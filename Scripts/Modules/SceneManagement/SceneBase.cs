@@ -1,0 +1,56 @@
+﻿﻿﻿
+using UnityEngine;
+using Unity.Linq;
+using System;
+using System.Linq;
+using System.Collections.Generic;
+using UniRx;
+using Extensions;
+using Constants;
+
+namespace Modules.SceneManagement
+{
+    /// <summary>
+    /// シーンに渡す引数.
+    /// </summary>
+    public interface ISceneArgument
+    {
+        Scenes? Identifier { get; }
+    }
+
+    public interface ISceneBase
+    {
+        /// <summary> シーン引数を設定 </summary>
+        void SetArgument(ISceneArgument argument);
+
+        /// <summary> シーンの準備 (通信、読み込みなど) </summary>
+        IObservable<Unit> PrepareAsync(bool isSceneBack);
+
+        /// <summary> シーンの開始 </summary>
+        void Enter(bool isSceneBack);
+
+        /// <summary> シーンの終了 </summary>
+        IObservable<Unit> LeaveAsync();
+
+        /// <summary> シーンの再読み込み  </summary>
+        void Reload();
+    }
+
+    public abstract class SceneBase : MonoBehaviour, ISceneBase
+    {
+        /// <summary> シーン引数を設定 </summary>
+        public abstract void SetArgument(ISceneArgument argument);
+
+        /// <summary> シーン準備処理 </summary>
+        public abstract IObservable<Unit> PrepareAsync(bool isSceneBack);
+
+        /// <summary> シーン開始時処理 </summary>
+        public abstract void Enter(bool isSceneBack);
+
+        /// <summary> シーン離脱時処理 </summary>
+        public abstract IObservable<Unit> LeaveAsync();
+
+        /// <summary> シーン再読み込み時処理 </summary>
+        public abstract void Reload();
+    }
+}

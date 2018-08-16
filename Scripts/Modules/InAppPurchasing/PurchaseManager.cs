@@ -1,0 +1,611 @@
+﻿
+
+#if UNITY_PURCHASING
+
+using UnityEngine;
+using UnityEngine.Purchasing;
+using System;
+using System.Linq;
+using System.Collections.Generic;
+using System.Text;
+using Extensions;
+using UniRx;
+
+namespace Modules.InAppPurchasing
+{
+    /// <summary>
+    /// 購入失敗時のエラー.
+    /// </summary>
+    public enum BuyFailureReason
+    {
+        /// <summary> エラー無し </summary>
+        None,
+
+        /// <summary> 課金システム未初期化 </summary>
+        NotInitialization,
+
+        /// <summary> 販売されていないアイテムを指定した </summary>
+        UnknownItem,
+
+        /// <summary> 課金メッセージを受け取れない </summary>
+        NotReceiveMessage,
+
+        /// <summary> 通信不可（課金システムの初期化は完了）</summary>
+        NetworkUnavailable,
+
+        /// <summary> 購入処理中 </summary>
+        InPurchaseing,
+
+        /// <summary> 不明なエラー </summary>
+        Unknown
+    }
+
+    public abstract class PurchaseManager : IStoreListener
+    {
+        //----- params -----
+
+        // UnityEditorのダミーストア名
+        private const string UnityEditorStore = "UnityEditorStore";
+
+        //----- field -----
+
+        // 基本的な課金処理を行うオブジェクト.
+        private IStoreController storeController = null;
+
+        // 各ストアに依存する課金処理を行うオブジェクト.
+        private IExtensionProvider storeExtensionProvider = null;
+
+        // 課金リスト更新通知.
+        private Subject<Product[]> onStoreProductsUpdate = null;
+        // 課金完了通知.
+        private Subject<PurchaseResult> onStorePurchaseComplete = null;
+        // 課金復元通知.
+        private Subject<Product> onStorePurchaseRestore = null;
+
+        protected bool initialized = false;
+
+        //----- property -----
+
+        /// <summary>
+        /// 課金処理の準備が出来ているか.
+        /// </summary>
+        public bool IsPurchaseReady { get; private set; }
+
+        /// <summary>
+        /// 販売中の課金アイテム.
+        /// </summary>
+        public Product[] StoreProducts { get; private set; }
+
+        /// <summary>
+        /// Pendingとなった課金アイテム.
+        /// </summary>
+        public Product[] PendingProducts { get; private set; }
+
+        /// <summary>
+        /// 購入中か.
+        /// </summary>
+        public bool IsPurchaseing { get; protected set; }
+
+        //----- method -----
+
+        public virtual void Initialize()
+        {
+            if (initialized) { return; }
+
+            StoreProducts = new Product[] { };
+            PendingProducts = new Product[] { };
+
+            IsPurchaseReady = false;
+            IsPurchaseing = false;
+
+            initialized = true;
+        }
+
+        /// <summary>
+        /// 商品情報更新.
+        /// </summary>
+        /// <returns></returns>
+        public IObservable<Unit> UpdateProducts()
+        {
+            return FetchProducts()
+                .Do(x =>
+                {
+                    if (!IsPurchaseReady)
+                    {
+                        InitializePurchasing(x);
+                    }
+                    else
+                    {
+                        UpdatePurchasing(x);
+                    }
+                })
+                .AsUnitObservable();
+        }
+
+        /// <summary>
+        /// 課金システム初期化.
+        /// </summary>
+        private void InitializePurchasing(ProductDefinition[] productDefinitions)
+        {
+            storeController = null;
+            storeExtensionProvider = null;
+
+            // Unityの課金システム構築.
+            var module = StandardPurchasingModule.Instance();
+
+            #if UNITY_EDITOR
+
+            module.useFakeStoreUIMode = FakeStoreUIMode.StandardUser;
+
+            #endif
+
+            var builder = ConfigurationBuilder.Instance(module);
+
+            if (productDefinitions.Any())
+            {
+                foreach (var productDefinition in productDefinitions)
+                {
+                    var ids = new IDs();
+                    var storeName = string.Empty;
+
+                    switch (Application.platform)
+                    {
+                        case RuntimePlatform.Android:
+                            storeName = GooglePlay.Name;
+                            break;
+
+                        case RuntimePlatform.IPhonePlayer:
+                            storeName = AppleAppStore.Name;
+                            break;
+
+                        case RuntimePlatform.WindowsPlayer:
+                        case RuntimePlatform.WindowsEditor:
+                        case RuntimePlatform.OSXPlayer:
+                        case RuntimePlatform.OSXEditor:
+                            storeName = UnityEditorStore;
+                            break;
+                    }
+
+                    if (!string.IsNullOrEmpty(storeName))
+                    {
+                        ids.Add(productDefinition.storeSpecificId, storeName);
+                    }
+
+                    builder.AddProduct(productDefinition.storeSpecificId, productDefinition.type, ids);
+                }
+            }
+
+            // 非同期の課金処理の初期化を開始.
+            UnityPurchasing.Initialize(this, builder);
+        }
+
+        /// <summary>
+        /// ストア商品リストを更新.
+        /// </summary>
+        /// <param name="productDefinitions"></param>
+        private void UpdatePurchasing(ProductDefinition[] productDefinitions)
+        {
+            storeController.FetchAdditionalProducts(
+                productDefinitions.ToHashSet(),
+                () =>
+                {
+                    StoreProducts = storeController.products.all
+                        .Where(x => !string.IsNullOrEmpty(x.metadata.localizedTitle))
+                        .Where(x => !string.IsNullOrEmpty(x.metadata.localizedPriceString))
+                        .Where(x => productDefinitions.Any(y => y.id == x.definition.id && y.storeSpecificId == x.definition.storeSpecificId))
+                        .ToArray();
+
+                    if (onStoreProductsUpdate != null)
+                    {
+                        onStoreProductsUpdate.OnNext(StoreProducts);
+                    }
+                },
+                x => { Debug.LogErrorFormat("[PurchaseManager] UpdatePurchasing Error.({0})", x); }
+           );
+        }
+
+        #region Purchase
+
+        /// <summary>
+        /// アイテムの購入.
+        /// </summary>
+        protected BuyFailureReason Purchase(string productId, string developerPayload = null)
+        {
+            var result = PurchaseInternal(productId, developerPayload);
+
+            if (result == BuyFailureReason.None)
+            {
+                var product = StoreProducts.FirstOrDefault(x => x.definition.storeSpecificId == productId);
+
+                if (product != null)
+                {
+                    var builder = new StringBuilder();
+
+                    builder.AppendLine("------- PurchaseProducts -------");
+                    builder.AppendLine(GetProductString(product)).AppendLine();
+
+                    Debug.Log(builder.ToString());
+                }
+            }
+            else
+            {
+                Debug.LogErrorFormat("[PurchaseManager] Purchase Error. ({0})", result);
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// アイテムの購入.
+        /// </summary>
+        private BuyFailureReason PurchaseInternal(string productId, string developerPayload)
+        {
+            // コールバックが通知できない場合は何もしない.
+            if (onStorePurchaseComplete == null || !onStorePurchaseComplete.HasObservers)
+            {
+                return BuyFailureReason.NotReceiveMessage;
+            }
+
+            // 購入処理中.
+            if (IsPurchaseing) { return BuyFailureReason.InPurchaseing; }
+
+            try
+            {
+                // 課金システムが未初期化の場合はなにもしない.
+                if (!IsPurchaseReady)
+                {
+                    return BuyFailureReason.NotInitialization;
+                }
+
+                var product = storeController.products.WithID(productId);
+
+                // 購入できないアイテムの場合.
+                if (product == null || !product.availableToPurchase)
+                {
+                    return BuyFailureReason.UnknownItem;
+                }
+
+                // 通信不可の場合は何もしない（初期化は終了済み）.
+                if (!NetworkConnection())
+                {
+                    return BuyFailureReason.NetworkUnavailable;
+                }
+
+                // Androidの場合はDeveloperPayloadを送る.
+                if (Application.platform == RuntimePlatform.Android)
+                {
+                    storeController.InitiatePurchase(product, developerPayload);
+                }
+                else
+                {
+                    storeController.InitiatePurchase(product);
+                }
+                IsPurchaseing = true;
+
+                return BuyFailureReason.None;
+            }
+            catch (Exception)
+            {
+                // 何らかのエラーが発生（課金は未発生）.
+                return BuyFailureReason.Unknown;
+            }
+        }
+
+        /// <summary>
+        /// 購入処理を完了しアイテムを購入完了状態に更新.
+        /// </summary>
+        public void PurchaseFinish(Product product)
+        {
+            UpdatePendingProduct(product, PurchaseProcessingResult.Complete);
+        }
+
+        #endregion
+
+        #region Restore
+
+        /// <summary>
+        /// 通信の影響で購入失敗したアイテムや、再インストール時に(非消費型/サブスクリプション型)アイテムを復元.
+        /// </summary>
+        public BuyFailureReason Restore()
+        {
+            var result = RestoreInternal();
+
+            if (result != BuyFailureReason.None)
+            {
+                Debug.LogErrorFormat("[PurchaseManager] Restore Error. ({0})", result);
+            }
+
+            return result;
+        }
+
+        private BuyFailureReason RestoreInternal()
+        {
+            // 課金システムが未初期化の場合はなにもしない.
+            if (!IsPurchaseReady)
+            {
+                return BuyFailureReason.NotInitialization;
+            }
+
+            // コールバックが通知できない場合は何もしない.
+            if (onStorePurchaseRestore == null || !onStorePurchaseRestore.HasObservers)
+            {
+                return BuyFailureReason.NotReceiveMessage;
+            }
+
+            // 通信不可の場合は何もしない.
+            if (!NetworkConnection())
+            {
+                return BuyFailureReason.NetworkUnavailable;
+            }
+
+            var platform = Application.platform;
+
+            if (platform == RuntimePlatform.IPhonePlayer || platform == RuntimePlatform.OSXPlayer)
+            {
+                var apple = storeExtensionProvider.GetExtension<IAppleExtensions>();
+
+                apple.RestoreTransactions(
+                    result =>
+                    {
+                        Debug.LogFormat("[PurchaseManager] RestorePurchases continuing: {0}", result);
+                    });
+            }
+
+            try
+            {
+                // 購入済みアイテムを通知.
+                foreach (var pendingProduct in PendingProducts)
+                {
+                    if (onStorePurchaseRestore != null)
+                    {
+                        onStorePurchaseRestore.OnNext(pendingProduct);
+                    }
+                }
+            }
+            catch (Exception)
+            {
+                // 何らかのエラーが発生.
+                return BuyFailureReason.Unknown;
+            }
+
+            return BuyFailureReason.None;
+        }
+
+        #endregion
+
+        /// <summary>
+        /// ストアの商品情報更新通知.
+        /// </summary>
+        /// <returns></returns>
+        protected IObservable<Product[]> OnStoreProductsUpdateAsObservable()
+        {
+            return onStoreProductsUpdate ?? (onStoreProductsUpdate = new Subject<Product[]>());
+        }
+
+        /// <summary>
+        /// ストア購入の結果通知.
+        /// </summary>
+        /// <returns></returns>
+        protected IObservable<PurchaseResult> OnStorePurchaseCompleteAsObservable()
+        {
+            return onStorePurchaseComplete ?? (onStorePurchaseComplete = new Subject<PurchaseResult>());
+        }
+
+        /// <summary>
+        /// ストア購入復元を通知.
+        /// </summary>
+        /// <returns></returns>
+        protected IObservable<Product> OnStorePurchaseRestoreAsObservable()
+        {
+            return onStorePurchaseRestore ?? (onStorePurchaseRestore = new Subject<Product>());
+        }
+
+        /// <summary>
+        /// Pending状態のアイテムを更新.
+        /// </summary>
+        private void UpdatePendingProduct(Product product, PurchaseProcessingResult result)
+        {
+            // レシートを持っていない.
+            if (!product.hasReceipt) { return; }
+
+            if (string.IsNullOrEmpty(product.transactionID)) { return; }
+
+            var pendingProducts = new List<Product>(PendingProducts);
+
+            // Pendingの場合は最新のものに更新.
+            if (result == PurchaseProcessingResult.Pending)
+            {
+                var pendingProduct = pendingProducts.FirstOrDefault(x => x.transactionID == product.transactionID);
+
+                if (pendingProduct != null)
+                {
+                    pendingProducts.Remove(pendingProduct);
+                }
+
+                pendingProducts.Add(product);
+            }
+            else if (result == PurchaseProcessingResult.Complete)
+            {
+                // 完了した場合は削除.
+                var pendingProduct = pendingProducts.FirstOrDefault(x => x.transactionID == product.transactionID);
+
+                if (pendingProduct != null)
+                {
+                    pendingProducts.Remove(pendingProduct);
+                }
+
+                storeController.ConfirmPendingPurchase(product);
+
+                var builder = new StringBuilder();
+
+                builder.AppendLine("------- ConfirmPendingProducts -------");
+                builder.AppendLine(GetProductString(product)).AppendLine();
+
+                Debug.Log(builder.ToString());
+            }
+
+            PendingProducts = pendingProducts.ToArray();
+        }
+
+        /// <summary>
+        /// 通信接続があるかチェックします。
+        /// </summary>
+        /// <returns><c>true</c>の場合は通信接続がある</returns>
+        private static bool NetworkConnection()
+        {
+            return Application.internetReachability != NetworkReachability.NotReachable;
+        }
+
+        #region IStoreListener
+
+        /// <summary>
+        /// IStoreListenerの初期化完了通知.
+        /// </summary>
+        public void OnInitialized(IStoreController controller, IExtensionProvider extensions)
+        {
+            storeController = controller;
+            storeExtensionProvider = extensions;
+
+            // ストアに販売中のアイテムを更新.
+            StoreProducts = controller.products.all;
+
+            if (StoreProducts.Any())
+            {
+                var builder = new StringBuilder();
+
+                builder.AppendLine("------- StoreProducts -------");
+
+                foreach (var item in StoreProducts)
+                {
+                    builder.AppendLine(GetProductString(item)).AppendLine();
+                }
+
+                Debug.Log(builder.ToString());
+            }
+
+            // Pending状態のアイテムを更新.
+            foreach (var product in controller.products.all)
+            {
+                UpdatePendingProduct(product, PurchaseProcessingResult.Pending);
+            }
+
+            if (PendingProducts.Any())
+            {
+                var builder = new StringBuilder();
+
+                builder.AppendLine("------- PendingProducts -------");
+
+                foreach (var item in PendingProducts)
+                {
+                    builder.AppendLine(GetProductString(item)).AppendLine();
+                }
+
+                Debug.Log(builder.ToString());
+            }
+
+            if (onStoreProductsUpdate != null)
+            {
+                onStoreProductsUpdate.OnNext(StoreProducts);
+            }
+
+            IsPurchaseReady = true;
+        }
+
+        /// <summary>
+        /// IStoreListenerの初期化失敗通知.
+        /// </summary>
+        public void OnInitializeFailed(InitializationFailureReason error)
+        {
+            IsPurchaseReady = false;
+
+            Debug.LogErrorFormat("[PurchaseManager] InitializeFailed. ({0})", error);
+        }
+
+        /// <summary>
+        /// IStoreListenerのアプリ内課金成功の通知.
+        /// </summary>
+        public PurchaseProcessingResult ProcessPurchase(PurchaseEventArgs args)
+        {
+            IsPurchaseing = false;
+
+            var product = args.purchasedProduct;
+
+            // 通信前提のため一度Pendingに追加.
+            UpdatePendingProduct(product, PurchaseProcessingResult.Pending);
+
+            // 通知できない場合はここで処理を終了.
+            if (onStorePurchaseComplete == null || !onStorePurchaseComplete.HasObservers)
+            {
+                return PurchaseProcessingResult.Pending;
+            }
+
+            // 初期化時に登録されていないアイテムの場合（アプリの不具合・サーバの設定ミス等）.
+            if (product.definition.id == null)
+            {
+                onStorePurchaseComplete.OnNext(new PurchaseResult(product, PurchaseFailureReason.ProductUnavailable));
+
+                return PurchaseProcessingResult.Pending;
+            }
+
+            // アプリの強制終了にも耐えうるようにする.
+            try
+            {
+                // アイテムの購入完了処理.
+                // ※ 過去に購入した現在は販売していないアイテムが未消費の可能性がある為未登録のアイテムの除外はしない.
+                if (onStorePurchaseComplete != null)
+                {
+                    onStorePurchaseComplete.OnNext(new PurchaseResult(product, null));
+                }
+            }
+            catch (Exception)
+            {
+                // 不明なエラーが発生.
+                // ※ 成功通知時に強制終了している場合もここで通知されるので、レシートの有無で判断する.
+                if (onStorePurchaseComplete != null)
+                {
+                    onStorePurchaseComplete.OnNext(new PurchaseResult(product, PurchaseFailureReason.Unknown));
+                }
+            }
+
+            return PurchaseProcessingResult.Pending;
+        }
+
+        /// <summary>
+        /// IStoreListenerアプリ内課金の失敗の通知.
+        /// </summary>
+        public void OnPurchaseFailed(Product product, PurchaseFailureReason failureReason)
+        {
+            IsPurchaseing = false;
+
+            if (onStorePurchaseComplete != null)
+            {
+                onStorePurchaseComplete.OnNext(new PurchaseResult(product, failureReason));
+            }
+
+            Debug.LogFormat("[PurchaseManager] PurchaseFailed. ({0})\n{1}", failureReason, GetProductString(product));
+        }
+
+        #endregion
+
+        private static string GetProductString(Product product)
+        {
+            var builder = new StringBuilder();
+
+            builder.AppendFormat("id: {0}", product.definition.storeSpecificId).AppendLine();
+            builder.AppendFormat("type: {0}", product.definition.type).AppendLine();
+            builder.AppendFormat("title: {0}", product.metadata.localizedTitle).AppendLine();
+            builder.AppendFormat("price: {0}", product.metadata.localizedPrice).AppendLine();
+            builder.AppendFormat("receipt: {0}", product.receipt).AppendLine();
+
+            return builder.ToString();
+        }
+
+        /// <summary>
+        /// 課金アイテムリストを取得.
+        /// </summary>
+        /// <returns></returns>
+        protected abstract IObservable<ProductDefinition[]> FetchProducts();
+    }
+}
+
+#endif

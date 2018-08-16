@@ -1,0 +1,343 @@
+﻿
+using UnityEditor;
+using UnityEngine;
+using System;
+using System.Linq;
+using System.Collections.Generic;
+using System.IO;
+using System.Text;
+using System.Threading;
+using Extensions;
+using Extensions.Devkit;
+
+using Object = UnityEngine.Object;
+
+namespace Modules.Devkit.FindReferences
+{
+    public class FindReferencesInProject : UnityEditor.Editor
+    {
+        private const string MenuItemLabel = "Assets/Find References In Project";
+
+        [MenuItem(MenuItemLabel, validate = true)]
+        public static bool CanExecute()
+        {
+            var path = AssetDatabase.GetAssetOrScenePath(Selection.activeObject);
+            return (Selection.activeObject != null) && !path.EndsWith(".unity");
+        }
+
+        [MenuItem(MenuItemLabel, priority = 27)]
+        public static void Execute()
+        {
+            var targetAsset = Selection.activeObject;
+
+            if(!AssetDatabase.IsMainAsset(targetAsset)) { return; }
+
+            var result = Execute(targetAsset);
+
+            FindReferencesResultWindow.Open(targetAsset, result);
+        }
+
+        public static AssetReferenceInfo Execute(UnityEngine.Object targetObject)
+        {
+            try
+            {
+                var assetPath = Application.dataPath;
+
+                Action<int, int> reportProgress = (current, total) =>
+                {
+                    var title = "Find References In Project";
+                    var info = string.Format("Loading Dependencies ({0}/{1})", current, total);
+                    var progress = current / (float)total;
+
+                    EditorUtility.DisplayProgressBar(title, info, progress);
+                };
+
+                var scenes = FindAllFiles(assetPath, "*.unity");
+                var prefabs = FindAllFiles(assetPath, "*.prefab");
+                var materials = FindAllFiles(assetPath, "*.mat");
+                var assets = FindAllFiles(assetPath, "*.asset");
+
+                var ctx = new FindReferenceContext(scenes, prefabs, materials, assets, reportProgress);
+
+                return FindReferencesCore(ctx, targetObject);
+            }
+            catch(Exception ex)
+            {
+                Debug.LogException(ex);
+            }
+            finally
+            {
+                EditorUtility.ClearProgressBar();
+            }
+
+            return null;
+        }
+
+        private static string[] FindAllFiles(string assetPath, string searchPattern)
+        {
+            return Directory.GetFiles(assetPath, searchPattern, SearchOption.AllDirectories)
+                .Select(x => PathUtility.ConvertPathSeparator(x))
+                .ToArray();
+        }
+
+        private static AssetReferenceInfo FindReferencesCore(FindReferenceContext ctx, UnityEngine.Object targetObject)
+        {
+            try
+            {
+                var assetPath = Application.dataPath;
+                var projectPath = Directory.GetParent(assetPath).ToString();
+                
+                TargetAssetInfo targetAssetInfo = null;
+
+                var targetObjectPath = AssetDatabase.GetAssetPath(targetObject);
+                var targetObjectFullPath = Path.Combine(projectPath, targetObjectPath);
+
+                targetAssetInfo = new TargetAssetInfo(targetObject, targetObjectFullPath.Substring(projectPath.Length + 1), targetObjectFullPath);
+
+                var assets = ctx.Scenes.Concat(ctx.Prefabs).Concat(ctx.Materials).Concat(ctx.Assets);
+                
+                foreach (var asset in assets)
+                {
+                    if (targetAssetInfo.IsReferencedFrom(asset))
+                    {
+                        targetAssetInfo.AssetReferenceInfo.Dependencies.Add(asset.FullPath.Substring(projectPath.Length + 1));
+                    }
+                }
+
+                return targetAssetInfo.AssetReferenceInfo;
+            }
+            finally
+            {
+                EditorUtility.ClearProgressBar();
+            }
+        }
+
+
+        /// <summary>
+        /// 依存される側の情報
+        /// </summary>
+        private class TargetAssetInfo
+        {
+            //----- params -----
+
+            //----- field -----
+
+            private string guid = null;
+            private string fileId = null;
+
+            //----- property -----
+
+            public AssetReferenceInfo AssetReferenceInfo { get; private set; }
+
+            //----- method -----
+
+            internal TargetAssetInfo(Object target, string path, string fullPath)
+            {
+                this.guid = GetGuid(fullPath);
+                this.AssetReferenceInfo = new AssetReferenceInfo(path, target);
+
+                // DLLでMonoScriptだったらDLLの中のコンポーネントなのでfileIDを取り出す.
+                if (path.EndsWith(".dll") && target is MonoScript)
+                {
+                    fileId = LocalIdentifierInFile.Get(target).ToString();
+                }
+            }
+
+            /// <summary>
+            /// 指定したアセットからこのアセットが参照されているかどうか返す.
+            /// </summary>
+            /// <param name="dependencyInfo"></param>
+            /// <returns></returns>
+            public bool IsReferencedFrom(AssetDependencyInfo dependencyInfo)
+            {
+                // fileIDがあるということはDLL.
+                if (fileId != null)
+                {
+                    // DLLの時はGUIDに加えてfileIDも比較.
+                    return dependencyInfo.FileIdsByGuid.ContainsKey(guid) && dependencyInfo.FileIdsByGuid[guid].Contains(fileId);
+                }
+                else
+                {
+                    return dependencyInfo.FileIdsByGuid.ContainsKey(guid);
+                }
+            }
+
+            private static string GetGuid(string path)
+            {
+                using (var sr = new StreamReader(path + ".meta"))
+                {
+                    while (!sr.EndOfStream)
+                    {
+                        var line = sr.ReadLine();
+                        var index = line.IndexOf("guid:", StringComparison.Ordinal);
+                        if (index >= 0)
+                            return line.Substring(index + 6, 32);
+                    }
+                }
+                return "0";
+            }
+        }
+
+        /// <summary>
+        /// 参照を持っているアセット(依存を持つ側)の情報.
+        /// </summary>
+        private class AssetDependencyInfo
+        {
+            public string FullPath { get; private set; }
+
+            /// <summary>
+            /// 参照しているコンポーネントのGUIDとfileIDのセット.
+            /// </summary>
+            public Dictionary<string, HashSet<string>> FileIdsByGuid { get; private set; }
+
+            public AssetDependencyInfo(string fullPath, Dictionary<string, HashSet<string>> fileIdsByguid)
+            {
+                this.FullPath = fullPath;
+                this.FileIdsByGuid = fileIdsByguid;
+            }
+        }
+
+        private class FindReferenceContext
+        {
+            public AssetDependencyInfo[] Scenes { get; private set; }
+            public AssetDependencyInfo[] Prefabs { get; private set; }
+            public AssetDependencyInfo[] Materials { get; private set; }
+            public AssetDependencyInfo[] Assets { get; private set; }
+
+            public FindReferenceContext(string[] scenes, string[] prefabs, string[] materials, string[] assets, Action<int, int> reportProgress)
+            {
+                var total = scenes.Length + prefabs.Length + materials.Length + assets.Length;
+
+                reportProgress(0, total);
+
+                // スレッドプールに投げ込んで待つ.
+                var progress = new Progress();
+
+                var events = new WaitHandle[]
+                {
+                    StartResolveReferencesWorker(scenes, (metadata) => this.Scenes = metadata, progress),
+                    StartResolveReferencesWorker(prefabs, (metadata) => this.Prefabs = metadata, progress),
+                    StartResolveReferencesWorker(materials, (metadata) => this.Materials = metadata, progress),
+                    StartResolveReferencesWorker(assets, (metadata) => this.Assets = metadata, progress),
+                };
+
+                while (!WaitHandle.WaitAll(events, 100))
+                {
+                    reportProgress(progress.Count, total);
+                }
+
+                reportProgress(progress.Count, total);
+            }
+
+            private class Progress
+            {
+                public int Count;
+            }
+
+            private ManualResetEvent StartResolveReferencesWorker(string[] paths, Action<AssetDependencyInfo[]> setter, Progress progress)
+            {
+                var queue = new Queue<string>(paths);
+                var dependencyInfoList = new List<AssetDependencyInfo>();
+                var resetEvent = new ManualResetEvent(false);
+                var completedCount = 0;
+
+                for (var i = 0; i < Environment.ProcessorCount; i++)
+                {
+                    ThreadPool.QueueUserWorkItem(state =>
+                    {
+                        var dependencyInfoListLocal = new List<AssetDependencyInfo>();
+
+                        while (true)
+                        {
+                            string path = null;
+
+                            lock (queue)
+                            {
+                                if (queue.Any()) { path = queue.Dequeue(); }
+                            }
+
+                            if (path == null) { break; }
+
+                            var metadata = new AssetDependencyInfo(path, GetReferencingGuid(path));
+
+                            dependencyInfoListLocal.Add(metadata);
+
+                            Interlocked.Increment(ref progress.Count);
+                        }
+                        
+                        lock (dependencyInfoList)
+                        {
+                            dependencyInfoList.AddRange(dependencyInfoListLocal);
+                        }
+
+                        // 全部終わった?.
+                        if (Interlocked.Increment(ref completedCount) == Environment.ProcessorCount)
+                        {
+                            setter(dependencyInfoList.ToArray());
+                            resetEvent.Set();
+                        }
+                    });
+                }
+
+                return resetEvent;
+            }
+        }
+
+        public static Dictionary<string, HashSet<string>> GetReferencingGuid(string path)
+        {
+            var result = new Dictionary<string, HashSet<string>>(StringComparer.OrdinalIgnoreCase);
+
+            using (var sr = new StreamReader(path, Encoding.UTF8, false, 256 * 1024))
+            {
+                while (!sr.EndOfStream)
+                {
+                    var line = sr.ReadLine();
+
+                    if(string.IsNullOrEmpty(line)) { continue; }
+
+                    line = line.Replace(" ", string.Empty);
+
+                    var fileIdIndex = line.IndexOf("fileID:", StringComparison.Ordinal);
+
+                    if (0 <= fileIdIndex)
+                    {
+                        var fileId = "";
+
+                        var startPos = fileIdIndex + 7;
+
+                        var fileIdEndIndex = line.IndexOf(',', startPos);
+
+                        if (0 <= fileIdEndIndex)
+                        {
+                            fileId = line.SafeSubstring(startPos, fileIdEndIndex - startPos);
+                        }
+
+                        if (string.IsNullOrEmpty(fileId)) { continue; }
+
+                        var guidIndex = line.IndexOf("guid:", StringComparison.Ordinal);
+
+                        if(0 <= guidIndex)
+                        {
+                            var guid = line.SafeSubstring(guidIndex + 5, 32);
+
+                            if (string.IsNullOrEmpty(guid)) { continue; }
+
+                            var fileIds = result.GetValueOrDefault(guid);
+
+                            if (fileIds != null)
+                            {
+                                fileIds.Add(fileId);
+                            }
+                            else
+                            {
+                                result.Add(guid, new HashSet<string>(StringComparer.Ordinal) { fileId });
+                            }
+                        }
+                    }
+                }
+            }
+
+            return result;
+        }
+    }
+}
