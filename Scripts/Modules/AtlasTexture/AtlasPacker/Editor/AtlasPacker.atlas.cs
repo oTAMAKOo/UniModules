@@ -92,7 +92,9 @@ namespace Modules.Atlas
             foreach (var editableTexture in editableTextures.Values)
             {
                 editableTexture.Restore();
-            }
+
+				UnityEditorUtility.ReleaseEditAsset(editableTexture.Texture);
+			}
 
             AssetDatabase.StopAssetEditing();
             AssetDatabase.Refresh(ImportAssetOptions.ForceUpdate | ImportAssetOptions.ForceSynchronousImport);
@@ -108,12 +110,14 @@ namespace Modules.Atlas
             {
                 editableTexture.Editable();
 
-                if (restore)
+				UnityEditorUtility.RegisterEditAsset(editableTexture.Texture);
+
+				if (restore)
                 {
                     editableTextures.Add(editableTexture.TextureId, editableTexture);
                 }
-            }
-        }
+			}
+		}
 
         private void UpdateAtlas(AtlasTexture atlas, List<Texture> textures, bool keepSprites)
         {
