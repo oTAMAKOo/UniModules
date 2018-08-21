@@ -39,9 +39,11 @@ namespace Modules.ExternalResource.Editor
             }
         }
 
-        //----- field -----
+		//----- field -----
 
-        private AssetManageManager assetManageManager = null;
+		private string externalResourcesPath = null;
+
+		private AssetManageManager assetManageManager = null;
 
         private Object selectionAssetObject = null;
 
@@ -57,31 +59,61 @@ namespace Modules.ExternalResource.Editor
 
         public static void Open(string externalResourcesPath)
         {
-            var assetManageConfig = AssetManageConfig.Instance;
+			Instance.titleContent = new GUIContent("Asset Navigation");
 
-            Instance.titleContent = new GUIContent("Asset Navigation");
-
-            Instance.Initialize(externalResourcesPath, assetManageConfig);
+            Instance.Initialize(externalResourcesPath);
 
             Instance.Show();
         }
 
-        private void Initialize(string externalResourcesPath, AssetManageConfig config)
+        private void Initialize(string externalResourcesPath)
         {
             if (initialized) { return; }
 
-            Prefs.externalResourcesPath = externalResourcesPath;
+			var config = AssetManageConfig.Instance;
+
+			this.externalResourcesPath = externalResourcesPath;
+
+			Prefs.externalResourcesPath = externalResourcesPath;
             Prefs.assetManageConfigGUID = AssetDatabase.AssetPathToGUID(AssetDatabase.GetAssetPath(config));
 
-            assetManageManager = new AssetManageManager();
-            assetManageManager.Initialize(externalResourcesPath, config);
+			Setup();
 
-            initialized = true;
+			initialized = true;
         }
 
-        void OnEnable()
+		private void Setup()
+		{
+			if (string.IsNullOrEmpty(Prefs.externalResourcesPath) || string.IsNullOrEmpty(Prefs.assetManageConfigGUID))
+			{
+				return;
+			}
+
+			var externalResourcesPath = Prefs.externalResourcesPath;
+			var assetManageConfigPath = AssetDatabase.GUIDToAssetPath(Prefs.assetManageConfigGUID);
+			var assetManageConfig = AssetDatabase.LoadMainAssetAtPath(assetManageConfigPath) as AssetManageConfig;
+
+			AssetManageConfig.OnReloadAsObservable().Subscribe(_ => Setup()).AddTo(Disposable);
+
+			assetManageManager = new AssetManageManager();
+			assetManageManager.Initialize(externalResourcesPath, assetManageConfig);
+
+			if (!string.IsNullOrEmpty(Prefs.selectionAssetGUID))
+			{
+				var assetPath = AssetDatabase.GUIDToAssetPath(Prefs.selectionAssetGUID);
+				selectionAssetObject = AssetDatabase.LoadMainAssetAtPath(assetPath);
+
+				UpdateViewInfo(selectionAssetObject);
+			}
+
+			initialized = true;
+
+			Repaint();
+		}
+
+		void OnEnable()
         {
-            Reload();
+            Setup();
         }
 
         void OnDestroy()
@@ -95,7 +127,7 @@ namespace Modules.ExternalResource.Editor
         {
             if (!initialized)
             {
-                Reload();
+                Setup();
             }
         }
 
@@ -166,33 +198,6 @@ namespace Modules.ExternalResource.Editor
 
                 GUILayout.FlexibleSpace();
             }
-        }
-
-        private void Reload()
-        {
-            if (string.IsNullOrEmpty(Prefs.externalResourcesPath) || string.IsNullOrEmpty(Prefs.assetManageConfigGUID))
-            {
-                return;
-            }
-
-            var externalResourcesPath = Prefs.externalResourcesPath;
-            var assetManageConfigPath = AssetDatabase.GUIDToAssetPath(Prefs.assetManageConfigGUID);
-            var assetManageConfig = AssetDatabase.LoadMainAssetAtPath(assetManageConfigPath) as AssetManageConfig;
-
-            assetManageManager = new AssetManageManager();
-            assetManageManager.Initialize(externalResourcesPath, assetManageConfig);
-
-            if (!string.IsNullOrEmpty(Prefs.selectionAssetGUID))
-            {
-                var assetPath = AssetDatabase.GUIDToAssetPath(Prefs.selectionAssetGUID);
-                selectionAssetObject = AssetDatabase.LoadMainAssetAtPath(assetPath);
-
-                UpdateViewInfo(selectionAssetObject);
-            }
-
-            initialized = true;
-
-            Repaint();
         }
 
         private void UpdateDragAndDrop()

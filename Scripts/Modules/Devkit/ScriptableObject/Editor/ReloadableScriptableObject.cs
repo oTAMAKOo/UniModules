@@ -5,6 +5,7 @@ using System;
 using System.Linq;
 using System.IO;
 using Extensions;
+using UniRx;
 using UnityEditor.Callbacks;
 
 namespace Modules.Devkit.ScriptableObjects
@@ -16,6 +17,8 @@ namespace Modules.Devkit.ScriptableObjects
         //----- field -----
 
         private DateTime? lastWriteTime = null;
+
+		private static Subject<Unit> onReload = null;
 
         //----- property -----
 
@@ -41,11 +44,21 @@ namespace Modules.Devkit.ScriptableObjects
             
             if(update)
             {
-                instance = LoadInstance();
+				if (onReload != null)
+				{
+					onReload.OnNext(Unit.Default);
+				}
+
+				instance = LoadInstance();
                 instance.lastWriteTime = time;
             }
 
             return instance;
         }
-    }
+
+		public static IObservable<Unit> OnReloadAsObservable()
+		{
+			return onReload ?? (onReload = new Subject<Unit>());
+		}
+	}
 }
