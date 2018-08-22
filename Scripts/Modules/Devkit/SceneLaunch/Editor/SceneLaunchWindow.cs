@@ -10,24 +10,21 @@ using Extensions.Devkit;
 using Modules.Devkit.EditorSceneChange;
 using Modules.Devkit.Prefs;
 
-namespace Modules.Devkit.SceneExecuter.Editor
+namespace Modules.Devkit.SceneLaunch
 {
-    [CustomEditor(typeof(SceneExecuter))]
-    public class SceneExecuterInspector : UnityEditor.Editor
-    {
-        //----- params -----
+    public class SceneLaunchWindow : SingletonEditorWindow<SceneLaunchWindow>
+	{
+		//----- params -----
 
-        private enum LaunchState
+		private static class Prefs
         {
-            None = 0,
-            WaitOpenScene,
-            WaitSceneChange,
-            SceneStart,
-        }
+			public static string targetScenePath
+			{
+				get { return ProjectPrefs.GetString("SceneExecuterPrefs-targetScenePath"); }
+				set { ProjectPrefs.SetString("SceneExecuterPrefs-targetScenePath", value); }
+			}
 
-        private static class Prefs
-        {
-            public static bool launch
+			public static bool launch
             {
                 get { return ProjectPrefs.GetBool("SceneExecuterPrefs-launch", false); }
                 set { ProjectPrefs.SetBool("SceneExecuterPrefs-launch", value); }
@@ -138,66 +135,100 @@ namespace Modules.Devkit.SceneExecuter.Editor
             }
         }
 
-        //----- field -----
+		//----- field -----
 
-        private SceneExecuter instance = null;
+		private string targetScenePath = null;
 
-        //----- property -----
+		private bool initialized = false;
 
-        //----- method -----
+		//----- property -----
 
-        public override void OnInspectorGUI()
-        {
-            instance = target as SceneExecuter;
+		//----- method -----
 
-            serializedObject.Update();
+		public static void Open()
+		{
+			Instance.titleContent = new GUIContent("Launch Scene");
+			Instance.minSize = new Vector2(0f, 60f);
 
-            var targetScenePathProperty = serializedObject.FindProperty("targetScenePath");
+			Instance.Initialize();
 
-            EditorLayoutTools.SetLabelWidth(120f);
+			Instance.Show();
+		}
+
+		public void Initialize()
+		{
+			if (initialized) { return; }
+
+			targetScenePath = Prefs.targetScenePath;
+
+			initialized = true;
+		}
+
+		void OnEnable()
+		{
+			Initialize();
+		}
+
+		void Update()
+		{
+			if (!initialized)
+			{
+				Initialize();
+			}
+		}
+
+		void OnGUI()
+		{
+			EditorLayoutTools.SetLabelWidth(120f);
 
             EditorGUILayout.Separator();
 
             using(new EditorGUILayout.HorizontalScope())
             {
-                var sceneName = Path.GetFileName(targetScenePathProperty.stringValue);
+                var sceneName = Path.GetFileName(targetScenePath);
 
-                if (EditorLayoutTools.DrawPrefixButton("Scene", GUILayout.Width(80f)))
+                if (EditorLayoutTools.DrawPrefixButton("Scene", GUILayout.Width(65f)))
                 {
-                    SceneSelectorPrefs.selectedScenePath = targetScenePathProperty.stringValue;
+                    SceneSelectorPrefs.selectedScenePath = targetScenePath;
                     SceneSelector.Open().Subscribe(OnSelectScene);
                 }
 
                 var sceneNameStyle = GUI.skin.GetStyle("TextArea");
                 sceneNameStyle.alignment = TextAnchor.MiddleLeft;
 
-                EditorGUILayout.SelectableLabel(sceneName, sceneNameStyle, GUILayout.Height(18f));
+				EditorGUILayout.SelectableLabel(sceneName, sceneNameStyle, GUILayout.Height(18f));
 
-                // 下記条件時は再生ボタンを非アクティブ:.
-                // ・実行中.
-                // ・ビルド中.
-                // ・遷移先シーンが未選択.
-                GUI.enabled = !(EditorApplication.isPlaying ||
-                                EditorApplication.isCompiling ||
-                                string.IsNullOrEmpty(targetScenePathProperty.stringValue));
-
-                if (GUILayout.Button("Launch", GUILayout.ExpandWidth(true), GUILayout.Width(100f)))
-                {
-                    SceneSelectorPrefs.selectedScenePath = targetScenePathProperty.stringValue;
-                    Launch().Subscribe();
-                }
-
-                GUI.enabled = true;
-
-                GUILayout.Space(15f);
+				GUILayout.Space(5f);
             }
 
-            EditorGUILayout.Separator();
-        }
+			GUILayout.Space(5f);
+
+			using (new EditorGUILayout.HorizontalScope())
+			{
+				GUILayout.Space(5f);
+
+				// 下記条件時は再生ボタンを非アクティブ:.
+				// ・実行中.
+				// ・ビルド中.
+				// ・遷移先シーンが未選択.
+				GUI.enabled = !(EditorApplication.isPlaying ||
+							EditorApplication.isCompiling ||
+							string.IsNullOrEmpty(targetScenePath));
+
+				if (GUILayout.Button("Launch"))
+				{
+					Launch().Subscribe();
+				}
+
+				GUI.enabled = true;
+
+				GUILayout.Space(5f);
+			}
+		}
 
         private IObservable<Unit> Launch()
         {
-            return EditorSceneChanger.SceneChange(instance.TargetScenePath)
+            return EditorSceneChanger.SceneChange(targetScenePath)
                 .Do(x =>
                     {
                         if (x)
@@ -246,17 +277,11 @@ namespace Modules.Devkit.SceneExecuter.Editor
 
         private void OnSelectScene(string targetScenePath)
         {
-            serializedObject.Update();
+			this.targetScenePath = targetScenePath;
 
-            var targetScenePathProperty = serializedObject.FindProperty("targetScenePath");
+			Prefs.targetScenePath = targetScenePath;
 
-            UnityEditorUtility.RegisterUndo("SceneExecuterInspector Undo", instance);
-
-            targetScenePathProperty.stringValue = targetScenePath;
-
-            serializedObject.ApplyModifiedProperties();
-
-            SceneSelectorPrefs.selectedScenePath = targetScenePathProperty.stringValue;
+            SceneSelectorPrefs.selectedScenePath = targetScenePath;
 
             Repaint();
         }

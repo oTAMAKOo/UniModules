@@ -10,7 +10,7 @@ using Extensions;
 using Extensions.Devkit;
 using Modules.Devkit.Prefs;
 
-namespace Modules.Devkit.SceneExecuter.Editor
+namespace Modules.Devkit.SceneLaunch
 {
     public static class SceneSelectorPrefs
     {
