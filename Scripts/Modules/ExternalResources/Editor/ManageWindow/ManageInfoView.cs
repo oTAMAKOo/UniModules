@@ -203,7 +203,7 @@ namespace Modules.ExternalResource.Editor
 
                     EditorGUILayout.Separator();
 
-                    EditorLayoutTools.DrawLabelWithBackground("Contents", new Color(0.3f, 0.3f, 0.3f));
+                    EditorLayoutTools.DrawLabelWithBackground("Contents", new Color(0.7f, 0.9f, 0.7f));
 
                     using (new ContentsScope())
                     {
