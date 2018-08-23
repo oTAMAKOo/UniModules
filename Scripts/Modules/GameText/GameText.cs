@@ -39,7 +39,7 @@ namespace Modules.GameText
 
         // ※ SheetIdがGameTextCategoryのEnumIDとして登録されている.
 
-        public static string Get(GameTextCategory category, int enumValue)
+        public string Find(GameTextCategory category, int enumValue)
         {
             if (Instance == null) { return null; }
 

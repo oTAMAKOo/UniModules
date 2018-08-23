@@ -74,7 +74,7 @@ namespace Modules.GameText.Components
 
             if (category == GameTextCategory.None || !identifier.HasValue) { return; }
 
-            content = GameText.Get(category, identifier.Value);
+            content = GameText.Instance.Find(category, identifier.Value);
 
             ApplyText(content);
         }
