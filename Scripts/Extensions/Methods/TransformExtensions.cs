@@ -1,15 +1,10 @@
-﻿﻿﻿﻿
+﻿
 using UnityEngine;
-using System;
-using System.Linq;
-using System.Collections.Generic;
-using UniRx;
-using Extensions;
 
 namespace Extensions
 {
-	public static class TransformExtensions
-	{
+    public static class TransformExtensions
+    {
         public static void Reset(this Transform transform, bool localPosition = true, bool localRotation = true, bool localScale = true)
         {
             if (localPosition)

@@ -1,4 +1,4 @@
-﻿﻿﻿
+﻿
 using UnityEngine;
 using System;
 using System.Linq;
@@ -7,7 +7,7 @@ using System.Collections.Generic;
 namespace Extensions
 {
     public static class ColorExtensions
-	{
+    {
         public static string ColorToHex(this Color color, bool hasAlpha = false)
         {
             return ColorToHex((Color32)color, hasAlpha);
@@ -17,7 +17,7 @@ namespace Extensions
         {
             string hex = color.r.ToString("X2") + color.g.ToString("X2") + color.b.ToString("X2");
 
-            if(hasAlpha)
+            if (hasAlpha)
             {
                 hex += color.a.ToString("X2");
             }

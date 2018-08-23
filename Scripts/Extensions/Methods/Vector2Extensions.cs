@@ -1,7 +1,5 @@
-﻿﻿﻿
+﻿
 using UnityEngine;
-using System.Collections;
-using Extensions;
 
 namespace Extensions
 {
@@ -58,7 +56,7 @@ namespace Extensions
 
         /// <summary>
         /// returns positive if v2 is clockwise of this vector,
-        //  minus if anticlockwise (Y axis pointing down, X axis to right)
+        ///  minus if anticlockwise (Y axis pointing down, X axis to right)
         /// </summary>
         /// <param name="src"></param>
         /// <param name="vec"></param>
@@ -93,17 +91,16 @@ namespace Extensions
         /// Vector2をVector3に変換. 
         /// </summary> 
         public static Vector3 ToVector3(this Vector2 vector, float z)
-        { 
-            return new Vector3(vector.x, vector.y, z); 
-        } 
- 
+        {
+            return new Vector3(vector.x, vector.y, z);
+        }
 
         /// <summary> 
         /// Vector2をZ座標0のVector3に変換.
         /// </summary> 
         public static Vector3 ToVector3(this Vector2 vector)
-        { 
-            return vector.ToVector3(0); 
-        } 
+        {
+            return vector.ToVector3(0);
+        }
     }
 }

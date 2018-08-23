@@ -1,7 +1,4 @@
 ﻿
-using System;
-using System.Linq;
-using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
 using System.Text;
@@ -9,7 +6,7 @@ using System.Runtime.Serialization.Formatters.Binary;
 
 namespace Extensions
 {
-	public static class GZipExtensions
+    public static class GZipExtensions
     {
         /// <summary> GZip形式で圧縮 </summary>
         public static byte[] Compress(this byte[] bytes)
@@ -49,9 +46,9 @@ namespace Extensions
         /// <summary> GZip形式で圧縮されたデータを解凍 </summary>
         public static byte[] Decompress(this byte[] bytes)
         {
-            if (bytes == null) { return  null; }
+            if (bytes == null) { return null; }
 
-            if (bytes.IsEmpty()){ return  new byte[0]; }
+            if (bytes.IsEmpty()) { return new byte[0]; }
 
             var buffer = new byte[1024];
 

@@ -1,61 +1,61 @@
-﻿﻿﻿using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 
 namespace Extensions
 {
-	public static partial class EnumerableExtensions
-	{
+    public static partial class EnumerableExtensions
+    {
         private static Random random = new Random();
 
         public static bool IsEmpty<T>(this IEnumerable<T> source)
-		{
-			return !source.Any();
-		}
+        {
+            return !source.Any();
+        }
 
-		public static string[] ToStrings(this object[] objectArray)
-		{
-			return Array.ConvertAll<object, string>(objectArray, o => o.ToString());
-		}
+        public static string[] ToStrings(this object[] objectArray)
+        {
+            return Array.ConvertAll<object, string>(objectArray, o => o.ToString());
+        }
 
-		public static IEnumerable<TSource> DistinctBy<TSource, TKey>(this IEnumerable<TSource> source, Func<TSource, TKey> keySelector)
-		{
-			HashSet<TKey> knownKeys = new HashSet<TKey>();
+        public static IEnumerable<TSource> DistinctBy<TSource, TKey>(this IEnumerable<TSource> source, Func<TSource, TKey> keySelector)
+        {
+            HashSet<TKey> knownKeys = new HashSet<TKey>();
 
-			foreach (TSource element in source)
-			{
-				if (knownKeys.Add(keySelector(element)))
-				{
-					yield return element;
-				}
-			}
-		}
+            foreach (TSource element in source)
+            {
+                if (knownKeys.Add(keySelector(element)))
+                {
+                    yield return element;
+                }
+            }
+        }
 
-		public static IEnumerable<T> Concat<T>(IEnumerable<IEnumerable<T>> source)
-		{
-			foreach (var item in source)
-			{
-				foreach (var item2 in item)
-				{
-					yield return item2;
-				}
-			}
-		}
+        public static IEnumerable<T> Concat<T>(IEnumerable<IEnumerable<T>> source)
+        {
+            foreach (var item in source)
+            {
+                foreach (var item2 in item)
+                {
+                    yield return item2;
+                }
+            }
+        }
 
-		public static IEnumerable<T> Concat<T>(params IEnumerable<T>[] source)
-		{
-			return Concat(source.AsEnumerable());
-		}
+        public static IEnumerable<T> Concat<T>(params IEnumerable<T>[] source)
+        {
+            return Concat(source.AsEnumerable());
+        }
 
-		public static HashSet<T> ToHashSet<T>(this IEnumerable<T> source)
-		{
-			return new HashSet<T>(source);
-		}
+        public static HashSet<T> ToHashSet<T>(this IEnumerable<T> source)
+        {
+            return new HashSet<T>(source);
+        }
 
-		public static HashSet<T> ToHashSet<T>(this IEnumerable<T> source, IEqualityComparer<T> comparer)
-		{
-			return new HashSet<T>(source, comparer);
-		}
+        public static HashSet<T> ToHashSet<T>(this IEnumerable<T> source, IEqualityComparer<T> comparer)
+        {
+            return new HashSet<T>(source, comparer);
+        }
 
         /// <summary>
         /// 重み付き抽選を実行し抽選されたインデックスを取得.
@@ -108,35 +108,35 @@ namespace Extensions
         /// 重複を避けたい場合はShuffleを使ってください.
         /// </summary>
         public static IEnumerable<T> Sample<T>(this IEnumerable<T> source, int sampleCount, Random random = null)
-		{
+        {
             if (random == null)
             {
                 random = EnumerableExtensions.random;
             }
 
             if (source == null) throw new ArgumentNullException("source");
-			if (sampleCount <= 0) throw new ArgumentOutOfRangeException("sampleCount");
+            if (sampleCount <= 0) throw new ArgumentOutOfRangeException("sampleCount");
 
-			return SampleCore(source, sampleCount, random);
-		}
+            return SampleCore(source, sampleCount, random);
+        }
 
-		private static IEnumerable<T> SampleCore<T>(this IEnumerable<T> source, int sampleCount, Random random)
-		{
-			var list = source as IList<T>;
-			if (list == null)
-			{
-				list = source.ToList();
-			}
+        private static IEnumerable<T> SampleCore<T>(this IEnumerable<T> source, int sampleCount, Random random)
+        {
+            var list = source as IList<T>;
+            if (list == null)
+            {
+                list = source.ToList();
+            }
 
-			var len = list.Count;
-			if (len == 0) yield break;
+            var len = list.Count;
+            if (len == 0) yield break;
 
-			for (int i = 0; i < sampleCount; i++)
-			{
-				var index = random.Next(0, len);
-				yield return list[index];
-			}
-		}
+            for (int i = 0; i < sampleCount; i++)
+            {
+                var index = random.Next(0, len);
+                yield return list[index];
+            }
+        }
 
         /// <summary>
         /// 値を一つだけランダムで抽出します.
@@ -166,7 +166,7 @@ namespace Extensions
         /// <param name="random">シャッフルに使用するランダム生成子</param>
         /// <returns>シャッフルされたシーケンス</returns>
         public static IEnumerable<T> Shuffle<T>(this IEnumerable<T> source, Random random = null)
-		{
+        {
             if (random == null)
             {
                 random = EnumerableExtensions.random;
@@ -174,133 +174,133 @@ namespace Extensions
 
             if (source == null) throw new ArgumentNullException("source");
 
-			return ShuffleCore(source, random);
-		}
+            return ShuffleCore(source, random);
+        }
 
-		private static IEnumerable<T> ShuffleCore<T>(this IEnumerable<T> source, Random random)
-		{
-			var buffer = source.ToArray();
+        private static IEnumerable<T> ShuffleCore<T>(this IEnumerable<T> source, Random random)
+        {
+            var buffer = source.ToArray();
 
-			for (var i = buffer.Length - 1; i > 0; i--)
-			{
-				var j = random.Next(0, i + 1);
+            for (var i = buffer.Length - 1; i > 0; i--)
+            {
+                var j = random.Next(0, i + 1);
 
-				yield return buffer[j];
-				buffer[j] = buffer[i];
-			}
+                yield return buffer[j];
+                buffer[j] = buffer[i];
+            }
 
-			if (buffer.Length != 0)
-			{
-				yield return buffer[0];
-			}
-		}
+            if (buffer.Length != 0)
+            {
+                yield return buffer[0];
+            }
+        }
 
-		public static void ForEach<T>(this IEnumerable<T> source, Action<T> action)
-		{
-			var array = source as T[];
-			if (array != null)
-			{
-				Array.ForEach(array, action);
-				return;
-			}
+        public static void ForEach<T>(this IEnumerable<T> source, Action<T> action)
+        {
+            var array = source as T[];
+            if (array != null)
+            {
+                Array.ForEach(array, action);
+                return;
+            }
 
-			var list = source as List<T>;
-			if (list != null)
-			{
-				list.ForEach(action);
-				return;
-			}
+            var list = source as List<T>;
+            if (list != null)
+            {
+                list.ForEach(action);
+                return;
+            }
 
-			foreach (var item in source)
-			{
-				action(item);
-			}
-		}
+            foreach (var item in source)
+            {
+                action(item);
+            }
+        }
 
-		public static void ForEach<T>(this IEnumerable<T> source, Action<T, int> action)
-		{
-			var index = 0;
-			foreach (var item in source)
-			{
-				action(item, index++);
-			}
-		}
+        public static void ForEach<T>(this IEnumerable<T> source, Action<T, int> action)
+        {
+            var index = 0;
+            foreach (var item in source)
+            {
+                action(item, index++);
+            }
+        }
 
-		public static int IndexOf<T>(this IEnumerable<T> source, Func<T, bool> action, int defaultValue = -1)
-		{
-			var index = 0;
+        public static int IndexOf<T>(this IEnumerable<T> source, Func<T, bool> action, int defaultValue = -1)
+        {
+            var index = 0;
 
-			foreach (var item in source)
-			{
-				if (action(item))
-				{
-					return index;
-				}
+            foreach (var item in source)
+            {
+                if (action(item))
+                {
+                    return index;
+                }
 
-				index++;
-			}
+                index++;
+            }
 
-			return defaultValue;
-		}
+            return defaultValue;
+        }
 
-		/// <summary>
-		/// 要素のIndexを入れ替えます.
-		/// </summary>
-		/// <typeparam name="T"></typeparam>
-		/// <param name="source"></param>
-		/// <param name="firstIndex"></param>
-		/// <param name="secondIndex"></param>
-		/// <returns></returns>
-		public static IEnumerable<T> Swap<T>(this IEnumerable<T> source, int firstIndex, int secondIndex)
-		{
-			if (source == null)
-			{
-				throw new ArgumentNullException("source");
-			}
+        /// <summary>
+        /// 要素のIndexを入れ替えます.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="source"></param>
+        /// <param name="firstIndex"></param>
+        /// <param name="secondIndex"></param>
+        /// <returns></returns>
+        public static IEnumerable<T> Swap<T>(this IEnumerable<T> source, int firstIndex, int secondIndex)
+        {
+            if (source == null)
+            {
+                throw new ArgumentNullException("source");
+            }
 
-			var array = source.ToArray();
+            var array = source.ToArray();
 
-			return Swap<T>(array, firstIndex, secondIndex);
-		}
+            return Swap<T>(array, firstIndex, secondIndex);
+        }
 
-		private static IEnumerable<T> Swap<T>(IList<T> array, int firstIndex, int secondIndex)
-		{
-			if (firstIndex < 0 || firstIndex >= array.Count)
-			{
-				throw new ArgumentOutOfRangeException("firstIndex");
-			}
+        private static IEnumerable<T> Swap<T>(IList<T> array, int firstIndex, int secondIndex)
+        {
+            if (firstIndex < 0 || firstIndex >= array.Count)
+            {
+                throw new ArgumentOutOfRangeException("firstIndex");
+            }
 
-			if (secondIndex < 0 || secondIndex >= array.Count)
-			{
-				throw new ArgumentOutOfRangeException("secondIndex");
-			}
+            if (secondIndex < 0 || secondIndex >= array.Count)
+            {
+                throw new ArgumentOutOfRangeException("secondIndex");
+            }
 
-			var tmp = array[firstIndex];
+            var tmp = array[firstIndex];
 
-			array[firstIndex] = array[secondIndex];
-			array[secondIndex] = tmp;
+            array[firstIndex] = array[secondIndex];
+            array[secondIndex] = tmp;
 
-			return array;
-		}
+            return array;
+        }
 
-		/// <summary>
-		/// 最小値を持つ要素を返します.
-		/// </summary>
-		public static TSource FindMin<TSource, TResult>(this IEnumerable<TSource> source, Func<TSource, TResult> selector)
-		{
-			var array = source.ToArray();
+        /// <summary>
+        /// 最小値を持つ要素を返します.
+        /// </summary>
+        public static TSource FindMin<TSource, TResult>(this IEnumerable<TSource> source, Func<TSource, TResult> selector)
+        {
+            var array = source.ToArray();
 
-			return array.FirstOrDefault(c => selector(c).Equals(array.Min(selector)));
-		}
+            return array.FirstOrDefault(c => selector(c).Equals(array.Min(selector)));
+        }
 
-		/// <summary>
-		/// 最大値を持つ要素を返します.
-		/// </summary>
-		public static TSource FindMax<TSource, TResult>(this IEnumerable<TSource> source, Func<TSource, TResult> selector)
-		{
-			var array = source.ToArray();
+        /// <summary>
+        /// 最大値を持つ要素を返します.
+        /// </summary>
+        public static TSource FindMax<TSource, TResult>(this IEnumerable<TSource> source, Func<TSource, TResult> selector)
+        {
+            var array = source.ToArray();
 
-			return array.FirstOrDefault(c => selector(c).Equals(array.Max(selector)));
-		}
-	}
+            return array.FirstOrDefault(c => selector(c).Equals(array.Max(selector)));
+        }
+    }
 }
