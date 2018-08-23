@@ -55,7 +55,7 @@ namespace Modules.Devkit.Spreadsheet
                     var column = match.Groups[1].Value;
                     var row = int.Parse(match.Groups[2].Value);
 
-                    return UniRx.Tuple.Create(cell, column, row);
+                    return Tuple.Create(cell, column, row);
                 })
                 .GroupBy(x => x.Item3)
                 .OrderBy(x => x.Key)

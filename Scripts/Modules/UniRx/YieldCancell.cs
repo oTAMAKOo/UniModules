@@ -1,5 +1,6 @@
 ﻿
 using System;
+using System.Threading;
 using UniRx;
 
 namespace Modules.UniRxExtension
@@ -9,13 +10,12 @@ namespace Modules.UniRxExtension
         //----- params -----
 
         //----- field -----
-
-        private BooleanDisposable cancelDisposable = null;
-        private CancellationToken cancellationToken;
+        
+        private CancellationTokenSource cancellationToken = null;
 
         //----- property -----
 
-        public CancellationToken Token { get { return cancellationToken; } }
+        public CancellationToken Token { get { return cancellationToken.Token; } }
 
         public bool IsCancelled { get { return cancellationToken.IsCancellationRequested; } }
 
@@ -23,8 +23,7 @@ namespace Modules.UniRxExtension
 
         public YieldCancell()
         {
-            cancelDisposable = new BooleanDisposable();
-            cancellationToken = new CancellationToken(cancelDisposable);
+            cancellationToken = new CancellationTokenSource();
         }
 
         ~YieldCancell()
@@ -34,9 +33,10 @@ namespace Modules.UniRxExtension
 
         public void Dispose()
         {
-            if (cancelDisposable != null)
+            if (cancellationToken != null)
             {
-                cancelDisposable.Dispose();
+                cancellationToken.Cancel();
+                cancellationToken = null;
             }
 
             GC.SuppressFinalize(this);

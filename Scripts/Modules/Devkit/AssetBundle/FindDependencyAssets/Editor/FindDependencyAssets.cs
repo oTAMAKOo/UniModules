@@ -162,7 +162,7 @@ namespace Modules.Devkit.AssetBundles
             var allAssetPaths = allAssetGuids.Select(x => AssetDatabase.GUIDToAssetPath(x));
 
             return allAssetPaths
-                .Select(x => UniRx.Tuple.Create(GetBundleName(x), x))
+                .Select(x => Tuple.Create(GetBundleName(x), x))
                 .Where(x => !string.IsNullOrEmpty(x.Item1))
                 .ToLookup(x => x.Item1, x => x.Item2);
         }

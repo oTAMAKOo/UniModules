@@ -181,12 +181,12 @@ namespace Modules.ExternalResource
         /// <summary>
         /// マニフェストファイルを更新.
         /// </summary>
-        public IObservable<Unit> UpdateManifest(UniRx.IProgress<float> progress = null)
+        public IObservable<Unit> UpdateManifest(IProgress<float> progress = null)
         {
             return Observable.FromCoroutine(() => UpdateManifestInternal(progress));
         }
 
-        private IEnumerator UpdateManifestInternal(UniRx.IProgress<float> progress = null)
+        private IEnumerator UpdateManifestInternal(IProgress<float> progress = null)
         {
             var currentProgress = 0f;
             var scheduledNotifier = new ScheduledNotifier<float>();
@@ -258,14 +258,14 @@ namespace Modules.ExternalResource
         /// <summary>
         /// アセットを更新.
         /// </summary>
-        public static IObservable<Unit> UpdateAsset(string resourcesPath, UniRx.IProgress<float> progress = null)
+        public static IObservable<Unit> UpdateAsset(string resourcesPath, IProgress<float> progress = null)
         {
             if (string.IsNullOrEmpty(resourcesPath)) { return Observable.ReturnUnit(); }
 
             return Observable.FromCoroutine(() => instance.UpdateAssetInternal(resourcesPath, progress));
         }
 
-        private IEnumerator UpdateAssetInternal(string resourcesPath, UniRx.IProgress<float> progress = null)
+        private IEnumerator UpdateAssetInternal(string resourcesPath, IProgress<float> progress = null)
         {
             #if ENABLE_CRIWARE
 
@@ -489,7 +489,7 @@ namespace Modules.ExternalResource
         }
 
         /// <summary> 読み込み済みAssetbundle一覧取得 </summary>
-        public static UniRx.Tuple<string, int>[] GetLoadedAssets()
+        public static Tuple<string, int>[] GetLoadedAssets()
         {
             return Instance.assetBundleManager.GetLoadedAssetBundleNames();
         }

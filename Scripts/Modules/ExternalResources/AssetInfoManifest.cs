@@ -72,7 +72,7 @@ namespace Modules.ExternalResource
             return info;
         }
 
-        public void SetAssetFileInfo(string exportPath, UniRx.IProgress<Tuple<string,float>> progress = null)
+        public void SetAssetFileInfo(string exportPath, IProgress<Tuple<string,float>> progress = null)
         {
             for (var i = 0; i < assetInfos.Length; i++)
             {
@@ -104,7 +104,7 @@ namespace Modules.ExternalResource
 
                 assetInfo.SetFileInfo(filePath);
 
-                progress.Report(UniRx.Tuple.Create(assetInfo.ResourcesPath, (float)i / assetInfos.Length));
+                progress.Report(Tuple.Create(assetInfo.ResourcesPath, (float)i / assetInfos.Length));
             }
 
             BuildCache(true);

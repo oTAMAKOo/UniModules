@@ -71,7 +71,7 @@ namespace Modules.Devkit.Build
                 .Do(x => EditorUtility.ClearProgressBar());
         }
 
-        private static IEnumerator CollectBuildInAssetsInternal(IObserver<BuildInAssetInfo[]> observer, UniRx.IProgress<float> progress)
+        private static IEnumerator CollectBuildInAssetsInternal(IObserver<BuildInAssetInfo[]> observer, IProgress<float> progress)
         {
             var buildInAssets = new List<BuildInAssetInfo>();
 

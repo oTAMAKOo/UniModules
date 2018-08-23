@@ -5,6 +5,7 @@ using System;
 using System.Linq;
 using System.Collections;
 using System.Net;
+using System.Threading;
 using UniRx;
 
 namespace Modules.Networking
@@ -22,12 +23,12 @@ namespace Modules.Networking
             HttpStatusCode.PartialContent
         };
 
-        public static IObservable<byte[]> Fetch(this UnityWebRequest request, UniRx.IProgress<float> progress = null)
+        public static IObservable<byte[]> Fetch(this UnityWebRequest request, IProgress<float> progress = null)
         {
             return Observable.FromCoroutine<byte[]>((observer, cancellation) => Fetch(observer, cancellation, request, progress));
         }
 
-        private static IEnumerator Fetch(IObserver<byte[]> observer, CancellationToken cancel, UnityWebRequest request, UniRx.IProgress<float> progress)
+        private static IEnumerator Fetch(IObserver<byte[]> observer, CancellationToken cancel, UnityWebRequest request, IProgress<float> progress)
         {
             using (request)
             {

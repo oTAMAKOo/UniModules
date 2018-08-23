@@ -1,10 +1,11 @@
 ﻿
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.EventSystems;
+using System;
 using UniRx;
 using UniRx.Triggers;
 using Extensions;
-using UnityEngine.EventSystems;
 
 namespace Modules.UI
 {

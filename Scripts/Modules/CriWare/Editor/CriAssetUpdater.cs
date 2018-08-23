@@ -166,7 +166,7 @@ namespace Modules.CriWare.Editor
 
             var copyTargets = files
                 .Where(x => assetExtensions.Contains(Path.GetExtension(x)))
-                .Select(x => UniRx.Tuple.Create(x, PathUtility.Combine(assetFolderPath, x.Replace(sourceFolderPath, string.Empty))))
+                .Select(x => Tuple.Create(x, PathUtility.Combine(assetFolderPath, x.Replace(sourceFolderPath, string.Empty))))
                 .ToArray();
 
             if (copyTargets.Any())
@@ -215,7 +215,7 @@ namespace Modules.CriWare.Editor
 
             var deleteTargets = files
                 .Where(x => Path.GetExtension(x) != ".meta")
-                .Select(x => UniRx.Tuple.Create(x, x.Replace(assetFolderPath, sourceFolderPath)))
+                .Select(x => Tuple.Create(x, x.Replace(assetFolderPath, sourceFolderPath)))
                 .Where(x => !File.Exists(x.Item2))
                 .ToArray();
 

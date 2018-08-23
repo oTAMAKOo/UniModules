@@ -54,7 +54,7 @@ namespace Modules.AssetBundles
         private Dictionary<string, CachedInfo> assetBundleCache = null;
 
         // 読み込み待ちアセットバンドル.
-        private Dictionary<string, IObservable<UniRx.Tuple<AssetBundle, string>>> cacheQueueing = null;
+        private Dictionary<string, IObservable<Tuple<AssetBundle, string>>> cacheQueueing = null;
 
         // ダウンロードエラー一覧.
         private Dictionary<string, string> downloadingErrors = null;
@@ -94,7 +94,7 @@ namespace Modules.AssetBundles
             this.simulateMode = Application.isEditor && simulateMode;
 
             assetBundleCache = new Dictionary<string, CachedInfo>();
-            cacheQueueing = new Dictionary<string, IObservable<UniRx.Tuple<AssetBundle, string>>>();
+            cacheQueueing = new Dictionary<string, IObservable<Tuple<AssetBundle, string>>>();
             downloadingErrors = new Dictionary<string, string>();
             dependencies = new Dictionary<string, string[]>();
 
@@ -119,11 +119,11 @@ namespace Modules.AssetBundles
         }
 
         /// <summary> 展開中のアセットバンドル名一覧取得 </summary>
-        public UniRx.Tuple<string, int>[] GetLoadedAssetBundleNames()
+        public Tuple<string, int>[] GetLoadedAssetBundleNames()
         {
             return assetBundleCache != null ?
-                assetBundleCache.Select(x => UniRx.Tuple.Create(x.Key, x.Value.referencedCount)).ToArray() : 
-                new UniRx.Tuple<string, int>[0];
+                assetBundleCache.Select(x => Tuple.Create(x.Key, x.Value.referencedCount)).ToArray() : 
+                new Tuple<string, int>[0];
         }
 
         private string BuildUrl(string assetBundlePath)
@@ -138,14 +138,14 @@ namespace Modules.AssetBundles
         /// </summary>
         /// <param name="progress"></param>
         /// <returns></returns>
-        public IObservable<Unit> UpdateManifest(UniRx.IProgress<float> progress = null)
+        public IObservable<Unit> UpdateManifest(IProgress<float> progress = null)
         {
             if (simulateMode) { return Observable.ReturnUnit(); }
 
             return Observable.FromCoroutine(() => UpdateManifestInternal(progress));
         }
 
-        private IEnumerator UpdateManifestInternal(UniRx.IProgress<float> progress = null)
+        private IEnumerator UpdateManifestInternal(IProgress<float> progress = null)
         {
             // マニフェストファイルはこの名前でないとロード出来ない...
             const string ManifestLoadName = "AssetBundleManifest";
@@ -232,7 +232,7 @@ namespace Modules.AssetBundles
         /// <param name="assetBundleName"></param>
         /// <param name="progress"></param>
         /// <returns></returns>
-        public IObservable<Unit> UpdateAssetBundle(string assetBundleName, UniRx.IProgress<float> progress = null)
+        public IObservable<Unit> UpdateAssetBundle(string assetBundleName, IProgress<float> progress = null)
         {
             if (simulateMode) { return Observable.ReturnUnit(); }
 
@@ -240,7 +240,7 @@ namespace Modules.AssetBundles
         }
 
 
-        private IEnumerator UpdateAssetBundleInternal(string assetBundleName, UniRx.IProgress<float> progress = null)
+        private IEnumerator UpdateAssetBundleInternal(string assetBundleName, IProgress<float> progress = null)
         {
             //----------------------------------------------------------------------------------
             // ※ 呼び出し頻度が高いのでFromMicroCoroutineで呼び出される.
@@ -269,7 +269,7 @@ namespace Modules.AssetBundles
                             }
 
                             cacheQueueing[x] = Observable.FromMicroCoroutine<AssetBundle>(observer => DownloadAssetBundle(observer, x, progress))
-                                    .Select(y => UniRx.Tuple.Create(y, x))
+                                    .Select(y => Tuple.Create(y, x))
                                     .Share();
 
                             return cacheQueueing[x];
@@ -301,7 +301,7 @@ namespace Modules.AssetBundles
             }
         }
 
-        private IEnumerator DownloadAssetBundle(IObserver<AssetBundle> observer, string assetBundleName, UniRx.IProgress<float> progress = null)
+        private IEnumerator DownloadAssetBundle(IObserver<AssetBundle> observer, string assetBundleName, IProgress<float> progress = null)
         {
             //----------------------------------------------------------------------------------
             // ※ 呼び出し頻度が高いのでFromMicroCoroutineで呼び出される.
@@ -450,7 +450,7 @@ namespace Modules.AssetBundles
         /// <summary>
         /// 名前で指定したアセットを取得.
         /// </summary>
-        public IObservable<T> LoadAsset<T>(string assetBundleName, string assetPath, bool autoUnLoad = true, UniRx.IProgress<float> progress = null) where T : UnityEngine.Object
+        public IObservable<T> LoadAsset<T>(string assetBundleName, string assetPath, bool autoUnLoad = true, IProgress<float> progress = null) where T : UnityEngine.Object
         {
             // コンポーネントを取得する場合はGameObjectから取得.
             if (typeof(T).IsSubclassOf(typeof(Component)))
@@ -462,7 +462,7 @@ namespace Modules.AssetBundles
             return Observable.FromMicroCoroutine<T>(observer => LoadAssetInternal(observer, assetBundleName, assetPath, autoUnLoad, progress));
         }
 
-        private IEnumerator LoadAssetInternal<T>(IObserver<T> observer, string assetBundleName, string assetPath, bool autoUnLoad, UniRx.IProgress<float> progress) where T : UnityEngine.Object
+        private IEnumerator LoadAssetInternal<T>(IObserver<T> observer, string assetBundleName, string assetPath, bool autoUnLoad, IProgress<float> progress) where T : UnityEngine.Object
         {
             //----------------------------------------------------------------------------------
             // ※ 呼び出し頻度が高いのでFromMicroCoroutineで呼び出される.
@@ -510,7 +510,7 @@ namespace Modules.AssetBundles
 
                                 if (cached != null)
                                 {
-                                    return Observable.Return(UniRx.Tuple.Create(cached.assetBundle, x));
+                                    return Observable.Return(Tuple.Create(cached.assetBundle, x));
                                 }
 
                                 var loadTask = cacheQueueing.GetValueOrDefault(x);
@@ -527,7 +527,7 @@ namespace Modules.AssetBundles
                                     .Timeout(TimeoutLimit)
                                     .OnErrorRetry((TimeoutException ex) => OnTimeout(url, ex), RetryCount, RetryDelaySeconds)
                                     .DoOnError(error => OnError(error))
-                                    .Select(y => UniRx.Tuple.Create(y, x))
+                                    .Select(y => Tuple.Create(y, x))
                                     .Share();
 
                                 return cacheQueueing[x];

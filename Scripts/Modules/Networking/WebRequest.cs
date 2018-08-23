@@ -64,14 +64,14 @@ namespace Modules.Networking
             Connecting = false;
         }
 
-        public IObservable<TResult> Get<TResult>(UniRx.IProgress<float> progress = null) where TResult : class
+        public IObservable<TResult> Get<TResult>(IProgress<float> progress = null) where TResult : class
         {
             BuildUnityWebRequest();
 
             return FetchCore<TResult>(progress);
         }
 
-        public IObservable<TResult> Post<TResult, TContent>(TContent content, UniRx.IProgress<float> progress = null) where TResult : class
+        public IObservable<TResult> Post<TResult, TContent>(TContent content, IProgress<float> progress = null) where TResult : class
         {
             BuildUnityWebRequest(content);
 
@@ -88,7 +88,7 @@ namespace Modules.Networking
             }
         }
 
-        private IObservable<TResult> FetchCore<TResult>(UniRx.IProgress<float> progress) where TResult : class
+        private IObservable<TResult> FetchCore<TResult>(IProgress<float> progress) where TResult : class
         {
             Connecting = true;
 

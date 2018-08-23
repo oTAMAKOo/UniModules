@@ -9,6 +9,7 @@ using UniRx;
 using Extensions;
 using SRDebugger.Internal;
 using System.Text;
+using System.Threading;
 
 namespace Modules.Devkit.Diagnosis.SRDebugger
 {
@@ -102,7 +103,7 @@ namespace Modules.Devkit.Diagnosis.SRDebugger
 
             yield return ObservableWWW.Post(url, content, notifier)
                 .Timeout(TimeSpan.FromSeconds(30))
-                .StartAsCoroutine(error => ex = error, CancellationToken.Empty);
+                .StartAsCoroutine(error => ex = error);
 
             // 終了.
             OnReportComplete(ex == null ? string.Empty : ex.ToString());

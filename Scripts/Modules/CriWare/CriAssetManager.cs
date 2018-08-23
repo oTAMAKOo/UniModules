@@ -24,7 +24,7 @@ namespace Modules.CriWare
             public CriFsInstallRequest Request { get; private set; }
             public IObservable<CriAssetInstall> Task { get; private set; }
 
-            public CriAssetInstall(AssetInfo assetInfo, CriFsInstallRequest request, UniRx.IProgress<float> progress = null)
+            public CriAssetInstall(AssetInfo assetInfo, CriFsInstallRequest request, IProgress<float> progress = null)
             {
                 AssetInfo = assetInfo;
                 Request = request;
@@ -34,7 +34,7 @@ namespace Modules.CriWare
                     .Share();
             }
 
-            private IEnumerator Install(CriFsInstallRequest request, UniRx.IProgress<float> progress = null)
+            private IEnumerator Install(CriFsInstallRequest request, IProgress<float> progress = null)
             {
                 while (!request.isDone)
                 {
@@ -142,7 +142,7 @@ namespace Modules.CriWare
         /// <summary>
         /// 指定されたアセットを更新.
         /// </summary>
-        public IObservable<Unit> UpdateCriAsset(string resourcesPath, UniRx.IProgress<float> progress = null)
+        public IObservable<Unit> UpdateCriAsset(string resourcesPath, IProgress<float> progress = null)
         {
             if (simulateMode) { return Observable.ReturnUnit(); }
 
@@ -210,7 +210,7 @@ namespace Modules.CriWare
                 .AsUnitObservable();
         }
 
-        private CriAssetInstall GetCriAssetInstall(AssetInfo assetInfo, UniRx.IProgress<float> progress)
+        private CriAssetInstall GetCriAssetInstall(AssetInfo assetInfo, IProgress<float> progress)
         {
             var resourcePath = UnityPathUtility.GetLocalPath(assetInfo.ResourcesPath, sourceDir);
             var downloadUrl = PathUtility.Combine(remoteUrl, resourcePath);

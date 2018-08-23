@@ -59,7 +59,7 @@ namespace Modules.Networking
         /// <param name="webRequest"></param>
         /// <param name="progress"></param>
         /// <returns></returns>
-        protected IObservable<TResult> Get<TResult>(TWebRequest webRequest, UniRx.IProgress<float> progress = null) where TResult : class
+        protected IObservable<TResult> Get<TResult>(TWebRequest webRequest, IProgress<float> progress = null) where TResult : class
         {
             var requestObserver = Observable.Defer(() => webRequest.Get<TResult>(progress));
 
@@ -76,7 +76,7 @@ namespace Modules.Networking
         /// <param name="content"></param>
         /// <param name="progress"></param>
         /// <returns></returns>
-        protected IObservable<TResult> Post<TResult, TContent>(TWebRequest webRequest, TContent content, UniRx.IProgress<float> progress = null) where TResult : class
+        protected IObservable<TResult> Post<TResult, TContent>(TWebRequest webRequest, TContent content, IProgress<float> progress = null) where TResult : class
         {
             var requestObserver = Observable.Defer(() => webRequest.Post<TResult, TContent>(content, progress));
 
