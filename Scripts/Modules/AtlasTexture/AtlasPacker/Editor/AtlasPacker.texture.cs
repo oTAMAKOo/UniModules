@@ -235,6 +235,7 @@ namespace Modules.Atlas
 
                 textureImporterSettings.spriteMeshType = SpriteMeshType.FullRect;
                 textureImporterSettings.readable = false;
+                textureImporterSettings.spriteGenerateFallbackPhysicsShape = false;
 
                 textureImporter.SetTextureSettings(textureImporterSettings);
                 
