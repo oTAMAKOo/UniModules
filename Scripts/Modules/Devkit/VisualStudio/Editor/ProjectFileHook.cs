@@ -20,7 +20,6 @@ namespace Modules.Devkit.VisualStudio
 
             // Analyzer
             ProjectFilesGenerator.ProjectFile.AddHook(ProjectFile.IsUnityProject, args => ProjectFile.IncludeAnalyzer(args, "UniRxAnalyzer"));
-            ProjectFilesGenerator.ProjectFile.AddHook(ProjectFile.IsUnityProject, args => ProjectFile.IncludeAnalyzer(args, "MessagePackAnalyzer"));
         }
     }
 }

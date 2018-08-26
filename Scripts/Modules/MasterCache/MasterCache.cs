@@ -17,6 +17,7 @@ using Modules.UniRxExtension;
 
 namespace Modules.MasterCache
 {
+    [MessagePackObject(true)]
     public abstract class Cache<T>
     {
         public T[] values = new T[0];
