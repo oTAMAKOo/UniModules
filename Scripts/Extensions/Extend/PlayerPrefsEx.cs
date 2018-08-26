@@ -52,36 +52,62 @@ namespace Extensions
 
         public static void SetInt(string name, int value)
         {
-            PlayerPrefs.SetInt(name.Encrypt(rijndael), value);
+            SetString(name, value.ToString());
         }
 
         public static int GetInt(string name, int defaultValue = 0)
         {
-            return PlayerPrefs.GetInt(name.Encrypt(rijndael), defaultValue);
+            if (!HasKey(name)) { return defaultValue; }
+
+            var value = GetString(name);
+
+            if (string.IsNullOrEmpty(value)) { return defaultValue; }
+
+            try
+            {
+                return int.Parse(value);
+            }
+            catch
+            {
+                return defaultValue;
+            }
         }
 
         //====== Float ======
 
         public static void SetFloat(string name, float value)
         {
-            PlayerPrefs.SetFloat(name.Encrypt(rijndael), value);
+            SetString(name, value.ToString());
         }
 
         public static float GetFloat(string name, float defaultValue = 0f)
         {
-            return PlayerPrefs.GetFloat(name.Encrypt(rijndael), defaultValue);
+            if (!HasKey(name)) { return defaultValue; }
+
+            var value = GetString(name);
+
+            if (string.IsNullOrEmpty(value)) { return defaultValue; }
+
+            try
+            {
+                return float.Parse(value);
+            }
+            catch
+            {
+                return defaultValue;
+            }
         }
 
         //====== Bool ======
 
         public static void SetBool(string name, bool value)
         {
-            PlayerPrefs.SetInt(name.Encrypt(rijndael), value ? 1 : 0);
+            SetInt(name, value ? 1 : 0);
         }
 
         public static bool GetBool(string name, bool defaultValue = false)
         {
-            return PlayerPrefs.GetInt(name.Encrypt(rijndael), defaultValue ? 1 : 0) != 0;
+            return GetInt(name, defaultValue ? 1 : 0) != 0;
         }
 
         //====== DateTime ======
@@ -98,41 +124,55 @@ namespace Extensions
                 defaultValue = DateTime.MinValue;
             }
 
-            var str = GetString(name);
+            var value = GetString(name);
 
-            if (string.IsNullOrEmpty(str)) { return defaultValue.Value; }
+            if (string.IsNullOrEmpty(value)) { return defaultValue.Value; }
 
-            return DateTime.Parse(str);
+            try
+            {
+                return DateTime.Parse(value);
+            }
+            catch
+            {
+                return defaultValue.Value;
+            }
         }
 
         //====== Color ======
 
         public static void SetColor(string name, Color value)
         {
-            SetString(name, value.r + " " + value.g + " " + value.b + " " + value.a);
+            SetString(name, string.Format("{0},{1},{2},{3}", value.r, value.g, value.b, value.a));
         }
 
-        public static Color GetColor(string name, Color? value = null)
+        public static Color GetColor(string name, Color? defaultValue = null)
         {
-            if (!value.HasValue)
+            if (!defaultValue.HasValue)
             {
-                value = Color.white;
+                defaultValue = Color.white;
             }
 
-            var c = value.Value;
+            var value = GetString(name);
 
-            var strVal = GetString(name, c.r + " " + c.g + " " + c.b + " " + c.a);
-            var parts = strVal.Split(' ');
+            if (string.IsNullOrEmpty(value)) { return defaultValue.Value; }
 
-            if (parts.Length == 4)
+            var parts = value.Split(',');
+
+            if (parts.Length != 4) { return defaultValue.Value; }
+
+            try
             {
-                float.TryParse(parts[0], out c.r);
-                float.TryParse(parts[1], out c.g);
-                float.TryParse(parts[2], out c.b);
-                float.TryParse(parts[3], out c.a);
-            }
+                var r = float.Parse(parts[0]);
+                var g = float.Parse(parts[1]);
+                var b = float.Parse(parts[2]);
+                var a = float.Parse(parts[3]);
 
-            return c;
+                return new Color(r, g, b, a);
+            }
+            catch
+            {
+                return defaultValue.Value;
+            }
         }
 
         //====== Enum ======
