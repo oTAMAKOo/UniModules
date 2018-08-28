@@ -70,8 +70,6 @@ namespace Modules.ExternalResource.Editor
 
 			var config = AssetManageConfig.Instance;
 
-			this.externalResourcesPath = externalResourcesPath;
-
 			Prefs.externalResourcesPath = externalResourcesPath;
             Prefs.assetManageConfigGUID = AssetDatabase.AssetPathToGUID(AssetDatabase.GetAssetPath(config));
 
