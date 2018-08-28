@@ -1,6 +1,4 @@
 ﻿
-//#if ENABLE_CRIWARE
-
 using UnityEngine;
 using Extensions;
 using Modules.Devkit.ScriptableObjects;
@@ -26,5 +24,3 @@ namespace Modules.CriWare.Editor
         //----- method -----
     }
 }
-
-//#endif

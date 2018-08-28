@@ -1,6 +1,4 @@
-﻿
-#if ENABLE_CRIWARE
-﻿﻿
+﻿﻿﻿
 using Extensions;
 
 namespace Modules.MovieManagement.Editor
@@ -16,5 +14,3 @@ namespace Modules.MovieManagement.Editor
         //----- method -----
     }
 }
-
-#endif

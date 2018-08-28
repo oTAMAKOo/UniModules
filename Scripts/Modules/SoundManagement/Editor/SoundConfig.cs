@@ -1,5 +1,3 @@
-﻿﻿
-#if ENABLE_CRIWARE
 ﻿
 using UnityEngine;
 using Extensions;
@@ -26,5 +24,3 @@ namespace Modules.SoundManagement.Editor
         //----- method -----
     }
 }
-
-#endif

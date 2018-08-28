@@ -41,8 +41,6 @@ namespace Modules.ExternalResource.Editor
 
 		//----- field -----
 
-		private string externalResourcesPath = null;
-
 		private AssetManageManager assetManageManager = null;
 
         private Object selectionAssetObject = null;
