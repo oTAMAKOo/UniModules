@@ -1,6 +1,4 @@
-﻿﻿
-#if ENABLE_CRIWARE
-﻿﻿
+﻿﻿﻿﻿
 using UnityEngine;
 using Unity.Linq;
 using System;
@@ -30,13 +28,19 @@ namespace Modules.CriWare
 
         //----- property -----
 
+        #if ENABLE_CRIWARE
+
         public CriWareInitializer Initializer { get; private set; }
         public CriWareErrorHandler ErrorHandler { get; private set; }
+
+        #endif
 
         //----- method -----
 
         public void Initialize(string decryptKey)
         {
+            #if ENABLE_CRIWARE
+
             // CRIの管理GameObject名にリネーム.
             gameObject.transform.name = CriWareManageObjectName;
 
@@ -111,8 +115,8 @@ namespace Modules.CriWare
 
                 CriAtomEx.RegisterAcf(null, acfPath);
             }
+
+            #endif
         }
     }
 }
-
-#endif
