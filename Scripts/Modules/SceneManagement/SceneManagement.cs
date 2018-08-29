@@ -36,11 +36,11 @@ namespace Modules.SceneManagement
 
         private IDisposable transitionDisposable = null;
 
-        private SceneInfo current = null;
+        private SceneInstance current = null;
         private ISceneArgument currentSceneArgument = null;
         private List<ISceneArgument> history = null;
 
-        private List<SceneInfo> additiveScene = null;
+        private List<SceneInstance> additiveScene = null;
 
         private Subject<ISceneArgument> onPrepare = null;
         private Subject<ISceneArgument> onPrepareComplete = null;
@@ -51,21 +51,21 @@ namespace Modules.SceneManagement
         private Subject<ISceneArgument> onLeave = null;
         private Subject<ISceneArgument> onLeaveComplete = null;
 
-        private Subject<SceneInfo> onLoadScene = null;
-        private Subject<SceneInfo> onLoadSceneComplete = null;
+        private Subject<SceneInstance> onLoadScene = null;
+        private Subject<SceneInstance> onLoadSceneComplete = null;
         private Subject<Unit> onLoadError = null;
 
-        private Subject<SceneInfo> onUnloadScene = null;
-        private Subject<SceneInfo> onUnloadSceneComplete = null;
+        private Subject<SceneInstance> onUnloadScene = null;
+        private Subject<SceneInstance> onUnloadSceneComplete = null;
         private Subject<Unit> onUnloadError = null;
 
         //----- property -----
 
         /// <summary> 現在のシーン情報 </summary>
-        public SceneInfo Current { get { return current; } }
+        public SceneInstance Current { get { return current; } }
 
         /// <summary> シーン加算で読み込まれているシーン情報 </summary>
-        public SceneInfo[] AdditiveScene { get { return additiveScene.ToArray(); } }
+        public SceneInstance[] AdditiveScene { get { return additiveScene.ToArray(); } }
 
         /// <summary> 遷移中か </summary>
         public bool IsTransition { get { return transitionDisposable != null; } }
@@ -81,7 +81,7 @@ namespace Modules.SceneManagement
         protected SceneManagement()
         {
             history = new List<ISceneArgument>();
-            additiveScene = new List<SceneInfo>();
+            additiveScene = new List<SceneInstance>();
             waitEntityIds = new HashSet<int>();
         }
 
@@ -122,7 +122,7 @@ namespace Modules.SceneManagement
 
             if (sceneInstance != null)
             {
-                current = new SceneInfo(identifier, sceneInstance, LoadSceneMode.Single, scene);
+                current = new SceneInstance(identifier, sceneInstance, LoadSceneMode.Single, scene);
 
                 // 起動シーンは引数なしで遷移してきたという扱い.
                 history.Add(new BootSceneArgument(identifier));
@@ -143,7 +143,7 @@ namespace Modules.SceneManagement
         }
 
         /// <summary> 初期シーン登録時のイベント </summary>
-        protected virtual IObservable<Unit> OnRegisterCurrentScene(SceneInfo currentInfo) { return Observable.ReturnUnit(); }
+        protected virtual IObservable<Unit> OnRegisterCurrentScene(SceneInstance currentInfo) { return Observable.ReturnUnit(); }
 
         /// <summary>
         /// シーン遷移.
@@ -331,11 +331,8 @@ namespace Modules.SceneManagement
             // 前のシーンからの引数を設定.
             sceneInfo.Instance.SetArgument(sceneArgument);
 
-            // シーンを有効化.
-            sceneInfo.Enable();
-
             // 次のシーンを現在のシーンとして登録.
-            current = new SceneInfo(currentSceneArgument.Identifier, sceneInfo.Instance, sceneInfo.Mode, scene.Value);
+            current = new SceneInstance(currentSceneArgument.Identifier, sceneInfo.Instance, sceneInfo.Mode, scene.Value);
 
             // 次のシーンを履歴に登録.
             // シーン引数を保存する為遷移時に引数と一緒に履歴登録する為、履歴の最後尾は現在のシーンになる.
@@ -386,19 +383,10 @@ namespace Modules.SceneManagement
 
             //====== End Transition ======
 
+            // シーンを有効化.
+            sceneInfo.Enable();
+
             TransitionTarget = null;
-
-            //====== Report ======
-
-            diagnostics.Finish(TimeDiagnostics.Measure.Total);
-
-            var prevScene = prev.Identifier;
-            var nextScene = current.Identifier;
-
-            var total = diagnostics.GetTime(TimeDiagnostics.Measure.Total);
-            var detail = diagnostics.BuildDetailText();
-
-            UnityConsole.Event(ConsoleEventName, ConsoleEventColor, "{0} → {1} ({2:F2}ms)\n\n{3}", prevScene, nextScene, total, detail);
 
             //====== Scene Enter ======
 
@@ -419,6 +407,18 @@ namespace Modules.SceneManagement
             {
                 onEnterComplete.OnNext(currentSceneArgument);
             }
+
+            //====== Report ======
+
+            diagnostics.Finish(TimeDiagnostics.Measure.Total);
+
+            var prevScene = prev.Identifier;
+            var nextScene = current.Identifier;
+
+            var total = diagnostics.GetTime(TimeDiagnostics.Measure.Total);
+            var detail = diagnostics.BuildDetailText();
+
+            UnityConsole.Event(ConsoleEventName, ConsoleEventColor, "{0} → {1} ({2:F2}ms)\n\n{3}", prevScene, nextScene, total, detail);
         }
 
         #region Scene Additive
@@ -427,9 +427,9 @@ namespace Modules.SceneManagement
         /// シーンを追加で読み込み.
         /// <para> Prepar, Enter, Leaveは自動で呼び出されないので自分で制御する </para>
         /// </summary>
-        public IObservable<SceneInfo> Append<TArgument>(TArgument sceneArgument, bool activeOnLoad = true) where TArgument : ISceneArgument
+        public IObservable<SceneInstance> Append<TArgument>(TArgument sceneArgument, bool activeOnLoad = true) where TArgument : ISceneArgument
         {
-            return Observable.FromCoroutine<SceneInfo>(observer => AppendCore(observer, sceneArgument.Identifier, activeOnLoad))
+            return Observable.FromCoroutine<SceneInstance>(observer => AppendCore(observer, sceneArgument.Identifier, activeOnLoad))
                 .Do(x =>
                 {
                     // シーンルート引数設定.
@@ -444,16 +444,16 @@ namespace Modules.SceneManagement
         /// シーンを追加で読み込み.
         /// <para> Prepar, Enter, Leaveは自動で呼び出されないので自分で制御する </para>
         /// </summary>
-        public IObservable<SceneInfo> Append(Scenes identifier, bool activeOnLoad = true)
+        public IObservable<SceneInstance> Append(Scenes identifier, bool activeOnLoad = true)
         {
-            return Observable.FromCoroutine<SceneInfo>(observer => AppendCore(observer, identifier, activeOnLoad));
+            return Observable.FromCoroutine<SceneInstance>(observer => AppendCore(observer, identifier, activeOnLoad));
         }
 
-        private IEnumerator AppendCore(IObserver<SceneInfo> observer, Scenes? identifier, bool activeOnLoad)
+        private IEnumerator AppendCore(IObserver<SceneInstance> observer, Scenes? identifier, bool activeOnLoad)
         {
             if (!identifier.HasValue) { yield break; }
 
-            SceneInfo sceneInfo = null;
+            SceneInstance sceneInstance = null;
 
             var diagnostics = new TimeDiagnostics();
 
@@ -465,7 +465,7 @@ namespace Modules.SceneManagement
 
             if (loadYield.HasResult)
             {
-                sceneInfo = loadYield.Result;
+                sceneInstance = loadYield.Result;
 
                 diagnostics.Finish(TimeDiagnostics.Measure.Total);
 
@@ -476,15 +476,15 @@ namespace Modules.SceneManagement
 
             if (activeOnLoad)
             {
-                sceneInfo.Enable();
+                sceneInstance.Enable();
             }
 
-            observer.OnNext(sceneInfo);
+            observer.OnNext(sceneInstance);
             observer.OnCompleted();
         }
 
         /// <summary> 加算シーンをアンロード </summary>
-        public IObservable<Unit> Remove(SceneInfo sceneInfo)
+        public IObservable<Unit> Remove(SceneInstance sceneInfo)
         {
             return UnloadScene(sceneInfo);
         }
@@ -493,14 +493,14 @@ namespace Modules.SceneManagement
 
         #region Scene Load
 
-        private IObservable<SceneInfo> LoadScene(Scenes identifier, LoadSceneMode mode)
+        private IObservable<SceneInstance> LoadScene(Scenes identifier, LoadSceneMode mode)
         {
-            return Observable.FromCoroutine<SceneInfo>(observer => LoadSceneCore(observer, identifier, mode));
+            return Observable.FromCoroutine<SceneInstance>(observer => LoadSceneCore(observer, identifier, mode));
         }
 
-        private IEnumerator LoadSceneCore(IObserver<SceneInfo> observer, Scenes identifier, LoadSceneMode mode)
+        private IEnumerator LoadSceneCore(IObserver<SceneInstance> observer, Scenes identifier, LoadSceneMode mode)
         {
-            SceneInfo sceneInfo = null;
+            SceneInstance sceneInstance = null;
 
             var scenePath = ScenePaths.GetValueOrDefault(identifier);
 
@@ -508,7 +508,7 @@ namespace Modules.SceneManagement
             {
                 if (s.IsValid())
                 {
-                    sceneInfo = new SceneInfo(identifier, FindSceneObject(s), m, s);
+                    sceneInstance = new SceneInstance(identifier, FindSceneObject(s), m, s);
 
                     switch (m)
                     {
@@ -517,7 +517,7 @@ namespace Modules.SceneManagement
                             break;
 
                         case LoadSceneMode.Additive:
-                            additiveScene.Add(sceneInfo);
+                            additiveScene.Add(sceneInstance);
                             break;
                     }
 
@@ -530,11 +530,11 @@ namespace Modules.SceneManagement
                     }
 
                     // 初期状態は非アクティブ.
-                    sceneInfo.Disable();
+                    sceneInstance.Disable();
 
                     if (onLoadScene != null)
                     {
-                        onLoadScene.OnNext(sceneInfo);
+                        onLoadScene.OnNext(sceneInstance);
                     }
                 }
             };
@@ -574,14 +574,14 @@ namespace Modules.SceneManagement
 
             SetEnabledForCapturedComponents(true);
 
-            if (sceneInfo != null)
+            if (sceneInstance != null)
             {
                 if (onLoadSceneComplete != null)
                 {
-                    onLoadSceneComplete.OnNext(sceneInfo);
+                    onLoadSceneComplete.OnNext(sceneInstance);
                 }
 
-                var scene = sceneInfo.GetScene();
+                var scene = sceneInstance.GetScene();
 
                 if (scene.HasValue)
                 {
@@ -599,18 +599,18 @@ namespace Modules.SceneManagement
                 }
             }
 
-            observer.OnNext(sceneInfo);
+            observer.OnNext(sceneInstance);
             observer.OnCompleted();
         }
 
-        public IObservable<SceneInfo> OnLoadSceneAsObservable()
+        public IObservable<SceneInstance> OnLoadSceneAsObservable()
         {
-            return onLoadScene ?? (onLoadScene = new Subject<SceneInfo>());
+            return onLoadScene ?? (onLoadScene = new Subject<SceneInstance>());
         }
 
-        public IObservable<SceneInfo> OnLoadSceneCompleteAsObservable()
+        public IObservable<SceneInstance> OnLoadSceneCompleteAsObservable()
         {
-            return onLoadSceneComplete ?? (onLoadSceneComplete = new Subject<SceneInfo>());
+            return onLoadSceneComplete ?? (onLoadSceneComplete = new Subject<SceneInstance>());
         }
 
         public IObservable<Unit> OnLoadErrorAsObservable()
@@ -622,7 +622,7 @@ namespace Modules.SceneManagement
 
         #region Scene Unload
 
-        private IObservable<Unit> UnloadScene(SceneInfo sceneInfo)
+        private IObservable<Unit> UnloadScene(SceneInstance sceneInfo)
         {
             if (sceneInfo == null) { return Observable.ReturnUnit(); }
 
@@ -635,7 +635,7 @@ namespace Modules.SceneManagement
             return Observable.FromCoroutine(() => UnloadSceneCore(sceneInfo));
         }
 
-        private IEnumerator UnloadSceneCore(SceneInfo sceneInfo)
+        private IEnumerator UnloadSceneCore(SceneInstance sceneInfo)
         {
             var scene = sceneInfo.GetScene();
 
@@ -703,14 +703,14 @@ namespace Modules.SceneManagement
             }
         }
 
-        public IObservable<SceneInfo> OnUnloadSceneAsObservable()
+        public IObservable<SceneInstance> OnUnloadSceneAsObservable()
         {
-            return onUnloadScene ?? (onUnloadScene = new Subject<SceneInfo>());
+            return onUnloadScene ?? (onUnloadScene = new Subject<SceneInstance>());
         }
 
-        public IObservable<SceneInfo> OnUnloadSceneCompleteAsObservable()
+        public IObservable<SceneInstance> OnUnloadSceneCompleteAsObservable()
         {
-            return onUnloadSceneComplete ?? (onUnloadSceneComplete = new Subject<SceneInfo>());
+            return onUnloadSceneComplete ?? (onUnloadSceneComplete = new Subject<SceneInstance>());
         }
 
         public IObservable<Unit> OnUnloadErrorAsObservable()

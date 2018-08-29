@@ -11,7 +11,7 @@ using Extensions;
 namespace Modules.SceneManagement
 {
     /// <summary> シーン情報 </summary>
-    public class SceneInfo
+    public class SceneInstance
     {
         //----- params -----
 
@@ -29,7 +29,7 @@ namespace Modules.SceneManagement
 
         //----- method -----
 
-        public SceneInfo(Scenes? identifier, ISceneBase instance, LoadSceneMode mode, Scene scene)
+        public SceneInstance(Scenes? identifier, ISceneBase instance, LoadSceneMode mode, Scene scene)
         {
             this.scene = scene;
 
