@@ -27,7 +27,7 @@ namespace Modules.ExternalResource
         //----- params -----
 
         public static readonly string ConsoleEventName = "ExternalResources";
-        public static readonly Color ConsoleEventColor = new Color(127, 255, 212);
+        public static readonly Color ConsoleEventColor = new Color(0.8f, 1f, 0.1f);
 
         //----- field -----
 

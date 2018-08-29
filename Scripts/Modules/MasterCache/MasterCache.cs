@@ -61,7 +61,7 @@ namespace Modules.MasterCache
         }
 
         private static readonly string ConsoleEventName = "MasterCache";
-        private static readonly Color ConsoleEventColor = new Color(118, 112, 214);
+        private static readonly Color ConsoleEventColor = new Color(0.46f, 0.46f, 0.83f);
 
         //----- field -----
 

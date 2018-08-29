@@ -30,7 +30,7 @@ namespace Modules.SceneManagement
         }
 
         private readonly string ConsoleEventName = "Scene";
-        private readonly Color ConsoleEventColor = new Color(135, 206, 235);
+        private readonly Color ConsoleEventColor = new Color(0.4f, 1f, 0.4f);
 
         //----- field -----
 

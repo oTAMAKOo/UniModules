@@ -16,7 +16,7 @@ namespace Modules.Networking
         //----- params -----
 
         private static readonly string ConsoleEventName = "Download";
-        private static readonly Color ConsoleEventColor = new Color(200, 215, 0);
+        private static readonly Color ConsoleEventColor = new Color(0.85f, 0.88f, 0f);
 
         private const float DefaultTimeOutSeconds = 5f;
         private const int DefaultRetryCount = 3;
