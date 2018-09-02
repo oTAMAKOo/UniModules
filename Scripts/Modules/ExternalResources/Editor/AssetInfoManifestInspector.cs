@@ -41,7 +41,7 @@ namespace Modules.ExternalResource.Editor
 
                 using (new EditorGUILayout.VerticalScope())
                 {
-                    var isAssetBundle = !string.IsNullOrEmpty(content.AssetBundleName);
+                    var isAssetBundle = content.IsAssetBundle;
 
                     var color = isAssetBundle ? new Color(0.7f, 0.7f, 1f) : new Color(0.7f, 1f, 0.7f);
 
@@ -54,9 +54,6 @@ namespace Modules.ExternalResource.Editor
                             EditorGUILayout.LabelField("ResourcesPath");
                             EditorGUILayout.SelectableLabel(content.ResourcesPath, textAreaStyle, GUILayout.Height(18f));
 
-                            EditorGUILayout.LabelField("AssetBundleName");
-                            EditorGUILayout.SelectableLabel(content.AssetBundleName, textAreaStyle, GUILayout.Height(18f));
-
                             EditorGUILayout.LabelField("GroupName");
                             EditorGUILayout.SelectableLabel(content.GroupName, textAreaStyle, GUILayout.Height(18f));
 
@@ -65,6 +62,28 @@ namespace Modules.ExternalResource.Editor
 
                             EditorGUILayout.LabelField("FileSize");
                             EditorGUILayout.SelectableLabel(content.FileSize.ToString(), textAreaStyle, GUILayout.Height(18f));
+
+                            if (isAssetBundle)
+                            {
+                                EditorLayoutTools.DrawContentTitle("AssetBundle");
+
+                                using (new ContentsScope())
+                                {
+                                    var assetBundle = content.AssetBundle;
+
+                                    EditorGUILayout.LabelField("AssetBundleName");
+                                    EditorGUILayout.SelectableLabel(assetBundle.AssetBundleName, textAreaStyle, GUILayout.Height(18f));
+
+                                    if (assetBundle.Dependencies.Any())
+                                    {
+                                        EditorGUILayout.LabelField("Dependencies");
+                                        foreach (var dependencie in assetBundle.Dependencies)
+                                        {
+                                            EditorGUILayout.SelectableLabel(dependencie, textAreaStyle, GUILayout.Height(18f));
+                                        }
+                                    }
+                                }
+                            }
                         }
                     }
 
@@ -170,7 +189,10 @@ namespace Modules.ExternalResource.Editor
             var isHit = false;
 
             // アセットバンドル名が一致.
-            isHit |= info.AssetBundleName.IsMatch(keywords);
+            if (info.IsAssetBundle)
+            {
+                isHit |= info.AssetBundle.AssetBundleName.IsMatch(keywords);
+            }
 
             // 管理下のアセットのパスが一致.
             isHit |= info.ResourcesPath.IsMatch(keywords);

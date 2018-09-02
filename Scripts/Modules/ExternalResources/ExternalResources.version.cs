@@ -80,9 +80,11 @@ namespace Modules.ExternalResource
             {
                 var assetInfo = FindAssetInfo(resourcesPath);
 
-                if (assetInfo != null && !string.IsNullOrEmpty(assetInfo.AssetBundleName))
+                if (assetInfo != null && assetInfo.IsAssetBundle)
                 {
-                    result = CheckAssetBundleVersion(assetInfo.AssetBundleName);
+                    var assetBundleName = assetInfo.AssetBundle.AssetBundleName;
+
+                    result = CheckAssetBundleVersion(assetBundleName);
                 }
             }
 
@@ -93,10 +95,13 @@ namespace Modules.ExternalResource
         /// アセットバンドルのバージョンが最新か確認.
         /// (同梱された別アセットが更新された場合でもtrueを返す)
         /// </summary>
-        /// <param name="assetBundleName"></param>
-        /// <returns></returns>
         private bool CheckAssetBundleVersion(string assetBundleName)
         {
+            var filePath = assetBundleManager.BuildFilePath(assetBundleName);
+
+            // ファイルがない.
+            if (!File.Exists(filePath)) { return false; }
+
             // バージョン情報が存在しない.
             if (versions.IsEmpty()) { return false; }
 
@@ -187,12 +192,13 @@ namespace Modules.ExternalResource
                 }
 
                 // アセットバンドル.
-                if (!string.IsNullOrEmpty(assetInfo.AssetBundleName))
+                if (assetInfo.IsAssetBundle)
                 {
                     // 同じアセットバンドル内のバージョンも更新.
                     var assetBundle = allAssetInfos
-                        .Where(x => x.AssetBundleName == assetInfo.AssetBundleName)
-                        .GroupBy(x => x.AssetBundleName)
+                        .Where(x => x.IsAssetBundle)
+                        .Where(x => x.AssetBundle.AssetBundleName == assetInfo.AssetBundle.AssetBundleName)
+                        .GroupBy(x => x.AssetBundle.AssetBundleName)
                         .FirstOrDefault();
 
                     foreach (var item in assetBundle)

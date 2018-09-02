@@ -73,7 +73,14 @@ namespace Modules.UtageExtension
 
             if (Priority != AssetFileLoadPriority.DownloadOnly)
             {
-                CueInfo = ExternalResources.GetCueInfo(resourcesPath, soundName);
+                var cueYield = ExternalResources.GetCueInfo(resourcesPath, soundName).ToYieldInstruction();
+
+                while (!cueYield.IsDone)
+                {
+                    yield return null;
+                }
+
+                CueInfo = cueYield.Result;
 
                 if (CueInfo == null)
                 {

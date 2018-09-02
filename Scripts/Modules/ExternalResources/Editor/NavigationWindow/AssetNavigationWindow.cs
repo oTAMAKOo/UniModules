@@ -242,7 +242,7 @@ namespace Modules.ExternalResource.Editor
 
             selectionAssetObject = info != null ? assetObject : null;
             assetGroupName = info != null ? info.GroupName : null;
-            assetBundleName = info != null ? info.AssetBundleName : null;
+            assetBundleName = info != null && info.IsAssetBundle ? info.AssetBundle.AssetBundleName : null;
             assetLoadPath = string.IsNullOrEmpty(assetPath) ? string.Empty : assetManageManager.GetAssetLoadPath(assetPath);
 
             if (info == null) { return false; }

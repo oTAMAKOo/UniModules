@@ -147,10 +147,21 @@ namespace Modules.ExternalResource
             var allAssetInfos = manifest.GetAssetInfos().ToArray();
 
             // アセット情報 (Key: アセットバンドル名).
-            assetInfosByAssetBundleName = allAssetInfos.ToLookup(x => x.AssetBundleName);
+            assetInfosByAssetBundleName = allAssetInfos
+                .Where(x => x.IsAssetBundle)
+                .ToLookup(x => x.AssetBundle.AssetBundleName);
 
             // アセット情報 (Key: リソースパス).
             assetInfosByResourcePath = allAssetInfos.ToDictionary(x => x.ResourcesPath);
+
+            // アセットバンドル依存関係.
+            var dependencies = allAssetInfos
+                .Where(x => x.IsAssetBundle)
+                .Select(x => x.AssetBundle)
+                .Where(x => x.Dependencies != null && x.Dependencies.Any())
+                .ToDictionary(x => x.AssetBundleName, x => x.Dependencies);
+
+            assetBundleManager.SetDependencies(dependencies);
         }
 
          /// <summary>
@@ -188,31 +199,9 @@ namespace Modules.ExternalResource
 
         private IEnumerator UpdateManifestInternal(IProgress<float> progress = null)
         {
-            var currentProgress = 0f;
-            var scheduledNotifier = new ScheduledNotifier<float>();
-            
-            // 複数の非同期で100％の進捗度を示す.
-            var notifierDisposable =  scheduledNotifier.Subscribe(
-                x =>
-                {
-                    if (progress != null)
-                    {
-                        progress.Report(currentProgress + x * 0.5f);
-                    }
-                });
-
             var sw = System.Diagnostics.Stopwatch.StartNew();
 
-            // AssetBundleマニフェストファイルを更新.
-            currentProgress = 0f;
-
-            if (!isSimulate)
-            {
-                yield return assetBundleManager.UpdateManifest(scheduledNotifier).ToYieldInstruction(false);
-            }
-
             // アセット管理情報読み込み.
-            currentProgress = 0.5f;
 
             var manifestAssetBundleName = AssetInfoManifest.AssetBundleName;
             var manifestFileName = AssetInfoManifest.ManifestFileName;
@@ -226,8 +215,9 @@ namespace Modules.ExternalResource
 
             #endif
 
-            var loadYield = assetBundleManager
-                .LoadAsset<AssetInfoManifest>(manifestAssetBundleName, manifestFileName, true, scheduledNotifier)
+            // AssetInfoManifestは常に最新に保たなくてはいけない為必ずダウンロードする.
+            var loadYield = assetBundleManager.UpdateAssetBundle(manifestAssetBundleName, progress)
+                .SelectMany(_ => assetBundleManager.LoadAsset<AssetInfoManifest>(manifestAssetBundleName, manifestFileName))
                 .ToYieldInstruction(false);
 
             yield return loadYield;
@@ -241,12 +231,8 @@ namespace Modules.ExternalResource
 
             sw.Stop();
 
-            currentProgress = 1f;
-
             var message = string.Format("UpdateManifest: ({0}ms)", sw.Elapsed.TotalMilliseconds);
             UnityConsole.Event(ConsoleEventName, ConsoleEventColor, message);
-
-            notifierDisposable.Dispose();
 
             #if ENABLE_CRIWARE
 
@@ -305,14 +291,16 @@ namespace Modules.ExternalResource
                     yield break;
                 }
 
-                if (string.IsNullOrEmpty(assetInfo.AssetBundleName))
+                if (!assetInfo.IsAssetBundle)
                 {
                     Debug.LogErrorFormat("AssetBundleName is empty.\n{0}", resourcesPath);
                     yield break;
                 }
 
+                var assetBundleName = assetInfo.AssetBundle.AssetBundleName;
+
                 // ローカルバージョンが最新の場合は更新しない.
-                if (CheckAssetBundleVersion(assetInfo.AssetBundleName))
+                if (CheckAssetBundleVersion(assetBundleName))
                 {
                     if(progress != null)
                     {
@@ -323,7 +311,7 @@ namespace Modules.ExternalResource
                 }
 
                 var updateYield = instance.assetBundleManager
-                    .UpdateAssetBundle(assetInfo.AssetBundleName, progress)
+                    .UpdateAssetBundle(assetBundleName, progress)
                     .ToYieldInstruction(false, yieldCancell.Token);
 
                 yield return updateYield;
@@ -380,6 +368,8 @@ namespace Modules.ExternalResource
 
         private IEnumerator LoadAssetInternal<T>(IObserver<T> observer, string resourcesPath, bool autoUnload) where T : UnityEngine.Object
         {
+            System.Diagnostics.Stopwatch sw = null;
+
             T result = null;
 
             if (assetInfoManifest == null)
@@ -412,23 +402,32 @@ namespace Modules.ExternalResource
                 yield break;
             }
 
-            // ローカルバージョンが古い場合はエラー扱い.
-            // ※ 読み込むことは出来るが明示的にUpdateAssetを実行させる為エラー扱いにする.
-            if (!CheckAssetBundleVersion(assetInfo.AssetBundleName))
-            {
-                var exception = new Exception(string.Format("The version of this asset is outdated.\n{0}", resourcesPath));
-
-                if (onError != null)
-                {
-                    onError.OnNext(exception);
-                }
-
-                observer.OnError(exception);
-
-                yield break;
-            }
-
             var assetPath = PathUtility.Combine(resourceDir, resourcesPath);
+
+            var assetBundleName = assetInfo.AssetBundle.AssetBundleName;
+
+            // ローカルバージョンが古い場合はダウンロード.
+            if (!CheckAssetBundleVersion(assetBundleName))
+            {
+                var downloadYield = UpdateAsset(resourcesPath).ToYieldInstruction(false, yieldCancell.Token);
+
+                // 読み込み実行 (読み込み中の場合は読み込み待ちのObservableが返る).
+                sw = System.Diagnostics.Stopwatch.StartNew();
+
+                yield return downloadYield;
+
+                sw.Stop();
+
+                var builder = new StringBuilder();
+
+                builder.AppendFormat("Update: {0} ({1:F2}ms)", Path.GetFileName(assetPath), sw.Elapsed.TotalMilliseconds).AppendLine();
+                builder.AppendLine();
+                builder.AppendFormat("LoadPath = {0}", assetPath).AppendLine();
+                builder.AppendFormat("AssetBundleName = {0}", assetBundleName).AppendLine();
+                builder.AppendFormat("Hash = {0}", assetInfo.FileHash).AppendLine();
+
+                UnityConsole.Event(ConsoleEventName, ConsoleEventColor, builder.ToString());
+            }
 
             var isLoading = loadingAssets.Contains(assetInfo);
 
@@ -438,9 +437,9 @@ namespace Modules.ExternalResource
             }
 
             // 読み込み実行 (読み込み中の場合は読み込み待ちのObservableが返る).
-            var sw = System.Diagnostics.Stopwatch.StartNew();
+            sw = System.Diagnostics.Stopwatch.StartNew();
 
-            var loadYield = assetBundleManager.LoadAsset<T>(assetInfo.AssetBundleName, assetPath, autoUnload).ToYieldInstruction();
+            var loadYield = assetBundleManager.LoadAsset<T>(assetBundleName, assetPath, autoUnload).ToYieldInstruction();
 
             yield return loadYield;
 
@@ -458,10 +457,10 @@ namespace Modules.ExternalResource
             {
                 var builder = new StringBuilder();
 
-                builder.AppendFormat("Load: {0} ({1}ms)", Path.GetFileName(assetPath), sw.Elapsed.TotalMilliseconds).AppendLine();
+                builder.AppendFormat("Load: {0} ({1:F2}ms)", Path.GetFileName(assetPath), sw.Elapsed.TotalMilliseconds).AppendLine();
                 builder.AppendLine();
                 builder.AppendFormat("LoadPath = {0}", assetPath).AppendLine();
-                builder.AppendFormat("AssetBundleName = {0}", assetInfo.AssetBundleName).AppendLine();
+                builder.AppendFormat("AssetBundleName = {0}", assetBundleName).AppendLine();
                 builder.AppendFormat("Hash = {0}", assetInfo.FileHash).AppendLine();
 
                 if (!string.IsNullOrEmpty(assetInfo.GroupName))
@@ -508,7 +507,12 @@ namespace Modules.ExternalResource
                 Debug.LogErrorFormat("AssetInfo not found.\n{0}", resourcesPath);
             }
 
-            assetBundleManager.UnloadAsset(assetInfo.AssetBundleName);
+            if (!assetInfo.IsAssetBundle)
+            {
+                Debug.LogErrorFormat("This file is not an assetBundle.\n{0}", resourcesPath);
+            }
+
+            assetBundleManager.UnloadAsset(assetInfo.AssetBundle.AssetBundleName);
         }
 
         #endregion
@@ -526,40 +530,106 @@ namespace Modules.ExternalResource
 
         #region Sound
         
-        public static CueInfo GetCueInfo(string resourcesPath, string cue)
+        public static IObservable<CueInfo> GetCueInfo(string resourcesPath, string cue)
         {
-            return Instance.GetCueInfoInternal(resourcesPath, cue);
+            return Observable.FromMicroCoroutine<CueInfo>(observer => Instance.GetCueInfoInternal(observer, resourcesPath, cue));
         }
 
-        private CueInfo GetCueInfoInternal(string resourcesPath, string cue)
+        private IEnumerator GetCueInfoInternal(IObserver<CueInfo> observer, string resourcesPath, string cue)
         {
-            if (string.IsNullOrEmpty(resourcesPath)){ return null; }
+            if (string.IsNullOrEmpty(resourcesPath))
+            {
+                observer.OnError(new ArgumentException("resourcesPath"));
+            }
+            else
+            {
+                var filePath = ConvertCriFilePath(resourcesPath);
 
-            var filePath = ConvertCriFilePath(resourcesPath);
+                if (!CheckAssetVersion(resourcesPath, filePath))
+                {
+                    var assetInfo = FindAssetInfo(resourcesPath);
+                    var assetPath = PathUtility.Combine(resourceDir, resourcesPath);
 
-            filePath = PathUtility.GetPathWithoutExtension(filePath) + CriAssetDefinition.AcbExtension;
-            
-            return File.Exists(filePath) ? new CueInfo(cue, filePath) : null;
+                    var sw = System.Diagnostics.Stopwatch.StartNew();
+
+                    var updateYield = UpdateAsset(resourcesPath).ToYieldInstruction(false, yieldCancell.Token);
+
+                    while (!updateYield.IsDone)
+                    {
+                        yield return null;
+                    }
+
+                    sw.Stop();
+
+                    var builder = new StringBuilder();
+
+                    builder.AppendFormat("Update: {0} ({1:F2}ms)", Path.GetFileName(filePath), sw.Elapsed.TotalMilliseconds).AppendLine();
+                    builder.AppendLine();
+                    builder.AppendFormat("LoadPath = {0}", assetPath).AppendLine();
+                    builder.AppendFormat("Hash = {0}", assetInfo.FileHash).AppendLine();
+
+                    UnityConsole.Event(ConsoleEventName, ConsoleEventColor, builder.ToString());
+                }
+
+                filePath = PathUtility.GetPathWithoutExtension(filePath) + CriAssetDefinition.AcbExtension;
+
+                observer.OnNext(File.Exists(filePath) ? new CueInfo(cue, filePath) : null);
+            }
+
+            observer.OnCompleted();
         }
 
         #endregion
 
         #region Movie
 
-        public static ManaInfo GetMovieInfo(string resourcesPath)
+        public static IObservable<ManaInfo> GetMovieInfo(string resourcesPath)
         {
-            return Instance.GetMovieInfoInternal(resourcesPath);
+            return Observable.FromMicroCoroutine<ManaInfo>(observer => Instance.GetMovieInfoInternal(observer, resourcesPath));
         }
 
-        private ManaInfo GetMovieInfoInternal(string resourcesPath)
+        private IEnumerator GetMovieInfoInternal(IObserver<ManaInfo> observer, string resourcesPath)
         {
-            if (string.IsNullOrEmpty(resourcesPath)) { return null; }
+            if (string.IsNullOrEmpty(resourcesPath))
+            {
+                observer.OnError(new ArgumentException("resourcesPath"));
+            }
+            else
+            {
+                var filePath = ConvertCriFilePath(resourcesPath);
 
-            var filePath = ConvertCriFilePath(resourcesPath);
+                if (!CheckAssetVersion(resourcesPath, filePath))
+                {
+                    var assetInfo = FindAssetInfo(resourcesPath);
+                    var assetPath = PathUtility.Combine(resourceDir, resourcesPath);
 
-            filePath = PathUtility.GetPathWithoutExtension(filePath) + CriAssetDefinition.UsmExtension;
+                    var sw = System.Diagnostics.Stopwatch.StartNew();
 
-            return File.Exists(filePath) ? new ManaInfo(filePath) : null;
+                    var updateYield = UpdateAsset(resourcesPath).ToYieldInstruction(false, yieldCancell.Token);
+
+                    while (!updateYield.IsDone)
+                    {
+                        yield return null;
+                    }
+
+                    sw.Stop();
+
+                    var builder = new StringBuilder();
+
+                    builder.AppendFormat("Update: {0} ({1:F2}ms)", Path.GetFileName(filePath), sw.Elapsed.TotalMilliseconds).AppendLine();
+                    builder.AppendLine();
+                    builder.AppendFormat("LoadPath = {0}", assetPath).AppendLine();
+                    builder.AppendFormat("Hash = {0}", assetInfo.FileHash).AppendLine();
+
+                    UnityConsole.Event(ConsoleEventName, ConsoleEventColor, builder.ToString());
+                }
+
+                filePath = PathUtility.GetPathWithoutExtension(filePath) + CriAssetDefinition.UsmExtension;
+
+                observer.OnNext(File.Exists(filePath) ? new ManaInfo(filePath) : null);
+            }
+
+            observer.OnCompleted();
         }
 
         #endregion

@@ -225,8 +225,8 @@ namespace Modules.ExternalResource.Editor
             var contents = new List<ContentsScrollView.IScrollContent>();
 
             var assetBundleTargets = assetInfos
-                .Where(x => !string.IsNullOrEmpty(x.AssetInfo.AssetBundleName))
-                .GroupBy(x => x.AssetInfo.AssetBundleName)
+                .Where(x => x.AssetInfo.IsAssetBundle)
+                .GroupBy(x => x.AssetInfo.AssetBundle.AssetBundleName)
                 .ToArray();
 
             if (assetBundleTargets.Any())
@@ -248,7 +248,7 @@ namespace Modules.ExternalResource.Editor
             }
 
             var otherAssetTargets = assetInfos
-                .Where(x => string.IsNullOrEmpty(x.AssetInfo.AssetBundleName))               
+                .Where(x => !x.AssetInfo.IsAssetBundle)               
                 .ToArray();
 
             if (otherAssetTargets.Any())

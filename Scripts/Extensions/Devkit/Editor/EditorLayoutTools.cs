@@ -365,7 +365,7 @@ namespace Extensions.Devkit
 
         public static void DrawContentTitle(string text)
         {
-            GUILayout.Space(3f);
+            GUILayout.Space(2f);
 
             using (new EditorGUILayout.HorizontalScope())
             {
@@ -375,6 +375,8 @@ namespace Extensions.Devkit
 
                 GUILayout.Space(2f);
             }
+
+            GUILayout.Space(-2f);
         }
 
         public static Color BackgroundColor
@@ -624,7 +626,7 @@ namespace Extensions.Devkit
             EditorGUILayout.BeginHorizontal(TextAreaStyle, GUILayout.MinHeight(10f));
 
             GUILayout.BeginVertical();
-            EditorGUILayout.Separator();
+            GUILayout.Space(3f);
         }
 
         public static void EndContents()

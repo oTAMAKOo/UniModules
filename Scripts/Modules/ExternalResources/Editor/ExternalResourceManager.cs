@@ -2,10 +2,11 @@
 using UnityEngine;
 using UnityEditor;
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using UniRx;
 using Extensions;
+using Modules.AssetBundles;
 using Modules.AssetBundles.Editor;
 using Modules.Devkit;
 using Modules.Devkit.Prefs;
@@ -19,7 +20,7 @@ using Modules.CriWare.Editor;
 
 namespace Modules.ExternalResource.Editor
 {
-    public static class ExternalResourceManager
+    public static partial class ExternalResourceManager
     {
         //----- params -----
 
@@ -65,13 +66,19 @@ namespace Modules.ExternalResource.Editor
             #endif
 
             // CriAssetGeneratorでCriのManifestファイルを生成後に実行.
-            BuildScript.BuildAllAssetBundles(exportPath);
+            var assetBundleManifest = BuildAssetBundle.BuildAllAssetBundles(exportPath);
 
             // ビルド成果物の情報をAssetInfoManifestに書き込み.
-            AssetInfoManifestGenerator.SetAssetFileInfo(exportPath, externalResourcesPath);
+            AssetInfoManifestGenerator.SetAssetFileInfo(exportPath, externalResourcesPath, assetBundleManifest);
 
             // 再度AssetInfoManifestだけビルドを実行.
-            BuildScript.BuildAllAssetBundles(exportPath);
+            BuildAssetBundle.BuildAssetInfoManifest(exportPath, externalResourcesPath);
+
+            // 不要ファイル削除.
+            BuildAssetBundle.DeleteUnUseFiles(exportPath);
+
+            // AssetBundleファイルをパッケージ化.
+            BuildAssetBundle.BuildPackage(exportPath);
 
             EditorApplication.UnlockReloadAssemblies();
 
@@ -85,7 +92,7 @@ namespace Modules.ExternalResource.Editor
 
             var path = EditorUtility.OpenFolderPanel("Select export folder.", directory, folderName);
 
-            if (string.IsNullOrEmpty(path)) { return null; }
+            if (string.IsNullOrEmpty(path)) { return null; }    
 
             Prefs.exportPath = path;
 

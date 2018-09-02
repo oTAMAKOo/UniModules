@@ -16,6 +16,116 @@ using Modules.CriWare;
 
 namespace Modules.ExternalResource
 {
+    [Serializable]
+    public class AssetInfo
+    {
+        //----- params -----
+
+        //----- field -----
+
+        [SerializeField]
+        private string resourcesPath = null;
+        [SerializeField]
+        private string groupName = null;
+        [SerializeField]
+        private long fileSize = 0;
+        [SerializeField]
+        private string fileHash = null;
+        [SerializeField]
+        private AssetBundleInfo assetBundle = null;
+
+        //----- property -----
+
+        /// <summary> 読み込みパス </summary>
+        public string ResourcesPath { get { return resourcesPath; } }
+        /// <summary> グループ名 </summary>
+        public string GroupName { get { return groupName; } }
+        /// <summary> ファイルサイズ(byte) </summary>
+        public long FileSize { get { return fileSize; } }
+        /// <summary> ファイルハッシュ </summary>
+        public string FileHash { get { return fileHash; } }
+        /// <summary> アセットバンドル情報 </summary>
+        public AssetBundleInfo AssetBundle { get { return assetBundle; } }
+        
+        /// <summary> アセットバンドルか </summary>
+        public bool IsAssetBundle
+        {
+            get { return assetBundle != null && !string.IsNullOrEmpty(assetBundle.AssetBundleName); }
+        }
+
+        //----- method -----
+
+        public AssetInfo(string resourcesPath, string groupName)
+        {
+            this.resourcesPath = resourcesPath;
+            this.groupName = groupName;
+        }
+
+        public void SetFileInfo(string filePath)
+        {
+            if (File.Exists(filePath))
+            {
+                var fileInfo = new FileInfo(filePath);
+
+                fileSize = fileInfo.Length;
+                fileHash = FileUtility.GetHash(filePath);
+            }
+            else
+            {
+                Debug.LogErrorFormat("File not exists.\nFile : {0}", filePath);
+            }
+        }
+
+        public void SetAssetBundleInfo(AssetBundleInfo assetBundleInfo)
+        {
+            assetBundle = assetBundleInfo;
+        }
+    }
+
+    [Serializable]
+    public class AssetBundleInfo
+    {
+        //----- params -----
+
+        //----- field -----
+
+        [SerializeField]
+        private string assetBundleName = null;
+        [SerializeField]
+        private bool compress = false;
+        [SerializeField]
+        private string[] dependencies = null;
+
+        //----- property -----
+
+        /// <summary> アセットバンドル名 </summary>
+        public string AssetBundleName { get { return assetBundleName; } }
+        /// <summary> 圧縮 </summary>
+        public bool Compress { get { return compress; } }
+        /// <summary> 依存関係 </summary>
+        public string[] Dependencies { get { return dependencies; } }
+
+        //----- method -----
+
+        public AssetBundleInfo(string assetBundleName)
+        {
+            this.assetBundleName = assetBundleName;
+
+            SetCompress(false);
+            SetDependencies(null);
+        }
+
+        public void SetCompress(bool compress)
+        {
+            this.compress = compress;
+        }
+
+        public void SetDependencies(string[] dependencies)
+        {
+            this.dependencies = dependencies ?? new string[0];
+        }
+    }
+
     public class AssetInfoManifest : ScriptableObject
     {
         //----- params -----
@@ -72,7 +182,7 @@ namespace Modules.ExternalResource
             return info;
         }
 
-        public void SetAssetFileInfo(string exportPath, IProgress<Tuple<string,float>> progress = null)
+        public void SetAssetFileInfo(string exportPath, IProgress<Tuple<string, float>> progress = null)
         {
             for (var i = 0; i < assetInfos.Length; i++)
             {
@@ -80,7 +190,13 @@ namespace Modules.ExternalResource
 
                 var elements = new string[0];
 
-                if (string.IsNullOrEmpty(assetInfo.AssetBundleName))
+                if (assetInfo.IsAssetBundle)
+                {
+                    var assetBundleName = assetInfo.AssetBundle.AssetBundleName;
+
+                    elements = new string[] { exportPath, AssetBundleManager.AssetBundlesFolder, assetBundleName };
+                }
+                else
                 {
                     #if ENABLE_CRIWARE
 
@@ -93,16 +209,38 @@ namespace Modules.ExternalResource
 
                     #endif
                 }
-                else
-                {
-                    elements = new string[] { exportPath, AssetBundleManager.AssetBundlesFolder, assetInfo.AssetBundleName };
-                }
 
                 if (elements.IsEmpty()) { continue; }
 
                 var filePath = PathUtility.Combine(elements);
 
                 assetInfo.SetFileInfo(filePath);
+
+                progress.Report(Tuple.Create(assetInfo.ResourcesPath, (float)i / assetInfos.Length));
+            }
+
+            BuildCache(true);
+        }
+
+        public void SetAssetBundleInfo(string exportPath, AssetBundleManifest assetBundleManifest, IProgress<Tuple<string, float>> progress = null)
+        {
+            const long CompressFileSize = 100 * 1024; // 100kbyteは圧縮.
+
+            for (var i = 0; i < assetInfos.Length; i++)
+            {
+                var assetInfo = assetInfos[i];
+
+                if (!assetInfo.IsAssetBundle) { continue; }
+
+                var assetBundleName = assetInfo.AssetBundle.AssetBundleName;
+                var dependencies = assetBundleManifest.GetAllDependencies(assetBundleName);
+
+                var assetBundleInfo = new AssetBundleInfo(assetBundleName);
+
+                assetBundleInfo.SetCompress(CompressFileSize <= assetInfo.FileSize);
+                assetBundleInfo.SetDependencies(dependencies);
+
+                assetInfo.SetAssetBundleInfo(assetBundleInfo);
 
                 progress.Report(Tuple.Create(assetInfo.ResourcesPath, (float)i / assetInfos.Length));
             }
@@ -120,62 +258,6 @@ namespace Modules.ExternalResource
             if (assetInfoByResourcesPath == null || forceUpdate)
             {
                 assetInfoByResourcesPath = assetInfos.ToDictionary(x => x.ResourcesPath);
-            }
-        }
-    }
-
-    [Serializable]
-    public class AssetInfo
-    {
-        //----- params -----
-
-        //----- field -----
-
-        [SerializeField]
-        private string resourcesPath = null;
-        [SerializeField]
-        private string assetBundleName = null;
-        [SerializeField]
-        private string groupName = null;
-        [SerializeField]
-        private long fileSize = 0;
-        [SerializeField]
-        private string fileHash = null;
-
-        //----- property -----
-
-        /// <summary> 読み込みパス </summary>
-        public string ResourcesPath { get { return resourcesPath; } }
-        /// <summary> アセットバンドル名 </summary>
-        public string AssetBundleName { get { return assetBundleName; } }
-        /// <summary> グループ名 </summary>
-        public string GroupName { get { return groupName; } }
-        /// <summary> ファイルサイズ(byte) </summary>
-        public long FileSize { get { return fileSize; } }
-        /// <summary> ファイルハッシュ </summary>
-        public string FileHash { get { return fileHash; } }
-
-        //----- method -----
-
-        public AssetInfo(string resourcesPath, string assetBundleName, string groupName)
-        {
-            this.resourcesPath = resourcesPath;
-            this.assetBundleName = assetBundleName;
-            this.groupName = groupName;
-        }
-
-        public void SetFileInfo(string filePath)
-        {
-            if (File.Exists(filePath))
-            {
-                var fileInfo = new FileInfo(filePath);
-
-                fileSize = fileInfo.Length;
-                fileHash = FileUtility.GetHash(filePath);
-            }
-            else
-            {
-                Debug.LogErrorFormat("File not exists.\nFile : {0}", filePath);
             }
         }
     }

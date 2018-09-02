@@ -34,7 +34,7 @@ namespace Modules.ExternalResource.Editor
             AssetDatabase.Refresh();
         }
 
-        public static void SetAssetFileInfo(string exportPath, string externalResourcesPath)
+        public static void SetAssetFileInfo(string exportPath, string externalResourcesPath, AssetBundleManifest assetBundleManifest)
         {
             var manifestPath = PathUtility.Combine(externalResourcesPath, AssetInfoManifest.ManifestFileName);
             var assetInfoManifest = AssetDatabase.LoadAssetAtPath<AssetInfoManifest>(manifestPath);
@@ -64,7 +64,10 @@ namespace Modules.ExternalResource.Editor
 
                 var assetPath = PathUtility.Combine(assetManageManager.ExternalResourcesPath, assetInfo.ResourcesPath);
 
-                assetManageManager.SetAssetBundleName(assetPath, assetInfo.AssetBundleName);
+                if (assetInfo.IsAssetBundle)
+                {
+                    assetManageManager.SetAssetBundleName(assetPath, assetInfo.AssetBundle.AssetBundleName);
+                }
             }
 
             AssetDatabase.StopAssetEditing();

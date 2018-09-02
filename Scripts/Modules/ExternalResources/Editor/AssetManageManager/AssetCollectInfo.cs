@@ -60,9 +60,9 @@ namespace Modules.ExternalResource.Editor
             }
             else
             {
-                if(AssetInfo != null && !string.IsNullOrEmpty(AssetInfo.AssetBundleName))
+                if(AssetInfo != null && AssetInfo.IsAssetBundle)
                 {
-                    result = assetManageManager.SetAssetBundleName(AssetPath, AssetInfo.AssetBundleName);
+                    result = assetManageManager.SetAssetBundleName(AssetPath, AssetInfo.AssetBundle.AssetBundleName);
                 }
                 else
                 {

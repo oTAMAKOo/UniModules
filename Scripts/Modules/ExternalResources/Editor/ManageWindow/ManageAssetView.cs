@@ -413,7 +413,9 @@ namespace Modules.ExternalResource.Editor
             var isHit = false;
 
             // アセットバンドル名が一致.
-            isHit |= view.Infos.Any(x => x.AssetInfo.AssetBundleName.IsMatch(keywords));
+            isHit |= view.Infos
+                 .Where(x => x.AssetInfo.IsAssetBundle)
+                 .Any(x => x.AssetInfo.AssetBundle.AssetBundleName.IsMatch(keywords));
 
             // 管理下のアセットのパスが一致.
             isHit |= view.Infos.Any(x => x.AssetPath.IsMatch(keywords));

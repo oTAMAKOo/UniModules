@@ -426,10 +426,18 @@ namespace Modules.ExternalResource.Editor
                 if (manageInfo != null)
                 {
                     var loadPath = GetAssetLoadPath(assetPath);
-                    var assetBundleName = manageInfo.isAssetBundle ? GetAssetBundleName(assetPath, manageInfo) : string.Empty;
                     var groupName = GetAssetGroupName(manageInfo);
 
-                    return new AssetInfo(loadPath, assetBundleName, groupName);
+                    var assetInfo = new AssetInfo(loadPath, groupName);
+
+                    if (manageInfo.isAssetBundle)
+                    {
+                        var assetBundleName = GetAssetBundleName(assetPath, manageInfo);
+
+                        assetInfo.SetAssetBundleInfo(new AssetBundleInfo(assetBundleName));
+                    }
+
+                    return assetInfo;
                 }
             }
 
