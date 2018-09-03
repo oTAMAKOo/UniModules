@@ -20,38 +20,79 @@ namespace Modules.CriWare
 
         private class CriAssetInstall
         {
+            private static int installCount = 0;
+
             public AssetInfo AssetInfo { get; private set; }
-            public CriFsInstallRequest Request { get; private set; }
+            public CriFsWebInstaller Installer { get; private set; }
             public IObservable<CriAssetInstall> Task { get; private set; }
 
-            public CriAssetInstall(AssetInfo assetInfo, CriFsInstallRequest request, IProgress<float> progress = null)
+            public CriAssetInstall(AssetInfo assetInfo, IProgress<float> progress = null)
             {
                 AssetInfo = assetInfo;
-                Request = request;
 
-                Task = Observable.FromMicroCoroutine(() => Install(request, progress))
+                var resourcePath = UnityPathUtility.GetLocalPath(assetInfo.ResourcesPath, Instance.sourceDir);
+                var downloadUrl = PathUtility.Combine(Instance.remoteUrl, resourcePath);
+                var installPath = PathUtility.Combine(Instance.installDir, resourcePath);
+
+                var directory = Path.GetDirectoryName(installPath);
+
+                if (!Directory.Exists(directory))
+                {
+                    Directory.CreateDirectory(directory);
+                }
+
+                if (File.Exists(installPath))
+                {
+                    File.Delete(installPath);
+                }
+
+                Task = Observable.FromMicroCoroutine(() => Install(downloadUrl, installPath, progress))
                     .Select(_ => this)
                     .Share();
             }
 
-            private IEnumerator Install(CriFsInstallRequest request, IProgress<float> progress = null)
+            private IEnumerator Install(string downloadUrl, string installPath, IProgress<float> progress = null)
             {
-                while (!request.isDone)
+                var numInstallers = Instance.numInstallers;
+
+                // 同時インストール数待ち.
+                while (numInstallers <= installCount)
                 {
-                    if (request.isDisposed) { break; }
-
-                    if (progress != null)
-                    {
-                        progress.Report(request.progress);
-                    }
-
                     yield return null;
                 }
 
-                if (request.error != null)
+                installCount++;
+
+                using (Installer = new CriFsWebInstaller())
                 {
-                    throw new Exception(string.Format("[Download Error] {0}\n{1}", AssetInfo.ResourcesPath, request.error));
+                    Installer.Copy(downloadUrl, installPath);
+
+                    CriFsWebInstaller.StatusInfo statusInfo;
+
+                    while (true)
+                    {
+                        statusInfo = Installer.GetStatusInfo();
+
+                        if (progress != null)
+                        {
+                            progress.Report((float)statusInfo.receivedSize / statusInfo.contentsSize);
+                        }
+
+                        if (statusInfo.status != CriFsWebInstaller.Status.Busy)
+                        {
+                            break;
+                        }
+
+                        yield return null;
+                    }
+
+                    if (statusInfo.error != CriFsWebInstaller.Error.None)
+                    {
+                        throw new Exception(string.Format("[Download Error] {0}\n{1}", AssetInfo.ResourcesPath, statusInfo.error));
+                    }
                 }
+
+                installCount--;
             }
         }
 
@@ -83,7 +124,10 @@ namespace Modules.CriWare
 
         // アセット管理.
         private AssetInfoManifest manifest = null;
-        
+
+        // 同時インストール数.
+        private uint numInstallers = 0;
+
         // イベント通知.
         private Subject<string> onTimeOut = null;
         private Subject<Exception> onError = null;
@@ -94,18 +138,50 @@ namespace Modules.CriWare
 
         //----- method -----
 
-        public void Initialize(string sourceDir, bool simulateMode = false)
+        public void Initialize(string sourceDir, uint numInstallers, bool simulateMode = false)
         {
             if (isInitialized) { return; }
 
             this.sourceDir = sourceDir;
             this.simulateMode = Application.isEditor && simulateMode;
+            this.numInstallers = numInstallers;
 
             installQueueing = new Dictionary<string, CriAssetInstall>();
 
             installDir = GetInstallDirectory();
 
+            //------ CriInstaller初期化 ------
+
+            var moduleConfig = CriFsWebInstaller.defaultModuleConfig;
+
+            // 同時インストール数.
+            moduleConfig.numInstallers = numInstallers;
+            // タイムアウト時間.
+            moduleConfig.inactiveTimeoutSec = (uint)TimeoutLimit.TotalSeconds;
+
+            CriFsWebInstaller.InitializeModule(moduleConfig);
+
+            Observable.EveryUpdate()
+                .Subscribe(_ => CriFsWebInstaller.ExecuteMain())
+                .AddTo(Disposable);
+
             isInitialized = true;
+        }
+
+        protected override void OnRelease()
+        {
+            if (isInitialized)
+            {
+                foreach (var item in installQueueing.Values)
+                {
+                    item.Installer.Stop();
+                    item.Installer.Dispose();
+                }
+
+                installQueueing.Clear();
+
+                CriFsWebInstaller.FinalizeModule();
+            }
         }
 
         /// <summary>
@@ -212,24 +288,11 @@ namespace Modules.CriWare
 
         private CriAssetInstall GetCriAssetInstall(AssetInfo assetInfo, IProgress<float> progress)
         {
-            var resourcePath = UnityPathUtility.GetLocalPath(assetInfo.ResourcesPath, sourceDir);
-            var downloadUrl = PathUtility.Combine(remoteUrl, resourcePath);
-            var installPath = PathUtility.Combine(installDir, resourcePath);
-
             var install = installQueueing.GetValueOrDefault(assetInfo.ResourcesPath);
 
             if (install != null) { return install; }
 
-            var directory = Path.GetDirectoryName(installPath);
-
-            if (!Directory.Exists(directory))
-            {
-                Directory.CreateDirectory(directory);
-            }
-
-            var request = CriFsUtility.Install(downloadUrl, installPath);
-
-            install = new CriAssetInstall(assetInfo, request, progress);
+            install = new CriAssetInstall(assetInfo, progress);
 
             installQueueing[assetInfo.ResourcesPath] = install;
 
@@ -248,8 +311,8 @@ namespace Modules.CriWare
 
             if (item != null)
             {
-                item.Request.Stop();
-                item.Request.Dispose();
+                item.Installer.Stop();
+                item.Installer.Dispose();
 
                 installQueueing.Remove(resourcesPath);
             }

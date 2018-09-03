@@ -106,7 +106,7 @@ namespace Modules.ExternalResource
             // CriAssetManager初期化.
 
             criAssetManager = CriAssetManager.CreateInstance();
-            criAssetManager.Initialize(resourceDir, isSimulate);
+            criAssetManager.Initialize(resourceDir, 4, isSimulate);
             criAssetManager.OnTimeOutAsObservable().Subscribe(x => OnTimeout(x)).AddTo(Disposable);
             criAssetManager.OnErrorAsObservable().Subscribe(x => OnError(x)).AddTo(Disposable);
             
