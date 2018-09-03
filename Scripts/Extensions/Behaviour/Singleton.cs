@@ -21,6 +21,11 @@ namespace Extensions
 
         protected Singleton() { }
 
+        ~Singleton()
+        {
+            OnRelease();
+        }
+
         public static T CreateInstance()
         {
             if (instance != null) { return instance; }
@@ -35,11 +40,6 @@ namespace Extensions
 
         public static void ReleaseInstance()
         {
-            if (instance != null)
-            {
-                instance.OnRelease();
-            }
-
             instance = null;
         }
 
