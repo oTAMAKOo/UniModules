@@ -10,6 +10,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UniRx;
 using Extensions;
+using Modules.Devkit;
 using Modules.ExternalResource;
 
 namespace Modules.CriWare
@@ -31,8 +32,9 @@ namespace Modules.CriWare
                 AssetInfo = assetInfo;
 
                 var resourcePath = UnityPathUtility.GetLocalPath(assetInfo.ResourcesPath, Instance.sourceDir);
-                var downloadUrl = PathUtility.Combine(Instance.remoteUrl, resourcePath);
-                var installPath = PathUtility.Combine(Instance.installDir, resourcePath);
+
+                var downloadUrl = Instance.BuildUrl(resourcePath);
+                var installPath = Instance.BuildFilePath(resourcePath);
 
                 var directory = Path.GetDirectoryName(installPath);
 
@@ -107,11 +109,11 @@ namespace Modules.CriWare
 
         //----- field -----
 
+        // アセット管理.
+        private AssetInfoManifest manifest = null;
+
         // ダウンロード元URL.
         private string remoteUrl = null;
-
-        // インストール先.
-        private string installDir = null;
 
         // シュミュレートモードか.
         private bool simulateMode = false;
@@ -121,9 +123,6 @@ namespace Modules.CriWare
 
         // ダウンロード待ち.
         private Dictionary<string, CriAssetInstall> installQueueing = null;
-
-        // アセット管理.
-        private AssetInfoManifest manifest = null;
 
         // 同時インストール数.
         private uint numInstallers = 0;
@@ -147,8 +146,6 @@ namespace Modules.CriWare
             this.numInstallers = numInstallers;
 
             installQueueing = new Dictionary<string, CriAssetInstall>();
-
-            installDir = GetInstallDirectory();
 
             //------ CriInstaller初期化 ------
 
@@ -189,7 +186,7 @@ namespace Modules.CriWare
         /// </summary>
         public void SetUrl(string remoteUrl)
         {
-            this.remoteUrl = PathUtility.Combine(new string[] { remoteUrl, UnityPathUtility.GetPlatformName(), CriAssetDefinition.CriAssetFolder });
+            this.remoteUrl = remoteUrl;
         }
 
         public void SetManifest(AssetInfoManifest manifest)
@@ -204,7 +201,7 @@ namespace Modules.CriWare
         /// </summary>
         public static void CleanCache()
         {
-            var installDir = GetInstallDirectory();
+            var installDir = Instance.BuildFilePath(null);
 
             if (Directory.Exists(installDir))
             {
@@ -327,7 +324,11 @@ namespace Modules.CriWare
 
             if (manifest == null) { return; }
 
+            var installDir = BuildFilePath(null);
+
             if (string.IsNullOrEmpty(installDir)) { return; }
+
+            var sw = System.Diagnostics.Stopwatch.StartNew();
 
             var builder = new StringBuilder();
             var directory = Path.GetDirectoryName(installDir);
@@ -337,8 +338,8 @@ namespace Modules.CriWare
                 var cacheFiles = Directory.GetFiles(installDir, "*", SearchOption.AllDirectories);
 
                 var managedFiles = manifest.GetAssetInfos()
-                    .Select(x => UnityPathUtility.GetLocalPath(x.ResourcesPath, sourceDir))
-                    .Select(x => PathUtility.Combine(installDir, x))
+                    .Select(x => BuildFilePath(x.ResourcesPath))
+                    .Select(x => PathUtility.ConvertPathSeparator(x))
                     .Distinct()
                     .ToHashSet();
 
@@ -361,16 +362,38 @@ namespace Modules.CriWare
 
                 deleteDirectorys.ForEach(x => builder.AppendLine(x));
 
-                if (!string.IsNullOrEmpty(builder.ToString()))
+                sw.Stop();
+
+                var log = builder.ToString();
+
+                if (!string.IsNullOrEmpty(log))
                 {
-                    Debug.LogFormat("CriAsset CleanUnuseCache:\n{0}", builder.ToString());
+                    UnityConsole.Info("Delete unuse cached criassets ({0}ms)\n{1}", sw.Elapsed.TotalMilliseconds, log);
                 }
             }
         }
 
-        public static string GetInstallDirectory()
+        public string BuildUrl(string assetPath)
         {
-            return PathUtility.Combine(UnityPathUtility.GetInstallPath(), CriAssetDefinition.CriAssetFolder) + PathUtility.PathSeparator;
+            var platformName = UnityPathUtility.GetPlatformName();
+            var assetFolder = CriAssetDefinition.CriAssetFolder;
+
+            return PathUtility.Combine(new string[] { remoteUrl, platformName, assetFolder, assetPath });
+        }
+
+        public string BuildFilePath(string assetPath)
+        {
+            var installPath = UnityPathUtility.GetInstallPath();
+            var assetFolder = CriAssetDefinition.CriAssetFolder;
+           
+            var path = PathUtility.Combine(installPath, assetFolder);
+
+            if (!string.IsNullOrEmpty(assetPath))
+            {
+                path = PathUtility.Combine(path, assetPath);
+            }
+
+            return path;
         }
 
         private void OnTimeout(string url, Exception exception)

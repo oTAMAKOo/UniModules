@@ -234,6 +234,10 @@ namespace Modules.ExternalResource
             var message = string.Format("UpdateManifest: ({0}ms)", sw.Elapsed.TotalMilliseconds);
             UnityConsole.Event(ConsoleEventName, ConsoleEventColor, message);
 
+            // アセット管理情報を登録.
+
+            assetBundleManager.SetManifest(assetInfoManifest);
+
             #if ENABLE_CRIWARE
 
             criAssetManager.SetManifest(assetInfoManifest);
@@ -525,7 +529,7 @@ namespace Modules.ExternalResource
 
             return isSimulate ?
                 PathUtility.Combine(new string[] { UnityPathUtility.GetProjectFolderPath(), resourceDir, resourcesPath }) :
-                PathUtility.Combine(new string[] { CriAssetManager.GetInstallDirectory(), resourcesPath });
+                PathUtility.Combine(new string[] { criAssetManager.BuildFilePath(null), resourcesPath });
         }
 
         #region Sound

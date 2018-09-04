@@ -6,9 +6,12 @@ using System.Linq;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
+using System.Text;
 using System.Security.Cryptography;
 using UniRx;
 using Extensions;
+using Modules.Devkit;
+using Modules.ExternalResource;
 using Modules.UniRxExtension;
 
 using Debug = UnityEngine.Debug;
@@ -50,6 +53,9 @@ namespace Modules.AssetBundles
 
         //----- field -----
 
+        // アセット管理.
+        private AssetInfoManifest manifest = null;
+
         // ダウンロード元URL.
         private string remoteUrl = null;
 
@@ -81,8 +87,6 @@ namespace Modules.AssetBundles
         private bool isInitialized = false;
 
         //----- property -----
-
-        public string DownloadURL { get { return remoteUrl; } }
 
         //----- method -----
 
@@ -123,6 +127,13 @@ namespace Modules.AssetBundles
             this.remoteUrl = remoteUrl;
         }
 
+        public void SetManifest(AssetInfoManifest manifest)
+        {
+            this.manifest = manifest;
+
+            CleanUnuseCache();
+        }
+
         /// <summary> 展開中のアセットバンドル名一覧取得 </summary>
         public Tuple<string, int>[] GetLoadedAssetBundleNames()
         {
@@ -134,17 +145,22 @@ namespace Modules.AssetBundles
         public string BuildUrl(string assetBundlePath)
         {
             var platformName = UnityPathUtility.GetPlatformName();
+            var assetFolder = AssetBundlesFolder;
 
-            var url = PathUtility.Combine(new string[] { remoteUrl, platformName, AssetBundlesFolder, assetBundlePath }) + PackageExtension;
-
-            return url;
+            return PathUtility.Combine(new string[] { remoteUrl, platformName, assetFolder, assetBundlePath }) + PackageExtension;
         }
 
         public string BuildFilePath(string assetBundleName)
         {
-            var elements = new string[] { UnityPathUtility.GetInstallPath(), AssetBundlesFolder, assetBundleName };
+            var installPath = UnityPathUtility.GetInstallPath();
+            var assetFolder = AssetBundlesFolder;
 
-            var path = PathUtility.Combine(elements) + PackageExtension;
+            var path = PathUtility.Combine(installPath, assetFolder);
+
+            if (!string.IsNullOrEmpty(assetBundleName))
+            {
+                path = PathUtility.Combine(path, assetBundleName) + PackageExtension;
+            }
 
             return path;
         }
@@ -598,6 +614,68 @@ namespace Modules.AssetBundles
         }
 
         #endregion
+
+        /// <summary>
+        /// マニフェストファイルに存在しないキャッシュファイルを破棄.
+        /// </summary>
+        private void CleanUnuseCache()
+        {
+            if (simulateMode) { return; }
+
+            if (manifest == null) { return; }
+
+            var installDir = BuildFilePath(null);
+
+            if (string.IsNullOrEmpty(installDir)) { return; }
+
+            var sw = System.Diagnostics.Stopwatch.StartNew();
+
+            var builder = new StringBuilder();
+
+            var directory = Path.GetDirectoryName(installDir);
+
+            if (Directory.Exists(directory))
+            {
+                var cacheFiles = Directory.GetFiles(installDir, "*", SearchOption.AllDirectories);
+
+                var managedFiles = manifest.GetAssetInfos()
+                    .Select(x => BuildFilePath(x.AssetBundle.AssetBundleName))
+                    .Select(x => PathUtility.ConvertPathSeparator(x))
+                    .Distinct()
+                    .ToHashSet();
+
+                // 管理情報は必ず管理対象.
+                managedFiles.Add(BuildFilePath(AssetInfoManifest.AssetBundleName));
+
+                var targets = cacheFiles
+                    .Select(x => PathUtility.ConvertPathSeparator(x))
+                    .Where(x => !managedFiles.Contains(x))
+                    .ToArray();
+
+                foreach (var target in targets)
+                {
+                    if (!File.Exists(target)) { continue; }
+
+                    File.SetAttributes(target, FileAttributes.Normal);
+                    File.Delete(target);
+
+                    builder.AppendLine(target);
+                }
+
+                var deleteDirectorys = DirectoryUtility.DeleteEmpty(installDir);
+
+                deleteDirectorys.ForEach(x => builder.AppendLine(x));
+
+                sw.Stop();
+
+                var log = builder.ToString();
+
+                if (!string.IsNullOrEmpty(log))
+                {
+                    UnityConsole.Info("Delete unuse cached assetbundles ({0}ms)\n{1}", sw.Elapsed.TotalMilliseconds, log);
+                }
+            }
+        }
 
         /// <summary>
         /// キャッシュ済みのアセット情報を取得.
