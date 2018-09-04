@@ -10,7 +10,7 @@ using System.Collections.Generic;
 using UniRx;
 using Extensions;
 using Extensions.Devkit;
-using GameObject = UnityEngine.GameObject;
+
 using Object = UnityEngine.Object;
 
 namespace Modules.TimeLine.Component
@@ -23,7 +23,6 @@ namespace Modules.TimeLine.Component
         //----- field -----
 
         private EventClip timeLineEvent = null;
-        private EventBehaviour playableBehaviour = null;
 
         private List<EventMethodInfo> editTargets = null;
         private List<EventMethodInfo> deleteTargets = null;
@@ -81,8 +80,6 @@ namespace Modules.TimeLine.Component
             if (initialized) { return; }
 
             timeLineEvent = target as EventClip;
-
-            playableBehaviour = Reflection.GetPrivateField<EventClip, EventBehaviour>(timeLineEvent, "playableBehaviour");
 
             BuildEditTargets();
 
