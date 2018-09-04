@@ -1,0 +1,25 @@
+
+#-----------------------------------------------
+# File end of line
+#-----------------------------------------------
+*.cs text eol=lf
+
+#-----------------------------------------------
+# Git LFS
+#-----------------------------------------------
+
+# Image File.
+#*.png filter=lfs diff=lfs merge=lfs -text
+#*.jpg filter=lfs diff=lfs merge=lfs -text
+#*.tga filter=lfs diff=lfs merge=lfs -text
+
+# Sound File.
+#*.wav filter=lfs diff=lfs merge=lfs -text
+#*.mp3 filter=lfs diff=lfs merge=lfs -text
+
+# Movie File.
+#*.avi filter=lfs diff=lfs merge=lfs -text
+
+# CRIWare.
+#*.acb filter=lfs diff=lfs merge=lfs -text
+#*.usm filter=lfs diff=lfs merge=lfs -text
