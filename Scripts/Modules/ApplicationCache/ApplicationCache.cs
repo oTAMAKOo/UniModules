@@ -43,8 +43,6 @@ namespace Modules.ApplicationCache
         {
             var builder = new StringBuilder();
 
-            builder.AppendLine("CleanCache :");
-
             #if ENABLE_CRIWARE
 
             // 未使用の音ファイルを解放.
@@ -57,16 +55,8 @@ namespace Modules.ApplicationCache
 
             yield return null;
 
-            if (ExternalResources.Exists)
-            {
-                // ExternalResourcesのキャッシュクリア.
-                ExternalResources.Instance.CleanCache();
-            }
-            else
-            {
-                // アセットバンドルキャッシュクリア.
-                Caching.ClearCache();
-            }
+            // キャッシュクリア.
+            ExternalResources.CleanCache();
 
             yield return null;
 
@@ -99,19 +89,17 @@ namespace Modules.ApplicationCache
                     }
                 }
 
+                DirectoryUtility.DeleteEmpty(cachePath);
+
                 yield return null;
             }
 
-#if ENABLE_CRIWARE
+            if (!string.IsNullOrEmpty(builder.ToString()))
+            {
+                builder.Insert(0, "CleanCache :");
 
-            // Criキャッシュクリア.
-            CriAssetManager.CleanCache();
-
-            yield return null;
-
-#endif
-
-            Debug.Log(builder.ToString());
+                Debug.Log(builder.ToString());
+            }
         }
 	}
 }

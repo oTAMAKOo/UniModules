@@ -197,22 +197,6 @@ namespace Modules.CriWare
         }
 
         /// <summary>
-        /// 全てのキャッシュを破棄.
-        /// </summary>
-        public static void CleanCache()
-        {
-            var installDir = Instance.BuildFilePath(null);
-
-            if (Directory.Exists(installDir))
-            {
-                DirectoryUtility.Clean(installDir);
-
-                // 一旦削除するので再度生成.
-                Directory.CreateDirectory(installDir);
-            }
-        }
-
-        /// <summary>
         /// 指定されたアセットを更新.
         /// </summary>
         public IObservable<Unit> UpdateCriAsset(string resourcesPath, IProgress<float> progress = null)
@@ -316,6 +300,22 @@ namespace Modules.CriWare
         }
 
         /// <summary>
+        /// 全てのキャッシュを破棄.
+        /// </summary>
+        public static void CleanCache()
+        {
+            var installDir = Instance.BuildFilePath(null);
+
+            if (Directory.Exists(installDir))
+            {
+                DirectoryUtility.Clean(installDir);
+
+                // 一旦削除するので再度生成.
+                Directory.CreateDirectory(installDir);
+            }
+        }
+
+        /// <summary>
         /// マニフェストファイルに存在しないキャッシュファイルを破棄.
         /// </summary>
         private void CleanUnuseCache()
@@ -327,6 +327,8 @@ namespace Modules.CriWare
             var installDir = BuildFilePath(null);
 
             if (string.IsNullOrEmpty(installDir)) { return; }
+
+            if (!Directory.Exists(installDir)) { return; }
 
             var sw = System.Diagnostics.Stopwatch.StartNew();
 

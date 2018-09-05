@@ -282,13 +282,16 @@ namespace Modules.ExternalResource
             versions = version.infos.ToDictionary(x => x.resourcesPath, x => x);
         }
 
-        private void ClearVersion()
+        private static void ClearVersion()
         {
-            version = new Version();
-
-            if (versions != null)
+            if (Exists)
             {
-                versions.Clear();
+                Instance.version = new Version();
+
+                if (Instance.versions != null)
+                {
+                    Instance.versions.Clear();
+                }
             }
 
             var versionFilePath = GetVersionFilePath();

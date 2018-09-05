@@ -177,7 +177,7 @@ namespace Modules.ExternalResource
         /// <summary>
         /// キャッシュ削除.
         /// </summary>
-        public void CleanCache()
+        public static void CleanCache()
         {
             if (Exists)
             {
@@ -185,6 +185,14 @@ namespace Modules.ExternalResource
             }
 
             ClearVersion();
+
+            AssetBundleManager.CleanCache();
+
+            #if ENABLE_CRIWARE
+
+            CriAssetManager.CleanCache();
+
+            #endif
 
             Caching.ClearCache();
         }
