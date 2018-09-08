@@ -152,7 +152,11 @@ namespace Modules.Devkit.Spreadsheet
 
             if(ShowRequireSignInMessage()){ return result.ToArray(); }
 
-            var entry = GetSpreadsheetEntry(spreadsheetUrl);
+            var entrys = RequestSpreadsheetEntrys();
+
+            if (entrys == null) { return result.ToArray(); }
+
+            var entry = GetSpreadsheetEntry(entrys.ToArray(), spreadsheetUrl);
 
             if (entry == null){ return result.ToArray(); }
 
@@ -183,11 +187,16 @@ namespace Modules.Devkit.Spreadsheet
             return result;
         }
 
-        private SpreadsheetEntry GetSpreadsheetEntry(string spreadsheetId)
-        {
-            var feed = service.Query(new SpreadsheetQuery());
+	    public IEnumerable<SpreadsheetEntry> RequestSpreadsheetEntrys()
+	    {
+	        var feed = service.Query(new SpreadsheetQuery());
 
-            var entry = feed.Entries.Cast<SpreadsheetEntry>().FirstOrDefault(x => x.AlternateUri.Content.Contains(spreadsheetId));
+	        return feed.Entries.Cast<SpreadsheetEntry>();
+	    }
+
+        public SpreadsheetEntry GetSpreadsheetEntry(SpreadsheetEntry[] entrys, string spreadsheetId)
+        {
+            var entry = entrys.FirstOrDefault(x => x.AlternateUri.Content.Contains(spreadsheetId));
 
             if (entry == null)
             {
