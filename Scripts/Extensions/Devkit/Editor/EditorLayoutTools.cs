@@ -289,6 +289,14 @@ namespace Extensions.Devkit
             return instance;
         }
 
+        public static float SetLabelWidth(string text)
+        {
+            var textStyle = new GUIStyle();
+            var textSize = textStyle.CalcSize(new GUIContent(text));
+
+            return SetLabelWidth(textSize.x);
+        }
+
         public static float SetLabelWidth(float width)
         {
             var prevWidth = EditorGUIUtility.labelWidth;
