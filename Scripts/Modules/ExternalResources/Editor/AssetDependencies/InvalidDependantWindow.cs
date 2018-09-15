@@ -141,7 +141,7 @@ namespace Modules.ExternalResource.Editor
             scrollView = new DependantInfoScrollView();
             scrollView.Contents = GetAssetInfos();
 
-            titleContent = new GUIContent("BuildInAssets Report");
+            titleContent = new GUIContent("ExternalResources InvalidDependant");
 
             ShowUtility();
         }

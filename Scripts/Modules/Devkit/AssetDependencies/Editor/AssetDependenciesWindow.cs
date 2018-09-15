@@ -61,6 +61,8 @@ namespace Modules.Devkit.AssetDependencies
         {
             if (initialized) { return; }
 
+            titleContent = new GUIContent("AssetDependencies");
+
             Show();
 
             initialized = true;
