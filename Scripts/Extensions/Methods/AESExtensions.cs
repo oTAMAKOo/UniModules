@@ -8,6 +8,10 @@ namespace Extensions
 {
     public static class AESExtension
     {
+        private const string RijndaelKey = "SSAHb5DqFV241491";
+
+        public static readonly RijndaelManaged Rijndael = CreateRijndael(RijndaelKey);
+
         private static readonly byte[] Salt = { 0xe6, 0xdc, 0xff, 0x74, 0xad, 0xad, 0x7a, 0xee, 0xc5, 0xfe, 0x50, 0xaf, 0x4d, 0x08, 0x2d, 0x3c };
 
         public static RijndaelManaged CreateRijndael(string password, bool passwordEncryption = true)
@@ -37,9 +41,14 @@ namespace Extensions
         /// <summary>
         /// バイト配列をAESで暗号化.
         /// </summary>
-        public static byte[] Encrypt(this byte[] value, RijndaelManaged rijndael)
+        public static byte[] Encrypt(this byte[] value, RijndaelManaged rijndael = null)
         {
             if (value == null || value.IsEmpty()) { return null; }
+
+            if (rijndael == null)
+            {
+                rijndael = Rijndael;
+            }
 
             byte[] result = null;
 
@@ -63,9 +72,14 @@ namespace Extensions
         /// <summary>
         /// バイト配列をAESで復号化.
         /// </summary>
-        public static byte[] Decrypt(this byte[] value, RijndaelManaged rijndael)
+        public static byte[] Decrypt(this byte[] value, RijndaelManaged rijndael = null)
         {
             if (value == null || value.IsEmpty()) { return null; }
+
+            if (rijndael == null)
+            {
+                rijndael = Rijndael;
+            }
 
             byte[] result = null;
 

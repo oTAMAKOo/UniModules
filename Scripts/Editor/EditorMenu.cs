@@ -12,6 +12,7 @@ using Modules.ExternalResource;
 using Modules.ExternalResource.Editor;
 using Modules.Devkit;
 using Modules.Devkit.AssetBundles;
+using Modules.Devkit.AssetDependencies;
 using Modules.Devkit.CompileNotice;
 using Modules.Devkit.Generators;
 using Modules.Devkit.Pinning;
@@ -361,19 +362,25 @@ namespace Modules
             HierarchyPinningWindow.Open();
         }
 
-        [MenuItem(itemName: WindowsMenu + "Open StyleViewerWindow", priority = 3)]
+        [MenuItem(itemName: WindowsMenu + "Open AssetDependenciesWindow", priority = 3)]
+        public static void OpenAssetDependenciesWindow()
+        {
+            AssetDependenciesWindow.Open();
+        }
+
+        [MenuItem(itemName: WindowsMenu + "Open StyleViewerWindow", priority = 4)]
         public static void OpenStyleViewerWindow()
         {
             EditorStyleViewerWindow.Open();
         }
 
-        [MenuItem(itemName: WindowsMenu + "Open CleanDirectoryWindow", priority = 4)]
+        [MenuItem(itemName: WindowsMenu + "Open CleanDirectoryWindow", priority = 5)]
         public static void OpenCleanDirectoryWindow()
         {
             CleanDirectoryWindow.Open();
         }
 
-        [MenuItem(itemName: WindowsMenu + "Open ShaderVariantWindow", priority = 5)]
+        [MenuItem(itemName: WindowsMenu + "Open ShaderVariantWindow", priority = 6)]
         public static void OpenShaderVariantUpdateWindow()
         {
             ShaderVariantUpdateWindow.Open();

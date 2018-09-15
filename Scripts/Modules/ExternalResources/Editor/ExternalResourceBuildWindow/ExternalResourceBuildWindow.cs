@@ -71,6 +71,7 @@ namespace Modules.ExternalResource.Editor
 
             if (GUILayout.Button("Generate"))
             {
+                // アセット情報ファイルを生成.
                 AssetInfoManifestGenerator.Generate(externalResourcesPath, assetManageConfig);
             }
 
@@ -82,15 +83,27 @@ namespace Modules.ExternalResource.Editor
             {
                 if (ExternalResourceManager.BuildConfirm())
                 {
+                    // アセット情報ファイルを生成.
                     AssetInfoManifestGenerator.Generate(externalResourcesPath, assetManageConfig);
-                    
+
                     #if ENABLE_CRIWARE
 
+                    // CRIの最新アセットに更新.
                     CriAssetUpdater.Execute();
 
                     #endif
 
+                    // ビルド.
                     ExternalResourceManager.Build(externalResourcesPath);
+
+                    // 依存関係の検証.
+                    var validate = AssetDependencies.Validate(externalResourcesPath);
+
+                    // ExternalResourceフォルダ以外のアセットを参照している場合は依存関係を表示.
+                    if (!validate)
+                    {
+                        InvalidDependantWindow.Open(externalResourcesPath);
+                    }
                 }
             }
 

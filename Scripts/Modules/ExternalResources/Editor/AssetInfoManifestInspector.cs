@@ -15,7 +15,7 @@ namespace Modules.ExternalResource.Editor
     {
         //----- params -----
 
-        public class AsstInfoScrollView : EditorGUIFastScrollView<AssetInfo>
+        private class AsstInfoScrollView : EditorGUIFastScrollView<AssetInfo>
         {
             private HashSet<int> openedIds = null;
             private GUIStyle textAreaStyle = null;
@@ -23,11 +23,6 @@ namespace Modules.ExternalResource.Editor
             public AsstInfoScrollView()
             {
                 openedIds = new HashSet<int>();
-
-                textAreaStyle = GUI.skin.GetStyle("TextArea");
-                textAreaStyle.alignment = TextAnchor.MiddleLeft;
-                textAreaStyle.wordWrap = false;
-                textAreaStyle.stretchWidth = true;
             }
 
             public override Direction Type
@@ -37,6 +32,14 @@ namespace Modules.ExternalResource.Editor
 
             protected override void DrawContent(int index, AssetInfo content)
             {
+                if (textAreaStyle == null)
+                {
+                    textAreaStyle = GUI.skin.GetStyle("TextArea");
+                    textAreaStyle.alignment = TextAnchor.MiddleLeft;
+                    textAreaStyle.wordWrap = false;
+                    textAreaStyle.stretchWidth = true;
+                }
+
                 var opened = openedIds.Contains(index);
 
                 using (new EditorGUILayout.VerticalScope())
