@@ -8,14 +8,29 @@ namespace Extensions
 {
     public static class AESExtension
     {
-        private const string RijndaelKey = "SSAHb5DqFV241491";
+        //----- params -----
 
-        public static readonly RijndaelManaged Rijndael = CreateRijndael(RijndaelKey);
+        private const string RijndaelKey = "SSAHb5DqFV241491";
 
         private static readonly byte[] Salt = { 0xe6, 0xdc, 0xff, 0x74, 0xad, 0xad, 0x7a, 0xee, 0xc5, 0xfe, 0x50, 0xaf, 0x4d, 0x08, 0x2d, 0x3c };
 
+        //----- field -----
+
+        private static RijndaelManaged rijndael = null;
+
+        //----- property -----
+
+        public static RijndaelManaged Rijndael
+        {
+            get { return rijndael ?? (rijndael = CreateRijndael(RijndaelKey)); }
+        }
+
+        //----- method -----
+
         public static RijndaelManaged CreateRijndael(string password, bool passwordEncryption = true)
         {
+            if (string.IsNullOrEmpty(password)) { return null; }
+
             var rijndael = new RijndaelManaged();
 
             rijndael.BlockSize = 128;

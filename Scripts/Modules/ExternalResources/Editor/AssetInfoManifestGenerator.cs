@@ -48,6 +48,8 @@ namespace Modules.ExternalResource.Editor
             assetInfoManifest.SetAssetFileInfo(exportPath, progress);
 
             UnityEditorUtility.SaveAsset(assetInfoManifest);
+
+            EditorUtility.ClearProgressBar();
         }
 
         private static void ApplyAssetBundleName(AssetManageManager assetManageManager, AssetInfoManifest manifest)

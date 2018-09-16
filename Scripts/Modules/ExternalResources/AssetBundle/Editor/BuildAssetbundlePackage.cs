@@ -28,12 +28,8 @@ namespace Modules.AssetBundles.Editor
 
         //----- method -----
 
-        static StringBuilder b = null;
-
         public void Build(string[] filePaths, Action<int, int> reportProgress)
         {
-            b = new StringBuilder();
-
             var total = filePaths.Length;
 
             reportProgress(0, total);
@@ -59,8 +55,6 @@ namespace Modules.AssetBundles.Editor
             }
 
             reportProgress(progress.Count, total);
-
-            Debug.Log(b.ToString());
         }
 
         private static ManualResetEvent StartWorker(string[] paths, Progress progress)
@@ -105,11 +99,6 @@ namespace Modules.AssetBundles.Editor
         /// </summary>
         private static void CreatePackage(string filePath)
         {
-            lock (b)
-            {
-                b.AppendLine(filePath);
-            }
-
             var rijndael = AESExtension.CreateRijndael(AssetBundleManager.RijndaelKey);
 
             try

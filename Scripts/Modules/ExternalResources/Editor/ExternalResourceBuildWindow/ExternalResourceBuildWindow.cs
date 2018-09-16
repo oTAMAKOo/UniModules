@@ -1,4 +1,5 @@
 ﻿﻿﻿﻿﻿﻿
+using System;
 using UnityEngine;
 using UnityEditor;
 using Extensions;
@@ -92,29 +93,38 @@ namespace Modules.ExternalResource.Editor
 
                     #endif
 
-                    // アセット情報ファイルを生成.
-                    AssetInfoManifestGenerator.Generate(externalResourcesPath, assetManageConfig);
-
-                    // 依存関係の検証.
-                    var validate = AssetDependencies.Validate(externalResourcesPath);
-
-                    if (!validate)
+                    try
                     {
-                        var messeage = "There is an incorrect reference.\nDo you want to cancel the build?";
+                        EditorApplication.LockReloadAssemblies();
 
-                        if(!EditorUtility.DisplayDialog("InvalidDependant", messeage, "build", "cancel"))
+                        // アセット情報ファイルを生成.
+                        AssetInfoManifestGenerator.Generate(externalResourcesPath, assetManageConfig);
+
+                        // 依存関係の検証.
+                        var validate = AssetDependencies.Validate(externalResourcesPath);
+
+                        if (!validate)
                         {
-                            build = false;
+                            var messeage = "There is an incorrect reference.\nDo you want to cancel the build?";
 
-                            // ExternalResourceフォルダ以外の参照が含まれる場合は依存関係を表示.
-                            InvalidDependantWindow.Open(externalResourcesPath);
+                            if (!EditorUtility.DisplayDialog("InvalidDependant", messeage, "build", "cancel"))
+                            {
+                                build = false;
+
+                                // ExternalResourceフォルダ以外の参照が含まれる場合は依存関係を表示.
+                                InvalidDependantWindow.Open(externalResourcesPath);
+                            }
+                        }
+
+                        // ビルド.
+                        if (build)
+                        {
+                            ExternalResourceManager.Build(externalResourcesPath);
                         }
                     }
-
-                    // ビルド.
-                    if (build)
+                    finally
                     {
-                        ExternalResourceManager.Build(externalResourcesPath);
+                        EditorApplication.UnlockReloadAssemblies();
                     }
                 }
             }
