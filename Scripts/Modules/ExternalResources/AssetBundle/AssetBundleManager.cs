@@ -14,10 +14,10 @@ using Modules.Devkit;
 using Modules.ExternalResource;
 using Modules.UniRxExtension;
 
-using Debug = UnityEngine.Debug;
-
 namespace Modules.AssetBundles
 {
+    using Debug = UnityEngine.Debug;
+
     public partial class AssetBundleManager : Singleton<AssetBundleManager>
     {
         //----- params -----
