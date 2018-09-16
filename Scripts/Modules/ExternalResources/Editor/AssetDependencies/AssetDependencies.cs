@@ -19,7 +19,7 @@ namespace Modules.ExternalResource.Editor
 
             foreach (var assetInfo in allAssetInfos)
             {
-                var assetPath = PathUtility.Combine(UnityPathUtility.AssetsFolder, assetInfo.ResourcesPath);
+                var assetPath = PathUtility.Combine(externalResourcesPath, assetInfo.ResourcesPath);
 
                 var dependencies = AssetDatabase.GetDependencies(assetPath);
 

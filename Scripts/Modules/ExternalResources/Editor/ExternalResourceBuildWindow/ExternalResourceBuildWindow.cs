@@ -83,8 +83,7 @@ namespace Modules.ExternalResource.Editor
             {
                 if (ExternalResourceManager.BuildConfirm())
                 {
-                    // アセット情報ファイルを生成.
-                    AssetInfoManifestGenerator.Generate(externalResourcesPath, assetManageConfig);
+                    var build = true;
 
                     #if ENABLE_CRIWARE
 
@@ -93,16 +92,29 @@ namespace Modules.ExternalResource.Editor
 
                     #endif
 
-                    // ビルド.
-                    ExternalResourceManager.Build(externalResourcesPath);
+                    // アセット情報ファイルを生成.
+                    AssetInfoManifestGenerator.Generate(externalResourcesPath, assetManageConfig);
 
                     // 依存関係の検証.
                     var validate = AssetDependencies.Validate(externalResourcesPath);
 
-                    // ExternalResourceフォルダ以外のアセットを参照している場合は依存関係を表示.
                     if (!validate)
                     {
-                        InvalidDependantWindow.Open(externalResourcesPath);
+                        var messeage = "There is an incorrect reference.\nDo you want to cancel the build?";
+
+                        if(!EditorUtility.DisplayDialog("InvalidDependant", messeage, "build", "cancel"))
+                        {
+                            build = false;
+
+                            // ExternalResourceフォルダ以外の参照が含まれる場合は依存関係を表示.
+                            InvalidDependantWindow.Open(externalResourcesPath);
+                        }
+                    }
+
+                    // ビルド.
+                    if (build)
+                    {
+                        ExternalResourceManager.Build(externalResourcesPath);
                     }
                 }
             }

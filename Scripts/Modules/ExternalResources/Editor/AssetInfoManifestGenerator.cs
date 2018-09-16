@@ -30,6 +30,8 @@ namespace Modules.ExternalResource.Editor
 
             ApplyAssetBundleName(assetManageManager, manifest);
 
+            UnityEditorUtility.SaveAsset(manifest);
+
             AssetDatabase.RemoveUnusedAssetBundleNames();
             AssetDatabase.Refresh();
         }
