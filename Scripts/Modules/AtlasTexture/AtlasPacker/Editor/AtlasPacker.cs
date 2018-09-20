@@ -401,7 +401,16 @@ namespace Modules.Atlas
 
             if (action.HasFlag(AtlasAction.Create))
             {
-                var path = Prefs.exportPath;
+                var path = string.Empty;
+
+                if (string.IsNullOrEmpty(Prefs.exportPath) || !Directory.Exists(path))
+                {
+                    path = UnityPathUtility.AssetsFolder;
+                }
+                else
+                {
+                    path = Prefs.exportPath;
+                }
 
                 path = EditorUtility.SaveFilePanelInProject("Save As", "New Atlas.asset", "asset", "Save atlas as...", path);
 
@@ -456,6 +465,8 @@ namespace Modules.Atlas
             selectAtlas.CacheClear();
 
             FinishTextureEdit();
+
+            UnityEditorUtility.SaveAsset(selectAtlas);
         }
 
         private void OnSelectAtlas(UnityEngine.Object obj)

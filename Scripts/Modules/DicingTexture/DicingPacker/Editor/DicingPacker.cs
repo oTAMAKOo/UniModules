@@ -545,7 +545,16 @@ namespace Modules.Dicing
 
             if (target == null)
             {
-                var path = string.IsNullOrEmpty(Prefs.exportPath) ? UnityPathUtility.AssetsFolder : Prefs.exportPath;
+                var path = string.Empty;
+
+                if (string.IsNullOrEmpty(Prefs.exportPath) || !Directory.Exists(path))
+                {
+                    path = UnityPathUtility.AssetsFolder;
+                }
+                else
+                {
+                    path = Prefs.exportPath;
+                }
 
                 exportPath = EditorUtility.SaveFilePanelInProject("Save As", "New DicingTexture.asset", "asset", "Save as...", path);
             }

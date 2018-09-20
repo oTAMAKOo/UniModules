@@ -1,8 +1,11 @@
-﻿using System;
-using System.Collections.Generic;
-using Extensions;
+﻿
 using UnityEngine;
 using UnityEditor;
+using System;
+using System.Collections.Generic;
+using Extensions;
+using Extensions.Devkit;
+
 
 namespace Modules.Devkit.TextureEdit
 {
@@ -48,7 +51,7 @@ namespace Modules.Devkit.TextureEdit
 
         public Texture Texture { get { return texture; } }
 
-        public int TextureId { get { return texture == null ? -1 : texture.GetInstanceID(); } }
+        public string Guid { get { return UnityEditorUtility.GetAssetGUID(texture); } }
 
         //----- method -----
 

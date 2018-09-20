@@ -44,7 +44,7 @@ namespace Modules.Atlas
 
         //----- field -----
 
-        private Dictionary<int, EditableTexture> editableTextures = null;
+        private Dictionary<string, EditableTexture> editableTextures = null;
 
         //----- property -----
 
@@ -52,22 +52,21 @@ namespace Modules.Atlas
 
         private void StartTextureEdit(AtlasTexture atlas, List<Texture> textures)
         {
+            AssetDatabase.StartAssetEditing();
+
             if (editableTextures == null)
             {
-                editableTextures = new Dictionary<int, EditableTexture>();
+                editableTextures = new Dictionary<string, EditableTexture>();
             }
             else
             {
-                var restoreTargets = editableTextures.Values.Where(x => textures.Contains(x.Texture)).ToArray();
-
-                foreach (var target in restoreTargets)
+                foreach (var target in editableTextures.Values)
                 {
                     target.Restore();
-                    editableTextures.Remove(target.TextureId);
                 }
-            }
 
-            AssetDatabase.StartAssetEditing();
+                editableTextures.Clear();
+            }
 
             if (atlas != null)
             {
@@ -106,7 +105,7 @@ namespace Modules.Atlas
 
             var editableTexture = new EditableTexture(texture);
 
-            if (!editableTextures.ContainsKey(editableTexture.TextureId))
+            if (!editableTextures.ContainsKey(editableTexture.Guid))
             {
                 editableTexture.Editable();
 
@@ -114,7 +113,7 @@ namespace Modules.Atlas
 
 				if (restore)
                 {
-                    editableTextures.Add(editableTexture.TextureId, editableTexture);
+                    editableTextures.Add(editableTexture.Guid, editableTexture);
                 }
 			}
 		}
