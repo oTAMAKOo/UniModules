@@ -150,7 +150,7 @@ namespace Modules.Atlas
                         {
                             GUILayout.FlexibleSpace();
 
-                            if (GUILayout.Button("Save Atlas"))
+                            if (GUILayout.Button("Update"))
                             {
                                 UnityEditorUtility.SaveAsset(atlas);
                             }
