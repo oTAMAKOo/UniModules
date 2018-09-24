@@ -163,10 +163,6 @@ namespace Modules.Atlas
 
                     spriteCache.Add(name, sprite);
                 }
-                else
-                {
-                    Debug.LogFormat("Get sprite from cache. : {0}", name);
-                }
             }
 
             return sprite;
