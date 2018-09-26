@@ -2,9 +2,11 @@
 using UnityEngine;
 using System;
 using System.Collections;
+using System.Linq;
 using UniRx;
 using Extensions;
 using Modules.StateMachine;
+using Unity.Linq;
 
 namespace Modules.Animation
 {
@@ -162,6 +164,8 @@ namespace Modules.Animation
             }
 
             this.animationName = animationName;
+
+            SetSubCanvas();
 
             var hash = Animator.StringToHash(animationName);
 
@@ -416,6 +420,27 @@ namespace Modules.Animation
                 .Select(_ => func(animatorInfo.Animator));
         }
 
+        #region Canvas
+
+        private void SetSubCanvas()
+        {
+            var canvas = UnityUtility.GetComponent<Canvas>(gameObject);
+
+            if (transform is RectTransform && endActionType == EndActionType.Loop && gameObject.Ancestors().OfComponent<Canvas>().Any())
+            {
+                UnityUtility.GetOrAddComponent<Canvas>(gameObject);
+            }
+            else
+            {
+                if (canvas != null)
+                {
+                    UnityUtility.SafeDelete<Canvas>(gameObject);
+                }
+            }
+        }
+
+        #endregion
+
         #region StateMachine Event
 
         public void StateMachineEvent(StateMachineEvent stateMachineEvent)
@@ -448,6 +473,6 @@ namespace Modules.Animation
             return onAnimationEvent ?? (onAnimationEvent = new Subject<string>());
         }
 
-        #endregion        
+        #endregion
     }
 }
