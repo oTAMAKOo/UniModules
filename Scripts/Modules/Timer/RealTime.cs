@@ -2,7 +2,7 @@
 using Extensions;
 using UnityEngine;
 
-namespace Modules.RealTime
+namespace Modules.Timer
 {
     public class RealTime : SingletonMonoBehaviour<RealTime>
     {

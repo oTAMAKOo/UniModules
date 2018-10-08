@@ -6,14 +6,12 @@ using System.Linq;
 using System.IO;
 using System.Collections.Generic;
 using System.Security.Cryptography;
-using System.Text;
 using System.Threading;
 using UniRx;
 using Extensions;
 using MessagePack;
 using Modules.Devkit;
 using Modules.MessagePack;
-using Modules.UniRxExtension;
 
 namespace Modules.MasterCache
 {
@@ -27,10 +25,10 @@ namespace Modules.MasterCache
     {
         string Version { get; }
 
-        bool CheckVersion(string applicationVersion, int masterVersion);
+        bool CheckVersion(string applicationVersion, string masterVersion);
         void ClearVersion();
         IObservable<bool> Load(RijndaelManaged rijndael);
-        IObservable<bool> UpdateCache(string applicationVersion, int masterVersion, RijndaelManaged rijndael, CancellationToken cancelToken);
+        IObservable<bool> UpdateCache(string applicationVersion, string masterVersion, RijndaelManaged rijndael, CancellationToken cancelToken);
     }
 
     public static class MasterCaches
@@ -124,7 +122,7 @@ namespace Modules.MasterCache
             }
         }
 
-        public bool CheckVersion(string applicationVersion, int masterVersion)
+        public bool CheckVersion(string applicationVersion, string masterVersion)
         {
             var result = true;
 
@@ -170,12 +168,12 @@ namespace Modules.MasterCache
             return Observable.Return(result);
         }
 
-        public IObservable<bool> UpdateCache(string applicationVersion, int masterVersion, RijndaelManaged rijndael, CancellationToken cancelToken)
+        public IObservable<bool> UpdateCache(string applicationVersion, string masterVersion, RijndaelManaged rijndael, CancellationToken cancelToken)
         {
             return Observable.FromCoroutine<bool>(observer => UpdateCacheInternal(observer, applicationVersion, masterVersion, rijndael, cancelToken));
         }
 
-        private IEnumerator UpdateCacheInternal(IObserver<bool> observer, string applicationVersion, int masterVersion, RijndaelManaged rijndael, CancellationToken cancelToken)
+        private IEnumerator UpdateCacheInternal(IObserver<bool> observer, string applicationVersion, string masterVersion, RijndaelManaged rijndael, CancellationToken cancelToken)
         {
             var result = true;
 
@@ -213,7 +211,7 @@ namespace Modules.MasterCache
             observer.OnCompleted();
         }
 
-        private bool SaveCache(object[] masterData, string applicationVersion, int masterVersion, RijndaelManaged rijndael)
+        private bool SaveCache(object[] masterData, string applicationVersion, string masterVersion, RijndaelManaged rijndael)
         {
             try
             {
@@ -313,7 +311,7 @@ namespace Modules.MasterCache
             return PathUtility.Combine(installDir, fileName);
         }
 
-        private string ConvertVersionStr(string applicationVersion, int masterVersion)
+        private string ConvertVersionStr(string applicationVersion, string masterVersion)
         {
             return string.Format("{0}::{1}", applicationVersion, masterVersion);
         }

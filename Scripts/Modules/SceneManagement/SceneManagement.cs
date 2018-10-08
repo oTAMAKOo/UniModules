@@ -378,15 +378,14 @@ namespace Modules.SceneManagement
             // 外部処理待機.
             yield return Observable.FromCoroutine(() => TransitionWait()).ToYieldInstruction();
 
-            // シーン遷移終了.
-            yield return TransitionFinish(currentSceneArgument).ToYieldInstruction();
-
-            //====== End Transition ======
-
             // シーンを有効化.
             sceneInfo.Enable();
 
+            // シーン遷移完了.
             TransitionTarget = null;
+
+            // シーン遷移終了.
+            yield return TransitionFinish(currentSceneArgument).ToYieldInstruction();
 
             //====== Scene Enter ======
 
