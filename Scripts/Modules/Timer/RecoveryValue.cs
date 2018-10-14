@@ -38,9 +38,9 @@ namespace Modules.Timer
         /// <summary> 回復量 </summary>
         public double RecoveryAmount { get; private set; }
         /// <summary> 最後に回復した時間 </summary>
-        public DateTime LastRecoveryTime { get; private set; }
+        public DateTime? LastRecoveryTime { get; private set; }
         /// <summary> 全回復時間 </summary>
-        public DateTime FullRecoveryTime { get; private set; }
+        public DateTime? FullRecoveryTime { get; private set; }
         /// <summary> 最大値 </summary>
         public double Max { get; private set; }
         /// <summary> 最大か </summary>
@@ -56,7 +56,7 @@ namespace Modules.Timer
         /// <param name="recoveryAmount">回復量</param>
         /// <param name="lastRecoveryTime">最後に回復した時間</param>
         /// <param name="fullRecoveryTime">全回復時間</param>
-        public RecoveryValue(float max, float recoveryInterval, float recoveryAmount, DateTime lastRecoveryTime, DateTime fullRecoveryTime)
+        public RecoveryValue(float max, float recoveryInterval, float recoveryAmount, DateTime? lastRecoveryTime, DateTime? fullRecoveryTime)
         {
             Max = max;
             RecoveryInterval = recoveryInterval;
@@ -64,11 +64,18 @@ namespace Modules.Timer
             LastRecoveryTime = lastRecoveryTime;
             FullRecoveryTime = fullRecoveryTime;
 
-            // 回復に掛かる時間.
-            var recoveryTimeSpan = FullRecoveryTime - LastRecoveryTime;
+            if (FullRecoveryTime.HasValue && LastRecoveryTime.HasValue)
+            {
+                // 回復に掛かる時間.
+                var recoveryTimeSpan = FullRecoveryTime.Value - LastRecoveryTime.Value;
 
-            // 回復に掛かる時間から現在値を算出.
-            Current = Max - recoveryTimeSpan.TotalSeconds / RecoveryInterval * RecoveryAmount;
+                // 回復に掛かる時間から現在値を算出.
+                Current = Max - recoveryTimeSpan.TotalSeconds / RecoveryInterval * RecoveryAmount;
+            }
+            else
+            {
+                Current = Max;
+            }
         }
 
         /// <summary> 次に回復する時間までの残り時間. </summary>
@@ -98,7 +105,13 @@ namespace Modules.Timer
                 return;
             }
 
-            var diff = currentTime - LastRecoveryTime;
+            if (!LastRecoveryTime.HasValue)
+            {
+                Current = Max;
+                return;
+            }
+
+            var diff = currentTime - LastRecoveryTime.Value;
 
             var totalSeconds = diff.TotalSeconds;
 
@@ -112,7 +125,7 @@ namespace Modules.Timer
 
                 totalSeconds -= RecoveryInterval;
 
-                LastRecoveryTime = LastRecoveryTime.Add(TimeSpan.FromSeconds(RecoveryInterval));
+                LastRecoveryTime = LastRecoveryTime.Value.Add(TimeSpan.FromSeconds(RecoveryInterval));
 
                 Current += RecoveryAmount;           
             }
