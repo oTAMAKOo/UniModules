@@ -169,9 +169,15 @@ namespace Modules.ExternalResource
         /// </summary>
         /// <param name="groupName"></param>
         /// <returns></returns>
-        public IEnumerable<AssetInfo> GetAssetInfo(string groupName = null)
+        public IEnumerable<AssetInfo> GetGroupAssetInfos(string groupName = null)
         {
             return assetInfoManifest.GetAssetInfos(groupName);
+        }
+
+        /// <summary> アセット情報取得 </summary>
+        public AssetInfo GetAssetInfo(string resourcesPath)
+        {
+            return assetInfosByResourcePath.GetValueOrDefault(resourcesPath);
         }
 
         /// <summary>
@@ -295,7 +301,7 @@ namespace Modules.ExternalResource
             #endif
 
             {
-                var assetInfo = FindAssetInfo(resourcesPath);
+                var assetInfo = GetAssetInfo(resourcesPath);
 
                 if (assetInfo == null)
                 {
@@ -350,26 +356,6 @@ namespace Modules.ExternalResource
             }
         }
 
-        /// <summary> アセットが存在するか </summary>
-        public static bool IsAssetExsist(string externalResourcesPath)
-        {
-            return Instance.IsAssetExsistInternal(externalResourcesPath);
-        }
-
-        private bool IsAssetExsistInternal(string resourcesPath)
-        {
-            if (assetInfoManifest == null){ return false; }
-           
-            var assetInfo = FindAssetInfo(resourcesPath);
-
-            return assetInfo != null;
-        }
-
-        private AssetInfo FindAssetInfo(string resourcesPath)
-        {
-            return assetInfosByResourcePath.GetValueOrDefault(resourcesPath);
-        }
-
         #region AssetBundle
 
         /// <summary> Assetbundleを読み込み (非同期) </summary>
@@ -398,7 +384,7 @@ namespace Modules.ExternalResource
                 yield break;
             }
 
-            var assetInfo = FindAssetInfo(resourcesPath);
+            var assetInfo = GetAssetInfo(resourcesPath);
 
             if (assetInfo == null)
             {
@@ -512,7 +498,7 @@ namespace Modules.ExternalResource
                 Debug.LogError("AssetInfoManifest is null.");
             }
 
-            var assetInfo = FindAssetInfo(resourcesPath);
+            var assetInfo = GetAssetInfo(resourcesPath);
 
             if (assetInfo == null)
             {
@@ -559,7 +545,7 @@ namespace Modules.ExternalResource
 
                 if (!CheckAssetVersion(resourcesPath, filePath))
                 {
-                    var assetInfo = FindAssetInfo(resourcesPath);
+                    var assetInfo = GetAssetInfo(resourcesPath);
                     var assetPath = PathUtility.Combine(resourceDir, resourcesPath);
 
                     var sw = System.Diagnostics.Stopwatch.StartNew();
@@ -612,7 +598,7 @@ namespace Modules.ExternalResource
 
                 if (!CheckAssetVersion(resourcesPath, filePath))
                 {
-                    var assetInfo = FindAssetInfo(resourcesPath);
+                    var assetInfo = GetAssetInfo(resourcesPath);
                     var assetPath = PathUtility.Combine(resourceDir, resourcesPath);
 
                     var sw = System.Diagnostics.Stopwatch.StartNew();

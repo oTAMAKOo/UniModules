@@ -78,7 +78,7 @@ namespace Modules.ExternalResource
             #endif
 
             {
-                var assetInfo = FindAssetInfo(resourcesPath);
+                var assetInfo = GetAssetInfo(resourcesPath);
 
                 if (assetInfo != null && assetInfo.IsAssetBundle)
                 {
@@ -134,7 +134,7 @@ namespace Modules.ExternalResource
             // バージョン情報が存在しない.
             if (versions.IsEmpty()) { return false; }
 
-            var assetInfo = FindAssetInfo(resourcesPath);
+            var assetInfo = GetAssetInfo(resourcesPath);
 
             // アセット管理情報内に存在しないので最新扱い.
             if (assetInfo == null) { return true; }
@@ -183,7 +183,7 @@ namespace Modules.ExternalResource
 
                 var allAssetInfos = assetInfoManifest.GetAssetInfos();
 
-                var assetInfo = FindAssetInfo(resourcesPath);
+                var assetInfo = GetAssetInfo(resourcesPath);
 
                 if (assetInfo == null)
                 {
