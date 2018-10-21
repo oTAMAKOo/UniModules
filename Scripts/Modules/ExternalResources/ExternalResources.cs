@@ -374,6 +374,8 @@ namespace Modules.ExternalResource
             {
                 var exception = new Exception("AssetInfoManifest is null.");
 
+                Debug.LogException(exception);
+
                 if (onError != null)
                 {
                     onError.OnNext(exception);
@@ -389,6 +391,8 @@ namespace Modules.ExternalResource
             if (assetInfo == null)
             {
                 var exception = new Exception(string.Format("AssetInfo not found.\n{0}", resourcesPath));
+
+                Debug.LogException(exception);
 
                 if (onError != null)
                 {
@@ -413,6 +417,18 @@ namespace Modules.ExternalResource
                 sw = System.Diagnostics.Stopwatch.StartNew();
 
                 yield return downloadYield;
+
+                if (downloadYield.HasError)
+                {
+                    Debug.LogException(downloadYield.Error);
+
+                    if (onError != null)
+                    {
+                        onError.OnNext(downloadYield.Error);
+                    }
+
+                    observer.OnError(downloadYield.Error);
+                }
 
                 sw.Stop();
 

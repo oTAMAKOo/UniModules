@@ -38,6 +38,11 @@ namespace Modules.UI.Element
             component.SetLongPressDuration(duration);
         }
 
+        public IDisposable OnClick(Action action)
+        {
+            return component.OnClickAsObservable().Subscribe(_ => action()).AddTo(this);
+        }
+
         public IDisposable OnPress(Action action)
         {
             return component.OnPressAsObservable().Subscribe(_ => action()).AddTo(this);

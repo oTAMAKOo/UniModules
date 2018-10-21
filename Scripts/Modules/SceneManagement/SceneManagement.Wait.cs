@@ -44,8 +44,6 @@ namespace Modules.SceneManagement
                 }
 
                 GC.SuppressFinalize(this);
-
-                Debug.Log("Dispose");
             }
 
             public IObservable<Unit> OnDisposeAsObservable()

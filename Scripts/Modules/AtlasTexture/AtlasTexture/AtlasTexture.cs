@@ -31,7 +31,7 @@ namespace Modules.Atlas
         [SerializeField, HideInInspector]
         private bool forceSquare = true;
 
-        private ObjectCache<Sprite> spriteCache = null;
+        private ObjectCache<Sprite> spriteCache = new ObjectCache<Sprite>();
 
         //----- property -----
 

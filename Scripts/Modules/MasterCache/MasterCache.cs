@@ -63,7 +63,7 @@ namespace Modules.MasterCache
 
         //----- field -----
 
-        private Dictionary<string, T> cache = new Dictionary<string, T>();
+        private Dictionary<string, T> masters = new Dictionary<string, T>();
         private Prefs versionPrefs = new Prefs();
 
         private static TInstance instance = null;
@@ -93,7 +93,7 @@ namespace Modules.MasterCache
 
         public void SetMaster(T[] master)
         {
-            cache.Clear();
+            masters.Clear();
 
             if (master == null) { return; }
 
@@ -109,7 +109,7 @@ namespace Modules.MasterCache
 
             var key = GetMasterKey(master);
 
-            if (cache.ContainsKey(key))
+            if (masters.ContainsKey(key))
             {
                 var message = "MasterCache register error!\nRegistered keys can not be registered.";
                 var typeName = master.GetType().FullName;
@@ -118,7 +118,7 @@ namespace Modules.MasterCache
             }
             else
             {
-                cache.Add(key, master);
+                masters.Add(key, master);
             }
         }
 
@@ -150,7 +150,7 @@ namespace Modules.MasterCache
             }
 
             versionPrefs.version = string.Empty;
-            cache.Clear();
+            masters.Clear();
         }
 
         public IObservable<bool> Load(RijndaelManaged rijndael)
@@ -235,7 +235,7 @@ namespace Modules.MasterCache
 
                 #endif
 
-                var cacheData = new TCache() { values = cache.Values.ToArray() };
+                var cacheData = new TCache() { values = masters.Values.ToArray() };
 
                 var data = LZ4MessagePackSerializer.Serialize(cacheData, UnityContractResolver.Instance);
                 var encrypt = data.Encrypt(rijndael);
@@ -318,12 +318,12 @@ namespace Modules.MasterCache
 
         public IEnumerable<T> GetAllMasters()
         {
-            return cache.Values;
+            return masters.Values;
         }
 
         public T GetMaster(string key)
         {
-            return cache.GetValueOrDefault(key);
+            return masters.GetValueOrDefault(key);
         }
 
         protected virtual void OnError()
