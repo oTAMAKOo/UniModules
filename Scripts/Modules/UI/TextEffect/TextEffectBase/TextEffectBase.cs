@@ -101,8 +101,6 @@ namespace Modules.UI.TextEffect
                 reference[material].Add(this);
 
                 target.material = material;
-
-                Debug.LogFormat("Add Material : cache count = {0}", cache.Count);
             }
         }
 
@@ -127,8 +125,6 @@ namespace Modules.UI.TextEffect
                     cache.Remove(item.Key);
 
                     UnityUtility.SafeDelete(material);
-
-                    Debug.LogFormat("Release Material : cache count = {0}", cache.Count);
                 }
             }
         }
