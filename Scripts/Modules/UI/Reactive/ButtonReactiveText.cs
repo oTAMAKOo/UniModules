@@ -91,12 +91,12 @@ namespace Modules.UI.Reactive
             {
                 if (uiText.Shadow != null)
                 {
-                    uiText.Shadow.effectColor = interactable ? enableShadowColor : disableShadowColor;
+                    uiText.Shadow.SetColor(interactable ? enableShadowColor : disableShadowColor);
                 }
 
-                if (uiText.DropShadow != null)
+                if (uiText.RichShadow != null)
                 {
-                    uiText.DropShadow.effectColor = interactable ? enableShadowColor : disableShadowColor;
+                    uiText.RichShadow.effectColor = interactable ? enableShadowColor : disableShadowColor;
                 }
             }
 
@@ -104,7 +104,7 @@ namespace Modules.UI.Reactive
             {
                 if (uiText.Outline != null)
                 {
-                    uiText.Outline.effectColor = interactable ? enableOutlineColor : disableOutlineColor;
+                    uiText.Outline.SetColor(interactable ? enableOutlineColor : disableOutlineColor);
                 }
 
                 if (uiText.RichOutline != null)

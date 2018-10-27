@@ -32,24 +32,24 @@ namespace Modules.ObjectCache
 
         //----- method -----
 
-        public void Add(string assetName, T asset)
+        public void Add(string key, T asset)
         {
             if (cache == null)
             {
                 cache = new Dictionary<string, T>();
             }
 
-            if (!cache.ContainsKey(assetName))
+            if (!cache.ContainsKey(key))
             {
-                cache.Add(assetName, asset);
+                cache.Add(key, asset);
             }
         }
 
-        public void Remove(string assetName)
+        public void Remove(string key)
         {
-            if (!cache.ContainsKey(assetName))
+            if (!cache.ContainsKey(key))
             {
-                cache.Remove(assetName);
+                cache.Remove(key);
             }
 
             if (cache.IsEmpty())
@@ -66,11 +66,11 @@ namespace Modules.ObjectCache
             cache = null;
         }
 
-        public T Get(string assetName)
+        public T Get(string key)
         {
             if (cache == null) { return null; }
 
-            return cache.GetValueOrDefault(assetName);
+            return cache.GetValueOrDefault(key);
         }
 
         public void AddReference()

@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using UniRx;
 using Extensions;
 using Extensions.Serialize;
+using Modules.UI.TextEffect;
 
 namespace Modules.UI.Element
 {
@@ -48,10 +49,11 @@ namespace Modules.UI.Element
         [SerializeField, HideInInspector]
         private IntNullable selection = new IntNullable(null);
 
-        private Shadow shadow = null;
-        private DropShadow dropShadow = null;
-        private Outline outline = null;
-        private RichOutline richOutline = null;
+        private TextShadow shadow = null;
+        private TextOutline outline = null;
+
+        private RichTextShadow richShadow = null;
+        private RichTextOutline richOutline = null;
 
         //----- property -----
 
@@ -70,13 +72,25 @@ namespace Modules.UI.Element
             get { return selection.HasValue ? ColorInfos.FirstOrDefault(x => x.Type == selection.Value) : null; }
         }
 
-        public Shadow Shadow { get { return shadow ?? (shadow = UnityUtility.GetComponent<Shadow>(gameObject)); } }
+        public TextShadow Shadow
+        {
+            get { return shadow ?? (shadow = UnityUtility.GetComponent<TextShadow>(gameObject)); }
+        }
 
-        public DropShadow DropShadow { get { return dropShadow ?? (dropShadow = UnityUtility.GetComponent<DropShadow>(gameObject)); } }
+        public TextOutline Outline
+        {
+            get { return outline ?? (outline = UnityUtility.GetComponent<TextOutline>(gameObject)); }
+        }
 
-        public Outline Outline { get { return outline ?? (outline = UnityUtility.GetComponent<Outline>(gameObject)); } }
+        public RichTextShadow RichShadow
+        {
+            get { return richShadow ?? (richShadow = UnityUtility.GetComponent<RichTextShadow>(gameObject)); }
+        }
 
-        public RichOutline RichOutline { get { return richOutline ?? (richOutline = UnityUtility.GetComponent<RichOutline>(gameObject)); } }
+        public RichTextOutline RichOutline
+        {
+            get { return richOutline ?? (richOutline = UnityUtility.GetComponent<RichTextOutline>(gameObject)); }
+        }
 
         //----- method -----
 
@@ -111,19 +125,19 @@ namespace Modules.UI.Element
 
                         if (info.ShadowColor.HasValue)
                         {
-                            Shadow.effectColor = info.ShadowColor.Value;
+                            Shadow.SetColor(info.ShadowColor.Value);
                         }
                     }
 
                     //====== Drop Shadow ======
 
-                    if (DropShadow != null)
+                    if (RichShadow != null)
                     {
-                        DropShadow.enabled = info.ShadowColor.HasValue;
+                        RichShadow.enabled = info.ShadowColor.HasValue;
 
                         if (info.ShadowColor.HasValue)
                         {
-                            DropShadow.effectColor = info.ShadowColor.Value;
+                            RichShadow.effectColor = info.ShadowColor.Value;
                         }
                     }
 
@@ -135,7 +149,7 @@ namespace Modules.UI.Element
 
                         if (info.OutlineColor.HasValue)
                         {
-                            Outline.effectColor = info.OutlineColor.Value;
+                            Outline.SetColor(info.OutlineColor.Value);
                         }
                     }
 

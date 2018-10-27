@@ -1,22 +1,57 @@
-﻿﻿
+﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿
 using UnityEngine;
 using UnityEngine.UI;
+using System;
 using System.Collections.Generic;
+using System.Linq;
+using Extensions;
+using Extensions.Serialize;
 
-namespace Modules.UI
+namespace Modules.UI.TextEffect
 {
-    public class RichOutline : BaseMeshEffect
+    public class RichTextShadow : BaseMeshEffect
     {
         //----- params -----
 
+        public enum Placement
+        {
+            Simple,
+            Custom,
+        }
+
+        [Flags]
+        public enum Direction
+        {
+            Top     =  1 << 0,
+            Right   =  1 << 1,
+            Bottom  =  1 << 2,
+            Left    =  1 << 3,
+        }
+
+        [Serializable]
+        public class Info
+        {
+            public IntNullable direction = new IntNullable(null);
+            public Vector2 distance = Vector2.zero;
+        }
+
         //----- field -----
+
+        // Editorからリフレクションで値を設定するので警告を抑制.
+
+        #pragma warning disable CS0414
+
+        [SerializeField]
+        private Placement placement = Placement.Simple;
+        [SerializeField]
+        private Direction direction = 0;
+
+        #pragma warning restore CS0414
 
         [SerializeField]
         private Color color = new Color(0f, 0f, 0f, 0.5f);
         [SerializeField]
-        private Vector2 distance = Vector2.zero;
-        [SerializeField]
-        private int copyCount = 4;
+        private Info[] infos = new Info[0];
         [SerializeField]
         private bool useGraphicAlpha = true;
 
@@ -26,12 +61,6 @@ namespace Modules.UI
         {
             get { return color; }
             set { color = value; }
-        }
-
-        public Vector2 effectDistance
-        {
-            get { return distance; }
-            set { distance = value; }
         }
 
         //----- method -----
@@ -54,14 +83,11 @@ namespace Modules.UI
             var start = 0;
             var end = verts.Count;
 
-            for (var n = 0; n < copyCount; ++n)
+            foreach (var info in infos)
             {
-                var rad = 2.0f * Mathf.PI * n / copyCount;
+                if(info == null) { continue; }
 
-                var x = effectDistance.x * Mathf.Cos(rad);
-                var y = effectDistance.y * Mathf.Sin(rad);
-
-                ApplyShadow(verts, start, end, x, y);
+                ApplyShadow(verts, start, end, info.distance.x, info.distance.y);
 
                 start = end;
                 end = verts.Count;

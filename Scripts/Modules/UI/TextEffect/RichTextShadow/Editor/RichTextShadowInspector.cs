@@ -8,16 +8,16 @@ using System.Collections.Generic;
 using Extensions;
 using Extensions.Devkit;
 
-namespace Modules.UI
+namespace Modules.UI.TextEffect
 {
-    [CustomEditor(typeof(DropShadow))]
-    public class DropShadowInspector : UnityEditor.Editor
+    [CustomEditor(typeof(RichTextShadow))]
+    public class RichTextShadowInspector : UnityEditor.Editor
     {
         //----- params -----
 
         //----- field -----
 
-        private DropShadow instance = null;
+        private RichTextShadow instance = null;
 
         //----- property -----
 
@@ -25,7 +25,7 @@ namespace Modules.UI
 
         public override void OnInspectorGUI()
         {
-            instance = target as DropShadow;
+            instance = target as RichTextShadow;
 
             serializedObject.Update();
 
@@ -36,40 +36,40 @@ namespace Modules.UI
         {
             GUILayout.Space(2f);
 
-            var placement = Reflection.GetPrivateField<DropShadow, DropShadow.Placement>(instance, "placement");
+            var placement = Reflection.GetPrivateField<RichTextShadow, RichTextShadow.Placement>(instance, "placement");
 
             EditorGUI.BeginChangeCheck();
 
-            placement = (DropShadow.Placement)EditorGUILayout.EnumPopup("Placement", placement);
+            placement = (RichTextShadow.Placement)EditorGUILayout.EnumPopup("Placement", placement);
 
             if (EditorGUI.EndChangeCheck())
             {
                 SetValue("placement", placement);
-                SetValue("direction", (DropShadow.Direction)0);
-                SetValue("infos", new DropShadow.Info[0]);
+                SetValue("direction", (RichTextShadow.Direction)0);
+                SetValue("infos", new RichTextShadow.Info[0]);
             }
 
             switch (placement)
             {
-                case DropShadow.Placement.Simple:
+                case RichTextShadow.Placement.Simple:
                     {
-                        var direction = Reflection.GetPrivateField<DropShadow, DropShadow.Direction>(instance, "direction");
+                        var direction = Reflection.GetPrivateField<RichTextShadow, RichTextShadow.Direction>(instance, "direction");
 
                         EditorGUI.BeginChangeCheck();
 
-                        direction = (DropShadow.Direction)EditorGUILayout.EnumFlagsField("Direction", direction);
+                        direction = (RichTextShadow.Direction)EditorGUILayout.EnumFlagsField("Direction", direction);
 
                         if (EditorGUI.EndChangeCheck())
                         {
                             SetValue("direction", direction);
-                            SetValue("infos", new DropShadow.Info[0]);
+                            SetValue("infos", new RichTextShadow.Info[0]);
                         }
 
                         if (direction != 0)
                         {
-                            if (EditorLayoutTools.DrawHeader("Distance", "DropShadowInspector-Distance"))
+                            if (EditorLayoutTools.DrawHeader("Distance", "RichTextShadowInspector-Distance"))
                             {
-                                var infos = Reflection.GetPrivateField<DropShadow, DropShadow.Info[]>(instance, "infos");
+                                var infos = Reflection.GetPrivateField<RichTextShadow, RichTextShadow.Info[]>(instance, "infos");
 
                                 using (new ContentsScope())
                                 {
@@ -77,34 +77,34 @@ namespace Modules.UI
 
                                     EditorGUI.BeginChangeCheck();
 
-                                    if ((direction & DropShadow.Direction.Top) != 0)
+                                    if ((direction & RichTextShadow.Direction.Top) != 0)
                                     {
-                                        var label = DropShadow.Direction.Top.ToString();
-                                        var index = GetIndex(DropShadow.Direction.Top, ref list);
+                                        var label = RichTextShadow.Direction.Top.ToString();
+                                        var index = GetIndex(RichTextShadow.Direction.Top, ref list);
 
                                         list[index].distance.y = EditorGUILayout.FloatField(label, list[index].distance.y);
                                     }
 
-                                    if ((direction & DropShadow.Direction.Right) != 0)
+                                    if ((direction & RichTextShadow.Direction.Right) != 0)
                                     {
-                                        var label = DropShadow.Direction.Right.ToString();
-                                        var index = GetIndex(DropShadow.Direction.Right, ref list);
+                                        var label = RichTextShadow.Direction.Right.ToString();
+                                        var index = GetIndex(RichTextShadow.Direction.Right, ref list);
 
                                         list[index].distance.x = EditorGUILayout.FloatField(label, list[index].distance.x);
                                     }
 
-                                    if ((direction & DropShadow.Direction.Bottom) != 0)
+                                    if ((direction & RichTextShadow.Direction.Bottom) != 0)
                                     {
-                                        var label = DropShadow.Direction.Bottom.ToString();
-                                        var index = GetIndex(DropShadow.Direction.Bottom, ref list);
+                                        var label = RichTextShadow.Direction.Bottom.ToString();
+                                        var index = GetIndex(RichTextShadow.Direction.Bottom, ref list);
 
                                         list[index].distance.y = EditorGUILayout.FloatField(label, list[index].distance.y * -1) * -1;
                                     }
 
-                                    if ((direction & DropShadow.Direction.Left) != 0)
+                                    if ((direction & RichTextShadow.Direction.Left) != 0)
                                     {
-                                        var label = DropShadow.Direction.Left.ToString();
-                                        var index = GetIndex(DropShadow.Direction.Left, ref list);
+                                        var label = RichTextShadow.Direction.Left.ToString();
+                                        var index = GetIndex(RichTextShadow.Direction.Left, ref list);
 
                                         list[index].distance.x = EditorGUILayout.FloatField(label, list[index].distance.x * -1) * -1;
                                     }
@@ -119,11 +119,11 @@ namespace Modules.UI
                     }
                     break;
 
-                case DropShadow.Placement.Custom:
+                case RichTextShadow.Placement.Custom:
                     {
-                        if (EditorLayoutTools.DrawHeader("Distance", "DropShadowInspector-Distance"))
+                        if (EditorLayoutTools.DrawHeader("Distance", "RichShadowInspector-Distance"))
                         {
-                            var infos = Reflection.GetPrivateField<DropShadow, DropShadow.Info[]>(instance, "infos");
+                            var infos = Reflection.GetPrivateField<RichTextShadow, RichTextShadow.Info[]>(instance, "infos");
                             var list = infos.ToList();
 
                             using (new ContentsScope())
@@ -138,7 +138,7 @@ namespace Modules.UI
                                     {
                                         while (list.Count < size)
                                         {
-                                            list.Add(new DropShadow.Info());
+                                            list.Add(new RichTextShadow.Info());
                                         }
                                     }
                                     else
@@ -181,7 +181,7 @@ namespace Modules.UI
                     break;
             }
             
-            var color = Reflection.GetPrivateField<DropShadow, Color>(instance, "color");
+            var color = Reflection.GetPrivateField<RichTextShadow, Color>(instance, "color");
 
             EditorGUI.BeginChangeCheck();
 
@@ -192,7 +192,7 @@ namespace Modules.UI
                 SetValue("color", color);
             }
 
-            var useGraphicAlpha = Reflection.GetPrivateField<DropShadow, bool>(instance, "useGraphicAlpha");
+            var useGraphicAlpha = Reflection.GetPrivateField<RichTextShadow, bool>(instance, "useGraphicAlpha");
 
             EditorGUI.BeginChangeCheck();
 
@@ -206,13 +206,13 @@ namespace Modules.UI
             GUILayout.Space(2f);
         }
 
-        private int GetIndex(DropShadow.Direction flag, ref List<DropShadow.Info> infos)
+        private int GetIndex(RichTextShadow.Direction flag, ref List<RichTextShadow.Info> infos)
         {
             var index = infos.IndexOf(x => x.direction.HasValue && x.direction.Value == (int)flag);
 
             if (index == -1)
             {
-                var info = new DropShadow.Info()
+                var info = new RichTextShadow.Info()
                 {
                     direction = (int)flag,
                     distance = Vector2.zero,
@@ -227,7 +227,7 @@ namespace Modules.UI
 
         private void SetValue<TValue>(string fieldName, TValue value)
         {
-            UnityEditorUtility.RegisterUndo("DropShadowInspector Undo", instance);
+            UnityEditorUtility.RegisterUndo("RichTextShadowInspector Undo", instance);
             Reflection.SetPrivateField(instance, fieldName, value);
             Reflection.InvokePrivateMethod(instance, "OnValidate");
         }

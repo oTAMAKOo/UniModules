@@ -7,16 +7,16 @@ using System.Collections.Generic;
 using Extensions;
 using Extensions.Devkit;
 
-namespace Modules.UI
+namespace Modules.UI.TextEffect
 {
-    [CustomEditor(typeof(RichOutline))]
-    public class RichOutlineInspector : UnityEditor.Editor
+    [CustomEditor(typeof(RichTextOutline))]
+    public class RichTextOutlineInspector : UnityEditor.Editor
     {
         //----- params -----
 
         //----- field -----
 
-        private RichOutline instance = null;
+        private RichTextOutline instance = null;
 
         //----- property -----
 
@@ -24,14 +24,14 @@ namespace Modules.UI
 
         public override void OnInspectorGUI()
         {
-            instance = target as RichOutline;
+            instance = target as RichTextOutline;
 
             DrawInspector();
         }
 
         private void DrawInspector()
         {
-            var copyCount = Reflection.GetPrivateField<RichOutline, int>(instance, "copyCount");
+            var copyCount = Reflection.GetPrivateField<RichTextOutline, int>(instance, "copyCount");
 
             EditorGUI.BeginChangeCheck();
 
@@ -42,7 +42,7 @@ namespace Modules.UI
                 SetValue("copyCount", copyCount);
             }
 
-            var color = Reflection.GetPrivateField<RichOutline, Color>(instance, "color");
+            var color = Reflection.GetPrivateField<RichTextOutline, Color>(instance, "color");
 
             EditorGUI.BeginChangeCheck();
 
@@ -53,7 +53,7 @@ namespace Modules.UI
                 SetValue("color", color);
             }
 
-            var distance = Reflection.GetPrivateField<RichOutline, Vector2>(instance, "distance");
+            var distance = Reflection.GetPrivateField<RichTextOutline, Vector2>(instance, "distance");
 
             EditorGUI.BeginChangeCheck();
 
@@ -64,7 +64,7 @@ namespace Modules.UI
                 SetValue("distance", distance);
             }
 
-            var useGraphicAlpha = Reflection.GetPrivateField<RichOutline, bool>(instance, "useGraphicAlpha");
+            var useGraphicAlpha = Reflection.GetPrivateField<RichTextOutline, bool>(instance, "useGraphicAlpha");
 
             EditorGUI.BeginChangeCheck();
 
@@ -78,7 +78,7 @@ namespace Modules.UI
 
         private void SetValue<TValue>(string fieldName, TValue value)
         {
-            UnityEditorUtility.RegisterUndo("RichOutlineInspector Undo", instance);
+            UnityEditorUtility.RegisterUndo("RichTextOutlineInspector Undo", instance);
             Reflection.SetPrivateField(instance, fieldName, value);
             Reflection.InvokePrivateMethod(instance, "OnValidate");
         }

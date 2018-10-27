@@ -82,7 +82,10 @@ namespace Modules.GameText.Components
 
         private void OnUndoRedo()
         {
-            instance.ImportText();
+            if (instance != null)
+            {
+                instance.ImportText();
+            }
         }
     }
 }
