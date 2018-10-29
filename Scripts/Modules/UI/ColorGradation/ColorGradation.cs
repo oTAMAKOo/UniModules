@@ -12,7 +12,7 @@ using UnityEngine.UI;
 namespace Modules.UI
 {
     [RequireComponent(typeof(Graphic))]
-    public class UIColorGradation : BaseMeshEffect
+    public class ColorGradation : BaseMeshEffect
     {
         public enum DIRECTION
         {

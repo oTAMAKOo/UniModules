@@ -99,8 +99,13 @@ namespace Modules.ExternalResource
         {
             var filePath = assetBundleManager.BuildFilePath(assetBundleName);
 
-            // ファイルがない.
-            if (!File.Exists(filePath)) { return false; }
+            // ※ シュミレート時はpackageファイルをダウンロードしていないので常にファイルが存在しない.
+
+            if (!isSimulate)
+            {
+                // ファイルがない.
+                if (!File.Exists(filePath)) { return false; }
+            }
 
             // バージョン情報が存在しない.
             if (versions.IsEmpty()) { return false; }
@@ -180,9 +185,7 @@ namespace Modules.ExternalResource
             try
             {
                 // ※ 古いバージョン情報を破棄して最新のバージョン情報を追加.
-
-                var allAssetInfos = assetInfoManifest.GetAssetInfos();
-
+                
                 var assetInfo = GetAssetInfo(resourcesPath);
 
                 if (assetInfo == null)
@@ -194,6 +197,8 @@ namespace Modules.ExternalResource
                 // アセットバンドル.
                 if (assetInfo.IsAssetBundle)
                 {
+                    var allAssetInfos = assetInfoManifest.GetAssetInfos();
+
                     // 同じアセットバンドル内のバージョンも更新.
                     var assetBundle = allAssetInfos
                         .Where(x => x.IsAssetBundle)

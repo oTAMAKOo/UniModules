@@ -143,12 +143,8 @@ namespace Modules.GameText.Components
 
                     scrollPos = GUILayout.BeginScrollView(scrollPos);
                     {
-                        int index = 0;
-
                         foreach (var info in infos)
                         {
-                            ++index;
-
                             GUILayout.Space(-1f);
 
                             bool highlight = setter.Identifier.ToNullable() == info.Id;
@@ -237,7 +233,7 @@ namespace Modules.GameText.Components
                     list.Add(item);
                 }
             }
-
+            
             return list.ToArray();
         }
     }

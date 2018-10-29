@@ -52,18 +52,26 @@ namespace Modules.Window
             UpdateTouchBloc();
         }
 
-        public IObservable<Unit> Open(Window popupWindow, bool isGlobal = false, bool inputProtect = true)
+        /// <summary> ポップアップを開く </summary>
+        public static IObservable<Unit> Open(Window popupWindow, bool isGlobal = false, bool inputProtect = true)
         {
+            if (popupWindow == null)
+            {
+                throw new ArgumentException("Invalid popupWindow");
+            }
+
+            UnityUtility.SetActive(popupWindow, false);
+
             if (isGlobal)
             {
-                RegisterGlobal(popupWindow);
+                Instance.RegisterGlobal(popupWindow);
             }
             else
             {
-                RegisterScene(popupWindow);
+                Instance.RegisterScene(popupWindow);
             }
 
-            UpdateTouchBloc();
+            Instance.UpdateTouchBloc();
 
             return popupWindow.Open(inputProtect);
         }
