@@ -18,13 +18,15 @@ namespace Modules.UI.TextEffect
 
         //----- field -----
 
+        private TextShadow instance = null;
+
         //----- property -----
 
         //----- method -----
 
         public override void OnInspectorGUI()
         {
-            var instance = target as TextShadow;
+            instance = target as TextShadow;
 
             var color = Reflection.GetPrivateField<TextShadow, Color>(instance, "color");
 
@@ -57,6 +59,58 @@ namespace Modules.UI.TextEffect
             if (EditorGUI.EndChangeCheck())
             {
                 SetValue(instance, "offsetY", offsetY);
+            }
+
+            DrawMaterialSelector(instance);
+        }
+
+        protected override void DrawSelectorContents(TextEffectBase[] targets)
+        {
+            foreach (var target in targets)
+            {
+                var textShadow = target as TextShadow;
+
+                if (textShadow == null) { continue; }
+
+                using (new ContentsScope())
+                {
+                    using (new EditorGUILayout.HorizontalScope(GUILayout.Height(18f)))
+                    {
+                        GUILayout.Space(5f);
+
+                        using (new DisableScope(true))
+                        {
+                            EditorGUILayout.ColorField(textShadow.Color, GUILayout.Width(50f));
+                        }
+
+                        GUILayout.Space(2f);
+
+                        var colorText = ColorUtility.ToHtmlStringRGBA(textShadow.Color);
+                        EditorGUILayout.SelectableLabel(colorText, new GUIStyle("TextArea"), GUILayout.Width(95f), GUILayout.Height(18f));
+
+                        GUILayout.Space(2f);
+
+                        EditorGUILayout.FloatField(textShadow.Offset.x, GUILayout.Width(50f), GUILayout.Height(18f));
+
+                        GUILayout.Space(2f);
+
+                        EditorGUILayout.FloatField(textShadow.Offset.y, GUILayout.Width(50f), GUILayout.Height(18f));
+
+                        GUILayout.FlexibleSpace();
+
+                        if (instance.Color != textShadow.Color || instance.Offset != textShadow.Offset)
+                        {
+                            if (GUILayout.Button("Apply", GUILayout.Width(65f)))
+                            {
+                                SetValue(instance, "color", textShadow.Color);
+                                SetValue(instance, "offsetX", textShadow.Offset.x);
+                                SetValue(instance, "offsetY", textShadow.Offset.y);
+                            }
+                        }
+
+                        GUILayout.Space(5f);
+                    }
+                }
             }
         }
 

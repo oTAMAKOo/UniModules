@@ -30,6 +30,10 @@ namespace Modules.UI.TextEffect
 
         //----- property -----
 
+        public Color Color { get { return color; } }
+
+        public Vector2 Offset { get { return new Vector2(offsetX, offsetY); } }
+
         //----- method -----
 
         public void SetColor(Color value)

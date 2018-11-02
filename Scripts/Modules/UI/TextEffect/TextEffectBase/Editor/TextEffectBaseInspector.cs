@@ -4,6 +4,7 @@ using UnityEditor;
 using System;
 using System.Linq;
 using System.Collections.Generic;
+using System.Reflection;
 using UniRx;
 using Extensions;
 using Extensions.Devkit;
@@ -16,6 +17,8 @@ namespace Modules.UI.TextEffect
         //----- params -----
 
         //----- field -----
+
+        private Vector2 scrollPosition = Vector2.zero;
 
         protected bool update = false;
 
@@ -45,5 +48,48 @@ namespace Modules.UI.TextEffect
 
             update = false;
         }
+
+        protected void DrawMaterialSelector<T>(T instance) where T : TextEffectBase
+        {
+            var textEffectBase = instance as TextEffectBase;
+
+            var reference = Reflection.GetPrivateField<TextEffectBase, Dictionary<Material, List<TextEffectBase>>>(textEffectBase, "reference", BindingFlags.Static);
+            
+            if (reference == null || reference.IsEmpty()) { return; }
+
+            var targets = reference.Values
+                    .Select(x => x.Select(y => y as T).Where(y => y != null))
+                    .Select(x => x.FirstOrDefault())
+                    .Where(x => x != null)
+                    .Cast<TextEffectBase>()
+                    .ToArray();
+
+            // 1つしかない時は自身のみなので不要.
+            if (targets.Length <= 1) { return; }
+
+            GUILayout.Space(2f);
+
+            if (EditorLayoutTools.DrawHeader("MaterialSelector", "TextEffectBaseInspector.MaterialSelector"))
+            {
+                using (new ContentsScope())
+                {
+                    if (4 <= targets.Length)
+                    {
+                        using (var scrollViewScope = new EditorGUILayout.ScrollViewScope(scrollPosition, GUILayout.Height(130f)))
+                        {
+                            DrawSelectorContents(targets);
+
+                            scrollPosition = scrollViewScope.scrollPosition;
+                        }
+                    }
+                    else
+                    {
+                        DrawSelectorContents(targets);
+                    }
+                }
+            }
+        }
+
+        protected abstract void DrawSelectorContents(TextEffectBase[] targets);
     }
 }

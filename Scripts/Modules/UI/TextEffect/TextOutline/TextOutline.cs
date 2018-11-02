@@ -30,6 +30,10 @@ namespace Modules.UI.TextEffect
 
         //----- property -----
 
+        public Color Color { get { return color; }}
+
+        public float Distance { get { return distance; } }
+
         //----- method -----
 
         public void SetColor(Color value)
