@@ -49,7 +49,7 @@ namespace Modules.Window
 
             parentGlobal = popupParent.Parent;
 
-            UpdateTouchBloc();
+            UpdateContents();
         }
 
         /// <summary> ポップアップを開く </summary>
@@ -71,7 +71,7 @@ namespace Modules.Window
                 Instance.RegisterScene(popupWindow);
             }
 
-            Instance.UpdateTouchBloc();
+            Instance.UpdateContents();
 
             return popupWindow.Open(inputProtect);
         }
@@ -89,7 +89,7 @@ namespace Modules.Window
                         _ =>
                         {
                             globalPopups.Remove(popupWindow);
-                            UpdateTouchBloc();
+                            UpdateContents();
                         })
                     .AddTo(this);
 
@@ -116,7 +116,7 @@ namespace Modules.Window
                         _ =>
                         {
                             scenePopups.Remove(popupWindow);
-                            UpdateTouchBloc();
+                            UpdateContents();
                         })
                     .AddTo(this);
 
@@ -152,7 +152,7 @@ namespace Modules.Window
             parentInScene = popupParent.Parent;
         }
 
-        protected void UpdateTouchBloc()
+        protected void UpdateContents()
         {
             var touchBlocIndex = 0;
             GameObject parent = null;
