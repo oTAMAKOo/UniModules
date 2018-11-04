@@ -230,15 +230,28 @@ namespace Modules
         }
 
         [MenuItem(itemName: ToolsMenu + "Cleaner/AutoClean Text On", priority = 0)]
-        public static void ToggleCleanerAutoMode()
+        public static void ToggleTextCleanerAutoMode()
         {
             TextComponentCleaner.Prefs.autoClean = !TextComponentCleaner.Prefs.autoClean;
         }
 
         [MenuItem(itemName: ToolsMenu + "Cleaner/AutoClean Text On", validate = true)]
-        public static bool ToggleCleanerAutoModeValidate()
+        public static bool ToggleTextCleanerAutoModeValidate()
         {
             UnityEditor.Menu.SetChecked(ToolsMenu + "Cleaner/AutoClean Text On", TextComponentCleaner.Prefs.autoClean);
+            return true;
+        }
+
+        [MenuItem(itemName: ToolsMenu + "Cleaner/AutoClean Image On", priority = 0)]
+        public static void ToggleImageCleanerAutoMode()
+        {
+            ImageComponentCleaner.Prefs.autoClean = !ImageComponentCleaner.Prefs.autoClean;
+        }
+
+        [MenuItem(itemName: ToolsMenu + "Cleaner/AutoClean Image On", validate = true)]
+        public static bool ToggleImageCleanerAutoModeValidate()
+        {
+            UnityEditor.Menu.SetChecked(ToolsMenu + "Cleaner/AutoClean Image On", ImageComponentCleaner.Prefs.autoClean);
             return true;
         }
 

@@ -23,6 +23,7 @@ namespace Modules.Devkit.CleanComponent
         private static readonly IComponentCleaner[] CleanTargets = new IComponentCleaner[]
         {
             new TextComponentCleaner(),
+            new ImageComponentCleaner(),
         };
 
         //----- field -----

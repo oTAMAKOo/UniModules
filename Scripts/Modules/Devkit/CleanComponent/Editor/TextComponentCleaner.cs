@@ -23,8 +23,8 @@ namespace Modules.Devkit.CleanComponent
         {
             public static bool autoClean
             {
-                get { return ProjectPrefs.GetBool("ComponentSaveHookPrefs-autoClean", false); }
-                set { ProjectPrefs.SetBool("ComponentSaveHookPrefs-autoClean", value); }
+                get { return ProjectPrefs.GetBool("TextComponentCleanerPrefs-autoClean", true); }
+                set { ProjectPrefs.SetBool("TextComponentCleanerPrefs-autoClean", value); }
             }
         }
 
