@@ -39,6 +39,7 @@ namespace Extensions
             return instance;
         }
 
+        /// <summary> インスタンスを生成. </summary>
         public T Instantiate<T>(bool active = true, bool instantiateInWorldSpace = false) where T : Component
         {
             if (prefab == null)
@@ -55,6 +56,25 @@ namespace Extensions
             }
 
             return instance;
+        }
+
+        /// <summary> 複数のインスタンスを生成. </summary>
+        public T[] Instantiate<T>(int count, bool active = true, bool instantiateInWorldSpace = false) where T : Component
+        {
+            if (prefab == null)
+            {
+                PrefabErrorMessage();
+                return null;
+            }
+
+            var instances = UnityUtility.Instantiate<T>(parent, prefab, count, instantiateInWorldSpace);
+
+            if (instances != null)
+            {
+                instances.ForEach(x => UnityUtility.SetActive(x.gameObject, active));
+            }
+
+            return instances;
         }
 
         private void PrefabErrorMessage()
