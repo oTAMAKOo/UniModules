@@ -440,29 +440,6 @@ namespace Modules.Particle
             }
         }
 
-        public void SetRotation(Quaternion quaternion)
-        {
-            transform.localRotation = quaternion;
-
-            // ParticleSystemのRotationは回転方向がTransformと逆らしいのでマイナスに.
-            var rotation = -transform.localRotation.eulerAngles.z * Mathf.Deg2Rad;
-
-            // RenderModeがBillboardのParticleSystemだけStartRotationを設定する.
-            var billboardParticleSystems = particleSystems
-                .Where(x => x.Renderer != null)
-                .Where(x => x.Renderer.renderMode == ParticleSystemRenderMode.Billboard ||
-                            x.Renderer.renderMode == ParticleSystemRenderMode.Stretch ||
-                            x.Renderer.renderMode == ParticleSystemRenderMode.HorizontalBillboard ||
-                            x.Renderer.renderMode == ParticleSystemRenderMode.VerticalBillboard);
-
-            foreach (var element in billboardParticleSystems)
-            {
-                var main = element.ParticleSystem.main;
-
-                main.startRotationMultiplier = element.StartRotation + rotation;
-            }
-        }
-
         private void ApplySpeedRate()
         {
             if (particleSystems != null)
@@ -597,6 +574,8 @@ namespace Modules.Particle
                 var ps = element.ParticleSystem;
 
                 if (UnityUtility.IsNull(ps)) { continue; }
+
+                if (!UnityUtility.IsActiveInHierarchy(ps.gameObject)) { continue; }
 
                 // ループエフェクトは常に生存.
                 if (ps.main.loop) { return true; }
