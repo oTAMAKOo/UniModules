@@ -1,15 +1,11 @@
 ﻿
-using UnityEngine;
 using System;
 using System.Linq;
-using System.Collections.Generic;
+using UniRx;
 
 namespace Extensions
 {
-    /// <summary>
-    /// 固定長のQueue.
-    /// </summary>
-    /// <typeparam name="T"></typeparam>
+    /// <summary> 固定長のQueue </summary>
     public class FixedQueue<T> : System.Collections.Generic.Queue<T>
     {
         //----- params -----
@@ -18,7 +14,9 @@ namespace Extensions
 
         //----- field -----
 
-        protected int length = 0;
+        private int length = 0;
+
+        private Subject<T> onExtruded = null;
 
         //----- property -----
 
@@ -40,10 +38,32 @@ namespace Extensions
         {
             if (length <= Count)
             {
-                Dequeue();
+                var dequeuedItem = Dequeue();
+
+                if(onExtruded != null)
+                {
+                    onExtruded.OnNext(dequeuedItem);
+                }
             }
 
             base.Enqueue(item);
+        }
+
+        public void Remove(T item)
+        {
+            var items = this.Where(x => !x.Equals(item)).ToArray();
+
+            Clear();
+
+            foreach (var obj in items)
+            {
+                Enqueue(obj);
+            }
+        }
+
+        public IObservable<T> OnExtrudedAsObservable()
+        {
+            return onExtruded ?? (onExtruded = new Subject<T>());
         }
     }
 }
