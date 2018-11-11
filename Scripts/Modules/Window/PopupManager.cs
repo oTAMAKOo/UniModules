@@ -25,8 +25,8 @@ namespace Modules.Window
         [SerializeField]
         private int globalCanvasOrder = 1;
 
-        private GameObject parentInScene = null;
-        private GameObject parentGlobal = null;
+        private PopupParent parentInScene = null;
+        private PopupParent parentGlobal = null;
         private GameObject touchBloc = null;
 
         // 登録されているポップアップ.
@@ -35,8 +35,8 @@ namespace Modules.Window
 
         //----- property -----
 
-        public GameObject ParentInScene { get { return parentInScene; } }
-        public GameObject ParentGlobal { get { return parentGlobal; } }
+        public GameObject ParentInScene { get { return parentInScene.Parent; } }
+        public GameObject ParentGlobal { get { return parentGlobal.Parent; } }
 
         //----- method -----
 
@@ -47,7 +47,7 @@ namespace Modules.Window
             popupParent.transform.name = "Popup (Global)";
             popupParent.Canvas.sortingOrder = globalCanvasOrder;
 
-            parentGlobal = popupParent.Parent;
+            parentGlobal = popupParent;
 
             UpdateContents();
         }
@@ -82,7 +82,7 @@ namespace Modules.Window
             if (globalPopups.All(x => x != popupWindow))
             {
                 UnityUtility.SetLayer(gameObject, popupWindow.gameObject, true);
-                UnityUtility.SetParent(popupWindow.gameObject, parentGlobal);
+                UnityUtility.SetParent(popupWindow.gameObject, parentGlobal.Parent);
 
                 popupWindow.OnCloseAsObservable()
                     .Subscribe(
@@ -109,7 +109,7 @@ namespace Modules.Window
             if (scenePopups.All(x => x != popupWindow))
             {
                 UnityUtility.SetLayer(gameObject, popupWindow.gameObject, true);
-                UnityUtility.SetParent(popupWindow.gameObject, parentInScene);
+                UnityUtility.SetParent(popupWindow.gameObject, parentInScene.Parent);
 
                 popupWindow.OnCloseAsObservable()
                     .Subscribe(
@@ -134,7 +134,7 @@ namespace Modules.Window
         {
             if (!UnityUtility.IsNull(parentInScene))
             {
-                UnityUtility.SafeDelete(parentInScene);
+                UnityUtility.SafeDelete(parentInScene.gameObject);
             }
 
             var popupParent = UnityUtility.Instantiate<PopupParent>(sceneRoot, parentPrefab);
@@ -149,7 +149,7 @@ namespace Modules.Window
                 ignoreControl.Type = IgnoreControl.IgnoreType.ActiveControl;
             }
 
-            parentInScene = popupParent.Parent;
+            parentInScene = popupParent;
         }
 
         protected void UpdateContents()
@@ -159,14 +159,14 @@ namespace Modules.Window
 
             if (touchBloc == null)
             {
-                touchBloc = UnityUtility.Instantiate(parentGlobal, touchBlocPrefab);
+                touchBloc = UnityUtility.Instantiate(parentGlobal.Parent, touchBlocPrefab);
             }
 
             if (scenePopups.Any())
             {
                 var index = 0;
 
-                parent = parentInScene;
+                parent = parentInScene.Parent;
                 touchBlocIndex = 0;
 
                 foreach (var item in scenePopups)
@@ -184,7 +184,7 @@ namespace Modules.Window
             {
                 var index = 0;
 
-                parent = parentGlobal;
+                parent = parentGlobal.Parent;
                 touchBlocIndex = 0;
 
                 foreach (var item in globalPopups)
@@ -201,7 +201,7 @@ namespace Modules.Window
             // ポップアップがなかった場合はグローバルの下に退避.
             if (parent == null)
             {
-                parent = parentGlobal;
+                parent = parentGlobal.Parent;
             }
 
             UnityUtility.SetParent(touchBloc, parent);
@@ -222,8 +222,8 @@ namespace Modules.Window
 
             scenePopups.Clear();
 
-            UnityUtility.SetParent(touchBloc, parentGlobal);
-            UnityUtility.SetLayer(parentGlobal, touchBloc, true);
+            UnityUtility.SetParent(touchBloc, parentGlobal.Parent);
+            UnityUtility.SetLayer(parentGlobal.Parent, touchBloc, true);
 
             if (globalPopups.IsEmpty())
             {

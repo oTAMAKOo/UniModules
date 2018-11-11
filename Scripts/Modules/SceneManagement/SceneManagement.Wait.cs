@@ -9,48 +9,48 @@ using Extensions;
 
 namespace Modules.SceneManagement
 {
-    public partial class SceneManagement<T>
+    public class WaitEntity : IDisposable
     {
         //----- params -----
 
-        public class WaitEntity : IDisposable
+        //----- field -----
+
+        public int? identifier = null;
+        private Subject<Unit> onDispose = null;
+
+        //----- property -----
+
+        public int Identifier
         {
-            //----- params -----
-
-            //----- field -----
-
-            public int? identifier = null;
-            private Subject<Unit> onDispose = null;
-
-            //----- property -----
-
-            public int Identifier
-            {
-                get { return (int)(identifier ?? (identifier = GetHashCode())); }
-            }
-
-            //----- method -----
-
-            ~WaitEntity()
-            {
-                Dispose();
-            }
-
-            public void Dispose()
-            {
-                if (onDispose != null)
-                {
-                    onDispose.OnNext(Unit.Default);
-                }
-
-                GC.SuppressFinalize(this);
-            }
-
-            public IObservable<Unit> OnDisposeAsObservable()
-            {
-                return onDispose ?? (onDispose = new Subject<Unit>());
-            }
+            get { return (int)(identifier ?? (identifier = GetHashCode())); }
         }
+
+        //----- method -----
+
+        ~WaitEntity()
+        {
+            Dispose();
+        }
+
+        public void Dispose()
+        {
+            if (onDispose != null)
+            {
+                onDispose.OnNext(Unit.Default);
+            }
+
+            GC.SuppressFinalize(this);
+        }
+
+        public IObservable<Unit> OnDisposeAsObservable()
+        {
+            return onDispose ?? (onDispose = new Subject<Unit>());
+        }
+    }
+
+    public partial class SceneManagement<T>
+    {
+        //----- params -----
 
         //----- field -----
 

@@ -11,6 +11,7 @@ using Extensions;
 using Constants;
 using Modules.Devkit;
 using Modules.SceneManagement.Diagnostics;
+using Unity.Linq;
 
 namespace Modules.SceneManagement
 {
@@ -22,6 +23,9 @@ namespace Modules.SceneManagement
         private class BootSceneArgument : ISceneArgument
         {
             public Scenes? Identifier { get; private set; }
+
+            public Scenes[] PreLoadScenes { get { return new Scenes[0]; } }
+            public bool Cache { get { return false; } }
 
             public BootSceneArgument(Scenes? identifier)
             {
@@ -36,11 +40,18 @@ namespace Modules.SceneManagement
 
         private IDisposable transitionDisposable = null;
 
+        private Dictionary<Scenes, SceneInstance> loadedscenes = null;
+        private FixedQueue<SceneInstance> cacheScenes = null;
+
+        private Dictionary<Scenes, IObservable<SceneInstance>> loadingScenes = null;
+        private Dictionary<Scenes, IObservable<Unit>> unloadingScenes = null;
+
         private SceneInstance current = null;
         private ISceneArgument currentSceneArgument = null;
+        
         private List<ISceneArgument> history = null;
 
-        private List<SceneInstance> additiveScene = null;
+        private IDisposable preLoadDisposable = null;
 
         private Subject<ISceneArgument> onPrepare = null;
         private Subject<ISceneArgument> onPrepareComplete = null;
@@ -64,27 +75,47 @@ namespace Modules.SceneManagement
         /// <summary> 現在のシーン情報 </summary>
         public SceneInstance Current { get { return current; } }
 
-        /// <summary> シーン加算で読み込まれているシーン情報 </summary>
-        public SceneInstance[] AdditiveScene { get { return additiveScene.ToArray(); } }
-
         /// <summary> 遷移中か </summary>
         public bool IsTransition { get { return transitionDisposable != null; } }
 
         /// <summary> 遷移先のシーン </summary>
         public Scenes? TransitionTarget { get; private set; }
 
+        /// <summary> キャッシュするシーン数 </summary>
+        protected virtual int CacheSize { get { return 3; } }
+
         /// <summary> シーンを読み込む為の定義情報 </summary>
         protected abstract Dictionary<Scenes, string> ScenePaths { get; }
 
         //----- method -----
 
-        protected SceneManagement()
-        {
-            history = new List<ISceneArgument>();
-            additiveScene = new List<SceneInstance>();
-            waitEntityIds = new HashSet<int>();
-        }
+        protected SceneManagement() { }
 
+        protected override void OnCreate()
+        {
+            loadedscenes = new Dictionary<Scenes, SceneInstance>();
+            cacheScenes = new FixedQueue<SceneInstance>(CacheSize);
+
+            loadingScenes = new Dictionary<Scenes, IObservable<SceneInstance>>();
+            unloadingScenes = new Dictionary<Scenes, IObservable<Unit>>();
+
+            history = new List<ISceneArgument>();
+            waitEntityIds = new HashSet<int>();
+
+            // キャッシュ許容数を超えたらアンロード.
+            cacheScenes.OnExtrudedAsObservable()
+                .Subscribe(x =>
+                    {
+                        if (x.Identifier.HasValue)
+                        {
+                            loadedscenes.Remove(x.Identifier.Value);
+                        }
+
+                        UnloadScene(x).Subscribe().AddTo(Disposable);
+                    })
+                .AddTo(Disposable);
+        }
+        
         public IObservable<Unit> WaitBootSceneReady()
         {
             var observers = new List<IObservable<Unit>>();
@@ -122,7 +153,7 @@ namespace Modules.SceneManagement
 
             if (sceneInstance != null)
             {
-                current = new SceneInstance(identifier, sceneInstance, LoadSceneMode.Single, scene);
+                current = new SceneInstance(identifier, sceneInstance, SceneManager.GetSceneAt(0));
 
                 // 起動シーンは引数なしで遷移してきたという扱い.
                 history.Add(new BootSceneArgument(identifier));
@@ -145,37 +176,25 @@ namespace Modules.SceneManagement
         /// <summary> 初期シーン登録時のイベント </summary>
         protected virtual IObservable<Unit> OnRegisterCurrentScene(SceneInstance currentInfo) { return Observable.ReturnUnit(); }
 
-        /// <summary>
-        /// シーン遷移.
-        /// </summary>
-        /// <typeparam name="TArgument"></typeparam>
-        /// <param name="sceneArgument"></param>
-        /// <param name="registerHistory"></param>
-        /// <returns></returns>
+        /// <summary> シーン遷移. </summary>
         public void Transition<TArgument>(TArgument sceneArgument, bool registerHistory = false) where TArgument : ISceneArgument
         {
             // 遷移中は遷移不可.
-            if (TransitionTarget != null) { return; }
+            if (IsTransition) { return; }
 
             // ※ 呼び出し元でAddTo(this)されるとシーン遷移中にdisposableされてしまうのでIObservableで公開しない.
-            transitionDisposable = Observable.FromCoroutine(() => TransitionCore(sceneArgument, false, registerHistory))
+            transitionDisposable = Observable.FromCoroutine(() => TransitionCore(sceneArgument, LoadSceneMode.Additive, false, registerHistory))
                 .Subscribe(_ => transitionDisposable = null)
                 .AddTo(Disposable);
         }
 
-        /// <summary>
-        /// 強制シーン遷移.
-        /// </summary>
-        /// <typeparam name="TArgument"></typeparam>
-        /// <param name="sceneArgument"></param>
-        /// <param name="registerHistory"></param>
-        /// <returns></returns>
+        /// <summary> 強制シーン遷移. </summary>
         public void ForceTransition<TArgument>(TArgument sceneArgument, bool registerHistory = false) where TArgument : ISceneArgument
         {
             TransitionCancel();
 
             // ※ 呼び出し元でAddTo(this)されるとシーン遷移中にdisposableされてしまうのでIObservableで公開しない.
-            transitionDisposable = Observable.FromCoroutine(() => TransitionCore(sceneArgument, false, registerHistory))
+            transitionDisposable = Observable.FromCoroutine(() => TransitionCore(sceneArgument, LoadSceneMode.Single, false, registerHistory))
                 .Subscribe(_ => transitionDisposable = null)
                 .AddTo(Disposable);
         }
@@ -216,7 +235,7 @@ namespace Modules.SceneManagement
 
             if (argument != null)
             {
-                transitionDisposable = Observable.FromCoroutine(() => TransitionCore(argument, true, false))
+                transitionDisposable = Observable.FromCoroutine(() => TransitionCore(argument, LoadSceneMode.Additive, true, false))
                     .Subscribe(_ => transitionDisposable = null)
                     .AddTo(Disposable);
             }
@@ -227,12 +246,20 @@ namespace Modules.SceneManagement
         /// </summary>
         public void ClearTransitionHistory()
         {
+            ISceneArgument currentEntity = null;
+
             // 現在のシーンの情報は残す.
-            var currentEntity = history.Last();
+            if (history.Any())
+            {
+                currentEntity = history.Last();
+            }
 
             history.Clear();
 
-            history.Add(currentEntity);
+            if (currentEntity != null)
+            {
+                history.Add(currentEntity);
+            }
         }
 
         /// <summary>
@@ -243,9 +270,16 @@ namespace Modules.SceneManagement
             return history.ToArray();
         }
 
-        private IEnumerator TransitionCore<TArgument>(TArgument sceneArgument, bool isSceneBack, bool registerHistory) where TArgument : ISceneArgument
+        private IEnumerator TransitionCore<TArgument>(TArgument sceneArgument, LoadSceneMode mode, bool isSceneBack, bool registerHistory) where TArgument : ISceneArgument
         {
             if (!sceneArgument.Identifier.HasValue) { yield break; }
+
+            // プリロード停止.
+            if (preLoadDisposable != null)
+            {
+                preLoadDisposable.Dispose();
+                preLoadDisposable = null;
+            }
 
             TransitionTarget = sceneArgument.Identifier;
 
@@ -269,7 +303,7 @@ namespace Modules.SceneManagement
 
             yield return TransitionStart(currentSceneArgument).ToYieldInstruction();
 
-            if (current != null)
+            if (prev != null)
             {
                 //====== Scene Leave ======
 
@@ -282,7 +316,7 @@ namespace Modules.SceneManagement
                 }
 
                 // 現在のシーンの終了処理を実行.
-                yield return current.Instance.LeaveAsync().ToYieldInstruction();
+                yield return prev.Instance.LeaveAsync().ToYieldInstruction();
 
                 // PlayerPrefsを保存.
                 PlayerPrefs.Save();
@@ -293,24 +327,35 @@ namespace Modules.SceneManagement
                     onLeaveComplete.OnNext(prevSceneArgument);
                 }
 
+                prev.Disable();
+
                 diagnostics.Finish(TimeDiagnostics.Measure.Leave);
             }
 
             //====== Load Next Scene ======
 
             diagnostics.Begin(TimeDiagnostics.Measure.Load);
-
+            
+            // 次のシーンを読み込み.
             var identifier = sceneArgument.Identifier.Value;
 
-            var loadYield = LoadScene(identifier, LoadSceneMode.Single).ToYieldInstruction();
+            var sceneInfo = loadedscenes.GetValueOrDefault(identifier);
 
-            yield return loadYield;
+            if (sceneInfo == null)
+            {
+                var loadYield = LoadScene(identifier, mode).ToYieldInstruction();
 
-            if (!loadYield.HasResult) { yield break; }
+                yield return loadYield;
 
-            var sceneInfo = loadYield.Result;
+                if (!loadYield.HasResult) { yield break; }
 
-            SetSceneActive(sceneInfo.GetScene());
+                sceneInfo = loadYield.Result;
+
+                if (sceneArgument.Cache)
+                {
+                    cacheScenes.Enqueue(sceneInfo);
+                }
+            }
 
             var scene = sceneInfo.GetScene();
 
@@ -328,11 +373,13 @@ namespace Modules.SceneManagement
                 yield break;
             }
 
+            SetSceneActive(scene);
+
             // 前のシーンからの引数を設定.
             sceneInfo.Instance.SetArgument(sceneArgument);
 
-            // 次のシーンを現在のシーンとして登録.
-            current = new SceneInstance(currentSceneArgument.Identifier, sceneInfo.Instance, sceneInfo.Mode, scene.Value);
+            // 現在のシーンとして登録.
+            current = sceneInfo;
 
             // 次のシーンを履歴に登録.
             // シーン引数を保存する為遷移時に引数と一緒に履歴登録する為、履歴の最後尾は現在のシーンになる.
@@ -345,6 +392,23 @@ namespace Modules.SceneManagement
             yield return null;
 
             diagnostics.Finish(TimeDiagnostics.Measure.Load);
+
+            //====== Scene Unload ======
+
+            // SceneBaseクラスが存在しない or キャッシュ対象でない場合削除.
+            var unloadScenes = loadedscenes.Values
+                .Where(x => x.Instance == null || cacheScenes.All(y => y != x))
+                .ToArray();
+
+            foreach (var unloadScene in unloadScenes)
+            {
+                yield return UnloadScene(unloadScene).ToYieldInstruction();
+
+                if (unloadScene.Identifier.HasValue)
+                {
+                    loadedscenes.Remove(unloadScene.Identifier.Value);
+                }
+            }
 
             //====== Scene Prepare ======
 
@@ -370,13 +434,21 @@ namespace Modules.SceneManagement
 
             diagnostics.Finish(TimeDiagnostics.Measure.Prepare);
 
+            //====== Unload PrevScene ======
+
+            // キャッシュ対象でない場合はアンロード.
+            if (prevSceneArgument == null || !prevSceneArgument.Cache)
+            {
+                yield return UnloadScene(prev).ToYieldInstruction();
+            }
+
             //====== Scene Wait ======
 
             // メモリ解放.
             yield return CleanUp().ToYieldInstruction();
 
             // 外部処理待機.
-            yield return Observable.FromCoroutine(() => TransitionWait()).ToYieldInstruction();
+            yield return Observable.FromMicroCoroutine(() => TransitionWait()).ToYieldInstruction();
 
             // シーンを有効化.
             sceneInfo.Enable();
@@ -418,6 +490,19 @@ namespace Modules.SceneManagement
             var detail = diagnostics.BuildDetailText();
 
             UnityConsole.Event(ConsoleEventName, ConsoleEventColor, "{0} → {1} ({2:F2}ms)\n\n{3}", prevScene, nextScene, total, detail);
+
+            //====== PreLoad ======
+
+            var preLoadScenes = sceneArgument.PreLoadScenes;
+
+            if (preLoadScenes.Any())
+            {
+                preLoadDisposable = preLoadScenes
+                    .Select(x => LoadScene(x, LoadSceneMode.Additive))
+                    .WhenAll()
+                    .Subscribe(_ => preLoadDisposable = null)
+                    .AddTo(Disposable);
+            }
         }
 
         #region Scene Additive
@@ -482,7 +567,7 @@ namespace Modules.SceneManagement
             observer.OnCompleted();
         }
 
-        /// <summary> 加算シーンをアンロード </summary>
+        /// <summary> シーンをアンロード </summary>
         public IObservable<Unit> Remove(SceneInstance sceneInfo)
         {
             return UnloadScene(sceneInfo);
@@ -491,90 +576,92 @@ namespace Modules.SceneManagement
         #endregion
 
         #region Scene Load
-
+        
         private IObservable<SceneInstance> LoadScene(Scenes identifier, LoadSceneMode mode)
         {
-            return Observable.FromCoroutine<SceneInstance>(observer => LoadSceneCore(observer, identifier, mode));
+            var observable = loadingScenes.GetValueOrDefault(identifier);
+
+            if (observable == null)
+            {
+                observable = Observable.Defer(() => Observable.FromCoroutine<SceneInstance>(observer => LoadSceneCore(observer, identifier, mode))
+                    .Do(_ => loadingScenes.Remove(identifier)))
+                    .Share();
+
+                loadingScenes.Add(identifier, observable);
+            }
+
+            return observable;
         }
 
         private IEnumerator LoadSceneCore(IObserver<SceneInstance> observer, Scenes identifier, LoadSceneMode mode)
         {
-            SceneInstance sceneInstance = null;
+            var sceneInstance = loadedscenes.GetValueOrDefault(identifier);
 
-            var scenePath = ScenePaths.GetValueOrDefault(identifier);
-
-            UnityAction<Scene, LoadSceneMode> sceneLoaded = (s, m) =>
+            if (sceneInstance == null)
             {
-                if (s.IsValid())
+                var scenePath = ScenePaths.GetValueOrDefault(identifier);
+
+                UnityAction<Scene, LoadSceneMode> sceneLoaded = (s, m) =>
                 {
-                    sceneInstance = new SceneInstance(identifier, FindSceneObject(s), m, s);
-
-                    switch (m)
-                    {
-                        case LoadSceneMode.Single:
-                            additiveScene.Clear();
-                            break;
-
-                        case LoadSceneMode.Additive:
-                            additiveScene.Add(sceneInstance);
-                            break;
-                    }
-
                     if (s.IsValid())
                     {
-                        var rootObjects = s.GetRootGameObjects();
+                        sceneInstance = new SceneInstance(identifier, FindSceneObject(s), s);
 
-                        // UniqueComponentsを回収.
-                        CollectUniqueComponents(rootObjects);
+                        switch (m)
+                        {
+                            case LoadSceneMode.Single:
+                                loadedscenes.Clear();
+                                cacheScenes.Clear();
+                                break;
+                        }
+                        
+                        // 初期状態は非アクティブ.
+                        sceneInstance.Disable();
+
+                        if (onLoadScene != null)
+                        {
+                            onLoadScene.OnNext(sceneInstance);
+                        }
                     }
+                };
 
-                    // 初期状態は非アクティブ.
-                    sceneInstance.Disable();
+                SetEnabledForCapturedComponents(false);
 
-                    if (onLoadScene != null)
-                    {
-                        onLoadScene.OnNext(sceneInstance);
-                    }
+                SceneManager.sceneLoaded += sceneLoaded;
+
+                AsyncOperation op = null;
+
+                try
+                {
+                    op = SceneManager.LoadSceneAsync(scenePath, mode);
                 }
-            };
+                catch (Exception e)
+                {
+                    Debug.LogException(e);
 
-            SetEnabledForCapturedComponents(false);
+                    SceneManager.sceneLoaded -= sceneLoaded;
 
-            SceneManager.sceneLoaded += sceneLoaded;
+                    if (onLoadError != null)
+                    {
+                        onLoadError.OnNext(Unit.Default);
+                    }
 
-            AsyncOperation op = null;
+                    observer.OnError(e);
 
-            try
-            {
-                op = SceneManager.LoadSceneAsync(scenePath, mode);
-            }
-            catch (Exception e)
-            {
-                Debug.LogException(e);
+                    yield break;
+                }
+
+                while (!op.isDone)
+                {
+                    yield return op;
+                }
 
                 SceneManager.sceneLoaded -= sceneLoaded;
 
-                if (onLoadError != null)
-                {
-                    onLoadError.OnNext(Unit.Default);
-                }
+                loadedscenes.Add(identifier, sceneInstance);
 
-                observer.OnError(e);
-
-                yield break;
-            }
-
-            while (!op.isDone)
-            {
-                yield return op;
-            }
-
-            SceneManager.sceneLoaded -= sceneLoaded;
-
-            SetEnabledForCapturedComponents(true);
-
-            if (sceneInstance != null)
-            {
+                yield return new WaitForEndOfFrame();
+                
                 if (onLoadSceneComplete != null)
                 {
                     onLoadSceneComplete.OnNext(sceneInstance);
@@ -586,6 +673,10 @@ namespace Modules.SceneManagement
                 {
                     var rootObjects = scene.Value.GetRootGameObjects();
 
+                    // UniqueComponentsを回収.
+                    CollectUniqueComponents(rootObjects);
+
+                    // ISceneEvent発行.
                     foreach (var rootObject in rootObjects)
                     {
                         var targets = UnityUtility.FindObjectsOfInterface<ISceneEvent>(rootObject);
@@ -596,6 +687,13 @@ namespace Modules.SceneManagement
                         }
                     }
                 }
+
+                SetEnabledForCapturedComponents(true);
+            }
+            else
+            {
+                // 初期状態は非アクティブ.
+                sceneInstance.Disable();
             }
 
             observer.OnNext(sceneInstance);
@@ -621,37 +719,80 @@ namespace Modules.SceneManagement
 
         #region Scene Unload
 
-        private IObservable<Unit> UnloadScene(SceneInstance sceneInfo)
+        /// <summary> キャッシュ済みのシーンをアンロード. </summary>
+        public IObservable<Unit> UnloadCacheScene()
         {
-            if (sceneInfo == null) { return Observable.ReturnUnit(); }
+            var sceneInstances = cacheScenes.ToArray();
 
-            if (sceneInfo.Mode != LoadSceneMode.Additive)
-            {
-                Debug.LogError("Only the added scenes can be unloaded.");
-                return Observable.ReturnUnit();
-            }
-
-            return Observable.FromCoroutine(() => UnloadSceneCore(sceneInfo));
+            return sceneInstances.Select(x => UnloadScene(x)).WhenAll().AsUnitObservable();
         }
 
-        private IEnumerator UnloadSceneCore(SceneInstance sceneInfo)
+        /// <summary> シーンを指定してアンロード. </summary>
+        public IObservable<Unit> UnloadScene(Scenes identifier)
         {
-            var scene = sceneInfo.GetScene();
+            if ( current.Identifier == identifier)
+            {
+                throw new ArgumentException("The current scene can not be unloaded");
+            }
+
+            var sceneInstance = loadedscenes.GetValueOrDefault(identifier);
+
+            return UnloadScene(sceneInstance);
+        }
+
+        private IObservable<Unit> UnloadScene(SceneInstance sceneInstance)
+        {
+            if (sceneInstance == null) { return Observable.ReturnUnit(); }
+
+            if (!sceneInstance.Identifier.HasValue) { return Observable.ReturnUnit(); }
+
+            var identifier = sceneInstance.Identifier.Value;
+
+            var observable = unloadingScenes.GetValueOrDefault(identifier);
+
+            if (observable == null)
+            {
+                observable = Observable.Defer(() => Observable.FromCoroutine(() => UnloadSceneCore(sceneInstance))
+                    .Do(_ => unloadingScenes.Remove(identifier)))
+                    .Share();
+
+                unloadingScenes.Add(identifier, observable);
+            }
+
+            return observable;
+        }
+
+        private IEnumerator UnloadSceneCore(SceneInstance sceneInstance)
+        {
+            var scene = sceneInstance.GetScene();
 
             if (!scene.HasValue) { yield break; }
 
-            UnityAction<Scene> sceneUnloaded = (s) =>
-            {
-                switch (sceneInfo.Mode)
-                {
-                    case LoadSceneMode.Additive:
-                        additiveScene.Remove(sceneInfo);
-                        break;
-                }
+            if (SceneManager.sceneCount <= 1){ yield break; }
 
-                if (onUnloadScene != null)
+            UnityAction<Scene> sceneUnloaded = s =>
+            {
+                if (s.IsValid())
                 {
-                    onUnloadScene.OnNext(sceneInfo);
+                    if (sceneInstance.Identifier.HasValue)
+                    {
+                        var identifier = sceneInstance.Identifier.Value;
+
+                        if (loadedscenes.ContainsKey(identifier))
+                        {
+                            loadedscenes.Remove(identifier);
+                        }
+                    }
+
+                    if (cacheScenes.Contains(sceneInstance))
+                    {
+                        cacheScenes.Remove(sceneInstance);
+                    }
+
+                    if (onUnloadScene != null)
+                    {
+                        onUnloadScene.OnNext(sceneInstance);
+                    }
                 }
             };
 
@@ -698,7 +839,7 @@ namespace Modules.SceneManagement
 
             if (onUnloadSceneComplete != null)
             {
-                onUnloadSceneComplete.OnNext(sceneInfo);
+                onUnloadSceneComplete.OnNext(sceneInstance);
             }
         }
 
@@ -722,21 +863,7 @@ namespace Modules.SceneManagement
         /// <summary> シーンが展開済みか </summary>
         public bool IsSceneLoaded(Scenes identifier)
         {
-            var path = ScenePaths.GetValueOrDefault(identifier);
-
-            if (string.IsNullOrEmpty(path)) { return false; }
-
-            var scene = current.GetScene();
-
-            if (current != null && scene.HasValue)
-            {
-                if (scene.Value.path == path) { return true; }
-            }
-
-            return additiveScene
-                .Select(x => x.GetScene())
-                .Where(x => x != null)
-                .Any(x => x.Value.path == path);
+            return loadedscenes.ContainsKey(identifier);
         }
 
         private ISceneBase FindSceneObject(Scene scene)

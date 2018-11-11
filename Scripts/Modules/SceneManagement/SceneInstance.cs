@@ -25,17 +25,22 @@ namespace Modules.SceneManagement
 
         public Scenes? Identifier { get; private set; }
         public ISceneBase Instance { get; private set; }
-        public LoadSceneMode Mode { get; private set; }
 
         //----- method -----
 
-        public SceneInstance(Scenes? identifier, ISceneBase instance, LoadSceneMode mode, Scene scene)
+        public SceneInstance(Scenes? identifier, ISceneBase instance, Scene? scene)
         {
             this.scene = scene;
-
-            Mode = mode;
+            
             Identifier = identifier;
             Instance = instance;
+
+            var rootObjects = scene.Value.GetRootGameObjects();
+
+            activeRoots = rootObjects
+                .Where(x => !UnityUtility.IsNull(x))
+                .Where(x => UnityUtility.IsActive(x))
+                .ToArray();
         }
 
         public bool Enable()
@@ -74,13 +79,6 @@ namespace Modules.SceneManagement
             if (!enable) { return true; }
 
             if (!scene.Value.isLoaded || !scene.Value.IsValid()) { return false; }
-
-            var rootObjects = scene.Value.GetRootGameObjects();
-
-            activeRoots = rootObjects
-                .Where(x => !UnityUtility.IsNull(x))
-                .Where(x => UnityUtility.IsActive(x))
-                .ToArray();
 
             foreach (var rootObject in activeRoots)
             {

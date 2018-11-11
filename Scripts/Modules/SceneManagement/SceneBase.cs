@@ -15,7 +15,12 @@ namespace Modules.SceneManagement
     /// </summary>
     public interface ISceneArgument
     {
+        /// <summary> シーン識別子 </summary>
         Scenes? Identifier { get; }
+        /// <summary> 事前読み込みを行うシーン </summary>
+        Scenes[] PreLoadScenes { get; }
+        /// <summary> キャッシュ対象か </summary>
+        bool Cache { get; }
     }
 
     public interface ISceneBase
