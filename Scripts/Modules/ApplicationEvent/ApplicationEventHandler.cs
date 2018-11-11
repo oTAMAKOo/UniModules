@@ -16,6 +16,7 @@ namespace Modules.ApplicationEvent
 
         private static Subject<Unit> onSuspend = null;
         private static Subject<double> onResume = null;
+        private static Subject<Unit> onLowMemory = null;
         private static Subject<Unit> onQuit = null;
 
         private DateTime? spendTime = null;
@@ -23,6 +24,13 @@ namespace Modules.ApplicationEvent
         //----- property -----
 
         //----- method -----
+
+        protected override void Awake()
+        {
+            base.Awake();
+
+            Application.lowMemory += OnLowMemory;
+        }
 
         private void OnSuspend()
         {
@@ -49,6 +57,14 @@ namespace Modules.ApplicationEvent
             spendTime = null;
         }
 
+        private void OnLowMemory()
+        {
+            if (onLowMemory != null)
+            {
+                onLowMemory.OnNext(Unit.Default);
+            }
+        }
+
         /// <summary> サスペンド時のイベント </summary>
         public static IObservable<Unit> OnSuspendAsObservable()
         {
@@ -59,6 +75,12 @@ namespace Modules.ApplicationEvent
         public static IObservable<double> OnResumeAsObservable()
         {
             return onResume ?? (onResume = new Subject<double>());
+        }
+
+        /// <summary> メモリが不足してきた時のイベント </summary>
+        public static IObservable<Unit> OnLowMemoryAsObservable()
+        {
+            return onLowMemory ?? (onLowMemory = new Subject<Unit>());
         }
 
         /// <summary> アプリケーション終了時のイベント </summary>
