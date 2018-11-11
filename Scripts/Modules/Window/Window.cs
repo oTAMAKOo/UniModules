@@ -15,17 +15,18 @@ namespace Modules.Window
 
         //----- field -----
 
-        private bool manualDelete = false;
+        private bool deleteOnClose = true;
 
         private Subject<Unit> onOpen = null;
         private Subject<Unit> onClose = null;
 
         //----- property -----
 
-        public bool ManualDelete
+        /// <summary> ウィンドウが閉じた時に自動でインスタンスを破棄するか </summary>
+        public bool DeleteOnClose
         {
-            get { return manualDelete; }
-            set { manualDelete = value; }
+            get { return deleteOnClose; }
+            set { deleteOnClose = value; }
         }
 
         //----- method -----
@@ -83,7 +84,7 @@ namespace Modules.Window
                             onClose.OnNext(Unit.Default);
                         }
                         
-                        if (!manualDelete)
+                        if (deleteOnClose)
                         {
                             UnityUtility.SafeDelete(gameObject);
                         }
