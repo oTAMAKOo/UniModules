@@ -332,6 +332,24 @@ namespace Modules.SceneManagement
                 diagnostics.Finish(TimeDiagnostics.Measure.Leave);
             }
 
+            //====== Scene Unload ======
+
+            // 遷移先のシーンではない かつ SceneBaseクラスが存在しない or キャッシュ対象でない場合削除.
+            var unloadScenes = loadedscenes.Values
+                .Where(x => x.Identifier != TransitionTarget)
+                .Where(x => UnityUtility.IsNull(x.Instance) || cacheScenes.All(y => y != x))
+                .ToArray();
+
+            foreach (var unloadScene in unloadScenes)
+            {
+                yield return UnloadScene(unloadScene).ToYieldInstruction();
+
+                if (unloadScene.Identifier.HasValue)
+                {
+                    loadedscenes.Remove(unloadScene.Identifier.Value);
+                }
+            }
+
             //====== Load Next Scene ======
 
             diagnostics.Begin(TimeDiagnostics.Measure.Load);
@@ -392,23 +410,6 @@ namespace Modules.SceneManagement
             yield return null;
 
             diagnostics.Finish(TimeDiagnostics.Measure.Load);
-
-            //====== Scene Unload ======
-
-            // SceneBaseクラスが存在しない or キャッシュ対象でない場合削除.
-            var unloadScenes = loadedscenes.Values
-                .Where(x => x.Instance == null || cacheScenes.All(y => y != x))
-                .ToArray();
-
-            foreach (var unloadScene in unloadScenes)
-            {
-                yield return UnloadScene(unloadScene).ToYieldInstruction();
-
-                if (unloadScene.Identifier.HasValue)
-                {
-                    loadedscenes.Remove(unloadScene.Identifier.Value);
-                }
-            }
 
             //====== Scene Prepare ======
 
@@ -614,7 +615,7 @@ namespace Modules.SceneManagement
                                 cacheScenes.Clear();
                                 break;
                         }
-                        
+
                         // 初期状態は非アクティブ.
                         sceneInstance.Disable();
 
@@ -658,15 +659,6 @@ namespace Modules.SceneManagement
 
                 SceneManager.sceneLoaded -= sceneLoaded;
 
-                loadedscenes.Add(identifier, sceneInstance);
-
-                yield return new WaitForEndOfFrame();
-                
-                if (onLoadSceneComplete != null)
-                {
-                    onLoadSceneComplete.OnNext(sceneInstance);
-                }
-
                 var scene = sceneInstance.GetScene();
 
                 if (scene.HasValue)
@@ -675,6 +667,15 @@ namespace Modules.SceneManagement
 
                     // UniqueComponentsを回収.
                     CollectUniqueComponents(rootObjects);
+
+                    loadedscenes.Add(identifier, sceneInstance);
+
+                    yield return new WaitForEndOfFrame();
+
+                    if (onLoadSceneComplete != null)
+                    {
+                        onLoadSceneComplete.OnNext(sceneInstance);
+                    }
 
                     // ISceneEvent発行.
                     foreach (var rootObject in rootObjects)
