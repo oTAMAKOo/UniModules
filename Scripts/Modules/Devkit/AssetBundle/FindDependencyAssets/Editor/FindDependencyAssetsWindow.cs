@@ -187,17 +187,18 @@ namespace Modules.Devkit.AssetBundles
 
         private AssetBundleInfo[] GetListOfDependentInfos()
         {
-            if(string.IsNullOrEmpty(searchText)){ return assetBundleInfo; }
+            if (string.IsNullOrEmpty(searchText)) { return assetBundleInfo; }
 
             var keywords = searchText.Split(new char[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
 
-            for(var i = 0; i < keywords.Length; ++i)
+            for (var i = 0; i < keywords.Length; ++i)
             {
                 keywords[i] = keywords[i].ToLower();
             }
 
             return assetBundleInfo
-                .Where(x => x.DependentAssets.Any(y => AssetDatabase.GetAssetPath(y).IsMatch(keywords)))
+                .Where(x => x.AssetBundleName.IsMatch(keywords) ||
+                            x.DependentAssets.Any(y => AssetDatabase.GetAssetPath(y).IsMatch(keywords)))
                 .ToArray();
         }
     }
