@@ -60,22 +60,24 @@ namespace Modules.Devkit.AssetBundles
         {
             var progressTitle = "Find Dependencies";
             var progressInfo = string.Empty;
-            var progressCount = 0;
+            var progressCount = 0f;
+            var totalCount = 0f;
 
             referenceInfos = new List<ReferenceInfo>();
             assetBundleDependentInfos = new Dictionary<string, AssetBundleDependentInfo>();
 
             var allAssetPathByAssetBundleName = GetAllAssetPathByAssetBundleName();
-            
-            // アセットバンドルからの参照情報を構築.
+
+            //====== アセットバンドルからの参照情報を構築 ======
 
             progressCount = 0;
+            totalCount = allAssetPathByAssetBundleName.Count;
             progressInfo = "CollectDependencies.";
 
             foreach(var assetBundle in allAssetPathByAssetBundleName)
             {
-                var progress = progressCount / allAssetPathByAssetBundleName.Count;
-                EditorUtility.DisplayProgressBar(progressTitle, progressInfo, progress);
+                EditorUtility.DisplayProgressBar(progressTitle, progressInfo, progressCount / totalCount);
+
                 progressCount++;
 
                 var assetPaths = new List<string>();
@@ -116,15 +118,16 @@ namespace Modules.Devkit.AssetBundles
                 assetBundleDependentInfos.Add(item.AssetBundleName, item);
             }
 
-            // 参照されているアセット情報を収集.
+            //====== 参照されているアセット情報を収集 ======
 
             progressCount = 0;
+            totalCount = assetBundleDependentInfos.Count;
             progressInfo = "BuildReferenceInfo.";
 
             foreach (var info in assetBundleDependentInfos)
             {
-                var progress = progressCount / assetBundleDependentInfos.Count;
-                EditorUtility.DisplayProgressBar(progressTitle, progressInfo, progress);
+                EditorUtility.DisplayProgressBar(progressTitle, progressInfo, progressCount / totalCount);
+
                 progressCount++;
 
                 foreach (var assetPath in info.Value.DependentAssetPaths)
