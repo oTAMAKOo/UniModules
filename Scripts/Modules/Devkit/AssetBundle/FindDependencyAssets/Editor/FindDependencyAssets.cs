@@ -158,8 +158,26 @@ namespace Modules.Devkit.AssetBundles
         /// <returns></returns>
         private ILookup<string, string> GetAllAssetPathByAssetBundleName()
         {
+            var title = "Build AssetBundle Info";
+
+            EditorUtility.DisplayProgressBar(title, "Find AllAssets", 0);
+
             var allAssetGuids = AssetDatabase.FindAssets("", new string[] { UnityPathUtility.AssetsFolder });
-            var allAssetPaths = allAssetGuids.Select(x => AssetDatabase.GUIDToAssetPath(x));
+
+            var allAssetPaths = new List<string>();
+
+            for (var i = 0; i < allAssetGuids.Length; i++)
+            {
+                var guid = allAssetGuids[i];
+
+                EditorUtility.DisplayProgressBar(title, guid, (float)i / allAssetGuids.Length);
+
+                var assetPath = AssetDatabase.GUIDToAssetPath(guid);
+
+                allAssetPaths.Add(assetPath);
+            }
+
+            EditorUtility.ClearProgressBar();
 
             return allAssetPaths
                 .Select(x => Tuple.Create(GetBundleName(x), x))
