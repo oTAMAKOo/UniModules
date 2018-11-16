@@ -93,19 +93,23 @@ namespace Extensions.Devkit
 
             if (!scrollRect.HasValue) { return; }
 
-            var layoutMargin = scrollRect.Value.height;
+            var layoutMargin = 150f;
+
+            var layoutBegin = ScrollPosition.y - layoutMargin;
+            var layoutEnd = ScrollPosition.y + scrollRect.Value.height + layoutMargin;
 
             startIndex = 0;
             startSpace = 0f;
 
-            // 見える範囲までのスペース.
+            //====== 見える範囲までのスペース ======
+
             for (var i = 0; i < itemInfos.Length; i++)
             {
                 if (!itemInfos[i].rect.HasValue) { continue; }
 
                 var space = itemInfos[i].rect.Value.height;
 
-                if (ScrollPosition.y - layoutMargin < startSpace + space)
+                if (layoutBegin < startSpace + space)
                 {
                     startIndex = i;
                     break;
@@ -114,19 +118,20 @@ namespace Extensions.Devkit
                 startSpace += space;
             }
 
-            endIndex = itemInfos.Length;
-            endSpace = 0f;
+            //====== 見えてる範囲から出るまで検索 ======
 
             var viewSpace = 0f;
 
-            // 見えてる範囲から出るまで検索.
+            endIndex = itemInfos.Length;
+            endSpace = 0f;
+
             for (var i = startIndex.Value; i < itemInfos.Length; i++)
             {
                 if (!itemInfos[i].rect.HasValue) { continue; }
 
                 var space = itemInfos[i].rect.Value.height;
 
-                if (ScrollPosition.y + scrollRect.Value.height + layoutMargin < startSpace + viewSpace + space)
+                if (layoutEnd < startSpace + viewSpace + space)
                 {
                     endIndex = i;
                     break;
@@ -135,7 +140,8 @@ namespace Extensions.Devkit
                 viewSpace += space;
             }
 
-            // 終端までのスペース.
+            //====== 終端までのスペース ======
+
             for (var i = endIndex.Value; i < itemInfos.Length; i++)
             {
                 if (!itemInfos[i].rect.HasValue) { continue; }
@@ -150,19 +156,23 @@ namespace Extensions.Devkit
 
             if (!scrollRect.HasValue) { return; }
 
-            var layoutMargin = scrollRect.Value.width;
+            var layoutMargin = 150f;
+
+            var layoutBegin = ScrollPosition.x - layoutMargin;
+            var layoutEnd = ScrollPosition.x + scrollRect.Value.width + layoutMargin;
 
             startIndex = 0;
             startSpace = 0f;
 
-            // 見える範囲までのスペース.
+            //====== 見える範囲までのスペース ======
+
             for (var i = 0; i < itemInfos.Length; i++)
             {
                 if (!itemInfos[i].rect.HasValue) { continue; }
 
                 var space = itemInfos[i].rect.Value.width;
 
-                if (ScrollPosition.x - layoutMargin < startSpace + space)
+                if (layoutBegin < startSpace + space)
                 {
                     startIndex = i;
                     break;
@@ -171,19 +181,20 @@ namespace Extensions.Devkit
                 startSpace += space;
             }
 
-            endIndex = itemInfos.Length;
-            endSpace = 0f;
+            //====== 見えてる範囲から出るまで検索 ======
 
             var viewSpace = 0f;
 
-            // 見えてる範囲から出るまで検索.
+            endIndex = itemInfos.Length;
+            endSpace = 0f;
+
             for (var i = startIndex.Value; i < itemInfos.Length; i++)
             {
                 if (!itemInfos[i].rect.HasValue) { continue; }
 
                 var space = itemInfos[i].rect.Value.width;
 
-                if (ScrollPosition.x + scrollRect.Value.width + layoutMargin < startSpace + viewSpace + space)
+                if (layoutEnd < startSpace + viewSpace + space)
                 {
                     endIndex = i;
                     break;
@@ -192,7 +203,8 @@ namespace Extensions.Devkit
                 viewSpace += space;
             }
 
-            // 終端までのスペース.
+            //====== 終端までのスペース ======
+
             for (var i = endIndex.Value; i < itemInfos.Length; i++)
             {
                 if (!itemInfos[i].rect.HasValue) { continue; }
@@ -214,9 +226,9 @@ namespace Extensions.Devkit
 
                     for (var i = 0; i < itemInfos.Length; i++)
                     {
-                        if (startIndex.HasValue && i < startIndex.Value) { continue; }
+                        if (!startIndex.HasValue || i < startIndex.Value) { continue; }
 
-                        if (endIndex.HasValue && endIndex.Value < i) { continue; }
+                        if (!endIndex.HasValue || endIndex.Value < i) { continue; }
 
                         // リストアイテム領域計測用.
                         var rect = EditorGUILayout.BeginVertical();
@@ -225,12 +237,9 @@ namespace Extensions.Devkit
 
                         EditorGUILayout.EndVertical();
 
-                        if (Event.current.type == EventType.Repaint)
+                        if (rect != Rect.zero)
                         {
-                            if (!itemInfos[i].rect.HasValue)
-                            {
-                                itemInfos[i].rect = rect;
-                            }
+                            itemInfos[i].rect = rect;
                         }
                     }
 

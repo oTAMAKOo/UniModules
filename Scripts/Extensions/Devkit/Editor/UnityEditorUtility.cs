@@ -377,7 +377,6 @@ namespace Extensions.Devkit
 
         #endregion
 
-
         #region Audio
 
         public static void PlayClip(AudioClip clip, float startTime = 0f, bool loop = false)
