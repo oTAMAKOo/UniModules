@@ -58,8 +58,6 @@ namespace Modules.Devkit.AssetBundles
 
         public void CollectDependencies()
         {
-            var progressTitle = "Find Dependencies";
-            var progressInfo = string.Empty;
             var progressCount = 0f;
             var totalCount = 0f;
 
@@ -72,18 +70,17 @@ namespace Modules.Devkit.AssetBundles
 
             progressCount = 0;
             totalCount = allAssetPathByAssetBundleName.Count;
-            progressInfo = "CollectDependencies.";
 
-            foreach(var assetBundle in allAssetPathByAssetBundleName)
+            foreach (var assetBundle in allAssetPathByAssetBundleName)
             {
-                EditorUtility.DisplayProgressBar(progressTitle, progressInfo, progressCount / totalCount);
+                EditorUtility.DisplayProgressBar("Find Dependencies", assetBundle.Key, progressCount / totalCount);
 
                 progressCount++;
 
                 var assetPaths = new List<string>();
                 var dependentAssetPaths = new List<string>();
 
-                foreach(var assetPath in assetBundle)
+                foreach (var assetPath in assetBundle)
                 {
                     var dependencies = AssetDatabase.GetDependencies(assetPath);
 
@@ -91,23 +88,23 @@ namespace Modules.Devkit.AssetBundles
                     {
                         var bundleName = GetBundleName(path);
 
-                        if(assetBundle.Key == bundleName)
+                        if (assetBundle.Key == bundleName)
                         {
                             // 既に参照済みの場合は再登録.
-                            if(dependentAssetPaths.Contains(path))
+                            if (dependentAssetPaths.Contains(path))
                             {
                                 dependentAssetPaths.Remove(path);
                             }
 
                             // 既に参照済みの場合は追加なし.
-                            if(assetPaths.Contains(path)){ continue; }
+                            if (assetPaths.Contains(path)) { continue; }
 
                             assetPaths.Add(path);
                         }
                         else
                         {
                             // 既に参照済みの場合は参照扱いしない.
-                            if(dependentAssetPaths.Contains(path)){ continue; }
+                            if (dependentAssetPaths.Contains(path)) { continue; }
 
                             dependentAssetPaths.Add(path);
                         }
@@ -122,11 +119,10 @@ namespace Modules.Devkit.AssetBundles
 
             progressCount = 0;
             totalCount = assetBundleDependentInfos.Count;
-            progressInfo = "BuildReferenceInfo.";
 
             foreach (var info in assetBundleDependentInfos)
             {
-                EditorUtility.DisplayProgressBar(progressTitle, progressInfo, progressCount / totalCount);
+                EditorUtility.DisplayProgressBar("Build ReferenceInfo", info.Key, progressCount / totalCount);
 
                 progressCount++;
 
@@ -134,7 +130,7 @@ namespace Modules.Devkit.AssetBundles
                 {
                     var referenceInfo = referenceInfos.FirstOrDefault(x => x.AssetPath == assetPath);
 
-                    if(referenceInfo == null)
+                    if (referenceInfo == null)
                     {
                         referenceInfo = new ReferenceInfo(assetPath);
                         referenceInfo.ReferenceAssetBundles.Add(info.Key);
