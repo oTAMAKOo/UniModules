@@ -66,7 +66,7 @@ namespace Extensions.Devkit
 
         public void Draw(bool scrollEnable = true, params GUILayoutOption[] options)
         {
-            if(scrollEnable)
+            if (scrollEnable)
             {
                 switch (Type)
                 {

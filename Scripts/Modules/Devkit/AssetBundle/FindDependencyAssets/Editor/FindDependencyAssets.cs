@@ -1,4 +1,4 @@
-﻿﻿﻿
+﻿
 using UnityEngine;
 using UnityEditor;
 using System;
@@ -197,8 +197,8 @@ namespace Modules.Devkit.AssetBundles
             var bundleName = importer.assetBundleName;
             var variantName = importer.assetBundleVariant;
 
-            if(string.IsNullOrEmpty(bundleName)) { return null; }
-            
+            if (string.IsNullOrEmpty(bundleName)) { return null; }
+
             return string.IsNullOrEmpty(variantName) ? bundleName : bundleName + "." + variantName;
         }
     }
