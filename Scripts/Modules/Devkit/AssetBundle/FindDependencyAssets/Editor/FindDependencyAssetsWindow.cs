@@ -61,7 +61,6 @@ namespace Modules.Devkit.AssetBundles
         private AssetReferenceInfo[] assetReferenceInfo = null;
 
         private ViewType selection = ViewType.Dependencies;
-        private Vector2 scrollPosition = Vector2.zero;
         private DependencyScrollView dependencyScrollView = null;
         private ReferenceScrollView referenceScrollView = null;
         private string searchText = string.Empty;
@@ -84,29 +83,66 @@ namespace Modules.Devkit.AssetBundles
             titleContent = new GUIContent("FindDependencyAssetsWindow");
             minSize = MinWindowSize;
 
+            // 参照情報を収集.
             findDependencyAssets.CollectDependencies();
 
-            assetBundleInfo = findDependencyAssets.AssetBundleDependentInfos
-                .Select(
-                    x =>
-                    {
-                        var assets = x.Value.AssetPaths.Select(y => AssetDatabase.LoadMainAssetAtPath(y)).ToArray();
-                        var dependentAssets = x.Value.DependentAssetPaths.Select(y => AssetDatabase.LoadMainAssetAtPath(y)).ToArray();
+            // 依存情報を構築.
+            if (findDependencyAssets.AssetBundleDependentInfos.Any())
+            {
+                var list = new List<AssetBundleInfo>();
 
-                        return new AssetBundleInfo(x.Key, assets, dependentAssets);
-                    })
-                .ToArray();
+                var count = 0;
+                var size = findDependencyAssets.AssetBundleDependentInfos.Count;
 
-            assetReferenceInfo = findDependencyAssets.ReferenceInfos
-                .Select(
-                    x =>
-                    {
-                        var asset = AssetDatabase.LoadMainAssetAtPath(x.AssetPath);
-                        var referenceAssets = x.ReferenceAssetBundles.Select(y => AssetDatabase.LoadMainAssetAtPath(y)).ToArray();
+                foreach (var item in findDependencyAssets.AssetBundleDependentInfos)
+                {
+                    EditorUtility.DisplayProgressBar("Find Dependency", item.Key, (float)count / size);
 
-                        return new AssetReferenceInfo(asset, referenceAssets);
-                    })
-                .ToArray();
+                    var assets = item.Value.AssetPaths.Select(y => AssetDatabase.LoadMainAssetAtPath(y)).ToArray();
+                    var dependentAssets = item.Value.DependentAssetPaths.Select(y => AssetDatabase.LoadMainAssetAtPath(y)).ToArray();
+                    
+                    list.Add(new AssetBundleInfo(item.Key, assets, dependentAssets));
+
+                    count++;
+                }
+
+                assetBundleInfo = list.ToArray();
+
+                EditorUtility.ClearProgressBar();
+            }
+            else
+            {
+                assetBundleInfo = new AssetBundleInfo[0];
+            }
+
+            // 参照情報を構築.
+            if (findDependencyAssets.ReferenceInfos.Any())
+            {
+                var list = new List<AssetReferenceInfo>();
+
+                var count = 0;
+                var size = findDependencyAssets.ReferenceInfos.Count;
+
+                foreach (var item in findDependencyAssets.ReferenceInfos)
+                {
+                    EditorUtility.DisplayProgressBar("Find Reference", item.AssetPath, (float)count / size);
+
+                    var asset = AssetDatabase.LoadMainAssetAtPath(item.AssetPath);
+                    var referenceAssets = item.ReferenceAssetBundles.Select(y => AssetDatabase.LoadMainAssetAtPath(y)).ToArray();
+
+                    list.Add(new AssetReferenceInfo(asset, referenceAssets));
+
+                    count++;
+                }
+
+                assetReferenceInfo = list.ToArray();
+
+                EditorUtility.ClearProgressBar();
+            }
+            else
+            {
+                assetReferenceInfo = new AssetReferenceInfo[0];
+            }
 
             dependencyScrollView = new DependencyScrollView();
             dependencyScrollView.Contents = GetListOfDependentInfos();
@@ -137,7 +173,8 @@ namespace Modules.Devkit.AssetBundles
 
                 if(EditorGUI.EndChangeCheck())
                 {
-                    scrollPosition = Vector2.zero;
+                    dependencyScrollView.ScrollPosition = Vector2.zero;
+                    referenceScrollView.ScrollPosition = Vector2.zero;
                 }
             }
 
@@ -158,8 +195,8 @@ namespace Modules.Devkit.AssetBundles
                 if(before != after)
                 {
                     searchText = after;
-                    scrollPosition = Vector2.zero;
 
+                    dependencyScrollView.ScrollPosition = Vector2.zero;
                     dependencyScrollView.Contents = GetListOfDependentInfos();
                 }
 
@@ -167,8 +204,8 @@ namespace Modules.Devkit.AssetBundles
                 {
                     searchText = string.Empty;
                     GUIUtility.keyboardControl = 0;
-                    scrollPosition = Vector2.zero;
 
+                    dependencyScrollView.ScrollPosition = Vector2.zero;
                     dependencyScrollView.Contents = GetListOfDependentInfos();
                 }
             }
