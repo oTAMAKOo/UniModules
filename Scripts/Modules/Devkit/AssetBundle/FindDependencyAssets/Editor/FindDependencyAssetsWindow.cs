@@ -16,7 +16,7 @@ namespace Modules.Devkit.AssetBundles
 	{
         //----- params -----
 
-        private readonly Vector2 WindowSize = new Vector2(500f, 650f);
+        private readonly Vector2 MinWindowSize = new Vector2(500f, 650f);
 
         private enum ViewType
         {
@@ -24,7 +24,7 @@ namespace Modules.Devkit.AssetBundles
             Reference,
         }
 
-        private class AssetBundleInfo
+        public class AssetBundleInfo
         {
             public string AssetBundleName { get; private set; }
             public Object[] Assets { get; private set; }
@@ -38,11 +38,11 @@ namespace Modules.Devkit.AssetBundles
                 this.Assets = assets;
                 this.DependentAssets = dependentAssets;
 
-                IsOpen = true;
+                IsOpen = false;
             }
         }
 
-        private class AssetReferenceInfo
+        public class AssetReferenceInfo
         {
             public Object Asset { get; private set; }
             public Object[] ReferenceAssets { get; private set; }
@@ -62,6 +62,8 @@ namespace Modules.Devkit.AssetBundles
 
         private ViewType selection = ViewType.Dependencies;
         private Vector2 scrollPosition = Vector2.zero;
+        private DependencyScrollView dependencyScrollView = null;
+        private ReferenceScrollView referenceScrollView = null;
         private string searchText = string.Empty;
 
         private bool initialized = false;
@@ -80,8 +82,7 @@ namespace Modules.Devkit.AssetBundles
         private void Initialize()
         {
             titleContent = new GUIContent("FindDependencyAssetsWindow");
-            minSize = WindowSize;
-            maxSize = WindowSize;
+            minSize = MinWindowSize;
 
             findDependencyAssets.CollectDependencies();
 
@@ -106,6 +107,12 @@ namespace Modules.Devkit.AssetBundles
                         return new AssetReferenceInfo(asset, referenceAssets);
                     })
                 .ToArray();
+
+            dependencyScrollView = new DependencyScrollView();
+            dependencyScrollView.Contents = GetListOfDependentInfos();
+
+            referenceScrollView = new ReferenceScrollView();
+            referenceScrollView.Contents = assetReferenceInfo;
 
             ShowUtility();
             initialized = true;
@@ -152,6 +159,8 @@ namespace Modules.Devkit.AssetBundles
                 {
                     searchText = after;
                     scrollPosition = Vector2.zero;
+
+                    dependencyScrollView.Contents = GetListOfDependentInfos();
                 }
 
                 if(GUILayout.Button(string.Empty, "SearchCancelButton", GUILayout.Width(18f)))
@@ -159,75 +168,21 @@ namespace Modules.Devkit.AssetBundles
                     searchText = string.Empty;
                     GUIUtility.keyboardControl = 0;
                     scrollPosition = Vector2.zero;
+
+                    dependencyScrollView.Contents = GetListOfDependentInfos();
                 }
             }
-
-            var infos = GetListOfDependentInfos();
-
+            
             GUILayout.Space(2f);
 
-            using(var scrollViewScope = new EditorGUILayout.ScrollViewScope(scrollPosition))
-            {
-                foreach(var info in infos)
-                {
-                    info.IsOpen = EditorLayoutTools.DrawHeader(info.AssetBundleName, info.IsOpen);
-
-                    if(info.IsOpen)
-                    {
-                        using(new ContentsScope())
-                        {
-                            if(info.Assets.Any())
-                            {
-                                foreach(var asset in info.Assets)
-                                {
-                                    using(new EditorGUILayout.HorizontalScope())
-                                    {
-                                        EditorLayoutTools.DrawLabelWithBackground("Asset", new Color(0.9f, 0.4f, 0.4f, 0.3f), null, TextAnchor.MiddleCenter, 90f);
-                                        EditorGUILayout.ObjectField("", asset, typeof(Object), false, GUILayout.Width(250f));
-                                    }
-                                }
-                            }
-
-                            if(info.DependentAssets.Any())
-                            {
-                                foreach(var dependentAsset in info.DependentAssets)
-                                {
-                                    using(new EditorGUILayout.HorizontalScope())
-                                    {
-                                        EditorLayoutTools.DrawLabelWithBackground("Dependent", new Color(0.4f, 0.4f, 0.9f, 0.5f), null, TextAnchor.MiddleCenter, 90f);
-                                        EditorGUILayout.ObjectField("", dependentAsset, typeof(Object), false, GUILayout.Width(250f));
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-
-                scrollPosition = scrollViewScope.scrollPosition;
-            }
+            dependencyScrollView.Draw();
         }
 
         private void DrawReference()
         {
             if(selection != ViewType.Reference){ return; }
 
-            using(var scrollViewScope = new EditorGUILayout.ScrollViewScope(scrollPosition))
-            {
-                foreach(var info in assetReferenceInfo)
-                {
-                    var count = info.ReferenceAssets.Length;
-
-                    if(count < 2) { continue; }
-
-                    using(new EditorGUILayout.HorizontalScope())
-                    {
-                        EditorLayoutTools.DrawLabelWithBackground(count.ToString(), new Color(1f, 0.65f, 0f, 0.5f), null, TextAnchor.MiddleCenter, 30f);
-                        EditorGUILayout.ObjectField("", info.Asset, typeof(Object), false, GUILayout.Width(250f));
-                    }
-                }
-
-                scrollPosition = scrollViewScope.scrollPosition;
-            }
+            referenceScrollView.Draw();
         }
 
         private AssetBundleInfo[] GetListOfDependentInfos()

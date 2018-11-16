@@ -164,7 +164,7 @@ namespace Modules.Devkit.AssetBundles
 
             var allAssetGuids = AssetDatabase.FindAssets("", new string[] { UnityPathUtility.AssetsFolder });
 
-            var allAssetPaths = new List<string>();
+            var allAssetPaths = new List<Tuple<string, string>>();
 
             for (var i = 0; i < allAssetGuids.Length; i++)
             {
@@ -174,15 +174,16 @@ namespace Modules.Devkit.AssetBundles
 
                 var assetPath = AssetDatabase.GUIDToAssetPath(guid);
 
-                allAssetPaths.Add(assetPath);
+                var assetBundleName = GetBundleName(assetPath);
+
+                if (string.IsNullOrEmpty(assetBundleName)) { continue; }
+
+                allAssetPaths.Add(Tuple.Create(assetBundleName, assetPath));
             }
 
             EditorUtility.ClearProgressBar();
 
-            return allAssetPaths
-                .Select(x => Tuple.Create(GetBundleName(x), x))
-                .Where(x => !string.IsNullOrEmpty(x.Item1))
-                .ToLookup(x => x.Item1, x => x.Item2);
+            return allAssetPaths.ToLookup(x => x.Item1, x => x.Item2);
         }
 
         /// <summary>
