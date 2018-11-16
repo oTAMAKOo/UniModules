@@ -226,7 +226,7 @@ namespace Modules
         [MenuItem(itemName: ToolsMenu + "AssetBundle/Dependency", priority = 2)]
         public static void OpenAssetBundleDependency()
         {
-            FindDependencyAssetsWindow.Instance.Initialize();
+            FindDependencyAssetsWindow.Open();
         }
 
         [MenuItem(itemName: ToolsMenu + "Cleaner/AutoClean Text On", priority = 0)]

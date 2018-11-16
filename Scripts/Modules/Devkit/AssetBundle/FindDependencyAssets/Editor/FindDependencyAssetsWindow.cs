@@ -77,7 +77,7 @@ namespace Modules.Devkit.AssetBundles
             Instance.Initialize();
         }
 
-        public void Initialize()
+        private void Initialize()
         {
             titleContent = new GUIContent("FindDependencyAssetsWindow");
             minSize = WindowSize;
