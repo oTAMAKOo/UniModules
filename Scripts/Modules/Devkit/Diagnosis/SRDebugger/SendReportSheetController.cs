@@ -4,12 +4,12 @@ using UnityEngine.UI;
 using System;
 using System.Collections;
 using System.Globalization;
+using System.Text;
 using System.Linq;
+using System.Security.Cryptography;
 using UniRx;
 using Extensions;
 using SRDebugger.Internal;
-using System.Text;
-using System.Threading;
 
 namespace Modules.Devkit.Diagnosis.SRDebugger
 {
@@ -36,25 +36,33 @@ namespace Modules.Devkit.Diagnosis.SRDebugger
 
         private IDisposable sendReportDisposable = null;
 
+        private RijndaelManaged rijndaelManaged = null;
+
+        private bool initialized = false;
+
         //----- property -----
 
-        public abstract string PostReportURL
-        {
-            get;
-        }
-        public abstract string Uid
-        {
-            get;
-        }
+        public abstract string PostReportURL { get; }
 
         //----- method -----
 
-        public void Initialize()
+        /// <summary>
+        /// 初期化.
+        /// </summary>
+        /// <param name="password">16文字の暗号化キー</param>
+        public void Initialize(string password = null)
         {
+            if (initialized) { return; }
+
+            if (!string.IsNullOrEmpty(password))
+            {
+                rijndaelManaged = AESExtension.CreateRijndael(password);
+            }
+
             UpdateView();
 
-            sendReportButton.OnClickAsObservable().Subscribe(
-                _ =>
+            sendReportButton.OnClickAsObservable()
+                .Subscribe(_ =>
                 {
                     if (sendReportDisposable != null)
                     {
@@ -63,15 +71,16 @@ namespace Modules.Devkit.Diagnosis.SRDebugger
                     else
                     {
                         sendReportDisposable = Observable.FromCoroutine(() => PostReport())
-                            .Subscribe(
-                                __ =>
-                                {
-                                    sendReportDisposable = null;
-
-                                })
+                            .Subscribe(__ =>
+                            {
+                                sendReportDisposable = null;
+                            })
                             .AddTo(this);
                     }
-                }).AddTo(this);
+                })
+                .AddTo(this);
+
+            initialized = true;
         }
 
         void OnEnable()
@@ -185,30 +194,10 @@ namespace Modules.Devkit.Diagnosis.SRDebugger
             // Unityは15000文字くらいまでしか表示対応していない.
             if (14000 < reportText.Length)
             {
-                reportText = reportText.SafeSubstring(0, 14000) + "<message truncated>"; 
+                reportText = reportText.SafeSubstring(0, 14000) + "<message truncated>";
             }
 
             reportContentText.text = reportText;
-        }
-
-        private static string GetReportText(LogEntry[] contents)
-        {
-            if (contents.IsEmpty())
-            {
-                return string.Empty;
-            }
-
-            var builder = new StringBuilder();
-
-            foreach (var content in contents)
-            {
-                builder.AppendFormat("Type: {0}", Enum.GetName(typeof(LogType), content.LogType)).AppendLine();
-                builder.AppendFormat("Message: {0}", content.Message).AppendLine();
-                builder.AppendFormat("StackTrace:\n{0}", content.StackTrace).AppendLine();
-                builder.AppendLine();
-            }
-
-            return builder.ToString();
         }
 
         private WWWForm CreatePostContent()
@@ -219,21 +208,64 @@ namespace Modules.Devkit.Diagnosis.SRDebugger
 
             var form = new WWWForm();
 
-            form.AddField("uid", Uid);
             form.AddField("logType", (lastLog != null ? lastLog.LogType : LogType.Log).ToString());
-            form.AddField("log", GetReportText(reportContents));
-            form.AddField("comment", commentInputField.text);
+            form.AddField("log", GetReportTextPostData());
+            form.AddField("comment", GetCommentPostData());
             form.AddField("time", DateTime.Now.ToString(CultureInfo.InvariantCulture));
             form.AddField("operatingSystem", SystemInfo.operatingSystem);
             form.AddField("deviceModel", SystemInfo.deviceModel);
             form.AddField("systemMemorySize", (SystemInfo.systemMemorySize * mega).ToString());
             form.AddField("useMemorySize", (int)GC.GetTotalMemory(false));
-            form.AddField("screenShotBase64", Convert.ToBase64String(BugReportScreenshotUtil.ScreenshotData));
+            form.AddField("screenShotBase64", GetScreenshotPostData());
+
+            // 拡張情報を追加.
+            AddExtendPostData(form);
+
+            return form;
+        }
+
+        private string GetReportTextPostData()
+        {
+            if (reportContents.IsEmpty())
+            {
+                return string.Empty;
+            }
+
+            var builder = new StringBuilder();
+
+            foreach (var content in reportContents)
+            {
+                builder.AppendFormat("Type: {0}", Enum.GetName(typeof(LogType), content.LogType)).AppendLine();
+                builder.AppendFormat("Message: {0}", content.Message).AppendLine();
+                builder.AppendFormat("StackTrace:\n{0}", content.StackTrace).AppendLine();
+                builder.AppendLine();
+            }
+
+            var reportText = builder.ToString();
+
+            return rijndaelManaged != null ? reportText.Encrypt(rijndaelManaged) : reportText;
+        }
+
+        private string GetScreenshotPostData()
+        {
+            var bytes = BugReportScreenshotUtil.ScreenshotData;
+
+            var base64Text = Convert.ToBase64String(bytes);
 
             // スクリーンショット情報破棄.
             BugReportScreenshotUtil.ScreenshotData = null;
 
-            return form;
+            return rijndaelManaged != null ? base64Text.Encrypt(rijndaelManaged) : base64Text;
         }
+
+        private string GetCommentPostData()
+        {
+            var comment = commentInputField.text;
+
+            return rijndaelManaged != null ? comment.Encrypt(rijndaelManaged) : comment;
+        }
+
+        /// <summary> 拡張情報を追加 </summary>
+        protected virtual void AddExtendPostData(WWWForm form) { }
     }
 }
