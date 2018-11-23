@@ -216,6 +216,8 @@ namespace Modules.Animation
         {
             while (true)
             {
+                if (UnityUtility.IsNull(this)) { yield break; }
+
                 if (UnityUtility.IsNull(gameObject)) { yield break; }
 
                 if (!UnityUtility.IsActiveInHierarchy(gameObject)) { break; }
