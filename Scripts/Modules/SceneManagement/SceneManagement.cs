@@ -6,12 +6,12 @@ using System;
 using System.Linq;
 using System.Collections;
 using System.Collections.Generic;
+using System.Text;
 using UniRx;
 using Extensions;
 using Constants;
 using Modules.Devkit;
 using Modules.SceneManagement.Diagnostics;
-using Unity.Linq;
 
 namespace Modules.SceneManagement
 {
@@ -493,17 +493,10 @@ namespace Modules.SceneManagement
             UnityConsole.Event(ConsoleEventName, ConsoleEventColor, "{0} → {1} ({2:F2}ms)\n\n{3}", prevScene, nextScene, total, detail);
 
             //====== PreLoad ======
-
-            var preLoadScenes = sceneArgument.PreLoadScenes;
-
-            if (preLoadScenes.Any())
-            {
-                preLoadDisposable = preLoadScenes
-                    .Select(x => LoadScene(x, LoadSceneMode.Additive))
-                    .WhenAll()
-                    .Subscribe(_ => preLoadDisposable = null)
-                    .AddTo(Disposable);
-            }
+            
+            preLoadDisposable = PreLoadScene(sceneArgument.PreLoadScenes)
+                .Subscribe(_ => preLoadDisposable = null)
+                .AddTo(Disposable);
         }
 
         #region Scene Additive
@@ -857,6 +850,57 @@ namespace Modules.SceneManagement
         public IObservable<Unit> OnUnloadErrorAsObservable()
         {
             return onUnloadError ?? (onUnloadError = new Subject<Unit>());
+        }
+
+        #endregion
+
+        #region Scene Preload 
+
+        private IObservable<Unit> PreLoadScene(Scenes[] targetScenes)
+        {
+            if (targetScenes.IsEmpty()) { return Observable.ReturnUnit(); }
+
+            var builder = new StringBuilder();
+
+            var observers = new List<IObservable<Unit>>();
+
+            foreach (var scene in targetScenes)
+            {
+                var observer = Observable.Defer(() => Observable.FromMicroCoroutine(() => PreLoadCore(scene, builder)));
+
+                observers.Add(observer);
+            }
+
+            var sw = new System.Diagnostics.Stopwatch();
+
+            return observers.WhenAll()
+                .Do(_ =>
+                    {
+                        sw.Stop();
+                        var time = sw.Elapsed.TotalMilliseconds.ToString("F2");
+                        var detail = builder.ToString();
+
+                        UnityConsole.Event(ConsoleEventName, ConsoleEventColor, "PreLoad Complete ({0ms)\n\n{1}", time, detail);
+                    })
+                .AsUnitObservable();
+        }
+
+        private IEnumerator PreLoadCore(Scenes targetScene, StringBuilder builder)
+        {
+            var sw = new System.Diagnostics.Stopwatch();
+
+            var loadYield = LoadScene(targetScene, LoadSceneMode.Additive).ToYieldInstruction();
+
+            while (!loadYield.IsDone)
+            {
+                yield return null;
+            }
+
+            sw.Stop();
+
+            var time = sw.Elapsed.TotalMilliseconds.ToString("F2");
+
+            builder.AppendLine(string.Format("{0} ({1}ms)", targetScene, time));
         }
 
         #endregion
