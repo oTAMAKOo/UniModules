@@ -27,6 +27,9 @@ namespace Extensions
 
         //----- method -----
 
+        /// <summary>
+        /// パスワードを指定してRijndaelManagedを生成.
+        /// </summary>
         public static RijndaelManaged CreateRijndael(string password, bool passwordEncryption = true)
         {
             if (string.IsNullOrEmpty(password)) { return null; }
@@ -49,6 +52,27 @@ namespace Extensions
             {
                 rijndael.Key = Encoding.UTF8.GetBytes(password);
             }
+
+            return rijndael;
+        }
+
+        /// <summary>
+        /// キー、ベクトルを指定してRijndaelManagedを生成.
+        /// </summary>
+        public static RijndaelManaged CreateRijndael(string key, string iv)
+        {
+            if (string.IsNullOrEmpty(key)) { return null; }
+
+            if (string.IsNullOrEmpty(iv)) { return null; }
+
+            var rijndael = new RijndaelManaged();
+
+            rijndael.BlockSize = 128;
+            rijndael.Padding = PaddingMode.PKCS7;
+            rijndael.Mode = CipherMode.ECB;
+
+            rijndael.Key = Encoding.UTF8.GetBytes(key);
+            rijndael.IV = Encoding.UTF8.GetBytes(iv);
 
             return rijndael;
         }

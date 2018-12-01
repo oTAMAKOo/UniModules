@@ -32,6 +32,8 @@ namespace Modules.Devkit.Diagnosis.SRDebugger
         [SerializeField]
         private Text progressBarText = null;
 
+        private WWWForm reportForm = null;
+
         private LogEntry[] reportContents = null;
 
         private IDisposable sendReportDisposable = null;
@@ -46,18 +48,12 @@ namespace Modules.Devkit.Diagnosis.SRDebugger
 
         //----- method -----
 
-        /// <summary>
-        /// 初期化.
-        /// </summary>
-        /// <param name="password">16文字の暗号化キー</param>
-        public void Initialize(string password = null)
+        /// <summary> 初期化. </summary>
+        public void Initialize()
         {
             if (initialized) { return; }
 
-            if (!string.IsNullOrEmpty(password))
-            {
-                rijndaelManaged = AESExtension.CreateRijndael(password);
-            }
+            rijndaelManaged = CreateRijndaelManaged();
 
             UpdateView();
 
@@ -104,18 +100,20 @@ namespace Modules.Devkit.Diagnosis.SRDebugger
             var notifier = new ScheduledNotifier<float>();
             notifier.Subscribe(x => UpdatePostProgress(x));
 
+            // 送信内容構築.
+            BuildPostContent();
+
             // 送信.
             Exception ex = null;
 
-            var url = PostReportURL;
-            var content = CreatePostContent();
-
-            yield return ObservableWWW.Post(url, content, notifier)
+            yield return ObservableWWW.Post(PostReportURL, reportForm, notifier)
                 .Timeout(TimeSpan.FromSeconds(30))
                 .StartAsCoroutine(error => ex = error);
 
             // 終了.
             OnReportComplete(ex == null ? string.Empty : ex.ToString());
+
+            reportForm = null;
         }
 
         private void UpdatePostProgress(float progress)
@@ -200,30 +198,6 @@ namespace Modules.Devkit.Diagnosis.SRDebugger
             reportContentText.text = reportText;
         }
 
-        private WWWForm CreatePostContent()
-        {
-            const uint mega = 1024 * 1024;
-
-            var lastLog = reportContents.LastOrDefault();
-
-            var form = new WWWForm();
-
-            form.AddField("logType", (lastLog != null ? lastLog.LogType : LogType.Log).ToString());
-            form.AddField("log", GetReportTextPostData());
-            form.AddField("comment", GetCommentPostData());
-            form.AddField("time", DateTime.Now.ToString(CultureInfo.InvariantCulture));
-            form.AddField("operatingSystem", SystemInfo.operatingSystem);
-            form.AddField("deviceModel", SystemInfo.deviceModel);
-            form.AddField("systemMemorySize", (SystemInfo.systemMemorySize * mega).ToString());
-            form.AddField("useMemorySize", (int)GC.GetTotalMemory(false));
-            form.AddField("screenShotBase64", GetScreenshotPostData());
-
-            // 拡張情報を追加.
-            AddExtendPostData(form);
-
-            return form;
-        }
-
         private string GetReportTextPostData()
         {
             if (reportContents.IsEmpty())
@@ -241,31 +215,56 @@ namespace Modules.Devkit.Diagnosis.SRDebugger
                 builder.AppendLine();
             }
 
-            var reportText = builder.ToString();
-
-            return rijndaelManaged != null ? reportText.Encrypt(rijndaelManaged) : reportText;
+            return builder.ToString();
         }
 
-        private string GetScreenshotPostData()
+        private void BuildPostContent()
         {
+            reportForm = new WWWForm();
+
+            const uint mega = 1024 * 1024;
+
+            var lastLog = reportContents.LastOrDefault();
+
+            //------ Screenshot ------
+
             var bytes = BugReportScreenshotUtil.ScreenshotData;
 
-            var base64Text = Convert.ToBase64String(bytes);
+            var screenshotBase64 = Convert.ToBase64String(bytes);
 
             // スクリーンショット情報破棄.
             BugReportScreenshotUtil.ScreenshotData = null;
 
-            return rijndaelManaged != null ? base64Text.Encrypt(rijndaelManaged) : base64Text;
+            //------ ReportContent ------
+
+            AddReportContent("logType", (lastLog != null ? lastLog.LogType : LogType.Log).ToString());
+            AddReportContent("log", GetReportTextPostData());
+            AddReportContent("comment", commentInputField.text);
+            AddReportContent("time", DateTime.Now.ToString(CultureInfo.InvariantCulture));
+            AddReportContent("operatingSystem", SystemInfo.operatingSystem);
+            AddReportContent("deviceModel", SystemInfo.deviceModel);
+            AddReportContent("systemMemorySize", (SystemInfo.systemMemorySize * mega).ToString());
+            AddReportContent("useMemorySize", GC.GetTotalMemory(false).ToString());
+            AddReportContent("screenShotBase64", screenshotBase64);
+
+            // 拡張情報を追加.
+            SetExtendContents();
         }
 
-        private string GetCommentPostData()
+        /// <summary> 送信情報に追加 </summary>
+        protected void AddReportContent(string key, string value)
         {
-            var comment = commentInputField.text;
+            if (reportForm == null) { return; }
 
-            return rijndaelManaged != null ? comment.Encrypt(rijndaelManaged) : comment;
+            value = rijndaelManaged != null ? value.Encrypt(rijndaelManaged) : value;
+
+            reportForm.AddField(key, value);
         }
+
+        /// <summary> AESクラス生成 </summary>
+        protected virtual RijndaelManaged CreateRijndaelManaged() { return null; }
 
         /// <summary> 拡張情報を追加 </summary>
-        protected virtual void AddExtendPostData(WWWForm form) { }
+        protected virtual void SetExtendContents() { }
     }
 }
