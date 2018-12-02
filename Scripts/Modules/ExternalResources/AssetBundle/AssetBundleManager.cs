@@ -26,9 +26,9 @@ namespace Modules.AssetBundles
 
         public const string PackageExtension = ".package";
 
-        public const string RijndaelKey = "QaQaVf7258Whw258";
+        public const string AesPassword = "QaQaVf7258Whw258";
 
-        private static readonly RijndaelManaged rijndael = AESExtension.CreateRijndael(RijndaelKey);
+        private static readonly AesManaged aesManaged = AESExtension.CreateAesManaged(AesPassword);
 
         // タイムアウトまでの時間.
         private readonly TimeSpan TimeoutLimit = TimeSpan.FromSeconds(60f);
@@ -525,7 +525,7 @@ namespace Modules.AssetBundles
                 fileStream.Read(bytes, 0, bytes.Length);
 
                 // 復号化
-                bytes = bytes.Decrypt(rijndael);
+                bytes = bytes.Decrypt(aesManaged);
             }
 
             var bundleLoadRequest = AssetBundle.LoadFromMemoryAsync(bytes);

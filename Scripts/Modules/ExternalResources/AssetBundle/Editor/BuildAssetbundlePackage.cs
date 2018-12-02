@@ -99,7 +99,7 @@ namespace Modules.AssetBundles.Editor
         /// </summary>
         private static void CreatePackage(string filePath)
         {
-            var rijndael = AESExtension.CreateRijndael(AssetBundleManager.RijndaelKey);
+            var aesManaged = AESExtension.CreateAesManaged(AssetBundleManager.AesPassword);
 
             try
             {
@@ -114,7 +114,7 @@ namespace Modules.AssetBundles.Editor
                     fileStream.Read(data, 0, data.Length);
 
                     // 暗号化して書き込み.
-                    File.WriteAllBytes(compressedPackage, data.Encrypt(rijndael));                   
+                    File.WriteAllBytes(compressedPackage, data.Encrypt(aesManaged));                   
                 }
 
                 // 元のファイル削除.

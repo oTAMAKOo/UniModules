@@ -44,13 +44,13 @@ namespace Modules.ExternalResource
 
         private Dictionary<string, Version.Info> versions = null;
 
-        private static RijndaelManaged rijndael = null;
+        private static AesManaged aesManaged = null;
 
         //----- property -----
 
-        private RijndaelManaged Rijndael
+        private AesManaged AesManaged
         {
-            get { return rijndael ?? (rijndael = AESExtension.CreateRijndael(AESKey)); }
+            get { return aesManaged ?? (aesManaged = AESExtension.CreateAesManaged(AESKey)); }
         }
 
         //----- method -----
@@ -232,7 +232,7 @@ namespace Modules.ExternalResource
                 version.infos = versions.Select(x => x.Value).ToArray();
 
                 var data = LZ4MessagePackSerializer.Serialize(version, UnityContractResolver.Instance);
-                var encrypt = data.Encrypt(Rijndael);
+                var encrypt = data.Encrypt(aesManaged);
 
                 File.WriteAllBytes(versionFilePath, encrypt);
             }
@@ -259,7 +259,7 @@ namespace Modules.ExternalResource
 
                 try
                 {
-                    decrypt = data.Decrypt(Rijndael);
+                    decrypt = data.Decrypt(aesManaged);
                 }
                 catch (Exception exception)
                 {

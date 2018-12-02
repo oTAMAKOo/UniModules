@@ -27,8 +27,8 @@ namespace Modules.MasterCache
 
         bool CheckVersion(string applicationVersion, string masterVersion);
         void ClearVersion();
-        IObservable<bool> Load(RijndaelManaged rijndael);
-        IObservable<bool> UpdateCache(string applicationVersion, string masterVersion, RijndaelManaged rijndael, CancellationToken cancelToken);
+        IObservable<bool> Load(AesManaged aesManaged);
+        IObservable<bool> UpdateCache(string applicationVersion, string masterVersion, AesManaged aesManaged, CancellationToken cancelToken);
     }
 
     public static class MasterCaches
@@ -153,13 +153,13 @@ namespace Modules.MasterCache
             masters.Clear();
         }
 
-        public IObservable<bool> Load(RijndaelManaged rijndael)
+        public IObservable<bool> Load(AesManaged aesManaged)
         {
             var result = true;
 
             var sw = System.Diagnostics.Stopwatch.StartNew();
 
-            result &= LoadCache(rijndael);
+            result &= LoadCache(aesManaged);
 
             sw.Stop();
 
@@ -168,12 +168,12 @@ namespace Modules.MasterCache
             return Observable.Return(result);
         }
 
-        public IObservable<bool> UpdateCache(string applicationVersion, string masterVersion, RijndaelManaged rijndael, CancellationToken cancelToken)
+        public IObservable<bool> UpdateCache(string applicationVersion, string masterVersion, AesManaged aesManaged, CancellationToken cancelToken)
         {
-            return Observable.FromCoroutine<bool>(observer => UpdateCacheInternal(observer, applicationVersion, masterVersion, rijndael, cancelToken));
+            return Observable.FromCoroutine<bool>(observer => UpdateCacheInternal(observer, applicationVersion, masterVersion, aesManaged, cancelToken));
         }
 
-        private IEnumerator UpdateCacheInternal(IObserver<bool> observer, string applicationVersion, string masterVersion, RijndaelManaged rijndael, CancellationToken cancelToken)
+        private IEnumerator UpdateCacheInternal(IObserver<bool> observer, string applicationVersion, string masterVersion, AesManaged aesManaged, CancellationToken cancelToken)
         {
             var result = true;
 
@@ -187,7 +187,7 @@ namespace Modules.MasterCache
 
             if (updateYield.HasResult && !updateYield.HasError)
             {
-                result &= SaveCache(updateYield.Result, applicationVersion, masterVersion, rijndael);
+                result &= SaveCache(updateYield.Result, applicationVersion, masterVersion, aesManaged);
 
                 sw.Stop();
 
@@ -211,7 +211,7 @@ namespace Modules.MasterCache
             observer.OnCompleted();
         }
 
-        private bool SaveCache(object[] masterData, string applicationVersion, string masterVersion, RijndaelManaged rijndael)
+        private bool SaveCache(object[] masterData, string applicationVersion, string masterVersion, AesManaged aesManaged)
         {
             try
             {
@@ -238,7 +238,7 @@ namespace Modules.MasterCache
                 var cacheData = new TCache() { values = masters.Values.ToArray() };
 
                 var data = LZ4MessagePackSerializer.Serialize(cacheData, UnityContractResolver.Instance);
-                var encrypt = data.Encrypt(rijndael);
+                var encrypt = data.Encrypt(aesManaged);
 
                 File.WriteAllBytes(installPath, encrypt);
 
@@ -255,7 +255,7 @@ namespace Modules.MasterCache
             return true;
         }
 
-        private bool LoadCache(RijndaelManaged rijndael)
+        private bool LoadCache(AesManaged aesManaged)
         {
             var result = true;
 
@@ -268,7 +268,7 @@ namespace Modules.MasterCache
 
             try
             {
-                decrypt = data.Decrypt(rijndael);
+                decrypt = data.Decrypt(aesManaged);
             }
             catch (Exception exception)
             {

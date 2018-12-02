@@ -10,88 +10,81 @@ namespace Extensions
     {
         //----- params -----
 
-        private const string RijndaelKey = "SSAHb5DqFV241491";
+        private const string DefaultPassword = "SSAHb5DqFV241491";
 
         private static readonly byte[] Salt = { 0xe6, 0xdc, 0xff, 0x74, 0xad, 0xad, 0x7a, 0xee, 0xc5, 0xfe, 0x50, 0xaf, 0x4d, 0x08, 0x2d, 0x3c };
 
         //----- field -----
 
-        private static RijndaelManaged rijndael = null;
+        private static AesManaged aesManaged = null;
 
         //----- property -----
 
-        public static RijndaelManaged Rijndael
+        public static AesManaged Rijndael
         {
-            get { return rijndael ?? (rijndael = CreateRijndael(RijndaelKey)); }
+            get { return aesManaged ?? (aesManaged = CreateAesManaged(DefaultPassword)); }
         }
 
         //----- method -----
 
         /// <summary>
-        /// パスワードを指定してRijndaelManagedを生成.
+        /// パスワードを指定してAesManagedを生成.
         /// </summary>
-        public static RijndaelManaged CreateRijndael(string password, bool passwordEncryption = true)
+        public static AesManaged CreateAesManaged(string password)
         {
             if (string.IsNullOrEmpty(password)) { return null; }
 
-            var rijndael = new RijndaelManaged();
+            var aesManaged = new AesManaged();
 
-            rijndael.BlockSize = 128;
-            rijndael.Padding = PaddingMode.PKCS7;
-            rijndael.Mode = CipherMode.ECB;
+            aesManaged.BlockSize = 128;
+            aesManaged.Padding = PaddingMode.PKCS7;
+            aesManaged.Mode = CipherMode.CBC;
 
-            if (passwordEncryption)
-            {
-                // 疑似乱数を使用してパスワードを暗号化.
-                var pdb = new Rfc2898DeriveBytes(password, Salt, 64);
+            // 疑似乱数を使用してパスワードを暗号化.
+            var pdb = new Rfc2898DeriveBytes(password, Salt, 64);
 
-                rijndael.Key = pdb.GetBytes(32);
-                rijndael.IV = pdb.GetBytes(16);
-            }
-            else
-            {
-                rijndael.Key = Encoding.UTF8.GetBytes(password);
-            }
+            aesManaged.Key = pdb.GetBytes(32);
+            aesManaged.IV = pdb.GetBytes(16);
 
-            return rijndael;
+            return aesManaged;
         }
 
         /// <summary>
-        /// キー、ベクトルを指定してRijndaelManagedを生成.
+        /// キー、ベクトルを指定してAesManagedを生成.
         /// </summary>
-        public static RijndaelManaged CreateRijndael(string key, string iv)
+        public static AesManaged CreateAesManaged(string key, string iv)
         {
             if (string.IsNullOrEmpty(key)) { return null; }
 
             if (string.IsNullOrEmpty(iv)) { return null; }
 
-            var rijndael = new RijndaelManaged();
+            var aesManaged = new AesManaged();
 
-            rijndael.BlockSize = 128;
-            rijndael.Padding = PaddingMode.PKCS7;
-            rijndael.Mode = CipherMode.ECB;
+            aesManaged.BlockSize = 128;
+            aesManaged.Padding = PaddingMode.PKCS7;
+            aesManaged.Mode = CipherMode.CBC;
 
-            rijndael.Key = Encoding.UTF8.GetBytes(key);
-            rijndael.IV = Encoding.UTF8.GetBytes(iv);
+            aesManaged.Key = Encoding.UTF8.GetBytes(key);
+            aesManaged.IV = Encoding.UTF8.GetBytes(iv);
 
-            return rijndael;
+            return aesManaged;
         }
 
         /// <summary>
         /// バイト配列をAESで暗号化.
         /// </summary>
-        public static byte[] Encrypt(this byte[] value, RijndaelManaged rijndael = null)
+        public static byte[] Encrypt(this byte[] value, AesManaged aesManaged = null)
         {
             if (value == null || value.IsEmpty()) { return null; }
 
-            if (rijndael == null)
+            if (aesManaged == null)
             {
-                rijndael = Rijndael;
+                aesManaged = AESExtension.aesManaged;
             }
 
             byte[] result = null;
 
-            using (var encryptor = rijndael.CreateEncryptor())
+            using (var encryptor = aesManaged.CreateEncryptor())
             {
                 using (var memoryStream = new MemoryStream())
                 {
@@ -111,18 +104,18 @@ namespace Extensions
         /// <summary>
         /// バイト配列をAESで復号化.
         /// </summary>
-        public static byte[] Decrypt(this byte[] value, RijndaelManaged rijndael = null)
+        public static byte[] Decrypt(this byte[] value, AesManaged aesManaged = null)
         {
             if (value == null || value.IsEmpty()) { return null; }
 
-            if (rijndael == null)
+            if (aesManaged == null)
             {
-                rijndael = Rijndael;
+                aesManaged = AESExtension.aesManaged;
             }
 
             byte[] result = null;
 
-            using (var decryptor = rijndael.CreateDecryptor())
+            using (var decryptor = aesManaged.CreateDecryptor())
             {
                 using (var memoryStream = new MemoryStream())
                 {
@@ -142,13 +135,13 @@ namespace Extensions
         /// <summary>
         /// 文字列をAESで暗号化.
         /// </summary>
-        public static string Encrypt(this string value, RijndaelManaged rijndael)
+        public static string Encrypt(this string value, AesManaged aesManaged)
         {
             if (string.IsNullOrEmpty(value)) { return null; }
 
             string result = null;
 
-            using (var encryptor = rijndael.CreateEncryptor())
+            using (var encryptor = aesManaged.CreateEncryptor())
             {
                 using (var memoryStream = new MemoryStream())
                 {
@@ -161,7 +154,7 @@ namespace Extensions
 
                         var encrypted = memoryStream.ToArray();
 
-                        result = ToHexString(encrypted);
+                        result = Convert.ToBase64String(encrypted);
                     }
                 }
             }
@@ -172,15 +165,15 @@ namespace Extensions
         /// <summary>
         /// 文字列をAESで復号化.
         /// </summary>
-        public static string Decrypt(this string value, RijndaelManaged rijndael)
+        public static string Decrypt(this string value, AesManaged aesManaged)
         {
             if (string.IsNullOrEmpty(value)) { return null; }
 
             string result = null;
 
-            using (var decryptor = rijndael.CreateDecryptor())
+            using (var decryptor = aesManaged.CreateDecryptor())
             {
-                var encrypted = FromHexString(value);
+                var encrypted = Convert.FromBase64String(value);
                 var fromEncrypt = new byte[encrypted.Length];
 
                 using (var memoryStream = new MemoryStream(encrypted))
@@ -196,40 +189,6 @@ namespace Extensions
 
             // string.Lengthした際に終端にNull文字が混入する為Null文字を削る.
             return result.TrimEnd('\0');
-        }
-
-        // バイト配列を16進文字列に変換.
-        private static string ToHexString(byte[] value)
-        {
-            var ret = string.Empty;
-
-            foreach (var b in value)
-            {
-                if (b < 16)
-                {
-                    ret += "0";
-                }
-                ret += Convert.ToString(b, 16);
-            }
-
-            return ret;
-        }
-
-        // 16進文字列をバイト配列に変換.
-        private static byte[] FromHexString(string value)
-        {
-            var length = value.Length / 2;
-            var bytes = new byte[length];
-
-            var j = 0;
-
-            for (var i = 0; i < length; ++i)
-            {
-                bytes[i] = Convert.ToByte(value.Substring(j, 2), 16);
-                j += 2;
-            }
-
-            return bytes;
         }
     }
 }

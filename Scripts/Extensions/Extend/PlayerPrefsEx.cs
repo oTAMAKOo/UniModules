@@ -10,18 +10,18 @@ namespace Extensions
     {
         private const string PrefsKey = "Sa0HbfDqeF6hw4s1";
 
-        private static readonly RijndaelManaged rijndael = AESExtension.CreateRijndael(PrefsKey);
+        private static readonly AesManaged aesManaged = AESExtension.CreateAesManaged(PrefsKey);
 
         //====== Utility ======
 
         public static bool HasKey(string name)
         {
-            return PlayerPrefs.HasKey(name.Encrypt(rijndael));
+            return PlayerPrefs.HasKey(name.Encrypt(aesManaged));
         }
 
         public static void DeleteKey(string name)
         {
-            PlayerPrefs.DeleteKey(name.Encrypt(rijndael));
+            PlayerPrefs.DeleteKey(name.Encrypt(aesManaged));
         }
 
         public static void DeleteAll()
@@ -38,14 +38,14 @@ namespace Extensions
 
         public static void SetString(string name, string value)
         {
-            PlayerPrefs.SetString(name.Encrypt(rijndael), value.Encrypt(rijndael));
+            PlayerPrefs.SetString(name.Encrypt(aesManaged), value.Encrypt(aesManaged));
         }
 
         public static string GetString(string name, string defaultValue = "")
         {
             if (!HasKey(name)) { return defaultValue; }
 
-            return PlayerPrefs.GetString(name.Encrypt(rijndael)).Decrypt(rijndael);
+            return PlayerPrefs.GetString(name.Encrypt(aesManaged)).Decrypt(aesManaged);
         }
 
         //====== Int ======

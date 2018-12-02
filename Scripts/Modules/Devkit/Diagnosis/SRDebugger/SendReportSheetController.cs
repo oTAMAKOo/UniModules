@@ -38,7 +38,7 @@ namespace Modules.Devkit.Diagnosis.SRDebugger
 
         private IDisposable sendReportDisposable = null;
 
-        private RijndaelManaged rijndaelManaged = null;
+        private AesManaged aesManaged = null;
 
         private bool initialized = false;
 
@@ -53,7 +53,7 @@ namespace Modules.Devkit.Diagnosis.SRDebugger
         {
             if (initialized) { return; }
 
-            rijndaelManaged = CreateRijndaelManaged();
+            aesManaged = CreateAesManaged();
 
             UpdateView();
 
@@ -256,13 +256,13 @@ namespace Modules.Devkit.Diagnosis.SRDebugger
         {
             if (reportForm == null) { return; }
 
-            value = rijndaelManaged != null ? value.Encrypt(rijndaelManaged) : value;
+            value = aesManaged != null ? value.Encrypt(aesManaged) : value;
 
             reportForm.AddField(key, value);
         }
 
         /// <summary> AESクラス生成 </summary>
-        protected virtual RijndaelManaged CreateRijndaelManaged() { return null; }
+        protected virtual AesManaged CreateAesManaged() { return null; }
 
         /// <summary> 拡張情報を追加 </summary>
         protected virtual void SetExtendContents() { }
