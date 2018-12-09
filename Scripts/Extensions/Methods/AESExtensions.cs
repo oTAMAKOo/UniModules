@@ -20,12 +20,23 @@ namespace Extensions
 
         //----- property -----
 
-        public static AesManaged Rijndael
+        public static AesManaged AesManaged
         {
             get { return aesManaged ?? (aesManaged = CreateAesManaged(DefaultPassword)); }
         }
 
         //----- method -----
+
+        private static AesManaged CreateDefaultAesManaged()
+        {
+            var aesManaged = new AesManaged();
+
+            aesManaged.BlockSize = 128;
+            aesManaged.Padding = PaddingMode.PKCS7;
+            aesManaged.Mode = CipherMode.CBC;
+
+            return aesManaged;
+        }
 
         /// <summary>
         /// パスワードを指定してAesManagedを生成.
@@ -34,14 +45,10 @@ namespace Extensions
         {
             if (string.IsNullOrEmpty(password)) { return null; }
 
-            var aesManaged = new AesManaged();
-
-            aesManaged.BlockSize = 128;
-            aesManaged.Padding = PaddingMode.PKCS7;
-            aesManaged.Mode = CipherMode.CBC;
-
             // 疑似乱数を使用してパスワードを暗号化.
             var pdb = new Rfc2898DeriveBytes(password, Salt, 64);
+
+            var aesManaged = CreateDefaultAesManaged();
 
             aesManaged.Key = pdb.GetBytes(32);
             aesManaged.IV = pdb.GetBytes(16);
@@ -58,11 +65,7 @@ namespace Extensions
 
             if (string.IsNullOrEmpty(iv)) { return null; }
 
-            var aesManaged = new AesManaged();
-
-            aesManaged.BlockSize = 128;
-            aesManaged.Padding = PaddingMode.PKCS7;
-            aesManaged.Mode = CipherMode.CBC;
+            var aesManaged = CreateDefaultAesManaged();
 
             aesManaged.Key = Encoding.UTF8.GetBytes(key);
             aesManaged.IV = Encoding.UTF8.GetBytes(iv);
@@ -79,7 +82,7 @@ namespace Extensions
 
             if (aesManaged == null)
             {
-                aesManaged = AESExtension.aesManaged;
+                aesManaged = AesManaged;
             }
 
             byte[] result = null;
@@ -110,7 +113,7 @@ namespace Extensions
 
             if (aesManaged == null)
             {
-                aesManaged = AESExtension.aesManaged;
+                aesManaged = AesManaged;
             }
 
             byte[] result = null;
