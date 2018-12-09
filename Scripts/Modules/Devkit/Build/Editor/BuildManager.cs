@@ -182,8 +182,18 @@ namespace Modules.Devkit.Build
 
             Debug.LogFormat("[Build] : {1}", path);
 
+            #if UNITY_2018_1_OR_NEWER
+
+            var success = error == null;
+
+            #else
+
+            var success = string.IsNullOrEmpty(error);
+
+            #endif
+
             // 出力先フォルダを開く.
-            if (string.IsNullOrEmpty(error))
+            if　(success)
             {
                 if (!BatchMode)
                 {
@@ -201,7 +211,7 @@ namespace Modules.Devkit.Build
             // 終了処理.
             if (BatchMode)
             {
-                EditorApplication.Exit(string.IsNullOrEmpty(error) ? 0 : 1);
+                EditorApplication.Exit(success ? 0 : 1);
             }
         }
 
