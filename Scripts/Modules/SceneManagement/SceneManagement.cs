@@ -877,10 +877,11 @@ namespace Modules.SceneManagement
                 .Do(_ =>
                     {
                         sw.Stop();
+
                         var time = sw.Elapsed.TotalMilliseconds.ToString("F2");
                         var detail = builder.ToString();
 
-                        UnityConsole.Event(ConsoleEventName, ConsoleEventColor, "PreLoad Complete ({0ms)\n\n{1}", time, detail);
+                        UnityConsole.Event(ConsoleEventName, ConsoleEventColor, "PreLoad Complete ({0}ms)\n\n{1}", time, detail);
                     })
                 .AsUnitObservable();
         }
