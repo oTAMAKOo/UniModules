@@ -1,4 +1,6 @@
 ﻿
+#if ENABLE_UTAGE
+
 using UnityEngine;
 using System;
 using System.Linq;
@@ -50,3 +52,5 @@ namespace Modules.UtageExtension
         protected abstract AssetFileBase GetExternalResourcesAssetFile(AssetFileManager mangager, AssetFileInfo fileInfo, IAssetFileSettingData settingData);
     }
 }
+
+#endif

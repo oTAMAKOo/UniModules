@@ -75,7 +75,7 @@ namespace Extensions.Devkit
         /// </summary>
         public static bool IsPrefab(Object instance)
         {
-            return PrefabUtility.GetPrefabParent(instance) == null && PrefabUtility.GetPrefabObject(instance) != null;
+            return PrefabUtility.GetCorrespondingObjectFromSource(instance) == null && PrefabUtility.GetPrefabInstanceHandle(instance) != null;
         }
 
         /// <summary>
@@ -83,27 +83,7 @@ namespace Extensions.Devkit
         /// </summary>
         public static bool IsPrefabInstance(Object instance)
         {
-            return PrefabUtility.GetPrefabParent(instance) != null && PrefabUtility.GetPrefabObject(instance) != null;
-        }
-
-        /// <summary>
-        /// Prefabに変更がある場合適用.
-        /// </summary>
-        public static bool ApplyPrefabIfModifications(Object instance)
-        {
-            var go = instance as GameObject;
-
-            if (go == null) { return false; }
-
-            // Prefabのインスタンスかどうかをチェック.
-            if (!IsPrefabInstance(go)) { return false; }
-
-            // 変更がある場合のみ置き換える.
-            if (PrefabUtility.GetPropertyModifications(go).Length <= 0) { return false; }
-
-            PrefabUtility.ReplacePrefab(go, PrefabUtility.GetPrefabParent(go));
-
-            return true;
+            return PrefabUtility.GetCorrespondingObjectFromSource(instance) != null && PrefabUtility.GetPrefabInstanceHandle(instance) != null;
         }
 
         #endregion

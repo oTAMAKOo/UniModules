@@ -1,4 +1,6 @@
 ﻿
+#if ENABLE_UTAGE
+
 using UnityEngine;
 using System;
 using System.IO;
@@ -95,3 +97,5 @@ namespace Modules.UtageExtension
         protected virtual void OnLoadComplete(T asset){}
     }
 }
+
+#endif

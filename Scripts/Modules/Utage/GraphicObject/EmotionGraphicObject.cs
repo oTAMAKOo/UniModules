@@ -1,4 +1,6 @@
 ﻿
+#if ENABLE_UTAGE
+
 using UnityEngine;
 using UniRx;
 using Extensions;
@@ -117,3 +119,5 @@ namespace Modules.UtageExtension
         }
     }
 }
+
+#endif

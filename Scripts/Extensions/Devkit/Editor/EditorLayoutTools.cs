@@ -1,6 +1,7 @@
 ﻿
 using UnityEngine;
 using UnityEditor;
+using System.Reflection;
 using Modules.Devkit.Prefs;
 
 namespace Extensions.Devkit
@@ -29,6 +30,8 @@ namespace Extensions.Devkit
 
         private static Texture2D backdropTex = null;
         private static Texture2D contrastTex = null;
+
+        private static MethodInfo drawSpriteMethod = null;
 
         //----- property -----
 
@@ -624,6 +627,69 @@ namespace Extensions.Devkit
                 GUI.DrawTextureWithTexCoords(rect, texture, uv.Value);
             }
         }
+
+        #region DrawSprite
+
+        private static MethodInfo CreateDrawSpriteMethod()
+        {
+            if (drawSpriteMethod != null) { return drawSpriteMethod; }
+
+            // ※ UnityEditor.UI.SpriteDrawUtility.DrawSpriteは公開されていないメソッドの為、リフレクションで実行.
+
+            var type = System.Type.GetType("UnityEditor.UI.SpriteDrawUtility, UnityEditor.UI");
+
+            var name = "DrawSprite";
+            var bindingAttr = BindingFlags.NonPublic | BindingFlags.Static;
+            var modifiers = new System.Type[]
+            {
+                typeof(Texture),
+                typeof(Rect),
+                typeof(Vector4),
+                typeof(Rect),
+                typeof(Rect),
+                typeof(Rect),
+                typeof(Color),
+                typeof(Material)
+            };
+
+            return type.GetMethod(name, bindingAttr, null, modifiers, null);
+        }
+
+        /// <summary> Sprite描画 </summary>
+        public static void DrawSprite(Sprite sprite, Rect drawArea, Vector4 border, Color color)
+        {
+            if (drawSpriteMethod == null)
+            {
+                drawSpriteMethod = CreateDrawSpriteMethod();
+            }
+
+            if (sprite == null) { return; }
+
+            var tex = sprite.texture;
+
+            if (tex == null) { return; }
+
+            var outer = sprite.rect;
+            var inner = outer;
+
+            inner.xMin += border.x;
+            inner.yMin += border.y;
+            inner.xMax -= border.z;
+            inner.yMax -= border.w;
+
+            var uv4 = UnityEngine.Sprites.DataUtility.GetOuterUV(sprite);
+            var uv = new Rect(uv4.x, uv4.y, uv4.z - uv4.x, uv4.w - uv4.y);
+            var padding = UnityEngine.Sprites.DataUtility.GetPadding(sprite);
+
+            padding.x /= outer.width;
+            padding.y /= outer.height;
+            padding.z /= outer.width;
+            padding.w /= outer.height;
+
+            drawSpriteMethod.Invoke(null, new object[] { tex, drawArea, padding, outer, inner, uv, color, null });
+        }
+
+        #endregion
 
         #region Inspector Preview
 

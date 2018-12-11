@@ -35,9 +35,9 @@ namespace Extensions.Devkit
 
             if (id <= 0)
             {
-                var prefabType = PrefabUtility.GetPrefabType(unityObject);
+                var prefabInstanceStatus = PrefabUtility.GetPrefabInstanceStatus(unityObject);
 
-                id = prefabType != PrefabType.None ? Get(PrefabUtility.GetPrefabObject(unityObject)) : unityObject.GetInstanceID();
+                id = prefabInstanceStatus != PrefabInstanceStatus.NotAPrefab ? Get(PrefabUtility.GetPrefabInstanceHandle(unityObject)) : unityObject.GetInstanceID();
             }
 
             return id;

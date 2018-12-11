@@ -6,6 +6,7 @@ using System.Linq;
 using UniRx;
 using Extensions;
 using System.Collections;
+using UnityEngine.Networking;
 
 namespace Modules.WebView
 {
@@ -126,40 +127,41 @@ namespace Modules.WebView
         {
             if (!postDataList.Any()) { yield break; }
 
-            var form = new WWWForm();
+            var form = new List<IMultipartFormSection>();
 
             foreach (var postData in postDataList)
             {
-                form.AddField(postData.fieldName, postData.value);
+                form.Add(new MultipartFormDataSection(postData.fieldName, postData.value));
             }
 
-            var www = new WWW(url, form);
+            var webRequest = UnityWebRequest.Post(url, form);
 
-            var yieldResponse = Observable.FromCoroutine(_ => ResponseConnect(www, 3.0f)).ToYieldInstruction();
+            var yieldResponse = Observable.FromCoroutine(_ => ResponseConnect(webRequest, 3.0f)).ToYieldInstruction();
 
             yield return yieldResponse;
 
-            if (!string.IsNullOrEmpty(www.error))
+            if (!string.IsNullOrEmpty(webRequest.error))
             {
                 // リクエストエラー
                 yield break;
             }
-            else if (string.IsNullOrEmpty(www.text))
+
+            if (string.IsNullOrEmpty(webRequest.downloadHandler.text))
             {
                 // 空で返ってきた場合
                 yield break;
             }
-            else
-            {
-                yield return LoadHTMLString(www.text, url).Subscribe().AddTo(this);
-            }
+
+            yield return LoadHTMLString(webRequest.downloadHandler.text, url).Subscribe().AddTo(this);
         }
 
-        private IEnumerator<WWW> ResponseConnect(WWW www, float timeout)
+        private IEnumerator<UnityWebRequest> ResponseConnect(UnityWebRequest webRequest, float timeout)
         {
             var requestTime = Time.time;
 
-            while (!www.isDone)
+            var operation = webRequest.SendWebRequest();
+
+            while (!operation.isDone)
             {
                 if (Time.time - requestTime < timeout)
                 {
@@ -172,7 +174,7 @@ namespace Modules.WebView
                 }
             }
 
-            yield return www;
+            yield return webRequest;
         }
 
 

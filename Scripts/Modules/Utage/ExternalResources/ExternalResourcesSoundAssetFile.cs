@@ -1,6 +1,8 @@
 ﻿
 #if ENABLE_CRIWARE
 
+#if ENABLE_UTAGE
+
 using UnityEngine;
 using System;
 using System.Collections;
@@ -101,5 +103,7 @@ namespace Modules.UtageExtension
         }
     }
 }
+
+#endif
 
 #endif

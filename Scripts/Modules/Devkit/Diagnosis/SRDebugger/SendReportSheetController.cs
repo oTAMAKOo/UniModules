@@ -3,6 +3,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.Globalization;
 using System.Text;
 using System.Linq;
@@ -10,6 +11,7 @@ using System.Security.Cryptography;
 using UniRx;
 using Extensions;
 using SRDebugger.Internal;
+using UnityEngine.Networking;
 
 namespace Modules.Devkit.Diagnosis.SRDebugger
 {
@@ -32,7 +34,7 @@ namespace Modules.Devkit.Diagnosis.SRDebugger
         [SerializeField]
         private Text progressBarText = null;
 
-        private WWWForm reportForm = null;
+        private List<IMultipartFormSection> reportForm = null;
 
         private LogEntry[] reportContents = null;
 
@@ -54,26 +56,27 @@ namespace Modules.Devkit.Diagnosis.SRDebugger
             if (initialized) { return; }
 
             aesManaged = CreateAesManaged();
+            reportForm = new List<IMultipartFormSection>();
 
             UpdateView();
 
             sendReportButton.OnClickAsObservable()
                 .Subscribe(_ =>
-                {
-                    if (sendReportDisposable != null)
                     {
-                        PostCancel();
-                    }
-                    else
-                    {
-                        sendReportDisposable = Observable.FromCoroutine(() => PostReport())
-                            .Subscribe(__ =>
-                            {
-                                sendReportDisposable = null;
-                            })
-                            .AddTo(this);
-                    }
-                })
+                        if (sendReportDisposable != null)
+                        {
+                            PostCancel();
+                        }
+                        else
+                        {
+                            sendReportDisposable = Observable.FromCoroutine(() => PostReport())
+                                .Subscribe(__ =>
+                                {
+                                    sendReportDisposable = null;
+                                })
+                                .AddTo(this);
+                        }
+                    })
                 .AddTo(this);
 
             initialized = true;
@@ -100,18 +103,27 @@ namespace Modules.Devkit.Diagnosis.SRDebugger
             var notifier = new ScheduledNotifier<float>();
             notifier.Subscribe(x => UpdatePostProgress(x));
 
+            reportForm.Clear();
+
             // 送信内容構築.
             BuildPostContent();
 
             // 送信.
-            Exception ex = null;
+            var webRequest = UnityWebRequest.Post(PostReportURL, reportForm);
 
-            yield return ObservableWWW.Post(PostReportURL, reportForm, notifier)
-                .Timeout(TimeSpan.FromSeconds(30))
-                .StartAsCoroutine(error => ex = error);
+            webRequest.timeout = 30;
+
+            var operation = webRequest.SendWebRequest();
+
+            while (!operation.isDone)
+            {
+                notifier.Report(operation.progress);
+
+                yield return null;
+            }
 
             // 終了.
-            OnReportComplete(ex == null ? string.Empty : ex.ToString());
+            OnReportComplete(webRequest.error);
 
             reportForm = null;
         }
@@ -220,7 +232,7 @@ namespace Modules.Devkit.Diagnosis.SRDebugger
 
         private void BuildPostContent()
         {
-            reportForm = new WWWForm();
+            reportForm = new List<IMultipartFormSection>();
 
             const uint mega = 1024 * 1024;
 
@@ -258,7 +270,7 @@ namespace Modules.Devkit.Diagnosis.SRDebugger
 
             value = aesManaged != null ? value.Encrypt(aesManaged) : value;
 
-            reportForm.AddField(key, value);
+            reportForm.Add(new MultipartFormDataSection(key, value));
         }
 
         /// <summary> AESクラス生成 </summary>

@@ -52,7 +52,7 @@ namespace Modules.Devkit.Pinning
         {
             base.Initialize();
 
-            EditorApplication.hierarchyWindowChanged += () => { UpdatePinnedObjectIds(); };
+            EditorApplication.hierarchyChanged += () => { UpdatePinnedObjectIds(); };
         }
 
         protected override void Save()

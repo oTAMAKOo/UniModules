@@ -6,6 +6,7 @@ using Unity.Linq;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Extensions.Devkit;
 using Modules.Devkit.Prefs;
 using UniRx;
 
@@ -55,7 +56,7 @@ namespace Modules.Devkit.EventHook
 
                 foreach (var newGameObject in newGameObjects)
                 {
-                    var isPrefab = PrefabUtility.GetPrefabParent(newGameObject) != null || PrefabUtility.GetPrefabObject(newGameObject) != null;
+                    var isPrefab = UnityEditorUtility.IsPrefab(newGameObject);
 
                     // Prefabは処理しない.
                     if (isPrefab) { continue; }

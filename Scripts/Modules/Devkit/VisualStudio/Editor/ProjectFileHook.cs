@@ -9,7 +9,15 @@ namespace Modules.Devkit.VisualStudio
     [InitializeOnLoad]
     public static class ProjectFileHook
     {
+        #if CSHARP_7_OR_LATER
+
+        private const int csharpLangVersion = 7;
+
+        #else
+
         private const int csharpLangVersion = 4;
+
+        #endif
 
         static ProjectFileHook()
         {

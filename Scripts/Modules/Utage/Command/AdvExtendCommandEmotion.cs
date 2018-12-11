@@ -1,4 +1,6 @@
 ﻿
+#if ENABLE_UTAGE
+
 using UnityEngine;
 using System;
 using System.Linq;
@@ -81,3 +83,5 @@ namespace Modules.UtageExtension
         }
     }
 }
+
+#endif

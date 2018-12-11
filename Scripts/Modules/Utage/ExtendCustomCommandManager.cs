@@ -1,4 +1,6 @@
 ﻿
+#if ENABLE_UTAGE
+
 using UnityEngine;
 using System;
 using System.Linq;
@@ -27,3 +29,5 @@ namespace Modules.UtageExtension
         public abstract void CreateCustomCommand(string id, StringGridRow row, AdvSettingDataManager dataManager, ref AdvCommand command);
     }
 }
+
+#endif

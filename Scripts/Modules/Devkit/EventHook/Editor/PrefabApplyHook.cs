@@ -33,7 +33,9 @@ namespace Modules.Devkit.EventHook
 
             var gameObject = Selection.activeGameObject;
 
-            var isPrefab = PrefabUtility.GetPrefabParent(gameObject) != null || PrefabUtility.GetPrefabObject(gameObject) != null;
+            if (gameObject == null) { return paths; }
+
+            var isPrefab = UnityEditorUtility.IsPrefab(gameObject);
 
             if (!isPrefab) { return paths; }
 

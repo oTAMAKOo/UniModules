@@ -24,7 +24,7 @@ namespace Extensions
             return sprites;
         }
 
-        public static string[] GetListOfSprites(this SpriteAtlas atlas, string match)
+        public static string[] GetListOfSprites(this SpriteAtlas atlas, string match = null)
         {
             var sprites = atlas.GetAllSprites().ToArray();
 

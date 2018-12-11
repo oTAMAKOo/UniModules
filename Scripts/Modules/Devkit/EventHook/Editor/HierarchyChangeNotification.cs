@@ -34,7 +34,7 @@ namespace Modules.Devkit.EventHook
         [InitializeOnLoadMethod]
         private static void InitializeOnLoadMethod()
         {
-            EditorApplication.hierarchyWindowChanged += HierarchyWindowChanged;
+            EditorApplication.hierarchyChanged += HierarchyChanged;
             EditorApplication.playModeStateChanged += x => { CollectHierarchyObjects(); };
 
             CollectHierarchyObjects();
@@ -52,7 +52,7 @@ namespace Modules.Devkit.EventHook
             currentScene = nowScene;
         }
 
-        private static void HierarchyWindowChanged()
+        private static void HierarchyChanged()
         {
             // 実行中は負荷が高いので実行しない.
             if(Application.isPlaying) { return; }

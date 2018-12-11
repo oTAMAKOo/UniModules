@@ -131,7 +131,7 @@ namespace Modules.Atlas
                         if (t == type || t.IsSubclassOf(type) && !list.Contains(obj))
                             list.Add(obj);
                     }
-                    else if (PrefabUtility.GetPrefabType(obj) == PrefabType.Prefab)
+                    else if (PrefabUtility.GetPrefabInstanceStatus(obj) != PrefabInstanceStatus.NotAPrefab)
                     {
                         Object t = (obj as GameObject).GetComponent(type);
                         if (t != null && !list.Contains(t)) list.Add(t);
