@@ -27,7 +27,7 @@ namespace Modules.MasterCache
 
         bool CheckVersion(string applicationVersion, string masterVersion);
         void ClearVersion();
-        IObservable<bool> Load(AesManaged aesManaged);
+        IObservable<bool> LoadCache(AesManaged aesManaged);
         IObservable<bool> UpdateCache(string applicationVersion, string masterVersion, AesManaged aesManaged, CancellationToken cancelToken);
     }
 
@@ -153,24 +153,87 @@ namespace Modules.MasterCache
             masters.Clear();
         }
 
-        public IObservable<bool> Load(AesManaged aesManaged)
+        public IObservable<bool> LoadCache(AesManaged aesManaged)
         {
-            var result = true;
+            return Observable.FromMicroCoroutine<bool>(observer => LoadCacheInternal(observer, aesManaged));
+        }
 
+        private IEnumerator LoadCacheInternal(IObserver<bool> observer, AesManaged aesManaged)
+        {
             var sw = System.Diagnostics.Stopwatch.StartNew();
+            
+            #if UNITY_EDITOR
 
-            result &= LoadCache(aesManaged);
+            try
+            {
+                MessagePackValidater.ValidateAttribute(typeof(TCache));
+                MessagePackValidater.ValidateAttribute(typeof(T));
+            }
+            catch (Exception exception)
+            {
+                Debug.LogException(exception);
+            }
+
+            #endif
+
+            var installPath = GetLocalCacheFilePath();
+
+            Func<string, AesManaged, byte[]> loadCacheFile = (_installPath, _aesManaged) =>
+            {
+                // ファイル読み込み.
+                var data = File.ReadAllBytes(_installPath);
+
+                // 復号化.               
+                return data.Decrypt(_aesManaged);
+            };
+
+            // ファイルの読み込みと復号化をスレッドプールで実行.
+            var loadYield = Observable.Start(() => loadCacheFile(installPath, aesManaged)).ObserveOnMainThread().ToYieldInstruction();
+
+            while (!loadYield.IsDone)
+            {
+                yield return null;
+            }
+
+            var result = false;
+
+            if (loadYield.HasResult)
+            {
+                var data = loadYield.Result;
+
+                try
+                {
+                    var cachedData = LZ4MessagePackSerializer.Deserialize<TCache>(data, UnityContractResolver.Instance);
+
+                    SetMaster(cachedData.values);
+
+                    result = true;
+                }
+                catch (Exception exception)
+                {
+                    Debug.LogException(exception);                    
+                }
+            }
 
             sw.Stop();
+            
+            if (result)
+            {
+                MasterCacheLoadDiagnostic.Instance.Register<TInstance>(sw.Elapsed.TotalMilliseconds);
+            }
+            else
+            {
+                File.Delete(installPath);
+                OnError();
+            }
 
-            MasterCacheLoadDiagnostic.Instance.Register<TInstance>(sw.Elapsed.TotalMilliseconds);
-
-            return Observable.Return(result);
+            observer.OnNext(result);
+            observer.OnCompleted();
         }
 
         public IObservable<bool> UpdateCache(string applicationVersion, string masterVersion, AesManaged aesManaged, CancellationToken cancelToken)
         {
-            return Observable.FromCoroutine<bool>(observer => UpdateCacheInternal(observer, applicationVersion, masterVersion, aesManaged, cancelToken));
+            return Observable.FromMicroCoroutine<bool>(observer => UpdateCacheInternal(observer, applicationVersion, masterVersion, aesManaged, cancelToken));
         }
 
         private IEnumerator UpdateCacheInternal(IObserver<bool> observer, string applicationVersion, string masterVersion, AesManaged aesManaged, CancellationToken cancelToken)
@@ -183,7 +246,10 @@ namespace Modules.MasterCache
 
             var updateYield = UpdateMaster().ToYieldInstruction(false, cancelToken);
 
-            yield return updateYield;
+            while (!updateYield.IsDone)
+            {
+                yield return null;
+            }
 
             if (updateYield.HasResult && !updateYield.HasError)
             {
@@ -253,54 +319,6 @@ namespace Modules.MasterCache
             }
 
             return true;
-        }
-
-        private bool LoadCache(AesManaged aesManaged)
-        {
-            var result = true;
-
-            var installPath = GetLocalCacheFilePath();
-
-            var data = File.ReadAllBytes(installPath);
-
-            // 復号化.
-            var decrypt = new byte[0];
-
-            try
-            {
-                decrypt = data.Decrypt(aesManaged);
-            }
-            catch (Exception exception)
-            {
-                Debug.LogException(exception);
-                result = false;
-            }
-
-            try
-            {
-                #if UNITY_EDITOR
-
-                MessagePackValidater.ValidateAttribute(typeof(TCache));
-                MessagePackValidater.ValidateAttribute(typeof(T));
-
-                #endif
-
-                var cachedData = LZ4MessagePackSerializer.Deserialize<TCache>(decrypt, UnityContractResolver.Instance);
-                SetMaster(cachedData.values);
-            }
-            catch (Exception exception)
-            {
-                Debug.LogException(exception);
-                result = false;
-            }
-
-            if (!result)
-            {
-                File.Delete(installPath);
-                OnError();
-            }
-
-            return result;
         }
 
         protected static string GetLocalCacheFilePath()
