@@ -211,7 +211,7 @@ namespace Modules.MasterCache
                 }
                 catch (Exception exception)
                 {
-                    Debug.LogException(exception);                    
+                    Debug.LogException(exception);      
                 }
             }
 

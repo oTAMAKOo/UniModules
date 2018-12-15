@@ -288,6 +288,8 @@ namespace Modules
 
         //------ コンパイル時に実行状態を解除 ------
 
+        #if !UNITY_2017_1_OR_NEWER
+
         [MenuItem(itemName: SettingsMenu + "StopPlayModeOnCompile", priority = 1)]
         public static void ToggleStopPlayModeOnCompileMode()
         {
@@ -300,6 +302,8 @@ namespace Modules
             UnityEditor.Menu.SetChecked(SettingsMenu + "StopPlayModeOnCompile", StopPlayModeOnCompilePrefs.enable);
             return true;
         }
+
+        #endif
 
         //------ コンパイル時のSceneView表示 ------
 
