@@ -270,41 +270,7 @@ namespace Modules
         #region Settings
 
         public const string SettingsMenu = MenuRoot + "Settings/";
-
-        //------ 日本語入力 ------
-
-        [MenuItem(itemName: SettingsMenu + "IME Composition On", priority = 0)]
-        public static void ToggleIMECompositionMode()
-        {
-            EditorIME.ToggleIMECompositionMode();
-        }
-
-        [MenuItem(itemName: SettingsMenu + "IME Composition On", validate = true)]
-        public static bool ToggleIMECompositionModeValidate()
-        {
-            UnityEditor.Menu.SetChecked(SettingsMenu + "IME Composition On", EditorIME.Mode == IMECompositionMode.On ? true : false);
-            return true;
-        }
-
-        //------ コンパイル時に実行状態を解除 ------
-
-        #if !UNITY_2017_1_OR_NEWER
-
-        [MenuItem(itemName: SettingsMenu + "StopPlayModeOnCompile", priority = 1)]
-        public static void ToggleStopPlayModeOnCompileMode()
-        {
-            StopPlayModeOnCompile.SetEnable(!StopPlayModeOnCompilePrefs.enable);
-        }
-
-        [MenuItem(itemName: SettingsMenu + "StopPlayModeOnCompile", validate = true)]
-        public static bool ToggleStopPlayModeOnCompileModeValidate()
-        {
-            UnityEditor.Menu.SetChecked(SettingsMenu + "StopPlayModeOnCompile", StopPlayModeOnCompilePrefs.enable);
-            return true;
-        }
-
-        #endif
-
+        
         //------ コンパイル時のSceneView表示 ------
 
         [MenuItem(itemName: SettingsMenu + "Show CompilingView", priority = 2)]
