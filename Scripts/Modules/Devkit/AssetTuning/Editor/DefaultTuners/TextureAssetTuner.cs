@@ -150,7 +150,7 @@ namespace Modules.Devkit.AssetTuning
                     break;
 
                 case BuildTargetGroup.Android:
-                    format = hasAlpha ? TextureImporterFormat.ETC2_RGBA8 : TextureImporterFormat.ETC2_RGB4;
+                    format = hasAlpha ? TextureImporterFormat.ASTC_RGBA_4x4 : TextureImporterFormat.ASTC_RGB_4x4;
                     break;
             }
 
