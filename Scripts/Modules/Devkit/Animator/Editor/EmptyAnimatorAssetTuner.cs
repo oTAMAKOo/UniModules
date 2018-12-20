@@ -20,6 +20,8 @@ namespace Modules.Devkit.Animator
 
         //----- property -----
 
+        public int Priority { get { return 50; } }
+
         //----- method -----
 
         [InitializeOnLoadMethod]

@@ -342,7 +342,7 @@ namespace Modules.Dicing
                                 GUI.backgroundColor = Color.white;
                                 GUILayout.Label(index.ToString(), GUILayout.Width(24f));
 
-                                if (GUILayout.Button(textureName, "OL TextField", GUILayout.Height(20f)))
+                                if (GUILayout.Button(textureName, EditorStyles.label, GUILayout.Height(20f)))
                                 {
                                     selectionTextureName = textureName;
                                 }

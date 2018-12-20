@@ -319,7 +319,7 @@ namespace Modules.Atlas
                                 GUI.backgroundColor = Color.white;
                                 GUILayout.Label(index.ToString(), GUILayout.Width(24f));
 
-                                if (GUILayout.Button(spriteInfo.name, "OL TextField", GUILayout.Height(20f)))
+                                if (GUILayout.Button(spriteInfo.name, EditorStyles.label, GUILayout.Height(20f)))
                                 {
                                     selection = spriteInfo.name;
                                 }

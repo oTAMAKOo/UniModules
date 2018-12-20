@@ -12,7 +12,9 @@ namespace Modules.Devkit.AssetTuning
 	public class AssetBundleAssetTuner : LifetimeDisposable, IAssetTuner
     {
         private IDisposable rebuildDisposable = null;
-        private AssetManageManager assetManageManager = null;       
+        private AssetManageManager assetManageManager = null;
+
+        public int Priority { get { return 50; } }
 
         private AssetManageManager AssetManageManager
         {

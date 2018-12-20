@@ -21,6 +21,8 @@ namespace Extensions.Devkit
 
         public const string MetaFileExtension = ".meta";
 
+        private const string EditingAssetTag = "Editing";
+
         /// <summary>
         /// 編集履歴に登録.
         /// </summary>
@@ -286,21 +288,21 @@ namespace Extensions.Devkit
 
             return AssetDatabase.AssetPathToGUID(assetPath);
         }
-
-        private const string EditingAssetTag = "Edit";
-
+        
         /// <summary>
         /// アセットに編集状態のタグを付与.
         /// </summary>
         public static void RegisterEditAsset(string assetPath)
         {
-            var assetImporter = AssetImporter.GetAtPath(assetPath);
+            var asset = AssetDatabase.LoadMainAssetAtPath(assetPath);
 
-            if (!assetImporter.userData.Contains(EditingAssetTag))
+            var labels =AssetDatabase.GetLabels(asset);
+
+            if (!labels.Contains(EditingAssetTag))
             {
-                assetImporter.userData += EditingAssetTag;
+                labels = labels.Concat(new string[] { EditingAssetTag }).ToArray();
 
-                assetImporter.SaveAndReimport();
+                AssetDatabase.SetLabels(asset, labels);
             }
         }
 
@@ -317,15 +319,17 @@ namespace Extensions.Devkit
         /// </summary>
         public static void ReleaseEditAsset(string assetPath)
         {
-            var assetImporter = AssetImporter.GetAtPath(assetPath);
+            var asset = AssetDatabase.LoadMainAssetAtPath(assetPath);
 
-            if (assetImporter == null) { return; }
+            if (asset == null) { return; }
 
-            if (assetImporter.userData.Contains(EditingAssetTag))
+            var labels = AssetDatabase.GetLabels(asset);
+
+            if (labels.Contains(EditingAssetTag))
             {
-                assetImporter.userData = assetImporter.userData.Replace(EditingAssetTag, string.Empty);
+                labels = labels.Where(x => x != EditingAssetTag).ToArray();
 
-                assetImporter.SaveAndReimport();
+                AssetDatabase.SetLabels(asset, labels);
             }
         }
 
@@ -342,9 +346,13 @@ namespace Extensions.Devkit
         /// </summary>
         public static bool IsEditAsset(string assetPath)
         {
-            var assetImporter = AssetImporter.GetAtPath(assetPath);
+            var asset = AssetDatabase.LoadMainAssetAtPath(assetPath);
 
-            return assetImporter != null && assetImporter.userData.Contains(EditingAssetTag);
+            if (asset == null) { return false; }
+
+            var labels = AssetDatabase.GetLabels(asset);
+
+            return labels.Contains(EditingAssetTag);
         }
 
         /// <summary>
@@ -354,7 +362,7 @@ namespace Extensions.Devkit
         {
             return IsEditAsset(AssetDatabase.GetAssetPath(assetObject));
         }
-
+        
         #endregion
 
         #region Audio

@@ -241,8 +241,6 @@ namespace Modules.Atlas
                 
                 AssetDatabase.ImportAsset(path);
             }
-
-            UnityEditorUtility.ReleaseEditAsset(path);
         }
 
         private SpriteData AddSprite(List<SpriteData> sprites, SpriteEntry se)

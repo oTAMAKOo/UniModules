@@ -12,14 +12,25 @@ namespace Modules.Devkit.AssetTuning
     {
         //----- params -----
 
+        private static readonly BuildTargetGroup[] DefaultTargetPlatforms =
+        {
+            BuildTargetGroup.Android,
+            BuildTargetGroup.iOS,
+        };
+
         //----- field -----
 
         private MethodInfo getWidthAndHeightMethodInfo = null;
 
         //----- property -----
 
+        public int Priority { get { return 25; } }
+
         /// <summary> 適用対象 </summary>
-        protected abstract BuildTargetGroup[] Platforms { get; }
+        protected virtual BuildTargetGroup[] Platforms
+        {
+            get { return DefaultTargetPlatforms; }
+        }
 
         // 圧縮設定を適用しないフォルダ名.
         protected abstract string[] IgnoreCompressionFolders { get; }
@@ -60,28 +71,6 @@ namespace Modules.Devkit.AssetTuning
             {
                 OnFirstImport(textureImporter);
             }
-
-            var assetPath = PathUtility.ConvertPathSeparator(path);
-            var pathSplit = assetPath.Split(PathUtility.PathSeparator);
-
-            var size = GetPreImportTextureSize(textureImporter);
-            
-            if (IgnoreCompressionFolders.Any(x => pathSplit.Contains(x)))
-            {
-                SetDefaultSettings(textureImporter);
-                return;
-            }
-
-            // ASTC / ETC2が使えるか(4の倍数なら圧縮設定).
-            var isMultipleOf4 = IsMultipleOf4(size.x) && IsMultipleOf4(size.y);
-
-            if (!isMultipleOf4)
-            {
-                SetDefaultSettings(textureImporter);
-                return;
-            }
-
-            ApplyCompressionSettings(textureImporter, (int)size.x, (int)size.y);
         }
 
         protected virtual void OnFirstImport(TextureImporter textureImporter)
@@ -101,10 +90,31 @@ namespace Modules.Devkit.AssetTuning
             settings.spriteGenerateFallbackPhysicsShape = false;
 
             textureImporter.SetTextureSettings(settings);
+
+            SetCompressionSettings(textureImporter);
         }
 
-        protected virtual void ApplyCompressionSettings(TextureImporter textureImporter, int width, int height)
+        protected virtual void SetCompressionSettings(TextureImporter textureImporter)
         {
+            var pathSplit = textureImporter.assetPath.Split(PathUtility.PathSeparator);
+
+            var size = GetPreImportTextureSize(textureImporter);
+
+            if (IgnoreCompressionFolders.Any(x => pathSplit.Contains(x)))
+            {
+                SetDefaultSettings(textureImporter);
+                return;
+            }
+
+            // ブロックが使えるか(4の倍数なら圧縮設定).
+            var isMultipleOf4 = IsMultipleOf4(size.x) && IsMultipleOf4(size.y);
+
+            if (!isMultipleOf4)
+            {
+                SetDefaultSettings(textureImporter);
+                return;
+            }
+
             foreach (var platform in Platforms)
             {
                 var platformTextureSetting = textureImporter.GetPlatformTextureSettings(platform.ToString());
@@ -129,22 +139,22 @@ namespace Modules.Devkit.AssetTuning
 
         protected virtual TextureImporterFormat GetPlatformCompressionType(TextureImporter textureImporter, BuildTargetGroup platform)
         {
-            var compressionType = TextureImporterFormat.RGBA32;
+            TextureImporterFormat format = TextureImporterFormat.RGBA32;
 
             var hasAlpha = textureImporter.DoesSourceTextureHaveAlpha();
 
             switch (platform)
             {
-                case BuildTargetGroup.Android:
-                    compressionType = hasAlpha ? TextureImporterFormat.ETC2_RGBA8Crunched : TextureImporterFormat.ETC2_RGB4;
+                case BuildTargetGroup.iOS:
+                    format = hasAlpha ? TextureImporterFormat.ASTC_RGBA_4x4 : TextureImporterFormat.ASTC_RGB_4x4;
                     break;
 
-                case BuildTargetGroup.iOS:
-                    compressionType = hasAlpha ? TextureImporterFormat.ASTC_RGBA_4x4 : TextureImporterFormat.ASTC_RGB_4x4;
+                case BuildTargetGroup.Android:
+                    format = hasAlpha ? TextureImporterFormat.ETC2_RGBA8 : TextureImporterFormat.ETC2_RGB4;
                     break;
             }
 
-            return compressionType;
+            return format;
 		}
 
         protected void SetDefaultSettings(TextureImporter textureImporter)

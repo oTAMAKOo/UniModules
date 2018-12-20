@@ -7,6 +7,8 @@ namespace Modules.Devkit.AssetTuning
 {
     public abstract class SpriteAtlasAssetTuner : IAssetTuner
     {
+        public int Priority { get { return 75; } }
+
         public bool Validate(string path)
         {
             var spriteAtlas = AssetDatabase.LoadMainAssetAtPath(path) as SpriteAtlas;

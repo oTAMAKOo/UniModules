@@ -91,8 +91,6 @@ namespace Modules.Atlas
             foreach (var editableTexture in editableTextures.Values)
             {
                 editableTexture.Restore();
-
-				UnityEditorUtility.ReleaseEditAsset(editableTexture.Texture);
 			}
 
             AssetDatabase.StopAssetEditing();
@@ -109,7 +107,7 @@ namespace Modules.Atlas
             {
                 editableTexture.Editable();
 
-				UnityEditorUtility.RegisterEditAsset(editableTexture.Texture);
+                //UnityEditorUtility.RegisterEditAsset(editableTexture.Texture);
 
 				if (restore)
                 {

@@ -13,6 +13,8 @@ namespace Modules.Devkit.AssetTuning
 {
     public interface IAssetTuner
     {
+        int Priority { get; }
+
         bool Validate(string path);
         void OnAssetCreate(string path);
         void OnAssetImport(string path);
@@ -41,7 +43,12 @@ namespace Modules.Devkit.AssetTuning
 
         public IAssetTuner[] AssetTuners
         {
-            get { return assetTuners.Values.ToArray(); }
+            get
+            {
+                return assetTuners.Values
+                    .OrderBy(x => x.Priority)
+                    .ToArray();
+            }
         }
 
         //----- method -----
