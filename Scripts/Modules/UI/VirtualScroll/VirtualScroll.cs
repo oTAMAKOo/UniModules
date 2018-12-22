@@ -243,6 +243,9 @@ namespace Modules.UI
                 UpdateItem(item, i);
             }
 
+            // 並べ替え.
+            UpdateSibling();
+
             // スクロール初期位置設定.
             CenterToItem(0);
 
@@ -413,16 +416,6 @@ namespace Modules.UI
                     if (ScrollMinus()) { break; }
                 }
             }
-
-            foreach (var item in itemList)
-            {
-                item.transform.SetSiblingIndex(item.Index);
-            }
-
-            if (hitBox != null)
-            {
-                hitBox.SetAsFirstSibling();
-            }
         }
 
         // 上 / 左にスクロール.
@@ -451,6 +444,8 @@ namespace Modules.UI
                     new Vector2(lastItem.RectTransform.localPosition.x + offset, 0);
 
                 UpdateItem(firstItem, lastItem.Index + 1);
+
+                UpdateSibling();
 
                 return false;
             }
@@ -484,10 +479,25 @@ namespace Modules.UI
 
                 UpdateItem(lastItem, firstItem.Index - 1);
 
+                UpdateSibling();
+
                 return false;
             }
 
             return true;
+        }
+
+        private void UpdateSibling()
+        {
+            foreach (var item in itemList)
+            {
+                item.transform.SetSiblingIndex(item.Index);
+            }
+
+            if (hitBox != null)
+            {
+                hitBox.SetAsFirstSibling();
+            }
         }
 
         void Update()
