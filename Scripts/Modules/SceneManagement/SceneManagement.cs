@@ -104,15 +104,7 @@ namespace Modules.SceneManagement
 
             // キャッシュ許容数を超えたらアンロード.
             cacheScenes.OnExtrudedAsObservable()
-                .Subscribe(x =>
-                    {
-                        if (x.Identifier.HasValue)
-                        {
-                            loadedscenes.Remove(x.Identifier.Value);
-                        }
-
-                        UnloadScene(x).Subscribe().AddTo(Disposable);
-                    })
+                .Subscribe(x => UnloadCacheScene(x))
                 .AddTo(Disposable);
         }
         
@@ -334,10 +326,16 @@ namespace Modules.SceneManagement
 
             //====== Scene Unload ======
 
-            // 遷移先のシーンではない かつ SceneBaseクラスが存在しない or キャッシュ対象でない場合削除.
+            // 不要なシーンをアンロード.
             var unloadScenes = loadedscenes.Values
+                // 遷移先のシーンではない.
                 .Where(x => x.Identifier != TransitionTarget)
-                .Where(x => UnityUtility.IsNull(x.Instance) || cacheScenes.All(y => y != x))
+                // SceneBaseクラスが存在しない.
+                .Where(x => UnityUtility.IsNull(x.Instance))
+                // キャッシュ対象でない.
+                .Where(x => cacheScenes.All(y => y != x))
+                // 次のシーンのPreload対象ではない.
+                .Where(x => currentSceneArgument.PreLoadScenes.All(y => y != x.Identifier))
                 .ToArray();
 
             foreach (var unloadScene in unloadScenes)
@@ -713,14 +711,6 @@ namespace Modules.SceneManagement
 
         #region Scene Unload
 
-        /// <summary> キャッシュ済みのシーンをアンロード. </summary>
-        public IObservable<Unit> UnloadCacheScene()
-        {
-            var sceneInstances = cacheScenes.ToArray();
-
-            return sceneInstances.Select(x => UnloadScene(x)).WhenAll().AsUnitObservable();
-        }
-
         /// <summary> シーンを指定してアンロード. </summary>
         public IObservable<Unit> UnloadScene(Scenes identifier)
         {
@@ -902,6 +892,38 @@ namespace Modules.SceneManagement
             var time = sw.Elapsed.TotalMilliseconds.ToString("F2");
 
             builder.AppendLine(string.Format("{0} ({1}ms)", targetScene, time));
+        }
+
+        #endregion
+
+        #region Scene Cache
+
+        /// <summary> キャッシュ済みの全シーンをアンロード. </summary>
+        public IObservable<Unit> UnloadAllCacheScene()
+        {
+            var sceneInstances = cacheScenes.ToArray();
+
+            return sceneInstances.Select(x => UnloadScene(x)).WhenAll().AsUnitObservable();
+        }
+
+        /// <summary> キャッシュ済みのシーンをアンロード. </summary>
+        private void UnloadCacheScene(SceneInstance sceneInstance)
+        {
+            // ※ 現在のシーンは破棄できんないので再度キャッシュキューに登録しなおす.
+
+            if (sceneInstance == current)
+            {
+                cacheScenes.Enqueue(sceneInstance);
+            }
+            else
+            {
+                if (sceneInstance.Identifier.HasValue)
+                {
+                    loadedscenes.Remove(sceneInstance.Identifier.Value);
+                }
+
+                UnloadScene(sceneInstance).Subscribe().AddTo(Disposable);
+            }
         }
 
         #endregion
