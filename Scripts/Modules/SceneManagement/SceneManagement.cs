@@ -856,10 +856,15 @@ namespace Modules.SceneManagement
 
             foreach (var scene in targetScenes)
             {
+                // キャッシュ済みのシーンがある場合はプリロードしない.
+                if (cacheScenes.Any(x => x.Identifier == scene)) { continue; }
+
                 var observer = Observable.Defer(() => Observable.FromMicroCoroutine(() => PreLoadCore(scene, builder)));
 
                 observers.Add(observer);
             }
+
+            if (observers.IsEmpty()) { return Observable.ReturnUnit(); }
 
             var sw = new System.Diagnostics.Stopwatch();
 
