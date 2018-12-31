@@ -1,13 +1,20 @@
 ﻿
 using UnityEngine;
 using UnityEngine.UI;
-using UnityEditor.Callbacks;
+using Unity.Linq;
 using System;
 using System.Collections;
 using System.Linq;
 using System.Collections.Generic;
 using UniRx;
 using Extensions;
+using SoftMasking;
+
+#if UNITY_EDITOR
+
+using UnityEditor.Callbacks;
+
+#endif
 
 namespace Modules.UI.TextEffect
 {
@@ -45,11 +52,15 @@ namespace Modules.UI.TextEffect
             Release();
         }
 
+        #if UNITY_EDITOR
+        
         [DidReloadScripts]
         private static void DidReloadScripts()
         {
             Rebuild();
         }
+
+        #endif
 
         private void Initialize()
         {
@@ -131,7 +142,9 @@ namespace Modules.UI.TextEffect
 
         private Material GetMaterial()
         {
-            var key = GetCacheKey();
+            var softMaskable = IsSoftMaskable();
+
+            var key = GetCacheKey(softMaskable);
 
             var material = cache.GetValueOrDefault(key);
 
@@ -144,7 +157,7 @@ namespace Modules.UI.TextEffect
                 return material;
             }
 
-            var shader = GetShader();
+            var shader = GetShader(softMaskable);
 
             if (shader == null) { return null; }
 
@@ -159,10 +172,15 @@ namespace Modules.UI.TextEffect
             return material;
         }
 
-        protected abstract Shader GetShader();
+        protected bool IsSoftMaskable()
+        {
+            return !gameObject.Ancestors().OfComponent<SoftMask>().IsEmpty();
+        }
 
         protected abstract void SetShaderParams(Material material);
 
-        protected abstract string GetCacheKey();
+        protected abstract Shader GetShader(bool softMaskable);
+
+        protected abstract string GetCacheKey(bool softMaskable);
     }
 }

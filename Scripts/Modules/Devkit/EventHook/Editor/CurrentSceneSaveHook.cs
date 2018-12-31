@@ -3,12 +3,21 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEditor;
 using System;
+using UniRx;
 
 namespace Modules.Devkit.EventHook
 {
     public class CurrentSceneSaveHook : UnityEditor.AssetModificationProcessor
     {
-        public static Action onSave = null;
+        //----- params -----
+
+        //----- field -----
+
+        private static Subject<string> onSaveScene = null;
+
+        //----- property -----
+
+        //----- method -----
 
         public static string[] OnWillSaveAssets(string[] paths)
         {
@@ -20,15 +29,20 @@ namespace Modules.Devkit.EventHook
                 {
                     if (currentScenePath == path)
                     {
-                        if (onSave != null)
+                        if (onSaveScene != null)
                         {
-                            onSave();
+                            onSaveScene.OnNext(path);
                         }
                     }
                 }
             }
 
             return paths;
+        }
+
+        public static IObservable<string> OnSaveSceneAsObservable()
+        {
+            return onSaveScene ?? (onSaveScene = new Subject<string>());
         }
     }
 }

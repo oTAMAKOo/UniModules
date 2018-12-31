@@ -155,7 +155,10 @@ namespace Modules.UI
 
                 case ScrollType.Limited:
                     {
-                        scrollRect.movementType = ScrollRect.MovementType.Elastic;
+                        if (scrollRect.movementType == ScrollRect.MovementType.Unrestricted)
+                        {
+                            scrollRect.movementType = ScrollRect.MovementType.Elastic;
+                        }
 
                         var delta = scrollRect.content.sizeDelta;
 

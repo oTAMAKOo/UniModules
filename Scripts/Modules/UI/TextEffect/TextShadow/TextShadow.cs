@@ -6,6 +6,8 @@ using System.Linq;
 using System.Collections.Generic;
 using UniRx;
 using Extensions;
+using SoftMasking;
+using Unity.Linq;
 
 namespace Modules.UI.TextEffect
 {
@@ -26,7 +28,8 @@ namespace Modules.UI.TextEffect
         [SerializeField]
         private float offsetY = -1f;
 
-        private static Shader outlineShader = null;
+        private static Shader shadowShader = null;
+        private static Shader shadowSoftMaskShader = null;
 
         //----- property -----
 
@@ -51,14 +54,19 @@ namespace Modules.UI.TextEffect
             Apply();
         }
 
-        protected override Shader GetShader()
+        protected override Shader GetShader(bool softMaskable)
         {
-            if (outlineShader == null)
+            if (shadowShader == null)
             {
-                outlineShader = Shader.Find("Custom/UI/Text-Shadow");
+                shadowShader = Shader.Find("Custom/UI/Text-Shadow");
             }
 
-            return outlineShader;
+            if (shadowSoftMaskShader)
+            {
+                shadowSoftMaskShader = Shader.Find("Custom/UI/Text-Shadow (SoftMask)");
+            }
+            
+            return softMaskable ? shadowSoftMaskShader : shadowShader;
         }
 
         protected override void SetShaderParams(Material material)
@@ -67,9 +75,9 @@ namespace Modules.UI.TextEffect
             material.SetVector("_Offset", new Vector4(offsetX, offsetY));
         }
 
-        protected override string GetCacheKey()
+        protected override string GetCacheKey(bool softMaskable)
         {
-            return string.Format("{0}.{1}.{2}", ColorUtility.ToHtmlStringRGBA(color), offsetX, offsetY);
+            return string.Format("{0}.{1}.{2}.{3}", softMaskable, ColorUtility.ToHtmlStringRGBA(color), offsetX, offsetY);
         }
     }
 }

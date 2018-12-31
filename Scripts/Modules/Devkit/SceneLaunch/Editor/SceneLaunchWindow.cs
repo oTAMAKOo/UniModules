@@ -248,7 +248,7 @@ namespace Modules.Devkit.SceneLaunch
 
 
         [InitializeOnLoadMethod()]
-        public static void InitializeOnLoadMethod()
+        private static void InitializeOnLoadMethod()
         {
             if (Prefs.standbyInitializer)
             {

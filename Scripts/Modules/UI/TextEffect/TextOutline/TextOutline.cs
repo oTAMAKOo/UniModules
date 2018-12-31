@@ -1,13 +1,13 @@
 ﻿
 using UnityEngine;
 using UnityEngine.UI;
+using Unity.Linq;
 using System;
 using System.Linq;
 using System.Collections.Generic;
 using UniRx;
 using Extensions;
-using Modules.ObjectCache;
-using UnityEditor.Callbacks;
+using SoftMasking;
 
 namespace Modules.UI.TextEffect
 {
@@ -27,6 +27,7 @@ namespace Modules.UI.TextEffect
         private float distance = 2f;
 
         private static Shader outlineShader = null;
+        private static Shader outlineSoftMaskShader = null;
 
         //----- property -----
 
@@ -50,14 +51,19 @@ namespace Modules.UI.TextEffect
             Apply();
         }
 
-        protected override Shader GetShader()
+        protected override Shader GetShader(bool softMaskable)
         {
             if(outlineShader == null)
             {
                 outlineShader = Shader.Find("Custom/UI/Text-Outline");
             }
 
-            return outlineShader;
+            if (outlineSoftMaskShader == null)
+            {
+                outlineSoftMaskShader = Shader.Find("Custom/UI/Text-Outline (SoftMask)");
+            }
+
+            return softMaskable ? outlineSoftMaskShader : outlineShader;
         }
 
         protected override void SetShaderParams(Material material)
@@ -66,9 +72,9 @@ namespace Modules.UI.TextEffect
             material.SetFloat("_Spread", distance);
         }
 
-        protected override string GetCacheKey()
+        protected override string GetCacheKey(bool softMaskable)
         {
-            return string.Format("{0}.{1}", ColorUtility.ToHtmlStringRGBA(color), distance);
+            return string.Format("{0}.{1}.{2}", softMaskable, ColorUtility.ToHtmlStringRGBA(color), distance);
         }
     }
 }

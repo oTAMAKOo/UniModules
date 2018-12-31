@@ -77,7 +77,7 @@ namespace Extensions.Devkit
         /// </summary>
         public static bool IsPrefab(Object instance)
         {
-            return PrefabUtility.GetCorrespondingObjectFromSource(instance) == null && PrefabUtility.GetPrefabInstanceHandle(instance) != null;
+            return PrefabUtility.GetCorrespondingObjectFromOriginalSource(instance) != null;
         }
 
         /// <summary>

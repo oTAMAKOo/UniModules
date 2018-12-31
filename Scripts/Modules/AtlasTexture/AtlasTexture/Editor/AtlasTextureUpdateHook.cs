@@ -22,7 +22,7 @@ namespace Modules.Atlas
         //----- method -----
 
         [InitializeOnLoadMethod]
-        public static void InitializeOnLoadMethod()
+        private static void InitializeOnLoadMethod()
         {
             PrefabUtility.prefabInstanceUpdated += ApplyAtlasTextureImage;
         }

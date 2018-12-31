@@ -262,6 +262,8 @@ namespace Extensions
         {
             if (instance == null) { return; }
 
+            if (state == instance.activeSelf) { return; }
+
             instance.SetActive(state);
         }
 
@@ -269,6 +271,8 @@ namespace Extensions
         public static void SetActive<T>(T instance, bool state) where T : Component
         {
             if (instance == null) { return; }
+
+            if (state == instance.gameObject.activeSelf) { return; }
 
             instance.gameObject.SetActive(state);
         }
@@ -336,6 +340,12 @@ namespace Extensions
         #endregion
 
         #region Component
+
+        /// <summary> コンポーネント取得 </summary>
+        public static T GetComponent<T>(Component instance) where T : Component
+        {
+            return instance != null ? instance.GetComponent<T>() : null;
+        }
 
         /// <summary> コンポーネント取得 </summary>
         public static T GetComponent<T>(GameObject instance) where T : Component
