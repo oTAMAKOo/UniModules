@@ -28,8 +28,9 @@ namespace Modules.Devkit.CleanComponent
 
         //----- method -----
 
-        protected static void ModifyTextComponent(GameObject rootObject)
+        protected static bool ModifyTextComponent(GameObject rootObject)
         {
+            var modified = false;
             var textComponents = rootObject.DescendantsAndSelf().OfComponent<Text>();
 
             foreach (var textComponent in textComponents)
@@ -51,9 +52,12 @@ namespace Modules.Devkit.CleanComponent
 
                 if (before != after)
                 {
+                    modified = true;
                     EditorUtility.SetDirty(textComponent);
                 }
             }
+
+            return modified;
         }
     }
 }

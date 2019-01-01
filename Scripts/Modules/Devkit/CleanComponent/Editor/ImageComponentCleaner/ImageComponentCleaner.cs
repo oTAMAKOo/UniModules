@@ -29,8 +29,9 @@ namespace Modules.Devkit.CleanComponent
 
         //----- method -----
 
-        protected static void ModifyImageComponent(GameObject rootObject)
+        protected static bool ModifyImageComponent(GameObject rootObject)
         {
+            var modified = false;
             var imageComponents = rootObject.DescendantsAndSelf().OfComponent<Image>();
 
             foreach (var imageComponent in imageComponents)
@@ -52,9 +53,12 @@ namespace Modules.Devkit.CleanComponent
 
                 if (before != after)
                 {
+                    modified = true;
                     EditorUtility.SetDirty(imageComponent);
                 }
             }
+
+            return modified;
         }
     }
 }
