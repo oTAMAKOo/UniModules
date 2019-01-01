@@ -97,40 +97,46 @@ namespace VisualStudioToolsUnity
             var deleteTargets = new[]
             {
                 "Boo.Lang",
+                "UnityScript",
                 "UnityScript.Lang",
             };
 
             var document = args.Content;
 
-            XElement targetChild = null;
+            XElement[] targetChilds = null;
 
             if (document.Root != null)
             {
-                targetChild = document.Root.Nodes()
+                targetChilds = document.Root.Nodes()
                     .OfType<XElement>()
                     .Where(x => x.Name.LocalName == "ItemGroup")
                     .Where(x => x.FirstNode != null)
                     .Select(x => x.FirstNode)
                     .OfType<XElement>()
-                    .FirstOrDefault(x => x.Name.LocalName == "Reference");
+                    .ToArray();
             }
 
-            if (targetChild == null) { return; }
+            if (targetChilds == null) { return; }
 
-            if (targetChild.Parent == null) { return; }
+            if (targetChilds.Length == 0) { return; }
 
-            var targetNode = targetChild.Parent;
-            var ns = document.Root.Name.Namespace;
-
-            var removeTargets = targetNode.Descendants()
-                .Where(x => x.Name.LocalName == "Reference")
-                .Where(x => x.Attribute("Include") != null)
-                .Where(x => !string.IsNullOrEmpty(x.Attribute("Include").Value))
-                .Where(x => deleteTargets.Any(y => x.Attribute("Include").Value.ToLower().Contains(y.ToLower())));
-
-            foreach (var removeTarget in removeTargets)
+            foreach (var targetChild in targetChilds)
             {
-                removeTarget.Remove();
+                if (targetChild.Parent == null) { continue; }
+
+                var targetNode = targetChild.Parent;
+
+                var removeTargets = targetNode.Descendants()
+                    .Where(x => x.Name.LocalName == "Reference")
+                    .Where(x => x.Attribute("Include") != null)
+                    .Where(x => !string.IsNullOrEmpty(x.Attribute("Include").Value))
+                    .Where(x => deleteTargets.Any(y => x.Attribute("Include").Value.ToLower().Contains(y.ToLower())))
+                    .ToArray();
+
+                foreach (var removeTarget in removeTargets)
+                {
+                    removeTarget.Remove();
+                }
             }
         }
 
