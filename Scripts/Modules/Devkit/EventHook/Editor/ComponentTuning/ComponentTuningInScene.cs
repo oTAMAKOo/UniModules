@@ -1,17 +1,12 @@
 ﻿
 using UnityEngine;
 using UnityEditor;
-using Unity.Linq;
-using System;
-using System.Linq;
-using System.Collections.Generic;
 using UniRx;
-using Extensions;
 using Extensions.Devkit;
 
 namespace Modules.Devkit.EventHook
 {
-    public class AdditionalComponentInScene : AdditionalComponent
+    public class ComponentTuningInScene : ComponentTuning
     {
         //----- params -----
 
@@ -24,7 +19,7 @@ namespace Modules.Devkit.EventHook
         [InitializeOnLoadMethod]
         private static void InitializeOnLoadMethod()
         {
-            HierarchyChangeNotification.OnCreatedAsObservable().Subscribe(x => AddRequireComponents(x, CheckExecute));
+            HierarchyChangeNotification.OnCreatedAsObservable().Subscribe(x => TuneComponents(x, CheckExecute));
         }
 
         private static bool CheckExecute(GameObject target)
