@@ -20,6 +20,7 @@ namespace Modules.SceneManagement.Diagnostics
             Prepare,
             Leave,
             Total,
+            Append,
         }
 
         //----- field -----

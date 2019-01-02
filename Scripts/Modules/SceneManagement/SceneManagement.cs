@@ -533,7 +533,7 @@ namespace Modules.SceneManagement
 
             var diagnostics = new TimeDiagnostics();
 
-            diagnostics.Begin(TimeDiagnostics.Measure.Total);
+            diagnostics.Begin(TimeDiagnostics.Measure.Append);
 
             var loadYield = LoadScene(identifier.Value, LoadSceneMode.Additive).ToYieldInstruction();
 
@@ -543,9 +543,9 @@ namespace Modules.SceneManagement
             {
                 sceneInstance = loadYield.Result;
 
-                diagnostics.Finish(TimeDiagnostics.Measure.Total);
+                diagnostics.Finish(TimeDiagnostics.Measure.Append);
 
-                var additiveTime = diagnostics.GetTime(TimeDiagnostics.Measure.Total);
+                var additiveTime = diagnostics.GetTime(TimeDiagnostics.Measure.Append);
 
                 UnityConsole.Event(ConsoleEventName, ConsoleEventColor, "{0} ({1}ms)(Additive)", identifier.Value, additiveTime);
             }
