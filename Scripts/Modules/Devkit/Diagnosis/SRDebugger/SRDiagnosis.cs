@@ -123,9 +123,9 @@ namespace Modules.Devkit.Diagnosis.SRDebugger
                 {
                     background.color = lastShowLogTime < Time.realtimeSinceStartup ? color : defaultColor;
                 }
-            }
 
-            currentLogType = logInfo.Type;
+                currentLogType = logInfo.Type;
+            }            
         }
     } 
 }
