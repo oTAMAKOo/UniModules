@@ -83,6 +83,22 @@ namespace Modules.UI
                     -scrollRect.content.anchoredPosition.y :
                     scrollRect.content.anchoredPosition.x;
             }
+
+            set
+            {
+                var rt = scrollRect.content;
+
+                switch (direction)
+                {
+                    case Direction.Vertical:
+                        rt.anchoredPosition = Vector.SetY(rt.anchoredPosition, value);
+                        break;
+
+                    case Direction.Horizontal:
+                        rt.anchoredPosition = Vector.SetX(rt.anchoredPosition, value);
+                        break;
+                }
+            }
         }
 
         public abstract T[] Contents { get; }

@@ -11,6 +11,14 @@ namespace Modules.Devkit.Diagnosis.SRDebugger
     {
         //----- params -----
 
+        private static readonly LogType[] LogPriority = new LogType[]
+        {
+            LogType.Log,
+            LogType.Warning,
+            LogType.Error,
+            LogType.Exception,
+        };
+
         //----- field -----
 
         [SerializeField]
@@ -22,7 +30,13 @@ namespace Modules.Devkit.Diagnosis.SRDebugger
         [SerializeField]
         private Color defaultColor = Color.white;
         [SerializeField]
+        private Color warningColor = Color.yellow;
+        [SerializeField]
         private Color errorColor = Color.red;
+        [SerializeField]
+        private Color exceptionColor = Color.magenta;
+
+        private LogType? currentLogType = null;
 
         private float lastShowLogTime = 0f;
 
@@ -50,34 +64,68 @@ namespace Modules.Devkit.Diagnosis.SRDebugger
                 SRDebug.Instance.PanelVisibilityChanged += x => { UnityUtility.SetActive(blockCollider, x); };
 
                 button.OnClickAsObservable()
-                    .Subscribe(_ =>
-                        {
-                            if (!SRDebug.Instance.IsDebugPanelVisible)
-                            {
-                                SRDebug.Instance.ShowDebugPanel();
-                                background.color = defaultColor;
-                                lastShowLogTime = Time.realtimeSinceStartup;
-                            }
-                        })
+                    .Subscribe(_ => OnClick())
                     .AddTo(this);
 
                 ApplicationLogHandler.Instance.OnLogReceiveAsObservable()
-                    .Subscribe(x =>
-                        {
-                            if (x.Type == LogType.Error || x.Type == LogType.Exception)
-                            {
-                                if (!SRDebug.Instance.IsDebugPanelVisible)
-                                {
-                                    background.color = lastShowLogTime < Time.realtimeSinceStartup ? errorColor : defaultColor;
-                                }
-                            }
-                        })
+                    .Subscribe(x => OnLogReceive(x))
                     .AddTo(this);
 
                 SRTrackLogService.Initialize();
 
                 initialized = true;
             }
+        }
+
+        private void OnClick()
+        {
+            if (!SRDebug.Instance.IsDebugPanelVisible)
+            {
+                SRDebug.Instance.ShowDebugPanel();
+                background.color = defaultColor;
+                currentLogType = null;
+                lastShowLogTime = Time.realtimeSinceStartup;
+            }
+        }
+
+        private void OnLogReceive(ApplicationLogHandler.LogInfo logInfo)
+        {
+            var changeColor = true;
+
+            if(currentLogType.HasValue)
+            {
+                var priority = LogPriority.IndexOf(x => x == logInfo.Type);
+                var current = LogPriority.IndexOf(x => x == currentLogType.Value);
+
+                changeColor = current < priority;
+            }
+
+            if (changeColor)
+            {
+                var color = defaultColor;
+
+                switch (logInfo.Type)
+                {
+                    case LogType.Warning:
+                        color = warningColor;
+                        break;
+
+                    case LogType.Error:
+                        color = errorColor;
+                        break;
+
+                    case LogType.Exception:
+                        color = exceptionColor;
+                        break;
+                }
+
+                if (!SRDebug.Instance.IsDebugPanelVisible)
+                {
+                    background.color = lastShowLogTime < Time.realtimeSinceStartup ? color : defaultColor;
+                }
+            }
+
+            currentLogType = logInfo.Type;
         }
     } 
 }

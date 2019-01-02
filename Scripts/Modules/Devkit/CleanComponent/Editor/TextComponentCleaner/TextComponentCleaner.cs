@@ -3,7 +3,9 @@ using UnityEngine;
 using UnityEngine.UI;
 using UnityEditor;
 using Unity.Linq;
+using System.Linq;
 using Extensions;
+using Modules.Atlas;
 using Modules.Devkit.Prefs;
 using Modules.GameText.Components;
 
@@ -28,36 +30,38 @@ namespace Modules.Devkit.CleanComponent
 
         //----- method -----
 
-        protected static bool ModifyTextComponent(GameObject rootObject)
+        protected static void ModifyTextComponent(GameObject rootObject)
         {
-            var modified = false;
             var textComponents = rootObject.DescendantsAndSelf().OfComponent<Text>();
 
             foreach (var textComponent in textComponents)
             {
                 if (string.IsNullOrEmpty(textComponent.text)) { continue; }
-
-                var before = textComponent.text;
-
+                
                 textComponent.text = string.Empty;
 
-                var setter = UnityUtility.GetComponent<GameTextSetter>(textComponent.gameObject);
+                EditorUtility.SetDirty(textComponent);
+            }
+        }
 
-                if (setter != null)
-                {
-                    setter.ImportText();
-                }
+        protected static bool CheckExecute(GameObject[] gameObjects)
+        {
+            var modify = gameObjects.SelectMany(x => x.DescendantsAndSelf().OfComponent<Text>())
+                .Where(x => !string.IsNullOrEmpty(x.text))
+                .Where(x =>
+                       {
+                           var gameTextSetter = UnityUtility.GetComponent<GameTextSetter>(x);
 
-                var after = textComponent.text;
+                           return gameTextSetter == null || gameTextSetter.Content != x.text;
+                       })
+                .Any();
 
-                if (before != after)
-                {
-                    modified = true;
-                    EditorUtility.SetDirty(textComponent);
-                }
+            if (modify)
+            {
+                return EditorUtility.DisplayDialog("TextComponent Cleaner", "Text is set directly Do you want to run cleanup?", "Execute", "Cancel");
             }
 
-            return modified;
+            return false;
         }
     }
 }

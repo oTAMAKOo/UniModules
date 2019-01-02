@@ -47,6 +47,8 @@ namespace Modules.Devkit.CleanComponent
 
             var rootGameObjects = activeScene.GetRootGameObjects();
 
+            if (!CheckExecute(rootGameObjects)) { return; }
+
             foreach (var rootGameObject in rootGameObjects)
             {
                 ModifyTextComponent(rootGameObject);

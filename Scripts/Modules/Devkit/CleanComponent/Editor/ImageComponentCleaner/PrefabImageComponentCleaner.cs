@@ -31,7 +31,9 @@ namespace Modules.Devkit.CleanComponent
 
             if (!Prefs.autoClean) { return; }
 
-            var gameObjects = prefab.DescendantsAndSelf();
+            var gameObjects = prefab.DescendantsAndSelf().ToArray();
+
+            if (!CheckExecute(gameObjects)) { return; }
 
             foreach (var gameObject in gameObjects)
             {

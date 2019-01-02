@@ -69,6 +69,8 @@ namespace Modules.Atlas
             }
         }
 
+        public Sprite Sprite { get; private set; }
+
         //----- method -----
 
         void Start()
@@ -101,7 +103,9 @@ namespace Modules.Atlas
                     spriteName = spriteData.name;
                 }
 
-                targetImage.sprite = string.IsNullOrEmpty(spriteName) ? null : atlas.GetSprite(spriteName);
+                Sprite = string.IsNullOrEmpty(spriteName) ? null : atlas.GetSprite(spriteName);
+
+                targetImage.sprite = Sprite;
             }
         }
 
@@ -109,6 +113,7 @@ namespace Modules.Atlas
         {
             spriteGuid = null;
             spriteName = null;
+            Sprite = null;
 
             if (targetImage != null)
             {

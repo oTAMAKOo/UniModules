@@ -1,4 +1,5 @@
 ﻿
+using System.Linq;
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEditor;
@@ -6,7 +7,7 @@ using Unity.Linq;
 using Extensions;
 using Modules.Atlas;
 using Modules.Devkit.Prefs;
-
+using UniRx.Async;
 
 namespace Modules.Devkit.CleanComponent
 {
@@ -29,36 +30,38 @@ namespace Modules.Devkit.CleanComponent
 
         //----- method -----
 
-        protected static bool ModifyImageComponent(GameObject rootObject)
+        protected static void ModifyImageComponent(GameObject rootObject)
         {
-            var modified = false;
             var imageComponents = rootObject.DescendantsAndSelf().OfComponent<Image>();
 
             foreach (var imageComponent in imageComponents)
             {
-                var before = imageComponent.sprite;
-
                 if (imageComponent.sprite == null) { continue; }
 
                 imageComponent.sprite = null;
 
-                var atlasTextureImage = UnityUtility.GetComponent<AtlasTextureImage>(imageComponent);
+                EditorUtility.SetDirty(imageComponent);
+            }
+        }
 
-                if(atlasTextureImage != null)
-                {
-                    atlasTextureImage.Apply();
-                }
+        protected static bool CheckExecute(GameObject[] gameObjects)
+        {
+            var modify = gameObjects.SelectMany(x => x.DescendantsAndSelf().OfComponent<Image>())
+                .Where(x => x.sprite != null)
+                .Where(x =>
+                    {
+                       var atlasTextureImage = UnityUtility.GetComponent<AtlasTextureImage>(x);
 
-                var after = imageComponent.sprite;
+                       return atlasTextureImage == null || atlasTextureImage.Sprite != x.sprite;
+                    })
+                .Any();
 
-                if (before != after)
-                {
-                    modified = true;
-                    EditorUtility.SetDirty(imageComponent);
-                }
+            if (modify)
+            {
+                return EditorUtility.DisplayDialog("ImageComponent Cleaner", "Sprite is set directly Do you want to run cleanup?", "Execute", "Cancel");
             }
 
-            return modified;
+            return false;
         }
     }
 }

@@ -33,21 +33,19 @@ namespace Modules.Devkit.CleanComponent
 
         private static void ClosePrefabMode(PrefabStage prefabStage)
         {
-            var modified = false;
-            var gameObjects = prefabStage.prefabContentsRoot.DescendantsAndSelf();
+            var gameObjects = prefabStage.prefabContentsRoot.DescendantsAndSelf().ToArray();
+
+            if (!CheckExecute(gameObjects)) { return; }
 
             foreach (var gameObject in gameObjects)
             {
-                modified |= ModifyTextComponent(gameObject);
+                ModifyTextComponent(gameObject);
             }
 
-            if (modified)
-            {
-                var prefabRoot = prefabStage.prefabContentsRoot;
-                var assetPath = prefabStage.prefabAssetPath;
+            var prefabRoot = prefabStage.prefabContentsRoot;
+            var assetPath = prefabStage.prefabAssetPath;
 
-                PrefabUtility.SaveAsPrefabAsset(prefabRoot, assetPath);
-            }
+            PrefabUtility.SaveAsPrefabAsset(prefabRoot, assetPath);   
         }
     }
 
