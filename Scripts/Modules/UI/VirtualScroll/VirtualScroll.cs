@@ -65,8 +65,6 @@ namespace Modules.UI
 
         private List<VirtualScrollItem<T>> itemList = null;
 
-        private IVirtualScrollExtension[] extensions = null;
-
         private Subject<GameObject> onCreateItem = null;
 
         private IObservable<Unit> updateQueueing = null;
@@ -124,8 +122,6 @@ namespace Modules.UI
                 scrollRect.vertical = direction == Direction.Vertical;
 
                 itemList = new List<VirtualScrollItem<T>>();
-
-                extensions = UnityUtility.GetInterfaces<IVirtualScrollExtension>(gameObject);
 
                 initialize = Status.Initialize;
             }
@@ -214,9 +210,6 @@ namespace Modules.UI
             // 先に登録して非アクティブ化.
             foreach (var item in addItems)
             {
-                // 拡張 (OnCreateItem).
-                yield return extensions.Select(x => x.OnCreateItem(item.gameObject)).WhenAll().ToYieldInstruction();
-
                 UnityUtility.SetActive(item, false);
             }
 
@@ -231,9 +224,6 @@ namespace Modules.UI
                 }
 
                 yield return item.Initialize().ToYieldInstruction();
-
-                // 拡張 (OnItemInitialize).
-                yield return extensions.Select(x => x.OnItemInitialize(item.gameObject)).WhenAll().ToYieldInstruction();
 
                 UnityUtility.SetActive(item, false);
             }
@@ -269,9 +259,6 @@ namespace Modules.UI
 
             // スクロール初期位置設定.
             CenterToItem(0);
-
-            // 拡張 (OnUpdateContents).
-            yield return extensions.Select(x => x.OnUpdateContents(ListItems)).WhenAll().ToYieldInstruction();
         }
 
         public void CenterToItem(int index)
