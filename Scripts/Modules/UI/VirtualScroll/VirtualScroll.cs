@@ -102,6 +102,8 @@ namespace Modules.UI
                 }
 
                 scrollRect.content.anchoredPosition = scrollPosition;
+
+                UpdateScroll();
             }
         }
 
@@ -405,13 +407,18 @@ namespace Modules.UI
                 }
             }
 
-            UpdateScroll(true);
-            UpdateScroll(false);
+            UpdateScroll();
 
             scrollRect.StopMovement();
         }
 
-        public void UpdateScroll(bool scrollPlus)
+        public void UpdateScroll()
+        {
+            UpdateScroll(true);
+            UpdateScroll(false);
+        }
+
+        private void UpdateScroll(bool scrollPlus)
         {
             while (true)
             {
