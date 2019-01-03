@@ -28,6 +28,9 @@ namespace Modules.SceneManagement
         /// <summary> シーン引数を設定 </summary>
         void SetArgument(ISceneArgument argument);
 
+        /// <summary> シーンの初期化 </summary>
+        IObservable<Unit> Initialize();
+
         /// <summary> シーンの準備 (通信、読み込みなど) </summary>
         IObservable<Unit> PrepareAsync(bool isSceneBack);
 
@@ -45,6 +48,9 @@ namespace Modules.SceneManagement
     {
         /// <summary> シーン引数を設定 </summary>
         public abstract void SetArgument(ISceneArgument argument);
+
+        /// <summary> シーンの初期化 </summary>
+        public abstract IObservable<Unit> Initialize();
 
         /// <summary> シーン準備処理 </summary>
         public abstract IObservable<Unit> PrepareAsync(bool isSceneBack);

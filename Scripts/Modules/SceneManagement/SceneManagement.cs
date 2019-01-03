@@ -681,6 +681,12 @@ namespace Modules.SceneManagement
                 }
 
                 SetEnabledForCapturedComponents(true);
+
+                // シーンの初期化処理.
+                if (sceneInstance.Instance != null)
+                {
+                    yield return sceneInstance.Instance.Initialize().ToYieldInstruction();
+                }
             }
             else
             {
