@@ -46,15 +46,10 @@ namespace Modules.Devkit.CleanComponent
 
         protected static bool CheckExecute(GameObject[] gameObjects)
         {
-            var modify = gameObjects.SelectMany(x => x.DescendantsAndSelf().OfComponent<Image>())
+            var modify = gameObjects
+                .SelectMany(x => x.DescendantsAndSelf().OfComponent<Image>())
                 .Where(x => x.sprite != null)
-                .Where(x =>
-                    {
-                       var atlasTextureImage = UnityUtility.GetComponent<AtlasTextureImage>(x);
-
-                       return atlasTextureImage == null || atlasTextureImage.Sprite != x.sprite;
-                    })
-                .Any();
+                .Any(x => x.sprite.hideFlags == HideFlags.None);
 
             if (modify)
             {

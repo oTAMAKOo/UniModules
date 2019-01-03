@@ -49,11 +49,11 @@ namespace Modules.Devkit.CleanComponent
             var modify = gameObjects.SelectMany(x => x.DescendantsAndSelf().OfComponent<Text>())
                 .Where(x => !string.IsNullOrEmpty(x.text))
                 .Where(x =>
-                       {
-                           var gameTextSetter = UnityUtility.GetComponent<GameTextSetter>(x);
+                    {
+                       var gameTextSetter = UnityUtility.GetComponent<GameTextSetter>(x);
 
-                           return gameTextSetter == null || gameTextSetter.Content != x.text;
-                       })
+                       return gameTextSetter == null || gameTextSetter.Content != x.text;
+                    })
                 .Any();
 
             if (modify)
