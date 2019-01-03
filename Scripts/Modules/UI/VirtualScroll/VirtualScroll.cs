@@ -75,35 +75,37 @@ namespace Modules.UI
 
         //----- property -----
 
-        private float ScrollPosition
+        public abstract T[] Contents { get; }
+
+        public ScrollRect ScrollRect { get { return scrollRect; } }
+
+        public float ScrollPosition
         {
             get
             {
                 return direction == Direction.Vertical ?
-                    -scrollRect.content.anchoredPosition.y :
-                    scrollRect.content.anchoredPosition.x;
+                       scrollRect.content.anchoredPosition.y :
+                       scrollRect.content.anchoredPosition.x;
             }
 
             set
             {
-                var rt = scrollRect.content;
+                var scrollPosition = scrollRect.content.anchoredPosition;
 
                 switch (direction)
                 {
                     case Direction.Vertical:
-                        rt.anchoredPosition = Vector.SetY(rt.anchoredPosition, value);
+                        scrollPosition.y = ScrollEnable() ? value : 0f;
                         break;
 
                     case Direction.Horizontal:
-                        rt.anchoredPosition = Vector.SetX(rt.anchoredPosition, value);
+                        scrollPosition.x = ScrollEnable() ? value : 0f;
                         break;
                 }
+
+                scrollRect.content.anchoredPosition = scrollPosition;
             }
         }
-
-        public abstract T[] Contents { get; }
-
-        public ScrollRect ScrollRect { get { return scrollRect; } }
 
         public GameObject[] ListItems { get { return itemList.Select(x => x.gameObject).ToArray(); } }
 
@@ -274,7 +276,7 @@ namespace Modules.UI
 
         public void CenterToItem(int index)
         {
-            prevScrollPosition = ScrollPosition;
+            prevScrollPosition = GetCurrentPosition();
 
             var anchoredPosition = CalcCenterToAnchoredPosition(index);
 
@@ -523,13 +525,22 @@ namespace Modules.UI
         {
             if (initialize != Status.Done) { return; }
 
-            if (ScrollPosition == prevScrollPosition) { return; }
+            var scrollPosition = GetCurrentPosition();
+
+            if (scrollPosition == prevScrollPosition) { return; }
 
             if (!ScrollEnable()) { return; }
+                        
+            UpdateScroll(0 < scrollPosition - prevScrollPosition);
 
-            UpdateScroll(0 < ScrollPosition - prevScrollPosition);
+            prevScrollPosition = scrollPosition;
+        }
 
-            prevScrollPosition = ScrollPosition;
+        private float GetCurrentPosition()
+        {
+            return direction == Direction.Vertical ?
+                   -scrollRect.content.anchoredPosition.y :
+                   scrollRect.content.anchoredPosition.x;
         }
 
         private int GetRequireCount()
