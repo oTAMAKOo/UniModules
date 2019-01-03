@@ -160,7 +160,7 @@ namespace Modules.SceneManagement
 
             yield return OnRegisterCurrentScene(current).ToYieldInstruction();
 
-            yield return current.Instance.PrepareAsync(false).ToYieldInstruction();
+            yield return current.Instance.Prepare(false).ToYieldInstruction();
 
             current.Instance.Enter(false);
         }
@@ -422,7 +422,7 @@ namespace Modules.SceneManagement
             // 次のシーンの準備処理実行.
             if (current.Instance != null)
             {
-                yield return current.Instance.PrepareAsync(isSceneBack).ToYieldInstruction();
+                yield return current.Instance.Prepare(isSceneBack).ToYieldInstruction();
             }
 
             // Prepar終了通知.

@@ -32,7 +32,7 @@ namespace Modules.SceneManagement
         IObservable<Unit> Initialize();
 
         /// <summary> シーンの準備 (通信、読み込みなど) </summary>
-        IObservable<Unit> PrepareAsync(bool isSceneBack);
+        IObservable<Unit> Prepare(bool isSceneBack);
 
         /// <summary> シーンの開始 </summary>
         void Enter(bool isSceneBack);
@@ -53,7 +53,7 @@ namespace Modules.SceneManagement
         public abstract IObservable<Unit> Initialize();
 
         /// <summary> シーン準備処理 </summary>
-        public abstract IObservable<Unit> PrepareAsync(bool isSceneBack);
+        public abstract IObservable<Unit> Prepare(bool isSceneBack);
 
         /// <summary> シーン開始時処理 </summary>
         public abstract void Enter(bool isSceneBack);
