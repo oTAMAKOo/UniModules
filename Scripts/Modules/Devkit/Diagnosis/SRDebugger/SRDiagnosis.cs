@@ -73,6 +73,8 @@ namespace Modules.Devkit.Diagnosis.SRDebugger
 
                 SRTrackLogService.Initialize();
 
+                UnityUtility.SetActive(blockCollider, false);
+
                 initialized = true;
             }
         }
