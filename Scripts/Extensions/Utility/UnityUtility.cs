@@ -518,6 +518,8 @@ namespace Extensions
             {
                 var scene = SceneManager.GetSceneAt(i);
 
+                if (!scene.isLoaded) { continue; }
+
                 if (!scene.IsValid()) { continue; }
 
                 var rootObjects = scene.GetRootGameObjects();
