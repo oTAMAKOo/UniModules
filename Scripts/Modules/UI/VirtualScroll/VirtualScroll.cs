@@ -165,6 +165,15 @@ namespace Modules.UI
 
                         var delta = scrollRectTransform.rect.size;
 
+                        if (direction == Direction.Vertical)
+                        {
+                            delta.x = 0;
+                        }
+                        else
+                        {
+                            delta.y = 0f;
+                        }
+
                         scrollRect.content.sizeDelta = delta;
                     }
                     break;
