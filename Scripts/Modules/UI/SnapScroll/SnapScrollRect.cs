@@ -63,16 +63,15 @@ namespace Modules.UI
         {
             snapTarget = target;
 
-            if (snapTarget != null)
-            {
-                var position = content.InverseTransformPoint(snapTarget.transform.position);
+            if (snapTarget == null) { return; }
+            
+            var position = content.InverseTransformPoint(snapTarget.transform.position);
 
-                targetPosition = new Vector3()
-                {
-                    x = horizontal ? -position.x : content.localPosition.x,
-                    y = vertical ? -position.y : content.localPosition.y,
-                };
-            }
+            targetPosition = new Vector3()
+            {
+                x = horizontal ? -position.x : content.localPosition.x,
+                y = vertical ? -position.y : content.localPosition.y,
+            };       
         }
 
         void Update()

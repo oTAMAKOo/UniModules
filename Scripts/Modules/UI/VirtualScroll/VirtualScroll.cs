@@ -421,13 +421,27 @@ namespace Modules.UI
             scrollRect.StopMovement();
         }
 
-        public void UpdateScroll()
+        void Update()
         {
-            UpdateScroll(true);
-            UpdateScroll(false);
+            UpdateScroll();
         }
 
-        private void UpdateScroll(bool scrollPlus)
+        private void UpdateScroll()
+        {
+            if (initialize != Status.Done) { return; }
+
+            var scrollPosition = GetCurrentPosition();
+
+            if (scrollPosition == prevScrollPosition) { return; }
+
+            if (!ScrollEnable()) { return; }
+
+            ScrollUpdate(0 < scrollPosition - prevScrollPosition);
+
+            prevScrollPosition = scrollPosition;
+        }
+
+        public void ScrollUpdate(bool scrollPlus)
         {
             while (true)
             {
@@ -523,22 +537,7 @@ namespace Modules.UI
                 hitBox.SetAsFirstSibling();
             }
         }
-
-        void Update()
-        {
-            if (initialize != Status.Done) { return; }
-
-            var scrollPosition = GetCurrentPosition();
-
-            if (scrollPosition == prevScrollPosition) { return; }
-
-            if (!ScrollEnable()) { return; }
-                        
-            UpdateScroll(0 < scrollPosition - prevScrollPosition);
-
-            prevScrollPosition = scrollPosition;
-        }
-
+        
         private float GetCurrentPosition()
         {
             return direction == Direction.Vertical ?
