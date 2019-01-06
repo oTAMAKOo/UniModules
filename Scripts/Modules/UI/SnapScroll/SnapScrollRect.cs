@@ -39,7 +39,7 @@ namespace Modules.UI
 
         //----- method -----
 
-        public void SetSnapTargets(GameObject[] items)
+        public void RegisterTargets(GameObject[] items)
         {
             snapTargets = items;
         }
@@ -59,7 +59,7 @@ namespace Modules.UI
             dragging = false;
         }
 
-        public void SetSnapTarget(GameObject target)
+        public void Snap(GameObject target)
         {
             snapTarget = target;
 
@@ -137,7 +137,7 @@ namespace Modules.UI
                 }
             }
 
-            SetSnapTarget(nearestTarget);
+            Snap(nearestTarget);
         }
 
         public IObservable<GameObject> OnSnapAsObservable()

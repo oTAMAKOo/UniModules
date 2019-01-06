@@ -509,6 +509,8 @@ namespace Modules.ExternalResource
 
         private void UnloadAssetInternal(string resourcesPath)
         {
+            if (string.IsNullOrEmpty(resourcesPath)) { return; }
+
             if (assetInfoManifest == null)
             {
                 Debug.LogError("AssetInfoManifest is null.");
