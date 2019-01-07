@@ -29,7 +29,8 @@ namespace Modules.MessagePack
 
             serializedObject.Update();
 
-            var compilerAssetsRelativePath = serializedObject.FindProperty("compilerAssetsRelativePath");
+            var winCompilerRelativePath = serializedObject.FindProperty("winCompilerRelativePath");
+            var osxCompilerRelativePath = serializedObject.FindProperty("osxCompilerRelativePath");
             var scriptExportAssetDir = serializedObject.FindProperty("scriptExportAssetDir");
             var scriptName = serializedObject.FindProperty("scriptName");
 
@@ -37,19 +38,37 @@ namespace Modules.MessagePack
             var pathTextStyle = GUI.skin.GetStyle("TextArea");
             pathTextStyle.alignment = TextAnchor.MiddleLeft;
 
-            GUILayout.Label("MessagePack compiler");
+            GUILayout.Label("MessagePack compiler (Win)");
 
             using (new EditorGUILayout.HorizontalScope())
             {
-                GUILayout.Label(compilerAssetsRelativePath.stringValue, pathTextStyle);
+                GUILayout.Label(winCompilerRelativePath.stringValue, pathTextStyle);
 
-                if (GUILayout.Button("Edit", GUILayout.Width(30f)))
+                if (GUILayout.Button("Edit", GUILayout.Width(45f)))
                 {
                     UnityEditorUtility.RegisterUndo("MessagePackConfigInspector Undo", instance);
 
                     var path = EditorUtility.OpenFilePanel("Select MessagePack compiler", Application.dataPath, "exe");
 
-                    compilerAssetsRelativePath.stringValue = UnityPathUtility.MakeRelativePath(path);
+                    winCompilerRelativePath.stringValue = UnityPathUtility.MakeRelativePath(path);
+
+                    serializedObject.ApplyModifiedProperties();
+                }
+            }
+
+            GUILayout.Label("MessagePack compiler (OSX)");
+
+            using (new EditorGUILayout.HorizontalScope())
+            {
+                GUILayout.Label(osxCompilerRelativePath.stringValue, pathTextStyle);
+
+                if (GUILayout.Button("Edit", GUILayout.Width(45f)))
+                {
+                    UnityEditorUtility.RegisterUndo("MessagePackConfigInspector Undo", instance);
+
+                    var path = EditorUtility.OpenFilePanel("Select MessagePack compiler", Application.dataPath, "");
+
+                    osxCompilerRelativePath.stringValue = UnityPathUtility.MakeRelativePath(path);
 
                     serializedObject.ApplyModifiedProperties();
                 }
@@ -61,7 +80,7 @@ namespace Modules.MessagePack
             {
                 GUILayout.Label(scriptExportAssetDir.stringValue, pathTextStyle);
 
-                if (GUILayout.Button("Edit", GUILayout.Width(30f)))
+                if (GUILayout.Button("Edit", GUILayout.Width(45f)))
                 {
                     UnityEditorUtility.RegisterUndo("MessagePackConfigInspector Undo", instance);
 

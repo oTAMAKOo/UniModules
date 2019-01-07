@@ -16,17 +16,36 @@ namespace Modules.MessagePack
         //----- field -----
 
         [SerializeField]
-        private string compilerAssetsRelativePath = null;   // コンパイラまでのパス(相対パス).
+        private string winCompilerRelativePath = null;  // コンパイラまでのパス(相対パス).
         [SerializeField]
-        private string scriptExportAssetDir = null;         // スクリプト出力先.
+        private string osxCompilerRelativePath = null;  // コンパイラまでのパス(相対パス).
         [SerializeField]
-        private string scriptName = null;                   // 出力スクリプト名.
+        private string scriptExportAssetDir = null;     // スクリプト出力先.
+        [SerializeField]
+        private string scriptName = null;               // 出力スクリプト名.
 
         //----- property -----
 
         public string CompilerPath
         {
-            get { return UnityPathUtility.RelativePathToFullPath(compilerAssetsRelativePath); }
+            get
+            {
+                var relativePath = string.Empty;
+
+                #if UNITY_EDITOR_WIN
+
+                relativePath = winCompilerRelativePath;
+
+                #endif
+
+                #if UNITY_EDITOR_OSX
+
+                relativePath = osxCompilerRelativePath;
+
+                #endif
+
+                return UnityPathUtility.RelativePathToFullPath(relativePath);
+            }
         }
 
         public string ScriptExportDir { get { return UnityPathUtility.ConvertAssetPathToFullPath(scriptExportAssetDir); } }

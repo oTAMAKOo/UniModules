@@ -2,6 +2,7 @@
 using UnityEditor;
 using System;
 using System.Diagnostics;
+using System.IO;
 using System.Text;
 using Extensions;
 
@@ -20,7 +21,6 @@ namespace Modules.MessagePack
         //----- property -----
 
         //----- method -----
-        
         
         public static void Compile()
         {
@@ -43,7 +43,7 @@ namespace Modules.MessagePack
             var csproj = PathUtility.Combine(projectFolder, string.Format("{0}{1}", csprojName, CSProjExtension));
             var generatePath = PathUtility.Combine(messagePackConfig.ScriptExportDir, messagePackConfig.ExportScriptName);
 
-            var arguments = string.Format("--input {0} --output {1}", csproj, generatePath);
+            var arguments = string.Format(" --input {0} --output {1}", csproj, generatePath);
 
             if (EditorUserBuildSettings.development)
             {
@@ -52,30 +52,34 @@ namespace Modules.MessagePack
 
             try
             {
+                var processStartInfo = new ProcessStartInfo(messagePackConfig.CompilerPath, arguments);
+
+                // エラー出力をリダイレクト.
+                processStartInfo.RedirectStandardOutput = true;
+                processStartInfo.RedirectStandardError = true;
+
+                // シェル実行しない.
+                processStartInfo.UseShellExecute = false;
+
+                // ウィンドウ非表示.
+                processStartInfo.CreateNoWindow = true;                
+
                 // 実行ファイルを指定して実行.
                 using (var compileProcess = new Process())
                 {
-                    compileProcess.StartInfo.FileName = messagePackConfig.CompilerPath;
-
-                    compileProcess.StartInfo.Arguments = arguments;
-
                     var compileLog = new StringBuilder();
 
-                    // 標準出力をリダイレクト.
-                    compileProcess.StartInfo.RedirectStandardOutput = true;
-
-                    // シェル実行しない.
-                    compileProcess.StartInfo.UseShellExecute = false;
-
-                    // ウィンドウ非表示.
-                    compileProcess.StartInfo.CreateNoWindow = false;
+                    compileProcess.StartInfo = processStartInfo;
 
                     DataReceivedEventHandler processOutputDataReceived = (sender, e) =>
                     {
-                        compileLog.AppendLine(e.Data).AppendLine();
+                        compileLog.AppendLine(e.Data);
                     };
 
                     compileProcess.OutputDataReceived += processOutputDataReceived;
+
+                    // タイムアウト時間 (120秒).
+                    var timeout = TimeSpan.FromSeconds(120);
 
                     //起動.
                     compileProcess.Start();
@@ -83,7 +87,7 @@ namespace Modules.MessagePack
                     compileProcess.BeginOutputReadLine();
 
                     // 結果待ち.
-                    compileProcess.WaitForExit();
+                    compileProcess.WaitForExit((int)timeout.TotalMilliseconds);
 
                     if (compileProcess.ExitCode == 1)
                     {
