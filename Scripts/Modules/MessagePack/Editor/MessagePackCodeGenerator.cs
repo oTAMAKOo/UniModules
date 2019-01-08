@@ -22,8 +22,10 @@ namespace Modules.MessagePack
 
         //----- method -----
         
-        public static void Compile()
+        public static bool Compile()
         {
+            var result = false;
+
             var messagePackConfig = MessagePackConfig.Instance;
 
             var csprojName = string.Empty;
@@ -96,6 +98,8 @@ namespace Modules.MessagePack
                     else
                     {
                         Debug.LogFormat("Generate: {0}", generatePath);
+
+                        result = true;
                     }
                 }
             }
@@ -103,6 +107,8 @@ namespace Modules.MessagePack
             {
                 Debug.LogError(e.Message + "\n" + e.StackTrace);
             }
+
+            return result;
         }
     }
 }
