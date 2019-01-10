@@ -70,7 +70,7 @@ namespace Modules.Devkit.CleanComponent
 
             // 保存されないなら許容.
             if(image.sprite.hideFlags.HasFlag(HideFlags.DontSaveInEditor)) { return false; }
-            
+
             return true;
         }
     }

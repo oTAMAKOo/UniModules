@@ -75,6 +75,8 @@ namespace Modules.Devkit.Diagnosis.SRDebugger
 
                 UnityUtility.SetActive(blockCollider, false);
 
+                background.color = defaultColor;
+
                 initialized = true;
             }
         }
