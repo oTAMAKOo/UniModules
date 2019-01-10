@@ -311,7 +311,7 @@ namespace Modules.Particle
 
             playObservable = Observable.FromCoroutine(() => PlayInternal()).Share();
 
-            return Observable.FromCoroutine(() => PlayInternal());
+            return playObservable;
         }
 
         private IEnumerator PlayInternal()

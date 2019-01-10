@@ -24,6 +24,8 @@ namespace Modules.Devkit.CleanComponent
             }
         }
 
+        private const string UnityBuiltinAssetPath = "Resources/unity_builtin_extra";
+
         //----- field -----
 
         //----- property -----
@@ -48,8 +50,7 @@ namespace Modules.Devkit.CleanComponent
         {
             var modify = gameObjects
                 .SelectMany(x => x.DescendantsAndSelf().OfComponent<Image>())
-                .Where(x => x.sprite != null)
-                .Any(x => x.sprite.hideFlags == HideFlags.None);
+                .Any(x => CheckModifyTarget(x));
 
             if (modify)
             {
@@ -57,6 +58,20 @@ namespace Modules.Devkit.CleanComponent
             }
 
             return false;
+        }
+
+        private static bool CheckModifyTarget(Image image)
+        {
+            // Spriteが存在.
+            if(image.sprite == null) { return false; }
+
+            // Unity内臓のAssetの場合は許容.
+            if(AssetDatabase.GetAssetPath(image.mainTexture) == UnityBuiltinAssetPath) { return false; }
+
+            // 保存されないなら許容.
+            if(image.sprite.hideFlags.HasFlag(HideFlags.DontSaveInEditor)) { return false; }
+            
+            return true;
         }
     }
 }

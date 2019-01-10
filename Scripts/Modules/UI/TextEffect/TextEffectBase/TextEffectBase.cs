@@ -165,7 +165,7 @@ namespace Modules.UI.TextEffect
 
             SetShaderParams(material);
 
-            material.hideFlags = HideFlags.DontSave;
+            material.hideFlags = HideFlags.DontSaveInBuild | HideFlags.DontSaveInEditor;
 
             cache[key] = material;
 

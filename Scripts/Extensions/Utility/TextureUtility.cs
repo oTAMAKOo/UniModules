@@ -75,7 +75,7 @@ namespace Extensions
         {
             var tex = new Texture2D(size, size);
             tex.name = "[Generated] Checker Texture";
-            tex.hideFlags = HideFlags.DontSave;
+            tex.hideFlags = HideFlags.DontSaveInBuild | HideFlags.DontSaveInEditor;
 
             for (var y = 0; y < size / 2 ; ++y)
             {
