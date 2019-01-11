@@ -96,6 +96,21 @@ namespace Modules.Devkit.Diagnosis.SRDebugger
         {
             var changeColor = true;
 
+            //----- TODO: Unity2018.2以降で無駄な警告が出るので、修正されるまで除外. -----
+
+            var ignoreUnity2018_2Warnings = new string[]
+            {
+                "Your multi-scene setup may be improved by tending to the following issues",
+                "Your current multi-scene setup has inconsistent Lighting settings",
+            };
+
+            foreach (var ignore in ignoreUnity2018_2Warnings)
+            {
+                if (logInfo.Condition.StartsWith(ignore)) { return; }
+            }
+            
+            //-----------------------------------------------------------------------------------
+
             if(currentLogType.HasValue)
             {
                 var priority = LogPriority.IndexOf(x => x == logInfo.Type);
