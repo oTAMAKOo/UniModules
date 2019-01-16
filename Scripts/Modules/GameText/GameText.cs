@@ -13,27 +13,26 @@ namespace Modules.GameText
     {
         //----- params -----
 
-        public const string GameTextAsset = "Resources/GameText.asset";
-
         //----- field -----
-
-        private Dictionary<int, GameTextDictionary> cache = new Dictionary<int, GameTextDictionary>();
-
+        
         //----- property -----
 
-        public Dictionary<int, GameTextDictionary> Cache { get { return cache; } }
+        public Dictionary<int, GameTextDictionary> Cache { get; private set; }
 
         //----- method -----
 
-        private GameText() { }
-
-        public void Load()
+        private GameText()
         {
-            var asset = Resources.Load<GameTextAsset>(UnityPathUtility.ConvertResourcesLoadPath(GameTextAsset));
+            Cache = new Dictionary<int, GameTextDictionary>();
+        }
+
+        public void Load(string assetPath)
+        {
+            var asset = Resources.Load<GameTextAsset>(UnityPathUtility.ConvertResourcesLoadPath(assetPath));
 
             if (asset != null)
             {
-                cache = asset.contents.ToDictionary(x => x.SheetId);
+                Cache = asset.contents.ToDictionary(x => x.SheetId);
             }
         }
 
@@ -45,7 +44,7 @@ namespace Modules.GameText
 
             if (category != GameTextCategory.None)
             {
-                var texts = Instance.cache.GetValueOrDefault((int)category);
+                var texts = Instance.Cache.GetValueOrDefault((int)category);
 
                 return texts != null ? texts.GetValueOrDefault(enumValue, null) : null;
             }
@@ -61,7 +60,7 @@ namespace Modules.GameText
 
             if (category != GameTextCategory.None)
             {
-                var texts = Instance.cache.GetValueOrDefault((int)category);
+                var texts = Instance.Cache.GetValueOrDefault((int)category);
 
                 return texts != null ? texts.GetValueOrDefault(int.Parse(id.ToString("d")), null) : null;
             }

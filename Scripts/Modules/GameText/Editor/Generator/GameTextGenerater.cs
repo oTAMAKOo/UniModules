@@ -2,6 +2,7 @@
 using UnityEngine;
 using UnityEditor;
 using System;
+using System.IO;
 using System.Linq;
 using UniRx;
 using Extensions;
@@ -15,13 +16,13 @@ namespace Modules.GameText.Editor
     public class GameTextGenerateInfo
     {
         public string Language { get; private set; }
-        public string FileName { get; private set; }
+        public string AssetPath { get; private set; }
         public int TextColumn { get; private set; }
 
-        public GameTextGenerateInfo(string language, string fileName, int textColumn)
+        public GameTextGenerateInfo(string language, string assetPath, int textColumn)
         {
             Language = language;
-            FileName = fileName;
+            AssetPath = assetPath;
             TextColumn = textColumn;
         }
     }
@@ -40,7 +41,7 @@ namespace Modules.GameText.Editor
             progressMessage = "Connection Spreadsheet.";
             EditorUtility.DisplayProgressBar(progressTitle, progressMessage, 0f);
 
-            var asset = LoadAsset(gameTextConfig.ScriptableObjectFolderPath, generateInfo.FileName);
+            var asset = LoadAsset(gameTextConfig.ScriptableObjectFolderPath, generateInfo.AssetPath);
 
             progressMessage = "Load GameText form Spreadsheet.";
             EditorUtility.DisplayProgressBar(progressTitle, progressMessage, 0f);
@@ -99,11 +100,11 @@ namespace Modules.GameText.Editor
             EditorUtility.ClearProgressBar();
         }
 
-        private static GameTextAsset LoadAsset(string assetFolderPath, string assetName)
+        private static GameTextAsset LoadAsset(string assetFolderPath, string resourcesPath)
         {
-            var assetPath = PathUtility.Combine(assetFolderPath, assetName + ".asset");
+            var assetPath = PathUtility.Combine(assetFolderPath, resourcesPath);
 
-            if (string.IsNullOrEmpty(assetFolderPath)) { return null; }
+            if (string.IsNullOrEmpty(assetPath)) { return null; }
 
             var asset = AssetDatabase.LoadAssetAtPath<GameTextAsset>(assetPath);
 

@@ -1,8 +1,10 @@
 ﻿﻿
+using System.Linq;
 using UnityEngine;
 using UnityEditor.Callbacks;
 using UniRx;
 using Extensions.Devkit;
+using Modules.Devkit.Prefs;
 using Modules.GameText.Components;
 
 namespace Modules.GameText.Editor
@@ -30,7 +32,11 @@ namespace Modules.GameText.Editor
                 GameText.CreateInstance();
             }
 
-            GameText.Instance.Load();
+            var gameTextInfo = GameTextLanguage.GameTextInfos.ElementAtOrDefault(GameTextLanguage.Prefs.selection);
+
+            if (gameTextInfo == null) { return; }
+            
+            GameText.Instance.Load(gameTextInfo.AssetPath);
 
             var gameObjects = UnityEditorUtility.FindAllObjectsInHierarchy();
 

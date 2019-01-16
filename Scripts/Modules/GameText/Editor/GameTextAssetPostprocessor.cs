@@ -8,6 +8,7 @@ using System.Linq;
 using System.Collections.Generic;
 using UniRx;
 using Extensions.Devkit;
+using Modules.GameText.Components;
 
 namespace Modules.GameText.Editor
 {
@@ -35,9 +36,15 @@ namespace Modules.GameText.Editor
         /// <param name="movedFromPath"> 移動されたアセットの移動前のファイルパス。 </param>
         private static void OnPostprocessAllAssets(string[] importedAssets, string[] deletedAssets, string[] movedAssets, string[] movedFromPath)
         {
-            if (importedAssets.Any(x => x.Contains(GameText.GameTextAsset)))
+            foreach (var importedAsset in importedAssets)
             {
-                GameTextLoader.Reload();
+                var asset = AssetDatabase.LoadMainAssetAtPath(importedAsset);
+
+                if (asset is GameTextAsset)
+                {
+                    GameTextLoader.Reload();
+                    break;
+                }
             }
         }
     }
