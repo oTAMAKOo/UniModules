@@ -32,7 +32,7 @@ namespace Modules.Devkit.Spreadsheet
         protected virtual void Initialize()
         {
             minSize = WindowSize;
-            maxSize = minSize;
+
             titleContent = new GUIContent(WindowTitle);
 
             var spreadsheetConfig = SpreadsheetConfig.Instance;

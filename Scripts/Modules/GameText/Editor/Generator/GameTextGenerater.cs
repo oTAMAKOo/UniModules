@@ -12,11 +12,25 @@ using Modules.GameText.Components;
 
 namespace Modules.GameText.Editor
 {
+    public class GameTextGenerateInfo
+    {
+        public string Language { get; private set; }
+        public string FileName { get; private set; }
+        public int TextColumn { get; private set; }
+
+        public GameTextGenerateInfo(string language, string fileName, int textColumn)
+        {
+            Language = language;
+            FileName = fileName;
+            TextColumn = textColumn;
+        }
+    }
+
     public static class GameTextGenerater
     {
-        public static void Generate(SpreadsheetConnector connector, int textColumn)
+        public static void Generate(SpreadsheetConnector connector, GameTextGenerateInfo generateInfo)
         {
-            if (textColumn < 0) { return; }
+            if (generateInfo == null) { return; }
 
             var progressTitle = "Generate Progress";
             var progressMessage = string.Empty;
@@ -26,7 +40,7 @@ namespace Modules.GameText.Editor
             progressMessage = "Connection Spreadsheet.";
             EditorUtility.DisplayProgressBar(progressTitle, progressMessage, 0f);
 
-            var asset = LoadAsset(gameTextConfig.ScriptableObjectFolderPath, "GameText");
+            var asset = LoadAsset(gameTextConfig.ScriptableObjectFolderPath, generateInfo.FileName);
 
             progressMessage = "Load GameText form Spreadsheet.";
             EditorUtility.DisplayProgressBar(progressTitle, progressMessage, 0f);
@@ -51,14 +65,14 @@ namespace Modules.GameText.Editor
                     progressMessage = "Generating GameTextScript.";
                     EditorUtility.DisplayProgressBar(progressTitle, progressMessage, 0f);
 
-                    GameTextScriptGenerator.Generate(spreadsheets, gameTextConfig, textColumn);
+                    GameTextScriptGenerator.Generate(spreadsheets, gameTextConfig, generateInfo.TextColumn);
 
                     EditorUtility.DisplayProgressBar(progressTitle, progressMessage, 0.2f);
 
                     progressMessage = "Generating GameTextAsset.";
                     EditorUtility.DisplayProgressBar(progressTitle, progressMessage, 0.5f);
 
-                    GameTextAssetGenerator.Build(asset, spreadsheets, gameTextConfig, textColumn);
+                    GameTextAssetGenerator.Build(asset, spreadsheets, gameTextConfig, generateInfo.TextColumn);
 
                     EditorUtility.DisplayProgressBar(progressTitle, progressMessage, 0.8f);
 

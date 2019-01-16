@@ -27,7 +27,7 @@ namespace Modules.GameText.Editor
 
         //----- field -----
         
-        private int? textColumn = null;
+        private int? selection = null;
 
         private static GameTextGenerateWindow<TInstance> instance = null;
 
@@ -35,9 +35,9 @@ namespace Modules.GameText.Editor
 
         public override string WindowTitle { get { return "GameText"; } }
 
-        public override Vector2 WindowSize { get { return new Vector2(250f, 60f); } }
+        public override Vector2 WindowSize { get { return new Vector2(250f, 50f); } }
 
-        public abstract Dictionary<string, int> ColumnTable { get; }
+        public abstract GameTextGenerateInfo[] GenerateInfos { get; }
 
         //----- method -----
 
@@ -64,11 +64,18 @@ namespace Modules.GameText.Editor
 
             GUILayout.Space(3f);
 
-            using (new DisableScope(!textColumn.HasValue))
+            GameTextGenerateInfo info = null;
+
+            if (selection.HasValue)
+            {
+                info = selection.Value < GenerateInfos.Length ? GenerateInfos[selection.Value] : null;
+            }            
+
+            using (new DisableScope(info == null))
             {
                 if (GUILayout.Button("Generate"))
                 {
-                    GameTextGenerater.Generate(connector, textColumn.Value);
+                    GameTextGenerater.Generate(connector, info);
                     Repaint();
                 }
             }
@@ -79,17 +86,16 @@ namespace Modules.GameText.Editor
             {
                 using (new ContentsScope())
                 {
-                    var labels = ColumnTable.Keys.ToArray();
+                    var labels = GenerateInfos.Select(x => x.Language).ToArray();
 
                     EditorGUI.BeginChangeCheck();
 
-                    var selection = EditorGUILayout.Popup(Prefs.selection, labels);
+                    var index = EditorGUILayout.Popup(Prefs.selection, labels);
 
                     if (EditorGUI.EndChangeCheck())
                     {
-                        Prefs.selection = selection;
-
-                        textColumn = selection != -1 ? (int?)ColumnTable.GetValueOrDefault(labels[selection]) : null;
+                        selection = index;
+                        Prefs.selection = index;
                     }
                 }
             }
@@ -97,10 +103,9 @@ namespace Modules.GameText.Editor
 
         private void Reload()
         {
-            if (!textColumn.HasValue && Prefs.selection != -1)
+            if (!selection.HasValue && Prefs.selection != -1)
             {
-                var labels = ColumnTable.Keys.ToArray();
-                textColumn = (int?)ColumnTable.GetValueOrDefault(labels[Prefs.selection]);
+                selection = Prefs.selection;
                 Repaint();
             }
         }
