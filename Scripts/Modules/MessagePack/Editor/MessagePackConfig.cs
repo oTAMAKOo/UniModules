@@ -15,10 +15,15 @@ namespace Modules.MessagePack
 
         //----- field -----
 
+        #pragma warning disable 0414
+
         [SerializeField]
         private string winCompilerRelativePath = null;  // コンパイラまでのパス(相対パス).
         [SerializeField]
         private string osxCompilerRelativePath = null;  // コンパイラまでのパス(相対パス).
+
+        #pragma warning restore 0414
+
         [SerializeField]
         private string scriptExportAssetDir = null;     // スクリプト出力先.
         [SerializeField]
