@@ -27,7 +27,9 @@ namespace Modules.Window
 
         private PopupParent parentInScene = null;
         private PopupParent parentGlobal = null;
-        private GameObject touchBloc = null;
+
+        private TouchBloc touchBloc = null;
+        private IDisposable touchBlocDisposable = null;
 
         // 登録されているポップアップ.
         protected List<Window> scenePopups = new List<Window>();
@@ -159,7 +161,8 @@ namespace Modules.Window
 
             if (touchBloc == null)
             {
-                touchBloc = UnityUtility.Instantiate(parentGlobal.Parent, touchBlocPrefab);
+                touchBloc = UnityUtility.Instantiate<TouchBloc>(parentGlobal.Parent, touchBlocPrefab);
+                touchBloc.Initialize();
             }
 
             if (scenePopups.Any())
@@ -204,13 +207,35 @@ namespace Modules.Window
                 parent = parentGlobal.Parent;
             }
 
-            UnityUtility.SetParent(touchBloc, parent);
+            UnityUtility.SetParent(touchBloc.gameObject, parent);
 
             touchBloc.transform.SetSiblingIndex(touchBlocIndex);
 
-            UnityUtility.SetLayer(parent, touchBloc, true);
+            UnityUtility.SetLayer(parent, touchBloc.gameObject, true);
 
-            UnityUtility.SetActive(touchBloc, scenePopups.Any() || globalPopups.Any());
+            // 一つでも登録されたら表示.
+            if (!touchBloc.Active && (scenePopups.Any() || globalPopups.Any()))
+            {
+                if (touchBlocDisposable != null)
+                {
+                    touchBlocDisposable.Dispose();
+                    touchBlocDisposable = null;
+                }
+
+                touchBlocDisposable = touchBloc.FadeIn().Subscribe().AddTo(this);
+            }
+
+            // 空になったら非表示.
+            if (touchBloc.Active && (scenePopups.IsEmpty() && globalPopups.IsEmpty()))
+            {
+                if (touchBlocDisposable != null)
+                {
+                    touchBlocDisposable.Dispose();
+                    touchBlocDisposable = null;
+                }
+
+                touchBlocDisposable = touchBloc.FadeOut().Subscribe().AddTo(this);
+            }
         }
 
         public void Clean()
@@ -222,13 +247,18 @@ namespace Modules.Window
 
             scenePopups.Clear();
 
-            UnityUtility.SetParent(touchBloc, parentGlobal.Parent);
-            UnityUtility.SetLayer(parentGlobal.Parent, touchBloc, true);
+            UnityUtility.SetParent(touchBloc.gameObject, parentGlobal.Parent);
+            UnityUtility.SetLayer(parentGlobal.Parent, touchBloc.gameObject, true);
 
             if (globalPopups.IsEmpty())
             {
-                UnityUtility.SetActive(touchBloc, false);
+                if (touchBlocDisposable != null)
+                {
+                    touchBlocDisposable.Dispose();
+                    touchBlocDisposable = null;
+                }
 
+                touchBloc.Hide();
                 touchBloc.transform.SetSiblingIndex(0);
             }
         }
