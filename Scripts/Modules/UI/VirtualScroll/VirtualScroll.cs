@@ -65,7 +65,7 @@ namespace Modules.UI
 
         private List<VirtualScrollItem<T>> itemList = null;
 
-        private Subject<GameObject> onCreateItem = null;
+        private Subject<VirtualScrollItem<T>> onCreateItem = null;
 
         private IObservable<Unit> updateQueueing = null;
 
@@ -107,7 +107,7 @@ namespace Modules.UI
             }
         }
 
-        public GameObject[] ListItems { get { return itemList.Select(x => x.gameObject).ToArray(); } }
+        public IEnumerable<VirtualScrollItem<T>> ListItems { get { return itemList; } }
 
         //----- method -----
 
@@ -231,7 +231,7 @@ namespace Modules.UI
 
                 if (onCreateItem != null)
                 {
-                    onCreateItem.OnNext(item.gameObject);
+                    onCreateItem.OnNext(item);
                 }
 
                 yield return item.Initialize().ToYieldInstruction();
@@ -627,9 +627,9 @@ namespace Modules.UI
             return new Rect(tl, new Vector2(br.x - tl.x, br.y - tl.y));
         }
 
-        public IObservable<GameObject> OnCreateItemAsObservable()
+        public IObservable<VirtualScrollItem<T>> OnCreateItemAsObservable()
         {
-            return onCreateItem ?? (onCreateItem = new Subject<GameObject>());
+            return onCreateItem ?? (onCreateItem = new Subject<VirtualScrollItem<T>>());
         }
     }
 }
