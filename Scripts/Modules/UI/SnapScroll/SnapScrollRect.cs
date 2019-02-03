@@ -101,7 +101,7 @@ namespace Modules.UI
             }
         }
 
-        private void StopSnap()
+        public void StopSnap()
         {
             snapTarget = null;
             targetPosition = null;

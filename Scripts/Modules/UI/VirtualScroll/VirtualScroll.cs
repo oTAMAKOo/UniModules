@@ -107,7 +107,11 @@ namespace Modules.UI
             }
         }
 
+        /// <summary> 管理下のリストアイテム. </summary>
         public IEnumerable<VirtualScrollItem<T>> ListItems { get { return itemList; } }
+
+        /// <summary> リストアイテムが存在するか. </summary>
+        public bool HasListItem { get { return itemList != null && itemList.Any(); } }
 
         //----- method -----
 
