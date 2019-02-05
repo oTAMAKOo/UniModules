@@ -57,9 +57,11 @@ namespace Modules.Devkit.Diagnosis.SRDebugger
             {
                 // 一旦アクティブにならないとログ収集しないので一瞬アクティブ化.
                 SRDebug.Instance.ShowDebugPanel();
-                SRDebug.Instance.HideDebugPanel();
 
-                UnityUtility.SetActive(blockCollider, SRDebug.Instance.IsDebugPanelVisible);
+                // 1フレーム待たないとSRDebuggerの当たり判定が残る為次のフレームで非表示化.
+                Observable.NextFrame().Subscribe(_ => SRDebug.Instance.HideDebugPanel()).AddTo(this);
+
+                UnityUtility.SetActive(blockCollider, false);
 
                 SRDebug.Instance.PanelVisibilityChanged += x => { UnityUtility.SetActive(blockCollider, x); };
 
