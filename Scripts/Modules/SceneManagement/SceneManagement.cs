@@ -326,25 +326,41 @@ namespace Modules.SceneManagement
 
             //====== Scene Unload ======
 
-            // 不要なシーンをアンロード.
-            var unloadScenes = loadedscenes.Values
-                // 遷移先のシーンではない.
-                .Where(x => x.Identifier != TransitionTarget)
-                // SceneBaseクラスが存在しない.
-                .Where(x => UnityUtility.IsNull(x.Instance))
-                // キャッシュ対象でない.
-                .Where(x => cacheScenes.All(y => y != x))
-                // 次のシーンのPreload対象ではない.
-                .Where(x => currentSceneArgument.PreLoadScenes.All(y => y != x.Identifier))
-                .ToArray();
-
-            foreach (var unloadScene in unloadScenes)
+            if (mode == LoadSceneMode.Additive)
             {
-                yield return UnloadScene(unloadScene).ToYieldInstruction();
-
-                if (unloadScene.Identifier.HasValue)
+                Func<SceneInstance, bool> isUnlodadTarget = sceneInstance =>
                 {
-                    loadedscenes.Remove(unloadScene.Identifier.Value);
+                    // SceneBaseクラスが存在しない.
+                    if (UnityUtility.IsNull(sceneInstance.Instance)) { return true; }
+
+                    var result = true;
+
+                    // 遷移元のシーンではない.
+                    result &= sceneInstance != prev;
+
+                    // 遷移先のシーンではない.
+                    result &= sceneInstance.Identifier != TransitionTarget;
+
+                    // キャッシュ対象でない.
+                    result &= cacheScenes.All(x => x != sceneInstance);
+
+                    // 次のシーンのPreload対象ではない.
+                    result &= currentSceneArgument.PreLoadScenes.All(y => y != sceneInstance.Identifier);
+
+                    return result;
+                };
+
+                // 不要なシーンをアンロード.
+                var unloadScenes = loadedscenes.Values.Where(x => isUnlodadTarget(x)).ToArray();
+
+                foreach (var unloadScene in unloadScenes)
+                {
+                    yield return UnloadScene(unloadScene).ToYieldInstruction();
+
+                    if (unloadScene.Identifier.HasValue)
+                    {
+                        loadedscenes.Remove(unloadScene.Identifier.Value);
+                    }
                 }
             }
 
@@ -735,7 +751,7 @@ namespace Modules.SceneManagement
             if (sceneInstance == null) { return Observable.ReturnUnit(); }
 
             if (!sceneInstance.Identifier.HasValue) { return Observable.ReturnUnit(); }
-
+            
             var identifier = sceneInstance.Identifier.Value;
 
             var observable = unloadingScenes.GetValueOrDefault(identifier);
@@ -757,6 +773,8 @@ namespace Modules.SceneManagement
             var scene = sceneInstance.GetScene();
 
             if (!scene.HasValue) { yield break; }
+
+            if (!scene.Value.isLoaded) { yield break; }
 
             if (SceneManager.sceneCount <= 1){ yield break; }
 
