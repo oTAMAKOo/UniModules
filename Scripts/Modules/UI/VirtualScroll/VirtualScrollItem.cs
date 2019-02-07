@@ -32,8 +32,9 @@ namespace Modules.UI
 
         /// <summary>
         /// 初期化(非同期).
-        /// 多数のオブジェクトの生成などの初期化処理はこのメソッドで非同期で実行する.
+        /// 多数のオブジェクトの生成などの初期化処理はこのメソッドで非同期で実行する.        
         /// </summary>
+        /// <returns>nullを返した場合は処理がスキップされる</returns>
         public virtual IObservable<Unit> InitializeAsync() { return null; }
 
         public void UpdateItem(int index, T[] contents)
