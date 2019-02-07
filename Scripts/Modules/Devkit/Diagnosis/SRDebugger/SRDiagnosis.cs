@@ -4,6 +4,7 @@ using UnityEngine.UI;
 using UniRx;
 using Extensions;
 using Modules.Devkit.Log;
+using SRDebugger;
 
 namespace Modules.Devkit.Diagnosis.SRDebugger
 {
@@ -59,10 +60,20 @@ namespace Modules.Devkit.Diagnosis.SRDebugger
 
                 UnityUtility.SetActive(blockCollider, SRDebug.Instance.IsDebugPanelVisible);
 
-                SRDebug.Instance.PanelVisibilityChanged += x => { UnityUtility.SetActive(blockCollider, x); };
+                VisibilityChangedDelegate onPanelVisibilityChanged = visible =>
+                {
+                    if (visible)
+                    {
+                        ResetLogTrack();
+                    }
+
+                    UnityUtility.SetActive(blockCollider, visible);
+                };
+
+                SRDebug.Instance.PanelVisibilityChanged += onPanelVisibilityChanged;
 
                 button.OnClickAsObservable()
-                    .Subscribe(_ => OnClick())
+                    .Subscribe(_ => ResetLogTrack())
                     .AddTo(this);
 
                 ApplicationLogHandler.Instance.OnLogReceiveAsObservable()
@@ -79,7 +90,7 @@ namespace Modules.Devkit.Diagnosis.SRDebugger
             }
         }
 
-        private void OnClick()
+        private void ResetLogTrack()
         {
             if (!SRDebug.Instance.IsDebugPanelVisible)
             {

@@ -47,7 +47,10 @@ namespace Modules.Devkit.ScriptableObjects
 
         protected static T LoadInstance()
         {
-            return UnityEditorUtility.FindAssetsByType<T>().FirstOrDefault();
+            return AssetDatabase.FindAssets(string.Format("t:{0}", typeof(T).FullName))
+                .Select(x => AssetDatabase.GUIDToAssetPath(x))
+                .Select(x => AssetDatabase.LoadAssetAtPath<T>(x))
+                .FirstOrDefault(x => x != null);
         }
     }
 }
