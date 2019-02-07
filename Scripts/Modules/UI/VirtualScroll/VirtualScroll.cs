@@ -238,7 +238,16 @@ namespace Modules.UI
                     onCreateItem.OnNext(item);
                 }
 
-                yield return item.Initialize().ToYieldInstruction();
+                // 初期化.
+                item.Initialize();
+
+                // 非同期初期化.
+                var initializeObservable = item.InitializeAsync();
+
+                if (initializeObservable != null)
+                {
+                    yield return initializeObservable.ToYieldInstruction();
+                }
 
                 UnityUtility.SetActive(item, false);
             }

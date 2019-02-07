@@ -27,7 +27,14 @@ namespace Modules.UI
 
         //----- method -----
 
-        public virtual IObservable<Unit> Initialize() { return Observable.ReturnUnit(); }
+        /// <summary> 初期化. </summary>
+        public virtual void Initialize() { }
+
+        /// <summary>
+        /// 初期化(非同期).
+        /// 多数のオブジェクトの生成などの初期化処理はこのメソッドで非同期で実行する.
+        /// </summary>
+        public virtual IObservable<Unit> InitializeAsync() { return null; }
 
         public void UpdateItem(int index, T[] contents)
         {
