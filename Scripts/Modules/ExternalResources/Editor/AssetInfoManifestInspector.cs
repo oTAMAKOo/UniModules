@@ -15,7 +15,62 @@ namespace Modules.ExternalResource.Editor
     {
         //----- params -----
 
-        private class AsstInfoScrollView : EditorGUIFastScrollView<AssetInfo>
+        private class AssetGroupInfo
+        {
+            public string GroupName { get; private set; }
+            public AssetInfo[] AssetInfos { get; private set; }
+            public AssetInfo[] SearchedInfos { get; private set; }
+            public HashSet<int> OpenedIds { get; private set; }
+
+            public AssetGroupInfo(string groupName, AssetInfo[] assetInfos)
+            {
+                GroupName = groupName;
+                AssetInfos = assetInfos;
+
+                OpenedIds = new HashSet<int>();
+            }
+
+            public bool IsSearchedHit(string[] keywords)
+            {
+                var isHit = false;
+
+                // グループ名が一致.
+                isHit |= GroupName.IsMatch(keywords);
+
+                // アセット情報が一致.
+                SearchedInfos = AssetInfos.Where(x => IsAssetInfoSearchedHit(x, keywords)).ToArray();
+
+                isHit |= SearchedInfos.Any();
+
+                OpenedIds.Clear();
+
+                return isHit;
+            }
+
+            public void ResetSearch()
+            {
+                SearchedInfos = null;
+                OpenedIds.Clear();
+            }
+
+            private bool IsAssetInfoSearchedHit(AssetInfo assetInfo, string[] keywords)
+            {
+                var isHit = false;
+
+                // アセットバンドル名が一致.
+                if (assetInfo.IsAssetBundle)
+                {
+                    isHit |= assetInfo.AssetBundle.AssetBundleName.IsMatch(keywords);
+                }
+
+                // 管理下のアセットのパスが一致.
+                isHit |= assetInfo.ResourcesPath.IsMatch(keywords);
+
+                return isHit;
+            }
+        }
+
+        private class AsstInfoScrollView : EditorGUIFastScrollView<AssetGroupInfo>
         {
             private HashSet<int> openedIds = null;
             private GUIStyle textAreaStyle = null;
@@ -30,7 +85,7 @@ namespace Modules.ExternalResource.Editor
                 get { return Direction.Vertical; }
             }
 
-            protected override void DrawContent(int index, AssetInfo content)
+            protected override void DrawContent(int index, AssetGroupInfo content)
             {
                 if (textAreaStyle == null)
                 {
@@ -44,27 +99,59 @@ namespace Modules.ExternalResource.Editor
 
                 using (new EditorGUILayout.VerticalScope())
                 {
-                    var isAssetBundle = content.IsAssetBundle;
+                    var open = EditorLayoutTools.DrawHeader(content.GroupName, opened);
+
+                    if (open)
+                    {
+                        using (new ContentsScope())
+                        {
+                            DrawGroupContent(content);
+                        }
+                    }
+
+                    if (!opened && open)
+                    {
+                        openedIds.Add(index);
+                    }
+
+                    if (opened && !open)
+                    {
+                        openedIds.Remove(index);
+                    }
+                }
+            }
+
+            private void DrawGroupContent(AssetGroupInfo assetGroupInfo)
+            {
+                var assetInfos = assetGroupInfo.SearchedInfos ?? assetGroupInfo.AssetInfos;
+
+                for (var i = 0; i < assetInfos.Length; i++)
+                {
+                    var opened = assetGroupInfo.OpenedIds.Contains(i);
+
+                    var assetInfo = assetInfos[i];
+
+                    var isAssetBundle = assetInfo.IsAssetBundle;
 
                     var color = isAssetBundle ? new Color(0.7f, 0.7f, 1f) : new Color(0.7f, 1f, 0.7f);
 
-                    var open = EditorLayoutTools.DrawHeader(content.ResourcesPath, opened, color);
+                    var open = EditorLayoutTools.DrawHeader(assetInfo.ResourcesPath, opened, color);
 
                     if (open)
                     {
                         using (new ContentsScope())
                         {
                             EditorGUILayout.LabelField("ResourcesPath");
-                            EditorGUILayout.SelectableLabel(content.ResourcesPath, textAreaStyle, GUILayout.Height(18f));
+                            EditorGUILayout.SelectableLabel(assetInfo.ResourcesPath, textAreaStyle, GUILayout.Height(18f));
 
                             EditorGUILayout.LabelField("GroupName");
-                            EditorGUILayout.SelectableLabel(content.GroupName, textAreaStyle, GUILayout.Height(18f));
+                            EditorGUILayout.SelectableLabel(assetInfo.GroupName, textAreaStyle, GUILayout.Height(18f));
 
                             EditorGUILayout.LabelField("FileHash");
-                            EditorGUILayout.SelectableLabel(content.FileHash, textAreaStyle, GUILayout.Height(18f));
+                            EditorGUILayout.SelectableLabel(assetInfo.FileHash, textAreaStyle, GUILayout.Height(18f));
 
                             EditorGUILayout.LabelField("FileSize");
-                            EditorGUILayout.SelectableLabel(content.FileSize.ToString(), textAreaStyle, GUILayout.Height(18f));
+                            EditorGUILayout.SelectableLabel(assetInfo.FileSize.ToString(), textAreaStyle, GUILayout.Height(18f));
 
                             if (isAssetBundle)
                             {
@@ -72,7 +159,7 @@ namespace Modules.ExternalResource.Editor
 
                                 using (new ContentsScope())
                                 {
-                                    var assetBundle = content.AssetBundle;
+                                    var assetBundle = assetInfo.AssetBundle;
 
                                     EditorGUILayout.LabelField("AssetBundleName");
                                     EditorGUILayout.SelectableLabel(assetBundle.AssetBundleName, textAreaStyle, GUILayout.Height(18f));
@@ -92,21 +179,21 @@ namespace Modules.ExternalResource.Editor
 
                     if (!opened && open)
                     {
-                        openedIds.Add(index);
+                        assetGroupInfo.OpenedIds.Add(i);
                     }
 
                     if (opened && !open)
                     {
-                        openedIds.Remove(index);
+                        assetGroupInfo.OpenedIds.Remove(i);
                     }
                 }
             }
         }
 
         //----- field -----
-
-        private AssetInfo[] assetInfos = null;
-        private AssetInfo[] currentAssetInfos = null;
+        
+        private AssetGroupInfo[] currentInfos = null;
+        private AssetGroupInfo[] searchedInfos = null;
         private AsstInfoScrollView asstInfoScrollView = null;
         private string totalAssetCountText = null;
         private string searchText = null;
@@ -126,12 +213,14 @@ namespace Modules.ExternalResource.Editor
 
             if (!initialized)
             {
-                assetInfos = Reflection.GetPrivateField<AssetInfoManifest, AssetInfo[]>(instance, "assetInfos");
+                var assetInfos = Reflection.GetPrivateField<AssetInfoManifest, AssetInfo[]>(instance, "assetInfos");
 
-                currentAssetInfos = assetInfos;
+                currentInfos = assetInfos.GroupBy(x => x.GroupName)
+                    .Select(x => new AssetGroupInfo(x.Key, x.ToArray()))
+                    .ToArray();
 
                 asstInfoScrollView = new AsstInfoScrollView();
-                asstInfoScrollView.Contents = currentAssetInfos;
+                asstInfoScrollView.Contents = currentInfos;
 
                 totalAssetCountText = string.Format("Total Asset Count : {0}", assetInfos.Length);
 
@@ -155,9 +244,11 @@ namespace Modules.ExternalResource.Editor
 
                 if (EditorGUI.EndChangeCheck())
                 {
-                    currentAssetInfos = assetInfos.Where(x => IsSearchedHit(x)).ToArray();
+                    var searchKeywords = BuildSearchKeywords();
+
+                    searchedInfos = currentInfos.Where(x => x.IsSearchedHit(searchKeywords)).ToArray();
                     asstInfoScrollView.ScrollPosition = Vector2.zero;
-                    asstInfoScrollView.Contents = currentAssetInfos;
+                    asstInfoScrollView.Contents = searchedInfos;
 
                     Repaint();
                 }
@@ -165,9 +256,12 @@ namespace Modules.ExternalResource.Editor
                 if (GUILayout.Button(string.Empty, "SearchCancelButton", GUILayout.Width(18f)))
                 {
                     searchText = string.Empty;
-                    currentAssetInfos = assetInfos;
+                    searchedInfos = null;
+
+                    currentInfos.ForEach(x => x.ResetSearch());
+
                     asstInfoScrollView.ScrollPosition = Vector2.zero;
-                    asstInfoScrollView.Contents = currentAssetInfos;
+                    asstInfoScrollView.Contents = currentInfos;
 
                     Repaint();
                 }
@@ -178,9 +272,9 @@ namespace Modules.ExternalResource.Editor
             asstInfoScrollView.Draw();
         }
 
-        private bool IsSearchedHit(AssetInfo info)
+        private string[] BuildSearchKeywords()
         {
-            if (string.IsNullOrEmpty(searchText)) { return true; }
+            if (string.IsNullOrEmpty(searchText)) { return null; }
 
             var keywords = searchText.Split(new char[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
 
@@ -189,18 +283,7 @@ namespace Modules.ExternalResource.Editor
                 keywords[i] = keywords[i].ToLower();
             }
 
-            var isHit = false;
-
-            // アセットバンドル名が一致.
-            if (info.IsAssetBundle)
-            {
-                isHit |= info.AssetBundle.AssetBundleName.IsMatch(keywords);
-            }
-
-            // 管理下のアセットのパスが一致.
-            isHit |= info.ResourcesPath.IsMatch(keywords);
-            
-            return isHit;
+            return keywords;
         }
     }
 }

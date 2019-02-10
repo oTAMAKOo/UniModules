@@ -1,4 +1,7 @@
 ﻿
+
+#if ENABLE_UNIWEBVIEW2
+
 using UnityEngine;
 using System;
 using System.Collections.Generic;
@@ -370,3 +373,5 @@ namespace Modules.WebView
         }
     }
 }
+
+#endif
