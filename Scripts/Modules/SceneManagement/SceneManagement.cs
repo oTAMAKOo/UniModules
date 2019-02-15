@@ -563,7 +563,7 @@ namespace Modules.SceneManagement
 
                 var additiveTime = diagnostics.GetTime(TimeDiagnostics.Measure.Append);
 
-                UnityConsole.Event(ConsoleEventName, ConsoleEventColor, "{0} ({1}ms)(Additive)", identifier.Value, additiveTime);
+                UnityConsole.Event(ConsoleEventName, ConsoleEventColor, "{0} ({1:F2}ms)(Additive)", identifier.Value, additiveTime);
             }
 
             if (activeOnLoad)
@@ -897,10 +897,10 @@ namespace Modules.SceneManagement
                     {
                         sw.Stop();
 
-                        var time = sw.Elapsed.TotalMilliseconds.ToString("F2");
+                        var time = sw.Elapsed.TotalMilliseconds;
                         var detail = builder.ToString();
 
-                        UnityConsole.Event(ConsoleEventName, ConsoleEventColor, "PreLoad Complete ({0}ms)\n\n{1}", time, detail);
+                        UnityConsole.Event(ConsoleEventName, ConsoleEventColor, "PreLoad Complete ({0:F2}ms)\n\n{1}", time, detail);
                     })
                 .AsUnitObservable();
         }
@@ -918,9 +918,9 @@ namespace Modules.SceneManagement
 
             sw.Stop();
 
-            var time = sw.Elapsed.TotalMilliseconds.ToString("F2");
+            var time = sw.Elapsed.TotalMilliseconds;
 
-            builder.AppendLine(string.Format("{0} ({1}ms)", targetScene, time));
+            builder.AppendLine(string.Format("{0} ({1:F2}ms)", targetScene, time));
         }
 
         #endregion
