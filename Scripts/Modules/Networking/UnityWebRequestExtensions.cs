@@ -23,15 +23,17 @@ namespace Modules.Networking
             HttpStatusCode.PartialContent
         };
 
-        public static IObservable<byte[]> Fetch(this UnityWebRequest request, IProgress<float> progress = null)
+        public static IObservable<byte[]> Send(this UnityWebRequest request, IProgress<float> progress = null)
         {
-            return Observable.FromCoroutine<byte[]>((observer, cancellation) => Fetch(observer, cancellation, request, progress));
+            return Observable.FromMicroCoroutine<byte[]>((observer, cancellation) => Send(observer, cancellation, request, progress));
         }
 
-        private static IEnumerator Fetch(IObserver<byte[]> observer, CancellationToken cancel, UnityWebRequest request, IProgress<float> progress)
+        private static IEnumerator Send(IObserver<byte[]> observer, CancellationToken cancel, UnityWebRequest request, IProgress<float> progress)
         {
             using (request)
             {
+                var error = false;
+
                 var operation = request.SendWebRequest();
 
                 while (!operation.isDone && !cancel.IsCancellationRequested)
@@ -45,39 +47,38 @@ namespace Modules.Networking
                     }
                     catch (Exception ex)
                     {
+                        error = true;
                         observer.OnError(ex);
-                        yield break;
+                        break;
                     }
 
                     yield return null;
                 }
 
-                if (cancel.IsCancellationRequested)
+                if (!cancel.IsCancellationRequested && !error)
                 {
-                    yield break;
-                }
-
-                if (progress != null)
-                {
-                    try
+                    if (progress != null)
                     {
-                        progress.Report(request.downloadProgress);
+                        try
+                        {
+                            progress.Report(request.downloadProgress);
+                        }
+                        catch (Exception ex)
+                        {
+                            observer.OnError(ex);
+                            error = true;
+                        }
                     }
-                    catch (Exception ex)
+                    
+                    if (!request.isNetworkError && SuccessStatus.Contains((HttpStatusCode)request.responseCode) && !error)
                     {
-                        observer.OnError(ex);
-                        yield break;
+                        observer.OnNext(request.downloadHandler != null ? request.downloadHandler.data : null);
+                        observer.OnCompleted();
                     }
-                }
-
-                if (!request.isNetworkError && SuccessStatus.Contains((HttpStatusCode)request.responseCode))
-                {
-                    observer.OnNext(request.downloadHandler != null ? request.downloadHandler.data : null);
-                    observer.OnCompleted();
-                }
-                else
-                {
-                    observer.OnError(new UnityWebRequestErrorException(request));
+                    else
+                    {
+                        observer.OnError(new UnityWebRequestErrorException(request));
+                    }
                 }
             }
         }

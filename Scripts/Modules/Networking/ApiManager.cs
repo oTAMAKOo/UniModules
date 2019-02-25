@@ -4,6 +4,7 @@ using System;
 using System.Collections;
 using System.Linq;
 using System.Collections.Generic;
+using System.Net.Http;
 using UniRx;
 using Extensions;
 
@@ -13,6 +14,12 @@ namespace Modules.Networking
         where TInstance : ApiManager<TInstance, TWebRequest> where TWebRequest : WebRequest, new()
     {
         //----- params -----
+
+        protected enum RequestErrorHandle
+        {
+            Retry,
+            Cancel,
+        }
 
         //----- field -----
 
@@ -63,25 +70,125 @@ namespace Modules.Networking
         {
             var requestObserver = Observable.Defer(() => webRequest.Get<TResult>(progress));
 
-            return Observable.FromCoroutine(() => WaitWebRequestStart(webRequest))
-                .SelectMany(_ => FetchCore(requestObserver, webRequest));
+            return Observable.FromMicroCoroutine<TResult>(observer => SnedRequestInternal(observer, webRequest, requestObserver));
         }
 
         /// <summary>
         /// 指定されたURLからPostでデータを取得.
         /// </summary>
-        /// <typeparam name="TResult"></typeparam>
-        /// <typeparam name="TContent"></typeparam>
-        /// <param name="webRequest"></param>
-        /// <param name="content"></param>
-        /// <param name="progress"></param>
-        /// <returns></returns>
         protected IObservable<TResult> Post<TResult, TContent>(TWebRequest webRequest, TContent content, IProgress<float> progress = null) where TResult : class
         {
             var requestObserver = Observable.Defer(() => webRequest.Post<TResult, TContent>(content, progress));
 
-            return Observable.FromCoroutine(() => WaitWebRequestStart(webRequest))
-                .SelectMany(_ => FetchCore(requestObserver, webRequest));
+            return Observable.FromMicroCoroutine<TResult>(observer => SnedRequestInternal(observer, webRequest, requestObserver));
+        }
+
+        /// <summary> リクエスト制御 </summary>
+        private IEnumerator SnedRequestInternal<TResult>(IObserver<TResult> observer, TWebRequest webRequest, IObservable<TResult> requestObserver) where TResult : class
+        {
+            // 通信待ちキュー.
+            var waitQueueingYield = Observable.FromMicroCoroutine(() => WaitQueueingRequest(webRequest)).ToYieldInstruction(false);
+
+            while (!waitQueueingYield.IsDone)
+            {
+                yield return null;
+            }
+
+            // 通信中.
+            currentWebRequest = webRequest;
+            
+            var sw = System.Diagnostics.Stopwatch.StartNew();
+
+            var retryCount = 0;
+
+            TResult result = null;
+
+            // リクエスト実行.
+            while (true)
+            {
+                var requestYield = requestObserver.ToYieldInstruction(false);                
+
+                while (!requestYield.IsDone)
+                {
+                    yield return null;
+                }
+
+                //------ 通信成功 ------
+
+                if (requestYield.HasResult && !requestYield.HasError)
+                {
+                    result = requestYield.Result;
+                    break;
+                }
+                
+                //------ 通信キャンセル ------
+
+                if (requestYield.IsCanceled) { break; }
+
+                //------ リトライ回数オーバー ------
+
+                if (RetryCount <= retryCount)
+                {
+                    OnRetryLimit(webRequest);
+                    observer.OnError(requestYield.Error);
+                    break;
+                }
+
+                //------ 通信失敗 ------
+
+                // エラーハンドリングを待つのだ.
+                var waitErrorHandling = WaitErrorHandling(webRequest, requestYield.Error).ToYieldInstruction(false);
+
+                while (!waitErrorHandling.IsDone)
+                {
+                    yield return null;
+                }
+
+                if (waitErrorHandling.HasError)
+                {
+                    observer.OnError(requestYield.Error);
+                    break;
+                }
+
+                if (waitErrorHandling.HasResult)
+                {
+                    switch (waitErrorHandling.Result)
+                    {
+                        case RequestErrorHandle.Retry:
+                            retryCount++;
+                            break;
+                    }
+
+                    // キャンセル時は通信終了.
+                    if (waitErrorHandling.Result == RequestErrorHandle.Cancel)
+                    {
+                        break;
+                    }
+                }
+
+                // リトライディレイ.
+                var retryDelayYield = Observable.Timer(TimeSpan.FromSeconds(RetryDelaySeconds)).ToYieldInstruction();
+
+                while (!retryDelayYield.IsDone)
+                {
+                    yield return null;
+                }
+
+            }
+
+            if (result != null)
+            {
+                // 正常終了.
+                sw.Stop();
+                OnComplete(webRequest, result, sw.Elapsed.TotalMilliseconds);
+
+                observer.OnNext(result);
+            }
+
+            // 通信完了.
+            currentWebRequest = null;
+
+            observer.OnCompleted();
         }
 
         /// <summary>
@@ -104,7 +211,7 @@ namespace Modules.Networking
         /// <summary>
         /// 通信処理が同時に実行されないようにキューイング.
         /// </summary>
-        private IEnumerator WaitWebRequestStart(TWebRequest webRequest)
+        private IEnumerator WaitQueueingRequest(TWebRequest webRequest)
         {
             // キューに追加.
             webRequestQueue.Enqueue(webRequest);
@@ -115,51 +222,20 @@ namespace Modules.Networking
                 if (webRequestQueue.IsEmpty())
                 {
                     webRequest.Cancel(true);
-                    yield break;
+                    break;
                 }
 
                 // 通信中のリクエストが存在しない & キューの先頭が自身の場合待ち終了.
                 if (currentWebRequest == null && webRequestQueue.Peek() == webRequest)
                 {
                     webRequestQueue.Dequeue();
-                    yield break;
+                    break;
                 }
 
                 yield return null;
             }
         }
-
-        private IObservable<TResult> FetchCore<TResult>(IObservable<TResult> observer, TWebRequest webRequest)
-        {
-            // 通信中.
-            currentWebRequest = webRequest;
-
-            var sw = System.Diagnostics.Stopwatch.StartNew();
-
-            return observer
-                // タイムアウト時間設定.
-                .Timeout(TimeSpan.FromSeconds(TimeOutSeconds))
-                // リトライ処理.
-                .OnErrorRetry((TimeoutException ex) => OnTimeout(webRequest, ex), RetryCount, TimeSpan.FromSeconds(RetryDelaySeconds))
-                // エラー処理.
-                .DoOnError((Exception ex) =>
-                    {
-                        OnError(webRequest, ex);
-                        ForceCancelAll();
-                    })
-                // 正常終処理.
-                .Do(x =>
-                    {
-                        if (x != null)
-                        {
-                            sw.Stop();
-                            OnComplete(webRequest, x, sw.Elapsed.TotalMilliseconds);
-                        }
-                    })
-                // 通信完了.
-                .Finally(() => currentWebRequest = null);
-        }
-
+        
         protected TWebRequest SetupWebRequest(string url, IDictionary<string, object> urlParams)
         {
             var webRequest = new TWebRequest();
@@ -183,10 +259,13 @@ namespace Modules.Networking
             return webRequest;
         }
 
-        protected abstract void OnTimeout(TWebRequest webRequest, Exception ex);
-
-        protected abstract void OnError(TWebRequest webRequest, Exception ex);
-
+        /// <summary> 成功時イベント. </summary>
         protected abstract void OnComplete<TResult>(TWebRequest webRequest, TResult result, double totalMilliseconds);
+
+        /// <summary> 通信エラーのハンドリング. </summary>
+        protected abstract IObservable<RequestErrorHandle> WaitErrorHandling(TWebRequest webRequest, Exception ex);
+
+        /// <summary> リトライ回数を超えた時のイベント. </summary>
+        protected abstract void OnRetryLimit(TWebRequest webRequest);
     }
 }

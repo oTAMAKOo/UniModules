@@ -27,27 +27,33 @@ namespace Modules.Networking
         protected UnityWebRequest request = null;
 
         //----- property -----
-
-        // URL.
+        
+        /// <summary> URL. </summary>
         public string BaseUrl { get; private set; }
-
-        // リクエストURL.
+        
+        /// <summary> リクエストURL. </summary>
         public string Url { get { return request.url; } }
-
-        // ヘッダー情報.
+        
+        /// <summary> ヘッダー情報. </summary>
         public IDictionary<string, string> Headers { get; private set; }
-
-        // URLパラメータ.
+        
+        /// <summary> URLパラメータ. </summary>
         public IDictionary<string, object> UrlParams { get; private set; }
-
-        // 通信データフォーマット.
+        
+        /// <summary> 通信データフォーマット. </summary>
         public DataFormat Format { get; private set; }
 
-        // 受信したデータを取り扱う拡張クラス.
+        /// <summary> 受信したデータを取り扱う拡張クラス. </summary>
         public DownloadHandler DownloadHandler { get; set; }
-
-        // 通信中か.
+        
+        /// <summary> 通信中か. </summary>
         public bool Connecting { get; private set; }
+        
+        /// <summary> タイムアウト時間(秒). </summary>
+        public virtual int TimeOutSeconds { get { return 3;  } }
+        
+        /// <summary> リトライ回数. </summary>
+        public virtual int RetryCount { get { return 3; } }
 
         //----- method -----
 
@@ -68,14 +74,14 @@ namespace Modules.Networking
         {
             BuildUnityWebRequest();
 
-            return FetchCore<TResult>(progress);
+            return SendRequest<TResult>(progress);
         }
 
         public IObservable<TResult> Post<TResult, TContent>(TContent content, IProgress<float> progress = null) where TResult : class
         {
             BuildUnityWebRequest(content);
 
-            return FetchCore<TResult>(progress);
+            return SendRequest<TResult>(progress);
         }
 
         public void Cancel(bool throwException = false)
@@ -88,11 +94,11 @@ namespace Modules.Networking
             }
         }
 
-        private IObservable<TResult> FetchCore<TResult>(IProgress<float> progress) where TResult : class
+        private IObservable<TResult> SendRequest<TResult>(IProgress<float> progress) where TResult : class
         {
             Connecting = true;
 
-            return request.Fetch(progress).Select(x => Deserialize<TResult>(x)).Do(x => Connecting = false);
+            return request.Send(progress).Select(x => Deserialize<TResult>(x)).Do(x => Connecting = false);
         }
 
         private TResult Deserialize<TResult>(byte[] value) where TResult : class
@@ -137,6 +143,7 @@ namespace Modules.Networking
 
             request.method = UnityWebRequest.kHttpVerbGET;
             request.downloadHandler = DownloadHandler;
+            request.timeout = TimeOutSeconds;
 
             BuildUrlParams();
             BuildHeader();
