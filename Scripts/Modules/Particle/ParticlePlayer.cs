@@ -112,14 +112,14 @@ namespace Modules.Particle
         [SerializeField]
         private float lifeTime = 0f;
 
-        // 以前の状態.
+        // 現在の状態.
         private State currentState = State.Stop;
-
-        // 以前の状態.
-        private State? prevState = null;
 
         // 現在の実行時間.
         private float currentTime = 0f;
+
+        // 以前の状態.
+        private State? prevState = null;
 
         // 再生速度(倍率).
         public float speedRate = 1f;
@@ -149,7 +149,7 @@ namespace Modules.Particle
         //----- property -----
 
         public State State { get { return currentState; } }
-
+        
         public float CurrentTime { get { return currentTime; } }
 
         public SortingLayer SortingLayer
