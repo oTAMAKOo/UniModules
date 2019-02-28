@@ -23,7 +23,7 @@ namespace Modules.GameText
 
         private GameText()
         {
-            Cache = new Dictionary<int, GameTextDictionary>();
+            Cache = null;
         }
 
         public void Load(string assetPath)

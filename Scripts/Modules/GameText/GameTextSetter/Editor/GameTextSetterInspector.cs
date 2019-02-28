@@ -64,16 +64,22 @@ namespace Modules.GameText.Components
             {
                 EditorGUILayout.Separator();
 
-                if (EditorLayoutTools.DrawPrefixButton("Selection GameText", GUILayout.Width(180f)))
+                using (new DisableScope(GameText.Instance.Cache == null))
                 {
-                    GameTextSelector.Open();
+                    if (EditorLayoutTools.DrawPrefixButton("Selection GameText", GUILayout.Width(180f)))
+                    {
+                        GameTextSelector.Open();
+                    }
                 }
 
                 GUILayout.Space(5f);
 
-                if (EditorLayoutTools.DrawHeader("SourceText", "GameTextSetterInspector-SourceText"))
+                if (!string.IsNullOrEmpty(instance.Content))
                 {
-                    EditorGUILayout.TextArea(instance.Content, GUILayout.Height(48f));
+                    if (EditorLayoutTools.DrawHeader("SourceText", "GameTextSetterInspector-SourceText"))
+                    {
+                        EditorGUILayout.TextArea(instance.Content, GUILayout.Height(48f));
+                    }
                 }
             }
 
