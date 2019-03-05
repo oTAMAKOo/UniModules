@@ -5,9 +5,7 @@ using UnityEngine.UI;
 using UnityEditor;
 using Unity.Linq;
 using Extensions;
-using Modules.Atlas;
 using Modules.Devkit.Prefs;
-using UniRx.Async;
 
 namespace Modules.Devkit.CleanComponent
 {
@@ -38,7 +36,7 @@ namespace Modules.Devkit.CleanComponent
 
             foreach (var imageComponent in imageComponents)
             {
-                if (imageComponent.sprite == null) { continue; }
+                if (!CheckModifyTarget(imageComponent)) { continue; }
 
                 imageComponent.sprite = null;
 

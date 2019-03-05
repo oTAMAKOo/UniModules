@@ -17,6 +17,7 @@ namespace Modules.Devkit.CleanComponent
         {
             SceneTextComponentCleaner.Clean();
             SceneImageComponentCleaner.Clean();
+            SceneParticleComponentCleaner.Clean();
 
             InternalEditorUtility.RepaintAllViews();
 

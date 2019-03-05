@@ -45,16 +45,13 @@ namespace Modules.Networking
 
         /// <summary> 受信したデータを取り扱う拡張クラス. </summary>
         public DownloadHandler DownloadHandler { get; set; }
-        
+
+        /// <summary> タイムアウト時間(秒). </summary>
+        public virtual int TimeOutSeconds { get { return 3; } }
+
         /// <summary> 通信中か. </summary>
         public bool Connecting { get; private set; }
-        
-        /// <summary> タイムアウト時間(秒). </summary>
-        public virtual int TimeOutSeconds { get { return 3;  } }
-        
-        /// <summary> リトライ回数. </summary>
-        public virtual int RetryCount { get { return 3; } }
-
+       
         //----- method -----
 
         public virtual void Initialize(string url, DataFormat format = DataFormat.MessagePack)

@@ -255,6 +255,19 @@ namespace Modules
             return true;
         }
 
+        [MenuItem(itemName: ToolsMenu + "Cleaner/AutoClean ParticleSystem On", priority = 0)]
+        public static void ToggleParticleSystemCleanerAutoMode()
+        {
+            TextComponentCleaner.Prefs.autoClean = !ParticleComponentCleaner.Prefs.autoClean;
+        }
+
+        [MenuItem(itemName: ToolsMenu + "Cleaner/AutoClean ParticleSystem On", validate = true)]
+        public static bool ToggleParticleSystemCleanerAutoModeValidate()
+        {
+            UnityEditor.Menu.SetChecked(ToolsMenu + "Cleaner/AutoClean ParticleSystem On", ParticleComponentCleaner.Prefs.autoClean);
+            return true;
+        }
+
         [MenuItem(itemName: ToolsMenu + "Cleaner/Execute", priority = 1)]
         public static void ExecComponentCleaner()
         {

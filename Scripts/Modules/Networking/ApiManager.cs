@@ -22,27 +22,26 @@ namespace Modules.Networking
         }
 
         //----- field -----
-
-        private string serverUrl = null;
+        
         private TWebRequest currentWebRequest = null;
         private Queue<TWebRequest> webRequestQueue = null;
 
         //----- property -----
 
-        public string ServerUrl { get { return serverUrl; } }
+        /// <summary> 接続先URL. </summary>
+        public string ServerUrl { get; private set; }
 
+        /// <summary> データ内容フォーマット. </summary>
         public DataFormat Format { get; set; }
 
+        /// <summary> ヘッダー情報. </summary>
         public IDictionary<string, string> Headers { get; private set; }
 
-        // タイムアウトするまでの時間(秒).
-        protected abstract float TimeOutSeconds { get; }
+        /// <summary> リトライ回数. </summary>
+        public int RetryCount { get; private set; }
 
-        // リトライ回数.
-        protected abstract int RetryCount { get; }
-
-        // リトライするまでの時間(秒).
-        protected abstract float RetryDelaySeconds { get; }
+        /// <summary> リトライするまでの時間(秒). </summary>
+        public float RetryDelaySeconds { get; private set; }
 
         //----- method -----
 
@@ -52,11 +51,12 @@ namespace Modules.Networking
             Headers = new Dictionary<string, string>();
         }
 
-        public virtual void Initialize(string serverUrl, DataFormat format = DataFormat.MessagePack)
+        public virtual void Initialize(string serverUrl, DataFormat format = DataFormat.MessagePack, int retryCount = 3, float retryDelaySeconds = 2)
         {
-            this.serverUrl = serverUrl;
-
+            ServerUrl = serverUrl;
             Format = format;
+            RetryCount = retryCount;
+            RetryDelaySeconds = retryDelaySeconds;
         }
 
         /// <summary>
@@ -125,6 +125,13 @@ namespace Modules.Networking
 
                 if (requestYield.IsCanceled) { break; }
 
+                //------ エラー ------
+
+                if (requestYield.HasError)
+                {
+                    OnError(webRequest, requestYield.Error);
+                }
+
                 //------ リトライ回数オーバー ------
 
                 if (RetryCount <= retryCount)
@@ -136,7 +143,7 @@ namespace Modules.Networking
 
                 //------ 通信失敗 ------
 
-                // エラーハンドリングを待つのだ.
+                // エラーハンドリングを待つ.
                 var waitErrorHandling = WaitErrorHandling(webRequest, requestYield.Error).ToYieldInstruction(false);
 
                 while (!waitErrorHandling.IsDone)
@@ -240,7 +247,7 @@ namespace Modules.Networking
         {
             var webRequest = new TWebRequest();
 
-            webRequest.Initialize(PathUtility.Combine(serverUrl, url), Format);
+            webRequest.Initialize(PathUtility.Combine(ServerUrl, url), Format);
 
             foreach (var header in Headers)
             {
@@ -262,10 +269,13 @@ namespace Modules.Networking
         /// <summary> 成功時イベント. </summary>
         protected abstract void OnComplete<TResult>(TWebRequest webRequest, TResult result, double totalMilliseconds);
 
-        /// <summary> 通信エラーのハンドリング. </summary>
-        protected abstract IObservable<RequestErrorHandle> WaitErrorHandling(TWebRequest webRequest, Exception ex);
-
         /// <summary> リトライ回数を超えた時のイベント. </summary>
         protected abstract void OnRetryLimit(TWebRequest webRequest);
+
+        /// <summary> 通信エラー時イベント. </summary>
+        protected abstract void OnError(TWebRequest webRequest, Exception ex);
+
+        /// <summary> 通信エラーのハンドリング. </summary>
+        protected abstract IObservable<RequestErrorHandle> WaitErrorHandling(TWebRequest webRequest, Exception ex);
     }
 }
