@@ -1,4 +1,5 @@
 ﻿﻿
+using System;
 using MessagePack;
 using MessagePack.Formatters;
 using MessagePack.Resolvers;
@@ -56,7 +57,13 @@ namespace Modules.MessagePack
         {
             return new IFormatterResolver[]
             {
+                // DateTime.
+                DateTimeResolver.Instance,
+
                 GeneratedResolver.Instance,
+
+                // Builtin.
+                BuiltinResolver.Instance,
 
                 #if !NETSTANDARD1_4
 
@@ -65,8 +72,7 @@ namespace Modules.MessagePack
 
                 #endif
 
-                BuiltinResolver.Instance,
-
+                // Primitive.
                 PrimitiveObjectResolver.Instance,
             };
         }
@@ -81,6 +87,9 @@ namespace Modules.MessagePack
         {
             return new IFormatterResolver[]
             {
+                // DateTime.
+                DateTimeResolver.Instance,
+
                 // Builtin.
                 BuiltinResolver.Instance,
 
@@ -104,7 +113,7 @@ namespace Modules.MessagePack
                 DynamicContractlessObjectResolver.Instance,
 
                 // Primitive.
-                PrimitiveObjectResolver.Instance
+                PrimitiveObjectResolver.Instance,
             };
         }
     }

@@ -19,11 +19,20 @@ namespace Extensions
 
         //----- method -----
 
-        /// <summary> 型の名前から型情報を取得 </summary>
-        public static Type GetTypeFromTypeName(string csTypeName)
+        /// <summary> System名前空間内の型の名前から型情報を取得 </summary>
+        public static Type GetTypeFromSystemTypeName(string csTypeName)
         {
             csTypeName = csTypeName.Trim();
 
+            // 配列.
+            var array = csTypeName.EndsWith("[]");
+
+            if (array)
+            {
+                csTypeName = csTypeName.Substring(0, csTypeName.Length - 2);
+            }
+
+            // Null許容型.
             var nullable = csTypeName.EndsWith("?");
 
             if (nullable)
@@ -31,6 +40,7 @@ namespace Extensions
                 csTypeName = csTypeName.TrimEnd('?');
             }
 
+            // 型テーブル.
             if (TypeTable == null)
             {
                 TypeTable = new Dictionary<string, Type>();
@@ -46,18 +56,47 @@ namespace Extensions
                             var typeRef = new CodeTypeReference(definedType);
                             var typeName = provider.GetTypeOutput(typeRef);
 
+                            // int, float, stringなどの短縮型.
                             if (typeName.IndexOf('.') == -1)
                             {
                                 TypeTable.Add(typeName, Type.GetType(definedType.FullName));
+                            }                            
+                            else
+                            {
+                                // 「System.」から始まる型.
+                                if (typeName.StartsWith(definedType.Namespace))
+                                {
+                                    typeName = typeName.Substring(definedType.Namespace.Length + 1);
+
+                                    TypeTable.Add(typeName, Type.GetType(definedType.FullName));
+                                }
                             }
                         }
                     }
-                }
+                }                
             }
+
+            // 型情報を生成.
 
             var type = TypeTable.GetValueOrDefault(csTypeName);
 
-            return nullable ? typeof(Nullable<>).MakeGenericType(type) : type;
+            if (array)
+            {
+                type = type.MakeArrayType();
+            }
+
+            if(nullable)
+            {
+                type = typeof(Nullable<>).MakeGenericType(type);
+            }
+
+            return type;
+        }
+
+        /// <summary> 型情報からデフォルト値を取得 </summary>
+        public static object GetDefaultValue(this Type type)
+        {
+            return type.IsValueType ? Activator.CreateInstance(type) : null;
         }
     }
 }

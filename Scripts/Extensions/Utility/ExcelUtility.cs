@@ -120,7 +120,7 @@ namespace Extensions
                         // ヘッダー行までの行をスキップ.
                         if (headerRow <= index)
                         {
-                            builder.AppendLine(csvParser.RawRecord);
+                            builder.Append(csvParser.RawRecord);
                         }
 
                         index++;
