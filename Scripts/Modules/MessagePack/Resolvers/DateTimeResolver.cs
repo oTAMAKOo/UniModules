@@ -22,12 +22,12 @@ namespace Modules.MessagePack
 
             static FormatterCache()
             {
-                formatter = (IMessagePackFormatter<T>)new DateTimeFormatter();
+                formatter = typeof(T) == typeof(DateTime) ? (IMessagePackFormatter<T>)new DurableDateTimeFormatter() : null;
             }
         }
     }
 
-    public class DateTimeFormatter : IMessagePackFormatter<DateTime>
+    public class DurableDateTimeFormatter : IMessagePackFormatter<DateTime>
     {
         public int Serialize(ref byte[] bytes, int offset, DateTime value, IFormatterResolver formatterResolver)
         {
