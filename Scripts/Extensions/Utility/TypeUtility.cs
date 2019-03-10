@@ -51,25 +51,21 @@ namespace Extensions
                 {
                     foreach (var definedType in mscorlib.DefinedTypes)
                     {
+                        var typeRef = new CodeTypeReference(definedType);
+                        var typeName = provider.GetTypeOutput(typeRef);
+
                         if (string.Equals(definedType.Namespace, "System"))
                         {
-                            var typeRef = new CodeTypeReference(definedType);
-                            var typeName = provider.GetTypeOutput(typeRef);
-
                             // int, float, stringなどの短縮型.
                             if (typeName.IndexOf('.') == -1)
                             {
                                 TypeTable.Add(typeName, Type.GetType(definedType.FullName));
-                            }                            
+                            }
                             else
                             {
-                                // 「System.」から始まる型.
-                                if (typeName.StartsWith(definedType.Namespace))
-                                {
-                                    typeName = typeName.Substring(definedType.Namespace.Length + 1);
+                                typeName = typeName.Substring(definedType.Namespace.Length + 1);
 
-                                    TypeTable.Add(typeName, Type.GetType(definedType.FullName));
-                                }
+                                TypeTable.Add(typeName, Type.GetType(definedType.FullName));
                             }
                         }
                     }

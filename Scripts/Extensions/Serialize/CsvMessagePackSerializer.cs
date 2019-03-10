@@ -2,6 +2,7 @@
 using System;
 using System.Linq;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Text;
 using CsvHelper;
@@ -9,30 +10,32 @@ using MessagePack;
 
 namespace Extensions.Serialize
 {
-    public class CsvMessagePackSerializer
+    public sealed class CsvMessagePackSerializer
     {
         //----- params -----
 
         //----- field -----
 
+        private TypeGenerator typeGenerator = null;
+
         //----- property -----
 
         //----- method -----
 
-        public static byte[] Serialize(string csv, string[] exportMarks, bool lz4Compress = false)
+        public byte[] Serialize(string csv, string[] exportMarks, bool lz4Compress = false)
         {
             var textBytes = Encoding.UTF8.GetBytes(csv);
 
             var exportFlags = exportMarks.Any() ? GetExportFlags(textBytes, exportMarks) : null;
 
-            var typeGenerator = GenerateSerializeType(textBytes, exportFlags);
+            GenerateSerializeType(textBytes, exportFlags);
 
-            var bytes = BuildMessagePack(textBytes, typeGenerator, lz4Compress);
+            var bytes = BuildMessagePack(textBytes, lz4Compress);
 
             return bytes;
         }
 
-        private static bool[] GetExportFlags(byte[] textBytes, string[] exportMarks)
+        private bool[] GetExportFlags(byte[] textBytes, string[] exportMarks)
         {
             using (var memoryStream = new MemoryStream(textBytes))
             {
@@ -53,7 +56,7 @@ namespace Extensions.Serialize
                         for (var i = 0; i < csvReader.CurrentRecord.Length; i++)
                         {
                             var str = csvReader.CurrentRecord.ElementAt(i);
-                            
+
                             exportFlags.Add(exportMarks.Contains(str));
                         }
 
@@ -63,10 +66,8 @@ namespace Extensions.Serialize
             }
         }
 
-        private static TypeGenerator GenerateSerializeType(byte[] textBytes, bool[] exportFlags)
+        private void GenerateSerializeType(byte[] textBytes, bool[] exportFlags)
         {
-            TypeGenerator typeGenerator = null;
-
             using (var memoryStream = new MemoryStream(textBytes))
             {
                 using (var streamReader = new StreamReader(memoryStream))
@@ -99,7 +100,10 @@ namespace Extensions.Serialize
 
                             if (csvReader.FieldHeaders.Length <= i) { continue; }
 
-                            var type = TypeUtility.GetTypeFromSystemTypeName(csvReader.FieldHeaders[i]);
+                            var typeName = csvReader.FieldHeaders[i];
+
+                            var type = TypeUtility.GetTypeFromSystemTypeName(typeName);
+
                             var name = csvReader.CurrentRecord.ElementAt(i);
 
                             if (type == null || string.IsNullOrEmpty(name)) { continue; }
@@ -111,11 +115,9 @@ namespace Extensions.Serialize
                     }
                 }
             }
-
-            return typeGenerator;
         }
 
-        public static byte[] BuildMessagePack(byte[] textBytes, TypeGenerator typeGenerator, bool lz4Compress)
+        private byte[] BuildMessagePack(byte[] textBytes, bool lz4Compress)
         {
             using (var memoryStream = new MemoryStream(textBytes))
             {
@@ -143,8 +145,8 @@ namespace Extensions.Serialize
 
                         while (csvReader.Read())
                         {
-                            var instance = CreateInstanceFromCsvRecord(typeGenerator, csvReader.FieldHeaders, csvReader.CurrentRecord);
-
+                            var instance = CreateInstanceFromCsvRecord(csvReader.FieldHeaders, csvReader.CurrentRecord);
+                            
                             data.Add(instance);
                         }
 
@@ -160,7 +162,7 @@ namespace Extensions.Serialize
             }
         }
 
-        private static object CreateInstanceFromCsvRecord(TypeGenerator typeGenerator, string[] headers, string[] values)
+        private object CreateInstanceFromCsvRecord(string[] headers, string[] values)
         {
             var instance = typeGenerator.NewInstance();
 
@@ -175,60 +177,7 @@ namespace Extensions.Serialize
 
                     var type = Nullable.GetUnderlyingType(property.PropertyType) ?? property.PropertyType;
 
-                    var value = type.GetDefaultValue();
-
-                    if (!string.IsNullOrEmpty(values[i]))
-                    {
-                        if (type.IsArray)
-                        {
-                            var elementType = type.GetElementType();
-
-                            var str = values[i];
-
-                            str = str.Trim(new char[] { ' ', '\n', '\t' });
-
-                            var list = new List<object>();
-
-                            // 複数要素のある場合.
-                            if (str.StartsWith("[") && str.EndsWith("]"))
-                            {
-                                // 文字列要素でない場合は余計な文字を削除.
-                                if (elementType != typeof(string))
-                                {
-                                    str = str.Replace(" ", string.Empty);
-                                    str = str.Replace("\n", string.Empty);
-                                    str = str.Replace("\t", string.Empty);
-                                }
-
-                                // 「[]」を外す.
-                                str = str.Substring(1, str.Length - 1).Substring(0, str.Length - 2);
-
-                                // 「,」区切りで配列化.
-                                var elements = str.Split(',').Where(x => !string.IsNullOrEmpty(x));
-
-                                foreach (var element in elements)
-                                {
-                                    list.Add(Convert.ChangeType(element, elementType));
-                                }
-                            }
-                            // 「[]」で囲まれてない場合は1つしか要素がない配列に変換.
-                            else
-                            {
-                                list.Add(Convert.ChangeType(str, elementType));
-                            }
-
-                            var array = Array.CreateInstance(elementType, list.Count);
-                            Array.Copy(list.ToArray(), array, list.Count);
-
-                            value = array;
-                        }
-                        else
-                        {
-                            value = Convert.ChangeType(values[i], type);
-                        }
-                    }
-
-                    value = value != null ? Convert.ChangeType(value, type) : null;
+                    var value = ParseValueObject(values[i], type);
 
                     TypeGenerator.SetProperty(instance, name, value, type);
                 }
@@ -242,12 +191,71 @@ namespace Extensions.Serialize
             return instance;
         }
 
-        private static object GetDefaultValue(Type t)
+        private object ParseValueObject(string valueText, Type valueType)
         {
-            if (t.IsValueType)
-                return Activator.CreateInstance(t);
+            var value = valueType.GetDefaultValue();
 
-            return null;
+            // 空文字列ならデフォルト値.
+            if (string.IsNullOrEmpty(valueText))
+            {
+                return valueType.GetDefaultValue();
+            }
+
+            // 配列.
+            if (valueType.IsArray)
+            {
+                var list = new List<object>();
+
+                var elementType = valueType.GetElementType();
+
+                var arrayText = valueText;
+
+                var start = arrayText.IndexOf("[", StringComparison.Ordinal);
+                var end = arrayText.LastIndexOf("]", StringComparison.Ordinal);
+
+                // 複数要素のある場合.
+                if (start != -1 && end != -1 && start < end)
+                {
+                    // 「[]」を外す.
+                    arrayText = arrayText.Substring(start + 1, end - start - 1);
+
+                    // 「,」区切りで配列化.
+                    var elements = arrayText.Split(',').ToArray();
+
+                    foreach (var element in elements)
+                    {
+                        list.Add(ParseValue(element, elementType));
+                    }
+                }
+                // 「[]」で囲まれてない場合は1つしか要素がない配列に変換.
+                else
+                {
+                    list.Add(ParseValue(valueText, elementType));
+                }
+
+                var array = Array.CreateInstance(elementType, list.Count);
+
+                Array.Copy(list.ToArray(), array, list.Count);
+
+                value = array;
+            }
+            // 単一要素.
+            else
+            {
+                value = ParseValue(valueText, valueType);
+            }
+
+            return value;
+        }
+
+        private object ParseValue(string valueText, Type valueType)
+        {
+            if(valueType != typeof(string))
+            {
+                valueText = valueText.Trim(' ', '　', '\n', '\t');
+            }
+            
+            return Convert.ChangeType(valueText, valueType, CultureInfo.InvariantCulture);
         }
     }
 }
