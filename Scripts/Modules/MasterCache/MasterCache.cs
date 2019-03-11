@@ -15,20 +15,14 @@ using Modules.MessagePack;
 
 namespace Modules.MasterCache
 {
-    [MessagePackObject(true)]
-    public abstract class Cache<T>
-    {
-        public T[] values = new T[0];
-    }
-
     public interface IMasterCache
     {
         string Version { get; }
 
-        bool CheckVersion(string applicationVersion, string masterVersion);
+        bool CheckVersion(string masterVersion);
         void ClearVersion();
         IObservable<bool> LoadCache(AesManaged aesManaged);
-        IObservable<bool> UpdateCache(string applicationVersion, string masterVersion, AesManaged aesManaged, CancellationToken cancelToken);
+        IObservable<bool> UpdateCache(string masterVersion, AesManaged aesManaged, CancellationToken cancelToken);
     }
 
     public static class MasterCaches
@@ -41,20 +35,18 @@ namespace Modules.MasterCache
         }
     }
 
-    public abstract class MasterCache<TInstance, T, TCache> : IMasterCache
-        where TInstance : MasterCache<TInstance, T, TCache>, new()
-        where TCache : Cache<T>, new()
+    public abstract class MasterCache<TMaster, TMasterData> : IMasterCache where TMaster : MasterCache<TMaster, TMasterData>, new()
     {
         //----- params -----
 
-        private const string MasterCacheExtension = ".cache";
+        private const string CacheFileExtension = ".cache";
 
         private class Prefs
         {
             public string version
             {
-                get { return PlayerPrefs.GetString(string.Format("{0}.Version", typeof(TInstance).Name.ToUpper())); }
-                set { PlayerPrefs.SetString(string.Format("{0}.Version", typeof(TInstance).Name.ToUpper()), value); }
+                get { return PlayerPrefs.GetString(string.Format("{0}.Version", typeof(TMaster).Name.ToUpper())); }
+                set { PlayerPrefs.SetString(string.Format("{0}.Version", typeof(TMaster).Name.ToUpper()), value); }
             }
         }
 
@@ -63,20 +55,20 @@ namespace Modules.MasterCache
 
         //----- field -----
 
-        private Dictionary<string, T> masters = new Dictionary<string, T>();
+        private Dictionary<string, TMasterData> masters = new Dictionary<string, TMasterData>();
         private Prefs versionPrefs = new Prefs();
 
-        private static TInstance instance = null;
+        private static TMaster instance = null;
 
         //----- property -----
 
-        public static TInstance Instance
+        public static TMaster Instance
         {
             get
             {
                 if (instance == null)
                 {
-                    instance = new TInstance();
+                    instance = new TMaster();
                     MasterCaches.All.Add(instance);
                 }
 
@@ -84,14 +76,12 @@ namespace Modules.MasterCache
             }
         }
 
-        public string Version
-        {
-            get { return versionPrefs.version; }
-        }
+        /// <summary> バージョン. </summary>
+        public string Version { get { return versionPrefs.version; } }
 
         //----- method -----
 
-        public void SetMaster(T[] master)
+        public void SetMaster(TMasterData[] master)
         {
             masters.Clear();
 
@@ -103,7 +93,7 @@ namespace Modules.MasterCache
             }
         }
 
-        private void SetMaster(T master)
+        private void SetMaster(TMasterData master)
         {
             if (master == null) { return; }
 
@@ -122,27 +112,24 @@ namespace Modules.MasterCache
             }
         }
 
-        public bool CheckVersion(string applicationVersion, string masterVersion)
+        public bool CheckVersion(string masterVersion)
         {
             var result = true;
 
-            var installPath = GetLocalCacheFilePath();
-
-            // バージョン文字列.
-            var version = ConvertVersionStr(applicationVersion, masterVersion);
-
+            var installPath = PathUtility.Combine(GetInstallDirectory(), GetCacheFileName());
+            
             // ファイルがなかったらバージョン不一致.
             result &= File.Exists(installPath);
 
             // ローカル保存されているバージョンと一致するか.
-            result &= versionPrefs.version == version;
+            result &= versionPrefs.version == masterVersion;
 
             return result;
         }
 
         public void ClearVersion()
         {
-            var installPath = GetLocalCacheFilePath();
+            var installPath = PathUtility.Combine(GetInstallDirectory(), GetCacheFileName());
 
             if (File.Exists(installPath))
             {
@@ -166,8 +153,8 @@ namespace Modules.MasterCache
 
             try
             {
-                MessagePackValidater.ValidateAttribute(typeof(TCache));
-                MessagePackValidater.ValidateAttribute(typeof(T));
+                MessagePackValidater.ValidateAttribute(typeof(TMaster));
+                MessagePackValidater.ValidateAttribute(typeof(TMasterData));
             }
             catch (Exception exception)
             {
@@ -176,7 +163,7 @@ namespace Modules.MasterCache
 
             #endif
 
-            var installPath = GetLocalCacheFilePath();
+            var installPath = PathUtility.Combine(GetInstallDirectory(), GetCacheFileName());
 
             Func<string, AesManaged, byte[]> loadCacheFile = (_installPath, _aesManaged) =>
             {
@@ -199,13 +186,13 @@ namespace Modules.MasterCache
 
             if (loadYield.HasResult)
             {
-                var data = loadYield.Result;
+                var bytes = loadYield.Result;
 
                 try
                 {
-                    var cachedData = LZ4MessagePackSerializer.Deserialize<TCache>(data, UnityContractResolver.Instance);
+                    var data = LZ4MessagePackSerializer.Deserialize<TMasterData[]>(bytes, UnityContractResolver.Instance);
 
-                    SetMaster(cachedData.values);
+                    SetMaster(data);
 
                     result = true;
                 }
@@ -219,7 +206,7 @@ namespace Modules.MasterCache
             
             if (result)
             {
-                MasterCacheLoadDiagnostic.Instance.Register<TInstance>(sw.Elapsed.TotalMilliseconds);
+                MasterCacheLoadDiagnostic.Instance.Register<TMaster>(sw.Elapsed.TotalMilliseconds);
             }
             else
             {
@@ -231,115 +218,93 @@ namespace Modules.MasterCache
             observer.OnCompleted();
         }
 
-        public IObservable<bool> UpdateCache(string applicationVersion, string masterVersion, AesManaged aesManaged, CancellationToken cancelToken)
+        public IObservable<bool> UpdateCache(string masterVersion, AesManaged aesManaged, CancellationToken cancelToken)
         {
-            return Observable.FromMicroCoroutine<bool>(observer => UpdateCacheInternal(observer, applicationVersion, masterVersion, aesManaged, cancelToken));
+            return Observable.FromMicroCoroutine<bool>(observer => UpdateCacheInternal(observer, masterVersion, aesManaged, cancelToken));
         }
 
-        private IEnumerator UpdateCacheInternal(IObserver<bool> observer, string applicationVersion, string masterVersion, AesManaged aesManaged, CancellationToken cancelToken)
+        private IEnumerator UpdateCacheInternal(IObserver<bool> observer, string masterVersion, AesManaged aesManaged, CancellationToken cancelToken)
         {
             var result = true;
 
             var localVersion = versionPrefs.version;
 
+            var cachefilePath = PathUtility.Combine(GetInstallDirectory(), GetCacheFileName());
+
+            if (File.Exists(cachefilePath))
+            {
+                File.Delete(cachefilePath);
+            }
+
             var sw = System.Diagnostics.Stopwatch.StartNew();
 
-            var updateYield = UpdateMaster().ToYieldInstruction(false, cancelToken);
+            var downloadYield = UpdateMaster().ToYieldInstruction(false, cancelToken);
 
-            while (!updateYield.IsDone)
+            while (!downloadYield.IsDone)
             {
                 yield return null;
             }
 
-            if (updateYield.HasResult && !updateYield.HasError)
+            var downloadfilePath = PathUtility.Combine(GetInstallDirectory(), GetDownloadFileName());
+
+            if (downloadYield.HasResult && !downloadYield.HasError && File.Exists(downloadfilePath))
             {
-                result &= SaveCache(updateYield.Result, applicationVersion, masterVersion, aesManaged);
+                // 拡張子を変更.
+                File.Move(downloadfilePath, cachefilePath);
 
                 sw.Stop();
 
-                if (result)
-                {
-                    var version = ConvertVersionStr(applicationVersion, masterVersion);
+                var message = string.Format("[{0}] Version : {1} >> {2}", typeof(TMaster).Name, string.IsNullOrEmpty(localVersion) ? "---" : localVersion, masterVersion);
 
-                    var message = string.Format("[{0}] Version : {1} >>> {2}", typeof(TInstance).Name, string.IsNullOrEmpty(localVersion) ? "---" : localVersion, version);
+                UnityConsole.Event(ConsoleEventName, ConsoleEventColor, message);
 
-                    UnityConsole.Event(ConsoleEventName, ConsoleEventColor, message);
-
-                    MasterCacheUpdateDiagnostic.Instance.Register<TInstance>(sw.Elapsed.TotalMilliseconds);
-                }
+                MasterCacheUpdateDiagnostic.Instance.Register<TMaster>(sw.Elapsed.TotalMilliseconds);
             }
             else
             {
                 result = false;
             }
 
+            // 読み込み開始.
+            if (result)
+            {
+                var loadYield = LoadCache(aesManaged).ToYieldInstruction(false, cancelToken);
+
+                while (!loadYield.IsDone)
+                {
+                    yield return null;
+                }
+
+                if (loadYield.HasResult && !loadYield.HasError)
+                {
+                    result = loadYield.Result;
+                }
+                else
+                {
+                    result = false;
+                }                
+            }
+
             observer.OnNext(result);
             observer.OnCompleted();
         }
 
-        private bool SaveCache(object[] masterData, string applicationVersion, string masterVersion, AesManaged aesManaged)
+        protected virtual string GetInstallDirectory()
         {
-            try
-            {
-                var master = masterData.Select(x => (T)Activator.CreateInstance(typeof(T), x)).ToArray();
-
-                SetMaster(master);
-
-                var installPath = GetLocalCacheFilePath();
-
-                var directory = Path.GetDirectoryName(installPath);
-
-                if (!Directory.Exists(directory))
-                {
-                    Directory.CreateDirectory(directory);
-                }
-
-                #if UNITY_EDITOR
-
-                MessagePackValidater.ValidateAttribute(typeof(TCache));
-                MessagePackValidater.ValidateAttribute(typeof(T));
-
-                #endif
-
-                var cacheData = new TCache() { values = masters.Values.ToArray() };
-
-                var data = LZ4MessagePackSerializer.Serialize(cacheData, UnityContractResolver.Instance);
-                var encrypt = data.Encrypt(aesManaged);
-
-                File.WriteAllBytes(installPath, encrypt);
-
-                versionPrefs.version = ConvertVersionStr(applicationVersion, masterVersion);
-            }
-            catch (Exception exception)
-            {
-                Debug.LogException(exception);
-                OnError();
-
-                return false;
-            }
-
-            return true;
+            return Application.temporaryCachePath;
         }
 
-        protected static string GetLocalCacheFilePath()
+        private string GetCacheFileName()
         {
-            var installDir = Application.temporaryCachePath;
-            var fileName = typeof(TInstance).Name.ToLower() + MasterCacheExtension;
-
-            return PathUtility.Combine(installDir, fileName);
+            return typeof(TMaster).Name + CacheFileExtension;
         }
 
-        private string ConvertVersionStr(string applicationVersion, string masterVersion)
-        {
-            return string.Format("{0}::{1}", applicationVersion, masterVersion);
-        }
-
-        public IEnumerable<T> GetAllMasters()
+        public IEnumerable<TMasterData> GetAllMasters()
         {
             return masters.Values;
         }
 
-        public T GetMaster(string key)
+        public TMasterData GetMaster(string key)
         {
             return masters.GetValueOrDefault(key);
         }
@@ -350,8 +315,10 @@ namespace Modules.MasterCache
             ClearVersion();
         }
 
-        protected abstract string GetMasterKey(T master);
+        protected abstract string GetMasterKey(TMasterData master);
 
-        protected abstract IObservable<object[]> UpdateMaster();
+        protected abstract string GetDownloadFileName();
+
+        protected abstract IObservable<Unit> UpdateMaster();
     }
 }
