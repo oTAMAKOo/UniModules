@@ -153,7 +153,6 @@ namespace Modules.MasterCache
 
             try
             {
-                MessagePackValidater.ValidateAttribute(typeof(TMaster));
                 MessagePackValidater.ValidateAttribute(typeof(TMasterData));
             }
             catch (Exception exception)
@@ -206,7 +205,7 @@ namespace Modules.MasterCache
             
             if (result)
             {
-                MasterCacheLoadDiagnostic.Instance.Register<TMaster>(sw.Elapsed.TotalMilliseconds);
+                MasterCacheDiagnostic.Instance.Register<TMaster>(sw.Elapsed.TotalMilliseconds);
             }
             else
             {
@@ -231,11 +230,13 @@ namespace Modules.MasterCache
 
             var cachefilePath = PathUtility.Combine(GetInstallDirectory(), GetCacheFileName());
 
+            // 既存のファイル削除.
             if (File.Exists(cachefilePath))
             {
                 File.Delete(cachefilePath);
             }
 
+            // ダウンロード.
             var sw = System.Diagnostics.Stopwatch.StartNew();
 
             var downloadYield = UpdateMaster().ToYieldInstruction(false, cancelToken);
@@ -257,15 +258,13 @@ namespace Modules.MasterCache
                 var message = string.Format("[{0}] Version : {1} >> {2}", typeof(TMaster).Name, string.IsNullOrEmpty(localVersion) ? "---" : localVersion, masterVersion);
 
                 UnityConsole.Event(ConsoleEventName, ConsoleEventColor, message);
-
-                MasterCacheUpdateDiagnostic.Instance.Register<TMaster>(sw.Elapsed.TotalMilliseconds);
             }
             else
             {
                 result = false;
             }
 
-            // 読み込み開始.
+            // 読み込み.
             if (result)
             {
                 var loadYield = LoadCache(aesManaged).ToYieldInstruction(false, cancelToken);
@@ -284,6 +283,9 @@ namespace Modules.MasterCache
                     result = false;
                 }                
             }
+
+            // バージョン情報を更新.
+            versionPrefs.version = result ? masterVersion : string.Empty;
 
             observer.OnNext(result);
             observer.OnCompleted();

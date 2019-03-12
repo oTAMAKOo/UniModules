@@ -10,7 +10,7 @@ using Modules.Devkit;
 
 namespace Modules.MasterCache
 {
-	public abstract class MasterCacheDiagnostic<TInstance> : Singleton<TInstance> where TInstance : MasterCacheDiagnostic<TInstance>
+	public class MasterCacheDiagnostic : Singleton<MasterCacheDiagnostic>
     {
         //----- params -----
 
@@ -19,8 +19,6 @@ namespace Modules.MasterCache
         protected Dictionary<string, double> dictionary = null;
 
         //----- property -----
-
-        protected abstract string LogTitle { get; }
 
         //----- method -----
 
@@ -39,36 +37,18 @@ namespace Modules.MasterCache
             dictionary[typeof(T).Name] = time;
         }
 
-        public string BuildLog(double totalTime)
+        public string BuildLog()
         {
             if (dictionary.IsEmpty()) { return string.Empty; }
 
             var builder = new StringBuilder();
-
-            builder.AppendLine(string.Format("---------------- {0} : ({1:F1}ms) ----------------", LogTitle, totalTime));
-
-            builder.AppendLine();
 
             foreach (var item in dictionary)
             {
                 builder.AppendLine(string.Format("{0} ({1:F1}ms)", item.Key, item.Value));
             }
 
-            builder.AppendLine();
-
-            builder.AppendLine("----------------------------------------");
-
             return builder.ToString();
         }
-    }
-
-    public class MasterCacheUpdateDiagnostic : MasterCacheDiagnostic<MasterCacheUpdateDiagnostic>
-    {
-        protected override string LogTitle { get { return "Update"; } }
-    }
-
-    public class MasterCacheLoadDiagnostic : MasterCacheDiagnostic<MasterCacheLoadDiagnostic>
-    {
-        protected override string LogTitle { get { return "Load"; } }
     }
 }
