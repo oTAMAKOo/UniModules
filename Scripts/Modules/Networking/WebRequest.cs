@@ -43,8 +43,11 @@ namespace Modules.Networking
         /// <summary> 通信データフォーマット. </summary>
         public DataFormat Format { get; private set; }
 
-        /// <summary> 受信したデータを取り扱う拡張クラス. </summary>
-        public DownloadHandler DownloadHandler { get; set; }
+        /// <summary> サーバーへ送信するデータを扱うオブジェクト. </summary>
+        public UploadHandler UploadHandler { get; private set; }
+
+        /// <summary> サーバーから受信するデータを扱うオブジェクト. </summary>
+        public DownloadHandler DownloadHandler { get; private set; }
 
         /// <summary> タイムアウト時間(秒). </summary>
         public virtual int TimeOutSeconds { get { return 3; } }
@@ -62,21 +65,58 @@ namespace Modules.Networking
             Headers = new Dictionary<string, string>();
             UrlParams = new Dictionary<string, object>();
 
-            DownloadHandler = new DownloadHandlerBuffer();
+            DownloadHandler = CreateDownloadHandler();
 
             Connecting = false;
         }
 
+        protected virtual UnityWebRequest CreateWebRequest(string method)
+        {
+            var uri = BuildUri();
+
+            var request = new UnityWebRequest(uri, method);
+
+            SetRequestHeaders();
+
+            request.timeout = TimeOutSeconds;
+
+            return request;
+        }
+
         public IObservable<TResult> Get<TResult>(IProgress<float> progress = null) where TResult : class
         {
-            BuildUnityWebRequest();
+            request = CreateWebRequest(UnityWebRequest.kHttpVerbGET);
+
+            request.downloadHandler = CreateDownloadHandler();
 
             return SendRequest<TResult>(progress);
         }
 
         public IObservable<TResult> Post<TResult, TContent>(TContent content, IProgress<float> progress = null) where TResult : class
         {
-            BuildUnityWebRequest(content);
+            request = CreateWebRequest(UnityWebRequest.kHttpVerbGET);
+
+            request.uploadHandler = CreateUploadHandler(content);
+            request.downloadHandler = CreateDownloadHandler();
+
+            return SendRequest<TResult>(progress);
+        }
+
+        public IObservable<TResult> Put<TResult, TContent>(TContent content, IProgress<float> progress = null) where TResult : class
+        {
+            request = CreateWebRequest(UnityWebRequest.kHttpVerbPUT);
+
+            request.uploadHandler = CreateUploadHandler(content);
+            request.downloadHandler = CreateDownloadHandler();
+
+            return SendRequest<TResult>(progress);
+        }
+
+        public IObservable<TResult> Delete<TResult>(IProgress<float> progress = null) where TResult : class
+        {
+            request = CreateWebRequest(UnityWebRequest.kHttpVerbDELETE);
+
+            request.downloadHandler = CreateDownloadHandler();
 
             return SendRequest<TResult>(progress);
         }
@@ -133,52 +173,26 @@ namespace Modules.Networking
 
             return result;
         }
-
-        private void BuildUnityWebRequest()
-        {
-            request = new UnityWebRequest(BaseUrl);
-
-            request.method = UnityWebRequest.kHttpVerbGET;
-            request.downloadHandler = DownloadHandler;
-            request.timeout = TimeOutSeconds;
-
-            BuildUrlParams();
-            BuildHeader();
-        }
-
-        private void BuildUnityWebRequest<T>(T content)
-        {
-            request = new UnityWebRequest(BaseUrl);
-
-            request.method = UnityWebRequest.kHttpVerbPOST;
-            request.downloadHandler = DownloadHandler;
-
-            BuildUrlParams();
-            BuildHeader();
-            BuildContent(content);
-        }
-
-        protected virtual void RegisterDefaultUrlParams() { }
-
-        private void BuildUrlParams()
+        
+        private Uri BuildUri()
         {
             RegisterDefaultUrlParams();
 
-            var urlParams = string.Empty;
+            var url = new StringBuilder(BaseUrl);
 
-            foreach (var urlParam in UrlParams)
+            for (var i = 0; i < UrlParams.Count; i++)
             {
-                urlParams += string.IsNullOrEmpty(urlParams) ? "?" : "&";
+                var item = UrlParams.ElementAt(i);
 
-                urlParams += string.Format("{0}={1}", urlParam.Key, urlParam.Value);
+                url.Append(i == 0 ? "?" : "&");
+
+                url.Append(string.Format("{0}={1}", item.Key, item.Value));
             }
 
-            request.url = string.Format("{0}{1}", BaseUrl, urlParams);
+            return new Uri(url.ToString());
         }
-
-        protected virtual void RegisterDefaultHeader() { }
-
-        private void BuildHeader()
+        
+        private void SetRequestHeaders()
         {
             RegisterDefaultHeader();
 
@@ -191,31 +205,45 @@ namespace Modules.Networking
             }
         }
 
-        private void BuildContent<T>(T value)
+        protected virtual DownloadHandler CreateDownloadHandler()
         {
-            if (value == null) { return; }
+            return new DownloadHandlerBuffer();
+        }
+
+        protected virtual UploadHandler CreateUploadHandler<TContent>(TContent content)
+        {
+            if (content == null) { return null; }
 
             byte[] bodyData = null;
 
             switch (Format)
             {
                 case DataFormat.Json:
-                    var json = JsonFx.Json.JsonWriter.Serialize(value);
+                    var json = JsonFx.Json.JsonWriter.Serialize(content);
                     bodyData = Encoding.UTF8.GetBytes(json);
                     break;
 
                 case DataFormat.MessagePack:
-                    MessagePackValidater.ValidateAttribute(typeof(T));
-                    bodyData = MessagePackSerializer.Serialize(value, UnityContractResolver.Instance);
+                    MessagePackValidater.ValidateAttribute(typeof(TContent));
+                    bodyData = MessagePackSerializer.Serialize(content, UnityContractResolver.Instance);
                     break;
             }
 
             bodyData = Encrypt(bodyData);
 
-            request.uploadHandler = new UploadHandlerRaw(bodyData);
+            return new UploadHandlerRaw(bodyData);
         }
 
-        protected virtual byte[] Encrypt(byte[] bytes) { return bytes; }
-        protected virtual byte[] Decrypt(byte[] bytes) { return bytes; }
+        /// <summary> 常時付与されるURLパラメータを登録 </summary>
+        protected virtual void RegisterDefaultUrlParams() { }
+
+        /// <summary> 常時付与されるヘッダー情報を登録 </summary>
+        protected virtual void RegisterDefaultHeader() { }
+
+        /// <summary> 送信データ暗号化. </summary>
+        protected abstract byte[] Encrypt(byte[] bytes);
+
+        /// <summary> 受信データ復号化. </summary>
+        protected abstract byte[] Decrypt(byte[] bytes);
     }
 }

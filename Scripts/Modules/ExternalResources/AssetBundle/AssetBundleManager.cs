@@ -247,7 +247,7 @@ namespace Modules.AssetBundles
 
         private IEnumerator FileDownload(string url, string path, IProgress<float> progress = null)
         {
-            var www = new UnityWebRequest(url);
+            var webRequest = new UnityWebRequest(url);
             var buffer = new byte[256 * 1024];
 
             var directory = Path.GetDirectoryName(path);
@@ -257,15 +257,15 @@ namespace Modules.AssetBundles
                 Directory.CreateDirectory(directory);
             }
 
-            www.downloadHandler = new AssetBundleDownloadHandler(path, buffer);
+            webRequest.downloadHandler = new AssetBundleDownloadHandler(path, buffer);
 
-            www.SendWebRequest();
+            webRequest.SendWebRequest();
 
-            while (!www.isDone)
+            while (!webRequest.isDone)
             {
                 if (progress != null)
                 {
-                    progress.Report(www.downloadProgress);
+                    progress.Report(webRequest.downloadProgress);
                 }
 
                 yield return null;

@@ -59,13 +59,7 @@ namespace Modules.Networking
             RetryDelaySeconds = retryDelaySeconds;
         }
 
-        /// <summary>
-        /// 指定されたURLからGetでデータを取得.
-        /// </summary>
-        /// <typeparam name="TResult"></typeparam>
-        /// <param name="webRequest"></param>
-        /// <param name="progress"></param>
-        /// <returns></returns>
+        /// <summary> リソースの取得. </summary>
         protected IObservable<TResult> Get<TResult>(TWebRequest webRequest, IProgress<float> progress = null) where TResult : class
         {
             var requestObserver = Observable.Defer(() => webRequest.Get<TResult>(progress));
@@ -73,12 +67,26 @@ namespace Modules.Networking
             return Observable.FromMicroCoroutine<TResult>(observer => SnedRequestInternal(observer, webRequest, requestObserver));
         }
 
-        /// <summary>
-        /// 指定されたURLからPostでデータを取得.
-        /// </summary>
+        /// <summary> リソースの作成、追加. </summary>
         protected IObservable<TResult> Post<TResult, TContent>(TWebRequest webRequest, TContent content, IProgress<float> progress = null) where TResult : class
         {
             var requestObserver = Observable.Defer(() => webRequest.Post<TResult, TContent>(content, progress));
+
+            return Observable.FromMicroCoroutine<TResult>(observer => SnedRequestInternal(observer, webRequest, requestObserver));
+        }
+
+        /// <summary> リソースの更新、作成. </summary>
+        protected IObservable<TResult> Put<TResult, TContent>(TWebRequest webRequest, TContent content, IProgress<float> progress = null) where TResult : class
+        {
+            var requestObserver = Observable.Defer(() => webRequest.Put<TResult, TContent>(content, progress));
+
+            return Observable.FromMicroCoroutine<TResult>(observer => SnedRequestInternal(observer, webRequest, requestObserver));
+        }
+
+        /// <summary> リソースの削除. </summary>
+        protected IObservable<TResult> Delete<TResult, TContent>(TWebRequest webRequest, TContent content, IProgress<float> progress = null) where TResult : class
+        {
+            var requestObserver = Observable.Defer(() => webRequest.Delete<TResult>(progress));
 
             return Observable.FromMicroCoroutine<TResult>(observer => SnedRequestInternal(observer, webRequest, requestObserver));
         }
