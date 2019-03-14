@@ -29,7 +29,7 @@ namespace Modules.Networking
         //----- property -----
         
         /// <summary> URL. </summary>
-        public string BaseUrl { get; private set; }
+        public string HostUrl { get; private set; }
         
         /// <summary> リクエストURL. </summary>
         public string Url { get { return request.url; } }
@@ -57,9 +57,9 @@ namespace Modules.Networking
        
         //----- method -----
 
-        public virtual void Initialize(string url, DataFormat format = DataFormat.MessagePack)
+        public virtual void Initialize(string hostUrl, DataFormat format = DataFormat.MessagePack)
         {
-            BaseUrl = url;
+            HostUrl = hostUrl;
             Format = format;
 
             Headers = new Dictionary<string, string>();
@@ -70,22 +70,20 @@ namespace Modules.Networking
             Connecting = false;
         }
 
-        protected virtual UnityWebRequest CreateWebRequest(string method)
+        protected virtual void CreateWebRequest(string method)
         {
             var uri = BuildUri();
 
-            var request = new UnityWebRequest(uri, method);
-
-            SetRequestHeaders();
-
+            request = new UnityWebRequest(uri, method);
+            
             request.timeout = TimeOutSeconds;
 
-            return request;
+            SetRequestHeaders();            
         }
 
         public IObservable<TResult> Get<TResult>(IProgress<float> progress = null) where TResult : class
         {
-            request = CreateWebRequest(UnityWebRequest.kHttpVerbGET);
+            CreateWebRequest(UnityWebRequest.kHttpVerbGET);
 
             request.downloadHandler = CreateDownloadHandler();
 
@@ -94,7 +92,7 @@ namespace Modules.Networking
 
         public IObservable<TResult> Post<TResult, TContent>(TContent content, IProgress<float> progress = null) where TResult : class
         {
-            request = CreateWebRequest(UnityWebRequest.kHttpVerbGET);
+            CreateWebRequest(UnityWebRequest.kHttpVerbGET);
 
             request.uploadHandler = CreateUploadHandler(content);
             request.downloadHandler = CreateDownloadHandler();
@@ -104,7 +102,7 @@ namespace Modules.Networking
 
         public IObservable<TResult> Put<TResult, TContent>(TContent content, IProgress<float> progress = null) where TResult : class
         {
-            request = CreateWebRequest(UnityWebRequest.kHttpVerbPUT);
+            CreateWebRequest(UnityWebRequest.kHttpVerbPUT);
 
             request.uploadHandler = CreateUploadHandler(content);
             request.downloadHandler = CreateDownloadHandler();
@@ -114,7 +112,7 @@ namespace Modules.Networking
 
         public IObservable<TResult> Delete<TResult>(IProgress<float> progress = null) where TResult : class
         {
-            request = CreateWebRequest(UnityWebRequest.kHttpVerbDELETE);
+            CreateWebRequest(UnityWebRequest.kHttpVerbDELETE);
 
             request.downloadHandler = CreateDownloadHandler();
 
@@ -178,18 +176,25 @@ namespace Modules.Networking
         {
             RegisterDefaultUrlParams();
 
-            var url = new StringBuilder(BaseUrl);
+            var queryBuilder = new StringBuilder();
 
             for (var i = 0; i < UrlParams.Count; i++)
             {
                 var item = UrlParams.ElementAt(i);
 
-                url.Append(i == 0 ? "?" : "&");
+                queryBuilder.Append(i == 0 ? "?" : "&");
 
-                url.Append(string.Format("{0}={1}", item.Key, item.Value));
+                var query = string.Format("{0}={1}", item.Key, item.Value);
+                
+                queryBuilder.Append(Uri.EscapeUriString(query));
             }
 
-            return new Uri(url.ToString());
+            var uriBuilder = new UriBuilder(HostUrl)
+            {
+                Query = queryBuilder.ToString(),
+            };
+
+            return uriBuilder.Uri;
         }
         
         private void SetRequestHeaders()
