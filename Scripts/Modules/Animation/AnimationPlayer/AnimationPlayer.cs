@@ -251,7 +251,7 @@ namespace Modules.Animation
             }
         }
 
-        public void Stop()
+        public void Stop(bool setDefaultState = true)
         {
             if (!isInitialized) { return; }
 
@@ -266,6 +266,11 @@ namespace Modules.Animation
             }
 
             Refresh();
+
+            if (setDefaultState)
+            {
+                animatorInfo.Animator.Rebind();
+            }
         }
 
         private void ApplySpeedRate()
