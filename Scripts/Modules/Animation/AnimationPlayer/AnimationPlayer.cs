@@ -197,6 +197,9 @@ namespace Modules.Animation
                 currentState = State.Play;
                 animatorInfo.Animator.Play(hash, -1, 0f);
 
+                // 強制更新を行いステートの更新を行う.
+                animatorInfo.Animator.Update(0);
+
                 // 指定アニメーションへ遷移待ち.
                 yield return Observable.FromCoroutine(() => WaitTransitionState()).ToYieldInstruction();
 
