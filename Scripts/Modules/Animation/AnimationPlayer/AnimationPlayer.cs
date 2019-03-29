@@ -150,7 +150,7 @@ namespace Modules.Animation
             Stop();
         }
 
-        public IObservable<Unit> Play(string animationName)
+        public IObservable<Unit> Play(string animationName, bool forceTransition = true)
         {
             if (string.IsNullOrEmpty(animationName)) { return Observable.ReturnUnit(); }
 
@@ -169,7 +169,7 @@ namespace Modules.Animation
 
             if (animatorInfo.Animator.HasState(0, hash))
             {
-                return Observable.FromCoroutine(() => PlayInternal());
+                return Observable.FromCoroutine(() => PlayInternal(forceTransition));
             }
 
             this.animationName = string.Empty;
@@ -179,7 +179,7 @@ namespace Modules.Animation
             return Observable.ReturnUnit();
         }
 
-        private IEnumerator PlayInternal()
+        private IEnumerator PlayInternal(bool forceTransition)
         {
             var hash = Animator.StringToHash(animationName);
 
@@ -197,11 +197,8 @@ namespace Modules.Animation
                 currentState = State.Play;
                 animatorInfo.Animator.Play(hash, -1, 0f);
 
-                // 強制更新を行いステートの更新を行う.
-                animatorInfo.Animator.Update(0);
-
                 // 指定アニメーションへ遷移待ち.
-                yield return Observable.FromCoroutine(() => WaitTransitionState()).ToYieldInstruction();
+                yield return Observable.FromCoroutine(() => WaitTransitionState(forceTransition)).ToYieldInstruction();
 
                 // アニメーションの終了待ち.
                 yield return Observable.FromCoroutine(() => WaitForEndOfAnimation()).ToYieldInstruction();
@@ -215,8 +212,16 @@ namespace Modules.Animation
         }
 
         // 指定アニメーションへ遷移待ち.
-        private IEnumerator WaitTransitionState()
+        private IEnumerator WaitTransitionState(bool forceTransition)
         {
+            var stateInfo = animatorInfo.Animator.GetCurrentAnimatorStateInfo(0);
+
+            // 強制更新.
+            if (forceTransition && !stateInfo.IsName(animationName))
+            {
+                animatorInfo.Animator.Update(0);
+            }
+
             while (true)
             {
                 if (UnityUtility.IsNull(this)) { yield break; }
@@ -225,7 +230,7 @@ namespace Modules.Animation
 
                 if (!UnityUtility.IsActiveInHierarchy(gameObject)) { break; }
 
-                var stateInfo = animatorInfo.Animator.GetCurrentAnimatorStateInfo(0);
+                stateInfo = animatorInfo.Animator.GetCurrentAnimatorStateInfo(0);
 
                 if (stateInfo.IsName(animationName)) { break; }
 
