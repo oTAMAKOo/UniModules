@@ -4,6 +4,7 @@ using System.Linq;
 using System.Collections.Generic;
 using System.Reflection;
 using System.Reflection.Emit;
+using MessagePack;
 
 namespace Extensions
 {
@@ -24,6 +25,7 @@ namespace Extensions
         //----- property -----
 
         public Type Type { get; private set; }
+        public Dictionary<string, Type> Properties { get; private set; }
 
         //----- method -----
 
@@ -41,6 +43,7 @@ namespace Extensions
         public TypeGenerator(string className, Dictionary<string, Type> properties)
         {
             Type = Create(className, properties);
+            Properties = properties;
         }
 
         private static Type Create(string className, Dictionary<string, Type> properties)

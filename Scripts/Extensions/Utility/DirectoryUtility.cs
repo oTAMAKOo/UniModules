@@ -45,21 +45,15 @@ namespace Extensions
 
             if (Directory.GetFileSystemEntries(targetDir).IsEmpty())
             {
-                if (targetDir.StartsWith(UnityPathUtility.GetProjectFolderPath()))
-                {
-                    var metaFile = targetDir + ".meta";
+                // Unityのフォルダには.metaが対になって生成されるので消す.
+                var metaFile = targetDir + ".meta";
 
-                    if (File.Exists(metaFile))
-                    {
-                        File.Delete(metaFile);
-                    }
-
-                    Directory.Delete(targetDir);
-                }
-                else
+                if (File.Exists(metaFile))
                 {
-                    Directory.Delete(targetDir);
+                    File.Delete(metaFile);
                 }
+
+                Directory.Delete(targetDir);
 
                 list.Add(targetDir);
             }
