@@ -421,8 +421,7 @@ namespace Modules.Animation
             if (clipInfo.Any())
             {
                 var currentClipInfo = clipInfo[0];
-
-                // 0フレーム目にのみキーがある場合はデフォルト(1秒)のクリップとして扱われる為即時終了扱いにする.
+                
                 if (currentClipInfo.clip.length == 0) { return false; }
             }
 
