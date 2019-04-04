@@ -9,6 +9,7 @@ using Extensions;
 using Extensions.Devkit;
 
 using Object = UnityEngine.Object;
+using System.IO;
 
 namespace Modules.Devkit.AssetBundles
 {
@@ -63,6 +64,8 @@ namespace Modules.Devkit.AssetBundles
         private ViewType selection = ViewType.Dependencies;
         private DependencyScrollView dependencyScrollView = null;
         private ReferenceScrollView referenceScrollView = null;
+        private bool ignoreDependentAssetbundle = false;
+        private bool ignoreScriptAsset = false;
         private string searchText = string.Empty;
 
         private bool initialized = false;
@@ -148,7 +151,7 @@ namespace Modules.Devkit.AssetBundles
             dependencyScrollView.Contents = GetListOfDependentInfos();
 
             referenceScrollView = new ReferenceScrollView();
-            referenceScrollView.Contents = assetReferenceInfo;
+            referenceScrollView.Contents = GetFilteredContents();
 
             ShowUtility();
             initialized = true;
@@ -161,6 +164,7 @@ namespace Modules.Devkit.AssetBundles
             DrawHeader();
             DrawDependencies();
             DrawReference();
+            DrawFooter();
         }
 
         private void DrawHeader()
@@ -179,6 +183,71 @@ namespace Modules.Devkit.AssetBundles
             }
 
             EditorGUILayout.Separator();
+        }
+
+        private void DrawFooter()
+        {
+            switch (selection)
+            {
+                case ViewType.Reference:
+                    {
+                        using (new EditorGUILayout.HorizontalScope())
+                        {
+                            GUILayout.FlexibleSpace();
+
+                            var originLabelWidth = EditorLayoutTools.SetLabelWidth(180f);
+
+                            EditorGUI.BeginChangeCheck();
+
+                            ignoreDependentAssetbundle = EditorGUILayout.Toggle("Ignore dependent assetbundle", ignoreDependentAssetbundle);
+
+                            if (EditorGUI.EndChangeCheck())
+                            {
+                                referenceScrollView.Contents = GetFilteredContents();
+                            }
+
+                            EditorLayoutTools.SetLabelWidth(80f);
+
+                            EditorGUI.BeginChangeCheck();
+
+                            ignoreScriptAsset = EditorGUILayout.Toggle("Ignore script", ignoreScriptAsset);
+
+                            if (EditorGUI.EndChangeCheck())
+                            {
+                                referenceScrollView.Contents = GetFilteredContents();
+                            }
+
+                            EditorLayoutTools.SetLabelWidth(originLabelWidth);
+                        }                        
+                    }
+                    break;
+            }
+        }
+
+        private AssetReferenceInfo[] GetFilteredContents()
+        {
+            return assetReferenceInfo
+                // アセットバンドル名が付いていたら除外.
+                .Where(x => !ignoreDependentAssetbundle || HasAssetBundleName(x.Asset))
+                // スクリプト(.cs)なら除外.
+                .Where(x => !ignoreScriptAsset || !IsScriptAssets(x.Asset))
+                .ToArray();
+        }
+
+        private static bool HasAssetBundleName(Object asset)
+        {
+            var assetPath = AssetDatabase.GetAssetPath(asset);
+
+            var importer = AssetImporter.GetAtPath(assetPath);
+
+            return !string.IsNullOrEmpty(importer.assetBundleName);
+        }
+
+        private static bool IsScriptAssets(Object asset)
+        {
+            var assetPath = AssetDatabase.GetAssetPath(asset);
+
+            return Path.GetExtension(assetPath) == ".cs";
         }
 
         private void DrawDependencies()
