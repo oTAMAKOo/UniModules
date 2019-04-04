@@ -227,9 +227,9 @@ namespace Modules.Devkit.AssetBundles
         {
             return assetReferenceInfo
                 // アセットバンドル名が付いていたら除外.
-                .Where(x => !ignoreDependentAssetbundle || HasAssetBundleName(x.Asset))
+                .Where(x => !ignoreDependentAssetbundle || HasAssetBundleName(x.Asset) == false)
                 // スクリプト(.cs)なら除外.
-                .Where(x => !ignoreScriptAsset || !IsScriptAssets(x.Asset))
+                .Where(x => !ignoreScriptAsset || IsScriptAssets(x.Asset) == false)
                 .ToArray();
         }
 
