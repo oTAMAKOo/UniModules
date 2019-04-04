@@ -2,14 +2,13 @@
 using UnityEngine;
 using UnityEditor;
 using System;
+using System.IO;
 using System.Linq;
 using System.Collections.Generic;
-using UniRx;
 using Extensions;
 using Extensions.Devkit;
 
 using Object = UnityEngine.Object;
-using System.IO;
 
 namespace Modules.Devkit.AssetBundles
 {
