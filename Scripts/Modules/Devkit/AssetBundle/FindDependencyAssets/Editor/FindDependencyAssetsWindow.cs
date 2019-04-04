@@ -1,4 +1,4 @@
-﻿﻿﻿
+﻿
 using UnityEngine;
 using UnityEditor;
 using System;
@@ -12,8 +12,8 @@ using Object = UnityEngine.Object;
 
 namespace Modules.Devkit.AssetBundles
 {
-	public class FindDependencyAssetsWindow : SingletonEditorWindow<FindDependencyAssetsWindow>
-	{
+    public class FindDependencyAssetsWindow : SingletonEditorWindow<FindDependencyAssetsWindow>
+    {
         //----- params -----
 
         private readonly Vector2 MinWindowSize = new Vector2(500f, 650f);
@@ -74,7 +74,7 @@ namespace Modules.Devkit.AssetBundles
         //----- method -----
 
         public static void Open()
-        {            
+        {
             AssetDatabase.SaveAssets();
 
             Instance.Initialize();
@@ -102,7 +102,7 @@ namespace Modules.Devkit.AssetBundles
 
                     var assets = item.Value.AssetPaths.Select(y => AssetDatabase.LoadMainAssetAtPath(y)).ToArray();
                     var dependentAssets = item.Value.DependentAssetPaths.Select(y => AssetDatabase.LoadMainAssetAtPath(y)).ToArray();
-                    
+
                     list.Add(new AssetBundleInfo(item.Key, assets, dependentAssets));
 
                     count++;
@@ -158,7 +158,7 @@ namespace Modules.Devkit.AssetBundles
 
         void OnGUI()
         {
-            if(!initialized) { return; }
+            if (!initialized) { return; }
 
             DrawHeader();
             DrawDependencies();
@@ -168,13 +168,13 @@ namespace Modules.Devkit.AssetBundles
 
         private void DrawHeader()
         {
-            using(new EditorGUILayout.HorizontalScope(EditorStyles.toolbarButton))
+            using (new EditorGUILayout.HorizontalScope(EditorStyles.toolbarButton))
             {
                 EditorGUI.BeginChangeCheck();
 
                 selection = (ViewType)EditorGUILayout.EnumPopup(selection, GUILayout.Width(150f));
 
-                if(EditorGUI.EndChangeCheck())
+                if (EditorGUI.EndChangeCheck())
                 {
                     dependencyScrollView.ScrollPosition = Vector2.zero;
                     referenceScrollView.ScrollPosition = Vector2.zero;
@@ -202,6 +202,7 @@ namespace Modules.Devkit.AssetBundles
 
                             if (EditorGUI.EndChangeCheck())
                             {
+                                referenceScrollView.ScrollPosition = Vector2.zero;
                                 referenceScrollView.Contents = GetFilteredContents();
                             }
 
@@ -213,11 +214,12 @@ namespace Modules.Devkit.AssetBundles
 
                             if (EditorGUI.EndChangeCheck())
                             {
+                                referenceScrollView.ScrollPosition = Vector2.zero;
                                 referenceScrollView.Contents = GetFilteredContents();
                             }
 
                             EditorLayoutTools.SetLabelWidth(originLabelWidth);
-                        }                        
+                        }
                     }
                     break;
             }
@@ -251,16 +253,16 @@ namespace Modules.Devkit.AssetBundles
 
         private void DrawDependencies()
         {
-            if(selection != ViewType.Dependencies) { return; }
+            if (selection != ViewType.Dependencies) { return; }
 
-            using(new EditorGUILayout.HorizontalScope())
+            using (new EditorGUILayout.HorizontalScope())
             {
                 GUILayout.FlexibleSpace();
 
                 var before = searchText;
                 var after = EditorGUILayout.TextField(string.Empty, before, "SearchTextField", GUILayout.Width(200f));
 
-                if(before != after)
+                if (before != after)
                 {
                     searchText = after;
 
@@ -268,7 +270,7 @@ namespace Modules.Devkit.AssetBundles
                     dependencyScrollView.Contents = GetListOfDependentInfos();
                 }
 
-                if(GUILayout.Button(string.Empty, "SearchCancelButton", GUILayout.Width(18f)))
+                if (GUILayout.Button(string.Empty, "SearchCancelButton", GUILayout.Width(18f)))
                 {
                     searchText = string.Empty;
                     GUIUtility.keyboardControl = 0;
@@ -277,7 +279,7 @@ namespace Modules.Devkit.AssetBundles
                     dependencyScrollView.Contents = GetListOfDependentInfos();
                 }
             }
-            
+
             GUILayout.Space(2f);
 
             dependencyScrollView.Draw();
@@ -285,7 +287,7 @@ namespace Modules.Devkit.AssetBundles
 
         private void DrawReference()
         {
-            if(selection != ViewType.Reference){ return; }
+            if (selection != ViewType.Reference) { return; }
 
             referenceScrollView.Draw();
         }
