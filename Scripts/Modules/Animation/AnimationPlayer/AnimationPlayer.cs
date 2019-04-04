@@ -1,4 +1,4 @@
-﻿﻿
+﻿
 using UnityEngine;
 using System;
 using System.Collections;
@@ -6,7 +6,6 @@ using System.Linq;
 using UniRx;
 using Extensions;
 using Modules.StateMachine;
-using Unity.Linq;
 
 namespace Modules.Animation
 {
@@ -259,7 +258,7 @@ namespace Modules.Animation
             }
         }
 
-        public void Stop(bool setDefaultState = true)
+        public void Stop(bool setDefaultState = false)
         {
             if (!isInitialized) { return; }
 
@@ -416,6 +415,17 @@ namespace Modules.Animation
 
             if (1 < stateInfo.normalizedTime && !animatorInfo.Animator.IsInTransition(0)) { return false; }
 
+            // 再生中のアニメーションクリップ.
+            var clipInfo = animatorInfo.Animator.GetCurrentAnimatorClipInfo(0);
+
+            if (clipInfo.Any())
+            {
+                var currentClipInfo = clipInfo[0];
+
+                // 0フレーム目にのみキーがある場合はデフォルト(1秒)のクリップとして扱われる為即時終了扱いにする.
+                if (currentClipInfo.clip.length == 0) { return false; }
+            }
+
             return true;
         }
 
@@ -467,6 +477,6 @@ namespace Modules.Animation
             return onAnimationEvent ?? (onAnimationEvent = new Subject<string>());
         }
 
-        #endregion
+        #endregion        
     }
 }
