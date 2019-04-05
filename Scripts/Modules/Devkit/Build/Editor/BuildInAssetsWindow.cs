@@ -50,10 +50,21 @@ namespace Modules.Devkit.Build
 
         public static void Open()
         {
-            Instance.Initialize();
+            // ビルドログファイルを選択.
+
+            var localAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+            var unityEditorLogDirectory = localAppData + "/Unity/Editor/";
+
+            var logFilePath = EditorUtility.OpenFilePanel("Open File As", unityEditorLogDirectory, "log");
+
+            if (!string.IsNullOrEmpty(logFilePath)) { return; }
+            
+            if (File.Exists(logFilePath)) { return; }
+
+            Instance.Initialize(logFilePath);
         }
 
-        private void Initialize()
+        private void Initialize(string logFilePath)
         {
             if (isInitialized) { return; }
 
@@ -71,14 +82,14 @@ namespace Modules.Devkit.Build
             warningAssetSize = buildConfig.WarningAssetSize;
 
             // 読み込みが終わったら表示.
-            CollectBuildInAssets().Subscribe(_ => ShowUtility()).AddTo(Disposable);
+            CollectBuildInAssets(logFilePath).Subscribe(_ => ShowUtility()).AddTo(Disposable);
 
             isInitialized = true;
         }
 
-        public IObservable<Unit> CollectBuildInAssets()
+        private IObservable<Unit> CollectBuildInAssets(string logFilePath)
         {
-            return BuildInAssets.CollectBuildInAssets()
+            return BuildInAssets.CollectBuildInAssets(logFilePath)
                 .SelectMany(x => LoadBuildInAssets(x).ToObservable())
                 .Do(_ => Repaint())
                 .AsUnitObservable();

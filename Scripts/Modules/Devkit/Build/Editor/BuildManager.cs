@@ -13,12 +13,6 @@ using Extensions.Devkit;
 
 namespace Modules.Devkit.Build
 {
-    public interface IParameterApply
-    {
-        void Apply(bool isBuild);
-        void Restore();
-    }
-
     public static class BuildManager
     {
         //----- params -----

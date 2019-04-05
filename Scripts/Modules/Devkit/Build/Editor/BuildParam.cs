@@ -8,13 +8,20 @@ using System.Linq;
 using Extensions;
 using Extensions.Devkit;
 using Modules.Devkit.Prefs;
+
 using DirectoryUtility = Extensions.DirectoryUtility;
 
 using Object = UnityEngine.Object;
 
 namespace Modules.Devkit.Build
 {
-    public abstract class BuildParam : ScriptableObject, IParameterApply
+    public interface IBuildParam
+    {
+        void Apply(bool isBuild);
+        void Restore();
+    }
+
+    public abstract class BuildParam : ScriptableObject, IBuildParam
     {
         //----- params -----
 

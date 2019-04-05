@@ -62,25 +62,22 @@ namespace Modules.Devkit.Build
 
         //----- method -----
 
-        public static IObservable<BuildInAssetInfo[]> CollectBuildInAssets()
+        public static IObservable<BuildInAssetInfo[]> CollectBuildInAssets(string logFilePath)
         {
             var progress = new ScheduledNotifier<float>();
             progress.Subscribe(prog => EditorUtility.DisplayProgressBar("progress", "Collect build in assets from logfile.", prog));
 
-            return Observable.FromCoroutine<BuildInAssetInfo[]>(observer => CollectBuildInAssetsInternal(observer, progress))
+            return Observable.FromCoroutine<BuildInAssetInfo[]>(observer => CollectBuildInAssetsInternal(observer, logFilePath, progress))
                 .Do(x => EditorUtility.ClearProgressBar());
         }
 
-        private static IEnumerator CollectBuildInAssetsInternal(IObserver<BuildInAssetInfo[]> observer, IProgress<float> progress)
+        private static IEnumerator CollectBuildInAssetsInternal(IObserver<BuildInAssetInfo[]> observer, string logFilePath, IProgress<float> progress)
         {
             var buildInAssets = new List<BuildInAssetInfo>();
 
-            var localAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
-            var unityEditorLogFile = localAppData + "/Unity/Editor/Editor.log";
-
-            if (File.Exists(unityEditorLogFile))
+            if (File.Exists(logFilePath))
             {
-                var fs = new FileStream(unityEditorLogFile, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+                var fs = new FileStream(logFilePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
                 var sr = new StreamReader(fs);
 
                 var line = string.Empty;
