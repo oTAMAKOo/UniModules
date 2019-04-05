@@ -150,7 +150,7 @@ namespace Modules.Devkit.AssetBundles
             dependencyScrollView.Contents = GetListOfDependentInfos();
 
             referenceScrollView = new ReferenceScrollView();
-            referenceScrollView.Contents = GetFilteredContents();
+            referenceScrollView.Contents = GetListOfReferenceInfos();
 
             ShowUtility();
             initialized = true;
@@ -161,8 +161,7 @@ namespace Modules.Devkit.AssetBundles
             if (!initialized) { return; }
 
             DrawHeader();
-            DrawDependencies();
-            DrawReference();
+            DrawContents();
             DrawFooter();
         }
 
@@ -176,8 +175,20 @@ namespace Modules.Devkit.AssetBundles
 
                 if (EditorGUI.EndChangeCheck())
                 {
-                    dependencyScrollView.ScrollPosition = Vector2.zero;
-                    referenceScrollView.ScrollPosition = Vector2.zero;
+                    searchText = string.Empty;
+
+                    switch (selection)
+                    {
+                        case ViewType.Dependencies:
+                            dependencyScrollView.ScrollPosition = Vector2.zero;
+                            dependencyScrollView.Contents = GetListOfDependentInfos();
+                            break;
+
+                        case ViewType.Reference:
+                            referenceScrollView.ScrollPosition = Vector2.zero;
+                            referenceScrollView.Contents = GetListOfReferenceInfos();
+                            break;
+                    }
                 }
             }
 
@@ -203,7 +214,7 @@ namespace Modules.Devkit.AssetBundles
                             if (EditorGUI.EndChangeCheck())
                             {
                                 referenceScrollView.ScrollPosition = Vector2.zero;
-                                referenceScrollView.Contents = GetFilteredContents();
+                                referenceScrollView.Contents = GetListOfReferenceInfos();
                             }
 
                             EditorLayoutTools.SetLabelWidth(80f);
@@ -215,7 +226,7 @@ namespace Modules.Devkit.AssetBundles
                             if (EditorGUI.EndChangeCheck())
                             {
                                 referenceScrollView.ScrollPosition = Vector2.zero;
-                                referenceScrollView.Contents = GetFilteredContents();
+                                referenceScrollView.Contents = GetListOfReferenceInfos();
                             }
 
                             EditorLayoutTools.SetLabelWidth(originLabelWidth);
@@ -225,15 +236,61 @@ namespace Modules.Devkit.AssetBundles
             }
         }
 
-        private AssetReferenceInfo[] GetFilteredContents()
+        private void DrawContents()
         {
-            return assetReferenceInfo
-                // アセットバンドル名が付いていたら除外.
-                .Where(x => !ignoreDependentAssetbundle || HasAssetBundleName(x.Asset) == false)
-                // スクリプト(.cs)なら除外.
-                .Where(x => !ignoreScriptAsset || IsScriptAssets(x.Asset) == false)
-                .ToArray();
+            var updateSearch = false;
+
+            using (new EditorGUILayout.HorizontalScope())
+            {
+                GUILayout.FlexibleSpace();
+
+                var before = searchText;
+                var after = EditorGUILayout.DelayedTextField(string.Empty, before, "SearchTextField", GUILayout.Width(200f));
+
+                if (before != after)
+                {
+                    searchText = after;
+                    updateSearch = true;
+                }
+
+                if (GUILayout.Button(string.Empty, "SearchCancelButton", GUILayout.Width(18f)))
+                {
+                    searchText = string.Empty;
+                    GUIUtility.keyboardControl = 0;
+                    updateSearch = true;
+                }
+            }
+
+            GUILayout.Space(2f);
+
+            switch (selection)
+            {
+                case ViewType.Dependencies:
+                    {
+                        if (updateSearch)
+                        {
+                            dependencyScrollView.ScrollPosition = Vector2.zero;
+                            dependencyScrollView.Contents = GetListOfDependentInfos();
+                        }
+
+                        dependencyScrollView.Draw();
+                    }
+                    break;
+
+                case ViewType.Reference:
+                    {
+                        if (updateSearch)
+                        {
+                            referenceScrollView.ScrollPosition = Vector2.zero;
+                            referenceScrollView.Contents = GetListOfReferenceInfos();
+                        }
+
+                        referenceScrollView.Draw();
+                    }
+                    break;
+            }
         }
+
 
         private static bool HasAssetBundleName(Object asset)
         {
@@ -251,45 +308,33 @@ namespace Modules.Devkit.AssetBundles
             return Path.GetExtension(assetPath) == ".cs";
         }
 
-        private void DrawDependencies()
+        private AssetReferenceInfo[] GetListOfReferenceInfos()
         {
-            if (selection != ViewType.Dependencies) { return; }
+            // 条件フィルタ.
+            var infos = assetReferenceInfo
+                // アセットバンドル名が付いていたら除外.
+                .Where(x => !ignoreDependentAssetbundle || HasAssetBundleName(x.Asset) == false)
+                // スクリプト(.cs)なら除外.
+                .Where(x => !ignoreScriptAsset || IsScriptAssets(x.Asset) == false)
+                .ToArray();
 
-            using (new EditorGUILayout.HorizontalScope())
+            if (string.IsNullOrEmpty(searchText)) { return infos; }
+
+            var keywords = searchText.Split(new char[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+
+            for (var i = 0; i < keywords.Length; ++i)
             {
-                GUILayout.FlexibleSpace();
-
-                var before = searchText;
-                var after = EditorGUILayout.TextField(string.Empty, before, "SearchTextField", GUILayout.Width(200f));
-
-                if (before != after)
-                {
-                    searchText = after;
-
-                    dependencyScrollView.ScrollPosition = Vector2.zero;
-                    dependencyScrollView.Contents = GetListOfDependentInfos();
-                }
-
-                if (GUILayout.Button(string.Empty, "SearchCancelButton", GUILayout.Width(18f)))
-                {
-                    searchText = string.Empty;
-                    GUIUtility.keyboardControl = 0;
-
-                    dependencyScrollView.ScrollPosition = Vector2.zero;
-                    dependencyScrollView.Contents = GetListOfDependentInfos();
-                }
+                keywords[i] = keywords[i].ToLower();
             }
 
-            GUILayout.Space(2f);
+            Func<AssetReferenceInfo, bool> filter = info =>
+            {
+                var assetPath = AssetDatabase.GetAssetPath(info.Asset);
 
-            dependencyScrollView.Draw();
-        }
+                return assetPath.IsMatch(keywords);
+            };
 
-        private void DrawReference()
-        {
-            if (selection != ViewType.Reference) { return; }
-
-            referenceScrollView.Draw();
+            return infos.Where(x => filter(x)).ToArray();
         }
 
         private AssetBundleInfo[] GetListOfDependentInfos()
@@ -303,10 +348,17 @@ namespace Modules.Devkit.AssetBundles
                 keywords[i] = keywords[i].ToLower();
             }
 
-            return assetBundleInfo
-                .Where(x => x.AssetBundleName.IsMatch(keywords) ||
-                            x.DependentAssets.Any(y => AssetDatabase.GetAssetPath(y).IsMatch(keywords)))
-                .ToArray();
+            Func<AssetBundleInfo, bool> filter = info =>
+            {
+                var result = false;
+
+                result |= info.AssetBundleName.IsMatch(keywords);
+                result |= info.DependentAssets.Any(y => AssetDatabase.GetAssetPath(y).IsMatch(keywords));
+
+                return result;
+            };
+
+            return assetBundleInfo.Where(x => filter(x)).ToArray();
         }
     }
 }

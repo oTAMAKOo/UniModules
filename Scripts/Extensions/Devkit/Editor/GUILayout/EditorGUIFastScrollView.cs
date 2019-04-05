@@ -295,6 +295,8 @@ namespace Extensions.Devkit
                 }
             }
 
+            startIndex = null;
+            endIndex = null;
             scrollRect = null;
         }
 
