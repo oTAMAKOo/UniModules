@@ -59,7 +59,7 @@ namespace Modules.Devkit.Build
 
             if (!string.IsNullOrEmpty(logFilePath)) { return; }
             
-            if (File.Exists(logFilePath)) { return; }
+            if (!File.Exists(logFilePath)) { return; }
 
             Instance.Initialize(logFilePath);
         }
