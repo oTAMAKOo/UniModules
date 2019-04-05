@@ -239,9 +239,9 @@ namespace Modules.Devkit.AssetBundles
         {
             var assetPath = AssetDatabase.GetAssetPath(asset);
 
-            var importer = AssetImporter.GetAtPath(assetPath);
+            var assetBundleName = UnityEditorUtility.GetAssetBundleName(assetPath);
 
-            return !string.IsNullOrEmpty(importer.assetBundleName);
+            return !string.IsNullOrEmpty(assetBundleName);
         }
 
         private static bool IsScriptAssets(Object asset)

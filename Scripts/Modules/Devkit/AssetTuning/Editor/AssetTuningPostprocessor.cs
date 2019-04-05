@@ -40,8 +40,6 @@ namespace Modules.Devkit.AssetTuning
                 {
                     foreach (var path in importedAssets)
                     {
-                        if (UnityEditorUtility.IsEditAsset(path)) { continue; }
-
                         if (!tuner.Validate(path)) { continue; }
 
                         if (assetTuner.IsFirstImport(path))
@@ -54,8 +52,6 @@ namespace Modules.Devkit.AssetTuning
 
                     foreach (var path in deletedAssets)
                     {
-                        if (UnityEditorUtility.IsEditAsset(path)) { continue; }
-
                         if (!tuner.Validate(path)) { continue; }
 
                         tuner.OnAssetDelete(path);
@@ -63,8 +59,6 @@ namespace Modules.Devkit.AssetTuning
 
                     for (var i = 0; i < movedAssets.Length; i++)
                     {
-                        if (UnityEditorUtility.IsEditAsset(movedAssets[i])) { continue; }
-
                         if (!tuner.Validate(movedAssets[i])) { continue; }
 
                         tuner.OnAssetMove(movedAssets[i], movedFromPath[i]);

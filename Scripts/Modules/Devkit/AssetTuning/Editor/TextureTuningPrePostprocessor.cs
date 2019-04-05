@@ -32,18 +32,15 @@ namespace Modules.Devkit.AssetTuning
 
             try
             {
-                if (!UnityEditorUtility.IsEditAsset(assetPath))
+                foreach (var tuner in assetTuner.AssetTuners)
                 {
-                    foreach (var tuner in assetTuner.AssetTuners)
+                    var textureTuner = tuner as ITextureAssetTuner;
+
+                    if (textureTuner == null) { continue; }
+
+                    if (textureTuner.Validate(assetPath))
                     {
-                        var textureTuner = tuner as ITextureAssetTuner;
-
-                        if (textureTuner == null) { continue; }
-
-                        if (textureTuner.Validate(assetPath))
-                        {
-                            textureTuner.OnPreprocessTexture(assetPath, assetTuner.IsFirstImport(assetPath));
-                        }
+                        textureTuner.OnPreprocessTexture(assetPath, assetTuner.IsFirstImport(assetPath));
                     }
                 }
             }

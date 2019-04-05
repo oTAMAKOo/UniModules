@@ -275,112 +275,51 @@ namespace Extensions.Devkit
 
             return AssetDatabase.AssetPathToGUID(assetPath);
         }
-        
-        /// <summary>
-        /// アセットに編集状態のタグを付与.
-        /// </summary>
-        public static void RegisterEditAsset(string assetPath)
-        {
-            var asset = AssetDatabase.LoadMainAssetAtPath(assetPath);
 
-            var labels =AssetDatabase.GetLabels(asset);
-
-            if (!labels.Contains(EditingAssetTag))
-            {
-                labels = labels.Concat(new string[] { EditingAssetTag }).ToArray();
-
-                AssetDatabase.SetLabels(asset, labels);
-            }
-        }
-
-        /// <summary>
-        /// アセットに編集状態のタグを付与.
-        /// </summary>
-        public static void RegisterEditAsset(Object assetObject)
-        {
-            RegisterEditAsset(AssetDatabase.GetAssetPath(assetObject));
-        }
-
-        /// <summary>
-        /// アセットの編集を終了し編集状態のタグを削除.
-        /// </summary>
-        public static void ReleaseEditAsset(string assetPath)
-        {
-            var asset = AssetDatabase.LoadMainAssetAtPath(assetPath);
-
-            if (asset == null) { return; }
-
-            var labels = AssetDatabase.GetLabels(asset);
-
-            if (labels.Contains(EditingAssetTag))
-            {
-                labels = labels.Where(x => x != EditingAssetTag).ToArray();
-
-                AssetDatabase.SetLabels(asset, labels);
-            }
-        }
-
-        /// <summary>
-        /// アセットの編集を終了し編集状態のタグを削除.
-        /// </summary>
-        public static void ReleaseEditAsset(Object assetObject)
-        {
-            ReleaseEditAsset(AssetDatabase.GetAssetPath(assetObject));
-        }
-
-        /// <summary>
-        /// アセットが編集中状態か取得.
-        /// </summary>
-        public static bool IsEditAsset(string assetPath)
-        {
-            var asset = AssetDatabase.LoadMainAssetAtPath(assetPath);
-
-            if (asset == null) { return false; }
-
-            var labels = AssetDatabase.GetLabels(asset);
-
-            return labels.Contains(EditingAssetTag);
-        }
-
-        /// <summary>
-        /// アセットが編集中状態か取得.
-        /// </summary>
-        public static bool IsEditAsset(Object assetObject)
-        {
-            return IsEditAsset(AssetDatabase.GetAssetPath(assetObject));
-        }
-        
         #endregion
 
-        #region Audio
+        #region AssetBundle
 
-        public static void PlayClip(AudioClip clip, float startTime = 0f, bool loop = false)
+        /// <summary> アセットバンドル名を取得. </summary>
+        public static string GetAssetBundleName(string assetPath)
         {
-            int startSample = (int)(startTime * clip.frequency);
+            var importer = AssetImporter.GetAtPath(assetPath);
 
-            Assembly assembly = typeof(AudioImporter).Assembly;
-            Type audioUtilType = assembly.GetType("UnityEditor.AudioUtil");
+            var assetBundleName = BuildAssetBundleName(importer);
 
-            Type[] typeParams = { typeof(AudioClip), typeof(int), typeof(bool) };
-            object[] objParams = { clip, startSample, loop };
+            var directory = Path.GetDirectoryName(assetPath);
 
-            MethodInfo method = audioUtilType.GetMethod("PlayClip", typeParams);
-            method.Invoke(null, BindingFlags.Static | BindingFlags.Public, null, objParams, null);
+            while (true)
+            {
+                importer = AssetImporter.GetAtPath(directory);
+
+                if (importer == null) { break; }
+
+                assetBundleName = BuildAssetBundleName(importer);
+
+                if (!string.IsNullOrEmpty(assetBundleName)) { break; }
+
+                directory = Path.GetDirectoryName(directory);
+
+                if (string.IsNullOrEmpty(directory)) { break; }
+            }
+
+            return assetBundleName;
         }
 
-        public static void StopAllClips()
+        private static string BuildAssetBundleName(AssetImporter importer)
         {
-            var unityEditorAssembly = typeof(AudioImporter).Assembly;
-            var audioUtilClass = unityEditorAssembly.GetType("UnityEditor.AudioUtil");
+            var assetBundleName = string.Empty;
 
-            MethodInfo method = audioUtilClass.GetMethod(
-                "StopAllClips",
-                BindingFlags.Static | BindingFlags.Public,
-                null,
-                new System.Type[] { },
-                null
-            );
-            method.Invoke(null, new object[] { });
+            var bundleName = importer.assetBundleName;
+            var variantName = importer.assetBundleVariant;
+
+            if (!string.IsNullOrEmpty(bundleName))
+            {
+                assetBundleName = string.IsNullOrEmpty(variantName) ? bundleName : bundleName + "." + variantName;
+            }
+
+            return assetBundleName;
         }
 
         #endregion

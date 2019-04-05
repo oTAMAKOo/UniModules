@@ -7,7 +7,7 @@ using System.Collections.Generic;
 using System.IO;
 using UniRx;
 using Extensions;
-
+using Extensions.Devkit;
 using Object = UnityEngine.Object;
 
 namespace Modules.Devkit.AssetBundles
@@ -86,9 +86,9 @@ namespace Modules.Devkit.AssetBundles
 
                     foreach (var path in dependencies)
                     {
-                        var bundleName = GetBundleName(path);
+                        var assetBundleName = UnityEditorUtility.GetAssetBundleName(path);
 
-                        if (assetBundle.Key == bundleName)
+                        if (assetBundle.Key == assetBundleName)
                         {
                             // 既に参照済みの場合は再登録.
                             if (dependentAssetPaths.Contains(path))
@@ -173,7 +173,7 @@ namespace Modules.Devkit.AssetBundles
 
                 var assetPath = AssetDatabase.GUIDToAssetPath(guid);
 
-                var assetBundleName = GetBundleName(assetPath);
+                var assetBundleName = UnityEditorUtility.GetAssetBundleName(assetPath);
 
                 if (string.IsNullOrEmpty(assetBundleName)) { continue; }
 
@@ -183,23 +183,6 @@ namespace Modules.Devkit.AssetBundles
             EditorUtility.ClearProgressBar();
 
             return allAssetPaths.ToLookup(x => x.Item1, x => x.Item2);
-        }
-
-        /// <summary>
-        /// アセットからアセットバンドル名を取得.
-        /// </summary>
-        /// <param name="path"></param>
-        /// <returns></returns>
-        private string GetBundleName(string path)
-        {
-            var importer = AssetImporter.GetAtPath(path);
-
-            var bundleName = importer.assetBundleName;
-            var variantName = importer.assetBundleVariant;
-
-            if (string.IsNullOrEmpty(bundleName)) { return null; }
-
-            return string.IsNullOrEmpty(variantName) ? bundleName : bundleName + "." + variantName;
         }
     }
 }
