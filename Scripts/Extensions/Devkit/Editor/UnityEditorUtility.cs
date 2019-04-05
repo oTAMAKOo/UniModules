@@ -287,21 +287,24 @@ namespace Extensions.Devkit
 
             var assetBundleName = BuildAssetBundleName(importer);
 
-            var directory = Path.GetDirectoryName(assetPath);
-
-            while (true)
+            if (string.IsNullOrEmpty(assetBundleName))
             {
-                importer = AssetImporter.GetAtPath(directory);
+                var directory = Path.GetDirectoryName(assetPath);
 
-                if (importer == null) { break; }
+                while (true)
+                {
+                    importer = AssetImporter.GetAtPath(directory);
 
-                assetBundleName = BuildAssetBundleName(importer);
+                    if (importer == null) { break; }
 
-                if (!string.IsNullOrEmpty(assetBundleName)) { break; }
+                    assetBundleName = BuildAssetBundleName(importer);
 
-                directory = Path.GetDirectoryName(directory);
+                    if (!string.IsNullOrEmpty(assetBundleName)) { break; }
 
-                if (string.IsNullOrEmpty(directory)) { break; }
+                    directory = Path.GetDirectoryName(directory);
+
+                    if (string.IsNullOrEmpty(directory)) { break; }
+                }
             }
 
             return assetBundleName;
