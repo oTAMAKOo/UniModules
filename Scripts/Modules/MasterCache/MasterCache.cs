@@ -51,7 +51,7 @@ namespace Modules.MasterCache
         }
 
         private static readonly string ConsoleEventName = "MasterCache";
-        private static readonly Color ConsoleEventColor = new Color(0.46f, 0.46f, 0.83f);
+        private static readonly Color ConsoleEventColor = new Color(0.56f, 0.86f, 0.83f);
 
         //----- field -----
 
@@ -147,6 +147,8 @@ namespace Modules.MasterCache
 
         private IEnumerator LoadCacheInternal(IObserver<bool> observer, AesManaged aesManaged)
         {
+            var result = false;
+
             var sw = System.Diagnostics.Stopwatch.StartNew();
             
             #if UNITY_EDITOR
@@ -168,11 +170,11 @@ namespace Modules.MasterCache
             {
                 // ファイル読み込み.
                 var data = File.ReadAllBytes(_installPath);
-
+                
                 // 復号化.               
                 return data.Decrypt(_aesManaged);
             };
-
+            
             // ファイルの読み込みと復号化をスレッドプールで実行.
             var loadYield = Observable.Start(() => loadCacheFile(installPath, aesManaged)).ObserveOnMainThread().ToYieldInstruction();
 
@@ -181,24 +183,29 @@ namespace Modules.MasterCache
                 yield return null;
             }
 
-            var result = false;
-
-            if (loadYield.HasResult)
+            if (!loadYield.HasError)
             {
-                var bytes = loadYield.Result;
-
-                try
+                if (loadYield.HasResult)
                 {
-                    var data = LZ4MessagePackSerializer.Deserialize<TMasterData[]>(bytes, UnityContractResolver.Instance);
+                    var bytes = loadYield.Result;
 
-                    SetMaster(data);
+                    try
+                    {
+                        var data = LZ4MessagePackSerializer.Deserialize<TMasterData[]>(bytes, UnityContractResolver.Instance);
 
-                    result = true;
+                        SetMaster(data);
+
+                        result = true;
+                    }
+                    catch (Exception exception)
+                    {
+                        Debug.LogException(exception);
+                    }
                 }
-                catch (Exception exception)
-                {
-                    Debug.LogException(exception);      
-                }
+            }
+            else
+            {
+                Debug.LogException(loadYield.Error);
             }
 
             sw.Stop();
