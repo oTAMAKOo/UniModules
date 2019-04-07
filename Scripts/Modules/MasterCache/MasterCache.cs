@@ -2,7 +2,6 @@
 using UnityEngine;
 using System;
 using System.Collections;
-using System.Linq;
 using System.IO;
 using System.Collections.Generic;
 using System.Security.Cryptography;
@@ -10,7 +9,6 @@ using System.Threading;
 using UniRx;
 using Extensions;
 using MessagePack;
-using Modules.Devkit;
 using Modules.MessagePack;
 
 namespace Modules.MasterCache
@@ -22,7 +20,7 @@ namespace Modules.MasterCache
         bool CheckVersion(string masterVersion);
         void ClearVersion();
         IObservable<bool> LoadCache(AesManaged aesManaged);
-        IObservable<bool> UpdateCache(string masterVersion, AesManaged aesManaged, CancellationToken cancelToken);
+        IObservable<bool> UpdateCache(string masterVersion, CancellationToken cancelToken);
     }
 
     public static class MasterCaches
@@ -49,9 +47,6 @@ namespace Modules.MasterCache
                 set { PlayerPrefs.SetString(string.Format("{0}.Version", typeof(TMaster).Name.ToUpper()), value); }
             }
         }
-
-        private static readonly string ConsoleEventName = "MasterCache";
-        private static readonly Color ConsoleEventColor = new Color(0.56f, 0.86f, 0.83f);
 
         //----- field -----
 
@@ -148,8 +143,6 @@ namespace Modules.MasterCache
         private IEnumerator LoadCacheInternal(IObserver<bool> observer, AesManaged aesManaged)
         {
             var result = false;
-
-            var sw = System.Diagnostics.Stopwatch.StartNew();
             
             #if UNITY_EDITOR
 
@@ -207,14 +200,8 @@ namespace Modules.MasterCache
             {
                 Debug.LogException(loadYield.Error);
             }
-
-            sw.Stop();
             
-            if (result)
-            {
-                MasterCacheDiagnostic.Instance.Register<TMaster>(sw.Elapsed.TotalMilliseconds);
-            }
-            else
+            if (!result)
             {
                 File.Delete(installPath);
                 OnError();
@@ -224,16 +211,14 @@ namespace Modules.MasterCache
             observer.OnCompleted();
         }
 
-        public IObservable<bool> UpdateCache(string masterVersion, AesManaged aesManaged, CancellationToken cancelToken)
+        public IObservable<bool> UpdateCache(string masterVersion, CancellationToken cancelToken)
         {
-            return Observable.FromMicroCoroutine<bool>(observer => UpdateCacheInternal(observer, masterVersion, aesManaged, cancelToken));
+            return Observable.FromMicroCoroutine<bool>(observer => UpdateCacheInternal(observer, masterVersion, cancelToken));
         }
 
-        private IEnumerator UpdateCacheInternal(IObserver<bool> observer, string masterVersion, AesManaged aesManaged, CancellationToken cancelToken)
+        private IEnumerator UpdateCacheInternal(IObserver<bool> observer, string masterVersion, CancellationToken cancelToken)
         {
             var result = true;
-
-            var localVersion = versionPrefs.version;
 
             var cachefilePath = PathUtility.Combine(GetInstallDirectory(), GetCacheFileName());
 
@@ -261,34 +246,10 @@ namespace Modules.MasterCache
                 File.Move(downloadfilePath, cachefilePath);
 
                 sw.Stop();
-
-                var message = string.Format("[{0}] Version : {1} >> {2}", typeof(TMaster).Name, string.IsNullOrEmpty(localVersion) ? "---" : localVersion, masterVersion);
-
-                UnityConsole.Event(ConsoleEventName, ConsoleEventColor, message);
             }
             else
             {
                 result = false;
-            }
-
-            // 読み込み.
-            if (result)
-            {
-                var loadYield = LoadCache(aesManaged).ToYieldInstruction(false, cancelToken);
-
-                while (!loadYield.IsDone)
-                {
-                    yield return null;
-                }
-
-                if (loadYield.HasResult && !loadYield.HasError)
-                {
-                    result = loadYield.Result;
-                }
-                else
-                {
-                    result = false;
-                }                
             }
 
             // バージョン情報を更新.
