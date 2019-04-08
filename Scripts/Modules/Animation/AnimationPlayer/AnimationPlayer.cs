@@ -16,22 +16,6 @@ namespace Modules.Animation
     {
         //----- params -----
 
-        private class AnimatorInfo
-        {
-            public Animator Animator { get; private set; }
-            public RuntimeAnimatorController AnimatorController { get; private set; }
-            public AnimationClip[] Clips { get; private set; }
-            public float DefaultSpeed { get; private set; }
-
-            public AnimatorInfo(Animator animator)
-            {
-                Animator = animator;
-                AnimatorController = Animator.runtimeAnimatorController;
-                Clips = AnimatorController != null ? AnimatorController.animationClips : new AnimationClip[0];
-                DefaultSpeed = Animator.speed;
-            }
-        }
-
         //----- field -----
 
         [SerializeField]
@@ -41,9 +25,8 @@ namespace Modules.Animation
         [SerializeField]
         private bool ignoreTimeScale = false;
 
-        private AnimatorInfo animatorInfo = null;
-
         private string animationName = null;
+        private int layer = -1;
 
         // 現在の状態.
         private State currentState = State.Stop;
@@ -73,6 +56,12 @@ namespace Modules.Animation
         private bool isInitialized = false;
 
         //----- property -----
+
+        public Animator Animator { get; private set; }
+        
+        public AnimationClip[] Clips { get; private set; }
+
+        public float DefaultSpeed { get; private set; }
 
         public bool IsPlaying
         {
@@ -128,9 +117,12 @@ namespace Modules.Animation
             if (animator == null) { return; }
 
             if (isInitialized) { return; }
+            
+            Animator = animator;
+            Clips = animatorController != null ? animatorController.animationClips : new AnimationClip[0];
+            DefaultSpeed = Animator.speed;
 
             animator.runtimeAnimatorController = animatorController;
-            animatorInfo = new AnimatorInfo(animator);
 
             Stop();
 
@@ -149,7 +141,7 @@ namespace Modules.Animation
             Stop();
         }
 
-        public IObservable<Unit> Play(string animationName, bool immediate = true)
+        public IObservable<Unit> Play(string animationName, int layer = -1, float normalizedTime = float.NegativeInfinity, bool immediate = true)
         {
             if (string.IsNullOrEmpty(animationName)) { return Observable.ReturnUnit(); }
 
@@ -163,12 +155,13 @@ namespace Modules.Animation
             }
 
             this.animationName = animationName;
+            this.layer = layer;
 
             var hash = Animator.StringToHash(animationName);
 
-            if (animatorInfo.Animator.HasState(0, hash))
+            if (Animator.HasState(GetCurrentLayerIndex(), hash))
             {
-                return Observable.FromCoroutine(() => PlayInternal(immediate));
+                return Observable.FromCoroutine(() => PlayInternal(layer, normalizedTime, immediate));
             }
 
             this.animationName = string.Empty;
@@ -178,7 +171,7 @@ namespace Modules.Animation
             return Observable.ReturnUnit();
         }
 
-        private IEnumerator PlayInternal(bool immediate)
+        private IEnumerator PlayInternal(int layer, float normalizedTime, bool immediate)
         {
             var hash = Animator.StringToHash(animationName);
 
@@ -194,8 +187,8 @@ namespace Modules.Animation
 
                 // 再生.
                 currentState = State.Play;
-                animatorInfo.Animator.enabled = true;
-                animatorInfo.Animator.Play(hash, -1, 0f);
+                Animator.enabled = true;
+                Animator.Play(hash, layer, normalizedTime);
 
                 // 指定アニメーションへ遷移待ち.
                 yield return Observable.FromCoroutine(() => WaitTransitionState(immediate)).ToYieldInstruction();
@@ -222,13 +215,13 @@ namespace Modules.Animation
 
                 if (!UnityUtility.IsActiveInHierarchy(gameObject)) { break; }
 
-                var stateInfo = animatorInfo.Animator.GetCurrentAnimatorStateInfo(0);
+                var stateInfo = Animator.GetCurrentAnimatorStateInfo(GetCurrentLayerIndex());
 
                 if (stateInfo.IsName(animationName)) { break; }
 
                 if (immediate)
                 {
-                    animatorInfo.Animator.Update(0);
+                    Animator.Update(0);
                 }
                 else
                 {
@@ -264,27 +257,27 @@ namespace Modules.Animation
 
             if (State == State.Stop) { return; }
 
-            if (UnityUtility.IsNull(animatorInfo.Animator)) { return; }
+            if (UnityUtility.IsNull(Animator)) { return; }
 
             // Animator停止.
-            foreach (var clip in animatorInfo.Clips)
+            foreach (var clip in Clips)
             {
-                clip.SampleAnimation(animatorInfo.Animator.gameObject, clip.length);
+                clip.SampleAnimation(Animator.gameObject, clip.length);
             }
 
             Refresh();
 
             if (setDefaultState)
             {
-                animatorInfo.Animator.Rebind();
+                Animator.Rebind();
             }
 
-            animatorInfo.Animator.enabled = false;
+            Animator.enabled = false;
         }
 
         private void ApplySpeedRate()
         {
-            animatorInfo.Animator.speed *= speedRate;
+            Animator.speed *= speedRate;
         }
 
         private void Refresh()
@@ -294,17 +287,17 @@ namespace Modules.Animation
             currentState = State.Stop;
 
             // TimeScaleの影響を受けるか.
-            animatorInfo.Animator.updateMode = ignoreTimeScale ? AnimatorUpdateMode.UnscaledTime : AnimatorUpdateMode.Normal;
+            Animator.updateMode = ignoreTimeScale ? AnimatorUpdateMode.UnscaledTime : AnimatorUpdateMode.Normal;
 
             if (UnityUtility.IsActiveInHierarchy(gameObject))
             {
                 // 実行中にSampleAnimationしても表示された物が更新されない為、一旦再生して表示物をリセットする.
-                var currentStateInfo = animatorInfo.Animator.GetCurrentAnimatorStateInfo(0);
+                var currentStateInfo = Animator.GetCurrentAnimatorStateInfo(0);
 
-                animatorInfo.Animator.Play(currentStateInfo.fullPathHash, -1, 0.0f);
+                Animator.Play(currentStateInfo.fullPathHash, -1, 0.0f);
             }
 
-            animatorInfo.Animator.speed = animatorInfo.DefaultSpeed;
+            Animator.speed = DefaultSpeed;
         }
 
         private void EndAction()
@@ -383,27 +376,29 @@ namespace Modules.Animation
         {
             if (!isPause && pause)
             {
-                pausedSpeed = animatorInfo.Animator.speed;
+                pausedSpeed = Animator.speed;
             }
 
-            animatorInfo.Animator.speed = pause ? 0f : pausedSpeed;
+            Animator.speed = pause ? 0f : pausedSpeed;
         }
 
         private void ResetAnimatorSpeed()
         {
-            animatorInfo.Animator.speed = animatorInfo.DefaultSpeed;
+            Animator.speed = DefaultSpeed;
         }
 
         private bool IsAlive()
         {
             if (!UnityUtility.IsActiveInHierarchy(gameObject)) { return false; }
 
-            var stateInfo = animatorInfo.Animator.GetCurrentAnimatorStateInfo(0);
+            var layerIndex = GetCurrentLayerIndex();
+
+            var stateInfo = Animator.GetCurrentAnimatorStateInfo(layerIndex);
 
             // 指定ステートへ遷移待ち.
             if (waitStateTransition)
             {
-                if (!stateInfo.IsName(animationName) || animatorInfo.Animator.IsInTransition(0))
+                if (!stateInfo.IsName(animationName) || Animator.IsInTransition(layerIndex))
                 {
                     return true;
                 }
@@ -413,35 +408,40 @@ namespace Modules.Animation
 
             if (!stateInfo.IsName(animationName)) { return false; }
 
-            if (1 < stateInfo.normalizedTime && !animatorInfo.Animator.IsInTransition(0)) { return false; }
+            if (1 < stateInfo.normalizedTime && !Animator.IsInTransition(layerIndex)) { return false; }
 
             // 再生中のアニメーションクリップ.
-            var clipInfo = animatorInfo.Animator.GetCurrentAnimatorClipInfo(0);
+            var clipInfo = Animator.GetCurrentAnimatorClipInfo(layerIndex);
 
             if (clipInfo.Any())
             {
                 var currentClipInfo = clipInfo[0];
-                
+
                 if (currentClipInfo.clip.length == 0) { return false; }
             }
 
             return true;
         }
 
+        private int GetCurrentLayerIndex()
+        {
+            return layer == -1 ? 0 : layer;
+        }
+
         private IObservable<TResult> DoLazyFunc<TResult>(Func<Animator, TResult> func)
         {
             // 初期化済の場合は即座に実行.
-            if (animatorInfo.Animator.isInitialized)
+            if (Animator.isInitialized)
             {
-                return Observable.Return(func(animatorInfo.Animator));
+                return Observable.Return(func(Animator));
             }
 
             // 初期化済でない場合は初期化完了を待つ.
             // これは非アクティブでも回って欲しいのであえて Observable.EveryUpdateを使う.
             return Observable.EveryUpdate()
-                .SkipWhile(_ => !animatorInfo.Animator.isInitialized)
+                .SkipWhile(_ => !Animator.isInitialized)
                 .Take(1)
-                .Select(_ => func(animatorInfo.Animator));
+                .Select(_ => func(Animator));
         }
 
         #region StateMachine Event
