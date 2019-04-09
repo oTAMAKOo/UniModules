@@ -20,9 +20,7 @@ namespace Modules.Atlas
         }
 
         //----- field -----
-
-        private bool unityPacking = false;
-        private bool forceSquare = true;
+        
         private int padding = 0;
         private float pixelsPerUnit = 100f;
         private FilterMode filterMode = FilterMode.Bilinear;
@@ -116,7 +114,7 @@ namespace Modules.Atlas
                 RegisterEditableTexture(texture, true);
             }
 
-            if (PackTextures(texture, sprites, padding, unityPacking, forceSquare))
+            if (PackTextures(texture, sprites, padding))
             {
                 var bytes = texture.EncodeToPNG();
 
@@ -144,7 +142,7 @@ namespace Modules.Atlas
             return true;
         }
 
-        private static bool PackTextures(Texture2D texture, List<SpriteEntry> sprites, int padding, bool unityPacking, bool forceSquare)
+        private static bool PackTextures(Texture2D texture, List<SpriteEntry> sprites, int padding)
         {
             #if UNITY_3_5 || UNITY_4_0
 		    
@@ -162,16 +160,7 @@ namespace Modules.Atlas
 
             var textures = sprites.Select(x => x.texture).ToArray();
 
-            var rects = new Rect[0];
-
-            if (unityPacking)
-            {
-                rects = texture.PackTextures(textures, padding, maxSize);
-            }
-            else
-            {
-                rects = TexturePacker.PackTextures(texture, textures, 4, 4, padding, maxSize, forceSquare);
-            }
+            var rects = texture.PackTextures(textures, padding, maxSize);
 
             for (var i = 0; i < sprites.Count; ++i)
             {

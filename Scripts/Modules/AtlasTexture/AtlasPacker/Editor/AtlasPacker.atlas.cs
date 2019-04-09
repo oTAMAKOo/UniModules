@@ -164,8 +164,6 @@ namespace Modules.Atlas
                 atlas.Padding = padding;
                 atlas.PixelsPerUnit = pixelsPerUnit;
                 atlas.FilterMode = filterMode;
-                atlas.UnityPacking = unityPacking;
-                atlas.ForceSquare = forceSquare;
             }
             else
             {
@@ -176,8 +174,6 @@ namespace Modules.Atlas
                 atlas.Padding = 0;
                 atlas.PixelsPerUnit = 100f;
                 atlas.FilterMode = FilterMode.Bilinear;
-                atlas.UnityPacking = unityPacking;
-                atlas.ForceSquare = forceSquare;
 
                 if (!string.IsNullOrEmpty(path))
                 {

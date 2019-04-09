@@ -181,26 +181,7 @@ namespace Modules.Atlas
         private void DrawOptions()
         {
             var labelWidth = 80f;
-
-            GUILayout.Space(2f);
-
-            using (new EditorGUILayout.HorizontalScope())
-            {
-                GUILayout.Label("Unity Packer", GUILayout.Width(labelWidth));
-                unityPacking = EditorGUILayout.Toggle(unityPacking, GUILayout.Width(50f));
-            }
-
-            if (!unityPacking)
-            {
-                GUILayout.Space(2f);
-
-                using (new EditorGUILayout.HorizontalScope())
-                {
-                    GUILayout.Label("ForceSquare", GUILayout.Width(labelWidth));
-                    forceSquare = EditorGUILayout.Toggle(forceSquare, GUILayout.Width(50f));
-                }
-            }
-
+            
             GUILayout.Space(2f);
 
             using (new EditorGUILayout.HorizontalScope())
@@ -481,16 +462,12 @@ namespace Modules.Atlas
                     padding = selectAtlas.Padding;
                     pixelsPerUnit = selectAtlas.PixelsPerUnit;
                     filterMode = selectAtlas.FilterMode;
-                    unityPacking = selectAtlas.UnityPacking;
-                    forceSquare = selectAtlas.ForceSquare;
                 }
                 else
                 {
                     selectAtlas = null;
                     padding = 0;
                     filterMode = FilterMode.Bilinear;
-                    unityPacking = false;
-                    forceSquare = true;
                 }
 
                 Repaint();
