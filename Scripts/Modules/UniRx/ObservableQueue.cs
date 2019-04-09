@@ -8,17 +8,23 @@ using Extensions;
 
 namespace Modules.UniRxExtension
 {
-    public class ObservableQueue<T>
+    public class ObservableQueue
     {
         //----- params -----
 
         private class QueueItem
         {
-            public IObservable<T> Observable { get; private set; }
+            public IObservable<Unit> Observable { get; private set; }
+            public Action OnStart { get; private set; }
+            public Action OnComplete { get; private set; }
+            public Action<Exception> OnError { get; private set; }
 
-            public QueueItem(IObservable<T> observable)
+            public QueueItem(IObservable<Unit> observable, Action onStart, Action onComplete, Action<Exception> onError)
             {
                 Observable = observable;
+                OnStart = onStart;
+                OnComplete = onComplete;
+                OnError = onError;
             }
         }
 
@@ -32,7 +38,7 @@ namespace Modules.UniRxExtension
         private List<QueueItem> runningList = null;
 
         // 完了イベント.
-        private Subject<T> onComplete = null;
+        private Subject<Unit> onComplete = null;
 
         //----- property -----
 
@@ -46,16 +52,23 @@ namespace Modules.UniRxExtension
             runningList = new List<QueueItem>();
         }
 
-        public void Add(IObservable<T> observable)
+        public void Add(IObservable<Unit> observable, Action onStart = null, Action onFinish = null, Action<Exception> onError = null)
         {
-            processingQueue.Enqueue(new QueueItem(observable));
+            processingQueue.Enqueue(new QueueItem(observable, onStart, onFinish, onError));
         }
 
         public IObservable<Unit> Start()
         {
             var observables = processingQueue.Select(x => Observable.FromMicroCoroutine(() => ExecProcess(x))).ToArray();
 
-            return observables.WhenAll()
+            return observables.WhenAll()                
+                .Do(_ =>
+                    {
+                        if (onComplete != null)
+                        {
+                            onComplete.OnNext(Unit.Default);
+                        }
+                    })
                 .Finally(() => Clear())
                 .AsUnitObservable();
         }
@@ -75,6 +88,11 @@ namespace Modules.UniRxExtension
                 yield return null;
             }
 
+            if (queueItem.OnStart != null)
+            {
+                queueItem.OnStart();
+            }
+
             runningList.Add(queueItem);
 
             var itemYield = queueItem.Observable.ToYieldInstruction();
@@ -84,11 +102,18 @@ namespace Modules.UniRxExtension
                 yield return null;
             }
 
-            if (itemYield.HasResult)
+            if (itemYield.HasError)
             {
-                if (onComplete != null)
+                if (queueItem.OnError != null)
                 {
-                    onComplete.OnNext(itemYield.Result);
+                    queueItem.OnError(itemYield.Error);
+                }
+            }
+            else
+            {
+                if (queueItem.OnComplete != null)
+                {
+                    queueItem.OnComplete();
                 }
             }
 
@@ -113,9 +138,9 @@ namespace Modules.UniRxExtension
             }
         }
 
-        public IObservable<T> OnCompleteAsObservable()
+        public IObservable<Unit> OnCompleteAsObservable()
         {
-            return onComplete ?? (onComplete = new Subject<T>());
+            return onComplete ?? (onComplete = new Subject<Unit>());
         }
     }
 }
