@@ -59,9 +59,9 @@ namespace Modules.UniRxExtension
 
         public IObservable<Unit> Start()
         {
-            var observables = processingQueue.Select(x => Observable.FromMicroCoroutine(() => ExecProcess(x))).ToArray();
+            var observers = processingQueue.Select(x => Observable.FromMicroCoroutine(() => ExecProcess(x))).ToArray();
 
-            return observables.WhenAll()                
+            return observers.WhenAll()                
                 .Do(_ =>
                     {
                         if (onComplete != null)
