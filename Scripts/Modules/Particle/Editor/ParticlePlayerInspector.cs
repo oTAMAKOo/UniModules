@@ -171,6 +171,8 @@ namespace Modules.Particle
                                     emulateDisposable = null;
                                 }
 
+                                Reflection.InvokePrivateMethod(instance, "RunCollectContents");
+
                                 emulateDisposable = instance.Play()
                                     .Subscribe(_ =>
                                         {
