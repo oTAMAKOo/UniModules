@@ -235,6 +235,8 @@ namespace Modules.Particle
                     if (EditorGUI.EndChangeCheck())
                     {
                         UnityEditorUtility.RegisterUndo("ParticlePlayerInspector Undo", instance);
+
+                        Reflection.InvokePrivateMethod(instance, "RunCollectContents");
                         instance.SortingLayer = sortingLayerState;
                     }
 
@@ -257,6 +259,7 @@ namespace Modules.Particle
                     {
                         UnityEditorUtility.RegisterUndo("ParticlePlayerInspector Undo", instance);
 
+                        Reflection.InvokePrivateMethod(instance, "RunCollectContents");
                         instance.SortingOrder = sortingOrderState;
                     }
 
