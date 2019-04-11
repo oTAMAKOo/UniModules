@@ -321,7 +321,7 @@ namespace Modules.Particle
                 ApplySpeedRate();
 
                 // 終了待ち.
-                yield return Observable.FromCoroutine(() => WaitForEndOfAnimation()).ToYieldInstruction();
+                yield return Observable.FromMicroCoroutine(() => WaitForEndOfAnimation()).ToYieldInstruction();
 
                 if (endActionType != EndActionType.Loop) { break; }
             }
@@ -332,37 +332,38 @@ namespace Modules.Particle
         // アニメーションの終了待ち.
         private IEnumerator WaitForEndOfAnimation()
         {
-            if (!isInitialized) { yield break; }
-
-            while (true)
+            if (isInitialized)
             {
-                if (State == State.Stop) { yield break; }
-
-                if (State == State.Play)
+                while (true)
                 {
-                    if (Application.isPlaying)
+                    if (State == State.Stop) { break; }
+
+                    if (State == State.Play)
                     {
-                        var time = ignoreTimeScale ? Time.unscaledDeltaTime : Time.deltaTime;
-
-                        // 時間更新.
-                        FrameUpdate(time);
-
-                        // ParticleSysmteのSimulate.
-                        foreach (var ps in particleSystems)
+                        if (Application.isPlaying)
                         {
-                            if (UnityUtility.IsNull(ps.ParticleSystem)) { continue; }
+                            var time = ignoreTimeScale ? Time.unscaledDeltaTime : Time.deltaTime;
 
-                            if (!ps.ParticleSystem.gameObject.activeInHierarchy) { continue; }
+                            // 時間更新.
+                            FrameUpdate(time);
 
-                            ps.ParticleSystem.Simulate(time, false, false);
+                            // ParticleSystemのSimulate.
+                            foreach (var ps in particleSystems)
+                            {
+                                if (UnityUtility.IsNull(ps.ParticleSystem)) { continue; }
+
+                                if (!ps.ParticleSystem.gameObject.activeInHierarchy) { continue; }
+
+                                ps.ParticleSystem.Simulate(time, false, false);
+                            }
+
+                            // 終了監視.
+                            if (!IsAlive()) { break; }
                         }
-
-                        // 終了監視.
-                        if (!IsAlive()) { break; }
                     }
-                }
 
-                yield return null;
+                    yield return null;
+                }
             }
         }
 
