@@ -42,6 +42,7 @@ namespace Modules.Particle
         {
             public ParticleSystem ParticleSystem { get; private set; }
             public ParticleSystemRenderer Renderer { get; private set; }
+            public ParticlePlayerSortingOrder SortingOrder { get; private set; }
             public float StartRotation { get; private set; }
             public float DefaultSpeed { get; private set; }
 
@@ -50,36 +51,9 @@ namespace Modules.Particle
                 ParticleSystem = particleSystem;
                 StartRotation = particleSystem.main.startRotationMultiplier;
                 Renderer = particleSystem.GetComponent<ParticleSystemRenderer>();
-                
+                SortingOrder = particleSystem.GetComponent<ParticlePlayerSortingOrder>();
+
                 DefaultSpeed = particleSystem.main.simulationSpeed;
-            }
-        }
-
-        public class RendererSortingInfo
-        {
-            public Renderer Renderer { get; private set; }
-            public int? SortingOrder { get; private set; }
-
-            public RendererSortingInfo(Renderer renderer)
-            {
-                Renderer = renderer;
-                SortingOrder = renderer.sortingOrder;
-            }
-
-            public void ApplySortingLayer(SortingLayer sortingLayer)
-            {
-                Renderer.sortingLayerID = (int)sortingLayer;
-            }
-
-            public void ApplySortingOrder(int oldValue, int newValue)
-            {
-                // 編集されていた場合ここで値に差異が発生する.
-                if(!SortingOrder.HasValue || Renderer.sortingOrder != SortingOrder + oldValue)
-                {
-                    SortingOrder = Renderer.sortingOrder;
-                }
-
-                Renderer.sortingOrder = SortingOrder.Value + newValue;
             }
         }
 
@@ -126,7 +100,6 @@ namespace Modules.Particle
 
         // 管理対象.
         protected ParticleSystemInfo[] particleSystems = null;
-        protected RendererSortingInfo[] renderers = null;
 
         // 終了通知.
         private Subject<ParticlePlayer> onEnd = null;
@@ -170,10 +143,9 @@ namespace Modules.Particle
             set
             {
                 if (sortingOrder == value) return;
-
-                var oldValue = sortingOrder;
+                
                 sortingOrder = value;
-                ApplySortingOrder(oldValue, sortingOrder);
+                ApplySortingOrder(sortingOrder);
             }
         }
 
@@ -240,6 +212,8 @@ namespace Modules.Particle
         void OnEnable()
         {
             Initialize();
+
+            CollectContents();
 
             if (activateOnPlay && Application.isPlaying)
             {
@@ -325,8 +299,7 @@ namespace Modules.Particle
                 yield break;
             }
 
-            RevertOriginSortingOrder();
-            ApplySortingOrder(0, sortingOrder);
+            ApplySortingOrder(sortingOrder);
 
             while (true)
             {
@@ -600,13 +573,10 @@ namespace Modules.Particle
                 .Select(x => new ParticleSystemInfo(x))
                 .ToArray();
 
-            renderers = descendants
-                .OfComponent<Renderer>()
-                .Select(x => new RendererSortingInfo(x))
-                .ToArray();
-
             ApplySortingLayer(sortingLayer);
-            ApplySortingOrder(sortingOrder, sortingOrder);
+            ApplySortingOrder(sortingOrder);
+
+            ResetContents();
         }
 
         private void EndAction()
@@ -643,23 +613,26 @@ namespace Modules.Particle
 
         private void ApplySortingLayer(SortingLayer newValue)
         {
-            foreach (var info in renderers)
+            if (particleSystems != null)
             {
-                info.ApplySortingLayer(newValue);
+                foreach (var info in particleSystems)
+                {
+                    info.Renderer.sortingLayerID = (int)newValue;
+                }
             }
         }
 
-        private void ApplySortingOrder(int oldValue, int newValue)
+        private void ApplySortingOrder(int baseValue)
         {
-            foreach (var info in renderers)
+            if (particleSystems != null)
             {
-                info.ApplySortingOrder(oldValue, newValue);
-            }
-        }
+                foreach (var info in particleSystems)
+                {
+                    if (info.SortingOrder == null) { continue; }
 
-        private void RevertOriginSortingOrder()
-        {
-            ApplySortingOrder(sortingOrder, 0);
+                    info.SortingOrder.Apply(baseValue);
+                }
+            }
         }
 
         public IObservable<ParticlePlayer> OnEndAsObservable()

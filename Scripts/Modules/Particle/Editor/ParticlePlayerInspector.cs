@@ -7,6 +7,7 @@ using UniRx;
 using Extensions;
 using Extensions.Devkit;
 using Modules.Devkit.EventHook;
+using Modules.Devkit.CompileNotice;
 
 using SortingLayer = Constants.SortingLayer;
 
@@ -48,7 +49,6 @@ namespace Modules.Particle
         private LifetimeDisposable disposable = new LifetimeDisposable();
 
         private IDisposable emulateDisposable = null;
-        private IDisposable applyDisposable = null;
         private IDisposable updateDisposable = null;
 
         private ParticlePlayer instance = null;
@@ -66,26 +66,10 @@ namespace Modules.Particle
                 Reflection.InvokePrivateMethod(instance, "Initialize");
             }
 
-            if(applyDisposable != null)
-            {
-                applyDisposable.Dispose();
-            }
-
             if (!Application.isPlaying)
             {
                 ParticlePlayerEmulator.update -= Emulate;
                 ParticlePlayerEmulator.update += Emulate;
-
-                // Applyされたタイミングで子階層のSortingOrderを戻してから保存する.
-                applyDisposable = PrefabApplyHook.OnApplyPrefabAsObservable().Subscribe(
-                        x =>
-                        {
-                            if (instance != null && x == instance.gameObject)
-                            {
-                                Reflection.InvokePrivateMethod(instance, "RevertOriginSortingOrder");
-                            }
-                        })
-                    .AddTo(disposable.Disposable);
             }
             else
             {
@@ -108,11 +92,6 @@ namespace Modules.Particle
             else
             {
                 ParticlePlayerEmulator.update -= Emulate;
-
-                if (applyDisposable != null)
-                {
-                    applyDisposable.Dispose();
-                }
 
                 instance.Simulate(0);
                 instance.Stop(true, true);
