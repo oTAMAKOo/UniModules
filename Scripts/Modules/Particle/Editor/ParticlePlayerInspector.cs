@@ -3,12 +3,12 @@ using UnityEngine;
 using UnityEditor;
 using UnityEditorInternal;
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using UniRx;
 using Extensions;
 using Extensions.Devkit;
-using Modules.Devkit.EventHook;
-using Modules.Devkit.CompileNotice;
-
+using Unity.Linq;
 using SortingLayer = Constants.SortingLayer;
 
 namespace Modules.Particle
@@ -50,6 +50,9 @@ namespace Modules.Particle
 
         private IDisposable emulateDisposable = null;
         private IDisposable updateDisposable = null;
+        private IDisposable eventLogDisposable = null;
+
+        private Vector2 scrollPosition = Vector2.zero;
 
         private ParticlePlayer instance = null;
 
@@ -70,6 +73,12 @@ namespace Modules.Particle
             {
                 ParticlePlayerEmulator.update -= Emulate;
                 ParticlePlayerEmulator.update += Emulate;
+
+                var colorCode = Color.magenta.ColorToHex();
+
+                eventLogDisposable = instance.OnEventAsObservable()
+                    .Subscribe(x => Debug.LogFormat("<color=#{0}><b>[ParticlePlayer Event]</b></color> {1}", colorCode, x))
+                    .AddTo(disposable.Disposable);
             }
             else
             {
@@ -92,9 +101,13 @@ namespace Modules.Particle
             else
             {
                 ParticlePlayerEmulator.update -= Emulate;
-
-                instance.Simulate(0);
+                
                 instance.Stop(true, true);
+
+                if (eventLogDisposable != null)
+                {
+                    eventLogDisposable.Dispose();
+                }
             }
 
             SetParticleSystemsDirty();
@@ -104,8 +117,17 @@ namespace Modules.Particle
         {
             if (instance != null && instance.State == State.Play)
             {
-                instance.Simulate(time);
+                Reflection.InvokePrivateMethod(instance, "UpdateCurrentTime", new object[] { time });
+
+                Reflection.InvokePrivateMethod(instance, "InvokeEvent");
+
+                if (!instance.IsAlive())
+                {
+                    Reflection.InvokePrivateMethod(instance, "ResetContents");
+                }
+
                 SetParticleSystemsDirty();
+                
                 Repaint();
             }
         }
@@ -117,8 +139,9 @@ namespace Modules.Particle
             var activateOnPlay = Reflection.GetPrivateField<ParticlePlayer, bool>(instance, "activateOnPlay");
             var endActionType = Reflection.GetPrivateField<ParticlePlayer, EndActionType>(instance, "endActionType");
             var ignoreTimeScale = Reflection.GetPrivateField<ParticlePlayer, bool>(instance, "ignoreTimeScale");
-            var lifecycleType = Reflection.GetPrivateField<ParticlePlayer, LifcycleType>(instance, "lifecycleType");
+            var lifecycleType = Reflection.GetPrivateField<ParticlePlayer, LifecycleControl>(instance, "lifecycleControl");
             var lifeTime = Reflection.GetPrivateField<ParticlePlayer, float>(instance, "lifeTime");
+            var events = Reflection.GetPrivateField<ParticlePlayer, ParticlePlayer.EventInfo[]>(instance, "eventInfos");
 
             EditorGUILayout.Separator();
 
@@ -260,9 +283,9 @@ namespace Modules.Particle
 
                     endActionType = (EndActionType)EditorGUILayout.EnumPopup("End Action", endActionType);
 
-                    lifecycleType = (LifcycleType)EditorGUILayout.EnumPopup("Lifcycle Type", lifecycleType);
+                    lifecycleType = (LifecycleControl)EditorGUILayout.EnumPopup("Lifcycle Type", lifecycleType);
 
-                    if (lifecycleType == LifcycleType.Manual)
+                    if (lifecycleType == LifecycleControl.Manual)
                     {
                         lifeTime = EditorGUILayout.FloatField("Life Time", lifeTime);
                     }
@@ -274,7 +297,7 @@ namespace Modules.Particle
                         Reflection.SetPrivateField(instance, "activateOnPlay", activateOnPlay);
                         Reflection.SetPrivateField(instance, "endActionType", endActionType);
                         Reflection.SetPrivateField(instance, "ignoreTimeScale", ignoreTimeScale);
-                        Reflection.SetPrivateField(instance, "lifecycleType", lifecycleType);
+                        Reflection.SetPrivateField(instance, "lifecycleControl", lifecycleType);
                         Reflection.SetPrivateField(instance, "lifeTime", lifeTime);
                         Reflection.SetPrivateField(instance, "activateOnPlay", activateOnPlay);
                     }
@@ -283,14 +306,181 @@ namespace Modules.Particle
                 }
             }
 
+            if (EditorLayoutTools.DrawHeader("Event", "ParticlePlayerInspector-Event"))
+            {
+                var updated = false;
+                var eventList = events != null ? events.ToList() : new List<ParticlePlayer.EventInfo>();
+
+                using (new ContentsScope())
+                {
+                    if (eventList.IsEmpty())
+                    {
+                        EditorGUILayout.HelpBox("Press the + button if add event", MessageType.Info);
+                    }
+                    else
+                    {
+                        GUILayout.Space(3f);
+
+                        DrawEventHeaderGUI(eventList);
+
+                        var deleteTargets = new List<ParticlePlayer.EventInfo>();
+
+                        Action drawContents = () =>
+                        {
+                            foreach (var eventInfo in eventList)
+                            {
+                                EditorGUI.BeginChangeCheck();
+
+                                var delete = DrawEventInfoGUI(eventInfo);
+
+                                if (EditorGUI.EndChangeCheck())
+                                {
+                                    updated = true;
+                                }
+
+                                if (delete)
+                                {
+                                    deleteTargets.Add(eventInfo);
+                                    updated = true;
+                                }
+
+                                GUILayout.Space(2f);
+                            }
+                        };
+
+                        if (eventList.Count <= 5)
+                        {
+                            drawContents();
+                        }
+                        else
+                        {
+                            using (var scrollViewScope = new EditorGUILayout.ScrollViewScope(scrollPosition, GUILayout.Height(100f)))
+                            {
+                                drawContents();
+
+                                scrollPosition = scrollViewScope.scrollPosition;
+                            }
+                        }
+
+                        foreach (var deleteTarget in deleteTargets)
+                        {
+                            eventList.Remove(deleteTarget);
+                        }
+                    }
+
+                    using (new EditorGUILayout.HorizontalScope())
+                    {
+                        GUILayout.FlexibleSpace();
+
+                        if (GUILayout.Button("+", EditorStyles.miniButton, GUILayout.Width(60f)))
+                        {
+                            var eventInfo = new ParticlePlayer.EventInfo()
+                            {
+                                trigger = ParticlePlayer.EventInfo.EventTrigger.Time,
+                                target = null,
+                                time = 0f,
+                                message = string.Empty,
+                            };
+
+                            eventList.Add(eventInfo);
+
+                            updated = true;
+                        }
+                    }
+
+                    if (updated)
+                    {
+                        Reflection.SetPrivateField(instance, "eventInfos", eventList.ToArray());
+                    }
+                }
+            }
+
             EditorGUILayout.Separator();
+        }
+
+        private void DrawEventHeaderGUI(List<ParticlePlayer.EventInfo> eventList)
+        {
+            var style = new GUIStyle("ShurikenModuleTitle");
+            style.font = new GUIStyle(EditorStyles.label).font;
+            style.border = new RectOffset(2, 2, 2, 2);
+            style.fixedHeight = 16;
+            style.contentOffset = new Vector2(0f, -2f);
+            style.alignment = TextAnchor.MiddleCenter;
+
+            using (new EditorGUILayout.HorizontalScope())
+            {
+                GUILayout.FlexibleSpace();
+
+                EditorGUILayout.LabelField("Trigger", style, GUILayout.Width(55f));
+                EditorGUILayout.LabelField("Invoke", style, GUILayout.Width(150f));
+                EditorGUILayout.LabelField("Message", style, GUILayout.Width(150f));
+                GUILayout.Space(eventList.Count <= 5 ? 30f : 43f);
+
+                GUILayout.FlexibleSpace();
+            }
+        }
+
+        private bool DrawEventInfoGUI(ParticlePlayer.EventInfo info)
+        {
+            var delete = false;
+
+            using (new EditorGUILayout.HorizontalScope())
+            {
+                GUILayout.FlexibleSpace();
+
+                info.trigger = (ParticlePlayer.EventInfo.EventTrigger)EditorGUILayout.EnumPopup(info.trigger, GUILayout.Width(55f));
+
+                switch (info.trigger)
+                {
+                    case ParticlePlayer.EventInfo.EventTrigger.Time:
+                        {
+                            info.target = null;
+
+                            info.time = (float)EditorGUILayout.DelayedDoubleField(info.time, GUILayout.Width(150f));
+                        }
+                        break;
+
+                    case ParticlePlayer.EventInfo.EventTrigger.Birth:
+                    case ParticlePlayer.EventInfo.EventTrigger.Alive:
+                    case ParticlePlayer.EventInfo.EventTrigger.Death:
+                        {
+                            info.time = 0f;
+
+                            EditorGUI.BeginChangeCheck();
+
+                            var particleSystem = (ParticleSystem)EditorGUILayout.ObjectField(info.target, typeof(ParticleSystem), true, GUILayout.Width(150f));
+
+                            if (EditorGUI.EndChangeCheck())
+                            {
+                                var isChild = instance.gameObject.DescendantsAndSelf().OfComponent<ParticleSystem>().Contains(particleSystem);
+
+                                if (isChild)
+                                {
+                                    info.target = particleSystem;
+                                }
+                            }
+                        }
+                        break;
+                }
+
+                info.message = EditorGUILayout.DelayedTextField(info.message, GUILayout.Width(150f));
+
+                if (GUILayout.Button("-", EditorStyles.miniButton, GUILayout.Width(25f)))
+                {
+                    delete = true;
+                }
+
+                GUILayout.FlexibleSpace();
+            }
+
+            return delete;
         }
 
         private void SetParticleSystemsDirty()
         {
-            var particleSystemInfos = Reflection.GetPrivateField<ParticlePlayer, ParticlePlayer.ParticleSystemInfo[]>(instance, "particleSystems");
+            var particleInfos = Reflection.GetPrivateField<ParticlePlayer, ParticlePlayer.ParticleInfo[]>(instance, "particleInfos");
 
-            foreach (var info in particleSystemInfos)
+            foreach (var info in particleInfos)
             {
                 if (UnityUtility.IsNull(info.ParticleSystem)) { continue; }
 

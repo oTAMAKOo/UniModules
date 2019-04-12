@@ -3,6 +3,7 @@ using UnityEngine;
 using Unity.Linq;
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.Linq;
 using UniRx;
 using Extensions;
@@ -23,13 +24,21 @@ namespace Modules.Particle
         None,
         Destroy,
         Deactivate,
-        Loop
+        Loop,
     }
 
-    public enum LifcycleType
+    public enum LifecycleControl
     {
         ParticleSystem,
         Manual,
+    }
+
+    public enum LifecycleType
+    {
+        None = 0,
+        Birth,
+        Alive,
+        Death,
     }
 
     [ExecuteInEditMode]
@@ -38,23 +47,47 @@ namespace Modules.Particle
     {
         //----- params -----
 
-        public class ParticleSystemInfo
+        public class ParticleInfo
         {
             public ParticleSystem ParticleSystem { get; private set; }
             public ParticleSystemRenderer Renderer { get; private set; }
             public ParticlePlayerSortingOrder SortingOrder { get; private set; }
             public float StartRotation { get; private set; }
             public float DefaultSpeed { get; private set; }
+            public bool IsSubemitter { get; private set; }
+            public LifecycleType LifeCycle { get; set; }
 
-            public ParticleSystemInfo(ParticleSystem particleSystem)
+            public ParticleInfo(ParticleSystem particleSystem, bool isSubemitter)
             {
                 ParticleSystem = particleSystem;
                 StartRotation = particleSystem.main.startRotationMultiplier;
                 Renderer = particleSystem.GetComponent<ParticleSystemRenderer>();
                 SortingOrder = particleSystem.GetComponent<ParticlePlayerSortingOrder>();
-
                 DefaultSpeed = particleSystem.main.simulationSpeed;
+                IsSubemitter = isSubemitter;
+                LifeCycle = LifecycleType.None;
             }
+        }
+
+        [Serializable]
+        public class EventInfo
+        {
+            public enum EventTrigger
+            {
+                Time = 0,
+                Birth,
+                Alive,
+                Death,
+            }
+
+            [SerializeField]
+            public EventTrigger trigger = EventTrigger.Time;
+            [SerializeField]
+            public ParticleSystem target = null;
+            [SerializeField]
+            public float time = 0f;
+            [SerializeField]
+            public string message = null;
         }
 
         //----- field -----
@@ -68,9 +101,11 @@ namespace Modules.Particle
         [SerializeField]
         private bool ignoreTimeScale = false;
         [SerializeField]
-        private LifcycleType lifecycleType = LifcycleType.ParticleSystem;
+        private LifecycleControl lifecycleControl = LifecycleControl.ParticleSystem;
         [SerializeField]
         private int sortingOrder = 0;
+        [SerializeField]
+        private EventInfo[] eventInfos = new EventInfo[0];
 
         // ※ Animationから再生、中断する為のフィールド.
 
@@ -79,9 +114,12 @@ namespace Modules.Particle
         [SerializeField]
         private bool pause = false;
 
+        [NonSerialized]
+        private bool initialized = false;
+
         /// <summary>
-        /// <see cref="lifecycleType" /> が <see cref="LifcycleType.Manual" /> の場合のエフェクト継続時間.
-        /// <see cref="LifcycleType.Manual" /> 以外の場合は無視される.
+        /// <see cref="lifecycleControl" /> が <see cref="LifecycleControl.Manual" /> の場合のエフェクト継続時間.
+        /// <see cref="LifecycleControl.Manual" /> 以外の場合は無視される.
         /// </summary>
         [SerializeField]
         private float lifeTime = 0f;
@@ -89,8 +127,9 @@ namespace Modules.Particle
         // 現在の状態.
         private State currentState = State.Stop;
 
-        // 現在の実行時間.
+        // 実行時間.
         private float currentTime = 0f;
+        private float prevTime = 0f;
 
         // 以前の状態.
         private State? prevState = null;
@@ -99,10 +138,7 @@ namespace Modules.Particle
         public float speedRate = 1f;
 
         // 管理対象.
-        protected ParticleSystemInfo[] particleSystems = null;
-
-        // 終了通知.
-        private Subject<ParticlePlayer> onEnd = null;
+        protected ParticleInfo[] particleInfos = null;
 
         // アニメーションイベントフラグ.
         private bool played = false;
@@ -113,11 +149,15 @@ namespace Modules.Particle
 
         // 再生キャンセル用.
         private IDisposable playDisposable = null;
+        // 終了通知用.
+        private IDisposable stopNotificationDisposable = null;
 
         private LifetimeDisposable disposable = new LifetimeDisposable();
 
-        [NonSerialized]
-        private bool isInitialized = false;
+        // イベント通知.
+        private Subject<string> onEvent = null;
+        // 終了通知.
+        private Subject<ParticlePlayer> onEnd = null;
 
         //----- property -----
 
@@ -187,13 +227,13 @@ namespace Modules.Particle
             }
         }
 
-        public bool IsInitialized { get { return isInitialized; } }
+        public bool IsInitialized { get { return initialized; } }
 
         //----- method -----
 
-        protected virtual void Initialize()
+        private void Initialize()
         {
-            if(isInitialized) { return; }
+            if(initialized) { return; }
 
             CollectContents();
 
@@ -206,7 +246,10 @@ namespace Modules.Particle
                 Stop();
             }
 
-            isInitialized = true;
+            // 状態更新.
+            Observable.EveryUpdate().Subscribe(_ => UpdateState()).AddTo(disposable.Disposable);
+
+            initialized = true;
         }
 
         void OnEnable()
@@ -224,19 +267,6 @@ namespace Modules.Particle
         void OnDisable()
         {
             Stop(true, true);
-        }
-
-        /// <summary>
-        /// <see cref="UniRx.Triggers.ObservableUpdateTrigger" /> で監視するとPrefabの変更になってしまうのでUpdateで監視を行う.
-        /// </summary>
-        void Update()
-        {
-            if(!isInitialized)
-            {
-                Initialize();
-            }
-
-            UpdateState();
         }
 
         private void UpdateState()
@@ -271,6 +301,11 @@ namespace Modules.Particle
 
         public IObservable<Unit> Play(bool restart = true)
         {
+            if (!initialized)
+            {
+                Initialize();
+            }
+
             if (restart)
             {
                 Stop(true, true);
@@ -283,7 +318,8 @@ namespace Modules.Particle
                 }
             }
 
-            playObservable = Observable.FromCoroutine(() => PlayInternal()).Share();
+            // 再生.
+            playObservable = Observable.FromMicroCoroutine(() => PlayInternal()).Share();
 
             return playObservable;
         }
@@ -291,13 +327,6 @@ namespace Modules.Particle
         private IEnumerator PlayInternal()
         {
             UnityUtility.SetActive(gameObject, true);
-
-            // ヒエラルキー上で非アクティブでないか.
-            if (!UnityUtility.IsActiveInHierarchy(gameObject))
-            {
-                Debug.LogErrorFormat("Animation can't play not active in hierarchy.\n{0}", gameObject.transform.name);
-                yield break;
-            }
 
             ApplySortingOrder(sortingOrder);
 
@@ -311,82 +340,99 @@ namespace Modules.Particle
                 // 開始.
                 SetState(State.Play);
 
-                // 止まってたら開始.
-                foreach (var ps in particleSystems.Where(x => !x.ParticleSystem.isPlaying))
+                for (var i = 0; i < particleInfos.Length; i++)
                 {
-                    ps.ParticleSystem.Play();
+                    var particleInfo = particleInfos[i];
+
+                    // 止まってたら開始.
+                    if (!particleInfo.ParticleSystem.isPlaying)
+                    {
+                        particleInfo.ParticleSystem.Play();
+                    }
+
+                    particleInfo.LifeCycle = LifecycleType.None;
                 }
 
                 // 再生速度.
                 ApplySpeedRate();
 
                 // 終了待ち.
-                yield return Observable.FromMicroCoroutine(() => WaitForEndOfAnimation()).ToYieldInstruction();
+                var updateYield = Observable.FromMicroCoroutine(() => FrameUpdate()).ToYieldInstruction();
+
+                while (!updateYield.IsDone)
+                {
+                    yield return null;
+                }                
 
                 if (endActionType != EndActionType.Loop) { break; }
+
+                if (State == State.Stop) { break; }                
             }
 
             EndAction();
         }
 
-        // アニメーションの終了待ち.
-        private IEnumerator WaitForEndOfAnimation()
+        // 更新.
+        private IEnumerator FrameUpdate()
         {
-            if (isInitialized)
+            while (true)
             {
-                while (true)
+                if (State == State.Stop) { break; }
+
+                if (State == State.Play)
                 {
-                    if (State == State.Stop) { break; }
-
-                    if (State == State.Play)
+                    if (Application.isPlaying)
                     {
-                        if (Application.isPlaying)
-                        {
-                            var time = ignoreTimeScale ? Time.unscaledDeltaTime : Time.deltaTime;
+                        var time = ignoreTimeScale ? Time.unscaledDeltaTime : Time.deltaTime;
 
-                            // 時間更新.
-                            FrameUpdate(time);
+                        // 時間更新.
+                        UpdateCurrentTime(time);
 
-                            // ParticleSystemのSimulate.
-                            foreach (var ps in particleSystems)
-                            {
-                                if (UnityUtility.IsNull(ps.ParticleSystem)) { continue; }
-
-                                if (!ps.ParticleSystem.gameObject.activeInHierarchy) { continue; }
-
-                                ps.ParticleSystem.Simulate(time, false, false);
-                            }
-
-                            // 終了監視.
-                            if (!IsAlive()) { break; }
-                        }
+                        // イベント発行.
+                        InvokeEvent();
                     }
-
-                    yield return null;
                 }
+
+                // 終了監視.
+                if (!IsAlive()) { break; }
+
+                yield return null;
             }
         }
 
         public void Stop(bool immediate = false, bool clear = true)
         {
-            if (!isInitialized) { return; }
+            if (!initialized) { return; }
 
-            if (particleSystems != null)
+            if (particleInfos != null)
             {
-                foreach (var ps in particleSystems)
+                foreach (var particleInfo in particleInfos)
                 {
-                    if (UnityUtility.IsNull(ps.ParticleSystem)) { continue; }
+                    if (UnityUtility.IsNull(particleInfo.ParticleSystem)) { continue; }
 
                     var stopBehavior = immediate ? 
                         ParticleSystemStopBehavior.StopEmittingAndClear : 
                         ParticleSystemStopBehavior.StopEmitting;
 
-                    ps.ParticleSystem.Stop(true, stopBehavior);
+                    particleInfo.ParticleSystem.Stop(true, stopBehavior);
+                    particleInfo.LifeCycle = LifecycleType.None;
                 }
+            }
+
+            if (stopNotificationDisposable != null)
+            {
+                stopNotificationDisposable.Dispose();
+                stopNotificationDisposable = null;
             }
 
             Action onStopComplete = () =>
             {
+                if (stopNotificationDisposable != null)
+                {
+                    stopNotificationDisposable.Dispose();
+                    stopNotificationDisposable = null;
+                }
+
                 if (playDisposable != null)
                 {
                     playDisposable.Dispose();
@@ -394,6 +440,8 @@ namespace Modules.Particle
                 }
 
                 currentTime = 0f;
+                prevTime = 0f;
+
                 playObservable = null;
 
                 SetState(State.Stop);
@@ -410,15 +458,17 @@ namespace Modules.Particle
             }
             else
             {
-                OnEndAsObservable().Subscribe(_ => onStopComplete()).AddTo(disposable.Disposable);
+                stopNotificationDisposable = OnEndAsObservable()
+                    .Subscribe(_ => onStopComplete())
+                    .AddTo(disposable.Disposable);
             }
         }
 
         private void ApplySpeedRate()
         {
-            if (particleSystems != null)
+            if (particleInfos != null)
             {
-                foreach (var ps in particleSystems)
+                foreach (var ps in particleInfos)
                 {
                     var main = ps.ParticleSystem.main;
 
@@ -430,6 +480,7 @@ namespace Modules.Particle
         private void ResetContents()
         {
             currentTime = 0f;
+            prevTime = 0f;
 
             prevState = null;
             pause = paused = false;
@@ -437,26 +488,27 @@ namespace Modules.Particle
 
             SetState(State.Stop);
 
-            if (particleSystems != null)
+            if (particleInfos != null)
             {
-                foreach (var ps in particleSystems)
+                foreach (var particleInfo in particleInfos)
                 {
-                    var emission = ps.ParticleSystem.emission;
+                    var emission = particleInfo.ParticleSystem.emission;
                     emission.enabled = true;
 
-                    var main = ps.ParticleSystem.main;
-                    main.simulationSpeed = ps.DefaultSpeed;
+                    var main = particleInfo.ParticleSystem.main;
+                    main.simulationSpeed = particleInfo.DefaultSpeed;
 
-                    ps.ParticleSystem.Simulate(0f, false, true);
+                    particleInfo.ParticleSystem.Simulate(0f, false, true);
+                    particleInfo.LifeCycle = LifecycleType.None;
                 }
             }
         }
 
         private void Clear()
         {
-            if (particleSystems != null)
+            if (particleInfos != null)
             {
-                foreach (var ps in particleSystems)
+                foreach (var ps in particleInfos)
                 {
                     if (UnityUtility.IsNull(ps.ParticleSystem)) { continue; }
 
@@ -472,7 +524,7 @@ namespace Modules.Particle
                 // Pause -> Play.
                 if (state == State.Play && prevState.Value == State.Pause)
                 {
-                    foreach (var ps in particleSystems)
+                    foreach (var ps in particleInfos)
                     {
                         ps.ParticleSystem.Play();
                     }
@@ -481,7 +533,7 @@ namespace Modules.Particle
                 // Play -> Pause.
                 if (state == State.Pause && prevState.Value == State.Play)
                 {
-                    foreach (var ps in particleSystems)
+                    foreach (var ps in particleInfos)
                     {
                         ps.ParticleSystem.Pause(true);
                     }
@@ -512,26 +564,121 @@ namespace Modules.Particle
             currentState = state;
         }
 
-        protected void FrameUpdate(float time)
+        protected void UpdateCurrentTime(float time)
         {
             if (State != State.Play) { return; }
 
             UpdateState();
 
-            currentTime += time;            
+            prevTime = currentTime;
+            currentTime += time;
+
+            // Particle更新.
+            for (var i = 0; i < particleInfos.Length; i++)
+            {
+                var particleInfo = particleInfos[i];
+
+                var particleSystem = particleInfo.ParticleSystem;
+
+                if (UnityUtility.IsNull(particleSystem)) { continue; }
+
+                // フレーム更新.
+                particleSystem.Simulate(time, false, false);
+
+                // 状態更新.
+                var playback = particleSystem.IsPlayback(particleInfo.IsSubemitter);
+
+                switch (particleInfo.LifeCycle)
+                {
+                    case LifecycleType.None:
+                        particleInfo.LifeCycle = playback ? LifecycleType.Birth : LifecycleType.None;
+                        break;
+
+                    case LifecycleType.Birth:
+                        particleInfo.LifeCycle = playback ? LifecycleType.Alive : LifecycleType.Death;
+                        break;
+
+                    case LifecycleType.Alive:
+                        particleInfo.LifeCycle = playback ? LifecycleType.Alive : LifecycleType.Death;
+                        break;
+
+                    case LifecycleType.Death:
+                        particleInfo.LifeCycle = LifecycleType.None;
+                        break;
+                }
+            }
         }
 
-        protected bool IsAlive()
+        /// <summary> イベント発行. </summary>
+        private void InvokeEvent()
+        {
+            if (eventInfos == null) { return; }
+
+            for (var i = 0; i < eventInfos.Length; i++)
+            {
+                var eventInfo = eventInfos[i];
+
+                if (string.IsNullOrEmpty(eventInfo.message)) { continue; }
+
+                var eventInvoke = false;
+
+                var particleInfo = GetEventTargetParticle(eventInfo);
+
+                switch (eventInfo.trigger)
+                {
+                    case EventInfo.EventTrigger.Time:
+                        eventInvoke = prevTime < eventInfo.time && eventInfo.time <= currentTime;
+                        break;
+
+                    case EventInfo.EventTrigger.Birth:
+                        eventInvoke = particleInfo != null && particleInfo.LifeCycle == LifecycleType.Birth;
+                        break;
+
+                    case EventInfo.EventTrigger.Alive:
+                        eventInvoke = particleInfo != null && particleInfo.LifeCycle == LifecycleType.Alive;
+                        break;
+
+                    case EventInfo.EventTrigger.Death:
+                        eventInvoke = particleInfo != null && particleInfo.LifeCycle == LifecycleType.Death;
+                        break;
+                }
+
+                if (eventInvoke)
+                {
+                    if (onEvent != null)
+                    {
+                        onEvent.OnNext(eventInfo.message);
+                    }
+                }
+            }
+        }
+
+        private ParticleInfo GetEventTargetParticle(EventInfo eventInfo)
+        {
+            if (eventInfo.target == null) { return null; }
+
+            return particleInfos.FirstOrDefault(x => x.ParticleSystem == eventInfo.target);
+        }
+
+        public bool IsAlive()
         {
             var result = false;
 
-            switch (lifecycleType)
+            switch (lifecycleControl)
             {
-                case LifcycleType.ParticleSystem:
-                    result = IsAliveParticleSystem();
+                case LifecycleControl.ParticleSystem:
+                    {
+                        // 毎フレーム呼ばれる処理なのでLinqは使わない.
+                        for (var i = 0; i < particleInfos.Length; i++)
+                        {
+                            var info = particleInfos[i];
+
+                            result |= info.ParticleSystem.IsPlayback(info.IsSubemitter);
+                        }
+                    }
                     break;
 
-                case LifcycleType.Manual:
+                case LifecycleControl.Manual:
                     // 経過時間が生存期間より短ければ生存.
                     result = currentTime <= lifeTime;
                     break;
@@ -540,39 +687,22 @@ namespace Modules.Particle
             return result;
         }
 
-        private bool IsAliveParticleSystem()
-        {
-            // 毎フレーム呼ばれる処理なのでLinqは使わない.
-            foreach (var element in particleSystems)
-            {
-                var ps = element.ParticleSystem;
-
-                if (UnityUtility.IsNull(ps)) { continue; }
-
-                if (!UnityUtility.IsActiveInHierarchy(ps.gameObject)) { continue; }
-
-                // ループエフェクトは常に生存.
-                if (ps.main.loop) { return true; }
-
-                // 再生時間より短いか.
-                if (ps.time < ps.main.duration) { return true; }
-
-                // 1つでも生きてるParticleSystemがいたら生存中.
-                // ※ ParticleSystem.IsAlive()が正常に動かない為、particleCountで判定.
-                if (0 < ps.particleCount) { return true; }
-            }
-
-            return false;
-        }
-
         private void CollectContents()
         {
             var descendants = gameObject.DescendantsAndSelf().ToArray();
 
-            particleSystems = descendants
-                .OfComponent<ParticleSystem>()
-                .Select(x => new ParticleSystemInfo(x))
-                .ToArray();
+            var particleSystems = descendants.OfComponent<ParticleSystem>().ToArray();
+            var subemitters = particleSystems.SelectMany(x => x.GetSubemitters()).ToArray();
+
+            particleInfos = particleSystems.Select(x => new ParticleInfo(x, subemitters.Any(y => y == x))).ToArray();
+
+            // Apply Settings.
+            foreach (var ps in particleInfos)
+            {
+                var mainModule = ps.ParticleSystem.main;
+
+                mainModule.playOnAwake = false;
+            }
 
             ApplySortingLayer(sortingLayer);
             ApplySortingOrder(sortingOrder);
@@ -614,9 +744,9 @@ namespace Modules.Particle
 
         private void ApplySortingLayer(SortingLayer newValue)
         {
-            if (particleSystems != null)
+            if (particleInfos != null)
             {
-                foreach (var info in particleSystems)
+                foreach (var info in particleInfos)
                 {
                     info.Renderer.sortingLayerID = (int)newValue;
                 }
@@ -625,9 +755,9 @@ namespace Modules.Particle
 
         private void ApplySortingOrder(int baseValue)
         {
-            if (particleSystems != null)
+            if (particleInfos != null)
             {
-                foreach (var info in particleSystems)
+                foreach (var info in particleInfos)
                 {
                     if (info.SortingOrder == null) { continue; }
 
@@ -636,12 +766,25 @@ namespace Modules.Particle
             }
         }
 
+        private void OnTransformChildrenChanged()
+        {
+            CollectContents();
+        }
+
+        /// <summary> イベント発生通知 </summary>
+        public IObservable<string> OnEventAsObservable()
+        {
+            return onEvent ?? (onEvent = new Subject<string>());
+        }
+
+        /// <summary> 終了通知 </summary>
         public IObservable<ParticlePlayer> OnEndAsObservable()
         {
             return onEnd ?? (onEnd = new Subject<ParticlePlayer>());
         }
 
-        private void OnTransformChildrenChanged()
+        [ContextMenu("CollectContents")]
+        private void RunCollectContents()
         {
             CollectContents();
         }
