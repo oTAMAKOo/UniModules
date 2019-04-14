@@ -411,9 +411,9 @@ namespace Modules.Particle
             {
                 GUILayout.FlexibleSpace();
 
-                EditorGUILayout.LabelField("Trigger", style, GUILayout.Width(55f));
-                EditorGUILayout.LabelField("Invoke", style, GUILayout.Width(150f));
-                EditorGUILayout.LabelField("Message", style, GUILayout.Width(150f));
+                EditorGUILayout.LabelField("Trigger", style, GUILayout.Width(60f));
+                EditorGUILayout.LabelField("Invoke", style, GUILayout.MinWidth(100f));
+                EditorGUILayout.LabelField("Message", style, GUILayout.MinWidth(100f));
                 GUILayout.Space(eventList.Count <= 5 ? 30f : 43f);
 
                 GUILayout.FlexibleSpace();
@@ -428,7 +428,7 @@ namespace Modules.Particle
             {
                 GUILayout.FlexibleSpace();
 
-                info.trigger = (ParticlePlayer.EventInfo.EventTrigger)EditorGUILayout.EnumPopup(info.trigger, GUILayout.Width(55f));
+                info.trigger = (ParticlePlayer.EventInfo.EventTrigger)EditorGUILayout.EnumPopup(info.trigger, GUILayout.Width(60f));
 
                 switch (info.trigger)
                 {
@@ -436,7 +436,7 @@ namespace Modules.Particle
                         {
                             info.target = null;
 
-                            info.time = (float)EditorGUILayout.DelayedDoubleField(info.time, GUILayout.Width(150f));
+                            info.time = (float)EditorGUILayout.DelayedDoubleField(info.time, GUILayout.MinWidth(100f));
                         }
                         break;
 
@@ -448,7 +448,7 @@ namespace Modules.Particle
 
                             EditorGUI.BeginChangeCheck();
 
-                            var particleSystem = (ParticleSystem)EditorGUILayout.ObjectField(info.target, typeof(ParticleSystem), true, GUILayout.Width(150f));
+                            var particleSystem = (ParticleSystem)EditorGUILayout.ObjectField(info.target, typeof(ParticleSystem), true, GUILayout.MinWidth(100f));
 
                             if (EditorGUI.EndChangeCheck())
                             {
@@ -463,7 +463,7 @@ namespace Modules.Particle
                         break;
                 }
 
-                info.message = EditorGUILayout.DelayedTextField(info.message, GUILayout.Width(150f));
+                info.message = EditorGUILayout.DelayedTextField(info.message, GUILayout.MinWidth(100f));
 
                 if (GUILayout.Button("-", EditorStyles.miniButton, GUILayout.Width(25f)))
                 {
