@@ -436,7 +436,7 @@ namespace Modules.Particle
                         {
                             info.target = null;
 
-                            info.time = (float)EditorGUILayout.DelayedDoubleField(info.time, GUILayout.MinWidth(100f));
+                            info.time = (float)EditorGUILayout.DoubleField(info.time, GUILayout.MinWidth(100f));
                         }
                         break;
 
@@ -463,7 +463,7 @@ namespace Modules.Particle
                         break;
                 }
 
-                info.message = EditorGUILayout.DelayedTextField(info.message, GUILayout.MinWidth(100f));
+                info.message = EditorGUILayout.TextField(info.message, GUILayout.MinWidth(100f));
 
                 if (GUILayout.Button("-", EditorStyles.miniButton, GUILayout.Width(25f)))
                 {
