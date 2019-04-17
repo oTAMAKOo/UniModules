@@ -1,12 +1,9 @@
 ﻿
-using UnityEngine;
 using UnityEditor;
 using System;
-using System.Linq;
 using System.IO;
 using Extensions;
 using UniRx;
-using UnityEditor.Callbacks;
 
 namespace Modules.Devkit.ScriptableObjects
 {

@@ -1,16 +1,11 @@
 ﻿
 using UnityEngine;
 using UnityEditor;
-using System;
 using System.Linq;
-using System.Collections.Generic;
-using UniRx;
-using Extensions;
-using Extensions.Devkit;
 
 namespace Modules.Devkit.ScriptableObjects
 {
-	public abstract class SingletonScriptableObject<T> : UnityEngine.ScriptableObject where T : SingletonScriptableObject<T>
+    public abstract class SingletonScriptableObject<T> : UnityEngine.ScriptableObject where T : SingletonScriptableObject<T>
     {
         //----- params -----
 
