@@ -35,6 +35,26 @@ namespace Modules.UI.TextEffect
                 UnityEditorUtility.RegisterUndo("TextKerninInspector Undo", instance);
                 instance.Spacing = spacing;
             }
+
+            EditorGUI.BeginChangeCheck();
+
+            var ttt = EditorGUILayout.FloatField("ttt", instance.TTT);
+
+            if (EditorGUI.EndChangeCheck())
+            {
+                UnityEditorUtility.RegisterUndo("TextKerninInspector Undo", instance);
+                instance.TTT = ttt;
+            }
+
+            EditorGUI.BeginChangeCheck();
+
+            var yyy = EditorGUILayout.FloatField("yyy", instance.YYY);
+
+            if (EditorGUI.EndChangeCheck())
+            {
+                UnityEditorUtility.RegisterUndo("TextKerninInspector Undo", instance);
+                instance.YYY = yyy;
+            }
         }
     }
 }

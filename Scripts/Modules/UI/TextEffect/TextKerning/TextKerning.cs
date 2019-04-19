@@ -21,6 +21,10 @@ namespace Modules.UI.TextEffect
 
         [SerializeField]
         private float spacing = 0f;
+        [SerializeField]
+        private float ttt = 0f;
+        [SerializeField]
+        private float yyy = 0f;
 
         private Text textComponent = null;
 
@@ -40,6 +44,40 @@ namespace Modules.UI.TextEffect
                 if (spacing == value) { return; }
 
                 spacing = value;
+
+                if (graphic != null)
+                {
+                    graphic.SetVerticesDirty();
+                }
+            }
+        }
+
+        public float YYY
+        {
+            get { return yyy; }
+
+            set
+            {
+                if (yyy == value) { return; }
+
+                yyy = value;
+
+                if (graphic != null)
+                {
+                    graphic.SetVerticesDirty();
+                }
+            }
+        }
+
+        public float TTT
+        {
+            get { return ttt; }
+
+            set
+            {
+                if (ttt == value) { return; }
+
+                ttt = value;
 
                 if (graphic != null)
                 {
@@ -84,6 +122,7 @@ namespace Modules.UI.TextEffect
             var lines = str.Split('\n');
 
             var pos = Vector3.zero;
+            var xOffset = 0f;
             var letterOffset = spacing * TextComponent.fontSize / 100f;
             var alignmentFactor = 0f;
 
@@ -137,6 +176,8 @@ namespace Modules.UI.TextEffect
 
                 var lineOffset = (lineLength - 1) * letterOffset * alignmentFactor;
 
+                pos.x -= lineOffset;
+
                 for (int charIdx = 0, actualCharIndex = 0; charIdx < line.Length; charIdx++, actualCharIndex++)
                 {
                     if (isRichText)
@@ -182,7 +223,17 @@ namespace Modules.UI.TextEffect
                     var vert5 = verts[idx5];
                     var vert6 = verts[idx6];
 
-                    pos = Vector3.right * (letterOffset * actualCharIndex - lineOffset);
+                    if (line[charIdx] == '1')
+                    {
+                        xOffset += TextComponent.fontSize / 100f * ttt; 
+                    }
+
+                    if (0 < charIdx && line[charIdx -1] == '1')
+                    {
+                        xOffset += TextComponent.fontSize / 100f * yyy;
+                    }
+
+                    pos = Vector3.right * (letterOffset * actualCharIndex + xOffset);
 
                     vert1.position += pos;
                     vert2.position += pos;
@@ -200,6 +251,8 @@ namespace Modules.UI.TextEffect
 
                     glyphIdx++;
                 }
+
+                xOffset = 0f;
 
                 // Offset for carriage return character that still generates verts
                 glyphIdx++;
