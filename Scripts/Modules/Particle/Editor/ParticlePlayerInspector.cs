@@ -321,7 +321,7 @@ namespace Modules.Particle
                     {
                         GUILayout.Space(3f);
 
-                        DrawEventHeaderGUI(eventList);
+                        DrawEventHeaderGUI(eventList.Count);
 
                         var deleteTargets = new List<ParticlePlayer.EventInfo>();
 
@@ -398,7 +398,7 @@ namespace Modules.Particle
             EditorGUILayout.Separator();
         }
 
-        private void DrawEventHeaderGUI(List<ParticlePlayer.EventInfo> eventList)
+        private void DrawEventHeaderGUI(int itemCount)
         {
             var style = new GUIStyle("ShurikenModuleTitle");
             style.font = new GUIStyle(EditorStyles.label).font;
@@ -414,7 +414,13 @@ namespace Modules.Particle
                 EditorGUILayout.LabelField("Trigger", style, GUILayout.Width(60f));
                 EditorGUILayout.LabelField("Invoke", style, GUILayout.MinWidth(100f));
                 EditorGUILayout.LabelField("Message", style, GUILayout.MinWidth(100f));
-                GUILayout.Space(eventList.Count <= 5 ? 30f : 43f);
+
+                GUILayout.Space(30f);
+
+                if (5 <= itemCount)
+                {
+                    GUILayout.Space(18f);
+                }
 
                 GUILayout.FlexibleSpace();
             }

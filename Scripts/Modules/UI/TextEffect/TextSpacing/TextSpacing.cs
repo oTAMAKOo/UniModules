@@ -1,6 +1,4 @@
 ﻿
-// Reference form: http://forum.unity3d.com/threads/adjustable-character-spacing-free-script.288277/
-
 using UnityEngine;
 using UnityEngine.UI;
 using System.Collections;
@@ -11,7 +9,7 @@ using Extensions;
 namespace Modules.UI.TextEffect
 {
     [RequireComponent(typeof(Text))]
-    public class TextKerning : BaseMeshEffect
+    public class TextSpacing : BaseMeshEffect
     {
         //----- params -----
 
@@ -20,64 +18,33 @@ namespace Modules.UI.TextEffect
         //----- field -----
 
         [SerializeField]
-        private float spacing = 0f;
+        private float tracking = 0f;
         [SerializeField]
-        private float ttt = 0f;
-        [SerializeField]
-        private float yyy = 0f;
+        private FontKerningSetting kerningSetting = null;
 
         private Text textComponent = null;
 
         //----- property -----
 
-        private Text TextComponent
+        public Text Text
         {
             get { return textComponent ?? (textComponent = UnityUtility.GetComponent<Text>(this)); }
         }
 
-        public float Spacing
+        public FontKerningSetting KerningSetting
         {
-            get { return spacing; }
-
-            set
-            {
-                if (spacing == value) { return; }
-
-                spacing = value;
-
-                if (graphic != null)
-                {
-                    graphic.SetVerticesDirty();
-                }
-            }
+            get { return kerningSetting; }
         }
 
-        public float YYY
+        public float Tracking
         {
-            get { return yyy; }
+            get { return tracking; }
 
             set
             {
-                if (yyy == value) { return; }
+                if (tracking == value) { return; }
 
-                yyy = value;
-
-                if (graphic != null)
-                {
-                    graphic.SetVerticesDirty();
-                }
-            }
-        }
-
-        public float TTT
-        {
-            get { return ttt; }
-
-            set
-            {
-                if (ttt == value) { return; }
-
-                ttt = value;
+                tracking = value;
 
                 if (graphic != null)
                 {
@@ -106,10 +73,10 @@ namespace Modules.UI.TextEffect
         {
             if (!IsActive()){ return; }
 
-            var str = TextComponent.text;
+            var str = Text.text;
 
             // Artificially insert line breaks for automatic line breaks.
-            var lineInfos = TextComponent.cachedTextGenerator.lines;
+            var lineInfos = Text.cachedTextGenerator.lines;
 
             for (var i = lineInfos.Count - 1; i > 0; i--)
             {
@@ -123,20 +90,20 @@ namespace Modules.UI.TextEffect
 
             var pos = Vector3.zero;
             var xOffset = 0f;
-            var letterOffset = spacing * TextComponent.fontSize / 100f;
+            var letterOffset = tracking * Text.fontSize / 100f;
             var alignmentFactor = 0f;
 
             // character index from the beginning of the text, including RichText tags and line breaks.
             var glyphIdx = 0;
 
-            var isRichText = TextComponent.supportRichText;
+            var isRichText = Text.supportRichText;
 
             // when using RichText this will collect all tags (index, length, value)
             IEnumerator matchedTagCollection = null;
 
             Match currentMatchedTag = null;
 
-            switch (TextComponent.alignment)
+            switch (Text.alignment)
             {
                 case TextAnchor.LowerLeft:
                 case TextAnchor.MiddleLeft:
@@ -216,24 +183,34 @@ namespace Modules.UI.TextEffect
                     // Check for truncated text (doesn't generate verts for all characters)
                     if (idx6 > verts.Count - 1){ return; }
 
+                    if (kerningSetting != null && Text.font == kerningSetting.Font)
+                    {
+                        var leftCharInfo = kerningSetting.GetCharInfo(line[charIdx]);
+
+                        if (leftCharInfo != null)
+                        {
+                            xOffset += Text.fontSize / 100f * leftCharInfo.leftSpace;
+                        }
+                        
+                        if (0 < charIdx)
+                        {
+                            var rightCharInfo = kerningSetting.GetCharInfo(line[charIdx - 1]);
+
+                            if (rightCharInfo != null)
+                            {
+                                xOffset += Text.fontSize / 100f * rightCharInfo.rightSpace;
+                            }
+                        }
+                    }
+
+                    pos = Vector3.right * (letterOffset * actualCharIndex + xOffset);
+
                     var vert1 = verts[idx1];
                     var vert2 = verts[idx2];
                     var vert3 = verts[idx3];
                     var vert4 = verts[idx4];
                     var vert5 = verts[idx5];
                     var vert6 = verts[idx6];
-
-                    if (line[charIdx] == '1')
-                    {
-                        xOffset += TextComponent.fontSize / 100f * ttt; 
-                    }
-
-                    if (0 < charIdx && line[charIdx -1] == '1')
-                    {
-                        xOffset += TextComponent.fontSize / 100f * yyy;
-                    }
-
-                    pos = Vector3.right * (letterOffset * actualCharIndex + xOffset);
 
                     vert1.position += pos;
                     vert2.position += pos;
