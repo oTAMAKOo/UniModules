@@ -19,18 +19,13 @@ namespace Modules.UI.TextEffect
         //----- field -----
 
         private Vector3 scrollPosition = Vector3.zero;
-        private TextSpacing[] targets = null;
+        private TextSpacing[] applyTargets = null;
 
         private FontKerningSetting instance = null;
 
         //----- property -----
 
         //----- method -----
-
-        void OnEnable()
-        {
-            targets = UnityUtility.FindObjectsOfType<TextSpacing>();
-        }
 
         public override void OnInspectorGUI()
         {
@@ -41,6 +36,11 @@ namespace Modules.UI.TextEffect
 
             var infos = Reflection.GetPrivateField<FontKerningSetting, FontKerningSetting.CharInfo[]>(instance, "infos");
             var list = infos != null ? infos.ToList() : new List<FontKerningSetting.CharInfo>();
+
+            if (applyTargets == null)
+            {
+                applyTargets = UnityUtility.FindObjectsOfType<TextSpacing>();
+            }
 
             EditorGUILayout.Separator();
 
@@ -131,8 +131,10 @@ namespace Modules.UI.TextEffect
             if (updated)
             {
                 UnityEditorUtility.RegisterUndo("FontKerningSettingInspector Undo", instance);
+
                 Reflection.SetPrivateField(instance, "font", font);
                 Reflection.SetPrivateField(instance, "infos", list.Where(x => x != null).ToArray());
+                Reflection.SetPrivateField(instance, "dictionary", (Dictionary<char, FontKerningSetting.CharInfo>)null);
 
                 ApplyTextSpacing();
             }
@@ -149,19 +151,16 @@ namespace Modules.UI.TextEffect
 
             using (new EditorGUILayout.HorizontalScope())
             {
-                GUILayout.FlexibleSpace();
-
-                EditorGUILayout.LabelField("Char", style, GUILayout.Width(50f));
+                GUILayout.Space(2f);
+                EditorGUILayout.LabelField("Char", style, GUILayout.Width(55f));
                 EditorGUILayout.LabelField("Space (Left)", style, GUILayout.MinWidth(50f));
                 EditorGUILayout.LabelField("Space (Right)", style, GUILayout.MinWidth(50f));
-                GUILayout.Space(30f);
+                GUILayout.Space(35f);
 
                 if (15 <= itemCount)
                 {
                     GUILayout.Space(18f);
                 }
-
-                GUILayout.FlexibleSpace();
             }
         }
 
@@ -171,8 +170,6 @@ namespace Modules.UI.TextEffect
 
             using (new EditorGUILayout.HorizontalScope())
             {
-                GUILayout.FlexibleSpace();
-
                 EditorGUI.BeginChangeCheck();
 
                 var text = EditorGUILayout.DelayedTextField(info.character.ToString(), GUILayout.Width(50f));
@@ -182,16 +179,18 @@ namespace Modules.UI.TextEffect
                     info.character = text.FirstOrDefault();
                 }
 
-                info.leftSpace = EditorGUILayout.FloatField(info.leftSpace, GUILayout.MinWidth(50f));
+                var originLabelWidth = EditorLayoutTools.SetLabelWidth(20f);
 
-                info.rightSpace = EditorGUILayout.FloatField(info.rightSpace, GUILayout.MinWidth(50f));
+                info.leftSpace = EditorGUILayout.FloatField("◀▶", info.leftSpace, GUILayout.ExpandWidth(true));
+
+                info.rightSpace = EditorGUILayout.FloatField("◀▶", info.rightSpace, GUILayout.ExpandWidth(true));
+
+                EditorLayoutTools.SetLabelWidth(originLabelWidth);
 
                 if (GUILayout.Button("-", EditorStyles.miniButton, GUILayout.Width(25f)))
                 {
                     delete = true;
                 }
-
-                GUILayout.FlexibleSpace();
             }
 
             return delete;
@@ -199,7 +198,7 @@ namespace Modules.UI.TextEffect
 
         private void ApplyTextSpacing()
         {
-            foreach (var target in targets)
+            foreach (var target in applyTargets)
             {
                 if (target.Text.font == null) { continue; }
 

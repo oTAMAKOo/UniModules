@@ -40,61 +40,53 @@ namespace Modules.UI.TextEffect
                 UnityEditorUtility.RegisterUndo("TextSpacingInspector Undo", instance);
                 instance.Tracking = spacing;
             }
-
-            GUILayout.Space(2f);
-
+            
             if (currentFont != instance.Text.font)
             {
                 currentFont = instance.Text.font;
 
-                if (settings == null)
-                {
-                    var assets = UnityEditorUtility.FindAssetsByType<FontKerningSetting>("t:FontKerningSetting").ToArray();
+                var assets = UnityEditorUtility.FindAssetsByType<FontKerningSetting>("t:FontKerningSetting");
 
-                    settings = assets.Where(x => x.Font == currentFont).ToArray();
-                }
+                settings = assets.Where(x => x.Font == currentFont).ToArray();
             }
 
-            FontKerningSetting kerningSetting = null;
-            
-            EditorGUI.BeginChangeCheck();
-
-            kerningSetting = (FontKerningSetting)EditorGUILayout.ObjectField("Font Setting", instance.KerningSetting, typeof(FontKerningSetting), false);
-
-            if (EditorGUI.EndChangeCheck())
+            using (new DisableScope(settings.IsEmpty()))
             {
-                UnityEditorUtility.RegisterUndo("TextSpacingInspector Undo", instance);
-                Reflection.SetPrivateField(instance, "kerningSetting", kerningSetting);
-            }
-
-            if (settings.Any())
-            {
-                GUILayout.Space(2f);
-
                 using (new EditorGUILayout.HorizontalScope())
                 {
-                    GUILayout.Space(EditorGUIUtility.labelWidth);
+                    var labels = settings.Select(x => x.name).ToList();
 
-                    var labels = settings.Select(x => x.name).ToArray();
-                    var selection = settings.IndexOf(x => x == kerningSetting);
+                    labels.Insert(0, "None");
+
+                    var index = settings.IndexOf(x => x == instance.KerningSetting);
+                    var selection = index != -1 ? index + 1 : 0; 
 
                     EditorGUI.BeginChangeCheck();
 
-                    var index = EditorGUILayout.Popup(selection, labels);
+                    selection = EditorGUILayout.Popup("Kerning", selection, labels.ToArray());
 
                     if (EditorGUI.EndChangeCheck())
                     {
-                        kerningSetting = settings.ElementAtOrDefault(index);
+                        var kerningSetting = 0 < selection ? settings.ElementAtOrDefault(selection - 1) : null;
 
                         UnityEditorUtility.RegisterUndo("TextSpacingInspector Undo", instance);
-                        Reflection.SetPrivateField(instance, "kerningSetting", kerningSetting);
+
+                        instance.KerningSetting = kerningSetting;
+                    }
+
+                    using (new DisableScope(instance.KerningSetting == null))
+                    {
+                        if (GUILayout.Button("select", EditorStyles.miniButton, GUILayout.Width(45f)))
+                        {
+                            Selection.activeObject = instance.KerningSetting;
+                        }
                     }
                 }
             }
 
-            if (kerningSetting != null && instance.Text.font != kerningSetting.Font)
+            if (settings.IsEmpty())
             {
-                EditorGUILayout.HelpBox("Kerning is invalid because the font of the configuration file is different.", MessageType.Warning);
+                EditorGUILayout.HelpBox("Can not find kerning setting file for this font.", MessageType.Info);
             }
         }
     }

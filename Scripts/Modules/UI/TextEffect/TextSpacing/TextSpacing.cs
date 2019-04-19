@@ -31,11 +31,6 @@ namespace Modules.UI.TextEffect
             get { return textComponent ?? (textComponent = UnityUtility.GetComponent<Text>(this)); }
         }
 
-        public FontKerningSetting KerningSetting
-        {
-            get { return kerningSetting; }
-        }
-
         public float Tracking
         {
             get { return tracking; }
@@ -45,6 +40,23 @@ namespace Modules.UI.TextEffect
                 if (tracking == value) { return; }
 
                 tracking = value;
+
+                if (graphic != null)
+                {
+                    graphic.SetVerticesDirty();
+                }
+            }
+        }
+
+        public FontKerningSetting KerningSetting
+        {
+            get { return kerningSetting; }
+
+            set
+            {
+                if (kerningSetting == value) { return; }
+
+                kerningSetting = value;
 
                 if (graphic != null)
                 {

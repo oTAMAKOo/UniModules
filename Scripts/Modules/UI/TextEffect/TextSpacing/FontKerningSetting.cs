@@ -24,7 +24,7 @@ namespace Modules.UI.TextEffect
         [SerializeField]
         private Font font = null;
         [SerializeField]
-        private CharInfo[] infos = null;
+        private CharInfo[] infos = new CharInfo[0];
 
         private Dictionary<char, CharInfo> dictionary = null;
 
@@ -32,15 +32,13 @@ namespace Modules.UI.TextEffect
 
         public Font Font { get { return font; } }
 
-        //----- method -----
+        //----- method ----- 
 
         public CharInfo GetCharInfo(char c)
         {
             if (dictionary == null)
             {
-                dictionary = infos != null ?
-                             infos.Where(x => x.character != default(char)).ToDictionary(x => x.character) :
-                             new Dictionary<char, CharInfo>();
+                dictionary = infos.Where(x => x.character != default(char)).ToDictionary(x => x.character);
             }
 
             return dictionary.GetValueOrDefault(c);

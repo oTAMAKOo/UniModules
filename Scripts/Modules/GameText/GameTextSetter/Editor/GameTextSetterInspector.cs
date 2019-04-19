@@ -45,45 +45,37 @@ namespace Modules.GameText.Components
 
             EditorGUILayout.Separator();
 
-            var categories = Enum.GetValues(typeof(GameTextCategory)).Cast<GameTextCategory>().OrderBy(x => (int)x).ToList();
-
-            var categoryIndex = categories.FindIndex(x => x == instance.Category);
-
-            var categoryLabels = categories.Select(x => x.ToLabelName());
-            var currentCategoryIndex = EditorGUILayout.Popup("Category", categoryIndex, categoryLabels.ToArray());
-
-            if (categoryIndex != currentCategoryIndex)
+            using (new EditorGUILayout.HorizontalScope())
             {
-                UnityEditorUtility.RegisterUndo("GameTextSetterInspector-Undo", instance);
-                categoryIndex = currentCategoryIndex;
+                var categories = Enum.GetValues(typeof(GameTextCategory)).Cast<GameTextCategory>().OrderBy(x => (int)x).ToList();
 
-                instance.SetCategory(categories[categoryIndex]);
-            }
+                var categoryIndex = categories.FindIndex(x => x == instance.Category);
 
-            if (categoryIndex != 0)
-            {
-                EditorGUILayout.Separator();
+                var categoryLabels = categories.Select(x => x.ToLabelName());
+                var labels = categoryLabels.ToArray();
 
-                using (new DisableScope(GameText.Instance.Cache == null))
+                var currentCategoryIndex = EditorGUILayout.Popup("GameText", categoryIndex, labels);
+
+                if (categoryIndex != currentCategoryIndex)
                 {
-                    if (EditorLayoutTools.DrawPrefixButton("Selection GameText", GUILayout.Width(180f)))
+                    UnityEditorUtility.RegisterUndo("GameTextSetterInspector-Undo", instance);
+                    categoryIndex = currentCategoryIndex;
+
+                    instance.SetCategory(categories[categoryIndex]);
+                }
+
+                using (new DisableScope(categoryIndex == 0 || GameText.Instance.Cache == null))
+                {
+                    GUILayout.Space(2f);
+                    
+                    if (GUILayout.Button("select", EditorStyles.miniButton, GUILayout.Width(75f)))
                     {
                         GameTextSelector.Open();
                     }
                 }
-
-                GUILayout.Space(5f);
-
-                if (!string.IsNullOrEmpty(instance.Content))
-                {
-                    if (EditorLayoutTools.DrawHeader("SourceText", "GameTextSetterInspector-SourceText"))
-                    {
-                        EditorGUILayout.TextArea(instance.Content, GUILayout.Height(48f));
-                    }
-                }
             }
 
-            EditorGUILayout.Separator();
+            GUILayout.Space(2f);
         }
 
         private void OnUndoRedo()
