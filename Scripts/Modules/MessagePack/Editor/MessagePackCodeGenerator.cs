@@ -45,7 +45,13 @@ namespace Modules.MessagePack
             var csproj = PathUtility.Combine(projectFolder, string.Format("{0}{1}", csprojName, CSProjExtension));
             var generatePath = PathUtility.Combine(messagePackConfig.ScriptExportDir, messagePackConfig.ExportScriptName);
 
-            var arguments = string.Format(" --input {0} --output {1} --usemapmode", csproj, generatePath);
+            var arguments = string.Format(" --input {0} --output {1}", csproj, generatePath);
+
+            // ※ Releaseビルド時はコードジェネレータで生成した物を使用する.
+            if (EditorUserBuildSettings.development)
+            {
+                arguments += " --usemapmode";
+            }
 
             try
             {
