@@ -400,20 +400,17 @@ namespace Modules.Particle
 
         private void DrawEventHeaderGUI(int itemCount)
         {
-            var style = new GUIStyle("ShurikenModuleTitle");
-            style.font = new GUIStyle(EditorStyles.label).font;
-            style.border = new RectOffset(2, 2, 2, 2);
-            style.fixedHeight = 16;
-            style.contentOffset = new Vector2(0f, -2f);
-            style.alignment = TextAnchor.MiddleCenter;
+            var headerItems = new List<EditorLayoutTools.ColumnHeaderContent>();
+
+            headerItems.Add(new EditorLayoutTools.ColumnHeaderContent("Trigger", GUILayout.Width(60f)));
+            headerItems.Add(new EditorLayoutTools.ColumnHeaderContent("Invoke", GUILayout.MinWidth(100f)));
+            headerItems.Add(new EditorLayoutTools.ColumnHeaderContent("Message", GUILayout.MinWidth(100f)));
 
             using (new EditorGUILayout.HorizontalScope())
             {
                 GUILayout.FlexibleSpace();
 
-                EditorGUILayout.LabelField("Trigger", style, GUILayout.Width(60f));
-                EditorGUILayout.LabelField("Invoke", style, GUILayout.MinWidth(100f));
-                EditorGUILayout.LabelField("Message", style, GUILayout.MinWidth(100f));
+                EditorLayoutTools.DrawColumnHeader(headerItems.ToArray());
 
                 GUILayout.Space(30f);
 

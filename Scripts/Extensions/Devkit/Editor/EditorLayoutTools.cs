@@ -374,6 +374,46 @@ namespace Extensions.Devkit
             return state;
         }
 
+        public class ColumnHeaderContent
+        {
+            public string text = string.Empty;
+            public GUILayoutOption[] options = null;
+
+            public ColumnHeaderContent(string text)
+            {
+                this.text = text;
+            }
+
+            public ColumnHeaderContent(string text, GUILayoutOption[] options = null) : this(text)
+            {
+                this.options = options;
+            }
+
+            public ColumnHeaderContent(string text, GUILayoutOption option) : this(text, new GUILayoutOption[] { option }) { }
+        }
+
+        public static void DrawColumnHeader(ColumnHeaderContent[] contents)
+        {
+            var style = new GUIStyle("ShurikenModuleTitle")
+            {
+                font = new GUIStyle(EditorStyles.label).font,
+                border = new RectOffset(2, 2, 2, 2),
+                fixedHeight = 17,
+                contentOffset = new Vector2(0f, -2f),
+                alignment = TextAnchor.MiddleCenter,
+            };
+
+            using (new EditorGUILayout.HorizontalScope())
+            {
+                foreach (var content in contents)
+                {
+                    var text = "<b><size=11>" + content.text + "</size></b>";
+
+                    EditorGUILayout.LabelField(text, style, content.options);
+                }         
+            }
+        }
+
         public static void DrawContentTitle(string text)
         {
             GUILayout.Space(2f);
@@ -436,81 +476,7 @@ namespace Extensions.Devkit
 
             GUI.backgroundColor = originColor;
         }
-
-        public static SerializedProperty DrawProperty(string label, SerializedObject serializedObject, string property, params GUILayoutOption[] options)
-        {
-            return DrawProperty(label, serializedObject, property, false, options);
-        }
-
-        public static SerializedProperty DrawProperty(string label, SerializedObject serializedObject, string property, bool padding, params GUILayoutOption[] options)
-        {
-            var sp = serializedObject.FindProperty(property);
-
-            if (sp != null)
-            {
-                if (padding)
-                {
-                    EditorGUILayout.BeginHorizontal();
-                }
-
-                if (sp.isArray && sp.type != "string")
-                {
-                    DrawArray(serializedObject, property, label ?? property);
-                }
-                else if (label != null)
-                {
-                    EditorGUILayout.PropertyField(sp, new GUIContent(label), options);
-                }
-                else
-                {
-                    EditorGUILayout.PropertyField(sp, options);
-                }
-
-                if (padding)
-                {
-                    DrawPadding();
-                    EditorGUILayout.EndHorizontal();
-                }
-            }
-            else
-            {
-
-                Debug.LogWarning("Unable to find property " + property);
-            }
-
-            return sp;
-        }
-
-        public static void DrawArray(this SerializedObject obj, string property, string title)
-        {
-            var sp = obj.FindProperty(property + ".Array.size");
-
-            if (sp != null && DrawHeader(title))
-            {
-                using (new ContentsScope())
-                {
-                    int size = sp.intValue;
-                    int newSize = EditorGUILayout.IntField("Size", size);
-                    if (newSize != size)
-                        obj.FindProperty(property + ".Array.size").intValue = newSize;
-
-                    EditorGUI.indentLevel = 1;
-
-                    for (int i = 0; i < newSize; i++)
-                    {
-                        var p = obj.FindProperty(string.Format("{0}.Array.data[{1}]", property, i));
-
-                        if (p != null)
-                        {
-                            EditorGUILayout.PropertyField(p);
-                        }
-                    }
-
-                    EditorGUI.indentLevel = 0;
-                }
-            }
-        }
-
+        
         public static void DrawPadding()
         {
             GUILayout.Space(18f);

@@ -142,19 +142,18 @@ namespace Modules.UI.TextEffect
 
         private void DrawCharInfoHeaderGUI(int itemCount)
         {
-            var style = new GUIStyle("ShurikenModuleTitle");
-            style.font = new GUIStyle(EditorStyles.label).font;
-            style.border = new RectOffset(2, 2, 2, 2);
-            style.fixedHeight = 16;
-            style.contentOffset = new Vector2(0f, -2f);
-            style.alignment = TextAnchor.MiddleCenter;
+            var headerItems = new List<EditorLayoutTools.ColumnHeaderContent>();
+
+            headerItems.Add(new EditorLayoutTools.ColumnHeaderContent("Char", GUILayout.Width(55f)));
+            headerItems.Add(new EditorLayoutTools.ColumnHeaderContent("Space (Left)", GUILayout.MinWidth(50f)));
+            headerItems.Add(new EditorLayoutTools.ColumnHeaderContent("Space (Right)", GUILayout.MinWidth(50f)));
 
             using (new EditorGUILayout.HorizontalScope())
             {
                 GUILayout.Space(2f);
-                EditorGUILayout.LabelField("Char", style, GUILayout.Width(55f));
-                EditorGUILayout.LabelField("Space (Left)", style, GUILayout.MinWidth(50f));
-                EditorGUILayout.LabelField("Space (Right)", style, GUILayout.MinWidth(50f));
+
+                EditorLayoutTools.DrawColumnHeader(headerItems.ToArray());
+
                 GUILayout.Space(35f);
 
                 if (15 <= itemCount)
