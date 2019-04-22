@@ -25,6 +25,8 @@ namespace Modules.UI.TextEffect
         private Font font = null;
         [SerializeField]
         private CharInfo[] infos = new CharInfo[0];
+        [SerializeField]
+        private byte[] description = new byte[0];
 
         private Dictionary<char, CharInfo> dictionary = null;
 

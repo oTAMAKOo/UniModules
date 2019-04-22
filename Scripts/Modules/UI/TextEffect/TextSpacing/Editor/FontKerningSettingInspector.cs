@@ -2,12 +2,14 @@
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEditor;
+using UnityEditorInternal;
 using System;
 using System.Linq;
 using System.Collections.Generic;
+using System.Security.Cryptography;
+using System.Text;
 using Extensions;
 using Extensions.Devkit;
-using UnityEditorInternal;
 
 namespace Modules.UI.TextEffect
 {
@@ -16,11 +18,16 @@ namespace Modules.UI.TextEffect
     {
         //----- params -----
 
+        private static readonly Color HeaderColor = new Color(0.5f, 0.2f, 0.8f);
+
+        private static readonly AesManaged aesManaged = AESExtension.CreateAesManaged("D1AHKKDqFV2JU4Zs");
+        
         //----- field -----
 
-        private Vector3 scrollPosition = Vector3.zero;
+        private Vector3 charInfoScrollPosition = Vector3.zero;
+        private Vector3 descriptionScrollPosition = Vector3.zero;
         private TextSpacing[] applyTargets = null;
-
+        
         private FontKerningSetting instance = null;
 
         //----- property -----
@@ -30,11 +37,13 @@ namespace Modules.UI.TextEffect
         public override void OnInspectorGUI()
         {
             instance = target as FontKerningSetting;
-            
+
             var updated = false;
             var deleteIndexs = new List<int>();
 
             var infos = Reflection.GetPrivateField<FontKerningSetting, FontKerningSetting.CharInfo[]>(instance, "infos");
+            var description = Reflection.GetPrivateField<FontKerningSetting, byte[]>(instance, "description");
+
             var list = infos != null ? infos.ToList() : new List<FontKerningSetting.CharInfo>();
 
             if (applyTargets == null)
@@ -42,11 +51,17 @@ namespace Modules.UI.TextEffect
                 applyTargets = UnityUtility.FindObjectsOfType<TextSpacing>();
             }
 
+            //------ Font ------
+
             EditorGUILayout.Separator();
+
+            EditorLayoutTools.DrawLabelWithBackground("Font", HeaderColor);
+
+            GUILayout.Space(2f);
 
             EditorGUI.BeginChangeCheck();
 
-            var font = EditorGUILayout.ObjectField("Font", instance.Font, typeof(Font), false);
+            var font = EditorGUILayout.ObjectField(instance.Font, typeof(Font), false);
 
             if (EditorGUI.EndChangeCheck())
             {
@@ -54,7 +69,9 @@ namespace Modules.UI.TextEffect
                 updated = true;
             }
 
-            EditorGUILayout.Separator();
+            GUILayout.Space(2f);
+
+            //------ Characters ------
 
             if (font != null)
             {
@@ -64,11 +81,15 @@ namespace Modules.UI.TextEffect
                 }
                 else
                 {
+                    EditorLayoutTools.DrawLabelWithBackground("Character settings", HeaderColor);
+
+                    GUILayout.Space(2f);
+
                     DrawCharInfoHeaderGUI(list.Count);
 
                     using (new ContentsScope())
                     {
-                        using (var scrollViewScope = new EditorGUILayout.ScrollViewScope(scrollPosition, GUILayout.Height(300f)))
+                        using (var scrollViewScope = new EditorGUILayout.ScrollViewScope(charInfoScrollPosition, GUILayout.Height(350f)))
                         {
                             for (var i = 0; i < list.Count; i++)
                             {
@@ -103,7 +124,7 @@ namespace Modules.UI.TextEffect
                                 }
                             }
 
-                           scrollPosition = scrollViewScope.scrollPosition;
+                            charInfoScrollPosition = scrollViewScope.scrollPosition;
                         }
                     }
 
@@ -112,7 +133,7 @@ namespace Modules.UI.TextEffect
                         list.RemoveAt(index);
                     }
                 }
-                
+
                 using (new EditorGUILayout.HorizontalScope())
                 {
                     GUILayout.FlexibleSpace();
@@ -127,7 +148,7 @@ namespace Modules.UI.TextEffect
                     }
                 }
             }
-            
+
             if (updated)
             {
                 UnityEditorUtility.RegisterUndo("FontKerningSettingInspector Undo", instance);
@@ -137,6 +158,31 @@ namespace Modules.UI.TextEffect
                 Reflection.SetPrivateField(instance, "dictionary", (Dictionary<char, FontKerningSetting.CharInfo>)null);
 
                 ApplyTextSpacing();
+            }
+
+            GUILayout.Space(2f);
+
+            //------ Description ------
+
+            EditorLayoutTools.DrawLabelWithBackground("Description", HeaderColor);
+
+            var textBytes = description.Decrypt(aesManaged);
+            var descriptionText = textBytes != null ? Encoding.UTF8.GetString(textBytes) : string.Empty;
+
+            using (var scrollViewScope = new EditorGUILayout.ScrollViewScope(descriptionScrollPosition, GUILayout.Height(60f)))
+            {
+                EditorGUI.BeginChangeCheck();
+
+                descriptionText = EditorGUILayout.TextArea(descriptionText, GUILayout.MinHeight(40f));
+
+                if (EditorGUI.EndChangeCheck())
+                {
+                    textBytes = Encoding.UTF8.GetBytes(descriptionText).Encrypt(aesManaged);
+
+                    Reflection.SetPrivateField(instance, "description", textBytes);
+                }
+
+                descriptionScrollPosition = scrollViewScope.scrollPosition;
             }
         }
 
