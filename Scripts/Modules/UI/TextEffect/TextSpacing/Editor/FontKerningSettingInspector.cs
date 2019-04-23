@@ -224,7 +224,7 @@ namespace Modules.UI.TextEffect
                     info.character = text.FirstOrDefault();
                 }
 
-                var originLabelWidth = EditorLayoutTools.SetLabelWidth(20f);
+                var originLabelWidth = EditorLayoutTools.SetLabelWidth(30f);
 
                 info.leftSpace = EditorGUILayout.FloatField("◀▶", info.leftSpace, GUILayout.ExpandWidth(true));
 

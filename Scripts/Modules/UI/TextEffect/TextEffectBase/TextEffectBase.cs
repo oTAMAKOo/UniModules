@@ -8,7 +8,12 @@ using System.Linq;
 using System.Collections.Generic;
 using UniRx;
 using Extensions;
+
+#if ENABLE_SOFT_MASK
+
 using SoftMasking;
+
+#endif
 
 #if UNITY_EDITOR
 
@@ -174,7 +179,15 @@ namespace Modules.UI.TextEffect
 
         protected bool IsSoftMaskable()
         {
+            #if ENABLE_SOFT_MASK
+
             return !gameObject.Ancestors().OfComponent<SoftMask>().IsEmpty();
+
+            #else
+
+            return false;
+
+            #endif
         }
 
         protected abstract void SetShaderParams(Material material);
