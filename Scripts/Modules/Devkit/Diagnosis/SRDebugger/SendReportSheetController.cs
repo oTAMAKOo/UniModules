@@ -1,6 +1,7 @@
 ﻿
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.Networking;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -10,8 +11,10 @@ using System.Linq;
 using System.Security.Cryptography;
 using UniRx;
 using Extensions;
+
+#if ENABLE_SRDEBUGGER
+
 using SRDebugger.Internal;
-using UnityEngine.Networking;
 
 namespace Modules.Devkit.Diagnosis.SRDebugger
 {
@@ -283,3 +286,5 @@ namespace Modules.Devkit.Diagnosis.SRDebugger
         protected virtual void SetExtendContents() { }
     }
 }
+
+#endif

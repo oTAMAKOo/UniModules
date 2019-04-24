@@ -1,9 +1,12 @@
-﻿﻿﻿
+﻿
 using UnityEngine;
 using UnityEngine.UI;
 using UniRx;
 using Extensions;
 using Modules.Devkit.Log;
+
+#if ENABLE_SRDEBUGGER
+
 using SRDebugger;
 
 namespace Modules.Devkit.Diagnosis.SRDebugger
@@ -157,3 +160,5 @@ namespace Modules.Devkit.Diagnosis.SRDebugger
         }
     } 
 }
+
+#endif

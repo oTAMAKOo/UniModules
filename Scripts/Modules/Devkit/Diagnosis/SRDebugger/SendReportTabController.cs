@@ -5,6 +5,9 @@ using System.Linq;
 using System.Collections.Generic;
 using UniRx;
 using Extensions;
+
+#if ENABLE_SRDEBUGGER
+
 using SRDebugger.UI.Other;
 using SRF;
 
@@ -40,3 +43,5 @@ namespace Modules.Devkit.Diagnosis.SRDebugger
         }
     }
 }
+
+#endif

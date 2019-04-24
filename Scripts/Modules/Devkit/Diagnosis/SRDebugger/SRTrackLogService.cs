@@ -7,6 +7,8 @@ using UniRx;
 using Extensions;
 using Modules.Devkit.Log;
 
+#if ENABLE_SRDEBUGGER
+
 namespace Modules.Devkit.Diagnosis.SRDebugger
 {
     public class LogEntry
@@ -97,3 +99,5 @@ namespace Modules.Devkit.Diagnosis.SRDebugger
         }
     }
 }
+
+#endif
