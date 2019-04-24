@@ -15,6 +15,9 @@ namespace Modules.Devkit.Diagnosis
 
         //----- field -----
 
+
+        [SerializeField]
+        private GameObject touchBlockObject = null;
         [SerializeField]
         private FpsStats fpsStats = null;
         [SerializeField]
@@ -26,8 +29,15 @@ namespace Modules.Devkit.Diagnosis
 
         public void Initialize()
         {
+            UnityUtility.SetActive(touchBlockObject, false);
+
             fpsStats.Initialize();
+
+            #if ENABLE_SRDEBUGGER
+
             srDiagnosis.Initialize();
+
+            #endif
         }
     }
 }

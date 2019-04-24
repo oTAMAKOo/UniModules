@@ -16,8 +16,12 @@ using Extensions;
 
 using SRDebugger.Internal;
 
+#endif
+
 namespace Modules.Devkit.Diagnosis.SRDebugger
 {
+    #if ENABLE_SRDEBUGGER
+
     public abstract class SendReportSheetController : MonoBehaviour
     {
         //----- params -----
@@ -285,6 +289,6 @@ namespace Modules.Devkit.Diagnosis.SRDebugger
         /// <summary> 拡張情報を追加 </summary>
         protected virtual void SetExtendContents() { }
     }
-}
 
-#endif
+    #endif
+}

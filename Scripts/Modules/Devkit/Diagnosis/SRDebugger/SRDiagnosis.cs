@@ -9,10 +9,14 @@ using Modules.Devkit.Log;
 
 using SRDebugger;
 
+#endif
+
 namespace Modules.Devkit.Diagnosis.SRDebugger
 {
     public class SRDiagnosis : MonoBehaviour
     {
+        #if ENABLE_SRDEBUGGER
+
         //----- params -----
 
         private static readonly LogType[] LogPriority = new LogType[]
@@ -83,7 +87,11 @@ namespace Modules.Devkit.Diagnosis.SRDebugger
                     .Subscribe(x => OnLogReceive(x))
                     .AddTo(this);
 
+                #if ENABLE_SRDEBUGGER
+
                 SRTrackLogService.Initialize();
+
+                #endif
 
                 UnityUtility.SetActive(blockCollider, false);
 
@@ -158,7 +166,7 @@ namespace Modules.Devkit.Diagnosis.SRDebugger
                 currentLogType = logInfo.Type;
             }            
         }
-    } 
-}
 
-#endif
+        #endif
+    }
+}

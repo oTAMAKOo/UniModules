@@ -11,9 +11,13 @@ using Extensions;
 using SRDebugger.UI.Other;
 using SRF;
 
+#endif
+
 namespace Modules.Devkit.Diagnosis.SRDebugger
 {
-	public class SendReportTabController : SRMonoBehaviourEx, IEnableTab
+    #if ENABLE_SRDEBUGGER
+
+    public class SendReportTabController : SRMonoBehaviourEx, IEnableTab
     {
         //----- params -----
 
@@ -42,6 +46,6 @@ namespace Modules.Devkit.Diagnosis.SRDebugger
             sendReportSheet.Initialize();
         }
     }
-}
 
-#endif
+    #endif
+}

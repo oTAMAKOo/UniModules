@@ -97,7 +97,7 @@ namespace Modules.Devkit.Diagnosis.SRDebugger
 
             reportQueue.Enqueue(item);
         }
-    }
+    }    
 }
 
 #endif
