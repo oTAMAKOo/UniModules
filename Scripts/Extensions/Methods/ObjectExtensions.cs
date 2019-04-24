@@ -2,6 +2,7 @@
 using System;
 using System.IO;
 using System.Runtime.Serialization.Formatters.Binary;
+using Newtonsoft.Json;
 
 namespace Extensions
 {
@@ -27,7 +28,7 @@ namespace Extensions
         /// <summary> Json文字列に変換  </summary>
         public static string ToJson<T>(this T obj)
         {
-            return JsonFx.Json.JsonWriter.Serialize(obj);
+            return JsonConvert.SerializeObject(obj);
         }
 
         /// <summary> 指定されたEnumに変換 </summary>

@@ -1,9 +1,11 @@
 ﻿﻿﻿
 using UnityEngine;
-using JsonFx.Json;
+using Newtonsoft.Json;
 
 #if UNITY_EDITOR
-    using UnityEditor;
+
+using UnityEditor;
+
 #endif
 
 namespace Modules.Devkit.Prefs
@@ -155,12 +157,12 @@ namespace Modules.Devkit.Prefs
         {
             var json = GetString(key);
 
-            return string.IsNullOrEmpty(json) ? defaultValue : JsonReader.Deserialize<T>(json);
+            return string.IsNullOrEmpty(json) ? defaultValue : JsonConvert.DeserializeObject<T>(json);
         }
 
         public static void Set<T>(string key, T value)
         {
-            var json = JsonWriter.Serialize(value);
+            var json = JsonConvert.SerializeObject(value);
 
             SetString(key, json);
         }

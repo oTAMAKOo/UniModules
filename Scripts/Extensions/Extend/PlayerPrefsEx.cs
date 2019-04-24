@@ -1,8 +1,8 @@
 ﻿
+using UnityEngine;
 using System;
 using System.Security.Cryptography;
-using UnityEngine;
-using JsonFx.Json;
+using Newtonsoft.Json;
 
 namespace Extensions
 {
@@ -205,7 +205,7 @@ namespace Extensions
 
         public static void Set<T>(string name, T value)
         {
-            var json = JsonWriter.Serialize(value);
+            var json = JsonConvert.SerializeObject(value);
 
             SetString(name, json);
         }
@@ -214,7 +214,7 @@ namespace Extensions
         {
             var json = GetString(name, null);
 
-            return string.IsNullOrEmpty(json) ? defaultValue : JsonReader.Deserialize<T>(json);
+            return string.IsNullOrEmpty(json) ? defaultValue : JsonConvert.DeserializeObject<T>(json);
         }
     }
 }

@@ -6,6 +6,7 @@ using System.Linq;
 using System.Collections.Generic;
 using System.Text;
 using UniRx;
+using Newtonsoft.Json;
 using Extensions;
 using MessagePack;
 using Modules.MessagePack;
@@ -152,7 +153,7 @@ namespace Modules.Networking
 
                     if (!string.IsNullOrEmpty(json))
                     {
-                        result = JsonFx.Json.JsonReader.Deserialize<TResult>(json);
+                        result = JsonConvert.DeserializeObject<TResult>(json);
                     }
 
                     break;
@@ -224,7 +225,7 @@ namespace Modules.Networking
             switch (Format)
             {
                 case DataFormat.Json:
-                    var json = JsonFx.Json.JsonWriter.Serialize(content);
+                    var json = JsonConvert.SerializeObject(content);
                     bodyData = Encoding.UTF8.GetBytes(json);
                     break;
 
