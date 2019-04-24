@@ -48,7 +48,7 @@ namespace Modules.UI.TextEffect
 
             if (applyTargets == null)
             {
-                applyTargets = UnityUtility.FindObjectsOfType<TextSpacing>();
+                applyTargets = UnityUtility.FindObjectsOfType<TextSpacing>().ToArray();
             }
 
             //------ Font ------

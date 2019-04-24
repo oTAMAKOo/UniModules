@@ -5,7 +5,6 @@ using UnityEngine.SceneManagement;
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using Unity.Linq;
 
@@ -62,16 +61,6 @@ namespace Extensions
             return gameObject.AddComponent<T>();
         }
 
-        /// <summary> 親オブジェクト取得 </summary>
-        public static GameObject ParentGameObject(GameObject instance)
-        {
-            if (instance == null) { return null; }
-
-            var parent = instance.transform.parent;
-
-            return parent != null ? parent.gameObject : null;
-        }
-
         /// <summary> パスからPrefab生成 </summary>
         public static GameObject Instantiate(GameObject parent, string path, bool instantiateInWorldSpace = false)
         {
@@ -125,7 +114,7 @@ namespace Extensions
         }
 
         /// <summary> Prefabから複数のインスタンスを高速生成 + Component取得 </summary>
-        public static T[] Instantiate<T>(GameObject parent, UnityEngine.Object prefab, int count,
+        public static IEnumerable<T> Instantiate<T>(GameObject parent, UnityEngine.Object prefab, int count,
             bool instantiateInWorldSpace = false) where T : Component
         {
             var list = new List<T>();
@@ -152,7 +141,7 @@ namespace Extensions
                 list.Add(item);
             }
 
-            return list.ToArray();
+            return list;
         }
 
         #endregion
@@ -199,14 +188,12 @@ namespace Extensions
         }
 
         /// <summary> 複数オブジェクトの削除 </summary>
-        public static void SafeDelete(List<GameObject> list)
+        public static void SafeDelete(IEnumerable<GameObject> targets)
         {
-            foreach (var elem in list)
+            foreach (var target in targets)
             {
-                SafeDelete(elem);
+                SafeDelete(target);
             }
-
-            list.Clear();
         }
 
         /// <summary> Nullチェック </summary>
@@ -354,7 +341,7 @@ namespace Extensions
         }
 
         /// <summary> コンポーネント取得 </summary>
-        public static T[] GetComponents<T>(GameObject instance) where T : Component
+        public static IEnumerable<T> GetComponents<T>(GameObject instance) where T : Component
         {
             return instance != null ? instance.GetComponents<T>() : new T[0];
         }
@@ -379,11 +366,11 @@ namespace Extensions
         }
 
         /// <summary> インターフェース取得 </summary>
-        public static T[] GetInterfaces<T>(GameObject instance) where T : class
+        public static IEnumerable<T> GetInterfaces<T>(GameObject instance) where T : class
         {
             if (instance == null) { return new T[0]; }
 
-            return instance.GetComponents(typeof(MonoBehaviour)).OfType<T>().ToArray();
+            return instance.GetComponents(typeof(MonoBehaviour)).OfType<T>();
         }
 
         /// <summary> インターフェース取得 </summary>
@@ -397,27 +384,7 @@ namespace Extensions
         #endregion
 
         #region Find Objects
-
-        /// <summary> 型で親オブジェクト検索 </summary>
-        public static T FindInParents<T>(GameObject instance) where T : Component
-        {
-            if (instance == null) { return null; }
-
-            var component = GetComponent<T>(instance);
-
-            if (component == null)
-            {
-                var t = instance.transform.parent;
-
-                while (t != null && component == null)
-                {
-                    component = GetComponent<T>(t.gameObject);
-                    t = t.parent;
-                }
-            }
-            return component;
-        }
-
+        
         /// <summary>
         /// カメラ取得.
         /// ※ layerMaskは <code>1 &lt;&lt; (int)layer</code>された状態の物を受け取る.
@@ -425,70 +392,6 @@ namespace Extensions
         public static Camera[] FindCameraForLayer(int layerMask)
         {
             return FindObjectsOfType<Camera>().Where(x => (x.cullingMask & layerMask) != 0).ToArray();
-        }
-
-        /// <summary> 階層オブジェクトを取得 </summary>
-        public static List<GameObject> GetChildObjects(GameObject root)
-        {
-            var list = new List<GameObject>();
-
-            for (var i = 0; i < root.transform.childCount; ++i)
-            {
-                var trans = root.transform.GetChild(i);
-
-                // 追加.
-                list.Add(trans.gameObject);
-
-                // 再帰処理で子階層を追加.
-                list.AddRange(GetChildObjects(trans.gameObject));
-            }
-
-            return list;
-        }
-
-        /// <summary> 子階層オブジェクトを取得 </summary>
-        public static List<T> GetChildObject<T>(GameObject root) where T : Component
-        {
-            var list = new List<T>();
-
-            for (var i = 0; i < root.transform.childCount; ++i)
-            {
-                var trans = root.transform.GetChild(i);
-
-                T component = GetComponent<T>(trans.gameObject);
-
-                if (component != null)
-                {
-                    // 追加.
-                    list.Add(component);
-                }
-            }
-
-            return list;
-        }
-
-        /// <summary> 全階層オブジェクトを取得 </summary>
-        public static List<T> GetChildObjects<T>(GameObject root) where T : Component
-        {
-            var list = new List<T>();
-
-            for (var i = 0; i < root.transform.childCount; ++i)
-            {
-                var trans = root.transform.GetChild(i);
-
-                var component = GetComponent<T>(trans.gameObject);
-
-                if (component != null)
-                {
-                    // 追加.
-                    list.Add(component);
-                }
-
-                // 再帰処理で子階層を追加.
-                list.AddRange(GetChildObjects<T>(trans.gameObject));
-            }
-
-            return list;
         }
 
         /// <summary> Hierarchyから特定の種類のオブジェクト取得 </summary>
@@ -501,7 +404,7 @@ namespace Extensions
         /// Hierarchyから特定の種類のオブジェクト一覧取得.
         /// ※ DontDestroyOnLoad内の非アクティブなオブジェクトは取得不可.
         /// </summary>
-        public static T[] FindObjectsOfType<T>() where T : Component
+        public static IEnumerable<T> FindObjectsOfType<T>() where T : Component
         {
             var targets = new List<T>();
 
@@ -532,7 +435,7 @@ namespace Extensions
                 }
             }
 
-            return targets.ToArray();
+            return targets;
         }
 
         /// <summary> Hierarchyから特定の種類のオブジェクト取得 </summary>
@@ -542,7 +445,7 @@ namespace Extensions
         }
 
         /// <summary> Hierarchyから特定の種類のオブジェクト一覧取得 </summary>
-        public static T[] FindObjectsOfType<T>(GameObject rootObject) where T : Component
+        public static IEnumerable<T> FindObjectsOfType<T>(GameObject rootObject) where T : Component
         {
             if (rootObject == null) { return new T[0]; }
 
@@ -552,7 +455,7 @@ namespace Extensions
 
             foreach (var item in objects)
             {
-                var components = GetComponents<T>(item);
+                var components = GetComponents<T>(item).ToArray();
 
                 if (components.Any())
                 {
@@ -560,7 +463,7 @@ namespace Extensions
                 }
             }
 
-            return list.ToArray();
+            return list;
         }
 
         /// <summary>
@@ -582,21 +485,21 @@ namespace Extensions
         /// <summary>
         /// Hierarchyから指定されたインターフェイスを実装したコンポーネントを持つオブジェクト一覧取得.
         /// </summary>
-        public static T[] FindObjectsOfInterface<T>() where T : class
+        public static IEnumerable<T> FindObjectsOfInterface<T>() where T : class
         {
             var components = FindObjectsOfType<Component>();
 
-            return components.Select(x => x as T).Where(x => x != null).ToArray();
+            return components.Select(x => x as T).Where(x => x != null);
         }
 
         /// <summary>
         /// Hierarchyから指定されたインターフェイスを実装したコンポーネントを持つオブジェクト一覧取得.
         /// </summary>
-        public static T[] FindObjectsOfInterface<T>(GameObject rootObject) where T : class
+        public static IEnumerable<T> FindObjectsOfInterface<T>(GameObject rootObject) where T : class
         {
             var components = FindObjectsOfType<Component>(rootObject);
 
-            return components.Select(x => x as T).Where(x => x != null).ToArray();
+            return components.Select(x => x as T).Where(x => x != null);
         }
 
         #endregion

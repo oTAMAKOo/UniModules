@@ -218,7 +218,7 @@ namespace Modules.UI
 
             // 足りない分を生成.
             var createCount = requireCount - itemList.Count;
-            var addItems = UnityUtility.Instantiate<VirtualScrollItem<T>>(scrollRect.content.gameObject, itemPrefab, createCount, false);
+            var addItems = UnityUtility.Instantiate<VirtualScrollItem<T>>(scrollRect.content.gameObject, itemPrefab, createCount).ToArray();
 
             itemList.AddRange(addItems);
 
