@@ -40,7 +40,10 @@ namespace Modules.Networking
         
         /// <summary> URLパラメータ. </summary>
         public IDictionary<string, object> UrlParams { get; private set; }
-        
+
+        /// <summary> 送受信データの圧縮. </summary>
+        public bool Compress { get; private set; }
+
         /// <summary> 通信データフォーマット. </summary>
         public DataFormat Format { get; private set; }
 
@@ -58,9 +61,10 @@ namespace Modules.Networking
        
         //----- method -----
 
-        public virtual void Initialize(string hostUrl, DataFormat format = DataFormat.MessagePack)
+        public virtual void Initialize(string hostUrl, bool compress, DataFormat format = DataFormat.MessagePack)
         {
             HostUrl = hostUrl;
+            Compress = compress;
             Format = format;
 
             Headers = new Dictionary<string, string>();
@@ -144,6 +148,11 @@ namespace Modules.Networking
             TResult result = null;
 
             value = Decrypt(value);
+
+            if (Compress)
+            {
+                value = value.Decompress();
+            }
 
             switch (Format)
             {
@@ -233,6 +242,11 @@ namespace Modules.Networking
                     MessagePackValidater.ValidateAttribute(typeof(TContent));
                     bodyData = MessagePackSerializer.Serialize(content, UnityContractResolver.Instance);
                     break;
+            }
+
+            if (Compress)
+            {
+                bodyData = bodyData.Compress();
             }
 
             bodyData = Encrypt(bodyData);

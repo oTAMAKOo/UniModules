@@ -31,8 +31,11 @@ namespace Modules.Networking
         /// <summary> 接続先URL. </summary>
         public string ServerUrl { get; private set; }
 
+        /// <summary> 送受信データの圧縮. </summary>
+        public bool Compress { get; private set; }
+
         /// <summary> データ内容フォーマット. </summary>
-        public DataFormat Format { get; set; }
+        public DataFormat Format { get; private set; }
 
         /// <summary> ヘッダー情報. </summary>
         public IDictionary<string, string> Headers { get; private set; }
@@ -51,9 +54,10 @@ namespace Modules.Networking
             Headers = new Dictionary<string, string>();
         }
 
-        public virtual void Initialize(string serverUrl, DataFormat format = DataFormat.MessagePack, int retryCount = 3, float retryDelaySeconds = 2)
+        public virtual void Initialize(string serverUrl, bool compress = true, DataFormat format = DataFormat.MessagePack, int retryCount = 3, float retryDelaySeconds = 2)
         {
             ServerUrl = serverUrl;
+            Compress = compress;
             Format = format;
             RetryCount = retryCount;
             RetryDelaySeconds = retryDelaySeconds;
