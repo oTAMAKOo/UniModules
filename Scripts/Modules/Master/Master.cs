@@ -11,40 +11,29 @@ using Extensions;
 using MessagePack;
 using Modules.MessagePack;
 
-namespace Modules.MasterCache
+namespace Modules.Master
 {
-    public interface IMasterCache
+    public interface IMaster
     {
         string Version { get; }
 
         bool CheckVersion(string masterVersion);
         void ClearVersion();
-        IObservable<bool> LoadCache(AesManaged aesManaged);
-        IObservable<bool> UpdateCache(string masterVersion, CancellationToken cancelToken);
+
+        IObservable<bool> Update(string masterVersion, CancellationToken cancelToken);
+        IObservable<bool> Load(AesManaged aesManaged);
     }
 
-    public static class MasterCaches
-    {
-        private static List<IMasterCache> allMasterCaches;
-
-        public static List<IMasterCache> All
-        {
-            get { return allMasterCaches ?? (allMasterCaches = new List<IMasterCache>()); }
-        }
-    }
-
-    public abstract class MasterCache<TMaster, TMasterData> : IMasterCache where TMaster : MasterCache<TMaster, TMasterData>, new()
+    public abstract class Master<TMaster, TMasterData> : IMaster where TMaster : Master<TMaster, TMasterData>, new()
     {
         //----- params -----
-
-        private const string CacheFileExtension = ".cache";
 
         private class Prefs
         {
             public string version
             {
-                get { return PlayerPrefs.GetString(string.Format("{0}.Version", typeof(TMaster).Name.ToUpper())); }
-                set { PlayerPrefs.SetString(string.Format("{0}.Version", typeof(TMaster).Name.ToUpper()), value); }
+                get { return PlayerPrefs.GetString(string.Format("{0}_VERSION", typeof(TMaster).Name.ToUpper())); }
+                set { PlayerPrefs.SetString(string.Format("{0}_VERSION", typeof(TMaster).Name.ToUpper()), value); }
             }
         }
 
@@ -64,7 +53,7 @@ namespace Modules.MasterCache
                 if (instance == null)
                 {
                     instance = new TMaster();
-                    MasterCaches.All.Add(instance);
+                    MasterManager.Instance.All.Add(instance);
                 }
 
                 return instance;
@@ -96,7 +85,7 @@ namespace Modules.MasterCache
 
             if (masters.ContainsKey(key))
             {
-                var message = "MasterCache register error!\nRegistered keys can not be registered.";
+                var message = "Master register error!\nRegistered keys can not be registered.";
                 var typeName = master.GetType().FullName;
 
                 Debug.LogErrorFormat("{0}\n\nMaster : {1}\nKey : {2}\n", message, typeName, key);
@@ -109,10 +98,16 @@ namespace Modules.MasterCache
 
         public bool CheckVersion(string masterVersion)
         {
+            #if UNITY_EDITOR
+
+            if (!MasterManager.Prefs.checkVersion) { return true; }
+
+            #endif
+
             var result = true;
 
-            var installPath = PathUtility.Combine(GetInstallDirectory(), GetCacheFileName());
-            
+            var installPath = MasterManager.Instance.GetInstallPath<TMaster>();
+
             // ファイルがなかったらバージョン不一致.
             result &= File.Exists(installPath);
 
@@ -124,7 +119,7 @@ namespace Modules.MasterCache
 
         public void ClearVersion()
         {
-            var installPath = PathUtility.Combine(GetInstallDirectory(), GetCacheFileName());
+            var installPath = MasterManager.Instance.GetInstallPath<TMaster>();
 
             if (File.Exists(installPath))
             {
@@ -135,15 +130,15 @@ namespace Modules.MasterCache
             masters.Clear();
         }
 
-        public IObservable<bool> LoadCache(AesManaged aesManaged)
+        public IObservable<bool> Load(AesManaged aesManaged)
         {
-            return Observable.FromMicroCoroutine<bool>(observer => LoadCacheInternal(observer, aesManaged));
+            return Observable.FromMicroCoroutine<bool>(observer => LoadInternal(observer, aesManaged));
         }
 
-        private IEnumerator LoadCacheInternal(IObserver<bool> observer, AesManaged aesManaged)
+        private IEnumerator LoadInternal(IObserver<bool> observer, AesManaged aesManaged)
         {
             var result = false;
-            
+
             #if UNITY_EDITOR
 
             try
@@ -157,17 +152,17 @@ namespace Modules.MasterCache
 
             #endif
 
-            var installPath = PathUtility.Combine(GetInstallDirectory(), GetCacheFileName());
+            var installPath = MasterManager.Instance.GetInstallPath<TMaster>();
 
             Func<string, AesManaged, byte[]> loadCacheFile = (_installPath, _aesManaged) =>
             {
                 // ファイル読み込み.
                 var data = File.ReadAllBytes(_installPath);
-                
+
                 // 復号化.               
                 return data.Decrypt(_aesManaged);
             };
-            
+
             // ファイルの読み込みと復号化をスレッドプールで実行.
             var loadYield = Observable.Start(() => loadCacheFile(installPath, aesManaged)).ObserveOnMainThread().ToYieldInstruction();
 
@@ -200,7 +195,7 @@ namespace Modules.MasterCache
             {
                 Debug.LogException(loadYield.Error);
             }
-            
+
             if (!result)
             {
                 File.Delete(installPath);
@@ -211,43 +206,32 @@ namespace Modules.MasterCache
             observer.OnCompleted();
         }
 
-        public IObservable<bool> UpdateCache(string masterVersion, CancellationToken cancelToken)
+        public IObservable<bool> Update(string masterVersion, CancellationToken cancelToken)
         {
-            return Observable.FromMicroCoroutine<bool>(observer => UpdateCacheInternal(observer, masterVersion, cancelToken));
+            return Observable.FromMicroCoroutine<bool>(observer => UpdateInternal(observer, masterVersion, cancelToken));
         }
 
-        private IEnumerator UpdateCacheInternal(IObserver<bool> observer, string masterVersion, CancellationToken cancelToken)
+        private IEnumerator UpdateInternal(IObserver<bool> observer, string masterVersion, CancellationToken cancelToken)
         {
             var result = true;
 
-            var cachefilePath = PathUtility.Combine(GetInstallDirectory(), GetCacheFileName());
+            var installPath = MasterManager.Instance.GetInstallPath<TMaster>();
 
             // 既存のファイル削除.
-            if (File.Exists(cachefilePath))
+            if (File.Exists(installPath))
             {
-                File.Delete(cachefilePath);
+                File.Delete(installPath);
             }
 
             // ダウンロード.
-            var sw = System.Diagnostics.Stopwatch.StartNew();
-
-            var downloadYield = UpdateMaster().ToYieldInstruction(false, cancelToken);
+            var downloadYield = DownloadMaster().ToYieldInstruction(false, cancelToken);
 
             while (!downloadYield.IsDone)
             {
                 yield return null;
             }
 
-            var downloadfilePath = PathUtility.Combine(GetInstallDirectory(), GetDownloadFileName());
-
-            if (downloadYield.HasResult && !downloadYield.HasError && File.Exists(downloadfilePath))
-            {
-                // 拡張子を変更.
-                File.Move(downloadfilePath, cachefilePath);
-
-                sw.Stop();
-            }
-            else
+            if (!downloadYield.HasResult || downloadYield.HasError || !File.Exists(installPath))
             {
                 result = false;
             }
@@ -257,16 +241,6 @@ namespace Modules.MasterCache
 
             observer.OnNext(result);
             observer.OnCompleted();
-        }
-
-        protected virtual string GetInstallDirectory()
-        {
-            return Application.temporaryCachePath;
-        }
-
-        private string GetCacheFileName()
-        {
-            return typeof(TMaster).Name + CacheFileExtension;
         }
 
         public IEnumerable<TMasterData> GetAllMasters()
@@ -287,8 +261,6 @@ namespace Modules.MasterCache
 
         protected abstract string GetMasterKey(TMasterData master);
 
-        protected abstract string GetDownloadFileName();
-
-        protected abstract IObservable<Unit> UpdateMaster();
+        protected abstract IObservable<Unit> DownloadMaster();
     }
 }

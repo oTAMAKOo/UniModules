@@ -1,6 +1,7 @@
 ﻿
 using UnityEngine;
 using UnityEditor;
+using System.IO;
 using Extensions;
 using UniRx;
 
@@ -8,9 +9,9 @@ using UniRx;
 using Modules.Atlas;
 using Modules.Dicing;
 using Modules.MessagePack;
+using Modules.Master;
 using Modules.ExternalResource;
 using Modules.ExternalResource.Editor;
-using Modules.Devkit;
 using Modules.Devkit.AssetBundles;
 using Modules.Devkit.AssetDependencies;
 using Modules.Devkit.CompileNotice;
@@ -120,6 +121,44 @@ namespace Modules
         public static void GenerateScriptableObject()
         {
             ScriptableObjectGenerator.Generate();
+        }
+
+        #endregion
+
+        //===============================================================
+        //  Master.
+        //===============================================================
+
+        #region Master
+
+        public const string MasterMenu = MenuRoot + "Master/";
+
+        //------ AssetDataBaseから読込 ------
+
+        [MenuItem(itemName: MasterMenu + "Use CachedMasterFile", priority = 0)]
+        public static void ToggleUseCachedMasterFile()
+        {
+            MasterManager.Prefs.checkVersion = !MasterManager.Prefs.checkVersion;
+        }
+
+        [MenuItem(itemName: MasterMenu + "Use CachedMasterFile", isValidateFunction: true)]
+        public static bool ToggleUseCachedMasterFileValidate()
+        {
+            Menu.SetChecked(MasterMenu + "Use CachedMasterFile", !MasterManager.Prefs.checkVersion);
+            return true;
+        }
+
+        [MenuItem(itemName: MasterMenu + "Open MasterFile Directory", priority = 12)]
+        public static void OpenMasterFileDirectory()
+        {
+            var masterDownloadDirectory = MasterManager.Instance.InstallDirectory;
+
+            if (!Directory.Exists(masterDownloadDirectory))
+            {
+                Directory.CreateDirectory(masterDownloadDirectory);
+            }
+
+            System.Diagnostics.Process.Start(masterDownloadDirectory);
         }
 
         #endregion
