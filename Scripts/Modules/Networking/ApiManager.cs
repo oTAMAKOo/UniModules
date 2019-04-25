@@ -259,7 +259,7 @@ namespace Modules.Networking
         {
             var webRequest = new TWebRequest();
 
-            webRequest.Initialize(PathUtility.Combine(ServerUrl, url), Format);
+            webRequest.Initialize(PathUtility.Combine(ServerUrl, url), Compress, Format);
 
             foreach (var header in Headers)
             {
