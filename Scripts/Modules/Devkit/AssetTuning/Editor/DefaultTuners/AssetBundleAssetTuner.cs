@@ -9,12 +9,10 @@ using Modules.Devkit.Project;
 
 namespace Modules.Devkit.AssetTuning
 {
-	public class AssetBundleAssetTuner : LifetimeDisposable, IAssetTuner
+	public class AssetBundleAssetTuner : AssetTuner
     {
         private IDisposable rebuildDisposable = null;
         private AssetManageManager assetManageManager = null;
-
-        public int Priority { get { return 50; } }
 
         private AssetManageManager AssetManageManager
         {
@@ -32,17 +30,15 @@ namespace Modules.Devkit.AssetTuning
         [InitializeOnLoadMethod]
         private static void InitializeOnLoadMethod()
         {
-            AssetTuner.Instance.Register<AssetBundleAssetTuner>();
+            AssetTuneManager.Instance.Register<AssetBundleAssetTuner>();
         }
 
-        public bool Validate(string path)
+        public override bool Validate(string path)
         {
             return AssetManageManager != null;
         }
-
-        public void OnAssetCreate(string path) { }
-
-        public void OnAssetImport(string path)
+        
+        public override void OnAssetImport(string path)
         {
             if (path.StartsWith(AssetManageManager.ExternalResourcesPath))
             {
@@ -55,9 +51,7 @@ namespace Modules.Devkit.AssetTuning
             }
         }
 
-        public void OnAssetDelete(string path) {}
-
-        public void OnAssetMove(string path, string from)
+        public override void OnAssetMove(string path, string from)
         {
             // 対象から外れる場合.
 

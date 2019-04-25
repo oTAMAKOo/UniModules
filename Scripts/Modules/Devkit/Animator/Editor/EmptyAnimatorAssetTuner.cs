@@ -12,7 +12,7 @@ using Modules.Devkit.AssetTuning;
 
 namespace Modules.Devkit.Animator
 {
-	public class EmptyAnimatorAssetTuner : IAssetTuner
+	public class EmptyAnimatorAssetTuner : AssetTuner
     {
         //----- params -----
 
@@ -20,17 +20,15 @@ namespace Modules.Devkit.Animator
 
         //----- property -----
 
-        public int Priority { get { return 50; } }
-
         //----- method -----
 
         [InitializeOnLoadMethod]
         private static void InitializeOnLoadMethod()
         {
-            AssetTuner.Instance.Register<EmptyAnimatorAssetTuner>();
+            AssetTuneManager.Instance.Register<EmptyAnimatorAssetTuner>();
         }
 
-        public bool Validate(string path)
+        public override bool Validate(string path)
         {
             if (Path.GetExtension(path) != ".controller") { return false; }
 
@@ -56,16 +54,10 @@ namespace Modules.Devkit.Animator
             return true;
         }
 
-        public void OnAssetCreate(string path)
+        public override void OnAssetCreate(string path)
         {
             RegisterTuneAssetCallback(path);
         }
-
-        public void OnAssetImport(string path) { }
-
-        public void OnAssetDelete(string path){ }
-
-        public void OnAssetMove(string path, string from) { }
 
         private void RegisterTuneAssetCallback(string path)
         {
@@ -115,8 +107,6 @@ namespace Modules.Devkit.Animator
             rootStateMachine.exitPosition = new Vector2(0f, 100f);
 
             UnityEditorUtility.SaveAsset(controller);
-
-            Debug.Log("TuneAsset!");
         }
     }
 }

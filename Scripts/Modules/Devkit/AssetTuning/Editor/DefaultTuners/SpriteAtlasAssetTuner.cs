@@ -5,18 +5,18 @@ using UnityEditor.U2D;
 
 namespace Modules.Devkit.AssetTuning
 {
-    public abstract class SpriteAtlasAssetTuner : IAssetTuner
+    public abstract class SpriteAtlasAssetTuner : AssetTuner
     {
-        public int Priority { get { return 75; } }
+        public override int Priority { get { return 75; } }
 
-        public bool Validate(string path)
+        public override bool Validate(string path)
         {
             var spriteAtlas = AssetDatabase.LoadMainAssetAtPath(path) as SpriteAtlas;
 
             return spriteAtlas != null;
         }
 
-        public void OnAssetCreate(string path)
+        public override void OnAssetCreate(string path)
         {
             var spriteAtlas = AssetDatabase.LoadMainAssetAtPath(path) as SpriteAtlas;
 
@@ -26,12 +26,6 @@ namespace Modules.Devkit.AssetTuning
 
             AssetDatabase.WriteImportSettingsIfDirty(path);
         }
-
-        public virtual void OnAssetImport(string path) { }
-
-        public virtual void OnAssetDelete(string path) { }
-
-        public virtual void OnAssetMove(string path, string from) { }
 
         protected virtual void OnFirstImport(SpriteAtlas spriteAtlas)
         {

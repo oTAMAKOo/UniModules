@@ -30,19 +30,26 @@ namespace Modules.Devkit.AssetTuning
         /// <param name="movedFromPath"> 移動されたアセットの移動前のファイルパス。 </param>
         static void OnPostprocessAllAssets(string[] importedAssets, string[] deletedAssets, string[] movedAssets, string[] movedFromPath)
         {
-            var assetTuner = AssetTuner.Instance;
+            var assetTuneManager = AssetTuneManager.Instance;
+
+            var assetTuners = assetTuneManager.AssetTuners;
 
             try
             {
                 AssetDatabase.StartAssetEditing();
+                
+                foreach (var tuner in assetTuners)
+                {
+                    tuner.OnBegin();
+                }
 
-                foreach (var tuner in assetTuner.AssetTuners)
+                foreach (var tuner in assetTuners)
                 {
                     foreach (var path in importedAssets)
                     {
                         if (!tuner.Validate(path)) { continue; }
 
-                        if (assetTuner.IsFirstImport(path))
+                        if (assetTuneManager.IsFirstImport(path))
                         {
                             tuner.OnAssetCreate(path);
                         }
@@ -67,7 +74,12 @@ namespace Modules.Devkit.AssetTuning
 
                 foreach (var path in importedAssets)
                 {
-                    assetTuner.FinishFirstImport(path);
+                    assetTuneManager.FinishFirstImport(path);
+                }
+
+                foreach (var tuner in assetTuners)
+                {
+                    tuner.OnFinish();
                 }
             }
             catch (Exception ex)

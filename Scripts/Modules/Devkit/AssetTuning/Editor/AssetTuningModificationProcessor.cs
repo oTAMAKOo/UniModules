@@ -20,7 +20,7 @@ namespace Modules.Devkit.AssetTuning
 
         public static void OnWillCreateAsset(string path)
         {
-            var assetTuner = AssetTuner.Instance;
+            var assetTuneManager = AssetTuneManager.Instance;
 
             var extension = Path.GetExtension(path);
 
@@ -28,7 +28,7 @@ namespace Modules.Devkit.AssetTuning
             if (extension == UnityEditorUtility.MetaFileExtension)
             {
                 path = path.Replace(UnityEditorUtility.MetaFileExtension, string.Empty);
-                assetTuner.MarkFirstImport(path);
+                assetTuneManager.MarkFirstImport(path);
             }
         }
     }

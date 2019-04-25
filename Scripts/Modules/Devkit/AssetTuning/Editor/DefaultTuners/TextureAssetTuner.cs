@@ -8,7 +8,7 @@ using Extensions;
 
 namespace Modules.Devkit.AssetTuning
 {
-    public abstract class TextureAssetTuner : ITextureAssetTuner
+    public abstract class TextureAssetTuner : AssetTuner
     {
         //----- params -----
 
@@ -23,9 +23,7 @@ namespace Modules.Devkit.AssetTuning
         private MethodInfo getWidthAndHeightMethodInfo = null;
 
         //----- property -----
-
-        public int Priority { get { return 25; } }
-
+        
         /// <summary> 適用対象 </summary>
         protected virtual BuildTargetGroup[] Platforms
         {
@@ -37,14 +35,14 @@ namespace Modules.Devkit.AssetTuning
 
         //----- method -----
        
-        public bool Validate(string path)
+        public override bool Validate(string path)
         {
             var textureImporter = AssetImporter.GetAtPath(path) as TextureImporter;
 
             return textureImporter != null;
         }
 
-        public void OnAssetCreate(string path)
+        public override void OnAssetCreate(string path)
         {
             var textureImporter = AssetImporter.GetAtPath(path) as TextureImporter;
 
@@ -54,12 +52,6 @@ namespace Modules.Devkit.AssetTuning
 
             textureImporter.SaveAndReimport();
         }
-
-        public virtual void OnAssetImport(string path) {}
-
-        public virtual void OnAssetDelete(string path) {}
-
-        public virtual void OnAssetMove(string path, string from) {}
 
         public virtual void OnPreprocessTexture(string path, bool isFirstImport)
         {
