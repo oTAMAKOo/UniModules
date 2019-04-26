@@ -26,7 +26,7 @@ namespace Modules.Master
         {
             All = new List<IMaster>();
 
-            InstallDirectory = string.Format("{0}/Master", Application.temporaryCachePath);
+            InstallDirectory = string.Format("{0}/Master/", Application.temporaryCachePath);
         }
 
         public string GetInstallPath<T>() where T : IMaster
