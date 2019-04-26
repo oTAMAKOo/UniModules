@@ -1,19 +1,24 @@
-﻿
-#if ENABLE_LIVE2D
-﻿
+﻿﻿
 using UnityEngine;
 using System;
 using System.Collections;
 using System.Collections.Generic;
 using UniRx;
+using Modules.OffScreenRendering;
+
+#if ENABLE_LIVE2D
+
 using Live2D.Cubism.Core;
 using Live2D.Cubism.Framework.Raycasting;
-using Modules.OffScreenRendering;
+
+#endif
 
 namespace Modules.Live2D
 {
     public class Live2DRaycaster : RenderTextureRaycaster
     {
+        #if ENABLE_LIVE2D
+
         //----- params -----
 
         //----- field -----
@@ -50,7 +55,7 @@ namespace Modules.Live2D
                 }
             }
         }
+
+        #endif
     }
 }
-
-#endif

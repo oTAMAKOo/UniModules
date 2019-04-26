@@ -64,9 +64,12 @@ namespace Modules.Devkit.EventHook
 
         protected static void AddRequireComponents(GameObject[] newGameObjects, Func<GameObject, bool> checkExecute)
         {
+            // 無効化中は追加しない.
+            if (!Prefs.enable) { return; }
+
             // 実行中は追加しない.
             if (Application.isPlaying) { return; }
-
+            
             foreach (var newGameObject in newGameObjects)
             {
                 // 子階層も走査.
