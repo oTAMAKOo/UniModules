@@ -38,7 +38,7 @@ namespace Modules.SceneManagement
         void Enter(bool isSceneBack);
 
         /// <summary> シーンの終了 </summary>
-        IObservable<Unit> LeaveAsync();
+        IObservable<Unit> Leave();
 
         /// <summary> シーンの再読み込み  </summary>
         void Reload();
@@ -59,7 +59,7 @@ namespace Modules.SceneManagement
         public abstract void Enter(bool isSceneBack);
 
         /// <summary> シーン離脱時処理 </summary>
-        public abstract IObservable<Unit> LeaveAsync();
+        public abstract IObservable<Unit> Leave();
 
         /// <summary> シーン再読み込み時処理 </summary>
         public abstract void Reload();

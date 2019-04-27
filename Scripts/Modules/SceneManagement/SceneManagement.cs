@@ -308,7 +308,7 @@ namespace Modules.SceneManagement
                 }
 
                 // 現在のシーンの終了処理を実行.
-                yield return prev.Instance.LeaveAsync().ToYieldInstruction();
+                yield return prev.Instance.Leave().ToYieldInstruction();
 
                 // PlayerPrefsを保存.
                 PlayerPrefs.Save();
