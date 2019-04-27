@@ -60,7 +60,7 @@ namespace Modules.ExternalResource.Editor
             assetManageModel = new AssetManageModel();
             assetManageModel.Initialize();
 
-            assetManageManager = new AssetManageManager();
+            assetManageManager = AssetManageManager.Instance;
             assetManageManager.Initialize(externalResourcesPath, assetManageConfig);
 
             manageAssetView = new ManageAssetView();

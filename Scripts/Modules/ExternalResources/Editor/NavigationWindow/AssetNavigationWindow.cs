@@ -91,7 +91,7 @@ namespace Modules.ExternalResource.Editor
 
 			AssetManageConfig.OnReloadAsObservable().Subscribe(_ => Setup()).AddTo(Disposable);
 
-			assetManageManager = new AssetManageManager();
+			assetManageManager = AssetManageManager.Instance;
 			assetManageManager.Initialize(externalResourcesPath, assetManageConfig);
 
 			if (!string.IsNullOrEmpty(Prefs.selectionAssetGUID))

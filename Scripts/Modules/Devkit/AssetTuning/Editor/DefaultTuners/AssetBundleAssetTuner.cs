@@ -14,18 +14,7 @@ namespace Modules.Devkit.AssetTuning
         private IDisposable rebuildDisposable = null;
         private AssetManageManager assetManageManager = null;
 
-        private AssetManageManager AssetManageManager
-        {
-            get
-            {
-                if (assetManageManager == null)
-                {
-                    BuildAssetManageManager();
-                }
-
-                return assetManageManager;
-            }
-        }
+        public override int Priority { get { return 75; } }
 
         [InitializeOnLoadMethod]
         private static void InitializeOnLoadMethod()
@@ -33,16 +22,33 @@ namespace Modules.Devkit.AssetTuning
             AssetTuneManager.Instance.Register<AssetBundleAssetTuner>();
         }
 
+        public override void OnBegin()
+        {
+            assetManageManager = null;
+
+            var projectFolders = ProjectFolders.Instance;
+            var assetManageConfig = AssetManageConfig.Instance;
+
+            if (projectFolders != null && assetManageConfig != null)
+            {
+                assetManageManager = AssetManageManager.Instance;
+
+                var externalResourcesPath = projectFolders.ExternalResourcesPath;
+
+                assetManageManager.Initialize(externalResourcesPath, assetManageConfig);
+            }
+        }
+
         public override bool Validate(string path)
         {
-            return AssetManageManager != null;
+            return assetManageManager != null;
         }
         
         public override void OnAssetImport(string path)
         {
-            if (path.StartsWith(AssetManageManager.ExternalResourcesPath))
+            if (path.StartsWith(assetManageManager.ExternalResourcesPath))
             {
-                var infos = AssetManageManager.CollectInfo(path);
+                var infos = assetManageManager.CollectInfo(path);
 
                 foreach (var info in infos)
                 {
@@ -55,50 +61,25 @@ namespace Modules.Devkit.AssetTuning
         {
             // 対象から外れる場合.
 
-            if (from.StartsWith(AssetManageManager.ExternalResourcesPath))
+            if (from.StartsWith(assetManageManager.ExternalResourcesPath))
             {
-                if (!path.StartsWith(AssetManageManager.ExternalResourcesPath))
+                if (!path.StartsWith(assetManageManager.ExternalResourcesPath))
                 {
-                    AssetManageManager.SetAssetBundleName(path, string.Empty);
+                    assetManageManager.SetAssetBundleName(path, string.Empty);
                 }
             }
 
             // 対象に追加される場合.
 
-            if (path.StartsWith(AssetManageManager.ExternalResourcesPath))
+            if (path.StartsWith(assetManageManager.ExternalResourcesPath))
             {
-                var infos = AssetManageManager.CollectInfo(path);
+                var infos = assetManageManager.CollectInfo(path);
 
                 foreach (var info in infos)
                 {
                     info.ApplyAssetBundleName();
                 }
             }
-        }
-
-        private void BuildAssetManageManager()
-        {
-            var projectFolders = ProjectFolders.Instance;
-            var assetManageConfig = AssetManageConfig.Instance;
-
-            if (projectFolders == null) { return; }
-
-            if (assetManageConfig == null) { return; }
-
-            var externalResourcesPath = projectFolders.ExternalResourcesPath;
-
-            assetManageManager = new AssetManageManager();
-            assetManageManager.Initialize(externalResourcesPath, assetManageConfig);
-
-            if(rebuildDisposable != null)
-            {
-                rebuildDisposable.Dispose();
-                rebuildDisposable = null;
-            }
-
-            rebuildDisposable = AssetManageConfig.OnReloadAsObservable()
-                .Subscribe(_ => BuildAssetManageManager())
-                .AddTo(Disposable);
         }
     }
 }

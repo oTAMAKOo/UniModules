@@ -22,7 +22,7 @@ namespace Modules.ExternalResource.Editor
 
         public static void Generate(string externalResourcesPath, AssetManageConfig config)
         {
-            var assetManageManager = new AssetManageManager();
+            var assetManageManager = AssetManageManager.Instance;
 
             assetManageManager.Initialize(externalResourcesPath, config);
 
@@ -38,7 +38,7 @@ namespace Modules.ExternalResource.Editor
 
         public static void SetAssetFileInfo(string exportPath, string externalResourcesPath, AssetBundleManifest assetBundleManifest)
         {
-            var manifestPath = PathUtility.Combine(externalResourcesPath, AssetInfoManifest.ManifestFileName);
+            var manifestPath = GetManifestPath(externalResourcesPath);
             var assetInfoManifest = AssetDatabase.LoadAssetAtPath<AssetInfoManifest>(manifestPath);
 
             var progress = new ScheduledNotifier<Tuple<string,float>>();
@@ -87,7 +87,7 @@ namespace Modules.ExternalResource.Editor
             var allAssetInfos = assetManageManager.GetAllAssetInfos().ToArray();
 
             // アセット情報を更新.
-            var manifestPath = PathUtility.Combine(assetManageManager.ExternalResourcesPath, AssetInfoManifest.ManifestFileName);
+            var manifestPath = GetManifestPath(assetManageManager.ExternalResourcesPath);
             var manifest = ScriptableObjectGenerator.Generate<AssetInfoManifest>(manifestPath);
 
             Reflection.SetPrivateField(manifest, "assetInfos", allAssetInfos);
@@ -100,6 +100,11 @@ namespace Modules.ExternalResource.Editor
             importer.SaveAndReimport();
 
             return manifest;
+        }
+
+        private static string GetManifestPath(string externalResourcesPath)
+        {
+            return PathUtility.Combine(externalResourcesPath, AssetInfoManifest.ManifestFileName);
         }
     }
 }

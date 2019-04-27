@@ -13,7 +13,7 @@ using Object = UnityEngine.Object;
 
 namespace Modules.ExternalResource.Editor
 {
-    public class AssetManageManager : LifetimeDisposable
+    public class AssetManageManager : Singleton<AssetManageManager>
     {
         //----- params -----
 
@@ -34,6 +34,8 @@ namespace Modules.ExternalResource.Editor
         // Tuple<管理アセットのパス, 管理情報>をパスの長い順に抽出したキャッシュ.
         private Tuple<string, ManageInfo>[] manageInfoSearchCache = null;
 
+        private bool initialized = false;
+
         //----- property -----
 
         public string ExternalResourcesPath { get { return externalResourcesPath; } }
@@ -43,17 +45,22 @@ namespace Modules.ExternalResource.Editor
 
         //----- method -----
 
+        protected AssetManageManager()
+        {
+            assetCollectInfoByAssetPath = new Dictionary<string, AssetCollectInfo>();
+        }
+
         public void Initialize(string externalResourcesPath, AssetManageConfig config)
         {
+            if (initialized) { return; }
+
             this.externalResourcesPath = externalResourcesPath;
             this.config = config;
 
             groupInfos = new List<GroupInfo>(config.GroupInfos);
             manageInfos = new List<ManageInfo>(config.ManageInfos);
 
-            assetCollectInfoByAssetPath = new Dictionary<string, AssetCollectInfo>();
-
-            manageInfoSearchCache = null;
+            initialized = true;
         }
 
         public IEnumerable<AssetInfo> GetAllAssetInfos()
