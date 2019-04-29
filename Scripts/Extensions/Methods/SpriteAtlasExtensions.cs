@@ -10,11 +10,11 @@ namespace Extensions
 {
     public static class SpriteAtlasExtensions
     {
-        public static IEnumerable<Sprite> GetAllSprites(this SpriteAtlas atlas)
+        public static IEnumerable<Sprite> GetAllSprites(this SpriteAtlas spriteAtlas)
         {
-            var sprites = new Sprite[atlas.spriteCount];
+            var sprites = new Sprite[spriteAtlas.spriteCount];
 
-            atlas.GetSprites(sprites);
+            spriteAtlas.GetSprites(sprites);
 
             foreach (var sprite in sprites)
             {
@@ -24,9 +24,9 @@ namespace Extensions
             return sprites;
         }
 
-        public static string[] GetListOfSprites(this SpriteAtlas atlas, string match = null)
+        public static string[] GetListOfSprites(this SpriteAtlas spriteAtlas, string match = null)
         {
-            var sprites = atlas.GetAllSprites().ToArray();
+            var sprites = spriteAtlas.GetAllSprites().ToArray();
 
             if (string.IsNullOrEmpty(match)) { return sprites.Select(x => x.name).ToArray(); }
 
