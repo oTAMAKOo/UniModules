@@ -199,21 +199,14 @@ namespace Extensions
         /// <summary> Nullチェック </summary>
         public static bool IsNull(object obj)
         {
-            if (obj is UnityEngine.Object)
+            var unityObj = obj as UnityEngine.Object;
+
+            if (!ReferenceEquals(unityObj, null))
             {
-                if ((UnityEngine.Object)obj != null)
-                {
-                    return false; // 元気なUnityオブジェクト.
-                }
-                else
-                {
-                    return true; // 死んだフリしているUnityオブジェクト.
-                }
+                return unityObj == null;
             }
-            else
-            {
-                return obj == null;
-            }
+
+            return obj == null;
         }
 
         #endregion

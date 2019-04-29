@@ -72,13 +72,9 @@ namespace Extensions
             return null;
         }
 
-        #if !UNITY_METRO
-
         public static bool HasFlag<T>(this T source, T destination) where T : struct, IComparable, IFormattable, IConvertible
         {
             return (Convert.ToUInt64(source) & Convert.ToUInt64(destination)) != 0;
         }
-
-        #endif
     }
 }
