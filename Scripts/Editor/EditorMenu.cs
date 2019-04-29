@@ -6,7 +6,7 @@ using Extensions;
 using UniRx;
 
 // Modules.
-using Modules.Atlas;
+using Modules.SpriteSheet;
 using Modules.Dicing;
 using Modules.MessagePack;
 using Modules.Master;
@@ -250,10 +250,10 @@ namespace Modules
 
         public const string ToolsMenu = MenuRoot + "Tools/";
 
-        [MenuItem(itemName: ToolsMenu + "Atlas Packer/Open AtlasPacker", priority = 0)]
-        public static void OpenAtlasMaker()
+        [MenuItem(itemName: ToolsMenu + "SpriteSheet Maker/Open SpriteSheetMaker", priority = 0)]
+        public static void OpenSpriteSheetMaker()
         {
-            AtlasPacker.Open();
+            SpriteSheetMaker.Open();
         }
 
         [MenuItem(itemName: ToolsMenu + "Dicing Packer/Open DicingPacker", priority = 1)]

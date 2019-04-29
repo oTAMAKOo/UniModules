@@ -1,11 +1,8 @@
 ﻿
 using UnityEngine;
-using System;
 using System.Linq;
-using System.Collections.Generic;
 using UniRx;
 using Extensions;
-using Modules.Atlas;
 using Modules.UI.Element;
 
 namespace Modules.UI.Reactive
@@ -21,7 +18,7 @@ namespace Modules.UI.Reactive
         [SerializeField]
         private UIButton target = null;
         [SerializeField]
-        private AtlasTexture atlas = null;
+        private SpriteSheet.SpriteSheet spriteSheet = null;
 
         [SerializeField, HideInInspector]
         private string enableSpriteName = null;
@@ -36,7 +33,7 @@ namespace Modules.UI.Reactive
 
         //----- property -----
 
-        public AtlasTexture Atlas { get { return atlas; } }
+        public SpriteSheet.SpriteSheet SpriteSheet { get { return spriteSheet; } }
 
         public string EnableSpriteName
         {
@@ -44,9 +41,9 @@ namespace Modules.UI.Reactive
 
             set
             {
-                if (atlas != null && atlas.GetListOfSprites().Contains(value))
+                if (spriteSheet != null && spriteSheet.GetListOfSprites().Contains(value))
                 {
-                    var spriteData = atlas.GetSpriteData(value);
+                    var spriteData = spriteSheet.GetSpriteData(value);
 
                     enableSpriteGuid = spriteData.guid;
                     enableSpriteName = value;
@@ -67,9 +64,9 @@ namespace Modules.UI.Reactive
 
             set
             {
-                if (atlas != null && atlas.GetListOfSprites().Contains(value))
+                if (spriteSheet != null && spriteSheet.GetListOfSprites().Contains(value))
                 {
-                    var spriteData = atlas.GetSpriteData(value);
+                    var spriteData = spriteSheet.GetSpriteData(value);
 
                     disableSpriteGuid = spriteData.guid;
                     disableSpriteName = value;
@@ -108,7 +105,7 @@ namespace Modules.UI.Reactive
         {
             var spriteGuid = interactable ? enableSpriteGuid : disableSpriteGuid;
 
-            var spriteData = atlas.GetSpriteData(spriteGuid);
+            var spriteData = spriteSheet.GetSpriteData(spriteGuid);
 
             if (spriteData != null)
             {
@@ -124,7 +121,7 @@ namespace Modules.UI.Reactive
 
             var spriteName = interactable ? enableSpriteName : disableSpriteName;
 
-            var sprite = atlas.GetSprite(spriteName); ;
+            var sprite = spriteSheet.GetSprite(spriteName); ;
 
             if (sprite != null)
             {

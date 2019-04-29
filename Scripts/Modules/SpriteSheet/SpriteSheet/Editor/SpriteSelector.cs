@@ -5,11 +5,11 @@ using System.Collections.Generic;
 using Extensions;
 using Extensions.Devkit;
 
-namespace Modules.Atlas
+namespace Modules.SpriteSheet
 {
-    public class AtlasSpriteSelector : ScriptableWizard
+    public class SpriteSelector : ScriptableWizard
     {
-        public static AtlasSpriteSelector instance;
+        public static SpriteSelector instance;
 
         public delegate void Callback(string sprite);
 
@@ -30,13 +30,13 @@ namespace Modules.Atlas
         {
             EditorLayoutTools.SetLabelWidth(80f);
 
-            if (EditorAtlasPrefs.atlas == null)
+            if (EditorSpriteSheetPrefs.spriteSheet == null)
             {
-                EditorGUILayout.HelpBox("No Atlas selected.", MessageType.Info);
+                EditorGUILayout.HelpBox("No SpriteSheet selected.", MessageType.Info);
             }
             else
             {
-                var atlas = EditorAtlasPrefs.atlas;
+                var spriteSheet = EditorSpriteSheetPrefs.spriteSheet;
 
                 GUILayout.Space(15f);
 
@@ -49,19 +49,19 @@ namespace Modules.Atlas
                     txtStyle.fontSize = 12;
                     txtStyle.normal.textColor = Color.yellow;
 
-                    GUILayout.Label("Atlas : " + atlas.name, txtStyle);
+                    GUILayout.Label("SpriteSheet : " + spriteSheet.name, txtStyle);
 
                     GUILayout.FlexibleSpace();
 
                     GUILayout.BeginHorizontal();
                     {
-                        string before = EditorAtlasPrefs.spriteSearchText;
+                        string before = EditorSpriteSheetPrefs.spriteSearchText;
                         string after = EditorGUILayout.TextField(string.Empty, before, "SearchTextField", GUILayout.Width(200f));
-                        if (before != after) EditorAtlasPrefs.spriteSearchText = after;
+                        if (before != after) EditorSpriteSheetPrefs.spriteSearchText = after;
 
                         if (GUILayout.Button(string.Empty, "SearchCancelButton", GUILayout.Width(18f)))
                         {
-                            EditorAtlasPrefs.spriteSearchText = string.Empty;
+                            EditorSpriteSheetPrefs.spriteSearchText = string.Empty;
                             GUIUtility.keyboardControl = 0;
                         }
                     }
@@ -72,15 +72,15 @@ namespace Modules.Atlas
 
                 EditorGUILayout.Separator();
 
-                Texture2D tex = atlas.Texture as Texture2D;
+                Texture2D tex = spriteSheet.Texture as Texture2D;
 
                 if (tex == null)
                 {
-                    EditorGUILayout.HelpBox("The atlas doesn't have a texture to work with.", MessageType.Info);
+                    EditorGUILayout.HelpBox("The spritesheet doesn't have a texture to work with.", MessageType.Info);
                     return;
                 }
 
-                var sprites = atlas.GetListOfSprites(EditorAtlasPrefs.spriteSearchText);
+                var sprites = spriteSheet.GetListOfSprites(EditorSpriteSheetPrefs.spriteSearchText);
 
                 var size = 80f;
                 var padded = size + 10f;
@@ -105,7 +105,7 @@ namespace Modules.Atlas
 
                         for (; offset < sprites.Length; ++offset)
                         {
-                            var sprite = atlas.GetSpriteData(sprites[offset]);
+                            var sprite = spriteSheet.GetSpriteData(sprites[offset]);
 
                             if (sprite == null) continue;
 
@@ -113,10 +113,10 @@ namespace Modules.Atlas
                             {
                                 if (Event.current.button == 0)
                                 {
-                                    if (EditorAtlasPrefs.spriteSearchText != sprite.name)
+                                    if (EditorSpriteSheetPrefs.spriteSearchText != sprite.name)
                                     {
-                                        EditorAtlasPrefs.selectedSprite = sprite.name;
-                                        AtlasTextureInspector.RepaintSprites();
+                                        EditorSpriteSheetPrefs.selectedSprite = sprite.name;
+                                        SpriteSheetInspector.RepaintSprites();
 
                                         if (callback != null)
                                         {
@@ -158,7 +158,7 @@ namespace Modules.Atlas
 
                                 GUI.DrawTextureWithTexCoords(clipRect, tex, uv);
                                 
-                                if (EditorAtlasPrefs.selectedSprite == sprite.name)
+                                if (EditorSpriteSheetPrefs.selectedSprite == sprite.name)
                                 {
                                     EditorLayoutTools.DrawOutline(rect, new Color(0.4f, 1f, 0f, 1f));
                                 }
@@ -192,9 +192,9 @@ namespace Modules.Atlas
 
         public static void ShowSelected()
         {
-            if (EditorAtlasPrefs.atlas != null)
+            if (EditorSpriteSheetPrefs.spriteSheet != null)
             {
-                Show(delegate (string sel) { AtlasTextureInspector.SelectSprite(sel); });
+                Show(delegate (string sel) { SpriteSheetInspector.SelectSprite(sel); });
             }
         }
 
@@ -206,7 +206,7 @@ namespace Modules.Atlas
                 instance = null;
             }
 
-            var comp = ScriptableWizard.DisplayWizard<AtlasSpriteSelector>("Select Sprite");
+            var comp = ScriptableWizard.DisplayWizard<SpriteSelector>("Select Sprite");
 
             comp.callback = callback;
         }

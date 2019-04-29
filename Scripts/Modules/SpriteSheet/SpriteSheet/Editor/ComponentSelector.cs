@@ -6,7 +6,7 @@ using System.Collections.Generic;
 using Extensions;
 using Extensions.Devkit;
 
-namespace Modules.Atlas
+namespace Modules.SpriteSheet
 {
     public class ComponentSelector : ScriptableWizard
     {

@@ -7,9 +7,9 @@ using Extensions;
 using Extensions.Devkit;
 using Modules.Devkit.TextureEdit;
 
-namespace Modules.Atlas
+namespace Modules.SpriteSheet
 {
-    public partial class AtlasPacker
+    public partial class SpriteSheetMaker
     {
         //----- params -----
 
@@ -50,7 +50,7 @@ namespace Modules.Atlas
 
         //----- method -----
 
-        private void StartTextureEdit(AtlasTexture atlas, List<Texture> textures)
+        private void StartTextureEdit(SpriteSheet spriteSheet, List<Texture> textures)
         {
             AssetDatabase.StartAssetEditing();
 
@@ -68,9 +68,9 @@ namespace Modules.Atlas
                 editableTextures.Clear();
             }
 
-            if (atlas != null)
+            if (spriteSheet != null)
             {
-                var texture = atlas.Texture as Texture2D;
+                var texture = spriteSheet.Texture as Texture2D;
 
                 RegisterEditableTexture(texture, true);
             }
@@ -107,8 +107,6 @@ namespace Modules.Atlas
             {
                 editableTexture.Editable();
 
-                //UnityEditorUtility.RegisterEditAsset(editableTexture.Texture);
-
 				if (restore)
                 {
                     editableTextures.Add(editableTexture.Guid, editableTexture);
@@ -116,13 +114,13 @@ namespace Modules.Atlas
 			}
 		}
 
-        private void UpdateAtlas(AtlasTexture atlas, List<Texture> textures, bool keepSprites)
+        private void UpdateSpriteSheet(SpriteSheet spriteSheet, List<Texture> textures, bool keepSprites)
         {
-            if (atlas == null) { return; }
+            if (spriteSheet == null) { return; }
 
             Texture2D texture = null;
 
-            texture = atlas.Texture as Texture2D;
+            texture = spriteSheet.Texture as Texture2D;
 
             var sprites = CreateSprites(textures);
 
@@ -130,17 +128,17 @@ namespace Modules.Atlas
             {
                 if (keepSprites)
                 {
-                    ExtractSprites(atlas, sprites);
+                    ExtractSprites(spriteSheet, sprites);
                 }
 
-                UpdateAtlas(atlas, sprites);
+                UpdateSpriteSheet(spriteSheet, sprites);
             }
             else if (!keepSprites)
             {
-                UpdateAtlas(atlas, sprites);
+                UpdateSpriteSheet(spriteSheet, sprites);
             }
 
-            texture = atlas.Texture as Texture2D;
+            texture = spriteSheet.Texture as Texture2D;
 
             if (texture != null)
             {
@@ -148,32 +146,32 @@ namespace Modules.Atlas
             }
         }
 
-        private void UpdateAtlas(AtlasTexture atlas, List<SpriteEntry> sprites)
+        private void UpdateSpriteSheet(SpriteSheet spriteSheet, List<SpriteEntry> sprites)
         {
-            if (atlas == null) { return; }
+            if (spriteSheet == null) { return; }
 
             if (sprites.Count > 0)
             {
-                if (UpdateTexture(atlas, sprites))
+                if (UpdateTexture(spriteSheet, sprites))
                 {
-                    ReplaceSprites(atlas, sprites);
+                    ReplaceSprites(spriteSheet, sprites);
                 }
 
                 ReleaseSprites(sprites);
 
-                atlas.Padding = padding;
-                atlas.PixelsPerUnit = pixelsPerUnit;
-                atlas.FilterMode = filterMode;
+                spriteSheet.Padding = padding;
+                spriteSheet.PixelsPerUnit = pixelsPerUnit;
+                spriteSheet.FilterMode = filterMode;
             }
             else
             {
-                atlas.Sprites.Clear();
+                spriteSheet.Sprites.Clear();
 
-                var path = GetSaveableTexturePath(atlas);
+                var path = GetSaveableTexturePath(spriteSheet);
                 
-                atlas.Padding = 0;
-                atlas.PixelsPerUnit = 100f;
-                atlas.FilterMode = FilterMode.Bilinear;
+                spriteSheet.Padding = 0;
+                spriteSheet.PixelsPerUnit = 100f;
+                spriteSheet.FilterMode = FilterMode.Bilinear;
 
                 if (!string.IsNullOrEmpty(path))
                 {
@@ -208,17 +206,17 @@ namespace Modules.Atlas
             return list;
         }
 
-        private List<SpriteEntry> ExtractAllSprite(AtlasTexture atlas)
+        private List<SpriteEntry> ExtractAllSprite(SpriteSheet spriteSheet)
         {
             var sprites = new List<SpriteEntry>();
 
-            if (atlas.Texture == null) { return null; }
+            if (spriteSheet.Texture == null) { return null; }
 
-            foreach (var sd in atlas.Sprites)
+            foreach (var sd in spriteSheet.Sprites)
             {
                 var identifier = string.IsNullOrEmpty(sd.guid) ? sd.name : sd.guid;
 
-                var se = ExtractSprite(atlas, identifier);
+                var se = ExtractSprite(spriteSheet, identifier);
 
                 if (se != null)
                 {
@@ -229,15 +227,15 @@ namespace Modules.Atlas
             return sprites;
         }
 
-        private SpriteEntry ExtractSprite(AtlasTexture atlas, string identifier)
+        private SpriteEntry ExtractSprite(SpriteSheet spriteSheet, string identifier)
         {
-            if (atlas.Texture == null) { return null; }
+            if (spriteSheet.Texture == null) { return null; }
 
-            var sd = atlas.GetSpriteData(identifier);
+            var sd = spriteSheet.GetSpriteData(identifier);
 
             if (sd == null) { return null; }
 
-            var se = ExtractSprite(sd, atlas.Texture as Texture2D);
+            var se = ExtractSprite(sd, spriteSheet.Texture as Texture2D);
 
             return se;
         }

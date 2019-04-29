@@ -10,9 +10,9 @@ using Extensions.Devkit;
 using Modules.Devkit.Generators;
 using Modules.Devkit.Prefs;
 
-namespace Modules.Atlas
+namespace Modules.SpriteSheet
 {
-    public partial class AtlasPacker : EditorWindow
+    public partial class SpriteSheetMaker : EditorWindow
     {
         //----- params -----
 
@@ -27,7 +27,7 @@ namespace Modules.Atlas
         };
 
         [Flags]
-        public enum AtlasAction
+        public enum MakerAction
         {
             None = 1 << 0,
             Create = 1 << 1,
@@ -40,8 +40,8 @@ namespace Modules.Atlas
         {
             public static string exportPath
             {
-                get { return ProjectPrefs.GetString("SpritePackerPrefs-exportPath", null); }
-                set { ProjectPrefs.SetString("SpritePackerPrefs-exportPath", value); }
+                get { return ProjectPrefs.GetString("SpriteSheetMakerPrefs-exportPath", null); }
+                set { ProjectPrefs.SetString("SpriteSheetMakerPrefs-exportPath", value); }
             }
         }
 
@@ -68,7 +68,7 @@ namespace Modules.Atlas
 
         //----- field -----
 
-        private AtlasTexture selectAtlas = null;
+        private SpriteSheet selectSpriteSheet = null;
 
         private Vector2 scrollPos = Vector2.zero;
         private string selection = null;
@@ -78,7 +78,7 @@ namespace Modules.Atlas
         private Color defaultColor = new Color();
         private Color defaultBackgroundColor = new Color();
 
-        public static AtlasPacker instance = null;
+        public static SpriteSheetMaker instance = null;
 
         //----- property -----
 
@@ -91,13 +91,13 @@ namespace Modules.Atlas
                 instance.Close();
             }
 
-            instance = EditorWindow.GetWindow<AtlasPacker>(false, "SpritePacker", true);
+            instance = EditorWindow.GetWindow<SpriteSheetMaker>(false, "SpriteSheetMaker", true);
             instance.Initialize();
         }
 
         public void Initialize()
         {
-            titleContent = new GUIContent("AtlasPacker");
+            titleContent = new GUIContent("SpriteSheetMaker");
             minSize = WindowSize;
 
             defaultColor = GUI.color;
@@ -112,30 +112,30 @@ namespace Modules.Atlas
 
         void OnGUI()
         {
-            var action = AtlasAction.None;
+            var action = MakerAction.None;
 
-            var textures = GetSelectedTextures(selectAtlas);
+            var textures = GetSelectedTextures(selectSpriteSheet);
 
             var spriteInfos = GetSpriteInfos(textures);
 
-            ComponentSelector.Draw("Atlas", selectAtlas, OnSelectAtlas, GUILayout.MinWidth(80f));
+            ComponentSelector.Draw("SpriteSheet", selectSpriteSheet, OnSelectSpriteSheet, GUILayout.MinWidth(80f));
 
-            if (selectAtlas == null)
+            if (selectSpriteSheet == null)
             {
-                action |= DrawAtlasCreate(textures);
+                action |= DrawSpriteSheetCreate(textures);
             }
             else
             {
-                DrawAtlasInfos();
+                DrawSpriteSheetInfos();
                 DrawOptions();
 
                 action |= DrawSpriteList(spriteInfos);
                 action |= DrawButtons();
             }
 
-            if (action != AtlasAction.None)
+            if (action != MakerAction.None)
             {
-                ApplyAtlas(action, textures);
+                ApplySpriteSheet(action, textures);
             }
 
             GUI.color = defaultColor;
@@ -149,11 +149,11 @@ namespace Modules.Atlas
 
         #region Draw GUI
 
-        private void DrawAtlasInfos()
+        private void DrawSpriteSheetInfos()
         {
             EditorLayoutTools.DrawLabelWithBackground("Input", EditorLayoutTools.BackgroundColor, EditorLayoutTools.LabelColor);
 
-            var tex = selectAtlas.Texture;
+            var tex = selectSpriteSheet.Texture;
 
             var labelWidth = 80f;
 
@@ -209,9 +209,9 @@ namespace Modules.Atlas
             GUILayout.Space(5f);
         }
 
-        private AtlasAction DrawButtons()
+        private MakerAction DrawButtons()
         {
-            var action = AtlasAction.None;
+            var action = MakerAction.None;
 
             GUILayout.Space(5f);
 
@@ -223,7 +223,7 @@ namespace Modules.Atlas
 
                 if (GUILayout.Button("Apply", GUILayout.Width(150f)))
                 {
-                    action |= AtlasAction.Update;
+                    action |= MakerAction.Update;
                 }
 
                 GUI.backgroundColor = defaultBackgroundColor;
@@ -232,7 +232,7 @@ namespace Modules.Atlas
 
                 if (GUILayout.Button("View Sprites", GUILayout.Width(150f)))
                 {
-                    AtlasSpriteSelector.ShowSelected();
+                    SpriteSelector.ShowSelected();
                 }
 
                 GUILayout.FlexibleSpace();
@@ -243,9 +243,9 @@ namespace Modules.Atlas
             return action;
         }
 
-        private AtlasAction DrawAtlasCreate(List<Texture> textures)
+        private MakerAction DrawSpriteSheetCreate(List<Texture> textures)
         {
-            var action = AtlasAction.None;
+            var action = MakerAction.None;
 
             EditorGUILayout.HelpBox("パック対象のテクスチャを選択してください。", MessageType.Info);
 
@@ -257,7 +257,7 @@ namespace Modules.Atlas
                     GUI.backgroundColor = textures.Count != 0 ? Color.yellow : Color.white;
                     if (GUILayout.Button("Create"))
                     {
-                        action = AtlasAction.Create | AtlasAction.Replace;
+                        action = MakerAction.Create | MakerAction.Replace;
                     }
                     GUI.backgroundColor = defaultBackgroundColor;
                     GUILayout.Space(20f);
@@ -267,9 +267,9 @@ namespace Modules.Atlas
             return action;
         }
 
-        private AtlasAction DrawSpriteList(SpriteInfo[] spriteInfos)
+        private MakerAction DrawSpriteList(SpriteInfo[] spriteInfos)
         {
-            var action = AtlasAction.None;
+            var action = MakerAction.None;
 
             if (spriteInfos.Any())
             {
@@ -291,7 +291,7 @@ namespace Modules.Atlas
 
                             GUILayout.Space(-1f);
 
-                            var highlight = (AtlasTextureInspector.instance != null) && (EditorAtlasPrefs.selectedSprite == spriteInfo.name);
+                            var highlight = (SpriteSheetInspector.instance != null) && (EditorSpriteSheetPrefs.selectedSprite == spriteInfo.name);
 
                             GUI.backgroundColor = highlight ? Color.white : new Color(0.8f, 0.8f, 0.8f);
 
@@ -353,7 +353,7 @@ namespace Modules.Atlas
 
                                 if (delete)
                                 {
-                                    action |= AtlasAction.Delete;
+                                    action |= MakerAction.Delete;
                                 }
                             }
                         }
@@ -363,9 +363,9 @@ namespace Modules.Atlas
                 }
             }
 
-            if (EditorAtlasPrefs.atlas != null && !string.IsNullOrEmpty(selection))
+            if (EditorSpriteSheetPrefs.spriteSheet != null && !string.IsNullOrEmpty(selection))
             {
-                AtlasTextureInspector.SelectSprite(selection);
+                SpriteSheetInspector.SelectSprite(selection);
                 selection = null;
             }
 
@@ -374,13 +374,13 @@ namespace Modules.Atlas
 
         #endregion
 
-        private void ApplyAtlas(AtlasAction action, List<Texture> textures)
+        private void ApplySpriteSheet(MakerAction action, List<Texture> textures)
         {
-            if (action == AtlasAction.None) { return; }
+            if (action == MakerAction.None) { return; }
 
-            StartTextureEdit(selectAtlas, textures);
+            StartTextureEdit(selectSpriteSheet, textures);
 
-            if (action.HasFlag(AtlasAction.Create))
+            if (action.HasFlag(MakerAction.Create))
             {
                 var path = string.Empty;
 
@@ -393,31 +393,31 @@ namespace Modules.Atlas
                     path = Prefs.exportPath;
                 }
 
-                path = EditorUtility.SaveFilePanelInProject("Save As", "New Atlas.asset", "asset", "Save atlas as...", path);
+                path = EditorUtility.SaveFilePanelInProject("Save As", "New SpriteSheet.asset", "asset", "Save spritesheet as...", path);
 
                 if (!string.IsNullOrEmpty(path))
                 {
                     Prefs.exportPath = Path.GetDirectoryName(path) + PathUtility.PathSeparator;
 
-                    // Create ScriptableObject for atlas.
-                    var atlasTexture = ScriptableObjectGenerator.Generate<AtlasTexture>(path, false);
+                    // Create ScriptableObject for spritesheet.
+                    var spritSheet = ScriptableObjectGenerator.Generate<SpriteSheet>(path, false);
 
-                    if (atlasTexture != null)
+                    if (spritSheet != null)
                     {
-                        Selection.activeObject = atlasTexture;
+                        Selection.activeObject = spritSheet;
 
-                        OnSelectAtlas(atlasTexture);
+                        OnSelectSpriteSheet(spritSheet);
                     }
                 }
                 else
                 {
-                    action = AtlasAction.None;
+                    action = MakerAction.None;
                 }
             }
-            else if (action.HasFlag(AtlasAction.Delete))
+            else if (action.HasFlag(MakerAction.Delete))
             {
                 var sprites = new List<SpriteEntry>();
-                ExtractSprites(selectAtlas, sprites);
+                ExtractSprites(selectSpriteSheet, sprites);
 
                 for (int i = sprites.Count; i > 0;)
                 {
@@ -429,43 +429,43 @@ namespace Modules.Atlas
                     }
                 }
 
-                UpdateAtlas(selectAtlas, sprites);
+                UpdateSpriteSheet(selectSpriteSheet, sprites);
 
                 deleteNames.Clear();
             }
 
-            if (action.HasFlag(AtlasAction.Update))
+            if (action.HasFlag(MakerAction.Update))
             {
-                UpdateAtlas(selectAtlas, textures, true);
+                UpdateSpriteSheet(selectSpriteSheet, textures, true);
             }
-            else if (action.HasFlag(AtlasAction.Replace))
+            else if (action.HasFlag(MakerAction.Replace))
             {
-                UpdateAtlas(selectAtlas, textures, false);
+                UpdateSpriteSheet(selectSpriteSheet, textures, false);
             }
 
-            selectAtlas.CacheClear();
+            selectSpriteSheet.CacheClear();
 
             FinishTextureEdit();
 
-            UnityEditorUtility.SaveAsset(selectAtlas);
+            UnityEditorUtility.SaveAsset(selectSpriteSheet);
         }
 
-        private void OnSelectAtlas(UnityEngine.Object obj)
+        private void OnSelectSpriteSheet(UnityEngine.Object obj)
         {
-            if (EditorAtlasPrefs.atlas != obj || obj == null)
+            if (EditorSpriteSheetPrefs.spriteSheet != obj || obj == null)
             {
-                EditorAtlasPrefs.atlas = obj as AtlasTexture;
+                EditorSpriteSheetPrefs.spriteSheet = obj as SpriteSheet;
 
-                if (EditorAtlasPrefs.atlas != null)
+                if (EditorSpriteSheetPrefs.spriteSheet != null)
                 {
-                    selectAtlas = EditorAtlasPrefs.atlas;
-                    padding = selectAtlas.Padding;
-                    pixelsPerUnit = selectAtlas.PixelsPerUnit;
-                    filterMode = selectAtlas.FilterMode;
+                    selectSpriteSheet = EditorSpriteSheetPrefs.spriteSheet;
+                    padding = selectSpriteSheet.Padding;
+                    pixelsPerUnit = selectSpriteSheet.PixelsPerUnit;
+                    filterMode = selectSpriteSheet.FilterMode;
                 }
                 else
                 {
-                    selectAtlas = null;
+                    selectSpriteSheet = null;
                     padding = 0;
                     filterMode = FilterMode.Bilinear;
                 }
@@ -488,9 +488,9 @@ namespace Modules.Atlas
                 }
             }
 
-            if (selectAtlas != null)
+            if (selectSpriteSheet != null)
             {
-                var sprites = selectAtlas.Sprites;
+                var sprites = selectSpriteSheet.Sprites;
 
                 foreach (var sprite in sprites)
                 {
@@ -517,7 +517,7 @@ namespace Modules.Atlas
             return list.ToArray();
         }
 
-        private List<Texture> GetSelectedTextures(AtlasTexture atlas)
+        private List<Texture> GetSelectedTextures(SpriteSheet spriteSheet)
         {
             var textures = new List<Texture>();
 
@@ -531,9 +531,9 @@ namespace Modules.Atlas
 
                     if (tex.name == "Font Texture") { continue; }
 
-                    if (atlas != null && atlas.Texture != null)
+                    if (spriteSheet != null && spriteSheet.Texture != null)
                     {
-                        if (tex.GetInstanceID() == atlas.Texture.GetInstanceID()) { continue; }
+                        if (tex.GetInstanceID() == spriteSheet.Texture.GetInstanceID()) { continue; }
                     }
 
                     textures.Add(tex);
@@ -543,15 +543,15 @@ namespace Modules.Atlas
             return textures;
         }
 
-        public string GetSaveableTexturePath(AtlasTexture atlas)
+        public string GetSaveableTexturePath(SpriteSheet spriteSheet)
         {
             const string TextureExtension = ".png";
 
             string path = "";
 
-            if (atlas.Texture != null)
+            if (spriteSheet.Texture != null)
             {
-                path = AssetDatabase.GetAssetPath(atlas.Texture.GetInstanceID());
+                path = AssetDatabase.GetAssetPath(spriteSheet.Texture.GetInstanceID());
 
                 if (!string.IsNullOrEmpty(path))
                 {
@@ -561,8 +561,8 @@ namespace Modules.Atlas
                 }
             }
 
-            path = AssetDatabase.GetAssetPath(atlas.GetInstanceID());
-            path = string.IsNullOrEmpty(path) ? "Assets/" + atlas.name + TextureExtension : path.Replace(".asset", TextureExtension);
+            path = AssetDatabase.GetAssetPath(spriteSheet.GetInstanceID());
+            path = string.IsNullOrEmpty(path) ? "Assets/" + spriteSheet.name + TextureExtension : path.Replace(".asset", TextureExtension);
 
             return path;
         }

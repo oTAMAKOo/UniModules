@@ -1,24 +1,20 @@
 ﻿﻿
 using UnityEngine;
 using UnityEngine.UI;
-using System;
-using System.Linq;
-using System.Collections.Generic;
-using UniRx;
 using Extensions;
 
-namespace Modules.Atlas
+namespace Modules.SpriteSheet
 {
     [ExecuteInEditMode]
     [RequireComponent(typeof(Image))]
-    public class AtlasTextureImage : MonoBehaviour
+    public class SpriteSheetImage : MonoBehaviour
     {
         //----- params -----
 
         //----- field -----
 
         [SerializeField]
-        private AtlasTexture atlas = null;
+        private SpriteSheet spriteSheet = null;
         [SerializeField]
         private string spriteName = null;
         [SerializeField]
@@ -28,10 +24,10 @@ namespace Modules.Atlas
 
         //----- property -----
 
-        public AtlasTexture Atlas
+        public SpriteSheet SpriteSheet
         {
-            get { return atlas; }
-            set { atlas = value; }
+            get { return spriteSheet; }
+            set { spriteSheet = value; }
         }
 
         public string SpriteName
@@ -42,15 +38,15 @@ namespace Modules.Atlas
             {
                 SpriteData spriteData = null;
 
-                if (atlas != null)
+                if (spriteSheet != null)
                 {
-                    spriteData = atlas.GetSpriteData(value);
+                    spriteData = spriteSheet.GetSpriteData(value);
 
                     if (spriteData == null)
                     {
                         if (!string.IsNullOrEmpty(spriteGuid))
                         {
-                            spriteData = atlas.GetSpriteData(spriteGuid);
+                            spriteData = spriteSheet.GetSpriteData(spriteGuid);
                         }
                     }
                 }
@@ -94,16 +90,16 @@ namespace Modules.Atlas
                 targetImage = UnityUtility.GetComponent<Image>(gameObject);
             }
 
-            if (targetImage != null && atlas != null)
+            if (targetImage != null && spriteSheet != null)
             {
-                var spriteData = atlas.GetSpriteData(spriteGuid);
+                var spriteData = spriteSheet.GetSpriteData(spriteGuid);
 
                 if (spriteData != null)
                 {
                     spriteName = spriteData.name;
                 }
 
-                Sprite = string.IsNullOrEmpty(spriteName) ? null : atlas.GetSprite(spriteName);
+                Sprite = string.IsNullOrEmpty(spriteName) ? null : spriteSheet.GetSprite(spriteName);
 
                 targetImage.sprite = Sprite;
             }

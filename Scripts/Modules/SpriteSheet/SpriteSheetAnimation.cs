@@ -6,9 +6,9 @@ using System.Collections.Generic;
 using UniRx;
 using Extensions;
 
-namespace Modules.Atlas
+namespace Modules.SpriteSheet
 {
-    public class AtlasTextureAnimation : MonoBehaviour
+    public class SpriteSheetAnimation : MonoBehaviour
     {
         //----- params -----
 
@@ -21,7 +21,7 @@ namespace Modules.Atlas
         //----- field -----
 
         [SerializeField]
-        private AtlasTexture sourceAtlas = null;
+        private SpriteSheet sourceSpriteSheet = null;
         [SerializeField]
         private float updateInterval = 1f;
 
@@ -44,10 +44,10 @@ namespace Modules.Atlas
             get { return currentAnimation; }
         }
 
-        public AtlasTexture SourceAtlas
+        public SpriteSheet SourceSpriteSheet
         {
-            get { return sourceAtlas; }
-            set { sourceAtlas = value; }
+            get { return sourceSpriteSheet; }
+            set { sourceSpriteSheet = value; }
         }
 
         public float UpdateInterval
@@ -126,7 +126,7 @@ namespace Modules.Atlas
         private void LoadSprites(string animationName)
         {
             var sprites = new List<Sprite>();
-            var count = sourceAtlas.GetListOfSprites().Count(x => x.StartsWith(animationName));
+            var count = sourceSpriteSheet.GetListOfSprites().Count(x => x.StartsWith(animationName));
 
             for (var i = 0; i < count; i++)
             {
@@ -142,7 +142,7 @@ namespace Modules.Atlas
                     continue;
                 }
 
-                sprite = sourceAtlas.GetSprite(spriteName);
+                sprite = sourceSpriteSheet.GetSprite(spriteName);
 
                 if (sprite != null)
                 {

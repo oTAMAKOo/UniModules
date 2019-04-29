@@ -3,7 +3,7 @@ using UnityEngine;
 using System;
 using System.Collections;
 
-namespace Modules.Atlas
+namespace Modules.SpriteSheet
 {
     [System.Serializable]
     public class SpriteData

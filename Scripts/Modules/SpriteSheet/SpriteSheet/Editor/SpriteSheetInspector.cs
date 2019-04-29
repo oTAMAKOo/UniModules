@@ -6,39 +6,39 @@ using Extensions;
 using Extensions.Devkit;
 using Modules.Devkit.Prefs;
 
-namespace Modules.Atlas
+namespace Modules.SpriteSheet
 {
-    public static class EditorAtlasPrefs
+    public static class EditorSpriteSheetPrefs
     {
-        public static AtlasTexture atlas
+        public static SpriteSheet spriteSheet
         {
-            get { return ProjectPrefs.GetAsset<AtlasTexture>("CurrentAtlas", null); }
-            set { ProjectPrefs.SetAsset("CurrentAtlas", value); }
+            get { return ProjectPrefs.GetAsset<SpriteSheet>("EditorSpriteSheetPrefs-spriteSheet", null); }
+            set { ProjectPrefs.SetAsset("EditorSpriteSheetPrefs-spriteSheet", value); }
         }
 
         public static string spriteSearchText
         {
-            get { return ProjectPrefs.GetString("SpriteSearchText", null); }
-            set { ProjectPrefs.SetString("SpriteSearchText", value); }
+            get { return ProjectPrefs.GetString("EditorSpriteSheetPrefs-spriteSearchText", null); }
+            set { ProjectPrefs.SetString("EditorSpriteSheetPrefs-spriteSearchText", value); }
         }
 
         public static string selectedSprite
         {
-            get { return ProjectPrefs.GetString("SelectedSprite", null); }
-            set { ProjectPrefs.SetString("SelectedSprite", value); }
+            get { return ProjectPrefs.GetString("EditorSpriteSheetPrefs-selectedSprite", null); }
+            set { ProjectPrefs.SetString("EditorSpriteSheetPrefs-selectedSprite", value); }
         }
     }
 
-    [CustomEditor(typeof(AtlasTexture))]
-    public class AtlasTextureInspector : UnityEditor.Editor
+    [CustomEditor(typeof(SpriteSheet))]
+    public class SpriteSheetInspector : UnityEditor.Editor
     {
         //----- params -----
 
         //----- field -----
 
-        private AtlasTexture atlas = null;
+        private SpriteSheet spriteSheet = null;
 
-        public static AtlasTextureInspector instance = null;
+        public static SpriteSheetInspector instance = null;
 
         //----- property -----
 
@@ -50,26 +50,26 @@ namespace Modules.Atlas
 
         public override void OnInspectorGUI()
         {
-            atlas = target as AtlasTexture;
+            spriteSheet = target as SpriteSheet;
 
             CustomInspector();
         }
 
         public static void SelectSprite(string spriteName)
         {
-            if (EditorAtlasPrefs.atlas != null)
+            if (EditorSpriteSheetPrefs.spriteSheet != null)
             {
-                EditorAtlasPrefs.selectedSprite = spriteName;
-                Selection.activeObject = EditorAtlasPrefs.atlas;
+                EditorSpriteSheetPrefs.selectedSprite = spriteName;
+                Selection.activeObject = EditorSpriteSheetPrefs.spriteSheet;
                 RepaintSprites();
             }
         }
 
         public static void RepaintSprites()
         {
-            if (AtlasPacker.instance != null)
+            if (SpriteSheetMaker.instance != null)
             {
-                AtlasPacker.instance.Repaint();
+                SpriteSheetMaker.instance.Repaint();
             }
 
             if (instance != null)
@@ -82,36 +82,36 @@ namespace Modules.Atlas
         {
             EditorLayoutTools.SetLabelWidth(80f);
 
-            var sprite = (atlas != null) ? atlas.GetSpriteData(EditorAtlasPrefs.selectedSprite) : null;
+            var sprite = (spriteSheet != null) ? spriteSheet.GetSpriteData(EditorSpriteSheetPrefs.selectedSprite) : null;
 
             EditorGUILayout.Separator();
 
-            if (atlas.Texture != null)
+            if (spriteSheet.Texture != null)
             {
-                if (sprite == null && atlas.Sprites.Count > 0)
+                if (sprite == null && spriteSheet.Sprites.Count > 0)
                 {
-                    string spriteName = EditorAtlasPrefs.selectedSprite;
+                    string spriteName = EditorSpriteSheetPrefs.selectedSprite;
 
                     if (!string.IsNullOrEmpty(spriteName))
                     {
-                        sprite = atlas.GetSpriteData(spriteName);
+                        sprite = spriteSheet.GetSpriteData(spriteName);
                     }
 
                     if (sprite == null)
                     {
-                        sprite = atlas.Sprites[0];
+                        sprite = spriteSheet.Sprites[0];
                     }
                 }
 
                 if (sprite != null)
                 {
-                    var tex = atlas.Texture as Texture2D;
+                    var tex = spriteSheet.Texture as Texture2D;
 
                     if (tex != null)
                     {
                         EditorGUILayout.Separator();
 
-                        DrawAdvancedSpriteField(atlas, sprite.name);
+                        DrawAdvancedSpriteField(spriteSheet, sprite.name);
 
                         EditorGUILayout.Separator();
                         
@@ -133,14 +133,14 @@ namespace Modules.Atlas
 
                             if (GUI.changed)
                             {
-                                UnityEditorUtility.RegisterUndo("Atlas Change", atlas);
+                                UnityEditorUtility.RegisterUndo("SpriteSheet Change", spriteSheet);
 
                                 sprite.borderLeft = borderA.x;
                                 sprite.borderRight = borderA.y;
                                 sprite.borderBottom = borderB.x;
                                 sprite.borderTop = borderB.y;
 
-                                atlas.CacheClear();
+                                spriteSheet.CacheClear();
                             }
                         }
 
@@ -152,7 +152,7 @@ namespace Modules.Atlas
 
                             if (GUILayout.Button("Update"))
                             {
-                                UnityEditorUtility.SaveAsset(atlas);
+                                UnityEditorUtility.SaveAsset(spriteSheet);
                             }
                         }
                     }
@@ -160,11 +160,11 @@ namespace Modules.Atlas
             }
         }
 
-        private static void DrawAdvancedSpriteField(AtlasTexture atlas, string spriteName)
+        private static void DrawAdvancedSpriteField(SpriteSheet spriteSheet, string spriteName)
         {
-            if (atlas == null) { return; }
+            if (spriteSheet == null) { return; }
 
-            if (atlas.Sprites.Count == 0)
+            if (spriteSheet.Sprites.Count == 0)
             {
                 EditorGUILayout.HelpBox("No sprites found", MessageType.Warning);
                 return;
@@ -174,9 +174,9 @@ namespace Modules.Atlas
             {
                 if (EditorLayoutTools.DrawPrefixButton("Sprite"))
                 {
-                    EditorAtlasPrefs.atlas = atlas;
-                    EditorAtlasPrefs.selectedSprite = spriteName;
-                    AtlasSpriteSelector.Show(SelectSprite);
+                    EditorSpriteSheetPrefs.spriteSheet = spriteSheet;
+                    EditorSpriteSheetPrefs.selectedSprite = spriteName;
+                    SpriteSelector.Show(SelectSprite);
                 }
 
                 EditorGUILayout.SelectableLabel(spriteName, new GUIStyle("TextArea"), GUILayout.Height(18f));
@@ -188,11 +188,11 @@ namespace Modules.Atlas
         
         public override void OnPreviewGUI(Rect rect, GUIStyle background)
         {
-            var sprite = (atlas != null) ? atlas.GetSpriteData(EditorAtlasPrefs.selectedSprite) : null;
+            var sprite = (spriteSheet != null) ? spriteSheet.GetSpriteData(EditorSpriteSheetPrefs.selectedSprite) : null;
 
             if (sprite == null) { return; }
 
-            var tex = atlas.Texture as Texture2D;
+            var tex = spriteSheet.Texture as Texture2D;
 
             if (tex != null)
             {

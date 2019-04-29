@@ -5,7 +5,6 @@ using UnityEditor;
 using Unity.Linq;
 using System.Linq;
 using Extensions;
-using Modules.Atlas;
 using Modules.Devkit.Prefs;
 using Modules.GameText.Components;
 

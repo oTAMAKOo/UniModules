@@ -3,11 +3,9 @@ using UnityEngine;
 using UnityEditor;
 using System;
 using System.Linq;
-using System.Collections.Generic;
-using UniRx;
 using Extensions;
 using Extensions.Devkit;
-using Modules.Atlas;
+using Modules.SpriteSheet;
 
 namespace Modules.UI.Reactive
 {
@@ -34,7 +32,7 @@ namespace Modules.UI.Reactive
         {
             if (inspector == null) { return; }
 
-            if (inspector.instance.Atlas != null)
+            if (inspector.instance.SpriteSheet != null)
             {
                 UnityEditorUtility.RegisterUndo("ButtonReactiveImageInspector Undo", inspector.instance);
 
@@ -46,7 +44,7 @@ namespace Modules.UI.Reactive
         {
             if (inspector == null) { return; }
 
-            if (inspector.instance.Atlas != null)
+            if (inspector.instance.SpriteSheet != null)
             {
                 UnityEditorUtility.RegisterUndo("ButtonReactiveImageInspector Undo", inspector.instance);
 
@@ -60,12 +58,12 @@ namespace Modules.UI.Reactive
 
             instance = target as ButtonReactiveImage;
 
-            if (instance.Atlas != null)
+            if (instance.SpriteSheet != null)
             {
                 var backgroundColor = new Color(0.3f, 0.3f, 0.5f);
                 var labelColor = new Color(0.8f, 0.8f, 0.8f, 0.8f);
 
-                if (instance.Atlas.Sprites.Any())
+                if (instance.SpriteSheet.Sprites.Any())
                 {
                     EditorGUILayout.Separator();
 
@@ -79,9 +77,9 @@ namespace Modules.UI.Reactive
 
                         if (EditorLayoutTools.DrawPrefixButton("Sprite"))
                         {
-                            EditorAtlasPrefs.atlas = instance.Atlas;
-                            EditorAtlasPrefs.selectedSprite = enableSpriteName;
-                            AtlasSpriteSelector.Show(SelectEnableSprite);
+                            EditorSpriteSheetPrefs.spriteSheet = instance.SpriteSheet;
+                            EditorSpriteSheetPrefs.selectedSprite = enableSpriteName;
+                            SpriteSelector.Show(SelectEnableSprite);
                         }
 
                         if (!string.IsNullOrEmpty(enableSpriteName))
@@ -102,9 +100,9 @@ namespace Modules.UI.Reactive
 
                         if (EditorLayoutTools.DrawPrefixButton("Sprite"))
                         {
-                            EditorAtlasPrefs.atlas = instance.Atlas;
-                            EditorAtlasPrefs.selectedSprite = disableSpriteName;
-                            AtlasSpriteSelector.Show(SelectDisableSprite);
+                            EditorSpriteSheetPrefs.spriteSheet = instance.SpriteSheet;
+                            EditorSpriteSheetPrefs.selectedSprite = disableSpriteName;
+                            SpriteSelector.Show(SelectDisableSprite);
                         }
 
                         if (!string.IsNullOrEmpty(disableSpriteName))

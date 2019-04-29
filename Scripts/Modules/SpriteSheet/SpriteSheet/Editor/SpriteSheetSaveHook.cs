@@ -1,16 +1,12 @@
 ﻿﻿﻿
 using UnityEngine;
 using UnityEditor;
-using System;
-using System.Linq;
-using System.Collections.Generic;
-using UniRx;
 using Extensions;
 using Extensions.Devkit;
 
-namespace Modules.Atlas
+namespace Modules.SpriteSheet
 {
-	public class AtlasTextureSaveHook : UnityEditor.AssetModificationProcessor
+	public class SpriteSheetSaveHook : UnityEditor.AssetModificationProcessor
     {
         //----- params -----
 
@@ -28,39 +24,38 @@ namespace Modules.Atlas
 
             foreach (string path in paths)
             {
-                var atlasTexture = AssetDatabase.LoadMainAssetAtPath(path) as AtlasTexture;
+                var spriteSheet = AssetDatabase.LoadMainAssetAtPath(path) as SpriteSheet;
 
-                if (atlasTexture != null)
+                if (spriteSheet != null)
                 {
                     // 必要になった時に一回だけ取得して使いまわす.
                     if (hierarchyGameObjects == null)
                     {
                         hierarchyGameObjects = UnityEditorUtility.FindAllObjectsInHierarchy();
                     }
-
-                    // AtlasTextureImage.
-                    UpdateAtlasTextureImage(hierarchyGameObjects, atlasTexture);
+                    
+                    UpdateSpriteSheetImage(hierarchyGameObjects, spriteSheet);
                 }
             }
 
             return paths;
         }
 
-        private static void UpdateAtlasTextureImage(GameObject[] gameObjects, AtlasTexture atlas)
+        private static void UpdateSpriteSheetImage(GameObject[] gameObjects, SpriteSheet spriteSheet)
         {
-            var atlasAssetPath = AssetDatabase.GetAssetPath(atlas);
+            var spriteSheetPath = AssetDatabase.GetAssetPath(spriteSheet);
 
             foreach (var gameObject in gameObjects)
             {
-                var atlasTextureImage = UnityUtility.GetComponent<AtlasTextureImage>(gameObject);
+                var spriteSheetImage = UnityUtility.GetComponent<SpriteSheetImage>(gameObject);
                 
-                if (atlasTextureImage != null && atlasTextureImage.Atlas != null)
+                if (spriteSheetImage != null && spriteSheetImage.SpriteSheet != null)
                 {
-                    var path = AssetDatabase.GetAssetPath(atlasTextureImage.Atlas);
+                    var path = AssetDatabase.GetAssetPath(spriteSheetImage.SpriteSheet);
 
-                    if (path == atlasAssetPath)
+                    if (path == spriteSheetPath)
                     {
-                        atlasTextureImage.Apply();
+                        spriteSheetImage.Apply();
                     }
                 }
             }

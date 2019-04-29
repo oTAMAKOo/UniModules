@@ -6,9 +6,9 @@ using System.Linq;
 using Extensions;
 using Extensions.Devkit;
 
-namespace Modules.Atlas
+namespace Modules.SpriteSheet
 {
-    public partial class AtlasPacker
+    public partial class SpriteSheetMaker
     {
         //----- params -----
 
@@ -29,9 +29,9 @@ namespace Modules.Atlas
 
         //----- method -----
 
-        private void ExtractSprites(AtlasTexture atlas, List<SpriteEntry> finalSprites)
+        private void ExtractSprites(SpriteSheet spriteSheet, List<SpriteEntry> finalSprites)
         {
-            var tex = atlas.Texture as Texture2D;
+            var tex = spriteSheet.Texture as Texture2D;
 
             if (tex != null)
             {
@@ -39,7 +39,7 @@ namespace Modules.Atlas
 
                 var width = tex.width;
                 var height = tex.height;
-                var sprites = atlas.Sprites;
+                var sprites = spriteSheet.Sprites;
                 var count = sprites.Count;
                 var index = 0;
 
@@ -47,7 +47,7 @@ namespace Modules.Atlas
                 {
                     var progress = (float)index++ / count;
                     
-                    EditorUtility.DisplayProgressBar("progress", "Updating the atlas...", progress);
+                    EditorUtility.DisplayProgressBar("progress", "Updating the spritesheet...", progress);
 
                     var found = false;
 
@@ -89,12 +89,12 @@ namespace Modules.Atlas
             EditorUtility.ClearProgressBar();
         }
 
-        private bool UpdateTexture(AtlasTexture atlas, List<SpriteEntry> sprites)
+        private bool UpdateTexture(SpriteSheet spriteSheet, List<SpriteEntry> sprites)
         {
-            var texture = atlas.Texture as Texture2D;
+            var texture = spriteSheet.Texture as Texture2D;
 
             var oldPath = (texture != null) ? AssetDatabase.GetAssetPath(texture.GetInstanceID()) : string.Empty;
-            var newPath = GetSaveableTexturePath(atlas);
+            var newPath = GetSaveableTexturePath(spriteSheet);
 
             if (System.IO.File.Exists(newPath))
             {
@@ -127,14 +127,14 @@ namespace Modules.Atlas
 
                 if (newTexture)
                 {
-                    Reflection.SetPrivateField<AtlasTexture, Texture>(atlas, "texture", texture);
+                    Reflection.SetPrivateField<SpriteSheet, Texture>(spriteSheet, "texture", texture);
 
                     ReleaseSprites(sprites);
                 }
             }
             else
             {
-                EditorUtility.DisplayDialog("Operation Canceled", "The selected sprites can't fit into the atlas.", "OK");
+                EditorUtility.DisplayDialog("Operation Canceled", "The selected sprites can't fit into the spritesheet.", "OK");
 
                 return false;
             }
@@ -197,7 +197,7 @@ namespace Modules.Atlas
 
             if (textureImporter != null)
             {
-                textureImporter.textureType = TextureImporterType.Sprite;
+                textureImporter.textureType = TextureImporterType.Default;
                 textureImporter.spriteImportMode = SpriteImportMode.Multiple;
                 textureImporter.filterMode = filterMode;
                 textureImporter.spritePixelsPerUnit = pixelsPerUnit;
@@ -211,7 +211,7 @@ namespace Modules.Atlas
                     var rect = new Rect(new Vector2(sprite.x, sprite.y), new Vector2(sprite.width, sprite.height));
 
                     metaData.name = sprite.name;
-                    metaData.rect = AtlasTexture.ConvertToSpriteSheetPixels(rect, texture.width, texture.height);
+                    metaData.rect = SpriteSheet.ConvertToSpriteSheetPixels(rect, texture.width, texture.height);
 
                     spritesheet.Add(metaData);
                 }
@@ -260,9 +260,9 @@ namespace Modules.Atlas
             Resources.UnloadUnusedAssets();
         }
 
-        private void ReplaceSprites(AtlasTexture atlas, List<SpriteEntry> sprites)
+        private void ReplaceSprites(SpriteSheet spriteSheet, List<SpriteEntry> sprites)
         {
-            var spriteList = atlas.Sprites;
+            var spriteList = spriteSheet.Sprites;
             var kept = new List<SpriteData>();
 
             for (var i = 0; i < sprites.Count; ++i)
@@ -282,9 +282,9 @@ namespace Modules.Atlas
                 }
             }
 
-            atlas.SortAlphabetically();
+            spriteSheet.SortAlphabetically();
 
-            EditorUtility.SetDirty(atlas);
+            EditorUtility.SetDirty(spriteSheet);
         }
 
         private static int Compare(SpriteEntry a, SpriteEntry b)

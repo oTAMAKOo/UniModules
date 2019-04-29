@@ -11,7 +11,6 @@ namespace Modules.Devkit.AssetTuning
 {
 	public class AssetBundleAssetTuner : AssetTuner
     {
-        private IDisposable rebuildDisposable = null;
         private AssetManageManager assetManageManager = null;
 
         public override int Priority { get { return 75; } }

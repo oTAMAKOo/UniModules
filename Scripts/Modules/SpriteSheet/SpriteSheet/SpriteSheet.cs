@@ -5,12 +5,11 @@ using System.Linq;
 using System.Collections.Generic;
 using Extensions;
 using Modules.ObjectCache;
-using UniRx;
 
-namespace Modules.Atlas
+namespace Modules.SpriteSheet
 {
     [Serializable]
-    public class AtlasTexture : ScriptableObject
+    public class SpriteSheet : ScriptableObject
     {
         //----- params -----
 
