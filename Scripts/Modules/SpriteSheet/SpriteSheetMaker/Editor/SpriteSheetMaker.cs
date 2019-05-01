@@ -118,7 +118,7 @@ namespace Modules.SpriteSheet
 
             var spriteInfos = GetSpriteInfos(textures);
 
-            ComponentSelector.Draw("SpriteSheet", selectSpriteSheet, OnSelectSpriteSheet, GUILayout.MinWidth(80f));
+            ComponentSelector.Draw("Asset", selectSpriteSheet, OnSelectSpriteSheet, GUILayout.MinWidth(80f));
 
             if (selectSpriteSheet == null)
             {
