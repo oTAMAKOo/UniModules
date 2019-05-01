@@ -215,6 +215,8 @@ namespace Extensions.Devkit
 
         private void DrawScrollContents(params GUILayoutOption[] options)
         {
+            var isLayoutEvent = Event.current.type == EventType.Layout;
+
             // スクロール領域計測用.
             var scrollViewRect = EditorGUILayout.BeginVertical();
 
@@ -237,7 +239,7 @@ namespace Extensions.Devkit
 
                         EditorGUILayout.EndVertical();
 
-                        if (rect != Rect.zero)
+                        if (isLayoutEvent && rect != Rect.zero)
                         {
                             itemInfos[i].rect = rect;
                         }
@@ -251,7 +253,7 @@ namespace Extensions.Devkit
 
             EditorGUILayout.EndVertical();
 
-            if (Event.current.type == EventType.Repaint)
+            if (isLayoutEvent)
             {
                 scrollRect = scrollViewRect;
             }
