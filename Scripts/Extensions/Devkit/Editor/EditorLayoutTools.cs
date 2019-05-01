@@ -476,11 +476,6 @@ namespace Extensions.Devkit
 
             GUI.backgroundColor = originColor;
         }
-        
-        public static void DrawPadding()
-        {
-            GUILayout.Space(18f);
-        }
 
         public static void DrawOutline(Rect rect, Color color)
         {
