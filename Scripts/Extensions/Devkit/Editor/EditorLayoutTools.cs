@@ -158,47 +158,44 @@ namespace Extensions.Devkit
 
         private static IntRange IntRangeFieldInternal(string prefix, string leftCaption, string rightCaption, int x, int y, bool delayed, bool editable = true)
         {
-            GUILayout.BeginHorizontal();
-
-            if (string.IsNullOrEmpty(prefix))
-            {
-                GUILayout.Space(82f);
-            }
-            else
-            {
-                GUILayout.Label(prefix, GUILayout.Width(74f));
-            }
-
-            SetLabelWidth(48f);
-
             var retVal = new IntRange() { x = x, y = y };
 
-            if (editable)
+            using (new EditorGUILayout.HorizontalScope())
             {
-                var backgroundColor = GUI.backgroundColor;
+                if (!string.IsNullOrEmpty(prefix))
+                {
+                    GUILayout.Label(prefix, GUILayout.Width(74f));
+                }
 
-                GUI.backgroundColor = new Color(0f, 0.7f, 1f, 1f); // Blue.
+                var originLabelWidth = SetLabelWidth(48f);
 
-                retVal.x = delayed ?
-                    EditorGUILayout.DelayedIntField(leftCaption, x, GUILayout.MinWidth(30f)) :
-                    EditorGUILayout.IntField(leftCaption, x, GUILayout.MinWidth(30f));
+                if (editable)
+                {
+                    var backgroundColor = GUI.backgroundColor;
 
-                retVal.y = delayed ?
-                    EditorGUILayout.DelayedIntField(rightCaption, y, GUILayout.MinWidth(30f)) :
-                    EditorGUILayout.IntField(rightCaption, y, GUILayout.MinWidth(30f));
+                    GUI.backgroundColor = new Color(0f, 0.7f, 1f, 1f); // Blue.
 
-                GUI.backgroundColor = backgroundColor;
+                    retVal.x = delayed ?
+                        EditorGUILayout.DelayedIntField(leftCaption, x, GUILayout.MinWidth(30f)) :
+                        EditorGUILayout.IntField(leftCaption, x, GUILayout.MinWidth(30f));
+
+                    retVal.y = delayed ?
+                        EditorGUILayout.DelayedIntField(rightCaption, y, GUILayout.MinWidth(30f)) :
+                        EditorGUILayout.IntField(rightCaption, y, GUILayout.MinWidth(30f));
+
+                    GUI.backgroundColor = backgroundColor;
+                }
+                else
+                {
+                    GUILayout.Label(leftCaption + " ", GUILayout.Width(48f));
+                    GUILayout.Label(x.ToString(), TextAreaStyle, GUILayout.MinWidth(30f));
+
+                    GUILayout.Label(rightCaption + " ", GUILayout.Width(48f));
+                    GUILayout.Label(y.ToString(), TextAreaStyle, GUILayout.MinWidth(30f));
+                }
+
+                SetLabelWidth(originLabelWidth);
             }
-            else
-            {
-                GUILayout.Label(leftCaption + " ", GUILayout.Width(48f));
-                GUILayout.TextArea(x.ToString(), GUILayout.MinWidth(30f));
-
-                GUILayout.Label(rightCaption + " ", GUILayout.Width(48f));
-                GUILayout.TextArea(y.ToString(), GUILayout.MinWidth(30f));
-            }
-
-            GUILayout.EndHorizontal();
 
             return retVal;
         }
@@ -705,7 +702,9 @@ namespace Extensions.Devkit
         }
 
         public static void DrawSprite(Texture2D tex, Rect drawRect, Color color, Material mat,
-            int x, int y, int width, int height, int borderLeft, int borderBottom, int borderRight, int borderTop, bool hasSizeLabel)
+                                      float x, float y, float width, float height,
+                                      float borderLeft, float borderBottom, float borderRight, float borderTop,
+                                      bool hasSizeLabel)
         {
             if (!tex) { return; }
 

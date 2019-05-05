@@ -6,12 +6,12 @@ using Extensions;
 using UniRx;
 
 // Modules.
-using Modules.SpriteSheet;
 using Modules.Dicing;
 using Modules.MessagePack;
 using Modules.Master;
 using Modules.ExternalResource;
 using Modules.ExternalResource.Editor;
+using Modules.AtlasTexture;
 using Modules.Devkit.AssetBundles;
 using Modules.Devkit.AssetDependencies;
 using Modules.Devkit.CompileNotice;
@@ -250,12 +250,6 @@ namespace Modules
 
         public const string ToolsMenu = MenuRoot + "Tools/";
 
-        [MenuItem(itemName: ToolsMenu + "SpriteSheet Maker/Open SpriteSheetMaker", priority = 0)]
-        public static void OpenSpriteSheetMaker()
-        {
-            SpriteSheetMaker.Open();
-        }
-
         [MenuItem(itemName: ToolsMenu + "Dicing Packer/Open DicingPacker", priority = 1)]
         public static void OpenDicingPacker()
         {
@@ -438,6 +432,16 @@ namespace Modules
         }
 
         #endregion
+
+        //===============================================================
+        //  ProjectView Creare Asset.
+        //===============================================================
+
+        [MenuItem("Assets/Create/AtlasTexture", priority = 355)]
+        public static void GenerateAtlasTexture()
+        {
+            AtlasTextureGenerator.Generate(Selection.activeObject, "New AtlasTexture.asset");
+        }
 
         //===============================================================
         //  Prerelease.

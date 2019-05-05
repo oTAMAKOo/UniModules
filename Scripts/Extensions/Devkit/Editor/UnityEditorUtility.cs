@@ -134,18 +134,8 @@ namespace Extensions.Devkit
         public static bool IsFolder(UnityEngine.Object assetObject)
         {
             var path = AssetDatabase.GetAssetPath(assetObject);
-
-            if (File.Exists(path))
-            {
-                return false;
-            }
-
-            if (Directory.Exists(path))
-            {
-                return true;
-            }
-
-            return false;
+            
+            return IsFolder(path);
         }
 
         public static bool IsFolder(string path)

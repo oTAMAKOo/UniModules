@@ -1,26 +1,30 @@
-﻿﻿﻿
+﻿
 using UnityEngine;
 
 namespace Extensions.Devkit
 {
-    public class ContentsScope : GUI.Scope
+    public class ColorScope : GUI.Scope
     {
         //----- params -----
 
         //----- field -----
 
+        private readonly Color originColor;
+
         //----- property -----
 
         //----- method -----
 
-        public ContentsScope()
+        public ColorScope(Color color)
         {
-            EditorLayoutTools.BeginContents();
+            originColor = GUI.backgroundColor;
+
+            GUI.color = color;
         }
 
         protected override void CloseScope()
         {
-            EditorLayoutTools.EndContents();
+            GUI.color = originColor;
         }
     }
 }
