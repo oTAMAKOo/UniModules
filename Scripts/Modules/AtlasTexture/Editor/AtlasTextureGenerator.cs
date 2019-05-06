@@ -72,6 +72,10 @@ namespace Modules.AtlasTexture
             if (spriteAtlas == null) { return null; }
 
             Reflection.SetPrivateField(atlasTexture, "spriteAtlas", spriteAtlas);
+
+            UnityEditorUtility.SaveAsset(atlasTexture);
+
+            AssetDatabase.Refresh();
             
             return atlasTexture;
         }
