@@ -73,9 +73,29 @@ namespace Modules.AtlasTexture
 
             var originLabelWidth = EditorLayoutTools.SetLabelWidth(80f);
 
-            EditorGUILayout.ObjectField(spriteAtlas, typeof(SpriteAtlas), false);
+            EditorLayoutTools.DrawLabelWithBackground("SpriteAtlas", new Color(0.4f, 0.1f, 0.8f));
 
-            GUILayout.Space(2f);
+            using (new EditorGUILayout.HorizontalScope())
+            {
+                using (new BackgroundColorScope(new Color(1f, 0.95f, 0.05f, 0.85f)))
+                {
+                    if (GUILayout.Button("Pack", GUILayout.Width(75f), GUILayout.Height(18f)))
+                    {
+                        AtlasTextureUpdater.SetAtlasSpriteData(atlasTexture);
+                    }
+                }
+
+                using (new EditorGUILayout.VerticalScope())
+                {
+                    GUILayout.Space(4f);
+
+                    EditorGUILayout.ObjectField(spriteAtlas, typeof(SpriteAtlas), false);
+                }
+            }
+
+            EditorGUILayout.Separator();
+
+            EditorLayoutTools.DrawLabelWithBackground("Sprite", new Color(0.4f, 0.1f, 0.8f));
 
             var currentSpriteName = currentSprite != null ? currentSprite.name : string.Empty;
 
@@ -108,7 +128,7 @@ namespace Modules.AtlasTexture
                 {
                     using (new EditorGUILayout.VerticalScope(GUILayout.Width(50f)))
                     {
-                        GUILayout.Space(1f);
+                        GUILayout.Space(2f);
 
                         if (GUILayout.Button("Edit", GUILayout.Width(50f), GUILayout.Height(18f)))
                         {
@@ -156,11 +176,6 @@ namespace Modules.AtlasTexture
 
             using (new EditorGUILayout.HorizontalScope())
             {
-                if (GUILayout.Button("Pack & Update", GUILayout.Width(150f)))
-                {
-                    AtlasTextureUpdater.SetAtlasSpriteData(atlasTexture);
-                }
-
                 GUILayout.FlexibleSpace();
 
                 if (currentSprite != null)
