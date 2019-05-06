@@ -9,6 +9,7 @@ using Extensions;
 using Extensions.Devkit;
 using Modules.Devkit.Prefs;
 using UniRx;
+using UnityEngine.U2D;
 
 namespace Modules.AtlasTexture
 {
@@ -68,7 +69,13 @@ namespace Modules.AtlasTexture
         {
             atlasTexture = target as AtlasTexture;
 
+            var spriteAtlas = Reflection.GetPrivateField<AtlasTexture, SpriteAtlas>(atlasTexture, "spriteAtlas");
+
             var originLabelWidth = EditorLayoutTools.SetLabelWidth(80f);
+
+            EditorGUILayout.ObjectField(spriteAtlas, typeof(SpriteAtlas), false);
+
+            GUILayout.Space(2f);
 
             var currentSpriteName = currentSprite != null ? currentSprite.name : string.Empty;
 
@@ -144,17 +151,20 @@ namespace Modules.AtlasTexture
                     }
                 }
 
-                GUILayout.Space(2f);
+                GUILayout.Space(2f);                
+            }
 
-                using (new EditorGUILayout.HorizontalScope())
+            using (new EditorGUILayout.HorizontalScope())
+            {
+                if (GUILayout.Button("Pack & Update", GUILayout.Width(150f)))
                 {
-                    if (GUILayout.Button("Pack & Update", GUILayout.Width(150f)))
-                    {
-                        AtlasTextureUpdater.SetAtlasSpriteData(atlasTexture);
-                    }
+                    AtlasTextureUpdater.SetAtlasSpriteData(atlasTexture);
+                }
 
-                    GUILayout.FlexibleSpace();
+                GUILayout.FlexibleSpace();
 
+                if (currentSprite != null)
+                {
                     using (new DisableScope(!changeBorder))
                     {
                         if (GUILayout.Button("Apply", GUILayout.Width(70f)))
