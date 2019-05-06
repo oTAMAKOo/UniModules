@@ -1,6 +1,5 @@
 ﻿
 using UnityEngine;
-using System.Linq;
 using UniRx;
 using Extensions;
 using Modules.UI.Element;
@@ -18,14 +17,10 @@ namespace Modules.UI.Reactive
         [SerializeField]
         private UIButton target = null;
         [SerializeField]
-        private SpriteSheet.SpriteSheet spriteSheet = null;
+        private AtlasTexture.AtlasTexture atlasTexture = null;
 
         [SerializeField, HideInInspector]
-        private string enableSpriteName = null;
-        [SerializeField, HideInInspector]
         private string enableSpriteGuid = null;
-        [SerializeField, HideInInspector]
-        private string disableSpriteName = null;
         [SerializeField, HideInInspector]
         private string disableSpriteGuid = null;
 
@@ -33,26 +28,24 @@ namespace Modules.UI.Reactive
 
         //----- property -----
 
-        public SpriteSheet.SpriteSheet SpriteSheet { get { return spriteSheet; } }
+        public AtlasTexture.AtlasTexture AtlasTexture { get { return atlasTexture; } }
 
         public string EnableSpriteName
         {
-            get { return enableSpriteName; }
+            get
+            {
+                var spriteData = atlasTexture.GetSpriteDataFromGuid(enableSpriteGuid);
+
+                return spriteData != null ? spriteData.SpriteName : null;
+            }
 
             set
             {
-                if (spriteSheet != null && spriteSheet.GetListOfSprites().Contains(value))
-                {
-                    var spriteData = spriteSheet.GetSpriteData(value);
+                if (atlasTexture == null) { return; }
 
-                    enableSpriteGuid = spriteData.guid;
-                    enableSpriteName = value;
-                }
-                else
-                {
-                    enableSpriteGuid = null;
-                    enableSpriteName = null;
-                }
+                var spriteData = atlasTexture.GetSpriteData(value);
+
+                enableSpriteGuid = spriteData != null ? spriteData.SpriteGuid : null;
 
                 Apply(target.Button.interactable);
             }
@@ -60,22 +53,20 @@ namespace Modules.UI.Reactive
 
         public string DisableSpriteName
         {
-            get { return disableSpriteName; }
+            get
+            {
+                var spriteData = atlasTexture.GetSpriteDataFromGuid(disableSpriteGuid);
+
+                return spriteData != null ? spriteData.SpriteName : null;
+            }
 
             set
             {
-                if (spriteSheet != null && spriteSheet.GetListOfSprites().Contains(value))
-                {
-                    var spriteData = spriteSheet.GetSpriteData(value);
+                if (atlasTexture == null) { return; }
 
-                    disableSpriteGuid = spriteData.guid;
-                    disableSpriteName = value;
-                }
-                else
-                {
-                    disableSpriteGuid = null;
-                    disableSpriteName = null;
-                }
+                var spriteData = atlasTexture.GetSpriteData(value);
+
+                disableSpriteGuid = spriteData != null ? spriteData.SpriteGuid : null;
 
                 Apply(target.Button.interactable);
             }
@@ -105,28 +96,11 @@ namespace Modules.UI.Reactive
         {
             var spriteGuid = interactable ? enableSpriteGuid : disableSpriteGuid;
 
-            var spriteData = spriteSheet.GetSpriteData(spriteGuid);
+            var spriteData = atlasTexture.GetSpriteDataFromGuid(spriteGuid);
+            
+            var sprite = atlasTexture.GetSprite(spriteData.SpriteName); ;
 
-            if (spriteData != null)
-            {
-                if (interactable)
-                {
-                    enableSpriteName = spriteData.name;
-                }
-                else
-                {
-                    disableSpriteName = spriteData.name;
-                }
-            }
-
-            var spriteName = interactable ? enableSpriteName : disableSpriteName;
-
-            var sprite = spriteSheet.GetSprite(spriteName); ;
-
-            if (sprite != null)
-            {
-                uiImage.Image.sprite = sprite;
-            }
+            uiImage.Image.sprite = sprite;
         }
     }
 }

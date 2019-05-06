@@ -5,7 +5,8 @@ using System;
 using System.Linq;
 using Extensions;
 using Extensions.Devkit;
-using Modules.SpriteSheet;
+using Modules.AtlasTexture;
+using UniRx;
 
 namespace Modules.UI.Reactive
 {
@@ -18,6 +19,8 @@ namespace Modules.UI.Reactive
 
         private ButtonReactiveImage instance = null;
 
+        private IDisposable spriteSelectDisposable = null;
+
         public static ButtonReactiveImageInspector inspector = null;
 
         //----- property -----
@@ -26,13 +29,22 @@ namespace Modules.UI.Reactive
 
         void OnEnable() { inspector = this; }
 
-        void OnDisable() { inspector = null; }
+        void OnDisable()
+        {
+            inspector = null;
+
+            if (spriteSelectDisposable != null)
+            {
+                spriteSelectDisposable.Dispose();
+                spriteSelectDisposable = null;
+            }
+        }
 
         public static void SelectEnableSprite(string spriteName)
         {
             if (inspector == null) { return; }
 
-            if (inspector.instance.SpriteSheet != null)
+            if (inspector.instance.AtlasTexture != null)
             {
                 UnityEditorUtility.RegisterUndo("ButtonReactiveImageInspector Undo", inspector.instance);
 
@@ -44,7 +56,7 @@ namespace Modules.UI.Reactive
         {
             if (inspector == null) { return; }
 
-            if (inspector.instance.SpriteSheet != null)
+            if (inspector.instance.AtlasTexture != null)
             {
                 UnityEditorUtility.RegisterUndo("ButtonReactiveImageInspector Undo", inspector.instance);
 
@@ -58,12 +70,12 @@ namespace Modules.UI.Reactive
 
             instance = target as ButtonReactiveImage;
 
-            if (instance.SpriteSheet != null)
+            if (instance.AtlasTexture != null)
             {
                 var backgroundColor = new Color(0.3f, 0.3f, 0.5f);
                 var labelColor = new Color(0.8f, 0.8f, 0.8f, 0.8f);
 
-                if (instance.SpriteSheet.Sprites.Any())
+                if (instance.AtlasTexture.SpriteData.Any())
                 {
                     EditorGUILayout.Separator();
 
@@ -77,9 +89,15 @@ namespace Modules.UI.Reactive
 
                         if (EditorLayoutTools.DrawPrefixButton("Sprite"))
                         {
-                            EditorSpriteSheetPrefs.spriteSheet = instance.SpriteSheet;
-                            EditorSpriteSheetPrefs.selectedSprite = enableSpriteName;
-                            SpriteSelector.Show(SelectEnableSprite);
+                            if (spriteSelectDisposable != null)
+                            {
+                                spriteSelectDisposable.Dispose();
+                                spriteSelectDisposable = null;
+                            }
+
+                            var spriteSelector = SpriteSelector.Open(instance.AtlasTexture, enableSpriteName);
+
+                            spriteSelectDisposable = spriteSelector.OnSelectSpriteAsObservable().Subscribe(x => SelectEnableSprite(x));
                         }
 
                         if (!string.IsNullOrEmpty(enableSpriteName))
@@ -100,9 +118,15 @@ namespace Modules.UI.Reactive
 
                         if (EditorLayoutTools.DrawPrefixButton("Sprite"))
                         {
-                            EditorSpriteSheetPrefs.spriteSheet = instance.SpriteSheet;
-                            EditorSpriteSheetPrefs.selectedSprite = disableSpriteName;
-                            SpriteSelector.Show(SelectDisableSprite);
+                            if (spriteSelectDisposable != null)
+                            {
+                                spriteSelectDisposable.Dispose();
+                                spriteSelectDisposable = null;
+                            }
+
+                            var spriteSelector = SpriteSelector.Open(instance.AtlasTexture, disableSpriteName);
+
+                            spriteSelectDisposable = spriteSelector.OnSelectSpriteAsObservable().Subscribe(x => SelectDisableSprite(x));
                         }
 
                         if (!string.IsNullOrEmpty(disableSpriteName))

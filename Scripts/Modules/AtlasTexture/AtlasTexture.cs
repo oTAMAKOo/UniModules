@@ -77,6 +77,8 @@ namespace Modules.AtlasTexture
                     sprite.name = sprite.name.Substring(0, sprite.name.Length - cloneText.Length);
                 }
 
+                sprite.hideFlags = HideFlags.DontSaveInBuild | HideFlags.DontSaveInEditor;
+
                 spriteCache.Add(spriteName, sprite);
             }
 
