@@ -36,7 +36,7 @@ namespace Modules.AtlasTexture
         [SerializeField]
         private SpriteAtlas spriteAtlas = null;
         [SerializeField]
-        private AtlasSpriteData[] spriteData = null;
+        private AtlasSpriteData[] spriteData = new AtlasSpriteData[0];
 
         private ObjectCache<Sprite> spriteCache = new ObjectCache<Sprite>();
 
