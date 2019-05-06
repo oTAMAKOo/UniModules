@@ -73,7 +73,9 @@ namespace Modules.AtlasTexture
 
             var originLabelWidth = EditorLayoutTools.SetLabelWidth(80f);
 
-            EditorLayoutTools.DrawLabelWithBackground("SpriteAtlas", new Color(0.4f, 0.1f, 0.8f));
+            EditorLayoutTools.DrawLabelWithBackground("SpriteAtlas");
+
+            GUILayout.Space(2f);
 
             using (new EditorGUILayout.HorizontalScope())
             {
@@ -93,9 +95,11 @@ namespace Modules.AtlasTexture
                 }
             }
 
-            EditorGUILayout.Separator();
+            GUILayout.Space(4f);
 
-            EditorLayoutTools.DrawLabelWithBackground("Sprite", new Color(0.4f, 0.1f, 0.8f));
+            EditorLayoutTools.DrawLabelWithBackground("Sprite");
+
+            GUILayout.Space(2f);
 
             var currentSpriteName = currentSprite != null ? currentSprite.name : string.Empty;
 
