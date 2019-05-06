@@ -62,6 +62,8 @@ namespace Modules.AtlasTexture
         /// <summary> Sprite取得. </summary>
         public Sprite GetSprite(string spriteName)
         {
+            if (spriteAtlas == null) { return null; }
+
             var sprite = spriteCache.Get(spriteName);
 
             if (sprite != null) { return sprite; }
