@@ -17,59 +17,24 @@ namespace Modules.UI.Reactive
         [SerializeField]
         private UIButton target = null;
         [SerializeField]
-        private AtlasTexture.AtlasTexture atlasTexture = null;
-
-        [SerializeField, HideInInspector]
-        private string enableSpriteGuid = null;
-        [SerializeField, HideInInspector]
-        private string disableSpriteGuid = null;
+        private Sprite enableSprite = null;
+        [SerializeField]
+        private Sprite disableSprite = null;
 
         private UIImage uiImage = null;
 
         //----- property -----
 
-        public AtlasTexture.AtlasTexture AtlasTexture { get { return atlasTexture; } }
-
-        public string EnableSpriteName
+        public Sprite EnableSprite
         {
-            get
-            {
-                var spriteData = atlasTexture.GetSpriteDataFromGuid(enableSpriteGuid);
-
-                return spriteData != null ? spriteData.SpriteName : null;
-            }
-
-            set
-            {
-                if (atlasTexture == null) { return; }
-
-                var spriteData = atlasTexture.GetSpriteData(value);
-
-                enableSpriteGuid = spriteData != null ? spriteData.SpriteGuid : null;
-
-                Apply(target.Button.interactable);
-            }
+            get { return enableSprite; }
+            set { enableSprite = value; }
         }
 
-        public string DisableSpriteName
+        public Sprite DisableSpriteName
         {
-            get
-            {
-                var spriteData = atlasTexture.GetSpriteDataFromGuid(disableSpriteGuid);
-
-                return spriteData != null ? spriteData.SpriteName : null;
-            }
-
-            set
-            {
-                if (atlasTexture == null) { return; }
-
-                var spriteData = atlasTexture.GetSpriteData(value);
-
-                disableSpriteGuid = spriteData != null ? spriteData.SpriteGuid : null;
-
-                Apply(target.Button.interactable);
-            }
+            get { return disableSprite; }
+            set { disableSprite = value; }
         }
 
         //----- method -----
@@ -94,11 +59,7 @@ namespace Modules.UI.Reactive
 
         private void Apply(bool interactable)
         {
-            var spriteGuid = interactable ? enableSpriteGuid : disableSpriteGuid;
-
-            var spriteData = atlasTexture.GetSpriteDataFromGuid(spriteGuid);
-            
-            var sprite = atlasTexture.GetSprite(spriteData.SpriteName); ;
+            var sprite = interactable ? enableSprite : disableSprite;
 
             uiImage.Image.sprite = sprite;
         }

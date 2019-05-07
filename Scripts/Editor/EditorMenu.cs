@@ -11,7 +11,6 @@ using Modules.MessagePack;
 using Modules.Master;
 using Modules.ExternalResource;
 using Modules.ExternalResource.Editor;
-using Modules.AtlasTexture;
 using Modules.Devkit.AssetBundles;
 using Modules.Devkit.AssetDependencies;
 using Modules.Devkit.CompileNotice;
@@ -432,16 +431,6 @@ namespace Modules
         }
 
         #endregion
-
-        //===============================================================
-        //  ProjectView Creare Asset.
-        //===============================================================
-
-        [MenuItem("Assets/Create/AtlasTexture", priority = 355)]
-        public static void GenerateAtlasTexture()
-        {
-            AtlasTextureGenerator.Generate(Selection.activeObject, "New AtlasTexture.asset");
-        }
 
         //===============================================================
         //  Prerelease.

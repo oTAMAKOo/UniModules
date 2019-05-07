@@ -8,62 +8,131 @@ using Extensions;
 
 namespace Modules.ObjectCache
 {
-    public interface IObjectCache
-    {
-        // 参照数を増やす.
-        void AddReference();
-        // 参照数を減らす.
-        void ReleaseReference();
-    }
-
     /// <summary>
     /// オブジェクトをメモリ上にキャッシュ.
     /// </summary>
-    public class ObjectCache<T> : IObjectCache where T : UnityEngine.Object
+    public class ObjectCache<T> : IDisposable where T : class
     {
         //----- params -----
 
+        private class Reference
+        {
+            public int referenceCount = 0;
+            public ObjectCache<T> cacheInstance = null;
+        }
+
         //----- field -----
 
+        private string referenceName = null;
         private Dictionary<string, T> cache = null;
-        private int referenceCount = 0;
+
+        private static Dictionary<string, Reference> cacheReference = null;
 
         //----- property -----
 
         //----- method -----
 
-        public void Add(string key, T asset)
+        public ObjectCache(string referenceName = null)
         {
-            if (cache == null)
+            this.referenceName = referenceName;
+
+            if (cacheReference == null)
             {
-                cache = new Dictionary<string, T>();
+                cacheReference = new Dictionary<string, Reference>();
             }
 
-            if (!cache.ContainsKey(key))
+            if (!string.IsNullOrEmpty(referenceName))
             {
-                cache.Add(key, asset);
+                var reference = cacheReference.GetValueOrDefault(referenceName);
+
+                if (reference == null)
+                {
+                    reference = new Reference()
+                    {
+                        referenceCount = 1,
+                        cacheInstance = this,
+                    };
+
+                    cacheReference.Add(referenceName, reference);
+
+                    Debug.LogFormat("ObjectCache Reference New {0}", referenceName);
+                }
+                else
+                {
+                    reference.referenceCount++;
+
+                    Debug.LogFormat("ObjectCache Reference Add {0}", reference.referenceCount);
+                }
+            }
+        }
+
+        ~ObjectCache()
+        {
+            Dispose();
+        }
+
+        public void Dispose()
+        {
+            if (!string.IsNullOrEmpty(referenceName))
+            {
+                var reference = cacheReference.GetValueOrDefault(referenceName);
+
+                if (reference != null)
+                {
+                    reference.referenceCount--;
+
+                    if (reference.referenceCount <= 0)
+                    {
+                        cacheReference.Remove(referenceName);
+
+                        Debug.LogFormat("ObjectCache Reference Release {0}", referenceName);
+                    }
+                }
+            }
+
+            GC.SuppressFinalize(this);
+        }
+
+        public void Add(string key, T asset)
+        {
+            if (asset == null) { return; }
+
+            var instance = GetInstance();
+
+            if (instance.cache == null)
+            {
+                instance.cache = new Dictionary<string, T>();
+            }
+            
+            if (!instance.cache.ContainsKey(key))
+            {
+                instance.cache.Add(key, asset);
             }
         }
 
         public void Remove(string key)
         {
-            if (!cache.ContainsKey(key))
+            var instance = GetInstance();
+
+            if (!instance.cache.ContainsKey(key))
             {
-                cache.Remove(key);
+                instance.cache.Remove(key);
             }
 
-            if (cache.IsEmpty())
+            if (instance.cache.IsEmpty())
             {
-                cache = null;
+                instance.cache = null;
             }
         }
 
         public void Clear()
         {
-            if (cache == null) { return; }
+            var instance = GetInstance();
 
-            cache.Clear();
-            cache = null;
+            if (instance.cache == null) { return; }
+
+            instance.cache.Clear();
+            instance.cache = null;
         }
 
         public T Get(string key)
@@ -73,20 +142,22 @@ namespace Modules.ObjectCache
             return cache.GetValueOrDefault(key);
         }
 
-        public void AddReference()
+        private ObjectCache<T> GetInstance()
         {
-            referenceCount++;
-        }
+            ObjectCache<T> cacheInstance = null;
 
-        public void ReleaseReference()
-        {
-            referenceCount--;
-
-            if (referenceCount <= 0)
+            if (string.IsNullOrEmpty(referenceName))
             {
-                Clear();
-                referenceCount = 0;
+                cacheInstance = this;
             }
+            else
+            {
+                var reference = cacheReference.GetValueOrDefault(referenceName);
+
+                cacheInstance = reference.cacheInstance;
+            }
+
+            return cacheInstance;
         }
     }
 }

@@ -1,12 +1,14 @@
 ﻿
 using UnityEngine;
+using UnityEngine.U2D;
 using System;
 using System.Linq;
 using System.Collections.Generic;
 using UniRx;
 using Extensions;
+using Modules.ObjectCache;
 
-namespace Modules.AtlasTexture
+namespace Modules.U2D
 {
     public class AtlasTextureAnimation : MonoBehaviour
     {
@@ -21,7 +23,7 @@ namespace Modules.AtlasTexture
         //----- field -----
 
         [SerializeField]
-        private AtlasTexture atlasTexture = null;
+        private SpriteAtlas spriteAtlas = null;
         [SerializeField]
         private float updateInterval = 1f;
 
@@ -37,10 +39,10 @@ namespace Modules.AtlasTexture
 
         public string CurrentAnimation { get; private set; }
 
-        public AtlasTexture AtlasTexture
+        public SpriteAtlas SpriteAtlas
         {
-            get { return atlasTexture; }
-            set { atlasTexture = value; }
+            get { return spriteAtlas; }
+            set { spriteAtlas = value; }
         }
 
         public float UpdateInterval
@@ -113,15 +115,14 @@ namespace Modules.AtlasTexture
 
         private void LoadSprites(string animationName)
         {
+            var index = 0;
             var sprites = new List<Sprite>();
 
-            var count = atlasTexture.SpriteData.Count(x => x.SpriteName.StartsWith(animationName));
-
-            for (var i = 0; i < count; i++)
+            while (true)
             {
-                var spriteName = string.Format("{0}_{1}", animationName, i);
+                var spriteName = string.Format("{0}_{1}", animationName, index);
                 
-                var sprite = atlasTexture.GetSprite(spriteName);
+                var sprite = spriteAtlas.GetSprite(spriteName);
                 
                 if (sprite != null)
                 {
@@ -131,6 +132,8 @@ namespace Modules.AtlasTexture
                 {
                     break;
                 }
+
+                index++;
             }
 
             animationSprites = sprites.ToArray();
