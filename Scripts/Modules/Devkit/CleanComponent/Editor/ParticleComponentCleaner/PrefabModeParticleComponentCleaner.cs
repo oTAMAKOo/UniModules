@@ -2,17 +2,17 @@
 using UnityEngine;
 using UnityEditor;
 using UnityEditor.Experimental.SceneManagement;
-using Unity.Linq;
 using System;
 using System.Linq;
 using System.Collections.Generic;
 using UniRx;
 using Extensions;
+using Unity.Linq;
 using Modules.Devkit.EventHook;
 
 namespace Modules.Devkit.CleanComponent
 {
-    public class PrefabModeImageComponentCleaner : ImageComponentCleaner
+    public class PrefabModeParticleComponentCleaner : ParticleComponentCleaner
     {
         //----- params -----
 
@@ -33,16 +33,16 @@ namespace Modules.Devkit.CleanComponent
             var gameObjects = prefabStage.prefabContentsRoot.DescendantsAndSelf().ToArray();
 
             if (!CheckExecute(gameObjects)) { return; }
-            
+
             foreach (var gameObject in gameObjects)
             {
-               ModifyImageComponent(gameObject);
+                ModifyParticleSystemComponent(gameObject);
             }
 
             var prefabRoot = prefabStage.prefabContentsRoot;
             var assetPath = prefabStage.prefabAssetPath;
 
-            PrefabUtility.SaveAsPrefabAsset(prefabRoot, assetPath);            
+            PrefabUtility.SaveAsPrefabAsset(prefabRoot, assetPath);
         }
     }
 }

@@ -1,15 +1,19 @@
 ﻿
 using UnityEngine;
 using UnityEditor;
+using System;
+using System.Linq;
+using System.Collections.Generic;
 using Unity.Linq;
 using UniRx;
+using Extensions;
 using Modules.Devkit.EventHook;
 
 namespace Modules.Devkit.CleanComponent
 {
     #if !UNITY_2018_3_OR_NEWER
 
-    public class PrefabImageComponentCleaner : ImageComponentCleaner
+    public class PrefabParticleComponentCleaner : ParticleComponentCleaner
     {
         //----- params -----
 
@@ -37,7 +41,7 @@ namespace Modules.Devkit.CleanComponent
 
             foreach (var gameObject in gameObjects)
             {
-                ModifyImageComponent(gameObject);
+                ModifyParticleSystemComponent(gameObject);
             }
         }
     }

@@ -1,12 +1,17 @@
 ﻿
+using UnityEngine;
 using UnityEditor;
 using UnityEditor.SceneManagement;
+using System;
+using System.Linq;
+using System.Collections.Generic;
 using UniRx;
+using Extensions;
 using Modules.Devkit.EventHook;
 
 namespace Modules.Devkit.CleanComponent
 {
-    public class SceneImageComponentCleaner : ImageComponentCleaner
+    public class SceneParticleComponentCleaner : ParticleComponentCleaner
     {
         //----- params -----
 
@@ -43,7 +48,7 @@ namespace Modules.Devkit.CleanComponent
 
             foreach (var rootGameObject in rootGameObjects)
             {
-                ModifyImageComponent(rootGameObject);
+                ModifyParticleSystemComponent(rootGameObject);
             }
         }
     }
