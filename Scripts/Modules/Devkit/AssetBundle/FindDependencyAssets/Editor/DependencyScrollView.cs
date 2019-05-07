@@ -30,7 +30,9 @@ namespace Modules.Devkit.AssetBundles
                         {
                             using (new EditorGUILayout.HorizontalScope())
                             {
-                                EditorLayoutTools.DrawLabelWithBackground("Asset", new Color(0.9f, 0.4f, 0.4f, 0.3f), null, TextAnchor.MiddleCenter, 90f);
+                                var backgroundColor = new Color(0.9f, 0.4f, 0.4f, 0.3f);
+
+                                EditorLayoutTools.DrawLabelWithBackground("Asset", backgroundColor, null, TextAnchor.MiddleCenter, FontStyle.Bold, 90f);
                                 EditorGUILayout.ObjectField("", asset, typeof(Object), false, GUILayout.Width(250f));
                             }
                         }
@@ -42,7 +44,9 @@ namespace Modules.Devkit.AssetBundles
                         {
                             using (new EditorGUILayout.HorizontalScope())
                             {
-                                EditorLayoutTools.DrawLabelWithBackground("Dependent", new Color(0.4f, 0.4f, 0.9f, 0.5f), null, TextAnchor.MiddleCenter, 90f);
+                                var backgroundColor = new Color(0.4f, 0.4f, 0.9f, 0.5f);
+
+                                EditorLayoutTools.DrawLabelWithBackground("Dependent", backgroundColor, null, TextAnchor.MiddleCenter, FontStyle.Bold, 90f);
                                 EditorGUILayout.ObjectField("", dependentAsset, typeof(Object), false, GUILayout.Width(250f));
                             }
                         }

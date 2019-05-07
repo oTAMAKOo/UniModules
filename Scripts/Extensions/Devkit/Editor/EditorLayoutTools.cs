@@ -437,41 +437,40 @@ namespace Extensions.Devkit
             get { return EditorGUIUtility.isProSkin ? new Color(1f, 1f, 1f, 0.9f) : new Color(1f, 1f, 1f, 0.7f); }
         }
 
-        public static void DrawLabelWithBackground(string text, Color? backgroundColor = null, Color? labelColor = null, TextAnchor alignment = TextAnchor.MiddleLeft, float? width = null, params GUILayoutOption[] options)
+        public static void DrawLabelWithBackground(string text, Color? backgroundColor = null, Color? labelColor = null,
+                                                   TextAnchor alignment = TextAnchor.MiddleLeft, FontStyle fontStyle = FontStyle.Bold,
+                                                   float? width = null, params GUILayoutOption[] options)
         {
-            var labelStyle = new GUIStyle("IN TextField");
-            var labelStyleState = new GUIStyleState();
+            var labelStyleState = new GUIStyleState()
+            {
+                textColor = labelColor.HasValue ? labelColor.Value : LabelColor,
+            };
 
-            backgroundColor = backgroundColor.HasValue ? backgroundColor.Value : BackgroundColor;
-            labelColor = labelColor.HasValue ? labelColor.Value : LabelColor;
-
-            labelStyle.alignment = alignment;
-            labelStyleState.textColor = labelColor.Value;
-
-            labelStyle.normal = labelStyleState;
+            var labelStyle = new GUIStyle("IN TextField")
+            {
+                alignment = alignment,
+                fontStyle = fontStyle,
+                normal = labelStyleState,
+            };
 
             var style = new GUIStyle(TextAreaStyle);
             var size = labelStyle.CalcSize(new GUIContent(text));
 
-            var originColor = GUI.backgroundColor;
-
-            GUI.backgroundColor = backgroundColor.Value;
-
-            var layoutOptions = width.HasValue ?
-                new GUILayoutOption[] { GUILayout.Width(width.Value), GUILayout.Height(size.y) } :
-                new GUILayoutOption[] { GUILayout.Height(size.y) };
-
-            GUILayout.BeginHorizontal(style, layoutOptions);
+            using (new BackgroundColorScope(backgroundColor.HasValue ? backgroundColor.Value : BackgroundColor))
             {
-                GUILayout.Space(10f);
+                var layoutOptions = width.HasValue ?
+                    new GUILayoutOption[] { GUILayout.Width(width.Value), GUILayout.Height(size.y) } :
+                    new GUILayoutOption[] { GUILayout.Height(size.y) };
 
-                GUILayout.Label(text, labelStyle, options);
+                using (new EditorGUILayout.HorizontalScope(style, layoutOptions))
+                {
+                    GUILayout.Space(10f);
 
-                GUILayout.Space(10f);
+                    GUILayout.Label(text, labelStyle, options);
+
+                    GUILayout.Space(10f);
+                }
             }
-            GUILayout.EndHorizontal();
-
-            GUI.backgroundColor = originColor;
         }
 
         public static void DrawOutline(Rect rect, Color color)
@@ -479,6 +478,7 @@ namespace Extensions.Devkit
             if (Event.current.type == EventType.Repaint)
             {
                 Texture2D tex = blankTexture;
+
                 GUI.color = color;
                 GUI.DrawTexture(new Rect(rect.xMin, rect.yMin, 1f, rect.height), tex);
                 GUI.DrawTexture(new Rect(rect.xMax, rect.yMin, 1f, rect.height), tex);

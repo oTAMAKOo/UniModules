@@ -71,9 +71,11 @@ namespace Modules.AtlasTexture
 
             var spriteAtlas = Reflection.GetPrivateField<AtlasTexture, SpriteAtlas>(atlasTexture, "spriteAtlas");
 
+            var titleBackgroundColor = new Color(0.6f, 0.8f, 1f);
+
             var originLabelWidth = EditorLayoutTools.SetLabelWidth(80f);
 
-            EditorLayoutTools.DrawLabelWithBackground("SpriteAtlas");
+            EditorLayoutTools.DrawLabelWithBackground("SpriteAtlas", titleBackgroundColor);
 
             GUILayout.Space(2f);
 
@@ -97,7 +99,7 @@ namespace Modules.AtlasTexture
 
             GUILayout.Space(4f);
 
-            EditorLayoutTools.DrawLabelWithBackground("Sprite");
+            EditorLayoutTools.DrawLabelWithBackground("Sprite", titleBackgroundColor);
 
             GUILayout.Space(2f);
 
@@ -109,7 +111,7 @@ namespace Modules.AtlasTexture
 
                 using (new DisableScope(!enableSelectSprite))
                 {
-                    if (EditorLayoutTools.DrawPrefixButton("Sprite"))
+                    if (EditorLayoutTools.DrawPrefixButton("Select"))
                     {
                         var spriteSelector = SpriteSelector.Open(atlasTexture, currentSpriteName);
 
