@@ -25,7 +25,6 @@ namespace Modules.Animation
         [SerializeField]
         private bool ignoreTimeScale = false;
 
-        private string animationName = null;
         private int layer = -1;
 
         // 現在の状態.
@@ -57,8 +56,10 @@ namespace Modules.Animation
 
         //----- property -----
 
+        public string CurrentAnimationName { get; private set; }
+
         public Animator Animator { get; private set; }
-        
+
         public AnimationClip[] Clips { get; private set; }
 
         public float DefaultSpeed { get; private set; }
@@ -117,7 +118,7 @@ namespace Modules.Animation
             if (animator == null) { return; }
 
             if (isInitialized) { return; }
-            
+
             Animator = animator;
             Clips = animatorController != null ? animatorController.animationClips : new AnimationClip[0];
             DefaultSpeed = Animator.speed;
@@ -154,17 +155,18 @@ namespace Modules.Animation
                 return Observable.ReturnUnit();
             }
 
-            this.animationName = animationName;
             this.layer = layer;
 
-            var hash = Animator.StringToHash(animationName);
+            CurrentAnimationName = animationName;
+
+            var hash = Animator.StringToHash(CurrentAnimationName);
 
             if (Animator.HasState(GetCurrentLayerIndex(), hash))
             {
                 return Observable.FromCoroutine(() => PlayInternal(layer, normalizedTime, immediate));
             }
 
-            this.animationName = string.Empty;
+            CurrentAnimationName = null;
 
             Debug.LogErrorFormat("Animation State Not found. {0}", animationName);
 
@@ -173,7 +175,7 @@ namespace Modules.Animation
 
         private IEnumerator PlayInternal(int layer, float normalizedTime, bool immediate)
         {
-            var hash = Animator.StringToHash(animationName);
+            var hash = Animator.StringToHash(CurrentAnimationName);
 
             while (true)
             {
@@ -217,7 +219,7 @@ namespace Modules.Animation
 
                 var stateInfo = Animator.GetCurrentAnimatorStateInfo(GetCurrentLayerIndex());
 
-                if (stateInfo.IsName(animationName)) { break; }
+                if (stateInfo.IsName(CurrentAnimationName)) { break; }
 
                 if (immediate)
                 {
@@ -398,7 +400,7 @@ namespace Modules.Animation
             // 指定ステートへ遷移待ち.
             if (waitStateTransition)
             {
-                if (!stateInfo.IsName(animationName) || Animator.IsInTransition(layerIndex))
+                if (!stateInfo.IsName(CurrentAnimationName) || Animator.IsInTransition(layerIndex))
                 {
                     return true;
                 }
@@ -406,7 +408,7 @@ namespace Modules.Animation
                 waitStateTransition = false;
             }
 
-            if (!stateInfo.IsName(animationName)) { return false; }
+            if (!stateInfo.IsName(CurrentAnimationName)) { return false; }
 
             if (1 < stateInfo.normalizedTime && !Animator.IsInTransition(layerIndex)) { return false; }
 
