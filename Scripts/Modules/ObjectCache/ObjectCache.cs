@@ -49,19 +49,15 @@ namespace Modules.ObjectCache
                 {
                     reference = new Reference()
                     {
-                        referenceCount = 1,
+                        referenceCount = 0,
                         cacheInstance = this,
                     };
 
                     cacheReference.Add(referenceName, reference);
-
-                    Debug.LogFormat("ObjectCache Reference New {0}", referenceName);
                 }
                 else
                 {
                     reference.referenceCount++;
-
-                    Debug.LogFormat("ObjectCache Reference Add {0}", reference.referenceCount);
                 }
             }
         }
@@ -84,8 +80,6 @@ namespace Modules.ObjectCache
                     if (reference.referenceCount <= 0)
                     {
                         cacheReference.Remove(referenceName);
-
-                        Debug.LogFormat("ObjectCache Reference Release {0}", referenceName);
                     }
                 }
             }

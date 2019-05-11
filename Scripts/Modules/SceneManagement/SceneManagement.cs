@@ -661,7 +661,7 @@ namespace Modules.SceneManagement
 
                 while (!op.isDone)
                 {
-                    yield return op;
+                    yield return null;
                 }
 
                 SceneManager.sceneLoaded -= sceneLoaded;
