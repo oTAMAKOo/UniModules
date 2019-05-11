@@ -137,64 +137,72 @@ namespace Modules.GameText.Components
 
                 var infos = GetMatchOfList();
 
-                GUILayout.BeginVertical();
+                using (new EditorGUILayout.VerticalScope())
                 {
                     EditorLayoutTools.DrawLabelWithBackground("Category : " + setter.Category.ToLabelName(), new Color(0.2f, 0.5f, 0.2f));
 
-                    scrollPos = GUILayout.BeginScrollView(scrollPos);
+                    using (var scrollViewScope = new EditorGUILayout.ScrollViewScope(scrollPos))
                     {
                         foreach (var info in infos)
                         {
                             GUILayout.Space(-1f);
 
-                            bool highlight = setter.Identifier.ToNullable() == info.Id;
+                            var highlight = setter.Identifier.ToNullable() == info.Id;
 
-                            GUI.backgroundColor = highlight ? Color.white : new Color(0.8f, 0.8f, 0.8f);
+                            var originBackgroundColor = GUI.backgroundColor;
 
-                            var size = EditorStyles.label.CalcSize(new GUIContent(info.Text));
-
-                            size.y += 6f;
-
-                            GUILayout.BeginHorizontal(EditorLayoutTools.TextAreaStyle, GUILayout.Height(size.y));
+                            using (new BackgroundColorScope(highlight ? new Color(0.9f, 1f, 0.9f) : new Color(0.95f, 0.95f, 0.95f)))
                             {
-                                var labelStyle = new GUIStyle("IN TextField");
-                                labelStyle.alignment = TextAnchor.MiddleLeft;
+                                var size = EditorStyles.label.CalcSize(new GUIContent(info.Text));
 
-                                GUILayout.Space(10f);
+                                size.y += 6f;
 
-                                GUILayout.Label(info.Id.ToString(), labelStyle, GUILayout.MinWidth(65f), GUILayout.Height(size.y));
-
-                                GUILayout.Label(info.Name, labelStyle, GUILayout.MinWidth(220f), GUILayout.Height(size.y));
-
-                                GUILayout.Label(info.Text, labelStyle, GUILayout.MaxWidth(500f), GUILayout.Height(size.y));
-
-                                GUILayout.FlexibleSpace();
-
-                                GUILayout.BeginVertical();
+                                using (new EditorGUILayout.HorizontalScope(EditorLayoutTools.TextAreaStyle, GUILayout.Height(size.y)))
                                 {
-                                    var buttonHeight = 20f;
-
-                                    GUILayout.Space((size.y - buttonHeight) * 0.5f);
-
-                                    if (GUILayout.Button("Select", GUILayout.Width(75f), GUILayout.Height(buttonHeight)))
+                                    var labelStyle = new GUIStyle("IN TextField")
                                     {
-                                        UnityEditorUtility.RegisterUndo("GameTextSelector-Select", setter);
-                                        setter.SetCategoryId(info.Id);
-                                        setterInspector.Repaint();
+                                        alignment = TextAnchor.MiddleLeft,
+                                    };
+
+                                    GUILayout.Space(10f);
+
+                                    GUILayout.Label(info.Id.ToString(), labelStyle, GUILayout.MinWidth(65f), GUILayout.Height(size.y));
+
+                                    GUILayout.Label(info.Name, labelStyle, GUILayout.MinWidth(220f), GUILayout.Height(size.y));
+
+                                    GUILayout.Label(info.Text, labelStyle, GUILayout.MaxWidth(500f), GUILayout.Height(size.y));
+
+                                    GUILayout.FlexibleSpace();
+
+                                    using (new EditorGUILayout.VerticalScope())
+                                    {
+                                        var buttonHeight = 20f;
+
+                                        GUILayout.Space((size.y - buttonHeight) * 0.5f);
+
+                                        using (new BackgroundColorScope(originBackgroundColor))
+                                        {
+                                            if (GUILayout.Button("Select", GUILayout.Width(75f), GUILayout.Height(buttonHeight)))
+                                            {
+                                                UnityEditorUtility.RegisterUndo("GameTextSelector-Select", setter);
+                                                setter.SetCategoryId(info.Id);
+                                                setterInspector.Repaint();
+
+                                                Close();
+                                            }
+                                        }
+
+                                        GUILayout.Space((size.y - buttonHeight) * 0.5f);
                                     }
 
-                                    GUILayout.Space((size.y - buttonHeight) * 0.5f);
+                                    GUILayout.Space(8f);
                                 }
-                                GUILayout.EndVertical();
-
-                                GUILayout.Space(8f);
                             }
-                            GUILayout.EndHorizontal();
                         }
+
+                        scrollPos = scrollViewScope.scrollPosition;
                     }
-                    GUILayout.EndScrollView();
                 }
-                GUILayout.EndVertical();
             }
             else
             {
