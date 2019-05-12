@@ -28,6 +28,8 @@ namespace Modules.ExternalResource
         [SerializeField]
         private string groupName = null;
         [SerializeField]
+        private string tag = null;
+        [SerializeField]
         private long fileSize = 0;
         [SerializeField]
         private string fileHash = null;
@@ -40,6 +42,8 @@ namespace Modules.ExternalResource
         public string ResourcesPath { get { return resourcesPath; } }
         /// <summary> グループ名 </summary>
         public string GroupName { get { return groupName; } }
+        /// <summary> タグ </summary>
+        public string Tag { get { return tag; } }
         /// <summary> ファイルサイズ(byte) </summary>
         public long FileSize { get { return fileSize; } }
         /// <summary> ファイルハッシュ </summary>
@@ -55,10 +59,11 @@ namespace Modules.ExternalResource
 
         //----- method -----
 
-        public AssetInfo(string resourcesPath, string groupName)
+        public AssetInfo(string resourcesPath, string groupName, string tag)
         {
             this.resourcesPath = resourcesPath;
             this.groupName = groupName;
+            this.tag = tag;
         }
 
         public void SetFileInfo(string filePath)

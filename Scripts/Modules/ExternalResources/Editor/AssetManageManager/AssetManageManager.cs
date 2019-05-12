@@ -434,8 +434,9 @@ namespace Modules.ExternalResource.Editor
                 {
                     var loadPath = GetAssetLoadPath(assetPath);
                     var groupName = GetAssetGroupName(manageInfo);
+                    var tag = manageInfo.tag;
 
-                    var assetInfo = new AssetInfo(loadPath, groupName);
+                    var assetInfo = new AssetInfo(loadPath, groupName, tag);
 
                     if (manageInfo.isAssetBundle)
                     {

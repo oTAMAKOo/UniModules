@@ -57,6 +57,12 @@ namespace Modules.ExternalResource.Editor
             {
                 var isHit = false;
 
+                // タグが一致.
+                if (!string.IsNullOrEmpty(assetInfo.Tag))
+                {
+                    isHit |= assetInfo.Tag.IsMatch(keywords);
+                }
+
                 // アセットバンドル名が一致.
                 if (assetInfo.IsAssetBundle)
                 {
@@ -146,6 +152,9 @@ namespace Modules.ExternalResource.Editor
 
                             EditorGUILayout.LabelField("GroupName");
                             EditorGUILayout.SelectableLabel(assetInfo.GroupName, textAreaStyle, GUILayout.Height(18f));
+
+                            EditorGUILayout.LabelField("Tag");
+                            EditorGUILayout.SelectableLabel(assetInfo.Tag, textAreaStyle, GUILayout.Height(18f));
 
                             EditorGUILayout.LabelField("FileHash");
                             EditorGUILayout.SelectableLabel(assetInfo.FileHash, textAreaStyle, GUILayout.Height(18f));

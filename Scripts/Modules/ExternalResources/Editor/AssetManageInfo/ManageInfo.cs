@@ -33,6 +33,9 @@ namespace Modules.ExternalResource.Editor
         /// <summary> 命名文字列 </summary>
         public string assetBundleNameStr = null;
 
+        /// <summary> タグ </summary>
+        public string tag = null;
+
         /// <summary> コメント </summary>
         public string comment = null;
 
@@ -47,6 +50,7 @@ namespace Modules.ExternalResource.Editor
             this.isAssetBundle = source.isAssetBundle;
             this.assetBundleNameType = source.assetBundleNameType;
             this.assetBundleNameStr = source.assetBundleNameStr;
+            this.tag = source.tag;
             this.comment = source.comment;
         }
     }

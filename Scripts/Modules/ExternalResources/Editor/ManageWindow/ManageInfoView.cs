@@ -198,6 +198,10 @@ namespace Modules.ExternalResource.Editor
                             }
                         }
 
+                        manageInfo.tag = EditorGUILayout.DelayedTextField("Tag", manageInfo.tag, GUILayout.Width(layoutWidth));
+
+                        GUILayout.Space(2f);
+
                         manageInfo.comment = EditorGUILayout.DelayedTextField("Memo", manageInfo.comment, GUILayout.Width(layoutWidth), GUILayout.Height(38f));
 
                         EditorLayoutTools.SetLabelWidth(originLabelWidth);

@@ -267,6 +267,7 @@ namespace Modules.ExternalResource.Editor
             var view = new ManageInfoView(manageInfo, assetInfos, ignoreType, opened, edited);
             
             view.OnUpdateManageInfoAsObservable()
+                .DelayFrame(1)
                 .Subscribe(_ =>
                     {
                         assetManageManager.UpdateManageInfo(view.ManageInfo);
@@ -276,6 +277,7 @@ namespace Modules.ExternalResource.Editor
                 .AddTo(Disposable);
 
             view.OnDeleteManageInfoAsObservable()
+                .DelayFrame(1)
                 .Subscribe(_ =>
                     {
                         assetManageManager.DeleteManageInfo(selectionGroupInfo.groupName, view.ManageInfo);
