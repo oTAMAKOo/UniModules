@@ -163,7 +163,7 @@ namespace Modules.Animation
 
             if (Animator.HasState(GetCurrentLayerIndex(), hash))
             {
-                return Observable.FromCoroutine(() => PlayInternal(layer, normalizedTime, immediate));
+                return Observable.FromMicroCoroutine(() => PlayInternal(layer, normalizedTime, immediate));
             }
 
             CurrentAnimationName = null;
@@ -193,10 +193,20 @@ namespace Modules.Animation
                 Animator.Play(hash, layer, normalizedTime);
 
                 // 指定アニメーションへ遷移待ち.
-                yield return Observable.FromCoroutine(() => WaitTransitionState(immediate)).ToYieldInstruction();
+                var waitTransitionStateYield = Observable.FromMicroCoroutine(() => WaitTransitionState(immediate)).ToYieldInstruction();
+
+                while (!waitTransitionStateYield.IsDone)
+                {
+                    yield return null;
+                }
 
                 // アニメーションの終了待ち.
-                yield return Observable.FromCoroutine(() => WaitForEndOfAnimation()).ToYieldInstruction();
+                var waitForEndYield = Observable.FromMicroCoroutine(() => WaitForEndOfAnimation()).ToYieldInstruction();
+
+                while (!waitForEndYield.IsDone)
+                {
+                    yield return null;
+                }
 
                 if (endActionType != EndActionType.Loop) { break; }
 
@@ -253,7 +263,7 @@ namespace Modules.Animation
             }
         }
 
-        public void Stop(bool setDefaultState = false)
+        public void Stop()
         {
             if (!isInitialized) { return; }
 
@@ -268,11 +278,6 @@ namespace Modules.Animation
             }
 
             Refresh();
-
-            if (setDefaultState)
-            {
-                Animator.Rebind();
-            }
 
             Animator.enabled = false;
         }
