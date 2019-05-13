@@ -31,10 +31,10 @@ namespace Modules.Networking
         
         /// <summary> URL. </summary>
         public string HostUrl { get; private set; }
-        
+
         /// <summary> リクエストURL. </summary>
-        public string Url { get { return request.url; } }
-        
+        public string Url { get; private set; }
+
         /// <summary> ヘッダー情報. </summary>
         public IDictionary<string, string> Headers { get; private set; }
         
@@ -83,7 +83,9 @@ namespace Modules.Networking
             
             request.timeout = TimeOutSeconds;
 
-            SetRequestHeaders();            
+            SetRequestHeaders();
+
+            Url = request.url;
         }
 
         public IObservable<TResult> Get<TResult>(IProgress<float> progress = null) where TResult : class
