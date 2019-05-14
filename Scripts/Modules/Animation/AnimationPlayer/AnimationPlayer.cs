@@ -219,6 +219,7 @@ namespace Modules.Animation
         // 指定アニメーションへ遷移待ち.
         private IEnumerator WaitTransitionState(bool immediate)
         {
+            // ステートの遷移待ち.
             while (true)
             {
                 if (UnityUtility.IsNull(this)) { yield break; }
@@ -239,6 +240,12 @@ namespace Modules.Animation
                 {
                     yield return null;
                 }
+            }
+
+            // 遷移先の1フレーム目で更新.
+            if (immediate)
+            {
+                Animator.Update(0);
             }
         }
 
