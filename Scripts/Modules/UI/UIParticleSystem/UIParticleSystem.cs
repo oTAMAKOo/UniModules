@@ -1,4 +1,4 @@
-/// Credit glennpow
+﻿/// Credit glennpow
 /// Sourced from - http://forum.unity3d.com/threads/free-script-particle-systems-in-ui-screen-space-overlay.406862/
 /// *Note - experimental.  Currently renders in scene view and not game view.
 
@@ -320,8 +320,6 @@ namespace Modules.UI.Particle
                 result.y = (numTiles.y - Mathf.FloorToInt(frame / numTiles.x)) * frameSize.y - frameSize.y;
                 result.z = result.x + frameSize.x;
                 result.w = result.y + frameSize.y;
-
-                Debug.Log(frame);
             }
 
             return result;
