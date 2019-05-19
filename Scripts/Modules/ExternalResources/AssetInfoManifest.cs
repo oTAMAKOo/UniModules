@@ -187,37 +187,17 @@ namespace Modules.ExternalResource
             return info;
         }
 
-        public void SetAssetFileInfo(string exportPath, IProgress<Tuple<string, float>> progress = null)
+        public void SetAssetBundleFileInfo(string assetBundlePath, IProgress<Tuple<string, float>> progress = null)
         {
             for (var i = 0; i < assetInfos.Length; i++)
             {
                 var assetInfo = assetInfos[i];
 
-                var elements = new string[0];
+                if (!assetInfo.IsAssetBundle) { continue; }
 
-                if (assetInfo.IsAssetBundle)
-                {
-                    var assetBundleName = assetInfo.AssetBundle.AssetBundleName;
+                var assetBundleName = assetInfo.AssetBundle.AssetBundleName;
 
-                    elements = new string[] { exportPath, AssetBundleManager.AssetBundlesFolder, assetBundleName };
-                }
-                else
-                {
-                    #if ENABLE_CRIWARE
-
-                    var extension = Path.GetExtension(assetInfo.ResourcesPath);
-
-                    if (CriAssetDefinition.AssetAllExtensions.Any(x => x == extension))
-                    {
-                        elements = new string[] { exportPath, CriAssetDefinition.CriAssetFolder, assetInfo.ResourcesPath };
-                    }
-
-                    #endif
-                }
-
-                if (elements.IsEmpty()) { continue; }
-
-                var filePath = PathUtility.Combine(elements);
+                var filePath = PathUtility.Combine(new string[] { assetBundlePath, assetBundleName });
 
                 assetInfo.SetFileInfo(filePath);
 
@@ -226,6 +206,35 @@ namespace Modules.ExternalResource
 
             BuildCache(true);
         }
+
+        #if ENABLE_CRIWARE
+
+        public void SetCriAssetFileInfo(string exportPath, IProgress<Tuple<string, float>> progress = null)
+        {
+            for (var i = 0; i < assetInfos.Length; i++)
+            {
+                var assetInfo = assetInfos[i];
+
+                if (assetInfo.IsAssetBundle) { continue; }
+
+                var extension = Path.GetExtension(assetInfo.ResourcesPath);
+
+                var filePath = string.Empty;
+
+                if (CriAssetDefinition.AssetAllExtensions.Any(x => x == extension))
+                {
+                    filePath = PathUtility.Combine(new string[] { exportPath, CriAssetDefinition.CriAssetFolder, assetInfo.ResourcesPath });
+                }
+
+                assetInfo.SetFileInfo(filePath);
+
+                progress.Report(Tuple.Create(assetInfo.ResourcesPath, (float)i / assetInfos.Length));
+            }
+
+            BuildCache(true);
+        }
+
+        #endif
 
         public void SetAssetBundleInfo(string exportPath, AssetBundleManifest assetBundleManifest, IProgress<Tuple<string, float>> progress = null)
         {

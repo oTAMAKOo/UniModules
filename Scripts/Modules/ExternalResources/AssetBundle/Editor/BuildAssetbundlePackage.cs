@@ -1,11 +1,9 @@
 ﻿
 using UnityEngine;
-using UnityEditor;
 using System;
 using System.Linq;
 using System.Collections.Generic;
 using System.IO;
-using System.Text;
 using Extensions;
 using System.Threading;
 
@@ -14,6 +12,10 @@ namespace Modules.AssetBundles.Editor
     public class BuildAssetbundlePackage
     {
         //----- params -----
+
+        private const string AssetBundleManifestName = "AssetBundle";
+
+        private const string ManifestFileExtension = ".manifest";
 
         private const int ChunkSize = 5;
 
@@ -28,8 +30,10 @@ namespace Modules.AssetBundles.Editor
 
         //----- method -----
 
-        public void Build(string[] filePaths, Action<int, int> reportProgress)
+        public void Build(string exportPath, string assetBundlePath, Action<int, int> reportProgress)
         {
+            var filePaths = GetPackageTargets(assetBundlePath);
+
             var total = filePaths.Length;
 
             reportProgress(0, total);
@@ -46,7 +50,7 @@ namespace Modules.AssetBundles.Editor
 
             foreach (var item in list)
             {
-                events.Add(StartWorker(item.ToArray(), progress));
+                events.Add(StartWorker(exportPath, assetBundlePath, item.ToArray(), progress));
             }
 
             while (!WaitHandle.WaitAll(events.ToArray(), 100))
@@ -57,7 +61,29 @@ namespace Modules.AssetBundles.Editor
             reportProgress(progress.Count, total);
         }
 
-        private static ManualResetEvent StartWorker(string[] paths, Progress progress)
+        /// <summary> パッケージ化するアセットバンドルファイル一覧取得 </summary>
+        private static string[] GetPackageTargets(string assetBundlePath)
+        {
+            var allFiles = Directory.GetFiles(assetBundlePath, "*.*", SearchOption.AllDirectories);
+
+            var platformName = UnityPathUtility.GetPlatformName();
+
+            // パッケージ化するファイルパスを抽出.
+            var targets = allFiles
+                // パス区切り文字を修正
+                .Select(x => PathUtility.ConvertPathSeparator(x))
+                // Manifest除外.
+                .Where(c => Path.GetFileNameWithoutExtension(c) != platformName)
+                // AssetBundleManifest除外.
+                .Where(c => Path.GetFileNameWithoutExtension(c) != AssetBundleManifestName)
+                // ManifestFile除外.
+                .Where(c => !c.EndsWith(ManifestFileExtension))
+                .ToArray();
+            
+            return targets;
+        }
+
+        private static ManualResetEvent StartWorker(string exportPath, string assetBundlePath, string[] paths, Progress progress)
         {
             var queue = new Queue<string>(paths);
             var resetEvent = new ManualResetEvent(false);
@@ -78,7 +104,7 @@ namespace Modules.AssetBundles.Editor
 
                         if (path == null) { break; }
 
-                        CreatePackage(path);
+                        CreatePackage(exportPath, assetBundlePath, path);
 
                         Interlocked.Increment(ref progress.Count);
                     }
@@ -97,28 +123,48 @@ namespace Modules.AssetBundles.Editor
         /// <summary>
         /// 暗号化後に圧縮.
         /// </summary>
-        private static void CreatePackage(string filePath)
+        private static void CreatePackage(string exportPath, string assetBundlePath, string filePath)
         {
             var aesManaged = AESExtension.CreateAesManaged(AssetBundleManager.AesPassword);
 
             try
             {
-                // 作成する圧縮ファイルのパス
-                var compressedPackage = filePath + AssetBundleManager.PackageExtension;
+                byte[] data = null;
+
+                // 作成する圧縮ファイルのパス.
+                var path = filePath.Replace(assetBundlePath, string.Empty);
+
+                var compressedPackage = PathUtility.Combine(
+                        new string[]
+                        {
+                            exportPath,
+                            AssetBundleManager.AssetBundlesFolder,
+                            path + AssetBundleManager.PackageExtension
+                        });
 
                 // 圧縮するデータをすべて読み取る.
                 using (var fileStream = new FileStream(filePath, FileMode.Open, FileAccess.Read))
                 {
-                    var data = new byte[fileStream.Length];
+                    data = new byte[fileStream.Length];
 
-                    fileStream.Read(data, 0, data.Length);
-
-                    // 暗号化して書き込み.
-                    File.WriteAllBytes(compressedPackage, data.Encrypt(aesManaged));                   
+                    fileStream.Read(data, 0, data.Length);                    
                 }
 
-                // 元のファイル削除.
-                File.Delete(filePath);
+                // ディレクトリ作成.
+                var directory = Path.GetDirectoryName(compressedPackage);
+
+                if (!Directory.Exists(directory))
+                {
+                    Directory.CreateDirectory(directory);
+                }
+
+                // 暗号化して書き込み.
+                using (var fileStream = new FileStream(compressedPackage, FileMode.Create, FileAccess.Write))
+                {
+                    data = data.Encrypt(aesManaged);
+                    
+                    fileStream.Write(data, 0, data.Length);
+                }
             }
             catch (Exception exception)
             {

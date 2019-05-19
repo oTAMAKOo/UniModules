@@ -57,6 +57,8 @@ namespace Modules.ExternalResource.Editor
                 Directory.Delete(exportPath, true);
             }
 
+            var buildTime = DateTime.UtcNow;
+
             EditorApplication.LockReloadAssemblies();
 
             #if ENABLE_CRIWARE
@@ -65,17 +67,27 @@ namespace Modules.ExternalResource.Editor
 
             #endif
 
-            // CriAssetGeneratorでCriのManifestファイルを生成後に実行.
-            var assetBundleManifest = BuildAssetBundle.BuildAllAssetBundles(exportPath);
+            // AssetBundleをビルド.
+            // ※ CriAssetGeneratorでCriのManifestファイルを生成後に実行する.
+            var assetBundleManifest = BuildAssetBundle.BuildAllAssetBundles();
+
+            // 不要になった古いAssetBundle削除.
+            BuildAssetBundle.CleanUnUseAssetBundleFiles(buildTime);
 
             // ビルド成果物の情報をAssetInfoManifestに書き込み.
-            AssetInfoManifestGenerator.SetAssetFileInfo(exportPath, externalResourcesPath, assetBundleManifest);
+
+            var assetBundlePath = BuildAssetBundle.GetAssetBundleOutputPath();
+
+            AssetInfoManifestGenerator.SetAssetBundleFileInfo(assetBundlePath, externalResourcesPath, assetBundleManifest);
+            
+            #if ENABLE_CRIWARE
+
+            AssetInfoManifestGenerator.SetCriAssetFileInfo(exportPath, externalResourcesPath, assetBundleManifest);
+
+            #endif
 
             // 再度AssetInfoManifestだけビルドを実行.
-            BuildAssetBundle.BuildAssetInfoManifest(exportPath, externalResourcesPath);
-
-            // 不要ファイル削除.
-            BuildAssetBundle.DeleteUnUseFiles(exportPath);
+            BuildAssetBundle.BuildAssetInfoManifest(externalResourcesPath);
 
             // AssetBundleファイルをパッケージ化.
             BuildAssetBundle.BuildPackage(exportPath);

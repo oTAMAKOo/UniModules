@@ -36,21 +36,41 @@ namespace Modules.ExternalResource.Editor
             AssetDatabase.Refresh();
         }
 
-        public static void SetAssetFileInfo(string exportPath, string externalResourcesPath, AssetBundleManifest assetBundleManifest)
+        public static void SetAssetBundleFileInfo(string exportPath, string externalResourcesPath, AssetBundleManifest assetBundleManifest)
         {
             var manifestPath = GetManifestPath(externalResourcesPath);
             var assetInfoManifest = AssetDatabase.LoadAssetAtPath<AssetInfoManifest>(manifestPath);
 
             var progress = new ScheduledNotifier<Tuple<string,float>>();
 
-            progress.Subscribe(prog => EditorUtility.DisplayProgressBar("SetAssetFileInfo", prog.Item1, prog.Item2));
+            progress.Subscribe(prog => EditorUtility.DisplayProgressBar("Update assetbundle file info", prog.Item1, prog.Item2));
 
-            assetInfoManifest.SetAssetFileInfo(exportPath, progress);
+            assetInfoManifest.SetAssetBundleFileInfo(exportPath, progress);
 
             UnityEditorUtility.SaveAsset(assetInfoManifest);
 
             EditorUtility.ClearProgressBar();
         }
+
+        #if ENABLE_CRIWARE
+
+        public static void SetCriAssetFileInfo(string exportPath, string externalResourcesPath, AssetBundleManifest assetBundleManifest)
+        {
+            var manifestPath = GetManifestPath(externalResourcesPath);
+            var assetInfoManifest = AssetDatabase.LoadAssetAtPath<AssetInfoManifest>(manifestPath);
+
+            var progress = new ScheduledNotifier<Tuple<string, float>>();
+
+            progress.Subscribe(prog => EditorUtility.DisplayProgressBar("Update cri file info", prog.Item1, prog.Item2));
+
+            assetInfoManifest.SetCriAssetFileInfo(exportPath, progress);
+
+            UnityEditorUtility.SaveAsset(assetInfoManifest);
+
+            EditorUtility.ClearProgressBar();
+        }
+
+        #endif
 
         private static void ApplyAssetBundleName(AssetManageManager assetManageManager, AssetInfoManifest manifest)
         {

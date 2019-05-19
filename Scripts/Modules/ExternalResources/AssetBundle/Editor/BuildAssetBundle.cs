@@ -15,8 +15,6 @@ namespace Modules.AssetBundles.Editor
     {
         //----- params -----
 
-        private const string AssetBundleManifestName = "AssetBundle";
-
         private const string ManifestFileExtension = ".manifest";
 
         //----- field -----
@@ -25,31 +23,33 @@ namespace Modules.AssetBundles.Editor
 
         //----- method -----
 
-        private static string GetAssetBundleOutputPath(string exportPath)
+        public static string GetAssetBundleOutputPath()
         {
-            return PathUtility.Combine(exportPath, AssetBundleManager.AssetBundlesFolder)
-                .Replace(UnityPathUtility.GetProjectFolderPath(), string.Empty);
+            var projectPath = UnityPathUtility.GetProjectFolderPath();
+            var platformName = UnityPathUtility.GetPlatformName();
+
+            return PathUtility.Combine(new string[] { projectPath, AssetBundleManager.LibraryFolder, AssetBundleManager.AssetBundlesFolder, platformName });
         }
 
         /// <summary> 全てのアセットバンドルをビルド </summary>
-        public static AssetBundleManifest BuildAllAssetBundles(string exportPath)
+        public static AssetBundleManifest BuildAllAssetBundles()
         {
-            var outputPath = GetAssetBundleOutputPath(exportPath);
+            var assetBundlePath = GetAssetBundleOutputPath();
 
-            if (!Directory.Exists(outputPath))
+            if (!Directory.Exists(assetBundlePath))
             {
-                Directory.CreateDirectory(outputPath);
+                Directory.CreateDirectory(assetBundlePath);
             }
 
             var targetPlatform = EditorUserBuildSettings.activeBuildTarget;
 
-            return BuildPipeline.BuildAssetBundles(outputPath, BuildAssetBundleOptions.None, targetPlatform);
+            return BuildPipeline.BuildAssetBundles(assetBundlePath, BuildAssetBundleOptions.None, targetPlatform);
         }
 
         /// <summary> 情報書き込み後のAssetInfoManifestをビルド </summary>
-        public static void BuildAssetInfoManifest(string exportPath, string externalResourcesPath)
+        public static void BuildAssetInfoManifest(string externalResourcesPath)
         {
-            var outputPath = GetAssetBundleOutputPath(exportPath);
+            var assetBundlePath = GetAssetBundleOutputPath();
 
             var manifestPath = PathUtility.Combine(externalResourcesPath, AssetInfoManifest.ManifestFileName);
 
@@ -64,43 +64,13 @@ namespace Modules.AssetBundles.Editor
 
             var targetPlatform = EditorUserBuildSettings.activeBuildTarget;
 
-            BuildPipeline.BuildAssetBundles(outputPath, buildMap, BuildAssetBundleOptions.None, targetPlatform);
-        }
-
-        /// <summary> アセットバンドル関連の不要なファイル削除 </summary>
-        public static void DeleteUnUseFiles(string exportPath)
-        {
-            var deleteFiles = new List<string>();
-
-            var allFiles = Directory.GetFiles(exportPath, "*.*", SearchOption.AllDirectories);
-
-            // AssetBundleManifest.
-            var assetBundleManifests = allFiles
-                .Where(c => Path.GetFileNameWithoutExtension(c) == AssetBundleManifestName)
-                .ToArray();
-
-            deleteFiles.AddRange(assetBundleManifests);
-
-            // ManifestFile.
-            var manifestFiles = allFiles
-                .Where(c => c.EndsWith(ManifestFileExtension))
-                .ToArray();
-
-            deleteFiles.AddRange(manifestFiles);
-
-            // 削除.
-            foreach (var deleteFile in deleteFiles)
-            {
-                File.Delete(deleteFile);
-            }
+            BuildPipeline.BuildAssetBundles(assetBundlePath, buildMap, BuildAssetBundleOptions.None, targetPlatform);
         }
 
         /// <summary> アセットバンドルをパッケージ化 </summary>
         public static void BuildPackage(string exportPath)
         {
-            var outputPath = GetAssetBundleOutputPath(exportPath);
-
-            var allFiles = Directory.GetFiles(outputPath, "*.*", SearchOption.AllDirectories);
+            var assetBundlePath = GetAssetBundleOutputPath();
 
             var assetbundlePackageBuilder = new BuildAssetbundlePackage();
 
@@ -112,9 +82,42 @@ namespace Modules.AssetBundles.Editor
                 EditorUtility.DisplayProgressBar(title, info, current / (float)total);
             };
 
-            assetbundlePackageBuilder.Build(allFiles, reportProgress);
+            assetbundlePackageBuilder.Build(exportPath, assetBundlePath, reportProgress);
 
             EditorUtility.ClearProgressBar();
+        }
+
+        /// <summary> 不要になったアセットバンドルを削除 </summary>
+        public static void CleanUnUseAssetBundleFiles(DateTime buildTime)
+        {
+            var assetBundlePath = GetAssetBundleOutputPath();
+
+            var allFiles = Directory.GetFiles(assetBundlePath, "*.*", SearchOption.AllDirectories);
+
+            var deleteFiles = allFiles
+                .Where(x => Path.GetExtension(x) == ManifestFileExtension)
+                .Where(x => File.GetLastAccessTimeUtc(x) < buildTime);
+
+            foreach (var file in deleteFiles)
+            {
+                if (File.Exists(file))
+                {
+                    File.Delete(file);
+                }
+
+                var assetBundleFile = Path.ChangeExtension(file, string.Empty);
+
+                if (File.Exists(assetBundleFile))
+                {
+                    File.Delete(assetBundleFile);
+                }
+            }
+
+            // 空フォルダ削除.
+            if (!string.IsNullOrEmpty(assetBundlePath))
+            {
+                DirectoryUtility.DeleteEmpty(assetBundlePath);
+            }
         }
     }
 }

@@ -23,6 +23,7 @@ namespace Modules.AssetBundles
         //----- params -----
 
         public const string AssetBundlesFolder = "AssetBundle";
+        public const string LibraryFolder = "Library";
 
         public const string PackageExtension = ".package";
 
