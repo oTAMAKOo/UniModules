@@ -101,7 +101,7 @@ namespace Modules.Window
         {
             while (true)
             {
-                if (gameObject == null) { break; }
+                if (UnityUtility.IsNull(this)) { break; }
 
                 if (!UnityUtility.IsActive(gameObject)) { break; }
 
