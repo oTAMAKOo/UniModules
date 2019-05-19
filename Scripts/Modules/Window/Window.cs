@@ -94,13 +94,17 @@ namespace Modules.Window
 
         public IObservable<Unit> Wait()
         {
-            return Observable.FromCoroutine(() => WaitInternal());
+            return Observable.FromMicroCoroutine(() => WaitInternal());
         }
 
         private IEnumerator WaitInternal()
         {
-            while (UnityUtility.IsActive(gameObject))
+            while (true)
             {
+                if (gameObject == null) { break; }
+
+                if (!UnityUtility.IsActive(gameObject)) { break; }
+
                 yield return null;
             }
         }
