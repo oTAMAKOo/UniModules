@@ -7,13 +7,15 @@ namespace Modules.FixedAspectCamera
 {
     [ExecuteInEditMode]
     [RequireComponent(typeof(Camera))]
-    public abstract class FixedAspectCamera : MonoBehaviour
+    public class FixedAspectCamera : MonoBehaviour
     {
         //----- params -----
 
         //----- field -----
 
+        [SerializeField]
         private float fixedWidth = 0f;
+        [SerializeField]
         private float fixedHeight = 0f;
 
         private Camera target = null;
@@ -21,8 +23,17 @@ namespace Modules.FixedAspectCamera
 
         //----- property -----
 
-        public abstract float FixedWidth { get; }
-        public abstract float FixedHeight { get; }
+        public float FixedWidth
+        {
+            get { return fixedWidth; }
+            set { fixedWidth = value; }
+        }
+
+        public float FixedHeight
+        {
+            get { return fixedHeight; }
+            set { fixedHeight = value; }
+        }
 
         //----- method -----
 
