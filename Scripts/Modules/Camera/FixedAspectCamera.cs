@@ -26,13 +26,21 @@ namespace Modules.FixedAspectCamera
         public float FixedWidth
         {
             get { return fixedWidth; }
-            set { fixedWidth = value; }
+            set
+            {
+                fixedWidth = value;
+                aspectRate = fixedWidth / fixedHeight;
+            }
         }
 
         public float FixedHeight
         {
             get { return fixedHeight; }
-            set { fixedHeight = value; }
+            set
+            {
+                fixedHeight = value;
+                aspectRate = fixedWidth / fixedHeight;
+            }
         }
 
         //----- method -----
