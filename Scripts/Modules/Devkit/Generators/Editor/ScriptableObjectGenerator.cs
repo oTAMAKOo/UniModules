@@ -15,7 +15,7 @@ namespace Modules.Devkit.Generators
         //------ params ------
 
         private const string AssetFileExtension = "asset";
-        private const string DefaultAssetPath = "Assets/ScriptableObject (Empty)";
+        private const string DefaultAssetPath = "Assets/New ScriptableObject";
 
         //------ fields ------
 
@@ -25,35 +25,51 @@ namespace Modules.Devkit.Generators
 
         public static bool Generate()
         {
-            var instance = Generate<ScriptableObject>();
+            var directory = string.Empty;
+            var assetPath = string.Empty;
+
+            var selectionObject = Selection.activeObject;
+
+            if (selectionObject != null)
+            {
+                var path = AssetDatabase.GetAssetPath(selectionObject);
+
+                directory = AssetDatabase.IsValidFolder(path) ? path : Path.GetDirectoryName(path);
+
+                var assetName = Path.GetFileName(DefaultAssetPath);
+
+                assetPath = PathUtility.Combine(directory, assetName);
+            }
+            else
+            {
+                assetPath = DefaultAssetPath;
+            }
+
+            var instance = GenerateScriptableObject(typeof(ScriptableObject), assetPath);
 
             UnityEditorUtility.SelectAsset(instance);
 
             return instance;
         }
-
-        public static Object Generate(Type type, string assetPath = null, bool log = true)
+        
+        public static Object Generate(Type type, string assetPath = null, bool log = false)
         {
-            assetPath = Path.ChangeExtension(string.IsNullOrEmpty(assetPath) ? DefaultAssetPath : assetPath, AssetFileExtension);
+            Object instance = null;
 
-            var instance = AssetDatabase.LoadAssetAtPath(assetPath, type);
-
-            if (instance == null)
+            if (!type.IsSubclassOf(typeof(ScriptableObject)))
             {
-                var projectPath = UnityPathUtility.ConvertProjectPath(assetPath);
-                var path = PathUtility.Combine(Application.dataPath, projectPath);
+                Debug.LogErrorFormat("Generation failed require subclass of ScriptableObject.\n{0}", type.FullName);
 
-                if (!File.Exists(path))
-                {
-                    instance = CreateInstance(type);
-                    AssetDatabase.CreateAsset(instance, assetPath);
-                    AssetDatabase.SaveAssets();
+                return null;
+            }
 
-                    if (log)
-                    {
-                        Debug.Log(string.Format("Generate: {0}", assetPath));
-                    }
-                }
+            var path = string.IsNullOrEmpty(assetPath) ? DefaultAssetPath : assetPath;
+
+            instance = GenerateScriptableObject(type, path);
+            
+            if (instance != null && log)
+            {
+                Debug.LogFormat("Generate: {0}", path);
             }
 
             return instance;
@@ -61,28 +77,24 @@ namespace Modules.Devkit.Generators
 
         public static T Generate<T>(string assetPath = null, bool log = true) where T : ScriptableObject
         {
-            assetPath = Path.ChangeExtension(string.IsNullOrEmpty(assetPath) ? DefaultAssetPath : assetPath, AssetFileExtension);
+            return Generate(typeof(T), assetPath, log) as T;
+        }
 
-            var instance = AssetDatabase.LoadAssetAtPath<T>(assetPath);
+        private static Object GenerateScriptableObject(Type type, string assetPath)
+        {
+            Object instance = null;
 
-            if (instance == null)
-            {
-                var projectPath = UnityPathUtility.ConvertProjectPath(assetPath);
-                var path = PathUtility.Combine(Application.dataPath, projectPath);
+            assetPath = Path.ChangeExtension(assetPath, AssetFileExtension);
 
-                if (!File.Exists(path))
-                {
-                    AssetDatabase.CreateAsset(CreateInstance<T>(), assetPath);
-                    AssetDatabase.SaveAssets();
+            assetPath = AssetDatabase.GenerateUniqueAssetPath(assetPath);
 
-                    instance = AssetDatabase.LoadAssetAtPath<T>(assetPath);
+            instance = CreateInstance(type);
 
-                    if (log)
-                    {
-                        Debug.Log(string.Format("Generate: {0}", assetPath));
-                    }
-                }
-            }
+            AssetDatabase.CreateAsset(instance, assetPath);
+
+            AssetDatabase.ImportAsset(assetPath, ImportAssetOptions.ForceUpdate);
+            AssetDatabase.SaveAssets();
+            AssetDatabase.Refresh();
 
             return instance;
         }
