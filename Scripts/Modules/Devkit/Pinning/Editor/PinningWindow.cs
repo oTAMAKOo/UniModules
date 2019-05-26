@@ -15,7 +15,7 @@ namespace Modules.Devkit.Pinning
         //----- field -----
 
         [SerializeField]
-        protected List<Object> pinnedObject = new List<Object>();
+        protected List<Object> pinnedObject = null;
 
         private Vector2 scrollPosition = Vector2.zero;
 
@@ -29,6 +29,8 @@ namespace Modules.Devkit.Pinning
         public virtual void Initialize()
         {
             titleContent = new GUIContent(WindowTitle);
+
+            pinnedObject = new List<Object>();
 
             Load();
 
@@ -52,6 +54,16 @@ namespace Modules.Devkit.Pinning
                 {
                     Pin(Selection.activeObject);
                 }
+
+                GUILayout.FlexibleSpace();
+
+                if (GUILayout.Button("Clear", EditorStyles.toolbarButton, GUILayout.Width(45f)))
+                {
+                    pinnedObject.Clear();
+                    Save();
+                }
+
+                GUILayout.Space(4f);
             }
 
             using (var scrollViewScope = new EditorGUILayout.ScrollViewScope(scrollPosition))
@@ -68,6 +80,8 @@ namespace Modules.Devkit.Pinning
                 for (var i = 0; i < pinnedObject.Count; i++)
                 {
                     var item = pinnedObject[i];
+
+                    if (item == null) { continue; }
 
                     var thumbnail = (Texture)AssetPreview.GetMiniThumbnail(item);
 
@@ -99,62 +113,23 @@ namespace Modules.Devkit.Pinning
                             GUILayout.Label(labelText, labelStyle, GUILayout.Height(18f));
                         }
 
-                        //------ mouse move ------
+                        //------ mouse action ------
 
-                        var labelRect = GUILayoutUtility.GetLastRect();
+                        var rect = GUILayoutUtility.GetLastRect();
 
-                        if (labelRect.Contains(e.mousePosition))
+                        if (rect.Contains(e.mousePosition))
                         {
-                            if (e.type == EventType.ContextClick)
+                            switch (e.button)
                             {
-                                Selection.activeObject = item;
-                                e.Use();
-                            }
-                            else if (e.type == EventType.MouseDown)
-                            {
-                                EditorGUIUtility.PingObject(item);
-                            }
+                                case 0:
+                                    MouseRightButton(rect, e, item);
+                                    break;
 
-                            if (e.type == EventType.MouseDown && e.clickCount == 2)
-                            {
-                                OpenAsset(item);
-                            }
-
-                            if (e.type == EventType.MouseDrag)
-                            {
-                                DragAndDrop.PrepareStartDrag();
-                                DragAndDrop.objectReferences = new[] { item };
-                                DragAndDrop.StartDrag("Dragging");
-                                Event.current.Use();
-                            }
-
-                            if (e.type == EventType.DragPerform || e.type == EventType.DragUpdated)
-                            {
-                                DragAndDrop.visualMode = DragAndDropVisualMode.Copy;
-
-                                if (e.type == EventType.DragPerform)
-                                {
-                                    DragAndDrop.AcceptDrag();
-                                    DragAndDrop.activeControlID = 0;
-
-                                    // 中心より上なら上に挿入.
-                                    var toAbove = new Rect(labelRect.position, new Vector2(labelRect.width, labelRect.height * 0.5f))
-                                        .Contains(e.mousePosition);
-
-                                    Pin(DragAndDrop.objectReferences, item, toAbove);
-                                }
-
-                                e.Use();
+                                case 1:
+                                    MouseLeftButton(rect, e, item);
+                                    break;
                             }
                         }
-
-                        if (GUILayout.Button("×", GUILayout.Width(15f), GUILayout.Height(15f), GUILayout.ExpandWidth(false)))
-                        {
-                            pinnedObject.Remove(item);
-                            Save();
-                        }
-
-                        GUILayout.Space(3f);
                     }
                 }
 
@@ -185,6 +160,74 @@ namespace Modules.Devkit.Pinning
 
                         break;
                 }
+            }
+        }
+
+        private void MouseRightButton(Rect rect, Event e, Object item)
+        {
+            if (e.type == EventType.MouseDown)
+            {
+                switch (e.clickCount)
+                {
+                    case 1:
+                        EditorGUIUtility.PingObject(item);
+                        break;
+
+                    case 2:
+                        OpenAsset(item);
+                        break;
+                }
+            }
+
+            if (e.type == EventType.DragPerform || e.type == EventType.DragUpdated)
+            {
+                if (DragAndDrop.objectReferences.Any())
+                {
+                    DragAndDrop.visualMode = DragAndDropVisualMode.Copy;
+
+                    if (e.type == EventType.DragPerform)
+                    {
+                        DragAndDrop.AcceptDrag();
+                        DragAndDrop.activeControlID = 0;
+
+                        // 中心より上なら上に挿入.
+                        var toAbove = new Rect(rect.position, new Vector2(rect.width, rect.height * 0.5f))
+                            .Contains(e.mousePosition);
+
+                        Pin(DragAndDrop.objectReferences, item, toAbove);
+                    }
+
+                    e.Use();
+                }
+            }
+
+            if (e.type == EventType.MouseDrag)
+            {
+                DragAndDrop.PrepareStartDrag();
+                DragAndDrop.objectReferences = new[] { item };
+                DragAndDrop.StartDrag("Dragging");
+
+                e.Use();
+            }
+        }
+
+        private void MouseLeftButton(Rect rect, Event e, Object item)
+        {
+            if (e.type == EventType.MouseDown)
+            {
+                var menu = new GenericMenu();
+
+                GenericMenu.MenuFunction onMenuRemoveCommand = () =>
+                {
+                    pinnedObject.Remove(item);
+                    Save();
+                };
+
+                menu.AddItem(new GUIContent("Remove"), false, onMenuRemoveCommand);
+
+                menu.ShowAsContext();
+
+                e.Use();
             }
         }
 
