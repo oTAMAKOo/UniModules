@@ -518,18 +518,26 @@ namespace Modules.AssetBundles
             AssetBundle assetBundle = null;
 
             var filePath = BuildFilePath(assetBundleName);
-
-            Func<string, AesManaged, byte[]> loadCacheFile = (_filePath, _aesManaged) =>
+            
+            Func<byte[]> loadCacheFile = () =>
             {
-                // ファイル読み込み.
-                var data = File.ReadAllBytes(_filePath);
+                var bytes = new byte[0];
 
-                // 復号化.               
-                return data.Decrypt(_aesManaged);
+                using (var fileStream = new FileStream(filePath, FileMode.Open, FileAccess.Read))
+                {
+                    bytes = new byte[fileStream.Length];
+
+                    fileStream.Read(bytes, 0, bytes.Length);
+
+                    // 復号化
+                    bytes = bytes.Decrypt(aesManaged);
+                }
+
+                return bytes;
             };
 
             // ファイルの読み込みと復号化をスレッドプールで実行.
-            var loadYield = Observable.Start(() => loadCacheFile(filePath, aesManaged)).ObserveOnMainThread().ToYieldInstruction();
+            var loadYield = Observable.Start(() => loadCacheFile()).ObserveOnMainThread().ToYieldInstruction();
 
             while (!loadYield.IsDone)
             {
