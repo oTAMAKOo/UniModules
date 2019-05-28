@@ -515,32 +515,50 @@ namespace Modules.AssetBundles
 
         private IEnumerator LoadAssetBundleFromCache(IObserver<AssetBundle> observer, string assetBundleName)
         {
-            byte[] bytes = null;
+            AssetBundle assetBundle = null;
 
             var filePath = BuildFilePath(assetBundleName);
 
-            using (var fileStream = new FileStream(filePath, FileMode.Open, FileAccess.Read))
+            Func<string, AesManaged, byte[]> loadCacheFile = (_filePath, _aesManaged) =>
             {
-                bytes = new byte[fileStream.Length];
+                // ファイル読み込み.
+                var data = File.ReadAllBytes(_filePath);
 
-                fileStream.Read(bytes, 0, bytes.Length);
+                // 復号化.               
+                return data.Decrypt(_aesManaged);
+            };
 
-                // 復号化
-                bytes = bytes.Decrypt(aesManaged);
-            }
+            // ファイルの読み込みと復号化をスレッドプールで実行.
+            var loadYield = Observable.Start(() => loadCacheFile(filePath, aesManaged)).ObserveOnMainThread().ToYieldInstruction();
 
-            var bundleLoadRequest = AssetBundle.LoadFromMemoryAsync(bytes);
-
-            while (!bundleLoadRequest.isDone)
+            while (!loadYield.IsDone)
             {
                 yield return null;
             }
 
-            var assetBundle = bundleLoadRequest.assetBundle;
-
-            if (assetBundle == null)
+            if (loadYield.HasResult)
             {
-                Debug.LogErrorFormat("Failed to load AssetBundle!\nAssetBundleName : {0}", assetBundleName);
+                var bytes = loadYield.Result;
+
+                var bundleLoadRequest = AssetBundle.LoadFromMemoryAsync(bytes);
+
+                while (!bundleLoadRequest.isDone)
+                {
+                    yield return null;
+                }
+
+                assetBundle = bundleLoadRequest.assetBundle;
+
+                if (assetBundle == null)
+                {
+                    Debug.LogErrorFormat("Failed to load AssetBundle!\nAssetBundleName : {0}", assetBundleName);
+                }
+            }
+            else
+            {
+                var message = string.Format("Failed to load AssetBundle!\nFile : {0}\nAssetBundleName : {1}", filePath, assetBundleName);
+
+                throw new Exception(message);
             }
 
             observer.OnNext(assetBundle);

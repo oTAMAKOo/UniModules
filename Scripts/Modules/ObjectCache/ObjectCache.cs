@@ -136,6 +136,13 @@ namespace Modules.ObjectCache
             return cache.GetValueOrDefault(key);
         }
 
+        public bool HasCache(string key)
+        {
+            if (cache == null) { return false; }
+
+            return cache.ContainsKey(key);
+        }
+
         private ObjectCache<T> GetInstance()
         {
             ObjectCache<T> cacheInstance = null;
