@@ -82,19 +82,26 @@ namespace Modules.Devkit.Generators
 
         private static Object GenerateScriptableObject(Type type, string assetPath)
         {
-            Object instance = null;
-
             assetPath = Path.ChangeExtension(assetPath, AssetFileExtension);
 
-            assetPath = AssetDatabase.GenerateUniqueAssetPath(assetPath);
+            var instance = AssetDatabase.LoadAssetAtPath(assetPath, type);
 
-            instance = CreateInstance(type);
+            if (instance == null)
+            {
+                var projectPath = UnityPathUtility.ConvertProjectPath(assetPath);
+                var path = PathUtility.Combine(Application.dataPath, projectPath);
 
-            AssetDatabase.CreateAsset(instance, assetPath);
+                if (!File.Exists(path))
+                {
+                    instance = CreateInstance(type);
 
-            AssetDatabase.ImportAsset(assetPath, ImportAssetOptions.ForceUpdate);
-            AssetDatabase.SaveAssets();
-            AssetDatabase.Refresh();
+                    AssetDatabase.CreateAsset(instance, assetPath);
+
+                    AssetDatabase.ImportAsset(assetPath, ImportAssetOptions.ForceUpdate);
+                    AssetDatabase.SaveAssets();
+                    AssetDatabase.Refresh();
+                }
+            }
 
             return instance;
         }
