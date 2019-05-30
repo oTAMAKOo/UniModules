@@ -65,6 +65,8 @@ namespace Modules.UI
 
         private List<VirtualScrollItem<T>> itemList = null;
 
+        private Dictionary<VirtualScrollItem<T>, IDisposable> updateItemDisposables = null;
+
         private Subject<VirtualScrollItem<T>> onCreateItem = null;
 
         private IObservable<Unit> updateQueueing = null;
@@ -122,6 +124,8 @@ namespace Modules.UI
 
             if (initialize == Status.None)
             {
+                updateItemDisposables = new Dictionary<VirtualScrollItem<T>, IDisposable>();
+
                 scrollRectTransform = UnityUtility.GetComponent<RectTransform>(scrollRect.gameObject);
 
                 scrollRect.horizontal = direction == Direction.Horizontal;
@@ -132,7 +136,19 @@ namespace Modules.UI
                 initialize = Status.Initialize;
             }
 
-            updateQueueing = Observable.FromCoroutine(() => UpdateContentsInternal())
+            if (updateItemDisposables.Any())
+            {
+                foreach (var item in updateItemDisposables)
+                {
+                    if (UnityUtility.IsNull(item.Key)) { continue; }
+
+                    item.Value.Dispose();
+                }
+
+                updateItemDisposables.Clear();
+            }
+
+            updateQueueing = Observable.FromMicroCoroutine(() => UpdateContentsInternal())
                 .Do(_ => initialize = Status.Done)
                 .Do(_ => updateQueueing = null)
                 .Share();
@@ -242,11 +258,11 @@ namespace Modules.UI
                 item.Initialize();
 
                 // 非同期初期化.
-                var initializeObservable = item.InitializeAsync();
+                var initializeYield = item.InitializeAsync().ToYieldInstruction();
 
-                if (initializeObservable != null)
+                while (!initializeYield.IsDone)
                 {
-                    yield return initializeObservable.ToYieldInstruction();
+                    yield return null;
                 }
 
                 UnityUtility.SetActive(item, false);
@@ -262,6 +278,8 @@ namespace Modules.UI
                 UnityUtility.SetActive(scrollbar.gameObject, ScrollEnable());
             }
 
+            var observers = new IObservable<Unit>[itemList.Count];
+
             // 位置、情報を更新.
             for (var i = 0; i < itemList.Count; i++)
             {
@@ -275,7 +293,7 @@ namespace Modules.UI
                     new Vector2(0, basePosition - offset) :
                     new Vector2(basePosition + offset, 0);
 
-                UpdateItem(item, i);
+                observers[i] = UpdateItem(item, i);
             }
 
             // 並べ替え.
@@ -283,6 +301,14 @@ namespace Modules.UI
 
             // スクロール初期位置設定.
             CenterToItem(0);
+
+            // リストアイテム更新.
+            var updateItemYield = observers.WhenAll().ToYieldInstruction();
+
+            while (!updateItemYield.IsDone)
+            {
+                yield return null;
+            }
         }
 
         public void CenterToItem(int index)
@@ -494,7 +520,19 @@ namespace Modules.UI
                     new Vector2(0, lastItem.RectTransform.localPosition.y - offset) :
                     new Vector2(lastItem.RectTransform.localPosition.x + offset, 0);
 
-                UpdateItem(firstItem, lastItem.Index + 1);
+                var updateItemDisposable = updateItemDisposables.GetValueOrDefault(firstItem);
+
+                if (updateItemDisposable != null)
+                {
+                    updateItemDisposable.Dispose();
+                    updateItemDisposables.Remove(firstItem);
+                }
+
+                updateItemDisposable = UpdateItem(firstItem, lastItem.Index + 1)
+                    .Subscribe(_ => updateItemDisposables.Remove(firstItem))
+                    .AddTo(this);
+
+                updateItemDisposables.Add(firstItem, updateItemDisposable);
 
                 UpdateSibling();
 
@@ -528,7 +566,19 @@ namespace Modules.UI
                     new Vector2(0, firstItem.RectTransform.localPosition.y + offset) :
                     new Vector2(firstItem.RectTransform.localPosition.x - offset, 0);
 
-                UpdateItem(lastItem, firstItem.Index - 1);
+                var updateItemDisposable = updateItemDisposables.GetValueOrDefault(lastItem);
+
+                if (updateItemDisposable != null)
+                {
+                    updateItemDisposable.Dispose();
+                    updateItemDisposables.Remove(lastItem);
+                }
+
+                updateItemDisposable = UpdateItem(lastItem, firstItem.Index - 1)
+                    .Subscribe(_ => updateItemDisposables.Remove(lastItem))
+                    .AddTo(this);
+
+                updateItemDisposables.Add(lastItem, updateItemDisposable);
 
                 UpdateSibling();
 
@@ -595,15 +645,17 @@ namespace Modules.UI
             return result;
         }
 
-        private void UpdateItem(VirtualScrollItem<T> item, int index)
+        private IObservable<Unit> UpdateItem(VirtualScrollItem<T> item, int index)
         {
+            var observable = Observable.ReturnUnit();
+
             switch (scrollType)
             {
                 case ScrollType.Limited:
                     {
                         var enable = Contents != null && 0 <= index && index < Contents.Length;
 
-                        item.UpdateItem(index, Contents);
+                        observable = item.UpdateItem(index, Contents);
                         UnityUtility.SetActive(item.gameObject, enable);
                     }
                     break;
@@ -620,13 +672,15 @@ namespace Modules.UI
                             index = 0;
                         }
 
-                        item.UpdateItem(index, Contents);
+                        observable = item.UpdateItem(index, Contents);
                         UnityUtility.SetActive(item.gameObject, true);
                     }
                     break;
             }
 
             item.transform.name = index.ToString();
+
+            return observable;
         }
 
         private static Rect GetWorldRect(RectTransform trans)
