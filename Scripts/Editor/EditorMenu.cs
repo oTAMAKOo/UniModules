@@ -348,7 +348,7 @@ namespace Modules
             return true;
         }
 
-        //------ コンポーネント自動追加無効化 ------
+        //------ コンポーネント自動追加時のログ出力 ------
 
         [MenuItem(itemName: SettingsMenu + "AdditionalComponent/Log", priority = 4)]
         public static void AdditionalComponentLog()
@@ -359,7 +359,7 @@ namespace Modules
         [MenuItem(itemName: SettingsMenu + "AdditionalComponent/Log", validate = true)]
         public static bool AdditionalComponentLogValidate()
         {
-            UnityEditor.Menu.SetChecked(SettingsMenu + "AdditionalComponent/Log", !AdditionalComponent.Prefs.log);
+            UnityEditor.Menu.SetChecked(SettingsMenu + "AdditionalComponent/Log", AdditionalComponent.Prefs.log);
             return true;
         }
 
