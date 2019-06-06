@@ -50,6 +50,7 @@ namespace Modules.Devkit.HierarchyComponentIcon
             typeof(Button),
             typeof(Dropdown),
             typeof(InputField),
+            typeof(Toggle),
             typeof(Mask),
             typeof(RectMask2D),
 
