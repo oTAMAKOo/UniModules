@@ -4,7 +4,6 @@ using UnityEngine.UI;
 using System;
 using Extensions;
 using Extensions.Serialize;
-using UniRx;
 
 namespace Modules.UI.Layout
 {
