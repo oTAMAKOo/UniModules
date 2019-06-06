@@ -335,16 +335,31 @@ namespace Modules
 
         //------ コンポーネント自動追加無効化 ------
 
-        [MenuItem(itemName: SettingsMenu + "AdditionalComponent Disable", priority = 4)]
+        [MenuItem(itemName: SettingsMenu + "AdditionalComponent/Disable", priority = 4)]
         public static void AdditionalComponentDisable()
         {
             AdditionalComponent.Prefs.enable = !AdditionalComponent.Prefs.enable;
         }
 
-        [MenuItem(itemName: SettingsMenu + "AdditionalComponent Disable", validate = true)]
+        [MenuItem(itemName: SettingsMenu + "AdditionalComponent/Disable", validate = true)]
         public static bool AdditionalComponentDisableValidate()
         {
-            UnityEditor.Menu.SetChecked(SettingsMenu + "AdditionalComponent Disable", !AdditionalComponent.Prefs.enable);
+            UnityEditor.Menu.SetChecked(SettingsMenu + "AdditionalComponent/Disable", !AdditionalComponent.Prefs.enable);
+            return true;
+        }
+
+        //------ コンポーネント自動追加無効化 ------
+
+        [MenuItem(itemName: SettingsMenu + "AdditionalComponent/Log", priority = 4)]
+        public static void AdditionalComponentLog()
+        {
+            AdditionalComponent.Prefs.log = !AdditionalComponent.Prefs.log;
+        }
+
+        [MenuItem(itemName: SettingsMenu + "AdditionalComponent/Log", validate = true)]
+        public static bool AdditionalComponentLogValidate()
+        {
+            UnityEditor.Menu.SetChecked(SettingsMenu + "AdditionalComponent/Log", !AdditionalComponent.Prefs.log);
             return true;
         }
 

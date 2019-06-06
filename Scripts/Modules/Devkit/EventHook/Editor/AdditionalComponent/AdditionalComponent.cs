@@ -1,14 +1,10 @@
-﻿﻿
+﻿
 using UnityEngine;
 using UnityEditor;
-using UnityEditorInternal;
 using Unity.Linq;
 using System;
-using System.Collections.Generic;
 using System.Linq;
-using Extensions.Devkit;
 using Modules.Devkit.Prefs;
-using UniRx;
 
 namespace Modules.Devkit.EventHook
 {
@@ -22,6 +18,12 @@ namespace Modules.Devkit.EventHook
             {
                 get { return ProjectPrefs.GetBool("AdditionalComponentPrefs-enable", true); }
                 set { ProjectPrefs.SetBool("AdditionalComponentPrefs-enable", value); }
+            }
+
+            public static bool log
+            {
+                get { return ProjectPrefs.GetBool("AdditionalComponentPrefs-log", true); }
+                set { ProjectPrefs.SetBool("AdditionalComponentPrefs-log", value); }
             }
         }
 
@@ -102,7 +104,10 @@ namespace Modules.Devkit.EventHook
 
                                     EditorUtility.SetDirty(targetObject);
 
-                                    Debug.LogFormat("Attached Component: [ {0} ] {1}", component.GetType(), targetObject.transform.name);
+                                    if (Prefs.log)
+                                    {
+                                        Debug.LogFormat("Attached Component: [ {0} ] {1}", component.GetType(), targetObject.transform.name);
+                                    }
                                 }
                             }
                         }
