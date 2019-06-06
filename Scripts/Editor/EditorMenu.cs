@@ -25,6 +25,7 @@ using Modules.Devkit.ShaderVariant;
 using Modules.Devkit.Project;
 using Modules.Devkit.SceneImporter;
 using Modules.Devkit.SceneLaunch;
+using Modules.Devkit.HierarchyComponentIcon;
 
 #if ENABLE_CRIWARE
 
@@ -318,9 +319,24 @@ namespace Modules
             return true;
         }
 
+        //------ コンポーネントアイコン表示 ------
+
+        [MenuItem(itemName: SettingsMenu + "Draw HierarchyComponentIcon", priority = 3)]
+        public static void ToggleHierarchyComponentIcon()
+        {
+            HierarchyComponentIcon.Prefs.enable = !HierarchyComponentIcon.Prefs.enable;
+        }
+
+        [MenuItem(itemName: SettingsMenu + "Draw HierarchyComponentIcon", validate = true)]
+        public static bool ToggleHierarchyComponentIconValidate()
+        {
+            UnityEditor.Menu.SetChecked(SettingsMenu + "Draw HierarchyComponentIcon", HierarchyComponentIcon.Prefs.enable);
+            return true;
+        }
+
         //------ コンポーネント調整時のログ表示 ------
 
-        [MenuItem(itemName: SettingsMenu + "ComponentTuner Log", priority = 3)]
+        [MenuItem(itemName: SettingsMenu + "ComponentTuner Log", priority = 4)]
         public static void ToggleComponentTunerLog()
         {
             ComponentTuning.ToggleTuningLog();
@@ -335,7 +351,7 @@ namespace Modules
 
         //------ コンポーネント自動追加無効化 ------
 
-        [MenuItem(itemName: SettingsMenu + "AdditionalComponent/Disable", priority = 4)]
+        [MenuItem(itemName: SettingsMenu + "AdditionalComponent/Disable", priority = 5)]
         public static void AdditionalComponentDisable()
         {
             AdditionalComponent.Prefs.enable = !AdditionalComponent.Prefs.enable;
@@ -350,7 +366,7 @@ namespace Modules
 
         //------ コンポーネント自動追加時のログ出力 ------
 
-        [MenuItem(itemName: SettingsMenu + "AdditionalComponent/Log", priority = 4)]
+        [MenuItem(itemName: SettingsMenu + "AdditionalComponent/Log", priority = 6)]
         public static void AdditionalComponentLog()
         {
             AdditionalComponent.Prefs.log = !AdditionalComponent.Prefs.log;
@@ -364,7 +380,6 @@ namespace Modules
         }
 
         #endregion
-
 
         //===============================================================
         //  Window.
