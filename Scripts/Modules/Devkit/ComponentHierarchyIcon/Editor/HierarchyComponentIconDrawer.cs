@@ -47,6 +47,7 @@ namespace Modules.Devkit.HierarchyComponentIcon
             typeof(RawImage),
             typeof(Slider),
             typeof(ScrollRect),
+            typeof(Scrollbar),
             typeof(Button),
             typeof(Dropdown),
             typeof(InputField),
