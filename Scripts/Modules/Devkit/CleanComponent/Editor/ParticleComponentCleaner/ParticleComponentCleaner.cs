@@ -1,12 +1,8 @@
 ﻿
 using UnityEngine;
-using UnityEngine.UI;
 using UnityEditor;
 using Unity.Linq;
-using System;
 using System.Linq;
-using System.Collections.Generic;
-using UniRx;
 using Extensions;
 using Modules.Devkit.Prefs;
 using Modules.UI.Particle;
@@ -141,7 +137,7 @@ namespace Modules.Devkit.CleanComponent
 
                 if (uiParticleSystem == null && !particleSystemRenderer.enabled)
                 {
-                    particleSystemRenderer.materials = new Material[0];
+                    particleSystemRenderer.sharedMaterials = new Material[0];
                 }
 
                 EditorUtility.SetDirty(particleSystem);
@@ -244,7 +240,7 @@ namespace Modules.Devkit.CleanComponent
 
             if (uiParticleSystem == null)
             {
-                if (!particleSystemRenderer.enabled && particleSystemRenderer.materials.Any(x => x != null)) { return true; }
+                if (!particleSystemRenderer.enabled && particleSystemRenderer.sharedMaterials.Any(x => x != null)) { return true; }
             }
 
             return false;
