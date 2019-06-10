@@ -1,9 +1,6 @@
 ﻿﻿﻿
-using UnityEngine;
 using System;
-using System.Linq;
 using System.Collections.Generic;
-using UniRx;
 using Extensions;
 
 namespace Modules.ObjectCache
@@ -131,16 +128,20 @@ namespace Modules.ObjectCache
 
         public T Get(string key)
         {
-            if (cache == null) { return null; }
+            var instance = GetInstance();
 
-            return cache.GetValueOrDefault(key);
+            if (instance.cache == null) { return null; }
+
+            return instance.cache.GetValueOrDefault(key);
         }
 
         public bool HasCache(string key)
         {
-            if (cache == null) { return false; }
+            var instance = GetInstance();
 
-            return cache.ContainsKey(key);
+            if (instance.cache == null) { return false; }
+
+            return instance.cache.ContainsKey(key);
         }
 
         private ObjectCache<T> GetInstance()
