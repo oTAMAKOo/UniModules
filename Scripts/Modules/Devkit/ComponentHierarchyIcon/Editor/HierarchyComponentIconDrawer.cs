@@ -102,7 +102,9 @@ namespace Modules.Devkit.HierarchyComponentIcon
 
             if (go == null){ return; }
 
-            var components = UnityUtility.GetComponents<Component>(go).ToArray();
+            var components = UnityUtility.GetComponents<Component>(go)
+                .Where(x => x != null)
+                .ToArray();
 
             if (components.Any())
             {
