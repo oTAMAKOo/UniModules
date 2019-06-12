@@ -99,7 +99,7 @@ namespace Modules.Networking
 
         public IObservable<TResult> Post<TResult, TContent>(TContent content, IProgress<float> progress = null) where TResult : class
         {
-            CreateWebRequest(UnityWebRequest.kHttpVerbGET);
+            CreateWebRequest(UnityWebRequest.kHttpVerbPOST);
 
             request.uploadHandler = CreateUploadHandler(content);
             request.downloadHandler = CreateDownloadHandler();
