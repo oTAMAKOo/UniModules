@@ -18,11 +18,6 @@ ShaderVariantCollection:
       variants:
       - keywords: 
         passType: 0
-  - first: {fileID: 4800000, guid: 4181ecf66a14c6645b86942aaa4d33a1, type: 3}
-    second:
-      variants:
-      - keywords: 
-        passType: 0
   - first: {fileID: 4800000, guid: 4f93c2a68520f174590bdca9b6af2eda, type: 3}
     second:
       variants:
@@ -54,11 +49,6 @@ ShaderVariantCollection:
       - keywords: 
         passType: 0
   - first: {fileID: 4800000, guid: 67513d49d7b44f549a215ffac9adf717, type: 3}
-    second:
-      variants:
-      - keywords: 
-        passType: 0
-  - first: {fileID: 4800000, guid: 8ce4fc638abef87488fcf80314dfeecc, type: 3}
     second:
       variants:
       - keywords: 
