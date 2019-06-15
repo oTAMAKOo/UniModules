@@ -94,11 +94,8 @@ namespace Modules.ObjectCache
             {
                 instance.cache = new Dictionary<string, T>();
             }
-            
-            if (!instance.cache.ContainsKey(key))
-            {
-                instance.cache.Add(key, asset);
-            }
+
+            instance.cache[key] = asset;
         }
 
         public void Remove(string key)
