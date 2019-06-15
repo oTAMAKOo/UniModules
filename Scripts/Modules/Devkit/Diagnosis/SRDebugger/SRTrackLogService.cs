@@ -1,4 +1,6 @@
 ﻿
+#if ENABLE_SRDEBUGGER
+
 using UnityEngine;
 using System;
 using System.Linq;
@@ -6,8 +8,6 @@ using System.Collections.Generic;
 using UniRx;
 using Extensions;
 using Modules.Devkit.Log;
-
-#if ENABLE_SRDEBUGGER
 
 namespace Modules.Devkit.Diagnosis.SRDebugger
 {

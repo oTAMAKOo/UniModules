@@ -15,10 +15,24 @@ using SRF;
 
 namespace Modules.Devkit.Diagnosis.SRDebugger
 {
-    #if ENABLE_SRDEBUGGER
+    #if !ENABLE_SRDEBUGGER
 
+    public interface IEnableTab
+    {
+        
+    }
+
+    public class SRMonoBehaviourEx : MonoBehaviour
+    {
+        protected virtual void Start() { }
+    }
+
+    #endif
+    
     public class SendReportTabController : SRMonoBehaviourEx, IEnableTab
     {
+        #if ENABLE_SRDEBUGGER
+
         //----- params -----
 
         //----- field -----
@@ -45,7 +59,7 @@ namespace Modules.Devkit.Diagnosis.SRDebugger
 
             sendReportSheet.Initialize();
         }
-    }
 
-    #endif
+        #endif
+    }    
 }
