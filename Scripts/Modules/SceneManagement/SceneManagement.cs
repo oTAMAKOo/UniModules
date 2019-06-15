@@ -936,7 +936,7 @@ namespace Modules.SceneManagement
 
             if (observers.IsEmpty()) { return Observable.ReturnUnit(); }
 
-            var sw = new System.Diagnostics.Stopwatch();
+            var sw = System.Diagnostics.Stopwatch.StartNew();
 
             return observers.WhenAll()
                 .Do(_ =>
@@ -953,7 +953,7 @@ namespace Modules.SceneManagement
 
         private IEnumerator PreLoadCore(Scenes targetScene, StringBuilder builder)
         {
-            var sw = new System.Diagnostics.Stopwatch();
+            var sw = System.Diagnostics.Stopwatch.StartNew();
 
             var loadYield = LoadScene(targetScene, LoadSceneMode.Additive).ToYieldInstruction();
 
