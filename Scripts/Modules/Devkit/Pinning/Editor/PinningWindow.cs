@@ -109,8 +109,10 @@ namespace Modules.Devkit.Pinning
                             //------ label ------
 
                             var labelText = GetLabelName(item);
-                        
-                            GUILayout.Label(labelText, labelStyle, GUILayout.Height(18f));
+
+                            var labelContent = new GUIContent(labelText, toolTipText);
+
+                            GUILayout.Label(labelContent, labelStyle, GUILayout.Height(18f));
                         }
 
                         //------ mouse action ------
