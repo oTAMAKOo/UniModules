@@ -1,5 +1,5 @@
 ﻿
-#if ENABLE_CRIWARE
+#if ENABLE_CRIWARE_ADX || ENABLE_CRIWARE_SOFDEC
 
 using UnityEngine;
 using UnityEditor;
@@ -45,14 +45,24 @@ namespace Modules.CriWare.Editor
             var streamingAssetFolderName = Path.GetFileName(streamingAssetPath);
             var externalResourcesFolderName = Path.GetFileName(externalResourcesPath);
 
+            #if ENABLE_CRIWARE_ADX
+
             // Sound.
             UpdateSoundAssets(soundConfig, scriptPath, streamingAssetFolderName, externalResourcesFolderName);
+
+            #endif
+
+            #if ENABLE_CRIWARE_SOFDEC
 
             // Movie.
             UpdateMovieAssets(movieConfig, scriptPath, streamingAssetFolderName, externalResourcesFolderName);
 
+            #endif
+
             UnityConsole.Event(CriWareConsoleEvent.Name, CriWareConsoleEvent.Color, "UpdateCriAssets Complete.");
         }
+
+        #if ENABLE_CRIWARE_ADX
 
         /// <summary>
         /// サウンドアセットをCriの成果物置き場からUnityの管理下にインポート.
@@ -80,6 +90,10 @@ namespace Modules.CriWare.Editor
             }
         }
 
+        #endif
+
+        #if ENABLE_CRIWARE_SOFDEC
+
         /// <summary>
         /// ムービーアセットをCriの成果物置き場からUnityの管理下にインポート.
         /// </summary>
@@ -103,6 +117,8 @@ namespace Modules.CriWare.Editor
                 MovieScriptGenerator.Generate(scriptPath, assetDirInternal);
             }
         }
+
+        #endif
 
         private static void UpdateAcfAsset(string acfAssetSourceFullPath, string acfAssetExportPath)
         {

@@ -52,7 +52,7 @@ namespace Modules.ExternalResource.Editor
             EditorUtility.ClearProgressBar();
         }
 
-        #if ENABLE_CRIWARE
+        #if ENABLE_CRIWARE_ADX || ENABLE_CRIWARE_SOFDEC
 
         public static void SetCriAssetFileInfo(string exportPath, string externalResourcesPath, AssetBundleManifest assetBundleManifest)
         {

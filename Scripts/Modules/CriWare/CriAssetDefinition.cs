@@ -1,5 +1,5 @@
-﻿﻿
-#if ENABLE_CRIWARE
+﻿
+#if ENABLE_CRIWARE_ADX || ENABLE_CRIWARE_SOFDEC
 ﻿﻿
 using UnityEngine;
 using Unity.Linq;

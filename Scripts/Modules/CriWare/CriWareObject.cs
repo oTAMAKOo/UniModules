@@ -1,10 +1,5 @@
-﻿﻿﻿﻿
+﻿
 using UnityEngine;
-using Unity.Linq;
-using System;
-using System.Linq;
-using System.Collections.Generic;
-using UniRx;
 using Extensions;
 
 namespace Modules.CriWare
@@ -28,7 +23,7 @@ namespace Modules.CriWare
 
         //----- property -----
 
-        #if ENABLE_CRIWARE
+        #if ENABLE_CRIWARE_ADX || ENABLE_CRIWARE_SOFDEC
 
         public CriWareInitializer Initializer { get; private set; }
         public CriWareErrorHandler ErrorHandler { get; private set; }
@@ -39,7 +34,7 @@ namespace Modules.CriWare
 
         public void Initialize(string decryptKey)
         {
-            #if ENABLE_CRIWARE
+            #if ENABLE_CRIWARE_ADX || ENABLE_CRIWARE_SOFDEC
 
             // CRIの管理GameObject名にリネーム.
             gameObject.transform.name = CriWareManageObjectName;

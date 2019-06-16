@@ -8,7 +8,7 @@ using UniRx;
 using Extensions;
 using Modules.AssetBundles;
 
-#if ENABLE_CRIWARE
+#if ENABLE_CRIWARE_ADX || ENABLE_CRIWARE_SOFDEC
 
 using Modules.CriWare;
 
@@ -207,7 +207,7 @@ namespace Modules.ExternalResource
             BuildCache(true);
         }
 
-        #if ENABLE_CRIWARE
+        #if ENABLE_CRIWARE_ADX || ENABLE_CRIWARE_SOFDEC
 
         public void SetCriAssetFileInfo(string exportPath, IProgress<Tuple<string, float>> progress = null)
         {

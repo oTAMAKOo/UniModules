@@ -1,4 +1,5 @@
-﻿#if ENABLE_CRIWARE
+﻿
+#if ENABLE_CRIWARE_ADX
 ﻿﻿
 using UnityEngine;
 using Unity.Linq;

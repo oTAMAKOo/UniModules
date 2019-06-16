@@ -10,7 +10,7 @@ using Extensions;
 using MessagePack;
 using Modules.MessagePack;
 
-#if ENABLE_CRIWARE
+#if ENABLE_CRIWARE_ADX || ENABLE_CRIWARE_SOFDEC
 
 using Modules.CriWare;
 
@@ -62,7 +62,7 @@ namespace Modules.ExternalResource
         {
             var result = false;
 
-            #if ENABLE_CRIWARE
+            #if ENABLE_CRIWARE_ADX || ENABLE_CRIWARE_SOFDEC
 
             var extension = Path.GetExtension(resourcesPath);
             

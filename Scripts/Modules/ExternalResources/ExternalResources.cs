@@ -12,12 +12,16 @@ using Modules.Devkit;
 using Modules.AssetBundles;
 using Modules.UniRxExtension;
 
-#if ENABLE_CRIWARE
-
+#if ENABLE_CRIWARE_ADX || ENABLE_CRIWARE_SOFDEC
 using Modules.CriWare;
-using Modules.SoundManagement;
-using Modules.MovieManagement;
+#endif
 
+#if ENABLE_CRIWARE_ADX
+using Modules.SoundManagement;
+#endif
+
+#if ENABLE_CRIWARE_SOFDEC
+using Modules.MovieManagement;
 #endif
 
 namespace Modules.ExternalResource
@@ -42,7 +46,7 @@ namespace Modules.ExternalResource
         // アセットロードパスをキーとしたアセット情報.
         private Dictionary<string, AssetInfo> assetInfosByResourcePath = null;
 
-        #if ENABLE_CRIWARE
+        #if ENABLE_CRIWARE_ADX || ENABLE_CRIWARE_SOFDEC
 
         // CriWare管理.
         private CriAssetManager criAssetManager = null;
@@ -101,7 +105,7 @@ namespace Modules.ExternalResource
             assetBundleManager.OnTimeOutAsObservable().Subscribe(x => OnTimeout(x)).AddTo(Disposable);
             assetBundleManager.OnErrorAsObservable().Subscribe(x => OnError(x)).AddTo(Disposable);
 
-            #if ENABLE_CRIWARE
+            #if ENABLE_CRIWARE_ADX || ENABLE_CRIWARE_SOFDEC
 
             // CriAssetManager初期化.
 
@@ -126,7 +130,7 @@ namespace Modules.ExternalResource
         {
             assetBundleManager.SetUrl(remoteUrl);
 
-            #if ENABLE_CRIWARE
+            #if ENABLE_CRIWARE_ADX || ENABLE_CRIWARE_SOFDEC
 
             criAssetManager.SetUrl(remoteUrl);
 
@@ -194,7 +198,7 @@ namespace Modules.ExternalResource
 
             AssetBundleManager.CleanCache();
 
-            #if ENABLE_CRIWARE
+            #if ENABLE_CRIWARE_ADX || ENABLE_CRIWARE_SOFDEC
 
             CriAssetManager.CleanCache();
 
@@ -252,7 +256,7 @@ namespace Modules.ExternalResource
 
             assetBundleManager.SetManifest(assetInfoManifest);
 
-            #if ENABLE_CRIWARE
+            #if ENABLE_CRIWARE_ADX || ENABLE_CRIWARE_SOFDEC
 
             criAssetManager.SetManifest(assetInfoManifest);
 
@@ -271,7 +275,7 @@ namespace Modules.ExternalResource
 
         private IEnumerator UpdateAssetInternal(string resourcesPath, IProgress<float> progress = null)
         {
-            #if ENABLE_CRIWARE
+            #if ENABLE_CRIWARE_ADX || ENABLE_CRIWARE_SOFDEC
 
             var extension = Path.GetExtension(resourcesPath);
             
@@ -533,7 +537,7 @@ namespace Modules.ExternalResource
 
         #endregion
 
-        #if ENABLE_CRIWARE
+        #if ENABLE_CRIWARE_ADX || ENABLE_CRIWARE_SOFDEC
 
         private string ConvertCriFilePath(string resourcesPath)
         {
@@ -544,7 +548,11 @@ namespace Modules.ExternalResource
                 PathUtility.Combine(new string[] { criAssetManager.BuildFilePath(null), resourcesPath });
         }
 
+        #endif
+
         #region Sound
+
+        #if ENABLE_CRIWARE_ADX
         
         public static IObservable<CueInfo> GetCueInfo(string resourcesPath, string cue)
         {
@@ -595,9 +603,13 @@ namespace Modules.ExternalResource
             observer.OnCompleted();
         }
 
+        #endif
+
         #endregion
 
         #region Movie
+
+        #if ENABLE_CRIWARE_SOFDEC
 
         public static IObservable<ManaInfo> GetMovieInfo(string resourcesPath)
         {
@@ -648,10 +660,10 @@ namespace Modules.ExternalResource
             observer.OnCompleted();
         }
 
-        #endregion
-
         #endif
 
+        #endregion
+        
         private void OnTimeout(string str)
         {
             CancelAllCoroutines();

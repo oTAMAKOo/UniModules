@@ -1,24 +1,16 @@
-﻿﻿﻿﻿﻿﻿
+﻿
 using UnityEngine;
 using System;
 using System.Collections;
-using System.Linq;
-using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using UniRx;
 using Extensions;
 using Modules.ExternalResource;
 
-#if ENABLE_CRIWARE
-
-using Modules.CriWare;
-
-#endif
-
 namespace Modules.ApplicationCache
 {
-	public static class ApplicationCache
+    public static class ApplicationCache
     {
         //----- params -----
 
@@ -43,12 +35,21 @@ namespace Modules.ApplicationCache
         {
             var builder = new StringBuilder();
 
-            #if ENABLE_CRIWARE
+            #if ENABLE_CRIWARE_ADX
 
             // 未使用の音ファイルを解放.
             if (SoundManagement.SoundManagement.Exists)
             {
                 SoundManagement.SoundManagement.Instance.ReleaseAll();
+            }
+
+            #endif
+
+            #if ENABLE_CRIWARE_SOFDEC
+
+            if (MovieManagement.MovieManagement.Exists)
+            {
+                MovieManagement.MovieManagement.Instance.ReleaseAll();
             }
 
             #endif

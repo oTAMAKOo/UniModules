@@ -6,10 +6,8 @@ using Extensions;
 using Extensions.Devkit;
 using Modules.Devkit.Project;
 
-#if ENABLE_CRIWARE
-
+#if ENABLE_CRIWARE_ADX || ENABLE_CRIWARE_SOFDEC
 using Modules.CriWare.Editor;
-
 #endif
 
 namespace Modules.ExternalResource.Editor
@@ -86,7 +84,7 @@ namespace Modules.ExternalResource.Editor
                 {
                     var build = true;
 
-                    #if ENABLE_CRIWARE
+                    #if ENABLE_CRIWARE_ADX || ENABLE_CRIWARE_SOFDEC
 
                     // CRIの最新アセットに更新.
                     CriAssetUpdater.Execute();

@@ -27,7 +27,7 @@ using Modules.Devkit.SceneImporter;
 using Modules.Devkit.SceneLaunch;
 using Modules.Devkit.HierarchyComponentIcon;
 
-#if ENABLE_CRIWARE
+#if ENABLE_CRIWARE_ADX || ENABLE_CRIWARE_SOFDEC
 
 using Modules.CriWare.Editor;
 using Modules.SoundManagement.Editor;
@@ -220,6 +220,8 @@ namespace Modules
 
         #region CriWare
 
+        #if ENABLE_CRIWARE_ADX || ENABLE_CRIWARE_SOFDEC
+
         public const string CriWareMenu = MenuRoot + "CriWare/";
 
         [MenuItem(itemName: CriWareMenu + "Open CriAssetUpdateWindow", priority = 0)]
@@ -239,6 +241,8 @@ namespace Modules
         {
             CriAssetUpdater.Execute();
         }
+
+        #endif
 
         #endregion
 

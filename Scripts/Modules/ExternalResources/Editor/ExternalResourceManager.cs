@@ -11,7 +11,7 @@ using Modules.AssetBundles.Editor;
 using Modules.Devkit;
 using Modules.Devkit.Prefs;
 
-#if ENABLE_CRIWARE
+#if ENABLE_CRIWARE_ADX || ENABLE_CRIWARE_SOFDEC
 
 using Modules.CriWare;
 using Modules.CriWare.Editor;
@@ -61,7 +61,7 @@ namespace Modules.ExternalResource.Editor
 
             EditorApplication.LockReloadAssemblies();
 
-            #if ENABLE_CRIWARE
+            #if ENABLE_CRIWARE_ADX || ENABLE_CRIWARE_SOFDEC
 
             CriAssetGenerator.Generate(exportPath, externalResourcesPath);
 
@@ -80,7 +80,7 @@ namespace Modules.ExternalResource.Editor
 
             AssetInfoManifestGenerator.SetAssetBundleFileInfo(assetBundlePath, externalResourcesPath, assetBundleManifest);
             
-            #if ENABLE_CRIWARE
+            #if ENABLE_CRIWARE_ADX || ENABLE_CRIWARE_SOFDEC
 
             AssetInfoManifestGenerator.SetCriAssetFileInfo(exportPath, externalResourcesPath, assetBundleManifest);
 

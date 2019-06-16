@@ -1,16 +1,16 @@
-﻿﻿
-#if ENABLE_CRIWARE
+﻿
+#if ENABLE_CRIWARE_ADX || ENABLE_CRIWARE_SOFDEC
 ﻿﻿
 using UnityEngine;
 using UnityEditor;
 using System;
 using System.IO;
 using System.Linq;
+using System.Text;
 using System.Collections.Generic;
 using UniRx;
 using Extensions;
 using Modules.Devkit.Generators;
-using System.Text;
 
 namespace Modules.CriWare.Editor
 {

@@ -1,16 +1,13 @@
-﻿#if ENABLE_CRIWARE
-﻿﻿
-using UnityEngine;
+﻿
+#if ENABLE_CRIWARE_SOFDEC
+
 using System;
-using System.Linq;
-using System.Collections.Generic;
 using UniRx;
-using Extensions;
 using CriMana;
 
 namespace Modules.MovieManagement
 {
-	public class MovieElement
+    public class MovieElement
 	{
         //----- params -----
 

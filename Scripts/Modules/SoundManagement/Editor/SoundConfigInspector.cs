@@ -1,5 +1,5 @@
-﻿﻿﻿
-#if ENABLE_CRIWARE
+﻿
+#if ENABLE_CRIWARE_ADX
 ﻿﻿
 using System;
 using UnityEngine;

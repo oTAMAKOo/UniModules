@@ -1,9 +1,6 @@
-﻿﻿
-#if ENABLE_CRIWARE
-﻿﻿
-using UnityEngine;
-using System.IO;
-using Modules.CriWare;
+﻿
+#if ENABLE_CRIWARE_SOFDEC
+
 using Extensions;
 
 namespace Modules.MovieManagement

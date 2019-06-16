@@ -1,6 +1,5 @@
 ﻿
-#if ENABLE_UTAGE
-#if ENABLE_CRIWARE
+#if ENABLE_CRIWARE_ADX && ENABLE_UTAGE
 
 using UnityEngine;
 using System;
@@ -149,5 +148,4 @@ namespace Modules.UtageExtension
     }
 }
 
-#endif
 #endif
