@@ -53,6 +53,8 @@ namespace Modules.Devkit.CleanComponent
             {
                 ModifyTextComponent(rootGameObject);
             }
+
+            GameTextLoader.Reload();
         }
     }
 }
