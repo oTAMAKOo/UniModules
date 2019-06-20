@@ -1,15 +1,12 @@
 ﻿
-using UnityEngine;
 using UnityEditor;
 using UnityEditor.Experimental.SceneManagement;
-using System;
+using Unity.Linq;
 using System.Linq;
-using System.Collections.Generic;
 using UniRx;
 using Extensions;
 using Modules.Devkit.EventHook;
-using Unity.Linq;
-using UnityEditor.SceneManagement;
+using Modules.GameText.Editor;
 
 namespace Modules.Devkit.CleanComponent
 {
@@ -36,6 +33,8 @@ namespace Modules.Devkit.CleanComponent
             var gameObjects = prefabStage.prefabContentsRoot.DescendantsAndSelf().ToArray();
 
             if (!CheckExecute(gameObjects)) { return; }
+
+            GameTextLoader.Reload();
 
             foreach (var gameObject in gameObjects)
             {

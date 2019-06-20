@@ -1,14 +1,7 @@
 ﻿
-using UnityEngine;
-using UnityEngine.UI;
 using UnityEditor;
 using UnityEditor.SceneManagement;
-using Unity.Linq;
-using System;
-using System.Linq;
-using System.Collections.Generic;
 using UniRx;
-using Extensions;
 using Modules.Devkit.EventHook;
 using Modules.GameText.Editor;
 
@@ -41,6 +34,8 @@ namespace Modules.Devkit.CleanComponent
         {
             if (!Prefs.autoClean) { return; }
 
+            GameTextLoader.Reload();
+
             var activeScene = EditorSceneManager.GetActiveScene();
             
             if (activeScene.path != sceneAssetPath) { return; }
@@ -53,8 +48,6 @@ namespace Modules.Devkit.CleanComponent
             {
                 ModifyTextComponent(rootGameObject);
             }
-
-            GameTextLoader.Reload();
         }
     }
 }

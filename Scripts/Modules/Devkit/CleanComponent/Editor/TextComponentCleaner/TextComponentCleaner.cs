@@ -36,8 +36,15 @@ namespace Modules.Devkit.CleanComponent
             foreach (var textComponent in textComponents)
             {
                 if (string.IsNullOrEmpty(textComponent.text)) { continue; }
-                
+
                 textComponent.text = string.Empty;
+
+                var gameTextSetter = UnityUtility.GetComponent<GameTextSetter>(textComponent);
+
+                if (gameTextSetter != null)
+                {
+                    gameTextSetter.ImportText();
+                }
 
                 EditorUtility.SetDirty(textComponent);
             }
