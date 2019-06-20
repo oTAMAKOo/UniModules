@@ -17,6 +17,8 @@ namespace Modules.GameText.Editor
 
         //----- property -----
 
+        public static bool IsLoaded { get; private set; }
+
         //----- method -----
 
         [DidReloadScripts]
@@ -49,6 +51,8 @@ namespace Modules.GameText.Editor
                     setter.ImportText();
                 }
             }
+
+            IsLoaded = true;
         }
     }
 }

@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using UniRx;
 using Extensions;
 using Extensions.Devkit;
+using Modules.GameText.Editor;
 
 namespace Modules.GameText.Components
 {
@@ -29,7 +30,11 @@ namespace Modules.GameText.Components
 
         void OnEnable()
         {
-            Current = this;
+            if (!GameTextLoader.IsLoaded)
+            {
+                GameTextLoader.Reload();
+            }
+
             Undo.undoRedoPerformed += OnUndoRedo;
         }
 
@@ -42,6 +47,8 @@ namespace Modules.GameText.Components
         public override void OnInspectorGUI()
         {
             instance = target as GameTextSetter;
+
+            Current = this;
 
             EditorGUILayout.Separator();
 
