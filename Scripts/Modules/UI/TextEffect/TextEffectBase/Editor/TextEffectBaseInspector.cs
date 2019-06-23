@@ -25,18 +25,18 @@ namespace Modules.UI.TextEffect
         //----- property -----
 
         //----- method -----
-
+        
         void OnEnable()
         {
-            EditorApplication.update += ApplyCallback;
+            Undo.undoRedoPerformed += OnUndoRedo;
         }
 
         void OnDisable()
         {
-            EditorApplication.update -= ApplyCallback;
+            Undo.undoRedoPerformed -= OnUndoRedo;
         }
 
-        private void ApplyCallback()
+        private void Apply()
         {
             var instance = target as TextEffectBase;
 
@@ -56,6 +56,8 @@ namespace Modules.UI.TextEffect
             var reference = Reflection.GetPrivateField<TextEffectBase, Dictionary<Material, List<TextEffectBase>>>(textEffectBase, "reference", BindingFlags.Static);
             
             if (reference == null || reference.IsEmpty()) { return; }
+
+            Apply();
 
             var targets = reference.Values
                     .Select(x => x.Select(y => y as T).Where(y => y != null))
@@ -88,6 +90,15 @@ namespace Modules.UI.TextEffect
                     }
                 }
             }
+        }
+
+        private void OnUndoRedo()
+        {
+            var instance = target as TextEffectBase;
+
+            if (instance == null) { return; }
+
+            update = true;
         }
 
         protected abstract void DrawSelectorContents(TextEffectBase[] targets);

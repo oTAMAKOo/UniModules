@@ -36,7 +36,7 @@ namespace Modules.UI.TextEffect
 
             if (EditorGUI.EndChangeCheck())
             {
-                SetValue(instance, "color", color);
+                UpdateParams(instance, color, instance.Offset.x, instance.Offset.y);
             }
 
             var offsetX = Reflection.GetPrivateField<TextShadow, float>(instance, "offsetX");
@@ -47,7 +47,7 @@ namespace Modules.UI.TextEffect
 
             if (EditorGUI.EndChangeCheck())
             {
-                SetValue(instance, "offsetX", offsetX);
+                UpdateParams(instance, instance.Color, offsetX, instance.Offset.y);
             }
 
             var offsetY = Reflection.GetPrivateField<TextShadow, float>(instance, "offsetY");
@@ -58,7 +58,7 @@ namespace Modules.UI.TextEffect
 
             if (EditorGUI.EndChangeCheck())
             {
-                SetValue(instance, "offsetY", offsetY);
+                UpdateParams(instance, instance.Color, instance.Offset.x, offsetY);
             }
 
             DrawMaterialSelector(instance);
@@ -102,9 +102,7 @@ namespace Modules.UI.TextEffect
                         {
                             if (GUILayout.Button("Apply", GUILayout.Width(65f)))
                             {
-                                SetValue(instance, "color", textShadow.Color);
-                                SetValue(instance, "offsetX", textShadow.Offset.x);
-                                SetValue(instance, "offsetY", textShadow.Offset.y);
+                                UpdateParams(instance, textShadow.Color, textShadow.Offset.x, textShadow.Offset.y);
                             }
                         }
 
@@ -114,10 +112,13 @@ namespace Modules.UI.TextEffect
             }
         }
 
-        private void SetValue<TValue>(TextShadow instance, string fieldName, TValue value)
+        private void UpdateParams(TextShadow instance, Color color, float offsetX, float offsetY)
         {
             UnityEditorUtility.RegisterUndo("TextShadowInspector Undo", instance);
-            Reflection.SetPrivateField(instance, fieldName, value);
+
+            Reflection.SetPrivateField(instance, "color", color);
+            Reflection.SetPrivateField(instance, "offsetX", offsetX);
+            Reflection.SetPrivateField(instance, "offsetY", offsetY);
 
             update = true;
         }

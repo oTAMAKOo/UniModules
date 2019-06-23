@@ -36,7 +36,7 @@ namespace Modules.UI.TextEffect
 
             if (EditorGUI.EndChangeCheck())
             {
-                SetValue(instance, "color", color);
+                UpdateParams(instance, color, instance.Distance);
             }
 
             var distance = Reflection.GetPrivateField<TextOutline, float>(instance, "distance");
@@ -47,7 +47,7 @@ namespace Modules.UI.TextEffect
 
             if (EditorGUI.EndChangeCheck())
             {
-                SetValue(instance, "distance", distance);
+                UpdateParams(instance, instance.Color, distance);
             }
 
             DrawMaterialSelector(instance);
@@ -87,8 +87,7 @@ namespace Modules.UI.TextEffect
                         {
                             if (GUILayout.Button("Apply", GUILayout.Width(65f)))
                             {
-                                SetValue(instance, "color", textOutline.Color);
-                                SetValue(instance, "distance", textOutline.Distance);
+                                UpdateParams(instance, textOutline.Color, textOutline.Distance);
                             }
                         }
 
@@ -98,10 +97,12 @@ namespace Modules.UI.TextEffect
             }
         }
 
-        private void SetValue<TValue>(TextOutline instance, string fieldName, TValue value)
+        private void UpdateParams(TextOutline instance, Color color, float distance)
         {
             UnityEditorUtility.RegisterUndo("TextOutlineInspector Undo", instance);
-            Reflection.SetPrivateField(instance, fieldName, value);
+
+            Reflection.SetPrivateField(instance, "color", color);
+            Reflection.SetPrivateField(instance, "distance", distance);
 
             update = true;
         }
