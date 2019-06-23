@@ -41,6 +41,7 @@ namespace Modules.Devkit.HierarchyComponentIcon
             typeof(Camera),
             typeof(ParticleSystem),
             typeof(EventSystem),
+
             typeof(Canvas),
             typeof(Text),
             typeof(Image),
@@ -54,6 +55,10 @@ namespace Modules.Devkit.HierarchyComponentIcon
             typeof(Toggle),
             typeof(Mask),
             typeof(RectMask2D),
+            typeof(LayoutElement),
+            typeof(HorizontalLayoutGroup),
+            typeof(VerticalLayoutGroup),
+            typeof(GridLayoutGroup),
 
             #if ENABLE_SOFT_MASK
 
