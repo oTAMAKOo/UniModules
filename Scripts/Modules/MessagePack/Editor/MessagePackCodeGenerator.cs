@@ -1,8 +1,7 @@
 ﻿
-using UnityEditor;
 using System;
 using System.Diagnostics;
-using System.IO;
+using System.Reflection;
 using System.Text;
 using Extensions;
 
@@ -49,6 +48,16 @@ namespace Modules.MessagePack
 
             try
             {
+                //------ Solution同期 ------
+
+                var unitySyncVS = Type.GetType("UnityEditor.SyncVS,UnityEditor");
+
+                var syncSolution = unitySyncVS.GetMethod("SyncSolution", BindingFlags.Public | BindingFlags.Static);
+
+                syncSolution.Invoke(null, null);
+
+                //------ mpc実行 ------
+
                 var processStartInfo = new ProcessStartInfo(messagePackConfig.CompilerPath, arguments);
 
                 // エラー出力をリダイレクト.
@@ -88,7 +97,7 @@ namespace Modules.MessagePack
 
                     if (compileProcess.ExitCode == 1)
                     {
-                        Debug.LogErrorFormat("MessagePack code geneation failed.\n\n{0}", compileLog.ToString());
+                        Debug.LogErrorFormat("MessagePack code generate failed.\n\n{0}", compileLog.ToString());
                     }
                     else
                     {
