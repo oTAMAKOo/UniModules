@@ -24,7 +24,14 @@ namespace Modules.Master
         IObservable<bool> Load(AesManaged aesManaged);
     }
 
-    public abstract class Master<TMaster, TMasterData> : IMaster where TMaster : Master<TMaster, TMasterData>, new()
+    public class MasterContainer<TMasterData>
+    {
+        public TMasterData[] records = null;
+    }
+
+    public abstract class Master<TMaster, TMasterContainer, TMasterRecord> : IMaster
+        where TMaster : Master<TMaster, TMasterContainer, TMasterRecord>, new()
+        where TMasterContainer : MasterContainer<TMasterRecord>
     {
         //----- params -----
 
@@ -39,7 +46,7 @@ namespace Modules.Master
 
         //----- field -----
 
-        private Dictionary<string, TMasterData> masters = new Dictionary<string, TMasterData>();
+        private Dictionary<string, TMasterRecord> records = new Dictionary<string, TMasterRecord>();
         private Prefs versionPrefs = new Prefs();
 
         private static TMaster instance = null;
@@ -65,34 +72,34 @@ namespace Modules.Master
 
         //----- method -----
 
-        public void SetMaster(TMasterData[] master)
+        public void SetRecords(TMasterRecord[] masterRecords)
         {
-            masters.Clear();
+            records.Clear();
 
-            if (master == null) { return; }
+            if (records == null) { return; }
 
-            foreach (var item in master)
+            foreach (var masterRecord in masterRecords)
             {
-                SetMaster(item);
+                SetRecord(masterRecord);
             }
         }
 
-        private void SetMaster(TMasterData master)
+        private void SetRecord(TMasterRecord masterRecord)
         {
-            if (master == null) { return; }
+            if (masterRecord == null) { return; }
 
-            var key = GetMasterKey(master);
+            var key = GetRecordKey(masterRecord);
 
-            if (masters.ContainsKey(key))
+            if (records.ContainsKey(key))
             {
                 var message = "Master register error!\nRegistered keys can not be registered.";
-                var typeName = master.GetType().FullName;
+                var typeName = GetType().FullName;
 
-                Debug.LogErrorFormat("{0}\n\nMaster : {1}\nKey : {2}\n", message, typeName, key);
+                Debug.LogErrorFormat("{0}\n\n Master : {1}\nKey : {2}\n", message, typeName, key);
             }
             else
             {
-                masters.Add(key, master);
+                records.Add(key, masterRecord);
             }
         }
 
@@ -127,7 +134,7 @@ namespace Modules.Master
             }
 
             versionPrefs.version = string.Empty;
-            masters.Clear();
+            records.Clear();
         }
 
         public IObservable<bool> Load(AesManaged aesManaged)
@@ -143,7 +150,7 @@ namespace Modules.Master
 
             try
             {
-                MessagePackValidater.ValidateAttribute(typeof(TMasterData));
+                MessagePackValidater.ValidateAttribute(typeof(TMasterRecord));
             }
             catch (Exception exception)
             {
@@ -179,9 +186,9 @@ namespace Modules.Master
 
                     try
                     {
-                        var data = LZ4MessagePackSerializer.Deserialize<TMasterData[]>(bytes, UnityContractResolver.Instance);
+                        var container = LZ4MessagePackSerializer.Deserialize<TMasterContainer>(bytes, UnityContractResolver.Instance);
 
-                        SetMaster(data);
+                        SetRecords(container.records);
 
                         result = true;
                     }
@@ -243,14 +250,14 @@ namespace Modules.Master
             observer.OnCompleted();
         }
 
-        public IEnumerable<TMasterData> GetAllMasters()
+        public IEnumerable<TMasterRecord> GetAllRecords()
         {
-            return masters.Values;
+            return records.Values;
         }
 
-        public TMasterData GetMaster(string key)
+        public TMasterRecord GetRecord(string key)
         {
-            return masters.GetValueOrDefault(key);
+            return records.GetValueOrDefault(key);
         }
 
         protected virtual void OnError()
@@ -259,7 +266,7 @@ namespace Modules.Master
             ClearVersion();
         }
 
-        protected abstract string GetMasterKey(TMasterData master);
+        protected abstract string GetRecordKey(TMasterRecord masterRecord);
 
         protected abstract IObservable<Unit> DownloadMaster();
     }
