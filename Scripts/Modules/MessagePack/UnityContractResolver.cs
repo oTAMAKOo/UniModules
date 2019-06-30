@@ -10,7 +10,7 @@ namespace Modules.MessagePack
     /// <summary>
     /// Editor時はDynamicResolver、実行時はGeneratedResolverの振る舞いをするResolver.
     /// </summary>
-    public class UnityContractResolver : IFormatterResolver
+    public sealed class UnityContractResolver : IFormatterResolver
     {
         public static IFormatterResolver Instance = new UnityContractResolver();
 

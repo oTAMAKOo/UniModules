@@ -14,7 +14,7 @@ namespace Modules.UtageExtension
     /// <summary>
     /// キャラクターのソートオーダーを強制的に最前面にする拡張.
     /// </summary>
-	public class ExtendCharacterOrderController : MonoBehaviour
+	public sealed class ExtendCharacterOrderController : MonoBehaviour
 	{
         //----- params -----
 

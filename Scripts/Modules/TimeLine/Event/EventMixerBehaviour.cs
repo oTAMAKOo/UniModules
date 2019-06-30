@@ -9,7 +9,7 @@ using Extensions;
 
 namespace Modules.TimeLine.Component
 {
-    public class EventMixerBehaviour : PlayableBehaviour
+    public sealed class EventMixerBehaviour : PlayableBehaviour
     {
         //----- params -----
 

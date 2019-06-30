@@ -15,7 +15,7 @@ namespace Modules.StateMachine
         void StateMachineEvent(StateMachineEvent stateMachineEvent);
     }
 
-	public class StateMachineTrigger : StateMachineBehaviour
+	public sealed class StateMachineTrigger : StateMachineBehaviour
     {
         //----- params -----
 

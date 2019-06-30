@@ -19,7 +19,7 @@ namespace Modules.TimeLine.Component
     }
 
     [Serializable]
-    public class EventMethod : LifetimeDisposable
+    public sealed class EventMethod : LifetimeDisposable
     {
         //----- params -----
 

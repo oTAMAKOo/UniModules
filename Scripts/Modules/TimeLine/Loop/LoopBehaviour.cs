@@ -8,7 +8,7 @@ using Extensions;
 namespace Modules.TimeLine.Component
 {
     [Serializable]
-    public class LoopBehaviour : PlayableBehaviour
+    public sealed class LoopBehaviour : PlayableBehaviour
     {
         //----- params -----
 

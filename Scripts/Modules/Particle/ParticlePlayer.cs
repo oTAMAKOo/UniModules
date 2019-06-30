@@ -43,7 +43,7 @@ namespace Modules.Particle
 
     [ExecuteInEditMode]
     [DisallowMultipleComponent]
-    public partial class ParticlePlayer : MonoBehaviour
+    public sealed partial class ParticlePlayer : MonoBehaviour
     {
         //----- params -----
 
@@ -135,10 +135,10 @@ namespace Modules.Particle
         private State? prevState = null;
 
         // 再生速度(倍率).
-        public float speedRate = 1f;
+        private float speedRate = 1f;
 
         // 管理対象.
-        protected ParticleInfo[] particleInfos = null;
+        private ParticleInfo[] particleInfos = null;
 
         // アニメーションイベントフラグ.
         private bool played = false;
@@ -564,7 +564,7 @@ namespace Modules.Particle
             currentState = state;
         }
 
-        protected void UpdateCurrentTime(float time)
+        private void UpdateCurrentTime(float time)
         {
             if (State != State.Play) { return; }
 

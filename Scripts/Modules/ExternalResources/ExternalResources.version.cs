@@ -18,7 +18,7 @@ using Modules.CriWare;
 
 namespace Modules.ExternalResource
 {
-    public partial class ExternalResources
+    public sealed partial class ExternalResources
     {
         //----- params -----
 

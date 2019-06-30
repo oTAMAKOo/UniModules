@@ -9,7 +9,7 @@ using Extensions;
 
 namespace Modules.AssetBundles
 {
-    public partial class AssetBundleManager
+    public sealed partial class AssetBundleManager
     {
         private IObservable<T> SimulateLoadAsset<T>(string assetPath) where T : UnityEngine.Object
         {

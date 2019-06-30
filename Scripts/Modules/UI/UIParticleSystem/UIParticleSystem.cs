@@ -11,7 +11,7 @@ namespace Modules.UI.Particle
 {
     [ExecuteInEditMode]
     [RequireComponent(typeof(CanvasRenderer), typeof(ParticleSystem))]
-    public class UIParticleSystem : MaskableGraphic
+    public sealed class UIParticleSystem : MaskableGraphic
     {
         //----- params -----
 

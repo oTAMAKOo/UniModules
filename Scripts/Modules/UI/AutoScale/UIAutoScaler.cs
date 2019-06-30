@@ -1,16 +1,12 @@
 ﻿﻿﻿
 using UnityEngine;
 using UnityEngine.EventSystems;
-using System;
-using System.Linq;
-using System.Collections.Generic;
-using UniRx;
 using Extensions;
 
 namespace Modules.UI
 {
     [ExecuteInEditMode]
-	public class UIAutoScaler : UIBehaviour
+	public sealed class UIAutoScaler : UIBehaviour
 	{
 		//----- params -----
 

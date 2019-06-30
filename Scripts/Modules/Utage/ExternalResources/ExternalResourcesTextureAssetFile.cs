@@ -11,7 +11,7 @@ using Utage;
 
 namespace Modules.UtageExtension
 {
-	public class ExternalResourcesTextureAssetFile : ExternalResourcesAssetFile<Texture2D>
+	public sealed class ExternalResourcesTextureAssetFile : ExternalResourcesAssetFile<Texture2D>
     {
         //----- params -----
 

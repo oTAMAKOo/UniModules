@@ -9,13 +9,13 @@ using Extensions;
 
 namespace Modules.ObjectPool
 {
-    public class ObjectPool<T> where T : Component
+    public sealed class ObjectPool<T> where T : Component
     {
         //----- params -----
 
         //----- field -----
 
-        protected GameObject instance = null;
+        private GameObject instance = null;
 
         private GameObject prefab = null;
         private Queue<T> cachedObjects = new Queue<T>();

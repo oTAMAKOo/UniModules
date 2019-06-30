@@ -1,4 +1,4 @@
-﻿﻿﻿﻿
+﻿
 #if UNITY_IOS && !UNITY_EDITOR
 ﻿﻿﻿﻿
 using UnityEngine;
@@ -15,7 +15,7 @@ using LocalNotification = UnityEngine.iOS.LocalNotification;
 
 namespace Modules.LocalPushNotify
 {
-    public partial class LocalPushNotify
+    public sealed partial class LocalPushNotify
     {
         //----- params -----
 

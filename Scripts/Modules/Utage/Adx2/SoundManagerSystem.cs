@@ -15,7 +15,7 @@ using SoundType = Modules.SoundManagement.SoundType;
 
 namespace Modules.UtageExtension
 {
-    public class SoundManagerSystem : SoundManagerSystemInterface
+    public sealed class SoundManagerSystem : SoundManagerSystemInterface
     {
         //----- params -----
 

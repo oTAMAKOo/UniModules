@@ -8,7 +8,7 @@ using Extensions;
 namespace Modules.TimeLine.Component
 {
     [Serializable]
-    public class LoopClip : PlayableAsset, ITimelineClipAsset
+    public sealed class LoopClip : PlayableAsset, ITimelineClipAsset
     {
         //----- params -----
 

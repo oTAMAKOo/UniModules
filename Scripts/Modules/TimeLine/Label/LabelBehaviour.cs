@@ -9,7 +9,7 @@ using Extensions;
 namespace Modules.TimeLine.Component
 {
     [Serializable]
-    public class LabelBehaviour : PlayableBehaviour
+    public sealed class LabelBehaviour : PlayableBehaviour
     {
 		//----- params -----
 

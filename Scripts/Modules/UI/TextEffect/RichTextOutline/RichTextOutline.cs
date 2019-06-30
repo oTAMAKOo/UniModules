@@ -5,7 +5,7 @@ using System.Collections.Generic;
 
 namespace Modules.UI.TextEffect
 {
-    public class RichTextOutline : BaseMeshEffect
+    public sealed class RichTextOutline : BaseMeshEffect
     {
         //----- params -----
 

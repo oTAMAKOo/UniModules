@@ -11,7 +11,7 @@ namespace Modules.TimeLine.Component
 {
     [TrackColor(0.95f, 0.95f, 0.95f)]
     [TrackClipType(typeof(LabelClip))]
-    public class LabelTrack : TrackAsset
+    public sealed class LabelTrack : TrackAsset
     {
         //----- params -----
 

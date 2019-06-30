@@ -9,7 +9,7 @@ using Extensions;
 namespace Modules.UI
 {
     [ExecuteInEditMode]
-    public class GraphicGroup : Graphic
+    public sealed class GraphicGroup : Graphic
     {
         //----- params -----
 

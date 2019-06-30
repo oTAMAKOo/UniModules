@@ -10,7 +10,7 @@ namespace Modules.CriWare
         public static readonly Color Color = new Color(135, 206, 235);
     }
 
-    public class CriWareObject : SingletonMonoBehaviour<CriWareObject>
+    public sealed class CriWareObject : SingletonMonoBehaviour<CriWareObject>
 	{
         //----- params -----
 

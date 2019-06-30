@@ -8,7 +8,7 @@ using Extensions;
 
 namespace Modules.Window
 {
-    public class PopupParent : MonoBehaviour
+    public sealed class PopupParent : MonoBehaviour
     {
         //----- params -----
 

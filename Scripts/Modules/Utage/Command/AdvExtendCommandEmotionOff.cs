@@ -11,7 +11,7 @@ using Extensions;
 
 namespace Modules.UtageExtension
 {
-	public class AdvExtendCommandEmotionOff : AdvCommand
+	public sealed class AdvExtendCommandEmotionOff : AdvCommand
     {
         //----- params -----
 

@@ -3,14 +3,11 @@
 
 using UnityEngine;
 using System;
-using System.Linq;
-using System.Collections.Generic;
 using UniRx;
-using Extensions;
 
 namespace Modules.SoundManagement
 {
-    public class SoundElement
+    public sealed class SoundElement
     {
         //----- params -----
 

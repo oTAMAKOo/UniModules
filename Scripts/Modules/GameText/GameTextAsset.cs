@@ -5,7 +5,7 @@ using Extensions.Serialize;
 
 namespace Modules.GameText.Components
 {
-    public class GameTextAsset : ScriptableObject
+    public sealed class GameTextAsset : ScriptableObject
 	{
         [SerializeField, ReadOnly]
         public LongNullable updateTime = null;

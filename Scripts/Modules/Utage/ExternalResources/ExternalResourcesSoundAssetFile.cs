@@ -14,7 +14,7 @@ using Modules.SoundManagement;
 
 namespace Modules.UtageExtension
 {
-    public class ExternalResourcesSoundAssetFile : AssetFileBase
+    public sealed class ExternalResourcesSoundAssetFile : AssetFileBase
     {
         //----- params -----
 

@@ -1,19 +1,12 @@
 ﻿
 #if ENABLE_CRIWARE_ADX
-﻿﻿
-using UnityEngine;
-using Unity.Linq;
-using System;
-using System.Linq;
-using System.Collections.Generic;
+
 using System.IO;
-using UniRx;
-using Extensions;
 using Modules.CriWare;
 
 namespace Modules.SoundManagement
 {
-    public class SoundSheet
+    public sealed class SoundSheet
     {
         //----- params -----
 

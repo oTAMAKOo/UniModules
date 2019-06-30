@@ -26,7 +26,7 @@ using Modules.MovieManagement;
 
 namespace Modules.ExternalResource
 {
-    public partial class ExternalResources : Singleton<ExternalResources>
+    public sealed partial class ExternalResources : Singleton<ExternalResources>
     {
         //----- params -----
 

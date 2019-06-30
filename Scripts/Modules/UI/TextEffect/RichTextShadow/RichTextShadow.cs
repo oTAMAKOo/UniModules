@@ -3,13 +3,11 @@ using UnityEngine;
 using UnityEngine.UI;
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using Extensions;
 using Extensions.Serialize;
 
 namespace Modules.UI.TextEffect
 {
-    public class RichTextShadow : BaseMeshEffect
+    public sealed class RichTextShadow : BaseMeshEffect
     {
         //----- params -----
 

@@ -10,7 +10,7 @@ namespace Modules.TimeLine.Component
 {
     [TrackColor(0.85f, 0.85f, 0.1f)]
     [TrackClipType(typeof(EventClip))]
-    public class EventTrack : TrackAsset
+    public sealed class EventTrack : TrackAsset
     {
         //----- params -----
 

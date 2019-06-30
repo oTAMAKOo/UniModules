@@ -7,7 +7,7 @@ namespace Modules.UniRxExtension
 {
     #if !(NETFX_CORE || NET_4_6 || NET_STANDARD_2_0 || UNITY_WSA_10_0)
 
-    public class YieldCancell : IDisposable
+    public sealed class YieldCancell : IDisposable
     {
         //----- params -----
 

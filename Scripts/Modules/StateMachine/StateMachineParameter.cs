@@ -15,7 +15,7 @@ namespace Modules.StateMachine
         public abstract void SetParameter(Animator target);
     }
 
-    public class IntStateMachineParameter : StateMachineParameter
+    public sealed class IntStateMachineParameter : StateMachineParameter
     {
         public int Value { get; private set; }
 
@@ -30,7 +30,7 @@ namespace Modules.StateMachine
         }
     }
 
-    public class FloatStateMachineParameter : StateMachineParameter
+    public sealed class FloatStateMachineParameter : StateMachineParameter
     {
         public float Value { get; private set; }
 
@@ -45,7 +45,7 @@ namespace Modules.StateMachine
         }
     }
 
-    public class BoolStateMachineParameter : StateMachineParameter
+    public sealed class BoolStateMachineParameter : StateMachineParameter
     {
         public bool Value { get; private set; }
 
@@ -60,7 +60,7 @@ namespace Modules.StateMachine
         }
     }
 
-    public class TriggerStateMachineParameter : StateMachineParameter
+    public sealed class TriggerStateMachineParameter : StateMachineParameter
     {
         public TriggerStateMachineParameter(string parameterName) : base(parameterName) { }
 
@@ -70,7 +70,7 @@ namespace Modules.StateMachine
         }
     }
 
-    public class TriggerResetStateMachineParameter : StateMachineParameter
+    public sealed class TriggerResetStateMachineParameter : StateMachineParameter
     {
         public TriggerResetStateMachineParameter(string parameterName) : base(parameterName) { }
 

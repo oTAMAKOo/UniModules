@@ -1,16 +1,12 @@
 ﻿﻿﻿﻿
 using UnityEngine;
-using System;
-using System.Linq;
-using System.Collections.Generic;
-using UniRx;
 using Extensions.Serialize;
 using UnityEngine.UI;
 
 namespace Modules.GameText.Components
 {
     [ExecuteInEditMode]
-    public class GameTextSetter : MonoBehaviour
+    public sealed class GameTextSetter : MonoBehaviour
 	{
         //----- params -----
 

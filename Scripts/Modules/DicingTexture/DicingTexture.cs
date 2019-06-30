@@ -7,7 +7,7 @@ using Extensions;
 
 namespace Modules.Dicing
 {
-    public class DicingTexture : ScriptableObject
+    public sealed class DicingTexture : ScriptableObject
 	{
         //----- params -----
 

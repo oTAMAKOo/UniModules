@@ -15,7 +15,7 @@ using Modules.ExternalResource;
 
 namespace Modules.CriWare
 {
-    public partial class CriAssetManager : Singleton<CriAssetManager>
+    public sealed class CriAssetManager : Singleton<CriAssetManager>
     {
         //----- params -----
 

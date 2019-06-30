@@ -7,7 +7,7 @@ using Extensions;
 
 namespace Modules.UI
 {
-    public class UIDragAndDropHandler : MonoBehaviour
+    public sealed class UIDragAndDropHandler : MonoBehaviour
     {
         //----- params -----
 

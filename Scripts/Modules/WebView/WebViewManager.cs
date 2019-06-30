@@ -11,7 +11,7 @@ using Extensions;
 
 namespace Modules.WebView
 {
-	public class WebViewManager : Singleton<WebViewManager>
+	public sealed class WebViewManager : Singleton<WebViewManager>
 	{
         //----- params -----
 

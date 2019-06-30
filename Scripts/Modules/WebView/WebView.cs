@@ -14,7 +14,7 @@ using UnityEngine.Networking;
 namespace Modules.WebView
 {
     [RequireComponent(typeof(RectTransform))]
-    public class WebView : MonoBehaviour
+    public sealed class WebView : MonoBehaviour
     {
         //----- params -----
 

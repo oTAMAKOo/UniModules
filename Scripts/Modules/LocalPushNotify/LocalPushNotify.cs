@@ -9,7 +9,7 @@ using Modules.ApplicationEvent;
 
 namespace Modules.LocalPushNotify
 {
-    public partial class LocalPushNotify : Singleton<LocalPushNotify>
+    public sealed partial class LocalPushNotify : Singleton<LocalPushNotify>
     {
         //----- params -----
 

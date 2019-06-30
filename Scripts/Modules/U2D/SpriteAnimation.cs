@@ -2,15 +2,13 @@
 using UnityEngine;
 using UnityEngine.U2D;
 using System;
-using System.Linq;
 using System.Collections.Generic;
 using UniRx;
 using Extensions;
-using Modules.ObjectCache;
 
 namespace Modules.U2D
 {
-    public class AtlasTextureAnimation : MonoBehaviour
+    public sealed class AtlasTextureAnimation : MonoBehaviour
     {
         //----- params -----
 

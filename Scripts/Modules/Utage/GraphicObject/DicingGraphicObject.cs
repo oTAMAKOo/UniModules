@@ -15,7 +15,7 @@ using DicingImage = Modules.Dicing.DicingImage;
 
 namespace Modules.UtageExtension
 {
-	public class DicingGraphicObject : AdvGraphicObjectUguiBase
+	public sealed class DicingGraphicObject : AdvGraphicObjectUguiBase
     {
         //----- params -----
 

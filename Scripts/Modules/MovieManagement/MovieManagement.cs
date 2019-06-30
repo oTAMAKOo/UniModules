@@ -3,9 +3,6 @@
 ﻿﻿﻿
 using UnityEngine;
 using UnityEngine.UI;
-using System;
-using System.Linq;
-using System.Collections;
 using System.Collections.Generic;
 using UniRx;
 using Extensions;
@@ -19,7 +16,7 @@ namespace Modules.MovieManagement
         ExternalResources,
     }
 
-    public class MovieManagement : Singleton<MovieManagement>
+    public sealed class MovieManagement : Singleton<MovieManagement>
     {
         //----- params -----
 

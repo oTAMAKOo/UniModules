@@ -11,7 +11,7 @@ namespace Modules.UI.Reactive
 {
     [ExecuteInEditMode]
     [RequireComponent(typeof(UIText))]
-    public class ButtonReactiveText : MonoBehaviour
+    public sealed class ButtonReactiveText : MonoBehaviour
     {
         //----- params -----
 

@@ -7,7 +7,7 @@ using Extensions;
 
 namespace Modules.UI.TextEffect
 {
-    public class FontKerningSetting : ScriptableObject
+    public sealed class FontKerningSetting : ScriptableObject
     {
         //----- params -----
 

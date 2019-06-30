@@ -8,7 +8,7 @@ namespace Modules.ObjectCache
     /// <summary>
     /// オブジェクトをメモリ上にキャッシュ.
     /// </summary>
-    public class ObjectCache<T> : IDisposable where T : class
+    public sealed class ObjectCache<T> : IDisposable where T : class
     {
         //----- params -----
 

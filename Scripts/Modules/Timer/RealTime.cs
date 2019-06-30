@@ -4,7 +4,7 @@ using UnityEngine;
 
 namespace Modules.Timer
 {
-    public class RealTime : SingletonMonoBehaviour<RealTime>
+    public sealed class RealTime : SingletonMonoBehaviour<RealTime>
     {
         //----- params -----
 

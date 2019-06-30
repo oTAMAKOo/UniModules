@@ -9,7 +9,7 @@ namespace Modules.UI.Layout
 {
     [ExecuteInEditMode]
     [RequireComponent(typeof(RectTransform))]
-    public class PreferredSizeCopy : LayoutElement, ILayoutSelfController
+    public sealed class PreferredSizeCopy : LayoutElement, ILayoutSelfController
     {
         //----- params -----
 

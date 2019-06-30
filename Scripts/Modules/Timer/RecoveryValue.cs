@@ -3,7 +3,7 @@ using System;
 
 namespace Modules.Timer
 {
-    public class RecoveryValue
+    public sealed class RecoveryValue
     {
         //----- params -----
 

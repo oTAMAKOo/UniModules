@@ -1,18 +1,15 @@
 ﻿
 using UnityEngine;
 using UnityEngine.UI;
-using System;
 using System.Linq;
 using System.Collections.Generic;
-using UniRx;
 using Extensions;
-using Modules.UI;
 using Unity.Linq;
 
 namespace Modules.InputProtection.Components
 {
     [RequireComponent(typeof(Button))]
-    public class ButtonInputProtection : InputProtection
+    public sealed class ButtonInputProtection : InputProtection
     {
         //----- params -----
 

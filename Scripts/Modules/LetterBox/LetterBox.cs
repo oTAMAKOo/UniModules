@@ -3,8 +3,6 @@ using UnityEngine;
 using UnityEngine.UI;
 using System;
 using System.Collections;
-using System.Linq;
-using System.Collections.Generic;
 using UniRx;
 using Extensions;
 using Modules.UI.Element;
@@ -12,7 +10,7 @@ using Modules.UI.Element;
 namespace Modules.LetterBox
 {
     [ExecuteInEditMode]
-    public class LetterBox : SingletonMonoBehaviour<LetterBox>
+    public sealed class LetterBox : SingletonMonoBehaviour<LetterBox>
     {
         //----- params -----
 

@@ -8,7 +8,7 @@ using Extensions;
 
 namespace Modules.SceneManagement
 {
-	public class IgnoreControl : MonoBehaviour
+	public sealed class IgnoreControl : MonoBehaviour
     {
         //----- params -----
 

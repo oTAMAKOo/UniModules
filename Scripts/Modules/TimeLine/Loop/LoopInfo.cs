@@ -8,7 +8,7 @@ using Extensions;
 
 namespace Modules.TimeLine
 {
-	public class LoopInfo
+	public sealed class LoopInfo
 	{
         //----- params -----
 

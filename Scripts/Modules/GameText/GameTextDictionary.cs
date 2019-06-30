@@ -7,7 +7,7 @@ using Extensions;
 namespace Modules.GameText.Components
 {
     [Serializable]
-    public class GameTextDictionary : SerializableDictionary<int, string>
+    public sealed class GameTextDictionary : SerializableDictionary<int, string>
     {
         [SerializeField, ReadOnly]
         private string sheetName = string.Empty;

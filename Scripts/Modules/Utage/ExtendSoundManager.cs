@@ -11,7 +11,7 @@ using Utage;
 
 namespace Modules.UtageExtension
 {
-	public class ExtendSoundManager : MonoBehaviour
+	public sealed class ExtendSoundManager : MonoBehaviour
 	{
         //----- params -----
 

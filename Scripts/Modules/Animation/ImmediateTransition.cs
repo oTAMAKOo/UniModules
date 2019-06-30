@@ -8,7 +8,7 @@ using Extensions;
 
 namespace Modules.Animation
 {
-    public class ImmediateTransition : MonoBehaviour
+    public sealed class ImmediateTransition : MonoBehaviour
     {
         //----- params -----
 

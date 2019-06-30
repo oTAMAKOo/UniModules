@@ -5,7 +5,7 @@ using Modules.Devkit.Prefs;
 
 namespace Modules.Master
 {
-    public partial class MasterManager
+    public sealed partial class MasterManager
     {
         public static class Prefs
         {

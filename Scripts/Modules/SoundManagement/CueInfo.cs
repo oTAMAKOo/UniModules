@@ -6,7 +6,7 @@ using System.IO;
 
 namespace Modules.SoundManagement
 {
-    public class CueInfo
+    public sealed class CueInfo
     {
         public int CueId { get; private set; }
         public string CueSheet { get; private set; }

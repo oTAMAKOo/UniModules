@@ -1,17 +1,15 @@
 ﻿﻿﻿﻿﻿﻿﻿
 using UnityEngine;
 using UnityEngine.UI;
-using UniRx;
 using System;
 using System.Text.RegularExpressions;
-using System.Collections;
 using Extensions;
 
 namespace Modules.UI
 {
     [ExecuteInEditMode]
     [RequireComponent(typeof(Text))]
-    public class RichTextAlpha : MonoBehaviour
+    public sealed class RichTextAlpha : MonoBehaviour
     {
         //----- params -----
 

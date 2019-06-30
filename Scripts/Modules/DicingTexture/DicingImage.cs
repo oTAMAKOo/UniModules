@@ -12,7 +12,7 @@ using UniRx;
 namespace Modules.Dicing
 {
     [ExecuteInEditMode, RequireComponent(typeof(RectTransform))]
-    public class DicingImage : MaskableGraphic, ICanvasRaycastFilter
+    public sealed class DicingImage : MaskableGraphic, ICanvasRaycastFilter
     {
         //----- params -----
 

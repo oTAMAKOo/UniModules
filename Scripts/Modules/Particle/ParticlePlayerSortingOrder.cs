@@ -9,7 +9,7 @@ using Extensions;
 namespace Modules.Particle
 {
     [RequireComponent(typeof(ParticleSystem))]
-    public class ParticlePlayerSortingOrder : MonoBehaviour
+    public sealed class ParticlePlayerSortingOrder : MonoBehaviour
     {
         //----- params -----
 

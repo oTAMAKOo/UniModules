@@ -9,7 +9,7 @@ using Extensions;
 namespace Modules.UI.TextEffect
 {
     [RequireComponent(typeof(Text))]
-    public class TextSpacing : BaseMeshEffect
+    public sealed class TextSpacing : BaseMeshEffect
     {
         //----- params -----
 

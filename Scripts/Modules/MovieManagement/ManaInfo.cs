@@ -5,7 +5,7 @@ using Extensions;
 
 namespace Modules.MovieManagement
 {
-    public class ManaInfo
+    public sealed class ManaInfo
     {
         public string Usm { get; private set; }
         public string UsmPath { get; private set; }

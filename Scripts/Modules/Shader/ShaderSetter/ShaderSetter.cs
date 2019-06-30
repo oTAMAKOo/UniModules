@@ -10,7 +10,7 @@ using Extensions;
 namespace Modules.Shaders
 {
     [ExecuteInEditMode]
-	public class ShaderSetter : MonoBehaviour
+    public sealed class ShaderSetter : MonoBehaviour
 	{
         //----- params -----
 

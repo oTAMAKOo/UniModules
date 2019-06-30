@@ -11,7 +11,7 @@ using Utage;
 
 namespace Modules.UtageExtension
 {
-    public class AdvExtendCommandFinish : AdvCommand
+    public sealed class AdvExtendCommandFinish : AdvCommand
     {
         //----- params -----
 

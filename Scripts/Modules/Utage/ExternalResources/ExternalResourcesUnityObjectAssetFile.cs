@@ -11,7 +11,7 @@ using Utage;
 
 namespace Modules.UtageExtension
 {
-	public class ExternalResourcesUnityObjectAssetFile : ExternalResourcesAssetFile<UnityEngine.Object>
+	public sealed class ExternalResourcesUnityObjectAssetFile : ExternalResourcesAssetFile<UnityEngine.Object>
     {
         //----- params -----
 

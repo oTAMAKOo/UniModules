@@ -12,7 +12,7 @@ namespace Modules.Hyphenation
 {
     [ExecuteInEditMode]
     [RequireComponent(typeof(Text))]
-    public class UITextHyphenation : UIBehaviour
+    public sealed class UITextHyphenation : UIBehaviour
     {
         //----- params -----
 

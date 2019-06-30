@@ -6,7 +6,7 @@ using Extensions;
 
 namespace Modules.Master
 {
-    public partial class MasterManager : Singleton<MasterManager>
+    public sealed partial class MasterManager : Singleton<MasterManager>
     {
         //----- params -----
 
@@ -22,7 +22,7 @@ namespace Modules.Master
 
         //----- method -----
 
-        protected MasterManager()
+        private MasterManager()
         {
             All = new List<IMaster>();
 

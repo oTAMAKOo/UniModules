@@ -7,7 +7,7 @@ using Extensions;
 
 namespace Modules.UI
 {
-    public class UISwipeHandler : MonoBehaviour
+    public sealed class UISwipeHandler : MonoBehaviour
     {
         //----- params -----
 

@@ -10,7 +10,7 @@ using Utage;
 
 namespace Modules.UtageExtension
 {
-    public class EmotionGraphicObject : AdvGraphicObjectPrefabBase
+    public sealed class EmotionGraphicObject : AdvGraphicObjectPrefabBase
     {
         //----- params -----
 

@@ -7,7 +7,7 @@ using CriMana;
 
 namespace Modules.MovieManagement
 {
-    public class MovieElement
+    public sealed class MovieElement
 	{
         //----- params -----
 

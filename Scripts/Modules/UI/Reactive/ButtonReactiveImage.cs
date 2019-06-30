@@ -8,7 +8,7 @@ namespace Modules.UI.Reactive
 {
     [ExecuteInEditMode]
     [RequireComponent(typeof(UIImage))]
-    public class ButtonReactiveImage : MonoBehaviour
+    public sealed class ButtonReactiveImage : MonoBehaviour
     {
         //----- params -----
 

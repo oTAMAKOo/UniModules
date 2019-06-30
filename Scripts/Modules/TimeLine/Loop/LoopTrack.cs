@@ -8,7 +8,7 @@ namespace Modules.TimeLine.Component
 {
     [TrackColor(1f, 0.2794118f, 0.7117646f)]
     [TrackClipType(typeof(LoopClip))]
-    public class LoopTrack : TrackAsset
+    public sealed class LoopTrack : TrackAsset
     {
 		//----- params -----
 

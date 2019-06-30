@@ -10,7 +10,7 @@ using Extensions;
 namespace Modules.UI
 {
     [RequireComponent(typeof(Button))]
-    public class ButtonEventTrigger : MonoBehaviour
+    public sealed class ButtonEventTrigger : MonoBehaviour
     {
         //----- params -----
 

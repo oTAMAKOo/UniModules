@@ -7,5 +7,5 @@ namespace Modules.TimeLine
     /// TimeLineイベント関数として登録する為の属性.
     /// </summary>
     [AttributeUsage(AttributeTargets.Method)]
-    public class TimeLineEventAttribute : Attribute { }
+    public sealed class TimeLineEventAttribute : Attribute { }
 }

@@ -9,7 +9,7 @@ using Modules.GameText.Components;
 
 namespace Modules.GameText
 {
-    public partial class GameText : Singleton<GameText>
+    public sealed partial class GameText : Singleton<GameText>
     {
         //----- params -----
 

@@ -9,7 +9,7 @@ using Extensions;
 
 namespace Modules.AssetBundles
 {
-    public class AssetBundleDownloadHandler : DownloadHandlerScript
+    public sealed class AssetBundleDownloadHandler : DownloadHandlerScript
     {
         //----- params -----
 

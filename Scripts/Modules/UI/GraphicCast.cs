@@ -10,7 +10,7 @@ using UnityEditor;
 
 namespace Modules.UI
 {
-    public class GraphicCast : Graphic
+    public sealed class GraphicCast : Graphic
     {
         //----- params -----
 

@@ -11,7 +11,7 @@ using Extensions;
 namespace Modules.TimeLine.Component
 {
     [Serializable]
-    public class EventClip : PlayableAsset, ITimelineClipAsset
+    public sealed class EventClip : PlayableAsset, ITimelineClipAsset
     {
         //----- params -----
 

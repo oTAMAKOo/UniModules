@@ -4,7 +4,7 @@ using System.Collections;
 
 namespace Modules.ExternalResource
 {
-    public class ShaderReApply : MonoBehaviour
+    public sealed class ShaderReApply : MonoBehaviour
     {
         //----- params -----
 

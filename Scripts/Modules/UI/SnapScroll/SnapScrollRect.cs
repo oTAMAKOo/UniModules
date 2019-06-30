@@ -10,7 +10,7 @@ using Extensions;
 
 namespace Modules.UI
 {
-	public class SnapScrollRect : ScrollRect
+	public sealed class SnapScrollRect : ScrollRect
     {
         //----- params -----
 

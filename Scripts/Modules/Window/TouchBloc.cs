@@ -1,16 +1,13 @@
 ﻿
 using UnityEngine;
-using UnityEngine.UI;
 using System;
 using System.Collections;
-using System.Linq;
-using System.Collections.Generic;
 using UniRx;
 using Extensions;
 
 namespace Modules.Window
 {
-    public class TouchBloc : MonoBehaviour
+    public sealed class TouchBloc : MonoBehaviour
     {
         //----- params -----
 

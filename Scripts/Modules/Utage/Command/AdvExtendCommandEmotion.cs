@@ -11,7 +11,7 @@ using Utage;
 
 namespace Modules.UtageExtension
 {
-    public class AdvExtendCommandEmotion : AdvCommand
+    public sealed class AdvExtendCommandEmotion : AdvCommand
     {
         //----- params -----
 

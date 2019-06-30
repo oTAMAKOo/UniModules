@@ -11,7 +11,7 @@ using Utage;
 
 namespace Modules.UtageExtension
 {
-    public class ExternalResourcesTextAssetFile : ExternalResourcesAssetFile<TextAsset>
+    public sealed class ExternalResourcesTextAssetFile : ExternalResourcesAssetFile<TextAsset>
     {
         //----- params -----
 

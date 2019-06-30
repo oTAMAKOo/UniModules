@@ -4,7 +4,7 @@ using Unity.Linq;
 namespace Modules.SortingLayerSetter
 {
     [ExecuteInEditMode]
-    public class SortingLayerSetter : MonoBehaviour
+    public sealed class SortingLayerSetter : MonoBehaviour
     {
         //----- field -----
 

@@ -10,7 +10,7 @@ using Extensions;
 
 namespace Modules.TimeLine.Component
 {
-    public class LabelClip : PlayableAsset, ITimelineClipAsset
+    public sealed class LabelClip : PlayableAsset, ITimelineClipAsset
     {
         //----- params -----
 

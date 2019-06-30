@@ -9,7 +9,7 @@ namespace Modules.UI.TextEffect
 
     [ExecuteInEditMode]
     [RequireComponent(typeof(Text))]
-    public class TextOutline : TextEffectBase
+    public sealed class TextOutline : TextEffectBase
     {
         //----- params -----
 

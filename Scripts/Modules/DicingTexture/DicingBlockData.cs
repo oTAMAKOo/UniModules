@@ -5,7 +5,7 @@ using Extensions;
 namespace Modules.Dicing
 {
     [Serializable]
-    public class DicingBlockData
+    public sealed class DicingBlockData
     {
         // ピクセル開始位置.
         public int x = 0;

@@ -1,11 +1,9 @@
 ﻿
-using UnityEngine;
 using System;
 using System.Collections;
 using System.Linq;
 using System.Collections.Generic;
 using UniRx;
-using Extensions;
 
 namespace Modules.SceneManagement
 {

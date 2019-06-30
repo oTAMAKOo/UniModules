@@ -8,7 +8,7 @@ using Extensions;
 
 namespace Modules.ApplicationEvent
 {
-    public class ApplicationEventHandler : SingletonMonoBehaviour<ApplicationEventHandler>
+    public sealed class ApplicationEventHandler : SingletonMonoBehaviour<ApplicationEventHandler>
     {
         //----- params -----
 

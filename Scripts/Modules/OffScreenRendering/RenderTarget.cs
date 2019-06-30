@@ -10,7 +10,7 @@ namespace Modules.OffScreenRendering
 {
     [ExecuteInEditMode]
     [RequireComponent(typeof(Camera))]
-    public class RenderTarget : MonoBehaviour
+    public sealed class RenderTarget : MonoBehaviour
     {
         //----- params -----
 

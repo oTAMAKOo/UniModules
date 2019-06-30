@@ -8,7 +8,7 @@ using Extensions;
 
 namespace Modules.UniRxExtension
 {
-    public class ObservableQueue
+    public sealed class ObservableQueue
     {
         //----- params -----
 

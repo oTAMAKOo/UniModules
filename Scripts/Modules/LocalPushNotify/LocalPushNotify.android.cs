@@ -1,4 +1,4 @@
-﻿﻿
+﻿
 #if UNITY_ANDROID && !UNITY_EDITOR
 ﻿﻿﻿
 using UnityEngine;
@@ -11,7 +11,7 @@ using Modules.ApplicationEvent;
 
 namespace Modules.LocalPushNotify
 {
-    public partial class LocalPushNotify
+    public sealed partial class LocalPushNotify
     {
         //----- params -----
 

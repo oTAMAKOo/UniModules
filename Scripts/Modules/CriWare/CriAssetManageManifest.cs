@@ -19,7 +19,7 @@ namespace Modules.CriWare
     }
 
     [Serializable]
-    public class CriAssetInfo
+    public sealed class CriAssetInfo
     {
         [SerializeField]
         private string assetPath = null;
@@ -40,7 +40,7 @@ namespace Modules.CriWare
         }
     }
 
-    public class CriAssetManageManifest : ScriptableObject
+    public sealed class CriAssetManageManifest : ScriptableObject
 	{
         //----- params -----
 

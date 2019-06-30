@@ -13,7 +13,7 @@ using UnityEngine.Timeline;
 namespace Modules.TimeLine
 {
     [RequireComponent(typeof(PlayableDirector))]
-    public class TimeLinePlayer : MonoBehaviour
+    public sealed class TimeLinePlayer : MonoBehaviour
     {
         //----- params -----
 

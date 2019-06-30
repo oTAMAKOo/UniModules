@@ -3,7 +3,7 @@
 namespace Modules.Dicing
 {
     [Serializable]
-    public class DicingSourceData
+    public sealed class DicingSourceData
     {
         // テクスチャ名.
         public string textureName;

@@ -6,7 +6,7 @@ using UnityEngine.Playables;
 
 namespace Modules.TimeLine
 {
-	public class ExposedReferenceResolver<T> where T : UnityEngine.Object
+	public sealed class ExposedReferenceResolver<T> where T : UnityEngine.Object
     {
         //----- params -----
 

@@ -64,7 +64,7 @@ namespace Modules.Devkit.CleanComponent
 
             if (modify)
             {
-                return EditorUtility.DisplayDialog("TextComponent Cleaner", "Text is set directly Do you want to run cleanup?", "Execute", "Cancel");
+                return EditorUtility.DisplayDialog("TextComponent Cleaner", "Text is set directly Do you want to run cleanup?", "Clean", "Keep");
             }
 
             return false;

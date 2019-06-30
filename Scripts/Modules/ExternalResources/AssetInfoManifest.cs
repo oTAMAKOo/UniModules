@@ -17,7 +17,7 @@ using Modules.CriWare;
 namespace Modules.ExternalResource
 {
     [Serializable]
-    public class AssetInfo
+    public sealed class AssetInfo
     {
         //----- params -----
 
@@ -88,7 +88,7 @@ namespace Modules.ExternalResource
     }
 
     [Serializable]
-    public class AssetBundleInfo
+    public sealed class AssetBundleInfo
     {
         //----- params -----
 
@@ -131,7 +131,7 @@ namespace Modules.ExternalResource
         }
     }
 
-    public class AssetInfoManifest : ScriptableObject
+    public sealed class AssetInfoManifest : ScriptableObject
     {
         //----- params -----
 

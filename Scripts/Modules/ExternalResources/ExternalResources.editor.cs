@@ -5,7 +5,7 @@ using Modules.Devkit.Prefs;
 
 namespace Modules.ExternalResource
 {
-	public partial class ExternalResources
+	public sealed partial class ExternalResources
 	{
         public static class Prefs
         {

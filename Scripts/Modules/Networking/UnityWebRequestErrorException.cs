@@ -7,7 +7,7 @@ using System.Collections.Generic;
 
 namespace Modules.Networking
 {
-    public class UnityWebRequestErrorException : Exception
+    public sealed class UnityWebRequestErrorException : Exception
     {
         public string RawErrorMessage { get; private set; }
         public bool HasResponse { get; private set; }

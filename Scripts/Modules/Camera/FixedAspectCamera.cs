@@ -7,7 +7,7 @@ namespace Modules.FixedAspectCamera
 {
     [ExecuteInEditMode]
     [RequireComponent(typeof(Camera))]
-    public class FixedAspectCamera : MonoBehaviour
+    public sealed class FixedAspectCamera : MonoBehaviour
     {
         //----- params -----
 

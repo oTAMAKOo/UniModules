@@ -9,7 +9,7 @@ namespace Modules.UI.TextEffect
 
     [ExecuteInEditMode]
     [RequireComponent(typeof(Text))]
-    public class TextShadow : TextEffectBase
+    public sealed class TextShadow : TextEffectBase
     {
         //----- params -----
 

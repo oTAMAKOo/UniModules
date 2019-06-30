@@ -12,7 +12,7 @@ namespace Modules.Animation
     [ExecuteInEditMode]
     [DisallowMultipleComponent]
     [RequireComponent(typeof(Animator))]
-    public class AnimationPlayer : MonoBehaviour, IStateMachineEventHandler
+    public sealed class AnimationPlayer : MonoBehaviour, IStateMachineEventHandler
     {
         //----- params -----
 
