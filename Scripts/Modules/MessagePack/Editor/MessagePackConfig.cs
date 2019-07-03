@@ -5,6 +5,7 @@ using System.Linq;
 using System.Collections.Generic;
 using UniRx;
 using Extensions;
+using Modules.Devkit.Prefs;
 using Modules.Devkit.ScriptableObjects;
 
 namespace Modules.MessagePack
@@ -12,6 +13,17 @@ namespace Modules.MessagePack
 	public class MessagePackConfig : ReloadableScriptableObject<MessagePackConfig>
     {
         //----- params -----
+
+        private const string DefaultMsBuildPath = "/Library/Frameworks/Mono.framework/Versions/Current/bin";
+
+        public static class Prefs
+        {
+            public static string msbuildPath
+            {
+                get { return ProjectPrefs.GetString("MessagePackConfigPrefs-msbuildPath", DefaultMsBuildPath); }
+                set { ProjectPrefs.SetString("MessagePackConfigPrefs-msbuildPath", value); }
+            }
+        }
 
         //----- field -----
 

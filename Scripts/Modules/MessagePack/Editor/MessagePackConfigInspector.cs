@@ -100,7 +100,28 @@ namespace Modules.MessagePack
                 serializedObject.ApplyModifiedProperties();
             }
 
-            EditorGUILayout.Separator();
+            GUILayout.Space(25f);
+
+            //------ Private settings ------
+
+            #if UNITY_EDITOR_OSX
+
+            EditorLayoutTools.DrawLabelWithBackground("Private settings", new Color(1f, 1f, 0f, 1f));
+
+            using (new ContentsScope())
+            {   
+                EditorGUI.BeginChangeCheck();
+
+                GUILayout.Label("MsBuild Path");
+                MessagePackConfig.Prefs.msbuildPath = EditorGUILayout.DelayedTextField(MessagePackConfig.Prefs.msbuildPath);
+
+                if(EditorGUI.EndChangeCheck())
+                {
+                    UnityEditorUtility.RegisterUndo("MessagePackConfigInspector Undo", instance);
+                }
+            }
+
+            #endif
         }
     }
 }

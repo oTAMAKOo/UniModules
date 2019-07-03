@@ -1,6 +1,7 @@
 ﻿
 using System;
 using System.Diagnostics;
+using System.IO;
 using System.Reflection;
 using System.Text;
 using Extensions;
@@ -12,107 +13,192 @@ namespace Modules.MessagePack
     public static class MessagePackCodeGenerator
     {
         //----- params -----
-        
+
         private const string CSProjExtension = ".csproj";
+
+        private const string UnhandledErrorMessage = "Unhandled Error:System.AggregateException: One or more errors occurred";
 
         //----- field -----
 
         //----- property -----
 
         //----- method -----
-        
-        public static bool Compile()
-        {
-            var result = false;
 
+        public static bool Generate(int retryCount)
+        {
             var messagePackConfig = MessagePackConfig.Instance;
 
-            var csprojName = string.Empty;
-
-            var projectFolder = UnityPathUtility.GetProjectFolderPath();
-
-            #if UNITY_2018_3_OR_NEWER
-
-            csprojName = "Assembly-CSharp";
-
-            #else
-
-            csprojName = UnityPathUtility.GetProjectName();
-
-            #endif
-
-            var csproj = PathUtility.Combine(projectFolder, string.Format("{0}{1}", csprojName, CSProjExtension));
-            var generatePath = PathUtility.Combine(messagePackConfig.ScriptExportDir, messagePackConfig.ExportScriptName);
-
-            var arguments = string.Format(" --input {0} --output {1} --usemapmode", csproj, generatePath);
-
-            try
+            for (var i = 0; i < retryCount; i++)
             {
-                //------ Solution同期 ------
-
-                var unitySyncVS = Type.GetType("UnityEditor.SyncVS,UnityEditor");
-
-                var syncSolution = unitySyncVS.GetMethod("SyncSolution", BindingFlags.Public | BindingFlags.Static);
-
-                syncSolution.Invoke(null, null);
-
-                //------ mpc実行 ------
-
-                var processStartInfo = new ProcessStartInfo(messagePackConfig.CompilerPath, arguments);
-
-                // エラー出力をリダイレクト.
-                processStartInfo.RedirectStandardOutput = true;
-                processStartInfo.RedirectStandardError = true;
-
-                // シェル実行しない.
-                processStartInfo.UseShellExecute = false;
-
-                // ウィンドウ非表示.
-                processStartInfo.CreateNoWindow = true;                
-
-                // 実行ファイルを指定して実行.
-                using (var compileProcess = new Process())
+                try
                 {
-                    var compileLog = new StringBuilder();
+                    var result = GenerateCode(messagePackConfig);
 
-                    compileProcess.StartInfo = processStartInfo;
-
-                    DataReceivedEventHandler processOutputDataReceived = (sender, e) =>
+                    if (result)
                     {
-                        compileLog.AppendLine(e.Data);
-                    };
+                        Debug.LogFormat("Generate: {0}", GetScriptGeneratePath(messagePackConfig));
 
-                    compileProcess.OutputDataReceived += processOutputDataReceived;
-
-                    // タイムアウト時間 (120秒).
-                    var timeout = TimeSpan.FromSeconds(120);
-
-                    //起動.
-                    compileProcess.Start();
-
-                    compileProcess.BeginOutputReadLine();
-
-                    // 結果待ち.
-                    compileProcess.WaitForExit((int)timeout.TotalMilliseconds);
-
-                    if (compileProcess.ExitCode == 1)
+                        return true;
+                    }
+                }
+                catch(Exception e)
+                {
+                    if (e.Message.Contains(UnhandledErrorMessage))
                     {
-                        Debug.LogErrorFormat("MessagePack code generate failed.\n\n{0}", compileLog.ToString());
+                        Debug.LogErrorFormat("MessagePack code generate retry. [{0}/{1}]", i + 1, retryCount);
                     }
                     else
                     {
-                        Debug.LogFormat("Generate: {0}", generatePath);
-
-                        result = true;
+                        Debug.LogException(e);
+                        return false;
                     }
                 }
             }
-            catch (Exception e)
+
+            return false;
+        }
+
+        private static bool GenerateCode(MessagePackConfig messagePackConfig)
+        {
+            //------ Solution同期 ------
+
+            var unitySyncVS = Type.GetType("UnityEditor.SyncVS,UnityEditor");
+
+            var syncSolution = unitySyncVS.GetMethod("SyncSolution", BindingFlags.Public | BindingFlags.Static);
+
+            syncSolution.Invoke(null, null);
+
+            //------ csproj検索 ------
+
+            var csproj = string.Empty;
+
+            var projectFolder = UnityPathUtility.GetProjectFolderPath();
+
+            var csprojNames = new string[] { "Assembly-CSharp", UnityPathUtility.GetProjectName() };
+
+            foreach (var csprojName in csprojNames)
             {
-                Debug.LogError(e.Message + "\n" + e.StackTrace);
+                var path = PathUtility.Combine(projectFolder, string.Format("{0}{1}", csprojName, CSProjExtension));
+
+                if (File.Exists(path))
+                {
+                    csproj = path;
+                    break;
+                }
             }
 
-            return result;
+            if (!File.Exists(csproj))
+            {
+                throw new FileNotFoundException("csproj file not found");
+            }
+
+            //------ mpc実行 ------
+
+            var compilerPath = messagePackConfig.CompilerPath;
+
+            if (File.Exists(compilerPath))
+            {
+                var generatePath = GetScriptGeneratePath(messagePackConfig);
+
+                var arguments = string.Format(" --input {0} --output {1} --usemapmode", csproj, generatePath);
+
+                #if UNITY_EDITOR_WIN
+
+                // 実行.
+                var result = ExecuteProcess(compilerPath, arguments);
+
+                if (result.Item1 == 1)
+                {
+                    throw new Exception(result.Item2);
+                }
+
+                #elif UNITY_EDITOR_OSX
+
+                // msbuildへのパスを設定.
+
+                var environmentPath = Environment.GetEnvironmentVariable("PATH", EnvironmentVariableTarget.Process);
+
+                var path = string.Format("{0}:{1}", environmentPath, MessagePackConfig.Prefs.msbuildPath);
+
+                Environment.SetEnvironmentVariable("PATH", path, EnvironmentVariableTarget.Process);
+
+                // mpc権限変更.
+                ExecuteProcess("/bin/bash", string.Format("-c 'chmod 755 {0}'", compilerPath));
+
+                // 実行.
+                var result = ExecuteProcess(compilerPath, arguments);
+
+                if (result.Item1 == 1)
+                {
+                    throw new Exception(result.Item2);
+                }
+
+                #endif 
+            }
+            else
+            {
+                throw new FileNotFoundException("MessagePack compiler not found.");
+            }
+
+            return true;
+        }
+
+        private static string GetScriptGeneratePath(MessagePackConfig messagePackConfig)
+        {
+            return PathUtility.Combine(messagePackConfig.ScriptExportDir, messagePackConfig.ExportScriptName);
+        }
+
+        private static Tuple<int, string> ExecuteProcess(string fileName, string arguments)
+        {
+            var exitCode = 0;
+
+            // タイムアウト時間 (120秒).
+            var timeout = TimeSpan.FromSeconds(120);
+
+            // ログ.
+            var compileLog = new StringBuilder();
+            
+            using (var process = new Process())
+            {
+                var processStartInfo = new ProcessStartInfo
+                {
+                    FileName = fileName,
+                    Arguments = arguments,
+
+                    // エラー出力をリダイレクト.
+                    RedirectStandardOutput = true,
+                    RedirectStandardError = true,
+
+                    // シェル実行しない.
+                    UseShellExecute = false,
+
+                    // ウィンドウ非表示.
+                    CreateNoWindow = true,
+                    WindowStyle = ProcessWindowStyle.Hidden,
+                };
+
+                process.StartInfo = processStartInfo;
+
+                DataReceivedEventHandler processOutputDataReceived = (sender, e) =>
+                {
+                    compileLog.AppendLine(e.Data);
+                };
+
+                process.OutputDataReceived += processOutputDataReceived;
+
+                //起動.
+                process.Start();
+
+                process.BeginOutputReadLine();
+
+                // 結果待ち.
+                process.WaitForExit((int)timeout.TotalMilliseconds);
+
+                // 終了コード.
+                exitCode = process.ExitCode;
+            }
+            
+            return new Tuple<int, string>(exitCode, compileLog.ToString());
         }
     }
 }
