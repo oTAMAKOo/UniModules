@@ -1,4 +1,5 @@
 ﻿
+using UnityEditor;
 using System;
 using System.Diagnostics;
 using System.IO;
@@ -133,7 +134,9 @@ namespace Modules.MessagePack
                     throw new Exception(result.Item2);
                 }
 
-                #endif 
+                #endif
+
+                AssetDatabase.ImportAsset(generatePath, ImportAssetOptions.ForceUpdate);
             }
             else
             {
