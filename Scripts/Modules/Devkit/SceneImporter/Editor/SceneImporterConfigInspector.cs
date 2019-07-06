@@ -45,7 +45,7 @@ namespace Modules.Devkit.SceneImporter
             EditorGUILayout.Separator();
 
             // InitialScene.
-            GUILayout.BeginHorizontal();
+            using (new EditorGUILayout.HorizontalScope())
             {
                 GUILayout.Label("Initial Scene", GUILayout.Width(80f), GUILayout.Height(contentHeight));
                 GUILayout.Label(instance.InitialScene, pathTextStyle, GUILayout.Height(contentHeight));
@@ -60,7 +60,6 @@ namespace Modules.Devkit.SceneImporter
                     UnityEditorUtility.RegisterUndo("SceneImporterSettingsObject Undo", instance);
                 }
             }
-            GUILayout.EndHorizontal();
 
             EditorGUILayout.Separator();
 
@@ -69,11 +68,11 @@ namespace Modules.Devkit.SceneImporter
             {
                 var change = false;
 
-                EditorLayoutTools.BeginContents();
+                using (new ContentsScope())
                 {
                     EditorGUILayout.Separator();
 
-                    GUILayout.BeginHorizontal();
+                    using (new EditorGUILayout.HorizontalScope())
                     {
                         GUILayout.Space(20f);
 
@@ -93,19 +92,18 @@ namespace Modules.Devkit.SceneImporter
                             }
                         }
                     }
-                    GUILayout.EndHorizontal();
 
                     GUILayout.Space(10f);
 
                     var scrollViewHeight = System.Math.Min(contentHeight * managedFolders.Count + 5f, 300f);
 
-                    scrollPosition = EditorGUILayout.BeginScrollView(scrollPosition, GUILayout.Height(scrollViewHeight));
+                    using (var scrollViewScope = new EditorGUILayout.ScrollViewScope(scrollPosition, GUILayout.Height(scrollViewHeight)))
                     {
                         for (var i = 0; i < managedFolders.Count; ++i)
                         {
                             var folder = managedFolders[i];
 
-                            GUILayout.BeginHorizontal();
+                            using (new EditorGUILayout.HorizontalScope())
                             {
                                 var label = string.IsNullOrEmpty(folder) ? folder : folder + "/";
                                 GUILayout.Label(label, pathTextStyle, GUILayout.Height(contentHeight));
@@ -116,10 +114,10 @@ namespace Modules.Devkit.SceneImporter
                                     change = true;
                                 }
                             }
-                            GUILayout.EndHorizontal();
                         }
+
+                        scrollPosition = scrollViewScope.scrollPosition;
                     }
-                    EditorGUILayout.EndScrollView();
 
                     EditorGUILayout.Separator();
 
@@ -129,7 +127,6 @@ namespace Modules.Devkit.SceneImporter
                         UnityEditorUtility.RegisterUndo("SceneImporterSettingsObject Undo", instance);
                     }
                 }
-                EditorLayoutTools.EndContents();
             }
         }
     }
