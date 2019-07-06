@@ -4,7 +4,6 @@ using UnityEditor;
 using System.Linq;
 using System.Collections.Generic;
 using Extensions.Devkit;
-using UniRx;
 
 namespace Modules.Devkit.Pinning
 {
@@ -124,11 +123,12 @@ namespace Modules.Devkit.Pinning
                             switch (e.button)
                             {
                                 case 0:
-                                    MouseRightButton(rect, e, item);
+                                    MouseLeftButton(rect, e, item);
                                     break;
 
                                 case 1:
-                                    MouseLeftButton(rect, e, item);
+                                    MouseRightButton(rect, e, item);
+
                                     break;
                             }
                         }
@@ -165,7 +165,7 @@ namespace Modules.Devkit.Pinning
             }
         }
 
-        private void MouseRightButton(Rect rect, Event e, Object item)
+        private void MouseLeftButton(Rect rect, Event e, Object item)
         {
             if (e.type == EventType.MouseDown)
             {
@@ -213,7 +213,7 @@ namespace Modules.Devkit.Pinning
             }
         }
 
-        private void MouseLeftButton(Rect rect, Event e, Object item)
+        private void MouseRightButton(Rect rect, Event e, Object item)
         {
             if (e.type == EventType.MouseDown)
             {
