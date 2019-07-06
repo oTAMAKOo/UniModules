@@ -5,9 +5,23 @@ using UnityEditor.U2D;
 
 namespace Modules.Devkit.AssetTuning
 {
-    public abstract class SpriteAtlasAssetTuner : AssetTuner
+    public class SpriteAtlasAssetTuner : AssetTuner
     {
+        //----- params -----
+
+        private static readonly BuildTargetGroup[] DefaultTargetPlatforms =
+        {
+            BuildTargetGroup.Android,
+            BuildTargetGroup.iOS,
+        };
+
+        //----- field -----
+
+        //----- property -----
+
         public override int Priority { get { return 75; } }
+
+        //----- method -----
 
         public override bool Validate(string path)
         {
@@ -47,6 +61,19 @@ namespace Modules.Devkit.AssetTuning
             textureSettings.generateMipMaps = false;
 
             spriteAtlas.SetTextureSettings(textureSettings);
+
+            //------ PlatformSettings ------
+            
+            foreach (var platformName in DefaultTargetPlatforms)
+            {
+                var platformSetting = spriteAtlas.GetPlatformSettings(platformName.ToString());
+
+                platformSetting.overridden = true;
+                platformSetting.format = TextureImporterFormat.ASTC_RGBA_4x4;
+                platformSetting.maxTextureSize = 1024;
+
+                spriteAtlas.SetPlatformSettings(platformSetting);
+            }
         }
     }
 }

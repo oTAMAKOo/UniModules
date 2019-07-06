@@ -8,7 +8,7 @@ using Extensions;
 
 namespace Modules.Devkit.AssetTuning
 {
-    public abstract class TextureAssetTuner : AssetTuner
+    public class TextureAssetTuner : AssetTuner
     {
         //----- params -----
 
@@ -31,20 +31,20 @@ namespace Modules.Devkit.AssetTuning
         }
 
         // 圧縮設定を適用しないフォルダ名.
-        protected abstract string[] IgnoreCompressionFolders { get; }
+        protected virtual string[] IgnoreCompressionFolders { get { return new string[0]; } }
 
         //----- method -----
        
-        public override bool Validate(string path)
+        public override bool Validate(string assetPath)
         {
-            var textureImporter = AssetImporter.GetAtPath(path) as TextureImporter;
+            var textureImporter = AssetImporter.GetAtPath(assetPath) as TextureImporter;
 
             return textureImporter != null;
         }
 
-        public override void OnAssetCreate(string path)
+        public override void OnAssetCreate(string assetPath)
         {
-            var textureImporter = AssetImporter.GetAtPath(path) as TextureImporter;
+            var textureImporter = AssetImporter.GetAtPath(assetPath) as TextureImporter;
 
             if (textureImporter == null) { return; }
 
@@ -53,9 +53,9 @@ namespace Modules.Devkit.AssetTuning
             textureImporter.SaveAndReimport();
         }
 
-        public virtual void OnPreprocessTexture(string path, bool isFirstImport)
+        public virtual void OnPreprocessTexture(string assetPath, bool isFirstImport)
         {
-            var textureImporter = AssetImporter.GetAtPath(path) as TextureImporter;
+            var textureImporter = AssetImporter.GetAtPath(assetPath) as TextureImporter;
 
             if (textureImporter == null) { return; }
 

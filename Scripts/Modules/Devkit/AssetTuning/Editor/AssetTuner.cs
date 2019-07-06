@@ -10,18 +10,18 @@ namespace Modules.Devkit.AssetTuning
     {
         public virtual int Priority { get { return 50; } }
 
-        public abstract bool Validate(string path);
+        public abstract bool Validate(string assetPath);
 
         public virtual void OnBegin() { }
 
         public virtual void OnFinish() { }
 
-        public virtual void OnAssetCreate(string path) { }
+        public virtual void OnAssetCreate(string assetPath) { }
 
-        public virtual void OnAssetDelete(string path) { }
+        public virtual void OnAssetDelete(string assetPath) { }
 
-        public virtual void OnAssetImport(string path) { }
+        public virtual void OnAssetImport(string assetPath) { }
 
-        public virtual void OnAssetMove(string path, string from) { }
+        public virtual void OnAssetMove(string assetPath, string from) { }
     }
 }

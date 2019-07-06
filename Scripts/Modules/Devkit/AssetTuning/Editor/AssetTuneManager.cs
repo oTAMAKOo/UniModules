@@ -37,11 +37,23 @@ namespace Modules.Devkit.AssetTuning
 
         public void Register<T>() where T : AssetTuner, new()
         {
-            var className = typeof(T).FullName;
+            Register(typeof(T));
+        }
+
+        public void Register(Type type)
+        {
+            var className = type.FullName;
+
+            if (!type.IsSubclassOf(typeof(AssetTuner)))
+            {
+                Debug.LogErrorFormat("[AssetTuner Register Error] : {0} is not subclass of AssetTuner.", className);
+                return;
+            }
 
             if (assetTuners.ContainsKey(className)) { return; }
 
-            var assetTuner = new T();
+            var assetTuner = Activator.CreateInstance(type) as AssetTuner;
+
             assetTuners.Add(className, assetTuner);
 
             AssetTuners = assetTuners.Values.OrderBy(x => x.Priority).ToArray();

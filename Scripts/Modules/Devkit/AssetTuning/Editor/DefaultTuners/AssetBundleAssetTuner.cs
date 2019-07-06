@@ -15,12 +15,6 @@ namespace Modules.Devkit.AssetTuning
 
         public override int Priority { get { return 75; } }
 
-        [InitializeOnLoadMethod]
-        private static void InitializeOnLoadMethod()
-        {
-            AssetTuneManager.Instance.Register<AssetBundleAssetTuner>();
-        }
-
         public override void OnBegin()
         {
             assetManageManager = null;

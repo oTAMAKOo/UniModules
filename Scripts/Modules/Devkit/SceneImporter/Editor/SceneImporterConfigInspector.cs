@@ -34,7 +34,7 @@ namespace Modules.Devkit.SceneImporter
         {
             var managedFolders = instance.ManagedFolders.ToList();
 
-            var contentHeight = 18f;
+            var contentHeight = 16f;
 
             EditorLayoutTools.SetLabelWidth(100f);
 
@@ -52,80 +52,74 @@ namespace Modules.Devkit.SceneImporter
 
                 if (GUILayout.Button("Select", GUILayout.Width(60f), GUILayout.Height(contentHeight)))
                 {
+                    UnityEditorUtility.RegisterUndo("SceneImporterConfigInspector-Undo", instance);
+
                     var initialScenePath = EditorUtility.OpenFilePanelWithFilters("Select Initial Scene", "Assets", new string[]{ "SceneFile", "unity" });
 
                     initialScenePath = initialScenePath.Replace(Application.dataPath, "Assets");
 
                     Reflection.SetPrivateField(instance, "initialScene", initialScenePath);
-                    UnityEditorUtility.RegisterUndo("SceneImporterSettingsObject Undo", instance);
                 }
             }
 
             EditorGUILayout.Separator();
 
             // AutoAdditionFolders.
-            if (EditorLayoutTools.DrawHeader("ManagedFolders", "SceneImporterSettingsObjectInspector-ManagedFolders"))
+            EditorLayoutTools.DrawLabelWithBackground("Managed Folders");
+
+            var change = false;
+
+            using (new ContentsScope())
             {
-                var change = false;
+                var scrollViewHeight = System.Math.Min(contentHeight * managedFolders.Count + 5f, 300f);
 
-                using (new ContentsScope())
+                using (var scrollViewScope = new EditorGUILayout.ScrollViewScope(scrollPosition, GUILayout.Height(scrollViewHeight)))
                 {
-                    EditorGUILayout.Separator();
-
-                    using (new EditorGUILayout.HorizontalScope())
+                    for (var i = 0; i < managedFolders.Count; ++i)
                     {
-                        GUILayout.Space(20f);
+                        var folder = managedFolders[i];
 
-                        if (GUILayout.Button("Add", GUILayout.Width(150f)))
+                        using (new EditorGUILayout.HorizontalScope())
                         {
-                            var folderPath = EditorUtility.OpenFolderPanel("Select Auto Addition Scene Folder", "Assets", "");
+                            var label = string.IsNullOrEmpty(folder) ? folder : folder + "/";
+                            GUILayout.Label(label, pathTextStyle, GUILayout.Height(contentHeight));
 
-                            if (folderPath.Contains(Application.dataPath))
+                            if (GUILayout.Button("x", EditorStyles.miniButton, GUILayout.Width(24f), GUILayout.Height(contentHeight)))
                             {
-                                folderPath = folderPath.Replace(Application.dataPath, "Assets");
-
-                                if (folderPath != "Assets" && !managedFolders.Contains(folderPath))
-                                {
-                                    managedFolders.Add(folderPath);
-                                    change = true;
-                                }
+                                managedFolders.RemoveAt(i);
+                                change = true;
                             }
                         }
                     }
 
-                    GUILayout.Space(10f);
+                    scrollPosition = scrollViewScope.scrollPosition;
+                }
+                
+                using (new EditorGUILayout.HorizontalScope())
+                {
+                    GUILayout.FlexibleSpace();
 
-                    var scrollViewHeight = System.Math.Min(contentHeight * managedFolders.Count + 5f, 300f);
-
-                    using (var scrollViewScope = new EditorGUILayout.ScrollViewScope(scrollPosition, GUILayout.Height(scrollViewHeight)))
+                    if (GUILayout.Button("+", EditorStyles.miniButton, GUILayout.Width(40f)))
                     {
-                        for (var i = 0; i < managedFolders.Count; ++i)
+                        var folderPath = EditorUtility.OpenFolderPanel("Select Auto Addition Scene Folder", "Assets", "");
+
+                        if (folderPath.Contains(Application.dataPath))
                         {
-                            var folder = managedFolders[i];
+                            folderPath = folderPath.Replace(Application.dataPath, "Assets");
 
-                            using (new EditorGUILayout.HorizontalScope())
+                            if (folderPath != "Assets" && !managedFolders.Contains(folderPath))
                             {
-                                var label = string.IsNullOrEmpty(folder) ? folder : folder + "/";
-                                GUILayout.Label(label, pathTextStyle, GUILayout.Height(contentHeight));
-
-                                if (GUILayout.Button("X", GUILayout.Width(40f), GUILayout.Height(contentHeight)))
-                                {
-                                    managedFolders.RemoveAt(i);
-                                    change = true;
-                                }
+                                managedFolders.Add(folderPath);
+                                change = true;
                             }
                         }
-
-                        scrollPosition = scrollViewScope.scrollPosition;
                     }
+                }
 
-                    EditorGUILayout.Separator();
-
-                    if (change)
-                    {
-                        Reflection.SetPrivateField(instance, "managedFolders", managedFolders.OrderBy(x => x).ToList());
-                        UnityEditorUtility.RegisterUndo("SceneImporterSettingsObject Undo", instance);
-                    }
+                if (change)
+                {
+                    Reflection.SetPrivateField(instance, "managedFolders", managedFolders.OrderBy(x => x).ToList());
+                    UnityEditorUtility.RegisterUndo("SceneImporterSettingsObject Undo", instance);
                 }
             }
         }

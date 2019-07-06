@@ -26,6 +26,7 @@ using Modules.Devkit.Project;
 using Modules.Devkit.SceneImporter;
 using Modules.Devkit.SceneLaunch;
 using Modules.Devkit.HierarchyComponentIcon;
+using Modules.Devkit.TextureAssetCompress;
 
 #if ENABLE_CRIWARE_ADX || ENABLE_CRIWARE_SOFDEC
 
@@ -296,6 +297,12 @@ namespace Modules
         public static void ExecComponentCleaner()
         {
             ComponentCleaner.Execute();
+        }
+
+        [MenuItem(itemName: ToolsMenu + "Open TextureCompressChecker")]
+        public static void OpenTextureCompressChecker()
+        {
+            CompressCheckWindow.Open();
         }
 
         #endregion

@@ -3,6 +3,9 @@ using UnityEngine;
 using UnityEditor;
 using System.Reflection;
 using Modules.Devkit.Prefs;
+using System;
+
+using Object = UnityEngine.Object;
 
 namespace Extensions.Devkit
 {
@@ -485,6 +488,38 @@ namespace Extensions.Devkit
                 GUI.DrawTexture(new Rect(rect.xMin, rect.yMin, rect.width, 1f), tex);
                 GUI.DrawTexture(new Rect(rect.xMin, rect.yMax, rect.width, 1f), tex);
                 GUI.color = Color.white;
+            }
+        }
+
+        /// <summary> 検索用テキストボックス描画 </summary>
+        public static string DrawSearchTextField(string searchText, Action onChangeSearchText = null, Action onSearchCancel = null, float width = 200f)
+        {
+            using (new EditorGUILayout.HorizontalScope())
+            {
+                EditorGUI.BeginChangeCheck();
+
+                searchText = EditorGUILayout.TextField(string.Empty, searchText, "SearchTextField", GUILayout.Width(width));
+
+                if (EditorGUI.EndChangeCheck())
+                {
+                    if (onChangeSearchText != null)
+                    {
+                        onChangeSearchText();
+                    }
+                }
+
+                if (GUILayout.Button(string.Empty, "SearchCancelButton", GUILayout.Width(18f)))
+                {
+                    searchText = string.Empty;
+                    GUIUtility.keyboardControl = 0;
+
+                    if (onSearchCancel != null)
+                    {
+                        onSearchCancel();
+                    }
+                }
+
+                return searchText;
             }
         }
 

@@ -1,10 +1,6 @@
 ﻿
-using UnityEngine;
 using UnityEditor;
-using System;
 using System.Linq;
-using System.Collections.Generic;
-using UniRx;
 using Extensions;
 using Extensions.Devkit;
 using Modules.Devkit.Project;
@@ -31,12 +27,6 @@ namespace Modules.Devkit.AssetTuning
         public override int Priority { get { return 70; } }
 
         //----- method -----
-
-        [InitializeOnLoadMethod]
-        private static void InitializeOnLoadMethod()
-        {
-            AssetTuneManager.Instance.Register<AssetInfoManifestTuner>();
-        }
 
         public override bool Validate(string path)
         {
