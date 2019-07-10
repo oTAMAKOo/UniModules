@@ -15,7 +15,7 @@ namespace Modules.Devkit.CleanComponent
 {
     #if !UNITY_2018_3_OR_NEWER
 
-    public class PrefabTextComponentCleaner : TextComponentCleaner
+    public sealed class PrefabTextComponentCleaner : TextComponentCleaner
     {
         //----- params -----
 

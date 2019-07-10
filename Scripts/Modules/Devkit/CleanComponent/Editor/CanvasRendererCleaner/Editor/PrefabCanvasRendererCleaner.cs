@@ -1,9 +1,7 @@
 ﻿
 using UnityEngine;
 using UnityEditor;
-using System;
 using System.Linq;
-using System.Collections.Generic;
 using Unity.Linq;
 using UniRx;
 using Extensions;
@@ -13,7 +11,7 @@ namespace Modules.Devkit.CleanComponent
 {
     #if !UNITY_2018_3_OR_NEWER
 
-    public sealed class PrefabParticleComponentCleaner : ParticleComponentCleaner
+    public sealed class PrefabCanvasRendererCleaner : CanvasRendererCleaner
     {
         //----- params -----
 
@@ -41,10 +39,10 @@ namespace Modules.Devkit.CleanComponent
 
             foreach (var gameObject in gameObjects)
             {
-                ModifyParticleSystemComponent(gameObject);
+                ModifyComponent(gameObject);
             }
         }
     }
 
-    #endif
+    #endif    
 }

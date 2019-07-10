@@ -15,6 +15,7 @@ namespace Modules.Devkit.CleanComponent
 	{
         public static void Execute()
         {
+            SceneCanvasRendererCleaner.Clean();
             SceneTextComponentCleaner.Clean();
             SceneParticleComponentCleaner.Clean();
 

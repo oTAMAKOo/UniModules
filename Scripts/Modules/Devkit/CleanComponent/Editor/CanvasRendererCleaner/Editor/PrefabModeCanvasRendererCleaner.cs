@@ -1,15 +1,18 @@
 ﻿
 using UnityEditor;
 using UnityEditor.Experimental.SceneManagement;
+using Unity.Linq;
 using System.Linq;
 using UniRx;
 using Extensions;
-using Unity.Linq;
 using Modules.Devkit.EventHook;
+using Modules.GameText.Editor;
 
 namespace Modules.Devkit.CleanComponent
 {
-    public sealed class PrefabModeParticleComponentCleaner : ParticleComponentCleaner
+    #if UNITY_2018_3_OR_NEWER
+
+    public sealed class PrefabModeCanvasRendererCleaner : CanvasRendererCleaner
     {
         //----- params -----
 
@@ -31,9 +34,11 @@ namespace Modules.Devkit.CleanComponent
 
             if (!CheckExecute(gameObjects)) { return; }
 
+            GameTextLoader.Reload();
+
             foreach (var gameObject in gameObjects)
             {
-                ModifyParticleSystemComponent(gameObject);
+                ModifyComponent(gameObject);
             }
 
             var prefabRoot = prefabStage.prefabContentsRoot;
@@ -42,4 +47,6 @@ namespace Modules.Devkit.CleanComponent
             PrefabUtility.SaveAsPrefabAsset(prefabRoot, assetPath);
         }
     }
+
+    #endif
 }

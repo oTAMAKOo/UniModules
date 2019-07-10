@@ -39,8 +39,6 @@ namespace Modules
 {
     public class EditorMenu
     {
-        private const int SeparatorValue = 11;
-
         public const string MenuRoot = "Extension/";
 
         // ※ priorityは11以上差分があると区切り線が入る.
@@ -267,33 +265,46 @@ namespace Modules
             FindDependencyAssetsWindow.Open();
         }
 
-        [MenuItem(itemName: ToolsMenu + "Cleaner/AutoClean Text On", priority = 0)]
+        [MenuItem(itemName: ToolsMenu + "Cleaner/Clean CanvasRenderer On", priority = 0)]
+        public static void ToggleCanvasRendererCleanerAutoMode()
+        {
+            CanvasRendererCleaner.Prefs.autoClean = !CanvasRendererCleaner.Prefs.autoClean;
+        }
+
+        [MenuItem(itemName: ToolsMenu + "Cleaner/Clean CanvasRenderer On", validate = true)]
+        public static bool ToggleCanvasRendererCleanerAutoModeValidate()
+        {
+            UnityEditor.Menu.SetChecked(ToolsMenu + "Cleaner/Clean CanvasRenderer On", CanvasRendererCleaner.Prefs.autoClean);
+            return true;
+        }
+
+        [MenuItem(itemName: ToolsMenu + "Cleaner/Clean Text On", priority = 1)]
         public static void ToggleTextCleanerAutoMode()
         {
             TextComponentCleaner.Prefs.autoClean = !TextComponentCleaner.Prefs.autoClean;
         }
 
-        [MenuItem(itemName: ToolsMenu + "Cleaner/AutoClean Text On", validate = true)]
+        [MenuItem(itemName: ToolsMenu + "Cleaner/Clean Text On", validate = true)]
         public static bool ToggleTextCleanerAutoModeValidate()
         {
-            UnityEditor.Menu.SetChecked(ToolsMenu + "Cleaner/AutoClean Text On", TextComponentCleaner.Prefs.autoClean);
+            UnityEditor.Menu.SetChecked(ToolsMenu + "Cleaner/Clean Text On", TextComponentCleaner.Prefs.autoClean);
             return true;
         }
 
-        [MenuItem(itemName: ToolsMenu + "Cleaner/AutoClean ParticleSystem On", priority = 0)]
+        [MenuItem(itemName: ToolsMenu + "Cleaner/Clean ParticleSystem On", priority = 2)]
         public static void ToggleParticleSystemCleanerAutoMode()
         {
             TextComponentCleaner.Prefs.autoClean = !ParticleComponentCleaner.Prefs.autoClean;
         }
 
-        [MenuItem(itemName: ToolsMenu + "Cleaner/AutoClean ParticleSystem On", validate = true)]
+        [MenuItem(itemName: ToolsMenu + "Cleaner/Clean ParticleSystem On", validate = true)]
         public static bool ToggleParticleSystemCleanerAutoModeValidate()
         {
-            UnityEditor.Menu.SetChecked(ToolsMenu + "Cleaner/AutoClean ParticleSystem On", ParticleComponentCleaner.Prefs.autoClean);
+            UnityEditor.Menu.SetChecked(ToolsMenu + "Cleaner/Clean ParticleSystem On", ParticleComponentCleaner.Prefs.autoClean);
             return true;
         }
 
-        [MenuItem(itemName: ToolsMenu + "Cleaner/Execute", priority = 1)]
+        [MenuItem(itemName: ToolsMenu + "Cleaner/Execute Clean Scene", priority = 20)]
         public static void ExecComponentCleaner()
         {
             ComponentCleaner.Execute();

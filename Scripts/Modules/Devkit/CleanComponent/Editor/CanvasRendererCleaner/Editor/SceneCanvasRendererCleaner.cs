@@ -4,10 +4,11 @@ using UnityEditor.SceneManagement;
 using UniRx;
 using Extensions;
 using Modules.Devkit.EventHook;
+using Modules.GameText.Editor;
 
 namespace Modules.Devkit.CleanComponent
 {
-    public sealed class SceneParticleComponentCleaner : ParticleComponentCleaner
+    public sealed class SceneCanvasRendererCleaner : CanvasRendererCleaner
     {
         //----- params -----
 
@@ -34,6 +35,8 @@ namespace Modules.Devkit.CleanComponent
         {
             if (!Prefs.autoClean) { return; }
 
+            GameTextLoader.Reload();
+
             var activeScene = EditorSceneManager.GetActiveScene();
 
             if (activeScene.path != sceneAssetPath) { return; }
@@ -44,7 +47,7 @@ namespace Modules.Devkit.CleanComponent
 
             foreach (var rootGameObject in rootGameObjects)
             {
-                ModifyParticleSystemComponent(rootGameObject);
+                ModifyComponent(rootGameObject);
             }
         }
     }

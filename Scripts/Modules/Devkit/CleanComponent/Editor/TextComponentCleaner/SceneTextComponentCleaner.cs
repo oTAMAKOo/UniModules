@@ -7,7 +7,7 @@ using Modules.GameText.Editor;
 
 namespace Modules.Devkit.CleanComponent
 {
-    public class SceneTextComponentCleaner : TextComponentCleaner
+    public sealed class SceneTextComponentCleaner : TextComponentCleaner
     {
         //----- params -----
 
