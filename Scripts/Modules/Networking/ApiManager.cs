@@ -66,7 +66,7 @@ namespace Modules.Networking
         {
             var requestObserver = Observable.Defer(() => webRequest.Get<TResult>(progress));
 
-            return Observable.FromMicroCoroutine<TResult>(observer => SnedRequestInternal(observer, webRequest, requestObserver));
+            return Observable.FromMicroCoroutine<TResult>(observer => SendRequestInternal(observer, webRequest, requestObserver));
         }
 
         /// <summary> リソースの作成、追加. </summary>
@@ -74,7 +74,7 @@ namespace Modules.Networking
         {
             var requestObserver = Observable.Defer(() => webRequest.Post<TResult, TContent>(content, progress));
 
-            return Observable.FromMicroCoroutine<TResult>(observer => SnedRequestInternal(observer, webRequest, requestObserver));
+            return Observable.FromMicroCoroutine<TResult>(observer => SendRequestInternal(observer, webRequest, requestObserver));
         }
 
         /// <summary> リソースの更新、作成. </summary>
@@ -82,7 +82,7 @@ namespace Modules.Networking
         {
             var requestObserver = Observable.Defer(() => webRequest.Put<TResult, TContent>(content, progress));
 
-            return Observable.FromMicroCoroutine<TResult>(observer => SnedRequestInternal(observer, webRequest, requestObserver));
+            return Observable.FromMicroCoroutine<TResult>(observer => SendRequestInternal(observer, webRequest, requestObserver));
         }
 
         /// <summary> リソースの削除. </summary>
@@ -90,11 +90,11 @@ namespace Modules.Networking
         {
             var requestObserver = Observable.Defer(() => webRequest.Delete<TResult>(progress));
 
-            return Observable.FromMicroCoroutine<TResult>(observer => SnedRequestInternal(observer, webRequest, requestObserver));
+            return Observable.FromMicroCoroutine<TResult>(observer => SendRequestInternal(observer, webRequest, requestObserver));
         }
 
         /// <summary> リクエスト制御 </summary>
-        private IEnumerator SnedRequestInternal<TResult>(IObserver<TResult> observer, TWebRequest webRequest, IObservable<TResult> requestObserver) where TResult : class
+        private IEnumerator SendRequestInternal<TResult>(IObserver<TResult> observer, TWebRequest webRequest, IObservable<TResult> requestObserver) where TResult : class
         {
             // 通信待ちキュー.
             var waitQueueingYield = Observable.FromMicroCoroutine(() => WaitQueueingRequest(webRequest)).ToYieldInstruction(false);
