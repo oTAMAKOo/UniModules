@@ -56,48 +56,58 @@ namespace Modules.ExternalResource.Editor
 
             EditorApplication.LockReloadAssemblies();
 
-            // アセット情報ファイルを生成.
-            AssetInfoManifestGenerator.Generate(externalResourcesPath, assetManageConfig);
+            try
+            {
+                // アセット情報ファイルを生成.
+                AssetInfoManifestGenerator.Generate(externalResourcesPath, assetManageConfig);
 
-            // キャッシュ済みアセットバンドルのハッシュ値取得.
-            var cachedAssetBundleHashs = BuildAssetBundle.GetCachedAssetBundleHash();
+                // キャッシュ済みアセットバンドルのハッシュ値取得.
+                var cachedAssetBundleHashs = BuildAssetBundle.GetCachedAssetBundleHash();
 
-            // CRIアセットを生成.
-            #if ENABLE_CRIWARE_ADX || ENABLE_CRIWARE_SOFDEC
+                // CRIアセットを生成.
+                #if ENABLE_CRIWARE_ADX || ENABLE_CRIWARE_SOFDEC
 
-            CriAssetGenerator.Generate(exportPath, externalResourcesPath);
+                CriAssetGenerator.Generate(exportPath, externalResourcesPath);
 
-            #endif
+                #endif
 
-            // AssetBundleをビルド.
-            // ※ CriAssetGeneratorでCriのManifestファイルを生成後に実行する.
-            var assetBundleManifest = BuildAssetBundle.BuildAllAssetBundles();
+                // AssetBundleをビルド.
+                // ※ CriAssetGeneratorでCriのManifestファイルを生成後に実行する.
+                var assetBundleManifest = BuildAssetBundle.BuildAllAssetBundles();
 
-            // 不要になった古いAssetBundle削除.
-            BuildAssetBundle.CleanUnUseAssetBundleFiles();
+                // 不要になった古いAssetBundle削除.
+                BuildAssetBundle.CleanUnUseAssetBundleFiles();
 
-            // ビルド成果物の情報をAssetInfoManifestに書き込み.
+                // ビルド成果物の情報をAssetInfoManifestに書き込み.
 
-            var assetBundlePath = BuildAssetBundle.GetAssetBundleOutputPath();
+                var assetBundlePath = BuildAssetBundle.GetAssetBundleOutputPath();
 
-            AssetInfoManifestGenerator.SetAssetBundleFileInfo(assetBundlePath, externalResourcesPath, assetBundleManifest);
-            
-            #if ENABLE_CRIWARE_ADX || ENABLE_CRIWARE_SOFDEC
+                AssetInfoManifestGenerator.SetAssetBundleFileInfo(assetBundlePath, externalResourcesPath, assetBundleManifest);
 
-            AssetInfoManifestGenerator.SetCriAssetFileInfo(exportPath, externalResourcesPath, assetBundleManifest);
+                #if ENABLE_CRIWARE_ADX || ENABLE_CRIWARE_SOFDEC
 
-            #endif
+                AssetInfoManifestGenerator.SetCriAssetFileInfo(exportPath, externalResourcesPath, assetBundleManifest);
 
-            // 再度AssetInfoManifestだけビルドを実行.
-            BuildAssetBundle.BuildAssetInfoManifest(externalResourcesPath);
+                #endif
 
-            // 更新が必要なパッケージファイルを削除.
-            BuildAssetBundle.CleanOldPackage(cachedAssetBundleHashs);
+                // 再度AssetInfoManifestだけビルドを実行.
+                BuildAssetBundle.BuildAssetInfoManifest(externalResourcesPath);
 
-            // AssetBundleファイルをパッケージ化.
-            BuildAssetBundle.BuildPackage(exportPath);
+                // 更新が必要なパッケージファイルを削除.
+                BuildAssetBundle.CleanOldPackage(cachedAssetBundleHashs);
 
-            EditorApplication.UnlockReloadAssemblies();
+                // AssetBundleファイルをパッケージ化.
+                BuildAssetBundle.BuildPackage(exportPath);
+            }
+            catch (Exception e)
+            {
+                Debug.LogException(e);
+                throw;
+            }
+            finally
+            {
+                EditorApplication.UnlockReloadAssemblies();
+            }
 
             UnityConsole.Event(ExternalResources.ConsoleEventName, ExternalResources.ConsoleEventColor, "Build ExternalResource Complete.");
         }

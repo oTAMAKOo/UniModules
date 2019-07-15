@@ -28,7 +28,16 @@ namespace Modules.AssetBundles.Editor
             var projectPath = UnityPathUtility.GetProjectFolderPath();
             var platformName = UnityPathUtility.GetPlatformName();
 
-            return PathUtility.Combine(new string[] { projectPath, AssetBundleManager.LibraryFolder, AssetBundleManager.AssetBundlesFolder, platformName });
+            var assetBundlesFolder = AssetBundleManager.AssetBundlesFolder;
+
+            var assetBundlePath = PathUtility.Combine(new string[] { projectPath, AssetBundleManager.LibraryFolder, assetBundlesFolder, platformName });
+
+            if (!Directory.Exists(assetBundlePath))
+            {
+                Directory.CreateDirectory(assetBundlePath);
+            }
+
+            return assetBundlePath;
         }
 
         /// <summary> 全てのアセットバンドルをビルド </summary>
@@ -43,7 +52,7 @@ namespace Modules.AssetBundles.Editor
 
             var targetPlatform = EditorUserBuildSettings.activeBuildTarget;
 
-            return BuildPipeline.BuildAssetBundles(assetBundlePath, BuildAssetBundleOptions.ChunkBasedCompression, targetPlatform);
+            return BuildPipeline.BuildAssetBundles(assetBundlePath, BuildAssetBundleOptions.None, targetPlatform);
         }
 
         /// <summary> 情報書き込み後のAssetInfoManifestをビルド </summary>
@@ -64,7 +73,7 @@ namespace Modules.AssetBundles.Editor
 
             var targetPlatform = EditorUserBuildSettings.activeBuildTarget;
 
-            BuildPipeline.BuildAssetBundles(assetBundlePath, buildMap, BuildAssetBundleOptions.ChunkBasedCompression, targetPlatform);
+            BuildPipeline.BuildAssetBundles(assetBundlePath, buildMap, BuildAssetBundleOptions.None, targetPlatform);
         }
 
         /// <summary> アセットバンドルをパッケージ化 </summary>
