@@ -1,13 +1,11 @@
 ﻿
+using UnityEngine;
 using UnityEditor;
 using System;
-using System.Diagnostics;
 using System.IO;
 using System.Reflection;
 using System.Text;
 using Extensions;
-
-using Debug = UnityEngine.Debug;
 
 namespace Modules.MessagePack
 {
@@ -161,9 +159,9 @@ namespace Modules.MessagePack
             // ログ.
             var compileLog = new StringBuilder();
             
-            using (var process = new Process())
+            using (var process = new System.Diagnostics.Process())
             {
-                var processStartInfo = new ProcessStartInfo
+                var processStartInfo = new System.Diagnostics.ProcessStartInfo
                 {
                     FileName = fileName,
                     Arguments = arguments,
@@ -177,12 +175,12 @@ namespace Modules.MessagePack
 
                     // ウィンドウ非表示.
                     CreateNoWindow = true,
-                    WindowStyle = ProcessWindowStyle.Hidden,
+                    WindowStyle = System.Diagnostics.ProcessWindowStyle.Hidden,
                 };
 
                 process.StartInfo = processStartInfo;
 
-                DataReceivedEventHandler processOutputDataReceived = (sender, e) =>
+                System.Diagnostics.DataReceivedEventHandler processOutputDataReceived = (sender, e) =>
                 {
                     compileLog.AppendLine(e.Data);
                 };
