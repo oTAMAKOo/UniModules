@@ -113,7 +113,6 @@ namespace Modules.AssetBundles.Editor
                 if (File.Exists(path))
                 {
                     File.Delete(path);
-                    Debug.Log("Delete file: " + path);
                 }
 
                 var manifestFilePath = Path.ChangeExtension(path, ManifestFileExtension);
@@ -121,7 +120,6 @@ namespace Modules.AssetBundles.Editor
                 if (File.Exists(manifestFilePath))
                 {
                     File.Delete(manifestFilePath);
-                    Debug.Log("Delete manifestFile: " + manifestFilePath);
                 }                
             }
 
@@ -175,7 +173,6 @@ namespace Modules.AssetBundles.Editor
                 if (File.Exists(packageFile))
                 {
                     File.Delete(packageFile);
-                    Debug.Log("Delete packageFile: " + packageFile);
                 }
             }
         }

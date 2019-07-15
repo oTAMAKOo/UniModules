@@ -78,9 +78,12 @@ namespace Modules.AssetBundles.Editor
                 .Where(c => Path.GetFileNameWithoutExtension(c) != AssetBundleManifestName)
                 // ManifestFile除外.
                 .Where(c => !c.EndsWith(ManifestFileExtension))
-                .ToArray();
+                // PackageFile除外.
+                .Where(c => !c.EndsWith(AssetBundleManager.PackageExtension))
+                // 重複削除.
+                .Distinct();
             
-            return targets;
+            return targets.ToArray();
         }
 
         private static ManualResetEvent StartWorker(string exportPath, string assetBundlePath, string[] paths, Progress progress)
@@ -143,10 +146,10 @@ namespace Modules.AssetBundles.Editor
                             packageFilePath.Replace(assetBundlePath, string.Empty)
                     });
 
+                byte[] data = null;
+
                 if (!File.Exists(packageFilePath))
                 {
-                    byte[] data = null;
-
                     // 読み込み.
                     using (var fileStream = new FileStream(filePath, FileMode.Open, FileAccess.Read))
                     {
@@ -162,17 +165,17 @@ namespace Modules.AssetBundles.Editor
 
                         fileStream.Write(data, 0, data.Length);
                     }
-
-                    // ディレクトリ作成.
-                    var directory = Path.GetDirectoryName(packageExportPath);
-
-                    if (!Directory.Exists(directory))
-                    {
-                        Directory.CreateDirectory(directory);
-                    }
                 }
 
-                File.Copy(packageFilePath, packageExportPath);
+                // ディレクトリ作成.
+                var directory = Path.GetDirectoryName(packageExportPath);
+
+                if (!Directory.Exists(directory))
+                {
+                    Directory.CreateDirectory(directory);
+                }
+                
+                File.Copy(packageFilePath, packageExportPath, true);
             }
             catch (Exception exception)
             {
