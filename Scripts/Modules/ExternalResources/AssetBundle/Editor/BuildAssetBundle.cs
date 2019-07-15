@@ -43,7 +43,7 @@ namespace Modules.AssetBundles.Editor
 
             var targetPlatform = EditorUserBuildSettings.activeBuildTarget;
 
-            return BuildPipeline.BuildAssetBundles(assetBundlePath, BuildAssetBundleOptions.None, targetPlatform);
+            return BuildPipeline.BuildAssetBundles(assetBundlePath, BuildAssetBundleOptions.ChunkBasedCompression, targetPlatform);
         }
 
         /// <summary> 情報書き込み後のAssetInfoManifestをビルド </summary>
@@ -64,7 +64,7 @@ namespace Modules.AssetBundles.Editor
 
             var targetPlatform = EditorUserBuildSettings.activeBuildTarget;
 
-            BuildPipeline.BuildAssetBundles(assetBundlePath, buildMap, BuildAssetBundleOptions.None, targetPlatform);
+            BuildPipeline.BuildAssetBundles(assetBundlePath, buildMap, BuildAssetBundleOptions.ChunkBasedCompression, targetPlatform);
         }
 
         /// <summary> アセットバンドルをパッケージ化 </summary>
