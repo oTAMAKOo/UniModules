@@ -43,7 +43,7 @@ namespace Modules.ExternalResource.Editor
             return EditorUtility.DisplayDialog("Confirmation", "外部アセットを生成します.", "実行", "中止");
         }
 
-        public static void Build(string externalResourcesPath)
+        public static void Build(string externalResourcesPath, AssetManageConfig assetManageConfig)
         {
             var exportPath = GetExportPath();
 
@@ -54,10 +54,12 @@ namespace Modules.ExternalResource.Editor
                 Directory.Delete(exportPath, true);
             }
 
-            var buildTime = DateTime.UtcNow;
-
             EditorApplication.LockReloadAssemblies();
 
+            // アセット情報ファイルを生成.
+            AssetInfoManifestGenerator.Generate(externalResourcesPath, assetManageConfig);
+
+            // CRIアセットを生成.
             #if ENABLE_CRIWARE_ADX || ENABLE_CRIWARE_SOFDEC
 
             CriAssetGenerator.Generate(exportPath, externalResourcesPath);
@@ -69,7 +71,7 @@ namespace Modules.ExternalResource.Editor
             var assetBundleManifest = BuildAssetBundle.BuildAllAssetBundles();
 
             // 不要になった古いAssetBundle削除.
-            BuildAssetBundle.CleanUnUseAssetBundleFiles(buildTime);
+            BuildAssetBundle.CleanUnUseAssetBundleFiles();
 
             // ビルド成果物の情報をAssetInfoManifestに書き込み.
 

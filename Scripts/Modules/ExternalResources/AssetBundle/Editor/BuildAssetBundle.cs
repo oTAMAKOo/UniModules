@@ -43,7 +43,7 @@ namespace Modules.AssetBundles.Editor
 
             var targetPlatform = EditorUserBuildSettings.activeBuildTarget;
 
-            return BuildPipeline.BuildAssetBundles(assetBundlePath, BuildAssetBundleOptions.ChunkBasedCompression, targetPlatform);
+            return BuildPipeline.BuildAssetBundles(assetBundlePath, BuildAssetBundleOptions.None, targetPlatform);
         }
 
         /// <summary> 情報書き込み後のAssetInfoManifestをビルド </summary>
@@ -64,7 +64,7 @@ namespace Modules.AssetBundles.Editor
 
             var targetPlatform = EditorUserBuildSettings.activeBuildTarget;
 
-            BuildPipeline.BuildAssetBundles(assetBundlePath, buildMap, BuildAssetBundleOptions.ChunkBasedCompression, targetPlatform);
+            BuildPipeline.BuildAssetBundles(assetBundlePath, buildMap, BuildAssetBundleOptions.None, targetPlatform);
         }
 
         /// <summary> アセットバンドルをパッケージ化 </summary>
@@ -88,35 +88,56 @@ namespace Modules.AssetBundles.Editor
         }
 
         /// <summary> 不要になったアセットバンドルを削除 </summary>
-        public static void CleanUnUseAssetBundleFiles(DateTime buildTime)
+        public static void CleanUnUseAssetBundleFiles()
         {
             var assetBundlePath = GetAssetBundleOutputPath();
 
+            var assetBundleNames = AssetDatabase.GetAllAssetBundleNames()
+                .Select(x => PathUtility.ConvertPathSeparator(x))
+                .ToArray();
+
             var allFiles = Directory.GetFiles(assetBundlePath, "*.*", SearchOption.AllDirectories);
 
+            // アセットバンドル名一覧にない物は
             var deleteFiles = allFiles
-                .Where(x => Path.GetExtension(x) == ManifestFileExtension)
-                .Where(x => File.GetLastAccessTimeUtc(x) < buildTime);
-
+                .Where(x => Path.GetExtension(x) != ManifestFileExtension)
+                .Select(x => PathUtility.ConvertPathSeparator(x))
+                .Where(x => assetBundleNames.All(y => !x.EndsWith(y)))
+                .ToArray();
+            
             foreach (var file in deleteFiles)
             {
                 if (File.Exists(file))
                 {
                     File.Delete(file);
+                    Debug.Log("Delete file: " + file);
                 }
 
-                var assetBundleFile = Path.ChangeExtension(file, string.Empty);
+                var manifestFile = Path.ChangeExtension(file, ManifestFileExtension);
 
-                if (File.Exists(assetBundleFile))
+                if (File.Exists(manifestFile))
                 {
-                    File.Delete(assetBundleFile);
-                }
+                    File.Delete(manifestFile);
+                    Debug.Log("Delete manifestFile: " + manifestFile);
+                }                
             }
 
             // 空フォルダ削除.
             if (!string.IsNullOrEmpty(assetBundlePath))
             {
                 DirectoryUtility.DeleteEmpty(assetBundlePath);
+            }
+        }
+
+        /// <summary> 更新が必要なパッケージファイルを削除 </summary>
+        public static void DeleteCache(Dictionary<string, string> assetBundleFileHashs)
+        {
+            var packageFile = Path.ChangeExtension(file, AssetBundleManager.PackageExtension);
+
+            if (File.Exists(packageFile))
+            {
+                File.Delete(packageFile);
+                Debug.Log("Delete packageFile: " + packageFile);
             }
         }
     }

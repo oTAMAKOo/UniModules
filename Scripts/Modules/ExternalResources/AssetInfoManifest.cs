@@ -4,9 +4,7 @@ using System;
 using System.Linq;
 using System.Collections.Generic;
 using System.IO;
-using UniRx;
 using Extensions;
-using Modules.AssetBundles;
 
 #if ENABLE_CRIWARE_ADX || ENABLE_CRIWARE_SOFDEC
 
@@ -97,16 +95,12 @@ namespace Modules.ExternalResource
         [SerializeField]
         private string assetBundleName = null;
         [SerializeField]
-        private bool compress = false;
-        [SerializeField]
         private string[] dependencies = null;
 
         //----- property -----
 
         /// <summary> アセットバンドル名 </summary>
         public string AssetBundleName { get { return assetBundleName; } }
-        /// <summary> 圧縮 </summary>
-        public bool Compress { get { return compress; } }
         /// <summary> 依存関係 </summary>
         public string[] Dependencies { get { return dependencies; } }
 
@@ -116,13 +110,7 @@ namespace Modules.ExternalResource
         {
             this.assetBundleName = assetBundleName;
 
-            SetCompress(false);
             SetDependencies(null);
-        }
-
-        public void SetCompress(bool compress)
-        {
-            this.compress = compress;
         }
 
         public void SetDependencies(string[] dependencies)
@@ -235,33 +223,7 @@ namespace Modules.ExternalResource
         }
 
         #endif
-
-        public void SetAssetBundleInfo(string exportPath, AssetBundleManifest assetBundleManifest, IProgress<Tuple<string, float>> progress = null)
-        {
-            const long CompressFileSize = 100 * 1024; // 100kbyteは圧縮.
-
-            for (var i = 0; i < assetInfos.Length; i++)
-            {
-                var assetInfo = assetInfos[i];
-
-                if (!assetInfo.IsAssetBundle) { continue; }
-
-                var assetBundleName = assetInfo.AssetBundle.AssetBundleName;
-                var dependencies = assetBundleManifest.GetAllDependencies(assetBundleName);
-
-                var assetBundleInfo = new AssetBundleInfo(assetBundleName);
-
-                assetBundleInfo.SetCompress(CompressFileSize <= assetInfo.FileSize);
-                assetBundleInfo.SetDependencies(dependencies);
-
-                assetInfo.SetAssetBundleInfo(assetBundleInfo);
-
-                progress.Report(Tuple.Create(assetInfo.ResourcesPath, (float)i / assetInfos.Length));
-            }
-
-            BuildCache(true);
-        }
-
+        
         private void BuildCache(bool forceUpdate = false)
         {
             if (assetInfoByGroupName == null || forceUpdate)

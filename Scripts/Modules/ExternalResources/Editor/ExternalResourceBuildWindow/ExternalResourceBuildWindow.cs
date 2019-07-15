@@ -117,7 +117,7 @@ namespace Modules.ExternalResource.Editor
                         // ビルド.
                         if (build)
                         {
-                            ExternalResourceManager.Build(externalResourcesPath);
+                            ExternalResourceManager.Build(externalResourcesPath, assetManageConfig);
                         }
                     }
                     finally
