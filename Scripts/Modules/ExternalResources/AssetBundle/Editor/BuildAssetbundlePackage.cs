@@ -121,50 +121,58 @@ namespace Modules.AssetBundles.Editor
         }
 
         /// <summary>
-        /// 暗号化後に圧縮.
+        /// パッケージファイル化(暗号化).
         /// </summary>
         private static void CreatePackage(string exportPath, string assetBundlePath, string filePath)
         {
             var aesManaged = AESExtension.CreateAesManaged(AssetBundleManager.AesPassword);
 
+            // ※ パッケージファイルが存在する時は内容に変更がない時なのでそのままコピーする.
+
             try
             {
-                byte[] data = null;
-
                 // 作成する圧縮ファイルのパス.
-                var path = filePath.Replace(assetBundlePath, string.Empty);
+                var packageFilePath = Path.ChangeExtension(filePath, AssetBundleManager.PackageExtension);
 
-                var compressedPackage = PathUtility.Combine(
-                        new string[]
-                        {
+                // 作成したファイルの出力先.
+                var packageExportPath = PathUtility.Combine(
+                    new string[]
+                    {
                             exportPath,
                             AssetBundleManager.AssetBundlesFolder,
-                            path + AssetBundleManager.PackageExtension
-                        });
+                            packageFilePath.Replace(assetBundlePath, string.Empty)
+                    });
 
-                // 圧縮するデータをすべて読み取る.
-                using (var fileStream = new FileStream(filePath, FileMode.Open, FileAccess.Read))
+                if (!File.Exists(packageFilePath))
                 {
-                    data = new byte[fileStream.Length];
+                    byte[] data = null;
 
-                    fileStream.Read(data, 0, data.Length);                    
+                    // 読み込み.
+                    using (var fileStream = new FileStream(filePath, FileMode.Open, FileAccess.Read))
+                    {
+                        data = new byte[fileStream.Length];
+
+                        fileStream.Read(data, 0, data.Length);
+                    }
+
+                    // 暗号化して書き込み.
+                    using (var fileStream = new FileStream(packageFilePath, FileMode.Create, FileAccess.Write))
+                    {
+                        data = data.Encrypt(aesManaged);
+
+                        fileStream.Write(data, 0, data.Length);
+                    }
+
+                    // ディレクトリ作成.
+                    var directory = Path.GetDirectoryName(packageExportPath);
+
+                    if (!Directory.Exists(directory))
+                    {
+                        Directory.CreateDirectory(directory);
+                    }
                 }
 
-                // ディレクトリ作成.
-                var directory = Path.GetDirectoryName(compressedPackage);
-
-                if (!Directory.Exists(directory))
-                {
-                    Directory.CreateDirectory(directory);
-                }
-
-                // 暗号化して書き込み.
-                using (var fileStream = new FileStream(compressedPackage, FileMode.Create, FileAccess.Write))
-                {
-                    data = data.Encrypt(aesManaged);
-                    
-                    fileStream.Write(data, 0, data.Length);
-                }
+                File.Copy(packageFilePath, packageExportPath);
             }
             catch (Exception exception)
             {

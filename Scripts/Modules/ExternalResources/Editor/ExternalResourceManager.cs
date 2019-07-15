@@ -59,6 +59,9 @@ namespace Modules.ExternalResource.Editor
             // アセット情報ファイルを生成.
             AssetInfoManifestGenerator.Generate(externalResourcesPath, assetManageConfig);
 
+            // キャッシュ済みアセットバンドルのハッシュ値取得.
+            var cachedAssetBundleHashs = BuildAssetBundle.GetCachedAssetBundleHash();
+
             // CRIアセットを生成.
             #if ENABLE_CRIWARE_ADX || ENABLE_CRIWARE_SOFDEC
 
@@ -87,6 +90,9 @@ namespace Modules.ExternalResource.Editor
 
             // 再度AssetInfoManifestだけビルドを実行.
             BuildAssetBundle.BuildAssetInfoManifest(externalResourcesPath);
+
+            // 更新が必要なパッケージファイルを削除.
+            BuildAssetBundle.CleanOldPackage(cachedAssetBundleHashs);
 
             // AssetBundleファイルをパッケージ化.
             BuildAssetBundle.BuildPackage(exportPath);

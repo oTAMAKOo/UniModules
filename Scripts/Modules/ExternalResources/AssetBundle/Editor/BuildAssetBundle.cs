@@ -97,28 +97,31 @@ namespace Modules.AssetBundles.Editor
                 .ToArray();
 
             var allFiles = Directory.GetFiles(assetBundlePath, "*.*", SearchOption.AllDirectories);
-
-            // アセットバンドル名一覧にない物は
-            var deleteFiles = allFiles
-                .Where(x => Path.GetExtension(x) != ManifestFileExtension)
-                .Select(x => PathUtility.ConvertPathSeparator(x))
-                .Where(x => assetBundleNames.All(y => !x.EndsWith(y)))
-                .ToArray();
             
-            foreach (var file in deleteFiles)
+            foreach (var file in allFiles)
             {
-                if (File.Exists(file))
+                var extension = Path.GetExtension(file);
+
+                if (extension == ManifestFileExtension) { continue; }
+
+                if (extension == AssetBundleManager.PackageExtension) { continue; }
+
+                var path = PathUtility.ConvertPathSeparator(file);
+
+                if (assetBundleNames.Any(x => path.EndsWith(x))){ continue; }
+
+                if (File.Exists(path))
                 {
-                    File.Delete(file);
-                    Debug.Log("Delete file: " + file);
+                    File.Delete(path);
+                    Debug.Log("Delete file: " + path);
                 }
 
-                var manifestFile = Path.ChangeExtension(file, ManifestFileExtension);
+                var manifestFilePath = Path.ChangeExtension(path, ManifestFileExtension);
 
-                if (File.Exists(manifestFile))
+                if (File.Exists(manifestFilePath))
                 {
-                    File.Delete(manifestFile);
-                    Debug.Log("Delete manifestFile: " + manifestFile);
+                    File.Delete(manifestFilePath);
+                    Debug.Log("Delete manifestFile: " + manifestFilePath);
                 }                
             }
 
@@ -129,15 +132,51 @@ namespace Modules.AssetBundles.Editor
             }
         }
 
-        /// <summary> 更新が必要なパッケージファイルを削除 </summary>
-        public static void DeleteCache(Dictionary<string, string> assetBundleFileHashs)
+        /// <summary> キャッシュ済みアセットバンドルファイルのハッシュ値を取得 </summary>
+        public static Dictionary<string, string> GetCachedAssetBundleHash()
         {
-            var packageFile = Path.ChangeExtension(file, AssetBundleManager.PackageExtension);
+            var assetBundlePath = GetAssetBundleOutputPath();
 
-            if (File.Exists(packageFile))
+            var assetBundleNames = AssetDatabase.GetAllAssetBundleNames()
+                .Select(x => PathUtility.ConvertPathSeparator(x))
+                .ToArray();
+
+            var allFiles = Directory.GetFiles(assetBundlePath, "*.*", SearchOption.AllDirectories);
+
+            var dictionary = new Dictionary<string, string>();
+
+            foreach (var file in allFiles)
             {
-                File.Delete(packageFile);
-                Debug.Log("Delete packageFile: " + packageFile);
+                var path = PathUtility.ConvertPathSeparator(file);
+
+                if (assetBundleNames.All(x => !path.EndsWith(x))) { continue; }
+
+                var hash = FileUtility.GetHash(path);
+
+                dictionary.Add(path, hash);
+            }
+
+            return dictionary;
+        }
+
+        /// <summary> 更新が必要なパッケージファイルを削除 </summary>
+        public static void CleanOldPackage(Dictionary<string, string> cachedAssetBundleHashs)
+        {
+            foreach (var item in cachedAssetBundleHashs)
+            {
+                var file = item.Key;
+
+                var hash = FileUtility.GetHash(file);
+
+                if (hash == item.Value) { continue; }
+
+                var packageFile = Path.ChangeExtension(file, AssetBundleManager.PackageExtension);
+
+                if (File.Exists(packageFile))
+                {
+                    File.Delete(packageFile);
+                    Debug.Log("Delete packageFile: " + packageFile);
+                }
             }
         }
     }
