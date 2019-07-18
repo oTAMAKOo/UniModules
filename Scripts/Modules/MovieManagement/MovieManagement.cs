@@ -60,7 +60,7 @@ namespace Modules.MovieManagement
         /// <summary>
         /// InternalResources内の動画再生.
         /// </summary>
-        public MovieElement Play(Movies.Mana type, Graphic targetGraphic)
+        public static MovieElement Play(Movies.Mana type, Graphic targetGraphic)
         {
             var info = Movies.GetManaInfo(type);
 
@@ -70,12 +70,12 @@ namespace Modules.MovieManagement
         /// <summary>
         /// ExternalResources内や、直接指定での動画再生.
         /// </summary>
-        public MovieElement Play(ManaInfo movieInfo, Graphic targetGraphic)
+        public static MovieElement Play(ManaInfo movieInfo, Graphic targetGraphic)
         {
             return Play(movieInfo.UsmPath + CriAssetDefinition.UsmExtension, targetGraphic);
         }
 
-        public MovieElement Play(string moviePath, Graphic targetGraphic)
+        public static MovieElement Play(string moviePath, Graphic targetGraphic)
         {
             var movieController = UnityUtility.GetOrAddComponent<CriManaMovieControllerForUI>(targetGraphic.gameObject);
 
@@ -88,12 +88,12 @@ namespace Modules.MovieManagement
 
             var movieElement = new MovieElement(manaPlayer, moviePath);
 
-            movieElements.Add(movieElement);
+            Instance.movieElements.Add(movieElement);
 
             return movieElement;
         }
 
-        public void Stop(MovieElement element)
+        public static void Stop(MovieElement element)
         {
             element.GetPlayer().Stop();
         }
@@ -112,8 +112,10 @@ namespace Modules.MovieManagement
             }
         }
 
-        public void ReleaseAll()
+        public static void ReleaseAll()
         {
+            var movieElements = Instance.movieElements;
+
             foreach (var movieElement in movieElements)
             {
                 movieElement.GetPlayer().Stop();

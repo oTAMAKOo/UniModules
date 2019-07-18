@@ -46,7 +46,7 @@ namespace Modules.SoundManagement
         public string tag;
     }
 
-    public class SoundManagement : Singleton<SoundManagement>
+    public sealed class SoundManagement : Singleton<SoundManagement>
     {
         //----- params -----
 
@@ -122,16 +122,16 @@ namespace Modules.SoundManagement
         /// </summary>
         /// <param name="type"></param>
         /// <param name="param"></param>
-        public void RegisterSoundType(SoundType type, SoundParam param)
+        public static void RegisterSoundType(SoundType type, SoundParam param)
         {
-            soundParams[type] = param;
+            Instance.soundParams[type] = param;
 
             // 再生中の音量に適用.
-            foreach (var soundElement in soundElements)
+            foreach (var soundElement in Instance.soundElements)
             {
                 if (soundElement.Type == type)
                 {
-                    SetVolume(soundElement, soundParams[type].volume);
+                    SetVolume(soundElement, Instance.soundParams[type].volume);
                 }
             }
         }
@@ -140,11 +140,11 @@ namespace Modules.SoundManagement
         /// 再生設定を抹消.
         /// </summary>
         /// <param name="type"></param>
-        public void RemoveSoundType(SoundType type)
+        public static void RemoveSoundType(SoundType type)
         {
-            if (soundParams.ContainsKey(type))
+            if (Instance.soundParams.ContainsKey(type))
             {
-                soundParams.Remove(type);
+                Instance.soundParams.Remove(type);
             }
         }
 
@@ -152,16 +152,16 @@ namespace Modules.SoundManagement
         /// 再生設定を取得.
         /// </summary>
         /// <param name="type"></param>
-        public SoundParam GetSoundParam(SoundType type)
+        public static SoundParam GetSoundParam(SoundType type)
         {
-            var param = soundParams.GetValueOrDefault(type);
+            var param = Instance.soundParams.GetValueOrDefault(type);
 
             if (param == null)
             {
                 // エラーが大量に発生しないように空のパラメータを追加.
-                soundParams[type] = new SoundParam();
+                Instance.soundParams[type] = new SoundParam();
 
-                param = soundParams[type];
+                param = Instance.soundParams[type];
 
                 Debug.LogErrorFormat("未登録の再生属性が指定されました. ({0})", type);
             }
@@ -172,7 +172,7 @@ namespace Modules.SoundManagement
         /// <summary>
         /// InternalResources内のサウンドを再生.
         /// </summary>
-        public SoundElement Play(SoundType type, Sounds.Cue cue)
+        public static SoundElement Play(SoundType type, Sounds.Cue cue)
         {
             var soundParam = GetSoundParam(type);
             var info = Sounds.GetCueInfo(cue);
@@ -193,7 +193,7 @@ namespace Modules.SoundManagement
         /// <summary>
         ///  ExternalResources内のサウンドを再生.
         /// </summary>
-        public SoundElement Play(SoundType type, CueInfo info)
+        public static SoundElement Play(SoundType type, CueInfo info)
         {
             if (info == null) { return null; }
 
@@ -211,28 +211,28 @@ namespace Modules.SoundManagement
                 }
             }
 
-            element = GetSoundElement(info, type);
+            element = Instance.GetSoundElement(info, type);
 
             if (element == null) { return null; }
 
             // 管理対象に追加.
-            soundElements.Add(element);
+            Instance.soundElements.Add(element);
 
             // 音量設定.
             SetVolume(element, soundParam.volume);
 
-            Observable.FromCoroutine(() => PlaySoundElement(element)).Subscribe().AddTo(Disposable);
+            Observable.FromCoroutine(() => Instance.PlaySoundElement(element)).Subscribe().AddTo(Instance.Disposable);
 
-            if (onPlay != null)
+            if (Instance.onPlay != null)
             {
-                onPlay.OnNext(element);
+                Instance.onPlay.OnNext(element);
             }
 
             return element;
         }
 
         /// <summary> サウンド中断 </summary>
-        public void Pause(SoundElement element)
+        public static void Pause(SoundElement element)
         {
             if (element == null) { return; }
 
@@ -241,32 +241,32 @@ namespace Modules.SoundManagement
             playback.Pause();
             element.Update();
 
-            if (onPause != null)
+            if (Instance.onPause != null)
             {
-                onPause.OnNext(element);
+                Instance.onPause.OnNext(element);
             }
         }
 
         /// <summary> 全サウンド中断 </summary>
-        public void PauseAll()
+        public static void PauseAll()
         {
-            if (soundElements.IsEmpty()) { return; }
+            if (Instance.soundElements.IsEmpty()) { return; }
 
-            player.Pause();
+            Instance.player.Pause();
 
-            foreach (var element in soundElements)
+            foreach (var element in Instance.soundElements)
             {
                 element.Update();
 
-                if (onPause != null)
+                if (Instance.onPause != null)
                 {
-                    onPause.OnNext(element);
+                    Instance.onPause.OnNext(element);
                 }
             }
         }
 
         /// <summary> サウンド復帰 </summary>
-        public void Resume(SoundElement element, CriAtomEx.ResumeMode resumeMode = CriAtomEx.ResumeMode.AllPlayback)
+        public static void Resume(SoundElement element, CriAtomEx.ResumeMode resumeMode = CriAtomEx.ResumeMode.AllPlayback)
         {
             if (element == null) { return; }
 
@@ -275,32 +275,32 @@ namespace Modules.SoundManagement
             playback.Resume(resumeMode);
             element.Update();
 
-            if (onResume != null)
+            if (Instance.onResume != null)
             {
-                onResume.OnNext(element);
+                Instance.onResume.OnNext(element);
             }
         }
 
         /// <summary> 全サウンド復帰 </summary>
-        public void ResumeAll(CriAtomEx.ResumeMode resumeMode = CriAtomEx.ResumeMode.AllPlayback)
+        public static void ResumeAll(CriAtomEx.ResumeMode resumeMode = CriAtomEx.ResumeMode.AllPlayback)
         {
-            if (soundElements.IsEmpty()) { return; }
+            if (Instance.soundElements.IsEmpty()) { return; }
 
-            player.Resume(resumeMode);
+            Instance.player.Resume(resumeMode);
 
-            foreach (var element in soundElements)
+            foreach (var element in Instance.soundElements)
             {
                 element.Update();
 
-                if (onResume != null)
+                if (Instance.onResume != null)
                 {
-                    onResume.OnNext(element);
+                    Instance.onResume.OnNext(element);
                 }
             }
         }
 
         /// <summary> サウンド停止 </summary>
-        public void Stop(SoundElement element)
+        public static void Stop(SoundElement element)
         {
             if (element == null) { return; }
 
@@ -309,31 +309,31 @@ namespace Modules.SoundManagement
             playback.Stop();
             element.Update();
 
-            if (onStop != null)
+            if (Instance.onStop != null)
             {
-                onStop.OnNext(element);
+                Instance.onStop.OnNext(element);
             }
         }
 
         /// <summary> 全サウンドを停止 </summary>
-        public void StopAll()
+        public static void StopAll()
         {
-            if (soundElements.IsEmpty()) { return; }
+            if (Instance.soundElements.IsEmpty()) { return; }
 
-            foreach (var element in soundElements)
+            foreach (var element in Instance.soundElements)
             {
                 var playback = element.GetPlayback();
 
                 playback.Stop();
                 element.Update();
 
-                if (onStop != null)
+                if (Instance.onStop != null)
                 {
-                    onStop.OnNext(element);
+                    Instance.onStop.OnNext(element);
                 }
             }
 
-            soundElements.Clear();
+            Instance.soundElements.Clear();
         }
 
         /// <summary>
@@ -341,25 +341,25 @@ namespace Modules.SoundManagement
         /// </summary>
         /// <param name="element"></param>
         /// <param name="value"></param>
-        public void SetVolume(SoundElement element, float value)
+        public static void SetVolume(SoundElement element, float value)
         {
-            player.SetVolume(value);
-            player.Update(element.GetPlayback());
+            Instance.player.SetVolume(value);
+            Instance.player.Update(element.GetPlayback());
 
             // デフォルトに戻す.
-            SetSoundParam();
+            Instance.SetSoundParam();
         }
 
         /// <summary>
         /// 対象のサウンドが再生中か.
         /// </summary>
-        private SoundElement FindPlayingElement(Enum type, CueInfo info)
+        private static SoundElement FindPlayingElement(Enum type, CueInfo info)
         {
             // シート取得.
-            var soundSheet = GetSoundSheet(info);
+            var soundSheet = Instance.GetSoundSheet(info);
 
             // 再生中 + 同カテゴリ + 同アセットのサウンドを検索.
-            var element = soundElements.FirstOrDefault(x =>
+            var element = Instance.soundElements.FirstOrDefault(x =>
             {
                 if (!File.Exists(x.SoundSheet.AssetPath)) { return false; }
 
@@ -372,14 +372,14 @@ namespace Modules.SoundManagement
         /// <summary>
         /// 個別設定を戻す.
         /// </summary>
-        private void ResetSoundParam(SoundElement element)
+        private static void ResetSoundParam(SoundElement element)
         {
-            SetSoundParam(element.Type);
+            Instance.SetSoundParam(element.Type);
 
-            player.Update(element.GetPlayback());
+            Instance.player.Update(element.GetPlayback());
 
             // デフォルトに戻す.
-            SetSoundParam();
+            Instance.SetSoundParam();
         }
 
         /// <summary>
@@ -453,7 +453,7 @@ namespace Modules.SoundManagement
             // デフォルトに戻す.
             SetSoundParam();
 
-            var element = new SoundElement(this, type, soundSheet, info, playback);
+            var element = new SoundElement(type, soundSheet, info, playback);
 
             return element;
         }

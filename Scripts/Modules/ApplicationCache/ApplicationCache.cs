@@ -49,7 +49,7 @@ namespace Modules.ApplicationCache
 
             if (MovieManagement.MovieManagement.Exists)
             {
-                MovieManagement.MovieManagement.Instance.ReleaseAll();
+                MovieManagement.MovieManagement.ReleaseAll();
             }
 
             #endif

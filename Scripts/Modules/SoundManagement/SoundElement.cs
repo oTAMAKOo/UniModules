@@ -14,7 +14,6 @@ namespace Modules.SoundManagement
         //----- field -----
 
         private CriAtomExPlayback playback;
-        private SoundManagement soundManagement = null;
         private Subject<Unit> onFinish = null;
 
         //----- property -----
@@ -28,10 +27,9 @@ namespace Modules.SoundManagement
 
         //----- method -----
 
-        public SoundElement(SoundManagement soundManagement, SoundType type, SoundSheet soundSheet, CueInfo cueInfo, CriAtomExPlayback playback)
+        public SoundElement(SoundType type, SoundSheet soundSheet, CueInfo cueInfo, CriAtomExPlayback playback)
         {
             this.playback = playback;
-            this.soundManagement = soundManagement;
 
             this.Type = type;
             this.SoundSheet = soundSheet;
@@ -45,7 +43,7 @@ namespace Modules.SoundManagement
 
         public void SetVolume(float value)
         {
-            soundManagement.SetVolume(this, value);
+            SoundManagement.SetVolume(this, value);
         }
 
         public void Update()
