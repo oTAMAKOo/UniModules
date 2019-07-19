@@ -122,16 +122,16 @@ namespace Modules.SoundManagement
         /// </summary>
         /// <param name="type"></param>
         /// <param name="param"></param>
-        public static void RegisterSoundType(SoundType type, SoundParam param)
+        public void RegisterSoundType(SoundType type, SoundParam param)
         {
-            Instance.soundParams[type] = param;
+            soundParams[type] = param;
 
             // 再生中の音量に適用.
-            foreach (var soundElement in Instance.soundElements)
+            foreach (var soundElement in soundElements)
             {
                 if (soundElement.Type == type)
                 {
-                    SetVolume(soundElement, Instance.soundParams[type].volume);
+                    SetVolume(soundElement, soundParams[type].volume);
                 }
             }
         }
@@ -140,11 +140,11 @@ namespace Modules.SoundManagement
         /// 再生設定を抹消.
         /// </summary>
         /// <param name="type"></param>
-        public static void RemoveSoundType(SoundType type)
+        public void RemoveSoundType(SoundType type)
         {
-            if (Instance.soundParams.ContainsKey(type))
+            if (soundParams.ContainsKey(type))
             {
-                Instance.soundParams.Remove(type);
+                soundParams.Remove(type);
             }
         }
 
@@ -152,16 +152,16 @@ namespace Modules.SoundManagement
         /// 再生設定を取得.
         /// </summary>
         /// <param name="type"></param>
-        public static SoundParam GetSoundParam(SoundType type)
+        public SoundParam GetSoundParam(SoundType type)
         {
-            var param = Instance.soundParams.GetValueOrDefault(type);
+            var param = soundParams.GetValueOrDefault(type);
 
             if (param == null)
             {
                 // エラーが大量に発生しないように空のパラメータを追加.
-                Instance.soundParams[type] = new SoundParam();
+                soundParams[type] = new SoundParam();
 
-                param = Instance.soundParams[type];
+                param = soundParams[type];
 
                 Debug.LogErrorFormat("未登録の再生属性が指定されました. ({0})", type);
             }
@@ -174,7 +174,7 @@ namespace Modules.SoundManagement
         /// </summary>
         public static SoundElement Play(SoundType type, Sounds.Cue cue)
         {
-            var soundParam = GetSoundParam(type);
+            var soundParam = Instance.GetSoundParam(type);
             var info = Sounds.GetCueInfo(cue);
 
             if (soundParam.cancelIfPlaying)
@@ -197,7 +197,7 @@ namespace Modules.SoundManagement
         {
             if (info == null) { return null; }
 
-            var soundParam = GetSoundParam(type);
+            var soundParam = Instance.GetSoundParam(type);
 
             SoundElement element = null;
 
