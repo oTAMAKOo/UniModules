@@ -300,13 +300,13 @@ namespace Modules.SoundManagement
         }
 
         /// <summary> サウンド停止 </summary>
-        public static void Stop(SoundElement element)
+        public static void Stop(SoundElement element, bool ignoresReleaseTime = false)
         {
             if (element == null) { return; }
 
             var playback = element.GetPlayback();
 
-            playback.Stop();
+            playback.Stop(ignoresReleaseTime);
             element.Update();
 
             if (Instance.onStop != null)
@@ -316,7 +316,7 @@ namespace Modules.SoundManagement
         }
 
         /// <summary> 全サウンドを停止 </summary>
-        public static void StopAll()
+        public static void StopAll(bool ignoresReleaseTime = false)
         {
             if (Instance.soundElements.IsEmpty()) { return; }
 
@@ -324,7 +324,7 @@ namespace Modules.SoundManagement
             {
                 var playback = element.GetPlayback();
 
-                playback.Stop();
+                playback.Stop(ignoresReleaseTime);
                 element.Update();
 
                 if (Instance.onStop != null)
@@ -522,8 +522,7 @@ namespace Modules.SoundManagement
             foreach (var target in targets)
             {
                 CriAtom.RemoveCueSheet(target.AssetPath);
-                managedSoundSheets.Remove(target.AssetPath);
-                UnityConsole.Event(ConsoleEventName, ConsoleEventColor, "UnLoad : {0}", SoundSheet.AcbPath(target.AssetPath));
+                managedSoundSheets.Remove(target.AssetPath);                
             }
         }
 
