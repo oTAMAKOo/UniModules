@@ -16,7 +16,7 @@ using Modules.Devkit.AssetDependencies;
 using Modules.Devkit.CompileNotice;
 using Modules.Devkit.Generators;
 using Modules.Devkit.Pinning;
-using Modules.Devkit.EditorStyleViewer;
+using Modules.Devkit.BuiltInIconViewer;
 using Modules.Devkit.Build;
 using Modules.Devkit.EventHook;
 using Modules.Devkit.CleanDirectory;
@@ -435,10 +435,10 @@ namespace Modules
             AssetDependenciesWindow.Open();
         }
 
-        [MenuItem(itemName: WindowsMenu + "Open StyleViewerWindow", priority = 4)]
-        public static void OpenStyleViewerWindow()
+        [MenuItem(itemName: WindowsMenu + "Open BuiltInIconViewerWindow", priority = 4)]
+        public static void OpenBuiltInIconViewerWindow()
         {
-            EditorStyleViewerWindow.Open();
+            BuiltInIconViewerWindow.Open();
         }
 
         [MenuItem(itemName: WindowsMenu + "Open CleanDirectoryWindow", priority = 5)]
