@@ -16,7 +16,6 @@ using Modules.Devkit.AssetDependencies;
 using Modules.Devkit.CompileNotice;
 using Modules.Devkit.Generators;
 using Modules.Devkit.Pinning;
-using Modules.Devkit.BuiltInIconViewer;
 using Modules.Devkit.Build;
 using Modules.Devkit.EventHook;
 using Modules.Devkit.CleanDirectory;
@@ -435,19 +434,13 @@ namespace Modules
             AssetDependenciesWindow.Open();
         }
 
-        [MenuItem(itemName: WindowsMenu + "Open BuiltInIconViewerWindow", priority = 4)]
-        public static void OpenBuiltInIconViewerWindow()
-        {
-            BuiltInIconViewerWindow.Open();
-        }
-
-        [MenuItem(itemName: WindowsMenu + "Open CleanDirectoryWindow", priority = 5)]
+        [MenuItem(itemName: WindowsMenu + "Open CleanDirectoryWindow", priority = 4)]
         public static void OpenCleanDirectoryWindow()
         {
             CleanDirectoryWindow.Open();
         }
 
-        [MenuItem(itemName: WindowsMenu + "Open ShaderVariantWindow", priority = 6)]
+        [MenuItem(itemName: WindowsMenu + "Open ShaderVariantWindow", priority = 5)]
         public static void OpenShaderVariantUpdateWindow()
         {
             ShaderVariantUpdateWindow.Open();
