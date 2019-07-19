@@ -20,12 +20,8 @@ namespace Modules.Devkit.CompileNotice
     {
         //----- params -----
 
-        private const float UpdateInterval = 0.15f;
-
         //----- field -----
         
-        private static GUIStyle labelStyle = null;
-
         private static Texture backgroundTexture = null;
 
         private static IDisposable onCompileFinishDisposable = null;
@@ -48,9 +44,6 @@ namespace Modules.Devkit.CompileNotice
 
             var labelStyleState = new GUIStyleState();
             labelStyleState.textColor = Color.white;
-
-            labelStyle = new GUIStyle();
-            labelStyle.normal = labelStyleState;
 
             if (onCompileFinishDisposable != null)
             {
