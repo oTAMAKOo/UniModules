@@ -114,7 +114,7 @@ namespace Modules.Devkit.WebView
 
         void OnDisable()
         {
-            if (webView)
+            if (webView != null)
             {
                 Detach();
             }

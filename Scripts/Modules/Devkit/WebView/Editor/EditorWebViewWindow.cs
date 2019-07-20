@@ -20,7 +20,8 @@ namespace Modules.Devkit.WebView
         [SerializeField]
         private string url = null;
 
-        private LifetimeDisposable lifetimeDisposable = null;
+        private LifetimeDisposable lifetimeDisposable = new LifetimeDisposable();
+
         private WebViewHook webView = null;
         private FieldInfo parentField = null;
         private MethodInfo parentRepaintMethod = null;
@@ -48,26 +49,11 @@ namespace Modules.Devkit.WebView
         {
             if (initialized) { return; }
 
-            lifetimeDisposable = new LifetimeDisposable();
-
             url = openUrl;
 
-            if (webView == null)
-            {
-                webView = CreateInstance<WebViewHook>();
+            InitWebView();
 
-                webView.Hook(this);
-
-                webView.LoadURL(openUrl);
-            }
-
-            webView.OnLocationChangedAsObservable()
-                .Subscribe(x =>
-                           {
-                               url = x;
-                               Repaint();
-                           })
-                .AddTo(lifetimeDisposable.Disposable);
+            webView.LoadURL(openUrl);
 
             var hostViewType = Assembly.Load("UnityEditor.dll").GetType("UnityEditor.HostView");
 
@@ -77,26 +63,55 @@ namespace Modules.Devkit.WebView
             initialized = true;
         }
 
-        void OnDestroy()
+        private void InitWebView()
+        {
+            if (webView != null) { return; }
+
+            webView = CreateInstance<WebViewHook>();
+
+            webView.Hook(this);
+
+            webView.OnLocationChangedAsObservable()
+                .Subscribe(x =>
+                           {
+                               url = x;
+                               Repaint();
+                           })
+                .AddTo(lifetimeDisposable.Disposable);
+        }
+
+        private void ReleaseWebView()
+        {
+            if (webView == null) { return; }
+
+            webView.Detach();
+            DestroyImmediate(webView);
+            webView = null;
+        }
+
+        private void OnBecameInvisible()
         {
             if (webView != null)
             {
-                DestroyImmediate(webView);
+                webView.Detach();
             }
+        }
+
+        void OnDestroy()
+        {
+            ReleaseWebView();
         }
 
         void OnEnable()
         {
-            InternalEditorUtility.RepaintAllViews();
-
             EditorApplication.update += TrackFocusState;
+            EditorApplication.quitting += QuitEditor;
         }
 
         void OnDisable()
         {
-            InternalEditorUtility.RepaintAllViews();
-
             EditorApplication.update -= TrackFocusState;
+            EditorApplication.quitting -= QuitEditor;
         }
 
         void OnFocus()
@@ -117,15 +132,15 @@ namespace Modules.Devkit.WebView
             {
                 webView.SetFocus(false);
             }
-            
+
             InternalEditorUtility.RepaintAllViews();
         }
 
         void OnGUI()
         {
-            if (!initialized)
+            if (webView == null)
             {
-                Initialize(url);
+                InitWebView();
             }
 
             using (new EditorGUILayout.HorizontalScope("Toolbar", GUILayout.Height(26f), GUILayout.ExpandWidth(true)))
@@ -152,7 +167,7 @@ namespace Modules.Devkit.WebView
                 }
 
                 EditorGUI.BeginChangeCheck();
-                
+
                 var newUrl = EditorGUILayout.DelayedTextField(url);
 
                 if (EditorGUI.EndChangeCheck())
@@ -215,6 +230,11 @@ namespace Modules.Devkit.WebView
             {
                 OnTakeFocus();
             }
+        }
+
+        private void QuitEditor()
+        {
+            ReleaseWebView();
         }
     }
 }
