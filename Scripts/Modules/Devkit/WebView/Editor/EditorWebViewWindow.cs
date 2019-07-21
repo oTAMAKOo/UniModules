@@ -9,7 +9,7 @@ using Extensions;
 
 namespace Modules.Devkit.WebView
 {
-    public sealed class EditorWebViewWindow : EditorWindow
+    public abstract class EditorWebViewWindow : EditorWindow
     {
         //----- params -----
 
@@ -36,9 +36,11 @@ namespace Modules.Devkit.WebView
 
         //----- method -----
 
-        public static EditorWebViewWindow Open(string title, string url, Type dockWindowType = null)
+        public static T Open<T>(string title, string url) where T : EditorWebViewWindow
         {
-            var editorWindow = EditorWindow.GetWindow<EditorWebViewWindow>(title, new Type[] { dockWindowType });
+            var dockWindowType = Assembly.Load("UnityEditor.dll").GetType("UnityEditor.SceneView");
+
+            var editorWindow = GetWindow<T>(title, new Type[] { dockWindowType });
 
             editorWindow.Initialize(url);
 

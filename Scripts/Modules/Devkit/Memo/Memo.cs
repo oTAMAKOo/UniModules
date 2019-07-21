@@ -12,8 +12,12 @@ namespace Modules.Devkit.Memo
 
         #if UNITY_EDITOR
 
+        #pragma warning disable 0414
+
         [SerializeField]
         private string memo = null;
+
+        #pragma warning restore 0414
 
         #endif
 
