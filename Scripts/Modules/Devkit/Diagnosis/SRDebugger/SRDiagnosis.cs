@@ -114,6 +114,10 @@ namespace Modules.Devkit.Diagnosis.SRDebugger
 
         private void OnLogReceive(ApplicationLogHandler.LogInfo logInfo)
         {
+            var srDebug = SRDebug.Instance;
+
+            if (srDebug == null) { return; }
+
             var changeColor = true;
 
             //----- TODO: Unity2018.2以降で無駄な警告が出るので、修正されるまで除外. -----
@@ -158,7 +162,7 @@ namespace Modules.Devkit.Diagnosis.SRDebugger
                         break;
                 }
 
-                if (!SRDebug.Instance.IsDebugPanelVisible)
+                if (!srDebug.IsDebugPanelVisible)
                 {
                     background.color = lastShowLogTime < Time.realtimeSinceStartup ? color : defaultColor;
                 }

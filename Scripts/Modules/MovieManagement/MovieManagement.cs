@@ -4,6 +4,7 @@
 using UnityEngine;
 using UnityEngine.UI;
 using System.Collections.Generic;
+using CriMana;
 using UniRx;
 using Extensions;
 using Modules.CriWare;
@@ -95,7 +96,13 @@ namespace Modules.MovieManagement
 
         public static void Stop(MovieElement element)
         {
-            element.GetPlayer().Stop();
+            if (element == null) { return; }
+
+            var player = element.GetPlayer();
+
+            if (player == null) { return; }
+
+            player.Stop();
         }
 
         private void UpdateElement()
@@ -118,7 +125,13 @@ namespace Modules.MovieManagement
 
             foreach (var movieElement in movieElements)
             {
-                movieElement.GetPlayer().Stop();
+                if (movieElement == null) { continue; }
+
+                var player = movieElement.GetPlayer();
+
+                if (player == null) { continue; }
+
+                player.Dispose();
             }
 
             movieElements.Clear();
