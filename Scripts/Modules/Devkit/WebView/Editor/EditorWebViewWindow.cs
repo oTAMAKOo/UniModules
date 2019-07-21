@@ -36,24 +36,26 @@ namespace Modules.Devkit.WebView
 
         //----- method -----
 
-        public static void Open(string title, string url, Type dockWindowType = null)
+        public static EditorWebViewWindow Open(string title, string url, Type dockWindowType = null)
         {
             var editorWindow = EditorWindow.GetWindow<EditorWebViewWindow>(title, new Type[] { dockWindowType });
 
             editorWindow.Initialize(url);
 
             editorWindow.ShowUtility();
+
+            return editorWindow;
         }
 
-        private void Initialize(string openUrl)
+        private void Initialize(string url)
         {
             if (initialized) { return; }
 
-            url = openUrl;
+            this.url = url;
 
             InitWebView();
 
-            webView.LoadURL(openUrl);
+            webView.LoadURL(url);
 
             var hostViewType = Assembly.Load("UnityEditor.dll").GetType("UnityEditor.HostView");
 
@@ -89,7 +91,7 @@ namespace Modules.Devkit.WebView
             webView = null;
         }
 
-        private void OnBecameInvisible()
+        void OnBecameInvisible()
         {
             if (webView != null)
             {
@@ -185,6 +187,20 @@ namespace Modules.Devkit.WebView
             }
         }
 
+        public void OpenUrl(string url)
+        {
+            if (webView == null) { return; }
+
+            webView.LoadURL(url);
+        }
+
+        public void Reload()
+        {
+            if (webView == null) { return; }
+
+            webView.Reload();
+        }
+        
         public void Refresh()
         {
             webView.Hide();
