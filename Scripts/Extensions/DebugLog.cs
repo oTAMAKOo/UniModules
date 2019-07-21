@@ -144,6 +144,11 @@ public static class Debug
         UnityEngine.Debug.LogAssertionFormat(format, args);
     }
 
+    public static void Assert(bool condition)
+    {
+        UnityEngine.Debug.Assert(condition);
+    }
+
     public static void Assert(bool condition, string message)
     {
         if (!isDebugBuild){ return; }
