@@ -4,6 +4,7 @@
 using System;
 using UniRx;
 using CriMana;
+using Extensions;
 
 namespace Modules.MovieManagement
 {
@@ -14,6 +15,7 @@ namespace Modules.MovieManagement
         //----- field -----
 
         private Player manaPlayer = null;
+        private CriManaMovieControllerForUI movieController = null;
         private Subject<Unit> onFinish = null;
 
         //----- property -----
@@ -23,9 +25,10 @@ namespace Modules.MovieManagement
 
         //----- method -----
 
-        public MovieElement(Player manaPlayer, string moviePath)
+        public MovieElement(Player manaPlayer, CriManaMovieControllerForUI movieController, string moviePath)
         {
             this.manaPlayer = manaPlayer;
+            this.movieController = movieController;
 
             MoviePath = moviePath;
             Status = manaPlayer.status;
@@ -41,7 +44,14 @@ namespace Modules.MovieManagement
                 }
             }
 
-            Status = manaPlayer.status;
+            if (UnityUtility.IsNull(movieController))
+            {
+                Status = Player.Status.PlayEnd;
+            }
+            else
+            {
+                Status = manaPlayer.status;
+            }            
         }
         
         public Player GetPlayer()

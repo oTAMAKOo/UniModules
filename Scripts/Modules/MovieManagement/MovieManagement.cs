@@ -4,7 +4,6 @@
 using UnityEngine;
 using UnityEngine.UI;
 using System.Collections.Generic;
-using CriMana;
 using UniRx;
 using Extensions;
 using Modules.CriWare;
@@ -37,8 +36,8 @@ namespace Modules.MovieManagement
         {
             if (initialized) { return; }
 
-            // サウンドの状態更新.
-            Observable.EveryEndOfFrame().Subscribe(_ => UpdateElement());
+            // 状態更新.
+            Observable.EveryEndOfFrame().Subscribe(_ => UpdateElement()).AddTo(Disposable);
 
             if (movieTexture == null)
             {
@@ -87,10 +86,10 @@ namespace Modules.MovieManagement
             manaPlayer.SetFile(null, moviePath);
             manaPlayer.Start();
 
-            var movieElement = new MovieElement(manaPlayer, moviePath);
+            var movieElement = new MovieElement(manaPlayer, movieController, moviePath);
 
             Instance.movieElements.Add(movieElement);
-
+            
             return movieElement;
         }
 
@@ -107,15 +106,32 @@ namespace Modules.MovieManagement
 
         private void UpdateElement()
         {
-            // 呼ばれる頻度が多いのでforeachを使わない.
+            var releaseElements = new List<MovieElement>();
+            
             for (var i = 0; i < movieElements.Count; ++i)
             {
-                movieElements[i].Update();
+                var movieElement = movieElements[i];
 
-                if(movieElements[i].Status.HasValue && movieElements[i].Status.Value == CriMana.Player.Status.PlayEnd)
+                movieElement.Update();
+
+                if(movieElement.Status.HasValue && movieElement.Status.Value == CriMana.Player.Status.PlayEnd)
                 {
-                    movieElements.RemoveAt(i);
+                    releaseElements.Add(movieElement);                    
                 }
+            }
+
+            for (var i = 0; i < releaseElements.Count; i++)
+            {
+                var releaseElement = releaseElements[i];
+
+                var player = releaseElement.GetPlayer();
+
+                if (player != null)
+                {
+                    player.Dispose();
+                }
+
+                movieElements.Remove(releaseElement);
             }
         }
 
