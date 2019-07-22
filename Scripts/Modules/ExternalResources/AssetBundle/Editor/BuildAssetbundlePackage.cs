@@ -49,6 +49,11 @@ namespace Modules.AssetBundles.Editor
 
             foreach (var filePath in filePaths)
             {
+                if(workerPaths[workerNo] == null)
+                {
+                    workerPaths[workerNo] = new List<string>();
+                }
+
                 workerPaths[workerNo].Add(filePath);
 
                 workerNo = (workerNo + 1) % MaxWorkerCount;
