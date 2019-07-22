@@ -17,7 +17,7 @@ namespace Modules.AssetBundles.Editor
 
         private const string ManifestFileExtension = ".manifest";
 
-        private const int ChunkSize = 5;
+        private const int MaxWorkerCount = 20;
 
         private class Progress
         {
@@ -42,13 +42,19 @@ namespace Modules.AssetBundles.Editor
 
             var events = new List<WaitHandle>();
 
-            // ChunkSize数分のスレッドで分割処理.
-            var list = filePaths
-                .Select((number, index) => new { Index = index, Number = number })
-                .GroupBy(x => x.Index / ChunkSize)
-                .Select(gr => gr.Select(x => x.Number));
+            // スレッドで分割処理.
 
-            foreach (var item in list)
+            var workerNo = 0;
+            var workerPaths = new List<string>[MaxWorkerCount];
+
+            foreach (var filePath in filePaths)
+            {
+                workerPaths[workerNo].Add(filePath);
+
+                workerNo = (workerNo + 1) % MaxWorkerCount;
+            }
+
+            foreach (var item in workerPaths)
             {
                 events.Add(StartWorker(exportPath, assetBundlePath, item.ToArray(), progress));
             }
