@@ -71,6 +71,15 @@ namespace Modules.AssetBundles.Editor
                 },
             };
 
+            // 必ず更新するのでパッケージファイルを削除.            
+            var manifestFullPath = PathUtility.Combine(assetBundlePath, AssetInfoManifest.ManifestFileName);
+            var manifestFilePackage = Path.ChangeExtension(manifestFullPath, AssetBundleManager.PackageExtension);
+
+            if (File.Exists(manifestFilePackage))
+            {
+                File.Delete(manifestFilePackage);
+            }
+
             var targetPlatform = EditorUserBuildSettings.activeBuildTarget;
 
             BuildPipeline.BuildAssetBundles(assetBundlePath, buildMap, BuildAssetBundleOptions.ChunkBasedCompression, targetPlatform);
@@ -174,7 +183,7 @@ namespace Modules.AssetBundles.Editor
                 var file = item.Key;
 
                 var hash = FileUtility.GetHash(file);
-
+                
                 if (hash == item.Value) { continue; }
 
                 var packageFile = Path.ChangeExtension(file, AssetBundleManager.PackageExtension);
