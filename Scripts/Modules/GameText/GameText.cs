@@ -42,6 +42,8 @@ namespace Modules.GameText
         {
             if (Instance == null) { return null; }
 
+            if (Instance.Cache == null) { return null; }
+
             if (category != GameTextCategory.None)
             {
                 var texts = Instance.Cache.GetValueOrDefault((int)category);
