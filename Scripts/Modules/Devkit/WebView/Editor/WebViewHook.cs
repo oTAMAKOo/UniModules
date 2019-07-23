@@ -12,7 +12,7 @@ using Object = UnityEngine.Object;
 
 namespace Modules.Devkit.WebView
 {
-    public class WebViewHook : ScriptableObject
+    public class WebViewHook
     {
         //----- params -----
 
@@ -97,18 +97,12 @@ namespace Modules.Devkit.WebView
                     .GetMethod("Unclip", BindingFlags.Static | BindingFlags.Public, null, new Type[] { typeof(Rect) }, null));
         }
 
-        ~WebViewHook()
-        {
-            OnDisable();
-        }
-
         void OnEnable()
         {
             if (!webView)
             {
-                webView = CreateInstance(webViewType);
-                webView.hideFlags = HideFlags.DontSave;
-                this.hideFlags = HideFlags.DontSave;
+                webView = ScriptableObject.CreateInstance(webViewType);
+                webView.hideFlags = HideFlags.HideAndDontSave;
             }
         }
 
@@ -122,8 +116,7 @@ namespace Modules.Devkit.WebView
 
         void OnDestroy()
         {
-            DestroyImmediate(webView);
-            webView = null;
+            UnityEngine.Object.DestroyImmediate(webView);
         }
 
         public bool Hook(EditorWindow host)

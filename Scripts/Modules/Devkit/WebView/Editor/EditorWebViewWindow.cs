@@ -71,7 +71,7 @@ namespace Modules.Devkit.WebView
         {
             if (webView != null) { return; }
 
-            webView = CreateInstance<WebViewHook>();
+            webView = new WebViewHook();
 
             webView.Hook(this);
 
@@ -84,15 +84,6 @@ namespace Modules.Devkit.WebView
                 .AddTo(lifetimeDisposable.Disposable);
         }
 
-        private void ReleaseWebView()
-        {
-            if (webView == null) { return; }
-
-            webView.Detach();
-            DestroyImmediate(webView);
-            webView = null;
-        }
-
         void OnBecameInvisible()
         {
             if (webView != null)
@@ -101,21 +92,14 @@ namespace Modules.Devkit.WebView
             }
         }
 
-        void OnDestroy()
-        {
-            ReleaseWebView();
-        }
-
         void OnEnable()
         {
             EditorApplication.update += TrackFocusState;
-            EditorApplication.quitting += QuitEditor;
         }
 
         void OnDisable()
         {
             EditorApplication.update -= TrackFocusState;
-            EditorApplication.quitting -= QuitEditor;
         }
 
         void OnFocus()
@@ -248,11 +232,6 @@ namespace Modules.Devkit.WebView
             {
                 OnTakeFocus();
             }
-        }
-
-        private void QuitEditor()
-        {
-            ReleaseWebView();
         }
     }
 }
