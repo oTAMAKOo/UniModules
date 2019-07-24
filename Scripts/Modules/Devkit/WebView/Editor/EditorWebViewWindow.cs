@@ -101,7 +101,7 @@ namespace Modules.Devkit.WebView
 
             editorWindow.Initialize(url);
 
-            editorWindow.Show();
+            editorWindow.Show(true);
 
             return editorWindow;
         }
@@ -165,8 +165,6 @@ namespace Modules.Devkit.WebView
             {
                 SetFocus(false);
             }
-
-            Repaint();
         }
 
         void OnGUI()
@@ -356,11 +354,15 @@ namespace Modules.Devkit.WebView
 
         public void LoadHTML(string html)
         {
+            url = string.Empty;
+
             Invoke(WebViewMethodType.LoadURL, "data:text/html;charset=utf-8," + html);
         }
 
         public void LoadFile(string path)
         {
+            url = string.Empty;
+
             Invoke(WebViewMethodType.LoadURL, "file:///" + path);
         }
 
