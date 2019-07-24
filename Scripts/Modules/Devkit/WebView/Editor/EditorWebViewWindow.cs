@@ -39,23 +39,23 @@ namespace Modules.Devkit.WebView
         private static readonly BindingFlags BindingFlags = BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance | BindingFlags.FlattenHierarchy;
 
         //----- field -----
-        
+
         private string url = null;
 
         private LifetimeDisposable lifetimeDisposable = new LifetimeDisposable();
-
+        
         private Object webView = null;
+        private bool syncingFocus = false;
 
         private Subject<string> onLocationChanged = null;
         private Subject<string> onLoadError = null;
         private Subject<Unit> onInitScripting = null;
-        
+
         private static Type webViewType = null;
         private static Dictionary<WebViewMethodType, MethodInfo> webViewMethods = null;
         private static FieldInfo parentField = null;
-        private static Func<Rect, Rect> unclipMethod = null;        
+        private static Func<Rect, Rect> unclipMethod = null;
 
-        [NonSerialized]
         private bool initialized = false;
 
         //----- property -----
@@ -99,25 +99,35 @@ namespace Modules.Devkit.WebView
         {
             var editorWindow = GetWindow<T>(title, new Type[] { typeof(SceneView) });
 
-            editorWindow.Initialize(url);
+            editorWindow.Initialize();
+
+            editorWindow.LoadURL(url);
 
             editorWindow.Show(true);
 
             return editorWindow;
         }
 
-        private void Initialize(string url)
+        private void Initialize()
         {
             if (initialized) { return; }
-
-            this.url = url;
 
             var webViewRect = GetWebViewRect();
 
             InitWebView(webViewRect);
 
-            LoadURL(url);
+            OnLocationChangedAsObservable()
+                .Subscribe(x =>
+                    {
+                        url = x;
 
+                        if (Event.current.type != EventType.Repaint)
+                        {
+                            Repaint();
+                        }
+                    })
+                .AddTo(lifetimeDisposable.Disposable);
+             
             initialized = true;
         }
 
@@ -131,17 +141,10 @@ namespace Modules.Devkit.WebView
             if (webView != null)
             {
                 DetachHostView();
+                HideWebView();
             }
 
             Repaint();
-        }
-        
-        void OnDisable()
-        {
-            if (webView != null)
-            {
-                DetachHostView();
-            }
         }
 
         void OnDestroy()
@@ -165,17 +168,12 @@ namespace Modules.Devkit.WebView
             {
                 SetFocus(false);
             }
+
+            Repaint();
         }
 
         void OnGUI()
         {
-            var webViewRect = GetWebViewRect();
-
-            if (webView == null)
-            {
-                InitWebView(webViewRect);
-            }
-
             using (new EditorGUILayout.HorizontalScope("Toolbar", GUILayout.Height(26f), GUILayout.ExpandWidth(true)))
             {
                 var backIcon = EditorGUIUtility.IconContent("Profiler.PrevFrame");
@@ -206,19 +204,16 @@ namespace Modules.Devkit.WebView
                 if (EditorGUI.EndChangeCheck())
                 {
                     LoadURL(newUrl);
-                    SetApplicationFocus(true);
-
                     GUI.FocusControl(string.Empty);
                 }
             }
 
-            
+
             if (webView != null)
             {
-                if (Event.current.type == EventType.Layout)
-                {
-                    SetSizeAndPosition(webViewRect);
-                }
+                var webViewRect = GetWebViewRect();
+
+                SetSizeAndPosition(webViewRect);
 
                 if (Event.current.type == EventType.Repaint)
                 {
@@ -233,7 +228,7 @@ namespace Modules.Devkit.WebView
 
             LoadURL(url);
         }
-        
+
         public void Refresh()
         {
             HideWebView();
@@ -244,35 +239,29 @@ namespace Modules.Devkit.WebView
 
         private void InitWebView(Rect webViewRect)
         {
-            if (webView != null) { return; }
+            if (webView == null)
+            {
+                webView = ScriptableObject.CreateInstance(webViewType);
+                webView.hideFlags = HideFlags.HideAndDontSave;
 
-            webView = ScriptableObject.CreateInstance(webViewType);
-            webView.hideFlags = HideFlags.HideAndDontSave;
+                var px = (int)webViewRect.x;
+                var py = (int)webViewRect.y;
+                var width = (int)webViewRect.width;
+                var height = (int)webViewRect.height;
 
-            var px = (int)webViewRect.x;
-            var py = (int)webViewRect.y;
-            var width = (int)webViewRect.width;
-            var height = (int)webViewRect.height;
+                Invoke(WebViewMethodType.InitWebView, parentField.GetValue(this), px, py, width, height, false);
+            }
 
-            Invoke(WebViewMethodType.InitWebView, parentField.GetValue(this), px, py, width, height, false);
             Invoke(WebViewMethodType.SetDelegateObject, this);
             Invoke(WebViewMethodType.AllowRightClickMenu, true);
-
-            OnLocationChangedAsObservable()
-                .Subscribe(x =>
-                    {
-                        url = x;
-
-                        if (Event.current.type != EventType.Repaint)
-                        {
-                            Repaint();
-                        }
-                    })
-                .AddTo(lifetimeDisposable.Disposable);
         }
 
         private void SetFocus(bool focus)
         {
+            if (syncingFocus) { return; }
+
+            syncingFocus = true;
+
             if (webView == null) { return; }
 
             if (focus)
@@ -283,10 +272,11 @@ namespace Modules.Devkit.WebView
             else
             {
                 DetachHostView();
-                HideWebView();
             }
 
-            Invoke(WebViewMethodType.SetFocus, focus);            
+            Invoke(WebViewMethodType.SetFocus, focus);
+
+            syncingFocus = false;
         }
 
         private void DetachHostView()
@@ -298,9 +288,7 @@ namespace Modules.Devkit.WebView
         {
             var parent = parentField.GetValue(this);
 
-            Invoke(WebViewMethodType.SetHostView, parent);            
-            SetApplicationFocus(true);
-            Refresh();
+            Invoke(WebViewMethodType.SetHostView, parent);
         }
 
         private void SetSizeAndPosition(Rect webViewRect)
@@ -373,6 +361,8 @@ namespace Modules.Devkit.WebView
 
         private void Invoke(WebViewMethodType methodType, params object[] args)
         {
+            if (webView == null) { return; }
+
             try
             {
                 var method = webViewMethods.GetValueOrDefault(methodType);
