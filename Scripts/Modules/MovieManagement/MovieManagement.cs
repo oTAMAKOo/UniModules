@@ -5,8 +5,10 @@ using UnityEngine;
 using UnityEngine.UI;
 using System.Collections.Generic;
 using UniRx;
+using CriMana;
 using Extensions;
 using Modules.CriWare;
+using Newtonsoft.Json.Serialization;
 
 namespace Modules.MovieManagement
 {
@@ -60,22 +62,22 @@ namespace Modules.MovieManagement
         /// <summary>
         /// InternalResources内の動画再生.
         /// </summary>
-        public static MovieElement Play(Movies.Mana type, Graphic targetGraphic)
+        public static MovieElement Play(Movies.Mana type, Graphic targetGraphic, Player.ShaderDispatchCallback shaderOverrideCallBack = null)
         {
             var info = Movies.GetManaInfo(type);
 
-            return info != null ? Play(info, targetGraphic) : null;
+            return info != null ? Play(info, targetGraphic, shaderOverrideCallBack) : null;
         }
 
         /// <summary>
         /// ExternalResources内や、直接指定での動画再生.
         /// </summary>
-        public static MovieElement Play(ManaInfo movieInfo, Graphic targetGraphic)
+        public static MovieElement Play(ManaInfo movieInfo, Graphic targetGraphic, Player.ShaderDispatchCallback shaderOverrideCallBack = null)
         {
-            return Play(movieInfo.UsmPath + CriAssetDefinition.UsmExtension, targetGraphic);
+            return Play(movieInfo.UsmPath + CriAssetDefinition.UsmExtension, targetGraphic, shaderOverrideCallBack);
         }
 
-        public static MovieElement Play(string moviePath, Graphic targetGraphic)
+        public static MovieElement Play(string moviePath, Graphic targetGraphic, Player.ShaderDispatchCallback shaderOverrideCallBack = null)
         {
             var movieController = UnityUtility.GetOrAddComponent<CriManaMovieControllerForUI>(targetGraphic.gameObject);
 
@@ -84,6 +86,12 @@ namespace Modules.MovieManagement
             var manaPlayer = movieController.player;
 
             manaPlayer.SetFile(null, moviePath);
+
+            if (shaderOverrideCallBack != null)
+            {
+                manaPlayer.SetShaderDispatchCallback(shaderOverrideCallBack);
+            }
+
             manaPlayer.Start();
 
             var movieElement = new MovieElement(manaPlayer, movieController, moviePath);
