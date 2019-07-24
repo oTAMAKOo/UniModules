@@ -49,11 +49,11 @@ namespace Modules.Devkit.WebView
         private Subject<string> onLocationChanged = null;
         private Subject<string> onLoadError = null;
         private Subject<Unit> onInitScripting = null;
-
+        
         private static Type webViewType = null;
         private static Dictionary<WebViewMethodType, MethodInfo> webViewMethods = null;
         private static FieldInfo parentField = null;
-        private static Func<Rect, Rect> unclipMethod = null;
+        private static Func<Rect, Rect> unclipMethod = null;        
 
         [NonSerialized]
         private bool initialized = false;
@@ -87,8 +87,6 @@ namespace Modules.Devkit.WebView
                 SetWebViewMethod(webViewMethodType);
             }
 
-            var hostViewType = unityEditorAssembly.GetType("UnityEditor.HostView");
-
             parentField = typeof(EditorWindow).GetField("m_Parent", BindingFlags);
 
             unclipMethod = (Func<Rect, Rect>)Delegate.CreateDelegate(
@@ -99,13 +97,11 @@ namespace Modules.Devkit.WebView
 
         public static T Open<T>(string title, string url) where T : EditorWebViewWindow
         {
-            var dockWindowType = Assembly.Load("UnityEditor.dll").GetType("UnityEditor.SceneView");
-
-            var editorWindow = GetWindow<T>(title, new Type[] { dockWindowType });
+            var editorWindow = GetWindow<T>(title, new Type[] { typeof(SceneView) });
 
             editorWindow.Initialize(url);
 
-            editorWindow.ShowUtility();
+            editorWindow.Show();
 
             return editorWindow;
         }
@@ -116,11 +112,18 @@ namespace Modules.Devkit.WebView
 
             this.url = url;
 
-            InitWebView();
+            var webViewRect = GetWebViewRect();
+
+            InitWebView(webViewRect);
 
             LoadURL(url);
 
             initialized = true;
+        }
+
+        private Rect GetWebViewRect()
+        {
+            return unclipMethod.Invoke(new Rect(0.0f, 20f, position.width, position.height - 20f));
         }
 
         void OnBecameInvisible()
@@ -129,6 +132,8 @@ namespace Modules.Devkit.WebView
             {
                 DetachHostView();
             }
+
+            Repaint();
         }
         
         void OnDisable()
@@ -161,14 +166,16 @@ namespace Modules.Devkit.WebView
                 SetFocus(false);
             }
 
-            InternalEditorUtility.RepaintAllViews();
+            Repaint();
         }
 
         void OnGUI()
         {
+            var webViewRect = GetWebViewRect();
+
             if (webView == null)
             {
-                InitWebView();
+                InitWebView(webViewRect);
             }
 
             using (new EditorGUILayout.HorizontalScope("Toolbar", GUILayout.Height(26f), GUILayout.ExpandWidth(true)))
@@ -207,15 +214,18 @@ namespace Modules.Devkit.WebView
                 }
             }
 
-            if (Event.current.type == EventType.Repaint)
+            
+            if (webView != null)
             {
-                if (webView == null) { return; }
+                if (Event.current.type == EventType.Layout)
+                {
+                    SetSizeAndPosition(webViewRect);
+                }
 
-                SetHostView();
-
-                var rect = new Rect(0, 20, position.width, position.height - 20);
-
-                SetSizeAndPosition(unclipMethod(rect));
+                if (Event.current.type == EventType.Repaint)
+                {
+                    SetHostView();
+                }
             }
         }
 
@@ -234,14 +244,19 @@ namespace Modules.Devkit.WebView
 
         #region WebView
 
-        private void InitWebView()
+        private void InitWebView(Rect webViewRect)
         {
             if (webView != null) { return; }
 
             webView = ScriptableObject.CreateInstance(webViewType);
             webView.hideFlags = HideFlags.HideAndDontSave;
 
-            Invoke(WebViewMethodType.InitWebView, parentField.GetValue(this), 0, 0, 1, 1, false);
+            var px = (int)webViewRect.x;
+            var py = (int)webViewRect.y;
+            var width = (int)webViewRect.width;
+            var height = (int)webViewRect.height;
+
+            Invoke(WebViewMethodType.InitWebView, parentField.GetValue(this), px, py, width, height, false);
             Invoke(WebViewMethodType.SetDelegateObject, this);
             Invoke(WebViewMethodType.AllowRightClickMenu, true);
 
@@ -249,7 +264,11 @@ namespace Modules.Devkit.WebView
                 .Subscribe(x =>
                     {
                         url = x;
-                        Repaint();
+
+                        if (Event.current.type != EventType.Repaint)
+                        {
+                            Repaint();
+                        }
                     })
                 .AddTo(lifetimeDisposable.Disposable);
         }
@@ -269,7 +288,7 @@ namespace Modules.Devkit.WebView
                 HideWebView();
             }
 
-            Invoke(WebViewMethodType.SetFocus, focus);
+            Invoke(WebViewMethodType.SetFocus, focus);            
         }
 
         private void DetachHostView()
@@ -281,14 +300,14 @@ namespace Modules.Devkit.WebView
         {
             var parent = parentField.GetValue(this);
 
-            Invoke(WebViewMethodType.SetHostView, parent);
-            Refresh();
+            Invoke(WebViewMethodType.SetHostView, parent);            
             SetApplicationFocus(true);
+            Refresh();
         }
 
-        private void SetSizeAndPosition(Rect position)
+        private void SetSizeAndPosition(Rect webViewRect)
         {
-            Invoke(WebViewMethodType.SetSizeAndPosition, (int)position.x, (int)position.y, (int)position.width, (int)position.height);
+            Invoke(WebViewMethodType.SetSizeAndPosition, (int)webViewRect.x, (int)webViewRect.y, (int)webViewRect.width, (int)webViewRect.height);
         }
 
         private void ShowWebView()
