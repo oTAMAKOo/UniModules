@@ -24,7 +24,7 @@ namespace Modules.LocalPushNotify
             }
         }
 
-        private const string PluginClassName = "notification.LocalNotification";
+        private const string PluginClassName = "modules.notification.LocalNotification";
 
         //----- field -----
 
