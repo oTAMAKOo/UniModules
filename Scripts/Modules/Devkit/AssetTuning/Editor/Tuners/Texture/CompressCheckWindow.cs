@@ -5,7 +5,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Extensions.Devkit;
 
-namespace Modules.Devkit.TextureAssetCompress
+namespace Modules.Devkit.AssetTuning
 {
     public sealed class CompressCheckWindow : SingletonEditorWindow<CompressCheckWindow>
     {
@@ -174,7 +174,7 @@ namespace Modules.Devkit.TextureAssetCompress
 
         private CompressInfo[] BuildCompressInfo()
         {
-            var configs = TextureAssetCompressConfigs.Instance;
+            var configs = TextureAssetTunerConfig.Instance;
 
             var infos = new List<TextureAssetInfo>();
             

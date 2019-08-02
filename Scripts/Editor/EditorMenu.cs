@@ -1,9 +1,6 @@
 ﻿
-using UnityEngine;
 using UnityEditor;
 using System.IO;
-using Extensions;
-using UniRx;
 
 // Modules.
 using Modules.Dicing;
@@ -25,7 +22,7 @@ using Modules.Devkit.Project;
 using Modules.Devkit.SceneImporter;
 using Modules.Devkit.SceneLaunch;
 using Modules.Devkit.HierarchyComponentIcon;
-using Modules.Devkit.TextureAssetCompress;
+using Modules.Devkit.AssetTuning;
 
 #if ENABLE_CRIWARE_ADX || ENABLE_CRIWARE_SOFDEC
 

@@ -1,11 +1,9 @@
 ﻿
+using System;
 using UnityEngine;
 using UnityEditor;
-using System;
 using System.Linq;
-using System.Collections.Generic;
 using UniRx;
-using Extensions;
 
 namespace Extensions.Devkit
 {
@@ -41,6 +39,8 @@ namespace Extensions.Devkit
 
         private float startSpace = 0f;
         private float endSpace = 0f;
+
+        private Subject<Unit> onRepaintRequest = null;
 
         //----- property -----
 
@@ -300,6 +300,19 @@ namespace Extensions.Devkit
             startIndex = null;
             endIndex = null;
             scrollRect = null;
+        }
+
+        public void RequestRepaint()
+        {
+            if (onRepaintRequest != null)
+            {
+                onRepaintRequest.OnNext(Unit.Default);
+            }
+        }
+
+        public IObservable<Unit> OnRepaintRequestAsObservable()
+        {
+            return onRepaintRequest ?? (onRepaintRequest = new Subject<Unit>());
         }
 
         protected abstract void DrawContent(int index, T content);

@@ -63,6 +63,13 @@ namespace Modules.Devkit.AssetTuning
             {
                 OnFirstImport(textureImporter);
             }
+            else
+            {
+                if (IsCompressTarget(assetPath))
+                {
+                    SetCompressionSettings(textureImporter);
+                }
+            }
         }
 
         protected virtual void OnFirstImport(TextureImporter textureImporter)
@@ -168,6 +175,28 @@ namespace Modules.Devkit.AssetTuning
             }
         }
 
+        public static bool IsCompressTarget(string assetPath)
+        {
+            var settings = TextureAssetTunerConfig.Instance;
+
+            if (settings == null) { return false; }
+
+            assetPath = PathUtility.ConvertPathSeparator(assetPath);
+
+            var targetPaths = settings.CompressFolders
+                .Where(x => x != null)
+                .Select(x => AssetDatabase.GetAssetPath(x));
+
+            foreach (var targetPath in targetPaths)
+            {
+                var path = PathUtility.ConvertPathSeparator(targetPath);
+
+                if (assetPath.StartsWith(path + PathUtility.PathSeparator)) { return true; }
+            }
+
+            return false;
+        }
+
         protected Vector2 GetPreImportTextureSize(TextureImporter importer)
         {
             // ※ TextureImporter.GetWidthAndHeightは非公開メソッドなのでリフレクションで無理矢理呼び出し.
@@ -188,5 +217,5 @@ namespace Modules.Devkit.AssetTuning
         {
             return value % 4 == 0;
         }
-	}
+    }
 }

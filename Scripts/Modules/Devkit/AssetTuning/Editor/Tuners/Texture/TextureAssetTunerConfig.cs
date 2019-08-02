@@ -4,9 +4,9 @@ using Modules.Devkit.ScriptableObjects;
 
 using Object = UnityEngine.Object;
 
-namespace Modules.Devkit.TextureAssetCompress
+namespace Modules.Devkit.AssetTuning
 {
-    public sealed class TextureAssetCompressConfigs : ReloadableScriptableObject<TextureAssetCompressConfigs>
+    public sealed class TextureAssetTunerConfig : ReloadableScriptableObject<TextureAssetTunerConfig>
     {
         //----- params -----
 
