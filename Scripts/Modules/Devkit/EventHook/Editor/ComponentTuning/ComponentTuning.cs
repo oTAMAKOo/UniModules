@@ -9,7 +9,7 @@ using Modules.Devkit.Prefs;
 
 namespace Modules.Devkit.EventHook
 {
-    public abstract class ComponentTuner : ScriptableObject
+    public abstract class ComponentTuner
     {
         public abstract Type TargetComponent { get; }
         public abstract bool Tuning(Component component);
@@ -28,7 +28,7 @@ namespace Modules.Devkit.EventHook
         //----- property -----
 
         public static bool LogEnable { get; private set; }
-
+        
         //----- method -----
 
         [InitializeOnLoadMethod]
