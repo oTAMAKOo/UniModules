@@ -5,6 +5,7 @@ using System;
 using System.Linq;
 using System.Reflection;
 using Extensions;
+using Object = UnityEngine.Object;
 
 namespace Modules.Devkit.AssetTuning
 {
@@ -63,10 +64,8 @@ namespace Modules.Devkit.AssetTuning
             }
             else
             {
-                if (IsCompressTarget(assetPath))
-                {
-                    SetCompressionSettings(textureImporter);
-                }
+                SetTextureTypeSettings(textureImporter);
+                SetCompressionSettings(textureImporter);
             }
         }
 
@@ -88,11 +87,17 @@ namespace Modules.Devkit.AssetTuning
 
             textureImporter.SetTextureSettings(settings);
 
+            SetTextureTypeSettings(textureImporter);
+
             SetCompressionSettings(textureImporter);
         }
 
         protected virtual void SetCompressionSettings(TextureImporter textureImporter)
         {
+            var config = TextureAssetTunerConfig.Instance;
+
+            if (!IsFolderItem(textureImporter.assetPath, config.CompressFolders)) { return; }
+
             var pathSplit = textureImporter.assetPath.Split(PathUtility.PathSeparator);
 
             var size = textureImporter.GetPreImportTextureSize();
@@ -120,17 +125,22 @@ namespace Modules.Devkit.AssetTuning
                     settings.compressionQuality = (int)UnityEngine.TextureCompressionQuality.Normal;
                     settings.textureCompression = TextureImporterCompression.Compressed;
                     settings.androidETC2FallbackOverride = AndroidETC2FallbackOverride.UseBuildSettings;
-
-                    if (IsCompressTarget(textureImporter.assetPath))
-                    {
-                        settings.format = GetPlatformCompressionType(textureImporter, platform);
-                    }
+                    settings.format = GetPlatformCompressionType(textureImporter, platform);
 
                     return settings;
                 };
 
                 textureImporter.SetPlatformTextureSetting(platform, update);
             }
+        }
+
+        protected virtual void SetTextureTypeSettings(TextureImporter textureImporter)
+        {
+            var config = TextureAssetTunerConfig.Instance;
+
+            if (!IsFolderItem(textureImporter.assetPath, config.SpriteFolders)) { return; }
+
+            textureImporter.textureType = TextureImporterType.Sprite;
         }
 
         protected virtual TextureImporterFormat GetPlatformCompressionType(TextureImporter textureImporter, BuildTargetGroup platform)
@@ -170,7 +180,7 @@ namespace Modules.Devkit.AssetTuning
             }
         }
 
-        public static bool IsCompressTarget(string assetPath)
+        public static bool IsFolderItem(string assetPath, Object[] folders)
         {
             var settings = TextureAssetTunerConfig.Instance;
 
@@ -178,9 +188,7 @@ namespace Modules.Devkit.AssetTuning
 
             assetPath = PathUtility.ConvertPathSeparator(assetPath);
 
-            var targetPaths = settings.CompressFolders
-                .Where(x => x != null)
-                .Select(x => AssetDatabase.GetAssetPath(x));
+            var targetPaths = folders.Where(x => x != null).Select(x => AssetDatabase.GetAssetPath(x));
 
             foreach (var targetPath in targetPaths)
             {

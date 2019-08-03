@@ -3,7 +3,7 @@ using UnityEngine;
 using UnityEditor;
 using Extensions.Devkit;
 
-namespace Modules.Devkit.CustomInspector
+namespace Modules.Devkit.Inspector
 {
     [CanEditMultipleObjects]
     [CustomEditor(typeof(Transform), true)]

@@ -14,12 +14,19 @@ namespace Modules.Devkit.AssetTuning
 
         [SerializeField]
         private Object[] compressFolders = null;
+        [SerializeField]
+        private Object[] spriteFolders = null;
 
         //----- property -----
 
         public Object[] CompressFolders
         {
             get { return compressFolders ?? (compressFolders = new Object[0]); }
+        }
+
+        public Object[] SpriteFolders
+        {
+            get { return spriteFolders ?? (spriteFolders = new Object[0]); }
         }
 
         //----- method -----
