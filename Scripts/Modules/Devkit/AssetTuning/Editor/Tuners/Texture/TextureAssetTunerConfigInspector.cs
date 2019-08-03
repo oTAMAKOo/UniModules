@@ -158,6 +158,8 @@ namespace Modules.Devkit.AssetTuning
         private AssetViewMode assetViewMode = AssetViewMode.Asset;
         private List<CompressFolderInfo> compressFolderInfos = null;
         private CompressFolderScrollView compressFolderScrollView = null;
+        private Texture toolbarPlusTexture = null;
+
         private TextureAssetTunerConfig instance = null;
 
         private bool initialized = false;
@@ -202,6 +204,8 @@ namespace Modules.Devkit.AssetTuning
 
             compressFolderScrollView.Contents = compressFolderInfos.ToArray();
 
+            toolbarPlusTexture = EditorGUIUtility.FindTexture("Toolbar Plus");
+
             initialized = true;
         }
 
@@ -225,9 +229,7 @@ namespace Modules.Devkit.AssetTuning
                         }
 
                         GUILayout.FlexibleSpace();
-
-                        var toolbarPlusTexture = EditorGUIUtility.FindTexture("Toolbar Plus");
-
+                        
                         if (GUILayout.Button(new GUIContent(toolbarPlusTexture), EditorStyles.miniButton, GUILayout.Width(24f), GUILayout.Height(15f)))
                         {
                             var compressFolder = new CompressFolderInfo()
@@ -259,11 +261,11 @@ namespace Modules.Devkit.AssetTuning
 
             var registedFolderInfo = folderInfos
                 .Where(x => x.asset != null && !string.IsNullOrEmpty(x.assetPath))
-                .FirstOrDefault(x => x.assetPath.Length < assetPath.Length && assetPath.StartsWith(x.assetPath));
+                .FirstOrDefault(x => x.assetPath.Length <= assetPath.Length && assetPath.StartsWith(x.assetPath));
 
             if (registedFolderInfo != null)
             {
-                EditorUtility.DisplayDialog("Register failed", "This folder parent is registed.", "Close");
+                EditorUtility.DisplayDialog("Register failed", "This folder is registed.", "Close");
                 
                 EditorGUIUtility.PingObject(registedFolderInfo.asset);
 
@@ -276,6 +278,8 @@ namespace Modules.Devkit.AssetTuning
         // 親フォルダが登録された際に削除されるフォルダ情報取得.
         private static CompressFolderInfo[] GetRemoveChildrenFolders(Object folder, CompressFolderInfo[] folderInfos)
         {
+            if (folder == null) { return new CompressFolderInfo[0];}
+
             var assetPath = AssetDatabase.GetAssetPath(folder);
 
             return folderInfos.Where(x => assetPath.Length < x.assetPath.Length && x.assetPath.StartsWith(assetPath)).ToArray();

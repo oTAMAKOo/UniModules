@@ -1,9 +1,13 @@
 ﻿
+using System;
 using UnityEngine;
 using UnityEditor;
 using System.Collections.Generic;
 using System.Linq;
+using Extensions;
 using Extensions.Devkit;
+using UniRx;
+using Object = UnityEngine.Object;
 
 namespace Modules.Devkit.AssetTuning
 {
@@ -11,103 +15,42 @@ namespace Modules.Devkit.AssetTuning
     {
         //----- params -----
 
-        private sealed class TextureAssetInfo
+        private static readonly BuildTargetGroup[] Platforms =
+        {
+            BuildTargetGroup.Android,
+            BuildTargetGroup.iOS,
+        };
+
+        public enum ViewMode
+        {
+            SelectFolder,
+            SearchResult,
+        }
+
+        public enum AssetViewMode
+        {
+            Asset,
+            Path
+        }
+
+        public sealed class TextureAssetInfo
         {
             public Texture textureAsset;
-            public string compressPath;
             public Vector2 size;
             public bool compress;
         }
 
-        private sealed class CompressInfo
-        {
-            public string compressPath;
-            public TextureAssetInfo[] assetInfos = null;
-        }
-
-        private sealed class TextureAssetInfoScrollView : EditorGUIFastScrollView<CompressInfo>
-        {
-            //----- params -----
-
-            //----- field -----
-
-            private HashSet<int> openedIds = null;
-            private GUIStyle labelStyle = null;
-
-            //----- property -----
-
-            public override Direction Type { get { return Direction.Vertical; } }
-
-            //----- method -----
-
-            public TextureAssetInfoScrollView()
-            {
-                openedIds = new HashSet<int>();
-            }
-
-            protected override void DrawContent(int index, CompressInfo content)
-            {
-                if (labelStyle == null)
-                {
-                    labelStyle = GUI.skin.label;
-                    labelStyle.alignment = TextAnchor.MiddleLeft;
-                    labelStyle.wordWrap = false;
-                    labelStyle.stretchWidth = false;
-                }
-
-                var opened = openedIds.Contains(index);
-
-                using (new EditorGUILayout.VerticalScope())
-                {
-                    var open = EditorLayoutTools.DrawHeader(content.compressPath, opened);
-
-                    if (open)
-                    {
-                        using (new ContentsScope())
-                        {
-                            using (new ContentsScope())
-                            {
-                                foreach (var item in content.assetInfos)
-                                {
-                                    using (new EditorGUILayout.HorizontalScope())
-                                    {
-                                        if (item.compress)
-                                        {
-                                            EditorLayoutTools.DrawLabelWithBackground("Compress", Color.cyan, Color.white, TextAnchor.MiddleCenter, width: 50f);
-                                        }
-                                        else
-                                        {
-                                            EditorLayoutTools.DrawLabelWithBackground("Failed", Color.red, Color.white, TextAnchor.MiddleCenter, width: 85f);
-                                        }
-
-                                        EditorGUILayout.ObjectField(item.textureAsset, typeof(Texture), false);
-
-                                        EditorGUILayout.TextField(string.Format("{0}x{1}", item.size.x, item.size.y), labelStyle, GUILayout.Width(85f));
-                                    }
-                                }
-                            }
-                        }
-                    }
-
-                    if (!opened && open)
-                    {
-                        openedIds.Add(index);
-                    }
-
-                    if (opened && !open)
-                    {
-                        openedIds.Remove(index);
-                    }
-                }
-            }
-        }
-
         //----- field -----
 
-        private CompressInfo[] textureAssetInfos = null;
-        private TextureAssetInfoScrollView scrollView = null;
+        private ViewMode viewMode = ViewMode.SelectFolder;
+        private AssetViewMode assetViewMode = AssetViewMode.Asset;
+        private CompressFolderScrollView compressFolderScrollView = null;
+        private TextureAssetInfoScrollView textureAssetInfoScrollView = null;
+        private TextureAssetInfo[] textureAssetInfos = null;
+        private Texture tabprevTexture = null;
         private bool failedOnly = false;
 
+        [NonSerialized]
         private bool initialized = false;
 
         //----- property -----
@@ -125,8 +68,37 @@ namespace Modules.Devkit.AssetTuning
 
             titleContent = new GUIContent("CompressCheckWindow");
 
-            scrollView = new TextureAssetInfoScrollView();
+            var config = TextureAssetTunerConfig.Instance;
+
+            viewMode = ViewMode.SelectFolder;
+            assetViewMode = AssetViewMode.Asset;
+
+            if (tabprevTexture == null)
+            {
+                tabprevTexture = EditorGUIUtility.FindTexture("tab_prev");
+            }
             
+            // Initialize search view.
+            compressFolderScrollView = new CompressFolderScrollView();
+
+            compressFolderScrollView.AssetViewMode = assetViewMode;
+
+            compressFolderScrollView.OnSearchRequestAsObservable()
+                .Subscribe(x =>
+                    {
+                        textureAssetInfos = FindTextureAssetInfoInFolder(x);
+                        textureAssetInfoScrollView.Contents = GetFilteredTextureAssetInfos();
+                        viewMode = ViewMode.SearchResult;
+                        Repaint();
+                    })
+                .AddTo(Disposable);
+
+            compressFolderScrollView.Contents = config.CompressFolders;
+
+            // Initialize result view.
+            textureAssetInfoScrollView = new TextureAssetInfoScrollView();
+            textureAssetInfoScrollView.AssetViewMode = assetViewMode;
+
             initialized = true;
 
             Show();
@@ -134,24 +106,54 @@ namespace Modules.Devkit.AssetTuning
 
         void OnGUI()
         {
+            if (!initialized)
+            {
+                Initialize();
+            }
+
             EditorGUILayout.Separator();
 
             using (new EditorGUILayout.HorizontalScope())
             {
-                GUILayout.Space(5f);
-
-                if (GUILayout.Button("Search Textures", GUILayout.Width(150f)))
+                if (viewMode == ViewMode.SearchResult)
                 {
-                    textureAssetInfos = BuildCompressInfo().ToArray();
-                    scrollView.Contents = textureAssetInfos;
-                    Repaint();
+                    if (GUILayout.Button(new GUIContent(tabprevTexture), EditorStyles.miniButton, GUILayout.Width(30f), GUILayout.Height(15f)))
+                    {
+                        var config = TextureAssetTunerConfig.Instance;
+
+                        viewMode = ViewMode.SelectFolder;
+                        compressFolderScrollView.Contents = config.CompressFolders;
+                    }
                 }
 
                 GUILayout.FlexibleSpace();
 
+                EditorGUI.BeginChangeCheck();
+
+                assetViewMode = (AssetViewMode)EditorGUILayout.EnumPopup(assetViewMode, GUILayout.Width(60f));
+
+                if (EditorGUI.EndChangeCheck())
+                {
+                    compressFolderScrollView.AssetViewMode = assetViewMode;
+                    textureAssetInfoScrollView.AssetViewMode = assetViewMode;
+                    Repaint();
+                }
+
                 var originLabelWidth = EditorLayoutTools.SetLabelWidth(70f);
 
+                EditorGUI.BeginChangeCheck();
+
                 failedOnly = EditorGUILayout.Toggle("Failed Only", failedOnly, GUILayout.Width(90f));
+
+                if (EditorGUI.EndChangeCheck())
+                {
+                    if (viewMode == ViewMode.SearchResult)
+                    {
+                        textureAssetInfoScrollView.Contents = GetFilteredTextureAssetInfos();
+                    }
+
+                    Repaint();
+                }
 
                 EditorLayoutTools.SetLabelWidth(originLabelWidth);
 
@@ -160,80 +162,87 @@ namespace Modules.Devkit.AssetTuning
 
             EditorGUILayout.Separator();
 
-            if (textureAssetInfos == null)
-            {
-                EditorGUILayout.HelpBox("Press search texture.", MessageType.Warning);
-            }
-            else
-            {
-                EditorGUILayout.Separator();
+            GUILayout.Space(3f);
 
-                scrollView.Draw();
+            switch (viewMode)
+            {
+                case ViewMode.SelectFolder:
+                    compressFolderScrollView.Draw();
+                    break;
+
+                case ViewMode.SearchResult:
+                    textureAssetInfoScrollView.Draw();
+                    break;
             }
+
+            GUILayout.Space(1f);
         }
-
-        private CompressInfo[] BuildCompressInfo()
+        
+        private TextureAssetInfo[] FindTextureAssetInfoInFolder(Object folder)
         {
-            var configs = TextureAssetTunerConfig.Instance;
+            if (folder == null) { return null; }
 
-            var infos = new List<TextureAssetInfo>();
+            var path = AssetDatabase.GetAssetPath(folder);
+
+            if (!AssetDatabase.IsValidFolder(path)) { return null; }
+
+            var list = new List<TextureAssetInfo>();
             
-            foreach (var target in configs.CompressFolders)
+            var guids = AssetDatabase.FindAssets("t:texture", new string[] { path });
+
+            var title = string.Format("Search Folder : {0}", path);
+
+            for (var i = 0; i < guids.Length; i++)
             {
-                if (target == null) { continue; }
+                var texturePath = AssetDatabase.GUIDToAssetPath(guids[i]);
 
-                var path = AssetDatabase.GetAssetPath(target);
+                EditorUtility.DisplayProgressBar(title, texturePath, (float)i / guids.Length);
 
-                if (!AssetDatabase.IsValidFolder(path)) { continue; }
-                
-                var textures = UnityEditorUtility.FindAssetsByType<Texture2D>("t:texture", new string[] { path }).ToArray();
+                var texture = AssetDatabase.LoadMainAssetAtPath(texturePath) as Texture;
 
-                var title = string.Format("Find : {0}", path);
+                if (texture == null) { continue; }
 
-                for (var i = 0; i < textures.Length; i++)
+                EditorUtility.DisplayProgressBar(title, texturePath, (float)i / guids.Length);
+
+                var info = BuildTextureAssetInfo(texture);
+
+                if (failedOnly)
                 {
-                    var texture = textures[i];
-
-                    var assetPath = AssetDatabase.GetAssetPath(texture);
-
-                    EditorUtility.DisplayProgressBar(title, assetPath, (float)i / textures.Length);
-
-                    var info = BuildTextureAssetInfo(path, texture);
-
-                    if (failedOnly)
+                    if (!info.compress)
                     {
-                        if (!info.compress)
-                        {
-                            infos.Add(info);
-                        }
-                    }
-                    else
-                    {
-                        infos.Add(info);
+                        list.Add(info);
                     }
                 }
-
-                EditorUtility.ClearProgressBar();
+                else
+                {
+                    list.Add(info);
+                }
             }
 
-            return infos.GroupBy(x => x.compressPath)
-                .Select(x => new CompressInfo() { compressPath = x.Key, assetInfos = x.ToArray() })
-                .Where(x => x.assetInfos.Any())
-                .ToArray();
+            EditorUtility.ClearProgressBar();
+
+            return list.ToArray();
         }
 
-        private TextureAssetInfo BuildTextureAssetInfo(string compressPath, Texture texture)
+        private TextureAssetInfo BuildTextureAssetInfo(Texture texture)
         {
             if (texture == null) { return null; }
 
-            var size = new Vector2(texture.width, texture.height);
+            var assetPath = AssetDatabase.GetAssetPath(texture);
+
+            var textureImporter = AssetImporter.GetAtPath(assetPath) as TextureImporter;
+
+            var isCompressASTC = Platforms.Any(x => textureImporter.IsCompressASTC(x));
+
+            if (!isCompressASTC) { return null; }
+
+            var size = textureImporter.GetPreImportTextureSize();
 
             var compress = IsMultipleOf4(size.x) && IsMultipleOf4(size.y);
 
             var info = new TextureAssetInfo()
             {
                 textureAsset = texture,
-                compressPath = compressPath,
                 size = size,
                 compress = compress,
             };
@@ -241,9 +250,129 @@ namespace Modules.Devkit.AssetTuning
             return info;
         }
 
+        private TextureAssetInfo[] GetFilteredTextureAssetInfos()
+        {
+            if (!failedOnly) { return textureAssetInfos; }
+
+            return textureAssetInfos.Where(x => !x.compress).ToArray();
+        }
+
         private static bool IsMultipleOf4(float value)
         {
             return value % 4 == 0;
+        }
+    }
+
+    public sealed class CompressFolderScrollView : EditorGUIFastScrollView<Object>
+    {
+        private GUIContent viewToolZoomGUIContent = null;
+        private Subject<Object> onSearchRequest = null;
+
+        public CompressCheckWindow.AssetViewMode AssetViewMode { get; set; }
+
+        public override Direction Type { get { return Direction.Vertical; } }
+
+        protected override void DrawContent(int index, Object content)
+        {
+            if (viewToolZoomGUIContent == null)
+            {
+                var texture = EditorGUIUtility.FindTexture("ViewToolZoom");
+                viewToolZoomGUIContent = new GUIContent(texture);
+            }
+
+            using (new EditorGUILayout.HorizontalScope())
+            {
+                EditorGUI.BeginChangeCheck();
+
+                switch (AssetViewMode)
+                {
+                    case CompressCheckWindow.AssetViewMode.Asset:
+                        EditorGUILayout.ObjectField(content, typeof(Object), false);
+                        break;
+
+                    case CompressCheckWindow.AssetViewMode.Path:
+                        GUILayout.Label(AssetDatabase.GetAssetPath(content), EditorLayoutTools.TextAreaStyle);
+                        break;
+                }
+
+                if (GUILayout.Button(viewToolZoomGUIContent, EditorStyles.miniButton, GUILayout.Width(24f), GUILayout.Height(15f)))
+                {
+                    if (onSearchRequest != null)
+                    {
+                        onSearchRequest.OnNext(content);
+                    }
+                }
+            }
+        }
+
+        public IObservable<Object> OnSearchRequestAsObservable()
+        {
+            return onSearchRequest ?? (onSearchRequest = new Subject<Object>());
+        }
+    }
+
+    public sealed class TextureAssetInfoScrollView : EditorGUIFastScrollView<CompressCheckWindow.TextureAssetInfo>
+    {
+        private GUIStyle labelStyle = null;
+        private GUIContent vcscheckGUIContent = null;
+        private GUIContent vcsdeleteGUIContent = null;
+
+        public CompressCheckWindow.AssetViewMode AssetViewMode { get; set; }
+
+        public override Direction Type { get { return Direction.Vertical; } }
+
+        protected override void DrawContent(int index, CompressCheckWindow.TextureAssetInfo content)
+        {
+            if (content == null) { return; }
+
+            if (labelStyle == null)
+            {
+                labelStyle = GUI.skin.label;
+                labelStyle.alignment = TextAnchor.MiddleLeft;
+                labelStyle.wordWrap = false;
+                labelStyle.stretchWidth = false;
+            }
+
+            if (vcscheckGUIContent == null)
+            {
+                var texture = EditorGUIUtility.FindTexture("vcs_check");
+                vcscheckGUIContent = new GUIContent(texture);
+            }
+            
+            if (vcsdeleteGUIContent == null)
+            {
+                var texture = EditorGUIUtility.FindTexture("vcs_delete");
+                vcsdeleteGUIContent = new GUIContent(texture);
+            }
+
+            using (new EditorGUILayout.HorizontalScope())
+            {
+                var originLabelWidth = EditorLayoutTools.SetLabelWidth(12f);
+
+                var icon = content.compress ? vcscheckGUIContent : vcsdeleteGUIContent;
+
+                using (new EditorGUILayout.VerticalScope(GUILayout.Width(12f)))
+                {
+                    GUILayout.Space(-1f);
+
+                    EditorGUILayout.LabelField(icon, GUILayout.Width(20f), GUILayout.Height(20f));
+                }
+
+                EditorLayoutTools.SetLabelWidth(originLabelWidth);
+
+                switch (AssetViewMode)
+                {
+                    case CompressCheckWindow.AssetViewMode.Asset:
+                        EditorGUILayout.ObjectField(content.textureAsset, typeof(Texture), false);
+                        break;
+
+                    case CompressCheckWindow.AssetViewMode.Path:
+                        GUILayout.Label(AssetDatabase.GetAssetPath(content.textureAsset), EditorLayoutTools.TextAreaStyle);
+                        break;
+                }
+
+                EditorGUILayout.TextField(string.Format("{0}x{1}", content.size.x, content.size.y), labelStyle, GUILayout.Width(85f));
+            }
         }
     }
 }

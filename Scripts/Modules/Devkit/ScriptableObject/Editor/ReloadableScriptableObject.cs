@@ -13,6 +13,7 @@ namespace Modules.Devkit.ScriptableObjects
 
         //----- field -----
 
+        private string assetFullPath = null;
         private DateTime? lastWriteTime = null;
 
 		private static Subject<Unit> onReload = null;
@@ -32,10 +33,14 @@ namespace Modules.Devkit.ScriptableObjects
 
             if (instance == null) { return null; }
 
-            var assetPath = AssetDatabase.GetAssetPath(instance);
-            var path = UnityPathUtility.ConvertAssetPathToFullPath(assetPath);
+            if (string.IsNullOrEmpty(instance.assetFullPath))
+            {
+                var assetPath = AssetDatabase.GetAssetPath(instance);
 
-            var time = File.GetLastWriteTime(path);
+                instance.assetFullPath = UnityPathUtility.ConvertAssetPathToFullPath(assetPath);
+            }
+
+            var time = File.GetLastWriteTime(instance.assetFullPath);
 
             var update = !instance.lastWriteTime.HasValue || instance.lastWriteTime.Value != time;
             

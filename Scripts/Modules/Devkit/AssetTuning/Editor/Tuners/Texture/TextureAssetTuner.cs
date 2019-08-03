@@ -19,9 +19,7 @@ namespace Modules.Devkit.AssetTuning
         };
 
         //----- field -----
-
-        private MethodInfo getWidthAndHeightMethodInfo = null;
-
+        
         //----- property -----
         
         /// <summary> 適用対象 </summary>
@@ -97,7 +95,7 @@ namespace Modules.Devkit.AssetTuning
         {
             var pathSplit = textureImporter.assetPath.Split(PathUtility.PathSeparator);
 
-            var size = GetPreImportTextureSize(textureImporter);
+            var size = textureImporter.GetPreImportTextureSize();
 
             if (IgnoreCompressionFolders.Any(x => pathSplit.Contains(x)))
             {
@@ -116,23 +114,22 @@ namespace Modules.Devkit.AssetTuning
 
             foreach (var platform in Platforms)
             {
-                var platformTextureSetting = textureImporter.GetPlatformTextureSettings(platform.ToString());
-
-                var settings = new TextureImporterPlatformSettings();
-
-                platformTextureSetting.CopyTo(settings);
-
-                settings.overridden = true;
-                settings.compressionQuality = (int)UnityEngine.TextureCompressionQuality.Normal;
-                settings.textureCompression = TextureImporterCompression.Compressed;
-                settings.androidETC2FallbackOverride = AndroidETC2FallbackOverride.UseBuildSettings;
-
-                settings.format = GetPlatformCompressionType(textureImporter, platform);
-
-                if (!platformTextureSetting.Equals(settings))
+                Func<TextureImporterPlatformSettings, TextureImporterPlatformSettings> update = settings =>
                 {
-                    textureImporter.SetPlatformTextureSettings(settings);
-                }
+                    settings.overridden = true;
+                    settings.compressionQuality = (int)UnityEngine.TextureCompressionQuality.Normal;
+                    settings.textureCompression = TextureImporterCompression.Compressed;
+                    settings.androidETC2FallbackOverride = AndroidETC2FallbackOverride.UseBuildSettings;
+
+                    if (IsCompressTarget(textureImporter.assetPath))
+                    {
+                        settings.format = GetPlatformCompressionType(textureImporter, platform);
+                    }
+
+                    return settings;
+                };
+
+                textureImporter.SetPlatformTextureSetting(platform, update);
             }
         }
 
@@ -162,16 +159,14 @@ namespace Modules.Devkit.AssetTuning
             {
                 var platformTextureSetting = textureImporter.GetPlatformTextureSettings(platform.ToString());
 
-                var settings = new TextureImporterPlatformSettings();
-
-                platformTextureSetting.CopyTo(settings);
-
-                settings.overridden = false;
-
-                if (!platformTextureSetting.Equals(settings))
+                Func<TextureImporterPlatformSettings, TextureImporterPlatformSettings> update = settings =>
                 {
-                    textureImporter.SetPlatformTextureSettings(settings);
-                }
+                    platformTextureSetting.overridden = false;
+
+                    return platformTextureSetting;
+                };
+
+                textureImporter.SetPlatformTextureSetting(platform, update);
             }
         }
 
@@ -197,23 +192,7 @@ namespace Modules.Devkit.AssetTuning
             return false;
         }
 
-        protected Vector2 GetPreImportTextureSize(TextureImporter importer)
-        {
-            // ※ TextureImporter.GetWidthAndHeightは非公開メソッドなのでリフレクションで無理矢理呼び出し.
-
-            if (getWidthAndHeightMethodInfo == null)
-            {
-                getWidthAndHeightMethodInfo = typeof(TextureImporter).GetMethod("GetWidthAndHeight", BindingFlags.NonPublic | BindingFlags.Instance);
-            }
-
-            var args = new object[] { 0, 0 };
-
-            getWidthAndHeightMethodInfo.Invoke(importer, args);
-
-            return new Vector2((int)args[0], (int)args[1]);
-		}
-
-		protected bool IsMultipleOf4(float value)
+        public static bool IsMultipleOf4(float value)
         {
             return value % 4 == 0;
         }

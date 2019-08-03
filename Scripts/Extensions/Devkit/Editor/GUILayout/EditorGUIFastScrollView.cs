@@ -64,6 +64,11 @@ namespace Extensions.Devkit
 
         //----- method -----
 
+        public EditorGUIFastScrollView()
+        {
+            itemInfos = new ItemInfo[0];
+        }
+
         public void Draw(bool scrollEnable = true, params GUILayoutOption[] options)
         {
             if (scrollEnable)
