@@ -293,7 +293,10 @@ namespace Modules.ExternalResource
                     .UpdateCriAsset(resourcesPath, progress)
                     .ToYieldInstruction(false, yieldCancell.Token);
 
-                yield return updateYield;
+                while (!updateYield.IsDone)
+                {
+                    yield return null;
+                }
 
                 if (updateYield.IsCanceled || updateYield.HasError)
                 {
@@ -365,7 +368,7 @@ namespace Modules.ExternalResource
         /// <summary> Assetbundleを読み込み (非同期) </summary>
         public static IObservable<T> LoadAsset<T>(string externalResourcesPath, bool autoUnload = true) where T : UnityEngine.Object
         {
-            return Observable.FromCoroutine<T>(observer => Instance.LoadAssetInternal(observer, externalResourcesPath, autoUnload));
+            return Observable.FromMicroCoroutine<T>(observer => Instance.LoadAssetInternal(observer, externalResourcesPath, autoUnload));
         }
 
         private IEnumerator LoadAssetInternal<T>(IObserver<T> observer, string resourcesPath, bool autoUnload) where T : UnityEngine.Object
@@ -420,7 +423,10 @@ namespace Modules.ExternalResource
                 // 読み込み実行 (読み込み中の場合は読み込み待ちのObservableが返る).
                 sw = System.Diagnostics.Stopwatch.StartNew();
 
-                yield return downloadYield;
+                while (!downloadYield.IsDone)
+                {
+                    yield return null;
+                }
 
                 if (downloadYield.HasError)
                 {
@@ -459,7 +465,10 @@ namespace Modules.ExternalResource
 
             var loadYield = assetBundleManager.LoadAsset<T>(assetBundleName, assetPath, autoUnload).ToYieldInstruction();
 
-            yield return loadYield;
+            while (!loadYield.IsDone)
+            {
+                yield return null;
+            }
 
             result = loadYield.Result;
 
