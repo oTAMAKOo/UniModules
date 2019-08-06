@@ -47,7 +47,7 @@ namespace Modules.Devkit.AssetTuning
         private CompressFolderScrollView compressFolderScrollView = null;
         private TextureAssetInfoScrollView textureAssetInfoScrollView = null;
         private TextureAssetInfo[] textureAssetInfos = null;
-        private Texture tabprevTexture = null;
+        private GUIContent tabprevIcon = null;
         private bool failedOnly = false;
 
         [NonSerialized]
@@ -73,9 +73,9 @@ namespace Modules.Devkit.AssetTuning
             viewMode = ViewMode.SelectFolder;
             assetViewMode = AssetViewMode.Asset;
 
-            if (tabprevTexture == null)
+            if (tabprevIcon == null)
             {
-                tabprevTexture = EditorGUIUtility.FindTexture("tab_prev");
+                tabprevIcon = EditorGUIUtility.IconContent("tab_prev");
             }
             
             // Initialize search view.
@@ -117,7 +117,7 @@ namespace Modules.Devkit.AssetTuning
             {
                 if (viewMode == ViewMode.SearchResult)
                 {
-                    if (GUILayout.Button(new GUIContent(tabprevTexture), EditorStyles.miniButton, GUILayout.Width(30f), GUILayout.Height(15f)))
+                    if (GUILayout.Button(tabprevIcon, EditorStyles.miniButton, GUILayout.Width(30f), GUILayout.Height(15f)))
                     {
                         var config = TextureAssetTunerConfig.Instance;
 
@@ -265,7 +265,7 @@ namespace Modules.Devkit.AssetTuning
 
     public sealed class CompressFolderScrollView : EditorGUIFastScrollView<Object>
     {
-        private GUIContent viewToolZoomGUIContent = null;
+        private GUIContent viewToolZoomIcon = null;
         private Subject<Object> onSearchRequest = null;
 
         public CompressCheckWindow.AssetViewMode AssetViewMode { get; set; }
@@ -274,10 +274,9 @@ namespace Modules.Devkit.AssetTuning
 
         protected override void DrawContent(int index, Object content)
         {
-            if (viewToolZoomGUIContent == null)
+            if (viewToolZoomIcon == null)
             {
-                var texture = EditorGUIUtility.FindTexture("ViewToolZoom");
-                viewToolZoomGUIContent = new GUIContent(texture);
+                viewToolZoomIcon = EditorGUIUtility.IconContent("ViewToolZoom");
             }
 
             using (new EditorGUILayout.HorizontalScope())
@@ -295,7 +294,7 @@ namespace Modules.Devkit.AssetTuning
                         break;
                 }
 
-                if (GUILayout.Button(viewToolZoomGUIContent, EditorStyles.miniButton, GUILayout.Width(24f), GUILayout.Height(15f)))
+                if (GUILayout.Button(viewToolZoomIcon, EditorStyles.miniButton, GUILayout.Width(24f), GUILayout.Height(15f)))
                 {
                     if (onSearchRequest != null)
                     {
@@ -314,8 +313,8 @@ namespace Modules.Devkit.AssetTuning
     public sealed class TextureAssetInfoScrollView : EditorGUIFastScrollView<CompressCheckWindow.TextureAssetInfo>
     {
         private GUIStyle labelStyle = null;
-        private GUIContent vcscheckGUIContent = null;
-        private GUIContent vcsdeleteGUIContent = null;
+        private GUIContent vcscheckIcon = null;
+        private GUIContent vcsdeleteIcon = null;
 
         public CompressCheckWindow.AssetViewMode AssetViewMode { get; set; }
 
@@ -333,23 +332,21 @@ namespace Modules.Devkit.AssetTuning
                 labelStyle.stretchWidth = false;
             }
 
-            if (vcscheckGUIContent == null)
+            if (vcscheckIcon == null)
             {
-                var texture = EditorGUIUtility.FindTexture("vcs_check");
-                vcscheckGUIContent = new GUIContent(texture);
+                vcscheckIcon = EditorGUIUtility.IconContent("vcs_check");
             }
             
-            if (vcsdeleteGUIContent == null)
+            if (vcsdeleteIcon == null)
             {
-                var texture = EditorGUIUtility.FindTexture("vcs_delete");
-                vcsdeleteGUIContent = new GUIContent(texture);
+                vcsdeleteIcon = EditorGUIUtility.IconContent("vcs_delete");
             }
 
             using (new EditorGUILayout.HorizontalScope())
             {
                 var originLabelWidth = EditorLayoutTools.SetLabelWidth(12f);
 
-                var icon = content.compress ? vcscheckGUIContent : vcsdeleteGUIContent;
+                var icon = content.compress ? vcscheckIcon : vcsdeleteIcon;
 
                 using (new EditorGUILayout.VerticalScope(GUILayout.Width(12f)))
                 {

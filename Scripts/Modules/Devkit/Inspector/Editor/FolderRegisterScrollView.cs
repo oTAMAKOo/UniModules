@@ -30,12 +30,19 @@ namespace Modules.Devkit.Inspector
 
         private sealed class FolderScrollView : EditorGUIFastScrollView<FolderInfo>
         {
+            private GUIContent toolbarPlusIcon = null;
+
             private Subject<FolderInfo[]> onUpdateContents = null;
 
             public AssetViewMode AssetViewMode { get; set; }
             public bool RemoveChildrenFolder { get; set; }
 
             public override Direction Type { get { return Direction.Vertical; } }
+
+            public FolderScrollView() : base()
+            {
+                toolbarPlusIcon = EditorGUIUtility.IconContent("Toolbar Minus");
+            }
 
             protected override void DrawContent(int index, FolderInfo content)
             {
@@ -95,9 +102,7 @@ namespace Modules.Devkit.Inspector
                             break;
                     }
 
-                    var toolbarPlusTexture = EditorGUIUtility.FindTexture("Toolbar Minus");
-
-                    if (GUILayout.Button(new GUIContent(toolbarPlusTexture), EditorStyles.miniButton, GUILayout.Width(24f), GUILayout.Height(15f)))
+                    if (GUILayout.Button(toolbarPlusIcon, EditorStyles.miniButton, GUILayout.Width(24f), GUILayout.Height(15f)))
                     {
                         var list = Contents.ToList();
 
@@ -133,7 +138,7 @@ namespace Modules.Devkit.Inspector
         private AssetViewMode assetViewMode = AssetViewMode.Asset;
         private List<FolderInfo> folderInfos = null;
         private FolderScrollView folderScrollView = null;
-        private Texture toolbarPlusTexture = null;
+        private GUIContent toolbarPlusIcon = null;
 
         private Subject<Unit> onRepaintRequest = null;
         private Subject<Object[]> onUpdateContents = null;
@@ -180,7 +185,8 @@ namespace Modules.Devkit.Inspector
                 .AddTo(Disposable);
 
             RemoveChildrenFolder = false;
-            toolbarPlusTexture = EditorGUIUtility.FindTexture("Toolbar Plus");            
+
+            toolbarPlusIcon = EditorGUIUtility.IconContent("Toolbar Plus");
         }
 
         public void SetContents(Object[] folders)
@@ -222,7 +228,7 @@ namespace Modules.Devkit.Inspector
 
                         GUILayout.FlexibleSpace();
 
-                        if (GUILayout.Button(new GUIContent(toolbarPlusTexture), EditorStyles.miniButton, GUILayout.Width(24f), GUILayout.Height(15f)))
+                        if (GUILayout.Button(toolbarPlusIcon, EditorStyles.miniButton, GUILayout.Width(24f), GUILayout.Height(15f)))
                         {
                             var compressFolder = new FolderInfo()
                             {
