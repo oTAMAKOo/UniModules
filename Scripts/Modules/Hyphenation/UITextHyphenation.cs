@@ -94,7 +94,7 @@ namespace Modules.Hyphenation
         {
             if (Text.supportRichText)
             {
-                message = Regex.Replace(message, RITCH_TEXT_REPLACE, string.Empty);
+                message = Regex.Replace(message, RITCH_TEXT_REPLACE, string.Empty, RegexOptions.IgnoreCase);
             }
 
             Text.text = message;
@@ -167,6 +167,7 @@ namespace Modules.Hyphenation
                 var isLatinCurrent = Hyphenation.IsLatin(currentCharacter);
                 var isLatinPrev = Hyphenation.IsLatin(prevCharacter);
                 var isLatinNext = Hyphenation.IsLatin(nextCharacter);
+                var isLineEndChar = Hyphenation.IsLineEndChar(currentCharacter);
 
                 var hyphenationBackCurrent = Hyphenation.CheckHyphenationBack(currentCharacter);
                 var hyphenationBackPrev = Hyphenation.CheckHyphenationBack(prevCharacter);
@@ -175,7 +176,7 @@ namespace Modules.Hyphenation
                 if ((isLatinCurrent && isLatinPrev) && (isLatinCurrent && !isLatinPrev) ||
                     (!isLatinCurrent && hyphenationBackPrev) ||
                     (!isLatinNext && !hyphenationFrontNext && !hyphenationBackCurrent) ||
-                    (characterCount == tmpText.Length - 1))
+                    isLineEndChar || (characterCount == tmpText.Length - 1))
                 {
                     words.Add(line.ToString());
                     line = new StringBuilder();

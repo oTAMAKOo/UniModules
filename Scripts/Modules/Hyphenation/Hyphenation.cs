@@ -32,7 +32,7 @@ namespace Modules.Hyphenation
             ("abcdefghijklmnopqrstuvwxyz" +
              "ABCDEFGHIJKLMNOPQRSTUVWXYZ" +
              "0123456789" +
-             "<>=/().,")
+             "<>=/().,#")
             .ToCharArray();
 
         private static readonly char LineEndChar = '\n';
@@ -179,6 +179,11 @@ namespace Modules.Hyphenation
         public static bool IsLatin(char s)
         {
             return Array.Exists(HYP_LATIN, item => item == s);
+        }
+
+        public static bool IsLineEndChar(char s)
+        {
+            return s == LineEndChar;
         }
     }
 }
