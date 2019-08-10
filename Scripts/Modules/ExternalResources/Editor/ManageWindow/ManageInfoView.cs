@@ -36,8 +36,6 @@ namespace Modules.ExternalResource.Editor
         private ContentsScrollView contentsScrollView = null;
         private ContentAssetsScrollView contentAssetsScrollView = null;
 
-        private bool scrollEnable = false;
-
         private Subject<Unit> onUpdateManageInfo = null;
         private Subject<Unit> onDeleteManageInfo = null;
 
@@ -243,9 +241,11 @@ namespace Modules.ExternalResource.Editor
 
                                 using (new ContentsScope())
                                 {
+                                    var scrollEnable = 30 < contentsScrollView.Contents.Length;
+
                                     var options = scrollEnable ?
-                                      new GUILayoutOption[] { GUILayout.Height(250) } :
-                                      new GUILayoutOption[0];
+                                          new GUILayoutOption[] { GUILayout.Height(250) } :
+                                          new GUILayoutOption[0];
 
                                     contentsScrollView.Draw(scrollEnable, options);
                                 }
@@ -266,7 +266,13 @@ namespace Modules.ExternalResource.Editor
 
                                 using (new ContentsScope())
                                 {
-                                    contentAssetsScrollView.Draw(scrollEnable, GUILayout.Height(250));
+                                    var scrollEnable = 30 < contentAssetsScrollView.Contents.Length;
+
+                                    var options = scrollEnable ?
+                                          new GUILayoutOption[] { GUILayout.Height(250) } :
+                                          new GUILayoutOption[0];
+
+                                    contentAssetsScrollView.Draw(scrollEnable, options);
                                 }
                             }
                             break;
@@ -314,7 +320,6 @@ namespace Modules.ExternalResource.Editor
                 contents.Add(assetContent);
             }
 
-            scrollEnable = 30 < contents.Count;
             contentsScrollView.Contents = contents.ToArray();
         }
 
@@ -404,23 +409,18 @@ namespace Modules.ExternalResource.Editor
 
     public class ContentAssetsScrollView : EditorGUIFastScrollView<AssetCollectInfo>
     {
+        private Object[] assets = null;
+
         public override Direction Type { get { return Direction.Vertical; } }
+
+        protected override void OnContentsUpdate()
+        {
+            assets = Contents.Select(x => AssetDatabase.LoadMainAssetAtPath(x.AssetPath)).ToArray();
+        }
 
         protected override void DrawContent(int index, AssetCollectInfo content)
         {
-            using (new EditorGUILayout.HorizontalScope())
-            {
-                var originLabelWidth = EditorLayoutTools.SetLabelWidth(75f);
-
-                var resourcePath = content.AssetInfo.ResourcesPath;
-
-                EditorLayoutTools.SetLabelWidth(resourcePath);
-
-                EditorGUILayout.SelectableLabel(resourcePath, GUILayout.Height(18f));
-
-                EditorLayoutTools.SetLabelWidth(originLabelWidth);
-
-            }
+            EditorGUILayout.ObjectField(assets[index], typeof(Object), false);
         }
     }
 }

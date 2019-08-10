@@ -55,6 +55,8 @@ namespace Extensions.Devkit
                 itemInfos = value == null ?
                     new ItemInfo[0] :
                     value.Select(x => new ItemInfo(x)).ToArray();
+
+                OnContentsUpdate();
             }
         }
 
@@ -307,6 +309,7 @@ namespace Extensions.Devkit
             scrollRect = null;
         }
 
+        /// <summary> 再描画要求イベントを発行 </summary>
         public void RequestRepaint()
         {
             if (onRepaintRequest != null)
@@ -315,6 +318,10 @@ namespace Extensions.Devkit
             }
         }
 
+        /// <summary> コンテンツが更新された時のイベント </summary>
+        protected virtual void OnContentsUpdate() { }
+
+        /// <summary> 再描画要求イベント </summary>
         public IObservable<Unit> OnRepaintRequestAsObservable()
         {
             return onRepaintRequest ?? (onRepaintRequest = new Subject<Unit>());
