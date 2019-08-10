@@ -12,22 +12,36 @@ using Object = UnityEngine.Object;
 
 namespace Modules.ExternalResource.Editor
 {
-    public class ManageInfoView
+    public class ManageInfoView : LifetimeDisposable
     {
         //----- params -----
 
+        private enum ViewMode
+        {
+            Contents,
+            Detail,
+        }
+
         //----- field -----
 
+        private ViewMode viewMode = ViewMode.Contents;
         private ManageInfo manageInfo = null;
         private IgnoreType? ignoreType = null;
         private AssetCollectInfo[] assetInfos = null;
         private string manageAssetPath = null;
 
+        private string contentDetailName = null;
+        private Dictionary<string, AssetCollectInfo[]> assetContents = null;
+
         private ContentsScrollView contentsScrollView = null;
+        private ContentAssetsScrollView contentAssetsScrollView = null;
+
         private bool scrollEnable = false;
 
         private Subject<Unit> onUpdateManageInfo = null;
         private Subject<Unit> onDeleteManageInfo = null;
+
+        private static GUIContent winbtnWinCloseIconContent = null;
 
         //----- property -----
 
@@ -56,11 +70,22 @@ namespace Modules.ExternalResource.Editor
 
             contentsScrollView = new ContentsScrollView();
 
-            SetScrollViewContents(); 
+            contentsScrollView.OnRequestDetailViewAsObservable()
+                .Subscribe(x => SetDetailView(x))
+                .AddTo(Disposable);
+
+            contentAssetsScrollView = new ContentAssetsScrollView();
+
+            BuildContentsInfo(); 
         }
 
         public void Draw()
         {
+            if (winbtnWinCloseIconContent == null)
+            {
+                winbtnWinCloseIconContent = EditorGUIUtility.IconContent("winbtn_win_close");
+            }
+
             IsOpen = EditorLayoutTools.DrawHeader(manageAssetPath, IsOpen);
 
             if (IsOpen)
@@ -210,67 +235,106 @@ namespace Modules.ExternalResource.Editor
 
                     EditorGUILayout.Separator();
 
-                    EditorLayoutTools.DrawLabelWithBackground("Contents", new Color(0.7f, 0.9f, 0.7f));
-
-                    using (new ContentsScope())
+                    switch (viewMode)
                     {
-                        var options = scrollEnable ?
-                            new GUILayoutOption[] { GUILayout.Height(250) } :
-                            new GUILayoutOption[0];
+                        case ViewMode.Contents:
+                            {
+                                EditorLayoutTools.DrawLabelWithBackground("Contents", new Color(0.7f, 0.9f, 0.7f));
 
-                        contentsScrollView.Draw(scrollEnable, options);
+                                using (new ContentsScope())
+                                {
+                                    var options = scrollEnable ?
+                                      new GUILayoutOption[] { GUILayout.Height(250) } :
+                                      new GUILayoutOption[0];
+
+                                    contentsScrollView.Draw(scrollEnable, options);
+                                }
+                            }
+                            break;
+
+                        case ViewMode.Detail:
+                            {
+                                using (new EditorGUILayout.HorizontalScope())
+                                {
+                                    EditorLayoutTools.DrawLabelWithBackground(contentDetailName, new Color(0.3f, 0.3f, 1f));
+
+                                    if (GUILayout.Button(winbtnWinCloseIconContent, GUILayout.Width(20f), GUILayout.Height(18f)))
+                                    {
+                                        SetContentsView();
+                                    }
+                                }
+
+                                using (new ContentsScope())
+                                {
+                                    contentAssetsScrollView.Draw(scrollEnable, GUILayout.Height(250));
+                                }
+                            }
+                            break;
                     }
                 }
             }
         }
 
-        private void SetScrollViewContents()
+        private void BuildContentsInfo()
         {
-            var contents = new List<ContentsScrollView.IScrollContent>();
+            assetContents = new Dictionary<string, AssetCollectInfo[]>();
+
+            var contents = new List<ContentsScrollView.Content>();
 
             var assetBundleTargets = assetInfos
                 .Where(x => x.AssetInfo.IsAssetBundle)
                 .GroupBy(x => x.AssetInfo.AssetBundle.AssetBundleName)
                 .ToArray();
-
-            if (assetBundleTargets.Any())
+            
+            foreach (var assetBundleTarget in assetBundleTargets)
             {
-                foreach (var assetBundleTarget in assetBundleTargets)
+                var content = new ContentsScrollView.Content()
                 {
-                    var title = string.Format("AssetBundle : {0}", assetBundleTarget.Key);
-                    var headerContent = new ContentsScrollView.HeaderContent(title, new Color(0.3f, 0.3f, 1f));
+                    label = assetBundleTarget.Key,
+                    isAssetBundle = true,
+                };
 
-                    contents.Add(headerContent);
+                contents.Add(content);
 
-                    foreach (var info in assetBundleTarget)
-                    {
-                        var assetContent = new ContentsScrollView.AssetContent(info.AssetPath, info.AssetInfo.ResourcesPath);
-
-                        contents.Add(assetContent);
-                    }
-                }
+                assetContents.Add(assetBundleTarget.Key, assetBundleTarget.ToArray());
             }
 
             var otherAssetTargets = assetInfos
-                .Where(x => !x.AssetInfo.IsAssetBundle)               
+                .Where(x => !x.AssetInfo.IsAssetBundle)
                 .ToArray();
 
-            if (otherAssetTargets.Any())
+            foreach (var otherAssetTarget in otherAssetTargets)
             {
-                var headerContent = new ContentsScrollView.HeaderContent("Other Assets", new Color(0.3f, 1f, 0.3f));
-
-                contents.Add(headerContent);
-
-                foreach (var otherAssetTarget in otherAssetTargets)
+                var assetContent = new ContentsScrollView.Content()
                 {
-                    var assetContent = new ContentsScrollView.AssetContent(otherAssetTarget.AssetPath, otherAssetTarget.AssetInfo.ResourcesPath);
+                    label = otherAssetTarget.AssetInfo.ResourcesPath,
+                    isAssetBundle = false,
+                };
 
-                    contents.Add(assetContent);
-                }
+                contents.Add(assetContent);
             }
 
             scrollEnable = 30 < contents.Count;
             contentsScrollView.Contents = contents.ToArray();
+        }
+
+        private void SetContentsView()
+        {
+            viewMode = ViewMode.Contents;
+
+            contentDetailName = null;
+            contentAssetsScrollView.Contents = null;
+        }
+
+        private void SetDetailView(string target)
+        {
+            viewMode = ViewMode.Detail;
+
+            contentDetailName = target;
+
+            var assets = assetContents.GetValueOrDefault(target);
+
+            contentAssetsScrollView.Contents = assets;            
         }
 
         public IObservable<Unit> OnUpdateManageInfoAsObservable()
@@ -284,80 +348,79 @@ namespace Modules.ExternalResource.Editor
         }
     }
 
-    public class ContentsScrollView : EditorGUIFastScrollView<ContentsScrollView.IScrollContent>
+    public class ContentsScrollView : EditorGUIFastScrollView<ContentsScrollView.Content>
     {
-        //----- params -----
-
-        public interface IScrollContent
+        public class Content
         {
-            void Draw();
+            public string label = null;
+            public bool isAssetBundle = false;
         }
 
-        public class HeaderContent : IScrollContent
+        private static GUIContent tabNextIconContent = null;
+
+        private Subject<string> onRequestDetailView = null;
+
+        public override Direction Type { get { return Direction.Vertical; } }
+
+        protected override void DrawContent(int index, Content content)
         {
-            private string title = null;
-            private Color color = Color.clear;
-
-            public HeaderContent(string title, Color color)
+            if (tabNextIconContent == null)
             {
-                this.title = title;
-                this.color = color;
+                tabNextIconContent = EditorGUIUtility.IconContent("tab_next");
             }
 
-            public void Draw()
+            using (new EditorGUILayout.HorizontalScope())
             {
-                EditorLayoutTools.DrawLabelWithBackground(title, color);
-            }
-        }
+                var type = content.isAssetBundle ? "AssetBundle" : "Other Assets";
+                var color = content.isAssetBundle ? new Color(0.3f, 0.3f, 1f) : new Color(0.3f, 1f, 0.3f);
 
-        public class AssetContent : IScrollContent
-        {
-            private string assetPath = null;
-            private string assetLoadPath = null;
-            private Vector2 assetLoadPathSize = Vector2.zero;
+                var originLabelWidth = EditorLayoutTools.SetLabelWidth(75f);
 
-            public AssetContent(string assetPath, string assetLoadPath)
-            {
-                this.assetPath = assetPath;
-                this.assetLoadPath = assetLoadPath;
+                EditorLayoutTools.DrawLabelWithBackground(type, color, width: 70f, options: GUILayout.Height(15f));
 
-                var textStyle = new GUIStyle();
-                assetLoadPathSize = textStyle.CalcSize(new GUIContent(assetLoadPath));
-            }
+                EditorLayoutTools.SetLabelWidth(content.label);
 
-            public void Draw()
-            {
-                using (new EditorGUILayout.HorizontalScope())
+                EditorGUILayout.SelectableLabel(content.label, GUILayout.Height(18f));
+
+                EditorLayoutTools.SetLabelWidth(originLabelWidth);
+
+                GUILayout.FlexibleSpace();
+
+                if (GUILayout.Button(tabNextIconContent, EditorStyles.label, GUILayout.Width(20f), GUILayout.Height(20f)))
                 {
-                    if (GUILayout.Button("select", GUILayout.Width(55f), GUILayout.Height(20f)))
+                    if (onRequestDetailView != null)
                     {
-                        Selection.activeObject = AssetDatabase.LoadMainAssetAtPath(assetPath);
+                        onRequestDetailView.OnNext(content.label);
                     }
-
-                    GUILayout.Space(10f);
-
-                    var originLabelWidth = EditorLayoutTools.SetLabelWidth(assetLoadPathSize.x);
-
-                    EditorGUILayout.SelectableLabel(assetLoadPath, GUILayout.Height(20f));
-
-                    EditorLayoutTools.SetLabelWidth(originLabelWidth);
-
-                    GUILayout.FlexibleSpace();
                 }
             }
         }
 
-        //----- field -----
+        public IObservable<string> OnRequestDetailViewAsObservable()
+        {
+            return onRequestDetailView ?? (onRequestDetailView = new Subject<string>());
+        }
+    }
 
-        //----- property -----
-
+    public class ContentAssetsScrollView : EditorGUIFastScrollView<AssetCollectInfo>
+    {
         public override Direction Type { get { return Direction.Vertical; } }
 
-        //----- method -----
-
-        protected override void DrawContent(int index, IScrollContent content)
+        protected override void DrawContent(int index, AssetCollectInfo content)
         {
-            content.Draw();
+            using (new EditorGUILayout.HorizontalScope())
+            {
+                var originLabelWidth = EditorLayoutTools.SetLabelWidth(75f);
+
+                var resourcePath = content.AssetInfo.ResourcesPath;
+
+                EditorLayoutTools.SetLabelWidth(resourcePath);
+
+                EditorGUILayout.SelectableLabel(resourcePath, GUILayout.Height(18f));
+
+                EditorLayoutTools.SetLabelWidth(originLabelWidth);
+
+            }
         }
     }
 }
