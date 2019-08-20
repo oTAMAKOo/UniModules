@@ -40,9 +40,10 @@ namespace Modules.Devkit.WebView
 
         //----- field -----
 
+        [SerializeField]
         private string url = null;
 
-        private LifetimeDisposable lifetimeDisposable = new LifetimeDisposable();
+        private string currentUrl = null;
         
         private Object webView = null;
         private bool syncingFocus = false;
@@ -55,6 +56,8 @@ namespace Modules.Devkit.WebView
         private static Dictionary<WebViewMethodType, MethodInfo> webViewMethods = null;
         private static FieldInfo parentField = null;
         private static Func<Rect, Rect> unclipMethod = null;
+
+        private LifetimeDisposable lifetimeDisposable = new LifetimeDisposable();
 
         private bool initialized = false;
 
@@ -112,22 +115,24 @@ namespace Modules.Devkit.WebView
         {
             if (initialized) { return; }
 
+            OnLocationChangedAsObservable()
+                .Subscribe(x =>
+                   {
+                       currentUrl = x;
+
+                       if (Event.current.type != EventType.Repaint)
+                       {
+                           Repaint();
+                       }
+                   })
+                .AddTo(lifetimeDisposable.Disposable);
+
             var webViewRect = GetWebViewRect();
 
             InitWebView(webViewRect);
 
-            OnLocationChangedAsObservable()
-                .Subscribe(x =>
-                    {
-                        url = x;
+            GUI.FocusControl(string.Empty);
 
-                        if (Event.current.type != EventType.Repaint)
-                        {
-                            Repaint();
-                        }
-                    })
-                .AddTo(lifetimeDisposable.Disposable);
-             
             initialized = true;
         }
 
@@ -336,7 +341,7 @@ namespace Modules.Devkit.WebView
         public void LoadURL(string url)
         {
             this.url = url;
-
+            
             Invoke(WebViewMethodType.LoadURL, url);
         }
 
