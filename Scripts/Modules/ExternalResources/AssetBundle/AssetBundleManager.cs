@@ -74,7 +74,7 @@ namespace Modules.AssetBundles
         private Dictionary<string, string[]> dependencies = null;
 
         // ダウンロードキャンセル.
-        private YieldCancell yieldCancell = null;
+        private YieldCancel yieldCancel = null;
 
         // シュミュレートモードか.
         private bool simulateMode = false;
@@ -112,9 +112,9 @@ namespace Modules.AssetBundles
         /// <summary>
         /// Coroutine中断用のクラスを登録.
         /// </summary>
-        public void RegisterYieldCancell(YieldCancell yieldCancell)
+        public void RegisterYieldCancell(YieldCancel yieldCancel)
         {
-            this.yieldCancell = yieldCancell;
+            this.yieldCancel = yieldCancel;
         }
 
         /// <summary>
@@ -235,7 +235,7 @@ namespace Modules.AssetBundles
                                 }
                             }
                         })
-                    .ToYieldInstruction(false, yieldCancell.Token);
+                    .ToYieldInstruction(false, yieldCancel.Token);
 
                 while (!loadAssetYield.IsDone)
                 {
@@ -287,7 +287,7 @@ namespace Modules.AssetBundles
                     .Timeout(TimeoutLimit)
                     .OnErrorRetry((TimeoutException ex) => OnTimeout(url, ex), RetryCount, RetryDelaySeconds)
                     .DoOnError(x => OnError(x))
-                    .ToYieldInstruction(false, yieldCancell.Token);
+                    .ToYieldInstruction(false, yieldCancel.Token);
 
             while (!downloadYield.IsDone)
             {
@@ -398,7 +398,7 @@ namespace Modules.AssetBundles
 
             if (simulateMode)
             {
-                var loadYield = SimulateLoadAsset<T>(assetPath).ToYieldInstruction(false, yieldCancell.Token);
+                var loadYield = SimulateLoadAsset<T>(assetPath).ToYieldInstruction(false, yieldCancel.Token);
 
                 while (!loadYield.IsDone)
                 {

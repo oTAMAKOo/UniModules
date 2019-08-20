@@ -61,7 +61,7 @@ namespace Modules.ExternalResource
         private HashSet<AssetInfo> loadingAssets = new HashSet<AssetInfo>();
 
         // Coroutine中断用.
-        private YieldCancell yieldCancell = null;
+        private YieldCancel yieldCancel = null;
 
         // イベント通知.
         private Subject<string> onTimeOut = null;
@@ -88,7 +88,7 @@ namespace Modules.ExternalResource
             Caching.compressionEnabled = true;
 
             // 中断用登録.
-            yieldCancell = new YieldCancell();
+            yieldCancel = new YieldCancel();
 
             //----- AssetBundleManager初期化 -----
                         
@@ -101,7 +101,7 @@ namespace Modules.ExternalResource
             // AssetBundleManager初期化.
             assetBundleManager = AssetBundleManager.CreateInstance();
             assetBundleManager.Initialize(simulateMode: isSimulate);
-            assetBundleManager.RegisterYieldCancell(yieldCancell);
+            assetBundleManager.RegisterYieldCancell(yieldCancel);
             assetBundleManager.OnTimeOutAsObservable().Subscribe(x => OnTimeout(x)).AddTo(Disposable);
             assetBundleManager.OnErrorAsObservable().Subscribe(x => OnError(x)).AddTo(Disposable);
 
@@ -291,7 +291,7 @@ namespace Modules.ExternalResource
 
                 var updateYield = instance.criAssetManager
                     .UpdateCriAsset(resourcesPath, progress)
-                    .ToYieldInstruction(false, yieldCancell.Token);
+                    .ToYieldInstruction(false, yieldCancel.Token);
 
                 while (!updateYield.IsDone)
                 {
@@ -337,7 +337,7 @@ namespace Modules.ExternalResource
 
                 var updateYield = instance.assetBundleManager
                     .UpdateAssetBundle(assetBundleName, progress)
-                    .ToYieldInstruction(false, yieldCancell.Token);
+                    .ToYieldInstruction(false, yieldCancel.Token);
 
                 yield return updateYield;
 
@@ -352,14 +352,14 @@ namespace Modules.ExternalResource
 
         private void CancelAllCoroutines()
         {
-            if (yieldCancell != null)
+            if (yieldCancel != null)
             {
-                yieldCancell.Dispose();
+                yieldCancel.Dispose();
 
                 // キャンセルしたので再生成.
-                yieldCancell = new YieldCancell();
+                yieldCancel = new YieldCancel();
 
-                assetBundleManager.RegisterYieldCancell(yieldCancell);
+                assetBundleManager.RegisterYieldCancell(yieldCancel);
             }
         }
 
@@ -418,7 +418,7 @@ namespace Modules.ExternalResource
             // ローカルバージョンが古い場合はダウンロード.
             if (!CheckAssetBundleVersion(assetBundleName))
             {
-                var downloadYield = UpdateAsset(resourcesPath).ToYieldInstruction(false, yieldCancell.Token);
+                var downloadYield = UpdateAsset(resourcesPath).ToYieldInstruction(false, yieldCancel.Token);
 
                 // 読み込み実行 (読み込み中の場合は読み込み待ちのObservableが返る).
                 sw = System.Diagnostics.Stopwatch.StartNew();
@@ -585,7 +585,7 @@ namespace Modules.ExternalResource
 
                     var sw = System.Diagnostics.Stopwatch.StartNew();
 
-                    var updateYield = UpdateAsset(resourcesPath).ToYieldInstruction(false, yieldCancell.Token);
+                    var updateYield = UpdateAsset(resourcesPath).ToYieldInstruction(false, yieldCancel.Token);
 
                     while (!updateYield.IsDone)
                     {
@@ -642,7 +642,7 @@ namespace Modules.ExternalResource
 
                     var sw = System.Diagnostics.Stopwatch.StartNew();
 
-                    var updateYield = UpdateAsset(resourcesPath).ToYieldInstruction(false, yieldCancell.Token);
+                    var updateYield = UpdateAsset(resourcesPath).ToYieldInstruction(false, yieldCancel.Token);
 
                     while (!updateYield.IsDone)
                     {

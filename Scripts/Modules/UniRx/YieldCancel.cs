@@ -7,7 +7,7 @@ namespace Modules.UniRxExtension
 {
     #if !(NETFX_CORE || NET_4_6 || NET_STANDARD_2_0 || UNITY_WSA_10_0)
 
-    public sealed class YieldCancell : IDisposable
+    public sealed class YieldCancel : IDisposable
     {
         //----- params -----
 
@@ -24,13 +24,13 @@ namespace Modules.UniRxExtension
 
         //----- method -----
 
-        public YieldCancell()
+        public YieldCancel()
         {
             cancelDisposable = new BooleanDisposable();
             cancellationToken = new CancellationToken(cancelDisposable);
         }
 
-        ~YieldCancell()
+        ~YieldCancel()
         {
             Dispose();
         }
@@ -48,7 +48,7 @@ namespace Modules.UniRxExtension
 
     #else
 
-    public class YieldCancell : IDisposable
+    public class YieldCancel : IDisposable
     {
         //----- params -----
 
@@ -64,12 +64,12 @@ namespace Modules.UniRxExtension
 
         //----- method -----
 
-        public YieldCancell()
+        public YieldCancel()
         {
             cancellationToken = new CancellationTokenSource();
         }
 
-        ~YieldCancell()
+        ~YieldCancel()
         {
             Dispose();
         }
