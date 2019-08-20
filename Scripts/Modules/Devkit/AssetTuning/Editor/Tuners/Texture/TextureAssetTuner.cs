@@ -96,6 +96,8 @@ namespace Modules.Devkit.AssetTuning
         {
             var config = TextureAssetTunerConfig.Instance;
 
+            if (config == null) { return; }
+
             if (!IsFolderItem(textureImporter.assetPath, config.CompressFolders)) { return; }
 
             var pathSplit = textureImporter.assetPath.Split(PathUtility.PathSeparator);
@@ -137,6 +139,8 @@ namespace Modules.Devkit.AssetTuning
         protected virtual void SetTextureTypeSettings(TextureImporter textureImporter)
         {
             var config = TextureAssetTunerConfig.Instance;
+
+            if (config == null) { return; }
 
             if (!IsFolderItem(textureImporter.assetPath, config.SpriteFolders)) { return; }
 
@@ -182,10 +186,6 @@ namespace Modules.Devkit.AssetTuning
 
         public static bool IsFolderItem(string assetPath, Object[] folders)
         {
-            var settings = TextureAssetTunerConfig.Instance;
-
-            if (settings == null) { return false; }
-
             assetPath = PathUtility.ConvertPathSeparator(assetPath);
 
             var targetPaths = folders.Where(x => x != null).Select(x => AssetDatabase.GetAssetPath(x));
