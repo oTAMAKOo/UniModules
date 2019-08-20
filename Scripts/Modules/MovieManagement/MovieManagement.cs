@@ -8,7 +8,7 @@ using UniRx;
 using CriMana;
 using Extensions;
 using Modules.CriWare;
-using Newtonsoft.Json.Serialization;
+using System.IO;
 
 namespace Modules.MovieManagement
 {
@@ -59,6 +59,8 @@ namespace Modules.MovieManagement
             initialized = true;
         }
 
+        #region InternalResources
+
         /// <summary>
         /// InternalResources内の動画再生.
         /// </summary>
@@ -69,15 +71,15 @@ namespace Modules.MovieManagement
             return info != null ? Play(info, targetGraphic, shaderOverrideCallBack) : null;
         }
 
-        /// <summary>
-        /// ExternalResources内や、直接指定での動画再生.
-        /// </summary>
-        public static MovieElement Play(ManaInfo movieInfo, Graphic targetGraphic, Player.ShaderDispatchCallback shaderOverrideCallBack = null)
-        {
-            return Play(movieInfo.UsmPath + CriAssetDefinition.UsmExtension, targetGraphic, shaderOverrideCallBack);
-        }
+        #endregion
 
-        public static MovieElement Play(string moviePath, Graphic targetGraphic, Player.ShaderDispatchCallback shaderOverrideCallBack = null)
+        #region ExternalResources
+
+        /// <summary>
+        /// ExternalResources内や、直接指定での動画再生用のインスタンスを生成.
+        /// ※ 頭出しなどを行う時はこの関数で生成したPlayerを使って頭出しを実装する.
+        /// </summary>
+        public static MovieElement CreateElement(string moviePath, Graphic targetGraphic, Player.ShaderDispatchCallback shaderOverrideCallBack = null)
         {
             var movieController = UnityUtility.GetOrAddComponent<CriManaMovieControllerForUI>(targetGraphic.gameObject);
 
@@ -92,24 +94,38 @@ namespace Modules.MovieManagement
                 manaPlayer.SetShaderDispatchCallback(shaderOverrideCallBack);
             }
 
-            manaPlayer.Start();
-
             var movieElement = new MovieElement(manaPlayer, movieController, moviePath);
 
             Instance.movieElements.Add(movieElement);
-            
+
+            return movieElement;
+        }
+        
+        /// <summary> ExternalResources内や、直接指定での動画再生. </summary>
+        public static MovieElement Play(ManaInfo movieInfo, Graphic targetGraphic, Player.ShaderDispatchCallback shaderOverrideCallBack = null)
+        {
+            var moviePath = Path.ChangeExtension(movieInfo.UsmPath, CriAssetDefinition.UsmExtension);
+
+            return Play(moviePath, targetGraphic, shaderOverrideCallBack);
+        }
+
+        /// <summary> 直接指定での動画再生. </summary>
+        public static MovieElement Play(string moviePath, Graphic targetGraphic, Player.ShaderDispatchCallback shaderOverrideCallBack = null)
+        {
+            var movieElement = CreateElement(moviePath, targetGraphic, shaderOverrideCallBack);
+
+            movieElement.Player.Start();
+
             return movieElement;
         }
 
+        #endregion
+
         public static void Stop(MovieElement element)
         {
-            if (element == null) { return; }
+            if (element == null || element.Player == null) { return; }
 
-            var player = element.GetPlayer();
-
-            if (player == null) { return; }
-
-            player.Stop();
+            element.Player.Stop();
         }
 
         private void UpdateElement()
@@ -130,13 +146,11 @@ namespace Modules.MovieManagement
 
             for (var i = 0; i < releaseElements.Count; i++)
             {
-                var releaseElement = releaseElements[i];
+                var releaseElement = releaseElements[i];                
 
-                var player = releaseElement.GetPlayer();
-
-                if (player != null)
+                if (releaseElement.Player != null)
                 {
-                    player.Dispose();
+                    releaseElement.Player.Dispose();
                 }
 
                 movieElements.Remove(releaseElement);
@@ -151,11 +165,10 @@ namespace Modules.MovieManagement
             {
                 if (movieElement == null) { continue; }
 
-                var player = movieElement.GetPlayer();
-
-                if (player == null) { continue; }
-
-                player.Dispose();
+                if (movieElement.Player != null)
+                {
+                    movieElement.Player.Dispose();
+                }
             }
 
             movieElements.Clear();
