@@ -655,7 +655,7 @@ namespace Modules.UI
                     {
                         var enable = Contents != null && 0 <= index && index < Contents.Length;
 
-                        observable = item.UpdateItem(index, Contents);
+                        observable = Observable.Defer(() => item.UpdateItem(index, Contents));
                         UnityUtility.SetActive(item.gameObject, enable);
                     }
                     break;
@@ -672,7 +672,7 @@ namespace Modules.UI
                             index = 0;
                         }
 
-                        observable = item.UpdateItem(index, Contents);
+                        observable = Observable.Defer(() => item.UpdateItem(index, Contents));
                         UnityUtility.SetActive(item.gameObject, true);
                     }
                     break;
