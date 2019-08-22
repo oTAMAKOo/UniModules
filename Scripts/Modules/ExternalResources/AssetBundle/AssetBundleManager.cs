@@ -53,6 +53,9 @@ namespace Modules.AssetBundles
         // アセット管理.
         private AssetInfoManifest manifest = null;
 
+        // ダウンロード先パス.
+        private string installPath = null;
+
         // ダウンロード元URL.
         private string remoteUrl = null;
 
@@ -93,12 +96,14 @@ namespace Modules.AssetBundles
         /// 初期設定をします。
         /// Initializeで設定した値はstatic変数として保存されます。
         /// </summary>
+        /// <param name="installPath"></param>
         /// <param name="simulateMode">AssetDataBaseからアセットを取得(EditorOnly)</param>
         /// <param name="cryptPassword">暗号化用パスワード(16文字) AssetManageConfig.assetのCryptPasswordと一致している必要があります</param>
-        public void Initialize(bool simulateMode = false, string cryptPassword = DefaultPassword)
+        public void Initialize(string installPath, bool simulateMode = false, string cryptPassword = DefaultPassword)
         {
             if (isInitialized) { return; }
-            
+
+            this.installPath = installPath;
             this.simulateMode = Application.isEditor && simulateMode;
 
             downloadQueueing = new Dictionary<string, IObservable<string>>();
@@ -154,7 +159,6 @@ namespace Modules.AssetBundles
 
         public string BuildFilePath(string assetBundleName)
         {
-            var installPath = UnityPathUtility.GetInstallPath();
             var assetFolder = AssetBundlesFolder;
 
             var path = PathUtility.Combine(installPath, assetFolder);

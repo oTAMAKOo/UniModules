@@ -78,14 +78,11 @@ namespace Modules.ExternalResource
 
         //----- method -----
 
-        public void Initialize(string resourceDir)
+        public void Initialize(string resourceDir, string assetBundleInstallPath)
         {
             if (initialized) { return; }
 
             this.resourceDir = resourceDir;
-
-            // LZ4へ再圧縮有効.
-            Caching.compressionEnabled = true;
 
             // 中断用登録.
             yieldCancel = new YieldCancel();
@@ -100,7 +97,7 @@ namespace Modules.ExternalResource
 
             // AssetBundleManager初期化.
             assetBundleManager = AssetBundleManager.CreateInstance();
-            assetBundleManager.Initialize(simulateMode: isSimulate);
+            assetBundleManager.Initialize(assetBundleInstallPath, isSimulate);
             assetBundleManager.RegisterYieldCancel(yieldCancel);
             assetBundleManager.OnTimeOutAsObservable().Subscribe(x => OnTimeout(x)).AddTo(Disposable);
             assetBundleManager.OnErrorAsObservable().Subscribe(x => OnError(x)).AddTo(Disposable);
