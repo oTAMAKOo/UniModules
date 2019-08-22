@@ -101,7 +101,7 @@ namespace Modules.ExternalResource
             // AssetBundleManager初期化.
             assetBundleManager = AssetBundleManager.CreateInstance();
             assetBundleManager.Initialize(simulateMode: isSimulate);
-            assetBundleManager.RegisterYieldCancell(yieldCancel);
+            assetBundleManager.RegisterYieldCancel(yieldCancel);
             assetBundleManager.OnTimeOutAsObservable().Subscribe(x => OnTimeout(x)).AddTo(Disposable);
             assetBundleManager.OnErrorAsObservable().Subscribe(x => OnError(x)).AddTo(Disposable);
 
@@ -359,7 +359,7 @@ namespace Modules.ExternalResource
                 // キャンセルしたので再生成.
                 yieldCancel = new YieldCancel();
 
-                assetBundleManager.RegisterYieldCancell(yieldCancel);
+                assetBundleManager.RegisterYieldCancel(yieldCancel);
             }
         }
 

@@ -97,7 +97,7 @@ namespace Modules.ExternalResource.Editor
                 BuildAssetBundle.CleanOldPackage(cachedAssetBundleHashs);
 
                 // AssetBundleファイルをパッケージ化.
-                BuildAssetBundle.BuildPackage(exportPath);
+                BuildAssetBundle.BuildPackage(exportPath, assetManageConfig.CryptPassword);
             }
             catch (Exception e)
             {

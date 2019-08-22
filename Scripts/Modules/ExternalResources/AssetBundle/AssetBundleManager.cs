@@ -25,9 +25,7 @@ namespace Modules.AssetBundles
 
         public const string PackageExtension = ".package";
 
-        public const string AesPassword = "QaQaVf7258Whw258";
-
-        private static readonly AesManaged aesManaged = AESExtension.CreateAesManaged(AesPassword);
+        public const string DefaultPassword = "QaQaVf7258Whw258";
 
         // タイムアウトまでの時間.
         private readonly TimeSpan TimeoutLimit = TimeSpan.FromSeconds(60f);
@@ -83,6 +81,8 @@ namespace Modules.AssetBundles
         private Subject<string> onTimeOut = null;
         private Subject<Exception> onError = null;
 
+        private AesManaged aesManaged = null;
+
         private bool isInitialized = false;
 
         //----- property -----
@@ -94,7 +94,8 @@ namespace Modules.AssetBundles
         /// Initializeで設定した値はstatic変数として保存されます。
         /// </summary>
         /// <param name="simulateMode">AssetDataBaseからアセットを取得(EditorOnly)</param>
-        public void Initialize(bool simulateMode = false)
+        /// <param name="cryptPassword">暗号化用パスワード(16文字) AssetManageConfig.assetのCryptPasswordと一致している必要があります</param>
+        public void Initialize(bool simulateMode = false, string cryptPassword = DefaultPassword)
         {
             if (isInitialized) { return; }
             
@@ -106,13 +107,15 @@ namespace Modules.AssetBundles
             downloadingErrors = new Dictionary<string, string>();
             dependencies = new Dictionary<string, string[]>();
 
+            aesManaged = AESExtension.CreateAesManaged(cryptPassword);
+
             isInitialized = true;
         }
 
         /// <summary>
-        /// Coroutine中断用のクラスを登録.
+        /// コルーチン中断用のクラスを登録.
         /// </summary>
-        public void RegisterYieldCancell(YieldCancel yieldCancel)
+        public void RegisterYieldCancel(YieldCancel yieldCancel)
         {
             this.yieldCancel = yieldCancel;
         }

@@ -4,8 +4,8 @@ using UnityEditor;
 using System.Collections.Generic;
 using Extensions;
 using Extensions.Devkit;
+using Modules.AssetBundles;
 using Modules.Devkit.ScriptableObjects;
-using UnityEditor.Callbacks;
 
 namespace Modules.ExternalResource.Editor
 {
@@ -15,6 +15,8 @@ namespace Modules.ExternalResource.Editor
 
         //----- field -----
 
+        [SerializeField]
+        private string cryptPassword = AssetBundleManager.DefaultPassword;
         [SerializeField, ReadOnly]
         private List<GroupInfo> groupInfos = new List<GroupInfo>();
         [SerializeField, ReadOnly]
@@ -23,6 +25,9 @@ namespace Modules.ExternalResource.Editor
         private IgnoreInfo ignoreInfo = new IgnoreInfo();
 
         //----- property -----
+
+        /// <summary> 暗号化用パスワード </summary>
+        public string CryptPassword { get { return cryptPassword; } }
 
         /// <summary> 登録済みグループ </summary>
         public GroupInfo[] GroupInfos { get { return groupInfos.ToArray(); } }

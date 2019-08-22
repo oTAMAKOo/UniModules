@@ -30,7 +30,7 @@ namespace Modules.AssetBundles.Editor
 
         //----- method -----
 
-        public void Build(string exportPath, string assetBundlePath, Action<int, int> reportProgress)
+        public void Build(string exportPath, string assetBundlePath, string password, Action<int, int> reportProgress)
         {
             var filePaths = GetPackageTargets(assetBundlePath);
 
@@ -61,7 +61,7 @@ namespace Modules.AssetBundles.Editor
 
             foreach (var item in workerPaths)
             {
-                events.Add(StartWorker(exportPath, assetBundlePath, item.ToArray(), progress));
+                events.Add(StartWorker(exportPath, assetBundlePath, password, item.ToArray(), progress));
             }
 
             while (!WaitHandle.WaitAll(events.ToArray(), 100))
@@ -97,7 +97,7 @@ namespace Modules.AssetBundles.Editor
             return targets.ToArray();
         }
 
-        private static ManualResetEvent StartWorker(string exportPath, string assetBundlePath, string[] paths, Progress progress)
+        private static ManualResetEvent StartWorker(string exportPath, string assetBundlePath, string password, string[] paths, Progress progress)
         {
             var queue = new Queue<string>(paths);
             var resetEvent = new ManualResetEvent(false);
@@ -118,7 +118,7 @@ namespace Modules.AssetBundles.Editor
 
                         if (path == null) { break; }
 
-                        CreatePackage(exportPath, assetBundlePath, path);
+                        CreatePackage(exportPath, assetBundlePath, path, password);
 
                         Interlocked.Increment(ref progress.Count);
                     }
@@ -137,9 +137,9 @@ namespace Modules.AssetBundles.Editor
         /// <summary>
         /// パッケージファイル化(暗号化).
         /// </summary>
-        private static void CreatePackage(string exportPath, string assetBundlePath, string filePath)
+        private static void CreatePackage(string exportPath, string assetBundlePath, string filePath, string password)
         {
-            var aesManaged = AESExtension.CreateAesManaged(AssetBundleManager.AesPassword);
+            var aesManaged = AESExtension.CreateAesManaged(password);
 
             // ※ パッケージファイルが存在する時は内容に変更がない時なのでそのままコピーする.
 
