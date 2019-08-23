@@ -100,8 +100,6 @@ namespace Modules.CriWare
             }
         }
 
-        #endif
-
         // タイムアウトまでの時間.
         private readonly TimeSpan TimeoutLimit = TimeSpan.FromSeconds(180f);
 
@@ -110,6 +108,8 @@ namespace Modules.CriWare
 
         // リトライするまでの時間(秒).
         private readonly TimeSpan RetryDelaySeconds = TimeSpan.FromSeconds(2f);
+
+        #endif
 
         //----- field -----
 
