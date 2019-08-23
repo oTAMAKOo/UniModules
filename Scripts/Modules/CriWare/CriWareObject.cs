@@ -60,8 +60,14 @@ namespace Modules.CriWare
                 // 手動管理する為無効化.
                 Initializer.dontDestroyOnLoad = false;
 
+                // ※ ADX2-LEは自動で暗号化処理が掛かるのでdecrypterConfig自体が存在しない.
+
+                #if !ENABLE_CRIWARE_ADX_LE
+
                 // 認証キー.
                 Initializer.decrypterConfig.key = decryptKey;
+
+                #endif
 
                 // ファイルハンドルの使用数を節約する為、ファイルアクセスが行われるタイミングでのみハンドルを利用するよう変更.
                 // ※ 逐次オープンとなるためファイルアクセスの性能は低下する.
@@ -93,8 +99,12 @@ namespace Modules.CriWare
                 Initializer.Initialize();
             }
 
+            #if ENABLE_CRIWARE_FILESYSTEM
+
             // CriFsServerはライブラリの初期化後に生成.
             CriFsServer.CreateInstance();
+
+            #endif
 
             // CriAtomはライブラリの初期化後に生成.
             var criAtom = gameObject.AddComponent<CriAtom>();

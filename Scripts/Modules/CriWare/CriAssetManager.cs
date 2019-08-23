@@ -19,6 +19,8 @@ namespace Modules.CriWare
     {
         //----- params -----
 
+        #if ENABLE_CRIWARE_FILESYSTEM
+
         private class CriAssetInstall
         {
             private static int installCount = 0;
@@ -98,6 +100,8 @@ namespace Modules.CriWare
             }
         }
 
+        #endif
+
         // タイムアウトまでの時間.
         private readonly TimeSpan TimeoutLimit = TimeSpan.FromSeconds(180f);
 
@@ -124,8 +128,12 @@ namespace Modules.CriWare
         // フォルダディレクトリ.
         private string sourceDir = null;
 
+        #if ENABLE_CRIWARE_FILESYSTEM
+
         // ダウンロード待ち.
         private Dictionary<string, CriAssetInstall> installQueueing = null;
+
+        #endif
 
         // 同時インストール数.
         private uint numInstallers = 0;
@@ -149,7 +157,11 @@ namespace Modules.CriWare
             this.simulateMode = Application.isEditor && simulateMode;
             this.numInstallers = numInstallers;
 
+            #if ENABLE_CRIWARE_FILESYSTEM
+
             installQueueing = new Dictionary<string, CriAssetInstall>();
+
+            #endif
 
             //------ CriInstaller初期化 ------
 
@@ -173,6 +185,8 @@ namespace Modules.CriWare
         {
             if (isInitialized)
             {
+                #if ENABLE_CRIWARE_FILESYSTEM
+
                 foreach (var item in installQueueing.Values)
                 {
                     item.Installer.Stop();
@@ -182,6 +196,8 @@ namespace Modules.CriWare
                 installQueueing.Clear();
 
                 CriFsWebInstaller.FinalizeModule();
+
+                #endif
             }
         }
 
@@ -199,6 +215,8 @@ namespace Modules.CriWare
 
             CleanUnuseCache();
         }
+
+        #if ENABLE_CRIWARE_FILESYSTEM
 
         /// <summary>
         /// 指定されたアセットを更新.
@@ -304,6 +322,8 @@ namespace Modules.CriWare
                 installQueueing.Remove(resourcesPath);
             }
         }
+
+        #endif
 
         /// <summary>
         /// 全てのキャッシュを破棄.

@@ -1,5 +1,4 @@
-﻿﻿
-using UnityEngine;
+﻿using UnityEngine;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -30,7 +29,7 @@ namespace Modules.Live2D
         //----- property -----
 
         //----- method -----
-       
+
         public void SetParams(CubismRaycaster raycaster)
         {
             this.raycaster = raycaster;
@@ -40,9 +39,13 @@ namespace Modules.Live2D
         {
             return onRaycastHit ?? (onRaycastHit = new Subject<CubismDrawable>());
         }
-  
+
+        #endif
+
         protected override void Raycast(Ray ray)
         {
+            #if ENABLE_LIVE2D
+
             var hit = new CubismRaycastHit[4];
 
             var hitCount = raycaster.Raycast(ray, hit);
@@ -54,8 +57,8 @@ namespace Modules.Live2D
                     onRaycastHit.OnNext(hit[index].Drawable);
                 }
             }
-        }
 
-        #endif
+            #endif
+        }
     }
 }
