@@ -19,7 +19,10 @@ namespace Extensions
         //----- params -----
         
         public const string AssetsFolder = "Assets";
+
         public const string ResourcesFolder = "Resources";
+
+        public const string LibraryFolder = "Library";
 
         //----- field -----
 

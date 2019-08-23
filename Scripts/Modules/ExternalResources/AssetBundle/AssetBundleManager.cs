@@ -20,8 +20,7 @@ namespace Modules.AssetBundles
     {
         //----- params -----
 
-        public const string AssetBundlesFolder = "AssetBundle";
-        public const string LibraryFolder = "Library";
+        public const string PackageFolder = "Package";
 
         public const string PackageExtension = ".package";
 
@@ -80,6 +79,9 @@ namespace Modules.AssetBundles
         // シュミュレートモードか.
         private bool simulateMode = false;
 
+        // ローカルモードか.
+        private bool localMode = false;
+
         // イベント通知.
         private Subject<string> onTimeOut = null;
         private Subject<Exception> onError = null;
@@ -97,13 +99,15 @@ namespace Modules.AssetBundles
         /// Initializeで設定した値はstatic変数として保存されます。
         /// </summary>
         /// <param name="installPath"></param>
+        /// <param name="localMode"><see cref="installPath"/>のファイルからアセットを取得</param>
         /// <param name="simulateMode">AssetDataBaseからアセットを取得(EditorOnly)</param>
         /// <param name="cryptPassword">暗号化用パスワード(16文字) AssetManageConfig.assetのCryptPasswordと一致している必要があります</param>
-        public void Initialize(string installPath, bool simulateMode = false, string cryptPassword = DefaultPassword)
+        public void Initialize(string installPath, bool localMode = false, bool simulateMode = false, string cryptPassword = DefaultPassword)
         {
             if (isInitialized) { return; }
 
             this.installPath = installPath;
+            this.localMode = localMode;
             this.simulateMode = Application.isEditor && simulateMode;
 
             downloadQueueing = new Dictionary<string, IObservable<string>>();
@@ -152,14 +156,14 @@ namespace Modules.AssetBundles
         public string BuildUrl(string assetBundlePath)
         {
             var platformName = UnityPathUtility.GetPlatformName();
-            var assetFolder = AssetBundlesFolder;
+            var assetFolder = PackageFolder;
 
             return PathUtility.Combine(new string[] { remoteUrl, platformName, assetFolder, assetBundlePath }) + PackageExtension;
         }
 
         public string BuildFilePath(string assetBundleName)
         {
-            var assetFolder = AssetBundlesFolder;
+            var assetFolder = PackageFolder;
 
             var path = PathUtility.Combine(installPath, assetFolder);
 
@@ -191,6 +195,8 @@ namespace Modules.AssetBundles
         public IObservable<Unit> UpdateAssetBundle(string assetBundleName, IProgress<float> progress = null)
         {
             if (simulateMode) { return Observable.ReturnUnit(); }
+
+            if (localMode) { return Observable.ReturnUnit(); }
 
             return Observable.FromMicroCoroutine(() => UpdateAssetBundleInternal(assetBundleName, progress));
         }

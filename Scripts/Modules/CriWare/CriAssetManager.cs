@@ -118,6 +118,9 @@ namespace Modules.CriWare
         // シュミュレートモードか.
         private bool simulateMode = false;
 
+        // ローカルモードか.
+        private bool localMode = false;
+
         // フォルダディレクトリ.
         private string sourceDir = null;
 
@@ -137,11 +140,12 @@ namespace Modules.CriWare
 
         //----- method -----
 
-        public void Initialize(string sourceDir, uint numInstallers, bool simulateMode = false)
+        public void Initialize(string sourceDir, uint numInstallers, bool localMode = false, bool simulateMode = false)
         {
             if (isInitialized) { return; }
 
             this.sourceDir = sourceDir;
+            this.localMode = localMode;
             this.simulateMode = Application.isEditor && simulateMode;
             this.numInstallers = numInstallers;
 
@@ -202,6 +206,8 @@ namespace Modules.CriWare
         public IObservable<Unit> UpdateCriAsset(string resourcesPath, IProgress<float> progress = null)
         {
             if (simulateMode) { return Observable.ReturnUnit(); }
+
+            if (localMode) { return Observable.ReturnUnit(); }
 
             if (Path.GetExtension(resourcesPath) == CriAssetDefinition.AwbExtension) { return Observable.ReturnUnit(); }
 

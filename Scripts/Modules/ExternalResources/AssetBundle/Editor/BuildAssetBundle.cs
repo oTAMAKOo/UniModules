@@ -8,7 +8,6 @@ using System.Linq;
 using Extensions;
 using Modules.ExternalResource;
 
-
 namespace Modules.AssetBundles.Editor
 {
     public static class BuildAssetBundle
@@ -28,9 +27,9 @@ namespace Modules.AssetBundles.Editor
             var projectPath = UnityPathUtility.GetProjectFolderPath();
             var platformName = UnityPathUtility.GetPlatformName();
 
-            var assetBundlesFolder = AssetBundleManager.AssetBundlesFolder;
+            var assetBundlesFolder = AssetBundleManager.PackageFolder;
 
-            var assetBundlePath = PathUtility.Combine(new string[] { projectPath, AssetBundleManager.LibraryFolder, assetBundlesFolder, platformName });
+            var assetBundlePath = PathUtility.Combine(new string[] { projectPath, UnityPathUtility.LibraryFolder, assetBundlesFolder, platformName });
 
             if (!Directory.Exists(assetBundlePath))
             {

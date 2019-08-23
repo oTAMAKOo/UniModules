@@ -56,7 +56,8 @@ namespace Modules.ExternalResource
         // 外部アセットディレクトリ.
         private string resourceDir = null;
 
-        private bool isSimulate = false;
+        private bool simulateMode = false;
+        private bool localMode = false;
 
         private HashSet<AssetInfo> loadingAssets = new HashSet<AssetInfo>();
 
@@ -78,11 +79,12 @@ namespace Modules.ExternalResource
 
         //----- method -----
 
-        public void Initialize(string resourceDir, string assetBundleInstallPath)
+        public void Initialize(string resourceDir, string assetBundleInstallPath, bool localMode = false)
         {
             if (initialized) { return; }
 
             this.resourceDir = resourceDir;
+            this.localMode = localMode;
 
             // 中断用登録.
             yieldCancel = new YieldCancel();
@@ -91,13 +93,13 @@ namespace Modules.ExternalResource
                         
             #if UNITY_EDITOR
 
-            isSimulate = Prefs.isSimulate;
+            simulateMode = Prefs.isSimulate;
 
             #endif
 
             // AssetBundleManager初期化.
             assetBundleManager = AssetBundleManager.CreateInstance();
-            assetBundleManager.Initialize(assetBundleInstallPath, isSimulate);
+            assetBundleManager.Initialize(assetBundleInstallPath, localMode, simulateMode);
             assetBundleManager.RegisterYieldCancel(yieldCancel);
             assetBundleManager.OnTimeOutAsObservable().Subscribe(x => OnTimeout(x)).AddTo(Disposable);
             assetBundleManager.OnErrorAsObservable().Subscribe(x => OnError(x)).AddTo(Disposable);
@@ -107,7 +109,7 @@ namespace Modules.ExternalResource
             // CriAssetManager初期化.
 
             criAssetManager = CriAssetManager.CreateInstance();
-            criAssetManager.Initialize(resourceDir, 4, isSimulate);
+            criAssetManager.Initialize(resourceDir, 4, localMode, simulateMode);
             criAssetManager.OnTimeOutAsObservable().Subscribe(x => OnTimeout(x)).AddTo(Disposable);
             criAssetManager.OnErrorAsObservable().Subscribe(x => OnError(x)).AddTo(Disposable);
             
@@ -223,7 +225,7 @@ namespace Modules.ExternalResource
 
             #if UNITY_EDITOR
 
-            if (isSimulate)
+            if (simulateMode)
             {
                 manifestFileName = PathUtility.Combine(resourceDir, manifestFileName);
             }
@@ -549,7 +551,7 @@ namespace Modules.ExternalResource
         {
             if (string.IsNullOrEmpty(resourcesPath)){ return null; }
 
-            return isSimulate ?
+            return simulateMode ?
                 PathUtility.Combine(new string[] { UnityPathUtility.GetProjectFolderPath(), resourceDir, resourcesPath }) :
                 PathUtility.Combine(new string[] { criAssetManager.BuildFilePath(null), resourcesPath });
         }

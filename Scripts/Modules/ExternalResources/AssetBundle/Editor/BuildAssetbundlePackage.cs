@@ -153,7 +153,7 @@ namespace Modules.AssetBundles.Editor
                     new string[]
                     {
                             exportPath,
-                            AssetBundleManager.AssetBundlesFolder,
+                            AssetBundleManager.PackageFolder,
                             packageFilePath.Replace(assetBundlePath, string.Empty)
                     });
 

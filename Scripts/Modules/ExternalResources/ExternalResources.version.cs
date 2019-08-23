@@ -101,7 +101,7 @@ namespace Modules.ExternalResource
 
             // ※ シュミレート時はpackageファイルをダウンロードしていないので常にファイルが存在しない.
 
-            if (!isSimulate)
+            if (!simulateMode)
             {
                 // ファイルがない.
                 if (!File.Exists(filePath)) { return false; }
