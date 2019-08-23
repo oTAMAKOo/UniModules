@@ -161,8 +161,6 @@ namespace Modules.CriWare
 
             installQueueing = new Dictionary<string, CriAssetInstall>();
 
-            #endif
-
             //------ CriInstaller初期化 ------
 
             var moduleConfig = CriFsWebInstaller.defaultModuleConfig;
@@ -177,6 +175,8 @@ namespace Modules.CriWare
             Observable.EveryUpdate()
                 .Subscribe(_ => CriFsWebInstaller.ExecuteMain())
                 .AddTo(Disposable);
+
+            #endif
 
             isInitialized = true;
         }
