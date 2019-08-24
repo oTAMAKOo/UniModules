@@ -83,7 +83,7 @@ namespace Modules.SoundManagement.Editor
 
         void OnGUI()
         {
-            var backgroundColor = new Color(0.5f, 0.5f, 0.5f, 0.3f);
+            var backgroundColor = new Color(0.3f, 0.5f, 0.3f);
 
             EditorGUILayout.Separator();
 
