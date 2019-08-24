@@ -35,8 +35,6 @@ namespace Modules.CriWare.Editor
         public static void Execute()
         {
             var editorConfig = ProjectFolders.Instance;
-            var soundConfig = SoundConfig.Instance;
-            var movieConfig = MovieConfig.Instance;
 
             var scriptPath = editorConfig.ScriptPath;
             var streamingAssetPath = editorConfig.StreamingAssetPath;
@@ -47,14 +45,16 @@ namespace Modules.CriWare.Editor
 
             #if ENABLE_CRIWARE_ADX
 
-            // Sound.
+            var soundConfig = SoundConfig.Instance;
+            
             UpdateSoundAssets(soundConfig, scriptPath, streamingAssetFolderName, externalResourcesFolderName);
 
             #endif
 
             #if ENABLE_CRIWARE_SOFDEC
 
-            // Movie.
+            var movieConfig = MovieConfig.Instance;
+            
             UpdateMovieAssets(movieConfig, scriptPath, streamingAssetFolderName, externalResourcesFolderName);
 
             #endif
