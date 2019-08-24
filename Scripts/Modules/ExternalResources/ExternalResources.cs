@@ -267,6 +267,8 @@ namespace Modules.ExternalResource
         /// </summary>
         public static IObservable<Unit> UpdateAsset(string resourcesPath, IProgress<float> progress = null)
         {
+            if (instance.localMode) { return Observable.ReturnUnit(); }
+
             if (string.IsNullOrEmpty(resourcesPath)) { return Observable.ReturnUnit(); }
 
             return Observable.FromCoroutine(() => instance.UpdateAssetInternal(resourcesPath, progress));

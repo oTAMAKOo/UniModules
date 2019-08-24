@@ -81,20 +81,17 @@ namespace Modules.TouchEffect
             }
             else
             {
-                if (Input.touchCount == 0)
+                if (Input.GetMouseButtonDown(0))
                 {
-                    if (Input.GetMouseButtonDown(0))
-                    {
-                        HandleTouch(TouchPhase.Began, 0, Input.mousePosition);
-                    }
-                    if (Input.GetMouseButton(0))
-                    {
-                        HandleTouch(TouchPhase.Moved, 0, Input.mousePosition);
-                    }
-                    if (Input.GetMouseButtonUp(0))
-                    {
-                        HandleTouch(TouchPhase.Ended, 0, Input.mousePosition);
-                    }
+                    HandleTouch(TouchPhase.Began, 0, Input.mousePosition);
+                }
+                if (Input.GetMouseButton(0))
+                {
+                    HandleTouch(TouchPhase.Moved, 0, Input.mousePosition);
+                }
+                if (Input.GetMouseButtonUp(0))
+                {
+                    HandleTouch(TouchPhase.Ended, 0, Input.mousePosition);
                 }
             }
         }
