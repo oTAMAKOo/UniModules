@@ -25,8 +25,11 @@ namespace Modules.Master
         private MasterManager()
         {
             All = new List<IMaster>();
+        }
 
-            InstallDirectory = string.Format("{0}/Master/", Application.temporaryCachePath);
+        public void SetInstallDirectory(string installDirectory)
+        {
+            InstallDirectory = installDirectory;
         }
 
         public string GetInstallPath<T>() where T : IMaster
