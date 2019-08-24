@@ -579,30 +579,33 @@ namespace Modules.ExternalResource
             {
                 var filePath = ConvertCriFilePath(resourcesPath);
 
-                if (!CheckAssetVersion(resourcesPath, filePath))
+                if (!localMode)
                 {
-                    var assetInfo = GetAssetInfo(resourcesPath);
-                    var assetPath = PathUtility.Combine(resourceDir, resourcesPath);
-
-                    var sw = System.Diagnostics.Stopwatch.StartNew();
-
-                    var updateYield = UpdateAsset(resourcesPath).ToYieldInstruction(false, yieldCancel.Token);
-
-                    while (!updateYield.IsDone)
+                    if (!CheckAssetVersion(resourcesPath, filePath))
                     {
-                        yield return null;
+                        var assetInfo = GetAssetInfo(resourcesPath);
+                        var assetPath = PathUtility.Combine(resourceDir, resourcesPath);
+
+                        var sw = System.Diagnostics.Stopwatch.StartNew();
+
+                        var updateYield = UpdateAsset(resourcesPath).ToYieldInstruction(false, yieldCancel.Token);
+
+                        while (!updateYield.IsDone)
+                        {
+                            yield return null;
+                        }
+
+                        sw.Stop();
+
+                        var builder = new StringBuilder();
+
+                        builder.AppendFormat("Update: {0} ({1:F2}ms)", Path.GetFileName(filePath), sw.Elapsed.TotalMilliseconds).AppendLine();
+                        builder.AppendLine();
+                        builder.AppendFormat("LoadPath = {0}", assetPath).AppendLine();
+                        builder.AppendFormat("Hash = {0}", assetInfo.FileHash).AppendLine();
+
+                        UnityConsole.Event(ConsoleEventName, ConsoleEventColor, builder.ToString());
                     }
-
-                    sw.Stop();
-
-                    var builder = new StringBuilder();
-
-                    builder.AppendFormat("Update: {0} ({1:F2}ms)", Path.GetFileName(filePath), sw.Elapsed.TotalMilliseconds).AppendLine();
-                    builder.AppendLine();
-                    builder.AppendFormat("LoadPath = {0}", assetPath).AppendLine();
-                    builder.AppendFormat("Hash = {0}", assetInfo.FileHash).AppendLine();
-
-                    UnityConsole.Event(ConsoleEventName, ConsoleEventColor, builder.ToString());
                 }
 
                 filePath = PathUtility.GetPathWithoutExtension(filePath) + CriAssetDefinition.AcbExtension;
@@ -636,30 +639,33 @@ namespace Modules.ExternalResource
             {
                 var filePath = ConvertCriFilePath(resourcesPath);
 
-                if (!CheckAssetVersion(resourcesPath, filePath))
+                if (!localMode)
                 {
-                    var assetInfo = GetAssetInfo(resourcesPath);
-                    var assetPath = PathUtility.Combine(resourceDir, resourcesPath);
-
-                    var sw = System.Diagnostics.Stopwatch.StartNew();
-
-                    var updateYield = UpdateAsset(resourcesPath).ToYieldInstruction(false, yieldCancel.Token);
-
-                    while (!updateYield.IsDone)
+                    if (!CheckAssetVersion(resourcesPath, filePath))
                     {
-                        yield return null;
+                        var assetInfo = GetAssetInfo(resourcesPath);
+                        var assetPath = PathUtility.Combine(resourceDir, resourcesPath);
+
+                        var sw = System.Diagnostics.Stopwatch.StartNew();
+
+                        var updateYield = UpdateAsset(resourcesPath).ToYieldInstruction(false, yieldCancel.Token);
+
+                        while (!updateYield.IsDone)
+                        {
+                            yield return null;
+                        }
+
+                        sw.Stop();
+
+                        var builder = new StringBuilder();
+
+                        builder.AppendFormat("Update: {0} ({1:F2}ms)", Path.GetFileName(filePath), sw.Elapsed.TotalMilliseconds).AppendLine();
+                        builder.AppendLine();
+                        builder.AppendFormat("LoadPath = {0}", assetPath).AppendLine();
+                        builder.AppendFormat("Hash = {0}", assetInfo.FileHash).AppendLine();
+
+                        UnityConsole.Event(ConsoleEventName, ConsoleEventColor, builder.ToString());
                     }
-
-                    sw.Stop();
-
-                    var builder = new StringBuilder();
-
-                    builder.AppendFormat("Update: {0} ({1:F2}ms)", Path.GetFileName(filePath), sw.Elapsed.TotalMilliseconds).AppendLine();
-                    builder.AppendLine();
-                    builder.AppendFormat("LoadPath = {0}", assetPath).AppendLine();
-                    builder.AppendFormat("Hash = {0}", assetInfo.FileHash).AppendLine();
-
-                    UnityConsole.Event(ConsoleEventName, ConsoleEventColor, builder.ToString());
                 }
 
                 filePath = PathUtility.GetPathWithoutExtension(filePath) + CriAssetDefinition.UsmExtension;
