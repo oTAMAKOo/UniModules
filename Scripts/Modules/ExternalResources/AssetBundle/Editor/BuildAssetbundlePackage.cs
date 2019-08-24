@@ -61,6 +61,8 @@ namespace Modules.AssetBundles.Editor
 
             foreach (var item in workerPaths)
             {
+                if (item == null) { continue; }
+
                 events.Add(StartWorker(exportPath, assetBundlePath, password, item.ToArray(), progress));
             }
 
