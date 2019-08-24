@@ -32,7 +32,7 @@ namespace Modules.Shaders
 
         private Type type = Type.None;
         private Image image = null;
-        private new Renderer renderer = null;
+        private Renderer rendererComponent = null;
 
         private bool initialized = false;
 
@@ -51,9 +51,9 @@ namespace Modules.Shaders
 
             type = Type.None;
 
-            renderer = UnityUtility.GetComponent<Renderer>(gameObject);
+            rendererComponent = UnityUtility.GetComponent<Renderer>(gameObject);
 
-            if (renderer != null)
+            if (rendererComponent != null)
             {
                 type = Type.Renderer;
             }
@@ -122,7 +122,7 @@ namespace Modules.Shaders
             switch (type)
             {
                 case Type.Renderer:
-                    material = Application.isPlaying ? renderer.material : renderer.sharedMaterial;
+                    material = Application.isPlaying ? rendererComponent.material : rendererComponent.sharedMaterial;
                     break;
 
                 case Type.Image:
@@ -140,11 +140,11 @@ namespace Modules.Shaders
                 case Type.Renderer:
                     if (Application.isPlaying)
                     {
-                        renderer.material = material;
+                        rendererComponent.material = material;
                     }
                     else
                     {
-                        renderer.sharedMaterial = material;
+                        rendererComponent.sharedMaterial = material;
                     }
                     break;
 
