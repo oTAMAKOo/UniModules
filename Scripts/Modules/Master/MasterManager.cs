@@ -29,7 +29,7 @@ namespace Modules.Master
 
         public void SetInstallDirectory(string installDirectory)
         {
-            InstallDirectory = installDirectory;
+            InstallDirectory = string.Format("{0}/Master/", installDirectory);
         }
 
         public string GetInstallPath<T>() where T : IMaster
