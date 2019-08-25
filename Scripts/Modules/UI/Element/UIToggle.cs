@@ -17,6 +17,8 @@ namespace Modules.UI.Element
 
         //----- field -----
 
+        private Subject<bool> onChange = null;
+
         //----- property -----
 
         public Toggle Toggle { get { return component; } }
@@ -29,9 +31,26 @@ namespace Modules.UI.Element
 
         //----- method -----
 
-        public override void Modify()
+        protected override void OnEnable()
         {
+            base.OnEnable();
 
+            Toggle.onValueChanged.AddListener(OnToggleValueChanged);
+        }
+
+        public override void Modify(){ }
+
+        private void OnToggleValueChanged(bool value)
+        {
+            if (onChange != null)
+            {
+                onChange.OnNext(value);
+            }
+        }
+
+        public IObservable<bool> OnChangeAsObservable()
+        {
+            return onChange ?? (onChange = new Subject<bool>());
         }
     }
 }

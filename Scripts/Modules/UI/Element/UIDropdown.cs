@@ -17,15 +17,34 @@ namespace Modules.UI.Element
 
         //----- field -----
 
+        private Subject<int> onChange = null;
+
         //----- property -----
 
         public Dropdown Dropdown { get { return component; } }
 
         //----- method -----
 
-        public override void Modify()
+        protected override void OnEnable()
         {
+            base.OnEnable();
 
+            Dropdown.onValueChanged.AddListener(OnDropdownValueChanged);
+        }
+
+        public override void Modify(){ }
+
+        private void OnDropdownValueChanged(int index)
+        {
+            if (onChange != null)
+            {
+                onChange.OnNext(index);
+            }
+        }
+
+        public IObservable<int> OnChangeAsObservable()
+        {
+            return onChange ?? (onChange = new Subject<int>());
         }
     }
 }

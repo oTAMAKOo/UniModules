@@ -40,13 +40,6 @@ namespace Modules.UI.Element
         protected virtual void OnEnable()
         {
             Modify();
-
-            Recovery();
-        }
-
-        protected virtual void OnDisable()
-        {
-            WaitRecovery();
         }
 
         private void OnRectTransformParentChanged()
@@ -55,66 +48,5 @@ namespace Modules.UI.Element
         }
 
         public abstract void Modify();
-
-        #region Recovery
-
-        private void Recovery()
-        {
-            if (!Application.isPlaying) { return; }
-
-            if (!waitRecovery) { return; }
-
-            var target = component as Selectable;
-
-            if (recoveryDisposable != null)
-            {
-                if (recoveryState.HasValue)
-                {
-                    target.enabled = recoveryState.Value;
-                    recoveryState = null;
-                }
-
-                recoveryDisposable.Dispose();
-                recoveryDisposable = null;
-            }
-
-            if (target != null)
-            {
-                recoveryState = target.enabled;
-
-                target.enabled = !recoveryState.Value;
-
-                recoveryDisposable = Observable.EveryUpdate()
-                    .SkipWhile(_ => !UnityUtility.IsActiveInHierarchy(target.gameObject))
-                    .Take(1)
-                    .Subscribe(_ => target.enabled = recoveryState.Value)
-                    .AddTo(this);
-
-                waitRecovery = false;
-            }
-        }
-
-        private void WaitRecovery()
-        {
-            if (!Application.isPlaying) { return; }
-
-            var target = component as Selectable;
-
-            if (recoveryDisposable != null)
-            {
-                if (recoveryState.HasValue)
-                {
-                    target.enabled = recoveryState.Value;
-                    recoveryState = null;
-                }
-
-                recoveryDisposable.Dispose();
-                recoveryDisposable = null;
-            }
-
-            waitRecovery = true;
-        }
-
-        #endregion
     }
 }
