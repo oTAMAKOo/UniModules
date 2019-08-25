@@ -116,6 +116,9 @@ namespace Modules.CriWare
         // アセット管理.
         private AssetInfoManifest manifest = null;
 
+        // インストール先.
+        private string installPath = null;
+
         // ダウンロード元URL.
         private string remoteUrl = null;
 
@@ -148,10 +151,11 @@ namespace Modules.CriWare
 
         //----- method -----
 
-        public void Initialize(string sourceDir, uint numInstallers, bool localMode = false, bool simulateMode = false)
+        public void Initialize(string installPath, string sourceDir, uint numInstallers, bool localMode = false, bool simulateMode = false)
         {
             if (isInitialized) { return; }
 
+            this.installPath = installPath;
             this.sourceDir = sourceDir;
             this.localMode = localMode;
             this.simulateMode = Application.isEditor && simulateMode;
@@ -411,7 +415,6 @@ namespace Modules.CriWare
 
         public string BuildFilePath(string assetPath)
         {
-            var installPath = UnityPathUtility.GetInstallPath();
             var assetFolder = CriAssetDefinition.CriAssetFolder;
            
             var path = PathUtility.Combine(installPath, assetFolder);

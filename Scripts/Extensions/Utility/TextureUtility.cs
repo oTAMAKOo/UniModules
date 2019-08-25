@@ -114,5 +114,34 @@ namespace Extensions
 
             return tex;
         }
+
+        /// <summary>
+        /// pngファイルのバイト配列からTexture2Dを生成.
+        /// </summary>
+        public static Texture2D CreateTexture2DFromPngBytes(byte[] bytes)
+        {
+            if (bytes == null) { return null; }
+
+            // 16バイトから開始.
+            var pos = 16;
+
+            var width = 0;
+
+            for (var i = 0; i < 4; i++)
+            {
+                width = width * 256 + bytes[pos++];
+            }
+
+            var height = 0;
+            for (var i = 0; i < 4; i++)
+            {
+                height = height * 256 + bytes[pos++];
+            }
+
+            var texture = new Texture2D(width, height);
+            texture.LoadImage(bytes);
+
+            return texture;
+        }
     }
 }

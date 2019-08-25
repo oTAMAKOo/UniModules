@@ -65,6 +65,18 @@ namespace Modules.TouchEffect
             isInitialized = true;
         }
 
+        public void Show()
+        {
+            UnityUtility.SetActive(touchEffectRoot, true);
+            UnityUtility.SetActive(dragEffectRoot, true);
+        }
+
+        public void Hide()
+        {
+            UnityUtility.SetActive(touchEffectRoot, false);
+            UnityUtility.SetActive(dragEffectRoot, false);
+        }
+
         void Update()
         {
             if (!isInitialized) { return; }

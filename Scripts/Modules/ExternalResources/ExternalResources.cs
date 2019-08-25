@@ -79,7 +79,7 @@ namespace Modules.ExternalResource
 
         //----- method -----
 
-        public void Initialize(string resourceDir, string assetBundleInstallPath, bool localMode = false)
+        public void Initialize(string resourceDir, string installPath, bool localMode = false)
         {
             if (initialized) { return; }
 
@@ -99,7 +99,7 @@ namespace Modules.ExternalResource
 
             // AssetBundleManager初期化.
             assetBundleManager = AssetBundleManager.CreateInstance();
-            assetBundleManager.Initialize(assetBundleInstallPath, localMode, simulateMode);
+            assetBundleManager.Initialize(installPath, localMode, simulateMode);
             assetBundleManager.RegisterYieldCancel(yieldCancel);
             assetBundleManager.OnTimeOutAsObservable().Subscribe(x => OnTimeout(x)).AddTo(Disposable);
             assetBundleManager.OnErrorAsObservable().Subscribe(x => OnError(x)).AddTo(Disposable);
@@ -109,7 +109,7 @@ namespace Modules.ExternalResource
             // CriAssetManager初期化.
 
             criAssetManager = CriAssetManager.CreateInstance();
-            criAssetManager.Initialize(resourceDir, 4, localMode, simulateMode);
+            criAssetManager.Initialize(installPath, resourceDir, 4, localMode, simulateMode);
             criAssetManager.OnTimeOutAsObservable().Subscribe(x => OnTimeout(x)).AddTo(Disposable);
             criAssetManager.OnErrorAsObservable().Subscribe(x => OnError(x)).AddTo(Disposable);
             
@@ -417,7 +417,7 @@ namespace Modules.ExternalResource
             var assetBundleName = assetInfo.AssetBundle.AssetBundleName;
 
             // ローカルバージョンが古い場合はダウンロード.
-            if (!CheckAssetBundleVersion(assetBundleName))
+            if (!CheckAssetBundleVersion(assetBundleName) && !localMode)
             {
                 var downloadYield = UpdateAsset(resourcesPath).ToYieldInstruction(false, yieldCancel.Token);
 
@@ -579,33 +579,30 @@ namespace Modules.ExternalResource
             {
                 var filePath = ConvertCriFilePath(resourcesPath);
 
-                if (!localMode)
+                if (!CheckAssetVersion(resourcesPath, filePath) && !localMode)
                 {
-                    if (!CheckAssetVersion(resourcesPath, filePath))
+                    var assetInfo = GetAssetInfo(resourcesPath);
+                    var assetPath = PathUtility.Combine(resourceDir, resourcesPath);
+
+                    var sw = System.Diagnostics.Stopwatch.StartNew();
+
+                    var updateYield = UpdateAsset(resourcesPath).ToYieldInstruction(false, yieldCancel.Token);
+
+                    while (!updateYield.IsDone)
                     {
-                        var assetInfo = GetAssetInfo(resourcesPath);
-                        var assetPath = PathUtility.Combine(resourceDir, resourcesPath);
-
-                        var sw = System.Diagnostics.Stopwatch.StartNew();
-
-                        var updateYield = UpdateAsset(resourcesPath).ToYieldInstruction(false, yieldCancel.Token);
-
-                        while (!updateYield.IsDone)
-                        {
-                            yield return null;
-                        }
-
-                        sw.Stop();
-
-                        var builder = new StringBuilder();
-
-                        builder.AppendFormat("Update: {0} ({1:F2}ms)", Path.GetFileName(filePath), sw.Elapsed.TotalMilliseconds).AppendLine();
-                        builder.AppendLine();
-                        builder.AppendFormat("LoadPath = {0}", assetPath).AppendLine();
-                        builder.AppendFormat("Hash = {0}", assetInfo.FileHash).AppendLine();
-
-                        UnityConsole.Event(ConsoleEventName, ConsoleEventColor, builder.ToString());
+                        yield return null;
                     }
+
+                    sw.Stop();
+
+                    var builder = new StringBuilder();
+
+                    builder.AppendFormat("Update: {0} ({1:F2}ms)", Path.GetFileName(filePath), sw.Elapsed.TotalMilliseconds).AppendLine();
+                    builder.AppendLine();
+                    builder.AppendFormat("LoadPath = {0}", assetPath).AppendLine();
+                    builder.AppendFormat("Hash = {0}", assetInfo.FileHash).AppendLine();
+
+                    UnityConsole.Event(ConsoleEventName, ConsoleEventColor, builder.ToString());
                 }
 
                 filePath = PathUtility.GetPathWithoutExtension(filePath) + CriAssetDefinition.AcbExtension;
