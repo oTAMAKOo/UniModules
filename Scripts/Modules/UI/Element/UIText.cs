@@ -13,7 +13,7 @@ namespace Modules.UI.Element
 {
     [ExecuteInEditMode]
     [RequireComponent(typeof(Text))]
-    public abstract class UIText : UIElement<Text>
+    public abstract partial class UIText : UIElement<Text>
     {
         //----- params -----
 

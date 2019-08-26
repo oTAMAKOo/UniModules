@@ -7,6 +7,7 @@ using System.Linq;
 using Extensions;
 using Modules.Devkit.Prefs;
 using Modules.GameText.Components;
+using Modules.UI.Element;
 
 namespace Modules.Devkit.CleanComponent
 {
@@ -46,6 +47,13 @@ namespace Modules.Devkit.CleanComponent
                     gameTextSetter.ImportText();
                 }
 
+                var uiText = UnityUtility.GetComponent<UIText>(textComponent);
+
+                if (uiText != null)
+                {
+                    uiText.ImportText();
+                }
+
                 EditorUtility.SetDirty(textComponent);
             }
         }
@@ -56,9 +64,23 @@ namespace Modules.Devkit.CleanComponent
                 .Where(x => !string.IsNullOrEmpty(x.text))
                 .Where(x =>
                     {
-                       var gameTextSetter = UnityUtility.GetComponent<GameTextSetter>(x);
+                        var execute = true;
 
-                       return gameTextSetter == null || gameTextSetter.Content != x.text;
+                        var gameTextSetter = UnityUtility.GetComponent<GameTextSetter>(x);
+
+                        if (gameTextSetter != null && gameTextSetter.Content == x.text)
+                        {
+                            execute = false;
+                        }
+
+                        var uiText = UnityUtility.GetComponent<UIText>(x);
+
+                        if (uiText != null && uiText.GetDevelopmentText() == x.text)
+                        {
+                            execute = false;
+                        }
+
+                        return execute;
                     })
                 .Any();
 

@@ -8,6 +8,8 @@ using UniRx;
 using Extensions;
 using Extensions.Devkit;
 using Extensions.Serialize;
+using Modules.GameText;
+using Modules.GameText.Components;
 
 namespace Modules.UI.Element
 {
@@ -19,9 +21,33 @@ namespace Modules.UI.Element
 
         //----- field -----
 
+        private GameTextSetter gameTextSetter = null;
+
+        private LifetimeDisposable lifetimeDisposable = null;
+
         //----- property -----
 
         //----- method -----
+
+        void OnEnable()
+        {
+            var instance = target as UIText;
+
+            lifetimeDisposable = new LifetimeDisposable();
+            
+            if (UnityUtility.IsNull(gameTextSetter))
+            {
+                gameTextSetter = UnityUtility.GetComponent<GameTextSetter>(instance);
+
+                if (gameTextSetter != null)
+                {
+                    gameTextSetter.ObserveEveryValueChanged(x => x.Category)
+                        .TakeUntilDisable(instance)
+                        .Subscribe(x => OnGameTextSetterCategoryChanged(x))
+                        .AddTo(lifetimeDisposable.Disposable);
+                }
+            }
+        }
 
         public override void OnInspectorGUI()
         {
@@ -47,7 +73,7 @@ namespace Modules.UI.Element
 
                 if (EditorGUI.EndChangeCheck())
                 {
-                    UnityEditorUtility.RegisterUndo("TextColorSetterInspector-Undo", instance);
+                    UnityEditorUtility.RegisterUndo("UITextInspector-Undo", instance);
 
                     current = infos[select];
                     instance.SetColor(current.Type);
@@ -65,6 +91,50 @@ namespace Modules.UI.Element
                 {
                     EditorGUILayout.HelpBox("Outline color exists", MessageType.Info);
                 }
+            }
+
+            using (new DisableScope(gameTextSetter != null && gameTextSetter.Category != GameTextCategory.None))
+            {
+                using (new EditorGUILayout.HorizontalScope())
+                {
+                    var labelWidth = EditorGUIUtility.labelWidth - 10f;
+
+                    EditorGUILayout.LabelField("Development Text", GUILayout.Width(labelWidth));
+
+                    var developmentText = instance.GetDevelopmentText().TrimStart(UIText.DevelopmentMark);
+
+                    var prevText = developmentText;
+
+                    EditorGUI.BeginChangeCheck();
+
+                    developmentText = EditorGUILayout.TextArea(developmentText, GUILayout.ExpandWidth(true), GUILayout.Height(30f));
+
+                    if (EditorGUI.EndChangeCheck())
+                    {
+                        UnityEditorUtility.RegisterUndo("UITextInspector-Undo", instance);
+
+                        if (!string.IsNullOrEmpty(prevText))
+                        {
+                            instance.text = null;
+                        }
+
+                        instance.SetDevelopmentText(developmentText);
+                        instance.ImportText();
+                    }
+                }
+            }
+        }
+
+        private void OnGameTextSetterCategoryChanged(GameTextCategory category)
+        {
+            var instance = target as UIText;
+
+            if (instance == null) { return; }
+
+            if (category != GameTextCategory.None)
+            {
+                instance.SetDevelopmentText(null);
+                instance.text = null;
             }
         }
     }

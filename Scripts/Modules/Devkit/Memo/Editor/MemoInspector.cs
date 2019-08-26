@@ -17,7 +17,7 @@ namespace Modules.Devkit.Memo
 
         private static AesManaged aesManaged = null;
 
-        private void OnEnable()
+        void OnEnable()
         {
             if (aesManaged == null)
             {
