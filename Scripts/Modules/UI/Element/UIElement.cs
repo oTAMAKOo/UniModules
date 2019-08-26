@@ -16,10 +16,6 @@ namespace Modules.UI.Element
 
         private T targetComponent = null;
 
-        private bool waitRecovery = false;
-        private bool? recoveryState = null;
-        private IDisposable recoveryDisposable = null;
-
         //----- property -----
 
         public T component

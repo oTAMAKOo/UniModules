@@ -18,6 +18,9 @@ namespace Modules.SoundManagement
         /// <summary>BGM</summary>
         Bgm,
 
+        /// <summary>ジングル</summary>
+        Jingle,
+
         /// <summary>ボイス</summary>
         Voice,
 
