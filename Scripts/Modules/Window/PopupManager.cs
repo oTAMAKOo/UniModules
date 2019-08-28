@@ -42,14 +42,13 @@ namespace Modules.Window
 
         //----- method -----
 
+        protected abstract int ParentInSceneLayer { get; }
+
+        protected abstract int ParentGlobalLayer { get; }
+
         public virtual void Initialize()
         {
-            var popupParent = UnityUtility.Instantiate<PopupParent>(gameObject, parentPrefab);
-
-            popupParent.transform.name = "Popup (Global)";
-            popupParent.Canvas.sortingOrder = globalCanvasOrder;
-
-            parentGlobal = popupParent;
+            parentGlobal = CreatePopupParent("Popup (Global)", gameObject, ParentGlobalLayer, globalCanvasOrder);
 
             UpdateContents();
         }
@@ -132,6 +131,20 @@ namespace Modules.Window
             }
         }
 
+        private PopupParent CreatePopupParent(string instanceName, GameObject parent, int layer, int canvasOrder)
+        {
+            var popupParent = UnityUtility.Instantiate<PopupParent>(parent, parentPrefab);
+
+            popupParent.transform.name = instanceName;
+            popupParent.Canvas.sortingOrder = canvasOrder;
+
+            UnityUtility.SetLayer(layer, popupParent.gameObject, true);
+
+            popupParent.Canvas.worldCamera = UnityUtility.FindCameraForLayer(layer).FirstOrDefault();
+
+            return popupParent;
+        }
+
         public void CreateInSceneParent(GameObject sceneRoot)
         {
             if (!UnityUtility.IsNull(parentInScene))
@@ -139,10 +152,7 @@ namespace Modules.Window
                 UnityUtility.SafeDelete(parentInScene.gameObject);
             }
 
-            var popupParent = UnityUtility.Instantiate<PopupParent>(sceneRoot, parentPrefab);
-
-            popupParent.transform.name = "Popup (InScene)";
-            popupParent.Canvas.sortingOrder = sceneCanvasOrder;
+            var popupParent = CreatePopupParent("Popup (InScene)", sceneRoot, ParentInSceneLayer, sceneCanvasOrder);
 
             var ignoreControl = UnityUtility.GetOrAddComponent<IgnoreControl>(popupParent.gameObject);
 

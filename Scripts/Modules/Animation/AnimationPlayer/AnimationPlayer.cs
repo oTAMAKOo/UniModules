@@ -152,6 +152,7 @@ namespace Modules.Animation
             if (!UnityUtility.IsActiveInHierarchy(gameObject))
             {
                 Debug.LogErrorFormat("Animation can't play not active in hierarchy.\n{0}", gameObject.transform.name);
+
                 return Observable.ReturnUnit();
             }
 
@@ -163,7 +164,16 @@ namespace Modules.Animation
 
             if (Animator.HasState(GetCurrentLayerIndex(), hash))
             {
-                return Observable.FromMicroCoroutine(() => PlayInternal(layer, normalizedTime, immediate));
+                PlayAnimator(hash, layer, normalizedTime);
+
+                // 指定アニメーションへ遷移待ち.
+                // FromMicroCoroutineは次のフレームから始まるので即時遷移はこのタイミングで実行する.
+                if (immediate)
+                {
+                    WaitTransitionStateImmediate();
+                }
+
+                return Observable.FromMicroCoroutine(() => PlayInternal(hash, layer, normalizedTime, immediate));
             }
 
             CurrentAnimationName = null;
@@ -173,31 +183,39 @@ namespace Modules.Animation
             return Observable.ReturnUnit();
         }
 
-        private IEnumerator PlayInternal(int layer, float normalizedTime, bool immediate)
+        private void PlayAnimator(int hash, int layer, float normalizedTime)
         {
-            var hash = Animator.StringToHash(CurrentAnimationName);
+            // リセット.
+            Refresh();
 
+            // 再生速度設定.
+            ApplySpeedRate();
+
+            // 再生.
+            currentState = State.Play;
+            Animator.enabled = true;
+            Animator.Play(hash, layer, normalizedTime);
+        }
+
+        private IEnumerator PlayInternal(int hash, int layer, float normalizedTime, bool immediate)
+        {
             while (true)
             {
                 if (!UnityUtility.IsActiveInHierarchy(gameObject)) { break; }
 
-                // リセット.
-                Refresh();
-
-                // 再生速度設定.
-                ApplySpeedRate();
-
-                // 再生.
-                currentState = State.Play;
-                Animator.enabled = true;
-                Animator.Play(hash, layer, normalizedTime);
-
                 // 指定アニメーションへ遷移待ち.
-                var waitTransitionStateYield = Observable.FromMicroCoroutine(() => WaitTransitionState(immediate)).ToYieldInstruction();
-
-                while (!waitTransitionStateYield.IsDone)
+                if (immediate)
                 {
-                    yield return null;
+                    WaitTransitionStateImmediate();
+                }
+                else
+                {
+                    var waitTransitionStateYield = Observable.FromMicroCoroutine(() => WaitTransitionState()).ToYieldInstruction();
+
+                    while (!waitTransitionStateYield.IsDone)
+                    {
+                        yield return null;
+                    }
                 }
 
                 // アニメーションの終了待ち.
@@ -211,13 +229,16 @@ namespace Modules.Animation
                 if (endActionType != EndActionType.Loop) { break; }
 
                 if (State == State.Stop) { yield break; }
+
+                // ループ再生の場合は再度再生を行う.
+                PlayAnimator(hash, layer, normalizedTime);
             }
 
             EndAction();
         }
 
         // 指定アニメーションへ遷移待ち.
-        private IEnumerator WaitTransitionState(bool immediate)
+        private IEnumerator WaitTransitionState()
         {
             // ステートの遷移待ち.
             while (true)
@@ -232,21 +253,30 @@ namespace Modules.Animation
 
                 if (stateInfo.IsName(CurrentAnimationName)) { break; }
 
-                if (immediate)
-                {
-                    Animator.Update(0);
-                }
-                else
-                {
-                    yield return null;
-                }
+                yield return null;
+            }
+        }
+
+        // 指定アニメーションへ遷移待ち.
+        private void WaitTransitionStateImmediate()
+        {
+            while (true)
+            {
+                if (UnityUtility.IsNull(this)) { return; }
+
+                if (UnityUtility.IsNull(gameObject)) { return; }
+
+                if (!UnityUtility.IsActiveInHierarchy(gameObject)) { break; }
+
+                var stateInfo = Animator.GetCurrentAnimatorStateInfo(GetCurrentLayerIndex());
+
+                if (stateInfo.IsName(CurrentAnimationName)) { break; }
+
+                Animator.Update(0);
             }
 
             // 遷移先の1フレーム目で更新.
-            if (immediate)
-            {
-                Animator.Update(0);
-            }
+            Animator.Update(0);
         }
 
         // アニメーションの終了待ち.
