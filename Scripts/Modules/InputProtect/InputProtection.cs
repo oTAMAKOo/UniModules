@@ -1,10 +1,6 @@
 ﻿﻿﻿
 using UnityEngine;
-using System;
-using System.Linq;
-using System.Collections.Generic;
 using UniRx;
-using Extensions;
 
 namespace Modules.InputProtection
 {
@@ -20,11 +16,13 @@ namespace Modules.InputProtection
 
         void Start()
         {
-            InputProtect.OnUpdateProtectAsObservable().Subscribe(x => UpdateProtect(x)).AddTo(this);
+            var inputProtectManager = InputProtectManager.Instance;
 
-            if (InputProtect.IsProtect)
+            inputProtectManager.OnUpdateProtectAsObservable().Subscribe(x => UpdateProtect(x)).AddTo(this);
+
+            if (inputProtectManager.IsProtect)
             {
-                UpdateProtect(InputProtect.IsProtect);
+                UpdateProtect(inputProtectManager.IsProtect);
             }
         }
 

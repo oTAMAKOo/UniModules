@@ -9,59 +9,60 @@ using Modules.Devkit.Log;
 
 namespace Modules.InputProtection
 {
-    /// <summary>
-    /// 入力後の処理実行中に他の入力が実行されてしまわないようにするクラス.
-    /// </summary>
-    public static class InputProtect
-	{
+    public sealed class InputProtect : Extensions.Scope
+    {
         //----- params -----
-
-        public class Entity : Extensions.Scope
-        {
-            //----- params -----
-
-            //----- field -----
-
-            private static int EntityId = 0;
-
-            //----- property -----
-
-            public int Id { get; private set; }
-            
-            //----- method -----
-
-            public Entity()
-            {
-                Id = EntityId++;
-
-                Lock(Id);
-            }
-
-            protected override void CloseScope()
-            {
-                Unlock(Id);
-            }
-        }
 
         //----- field -----
 
-        private static HashSet<int> entityIds = new HashSet<int>();
-        private static Subject<bool> onUpdateProtect = null;
+        private static int EntityId = 0;
 
         //----- property -----
 
-        public static bool IsProtect { get { return entityIds.Any(); } }
+        public int Id { get; private set; }
 
         //----- method -----
 
-        static InputProtect()
+        public InputProtect()
+        {
+            Id = EntityId++;
+
+            InputProtectManager.Instance.Lock(Id);
+        }
+
+        protected override void CloseScope()
+        {
+            InputProtectManager.Instance.Unlock(Id);
+        }
+    }
+
+    /// <summary>
+    /// 入力後の処理実行中に他の入力が実行されてしまわないようにするクラス.
+    /// </summary>
+    public sealed class InputProtectManager : Singleton<InputProtectManager>
+	{
+        //----- params -----
+
+        //----- field -----
+
+        private HashSet<int> entityIds = new HashSet<int>();
+        private Subject<bool> onUpdateProtect = null;
+
+        //----- property -----
+
+        public bool IsProtect { get { return entityIds.Any(); } }
+
+        //----- method -----
+
+        private InputProtectManager()
         {
             // Exception発生時に強制解除.
             ApplicationLogHandler.Instance.OnReceiveExceptionAsObservable()
-                .Subscribe(x => ForceUnlock());
+                .Subscribe(x => ForceUnlock())
+                .AddTo(Disposable);
         }
 
-        private static void Lock(int entityId)
+        public void Lock(int entityId)
         {
             var isProtected = IsProtect;
 
@@ -73,7 +74,7 @@ namespace Modules.InputProtection
             }
         }
 
-        private static void Unlock(int entityId)
+        public void Unlock(int entityId)
         {
             if (!IsProtect) { return; }
 
@@ -87,7 +88,7 @@ namespace Modules.InputProtection
             }
         }
 
-        public static void ForceUnlock()
+        public void ForceUnlock()
         {
             if (!IsProtect) { return; }
 
@@ -101,7 +102,7 @@ namespace Modules.InputProtection
             }
         }
 
-        public static IObservable<bool> OnUpdateProtectAsObservable()
+        public IObservable<bool> OnUpdateProtectAsObservable()
         {
             return onUpdateProtect ?? (onUpdateProtect = new Subject<bool>());
         }

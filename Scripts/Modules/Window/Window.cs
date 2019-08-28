@@ -6,6 +6,7 @@ using System.Linq;
 using System.Collections.Generic;
 using UniRx;
 using Extensions;
+using Modules.InputProtection;
 
 namespace Modules.Window
 {
@@ -43,7 +44,7 @@ namespace Modules.Window
 
         public IObservable<Unit> Open(bool inputProtect = true)
         {
-            var protect = inputProtect ? new InputProtection.InputProtect.Entity() : null;
+            var protect = inputProtect ? new InputProtect() : null;
 
             return Prepare()
                 .Do(_ => UnityUtility.SetActive(gameObject, true))
@@ -66,7 +67,7 @@ namespace Modules.Window
 
         public IObservable<Unit> Close(bool inputProtect = true)
         {
-            var protect = inputProtect ? new InputProtection.InputProtect.Entity() : null;
+            var protect = inputProtect ? new InputProtect() : null;
 
             return OnClose()
                 .Do(_ =>

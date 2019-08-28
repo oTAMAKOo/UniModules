@@ -74,8 +74,8 @@ namespace Modules.Window
 
                 yield return null;
             }
-
-            fadeAlpha = 0f;
+            
+            SetAlpha(0f);
         }
 
         private IEnumerator FadeInAsync()
@@ -90,8 +90,8 @@ namespace Modules.Window
 
                 yield return null;
             }
-
-            fadeAlpha = 1f;
+            
+            SetAlpha(1f);
         }
     }
 }
