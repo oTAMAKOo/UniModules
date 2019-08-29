@@ -33,6 +33,9 @@ namespace Modules.Animation
         // ステート遷移待ちフラグ.
         private bool waitStateTransition = false;
 
+        // 再生開始通知 (ステート遷移待ち完了後に呼び出される).
+        private Subject<AnimationPlayer> onEnterAnimation = null;
+
         // 終了通知.
         private Subject<AnimationPlayer> onEndAnimation = null;
 
@@ -49,7 +52,7 @@ namespace Modules.Animation
         public float speedRate = 1f;
 
         // Pause前の再生速度.
-        private float pausedSpeed = 0f;
+        private float? pausedSpeed = null;
 
         [NonSerialized]
         private bool isInitialized = false;
@@ -170,7 +173,10 @@ namespace Modules.Animation
                 // FromMicroCoroutineは次のフレームから始まるので即時遷移はこのタイミングで実行する.
                 if (immediate)
                 {
-                    WaitTransitionStateImmediate();
+                    if (!IsCurrentState(CurrentAnimationName, GetCurrentLayerIndex()))
+                    {
+                        WaitTransitionStateImmediate();
+                    }
                 }
 
                 return Observable.FromMicroCoroutine(() => PlayInternal(hash, layer, normalizedTime, immediate));
@@ -197,6 +203,13 @@ namespace Modules.Animation
             Animator.Play(hash, layer, normalizedTime);
         }
 
+        private bool IsCurrentState(string animationName, int layer)
+        {
+            var stateInfo = Animator.GetCurrentAnimatorStateInfo(layer);
+
+            return stateInfo.IsName(animationName);
+        }
+
         private IEnumerator PlayInternal(int hash, int layer, float normalizedTime, bool immediate)
         {
             while (true)
@@ -204,11 +217,7 @@ namespace Modules.Animation
                 if (!UnityUtility.IsActiveInHierarchy(gameObject)) { break; }
 
                 // 指定アニメーションへ遷移待ち.
-                if (immediate)
-                {
-                    WaitTransitionStateImmediate();
-                }
-                else
+                if (!IsCurrentState(CurrentAnimationName, GetCurrentLayerIndex()))
                 {
                     var waitTransitionStateYield = Observable.FromMicroCoroutine(() => WaitTransitionState()).ToYieldInstruction();
 
@@ -216,6 +225,12 @@ namespace Modules.Animation
                     {
                         yield return null;
                     }
+                }
+
+                // アニメーション開始通知.
+                if (onEnterAnimation != null)
+                {
+                    onEnterAnimation.OnNext(this);
                 }
 
                 // アニメーションの終了待ち.
@@ -249,9 +264,7 @@ namespace Modules.Animation
 
                 if (!UnityUtility.IsActiveInHierarchy(gameObject)) { break; }
 
-                var stateInfo = Animator.GetCurrentAnimatorStateInfo(GetCurrentLayerIndex());
-
-                if (stateInfo.IsName(CurrentAnimationName)) { break; }
+                if (IsCurrentState(CurrentAnimationName, GetCurrentLayerIndex())) { break; }
 
                 yield return null;
             }
@@ -330,6 +343,9 @@ namespace Modules.Animation
 
             currentState = State.Stop;
 
+            isPause = false;
+            pausedSpeed = null;
+
             // TimeScaleの影響を受けるか.
             Animator.updateMode = ignoreTimeScale ? AnimatorUpdateMode.UnscaledTime : AnimatorUpdateMode.Normal;
 
@@ -341,7 +357,7 @@ namespace Modules.Animation
                 Animator.Play(currentStateInfo.fullPathHash, -1, 0.0f);
             }
 
-            Animator.speed = DefaultSpeed;
+            Animator.speed = DefaultSpeed;            
         }
 
         private void EndAction()
@@ -380,11 +396,6 @@ namespace Modules.Animation
             }
         }
 
-        public IObservable<AnimationPlayer> EndAnimationAsObservable()
-        {
-            return onEndAnimation ?? (onEndAnimation = new Subject<AnimationPlayer>());
-        }
-
         /// <summary>
         /// 配下のAnimatorに対してパラメータをセット.
         /// </summary>
@@ -418,12 +429,22 @@ namespace Modules.Animation
 
         private void SetPauseState(bool pause)
         {
-            if (!isPause && pause)
+            if (isPause == pause) { return; }
+
+            // 中断.
+            if (pause)
             {
                 pausedSpeed = Animator.speed;
+                Animator.speed = 0f;
+            }
+            // 再開.
+            else
+            {
+                Animator.speed = pausedSpeed.HasValue ? pausedSpeed.Value : 1f;
+                pausedSpeed = null;
             }
 
-            Animator.speed = pause ? 0f : pausedSpeed;
+            isPause = pause;
         }
 
         private void ResetAnimatorSpeed()
@@ -486,6 +507,16 @@ namespace Modules.Animation
                 .SkipWhile(_ => !Animator.isInitialized)
                 .Take(1)
                 .Select(_ => func(Animator));
+        }
+
+        public IObservable<AnimationPlayer> OnEnterAnimationAsObservable()
+        {
+            return onEnterAnimation ?? (onEnterAnimation = new Subject<AnimationPlayer>());
+        }
+
+        public IObservable<AnimationPlayer> OnEndAnimationAsObservable()
+        {
+            return onEndAnimation ?? (onEndAnimation = new Subject<AnimationPlayer>());
         }
 
         #region StateMachine Event
