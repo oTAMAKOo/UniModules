@@ -280,10 +280,8 @@ namespace Modules.Animation
                 if (UnityUtility.IsNull(gameObject)) { return; }
 
                 if (!UnityUtility.IsActiveInHierarchy(gameObject)) { break; }
-
-                var stateInfo = Animator.GetCurrentAnimatorStateInfo(GetCurrentLayerIndex());
-
-                if (stateInfo.IsName(CurrentAnimationName)) { break; }
+                
+                if (IsCurrentState(CurrentAnimationName, GetCurrentLayerIndex())) { break; }
 
                 Animator.Update(0);
             }
