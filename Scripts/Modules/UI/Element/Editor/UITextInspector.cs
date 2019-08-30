@@ -21,33 +21,11 @@ namespace Modules.UI.Element
 
         //----- field -----
 
-        private GameTextSetter gameTextSetter = null;
-
-        private LifetimeDisposable lifetimeDisposable = null;
+        private GameTextCategory? gameTextCategory = null;
 
         //----- property -----
 
         //----- method -----
-
-        void OnEnable()
-        {
-            var instance = target as UIText;
-
-            lifetimeDisposable = new LifetimeDisposable();
-            
-            if (UnityUtility.IsNull(gameTextSetter))
-            {
-                gameTextSetter = UnityUtility.GetComponent<GameTextSetter>(instance);
-
-                if (gameTextSetter != null)
-                {
-                    gameTextSetter.ObserveEveryValueChanged(x => x.Category)
-                        .TakeUntilDisable(instance)
-                        .Subscribe(x => OnGameTextSetterCategoryChanged(x))
-                        .AddTo(lifetimeDisposable.Disposable);
-                }
-            }
-        }
 
         public override void OnInspectorGUI()
         {
@@ -60,6 +38,25 @@ namespace Modules.UI.Element
 
             var infos = new UIText.TextColor[] { new UIText.TextColor() }.Concat(colorInfos).ToArray();
             var select = selection.HasValue ? infos.IndexOf(x => x.Type == selection.Value) : 0;
+
+            var gameTextSetter = UnityUtility.GetComponent<GameTextSetter>(instance);
+
+            if (gameTextSetter != null)
+            {
+                if (gameTextCategory.HasValue)
+                {
+                    if (gameTextCategory.Value != gameTextSetter.Category)
+                    {
+                        OnGameTextSetterCategoryChanged(gameTextSetter.Category);
+                    }
+                }
+                else
+                {
+                    OnGameTextSetterCategoryChanged(gameTextSetter.Category);
+                }
+
+                gameTextCategory = gameTextSetter.Category;
+            }
 
             var current = infos[select];
 
