@@ -287,9 +287,6 @@ namespace Modules.Animation
 
                 Animator.Update(0);
             }
-
-            // 遷移先の1フレーム目で更新.
-            Animator.Update(0);
         }
 
         // アニメーションの終了待ち.
@@ -403,13 +400,13 @@ namespace Modules.Animation
         public void SetParameters(params StateMachineParameter[] parameters)
         {
             DoLazyFunc(animator =>
-            {
-                foreach (var parameter in parameters)
                 {
-                    parameter.SetParameter(animator);
-                }
-                return Unit.Default;
-            })
+                    foreach (var parameter in parameters)
+                    {
+                        parameter.SetParameter(animator);
+                    }
+                    return Unit.Default;
+                })
             .Subscribe()
             .AddTo(this);
         }
