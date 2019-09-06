@@ -37,6 +37,7 @@ namespace Modules.UI.TextEffect
             if (EditorGUI.EndChangeCheck())
             {
                 UpdateParams(instance, color, instance.Offset.x, instance.Offset.y);
+                return;
             }
 
             var offsetX = Reflection.GetPrivateField<TextShadow, float>(instance, "offsetX");

@@ -37,6 +37,7 @@ namespace Modules.UI.TextEffect
             if (EditorGUI.EndChangeCheck())
             {
                 UpdateParams(instance, color, instance.Distance);
+                return;
             }
 
             var distance = Reflection.GetPrivateField<TextOutline, float>(instance, "distance");
