@@ -134,7 +134,7 @@ namespace Extensions
         }
 
         /// <summary> Private属性の関数を実行 </summary>
-        public static void InvokePrivateMethod<T>(T instance, string methodName, object[] parameters = null, BindingFlags? options = null)
+        public static object InvokePrivateMethod<T>(T instance, string methodName, object[] parameters = null, BindingFlags? options = null)
         {
             var flags = BindingFlags.NonPublic | BindingFlags.Instance;
 
@@ -145,11 +145,11 @@ namespace Extensions
 
             var methodInfo = typeof(T).GetMethod(methodName, flags);
 
-            methodInfo.Invoke(instance, parameters);
+            return methodInfo.Invoke(instance, parameters);
         }
 
         /// <summary> Public属性の関数を実行 </summary>
-        public static void InvokePublicMethod<T>(T instance, string methodName, object[] parameters = null, BindingFlags? options = null)
+        public static object InvokePublicMethod<T>(T instance, string methodName, object[] parameters = null, BindingFlags? options = null)
         {
             var flags = BindingFlags.Public | BindingFlags.Instance;
 
@@ -159,7 +159,8 @@ namespace Extensions
             }
 
             var methodInfo = typeof(T).GetMethod(methodName, flags);
-            methodInfo.Invoke(instance, parameters);
+
+            return methodInfo.Invoke(instance, parameters);
         }
     }
 }
