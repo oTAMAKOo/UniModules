@@ -5,7 +5,7 @@ using System;
 using System.Collections;
 using UniRx;
 using Extensions;
-using Modules.UI.Element;
+using Modules.UI.Extension;
 
 namespace Modules.LetterBox
 {

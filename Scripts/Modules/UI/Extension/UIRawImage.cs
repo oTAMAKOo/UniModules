@@ -7,11 +7,11 @@ using System.Collections.Generic;
 using UniRx;
 using Extensions;
 
-namespace Modules.UI.Element
+namespace Modules.UI.Extension
 {
     [ExecuteInEditMode]
     [RequireComponent(typeof(RawImage))]
-    public abstract class UIRawImage : UIElement<RawImage>
+    public abstract class UIRawImage : UIComponent<RawImage>
     {
         //----- params -----
 
@@ -28,10 +28,5 @@ namespace Modules.UI.Element
         }
 
         //----- method -----
-
-        public override void Modify()
-        {
-
-        }
     }
 }

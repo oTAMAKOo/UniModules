@@ -7,11 +7,11 @@ using System.Collections.Generic;
 using UniRx;
 using Extensions;
 
-namespace Modules.UI.Element
+namespace Modules.UI.Extension
 {
     [ExecuteInEditMode]
     [RequireComponent(typeof(Image))]
-    public abstract class UIImage : UIElement<Image>
+    public abstract class UIImage : UIComponent<Image>
     {
         //----- params -----
 
@@ -29,7 +29,7 @@ namespace Modules.UI.Element
 
         //----- method -----
 
-        public override void Modify()
+        protected override void Modify()
         {
 
         }

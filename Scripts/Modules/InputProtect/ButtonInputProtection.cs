@@ -6,6 +6,12 @@ using System.Collections.Generic;
 using Extensions;
 using Unity.Linq;
 
+#if UNITY_EDITOR
+
+using UnityEditor;
+
+#endif
+
 namespace Modules.InputProtection.Components
 {
     [RequireComponent(typeof(Button))]
@@ -66,5 +72,15 @@ namespace Modules.InputProtection.Components
                 }
             }
         }
+
+        #if UNITY_EDITOR
+
+        [CustomEditor(typeof(ButtonInputProtection))]
+        class ButtonInputProtectionInspector : Editor
+        {
+            public override void OnInspectorGUI(){}
+        }
+
+        #endif
     }
 }

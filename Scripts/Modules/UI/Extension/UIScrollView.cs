@@ -7,11 +7,11 @@ using System.Collections.Generic;
 using UniRx;
 using Extensions;
 
-namespace Modules.UI.Element
+namespace Modules.UI.Extension
 {
     [ExecuteInEditMode]
     [RequireComponent(typeof(ScrollRect))]
-    public abstract class UIScrollView : UIElement<ScrollRect>
+    public abstract class UIScrollView : UIComponent<ScrollRect>
     {
         //----- params -----
 
@@ -25,11 +25,6 @@ namespace Modules.UI.Element
         public ScrollRect ScrollRect { get { return component; } }
 
         //----- method -----
-
-        public override void Modify()
-        {
-
-        }
 
         public void LockPosition()
         {

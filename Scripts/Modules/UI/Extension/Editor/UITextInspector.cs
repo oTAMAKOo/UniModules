@@ -11,14 +11,14 @@ using Extensions.Serialize;
 using Modules.GameText;
 using Modules.GameText.Components;
 
-namespace Modules.UI.Element
+namespace Modules.UI.Extension
 {
     [CanEditMultipleObjects]
     [CustomEditor(typeof(UIText), true)]
-    public class UITextInspector : UnityEditor.Editor
+    public class UITextInspector : ScriptlessEditor
     {
         //----- params -----
-
+        
         //----- field -----
 
         private GameTextCategory? gameTextCategory = null;
@@ -29,7 +29,7 @@ namespace Modules.UI.Element
 
         public override void OnInspectorGUI()
         {
-            DrawDefaultInspector();
+            DrawDefaultScriptlessInspector();
 
             var instance = target as UIText;
 

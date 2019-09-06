@@ -8,11 +8,11 @@ using UniRx;
 using Extensions;
 
 
-namespace Modules.UI.Element
+namespace Modules.UI.Extension
 {
     [ExecuteInEditMode]
     [RequireComponent(typeof(Canvas))]
-    public abstract class UICanvas : UIElement<Canvas>
+    public abstract class UICanvas : UIComponent<Canvas>
     {
         //----- params -----
 
@@ -74,7 +74,7 @@ namespace Modules.UI.Element
             }
         }
 
-        public override void Modify()
+        protected override void Modify()
         {
             ModifyCanvasRoot();
             ModifyCanvasCamera();

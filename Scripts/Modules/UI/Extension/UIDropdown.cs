@@ -7,11 +7,11 @@ using System.Collections.Generic;
 using UniRx;
 using Extensions;
 
-namespace Modules.UI.Element
+namespace Modules.UI.Extension
 {
     [ExecuteInEditMode]
     [RequireComponent(typeof(Dropdown))]
-    public abstract class UIDropdown : UIElement<Dropdown>
+    public abstract class UIDropdown : UIComponent<Dropdown>
     {
         //----- params -----
 
@@ -31,8 +31,6 @@ namespace Modules.UI.Element
 
             Dropdown.onValueChanged.AddListener(OnDropdownValueChanged);
         }
-
-        public override void Modify(){ }
 
         private void OnDropdownValueChanged(int index)
         {

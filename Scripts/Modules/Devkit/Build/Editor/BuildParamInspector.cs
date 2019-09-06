@@ -11,11 +11,9 @@ using Extensions.Devkit;
 namespace Modules.Devkit.Build.Editor
 {
     [CustomEditor(typeof(BuildParam), true)]
-    public class BuildParamInfoInspector : UnityEditor.Editor
+    public class BuildParamInfoInspector : ScriptlessEditor
     {
         //----- params -----
-
-        private static readonly string[] HideInspector = new string[] { "m_Script" };
 
         //----- field -----
 
@@ -33,7 +31,7 @@ namespace Modules.Devkit.Build.Editor
 
             CustomInspector(instance, serializedObject);
 
-            DefaultInspector(serializedObject);
+            DrawDefaultScriptlessInspector();
 
             ExtendCustomInspector(instance, serializedObject);
         }
@@ -46,18 +44,6 @@ namespace Modules.Devkit.Build.Editor
             EditorGUILayout.PropertyField(serializedObject.FindProperty("development"));
             EditorGUILayout.PropertyField(serializedObject.FindProperty("iconFolder"));
             EditorGUILayout.PropertyField(serializedObject.FindProperty("directiveSymbols"));
-
-            if (EditorGUI.EndChangeCheck())
-            {
-                serializedObject.ApplyModifiedProperties();
-            }
-        }
-
-        private static void DefaultInspector(SerializedObject serializedObject)
-        {
-            EditorGUI.BeginChangeCheck();
-
-            DrawPropertiesExcluding(serializedObject, HideInspector);
 
             if (EditorGUI.EndChangeCheck())
             {

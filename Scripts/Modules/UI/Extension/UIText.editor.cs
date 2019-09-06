@@ -8,7 +8,7 @@ using System.Security.Cryptography;
 using Modules.GameText;
 using Modules.GameText.Components;
 
-namespace Modules.UI.Element
+namespace Modules.UI.Extension
 {
     public partial class UIText
     {

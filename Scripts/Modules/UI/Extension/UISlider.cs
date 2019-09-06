@@ -7,11 +7,11 @@ using System.Collections.Generic;
 using UniRx;
 using Extensions;
 
-namespace Modules.UI.Element
+namespace Modules.UI.Extension
 {
     [ExecuteInEditMode]
     [RequireComponent(typeof(Slider))]
-    public abstract class UISlider : UIElement<Slider>
+    public abstract class UISlider : UIComponent<Slider>
     {
         //----- params -----
 
@@ -29,9 +29,6 @@ namespace Modules.UI.Element
 
         //----- method -----
 
-        public override void Modify()
-        {
-
-        }
+        protected override void Modify(){}
     }
 }

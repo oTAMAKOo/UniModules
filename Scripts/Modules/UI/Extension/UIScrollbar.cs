@@ -7,11 +7,11 @@ using System.Collections.Generic;
 using UniRx;
 using Extensions;
 
-namespace Modules.UI.Element
+namespace Modules.UI.Extension
 {
     [ExecuteInEditMode]
     [RequireComponent(typeof(Scrollbar))]
-    public abstract class UIScrollbar : UIElement<Scrollbar>
+    public abstract class UIScrollbar : UIComponent<Scrollbar>
     {
         //----- params -----
 
@@ -22,10 +22,5 @@ namespace Modules.UI.Element
         public Scrollbar Scrollbar { get { return component; } }
 
         //----- method -----
-
-        public override void Modify()
-        {
-            
-        }
     }
 }

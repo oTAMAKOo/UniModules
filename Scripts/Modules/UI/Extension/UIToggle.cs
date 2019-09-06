@@ -7,11 +7,11 @@ using System.Collections.Generic;
 using UniRx;
 using Extensions;
 
-namespace Modules.UI.Element
+namespace Modules.UI.Extension
 {
     [ExecuteInEditMode]
     [RequireComponent(typeof(Toggle))]
-    public abstract class UIToggle : UIElement<Toggle>
+    public abstract class UIToggle : UIComponent<Toggle>
     {
         //----- params -----
 
@@ -37,8 +37,6 @@ namespace Modules.UI.Element
 
             Toggle.onValueChanged.AddListener(OnToggleValueChanged);
         }
-
-        public override void Modify(){ }
 
         private void OnToggleValueChanged(bool value)
         {

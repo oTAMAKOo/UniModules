@@ -7,11 +7,11 @@ using System.Collections.Generic;
 using UniRx;
 using Extensions;
 
-namespace Modules.UI.Element
+namespace Modules.UI.Extension
 {
     [ExecuteInEditMode]
     [RequireComponent(typeof(Button))]
-    public abstract class UIButton : UIElement<Button>
+    public abstract class UIButton : UIComponent<Button>
     {
         //----- params -----
 
@@ -23,7 +23,7 @@ namespace Modules.UI.Element
 
         //----- method -----
 
-        public override void Modify()
+        protected override void Modify()
         {
             // Tabでフォーカスを移動するのを防ぐ.
             var navigation = Button.navigation;

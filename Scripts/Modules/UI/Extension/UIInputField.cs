@@ -7,11 +7,11 @@ using System.Collections.Generic;
 using UniRx;
 using Extensions;
 
-namespace Modules.UI.Element
+namespace Modules.UI.Extension
 {
     [ExecuteInEditMode]
     [RequireComponent(typeof(InputField))]
-    public abstract class UIInputField : UIElement<InputField>
+    public abstract class UIInputField : UIComponent<InputField>
     {
         //----- params -----
 
@@ -22,10 +22,5 @@ namespace Modules.UI.Element
         public InputField InputField { get { return component; } }
 
         //----- method -----
-
-        public override void Modify()
-        {
-
-        }
     }
 }

@@ -9,11 +9,11 @@ using Extensions;
 using Extensions.Serialize;
 using Modules.UI.TextEffect;
 
-namespace Modules.UI.Element
+namespace Modules.UI.Extension
 {
     [ExecuteInEditMode]
     [RequireComponent(typeof(Text))]
-    public abstract partial class UIText : UIElement<Text>
+    public abstract partial class UIText : UIComponent<Text>
     {
         //----- params -----
 
@@ -94,7 +94,7 @@ namespace Modules.UI.Element
 
         //----- method -----
 
-        public override void Modify()
+        protected override void Modify()
         {
             if (selection.HasValue)
             {

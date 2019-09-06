@@ -7,7 +7,7 @@ using System.Linq;
 using Extensions;
 using Modules.Devkit.Prefs;
 using Modules.GameText.Components;
-using Modules.UI.Element;
+using Modules.UI.Extension;
 
 namespace Modules.Devkit.CleanComponent
 {
