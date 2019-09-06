@@ -21,8 +21,6 @@ namespace Modules.UI.Extension
         
         //----- field -----
 
-        private GameTextCategory? gameTextCategory = null;
-
         //----- property -----
 
         //----- method -----
@@ -38,25 +36,6 @@ namespace Modules.UI.Extension
 
             var infos = new UIText.TextColor[] { new UIText.TextColor() }.Concat(colorInfos).ToArray();
             var select = selection.HasValue ? infos.IndexOf(x => x.Type == selection.Value) : 0;
-
-            var gameTextSetter = UnityUtility.GetComponent<GameTextSetter>(instance);
-
-            if (gameTextSetter != null)
-            {
-                if (gameTextCategory.HasValue)
-                {
-                    if (gameTextCategory.Value != gameTextSetter.Category)
-                    {
-                        OnGameTextSetterCategoryChanged(gameTextSetter.Category);
-                    }
-                }
-                else
-                {
-                    OnGameTextSetterCategoryChanged(gameTextSetter.Category);
-                }
-
-                gameTextCategory = gameTextSetter.Category;
-            }
 
             var current = infos[select];
 
@@ -88,50 +67,6 @@ namespace Modules.UI.Extension
                 {
                     EditorGUILayout.HelpBox("Outline color exists", MessageType.Info);
                 }
-            }
-
-            using (new DisableScope(gameTextSetter != null && gameTextSetter.Category != GameTextCategory.None))
-            {
-                using (new EditorGUILayout.HorizontalScope())
-                {
-                    var labelWidth = EditorGUIUtility.labelWidth - 10f;
-
-                    EditorGUILayout.LabelField("Development Text", GUILayout.Width(labelWidth));
-
-                    var developmentText = instance.GetDevelopmentText().TrimStart(UIText.DevelopmentMark);
-
-                    var prevText = developmentText;
-
-                    EditorGUI.BeginChangeCheck();
-
-                    developmentText = EditorGUILayout.TextArea(developmentText, GUILayout.ExpandWidth(true), GUILayout.Height(30f));
-
-                    if (EditorGUI.EndChangeCheck())
-                    {
-                        UnityEditorUtility.RegisterUndo("UITextInspector-Undo", instance);
-
-                        if (!string.IsNullOrEmpty(prevText))
-                        {
-                            instance.text = null;
-                        }
-
-                        instance.SetDevelopmentText(developmentText);
-                        instance.ImportText();
-                    }
-                }
-            }
-        }
-
-        private void OnGameTextSetterCategoryChanged(GameTextCategory category)
-        {
-            var instance = target as UIText;
-
-            if (instance == null) { return; }
-
-            if (category != GameTextCategory.None)
-            {
-                instance.SetDevelopmentText(null);
-                instance.text = null;
             }
         }
     }

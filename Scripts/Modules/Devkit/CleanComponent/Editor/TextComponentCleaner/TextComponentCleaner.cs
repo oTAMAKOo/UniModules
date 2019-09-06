@@ -47,13 +47,6 @@ namespace Modules.Devkit.CleanComponent
                     gameTextSetter.ImportText();
                 }
 
-                var uiText = UnityUtility.GetComponent<UIText>(textComponent);
-
-                if (uiText != null)
-                {
-                    uiText.ImportText();
-                }
-
                 EditorUtility.SetDirty(textComponent);
             }
         }
@@ -68,16 +61,17 @@ namespace Modules.Devkit.CleanComponent
 
                         var gameTextSetter = UnityUtility.GetComponent<GameTextSetter>(x);
 
-                        if (gameTextSetter != null && gameTextSetter.Content == x.text)
+                        if (gameTextSetter != null)
                         {
-                            execute = false;
-                        }
+                            if (gameTextSetter.Content == x.text)
+                            {
+                                execute = false;
+                            }
 
-                        var uiText = UnityUtility.GetComponent<UIText>(x);
-
-                        if (uiText != null && uiText.GetDevelopmentText() == x.text)
-                        {
-                            execute = false;
+                            if (gameTextSetter.GetDevelopmentText() == x.text)
+                            {
+                                execute = false;
+                            }
                         }
 
                         return execute;

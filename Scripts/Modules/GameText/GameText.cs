@@ -28,6 +28,8 @@ namespace Modules.GameText
 
         public void Load(string assetPath)
         {
+            Cache = null;
+
             var asset = Resources.Load<GameTextAsset>(UnityPathUtility.ConvertResourcesLoadPath(assetPath));
 
             if (asset != null)

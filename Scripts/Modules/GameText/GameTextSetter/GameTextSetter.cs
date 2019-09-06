@@ -1,12 +1,14 @@
 ﻿﻿﻿﻿
 using UnityEngine;
-using Extensions.Serialize;
 using UnityEngine.UI;
+using Extensions;
+using Extensions.Serialize;
 
 namespace Modules.GameText.Components
 {
     [ExecuteInEditMode]
-    public sealed class GameTextSetter : MonoBehaviour
+    [RequireComponent(typeof(Text))]
+    public sealed partial class GameTextSetter : MonoBehaviour
 	{
         //----- params -----
 
@@ -31,8 +33,6 @@ namespace Modules.GameText.Components
 
         void Awake()
         {
-            textObject = gameObject.GetComponent<Text>();
-
             ImportText();
         }
 
@@ -61,12 +61,25 @@ namespace Modules.GameText.Components
             content = string.Empty;
 
             ApplyText(content);
-            ImportText();
+            ApplyGameText();
         }
 
         public void ImportText()
         {
+            #if UNITY_EDITOR
+
+            ApplyDevelopmentText();
+
+            #endif
+
+            ApplyGameText();
+        }
+
+        private void ApplyGameText()
+        {
             if (!GameText.Exists) { return; }
+
+            if (GameText.Instance.Cache == null) { return; }
 
             if (category == GameTextCategory.None || !identifier.HasValue) { return; }
 
@@ -77,6 +90,11 @@ namespace Modules.GameText.Components
 
         private void ApplyText(string text)
         {
+            if (textObject == null)
+            {
+                textObject = UnityUtility.GetComponent<Text>(gameObject);
+            }
+
             if (textObject != null)
             {
                 textObject.text = text;

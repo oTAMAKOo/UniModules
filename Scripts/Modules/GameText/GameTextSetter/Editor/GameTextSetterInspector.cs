@@ -18,6 +18,8 @@ namespace Modules.GameText.Components
 
         //----- field -----
 
+        private GameTextCategory? gameTextCategory = null;
+
         private GameTextSetter instance = null;
 
         //----- property -----
@@ -83,6 +85,74 @@ namespace Modules.GameText.Components
             }
 
             GUILayout.Space(2f);
+
+            if (gameTextCategory.HasValue)
+            {
+                if (gameTextCategory.Value != instance.Category)
+                {
+                    OnGameTextSetterCategoryChanged(instance.Category);
+                }
+            }
+            else
+            {
+                OnGameTextSetterCategoryChanged(instance.Category);
+            }
+
+            gameTextCategory = instance.Category;
+
+            if (instance.Category == GameTextCategory.None)
+            {
+                using (new EditorGUILayout.HorizontalScope())
+                {
+                    var labelWidth = EditorGUIUtility.labelWidth - 10f;
+
+                    EditorGUILayout.LabelField("Development Text", GUILayout.Width(labelWidth));
+
+                    var developmentText = instance.GetDevelopmentText();
+
+                    var editText = developmentText.TrimStart(GameTextSetter.DevelopmentMark);
+
+                    var prevText = editText;
+
+                    EditorGUI.BeginChangeCheck();
+
+                    var lineCount = editText.Count(x => x == '\n') + 1;
+
+                    lineCount = Mathf.Clamp(lineCount, 1, 5);
+
+                    var textAreaHeight = lineCount * 18f;
+
+                    editText = EditorGUILayout.TextArea(editText, GUILayout.ExpandWidth(true), GUILayout.Height(textAreaHeight));
+
+                    if (EditorGUI.EndChangeCheck())
+                    {
+                        UnityEditorUtility.RegisterUndo("UITextInspector-Undo", instance);
+
+                        if (!string.IsNullOrEmpty(prevText))
+                        {
+                            Reflection.InvokePrivateMethod(instance, "ApplyText", new object[] { null });
+                        }
+
+                        if (!string.IsNullOrEmpty(editText))
+                        {
+                            editText = editText.FixLineEnd();
+                        }
+
+                        Reflection.InvokePrivateMethod(instance, "SetDevelopmentText", new object[] { editText });
+                        instance.ImportText();
+                    }
+                }
+            }
+        }
+
+        private void OnGameTextSetterCategoryChanged(GameTextCategory category)
+        {
+            if (category != GameTextCategory.None)
+            {
+                Reflection.InvokePrivateMethod(instance, "SetDevelopmentText", new object[] { null });               
+            }
+
+            instance.ImportText();
         }
 
         private void OnUndoRedo()

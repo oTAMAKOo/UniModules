@@ -36,9 +36,10 @@ namespace Modules.GameText.Editor
 
             var gameTextInfo = GameTextLanguage.GameTextInfos.ElementAtOrDefault(GameTextLanguage.Prefs.selection);
 
-            if (gameTextInfo == null) { return; }
-            
-            GameText.Instance.Load(gameTextInfo.AssetPath);
+            if (gameTextInfo != null)
+            {
+                GameText.Instance.Load(gameTextInfo.AssetPath);
+            }
 
             var gameObjects = UnityEditorUtility.FindAllObjectsInHierarchy();
 

@@ -2,15 +2,17 @@
 #if UNITY_EDITOR
 
 using UnityEngine;
+using UnityEngine.UI;
 using UnityEditor.Callbacks;
-using Extensions;
+using System;
+using System.Linq;
+using System.Collections.Generic;
 using System.Security.Cryptography;
-using Modules.GameText;
-using Modules.GameText.Components;
+using Extensions;
 
-namespace Modules.UI.Extension
+namespace Modules.GameText.Components
 {
-    public partial class UIText
+    public partial class GameTextSetter
     {
         //----- params -----
 
@@ -20,7 +22,7 @@ namespace Modules.UI.Extension
         public const char DevelopmentMark = '#';
 
         //----- field -----
-        
+
         #pragma warning disable 0414
 
         [SerializeField, HideInInspector]
@@ -34,17 +36,6 @@ namespace Modules.UI.Extension
 
         //----- method -----
 
-        [DidReloadScripts]
-        private static void DidReloadScripts()
-        {
-            var allObjects = UnityUtility.FindObjectsOfType<UIText>();
-
-            foreach (var item in allObjects)
-            {
-                item.ImportText();
-            }
-        }
-
         public string GetDevelopmentText()
         {
             if (aesManaged == null)
@@ -57,7 +48,7 @@ namespace Modules.UI.Extension
             return string.Format("{0}{1}", DevelopmentMark, developmentText.Decrypt(aesManaged));
         }
 
-        public void SetDevelopmentText(string text)
+        private void SetDevelopmentText(string text)
         {
             if (aesManaged == null)
             {
@@ -67,15 +58,15 @@ namespace Modules.UI.Extension
             developmentText = text == null ? string.Empty : text.Encrypt(aesManaged);
         }
 
-        public void ImportText()
+        private void ApplyDevelopmentText()
         {
             if (string.IsNullOrEmpty(developmentText)) { return; }
 
-            var gameTextSetter = UnityUtility.GetComponent<GameTextSetter>(gameObject);
-
-            if (gameTextSetter == null || gameTextSetter.Category == GameTextCategory.None)
+            if (Category == GameTextCategory.None)
             {
-                text = GetDevelopmentText();
+                var text = GetDevelopmentText();
+
+                ApplyText(text);
             }
         }
     }
