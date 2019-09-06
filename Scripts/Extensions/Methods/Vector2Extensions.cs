@@ -5,22 +5,33 @@ namespace Extensions
 {
     public static class Vector2Extensions
     {
-        // ベクトル外積.
+        /// <summary> ベクトル外積. </summary>
         public static float Cross(this Vector2 lhs, Vector2 rhs)
         {
             return lhs.x * rhs.y - rhs.x * lhs.y;
         }
-
-        // ベクトルの法線.
+        
+        /// <summary> ベクトルの法線. </summary>
         public static Vector2 Perp(this Vector2 src)
         {
             return new Vector2(-src.y, src.x);
         }
-
-        // 点間距離.
+        
+        /// <summary> 点間距離. </summary>
         public static float Distance(this Vector2 lhs, Vector2 rhs)
         {
             return Mathf.Pow((rhs.x - lhs.x) * (rhs.x - lhs.x) + (rhs.y - lhs.y) * (rhs.y - lhs.y), 0.5f);
+        }
+
+        /// <summary> 対象座標との角度を取得. </summary>
+        public static float Degrees(this Vector2 src, Vector2 vec)
+        {
+            var dx = vec.x - src.x;
+            var dy = vec.y - src.y;
+
+            var rad = Mathf.Atan2(dy, dx);
+
+            return rad * Mathf.Rad2Deg;
         }
 
         public static Vector2 RotateAroundOrigin(this Vector2 src, float angle)

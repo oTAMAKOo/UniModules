@@ -67,7 +67,7 @@ namespace Extensions
             return Instantiate(parent, (GameObject)Resources.Load(path), instantiateInWorldSpace);
         }
 
-        /// <summary> 参照オブジェクトからPrefab生成 </summary>
+        /// <summary> Prefabからインスタンス生成 </summary>
         public static GameObject Instantiate(GameObject parent, UnityEngine.Object prefab,
             bool instantiateInWorldSpace = false)
         {
@@ -95,6 +95,36 @@ namespace Extensions
             return null;
         }
 
+        /// <summary> Prefabから複数のインスタンスを高速生成 </summary>
+        public static IEnumerable<GameObject> Instantiate(GameObject parent, UnityEngine.Object prefab, int count, bool instantiateInWorldSpace = false)
+        {
+            var list = new List<GameObject>();
+
+            var instanceName = string.Empty;
+
+            var sourceObject = prefab;
+
+            for (var i = 0; i < count; i++)
+            {
+                var item = Instantiate(parent, sourceObject, instantiateInWorldSpace);
+
+                if (i == 0)
+                {
+                    sourceObject = item.gameObject;
+
+                    instanceName = item.gameObject.transform.name;
+                }
+                else
+                {
+                    item.gameObject.transform.name = instanceName;
+                }
+
+                list.Add(item);
+            }
+
+            return list;
+        }
+
         /// <summary> Resource パスから生成 + Component取得 </summary>
         public static T Instantiate<T>(GameObject parent, string path, bool instantiateInWorldSpace = false)
             where T : Component
@@ -117,31 +147,9 @@ namespace Extensions
         public static IEnumerable<T> Instantiate<T>(GameObject parent, UnityEngine.Object prefab, int count,
             bool instantiateInWorldSpace = false) where T : Component
         {
-            var list = new List<T>();
-
-            var instanceName = string.Empty;
-
-            var sourceObject = prefab;
-
-            for (var i = 0; i < count; i++)
-            {
-                var item = Instantiate<T>(parent, sourceObject, instantiateInWorldSpace);
-
-                if (i == 0)
-                {
-                    sourceObject = item.gameObject;
-
-                    instanceName = item.gameObject.transform.name;
-                }
-                else
-                {
-                    item.gameObject.transform.name = instanceName;
-                }
-
-                list.Add(item);
-            }
-
-            return list;
+            var gameObjects = Instantiate(parent, prefab, count, instantiateInWorldSpace);
+            
+            return gameObjects.Select(x => GetComponent<T>(x));
         }
 
         #endregion
@@ -263,6 +271,15 @@ namespace Extensions
 
         /// <summary> 親オブジェクト設定 </summary>
         public static void SetParent(GameObject instance, GameObject parent, bool worldPositionStays = false)
+        {
+            if (instance != null)
+            {
+                instance.transform.SetParent(parent != null ? parent.transform : null, worldPositionStays);
+            }
+        }
+
+        /// <summary> 親オブジェクト設定 </summary>
+        public static void SetParent(Component instance, Component parent, bool worldPositionStays = false)
         {
             if (instance != null)
             {

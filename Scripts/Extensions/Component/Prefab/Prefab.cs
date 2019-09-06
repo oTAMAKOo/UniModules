@@ -41,6 +41,21 @@ namespace Extensions
             return instance;
         }
 
+        public IEnumerable<GameObject> Instantiate(int count, bool active = true, bool instantiateInWorldSpace = false)
+        {
+            if (prefab == null)
+            {
+                PrefabErrorMessage();
+                return null;
+            }
+
+            var instances = UnityUtility.Instantiate(parent, prefab, count, instantiateInWorldSpace).ToArray();
+
+            instances.ForEach(x => UnityUtility.SetActive(x.gameObject, active));
+
+            return instances;
+        }
+
         /// <summary> インスタンスを生成. </summary>
         public T Instantiate<T>(bool active = true, bool instantiateInWorldSpace = false) where T : Component
         {
