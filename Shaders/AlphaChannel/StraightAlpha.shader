@@ -1,5 +1,5 @@
 ﻿
-Shader "Custom/UI/StraightAlpha"
+Shader "Custom/AlphaChannel/StraightAlpha"
 {
 	Properties
 	{

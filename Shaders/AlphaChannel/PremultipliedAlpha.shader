@@ -1,5 +1,5 @@
 ﻿    
-Shader "Custom/Unlit/Pre-Multiplied Alpha" 
+Shader "Custom/AlphaChannel/PremultipliedAlpha" 
 {
 	Properties
 	{
