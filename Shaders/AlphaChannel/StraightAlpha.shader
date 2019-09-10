@@ -3,7 +3,7 @@ Shader "Custom/AlphaChannel/StraightAlpha"
 {
 	Properties
 	{
-		[PerRendererData] _MainTex("Sprite Texture", 2D) = "white" {}
+		[PerRendererData] _MainTex("Texture", 2D) = "white" {}
 
 		_Color("Tint", Color) = (1,1,1,1)
 
