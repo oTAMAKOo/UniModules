@@ -343,7 +343,7 @@ namespace Modules.SceneManagement
 
             if (mode == LoadSceneMode.Additive)
             {
-                Func<SceneInstance, bool> isUnlodadTarget = sceneInstance =>
+                Func<SceneInstance, bool> isUnloadTarget = sceneInstance =>
                 {
                     // SceneBaseクラスが存在しない.
                     if (UnityUtility.IsNull(sceneInstance.Instance)) { return true; }
@@ -366,7 +366,7 @@ namespace Modules.SceneManagement
                 };
 
                 // 不要なシーンをアンロード.
-                var unloadScenes = loadedScenes.Values.Where(x => isUnlodadTarget(x)).ToArray();
+                var unloadScenes = loadedScenes.Values.Where(x => isUnloadTarget(x)).ToArray();
 
                 foreach (var unloadScene in unloadScenes)
                 {
