@@ -165,6 +165,8 @@ namespace Modules.SceneManagement
 
             yield return OnRegisterCurrentScene(currentScene).ToYieldInstruction();
 
+            currentScene.Instance.Initialize();
+
             yield return currentScene.Instance.Prepare(false).ToYieldInstruction();
 
             currentScene.Instance.Enter(false);
