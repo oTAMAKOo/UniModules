@@ -55,17 +55,8 @@ namespace Extensions.Devkit
 
             if (EditorGUI.EndChangeCheck())
             {
-                var gameObjects = parent != null ? UnityEditorUtility.FindAllObjectsInHierarchy() : null;
-
-                if (parent == null || gameObjects.Contains(parent))
-                {
-                    parentProperty.objectReferenceValue = parent;
-                    property.serializedObject.ApplyModifiedProperties();
-                }
-                else
-                {
-                    Debug.LogError("ParentはHierarchy内のGameObjectである必要があります");
-                }
+                parentProperty.objectReferenceValue = parent;
+                property.serializedObject.ApplyModifiedProperties();
             }
 
             EditorGUI.indentLevel = indent;
