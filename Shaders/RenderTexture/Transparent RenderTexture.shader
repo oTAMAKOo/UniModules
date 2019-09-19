@@ -2,7 +2,7 @@
 // ※ 描画される側のブレンドモードを下記の設定にしないと動かない.
 // Blend SrcAlpha OneMinusSrcAlpha, Zero OneMinusSrcAlpha
 
-Shader "Custom/UI/RenderTexture"
+Shader "Custom/RenderTexture/Transparent RenderTexture"
 {
 	Properties
 	{

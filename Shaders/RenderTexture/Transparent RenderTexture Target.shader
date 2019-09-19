@@ -1,7 +1,7 @@
 ﻿// Upgrade NOTE: replaced 'mul(UNITY_MATRIX_MVP,*)' with 'UnityObjectToClipPos(*)'
 
 
-Shader "Custom/Mask/Unlit/RenderTextureTarget" 
+Shader "Custom/Mask/RenderTexture/Transparent RenderTexture Target" 
 {
 	Properties
 	{
