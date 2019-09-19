@@ -65,22 +65,26 @@ namespace Modules.Devkit.Diagnosis.SRDebugger
             {
                 SRDebug.Init();
 
-                UnityUtility.SetActive(blockCollider, SRDebug.Instance.IsDebugPanelVisible);
+                var srDebug = SRDebug.Instance;
+
+                UnityUtility.SetActive(blockCollider, srDebug.IsDebugPanelVisible);
 
                 VisibilityChangedDelegate onPanelVisibilityChanged = visible =>
                 {
                     if (visible)
                     {
-                        ResetLogTrack();
+                        background.color = defaultColor;
+                        currentLogType = null;
+                        lastShowLogTime = Time.realtimeSinceStartup;
                     }
 
                     UnityUtility.SetActive(blockCollider, visible);
                 };
 
-                SRDebug.Instance.PanelVisibilityChanged += onPanelVisibilityChanged;
+                srDebug.PanelVisibilityChanged += onPanelVisibilityChanged;
 
                 button.OnClickAsObservable()
-                    .Subscribe(_ => ResetLogTrack())
+                    .Subscribe(_ => srDebug.ShowDebugPanel())
                     .AddTo(this);
 
                 ApplicationLogHandler.Instance.OnLogReceiveAsObservable()
@@ -98,17 +102,6 @@ namespace Modules.Devkit.Diagnosis.SRDebugger
                 background.color = defaultColor;
 
                 initialized = true;
-            }
-        }
-
-        private void ResetLogTrack()
-        {
-            if (!SRDebug.Instance.IsDebugPanelVisible)
-            {
-                SRDebug.Instance.ShowDebugPanel();
-                background.color = defaultColor;
-                currentLogType = null;
-                lastShowLogTime = Time.realtimeSinceStartup;
             }
         }
 
