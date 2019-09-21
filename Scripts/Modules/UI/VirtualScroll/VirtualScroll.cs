@@ -67,7 +67,9 @@ namespace Modules.UI
 
         private Dictionary<VirtualScrollItem<T>, IDisposable> updateItemDisposables = null;
 
+        private Subject<Unit> onUpdateContents = null;
         private Subject<VirtualScrollItem<T>> onCreateItem = null;
+        private Subject<VirtualScrollItem<T>> onUpdateItem = null;
 
         private IObservable<Unit> updateQueueing = null;
 
@@ -117,7 +119,7 @@ namespace Modules.UI
 
         //----- method -----
 
-        public IObservable<Unit> UpdateContents()
+        public IObservable<Unit> UpdateContents(bool keepScrollPosition = false)
         {
             // 既に実行中の場合は実行中の物を返す.
             if (updateQueueing != null) { return updateQueueing; }
@@ -132,6 +134,8 @@ namespace Modules.UI
                 scrollRect.vertical = direction == Direction.Vertical;
 
                 itemList = new List<VirtualScrollItem<T>>();
+
+                ScrollPosition = 0f;
 
                 initialize = Status.Initialize;
             }
@@ -148,7 +152,7 @@ namespace Modules.UI
                 updateItemDisposables.Clear();
             }
 
-            updateQueueing = Observable.FromMicroCoroutine(() => UpdateContentsInternal())
+            updateQueueing = Observable.FromMicroCoroutine(() => UpdateContentsInternal(keepScrollPosition))
                 .Do(_ => initialize = Status.Done)
                 .Do(_ => updateQueueing = null)
                 .Share();
@@ -156,8 +160,10 @@ namespace Modules.UI
             return updateQueueing;
         }
 
-        private IEnumerator UpdateContentsInternal()
+        private IEnumerator UpdateContentsInternal(bool keepScrollPosition)
         {
+            var scrollPosition = ScrollPosition;
+
             if (itemSize == -1)
             {
                 var rt = UnityUtility.GetComponent<RectTransform>(itemPrefab);
@@ -169,7 +175,7 @@ namespace Modules.UI
             scrollRect.content.anchorMax = direction == Direction.Vertical ? new Vector2(1f, 0.5f) : new Vector2(0.5f, 1f);
             scrollRect.content.pivot = new Vector2(0.5f, 0.5f);
 
-            // Hitboxは全域使用.
+            // HitBoxは全域使用.
             if (hitBox != null)
             {
                 hitBox.anchorMin = new Vector2(0f, 0f);
@@ -234,38 +240,42 @@ namespace Modules.UI
 
             // 足りない分を生成.
             var createCount = requireCount - itemList.Count;
-            var addItems = UnityUtility.Instantiate<VirtualScrollItem<T>>(scrollRect.content.gameObject, itemPrefab, createCount).ToArray();
 
-            itemList.AddRange(addItems);
-
-            // 先に登録して非アクティブ化.
-            foreach (var item in addItems)
+            if (0 < createCount)
             {
-                UnityUtility.SetActive(item, false);
-            }
+                var addItems = UnityUtility.Instantiate<VirtualScrollItem<T>>(scrollRect.content.gameObject, itemPrefab, createCount).ToArray();
 
-            // 生成したインスタンス初期化.
-            foreach (var item in addItems)
-            {
-                UnityUtility.SetActive(item, true);
+                itemList.AddRange(addItems);
 
-                if (onCreateItem != null)
+                // 先に登録して非アクティブ化.
+                foreach (var item in addItems)
                 {
-                    onCreateItem.OnNext(item);
+                    UnityUtility.SetActive(item, false);
                 }
 
-                // 初期化.
-                item.Initialize();
-
-                // 非同期初期化.
-                var initializeYield = item.InitializeAsync().ToYieldInstruction();
-
-                while (!initializeYield.IsDone)
+                // 生成したインスタンス初期化.
+                foreach (var item in addItems)
                 {
-                    yield return null;
-                }
+                    UnityUtility.SetActive(item, true);
 
-                UnityUtility.SetActive(item, false);
+                    if (onCreateItem != null)
+                    {
+                        onCreateItem.OnNext(item);
+                    }
+
+                    // 初期化.
+                    item.Initialize();
+
+                    // 非同期初期化.
+                    var initializeYield = item.InitializeAsync().ToYieldInstruction();
+
+                    while (!initializeYield.IsDone)
+                    {
+                        yield return null;
+                    }
+
+                    UnityUtility.SetActive(item, false);
+                }
             }
 
             // 要素数が少ない時はスクロールを無効化.
@@ -299,8 +309,15 @@ namespace Modules.UI
             // 並べ替え.
             UpdateSibling();
 
-            // スクロール初期位置設定.
-            CenterToItem(0);
+            // スクロール位置設定.
+            if (keepScrollPosition)
+            {
+                ScrollPosition = scrollPosition;
+            }
+            else
+            {
+                CenterToItem(0);
+            }
 
             // リストアイテム更新.
             var updateItemYield = observers.WhenAll().ToYieldInstruction();
@@ -308,6 +325,12 @@ namespace Modules.UI
             while (!updateItemYield.IsDone)
             {
                 yield return null;
+            }
+
+            // 更新イベント.
+            if (onUpdateContents != null)
+            {
+                onUpdateContents.OnNext(Unit.Default);
             }
         }
 
@@ -680,6 +703,11 @@ namespace Modules.UI
 
             item.transform.name = index.ToString();
 
+            if (onUpdateItem != null)
+            {
+                onUpdateItem.OnNext(item);
+            }
+
             return observable;
         }
 
@@ -694,9 +722,22 @@ namespace Modules.UI
             return new Rect(tl, new Vector2(br.x - tl.x, br.y - tl.y));
         }
 
+        /// <summary> リストアイテム生成時イベント </summary>
         public IObservable<VirtualScrollItem<T>> OnCreateItemAsObservable()
         {
             return onCreateItem ?? (onCreateItem = new Subject<VirtualScrollItem<T>>());
+        }
+
+        /// <summary> リストアイテム更新時イベント </summary>
+        public IObservable<VirtualScrollItem<T>> OnUpdateItemAsObservable()
+        {
+            return onUpdateItem ?? (onUpdateItem = new Subject<VirtualScrollItem<T>>());
+        }
+
+        /// <summary> リスト内容更新完了イベント </summary>
+        public IObservable<Unit> OnUpdateContentsAsObservable()
+        {
+            return onUpdateContents ?? (onUpdateContents = new Subject<Unit>());
         }
     }
 }
