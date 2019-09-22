@@ -10,6 +10,8 @@ using Extensions;
 
 namespace Modules.Hyphenation
 {
+    // ※ BestFitと併用すると相互にサイズをし合い最終サイズが正しく取得できない為、併用しない.
+
     [ExecuteInEditMode]
     [RequireComponent(typeof(Text))]
     public sealed class UITextHyphenation : UIBehaviour
