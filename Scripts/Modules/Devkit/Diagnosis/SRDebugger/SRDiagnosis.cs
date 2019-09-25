@@ -115,7 +115,7 @@ namespace Modules.Devkit.Diagnosis.SRDebugger
 
             var ignoreWarnings = new string[]
             {
-                "SpriteAtlasManager.atlasRequested wasn't listened to while MaskAtlas requested.",
+                "SpriteAtlasManager.atlasRequested wasn't listened to while",
             };
 
             foreach (var ignore in ignoreWarnings)
