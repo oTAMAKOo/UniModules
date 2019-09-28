@@ -384,12 +384,10 @@ namespace Extensions.Devkit
                 this.text = text;
             }
 
-            public ColumnHeaderContent(string text, GUILayoutOption[] options = null) : this(text)
+            public ColumnHeaderContent(string text, params GUILayoutOption[] options) : this(text)
             {
                 this.options = options;
             }
-
-            public ColumnHeaderContent(string text, GUILayoutOption option) : this(text, new GUILayoutOption[] { option }) { }
         }
 
         public static void DrawColumnHeader(ColumnHeaderContent[] contents)

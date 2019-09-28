@@ -55,7 +55,7 @@ namespace Modules.UI.TextEffect
 
             EditorGUI.BeginChangeCheck();
 
-            offsetY = EditorGUILayout.DelayedFloatField("offsetY", offsetY);
+            offsetY = EditorGUILayout.DelayedFloatField("OffsetY", offsetY);
 
             if (EditorGUI.EndChangeCheck())
             {

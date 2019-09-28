@@ -24,6 +24,7 @@ using UnityEditor.Callbacks;
 namespace Modules.UI.TextEffect
 {
     [ExecuteInEditMode]
+    [DisallowMultipleComponent]
     public abstract class TextEffectBase : MonoBehaviour
     {
         //----- params -----
@@ -37,11 +38,11 @@ namespace Modules.UI.TextEffect
 
         private static Dictionary<Material, List<TextEffectBase>> reference = null;
         private static Dictionary<string, Material> cache = null;
-        
+
         //----- property -----
 
         //----- method -----
-
+        
         void OnEnable()
         {
             Apply();
@@ -57,19 +58,17 @@ namespace Modules.UI.TextEffect
             Release();
         }
 
-        #if UNITY_EDITOR
-        
-        [DidReloadScripts]
-        private static void DidReloadScripts()
-        {
-            Rebuild();
-        }
-
-        #endif
-
         private void Initialize()
         {
-            Rebuild();
+            if (reference == null)
+            {
+                reference = new Dictionary<Material, List<TextEffectBase>>();
+            }
+
+            if (cache == null)
+            {
+                cache = new Dictionary<string, Material>();
+            }
 
             if (initialized) { return; }
 
@@ -79,22 +78,6 @@ namespace Modules.UI.TextEffect
             }
 
             initialized = true;
-        }
-
-        private static void Rebuild()
-        {
-            if (reference == null || cache == null)
-            {
-                reference = new Dictionary<Material, List<TextEffectBase>>();
-                cache = new Dictionary<string, Material>();
-
-                var textEffects = UnityUtility.FindObjectsOfType<TextEffectBase>();
-
-                foreach (var textEffect in textEffects)
-                {
-                    textEffect.Apply();
-                }
-            }
         }
 
         protected void Apply()
@@ -195,5 +178,28 @@ namespace Modules.UI.TextEffect
         protected abstract Shader GetShader(bool softMaskable);
 
         protected abstract string GetCacheKey(bool softMaskable);
+
+        #if UNITY_EDITOR
+
+        [DidReloadScripts]
+        private static void DidReloadScripts()
+        {
+            Rebuild();
+        }
+
+        private static void Rebuild()
+        {
+            reference = new Dictionary<Material, List<TextEffectBase>>();
+            cache = new Dictionary<string, Material>();
+
+            var textEffects = UnityUtility.FindObjectsOfType<TextEffectBase>();
+
+            foreach (var textEffect in textEffects)
+            {
+                textEffect.Apply();
+            }
+        }
+
+        #endif
     }
 }
