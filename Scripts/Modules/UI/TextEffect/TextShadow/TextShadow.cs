@@ -23,9 +23,6 @@ namespace Modules.UI.TextEffect
         [SerializeField]
         private float offsetY = -1f;
 
-        private static Shader shadowShader = null;
-        private static Shader shadowSoftMaskShader = null;
-
         //----- property -----
 
         public Color Color { get { return color; } }
@@ -38,7 +35,7 @@ namespace Modules.UI.TextEffect
         {
             color = value;
 
-            Apply();
+            TextEffectManager.Instance.Apply(this);
         }
 
         public void SetOffsetX(float offsetX, float offsetY)
@@ -46,7 +43,7 @@ namespace Modules.UI.TextEffect
             this.offsetX = offsetX;
             this.offsetY = offsetY;
 
-            Apply();
+            TextEffectManager.Instance.Apply(this);
         }
 
         public override void SetShaderParams(Material material)

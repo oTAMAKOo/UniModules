@@ -1,6 +1,7 @@
 ﻿
 using UnityEngine;
 using UnityEditor;
+using UnityEditorInternal;
 using System;
 using System.Linq;
 using System.Collections.Generic;
@@ -44,7 +45,7 @@ namespace Modules.UI.TextEffect
 
             if (!update) { return; }
 
-            instance.Apply();
+            TextEffectManager.Instance.Apply(instance);
 
             update = false;
         }

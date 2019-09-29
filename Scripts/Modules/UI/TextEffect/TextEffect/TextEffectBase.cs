@@ -30,9 +30,13 @@ namespace Modules.UI.TextEffect
 
         //----- field -----
 
+        private bool alive = true;
+
         private Text target = null;
 
         //----- property -----
+
+        public bool Alive { get { return alive; } }
 
         public Text Text
         {
@@ -40,30 +44,17 @@ namespace Modules.UI.TextEffect
         }
 
         //----- method -----
-        
+                
         void OnEnable()
-        {
-            Apply();
-        }
-
-        void OnDisable()
-        {
-            Release();
-        }
-
-        void OnDestroy()
-        {
-            Release();
-        }
-
-        public void Apply()
         {
             TextEffectManager.Instance.Apply(this);
         }
 
-        public void Release()
+        void OnDestroy()
         {
-            TextEffectManager.Instance.Release(this);
+            alive = false;
+
+            TextEffectManager.Instance.Apply(this);
         }
 
         public abstract void SetShaderParams(Material material);

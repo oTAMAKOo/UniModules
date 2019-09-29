@@ -49,7 +49,9 @@ namespace Modules.UI.TextEffect
 
             var softMaskable = IsSoftMaskable(target);
 
-            var components = UnityUtility.GetComponents<TextEffectBase>(target.gameObject).ToArray();
+            var components = UnityUtility.GetComponents<TextEffectBase>(target.gameObject)
+                .Where(x => x.Alive)
+                .ToArray();
 
             var cacheKey = GetCacheKey(components, softMaskable);
 
@@ -62,13 +64,16 @@ namespace Modules.UI.TextEffect
                     reference.Add(material, new List<TextEffectBase>());
                 }
 
-                reference[material].Add(target);
-
-                target.Text.material = material;
+                if (target.Alive)
+                {
+                    reference[material].Add(target);
+                }                
             }
+
+            target.Text.material = material;
         }
 
-        public void Release(TextEffectBase target)
+        private void Release(TextEffectBase target)
         {
             var material = target.Text.material;
 
@@ -83,6 +88,8 @@ namespace Modules.UI.TextEffect
                 reference.Remove(material);
 
                 materials.Remove(item.Key);
+
+                target.Text.material = null;
 
                 UnityUtility.SafeDelete(material);
             }
@@ -170,6 +177,8 @@ namespace Modules.UI.TextEffect
                 shaderName = "Custom/UI/Text-Outline-Shadow";
             }
 
+            if (string.IsNullOrEmpty(shaderName)) { return null; }
+
             if (softMaskable)
             {
                 shaderName += " (SoftMask)";
@@ -204,11 +213,15 @@ namespace Modules.UI.TextEffect
 
         private void Rebuild()
         {
+            reference.Clear();
+            materials.Clear();
+            shaders.Clear();
+
             var textEffects = UnityUtility.FindObjectsOfType<TextEffectBase>();
 
             foreach (var textEffect in textEffects)
             {
-                textEffect.Apply();
+                Apply(textEffect);
             }
         }
 

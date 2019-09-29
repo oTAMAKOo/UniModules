@@ -21,12 +21,6 @@ namespace Modules.UI.TextEffect
         [SerializeField]
         private float distance = 2f;
 
-        private static Shader outlineShader = null;
-        private static Shader outlineSoftMaskShader = null;
-
-        private static Shader outlineShadowShader = null;
-        private static Shader outlineShadowSoftMaskShader = null;
-
         //----- property -----
 
         public Color Color { get { return color; }}
@@ -39,14 +33,14 @@ namespace Modules.UI.TextEffect
         {
             color = value;
 
-            Apply();
+            TextEffectManager.Instance.Apply(this);
         }
 
         public void SetDistance(float value)
         {
             distance = value;
 
-            Apply();
+            TextEffectManager.Instance.Apply(this);
         }
 
         public override void SetShaderParams(Material material)
