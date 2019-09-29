@@ -29,37 +29,21 @@ namespace Modules.UI.TextEffect
             instance = target as TextShadow;
 
             var color = Reflection.GetPrivateField<TextShadow, Color>(instance, "color");
+            var offsetX = Reflection.GetPrivateField<TextShadow, float>(instance, "offsetX");
+            var offsetY = Reflection.GetPrivateField<TextShadow, float>(instance, "offsetY");
 
             EditorGUI.BeginChangeCheck();
 
             color = EditorGUILayout.ColorField("Color", color);
 
-            if (EditorGUI.EndChangeCheck())
-            {
-                UpdateParams(instance, color, instance.Offset.x, instance.Offset.y);
-                return;
-            }
-
-            var offsetX = Reflection.GetPrivateField<TextShadow, float>(instance, "offsetX");
-
-            EditorGUI.BeginChangeCheck();
-
             offsetX = EditorGUILayout.DelayedFloatField("OffsetX", offsetX);
-
-            if (EditorGUI.EndChangeCheck())
-            {
-                UpdateParams(instance, instance.Color, offsetX, instance.Offset.y);
-            }
-
-            var offsetY = Reflection.GetPrivateField<TextShadow, float>(instance, "offsetY");
-
-            EditorGUI.BeginChangeCheck();
-
+            
             offsetY = EditorGUILayout.DelayedFloatField("OffsetY", offsetY);
 
             if (EditorGUI.EndChangeCheck())
             {
-                UpdateParams(instance, instance.Color, instance.Offset.x, offsetY);
+                UpdateParams(instance, color, offsetX, offsetY);
+                return;
             }
 
             DrawMaterialSelector(instance);

@@ -8,8 +8,7 @@ Shader "Custom/UI/Text-Outline"
        
         [HDR]
         _OutlineColor ("Outline Color", Color) = (0,0,0,1)
-
-        _Spread ("Spread", Range(0.1, 5)) = 1
+        _OutlineSpread ("Outline Spread", Range(0.1, 5)) = 1
 
         // required for UI.Mask
         _StencilComp("Stencil Comparison", Float) = 8
@@ -72,7 +71,7 @@ Shader "Custom/UI/Text-Outline"
             float4 _MainTex_ST;
             float4 _MainTex_TexelSize;
             half4  _OutlineColor;
-            half   _Spread;
+            half   _OutlineSpread;
 
             v2f vert (appdata_t v)
             {
@@ -95,7 +94,7 @@ Shader "Custom/UI/Text-Outline"
 
                 col = lerp(ocol, col, a0);
 
-                float4 delta = float4(1, 1, 0, -1) * _MainTex_TexelSize.xyxy * _Spread;
+                float4 delta = float4(1, 1, 0, -1) * _MainTex_TexelSize.xyxy * _OutlineSpread;
 
                 half a1 = max(max(tex2D(_MainTex, i.uv + delta.xz).a, tex2D(_MainTex, i.uv - delta.xz).a),
                                 max(tex2D(_MainTex, i.uv + delta.zy).a, tex2D(_MainTex, i.uv - delta.zy).a));

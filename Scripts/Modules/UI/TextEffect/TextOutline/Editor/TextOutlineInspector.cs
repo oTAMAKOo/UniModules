@@ -29,26 +29,17 @@ namespace Modules.UI.TextEffect
             instance = target as TextOutline;
 
             var color = Reflection.GetPrivateField<TextOutline, Color>(instance, "color");
-
-            EditorGUI.BeginChangeCheck();
-
-            color = EditorGUILayout.ColorField("Color", color);
-
-            if (EditorGUI.EndChangeCheck())
-            {
-                UpdateParams(instance, color, instance.Distance);
-                return;
-            }
-
             var distance = Reflection.GetPrivateField<TextOutline, float>(instance, "distance");
 
             EditorGUI.BeginChangeCheck();
 
+            color = EditorGUILayout.ColorField("Color", color);
             distance = EditorGUILayout.DelayedFloatField("Distance", distance);
 
             if (EditorGUI.EndChangeCheck())
             {
-                UpdateParams(instance, instance.Color, distance);
+                UpdateParams(instance, color, distance);
+                return;
             }
 
             DrawMaterialSelector(instance);

@@ -44,26 +44,24 @@ namespace Modules.UI.TextEffect
 
             if (!update) { return; }
 
-            Reflection.InvokePrivateMethod(instance, "Apply");
+            instance.Apply();
 
             update = false;
         }
 
         protected void DrawMaterialSelector<T>(T instance) where T : TextEffectBase
         {
-            var textEffectBase = instance as TextEffectBase;
-
-            var reference = Reflection.GetPrivateField<TextEffectBase, Dictionary<Material, List<TextEffectBase>>>(textEffectBase, "reference", BindingFlags.Static);
+            var reference = Reflection.GetPrivateField<TextEffectManager, Dictionary<Material, List<TextEffectBase>>>(TextEffectManager.Instance, "reference");
             
             if (reference == null || reference.IsEmpty()) { return; }
 
             Apply();
 
             var targets = reference.Values
-                    .Select(x => x.Select(y => y as T).Where(y => y != null))
-                    .Select(x => x.FirstOrDefault())
+                    .Select(x => x.OfType<T>().FirstOrDefault())
                     .Where(x => x != null)
                     .Cast<TextEffectBase>()
+                    .Distinct()
                     .ToArray();
 
             // 1つしかない時は自身のみなので不要.

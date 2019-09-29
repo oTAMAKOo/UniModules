@@ -8,6 +8,7 @@ namespace Modules.UI.TextEffect
     // ※ このComponentを使用するにはTextに指定されたFontのmetaデータのcharacterPaddingを4以上に変更する必要があります.
 
     [ExecuteInEditMode]
+    [DisallowMultipleComponent]
     [RequireComponent(typeof(Text))]
     public sealed class TextOutline : TextEffectBase
     {
@@ -22,6 +23,9 @@ namespace Modules.UI.TextEffect
 
         private static Shader outlineShader = null;
         private static Shader outlineSoftMaskShader = null;
+
+        private static Shader outlineShadowShader = null;
+        private static Shader outlineShadowSoftMaskShader = null;
 
         //----- property -----
 
@@ -45,30 +49,15 @@ namespace Modules.UI.TextEffect
             Apply();
         }
 
-        protected override Shader GetShader(bool softMaskable)
-        {
-            if(outlineShader == null)
-            {
-                outlineShader = Shader.Find("Custom/UI/Text-Outline");
-            }
-
-            if (outlineSoftMaskShader == null)
-            {
-                outlineSoftMaskShader = Shader.Find("Custom/UI/Text-Outline (SoftMask)");
-            }
-
-            return softMaskable ? outlineSoftMaskShader : outlineShader;
-        }
-
-        protected override void SetShaderParams(Material material)
+        public override void SetShaderParams(Material material)
         {
             material.SetColor("_OutlineColor", color);
-            material.SetFloat("_Spread", distance);
+            material.SetFloat("_OutlineSpread", distance);
         }
 
-        protected override string GetCacheKey(bool softMaskable)
+        public override string GetCacheKey()
         {
-            return string.Format("{0}.{1}.{2}", softMaskable, ColorUtility.ToHtmlStringRGBA(color), distance);
+            return string.Format("{0}.{1}", ColorUtility.ToHtmlStringRGBA(color), distance);
         }
     }
 }
