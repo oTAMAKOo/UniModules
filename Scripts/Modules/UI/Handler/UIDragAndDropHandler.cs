@@ -13,6 +13,8 @@ namespace Modules.UI
 
         //----- field -----
 
+        private ObservableEventTrigger eventTrigger = null;
+
         private Subject<Vector2> onDragStart = null;
         private Subject<Vector2> onDrag = null;
         private Subject<Vector2> onDragEnd = null;
@@ -23,7 +25,7 @@ namespace Modules.UI
 
         void OnEnable()
         {
-            var eventTrigger = UnityUtility.GetOrAddComponent<ObservableEventTrigger>(gameObject);
+            eventTrigger = UnityUtility.GetOrAddComponent<ObservableEventTrigger>(gameObject);
 
             eventTrigger
                 .OnBeginDragAsObservable()
@@ -31,12 +33,12 @@ namespace Modules.UI
                 .Where(eventData => eventData.pointerDrag.gameObject == gameObject)
                 .Select(eventData => eventData.position)
                 .Subscribe(position =>
-                {
-                    if (onDragStart != null)
                     {
-                        onDragStart.OnNext(position);
-                    }
-                })
+                        if (onDragStart != null)
+                        {
+                            onDragStart.OnNext(position);
+                        }
+                    })
                 .AddTo(this);
 
             eventTrigger
@@ -45,12 +47,12 @@ namespace Modules.UI
                 .Where(eventData => eventData.pointerDrag.gameObject == gameObject)
                 .Select(eventData => eventData.position)
                 .Subscribe(position =>
-                {
-                    if (onDrag != null)
                     {
-                        onDrag.OnNext(position);
-                    }
-                })
+                        if (onDrag != null)
+                        {
+                            onDrag.OnNext(position);
+                        }
+                    })
                 .AddTo(this);
 
             eventTrigger
@@ -59,14 +61,19 @@ namespace Modules.UI
                 .Where(eventData => eventData.pointerDrag.gameObject == gameObject)
                 .Select(eventData => eventData.position)
                 .Subscribe(position =>
-                {
-                    if (onDragEnd != null)
                     {
-                        onDragEnd.OnNext(position);
-                    }
-                })
+                        if (onDragEnd != null)
+                        {
+                            onDragEnd.OnNext(position);
+                        }
+                    })
                 .AddTo(this);
         }
+
+        void OnDestroy()
+        {
+            UnityUtility.SafeDelete(eventTrigger);
+        }  
 
         public IObservable<Vector2> OnDragStartAsObservable()
         {
