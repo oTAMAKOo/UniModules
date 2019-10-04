@@ -1,5 +1,7 @@
-﻿﻿﻿using UnityEngine;
+﻿﻿﻿
+using UnityEngine;
 using Unity.Linq;
+using Extensions;
 
 namespace Modules.SortingLayerSetter
 {
@@ -52,7 +54,7 @@ namespace Modules.SortingLayerSetter
 
         public void SetSortingLayer()
         {
-            Renderer renderer = GetComponent<Renderer>();
+            var renderer = GetComponent<Renderer>();
 
             if (renderer != null)
             {
@@ -62,18 +64,9 @@ namespace Modules.SortingLayerSetter
 
             if (applyChildObjects)
             {
-                var childObjects = gameObject.Children();
+                var childRenderers = gameObject.Descendants().OfComponent<Renderer>();
 
-                foreach (var childObject in childObjects)
-                {
-                    renderer = childObject.GetComponent<Renderer>();
-
-                    if (renderer != null)
-                    {
-                        renderer.sortingLayerID = (int)sortingLayer;
-                        renderer.sortingOrder = sortingOrder;
-                    }
-                }
+                childRenderers.ForEach(x => x.sortingOrder = sortingOrder);
             }
         }
     }
