@@ -288,7 +288,7 @@ namespace Modules.ExternalResource
 
         private static string GetVersionFilePath()
         {
-            return PathUtility.Combine(Application.temporaryCachePath, VersionFileName);
+            return PathUtility.Combine(GetInstallDirectory(), VersionFileName);
         }
     }
 }

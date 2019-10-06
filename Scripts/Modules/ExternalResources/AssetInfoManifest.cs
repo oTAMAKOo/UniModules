@@ -96,16 +96,25 @@ namespace Modules.ExternalResource
         {
             if (string.IsNullOrEmpty(resourcePath)) { return; }
 
-            var extension = Path.GetExtension(resourcePath);
-            
-            if (IsAssetBundle)
+            var isManifestFile = Path.GetFileName(resourcePath) == AssetInfoManifest.ManifestFileName;
+
+            if (isManifestFile)
             {
-                fileName = assetBundle.AssetBundleName.GetHash();
+                fileName = Path.GetFileNameWithoutExtension(AssetInfoManifest.ManifestFileName);
             }
             else
             {
-                fileName = PathUtility.GetPathWithoutExtension(resourcePath).GetHash() + extension;
-            }            
+                if (IsAssetBundle)
+                {
+                    fileName = assetBundle.AssetBundleName.GetHash();
+                }
+                else
+                {
+                    var extension = Path.GetExtension(resourcePath);
+
+                    fileName = PathUtility.GetPathWithoutExtension(resourcePath).GetHash() + extension;
+                }
+            }          
         }
     }
 

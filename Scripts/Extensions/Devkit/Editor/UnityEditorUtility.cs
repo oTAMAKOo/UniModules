@@ -154,6 +154,21 @@ namespace Extensions.Devkit
         }
 
         /// <summary>
+        /// フォルダを開く.
+        /// </summary>
+        public static void OpenFolder(string path)
+        {
+            if (Application.platform == RuntimePlatform.OSXEditor)
+            {
+                System.Diagnostics.Process.Start(path);
+            }
+            else if (Application.platform == RuntimePlatform.WindowsEditor)
+            {
+                EditorUtility.RevealInFinder(path);
+            }
+        }
+
+        /// <summary>
         /// 指定Assetのフルパスを取得.
         /// </summary>
         /// <param name="assetObject"></param>

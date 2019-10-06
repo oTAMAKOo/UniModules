@@ -1,6 +1,7 @@
 ﻿
 using UnityEditor;
 using System.IO;
+using Extensions.Devkit;
 
 // Modules.
 using Modules.Dicing;
@@ -207,6 +208,14 @@ namespace Modules
             AssetNavigationWindow.Open(projectFolders.ExternalResourcesPath);
         }
 
+        [MenuItem(itemName: ResourcesMenu + "Open Install Folder", priority = 24)]
+        public static void OpenInstallFolder()
+        {
+            var path = ExternalResources.GetInstallDirectory();
+
+            UnityEditorUtility.OpenFolder(path);
+        }
+
         #endregion
 
         //===============================================================
@@ -215,7 +224,7 @@ namespace Modules
 
         #region CriWare
 
-        #if ENABLE_CRIWARE_ADX || ENABLE_CRIWARE_SOFDEC
+#if ENABLE_CRIWARE_ADX || ENABLE_CRIWARE_SOFDEC
 
         public const string CriWareMenu = MenuRoot + "CriWare/";
 

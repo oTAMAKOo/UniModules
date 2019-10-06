@@ -4,6 +4,7 @@ using UnityEditor;
 using System;
 using System.IO;
 using Extensions;
+using Extensions.Devkit;
 using Modules.AssetBundles.Editor;
 using Modules.Devkit;
 using Modules.Devkit.Prefs;
@@ -100,6 +101,11 @@ namespace Modules.ExternalResource.Editor
 
                 // AssetBundleファイルをパッケージ化.
                 BuildAssetBundle.BuildPackage(exportPath, assetInfoManifest, assetManageConfig.CryptPassword);
+
+                // 出力先フォルダを開く.
+                UnityEditorUtility.OpenFolder(exportPath);
+
+                UnityConsole.Event(ExternalResources.ConsoleEventName, ExternalResources.ConsoleEventColor, "Build ExternalResource Complete.");
             }
             catch (Exception e)
             {
@@ -110,8 +116,6 @@ namespace Modules.ExternalResource.Editor
             {
                 EditorApplication.UnlockReloadAssemblies();
             }
-
-            UnityConsole.Event(ExternalResources.ConsoleEventName, ExternalResources.ConsoleEventColor, "Build ExternalResource Complete.");
         }
         
         private static string GetExportPath()
@@ -126,6 +130,6 @@ namespace Modules.ExternalResource.Editor
             Prefs.exportPath = path;
 
             return PathUtility.Combine(path, UnityPathUtility.GetPlatformName()) + PathUtility.PathSeparator;
-        }
+        }        
     }
 }

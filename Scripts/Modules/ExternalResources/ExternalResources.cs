@@ -55,8 +55,6 @@ namespace Modules.ExternalResource
 
         #endif
 
-        // インストールディレクトリ.
-        private string installDir = null;
 
         // 外部アセットディレクトリ.
         private string resourceDir = null;
@@ -84,7 +82,7 @@ namespace Modules.ExternalResource
 
         //----- method -----
 
-        public void Initialize(string resourceDir, string installPath, bool localMode = false)
+        public void Initialize(string resourceDir, bool localMode = false)
         {
             if (initialized) { return; }
 
@@ -95,7 +93,7 @@ namespace Modules.ExternalResource
             yieldCancel = new YieldCancel();
 
             // アセットフォルダ.
-            installDir = PathUtility.Combine(installPath, InstallFolderName);
+            var installDir = GetInstallDirectory();
 
             //----- AssetBundleManager初期化 -----
                         
@@ -127,6 +125,11 @@ namespace Modules.ExternalResource
             LoadVersion();
 
             initialized = true;
+        }
+
+        public static string GetInstallDirectory()
+        {
+            return PathUtility.Combine(Application.temporaryCachePath, InstallFolderName);
         }
 
         /// <summary>
@@ -205,12 +208,14 @@ namespace Modules.ExternalResource
 
             ClearVersion();
 
-            if (Directory.Exists(Instance.installDir))
+            var installDir = GetInstallDirectory();
+
+            if (Directory.Exists(installDir))
             {
-                DirectoryUtility.Clean(Instance.installDir);
+                DirectoryUtility.Clean(installDir);
 
                 // 一旦削除するので再度生成.
-                Directory.CreateDirectory(Instance.installDir);
+                Directory.CreateDirectory(installDir);
             }
 
             Caching.ClearCache();
