@@ -20,8 +20,6 @@ namespace Modules.AssetBundles
     {
         //----- params -----
 
-        public const string PackageFolder = "Package";
-
         public const string PackageExtension = ".package";
 
         public const string DefaultPassword = "QaQaVf7258Whw258";
@@ -70,6 +68,9 @@ namespace Modules.AssetBundles
         // ダウンロードエラー一覧.
         private Dictionary<string, string> downloadingErrors = null;
 
+        // アセット情報(アセットバンドル).
+        private Dictionary<string, AssetInfo[]> assetInfosByAssetBundleName = null;
+
         // 依存関係.
         private Dictionary<string, string[]> dependencies = null;
 
@@ -83,7 +84,7 @@ namespace Modules.AssetBundles
         private bool localMode = false;
 
         // イベント通知.
-        private Subject<string> onTimeOut = null;
+        private Subject<AssetInfo> onTimeOut = null;
         private Subject<Exception> onError = null;
 
         private AesManaged aesManaged = null;
@@ -114,9 +115,12 @@ namespace Modules.AssetBundles
             assetBundleCache = new Dictionary<string, CachedInfo>();
             cacheQueueing = new Dictionary<string, IObservable<Tuple<AssetBundle, string>>>();
             downloadingErrors = new Dictionary<string, string>();
+            assetInfosByAssetBundleName = new Dictionary<string, AssetInfo[]>();
             dependencies = new Dictionary<string, string[]>();
 
             aesManaged = AESExtension.CreateAesManaged(cryptPassword);
+
+            BuildAssetInfoTable();
 
             isInitialized = true;
         }
@@ -138,11 +142,35 @@ namespace Modules.AssetBundles
             this.remoteUrl = remoteUrl;
         }
 
+        private void BuildAssetInfoTable()
+        {
+            assetInfosByAssetBundleName.Clear();
+            
+            if (manifest != null)
+            {
+                assetInfosByAssetBundleName = manifest.GetAssetInfos()
+                    .Where(x => x.IsAssetBundle)
+                    .GroupBy(x => x.AssetBundle.AssetBundleName)
+                    .ToDictionary(x => x.Key, x => x.ToArray());
+            }
+
+            // ※ アセット管理情報内にAssetInfoManifestの情報は入っていないので明示的に追加する.
+
+            var manifestAssetInfo = AssetInfoManifest.GetManifestAssetInfo();
+            
+            assetInfosByAssetBundleName[manifestAssetInfo.AssetBundle.AssetBundleName] = new AssetInfo[] { manifestAssetInfo };
+        }
+
         public void SetManifest(AssetInfoManifest manifest)
         {
             this.manifest = manifest;
 
-            CleanUnuseCache();
+            BuildAssetInfoTable();
+
+            if (manifest != null)
+            {
+                CleanUnuseCache();
+            }
         }
 
         /// <summary> 展開中のアセットバンドル名一覧取得 </summary>
@@ -153,23 +181,20 @@ namespace Modules.AssetBundles
                 new Tuple<string, int>[0];
         }
 
-        public string BuildUrl(string assetBundlePath)
+        public string BuildUrl(string fileName)
         {
             var platformName = UnityPathUtility.GetPlatformName();
-            var assetFolder = PackageFolder;
 
-            return PathUtility.Combine(new string[] { remoteUrl, platformName, assetFolder, assetBundlePath }) + PackageExtension;
+            return PathUtility.Combine(new string[] { remoteUrl, platformName, fileName }) + PackageExtension;
         }
 
-        public string BuildFilePath(string assetBundleName)
+        public string BuildFilePath(AssetInfo assetInfo)
         {
-            var assetFolder = PackageFolder;
+            var path = installPath;
 
-            var path = PathUtility.Combine(installPath, assetFolder);
-
-            if (!string.IsNullOrEmpty(assetBundleName))
+            if (assetInfo != null && !string.IsNullOrEmpty(assetInfo.FileName))
             {
-                path = PathUtility.Combine(path, assetBundleName) + PackageExtension;
+                path = PathUtility.Combine(installPath, assetInfo.FileName) + PackageExtension;
             }
 
             return path;
@@ -187,26 +212,39 @@ namespace Modules.AssetBundles
         }
 
         /// <summary>
-        /// アセットバンドルを更新.
+        /// アセット情報ファイルを更新.
         /// </summary>
-        /// <param name="assetBundleName"></param>
-        /// <param name="progress"></param>
-        /// <returns></returns>
-        public IObservable<Unit> UpdateAssetBundle(string assetBundleName, IProgress<float> progress = null)
+        public IObservable<Unit> UpdateAssetInfoManifest()
         {
             if (simulateMode) { return Observable.ReturnUnit(); }
 
             if (localMode) { return Observable.ReturnUnit(); }
 
-            return Observable.FromMicroCoroutine(() => UpdateAssetBundleInternal(assetBundleName, progress));
+            var manifestAssetInfo = AssetInfoManifest.GetManifestAssetInfo();
+            
+            return Observable.FromMicroCoroutine(() => UpdateAssetBundleInternal(manifestAssetInfo));
         }
 
-        private IEnumerator UpdateAssetBundleInternal(string assetBundleName, IProgress<float> progress = null)
+        /// <summary>
+        /// アセットバンドルを更新.
+        /// </summary>
+        public IObservable<Unit> UpdateAssetBundle(AssetInfo assetInfo, IProgress<float> progress = null)
+        {
+            if (simulateMode) { return Observable.ReturnUnit(); }
+
+            if (localMode) { return Observable.ReturnUnit(); }
+
+            return Observable.FromMicroCoroutine(() => UpdateAssetBundleInternal(assetInfo, progress));
+        }
+
+        private IEnumerator UpdateAssetBundleInternal(AssetInfo assetInfo, IProgress<float> progress = null)
         {
             //----------------------------------------------------------------------------------
             // ※ 呼び出し頻度が高いのでFromMicroCoroutineで呼び出される.
             //    戻り値を返す時はyield return null以外使わない.
             //----------------------------------------------------------------------------------
+
+            var assetBundleName = assetInfo.AssetBundle.AssetBundleName;
 
             if (!assetBundleCache.ContainsKey(assetBundleName))
             {
@@ -228,8 +266,10 @@ namespace Modules.AssetBundles
                             {
                                 return downloadTask;
                             }
+                            
+                            var info = assetInfosByAssetBundleName.GetValueOrDefault(x).FirstOrDefault();
 
-                            downloadQueueing[x] = Observable.FromMicroCoroutine(() => DownloadAssetBundle(x, progress))
+                            downloadQueueing[x] = Observable.FromMicroCoroutine(() => DownloadAssetBundle(info, progress))
                                     .Select(_ => x)
                                     .Share();
 
@@ -284,21 +324,21 @@ namespace Modules.AssetBundles
             }
         }
 
-        private IEnumerator DownloadAssetBundle(string assetBundleName, IProgress<float> progress = null)
+        private IEnumerator DownloadAssetBundle(AssetInfo assetInfo, IProgress<float> progress = null)
         {
             //----------------------------------------------------------------------------------
             // ※ 呼び出し頻度が高いのでFromMicroCoroutineで呼び出される.
             //    戻り値を返す時はyield return null以外使わない.
             //----------------------------------------------------------------------------------
             
-            var url = BuildUrl(assetBundleName);
-            var filePath = BuildFilePath(assetBundleName);
+            var url = BuildUrl(assetInfo.FileName);
+            var filePath = BuildFilePath(assetInfo);
 
             var downloader = Observable.Defer(() => Observable.FromMicroCoroutine(() => FileDownload(url, filePath, progress)));
 
             var downloadYield = downloader
                     .Timeout(TimeoutLimit)
-                    .OnErrorRetry((TimeoutException ex) => OnTimeout(url, ex), RetryCount, RetryDelaySeconds)
+                    .OnErrorRetry((TimeoutException ex) => OnTimeout(assetInfo, ex), RetryCount, RetryDelaySeconds)
                     .DoOnError(x => OnError(x))
                     .ToYieldInstruction(false, yieldCancel.Token);
 
@@ -342,12 +382,9 @@ namespace Modules.AssetBundles
         /// <summary>
         /// 依存関係にあるアセット一覧取得.
         /// </summary>
-        /// <param name="assetBundleName"></param>
-        /// <param name="dependents"></param>
-        /// <returns></returns>
-        private string[] GetDependenciesInternal(string assetBundleName, List<string> dependents = null)
+        private string[] GetDependenciesInternal(string fileName, List<string> dependents = null)
         {
-            var targets = dependencies.GetValueOrDefault(assetBundleName, new string[0]);
+            var targets = dependencies.GetValueOrDefault(fileName, new string[0]);
 
             if (targets.Length == 0) { return new string[0]; }
 
@@ -386,19 +423,19 @@ namespace Modules.AssetBundles
         /// <summary>
         /// 名前で指定したアセットを取得.
         /// </summary>
-        public IObservable<T> LoadAsset<T>(string assetBundleName, string assetPath, bool autoUnLoad = true) where T : UnityEngine.Object
+        public IObservable<T> LoadAsset<T>(AssetInfo assetInfo, string assetPath, bool autoUnLoad = true) where T : UnityEngine.Object
         {
             // コンポーネントを取得する場合はGameObjectから取得.
             if (typeof(T).IsSubclassOf(typeof(Component)))
             {
-                return Observable.FromMicroCoroutine<GameObject>(observer => LoadAssetInternal(observer, assetBundleName, assetPath, autoUnLoad))
+                return Observable.FromMicroCoroutine<GameObject>(observer => LoadAssetInternal(observer, assetInfo, assetPath, autoUnLoad))
                     .Select(x => x != null ? x.GetComponent<T>() : null);                   
             }
 
-            return Observable.FromMicroCoroutine<T>(observer => LoadAssetInternal(observer, assetBundleName, assetPath, autoUnLoad));
+            return Observable.FromMicroCoroutine<T>(observer => LoadAssetInternal(observer, assetInfo, assetPath, autoUnLoad));
         }
 
-        private IEnumerator LoadAssetInternal<T>(IObserver<T> observer, string assetBundleName, string assetPath, bool autoUnLoad) where T : UnityEngine.Object
+        private IEnumerator LoadAssetInternal<T>(IObserver<T> observer, AssetInfo assetInfo, string assetPath, bool autoUnLoad) where T : UnityEngine.Object
         {
             //----------------------------------------------------------------------------------
             // ※ 呼び出し頻度が高いのでFromMicroCoroutineで呼び出される.
@@ -431,7 +468,7 @@ namespace Modules.AssetBundles
                 IObservable<AssetBundle> loader = null;
 
                 // アセットバンドル名は小文字なので小文字に変換.
-                assetBundleName = assetBundleName.ToLower();
+                var assetBundleName = assetInfo.AssetBundle.AssetBundleName.ToLower();
 
                 var cache = assetBundleCache.GetValueOrDefault(assetBundleName);
 
@@ -452,13 +489,15 @@ namespace Modules.AssetBundles
                                 var loadTask = cacheQueueing.GetValueOrDefault(x);
 
                                 if (loadTask != null)
-                                {
+                                {   
                                     return loadTask;
                                 }
 
-                                cacheQueueing[x] = Observable.FromMicroCoroutine<AssetBundle>(_observer => LoadAssetBundleFromCache(_observer, assetBundleName))
+                                var info = assetInfosByAssetBundleName.GetValueOrDefault(x).FirstOrDefault();
+
+                                cacheQueueing[x] = Observable.FromMicroCoroutine<AssetBundle>(_observer => LoadAssetBundleFromCache(_observer, info))
                                     .Timeout(TimeoutLimit)
-                                    .OnErrorRetry((TimeoutException ex) => OnTimeout(assetBundleName, ex), RetryCount, RetryDelaySeconds)
+                                    .OnErrorRetry((TimeoutException ex) => OnTimeout(info, ex), RetryCount, RetryDelaySeconds)
                                     .DoOnError(error => OnError(error))
                                     .Select(y => Tuple.Create(y, x))
                                     .Share();
@@ -524,12 +563,13 @@ namespace Modules.AssetBundles
             observer.OnCompleted();
         }
 
-        private IEnumerator LoadAssetBundleFromCache(IObserver<AssetBundle> observer, string assetBundleName)
+        private IEnumerator LoadAssetBundleFromCache(IObserver<AssetBundle> observer, AssetInfo assetInfo)
         {
             AssetBundle assetBundle = null;
 
-            var filePath = BuildFilePath(assetBundleName);
-            
+            var filePath = BuildFilePath(assetInfo);
+            var assetBundleName = assetInfo.AssetBundle.AssetBundleName;
+
             Func<byte[]> loadCacheFile = () =>
             {
                 var bytes = new byte[0];
@@ -570,7 +610,7 @@ namespace Modules.AssetBundles
 
                 if (assetBundle == null)
                 {
-                    Debug.LogErrorFormat("Failed to load AssetBundle!\nAssetBundleName : {0}", assetBundleName);
+                    Debug.LogErrorFormat("Failed to load AssetBundle!\nFile : {0}\nAssetBundleName : {1}", filePath, assetBundleName);
                 }
             }
             else
@@ -654,22 +694,6 @@ namespace Modules.AssetBundles
         #endregion
 
         /// <summary>
-        /// 全てのキャッシュを破棄.
-        /// </summary>
-        public static void CleanCache()
-        {
-            var installDir = Instance.BuildFilePath(null);
-
-            if (Directory.Exists(installDir))
-            {
-                DirectoryUtility.Clean(installDir);
-
-                // 一旦削除するので再度生成.
-                Directory.CreateDirectory(installDir);
-            }
-        }
-
-        /// <summary>
         /// マニフェストファイルに存在しないキャッシュファイルを破棄.
         /// </summary>
         private void CleanUnuseCache()
@@ -694,17 +718,19 @@ namespace Modules.AssetBundles
             {
                 var cacheFiles = Directory.GetFiles(installDir, "*", SearchOption.AllDirectories);
 
-                var managedFiles = manifest.GetAssetInfos()
-                    .Select(x => BuildFilePath(x.AssetBundle.AssetBundleName))
+                var allAssetInfos = manifest.GetAssetInfos().ToList();
+
+                allAssetInfos.Add(AssetInfoManifest.GetManifestAssetInfo());
+
+                var managedFiles = allAssetInfos
+                    .Select(x => BuildFilePath(x))
                     .Select(x => PathUtility.ConvertPathSeparator(x))
                     .Distinct()
                     .ToHashSet();
 
-                // 管理情報は必ず管理対象.
-                managedFiles.Add(BuildFilePath(AssetInfoManifest.AssetBundleName));
-
                 var targets = cacheFiles
                     .Select(x => PathUtility.ConvertPathSeparator(x))
+                    .Where(x => Path.GetExtension(x) == PackageExtension)
                     .Where(x => !managedFiles.Contains(x))
                     .ToArray();
 
@@ -771,13 +797,13 @@ namespace Modules.AssetBundles
             return info;
         }
 
-        private void OnTimeout(string url, Exception exception)
+        private void OnTimeout(AssetInfo assetInfo, Exception exception)
         {
             Debug.LogErrorFormat("[Download Timeout] \n{0}", exception);
 
             if (onTimeOut != null)
             {
-                onTimeOut.OnNext(url);
+                onTimeOut.OnNext(assetInfo);
             }
         }
 
@@ -795,9 +821,9 @@ namespace Modules.AssetBundles
         /// タイムアウト時のイベント.
         /// </summary>
         /// <returns></returns>
-        public IObservable<string> OnTimeOutAsObservable()
+        public IObservable<AssetInfo> OnTimeOutAsObservable()
         {
-            return onTimeOut ?? (onTimeOut = new Subject<string>());
+            return onTimeOut ?? (onTimeOut = new Subject<AssetInfo>());
         }
 
         /// <summary>

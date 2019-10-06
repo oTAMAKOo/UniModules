@@ -59,7 +59,7 @@ namespace Modules.ExternalResource.Editor
             try
             {
                 // アセット情報ファイルを生成.
-                AssetInfoManifestGenerator.Generate(externalResourcesPath, assetManageConfig);
+                var assetInfoManifest = AssetInfoManifestGenerator.Generate(externalResourcesPath, assetManageConfig);
 
                 // キャッシュ済みアセットバンドルのハッシュ値取得.
                 var cachedAssetBundleHashs = BuildAssetBundle.GetCachedAssetBundleHash();
@@ -67,12 +67,11 @@ namespace Modules.ExternalResource.Editor
                 // CRIアセットを生成.
                 #if ENABLE_CRIWARE_ADX || ENABLE_CRIWARE_SOFDEC
 
-                CriAssetGenerator.Generate(exportPath, externalResourcesPath);
+                CriAssetGenerator.Generate(exportPath, externalResourcesPath, assetInfoManifest);
 
                 #endif
 
                 // AssetBundleをビルド.
-                // ※ CriAssetGeneratorでCriのManifestファイルを生成後に実行する.
                 var assetBundleManifest = BuildAssetBundle.BuildAllAssetBundles();
 
                 // 不要になった古いAssetBundle削除.
@@ -90,6 +89,9 @@ namespace Modules.ExternalResource.Editor
 
                 #endif
 
+                // アセットバンドルの参照情報をAssetInfoManifestに書き込み.
+                BuildAssetBundle.SetDependencies(assetInfoManifest, assetBundleManifest);
+
                 // 再度AssetInfoManifestだけビルドを実行.
                 BuildAssetBundle.BuildAssetInfoManifest(externalResourcesPath);
 
@@ -97,7 +99,7 @@ namespace Modules.ExternalResource.Editor
                 BuildAssetBundle.CleanOldPackage(cachedAssetBundleHashs);
 
                 // AssetBundleファイルをパッケージ化.
-                BuildAssetBundle.BuildPackage(exportPath, assetManageConfig.CryptPassword);
+                BuildAssetBundle.BuildPackage(exportPath, assetInfoManifest, assetManageConfig.CryptPassword);
             }
             catch (Exception e)
             {
@@ -111,7 +113,7 @@ namespace Modules.ExternalResource.Editor
 
             UnityConsole.Event(ExternalResources.ConsoleEventName, ExternalResources.ConsoleEventColor, "Build ExternalResource Complete.");
         }
-
+        
         private static string GetExportPath()
         {
             var directory = string.IsNullOrEmpty(Prefs.exportPath) ? null : Path.GetDirectoryName(Prefs.exportPath);

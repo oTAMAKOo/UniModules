@@ -6,11 +6,8 @@ using UnityEditor;
 using System;
 using System.IO;
 using System.Linq;
-using System.Text;
-using System.Collections.Generic;
-using UniRx;
 using Extensions;
-using Modules.Devkit.Generators;
+using Modules.ExternalResource;
 
 namespace Modules.CriWare.Editor
 {
@@ -24,45 +21,35 @@ namespace Modules.CriWare.Editor
 
         //----- method -----
 
-        public static void Generate(string exportPath, string externalResourcesPath)
-        {
-            CopyCriManagedFiles(exportPath, externalResourcesPath);
-        }
-
         /// <summary>
         /// CriAssetをアセットバンドルの出力先にコピー.
         /// </summary>
-        /// <param name="exportPath"></param>
-        /// <param name="externalResourcesPath"></param>
-        private static void CopyCriManagedFiles(string exportPath, string externalResourcesPath)
+        public static void Generate(string exportPath, string externalResourcesPath, AssetInfoManifest assetInfoManifest)
         {
-            var assetPaths = AssetDatabase.FindAssets(string.Empty, new string[] { externalResourcesPath })
-                            .Select(x => AssetDatabase.GUIDToAssetPath(x))
-                            .ToArray();
-
-            foreach (var assetPath in assetPaths)
+            Func<AssetInfo, bool> isCriAssetInfo = x =>
             {
-                var path = assetPath.Replace(externalResourcesPath, string.Empty);
+                if (string.IsNullOrEmpty(x.FileName)) { return false; }
 
-                var source = PathUtility.Combine(UnityPathUtility.GetProjectFolderPath(), assetPath);
-                var dest = PathUtility.Combine(new string[] { exportPath, CriAssetDefinition.CriAssetFolder, path });
+                var extension = Path.GetExtension(x.ResourcePath);
 
-                if (PathUtility.GetFilePathType(source) == PathUtility.FilePathType.File)
+                return CriAssetDefinition.AssetAllExtensions.Contains(extension);
+            };
+
+            var assetInfos = assetInfoManifest.GetAssetInfos().Where(x => isCriAssetInfo(x)).ToArray();
+
+            foreach (var assetInfo in assetInfos)
+            {
+                var source = PathUtility.Combine(new string[] { UnityPathUtility.GetProjectFolderPath(), externalResourcesPath, assetInfo.ResourcePath });
+                var dest = PathUtility.Combine(new string[] { exportPath, assetInfo.FileName });
+
+                var directory = Path.GetDirectoryName(dest);
+
+                if (!Directory.Exists(directory))
                 {
-                    var extension = Path.GetExtension(source);
-
-                    if (CriAssetDefinition.AssetAllExtensions.Contains(extension))
-                    {
-                        var directory = Path.GetDirectoryName(dest);
-
-                        if (!Directory.Exists(directory))
-                        {
-                            Directory.CreateDirectory(directory);
-                        }
-
-                        File.Copy(source, dest, true);
-                    }
+                    Directory.CreateDirectory(directory);
                 }
+
+                File.Copy(source, dest, true);
             }
         }
     }

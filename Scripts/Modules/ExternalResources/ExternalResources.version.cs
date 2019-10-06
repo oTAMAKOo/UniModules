@@ -82,9 +82,7 @@ namespace Modules.ExternalResource
 
                 if (assetInfo != null && assetInfo.IsAssetBundle)
                 {
-                    var assetBundleName = assetInfo.AssetBundle.AssetBundleName;
-
-                    result = CheckAssetBundleVersion(assetBundleName);
+                    result = CheckAssetBundleVersion(assetInfo);
                 }
             }
 
@@ -95,9 +93,9 @@ namespace Modules.ExternalResource
         /// アセットバンドルのバージョンが最新か確認.
         /// (同梱された別アセットが更新された場合でもtrueを返す)
         /// </summary>
-        private bool CheckAssetBundleVersion(string assetBundleName)
+        private bool CheckAssetBundleVersion(AssetInfo assetInfo)
         {
-            var filePath = assetBundleManager.BuildFilePath(assetBundleName);
+            var filePath = assetBundleManager.BuildFilePath(assetInfo);
 
             // ※ シュミレート時はpackageファイルをダウンロードしていないので常にファイルが存在しない.
 
@@ -110,19 +108,19 @@ namespace Modules.ExternalResource
             // バージョン情報が存在しない.
             if (versions.IsEmpty()) { return false; }
 
-            var assetInfos = assetInfosByAssetBundleName.FirstOrDefault(x => x.Key == assetBundleName);
+            var infos = assetInfosByAssetBundleName.FirstOrDefault(x => x.Key == assetInfo.AssetBundle.AssetBundleName);
 
-            if (assetInfos == null) { return false; }
+            if (infos == null) { return false; }
 
-            foreach (var assetInfo in assetInfos)
+            foreach (var info in infos)
             {
-                var info = versions.GetValueOrDefault(assetInfo.ResourcesPath);
+                var versionInfo = versions.GetValueOrDefault(info.ResourcePath);
 
                 // ローカルにバージョンが存在しない.
-                if (info == null) { return false; }
+                if (versionInfo == null) { return false; }
 
                 // アセットバンドル内のアセットが更新されている.
-                if (info.hash != assetInfo.FileHash) { return false; }
+                if (versionInfo.hash != info.FileHash) { return false; }
             }
 
             return true;
@@ -167,7 +165,7 @@ namespace Modules.ExternalResource
             var versionHashTable = version.infos.ToDictionary(x => x.resourcesPath, x => x.hash);
 
             return assetInfos
-                .Where(x => !versionHashTable.ContainsKey(x.ResourcesPath) || versionHashTable[x.ResourcesPath] != x.FileHash)
+                .Where(x => !versionHashTable.ContainsKey(x.ResourcePath) || versionHashTable[x.ResourcePath] != x.FileHash)
                 .ToArray();
         }
 
@@ -210,11 +208,11 @@ namespace Modules.ExternalResource
                     {
                         var info = new Version.Info()
                         {
-                            resourcesPath = item.ResourcesPath,
+                            resourcesPath = item.ResourcePath,
                             hash = item.FileHash,
                         };
 
-                        versions[item.ResourcesPath] = info;
+                        versions[item.ResourcePath] = info;
                     }
                 }
                 // アセットバンドル以外.
@@ -222,11 +220,11 @@ namespace Modules.ExternalResource
                 {
                     var info = new Version.Info()
                     {
-                        resourcesPath = assetInfo.ResourcesPath,
+                        resourcesPath = assetInfo.ResourcePath,
                         hash = assetInfo.FileHash,
                     };
 
-                    versions[assetInfo.ResourcesPath] = info;
+                    versions[assetInfo.ResourcePath] = info;
                 }
 
                 version.infos = versions.Select(x => x.Value).ToArray();

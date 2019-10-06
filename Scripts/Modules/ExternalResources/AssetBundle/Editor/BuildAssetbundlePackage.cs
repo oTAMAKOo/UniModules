@@ -4,8 +4,9 @@ using System;
 using System.Linq;
 using System.Collections.Generic;
 using System.IO;
-using Extensions;
 using System.Threading;
+using Extensions;
+using Modules.ExternalResource;
 
 namespace Modules.AssetBundles.Editor
 {
@@ -15,13 +16,11 @@ namespace Modules.AssetBundles.Editor
 
         private const string AssetBundleManifestName = "AssetBundle";
 
-        private const string ManifestFileExtension = ".manifest";
-
         private const int MaxWorkerCount = 20;
 
         private class Progress
         {
-            public int Count;
+            public int count;
         }
 
         //----- field -----
@@ -30,11 +29,18 @@ namespace Modules.AssetBundles.Editor
 
         //----- method -----
 
-        public void Build(string exportPath, string assetBundlePath, string password, Action<int, int> reportProgress)
+        public void Build(string exportPath, string assetBundlePath, AssetInfoManifest assetInfoManifest, string password, Action<int, int> reportProgress)
         {
-            var filePaths = GetPackageTargets(assetBundlePath);
+            var assetInfos = assetInfoManifest.GetAssetInfos()
+                .Where(x => x.IsAssetBundle)
+                .Where(x => !string.IsNullOrEmpty(x.AssetBundle.AssetBundleName))
+                .GroupBy(x => x.AssetBundle.AssetBundleName)
+                .Select(x => x.FirstOrDefault())
+                .ToList();
 
-            var total = filePaths.Length;
+            assetInfos.Add(AssetInfoManifest.GetManifestAssetInfo());
+
+            var total = assetInfos.Count;
 
             reportProgress(0, total);
 
@@ -45,16 +51,16 @@ namespace Modules.AssetBundles.Editor
             // スレッドで分割処理.
 
             var workerNo = 0;
-            var workerPaths = new List<string>[MaxWorkerCount];
+            var workerPaths = new List<AssetInfo>[MaxWorkerCount];
 
-            foreach (var filePath in filePaths)
+            foreach (var assetInfo in assetInfos)
             {
                 if(workerPaths[workerNo] == null)
                 {
-                    workerPaths[workerNo] = new List<string>();
+                    workerPaths[workerNo] = new List<AssetInfo>();
                 }
 
-                workerPaths[workerNo].Add(filePath);
+                workerPaths[workerNo].Add(assetInfo);
 
                 workerNo = (workerNo + 1) % MaxWorkerCount;
             }
@@ -68,40 +74,15 @@ namespace Modules.AssetBundles.Editor
 
             while (!WaitHandle.WaitAll(events.ToArray(), 100))
             {
-                reportProgress(progress.Count, total);
+                reportProgress(progress.count, total);
             }
 
-            reportProgress(progress.Count, total);
+            reportProgress(progress.count, total);
         }
-
-        /// <summary> パッケージ化するアセットバンドルファイル一覧取得 </summary>
-        private static string[] GetPackageTargets(string assetBundlePath)
+        
+        private static ManualResetEvent StartWorker(string exportPath, string assetBundlePath, string password, AssetInfo[] assetInfos, Progress progress)
         {
-            var allFiles = Directory.GetFiles(assetBundlePath, "*.*", SearchOption.AllDirectories);
-
-            var platformName = UnityPathUtility.GetPlatformName();
-
-            // パッケージ化するファイルパスを抽出.
-            var targets = allFiles
-                // パス区切り文字を修正
-                .Select(x => PathUtility.ConvertPathSeparator(x))
-                // Manifest除外.
-                .Where(c => Path.GetFileNameWithoutExtension(c) != platformName)
-                // AssetBundleManifest除外.
-                .Where(c => Path.GetFileNameWithoutExtension(c) != AssetBundleManifestName)
-                // ManifestFile除外.
-                .Where(c => !c.EndsWith(ManifestFileExtension))
-                // PackageFile除外.
-                .Where(c => !c.EndsWith(AssetBundleManager.PackageExtension))
-                // 重複削除.
-                .Distinct();
-            
-            return targets.ToArray();
-        }
-
-        private static ManualResetEvent StartWorker(string exportPath, string assetBundlePath, string password, string[] paths, Progress progress)
-        {
-            var queue = new Queue<string>(paths);
+            var queue = new Queue<AssetInfo>(assetInfos);
             var resetEvent = new ManualResetEvent(false);
             var completedCount = 0;
 
@@ -111,18 +92,18 @@ namespace Modules.AssetBundles.Editor
                 {
                     while (true)
                     {
-                        string path = null;
+                        AssetInfo assetInfo = null;
 
                         lock (queue)
                         {
-                            if (queue.Any()) { path = queue.Dequeue(); }
+                            if (queue.Any()) { assetInfo = queue.Dequeue(); }
                         }
 
-                        if (path == null) { break; }
+                        if (assetInfo == null) { break; }
 
-                        CreatePackage(exportPath, assetBundlePath, path, password);
+                        CreatePackage(exportPath, assetBundlePath, assetInfo, password);
 
-                        Interlocked.Increment(ref progress.Count);
+                        Interlocked.Increment(ref progress.count);
                     }
 
                     // 完了.
@@ -139,7 +120,7 @@ namespace Modules.AssetBundles.Editor
         /// <summary>
         /// パッケージファイル化(暗号化).
         /// </summary>
-        private static void CreatePackage(string exportPath, string assetBundlePath, string filePath, string password)
+        private static void CreatePackage(string exportPath, string assetBundlePath, AssetInfo assetInfo, string password)
         {
             var aesManaged = AESExtension.CreateAesManaged(password);
 
@@ -147,37 +128,40 @@ namespace Modules.AssetBundles.Editor
 
             try
             {
+                // アセットバンドルファイルパス.
+                var assetBundleFilePath = PathUtility.Combine(assetBundlePath, assetInfo.AssetBundle.AssetBundleName);
+
+                // パッケージファイル名.
+                var packageFileName = Path.ChangeExtension(assetInfo.FileName, AssetBundleManager.PackageExtension);
+
                 // 作成する圧縮ファイルのパス.
-                var packageFilePath = Path.ChangeExtension(filePath, AssetBundleManager.PackageExtension);
+                var packageFilePath = PathUtility.Combine(assetBundlePath, packageFileName);
 
                 // 作成したファイルの出力先.
-                var packageExportPath = PathUtility.Combine(
-                    new string[]
-                    {
-                            exportPath,
-                            AssetBundleManager.PackageFolder,
-                            packageFilePath.Replace(assetBundlePath, string.Empty)
-                    });
-
+                var packageExportPath = PathUtility.Combine(exportPath, packageFileName);
+                
                 byte[] data = null;
 
-                if (!File.Exists(packageFilePath))
+                // 読み込み.
+                using (var fileStream = new FileStream(assetBundleFilePath, FileMode.Open, FileAccess.Read))
                 {
-                    // 読み込み.
-                    using (var fileStream = new FileStream(filePath, FileMode.Open, FileAccess.Read))
-                    {
-                        data = new byte[fileStream.Length];
+                    data = new byte[fileStream.Length];
 
-                        fileStream.Read(data, 0, data.Length);
-                    }
+                    fileStream.Read(data, 0, data.Length);
+                }
 
-                    // 暗号化して書き込み.
-                    using (var fileStream = new FileStream(packageFilePath, FileMode.Create, FileAccess.Write))
-                    {
-                        data = data.Encrypt(aesManaged);
+                // 暗号化して書き込み.
 
-                        fileStream.Write(data, 0, data.Length);
-                    }
+                if (File.Exists(packageFilePath))
+                {
+                    File.Delete(packageFilePath);
+                }
+
+                using (var fileStream = new FileStream(packageFilePath, FileMode.Create, FileAccess.Write))
+                {
+                    data = data.Encrypt(aesManaged);
+
+                    fileStream.Write(data, 0, data.Length);
                 }
 
                 // ディレクトリ作成.
@@ -189,6 +173,8 @@ namespace Modules.AssetBundles.Editor
                 }
                 
                 File.Copy(packageFilePath, packageExportPath, true);
+
+                File.Delete(packageFilePath);
             }
             catch (Exception exception)
             {

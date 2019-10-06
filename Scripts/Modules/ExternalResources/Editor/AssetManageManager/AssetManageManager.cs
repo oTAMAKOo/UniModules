@@ -235,7 +235,7 @@ namespace Modules.ExternalResource.Editor
             if (manageInfos.Any())
             {
                 var allAssetPaths = GetAllAssetInfos()
-                    .Select(x => PathUtility.Combine(ExternalResourcesPath, x.ResourcesPath))
+                    .Select(x => PathUtility.Combine(ExternalResourcesPath, x.ResourcePath))
                     .Distinct()
                     .ToArray();
 
@@ -442,7 +442,9 @@ namespace Modules.ExternalResource.Editor
                     {
                         var assetBundleName = GetAssetBundleName(assetPath, manageInfo);
 
-                        assetInfo.SetAssetBundleInfo(new AssetBundleInfo(assetBundleName));
+                        var assetBundleInfo = new AssetBundleInfo(assetBundleName);
+                        
+                        assetInfo.SetAssetBundleInfo(assetBundleInfo);
                     }
 
                     return assetInfo;

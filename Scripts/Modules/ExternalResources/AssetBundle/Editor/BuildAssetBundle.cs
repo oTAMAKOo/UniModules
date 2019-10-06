@@ -16,6 +16,8 @@ namespace Modules.AssetBundles.Editor
 
         private const string ManifestFileExtension = ".manifest";
 
+        private const string AssetBundleCacheFolder = "AssetBundleBuildCache";
+
         //----- field -----
 
         //----- property -----
@@ -27,9 +29,9 @@ namespace Modules.AssetBundles.Editor
             var projectPath = UnityPathUtility.GetProjectFolderPath();
             var platformName = UnityPathUtility.GetPlatformName();
 
-            var assetBundlesFolder = AssetBundleManager.PackageFolder;
+            var paths = new string[] { projectPath, UnityPathUtility.LibraryFolder, AssetBundleCacheFolder, platformName };
 
-            var assetBundlePath = PathUtility.Combine(new string[] { projectPath, UnityPathUtility.LibraryFolder, assetBundlesFolder, platformName });
+            var assetBundlePath = PathUtility.Combine(paths);
 
             if (!Directory.Exists(assetBundlePath))
             {
@@ -52,6 +54,19 @@ namespace Modules.AssetBundles.Editor
             var targetPlatform = EditorUserBuildSettings.activeBuildTarget;
 
             return BuildPipeline.BuildAssetBundles(assetBundlePath, BuildAssetBundleOptions.ChunkBasedCompression, targetPlatform);
+        }
+
+        /// <summary> アセットバンドルの参照情報を書き込み </summary>
+        public static void SetDependencies(AssetInfoManifest assetInfoManifest, AssetBundleManifest assetBundleManifest)
+        {
+            var assetInfos = assetInfoManifest.GetAssetInfos().Where(x => x.IsAssetBundle).ToArray();
+
+            foreach (var assetInfo in assetInfos)
+            {
+                var dependencies = assetBundleManifest.GetDirectDependencies(assetInfo.AssetBundle.AssetBundleName);
+
+                assetInfo.AssetBundle.SetDependencies(dependencies);
+            }
         }
 
         /// <summary> 情報書き込み後のAssetInfoManifestをビルド </summary>
@@ -85,7 +100,7 @@ namespace Modules.AssetBundles.Editor
         }
 
         /// <summary> アセットバンドルをパッケージ化 </summary>
-        public static void BuildPackage(string exportPath, string password)
+        public static void BuildPackage(string exportPath, AssetInfoManifest assetInfoManifest, string password)
         {
             var assetBundlePath = GetAssetBundleOutputPath();
 
@@ -99,7 +114,7 @@ namespace Modules.AssetBundles.Editor
                 EditorUtility.DisplayProgressBar(title, info, current / (float)total);
             };
 
-            assetbundlePackageBuilder.Build(exportPath, assetBundlePath, password, reportProgress);
+            assetbundlePackageBuilder.Build(exportPath, assetBundlePath, assetInfoManifest, password, reportProgress);
 
             EditorUtility.ClearProgressBar();
         }

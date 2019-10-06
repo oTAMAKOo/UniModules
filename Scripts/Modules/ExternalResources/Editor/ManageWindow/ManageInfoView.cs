@@ -313,7 +313,7 @@ namespace Modules.ExternalResource.Editor
             {
                 var assetContent = new ContentsScrollView.Content()
                 {
-                    label = otherAssetTarget.AssetInfo.ResourcesPath,
+                    label = otherAssetTarget.AssetInfo.ResourcePath,
                     isAssetBundle = false,
                 };
 

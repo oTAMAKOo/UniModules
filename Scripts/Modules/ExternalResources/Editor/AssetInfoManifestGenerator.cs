@@ -20,7 +20,7 @@ namespace Modules.ExternalResource.Editor
 
         //----- method -----
 
-        public static void Generate(string externalResourcesPath, AssetManageConfig config)
+        public static AssetInfoManifest Generate(string externalResourcesPath, AssetManageConfig config)
         {
             var assetManageManager = AssetManageManager.Instance;
 
@@ -34,6 +34,8 @@ namespace Modules.ExternalResource.Editor
 
             AssetDatabase.RemoveUnusedAssetBundleNames();
             AssetDatabase.Refresh();
+
+            return manifest;
         }
 
         public static void SetAssetBundleFileInfo(string exportPath, string externalResourcesPath, AssetBundleManifest assetBundleManifest)
@@ -84,9 +86,9 @@ namespace Modules.ExternalResource.Editor
             {
                 var assetInfo = assetInfos[i];
 
-                EditorUtility.DisplayProgressBar("ApplyAssetBundleName", assetInfo.ResourcesPath, (float)i / count);
+                EditorUtility.DisplayProgressBar("ApplyAssetBundleName", assetInfo.ResourcePath, (float)i / count);
 
-                var assetPath = PathUtility.Combine(assetManageManager.ExternalResourcesPath, assetInfo.ResourcesPath);
+                var assetPath = PathUtility.Combine(assetManageManager.ExternalResourcesPath, assetInfo.ResourcePath);
 
                 if (assetInfo.IsAssetBundle)
                 {

@@ -5,10 +5,11 @@ using UnityEngine;
 using System;
 using System.IO;
 using System.Linq;
+using System.Collections;
 using System.Collections.Generic;
+using System.Text;
 using UniRx;
 using Extensions;
-using System.Collections;
 using Modules.Devkit;
 
 namespace Modules.SoundManagement
@@ -428,7 +429,20 @@ namespace Modules.SoundManagement
 
                 managedSoundSheets.Add(soundSheet.AssetPath, soundSheet);
 
-                UnityConsole.Event(ConsoleEventName, ConsoleEventColor, "Load : {0}", acbPath);
+                var builder = new StringBuilder();
+
+                builder.AppendFormat("Load : {0} : {1}", cueInfo.Cue, cueInfo.CueId).AppendLine();
+                builder.AppendLine();
+                builder.AppendFormat("Cue : {0}", cueInfo.Cue).AppendLine();
+                builder.AppendFormat("CueId : {0}", cueInfo.CueId).AppendLine();
+                builder.AppendFormat("FileName : {0}", Path.GetFileName(acbPath)).AppendLine();
+
+                if (!string.IsNullOrEmpty(cueInfo.Summary))
+                {
+                    builder.AppendFormat("Summary: {0}", cueInfo.Summary).AppendLine();
+                }
+
+                UnityConsole.Event(ConsoleEventName, ConsoleEventColor, builder.ToString());
             }
 
             return soundSheet;

@@ -70,7 +70,10 @@ namespace Modules.ExternalResource.Editor
                 }
 
                 // 管理下のアセットのパスが一致.
-                isHit |= assetInfo.ResourcesPath.IsMatch(keywords);
+                isHit |= assetInfo.ResourcePath.IsMatch(keywords);
+
+                // ファイル名が一致.
+                isHit |= assetInfo.FileName.IsMatch(keywords);
 
                 return isHit;
             }
@@ -141,20 +144,23 @@ namespace Modules.ExternalResource.Editor
 
                     var color = isAssetBundle ? new Color(0.7f, 0.7f, 1f) : new Color(0.7f, 1f, 0.7f);
 
-                    var open = EditorLayoutTools.DrawHeader(assetInfo.ResourcesPath, opened, color);
+                    var open = EditorLayoutTools.DrawHeader(assetInfo.ResourcePath, opened, color);
 
                     if (open)
                     {
                         using (new ContentsScope())
                         {
                             EditorGUILayout.LabelField("ResourcesPath");
-                            EditorGUILayout.SelectableLabel(assetInfo.ResourcesPath, textAreaStyle, GUILayout.Height(18f));
+                            EditorGUILayout.SelectableLabel(assetInfo.ResourcePath, textAreaStyle, GUILayout.Height(18f));
 
                             EditorGUILayout.LabelField("GroupName");
                             EditorGUILayout.SelectableLabel(assetInfo.GroupName, textAreaStyle, GUILayout.Height(18f));
 
                             EditorGUILayout.LabelField("Tag");
                             EditorGUILayout.SelectableLabel(assetInfo.Tag, textAreaStyle, GUILayout.Height(18f));
+
+                            EditorGUILayout.LabelField("FileName");
+                            EditorGUILayout.SelectableLabel(assetInfo.FileName, textAreaStyle, GUILayout.Height(18f));
 
                             EditorGUILayout.LabelField("FileHash");
                             EditorGUILayout.SelectableLabel(assetInfo.FileHash, textAreaStyle, GUILayout.Height(18f));

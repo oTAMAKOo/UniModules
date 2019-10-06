@@ -22,11 +22,13 @@ namespace Modules.ExternalResource
         //----- field -----
 
         [SerializeField]
-        private string resourcesPath = null;
+        private string resourcePath = null;
         [SerializeField]
         private string groupName = null;
         [SerializeField]
         private string tag = null;
+        [SerializeField]
+        private string fileName = null;
         [SerializeField]
         private long fileSize = 0;
         [SerializeField]
@@ -37,11 +39,13 @@ namespace Modules.ExternalResource
         //----- property -----
 
         /// <summary> 読み込みパス </summary>
-        public string ResourcesPath { get { return resourcesPath; } }
+        public string ResourcePath { get { return resourcePath; } }
         /// <summary> グループ名 </summary>
         public string GroupName { get { return groupName; } }
         /// <summary> タグ </summary>
         public string Tag { get { return tag; } }
+        /// <summary> ファイル名 </summary>
+        public string FileName { get { return fileName; } }
         /// <summary> ファイルサイズ(byte) </summary>
         public long FileSize { get { return fileSize; } }
         /// <summary> ファイルハッシュ </summary>
@@ -57,11 +61,13 @@ namespace Modules.ExternalResource
 
         //----- method -----
 
-        public AssetInfo(string resourcesPath, string groupName, string tag)
+        public AssetInfo(string resourcePath, string groupName, string tag)
         {
-            this.resourcesPath = resourcesPath;
+            this.resourcePath = PathUtility.ConvertPathSeparator(resourcePath);
             this.groupName = groupName;
             this.tag = tag;
+
+            SetFileName();
         }
 
         public void SetFileInfo(string filePath)
@@ -82,6 +88,24 @@ namespace Modules.ExternalResource
         public void SetAssetBundleInfo(AssetBundleInfo assetBundleInfo)
         {
             assetBundle = assetBundleInfo;
+
+            SetFileName();
+        }
+
+        private void SetFileName()
+        {
+            if (string.IsNullOrEmpty(resourcePath)) { return; }
+
+            var extension = Path.GetExtension(resourcePath);
+            
+            if (IsAssetBundle)
+            {
+                fileName = assetBundle.AssetBundleName.GetHash();
+            }
+            else
+            {
+                fileName = PathUtility.GetPathWithoutExtension(resourcePath).GetHash() + extension;
+            }            
         }
     }
 
@@ -147,6 +171,17 @@ namespace Modules.ExternalResource
             this.assetInfos = assetInfos;
         }
 
+        public static AssetInfo GetManifestAssetInfo()
+        {
+            var manifestAssetInfo = new AssetInfo(ManifestFileName, null, null);
+
+            var assetBundleInfo = new AssetBundleInfo(AssetBundleName);
+
+            manifestAssetInfo.SetAssetBundleInfo(assetBundleInfo);
+
+            return manifestAssetInfo;
+        }
+
         public IEnumerable<AssetInfo> GetAssetInfos(string groupName = null)
         {
             BuildCache();
@@ -189,7 +224,7 @@ namespace Modules.ExternalResource
 
                 assetInfo.SetFileInfo(filePath);
 
-                progress.Report(Tuple.Create(assetInfo.ResourcesPath, (float)i / assetInfos.Length));
+                progress.Report(Tuple.Create(assetInfo.ResourcePath, (float)i / assetInfos.Length));
             }
 
             BuildCache(true);
@@ -205,18 +240,18 @@ namespace Modules.ExternalResource
 
                 if (assetInfo.IsAssetBundle) { continue; }
 
-                var extension = Path.GetExtension(assetInfo.ResourcesPath);
+                var extension = Path.GetExtension(assetInfo.FileName);
 
                 var filePath = string.Empty;
 
                 if (CriAssetDefinition.AssetAllExtensions.Any(x => x == extension))
                 {
-                    filePath = PathUtility.Combine(new string[] { exportPath, CriAssetDefinition.CriAssetFolder, assetInfo.ResourcesPath });
+                    filePath = PathUtility.Combine(new string[] { exportPath, assetInfo.FileName });
                 }
 
                 assetInfo.SetFileInfo(filePath);
 
-                progress.Report(Tuple.Create(assetInfo.ResourcesPath, (float)i / assetInfos.Length));
+                progress.Report(Tuple.Create(assetInfo.ResourcePath, (float)i / assetInfos.Length));
             }
 
             BuildCache(true);
@@ -233,7 +268,7 @@ namespace Modules.ExternalResource
 
             if (assetInfoByResourcesPath == null || forceUpdate)
             {
-                assetInfoByResourcesPath = assetInfos.ToDictionary(x => x.ResourcesPath);
+                assetInfoByResourcesPath = assetInfos.ToDictionary(x => x.ResourcePath);
             }
         }
     }

@@ -33,6 +33,8 @@ namespace Modules.ExternalResource
         public static readonly string ConsoleEventName = "ExternalResources";
         public static readonly Color ConsoleEventColor = new Color(0.8f, 1f, 0.1f);
 
+        public const string InstallFolderName = "ExternalResources";
+
         //----- field -----
 
         // アセットバンドル管理.
@@ -52,7 +54,10 @@ namespace Modules.ExternalResource
         private CriAssetManager criAssetManager = null;
 
         #endif
-        
+
+        // インストールディレクトリ.
+        private string installDir = null;
+
         // 外部アセットディレクトリ.
         private string resourceDir = null;
 
@@ -65,7 +70,7 @@ namespace Modules.ExternalResource
         private YieldCancel yieldCancel = null;
 
         // イベント通知.
-        private Subject<string> onTimeOut = null;
+        private Subject<AssetInfo> onTimeOut = null;
         private Subject<Exception> onError = null;
 
         private bool initialized = false;
@@ -89,6 +94,9 @@ namespace Modules.ExternalResource
             // 中断用登録.
             yieldCancel = new YieldCancel();
 
+            // アセットフォルダ.
+            installDir = PathUtility.Combine(installPath, InstallFolderName);
+
             //----- AssetBundleManager初期化 -----
                         
             #if UNITY_EDITOR
@@ -99,7 +107,7 @@ namespace Modules.ExternalResource
 
             // AssetBundleManager初期化.
             assetBundleManager = AssetBundleManager.CreateInstance();
-            assetBundleManager.Initialize(installPath, localMode, simulateMode);
+            assetBundleManager.Initialize(installDir, localMode, simulateMode);
             assetBundleManager.RegisterYieldCancel(yieldCancel);
             assetBundleManager.OnTimeOutAsObservable().Subscribe(x => OnTimeout(x)).AddTo(Disposable);
             assetBundleManager.OnErrorAsObservable().Subscribe(x => OnError(x)).AddTo(Disposable);
@@ -109,7 +117,7 @@ namespace Modules.ExternalResource
             // CriAssetManager初期化.
 
             criAssetManager = CriAssetManager.CreateInstance();
-            criAssetManager.Initialize(installPath, resourceDir, 4, localMode, simulateMode);
+            criAssetManager.Initialize(installDir, resourceDir, 4, localMode, simulateMode);
             criAssetManager.OnTimeOutAsObservable().Subscribe(x => OnTimeout(x)).AddTo(Disposable);
             criAssetManager.OnErrorAsObservable().Subscribe(x => OnError(x)).AddTo(Disposable);
             
@@ -155,13 +163,15 @@ namespace Modules.ExternalResource
                 .ToLookup(x => x.AssetBundle.AssetBundleName);
 
             // アセット情報 (Key: リソースパス).
-            assetInfosByResourcePath = allAssetInfos.ToDictionary(x => x.ResourcesPath);
+            assetInfosByResourcePath = allAssetInfos.ToDictionary(x => x.ResourcePath);
 
             // アセットバンドル依存関係.
             var dependencies = allAssetInfos
                 .Where(x => x.IsAssetBundle)
                 .Select(x => x.AssetBundle)
                 .Where(x => x.Dependencies != null && x.Dependencies.Any())
+                .GroupBy(x => x.AssetBundleName)
+                .Select(x => x.FirstOrDefault())
                 .ToDictionary(x => x.AssetBundleName, x => x.Dependencies);
 
             assetBundleManager.SetDependencies(dependencies);
@@ -195,13 +205,13 @@ namespace Modules.ExternalResource
 
             ClearVersion();
 
-            AssetBundleManager.CleanCache();
+            if (Directory.Exists(Instance.installDir))
+            {
+                DirectoryUtility.Clean(Instance.installDir);
 
-            #if ENABLE_CRIWARE_ADX || ENABLE_CRIWARE_SOFDEC
-
-            CriAssetManager.CleanCache();
-
-            #endif
+                // 一旦削除するので再度生成.
+                Directory.CreateDirectory(Instance.installDir);
+            }
 
             Caching.ClearCache();
         }
@@ -232,9 +242,11 @@ namespace Modules.ExternalResource
 
             #endif
 
+            var manifestAssetInfo = AssetInfoManifest.GetManifestAssetInfo();
+
             // AssetInfoManifestは常に最新に保たなくてはいけない為必ずダウンロードする.
-            var loadYield = assetBundleManager.UpdateAssetBundle(manifestAssetBundleName, progress)
-                .SelectMany(_ => assetBundleManager.LoadAsset<AssetInfoManifest>(manifestAssetBundleName, manifestFileName))
+            var loadYield = assetBundleManager.UpdateAssetInfoManifest()
+                .SelectMany(_ => assetBundleManager.LoadAsset<AssetInfoManifest>(manifestAssetInfo, manifestFileName))
                 .ToYieldInstruction(false);
 
             yield return loadYield;
@@ -323,10 +335,8 @@ namespace Modules.ExternalResource
                     yield break;
                 }
 
-                var assetBundleName = assetInfo.AssetBundle.AssetBundleName;
-
                 // ローカルバージョンが最新の場合は更新しない.
-                if (CheckAssetBundleVersion(assetBundleName))
+                if (CheckAssetBundleVersion(assetInfo))
                 {
                     if(progress != null)
                     {
@@ -337,7 +347,7 @@ namespace Modules.ExternalResource
                 }
 
                 var updateYield = instance.assetBundleManager
-                    .UpdateAssetBundle(assetBundleName, progress)
+                    .UpdateAssetBundle(assetInfo, progress)
                     .ToYieldInstruction(false, yieldCancel.Token);
 
                 yield return updateYield;
@@ -414,10 +424,8 @@ namespace Modules.ExternalResource
 
             var assetPath = PathUtility.Combine(resourceDir, resourcesPath);
 
-            var assetBundleName = assetInfo.AssetBundle.AssetBundleName;
-
             // ローカルバージョンが古い場合はダウンロード.
-            if (!CheckAssetBundleVersion(assetBundleName) && !localMode)
+            if (!CheckAssetBundleVersion(assetInfo) && !localMode)
             {
                 var downloadYield = UpdateAsset(resourcesPath).ToYieldInstruction(false, yieldCancel.Token);
 
@@ -445,9 +453,12 @@ namespace Modules.ExternalResource
 
                 var builder = new StringBuilder();
 
+                var assetBundleName = assetInfo.AssetBundle.AssetBundleName;
+
                 builder.AppendFormat("Update: {0} ({1:F2}ms)", Path.GetFileName(assetPath), sw.Elapsed.TotalMilliseconds).AppendLine();
                 builder.AppendLine();
                 builder.AppendFormat("LoadPath = {0}", assetPath).AppendLine();
+                builder.AppendFormat("FileName = {0}", assetInfo.FileName).AppendLine();
                 builder.AppendFormat("AssetBundleName = {0}", assetBundleName).AppendLine();
                 builder.AppendFormat("Hash = {0}", assetInfo.FileHash).AppendLine();
 
@@ -464,7 +475,7 @@ namespace Modules.ExternalResource
             // 読み込み実行 (読み込み中の場合は読み込み待ちのObservableが返る).
             sw = System.Diagnostics.Stopwatch.StartNew();
 
-            var loadYield = assetBundleManager.LoadAsset<T>(assetBundleName, assetPath, autoUnload).ToYieldInstruction();
+            var loadYield = assetBundleManager.LoadAsset<T>(assetInfo, assetPath, autoUnload).ToYieldInstruction();
 
             while (!loadYield.IsDone)
             {
@@ -484,6 +495,8 @@ namespace Modules.ExternalResource
             if (result != null && !isLoading)
             {
                 var builder = new StringBuilder();
+
+                var assetBundleName = assetInfo.AssetBundle.AssetBundleName;
 
                 builder.AppendFormat("Load: {0} ({1:F2}ms)", Path.GetFileName(assetPath), sw.Elapsed.TotalMilliseconds).AppendLine();
                 builder.AppendLine();
@@ -553,9 +566,11 @@ namespace Modules.ExternalResource
         {
             if (string.IsNullOrEmpty(resourcesPath)){ return null; }
 
+            var assetInfo = GetAssetInfo(resourcesPath);
+
             return simulateMode ?
                 PathUtility.Combine(new string[] { UnityPathUtility.GetProjectFolderPath(), resourceDir, resourcesPath }) :
-                PathUtility.Combine(new string[] { criAssetManager.BuildFilePath(null), resourcesPath });
+                criAssetManager.BuildFilePath(assetInfo);
         }
 
         #endif
@@ -600,6 +615,7 @@ namespace Modules.ExternalResource
                     builder.AppendFormat("Update: {0} ({1:F2}ms)", Path.GetFileName(filePath), sw.Elapsed.TotalMilliseconds).AppendLine();
                     builder.AppendLine();
                     builder.AppendFormat("LoadPath = {0}", assetPath).AppendLine();
+                    builder.AppendFormat("FileName = {0}", assetInfo.FileName).AppendLine();
                     builder.AppendFormat("Hash = {0}", assetInfo.FileHash).AppendLine();
 
                     UnityConsole.Event(ConsoleEventName, ConsoleEventColor, builder.ToString());
@@ -659,6 +675,7 @@ namespace Modules.ExternalResource
                         builder.AppendFormat("Update: {0} ({1:F2}ms)", Path.GetFileName(filePath), sw.Elapsed.TotalMilliseconds).AppendLine();
                         builder.AppendLine();
                         builder.AppendFormat("LoadPath = {0}", assetPath).AppendLine();
+                        builder.AppendFormat("FileName = {0}", assetInfo.FileName).AppendLine();
                         builder.AppendFormat("Hash = {0}", assetInfo.FileHash).AppendLine();
 
                         UnityConsole.Event(ConsoleEventName, ConsoleEventColor, builder.ToString());
@@ -677,13 +694,13 @@ namespace Modules.ExternalResource
 
         #endregion
         
-        private void OnTimeout(string str)
+        private void OnTimeout(AssetInfo assetInfo)
         {
             CancelAllCoroutines();
 
             if (onTimeOut != null)
             {
-                onTimeOut.OnNext(str);
+                onTimeOut.OnNext(assetInfo);
             }
         }
 
@@ -700,9 +717,9 @@ namespace Modules.ExternalResource
         /// <summary>
         /// タイムアウト時のイベント.
         /// </summary>
-        public IObservable<string> OnTimeOutAsObservable()
+        public IObservable<AssetInfo> OnTimeOutAsObservable()
         {
-            return onTimeOut ?? (onTimeOut = new Subject<string>());
+            return onTimeOut ?? (onTimeOut = new Subject<AssetInfo>());
         }
 
         /// <summary>

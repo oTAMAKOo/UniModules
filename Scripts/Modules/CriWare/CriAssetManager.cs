@@ -33,10 +33,8 @@ namespace Modules.CriWare
             {
                 AssetInfo = assetInfo;
 
-                var resourcePath = UnityPathUtility.GetLocalPath(assetInfo.ResourcesPath, Instance.sourceDir);
-
-                var downloadUrl = Instance.BuildUrl(resourcePath);
-                var installPath = Instance.BuildFilePath(resourcePath);
+                var downloadUrl = Instance.BuildUrl(assetInfo);
+                var installPath = Instance.BuildFilePath(assetInfo);
 
                 var directory = Path.GetDirectoryName(installPath);
 
@@ -92,7 +90,7 @@ namespace Modules.CriWare
 
                     if (statusInfo.error != CriFsWebInstaller.Error.None)
                     {
-                        throw new Exception(string.Format("[Download Error] {0}\n{1}", AssetInfo.ResourcesPath, statusInfo.error));
+                        throw new Exception(string.Format("[Download Error] {0}\n{1}", AssetInfo.ResourcePath, statusInfo.error));
                     }
                 }
 
@@ -142,7 +140,7 @@ namespace Modules.CriWare
         private uint numInstallers = 0;
 
         // イベント通知.
-        private Subject<string> onTimeOut = null;
+        private Subject<AssetInfo> onTimeOut = null;
         private Subject<Exception> onError = null;
 
         private bool isInitialized = false;
@@ -281,7 +279,7 @@ namespace Modules.CriWare
 
             if (installList.IsEmpty())
             {
-                Debug.LogErrorFormat("UpdateCriAsset Error.\n{0}", assetInfo.ResourcesPath);
+                Debug.LogErrorFormat("UpdateCriAsset Error.\n{0}", assetInfo.ResourcePath);
                 return Observable.ReturnUnit();
             }
 
@@ -289,7 +287,7 @@ namespace Modules.CriWare
                 .Select(x => x.Task)
                 .WhenAll()
                 .Timeout(TimeoutLimit)
-                .OnErrorRetry((TimeoutException ex) => OnTimeout(resourcesPath, ex), RetryCount, RetryDelaySeconds)
+                .OnErrorRetry((TimeoutException ex) => OnTimeout(assetInfo, ex), RetryCount, RetryDelaySeconds)
                 .DoOnError(ex => OnError(ex))
                 .Finally(() => installList.ForEach(item => RemoveInternalQueue(item)))
                 .AsUnitObservable();
@@ -297,13 +295,13 @@ namespace Modules.CriWare
 
         private CriAssetInstall GetCriAssetInstall(AssetInfo assetInfo, IProgress<float> progress)
         {
-            var install = installQueueing.GetValueOrDefault(assetInfo.ResourcesPath);
+            var install = installQueueing.GetValueOrDefault(assetInfo.ResourcePath);
 
             if (install != null) { return install; }
 
             install = new CriAssetInstall(assetInfo, progress);
 
-            installQueueing[assetInfo.ResourcesPath] = install;
+            installQueueing[assetInfo.ResourcePath] = install;
 
             return install;
         }
@@ -314,7 +312,7 @@ namespace Modules.CriWare
 
             if (install.AssetInfo == null) { return; }
 
-            var resourcesPath = install.AssetInfo.ResourcesPath;
+            var resourcesPath = install.AssetInfo.ResourcePath;
 
             var item = installQueueing.GetValueOrDefault(resourcesPath);
 
@@ -328,22 +326,6 @@ namespace Modules.CriWare
         }
 
         #endif
-
-        /// <summary>
-        /// 全てのキャッシュを破棄.
-        /// </summary>
-        public static void CleanCache()
-        {
-            var installDir = Instance.BuildFilePath(null);
-
-            if (Directory.Exists(installDir))
-            {
-                DirectoryUtility.Clean(installDir);
-
-                // 一旦削除するので再度生成.
-                Directory.CreateDirectory(installDir);
-            }
-        }
 
         /// <summary>
         /// マニフェストファイルに存在しないキャッシュファイルを破棄.
@@ -370,13 +352,19 @@ namespace Modules.CriWare
                 var cacheFiles = Directory.GetFiles(installDir, "*", SearchOption.AllDirectories);
 
                 var managedFiles = manifest.GetAssetInfos()
-                    .Select(x => BuildFilePath(x.ResourcesPath))
+                    .Select(x => BuildFilePath(x))
                     .Select(x => PathUtility.ConvertPathSeparator(x))
                     .Distinct()
                     .ToHashSet();
 
                 var targets = cacheFiles
                     .Select(x => PathUtility.ConvertPathSeparator(x))
+                    .Where(x =>
+                           {
+                               var extension = Path.GetExtension(x);
+
+                               return CriAssetDefinition.AssetAllExtensions.Any(y => y == extension);
+                           })
                     .Where(x => !managedFiles.Contains(x))
                     .ToArray();
 
@@ -405,35 +393,32 @@ namespace Modules.CriWare
             }
         }
 
-        public string BuildUrl(string assetPath)
+        public string BuildUrl(AssetInfo assetInfo)
         {
             var platformName = UnityPathUtility.GetPlatformName();
-            var assetFolder = CriAssetDefinition.CriAssetFolder;
-
-            return PathUtility.Combine(new string[] { remoteUrl, platformName, assetFolder, assetPath });
+            
+            return PathUtility.Combine(new string[] { remoteUrl, platformName, assetInfo.FileName });
         }
 
-        public string BuildFilePath(string assetPath)
+        public string BuildFilePath(AssetInfo assetInfo)
         {
-            var assetFolder = CriAssetDefinition.CriAssetFolder;
-           
-            var path = PathUtility.Combine(installPath, assetFolder);
+            var path = installPath;
 
-            if (!string.IsNullOrEmpty(assetPath))
+            if (assetInfo != null)
             {
-                path = PathUtility.Combine(path, assetPath);
+                path = PathUtility.Combine(installPath, assetInfo.FileName);
             }
 
             return path;
         }
 
-        private void OnTimeout(string url, Exception exception)
+        private void OnTimeout(AssetInfo assetInfo, Exception exception)
         {
             Debug.LogErrorFormat("[Download Timeout] \n{0}", exception);
 
             if (onTimeOut != null)
             {
-                onTimeOut.OnNext(url);
+                onTimeOut.OnNext(assetInfo);
             }
         }
 
@@ -451,9 +436,9 @@ namespace Modules.CriWare
         /// タイムアウト時のイベント.
         /// </summary>
         /// <returns></returns>
-        public IObservable<string> OnTimeOutAsObservable()
+        public IObservable<AssetInfo> OnTimeOutAsObservable()
         {
-            return onTimeOut ?? (onTimeOut = new Subject<string>());
+            return onTimeOut ?? (onTimeOut = new Subject<AssetInfo>());
         }
 
         /// <summary>
