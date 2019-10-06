@@ -54,41 +54,7 @@ namespace Modules.ExternalResource
         }
 
         //----- method -----
-
-        /// <summary>
-        /// バージョンが最新か取得.
-        /// </summary>
-        public bool CheckVersion(string resourcesPath)
-        {
-            var result = false;
-
-            #if ENABLE_CRIWARE_ADX || ENABLE_CRIWARE_SOFDEC
-
-            var extension = Path.GetExtension(resourcesPath);
-            
-            if (CriAssetDefinition.AssetAllExtensions.Any(x => x == extension))
-            {
-                var filePath = ConvertCriFilePath(resourcesPath);
-
-                result = CheckAssetVersion(resourcesPath, filePath);
-            }
-
-            else
-            
-            #endif
-
-            {
-                var assetInfo = GetAssetInfo(resourcesPath);
-
-                if (assetInfo != null && assetInfo.IsAssetBundle)
-                {
-                    result = CheckAssetBundleVersion(assetInfo);
-                }
-            }
-
-            return result;
-        }
-
+        
         /// <summary>
         /// アセットバンドルのバージョンが最新か確認.
         /// (同梱された別アセットが更新された場合でもtrueを返す)

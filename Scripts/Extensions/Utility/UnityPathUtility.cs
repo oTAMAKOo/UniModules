@@ -75,21 +75,6 @@ namespace Extensions
             return streamingAssetsPath;
         }
 
-        /// <summary> ダウンロードデータなどのインストール先のパスを取得 </summary>
-        public static string GetInstallPath()
-        {
-            if (Application.platform == RuntimePlatform.IPhonePlayer)
-            {
-                // iCloudバックアップ対象外に保存.
-                // Caches 配下はOSによって勝手に消される可能性がある.
-                return Application.temporaryCachePath;
-            }
-            else
-            {
-                return Application.persistentDataPath;
-            }
-        }
-
         /// <summary> Assets/xxx/sourceDir/yyy/zzz.asset → yyy/zzz.assetに変換 </summary>
         public static string GetLocalPath(string path, string rootDir)
         {
