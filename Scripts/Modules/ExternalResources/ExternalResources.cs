@@ -33,8 +33,6 @@ namespace Modules.ExternalResource
         public static readonly string ConsoleEventName = "ExternalResources";
         public static readonly Color ConsoleEventColor = new Color(0.8f, 1f, 0.1f);
 
-        public const string InstallFolderName = "ExternalResources";
-
         //----- field -----
 
         // アセットバンドル管理.
@@ -59,6 +57,9 @@ namespace Modules.ExternalResource
         // 外部アセットディレクトリ.
         private string resourceDir = null;
 
+        // アセット保存先.
+        private string installDir = null;
+
         private bool simulateMode = false;
         private bool localMode = false;
 
@@ -80,20 +81,20 @@ namespace Modules.ExternalResource
             get { return Instance != null && Instance.initialized; }
         }
 
+        public string InstallDirectory { get { return installDir; } }
+
         //----- method -----
 
-        public void Initialize(string resourceDir, bool localMode = false)
+        public void Initialize(string resourceDir, string installDir, bool localMode = false)
         {
             if (initialized) { return; }
 
             this.resourceDir = resourceDir;
+            this.installDir = installDir;
             this.localMode = localMode;
 
             // 中断用登録.
             yieldCancel = new YieldCancel();
-
-            // アセットフォルダ.
-            var installDir = GetInstallDirectory();
 
             //----- AssetBundleManager初期化 -----
                         
@@ -125,11 +126,6 @@ namespace Modules.ExternalResource
             LoadVersion();
 
             initialized = true;
-        }
-
-        public static string GetInstallDirectory()
-        {
-            return PathUtility.Combine(Application.temporaryCachePath, InstallFolderName);
         }
 
         /// <summary>
@@ -199,16 +195,11 @@ namespace Modules.ExternalResource
         /// <summary>
         /// キャッシュ削除.
         /// </summary>
-        public static void CleanCache()
+        public void CleanCache()
         {
-            if (Exists)
-            {
-                UnloadAllAssetBundles(false);
-            }
+            UnloadAllAssetBundles(false);
 
             ClearVersion();
-
-            var installDir = GetInstallDirectory();
 
             if (Directory.Exists(installDir))
             {

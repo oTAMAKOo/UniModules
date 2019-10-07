@@ -57,7 +57,7 @@ namespace Modules.ApplicationCache
             yield return null;
 
             // キャッシュクリア.
-            ExternalResources.CleanCache();
+            ExternalResources.Instance.CleanCache();
 
             yield return null;
 

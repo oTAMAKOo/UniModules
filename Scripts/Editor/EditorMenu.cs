@@ -208,14 +208,6 @@ namespace Modules
             AssetNavigationWindow.Open(projectFolders.ExternalResourcesPath);
         }
 
-        [MenuItem(itemName: ResourcesMenu + "Open Install Folder", priority = 24)]
-        public static void OpenInstallFolder()
-        {
-            var path = ExternalResources.GetInstallDirectory();
-
-            UnityEditorUtility.OpenFolder(path);
-        }
-
         #endregion
 
         //===============================================================

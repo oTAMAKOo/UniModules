@@ -251,16 +251,13 @@ namespace Modules.ExternalResource
             versions = version.infos.ToDictionary(x => x.resourcesPath, x => x);
         }
 
-        private static void ClearVersion()
+        private void ClearVersion()
         {
-            if (Exists)
-            {
-                Instance.version = new Version();
+            version = new Version();
 
-                if (Instance.versions != null)
-                {
-                    Instance.versions.Clear();
-                }
+            if (versions != null)
+            {
+                versions.Clear();
             }
 
             var versionFilePath = GetVersionFilePath();
@@ -286,9 +283,9 @@ namespace Modules.ExternalResource
             }
         }
 
-        private static string GetVersionFilePath()
+        private string GetVersionFilePath()
         {
-            return PathUtility.Combine(GetInstallDirectory(), VersionFileName);
+            return PathUtility.Combine(installDir, VersionFileName);
         }
     }
 }
