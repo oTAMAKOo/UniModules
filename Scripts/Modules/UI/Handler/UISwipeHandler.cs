@@ -42,11 +42,11 @@ namespace Modules.UI
                 .Where(eventData => eventData.pointerDrag.gameObject == gameObject)
                 .Select(eventData => eventData.position)
                 .Subscribe(position =>
-                {
-                    IsSwipe = true;
-                    beginPosition = position;
-                    beginTime = DateTime.Now;
-                })
+                    {
+                        IsSwipe = true;
+                        beginPosition = position;
+                        beginTime = DateTime.Now;
+                    })
                 .AddTo(this);
 
             var onEndDragObservable = eventTrigger
@@ -61,12 +61,12 @@ namespace Modules.UI
                 .Where(position => beginPosition.x > position.x)
                 .Where(position => Mathf.Abs(beginPosition.x - position.x) >= thresholdDistance)
                 .Subscribe(_ =>
-                {
-                    if (onSwipeLeft != null)
                     {
-                        onSwipeLeft.OnNext(Unit.Default);
-                    }
-                })
+                        if (onSwipeLeft != null)
+                        {
+                            onSwipeLeft.OnNext(Unit.Default);
+                        }
+                    })
                 .AddTo(this);
 
             // right.
@@ -74,12 +74,12 @@ namespace Modules.UI
                 .Where(position => position.x > beginPosition.x)
                 .Where(position => Mathf.Abs(position.x - beginPosition.x) >= thresholdDistance)
                 .Subscribe(_ =>
-                {
-                    if (onSwipeRight != null)
                     {
-                        onSwipeRight.OnNext(Unit.Default);
-                    }
-                })
+                        if (onSwipeRight != null)
+                        {
+                            onSwipeRight.OnNext(Unit.Default);
+                        }
+                    })
                 .AddTo(this);
 
             // down.
@@ -87,12 +87,12 @@ namespace Modules.UI
                 .Where(position => beginPosition.y > position.y)
                 .Where(position => Mathf.Abs(beginPosition.y - position.y) >= thresholdDistance)
                 .Subscribe(_ =>
-                {
-                    if (onSwipeDown != null)
                     {
-                        onSwipeDown.OnNext(Unit.Default);
-                    }
-                })
+                        if (onSwipeDown != null)
+                        {
+                            onSwipeDown.OnNext(Unit.Default);
+                        }
+                    })
                 .AddTo(this);
 
             // up.
@@ -100,12 +100,12 @@ namespace Modules.UI
                 .Where(position => position.y > beginPosition.y)
                 .Where(position => Mathf.Abs(position.y - beginPosition.y) >= thresholdDistance)
                 .Subscribe(_ =>
-                {
-                    if (onSwipeUp != null)
                     {
-                        onSwipeUp.OnNext(Unit.Default);
-                    }
-                })
+                        if (onSwipeUp != null)
+                        {
+                            onSwipeUp.OnNext(Unit.Default);
+                        }
+                    })
                 .AddTo(this);
 
             onEndDragObservable.Subscribe(_ => IsSwipe = false).AddTo(this);
