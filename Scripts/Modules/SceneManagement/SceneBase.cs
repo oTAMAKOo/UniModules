@@ -1,4 +1,4 @@
-﻿﻿﻿
+﻿
 using UnityEngine;
 using Unity.Linq;
 using System;
@@ -32,10 +32,10 @@ namespace Modules.SceneManagement
         IObservable<Unit> Initialize();
 
         /// <summary> シーンの準備 (通信、読み込みなど) </summary>
-        IObservable<Unit> Prepare(bool isSceneBack);
+        IObservable<Unit> Prepare(bool isSceneBack = false);
 
         /// <summary> シーンの開始 </summary>
-        void Enter(bool isSceneBack);
+        void Enter(bool isSceneBack = false);
 
         /// <summary> シーンの終了 </summary>
         IObservable<Unit> Leave();
