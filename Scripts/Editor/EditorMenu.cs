@@ -250,18 +250,6 @@ namespace Modules
 
         public const string ToolsMenu = MenuRoot + "Tools/";
 
-        [MenuItem(itemName: ToolsMenu + "Dicing Packer/Open DicingPacker", priority = 1)]
-        public static void OpenDicingPacker()
-        {
-            DicingPacker.Open();
-        }
-
-        [MenuItem(itemName: ToolsMenu + "AssetBundle/Dependency", priority = 2)]
-        public static void OpenAssetBundleDependency()
-        {
-            FindDependencyAssetsWindow.Open();
-        }
-
         [MenuItem(itemName: ToolsMenu + "Cleaner/Clean CanvasRenderer On", priority = 0)]
         public static void ToggleCanvasRendererCleanerAutoMode()
         {
@@ -305,6 +293,18 @@ namespace Modules
         public static void ExecComponentCleaner()
         {
             ComponentCleaner.Execute();
+        }
+
+        [MenuItem(itemName: ToolsMenu + "Open DicingPacker")]
+        public static void OpenDicingPacker()
+        {
+            DicingPacker.Open();
+        }
+
+        [MenuItem(itemName: ToolsMenu + "Open AssetBundleDependencyChecker")]
+        public static void OpenAssetBundleDependency()
+        {
+            FindDependencyAssetsWindow.Open();
         }
 
         [MenuItem(itemName: ToolsMenu + "Open TextureCompressChecker")]

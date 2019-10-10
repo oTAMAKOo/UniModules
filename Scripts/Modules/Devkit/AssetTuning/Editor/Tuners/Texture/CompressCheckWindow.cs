@@ -33,6 +33,13 @@ namespace Modules.Devkit.AssetTuning
             Path
         }
 
+        public sealed class CompressFolderInfo
+        {
+            public bool compress;
+            public Object folder;
+            public TextureAssetInfo[] textureAssetInfos;
+        }
+
         public sealed class TextureAssetInfo
         {
             public Texture textureAsset;
@@ -46,8 +53,10 @@ namespace Modules.Devkit.AssetTuning
         private AssetViewMode assetViewMode = AssetViewMode.Asset;
         private CompressFolderScrollView compressFolderScrollView = null;
         private TextureAssetInfoScrollView textureAssetInfoScrollView = null;
+        private CompressFolderInfo[] compressFolderInfos = null;
         private TextureAssetInfo[] textureAssetInfos = null;
         private GUIContent tabprevIcon = null;
+        private GUIContent viewToolZoomIcon = null;
         private bool failedOnly = false;
 
         [NonSerialized]
@@ -67,17 +76,18 @@ namespace Modules.Devkit.AssetTuning
             if (initialized) { return; }
 
             titleContent = new GUIContent("CompressCheckWindow");
+            minSize = new Vector2(650f, 450f);
 
             var config = TextureAssetTunerConfig.Instance;
 
             viewMode = ViewMode.SelectFolder;
             assetViewMode = AssetViewMode.Asset;
 
-            if (tabprevIcon == null)
-            {
-                tabprevIcon = EditorGUIUtility.IconContent("tab_prev");
-            }
-            
+            tabprevIcon = EditorGUIUtility.IconContent("tab_prev");
+            viewToolZoomIcon = EditorGUIUtility.IconContent("ViewToolZoom");
+
+            compressFolderInfos = new CompressFolderInfo[0];
+
             // Initialize search view.
             compressFolderScrollView = new CompressFolderScrollView();
 
@@ -86,10 +96,25 @@ namespace Modules.Devkit.AssetTuning
             compressFolderScrollView.OnSearchRequestAsObservable()
                 .Subscribe(x =>
                     {
-                        textureAssetInfos = FindTextureAssetInfoInFolder(x);
-                        textureAssetInfoScrollView.Contents = GetFilteredTextureAssetInfos();
-                        viewMode = ViewMode.SearchResult;
-                        Repaint();
+                        var infos = GetCompressFolderInfo(new Object[] { x }, true);
+
+                        if (infos.Any())
+                        {
+                            var info = infos.FirstOrDefault();
+
+                            textureAssetInfos = info.textureAssetInfos;
+                            textureAssetInfoScrollView.Contents = GetFilteredTextureAssetInfos();
+                            viewMode = ViewMode.SearchResult;
+
+                            var index = compressFolderInfos.IndexOf(y => y.folder == info.folder);
+
+                            if (index != -1)
+                            {
+                                compressFolderInfos[index] = info;
+                            }
+
+                            Repaint();
+                        }
                     })
                 .AddTo(Disposable);
 
@@ -115,12 +140,26 @@ namespace Modules.Devkit.AssetTuning
 
             using (new EditorGUILayout.HorizontalScope())
             {
+                var config = TextureAssetTunerConfig.Instance;
+
+                if (GUILayout.Button(viewToolZoomIcon, EditorStyles.miniButton, GUILayout.Width(24f), GUILayout.Height(15f)))
+                {
+                    var allFolders = config.CompressFolders;
+
+                    compressFolderInfos = GetCompressFolderInfo(allFolders, false);
+
+                    textureAssetInfos = null;
+                    viewMode = ViewMode.SelectFolder;
+
+                    Repaint();
+                }
+
+                EditorGUILayout.ObjectField(config, typeof(TextureAssetTunerConfig), false, GUILayout.Width(400f));
+
                 if (viewMode == ViewMode.SearchResult)
                 {
                     if (GUILayout.Button(tabprevIcon, EditorStyles.miniButton, GUILayout.Width(30f), GUILayout.Height(15f)))
                     {
-                        var config = TextureAssetTunerConfig.Instance;
-
                         viewMode = ViewMode.SelectFolder;
                         compressFolderScrollView.Contents = config.CompressFolders;
                     }
@@ -162,11 +201,12 @@ namespace Modules.Devkit.AssetTuning
 
             EditorGUILayout.Separator();
 
-            GUILayout.Space(3f);
+            EditorLayoutTools.DrawLabelWithBackground("Assets");
 
             switch (viewMode)
             {
                 case ViewMode.SelectFolder:
+                    compressFolderScrollView.CompressFolderInfos = compressFolderInfos;
                     compressFolderScrollView.Draw();
                     break;
 
@@ -174,75 +214,98 @@ namespace Modules.Devkit.AssetTuning
                     textureAssetInfoScrollView.Draw();
                     break;
             }
-
-            GUILayout.Space(1f);
         }
         
-        private TextureAssetInfo[] FindTextureAssetInfoInFolder(Object folder)
+        private CompressFolderInfo[] GetCompressFolderInfo(Object[] folders, bool requireAsset)
         {
-            if (folder == null) { return null; }
+            if (folders == null || folders.IsEmpty()) { return null; }
 
-            var path = AssetDatabase.GetAssetPath(folder);
+            var compressFolderInfos = new List<CompressFolderInfo>();
 
-            if (!AssetDatabase.IsValidFolder(path)) { return null; }
+            var guidsByFolderPath = new Dictionary<string, string[]>();
 
-            var list = new List<TextureAssetInfo>();
-            
-            var guids = AssetDatabase.FindAssets("t:texture", new string[] { path });
-
-            var title = string.Format("Search Folder : {0}", path);
-
-            for (var i = 0; i < guids.Length; i++)
+            foreach (var folder in folders)
             {
-                var texturePath = AssetDatabase.GUIDToAssetPath(guids[i]);
+                var path = AssetDatabase.GetAssetPath(folder);
 
-                EditorUtility.DisplayProgressBar(title, texturePath, (float)i / guids.Length);
+                if (!AssetDatabase.IsValidFolder(path)) { return null; }
 
-                var texture = AssetDatabase.LoadMainAssetAtPath(texturePath) as Texture;
+                var guids = AssetDatabase.FindAssets("t:texture", new string[] { path });
 
-                if (texture == null) { continue; }
+                guidsByFolderPath.Add(path, guids);
 
-                EditorUtility.DisplayProgressBar(title, texturePath, (float)i / guids.Length);
-
-                var info = BuildTextureAssetInfo(texture);
-
-                if (failedOnly)
+                var compressFolderInfo = new CompressFolderInfo()
                 {
-                    if (!info.compress)
+                    folder = folder,
+                    compress = false,
+                    textureAssetInfos = new TextureAssetInfo[0],
+                };
+
+                compressFolderInfos.Add(compressFolderInfo);
+            }
+
+            var count = 0;
+            var totalCount = guidsByFolderPath.SelectMany(x => x.Value).Count();
+
+            foreach (var item in guidsByFolderPath)
+            {
+                var textureAssetInfos = new List<TextureAssetInfo>();
+
+                var title = string.Format("Search Folder : {0}", item.Key);
+
+                for (var i = 0; i < item.Value.Length; i++)
+                {
+                    var texturePath = AssetDatabase.GUIDToAssetPath(item.Value[i]);
+
+                    EditorUtility.DisplayProgressBar(title, texturePath, (float)count++ / totalCount);
+
+                    var info = BuildTextureAssetInfo(texturePath, requireAsset);
+
+                    if (failedOnly)
                     {
-                        list.Add(info);
+                        if (!info.compress)
+                        {
+                            textureAssetInfos.Add(info);
+                        }
+                    }
+                    else
+                    {
+                        textureAssetInfos.Add(info);
                     }
                 }
-                else
+
+                var compressFolderInfo = compressFolderInfos.FirstOrDefault(x => AssetDatabase.GetAssetPath(x.folder) == item.Key);
+
+                if (compressFolderInfo != null)
                 {
-                    list.Add(info);
+                    compressFolderInfo.compress = textureAssetInfos.All(x => x.compress);
+                    compressFolderInfo.textureAssetInfos = textureAssetInfos.ToArray();
                 }
             }
 
             EditorUtility.ClearProgressBar();
 
-            return list.ToArray();
+            return compressFolderInfos.ToArray();
         }
 
-        private TextureAssetInfo BuildTextureAssetInfo(Texture texture)
+        private TextureAssetInfo BuildTextureAssetInfo(string assetPath, bool requireAsset)
         {
-            if (texture == null) { return null; }
-
-            var assetPath = AssetDatabase.GetAssetPath(texture);
-
             var textureImporter = AssetImporter.GetAtPath(assetPath) as TextureImporter;
+
+            var compress = false;
 
             var isCompressASTC = Platforms.Any(x => textureImporter.IsCompressASTC(x));
 
-            if (!isCompressASTC) { return null; }
-
             var size = textureImporter.GetPreImportTextureSize();
 
-            var compress = IsMultipleOf4(size.x) && IsMultipleOf4(size.y);
+            if (isCompressASTC)
+            {
+                compress = IsMultipleOf4(size.x) && IsMultipleOf4(size.y);
+            }
 
             var info = new TextureAssetInfo()
             {
-                textureAsset = texture,
+                textureAsset = requireAsset ? AssetDatabase.LoadMainAssetAtPath(assetPath) as Texture : null,
                 size = size,
                 compress = compress,
             };
@@ -266,12 +329,15 @@ namespace Modules.Devkit.AssetTuning
     public sealed class CompressFolderScrollView : EditorGUIFastScrollView<Object>
     {
         private GUIContent viewToolZoomIcon = null;
+        private GUIContent vcscheckIcon = null;
+        private GUIContent vcsdeleteIcon = null;
         private Subject<Object> onSearchRequest = null;
 
+        public CompressCheckWindow.CompressFolderInfo[] CompressFolderInfos { get; set; }
         public CompressCheckWindow.AssetViewMode AssetViewMode { get; set; }
 
         public override Direction Type { get { return Direction.Vertical; } }
-
+        
         protected override void DrawContent(int index, Object content)
         {
             if (viewToolZoomIcon == null)
@@ -279,8 +345,36 @@ namespace Modules.Devkit.AssetTuning
                 viewToolZoomIcon = EditorGUIUtility.IconContent("ViewToolZoom");
             }
 
+            if (vcscheckIcon == null)
+            {
+                vcscheckIcon = EditorGUIUtility.IconContent("vcs_check");
+            }
+
+            if (vcsdeleteIcon == null)
+            {
+                vcsdeleteIcon = EditorGUIUtility.IconContent("vcs_delete");
+            }
+
             using (new EditorGUILayout.HorizontalScope())
             {
+                var info = CompressFolderInfos.FirstOrDefault(x => x.folder == content);
+
+                if (info != null)
+                {
+                    var originLabelWidth = EditorLayoutTools.SetLabelWidth(12f);
+
+                    var icon = info.compress ? vcscheckIcon : vcsdeleteIcon;
+
+                    using (new EditorGUILayout.VerticalScope(GUILayout.Width(12f)))
+                    {
+                        GUILayout.Space(-1f);
+
+                        EditorGUILayout.LabelField(icon, GUILayout.Width(20f), GUILayout.Height(20f));
+                    }
+
+                    EditorLayoutTools.SetLabelWidth(originLabelWidth);
+                }
+
                 EditorGUI.BeginChangeCheck();
 
                 switch (AssetViewMode)
