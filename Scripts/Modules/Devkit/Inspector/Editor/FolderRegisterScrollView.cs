@@ -12,7 +12,7 @@ using Object = UnityEngine.Object;
 
 namespace Modules.Devkit.Inspector
 {
-    public sealed class FolderRegisterScrollView : LifetimeDisposable
+    public sealed class FolderRegisterScrollView : RegisterScrollView<FolderRegisterScrollView.FolderInfo>
     {
         //----- params -----
 
@@ -28,106 +28,59 @@ namespace Modules.Devkit.Inspector
             public Object asset = null;
         }
 
-        private sealed class FolderScrollView : EditorGUIFastScrollView<FolderInfo>
+        private FolderInfo DrawContent(int index, FolderInfo info)
         {
-            private GUIContent toolbarPlusIcon = null;
 
-            private Subject<FolderInfo[]> onUpdateContents = null;
-
-            public AssetViewMode AssetViewMode { get; set; }
-            public bool RemoveChildrenFolder { get; set; }
-
-            public override Direction Type { get { return Direction.Vertical; } }
-
-            public FolderScrollView() : base()
+            switch (assetViewMode)
             {
-                toolbarPlusIcon = EditorGUIUtility.IconContent("Toolbar Minus");
-            }
-
-            protected override void DrawContent(int index, FolderInfo content)
-            {
-                using (new EditorGUILayout.HorizontalScope())
-                {
-                    EditorGUI.BeginChangeCheck();
-
-                    switch (AssetViewMode)
+                case AssetViewMode.Asset:
                     {
-                        case AssetViewMode.Asset:
+                        EditorGUI.BeginChangeCheck();
+
+                        var folder = EditorGUILayout.ObjectField(info.asset, typeof(Object), false);
+
+                        if (EditorGUI.EndChangeCheck())
+                        {
+                            if (CheckFolderAsset(folder))
                             {
-                                EditorGUI.BeginChangeCheck();
-
-                                var folder = EditorGUILayout.ObjectField(content.asset, typeof(Object), false);
-
-                                if (EditorGUI.EndChangeCheck())
+                                var newContent = new FolderInfo()
                                 {
-                                    if (CheckFolderAsset(folder))
+                                    asset = folder,
+                                    assetPath = AssetDatabase.GetAssetPath(folder),
+                                };
+
+                                // 一旦ローカル配列に変換してから上書き.
+                                var contents = Contents.ToArray();
+
+                                contents[index] = newContent;
+
+                                // 親が登録された場合子階層を除外.
+                                if (RemoveChildrenFolder)
+                                {
+                                    if (CheckParentFolderRegisted(folder, Contents))
                                     {
-                                        var newContent = new FolderInfo()
+                                        var removeChildrenInfos = GetRemoveChildrenFolders(folder, Contents);
+
+                                        if (removeChildrenInfos.Any())
                                         {
-                                            asset = folder,
-                                            assetPath = AssetDatabase.GetAssetPath(folder),
-                                        };
+                                            EditorUtility.DisplayDialog("Removed Folder", "Removed registration of child folders.", "Close");
 
-                                        // 一旦ローカル配列に変換してから上書き.
-                                        var contents = Contents.ToArray();
-
-                                        contents[index] = newContent;
-
-                                        // 親が登録された場合子階層を除外.
-                                        if (RemoveChildrenFolder)
-                                        {
-                                            if (CheckParentFolderRegisted(folder, Contents))
-                                            {
-                                                var removeChildrenInfos = GetRemoveChildrenFolders(folder, Contents);
-
-                                                if (removeChildrenInfos.Any())
-                                                {
-                                                    EditorUtility.DisplayDialog("Removed Folder", "Removed registration of child folders.", "Close");
-
-                                                    contents = contents.Where(x => !removeChildrenInfos.Contains(x)).ToArray();
-                                                }
-                                            }
+                                            contents = contents.Where(x => !removeChildrenInfos.Contains(x)).ToArray();
                                         }
-
-                                        Contents = contents;
-
-                                        UpdateContens();
                                     }
                                 }
+
+                                Contents = contents;
+
+                                UpdateContens();
                             }
-                            break;
-
-                        case AssetViewMode.Path:
-                            GUILayout.Label(content.assetPath, EditorLayoutTools.TextAreaStyle);
-                            break;
+                        }
                     }
+                    break;
 
-                    if (GUILayout.Button(toolbarPlusIcon, EditorStyles.miniButton, GUILayout.Width(24f), GUILayout.Height(15f)))
-                    {
-                        var list = Contents.ToList();
-
-                        list.RemoveAt(index);
-
-                        Contents = list.ToArray();
-
-                        UpdateContens();
-                    }
-                }
-            }
-
-            private void UpdateContens()
-            {
-                if (onUpdateContents != null)
-                {
-                    onUpdateContents.OnNext(Contents);
-                }
-
-                RequestRepaint();
-            }
-
-            public IObservable<FolderInfo[]> OnUpdateContentsAsObservable()
-            {
-                return onUpdateContents ?? (onUpdateContents = new Subject<FolderInfo[]>());
+                case AssetViewMode.Path:
+                    GUILayout.Label(content.assetPath, EditorLayoutTools.TextAreaStyle);
+                    break;
             }
         }
 
@@ -144,12 +97,8 @@ namespace Modules.Devkit.Inspector
         private Subject<Object[]> onUpdateContents = null;
 
         //----- property -----
-
-        public bool RemoveChildrenFolder
-        {
-            get { return folderScrollView.RemoveChildrenFolder; }
-            set { folderScrollView.RemoveChildrenFolder = value; }
-        }
+        
+        public bool RemoveChildrenFolder { get; set; }
 
         //----- method -----
 
