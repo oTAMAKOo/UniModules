@@ -28,9 +28,64 @@ namespace Modules.Devkit.Inspector
             public Object asset = null;
         }
 
-        private FolderInfo DrawContent(int index, FolderInfo info)
-        {
+        //----- field -----
 
+        private string title = null;
+        private string headerKey = null;
+        private AssetViewMode assetViewMode = AssetViewMode.Asset;
+        
+        private Subject<Object[]> onUpdateContents = null;
+
+        //----- property -----
+
+        /// <summary>
+        /// 既に子階層のフォルダが登録済みの時そのフォルダを除外するか.
+        /// </summary>
+        public bool RemoveChildrenFolder { get; set; }
+
+        //----- method -----
+
+        public FolderRegisterScrollView(string title, string headerKey)
+        {
+            this.title = title;
+            this.headerKey = headerKey;
+
+            OnUpdateContentsAsObservable()
+                .Subscribe(x =>
+                    {
+                        if (onUpdateContents != null)
+                        {
+                            var folders = x.Select(y => y.asset).ToArray();
+
+                            onUpdateContents.OnNext(folders);
+                        }
+                    })
+                .AddTo(Disposable);
+
+            RemoveChildrenFolder = false;            
+        }
+
+        // 外部公開しない.
+        private new void SetContents(FolderInfo[] contents) { }
+
+        public void SetContents(Object[] folders)
+        {
+            Contents = folders
+                .Select(x =>
+                    {
+                        var info = new FolderInfo()
+                        {
+                            asset = x,
+                            assetPath = x != null ? AssetDatabase.GetAssetPath(x) : string.Empty,
+                        };
+
+                        return info;
+                    })
+                .ToArray();       
+        }
+
+        protected override FolderInfo DrawContent(int index, FolderInfo info)
+        {
             switch (assetViewMode)
             {
                 case AssetViewMode.Asset:
@@ -43,7 +98,7 @@ namespace Modules.Devkit.Inspector
                         {
                             if (CheckFolderAsset(folder))
                             {
-                                var newContent = new FolderInfo()
+                                info = new FolderInfo()
                                 {
                                     asset = folder,
                                     assetPath = AssetDatabase.GetAssetPath(folder),
@@ -52,7 +107,7 @@ namespace Modules.Devkit.Inspector
                                 // 一旦ローカル配列に変換してから上書き.
                                 var contents = Contents.ToArray();
 
-                                contents[index] = newContent;
+                                contents[index] = info;
 
                                 // 親が登録された場合子階層を除外.
                                 if (RemoveChildrenFolder)
@@ -71,138 +126,60 @@ namespace Modules.Devkit.Inspector
                                 }
 
                                 Contents = contents;
-
-                                UpdateContens();
                             }
                         }
                     }
                     break;
 
                 case AssetViewMode.Path:
-                    GUILayout.Label(content.assetPath, EditorLayoutTools.TextAreaStyle);
+                    GUILayout.Label(info.assetPath, EditorLayoutTools.TextAreaStyle);
                     break;
             }
+
+            return info;
         }
 
-        //----- field -----
-
-        private string title = null;
-        private string headerKey = null;
-        private AssetViewMode assetViewMode = AssetViewMode.Asset;
-        private List<FolderInfo> folderInfos = null;
-        private FolderScrollView folderScrollView = null;
-        private GUIContent toolbarPlusIcon = null;
-
-        private Subject<Unit> onRepaintRequest = null;
-        private Subject<Object[]> onUpdateContents = null;
-
-        //----- property -----
-        
-        public bool RemoveChildrenFolder { get; set; }
-
-        //----- method -----
-
-        public FolderRegisterScrollView(string title, string headerKey)
+        protected override FolderInfo CreateNewContent()
         {
-            this.title = title;
+            var compressFolder = new FolderInfo()
+            {
+                asset = null,
+                assetPath = string.Empty,
+            };
 
-            folderScrollView = new FolderScrollView();
-            folderScrollView.AssetViewMode = assetViewMode;
-
-            folderScrollView.OnUpdateContentsAsObservable()
-                .Subscribe(x =>
-                    {
-                        folderInfos = x.ToList();
-
-                        if (onUpdateContents != null)
-                        {
-                            var folders = x.Select(y => y.asset).ToArray();
-
-                            onUpdateContents.OnNext(folders);
-                        }
-                    })
-                .AddTo(Disposable);
-
-            folderScrollView.OnRepaintRequestAsObservable()
-                .Subscribe(_ =>
-                   {
-                       if (onRepaintRequest != null)
-                       {
-                           onRepaintRequest.OnNext(Unit.Default);
-                       }
-                   })
-                .AddTo(Disposable);
-
-            RemoveChildrenFolder = false;
-
-            toolbarPlusIcon = EditorGUIUtility.IconContent("Toolbar Plus");
+            return compressFolder;
         }
 
-        public void SetContents(Object[] folders)
+        protected override void DrawHeaderContent()
         {
-            folderInfos = folders
-                .Select(x =>
-                    {
-                        var info = new FolderInfo()
-                        {
-                            asset = x,
-                            assetPath = x != null ? AssetDatabase.GetAssetPath(x) : string.Empty,
-                        };
+            GUILayout.Space(5f);
 
-                        return info;
-                    })
-                .ToList();
+            EditorGUI.BeginChangeCheck();
 
-            folderScrollView.Contents = folderInfos.ToArray();            
+            var mode = (AssetViewMode)EditorGUILayout.EnumPopup(assetViewMode, GUILayout.Width(60f));
+
+            if (EditorGUI.EndChangeCheck())
+            {
+                assetViewMode = mode;
+            }
+
+            GUILayout.Space(4f);
         }
 
-        public void DrawGUI()
+        public override void DrawGUI(params GUILayoutOption[] option)
         {
             if (EditorLayoutTools.DrawHeader(title, headerKey))
             {
                 using (new ContentsScope())
                 {
-                    GUILayout.Space(2f);
+                    var scrollViewHeight = Mathf.Min(Contents.Length * 18f, 150f);
 
-                    using (new EditorGUILayout.HorizontalScope())
-                    {
-                        EditorGUI.BeginChangeCheck();
+                    var options = new List<GUILayoutOption>();
 
-                        assetViewMode = (AssetViewMode)EditorGUILayout.EnumPopup(assetViewMode, GUILayout.Width(60f));
+                    options.Add(GUILayout.Height(scrollViewHeight));
+                    options.AddRange(option);  
 
-                        if (EditorGUI.EndChangeCheck())
-                        {
-                            folderScrollView.AssetViewMode = assetViewMode;
-                        }
-
-                        GUILayout.FlexibleSpace();
-
-                        if (GUILayout.Button(toolbarPlusIcon, EditorStyles.miniButton, GUILayout.Width(24f), GUILayout.Height(15f)))
-                        {
-                            var compressFolder = new FolderInfo()
-                            {
-                                asset = null,
-                                assetPath = string.Empty,
-                            };
-
-                            folderInfos.Add(compressFolder);
-                            
-                            folderScrollView.Contents = folderInfos.ToArray();
-
-                            if (onUpdateContents != null)
-                            {
-                                var folders = folderInfos.Select(x => x.asset).ToArray();
-
-                                onUpdateContents.OnNext(folders);
-                            }
-                        }
-                    }
-
-                    GUILayout.Space(4f);
-
-                    var scrollViewHeight = Mathf.Min(folderInfos.Count * 18f, 150f);
-
-                    folderScrollView.Draw(true, GUILayout.Height(scrollViewHeight));
+                    base.DrawGUI(options.ToArray());
                 }
             }
         }
@@ -251,16 +228,6 @@ namespace Modules.Devkit.Inspector
             }
 
             return true;
-        }
-
-        public IObservable<Unit> OnRepaintRequestAsObservable()
-        {
-            return onRepaintRequest ?? (onRepaintRequest = new Subject<Unit>());
-        }
-
-        public IObservable<Object[]> OnUpdateContentsAsObservable()
-        {
-            return onUpdateContents ?? (onUpdateContents = new Subject<Object[]>());
         }
     }
 }

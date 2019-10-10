@@ -18,17 +18,12 @@ namespace Modules.Devkit.Inspector
         private sealed class FastScrollView : EditorGUIFastScrollView<T>
         {
             private RegisterScrollView<T> instance = null;
-            private GUIContent toolbarPlusIcon = null;
-            private Func<int, T, T> drawContent = null;
-
+            
             public override Direction Type { get { return Direction.Vertical; } }
 
-            public FastScrollView(RegisterScrollView<T> instance, Func<int, T, T> drawContent)
+            public FastScrollView(RegisterScrollView<T> instance)
             {
-                this.instance = instance;
-                this.drawContent = drawContent;
-
-                toolbarPlusIcon = EditorGUIUtility.IconContent("Toolbar Minus");
+                this.instance = instance;                
             }
 
             protected override void DrawContent(int index, T content)
@@ -37,14 +32,15 @@ namespace Modules.Devkit.Inspector
                 {
                     EditorGUI.BeginChangeCheck();
 
-                    if (drawContent != null)
-                    {
-                        content = drawContent(index, content);
-                    }
+                    content = instance.DrawContent(index, content);
 
                     if (EditorGUI.EndChangeCheck())
                     {
-                        Contents[index] = content;
+                        var list = Contents.ToList();
+
+                        list[index] = content;
+
+                        Contents = list.ToArray();
 
                         if (instance.onUpdateContents != null)
                         {
@@ -52,7 +48,7 @@ namespace Modules.Devkit.Inspector
                         }
                     }
 
-                    if (GUILayout.Button(toolbarPlusIcon, EditorStyles.miniButton, GUILayout.Width(24f), GUILayout.Height(15f)))
+                    if (GUILayout.Button(instance.toolbarMinusIcon, EditorStyles.miniButton, GUILayout.Width(24f), GUILayout.Height(15f)))
                     {
                         var list = Contents.ToList();
 
@@ -60,33 +56,23 @@ namespace Modules.Devkit.Inspector
 
                         Contents = list.ToArray();
 
-                        UpdateContens();
+                        if (instance.onUpdateContents != null)
+                        {
+                            instance.onUpdateContents.OnNext(Contents);
+                        }
+
+                        RequestRepaint();
                     }
                 }
-            }
-
-            protected void UpdateContens()
-            {
-                if (onUpdateContents != null)
-                {
-                    onUpdateContents.OnNext(Contents);
-                }
-
-                RequestRepaint();
-            }
-
-            public IObservable<T[]> OnUpdateContentsAsObservable()
-            {
-                return onUpdateContents ?? (onUpdateContents = new Subject<T[]>());
             }
         }
 
         //----- field -----
 
-        private Func<T> createContent = null;
-
         private FastScrollView scrollView = null;
+
         private GUIContent toolbarPlusIcon = null;
+        private GUIContent toolbarMinusIcon = null;
 
         private Subject<T[]> onUpdateContents = null;
         private Subject<Unit> onRepaintRequest = null;
@@ -101,23 +87,12 @@ namespace Modules.Devkit.Inspector
 
         //----- method -----
 
-        public RegisterScrollView(Func<T> createContent, Func<int, T, T> drawContent)
+        public RegisterScrollView()
         {
-            this.createContent = createContent;
-
-            scrollView = new FastScrollView(this, drawContent);
+            scrollView = new FastScrollView(this);
 
             toolbarPlusIcon = EditorGUIUtility.IconContent("Toolbar Plus");
-
-            scrollView.OnUpdateContentsAsObservable()
-                .Subscribe(x =>
-                    {
-                        if (onUpdateContents != null)
-                        {
-                            onUpdateContents.OnNext(Contents);
-                        }
-                    })
-                .AddTo(Disposable);
+            toolbarMinusIcon = EditorGUIUtility.IconContent("Toolbar Minus");
 
             scrollView.OnRepaintRequestAsObservable()
                 .Subscribe(_ =>
@@ -128,26 +103,39 @@ namespace Modules.Devkit.Inspector
                         }
                     })
                 .AddTo(Disposable);
-        }       
+        }
 
         public void SetContents(T[] contents)
         {
             scrollView.Contents = contents;
         }
 
-        public void DrawGUI(params GUILayoutOption[] options)
+        public virtual void DrawGUI(params GUILayoutOption[] options)
         {
+            GUILayout.Space(2f);
+
             using (new EditorGUILayout.HorizontalScope())
             {
+                DrawHeaderContent();
+
                 GUILayout.FlexibleSpace();
 
                 if (GUILayout.Button(toolbarPlusIcon, EditorStyles.miniButton, GUILayout.Width(24f), GUILayout.Height(15f)))
                 {
                     var list = Contents.ToList();
 
-                    list.Add(createContent());
+                    list.Add(CreateNewContent());
+
+                    Contents = list.ToArray();
+
+                    if (onRepaintRequest != null)
+                    {
+                        onRepaintRequest.OnNext(Unit.Default);
+                    }
                 }
             }
+
+            GUILayout.Space(2f);
 
             scrollView.Draw(true, options);
         }
@@ -156,5 +144,16 @@ namespace Modules.Devkit.Inspector
         {
             return onUpdateContents ?? (onUpdateContents = new Subject<T[]>());
         }
+
+        public IObservable<Unit> OnRepaintRequestAsObservable()
+        {
+            return onRepaintRequest ?? (onRepaintRequest = new Subject<Unit>());
+        }
+
+        protected virtual void DrawHeaderContent() { }
+
+        protected abstract T CreateNewContent();
+
+        protected abstract T DrawContent(int index, T content);
     }
 }

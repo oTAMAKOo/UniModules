@@ -98,7 +98,7 @@ namespace Modules.Devkit.AssetTuning
 
             if (config == null) { return; }
 
-            if (!IsFolderItem(textureImporter.assetPath, config.CompressFolders)) { return; }
+            if (!IsFolderItem(textureImporter.assetPath, config.CompressFolders, config.IgnoreCompressFolderNames)) { return; }
 
             var pathSplit = textureImporter.assetPath.Split(PathUtility.PathSeparator);
 
@@ -142,9 +142,18 @@ namespace Modules.Devkit.AssetTuning
 
             if (config == null) { return; }
 
-            if (!IsFolderItem(textureImporter.assetPath, config.SpriteFolders)) { return; }
+            var isTarget = false;
 
-            textureImporter.textureType = TextureImporterType.Sprite;
+            var parts = textureImporter.assetPath.Split(PathUtility.PathSeparator);
+
+            isTarget |= parts.Any(x => config.SpriteFolderNames.Contains(x));
+
+            isTarget |= IsFolderItem(textureImporter.assetPath, config.SpriteFolders, config.IgnoreSpriteFolderNames);
+
+            if (isTarget)
+            {
+                textureImporter.textureType = TextureImporterType.Sprite;
+            }
         }
 
         protected virtual TextureImporterFormat GetPlatformCompressionType(TextureImporter textureImporter, BuildTargetGroup platform)
@@ -184,7 +193,7 @@ namespace Modules.Devkit.AssetTuning
             }
         }
 
-        public static bool IsFolderItem(string assetPath, Object[] folders)
+        public static bool IsFolderItem(string assetPath, Object[] folders, string[] ignoreFolderNames)
         {
             assetPath = PathUtility.ConvertPathSeparator(assetPath);
 
@@ -194,7 +203,15 @@ namespace Modules.Devkit.AssetTuning
             {
                 var path = PathUtility.ConvertPathSeparator(targetPath);
 
-                if (assetPath.StartsWith(path + PathUtility.PathSeparator)) { return true; }
+                if (assetPath.StartsWith(path + PathUtility.PathSeparator))
+                {
+                    var parts = assetPath.Substring(path.Length).Split(PathUtility.PathSeparator);
+
+                    if (parts.All(x => !ignoreFolderNames.Contains(x)))
+                    {
+                        return true;
+                    }
+                }
             }
 
             return false;

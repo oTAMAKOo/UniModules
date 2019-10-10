@@ -12,12 +12,19 @@ namespace Modules.Devkit.AssetTuning
 
         //----- field -----
 
+        // compress
+
         [SerializeField]
         private Object[] compressFolders = null;
         [SerializeField]
         private string[] ignoreCompressFolderNames = null;
+
+        // sprite
+
         [SerializeField]
         private Object[] spriteFolders = null;
+        [SerializeField]
+        private string[] spriteFolderNames = null;
         [SerializeField]
         private string[] ignoreSpriteFolderNames = null;
 
@@ -41,6 +48,11 @@ namespace Modules.Devkit.AssetTuning
         public string[] IgnoreSpriteFolderNames
         {
             get { return ignoreSpriteFolderNames ?? (ignoreSpriteFolderNames = new string[0]); }
+        }
+
+        public string[] SpriteFolderNames
+        {
+            get { return spriteFolderNames ?? (spriteFolderNames = new string[0]); }
         }
 
         //----- method -----

@@ -57,7 +57,7 @@ namespace Modules.Devkit.AssetTuning
         private TextureAssetInfo[] textureAssetInfos = null;
         private GUIContent tabprevIcon = null;
         private GUIContent viewToolZoomIcon = null;
-        private bool failedOnly = false;
+        private bool failedOnly = true;
 
         [NonSerialized]
         private bool initialized = false;
@@ -218,6 +218,8 @@ namespace Modules.Devkit.AssetTuning
         
         private CompressFolderInfo[] GetCompressFolderInfo(Object[] folders, bool requireAsset)
         {
+            var config = TextureAssetTunerConfig.Instance;
+
             if (folders == null || folders.IsEmpty()) { return null; }
 
             var compressFolderInfos = new List<CompressFolderInfo>();
@@ -244,6 +246,8 @@ namespace Modules.Devkit.AssetTuning
                 compressFolderInfos.Add(compressFolderInfo);
             }
 
+            var ignoreCompressFolderNames = config.IgnoreCompressFolderNames;
+
             var count = 0;
             var totalCount = guidsByFolderPath.SelectMany(x => x.Value).Count();
 
@@ -256,6 +260,10 @@ namespace Modules.Devkit.AssetTuning
                 for (var i = 0; i < item.Value.Length; i++)
                 {
                     var texturePath = AssetDatabase.GUIDToAssetPath(item.Value[i]);
+
+                    var parts = texturePath.Substring(item.Key.Length).Split(PathUtility.PathSeparator);
+
+                    if (parts.Any(x => ignoreCompressFolderNames.Contains(x))) { continue; }
 
                     EditorUtility.DisplayProgressBar(title, texturePath, (float)count++ / totalCount);
 
