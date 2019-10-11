@@ -27,7 +27,7 @@ namespace Modules.Animation
         {
             instance = target as AnimationPlayer;
 
-            animator = UnityUtility.GetOrAddComponent<Animator>(instance.gameObject);
+            animator = UnityUtility.GetComponent<Animator>(instance.gameObject);
 
             if (!instance.IsInitialized)
             {
@@ -39,69 +39,37 @@ namespace Modules.Animation
         {
             instance = target as AnimationPlayer;
 
-            var animatorController = Reflection.GetPrivateField<AnimationPlayer, RuntimeAnimatorController>(instance, "animatorController") as AnimatorController;
+            if (animator == null) { return; }
+
+            var animatorController = animator.runtimeAnimatorController;
             var endActionType = Reflection.GetPrivateField<AnimationPlayer, EndActionType>(instance, "endActionType");
             var ignoreTimeScale = Reflection.GetPrivateField<AnimationPlayer, bool>(instance, "ignoreTimeScale");
-
-            if (animator != null)
-            {
-                animator.runtimeAnimatorController = animatorController;
-            }
-
-            EditorGUILayout.Separator();
-
-            EditorGUI.BeginChangeCheck();
-
-            animatorController = EditorGUILayout.ObjectField("Controller", animatorController, typeof(AnimatorController), false) as AnimatorController;
-
-            if (EditorGUI.EndChangeCheck())
-            {
-                UnityEditorUtility.RegisterUndo("AnimationPlayerInspector Undo", instance);
-
-                Reflection.SetPrivateField(instance, "animatorController", animatorController);
-            }
             
-            if (animator != null && animatorController != null)
+            if (animatorController != null)
             {
-                EditorGUILayout.Separator();
+                GUILayout.Space(8f);
 
-                if (EditorLayoutTools.DrawHeader("Option", "AnimationPlayerInspector-Option"))
+                EditorGUI.BeginChangeCheck();
+
+                var originLabelWidth = EditorLayoutTools.SetLabelWidth(150f);
+
+                endActionType = (EndActionType)EditorGUILayout.EnumPopup("End Action", endActionType);
+                ignoreTimeScale = EditorGUILayout.Toggle("Ignore TimeScale", ignoreTimeScale);
+
+                if (EditorGUI.EndChangeCheck())
                 {
-                    using (new ContentsScope())
-                    {
-                        EditorGUI.BeginChangeCheck();
-
-                        var originLabelWidth = EditorLayoutTools.SetLabelWidth(150f);
-
-                        endActionType = (EndActionType)EditorGUILayout.EnumPopup("End Action", endActionType);
-                        ignoreTimeScale = EditorGUILayout.Toggle("Ignore TimeScale", ignoreTimeScale);
-
-                        if (EditorGUI.EndChangeCheck())
-                        {
-                            UnityEditorUtility.RegisterUndo("AnimationPlayerInspector Undo", instance);
-                            
-                            Reflection.SetPrivateField(instance, "endActionType", endActionType);
-                            Reflection.SetPrivateField(instance, "ignoreTimeScale", ignoreTimeScale);
-                        }
-
-                        EditorLayoutTools.SetLabelWidth(originLabelWidth);
-                    }
+                    UnityEditorUtility.RegisterUndo("AnimationPlayerInspector Undo", instance);
+                    
+                    Reflection.SetPrivateField(instance, "endActionType", endActionType);
+                    Reflection.SetPrivateField(instance, "ignoreTimeScale", ignoreTimeScale);
                 }
 
-                EditorGUILayout.Separator();
+                EditorLayoutTools.SetLabelWidth(originLabelWidth);
             }
-        }
-
-        /// <summary>
-        /// レイヤー名からレイヤーインデックスに変換.
-        /// </summary>
-        public int ConvertLayerNameToIndex(AnimatorController animatorController, string layerName)
-        {
-            if (string.IsNullOrEmpty(layerName)) { return -1; }
-
-            var layers = animatorController.layers;
-
-            return layers.IndexOf(x => x.name == layerName);
+            else
+            {
+                EditorGUILayout.HelpBox("Please assign AnimationController asset.", MessageType.Info);
+            }
         }
     }
 }
