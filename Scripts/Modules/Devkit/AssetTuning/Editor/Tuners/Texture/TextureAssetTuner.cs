@@ -29,9 +29,6 @@ namespace Modules.Devkit.AssetTuning
             get { return DefaultTargetPlatforms; }
         }
 
-        // 圧縮設定を適用しないフォルダ名.
-        protected virtual string[] IgnoreCompressionFolders { get { return new string[0]; } }
-
         //----- method -----
        
         public override bool Validate(string assetPath)
@@ -98,17 +95,12 @@ namespace Modules.Devkit.AssetTuning
 
             if (config == null) { return; }
 
-            if (!IsFolderItem(textureImporter.assetPath, config.CompressFolders, config.IgnoreCompressFolderNames)) { return; }
-
-            var pathSplit = textureImporter.assetPath.Split(PathUtility.PathSeparator);
-
-            var size = textureImporter.GetPreImportTextureSize();
-
-            if (IgnoreCompressionFolders.Any(x => pathSplit.Contains(x)))
+            if (!IsFolderItem(textureImporter.assetPath, config.CompressFolders, config.IgnoreCompressFolderNames))
             {
-                SetDefaultSettings(textureImporter);
                 return;
             }
+
+            var size = textureImporter.GetPreImportTextureSize();
 
             // ブロックが使えるか(4の倍数なら圧縮設定).
             var isMultipleOf4 = IsMultipleOf4(size.x) && IsMultipleOf4(size.y);
@@ -136,11 +128,11 @@ namespace Modules.Devkit.AssetTuning
             }
         }
 
-        protected virtual void SetTextureTypeSettings(TextureImporter textureImporter)
+        protected virtual bool SetTextureTypeSettings(TextureImporter textureImporter)
         {
             var config = TextureAssetTunerConfig.Instance;
 
-            if (config == null) { return; }
+            if (config == null) { return false; }
 
             var isTarget = false;
 
@@ -154,6 +146,8 @@ namespace Modules.Devkit.AssetTuning
             {
                 textureImporter.textureType = TextureImporterType.Sprite;
             }
+
+            return isTarget;
         }
 
         protected virtual TextureImporterFormat GetPlatformCompressionType(TextureImporter textureImporter, BuildTargetGroup platform)
