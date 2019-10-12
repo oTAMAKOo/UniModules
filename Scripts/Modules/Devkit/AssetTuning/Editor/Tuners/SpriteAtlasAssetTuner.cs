@@ -50,6 +50,8 @@ namespace Modules.Devkit.AssetTuning
             var packingSettings = spriteAtlas.GetPackingSettings();
 
             packingSettings.padding = 2;
+            packingSettings.enableTightPacking = false;
+            packingSettings.enableRotation = false;
 
             spriteAtlas.SetPackingSettings(packingSettings);
 
