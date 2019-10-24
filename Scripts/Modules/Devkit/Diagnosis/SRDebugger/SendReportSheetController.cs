@@ -103,13 +103,11 @@ namespace Modules.Devkit.Diagnosis.SRDebugger
                 .AddTo(this);
 
             titleInputField.ObserveEveryValueChanged(x => x.text)
-                .Subscribe(x => sendReportButton.interactable = !string.IsNullOrEmpty(x))
+                .Subscribe(x => UnityUtility.SetActive(sendReportButton, !string.IsNullOrEmpty(x)))
                 .AddTo(this);
 
             titleInputField.text = string.Empty;
             commentInputField.text = string.Empty;
-
-            sendReportButton.interactable = false;
 
             initialized = true;
         }
