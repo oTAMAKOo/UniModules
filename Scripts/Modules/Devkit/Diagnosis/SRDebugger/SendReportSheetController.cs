@@ -159,6 +159,8 @@ namespace Modules.Devkit.Diagnosis.SRDebugger
 
             // 終了.
             OnReportComplete(webRequest.error);
+
+            reportForm.Clear();
         }
 
         private void UpdatePostProgress(float progress)
@@ -200,7 +202,6 @@ namespace Modules.Devkit.Diagnosis.SRDebugger
 
             titleInputField.text = string.Empty;
             commentInputField.text = string.Empty;
-            reportForm = null;
 
             UpdateView();
         }
@@ -288,8 +289,6 @@ namespace Modules.Devkit.Diagnosis.SRDebugger
 
             AddReportContent("logType", (lastLog != null ? lastLog.LogType : LogType.Log).ToString());
             AddReportContent("log", GetReportTextPostData());
-            AddReportContent("title", titleInputField.text);
-            AddReportContent("comment", commentInputField.text);
             AddReportContent("time", DateTime.Now.ToString(CultureInfo.InvariantCulture));
             AddReportContent("operatingSystem", SystemInfo.operatingSystem);
             AddReportContent("deviceModel", SystemInfo.deviceModel);
@@ -297,7 +296,20 @@ namespace Modules.Devkit.Diagnosis.SRDebugger
             AddReportContent("useMemorySize", GC.GetTotalMemory(false).ToString());
             AddReportContent("screenShotBase64", screenshotBase64);
 
+            // ユーザー入力情報.
+
+            if (!string.IsNullOrEmpty(titleInputField.text))
+            {
+                AddReportContent("title", titleInputField.text);
+            }
+
+            if (!string.IsNullOrEmpty(commentInputField.text))
+            {
+                AddReportContent("comment", commentInputField.text);
+            }
+
             // 拡張情報を追加.
+
             SetExtendContents();
         }
 
