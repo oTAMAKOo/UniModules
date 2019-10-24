@@ -14,6 +14,7 @@ using Extensions;
 
 #if ENABLE_SRDEBUGGER
 
+using SRDebugger;
 using SRDebugger.Internal;
 
 #endif
@@ -34,6 +35,8 @@ namespace Modules.Devkit.Diagnosis.SRDebugger
         private Button sendReportButton = null;
         [SerializeField]
         private Text sendReportButtonText = null;
+        [SerializeField]
+        private InputField titleInputField = null;
         [SerializeField]
         private InputField commentInputField = null;
         [SerializeField]
@@ -65,6 +68,18 @@ namespace Modules.Devkit.Diagnosis.SRDebugger
             aesManaged = CreateAesManaged();
             reportForm = new List<IMultipartFormSection>();
 
+            var srDebug = SRDebug.Instance;
+
+            VisibilityChangedDelegate onPanelVisibilityChanged = visible =>
+            {
+                if (visible && gameObject.activeInHierarchy)
+                {
+                    UpdateContents();
+                }
+            };
+
+            srDebug.PanelVisibilityChanged += onPanelVisibilityChanged;
+
             UpdateView();
 
             sendReportButton.OnClickAsObservable()
@@ -78,18 +93,33 @@ namespace Modules.Devkit.Diagnosis.SRDebugger
                         {
                             sendReportDisposable = Observable.FromCoroutine(() => PostReport())
                                 .Subscribe(__ =>
-                                {
-                                    sendReportDisposable = null;
-                                })
+                                    {
+                                        sendReportDisposable = null;
+                                    })
                                 .AddTo(this);
+
                         }
                     })
                 .AddTo(this);
+
+            titleInputField.ObserveEveryValueChanged(x => x.text)
+                .Subscribe(x => sendReportButton.interactable = !string.IsNullOrEmpty(x))
+                .AddTo(this);
+
+            titleInputField.text = string.Empty;
+            commentInputField.text = string.Empty;
+
+            sendReportButton.interactable = false;
 
             initialized = true;
         }
 
         void OnEnable()
+        {
+            UpdateContents();
+        }
+
+        private void UpdateContents()
         {
             reportContents = SRTrackLogService.Logs;
 
@@ -131,8 +161,6 @@ namespace Modules.Devkit.Diagnosis.SRDebugger
 
             // 終了.
             OnReportComplete(webRequest.error);
-
-            reportForm = null;
         }
 
         private void UpdatePostProgress(float progress)
@@ -171,6 +199,10 @@ namespace Modules.Devkit.Diagnosis.SRDebugger
             }
 
             sendReportDisposable = null;
+
+            titleInputField.text = string.Empty;
+            commentInputField.text = string.Empty;
+            reportForm = null;
 
             UpdateView();
         }
@@ -258,6 +290,7 @@ namespace Modules.Devkit.Diagnosis.SRDebugger
 
             AddReportContent("logType", (lastLog != null ? lastLog.LogType : LogType.Log).ToString());
             AddReportContent("log", GetReportTextPostData());
+            AddReportContent("title", titleInputField.text);
             AddReportContent("comment", commentInputField.text);
             AddReportContent("time", DateTime.Now.ToString(CultureInfo.InvariantCulture));
             AddReportContent("operatingSystem", SystemInfo.operatingSystem);
