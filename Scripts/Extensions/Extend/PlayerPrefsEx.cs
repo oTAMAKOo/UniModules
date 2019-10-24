@@ -10,7 +10,12 @@ namespace Extensions
     {
         private const string PrefsKey = "Sa0HbfDqeF6hw4s1";
 
-        private static readonly AesManaged aesManaged = AESExtension.CreateAesManaged(PrefsKey);
+        private static AesManaged aesManaged = AESExtension.CreateAesManaged(PrefsKey);
+
+        public static void SetAesManaged(AesManaged aesManaged)
+        {
+            PlayerPrefsEx.aesManaged = aesManaged;
+        }
 
         //====== Utility ======
 

@@ -49,7 +49,7 @@ namespace Modules.Devkit.Diagnosis.SRDebugger
 
         private AesManaged aesManaged = null;
 
-        private bool initialized = false;
+        protected bool initialized = false;
 
         //----- property -----
 
@@ -58,7 +58,7 @@ namespace Modules.Devkit.Diagnosis.SRDebugger
         //----- method -----
 
         /// <summary> 初期化. </summary>
-        public void Initialize()
+        public virtual void Initialize()
         {
             if (initialized) { return; }
 
