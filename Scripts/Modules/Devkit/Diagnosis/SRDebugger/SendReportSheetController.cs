@@ -268,7 +268,12 @@ namespace Modules.Devkit.Diagnosis.SRDebugger
             {
                 builder.AppendFormat("Type: {0}", Enum.GetName(typeof(LogType), content.LogType)).AppendLine();
                 builder.AppendFormat("Message: {0}", content.Message).AppendLine();
-                builder.AppendFormat("StackTrace:\n{0}", content.StackTrace).AppendLine();
+
+                if (!string.IsNullOrEmpty(content.StackTrace))
+                {
+                    builder.AppendFormat("StackTrace:\n{0}", content.StackTrace).AppendLine();
+                }
+
                 builder.AppendLine();
             }
 
