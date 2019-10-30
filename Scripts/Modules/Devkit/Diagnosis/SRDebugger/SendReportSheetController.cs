@@ -286,9 +286,7 @@ namespace Modules.Devkit.Diagnosis.SRDebugger
 
             const uint mega = 1024 * 1024;
 
-            var lastLog = reportContents.LastOrDefault();
-
-            //------ Screenshot ------
+            //------ ScreenShot ------
 
             var bytes = BugReportScreenshotUtil.ScreenshotData;
 
@@ -299,13 +297,12 @@ namespace Modules.Devkit.Diagnosis.SRDebugger
 
             //------ ReportContent ------
 
-            AddReportContent("logType", (lastLog != null ? lastLog.LogType : LogType.Log).ToString());
-            AddReportContent("log", GetReportTextPostData());
             AddReportContent("time", DateTime.Now.ToString(CultureInfo.InvariantCulture));
             AddReportContent("operatingSystem", SystemInfo.operatingSystem);
             AddReportContent("deviceModel", SystemInfo.deviceModel);
             AddReportContent("systemMemorySize", (SystemInfo.systemMemorySize * mega).ToString());
             AddReportContent("useMemorySize", GC.GetTotalMemory(false).ToString());
+            AddReportContent("log", GetReportTextPostData());
             AddReportContent("screenShotBase64", screenshotBase64);
 
             // ユーザー入力情報.
