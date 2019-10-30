@@ -157,8 +157,15 @@ namespace Modules.Devkit.Diagnosis.SRDebugger
                 yield return null;
             }
 
+            var errorMessage = string.Empty;
+
+            if (webRequest.isNetworkError || webRequest.isHttpError)
+            {
+                errorMessage = string.Format("[{0}]{1}", webRequest.responseCode, webRequest.error);
+            }
+
             // 終了.
-            OnReportComplete(webRequest.error);
+            OnReportComplete(errorMessage);
 
             reportForm.Clear();
         }
