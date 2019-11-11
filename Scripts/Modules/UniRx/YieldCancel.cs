@@ -79,7 +79,6 @@ namespace Modules.UniRxExtension
             if (cancellationToken != null)
             {
                 cancellationToken.Cancel();
-                cancellationToken = null;
             }
 
             GC.SuppressFinalize(this);
