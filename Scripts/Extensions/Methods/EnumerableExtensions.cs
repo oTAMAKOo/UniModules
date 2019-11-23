@@ -302,5 +302,28 @@ namespace Extensions
 
             return array.FirstOrDefault(c => selector(c).Equals(array.Max(selector)));
         }
+
+        /// <summary>
+        /// 複数のインデックスを削除.
+        /// </summary>
+        public static IEnumerable<T> RemoveAt<T>(this IEnumerable<T> source, IEnumerable<int> removeTargets)
+        {
+            var index = 0;
+            var removeIndex = removeTargets.ToArray();
+
+            var list = new List<T>();
+
+            foreach (var item in source)
+            {
+                if (!removeIndex.Contains(index))
+                {
+                    list.Add(item);
+                }
+
+                index++;
+            }
+
+            return list;
+        }
     }
 }
