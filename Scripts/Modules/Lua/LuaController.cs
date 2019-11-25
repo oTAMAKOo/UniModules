@@ -28,7 +28,7 @@ namespace Modules.Lua
 
         public Script LuaScript { get; private set; }
 
-        public IScriptLoader ScriptLoader { get; private set; }
+        public LuaScriptLoader ScriptLoader { get; private set; }
 
         //----- method -----
 
@@ -76,7 +76,7 @@ namespace Modules.Lua
             }
         }
 
-        public void SetScriptLoader(IScriptLoader scriptLoader)
+        public void SetScriptLoader(LuaScriptLoader scriptLoader)
         {
             ScriptLoader = scriptLoader;
 
@@ -148,25 +148,30 @@ namespace Modules.Lua
         /// <summary>
         /// Luaスクリプト読み込み.
         /// </summary>
-        public void LoadScript(string script)
+        public IObservable<Unit> LoadScript(string script)
         {
-            try
-            {
-                var luaFunc = LuaScript.LoadString(script);
+            return ScriptLoader.LoadSubScripts(script)
+                .Do(_ =>
+                    {
+                        try
+                        {
+                            var luaFunc = LuaScript.LoadString(script);
 
-                if (luaFunc.IsNotNil() && luaFunc.Type == DataType.Function)
-                {
-                    luaFunc.Function.Call();
-                }
-            }
-            catch (InterpreterException ex)
-            {
-                Debug.LogErrorFormat("Lua ExecuteString error: {0}", ex.DecoratedMessage);
-            }
-            catch (Exception ex)
-            {
-                Debug.LogErrorFormat("System ExecuteString error: {0}", ex.Message);
-            }
+                            if (luaFunc.IsNotNil() && luaFunc.Type == DataType.Function)
+                            {
+                                luaFunc.Function.Call();
+                            }
+                        }
+                        catch (InterpreterException ex)
+                        {
+                            Debug.LogErrorFormat("Lua ExecuteString error: {0}", ex.DecoratedMessage);
+                        }
+                        catch (Exception ex)
+                        {
+                            Debug.LogErrorFormat("System ExecuteString error: {0}", ex.Message);
+                        }
+                    })
+                .AsUnitObservable();
         }
 
         /// <summary>
