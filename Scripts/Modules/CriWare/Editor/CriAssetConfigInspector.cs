@@ -57,8 +57,13 @@ namespace Modules.CriWare.Editor
             {
                 using (new ContentsScope())
                 {
-                    DrawAssetImportInfoGUI(instance.SoundImportInfo);
-            
+                    var change = DrawAssetImportInfoGUI(instance.SoundImportInfo);
+
+                    if (change)
+                    {
+                        UnityEditorUtility.RegisterUndo("CriAssetConfigInspector Undo", instance);
+                    }
+
                     // Style.
                     var pathTextStyle = GUI.skin.GetStyle("TextArea");
                     pathTextStyle.alignment = TextAnchor.MiddleLeft;
@@ -71,7 +76,7 @@ namespace Modules.CriWare.Editor
 
                         if (GUILayout.Button("Edit", EditorStyles.miniButton, GUILayout.Width(50f)))
                         {
-                            UnityEditorUtility.RegisterUndo("SoundConfigInspector Undo", instance);
+                            UnityEditorUtility.RegisterUndo("CriAssetConfigInspector Undo", instance);
 
                             var acfAssetSource = EditorUtility.OpenFilePanel("Select ACF", "", "");
 
@@ -91,7 +96,7 @@ namespace Modules.CriWare.Editor
 
                         if (GUILayout.Button("Edit", EditorStyles.miniButton, GUILayout.Width(50f)))
                         {
-                            UnityEditorUtility.RegisterUndo("SoundConfigInspector Undo", instance);
+                            UnityEditorUtility.RegisterUndo("CriAssetConfigInspector Undo", instance);
 
                             var acfAssetDirectory = EditorUtility.OpenFolderPanel("Select CriSetting Folder", "", "");
 
@@ -123,7 +128,12 @@ namespace Modules.CriWare.Editor
             {
                 using (new ContentsScope())
                 {
-                    DrawAssetImportInfoGUI(instance.MovieImportInfo);
+                    var change = DrawAssetImportInfoGUI(instance.MovieImportInfo);
+
+                    if (change)
+                    {
+                        UnityEditorUtility.RegisterUndo("CriAssetConfigInspector Undo", instance);
+                    }
                 }
             }
 
