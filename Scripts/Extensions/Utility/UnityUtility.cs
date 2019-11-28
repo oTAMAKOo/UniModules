@@ -14,7 +14,7 @@ namespace Extensions
     {
         #region Object Instantiate
 
-        private const string PrefabTag = " (Prefab)";
+        private const string PrefabTag = " (Clone)";
 
         /// <summary> 空のGameObjectを生成 </summary>
         public static GameObject CreateEmptyGameObject(GameObject parent, string name, bool worldPositionStays = false)
