@@ -12,7 +12,8 @@ using Extensions.Devkit;
 
 namespace Modules.CriWare.Editor
 {
-    public class CriAssetConfigInspectorBase : UnityEditor.Editor
+    [CustomEditor(typeof(CriAssetConfig))]
+    public sealed class CriAssetConfigInspector : UnityEditor.Editor
     {
         //----- params -----
 
@@ -22,50 +23,160 @@ namespace Modules.CriWare.Editor
 
         //----- method -----
 
-        public static void DrawDirectoryInspector(SerializedObject serializedObject)
+        public override void OnInspectorGUI()
         {
+            var instance = target as CriAssetConfig;
+
             serializedObject.Update();
 
-            var rootFolderNameProperty = serializedObject.FindProperty("rootFolderName");
-            var criExportDirProperty = serializedObject.FindProperty("criExportDir");
+            #if ENABLE_CRIWARE_ADX
+
+            DrawSoundAssetConfigGUI(instance);
+            
+            #endif
+
+            #if ENABLE_CRIWARE_SOFDEC
+
+            DrawMovieAssetConfigGUI(instance);
+
+            #endif
+        }
+
+        //---------------------------------------
+        // Sound.
+        //---------------------------------------
+
+        #if ENABLE_CRIWARE_ADX
+
+        private void DrawSoundAssetConfigGUI(CriAssetConfig instance)
+        {
+            var acfAssetSourcePathProperty = serializedObject.FindProperty("acfAssetSourceFullPath");
+            var acfAssetExportPathProperty = serializedObject.FindProperty("acfAssetExportPath");
+
+            if (EditorLayoutTools.DrawHeader("Sound", "CriAssetConfigInspector-Sound"))
+            {
+                using (new ContentsScope())
+                {
+                    DrawAssetImportInfoGUI(instance.SoundImportInfo);
+            
+                    // Style.
+                    var pathTextStyle = GUI.skin.GetStyle("TextArea");
+                    pathTextStyle.alignment = TextAnchor.MiddleLeft;
+
+                    GUILayout.Label("AcfAssetSourcePath");
+
+                    using (new EditorGUILayout.HorizontalScope())
+                    {
+                        GUILayout.Label(acfAssetSourcePathProperty.stringValue, pathTextStyle);
+
+                        if (GUILayout.Button("Edit", EditorStyles.miniButton, GUILayout.Width(50f)))
+                        {
+                            UnityEditorUtility.RegisterUndo("SoundConfigInspector Undo", instance);
+
+                            var acfAssetSource = EditorUtility.OpenFilePanel("Select ACF", "", "");
+
+                            var assetFolderUri = new Uri(Application.dataPath);
+                            var targetUri = new Uri(acfAssetSource);
+                            acfAssetSourcePathProperty.stringValue = assetFolderUri.MakeRelativeUri(targetUri).ToString();
+
+                            serializedObject.ApplyModifiedProperties();
+                        }
+                    }
+
+                    GUILayout.Label("AcfAssetExportPath");
+
+                    using (new EditorGUILayout.HorizontalScope())
+                    {
+                        GUILayout.Label(acfAssetExportPathProperty.stringValue, pathTextStyle);
+
+                        if (GUILayout.Button("Edit", EditorStyles.miniButton, GUILayout.Width(50f)))
+                        {
+                            UnityEditorUtility.RegisterUndo("SoundConfigInspector Undo", instance);
+
+                            var acfAssetDirectory = EditorUtility.OpenFolderPanel("Select CriSetting Folder", "", "");
+
+                            var assetFolderUri = new Uri(Application.dataPath);
+                            var targetUri = new Uri(acfAssetDirectory);
+                            acfAssetExportPathProperty.stringValue = assetFolderUri.MakeRelativeUri(targetUri).ToString();
+
+                            serializedObject.ApplyModifiedProperties();
+                        }
+                    }
+                }
+            }
+
+            GUILayout.Space(4f);
+        }
+
+        #endif
+
+        //---------------------------------------
+        // Movie.
+        //---------------------------------------
+
+        #if ENABLE_CRIWARE_SOFDEC
+
+
+        private void DrawMovieAssetConfigGUI(CriAssetConfig instance)
+        {
+            if (EditorLayoutTools.DrawHeader("Movie", "CriAssetConfigInspector-Movie"))
+            {
+                using (new ContentsScope())
+                {
+                    DrawAssetImportInfoGUI(instance.MovieImportInfo);
+                }
+            }
+
+            GUILayout.Space(4f);
+        }
+
+        #endif
+
+
+        public static bool DrawAssetImportInfoGUI(CriAssetConfig.AssetImportInfo assetImportInfo)
+        {
+            var change = false;
 
             // Style.
             var pathTextStyle = GUI.skin.GetStyle("TextArea");
             pathTextStyle.alignment = TextAnchor.MiddleLeft;
 
+            GUILayout.Label("AssetFolderName");
+
             EditorGUI.BeginChangeCheck();
 
-            EditorGUILayout.PropertyField(rootFolderNameProperty);
+            var folderName = EditorGUILayout.DelayedTextField(assetImportInfo.FolderName);
 
             if (EditorGUI.EndChangeCheck())
             {
-                UnityEditorUtility.RegisterUndo("CriAssetConfigInspector Undo", serializedObject.targetObject);
-                serializedObject.ApplyModifiedProperties();
+                Reflection.SetPrivateField(assetImportInfo, "folderName", folderName);
+                change = true;
             }
 
-            EditorGUILayout.Separator();
-
-            GUILayout.Label("CRI Export Directory");
+            GUILayout.Label("ImportFrom");
 
             using (new EditorGUILayout.HorizontalScope())
             {
-                GUILayout.Label(criExportDirProperty.stringValue, pathTextStyle);
+                EditorGUILayout.SelectableLabel(assetImportInfo.ImportPath, pathTextStyle, GUILayout.Height(16f));
 
-                if (GUILayout.Button("Edit", GUILayout.Width(30f)))
+                if (GUILayout.Button("Edit", EditorStyles.miniButton, GUILayout.Width(50f)))
                 {
-                    UnityEditorUtility.RegisterUndo("CriAssetConfigInspector Undo", serializedObject.targetObject);
+                    var sourceFolder = EditorUtility.OpenFolderPanel("Select import folder", "", "");
 
-                    var sourceFolder = EditorUtility.OpenFolderPanel("Select CRI export folder", "", "");
+                    if (!string.IsNullOrEmpty(sourceFolder))
+                    {
+                        var assetFolderUri = new Uri(Application.dataPath);
+                        var targetUri = new Uri(sourceFolder);
+                        var importPath = assetFolderUri.MakeRelativeUri(targetUri).ToString();
 
-                    var assetFolderUri = new Uri(Application.dataPath);
-                    var targetUri = new Uri(sourceFolder);
-                    criExportDirProperty.stringValue = assetFolderUri.MakeRelativeUri(targetUri).ToString();
+                        Reflection.SetPrivateField(assetImportInfo, "importPath", importPath);
 
-                    serializedObject.ApplyModifiedProperties();
+                        change = true;
+                    }
                 }
             }
 
-            EditorGUILayout.Separator();
+            return change;
         }
     }
 }

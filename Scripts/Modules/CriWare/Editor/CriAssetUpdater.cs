@@ -43,19 +43,17 @@ namespace Modules.CriWare.Editor
             var streamingAssetFolderName = Path.GetFileName(streamingAssetPath);
             var externalResourcesFolderName = Path.GetFileName(externalResourcesPath);
 
+            var criAssetConfig = CriAssetConfig.Instance;
+
             #if ENABLE_CRIWARE_ADX
 
-            var soundConfig = SoundConfig.Instance;
-            
-            UpdateSoundAssets(soundConfig, scriptPath, streamingAssetFolderName, externalResourcesFolderName);
+            UpdateSoundAssets(criAssetConfig, scriptPath, streamingAssetFolderName, externalResourcesFolderName);
 
             #endif
 
             #if ENABLE_CRIWARE_SOFDEC
-
-            var movieConfig = MovieConfig.Instance;
             
-            UpdateMovieAssets(movieConfig, scriptPath, streamingAssetFolderName, externalResourcesFolderName);
+            UpdateMovieAssets(criAssetConfig, scriptPath, streamingAssetFolderName, externalResourcesFolderName);
 
             #endif
 
@@ -67,26 +65,26 @@ namespace Modules.CriWare.Editor
         /// <summary>
         /// サウンドアセットをCriの成果物置き場からUnityの管理下にインポート.
         /// </summary>
-        private static void UpdateSoundAssets(SoundConfig config, string scriptPath, string streamingAssetFolderName, string externalResourcesFolderName)
+        private static void UpdateSoundAssets(CriAssetConfig config, string scriptPath, string streamingAssetFolderName, string externalResourcesFolderName)
         {
-            var criExportDir = config.CriExportDir;
-            var rootFolderName = config.RootFolderName;
+            var importPath = config.SoundImportInfo.ImportPath;
+            var folderName = config.SoundImportInfo.FolderName;
 
             var assetExtensions = new string[] { CriAssetDefinition.AcbExtension, CriAssetDefinition.AwbExtension };
 
-            var assetDirInternal = PathUtility.Combine(new string[] { UnityPathUtility.AssetsFolder, streamingAssetFolderName, rootFolderName });
+            var assetDirInternal = PathUtility.Combine(new string[] { UnityPathUtility.AssetsFolder, streamingAssetFolderName, folderName });
 
             UpdateAcfAsset(config.AcfAssetSourceFullPath, config.AcfAssetExportPath);
 
             var updateScript = UpdateCriAssets(
-                    criExportDir, rootFolderName,
+                    importPath, folderName,
                     streamingAssetFolderName, externalResourcesFolderName,
                     assetExtensions
                     );
 
             if (updateScript)
             {
-                SoundScriptGenerator.Generate(scriptPath, assetDirInternal, rootFolderName);
+                SoundScriptGenerator.Generate(scriptPath, assetDirInternal, folderName);
             }
         }
 
@@ -97,17 +95,17 @@ namespace Modules.CriWare.Editor
         /// <summary>
         /// ムービーアセットをCriの成果物置き場からUnityの管理下にインポート.
         /// </summary>
-        private static void UpdateMovieAssets(MovieConfig config, string scriptPath, string internalResourcesFolderName, string externalResourcesFolderName)
+        private static void UpdateMovieAssets(CriAssetConfig config, string scriptPath, string internalResourcesFolderName, string externalResourcesFolderName)
         {
-            var criExportDir = config.CriExportDir;
-            var rootFolderName = config.RootFolderName;
+            var importPath = config.MovieImportInfo.ImportPath;
+            var folderName = config.MovieImportInfo.FolderName;
 
             var assetExtensions = new string[] { CriAssetDefinition.UsmExtension };
 
-            var assetDirInternal = PathUtility.Combine(new string[] { UnityPathUtility.AssetsFolder, internalResourcesFolderName, rootFolderName });
+            var assetDirInternal = PathUtility.Combine(new string[] { UnityPathUtility.AssetsFolder, internalResourcesFolderName, folderName });
 
             var updateScript = UpdateCriAssets(
-                    criExportDir, rootFolderName,
+                    importPath, folderName,
                     internalResourcesFolderName, externalResourcesFolderName,
                     assetExtensions
                     );
