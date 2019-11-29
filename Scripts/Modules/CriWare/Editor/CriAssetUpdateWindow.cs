@@ -10,8 +10,18 @@ using UniRx;
 using Extensions;
 using Extensions.Devkit;
 using Modules.Devkit.Project;
-using Modules.MovieManagement.Editor;
+
+#if ENABLE_CRIWARE_ADX
+
 using Modules.SoundManagement.Editor;
+
+#endif
+
+#if ENABLE_CRIWARE_SOFDEC
+
+using Modules.MovieManagement.Editor;
+
+#endif
 
 namespace Modules.CriWare.Editor
 {
