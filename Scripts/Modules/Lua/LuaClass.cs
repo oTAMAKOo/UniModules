@@ -14,7 +14,7 @@ namespace Modules.Lua
         //----- field -----
 
         protected LuaController luaController = null;
-        protected Table apiTable = null;
+        protected Table command = null;
 
         //----- property -----
 
@@ -36,7 +36,7 @@ namespace Modules.Lua
 
             if (!string.IsNullOrEmpty(LuaName))
             {
-                apiTable = luaController.AddGlobalTable(LuaName);
+                command = luaController.AddGlobalTable(LuaName);
             }
             else
             {
@@ -48,7 +48,7 @@ namespace Modules.Lua
             return true;
         }
 
-        public abstract void RegisterAPITable();
+        public abstract void RegisterCommand();
     }
 }
 

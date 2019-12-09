@@ -67,7 +67,7 @@ namespace Modules.Lua
 
                         if (setup)
                         {
-                            luaClass.RegisterAPITable();
+                            luaClass.RegisterCommand();
 
                             classTable.Add(luaType, luaClass);
                         }
@@ -86,9 +86,17 @@ namespace Modules.Lua
         /// <summary>
         /// Lua制御クラスインスタンスを取得.
         /// </summary>
+        public LuaClass GetLuaClass(Type type)
+        {
+            return classTable.GetValueOrDefault(type);
+        }
+
+        /// <summary>
+        /// Lua制御クラスインスタンスを取得.
+        /// </summary>
         public T GetLuaClass<T>() where T : LuaClass
         {
-            return classTable.GetValueOrDefault(typeof(T)) as T;
+            return GetLuaClass(typeof(T)) as T;
         }
 
         /// <summary>
