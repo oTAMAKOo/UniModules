@@ -65,6 +65,8 @@ namespace Modules.LocalPushNotify
 
         //----- method -----
 
+        private LocalPushNotify() { }
+
         public void Initialize()
         {
             disposable = new LifetimeDisposable();

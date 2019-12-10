@@ -36,7 +36,7 @@ namespace Modules.Devkit.Log
 
         //----- method -----
 
-        public ApplicationLogHandler()
+        private ApplicationLogHandler()
         {
             Application.logMessageReceived += OnLogReceived;
         }

@@ -94,6 +94,8 @@ namespace Modules.SoundManagement
 
         //----- method -----
 
+        private SoundManagement() { }
+
         public void Initialize(SoundParam defaultSoundParam)
         {
             if (initialized) { return; }

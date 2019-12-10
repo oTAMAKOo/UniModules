@@ -95,6 +95,8 @@ namespace Modules.AssetBundles
 
         //----- method -----
 
+        private AssetBundleManager() { }
+
         /// <summary>
         /// 初期設定をします。
         /// Initializeで設定した値はstatic変数として保存されます。

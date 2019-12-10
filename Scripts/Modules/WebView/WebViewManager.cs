@@ -21,6 +21,8 @@ namespace Modules.WebView
 
         //----- method -----
 
+        private WebViewManager() { }
+
         public void Initialize()
         {
             #if DEBUG && UNITY_ANDROID

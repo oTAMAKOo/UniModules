@@ -85,6 +85,8 @@ namespace Modules.ExternalResource
 
         //----- method -----
 
+        private ExternalResources() { }
+
         public void Initialize(string resourceDir, string installDir, bool localMode = false)
         {
             if (initialized) { return; }

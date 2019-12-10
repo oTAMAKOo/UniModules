@@ -15,7 +15,7 @@ using Modules.SceneManagement.Diagnostics;
 
 namespace Modules.SceneManagement
 {
-    public abstract partial class SceneManagement<T> : Singleton<T> where T : SceneManagement<T>, new()
+    public abstract partial class SceneManagement<T> : Singleton<T> where T : SceneManagement<T>
     {
         //----- params -----
 

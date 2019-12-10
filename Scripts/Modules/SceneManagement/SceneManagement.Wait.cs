@@ -58,7 +58,6 @@ namespace Modules.SceneManagement
 
         //----- method -----
 
-
         /// <summary>
         /// 遷移中に外部処理の待機開始.
         /// </summary>

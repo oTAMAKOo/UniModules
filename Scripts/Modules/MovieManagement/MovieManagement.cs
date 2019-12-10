@@ -34,6 +34,8 @@ namespace Modules.MovieManagement
 
         //----- method -----
 
+        private MovieManagement() { }
+
         public void Initialize()
         {
             if (initialized) { return; }

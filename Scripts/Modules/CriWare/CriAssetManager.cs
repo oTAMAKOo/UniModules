@@ -149,6 +149,8 @@ namespace Modules.CriWare
 
         //----- method -----
 
+        private CriAssetManager() { }
+
         public void Initialize(string installPath, string sourceDir, uint numInstallers, bool localMode = false, bool simulateMode = false)
         {
             if (isInitialized) { return; }

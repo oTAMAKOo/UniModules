@@ -36,6 +36,8 @@ namespace Modules.UI.TextEffect
 
         //----- method -----
 
+        private TextEffectManager() { }
+
         protected override void OnCreate()
         {
             reference = new Dictionary<Material, List<TextEffectBase>>();
