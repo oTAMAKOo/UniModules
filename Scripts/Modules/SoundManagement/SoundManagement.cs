@@ -58,8 +58,8 @@ namespace Modules.SoundManagement
 
         private const char SoundEventSeparator = '\t';
 
-        private static readonly string ConsoleEventName = "Sound";
-        private static readonly Color ConsoleEventColor = new Color(0.85f, 0.45f, 0.85f);
+        public static readonly string ConsoleEventName = "Sound";
+        public static readonly Color ConsoleEventColor = new Color(0.85f, 0.45f, 0.85f);
 
         //----- field -----
 

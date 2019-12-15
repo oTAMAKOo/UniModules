@@ -26,7 +26,7 @@ namespace Extensions
         private static readonly Dictionary<Type, Dictionary<object, Dictionary<int, string>>> labelCache = new Dictionary<Type, Dictionary<object, Dictionary<int, string>>>();
 
         /// <summary>
-        /// EnumにLabelAttributeで指定された名前を取り出します
+        /// EnumにLabelAttributeで指定された名前を取り出します.
         /// </summary>
         public static string ToLabelName(this Enum @enum, int no = 0)
         {
@@ -75,6 +75,20 @@ namespace Extensions
         public static bool HasFlag<T>(this T source, T destination) where T : struct, IComparable, IFormattable, IConvertible
         {
             return (Convert.ToUInt64(source) & Convert.ToUInt64(destination)) != 0;
+        }
+
+        /// <summary>
+        /// Enum名で検索し値を返します.
+        /// </summary>
+        public static T FindByName<T>(string name)
+        {
+            var type = typeof(T);
+
+            var index = Enum.GetNames(type).IndexOf(x => x == name);
+
+            var value = Enum.GetValues(type).Cast<T>().ElementAtOrDefault(index);
+
+            return value;
         }
     }
 }

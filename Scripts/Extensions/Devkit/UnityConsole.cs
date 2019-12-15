@@ -1,5 +1,6 @@
 ﻿
 using UnityEngine;
+using System.Collections.Generic;
 using Extensions;
 
 namespace Modules.Devkit
@@ -9,7 +10,28 @@ namespace Modules.Devkit
 
     public static class UnityConsole
     {
+        //----- params -----
+
+        public static class InfoEvent
+        {
+            public static readonly string ConsoleEventName = "Info";
+            public static readonly Color ConsoleEventColor = new Color(0f, 1f, 1f);
+        }
+
+        //----- field -----
+
         private static bool? isDevlopmentBuild = null;
+
+        //----- property -----
+
+        public static HashSet<string> DisableEventNames { get; private set; }
+
+        //----- method -----
+
+        static UnityConsole()
+        {
+            DisableEventNames = new HashSet<string>();
+        }
 
         private static bool isDebugBuild
         {
@@ -27,10 +49,8 @@ namespace Modules.Devkit
         public static void Info(string message)
         {
             if (!isDebugBuild) { return; }
-
-            var color = new Color(0, 255, 255);
-
-            Event("Info", color, message);
+            
+            Event(InfoEvent.ConsoleEventName, InfoEvent.ConsoleEventColor, message);
         }
 
         public static void Info(string format, params object[] args)
@@ -43,6 +63,8 @@ namespace Modules.Devkit
         public static void Event(string eventName, Color color, string message)
         {
             if (!isDebugBuild) { return; }
+
+            if (DisableEventNames.Contains(eventName)) { return; }
 
             var originStackTraceLogType = Application.GetStackTraceLogType(LogType.Log);
 
@@ -58,6 +80,8 @@ namespace Modules.Devkit
         public static void Event(string eventName, Color color, string format, params object[] args)
         {
             if (!isDebugBuild) { return; }
+
+            if (DisableEventNames.Contains(eventName)) { return; }
 
             Event(eventName, color, string.Format(format, args));
         }
