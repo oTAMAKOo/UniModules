@@ -140,16 +140,33 @@ namespace Modules.Lua
             var dynValue = LuaScript.CreateCoroutine(luaFunc);
 
             if (dynValue.IsNil()) { yield break; }
-
+            
             luaCoroutine = dynValue.Coroutine;
 
             luaCoroutine.AutoYieldCounter = 1000;
 
             luaCoroutine.Resume();
 
-            while (luaCoroutine.State != CoroutineState.Dead)
+            while (true)
             {
+                if (luaCoroutine == null) { break; }
+
+                if (luaCoroutine.State == CoroutineState.Dead) { break; }
+
                 yield return null;
+            }
+        }
+
+        public void QuitScript()
+        {
+            if (luaCoroutine != null)
+            {
+                luaCoroutine = null;
+            }
+
+            if (LuaScript != null)
+            {
+                LuaScript = null;
             }
         }
 
