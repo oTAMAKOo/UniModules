@@ -8,6 +8,7 @@ using System.Security.Cryptography;
 using UniRx;
 using Extensions;
 using MessagePack;
+using MessagePack.Resolvers;
 using Modules.MessagePack;
 
 #if ENABLE_CRIWARE_ADX || ENABLE_CRIWARE_SOFDEC
@@ -195,7 +196,12 @@ namespace Modules.ExternalResource
 
                 version.infos = versions.Select(x => x.Value).ToArray();
 
-                var data = LZ4MessagePackSerializer.Serialize(version, UnityContractResolver.Instance);
+                var options = StandardResolverAllowPrivate.Options
+                    .WithCompression(MessagePackCompression.Lz4BlockArray)
+                    .WithResolver(UnityContractResolver.Instance);
+
+                var data = MessagePackSerializer.Serialize(version, options);
+
                 var encrypt = data.Encrypt(aesManaged);
 
                 File.WriteAllBytes(versionFilePath, encrypt);
@@ -233,7 +239,11 @@ namespace Modules.ExternalResource
 
                 try
                 {
-                    version = LZ4MessagePackSerializer.Deserialize<Version>(decrypt, UnityContractResolver.Instance);
+                    var options = StandardResolverAllowPrivate.Options
+                        .WithCompression(MessagePackCompression.Lz4BlockArray)
+                        .WithResolver(UnityContractResolver.Instance);
+
+                    version = MessagePackSerializer.Deserialize<Version>(decrypt, options);
                 }
                 catch (Exception exception)
                 {

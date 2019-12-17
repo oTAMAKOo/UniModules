@@ -9,6 +9,7 @@ using System.Threading;
 using UniRx;
 using Extensions;
 using MessagePack;
+using MessagePack.Resolvers;
 using Modules.MessagePack;
 
 namespace Modules.Master
@@ -186,7 +187,11 @@ namespace Modules.Master
 
                     try
                     {
-                        var container = LZ4MessagePackSerializer.Deserialize<TMasterContainer>(bytes, UnityContractResolver.Instance);
+                        var options = StandardResolverAllowPrivate.Options
+                                .WithCompression(MessagePackCompression.Lz4BlockArray)
+                                .WithResolver(UnityContractResolver.Instance);
+
+                        var container = MessagePackSerializer.Deserialize<TMasterContainer>(bytes, options);
 
                         SetRecords(container.records);
 

@@ -9,6 +9,7 @@ using UniRx;
 using Newtonsoft.Json;
 using Extensions;
 using MessagePack;
+using MessagePack.Resolvers;
 using Modules.MessagePack;
 
 namespace Modules.Networking
@@ -175,7 +176,10 @@ namespace Modules.Networking
 
                     if (value != null && value.Any())
                     {
-                        result = MessagePackSerializer.Deserialize<TResult>(value, UnityContractResolver.Instance);
+                        var options = StandardResolverAllowPrivate.Options
+                            .WithResolver(UnityContractResolver.Instance);
+
+                        result = MessagePackSerializer.Deserialize<TResult>(value, options);
                     }
 
                     break;
@@ -236,13 +240,21 @@ namespace Modules.Networking
             switch (Format)
             {
                 case DataFormat.Json:
-                    var json = JsonConvert.SerializeObject(content);
-                    bodyData = Encoding.UTF8.GetBytes(json);
+                    {
+                        var json = JsonConvert.SerializeObject(content);
+                        bodyData = Encoding.UTF8.GetBytes(json);
+                    }
                     break;
 
                 case DataFormat.MessagePack:
-                    MessagePackValidater.ValidateAttribute(typeof(TContent));
-                    bodyData = MessagePackSerializer.Serialize(content, UnityContractResolver.Instance);
+                    {
+                        MessagePackValidater.ValidateAttribute(typeof(TContent));
+
+                        var options = StandardResolverAllowPrivate.Options
+                            .WithResolver(UnityContractResolver.Instance);
+
+                        bodyData = MessagePackSerializer.Serialize(content, options);
+                    }
                     break;
             }
 
