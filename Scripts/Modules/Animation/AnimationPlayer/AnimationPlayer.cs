@@ -522,7 +522,7 @@ namespace Modules.Animation
             }
         }
 
-        public IObservable<StateMachineEvent> StateEventAsObservable()
+        public IObservable<StateMachineEvent> OnStateMachineEventAsObservable()
         {
             return onStateMachineEvent ?? (onStateMachineEvent = new Subject<StateMachineEvent>());
         }
