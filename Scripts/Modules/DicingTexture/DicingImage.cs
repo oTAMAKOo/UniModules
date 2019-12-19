@@ -16,7 +16,7 @@ namespace Modules.Dicing
     {
         //----- params -----
 
-        private class BlockInfo
+        private sealed class BlockInfo
         {
             public Rect Rect { get; set; }
             public DicingBlockData BlockData { get; set; }

@@ -13,7 +13,7 @@ namespace Modules.LocalPushNotify
     {
         //----- params -----
 
-        public class NotificationInfo
+        public sealed class NotificationInfo
         {
             public int Identifier { get; private set; }
 

@@ -76,7 +76,7 @@ namespace Modules.InputProtection.Components
         #if UNITY_EDITOR
 
         [CustomEditor(typeof(ButtonInputProtection))]
-        class ButtonInputProtectionInspector : Editor
+        private sealed class ButtonInputProtectionInspector : Editor
         {
             public override void OnInspectorGUI(){}
         }

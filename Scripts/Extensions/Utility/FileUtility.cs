@@ -7,7 +7,7 @@ using Extensions;
 
 namespace Extensions
 {
-    public class FileUtility
+    public sealed class FileUtility
     {
         /// <summary>
         /// 指定されたファイルのハッシュ値を取得.

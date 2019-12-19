@@ -12,7 +12,7 @@ namespace Modules.UI.TextEffect
         //----- params -----
 
         [Serializable]
-        public class CharInfo
+        public sealed class CharInfo
         {
             public char character = default(char);
             public float leftSpace = 0f;

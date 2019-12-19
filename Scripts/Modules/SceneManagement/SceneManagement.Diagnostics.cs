@@ -10,7 +10,7 @@ using Extensions;
 
 namespace Modules.SceneManagement.Diagnostics
 {
-    public class TimeDiagnostics
+    public sealed class TimeDiagnostics
     {
         //----- params -----
 

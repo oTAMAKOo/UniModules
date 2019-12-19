@@ -6,7 +6,7 @@ namespace Extensions.Serialize
 {
     [DataContract]
     [Serializable]
-    public class DoubleNullable : SerializableNullable<double>
+    public sealed class DoubleNullable : SerializableNullable<double>
     {
         public DoubleNullable(double value) : base(value) { }
 

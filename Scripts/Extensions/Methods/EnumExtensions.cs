@@ -6,7 +6,7 @@ using System.Linq;
 namespace Extensions
 {
     [AttributeUsage(AttributeTargets.Field, AllowMultiple = true, Inherited = true)]
-    public class LabelAttribute : System.Attribute
+    public sealed class LabelAttribute : System.Attribute
     {
         public int No { get; private set; }
         public string Name { get; private set; }

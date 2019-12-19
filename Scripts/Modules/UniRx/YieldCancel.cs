@@ -48,7 +48,7 @@ namespace Modules.UniRxExtension
 
     #else
 
-    public class YieldCancel : IDisposable
+    public sealed class YieldCancel : IDisposable
     {
         //----- params -----
 

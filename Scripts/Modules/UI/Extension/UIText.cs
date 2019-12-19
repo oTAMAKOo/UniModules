@@ -17,7 +17,7 @@ namespace Modules.UI.Extension
     {
         //----- params -----
 
-        public class TextColor
+        public sealed class TextColor
         {
             public int Type { get; private set; }
             public string LabelName { get; private set; }

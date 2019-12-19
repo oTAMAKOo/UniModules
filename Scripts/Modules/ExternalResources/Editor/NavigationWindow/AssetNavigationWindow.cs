@@ -177,7 +177,7 @@ namespace Modules.ExternalResource.Editor
                 {
                     if (GUILayout.Button("copy", GUILayout.Width(45f), GUILayout.Height(18f)))
                     {
-                        UniClipboard.SetText(content);
+                        UnityClipboard.UniClipboard.SetText(content);
                     }
 
                     GUILayout.Space(2f);

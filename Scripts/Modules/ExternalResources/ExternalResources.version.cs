@@ -27,10 +27,10 @@ namespace Modules.ExternalResource
         private const string AESKey = @"TK4yH6hyD1dz8je24jq0PdF9oYqJ2fCF";
 
         [MessagePackObject(true)]
-        public class Version
+        public sealed class Version
         {
             [MessagePackObject(true)]
-            public class Info
+            public sealed class Info
             {
                 public string resourcesPath = string.Empty;
                 public string hash = string.Empty;

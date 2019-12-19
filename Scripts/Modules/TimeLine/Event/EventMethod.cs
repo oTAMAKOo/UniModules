@@ -34,7 +34,7 @@ namespace Modules.TimeLine.Component
         };
 
         [Serializable]
-        public class ArgumentObjects : LifetimeDisposable
+        public sealed class ArgumentObjects : LifetimeDisposable
         {
             [SerializeField]
             private ExposedReference<GameObject> targetObject;

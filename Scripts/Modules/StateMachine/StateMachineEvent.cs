@@ -15,7 +15,7 @@ namespace Modules.StateMachine
         ExitState,
     }
 
-    public class StateMachineEvent
+    public sealed class StateMachineEvent
     {
         public string ParameterName { get; private set; }
         public StateMachineEventType EventType { get; private set; }

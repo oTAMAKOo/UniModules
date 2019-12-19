@@ -27,7 +27,7 @@ namespace Modules.UI.TextEffect
         }
 
         [Serializable]
-        public class Info
+        public sealed class Info
         {
             public IntNullable direction = new IntNullable(null);
             public Vector2 distance = Vector2.zero;

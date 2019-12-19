@@ -11,7 +11,7 @@ using Modules.Devkit.Log;
 
 namespace Modules.Devkit.Diagnosis.SRDebugger
 {
-    public class LogEntry
+    public sealed class LogEntry
     {
         //----- params -----
 

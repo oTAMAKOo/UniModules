@@ -7,16 +7,16 @@ using System.Linq;
 namespace Extensions
 {
     [Serializable]
-    public class Prefab
+    public sealed class Prefab
     {
         //----- params -----
 
         //----- field -----
 
         [SerializeField]
-        protected GameObject prefab = null;
+        private GameObject prefab = null;
         [SerializeField]
-        protected GameObject parent = null;
+        private GameObject parent = null;
 
         //----- property -----
 

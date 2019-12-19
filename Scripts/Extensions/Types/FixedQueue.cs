@@ -6,7 +6,7 @@ using UniRx;
 namespace Extensions
 {
     /// <summary> 固定長のQueue </summary>
-    public class FixedQueue<T> : System.Collections.Generic.Queue<T>
+    public sealed class FixedQueue<T> : System.Collections.Generic.Queue<T>
     {
         //----- params -----
 

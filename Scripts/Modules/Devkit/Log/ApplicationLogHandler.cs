@@ -6,11 +6,11 @@ using Extensions;
 
 namespace Modules.Devkit.Log
 {
-    public class ApplicationLogHandler : Singleton<ApplicationLogHandler>
+    public sealed class ApplicationLogHandler : Singleton<ApplicationLogHandler>
     {
         //----- params -----
 
-        public class LogInfo
+        public sealed class LogInfo
         {
             public LogType Type { get; private set; }
             public string Condition { get; private set; }

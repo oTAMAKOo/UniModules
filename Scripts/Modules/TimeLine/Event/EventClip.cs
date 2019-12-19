@@ -15,7 +15,7 @@ namespace Modules.TimeLine.Component
     {
         //----- params -----
 
-        public class Info
+        public sealed class Info
         {
             public string name { get; set; }
             public double start { get; set; }

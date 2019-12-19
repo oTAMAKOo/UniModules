@@ -8,13 +8,13 @@ using System.Collections.Generic;
 
 namespace Modules.OffScreenRendering
 {
-    public class Collider2DRayCast : RenderTextureRaycaster
+    public sealed class Collider2DRayCast : RenderTextureRaycaster
     {
         //----- params -----
 
         //----- field -----
 
-        protected Subject<GameObject[]> onRaycastHit = null;
+        private Subject<GameObject[]> onRaycastHit = null;
 
         //----- property -----
 

@@ -30,7 +30,7 @@ namespace Modules.UI
         #if UNITY_EDITOR
 
         [CustomEditor(typeof(GraphicCast))]
-        class GraphicCastEditor : Editor
+        private sealed class GraphicCastEditor : Editor
         {
             public override void OnInspectorGUI(){}
         }

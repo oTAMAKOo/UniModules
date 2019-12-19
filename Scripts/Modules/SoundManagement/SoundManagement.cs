@@ -32,13 +32,13 @@ namespace Modules.SoundManagement
         Ambience,
     }
 
-    public class SoundParam
+    public sealed class SoundParam
     {
         public float volume = 1f;
         public bool cancelIfPlaying = false;
     }
 
-    public class SoundEventParam
+    public sealed class SoundEventParam
     {
         /// <summary>イベント位置 (sec) </summary>
         public int position;

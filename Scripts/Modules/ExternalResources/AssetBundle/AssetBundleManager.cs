@@ -33,7 +33,7 @@ namespace Modules.AssetBundles
         // リトライするまでの時間(秒).
         private readonly TimeSpan RetryDelaySeconds = TimeSpan.FromSeconds(2f);
 
-        private class CachedInfo
+        private sealed class CachedInfo
         {
             public AssetBundle assetBundle = null;
             public int referencedCount = 0;

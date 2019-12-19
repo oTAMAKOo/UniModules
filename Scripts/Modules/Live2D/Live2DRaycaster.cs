@@ -14,7 +14,7 @@ using Live2D.Cubism.Framework.Raycasting;
 
 namespace Modules.Live2D
 {
-    public class Live2DRaycaster : RenderTextureRaycaster
+    public sealed class Live2DRaycaster : RenderTextureRaycaster
     {
         #if ENABLE_LIVE2D
 
@@ -24,7 +24,7 @@ namespace Modules.Live2D
 
         private CubismRaycaster raycaster = null;
 
-        protected Subject<CubismDrawable> onRaycastHit = null;
+        private Subject<CubismDrawable> onRaycastHit = null;
 
         //----- property -----
 

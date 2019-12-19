@@ -6,7 +6,7 @@ namespace Extensions.Serialize
 {
     [DataContract]
     [Serializable]
-    public class LongNullable : SerializableNullable<long>
+    public sealed class LongNullable : SerializableNullable<long>
     {
         public LongNullable(long value) : base(value) { }
 

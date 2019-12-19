@@ -4,7 +4,7 @@ using System.IO;
 
 namespace Modules.Networking
 {
-    public class FileDownloadHandler : DownloadHandlerScript
+    public sealed class FileDownloadHandler : DownloadHandlerScript
     {
         //----- params -----
 

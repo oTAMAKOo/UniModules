@@ -12,7 +12,7 @@ namespace Modules.UniRxExtension
     {
         //----- params -----
 
-        private class QueueItem
+        private sealed class QueueItem
         {
             public IObservable<Unit> Observable { get; private set; }
             public Action OnStart { get; private set; }

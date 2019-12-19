@@ -3,7 +3,7 @@ using UnityEngine;
 
 namespace Extensions
 {
-	public class FloatSelectableAttribute : PropertyAttribute
+	public sealed class FloatSelectableAttribute : PropertyAttribute
     {
         //----- params -----
 

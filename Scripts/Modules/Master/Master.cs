@@ -36,7 +36,7 @@ namespace Modules.Master
     {
         //----- params -----
 
-        private class Prefs
+        private sealed class Prefs
         {
             public string version
             {

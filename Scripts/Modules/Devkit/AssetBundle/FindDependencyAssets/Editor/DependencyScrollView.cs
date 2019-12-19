@@ -9,7 +9,7 @@ using Extensions.Devkit;
 
 namespace Modules.Devkit.AssetBundles
 {
-    public class DependencyScrollView : EditorGUIFastScrollView<FindDependencyAssetsWindow.AssetBundleInfo>
+    public sealed class DependencyScrollView : EditorGUIFastScrollView<FindDependencyAssetsWindow.AssetBundleInfo>
     {
         public override Direction Type
         {

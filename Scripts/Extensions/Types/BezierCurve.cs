@@ -4,7 +4,7 @@ using UnityEngine;
 namespace Extensions
 {
     /// <summary> ベジェ曲線 </summary>
-    public class BezierCurve
+    public sealed class BezierCurve
     {
         //----- params -----
 

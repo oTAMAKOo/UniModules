@@ -9,12 +9,11 @@ using Modules.Devkit.Diagnosis.SRDebugger;
 
 namespace Modules.Devkit.Diagnosis
 {
-    public class Diagnosis : MonoBehaviour
+    public sealed class Diagnosis : MonoBehaviour
     {
         //----- params -----
 
         //----- field -----
-
 
         [SerializeField]
         private GameObject touchBlockObject = null;

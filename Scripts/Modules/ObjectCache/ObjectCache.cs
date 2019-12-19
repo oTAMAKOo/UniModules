@@ -12,7 +12,7 @@ namespace Modules.ObjectCache
     {
         //----- params -----
 
-        private class Reference
+        private sealed class Reference
         {
             public int referenceCount = 0;
             public ObjectCache<T> cacheInstance = null;

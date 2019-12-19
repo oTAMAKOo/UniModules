@@ -29,7 +29,7 @@ namespace Modules.Devkit.Diagnosis.SRDebugger
 
     #endif
     
-    public class SendReportTabController : SRMonoBehaviourEx, IEnableTab
+    public sealed class SendReportTabController : SRMonoBehaviourEx, IEnableTab
     {
         #if ENABLE_SRDEBUGGER
 

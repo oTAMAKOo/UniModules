@@ -22,7 +22,7 @@ namespace Modules.SceneManagement
             DestroyGameObject,
         }
 
-        protected class DuplicatedSettings
+        protected sealed class DuplicatedSettings
         {
             /// <summary>
             /// シーン読み込み時に一時的に無効化するかどうかを設定する.

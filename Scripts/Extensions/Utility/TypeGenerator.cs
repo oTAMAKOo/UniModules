@@ -8,7 +8,7 @@ using MessagePack;
 
 namespace Extensions
 {
-    public class TypeGenerator
+    public sealed class TypeGenerator
     {
         //----- params -----
 

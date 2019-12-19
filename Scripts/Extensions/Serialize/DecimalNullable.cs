@@ -6,7 +6,7 @@ namespace Extensions.Serialize
 {
     [DataContract]
     [Serializable]
-    public class DecimalNullable : SerializableNullable<decimal>
+    public sealed class DecimalNullable : SerializableNullable<decimal>
     {
         public DecimalNullable(decimal value) : base(value){}
 

@@ -21,7 +21,7 @@ namespace Modules.CriWare
 
         #if ENABLE_CRIWARE_FILESYSTEM
 
-        private class CriAssetInstall
+        private sealed class CriAssetInstall
         {
             private static int installCount = 0;
 

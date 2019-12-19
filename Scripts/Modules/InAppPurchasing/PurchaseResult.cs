@@ -9,7 +9,7 @@ using System.Text;
 
 namespace Modules.InAppPurchasing
 {
-    public class PurchaseResult
+    public sealed class PurchaseResult
     {
         //----- params -----
 

@@ -7,7 +7,7 @@ using UniRx;
 
 namespace Modules.SceneManagement
 {
-    public class WaitEntity : IDisposable
+    public sealed class WaitEntity : IDisposable
     {
         //----- params -----
 

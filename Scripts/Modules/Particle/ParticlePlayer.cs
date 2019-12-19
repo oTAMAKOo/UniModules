@@ -47,7 +47,7 @@ namespace Modules.Particle
     {
         //----- params -----
 
-        public class ParticleInfo
+        public sealed class ParticleInfo
         {
             public ParticleSystem ParticleSystem { get; private set; }
             public ParticleSystemRenderer Renderer { get; private set; }
@@ -70,7 +70,7 @@ namespace Modules.Particle
         }
 
         [Serializable]
-        public class EventInfo
+        public sealed class EventInfo
         {
             public enum EventTrigger
             {

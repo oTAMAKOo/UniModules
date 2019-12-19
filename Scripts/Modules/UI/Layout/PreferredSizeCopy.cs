@@ -14,7 +14,7 @@ namespace Modules.UI.Layout
         //----- params -----
 
         [Serializable]
-        public class LayoutInfo
+        public sealed class LayoutInfo
         {
             [SerializeField]
             private bool enable = false;

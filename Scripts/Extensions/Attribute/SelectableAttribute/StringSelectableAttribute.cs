@@ -3,7 +3,7 @@ using UnityEngine;
 
 namespace Extensions
 {
-	public class StringSelectableAttribute : PropertyAttribute
+	public sealed class StringSelectableAttribute : PropertyAttribute
     {
         //----- params -----
 

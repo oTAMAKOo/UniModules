@@ -18,7 +18,7 @@ namespace Modules.Networking
             Cancel,
         }
 
-        private class DownloadInfo
+        private sealed class DownloadInfo
         {
             public TDownloadRequest Request { get; private set; }
             public IObservable<Unit> Task { get; private set; }

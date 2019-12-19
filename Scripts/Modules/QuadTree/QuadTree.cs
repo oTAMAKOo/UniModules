@@ -12,7 +12,7 @@ namespace Modules.QuadTree
         Rect GetBounds();
     }
 
-    public class QuadTree<T> where T : IQuadTreeObject
+    public sealed class QuadTree<T> where T : IQuadTreeObject
     {
         //----- params -----
 

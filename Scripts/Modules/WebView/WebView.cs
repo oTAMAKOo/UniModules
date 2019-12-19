@@ -20,13 +20,13 @@ namespace Modules.WebView
 
         private const int TimeOutSeconds = 5;
 
-        public class PostData
+        public sealed class PostData
         {
             public string fieldName = string.Empty;
             public string value = string.Empty;
         }
 
-        public class ShowParam
+        public sealed class ShowParam
         {
             public bool fade = false;
             public UniWebViewTransitionEdge direction = UniWebViewTransitionEdge.None;

@@ -13,7 +13,7 @@ using SRDebugger;
 
 namespace Modules.Devkit.Diagnosis.SRDebugger
 {
-    public class SRDiagnosis : MonoBehaviour
+    public sealed class SRDiagnosis : MonoBehaviour
     {
         #if ENABLE_SRDEBUGGER
 

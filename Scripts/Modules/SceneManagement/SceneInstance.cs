@@ -11,7 +11,7 @@ using Extensions;
 namespace Modules.SceneManagement
 {
     /// <summary> シーン情報 </summary>
-    public class SceneInstance
+    public sealed class SceneInstance
     {
         //----- params -----
 

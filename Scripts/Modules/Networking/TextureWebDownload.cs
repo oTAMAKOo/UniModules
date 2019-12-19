@@ -10,7 +10,7 @@ using Modules.Devkit;
 
 namespace Modules.Networking
 {
-	public class TextureWebDownload
+	public sealed class TextureWebDownload
 	{
         //----- params -----
 
@@ -128,7 +128,7 @@ namespace Modules.Networking
             observer.OnCompleted();
         }
 
-        protected void OnTimeout(Exception ex)
+        private void OnTimeout(Exception ex)
         {
             var type = ex.GetType();
 
@@ -149,7 +149,7 @@ namespace Modules.Networking
             }
         }
 
-        protected void OnError(Exception ex)
+        private void OnError(Exception ex)
         {
             var type = ex.GetType();
 
@@ -185,7 +185,7 @@ namespace Modules.Networking
             }
         }
 
-        protected void OnComplete(Texture2D texture, double totalMilliseconds)
+        private void OnComplete(Texture2D texture, double totalMilliseconds)
         {
             if (Debug.isDebugBuild)
             {

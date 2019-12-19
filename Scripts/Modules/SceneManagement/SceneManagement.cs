@@ -20,7 +20,7 @@ namespace Modules.SceneManagement
         //----- params -----
 
         // 起動シーン用の空引数.
-        private class BootSceneArgument : ISceneArgument
+        private sealed class BootSceneArgument : ISceneArgument
         {
             public Scenes? Identifier { get; private set; }
 
