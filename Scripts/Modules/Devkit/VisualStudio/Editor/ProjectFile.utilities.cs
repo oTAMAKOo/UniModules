@@ -40,7 +40,7 @@ namespace VisualStudioToolsUnity
         /// <summary>
         /// プロジェクト ファイル (.csproj) 内に C# 言語バージョン (&lt;LangVersion&gt;) を追加.
         /// </summary>
-        public static void SetCSharpLangVersion(ProjectFileGenerationArgs args, int langVersion)
+        public static void SetCSharpLangVersion(ProjectFileGenerationArgs args, double langVersion)
         {
             // UnityVersion が書いてあるノードを取得.
             var document = args.Content;
