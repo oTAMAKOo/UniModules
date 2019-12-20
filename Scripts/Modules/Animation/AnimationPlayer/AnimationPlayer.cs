@@ -308,19 +308,18 @@ namespace Modules.Animation
 
         public void Stop()
         {
-            if (!isInitialized) { return; }
-
-            if (State == State.Stop) { return; }
-
             if (UnityUtility.IsNull(Animator)) { return; }
 
-            // Animator停止.
-            foreach (var clip in Clips)
+            if (isInitialized && State != State.Stop)
             {
-                clip.SampleAnimation(Animator.gameObject, clip.length);
-            }
+                // Animator停止.
+                foreach (var clip in Clips)
+                {
+                    clip.SampleAnimation(Animator.gameObject, clip.length);
+                }
 
-            Refresh();
+                Refresh();
+            }
 
             Animator.enabled = false;
         }
