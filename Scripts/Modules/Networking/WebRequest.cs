@@ -29,7 +29,10 @@ namespace Modules.Networking
         protected UnityWebRequest request = null;
 
         //----- property -----
-        
+
+        /// <summary> リクエストタイプ. </summary>
+        public string Method { get { return request.method; } }
+
         /// <summary> URL. </summary>
         public string HostUrl { get; private set; }
 

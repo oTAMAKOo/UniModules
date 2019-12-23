@@ -1,10 +1,16 @@
 ﻿
+using UnityEngine;
 using System;
 using System.Collections;
 using System.Linq;
 using System.Collections.Generic;
+using System.Text;
 using UniRx;
 using Extensions;
+using MessagePack;
+using MessagePack.Resolvers;
+using Modules.Devkit;
+using Modules.MessagePack;
 
 namespace Modules.Networking
 {
@@ -13,8 +19,13 @@ namespace Modules.Networking
     {
         //----- params -----
 
+        protected static readonly string ConsoleEventName = "API";
+        protected static readonly Color ConsoleEventColor = new Color(1f, 0.9f, 0f);
+
         protected enum RequestErrorHandle
         {
+            None = 0,
+
             Retry,
             Cancel,
         }
@@ -59,6 +70,12 @@ namespace Modules.Networking
             Format = format;
             RetryCount = retryCount;
             RetryDelaySeconds = retryDelaySeconds;
+
+            #if UNITY_EDITOR
+
+            ApiMonitorBridge.Instance.SetServerUrl(serverUrl);
+
+            #endif
         }
 
         /// <summary> リソースの取得. </summary>
@@ -106,8 +123,14 @@ namespace Modules.Networking
 
             // 通信中.
             currentWebRequest = webRequest;
-            
+
             var sw = System.Diagnostics.Stopwatch.StartNew();
+
+            #if UNITY_EDITOR
+
+            ApiMonitorBridge.Instance.Start(webRequest);
+
+            #endif
 
             var retryCount = 0;
 
@@ -139,14 +162,14 @@ namespace Modules.Networking
 
                 if (requestYield.HasError)
                 {
-                    OnError(webRequest, requestYield.Error);
+                    OnErrorAction(webRequest, requestYield.Error);
                 }
 
                 //------ リトライ回数オーバー ------
 
                 if (RetryCount <= retryCount)
                 {
-                    OnRetryLimit(webRequest);
+                    OnRetryLimitAction(webRequest);
                     observer.OnError(requestYield.Error);
                     break;
                 }
@@ -183,6 +206,8 @@ namespace Modules.Networking
                     }
                 }
 
+                //------ リトライ ------
+
                 // リトライディレイ.
                 var retryDelayYield = Observable.Timer(TimeSpan.FromSeconds(RetryDelaySeconds)).ToYieldInstruction();
 
@@ -191,6 +216,7 @@ namespace Modules.Networking
                     yield return null;
                 }
 
+                OnRetryAction(webRequest);
             }
 
             if (result != null)
@@ -223,6 +249,12 @@ namespace Modules.Networking
             {
                 webRequestQueue.Clear();
             }
+
+            #if UNITY_EDITOR
+
+            ApiMonitorBridge.Instance.OnForceCancelAll();
+
+            #endif
         }
 
         /// <summary>
@@ -277,15 +309,89 @@ namespace Modules.Networking
         }
 
         /// <summary> 成功時イベント. </summary>
-        protected abstract void OnComplete<TResult>(TWebRequest webRequest, TResult result, double totalMilliseconds);
+        protected virtual void OnComplete<TResult>(TWebRequest webRequest, TResult result, double totalMilliseconds)
+        {
+            if (Debug.isDebugBuild || Application.isEditor)
+            {
+                var json = string.Empty;
 
-        /// <summary> リトライ回数を超えた時のイベント. </summary>
-        protected abstract void OnRetryLimit(TWebRequest webRequest);
+                switch (Format)
+                {
+                    case DataFormat.Json:
+                        json = result.ToJson();
+                        break;
+
+                    case DataFormat.MessagePack:
+                        var options = StandardResolverAllowPrivate.Options.WithResolver(UnityContractResolver.Instance);
+                        json = MessagePackSerializer.SerializeToJson(result, options);
+                        break;
+                }
+
+                var builder = new StringBuilder();
+
+                builder.AppendFormat("{0} ({1}ms)", webRequest.HostUrl.Replace(ServerUrl, string.Empty), totalMilliseconds).AppendLine();
+                builder.AppendLine();
+                builder.AppendFormat("URL: {0}", webRequest.Url).AppendLine();
+                builder.AppendFormat("Result: {0}", json).AppendLine();
+                builder.AppendLine();
+
+                UnityConsole.Event(ConsoleEventName, ConsoleEventColor, builder.ToString());
+
+                #if UNITY_EDITOR
+
+                ApiMonitorBridge.Instance.OnComplete(webRequest, json);
+
+                #endif
+            }
+        }
+
+        private void OnRetryAction(TWebRequest webRequest)
+        {
+            #if UNITY_EDITOR
+
+            ApiMonitorBridge.Instance.OnRetry(webRequest);
+
+            #endif
+
+            OnRetry(webRequest);
+        }
+
+        private void OnRetryLimitAction(TWebRequest webRequest)
+        {
+            #if UNITY_EDITOR
+
+            ApiMonitorBridge.Instance.OnRetryLimit(webRequest);
+
+            #endif
+
+            OnRetryLimit(webRequest);
+        }
 
         /// <summary> 通信エラー時イベント. </summary>
-        protected abstract void OnError(TWebRequest webRequest, Exception ex);
+        private void OnErrorAction(TWebRequest webRequest, Exception ex)
+        {
+            #if UNITY_EDITOR
+
+            ApiMonitorBridge.Instance.OnError(webRequest, ex);
+
+            #endif
+
+            OnError(webRequest, ex);
+        }
 
         /// <summary> 通信エラーのハンドリング. </summary>
-        protected abstract IObservable<RequestErrorHandle> WaitErrorHandling(TWebRequest webRequest, Exception ex);
+        protected virtual IObservable<RequestErrorHandle> WaitErrorHandling(TWebRequest webRequest, Exception ex)
+        {
+            return Observable.Return<RequestErrorHandle>(RequestErrorHandle.None);
+        }
+
+        /// <summary> リトライ時イベント. </summary>
+        protected virtual void OnRetry(TWebRequest webRequest) { }
+
+        /// <summary> リトライ回数を超えた時のイベント. </summary>
+        protected virtual void OnRetryLimit(TWebRequest webRequest) { }
+
+        /// <summary> 通信エラー時イベント. </summary>
+        protected virtual void OnError(TWebRequest webRequest, Exception ex) { }
     }
 }
