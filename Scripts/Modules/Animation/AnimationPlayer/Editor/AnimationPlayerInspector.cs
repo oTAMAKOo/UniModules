@@ -42,9 +42,11 @@ namespace Modules.Animation
             if (animator == null) { return; }
 
             var animatorController = animator.runtimeAnimatorController;
-            var endActionType = Reflection.GetPrivateField<AnimationPlayer, EndActionType>(instance, "endActionType");
+
+            var stopOnInitialize = Reflection.GetPrivateField<AnimationPlayer, bool>(instance, "stopOnInitialize");
             var ignoreTimeScale = Reflection.GetPrivateField<AnimationPlayer, bool>(instance, "ignoreTimeScale");
-            
+            var endActionType = Reflection.GetPrivateField<AnimationPlayer, EndActionType>(instance, "endActionType");
+
             if (animatorController != null)
             {
                 GUILayout.Space(8f);
@@ -53,15 +55,19 @@ namespace Modules.Animation
 
                 var originLabelWidth = EditorLayoutTools.SetLabelWidth(150f);
 
-                endActionType = (EndActionType)EditorGUILayout.EnumPopup("End Action", endActionType);
+                stopOnInitialize = EditorGUILayout.Toggle("Stop On Initialize", stopOnInitialize);
+
                 ignoreTimeScale = EditorGUILayout.Toggle("Ignore TimeScale", ignoreTimeScale);
+
+                endActionType = (EndActionType)EditorGUILayout.EnumPopup("End Action", endActionType);
 
                 if (EditorGUI.EndChangeCheck())
                 {
                     UnityEditorUtility.RegisterUndo("AnimationPlayerInspector Undo", instance);
-                    
-                    Reflection.SetPrivateField(instance, "endActionType", endActionType);
+
+                    Reflection.SetPrivateField(instance, "stopOnInitialize", stopOnInitialize);
                     Reflection.SetPrivateField(instance, "ignoreTimeScale", ignoreTimeScale);
+                    Reflection.SetPrivateField(instance, "endActionType", endActionType);
                 }
 
                 EditorLayoutTools.SetLabelWidth(originLabelWidth);

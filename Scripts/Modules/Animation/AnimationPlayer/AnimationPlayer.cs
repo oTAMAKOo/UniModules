@@ -19,6 +19,8 @@ namespace Modules.Animation
         //----- field -----
 
         [SerializeField]
+        private bool stopOnInitialize = true;
+        [SerializeField]
         private EndActionType endActionType = EndActionType.None;
         [SerializeField]
         private bool ignoreTimeScale = false;
@@ -126,7 +128,10 @@ namespace Modules.Animation
             Clips = animatorController != null ? animator.runtimeAnimatorController.animationClips : new AnimationClip[0];
             DefaultSpeed = Animator.speed;
 
-            Stop();
+            if (stopOnInitialize)
+            {
+                Stop();
+            }
 
             Refresh();
 
