@@ -43,7 +43,7 @@ namespace Modules.Animation
 
             var animatorController = animator.runtimeAnimatorController;
 
-            var stopOnInitialize = Reflection.GetPrivateField<AnimationPlayer, bool>(instance, "stopOnInitialize");
+            var stopOnAwake = Reflection.GetPrivateField<AnimationPlayer, bool>(instance, "stopOnAwake");
             var ignoreTimeScale = Reflection.GetPrivateField<AnimationPlayer, bool>(instance, "ignoreTimeScale");
             var endActionType = Reflection.GetPrivateField<AnimationPlayer, EndActionType>(instance, "endActionType");
 
@@ -55,7 +55,7 @@ namespace Modules.Animation
 
                 var originLabelWidth = EditorLayoutTools.SetLabelWidth(150f);
 
-                stopOnInitialize = EditorGUILayout.Toggle("Stop On Initialize", stopOnInitialize);
+                stopOnAwake = EditorGUILayout.Toggle("Stop On Awake", stopOnAwake);
 
                 ignoreTimeScale = EditorGUILayout.Toggle("Ignore TimeScale", ignoreTimeScale);
 
@@ -65,7 +65,7 @@ namespace Modules.Animation
                 {
                     UnityEditorUtility.RegisterUndo("AnimationPlayerInspector Undo", instance);
 
-                    Reflection.SetPrivateField(instance, "stopOnInitialize", stopOnInitialize);
+                    Reflection.SetPrivateField(instance, "stopOnAwake", stopOnAwake);
                     Reflection.SetPrivateField(instance, "ignoreTimeScale", ignoreTimeScale);
                     Reflection.SetPrivateField(instance, "endActionType", endActionType);
                 }

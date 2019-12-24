@@ -19,7 +19,7 @@ namespace Modules.Animation
         //----- field -----
 
         [SerializeField]
-        private bool stopOnInitialize = true;
+        private bool stopOnAwake = true;
         [SerializeField]
         private EndActionType endActionType = EndActionType.None;
         [SerializeField]
@@ -128,7 +128,7 @@ namespace Modules.Animation
             Clips = animatorController != null ? animator.runtimeAnimatorController.animationClips : new AnimationClip[0];
             DefaultSpeed = Animator.speed;
 
-            if (stopOnInitialize)
+            if (stopOnAwake)
             {
                 Stop();
             }

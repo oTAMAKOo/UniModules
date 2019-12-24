@@ -163,15 +163,30 @@ namespace Modules.ExternalResource.Editor
 
                 EditorGUI.BeginChangeCheck();
 
-                selection = EditorGUILayout.Popup(string.Empty, selection, groupNames, EditorStyles.toolbarDropDown, GUILayout.Width(180f));
+                var groupName = groupNames.ElementAtOrDefault(selection);
+
+                var labels = groupNames.OrderBy(x => x, new NaturalComparer()).ToArray();
+
+                var index = labels.IndexOf(x => x == groupName);
+                
+                var displayLabels = labels.Select(x => ConvertSlashToUnicodeSlash(x)).ToArray();
+
+                index = EditorGUILayout.Popup(string.Empty, index, displayLabels, EditorStyles.toolbarDropDown, GUILayout.Width(180f));
 
                 if (EditorGUI.EndChangeCheck())
                 {
+                    selection = groupNames.IndexOf(x => x == labels[index]);
+
                     selectionGroupInfo = groupManageInfos[selection];
 
                     BuildManageInfoViews();
                 }
             }
+        }
+
+        private string ConvertSlashToUnicodeSlash(string text)
+        {
+            return text.Replace('/', '\u2215');
         }
 
         public void DrawGUI()
