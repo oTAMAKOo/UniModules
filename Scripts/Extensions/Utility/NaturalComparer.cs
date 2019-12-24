@@ -5,6 +5,11 @@ using System.Text.RegularExpressions;
 
 namespace Extensions
 {
+    //=================================================================
+    // var labels = new string[0]; // Any text.
+    // labels = labels.OrderBy(x => x, new NaturalComparer()).ToArray();
+    //=================================================================
+
     /// <summary> 文字列自然順ソート用比較クラス </summary>
     public sealed class NaturalComparer : Comparer<string>, IDisposable
     {
