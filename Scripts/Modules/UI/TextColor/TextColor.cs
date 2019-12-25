@@ -67,7 +67,9 @@ namespace Modules.UI.TextColor
 
             if (info == null) { return; }
 
-            var textComponent = UnityUtility.GetComponent<Text>(gameObject);
+            var components = UnityUtility.GetComponents<Component>(gameObject).ToArray();
+            
+            var textComponent = FindComponent<Text>(components);
 
             if (textComponent != null)
             {
@@ -76,73 +78,56 @@ namespace Modules.UI.TextColor
 
             if (info.hasOutline)
             {
-                var applyColor = false;
-
-                var textOutlineComponent = UnityUtility.GetComponent<TextOutline>(gameObject);
+                var textOutlineComponent = FindComponent<TextOutline>(components);
 
                 if (textOutlineComponent != null)
                 {
                     textOutlineComponent.SetColor(info.outlineColor);
-                    applyColor = true;
                 }
 
-                var richTextOutlineComponent = UnityUtility.GetComponent<RichTextOutline>(gameObject);
+                var richTextOutlineComponent = FindComponent<RichTextOutline>(components);
 
                 if (richTextOutlineComponent != null)
                 {
                     richTextOutlineComponent.effectColor = info.outlineColor;
-                    applyColor = true;
                 }
 
-                var outlineComponent = UnityUtility.GetComponent<Outline>(gameObject);
+                var outlineComponent = FindComponent<Outline>(components);
 
                 if (outlineComponent != null)
                 {
                     outlineComponent.effectColor = info.outlineColor;
-                    applyColor = true;
-                }
-
-                if (!applyColor)
-                {
-                    var hierarchyPath = UnityUtility.GetChildHierarchyPath(null, gameObject);
-                    Debug.LogWarningFormat("This object require outline category component.\n{0}/{1}", hierarchyPath, gameObject.name);
                 }
             }
 
             if (info.hasShadow)
             {
-                var applyColor = false;
-
-                var textShadowComponent = UnityUtility.GetComponent<TextShadow>(gameObject);
+                var textShadowComponent = FindComponent<TextShadow>(components);
 
                 if (textShadowComponent != null)
                 {
                     textShadowComponent.SetColor(info.shadowColor);
-                    applyColor = true;
                 }
 
-                var richTextShadowComponent = UnityUtility.GetComponent<RichTextShadow>(gameObject);
+                var richTextShadowComponent = FindComponent<RichTextShadow>(components);
 
                 if (richTextShadowComponent != null)
                 {
                     richTextShadowComponent.effectColor = info.shadowColor;
-                    applyColor = true;
                 }
 
-                var shadowComponent = UnityUtility.GetComponent<Shadow>(gameObject);
+                var shadowComponent = FindComponent<Shadow>(components);
 
                 if (shadowComponent != null)
                 {
                     shadowComponent.effectColor = info.shadowColor;
-                    applyColor = true;
-                }
-
-                if (!applyColor)
-                {
-                    var hierarchyPath = UnityUtility.GetChildHierarchyPath(null, gameObject);
-                    Debug.LogWarningFormat("This object require shadow category component.\n{0}/{1}", hierarchyPath, gameObject.name);
-                }
+                }             
             }
+        }
+
+        private T FindComponent<T>(Component[] components)
+        {
+            return components.Where(x => x.GetType() == typeof(T)).Cast<T>().FirstOrDefault();
         }
     }
 }
