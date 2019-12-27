@@ -473,13 +473,19 @@ namespace Modules.Devkit.AssetTuning
                 {
                     case CompressCheckWindow.AssetViewMode.Asset:
                         {
-                            var texture = textureCache.Get(content.textureGuid);
+                            Texture texture = null;
 
-                            if (texture == null)
+                            // レイアウト構築が終わってから表示する分だけ読み込む.
+                            if (LayoutAcquired)
                             {
-                                texture = AssetDatabase.LoadMainAssetAtPath(assetPath) as Texture;
+                                texture = textureCache.Get(content.textureGuid);
 
-                                textureCache.Add(content.textureGuid, texture);
+                                if (texture == null)
+                                {
+                                    texture = AssetDatabase.LoadMainAssetAtPath(assetPath) as Texture;
+
+                                    textureCache.Add(content.textureGuid, texture);
+                                }
                             }
 
                             EditorGUILayout.ObjectField(texture, typeof(Texture), false);
