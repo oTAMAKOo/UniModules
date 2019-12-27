@@ -493,7 +493,7 @@ namespace Modules.Devkit.AssetTuning
                         break;
 
                     case CompressCheckWindow.AssetViewMode.Path:
-                        GUILayout.Label(assetPath, EditorLayoutTools.TextAreaStyle);
+                        EditorGUILayout.SelectableLabel(assetPath, EditorLayoutTools.TextAreaStyle);
                         break;
                 }
 
