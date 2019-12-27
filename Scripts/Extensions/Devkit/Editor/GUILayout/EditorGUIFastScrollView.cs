@@ -65,7 +65,10 @@ namespace Extensions.Devkit
         public abstract Direction Type { get; }
 
         /// <summary> レイアウトの計算が終わっているか </summary>
-        public bool LayoutAcquired { get { return startIndex.HasValue && endIndex.HasValue; } }
+        public bool IsLayoutUpdating
+        {
+            get { return !startIndex.HasValue || !endIndex.HasValue; }
+        }
 
         //----- method -----
 

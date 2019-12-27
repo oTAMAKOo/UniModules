@@ -476,7 +476,7 @@ namespace Modules.Devkit.AssetTuning
                             Texture texture = null;
 
                             // レイアウト構築が終わってから表示する分だけ読み込む.
-                            if (LayoutAcquired)
+                            if (!IsLayoutUpdating)
                             {
                                 texture = textureCache.Get(content.textureGuid);
 
