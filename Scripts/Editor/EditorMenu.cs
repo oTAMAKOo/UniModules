@@ -409,7 +409,7 @@ namespace Modules
         [MenuItem(itemName: SettingsMenu + "Auto Add Component/Log", validate = true)]
         public static bool AdditionalComponentLogValidate()
         {
-            UnityEditor.Menu.SetChecked(SettingsMenu + "AdditionalComponent/Log", AdditionalComponent.Prefs.LogEnable);
+            UnityEditor.Menu.SetChecked(SettingsMenu + "Auto Add Component/Log", AdditionalComponent.Prefs.LogEnable);
             return true;
         }
 
