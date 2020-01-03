@@ -80,15 +80,15 @@ namespace Extensions
         /// <summary>
         /// Enum名で検索し値を返します.
         /// </summary>
-        public static T FindByName<T>(string name)
+        public static T FindByName<T>(string name, T defaultValue = default)
         {
+            if (string.IsNullOrEmpty(name)) { return defaultValue; }
+
             var type = typeof(T);
 
             var index = Enum.GetNames(type).IndexOf(x => x == name);
-
-            var value = Enum.GetValues(type).Cast<T>().ElementAtOrDefault(index);
-
-            return value;
+            
+            return index != -1 ? Enum.GetValues(type).Cast<T>().ElementAtOrDefault(index) : defaultValue;
         }
     }
 }

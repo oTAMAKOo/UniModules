@@ -157,6 +157,16 @@ namespace Extensions
         #region Object Delete
 
         /// <summary> オブジェクトの削除 </summary>
+        public static void SafeDelete(Component component, bool immediate = false)
+        {
+            if (component == null) { return; }
+
+            if (IsNull(component.gameObject)) { return; }
+
+            SafeDelete(component.gameObject, immediate);
+        }
+         
+        /// <summary> オブジェクトの削除 </summary>
         public static void SafeDelete(UnityEngine.Object instance, bool immediate = false)
         {
             if (instance != null)

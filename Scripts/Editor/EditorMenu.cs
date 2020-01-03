@@ -353,48 +353,63 @@ namespace Modules
             return true;
         }
 
-        //------ コンポーネント調整時のログ表示 ------
+        //------ コンポーネント調整無効化 ------
 
-        [MenuItem(itemName: SettingsMenu + "ComponentTuner Log", priority = 4)]
-        public static void ToggleComponentTunerLog()
+        [MenuItem(itemName: SettingsMenu + "Auto Component Tuning/Disable", priority = 4)]
+        public static void AutoComponentTuningDisable()
         {
-            ComponentTuning.ToggleTuningLog();
+            ComponentTuning.Prefs.Enable = !ComponentTuning.Prefs.Enable;
         }
 
-        [MenuItem(itemName: SettingsMenu + "ComponentTuner Log", validate = true)]
-        public static bool ToggleComponentTunerLogValidate()
+        [MenuItem(itemName: SettingsMenu + "Auto Component Tuning/Disable", validate = true)]
+        public static bool AutoComponentTuningDisableValidate()
         {
-            UnityEditor.Menu.SetChecked(SettingsMenu + "ComponentTuner Log", ComponentTuning.LogEnable);
+            UnityEditor.Menu.SetChecked(SettingsMenu + "Auto Component Tuning/Disable", !ComponentTuning.Prefs.Enable);
+            return true;
+        }
+
+        //------ コンポーネント調整時のログ表示 ------
+
+        [MenuItem(itemName: SettingsMenu + "Auto Component Tuning/Log", priority = 4)]
+        public static void ToggleAutoComponentTuningLog()
+        {
+            ComponentTuning.Prefs.LogEnable = !ComponentTuning.Prefs.LogEnable;
+        }
+
+        [MenuItem(itemName: SettingsMenu + "Auto Component Tuning/Log", validate = true)]
+        public static bool ToggleAutoComponentTuningValidate()
+        {
+            UnityEditor.Menu.SetChecked(SettingsMenu + "Auto Component Tuning/Log", ComponentTuning.Prefs.LogEnable);
             return true;
         }
 
         //------ コンポーネント自動追加無効化 ------
 
-        [MenuItem(itemName: SettingsMenu + "AdditionalComponent/Disable", priority = 5)]
-        public static void AdditionalComponentDisable()
+        [MenuItem(itemName: SettingsMenu + "Auto Add Component/Disable", priority = 5)]
+        public static void AutoAddComponentDisable()
         {
-            AdditionalComponent.Prefs.enable = !AdditionalComponent.Prefs.enable;
+            AdditionalComponent.Prefs.Enable = !AdditionalComponent.Prefs.Enable;
         }
 
-        [MenuItem(itemName: SettingsMenu + "AdditionalComponent/Disable", validate = true)]
-        public static bool AdditionalComponentDisableValidate()
+        [MenuItem(itemName: SettingsMenu + "Auto Add Component/Disable", validate = true)]
+        public static bool AutoAddComponentDisableValidate()
         {
-            UnityEditor.Menu.SetChecked(SettingsMenu + "AdditionalComponent/Disable", !AdditionalComponent.Prefs.enable);
+            UnityEditor.Menu.SetChecked(SettingsMenu + "Auto Add Component/Disable", !AdditionalComponent.Prefs.Enable);
             return true;
         }
 
         //------ コンポーネント自動追加時のログ出力 ------
 
-        [MenuItem(itemName: SettingsMenu + "AdditionalComponent/Log", priority = 6)]
+        [MenuItem(itemName: SettingsMenu + "Auto Add Component/Log", priority = 6)]
         public static void AdditionalComponentLog()
         {
-            AdditionalComponent.Prefs.log = !AdditionalComponent.Prefs.log;
+            AdditionalComponent.Prefs.LogEnable = !AdditionalComponent.Prefs.LogEnable;
         }
 
-        [MenuItem(itemName: SettingsMenu + "AdditionalComponent/Log", validate = true)]
+        [MenuItem(itemName: SettingsMenu + "Auto Add Component/Log", validate = true)]
         public static bool AdditionalComponentLogValidate()
         {
-            UnityEditor.Menu.SetChecked(SettingsMenu + "AdditionalComponent/Log", AdditionalComponent.Prefs.log);
+            UnityEditor.Menu.SetChecked(SettingsMenu + "AdditionalComponent/Log", AdditionalComponent.Prefs.LogEnable);
             return true;
         }
 

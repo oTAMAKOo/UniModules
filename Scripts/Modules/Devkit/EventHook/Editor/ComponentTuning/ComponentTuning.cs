@@ -19,32 +19,33 @@ namespace Modules.Devkit.EventHook
     {
         //----- params -----
 
-        private const string PrefsKey = "ComponentTuner-TuningLog";
+        public static class Prefs
+        {
+            public static bool Enable
+            {
+                get { return ProjectPrefs.GetBool("ComponentTunerPrefs-Enable", true); }
+                set { ProjectPrefs.SetBool("ComponentTunerPrefs-Enable", value); }
+            }
+
+            public static bool LogEnable
+            {
+                get { return ProjectPrefs.GetBool("ComponentTunerPrefs-Log", true); }
+                set { ProjectPrefs.SetBool("ComponentTunerPrefs-Log", value); }
+            }
+        }
 
         //----- field -----
         
         private static ComponentTuner[] tuners = null;
 
         //----- property -----
-
-        public static bool LogEnable { get; private set; }
         
         //----- method -----
 
-        [InitializeOnLoadMethod]
-        private static void InitializeOnLoadMethod()
-        {
-            LogEnable = ProjectPrefs.GetBool(PrefsKey, true);
-        }
-
-        public static void ToggleTuningLog()
-        {
-            LogEnable = !LogEnable;
-            ProjectPrefs.SetBool(PrefsKey, LogEnable);
-        }
-
         protected static void TuneComponents(GameObject[] newGameObjects, Func<GameObject, bool> checkExecute)
         {
+            if (!Prefs.Enable) { return; }
+
             var tunedObject = new List<GameObject>();
 
             foreach (var newGameObject in newGameObjects)
@@ -66,7 +67,7 @@ namespace Modules.Devkit.EventHook
 
                         if (component != null)
                         {
-                            if (tuner.Tuning(component) && LogEnable)
+                            if (tuner.Tuning(component) && Prefs.LogEnable)
                             {
                                 Debug.LogFormat("Tuning Component: [ {0} ] {1}", tuner.TargetComponent.Name, component.transform.name);
                             }

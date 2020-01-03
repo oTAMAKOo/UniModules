@@ -14,16 +14,16 @@ namespace Modules.Devkit.EventHook
 
         public static class Prefs
         {
-            public static bool enable
+            public static bool Enable
             {
-                get { return ProjectPrefs.GetBool("AdditionalComponentPrefs-enable", true); }
-                set { ProjectPrefs.SetBool("AdditionalComponentPrefs-enable", value); }
+                get { return ProjectPrefs.GetBool("AdditionalComponentPrefs-Enable", true); }
+                set { ProjectPrefs.SetBool("AdditionalComponentPrefs-Enable", value); }
             }
 
-            public static bool log
+            public static bool LogEnable
             {
-                get { return ProjectPrefs.GetBool("AdditionalComponentPrefs-log", true); }
-                set { ProjectPrefs.SetBool("AdditionalComponentPrefs-log", value); }
+                get { return ProjectPrefs.GetBool("AdditionalComponentPrefs-LogEnable", true); }
+                set { ProjectPrefs.SetBool("AdditionalComponentPrefs-LogEnable", value); }
             }
         }
 
@@ -67,7 +67,7 @@ namespace Modules.Devkit.EventHook
         protected static void AddRequireComponents(GameObject[] newGameObjects, Func<GameObject, bool> checkExecute)
         {
             // 無効化中は追加しない.
-            if (!Prefs.enable) { return; }
+            if (!Prefs.Enable) { return; }
 
             // 実行中は追加しない.
             if (Application.isPlaying) { return; }
@@ -104,7 +104,7 @@ namespace Modules.Devkit.EventHook
 
                                     EditorUtility.SetDirty(targetObject);
 
-                                    if (Prefs.log)
+                                    if (Prefs.LogEnable)
                                     {
                                         Debug.LogFormat("Attached Component: [ {0} ] {1}", component.GetType(), targetObject.transform.name);
                                     }
