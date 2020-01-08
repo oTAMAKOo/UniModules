@@ -128,7 +128,7 @@ namespace Modules.Networking
 
             #if UNITY_EDITOR
 
-            ApiMonitorBridge.Instance.Start(webRequest);
+            //ApiMonitorBridge.Instance.Start(webRequest);
 
             #endif
 
@@ -318,12 +318,23 @@ namespace Modules.Networking
                 switch (Format)
                 {
                     case DataFormat.Json:
-                        json = result.ToJson();
+                        {
+                            json = result.ToJson();
+                        }
                         break;
 
                     case DataFormat.MessagePack:
-                        var options = StandardResolverAllowPrivate.Options.WithResolver(UnityContractResolver.Instance);
-                        json = MessagePackSerializer.SerializeToJson(result, options);
+                    case DataFormat.MessagePackLZ4:
+                        {
+                            var options = StandardResolverAllowPrivate.Options.WithResolver(UnityContractResolver.Instance);
+
+                            if (Format == DataFormat.MessagePackLZ4)
+                            {
+                                options = options.WithCompression(MessagePackCompression.Lz4BlockArray);
+                            }
+
+                            json = MessagePackSerializer.SerializeToJson(result, options);
+                        }
                         break;
                 }
 

@@ -155,36 +155,40 @@ namespace Modules.Networking
 
             value = Decrypt(value);
 
-            if (Compress)
-            {
-                value = value.Decompress();
-            }
-
             switch (Format)
             {
                 case DataFormat.Json:
-
-                    var json = Encoding.UTF8.GetString(value);
-
-                    if (!string.IsNullOrEmpty(json))
                     {
-                        result = JsonConvert.DeserializeObject<TResult>(json);
-                    }
+                        if (Compress)
+                        {
+                            value = value.Decompress();
+                        }
 
+                        var json = Encoding.UTF8.GetString(value);
+
+                        if (!string.IsNullOrEmpty(json))
+                        {
+                            result = JsonConvert.DeserializeObject<TResult>(json);
+                        }
+                    }
                     break;
 
                 case DataFormat.MessagePack:
-
-                    MessagePackValidater.ValidateAttribute(typeof(TResult));
-
-                    if (value != null && value.Any())
                     {
-                        var options = StandardResolverAllowPrivate.Options
-                            .WithResolver(UnityContractResolver.Instance);
+                        MessagePackValidater.ValidateAttribute(typeof(TResult));
 
-                        result = MessagePackSerializer.Deserialize<TResult>(value, options);
+                        if (value != null && value.Any())
+                        {
+                            var options = StandardResolverAllowPrivate.Options.WithResolver(UnityContractResolver.Instance);
+
+                            if (Compress)
+                            {
+                                options = options.WithCompression(MessagePackCompression.Lz4BlockArray);
+                            }
+
+                            result = MessagePackSerializer.Deserialize<TResult>(value, options);
+                        }
                     }
-
                     break;
             }
 
@@ -246,6 +250,11 @@ namespace Modules.Networking
                     {
                         var json = JsonConvert.SerializeObject(content);
                         bodyData = Encoding.UTF8.GetBytes(json);
+                        
+                        if (Compress)
+                        {
+                            bodyData = bodyData.Compress();
+                        }
                     }
                     break;
 
@@ -253,17 +262,16 @@ namespace Modules.Networking
                     {
                         MessagePackValidater.ValidateAttribute(typeof(TContent));
 
-                        var options = StandardResolverAllowPrivate.Options
-                            .WithResolver(UnityContractResolver.Instance);
+                        var options = StandardResolverAllowPrivate.Options.WithResolver(UnityContractResolver.Instance);
+
+                        if (Compress)
+                        {
+                            options = options.WithCompression(MessagePackCompression.Lz4BlockArray);
+                        }
 
                         bodyData = MessagePackSerializer.Serialize(content, options);
                     }
                     break;
-            }
-
-            if (Compress)
-            {
-                bodyData = bodyData.Compress();
             }
 
             bodyData = Encrypt(bodyData);
