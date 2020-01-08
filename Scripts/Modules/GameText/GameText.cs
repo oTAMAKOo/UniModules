@@ -26,16 +26,23 @@ namespace Modules.GameText
             Cache = null;
         }
 
-        public void Load(string assetPath)
+        public void Load(GameTextAsset asset)
         {
             Cache = null;
-
-            var asset = Resources.Load<GameTextAsset>(UnityPathUtility.ConvertResourcesLoadPath(assetPath));
 
             if (asset != null)
             {
                 Cache = asset.contents.ToDictionary(x => x.SheetId);
             }
+        }
+
+        public void LoadFromResources(string assetPath)
+        {
+            var resourcesPath = UnityPathUtility.ConvertResourcesLoadPath(assetPath);
+
+            var asset = Resources.Load<GameTextAsset>(resourcesPath);
+
+            Load(asset);
         }
 
         // ※ SheetIdがGameTextCategoryのEnumIDとして登録されている.
