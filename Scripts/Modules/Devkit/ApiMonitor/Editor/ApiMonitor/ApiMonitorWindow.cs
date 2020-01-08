@@ -29,7 +29,8 @@ namespace Modules.Networking
         private WebRequestInfo[] contents = null;
 
         private GUIStyle statusLabelStyle = null;
-        private GUIStyle urlLabelStyle = null;
+        private GUIStyle serverUrlLabelStyle = null;
+        private GUIStyle apiNameLabelStyle = null;
 
         private Dictionary<WebRequestInfo.RequestType, Texture2D> statusLabelTexture = null;
 
@@ -97,7 +98,7 @@ namespace Modules.Networking
 
             using (new EditorGUILayout.HorizontalScope(EditorStyles.toolbar, GUILayout.Height(15f)))
             {
-                EditorGUILayout.LabelField(apiMonitorBridge.ServerUrl, urlLabelStyle, GUILayout.Width(500f));
+                EditorGUILayout.LabelField(apiMonitorBridge.ServerUrl, serverUrlLabelStyle, GUILayout.Width(500f));
 
                 GUILayout.FlexibleSpace();
 
@@ -111,6 +112,8 @@ namespace Modules.Networking
 
         private void DrawApiHistoryGUI()
         {
+            var apiMonitorBridge = ApiMonitorBridge.Instance;
+
             using (new EditorGUILayout.VerticalScope(EditorLayoutTools.TextAreaStyle))
             {
                 GUILayout.Space(2f);
@@ -164,7 +167,14 @@ namespace Modules.Networking
 
                                 var requestName = content.requestType.ToLabelName();
 
-                                GUILayout.Label(requestName, statusLabelStyle, GUILayout.Width(46f), GUILayout.Height(16f));
+                                using (new EditorGUILayout.HorizontalScope())
+                                {
+                                    GUILayout.Label(requestName, statusLabelStyle, GUILayout.Width(46f), GUILayout.Height(16f));
+
+                                    var apiName = content.url.Replace(apiMonitorBridge.ServerUrl, string.Empty);
+
+                                    GUILayout.Label(apiName, apiNameLabelStyle, GUILayout.Height(16f));
+                                }
                             }
                         }
 
@@ -204,9 +214,9 @@ namespace Modules.Networking
 
         private void InitializeStyle()
         {
-            if (urlLabelStyle == null)
+            if (serverUrlLabelStyle == null)
             {
-                urlLabelStyle = new GUIStyle(EditorStyles.miniLabel)
+                serverUrlLabelStyle = new GUIStyle(EditorStyles.miniLabel)
                 {
                     fontSize = 10,
                 };
@@ -220,6 +230,18 @@ namespace Modules.Networking
                     contentOffset = new Vector2(2f, 0f),
                     border = new RectOffset(10, 10, 4, 4),
                     fontSize = 9,
+                    fontStyle = FontStyle.Bold,
+                };
+
+                statusLabelStyle.normal.textColor = Color.white;
+            }
+
+            if (apiNameLabelStyle == null)
+            {
+                apiNameLabelStyle = new GUIStyle(GUI.skin.label)
+                {
+                    alignment = TextAnchor.MiddleLeft,
+                    fontSize = 10,
                     fontStyle = FontStyle.Bold,
                 };
 

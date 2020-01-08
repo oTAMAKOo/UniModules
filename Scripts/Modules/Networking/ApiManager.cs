@@ -126,12 +126,6 @@ namespace Modules.Networking
 
             var sw = System.Diagnostics.Stopwatch.StartNew();
 
-            #if UNITY_EDITOR
-
-            //ApiMonitorBridge.Instance.Start(webRequest);
-
-            #endif
-
             var retryCount = 0;
 
             TResult result = null;
@@ -139,7 +133,16 @@ namespace Modules.Networking
             // リクエスト実行.
             while (true)
             {
-                var requestYield = requestObserver.ToYieldInstruction(false);                
+                var requestYield = requestObserver.ToYieldInstruction(false);
+
+                #if UNITY_EDITOR
+
+                if (retryCount == 0)
+                {
+                    ApiMonitorBridge.Instance.Start(webRequest);                    
+                }
+
+                #endif
 
                 while (!requestYield.IsDone)
                 {
