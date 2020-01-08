@@ -324,11 +324,10 @@ namespace Modules.Networking
                         break;
 
                     case DataFormat.MessagePack:
-                    case DataFormat.MessagePackLZ4:
                         {
                             var options = StandardResolverAllowPrivate.Options.WithResolver(UnityContractResolver.Instance);
 
-                            if (Format == DataFormat.MessagePackLZ4)
+                            if (Compress)
                             {
                                 options = options.WithCompression(MessagePackCompression.Lz4BlockArray);
                             }
