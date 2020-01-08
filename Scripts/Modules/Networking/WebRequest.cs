@@ -183,7 +183,7 @@ namespace Modules.Networking
 
                             if (Compress)
                             {
-                                options = options.WithCompression(MessagePackCompression.Lz4BlockArray);
+                                options = options.WithCompression(MessagePackCompression.Lz4Block);
                             }
 
                             result = MessagePackSerializer.Deserialize<TResult>(value, options);
@@ -266,7 +266,7 @@ namespace Modules.Networking
 
                         if (Compress)
                         {
-                            options = options.WithCompression(MessagePackCompression.Lz4BlockArray);
+                            options = options.WithCompression(MessagePackCompression.Lz4Block);
                         }
 
                         bodyData = MessagePackSerializer.Serialize(content, options);

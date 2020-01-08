@@ -332,7 +332,7 @@ namespace Modules.Networking
 
                             if (Compress)
                             {
-                                options = options.WithCompression(MessagePackCompression.Lz4BlockArray);
+                                options = options.WithCompression(MessagePackCompression.Lz4Block);
                             }
 
                             json = MessagePackSerializer.SerializeToJson(result, options);
