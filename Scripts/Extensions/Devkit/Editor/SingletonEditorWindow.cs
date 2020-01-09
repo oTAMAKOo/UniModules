@@ -8,7 +8,7 @@ using UniRx;
 
 namespace Extensions.Devkit
 {
-    public class SingletonEditorWindow<T> : EditorWindow where T : EditorWindow
+    public class SingletonEditorWindow<T> : EditorWindow where T : SingletonEditorWindow<T>
     {
         //----- params -----
 
@@ -35,6 +35,11 @@ namespace Extensions.Devkit
                 if (instance == null)
                 {
                     instance = FindInstance() ?? CreateInstance<T>();
+
+                    if (instance != null)
+                    {
+                        instance.OnCreateInstance();
+                    }
                 }
 
                 return instance;
@@ -64,5 +69,7 @@ namespace Extensions.Devkit
         {
             return onDestroy ?? (onDestroy = new Subject<Unit>());
         }
+
+        protected virtual void OnCreateInstance() { }
     }
 }

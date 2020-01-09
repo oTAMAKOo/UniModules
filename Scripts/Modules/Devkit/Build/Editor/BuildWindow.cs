@@ -13,7 +13,7 @@ using Object = UnityEngine.Object;
 
 namespace Modules.Devkit.Build
 {
-    public abstract class BuildWindow<T> : SingletonEditorWindow<T> where T : EditorWindow
+    public abstract class BuildWindow<T> : SingletonEditorWindow<T> where T : BuildWindow<T>
     {
         //----- params -----
 
