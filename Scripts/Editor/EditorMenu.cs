@@ -36,9 +36,10 @@ namespace Modules
 {
     public class EditorMenu
     {
-        public const string MenuRoot = "Extension/";
+        protected const string MenuRoot = "Extension/";
 
         // ※ priorityは11以上差分があると区切り線が入る.
+        protected const int SeparatorValue = 11;
 
         //===============================================================
         //  Generators.
@@ -142,19 +143,6 @@ namespace Modules
         {
             Menu.SetChecked(MasterMenu + "Use CachedMasterFile", !MasterManager.Prefs.checkVersion);
             return true;
-        }
-
-        [MenuItem(itemName: MasterMenu + "Open MasterFile Directory", priority = 12)]
-        public static void OpenMasterFileDirectory()
-        {
-            var masterDownloadDirectory = MasterManager.Instance.InstallDirectory;
-
-            if (!Directory.Exists(masterDownloadDirectory))
-            {
-                Directory.CreateDirectory(masterDownloadDirectory);
-            }
-
-            System.Diagnostics.Process.Start(masterDownloadDirectory);
         }
 
         #endregion
