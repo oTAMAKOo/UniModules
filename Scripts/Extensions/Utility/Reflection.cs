@@ -1,5 +1,8 @@
 ﻿﻿
 using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
 
 namespace Extensions
@@ -208,6 +211,20 @@ namespace Extensions
             }
 
             return null;
+        }
+
+        /// <summary> ジェネリック型の配列の要素型を取得 </summary>
+        public static Type GetElementTypeOfEnumerable(object instance)
+        {
+            var enumerable = instance as IEnumerable;
+
+            if (enumerable == null) { return null; }
+
+            var interfaces = enumerable.GetType().GetInterfaces();
+
+            return (from i in interfaces
+                    where i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IEnumerable<>)
+                    select i.GetGenericArguments()[0]).FirstOrDefault();
         }
     }
 }
