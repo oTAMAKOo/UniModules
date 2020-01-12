@@ -213,8 +213,8 @@ namespace Extensions
             return null;
         }
 
-        /// <summary> ジェネリック型の配列の要素型を取得 </summary>
-        public static Type GetElementTypeOfEnumerable(object instance)
+        /// <summary> ジェネリック型配列の要素型取得 </summary>
+        public static Type GetElementTypeOfGenericEnumerable(object instance)
         {
             var enumerable = instance as IEnumerable;
 
@@ -222,9 +222,9 @@ namespace Extensions
 
             var interfaces = enumerable.GetType().GetInterfaces();
 
-            return (from i in interfaces
-                    where i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IEnumerable<>)
-                    select i.GetGenericArguments()[0]).FirstOrDefault();
+            return interfaces.Where(x => x.IsGenericType && x.GetGenericTypeDefinition() == typeof(IEnumerable<>))
+                .Select(x => x.GetGenericArguments()[0])
+                .FirstOrDefault();
         }
     }
 }

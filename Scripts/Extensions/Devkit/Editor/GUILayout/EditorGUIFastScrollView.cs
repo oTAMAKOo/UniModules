@@ -62,6 +62,10 @@ namespace Extensions.Devkit
 
         public Vector2 ScrollPosition { get; set; }
 
+        public bool HideHorizontalScrollBar { get; set; }
+
+        public bool HideVerticalScrollBar { get; set; }
+
         public abstract Direction Type { get; }
 
         /// <summary> レイアウトの計算が終わっているか </summary>
@@ -229,11 +233,15 @@ namespace Extensions.Devkit
         private void DrawScrollContents(params GUILayoutOption[] options)
         {
             var isLayoutEvent = Event.current.type == EventType.Layout;
+            
+            var horizontalScrollBar = HideHorizontalScrollBar ? GUIStyle.none : GUI.skin.horizontalScrollbar;
+
+            var verticalScrollBar = HideVerticalScrollBar ? GUIStyle.none : GUI.skin.verticalScrollbar;
 
             // スクロール領域計測用.
             var scrollViewRect = EditorGUILayout.BeginVertical();
 
-            using (var scrollViewScope = new EditorGUILayout.ScrollViewScope(ScrollPosition, options))
+            using (var scrollViewScope = new EditorGUILayout.ScrollViewScope(ScrollPosition, false, false, horizontalScrollBar, verticalScrollBar, GUIStyle.none, options))
             {
                 using (GetScrollDirectionScope())
                 {

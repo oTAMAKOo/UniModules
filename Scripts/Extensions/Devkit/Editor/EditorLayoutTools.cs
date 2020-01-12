@@ -73,6 +73,11 @@ namespace Extensions.Devkit
             }
         }
 
+        public static Color DefaultContentColor
+        {
+            get { return EditorGUIUtility.isProSkin ? Color.white : Color.black; }
+        }
+
         //----- method -----
 
         #region Field
@@ -490,23 +495,38 @@ namespace Extensions.Devkit
         }
 
         /// <summary> 検索用テキストボックス描画 </summary>
-        public static string DrawSearchTextField(string searchText, Action onChangeSearchText = null, Action onSearchCancel = null, float width = 200f)
+        public static string DrawSearchTextField(string searchText, Action<string> onChangeSearchText = null, Action onSearchCancel = null, params GUILayoutOption[] options)
+        {
+            return DrawSearchTextFieldCore(searchText, onChangeSearchText, onSearchCancel, false, options);        
+        }
+
+        /// <summary> 検索用テキストボックス描画 </summary>
+        public static string DrawToolbarSearchTextField(string searchText, Action<string> onChangeSearchText = null, Action onSearchCancel = null, params GUILayoutOption[] options)
+        {
+            return DrawSearchTextFieldCore(searchText, onChangeSearchText, onSearchCancel, true, options);
+        }
+
+        private static string DrawSearchTextFieldCore(string searchText, Action<string> onChangeSearchText, Action onSearchCancel, bool isToolbar, params GUILayoutOption[] options)
         {
             using (new EditorGUILayout.HorizontalScope())
             {
                 EditorGUI.BeginChangeCheck();
 
-                searchText = EditorGUILayout.TextField(string.Empty, searchText, "SearchTextField", GUILayout.Width(width));
+                var seachTextFieldStyleName = isToolbar ? "ToolbarSeachTextField" : "SeachTextField";
+
+                searchText = EditorGUILayout.TextField(string.Empty, searchText, seachTextFieldStyleName, options);
 
                 if (EditorGUI.EndChangeCheck())
                 {
                     if (onChangeSearchText != null)
                     {
-                        onChangeSearchText();
+                        onChangeSearchText(searchText);
                     }
                 }
 
-                if (GUILayout.Button(string.Empty, "SearchCancelButton", GUILayout.Width(18f)))
+                var seachCancelButtonStyleName = isToolbar ? "ToolbarSeachCancelButton" : "SeachCancelButton";
+
+                if (GUILayout.Button(string.Empty, seachCancelButtonStyleName, GUILayout.Width(18f)))
                 {
                     searchText = string.Empty;
                     GUIUtility.keyboardControl = 0;
@@ -686,21 +706,20 @@ namespace Extensions.Devkit
 
         public static void BeginContents()
         {
-            GUILayout.BeginHorizontal();
+            EditorGUILayout.BeginHorizontal(TextAreaStyle);
 
-            EditorGUILayout.BeginHorizontal(TextAreaStyle, GUILayout.MinHeight(10f));
+            EditorGUILayout.BeginVertical();
 
-            GUILayout.BeginVertical();
-            GUILayout.Space(3f);
+            GUILayout.Space(2f);
         }
 
         public static void EndContents()
         {
-            GUILayout.Space(3f);
-            GUILayout.EndVertical();
+            GUILayout.Space(2f);
+
+            EditorGUILayout.EndVertical();
 
             EditorGUILayout.EndHorizontal();
-            GUILayout.EndHorizontal();
         }
 
         public static void DrawSprite(Rect rect, Sprite sprite, Color color, bool hasSizeLabel)
