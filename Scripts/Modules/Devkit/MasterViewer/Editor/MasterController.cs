@@ -1,4 +1,6 @@
 ﻿
+using UnityEngine;
+using UnityEditor;
 using System;
 using System.Linq;
 using System.Collections.Generic;
@@ -25,6 +27,9 @@ namespace Modules.Devkit.MasterViewer
         /// <summary> 編集済みレコードがあるか. </summary>
         public bool HasChangedRecord { get { return changedRecords.Any(); } }
 
+        /// <summary> 編集可能か. </summary>
+        public bool EnableEdit { get; set; }
+
         //----- method -----
 
         public MasterController()
@@ -36,6 +41,24 @@ namespace Modules.Devkit.MasterViewer
 
         public void UpdateValue(object record, string valueName, object value)
         {
+            if (!Application.isPlaying)
+            {
+                EditorUtility.DisplayDialog("Require playing", "Editing values can only playing.", "Close");
+
+                GUI.FocusControl(string.Empty);
+
+                return;
+            }
+
+            if (!EnableEdit)
+            {
+                EditorUtility.DisplayDialog("Require unlock", "Editing values is locked.\nUnlock if you want to change the value.", "Close");
+
+                GUI.FocusControl(string.Empty);
+
+                return;
+            }
+
             if (GetValue(record, valueName).Equals(value)) { return; }
 
             var originData = changedRecords.GetValueOrDefault(record);
@@ -49,7 +72,7 @@ namespace Modules.Devkit.MasterViewer
                 var args = valueNames.Select(t => GetValue(record, t)).ToArray();
 
                 originData = Activator.CreateInstance(recordType, args);
-                
+
                 changedRecords.Add(record, originData);
             }
 

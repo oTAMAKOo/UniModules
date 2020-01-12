@@ -5,6 +5,7 @@ using System;
 using System.Collections;
 using System.Linq;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Text;
 using UniRx;
 using Extensions;
@@ -139,45 +140,45 @@ namespace Modules.Devkit.MasterViewer
                 return;
             }
 
-            using (var scrollViewScope = new EditorGUILayout.ScrollViewScope(scrollPosition))
+            // Toolbar.
+
+            using (new EditorGUILayout.HorizontalScope(EditorStyles.toolbar, GUILayout.Height(15f)))
             {
-                // Toolbar.
-
-                using (new EditorGUILayout.HorizontalScope(EditorStyles.toolbar, GUILayout.Height(15f)))
+                // 「編集」は実行中のみ.
+                if (Application.isPlaying)
                 {
-                    // 「編集」は実行中のみ.
-                    if (Application.isPlaying)
+                    // 「現在の状態」を表示する為、逆にする.
+                    var buttonContent = masterController.EnableEdit ? lockedButtonContent : unLockedButtonContent;
+
+                    using (new ContentColorScope(EditorLayoutTools.DefaultContentColor))
                     {
-                        // 「現在の状態」を表示する為、逆にする.
-                        var buttonContent = recordScrollView.EnableEdit ? lockedButtonContent : unLockedButtonContent;
-
-                        using (new ContentColorScope(EditorLayoutTools.DefaultContentColor))
-                        {
-                            recordScrollView.EnableEdit = GUILayout.Toggle(recordScrollView.EnableEdit, buttonContent, EditorStyles.toolbarButton, GUILayout.Width(20f));
-                        }
-
-                        GUILayout.Space(15f);
+                        masterController.EnableEdit = GUILayout.Toggle(masterController.EnableEdit, buttonContent, EditorStyles.toolbarButton, GUILayout.Width(20f));
                     }
 
-                    // 検索.
-
-                    Action<string> onChangeSearchText = x =>
-                    {
-                        searchText = x;
-                        recordScrollView.Contents = GetDisplayRecords();
-                        Repaint();
-                    };
-
-                    Action onSearchCancel = () =>
-                    {
-                        searchText = string.Empty;
-                        recordScrollView.Contents = GetDisplayRecords();
-                        Repaint();
-                    };
-
-                    EditorLayoutTools.DrawToolbarSearchTextField(searchText, onChangeSearchText, onSearchCancel, GUILayout.Width(250f));             
+                    GUILayout.Space(15f);
                 }
 
+                // 検索.
+
+                Action<string> onChangeSearchText = x =>
+                {
+                    searchText = x;
+                    recordScrollView.Contents = GetDisplayRecords();
+                    Repaint();
+                };
+
+                Action onSearchCancel = () =>
+                {
+                    searchText = string.Empty;
+                    recordScrollView.Contents = GetDisplayRecords();
+                    Repaint();
+                };
+
+                EditorLayoutTools.DrawToolbarSearchTextField(searchText, onChangeSearchText, onSearchCancel, GUILayout.Width(250f));
+            }
+
+            using (var scrollViewScope = new EditorGUILayout.ScrollViewScope(scrollPosition))
+            {
                 // RecordView.
 
                 var valueNames = masterController.GetValueNames();
@@ -239,6 +240,8 @@ namespace Modules.Devkit.MasterViewer
                         };
 
                         focusedControl = GetControlNum(controlPosition);
+
+                        GUI.FocusControl(string.Empty);
 
                         Event.current.Use();
 
@@ -354,8 +357,6 @@ namespace Modules.Devkit.MasterViewer
 
         public float[] FieldWidth { get; set; }
 
-        public bool EnableEdit { get; set; } = false;
-
         //----- method -----
 
         public RecordScrollView(MasterController masterController)
@@ -381,14 +382,11 @@ namespace Modules.Devkit.MasterViewer
 
                     Action<object> onUpdateValue = x =>
                     {
-                        if (EnableEdit)
-                        {
-                            masterController.UpdateValue(content, valueName, x);
+                        masterController.UpdateValue(content, valueName, x);
 
-                            if (onChangeRecord != null)
-                            {
-                                onChangeRecord.OnNext(Unit.Default);
-                            }
+                        if (onChangeRecord != null)
+                        {
+                            onChangeRecord.OnNext(Unit.Default);
                         }
                     };
 
@@ -415,13 +413,11 @@ namespace Modules.Devkit.MasterViewer
                             {
                                 var mouseRect = new Rect(Event.current.mousePosition, Vector2.one);
 
-                                var arrayFieldPopupWindow = new ArrayFieldPopupWindow();
+                                var arrayFieldPopupWindow = new ArrayFieldPopupWindow(masterController);
 
                                 var array = value as Array;
 
                                 arrayFieldPopupWindow.SetContents(valueType, array.Cast<object>().ToArray());
-
-                                arrayFieldPopupWindow.EnableEdit = EnableEdit;
 
                                 arrayFieldPopupWindow.OnUpdateElementsAsObservable()
                                     .Subscribe(x => onUpdateValue(x))

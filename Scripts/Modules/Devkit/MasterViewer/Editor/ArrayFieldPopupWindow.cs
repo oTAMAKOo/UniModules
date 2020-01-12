@@ -15,6 +15,8 @@ namespace Modules.Devkit.MasterViewer
 
         //----- field -----
 
+        private MasterController masterController = null;
+
         private Type arrayType = null;
         private Type displayType = null;
 
@@ -29,9 +31,12 @@ namespace Modules.Devkit.MasterViewer
 
         //----- property -----
 
-        public bool EnableEdit { get; set; }
-
         //----- method -----
+
+        public ArrayFieldPopupWindow(MasterController masterController)
+        {
+            this.masterController = masterController;
+        }
 
         public override void OnOpen()
         {
@@ -54,7 +59,7 @@ namespace Modules.Devkit.MasterViewer
 
             using (new EditorGUILayout.HorizontalScope(EditorStyles.toolbar, GUILayout.Height(15f)))
             {
-                if (EnableEdit)
+                if (masterController.EnableEdit)
                 {
                     if (GUILayout.Button(toolbarPlusIcon, EditorStyles.toolbarButton, GUILayout.Width(50f)))
                     {
@@ -84,7 +89,7 @@ namespace Modules.Devkit.MasterViewer
                             OnUpdateElements();
                         }
 
-                        if (EnableEdit)
+                        if (masterController.EnableEdit)
                         {
                             if (GUILayout.Button(toolbarMinusIcon, GUILayout.Width(20f)))
                             {
@@ -110,7 +115,7 @@ namespace Modules.Devkit.MasterViewer
 
         private void OnUpdateElements()
         {
-            if (!EnableEdit) { return; }
+            if (!masterController.EnableEdit) { return; }
 
             var arraySize = elements.Count;
 
