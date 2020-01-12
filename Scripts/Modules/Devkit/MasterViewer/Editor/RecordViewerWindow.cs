@@ -139,11 +139,6 @@ namespace Modules.Devkit.MasterViewer
                 return;
             }
 
-            // オフセット計算用に空領域を確保.
-            using (new EditorGUILayout.HorizontalScope()){ }
-
-            var offset = GUILayoutUtility.GetLastRect();
-
             using (var scrollViewScope = new EditorGUILayout.ScrollViewScope(scrollPosition))
             {
                 // Toolbar.
@@ -201,7 +196,7 @@ namespace Modules.Devkit.MasterViewer
 
                         EditorGUILayout.LabelField(valueName, EditorStyles.miniButton, GUILayout.Width(fieldWidth[i]), GUILayout.Height(15f));
 
-                        GetResizeHorizontalRect(offset, 5f);
+                        GetResizeHorizontalRect();
                     }
 
                     GUILayout.Space(3f);
@@ -221,50 +216,69 @@ namespace Modules.Devkit.MasterViewer
 
             var ev = Event.current;
 
-            if (ev.type == EventType.MouseUp)
+            switch (ev.type)
             {
-                focusedControl = -1;
+                case EventType.MouseUp:
+                    {
+                        focusedControl = -1;
 
-                Event.current.Use();
-                Repaint();
-            }
-            else if (ev.type == EventType.MouseDown)
-            {
-                mousDownPosition = ev.mousePosition;
-                focusedControl = GetControlNum(ev.mousePosition);
+                        Event.current.Use();
 
-                Event.current.Use();
-                Repaint();
-            }
-            else if (ev.type == EventType.MouseDrag)
-            {
-                if (focusedControl != -1)
-                {
-                    var diff = (int)(ev.mousePosition.x - mousDownPosition.x);
+                        Repaint();
+                    }
+                    break;
 
-                    mousDownPosition = ev.mousePosition;
+                case EventType.MouseDown:
+                    {
+                        mousDownPosition = ev.mousePosition;
 
-                    fieldWidth[focusedControl] = Mathf.Max(50f, fieldWidth[focusedControl] + diff);
+                        var controlPosition = new Vector2()
+                        {
+                            x = scrollPosition.x + mousDownPosition.x,
+                            y = mousDownPosition.y,
+                        };
 
-                    recordScrollView.FieldWidth = fieldWidth;
+                        focusedControl = GetControlNum(controlPosition);
 
-                    Repaint();
-                }
+                        Event.current.Use();
+
+                        Repaint();
+                    }
+                    break;
+
+                case EventType.MouseDrag:
+                    {
+                        if (focusedControl == -1) { break; }
+
+                        var diff = (int)(ev.mousePosition.x - mousDownPosition.x);
+
+                        mousDownPosition = ev.mousePosition;
+
+                        fieldWidth[focusedControl] = Mathf.Max(50f, fieldWidth[focusedControl] + diff);
+
+                        recordScrollView.FieldWidth = fieldWidth;
+
+                        Repaint();
+                    }
+                    break;
             }
         }
 
-        private void GetResizeHorizontalRect(Rect offset, float width)
+        private void GetResizeHorizontalRect()
         {
+            var resizeRectSize = new Vector2(20f, 10f);
+
             var rect = GUILayoutUtility.GetLastRect();
 
-            rect.x = rect.x + rect.width;
-            rect.y += offset.y + offset.height - 5f;
-            rect.width = width;
-            rect.height += 10f;
+            rect.x = rect.x + rect.width - resizeRectSize.x * 0.5f;
+            rect.y -= resizeRectSize.y * 0.5f;
 
-            EditorGUIUtility.AddCursorRect(rect, MouseCursor.ResizeHorizontal);
+            rect.width = resizeRectSize.x;
+            rect.height += resizeRectSize.y;
 
             controlRects.Add(rect);
+
+            EditorGUIUtility.AddCursorRect(rect, MouseCursor.ResizeHorizontal);
         }
 
         private int GetControlNum(Vector2 pos)
