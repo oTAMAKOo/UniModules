@@ -177,6 +177,8 @@ namespace Modules.Devkit.MasterViewer
                 EditorLayoutTools.DrawToolbarSearchTextField(searchText, onChangeSearchText, onSearchCancel, GUILayout.Width(250f));
             }
 
+            var scrollBaseRect = GUILayoutUtility.GetLastRect();
+
             using (var scrollViewScope = new EditorGUILayout.ScrollViewScope(scrollPosition))
             {
                 // RecordView.
@@ -236,7 +238,7 @@ namespace Modules.Devkit.MasterViewer
                         var controlPosition = new Vector2()
                         {
                             x = scrollPosition.x + mousDownPosition.x,
-                            y = mousDownPosition.y,
+                            y = mousDownPosition.y - (scrollBaseRect.y + scrollBaseRect.height),
                         };
 
                         focusedControl = GetControlNum(controlPosition);
@@ -281,7 +283,7 @@ namespace Modules.Devkit.MasterViewer
 
             controlRects.Add(rect);
 
-            EditorGUIUtility.AddCursorRect(rect, MouseCursor.ResizeHorizontal);
+            EditorGUIUtility.AddCursorRect(rect, MouseCursor.ResizeHorizontal);            
         }
 
         private int GetControlNum(Vector2 pos)
