@@ -16,13 +16,18 @@ namespace Modules.Devkit.MasterViewer
         
         private Dictionary<object, object> changedRecords = null;
 
+        private bool initialized = false;
+
         //----- property -----
 
         /// <summary> データ型. </summary>
-        public Type MasterType { get; set; }
+        public Type MasterType { get; private set; }
 
         /// <summary> レコード. </summary>
-        public object[] Records { get; set; }
+        public object[] Records { get; private set; }
+
+        /// <summary> フィールド幅. </summary>
+        public float[] FieldWidth { get; private set; }
 
         /// <summary> 編集済みレコードがあるか. </summary>
         public bool HasChangedRecord { get { return changedRecords.Any(); } }
@@ -32,11 +37,32 @@ namespace Modules.Devkit.MasterViewer
 
         //----- method -----
 
-        public MasterController()
+        public void Initialize(Type masterType, object[] records)
         {
+            if (initialized) { return; }
+
             changedRecords = new Dictionary<object, object>();
 
-            Records = new object[0];
+            MasterType = masterType;
+            Records = records;
+
+            EnableEdit = false;
+
+            // フィールド幅計算.
+
+            var valueNames = GetValueNames();
+
+            FieldWidth = new float[valueNames.Length];
+
+            for (var i = 0; i < valueNames.Length; i++)
+            {
+                var content = new GUIContent(valueNames[i]);
+                var size = EditorStyles.label.CalcSize(content);
+
+                FieldWidth[i] = Mathf.Max(80f, size.x + 20f);
+            }
+
+            initialized = true;
         }
 
         public void UpdateValue(object record, string valueName, object value)

@@ -5,7 +5,6 @@ using System;
 using System.Collections;
 using System.Linq;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.Text;
 using UniRx;
 using Extensions;
@@ -20,9 +19,7 @@ namespace Modules.Devkit.MasterViewer
         private readonly Vector2 WindowSize = new Vector2(300f, 300f);
 
         //----- field -----
-
-        private Type masterType = null;
-
+        
         private MasterController masterController = null;
 
         private RecordScrollView recordScrollView = null;
@@ -32,8 +29,6 @@ namespace Modules.Devkit.MasterViewer
 
         private List<Rect> controlRects = null;
         private int focusedControl = -1;
-
-        private float[] fieldWidth = null;
 
         private string searchText = null;
 
@@ -52,7 +47,7 @@ namespace Modules.Devkit.MasterViewer
 
             var windows = FindAllWindow();
 
-            var window = windows.FirstOrDefault(x => x.masterType == masterController.MasterType);
+            var window = windows.FirstOrDefault(x => x.masterController.MasterType == masterController.MasterType);
 
             // 1つのマスターにつき1ウィンドウまでしか開かない.
             if (window == null)
@@ -90,27 +85,10 @@ namespace Modules.Devkit.MasterViewer
 
             controlRects = new List<Rect>();
 
-            masterType = masterController.MasterType;
-
-            // フィールド幅計算.
-
-            var valueNames = masterController.GetValueNames();
-
-            fieldWidth = new float[valueNames.Length];
-
-            for (var i = 0; i < valueNames.Length; i++)
-            {
-                var content = new GUIContent(valueNames[i]);
-                var size = EditorStyles.label.CalcSize(content);
-                
-                fieldWidth[i] = Mathf.Max(80f, size.x + 20f);                
-            }
-
             // レコード一覧View.
 
             recordScrollView = new RecordScrollView(masterController);
             recordScrollView.Contents = masterController.Records;
-            recordScrollView.FieldWidth = fieldWidth;
             recordScrollView.HideHorizontalScrollBar = true;
 
             recordScrollView.OnRepaintRequestAsObservable()
@@ -127,7 +105,7 @@ namespace Modules.Devkit.MasterViewer
         {
             var windowPosition = position;
 
-            windowPosition.width = fieldWidth.Sum() + 50f;
+            windowPosition.width = masterController.FieldWidth.Sum() + 50f;
 
             position = windowPosition;
         }
@@ -197,7 +175,9 @@ namespace Modules.Devkit.MasterViewer
                     {
                         var valueName = valueNames[i];
 
-                        EditorGUILayout.LabelField(valueName, EditorStyles.miniButton, GUILayout.Width(fieldWidth[i]), GUILayout.Height(15f));
+                        var fieldWidth = masterController.FieldWidth[i];
+
+                        EditorGUILayout.LabelField(valueName, EditorStyles.miniButton, GUILayout.Width(fieldWidth), GUILayout.Height(15f));
 
                         GetResizeHorizontalRect();
                     }
@@ -258,10 +238,8 @@ namespace Modules.Devkit.MasterViewer
                         var diff = (int)(ev.mousePosition.x - mousDownPosition.x);
 
                         mousDownPosition = ev.mousePosition;
-
-                        fieldWidth[focusedControl] = Mathf.Max(50f, fieldWidth[focusedControl] + diff);
-
-                        recordScrollView.FieldWidth = fieldWidth;
+                        
+                        masterController.FieldWidth[focusedControl] = Mathf.Max(50f, masterController.FieldWidth[focusedControl] + diff);
 
                         Repaint();
                     }
@@ -357,15 +335,11 @@ namespace Modules.Devkit.MasterViewer
 
         public override Direction Type { get { return Direction.Vertical; } }
 
-        public float[] FieldWidth { get; set; }
-
         //----- method -----
 
         public RecordScrollView(MasterController masterController)
         {
             this.masterController = masterController;
-
-            FieldWidth = new float[0];
         }
 
         protected override void DrawContent(int index, object content)
@@ -394,6 +368,8 @@ namespace Modules.Devkit.MasterViewer
 
                     var color = masterController.IsChanged(content, valueName) ? Color.yellow : Color.white;
 
+                    var fieldWidth = masterController.FieldWidth[i];
+
                     using (new BackgroundColorScope(color))
                     {
                         var type = EditorRecordFieldUtility.GetDisplayType(valueType);
@@ -411,7 +387,7 @@ namespace Modules.Devkit.MasterViewer
 
                             text = text.TrimEnd(',');
 
-                            if (GUILayout.Button(text, EditorStyles.textField, GUILayout.Width(FieldWidth[i])))
+                            if (GUILayout.Button(text, EditorStyles.textField, GUILayout.Width(fieldWidth)))
                             {
                                 var mouseRect = new Rect(Event.current.mousePosition, Vector2.one);
 
@@ -432,7 +408,7 @@ namespace Modules.Devkit.MasterViewer
                         {
                             EditorGUI.BeginChangeCheck();
 
-                            value = EditorRecordFieldUtility.DrawRecordField(value, valueType, GUILayout.Width(FieldWidth[i]));
+                            value = EditorRecordFieldUtility.DrawRecordField(value, valueType, GUILayout.Width(fieldWidth));
 
                             if (EditorGUI.EndChangeCheck())
                             {
