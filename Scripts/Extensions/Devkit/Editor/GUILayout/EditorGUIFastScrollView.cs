@@ -87,6 +87,8 @@ namespace Extensions.Devkit
         {
             if (scrollEnable)
             {
+                var layoutUpdating = IsLayoutUpdating;
+
                 switch (Type)
                 {
                     case Direction.Horizontal:
@@ -96,6 +98,12 @@ namespace Extensions.Devkit
                     case Direction.Vertical:
                         LayoutVertical();
                         break;
+                }
+
+                // レイアウト更新が終わったら再描画.
+                if (layoutUpdating != IsLayoutUpdating)
+                {
+                    RequestRepaint();
                 }
 
                 DrawScrollContents(options);

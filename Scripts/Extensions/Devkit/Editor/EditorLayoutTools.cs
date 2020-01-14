@@ -526,7 +526,7 @@ namespace Extensions.Devkit
 
                 var seachTextFieldStyleName = isToolbar ? "ToolbarSeachTextField" : "SeachTextField";
 
-                if (true)
+                if (isDelayed)
                 {
                     searchText = EditorGUILayout.DelayedTextField(string.Empty, searchText, seachTextFieldStyleName, options);
                 }
