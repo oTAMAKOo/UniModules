@@ -11,9 +11,9 @@ namespace Modules.Devkit.MasterViewer
     public abstract class MasterController
     {
         //----- params -----
-        
+
         //----- field -----
-        
+
         private Dictionary<object, object> changedRecords = null;
 
         private bool initialized = false;
@@ -95,9 +95,12 @@ namespace Modules.Devkit.MasterViewer
             {
                 var recordType = record.GetType();
 
-                var arguments = valueNames.Select(t => GetValue(record, t)).ToArray();
+                var arguments = valueNames.ToDictionary(x => x, x => GetValue(record, x));
 
                 originData = CreateRecordInstance(recordType, arguments);
+
+                // 編集前の元データをコピー.
+                valueNames.ForEach(x => SetValue(originData, x, GetValue(record, x)));
 
                 changedRecords.Add(record, originData);
             }
@@ -165,11 +168,11 @@ namespace Modules.Devkit.MasterViewer
                 }
             }
 
-            return !originValue.Equals(currentValue);
+            return originValue == null ? currentValue != null : !originValue.Equals(currentValue);
         }
 
         /// <summary> データ保持用レコードインスタンス生成. </summary>
-        protected abstract object CreateRecordInstance(Type recordType, object[] arguments);
+        protected abstract object CreateRecordInstance(Type recordType, Dictionary<string, object> arguments);
 
         /// <summary> マスター表示名取得. </summary>
         public abstract string GetDisplayMasterName();
