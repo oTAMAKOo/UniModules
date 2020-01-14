@@ -66,7 +66,7 @@ namespace Extensions.Devkit
 
         public bool HideVerticalScrollBar { get; set; }
         
-        public virtual float LayoutMargin { get { return 100f; } }
+        public virtual float LayoutMargin { get { return 150f; } }
 
         public abstract Direction Type { get; }
 
@@ -274,12 +274,22 @@ namespace Extensions.Devkit
                         GUILayout.Space(endSpace);
                     }
 
+                    // スクロール位置が変わった場合は再描画.
+
                     if (ScrollPosition != scrollViewScope.scrollPosition)
                     {
                         RequestRepaint();
                     }
 
-                    ScrollPosition = scrollViewScope.scrollPosition;
+                    // ※ マージン領域を超えてスクロールした際のレイアウト崩れを抑制する為スクロール量に制限を掛ける.
+
+                    var scrollRange = LayoutMargin * 0.85f;
+
+                    ScrollPosition = new Vector2()
+                    {
+                        x = Mathf.Clamp(scrollViewScope.scrollPosition.x, ScrollPosition.x - scrollRange, ScrollPosition.x + scrollRange),
+                        y = Mathf.Clamp(scrollViewScope.scrollPosition.y, ScrollPosition.y - scrollRange, ScrollPosition.y + scrollRange),
+                    };
                 }
             }
 
