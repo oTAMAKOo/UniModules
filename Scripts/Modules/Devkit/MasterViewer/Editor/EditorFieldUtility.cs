@@ -60,6 +60,10 @@ namespace Modules.Devkit.MasterViewer
             {
                 result = EditorGUILayout.DoubleField(Convert.ToDouble(value), options);
             }
+            else if(type == typeof(bool))
+            {
+                result = EditorGUILayout.Toggle(Convert.ToBoolean(value), options);
+            }
             else if (type == typeof(string))
             {
                 var text = Convert.ToString(value).FixLineEnd();

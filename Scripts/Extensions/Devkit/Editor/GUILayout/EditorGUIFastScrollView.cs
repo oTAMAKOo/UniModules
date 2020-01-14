@@ -65,6 +65,8 @@ namespace Extensions.Devkit
         public bool HideHorizontalScrollBar { get; set; }
 
         public bool HideVerticalScrollBar { get; set; }
+        
+        public virtual float LayoutMargin { get { return 100f; } }
 
         public abstract Direction Type { get; }
 
@@ -109,11 +111,9 @@ namespace Extensions.Devkit
             if (Event.current.type != EventType.Layout) { return; }
 
             if (!scrollRect.HasValue) { return; }
-
-            var layoutMargin = 150f;
-
-            var layoutBegin = ScrollPosition.y - layoutMargin;
-            var layoutEnd = ScrollPosition.y + scrollRect.Value.height + layoutMargin;
+            
+            var layoutBegin = ScrollPosition.y - LayoutMargin;
+            var layoutEnd = ScrollPosition.y + scrollRect.Value.height + LayoutMargin;
 
             startIndex = 0;
             startSpace = 0f;
@@ -173,10 +173,8 @@ namespace Extensions.Devkit
 
             if (!scrollRect.HasValue) { return; }
 
-            var layoutMargin = 150f;
-
-            var layoutBegin = ScrollPosition.x - layoutMargin;
-            var layoutEnd = ScrollPosition.x + scrollRect.Value.width + layoutMargin;
+            var layoutBegin = ScrollPosition.x - LayoutMargin;
+            var layoutEnd = ScrollPosition.x + scrollRect.Value.width + LayoutMargin;
 
             startIndex = 0;
             startSpace = 0f;
@@ -233,7 +231,7 @@ namespace Extensions.Devkit
         private void DrawScrollContents(params GUILayoutOption[] options)
         {
             var isRepaintEvent = Event.current.type == EventType.Repaint;
-            
+
             var horizontalScrollBar = HideHorizontalScrollBar ? GUIStyle.none : GUI.skin.horizontalScrollbar;
 
             var verticalScrollBar = HideVerticalScrollBar ? GUIStyle.none : GUI.skin.verticalScrollbar;
@@ -257,7 +255,7 @@ namespace Extensions.Devkit
                             using (new EditorGUILayout.VerticalScope())
                             {
                                 DrawContent(i, itemInfos[i].content);
-                            }                            
+                            }
 
                             if (isRepaintEvent)
                             {
@@ -268,10 +266,15 @@ namespace Extensions.Devkit
                         GUILayout.Space(endSpace);
                     }
 
+                    if (ScrollPosition != scrollViewScope.scrollPosition)
+                    {
+                        RequestRepaint();
+                    }
+
                     ScrollPosition = scrollViewScope.scrollPosition;
                 }
             }
-            
+
             if (isRepaintEvent)
             {
                 scrollRect = GUILayoutUtility.GetLastRect();
