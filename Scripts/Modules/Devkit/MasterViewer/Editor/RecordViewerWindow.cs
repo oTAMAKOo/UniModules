@@ -152,7 +152,7 @@ namespace Modules.Devkit.MasterViewer
                     Repaint();
                 };
 
-                EditorLayoutTools.DrawToolbarSearchTextField(searchText, onChangeSearchText, onSearchCancel, GUILayout.Width(250f));
+                EditorLayoutTools.DrawDelayedToolbarSearchTextField(searchText, onChangeSearchText, onSearchCancel, GUILayout.Width(250f));
             }
 
             var scrollBaseRect = GUILayoutUtility.GetLastRect();

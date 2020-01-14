@@ -497,16 +497,28 @@ namespace Extensions.Devkit
         /// <summary> 検索用テキストボックス描画 </summary>
         public static string DrawSearchTextField(string searchText, Action<string> onChangeSearchText = null, Action onSearchCancel = null, params GUILayoutOption[] options)
         {
-            return DrawSearchTextFieldCore(searchText, onChangeSearchText, onSearchCancel, false, options);        
+            return DrawSearchTextFieldCore(searchText, onChangeSearchText, onSearchCancel, false, false, options);        
         }
 
         /// <summary> 検索用テキストボックス描画 </summary>
         public static string DrawToolbarSearchTextField(string searchText, Action<string> onChangeSearchText = null, Action onSearchCancel = null, params GUILayoutOption[] options)
         {
-            return DrawSearchTextFieldCore(searchText, onChangeSearchText, onSearchCancel, true, options);
+            return DrawSearchTextFieldCore(searchText, onChangeSearchText, onSearchCancel, true, false, options);
         }
 
-        private static string DrawSearchTextFieldCore(string searchText, Action<string> onChangeSearchText, Action onSearchCancel, bool isToolbar, params GUILayoutOption[] options)
+        /// <summary> 検索用テキストボックス描画 </summary>
+        public static string DrawDelayedSearchTextField(string searchText, Action<string> onChangeSearchText = null, Action onSearchCancel = null, params GUILayoutOption[] options)
+        {
+            return DrawSearchTextFieldCore(searchText, onChangeSearchText, onSearchCancel, false, true, options);
+        }
+
+        /// <summary> 検索用テキストボックス描画 </summary>
+        public static string DrawDelayedToolbarSearchTextField(string searchText, Action<string> onChangeSearchText = null, Action onSearchCancel = null, params GUILayoutOption[] options)
+        {
+            return DrawSearchTextFieldCore(searchText, onChangeSearchText, onSearchCancel, true, true, options);
+        }
+
+        private static string DrawSearchTextFieldCore(string searchText, Action<string> onChangeSearchText, Action onSearchCancel, bool isToolbar, bool isDelayed = false, params GUILayoutOption[] options)
         {
             using (new EditorGUILayout.HorizontalScope())
             {
@@ -514,7 +526,14 @@ namespace Extensions.Devkit
 
                 var seachTextFieldStyleName = isToolbar ? "ToolbarSeachTextField" : "SeachTextField";
 
-                searchText = EditorGUILayout.TextField(string.Empty, searchText, seachTextFieldStyleName, options);
+                if (true)
+                {
+                    searchText = EditorGUILayout.DelayedTextField(string.Empty, searchText, seachTextFieldStyleName, options);
+                }
+                else
+                {
+                    searchText = EditorGUILayout.TextField(string.Empty, searchText, seachTextFieldStyleName, options);
+                }
 
                 if (EditorGUI.EndChangeCheck())
                 {
