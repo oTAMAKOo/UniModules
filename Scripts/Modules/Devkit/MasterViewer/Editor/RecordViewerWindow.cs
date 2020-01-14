@@ -142,14 +142,22 @@ namespace Modules.Devkit.MasterViewer
                 {
                     searchText = x;
                     recordScrollView.Contents = GetDisplayRecords();
-                    Repaint();
+
+                    EditorApplication.delayCall += () =>
+                    {
+                        Repaint();
+                    };
                 };
 
                 Action onSearchCancel = () =>
                 {
                     searchText = string.Empty;
                     recordScrollView.Contents = GetDisplayRecords();
-                    Repaint();
+
+                    EditorApplication.delayCall += () =>
+                    {
+                        Repaint();
+                    };
                 };
 
                 EditorLayoutTools.DrawDelayedToolbarSearchTextField(searchText, onChangeSearchText, onSearchCancel, GUILayout.Width(250f));
