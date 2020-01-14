@@ -232,51 +232,49 @@ namespace Extensions.Devkit
 
         private void DrawScrollContents(params GUILayoutOption[] options)
         {
-            var isLayoutEvent = Event.current.type == EventType.Layout;
+            var isRepaintEvent = Event.current.type == EventType.Repaint;
             
             var horizontalScrollBar = HideHorizontalScrollBar ? GUIStyle.none : GUI.skin.horizontalScrollbar;
 
             var verticalScrollBar = HideVerticalScrollBar ? GUIStyle.none : GUI.skin.verticalScrollbar;
 
             // スクロール領域計測用.
-            var scrollViewRect = EditorGUILayout.BeginVertical();
-
-            using (var scrollViewScope = new EditorGUILayout.ScrollViewScope(ScrollPosition, false, false, horizontalScrollBar, verticalScrollBar, GUIStyle.none, options))
+            using (new EditorGUILayout.VerticalScope())
             {
-                using (GetScrollDirectionScope())
+                using (var scrollViewScope = new EditorGUILayout.ScrollViewScope(ScrollPosition, false, false, horizontalScrollBar, verticalScrollBar, GUIStyle.none, options))
                 {
-                    GUILayout.Space(startSpace);
-
-                    for (var i = 0; i < itemInfos.Length; i++)
+                    using (GetScrollDirectionScope())
                     {
-                        if (!startIndex.HasValue || i < startIndex.Value) { continue; }
+                        GUILayout.Space(startSpace);
 
-                        if (!endIndex.HasValue || endIndex.Value < i) { continue; }
-
-                        // リストアイテム領域計測用.
-                        var rect = EditorGUILayout.BeginVertical();
-
-                        DrawContent(i, itemInfos[i].content);
-
-                        EditorGUILayout.EndVertical();
-
-                        if (isLayoutEvent && rect != Rect.zero)
+                        for (var i = 0; i < itemInfos.Length; i++)
                         {
-                            itemInfos[i].rect = rect;
+                            if (!startIndex.HasValue || i < startIndex.Value) { continue; }
+
+                            if (!endIndex.HasValue || endIndex.Value < i) { continue; }
+
+                            // リストアイテム領域計測用.
+                            using (new EditorGUILayout.VerticalScope())
+                            {
+                                DrawContent(i, itemInfos[i].content);
+                            }                            
+
+                            if (isRepaintEvent)
+                            {
+                                itemInfos[i].rect = GUILayoutUtility.GetLastRect();
+                            }
                         }
+
+                        GUILayout.Space(endSpace);
                     }
 
-                    GUILayout.Space(endSpace);
+                    ScrollPosition = scrollViewScope.scrollPosition;
                 }
-
-                ScrollPosition = scrollViewScope.scrollPosition;
             }
-
-            EditorGUILayout.EndVertical();
-
-            if (isLayoutEvent)
+            
+            if (isRepaintEvent)
             {
-                scrollRect = scrollViewRect;
+                scrollRect = GUILayoutUtility.GetLastRect();
             }
         }
 

@@ -49,6 +49,13 @@ namespace Modules.Devkit.MasterViewer
             initialized = true;
         }
 
+        void OnDestroy()
+        {
+            var windows = RecordViewerWindow.FindAllWindow();
+
+            windows.ForEach(x => x.Close());
+        }
+
         protected void SetMasterController(MasterController[] masterControllers)
         {
             this.masterControllers = masterControllers;
