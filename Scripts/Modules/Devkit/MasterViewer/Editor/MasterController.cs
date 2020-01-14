@@ -95,9 +95,9 @@ namespace Modules.Devkit.MasterViewer
             {
                 var recordType = record.GetType();
 
-                var args = valueNames.Select(t => GetValue(record, t)).ToArray();
+                var arguments = valueNames.Select(t => GetValue(record, t)).ToArray();
 
-                originData = Activator.CreateInstance(recordType, args);
+                originData = CreateRecordInstance(recordType, arguments);
 
                 changedRecords.Add(record, originData);
             }
@@ -167,6 +167,9 @@ namespace Modules.Devkit.MasterViewer
 
             return !originValue.Equals(currentValue);
         }
+
+        /// <summary> データ保持用レコードインスタンス生成. </summary>
+        protected abstract object CreateRecordInstance(Type recordType, object[] arguments);
 
         /// <summary> マスター表示名取得. </summary>
         public abstract string GetDisplayMasterName();
