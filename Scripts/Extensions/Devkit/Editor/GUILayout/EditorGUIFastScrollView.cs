@@ -283,12 +283,12 @@ namespace Extensions.Devkit
 
                     // ※ マージン領域を超えてスクロールした際のレイアウト崩れを抑制する為スクロール量に制限を掛ける.
 
-                    var scrollRange = LayoutMargin * 0.85f;
+                    var scrollMargin = LayoutMargin * 0.95f;
 
                     ScrollPosition = new Vector2()
                     {
-                        x = Mathf.Clamp(scrollViewScope.scrollPosition.x, ScrollPosition.x - scrollRange, ScrollPosition.x + scrollRange),
-                        y = Mathf.Clamp(scrollViewScope.scrollPosition.y, ScrollPosition.y - scrollRange, ScrollPosition.y + scrollRange),
+                        x = Mathf.Clamp(scrollViewScope.scrollPosition.x, ScrollPosition.x - scrollMargin, ScrollPosition.x + scrollMargin),
+                        y = Mathf.Clamp(scrollViewScope.scrollPosition.y, ScrollPosition.y - scrollMargin, ScrollPosition.y + scrollMargin),
                     };
                 }
             }
