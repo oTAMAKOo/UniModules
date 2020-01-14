@@ -30,6 +30,7 @@ namespace Modules.Devkit.MasterViewer
 
         //----- property -----
 
+        protected virtual bool EnableLoadButton { get { return true; } }
 
         //----- method -----
 
@@ -87,9 +88,12 @@ namespace Modules.Devkit.MasterViewer
 
                 GUILayout.FlexibleSpace();
 
-                if (GUILayout.Button("Load", EditorStyles.toolbarButton, GUILayout.Width(40f)))
+                if (EnableLoadButton)
                 {
-                    LoadMasterData().Subscribe(_ => Repaint()).AddTo(Disposable);
+                    if (GUILayout.Button("Load", EditorStyles.toolbarButton, GUILayout.Width(40f)))
+                    {
+                        LoadMasterData().Subscribe(_ => Repaint()).AddTo(Disposable);
+                    }
                 }
 
                 if (GUILayout.Button("Close All", EditorStyles.toolbarButton, GUILayout.Width(60f)))
