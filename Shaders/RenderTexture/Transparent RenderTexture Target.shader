@@ -1,5 +1,6 @@
 ﻿// Upgrade NOTE: replaced 'mul(UNITY_MATRIX_MVP,*)' with 'UnityObjectToClipPos(*)'
 
+// ※ 描画するカメラのクリアカラーを (R:0 G:0 B:0 A:0)にしないと正しく描画されない.
 
 Shader "Custom/Mask/RenderTexture/Transparent RenderTexture Target" 
 {
@@ -23,7 +24,7 @@ Shader "Custom/Mask/RenderTexture/Transparent RenderTexture Target"
 		LOD 100
 
 		ZWrite Off
-		Blend SrcAlpha OneMinusSrcAlpha, Zero OneMinusSrcAlpha
+		Blend SrcAlpha OneMinusSrcAlpha, SrcAlpha SrcAlpha
 
 		// required for UI.Mask
 		Stencil
