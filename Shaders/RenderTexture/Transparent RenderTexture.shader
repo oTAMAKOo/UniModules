@@ -1,6 +1,7 @@
 ﻿
-// ※ 描画される側のブレンドモードを下記の設定にしないと動かない.
-// Blend SrcAlpha OneMinusSrcAlpha, Zero OneMinusSrcAlpha
+// ※ 描画される側のシェーダーを下記の設定にしないと動かない.
+// Blend [Blend1] [Blend2], SrcAlpha SrcAlpha
+// ColorMask RGBA
 
 // ※ 描画するカメラのクリアカラーを下記の設定にしないと動かない.
 // R:0 G:0 B:0 A:0
