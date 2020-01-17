@@ -46,9 +46,23 @@ namespace Modules.UI.TextColor
             {
                 if (setting == null) { return; }
 
-                var colorInfo = setting.ColorInfos.FirstOrDefault(x => x.name == value);
+                var colorInfo = GetColorInfo(value);
 
-                selectionGuid = colorInfo != null ? colorInfo.guid : null;
+                var guid = colorInfo != null ? colorInfo.guid : null;
+
+                if (guid != null)
+                {
+                    if (selectionGuid != guid)
+                    {
+                        selectionGuid = guid;
+
+                        ApplyColor();
+                    }
+                }
+                else
+                {
+                    Debug.LogErrorFormat("Color name {0} is not found.", value);
+                }
             }
         }
 
@@ -123,6 +137,13 @@ namespace Modules.UI.TextColor
                     shadowComponent.effectColor = info.shadowColor;
                 }             
             }
+        }
+
+        public TextColorInfo GetColorInfo(string colorName)
+        {
+            if (setting == null) { return null; }
+            
+            return setting.ColorInfos.FirstOrDefault(x => x.name == colorName);
         }
 
         private T FindComponent<T>(Component[] components)
