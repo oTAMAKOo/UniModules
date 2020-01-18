@@ -247,34 +247,15 @@ namespace Modules.UI
 
                 itemList.AddRange(addItems);
 
-                // 先に登録して非アクティブ化.
-                foreach (var item in addItems)
-                {
-                    UnityUtility.SetActive(item, false);
-                }
+                // 非アクティブ化.
+                addItems.ForEach(x => UnityUtility.SetActive(x, false));
 
                 // 生成したインスタンス初期化.
-                foreach (var item in addItems)
+                var initializeYield = addItems.Select(x => Observable.FromMicroCoroutine(() => InitializeItem(x))).WhenAll().ToYieldInstruction();
+
+                if (!initializeYield.IsDone)
                 {
-                    UnityUtility.SetActive(item, true);
-
-                    if (onCreateItem != null)
-                    {
-                        onCreateItem.OnNext(item);
-                    }
-
-                    // 初期化.
-                    item.Initialize();
-
-                    // 非同期初期化.
-                    var initializeYield = item.InitializeAsync().ToYieldInstruction();
-
-                    while (!initializeYield.IsDone)
-                    {
-                        yield return null;
-                    }
-
-                    UnityUtility.SetActive(item, false);
+                    yield return null;
                 }
             }
 
@@ -332,6 +313,29 @@ namespace Modules.UI
             {
                 onUpdateContents.OnNext(Unit.Default);
             }
+        }
+
+        private IEnumerator InitializeItem(VirtualScrollItem<T> item)
+        {
+            UnityUtility.SetActive(item, true);
+
+            if (onCreateItem != null)
+            {
+                onCreateItem.OnNext(item);
+            }
+
+            // 初期化.
+            item.Initialize();
+
+            // 非同期初期化.
+            var initializeYield = item.InitializeAsync().ToYieldInstruction();
+
+            while (!initializeYield.IsDone)
+            {
+                yield return null;
+            }
+
+            UnityUtility.SetActive(item, false);
         }
 
         public void CenterToItem(int index)
