@@ -325,10 +325,7 @@ namespace Modules.UI
             }
 
             // 初期化.
-            item.Initialize();
-
-            // 非同期初期化.
-            var initializeYield = item.InitializeAsync().ToYieldInstruction();
+            var initializeYield = item.Initialize().ToYieldInstruction();
 
             while (!initializeYield.IsDone)
             {
