@@ -2,6 +2,7 @@
 using UnityEngine;
 using UnityEditor;
 using System;
+using System.Collections;
 using System.Linq;
 using System.Collections.Generic;
 using Extensions;
@@ -49,7 +50,7 @@ namespace Modules.Devkit.MasterViewer
         public void SetContents(Type type, object[] elements)
         {
             this.arrayType = type;
-            this.displayType = EditorRecordFieldUtility.GetDisplayType(type.GetElementType());
+            this.displayType = EditorRecordFieldUtility.GetDisplayType(type);
             this.elements = elements.ToList();
         }
 
@@ -119,20 +120,42 @@ namespace Modules.Devkit.MasterViewer
 
             var arraySize = elements.Count;
 
-            var elementType = arrayType.GetElementType();
+            var elementType = EditorRecordFieldUtility.GetDisplayType(arrayType);
 
-            var array = Array.CreateInstance(elementType, arraySize);
+            object value = null;
 
-            for (var i = 0; i < arraySize; i++)
+            if (arrayType.IsArray)
             {
-                var val = Convert.ChangeType(elements[i], elementType);
+                var array = Array.CreateInstance(elementType, arraySize);
 
-                array.SetValue(val, i);
+                for (var i = 0; i < arraySize; i++)
+                {
+                    var val = Convert.ChangeType(elements[i], elementType);
+
+                    array.SetValue(val, i);
+                }
+
+                value = array;
+            }
+
+            if (arrayType.GetGenericTypeDefinition() == typeof(IList<>))
+            {
+                var listType = typeof(List<>);
+                var constructedListType = listType.MakeGenericType(elementType);
+
+                var list = (IList)Activator.CreateInstance(constructedListType);
+
+                for (var i = 0; i < elements.Count; i++)
+                {
+                    list.Add(elements[i]);
+                }
+
+                value = list;
             }
 
             if (onUpdateElements != null)
             {
-                onUpdateElements.OnNext(array);
+                onUpdateElements.OnNext(value);
             }
         }
 

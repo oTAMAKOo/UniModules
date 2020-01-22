@@ -2,6 +2,7 @@
 using UnityEngine;
 using UnityEditor;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using Extensions;
 
@@ -9,22 +10,46 @@ namespace Modules.Devkit.MasterViewer
 {
     public static class EditorRecordFieldUtility
     {
+        public static bool IsArrayType(Type valueType)
+        {
+            if (valueType.IsArray) { return true; }
+
+            if (valueType.IsGenericType)
+            {
+                var genericTypeDefinition = valueType.GetGenericTypeDefinition();
+
+                if (genericTypeDefinition == typeof(IList<>))
+                {
+                    return true;
+                }
+
+                if (genericTypeDefinition == typeof(List<>))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
         public static Type GetDisplayType(Type valueType)
         {
             var type = valueType;
 
             if (valueType.IsGenericType)
             {
-                if (valueType.GetGenericTypeDefinition() == typeof(Nullable<>))
-                {
-                    type = Nullable.GetUnderlyingType(valueType);
-                }
-                else
-                {
-                    type = valueType.GetGenericArguments()[0];
-                }
+                var genericTypeDefinition = valueType.GetGenericTypeDefinition();
+
+                type = genericTypeDefinition == typeof(Nullable<>) ?
+                       Nullable.GetUnderlyingType(valueType) :
+                       valueType.GetGenericArguments()[0];
             }
-            
+
+            if (valueType.IsArray)
+            {
+                type = valueType.GetElementType();
+            }
+
             return type;
         }
 
@@ -33,11 +58,11 @@ namespace Modules.Devkit.MasterViewer
             var type = GetDisplayType(valueType);
 
             object result = null;
-                        
+
             if (value == null)
             {
                 value = type.GetDefaultValue();
-            }            
+            }
 
             var valueTypeTable = new Type[]
             {
@@ -60,14 +85,14 @@ namespace Modules.Devkit.MasterViewer
             {
                 result = EditorGUILayout.DoubleField(Convert.ToDouble(value), options);
             }
-            else if(type == typeof(bool))
+            else if (type == typeof(bool))
             {
                 result = EditorGUILayout.Toggle(Convert.ToBoolean(value), options);
             }
             else if (type == typeof(string))
             {
                 var text = Convert.ToString(value).FixLineEnd();
-                
+
                 if (!string.IsNullOrEmpty(text))
                 {
                     var lineCount = text.Count(c => c == '\n') + 1;

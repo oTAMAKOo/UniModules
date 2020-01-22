@@ -380,9 +380,7 @@ namespace Modules.Devkit.MasterViewer
 
                     using (new BackgroundColorScope(color))
                     {
-                        var type = EditorRecordFieldUtility.GetDisplayType(valueType);
-
-                        if (type.IsArray)
+                        if (EditorRecordFieldUtility.IsArrayType(valueType))
                         {
                             var builder = new StringBuilder();
 
