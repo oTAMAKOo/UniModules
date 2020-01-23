@@ -321,6 +321,8 @@ namespace Modules.Devkit.MasterViewer
 
         public override Direction Type { get { return Direction.Vertical; } }
 
+        public override float LayoutMargin { get { return 30f; } }
+
         //----- method -----
 
         public RecordScrollView(MasterController masterController)
