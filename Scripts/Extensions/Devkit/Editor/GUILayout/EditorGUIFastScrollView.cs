@@ -10,8 +10,6 @@ namespace Extensions.Devkit
     public abstract class EditorGUIFastScrollView<T>
     {
         //----- params -----
-
-        private const float LayoutMargin = 50f;
         
         public enum Direction
         {
@@ -69,7 +67,9 @@ namespace Extensions.Devkit
         public bool HideHorizontalScrollBar { get; set; }
 
         public bool HideVerticalScrollBar { get; set; }
-        
+
+        protected virtual float LayoutMargin { get { return 50f; } }
+
         public abstract Direction Type { get; }
 
         /// <summary> レイアウトの計算が終わっているか </summary>
