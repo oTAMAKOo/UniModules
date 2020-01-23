@@ -11,6 +11,8 @@ namespace Extensions.Devkit
     {
         //----- params -----
 
+        private const float LayoutMargin = 50f;
+        
         public enum Direction
         {
             Vertical,
@@ -68,8 +70,6 @@ namespace Extensions.Devkit
 
         public bool HideVerticalScrollBar { get; set; }
         
-        public virtual float LayoutMargin { get { return 50f; } }
-
         public abstract Direction Type { get; }
 
         /// <summary> レイアウトの計算が終わっているか </summary>
@@ -88,10 +88,12 @@ namespace Extensions.Devkit
 
         public void Draw(bool scrollEnable = true, params GUILayoutOption[] options)
         {
+            var eventType = Event.current.type;
+
             // 最初のフレームはスキップして再描画要求する.
             if (requireSkip)
             {
-                if (Event.current.type == EventType.Repaint)
+                if (eventType == EventType.Repaint)
                 {
                     requireSkip = false;
                     RequestRepaint();
@@ -102,25 +104,6 @@ namespace Extensions.Devkit
 
             if (scrollEnable)
             {
-                var layoutUpdating = IsLayoutUpdating;
-
-                switch (Type)
-                {
-                    case Direction.Horizontal:
-                        LayoutHorizontal();
-                        break;
-
-                    case Direction.Vertical:
-                        LayoutVertical();
-                        break;
-                }
-
-                // レイアウト更新が終わったら再描画.
-                if (layoutUpdating != IsLayoutUpdating)
-                {
-                    RequestRepaint();
-                }
-
                 DrawScrollContents(options);
             }
             else
@@ -129,14 +112,12 @@ namespace Extensions.Devkit
             }
         }
 
-        private void LayoutVertical()
+        private void LayoutVertical(Vector2 scrollPosition)
         {
-            if (Event.current.type != EventType.Layout) { return; }
-
             if (!scrollRect.HasValue) { return; }
             
-            var layoutBegin = ScrollPosition.y - LayoutMargin;
-            var layoutEnd = ScrollPosition.y + scrollRect.Value.height + LayoutMargin;
+            var layoutBegin = scrollPosition.y - LayoutMargin;
+            var layoutEnd = scrollPosition.y + scrollRect.Value.height + LayoutMargin;
 
             startIndex = 0;
             startSpace = 0f;
@@ -190,14 +171,12 @@ namespace Extensions.Devkit
             }
         }
 
-        private void LayoutHorizontal()
+        private void LayoutHorizontal(Vector2 scrollPosition)
         {
-            if (Event.current.type != EventType.Layout) { return; }
-
             if (!scrollRect.HasValue) { return; }
 
-            var layoutBegin = ScrollPosition.x - LayoutMargin;
-            var layoutEnd = ScrollPosition.x + scrollRect.Value.width + LayoutMargin;
+            var layoutBegin = scrollPosition.x - LayoutMargin;
+            var layoutEnd = scrollPosition.x + scrollRect.Value.width + LayoutMargin;
 
             startIndex = 0;
             startSpace = 0f;
@@ -250,10 +229,12 @@ namespace Extensions.Devkit
                 endSpace += itemInfos[i].rect.Value.width;
             }
         }
-
+        
         private void DrawScrollContents(params GUILayoutOption[] options)
         {
-            var isRepaintEvent = Event.current.type == EventType.Repaint;
+            var eventType = Event.current.type;
+
+            var isRepaintEvent = eventType == EventType.Repaint;
 
             var horizontalScrollBar = HideHorizontalScrollBar ? GUIStyle.none : GUI.skin.horizontalScrollbar;
 
@@ -264,6 +245,22 @@ namespace Extensions.Devkit
             {
                 using (var scrollViewScope = new EditorGUILayout.ScrollViewScope(ScrollPosition, false, false, horizontalScrollBar, verticalScrollBar, GUIStyle.none, options))
                 {
+                    var scrollPosition = scrollViewScope.scrollPosition;
+                    
+                    if (eventType == EventType.Layout)
+                    {
+                        switch (Type)
+                        {
+                            case Direction.Horizontal:
+                                LayoutHorizontal(scrollPosition);
+                                break;
+
+                            case Direction.Vertical:
+                                LayoutVertical(scrollPosition);
+                                break;
+                        }
+                    }
+
                     using (GetScrollDirectionScope())
                     {
                         GUILayout.Space(startSpace);
@@ -275,7 +272,7 @@ namespace Extensions.Devkit
                             if (endIndex.HasValue && endIndex.Value < i) { continue; }
 
                             var drawContent = true;
-                            
+
                             if (isRepaintEvent)
                             {
                                 var prevItemInfo = itemInfos.ElementAtOrDefault(i - 1);
@@ -318,29 +315,14 @@ namespace Extensions.Devkit
                         GUILayout.Space(endSpace);
                     }
 
-                    // スクロール位置が変わった場合は再描画.
-
-                    if (ScrollPosition != scrollViewScope.scrollPosition)
-                    {
-                        RequestRepaint();
-                    }
-
-                    // ※ マージン領域を超えてスクロールした際のレイアウト崩れを抑制する為スクロール量に制限を掛ける.
-
-                    var scrollMargin = LayoutMargin * 0.95f;
-
-                    ScrollPosition = new Vector2()
-                    {
-                        x = Mathf.Clamp(scrollViewScope.scrollPosition.x, ScrollPosition.x - scrollMargin, ScrollPosition.x + scrollMargin),
-                        y = Mathf.Clamp(scrollViewScope.scrollPosition.y, ScrollPosition.y - scrollMargin, ScrollPosition.y + scrollMargin),
-                    };
+                    ScrollPosition = scrollPosition;
                 }
             }
 
             if (isRepaintEvent)
             {
                 scrollRect = GUILayoutUtility.GetLastRect();
-            }
+            }            
         }
 
         private void DrawContents(params GUILayoutOption[] options)
