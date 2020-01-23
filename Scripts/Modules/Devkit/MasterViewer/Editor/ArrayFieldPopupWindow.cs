@@ -60,14 +60,11 @@ namespace Modules.Devkit.MasterViewer
 
             using (new EditorGUILayout.HorizontalScope(EditorStyles.toolbar, GUILayout.Height(15f)))
             {
-                if (masterController.EnableEdit)
+                if (GUILayout.Button(toolbarPlusIcon, EditorStyles.toolbarButton, GUILayout.Width(50f)))
                 {
-                    if (GUILayout.Button(toolbarPlusIcon, EditorStyles.toolbarButton, GUILayout.Width(50f)))
-                    {
-                        elements.Add(displayType.GetDefaultValue());
+                    elements.Add(displayType.GetDefaultValue());
 
-                        OnUpdateElements();
-                    }
+                    OnUpdateElements();
                 }
 
                 GUILayout.FlexibleSpace();
@@ -90,12 +87,9 @@ namespace Modules.Devkit.MasterViewer
                             OnUpdateElements();
                         }
 
-                        if (masterController.EnableEdit)
+                        if (GUILayout.Button(toolbarMinusIcon, GUILayout.Width(20f)))
                         {
-                            if (GUILayout.Button(toolbarMinusIcon, GUILayout.Width(20f)))
-                            {
-                                removeIndexs.Add(i);
-                            }
+                            removeIndexs.Add(i);
                         }
                     }
                 }
@@ -116,8 +110,6 @@ namespace Modules.Devkit.MasterViewer
 
         private void OnUpdateElements()
         {
-            if (!masterController.EnableEdit) { return; }
-
             var arraySize = elements.Count;
 
             var elementType = EditorRecordFieldUtility.GetDisplayType(arrayType);

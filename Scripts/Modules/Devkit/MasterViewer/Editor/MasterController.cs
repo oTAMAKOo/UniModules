@@ -32,9 +32,6 @@ namespace Modules.Devkit.MasterViewer
         /// <summary> 編集済みレコードがあるか. </summary>
         public bool HasChangedRecord { get { return changedRecords.Any(); } }
 
-        /// <summary> 編集可能か. </summary>
-        public bool EnableEdit { get; set; }
-
         //----- method -----
 
         public void Initialize(Type masterType, object[] records)
@@ -45,8 +42,6 @@ namespace Modules.Devkit.MasterViewer
 
             MasterType = masterType;
             Records = records;
-
-            EnableEdit = false;
 
             // フィールド幅計算.
 
@@ -70,15 +65,6 @@ namespace Modules.Devkit.MasterViewer
             if (!Application.isPlaying)
             {
                 EditorUtility.DisplayDialog("Require playing", "Editing values can only playing.", "Close");
-
-                GUI.FocusControl(string.Empty);
-
-                return;
-            }
-
-            if (!EnableEdit)
-            {
-                EditorUtility.DisplayDialog("Require unlock", "Editing values is locked.\nUnlock if you want to change the value.", "Close");
 
                 GUI.FocusControl(string.Empty);
 
