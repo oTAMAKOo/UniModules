@@ -68,7 +68,7 @@ namespace Extensions.Devkit
 
         public bool HideVerticalScrollBar { get; set; }
         
-        public virtual float LayoutMargin { get { return 150f; } }
+        public virtual float LayoutMargin { get { return 50f; } }
 
         public abstract Direction Type { get; }
 
