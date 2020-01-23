@@ -377,7 +377,7 @@ namespace Modules.Devkit.MasterViewer
                             {
                                 var mouseRect = new Rect(Event.current.mousePosition, Vector2.one);
 
-                                var arrayFieldPopupWindow = new ArrayFieldPopupWindow(masterController);
+                                var arrayFieldPopupWindow = new ArrayFieldPopupWindow();
 
                                 var array = value as Array;
 

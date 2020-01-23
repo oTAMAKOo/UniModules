@@ -15,9 +15,7 @@ namespace Modules.Devkit.MasterViewer
         //----- params -----
 
         //----- field -----
-
-        private MasterController masterController = null;
-
+       
         private Type arrayType = null;
         private Type displayType = null;
 
@@ -33,11 +31,6 @@ namespace Modules.Devkit.MasterViewer
         //----- property -----
 
         //----- method -----
-
-        public ArrayFieldPopupWindow(MasterController masterController)
-        {
-            this.masterController = masterController;
-        }
 
         public override void OnOpen()
         {
