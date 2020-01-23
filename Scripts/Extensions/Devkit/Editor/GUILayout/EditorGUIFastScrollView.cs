@@ -40,6 +40,8 @@ namespace Extensions.Devkit
         private float startSpace = 0f;
         private float endSpace = 0f;
 
+        private bool requireSkip = false;
+
         private Subject<Unit> onRepaintRequest = null;
 
         //----- property -----
@@ -81,10 +83,23 @@ namespace Extensions.Devkit
         public EditorGUIFastScrollView()
         {
             itemInfos = new ItemInfo[0];
+            requireSkip = true;
         }
 
         public void Draw(bool scrollEnable = true, params GUILayoutOption[] options)
         {
+            // 最初のフレームはスキップして再描画要求する.
+            if (requireSkip)
+            {
+                if (Event.current.type == EventType.Repaint)
+                {
+                    requireSkip = false;
+                    RequestRepaint();
+                }
+
+                return;
+            }
+
             if (scrollEnable)
             {
                 var layoutUpdating = IsLayoutUpdating;
@@ -245,7 +260,7 @@ namespace Extensions.Devkit
             var verticalScrollBar = HideVerticalScrollBar ? GUIStyle.none : GUI.skin.verticalScrollbar;
 
             // スクロール領域計測用.
-            using (new EditorGUILayout.VerticalScope())
+            using (var scrollViewLayoutScope = new EditorGUILayout.VerticalScope())
             {
                 using (var scrollViewScope = new EditorGUILayout.ScrollViewScope(ScrollPosition, false, false, horizontalScrollBar, verticalScrollBar, GUIStyle.none, options))
                 {
@@ -255,14 +270,43 @@ namespace Extensions.Devkit
 
                         for (var i = 0; i < itemInfos.Length; i++)
                         {
-                            if (!startIndex.HasValue || i < startIndex.Value) { continue; }
+                            if (startIndex.HasValue && i < startIndex.Value) { continue; }
 
-                            if (!endIndex.HasValue || endIndex.Value < i) { continue; }
+                            if (endIndex.HasValue && endIndex.Value < i) { continue; }
+
+                            var drawContent = true;
+                            
+                            if (isRepaintEvent)
+                            {
+                                var prevItemInfo = itemInfos.ElementAtOrDefault(i - 1);
+
+                                if (prevItemInfo != null && prevItemInfo.rect.HasValue)
+                                {
+                                    var contentArea = new Rect()
+                                    {
+                                        xMin = ScrollPosition.x - LayoutMargin,
+                                        xMax = ScrollPosition.x + scrollViewLayoutScope.rect.width + LayoutMargin,
+                                        yMin = ScrollPosition.y - LayoutMargin,
+                                        yMax = ScrollPosition.y + scrollViewLayoutScope.rect.height + LayoutMargin,
+                                    };
+
+                                    var isContentAreaOver = contentArea.yMax < prevItemInfo.rect.Value.yMin;
+
+                                    // 描画領域外は描画しない.
+                                    if (isContentAreaOver)
+                                    {
+                                        drawContent = false;
+                                    }
+                                }
+                            }
 
                             // リストアイテム領域計測用.
                             using (new EditorGUILayout.VerticalScope())
                             {
-                                DrawContent(i, itemInfos[i].content);
+                                if (drawContent)
+                                {
+                                    DrawContent(i, itemInfos[i].content);
+                                }
                             }
 
                             if (isRepaintEvent)
@@ -329,6 +373,13 @@ namespace Extensions.Devkit
 
         public void Refresh()
         {
+            ScrollPosition = Vector2.zero;
+            
+            requireSkip = true;
+
+            startIndex = null;
+            endIndex = null;
+
             if (itemInfos != null)
             {
                 for (var i = 0; i < itemInfos.Length; i++)
@@ -336,10 +387,6 @@ namespace Extensions.Devkit
                     itemInfos[i].rect = null;
                 }
             }
-
-            startIndex = null;
-            endIndex = null;
-            scrollRect = null;
         }
 
         /// <summary> 再描画要求イベントを発行 </summary>

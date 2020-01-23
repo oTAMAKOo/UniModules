@@ -32,9 +32,6 @@ namespace Modules.Devkit.MasterViewer
 
         private string searchText = null;
 
-        private GUIContent lockedButtonContent = null;
-        private GUIContent unLockedButtonContent = null;
-
         private LifetimeDisposable lifetimeDisposable = new LifetimeDisposable();
 
         //----- property -----
@@ -94,11 +91,6 @@ namespace Modules.Devkit.MasterViewer
             recordScrollView.OnRepaintRequestAsObservable()
                 .Subscribe(_ => Repaint())
                 .AddTo(lifetimeDisposable.Disposable);
-
-            // アイコン.
-
-            lockedButtonContent = EditorGUIUtility.IconContent("LockIcon");
-            unLockedButtonContent = EditorGUIUtility.IconContent("LockIcon-On");
         }
 
         private void SetWindowSize()
@@ -122,20 +114,6 @@ namespace Modules.Devkit.MasterViewer
 
             using (new EditorGUILayout.HorizontalScope(EditorStyles.toolbar, GUILayout.Height(15f)))
             {
-                // 「編集」は実行中のみ.
-                if (Application.isPlaying)
-                {
-                    // 「現在の状態」を表示する為、逆にする.
-                    var buttonContent = masterController.EnableEdit ? lockedButtonContent : unLockedButtonContent;
-
-                    using (new ContentColorScope(EditorLayoutTools.DefaultContentColor))
-                    {
-                        masterController.EnableEdit = GUILayout.Toggle(masterController.EnableEdit, buttonContent, EditorStyles.toolbarButton, GUILayout.Width(20f));
-                    }
-
-                    GUILayout.Space(15f);
-                }
-
                 // 検索.
 
                 Action<string> onChangeSearchText = x =>
