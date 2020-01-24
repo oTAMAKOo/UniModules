@@ -41,6 +41,7 @@ namespace Modules.Networking
         public RequestStatus status = RequestStatus.None;
         public ulong retryCount = 0;
         public string result = null;
+        public string statusCode = null;
         public Exception exception = null;
     }
 
@@ -110,6 +111,7 @@ namespace Modules.Networking
             if (info == null) { return; }
 
             info.status = WebRequestInfo.RequestStatus.Success;
+            info.statusCode = webRequest.StatusCode;
             info.result = result;
 
             webRequestInfos.Remove(webRequest);
@@ -142,6 +144,7 @@ namespace Modules.Networking
             if (info == null) { return; }
 
             info.status = WebRequestInfo.RequestStatus.Failure;
+            info.statusCode = webRequest.StatusCode;
 
             webRequestInfos.Remove(webRequest);
 
@@ -158,6 +161,7 @@ namespace Modules.Networking
             if (info == null) { return; }
 
             info.status = WebRequestInfo.RequestStatus.Failure;
+            info.statusCode = webRequest.StatusCode;
             info.exception = ex;
 
             webRequestInfos.Remove(webRequest);

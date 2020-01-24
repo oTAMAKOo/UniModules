@@ -62,7 +62,13 @@ namespace Modules.Networking
 
         /// <summary> 通信中か. </summary>
         public bool Connecting { get; private set; }
-       
+
+        /// <summary> ステータスコード. </summary>
+        public string StatusCode
+        {
+            get { return request.GetResponseHeaders().GetValueOrDefault("STATUS"); }
+        }
+
         //----- method -----
 
         public virtual void Initialize(string hostUrl, bool compress, DataFormat format = DataFormat.MessagePack)
