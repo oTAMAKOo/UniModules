@@ -131,6 +131,21 @@ namespace Modules.Devkit.MasterViewer
             {
                 result = EditorGUILayout.Vector4Field(string.Empty, (Vector4)value, options);
             }
+            else if (type == typeof(DateTime))
+            {
+                var dateTime = (DateTime)value;
+
+                var from = Convert.ToString(value);
+
+                var to = EditorGUILayout.DelayedTextField(string.Empty, from, options);
+
+                result = value;
+
+                if (from != to)
+                {
+                    result = DateTime.TryParse(to, out var parseValue) ? parseValue : dateTime;
+                }
+            }
             else if (type.IsEnum)
             {
                 result = EditorGUILayout.EnumPopup((Enum)value, options);
