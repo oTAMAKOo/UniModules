@@ -91,7 +91,14 @@ namespace Modules.Devkit.MasterViewer
                 changedRecords.Add(record, originData);
             }
 
-            SetValue(record, valueName, value);
+            try
+            {
+                SetValue(record, valueName, value);
+            }
+            catch (Exception e)
+            {
+                EditorUtility.DisplayDialog("Error", e.Message, "close");
+            }
 
             var hasChanged = false;
 
