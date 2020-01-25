@@ -88,6 +88,8 @@ namespace Modules.ObjectCache
         {
             if (asset == null) { return; }
 
+            if (string.IsNullOrEmpty(key)) { return; }
+
             var instance = GetInstance();
 
             if (instance.cache == null)
@@ -100,6 +102,8 @@ namespace Modules.ObjectCache
 
         public void Remove(string key)
         {
+            if (string.IsNullOrEmpty(key)) { return; }
+
             var instance = GetInstance();
 
             if (!instance.cache.ContainsKey(key))
@@ -125,6 +129,8 @@ namespace Modules.ObjectCache
 
         public T Get(string key)
         {
+            if (string.IsNullOrEmpty(key)) { return null; }
+
             var instance = GetInstance();
 
             if (instance.cache == null) { return null; }
@@ -134,6 +140,8 @@ namespace Modules.ObjectCache
 
         public bool HasCache(string key)
         {
+            if (string.IsNullOrEmpty(key)) { return false; }
+
             var instance = GetInstance();
 
             if (instance.cache == null) { return false; }
