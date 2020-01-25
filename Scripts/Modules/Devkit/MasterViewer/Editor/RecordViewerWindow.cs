@@ -330,8 +330,12 @@ namespace Modules.Devkit.MasterViewer
 
         protected override void DrawContent(int index, object content)
         {
+            var current = Event.current;
+
             var valueNames = masterController.GetValueNames();
-            
+
+            var fieldAreaInfos = new List<Tuple<Rect, string>>();
+           
             using (new EditorGUILayout.HorizontalScope())
             {
                 for (var i = 0; i < valueNames.Length; i++)
@@ -366,14 +370,17 @@ namespace Modules.Devkit.MasterViewer
                             {
                                 builder.AppendFormat("{0},", item);
                             }
+                            
+                            var text = builder.ToString().TrimEnd(',');
 
-                            var text = builder.ToString();
+                            GUILayout.Label(text, EditorStyles.textField, GUILayout.Width(fieldWidth));
 
-                            text = text.TrimEnd(',');
+                            var fieldRect = GUILayoutUtility.GetLastRect();
 
-                            if (GUILayout.Button(text, EditorStyles.textField, GUILayout.Width(fieldWidth)))
+                            // メニュー表示と干渉するのでGUILayout.Buttonを使わない.
+                            if (fieldRect.Contains(current.mousePosition) && current.type == EventType.MouseDown && current.button == 0)
                             {
-                                var mouseRect = new Rect(Event.current.mousePosition, Vector2.one);
+                                var mouseRect = new Rect(current.mousePosition, Vector2.one);
 
                                 var arrayFieldPopupWindow = new ArrayFieldPopupWindow();
 
@@ -386,6 +393,8 @@ namespace Modules.Devkit.MasterViewer
                                     .AddTo(lifetimeDisposable.Disposable);
 
                                 PopupWindow.Show(mouseRect, arrayFieldPopupWindow);
+
+                                current.Use();
                             }
                         }
                         else
@@ -399,6 +408,35 @@ namespace Modules.Devkit.MasterViewer
                                 onUpdateValue(value);
                             }
                         }
+
+                        fieldAreaInfos.Add(Tuple.Create(GUILayoutUtility.GetLastRect(), valueName));
+                    }
+                }
+            }
+
+            // 右クリックでメニュー表示.
+            if (current.type == EventType.MouseDown && current.button == 1)
+            {
+                var fieldAreaInfo = fieldAreaInfos.FirstOrDefault(x => x.Item1.Contains(current.mousePosition));
+
+                if (fieldAreaInfo != null)
+                {
+                    var valueName = fieldAreaInfo.Item2;
+
+                    if (masterController.IsChanged(content, valueName))
+                    {
+                        var menu = new GenericMenu();
+
+                        GenericMenu.MenuFunction onResetMenuClick = () =>
+                        {
+                            masterController.ResetValue(content, valueName);
+                        };
+
+                        menu.AddItem(new GUIContent("Reset"), false, onResetMenuClick);
+
+                        menu.ShowAsContext();
+
+                        current.Use();
                     }
                 }
             }

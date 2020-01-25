@@ -117,6 +117,17 @@ namespace Modules.Devkit.MasterViewer
             }
         }
 
+        public void ResetValue(object record, string valueName)
+        {
+            var originData = changedRecords.GetValueOrDefault(record);
+
+            if (originData == null) { return; }
+
+            var originValue = GetValue(originData, valueName);
+
+            UpdateValue(record, valueName, originValue);
+        }
+
         public bool IsChanged(object record, string valueName)
         {
             var originData = changedRecords.GetValueOrDefault(record);

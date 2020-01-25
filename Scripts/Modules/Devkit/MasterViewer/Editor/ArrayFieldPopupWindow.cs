@@ -105,6 +105,8 @@ namespace Modules.Devkit.MasterViewer
         {
             var arraySize = elements.Count;
 
+            var interfaces = arrayType.GetInterfaces();
+
             var elementType = EditorRecordFieldUtility.GetDisplayType(arrayType);
 
             object value = null;
@@ -122,8 +124,7 @@ namespace Modules.Devkit.MasterViewer
 
                 value = array;
             }
-
-            if (arrayType.GetGenericTypeDefinition() == typeof(IList<>))
+            else if (interfaces.Any(x => x.IsGenericType && x.GetGenericTypeDefinition() == typeof(IList<>)))
             {
                 var listType = typeof(List<>);
                 var constructedListType = listType.MakeGenericType(elementType);
