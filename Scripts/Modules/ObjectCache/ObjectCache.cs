@@ -22,6 +22,7 @@ namespace Modules.ObjectCache
 
         private string referenceName = null;
         private Dictionary<string, T> cache = null;
+        private bool disposed = false;
 
         private static Dictionary<string, Reference> cacheReference = null;
 
@@ -40,21 +41,27 @@ namespace Modules.ObjectCache
 
             if (!string.IsNullOrEmpty(referenceName))
             {
-                var reference = cacheReference.GetValueOrDefault(referenceName);
-
-                if (reference == null)
+                lock (cacheReference)
                 {
-                    reference = new Reference()
+                    var reference = cacheReference.GetValueOrDefault(referenceName);
+
+                    if (reference == null)
                     {
-                        referenceCount = 0,
-                        cacheInstance = this,
-                    };
+                        reference = new Reference()
+                        {
+                            referenceCount = 0,
+                            cacheInstance = this,
+                        };
 
-                    cacheReference.Add(referenceName, reference);
-                }
-                else
-                {
-                    reference.referenceCount++;
+                        cacheReference.Add(referenceName, reference);
+                    }
+                    else
+                    {
+                        lock (reference)
+                        {
+                            reference.referenceCount++;
+                        }
+                    }
                 }
             }
         }
@@ -66,20 +73,30 @@ namespace Modules.ObjectCache
 
         public void Dispose()
         {
+            if (disposed) { return; }
+
             if (!string.IsNullOrEmpty(referenceName))
             {
-                var reference = cacheReference.GetValueOrDefault(referenceName);
-
-                if (reference != null)
+                lock (cacheReference)
                 {
-                    reference.referenceCount--;
+                    var reference = cacheReference.GetValueOrDefault(referenceName);
 
-                    if (reference.referenceCount <= 0)
+                    if (reference != null)
                     {
-                        cacheReference.Remove(referenceName);
+                        lock (reference)
+                        {
+                            reference.referenceCount--;
+
+                            if (reference.referenceCount <= 0)
+                            {
+                                cacheReference.Remove(referenceName);
+                            }
+                        }
                     }
                 }
             }
+
+            disposed = true;
 
             GC.SuppressFinalize(this);
         }
@@ -159,9 +176,12 @@ namespace Modules.ObjectCache
             }
             else
             {
-                var reference = cacheReference.GetValueOrDefault(referenceName);
+                lock (cacheReference)
+                {
+                    var reference = cacheReference.GetValueOrDefault(referenceName);
 
-                cacheInstance = reference.cacheInstance;
+                    cacheInstance = reference.cacheInstance;
+                }
             }
 
             return cacheInstance;
