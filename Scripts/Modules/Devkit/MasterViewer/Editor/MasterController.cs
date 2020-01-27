@@ -2,6 +2,7 @@
 using UnityEngine;
 using UnityEditor;
 using System;
+using System.Collections;
 using System.Linq;
 using System.Collections.Generic;
 using Extensions;
@@ -71,7 +72,9 @@ namespace Modules.Devkit.MasterViewer
                 return;
             }
 
-            if (GetValue(record, valueName).Equals(value)) { return; }
+            var currentValue = GetValue(record, valueName);
+
+            if (currentValue.Equals(value)) { return; }
 
             var originData = changedRecords.GetValueOrDefault(record);
 
@@ -136,19 +139,34 @@ namespace Modules.Devkit.MasterViewer
 
             var valueType = GetValueType(valueName);
 
+            var interfaces = valueType.GetInterfaces();
+
             var originValue = GetValue(originData, valueName);
             var currentValue = GetValue(record, valueName);
 
-            if (valueType.IsArray)
+            if (interfaces.Any(x => x.IsGenericType && x.GetGenericTypeDefinition() == typeof(IEnumerable<>)))
             {
-                var originArray = ((Array)originValue).Cast<object>().ToArray();
-                var currentArray = ((Array)currentValue).Cast<object>().ToArray();
+                var originArray = new ArrayList();
+                var currentArray = new ArrayList();
 
-                if (originArray.Length != currentArray.Length) { return true; }
-
-                for (var i = 0; i < originArray.Length; i++)
+                foreach (var item in (IEnumerable)originValue)
                 {
-                    if (!originArray[i].Equals(currentArray[i])) { return true; }
+                    originArray.Add(item);
+                }
+
+                foreach (var item in (IEnumerable)currentValue)
+                {
+                    currentArray.Add(item);
+                }
+
+                if (originArray.Count != currentArray.Count) { return true; }
+                
+                for (var i = 0; i < originArray.Count; i++)
+                {
+                    var v1 = originArray[i];
+                    var v2 = currentArray[i];
+
+                    if (!Equals(v1, v2)) { return true; }
                 }
 
                 return false;

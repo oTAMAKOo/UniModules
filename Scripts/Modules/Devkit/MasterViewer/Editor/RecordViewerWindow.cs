@@ -384,9 +384,7 @@ namespace Modules.Devkit.MasterViewer
 
                                 var arrayFieldPopupWindow = new ArrayFieldPopupWindow();
 
-                                var array = value as Array;
-
-                                arrayFieldPopupWindow.SetContents(valueType, array.Cast<object>().ToArray());
+                                arrayFieldPopupWindow.SetContents(valueType, value);
 
                                 arrayFieldPopupWindow.OnUpdateElementsAsObservable()
                                     .Subscribe(x => onUpdateValue(x))

@@ -17,7 +17,7 @@ namespace Modules.Devkit.MasterViewer
         //----- field -----
        
         private Type arrayType = null;
-        private Type displayType = null;
+        private Type elementType = null;
 
         private List<object> elements = null;
 
@@ -40,11 +40,19 @@ namespace Modules.Devkit.MasterViewer
             toolbarMinusIcon = EditorGUIUtility.IconContent("Toolbar Minus");
         }
 
-        public void SetContents(Type type, object[] elements)
+        public void SetContents(Type type, object value)
         {
             this.arrayType = type;
-            this.displayType = EditorRecordFieldUtility.GetDisplayType(type);
-            this.elements = elements.ToList();
+            this.elementType = EditorRecordFieldUtility.GetDisplayType(type);
+
+            var list = new ArrayList();
+
+            foreach (var item in (IEnumerable)value)
+            {
+                list.Add(item);
+            }
+            
+            elements = list.Cast<object>().ToList();
         }
 
         public override void OnGUI(Rect rect)
@@ -55,7 +63,7 @@ namespace Modules.Devkit.MasterViewer
             {
                 if (GUILayout.Button(toolbarPlusIcon, EditorStyles.toolbarButton, GUILayout.Width(50f)))
                 {
-                    elements.Add(displayType.GetDefaultValue());
+                    elements.Add(elementType.GetDefaultValue());
 
                     OnUpdateElements();
                 }
@@ -73,7 +81,7 @@ namespace Modules.Devkit.MasterViewer
                     {
                         EditorGUI.BeginChangeCheck();
 
-                        elements[i] = EditorRecordFieldUtility.DrawRecordField(elements[i], displayType);
+                        elements[i] = EditorRecordFieldUtility.DrawRecordField(elements[i], elementType);
 
                         if (EditorGUI.EndChangeCheck())
                         {
@@ -103,11 +111,7 @@ namespace Modules.Devkit.MasterViewer
 
         private void OnUpdateElements()
         {
-            var arraySize = elements.Count;
-
-            var interfaces = arrayType.GetInterfaces();
-
-            var elementType = EditorRecordFieldUtility.GetDisplayType(arrayType);
+            var arraySize = elements.Count;          
 
             object value = null;
 
@@ -124,7 +128,7 @@ namespace Modules.Devkit.MasterViewer
 
                 value = array;
             }
-            else if (interfaces.Any(x => x.IsGenericType && x.GetGenericTypeDefinition() == typeof(IList<>)))
+            else if (arrayType.GetGenericTypeDefinition() == typeof(IList<>))
             {
                 var listType = typeof(List<>);
                 var constructedListType = listType.MakeGenericType(elementType);
