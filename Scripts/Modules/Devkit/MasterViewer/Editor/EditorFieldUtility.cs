@@ -143,7 +143,9 @@ namespace Modules.Devkit.MasterViewer
 
                 if (from != to)
                 {
-                    result = DateTime.TryParse(to, out var parseValue) ? parseValue : dateTime;
+                    var parseValue = dateTime;
+
+                    result = DateTime.TryParse(to, out parseValue) ? parseValue : dateTime;
                 }
             }
             else if (type.IsEnum)
