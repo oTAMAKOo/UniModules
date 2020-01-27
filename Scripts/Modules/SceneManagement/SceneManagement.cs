@@ -130,7 +130,7 @@ namespace Modules.SceneManagement
 
         public IObservable<Unit> RegisterCurrentScene()
         {
-            return Observable.FromCoroutine(() => RegisterCurrentSceneCore());
+            return Observable.FromMicroCoroutine(() => RegisterCurrentSceneCore());
         }
 
         private IEnumerator RegisterCurrentSceneCore()
@@ -139,7 +139,10 @@ namespace Modules.SceneManagement
 
             var scene = SceneManager.GetSceneAt(0);
 
-            while (!scene.isLoaded) { yield return null; }
+            while (!scene.isLoaded)
+            {
+                yield return null;
+            }
 
             var definition = ScenePaths.FirstOrDefault(x => x.Value == scene.path);
             var identifier = definition.Equals(default(KeyValuePair<Scenes, string>)) ? null : (Scenes?)definition.Key;
@@ -163,11 +166,26 @@ namespace Modules.SceneManagement
                 yield break;
             }
 
-            yield return OnRegisterCurrentScene(currentScene).ToYieldInstruction();
+            var registerYield = OnRegisterCurrentScene(currentScene).ToYieldInstruction();
 
-            currentScene.Instance.Initialize();
+            while (!registerYield.IsDone)
+            {
+                yield return null;
+            }
 
-            yield return currentScene.Instance.Prepare(false).ToYieldInstruction();
+            var initializeYield = currentScene.Instance.Initialize().ToYieldInstruction();
+
+            while (!initializeYield.IsDone)
+            {
+                yield return null;
+            }
+
+            var prepareYield = currentScene.Instance.Prepare(false).ToYieldInstruction();
+
+            while (!prepareYield.IsDone)
+            {
+                yield return null;
+            }
 
             currentScene.Instance.Enter(false);
         }
@@ -454,7 +472,7 @@ namespace Modules.SceneManagement
 
             diagnostics.Begin(TimeDiagnostics.Measure.Prepare);
 
-            // Prepar通知.
+            // Prepare通知.
             if (onPrepare != null)
             {
                 onPrepare.OnNext(currentSceneArgument);
@@ -471,7 +489,7 @@ namespace Modules.SceneManagement
                 }
             }
 
-            // Prepar終了通知.
+            // Prepare終了通知.
             if (onPrepareComplete != null)
             {
                 onPrepareComplete.OnNext(currentSceneArgument);
