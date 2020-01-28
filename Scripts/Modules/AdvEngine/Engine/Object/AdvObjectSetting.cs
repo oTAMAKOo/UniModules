@@ -1,18 +1,15 @@
 ﻿
-#if ENABLE_MOONSHARP
-
 using UnityEngine;
 using System;
-using System.Linq;
 using System.Collections.Generic;
-using UniRx;
 using Extensions;
-using Extensions.Serialize;
 
 namespace Modules.AdvKit
 {
     public class AdvObjectSetting : ScriptableObject
     {
+        #if ENABLE_MOONSHARP
+
         //----- params -----
 
         //----- field -----
@@ -47,7 +44,7 @@ namespace Modules.AdvKit
             
             return prefab;
         }
+
+        #endif
     }
 }
-
-#endif
