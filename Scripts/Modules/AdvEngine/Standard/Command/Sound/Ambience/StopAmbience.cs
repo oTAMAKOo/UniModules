@@ -1,4 +1,6 @@
 ﻿
+#if ENABLE_MOONSHARP
+
 using System;
 
 namespace Modules.AdvKit.Standard
@@ -28,3 +30,5 @@ namespace Modules.AdvKit.Standard
         }
     }
 }
+
+#endif

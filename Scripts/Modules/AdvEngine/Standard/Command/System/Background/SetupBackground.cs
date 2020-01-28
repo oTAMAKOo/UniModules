@@ -1,4 +1,6 @@
 ﻿
+#if ENABLE_MOONSHARP
+
 using UnityEngine;
 using System;
 
@@ -40,3 +42,5 @@ namespace Modules.AdvKit.Standard
         }
     }
 }
+
+#endif

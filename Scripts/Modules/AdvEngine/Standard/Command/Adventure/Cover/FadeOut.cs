@@ -1,4 +1,6 @@
 ﻿
+#if ENABLE_MOONSHARP
+
 using UnityEngine.UI;
 using System;
 using DG.Tweening;
@@ -60,3 +62,5 @@ namespace Modules.AdvKit.Standard
         }
     }
 }
+
+#endif

@@ -1,4 +1,6 @@
 ﻿
+#if ENABLE_MOONSHARP
+
 using UnityEngine;
 using System;
 using System.Collections;
@@ -30,3 +32,5 @@ namespace Modules.AdvKit
         public abstract object GetCommandDelegate();
     }
 }
+
+#endif

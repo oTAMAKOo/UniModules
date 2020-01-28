@@ -1,4 +1,6 @@
 ﻿
+#if ENABLE_MOONSHARP
+
 using System;
 using Modules.AdvKit;
 using Modules.Dicing;
@@ -36,3 +38,5 @@ namespace Modules.AdvKit.Standard
         }
     }
 }
+
+#endif

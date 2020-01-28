@@ -1,4 +1,6 @@
 ﻿
+#if ENABLE_MOONSHARP
+
 using UnityEngine;
 using Extensions;
 using Modules.Dicing;
@@ -52,3 +54,5 @@ namespace Modules.AdvKit.Standard
         }
     }
 }
+
+#endif

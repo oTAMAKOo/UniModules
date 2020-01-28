@@ -1,4 +1,6 @@
 ﻿
+#if ENABLE_MOONSHARP
+
 using UnityEngine;
 using System;
 using System.Linq;
@@ -140,3 +142,5 @@ namespace Modules.AdvKit
         protected abstract IObservable<Unit> LoadAsset<T>(string resourcePath) where T : UnityEngine.Object;
     }
 }
+
+#endif

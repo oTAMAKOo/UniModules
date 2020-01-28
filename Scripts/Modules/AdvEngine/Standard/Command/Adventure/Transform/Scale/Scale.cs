@@ -1,4 +1,6 @@
 ﻿
+#if ENABLE_MOONSHARP
+
 using System;
 using DG.Tweening;
 using Extensions;
@@ -52,3 +54,5 @@ namespace Modules.AdvKit.Standard
         }
     }
 }
+
+#endif

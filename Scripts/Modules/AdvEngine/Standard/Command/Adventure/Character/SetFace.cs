@@ -1,4 +1,6 @@
 ﻿
+#if ENABLE_MOONSHARP
+
 using System;
 using UniRx;
 using Modules.AdvKit;
@@ -54,3 +56,5 @@ namespace Modules.AdvKit.Standard
         }
     }
 }
+
+#endif

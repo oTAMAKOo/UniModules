@@ -1,4 +1,6 @@
 ﻿
+#if ENABLE_MOONSHARP
+
 using System;
 using Modules.SoundManagement;
 
@@ -32,3 +34,5 @@ namespace Modules.AdvKit.Standard
 
     }
 }
+
+#endif
