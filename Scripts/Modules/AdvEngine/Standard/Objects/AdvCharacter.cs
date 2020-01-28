@@ -1,6 +1,4 @@
 ﻿
-#if ENABLE_MOONSHARP
-
 using UnityEngine;
 using Extensions;
 using Modules.Dicing;
@@ -9,6 +7,8 @@ namespace Modules.AdvKit.Standard
 {
     public sealed class AdvCharacter : AdvObject
     {
+        #if ENABLE_MOONSHARP
+
         //----- params -----
 
         //----- field -----
@@ -52,7 +52,7 @@ namespace Modules.AdvKit.Standard
 
             UnityUtility.SetActive(gameObject, false);
         }
+
+        #endif
     }
 }
-
-#endif

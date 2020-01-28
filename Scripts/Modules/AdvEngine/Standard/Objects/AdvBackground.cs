@@ -1,6 +1,4 @@
 ﻿
-#if ENABLE_MOONSHARP
-
 using UnityEngine;
 using UnityEngine.UI;
 using Extensions;
@@ -9,6 +7,8 @@ namespace Modules.AdvKit.Standard
 {
     public sealed class AdvBackground : AdvObject
     {
+        #if ENABLE_MOONSHARP
+
         //----- params -----
 
         public const string UniqueIdentifier = "Background";
@@ -51,7 +51,7 @@ namespace Modules.AdvKit.Standard
 
             UnityUtility.SetActive(gameObject, false);
         }
+
+        #endif
     }
 }
-
-#endif

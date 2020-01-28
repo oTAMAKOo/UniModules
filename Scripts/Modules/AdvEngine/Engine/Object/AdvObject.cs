@@ -1,10 +1,6 @@
 ﻿
-#if ENABLE_MOONSHARP
-
 using UnityEngine;
 using System;
-using System.Linq;
-using System.Collections.Generic;
 using UniRx;
 using Extensions;
 
@@ -13,6 +9,8 @@ namespace Modules.AdvKit
     [DisallowMultipleComponent]
     public class AdvObject : MonoBehaviour
     {
+        #if ENABLE_MOONSHARP
+
         //----- params -----
 
         //----- field -----
@@ -64,7 +62,7 @@ namespace Modules.AdvKit
         }
 
         protected virtual void OnInitialize() { }
+
+        #endif
     }
 }
-
-#endif

@@ -1,17 +1,16 @@
 ﻿
-#if ENABLE_MOONSHARP
-
 using UnityEngine;
 using System;
 using UniRx;
 using Extensions;
-using Modules.AdvKit;
 using Modules.Particle;
 
 namespace Modules.AdvKit.Standard
 {
     public sealed class AdvParticle : AdvObject
     {
+        #if ENABLE_MOONSHARP
+
         //----- params -----
 
         //----- field -----
@@ -44,7 +43,7 @@ namespace Modules.AdvKit.Standard
 
             return particlePlayer.Play(restart).AsUnitObservable();
         }
+
+        #endif
     }
 }
-
-#endif
