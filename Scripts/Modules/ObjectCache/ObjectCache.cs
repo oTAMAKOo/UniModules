@@ -47,13 +47,7 @@ namespace Modules.ObjectCache
 
                     if (reference == null)
                     {
-                        reference = new Reference()
-                        {
-                            referenceCount = 0,
-                            cacheInstance = this,
-                        };
-
-                        cacheReference.Add(referenceName, reference);
+                        reference = CreateNewReference(referenceName);
                     }
                     else
                     {
@@ -99,6 +93,24 @@ namespace Modules.ObjectCache
             disposed = true;
 
             GC.SuppressFinalize(this);
+        }
+
+        private Reference CreateNewReference(string referenceName)
+        {
+            Reference reference = null;
+
+            lock (cacheReference)
+            {
+                reference = new Reference()
+                {
+                    referenceCount = 0,
+                    cacheInstance = this,
+                };
+
+                cacheReference[referenceName] = reference;
+            }
+
+            return reference;
         }
 
         public void Add(string key, T asset)
@@ -179,6 +191,11 @@ namespace Modules.ObjectCache
                 lock (cacheReference)
                 {
                     var reference = cacheReference.GetValueOrDefault(referenceName);
+
+                    if (reference == null)
+                    {
+                        reference = CreateNewReference(referenceName);
+                    }
 
                     cacheInstance = reference.cacheInstance;
                 }
