@@ -2,13 +2,13 @@
 using UnityEngine;
 using UnityEngine.U2D;
 using System;
-using System.Collections.Generic;
 using UniRx;
 using Extensions;
+using Modules.ObjectCache;
 
 namespace Modules.U2D
 {
-    public sealed class AtlasTextureAnimation : MonoBehaviour
+    public sealed class SpriteAnimation : MonoBehaviour
     {
         //----- params -----
 
@@ -25,10 +25,12 @@ namespace Modules.U2D
         [SerializeField]
         private float updateInterval = 1f;
 
-        private int animationIndex = 0;
-        private Sprite[] animationSprites = null;
+        private int currentIndex = 0;
+        private int animationCount = 0;
         private float animationTime = 0f;
-        
+
+        private SpriteAtlasCache spriteCache = null;
+
         private Subject<Sprite> onUpdateAnimation = null;
 
         //----- property -----
@@ -49,25 +51,25 @@ namespace Modules.U2D
             set { updateInterval = value; }
         }
 
+        public string AnimationName { get; private set; }
+
         public bool Loop { get; set; }
 
         //----- method -----
 
         void Update()
         {
-            if (CurrentState != State.Play) { return; }
-
-            if (animationSprites.IsEmpty()) { return; }
+            if (CurrentState != State.Play) { return; }         
 
             var time = Time.deltaTime;
 
             if (updateInterval < animationTime)
             {
-                animationIndex++;
+                currentIndex++;
 
-                if (animationSprites.Length <= animationIndex)
+                if (animationCount <= currentIndex)
                 {
-                    animationIndex = 0;
+                    currentIndex = 0;
 
                     if (Loop == false)
                     {
@@ -75,10 +77,7 @@ namespace Modules.U2D
                     }
                 }
 
-                if (onUpdateAnimation != null)
-                {
-                    onUpdateAnimation.OnNext(animationSprites[animationIndex]);
-                }
+                UpdateAnimation(currentIndex);
 
                 animationTime = 0f;
             }
@@ -90,6 +89,7 @@ namespace Modules.U2D
 
         public void Play(string animationName, int? startIndex = null, bool loop = true)
         {
+            AnimationName = animationName;
             CurrentState = State.Play;
             animationTime = 0f;
             Loop = loop;
@@ -98,12 +98,9 @@ namespace Modules.U2D
 
             LoadSprites(CurrentAnimation);
 
-            animationIndex = startIndex.HasValue ? startIndex.Value : 0;
+            currentIndex = startIndex.HasValue ? startIndex.Value : 0;
 
-            if (onUpdateAnimation != null)
-            {
-                onUpdateAnimation.OnNext(animationSprites[animationIndex]);
-            }
+            UpdateAnimation(currentIndex);
         }
 
         public void Stop()
@@ -113,28 +110,44 @@ namespace Modules.U2D
 
         private void LoadSprites(string animationName)
         {
-            var index = 0;
-            var sprites = new List<Sprite>();
+            if (spriteAtlas == null) { return; }
+
+            var referenceName = string.Format("SpriteAnimation.{0}", spriteAtlas.GetInstanceID());
+
+            spriteCache = new SpriteAtlasCache(spriteAtlas, referenceName);
+
+            animationCount = 0;
 
             while (true)
             {
-                var spriteName = string.Format("{0}_{1}", animationName, index);
+                var spriteName = GetSpriteName(animationCount);
                 
-                var sprite = spriteAtlas.GetSprite(spriteName);
+                var sprite = spriteCache.GetSprite(spriteName);
                 
-                if (sprite != null)
-                {
-                    sprites.Add(sprite);
-                }
-                else
-                {
-                    break;
-                }
+                if (sprite == null) { break; }
 
-                index++;
+                animationCount++;
             }
+        }
 
-            animationSprites = sprites.ToArray();
+        private void UpdateAnimation(int index)
+        {
+            var spriteName = GetSpriteName(index);
+
+            var sprite = spriteCache.GetSprite(spriteName);
+
+            if (sprite != null)
+            {
+                if (onUpdateAnimation != null)
+                {
+                    onUpdateAnimation.OnNext(sprite);
+                }
+            }
+        }
+
+        private string GetSpriteName(int index)
+        {
+            return string.Format("{0}_{1}", AnimationName, index);
         }
 
         public IObservable<Sprite> OnUpdateAnimationAsObservable()
