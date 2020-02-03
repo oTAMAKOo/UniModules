@@ -53,7 +53,10 @@ namespace Modules.UI
             if (EditorGUI.EndChangeCheck())
             {
                 UnityEditorUtility.RegisterUndo("GraphicGroupInspector Undo", instance);
+
                 serializedObject.ApplyModifiedProperties();
+
+                instance.UpdateContents();
             }
         }
     }
