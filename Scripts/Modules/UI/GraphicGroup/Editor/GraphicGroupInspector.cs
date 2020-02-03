@@ -1,5 +1,4 @@
-﻿
-using UnityEngine;
+﻿using UnityEngine;
 using UnityEditor;
 using Extensions.Devkit;
 
@@ -13,6 +12,8 @@ namespace Modules.UI
         public override void OnInspectorGUI()
         {
             instance = target as GraphicGroup;
+
+            serializedObject.Update();
 
             DrawInspector();
         }
@@ -41,6 +42,18 @@ namespace Modules.UI
             {
                 UnityEditorUtility.RegisterUndo("GraphicGroupInspector Undo", instance);
                 instance.ColorTint = colorTint;
+            }
+
+            EditorGUI.BeginChangeCheck();
+
+            var ignoreTargetsProperty = serializedObject.FindProperty("ignoreTargets");
+
+            EditorGUILayout.PropertyField(ignoreTargetsProperty, true);
+
+            if (EditorGUI.EndChangeCheck())
+            {
+                UnityEditorUtility.RegisterUndo("GraphicGroupInspector Undo", instance);
+                serializedObject.ApplyModifiedProperties();
             }
         }
     }

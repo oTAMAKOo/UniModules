@@ -3,7 +3,6 @@ using UnityEngine;
 using UnityEngine.UI;
 using Unity.Linq;
 using System.Linq;
-using System.Collections.Generic;
 using Extensions;
 
 namespace Modules.UI
@@ -18,9 +17,10 @@ namespace Modules.UI
         [SerializeField]
         private Color colorTint = Color.white;
         [SerializeField]
-        private List<GameObject> ignoreTargets = new List<GameObject>();
+        private GameObject[] ignoreTargets = null;
 
-        private List<Graphic> childGraphics = new List<Graphic>();
+        private Graphic[] childGraphics = null;
+
         private Color? prevColor = null;
 
         //----- property -----
@@ -30,15 +30,16 @@ namespace Modules.UI
             get { return colorTint; }
             set
             {
-                canvasRenderer.SetColor(value);
-                ApplyColorForChildren(value);
+                colorTint = value;
+
+                ApplyColorForChildren();
             }
         }
 
         public GameObject[] IgnoreTargets
         {
-            get { return ignoreTargets.ToArray(); }
-            set { ignoreTargets = value.ToList(); }
+            get { return ignoreTargets ?? new GameObject[0]; }
+            set { ignoreTargets = value; }
         }
 
         //----- method -----
@@ -69,10 +70,9 @@ namespace Modules.UI
         [ContextMenu("UpdateContents")]
         public void UpdateContents()
         {
-            colorTint = canvasRenderer.GetColor();
-
             CollectChildGraphic();
-            ApplyColorForChildren(colorTint);
+
+            ApplyColorForChildren();
         }
 
         /// <summary>
@@ -80,11 +80,9 @@ namespace Modules.UI
         /// </summary>
         public void CollectChildGraphic()
         {
-            childGraphics.Clear();
-
             childGraphics = gameObject.Descendants().OfComponent<Graphic>()
                 .Where(x => !ignoreTargets.Contains(x.gameObject))
-                .ToList();
+                .ToArray();
         }
 
         protected override void OnPopulateMesh(VertexHelper vh)
@@ -92,33 +90,38 @@ namespace Modules.UI
             vh.Clear();
         }
 
-        private void ApplyColorForChildren(Color applyColor)
+        private void ApplyColorForChildren()
         {
+            if (childGraphics == null)
+            {
+                CollectChildGraphic();
+            }
+
+            var color = canvasRenderer.GetColor() * colorTint;
+
             foreach (var graphic in childGraphics)
             {
                 if (!UnityUtility.IsNull(graphic))
                 {
-                    graphic.canvasRenderer.SetColor(applyColor);
+                    graphic.canvasRenderer.SetColor(color);
                     graphic.SetAllDirty();
                 }
             }
 
-            prevColor = applyColor;
+            prevColor = colorTint;
         }
 
         void Update()
         {
-            colorTint = canvasRenderer.GetColor();
-
             if (prevColor == null)
             {
-                ApplyColorForChildren(colorTint);
+                ApplyColorForChildren();
             }
             else
             {
                 if (prevColor.Value != colorTint)
                 {
-                    ApplyColorForChildren(colorTint);
+                    ApplyColorForChildren();
                 }
             }
         }
