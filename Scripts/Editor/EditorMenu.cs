@@ -204,7 +204,7 @@ namespace Modules
 
         #region CriWare
 
-#if ENABLE_CRIWARE_ADX || ENABLE_CRIWARE_SOFDEC
+        #if ENABLE_CRIWARE_ADX || ENABLE_CRIWARE_SOFDEC
 
         public const string CriWareMenu = MenuRoot + "CriWare/";
 
@@ -212,12 +212,6 @@ namespace Modules
         public static void OpenCriAssetUpdateWindow()
         {
             CriAssetUpdateWindow.Open();
-        }
-
-        [MenuItem(itemName: CriWareMenu + "Open CueNavigationWindow", priority = 1)]
-        public static void OpenCueNavigationWindow()
-        {
-            CueNavigationWindow.Open();
         }
 
         [MenuItem(itemName: CriWareMenu + "UpdateCriAssets", priority = 20)]
