@@ -41,12 +41,13 @@ namespace Modules.UI
             if (EditorGUI.EndChangeCheck())
             {
                 UnityEditorUtility.RegisterUndo("GraphicGroupInspector Undo", instance);
+
                 instance.ColorTint = colorTint;
             }
 
-            EditorGUI.BeginChangeCheck();
-
             var ignoreTargetsProperty = serializedObject.FindProperty("ignoreTargets");
+
+            EditorGUI.BeginChangeCheck();
 
             EditorGUILayout.PropertyField(ignoreTargetsProperty, true);
 

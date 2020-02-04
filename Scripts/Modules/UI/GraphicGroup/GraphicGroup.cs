@@ -55,16 +55,7 @@ namespace Modules.UI
         {
             base.OnEnable();
 
-            // Disable状態でcanvasRendererの色が戻ってしまう為復元.
-
-            if (prevColor.HasValue)
-            {
-                ColorTint = prevColor.Value;
-            }
-            else
-            {
-                UpdateContents();
-            }
+            UpdateContents();
         }
 
         [ContextMenu("UpdateContents")]
@@ -97,33 +88,39 @@ namespace Modules.UI
                 CollectChildGraphic();
             }
 
-            var color = canvasRenderer.GetColor() * colorTint;
+            var applyColor = GetApplyColor();
 
             foreach (var graphic in childGraphics)
             {
-                if (!UnityUtility.IsNull(graphic))
-                {
-                    graphic.canvasRenderer.SetColor(color);
-                    graphic.SetAllDirty();
-                }
+                if (UnityUtility.IsNull(graphic)) { continue; }
+
+                graphic.canvasRenderer.SetColor(applyColor);
+                graphic.SetAllDirty();
             }
 
-            prevColor = colorTint;
+            prevColor = applyColor;
         }
 
         void Update()
         {
+            var applyColor = GetApplyColor();
+
             if (prevColor == null)
             {
                 ApplyColorForChildren();
             }
             else
             {
-                if (prevColor.Value != colorTint)
+                if (prevColor.Value != applyColor)
                 {
                     ApplyColorForChildren();
                 }
             }
+        }
+
+        private Color GetApplyColor()
+        {
+            return canvasRenderer.GetColor() * colorTint;
         }
 
         // ※ 子階層から別階層に移動した際のイベントがOnTransformChildrenChanged()で取得できない為.
