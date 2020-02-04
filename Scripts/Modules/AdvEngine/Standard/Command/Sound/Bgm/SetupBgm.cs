@@ -23,9 +23,14 @@ namespace Modules.AdvKit.Standard
             return (Action<string, string, string>)CommandFunction;
         }
 
-        private void CommandFunction(string soundIdentifier, string cueName, string acbName = null)
+        private void CommandFunction(string soundIdentifier, string acbName, string cueName = null)
         {
             var advEngine = AdvEngine.Instance;
+
+            if (string.IsNullOrEmpty(cueName))
+            {
+                cueName = acbName;
+            }
 
             var soundInfo = advEngine.Sound.Register(soundIdentifier, SoundType.Bgm, acbName, cueName);
 

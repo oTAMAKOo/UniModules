@@ -22,11 +22,13 @@ namespace Modules.AdvKit.Standard
             return (Action<string, string, float?, float?>)CommandFunction;
         }
 
-        private void CommandFunction(string identifier, string fileName, float? width = null, float? height = null)
+        private void CommandFunction(string identifier, string fileIdentifier, float? width = null, float? height = null)
         {
             var advEngine = AdvEngine.Instance;
 
             var advSprite = advEngine.ObjectManager.Create<AdvSprite>(identifier);
+
+            var fileName = advEngine.Resource.FindFileName<AdvSprite>(fileIdentifier);
 
             if (advSprite != null)
             {

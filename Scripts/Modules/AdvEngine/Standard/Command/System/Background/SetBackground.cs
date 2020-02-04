@@ -22,11 +22,13 @@ namespace Modules.AdvKit.Standard
             return (Action<string>)CommandFunction;
         }
 
-        private void CommandFunction(string fileName)
+        private void CommandFunction(string fileIdentifier)
         {
             var advEngine = AdvEngine.Instance;
 
             var advBackground = advEngine.ObjectManager.Get<AdvBackground>(AdvBackground.UniqueIdentifier);
+
+            var fileName = advEngine.Resource.FindFileName<AdvBackground>(fileIdentifier);
 
             if (advBackground != null)
             {

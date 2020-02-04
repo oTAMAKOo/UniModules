@@ -47,11 +47,6 @@ namespace Modules.AdvKit
 
         public bool IsEnable { get; set; }
 
-        protected abstract string BgmResourcePathFormat { get; }
-        protected abstract string SeResourcePathFormat { get; }
-        protected abstract string VoiceResourcePathFormat { get; }
-        protected abstract string AmbienceResourcePathFormat { get; }
-
         //----- method -----
 
         public AdvSoundManager()
@@ -67,7 +62,7 @@ namespace Modules.AdvKit
 
         public SoundInfo Register(string soundIdentifier, SoundType soundType, string acbName, string cueName)
         {
-            var resourcePathFormat = string.Empty;
+            var resourcePath = string.Empty;
 
             if (string.IsNullOrEmpty(acbName))
             {
@@ -77,20 +72,18 @@ namespace Modules.AdvKit
             switch (soundType)
             {
                 case SoundType.Bgm:
-                    resourcePathFormat = BgmResourcePathFormat;
+                    resourcePath = GetBgmResourcePath(acbName);
                     break;
                 case SoundType.Se:
-                    resourcePathFormat = SeResourcePathFormat;
+                    resourcePath = GetSeResourcePath(acbName);
                     break;
                 case SoundType.Voice:
-                    resourcePathFormat = VoiceResourcePathFormat;
+                    resourcePath = GetVoiceResourcePath(acbName);
                     break;
                 case SoundType.Ambience:
-                    resourcePathFormat = AmbienceResourcePathFormat;
+                    resourcePath = GetAmbienceResourcePath(acbName);
                     break;
             }
-
-            var resourcePath = string.Format(resourcePathFormat, acbName);
 
             var soundInfo = new SoundInfo(soundType, resourcePath, acbName, cueName);
 
@@ -114,9 +107,7 @@ namespace Modules.AdvKit
 
             if (soundInfo == null) { return; }
 
-            var cueName = Path.GetFileNameWithoutExtension(soundInfo.ResourcePath);
-
-            ExternalResources.GetCueInfo(soundInfo.ResourcePath, cueName)
+            ExternalResources.GetCueInfo(soundInfo.ResourcePath, soundInfo.CueName)
                 .Subscribe(x => bgm = SoundManagement.SoundManagement.Play(SoundType.Bgm, x))
                 .AddTo(Disposable);
         }
@@ -226,6 +217,11 @@ namespace Modules.AdvKit
             ambience.ForEach(x => SoundManagement.SoundManagement.Stop(x.Value));
             ambience.Clear();
         }
+
+        protected abstract string GetBgmResourcePath(string fileName);
+        protected abstract string GetSeResourcePath(string fileName);
+        protected abstract string GetVoiceResourcePath(string fileName);
+        protected abstract string GetAmbienceResourcePath(string fileName);
     }
 }
 

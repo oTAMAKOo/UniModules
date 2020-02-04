@@ -23,7 +23,7 @@ namespace Modules.AdvKit.Standard
             return (Action<string, string, string>)CommandFunction;
         }
 
-        private void CommandFunction(string soundIdentifier, string cueName, string acbName = null)
+        private void CommandFunction(string soundIdentifier, string acbName, string cueName)
         {
             var advEngine = AdvEngine.Instance;
 

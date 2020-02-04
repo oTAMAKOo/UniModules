@@ -22,13 +22,15 @@ namespace Modules.AdvKit.Standard
 
         public override object GetCommandDelegate()
         {
-            return (Action<string>)CommandFunction;
+            return (Action<string, string>)CommandFunction;
         }
 
-        private void CommandFunction(string fileName)
+        private void CommandFunction(string fileIdentifier, string fileName)
         {
             var advEngine = AdvEngine.Instance;
-            
+
+            advEngine.Resource.RegisterFileName<AdvBackground>(fileIdentifier, fileName);
+
             var resourcePath = advEngine.Resource.GetResourcePath<AdvBackground>(fileName);
 
             advEngine.Resource.Request<Sprite>(resourcePath);

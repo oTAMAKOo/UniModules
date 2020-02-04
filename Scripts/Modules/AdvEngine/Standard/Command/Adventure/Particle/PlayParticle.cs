@@ -24,11 +24,13 @@ namespace Modules.AdvKit.Standard
             return (Func<string, string, bool, int?, bool, DynValue>)CommandFunction;
         }
 
-        private DynValue CommandFunction(string identifier, string fileName, bool wait = true, int? sortingOrder = null, bool restart = true)
+        private DynValue CommandFunction(string identifier, string fileIdentifier, bool wait = true, int? sortingOrder = null, bool restart = true)
         {
             var advEngine = AdvEngine.Instance;
             
             var advParticle = advEngine.ObjectManager.Create<AdvParticle>(identifier);
+
+            var fileName = advEngine.Resource.FindFileName<AdvParticle>(fileIdentifier);
 
             if (advParticle != null)
             {

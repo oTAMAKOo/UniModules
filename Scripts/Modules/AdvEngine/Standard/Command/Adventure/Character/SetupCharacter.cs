@@ -27,8 +27,8 @@ namespace Modules.AdvKit.Standard
         private void CommandFunction(string identifier, string characterName, string fileName)
         {
             var advEngine = AdvEngine.Instance;
-
-            var resourcePath = string.Format("Contents/Character/FullBody/{0}/{0}.asset", fileName);
+            
+            var resourcePath = advEngine.Resource.GetResourcePath<AdvCharacter>(fileName);
 
             advEngine.Resource.Request<DicingTexture>(resourcePath);
 

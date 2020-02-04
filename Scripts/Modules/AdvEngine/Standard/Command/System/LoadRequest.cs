@@ -46,7 +46,14 @@ namespace Modules.AdvKit.Standard
             {
                 var assetInfo = ExternalResources.Instance.GetAssetInfo(resourcePath);
 
-                builder.AppendFormat("{0} : {1}", assetInfo.ResourcePath, assetInfo.FileSize).AppendLine();
+                if (assetInfo != null)
+                {
+                    builder.AppendFormat("{0} ({1}byte)", assetInfo.ResourcePath, assetInfo.FileSize).AppendLine();
+                }
+                else
+                {
+                    Debug.LogErrorFormat("AssetInfo not found. {0}", resourcePath);
+                }
             }
 
             Debug.Log(builder.ToString());
