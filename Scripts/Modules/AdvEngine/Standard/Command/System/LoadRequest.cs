@@ -5,6 +5,7 @@ using UnityEngine;
 using System;
 using System.Linq;
 using System.Text;
+using Extensions;
 using UniRx;
 using Modules.ExternalResource;
 using MoonSharp.Interpreter;
@@ -56,7 +57,10 @@ namespace Modules.AdvKit.Standard
                 }
             }
 
-            Debug.Log(builder.ToString());
+            using (new DisableStackTraceScope(LogType.Log))
+            {
+                Debug.Log(builder.ToString());
+            }
 
             loadDisposable = requests.Select(x => x.Value).WhenAll()
                 .Subscribe(_ => advEngine.Resume())

@@ -66,15 +66,12 @@ namespace Modules.Devkit
 
             if (DisableEventNames.Contains(eventName)) { return; }
 
-            var originStackTraceLogType = Application.GetStackTraceLogType(LogType.Log);
+            using (new DisableStackTraceScope(LogType.Log))
+            {
+                var colorCode = color.ColorToHex(false);
 
-            Application.SetStackTraceLogType(LogType.Log, StackTraceLogType.None);
-
-            var colorCode = color.ColorToHex(false);
-
-            Debug.Log(string.Format("<color=#{0}><b>[{1}]</b></color> {2}", colorCode, eventName, message));
-
-            Application.SetStackTraceLogType(LogType.Log, originStackTraceLogType);
+                Debug.Log(string.Format("<color=#{0}><b>[{1}]</b></color> {2}", colorCode, eventName, message));
+            }            
         }
 
         public static void Event(string eventName, Color color, string format, params object[] args)
