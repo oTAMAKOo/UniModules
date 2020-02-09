@@ -32,7 +32,7 @@ namespace Modules.ExternalResource
             [MessagePackObject(true)]
             public sealed class Info
             {
-                public string resourcesPath = string.Empty;
+                public string resourcePath = string.Empty;
                 public string hash = string.Empty;
             }
 
@@ -96,7 +96,7 @@ namespace Modules.ExternalResource
         /// <summary>
         /// アセットバンドル以外のアセットの更新が必要か確認.
         /// </summary>
-        private bool CheckAssetVersion(string resourcesPath, string filePath)
+        private bool CheckAssetVersion(string resourcePath, string filePath)
         {
             // ファイルがない.
             if (!File.Exists(filePath)) { return false; }
@@ -104,12 +104,12 @@ namespace Modules.ExternalResource
             // バージョン情報が存在しない.
             if (versions.IsEmpty()) { return false; }
 
-            var assetInfo = GetAssetInfo(resourcesPath);
+            var assetInfo = GetAssetInfo(resourcePath);
 
             // アセット管理情報内に存在しないので最新扱い.
             if (assetInfo == null) { return true; }
 
-            var versionInfo = versions.GetValueOrDefault(resourcesPath);
+            var versionInfo = versions.GetValueOrDefault(resourcePath);
 
             // ローカルにバージョンが存在しない.
             if (versionInfo == null) { return false; }
@@ -122,21 +122,46 @@ namespace Modules.ExternalResource
         /// </summary>
         /// <param name="groupName"></param>
         /// <returns></returns>
-        public AssetInfo[] GetUpdateRequired(string groupName = null)
+        public IReadOnlyList<AssetInfo> GetRequireUpdateAssetInfos(string groupName = null)
         {
             var assetInfos = assetInfoManifest.GetAssetInfos(groupName);
 
             // バージョン情報が存在しないので全更新.
             if (version.infos.IsEmpty()) { return assetInfos.ToArray(); }
 
-            var versionHashTable = version.infos.ToDictionary(x => x.resourcesPath, x => x.hash);
-
-            return assetInfos
-                .Where(x => !versionHashTable.ContainsKey(x.ResourcePath) || versionHashTable[x.ResourcePath] != x.FileHash)
-                .ToArray();
+            return assetInfos.Where(x => IsRequireUpdate(x)).ToArray();
         }
 
-        private void UpdateVersion(string resourcesPath)
+        public bool IsRequireUpdate(AssetInfo assetInfo)
+        {
+            // バージョン情報が存在しないので更新.
+            if (version.infos.IsEmpty()) { return true; }
+
+            var result = true;
+
+            #if ENABLE_CRIWARE_FILESYSTEM
+
+            var extension = Path.GetExtension(assetInfo.ResourcePath);
+
+            if (CriAssetDefinition.AssetAllExtensions.Any(x => x == extension))
+            {
+                var filePath = ConvertCriFilePath(assetInfo.ResourcePath);
+
+                result = CheckAssetVersion(assetInfo.ResourcePath, filePath);
+            }
+            else
+
+            #endif
+
+            {
+                result = CheckAssetBundleVersion(assetInfo);
+
+            }            
+
+            return result;
+        }
+
+        private void UpdateVersion(string resourcePath)
         {
             var versionFilePath = GetVersionFilePath();
 
@@ -151,11 +176,11 @@ namespace Modules.ExternalResource
             {
                 // ※ 古いバージョン情報を破棄して最新のバージョン情報を追加.
                 
-                var assetInfo = GetAssetInfo(resourcesPath);
+                var assetInfo = GetAssetInfo(resourcePath);
 
                 if (assetInfo == null)
                 {
-                    Debug.LogWarningFormat("AssetInfo not found.\n{0}", resourcesPath);
+                    Debug.LogWarningFormat("AssetInfo not found.\n{0}", resourcePath);
                     return;
                 }
 
@@ -175,7 +200,7 @@ namespace Modules.ExternalResource
                     {
                         var info = new Version.Info()
                         {
-                            resourcesPath = item.ResourcePath,
+                            resourcePath = item.ResourcePath,
                             hash = item.FileHash,
                         };
 
@@ -187,7 +212,7 @@ namespace Modules.ExternalResource
                 {
                     var info = new Version.Info()
                     {
-                        resourcesPath = assetInfo.ResourcePath,
+                        resourcePath = assetInfo.ResourcePath,
                         hash = assetInfo.FileHash,
                     };
 
@@ -258,7 +283,7 @@ namespace Modules.ExternalResource
                 }
             }
 
-            versions = version.infos.ToDictionary(x => x.resourcesPath, x => x);
+            versions = version.infos.ToDictionary(x => x.resourcePath, x => x);
         }
 
         private void ClearVersion()

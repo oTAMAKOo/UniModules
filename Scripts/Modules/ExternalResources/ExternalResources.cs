@@ -189,9 +189,9 @@ namespace Modules.ExternalResource
         }
 
         /// <summary> アセット情報取得 </summary>
-        public AssetInfo GetAssetInfo(string resourcesPath)
+        public AssetInfo GetAssetInfo(string resourcePath)
         {
-            return assetInfosByResourcePath.GetValueOrDefault(resourcesPath);
+            return assetInfosByResourcePath.GetValueOrDefault(resourcePath);
         }
 
         /// <summary>
@@ -275,33 +275,33 @@ namespace Modules.ExternalResource
         /// <summary>
         /// アセットを更新.
         /// </summary>
-        public static IObservable<Unit> UpdateAsset(string resourcesPath, IProgress<float> progress = null)
+        public static IObservable<Unit> UpdateAsset(string resourcePath, IProgress<float> progress = null)
         {
             if (instance.localMode) { return Observable.ReturnUnit(); }
 
-            if (string.IsNullOrEmpty(resourcesPath)) { return Observable.ReturnUnit(); }
+            if (string.IsNullOrEmpty(resourcePath)) { return Observable.ReturnUnit(); }
 
-            return Observable.FromCoroutine(() => instance.UpdateAssetInternal(resourcesPath, progress));
+            return Observable.FromCoroutine(() => instance.UpdateAssetInternal(resourcePath, progress));
         }
 
-        private IEnumerator UpdateAssetInternal(string resourcesPath, IProgress<float> progress = null)
+        private IEnumerator UpdateAssetInternal(string resourcePath, IProgress<float> progress = null)
         {
             #if ENABLE_CRIWARE_FILESYSTEM
 
-            var extension = Path.GetExtension(resourcesPath);
+            var extension = Path.GetExtension(resourcePath);
             
             if (CriAssetDefinition.AssetAllExtensions.Any(x => x == extension))
             {
-                var filePath = ConvertCriFilePath(resourcesPath);
+                var filePath = ConvertCriFilePath(resourcePath);
 
                 // ローカルバージョンが最新の場合は更新しない.
-                if (CheckAssetVersion(resourcesPath, filePath))
+                if (CheckAssetVersion(resourcePath, filePath))
                 {
                     yield break;
                 }
 
                 var updateYield = instance.criAssetManager
-                    .UpdateCriAsset(resourcesPath, progress)
+                    .UpdateCriAsset(resourcePath, progress)
                     .ToYieldInstruction(false, yieldCancel.Token);
 
                 while (!updateYield.IsDone)
@@ -319,17 +319,17 @@ namespace Modules.ExternalResource
             #endif
 
             {
-                var assetInfo = GetAssetInfo(resourcesPath);
+                var assetInfo = GetAssetInfo(resourcePath);
 
                 if (assetInfo == null)
                 {
-                    Debug.LogErrorFormat("AssetManageInfo not found.\n{0}", resourcesPath);
+                    Debug.LogErrorFormat("AssetManageInfo not found.\n{0}", resourcePath);
                     yield break;
                 }
 
                 if (!assetInfo.IsAssetBundle)
                 {
-                    Debug.LogErrorFormat("AssetBundleName is empty.\n{0}", resourcesPath);
+                    Debug.LogErrorFormat("AssetBundleName is empty.\n{0}", resourcePath);
                     yield break;
                 }
 
@@ -356,7 +356,7 @@ namespace Modules.ExternalResource
                 }
             }
 
-            UpdateVersion(resourcesPath);
+            UpdateVersion(resourcePath);
         }
 
         private void CancelAllCoroutines()
@@ -375,12 +375,12 @@ namespace Modules.ExternalResource
         #region AssetBundle
 
         /// <summary> Assetbundleを読み込み (非同期) </summary>
-        public static IObservable<T> LoadAsset<T>(string externalResourcesPath, bool autoUnload = true) where T : UnityEngine.Object
+        public static IObservable<T> LoadAsset<T>(string resourcePath, bool autoUnload = true) where T : UnityEngine.Object
         {
-            return Observable.FromMicroCoroutine<T>(observer => Instance.LoadAssetInternal(observer, externalResourcesPath, autoUnload));
+            return Observable.FromMicroCoroutine<T>(observer => Instance.LoadAssetInternal(observer, resourcePath, autoUnload));
         }
 
-        private IEnumerator LoadAssetInternal<T>(IObserver<T> observer, string resourcesPath, bool autoUnload) where T : UnityEngine.Object
+        private IEnumerator LoadAssetInternal<T>(IObserver<T> observer, string resourcePath, bool autoUnload) where T : UnityEngine.Object
         {
             System.Diagnostics.Stopwatch sw = null;
 
@@ -402,11 +402,11 @@ namespace Modules.ExternalResource
                 yield break;
             }
 
-            var assetInfo = GetAssetInfo(resourcesPath);
+            var assetInfo = GetAssetInfo(resourcePath);
 
             if (assetInfo == null)
             {
-                var exception = new Exception(string.Format("AssetInfo not found.\n{0}", resourcesPath));
+                var exception = new Exception(string.Format("AssetInfo not found.\n{0}", resourcePath));
 
                 Debug.LogException(exception);
 
@@ -420,12 +420,12 @@ namespace Modules.ExternalResource
                 yield break;
             }
 
-            var assetPath = PathUtility.Combine(resourceDir, resourcesPath);
+            var assetPath = PathUtility.Combine(resourceDir, resourcePath);
 
             // ローカルバージョンが古い場合はダウンロード.
             if (!CheckAssetBundleVersion(assetInfo) && !localMode)
             {
-                var downloadYield = UpdateAsset(resourcesPath).ToYieldInstruction(false, yieldCancel.Token);
+                var downloadYield = UpdateAsset(resourcePath).ToYieldInstruction(false, yieldCancel.Token);
 
                 // 読み込み実行 (読み込み中の場合は読み込み待ちのObservableが返る).
                 sw = System.Diagnostics.Stopwatch.StartNew();
@@ -515,9 +515,9 @@ namespace Modules.ExternalResource
         }
 
         /// <summary> Assetbundleを解放 </summary>
-        public static void UnloadAssetBundle(string externalResourcesPath)
+        public static void UnloadAssetBundle(string resourcePath)
         {
-            Instance.UnloadAssetInternal(externalResourcesPath);
+            Instance.UnloadAssetInternal(resourcePath);
         }
 
         /// <summary> 全てのAssetbundleを解放 </summary>
@@ -532,25 +532,25 @@ namespace Modules.ExternalResource
             return Instance.assetBundleManager.GetLoadedAssetBundleNames();
         }
 
-        private void UnloadAssetInternal(string resourcesPath)
+        private void UnloadAssetInternal(string resourcePath)
         {
-            if (string.IsNullOrEmpty(resourcesPath)) { return; }
+            if (string.IsNullOrEmpty(resourcePath)) { return; }
 
             if (assetInfoManifest == null)
             {
                 Debug.LogError("AssetInfoManifest is null.");
             }
 
-            var assetInfo = GetAssetInfo(resourcesPath);
+            var assetInfo = GetAssetInfo(resourcePath);
 
             if (assetInfo == null)
             {
-                Debug.LogErrorFormat("AssetInfo not found.\n{0}", resourcesPath);
+                Debug.LogErrorFormat("AssetInfo not found.\n{0}", resourcePath);
             }
 
             if (!assetInfo.IsAssetBundle)
             {
-                Debug.LogErrorFormat("This file is not an assetBundle.\n{0}", resourcesPath);
+                Debug.LogErrorFormat("This file is not an assetBundle.\n{0}", resourcePath);
             }
 
             assetBundleManager.UnloadAsset(assetInfo.AssetBundle.AssetBundleName);
@@ -560,14 +560,14 @@ namespace Modules.ExternalResource
 
         #if ENABLE_CRIWARE_ADX || ENABLE_CRIWARE_SOFDEC
 
-        private string ConvertCriFilePath(string resourcesPath)
+        private string ConvertCriFilePath(string resourcePath)
         {
-            if (string.IsNullOrEmpty(resourcesPath)){ return null; }
+            if (string.IsNullOrEmpty(resourcePath)){ return null; }
 
-            var assetInfo = GetAssetInfo(resourcesPath);
+            var assetInfo = GetAssetInfo(resourcePath);
 
             return simulateMode ?
-                PathUtility.Combine(new string[] { UnityPathUtility.GetProjectFolderPath(), resourceDir, resourcesPath }) :
+                PathUtility.Combine(new string[] { UnityPathUtility.GetProjectFolderPath(), resourceDir, resourcePath }) :
                 criAssetManager.BuildFilePath(assetInfo);
         }
 
@@ -577,29 +577,29 @@ namespace Modules.ExternalResource
 
         #if ENABLE_CRIWARE_ADX
         
-        public static IObservable<CueInfo> GetCueInfo(string resourcesPath, string cue)
+        public static IObservable<CueInfo> GetCueInfo(string resourcePath, string cue)
         {
-            return Observable.FromMicroCoroutine<CueInfo>(observer => Instance.GetCueInfoInternal(observer, resourcesPath, cue));
+            return Observable.FromMicroCoroutine<CueInfo>(observer => Instance.GetCueInfoInternal(observer, resourcePath, cue));
         }
 
-        private IEnumerator GetCueInfoInternal(IObserver<CueInfo> observer, string resourcesPath, string cue)
+        private IEnumerator GetCueInfoInternal(IObserver<CueInfo> observer, string resourcePath, string cue)
         {
-            if (string.IsNullOrEmpty(resourcesPath))
+            if (string.IsNullOrEmpty(resourcePath))
             {
-                observer.OnError(new ArgumentException("resourcesPath"));
+                observer.OnError(new ArgumentException("resourcePath"));
             }
             else
             {
-                var filePath = ConvertCriFilePath(resourcesPath);
+                var filePath = ConvertCriFilePath(resourcePath);
 
-                if (!CheckAssetVersion(resourcesPath, filePath) && !localMode)
+                if (!CheckAssetVersion(resourcePath, filePath) && !localMode)
                 {
-                    var assetInfo = GetAssetInfo(resourcesPath);
-                    var assetPath = PathUtility.Combine(resourceDir, resourcesPath);
+                    var assetInfo = GetAssetInfo(resourcePath);
+                    var assetPath = PathUtility.Combine(resourceDir, resourcePath);
 
                     var sw = System.Diagnostics.Stopwatch.StartNew();
 
-                    var updateYield = UpdateAsset(resourcesPath).ToYieldInstruction(false, yieldCancel.Token);
+                    var updateYield = UpdateAsset(resourcePath).ToYieldInstruction(false, yieldCancel.Token);
 
                     while (!updateYield.IsDone)
                     {
@@ -635,31 +635,31 @@ namespace Modules.ExternalResource
 
         #if ENABLE_CRIWARE_SOFDEC
 
-        public static IObservable<ManaInfo> GetMovieInfo(string resourcesPath)
+        public static IObservable<ManaInfo> GetMovieInfo(string resourcePath)
         {
-            return Observable.FromMicroCoroutine<ManaInfo>(observer => Instance.GetMovieInfoInternal(observer, resourcesPath));
+            return Observable.FromMicroCoroutine<ManaInfo>(observer => Instance.GetMovieInfoInternal(observer, resourcePath));
         }
 
-        private IEnumerator GetMovieInfoInternal(IObserver<ManaInfo> observer, string resourcesPath)
+        private IEnumerator GetMovieInfoInternal(IObserver<ManaInfo> observer, string resourcePath)
         {
-            if (string.IsNullOrEmpty(resourcesPath))
+            if (string.IsNullOrEmpty(resourcePath))
             {
-                observer.OnError(new ArgumentException("resourcesPath"));
+                observer.OnError(new ArgumentException("resourcePath"));
             }
             else
             {
-                var filePath = ConvertCriFilePath(resourcesPath);
+                var filePath = ConvertCriFilePath(resourcePath);
 
                 if (!localMode)
                 {
-                    if (!CheckAssetVersion(resourcesPath, filePath))
+                    if (!CheckAssetVersion(resourcePath, filePath))
                     {
-                        var assetInfo = GetAssetInfo(resourcesPath);
-                        var assetPath = PathUtility.Combine(resourceDir, resourcesPath);
+                        var assetInfo = GetAssetInfo(resourcePath);
+                        var assetPath = PathUtility.Combine(resourceDir, resourcePath);
 
                         var sw = System.Diagnostics.Stopwatch.StartNew();
 
-                        var updateYield = UpdateAsset(resourcesPath).ToYieldInstruction(false, yieldCancel.Token);
+                        var updateYield = UpdateAsset(resourcePath).ToYieldInstruction(false, yieldCancel.Token);
 
                         while (!updateYield.IsDone)
                         {

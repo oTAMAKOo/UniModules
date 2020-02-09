@@ -114,9 +114,9 @@ namespace Modules.Devkit.AssetTuning
 
         private bool ContainsAssetInfo(string path)
         {
-            var resourcesPath = ConvertAssetPathToResourcePath(path);
+            var resourcePath = ConvertAssetPathToResourcePath(path);
 
-            return assetInfos.Any(x => x.ResourcePath == resourcesPath);
+            return assetInfos.Any(x => x.ResourcePath == resourcePath);
         }
 
         private void AddAssetInfo(string path)
@@ -133,9 +133,9 @@ namespace Modules.Devkit.AssetTuning
 
         private void DeleteAssetInfo(string path)
         {
-            var resourcesPath = ConvertAssetPathToResourcePath(path);
+            var resourcePath = ConvertAssetPathToResourcePath(path);
 
-            assetInfos = assetInfos.Where(x => x.ResourcePath != resourcesPath).ToArray();
+            assetInfos = assetInfos.Where(x => x.ResourcePath != resourcePath).ToArray();
 
             changeAssetInfo = true;
         }

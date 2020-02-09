@@ -210,11 +210,11 @@ namespace Modules.ExternalResource
                 .SelectMany(x => x);
         }
 
-        public AssetInfo GetAssetInfo(string resourcesPath)
+        public AssetInfo GetAssetInfo(string resourcePath)
         {
             BuildCache();
 
-            var info = assetInfoByResourcesPath.GetValueOrDefault(resourcesPath);
+            var info = assetInfoByResourcesPath.GetValueOrDefault(resourcePath);
 
             return info;
         }

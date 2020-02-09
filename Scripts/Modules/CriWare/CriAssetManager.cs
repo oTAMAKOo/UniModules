@@ -225,23 +225,23 @@ namespace Modules.CriWare
         /// <summary>
         /// 指定されたアセットを更新.
         /// </summary>
-        public IObservable<Unit> UpdateCriAsset(string resourcesPath, IProgress<float> progress = null)
+        public IObservable<Unit> UpdateCriAsset(string resourcePath, IProgress<float> progress = null)
         {
             if (simulateMode) { return Observable.ReturnUnit(); }
 
             if (localMode) { return Observable.ReturnUnit(); }
 
-            if (Path.GetExtension(resourcesPath) == CriAssetDefinition.AwbExtension) { return Observable.ReturnUnit(); }
+            if (Path.GetExtension(resourcePath) == CriAssetDefinition.AwbExtension) { return Observable.ReturnUnit(); }
 
             var installList = new List<CriAssetInstall>();
 
-            var extension = Path.GetExtension(resourcesPath);
+            var extension = Path.GetExtension(resourcePath);
 
-            var assetInfo = manifest.GetAssetInfo(resourcesPath);
+            var assetInfo = manifest.GetAssetInfo(resourcePath);
 
             if (assetInfo == null)
             {
-                OnError(new FileNotFoundException(string.Format("File NotFound.\n[{0}]", resourcesPath)));
+                OnError(new FileNotFoundException(string.Format("File NotFound.\n[{0}]", resourcePath)));
                 return Observable.ReturnUnit();
             }
 
@@ -250,7 +250,7 @@ namespace Modules.CriWare
             if (extension == CriAssetDefinition.AcbExtension)
             {
                 // Awbの拡張子でマニフェストを検索して存在したら一緒にダウンロード.
-                var awbAssetPath = Path.ChangeExtension(resourcesPath, CriAssetDefinition.AwbExtension);
+                var awbAssetPath = Path.ChangeExtension(resourcePath, CriAssetDefinition.AwbExtension);
 
                 var awbAssetInfo = manifest.GetAssetInfo(awbAssetPath);
 
@@ -314,16 +314,16 @@ namespace Modules.CriWare
 
             if (install.AssetInfo == null) { return; }
 
-            var resourcesPath = install.AssetInfo.ResourcePath;
+            var resourcePath = install.AssetInfo.ResourcePath;
 
-            var item = installQueueing.GetValueOrDefault(resourcesPath);
+            var item = installQueueing.GetValueOrDefault(resourcePath);
 
             if (item != null)
             {
                 item.Installer.Stop();
                 item.Installer.Dispose();
 
-                installQueueing.Remove(resourcesPath);
+                installQueueing.Remove(resourcePath);
             }
         }
 
