@@ -251,9 +251,19 @@ namespace Modules.UI
                 addItems.ForEach(x => UnityUtility.SetActive(x, false));
 
                 // 生成したインスタンス初期化.
-                var initializeYield = addItems.Select(x => Observable.FromMicroCoroutine(() => InitializeItem(x))).WhenAll().ToYieldInstruction();
 
-                if (!initializeYield.IsDone)
+                var initializeObservers = new IObservable<Unit>[addItems.Length];
+
+                for (var i = 0; i < addItems.Length; i++)
+                {
+                    var item = addItems[i];
+
+                    initializeObservers[i] = Observable.FromCoroutine(() => InitializeItem(item));
+                }
+
+                var initializeYield = initializeObservers.WhenAll().ToYieldInstruction();
+
+                while (!initializeYield.IsDone)
                 {
                     yield return null;
                 }
@@ -269,7 +279,7 @@ namespace Modules.UI
                 UnityUtility.SetActive(scrollbar.gameObject, ScrollEnable());
             }
 
-            var observers = new IObservable<Unit>[itemList.Count];
+            var updateObservers = new IObservable<Unit>[itemList.Count];
 
             // 位置、情報を更新.
             for (var i = 0; i < itemList.Count; i++)
@@ -284,7 +294,7 @@ namespace Modules.UI
                     new Vector2(0, basePosition - offset) :
                     new Vector2(basePosition + offset, 0);
 
-                observers[i] = UpdateItem(item, i);
+                updateObservers[i] = UpdateItem(item, i);
             }
 
             // 並べ替え.
@@ -301,7 +311,7 @@ namespace Modules.UI
             }
 
             // リストアイテム更新.
-            var updateItemYield = observers.WhenAll().ToYieldInstruction();
+            var updateItemYield = updateObservers.WhenAll().ToYieldInstruction();
 
             while (!updateItemYield.IsDone)
             {
