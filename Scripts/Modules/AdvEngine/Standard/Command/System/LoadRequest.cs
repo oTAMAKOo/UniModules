@@ -3,6 +3,7 @@
 
 using UnityEngine;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using Extensions;
@@ -16,9 +17,28 @@ namespace Modules.AdvKit.Standard
     {
         //----- params -----
 
+        public sealed class Request : LifetimeDisposable
+        {
+            public bool IsStart { get; private set; }
+            public AssetInfo[] AssetInfos { get; private set; }
+
+            public Request(AssetInfo[] assetInfos)
+            {
+                AssetInfos = assetInfos ?? new AssetInfo[0];
+                IsStart = false;
+            }
+
+            public void LoadStart()
+            {
+                IsStart = true;
+            }
+        }
+
         //----- field -----
 
         private IDisposable loadDisposable = null;
+
+        private Subject<Request> onLoadRequest = null;
 
         //----- property -----
 
@@ -37,7 +57,9 @@ namespace Modules.AdvKit.Standard
 
             var requests = advEngine.Resource.GetRequests();
 
-            var resourcePaths = requests.Select(x => x.Key).ToArray();
+            var resourcePaths = requests.Select(x => x.Key).Distinct().ToArray();
+
+            var assetInfos = new List<AssetInfo>();
 
             var builder = new StringBuilder();
 
@@ -49,6 +71,8 @@ namespace Modules.AdvKit.Standard
 
                 if (assetInfo != null)
                 {
+                    assetInfos.Add(assetInfo);
+
                     builder.AppendFormat("{0} ({1}byte)", assetInfo.ResourcePath, assetInfo.FileSize).AppendLine();
                 }
                 else
@@ -62,9 +86,28 @@ namespace Modules.AdvKit.Standard
                 Debug.Log(builder.ToString());
             }
 
-            loadDisposable = requests.Select(x => x.Value).WhenAll()
-                .Subscribe(_ => advEngine.Resume())
-                .AddTo(Disposable);
+            Action execteLoad = () =>
+            {
+                loadDisposable = requests.Select(x => x.Value).WhenAll()
+                    .Subscribe(_ => advEngine.Resume())
+                    .AddTo(Disposable);
+            };
+
+            if (onLoadRequest != null && onLoadRequest.HasObservers)
+            {
+                var request = new Request(assetInfos.ToArray());
+
+                onLoadRequest.OnNext(request);
+
+                Observable.EveryUpdate().SkipWhile(x => !request.IsStart)
+                    .First()
+                    .Subscribe(_ => execteLoad())
+                    .AddTo(Disposable);
+            }
+            else
+            {
+                execteLoad();
+            }
 
             return YieldWait;
         }
@@ -76,6 +119,11 @@ namespace Modules.AdvKit.Standard
                 loadDisposable.Dispose();
                 loadDisposable = null;
             }
+        }
+
+        public IObservable<Request> OnLoadRequestAsObservable()
+        {
+            return onLoadRequest ?? (onLoadRequest = new Subject<Request>());
         }
     }
 }
