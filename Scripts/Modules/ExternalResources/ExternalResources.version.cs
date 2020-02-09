@@ -137,7 +137,7 @@ namespace Modules.ExternalResource
             // バージョン情報が存在しないので更新.
             if (version.infos.IsEmpty()) { return true; }
 
-            var result = true;
+            var requireUpdate = true;
 
             #if ENABLE_CRIWARE_FILESYSTEM
 
@@ -147,18 +147,18 @@ namespace Modules.ExternalResource
             {
                 var filePath = ConvertCriFilePath(assetInfo.ResourcePath);
 
-                result = CheckAssetVersion(assetInfo.ResourcePath, filePath);
+                requireUpdate = !CheckAssetVersion(assetInfo.ResourcePath, filePath);
             }
             else
 
             #endif
 
             {
-                result = CheckAssetBundleVersion(assetInfo);
+                requireUpdate = !CheckAssetBundleVersion(assetInfo);
 
             }            
 
-            return result;
+            return requireUpdate;
         }
 
         private void UpdateVersion(string resourcePath)
