@@ -57,9 +57,6 @@ namespace Modules.MessagePack
         {
             return new IFormatterResolver[]
             {
-                // DateTime.
-                DateTimeResolver.Instance,
-
                 GeneratedResolver.Instance,
 
                 // Builtin.
