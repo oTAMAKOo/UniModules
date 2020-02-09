@@ -181,6 +181,13 @@ public static class Debug
         UnityEngine.Debug.Break();
     }
 
+    public static void Fail(string message)
+    {
+        if (!isDebugBuild) { return; }
+
+        System.Diagnostics.Debug.Fail(message);
+    }
+
     #region DrawLine
 
     public static void DrawLine(Vector3 start, Vector3 end)
