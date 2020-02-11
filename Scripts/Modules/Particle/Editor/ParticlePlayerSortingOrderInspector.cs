@@ -33,56 +33,63 @@ namespace Modules.Particle
         {
             instance = target as ParticlePlayerSortingOrder;
 
-            var originLabelWidth = EditorLayoutTools.SetLabelWidth(120f);
-
-            using (new EditorGUILayout.HorizontalScope(GUILayout.Height(20f)))
+            if (particlePlayer != null)
             {
-                using (new EditorGUILayout.VerticalScope())
-                {
-                    GUILayout.Space(5f);
+                var originLabelWidth = EditorLayoutTools.SetLabelWidth(120f);
 
-                    EditorGUILayout.PrefixLabel("SortingOrder");
-                }
-
-                using (new ContentsScope())
+                using (new EditorGUILayout.HorizontalScope(GUILayout.Height(20f)))
                 {
-                    using (new EditorGUILayout.HorizontalScope())
+                    using (new EditorGUILayout.VerticalScope())
                     {
-                        var text = string.Empty;
-                        var size = Vector2.zero;
-                        
-                        var style = GUI.skin.box;
-                        style.alignment = TextAnchor.MiddleLeft;
+                        GUILayout.Space(5f);
 
-                        text = string.Format("{0} +", particlePlayer.SortingOrder);
-                        size = style.CalcSize(new GUIContent(text));
+                        EditorGUILayout.PrefixLabel("SortingOrder");
+                    }
 
-                        EditorGUILayout.LabelField(text, GUILayout.Width(size.x));
-
-                        EditorGUI.BeginChangeCheck();
-
-                        text = instance.SortingOrder.ToString();
-                        size = style.CalcSize(new GUIContent(text));
-
-                        var width = 30f < size.x ? size.x : 30f;
-                        var sortingOrder = EditorGUILayout.DelayedIntField(instance.SortingOrder, GUILayout.Width(width + 10f));
-
-                        if (EditorGUI.EndChangeCheck())
+                    using (new ContentsScope())
+                    {
+                        using (new EditorGUILayout.HorizontalScope())
                         {
-                            instance.Set(sortingOrder);
+                            var text = string.Empty;
+                            var size = Vector2.zero;
+
+                            var style = GUI.skin.box;
+                            style.alignment = TextAnchor.MiddleLeft;
+
+                            text = string.Format("{0} +", particlePlayer.SortingOrder);
+                            size = style.CalcSize(new GUIContent(text));
+
+                            EditorGUILayout.LabelField(text, GUILayout.Width(size.x));
+
+                            EditorGUI.BeginChangeCheck();
+
+                            text = instance.SortingOrder.ToString();
+                            size = style.CalcSize(new GUIContent(text));
+
+                            var width = 30f < size.x ? size.x : 30f;
+                            var sortingOrder = EditorGUILayout.DelayedIntField(instance.SortingOrder, GUILayout.Width(width + 10f));
+
+                            if (EditorGUI.EndChangeCheck())
+                            {
+                                instance.Set(sortingOrder);
+                            }
+
+                            var currentSortingOrder = particlePlayer.SortingOrder + instance.SortingOrder;
+
+                            text = string.Format("= {0}", currentSortingOrder);
+                            size = style.CalcSize(new GUIContent(text));
+
+                            EditorGUILayout.LabelField(text, GUILayout.Width(size.x));
                         }
-
-                        var currentSortingOrder = particlePlayer.SortingOrder + instance.SortingOrder;
-
-                        text = string.Format("= {0}", currentSortingOrder);
-                        size = style.CalcSize(new GUIContent(text));
-
-                        EditorGUILayout.LabelField(text, GUILayout.Width(size.x));
                     }
                 }
-            }
 
-            EditorLayoutTools.SetLabelWidth(originLabelWidth);
+                EditorLayoutTools.SetLabelWidth(originLabelWidth);
+            }
+            else
+            {
+                EditorGUILayout.HelpBox("Require ParticlePlayer component", MessageType.Warning);
+            }
         }
     }
 }
