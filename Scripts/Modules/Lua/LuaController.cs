@@ -7,8 +7,8 @@ using System.Collections;
 using System.Collections.Generic;
 using UniRx;
 using Extensions;
+using Modules.AdvKit;
 using MoonSharp.Interpreter;
-using MoonSharp.Interpreter.Loaders;
 
 using Coroutine = MoonSharp.Interpreter.Coroutine;
 
@@ -46,36 +46,35 @@ namespace Modules.Lua
                 }
             };
         }
-        
-        public LuaController(HashSet<Type> luaTypes) : this()
+
+        public void SetScriptCommands(HashSet<Type> luaTypes)
         {
-            if (luaTypes != null)
+            if (luaTypes == null) { return; }
+            
+            foreach (var luaType in luaTypes)
             {
-                foreach (var luaType in luaTypes)
+                if (!luaType.IsSubclassOf(typeof(LuaClass)))
                 {
-                    if (!luaType.IsSubclassOf(typeof(LuaClass)))
+                    Debug.LogErrorFormat("This class is not subclass of LuaClass.\nclass : {0}", luaType.FullName);
+                    continue;
+                }
+
+                var luaClass = Activator.CreateInstance(luaType) as LuaClass;
+
+                if (luaClass != null)
+                {
+                    var setup = luaClass.SetLuaController(this);
+
+                    if (setup)
                     {
-                        Debug.LogErrorFormat("This class is not subclass of LuaClass.\nclass : {0}", luaType.FullName);
-                        continue;
-                    }
+                        luaClass.RegisterCommand();
 
-                    var luaClass = Activator.CreateInstance(luaType) as LuaClass;
-
-                    if (luaClass != null)
-                    {
-                        var setup = luaClass.SetLuaController(this);
-
-                        if (setup)
-                        {
-                            luaClass.RegisterCommand();
-
-                            classTable.Add(luaType, luaClass);
-                        }
+                        classTable.Add(luaType, luaClass);
                     }
                 }
             }
         }
-
+        
         public void SetScriptLoader(LuaScriptLoader scriptLoader)
         {
             ScriptLoader = scriptLoader;

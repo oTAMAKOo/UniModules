@@ -5,11 +5,11 @@ using System;
 
 namespace Modules.AdvKit.Standard
 {
-    public sealed class SoundCommandController : CommandController
+    public class SoundCommandController : CommandController
     {
         //----- params -----
 
-        private static readonly Type[] CommandList = new Type[]
+        protected static readonly Type[] CommandList = new Type[]
         {
             // Bgm.
             typeof(SetupBgm), typeof(PlayBgm), typeof(StopBgm),

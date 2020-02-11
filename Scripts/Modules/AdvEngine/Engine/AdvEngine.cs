@@ -95,9 +95,10 @@ namespace Modules.AdvKit
 
         private void SetupLua()
         {
-            luaController = new LuaController(commandControllerTypes);
+            luaController = new LuaController();
 
             luaController.SetScriptLoader(scriptLoader);
+            luaController.SetScriptCommands(commandControllerTypes);
 
             commandControllers = new Dictionary<Type, CommandController>();
 
