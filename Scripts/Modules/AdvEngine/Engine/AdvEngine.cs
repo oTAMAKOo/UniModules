@@ -68,13 +68,12 @@ namespace Modules.AdvKit
         
         //----- method -----
 
-        public void Initialize(GameObject rootObject, LuaScriptLoader scriptLoader,
+        public void Initialize(GameObject rootObject,
                                AdvResourceManager resourceManager, AdvSoundManager soundManager,
                                HashSet<Type> commandControllerTypes, AdvObjectSetting advObjectSetting)
         {
             if (initialized) { return; }
-
-            this.scriptLoader = scriptLoader;
+            
             this.commandControllerTypes = commandControllerTypes;
 
             Resource = resourceManager;
@@ -87,6 +86,11 @@ namespace Modules.AdvKit
             IsExecute = false;
 
             initialized = true;
+        }
+
+        public void SetScriptLoader(LuaScriptLoader scriptLoader)
+        {
+            this.scriptLoader = scriptLoader;
         }
 
         private void SetupLua()

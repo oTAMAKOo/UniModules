@@ -32,6 +32,12 @@ namespace Modules.AdvKit.Standard
         {
             var advEngine = AdvEngine.Instance;
 
+            if (string.IsNullOrEmpty(fileName))
+            {
+                image.sprite = null;
+                return;
+            }
+
             var resourcePath = advEngine.Resource.GetResourcePath<AdvBackground>(fileName);
 
             if (string.IsNullOrEmpty(resourcePath)) { return; }

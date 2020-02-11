@@ -227,8 +227,7 @@ namespace Modules.ExternalResource
             var sw = System.Diagnostics.Stopwatch.StartNew();
 
             // アセット管理情報読み込み.
-
-            var manifestAssetBundleName = AssetInfoManifest.AssetBundleName;
+            
             var manifestFileName = AssetInfoManifest.ManifestFileName;
 
             #if UNITY_EDITOR
