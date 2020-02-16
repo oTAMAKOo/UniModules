@@ -10,6 +10,9 @@ namespace Modules.AdvKit.Standard
     public interface IMessageWindow
     {
         void ShowMessage(string name, string text);
+
+        void Hide();
+
         IObservable<Unit> OnShowMessageFinish();
     }
 
@@ -37,6 +40,13 @@ namespace Modules.AdvKit.Standard
         private DynValue CommandFunction(string text, string name = null)
         {
             var advEngine = AdvEngine.Instance;
+
+            if (text == null)
+            {
+                MessageWindow.Hide();
+
+                return DynValue.Void;
+            }
 
             var displayName = name;
 

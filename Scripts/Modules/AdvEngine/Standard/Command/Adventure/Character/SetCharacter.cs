@@ -20,18 +20,23 @@ namespace Modules.AdvKit.Standard
 
         public override object GetCommandDelegate()
         {
-            return (Action<string, int, Vector2>)CommandFunction;
+            return (Action<string, string, Vector2, int?>)CommandFunction;
         }
 
-        private void CommandFunction(string identifier, int face, Vector2 pos)
+        private void CommandFunction(string identifier, string patternName, Vector2 pos, int? priority = null)
         {
             var advEngine = AdvEngine.Instance;
 
             var advCharacter = advEngine.ObjectManager.Get<AdvCharacter>(identifier);
 
-            advCharacter.Show(face);
+            if (advCharacter != null)
+            {
+                advCharacter.SetPriority(priority.HasValue ? priority.Value : 0);
 
-            advCharacter.transform.localPosition = pos;
+                advCharacter.Show(patternName);
+
+                advCharacter.transform.localPosition = pos;
+            }
         }
     }
 }

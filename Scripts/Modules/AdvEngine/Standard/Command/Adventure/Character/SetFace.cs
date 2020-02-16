@@ -22,10 +22,10 @@ namespace Modules.AdvKit.Standard
 
         public override object GetCommandDelegate()
         {
-            return (Func<string, int, bool, DynValue>)CommandFunction;
+            return (Func<string, string, bool, DynValue>)CommandFunction;
         }
 
-        private DynValue CommandFunction(string identifier, int face, bool wait = false)
+        private DynValue CommandFunction(string identifier, string patternName, bool wait = false)
         {
             var advEngine = AdvEngine.Instance;
 
@@ -33,7 +33,7 @@ namespace Modules.AdvKit.Standard
 
             var dicingImage = advCharacter.DicingImage;
 
-            dicingImage.PatternName = face.ToString();
+            dicingImage.PatternName = patternName;
 
             if (dicingImage.CrossFade)
             {

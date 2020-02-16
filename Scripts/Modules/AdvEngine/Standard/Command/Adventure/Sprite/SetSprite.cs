@@ -19,10 +19,10 @@ namespace Modules.AdvKit.Standard
 
         public override object GetCommandDelegate()
         {
-            return (Action<string, string, float?, float?>)CommandFunction;
+            return (Action<string, string, int?, float?, float?>)CommandFunction;
         }
 
-        private void CommandFunction(string identifier, string fileIdentifier, float? width = null, float? height = null)
+        private void CommandFunction(string identifier, string fileIdentifier, int? priority = null, float ? width = null, float? height = null)
         {
             var advEngine = AdvEngine.Instance;
 
@@ -32,6 +32,8 @@ namespace Modules.AdvKit.Standard
 
             if (advSprite != null)
             {
+                advSprite.SetPriority(priority.HasValue ? priority.Value : 0);
+
                 advSprite.Show(fileName, width, height);
             }
         }

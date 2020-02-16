@@ -14,10 +14,10 @@ namespace Modules.AdvKit
         //----- params -----
 
         //----- field -----
+        
+        private Subject<Unit> onChangePriority = null;
 
         private bool initialized = false;
-
-        private Subject<Unit> onChangePriority = null;
 
         //----- property -----
 
@@ -46,8 +46,6 @@ namespace Modules.AdvKit
 
         public void SetPriority(int priority)
         {
-            if (Priority == priority) { return; }
-
             Priority = priority;
 
             if (onChangePriority != null)

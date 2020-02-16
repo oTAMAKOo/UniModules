@@ -32,6 +32,13 @@ namespace Modules.AdvKit.Standard
         {
             var advEngine = AdvEngine.Instance;
 
+            if (text == null)
+            {
+                MessageWindow.Hide();
+
+                return DynValue.Void;
+            }
+
             var displayName = name;
 
             if (string.IsNullOrEmpty(displayName))

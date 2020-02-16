@@ -33,13 +33,13 @@ namespace Modules.AdvKit.Standard
             this.resourcePath = resourcePath;
         }
 
-        public void Show(int face)
+        public void Show(string patternName)
         {
             var advEngine = AdvEngine.Instance;
 
             dicingImage.DicingTexture = advEngine.Resource.Get<DicingTexture>(resourcePath);
 
-            dicingImage.PatternName = face.ToString();
+            dicingImage.PatternName = patternName;
 
             dicingImage.SetNativeSize();
 
