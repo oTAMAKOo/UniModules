@@ -45,7 +45,7 @@ namespace Modules.AdvKit.Standard
 
             while (time < seconds)
             {
-                time += Time.deltaTime * advEngine.TimeScale;
+                time += Time.deltaTime * advEngine.TimeScale.Current;
 
                 yield return null;
             }

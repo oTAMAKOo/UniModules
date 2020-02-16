@@ -30,14 +30,10 @@ namespace Modules.AdvKit
 
         private Dictionary<Type, Command> commandDictionary = null;
 
-        private float timeScale = 1f;
-
         private Subject<Unit> onLoad = null;
         private Subject<Unit> onExecute = null;
         private Subject<Unit> onFinish = null;
         private Subject<Unit> onQuit = null;
-
-        private Subject<float> onTimeScaleChange = null;
 
         private bool initialized = false;
 
@@ -47,29 +43,16 @@ namespace Modules.AdvKit
 
         public AdvObjectManager ObjectManager { get; private set; }
 
+        public AdvTimeScale TimeScale { get; private set; }
+
         public AdvResourceManager Resource { get; private set; }
 
         public AdvSoundManager Sound { get; private set; }
-
-        public float TimeScale
-        {
-            get { return timeScale; }
-
-            set
-            {
-                timeScale = value;
-
-                if (onTimeScaleChange != null)
-                {
-                    onTimeScaleChange.OnNext(timeScale);
-                }
-            }
-        }
         
         //----- method -----
 
         public void Initialize(GameObject rootObject,
-                               AdvResourceManager resourceManager, AdvSoundManager soundManager,
+                               AdvResourceManager resourceManager, AdvSoundManager soundManager, AdvTimeScale timeScale,
                                HashSet<Type> commandControllerTypes, AdvObjectSetting advObjectSetting)
         {
             if (initialized) { return; }
@@ -77,10 +60,13 @@ namespace Modules.AdvKit
             this.commandControllerTypes = commandControllerTypes;
 
             Resource = resourceManager;
+
             Sound = soundManager;
 
-            ObjectManager = new AdvObjectManager();
+            TimeScale = timeScale;
+            TimeScale.Initialize();
 
+            ObjectManager = new AdvObjectManager();
             ObjectManager.Initialize(rootObject, advObjectSetting);
 
             IsExecute = false;
@@ -202,9 +188,9 @@ namespace Modules.AdvKit
         {
             if (tweener == null) { return; }
 
-            tweener.timeScale = timeScale;
+            tweener.timeScale = TimeScale.Current;
 
-            OnTimeScaleChangeAsObservable()
+            TimeScale.OnTimeScaleChangedAsObservable()
                 .TakeWhile(_ => !tweener.IsComplete())
                 .Subscribe(x => tweener.timeScale = x)
                 .AddTo(Disposable);
@@ -232,12 +218,6 @@ namespace Modules.AdvKit
         public IObservable<Unit> OnQuitAsObservable()
         {
             return onQuit ?? (onQuit = new Subject<Unit>());
-        }
-
-        /// <summary> 速度変更イベント. </summary>
-        public IObservable<float> OnTimeScaleChangeAsObservable()
-        {
-            return onTimeScaleChange ?? (onTimeScaleChange = new Subject<float>());
         }
     }
 }
