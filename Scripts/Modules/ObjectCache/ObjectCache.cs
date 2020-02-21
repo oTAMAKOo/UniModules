@@ -1,6 +1,7 @@
-﻿﻿﻿
+﻿
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Extensions;
 
 namespace Modules.ObjectCache
@@ -27,6 +28,11 @@ namespace Modules.ObjectCache
         private static Dictionary<string, Reference> cacheReference = null;
 
         //----- property -----
+
+        public IReadOnlyList<string> Keys
+        {
+            get { return cache != null ? cache.Keys.ToArray() : new string[0]; }
+        }
 
         //----- method -----
 
@@ -175,7 +181,7 @@ namespace Modules.ObjectCache
 
             if (instance.cache == null) { return false; }
 
-            return instance.cache.ContainsKey(key);
+            return instance.Keys.Contains(key);
         }
 
         private ObjectCache<T> GetInstance()
