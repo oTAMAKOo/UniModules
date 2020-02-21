@@ -36,24 +36,22 @@ namespace Modules.AdvKit.Standard
 
             if (advObject == null) { return DynValue.Nil; }
 
-            if (duration != 0)
+            var canvasGroup = UnityUtility.GetComponent<CanvasGroup>(advObject);
+
+            if (canvasGroup != null)
             {
-                TweenCallback onComplete = () =>
+                if (duration != 0)
                 {
-                    UnityUtility.SetActive(advObject, false);
-
-                    if (wait)
+                    TweenCallback onComplete = () =>
                     {
-                        advEngine.Resume();
-                    }
-                };
+                        UnityUtility.SetActive(advObject, false);
 
-                var canvasGroup = UnityUtility.GetComponent<CanvasGroup>(advObject);
-
-                if (canvasGroup != null)
-                {
-                    canvasGroup.alpha = 1f;
-
+                        if (wait)
+                        {
+                            advEngine.Resume();
+                        }
+                    };
+                    
                     var ease = EnumExtensions.FindByName(easingType, Ease.Linear);
 
                     var tweener = canvasGroup.DOFade(0f, duration)
@@ -63,6 +61,12 @@ namespace Modules.AdvKit.Standard
                     advEngine.SetTweenTimeScale(tweener);
 
                     returnValue = wait ? YieldWait : DynValue.Nil;
+                }
+                else
+                {
+                    canvasGroup.alpha = 0f;
+
+                    UnityUtility.SetActive(advObject, false);
                 }
             }
             else

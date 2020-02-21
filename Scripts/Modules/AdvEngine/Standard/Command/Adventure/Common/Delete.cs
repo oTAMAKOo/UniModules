@@ -26,13 +26,8 @@ namespace Modules.AdvKit.Standard
         private void CommandFunction(string identifier)
         {
             var advEngine = AdvEngine.Instance;
-
-            var advObject = advEngine.ObjectManager.Get<AdvObject>(identifier);
-
-            if (advObject != null)
-            {
-                UnityUtility.SafeDelete(advObject);
-            }
+            
+            advEngine.ObjectManager.Delete(identifier);
         }
     }
 }

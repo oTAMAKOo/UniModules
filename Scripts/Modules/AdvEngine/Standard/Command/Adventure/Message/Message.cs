@@ -45,7 +45,7 @@ namespace Modules.AdvKit.Standard
             {
                 MessageWindow.Hide();
 
-                return DynValue.Void;
+                return DynValue.Nil;
             }
 
             var displayName = name;

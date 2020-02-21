@@ -1,7 +1,11 @@
 ﻿
 #if ENABLE_MOONSHARP
 
+using UnityEngine;
 using System;
+using DG.Tweening;
+using Extensions;
+using MoonSharp.Interpreter;
 
 namespace Modules.AdvKit.Standard
 {
@@ -19,11 +23,14 @@ namespace Modules.AdvKit.Standard
 
         public override object GetCommandDelegate()
         {
-            return (Action<string, string, int?, float?, float?>)CommandFunction;
+            return (Func<string, string, Vector2?, int?, float, string, bool, DynValue>)CommandFunction;
         }
 
-        private void CommandFunction(string identifier, string fileIdentifier, int? priority = null, float ? width = null, float? height = null)
+        private DynValue CommandFunction(string identifier, string fileIdentifier, Vector2? size, int? priority = null,
+                                         float duration = 0, string easingType = null, bool wait = true)
         {
+            var returnValue = DynValue.Nil;
+
             var advEngine = AdvEngine.Instance;
 
             var advSprite = advEngine.ObjectManager.Create<AdvSprite>(identifier);
@@ -34,8 +41,45 @@ namespace Modules.AdvKit.Standard
             {
                 advSprite.SetPriority(priority.HasValue ? priority.Value : 0);
 
+                var width = size.HasValue ? (float?)size.Value.x : null;
+                var height = size.HasValue ? (float?)size.Value.y : null;
+
                 advSprite.Show(fileName, width, height);
             }
+
+            var canvasGroup = UnityUtility.GetComponent<CanvasGroup>(advSprite);
+
+            if (canvasGroup != null)
+            {
+                if (duration != 0)
+                {
+                    TweenCallback onComplete = () =>
+                    {
+                        if (wait)
+                        {
+                            advEngine.Resume();
+                        }
+                    };
+
+                    var ease = EnumExtensions.FindByName(easingType, Ease.Linear);
+
+                    canvasGroup.alpha = 0f;
+
+                    var tweener = canvasGroup.DOFade(1f, duration)
+                        .SetEase(ease)
+                        .OnComplete(onComplete);
+
+                    advEngine.SetTweenTimeScale(tweener);
+
+                    returnValue = wait ? YieldWait : DynValue.Nil;
+                }
+                else
+                {
+                    canvasGroup.alpha = 1f;
+                }
+            }
+
+            return returnValue;
         }
     }
 }

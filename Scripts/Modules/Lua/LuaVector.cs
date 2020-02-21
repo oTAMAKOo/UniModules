@@ -18,6 +18,9 @@ namespace Modules.Lua
             RegisterVector2();
             RegisterVector3();
 
+            RegisterNullableVector2();
+            RegisterNullableVector3();
+
             register = true;
         }
 
@@ -50,6 +53,42 @@ namespace Modules.Lua
                 });            
         }
 
+        private static void RegisterNullableVector2()
+        {
+            // To create Vector2? in lua:
+            // position = {1.0, 1.0}
+
+            Script.GlobalOptions.CustomConverters.SetScriptToClrCustomConversion(DataType.Table, typeof(Vector2?),
+                dynVal =>
+                {
+                    var table = dynVal.Table;
+
+                    var vector2 = new Vector2()
+                    {
+                        x = (float)table.Get(1).Number,
+                        y = (float)table.Get(2).Number,
+                    };
+
+                    return new Vector2?(vector2);
+                });
+
+            Script.GlobalOptions.CustomConverters.SetClrToScriptCustomConversion<Vector2?>(
+                (script, vector) =>
+                {
+                    var dynVal = DynValue.Nil;
+
+                    if (vector.HasValue)
+                    {
+                        var x = DynValue.NewNumber(vector.Value.x);
+                        var y = DynValue.NewNumber(vector.Value.y);
+
+                        dynVal = DynValue.NewTable(script, new DynValue[] { x, y });
+                    }
+
+                    return dynVal;
+                });
+        }
+
         private static void RegisterVector3()
         {
             // To Vector3 in lua:
@@ -79,6 +118,44 @@ namespace Modules.Lua
 
                     return dynVal;
                 });            
+        }
+
+        private static void RegisterNullableVector3()
+        {
+            // To create Vector3? in lua:
+            // position = {1.0, 1.0, 1.0}
+
+            Script.GlobalOptions.CustomConverters.SetScriptToClrCustomConversion(DataType.Table, typeof(Vector3?),
+                dynVal =>
+                {
+                    var table = dynVal.Table;
+
+                    var vector3 = new Vector3()
+                    {
+                        x = (float)table.Get(1).Number,
+                        y = (float)table.Get(2).Number,
+                        z = (float)table.Get(3).Number,
+                    };
+
+                    return new Vector3?(vector3);
+                });
+
+            Script.GlobalOptions.CustomConverters.SetClrToScriptCustomConversion<Vector3?>(
+                (script, vector) =>
+                {
+                    var dynVal = DynValue.Nil;
+
+                    if (vector.HasValue)
+                    {
+                        var x = DynValue.NewNumber(vector.Value.x);
+                        var y = DynValue.NewNumber(vector.Value.y);
+                        var z = DynValue.NewNumber(vector.Value.z);
+
+                        dynVal = DynValue.NewTable(script, new DynValue[] { x, y, z });
+                    }
+
+                    return dynVal;
+                });
         }
 
         public static Vector2 ToVector2(this Table table)

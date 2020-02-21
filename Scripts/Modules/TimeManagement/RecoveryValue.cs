@@ -1,7 +1,7 @@
 ﻿
 using System;
 
-namespace Modules.Timer
+namespace Modules.TimeManagement
 {
     public sealed class RecoveryValue
     {
