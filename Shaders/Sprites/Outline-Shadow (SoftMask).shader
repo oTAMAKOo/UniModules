@@ -1,5 +1,5 @@
 ﻿
-Shader "Custom/UI/Text-Outline-Shadow (SoftMask)"
+Shader "Custom/Sprites/Outline-Shadow (SoftMask)"
 {
     Properties
 	{
@@ -180,7 +180,7 @@ Shader "Custom/UI/Text-Outline-Shadow (SoftMask)"
             {
                 float4 vertex   : POSITION;
                 half4  color    : COLOR;
-                float2 uv       : TEXCOORD0;
+                float2 texcoord : TEXCOORD0;
 
                 UNITY_VERTEX_INPUT_INSTANCE_ID
             };
@@ -189,7 +189,7 @@ Shader "Custom/UI/Text-Outline-Shadow (SoftMask)"
             {
                 float4 vertex   : SV_POSITION;
                 half4  color    : COLOR;
-                float2 uv       : TEXCOORD0;
+                float2 texcoord : TEXCOORD0;
 
                 UNITY_VERTEX_OUTPUT_STEREO
                 
@@ -211,7 +211,7 @@ Shader "Custom/UI/Text-Outline-Shadow (SoftMask)"
 
                 o.vertex = UnityObjectToClipPos(v.vertex);
                 o.color = v.color;
-                o.uv = TRANSFORM_TEX(v.uv, _MainTex);
+                o.texcoord = TRANSFORM_TEX(v.texcoord, _MainTex);
 
                 SOFTMASK_CALCULATE_COORDS(o, v.vertex)
 
@@ -222,27 +222,23 @@ Shader "Custom/UI/Text-Outline-Shadow (SoftMask)"
             {
                 half4 color = i.color;
 
-                half4 o_color = _OutlineColor;
+                half4 ocol = _OutlineColor;
      
-                half4 lerp_color = _OutlineColor;
+                half a0 = tex2D(_MainTex, i.texcoord).a;                
 
-                half a0 = tex2D(_MainTex, i.uv).a;
+                ocol.a *= color.a;
 
-                o_color.a *= color.a;
-
-                lerp_color.a = 0;
-
-                color = lerp(o_color, lerp_color, a0);
+                color = lerp(ocol, color, a0);
 
                 float4 delta = float4(1, 1, 0, -1) * _MainTex_TexelSize.xyxy * _OutlineSpread;
 
-                half a1 = max(max(tex2D(_MainTex, i.uv + delta.xz).a, tex2D(_MainTex, i.uv - delta.xz).a),
-                          max(tex2D(_MainTex, i.uv + delta.zy).a, tex2D(_MainTex, i.uv - delta.zy).a));
+                half a1 = max(max(tex2D(_MainTex, i.texcoord + delta.xz).a, tex2D(_MainTex, i.texcoord - delta.xz).a),
+                          max(tex2D(_MainTex, i.texcoord + delta.zy).a, tex2D(_MainTex, i.texcoord - delta.zy).a));
 
                 delta *= 0.7071;
                
-                half a2 = max(max(tex2D(_MainTex, i.uv + delta.xy).a, tex2D(_MainTex, i.uv - delta.xy).a),
-                                max(tex2D(_MainTex, i.uv + delta.xw).a, tex2D(_MainTex, i.uv - delta.xw).a));
+                half a2 = max(max(tex2D(_MainTex, i.texcoord + delta.xy).a, tex2D(_MainTex, i.texcoord - delta.xy).a),
+                                max(tex2D(_MainTex, i.texcoord + delta.xw).a, tex2D(_MainTex, i.texcoord - delta.xw).a));
 
                 half aa = max(a0, max(a1, a2));
 
@@ -254,7 +250,7 @@ Shader "Custom/UI/Text-Outline-Shadow (SoftMask)"
             ENDCG
         }
 
-		// draw real text
+		// draw real sprite
 		Pass
 		{
             CGPROGRAM
@@ -275,7 +271,7 @@ Shader "Custom/UI/Text-Outline-Shadow (SoftMask)"
             {
                 float4 vertex   : POSITION;
                 half4  color    : COLOR;
-                float2 uv       : TEXCOORD0;
+                float2 texcoord : TEXCOORD0;
 
                 UNITY_VERTEX_INPUT_INSTANCE_ID
             };
@@ -284,7 +280,7 @@ Shader "Custom/UI/Text-Outline-Shadow (SoftMask)"
             {
                 float4 vertex   : SV_POSITION;
                 half4  color    : COLOR;
-                float2 uv       : TEXCOORD0;
+                float2 texcoord : TEXCOORD0;
 
                 UNITY_VERTEX_OUTPUT_STEREO
                 
@@ -305,7 +301,7 @@ Shader "Custom/UI/Text-Outline-Shadow (SoftMask)"
 
                 o.vertex = UnityObjectToClipPos(v.vertex);
                 o.color = v.color;
-                o.uv = TRANSFORM_TEX(v.uv, _MainTex);
+                o.texcoord = TRANSFORM_TEX(v.texcoord, _MainTex);
 
                 SOFTMASK_CALCULATE_COORDS(o, v.vertex)
 
@@ -314,7 +310,7 @@ Shader "Custom/UI/Text-Outline-Shadow (SoftMask)"
 
             half4 frag (v2f i) : SV_Target
             {
-                half4 color = (tex2D(_MainTex, i.uv) + _TextureSampleAdd) * i.color;
+                half4 color = (tex2D(_MainTex, i.texcoord) + _TextureSampleAdd) * i.color;
                
                 color.a *= SOFTMASK_GET_MASK(i);
 

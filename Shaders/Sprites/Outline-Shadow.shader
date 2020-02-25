@@ -1,14 +1,13 @@
 ﻿
-Shader "Custom/UI/Text-Outline-Shadow"
+Shader "Custom/Sprites/Outline-Shadow"
 {
    Properties
    {
         [PerRendererData]
-        _MainTex ("Font Texture", 2D) = "white" {}
+        _MainTex ("Sprite Texture", 2D) = "white" {}
 
         // Outline
        
-        [HDR]
         _OutlineColor ("Outline Color", Color) = (0,0,0,1)
         _OutlineSpread ("Outline Spread", Range(0.1, 5)) = 1
 
@@ -173,19 +172,15 @@ Shader "Custom/UI/Text-Outline-Shadow"
 
             half4 frag (v2f i) : SV_Target
             {
-                half4 color = i.color;
+                half4 col = i.color;
 
-                half4 o_color = _OutlineColor;
-
-                half4 lerp_color = _OutlineColor;
-
+                half4 ocol = _OutlineColor;
+                
                 half a0 = tex2D(_MainTex, i.uv).a;
 
-                o_color.a *= color.a;
+                ocol.a *= col.a;
 
-                lerp_color.a = 0;
-
-                color = lerp(o_color, lerp_color, a0);
+                col = lerp(ocol, col, a0);
 
                 float4 delta = float4(1, 1, 0, -1) * _MainTex_TexelSize.xyxy * _OutlineSpread;
 
@@ -199,15 +194,15 @@ Shader "Custom/UI/Text-Outline-Shadow"
 
                 half aa = max(a0, max(a1, a2));
 
-                color.a *= aa;
+                col.a *= aa;
            
-                return color;
+                return col;
             }
 
             ENDCG
         }
 
-        // draw real text
+        // draw real sprite
         Pass
 		{
             CGPROGRAM
@@ -246,13 +241,7 @@ Shader "Custom/UI/Text-Outline-Shadow"
 
             half4 frag (v2f i) : SV_Target
             {
-                half4 col = i.color;
-                
-                half a0 = tex2D(_MainTex, i.uv).a;
-
-                col.a *= a0;
-
-                return col;
+                return tex2D(_MainTex, i.uv)* i.color;
             }
 
             ENDCG

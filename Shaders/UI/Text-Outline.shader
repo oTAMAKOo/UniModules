@@ -84,15 +84,19 @@ Shader "Custom/UI/Text-Outline"
 
             half4 frag (v2f i) : SV_Target
             {
-                half4 col = i.color;
+                half4 color = i.color;
 
-                half4 ocol = _OutlineColor;
-                
+                half4 o_color = _OutlineColor;
+
+                half4 lerp_color = _OutlineColor;
+
                 half a0 = tex2D(_MainTex, i.uv).a;
 
-                ocol.a *= col.a;
+                o_color.a *= color.a;
 
-                col = lerp(ocol, col, a0);
+                lerp_color.a = 0;
+
+                color = lerp(o_color, lerp_color, a0);
 
                 float4 delta = float4(1, 1, 0, -1) * _MainTex_TexelSize.xyxy * _OutlineSpread;
 
@@ -106,9 +110,9 @@ Shader "Custom/UI/Text-Outline"
 
                 half aa = max(a0, max(a1, a2));
 
-                col.a *= aa;
+                color.a *= aa;
            
-                return col;
+                return color;
             }
 
             ENDCG

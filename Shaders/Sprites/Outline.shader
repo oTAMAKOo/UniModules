@@ -1,151 +1,194 @@
 ﻿
-// Upgrade NOTE: replaced 'mul(UNITY_MATRIX_MVP,*)' with 'UnityObjectToClipPos(*)'
-
 Shader "Custom/Sprites/Outline"
 {
-	Properties
-	{
-		[PerRendererData] _MainTex("Sprite Texture", 2D) = "white" {}
-		[MaterialToggle] PixelSnap("Pixel snap", Float) = 0
-		_OutLineSpread("OutLine Spread", Range(0.00, 1.00)) = 0.01
-		_OutLineColor("Outline Color", Color) = (1, 1, 1, 1)
+   Properties
+   {
+        [PerRendererData]
+        _MainTex ("Sprite Texture", 2D) = "white" {}
 
-		[MaterialToggle] _ShadowOn("Shadow On", Float) = 0
-		_ShadowOffsetX("Shadow Offset X", Float) = 0.02
-		_ShadowOffsetY("Shadow Offset Y", Float) = -0.02
-		_ShadowColor("Shadow Color", Color) = (0, 0, 0, 0.8)
-		_Alpha("Alpha", Range(0.0, 1.0)) = 1
-	}
+        _Color("Tint", Color) = (1,1,1,1)
+       
+        _OutlineColor ("Outline Color", Color) = (0,0,0,1)
+        _OutlineSpread ("Outline Spread", Range(0.1, 5)) = 1
 
-	SubShader
-	{
-		Tags
+        // required for UI.Mask
+        _StencilComp("Stencil Comparison", Float) = 8
+        _Stencil("Stencil ID", Float) = 0
+        _StencilOp("Stencil Operation", Float) = 0
+        _StencilWriteMask("Stencil Write Mask", Float) = 255
+        _StencilReadMask("Stencil Read Mask", Float) = 255
+        _ColorMask("Color Mask", Float) = 15
+   }
+
+   SubShader 
+   {
+       Tags 
+       {
+           "Queue"           = "Transparent"
+           "IgnoreProjector" = "True"
+           "RenderType"      = "Transparent"
+           "PreviewType"     = "Plane"
+       }
+
+        // required for UI.Mask
+        Stencil
+        {
+            Ref [_Stencil]
+            Comp [_StencilComp]
+            Pass [_StencilOp] 
+            ReadMask [_StencilReadMask]
+            WriteMask [_StencilWriteMask]
+        }
+
+        ColorMask [_ColorMask]
+
+        Lighting Off Cull Off ZTest Always ZWrite Off
+        Blend SrcAlpha OneMinusSrcAlpha
+        
+        // draw outline
+        Pass 
+        {
+            CGPROGRAM
+            #pragma vertex vert
+            #pragma fragment frag
+
+            #include "UnityCG.cginc"
+
+            struct appdata_t 
+            {
+                float4 vertex : POSITION;
+                half4  color  : COLOR;
+                float2 uv     : TEXCOORD0;
+            };
+
+            struct v2f 
+            {
+                float4 vertex : SV_POSITION;
+                half4  color  : COLOR;
+                float2 uv     : TEXCOORD0;
+            };
+
+            sampler2D _MainTex;
+            float4 _MainTex_ST;
+            float4 _MainTex_TexelSize;
+            half4  _OutlineColor;
+            half   _OutlineSpread;
+
+            v2f vert (appdata_t v)
+            {
+                v2f o;
+                o.vertex = UnityObjectToClipPos(v.vertex);
+                o.color = v.color;
+                o.uv = TRANSFORM_TEX(v.uv,_MainTex);
+                return o;
+            }
+
+            half4 frag (v2f i) : SV_Target
+            {
+                half4 col = i.color;
+
+                half4 ocol = _OutlineColor;
+                
+                half4 lerp_col = _OutlineColor;
+
+                half a0 = tex2D(_MainTex, i.uv).a;
+
+                ocol.a *= col.a;
+
+                lerp_col.a = 0;
+
+                col = lerp(ocol, lerp_col, a0);
+
+                float4 delta = float4(1, 1, 0, -1) * _MainTex_TexelSize.xyxy * _OutlineSpread;
+
+                half a1 = max(max(tex2D(_MainTex, i.uv + delta.xz).a, tex2D(_MainTex, i.uv - delta.xz).a),
+                                max(tex2D(_MainTex, i.uv + delta.zy).a, tex2D(_MainTex, i.uv - delta.zy).a));
+
+                delta *= 0.7071;
+               
+                half a2 = max(max(tex2D(_MainTex, i.uv + delta.xy).a, tex2D(_MainTex, i.uv - delta.xy).a),
+                                max(tex2D(_MainTex, i.uv + delta.xw).a, tex2D(_MainTex, i.uv - delta.xw).a));
+
+                half aa = max(a0, max(a1, a2));
+
+                col.a *= aa;
+           
+                return col;
+            }
+
+            ENDCG
+        }
+       
+        // draw real sprite
+        Pass
 		{
-			"Queue" = "Transparent"
-			"IgnoreProjector" = "True"
-			"RenderType" = "Transparent"
-			"PreviewType" = "Plane"
-			"CanUseSpriteAtlas" = "True"
+            CGPROGRAM
+
+            #pragma vertex vert
+            #pragma fragment frag
+
+            #include "UnityCG.cginc"
+
+            struct appdata_t 
+            {
+                float4 vertex   : POSITION;
+                float4 color    : COLOR;
+                float2 texcoord : TEXCOORD0;
+                UNITY_VERTEX_INPUT_INSTANCE_ID
+            };
+
+            struct v2f 
+            {
+                float4 vertex        : SV_POSITION;
+                fixed4 color         : COLOR;
+                float2 texcoord      : TEXCOORD0;
+                float4 worldPosition : TEXCOORD1;
+                UNITY_VERTEX_OUTPUT_STEREO
+            };
+
+           sampler2D _MainTex;
+           fixed4 _Color;
+           fixed4 _TextureSampleAdd;
+           float4 _MainTex_ST;
+           float4 _MainTex_TexelSize;
+
+            v2f vert (appdata_t v)
+            {
+                v2f o;
+
+                UNITY_SETUP_INSTANCE_ID(v);
+                UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(o);
+
+                o.worldPosition = v.vertex;
+                o.vertex = UnityObjectToClipPos(o.worldPosition);
+
+                o.texcoord = TRANSFORM_TEX(v.texcoord, _MainTex);
+
+                o.color = v.color * _Color;
+
+                return o;
+            }
+
+            half4 frag (v2f i) : SV_Target
+            {
+                half4 color = (tex2D(_MainTex, i.texcoord) + _TextureSampleAdd) * i.color;
+
+                #ifdef UNITY_UI_CLIP_RECT
+                
+                color.a *= UnityGet2DClipping(i.worldPosition.xy, _ClipRect);
+
+                #endif
+                
+                #ifdef UNITY_UI_ALPHACLIP
+
+                clip(color.a - 0.001);
+                
+                #endif
+
+                return color;
+            }
+
+            ENDCG
 		}
-
-		Cull Off
-		Lighting Off
-		ZWrite Off
-		Fog{ Mode Off }
-		Blend SrcAlpha OneMinusSrcAlpha
-
-		Pass
-		{
-			CGPROGRAM
-
-			#pragma vertex vert
-			#pragma fragment frag
-			#pragma multi_compile DUMMY PIXELSNAP_ON
-			#include "UnityCG.cginc"
-
-			struct appdata
-			{
-				float4 vertex   : POSITION;
-				float4 color    : COLOR;
-				float2 texcoord : TEXCOORD0;
-			};
-
-			struct v2f
-			{
-				float4 vertex	: SV_POSITION;
-				fixed4 color : COLOR;
-				float2 texcoord : TEXCOORD0;
-			};
-
-			sampler2D _MainTex;
-			half _OutLineSpread;
-			fixed4 _OutLineColor;
-			half _ShadowOffsetX;
-			half _ShadowOffsetY;
-			fixed4 _ShadowColor;
-			half _Alpha;
-
-			fixed _ShadowOn;
-
-			v2f vert(appdata IN)
-			{
-				float2 tex = IN.texcoord;
-
-				v2f OUT;
-				OUT.vertex = UnityObjectToClipPos(IN.vertex);
-				OUT.texcoord = tex;
-				OUT.color = IN.color;
-
-				#ifdef PIXELSNAP_ON
-
-				OUT.vertex = UnityPixelSnap(OUT.vertex);
-				
-				#endif
-
-				return OUT;
-			}
-
-			sampler2D _AlphaTex;
-			float _AlphaSplitEnabled;
-
-			fixed4 SampleSpriteTexture(float2 uv)
-			{
-				fixed4 color = tex2D(_MainTex, uv);
-
-				#if UNITY_TEXTURE_ALPHASPLIT_ALLOWED
-
-				if (_AlphaSplitEnabled)
-				{
-					color.a = tex2D(_AlphaTex, uv).r;
-				}
-
-				#endif
-
-				return color;
-			}
-
-			fixed4 frag(v2f IN) : SV_Target
-			{
-				const fixed THRESHOLD = 0.1;
-
-				// 元のテクスチャ
-				fixed4 base = SampleSpriteTexture(IN.texcoord) * IN.color;
-
-				// アウトライン色
-				fixed4 out_col = _OutLineColor;
-				_OutLineColor.a = 1;
-				half2 line_w = half2(_OutLineSpread, 0);
-				fixed4 line_col = SampleSpriteTexture(IN.texcoord + line_w.xy)
-					+ SampleSpriteTexture(IN.texcoord - line_w.xy)
-					+ SampleSpriteTexture(IN.texcoord + line_w.yx)
-					+ SampleSpriteTexture(IN.texcoord - line_w.yx);
-
-				_OutLineColor *= (line_col.a);
-				_OutLineColor.rgb = out_col.rgb;
-				_OutLineColor = lerp(base, _OutLineColor, max(0, sign(_OutLineSpread)));
-
-				// 合成
-				fixed4 main_col = base;
-				main_col = lerp(main_col, _OutLineColor, (1 - main_col.a));
-				main_col.a = _Alpha * max(0, sign(main_col.a - THRESHOLD));
-
-				// 影
-				if (_ShadowOn)
-				{
-					fixed4 shadow = SampleSpriteTexture(IN.texcoord - half2(_ShadowOffsetX, _ShadowOffsetY));
-					shadow = _ShadowColor * max(0, sign(shadow.a - THRESHOLD));
-					shadow.a *= _ShadowColor.a;
-					_ShadowColor = shadow;
-
-					// 合成.
-					_ShadowColor.a = min(_Alpha, shadow.a);
-					main_col = lerp(_ShadowColor, main_col, max(0, sign(main_col.a - THRESHOLD)));
-				}
-
-				return main_col;
-			}
-				
-			ENDCG
-		}
-	}
+   }
 }
