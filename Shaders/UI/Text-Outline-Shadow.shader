@@ -226,33 +226,51 @@ Shader "Custom/UI/Text-Outline-Shadow"
 
             struct v2f 
             {
-                float4 vertex : SV_POSITION;
-                half4  color  : COLOR;
-                float2 uv     : TEXCOORD0;
+                float4 vertex        : SV_POSITION;
+                half4  color         : COLOR;
+                float2 uv            : TEXCOORD0;
+                float4 worldPosition : TEXCOORD1;
             };
 
            sampler2D _MainTex;
+           fixed4 _TextureSampleAdd;
            float4 _MainTex_ST;
            float4 _MainTex_TexelSize;
 
             v2f vert (appdata_t v)
             {
                 v2f o;
+
+                UNITY_SETUP_INSTANCE_ID(v);
+
+                UNITY_INITIALIZE_OUTPUT(v2f, o);
+                UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(o);
+
                 o.vertex = UnityObjectToClipPos(v.vertex);
                 o.color = v.color;
                 o.uv = TRANSFORM_TEX(v.uv,_MainTex);
+                o.worldPosition = v.vertex;
+
                 return o;
             }
 
             half4 frag (v2f i) : SV_Target
             {
-                half4 col = i.color;
-                
-                half a0 = tex2D(_MainTex, i.uv).a;
+                half4 color = (tex2D(_MainTex, i.uv) + _TextureSampleAdd) * i.color;
 
-                col.a *= a0;
+                #ifdef UNITY_UI_CLIP_RECT
 
-                return col;
+                color.a *= UnityGet2DClipping(i.worldPosition.xy, _ClipRect);
+
+                #endif
+
+                #ifdef UNITY_UI_ALPHACLIP
+
+                clip(color.a - 0.001);
+
+                #endif
+
+                return color;
             }
 
             ENDCG

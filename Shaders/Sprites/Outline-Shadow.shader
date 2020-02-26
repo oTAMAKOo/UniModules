@@ -6,6 +6,8 @@ Shader "Custom/Sprites/Outline-Shadow"
         [PerRendererData]
         _MainTex ("Sprite Texture", 2D) = "white" {}
 
+        _Color("Tint", Color) = (1,1,1,1)
+
         // Outline
        
         _OutlineColor ("Outline Color", Color) = (0,0,0,1)
@@ -73,35 +75,43 @@ Shader "Custom/Sprites/Outline-Shadow"
 
 			struct v2f
 			{
-				float4 vertex   : SV_POSITION;
-				fixed4 color    : COLOR;
-				float2 uv       : TEXCOORD0;
+				float4 vertex        : SV_POSITION;
+				fixed4 color         : COLOR;
+				float2 uv            : TEXCOORD0;
+                float4 worldPosition : TEXCOORD1;
 			};
 			
+            sampler2D _MainTex;
+            float4 _MainTex_ST;
 			fixed4 _ShadowColor;
 			float4 _ShadowOffset;
+            sampler2D _AlphaTex;
+            float _AlphaSplitEnabled;
 
-			v2f vert(appdata_t IN)
+			v2f vert(appdata_t v)
 			{
-				v2f OUT;
-				OUT.vertex = UnityObjectToClipPos(IN.vertex + _ShadowOffset);
-				OUT.uv = IN.uv;
-				OUT.color = _ShadowColor;
+                v2f o;
 
-                OUT.color.a *= IN.color.a; 
+                UNITY_SETUP_INSTANCE_ID(v);
 
-				#ifdef PIXELSNAP_ON
+                UNITY_INITIALIZE_OUTPUT(v2f, o);
+                UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(o);
+
+                o.vertex = UnityObjectToClipPos(v.vertex + _ShadowOffset);
+                o.color = _ShadowColor;
+                o.uv = TRANSFORM_TEX(v.uv, _MainTex);
+                o.worldPosition = v.vertex;
+
+                o.color.a *= v.color.a;
+
+                #ifdef PIXELSNAP_ON
 				
-                OUT.vertex = UnityPixelSnap (OUT.vertex);
+                o.vertex = UnityPixelSnap (o.vertex);
 				
                 #endif
 
-				return OUT;
+                return o;
 			}
-
-			sampler2D _MainTex;
-			sampler2D _AlphaTex;
-			float _AlphaSplitEnabled;
 
 			fixed4 SampleSpriteTexture (float2 uv)
 			{
@@ -130,12 +140,13 @@ Shader "Custom/Sprites/Outline-Shadow"
 
 		    ENDCG
         }
-                
+
         // draw outline
 
         Pass 
         {
             CGPROGRAM
+
             #pragma vertex vert
             #pragma fragment frag
 
@@ -146,13 +157,18 @@ Shader "Custom/Sprites/Outline-Shadow"
                 float4 vertex : POSITION;
                 half4  color  : COLOR;
                 float2 uv     : TEXCOORD0;
+
+                UNITY_VERTEX_INPUT_INSTANCE_ID
             };
 
             struct v2f 
             {
-                float4 vertex : SV_POSITION;
-                half4  color  : COLOR;
-                float2 uv     : TEXCOORD0;
+                float4 vertex        : SV_POSITION;
+                half4  color         : COLOR;
+                float2 uv            : TEXCOORD0;
+                float4 worldPosition : TEXCOORD1;
+
+                UNITY_VERTEX_OUTPUT_STEREO
             };
 
             sampler2D _MainTex;
@@ -164,45 +180,70 @@ Shader "Custom/Sprites/Outline-Shadow"
             v2f vert (appdata_t v)
             {
                 v2f o;
+
+                UNITY_SETUP_INSTANCE_ID(v);
+
+                UNITY_INITIALIZE_OUTPUT(v2f, o);
+                UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(o);
+
                 o.vertex = UnityObjectToClipPos(v.vertex);
                 o.color = v.color;
                 o.uv = TRANSFORM_TEX(v.uv,_MainTex);
+                o.worldPosition = v.vertex;
+
                 return o;
             }
 
             half4 frag (v2f i) : SV_Target
             {
-                half4 col = i.color;
+                half4 color = i.color;
 
-                half4 ocol = _OutlineColor;
+                half4 o_color = _OutlineColor;
                 
+                half4 lerp_color = _OutlineColor;
+
                 half a0 = tex2D(_MainTex, i.uv).a;
 
-                ocol.a *= col.a;
+                o_color.a *= color.a;
 
-                col = lerp(ocol, col, a0);
+                lerp_color.a = 0;
+
+                color = lerp(o_color, lerp_color, a0);
 
                 float4 delta = float4(1, 1, 0, -1) * _MainTex_TexelSize.xyxy * _OutlineSpread;
 
                 half a1 = max(max(tex2D(_MainTex, i.uv + delta.xz).a, tex2D(_MainTex, i.uv - delta.xz).a),
-                                max(tex2D(_MainTex, i.uv + delta.zy).a, tex2D(_MainTex, i.uv - delta.zy).a));
+                              max(tex2D(_MainTex, i.uv + delta.zy).a, tex2D(_MainTex, i.uv - delta.zy).a));
 
                 delta *= 0.7071;
                
                 half a2 = max(max(tex2D(_MainTex, i.uv + delta.xy).a, tex2D(_MainTex, i.uv - delta.xy).a),
-                                max(tex2D(_MainTex, i.uv + delta.xw).a, tex2D(_MainTex, i.uv - delta.xw).a));
+                              max(tex2D(_MainTex, i.uv + delta.xw).a, tex2D(_MainTex, i.uv - delta.xw).a));
 
                 half aa = max(a0, max(a1, a2));
 
-                col.a *= aa;
+                color.a *= aa;
+
+                #ifdef UNITY_UI_CLIP_RECT
+                
+                color.a *= UnityGet2DClipping(i.worldPosition.xy, _ClipRect);
+
+                #endif
+                
+                #ifdef UNITY_UI_ALPHACLIP
+
+                clip(color.a - 0.001);
+                
+                #endif
            
-                return col;
+                return color;
             }
 
             ENDCG
         }
 
         // draw real sprite
+
         Pass
 		{
             CGPROGRAM
@@ -214,34 +255,63 @@ Shader "Custom/Sprites/Outline-Shadow"
 
             struct appdata_t 
             {
-                float4 vertex : POSITION;
-                half4  color  : COLOR;
-                float2 uv     : TEXCOORD0;
+                float4 vertex   : POSITION;
+                float4 color    : COLOR;
+                float2 uv       : TEXCOORD0;
+
+                UNITY_VERTEX_INPUT_INSTANCE_ID
             };
 
             struct v2f 
             {
-                float4 vertex : SV_POSITION;
-                half4  color  : COLOR;
-                float2 uv     : TEXCOORD0;
+                float4 vertex        : SV_POSITION;
+                fixed4 color         : COLOR;
+                float2 uv            : TEXCOORD0;
+                float4 worldPosition : TEXCOORD1;
+
+                UNITY_VERTEX_OUTPUT_STEREO
             };
 
            sampler2D _MainTex;
+           fixed4 _Color;
+           fixed4 _TextureSampleAdd;
            float4 _MainTex_ST;
            float4 _MainTex_TexelSize;
 
             v2f vert (appdata_t v)
             {
                 v2f o;
+
+                UNITY_SETUP_INSTANCE_ID(v);
+
+                UNITY_INITIALIZE_OUTPUT(v2f, o);
+                UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(o);
+
                 o.vertex = UnityObjectToClipPos(v.vertex);
-                o.color = v.color;
-                o.uv = TRANSFORM_TEX(v.uv,_MainTex);
+                o.color = v.color * _Color;
+                o.uv = TRANSFORM_TEX(v.uv, _MainTex);
+                o.worldPosition = v.vertex;
+
                 return o;
             }
 
             half4 frag (v2f i) : SV_Target
             {
-                return tex2D(_MainTex, i.uv)* i.color;
+                half4 color = (tex2D(_MainTex, i.uv) + _TextureSampleAdd) * i.color;
+
+                #ifdef UNITY_UI_CLIP_RECT
+                
+                color.a *= UnityGet2DClipping(i.worldPosition.xy, _ClipRect);
+
+                #endif
+                
+                #ifdef UNITY_UI_ALPHACLIP
+
+                clip(color.a - 0.001);
+                
+                #endif
+
+                return color;
             }
 
             ENDCG
