@@ -2,11 +2,18 @@
 using UnityEngine;
 using UnityEditor;
 using System;
+using System.IO;
 using System.Linq;
 using UniRx;
 using Extensions;
 using Extensions.Devkit;
 using Modules.Devkit.Generators;
+
+#if ENABLE_CRIWARE_ADX || ENABLE_CRIWARE_SOFDEC
+
+using Modules.CriWare;
+
+#endif
 
 namespace Modules.ExternalResource.Editor
 {
@@ -47,9 +54,34 @@ namespace Modules.ExternalResource.Editor
 
             progress.Subscribe(prog => EditorUtility.DisplayProgressBar("Update assetbundle file info", prog.Item1, prog.Item2));
 
-            assetInfoManifest.SetAssetBundleFileInfo(exportPath, progress);
+            var assetInfos = Reflection.GetPrivateField<AssetInfoManifest, AssetInfo[]>(assetInfoManifest, "assetInfos");
+            
+            for (var i = 0; i < assetInfos.Length; i++)
+            {
+                var assetInfo = assetInfos[i];
+
+                if (!assetInfo.IsAssetBundle) { continue; }
+
+                var assetBundleName = assetInfo.AssetBundle.AssetBundleName;
+
+                var filePath = PathUtility.Combine(new string[] { exportPath, assetBundleName });
+
+                BuildPipeline.GetCRCForAssetBundle(filePath, out var crc);
+
+                var hashSource = string.Format("{0}-{1}", assetBundleName, crc);
+
+                var assetBundleHash = hashSource.GetHash();
+
+                assetInfo.SetFileInfo(filePath, assetBundleHash);
+
+                progress.Report(Tuple.Create(assetInfo.ResourcePath, (float)i / assetInfos.Length));
+            }
+
+            Reflection.SetPrivateField(assetInfoManifest, "assetInfos", assetInfos);
 
             UnityEditorUtility.SaveAsset(assetInfoManifest);
+
+            assetInfoManifest.BuildCache(true);
 
             EditorUtility.ClearProgressBar();
         }
@@ -65,9 +97,35 @@ namespace Modules.ExternalResource.Editor
 
             progress.Subscribe(prog => EditorUtility.DisplayProgressBar("Update cri file info", prog.Item1, prog.Item2));
 
-            assetInfoManifest.SetCriAssetFileInfo(exportPath, progress);
+            var assetInfos = Reflection.GetPrivateField<AssetInfoManifest, AssetInfo[]>(assetInfoManifest, "assetInfos");
+
+            for (var i = 0; i < assetInfos.Length; i++)
+            {
+                var assetInfo = assetInfos[i];
+
+                if (assetInfo.IsAssetBundle) { continue; }
+
+                var extension = Path.GetExtension(assetInfo.FileName);
+
+                var filePath = string.Empty;
+
+                if (CriAssetDefinition.AssetAllExtensions.Any(x => x == extension))
+                {
+                    filePath = PathUtility.Combine(new string[] { exportPath, assetInfo.FileName });
+                }
+
+                var fileHash = FileUtility.GetHash(filePath);
+
+                assetInfo.SetFileInfo(filePath, fileHash);
+
+                progress.Report(Tuple.Create(assetInfo.ResourcePath, (float)i / assetInfos.Length));
+            }
+
+            Reflection.SetPrivateField(assetInfoManifest, "assetInfos", assetInfos);
 
             UnityEditorUtility.SaveAsset(assetInfoManifest);
+
+            assetInfoManifest.BuildCache(true);
 
             EditorUtility.ClearProgressBar();
         }

@@ -6,12 +6,6 @@ using System.Collections.Generic;
 using System.IO;
 using Extensions;
 
-#if ENABLE_CRIWARE_ADX || ENABLE_CRIWARE_SOFDEC
-
-using Modules.CriWare;
-
-#endif
-
 namespace Modules.ExternalResource
 {
     [Serializable]
@@ -70,14 +64,15 @@ namespace Modules.ExternalResource
             SetFileName();
         }
 
-        public void SetFileInfo(string filePath)
+        public void SetFileInfo(string filePath, string hash)
         {
             if (File.Exists(filePath))
             {
+                fileHash = hash;
+
                 var fileInfo = new FileInfo(filePath);
 
-                fileSize = fileInfo.Length;
-                fileHash = FileUtility.GetHash(filePath);
+                fileSize = fileInfo.Exists ? fileInfo.Length : -1;
             }
             else
             {
@@ -218,57 +213,8 @@ namespace Modules.ExternalResource
 
             return info;
         }
-
-        public void SetAssetBundleFileInfo(string assetBundlePath, IProgress<Tuple<string, float>> progress = null)
-        {
-            for (var i = 0; i < assetInfos.Length; i++)
-            {
-                var assetInfo = assetInfos[i];
-
-                if (!assetInfo.IsAssetBundle) { continue; }
-
-                var assetBundleName = assetInfo.AssetBundle.AssetBundleName;
-
-                var filePath = PathUtility.Combine(new string[] { assetBundlePath, assetBundleName });
-
-                assetInfo.SetFileInfo(filePath);
-
-                progress.Report(Tuple.Create(assetInfo.ResourcePath, (float)i / assetInfos.Length));
-            }
-
-            BuildCache(true);
-        }
-
-        #if ENABLE_CRIWARE_ADX || ENABLE_CRIWARE_SOFDEC
-
-        public void SetCriAssetFileInfo(string exportPath, IProgress<Tuple<string, float>> progress = null)
-        {
-            for (var i = 0; i < assetInfos.Length; i++)
-            {
-                var assetInfo = assetInfos[i];
-
-                if (assetInfo.IsAssetBundle) { continue; }
-
-                var extension = Path.GetExtension(assetInfo.FileName);
-
-                var filePath = string.Empty;
-
-                if (CriAssetDefinition.AssetAllExtensions.Any(x => x == extension))
-                {
-                    filePath = PathUtility.Combine(new string[] { exportPath, assetInfo.FileName });
-                }
-
-                assetInfo.SetFileInfo(filePath);
-
-                progress.Report(Tuple.Create(assetInfo.ResourcePath, (float)i / assetInfos.Length));
-            }
-
-            BuildCache(true);
-        }
-
-        #endif
         
-        private void BuildCache(bool forceUpdate = false)
+        public void BuildCache(bool forceUpdate = false)
         {
             if (assetInfoByGroupName == null || forceUpdate)
             {
