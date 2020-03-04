@@ -12,7 +12,15 @@ namespace VisualStudioToolsUnity
     {
         internal SolutionFile()
         {
+            #if UNITY_2018_2_OR_NEWER
+
+            VisualStudioFileCallback.AddGeneratedSlnSolutionCallback(HandleSolutionFileGeneration);
+
+            #else
+
             SyntaxTree.VisualStudio.Unity.Bridge.ProjectFilesGenerator.SolutionFileGeneration = HandleSolutionFileGeneration;
+
+            #endif
         }
 
         private string HandleSolutionFileGeneration(string filename, string content)

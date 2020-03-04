@@ -15,7 +15,15 @@ namespace VisualStudioToolsUnity
     {
         internal ProjectFile()
         {
+            #if UNITY_2018_2_OR_NEWER
+
+            VisualStudioFileCallback.AddGeneratedCSProjectCallback(HandleProjectFileGeneration);
+
+            #else
+
             SyntaxTree.VisualStudio.Unity.Bridge.ProjectFilesGenerator.ProjectFileGeneration = HandleProjectFileGeneration;
+
+            #endif
         }
 
         private string HandleProjectFileGeneration(string filename, string content)
