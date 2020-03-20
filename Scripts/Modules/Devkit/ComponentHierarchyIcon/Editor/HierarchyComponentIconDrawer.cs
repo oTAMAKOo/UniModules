@@ -34,8 +34,10 @@ namespace Modules.Devkit.HierarchyComponentIcon
     {
         //----- params -----
 
-        private const float IconSize = 13f;
+        private const float MissingIconSize = 16f;
 
+        private const float ComponentIconSize = 13f;
+        
         protected static readonly Type[] DefaultDrawIconTypes = new Type[]
         {
             typeof(Camera),
@@ -71,6 +73,10 @@ namespace Modules.Devkit.HierarchyComponentIcon
 
         private Dictionary<Type, Texture> iconTextureCache = null;
 
+        private GUIContent missingIconGUIContent = null;
+
+        private int missingUpdateCounter = 0;
+
         private bool initialized = false;
 
         //----- property -----
@@ -83,6 +89,8 @@ namespace Modules.Devkit.HierarchyComponentIcon
 
             iconTextureCache = new Dictionary<Type, Texture>();
 
+            missingIconGUIContent = EditorGUIUtility.IconContent("d_console.warnicon.sml");
+
             var targetTypes = GetDrawIconTypes();
 
             foreach (var type in targetTypes)
@@ -91,59 +99,78 @@ namespace Modules.Devkit.HierarchyComponentIcon
 
                 iconTextureCache.Add(type, texture);
             }
-
+            
             EditorApplication.hierarchyWindowItemOnGUI += OnDrawHierarchy;
 
             initialized = true;
         }
 
-        private void OnDrawHierarchy(int instandeID, Rect rect)
+        private void OnDrawHierarchy(int instanceID, Rect rect)
         {
             if (Application.isPlaying){ return; }
 
             if (!HierarchyComponentIcon.Prefs.enable) { return; }
 
-            var go = EditorUtility.InstanceIDToObject(instandeID) as GameObject;
+            var go = EditorUtility.InstanceIDToObject(instanceID) as GameObject;
 
             if (go == null){ return; }
 
-            var components = UnityUtility.GetComponents<Component>(go)
-                .Where(x => x != null)
-                .ToArray();
+            var padding = new Vector2(18, 0);
+            
+            var iconDrawRect = new Rect(rect.xMax - padding.x, rect.yMin, rect.width, rect.height);
 
+            var components = UnityUtility.GetComponents<Component>(go).ToArray();
+
+            var originIconSize = EditorGUIUtility.GetIconSize();
+
+            DrawMissingComponentIcon(components, ref iconDrawRect);
+
+            DrawComponentIcon(components, ref iconDrawRect);
+
+            EditorGUIUtility.SetIconSize(originIconSize);
+        }
+
+        private void DrawMissingComponentIcon(Component[] components, ref Rect rect)
+        {
+            var iconOffectX = MissingIconSize - 0.5f;
+
+            var hasMissingComponent = components.Any(x => x == null);
+            
+            if (hasMissingComponent)
+            {
+                EditorGUIUtility.SetIconSize(new Vector2(MissingIconSize, MissingIconSize));
+                
+                EditorGUI.LabelField(rect, missingIconGUIContent);
+
+                rect.center = Vector.SetX(rect.center, rect.center.x - iconOffectX);
+            }
+        }
+
+        private void DrawComponentIcon(Component[] components, ref Rect rect)
+        {
             if (components.Any())
             {
-                var originIconSize = EditorGUIUtility.GetIconSize();
+                EditorGUIUtility.SetIconSize(new Vector2(ComponentIconSize, ComponentIconSize));
 
-                EditorGUIUtility.SetIconSize(new Vector2(IconSize, IconSize));
-
-                var padding = new Vector2(5, 0);
-                var iconOffectX = IconSize + 1.5f;
-
-                var iconDrawRect = new Rect(rect.xMax - (IconSize + padding.x), rect.yMin, rect.width, rect.height);
+                var iconOffectX = ComponentIconSize + 1.5f;
 
                 foreach (var component in components)
                 {
+                    if (component == null) { continue; }
+
                     var type = component.GetType();
 
                     var item = iconTextureCache.FirstOrDefault(x => type == x.Key || type.IsSubclassOf(x.Key));
 
                     if (item.Equals(default(KeyValuePair<Type, Texture>))) { continue; }
+                    
+                    var iconGUIContent = new GUIContent(item.Value);
 
-                    DrawComponentIcon(iconDrawRect, item.Value);
+                    EditorGUI.LabelField(rect, iconGUIContent);
 
-                    iconDrawRect.center = Vector.SetX(iconDrawRect.center, iconDrawRect.center.x - iconOffectX);
+                    rect.center = Vector.SetX(rect.center, rect.center.x - iconOffectX);
                 }
-
-                EditorGUIUtility.SetIconSize(originIconSize);
             }
-        }
-
-        private void DrawComponentIcon(Rect rect, Texture texture)
-        {
-            var iconGUIContent = new GUIContent(texture);
-
-            EditorGUI.LabelField(rect, iconGUIContent);
         }
 
         protected virtual Type[] GetDrawIconTypes()
