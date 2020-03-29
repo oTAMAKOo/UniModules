@@ -26,6 +26,13 @@ namespace Modules.UI
             Limited,
             Loop,
         }
+
+        public enum ScrollTo
+        {
+            First,
+            Center,
+            Last,
+        }
     }
 
     public abstract class VirtualScroll<T> : UIBehaviour
@@ -183,24 +190,32 @@ namespace Modules.UI
                 hitBox.pivot = new Vector2(0.5f, 0.5f);
             }
 
+            var delta = scrollRectTransform.rect.size;
+
             switch (scrollType)
             {
                 case ScrollType.Loop:
                     {
                         scrollRect.movementType = ScrollRect.MovementType.Unrestricted;
-
-                        var delta = scrollRectTransform.rect.size;
-
+                        
                         if (direction == Direction.Vertical)
                         {
-                            delta.x = 0;
+                            delta.x = 0f;
+
+                            // UIScrollViewのautoScrollDisableに引っかからないように領域を拡張.
+                            delta.y += 1f;
                         }
                         else
                         {
                             delta.y = 0f;
+
+                            // UIScrollViewのautoScrollDisableに引っかからないように領域を拡張.
+                            delta.x += 1f;
                         }
 
                         scrollRect.content.sizeDelta = delta;
+
+                        UnityUtility.SetActive(hitBox, false);
                     }
                     break;
 
@@ -211,32 +226,29 @@ namespace Modules.UI
                             scrollRect.movementType = ScrollRect.MovementType.Elastic;
                         }
 
-                        var delta = scrollRect.content.sizeDelta;
-
                         var sizeDelta = Mathf.Abs(edgeSpacing) * 2 + itemSize * Contents.Length + itemSpacing * (Contents.Length - 1);
 
                         if (direction == Direction.Vertical)
                         {
                             var scrollHeight = scrollRectTransform.rect.height;
+                            delta.x = 0f;
                             delta.y = sizeDelta < scrollHeight ? scrollHeight : sizeDelta;
                         }
                         else
                         {
                             var scrollWidth = scrollRectTransform.rect.width;
                             delta.x = sizeDelta < scrollWidth ? scrollWidth : sizeDelta;
+                            delta.y = 0f;
                         }
 
                         scrollRect.content.sizeDelta = delta;
+
+                        UnityUtility.SetActive(hitBox, true);
                     }
                     break;
             }
 
             var requireCount = GetRequireCount();
-
-            // 配置初期位置(中央揃え想定なのでItemSize * 0.5f分ずらす).
-            var basePosition = direction == Direction.Vertical ?
-                scrollRect.content.rect.height * 0.5f - itemSize * 0.5f - edgeSpacing :
-                -scrollRect.content.rect.width * 0.5f + itemSize * 0.5f + edgeSpacing;
 
             // 足りない分を生成.
             var createCount = requireCount - itemList.Count;
@@ -247,7 +259,7 @@ namespace Modules.UI
 
                 itemList.AddRange(addItems);
 
-                // 非アクティブ化.
+                // 全アイテム非アクティブ化.
                 addItems.ForEach(x => UnityUtility.SetActive(x, false));
 
                 // 生成したインスタンス初期化.
@@ -281,6 +293,11 @@ namespace Modules.UI
 
             var updateObservers = new IObservable<Unit>[itemList.Count];
 
+            // 配置初期位置(中央揃え想定なのでItemSize * 0.5f分ずらす).
+            var basePosition = direction == Direction.Vertical ?
+                scrollRect.content.rect.height * 0.5f - itemSize * 0.5f - edgeSpacing :
+                -scrollRect.content.rect.width * 0.5f + itemSize * 0.5f + edgeSpacing;
+
             // 位置、情報を更新.
             for (var i = 0; i < itemList.Count; i++)
             {
@@ -307,7 +324,7 @@ namespace Modules.UI
             }
             else
             {
-                CenterToItem(0);
+                ScrollToItem(0, ScrollTo.First);
             }
 
             // リストアイテム更新.
@@ -345,20 +362,24 @@ namespace Modules.UI
             UnityUtility.SetActive(item, false);
         }
 
-        public void CenterToItem(int index)
+        public void ScrollToItem(int index, ScrollTo to)
         {
             prevScrollPosition = GetCurrentPosition();
 
-            var anchoredPosition = CalcCenterToAnchoredPosition(index);
+            var anchoredPosition = GetScrollToPosition(index, to);
 
             scrollRect.content.anchoredPosition = anchoredPosition;
+
+            UpdateScroll();
 
             OnMoveEnd();
         }
 
-        public IObservable<Unit> CenterToItem(int index, float duration, Ease ease = Ease.Unset)
+        public IObservable<Unit> ScrollToItem(int index, ScrollTo to, float duration, Ease ease = Ease.Unset)
         {
-            var targetPosition = CalcCenterToAnchoredPosition(index);
+            prevScrollPosition = GetCurrentPosition();
+
+            var targetPosition = GetScrollToPosition(index, to);
 
             var currentPosition = scrollRect.content.anchoredPosition;
 
@@ -398,7 +419,99 @@ namespace Modules.UI
                 .AsUnitObservable();
         }
 
-        private Vector2 CalcCenterToAnchoredPosition(int index)
+        private Vector2 GetScrollToPosition(int index, ScrollTo to)
+        {
+            var scrollToPosition = GetItemScrollToPosition(index);
+
+            var scrollToOffset = itemSize * 0.5f + edgeSpacing;
+
+            switch (direction)
+            {
+                case Direction.Vertical:
+                    {
+                        var contentHeight = scrollRect.content.rect.height;
+                        var scrollHeigh = scrollRectTransform.rect.height;
+
+                        var top = -contentHeight * 0.5f + scrollHeigh * 0.5f;
+                        var bottom = contentHeight * 0.5f - scrollHeigh * 0.5f;
+
+                        switch (to)
+                        {
+                            case ScrollTo.First:
+                                scrollToPosition.y += scrollHeigh * 0.5f;
+                                break;
+
+                            case ScrollTo.Last:
+                                scrollToPosition.y -= scrollHeigh * 0.5f;
+                                break;
+                        }
+
+                        if (top < scrollToPosition.y + scrollToOffset && scrollToPosition.y - scrollToOffset < bottom || scrollType == ScrollType.Loop)
+                        {
+                            switch (to)
+                            {
+                                case ScrollTo.First:
+                                    scrollToPosition.y -= scrollToOffset;
+                                    break;
+
+                                case ScrollTo.Last:
+                                    scrollToPosition.y += scrollToOffset;
+                                    break;
+                            }
+                        }
+
+                        if (scrollType == ScrollType.Limited)
+                        {
+                            scrollToPosition.y = Mathf.Clamp(scrollToPosition.y, top, bottom);
+                        }
+                    }
+                    break;
+
+                case Direction.Horizontal:
+                    {
+                        var contentWidth = scrollRect.content.rect.width;
+                        var scrollWidth = scrollRectTransform.rect.width;
+
+                        var left = -contentWidth * 0.5f + scrollWidth * 0.5f;
+                        var right = contentWidth * 0.5f - scrollWidth * 0.5f;
+
+                        switch (to)
+                        {
+                            case ScrollTo.First:
+                                scrollToPosition.x -= scrollWidth * 0.5f;
+                                break;
+
+                            case ScrollTo.Last:
+                                scrollToPosition.x += scrollWidth * 0.5f;
+                                break;
+                        }
+
+                        if (left < scrollToPosition.x + scrollToOffset && scrollToPosition.x - scrollToOffset < right || scrollType == ScrollType.Loop)
+                        {
+                            switch (to)
+                            {
+                                case ScrollTo.First:
+                                    scrollToPosition.x += scrollToOffset;
+                                    break;
+
+                                case ScrollTo.Last:
+                                    scrollToPosition.x -= scrollToOffset;
+                                    break;
+                            }
+                        }
+
+                        if (scrollType == ScrollType.Limited)
+                        {
+                            scrollToPosition.x = Mathf.Clamp(scrollToPosition.x, left, right);
+                        }
+                    }
+                    break;
+            }
+
+            return scrollToPosition;
+        }
+        
+        private Vector2 GetItemScrollToPosition(int index)
         {
             var offset = 0f;
 
@@ -416,51 +529,19 @@ namespace Modules.UI
             switch (direction)
             {
                 case Direction.Vertical:
-                    var contentHeight = scrollRect.content.rect.height;
-                    var scrollHeigh = scrollRectTransform.rect.height;
-
-                    switch (scrollType)
                     {
-                        case ScrollType.Loop:
-                            {
-                                anchoredPosition.y = -contentHeight * 0.5f + offset;
-                            }
-                            break;
+                        var contentHeight = scrollRect.content.rect.height;
 
-                        case ScrollType.Limited:
-                            {
-                                var bottom = -contentHeight * 0.5f + scrollHeigh * 0.5f;
-                                var top = contentHeight * 0.5f - scrollHeigh * 0.5f;
-
-                                anchoredPosition.y = Mathf.Clamp(-contentHeight * 0.5f + offset, bottom, top);
-                            }
-                            break;
+                        anchoredPosition.y = -contentHeight * 0.5f + offset;
                     }
-
                     break;
 
                 case Direction.Horizontal:
-                    var contentWidth = scrollRect.content.rect.width;
-                    var scrollWidth = scrollRectTransform.rect.width;
-
-                    switch (scrollType)
                     {
-                        case ScrollType.Loop:
-                            {
-                                anchoredPosition.x = contentWidth * 0.5f - offset;
-                            }
-                            break;
+                        var contentWidth = scrollRect.content.rect.width;
 
-                        case ScrollType.Limited:
-                            {
-                                var left = contentWidth * 0.5f - scrollWidth * 0.5f;
-                                var right = -contentWidth * 0.5f + scrollWidth * 0.5f;
-
-                                anchoredPosition.x = Mathf.Clamp(contentWidth * 0.5f - offset, right, left);
-                            }
-                            break;
+                        anchoredPosition.x = contentWidth * 0.5f - offset;
                     }
-
                     break;
             }
 
