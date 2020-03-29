@@ -63,7 +63,7 @@ namespace Modules.UI
         [SerializeField]
         private float itemSpacing = 0f;
         [SerializeField]
-        private RectTransform hitBox = null;
+        private bool hitBoxEnable = true;
 
         private RectTransform scrollRectTransform = null;
         private float itemSize = -1f;
@@ -73,6 +73,8 @@ namespace Modules.UI
         private List<VirtualScrollItem<T>> itemList = null;
 
         private Dictionary<VirtualScrollItem<T>, IDisposable> updateItemDisposables = null;
+
+        private GraphicCast hitBox = null;
 
         private Subject<Unit> onUpdateContents = null;
         private Subject<VirtualScrollItem<T>> onCreateItem = null;
@@ -177,18 +179,11 @@ namespace Modules.UI
                 itemSize = direction == Direction.Vertical ? rt.rect.height : rt.rect.width;
             }
 
-            // Contentのサイズ設定.
+            //----- Contentのサイズ設定 -----
+
             scrollRect.content.anchorMin = direction == Direction.Vertical ? new Vector2(0f, 0.5f) : new Vector2(0.5f, 0f);
             scrollRect.content.anchorMax = direction == Direction.Vertical ? new Vector2(1f, 0.5f) : new Vector2(0.5f, 1f);
             scrollRect.content.pivot = new Vector2(0.5f, 0.5f);
-
-            // HitBoxは全域使用.
-            if (hitBox != null)
-            {
-                hitBox.anchorMin = new Vector2(0f, 0f);
-                hitBox.anchorMax = new Vector2(1f, 1f);
-                hitBox.pivot = new Vector2(0.5f, 0.5f);
-            }
 
             var delta = scrollRectTransform.rect.size;
 
@@ -197,25 +192,21 @@ namespace Modules.UI
                 case ScrollType.Loop:
                     {
                         scrollRect.movementType = ScrollRect.MovementType.Unrestricted;
-                        
+
+                        // ※ UIScrollViewのautoScrollDisableに引っかからないように領域を拡張.
+
                         if (direction == Direction.Vertical)
                         {
-                            delta.x = 0f;
-
-                            // UIScrollViewのautoScrollDisableに引っかからないように領域を拡張.
+                            delta.x = 0f;                            
                             delta.y += 1f;
                         }
                         else
                         {
                             delta.y = 0f;
-
-                            // UIScrollViewのautoScrollDisableに引っかからないように領域を拡張.
                             delta.x += 1f;
                         }
 
                         scrollRect.content.sizeDelta = delta;
-
-                        UnityUtility.SetActive(hitBox, false);
                     }
                     break;
 
@@ -242,15 +233,18 @@ namespace Modules.UI
                         }
 
                         scrollRect.content.sizeDelta = delta;
-
-                        UnityUtility.SetActive(hitBox, true);
                     }
                     break;
             }
 
+            //----- ヒットボックス初期化 -----
+
+            SetupHitBox();
+
+            //----- 足りない分を生成 -----
+
             var requireCount = GetRequireCount();
 
-            // 足りない分を生成.
             var createCount = requireCount - itemList.Count;
 
             if (0 < createCount)
@@ -314,10 +308,12 @@ namespace Modules.UI
                 updateObservers[i] = UpdateItem(item, i);
             }
 
-            // 並べ替え.
+            //----- 並べ替え -----
+
             UpdateSibling();
 
-            // スクロール位置設定.
+            //----- スクロール位置設定 -----
+
             if (keepScrollPosition)
             {
                 ScrollPosition = scrollPosition;
@@ -327,7 +323,8 @@ namespace Modules.UI
                 ScrollToItem(0, ScrollTo.First);
             }
 
-            // リストアイテム更新.
+            //----- リストアイテム更新 -----
+
             var updateItemYield = updateObservers.WhenAll().ToYieldInstruction();
 
             while (!updateItemYield.IsDone)
@@ -360,6 +357,33 @@ namespace Modules.UI
             }
 
             UnityUtility.SetActive(item, false);
+        }
+
+        private void SetupHitBox()
+        {
+            if (hitBoxEnable)
+            {
+                var parent = scrollRect.viewport;
+
+                if (hitBox == null)
+                {
+                    hitBox = UnityUtility.CreateGameObject<GraphicCast>(parent.gameObject, "HitBox");
+                }
+                else
+                {
+                    UnityUtility.SetParent(hitBox, parent);
+                }
+
+                // HitBoxは全域使用.
+
+                var rt = hitBox.transform as RectTransform;
+
+                rt.FillRect();
+            }
+            else
+            {
+                UnityUtility.SafeDelete(hitBox);
+            }
         }
 
         public void ScrollToItem(int index, ScrollTo to)
@@ -712,7 +736,7 @@ namespace Modules.UI
 
             if (hitBox != null)
             {
-                hitBox.SetAsFirstSibling();
+                hitBox.transform.SetAsFirstSibling();
             }
         }
         
