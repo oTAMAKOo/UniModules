@@ -366,11 +366,14 @@ namespace Modules.Devkit.MasterViewer
                         {
                             var builder = new StringBuilder();
 
-                            foreach (var item in (IEnumerable)value)
+                            if (value != null)
                             {
-                                builder.AppendFormat("{0},", item);
+                                foreach (var item in (IEnumerable)value)
+                                {
+                                    builder.AppendFormat("{0},", item);
+                                }
                             }
-                            
+
                             var text = builder.ToString().TrimEnd(',');
 
                             GUILayout.Label(text, EditorStyles.textField, GUILayout.Width(fieldWidth));
@@ -399,7 +402,14 @@ namespace Modules.Devkit.MasterViewer
                         {
                             EditorGUI.BeginChangeCheck();
 
-                            value = EditorRecordFieldUtility.DrawRecordField(value, valueType, GUILayout.Width(fieldWidth));
+                            try
+                            {
+                                value = EditorRecordFieldUtility.DrawRecordField(value, valueType, GUILayout.Width(fieldWidth));
+                            }
+                            catch (Exception e)
+                            {
+                                Debug.LogErrorFormat("Error: {0}\nValueName = {1}\nValueType = {2}\nValue = {3}\n", e.Message, valueName, valueType, value);
+                            }
 
                             if (EditorGUI.EndChangeCheck())
                             {

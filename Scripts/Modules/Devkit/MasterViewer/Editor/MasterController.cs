@@ -149,14 +149,20 @@ namespace Modules.Devkit.MasterViewer
                 var originArray = new ArrayList();
                 var currentArray = new ArrayList();
 
-                foreach (var item in (IEnumerable)originValue)
+                if (originValue != null)
                 {
-                    originArray.Add(item);
+                    foreach (var item in (IEnumerable)originValue)
+                    {
+                        originArray.Add(item);
+                    }
                 }
 
-                foreach (var item in (IEnumerable)currentValue)
+                if (currentValue != null)
                 {
-                    currentArray.Add(item);
+                    foreach (var item in (IEnumerable)currentValue)
+                    {
+                        currentArray.Add(item);
+                    }
                 }
 
                 if (originArray.Count != currentArray.Count) { return true; }
