@@ -1,7 +1,6 @@
 ﻿
 using System;
 using System.Collections.Generic;
-using System.Runtime.CompilerServices;
 
 namespace Extensions
 {
@@ -64,13 +63,11 @@ namespace Extensions
                     buffer.CopyTo(bytes, 0);
                 }
             }
-
+            
             //----- method -----
 
-            public SecureData()
+            public SecureData(int bufferSize)
             {
-                var bufferSize = Unsafe.SizeOf<TValue>();
-
                 buffer = new byte[bufferSize];
                 bytes = new byte[bufferSize];
 
@@ -131,6 +128,8 @@ namespace Extensions
         [Serializable]
         private sealed class BoolSecureValue : SecureData<bool>
         {
+            public BoolSecureValue() : base(sizeof(bool)){}
+
             protected override byte[] GetValueBytes(bool value)
             {
                 return BitConverter.GetBytes(value);
@@ -149,6 +148,8 @@ namespace Extensions
         [Serializable]
         private sealed class SByteSecureValue : SecureData<sbyte>
         {
+            public SByteSecureValue() : base(sizeof(sbyte)) { }
+
             protected override byte[] GetValueBytes(sbyte value)
             {
                 return new byte[]{ (byte)value };
@@ -163,6 +164,8 @@ namespace Extensions
         [Serializable]
         private sealed class ByteSecureValue : SecureData<byte>
         {
+            public ByteSecureValue() : base(sizeof(byte)) { }
+
             protected override byte[] GetValueBytes(byte value)
             {
                 return new byte[] { (byte)value };
@@ -181,6 +184,8 @@ namespace Extensions
         [Serializable]
         private sealed class ShortSecureValue : SecureData<short>
         {
+            public ShortSecureValue() : base(sizeof(short)) { }
+
             protected override byte[] GetValueBytes(short value)
             {
                 return BitConverter.GetBytes(value);
@@ -195,6 +200,8 @@ namespace Extensions
         [Serializable]
         private sealed class UShortSecureValue : SecureData<ushort>
         {
+            public UShortSecureValue() : base(sizeof(ushort)) { }
+
             protected override byte[] GetValueBytes(ushort value)
             {
                 return BitConverter.GetBytes(value);
@@ -213,6 +220,8 @@ namespace Extensions
         [Serializable]
         private sealed class IntSecureValue : SecureData<int>
         {
+            public IntSecureValue() : base(sizeof(int)) { }
+
             protected override byte[] GetValueBytes(int value)
             {
                 return BitConverter.GetBytes(value);
@@ -227,6 +236,8 @@ namespace Extensions
         [Serializable]
         private sealed class UIntSecureValue : SecureData<uint>
         {
+            public UIntSecureValue() : base(sizeof(uint)) { }
+
             protected override byte[] GetValueBytes(uint value)
             {
                 return BitConverter.GetBytes(value);
@@ -245,6 +256,8 @@ namespace Extensions
         [Serializable]
         private sealed class LongSecureValue : SecureData<long>
         {
+            public LongSecureValue() : base(sizeof(long)) { }
+
             protected override byte[] GetValueBytes(long value)
             {
                 return BitConverter.GetBytes(value);
@@ -259,6 +272,8 @@ namespace Extensions
         [Serializable]
         private sealed class ULongSecureValue : SecureData<ulong>
         {
+            public ULongSecureValue() : base(sizeof(ulong)) { }
+
             protected override byte[] GetValueBytes(ulong value)
             {
                 return BitConverter.GetBytes(value);
@@ -277,6 +292,8 @@ namespace Extensions
         [Serializable]
         private sealed class FloatSecureValue : SecureData<float>
         {
+            public FloatSecureValue() : base(sizeof(float)) { }
+
             protected override byte[] GetValueBytes(float value)
             {
                 return BitConverter.GetBytes(value);
@@ -291,6 +308,8 @@ namespace Extensions
         [Serializable]
         private sealed class DoubleSecureValue : SecureData<double>
         {
+            public DoubleSecureValue() : base(sizeof(double)) { }
+
             protected override byte[] GetValueBytes(double value)
             {
                 return BitConverter.GetBytes(value);

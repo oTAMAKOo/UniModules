@@ -169,16 +169,7 @@ namespace Modules.Devkit.Pinning
         {
             if (e.type == EventType.MouseDown)
             {
-                switch (e.clickCount)
-                {
-                    case 1:
-                        EditorGUIUtility.PingObject(item);
-                        break;
-
-                    case 2:
-                        OpenAsset(item);
-                        break;
-                }
+                OnMouseLeftDown(item, e.clickCount);
             }
 
             if (e.type == EventType.DragPerform || e.type == EventType.DragUpdated)
@@ -268,13 +259,6 @@ namespace Modules.Devkit.Pinning
             Repaint();
         }
 
-        private void OpenAsset(Object obj)
-        {
-            AssetDatabase.OpenAsset(obj);
-            Selection.activeObject = obj;
-            EditorGUIUtility.PingObject(Selection.activeObject);
-        }
-
         protected virtual void UpdatePinnedObject()
         {
             // NullになったObjectの削除.
@@ -296,5 +280,7 @@ namespace Modules.Devkit.Pinning
         protected abstract string GetLabelName(Object item);
 
         protected abstract bool ValidatePinned(Object[] items);
+
+        protected abstract void OnMouseLeftDown(Object item, int clickCount);
     }
 }

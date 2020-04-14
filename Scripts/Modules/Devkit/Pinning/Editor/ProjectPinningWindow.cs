@@ -75,5 +75,20 @@ namespace Modules.Devkit.Pinning
         {
             return items.All(x => EditorUtility.IsPersistent(x));
         }
+
+        protected override void OnMouseLeftDown(Object item, int clickCount)
+        {
+            EditorUtility.FocusProjectWindow();
+
+            Selection.activeObject = item;
+
+            EditorGUIUtility.PingObject(item);
+
+            if(clickCount == 2)
+            {
+                AssetDatabase.OpenAsset(item);
+            }
+        }
+
     }
 }

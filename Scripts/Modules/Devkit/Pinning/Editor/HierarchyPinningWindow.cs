@@ -140,5 +140,11 @@ namespace Modules.Devkit.Pinning
 
             base.UpdatePinnedObject();
         }
+
+        protected override void OnMouseLeftDown(Object item, int clickCount)
+        {
+            Selection.activeObject = item;
+            EditorGUIUtility.PingObject(item);
+        }
     }
 }
