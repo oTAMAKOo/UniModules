@@ -8,17 +8,12 @@ ShaderVariantCollection:
   m_PrefabAsset: {fileID: 0}
   m_Name: ShaderVariants
   m_Shaders:
-  - first: {fileID: 4800000, guid: 0a3d3dc8bf2306c49ad4bf35d3e1a45f, type: 3}
-    second:
-      variants:
-      - keywords: 
-        passType: 0
   - first: {fileID: 4800000, guid: 15ee3e1d9a5cd714e903a200e68eb2e0, type: 3}
     second:
       variants:
       - keywords: 
         passType: 0
-  - first: {fileID: 4800000, guid: 4a188e8d4741e97498e962b695b4d200, type: 3}
+  - first: {fileID: 4800000, guid: 4181ecf66a14c6645b86942aaa4d33a1, type: 3}
     second:
       variants:
       - keywords: 
@@ -29,11 +24,6 @@ ShaderVariantCollection:
       - keywords: 
         passType: 0
   - first: {fileID: 4800000, guid: 50df763e3ddc40447b57d8c14970e4b5, type: 3}
-    second:
-      variants:
-      - keywords: 
-        passType: 0
-  - first: {fileID: 4800000, guid: 5218c9ce04b018f46a9f57667d8545a3, type: 3}
     second:
       variants:
       - keywords: 
@@ -53,11 +43,6 @@ ShaderVariantCollection:
       variants:
       - keywords: 
         passType: 0
-  - first: {fileID: 4800000, guid: 67513d49d7b44f549a215ffac9adf717, type: 3}
-    second:
-      variants:
-      - keywords: 
-        passType: 0
   - first: {fileID: 4800000, guid: 9a147b58601241b4aabc654e7aa066a0, type: 3}
     second:
       variants:
@@ -68,22 +53,7 @@ ShaderVariantCollection:
       variants:
       - keywords: 
         passType: 0
-  - first: {fileID: 4800000, guid: 9ff4be756eca52e40b680b6959d6bb0e, type: 3}
-    second:
-      variants:
-      - keywords: 
-        passType: 0
   - first: {fileID: 4800000, guid: a59b5adb25f8e6041abc6ef9d74a8a9c, type: 3}
-    second:
-      variants:
-      - keywords: 
-        passType: 0
-  - first: {fileID: 4800000, guid: b343000e662d01444babdfbc8cd2f71a, type: 3}
-    second:
-      variants:
-      - keywords: 
-        passType: 0
-  - first: {fileID: 4800000, guid: bb940c1e33cc0e14891f4f396e2cb2ad, type: 3}
     second:
       variants:
       - keywords: 
@@ -109,6 +79,36 @@ ShaderVariantCollection:
       - keywords: 
         passType: 0
   - first: {fileID: 4800000, guid: fed55e1e66f081c4da4554b0be9b4f23, type: 3}
+    second:
+      variants:
+      - keywords: 
+        passType: 0
+  - first: {fileID: 4800000, guid: 5218c9ce04b018f46a9f57667d8545a3, type: 3}
+    second:
+      variants:
+      - keywords: 
+        passType: 0
+  - first: {fileID: 4800000, guid: 0a3d3dc8bf2306c49ad4bf35d3e1a45f, type: 3}
+    second:
+      variants:
+      - keywords: 
+        passType: 0
+  - first: {fileID: 4800000, guid: b343000e662d01444babdfbc8cd2f71a, type: 3}
+    second:
+      variants:
+      - keywords: 
+        passType: 0
+  - first: {fileID: 4800000, guid: bb940c1e33cc0e14891f4f396e2cb2ad, type: 3}
+    second:
+      variants:
+      - keywords: 
+        passType: 0
+  - first: {fileID: 4800000, guid: 4a188e8d4741e97498e962b695b4d200, type: 3}
+    second:
+      variants:
+      - keywords: 
+        passType: 0
+  - first: {fileID: 4800000, guid: 9ff4be756eca52e40b680b6959d6bb0e, type: 3}
     second:
       variants:
       - keywords: 

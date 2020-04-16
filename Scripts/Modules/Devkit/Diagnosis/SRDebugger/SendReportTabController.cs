@@ -38,9 +38,9 @@ namespace Modules.Devkit.Diagnosis.SRDebugger
         //----- field -----
 
         [SerializeField]
-        public GameObject sendReportSheetPrefab = null;
+        private GameObject sendReportSheetPrefab = null;
         [SerializeField]
-        public GameObject container = null;
+        private GameObject container = null;
 
         private SendReportSheetController sendReportSheet = null;
 
