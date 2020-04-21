@@ -147,10 +147,7 @@ namespace Modules.Devkit.SceneLaunch
 
 		public static void Open()
 		{
-			Instance.titleContent = new GUIContent("Launch Scene");
-			Instance.minSize = new Vector2(0f, 60f);
-
-			Instance.Initialize();
+            Instance.Initialize();
 
 			Instance.Show();
 		}
@@ -159,7 +156,10 @@ namespace Modules.Devkit.SceneLaunch
 		{
 			if (initialized) { return; }
 
-			targetScenePath = Prefs.targetScenePath;
+            titleContent = new GUIContent("Launch Scene");
+            minSize = new Vector2(0f, 60f);
+
+            targetScenePath = Prefs.targetScenePath;
 
 			initialized = true;
 		}
