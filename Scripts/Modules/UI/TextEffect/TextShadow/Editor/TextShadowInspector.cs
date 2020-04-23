@@ -105,7 +105,7 @@ namespace Modules.UI.TextEffect
             Reflection.SetPrivateField(instance, "offsetX", offsetX);
             Reflection.SetPrivateField(instance, "offsetY", offsetY);
 
-            update = true;
+            Apply();
         }
     }
 }

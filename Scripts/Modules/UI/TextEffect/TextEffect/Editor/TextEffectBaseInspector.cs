@@ -21,8 +21,6 @@ namespace Modules.UI.TextEffect
 
         private Vector2 scrollPosition = Vector2.zero;
 
-        protected bool update = false;
-
         //----- property -----
 
         //----- method -----
@@ -37,17 +35,13 @@ namespace Modules.UI.TextEffect
             Undo.undoRedoPerformed -= OnUndoRedo;
         }
 
-        private void Apply()
+        protected void Apply()
         {
             var instance = target as TextEffectBase;
 
             if (instance == null) { return; }
-
-            if (!update) { return; }
-
+            
             TextEffectManager.Instance.Apply(instance);
-
-            update = false;
         }
 
         protected void DrawMaterialSelector<T>(T instance) where T : TextEffectBase
@@ -55,8 +49,6 @@ namespace Modules.UI.TextEffect
             var reference = Reflection.GetPrivateField<TextEffectManager, Dictionary<Material, List<TextEffectBase>>>(TextEffectManager.Instance, "reference");
             
             if (reference == null || reference.IsEmpty()) { return; }
-
-            Apply();
 
             var targets = reference.Values
                     .Select(x => x.OfType<T>().FirstOrDefault())
@@ -97,7 +89,7 @@ namespace Modules.UI.TextEffect
 
             if (instance == null) { return; }
 
-            update = true;
+            Apply();
         }
 
         protected abstract void DrawSelectorContents(TextEffectBase[] targets);

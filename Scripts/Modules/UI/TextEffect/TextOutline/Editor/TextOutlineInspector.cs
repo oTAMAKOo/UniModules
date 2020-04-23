@@ -96,7 +96,7 @@ namespace Modules.UI.TextEffect
             Reflection.SetPrivateField(instance, "color", color);
             Reflection.SetPrivateField(instance, "distance", distance);
 
-            update = true;
+            Apply();
         }
     }
 }
