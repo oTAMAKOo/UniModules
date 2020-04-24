@@ -55,7 +55,7 @@ namespace Modules.Devkit.MasterViewer
                 
                 EditorApplication.delayCall += () =>
                 {
-                    window.SetWindowSize();
+                    window.SetWindowPosition();
                     window.Show();
                 };
 
@@ -93,7 +93,7 @@ namespace Modules.Devkit.MasterViewer
                 .AddTo(lifetimeDisposable.Disposable);
         }
 
-        private void SetWindowSize()
+        private void SetWindowPosition()
         {
             var windowPosition = position;
 
@@ -143,44 +143,50 @@ namespace Modules.Devkit.MasterViewer
 
             var scrollBaseRect = GUILayoutUtility.GetLastRect();
 
-            using (var scrollViewScope = new EditorGUILayout.ScrollViewScope(scrollPosition))
-            {
-                // RecordView.
+            // RecordView.
 
-                var valueNames = masterController.GetValueNames();
-            
-                GUILayout.Space(3f);
-
-                using (new EditorGUILayout.HorizontalScope())
-                {
-                    GUILayout.Space(3f);
-
-                    controlRects.Clear();
-
-                    for (var i = 0; i < valueNames.Length; i++)
-                    {
-                        var valueName = valueNames[i];
-
-                        var fieldWidth = masterController.FieldWidth[i];
-
-                        EditorGUILayout.LabelField(valueName, EditorStyles.miniButton, GUILayout.Width(fieldWidth), GUILayout.Height(15f));
-
-                        GetResizeHorizontalRect();
-                    }
-
-                    GUILayout.Space(3f);
-                }
-
-                GUILayout.Space(3f);
-
-                using (new LabelWidthScope(0f))
-                {
-                    recordScrollView.Draw();
-                }
-
-                scrollPosition = scrollViewScope.scrollPosition;
-            }
+            var valueNames = masterController.GetValueNames();
         
+            GUILayout.Space(3f);
+
+            using (new EditorGUILayout.HorizontalScope())
+            {
+                GUILayout.Space(3f);
+
+                controlRects.Clear();
+
+                for (var i = 0; i < valueNames.Length; i++)
+                {
+                    var valueName = valueNames[i];
+
+                    var fieldWidth = masterController.FieldWidth[i];
+
+                    EditorGUILayout.LabelField(valueName, EditorStyles.miniButton, GUILayout.Width(fieldWidth), GUILayout.Height(15f));
+
+                    GetResizeHorizontalRect();
+                }
+
+                GUILayout.Space(3f);
+            }
+
+            GUILayout.Space(3f);
+
+            using (new LabelWidthScope(0f))
+            {
+                recordScrollView.Draw();
+            }
+
+            // カラム数のトータル幅＋スクロールバーの幅を最大ウィンドウ幅にする.
+
+            var scrollbarWidth = GUI.skin.verticalScrollbar.fixedWidth;
+            var totalSpaceWidth = (masterController.FieldWidth.Length - 1) * 5f;
+            var totalWidth = masterController.FieldWidth.Sum() + totalSpaceWidth + scrollbarWidth;
+
+            if (maxSize.x != totalWidth)
+            {
+                maxSize = Vector.SetX(maxSize, totalWidth);
+            }
+
             // Event Handling.
 
             var ev = Event.current;
