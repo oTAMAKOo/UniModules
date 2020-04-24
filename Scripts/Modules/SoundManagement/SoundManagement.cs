@@ -68,8 +68,6 @@ namespace Modules.SoundManagement
         private Dictionary<string, SoundSheet> managedSoundSheets = null;
         private List<SoundElement> soundElements = null;
 
-        private float releaseTime = DefaultReleaseTime;
-
         private SoundParam defaultSoundParam = null;
         private Dictionary<SoundType, SoundParam> soundParams = null;
 
@@ -86,15 +84,17 @@ namespace Modules.SoundManagement
 
         //----- property -----
 
-        public float ReleaseTime
-        {
-            get { return releaseTime; }
-            set { releaseTime = value; }
-        }
+        public bool LogEnable { get; set; }
+
+        public float ReleaseTime { get; set; }
 
         //----- method -----
 
-        private SoundManagement() { }
+        private SoundManagement()
+        {
+            ReleaseTime = DefaultReleaseTime;
+            LogEnable = false;
+        }
 
         public void Initialize(SoundParam defaultSoundParam)
         {
@@ -431,20 +431,24 @@ namespace Modules.SoundManagement
 
                 managedSoundSheets.Add(soundSheet.AssetPath, soundSheet);
 
-                var builder = new StringBuilder();
 
-                builder.AppendFormat("Load : {0} : {1}", cueInfo.Cue, cueInfo.CueId).AppendLine();
-                builder.AppendLine();
-                builder.AppendFormat("Cue : {0}", cueInfo.Cue).AppendLine();
-                builder.AppendFormat("CueId : {0}", cueInfo.CueId).AppendLine();
-                builder.AppendFormat("FileName : {0}", Path.GetFileName(acbPath)).AppendLine();
-
-                if (!string.IsNullOrEmpty(cueInfo.Summary))
+                if (LogEnable && Debug.isDebugBuild)
                 {
-                    builder.AppendFormat("Summary: {0}", cueInfo.Summary).AppendLine();
-                }
+                    var builder = new StringBuilder();
 
-                UnityConsole.Event(ConsoleEventName, ConsoleEventColor, builder.ToString());
+                    builder.AppendFormat("Load : {0} : {1}", cueInfo.Cue, cueInfo.CueId).AppendLine();
+                    builder.AppendLine();
+                    builder.AppendFormat("Cue : {0}", cueInfo.Cue).AppendLine();
+                    builder.AppendFormat("CueId : {0}", cueInfo.CueId).AppendLine();
+                    builder.AppendFormat("FileName : {0}", Path.GetFileName(acbPath)).AppendLine();
+
+                    if (!string.IsNullOrEmpty(cueInfo.Summary))
+                    {
+                        builder.AppendFormat("Summary: {0}", cueInfo.Summary).AppendLine();
+                    }
+
+                    UnityConsole.Event(ConsoleEventName, ConsoleEventColor, builder.ToString());
+                }
             }
 
             return soundSheet;
@@ -510,7 +514,7 @@ namespace Modules.SoundManagement
                 }
 
                 // 終了確認した時間から一定時間経過していたら解放.
-                if (soundElements[i].FinishTime.Value + releaseTime < Time.realtimeSinceStartup)
+                if (soundElements[i].FinishTime.Value + ReleaseTime < Time.realtimeSinceStartup)
                 {
                     soundElements.RemoveAt(i);
                 }
