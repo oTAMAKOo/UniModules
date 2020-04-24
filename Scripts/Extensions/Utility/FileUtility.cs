@@ -3,7 +3,6 @@ using System;
 using System.IO;
 using System.Security.Cryptography;
 using System.Text;
-using Extensions;
 
 namespace Extensions
 {
@@ -15,25 +14,24 @@ namespace Extensions
         public static string GetHash(string path)
         {
             byte[] bytes;
+            
+            var crypto256 = new SHA256CryptoServiceProvider();
 
-            // .NET FrameworkのMD5計算クラスを作成.
-            var md5 = MD5.Create();
-
-            // 対象ファイルを開い、ComputeHashメソッドを呼び出してMD5計算を行う
             using (var fs = File.Open(path, FileMode.Open, FileAccess.Read, FileShare.Read))
             {
-                bytes = md5.ComputeHash(fs);
-            }
+                bytes = crypto256.ComputeHash(fs);
 
-            // 計算結果を16進数の文字列に変換.
-            var md5str = new StringBuilder();
+                crypto256.Clear();
+            }
+            
+            var hashedText = new StringBuilder();
 
             foreach (var b in bytes)
             {
-                md5str.Append(b.ToString("x2"));
+                hashedText.Append(b.ToString("x2"));
             }
 
-            return md5str.ToString();
+            return hashedText.ToString();
         }
 
         /// <summary>

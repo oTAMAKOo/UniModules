@@ -72,37 +72,35 @@ namespace Extensions
             return new string((value ?? string.Empty).Skip(startIndex).Take(len).ToArray());
         }
 
-        /// <summary> 指定された文字列をMD5でハッシュ化 </summary>
+        /// <summary> 指定された文字列をSHA256でハッシュ化 </summary>
         public static string GetHash(this string value)
         {
-            return CalcMd5(value, Encoding.UTF8);
+            return CalcSHA256(value, Encoding.UTF8);
         }
 
-        /// <summary> 指定された文字列をMD5でハッシュ化 </summary>
+        /// <summary> 指定された文字列をSHA256でハッシュ化 </summary>
         public static string GetHash(this string value, Encoding enc)
         {
-            return CalcMd5(value, enc);
+            return CalcSHA256(value, enc);
         }
 
-        // MD5ハッシュ生成.
-        private static string CalcMd5(string value, Encoding enc)
+        // SHA256ハッシュ生成.
+        private static string CalcSHA256(string value, Encoding enc)
         {
-            var md5 = MD5.Create();
+            var byteValues = enc.GetBytes(value);
 
-            // md5ハッシュ値.
-            var srcBytes = enc.GetBytes(value);
-            var destBytes = md5.ComputeHash(srcBytes);
+            var crypto256 = new SHA256CryptoServiceProvider();
 
-            // 求めたmd5値を文字列に変換.
-            var destStrBuilder = new StringBuilder();
+            var hash256Value = crypto256.ComputeHash(byteValues);
+            
+            var hashedText = new StringBuilder();
 
-            foreach (var curByte in destBytes)
+            for (var i = 0; i < hash256Value.Length; i++)
             {
-                destStrBuilder.Append(curByte.ToString("x2"));
+                hashedText.AppendFormat("{0:X2}", hash256Value[i]);
             }
 
-            // 変換後の文字列を返す.
-            return destStrBuilder.ToString();
+            return hashedText.ToString();
         }
 
         /// <summary> 文字列に指定されたキーワード群が含まれるか判定 </summary>
