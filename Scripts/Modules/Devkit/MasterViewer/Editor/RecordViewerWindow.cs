@@ -86,7 +86,6 @@ namespace Modules.Devkit.MasterViewer
 
             recordScrollView = new RecordScrollView(masterController);
             recordScrollView.Contents = masterController.Records;
-            recordScrollView.HideHorizontalScrollBar = true;
 
             recordScrollView.OnRepaintRequestAsObservable()
                 .Subscribe(_ => Repaint())
