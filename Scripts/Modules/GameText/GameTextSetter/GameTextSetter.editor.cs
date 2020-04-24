@@ -60,6 +60,8 @@ namespace Modules.GameText.Components
 
         private void ApplyDevelopmentText()
         {
+            if (Application.isPlaying) { return; }
+
             if (string.IsNullOrEmpty(developmentText)) { return; }
 
             if (Category == GameTextCategory.None)
