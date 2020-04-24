@@ -252,20 +252,17 @@ namespace Extensions.Devkit
             var eventType = Event.current.type;
 
             var isRepaintEvent = eventType == EventType.Repaint;
-
-            var alwaysShowHorizontalScrollBar = !HideHorizontalScrollBar && AlwaysShowHorizontalScrollBar;
+            
             var horizontalScrollBarStyle = HideHorizontalScrollBar ? GUIStyle.none : HorizontalScrollBarStyle;
 
-            var alwaysShowVerticalScrollBar = !HideVerticalScrollBar && AlwaysShowVerticalScrollBar;
             var verticalScrollBarStyle = HideVerticalScrollBar ? GUIStyle.none : VerticalScrollBarStyle;
 
             // スクロール領域計測用.
             using (var scrollViewLayoutScope = new EditorGUILayout.VerticalScope())
             {
                 using (var scrollViewScope = new EditorGUILayout.ScrollViewScope(
-                    ScrollPosition, alwaysShowHorizontalScrollBar, alwaysShowVerticalScrollBar,
-                    horizontalScrollBarStyle, verticalScrollBarStyle, 
-                    GUIStyle.none, options))
+                    ScrollPosition, AlwaysShowHorizontalScrollBar, AlwaysShowVerticalScrollBar,
+                    horizontalScrollBarStyle, verticalScrollBarStyle, GUIStyle.none, options))
                 {
                     var scrollPosition = scrollViewScope.scrollPosition;
                     
