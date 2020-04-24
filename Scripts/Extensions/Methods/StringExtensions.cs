@@ -97,7 +97,7 @@ namespace Extensions
 
             for (var i = 0; i < hash256Value.Length; i++)
             {
-                hashedText.AppendFormat("{0:X2}", hash256Value[i]);
+                hashedText.AppendFormat("{0:x2}", hash256Value[i]);
             }
 
             return hashedText.ToString();
