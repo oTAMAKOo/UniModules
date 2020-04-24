@@ -70,6 +70,14 @@ namespace Extensions.Devkit
 
         public bool HideVerticalScrollBar { get; set; }
 
+        public GUIStyle HorizontalScrollBarStyle { get; set; }
+
+        public GUIStyle VerticalScrollBarStyle { get; set; }
+
+        public bool AlwaysShowHorizontalScrollBar { get; set; }
+
+        public bool AlwaysShowVerticalScrollBar { get; set; }
+
         public abstract Direction Type { get; }
 
         /// <summary> レイアウトの計算が終わっているか </summary>
@@ -84,6 +92,15 @@ namespace Extensions.Devkit
         {
             itemInfos = new ItemInfo[0];
             requireSkip = true;
+
+            HideHorizontalScrollBar = false;
+            HideVerticalScrollBar = false;
+
+            HorizontalScrollBarStyle = GUI.skin.horizontalScrollbar;
+            VerticalScrollBarStyle = GUI.skin.verticalScrollbar;
+
+            AlwaysShowHorizontalScrollBar = false;
+            AlwaysShowVerticalScrollBar = false;
         }
 
         public void Draw(bool scrollEnable = true, params GUILayoutOption[] options)
@@ -229,21 +246,26 @@ namespace Extensions.Devkit
                 endSpace += itemInfos[i].rect.Value.width;
             }
         }
-        
+
         private void DrawScrollContents(params GUILayoutOption[] options)
         {
             var eventType = Event.current.type;
 
             var isRepaintEvent = eventType == EventType.Repaint;
 
-            var horizontalScrollBar = HideHorizontalScrollBar ? GUIStyle.none : GUI.skin.horizontalScrollbar;
+            var alwaysShowHorizontalScrollBar = !HideHorizontalScrollBar && AlwaysShowHorizontalScrollBar;
+            var horizontalScrollBarStyle = HideHorizontalScrollBar ? GUIStyle.none : HorizontalScrollBarStyle;
 
-            var verticalScrollBar = HideVerticalScrollBar ? GUIStyle.none : GUI.skin.verticalScrollbar;
+            var alwaysShowVerticalScrollBar = !HideVerticalScrollBar && AlwaysShowVerticalScrollBar;
+            var verticalScrollBarStyle = HideVerticalScrollBar ? GUIStyle.none : VerticalScrollBarStyle;
 
             // スクロール領域計測用.
             using (var scrollViewLayoutScope = new EditorGUILayout.VerticalScope())
             {
-                using (var scrollViewScope = new EditorGUILayout.ScrollViewScope(ScrollPosition, false, false, horizontalScrollBar, verticalScrollBar, GUIStyle.none, options))
+                using (var scrollViewScope = new EditorGUILayout.ScrollViewScope(
+                    ScrollPosition, alwaysShowHorizontalScrollBar, alwaysShowVerticalScrollBar,
+                    horizontalScrollBarStyle, verticalScrollBarStyle, 
+                    GUIStyle.none, options))
                 {
                     var scrollPosition = scrollViewScope.scrollPosition;
                     

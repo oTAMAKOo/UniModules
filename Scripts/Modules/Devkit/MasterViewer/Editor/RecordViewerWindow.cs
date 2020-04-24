@@ -84,8 +84,11 @@ namespace Modules.Devkit.MasterViewer
 
             // レコード一覧View.
 
-            recordScrollView = new RecordScrollView(masterController);
-            recordScrollView.Contents = masterController.Records;
+            recordScrollView = new RecordScrollView(masterController)
+            {
+                Contents = masterController.Records,
+                AlwaysShowVerticalScrollBar = true,
+            };
 
             recordScrollView.OnRepaintRequestAsObservable()
                 .Subscribe(_ => Repaint())
@@ -147,25 +150,32 @@ namespace Modules.Devkit.MasterViewer
             var valueNames = masterController.GetValueNames();
         
             GUILayout.Space(3f);
-
-            using (new EditorGUILayout.HorizontalScope())
+            
+            using (new EditorGUILayout.ScrollViewScope(scrollPosition, false, false, GUIStyle.none, GUIStyle.none, GUIStyle.none))
             {
-                GUILayout.Space(3f);
-
-                controlRects.Clear();
-
-                for (var i = 0; i < valueNames.Length; i++)
+                using (new EditorGUILayout.HorizontalScope())
                 {
-                    var valueName = valueNames[i];
+                    GUILayout.Space(3f);
 
-                    var fieldWidth = masterController.FieldWidth[i];
+                    controlRects.Clear();
 
-                    EditorGUILayout.LabelField(valueName, EditorStyles.miniButton, GUILayout.Width(fieldWidth), GUILayout.Height(15f));
+                    for (var i = 0; i < valueNames.Length; i++)
+                    {
+                        var valueName = valueNames[i];
 
-                    GetResizeHorizontalRect();
+                        var fieldWidth = masterController.FieldWidth[i];
+
+                        EditorGUILayout.LabelField(valueName, EditorStyles.miniButton, GUILayout.Width(fieldWidth), GUILayout.Height(15f));
+
+                        GetResizeHorizontalRect();
+                    }
+
+                    GUILayout.Space(3f);
+
+                    GUILayout.Space(recordScrollView.VerticalScrollBarStyle.fixedWidth);
                 }
 
-                GUILayout.Space(3f);
+                scrollPosition = new Vector2(recordScrollView.ScrollPosition.x, 0f);
             }
 
             GUILayout.Space(3f);
@@ -173,17 +183,6 @@ namespace Modules.Devkit.MasterViewer
             using (new LabelWidthScope(0f))
             {
                 recordScrollView.Draw();
-            }
-
-            // カラム数のトータル幅＋スクロールバーの幅を最大ウィンドウ幅にする.
-
-            var scrollbarWidth = GUI.skin.verticalScrollbar.fixedWidth;
-            var totalSpaceWidth = (masterController.FieldWidth.Length - 1) * 5f;
-            var totalWidth = masterController.FieldWidth.Sum() + totalSpaceWidth + scrollbarWidth;
-
-            if (maxSize.x != totalWidth)
-            {
-                maxSize = Vector.SetX(maxSize, totalWidth);
             }
 
             // Event Handling.
