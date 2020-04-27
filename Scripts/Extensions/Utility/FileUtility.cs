@@ -9,7 +9,7 @@ namespace Extensions
     public sealed class FileUtility
     {
         /// <summary>
-        /// 指定されたファイルのハッシュ値を取得.
+        /// 指定されたファイルのSHA256ハッシュ値を取得.
         /// </summary>
         public static string GetHash(string path)
         {
@@ -24,6 +24,32 @@ namespace Extensions
                 crypto256.Clear();
             }
             
+            var hashedText = new StringBuilder();
+
+            foreach (var b in bytes)
+            {
+                hashedText.Append(b.ToString("x2"));
+            }
+
+            return hashedText.ToString();
+        }
+
+        /// <summary>
+        /// 指定されたファイルのCRC32ハッシュ値を取得.
+        /// </summary>
+        public static string GetCRC(string path)
+        {
+            byte[] bytes;
+
+            var crc32 = new CRC32();
+
+            using (var fs = File.Open(path, FileMode.Open, FileAccess.Read, FileShare.Read))
+            {
+                bytes = crc32.ComputeHash(fs);
+
+                crc32.Clear();
+            }
+
             var hashedText = new StringBuilder();
 
             foreach (var b in bytes)

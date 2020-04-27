@@ -103,6 +103,37 @@ namespace Extensions
             return hashedText.ToString();
         }
 
+        /// <summary> 指定された文字列をCRC32でハッシュ化 </summary>
+        public static string GetCRC(this string value)
+        {
+            return CalcCRC32(value, Encoding.UTF8);
+        }
+
+        /// <summary> 指定された文字列をCRC32でハッシュ化 </summary>
+        public static string GetCRC(this string value, Encoding enc)
+        {
+            return CalcCRC32(value, enc);
+        }
+
+        // CRC32ハッシュ生成.
+        private static string CalcCRC32(string value, Encoding enc)
+        {
+            var byteValues = enc.GetBytes(value);
+
+            var crc32 = new CRC32();
+
+            var hashValue = crc32.ComputeHash(byteValues);
+
+            var hashedText = new StringBuilder();
+
+            for (var i = 0; i < hashValue.Length; i++)
+            {
+                hashedText.AppendFormat("{0:x2}", hashValue[i]);
+            }
+
+            return hashedText.ToString();
+        }
+
         /// <summary> 文字列に指定されたキーワード群が含まれるか判定 </summary>
         public static bool IsMatch(this string text, string[] keywords)
         {

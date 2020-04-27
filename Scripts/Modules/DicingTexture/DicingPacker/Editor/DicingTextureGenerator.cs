@@ -39,12 +39,6 @@ namespace Modules.Dicing
             public bool isAllTransparent;
         }
 
-        private class RestoreInfo
-        {
-            public bool isReadable { get; set; }
-            public TextureImporterCompression textureCompression { get; set; }
-        }
-
         //----- field -----
 
         // ブロックに割り振るID.
@@ -405,7 +399,7 @@ namespace Modules.Dicing
             var str = builder.ToString();
 
             // 色情報は量が多いのでハッシュ化.
-            return string.Format(format, blockWidth, blockHeight, str).GetHash();
+            return string.Format(format, blockWidth, blockHeight, str).GetCRC();
         }
     }
 }
