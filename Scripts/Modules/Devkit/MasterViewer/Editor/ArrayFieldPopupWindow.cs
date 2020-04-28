@@ -47,9 +47,12 @@ namespace Modules.Devkit.MasterViewer
 
             var list = new ArrayList();
 
-            foreach (var item in (IEnumerable)value)
+            if (value != null)
             {
-                list.Add(item);
+                foreach (var item in (IEnumerable)value)
+                {
+                    list.Add(item);
+                }
             }
             
             elements = list.Cast<object>().ToList();
