@@ -2,8 +2,6 @@
 #if ENABLE_SRDEBUGGER
 
 using UnityEngine;
-using System;
-using System.Linq;
 using System.Collections.Generic;
 using UniRx;
 using Extensions;
@@ -52,7 +50,7 @@ namespace Modules.Devkit.Diagnosis.SRDebugger
     {
         //----- params -----
 
-        public const int ReportLogNum = 30;
+        private const int DefaultReportLogNum = 30;
 
         //----- field -----
 
@@ -64,13 +62,19 @@ namespace Modules.Devkit.Diagnosis.SRDebugger
 
         //----- property -----
 
-        public static LogEntry[] Logs
+        public static int ReportLogNum
         {
-            get
+            get { return reportQueue.Length; }
+
+            set
             {
-                return reportQueue.ToArray();
+                if (value <= 0) { return; }
+
+                reportQueue = new FixedQueue<LogEntry>(value);
             }
         }
+
+        public static IReadOnlyList<LogEntry> Logs { get { return reportQueue.ToArray(); } }
 
         //----- method -----
 
@@ -80,7 +84,7 @@ namespace Modules.Devkit.Diagnosis.SRDebugger
 
             disposable = new LifetimeDisposable();
 
-            reportQueue = new FixedQueue<LogEntry>(ReportLogNum);
+            reportQueue = new FixedQueue<LogEntry>(DefaultReportLogNum);
 
             ApplicationLogHandler.Instance.OnLogReceiveAsObservable()
                 .Subscribe(x => LogCallback(x))
