@@ -252,7 +252,7 @@ namespace Modules.Window
         {
             foreach (var scenePopup in scenePopups)
             {
-                UnityUtility.SafeDelete(scenePopup.gameObject);
+                UnityUtility.SafeDelete(scenePopup);
             }
 
             scenePopups.Clear();
