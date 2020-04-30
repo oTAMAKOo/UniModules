@@ -45,9 +45,7 @@ namespace Modules.Devkit.Diagnosis.SRDebugger
         private Text progressBarText = null;
 
         private List<IMultipartFormSection> reportForm = null;
-
-        private LogEntry[] reportContents = null;
-
+        
         private IDisposable sendReportDisposable = null;
 
         private AesManaged aesManaged = null;
@@ -119,9 +117,7 @@ namespace Modules.Devkit.Diagnosis.SRDebugger
 
         private void UpdateContents()
         {
-            reportContents = SRTrackLogService.Logs;
-
-            SetReportText(reportContents);
+            SetReportText();
 
             UpdateView();
         }
@@ -235,13 +231,15 @@ namespace Modules.Devkit.Diagnosis.SRDebugger
             SRDebug.Instance.ShowDebugPanel(false);
         }
 
-        private void SetReportText(LogEntry[] contents)
+        private void SetReportText()
         {
+            var logs = SRTrackLogService.Logs;
+
             var builder = new StringBuilder();
 
-            foreach (var content in contents)
+            foreach (var log in logs)
             {
-                builder.AppendLine(content.Message).AppendLine();
+                builder.AppendLine(log.Message).AppendLine();
             }
 
             var reportText = builder.ToString();
@@ -257,21 +255,20 @@ namespace Modules.Devkit.Diagnosis.SRDebugger
 
         private string GetReportTextPostData()
         {
-            if (reportContents.IsEmpty())
-            {
-                return string.Empty;
-            }
+            var logs = SRTrackLogService.Logs;
+
+            if (logs.IsEmpty()) { return string.Empty; }
 
             var builder = new StringBuilder();
 
-            foreach (var content in reportContents)
+            foreach (var log in logs)
             {
-                builder.AppendFormat("Type: {0}", Enum.GetName(typeof(LogType), content.LogType)).AppendLine();
-                builder.AppendFormat("Message: {0}", content.Message).AppendLine();
+                builder.AppendFormat("Type: {0}", Enum.GetName(typeof(LogType), log.LogType)).AppendLine();
+                builder.AppendFormat("Message: {0}", log.Message).AppendLine();
 
-                if (!string.IsNullOrEmpty(content.StackTrace))
+                if (!string.IsNullOrEmpty(log.StackTrace))
                 {
-                    builder.AppendFormat("StackTrace:\n{0}", content.StackTrace).AppendLine();
+                    builder.AppendFormat("StackTrace:\n{0}", log.StackTrace).AppendLine();
                 }
 
                 builder.AppendLine();

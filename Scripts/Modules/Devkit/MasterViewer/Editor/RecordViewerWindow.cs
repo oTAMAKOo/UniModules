@@ -16,10 +16,11 @@ namespace Modules.Devkit.MasterViewer
     {
         //----- params -----
 
-        private readonly Vector2 WindowSize = new Vector2(300f, 300f);
+
+        private const int PageCellCapacity = 1000;
 
         //----- field -----
-        
+
         private MasterController masterController = null;
 
         private RecordScrollView recordScrollView = null;
@@ -30,7 +31,15 @@ namespace Modules.Devkit.MasterViewer
         private List<Rect> controlRects = null;
         private int focusedControl = -1;
 
+        private int page = 0;
+        private List<object[]> pageRecords = null;
+
         private string searchText = null;
+        private object[] searchedRecords = null;
+
+        private GUIStyle pagingTextFieldStyle = null;
+        private GUIContent prevArrowIcon = null;
+        private GUIContent nextArrowIcon = null;
 
         private LifetimeDisposable lifetimeDisposable = new LifetimeDisposable();
 
@@ -50,18 +59,18 @@ namespace Modules.Devkit.MasterViewer
             if (window == null)
             {
                 window = CreateInstance<RecordViewerWindow>();
-                
+
                 window.Initialize(masterController);
-                
+
                 EditorApplication.delayCall += () =>
                 {
-                    window.SetWindowPosition();
+                    window.UpdateMaxWidth();
                     window.Show();
                 };
 
                 recordViewerWindow = window;
             }
-            
+
             window.Focus();
 
             return recordViewerWindow;
@@ -78,30 +87,41 @@ namespace Modules.Devkit.MasterViewer
 
             titleContent = new GUIContent(masterController.GetDisplayMasterName());
 
-            minSize = WindowSize;
-
             controlRects = new List<Rect>();
+
+            page = 0;
+            searchText = string.Empty;
+
+            UpdatePageRecords(masterController.Records);
 
             // レコード一覧View.
 
             recordScrollView = new RecordScrollView(masterController)
             {
-                Contents = masterController.Records,
+                Contents = GetDisplayRecords(),
                 AlwaysShowVerticalScrollBar = true,
             };
 
             recordScrollView.OnRepaintRequestAsObservable()
                 .Subscribe(_ => Repaint())
                 .AddTo(lifetimeDisposable.Disposable);
-        }
 
-        private void SetWindowPosition()
-        {
-            var windowPosition = position;
+            // Style.
 
-            windowPosition.width = masterController.FieldWidth.Sum() + 50f;
+            pagingTextFieldStyle = new GUIStyle(EditorStyles.toolbarTextField)
+            {
+                alignment = TextAnchor.MiddleCenter,
+                fontStyle = FontStyle.Bold,
+            };
 
-            position = windowPosition;
+            // アイコン.
+
+            prevArrowIcon = EditorGUIUtility.IconContent("Profiler.PrevFrame");
+            nextArrowIcon = EditorGUIUtility.IconContent("Profiler.NextFrame");
+
+            // ウィンドウ最大幅更新.
+
+            UpdateMaxWidth();
         }
 
         void OnGUI()
@@ -121,6 +141,8 @@ namespace Modules.Devkit.MasterViewer
                 Action<string> onChangeSearchText = x =>
                 {
                     searchText = x;
+                    page = 0;
+
                     recordScrollView.Contents = GetDisplayRecords();
 
                     EditorApplication.delayCall += () =>
@@ -132,6 +154,8 @@ namespace Modules.Devkit.MasterViewer
                 Action onSearchCancel = () =>
                 {
                     searchText = string.Empty;
+                    page = 0;
+
                     recordScrollView.Contents = GetDisplayRecords();
 
                     EditorApplication.delayCall += () =>
@@ -141,6 +165,46 @@ namespace Modules.Devkit.MasterViewer
                 };
 
                 EditorLayoutTools.DrawDelayedToolbarSearchTextField(searchText, onChangeSearchText, onSearchCancel, GUILayout.Width(250f));
+
+                GUILayout.FlexibleSpace();
+
+                // ページング.
+
+                var pageCount = pageRecords.Count;
+
+                if (1 < pageCount)
+                {
+                    using (new DisableScope(page <= 0))
+                    {
+                        if (GUILayout.Button(prevArrowIcon, EditorStyles.toolbarButton))
+                        {
+                            page--;
+
+                            recordScrollView.Contents = GetDisplayRecords();
+                        }
+                    }
+
+                    EditorGUI.BeginChangeCheck();
+
+                    var newPage = EditorGUILayout.DelayedIntField(string.Empty, page, pagingTextFieldStyle, GUILayout.Width(40f));
+
+                    if (EditorGUI.EndChangeCheck())
+                    {
+                        page = Mathf.Clamp(newPage, 0, pageCount - 1);
+
+                        recordScrollView.Contents = GetDisplayRecords();
+                    }
+
+                    using (new DisableScope(pageCount <= page))
+                    {
+                        if (GUILayout.Button(nextArrowIcon, EditorStyles.toolbarButton))
+                        {
+                            page++;
+
+                            recordScrollView.Contents = GetDisplayRecords();
+                        }
+                    }
+                }
             }
 
             var scrollBaseRect = GUILayoutUtility.GetLastRect();
@@ -148,9 +212,9 @@ namespace Modules.Devkit.MasterViewer
             // RecordView.
 
             var valueNames = masterController.GetValueNames();
-        
+
             GUILayout.Space(3f);
-            
+
             using (new EditorGUILayout.ScrollViewScope(scrollPosition, false, false, GUIStyle.none, GUIStyle.none, GUIStyle.none))
             {
                 using (new EditorGUILayout.HorizontalScope())
@@ -170,7 +234,7 @@ namespace Modules.Devkit.MasterViewer
                         GetResizeHorizontalRect();
                     }
 
-                    GUILayout.Space(3f);
+                    GUILayout.Space(10f);
 
                     GUILayout.Space(recordScrollView.VerticalScrollBarStyle.fixedWidth);
                 }
@@ -182,7 +246,7 @@ namespace Modules.Devkit.MasterViewer
 
             using (new LabelWidthScope(0f))
             {
-                recordScrollView.Draw();
+                recordScrollView.Draw(true, GUILayout.MinHeight(position.height - 45f));
             }
 
             // Event Handling.
@@ -228,8 +292,10 @@ namespace Modules.Devkit.MasterViewer
                         var diff = (int)(ev.mousePosition.x - mousDownPosition.x);
 
                         mousDownPosition = ev.mousePosition;
-                        
+
                         masterController.FieldWidth[focusedControl] = Mathf.Max(50f, masterController.FieldWidth[focusedControl] + diff);
+
+                        UpdateMaxWidth();
 
                         Repaint();
                     }
@@ -251,7 +317,7 @@ namespace Modules.Devkit.MasterViewer
 
             controlRects.Add(rect);
 
-            EditorGUIUtility.AddCursorRect(rect, MouseCursor.ResizeHorizontal);            
+            EditorGUIUtility.AddCursorRect(rect, MouseCursor.ResizeHorizontal);
         }
 
         private int GetControlNum(Vector2 pos)
@@ -267,9 +333,43 @@ namespace Modules.Devkit.MasterViewer
             return -1;
         }
 
-        private object[] GetDisplayRecords()
+        private void UpdatePageRecords(object[] records)
         {
-            if (string.IsNullOrEmpty(searchText)) { return masterController.Records; }
+            var valueNames = masterController.GetValueNames();
+
+            var recordCellCount = valueNames.Length;
+
+            var cellCount = 0;
+
+            var list = new List<object>();
+
+            pageRecords = new List<object[]>();
+
+            for (var i = 0; i < records.Length; i++)
+            {
+                list.Add(records[i]);
+
+                cellCount += recordCellCount;
+
+                if (PageCellCapacity <= cellCount)
+                {
+                    pageRecords.Add(list.ToArray());
+
+                    cellCount = 0;
+                    list.Clear();
+                }
+            }
+
+            pageRecords.Add(list.ToArray());
+        }
+
+        private void UpdateSearchedRecords()
+        {
+            searchedRecords = null;
+
+            // 検索テキストでフィルタ.
+
+            if (string.IsNullOrEmpty(searchText)) { return; }
 
             var list = new List<object>();
 
@@ -280,10 +380,12 @@ namespace Modules.Devkit.MasterViewer
                 keywords[i] = keywords[i].ToLower();
             }
 
-            foreach (var record in masterController.Records)
-            {
-                var valueNames = masterController.GetValueNames();
+            var records = masterController.Records;
 
+            var valueNames = masterController.GetValueNames();
+
+            foreach (var record in records)
+            {
                 foreach (var valueName in valueNames)
                 {
                     var value = masterController.GetValue(record, valueName);
@@ -297,10 +399,52 @@ namespace Modules.Devkit.MasterViewer
                             break;
                         }
                     }
-                }                
+                }
             }
 
-            return list.ToArray();
+            searchedRecords = list.ToArray();
+        }
+
+
+        private object[] GetDisplayRecords()
+        {
+            var records = masterController.Records;
+
+            // 検索.
+
+            UpdateSearchedRecords();
+
+            if (searchedRecords != null)
+            {
+                records = searchedRecords;
+            }
+
+            // ページング.
+
+            UpdatePageRecords(records);
+
+            if (pageRecords.Count < page)
+            {
+                records = pageRecords[page];
+            }
+
+            return records;
+        }
+
+        private void UpdateMaxWidth()
+        {
+            var maxWidth = 0f;
+
+            var valueNames = masterController.GetValueNames();
+
+            for (var i = 0; i < valueNames.Length; i++)
+            {
+                maxWidth += masterController.FieldWidth[i] + 3f;
+            }
+
+            maxWidth += recordScrollView.VerticalScrollBarStyle.fixedWidth;
+
+            maxSize = new Vector2(maxWidth, maxSize.y);
         }
 
         public IObservable<Unit> OnChangeRecordAsObservable()
@@ -339,7 +483,7 @@ namespace Modules.Devkit.MasterViewer
             var valueNames = masterController.GetValueNames();
 
             var fieldAreaInfos = new List<Tuple<Rect, string>>();
-           
+
             using (new EditorGUILayout.HorizontalScope())
             {
                 for (var i = 0; i < valueNames.Length; i++)
