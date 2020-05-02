@@ -75,8 +75,6 @@ namespace Modules.Devkit.HierarchyComponentIcon
 
         private GUIContent missingIconGUIContent = null;
 
-        private int missingUpdateCounter = 0;
-
         private bool initialized = false;
 
         //----- property -----
