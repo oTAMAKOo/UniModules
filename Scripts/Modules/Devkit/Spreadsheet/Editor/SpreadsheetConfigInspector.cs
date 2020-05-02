@@ -1,11 +1,8 @@
-﻿﻿
+﻿
+#if ENABLE_GOOGLE_GDATA
+
 using UnityEngine;
 using UnityEditor;
-using System;
-using System.Linq;
-using System.Collections.Generic;
-using UniRx;
-using Extensions;
 using Extensions.Devkit;
 
 namespace Modules.Devkit.Spreadsheet
@@ -60,3 +57,5 @@ namespace Modules.Devkit.Spreadsheet
         }
     }
 }
+
+#endif

@@ -1,13 +1,11 @@
-﻿﻿﻿
+﻿
+#if ENABLE_GOOGLE_GDATA
+
 using UnityEngine;
-using UnityEditor;
-using Unity.Linq;
 using System;
 using System.Linq;
 using System.Collections.Generic;
-using Extensions;
 using Modules.Devkit.Prefs;
-using UniRx;
 using Google.GData.Client;
 using Google.GData.Spreadsheets;
 
@@ -227,3 +225,5 @@ namespace Modules.Devkit.Spreadsheet
         }
     }
 }
+
+#endif

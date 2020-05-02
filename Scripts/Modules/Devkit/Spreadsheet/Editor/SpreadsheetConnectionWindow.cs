@@ -1,13 +1,8 @@
-﻿﻿﻿
+﻿
+#if ENABLE_GOOGLE_GDATA
+
 using UnityEngine;
 using UnityEditor;
-using UnityEditor.Callbacks;
-using System;
-using System.Linq;
-using System.Collections;
-using System.Collections.Generic;
-using UniRx;
-using Extensions;
 using Extensions.Devkit;
 
 namespace Modules.Devkit.Spreadsheet
@@ -99,3 +94,5 @@ namespace Modules.Devkit.Spreadsheet
         protected virtual void DrawGUI(){}
     }
 }
+
+#endif

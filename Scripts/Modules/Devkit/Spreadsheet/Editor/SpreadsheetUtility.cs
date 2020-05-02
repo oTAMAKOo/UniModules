@@ -1,4 +1,6 @@
-﻿﻿﻿
+﻿
+#if ENABLE_GOOGLE_GDATA
+
 using System;
 using System.Text.RegularExpressions;
 
@@ -74,3 +76,5 @@ namespace Modules.Devkit.Spreadsheet
         }
     }
 }
+
+#endif

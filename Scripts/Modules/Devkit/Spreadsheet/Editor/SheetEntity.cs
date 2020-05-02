@@ -1,10 +1,11 @@
-﻿﻿﻿
+﻿
+#if ENABLE_GOOGLE_GDATA
+
 using System;
 using System.Linq;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using Google.GData.Spreadsheets;
-using UniRx;
 
 namespace Modules.Devkit.Spreadsheet
 {
@@ -111,3 +112,5 @@ namespace Modules.Devkit.Spreadsheet
         }
     }
 }
+
+#endif
