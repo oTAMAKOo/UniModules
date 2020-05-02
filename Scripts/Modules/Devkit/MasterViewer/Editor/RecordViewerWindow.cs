@@ -236,7 +236,12 @@ namespace Modules.Devkit.MasterViewer
 
                     GUILayout.Space(10f);
 
-                    GUILayout.Space(recordScrollView.VerticalScrollBarStyle.fixedWidth);
+                    var verticalScrollBarStyle = recordScrollView.GetVerticalScrollBarStyle();
+
+                    if (verticalScrollBarStyle != null)
+                    {
+                        GUILayout.Space(verticalScrollBarStyle.fixedWidth);
+                    }
                 }
 
                 scrollPosition = new Vector2(recordScrollView.ScrollPosition.x, 0f);
@@ -442,8 +447,13 @@ namespace Modules.Devkit.MasterViewer
                 maxWidth += masterController.FieldWidth[i] + 3f;
             }
 
-            maxWidth += recordScrollView.VerticalScrollBarStyle.fixedWidth;
+            var verticalScrollBarStyle = recordScrollView.GetVerticalScrollBarStyle();
 
+            if (verticalScrollBarStyle != null)
+            {
+                maxWidth += verticalScrollBarStyle.fixedWidth;
+            }
+            
             maxSize = new Vector2(maxWidth, maxSize.y);
         }
 

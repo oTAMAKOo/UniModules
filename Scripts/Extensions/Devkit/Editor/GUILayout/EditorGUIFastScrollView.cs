@@ -69,11 +69,7 @@ namespace Extensions.Devkit
         public bool HideHorizontalScrollBar { get; set; }
 
         public bool HideVerticalScrollBar { get; set; }
-
-        public GUIStyle HorizontalScrollBarStyle { get; set; }
-
-        public GUIStyle VerticalScrollBarStyle { get; set; }
-
+       
         public bool AlwaysShowHorizontalScrollBar { get; set; }
 
         public bool AlwaysShowVerticalScrollBar { get; set; }
@@ -95,9 +91,6 @@ namespace Extensions.Devkit
 
             HideHorizontalScrollBar = false;
             HideVerticalScrollBar = false;
-
-            HorizontalScrollBarStyle = GUI.skin.horizontalScrollbar;
-            VerticalScrollBarStyle = GUI.skin.verticalScrollbar;
 
             AlwaysShowHorizontalScrollBar = false;
             AlwaysShowVerticalScrollBar = false;
@@ -253,9 +246,9 @@ namespace Extensions.Devkit
 
             var isRepaintEvent = eventType == EventType.Repaint;
             
-            var horizontalScrollBarStyle = HideHorizontalScrollBar ? GUIStyle.none : HorizontalScrollBarStyle;
+            var horizontalScrollBarStyle = HideHorizontalScrollBar ? GUIStyle.none : GetHorizontalScrollBarStyle();
 
-            var verticalScrollBarStyle = HideVerticalScrollBar ? GUIStyle.none : VerticalScrollBarStyle;
+            var verticalScrollBarStyle = HideVerticalScrollBar ? GUIStyle.none : GetVerticalScrollBarStyle();
 
             // スクロール領域計測用.
             using (var scrollViewLayoutScope = new EditorGUILayout.VerticalScope())
@@ -397,6 +390,16 @@ namespace Extensions.Devkit
             {
                 onRepaintRequest.OnNext(Unit.Default);
             }
+        }
+
+        public virtual GUIStyle GetHorizontalScrollBarStyle()
+        {
+            return GUI.skin.horizontalScrollbar;
+        }
+
+        public virtual GUIStyle GetVerticalScrollBarStyle()
+        {
+            return GUI.skin.verticalScrollbar;
         }
 
         /// <summary> コンテンツが更新された時のイベント </summary>
