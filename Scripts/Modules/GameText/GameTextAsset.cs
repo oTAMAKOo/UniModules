@@ -10,6 +10,6 @@ namespace Modules.GameText.Components
         [SerializeField, ReadOnly]
         public LongNullable updateTime = null;
         [SerializeField, ReadOnly]
-        public GameTextDictionary[] contents = new GameTextDictionary[0];
+        public GameText.GameTextDictionary[] contents = new GameText.GameTextDictionary[0];
     }
 }

@@ -1,58 +1,138 @@
-﻿﻿﻿
+﻿
 using UnityEngine;
 using UnityEditor;
-using Extensions.Serialize;
+using Extensions;
 using Modules.Devkit.ScriptableObjects;
 
 namespace Modules.GameText.Editor
 {
-	public class GameTextConfig : ReloadableScriptableObject<GameTextConfig>
+	public sealed class GameTextConfig : ReloadableScriptableObject<GameTextConfig>
     {
         //----- params -----
 
+        /// <summary> レコード格納フォルダ名 </summary>
+        public const string RecordFolderName = "Records";
+
+        /// <summary> シートファイル拡張子 </summary>
+        public const string SheetFileExtension = ".sheet";
+
+        /// <summary> レコードファイル拡張子 </summary>
+        public const string RecordFileExtension = ".record";
+
         //----- field -----
 
+        [SerializeField]
+        private FileSystem.Format fileFormat = FileSystem.Format.Yaml;
+        [SerializeField]
+        private string workspaceFolder = string.Empty;
+        [SerializeField]
+        private string excelFileName = string.Empty;
         [SerializeField]
         private UnityEngine.Object tableScriptFolder = null;
         [SerializeField]
         private UnityEngine.Object enumScriptFolder = null;
         [SerializeField]
         private UnityEngine.Object scriptableObjectFolder = null;
-        [SerializeField]
-        private string spreadsheetId = string.Empty;
-        [SerializeField]
-        private string[] ignoreSheets = new string[0];
 
-        [SerializeField]
-        private IntNullable sheetDefinitionRow = null;
-        [SerializeField]
-        private IntNullable sheetIdColumn = null;
-        [SerializeField]
-        private IntNullable sheetNameColumn = null;
+        #pragma warning disable 414
 
+        [Header("Windows")]
         [SerializeField]
-        private IntNullable definitionStartRow = null;
+        private string windowsImporterFileName = null;
         [SerializeField]
-        private IntNullable idColumn = null;
+        private string windowsExporterFileName = null;
+
+        [Header("Mac")]
         [SerializeField]
-        private IntNullable enumColumn = null;
+        private string osxImporterFileName = null;
+        [SerializeField]
+        private string osxExporterFileName = null;
+
+        #pragma warning restore 414
 
         //----- property -----
 
+        public FileSystem.Format FileFormat { get { return fileFormat; } }
+        
         public string TableScriptFolderPath { get { return AssetDatabase.GetAssetPath(tableScriptFolder); } }
+
         public string EnumScriptFolderPath { get { return AssetDatabase.GetAssetPath(enumScriptFolder); } }
+
         public string ScriptableObjectFolderPath { get { return AssetDatabase.GetAssetPath(scriptableObjectFolder); } }
-        public string SpreadsheetId { get { return spreadsheetId; } }
-        public string[] IgnoreSheets { get { return ignoreSheets; } }
-
-        public IntNullable SheetDefinitionRow { get { return sheetDefinitionRow; } }
-        public IntNullable SheetIdColumn { get { return sheetIdColumn; } }
-        public IntNullable SheetNameColumn { get { return sheetNameColumn; } }
-
-        public IntNullable DefinitionStartRow { get { return definitionStartRow; } }
-        public IntNullable IdColumn { get { return idColumn; } }
-        public IntNullable EnumColumn { get { return enumColumn; } }
 
         //----- method -----
+
+        public string GetGameTextWorkspacePath()
+        {
+            var projectFolder = UnityPathUtility.GetProjectFolderPath();
+
+            var workspacePath = PathUtility.RelativePathToFullPath(projectFolder, workspaceFolder);
+
+            return workspacePath;
+        }
+
+        public string GetSheetFileExtension() { return SheetFileExtension; }
+
+        public string GetRecordFileExtension() { return RecordFileExtension; }
+
+        public string GetExcelPath()
+        {
+            var workspacePath = GetGameTextWorkspacePath();
+
+            return PathUtility.Combine(workspacePath, excelFileName);
+        }
+
+        public string GetRecordFolderPath()
+        {
+            var workspacePath = GetGameTextWorkspacePath();
+
+            return PathUtility.Combine(workspacePath, RecordFolderName);
+        }
+
+        public string GetImporterPath()
+        {
+            var workspacePath = GetGameTextWorkspacePath();
+
+            var fileName = string.Empty;
+
+            #if UNITY_EDITOR_WIN
+
+            fileName = windowsImporterFileName;
+
+            #endif
+
+            #if UNITY_EDITOR_OSX
+
+            fileName = osxImporterFileName;
+
+            #endif
+
+            if (string.IsNullOrEmpty(fileName)) { return null; }
+
+            return PathUtility.Combine(workspacePath, fileName);
+        }
+
+        public string GetExporterPath()
+        {
+            var workspacePath = GetGameTextWorkspacePath();
+
+            var fileName = string.Empty;
+
+            #if UNITY_EDITOR_WIN
+
+            fileName = windowsExporterFileName;
+
+            #endif
+
+            #if UNITY_EDITOR_OSX
+
+            fileName = oscExporterFileName;
+
+            #endif
+
+            if (string.IsNullOrEmpty(fileName)) { return null; }
+
+            return PathUtility.Combine(workspacePath, fileName);
+        }
     }
 }

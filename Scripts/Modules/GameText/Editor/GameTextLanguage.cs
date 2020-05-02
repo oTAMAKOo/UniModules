@@ -1,10 +1,4 @@
 ﻿
-using UnityEngine;
-using System;
-using System.Linq;
-using System.Collections.Generic;
-using UniRx;
-using Extensions;
 using Modules.Devkit.Prefs;
 
 namespace Modules.GameText.Editor
@@ -20,6 +14,20 @@ namespace Modules.GameText.Editor
             }
         }
 
-        public static GameTextGenerateInfo[] GameTextInfos { get; set; }
+        public sealed class Info
+        {
+            public string Language { get; private set; }
+            public string AssetPath { get; private set; }
+            public int TextIndex { get; private set; }
+
+            public Info(string language, string assetPath, int textIndex)
+            {
+                Language = language;
+                AssetPath = assetPath;
+                TextIndex = textIndex;
+            }
+        }
+
+        public static Info[] Infos { get; set; }
     }
 }

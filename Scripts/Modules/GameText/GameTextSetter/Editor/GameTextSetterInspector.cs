@@ -18,7 +18,7 @@ namespace Modules.GameText.Components
 
         //----- field -----
 
-        private GameTextCategory? gameTextCategory = null;
+        private string categoryGuid = null;
 
         private GameTextSetter instance = null;
 
@@ -52,25 +52,45 @@ namespace Modules.GameText.Components
 
             Current = this;
 
-            EditorGUILayout.Separator();
+            GUILayout.Space(5f);
 
+            var gameText = GameText.Instance;
+            
             using (new EditorGUILayout.HorizontalScope())
             {
-                var categories = Enum.GetValues(typeof(GameTextCategory)).Cast<GameTextCategory>().OrderBy(x => (int)x).ToList();
+                var categoryType = gameText.GetCategoriesType();
 
-                var categoryIndex = categories.FindIndex(x => x == instance.Category);
+                var categories = Enum.GetValues(categoryType).Cast<Enum>().ToList();
+
+                var categoryIndex = 0;
+
+                for (var i = 0; i < categories.Count; i++)
+                {
+                    var categoryGuid = gameText.FindCategoryGuid(categories[i]);
+
+                    if (categoryGuid == instance.CategoryGuid)
+                    {
+                        // Noneが入るので1ずれる.
+                        categoryIndex = i + 1;
+                        break;
+                    }
+                }
 
                 var categoryLabels = categories.Select(x => x.ToLabelName());
-                var labels = categoryLabels.ToArray();
 
-                var currentCategoryIndex = EditorGUILayout.Popup("GameText", categoryIndex, labels);
+                var labels = new List<string> { "None" };
+
+                labels.AddRange(categoryLabels);
+
+                var currentCategoryIndex = EditorGUILayout.Popup("GameText", categoryIndex, labels.ToArray());
 
                 if (categoryIndex != currentCategoryIndex)
                 {
                     UnityEditorUtility.RegisterUndo("GameTextSetterInspector-Undo", instance);
+
                     categoryIndex = currentCategoryIndex;
 
-                    instance.SetCategory(categories[categoryIndex]);
+                    instance.ChangeCategory(1 <= categoryIndex ? categories[categoryIndex - 1] : null);
                 }
 
                 using (new DisableScope(categoryIndex == 0 || GameText.Instance.Cache == null))
@@ -86,21 +106,14 @@ namespace Modules.GameText.Components
 
             GUILayout.Space(2f);
 
-            if (gameTextCategory.HasValue)
+            if (categoryGuid != instance.CategoryGuid)
             {
-                if (gameTextCategory.Value != instance.Category)
-                {
-                    OnGameTextSetterCategoryChanged(instance.Category);
-                }
-            }
-            else
-            {
-                OnGameTextSetterCategoryChanged(instance.Category);
+                OnGameTextSetterCategoryChanged(instance.CategoryGuid);
             }
 
-            gameTextCategory = instance.Category;
+            categoryGuid = instance.CategoryGuid;
 
-            if (instance.Category == GameTextCategory.None)
+            if (string.IsNullOrEmpty(instance.CategoryGuid))
             {
                 using (new EditorGUILayout.HorizontalScope())
                 {
@@ -145,9 +158,9 @@ namespace Modules.GameText.Components
             }
         }
 
-        private void OnGameTextSetterCategoryChanged(GameTextCategory category)
+        private void OnGameTextSetterCategoryChanged(string categoryGuid)
         {
-            if (category != GameTextCategory.None)
+            if (string.IsNullOrEmpty(categoryGuid))
             {
                 Reflection.InvokePrivateMethod(instance, "SetDevelopmentText", new object[] { null });               
             }

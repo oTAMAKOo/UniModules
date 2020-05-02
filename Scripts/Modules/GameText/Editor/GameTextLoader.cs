@@ -34,7 +34,7 @@ namespace Modules.GameText.Editor
                 GameText.CreateInstance();
             }
 
-            var gameTextInfo = GameTextLanguage.GameTextInfos.ElementAtOrDefault(GameTextLanguage.Prefs.selection);
+            var gameTextInfo = GameTextLanguage.Infos.ElementAtOrDefault(GameTextLanguage.Prefs.selection);
 
             if (gameTextInfo != null)
             {

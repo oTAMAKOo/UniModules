@@ -1,8 +1,8 @@
 ﻿﻿﻿﻿
+using System;
 using UnityEngine;
 using UnityEngine.UI;
 using Extensions;
-using Extensions.Serialize;
 
 namespace Modules.GameText.Components
 {
@@ -15,9 +15,9 @@ namespace Modules.GameText.Components
         //----- field -----
 
         [SerializeField]
-        private GameTextCategory category = GameTextCategory.None;
+        private string categoryGuid = null;
         [SerializeField]
-        private IntNullable identifier = new IntNullable(0);
+        private string textGuid = null;
         [SerializeField]
         private string content = null;
 
@@ -25,8 +25,10 @@ namespace Modules.GameText.Components
 
         //----- property -----
 
-        public GameTextCategory Category { get { return category; } }
-        public IntNullable Identifier { get { return identifier; } }
+        public string CategoryGuid { get { return categoryGuid; } }
+
+	    public string TextGuid { get { return textGuid; } }
+
         public string Content { get { return content; } }
 
         //----- method -----
@@ -46,18 +48,29 @@ namespace Modules.GameText.Components
             }
         }
 
-        public void SetCategory(GameTextCategory newCategory)
+        public void ChangeCategory(Enum newCategory)
         {
-            if (category != newCategory)
+            var gameText = GameText.Instance;
+
+            if (gameText == null) { return; }
+            
+            var newCategoryGuid = gameText.FindCategoryGuid(newCategory);
+
+            if (categoryGuid != newCategoryGuid)
             {
-                category = newCategory;
-                SetCategoryId(null);
+                categoryGuid = newCategoryGuid;
+                SetText(null);
             }
         }
 
-        public void SetCategoryId(int? id)
+        public void SetText(Enum textType)
         {
-            identifier = id;
+            var gameText = GameText.Instance;
+
+            if (gameText == null) { return; }
+
+            textGuid = textType == null ? null : gameText.FindTextGuid(textType);
+
             content = string.Empty;
 
             ApplyText(content);
@@ -77,13 +90,20 @@ namespace Modules.GameText.Components
 
         private void ApplyGameText()
         {
-            if (!GameText.Exists) { return; }
+            var gameText = GameText.Instance;
 
-            if (GameText.Instance.Cache == null) { return; }
+            if (gameText == null) { return; }
 
-            if (category == GameTextCategory.None || !identifier.HasValue) { return; }
+            if (gameText.Cache == null) { return; }
 
-            content = GameText.Instance.Find(category, identifier.Value);
+            if (string.IsNullOrEmpty(textGuid))
+            {
+                content = string.Empty;
+            }
+            else
+            {
+                content = gameText.Cache.GetValueOrDefault(textGuid);
+            }
 
             ApplyText(content);
         }

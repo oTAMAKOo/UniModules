@@ -1,39 +1,51 @@
-﻿﻿
+﻿
 using UnityEngine;
 using System;
 using System.Linq;
 using System.Collections.Generic;
-using UniRx;
+using System.Security.Cryptography;
 using Extensions;
+using Extensions.Serialize;
 using Modules.GameText.Components;
 
 namespace Modules.GameText
 {
-    public sealed partial class GameText : Singleton<GameText>
+    public sealed partial class GameText : GameTextBase<GameText>
     {
         //----- params -----
 
+        public const string AESKey = "8FweHH7BpESL2eJUtntTFCM3ZVx3B3JT";
+        public const string AESIv = "AizA3xRfstJfPtpI";
+
+        [Serializable]
+        public sealed class GameTextDictionary : SerializableDictionary<string, string> { }
+
         //----- field -----
-        
+
         //----- property -----
 
-        public Dictionary<int, GameTextDictionary> Cache { get; private set; }
+        public Dictionary<string, string> Cache { get; private set; }
 
         //----- method -----
 
         private GameText()
         {
-            Cache = null;
+            BuildGenerateContents();
+
+            Cache = new Dictionary<string, string>();
         }
 
         public void Load(GameTextAsset asset)
         {
-            Cache = null;
+            Cache.Clear();
 
-            if (asset != null)
-            {
-                Cache = asset.contents.ToDictionary(x => x.SheetId);
-            }
+            if (asset == null) { return; }
+
+            var aesManaged = AESExtension.CreateAesManaged(AESKey, AESIv);
+
+            Cache = asset.contents
+                .SelectMany(x =>  x)
+                .ToDictionary(x => x.Key, x => x.Value.Decrypt(aesManaged));
         }
 
         public void LoadFromResources(string assetPath)
@@ -43,40 +55,6 @@ namespace Modules.GameText
             var asset = Resources.Load<GameTextAsset>(resourcesPath);
 
             Load(asset);
-        }
-
-        // ※ SheetIdがGameTextCategoryのEnumIDとして登録されている.
-
-        public string Find(GameTextCategory category, int enumValue)
-        {
-            if (Instance == null) { return null; }
-
-            if (Instance.Cache == null) { return null; }
-
-            if (category != GameTextCategory.None)
-            {
-                var texts = Instance.Cache.GetValueOrDefault((int)category);
-
-                return texts != null ? texts.GetValueOrDefault(enumValue, null) : null;
-            }
-
-            return null;
-        }
-
-        public static string Get(Enum id)
-        {
-            if(Instance == null) { return null; }
-
-            var category = Instance.CategoryTable.GetValueOrDefault(id.GetType(), GameTextCategory.None);
-
-            if (category != GameTextCategory.None)
-            {
-                var texts = Instance.Cache.GetValueOrDefault((int)category);
-
-                return texts != null ? texts.GetValueOrDefault(int.Parse(id.ToString("d")), null) : null;
-            }
-
-            return null;
         }
     }
 }

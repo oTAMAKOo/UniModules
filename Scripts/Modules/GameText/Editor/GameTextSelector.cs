@@ -19,13 +19,13 @@ namespace Modules.GameText.Components
 
         private class SelectionInfo
         {
-            public int Id { get; set; }
+            public string TextGuid { get; set; }
             public string Name { get; set; }
             public string Text { get; set; }
 
-            public SelectionInfo(int id, string name, string text)
+            public SelectionInfo(string textGuid, string name, string text)
             {
-                Id = id;
+                TextGuid = textGuid;
                 Name = name;
                 Text = text;
             }
@@ -33,7 +33,7 @@ namespace Modules.GameText.Components
 
         //----- field -----
 
-        private GameTextCategory category = GameTextCategory.None;
+        private string categoryGuid = null;
         private Vector2 scrollPos = Vector2.zero;
         private string searchText = null;
         private IDisposable disposable = null;
@@ -48,11 +48,23 @@ namespace Modules.GameText.Components
 
         public static void Open()
         {
-            if (instance == null)
+            if (instance != null)
             {
-                instance = DisplayWizard<GameTextSelector>("GameTextSelector");
-                instance.Initialize();
+                instance.Close();
+                instance = null;
             }
+
+            var gameText = GameText.Instance;
+            
+            var setter = GameTextSetterInspector.Current.Instance;
+
+            var category = gameText.FindCategoryDefinitionEnum(setter.CategoryGuid);
+
+            var titleText = string.Format("GameTextSelector : {0}", category.ToLabelName());
+
+            instance = DisplayWizard<GameTextSelector>(titleText);
+
+            instance.Initialize();
         }
 
         private void Initialize()
@@ -83,53 +95,16 @@ namespace Modules.GameText.Components
                 return;
             }
 
+            var gameText = GameText.Instance;
+
             var setter = GameTextSetterInspector.Current.Instance;
 
             if (setter == null) { return; }
 
-            if(category != setter.Category)
+            if(categoryGuid != setter.CategoryGuid)
             {
                 BuildSelectionInfos();
             }
-
-            GUILayout.Space(12f);
-
-            GUILayout.BeginHorizontal(GUILayout.MinHeight(20f));
-            {
-                GUILayout.FlexibleSpace();
-
-                GUILayout.BeginHorizontal();
-                {
-                    string before = searchText;
-                    string after = EditorGUILayout.TextField(string.Empty, before, "SearchTextField", GUILayout.Width(200f));
-
-                    if (before != after)
-                    {
-                        searchText = after;
-                        scrollPos = Vector2.zero;
-                    }
-
-                    if (GUILayout.Button(string.Empty, "SearchCancelButton", GUILayout.Width(18f)))
-                    {
-                        searchText = string.Empty;
-                        GUIUtility.keyboardControl = 0;
-                        scrollPos = Vector2.zero;
-                    }
-                }
-                GUILayout.EndHorizontal();
-
-                GUILayout.Space(15f);
-
-                if (GUILayout.Button("Clear", GUILayout.Width(70f), GUILayout.Height(16f)))
-                {
-                    setter.SetCategoryId(null);
-                }
-
-                GUILayout.Space(10f);
-            }
-            GUILayout.EndHorizontal();
-
-            GUILayout.Space(5f);
 
             if (selectionCache.Any())
             {
@@ -137,72 +112,116 @@ namespace Modules.GameText.Components
 
                 var infos = GetMatchOfList();
 
-                using (new EditorGUILayout.VerticalScope())
+                var categoryTexts = gameText.FindCategoryTexts(setter.CategoryGuid);
+
+                // Toolbar.
+
+                using (new EditorGUILayout.HorizontalScope(EditorStyles.toolbar, GUILayout.Height(15f)))
                 {
-                    EditorLayoutTools.DrawLabelWithBackground("Category : " + setter.Category.ToLabelName(), new Color(0.2f, 0.5f, 0.2f));
+                    // クリア.
 
-                    using (var scrollViewScope = new EditorGUILayout.ScrollViewScope(scrollPos))
+                    if (GUILayout.Button("Clear", EditorStyles.toolbarButton))
                     {
-                        foreach (var info in infos)
+                        setter.SetText(null);
+                    }
+
+                    GUILayout.FlexibleSpace();
+
+                    // 検索.
+
+                    Action<string> onChangeSearchText = x =>
+                    {
+                        searchText = x;
+
+                        EditorApplication.delayCall += () =>
                         {
-                            GUILayout.Space(-1f);
+                            Repaint();
+                        };
+                    };
 
-                            var highlight = setter.Identifier.ToNullable() == info.Id;
+                    Action onSearchCancel = () =>
+                    {
+                        searchText = string.Empty;
 
-                            var originBackgroundColor = GUI.backgroundColor;
+                        EditorApplication.delayCall += () =>
+                        {
+                            Repaint();
+                        };
+                    };
 
-                            using (new BackgroundColorScope(highlight ? new Color(0.9f, 1f, 0.9f) : new Color(0.95f, 0.95f, 0.95f)))
+                    EditorLayoutTools.DrawDelayedToolbarSearchTextField(searchText, onChangeSearchText, onSearchCancel, GUILayout.Width(250f));
+                }
+
+                EditorGUILayout.Separator();
+
+                // Contents.
+
+                using (var scrollViewScope = new EditorGUILayout.ScrollViewScope(scrollPos))
+                {
+                    foreach (var info in infos)
+                    {
+                        GUILayout.Space(-1f);
+
+                        var highlight = setter.TextGuid == info.TextGuid;
+
+                        var originBackgroundColor = GUI.backgroundColor;
+
+                        using (new BackgroundColorScope(highlight ? new Color(0.9f, 1f, 0.9f) : new Color(0.95f, 0.95f, 0.95f)))
+                        {
+                            var size = EditorStyles.label.CalcSize(new GUIContent(info.Text));
+
+                            size.y += 6f;
+
+                            using (new EditorGUILayout.HorizontalScope(EditorLayoutTools.TextAreaStyle, GUILayout.Height(size.y)))
                             {
-                                var size = EditorStyles.label.CalcSize(new GUIContent(info.Text));
-
-                                size.y += 6f;
-
-                                using (new EditorGUILayout.HorizontalScope(EditorLayoutTools.TextAreaStyle, GUILayout.Height(size.y)))
+                                var labelStyle = new GUIStyle("IN TextField")
                                 {
-                                    var labelStyle = new GUIStyle("IN TextField")
+                                    alignment = TextAnchor.MiddleLeft,
+                                };
+
+                                GUILayout.Space(10f);
+                                
+                                GUILayout.Label(info.Name, labelStyle, GUILayout.MinWidth(220f), GUILayout.Height(size.y));
+
+                                GUILayout.Label(info.Text, labelStyle, GUILayout.MaxWidth(500f), GUILayout.Height(size.y));
+
+                                GUILayout.FlexibleSpace();
+
+                                using (new EditorGUILayout.VerticalScope())
+                                {
+                                    var buttonHeight = 18f;
+
+                                    GUILayout.Space((size.y - buttonHeight) * 0.5f);
+
+                                    using (new BackgroundColorScope(originBackgroundColor))
                                     {
-                                        alignment = TextAnchor.MiddleLeft,
-                                    };
-
-                                    GUILayout.Space(10f);
-
-                                    GUILayout.Label(info.Id.ToString(), labelStyle, GUILayout.MinWidth(65f), GUILayout.Height(size.y));
-
-                                    GUILayout.Label(info.Name, labelStyle, GUILayout.MinWidth(220f), GUILayout.Height(size.y));
-
-                                    GUILayout.Label(info.Text, labelStyle, GUILayout.MaxWidth(500f), GUILayout.Height(size.y));
-
-                                    GUILayout.FlexibleSpace();
-
-                                    using (new EditorGUILayout.VerticalScope())
-                                    {
-                                        var buttonHeight = 20f;
-
-                                        GUILayout.Space((size.y - buttonHeight) * 0.5f);
-
-                                        using (new BackgroundColorScope(originBackgroundColor))
+                                        if (GUILayout.Button("Select", GUILayout.Width(75f), GUILayout.Height(buttonHeight)))
                                         {
-                                            if (GUILayout.Button("Select", GUILayout.Width(75f), GUILayout.Height(buttonHeight)))
+                                            UnityEditorUtility.RegisterUndo("GameTextSelector-Select", setter);
+
+                                            var textInfo = categoryTexts.FirstOrDefault(x => x.Value == info.TextGuid);
+
+                                            if (!textInfo.Equals(default(KeyValuePair<Enum, string>)))
                                             {
-                                                UnityEditorUtility.RegisterUndo("GameTextSelector-Select", setter);
-                                                setter.SetCategoryId(info.Id);
+                                                setter.SetText(textInfo.Key);
                                                 setterInspector.Repaint();
 
                                                 Close();
                                             }
                                         }
-
-                                        GUILayout.Space((size.y - buttonHeight) * 0.5f);
                                     }
 
-                                    GUILayout.Space(8f);
+                                    GUILayout.Space((size.y - buttonHeight) * 0.5f);
                                 }
+
+                                GUILayout.Space(8f);
                             }
                         }
-
-                        scrollPos = scrollViewScope.scrollPosition;
                     }
+
+                    scrollPos = scrollViewScope.scrollPosition;
                 }
+                
             }
             else
             {
@@ -212,13 +231,24 @@ namespace Modules.GameText.Components
 
         private void BuildSelectionInfos()
         {
-            category = GameTextSetterInspector.Current.Instance.Category;
+            var gameText = GameText.Instance;
 
-            var categoryTable = Reflection.GetPrivateField<GameText, Dictionary<Type, GameTextCategory>>(GameText.Instance, "CategoryTable");
-            var gameTexts = GameText.Instance.Cache.GetValueOrDefault((int)category);
-            var enumType = categoryTable.Where(x => x.Value == category).Select(x => x.Key).FirstOrDefault();
+            categoryGuid = GameTextSetterInspector.Current.Instance.CategoryGuid;
 
-            selectionCache = gameTexts.Select(x => new SelectionInfo(x.Key, Enum.ToObject(enumType, x.Key).ToString(), x.Value)).ToArray();
+            var categoryTexts = gameText.FindCategoryTexts(categoryGuid);
+
+            var list = new List<SelectionInfo>();
+
+            foreach (var textData in categoryTexts)
+            {
+                var text = gameText.Cache.GetValueOrDefault(textData.Value);
+
+                var info = new SelectionInfo(textData.Value, textData.Key.ToString(), text);
+
+                list.Add(info);
+            }
+            
+            selectionCache = list.ToArray();
         }
 
         private SelectionInfo[] GetMatchOfList()
@@ -232,9 +262,7 @@ namespace Modules.GameText.Components
 
             foreach (var item in selectionCache)
             {
-                var isMatch = item.Id.ToString().IsMatch(keywords) ||
-                              item.Name.IsMatch(keywords) ||
-                              item.Text.IsMatch(keywords);
+                var isMatch = item.Name.IsMatch(keywords) || item.Text.IsMatch(keywords);
 
                 if (isMatch)
                 {

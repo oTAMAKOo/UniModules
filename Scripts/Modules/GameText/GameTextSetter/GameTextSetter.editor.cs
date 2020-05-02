@@ -64,7 +64,7 @@ namespace Modules.GameText.Components
 
             if (string.IsNullOrEmpty(developmentText)) { return; }
 
-            if (Category == GameTextCategory.None)
+            if (CategoryGuid == null)
             {
                 var text = GetDevelopmentText();
 

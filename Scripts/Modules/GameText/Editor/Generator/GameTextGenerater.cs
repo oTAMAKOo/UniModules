@@ -3,8 +3,8 @@ using UnityEngine;
 using UnityEditor;
 using System;
 using System.IO;
+using System.Collections.Generic;
 using System.Linq;
-using UniRx;
 using Extensions;
 using Modules.Devkit;
 using Modules.Devkit.Generators;
@@ -13,91 +13,139 @@ using Modules.GameText.Components;
 
 namespace Modules.GameText.Editor
 {
-    public class GameTextGenerateInfo
-    {
-        public string Language { get; private set; }
-        public string AssetPath { get; private set; }
-        public int TextColumn { get; private set; }
-
-        public GameTextGenerateInfo(string language, string assetPath, int textColumn)
-        {
-            Language = language;
-            AssetPath = assetPath;
-            TextColumn = textColumn;
-        }
-    }
-
     public static class GameTextGenerater
     {
-        public static void Generate(SpreadsheetConnector connector, GameTextGenerateInfo generateInfo)
+        //----- params -----
+
+        //----- field -----
+
+        //----- property -----
+
+        //----- method -----
+
+        public static void Generate(GameTextLanguage.Info languageInfo)
         {
-            if (generateInfo == null) { return; }
+            if (languageInfo == null) { return; }
 
-            var progressTitle = "Generate Progress";
-            var progressMessage = string.Empty;
+            var progressTitle = "Generate GameText";
+           
+            var config = GameTextConfig.Instance;
 
-            var gameTextConfig = GameTextConfig.Instance;
+            var gameTextAsset = LoadAsset(config.ScriptableObjectFolderPath, languageInfo.AssetPath);
 
-            progressMessage = "Connection Spreadsheet.";
-            EditorUtility.DisplayProgressBar(progressTitle, progressMessage, 0f);
+            // 読み込み.
 
-            var asset = LoadAsset(gameTextConfig.ScriptableObjectFolderPath, generateInfo.AssetPath);
+            EditorUtility.DisplayProgressBar(progressTitle, "Load contents.", 0f);
 
-            progressMessage = "Load GameText form Spreadsheet.";
-            EditorUtility.DisplayProgressBar(progressTitle, progressMessage, 0f);
+            var sheets = LoadSheetData(config);
 
-            // Spreadsheetに接続しデータを取得 (同期通信).
-            var spreadsheets = connector.GetSpreadsheet(gameTextConfig.SpreadsheetId).ToArray();
+            if (sheets == null) { return; }
 
-            EditorUtility.DisplayProgressBar(progressTitle, progressMessage, 1f);
+            var records = LoadRecordData(config);
 
-            if (spreadsheets.Any())
+            if (records == null) { return; }
+
+            if (records.Any())
             {
-                // 全更新するので最も最近編集されたシート情報から最終更新日を取得.
-                var spreadsheetsUpdateDate = spreadsheets.Select(x => x.LastUpdateDate).Max().ToUnixTime();
+                AssetDatabase.StartAssetEditing();
 
-                var lastUpdateDate = asset.updateTime.HasValue ? asset.updateTime.Value : DateTime.MinValue.ToUnixTime();
-
-                // ローカルデータが最新なら更新処理は行わない.
-                if (lastUpdateDate < spreadsheetsUpdateDate)
+                try
                 {
-                    AssetDatabase.StartAssetEditing();
+                    EditorUtility.DisplayProgressBar(progressTitle, "Generate script.", 0.25f);
 
-                    progressMessage = "Generating GameTextScript.";
-                    EditorUtility.DisplayProgressBar(progressTitle, progressMessage, 0f);
+                    CategoryScriptGenerator.Generate(sheets, config);
 
-                    GameTextScriptGenerator.Generate(spreadsheets, gameTextConfig, generateInfo.TextColumn);
+                    ContentsScriptGenerator.Generate(sheets, records, config, languageInfo.TextIndex);
 
-                    EditorUtility.DisplayProgressBar(progressTitle, progressMessage, 0.2f);
+                    GameTextScriptGenerator.Generate(sheets, config);
 
-                    progressMessage = "Generating GameTextAsset.";
-                    EditorUtility.DisplayProgressBar(progressTitle, progressMessage, 0.5f);
+                    EditorUtility.DisplayProgressBar(progressTitle, "Generate asset.", 0.5f);
 
-                    GameTextAssetGenerator.Build(asset, spreadsheets, gameTextConfig, generateInfo.TextColumn);
+                    GameTextAssetGenerator.Build(gameTextAsset, records, config, languageInfo.TextIndex);
 
-                    EditorUtility.DisplayProgressBar(progressTitle, progressMessage, 0.8f);
-
-                    EditorUtility.DisplayProgressBar(progressTitle, progressMessage, 1f);
+                    EditorUtility.DisplayProgressBar(progressTitle, "Complete.", 1f);
 
                     UnityConsole.Info("GameTextを出力しました");
 
-                    SaveLastUpdateDate(asset, spreadsheetsUpdateDate);
+                    SaveLastUpdateDate(gameTextAsset, DateTime.Now.ToUnixTime());
 
                     AssetDatabase.SaveAssets();
-
-                    AssetDatabase.StopAssetEditing();
                 }
-                else
+                finally
                 {
-                    UnityConsole.Info("GameTextは最新の状態です");
+                    AssetDatabase.StopAssetEditing();
+
+                    EditorUtility.ClearProgressBar();
                 }
             }
             else
             {
-                Debug.LogError("Spreadsheetにデータがありません.");
+                Debug.Log("GameText record not found.");
             }
 
             EditorUtility.ClearProgressBar();
+        }
+
+        private static SheetData[] LoadSheetData(GameTextConfig config)
+        {
+            var recordDirectory = config.GetRecordFolderPath();
+
+            var sheetFileExtension = config.GetSheetFileExtension();
+
+            if (!Directory.Exists(recordDirectory))
+            {
+                Debug.LogErrorFormat("Directory {0} not found.", recordDirectory);
+                return null;
+            }
+
+            var sheetFiles = Directory.EnumerateFiles(recordDirectory, "*.*", SearchOption.TopDirectoryOnly)
+                .Where(x => Path.GetExtension(x) == sheetFileExtension)
+                .ToArray();
+
+            var list = new List<SheetData>();
+
+            foreach (var sheetFile in sheetFiles)
+            {
+                var sheetData = FileSystem.LoadFile<SheetData>(sheetFile, config.FileFormat);
+
+                if (sheetData != null)
+                {
+                    list.Add(sheetData);
+                }
+            }
+
+            return list.ToArray();
+        }
+
+        private static RecordData[] LoadRecordData(GameTextConfig config)
+        {
+            var recordDirectory = config.GetRecordFolderPath();
+
+            var recordFileExtension = config.GetRecordFileExtension();
+
+            if (!Directory.Exists(recordDirectory))
+            {
+                Debug.LogErrorFormat("Directory {0} not found.", recordDirectory);
+                return null;
+            }
+
+            var recordFiles = Directory.EnumerateFiles(recordDirectory, "*.*", SearchOption.AllDirectories)
+                .Where(x => Path.GetExtension(x) == recordFileExtension)
+                .ToArray();
+
+            var list = new List<RecordData>();
+
+            foreach (var recordFile in recordFiles)
+            {
+                var recordData = FileSystem.LoadFile<RecordData>(recordFile, config.FileFormat);
+
+                if (recordData != null)
+                {
+                    list.Add(recordData);
+                }
+            }
+
+            return list.ToArray();
         }
 
         private static GameTextAsset LoadAsset(string assetFolderPath, string resourcesPath)
