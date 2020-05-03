@@ -32,7 +32,7 @@ namespace Modules.GameText.Editor
                 contents.Add(textContent);
             }
             
-            asset.SetContents(DateTime.Now.ToUnixTime(), contents.ToArray());
+            asset.SetContents(contents.ToArray());
 
             EditorUtility.SetDirty(asset);
         }

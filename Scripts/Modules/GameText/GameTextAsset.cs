@@ -34,17 +34,12 @@ namespace Modules.GameText.Components
     public sealed class GameTextAsset : ScriptableObject
 	{
         [SerializeField, ReadOnly]
-        private LongNullable updateTime = null;
-        [SerializeField, ReadOnly]
         private TextContent[] contents = new TextContent[0];
-
-        public long? UpdateTime { get { return updateTime; } }
 
 	    public IReadOnlyList<TextContent> Contents { get { return contents; } }
 
-        public void SetContents(long? updateTime, TextContent[] contents)
+        public void SetContents(TextContent[] contents)
         {
-            this.updateTime = updateTime;
             this.contents = contents;
         }
     }
