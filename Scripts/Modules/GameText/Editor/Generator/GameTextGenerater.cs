@@ -66,9 +66,7 @@ namespace Modules.GameText.Editor
                     EditorUtility.DisplayProgressBar(progressTitle, "Complete.", 1f);
 
                     UnityConsole.Info("GameTextを出力しました");
-
-                    SaveLastUpdateDate(gameTextAsset, DateTime.Now.ToUnixTime());
-
+                    
                     AssetDatabase.SaveAssets();
                 }
                 finally
@@ -162,12 +160,6 @@ namespace Modules.GameText.Editor
             }
 
             return asset;
-        }
-
-        private static void SaveLastUpdateDate(GameTextAsset asset, long lastUpdateDate)
-        {
-            asset.updateTime = lastUpdateDate;
-            EditorUtility.SetDirty(asset);
         }
     }
 }

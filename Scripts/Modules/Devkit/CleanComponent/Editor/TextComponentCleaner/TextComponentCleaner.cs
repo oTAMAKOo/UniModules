@@ -1,4 +1,5 @@
 ﻿
+using System;
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEditor;
@@ -8,6 +9,7 @@ using Extensions;
 using Modules.Devkit.Prefs;
 using Modules.GameText.Components;
 using Modules.UI.Extension;
+using TMPro;
 
 namespace Modules.Devkit.CleanComponent
 {
@@ -32,7 +34,9 @@ namespace Modules.Devkit.CleanComponent
 
         protected static void ModifyTextComponent(GameObject rootObject)
         {
-            var textComponents = rootObject.DescendantsAndSelf().OfComponent<Text>();
+            var gameObjects = rootObject.DescendantsAndSelf().ToArray();
+
+            var textComponents = gameObjects.OfComponent<Text>();
 
             foreach (var textComponent in textComponents)
             {
@@ -49,34 +53,59 @@ namespace Modules.Devkit.CleanComponent
 
                 EditorUtility.SetDirty(textComponent);
             }
+
+            var textMeshProComponents = gameObjects.OfComponent<TextMeshProUGUI>();
+
+            foreach (var textMeshProComponent in textMeshProComponents)
+            {
+                if (string.IsNullOrEmpty(textMeshProComponent.text)) { continue; }
+
+                textMeshProComponent.text = string.Empty;
+
+                var gameTextSetter = UnityUtility.GetComponent<GameTextSetter>(textMeshProComponent);
+
+                if (gameTextSetter != null)
+                {
+                    gameTextSetter.ImportText();
+                }
+
+                EditorUtility.SetDirty(textMeshProComponent);
+            }
         }
 
         protected static bool CheckExecute(GameObject[] gameObjects)
         {
-            var modify = gameObjects.SelectMany(x => x.DescendantsAndSelf().OfComponent<Text>())
-                .Where(x => !string.IsNullOrEmpty(x.text))
-                .Where(x =>
+            Func<GameObject, string, bool> checkContents = (go, text) =>
+            {
+                var execute = true;
+
+                var gameTextSetter = UnityUtility.GetComponent<GameTextSetter>(go);
+
+                if (gameTextSetter != null)
+                {
+                    if (gameTextSetter.Content == text)
                     {
-                        var execute = true;
+                        execute = false;
+                    }
 
-                        var gameTextSetter = UnityUtility.GetComponent<GameTextSetter>(x);
+                    if (gameTextSetter.GetDevelopmentText() == text)
+                    {
+                        execute = false;
+                    }
+                }
 
-                        if (gameTextSetter != null)
-                        {
-                            if (gameTextSetter.Content == x.text)
-                            {
-                                execute = false;
-                            }
+                return execute;
+            };
 
-                            if (gameTextSetter.GetDevelopmentText() == x.text)
-                            {
-                                execute = false;
-                            }
-                        }
+            var modify = false;
 
-                        return execute;
-                    })
-                .Any();
+            modify |= gameObjects.SelectMany(x => x.DescendantsAndSelf().OfComponent<Text>())
+                .Where(x => !string.IsNullOrEmpty(x.text))
+                .Any(x => checkContents(x.gameObject, x.text));
+
+            modify |= gameObjects.SelectMany(x => x.DescendantsAndSelf().OfComponent<TextMeshProUGUI>())
+                .Where(x => !string.IsNullOrEmpty(x.text))
+                .Any(x => checkContents(x.gameObject, x.text));
 
             if (modify)
             {

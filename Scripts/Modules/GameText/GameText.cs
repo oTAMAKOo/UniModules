@@ -5,7 +5,6 @@ using System.Linq;
 using System.Collections.Generic;
 using System.Security.Cryptography;
 using Extensions;
-using Extensions.Serialize;
 using Modules.GameText.Components;
 
 namespace Modules.GameText
@@ -17,10 +16,9 @@ namespace Modules.GameText
         public const string AESKey = "8FweHH7BpESL2eJUtntTFCM3ZVx3B3JT";
         public const string AESIv = "AizA3xRfstJfPtpI";
 
-        [Serializable]
-        public sealed class GameTextDictionary : SerializableDictionary<string, string> { }
-
         //----- field -----
+
+        private TextContent[] textContents = null;
 
         //----- property -----
 
@@ -43,9 +41,9 @@ namespace Modules.GameText
 
             var aesManaged = AESExtension.CreateAesManaged(AESKey, AESIv);
 
-            Cache = asset.contents
-                .SelectMany(x =>  x)
-                .ToDictionary(x => x.Key, x => x.Value.Decrypt(aesManaged));
+            textContents = asset.Contents.ToArray();
+
+            Cache = textContents.ToDictionary(x => x.Guid, x => x.Text.Decrypt(aesManaged));
         }
 
         public void LoadFromResources(string assetPath)
@@ -55,6 +53,11 @@ namespace Modules.GameText
             var asset = Resources.Load<GameTextAsset>(resourcesPath);
 
             Load(asset);
+        }
+
+        public TextContent FindTextContentInfo(string textGuid)
+        {
+            return textContents.FirstOrDefault(x => x.Guid == textGuid);
         }
     }
 }

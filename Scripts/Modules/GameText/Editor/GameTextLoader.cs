@@ -29,18 +29,14 @@ namespace Modules.GameText.Editor
 
         public static void Reload()
         {
-            if (!GameText.Exists)
-            {
-                GameText.CreateInstance();
-            }
+            var gameText = GameText.Instance;
 
             var gameTextInfo = GameTextLanguage.Infos.ElementAtOrDefault(GameTextLanguage.Prefs.selection);
 
-            if (gameTextInfo != null)
-            {
-                GameText.Instance.LoadFromResources(gameTextInfo.AssetPath);
-            }
+            if (gameTextInfo == null) { return; }
 
+            gameText.LoadFromResources(gameTextInfo.AssetPath);
+            
             var gameObjects = UnityEditorUtility.FindAllObjectsInHierarchy();
 
             foreach (var gameObject in gameObjects)

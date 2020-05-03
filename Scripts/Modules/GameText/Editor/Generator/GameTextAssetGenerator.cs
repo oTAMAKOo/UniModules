@@ -1,5 +1,6 @@
-﻿﻿﻿
-using System.Linq;
+﻿
+using UnityEditor;
+using System;
 using System.Collections.Generic;
 using Extensions;
 using Modules.GameText.Components;
@@ -16,30 +17,24 @@ namespace Modules.GameText.Editor
 
         //----- method -----
 
-        public static void Build(GameTextAsset asset, RecordData[] records, GameTextConfig config, int textColumn)
+        public static void Build(GameTextAsset asset, RecordData[] records, GameTextConfig config, int textIndex)
         {
             var aesManaged = AESExtension.CreateAesManaged(GameText.AESKey, GameText.AESIv);
 
-            var gameTextDictionarys = new List<GameText.GameTextDictionary>();
-
-            var recordGroupBySheet = records.GroupBy(x => x.sheet);
-
-            foreach (var sheetRecords in recordGroupBySheet)
+            var contents = new List<TextContent>();
+            
+            foreach (var record in records)
             {
-                var gameTextDictionary = new GameText.GameTextDictionary();
+                var text = record.texts[textIndex].Encrypt(aesManaged);
+
+                var textContent = new TextContent(record.guid, text, record.line);
                 
-                foreach (var sheetRecord in sheetRecords)
-                {
-                    var key = sheetRecord.guid;
-                    var value = sheetRecord.texts[textColumn].Encrypt(aesManaged);
-
-                    gameTextDictionary.Add(key, value);
-                }
-
-                gameTextDictionarys.Add(gameTextDictionary);
+                contents.Add(textContent);
             }
+            
+            asset.SetContents(DateTime.Now.ToUnixTime(), contents.ToArray());
 
-            asset.contents = gameTextDictionarys.ToArray();
+            EditorUtility.SetDirty(asset);
         }
     }
 }

@@ -2,11 +2,6 @@
 #if UNITY_EDITOR
 
 using UnityEngine;
-using UnityEngine.UI;
-using UnityEditor.Callbacks;
-using System;
-using System.Linq;
-using System.Collections.Generic;
 using System.Security.Cryptography;
 using Extensions;
 
@@ -43,7 +38,7 @@ namespace Modules.GameText.Components
                 aesManaged = AESExtension.CreateAesManaged(AESKey, AESIv);
             }
 
-            if (developmentText == null) { return string.Empty; }
+            if (string.IsNullOrEmpty(developmentText)) { return string.Empty; }
 
             return string.Format("{0}{1}", DevelopmentMark, developmentText.Decrypt(aesManaged));
         }
@@ -55,6 +50,7 @@ namespace Modules.GameText.Components
                 aesManaged = AESExtension.CreateAesManaged(AESKey, AESIv);
             }
 
+            // developmentTextがnullの時にだけInitializeDevelopmentTextで初期化を行うのでnullではなく空文字を入れる.
             developmentText = text == null ? string.Empty : text.Encrypt(aesManaged);
         }
 
@@ -64,12 +60,11 @@ namespace Modules.GameText.Components
 
             if (string.IsNullOrEmpty(developmentText)) { return; }
 
-            if (CategoryGuid == null)
-            {
-                var text = GetDevelopmentText();
+            if (!string.IsNullOrEmpty(categoryGuid)) { return; }
 
-                ApplyText(text);
-            }
+            var text = GetDevelopmentText();
+
+            ApplyText(text);
         }
     }
 }
