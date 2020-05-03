@@ -1,7 +1,6 @@
 ﻿﻿
 using UnityEngine;
 using System;
-using System.Collections;
 using System.Linq;
 using System.Collections.Generic;
 using UniRx;
@@ -37,8 +36,9 @@ namespace Modules.Window
 
         //----- property -----
 
-        public GameObject ParentInScene { get { return parentInScene.Parent; } }
-        public GameObject ParentGlobal { get { return parentGlobal.Parent; } }
+        public GameObject ParentInScene { get { return parentInScene != null ? parentInScene.Parent : null; } }
+
+        public GameObject ParentGlobal { get { return parentGlobal != null ? parentGlobal.Parent : null; } }
 
         //----- method -----
 

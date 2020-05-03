@@ -113,11 +113,22 @@ namespace Modules.GameText
 
             if (table == null) { return null; }
 
-            var item = table.Table.FirstOrDefault(x => x.Key == textType);
+            var item = table.Table.FirstOrDefault(x => x.Key.Equals(textType));
 
             if (item.Equals(default(KeyValuePair<Enum, string>))) { return null; }
 
             return item.Value;
+        }
+
+        private static string GetTextInternal(Enum textType)
+        {
+            if (Instance.Cache == null) { return null; }
+
+            var textGuid = Instance.FindTextGuid(textType);
+
+            if (string.IsNullOrEmpty(textGuid)) { return null; }
+
+            return Instance.Cache.GetValueOrDefault(textGuid);
         }
 
 #GETTEXT_METHODS#
@@ -127,13 +138,7 @@ namespace Modules.GameText
 
         private const string CategoryDefinitionTemplate = @"new CategoryDefinition(CategoryType.{0}, typeof(GameText.{0}), _{0}Table, ""{1}""),";
 
-        private const string GetMethodTemplate =
-@"
-		public static string Get(GameText.{0} textType)
-		{{
-		    return GameText.Instance.Cache.GetValueOrDefault(GameText.Instance.FindTextGuid(textType));
-		}}
-";
+        private const string GetMethodTemplate = @"public static string Get(GameText.{0} textType){{ return GetTextInternal(textType); }}";
 
         //----- field -----
 
