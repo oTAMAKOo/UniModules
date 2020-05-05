@@ -149,7 +149,7 @@ namespace Modules.GameText.Components
                         };
                     };
 
-                    EditorLayoutTools.DrawDelayedToolbarSearchTextField(searchText, onChangeSearchText, onSearchCancel, GUILayout.Width(250f));
+                    EditorLayoutTools.DrawToolbarSearchTextField(searchText, onChangeSearchText, onSearchCancel, GUILayout.Width(250f));
                 }
 
                 EditorGUILayout.Separator();
