@@ -37,6 +37,8 @@ namespace Modules.Devkit.MasterViewer
         private string searchText = null;
         private object[] searchedRecords = null;
 
+        private bool requestMaxWidthUpdate = false;
+
         private GUIStyle pagingTextFieldStyle = null;
         private GUIContent prevArrowIcon = null;
         private GUIContent nextArrowIcon = null;
@@ -64,7 +66,7 @@ namespace Modules.Devkit.MasterViewer
 
                 EditorApplication.delayCall += () =>
                 {
-                    window.UpdateMaxWidth();
+                    window.requestMaxWidthUpdate = true;
                     window.Show();
                 };
 
@@ -119,9 +121,8 @@ namespace Modules.Devkit.MasterViewer
             prevArrowIcon = EditorGUIUtility.IconContent("Profiler.PrevFrame");
             nextArrowIcon = EditorGUIUtility.IconContent("Profiler.NextFrame");
 
-            // ウィンドウ最大幅更新.
-
-            UpdateMaxWidth();
+            // ウィンドウ最大幅更新.        
+            requestMaxWidthUpdate = true;
         }
 
         void OnGUI()
@@ -130,6 +131,11 @@ namespace Modules.Devkit.MasterViewer
             {
                 Close();
                 return;
+            }
+
+            if (requestMaxWidthUpdate)
+            {
+                UpdateMaxWidth();
             }
 
             // Toolbar.
@@ -300,7 +306,7 @@ namespace Modules.Devkit.MasterViewer
 
                         masterController.FieldWidth[focusedControl] = Mathf.Max(50f, masterController.FieldWidth[focusedControl] + diff);
 
-                        UpdateMaxWidth();
+                        requestMaxWidthUpdate = true;
 
                         Repaint();
                     }
@@ -438,6 +444,8 @@ namespace Modules.Devkit.MasterViewer
 
         private void UpdateMaxWidth()
         {
+            if (!requestMaxWidthUpdate) { return; }
+
             var maxWidth = 0f;
 
             var valueNames = masterController.GetValueNames();
@@ -455,6 +463,10 @@ namespace Modules.Devkit.MasterViewer
             }
             
             maxSize = new Vector2(maxWidth, maxSize.y);
+
+            requestMaxWidthUpdate = false;
+
+            Repaint();
         }
 
         public IObservable<Unit> OnChangeRecordAsObservable()
