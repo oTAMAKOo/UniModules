@@ -452,7 +452,7 @@ namespace Modules.Devkit.MasterViewer
 
             for (var i = 0; i < valueNames.Length; i++)
             {
-                maxWidth += masterController.FieldWidth[i] + 3f;
+                maxWidth += masterController.FieldWidth[i] + 4f;
             }
 
             var verticalScrollBarStyle = recordScrollView.GetVerticalScrollBarStyle();
