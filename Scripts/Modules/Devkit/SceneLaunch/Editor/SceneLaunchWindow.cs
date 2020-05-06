@@ -24,12 +24,6 @@ namespace Modules.Devkit.SceneLaunch
 				set { ProjectPrefs.SetString("SceneExecuterPrefs-targetScenePath", value); }
 			}
 
-			public static bool launch
-            {
-                get { return ProjectPrefs.GetBool("SceneExecuterPrefs-launch", false); }
-                set { ProjectPrefs.SetBool("SceneExecuterPrefs-launch", value); }
-            }
-
             public static bool standbyInitializer
             {
                 get { return ProjectPrefs.GetBool("SceneExecuterPrefs-standbyInitializer", false); }
@@ -81,56 +75,52 @@ namespace Modules.Devkit.SceneLaunch
         [InitializeOnLoad]
         private class SceneResume
         {
-            private const int CheckInterval = 180;
-
-            private static int frameCount = 0;
-            private static bool forceUpdate = false;
             private static IDisposable disposable = null;
 
             static SceneResume()
             {
-                EditorApplication.update += ResumeScene;
                 EditorApplication.playModeStateChanged += PlaymodeStateChanged;
             }
 
             private static void PlaymodeStateChanged(PlayModeStateChange state)
             {
-                if (!Application.isPlaying && Prefs.launch)
-                {
-                    forceUpdate = true;
-                }
+                if (state != PlayModeStateChange.EnteredEditMode) { return; }
+
+                ResumeScene();
             }
 
             private static void ResumeScene()
             {
                 if (Application.isPlaying) { return; }
+                
+                var currentScene = GetCurrentScenePath();
 
-                if (!Prefs.launch) { return; }
+                var waitScene = EditorSceneChangerPrefs.waitScene;
+                var lastScene = EditorSceneChangerPrefs.lastScene;
 
-                if (forceUpdate || CheckInterval < frameCount++)
+                var resume = true;
+
+                // 戻り先シーンがある.
+                resume &= !string.IsNullOrEmpty(lastScene);
+                // 現在のシーンが起動シーン.
+                resume &= string.IsNullOrEmpty(waitScene) || waitScene == currentScene;
+                // 現在のシーンが戻り先のシーンではない.
+                resume &= currentScene != lastScene;
+
+                if (resume)
                 {
-                    var waitScene = EditorSceneChangerPrefs.waitScene;
-                    var lastScene = EditorSceneChangerPrefs.lastScene;
-
-                    if (string.IsNullOrEmpty(waitScene) && !string.IsNullOrEmpty(lastScene))
+                    if (disposable != null)
                     {
-                        if (disposable != null)
-                        {
-                            disposable.Dispose();
-                            disposable = null;
-                        }
-
-                        disposable = EditorSceneChanger.SceneResume(() => Prefs.launch = false).Subscribe();
-                    }
-                    // 現在のシーンから起動されたのでResumeされない.
-                    else
-                    {
-                        Prefs.launch = false;
-                        ResumeSceneInstance();
+                        disposable.Dispose();
+                        disposable = null;
                     }
 
-                    frameCount = 0;
-                    forceUpdate = false;
+                    disposable = EditorSceneChanger.SceneResume().Subscribe();
+                }
+                // 現在のシーンから起動されたのでResumeされない.
+                else
+                {
+                    ResumeSceneInstance();
                 }
             }
         }
@@ -139,7 +129,9 @@ namespace Modules.Devkit.SceneLaunch
 
 		private string targetScenePath = null;
 
-		private bool initialized = false;
+        private GUIStyle sceneNameStyle = null;
+
+        private bool initialized = false;
 
 		//----- property -----
 
@@ -159,9 +151,7 @@ namespace Modules.Devkit.SceneLaunch
             titleContent = new GUIContent("Launch Scene");
             minSize = new Vector2(0f, 60f);
 
-            targetScenePath = Prefs.targetScenePath;
-
-			initialized = true;
+            initialized = true;
 		}
 
 		void OnEnable()
@@ -179,51 +169,58 @@ namespace Modules.Devkit.SceneLaunch
 
 		void OnGUI()
 		{
-			EditorLayoutTools.SetLabelWidth(120f);
-
             EditorGUILayout.Separator();
 
-            using(new EditorGUILayout.HorizontalScope())
+            using (new EditorGUILayout.HorizontalScope())
             {
+                targetScenePath = string.IsNullOrEmpty(targetScenePath) ? Prefs.targetScenePath : string.Empty;
+
                 var sceneName = Path.GetFileName(targetScenePath);
 
-                if (EditorLayoutTools.DrawPrefixButton("Scene", GUILayout.Width(65f)))
+                if (EditorLayoutTools.DrawPrefixButton("Scene", GUILayout.Width(65f), GUILayout.Height(15f)))
                 {
                     SceneSelectorPrefs.selectedScenePath = targetScenePath;
                     SceneSelector.Open().Subscribe(OnSelectScene);
                 }
 
-                var sceneNameStyle = GUI.skin.GetStyle("TextArea");
-                sceneNameStyle.alignment = TextAnchor.MiddleLeft;
+                using (new EditorGUILayout.VerticalScope())
+                {
+                    if (sceneNameStyle == null)
+                    {
+                        sceneNameStyle = EditorStyles.textArea;
+                        sceneNameStyle.alignment = TextAnchor.MiddleLeft;
+                    }
 
-				EditorGUILayout.SelectableLabel(sceneName, sceneNameStyle, GUILayout.Height(18f));
+                    GUILayout.Space(4f);
+
+                    EditorGUILayout.SelectableLabel(sceneName, sceneNameStyle, GUILayout.Height(15f));
+                }
 
 				GUILayout.Space(5f);
             }
 
-			GUILayout.Space(5f);
+		    EditorGUILayout.Separator();
 
 			using (new EditorGUILayout.HorizontalScope())
 			{
-				GUILayout.Space(5f);
+			    GUILayout.Space(5f);
 
-				// 下記条件時は再生ボタンを非アクティブ:.
-				// ・実行中.
-				// ・ビルド中.
-				// ・遷移先シーンが未選択.
-				GUI.enabled = !(EditorApplication.isPlaying ||
-							EditorApplication.isCompiling ||
-							string.IsNullOrEmpty(targetScenePath));
+                // 下記条件時は再生ボタンを非アクティブ:.
+                // ・実行中.
+                // ・ビルド中.
+                // ・遷移先シーンが未選択.
+                var disable = EditorApplication.isPlaying || EditorApplication.isCompiling || string.IsNullOrEmpty(targetScenePath);
 
-				if (GUILayout.Button("Launch"))
-				{
-					Launch().Subscribe();
-				}
+			    using (new DisableScope(disable))
+			    {
+			        if (GUILayout.Button("Launch"))
+			        {
+			            Launch().Subscribe();
+			        }
+                }
 
-				GUI.enabled = true;
-
-				GUILayout.Space(5f);
-			}
+			    GUILayout.Space(5f);
+            }
 		}
 
         private IObservable<Unit> Launch()
@@ -233,7 +230,6 @@ namespace Modules.Devkit.SceneLaunch
                     {
                         if (x)
                         {
-                            Prefs.launch = true;
                             Prefs.standbyInitializer = true;
 
                             SuspendSceneInstance();
@@ -247,7 +243,7 @@ namespace Modules.Devkit.SceneLaunch
         }
 
 
-        [InitializeOnLoadMethod()]
+        [InitializeOnLoadMethod]
         private static void InitializeOnLoadMethod()
         {
             if (Prefs.standbyInitializer)
@@ -290,20 +286,6 @@ namespace Modules.Devkit.SceneLaunch
         {
             var scene = EditorSceneManager.GetSceneAt(0);
             return scene.path;
-        }
-
-        private string AsSpacedCamelCase(string text)
-        {
-            var sb = new System.Text.StringBuilder(text.Length * 2);
-            sb.Append(char.ToUpper(text[0]));
-
-            for (var i = 1; i < text.Length; i++)
-            {
-                if (char.IsUpper(text[i]) && text[i - 1] != ' ')
-                    sb.Append(' ');
-                sb.Append(text[i]);
-            }
-            return sb.ToString();
         }
     }
 }

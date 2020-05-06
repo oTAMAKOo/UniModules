@@ -1,10 +1,8 @@
-﻿﻿﻿
-using UnityEngine;
+﻿
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UniRx;
 using System;
-using System.Collections;
 using Modules.Devkit.Prefs;
 
 namespace Modules.Devkit.EditorSceneChange
