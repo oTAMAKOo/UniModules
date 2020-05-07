@@ -1,4 +1,4 @@
-﻿﻿
+﻿
 using UnityEngine;
 using UnityEditor;
 using UnityEditor.SceneManagement;
@@ -13,16 +13,22 @@ using Modules.Devkit.Prefs;
 namespace Modules.Devkit.SceneLaunch
 {
     public class SceneLaunchWindow : SingletonEditorWindow<SceneLaunchWindow>
-	{
-		//----- params -----
+    {
+        //----- params -----
 
-		private static class Prefs
+        private static class Prefs
         {
-			public static string targetScenePath
-			{
-				get { return ProjectPrefs.GetString("SceneExecuterPrefs-targetScenePath"); }
-				set { ProjectPrefs.SetString("SceneExecuterPrefs-targetScenePath", value); }
-			}
+            public static string targetScenePath
+            {
+                get { return ProjectPrefs.GetString("SceneExecuterPrefs-targetScenePath"); }
+                set { ProjectPrefs.SetString("SceneExecuterPrefs-targetScenePath", value); }
+            }
+
+            public static bool resume
+            {
+                get { return ProjectPrefs.GetBool("SceneExecuterPrefs-resume", false); }
+                set { ProjectPrefs.SetBool("SceneExecuterPrefs-resume", value); }
+            }
 
             public static bool standbyInitializer
             {
@@ -75,100 +81,136 @@ namespace Modules.Devkit.SceneLaunch
         [InitializeOnLoad]
         private class SceneResume
         {
+            private const int CheckInterval = 30;
+
+            private static int frameCount = 0;
+
+            private static bool resumeInProgress = false;
+
             private static IDisposable disposable = null;
 
             static SceneResume()
             {
-                EditorApplication.playModeStateChanged += PlaymodeStateChanged;
+                EditorApplication.update += UpdateCallback;
+                EditorApplication.playModeStateChanged += PlaymodeStateChangedCallback;
             }
 
-            private static void PlaymodeStateChanged(PlayModeStateChange state)
+            private static void UpdateCallback()
             {
-                if (state != PlayModeStateChange.EnteredEditMode) { return; }
+                if (Application.isPlaying) { return; }
 
+                if (EditorApplication.isCompiling) { return; }
+
+                if (!Prefs.resume) { return; }
+
+                if (CheckInterval < frameCount++)
+                {
+                    ResumeScene();
+
+                    frameCount = 0;
+                }
+            }
+
+            private static void PlaymodeStateChangedCallback(PlayModeStateChange state)
+            {
+                if (!Prefs.resume) { return; }
+
+                if (state != PlayModeStateChange.EnteredEditMode){ return; }
+                
                 ResumeScene();
             }
 
             private static void ResumeScene()
             {
-                if (Application.isPlaying) { return; }
-                
-                var currentScene = GetCurrentScenePath();
+                if (resumeInProgress) { return; }
 
-                var waitScene = EditorSceneChangerPrefs.waitScene;
-                var lastScene = EditorSceneChangerPrefs.lastScene;
+                ResumeSceneInstance();
+
+                var currentScene = GetCurrentScenePath();
+                
+                var resumeScene = EditorSceneChangerPrefs.resumeScene;
+
+                Action onFinish = () =>
+                {
+                    Prefs.resume = false;
+                    resumeInProgress = false;
+                };
 
                 var resume = true;
 
                 // 戻り先シーンがある.
-                resume &= !string.IsNullOrEmpty(lastScene);
-                // 現在のシーンが起動シーン.
-                resume &= string.IsNullOrEmpty(waitScene) || waitScene == currentScene;
+                resume &= !string.IsNullOrEmpty(resumeScene);
                 // 現在のシーンが戻り先のシーンではない.
-                resume &= currentScene != lastScene;
-
+                resume &= currentScene != resumeScene;
+                
                 if (resume)
                 {
+                    resumeInProgress = true;
+
                     if (disposable != null)
                     {
                         disposable.Dispose();
                         disposable = null;
                     }
 
-                    disposable = EditorSceneChanger.SceneResume().Subscribe();
+                    disposable = EditorSceneChanger.SceneResume().Subscribe(_ => onFinish.Invoke());
                 }
-                // 現在のシーンから起動されたのでResumeされない.
                 else
                 {
-                    ResumeSceneInstance();
+                    onFinish.Invoke();
                 }
+                
             }
         }
 
-		//----- field -----
+        //----- field -----
 
-		private string targetScenePath = null;
+        private string targetScenePath = null;
 
         private GUIStyle sceneNameStyle = null;
 
         private bool initialized = false;
 
-		//----- property -----
+        //----- property -----
 
-		//----- method -----
+        //----- method -----
 
-		public static void Open()
-		{
+        public static void Open()
+        {
             Instance.Initialize();
 
-			Instance.Show();
-		}
+            Instance.Show();
+        }
 
-		public void Initialize()
-		{
-			if (initialized) { return; }
+        public void Initialize()
+        {
+            if (initialized) { return; }
 
             titleContent = new GUIContent("Launch Scene");
             minSize = new Vector2(0f, 55f);
 
+            targetScenePath = Prefs.targetScenePath;
+
             initialized = true;
-		}
+        }
 
-		void OnEnable()
-		{
-			Initialize();
-		}
+        void OnEnable()
+        {
+            Initialize();
+        }
 
-		void Update()
-		{
-			if (!initialized)
-			{
-				Initialize();
-			}
-		}
+        void Update()
+        {
+            if (!initialized)
+            {
+                Initialize();
+            }
+        }
 
-		void OnGUI()
-		{
+        void OnGUI()
+        {
+            EditorLayoutTools.SetLabelWidth(120f);
+
             EditorGUILayout.Separator();
 
             using (new EditorGUILayout.HorizontalScope())
@@ -183,27 +225,27 @@ namespace Modules.Devkit.SceneLaunch
                     SceneSelector.Open().Subscribe(OnSelectScene);
                 }
 
+                if (sceneNameStyle == null)
+                {
+                    sceneNameStyle = EditorStyles.textArea;
+                    sceneNameStyle.alignment = TextAnchor.MiddleLeft;
+                }
+
                 using (new EditorGUILayout.VerticalScope())
                 {
-                    if (sceneNameStyle == null)
-                    {
-                        sceneNameStyle = EditorStyles.textArea;
-                        sceneNameStyle.alignment = TextAnchor.MiddleLeft;
-                    }
-
                     GUILayout.Space(3f);
 
                     EditorGUILayout.SelectableLabel(sceneName, sceneNameStyle, GUILayout.Height(18f));
                 }
 
-				GUILayout.Space(5f);
+                GUILayout.Space(5f);
             }
 
-            GUILayout.Space(3f);
+            GUILayout.Space(5f);
 
             using (new EditorGUILayout.HorizontalScope())
-			{
-			    GUILayout.Space(5f);
+            {
+                GUILayout.Space(5f);
 
                 // 下記条件時は再生ボタンを非アクティブ:.
                 // ・実行中.
@@ -211,17 +253,17 @@ namespace Modules.Devkit.SceneLaunch
                 // ・遷移先シーンが未選択.
                 var disable = EditorApplication.isPlaying || EditorApplication.isCompiling || string.IsNullOrEmpty(targetScenePath);
 
-			    using (new DisableScope(disable))
-			    {
-			        if (GUILayout.Button("Launch"))
-			        {
-			            Launch().Subscribe();
-			        }
+                using (new DisableScope(disable))
+                {
+                    if (GUILayout.Button("Launch"))
+                    {
+                        Launch().Subscribe();
+                    }
                 }
 
-			    GUILayout.Space(5f);
+                GUILayout.Space(5f);
             }
-		}
+        }
 
         private IObservable<Unit> Launch()
         {
@@ -230,6 +272,7 @@ namespace Modules.Devkit.SceneLaunch
                     {
                         if (x)
                         {
+                            Prefs.resume = true;
                             Prefs.standbyInitializer = true;
 
                             SuspendSceneInstance();
@@ -243,7 +286,7 @@ namespace Modules.Devkit.SceneLaunch
         }
 
 
-        [InitializeOnLoadMethod]
+        [InitializeOnLoadMethod()]
         private static void InitializeOnLoadMethod()
         {
             if (Prefs.standbyInitializer)
@@ -258,7 +301,7 @@ namespace Modules.Devkit.SceneLaunch
                 };
 
                 EditorApplication.delayCall += execCallbackFunction;
-                
+
                 Prefs.standbyInitializer = false;
             }
         }
@@ -273,9 +316,9 @@ namespace Modules.Devkit.SceneLaunch
 
         private void OnSelectScene(string targetScenePath)
         {
-			this.targetScenePath = targetScenePath;
+            this.targetScenePath = targetScenePath;
 
-			Prefs.targetScenePath = targetScenePath;
+            Prefs.targetScenePath = targetScenePath;
 
             SceneSelectorPrefs.selectedScenePath = targetScenePath;
 
@@ -286,6 +329,20 @@ namespace Modules.Devkit.SceneLaunch
         {
             var scene = EditorSceneManager.GetSceneAt(0);
             return scene.path;
+        }
+
+        private string AsSpacedCamelCase(string text)
+        {
+            var sb = new System.Text.StringBuilder(text.Length * 2);
+            sb.Append(char.ToUpper(text[0]));
+
+            for (var i = 1; i < text.Length; i++)
+            {
+                if (char.IsUpper(text[i]) && text[i - 1] != ' ')
+                    sb.Append(' ');
+                sb.Append(text[i]);
+            }
+            return sb.ToString();
         }
     }
 }

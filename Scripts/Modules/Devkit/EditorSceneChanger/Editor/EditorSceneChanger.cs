@@ -1,24 +1,25 @@
-﻿
+﻿﻿﻿
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UniRx;
 using System;
+using System.Collections;
 using Modules.Devkit.Prefs;
 
 namespace Modules.Devkit.EditorSceneChange
 {
     public static class EditorSceneChangerPrefs
     {
-        public static string lastScene
+        public static string targetScene
         {
-            get { return ProjectPrefs.GetString("EditorSceneChangerPrefs-lastScene", null); }
-            set { ProjectPrefs.SetString("EditorSceneChangerPrefs-lastScene", value); }
+            get { return ProjectPrefs.GetString("EditorSceneChangerPrefs-targetScene", null); }
+            set { ProjectPrefs.SetString("EditorSceneChangerPrefs-targetScene", value); }
         }
 
-        public static string waitScene
+        public static string resumeScene
         {
-            get { return ProjectPrefs.GetString("EditorSceneChangerPrefs-waitScene", null); }
-            set { ProjectPrefs.SetString("EditorSceneChangerPrefs-waitScene", value); }
+            get { return ProjectPrefs.GetString("EditorSceneChangerPrefs-resumeScene", null); }
+            set { ProjectPrefs.SetString("EditorSceneChangerPrefs-resumeScene", value); }
         }
     }
 
@@ -36,9 +37,6 @@ namespace Modules.Devkit.EditorSceneChange
         //----- field -----
 
         private static State state = State.None;
-        private static int waitCount = 0;
-
-        private static Subject<Unit> onEditorSceneChange = null;
 
         //----- property -----
 
@@ -64,68 +62,75 @@ namespace Modules.Devkit.EditorSceneChange
             else
             {
                 state = State.WaitOpenScene;
-                waitCount = 0;
-                EditorSceneChangerPrefs.waitScene = targetScenePath;
-                EditorApplication.update += SceneChange;
 
-                onEditorSceneChange = new Subject<Unit>();
-
-                return onEditorSceneChange
-                    .Select(x => true);
+                EditorSceneChangerPrefs.targetScene = targetScenePath;
+                
+                return Observable.FromMicroCoroutine(() => SceneChange()).Select(x => true);
             }
 
             return Observable.Return(true);
         }
 
-        public static IObservable<Unit> SceneResume(Action onResumeComplete = null)
+        public static IObservable<Unit> SceneResume()
         {
             if (state != State.None) { return Observable.ReturnUnit(); }
 
-            if (!string.IsNullOrEmpty(EditorSceneChangerPrefs.lastScene))
+            if (!string.IsNullOrEmpty(EditorSceneChangerPrefs.resumeScene))
             {
-                return SceneChange(EditorSceneChangerPrefs.lastScene)
-                    .Do(
-                        _ =>
-                        {
-                            if (onResumeComplete != null)
-                            {
-                                onResumeComplete();
-                            }
-                            EditorSceneChangerPrefs.lastScene = null;
-                        })
+                return SceneChange(EditorSceneChangerPrefs.resumeScene)
+                    .Do(_ => EditorSceneChangerPrefs.resumeScene = null)
                     .AsUnitObservable();
             }
 
             return Observable.ReturnUnit();
         }
 
-        private static void SceneChange()
+        private static IEnumerator SceneChange()
         {
-            var scene = EditorSceneManager.GetSceneAt(0);
+            var loop = true;
 
-            switch (state)
+            EditorApplication.LockReloadAssemblies();
+
+            while (loop)
             {
-                case State.WaitOpenScene:
-                    if (20 < waitCount++)
-                    {
-                        state = State.WaitSceneChange;
-                        EditorSceneChangerPrefs.lastScene = scene.path;
-                        EditorSceneManager.OpenScene(EditorSceneChangerPrefs.waitScene);
-                    }
-                    break;
+                var scene = EditorSceneManager.GetSceneAt(0);
 
-                case State.WaitSceneChange:
-                    if (scene.path == EditorSceneChangerPrefs.waitScene)
-                    {
-                        state = State.None;
-                        EditorSceneChangerPrefs.waitScene = null;
-                        onEditorSceneChange.OnNext(Unit.Default);
-                        onEditorSceneChange.OnCompleted();
-                        onEditorSceneChange = null;
-                        EditorApplication.update -= SceneChange;
-                    }
-                    break;
+                switch (state)
+                {
+                    case State.WaitOpenScene:
+                        {
+                            if (!string.IsNullOrEmpty(EditorSceneChangerPrefs.targetScene))
+                            {
+                                EditorSceneChangerPrefs.resumeScene = scene.path;
+                                EditorSceneManager.OpenScene(EditorSceneChangerPrefs.targetScene);
+
+                                state = State.WaitSceneChange;
+                            }
+                            else
+                            {
+                                loop = false;
+                            }
+                        }
+                        break;
+
+                    case State.WaitSceneChange:
+                        {
+                            if (scene.path == EditorSceneChangerPrefs.targetScene)
+                            {
+                                loop = false;
+                            }
+                        }
+                        break;
+                }
+
+                yield return null;
             }
+
+            state = State.None;
+
+            EditorSceneChangerPrefs.targetScene = null;
+
+            EditorApplication.UnlockReloadAssemblies();
         }
     }
 }
