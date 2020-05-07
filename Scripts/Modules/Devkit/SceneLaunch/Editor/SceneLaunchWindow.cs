@@ -149,7 +149,7 @@ namespace Modules.Devkit.SceneLaunch
 			if (initialized) { return; }
 
             titleContent = new GUIContent("Launch Scene");
-            minSize = new Vector2(0f, 60f);
+            minSize = new Vector2(0f, 55f);
 
             initialized = true;
 		}
@@ -173,11 +173,11 @@ namespace Modules.Devkit.SceneLaunch
 
             using (new EditorGUILayout.HorizontalScope())
             {
-                targetScenePath = string.IsNullOrEmpty(targetScenePath) ? Prefs.targetScenePath : string.Empty;
+                targetScenePath = string.IsNullOrEmpty(targetScenePath) ? Prefs.targetScenePath : targetScenePath;
 
                 var sceneName = Path.GetFileName(targetScenePath);
 
-                if (EditorLayoutTools.DrawPrefixButton("Scene", GUILayout.Width(65f), GUILayout.Height(15f)))
+                if (EditorLayoutTools.DrawPrefixButton("Scene", GUILayout.Width(65f), GUILayout.Height(18f)))
                 {
                     SceneSelectorPrefs.selectedScenePath = targetScenePath;
                     SceneSelector.Open().Subscribe(OnSelectScene);
@@ -191,17 +191,17 @@ namespace Modules.Devkit.SceneLaunch
                         sceneNameStyle.alignment = TextAnchor.MiddleLeft;
                     }
 
-                    GUILayout.Space(4f);
+                    GUILayout.Space(3f);
 
-                    EditorGUILayout.SelectableLabel(sceneName, sceneNameStyle, GUILayout.Height(15f));
+                    EditorGUILayout.SelectableLabel(sceneName, sceneNameStyle, GUILayout.Height(18f));
                 }
 
 				GUILayout.Space(5f);
             }
 
-		    EditorGUILayout.Separator();
+            GUILayout.Space(3f);
 
-			using (new EditorGUILayout.HorizontalScope())
+            using (new EditorGUILayout.HorizontalScope())
 			{
 			    GUILayout.Space(5f);
 
