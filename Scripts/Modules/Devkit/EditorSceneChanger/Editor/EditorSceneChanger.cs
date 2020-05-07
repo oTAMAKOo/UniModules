@@ -23,28 +23,30 @@ namespace Modules.Devkit.EditorSceneChange
         }
     }
 
+    public enum SceneChangeState
+    {
+        None = 0,
+        WaitOpenScene,
+        WaitSceneChange,
+    }
+
     public static class EditorSceneChanger
     {
         //----- params -----
 
-        private enum State
-        {
-            None = 0,
-            WaitOpenScene,
-            WaitSceneChange,
-        }
-
         //----- field -----
-
-        private static State state = State.None;
+        
+        private static Subject<Unit> onEditorSceneChange = null;
 
         //----- property -----
+
+        public static SceneChangeState State { get; private set; }
 
         //----- method -----
 
         public static IObservable<bool> SceneChange(string targetScenePath)
         {
-            if (state != State.None) { return Observable.Return(false); }
+            if (State != SceneChangeState.None) { return Observable.Return(false); }
 
             if (string.IsNullOrEmpty(targetScenePath)) { return Observable.Return(false); }
 
@@ -57,15 +59,18 @@ namespace Modules.Devkit.EditorSceneChange
 
             if (scene.path == targetScenePath)
             {
-                state = State.None;
+                State = SceneChangeState.None;
             }
             else
             {
-                state = State.WaitOpenScene;
+                State = SceneChangeState.WaitOpenScene;
 
                 EditorSceneChangerPrefs.targetScene = targetScenePath;
-                
-                return Observable.FromMicroCoroutine(() => SceneChange()).Select(x => true);
+                EditorApplication.update += SceneChange;
+
+                onEditorSceneChange = new Subject<Unit>();
+
+                return onEditorSceneChange.Select(x => true);
             }
 
             return Observable.Return(true);
@@ -73,7 +78,7 @@ namespace Modules.Devkit.EditorSceneChange
 
         public static IObservable<Unit> SceneResume()
         {
-            if (state != State.None) { return Observable.ReturnUnit(); }
+            if (State != SceneChangeState.None) { return Observable.ReturnUnit(); }
 
             if (!string.IsNullOrEmpty(EditorSceneChangerPrefs.resumeScene))
             {
@@ -85,52 +90,51 @@ namespace Modules.Devkit.EditorSceneChange
             return Observable.ReturnUnit();
         }
 
-        private static IEnumerator SceneChange()
+        private static void SceneChange()
         {
-            var loop = true;
+            var scene = EditorSceneManager.GetSceneAt(0);
 
-            EditorApplication.LockReloadAssemblies();
-
-            while (loop)
+            switch (State)
             {
-                var scene = EditorSceneManager.GetSceneAt(0);
-
-                switch (state)
-                {
-                    case State.WaitOpenScene:
+                case SceneChangeState.WaitOpenScene:
+                    {
+                        if (!string.IsNullOrEmpty(EditorSceneChangerPrefs.targetScene))
                         {
-                            if (!string.IsNullOrEmpty(EditorSceneChangerPrefs.targetScene))
-                            {
-                                EditorSceneChangerPrefs.resumeScene = scene.path;
-                                EditorSceneManager.OpenScene(EditorSceneChangerPrefs.targetScene);
+                            EditorApplication.LockReloadAssemblies();
 
-                                state = State.WaitSceneChange;
-                            }
-                            else
-                            {
-                                loop = false;
-                            }
+                            EditorSceneChangerPrefs.resumeScene = scene.path;
+                            EditorSceneManager.OpenScene(EditorSceneChangerPrefs.targetScene);
+
+                            State = SceneChangeState.WaitSceneChange;
                         }
-                        break;
-
-                    case State.WaitSceneChange:
+                        else
                         {
-                            if (scene.path == EditorSceneChangerPrefs.targetScene)
-                            {
-                                loop = false;
-                            }
-                        }
-                        break;
-                }
+                            State = SceneChangeState.None;
 
-                yield return null;
+                            EditorApplication.update -= SceneChange;
+                        }
+                    }
+                    break;
+
+                case SceneChangeState.WaitSceneChange:
+                    {
+                        if (scene.path == EditorSceneChangerPrefs.targetScene)
+                        {
+                            State = SceneChangeState.None;
+
+                            EditorSceneChangerPrefs.targetScene = null;
+
+                            onEditorSceneChange.OnNext(Unit.Default);
+                            onEditorSceneChange.OnCompleted();
+                            onEditorSceneChange = null;
+
+                            EditorApplication.update -= SceneChange;
+
+                            EditorApplication.UnlockReloadAssemblies();
+                        }
+                    }
+                    break;
             }
-
-            state = State.None;
-
-            EditorSceneChangerPrefs.targetScene = null;
-
-            EditorApplication.UnlockReloadAssemblies();
         }
     }
 }

@@ -85,8 +85,6 @@ namespace Modules.Devkit.SceneLaunch
 
             private static int frameCount = 0;
 
-            private static bool resumeInProgress = false;
-
             private static IDisposable disposable = null;
 
             static SceneResume()
@@ -116,50 +114,43 @@ namespace Modules.Devkit.SceneLaunch
                 if (!Prefs.resume) { return; }
 
                 if (state != PlayModeStateChange.EnteredEditMode){ return; }
-                
+
                 ResumeScene();
             }
 
             private static void ResumeScene()
             {
-                if (resumeInProgress) { return; }
-
-                ResumeSceneInstance();
-
-                var currentScene = GetCurrentScenePath();
-                
-                var resumeScene = EditorSceneChangerPrefs.resumeScene;
-
-                Action onFinish = () =>
+                // 遷移中ではない.
+                if (EditorSceneChanger.State == SceneChangeState.None)
                 {
-                    Prefs.resume = false;
-                    resumeInProgress = false;
-                };
+                    var currentScene = GetCurrentScenePath();
 
-                var resume = true;
+                    var resumeScene = EditorSceneChangerPrefs.resumeScene;
 
-                // 戻り先シーンがある.
-                resume &= !string.IsNullOrEmpty(resumeScene);
-                // 現在のシーンが戻り先のシーンではない.
-                resume &= currentScene != resumeScene;
-                
-                if (resume)
-                {
-                    resumeInProgress = true;
+                    var resume = true;
 
-                    if (disposable != null)
+                    // 戻り先シーンがある.
+                    resume &= !string.IsNullOrEmpty(resumeScene);
+                    // 現在のシーンが戻り先のシーンではない.
+                    resume &= currentScene != resumeScene;
+
+                    if (resume)
                     {
-                        disposable.Dispose();
-                        disposable = null;
-                    }
+                        if (disposable != null)
+                        {
+                            disposable.Dispose();
+                            disposable = null;
+                        }
 
-                    disposable = EditorSceneChanger.SceneResume().Subscribe(_ => onFinish.Invoke());
-                }
-                else
-                {
-                    onFinish.Invoke();
-                }
-                
+                        disposable = EditorSceneChanger.SceneResume().Subscribe(_ => Prefs.resume = false);
+                    }
+                    else
+                    {
+                        ResumeSceneInstance();
+
+                        Prefs.resume = false;
+                    }
+                }                
             }
         }
 
@@ -286,7 +277,7 @@ namespace Modules.Devkit.SceneLaunch
         }
 
 
-        [InitializeOnLoadMethod()]
+        [InitializeOnLoadMethod]
         private static void InitializeOnLoadMethod()
         {
             if (Prefs.standbyInitializer)
