@@ -7,7 +7,6 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Text;
-using System.Linq;
 using System.Security.Cryptography;
 using UniRx;
 using Extensions;
@@ -100,10 +99,6 @@ namespace Modules.Devkit.Diagnosis.SRDebugger
                     })
                 .AddTo(this);
 
-            titleInputField.ObserveEveryValueChanged(x => x.text)
-                .Subscribe(x => UnityUtility.SetActive(sendReportButton, !string.IsNullOrEmpty(x)))
-                .AddTo(this);
-
             titleInputField.text = string.Empty;
             commentInputField.text = string.Empty;
 
@@ -113,6 +108,16 @@ namespace Modules.Devkit.Diagnosis.SRDebugger
         void OnEnable()
         {
             UpdateContents();
+
+            Observable.NextFrame()
+                .TakeUntilDisable(this)
+                .Subscribe(_ => RefreshInputField())
+                .AddTo(this);
+
+            Observable.EveryUpdate()
+                .TakeUntilDisable(this)
+                .Subscribe(_ => UnityUtility.SetActive(sendReportButton, IsSendReportButtonEnable()))
+                .AddTo(this);
         }
 
         private void UpdateContents()
@@ -185,7 +190,7 @@ namespace Modules.Devkit.Diagnosis.SRDebugger
                 UpdatePostProgress(0f);
             }
         }
-
+        
         private void OnReportComplete(string errorMessage)
         {
             progressBar.value = 0;
@@ -332,6 +337,19 @@ namespace Modules.Devkit.Diagnosis.SRDebugger
             value = aesManaged != null ? value.Encrypt(aesManaged) : value;
 
             reportForm.Add(new MultipartFormDataSection(key, value));
+        }
+
+        /// <summary> InputFieldを初期化 </summary>
+        protected virtual void RefreshInputField()
+        {
+            titleInputField.MoveTextEnd(false);
+            commentInputField.MoveTextEnd(false);
+        }
+
+        /// <summary> レポートボタンが有効か </summary>
+        protected virtual bool IsSendReportButtonEnable()
+        {
+            return !string.IsNullOrEmpty(titleInputField.text);
         }
 
         /// <summary> AESクラス生成 </summary>
