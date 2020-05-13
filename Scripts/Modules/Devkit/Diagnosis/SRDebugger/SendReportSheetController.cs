@@ -324,10 +324,12 @@ namespace Modules.Devkit.Diagnosis.SRDebugger
         {
             if (reportForm == null) { return; }
 
-            if (!string.IsNullOrEmpty(value))
+            if (string.IsNullOrEmpty(value))
             {
-                value = aesManaged != null ? value.Encrypt(aesManaged) : value;
+                value = "---";
             }
+
+            value = aesManaged != null ? value.Encrypt(aesManaged) : value;
 
             reportForm.Add(new MultipartFormDataSection(key, value));
         }
