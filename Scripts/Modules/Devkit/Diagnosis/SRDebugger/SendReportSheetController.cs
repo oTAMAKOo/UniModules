@@ -299,24 +299,24 @@ namespace Modules.Devkit.Diagnosis.SRDebugger
 
             //------ ReportContent ------
 
-            AddReportContent("time", DateTime.Now.ToString(CultureInfo.InvariantCulture));
-            AddReportContent("operatingSystem", SystemInfo.operatingSystem);
-            AddReportContent("deviceModel", SystemInfo.deviceModel);
-            AddReportContent("systemMemorySize", (SystemInfo.systemMemorySize * mega).ToString());
-            AddReportContent("useMemorySize", GC.GetTotalMemory(false).ToString());
-            AddReportContent("log", GetReportTextPostData());
-            AddReportContent("screenShotBase64", screenshotBase64);
+            AddReportContent("Time", DateTime.Now.ToString(CultureInfo.InvariantCulture));
+            AddReportContent("OperatingSystem", SystemInfo.operatingSystem);
+            AddReportContent("DeviceModel", SystemInfo.deviceModel);
+            AddReportContent("SystemMemorySize", (SystemInfo.systemMemorySize * mega).ToString());
+            AddReportContent("UseMemorySize", GC.GetTotalMemory(false).ToString());
+            AddReportContent("Log", GetReportTextPostData());
+            AddReportContent("ScreenShotBase64", screenshotBase64);
 
             // ユーザー入力情報.
 
             if (!string.IsNullOrEmpty(titleInputField.text))
             {
-                AddReportContent("title", titleInputField.text);
+                AddReportContent("Title", titleInputField.text);
             }
 
             if (!string.IsNullOrEmpty(commentInputField.text))
             {
-                AddReportContent("comment", commentInputField.text);
+                AddReportContent("Comment", commentInputField.text);
             }
 
             // 拡張情報を追加.
