@@ -199,6 +199,9 @@ namespace Modules.Devkit.Diagnosis.SRDebugger
 
             if (string.IsNullOrEmpty(errorMessage))
             {
+                titleInputField.text = string.Empty;
+                commentInputField.text = string.Empty;
+
                 Debug.Log("Bug report submitted successfully.");
             }
             else
@@ -207,9 +210,6 @@ namespace Modules.Devkit.Diagnosis.SRDebugger
             }
 
             sendReportDisposable = null;
-
-            titleInputField.text = string.Empty;
-            commentInputField.text = string.Empty;
 
             UpdateView();
         }
