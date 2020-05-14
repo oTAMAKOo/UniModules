@@ -2,6 +2,7 @@
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.Networking;
+using UnityEngine.EventSystems;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -199,8 +200,7 @@ namespace Modules.Devkit.Diagnosis.SRDebugger
 
             if (string.IsNullOrEmpty(errorMessage))
             {
-                titleInputField.text = string.Empty;
-                commentInputField.text = string.Empty;
+                RefreshInputField();
 
                 Debug.Log("Bug report submitted successfully.");
             }
@@ -342,8 +342,13 @@ namespace Modules.Devkit.Diagnosis.SRDebugger
         /// <summary> InputFieldを初期化 </summary>
         protected virtual void RefreshInputField()
         {
+            titleInputField.text = string.Empty;
             titleInputField.MoveTextEnd(false);
+            titleInputField.OnDeselect(new BaseEventData(EventSystem.current));
+
+            commentInputField.text = string.Empty;
             commentInputField.MoveTextEnd(false);
+            commentInputField.OnDeselect(new BaseEventData(EventSystem.current));
         }
 
         /// <summary> レポートボタンが有効か </summary>
