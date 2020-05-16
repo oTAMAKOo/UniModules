@@ -99,17 +99,7 @@ namespace Modules.Devkit.Diagnosis.SRDebugger
                 .AddTo(this);
 
             titleInputField.text = string.Empty;
-            titleInputField.shouldHideMobileInput = false;
-
             commentInputField.text = string.Empty;
-            commentInputField.shouldHideMobileInput = false;
-
-            #if UINTY_IOS
-
-            titleInputField.shouldHideMobileInput = true;
-            commentInputField.shouldHideMobileInput = true;
-
-            #endif
 
             initialized = true;
         }

@@ -18,6 +18,12 @@ namespace Modules.UI
 
         private InputField inputField = null;
 
+        #if UNITY_EDITOR
+
+        private Text inputFieldText = null;
+
+        #endif
+
         private string prevText = "";
         private int pos = 0;
 
@@ -30,10 +36,29 @@ namespace Modules.UI
             if (inputField == null)
             {
                 inputField = UnityUtility.GetComponent<InputField>(gameObject);
+
+                #if UNITY_EDITOR
+
+                // Editorでの入力中に他のInputFieldに入力中の文字が表示されるので.
+                // 非フォーカス時に表示用の実テキストとは別のテキストオブジェクトを生成.
+
+                var textComponent = inputField.textComponent;
+                var parent = textComponent.transform.parent.gameObject;
+
+                inputFieldText = UnityUtility.Instantiate<Text>(parent, textComponent.gameObject);
+
+                OnFocuseChanged(inputField.isFocused);
+
+                #endif
             }
 
             if (inputField != null)
             {
+                inputField.ObserveEveryValueChanged(x => x.isFocused)
+                    .TakeUntilDisable(this)
+                    .Subscribe(x => OnFocuseChanged(x))
+                    .AddTo(this);
+
                 Observable.EveryUpdate()
                     .TakeUntilDisable(this)
                     .Subscribe(_ => UpdateContents())
@@ -44,6 +69,22 @@ namespace Modules.UI
                     .Subscribe(_ => LateUpdateContents())
                     .AddTo(this);
             }
+        }
+
+        private void OnFocuseChanged(bool isFocused)
+        {
+            // フォーカスされた時に既存の文字が全選択されるのを解除する.
+            if (isFocused)
+            {
+                inputField.MoveTextEnd(true);
+            }
+
+            #if UNITY_EDITOR
+
+            UnityUtility.SetActive(inputFieldText, !isFocused);
+            UnityUtility.SetActive(inputField.textComponent, isFocused);
+
+            #endif
         }
 
         private void UpdateContents()
@@ -139,13 +180,22 @@ namespace Modules.UI
         {
             if (inputField == null) { return; }
 
-            //他のInputFieldに変換中の文字が表示されるのを防ぐため選択中のみ.
+            #if UNITY_EDITOR
 
-            if (!inputField.isFocused) { return; }
+            if (!inputField.isFocused)
+            {
+                // フォーカスが当たってない時は常時上書き.
+                inputFieldText.text = inputField.text;
+            }
 
-            // 強制的にラベルを即時更新.
-            // キャレットと表示されている文字列の位置を再計算.
-            inputField.ForceLabelUpdate();
+            #endif
+
+            if (inputField.isFocused)
+            {
+                // 強制的にラベルを即時更新.
+                // キャレットと表示されている文字列の位置を再計算.
+                inputField.ForceLabelUpdate();
+            }
         }
     }
 }
