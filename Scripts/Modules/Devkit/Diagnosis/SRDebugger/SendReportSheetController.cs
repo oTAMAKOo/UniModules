@@ -54,8 +54,6 @@ namespace Modules.Devkit.Diagnosis.SRDebugger
 
         //----- property -----
 
-        public abstract string PostReportURL { get; }
-
         //----- method -----
 
         /// <summary> 初期化. </summary>
@@ -101,7 +99,17 @@ namespace Modules.Devkit.Diagnosis.SRDebugger
                 .AddTo(this);
 
             titleInputField.text = string.Empty;
+            titleInputField.shouldHideMobileInput = false;
+
             commentInputField.text = string.Empty;
+            commentInputField.shouldHideMobileInput = false;
+
+            #if UINTY_IOS
+
+            titleInputField.shouldHideMobileInput = true;
+            commentInputField.shouldHideMobileInput = true;
+
+            #endif
 
             initialized = true;
         }
@@ -146,7 +154,10 @@ namespace Modules.Devkit.Diagnosis.SRDebugger
             BuildPostContent();
 
             // 送信.
-            var webRequest = UnityWebRequest.Post(PostReportURL, reportForm);
+
+            var url = GetReportUrl();
+
+            var webRequest = UnityWebRequest.Post(url, reportForm);
 
             webRequest.timeout = 30;
 
@@ -362,6 +373,9 @@ namespace Modules.Devkit.Diagnosis.SRDebugger
 
         /// <summary> 拡張情報を追加 </summary>
         protected virtual void SetExtendContents() { }
+
+        /// <summary> 送信先URL </summary>
+        protected abstract string GetReportUrl();
 
         #endif
     }
