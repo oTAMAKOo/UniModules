@@ -1,14 +1,12 @@
 ﻿
 using UnityEngine;
 using UnityEditor;
-using System;
 using System.IO;
 using System.Collections.Generic;
 using System.Linq;
 using Extensions;
 using Modules.Devkit;
 using Modules.Devkit.Generators;
-using Modules.Devkit.Spreadsheet;
 using Modules.GameText.Components;
 
 namespace Modules.GameText.Editor
@@ -30,8 +28,6 @@ namespace Modules.GameText.Editor
             var progressTitle = "Generate GameText";
            
             var config = GameTextConfig.Instance;
-
-            var gameTextAsset = LoadAsset(config.ScriptableObjectFolderPath, languageInfo.AssetPath);
 
             // 読み込み.
 
@@ -57,7 +53,12 @@ namespace Modules.GameText.Editor
 
                     EditorUtility.DisplayProgressBar(progressTitle, "Generate asset.", 0.5f);
 
-                    GameTextAssetGenerator.Build(gameTextAsset, sheets, config, languageInfo.TextIndex);
+                    foreach (var assetFolderPath in config.AssetFolderPaths)
+                    {
+                        var gameTextAsset = LoadAsset(assetFolderPath, languageInfo.AssetName);
+
+                        GameTextAssetGenerator.Build(gameTextAsset, sheets, config, languageInfo.TextIndex);
+                    }
 
                     EditorUtility.DisplayProgressBar(progressTitle, "Complete.", 1f);
 

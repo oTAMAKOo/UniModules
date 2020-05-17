@@ -55,7 +55,7 @@ namespace Modules.GameText
 
         public static void Generate(SheetData[] sheets, GameTextConfig config, int textIndex)
         {
-            var exportPath = config.EnumScriptFolderPath;
+            var exportPath = config.ScriptFolderPath;
 
             var generatedScripts = new List<string>();
 
@@ -119,7 +119,7 @@ namespace Modules.GameText
 
         private static void DeleteUnusedFiles(string[] generatedScripts, GameTextConfig config)
         {
-            var exportPath = config.EnumScriptFolderPath;
+            var exportPath = config.ScriptFolderPath;
             var exportFullPath = PathUtility.Combine(UnityPathUtility.GetProjectFolderPath(), exportPath);
 
             if (AssetDatabase.IsValidFolder(exportPath))

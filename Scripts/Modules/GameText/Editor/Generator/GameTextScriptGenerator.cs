@@ -148,7 +148,7 @@ namespace Modules.GameText
 
         public static void Generate(SheetData[] sheets, GameTextConfig config)
         {
-            var exportPath = config.EnumScriptFolderPath;
+            var exportPath = config.ScriptFolderPath;
 
             var categorys = new StringBuilder();
             var getMethods = new StringBuilder();

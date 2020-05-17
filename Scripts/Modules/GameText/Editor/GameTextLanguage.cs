@@ -17,13 +17,13 @@ namespace Modules.GameText.Editor
         public sealed class Info
         {
             public string Language { get; private set; }
-            public string AssetPath { get; private set; }
+            public string AssetName { get; private set; }
             public int TextIndex { get; private set; }
 
-            public Info(string language, string assetPath, int textIndex)
+            public Info(string language, string assetName, int textIndex)
             {
                 Language = language;
-                AssetPath = assetPath;
+                AssetName = assetName;
                 TextIndex = textIndex;
             }
         }

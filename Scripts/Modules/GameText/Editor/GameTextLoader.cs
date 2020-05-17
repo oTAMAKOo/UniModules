@@ -35,7 +35,7 @@ namespace Modules.GameText.Editor
 
             if (gameTextInfo == null) { return; }
 
-            gameText.LoadFromResources(gameTextInfo.AssetPath);
+            gameText.LoadFromResources(gameTextInfo.AssetName);
             
             var gameObjects = UnityEditorUtility.FindAllObjectsInHierarchy();
 

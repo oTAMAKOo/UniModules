@@ -33,7 +33,7 @@ namespace Modules.GameText.Components
 
     public sealed class GameTextAsset : ScriptableObject
 	{
-        [SerializeField, ReadOnly]
+        [SerializeField, HideInInspector]
         private TextContent[] contents = new TextContent[0];
 
 	    public IReadOnlyList<TextContent> Contents { get { return contents; } }

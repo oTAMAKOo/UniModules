@@ -1,4 +1,5 @@
 ﻿
+using System.Linq;
 using UnityEngine;
 using UnityEditor;
 using Extensions;
@@ -28,11 +29,9 @@ namespace Modules.GameText.Editor
         [SerializeField]
         private string excelFileName = string.Empty;
         [SerializeField]
-        private UnityEngine.Object tableScriptFolder = null;
+        private UnityEngine.Object scriptFolder = null;
         [SerializeField]
-        private UnityEngine.Object enumScriptFolder = null;
-        [SerializeField]
-        private UnityEngine.Object scriptableObjectFolder = null;
+        private UnityEngine.Object[] assetFolders = null;
 
         #pragma warning disable 414
 
@@ -54,11 +53,21 @@ namespace Modules.GameText.Editor
 
         public FileLoader.Format FileFormat { get { return fileFormat; } }
         
-        public string TableScriptFolderPath { get { return AssetDatabase.GetAssetPath(tableScriptFolder); } }
+        public string ScriptFolderPath
+        {
+            get { return AssetDatabase.GetAssetPath(scriptFolder); }
+        }
 
-        public string EnumScriptFolderPath { get { return AssetDatabase.GetAssetPath(enumScriptFolder); } }
-
-        public string ScriptableObjectFolderPath { get { return AssetDatabase.GetAssetPath(scriptableObjectFolder); } }
+        public string[] AssetFolderPaths
+        {
+            get
+            {
+                return assetFolders
+                    .Where(x => x != null)
+                    .Select(x => AssetDatabase.GetAssetPath(x))
+                    .ToArray();
+            }
+        }
 
         //----- method -----
 

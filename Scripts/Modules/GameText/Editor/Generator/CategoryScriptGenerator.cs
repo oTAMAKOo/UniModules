@@ -67,7 +67,7 @@ namespace Modules.GameText
 
         public static void Generate(SheetData[] sheets, GameTextConfig config)
         {
-            var exportPath = config.TableScriptFolderPath;
+            var exportPath = config.ScriptFolderPath;
 
             var enums = new StringBuilder();
             var contents = new StringBuilder();
