@@ -10,19 +10,19 @@ namespace Modules.GameText.Editor
     {
         //----- params -----
 
-        /// <summary> レコード格納フォルダ名 </summary>
-        public const string RecordFolderName = "Records";
+        /// <summary> データフォルダ名 </summary>
+        public const string ContentsFolderName = "Contents";
 
-        /// <summary> シートファイル拡張子 </summary>
-        public const string SheetFileExtension = ".sheet";
+        /// <summary> Json拡張子 </summary>
+        private const string JsonFileExtension = ".json";
 
-        /// <summary> レコードファイル拡張子 </summary>
-        public const string RecordFileExtension = ".record";
+        /// <summary> Yaml拡張子 </summary>
+        private const string YamlFileExtension = ".yaml";
 
         //----- field -----
 
         [SerializeField]
-        private FileSystem.Format fileFormat = FileSystem.Format.Yaml;
+        private FileLoader.Format fileFormat = FileLoader.Format.Yaml;
         [SerializeField]
         private string workspaceFolder = string.Empty;
         [SerializeField]
@@ -52,7 +52,7 @@ namespace Modules.GameText.Editor
 
         //----- property -----
 
-        public FileSystem.Format FileFormat { get { return fileFormat; } }
+        public FileLoader.Format FileFormat { get { return fileFormat; } }
         
         public string TableScriptFolderPath { get { return AssetDatabase.GetAssetPath(tableScriptFolder); } }
 
@@ -70,10 +70,24 @@ namespace Modules.GameText.Editor
 
             return workspacePath;
         }
+        
+        public string GetFileExtension()
+        {
+            var extension = string.Empty;
 
-        public string GetSheetFileExtension() { return SheetFileExtension; }
+            switch (fileFormat)
+            {
+                case FileLoader.Format.Yaml:
+                    extension = YamlFileExtension;
+                    break;
+                    
+                case FileLoader.Format.Json:
+                    extension = JsonFileExtension;
+                    break;
+            }
 
-        public string GetRecordFileExtension() { return RecordFileExtension; }
+            return extension;
+        }
 
         public string GetExcelPath()
         {
@@ -82,11 +96,11 @@ namespace Modules.GameText.Editor
             return PathUtility.Combine(workspacePath, excelFileName);
         }
 
-        public string GetRecordFolderPath()
+        public string GetContentsFolderPath()
         {
             var workspacePath = GetGameTextWorkspacePath();
 
-            return PathUtility.Combine(workspacePath, RecordFolderName);
+            return PathUtility.Combine(workspacePath, ContentsFolderName);
         }
 
         public string GetImporterPath()

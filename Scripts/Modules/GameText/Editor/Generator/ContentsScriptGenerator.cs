@@ -53,7 +53,7 @@ namespace Modules.GameText
 
         //----- method -----
 
-        public static void Generate(SheetData[] sheets, RecordData[] records, GameTextConfig config, int textIndex)
+        public static void Generate(SheetData[] sheets, GameTextConfig config, int textIndex)
         {
             var exportPath = config.EnumScriptFolderPath;
 
@@ -64,7 +64,7 @@ namespace Modules.GameText
                 var enums = new StringBuilder();
                 var elements = new StringBuilder();
 
-                var sheetRecords = records.Where(x => x.sheet == sheet.guid).ToArray();
+                var sheetRecords = sheet.records;
 
                 for (var i = 0; i < sheetRecords.Length; ++i)
                 {
@@ -74,7 +74,9 @@ namespace Modules.GameText
 
                     if (string.IsNullOrEmpty(enumName)) { continue; }
 
-                    var text = record.texts[textIndex];
+                    var contentData = record.contents.ElementAtOrDefault(textIndex);
+
+                    var text = contentData != null ? contentData.text : string.Empty;
 
                     var summary = string.Format(SummaryTemplate, string.IsNullOrEmpty(text) ? string.Empty : text.Replace("\r\n", "").Replace("\n", ""));
 

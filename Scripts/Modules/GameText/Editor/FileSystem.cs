@@ -6,45 +6,12 @@ using YamlDotNet.Serialization;
 
 namespace Modules.GameText.Editor
 {
-    public static class FileSystem
+    public static class FileLoader
     {
         public enum Format
         {
             Yaml,
             Json,
-        }
-
-        public static void WriteFile<T>(string filePath, T value, Format format)
-        {
-            using (var file = new FileStream(filePath, FileMode.Create, FileAccess.Write, FileShare.ReadWrite))
-            {
-                using (var writer = new StreamWriter(file, new UTF8Encoding(false)))
-                {
-                    switch (format)
-                    {
-                        case Format.Json:
-                            {
-                                using (var jsonTextWriter = new JsonTextWriter(writer))
-                                {
-                                    jsonTextWriter.Formatting = Formatting.Indented;
-
-                                    var jsonSerializer = new JsonSerializer();
-
-                                    jsonSerializer.Serialize(jsonTextWriter, value);
-                                }
-                            }
-                            break;
-
-                        case Format.Yaml:
-                            {
-                                var yamlSerializer = new SerializerBuilder().Build();
-
-                                yamlSerializer.Serialize(writer, value);
-                            }
-                            break;
-                    }
-                }
-            }
         }
 
         public static T LoadFile<T>(string filePath, Format format) where T : class
@@ -63,7 +30,10 @@ namespace Modules.GameText.Editor
                             {
                                 using (var jsonTextReader = new JsonTextReader(reader))
                                 {
-                                    var jsonSerializer = new JsonSerializer();
+                                    var jsonSerializer = new JsonSerializer()
+                                    {
+                                        NullValueHandling = NullValueHandling.Ignore,
+                                    };
 
                                     result = jsonSerializer.Deserialize<T>(jsonTextReader);
                                 }
@@ -74,9 +44,13 @@ namespace Modules.GameText.Editor
                             {
                                 var contents = reader.ReadToEnd();
 
-                                var deserializer = new DeserializerBuilder().IgnoreUnmatchedProperties().Build();
-                                
-                                result = deserializer.Deserialize<T>(contents);
+                                var builder = new DeserializerBuilder();
+
+                                builder.IgnoreUnmatchedProperties();
+
+                                var yamlDeserializer = builder.Build();
+
+                                result = yamlDeserializer.Deserialize<T>(contents);
                             }
                             break;
                     }

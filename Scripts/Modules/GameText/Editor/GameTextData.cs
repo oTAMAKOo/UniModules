@@ -3,27 +3,30 @@ namespace Modules.GameText.Editor
 {
     public sealed class SheetData
     {
-        public string guid { get; set; }
+        public string sheetName { get; set; } = null;
+    
+        public string displayName { get; set; } = null;
 
-        public int index { get; set; }
+        public int index { get; set; } = 0;
 
-        public string sheetName { get; set; }
+        public string guid { get; set; } = null;
 
-        public string displayName { get; set; }
+        public RecordData[] records { get; set; } = null;
     }
 
     public sealed class RecordData
     {
-        public string guid { get; set; }
+        public string enumName { get; set; } = null;
 
-        public string sheet { get; set; }
+        public string description { get; set; } = null;
 
-        public int line { get; set; }
+        public string guid { get; set; } = null;
 
-        public string enumName { get; set; }
+        public ContentData[] contents { get; set; } = null;
+    }
 
-        public string description { get; set; }
-
-        public string[] texts { get; set; }
+    public sealed class ContentData
+    {
+        public string text { get; set; } = null;
     }
 }

@@ -41,11 +41,7 @@ namespace Modules.GameText.Editor
 
             if (sheets == null) { return; }
 
-            var records = LoadRecordData(config);
-
-            if (records == null) { return; }
-
-            if (records.Any())
+            if (sheets.Any(x => x.records != null && x.records.Any()))
             {
                 AssetDatabase.StartAssetEditing();
 
@@ -55,13 +51,13 @@ namespace Modules.GameText.Editor
 
                     CategoryScriptGenerator.Generate(sheets, config);
 
-                    ContentsScriptGenerator.Generate(sheets, records, config, languageInfo.TextIndex);
+                    ContentsScriptGenerator.Generate(sheets, config, languageInfo.TextIndex);
 
                     GameTextScriptGenerator.Generate(sheets, config);
 
                     EditorUtility.DisplayProgressBar(progressTitle, "Generate asset.", 0.5f);
 
-                    GameTextAssetGenerator.Build(gameTextAsset, records, config, languageInfo.TextIndex);
+                    GameTextAssetGenerator.Build(gameTextAsset, sheets, config, languageInfo.TextIndex);
 
                     EditorUtility.DisplayProgressBar(progressTitle, "Complete.", 1f);
 
@@ -86,9 +82,9 @@ namespace Modules.GameText.Editor
 
         private static SheetData[] LoadSheetData(GameTextConfig config)
         {
-            var recordDirectory = config.GetRecordFolderPath();
+            var recordDirectory = config.GetContentsFolderPath();
 
-            var sheetFileExtension = config.GetSheetFileExtension();
+            var extension = config.GetFileExtension();
 
             if (!Directory.Exists(recordDirectory))
             {
@@ -97,14 +93,15 @@ namespace Modules.GameText.Editor
             }
 
             var sheetFiles = Directory.EnumerateFiles(recordDirectory, "*.*", SearchOption.TopDirectoryOnly)
-                .Where(x => Path.GetExtension(x) == sheetFileExtension)
+                .Where(x => Path.GetExtension(x) == extension)
+                .Select(x => PathUtility.ConvertPathSeparator(x))
                 .ToArray();
 
             var list = new List<SheetData>();
 
             foreach (var sheetFile in sheetFiles)
             {
-                var sheetData = FileSystem.LoadFile<SheetData>(sheetFile, config.FileFormat);
+                var sheetData = FileLoader.LoadFile<SheetData>(sheetFile, config.FileFormat);
 
                 if (sheetData != null)
                 {
@@ -114,38 +111,7 @@ namespace Modules.GameText.Editor
 
             return list.ToArray();
         }
-
-        private static RecordData[] LoadRecordData(GameTextConfig config)
-        {
-            var recordDirectory = config.GetRecordFolderPath();
-
-            var recordFileExtension = config.GetRecordFileExtension();
-
-            if (!Directory.Exists(recordDirectory))
-            {
-                Debug.LogErrorFormat("Directory {0} not found.", recordDirectory);
-                return null;
-            }
-
-            var recordFiles = Directory.EnumerateFiles(recordDirectory, "*.*", SearchOption.AllDirectories)
-                .Where(x => Path.GetExtension(x) == recordFileExtension)
-                .ToArray();
-
-            var list = new List<RecordData>();
-
-            foreach (var recordFile in recordFiles)
-            {
-                var recordData = FileSystem.LoadFile<RecordData>(recordFile, config.FileFormat);
-
-                if (recordData != null)
-                {
-                    list.Add(recordData);
-                }
-            }
-
-            return list.ToArray();
-        }
-
+        
         private static GameTextAsset LoadAsset(string assetFolderPath, string resourcesPath)
         {
             var assetPath = PathUtility.Combine(assetFolderPath, resourcesPath);
