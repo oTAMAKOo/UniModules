@@ -20,7 +20,6 @@ namespace Modules.GameText.Editor
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Extensions;
 
 namespace Modules.GameText
 {
@@ -128,7 +127,7 @@ namespace Modules.GameText
 
             if (string.IsNullOrEmpty(textGuid)) { return null; }
 
-            return Instance.Cache.GetValueOrDefault(textGuid);
+            return Instance.FindText(textGuid);
         }
 
 #GETTEXT_METHODS#

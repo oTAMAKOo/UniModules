@@ -1,8 +1,6 @@
-﻿﻿﻿
+﻿
 using UnityEngine;
 using UnityEditor;
-using UnityEditor.Callbacks;
-using Unity.Linq;
 using System;
 using System.Linq;
 using System.Collections.Generic;
@@ -13,7 +11,7 @@ using Modules.Devkit.CompileNotice;
 
 namespace Modules.GameText.Components
 {
-	public class GameTextSelector : ScriptableWizard
+    public class GameTextSelector : ScriptableWizard
     {
         //----- params -----
 
@@ -241,7 +239,7 @@ namespace Modules.GameText.Components
 
             foreach (var textData in categoryTexts)
             {
-                var text = gameText.Cache.GetValueOrDefault(textData.Value);
+                var text = gameText.FindText(textData.Value);
 
                 var info = new SelectionInfo(textData.Value, textData.Key.ToString(), text);
 

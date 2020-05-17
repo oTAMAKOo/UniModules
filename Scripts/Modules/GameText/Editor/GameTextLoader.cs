@@ -1,10 +1,7 @@
-﻿﻿
-using System.Linq;
-using UnityEngine;
+﻿
 using UnityEditor.Callbacks;
-using UniRx;
+using System.Linq;
 using Extensions.Devkit;
-using Modules.Devkit.Prefs;
 using Modules.GameText.Components;
 
 namespace Modules.GameText.Editor

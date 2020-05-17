@@ -1,8 +1,8 @@
 ﻿
 using UnityEditor;
-using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Cryptography;
 using Extensions;
 using Modules.GameText.Components;
 
@@ -18,10 +18,8 @@ namespace Modules.GameText.Editor
 
         //----- method -----
 
-        public static void Build(GameTextAsset asset, SheetData[] sheets, GameTextConfig config, int textIndex)
+        public static void Build(GameTextAsset asset, SheetData[] sheets, GameTextConfig config, int textIndex, AesManaged aesManaged)
         {
-            var aesManaged = AESExtension.CreateAesManaged(GameText.AESKey, GameText.AESIv);
-
             var contents = new List<TextContent>();
 
             for (var i = 0; i < sheets.Length; i++)

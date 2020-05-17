@@ -26,7 +26,8 @@ namespace Modules.GameText.Editor
             if (languageInfo == null) { return; }
 
             var progressTitle = "Generate GameText";
-           
+
+            var gameText = GameText.Instance;
             var config = GameTextConfig.Instance;
 
             // 読み込み.
@@ -39,6 +40,8 @@ namespace Modules.GameText.Editor
 
             if (sheets.Any(x => x.records != null && x.records.Any()))
             {
+                var aesManaged = gameText.GetAesManaged();
+
                 AssetDatabase.StartAssetEditing();
 
                 try
@@ -57,7 +60,7 @@ namespace Modules.GameText.Editor
                     {
                         var gameTextAsset = LoadAsset(assetFolderPath, languageInfo.AssetName);
 
-                        GameTextAssetGenerator.Build(gameTextAsset, sheets, config, languageInfo.TextIndex);
+                        GameTextAssetGenerator.Build(gameTextAsset, sheets, config, languageInfo.TextIndex, aesManaged);
                     }
 
                     EditorUtility.DisplayProgressBar(progressTitle, "Complete.", 1f);

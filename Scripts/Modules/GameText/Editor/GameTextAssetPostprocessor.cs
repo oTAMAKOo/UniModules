@@ -1,13 +1,5 @@
-﻿﻿﻿
-using UnityEngine;
+﻿
 using UnityEditor;
-using Unity.Linq;
-using System;
-using System.IO;
-using System.Linq;
-using System.Collections.Generic;
-using UniRx;
-using Extensions.Devkit;
 using Modules.GameText.Components;
 
 namespace Modules.GameText.Editor

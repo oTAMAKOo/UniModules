@@ -3,7 +3,6 @@ using UnityEngine;
 using System;
 using System.Collections.Generic;
 using Extensions;
-using Extensions.Serialize;
 
 namespace Modules.GameText.Components
 {

@@ -1,6 +1,7 @@
 ﻿
 using System;
 using System.Collections.Generic;
+using System.Security.Cryptography;
 using Extensions;
 
 namespace Modules.GameText.Components
@@ -11,9 +12,27 @@ namespace Modules.GameText.Components
 
         //----- field -----
 
+        protected Dictionary<string, string> cache = null;
+
         //----- property -----
 
+        public IReadOnlyDictionary<string, string> Cache { get { return cache; } }
+
         //----- method -----
+
+        protected override void OnCreate()
+        {
+            cache = new Dictionary<string, string>();
+            
+            BuildGenerateContents();
+        }
+
+        public string FindText(string textGuid)
+        {
+            if (string.IsNullOrEmpty(textGuid)) { return string.Empty; }
+
+            return cache.GetValueOrDefault(textGuid);
+        }
 
         protected virtual void BuildGenerateContents() { }
 
@@ -28,5 +47,9 @@ namespace Modules.GameText.Components
         public virtual IReadOnlyDictionary<Enum, string> FindCategoryTexts(string categoryGuid) { return null; }
 
         public virtual string FindTextGuid(Enum textType) { return null; }
+
+        protected abstract string GetAesKey();
+
+        protected abstract string GetAesIv();
     }
 }

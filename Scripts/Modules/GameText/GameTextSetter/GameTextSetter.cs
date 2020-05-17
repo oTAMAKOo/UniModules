@@ -99,7 +99,7 @@ namespace Modules.GameText.Components
 
             if (string.IsNullOrEmpty(categoryGuid)) { return; }
 
-            content = string.IsNullOrEmpty(textGuid) ? string.Empty : gameText.Cache.GetValueOrDefault(textGuid);
+            content = gameText.FindText(textGuid);
 
             ApplyText(content);
         }

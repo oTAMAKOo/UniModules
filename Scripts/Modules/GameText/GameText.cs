@@ -1,6 +1,5 @@
 ﻿
 using UnityEngine;
-using System;
 using System.Linq;
 using System.Collections.Generic;
 using System.Security.Cryptography;
@@ -13,37 +12,34 @@ namespace Modules.GameText
     {
         //----- params -----
 
-        public const string AESKey = "8FweHH7BpESL2eJUtntTFCM3ZVx3B3JT";
-        public const string AESIv = "AizA3xRfstJfPtpI";
-
         //----- field -----
+
+        private AesManaged aesManaged = null;
 
         private TextContent[] textContents = null;
 
         //----- property -----
-
-        public Dictionary<string, string> Cache { get; private set; }
-
+        
         //----- method -----
 
-        private GameText()
-        {
-            BuildGenerateContents();
+        private GameText(){ }
 
-            Cache = new Dictionary<string, string>();
+        public AesManaged GetAesManaged()
+        {
+            return aesManaged ?? (aesManaged = AESExtension.CreateAesManaged(GetAesKey(), GetAesIv()));
         }
 
         public void Load(GameTextAsset asset)
         {
-            Cache.Clear();
+            cache.Clear();
 
             if (asset == null) { return; }
-
-            var aesManaged = AESExtension.CreateAesManaged(AESKey, AESIv);
-
+            
             textContents = asset.Contents.ToArray();
 
-            Cache = textContents.ToDictionary(x => x.Guid, x => x.Text.Decrypt(aesManaged));
+            var aesManaged = GetAesManaged();
+
+            cache = textContents.ToDictionary(x => x.Guid, x => x.Text.Decrypt(aesManaged));
         }
 
         public void LoadFromResources(string assetPath)
