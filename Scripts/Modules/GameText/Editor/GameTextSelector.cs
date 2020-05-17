@@ -17,9 +17,9 @@ namespace Modules.GameText.Components
 
         private class SelectionInfo
         {
-            public string TextGuid { get; set; }
-            public string Name { get; set; }
-            public string Text { get; set; }
+            public string TextGuid { get; private set; }
+            public string Name { get; private set; }
+            public string Text { get; private set; }
 
             public SelectionInfo(string textGuid, string name, string text)
             {
@@ -32,11 +32,14 @@ namespace Modules.GameText.Components
         //----- field -----
 
         private string categoryGuid = null;
-        private Vector2 scrollPos = Vector2.zero;
+
+        private GameTextSelectorScrollView scrollView = null;
+
         private string searchText = null;
-        private IDisposable disposable = null;
 
         private SelectionInfo[] selectionCache = null;
+
+        private LifetimeDisposable lifetimeDisposable = null;
 
         private static GameTextSelector instance = null;
 
@@ -67,19 +70,31 @@ namespace Modules.GameText.Components
 
         private void Initialize()
         {
-            disposable = CompileNotification.OnCompileStartAsObservable().Subscribe(_ => Close());
+            lifetimeDisposable = new LifetimeDisposable();
+
+            scrollView = new GameTextSelectorScrollView();
 
             Selection.selectionChanged += () => { Repaint(); };
+
+            CompileNotification.OnCompileStartAsObservable()
+                .Subscribe(_ => Close())
+                .AddTo(lifetimeDisposable.Disposable);
+
+            scrollView.OnSelectAsObservable()
+                .Subscribe(_ => Close())
+                .AddTo(lifetimeDisposable.Disposable);
+
+            scrollView.Contents = GetMatchOfList();
 
             BuildSelectionInfos();
         }
 
         void OnDestroy()
         {
-            if(disposable != null)
+            if(lifetimeDisposable != null)
             {
-                disposable.Dispose();
-                disposable = null;
+                lifetimeDisposable.Dispose();
+                lifetimeDisposable = null;
             }
         }
 
@@ -108,10 +123,6 @@ namespace Modules.GameText.Components
             {
                 EditorGUILayout.Separator();
 
-                var infos = GetMatchOfList();
-
-                var categoryTexts = gameText.FindCategoryTexts(setter.CategoryGuid);
-
                 // Toolbar.
 
                 using (new EditorGUILayout.HorizontalScope(EditorStyles.toolbar, GUILayout.Height(15f)))
@@ -131,6 +142,8 @@ namespace Modules.GameText.Components
                     {
                         searchText = x;
 
+                        scrollView.Contents = GetMatchOfList();
+
                         EditorApplication.delayCall += () =>
                         {
                             Repaint();
@@ -140,6 +153,8 @@ namespace Modules.GameText.Components
                     Action onSearchCancel = () =>
                     {
                         searchText = string.Empty;
+
+                        scrollView.Contents = GetMatchOfList();
 
                         EditorApplication.delayCall += () =>
                         {
@@ -153,73 +168,12 @@ namespace Modules.GameText.Components
                 EditorGUILayout.Separator();
 
                 // Contents.
-
-                using (var scrollViewScope = new EditorGUILayout.ScrollViewScope(scrollPos))
-                {
-                    foreach (var info in infos)
-                    {
-                        GUILayout.Space(-1f);
-
-                        var highlight = setter.TextGuid == info.TextGuid;
-
-                        var originBackgroundColor = GUI.backgroundColor;
-
-                        using (new BackgroundColorScope(highlight ? new Color(0.9f, 1f, 0.9f) : new Color(0.95f, 0.95f, 0.95f)))
-                        {
-                            var size = EditorStyles.label.CalcSize(new GUIContent(info.Text));
-
-                            size.y += 6f;
-
-                            using (new EditorGUILayout.HorizontalScope(EditorLayoutTools.TextAreaStyle, GUILayout.Height(size.y)))
-                            {
-                                var labelStyle = new GUIStyle("IN TextField")
-                                {
-                                    alignment = TextAnchor.MiddleLeft,
-                                };
-
-                                GUILayout.Space(10f);
-                                
-                                GUILayout.Label(info.Name, labelStyle, GUILayout.MinWidth(220f), GUILayout.Height(size.y));
-
-                                GUILayout.Label(info.Text, labelStyle, GUILayout.MaxWidth(500f), GUILayout.Height(size.y));
-
-                                GUILayout.FlexibleSpace();
-
-                                using (new EditorGUILayout.VerticalScope())
-                                {
-                                    var buttonHeight = 18f;
-
-                                    GUILayout.Space((size.y - buttonHeight) * 0.5f);
-
-                                    using (new BackgroundColorScope(originBackgroundColor))
-                                    {
-                                        if (GUILayout.Button("Select", GUILayout.Width(75f), GUILayout.Height(buttonHeight)))
-                                        {
-                                            UnityEditorUtility.RegisterUndo("GameTextSelector-Select", setter);
-
-                                            var textInfo = categoryTexts.FirstOrDefault(x => x.Value == info.TextGuid);
-
-                                            if (!textInfo.Equals(default(KeyValuePair<Enum, string>)))
-                                            {
-                                                setter.SetText(textInfo.Key);
-                                                setterInspector.Repaint();
-
-                                                Close();
-                                            }
-                                        }
-                                    }
-
-                                    GUILayout.Space((size.y - buttonHeight) * 0.5f);
-                                }
-
-                                GUILayout.Space(8f);
-                            }
-                        }
-                    }
-
-                    scrollPos = scrollViewScope.scrollPosition;
-                }
                 
+                scrollView.Setter = setter;
+                scrollView.SetterInspector = setterInspector;
+                scrollView.CategoryTexts = gameText.FindCategoryTexts(setter.CategoryGuid);
+
+                scrollView.Draw();
             }
             else
             {
@@ -247,6 +201,8 @@ namespace Modules.GameText.Components
             }
             
             selectionCache = list.ToArray();
+
+            scrollView.Contents = GetMatchOfList();
         }
 
         private SelectionInfo[] GetMatchOfList()
@@ -269,6 +225,94 @@ namespace Modules.GameText.Components
             }
             
             return list.ToArray();
+        }
+
+        private sealed class GameTextSelectorScrollView : EditorGUIFastScrollView<SelectionInfo>
+        {
+            //----- params -----
+
+            //----- field -----
+
+            private Subject<Unit> onSelect = null;
+
+            //----- property -----
+
+            public override Direction Type { get { return Direction.Vertical; } }
+
+            public GameTextSetter Setter { get; set; }
+
+            public GameTextSetterInspector SetterInspector { get; set; }
+
+            public IReadOnlyDictionary<Enum, string> CategoryTexts { get; set; }
+
+            //----- method -----
+
+            protected override void DrawContent(int index, SelectionInfo content)
+            {
+                var highlight = Setter.TextGuid == content.TextGuid;
+
+                var originBackgroundColor = GUI.backgroundColor;
+
+                using (new BackgroundColorScope(highlight ? new Color(0.9f, 1f, 0.9f) : new Color(0.95f, 0.95f, 0.95f)))
+                {
+                    var size = EditorStyles.label.CalcSize(new GUIContent(content.Text));
+
+                    size.y += 6f;
+
+                    using (new EditorGUILayout.HorizontalScope(EditorLayoutTools.TextAreaStyle, GUILayout.Height(size.y)))
+                    {
+                        var labelStyle = new GUIStyle("IN TextField")
+                        {
+                            alignment = TextAnchor.MiddleLeft,
+                        };
+
+                        GUILayout.Space(10f);
+
+                        GUILayout.Label(content.Name, labelStyle, GUILayout.MinWidth(220f), GUILayout.Height(size.y));
+
+                        GUILayout.Label(content.Text, labelStyle, GUILayout.MaxWidth(500f), GUILayout.Height(size.y));
+
+                        GUILayout.FlexibleSpace();
+
+                        using (new EditorGUILayout.VerticalScope())
+                        {
+                            var buttonHeight = 18f;
+
+                            GUILayout.Space((size.y - buttonHeight) * 0.5f);
+
+                            using (new BackgroundColorScope(originBackgroundColor))
+                            {
+                                if (GUILayout.Button("Select", GUILayout.Width(75f), GUILayout.Height(buttonHeight)))
+                                {
+                                    UnityEditorUtility.RegisterUndo("GameTextSelector-Select", Setter);
+
+                                    var textInfo = CategoryTexts.FirstOrDefault(x => x.Value == content.TextGuid);
+
+                                    if (!textInfo.Equals(default(KeyValuePair<Enum, string>)))
+                                    {
+                                        Setter.SetText(textInfo.Key);
+                                        SetterInspector.Repaint();
+
+                                        if (onSelect != null)
+                                        {
+                                            onSelect.OnNext(Unit.Default);
+                                        }
+                                    }
+                                }
+                            }
+
+                            GUILayout.Space((size.y - buttonHeight) * 0.5f);
+                        }
+
+                        GUILayout.Space(8f);
+                    }
+                }
+            }
+
+            public IObservable<Unit> OnSelectAsObservable()
+            {
+                return onSelect ?? (onSelect = new Subject<Unit>());
+            }
         }
     }
 }
