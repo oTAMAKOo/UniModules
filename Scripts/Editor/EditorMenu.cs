@@ -47,8 +47,8 @@ namespace Modules
 
         #region Generators
 
-        public const string GeneratorsMenu = MenuRoot + "Generators/";
-        public const string GeneratorsScripts = GeneratorsMenu + "Scripts/";
+        protected const string GeneratorsMenu = MenuRoot + "Generators/";
+        protected const string GeneratorsScripts = GeneratorsMenu + "Scripts/";
 
         [MenuItem(GeneratorsScripts + "All Scripts", priority = 0)]
         public static void GenerateAll()
@@ -128,7 +128,7 @@ namespace Modules
 
         #region Master
 
-        public const string MasterMenu = MenuRoot + "Master/";
+        protected const string MasterMenu = MenuRoot + "Master/";
 
         //------ AssetDataBaseから読込 ------
 
@@ -153,7 +153,7 @@ namespace Modules
 
         #region Resource
 
-        public const string ResourcesMenu = MenuRoot + "ExternalResources/";
+        protected const string ResourcesMenu = MenuRoot + "ExternalResources/";
 
         //------ AssetDataBaseから読込 ------
 
@@ -206,7 +206,7 @@ namespace Modules
 
         #if ENABLE_CRIWARE_ADX || ENABLE_CRIWARE_SOFDEC
 
-        public const string CriWareMenu = MenuRoot + "CriWare/";
+        protected const string CriWareMenu = MenuRoot + "CriWare/";
 
         [MenuItem(itemName: CriWareMenu + "Open CriAssetUpdateWindow", priority = 0)]
         public static void OpenCriAssetUpdateWindow()
@@ -230,7 +230,7 @@ namespace Modules
 
         #region Tools
 
-        public const string ToolsMenu = MenuRoot + "Tools/";
+        protected const string ToolsMenu = MenuRoot + "Tools/";
 
         [MenuItem(itemName: ToolsMenu + "Cleaner/Clean CanvasRenderer On", priority = 0)]
         public static void ToggleCanvasRendererCleanerAutoMode()
@@ -303,7 +303,7 @@ namespace Modules
 
         #region Settings
 
-        public const string SettingsMenu = MenuRoot + "Settings/";
+        protected const string SettingsMenu = MenuRoot + "Settings/";
         
         //------ コンパイル時のSceneView表示 ------
 
@@ -403,7 +403,7 @@ namespace Modules
 
         #region Windows
 
-        public const string WindowsMenu = MenuRoot + "Window/";
+        protected const string WindowsMenu = MenuRoot + "Window/";
 
         [MenuItem(itemName: WindowsMenu + "Open SceneLaunchWindow", priority = 0)]
         public static void OpenSceneLaunchWindow()
@@ -449,7 +449,7 @@ namespace Modules
 
         #region Build
 
-        public const string BuildMenu = MenuRoot + "Build/";
+        protected const string BuildMenu = MenuRoot + "Build/";
 
         [MenuItem(itemName: BuildMenu + "Open BuildInAssetsWindow", priority = 50)]
         public static void OpenBuildInAssetsWindow()
@@ -465,7 +465,7 @@ namespace Modules
 
         #region Prerelease
 
-        public const string PrereleaseMenu = MenuRoot + "Prerelease/";
+        protected const string PrereleaseMenu = MenuRoot + "Prerelease/";
 
         #endregion
     }

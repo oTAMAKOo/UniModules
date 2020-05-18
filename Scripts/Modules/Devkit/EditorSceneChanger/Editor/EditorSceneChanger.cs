@@ -94,46 +94,58 @@ namespace Modules.Devkit.EditorSceneChange
         {
             var scene = EditorSceneManager.GetSceneAt(0);
 
-            switch (State)
+            try
             {
-                case SceneChangeState.WaitOpenScene:
-                    {
-                        if (!string.IsNullOrEmpty(EditorSceneChangerPrefs.targetScene))
+                switch (State)
+                {
+                    case SceneChangeState.WaitOpenScene:
                         {
-                            EditorApplication.LockReloadAssemblies();
+                            if (!string.IsNullOrEmpty(EditorSceneChangerPrefs.targetScene))
+                            {
+                                EditorApplication.LockReloadAssemblies();
 
-                            EditorSceneChangerPrefs.resumeScene = scene.path;
-                            EditorSceneManager.OpenScene(EditorSceneChangerPrefs.targetScene);
+                                EditorSceneChangerPrefs.resumeScene = scene.path;
 
-                            State = SceneChangeState.WaitSceneChange;
+                                EditorSceneManager.OpenScene(EditorSceneChangerPrefs.targetScene);
+
+                                State = SceneChangeState.WaitSceneChange;
+                            }
+                            else
+                            {
+                                State = SceneChangeState.None;
+
+                                EditorApplication.update -= SceneChange;
+                            }
                         }
-                        else
+                        break;
+
+                    case SceneChangeState.WaitSceneChange:
                         {
-                            State = SceneChangeState.None;
+                            if (scene.path == EditorSceneChangerPrefs.targetScene)
+                            {
+                                State = SceneChangeState.None;
 
-                            EditorApplication.update -= SceneChange;
+                                EditorSceneChangerPrefs.targetScene = null;
+
+                                onEditorSceneChange.OnNext(Unit.Default);
+                                onEditorSceneChange.OnCompleted();
+                                onEditorSceneChange = null;
+
+                                EditorApplication.update -= SceneChange;
+
+                                EditorApplication.UnlockReloadAssemblies();
+                            }
                         }
-                    }
-                    break;
+                        break;
+                }
+            }
+            catch
+            {
+                State = SceneChangeState.None;
 
-                case SceneChangeState.WaitSceneChange:
-                    {
-                        if (scene.path == EditorSceneChangerPrefs.targetScene)
-                        {
-                            State = SceneChangeState.None;
+                EditorApplication.update -= SceneChange;
 
-                            EditorSceneChangerPrefs.targetScene = null;
-
-                            onEditorSceneChange.OnNext(Unit.Default);
-                            onEditorSceneChange.OnCompleted();
-                            onEditorSceneChange = null;
-
-                            EditorApplication.update -= SceneChange;
-
-                            EditorApplication.UnlockReloadAssemblies();
-                        }
-                    }
-                    break;
+                EditorApplication.UnlockReloadAssemblies();
             }
         }
     }
