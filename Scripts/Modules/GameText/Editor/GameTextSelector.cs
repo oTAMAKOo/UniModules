@@ -177,7 +177,7 @@ namespace Modules.GameText.Components
             }
             else
             {
-                EditorGUILayout.HelpBox("GameText Notfound", MessageType.Warning);
+                EditorGUILayout.HelpBox("GameText not found", MessageType.Warning);
             }
         }
 
@@ -253,7 +253,7 @@ namespace Modules.GameText.Components
 
                 var originBackgroundColor = GUI.backgroundColor;
 
-                using (new BackgroundColorScope(highlight ? new Color(0.9f, 1f, 0.9f) : new Color(0.95f, 0.95f, 0.95f)))
+                using (new BackgroundColorScope(highlight ? new Color(0.6f, 1f, 0.9f) : new Color(0.95f, 0.95f, 0.95f)))
                 {
                     var size = EditorStyles.label.CalcSize(new GUIContent(content.Text));
 
