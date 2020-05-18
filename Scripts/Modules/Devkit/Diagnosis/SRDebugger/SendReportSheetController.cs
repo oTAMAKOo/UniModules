@@ -7,8 +7,10 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Globalization;
+using System.Linq;
 using System.Text;
 using System.Security.Cryptography;
+using Newtonsoft.Json;
 using UniRx;
 using Extensions;
 
@@ -261,26 +263,11 @@ namespace Modules.Devkit.Diagnosis.SRDebugger
 
         private string GetReportTextPostData()
         {
-            var logs = SRTrackLogService.Logs;
+            var logs = SRTrackLogService.Logs.ToArray();
 
             if (logs.IsEmpty()) { return string.Empty; }
-
-            var builder = new StringBuilder();
-
-            foreach (var log in logs)
-            {
-                builder.AppendFormat("Type: {0}", Enum.GetName(typeof(LogType), log.LogType)).AppendLine();
-                builder.AppendFormat("Message: {0}", log.Message).AppendLine();
-
-                if (!string.IsNullOrEmpty(log.StackTrace))
-                {
-                    builder.AppendFormat("StackTrace:\n{0}", log.StackTrace).AppendLine();
-                }
-
-                builder.AppendLine();
-            }
-
-            return builder.ToString();
+            
+            return JsonConvert.SerializeObject(logs, Formatting.None);
         }
 
         private void BuildPostContent()

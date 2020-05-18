@@ -1,6 +1,7 @@
 ﻿
 #if ENABLE_SRDEBUGGER
 
+using System;
 using UnityEngine;
 using System.Collections.Generic;
 using UniRx;
@@ -9,12 +10,10 @@ using Modules.Devkit.Log;
 
 namespace Modules.Devkit.Diagnosis.SRDebugger
 {
+    [Serializable]
     public sealed class LogEntry
     {
         //----- params -----
-
-        private const int MessagePreviewLength = 180;
-        private const int StackTracePreviewLength = 120;
 
         //----- field -----
 
@@ -23,8 +22,6 @@ namespace Modules.Devkit.Diagnosis.SRDebugger
         public LogType LogType { get; private set; }
         public string Message { get; private set; }
         public string StackTrace { get; private set; }
-        public string MessagePreview { get; private set; }
-        public string StackTracePreview { get; private set; }
 
         //----- method -----
 
@@ -33,16 +30,6 @@ namespace Modules.Devkit.Diagnosis.SRDebugger
             LogType = logType;
             Message = message;
             StackTrace = stackTrace;
-
-            MessagePreview = GetPreviewText(Message, MessagePreviewLength);
-            StackTracePreview = GetPreviewText(StackTrace, StackTracePreviewLength);
-        }
-
-        private string GetPreviewText(string text, int maxLength)
-        {
-            var line = text.Split('\n')[0];
-
-            return string.IsNullOrEmpty(line) ? string.Empty : line.Substring(0, Mathf.Min(line.Length, maxLength));
         }
     }
 
