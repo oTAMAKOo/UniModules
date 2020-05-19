@@ -41,8 +41,6 @@ namespace Modules.GameText.Components
             }
 
             Undo.undoRedoPerformed += OnUndoRedo;
-
-            InitializeDevelopmentText();
         }
 
         void OnDisable()
@@ -161,27 +159,6 @@ namespace Modules.GameText.Components
                     }
                 }
             }
-        }
-
-        private void InitializeDevelopmentText()
-        {
-            if (Application.isPlaying) { return; }
-
-            if (!string.IsNullOrEmpty(instance.CategoryGuid)) { return; }
-
-            if (!string.IsNullOrEmpty(instance.TextGuid)) { return; }
-
-            if (!string.IsNullOrEmpty(instance.Content)) { return; }
-
-            var developmentText = Reflection.GetPrivateField<GameTextSetter, string>(instance, "developmentText");
-
-            if (developmentText != null) { return; }
-
-            var text = (string)Reflection.InvokePrivateMethod(instance, "GetTargetText");
-            
-            Reflection.InvokePrivateMethod(instance, "SetDevelopmentText", new object[]{ text });
-
-            Reflection.InvokePrivateMethod(instance, "ApplyDevelopmentText");
         }
 
         private void OnGameTextSetterCategoryChanged(string categoryGuid)

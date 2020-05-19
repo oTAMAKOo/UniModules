@@ -50,15 +50,7 @@ namespace Modules.GameText.Components
                 aesManaged = AESExtension.CreateAesManaged(AESKey, AESIv);
             }
 
-            // developmentTextがnullの時にだけInitializeDevelopmentTextで初期化を行うのでnullではなく空文字を入れる.
-            if (text == null)
-            {
-                developmentText = string.Empty;
-            }
-            else
-            {
-                developmentText = string.IsNullOrEmpty(text) ? string.Empty : text.Encrypt(aesManaged);
-            }
+            developmentText = string.IsNullOrEmpty(text) ? string.Empty : text.Encrypt(aesManaged);
         }
 
         private void ApplyDevelopmentText()
