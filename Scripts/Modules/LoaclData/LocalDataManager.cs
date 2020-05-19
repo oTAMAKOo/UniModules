@@ -137,7 +137,7 @@ namespace Modules.LocalData
         {
             var directory = GetFileDirectory();
 
-            DirectoryUtility.Delete(directory);
+            DirectoryUtility.Clean(directory);
         }
     }
 }

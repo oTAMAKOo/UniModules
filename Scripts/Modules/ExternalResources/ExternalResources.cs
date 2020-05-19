@@ -203,13 +203,7 @@ namespace Modules.ExternalResource
 
             ClearVersion();
 
-            if (Directory.Exists(installDir))
-            {
-                DirectoryUtility.Clean(installDir);
-
-                // 一旦削除するので再度生成.
-                Directory.CreateDirectory(installDir);
-            }
+            DirectoryUtility.Clean(installDir);
 
             Caching.ClearCache();
         }

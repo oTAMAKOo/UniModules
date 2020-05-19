@@ -116,66 +116,19 @@ namespace Extensions
         }
 
         /// <summary>
-        /// 指定したディレクトリとその中身を全て削除.
-        /// </summary>
-        public static void Delete(string targetDirectoryPath)
-        {
-            if (!Directory.Exists(targetDirectoryPath))
-            {
-                return;
-            }
-
-            // ディレクトリ以外の全ファイルを削除.
-            var filePaths = Directory.GetFiles(targetDirectoryPath, "*", SearchOption.AllDirectories);
-
-            foreach (string filePath in filePaths)
-            {
-                if (FileUtility.IsFileLocked(filePath)) { continue; }
-
-                File.SetAttributes(filePath, FileAttributes.Normal);
-                File.Delete(filePath);
-            }
-
-            // ディレクトリの中のディレクトリも再帰的に削除.
-            DeleteEmpty(targetDirectoryPath);
-
-            //中が空になったらディレクトリ自身も削除.
-            try
-            {
-                Directory.Delete(targetDirectoryPath, false);
-            }
-            catch (Exception)
-            {
-                // ignored.
-            }
-        }
-
-        /// <summary>
         /// 指定されたディレクトリ内のファイル / フォルダを削除.
         /// </summary>
-        public static void Clean(string targetDirectoryPath)
+        public static void Clean(string path)
         {
-            var target = new DirectoryInfo(targetDirectoryPath);
+            if (string.IsNullOrEmpty(path)) { return; }
 
-            foreach (var file in target.GetFiles())
+            if (!Directory.Exists(path)) { return; }
+
+            var directories = Directory.GetDirectories(path);
+
+            foreach (var directory in directories)
             {
-                if (FileUtility.IsFileLocked(file.FullName)) { continue; }
-
-                try
-                {
-                    file.Delete();
-                }
-                catch (Exception)
-                {
-                    // ignored.
-                }
-            }
-
-            foreach (var dir in target.GetDirectories())
-            {
-                var path = PathUtility.ConvertPathSeparator(dir.FullName) + PathUtility.PathSeparator;
-
-                Delete(path);
+                Directory.Delete(directory, true);
             }
         }
     }
