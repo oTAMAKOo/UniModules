@@ -51,7 +51,14 @@ namespace Modules.GameText.Components
             }
 
             // developmentTextがnullの時にだけInitializeDevelopmentTextで初期化を行うのでnullではなく空文字を入れる.
-            developmentText = text == null ? string.Empty : text.Encrypt(aesManaged);
+            if (text == null)
+            {
+                developmentText = string.Empty;
+            }
+            else
+            {
+                developmentText = string.IsNullOrEmpty(text) ? string.Empty : text.Encrypt(aesManaged);
+            }
         }
 
         private void ApplyDevelopmentText()
