@@ -128,7 +128,7 @@ namespace Modules.GameText.Components
 	            return textComponent.text;
 	        }
 
-	        if (textMeshProComponent == null)
+	        if (textMeshProComponent != null)
 	        {
                 return textMeshProComponent.text;
             }
