@@ -21,6 +21,8 @@ namespace Modules.GameText.Components
 
         private GameTextSetter instance = null;
 
+        private bool initialized = false;
+
         //----- property -----
 
         public GameTextSetter Instance { get { return instance; } }
@@ -31,16 +33,14 @@ namespace Modules.GameText.Components
         
         void OnEnable()
         {
-            instance = target as GameTextSetter;
-
-            categoryGuid = instance.CategoryGuid;
-
             if (!GameTextLoader.IsLoaded)
             {
                 GameTextLoader.Reload();
             }
 
             Undo.undoRedoPerformed += OnUndoRedo;
+
+            initialized = false;
         }
 
         void OnDisable()
@@ -52,6 +52,13 @@ namespace Modules.GameText.Components
         public override void OnInspectorGUI()
         {
             instance = target as GameTextSetter;
+
+            if (!initialized)
+            {
+                categoryGuid = instance.CategoryGuid;
+
+                initialized = true;
+            }
 
             Current = this;
 
@@ -165,7 +172,7 @@ namespace Modules.GameText.Components
         {
             if (string.IsNullOrEmpty(categoryGuid))
             {
-                Reflection.InvokePrivateMethod(instance, "SetDevelopmentText", new object[] { null });               
+                Reflection.InvokePrivateMethod(instance, "SetDevelopmentText", new object[] { string.Empty });               
             }
 
             instance.ImportText();
