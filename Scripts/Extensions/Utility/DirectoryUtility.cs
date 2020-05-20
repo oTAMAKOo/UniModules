@@ -124,6 +124,26 @@ namespace Extensions
 
             if (!Directory.Exists(path)) { return; }
 
+            // ファイル削除.
+
+            var directoryInfo = new DirectoryInfo(path);
+
+            foreach (var file in directoryInfo.GetFiles())
+            {
+                if (FileUtility.IsFileLocked(file.FullName)) { continue; }
+
+                try
+                {
+                    file.Delete();
+                }
+                catch (Exception)
+                {
+                    // ignored.
+                }
+            }
+
+            // フォルダ削除.
+
             var directories = Directory.GetDirectories(path);
 
             foreach (var directory in directories)

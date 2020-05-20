@@ -11,7 +11,7 @@ namespace Modules.GameText.Editor
 
         public string guid { get; set; } = null;
 
-        public RecordData[] records { get; set; } = null;
+        public RecordData[] records { get; set; } = new RecordData[0];
     }
 
     public sealed class RecordData

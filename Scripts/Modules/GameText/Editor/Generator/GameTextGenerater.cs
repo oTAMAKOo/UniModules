@@ -38,47 +38,50 @@ namespace Modules.GameText.Editor
 
             if (sheets == null) { return; }
 
-            if (sheets.Any(x => x.records != null && x.records.Any()))
+            var aesManaged = gameText.GetAesManaged();
+
+            AssetDatabase.StartAssetEditing();
+
+            EditorApplication.LockReloadAssemblies();
+
+            DirectoryUtility.Clean(config.ScriptFolderPath);
+
+            AssetDatabase.ImportAsset(config.ScriptFolderPath, ImportAssetOptions.ForceUpdate);
+
+            try
             {
-                var aesManaged = gameText.GetAesManaged();
+                EditorUtility.DisplayProgressBar(progressTitle, "Generate script.", 0.25f);
 
-                AssetDatabase.StartAssetEditing();
+                CategoryScriptGenerator.Generate(sheets, config);
 
-                try
+                GameTextScriptGenerator.Generate(sheets, config);
+
+                ContentsScriptGenerator.Generate(sheets, config, languageInfo.TextIndex);
+
+                EditorUtility.DisplayProgressBar(progressTitle, "Generate asset.", 0.5f);
+
+                foreach (var assetFolderPath in config.AssetFolderPaths)
                 {
-                    EditorUtility.DisplayProgressBar(progressTitle, "Generate script.", 0.25f);
+                    var gameTextAsset = LoadAsset(assetFolderPath, languageInfo.AssetName);
 
-                    CategoryScriptGenerator.Generate(sheets, config);
-
-                    ContentsScriptGenerator.Generate(sheets, config, languageInfo.TextIndex);
-
-                    GameTextScriptGenerator.Generate(sheets, config);
-
-                    EditorUtility.DisplayProgressBar(progressTitle, "Generate asset.", 0.5f);
-
-                    foreach (var assetFolderPath in config.AssetFolderPaths)
-                    {
-                        var gameTextAsset = LoadAsset(assetFolderPath, languageInfo.AssetName);
-
-                        GameTextAssetGenerator.Build(gameTextAsset, sheets, config, languageInfo.TextIndex, aesManaged);
-                    }
-
-                    EditorUtility.DisplayProgressBar(progressTitle, "Complete.", 1f);
-
-                    UnityConsole.Info("GameTextを出力しました");
-                    
-                    AssetDatabase.SaveAssets();
+                    GameTextAssetGenerator.Build(gameTextAsset, sheets, config, languageInfo.TextIndex, aesManaged);
                 }
-                finally
-                {
-                    AssetDatabase.StopAssetEditing();
 
-                    EditorUtility.ClearProgressBar();
-                }
+                EditorUtility.DisplayProgressBar(progressTitle, "Complete.", 1f);
+
+                UnityConsole.Info("GameTextを出力しました");
+
+                AssetDatabase.SaveAssets();
             }
-            else
+            finally
             {
-                Debug.Log("GameText record not found.");
+                EditorApplication.UnlockReloadAssemblies();
+
+                AssetDatabase.StopAssetEditing();
+
+                AssetDatabase.Refresh();
+
+                EditorUtility.ClearProgressBar();
             }
 
             EditorUtility.ClearProgressBar();
