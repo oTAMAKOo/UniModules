@@ -149,7 +149,7 @@ namespace Modules.GameText.Editor
 
             #if UNITY_EDITOR_OSX
 
-            fileName = oscExporterFileName;
+            fileName = osxExporterFileName;
 
             #endif
 
