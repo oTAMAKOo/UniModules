@@ -1,6 +1,7 @@
 ﻿
 using UnityEditor.Callbacks;
 using System.Linq;
+using UniRx;
 using Extensions.Devkit;
 using Modules.GameText.Components;
 
@@ -21,7 +22,7 @@ namespace Modules.GameText.Editor
         [DidReloadScripts]
         private static void DidReloadScripts()
         {
-            Reload();
+            Observable.TimerFrame(30).First().Subscribe(_ => Reload());
         }
 
         public static void Reload()
