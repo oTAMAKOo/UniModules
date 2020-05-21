@@ -28,6 +28,11 @@ namespace Modules.Devkit.Diagnosis.SRDebugger
 
         //----- params -----
 
+        public sealed class LogContainer
+        {
+            public LogEntry[] contents = null;
+        }
+
         //----- field -----
 
         [SerializeField]
@@ -246,7 +251,7 @@ namespace Modules.Devkit.Diagnosis.SRDebugger
 
             foreach (var log in logs)
             {
-                builder.AppendLine(log.Message).AppendLine();
+                builder.AppendLine(log.message).AppendLine();
             }
 
             var reportText = builder.ToString();
@@ -265,8 +270,10 @@ namespace Modules.Devkit.Diagnosis.SRDebugger
             var logs = SRTrackLogService.Logs.ToArray();
 
             if (logs.IsEmpty()) { return string.Empty; }
+
+            var container = new LogContainer() { contents = logs };
             
-            return JsonUtility.ToJson(logs);
+            return JsonUtility.ToJson(container);
         }
 
         private void BuildPostContent()

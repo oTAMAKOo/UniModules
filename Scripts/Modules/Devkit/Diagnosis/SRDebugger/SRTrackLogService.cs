@@ -13,9 +13,9 @@ namespace Modules.Devkit.Diagnosis.SRDebugger
     [Serializable]
     public sealed class LogEntry
     {
-        public LogType LogType = default;
-        public string Message = null;
-        public string StackTrace = null;
+        public LogType type = default;
+        public string message = null;
+        public string stackTrace = null;
     }
 
     public static class SRTrackLogService
@@ -71,9 +71,9 @@ namespace Modules.Devkit.Diagnosis.SRDebugger
 
             var item = new LogEntry()
             {
-                LogType = log.Type,
-                Message = log.Condition,
-                StackTrace = log.StackTrace,
+                type = log.Type,
+                message = log.Condition,
+                stackTrace = log.StackTrace,
             };
 
             reportQueue.Enqueue(item);
