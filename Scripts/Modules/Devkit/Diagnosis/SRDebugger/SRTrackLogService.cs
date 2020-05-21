@@ -13,24 +13,9 @@ namespace Modules.Devkit.Diagnosis.SRDebugger
     [Serializable]
     public sealed class LogEntry
     {
-        //----- params -----
-
-        //----- field -----
-
-        //----- property -----
-
-        public LogType LogType { get; private set; }
-        public string Message { get; private set; }
-        public string StackTrace { get; private set; }
-
-        //----- method -----
-
-        public LogEntry(LogType logType, string message, string stackTrace)
-        {
-            LogType = logType;
-            Message = message;
-            StackTrace = stackTrace;
-        }
+        public LogType LogType { get; set; }
+        public string Message { get; set; }
+        public string StackTrace { get; set; }
     }
 
     public static class SRTrackLogService
@@ -84,7 +69,12 @@ namespace Modules.Devkit.Diagnosis.SRDebugger
         {
             if (log == null) { return; }
 
-            var item = new LogEntry(log.Type, log.Condition, log.StackTrace);
+            var item = new LogEntry()
+            {
+                LogType = log.Type,
+                Message = log.Condition,
+                StackTrace = log.StackTrace,
+            };
 
             reportQueue.Enqueue(item);
         }

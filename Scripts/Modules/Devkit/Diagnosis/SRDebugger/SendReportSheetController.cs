@@ -10,7 +10,6 @@ using System.Globalization;
 using System.Linq;
 using System.Text;
 using System.Security.Cryptography;
-using Newtonsoft.Json;
 using UniRx;
 using Extensions;
 
@@ -267,7 +266,7 @@ namespace Modules.Devkit.Diagnosis.SRDebugger
 
             if (logs.IsEmpty()) { return string.Empty; }
             
-            return JsonConvert.SerializeObject(logs, Formatting.None);
+            return JsonUtility.ToJson(logs);
         }
 
         private void BuildPostContent()
