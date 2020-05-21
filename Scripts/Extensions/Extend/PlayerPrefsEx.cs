@@ -2,6 +2,7 @@
 using UnityEngine;
 using System;
 using System.Security.Cryptography;
+using Newtonsoft.Json;
 
 namespace Extensions
 {
@@ -209,7 +210,7 @@ namespace Extensions
 
         public static void Set<T>(string name, T value)
         {
-            var json = JsonUtility.ToJson(value);
+            var json = JsonConvert.SerializeObject(value);
 
             SetString(name, json);
         }
@@ -218,7 +219,7 @@ namespace Extensions
         {
             var json = GetString(name, null);
 
-            return string.IsNullOrEmpty(json) ? defaultValue : JsonUtility.FromJson<T>(json);
+            return string.IsNullOrEmpty(json) ? defaultValue : JsonConvert.DeserializeObject<T>(json);
         }
     }
 }

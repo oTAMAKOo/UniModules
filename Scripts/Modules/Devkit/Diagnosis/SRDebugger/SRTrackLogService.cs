@@ -13,9 +13,9 @@ namespace Modules.Devkit.Diagnosis.SRDebugger
     [Serializable]
     public sealed class LogEntry
     {
-        public LogType LogType { get; set; }
-        public string Message { get; set; }
-        public string StackTrace { get; set; }
+        public LogType LogType = default;
+        public string Message = null;
+        public string StackTrace = null;
     }
 
     public static class SRTrackLogService
