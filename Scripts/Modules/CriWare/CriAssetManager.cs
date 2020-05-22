@@ -33,7 +33,7 @@ namespace Modules.CriWare
             {
                 AssetInfo = assetInfo;
 
-                var downloadUrl = Instance.BuildUrl(assetInfo);
+                var downloadUrl = Instance.BuildDownloadUrl(assetInfo);
                 var installPath = Instance.BuildFilePath(assetInfo);
 
                 var directory = Path.GetDirectoryName(installPath);
@@ -395,11 +395,13 @@ namespace Modules.CriWare
             }
         }
 
-        public string BuildUrl(AssetInfo assetInfo)
+        public string BuildDownloadUrl(AssetInfo assetInfo)
         {
             var platformName = UnityPathUtility.GetPlatformName();
-            
-            return PathUtility.Combine(new string[] { remoteUrl, platformName, assetInfo.FileName });
+
+            var url = PathUtility.Combine(new string[] { remoteUrl, platformName, assetInfo.FileName });
+
+            return string.Format("{0}?v={1}", url, assetInfo.FileHash);
         }
 
         public string BuildFilePath(AssetInfo assetInfo)

@@ -183,7 +183,7 @@ namespace Modules.AssetBundles
                 new Tuple<string, int>[0];
         }
 
-        public string BuildDownloadUrl(AssetInfo assetInfo)
+        private string BuildDownloadUrl(AssetInfo assetInfo)
         {
             var platformName = UnityPathUtility.GetPlatformName();
 
