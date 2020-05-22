@@ -84,6 +84,8 @@ namespace Modules.UI
             UnityUtility.SetActive(inputFieldText, !isFocused);
             UnityUtility.SetActive(inputField.textComponent, isFocused);
 
+            inputFieldText.text = inputField.text;
+
             #endif
         }
 
