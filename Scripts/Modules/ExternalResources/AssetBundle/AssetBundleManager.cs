@@ -183,11 +183,13 @@ namespace Modules.AssetBundles
                 new Tuple<string, int>[0];
         }
 
-        public string BuildUrl(string fileName)
+        public string BuildDownloadUrl(AssetInfo assetInfo)
         {
             var platformName = UnityPathUtility.GetPlatformName();
 
-            return PathUtility.Combine(new string[] { remoteUrl, platformName, fileName }) + PackageExtension;
+            var url = PathUtility.Combine(new string[] { remoteUrl, platformName, assetInfo.FileName });
+            
+            return string.Format("{0}{1}?v={2}", url, PackageExtension, assetInfo.FileHash);
         }
 
         public string BuildFilePath(AssetInfo assetInfo)
@@ -333,10 +335,11 @@ namespace Modules.AssetBundles
             //    戻り値を返す時はyield return null以外使わない.
             //----------------------------------------------------------------------------------
             
-            var url = BuildUrl(assetInfo.FileName);
+            var downloadUrl = BuildDownloadUrl(assetInfo);
+
             var filePath = BuildFilePath(assetInfo);
 
-            var downloader = Observable.Defer(() => Observable.FromMicroCoroutine(() => FileDownload(url, filePath, progress)));
+            var downloader = Observable.Defer(() => Observable.FromMicroCoroutine(() => FileDownload(downloadUrl, filePath, progress)));
 
             var downloadYield = downloader
                     .Timeout(TimeoutLimit)
