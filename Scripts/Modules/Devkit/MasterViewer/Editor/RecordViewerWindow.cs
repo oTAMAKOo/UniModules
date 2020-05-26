@@ -201,7 +201,7 @@ namespace Modules.Devkit.MasterViewer
                         recordScrollView.Contents = GetDisplayRecords();
                     }
 
-                    using (new DisableScope(pageCount <= page))
+                    using (new DisableScope(pageCount - 1 <= page))
                     {
                         if (GUILayout.Button(nextArrowIcon, EditorStyles.toolbarButton))
                         {
@@ -434,10 +434,7 @@ namespace Modules.Devkit.MasterViewer
 
             UpdatePageRecords(records);
 
-            if (pageRecords.Count < page)
-            {
-                records = pageRecords[page];
-            }
+            records = pageRecords.ElementAtOrDefault(page);
 
             return records;
         }
