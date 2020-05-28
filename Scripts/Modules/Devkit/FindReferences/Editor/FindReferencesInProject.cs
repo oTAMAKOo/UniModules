@@ -18,6 +18,8 @@ namespace Modules.Devkit.FindReferences
     {
         private const string MenuItemLabel = "Assets/Find References In Project";
 
+        private const int MaxWorkerCount = 50;
+
         [MenuItem(MenuItemLabel, validate = true)]
         public static bool CanExecute()
         {
@@ -215,10 +217,10 @@ namespace Modules.Devkit.FindReferences
 
                 var events = new WaitHandle[]
                 {
-                    StartResolveReferencesWorker(scenes, (metadata) => this.Scenes = metadata, progress),
-                    StartResolveReferencesWorker(prefabs, (metadata) => this.Prefabs = metadata, progress),
-                    StartResolveReferencesWorker(materials, (metadata) => this.Materials = metadata, progress),
-                    StartResolveReferencesWorker(assets, (metadata) => this.Assets = metadata, progress),
+                    StartResolveReferencesWorker(scenes, (metadata) => Scenes = metadata, progress),
+                    StartResolveReferencesWorker(prefabs, (metadata) => Prefabs = metadata, progress),
+                    StartResolveReferencesWorker(materials, (metadata) => Materials = metadata, progress),
+                    StartResolveReferencesWorker(assets, (metadata) => Assets = metadata, progress),
                 };
 
                 while (!WaitHandle.WaitAll(events, 100))
@@ -241,7 +243,7 @@ namespace Modules.Devkit.FindReferences
                 var resetEvent = new ManualResetEvent(false);
                 var completedCount = 0;
 
-                for (var i = 0; i < Environment.ProcessorCount; i++)
+                for (var i = 0; i < MaxWorkerCount; i++)
                 {
                     ThreadPool.QueueUserWorkItem(state =>
                     {
@@ -271,7 +273,7 @@ namespace Modules.Devkit.FindReferences
                         }
 
                         // 全部終わった?.
-                        if (Interlocked.Increment(ref completedCount) == Environment.ProcessorCount)
+                        if (Interlocked.Increment(ref completedCount) == MaxWorkerCount)
                         {
                             setter(dependencyInfoList.ToArray());
                             resetEvent.Set();
@@ -299,40 +301,38 @@ namespace Modules.Devkit.FindReferences
 
                     var fileIdIndex = line.IndexOf("fileID:", StringComparison.Ordinal);
 
-                    if (0 <= fileIdIndex)
+                    if (fileIdIndex == -1) { continue; }
+                    
+                    var fileId = "";
+
+                    var startPos = fileIdIndex + 7;
+
+                    var fileIdEndIndex = line.IndexOf(',', startPos);
+
+                    if (0 <= fileIdEndIndex)
                     {
-                        var fileId = "";
+                        fileId = line.SafeSubstring(startPos, fileIdEndIndex - startPos);
+                    }
 
-                        var startPos = fileIdIndex + 7;
+                    if (string.IsNullOrEmpty(fileId)) { continue; }
 
-                        var fileIdEndIndex = line.IndexOf(',', startPos);
+                    var guidIndex = line.IndexOf("guid:", StringComparison.Ordinal);
 
-                        if (0 <= fileIdEndIndex)
-                        {
-                            fileId = line.SafeSubstring(startPos, fileIdEndIndex - startPos);
-                        }
+                    if(guidIndex == -1) { continue; }
+                    
+                    var guid = line.SafeSubstring(guidIndex + 5, 32);
 
-                        if (string.IsNullOrEmpty(fileId)) { continue; }
+                    if (string.IsNullOrEmpty(guid)) { continue; }
 
-                        var guidIndex = line.IndexOf("guid:", StringComparison.Ordinal);
+                    var fileIds = result.GetValueOrDefault(guid);
 
-                        if(0 <= guidIndex)
-                        {
-                            var guid = line.SafeSubstring(guidIndex + 5, 32);
-
-                            if (string.IsNullOrEmpty(guid)) { continue; }
-
-                            var fileIds = result.GetValueOrDefault(guid);
-
-                            if (fileIds != null)
-                            {
-                                fileIds.Add(fileId);
-                            }
-                            else
-                            {
-                                result.Add(guid, new HashSet<string>(StringComparer.Ordinal) { fileId });
-                            }
-                        }
+                    if (fileIds != null)
+                    {
+                        fileIds.Add(fileId);
+                    }
+                    else
+                    {
+                        result.Add(guid, new HashSet<string>(StringComparer.Ordinal) { fileId });
                     }
                 }
             }
