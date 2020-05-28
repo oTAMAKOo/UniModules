@@ -1,6 +1,7 @@
 ﻿
 #if UNITY_EDITOR
 
+using System;
 using UnityEngine;
 using System.Security.Cryptography;
 using Extensions;
@@ -31,7 +32,7 @@ namespace Modules.GameText.Components
 
         //----- method -----
 
-        public string GetDevelopmentText()
+        private string GetDevelopmentText()
         {
             if (aesManaged == null)
             {
@@ -51,22 +52,24 @@ namespace Modules.GameText.Components
             }
 
             developmentText = string.IsNullOrEmpty(text) ? string.Empty : text.Encrypt(aesManaged);
+
+            ImportText();
         }
 
-        public void ApplyDevelopmentText()
+        private void ApplyDevelopmentText()
         {
             if (Application.isPlaying) { return; }
 
             if (string.IsNullOrEmpty(developmentText)) { return; }
 
-            if (!string.IsNullOrEmpty(categoryGuid)) { return; }
+            if (!string.IsNullOrEmpty(textGuid)) { return; }
 
             var text = GetDevelopmentText();
 
             ApplyText(text);
         }
 
-        public bool CleanDevelopmentText()
+        private bool CleanDevelopmentText()
         {
             if (Application.isPlaying) { return false; }
 

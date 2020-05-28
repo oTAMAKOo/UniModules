@@ -34,19 +34,19 @@ namespace Modules.GameText.Components
             return cache.GetValueOrDefault(textGuid);
         }
 
+        public virtual string FindTextGuid(Enum textType) { return null; }
+
         protected virtual void BuildGenerateContents() { }
 
-        public virtual Type GetCategoriesType() { return null; }
+        protected virtual Type GetCategoriesType() { return null; }
 
-        public virtual string FindCategoryGuid(Enum categoryType) { return null; }
+        protected virtual string FindCategoryGuid(Enum categoryType) { return null; }
 
-        public virtual Type FindCategoryEnumType(string categoryGuid) { return null; }
+        protected virtual Enum FindCategoryEnumFromCategoryGuid(string categoryGuid) { return null; }
 
-        public virtual Enum FindCategoryDefinitionEnum(string categoryGuid) { return null; }
+        protected virtual Enum FindCategoryEnumFromTextGuid(string textGuid) { return null; }
 
-        public virtual IReadOnlyDictionary<Enum, string> FindCategoryTexts(string categoryGuid) { return null; }
-
-        public virtual string FindTextGuid(Enum textType) { return null; }
+        protected virtual IReadOnlyDictionary<Enum, string> FindCategoryTexts(string categoryGuid) { return null; }
 
         protected abstract string GetAesKey();
 

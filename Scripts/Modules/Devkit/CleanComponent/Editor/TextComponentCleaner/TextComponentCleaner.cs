@@ -1,15 +1,13 @@
 ﻿
+using UnityEngine;
+using UnityEditor;
+using Unity.Linq;
 using System;
 using System.Linq;
 using System.Collections.Generic;
-using UnityEngine;
-using UnityEngine.UI;
-using UnityEditor;
-using Unity.Linq;
 using Extensions;
 using Modules.Devkit.Prefs;
 using Modules.GameText.Components;
-using TMPro;
 
 namespace Modules.Devkit.CleanComponent
 {
@@ -29,6 +27,7 @@ namespace Modules.Devkit.CleanComponent
         protected sealed class ComponentInfo<T> where T : class
         {
             public T Component{ get; private set; }
+
             public GameTextSetter GameTextSetter { get; private set; }
 
             public ComponentInfo(T component, GameTextSetter gameTextSetter)
@@ -60,29 +59,28 @@ namespace Modules.Devkit.CleanComponent
             return list.ToArray();
         }
 
-        protected static bool CheckExecute(ComponentInfo<Text>[] textComponents, ComponentInfo<TextMeshProUGUI>[] textMeshProComponents)
+        protected static bool CheckExecute<T>(ComponentInfo<T>[] targets, Func<T, string> getTextCallback) where T : Component
         {
             Func<GameTextSetter, string, bool> checkContents = (gameTextSetter, text) =>
             {
+                if (string.IsNullOrEmpty(text)) { return false; }
+
                 return gameTextSetter != null && gameTextSetter.Content == text;
             };
+            
+            var modify = targets.Any(x => checkContents(x.GameTextSetter, getTextCallback.Invoke(x.Component)));
 
-            var modify = false;
+            return modify;
+        }
 
-            modify |= textComponents
-                .Where(x => !string.IsNullOrEmpty(x.Component.text))
-                .Any(x => checkContents(x.GameTextSetter, x.Component.text));
+        protected static bool ConfirmExecute()
+        {
+            var title = "TextComponent Cleaner";
+            var message = "Text is set directly Do you want to run cleanup?";
 
-            modify |= textMeshProComponents
-                .Where(x => !string.IsNullOrEmpty(x.Component.text))
-                .Any(x => checkContents(x.GameTextSetter, x.Component.text));
+            var execute = EditorUtility.DisplayDialog(title, message, "Clean", "Keep");
 
-            if (modify)
-            {
-                return EditorUtility.DisplayDialog("TextComponent Cleaner", "Text is set directly Do you want to run cleanup?", "Clean", "Keep");
-            }
-
-            return false;
+            return execute;
         }
 
         protected static void ApplyDevelopmentText<T>(ComponentInfo<T>[] targets) where T : Component
@@ -92,41 +90,26 @@ namespace Modules.Devkit.CleanComponent
                 var gameTextSetter = target.GameTextSetter;
 
                 if (gameTextSetter == null) { continue; }
-
-                gameTextSetter.ApplyDevelopmentText();
+                
+                Reflection.InvokePrivateMethod(gameTextSetter, "ApplyDevelopmentText");
             }
         }
         
-        protected static bool CleanDevelopmentText(ComponentInfo<Text>[] textComponents, ComponentInfo<TextMeshProUGUI>[] textMeshProComponents)
+        protected static bool CleanDevelopmentText<T>(ComponentInfo<T>[] targets) where T : Component
         {
             var changed = false;
 
-            foreach (var textComponent in textComponents)
+            foreach (var target in targets)
             {
-                var gameTextSetter = textComponent.GameTextSetter;
+                var gameTextSetter = target.GameTextSetter;
 
                 if (gameTextSetter == null){ continue; }
 
-                var cleaned = gameTextSetter.CleanDevelopmentText();
+                var cleaned = (bool)Reflection.InvokePrivateMethod(gameTextSetter, "CleanDevelopmentText");
 
                 if (cleaned)
                 {
-                    EditorUtility.SetDirty(textComponent.Component);
-                    changed = true;
-                }
-            }
-
-            foreach (var textMeshProComponent in textMeshProComponents)
-            {
-                var gameTextSetter = textMeshProComponent.GameTextSetter;
-
-                if (gameTextSetter == null) { continue; }
-
-                var cleaned = gameTextSetter.CleanDevelopmentText();
-
-                if (cleaned)
-                {
-                    EditorUtility.SetDirty(textMeshProComponent.Component);
+                    EditorUtility.SetDirty(target.Component);
                     changed = true;
                 }
             }
@@ -134,42 +117,26 @@ namespace Modules.Devkit.CleanComponent
             return changed;
         }
 
-        protected static bool ModifyTextComponent(ComponentInfo<Text>[] textComponents, ComponentInfo<TextMeshProUGUI>[] textMeshProComponents)
+        protected static bool ModifyTextComponent<T>(ComponentInfo<T>[] targets, Func<T, bool> checkEmptyCallback, Action<T> cleanCallback) where T : Component
         {
             var changed = false;
 
-            foreach (var textComponent in textComponents)
+            foreach (var target in targets)
             {
-                if (string.IsNullOrEmpty(textComponent.Component.text)) { continue; }
+                if (checkEmptyCallback.Invoke(target.Component)) { continue; }
 
-                textComponent.Component.text = string.Empty;
-                
-                if (textComponent.GameTextSetter != null)
+                cleanCallback.Invoke(target.Component);
+
+                if (target.GameTextSetter != null)
                 {
-                    textComponent.GameTextSetter.ImportText();
+                    Reflection.InvokePrivateMethod(target.GameTextSetter, "ImportText");
 
-                    EditorUtility.SetDirty(textComponent.Component);
+                    EditorUtility.SetDirty(target.Component);
 
                     changed = true;
                 }
             }
             
-            foreach (var textMeshProComponent in textMeshProComponents)
-            {
-                if (string.IsNullOrEmpty(textMeshProComponent.Component.text)) { continue; }
-
-                textMeshProComponent.Component.text = string.Empty;
-                
-                if (textMeshProComponent.GameTextSetter != null)
-                {
-                    textMeshProComponent.GameTextSetter.ImportText();
-
-                    EditorUtility.SetDirty(textMeshProComponent.Component);
-
-                    changed = true;
-                }
-            }
-
             return changed;
         }
     }

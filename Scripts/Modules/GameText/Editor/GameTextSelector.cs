@@ -57,9 +57,9 @@ namespace Modules.GameText.Components
 
             var gameText = GameText.Instance;
             
-            var setter = GameTextSetterInspector.Current.Instance;
+            var selectionCategoryGuid = GameTextSetterInspector.Current.SelectionCategoryGuid;
 
-            var category = gameText.FindCategoryDefinitionEnum(setter.CategoryGuid);
+            var category = (Enum)Reflection.InvokePrivateMethod(gameText, "FindCategoryEnumFromCategoryGuid", new object[] { selectionCategoryGuid });
 
             var titleText = string.Format("GameTextSelector : {0}", category.ToLabelName());
 
@@ -114,7 +114,7 @@ namespace Modules.GameText.Components
 
             if (setter == null) { return; }
 
-            if(categoryGuid != setter.CategoryGuid)
+            if(categoryGuid != setterInspector.SelectionCategoryGuid)
             {
                 BuildSelectionInfos();
             }
@@ -131,7 +131,7 @@ namespace Modules.GameText.Components
 
                     if (GUILayout.Button("Clear", EditorStyles.toolbarButton))
                     {
-                        setter.SetText(null);
+                        Reflection.InvokePrivateMethod(setter, "SetText", new object[] { null });
                     }
 
                     GUILayout.FlexibleSpace();
@@ -168,10 +168,12 @@ namespace Modules.GameText.Components
                 EditorGUILayout.Separator();
 
                 // Contents.
-                
+
+                var categoryTexts = GetCategoryTexts(gameText, setterInspector.SelectionCategoryGuid);
+
                 scrollView.Setter = setter;
                 scrollView.SetterInspector = setterInspector;
-                scrollView.CategoryTexts = gameText.FindCategoryTexts(setter.CategoryGuid);
+                scrollView.CategoryTexts = categoryTexts;
 
                 scrollView.Draw();
             }
@@ -185,9 +187,9 @@ namespace Modules.GameText.Components
         {
             var gameText = GameText.Instance;
 
-            categoryGuid = GameTextSetterInspector.Current.Instance.CategoryGuid;
+            categoryGuid = GameTextSetterInspector.Current.SelectionCategoryGuid;
 
-            var categoryTexts = gameText.FindCategoryTexts(categoryGuid);
+            var categoryTexts = GetCategoryTexts(gameText, categoryGuid);
 
             var list = new List<SelectionInfo>();
 
@@ -225,6 +227,11 @@ namespace Modules.GameText.Components
             }
             
             return list.ToArray();
+        }
+
+        private IReadOnlyDictionary<Enum, string> GetCategoryTexts(GameText gameText, string categoryGuid)
+        {
+            return (IReadOnlyDictionary<Enum, string>)Reflection.InvokePrivateMethod(gameText, "FindCategoryTexts", new object[] { categoryGuid });
         }
 
         private sealed class GameTextSelectorScrollView : EditorGUIFastScrollView<SelectionInfo>
@@ -290,7 +297,8 @@ namespace Modules.GameText.Components
 
                                     if (!textInfo.Equals(default(KeyValuePair<Enum, string>)))
                                     {
-                                        Setter.SetText(textInfo.Key);
+                                        Reflection.InvokePrivateMethod(Setter, "SetText", new object[] { textInfo.Key });
+
                                         SetterInspector.Repaint();
 
                                         if (onSelect != null)

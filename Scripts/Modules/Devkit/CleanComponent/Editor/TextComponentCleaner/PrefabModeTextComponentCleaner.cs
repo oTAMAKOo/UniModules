@@ -1,4 +1,5 @@
 ﻿
+using System;
 using UnityEditor;
 using UnityEngine.UI;
 using UnityEditor.Experimental.SceneManagement;
@@ -39,16 +40,33 @@ namespace Modules.Devkit.CleanComponent
 
             var textMeshProComponents = GetComponentInfos<TextMeshProUGUI>(gameObjects);
 
-            changed |= CleanDevelopmentText(textComponents, textMeshProComponents);
+            // 開発用テキストクリア.
+
+            changed |= CleanDevelopmentText(textComponents);
+
+            changed |= CleanDevelopmentText(textMeshProComponents);
+
+            // 実テキストをクリア.
 
             if (Prefs.autoClean)
             {
                 GameTextLoader.Reload();
 
-                if (!CheckExecute(textComponents, textMeshProComponents)) { return; }
+                var check = false;
 
-                changed |= ModifyTextComponent(textComponents, textMeshProComponents);
+                check |= CheckExecute(textComponents, t => t.text);
+
+                check |= CheckExecute(textMeshProComponents, t => t.text);
+
+                if (check && ConfirmExecute())
+                {
+                    changed |= ModifyTextComponent(textComponents, t => string.IsNullOrEmpty(t.text), t => t.text = string.Empty);
+
+                    changed |= ModifyTextComponent(textMeshProComponents, t => string.IsNullOrEmpty(t.text), t => t.text = string.Empty);
+                }
             }
+
+            // 変更があったら保存.
 
             if (changed)
             {
@@ -56,6 +74,12 @@ namespace Modules.Devkit.CleanComponent
                 var assetPath = prefabStage.prefabAssetPath;
                 
                 PrefabUtility.SaveAsPrefabAsset(prefabRoot, assetPath);
+
+                // 保存後に開発テキストを再適用.
+
+                ApplyDevelopmentText(textComponents);
+
+                ApplyDevelopmentText(textMeshProComponents);
             }
         }
     }

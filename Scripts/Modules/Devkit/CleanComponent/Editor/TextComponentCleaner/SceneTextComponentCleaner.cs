@@ -51,16 +51,33 @@ namespace Modules.Devkit.CleanComponent
 
             var textMeshProComponents = GetComponentInfos<TextMeshProUGUI>(gameObjects);
 
-            CleanDevelopmentText(textComponents, textMeshProComponents);
+            // 開発用テキストクリア.
+
+            CleanDevelopmentText(textComponents);
+
+            CleanDevelopmentText(textMeshProComponents);
+
+            // 実テキストをクリア.
 
             if (Prefs.autoClean)
             {
                 GameTextLoader.Reload();
 
-                if (!CheckExecute(textComponents, textMeshProComponents)) { return; }
+                var check = false;
 
-                ModifyTextComponent(textComponents, textMeshProComponents);
+                check |= CheckExecute(textComponents, t => t.text);
+
+                check |= CheckExecute(textMeshProComponents, t => t.text);
+
+                if (check && ConfirmExecute())
+                {
+                    ModifyTextComponent(textComponents, t => string.IsNullOrEmpty(t.text), t => t.text = string.Empty);
+
+                    ModifyTextComponent(textMeshProComponents, t => string.IsNullOrEmpty(t.text), t => t.text = string.Empty);
+                }
             }
+
+            // 保存後に開発テキストを再適用.
 
             EditorApplication.delayCall += () =>
             {

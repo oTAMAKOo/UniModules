@@ -2,6 +2,7 @@
 using UnityEditor;
 using UnityEditor.Callbacks;
 using System.Linq;
+using Extensions;
 using Extensions.Devkit;
 using Modules.GameText.Components;
 
@@ -46,7 +47,7 @@ namespace Modules.GameText.Editor
 
                 if (setter != null)
                 {
-                    setter.ImportText();
+                    Reflection.InvokePrivateMethod(setter, "ImportText");
                 }
             }
 

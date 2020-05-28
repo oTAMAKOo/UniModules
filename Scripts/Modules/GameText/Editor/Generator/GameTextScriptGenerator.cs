@@ -62,50 +62,6 @@ namespace Modules.GameText
             };
         }
 
-        public override Type GetCategoriesType()
-        {
-            return typeof(CategoryType);
-        }
-
-        public override string FindCategoryGuid(Enum categoryType)
-        {
-            CategoryDefinition info = null;
-
-            if (categoryType is CategoryType)
-            {
-                info = categoryDefinition.FirstOrDefault(x => x.Category == (CategoryType)categoryType);
-            }
-            
-            return info == null ? null : info.Guid;
-        }
-
-        public override Type FindCategoryEnumType(string categoryGuid)
-        {
-            var info = categoryDefinition.FirstOrDefault(x => x.Guid == categoryGuid);
-
-            if (info == null) { return null; }
-
-            return info.EnumType;
-        }
-
-        public override Enum FindCategoryDefinitionEnum(string categoryGuid)
-        {
-            var info = categoryDefinition.FirstOrDefault(x => x.Guid == categoryGuid);
-
-            if (info == null) { return null; }
-
-            return info.Category;
-        }
-
-        public override IReadOnlyDictionary<Enum, string> FindCategoryTexts(string categoryGuid)
-        {
-            var info = categoryDefinition.FirstOrDefault(x => x.Guid == categoryGuid);
-
-            if (info == null) { return null; }
-
-            return info.Table;
-        }
-
         public override string FindTextGuid(Enum textType)
         {
             var table = categoryDefinition.FirstOrDefault(x => x.EnumType == textType.GetType());
@@ -117,6 +73,46 @@ namespace Modules.GameText
             if (item.Equals(default(KeyValuePair<Enum, string>))) { return null; }
 
             return item.Value;
+        }
+
+        protected override Type GetCategoriesType()
+        {
+            return typeof(CategoryType);
+        }
+
+        protected override string FindCategoryGuid(Enum categoryType)
+        {
+            CategoryDefinition info = null;
+
+            if (categoryType is CategoryType)
+            {
+                info = categoryDefinition.FirstOrDefault(x => x.Category == (CategoryType)categoryType);
+            }
+            
+            return info == null ? null : info.Guid;
+        }
+
+        protected override Enum FindCategoryEnumFromCategoryGuid(string categoryGuid)
+        {
+            var info = categoryDefinition.FirstOrDefault(x => x.Guid == categoryGuid);
+
+            return info != null ? (Enum)info.Category : null;
+        }
+
+        protected override Enum FindCategoryEnumFromTextGuid(string textGuid)
+        {
+            var info = categoryDefinition.FirstOrDefault(x => x.Table.Any(y => y.Value == textGuid));
+            
+            return info != null ? (Enum)info.Category : null;
+        }
+
+        protected override IReadOnlyDictionary<Enum, string> FindCategoryTexts(string categoryGuid)
+        {
+            var info = categoryDefinition.FirstOrDefault(x => x.Guid == categoryGuid);
+
+            if (info == null) { return null; }
+
+            return info.Table;
         }
 
         private static string GetTextInternal(Enum textType)

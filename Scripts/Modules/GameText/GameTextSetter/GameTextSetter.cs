@@ -13,10 +13,16 @@ namespace Modules.GameText.Components
 	{
         //----- params -----
 
+        public enum SetType
+        {
+            Selector,
+            Direct,
+        }
+
         //----- field -----
 
-        [SerializeField]
-        private string categoryGuid = null;
+	    [SerializeField]
+	    private SetType setType = SetType.Selector;
         [SerializeField]
         private string textGuid = null;
         [SerializeField]
@@ -27,9 +33,7 @@ namespace Modules.GameText.Components
 	    private TextMeshProUGUI textMeshProComponent = null;
 
         //----- property -----
-
-        public string CategoryGuid { get { return categoryGuid; } }
-
+        
 	    public string TextGuid { get { return textGuid; } }
 
         public string Content { get { return content; } }
@@ -51,22 +55,7 @@ namespace Modules.GameText.Components
             }
         }
 
-        public void ChangeCategory(Enum newCategory)
-        {
-            var gameText = GameText.Instance;
-
-            if (gameText == null) { return; }
-            
-            var newCategoryGuid = gameText.FindCategoryGuid(newCategory);
-
-            if (categoryGuid != newCategoryGuid)
-            {
-                categoryGuid = newCategoryGuid;
-                SetText(null);
-            }
-        }
-
-        public void SetText(Enum textType)
+	    private void SetText(Enum textType)
         {
             var gameText = GameText.Instance;
 
@@ -80,7 +69,7 @@ namespace Modules.GameText.Components
             ApplyGameText();
         }
 
-        public void ImportText()
+	    private void ImportText()
         {
             #if UNITY_EDITOR
 
@@ -97,7 +86,7 @@ namespace Modules.GameText.Components
 
             if (gameText == null || gameText.Cache == null) { return; }
 
-            if (string.IsNullOrEmpty(categoryGuid)) { return; }
+            if (string.IsNullOrEmpty(textGuid)) { return; }
 
             content = gameText.FindText(textGuid);
 
