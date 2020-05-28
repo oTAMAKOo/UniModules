@@ -1,17 +1,18 @@
-﻿﻿﻿﻿
-using System;
-using System.IO;
+﻿
 using UnityEngine;
 using UnityEditor;
+using System;
+using System.IO;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using Extensions;
 using Extensions.Devkit;
-using System.Threading;
+using Modules.Devkit.Prefs;
 
 namespace Modules.GameText.Editor
 {
-    public class GameTextGenerateWindow : EditorWindow
+    public sealed class GameTextGenerateWindow : EditorWindow
     {
         //----- params -----
 
@@ -46,6 +47,8 @@ namespace Modules.GameText.Editor
 
         void OnGUI()
         {
+            var config = GameTextConfig.Instance;
+
             var generateInfos = GameTextLanguage.Infos;
 
             if (generateInfos == null) { return; }
@@ -54,6 +57,8 @@ namespace Modules.GameText.Editor
 
             EditorGUILayout.Separator();
 
+            // 言語情報.
+
             GameTextLanguage.Info info = null;
 
             if (selection.HasValue)
@@ -61,17 +66,61 @@ namespace Modules.GameText.Editor
                 info = generateInfos.ElementAtOrDefault(selection.Value);
             }
 
-            using (new DisableScope(info == null))
+            // 生成制御.
+            
+            var enumValues = Enum.GetValues(typeof(GenerateMode)).Cast<GenerateMode>().ToArray();
+
+            var tabItems = enumValues.Select(x => x.ToLabelName()).ToArray();
+
+            foreach (var generateSetting in config.AseetGenerateSettings)
             {
-                if (GUILayout.Button("Generate"))
+                var label = generateSetting.Label;
+
+                EditorLayoutTools.DrawLabelWithBackground(label);
+
+                GUILayout.Space(2f);
+
+                using (new EditorGUILayout.HorizontalScope())
                 {
-                    GameTextGenerater.Generate(info);
+                    var selection = GetGenerateMode(label, generateSetting.DefaultMode);
 
-                    Repaint();
+                    var index = enumValues.IndexOf(x => x == selection);
+
+                    EditorGUI.BeginChangeCheck();
+
+                    index = GUILayout.Toolbar(index, tabItems, "Button", GUI.ToolbarButtonSize.Fixed, GUILayout.Width(175f));
+
+                    if (EditorGUI.EndChangeCheck())
+                    {
+                        selection = enumValues.ElementAtOrDefault(index);
+
+                        SetGenerateMode(label, selection);
+                    }
+
+                    using (new DisableScope(info == null))
+                    {
+                        if (GUILayout.Button("Generate"))
+                        {
+                            switch (selection)
+                            {
+                                case GenerateMode.FullGenerate:
+                                    GameTextGenerater.Generate(generateSetting.AssetFolderPath, true, info);
+                                    break;
+
+                                case GenerateMode.OnlyAsset:
+                                    GameTextGenerater.Generate(generateSetting.AssetFolderPath, false, info);
+                                    break;
+                            }
+
+                            Repaint();
+                        }
+                    }
                 }
-            }
 
-            EditorGUILayout.Separator();
+                GUILayout.Space(2f);
+            }
+            
+            // エクセル制御.
 
             if (EditorLayoutTools.DrawHeader("Excel", "GameTextGenerateWindow-Converter"))
             {
@@ -125,6 +174,8 @@ namespace Modules.GameText.Editor
             }
 
             EditorGUILayout.Separator();
+
+            // 言語選択.
 
             var labels = generateInfos.Select(x => x.Language).ToArray();
 
@@ -242,6 +293,21 @@ namespace Modules.GameText.Editor
             }
 
             return new Tuple<int, string>(exitCode, log.ToString());
+        }
+
+        private string GetGenerateModePrefsKey(string labe)
+        {
+            return string.Format("GameTextGenerateWindow-GenerateMode-{0}", labe);
+        }
+
+        private GenerateMode GetGenerateMode(string label, GenerateMode defaultMode)
+        {
+            return ProjectPrefs.GetEnum(GetGenerateModePrefsKey(label), defaultMode);
+        }
+
+        private void SetGenerateMode(string label, GenerateMode mode)
+        {
+            ProjectPrefs.SetEnum(GetGenerateModePrefsKey(label), mode);
         }
 
         private void Reload()

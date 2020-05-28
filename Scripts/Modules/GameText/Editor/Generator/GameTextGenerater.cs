@@ -21,13 +21,14 @@ namespace Modules.GameText.Editor
 
         //----- method -----
 
-        public static void Generate(GameTextLanguage.Info languageInfo)
+        public static void Generate(string assetFolderPath, bool generateScript, GameTextLanguage.Info languageInfo)
         {
             if (languageInfo == null) { return; }
 
             var progressTitle = "Generate GameText";
 
             var gameText = GameText.Instance;
+
             var config = GameTextConfig.Instance;
 
             // 読み込み.
@@ -42,30 +43,34 @@ namespace Modules.GameText.Editor
 
             AssetDatabase.StartAssetEditing();
 
-            EditorApplication.LockReloadAssemblies();
-
-            DirectoryUtility.Clean(config.ScriptFolderPath);
-
-            AssetDatabase.ImportAsset(config.ScriptFolderPath, ImportAssetOptions.ForceUpdate);
-
             try
             {
-                EditorUtility.DisplayProgressBar(progressTitle, "Generate script.", 0.25f);
+                // Generate: Script.
 
-                CategoryScriptGenerator.Generate(sheets, config);
+                if (generateScript)
+                {
+                    EditorApplication.LockReloadAssemblies();
 
-                GameTextScriptGenerator.Generate(sheets, config);
+                    DirectoryUtility.Clean(config.ScriptFolderPath);
 
-                ContentsScriptGenerator.Generate(sheets, config, languageInfo.TextIndex);
+                    AssetDatabase.ImportAsset(config.ScriptFolderPath, ImportAssetOptions.ForceUpdate);
+
+                    EditorUtility.DisplayProgressBar(progressTitle, "Generate script.", 0.25f);
+
+                    CategoryScriptGenerator.Generate(sheets, config);
+
+                    GameTextScriptGenerator.Generate(sheets, config);
+
+                    ContentsScriptGenerator.Generate(sheets, config, languageInfo.TextIndex);
+                }
+
+                // Generate: ScriptableObject.
 
                 EditorUtility.DisplayProgressBar(progressTitle, "Generate asset.", 0.5f);
 
-                foreach (var assetFolderPath in config.AssetFolderPaths)
-                {
-                    var gameTextAsset = LoadAsset(assetFolderPath, languageInfo.AssetName);
+                var gameTextAsset = LoadAsset(assetFolderPath, languageInfo.AssetName);
 
-                    GameTextAssetGenerator.Build(gameTextAsset, sheets, config, languageInfo.TextIndex, aesManaged);
-                }
+                GameTextAssetGenerator.Build(gameTextAsset, sheets, config, languageInfo.TextIndex, aesManaged);
 
                 EditorUtility.DisplayProgressBar(progressTitle, "Complete.", 1f);
 
@@ -75,7 +80,10 @@ namespace Modules.GameText.Editor
             }
             finally
             {
-                EditorApplication.UnlockReloadAssemblies();
+                if (generateScript)
+                {
+                    EditorApplication.UnlockReloadAssemblies();
+                }
 
                 AssetDatabase.StopAssetEditing();
 

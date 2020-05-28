@@ -131,7 +131,7 @@ namespace Modules.GameText.Components
 
                     if (GUILayout.Button("Clear", EditorStyles.toolbarButton))
                     {
-                        Reflection.InvokePrivateMethod(setter, "SetText", new object[] { null });
+                        Reflection.InvokePrivateMethod(setter, "SetTextGuid", new object[] { null });
                     }
 
                     GUILayout.FlexibleSpace();
@@ -297,7 +297,7 @@ namespace Modules.GameText.Components
 
                                     if (!textInfo.Equals(default(KeyValuePair<Enum, string>)))
                                     {
-                                        Reflection.InvokePrivateMethod(Setter, "SetText", new object[] { textInfo.Key });
+                                        Reflection.InvokePrivateMethod(Setter, "SetTextEnum", new object[] { textInfo.Key });
 
                                         SetterInspector.Repaint();
 

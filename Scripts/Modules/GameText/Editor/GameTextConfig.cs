@@ -1,4 +1,6 @@
 ﻿
+using System;
+using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 using UnityEditor;
@@ -7,9 +9,37 @@ using Modules.Devkit.ScriptableObjects;
 
 namespace Modules.GameText.Editor
 {
-	public sealed class GameTextConfig : ReloadableScriptableObject<GameTextConfig>
+    public enum GenerateMode
+    {
+        [Label("Asset+Script")]
+        FullGenerate,
+        [Label("Asset")]
+        OnlyAsset,
+    }
+
+    public sealed class GameTextConfig : ReloadableScriptableObject<GameTextConfig>
     {
         //----- params -----
+
+        [Serializable]
+        public sealed class AseetGenerateSetting
+        {
+            [SerializeField]
+            private string label = null;
+            [SerializeField]
+            private GenerateMode defaultMode = GenerateMode.FullGenerate;
+            [SerializeField]
+            private UnityEngine.Object assetFolder = null;
+
+            public string Label { get { return label; } }
+
+            public GenerateMode DefaultMode { get { return defaultMode; } }
+
+            public string AssetFolderPath
+            {
+                get { return AssetDatabase.GetAssetPath(assetFolder); }
+            }
+        }
 
         /// <summary> データフォルダ名 </summary>
         public const string ContentsFolderName = "Contents";
@@ -31,7 +61,7 @@ namespace Modules.GameText.Editor
         [SerializeField]
         private UnityEngine.Object scriptFolder = null;
         [SerializeField]
-        private UnityEngine.Object[] assetFolders = null;
+        private AseetGenerateSetting[] aseetGenerateSettings = null;
 
         #pragma warning disable 414
 
@@ -58,15 +88,9 @@ namespace Modules.GameText.Editor
             get { return AssetDatabase.GetAssetPath(scriptFolder); }
         }
 
-        public string[] AssetFolderPaths
+        public IReadOnlyList<AseetGenerateSetting> AseetGenerateSettings
         {
-            get
-            {
-                return assetFolders
-                    .Where(x => x != null)
-                    .Select(x => AssetDatabase.GetAssetPath(x))
-                    .ToArray();
-            }
+            get { return aseetGenerateSettings; }
         }
 
         //----- method -----

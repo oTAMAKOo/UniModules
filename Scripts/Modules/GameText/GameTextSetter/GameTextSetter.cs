@@ -55,18 +55,41 @@ namespace Modules.GameText.Components
             }
         }
 
-	    private void SetText(Enum textType)
+        private void SetTextGuid(string guid)
         {
             var gameText = GameText.Instance;
 
             if (gameText == null) { return; }
 
-            textGuid = textType == null ? null : gameText.FindTextGuid(textType);
+            if (string.IsNullOrEmpty(guid))
+            {
+                textGuid = null;
+            }
+            else
+            {
+                var info = gameText.FindTextContentInfo(guid);
+
+                if (info != null)
+                {
+                    textGuid = guid;
+                }
+            }
 
             content = string.Empty;
 
             ApplyText(content);
             ApplyGameText();
+        }
+        
+	    private void SetTextEnum(Enum textType)
+        {
+            var gameText = GameText.Instance;
+
+            if (gameText == null) { return; }
+
+            var newTextGuid = textType == null ? null : gameText.FindTextGuid(textType);
+
+            SetTextGuid(newTextGuid);
         }
 
 	    private void ImportText()
