@@ -22,7 +22,7 @@ namespace Modules.Devkit.EventHook
 
             public static bool LogEnable
             {
-                get { return ProjectPrefs.GetBool("AdditionalComponentPrefs-LogEnable", true); }
+                get { return ProjectPrefs.GetBool("AdditionalComponentPrefs-LogEnable", false); }
                 set { ProjectPrefs.SetBool("AdditionalComponentPrefs-LogEnable", value); }
             }
         }

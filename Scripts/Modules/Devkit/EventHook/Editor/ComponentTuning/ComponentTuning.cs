@@ -29,7 +29,7 @@ namespace Modules.Devkit.EventHook
 
             public static bool LogEnable
             {
-                get { return ProjectPrefs.GetBool("ComponentTunerPrefs-Log", true); }
+                get { return ProjectPrefs.GetBool("ComponentTunerPrefs-Log", false); }
                 set { ProjectPrefs.SetBool("ComponentTunerPrefs-Log", value); }
             }
         }
