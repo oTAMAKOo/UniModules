@@ -30,16 +30,12 @@ namespace Modules.GameText.Editor
             private UnityEngine.Object assetFolder = null;
             [SerializeField]
             private GenerateMode defaultMode = GenerateMode.FullGenerate;
-            [SerializeField]
-            private bool modeChangeEnable = true;
 
             public string Label { get { return label; } }
 
             public string AssetFolderPath { get { return AssetDatabase.GetAssetPath(assetFolder); } }
 
             public GenerateMode DefaultMode { get { return defaultMode; } }
-
-            public bool ModeChangeEnable { get { return modeChangeEnable; } }
         }
 
         /// <summary> データフォルダ名 </summary>
