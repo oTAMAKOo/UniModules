@@ -34,7 +34,7 @@ namespace Modules.GameText.Editor
 
                     var text = contentData != null ? contentData.text.Encrypt(aesManaged) : string.Empty;
 
-                    var textContent = new TextContent(record.guid, text, i);
+                    var textContent = new TextContent(record.guid, text);
 
                     contents.Add(textContent);
                 }

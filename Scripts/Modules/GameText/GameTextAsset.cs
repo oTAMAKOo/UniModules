@@ -13,20 +13,15 @@ namespace Modules.GameText.Components
         private string guid = null;
         [SerializeField, ReadOnly]
         private string text = null;
-        [SerializeField, ReadOnly]
-        private int index = 0;
 
         public string Guid { get { return guid; } }
 
         public string Text { get { return text; } }
 
-        public int Index { get { return index; } }
-
-        public TextContent(string guid, string text, int index)
+        public TextContent(string guid, string text)
         {
             this.guid = guid;
             this.text = text;
-            this.index = index;
         }
     }
 
