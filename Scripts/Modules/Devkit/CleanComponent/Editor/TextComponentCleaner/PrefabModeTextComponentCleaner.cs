@@ -1,10 +1,11 @@
 ﻿
 using UnityEditor;
+using UnityEngine.UI;
 using UnityEditor.Experimental.SceneManagement;
 using Unity.Linq;
 using System.Linq;
+using TMPro;
 using UniRx;
-using Extensions;
 using Modules.Devkit.EventHook;
 using Modules.GameText.Editor;
 
@@ -30,21 +31,32 @@ namespace Modules.Devkit.CleanComponent
 
         private static void ClosePrefabMode(PrefabStage prefabStage)
         {
+            var changed = false;
+
             var gameObjects = prefabStage.prefabContentsRoot.DescendantsAndSelf().ToArray();
 
-            if (!CheckExecute(gameObjects)) { return; }
+            var textComponents = GetComponentInfos<Text>(gameObjects);
 
-            GameTextLoader.Reload();
+            var textMeshProComponents = GetComponentInfos<TextMeshProUGUI>(gameObjects);
 
-            foreach (var gameObject in gameObjects)
+            changed |= CleanDevelopmentText(textComponents, textMeshProComponents);
+
+            if (Prefs.autoClean)
             {
-                ModifyTextComponent(gameObject);
+                GameTextLoader.Reload();
+
+                if (!CheckExecute(textComponents, textMeshProComponents)) { return; }
+
+                changed |= ModifyTextComponent(textComponents, textMeshProComponents);
             }
 
-            var prefabRoot = prefabStage.prefabContentsRoot;
-            var assetPath = prefabStage.prefabAssetPath;
-
-            PrefabUtility.SaveAsPrefabAsset(prefabRoot, assetPath);   
+            if (changed)
+            {
+                var prefabRoot = prefabStage.prefabContentsRoot;
+                var assetPath = prefabStage.prefabAssetPath;
+                
+                PrefabUtility.SaveAsPrefabAsset(prefabRoot, assetPath);
+            }
         }
     }
 

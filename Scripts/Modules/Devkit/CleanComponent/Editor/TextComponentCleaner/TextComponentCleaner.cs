@@ -1,14 +1,14 @@
 ﻿
 using System;
+using System.Linq;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEditor;
 using Unity.Linq;
-using System.Linq;
 using Extensions;
 using Modules.Devkit.Prefs;
 using Modules.GameText.Components;
-using Modules.UI.Extension;
 using TMPro;
 
 namespace Modules.Devkit.CleanComponent
@@ -21,8 +21,20 @@ namespace Modules.Devkit.CleanComponent
         {
             public static bool autoClean
             {
-                get { return ProjectPrefs.GetBool("TextComponentCleanerPrefs-autoClean", true); }
+                get { return ProjectPrefs.GetBool("TextComponentCleanerPrefs-autoClean", false); }
                 set { ProjectPrefs.SetBool("TextComponentCleanerPrefs-autoClean", value); }
+            }
+        }
+
+        protected sealed class ComponentInfo<T> where T : class
+        {
+            public T Component{ get; private set; }
+            public GameTextSetter GameTextSetter { get; private set; }
+
+            public ComponentInfo(T component, GameTextSetter gameTextSetter)
+            {
+                Component = component;
+                GameTextSetter = gameTextSetter;
             }
         }
 
@@ -32,80 +44,38 @@ namespace Modules.Devkit.CleanComponent
 
         //----- method -----
 
-        protected static void ModifyTextComponent(GameObject rootObject)
+        protected static ComponentInfo<T>[] GetComponentInfos<T>(GameObject[] gameObjects) where T : Component
         {
-            var gameObjects = rootObject.DescendantsAndSelf().ToArray();
+            var list = new List<ComponentInfo<T>>();
 
-            var textComponents = gameObjects.OfComponent<Text>();
+            var components = gameObjects.OfComponent<T>();
 
-            foreach (var textComponent in textComponents)
+            foreach (var component in components)
             {
-                if (string.IsNullOrEmpty(textComponent.text)) { continue; }
+                var gameTextSetter = UnityUtility.GetComponent<GameTextSetter>(component);
 
-                textComponent.text = string.Empty;
-
-                var gameTextSetter = UnityUtility.GetComponent<GameTextSetter>(textComponent);
-
-                if (gameTextSetter != null)
-                {
-                    gameTextSetter.ImportText();
-                }
-
-                EditorUtility.SetDirty(textComponent);
+                list.Add(new ComponentInfo<T>(component, gameTextSetter));
             }
 
-            var textMeshProComponents = gameObjects.OfComponent<TextMeshProUGUI>();
-
-            foreach (var textMeshProComponent in textMeshProComponents)
-            {
-                if (string.IsNullOrEmpty(textMeshProComponent.text)) { continue; }
-
-                textMeshProComponent.text = string.Empty;
-
-                var gameTextSetter = UnityUtility.GetComponent<GameTextSetter>(textMeshProComponent);
-
-                if (gameTextSetter != null)
-                {
-                    gameTextSetter.ImportText();
-                }
-
-                EditorUtility.SetDirty(textMeshProComponent);
-            }
+            return list.ToArray();
         }
 
-        protected static bool CheckExecute(GameObject[] gameObjects)
+        protected static bool CheckExecute(ComponentInfo<Text>[] textComponents, ComponentInfo<TextMeshProUGUI>[] textMeshProComponents)
         {
-            Func<GameObject, string, bool> checkContents = (go, text) =>
+            Func<GameTextSetter, string, bool> checkContents = (gameTextSetter, text) =>
             {
-                var execute = true;
-
-                var gameTextSetter = UnityUtility.GetComponent<GameTextSetter>(go);
-
-                if (gameTextSetter != null)
-                {
-                    if (gameTextSetter.Content == text)
-                    {
-                        execute = false;
-                    }
-
-                    if (gameTextSetter.GetDevelopmentText() == text)
-                    {
-                        execute = false;
-                    }
-                }
-
-                return execute;
+                return gameTextSetter != null && gameTextSetter.Content == text;
             };
 
             var modify = false;
 
-            modify |= gameObjects.SelectMany(x => x.DescendantsAndSelf().OfComponent<Text>())
-                .Where(x => !string.IsNullOrEmpty(x.text))
-                .Any(x => checkContents(x.gameObject, x.text));
+            modify |= textComponents
+                .Where(x => !string.IsNullOrEmpty(x.Component.text))
+                .Any(x => checkContents(x.GameTextSetter, x.Component.text));
 
-            modify |= gameObjects.SelectMany(x => x.DescendantsAndSelf().OfComponent<TextMeshProUGUI>())
-                .Where(x => !string.IsNullOrEmpty(x.text))
-                .Any(x => checkContents(x.gameObject, x.text));
+            modify |= textMeshProComponents
+                .Where(x => !string.IsNullOrEmpty(x.Component.text))
+                .Any(x => checkContents(x.GameTextSetter, x.Component.text));
 
             if (modify)
             {
@@ -113,6 +83,94 @@ namespace Modules.Devkit.CleanComponent
             }
 
             return false;
+        }
+
+        protected static void ApplyDevelopmentText<T>(ComponentInfo<T>[] targets) where T : Component
+        {
+            foreach (var target in targets)
+            {
+                var gameTextSetter = target.GameTextSetter;
+
+                if (gameTextSetter == null) { continue; }
+
+                gameTextSetter.ApplyDevelopmentText();
+            }
+        }
+        
+        protected static bool CleanDevelopmentText(ComponentInfo<Text>[] textComponents, ComponentInfo<TextMeshProUGUI>[] textMeshProComponents)
+        {
+            var changed = false;
+
+            foreach (var textComponent in textComponents)
+            {
+                var gameTextSetter = textComponent.GameTextSetter;
+
+                if (gameTextSetter == null){ continue; }
+
+                var cleaned = gameTextSetter.CleanDevelopmentText();
+
+                if (cleaned)
+                {
+                    EditorUtility.SetDirty(textComponent.Component);
+                    changed = true;
+                }
+            }
+
+            foreach (var textMeshProComponent in textMeshProComponents)
+            {
+                var gameTextSetter = textMeshProComponent.GameTextSetter;
+
+                if (gameTextSetter == null) { continue; }
+
+                var cleaned = gameTextSetter.CleanDevelopmentText();
+
+                if (cleaned)
+                {
+                    EditorUtility.SetDirty(textMeshProComponent.Component);
+                    changed = true;
+                }
+            }
+
+            return changed;
+        }
+
+        protected static bool ModifyTextComponent(ComponentInfo<Text>[] textComponents, ComponentInfo<TextMeshProUGUI>[] textMeshProComponents)
+        {
+            var changed = false;
+
+            foreach (var textComponent in textComponents)
+            {
+                if (string.IsNullOrEmpty(textComponent.Component.text)) { continue; }
+
+                textComponent.Component.text = string.Empty;
+                
+                if (textComponent.GameTextSetter != null)
+                {
+                    textComponent.GameTextSetter.ImportText();
+
+                    EditorUtility.SetDirty(textComponent.Component);
+
+                    changed = true;
+                }
+            }
+            
+            foreach (var textMeshProComponent in textMeshProComponents)
+            {
+                if (string.IsNullOrEmpty(textMeshProComponent.Component.text)) { continue; }
+
+                textMeshProComponent.Component.text = string.Empty;
+                
+                if (textMeshProComponent.GameTextSetter != null)
+                {
+                    textMeshProComponent.GameTextSetter.ImportText();
+
+                    EditorUtility.SetDirty(textMeshProComponent.Component);
+
+                    changed = true;
+                }
+            }
+
+            return changed;
         }
     }
 }

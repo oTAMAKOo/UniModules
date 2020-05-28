@@ -53,7 +53,7 @@ namespace Modules.GameText.Components
             developmentText = string.IsNullOrEmpty(text) ? string.Empty : text.Encrypt(aesManaged);
         }
 
-        private void ApplyDevelopmentText()
+        public void ApplyDevelopmentText()
         {
             if (Application.isPlaying) { return; }
 
@@ -64,6 +64,26 @@ namespace Modules.GameText.Components
             var text = GetDevelopmentText();
 
             ApplyText(text);
+        }
+
+        public bool CleanDevelopmentText()
+        {
+            if (Application.isPlaying) { return false; }
+
+            if (string.IsNullOrEmpty(developmentText)) { return false; }
+
+            var text = GetDevelopmentText();
+
+            var targetText = GetTargetText();
+
+            if (targetText == text)
+            {
+                ApplyText(string.Empty);
+
+                return true;
+            }
+
+            return false;
         }
     }
 }
