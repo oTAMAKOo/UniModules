@@ -82,7 +82,7 @@ namespace Modules.GameText.Editor
 
                 using (new EditorGUILayout.HorizontalScope())
                 {
-                    var selection = GetGenerateMode(label, generateSetting.DefaultMode);
+                    var selection = GetGenerateMode(label);
 
                     var index = enumValues.IndexOf(x => x == selection);
                     
@@ -300,9 +300,9 @@ namespace Modules.GameText.Editor
             return string.Format("GameTextGenerateWindow-GenerateMode-{0}", labe);
         }
 
-        private GenerateMode GetGenerateMode(string label, GenerateMode defaultMode)
+        private GenerateMode GetGenerateMode(string label)
         {
-            return ProjectPrefs.GetEnum(GetGenerateModePrefsKey(label), defaultMode);
+            return ProjectPrefs.GetEnum(GetGenerateModePrefsKey(label), GenerateMode.FullGenerate);
         }
 
         private void SetGenerateMode(string label, GenerateMode mode)
