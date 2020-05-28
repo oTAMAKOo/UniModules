@@ -27,18 +27,19 @@ namespace Modules.GameText.Editor
             [SerializeField]
             private string label = null;
             [SerializeField]
+            private UnityEngine.Object assetFolder = null;
+            [SerializeField]
             private GenerateMode defaultMode = GenerateMode.FullGenerate;
             [SerializeField]
-            private UnityEngine.Object assetFolder = null;
+            private bool modeChangeEnable = true;
 
             public string Label { get { return label; } }
 
+            public string AssetFolderPath { get { return AssetDatabase.GetAssetPath(assetFolder); } }
+
             public GenerateMode DefaultMode { get { return defaultMode; } }
 
-            public string AssetFolderPath
-            {
-                get { return AssetDatabase.GetAssetPath(assetFolder); }
-            }
+            public bool ModeChangeEnable { get { return modeChangeEnable; } }
         }
 
         /// <summary> データフォルダ名 </summary>

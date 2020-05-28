@@ -86,15 +86,18 @@ namespace Modules.GameText.Editor
 
                     var index = enumValues.IndexOf(x => x == selection);
 
-                    EditorGUI.BeginChangeCheck();
-
-                    index = GUILayout.Toolbar(index, tabItems, "Button", GUI.ToolbarButtonSize.Fixed, GUILayout.Width(175f));
-
-                    if (EditorGUI.EndChangeCheck())
+                    using (new DisableScope(!generateSetting.ModeChangeEnable))
                     {
-                        selection = enumValues.ElementAtOrDefault(index);
+                        EditorGUI.BeginChangeCheck();
 
-                        SetGenerateMode(label, selection);
+                        index = GUILayout.Toolbar(index, tabItems, "Button", GUI.ToolbarButtonSize.Fixed, GUILayout.Width(175f));
+
+                        if (EditorGUI.EndChangeCheck())
+                        {
+                            selection = enumValues.ElementAtOrDefault(index);
+
+                            SetGenerateMode(label, selection);
+                        }
                     }
 
                     using (new DisableScope(info == null))
