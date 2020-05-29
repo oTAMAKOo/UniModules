@@ -64,7 +64,7 @@ namespace Modules.GameText.Editor
                     ContentsScriptGenerator.Generate(sheets, config, languageInfo.TextIndex);
                 }
 
-                // Generate: ScriptableObject.
+                // Generate: Asset.
 
                 EditorUtility.DisplayProgressBar(progressTitle, "Generate asset.", 0.5f);
 
@@ -124,7 +124,7 @@ namespace Modules.GameText.Editor
                 }
             }
 
-            return list.ToArray();
+            return list.OrderBy(x => x.index).ToArray();
         }
         
         private static GameTextAsset LoadAsset(string assetFolderPath, string resourcesPath)
