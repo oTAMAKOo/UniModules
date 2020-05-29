@@ -9,30 +9,9 @@ using Modules.Devkit.ScriptableObjects;
 
 namespace Modules.GameText.Editor
 {
-    public enum GenerateMode
-    {
-        [Label("Asset+Script")]
-        FullGenerate,
-        [Label("Asset")]
-        OnlyAsset,
-    }
-
     public sealed class GameTextConfig : ReloadableScriptableObject<GameTextConfig>
     {
         //----- params -----
-
-        [Serializable]
-        public sealed class AseetGenerateSetting
-        {
-            [SerializeField]
-            private string label = null;
-            [SerializeField]
-            private UnityEngine.Object assetFolder = null;
-
-            public string Label { get { return label; } }
-
-            public string AssetFolderPath { get { return AssetDatabase.GetAssetPath(assetFolder); } }
-        }
 
         /// <summary> データフォルダ名 </summary>
         public const string ContentsFolderName = "Contents";
@@ -53,18 +32,30 @@ namespace Modules.GameText.Editor
         private string excelFileName = string.Empty;
         [SerializeField]
         private UnityEngine.Object scriptFolder = null;
+
+        [Header("Internal Aseet")]
+
         [SerializeField]
-        private AseetGenerateSetting[] aseetGenerateSettings = null;
+        private UnityEngine.Object internalAseetFolder = null;
+
+        [Header("External Aseet")]
+
+        [SerializeField]
+        private bool useExternalAseet = false;
+        [SerializeField]
+        private UnityEngine.Object externalAseetFolder = null;
 
         #pragma warning disable 414
 
         [Header("Windows")]
+
         [SerializeField]
         private string windowsImporterFileName = null;
         [SerializeField]
         private string windowsExporterFileName = null;
 
         [Header("Mac")]
+
         [SerializeField]
         private string osxImporterFileName = null;
         [SerializeField]
@@ -78,18 +69,33 @@ namespace Modules.GameText.Editor
         
         public string ScriptFolderPath
         {
-            get { return AssetDatabase.GetAssetPath(scriptFolder); }
+            get { return scriptFolder != null ? AssetDatabase.GetAssetPath(scriptFolder) : null; }
         }
 
-        public IReadOnlyList<AseetGenerateSetting> AseetGenerateSettings
+        public string InternalAseetFolder
         {
-            get { return aseetGenerateSettings; }
+            get
+            {
+                return internalAseetFolder != null ? AssetDatabase.GetAssetPath(internalAseetFolder) : null;
+            }
+        }
+
+        public bool UseExternalAseet { get { return useExternalAseet; } }
+
+        public string ExternalAseetFolder
+        {
+            get
+            {
+                return externalAseetFolder != null ? AssetDatabase.GetAssetPath(externalAseetFolder) : null;
+            }
         }
 
         //----- method -----
 
         public string GetGameTextWorkspacePath()
         {
+            if (string.IsNullOrEmpty(workspaceFolder)) { return null; }
+
             var projectFolder = UnityPathUtility.GetProjectFolderPath();
 
             var workspacePath = PathUtility.RelativePathToFullPath(projectFolder, workspaceFolder);

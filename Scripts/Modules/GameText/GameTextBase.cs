@@ -1,7 +1,6 @@
 ﻿
 using System;
 using System.Collections.Generic;
-using System.Security.Cryptography;
 using Extensions;
 
 namespace Modules.GameText.Components
@@ -27,13 +26,15 @@ namespace Modules.GameText.Components
             BuildGenerateContents();
         }
 
-        public string FindText(string textGuid)
+        public virtual string FindText(string textGuid)
         {
             if (string.IsNullOrEmpty(textGuid)) { return string.Empty; }
 
+            textGuid = textGuid.Trim();
+
             return cache.GetValueOrDefault(textGuid);
         }
-
+        
         public virtual string FindTextGuid(Enum textType) { return null; }
 
         protected virtual void BuildGenerateContents() { }

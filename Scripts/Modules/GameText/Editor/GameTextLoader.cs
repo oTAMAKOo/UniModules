@@ -40,7 +40,6 @@ namespace Modules.GameText.Editor
                 EditorApplication.update -= reloadGameText;
             };
 
-
             EditorApplication.update += reloadGameText;
         }
 
@@ -48,11 +47,30 @@ namespace Modules.GameText.Editor
         {
             var gameText = GameText.Instance;
 
+            var config = GameTextConfig.Instance;
+
             var gameTextInfo = GameTextLanguage.Infos.ElementAtOrDefault(GameTextLanguage.Prefs.selection);
 
             if (gameTextInfo == null) { return; }
 
-            gameText.LoadFromResources(gameTextInfo.AssetName);
+            var assetName = gameTextInfo.AssetName;
+
+            // 内包テキスト読み込み.
+
+            gameText.LoadFromResources(assetName);
+
+            // 拡張テキスト読み込み.
+
+            if (config != null && config.UseExternalAseet)
+            {
+                var assetPath = PathUtility.Combine(config.ExternalAseetFolder, assetName);
+
+                var extendGameTextAsset = AssetDatabase.LoadMainAssetAtPath(assetPath) as GameTextAsset;
+
+                Reflection.InvokePrivateMethod(gameText, "LoadExtend", new object[] { extendGameTextAsset });
+            }
+
+            // 適用.
             
             var gameObjects = UnityEditorUtility.FindAllObjectsInHierarchy();
 

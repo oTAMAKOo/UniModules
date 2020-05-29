@@ -13,16 +13,19 @@ namespace Modules.GameText.Components
 	{
         //----- params -----
 
-        public enum SetType
+        public enum AssetType
         {
-            Selector,
-            Direct,
+            [Label("Resources")]
+            Internal,
+
+            [Label("AssetBundle")]
+            Extend,
         }
 
         //----- field -----
 
 	    [SerializeField]
-	    private SetType setType = SetType.Selector;
+	    private AssetType assetType = AssetType.Internal;
         [SerializeField]
         private string textGuid = null;
         [SerializeField]
@@ -67,9 +70,11 @@ namespace Modules.GameText.Components
             }
             else
             {
-                var info = gameText.FindTextContentInfo(guid);
+                guid = guid.Trim();
 
-                if (info != null)
+                var text = gameText.FindText(guid);
+
+                if (!string.IsNullOrEmpty(text))
                 {
                     textGuid = guid;
                 }

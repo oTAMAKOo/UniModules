@@ -16,8 +16,6 @@ namespace Modules.GameText
 
         private AesManaged aesManaged = null;
 
-        private TextContent[] textContents = null;
-
         //----- property -----
         
         //----- method -----
@@ -35,11 +33,11 @@ namespace Modules.GameText
 
             if (asset == null) { return; }
             
-            textContents = asset.Contents.ToArray();
+            var contents = asset.Contents.ToArray();
 
             var aesManaged = GetAesManaged();
 
-            cache = textContents.ToDictionary(x => x.Guid, x => x.Text.Decrypt(aesManaged));
+            cache = contents.ToDictionary(x => x.Guid, x => x.Text.Decrypt(aesManaged));
         }
 
         public void LoadFromResources(string assetPath)
@@ -49,11 +47,6 @@ namespace Modules.GameText
             var asset = Resources.Load<GameTextAsset>(resourcesPath);
 
             Load(asset);
-        }
-
-        public TextContent FindTextContentInfo(string textGuid)
-        {
-            return textContents.FirstOrDefault(x => x.Guid == textGuid);
         }
     }
 }

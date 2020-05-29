@@ -33,6 +33,7 @@ namespace Modules.GameText.Editor
                                     var jsonSerializer = new JsonSerializer()
                                     {
                                         NullValueHandling = NullValueHandling.Ignore,
+                                        MissingMemberHandling = MissingMemberHandling.Ignore,
                                     };
 
                                     result = jsonSerializer.Deserialize<T>(jsonTextReader);

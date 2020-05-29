@@ -17,6 +17,9 @@ namespace Modules.GameText.Components
 
         //----- field -----
 
+        private string currentCategoryGuid = null;
+        private string currentTextGuid = null;
+
         private GameTextSetter instance = null;
 
         private bool setup = false;
@@ -25,7 +28,7 @@ namespace Modules.GameText.Components
 
         public GameTextSetter Instance { get { return instance; } }
 
-        public string SelectionCategoryGuid { get; private set; }
+        public string SelectionCategoryGuid { get { return currentCategoryGuid; } }
 
         public static GameTextSetterInspector Current { get; private set; }
 
@@ -37,7 +40,11 @@ namespace Modules.GameText.Components
 
             var gameText = GameText.Instance;
 
-            SelectionCategoryGuid = GetCurrentCategoryGuid(gameText);
+            currentCategoryGuid = GetCategoryGuid(gameText, instance.TextGuid);
+
+            currentTextGuid = instance.TextGuid;
+
+            UpdateSelectionAssetType(gameText, instance.TextGuid);
 
             setup = true;
         }
@@ -50,6 +57,8 @@ namespace Modules.GameText.Components
             }
 
             Undo.undoRedoPerformed += OnUndoRedo;
+
+            setup = false;
         }
 
         void OnDisable()
@@ -66,39 +75,61 @@ namespace Modules.GameText.Components
 
             Setup();
 
-            GUILayout.Space(5f);
+            GUILayout.Space(4f);
 
             var gameText = GameText.Instance;
 
-            var currentCategoryGuid = GetCurrentCategoryGuid(gameText);
+            var config = GameTextConfig.Instance;
+
+            // TextGuidが変化していたらカテゴリGuidを更新.
+            if (currentTextGuid != instance.TextGuid)
+            {
+                currentTextGuid = instance.TextGuid;
+
+                currentCategoryGuid = GetCategoryGuid(gameText, instance.TextGuid);
+            }
 
             // モード選択タブ.
 
-            var setType = Reflection.GetPrivateField<GameTextSetter, GameTextSetter.SetType>(instance, "setType");
+            var assetType = GameTextSetter.AssetType.Internal;
 
-            using (new EditorGUILayout.HorizontalScope())
+            if (config.UseExternalAseet)
             {
-                EditorGUILayout.LabelField("Mode");
+                assetType = Reflection.GetPrivateField<GameTextSetter, GameTextSetter.AssetType>(instance, "assetType");
 
-                var enumValues = Enum.GetValues(typeof(GameTextSetter.SetType)).Cast<GameTextSetter.SetType>().ToArray();
-
-                var index = enumValues.IndexOf(x => x == setType);
-
-                var tabItems = enumValues.Select(x => x.ToString()).ToArray();
-
-                EditorGUI.BeginChangeCheck();
-
-                index = GUILayout.Toolbar(index, tabItems, "MiniButton", GUI.ToolbarButtonSize.Fixed);
-
-                if (EditorGUI.EndChangeCheck())
+                using (new EditorGUILayout.HorizontalScope())
                 {
-                    UnityEditorUtility.RegisterUndo("GameTextSetterInspector-Undo", instance);
+                    EditorGUILayout.LabelField("Source Asset", GUILayout.Width(45f));
 
-                    var selection = enumValues.ElementAtOrDefault(index);
+                    GUILayout.FlexibleSpace();
 
-                    Reflection.SetPrivateField(instance, "setType", selection);
+                    var enumValues = Enum.GetValues(typeof(GameTextSetter.AssetType)).Cast<GameTextSetter.AssetType>().ToArray();
 
-                    SelectionCategoryGuid = GetCurrentCategoryGuid(gameText);
+                    var index = enumValues.IndexOf(x => x == assetType);
+
+                    var tabItems = enumValues.Select(x => x.ToLabelName()).ToArray();
+
+                    var tabEnable = !string.IsNullOrEmpty(currentCategoryGuid) || string.IsNullOrEmpty(currentTextGuid);
+
+                    using (new DisableScope(!tabEnable))
+                    {
+                        EditorGUI.BeginChangeCheck();
+
+                        index = GUILayout.Toolbar(index, tabItems, "MiniButton", GUI.ToolbarButtonSize.Fixed);
+
+                        if (EditorGUI.EndChangeCheck())
+                        {
+                            UnityEditorUtility.RegisterUndo("GameTextSetterInspector-Undo", instance);
+
+                            var selection = enumValues.ElementAtOrDefault(index);
+
+                            Reflection.SetPrivateField(instance, "assetType", selection);
+
+                            currentCategoryGuid = GetCategoryGuid(gameText, instance.TextGuid);
+                        }
+                    }
+
+                    GUILayout.Space(4f);
                 }
             }
 
@@ -106,7 +137,7 @@ namespace Modules.GameText.Components
 
             // 選択ウィンドウモード.
 
-            if (setType == GameTextSetter.SetType.Selector)
+            if (assetType == GameTextSetter.AssetType.Internal)
             {
                 var categoryChanged = false;
 
@@ -150,9 +181,9 @@ namespace Modules.GameText.Components
 
                         if (currentCategoryGuid != newCategoryGuid)
                         {
-                            SelectionCategoryGuid = newCategoryGuid;
+                            currentCategoryGuid = newCategoryGuid;
 
-                            Reflection.InvokePrivateMethod(instance, "SetTextGuid", new object[] { null });
+                            SetTextGuid(null);
 
                             categoryChanged = true;
                         }
@@ -169,7 +200,7 @@ namespace Modules.GameText.Components
                     }
                 }
 
-                if (categoryChanged && string.IsNullOrEmpty(SelectionCategoryGuid))
+                if (categoryChanged && string.IsNullOrEmpty(currentCategoryGuid))
                 {
                     SetDevelopmentText(string.Empty);
                 }
@@ -177,7 +208,7 @@ namespace Modules.GameText.Components
 
             // 直接設定モード.
 
-            if (setType == GameTextSetter.SetType.Direct)
+            if (assetType == GameTextSetter.AssetType.Extend)
             {
                 EditorGUI.BeginChangeCheck();
 
@@ -185,24 +216,33 @@ namespace Modules.GameText.Components
 
                 if (EditorGUI.EndChangeCheck())
                 {
-                    var info = gameText.FindTextContentInfo(newTextGuid);
-
-                    if (info != null)
+                    if (!string.IsNullOrEmpty(newTextGuid))
                     {
-                        Reflection.InvokePrivateMethod(instance, "SetTextGuid", new object[] { newTextGuid.Trim() });
+                        var text = gameText.FindText(newTextGuid);
 
-                        SelectionCategoryGuid = GetCurrentCategoryGuid(gameText);
+                        if (!string.IsNullOrEmpty(text))
+                        {
+                            UnityEditorUtility.RegisterUndo("GameTextSetterInspector-Undo", instance);
+
+                            SetTextGuid(newTextGuid);
+
+                            UpdateSelectionAssetType(gameText, newTextGuid);
+                        }
+                        else
+                        {
+                            Debug.LogError("This guid is not defined asset.");
+                        }
                     }
                     else
                     {
-                        Debug.LogError("This guid is not defined.");
+                        SetTextGuid(null);
                     }
                 }
             }
 
             GUILayout.Space(2f);
 
-            if (string.IsNullOrEmpty(SelectionCategoryGuid))
+            if (string.IsNullOrEmpty(currentTextGuid))
             {
                 using (new EditorGUILayout.HorizontalScope())
                 {
@@ -246,14 +286,30 @@ namespace Modules.GameText.Components
             }
         }
 
+        private void UpdateSelectionAssetType(GameText gameText, string textGuid)
+        {
+            var categoryGuid = GetCategoryGuid(gameText, textGuid);
+
+            if (!string.IsNullOrEmpty(categoryGuid))
+            {
+                // 内包テキストに含まれるGuidだった場合は内包テキストモードに変更.
+                Reflection.SetPrivateField(instance, "assetType", GameTextSetter.AssetType.Internal);
+            }
+        }
+
+        private void SetTextGuid(string textGuid)
+        {
+            Reflection.InvokePrivateMethod(instance, "SetTextGuid", new object[] { textGuid });
+        }
+
         private void SetDevelopmentText(string text)
         {
             Reflection.InvokePrivateMethod(instance, "SetDevelopmentText", new object[] { text });
         }
 
-        private string GetCurrentCategoryGuid(GameText gameText)
+        private string GetCategoryGuid(GameText gameText, string textGuid)
         {
-            var categoryEnum = (Enum)Reflection.InvokePrivateMethod(gameText, "FindCategoryEnumFromTextGuid", new object[] { instance.TextGuid });
+            var categoryEnum = (Enum)Reflection.InvokePrivateMethod(gameText, "FindCategoryEnumFromTextGuid", new object[] { textGuid });
             
             return FindCategoryGuid(gameText, categoryEnum);
         }

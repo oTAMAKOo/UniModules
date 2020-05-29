@@ -8,7 +8,6 @@ using System.Text;
 using System.Threading;
 using Extensions;
 using Extensions.Devkit;
-using Modules.Devkit.Prefs;
 
 namespace Modules.GameText.Editor
 {
@@ -67,57 +66,36 @@ namespace Modules.GameText.Editor
             }
 
             // 生成制御.
-            
-            var enumValues = Enum.GetValues(typeof(GenerateMode)).Cast<GenerateMode>().ToArray();
-
-            var tabItems = enumValues.Select(x => x.ToLabelName()).ToArray();
-
-            foreach (var generateSetting in config.AseetGenerateSettings)
+            using (new DisableScope(info == null))
             {
-                var label = generateSetting.Label;
-
-                EditorLayoutTools.DrawLabelWithBackground(label);
+                EditorLayoutTools.DrawLabelWithBackground("Resources");
 
                 GUILayout.Space(2f);
 
-                using (new EditorGUILayout.HorizontalScope())
+                if (GUILayout.Button("Generate"))
                 {
-                    var selection = GetGenerateMode(label);
+                    GameTextGenerater.Generate(config.InternalAseetFolder, true, info);
 
-                    var index = enumValues.IndexOf(x => x == selection);
-                    
-                    EditorGUI.BeginChangeCheck();
-
-                    index = GUILayout.Toolbar(index, tabItems, "Button", GUI.ToolbarButtonSize.Fixed, GUILayout.Width(175f));
-
-                    if (EditorGUI.EndChangeCheck())
-                    {
-                        selection = enumValues.ElementAtOrDefault(index);
-
-                        SetGenerateMode(label, selection);
-                    }
- 
-                    using (new DisableScope(info == null))
-                    {
-                        if (GUILayout.Button("Generate"))
-                        {
-                            switch (selection)
-                            {
-                                case GenerateMode.FullGenerate:
-                                    GameTextGenerater.Generate(generateSetting.AssetFolderPath, true, info);
-                                    break;
-
-                                case GenerateMode.OnlyAsset:
-                                    GameTextGenerater.Generate(generateSetting.AssetFolderPath, false, info);
-                                    break;
-                            }
-
-                            Repaint();
-                        }
-                    }
+                    Repaint();
                 }
 
                 GUILayout.Space(2f);
+
+                if (config.UseExternalAseet)
+                {
+                    EditorLayoutTools.DrawLabelWithBackground("AssetBundle");
+
+                    GUILayout.Space(2f);
+
+                    if (GUILayout.Button("Generate"))
+                    {
+                        GameTextGenerater.Generate(config.ExternalAseetFolder, false, info);
+
+                        Repaint();
+                    }
+
+                    GUILayout.Space(2f);
+                }
             }
             
             // エクセル制御.
@@ -293,21 +271,6 @@ namespace Modules.GameText.Editor
             }
 
             return new Tuple<int, string>(exitCode, log.ToString());
-        }
-
-        private string GetGenerateModePrefsKey(string labe)
-        {
-            return string.Format("GameTextGenerateWindow-GenerateMode-{0}", labe);
-        }
-
-        private GenerateMode GetGenerateMode(string label)
-        {
-            return ProjectPrefs.GetEnum(GetGenerateModePrefsKey(label), GenerateMode.FullGenerate);
-        }
-
-        private void SetGenerateMode(string label, GenerateMode mode)
-        {
-            ProjectPrefs.SetEnum(GetGenerateModePrefsKey(label), mode);
         }
 
         private void Reload()

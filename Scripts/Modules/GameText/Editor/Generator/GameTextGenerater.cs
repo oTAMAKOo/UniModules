@@ -40,12 +40,12 @@ namespace Modules.GameText.Editor
             if (sheets == null) { return; }
 
             var aesManaged = gameText.GetAesManaged();
-
-            AssetDatabase.StartAssetEditing();
-
+            
             try
             {
-                // Generate: Script.
+                AssetDatabase.StartAssetEditing();
+
+                // Script.
 
                 if (generateScript)
                 {
@@ -64,7 +64,7 @@ namespace Modules.GameText.Editor
                     ContentsScriptGenerator.Generate(sheets, config, languageInfo.TextIndex);
                 }
 
-                // Generate: Asset.
+                // Asset.
 
                 EditorUtility.DisplayProgressBar(progressTitle, "Generate asset.", 0.5f);
 
