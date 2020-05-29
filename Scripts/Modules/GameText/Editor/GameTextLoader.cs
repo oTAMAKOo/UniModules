@@ -23,10 +23,25 @@ namespace Modules.GameText.Editor
         [DidReloadScripts]
         private static void DidReloadScripts()
         {
-            EditorApplication.delayCall += () =>
+            var frameCount = 0;
+
+            EditorApplication.CallbackFunction reloadGameText = null;
+
+            reloadGameText = () =>
             {
+                if (frameCount < 30)
+                {
+                    frameCount++;
+                    return;
+                }
+
                 Reload();
+
+                EditorApplication.update -= reloadGameText;
             };
+
+
+            EditorApplication.update += reloadGameText;
         }
 
         public static void Reload()
