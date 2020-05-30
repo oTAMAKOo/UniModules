@@ -114,7 +114,15 @@ namespace Modules.GameText.Components
 
             if (setter == null) { return; }
 
-            if(categoryGuid != setterInspector.SelectionCategoryGuid)
+            var selectionCategoryGuid = setterInspector.SelectionCategoryGuid;
+
+            if (string.IsNullOrEmpty(selectionCategoryGuid))
+            {
+                Close();
+                return;
+            }
+
+            if(categoryGuid != selectionCategoryGuid)
             {
                 BuildSelectionInfos();
             }
@@ -169,7 +177,7 @@ namespace Modules.GameText.Components
 
                 // Contents.
 
-                var categoryTexts = GetCategoryTexts(gameText, setterInspector.SelectionCategoryGuid);
+                var categoryTexts = GetCategoryTexts(gameText, selectionCategoryGuid);
 
                 scrollView.Setter = setter;
                 scrollView.SetterInspector = setterInspector;

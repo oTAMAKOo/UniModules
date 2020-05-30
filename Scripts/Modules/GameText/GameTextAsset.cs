@@ -3,6 +3,7 @@ using UnityEngine;
 using System;
 using System.Collections.Generic;
 using Extensions;
+using Extensions.Serialize;
 
 namespace Modules.GameText.Components
 {
@@ -29,12 +30,17 @@ namespace Modules.GameText.Components
 	{
         [SerializeField, HideInInspector]
         private TextContent[] contents = new TextContent[0];
+	    [SerializeField, ReadOnly]
+	    private LongNullable updateAt = null;
 
-	    public IReadOnlyList<TextContent> Contents { get { return contents; } }
+        public IReadOnlyList<TextContent> Contents { get { return contents; } }
 
-        public void SetContents(TextContent[] contents)
+	    public long? UpdateAt { get { return updateAt; } }
+
+        public void SetContents(TextContent[] contents, long updateAt)
         {
             this.contents = contents;
+            this.updateAt = updateAt;
         }
     }
 }

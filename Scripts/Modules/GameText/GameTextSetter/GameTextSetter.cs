@@ -4,6 +4,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using Extensions;
 using TMPro;
+using UniRx;
 
 namespace Modules.GameText.Components
 {
@@ -13,19 +14,21 @@ namespace Modules.GameText.Components
 	{
         //----- params -----
 
-        public enum AssetType
+        public enum SourceType
         {
-            [Label("Resources")]
-            Internal,
-
-            [Label("AssetBundle")]
+            BuiltIn,            
             Extend,
         }
 
         //----- field -----
 
-	    [SerializeField]
-	    private AssetType assetType = AssetType.Internal;
+	    #pragma warning disable 414
+
+        [SerializeField]
+	    private SourceType sourceType = SourceType.BuiltIn;
+
+        #pragma warning restore 414
+
         [SerializeField]
         private string textGuid = null;
         [SerializeField]
@@ -46,6 +49,11 @@ namespace Modules.GameText.Components
         void Awake()
         {
             ImportText();
+
+            // テキスト更新通知を受け取ったら再度テキストを適用.
+            GameText.Instance.OnUpdateContentsAsObservable()
+                .Subscribe(_ => ImportText())
+                .AddTo(this);
         }
 
         public void Format(params object[] args)

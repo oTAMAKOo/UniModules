@@ -1,5 +1,6 @@
 ﻿
 using UnityEditor;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Security.Cryptography;
@@ -18,7 +19,7 @@ namespace Modules.GameText.Editor
 
         //----- method -----
 
-        public static void Build(GameTextAsset asset, SheetData[] sheets, GameTextConfig config, int textIndex, AesManaged aesManaged)
+        public static void Build(GameTextAsset asset, SheetData[] sheets, int textIndex, AesManaged aesManaged)
         {
             var contents = new List<TextContent>();
 
@@ -40,7 +41,7 @@ namespace Modules.GameText.Editor
                 }
             }
             
-            asset.SetContents(contents.ToArray());
+            asset.SetContents(contents.ToArray(), DateTime.Now.ToUnixTime());
 
             EditorUtility.SetDirty(asset);
         }

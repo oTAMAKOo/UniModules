@@ -15,16 +15,22 @@ namespace Modules.GameText.Editor
     {
         //----- params -----
 
+        public sealed class GenerateInfo
+        {
+            public string assetPath = null;
+            public string scriptFolderPath = null;
+            public string contentsFolderPath = null;
+            public int textIndex = 0;
+        }
+
         //----- field -----
 
         //----- property -----
 
         //----- method -----
 
-        public static void Generate(string assetFolderPath, bool generateScript, GameTextLanguage.Info languageInfo)
+        public static void Generate(GenerateInfo info)
         {
-            if (languageInfo == null) { return; }
-
             var progressTitle = "Generate GameText";
 
             var gameText = GameText.Instance;
@@ -35,12 +41,14 @@ namespace Modules.GameText.Editor
 
             EditorUtility.DisplayProgressBar(progressTitle, "Load contents.", 0f);
 
-            var sheets = LoadSheetData(config);
+            var sheets = LoadSheetData(config.FileFormat, info.contentsFolderPath);
 
             if (sheets == null) { return; }
 
             var aesManaged = gameText.GetAesManaged();
-            
+
+            var generateScript = !string.IsNullOrEmpty(info.scriptFolderPath);
+
             try
             {
                 AssetDatabase.StartAssetEditing();
@@ -51,26 +59,26 @@ namespace Modules.GameText.Editor
                 {
                     EditorApplication.LockReloadAssemblies();
 
-                    DirectoryUtility.Clean(config.ScriptFolderPath);
+                    DirectoryUtility.Clean(info.scriptFolderPath);
 
-                    AssetDatabase.ImportAsset(config.ScriptFolderPath, ImportAssetOptions.ForceUpdate);
+                    AssetDatabase.ImportAsset(info.scriptFolderPath, ImportAssetOptions.ForceUpdate);
 
                     EditorUtility.DisplayProgressBar(progressTitle, "Generate script.", 0.25f);
 
-                    CategoryScriptGenerator.Generate(sheets, config);
+                    CategoryScriptGenerator.Generate(sheets, info.scriptFolderPath);
 
-                    GameTextScriptGenerator.Generate(sheets, config);
+                    GameTextScriptGenerator.Generate(sheets, info.scriptFolderPath);
 
-                    ContentsScriptGenerator.Generate(sheets, config, languageInfo.TextIndex);
+                    ContentsScriptGenerator.Generate(sheets, info.scriptFolderPath, info.textIndex);
                 }
 
                 // Asset.
 
                 EditorUtility.DisplayProgressBar(progressTitle, "Generate asset.", 0.5f);
+                
+                var gameTextAsset = LoadAsset(info.assetPath);
 
-                var gameTextAsset = LoadAsset(assetFolderPath, languageInfo.AssetName);
-
-                GameTextAssetGenerator.Build(gameTextAsset, sheets, config, languageInfo.TextIndex, aesManaged);
+                GameTextAssetGenerator.Build(gameTextAsset, sheets, info.textIndex, aesManaged);
 
                 EditorUtility.DisplayProgressBar(progressTitle, "Complete.", 1f);
 
@@ -95,11 +103,9 @@ namespace Modules.GameText.Editor
             EditorUtility.ClearProgressBar();
         }
 
-        private static SheetData[] LoadSheetData(GameTextConfig config)
+        private static SheetData[] LoadSheetData(FileLoader.Format fileFormat, string recordDirectory)
         {
-            var recordDirectory = config.GetContentsFolderPath();
-
-            var extension = config.GetFileExtension();
+            var extension = FileLoader.GetFileExtension(fileFormat);
 
             if (!Directory.Exists(recordDirectory))
             {
@@ -116,7 +122,7 @@ namespace Modules.GameText.Editor
 
             foreach (var sheetFile in sheetFiles)
             {
-                var sheetData = FileLoader.LoadFile<SheetData>(sheetFile, config.FileFormat);
+                var sheetData = FileLoader.LoadFile<SheetData>(sheetFile, fileFormat);
 
                 if (sheetData != null)
                 {
@@ -126,14 +132,12 @@ namespace Modules.GameText.Editor
 
             return list.OrderBy(x => x.index).ToArray();
         }
-        
-        private static GameTextAsset LoadAsset(string assetFolderPath, string resourcesPath)
-        {
-            var assetPath = PathUtility.Combine(assetFolderPath, resourcesPath);
 
+        private static GameTextAsset LoadAsset(string assetPath)
+        {
             if (string.IsNullOrEmpty(assetPath)) { return null; }
 
-            var asset = AssetDatabase.LoadAssetAtPath<GameTextAsset>(assetPath);
+            var asset = AssetDatabase.LoadMainAssetAtPath(assetPath) as GameTextAsset;
 
             if (asset == null)
             {

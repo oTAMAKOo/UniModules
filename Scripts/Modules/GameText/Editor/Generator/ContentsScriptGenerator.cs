@@ -53,10 +53,8 @@ namespace Modules.GameText
 
         //----- method -----
 
-        public static void Generate(SheetData[] sheets, GameTextConfig config, int textIndex)
+        public static void Generate(SheetData[] sheets, string scriptFolderPath, int textIndex)
         {
-            var exportPath = config.ScriptFolderPath;
-
             var generatedScripts = new List<string>();
 
             foreach (var sheet in sheets)
@@ -107,22 +105,21 @@ namespace Modules.GameText
 
                 var fileName = string.Format(@"{0}.cs", sheet.sheetName);
 
-                if (ScriptGenerateUtility.GenerateScript(exportPath, fileName, script))
+                if (ScriptGenerateUtility.GenerateScript(scriptFolderPath, fileName, script))
                 {
                     generatedScripts.Add(fileName);
                 }
             }
 
             // 定義が消えたファイルを削除.
-            DeleteUnusedFiles(generatedScripts.ToArray(), config);
+            DeleteUnusedFiles(generatedScripts.ToArray(), scriptFolderPath);
         }
 
-        private static void DeleteUnusedFiles(string[] generatedScripts, GameTextConfig config)
+        private static void DeleteUnusedFiles(string[] generatedScripts, string scriptFolderPath)
         {
-            var exportPath = config.ScriptFolderPath;
-            var exportFullPath = PathUtility.Combine(UnityPathUtility.GetProjectFolderPath(), exportPath);
+            var exportFullPath = PathUtility.Combine(UnityPathUtility.GetProjectFolderPath(), scriptFolderPath);
 
-            if (AssetDatabase.IsValidFolder(exportPath))
+            if (AssetDatabase.IsValidFolder(scriptFolderPath))
             {
                 var files = Directory.GetFiles(exportFullPath, "*", SearchOption.TopDirectoryOnly);
 

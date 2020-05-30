@@ -65,10 +65,8 @@ namespace Modules.GameText
 
         //----- method -----
 
-        public static void Generate(SheetData[] sheets, GameTextConfig config)
+        public static void Generate(SheetData[] sheets, string scriptFolderPath)
         {
-            var exportPath = config.ScriptFolderPath;
-
             var enums = new StringBuilder();
             var contents = new StringBuilder();
 
@@ -99,7 +97,7 @@ namespace Modules.GameText
 
             script = script.FixLineEnd();
 
-            ScriptGenerateUtility.GenerateScript(exportPath, CategoryScriptFileName, script);
+            ScriptGenerateUtility.GenerateScript(scriptFolderPath, CategoryScriptFileName, script);
         }
     }
 }

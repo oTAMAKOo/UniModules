@@ -5,6 +5,7 @@ using System.Linq;
 using Extensions;
 using Extensions.Devkit;
 using Modules.GameText.Components;
+using UnityEngine;
 
 namespace Modules.GameText.Editor
 {
@@ -23,6 +24,8 @@ namespace Modules.GameText.Editor
         [DidReloadScripts]
         private static void DidReloadScripts()
         {
+            if (EditorApplication.isPlayingOrWillChangePlaymode) { return; }
+
             var frameCount = 0;
 
             EditorApplication.CallbackFunction reloadGameText = null;
@@ -45,6 +48,8 @@ namespace Modules.GameText.Editor
 
         public static void Reload()
         {
+            if (EditorApplication.isPlayingOrWillChangePlaymode) { return; }
+
             var gameText = GameText.Instance;
 
             var config = GameTextConfig.Instance;
@@ -53,18 +58,46 @@ namespace Modules.GameText.Editor
 
             if (gameTextInfo == null) { return; }
 
-            var assetName = gameTextInfo.AssetName;
+            var identifier = gameTextInfo.Identifier;
+
+            var assetFolderName = gameText.GetAssetFolderName();
 
             // 内包テキスト読み込み.
 
-            gameText.LoadFromResources(assetName);
+            if (config != null)
+            {
+                var assetFileName = GameText.GetAssetFileName(GameText.AssetType.BuiltIn, identifier);
+
+                var resourcesPath = PathUtility.Combine(assetFolderName, assetFileName);
+
+                gameText.LoadBuiltInAsset(resourcesPath);
+            }
+
+            // 更新テキスト読み込み.
+
+            if (config != null && config.UpdateGameText.Enable)
+            {
+                var assetFileName = GameText.GetAssetFileName(GameText.AssetType.Update, identifier);
+
+                var aseetFolderPath = config.UpdateGameText.AseetFolderPath;
+
+                var assetPath = PathUtility.Combine(new string[] { aseetFolderPath, assetFolderName, assetFileName });
+
+                var updateGameTextAsset = AssetDatabase.LoadMainAssetAtPath(assetPath) as GameTextAsset;
+
+                gameText.ImportAsset(updateGameTextAsset);
+            }
 
             // 拡張テキスト読み込み.
 
-            if (config != null && config.UseExternalAseet)
+            if (config != null && config.ExtendGameText.Enable)
             {
-                var assetPath = PathUtility.Combine(config.ExternalAseetFolder, assetName);
+                var assetFileName = GameText.GetAssetFileName(GameText.AssetType.Extend, identifier);
 
+                var aseetFolderPath = config.ExtendGameText.AseetFolderPath;
+
+                var assetPath = PathUtility.Combine(new string[] { aseetFolderPath, assetFolderName, assetFileName });
+                
                 var extendGameTextAsset = AssetDatabase.LoadMainAssetAtPath(assetPath) as GameTextAsset;
 
                 Reflection.InvokePrivateMethod(gameText, "LoadExtend", new object[] { extendGameTextAsset });

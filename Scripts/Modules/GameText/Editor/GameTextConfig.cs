@@ -1,7 +1,5 @@
 ﻿
 using System;
-using System.Collections.Generic;
-using System.Linq;
 using UnityEngine;
 using UnityEditor;
 using Extensions;
@@ -9,41 +7,21 @@ using Modules.Devkit.ScriptableObjects;
 
 namespace Modules.GameText.Editor
 {
-    public sealed class GameTextConfig : ReloadableScriptableObject<GameTextConfig>
+    public sealed partial class GameTextConfig : ReloadableScriptableObject<GameTextConfig>
     {
         //----- params -----
-
-        /// <summary> データフォルダ名 </summary>
-        public const string ContentsFolderName = "Contents";
-
-        /// <summary> Json拡張子 </summary>
-        private const string JsonFileExtension = ".json";
-
-        /// <summary> Yaml拡張子 </summary>
-        private const string YamlFileExtension = ".yaml";
 
         //----- field -----
 
         [SerializeField]
         private FileLoader.Format fileFormat = FileLoader.Format.Yaml;
+        
         [SerializeField]
-        private string workspaceFolder = string.Empty;
+        private BuiltInGameTextSetting builtInGameTextSetting = null;
         [SerializeField]
-        private string excelFileName = string.Empty;
+        private UpdateGameTextSetting updateGameTextSetting = null;
         [SerializeField]
-        private UnityEngine.Object scriptFolder = null;
-
-        [Header("Internal Aseet")]
-
-        [SerializeField]
-        private UnityEngine.Object internalAseetFolder = null;
-
-        [Header("External Aseet")]
-
-        [SerializeField]
-        private bool useExternalAseet = false;
-        [SerializeField]
-        private UnityEngine.Object externalAseetFolder = null;
+        private ExtendGameTextSetting extendGameTextSetting = null;
 
         #pragma warning disable 414
 
@@ -67,118 +45,12 @@ namespace Modules.GameText.Editor
 
         public FileLoader.Format FileFormat { get { return fileFormat; } }
         
-        public string ScriptFolderPath
-        {
-            get { return scriptFolder != null ? AssetDatabase.GetAssetPath(scriptFolder) : null; }
-        }
+        public BuiltInGameTextSetting BuiltInGameText { get { return builtInGameTextSetting; } }
 
-        public string InternalAseetFolder
-        {
-            get
-            {
-                return internalAseetFolder != null ? AssetDatabase.GetAssetPath(internalAseetFolder) : null;
-            }
-        }
+        public UpdateGameTextSetting UpdateGameText { get { return updateGameTextSetting; } }
 
-        public bool UseExternalAseet { get { return useExternalAseet; } }
-
-        public string ExternalAseetFolder
-        {
-            get
-            {
-                return externalAseetFolder != null ? AssetDatabase.GetAssetPath(externalAseetFolder) : null;
-            }
-        }
+        public ExtendGameTextSetting ExtendGameText { get { return extendGameTextSetting; } }
 
         //----- method -----
-
-        public string GetGameTextWorkspacePath()
-        {
-            if (string.IsNullOrEmpty(workspaceFolder)) { return null; }
-
-            var projectFolder = UnityPathUtility.GetProjectFolderPath();
-
-            var workspacePath = PathUtility.RelativePathToFullPath(projectFolder, workspaceFolder);
-
-            return workspacePath;
-        }
-        
-        public string GetFileExtension()
-        {
-            var extension = string.Empty;
-
-            switch (fileFormat)
-            {
-                case FileLoader.Format.Yaml:
-                    extension = YamlFileExtension;
-                    break;
-                    
-                case FileLoader.Format.Json:
-                    extension = JsonFileExtension;
-                    break;
-            }
-
-            return extension;
-        }
-
-        public string GetExcelPath()
-        {
-            var workspacePath = GetGameTextWorkspacePath();
-
-            return PathUtility.Combine(workspacePath, excelFileName);
-        }
-
-        public string GetContentsFolderPath()
-        {
-            var workspacePath = GetGameTextWorkspacePath();
-
-            return PathUtility.Combine(workspacePath, ContentsFolderName);
-        }
-
-        public string GetImporterPath()
-        {
-            var workspacePath = GetGameTextWorkspacePath();
-
-            var fileName = string.Empty;
-
-            #if UNITY_EDITOR_WIN
-
-            fileName = windowsImporterFileName;
-
-            #endif
-
-            #if UNITY_EDITOR_OSX
-
-            fileName = osxImporterFileName;
-
-            #endif
-
-            if (string.IsNullOrEmpty(fileName)) { return null; }
-
-            return PathUtility.Combine(workspacePath, fileName);
-        }
-
-        public string GetExporterPath()
-        {
-            var workspacePath = GetGameTextWorkspacePath();
-
-            var fileName = string.Empty;
-
-            #if UNITY_EDITOR_WIN
-
-            fileName = windowsExporterFileName;
-
-            #endif
-
-            #if UNITY_EDITOR_OSX
-
-            fileName = osxExporterFileName;
-
-            #endif
-
-            if (string.IsNullOrEmpty(fileName)) { return null; }
-
-            return PathUtility.Combine(workspacePath, fileName);
-        }
     }
 }

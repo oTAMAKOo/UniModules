@@ -34,7 +34,9 @@ namespace Modules.GameText.Components
 
             return cache.GetValueOrDefault(textGuid);
         }
-        
+
+        public virtual string GetAssetFolderName() { return string.Empty; }
+
         public virtual string FindTextGuid(Enum textType) { return null; }
 
         protected virtual void BuildGenerateContents() { }

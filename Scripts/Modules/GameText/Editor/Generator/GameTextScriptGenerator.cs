@@ -141,10 +141,8 @@ namespace Modules.GameText
 
         //----- method -----
 
-        public static void Generate(SheetData[] sheets, GameTextConfig config)
+        public static void Generate(SheetData[] sheets, string scriptFolderPath)
         {
-            var exportPath = config.ScriptFolderPath;
-
             var categorys = new StringBuilder();
             var getMethods = new StringBuilder();
 
@@ -172,7 +170,7 @@ namespace Modules.GameText
 
             script = script.FixLineEnd();
             
-            ScriptGenerateUtility.GenerateScript(exportPath, GameTextScriptFileName, script);            
+            ScriptGenerateUtility.GenerateScript(scriptFolderPath, GameTextScriptFileName, script);            
         }
     }
 }

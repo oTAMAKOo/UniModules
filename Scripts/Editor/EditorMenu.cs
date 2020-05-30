@@ -5,6 +5,7 @@ using Extensions.Devkit;
 
 // Modules.
 using Modules.Dicing;
+using Modules.GameText.Editor;
 using Modules.MessagePack;
 using Modules.Master;
 using Modules.ExternalResource;
@@ -143,6 +144,34 @@ namespace Modules
         {
             Menu.SetChecked(MasterMenu + "Use CachedMasterFile", !MasterManager.Prefs.checkVersion);
             return true;
+        }
+
+        #endregion
+
+        //===============================================================
+        //  GameText.
+        //===============================================================
+
+        #region GameText
+
+        protected const string GameTextMenu = MenuRoot + "GameText/";
+
+        [MenuItem(itemName: GameTextMenu + "Open BuiltIn Window", priority = 0)]
+        public static void OpenBuiltInGameTextWindow()
+        {
+            BuiltInGameTextWindow.Open();
+        }
+
+        [MenuItem(itemName: GameTextMenu + "Open Extend Window", priority = 1)]
+        public static void OpenExtendnGameTextWindow()
+        {
+            ExtendGameTextWindow.Open();
+        }
+
+        [MenuItem(itemName: GameTextMenu + "Open Extend Window", true)]
+        private static bool ValidateOpenExtendnGameTextWindow()
+        {
+            return GameTextConfig.Instance.ExtendGameText.Enable;
         }
 
         #endregion

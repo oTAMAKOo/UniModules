@@ -14,6 +14,12 @@ namespace Modules.GameText.Editor
             Json,
         }
 
+        /// <summary> Json拡張子 </summary>
+        private const string JsonFileExtension = ".json";
+
+        /// <summary> Yaml拡張子 </summary>
+        private const string YamlFileExtension = ".yaml";
+
         public static T LoadFile<T>(string filePath, Format format) where T : class
         {
             if (!File.Exists(filePath)) { return null; }
@@ -59,6 +65,24 @@ namespace Modules.GameText.Editor
             }
 
             return result;
+        }
+
+        public static string GetFileExtension(Format fileFormat)
+        {
+            var extension = string.Empty;
+
+            switch (fileFormat)
+            {
+                case Format.Yaml:
+                    extension = YamlFileExtension;
+                    break;
+
+                case Format.Json:
+                    extension = JsonFileExtension;
+                    break;
+            }
+
+            return extension;
         }
     }
 }
