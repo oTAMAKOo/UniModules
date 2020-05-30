@@ -320,12 +320,6 @@ namespace Modules.ExternalResource
                     yield break;
                 }
 
-                if (!assetInfo.IsAssetBundle)
-                {
-                    Debug.LogErrorFormat("AssetBundleName is empty.\n{0}", resourcePath);
-                    yield break;
-                }
-
                 // ローカルバージョンが最新の場合は更新しない.
                 if (CheckAssetBundleVersion(assetInfo))
                 {
