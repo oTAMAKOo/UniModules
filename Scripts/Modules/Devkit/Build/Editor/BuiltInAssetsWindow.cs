@@ -14,7 +14,7 @@ using Object = UnityEngine.Object;
 
 namespace Modules.Devkit.Build
 {
-    public class BuildInAssetsWindow : SingletonEditorWindow<BuildInAssetsWindow>
+    public class BuiltInAssetsWindow : SingletonEditorWindow<BuiltInAssetsWindow>
     {
         //----- params -----
 
@@ -30,12 +30,12 @@ namespace Modules.Devkit.Build
 
         private Vector2 scrollPosition = Vector2.zero;
         private string searchText = null;
-        private BuildInAssets.BuildInAssetInfo[] buildInAssetInfo = null;
+        private BuiltInAssets.BuiltInAssetInfo[] builtInAssetInfo = null;
         private Dictionary<string, Object> assetObjectByAssetPath = null;
 
-        private string[] buildInAssetTargetPaths = null;
-        private string[] ignoreBuildInAssetTargetPaths = null;
-        private string[] ignoreBuildInFolderNames = null;
+        private string[] builtInAssetTargetPaths = null;
+        private string[] ignoreBuiltInAssetTargetPaths = null;
+        private string[] ignoreBuiltInFolderNames = null;
         private string[] ignoreValidationPaths = null;
         private string[] ignoreValidationExtensions = null;
         private float warningAssetSize = 0f;
@@ -70,44 +70,44 @@ namespace Modules.Devkit.Build
 
             var buildConfig = BuildConfig.Instance;
 
-            titleContent = new GUIContent("BuildInAssets Report");
+            titleContent = new GUIContent("BuiltInAssets Report");
             minSize = WindowSize;
 
-            buildInAssetInfo = new BuildInAssets.BuildInAssetInfo[0];
-            buildInAssetTargetPaths = buildConfig.BuildInAssetTargets.Select(x => AssetDatabase.GetAssetPath(x)).ToArray();
-            ignoreBuildInAssetTargetPaths = buildConfig.IgnoreBuildInAssetTargets.Select(x => AssetDatabase.GetAssetPath(x)).ToArray();
-            ignoreBuildInFolderNames = buildConfig.IgnoreBuildInFolderNames;
+            builtInAssetInfo = new BuiltInAssets.BuiltInAssetInfo[0];
+            builtInAssetTargetPaths = buildConfig.BuiltInAssetTargets.Select(x => AssetDatabase.GetAssetPath(x)).ToArray();
+            ignoreBuiltInAssetTargetPaths = buildConfig.IgnoreBuiltInAssetTargets.Select(x => AssetDatabase.GetAssetPath(x)).ToArray();
+            ignoreBuiltInFolderNames = buildConfig.IgnoreBuiltInFolderNames;
             ignoreValidationPaths = buildConfig.IgnoreValidationAssets.Select(x => AssetDatabase.GetAssetPath(x)).ToArray();
             ignoreValidationExtensions = buildConfig.IgnoreValidationExtensions;
             warningAssetSize = buildConfig.WarningAssetSize;
 
             // 読み込みが終わったら表示.
-            CollectBuildInAssets(logFilePath).Subscribe(_ => ShowUtility()).AddTo(Disposable);
+            CollectBuiltInAssets(logFilePath).Subscribe(_ => ShowUtility()).AddTo(Disposable);
 
             isInitialized = true;
         }
 
-        private IObservable<Unit> CollectBuildInAssets(string logFilePath)
+        private IObservable<Unit> CollectBuiltInAssets(string logFilePath)
         {
-            return BuildInAssets.CollectBuildInAssets(logFilePath)
-                .SelectMany(x => LoadBuildInAssets(x).ToObservable())
+            return BuiltInAssets.CollectBuiltInAssets(logFilePath)
+                .SelectMany(x => LoadBuiltInAssets(x).ToObservable())
                 .Do(_ => Repaint())
                 .AsUnitObservable();
         }
 
-        private IEnumerator LoadBuildInAssets(BuildInAssets.BuildInAssetInfo[] assetInfos)
+        private IEnumerator LoadBuiltInAssets(BuiltInAssets.BuiltInAssetInfo[] assetInfos)
         {
             const int FrameLoadCount = 100;
 
             // 対象外除外.
-            buildInAssetInfo = assetInfos
+            builtInAssetInfo = assetInfos
                 // 除外対象に指定されたAssetの子階層の場合.
                 .Where(x => ignoreValidationPaths.All(y => !x.assetPath.StartsWith(y)))
                 // 除外対象の拡張子のファイルの場合.
                 .Where(x => ignoreValidationExtensions.All(y => y != Path.GetExtension(x.assetPath)))
                 .ToArray();
 
-            if (buildInAssetInfo != null)
+            if (builtInAssetInfo != null)
             {
                 var count = 0;
                 var progressTitle = "progress";
@@ -117,9 +117,9 @@ namespace Modules.Devkit.Build
 
                 EditorUtility.DisplayProgressBar(progressTitle, progressMessage, 0f);
 
-                for (var i = 0; i < buildInAssetInfo.Length; i++)
+                for (var i = 0; i < builtInAssetInfo.Length; i++)
                 {
-                    var info = buildInAssetInfo[i];
+                    var info = builtInAssetInfo[i];
 
                     var asset = AssetDatabase.LoadMainAssetAtPath(info.assetPath);
 
@@ -130,7 +130,7 @@ namespace Modules.Devkit.Build
 
                     if (FrameLoadCount <= count++)
                     {
-                        EditorUtility.DisplayProgressBar(progressTitle, progressMessage, (float)i / buildInAssetInfo.Length);
+                        EditorUtility.DisplayProgressBar(progressTitle, progressMessage, (float)i / builtInAssetInfo.Length);
 
                         yield return null;
                     }
@@ -209,9 +209,9 @@ namespace Modules.Devkit.Build
                                         }
 
                                         var isInvalidAsset =
-                                            !buildInAssetTargetPaths.Any(x => item.assetPath.StartsWith(x)) ||          // 指定ディレクトリ以外のディレクトリに存在.
-                                            ignoreBuildInAssetTargetPaths.Any(x => item.assetPath.StartsWith(x)) ||     // 含まれてはいけないディレクトリに存在.
-                                            ignoreBuildInFolderNames.Any(x => item.assetPath.Split('/').Contains(x));   // 含まれていけないフォルダ名が含まれているか.
+                                            !builtInAssetTargetPaths.Any(x => item.assetPath.StartsWith(x)) ||          // 指定ディレクトリ以外のディレクトリに存在.
+                                            ignoreBuiltInAssetTargetPaths.Any(x => item.assetPath.StartsWith(x)) ||     // 含まれてはいけないディレクトリに存在.
+                                            ignoreBuiltInFolderNames.Any(x => item.assetPath.Split('/').Contains(x));   // 含まれていけないフォルダ名が含まれているか.
 
                                         // 指定されたAsset置き場にない or 同梱しないAsset置き場のAssetが混入.
                                         if (isInvalidAsset)
@@ -245,16 +245,16 @@ namespace Modules.Devkit.Build
             }
         }
 
-        private BuildInAssets.BuildInAssetInfo[] GetMatchOfList()
+        private BuiltInAssets.BuiltInAssetInfo[] GetMatchOfList()
         {
-            if (string.IsNullOrEmpty(searchText)) { return buildInAssetInfo; }
+            if (string.IsNullOrEmpty(searchText)) { return builtInAssetInfo; }
 
-            var list = new List<BuildInAssets.BuildInAssetInfo>();
+            var list = new List<BuiltInAssets.BuiltInAssetInfo>();
 
             string[] keywords = searchText.Split(new char[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
             for (int i = 0; i < keywords.Length; ++i) keywords[i] = keywords[i].ToLower();
 
-            foreach (var item in buildInAssetInfo)
+            foreach (var item in builtInAssetInfo)
             {
                 var isMatch = item.assetPath.IsMatch(keywords);
 

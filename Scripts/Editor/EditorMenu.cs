@@ -451,10 +451,10 @@ namespace Modules
 
         protected const string BuildMenu = MenuRoot + "Build/";
 
-        [MenuItem(itemName: BuildMenu + "Open BuildInAssetsWindow", priority = 50)]
-        public static void OpenBuildInAssetsWindow()
+        [MenuItem(itemName: BuildMenu + "Open BuiltInAssetsWindow", priority = 50)]
+        public static void OpenBuiltInAssetsWindow()
         {
-            BuildInAssetsWindow.Open();
+            BuiltInAssetsWindow.Open();
         }
 
         #endregion

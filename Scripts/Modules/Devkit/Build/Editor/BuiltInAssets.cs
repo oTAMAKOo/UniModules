@@ -1,32 +1,27 @@
-﻿﻿﻿﻿﻿﻿
-using UnityEngine;
+﻿
 using UnityEditor;
 using System;
 using System.Collections;
 using System.Linq;
 using System.IO;
-using System.Text;
 using System.Collections.Generic;
-using Extensions;
 using UniRx;
-
-using Object = UnityEngine.Object;
 
 namespace Modules.Devkit.Build
 {
-    public static class BuildInAssets
+    public static class BuiltInAssets
     {
         //----- params -----
 
         private const int FrameReadLine = 250;
 
-        public class BuildInAssetInfo
+        public class BuiltInAssetInfo
         {
             public string assetPath { get; private set; }
             public float size { get; private set; }
             public float ratio { get; private set; }
 
-            public BuildInAssetInfo(string line)
+            public BuiltInAssetInfo(string line)
             {
                 var delimiterChars = new char[] { ' ', '\t' };
 
@@ -62,18 +57,18 @@ namespace Modules.Devkit.Build
 
         //----- method -----
 
-        public static IObservable<BuildInAssetInfo[]> CollectBuildInAssets(string logFilePath)
+        public static IObservable<BuiltInAssetInfo[]> CollectBuiltInAssets(string logFilePath)
         {
             var progress = new ScheduledNotifier<float>();
-            progress.Subscribe(prog => EditorUtility.DisplayProgressBar("progress", "Collect build in assets from logfile.", prog));
+            progress.Subscribe(prog => EditorUtility.DisplayProgressBar("progress", "Collect built-in assets from logfile.", prog));
 
-            return Observable.FromCoroutine<BuildInAssetInfo[]>(observer => CollectBuildInAssetsInternal(observer, logFilePath, progress))
+            return Observable.FromCoroutine<BuiltInAssetInfo[]>(observer => CollectBuiltInAssetsInternal(observer, logFilePath, progress))
                 .Do(x => EditorUtility.ClearProgressBar());
         }
 
-        private static IEnumerator CollectBuildInAssetsInternal(IObserver<BuildInAssetInfo[]> observer, string logFilePath, IProgress<float> progress)
+        private static IEnumerator CollectBuiltInAssetsInternal(IObserver<BuiltInAssetInfo[]> observer, string logFilePath, IProgress<float> progress)
         {
-            var buildInAssets = new List<BuildInAssetInfo>();
+            var builtInAssets = new List<BuiltInAssetInfo>();
 
             if (File.Exists(logFilePath))
             {
@@ -100,21 +95,21 @@ namespace Modules.Devkit.Build
 
                     if (!line.StartsWith("Used Assets and files")) { continue; }
 
-                    buildInAssets.Clear();
+                    builtInAssets.Clear();
 
                     while (!sr.EndOfStream && (line = sr.ReadLine()).Contains("%"))
                     {
                         // プロジェクト内のAssetはAssets/から始まる.
                         if (!line.Contains("Assets/")) { continue; }
 
-                        buildInAssets.Add(new BuildInAssetInfo(line));
+                        builtInAssets.Add(new BuiltInAssetInfo(line));
                     }
                 }
 
                 progress.Report(1f);
             }
 
-            observer.OnNext(buildInAssets.ToArray());
+            observer.OnNext(builtInAssets.ToArray());
             observer.OnCompleted();
         }
     }

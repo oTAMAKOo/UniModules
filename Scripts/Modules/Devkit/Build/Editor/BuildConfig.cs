@@ -31,12 +31,12 @@ namespace Modules.Devkit.Build
 
         [SerializeField, ReadOnly, Tooltip("保存されたビルド設定")]
         private BuildParamInfo[] customBuildParams = null;
-        [SerializeField, Tooltip("ビルドインアセットの対象")]
-        private Object[] buildInAssetTargets = null;
-        [SerializeField, Tooltip("ビルドインアセットに含まない対象")]
-        private Object[] ignoreBuildInAssetTargets = null;
-        [SerializeField, Tooltip("ビルドインアセットに含まないフォルダ名")]
-        private string[] ignoreBuildInFolderNames = null;
+        [SerializeField, Tooltip("内蔵アセットの対象")]
+        private Object[] builtInAssetTargets = null;
+        [SerializeField, Tooltip("内蔵アセットに含まない対象")]
+        private Object[] ignoreBuiltInAssetTargets = null;
+        [SerializeField, Tooltip("内蔵アセットに含まないフォルダ名")]
+        private string[] ignoreBuiltInFolderNames = null;
         [SerializeField, Tooltip("アセット検証の対象にしないアセット")]
         private Object[] ignoreValidationAssets = null;
         [SerializeField, Tooltip("アセット検証の対象にしない拡張子")]
@@ -52,19 +52,19 @@ namespace Modules.Devkit.Build
             set { customBuildParams = value; }
         }
 
-        public Object[] BuildInAssetTargets
+        public Object[] BuiltInAssetTargets
         {
-            get { return buildInAssetTargets ?? (buildInAssetTargets = new Object[0]); }
+            get { return builtInAssetTargets ?? (builtInAssetTargets = new Object[0]); }
         }
 
-        public Object[] IgnoreBuildInAssetTargets
+        public Object[] IgnoreBuiltInAssetTargets
         {
-            get { return ignoreBuildInAssetTargets ?? (ignoreBuildInAssetTargets = new Object[0]); }
+            get { return ignoreBuiltInAssetTargets ?? (ignoreBuiltInAssetTargets = new Object[0]); }
         }
 
-        public string[] IgnoreBuildInFolderNames
+        public string[] IgnoreBuiltInFolderNames
         {
-            get { return ignoreBuildInFolderNames ?? (ignoreBuildInFolderNames = new string[0]); }
+            get { return ignoreBuiltInFolderNames ?? (ignoreBuiltInFolderNames = new string[0]); }
         }
 
         public Object[] IgnoreValidationAssets
