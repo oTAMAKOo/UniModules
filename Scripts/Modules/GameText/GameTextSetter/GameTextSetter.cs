@@ -49,11 +49,14 @@ namespace Modules.GameText.Components
         void Awake()
         {
             ImportText();
-
-            // テキスト更新通知を受け取ったら再度テキストを適用.
-            GameText.Instance.OnUpdateContentsAsObservable()
-                .Subscribe(_ => ImportText())
-                .AddTo(this);
+            
+            if (Application.isPlaying)
+            {
+                // テキスト更新通知を受け取ったら再度テキストを適用.
+                GameText.Instance.OnUpdateContentsAsObservable()
+                    .Subscribe(_ => ImportText())
+                    .AddTo(this);
+            }
         }
 
         public void Format(params object[] args)

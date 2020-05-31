@@ -52,15 +52,15 @@ namespace Modules.GameText.Editor
 
             Reload();
 
-            EditorGUILayout.Separator();
-
             var builtInGameTextSetting = config.BuiltInGameText;
 
             var updateGameTextSetting = config.UpdateGameText;
 
             // 言語情報.
             var info = GetCurrentLanguageInfo();
-            
+
+            GUILayout.Space(2f);
+
             EditorLayoutTools.DrawContentTitle("Asset");
 
             using (new ContentsScope())
@@ -133,6 +133,7 @@ namespace Modules.GameText.Editor
                         Repaint();
                     }
 
+                    GUILayout.Space(2f);
                 }
             }
 

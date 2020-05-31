@@ -94,10 +94,10 @@ namespace Modules.GameText.Editor
                     }
                 }
 
-                GUILayout.Space(4f);
+                GUILayout.Space(2f);
             }
 
-            EditorGUILayout.Separator();
+            GUILayout.Space(2f);
         }
 
         // 言語選択GUI描画.
