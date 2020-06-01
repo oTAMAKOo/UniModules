@@ -1,5 +1,6 @@
 ﻿
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using System;
@@ -36,10 +37,10 @@ namespace Modules.Devkit.SceneLaunch
                 set { ProjectPrefs.SetBool("SceneExecuterPrefs-standbyInitializer", value); }
             }
 
-            public static int[] enableInstanceIds
+            public static string[] suspendObjectNames
             {
-                get { return ProjectPrefs.Get<int[]>("SceneExecuterPrefs-enableInstanceIds", new int[0]); }
-                set { ProjectPrefs.Set<int[]>("SceneExecuterPrefs-enableInstanceIds", value); }
+                get { return ProjectPrefs.Get<string[]>("SceneExecuterPrefs-suspendObjectNames", new string[0]); }
+                set { ProjectPrefs.Set<string[]>("SceneExecuterPrefs-suspendObjectNames", value); }
             }
         }
 
@@ -57,7 +58,7 @@ namespace Modules.Devkit.SceneLaunch
                 rootObject.SetActive(false);
             }
 
-            Prefs.enableInstanceIds = rootObjects.Select(y => y.gameObject.GetInstanceID()).ToArray();
+            Prefs.suspendObjectNames = rootObjects.Select(y => y.gameObject.name).ToArray();
         }
 
         /// <summary>
@@ -65,16 +66,21 @@ namespace Modules.Devkit.SceneLaunch
         /// </summary>
         public static void ResumeSceneInstance()
         {
-            var enableInstanceIds = Prefs.enableInstanceIds;
-
             var rootObjects = UnityEditorUtility.FindRootObjectsInHierarchy();
+            
+            ResumeSuspendObject(rootObjects);
+        }
 
-            rootObjects = rootObjects.Where(x => enableInstanceIds.Contains(x.gameObject.GetInstanceID())).ToArray();
+        private static void ResumeSuspendObject(GameObject[] rootObjects)
+        {
+            var suspendObjectNames = Prefs.suspendObjectNames;
+
+            var targetObjects = rootObjects.Where(x => suspendObjectNames.Contains(x.gameObject.name)).ToArray();
 
             // 非アクティブ化したオブジェクトを復元.
-            foreach (var rootObject in rootObjects)
+            foreach (var targetObject in targetObjects)
             {
-                rootObject.SetActive(true);
+                targetObject.SetActive(true);
             }
         }
 
@@ -150,6 +156,8 @@ namespace Modules.Devkit.SceneLaunch
 
                         Prefs.resume = false;
                     }
+
+                    Prefs.suspendObjectNames = new string[0];
                 }                
             }
         }
@@ -280,29 +288,24 @@ namespace Modules.Devkit.SceneLaunch
         [InitializeOnLoadMethod]
         private static void InitializeOnLoadMethod()
         {
-            if (Prefs.standbyInitializer)
-            {
-                EditorApplication.CallbackFunction execCallbackFunction = null;
+            if (!Prefs.standbyInitializer) { return; }
 
-                execCallbackFunction = () =>
-                {
-                    ExecSceneInitializer().Subscribe();
+            // ScriptableObjectの初期化を待つ為少し待機.
+            Observable.TimerFrame(5).Subscribe(_ => ResumeSceneInstance());
 
-                    EditorApplication.delayCall -= execCallbackFunction;
-                };
+            SceneManager.sceneLoaded -= OnSceneLoaded;
+            SceneManager.sceneLoaded += OnSceneLoaded;
 
-                EditorApplication.delayCall += execCallbackFunction;
-
-                Prefs.standbyInitializer = false;
-            }
+            Prefs.standbyInitializer = false;            
         }
 
-        private static IObservable<Unit> ExecSceneInitializer()
+        private static void OnSceneLoaded(Scene scene, LoadSceneMode mode)
         {
-            // ScriptableObjectの初期化を待つ為1フレーム待機.
-            return Observable.NextFrame()
-                .Do(_ => ResumeSceneInstance())
-                .AsUnitObservable();
+            if (scene.path != Prefs.targetScenePath) { return; }
+            
+            ResumeSuspendObject(scene.GetRootGameObjects());
+
+            Debug.Log("OnSceneLoaded");
         }
 
         private void OnSelectScene(string targetScenePath)
@@ -319,6 +322,7 @@ namespace Modules.Devkit.SceneLaunch
         private static string GetCurrentScenePath()
         {
             var scene = EditorSceneManager.GetSceneAt(0);
+
             return scene.path;
         }
 
