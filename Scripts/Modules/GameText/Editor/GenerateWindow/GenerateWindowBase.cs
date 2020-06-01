@@ -113,6 +113,8 @@ namespace Modules.GameText.Editor
 
             using (new ContentsScope())
             {
+                GUILayout.Space(2f);
+
                 EditorGUI.BeginChangeCheck();
 
                 var index = EditorGUILayout.Popup(GameTextLanguage.Prefs.selection, labels);
@@ -125,9 +127,11 @@ namespace Modules.GameText.Editor
 
                     GameTextLoader.Reload();
                 }
+
+                GUILayout.Space(2f);
             }
 
-            EditorGUILayout.Separator();
+            GUILayout.Space(2f);
         }
 
         private bool IsExcelFileLocked(GameTextConfig.GenerateAssetSetting setting)
