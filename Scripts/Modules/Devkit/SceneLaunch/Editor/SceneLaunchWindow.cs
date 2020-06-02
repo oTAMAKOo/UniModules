@@ -47,7 +47,7 @@ namespace Modules.Devkit.SceneLaunch
         /// <summary>
         /// 全ヒエラルキーを非アクティブ化.
         /// </summary>
-        public static void SuspendSceneInstance()
+        private static void SuspendSceneInstance()
         {
             var rootObjects = UnityEditorUtility.FindRootObjectsInHierarchy(false);
 
@@ -64,7 +64,7 @@ namespace Modules.Devkit.SceneLaunch
         /// <summary>
         /// 非アクティブ化したObjectを復帰.
         /// </summary>
-        public static void ResumeSceneInstance()
+        private static void ResumeSceneInstance()
         {
             var rootObjects = UnityEditorUtility.FindRootObjectsInHierarchy();
             
@@ -181,7 +181,7 @@ namespace Modules.Devkit.SceneLaunch
             Instance.Show();
         }
 
-        public void Initialize()
+        private void Initialize()
         {
             if (initialized) { return; }
 
