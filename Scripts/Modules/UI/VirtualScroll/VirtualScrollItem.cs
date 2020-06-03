@@ -1,6 +1,7 @@
 ﻿﻿
 using UnityEngine;
 using System;
+using System.Collections.Generic;
 using Extensions;
 using UniRx;
 
@@ -28,13 +29,13 @@ namespace Modules.UI
         /// <summary> 初期化. </summary>
         public virtual IObservable<Unit> Initialize() { return Observable.ReturnUnit(); }
 
-        public IObservable<Unit> UpdateItem(int index, T[] contents)
+        public IObservable<Unit> UpdateItem(int index, IReadOnlyList<T> contents)
         {
             Index = index;
 
             if (contents == null) { return Observable.ReturnUnit(); }
 
-            if (index < 0 || contents.Length <= index) { return Observable.ReturnUnit(); }
+            if (index < 0 || contents.Count <= index) { return Observable.ReturnUnit(); }
 
             return UpdateContents(contents[index]);
         }

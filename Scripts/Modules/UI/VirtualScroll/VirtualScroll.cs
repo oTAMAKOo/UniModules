@@ -86,7 +86,7 @@ namespace Modules.UI
 
         //----- property -----
 
-        public abstract T[] Contents { get; }
+        public IReadOnlyList<T> Contents { get; protected set; }
 
         public ScrollRect ScrollRect { get { return scrollRect; } }
 
@@ -126,7 +126,33 @@ namespace Modules.UI
         /// <summary> リストアイテムが存在するか. </summary>
         public bool HasListItem { get { return itemList != null && itemList.Any(); } }
 
+        /// <summary> スクロールの方向 </summary>
+        protected Direction Direction { get { return direction; } }
+
         //----- method -----
+
+        protected virtual void Initialize()
+        {
+            if (initialize != Status.None) { return; }
+
+            updateItemDisposables = new Dictionary<VirtualScrollItem<T>, IDisposable>();
+
+            scrollRectTransform = UnityUtility.GetComponent<RectTransform>(scrollRect.gameObject);
+
+            scrollRect.horizontal = direction == Direction.Horizontal;
+            scrollRect.vertical = direction == Direction.Vertical;
+
+            itemList = new List<VirtualScrollItem<T>>();
+
+            ScrollPosition = 0f;
+
+            initialize = Status.Initialize;
+        }
+
+        public virtual void SetContents(T[] contents)
+        {
+            Contents = contents;
+        }
 
         public IObservable<Unit> UpdateContents(bool keepScrollPosition = false)
         {
@@ -135,18 +161,7 @@ namespace Modules.UI
 
             if (initialize == Status.None)
             {
-                updateItemDisposables = new Dictionary<VirtualScrollItem<T>, IDisposable>();
-
-                scrollRectTransform = UnityUtility.GetComponent<RectTransform>(scrollRect.gameObject);
-
-                scrollRect.horizontal = direction == Direction.Horizontal;
-                scrollRect.vertical = direction == Direction.Vertical;
-
-                itemList = new List<VirtualScrollItem<T>>();
-
-                ScrollPosition = 0f;
-
-                initialize = Status.Initialize;
+                Initialize();
             }
 
             if (updateItemDisposables.Any())
@@ -217,7 +232,7 @@ namespace Modules.UI
                             scrollRect.movementType = ScrollRect.MovementType.Elastic;
                         }
 
-                        var sizeDelta = Mathf.Abs(edgeSpacing) * 2 + itemSize * Contents.Length + itemSpacing * (Contents.Length - 1);
+                        var sizeDelta = Mathf.Abs(edgeSpacing) * 2 + itemSize * Contents.Count + itemSpacing * (Contents.Count - 1);
 
                         if (direction == Direction.Vertical)
                         {
@@ -264,7 +279,7 @@ namespace Modules.UI
                 {
                     var item = addItems[i];
 
-                    initializeObservers[i] = Observable.FromCoroutine(() => InitializeItem(item));
+                    initializeObservers[i] = Observable.Defer(() => Observable.FromMicroCoroutine(() => InitializeItem(item)));
                 }
 
                 var initializeYield = initializeObservers.WhenAll().ToYieldInstruction();
@@ -792,7 +807,7 @@ namespace Modules.UI
             {
                 case ScrollType.Limited:
                     {
-                        var enable = Contents != null && 0 <= index && index < Contents.Length;
+                        var enable = Contents != null && 0 <= index && index < Contents.Count;
 
                         observable = Observable.Defer(() => item.UpdateItem(index, Contents));
                         UnityUtility.SetActive(item.gameObject, enable);
@@ -803,10 +818,10 @@ namespace Modules.UI
                     {
                         if (index < 0)
                         {
-                            index = Contents.Length - 1;
+                            index = Contents.Count - 1;
                         }
 
-                        if (Contents.Length <= index)
+                        if (Contents.Count <= index)
                         {
                             index = 0;
                         }
