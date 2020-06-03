@@ -65,7 +65,7 @@ namespace Modules.Devkit.CleanComponent
             {
                 if (string.IsNullOrEmpty(text)) { return false; }
 
-                return gameTextSetter != null && gameTextSetter.Content == text;
+                return gameTextSetter != null && gameTextSetter.Content != text;
             };
             
             var modify = targets.Any(x => checkContents(x.GameTextSetter, getTextCallback.Invoke(x.Component)));
