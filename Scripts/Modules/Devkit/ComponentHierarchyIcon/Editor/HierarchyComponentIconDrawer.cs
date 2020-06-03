@@ -54,7 +54,11 @@ namespace Modules.Devkit.HierarchyComponentIcon
             typeof(Button),
             typeof(Dropdown),
             typeof(InputField),
+            typeof(Selectable),
             typeof(Toggle),
+            typeof(ToggleGroup),
+            typeof(Shadow),
+            typeof(Outline),
             typeof(Mask),
             typeof(RectMask2D),
             typeof(LayoutElement),
@@ -89,17 +93,13 @@ namespace Modules.Devkit.HierarchyComponentIcon
 
             missingIconGUIContent = EditorGUIUtility.IconContent("d_console.warnicon.sml");
 
-            var targetTypes = GetDrawIconTypes();
+            var componentIconInfos = GetDrawIconInfo();
 
-            foreach (var type in targetTypes)
+            foreach (var info in componentIconInfos)
             {
-                var texture = EditorGUIUtility.ObjectContent(null, type.UnderlyingSystemType).image;
+                if (info.Value == null) { continue; }
                 
-                if (texture == null) { continue; }
-
-                var guiContent = new GUIContent(texture);
-
-                iconGUIContentDictionary.Add(type, guiContent);
+                iconGUIContentDictionary.Add(info.Key, new GUIContent(info.Value));
             }
             
             EditorApplication.hierarchyWindowItemOnGUI += OnDrawHierarchy;
@@ -175,9 +175,9 @@ namespace Modules.Devkit.HierarchyComponentIcon
             }
         }
 
-        protected virtual Type[] GetDrawIconTypes()
+        protected virtual Dictionary<Type, Texture> GetDrawIconInfo()
         {
-            return DefaultDrawIconTypes;
+            return DefaultDrawIconTypes.ToDictionary(x => x, x => EditorGUIUtility.ObjectContent(null, x.UnderlyingSystemType).image);
         }
     }
 }
