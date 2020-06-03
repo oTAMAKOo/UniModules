@@ -19,7 +19,7 @@ namespace Modules.UI
         }
     }
 
-    public abstract class GirdScrollItem<T, TComponent> : VirtualScrollItem<GridVirtualScroll<T>.GridElement>, IGirdScrollItem
+    public abstract class GridVirtualScrollItem<T, TComponent> : VirtualScrollItem<GridVirtualScroll<T>.GridElement>, IGirdScrollItem
         where T : class where TComponent : Component
     {
         //----- params -----
@@ -29,21 +29,15 @@ namespace Modules.UI
         [SerializeField]
         private GameObject elementPrefab = null;
         [SerializeField]
-        protected TextAnchor alignment = TextAnchor.MiddleCenter;
-        [SerializeField]
-        protected float spacing = 0.0f;
-        [SerializeField]
-        protected RectOffset padding = new RectOffset();
-        [SerializeField, Tooltip("No Require")]
         private GameObject elementParent = null;
 
         private List<TComponent> elements = null;
 
-        private GameObject parentObject = null;
-
         private Direction scrollViewDirection = Direction.Vertical;
 
         //----- property -----
+
+        public IReadOnlyList<TComponent> Elements { get { return elements; } }
 
         //----- method -----
 
@@ -56,61 +50,16 @@ namespace Modules.UI
         {
             elements = new List<TComponent>();
 
-            if (parentObject == null)
+            var parentObjectRt = elementParent.transform as RectTransform;
+
+            if (parentObjectRt != null)
             {
-                parentObject = elementParent ?? UnityUtility.CreateEmptyGameObject(gameObject, "Elements");
+                parentObjectRt.FillRect();
             }
-
-            var parentObjectRt = UnityUtility.GetOrAddComponent<RectTransform>(parentObject);
-
-            parentObjectRt.FillRect();
             
-            HorizontalOrVerticalLayoutGroup layoutGroup = null;
-
-            switch (scrollViewDirection)
-            {
-                case Direction.Vertical:
-                    layoutGroup = UnityUtility.GetComponent<HorizontalLayoutGroup>(parentObject);
-                    break;
-
-                case Direction.Horizontal:
-                    layoutGroup = UnityUtility.GetComponent<VerticalLayoutGroup>(parentObject);
-                    break;
-            }
-
-            if (layoutGroup == null)
-            {
-                SetupLayoutGroup(parentObject);
-            }
-
             return base.Initialize();
         }
-
-        private void SetupLayoutGroup(GameObject target)
-        {
-            HorizontalOrVerticalLayoutGroup layoutGroup = null;
-
-            switch (scrollViewDirection)
-            {
-                case Direction.Vertical:
-                    layoutGroup = UnityUtility.AddComponent<HorizontalLayoutGroup>(target);
-                    break;
-
-                case Direction.Horizontal:
-                    layoutGroup = UnityUtility.AddComponent<VerticalLayoutGroup>(target);
-                    break;
-            }
-
-            layoutGroup.childControlWidth = false;
-            layoutGroup.childControlHeight = false;
-            layoutGroup.childForceExpandWidth = false;
-            layoutGroup.childForceExpandHeight = false;
-
-            layoutGroup.padding = padding;
-            layoutGroup.childAlignment = alignment;
-            layoutGroup.spacing = spacing;
-        }
-
+        
         protected override IObservable<Unit> UpdateContents(GridVirtualScroll<T>.GridElement info)
         {
             return Observable.FromMicroCoroutine(() => UpdateContentsInternal(info));
@@ -139,7 +88,12 @@ namespace Modules.UI
             {
                 var num = elementCount - elementObjectCount;
 
-                var newElements = UnityUtility.Instantiate<TComponent>(parentObject, elementPrefab, num);
+                var newElements = UnityUtility.Instantiate<TComponent>(elementParent, elementPrefab, num).ToArray();
+
+                foreach (var newElement in newElements)
+                {
+                    OnCreateElement(newElement);
+                }
 
                 elements.AddRange(newElements);
             }
@@ -165,6 +119,10 @@ namespace Modules.UI
             }
         }
 
+        /// <summary> 要素初期化処理 </summary>
+        protected virtual void OnCreateElement(TComponent element) { }
+        
+        /// <summary> 要素更新処理 </summary>
         protected abstract IObservable<Unit> UpdateContents(int index, T content, TComponent element);
     }
 }
