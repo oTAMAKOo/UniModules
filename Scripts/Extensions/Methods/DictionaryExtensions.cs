@@ -25,5 +25,11 @@ namespace Extensions
 
             return value;
         }
+
+        /// <summary> デフォルト値か </summary>
+        public static bool IsDefault<TKey, TValue>(this KeyValuePair<TKey, TValue> keyValuePair)
+        {
+            return keyValuePair.Equals(default(KeyValuePair<TKey, TValue>));
+        }
     }
 }

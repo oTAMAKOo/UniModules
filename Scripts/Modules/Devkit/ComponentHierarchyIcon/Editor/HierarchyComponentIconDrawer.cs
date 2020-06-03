@@ -71,7 +71,7 @@ namespace Modules.Devkit.HierarchyComponentIcon
 
         //----- field -----
 
-        private Dictionary<Type, Texture> iconTextureCache = null;
+        private Dictionary<Type, GUIContent> iconGUIContentDictionary = null;
 
         private GUIContent missingIconGUIContent = null;
 
@@ -85,7 +85,7 @@ namespace Modules.Devkit.HierarchyComponentIcon
         {
             if (initialized) { return; }
 
-            iconTextureCache = new Dictionary<Type, Texture>();
+            iconGUIContentDictionary = new Dictionary<Type, GUIContent>();
 
             missingIconGUIContent = EditorGUIUtility.IconContent("d_console.warnicon.sml");
 
@@ -94,8 +94,12 @@ namespace Modules.Devkit.HierarchyComponentIcon
             foreach (var type in targetTypes)
             {
                 var texture = EditorGUIUtility.ObjectContent(null, type.UnderlyingSystemType).image;
+                
+                if (texture == null) { continue; }
 
-                iconTextureCache.Add(type, texture);
+                var guiContent = new GUIContent(texture);
+
+                iconGUIContentDictionary.Add(type, guiContent);
             }
             
             EditorApplication.hierarchyWindowItemOnGUI += OnDrawHierarchy;
@@ -136,9 +140,10 @@ namespace Modules.Devkit.HierarchyComponentIcon
             
             if (hasMissingComponent)
             {
-                EditorGUIUtility.SetIconSize(new Vector2(MissingIconSize, MissingIconSize));
-                
-                EditorGUI.LabelField(rect, missingIconGUIContent);
+                using (new EditorGUIUtility.IconSizeScope(new Vector2(MissingIconSize, MissingIconSize)))
+                {
+                    EditorGUI.LabelField(rect, missingIconGUIContent);
+                }
 
                 rect.center = Vector.SetX(rect.center, rect.center.x - iconOffectX);
             }
@@ -148,25 +153,24 @@ namespace Modules.Devkit.HierarchyComponentIcon
         {
             if (components.Any())
             {
-                EditorGUIUtility.SetIconSize(new Vector2(ComponentIconSize, ComponentIconSize));
-
-                var iconOffectX = ComponentIconSize + 1.5f;
-
-                foreach (var component in components)
+                using (new EditorGUIUtility.IconSizeScope(new Vector2(ComponentIconSize, ComponentIconSize)))
                 {
-                    if (component == null) { continue; }
+                    var iconOffectX = ComponentIconSize + 1.5f;
 
-                    var type = component.GetType();
+                    foreach (var component in components)
+                    {
+                        if (component == null) { continue; }
 
-                    var item = iconTextureCache.FirstOrDefault(x => type == x.Key || type.IsSubclassOf(x.Key));
+                        var type = component.GetType();
 
-                    if (item.Equals(default(KeyValuePair<Type, Texture>))) { continue; }
-                    
-                    var iconGUIContent = new GUIContent(item.Value);
+                        var item = iconGUIContentDictionary.FirstOrDefault(x => type == x.Key || type.IsSubclassOf(x.Key));
 
-                    EditorGUI.LabelField(rect, iconGUIContent);
+                        if (item.IsDefault()) { continue; }
 
-                    rect.center = Vector.SetX(rect.center, rect.center.x - iconOffectX);
+                        EditorGUI.LabelField(rect, item.Value);
+
+                        rect.center = Vector.SetX(rect.center, rect.center.x - iconOffectX);
+                    }
                 }
             }
         }
