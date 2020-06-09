@@ -1,11 +1,6 @@
-﻿﻿﻿﻿
+﻿
 using UnityEngine;
 using UnityEngine.UI;
-using System;
-using System.Linq;
-using System.Collections.Generic;
-using UniRx;
-using Extensions;
 
 namespace Modules.UI.Extension
 {
@@ -28,7 +23,5 @@ namespace Modules.UI.Extension
         }
 
         //----- method -----
-
-        protected override void Modify(){}
     }
 }

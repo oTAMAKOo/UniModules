@@ -2,10 +2,7 @@
 using UnityEngine;
 using UnityEngine.UI;
 using System;
-using System.Linq;
-using System.Collections.Generic;
 using UniRx;
-using Extensions;
 
 namespace Modules.UI.Extension
 {
@@ -19,17 +16,22 @@ namespace Modules.UI.Extension
 
         private Subject<int> onChange = null;
 
+        private bool initialized = false;
+
         //----- property -----
 
         public Dropdown Dropdown { get { return component; } }
 
         //----- method -----
 
-        protected override void OnEnable()
+        void OnEnable()
         {
-            base.OnEnable();
+            if (!initialized)
+            {
+                Dropdown.onValueChanged.AddListener(OnDropdownValueChanged);
 
-            Dropdown.onValueChanged.AddListener(OnDropdownValueChanged);
+                initialized = true;
+            }
         }
 
         private void OnDropdownValueChanged(int index)

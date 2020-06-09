@@ -2,10 +2,7 @@
 using UnityEngine;
 using UnityEngine.UI;
 using System;
-using System.Linq;
-using System.Collections.Generic;
 using UniRx;
-using Extensions;
 
 namespace Modules.UI.Extension
 {
@@ -19,6 +16,8 @@ namespace Modules.UI.Extension
 
         private Subject<bool> onChange = null;
 
+        private bool initialized = false;
+
         //----- property -----
 
         public Toggle Toggle { get { return component; } }
@@ -31,11 +30,14 @@ namespace Modules.UI.Extension
 
         //----- method -----
 
-        protected override void OnEnable()
+        void OnEnable()
         {
-            base.OnEnable();
+            if (!initialized)
+            {
+                Toggle.onValueChanged.AddListener(OnToggleValueChanged);
 
-            Toggle.onValueChanged.AddListener(OnToggleValueChanged);
+                initialized = true;
+            }
         }
 
         private void OnToggleValueChanged(bool value)

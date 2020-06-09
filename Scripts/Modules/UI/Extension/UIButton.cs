@@ -2,8 +2,6 @@
 using UnityEngine;
 using UnityEngine.UI;
 using System;
-using System.Linq;
-using System.Collections.Generic;
 using UniRx;
 using Extensions;
 
@@ -23,11 +21,13 @@ namespace Modules.UI.Extension
 
         //----- method -----
 
-        protected override void Modify()
+        void OnEnable()
         {
             // Tabでフォーカスを移動するのを防ぐ.
             var navigation = Button.navigation;
+
             navigation.mode = Navigation.Mode.None;
+
             Button.navigation = navigation;
         }
 

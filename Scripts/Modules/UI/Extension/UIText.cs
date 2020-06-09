@@ -1,10 +1,8 @@
-﻿﻿
+﻿
 using UnityEngine;
 using UnityEngine.UI;
 using System;
 using System.Linq;
-using System.Collections.Generic;
-using UniRx;
 using Extensions;
 using Extensions.Serialize;
 using Modules.UI.TextEffect;
@@ -94,7 +92,7 @@ namespace Modules.UI.Extension
 
         //----- method -----
 
-        protected override void Modify()
+        void OnEnable()
         {
             if (selection.HasValue)
             {

@@ -1,8 +1,5 @@
-﻿﻿﻿
-using System;
+﻿
 using UnityEngine;
-using UnityEngine.UI;
-using UniRx;
 using Extensions;
 
 namespace Modules.UI.Extension
@@ -16,19 +13,7 @@ namespace Modules.UI.Extension
 
         //----- property -----
 
-        //----- method -----
-
-        protected virtual void OnEnable()
-        {
-            Modify();
-        }
-
-        private void OnRectTransformParentChanged()
-        {
-            Modify();
-        }
-
-        protected virtual void Modify() { }
+        //----- method -----        
     }
 
     public abstract class UIComponent<T> : UIComponentBehaviour where T : Component
