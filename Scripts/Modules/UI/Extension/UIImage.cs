@@ -42,17 +42,25 @@ namespace Modules.UI.Extension
 
         //----- method -----
 
-        #if UNITY_EDITOR
-
         void OnEnable()
         {
+            #if UNITY_EDITOR
+
             ApplyDevelopmentAsset();
+
+            #endif
         }
 
         void OnDisable()
         {
+            #if UNITY_EDITOR
+
             DeleteCreatedAsset();
+
+            #endif
         }
+
+        #if UNITY_EDITOR
 
         private void ApplyDevelopmentAsset()
         {
