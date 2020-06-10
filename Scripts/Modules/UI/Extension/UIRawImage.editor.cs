@@ -30,42 +30,35 @@ namespace Modules.UI.Extension
 
         private void ApplyDevelopmentAsset()
         {
-            if (Application.isPlaying) { return; }
+            DeleteCreatedAsset();
 
-            Texture2D texture = null;
+            if (RawImage.texture != null) { return; }
 
-            if (!string.IsNullOrEmpty(assetGuid))
-            {
-                DeleteCreatedAsset();
+            if (string.IsNullOrEmpty(assetGuid)) { return; }
 
-                var assetPath = AssetDatabase.GUIDToAssetPath(assetGuid);
+            var assetPath = AssetDatabase.GUIDToAssetPath(assetGuid);
 
-                if (string.IsNullOrEmpty(assetPath)) { return; }
+            if (string.IsNullOrEmpty(assetPath)) { return; }
 
-                var textureAsset = AssetDatabase.LoadMainAssetAtPath(assetPath) as Texture2D;
+            var textureAsset = AssetDatabase.LoadMainAssetAtPath(assetPath) as Texture;
 
-                if (textureAsset == null) { return; }
+            if (textureAsset == null) { return; }
+            
+            var texture = new Texture2D(textureAsset.width, textureAsset.height, TextureFormat.ARGB32, false);
 
-                texture = new Texture2D(textureAsset.width, textureAsset.height, TextureFormat.ARGB32, false);
+            texture.name = DevelopmentAssetName;
 
-                texture.name = DevelopmentAssetName;
+            Graphics.ConvertTexture(textureAsset, texture);
 
-                texture.hideFlags = HideFlags.DontSaveInEditor;
-
-                Graphics.ConvertTexture(textureAsset, texture);
-
-                // Bug: UnityのバグでこのタイミングでアクティブなRenderTextureを空にしないと下記警告が出る.
-                // 「Releasing render texture that is set to be RenderTexture.active!」.
-                RenderTexture.active = null;
-            }
+            // Bug: UnityのバグでこのタイミングでアクティブなRenderTextureを空にしないと下記警告が出る.
+            // 「Releasing render texture that is set to be RenderTexture.active!」.
+            RenderTexture.active = null;
 
             RawImage.texture = texture;
         }
 
         private void DeleteCreatedAsset()
         {
-            if (Application.isPlaying) { return; }
-
             if (RawImage != null)
             {
                 var texture = RawImage.texture;

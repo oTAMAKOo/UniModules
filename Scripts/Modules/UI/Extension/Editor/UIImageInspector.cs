@@ -58,7 +58,7 @@ namespace Modules.UI.Extension
             GUILayout.Space(4f);
 
             DrawDefaultScriptlessInspector();
-
+            
             using (new EditorGUILayout.HorizontalScope())
             {
                 EditorGUILayout.PrefixLabel("Development Sprite");
@@ -69,35 +69,40 @@ namespace Modules.UI.Extension
 
                 if (EditorGUI.EndChangeCheck())
                 {
-                    var assetGuid = string.Empty;
+                    UnityEditorUtility.RegisterUndo("UIImageInspector-undo", instance);
 
-                    if (spriteAsset != null)
-                    {
-                        assetGuid = UnityEditorUtility.GetAssetGUID(spriteAsset.texture);
-                    }
-
-                    var spriteId = string.Empty;
-
-                    if (spriteAsset != null)
-                    {
-                        spriteId = spriteAsset.GetSpriteID().ToString();
-                    }
+                    var assetGuid = spriteAsset != null ? UnityEditorUtility.GetAssetGUID(spriteAsset.texture) : string.Empty;
 
                     Reflection.SetPrivateField(instance, "assetGuid", assetGuid);
 
+                    var spriteId = spriteAsset != null ? spriteAsset.GetSpriteID().ToString() : string.Empty;
+
                     Reflection.SetPrivateField(instance, "spriteId", spriteId);
 
-                    Reflection.InvokePrivateMethod(instance, "ApplyDevelopmentAsset");                    
+                    if (spriteAsset == null)
+                    {
+                        if (instance.sprite != null && instance.sprite.name == UIImage.DevelopmentAssetName)
+                        {
+                            instance.sprite = null;
+                        }
+                    }
+                    else
+                    {
+                        Reflection.InvokePrivateMethod(instance, "ApplyDevelopmentAsset");
+                    }
                 }
             }
 
-            if (instance.sprite != null && instance.sprite.name == UIImage.DevelopmentAssetName)
+            if (developmentSprite != null)
             {
-                developmentSprite = instance.sprite;
-            }
-            else
-            {
-                UnityUtility.SafeDelete(developmentSprite);
+                if (instance.sprite != null && instance.sprite.name == UIImage.DevelopmentAssetName)
+                {
+                    developmentSprite = instance.sprite;
+                }
+                else
+                {
+                    UnityUtility.SafeDelete(developmentSprite);
+                }
             }
         }
     }

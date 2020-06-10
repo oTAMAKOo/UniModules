@@ -63,26 +63,36 @@ namespace Modules.UI.Extension
 
                 if (EditorGUI.EndChangeCheck())
                 {
-                    var assetGuid = string.Empty;
+                    UnityEditorUtility.RegisterUndo("UIRawImageInspector-undo", instance);
 
-                    if (textureAsset != null)
-                    {
-                        assetGuid = UnityEditorUtility.GetAssetGUID(textureAsset);
-                    }
+                    var assetGuid = textureAsset != null ? UnityEditorUtility.GetAssetGUID(textureAsset) : string.Empty;
 
                     Reflection.SetPrivateField(instance, "assetGuid", assetGuid);
 
-                    Reflection.InvokePrivateMethod(instance, "ApplyDevelopmentAsset");
+                    if (textureAsset == null)
+                    {
+                        if (instance.texture != null && instance.texture.name == UIRawImage.DevelopmentAssetName)
+                        {
+                            instance.texture = null;
+                        }
+                    }
+                    else
+                    {
+                        Reflection.InvokePrivateMethod(instance, "ApplyDevelopmentAsset");
+                    }
                 }
             }
 
-            if (instance.texture != null && instance.texture.name == UIRawImage.DevelopmentAssetName)
+            if (developmentTexture != null)
             {
-                developmentTexture = instance.texture;
-            }
-            else
-            {
-                UnityUtility.SafeDelete(developmentTexture);
+                if (instance.texture != null && instance.texture.name == UIRawImage.DevelopmentAssetName)
+                {
+                    developmentTexture = instance.texture;
+                }
+                else
+                {
+                    UnityUtility.SafeDelete(developmentTexture);
+                }
             }
         }
     }

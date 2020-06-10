@@ -32,44 +32,39 @@ namespace Modules.UI.Extension
 
         private void ApplyDevelopmentAsset()
         {
-            if (Application.isPlaying) { return; }
+            DeleteCreatedAsset();
 
-            Sprite sprite = null;
+            if (Image.sprite != null) { return; }
 
-            if (!string.IsNullOrEmpty(assetGuid) && !string.IsNullOrEmpty(spriteId))
-            {
-                DeleteCreatedAsset();
+            if (string.IsNullOrEmpty(assetGuid)) { return; }
 
-                var assetPath = AssetDatabase.GUIDToAssetPath(assetGuid);
+            if (string.IsNullOrEmpty(spriteId)) { return; }
+        
+            var assetPath = AssetDatabase.GUIDToAssetPath(assetGuid);
 
-                if (string.IsNullOrEmpty(assetPath)) { return; }
+            if (string.IsNullOrEmpty(assetPath)) { return; }
 
-                var spriteAsset = AssetDatabase.LoadAllAssetsAtPath(assetPath)
-                    .OfType<Sprite>()
-                    .FirstOrDefault(x => x.GetSpriteID().ToString() == spriteId);
+            var spriteAsset = AssetDatabase.LoadAllAssetsAtPath(assetPath)
+                .OfType<Sprite>()
+                .FirstOrDefault(x => x.GetSpriteID().ToString() == spriteId);
 
-                if (spriteAsset == null) { return; }
+            if (spriteAsset == null) { return; }
 
-                var texture = spriteAsset.texture;
-                var rect = spriteAsset.rect;
-                var pivot = spriteAsset.pivot;
-                var pixelsPerUnit = spriteAsset.pixelsPerUnit;
-                var border = spriteAsset.border;
+            var texture = spriteAsset.texture;
+            var rect = spriteAsset.rect;
+            var pivot = spriteAsset.pivot;
+            var pixelsPerUnit = spriteAsset.pixelsPerUnit;
+            var border = spriteAsset.border;
 
-                sprite = Sprite.Create(texture, rect, pivot, pixelsPerUnit, 0, SpriteMeshType.FullRect, border);
+            var sprite = Sprite.Create(texture, rect, pivot, pixelsPerUnit, 0, SpriteMeshType.FullRect, border);
 
-                sprite.name = DevelopmentAssetName;
-
-                sprite.hideFlags = HideFlags.DontSaveInEditor;
-            }
-
+            sprite.name = DevelopmentAssetName;
+            
             Image.sprite = sprite;
         }
 
         private void DeleteCreatedAsset()
         {
-            if (Application.isPlaying) { return; }
-
             if (Image != null)
             {
                 var sprite = Image.sprite;
