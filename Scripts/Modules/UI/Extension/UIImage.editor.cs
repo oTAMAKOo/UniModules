@@ -30,7 +30,6 @@ namespace Modules.UI.Extension
 
         //----- method -----
 
-
         private void ApplyDevelopmentAsset()
         {
             if (Application.isPlaying) { return; }
@@ -70,10 +69,6 @@ namespace Modules.UI.Extension
         private void DeleteCreatedAsset()
         {
             if (Application.isPlaying) { return; }
-
-            if (string.IsNullOrEmpty(assetGuid)) { return; }
-
-            if (string.IsNullOrEmpty(spriteId)) { return; }
 
             if (Image != null)
             {

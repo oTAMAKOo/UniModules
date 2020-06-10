@@ -66,8 +66,6 @@ namespace Modules.UI.Extension
         {
             if (Application.isPlaying) { return; }
 
-            if (string.IsNullOrEmpty(assetGuid)) { return; }
-
             if (RawImage != null)
             {
                 var texture = RawImage.texture;
