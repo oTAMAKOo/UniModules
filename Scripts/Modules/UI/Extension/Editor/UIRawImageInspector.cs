@@ -73,7 +73,7 @@ namespace Modules.UI.Extension
                     {
                         if (instance.texture != null && instance.texture.name == UIRawImage.DevelopmentAssetName)
                         {
-                            instance.texture = null;
+                            instance.texture = null;                            
                         }
                     }
                     else
@@ -85,14 +85,17 @@ namespace Modules.UI.Extension
 
             if (developmentTexture != null)
             {
-                if (instance.texture != null && instance.texture.name == UIRawImage.DevelopmentAssetName)
-                {
-                    developmentTexture = instance.texture;
-                }
-                else
+                if (instance.texture != developmentTexture)
                 {
                     UnityUtility.SafeDelete(developmentTexture);
+
+                    developmentTexture = null;
                 }
+            }
+
+            if (instance.texture != null && instance.texture.name == UIImage.DevelopmentAssetName)
+            {
+                developmentTexture = instance.texture;
             }
         }
     }

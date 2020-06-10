@@ -95,14 +95,17 @@ namespace Modules.UI.Extension
 
             if (developmentSprite != null)
             {
-                if (instance.sprite != null && instance.sprite.name == UIImage.DevelopmentAssetName)
-                {
-                    developmentSprite = instance.sprite;
-                }
-                else
+                if (instance.sprite != developmentSprite)
                 {
                     UnityUtility.SafeDelete(developmentSprite);
+
+                    developmentSprite = null;
                 }
+            }
+
+            if (instance.sprite != null && instance.sprite.name == UIImage.DevelopmentAssetName)
+            {
+                developmentSprite = instance.sprite;
             }
         }
     }
