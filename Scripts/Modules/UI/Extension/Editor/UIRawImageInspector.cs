@@ -13,6 +13,8 @@ namespace Modules.UI.Extension
 
         //----- field -----
 
+        private Texture textureAsset = null;
+
         private Texture developmentTexture = null;
 
         //----- property -----
@@ -23,13 +25,23 @@ namespace Modules.UI.Extension
         {
             var instance = target as UIRawImage;
 
+            textureAsset = null;
+
             var assetGuid = Reflection.GetPrivateField<UIRawImage, string>(instance, "assetGuid");
 
             if (!string.IsNullOrEmpty(assetGuid))
             {
                 var assetPath = AssetDatabase.GUIDToAssetPath(assetGuid);
 
-                developmentTexture = AssetDatabase.LoadMainAssetAtPath(assetPath) as Texture;
+                if (!string.IsNullOrEmpty(assetPath))
+                {
+                    textureAsset = AssetDatabase.LoadMainAssetAtPath(assetPath) as Texture;
+                }
+            }
+
+            if (instance.texture != null && instance.texture.name == UIRawImage.DevelopmentAssetName)
+            {
+                developmentTexture = instance.texture;
             }
         }
 
@@ -37,30 +49,41 @@ namespace Modules.UI.Extension
         {
             var instance = target as UIRawImage;
 
+            GUILayout.Space(4f);
+
             DrawDefaultScriptlessInspector();
-
-            EditorGUI.BeginChangeCheck();
-
-            developmentTexture = EditorGUILayout.ObjectField("Development Texture", developmentTexture, typeof(Object), false) as Texture;
-
-            if (EditorGUI.EndChangeCheck())
+            
+            using (new EditorGUILayout.HorizontalScope())
             {
-                SetAssetGuid(instance, developmentTexture);
+                EditorGUILayout.PrefixLabel("Development Texture");
 
-                Reflection.InvokePrivateMethod(instance, "ApplyDevelopmentAsset");
+                EditorGUI.BeginChangeCheck();
+
+                textureAsset = EditorGUILayout.ObjectField(textureAsset, typeof(Texture), false) as Texture;
+
+                if (EditorGUI.EndChangeCheck())
+                {
+                    var assetGuid = string.Empty;
+
+                    if (textureAsset != null)
+                    {
+                        assetGuid = UnityEditorUtility.GetAssetGUID(textureAsset);
+                    }
+
+                    Reflection.SetPrivateField(instance, "assetGuid", assetGuid);
+
+                    Reflection.InvokePrivateMethod(instance, "ApplyDevelopmentAsset");
+                }
             }
-        }
 
-        private void SetAssetGuid(UIRawImage instance, UnityEngine.Object asset)
-        {
-            var assetGuid = string.Empty;
-
-            if (asset != null)
+            if (instance.texture != null && instance.texture.name == UIRawImage.DevelopmentAssetName)
             {
-                assetGuid = UnityEditorUtility.GetAssetGUID(asset);
+                developmentTexture = instance.texture;
             }
-
-            Reflection.SetPrivateField(instance, "assetGuid", assetGuid);            
+            else
+            {
+                UnityUtility.SafeDelete(developmentTexture);
+            }
         }
     }
 }

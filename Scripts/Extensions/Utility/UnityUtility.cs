@@ -169,28 +169,27 @@ namespace Extensions
         /// <summary> オブジェクトの削除 </summary>
         public static void SafeDelete(UnityEngine.Object instance, bool immediate = false)
         {
-            if (instance != null)
+            if (instance == null) { return; }
+            
+            var gameObject = instance as GameObject;
+
+            if (gameObject != null)
             {
-                var gameObject = instance as GameObject;
+                gameObject.SetActive(false);
 
-                if (gameObject != null)
+                if (!(gameObject.transform is RectTransform))
                 {
-                    gameObject.SetActive(false);
+                    gameObject.transform.parent = null;
+                }
+            }
 
-                    if (!(gameObject.transform is RectTransform))
-                    {
-                        gameObject.transform.parent = null;
-                    }
-                }
-
-                if (!Application.isPlaying || immediate)
-                {
-                    UnityEngine.Object.DestroyImmediate(instance);
-                }
-                else
-                {
-                    UnityEngine.Object.Destroy(instance);
-                }
+            if (!Application.isPlaying || immediate)
+            {
+                UnityEngine.Object.DestroyImmediate(instance);
+            }
+            else
+            {
+                UnityEngine.Object.Destroy(instance);
             }
         }
 

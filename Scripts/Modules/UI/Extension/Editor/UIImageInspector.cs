@@ -15,6 +15,8 @@ namespace Modules.UI.Extension
 
         //----- field -----
 
+        private Sprite spriteAsset = null;
+
         private Sprite developmentSprite = null;
 
         //----- property -----
@@ -24,7 +26,9 @@ namespace Modules.UI.Extension
         void OnEnable()
         {
             var instance = target as UIImage;
-            
+
+            spriteAsset = null;
+
             var assetGuid = Reflection.GetPrivateField<UIImage, string>(instance, "assetGuid");
 
             var spriteId = Reflection.GetPrivateField<UIImage, string>(instance, "spriteId");
@@ -35,10 +39,15 @@ namespace Modules.UI.Extension
                 
                 if (!string.IsNullOrEmpty(assetPath))
                 {
-                    developmentSprite = AssetDatabase.LoadAllAssetsAtPath(assetPath)
+                    spriteAsset = AssetDatabase.LoadAllAssetsAtPath(assetPath)
                         .OfType<Sprite>()
                         .FirstOrDefault(x => x.GetSpriteID().ToString() == spriteId);
                 }
+            }
+
+            if (instance.sprite != null && instance.sprite.name == UIImage.DevelopmentAssetName)
+            {
+                developmentSprite = instance.sprite;
             }
         }
 
@@ -46,44 +55,50 @@ namespace Modules.UI.Extension
         {
             var instance = target as UIImage;
 
+            GUILayout.Space(4f);
+
             DrawDefaultScriptlessInspector();
 
-            EditorGUI.BeginChangeCheck();
-
-            developmentSprite = EditorGUILayout.ObjectField("Development Sprite", developmentSprite, typeof(Object), false) as Sprite;
-
-            if (EditorGUI.EndChangeCheck())
+            using (new EditorGUILayout.HorizontalScope())
             {
-                SetAssetGuid(instance, developmentSprite != null ? developmentSprite.texture : null);
+                EditorGUILayout.PrefixLabel("Development Sprite");
 
-                SetSpriteId(instance, developmentSprite);
+                EditorGUI.BeginChangeCheck();
 
-                Reflection.InvokePrivateMethod(instance, "ApplyDevelopmentAsset");
-            }
-        }
+                spriteAsset = EditorGUILayout.ObjectField(spriteAsset, typeof(Sprite), false) as Sprite;
 
-        private void SetAssetGuid(UIImage instance, UnityEngine.Object asset)
-        {
-            var assetGuid = string.Empty;
+                if (EditorGUI.EndChangeCheck())
+                {
+                    var assetGuid = string.Empty;
 
-            if (asset != null)
-            {
-                assetGuid = UnityEditorUtility.GetAssetGUID(asset);
-            }
+                    if (spriteAsset != null)
+                    {
+                        assetGuid = UnityEditorUtility.GetAssetGUID(spriteAsset.texture);
+                    }
 
-            Reflection.SetPrivateField(instance, "assetGuid", assetGuid);
-        }
+                    var spriteId = string.Empty;
 
-        private void SetSpriteId(UIImage instance, Sprite sprite)
-        {
-            var spriteId = string.Empty;
+                    if (spriteAsset != null)
+                    {
+                        spriteId = spriteAsset.GetSpriteID().ToString();
+                    }
 
-            if (sprite != null)
-            {
-                spriteId = sprite.GetSpriteID().ToString();
+                    Reflection.SetPrivateField(instance, "assetGuid", assetGuid);
+
+                    Reflection.SetPrivateField(instance, "spriteId", spriteId);
+
+                    Reflection.InvokePrivateMethod(instance, "ApplyDevelopmentAsset");                    
+                }
             }
 
-            Reflection.SetPrivateField(instance, "spriteId", spriteId);
+            if (instance.sprite != null && instance.sprite.name == UIImage.DevelopmentAssetName)
+            {
+                developmentSprite = instance.sprite;
+            }
+            else
+            {
+                UnityUtility.SafeDelete(developmentSprite);
+            }
         }
     }
 }
