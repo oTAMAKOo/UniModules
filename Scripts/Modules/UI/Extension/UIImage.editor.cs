@@ -59,7 +59,9 @@ namespace Modules.UI.Extension
             var sprite = Sprite.Create(texture, rect, pivot, pixelsPerUnit, 0, SpriteMeshType.FullRect, border);
 
             sprite.name = DevelopmentAssetName;
-            
+
+            sprite.hideFlags = HideFlags.DontSaveInEditor;
+
             Image.sprite = sprite;
         }
 

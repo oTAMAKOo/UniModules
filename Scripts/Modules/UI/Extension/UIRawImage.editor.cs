@@ -48,6 +48,8 @@ namespace Modules.UI.Extension
 
             texture.name = DevelopmentAssetName;
 
+            texture.hideFlags = HideFlags.DontSaveInEditor;
+
             Graphics.ConvertTexture(textureAsset, texture);
 
             // Bug: UnityのバグでこのタイミングでアクティブなRenderTextureを空にしないと下記警告が出る.
