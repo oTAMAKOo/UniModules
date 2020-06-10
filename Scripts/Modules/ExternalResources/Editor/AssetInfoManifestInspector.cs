@@ -4,18 +4,17 @@ using UnityEditor;
 using System;
 using System.Linq;
 using System.Collections.Generic;
-using UniRx;
 using Extensions;
 using Extensions.Devkit;
 
 namespace Modules.ExternalResource.Editor
 {
     [CustomEditor(typeof(AssetInfoManifest))]
-    public class AssetInfoManifestInspector : UnityEditor.Editor
+    public sealed class AssetInfoManifestInspector : UnityEditor.Editor
     {
         //----- params -----
 
-        private class AssetGroupInfo
+        private sealed class AssetGroupInfo
         {
             public string GroupName { get; private set; }
             public AssetInfo[] AssetInfos { get; private set; }
@@ -79,7 +78,7 @@ namespace Modules.ExternalResource.Editor
             }
         }
 
-        private class AsstInfoScrollView : EditorGUIFastScrollView<AssetGroupInfo>
+        private sealed class AsstInfoScrollView : EditorGUIFastScrollView<AssetGroupInfo>
         {
             private HashSet<int> openedIds = null;
             private GUIStyle textAreaStyle = null;

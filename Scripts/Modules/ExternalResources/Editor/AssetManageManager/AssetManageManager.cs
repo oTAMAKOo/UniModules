@@ -13,7 +13,7 @@ using Object = UnityEngine.Object;
 
 namespace Modules.ExternalResource.Editor
 {
-    public class AssetManageManager : Singleton<AssetManageManager>
+    public sealed class AssetManageManager : Singleton<AssetManageManager>
     {
         //----- params -----
 
@@ -45,7 +45,7 @@ namespace Modules.ExternalResource.Editor
 
         //----- method -----
 
-        protected AssetManageManager()
+        private AssetManageManager()
         {
             assetCollectInfoByAssetPath = new Dictionary<string, AssetCollectInfo>();
         }

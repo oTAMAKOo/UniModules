@@ -9,6 +9,7 @@ using UniRx;
 using Extensions;
 using Extensions.Devkit;
 using Unity.Linq;
+
 using SortingLayer = Constants.SortingLayer;
 
 namespace Modules.Particle
@@ -40,7 +41,7 @@ namespace Modules.Particle
     }
 
     [CustomEditor(typeof(ParticlePlayer), true)]
-    public class ParticlePlayerInspector : UnityEditor.Editor
+    public sealed class ParticlePlayerInspector : UnityEditor.Editor
     {
         //----- params -----
 

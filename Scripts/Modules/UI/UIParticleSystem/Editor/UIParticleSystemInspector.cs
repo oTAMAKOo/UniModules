@@ -4,7 +4,7 @@ using UnityEditor;
 namespace Modules.UI.Particle
 {
     [CustomEditor(typeof(UIParticleSystem))]
-    public class UIParticleSystemInspector : UnityEditor.Editor
+    public sealed class UIParticleSystemInspector : UnityEditor.Editor
     {
         //----- params -----
 

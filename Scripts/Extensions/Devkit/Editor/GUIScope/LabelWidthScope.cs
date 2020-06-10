@@ -4,7 +4,7 @@ using UnityEditor;
 
 namespace Extensions.Devkit
 {
-    public class LabelWidthScope : GUI.Scope
+    public sealed class LabelWidthScope : GUI.Scope
     {
         //----- params -----
 

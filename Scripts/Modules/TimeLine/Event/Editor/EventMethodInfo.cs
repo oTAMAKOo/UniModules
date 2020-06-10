@@ -9,11 +9,11 @@ using Extensions;
 
 namespace Modules.TimeLine.Component
 {
-    public class EventMethodInfo
+    public sealed class EventMethodInfo
     {
         //----- params -----
 
-        public class ArgumentInfo
+        public sealed class ArgumentInfo
         {
             public ParameterInfo info = null;
             public object value = null;

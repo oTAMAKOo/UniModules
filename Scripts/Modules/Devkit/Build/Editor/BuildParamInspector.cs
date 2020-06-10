@@ -1,17 +1,14 @@
-﻿﻿﻿
+﻿
 using UnityEngine;
 using UnityEditor;
-using System;
 using System.Linq;
-using System.Collections.Generic;
-using UniRx;
 using Extensions;
 using Extensions.Devkit;
 
 namespace Modules.Devkit.Build.Editor
 {
     [CustomEditor(typeof(BuildParam), true)]
-    public class BuildParamInfoInspector : ScriptlessEditor
+    public sealed class BuildParamInspector : ScriptlessEditor
     {
         //----- params -----
 

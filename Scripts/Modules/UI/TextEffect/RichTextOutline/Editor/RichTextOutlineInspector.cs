@@ -1,16 +1,13 @@
-﻿﻿
+﻿
 using UnityEngine;
 using UnityEditor;
-using System;
-using System.Linq;
-using System.Collections.Generic;
 using Extensions;
 using Extensions.Devkit;
 
 namespace Modules.UI.TextEffect
 {
     [CustomEditor(typeof(RichTextOutline))]
-    public class RichTextOutlineInspector : UnityEditor.Editor
+    public sealed class RichTextOutlineInspector : UnityEditor.Editor
     {
         //----- params -----
 

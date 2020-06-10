@@ -5,7 +5,7 @@ using UnityEditor;
 namespace Extensions
 {
     [CustomPropertyDrawer(typeof(ReadOnlyAttribute))]
-    public class ReadOnlyAttributePropertyDrawer : PropertyDrawer
+    public sealed class ReadOnlyAttributePropertyDrawer : PropertyDrawer
     {
         public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
         {

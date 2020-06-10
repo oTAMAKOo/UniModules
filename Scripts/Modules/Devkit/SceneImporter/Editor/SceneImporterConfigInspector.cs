@@ -2,14 +2,13 @@
 using UnityEngine;
 using UnityEditor;
 using System.Linq;
-using System.Collections.Generic;
 using Extensions.Devkit;
 using Extensions;
 
 namespace Modules.Devkit.SceneImporter
 {
     [CustomEditor(typeof(SceneImporterConfig))]
-    public class SceneImporterConfigInspector : UnityEditor.Editor
+    public sealed class SceneImporterConfigInspector : UnityEditor.Editor
     {
         //----- params -----
 
@@ -84,7 +83,7 @@ namespace Modules.Devkit.SceneImporter
                             var label = string.IsNullOrEmpty(folder) ? folder : folder + "/";
                             GUILayout.Label(label, pathTextStyle, GUILayout.Height(contentHeight));
 
-                            if (GUILayout.Button("x", EditorStyles.miniButton, GUILayout.Width(24f), GUILayout.Height(contentHeight)))
+                            if (GUILayout.Button("-", EditorStyles.miniButton, GUILayout.Width(24f), GUILayout.Height(contentHeight)))
                             {
                                 managedFolders.RemoveAt(i);
                                 change = true;

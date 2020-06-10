@@ -1,13 +1,11 @@
-﻿﻿﻿
-using UnityEngine;
+﻿
 using UnityEngine.SceneManagement;
-using UnityEditor;
 using System;
 using UniRx;
 
 namespace Modules.Devkit.EventHook
 {
-    public class CurrentSceneSaveHook : UnityEditor.AssetModificationProcessor
+    public sealed class CurrentSceneSaveHook : UnityEditor.AssetModificationProcessor
     {
         //----- params -----
 

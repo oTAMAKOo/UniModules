@@ -2,17 +2,14 @@
 using UnityEngine;
 using UnityEditor;
 using UnityEditor.Animations;
-using System;
 using System.IO;
 using System.Linq;
-using UniRx;
-using Extensions;
 using Extensions.Devkit;
 using Modules.Devkit.AssetTuning;
 
 namespace Modules.Devkit.Animator
 {
-	public class EmptyAnimatorAssetTuner : AssetTuner
+    public sealed class EmptyAnimatorAssetTuner : AssetTuner
     {
         //----- params -----
 
@@ -78,7 +75,7 @@ namespace Modules.Devkit.Animator
             EditorApplication.delayCall += tuningCallbackFunction;
         }
 
-        protected static void TuneAsset(string path)
+        private static void TuneAsset(string path)
         {
             var asset = AssetDatabase.LoadMainAssetAtPath(path);
 

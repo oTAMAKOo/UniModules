@@ -1,18 +1,18 @@
 ﻿﻿﻿﻿﻿﻿
-using System;
 using UnityEngine;
 using UnityEditor;
-using Extensions;
 using Extensions.Devkit;
 using Modules.Devkit.Project;
 
 #if ENABLE_CRIWARE_ADX || ENABLE_CRIWARE_SOFDEC
+
 using Modules.CriWare.Editor;
+
 #endif
 
 namespace Modules.ExternalResource.Editor
 {
-	public class ExternalResourceBuildWindow : SingletonEditorWindow<ExternalResourceBuildWindow>
+	public sealed class ExternalResourceBuildWindow : SingletonEditorWindow<ExternalResourceBuildWindow>
     {
         //----- params -----
 

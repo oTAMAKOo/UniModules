@@ -379,7 +379,7 @@ namespace Extensions.Devkit
             return state;
         }
 
-        public class ColumnHeaderContent
+        public sealed class ColumnHeaderContent
         {
             public string text = string.Empty;
             public GUILayoutOption[] options = null;

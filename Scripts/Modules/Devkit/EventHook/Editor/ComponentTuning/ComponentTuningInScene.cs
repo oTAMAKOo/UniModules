@@ -6,7 +6,7 @@ using Extensions.Devkit;
 
 namespace Modules.Devkit.EventHook
 {
-    public class ComponentTuningInScene : ComponentTuning
+    public sealed class ComponentTuningInScene : ComponentTuning
     {
         //----- params -----
 

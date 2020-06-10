@@ -7,9 +7,9 @@ namespace Modules.Devkit.Inspector
 {
     [CanEditMultipleObjects]
     [CustomEditor(typeof(Transform), true)]
-    public class TransformInspector : UnityEditor.Editor
+    public sealed class TransformInspector : UnityEditor.Editor
     {
-        static public TransformInspector instance;
+        public static TransformInspector instance;
 
         private SerializedProperty pos;
         private SerializedProperty rot;

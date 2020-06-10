@@ -7,7 +7,7 @@ using Extensions.Devkit;
 namespace Modules.MessagePack
 {
     [CustomEditor(typeof(MessagePackConfig), true)]
-    public class MessagePackConfigInspector : UnityEditor.Editor
+    public sealed class MessagePackConfigInspector : UnityEditor.Editor
     {
         //----- params -----
 

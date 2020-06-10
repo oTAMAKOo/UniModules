@@ -10,7 +10,7 @@ using Object = UnityEngine.Object;
 namespace Modules.Devkit.Build
 {
     [Serializable]
-    public class BuildParamInfo
+    public sealed class BuildParamInfo
     {
         public string name;
         public BuildTargetGroup buildGroup;
@@ -23,7 +23,7 @@ namespace Modules.Devkit.Build
         }
     }
 
-    public class BuildConfig : ReloadableScriptableObject<BuildConfig>
+    public sealed class BuildConfig : ReloadableScriptableObject<BuildConfig>
     {
         //----- params -----
 

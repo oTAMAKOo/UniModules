@@ -9,7 +9,7 @@ using Modules.Devkit.Project;
 
 namespace Modules.Devkit.Generators
 {
-	public class ScenesInBuildGenerator
+	public sealed class ScenesInBuildGenerator
     {
         //----- params -----
 

@@ -3,7 +3,7 @@ using UnityEngine;
 
 namespace Extensions.Devkit
 {
-    public class ContentsScope : GUI.Scope
+    public sealed class ContentsScope : GUI.Scope
     {
         //----- params -----
 

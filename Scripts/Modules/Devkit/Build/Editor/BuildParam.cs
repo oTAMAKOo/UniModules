@@ -35,7 +35,7 @@ namespace Modules.Devkit.Build
         }
 
         [Serializable]
-        public class CloneAssetInfo
+        public sealed class CloneAssetInfo
         {
             [SerializeField]
             private string source = null;

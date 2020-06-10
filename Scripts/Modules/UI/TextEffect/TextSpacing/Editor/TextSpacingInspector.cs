@@ -1,16 +1,14 @@
 ﻿
 using UnityEngine;
 using UnityEditor;
-using System;
 using System.Linq;
-using System.Collections.Generic;
 using Extensions;
 using Extensions.Devkit;
 
 namespace Modules.UI.TextEffect
 {
     [CustomEditor(typeof(TextSpacing))]
-    public class TextSpacingInspector : UnityEditor.Editor
+    public sealed class TextSpacingInspector : UnityEditor.Editor
     {
         //----- params -----
 

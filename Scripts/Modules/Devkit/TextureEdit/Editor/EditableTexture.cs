@@ -6,16 +6,15 @@ using System.Collections.Generic;
 using Extensions;
 using Extensions.Devkit;
 
-
 namespace Modules.Devkit.TextureEdit
 {
-    public class EditableTexture
+    public sealed class EditableTexture
     {
         //----- params -----
 
         private static readonly string[] PlatformNames = new string[] { "Standalone", "Android", "iPhone" };
 
-        private class TextureSetting
+        private sealed class TextureSetting
         {
             public bool readable;
             public TextureImporterCompression compression;
@@ -27,7 +26,7 @@ namespace Modules.Devkit.TextureEdit
             #endif
         }
 
-        private class PlatformSetting
+        private sealed class PlatformSetting
         {
             #if UNITY_5_5_OR_NEWER
 

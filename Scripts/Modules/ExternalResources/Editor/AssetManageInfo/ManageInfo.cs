@@ -1,5 +1,4 @@
 ﻿﻿﻿
-using UnityEngine;
 using System;
 
 using Object = UnityEngine.Object;
@@ -7,7 +6,7 @@ using Object = UnityEngine.Object;
 namespace Modules.ExternalResource.Editor
 {
     [Serializable]
-    public class ManageInfo
+    public sealed class ManageInfo
     {
         public enum NameType
         {

@@ -1,14 +1,11 @@
 ﻿
-using UnityEngine;
 using UnityEditor;
-using System;
 using System.Linq;
-using System.Collections.Generic;
 using Extensions;
 
 namespace Modules.ExternalResource.Editor
 {
-    public class AssetDependencies
+    public sealed class AssetDependencies
     {
         public static bool Validate(string externalResourcesPath)
         {

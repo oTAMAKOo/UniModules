@@ -1,21 +1,15 @@
-﻿﻿﻿﻿﻿
-using UnityEngine;
+﻿
 using UnityEditor;
-using System;
 using System.Linq;
-using System.Collections.Generic;
-using UniRx;
 using Extensions;
 using Extensions.Devkit;
 using Extensions.Serialize;
-using Modules.GameText;
-using Modules.GameText.Components;
 
 namespace Modules.UI.Extension
 {
     [CanEditMultipleObjects]
     [CustomEditor(typeof(UIText), true)]
-    public class UITextInspector : ScriptlessEditor
+    public sealed class UITextInspector : ScriptlessEditor
     {
         //----- params -----
         

@@ -9,11 +9,11 @@ using Google.GData.Spreadsheets;
 
 namespace Modules.Devkit.Spreadsheet
 {
-    public class SheetEntity
+    public sealed class SheetEntity
     {
         //----- params -----
 
-        public class Row
+        public sealed class Row
         {
             public int RowNumber { get; set; }
             public SortedDictionary<string, string> Values { get; set; }

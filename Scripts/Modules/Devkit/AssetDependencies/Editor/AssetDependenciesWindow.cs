@@ -4,7 +4,6 @@ using UnityEditor;
 using System;
 using System.Linq;
 using System.Collections.Generic;
-using UniRx;
 using Extensions;
 using Extensions.Devkit;
 
@@ -12,11 +11,11 @@ using Object = UnityEngine.Object;
 
 namespace Modules.Devkit.AssetDependencies
 {
-    public class AssetDependenciesWindow : SingletonEditorWindow<AssetDependenciesWindow>
+    public sealed class AssetDependenciesWindow : SingletonEditorWindow<AssetDependenciesWindow>
     {
         //----- params -----
 
-        private class DependantInfo
+        private sealed class DependantInfo
         {
             /// <summary> アセットパス </summary>
             public string AssetPath { get; private set; }

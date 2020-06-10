@@ -11,7 +11,7 @@ using Modules.GameText.Editor;
 namespace Modules.GameText.Components
 {
     [CustomEditor(typeof(GameTextSetter))]
-    public class GameTextSetterInspector : UnityEditor.Editor
+    public sealed class GameTextSetterInspector : UnityEditor.Editor
     {
         //----- params -----
 

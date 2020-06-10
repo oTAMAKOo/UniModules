@@ -1,13 +1,9 @@
 ﻿
 using UnityEngine;
 using UnityEditor;
-using UnityEditorInternal;
 using System;
-using System.Reflection;
-using System.Text.RegularExpressions;
 using System.Linq;
 using System.Collections.Generic;
-using UniRx;
 using Extensions;
 using Extensions.Devkit;
 
@@ -16,7 +12,7 @@ using Object = UnityEngine.Object;
 namespace Modules.TimeLine.Component
 {
     [CustomEditor(typeof(EventClip), true)]
-    public class EventClipInspector : UnityEditor.Editor
+    public sealed class EventClipInspector : UnityEditor.Editor
     {
         //----- params -----
 

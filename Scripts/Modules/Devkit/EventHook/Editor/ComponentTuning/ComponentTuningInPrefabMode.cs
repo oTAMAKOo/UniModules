@@ -3,15 +3,12 @@ using UnityEngine;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEditor.Experimental.SceneManagement;
-using System;
 using System.Linq;
-using System.Collections.Generic;
 using UniRx;
-using Extensions;
 
 namespace Modules.Devkit.EventHook
 {
-    public class ComponentTuningInPrefabMode : ComponentTuning
+    public sealed class ComponentTuningInPrefabMode : ComponentTuning
     {
         //----- params -----
 

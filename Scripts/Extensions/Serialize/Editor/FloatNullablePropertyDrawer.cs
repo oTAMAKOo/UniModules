@@ -4,7 +4,7 @@ using UnityEditor;
 namespace Extensions.Serialize
 {
     [CustomPropertyDrawer(typeof(FloatNullable))]
-    public class FloatNullablePropertyDrawer : SerializableNullablePropertyDrawer
+    public sealed class FloatNullablePropertyDrawer : SerializableNullablePropertyDrawer
     {
 
     }

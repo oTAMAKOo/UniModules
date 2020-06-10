@@ -12,7 +12,7 @@ using Object = UnityEngine.Object;
 
 namespace Modules.ExternalResource.Editor
 {
-    public class ManageInfoView : LifetimeDisposable
+    public sealed class ManageInfoView : LifetimeDisposable
     {
         //----- params -----
 
@@ -353,9 +353,9 @@ namespace Modules.ExternalResource.Editor
         }
     }
 
-    public class ContentsScrollView : EditorGUIFastScrollView<ContentsScrollView.Content>
+    public sealed class ContentsScrollView : EditorGUIFastScrollView<ContentsScrollView.Content>
     {
-        public class Content
+        public sealed class Content
         {
             public string label = null;
             public bool isAssetBundle = false;
@@ -407,7 +407,7 @@ namespace Modules.ExternalResource.Editor
         }
     }
 
-    public class ContentAssetsScrollView : EditorGUIFastScrollView<AssetCollectInfo>
+    public sealed class ContentAssetsScrollView : EditorGUIFastScrollView<AssetCollectInfo>
     {
         private Object[] assets = null;
 

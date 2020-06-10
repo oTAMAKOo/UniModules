@@ -12,7 +12,7 @@ using Object = UnityEngine.Object;
 
 namespace Modules.ExternalResource.Editor
 {
-    public class ManageAssetView : LifetimeDisposable
+    public sealed class ManageAssetView : LifetimeDisposable
     {
         //----- params -----
 

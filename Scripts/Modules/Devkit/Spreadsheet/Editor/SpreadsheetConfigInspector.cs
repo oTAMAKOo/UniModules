@@ -8,7 +8,7 @@ using Extensions.Devkit;
 namespace Modules.Devkit.Spreadsheet
 {
     [CustomEditor(typeof(SpreadsheetConfig), true)]
-    public class SpreadsheetConfigInspector : UnityEditor.Editor
+    public sealed class SpreadsheetConfigInspector : UnityEditor.Editor
     {
         //----- params -----
 

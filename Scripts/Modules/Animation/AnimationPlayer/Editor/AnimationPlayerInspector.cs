@@ -9,7 +9,7 @@ using AnimatorController = UnityEditor.Animations.AnimatorController;
 namespace Modules.Animation
 {
     [CustomEditor(typeof(AnimationPlayer))]
-    public class AnimationPlayerInspector : UnityEditor.Editor
+    public sealed class AnimationPlayerInspector : UnityEditor.Editor
     {
         //----- params -----
 

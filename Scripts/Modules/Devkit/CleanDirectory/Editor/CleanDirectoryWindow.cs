@@ -1,20 +1,17 @@
 ﻿﻿﻿﻿﻿﻿
 using UnityEngine;
 using UnityEditor;
-using System;
 using System.Linq;
 using System.Collections.Generic;
 using System.IO;
-using UniRx;
-using Extensions;
 using Extensions.Devkit;
 
 namespace Modules.Devkit.CleanDirectory
 {
-    public class CleanDirectoryWindow : EditorWindow
+    public sealed class CleanDirectoryWindow : EditorWindow
     {
         //----- params -----
-
+        
         private static readonly string WindowTitle = "Clean Directory";
 
         //----- field -----
@@ -35,8 +32,6 @@ namespace Modules.Devkit.CleanDirectory
         }
 
         //----- method -----
-
-        const float DIR_LABEL_HEIGHT = 21;
         
         public static void Open()
         {
@@ -109,7 +104,8 @@ namespace Modules.Devkit.CleanDirectory
                                 if (assetObj != null)
                                 {
                                     folderContent.text = CleanDirectoryUtility.GetRelativePath(dirInfo.FullName, Application.dataPath);
-                                    GUILayout.Label(folderContent, GUILayout.Height(DIR_LABEL_HEIGHT));
+
+                                    GUILayout.Label(folderContent, GUILayout.Height(21f));
                                 }
                             }
                         }

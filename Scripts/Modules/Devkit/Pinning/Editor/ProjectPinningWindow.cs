@@ -1,15 +1,12 @@
-﻿﻿﻿
+﻿
 using UnityEngine;
 using UnityEditor;
 using System.Linq;
-using System.Collections.Generic;
-using UniRx;
-using Extensions;
 using Modules.Devkit.Prefs;
 
 namespace Modules.Devkit.Pinning
 {
-    public class ProjectPinningWindow : PinningWindow<ProjectPinningWindow>
+    public sealed class ProjectPinningWindow : PinningWindow<ProjectPinningWindow>
     {
         //----- params -----
 

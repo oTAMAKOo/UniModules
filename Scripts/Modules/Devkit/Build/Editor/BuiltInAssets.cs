@@ -15,7 +15,7 @@ namespace Modules.Devkit.Build
 
         private const int FrameReadLine = 250;
 
-        public class BuiltInAssetInfo
+        public sealed class BuiltInAssetInfo
         {
             public string assetPath { get; private set; }
             public float size { get; private set; }

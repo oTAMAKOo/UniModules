@@ -10,7 +10,7 @@ using Modules.ExternalResource;
 
 namespace Modules.AssetBundles.Editor
 {
-    public class BuildAssetbundlePackage
+    public sealed class BuildAssetbundlePackage
     {
         //----- params -----
 
@@ -18,7 +18,7 @@ namespace Modules.AssetBundles.Editor
 
         private const int MaxWorkerCount = 20;
 
-        private class Progress
+        private sealed class Progress
         {
             public int count;
         }

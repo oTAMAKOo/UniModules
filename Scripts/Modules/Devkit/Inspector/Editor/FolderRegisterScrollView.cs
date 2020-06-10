@@ -22,7 +22,7 @@ namespace Modules.Devkit.Inspector
             Path
         }
 
-        public class FolderInfo
+        public sealed class FolderInfo
         {
             public string assetPath = null;
             public Object asset = null;

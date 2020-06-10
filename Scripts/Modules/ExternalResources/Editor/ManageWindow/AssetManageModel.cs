@@ -1,16 +1,12 @@
-﻿﻿
-using UnityEngine;
+﻿
 using System;
-using System.Linq;
-using System.Collections.Generic;
 using UniRx;
-using Extensions;
 
 using Object = UnityEngine.Object;
 
 namespace Modules.ExternalResource.Editor
 {
-    public class AssetManageModel
+    public sealed class AssetManageModel
     {
         //----- params -----
 

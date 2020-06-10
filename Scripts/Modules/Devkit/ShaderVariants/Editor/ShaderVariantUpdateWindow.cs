@@ -1,16 +1,14 @@
 ﻿
 using UnityEngine;
 using UnityEditor;
-using System;
 using System.Linq;
 using System.Collections.Generic;
-using UniRx;
 using Extensions;
 using Extensions.Devkit;
 
 namespace Modules.Devkit.ShaderVariant
 {
-    public class ShaderVariantUpdateWindow : SingletonEditorWindow<ShaderVariantUpdateWindow>
+    public sealed class ShaderVariantUpdateWindow : SingletonEditorWindow<ShaderVariantUpdateWindow>
     {
         //----- params -----
 
@@ -22,7 +20,7 @@ namespace Modules.Devkit.ShaderVariant
             Path
         }
 
-        private class ShaderInfo
+        private sealed class ShaderInfo
         {
             public string assetPath = null;
             public Shader shader = null;

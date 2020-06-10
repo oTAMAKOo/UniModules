@@ -1,19 +1,13 @@
 ﻿﻿
 using UnityEngine;
 using UnityEditor;
-using System;
-using System.Linq;
-using System.Collections.Generic;
 using UniRx;
-using Extensions;
 using Extensions.Devkit;
 using Modules.Devkit.CompileNotice;
 
-using Object = UnityEngine.Object;
-
 namespace Modules.ExternalResource.Editor
 {
-    public class AssetManageWindow : SingletonEditorWindow<AssetManageWindow>
+    public sealed class AssetManageWindow : SingletonEditorWindow<AssetManageWindow>
     {
         //----- params -----
 

@@ -1,12 +1,8 @@
 ﻿
 using UnityEngine;
 using UnityEditor;
-using System;
 using System.Linq;
-using System.Collections.Generic;
-using System.Reflection;
 using UniRx;
-using Extensions;
 using Extensions.Devkit;
 using Modules.Devkit.Prefs;
 
@@ -14,7 +10,7 @@ using Object = UnityEngine.Object;
 
 namespace Modules.ExternalResource.Editor
 {
-    public class AssetNavigationWindow : SingletonEditorWindow<AssetNavigationWindow>
+    public sealed class AssetNavigationWindow : SingletonEditorWindow<AssetNavigationWindow>
     {
         //----- params -----
 

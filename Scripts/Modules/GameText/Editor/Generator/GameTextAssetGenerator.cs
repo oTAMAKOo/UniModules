@@ -9,7 +9,7 @@ using Modules.GameText.Components;
 
 namespace Modules.GameText.Editor
 {
-    public class GameTextAssetGenerator
+    public sealed class GameTextAssetGenerator
     {
         //----- params -----
 

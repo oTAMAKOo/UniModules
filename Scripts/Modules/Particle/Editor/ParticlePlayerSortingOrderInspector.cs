@@ -1,14 +1,12 @@
 ﻿
 using UnityEngine;
 using UnityEditor;
-using System.Collections;
-using System.Collections.Generic;
 using Extensions.Devkit;
 
 namespace Modules.Particle
 {
     [CustomEditor(typeof(ParticlePlayerSortingOrder), true)]
-    public class ParticlePlayerSortingOrderInspector : UnityEditor.Editor
+    public sealed class ParticlePlayerSortingOrderInspector : UnityEditor.Editor
     {
         //----- params -----
 

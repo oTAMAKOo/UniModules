@@ -1,6 +1,5 @@
 ﻿
 using UnityEngine;
-using UnityEditor;
 using System.Collections.Generic;
 using Extensions;
 using Extensions.Devkit;
@@ -9,7 +8,7 @@ using Modules.Devkit.ScriptableObjects;
 
 namespace Modules.ExternalResource.Editor
 {
-    public class AssetManageConfig : ReloadableScriptableObject<AssetManageConfig>
+    public sealed class AssetManageConfig : ReloadableScriptableObject<AssetManageConfig>
     {
         //----- params -----
 

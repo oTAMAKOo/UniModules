@@ -4,7 +4,7 @@ using UnityEditor;
 namespace Extensions
 {
     [CustomPropertyDrawer(typeof(FloatSelectableAttribute))]
-    public class FloatSelectableAttributePropertyDrawer : SelectableAttributePropertyDrawer<float>
+    public sealed class FloatSelectableAttributePropertyDrawer : SelectableAttributePropertyDrawer<float>
     {
         //----- params -----
 

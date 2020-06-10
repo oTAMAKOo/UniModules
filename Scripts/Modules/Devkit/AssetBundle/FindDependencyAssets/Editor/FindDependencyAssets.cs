@@ -13,7 +13,7 @@ using Object = UnityEngine.Object;
 namespace Modules.Devkit.AssetBundles
 {
     // 他のアセットがアセットを参照している情報.
-    public class ReferenceInfo
+    public sealed class ReferenceInfo
     {
         public string AssetPath { get; private set; }
         public List<string> ReferenceAssetBundles { get; private set; }
@@ -26,7 +26,7 @@ namespace Modules.Devkit.AssetBundles
     }
 
     // アセットバンドルの依存情報.
-    public class AssetBundleDependentInfo
+    public sealed class AssetBundleDependentInfo
     {
         public string AssetBundleName { get; private set; }
         public string[] AssetPaths { get; private set; }
@@ -40,7 +40,7 @@ namespace Modules.Devkit.AssetBundles
         }
     }
 
-    public class FindDependencyAssets
+    public sealed class FindDependencyAssets
     {
         //----- params -----
 

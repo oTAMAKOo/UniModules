@@ -5,7 +5,7 @@ using Extensions.Devkit;
 namespace Modules.UI
 {
     [CustomEditor(typeof(GraphicGroup))]
-    public class GraphicGroupInspector : UnityEditor.Editor
+    public sealed class GraphicGroupInspector : UnityEditor.Editor
     {
         private GraphicGroup instance = null;
 

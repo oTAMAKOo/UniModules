@@ -1,17 +1,11 @@
-﻿﻿
-using UnityEngine;
+﻿
 using UnityEditor;
-using System;
-using System.Linq;
-using System.Collections.Generic;
-using UniRx;
-using Extensions;
 using Extensions.Devkit;
 
 namespace Modules.Shaders
 {
     [CustomEditor(typeof(ShaderSetter), true)]
-    public class ShaderSetterInspector : UnityEditor.Editor
+    public sealed class ShaderSetterInspector : UnityEditor.Editor
     {
         //----- params -----
 

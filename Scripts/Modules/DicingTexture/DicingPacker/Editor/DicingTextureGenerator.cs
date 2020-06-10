@@ -11,18 +11,18 @@ using Modules.Devkit.TextureEdit;
 
 namespace Modules.Dicing
 {
-    public class DicingData
+    public sealed class DicingData
     {
         public DicingSourceData[] SourceTextures { get; set; }
         public DicingBlockData[] DicingBlocks { get; set; }
         public Texture2D Texture { get; set; }
     }
 
-    public class DicingTextureGenerator
+    public sealed class DicingTextureGenerator
     {
 		//----- params -----
         
-        private class DicingTargetData
+        private sealed class DicingTargetData
         {
             public Texture2D texture;
             public int bx;
@@ -30,7 +30,7 @@ namespace Modules.Dicing
             public TextureBlock[] blocks;
         }
 
-        private class TextureBlock
+        private sealed class TextureBlock
         {
             public ushort blockId;
             public int width;

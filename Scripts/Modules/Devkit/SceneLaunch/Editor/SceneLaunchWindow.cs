@@ -13,7 +13,7 @@ using Modules.Devkit.Prefs;
 
 namespace Modules.Devkit.SceneLaunch
 {
-    public class SceneLaunchWindow : SingletonEditorWindow<SceneLaunchWindow>
+    public sealed class SceneLaunchWindow : SingletonEditorWindow<SceneLaunchWindow>
     {
         //----- params -----
 
@@ -85,7 +85,7 @@ namespace Modules.Devkit.SceneLaunch
         }
 
         [InitializeOnLoad]
-        private class SceneResume
+        private sealed class SceneResume
         {
             private const int CheckInterval = 30;
 

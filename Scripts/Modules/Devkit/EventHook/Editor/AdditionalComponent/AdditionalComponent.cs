@@ -27,7 +27,7 @@ namespace Modules.Devkit.EventHook
             }
         }
 
-        public class RequireComponentSettings
+        public sealed class RequireComponentSettings
         {
             public Type Type { get; set; }
             public ComponentSettings ComponentSettings { get; set; }
@@ -39,7 +39,7 @@ namespace Modules.Devkit.EventHook
             }
         }
 
-        public class ComponentSettings
+        public sealed class ComponentSettings
         {
             public Type Component { get; set; }
             public bool RequireOrderChange { get; set; }

@@ -1,8 +1,6 @@
-﻿﻿﻿
+﻿
 using UnityEngine;
 using UnityEditor;
-using System.IO;
-using System.Linq;
 using System.Collections.Generic;
 using Extensions.Devkit;
 
@@ -10,7 +8,7 @@ using Object = UnityEngine.Object;
 
 namespace Modules.Devkit.FindReferences
 {
-    public class FindReferencesResultWindow : SingletonEditorWindow<FindReferencesResultWindow>
+    public sealed class FindReferencesResultWindow : SingletonEditorWindow<FindReferencesResultWindow>
     {
         //----- params -----
 
@@ -20,7 +18,7 @@ namespace Modules.Devkit.FindReferences
             Path,
         }
 
-        private class ReferenceInfo
+        private sealed class ReferenceInfo
         {
             public string TargetPath { get; private set; }
             public Object Target { get; private set; }

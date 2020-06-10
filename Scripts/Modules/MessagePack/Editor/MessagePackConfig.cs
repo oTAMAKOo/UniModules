@@ -1,16 +1,12 @@
-﻿﻿﻿﻿﻿
+﻿
 using UnityEngine;
-using System;
-using System.Linq;
-using System.Collections.Generic;
-using UniRx;
 using Extensions;
 using Modules.Devkit.Prefs;
 using Modules.Devkit.ScriptableObjects;
 
 namespace Modules.MessagePack
 {
-	public class MessagePackConfig : ReloadableScriptableObject<MessagePackConfig>
+    public sealed class MessagePackConfig : ReloadableScriptableObject<MessagePackConfig>
     {
         //----- params -----
 

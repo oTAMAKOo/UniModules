@@ -17,7 +17,7 @@ using Modules.CriWare;
 
 namespace Modules.ExternalResource.Editor
 {
-    public class AssetInfoManifestGenerator
+    public sealed class AssetInfoManifestGenerator
     {
         //----- params -----
 

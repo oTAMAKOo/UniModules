@@ -1,16 +1,11 @@
-﻿﻿﻿﻿﻿
+﻿
 using UnityEngine;
-using UnityEditor;
-using System;
-using System.Linq;
 using System.Collections.Generic;
 using System.IO;
-using UniRx;
-using Extensions;
 
 namespace Modules.Devkit.CleanDirectory
 {
-	public class SaveCleanDirectory : UnityEditor.AssetModificationProcessor
+    public sealed class SaveCleanDirectory : UnityEditor.AssetModificationProcessor
     {
         //----- params -----
 

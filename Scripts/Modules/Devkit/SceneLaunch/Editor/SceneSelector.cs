@@ -3,7 +3,6 @@ using System;
 using UnityEngine;
 using UnityEditor;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using UniRx;
 using Extensions;
@@ -21,7 +20,7 @@ namespace Modules.Devkit.SceneLaunch
         }
     }
 
-    public class SceneSelector : ScriptableWizard
+    public sealed class SceneSelector : ScriptableWizard
     {
         //----- params -----
 

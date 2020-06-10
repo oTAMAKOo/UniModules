@@ -11,11 +11,11 @@ using Modules.Devkit.CompileNotice;
 
 namespace Modules.GameText.Components
 {
-    public class GameTextSelector : ScriptableWizard
+    public sealed class GameTextSelector : ScriptableWizard
     {
         //----- params -----
 
-        private class SelectionInfo
+        private sealed class SelectionInfo
         {
             public string TextGuid { get; private set; }
             public string Name { get; private set; }

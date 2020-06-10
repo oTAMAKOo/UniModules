@@ -1,14 +1,10 @@
 ﻿
-using UnityEngine;
-using UnityEditor;
 using System.IO;
-using UniRx;
-using Extensions;
 using Extensions.Devkit;
 
 namespace Modules.Devkit.AssetTuning
 {
-    public class AssetTuningModificationProcessor : UnityEditor.AssetModificationProcessor
+    public sealed class AssetTuningModificationProcessor : UnityEditor.AssetModificationProcessor
     {
         //----- params -----
 

@@ -4,14 +4,13 @@ using UnityEngine.SceneManagement;
 using UnityEditor;
 using System;
 using System.Linq;
-using System.Collections.Generic;
 using Extensions;
 using Extensions.Devkit;
 using UniRx;
 
 namespace Modules.Devkit.EventHook
 {
-    public class HierarchyChangeNotification
+    public sealed class HierarchyChangeNotification
     {
         //----- params -----
 

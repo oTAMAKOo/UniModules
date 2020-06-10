@@ -10,7 +10,7 @@ using Object = UnityEngine.Object;
 
 namespace Modules.Devkit.Generators
 {
-    public class ScriptableObjectGenerator : UnityEditor.Editor
+    public sealed class ScriptableObjectGenerator : UnityEditor.Editor
     {
         //------ params ------
 

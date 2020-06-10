@@ -9,7 +9,7 @@ using Modules.ExternalResource;
 
 namespace Modules.Devkit.AssetTuning
 {
-    public class AssetInfoManifestTuner : AssetTuner
+    public sealed class AssetInfoManifestTuner : AssetTuner
     {
         //----- params -----
 

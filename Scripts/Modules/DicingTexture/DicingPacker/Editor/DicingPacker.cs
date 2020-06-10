@@ -12,7 +12,7 @@ using Modules.Devkit.Prefs;
 
 namespace Modules.Dicing
 {
-	public partial class DicingPacker : SingletonEditorWindow<DicingPacker>
+	public sealed partial class DicingPacker : SingletonEditorWindow<DicingPacker>
 	{
         //----- params -----
 
@@ -48,7 +48,7 @@ namespace Modules.Dicing
             Missing,
         }
 
-        private class TextureInfo
+        private sealed class TextureInfo
         {
             public TextureStatus status;
             public Texture2D texture;

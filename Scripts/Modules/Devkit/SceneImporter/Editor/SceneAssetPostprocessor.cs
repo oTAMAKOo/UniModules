@@ -8,7 +8,7 @@ using Modules.Devkit.Project;
 
 namespace Modules.Devkit.SceneImporter
 {
-    public class SceneAssetPostprocessor : AssetPostprocessor
+    public sealed class SceneAssetPostprocessor : AssetPostprocessor
     {
         //----- params -----
 

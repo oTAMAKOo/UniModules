@@ -1,15 +1,10 @@
-﻿﻿﻿
-using System;
-using UnityEngine;
-using UnityEditor;
-using UniRx;
-using Extensions;
+﻿
 using Modules.ExternalResource.Editor;
 using Modules.Devkit.Project;
 
 namespace Modules.Devkit.AssetTuning
 {
-	public class AssetBundleAssetTuner : AssetTuner
+	public sealed class AssetBundleAssetTuner : AssetTuner
     {
         private AssetManageManager assetManageManager = null;
 

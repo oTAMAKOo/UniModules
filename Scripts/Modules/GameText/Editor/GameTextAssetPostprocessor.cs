@@ -4,7 +4,7 @@ using Modules.GameText.Components;
 
 namespace Modules.GameText.Editor
 {
-    public class GameTextAssetPostprocessor : AssetPostprocessor
+    public sealed class GameTextAssetPostprocessor : AssetPostprocessor
     {
         //----- params -----
 

@@ -1,13 +1,11 @@
 ﻿﻿﻿
 using UnityEngine;
 using UnityEditor;
-using System;
-using System.Collections;
 
 namespace Modules.SortingLayerSetter
 {
     [CustomEditor(typeof(SortingLayerSetter))]
-    public class SortingLayerSetterInspector : UnityEditor.Editor
+    public sealed class SortingLayerSetterInspector : UnityEditor.Editor
     {
         private SortingLayerSetter instance = null;
 

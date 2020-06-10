@@ -11,7 +11,7 @@ using Extensions.Devkit;
 namespace Modules.UI.Reactive
 {
     [CustomEditor(typeof(ButtonReactiveText))]
-    public class ButtonReactiveTextInspector : UnityEditor.Editor
+    public sealed class ButtonReactiveTextInspector : UnityEditor.Editor
     {
         //----- params -----
 

@@ -4,14 +4,13 @@ using UnityEngine;
 using System;
 using System.Linq;
 using System.Collections.Generic;
-using UniRx;
 using Extensions;
 using System.IO;
 using Extensions.Devkit;
 
 namespace Modules.Devkit.AssetTuning
 {
-    public class AssetTuneManager : Singleton<AssetTuneManager>
+    public sealed class AssetTuneManager : Singleton<AssetTuneManager>
     {
         //----- params -----
 
@@ -27,7 +26,7 @@ namespace Modules.Devkit.AssetTuning
 
         //----- method -----
 
-        protected AssetTuneManager()
+        private AssetTuneManager()
         {
             assetTuners = new Dictionary<string, AssetTuner>();
             firstImportAssets = new HashSet<string>();

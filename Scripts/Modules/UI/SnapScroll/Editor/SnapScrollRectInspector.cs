@@ -1,17 +1,10 @@
-﻿﻿﻿﻿
-using UnityEngine;
-using UnityEditor;
+﻿using UnityEditor;
 using UnityEditor.UI;
-using System;
-using System.Linq;
-using System.Collections.Generic;
-using UniRx;
-using Extensions;
 
 namespace Modules.UI
 {
     [CustomEditor(typeof(SnapScrollRect), true)]
-    public class SnapScrollRectInspector : ScrollRectEditor
+    public sealed class SnapScrollRectInspector : ScrollRectEditor
     {
         //----- params -----
 

@@ -1,18 +1,13 @@
 ﻿
 using UnityEngine;
 using UnityEditor;
-using System;
-using System.Linq;
-using System.Collections.Generic;
-using UniRx;
 using Extensions;
 using Extensions.Devkit;
-using UnityEditor.Callbacks;
 
 namespace Modules.UI.TextEffect
 {
     [CustomEditor(typeof(TextOutline))]
-    public class TextOutlineInspector : TextEffectBaseInspector
+    public sealed class TextOutlineInspector : TextEffectBaseInspector
     {
         //----- params -----
 

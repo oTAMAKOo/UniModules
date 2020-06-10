@@ -4,7 +4,7 @@ using UnityEditor;
 namespace Extensions
 {
     [CustomPropertyDrawer(typeof(StringSelectableAttribute))]
-    public class StringSelectableAttributePropertyDrawer : SelectableAttributePropertyDrawer<string>
+    public sealed class StringSelectableAttributePropertyDrawer : SelectableAttributePropertyDrawer<string>
     {
         //----- params -----
 

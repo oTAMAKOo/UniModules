@@ -3,17 +3,12 @@ using UnityEngine;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEditor.Experimental.SceneManagement;
-using Unity.Linq;
-using System;
 using System.Linq;
-using System.Collections.Generic;
 using UniRx;
-using Extensions;
-using Extensions.Devkit;
 
 namespace Modules.Devkit.EventHook
 {
-    public class AdditionalComponentInPrefabMode : AdditionalComponent
+    public sealed class AdditionalComponentInPrefabMode : AdditionalComponent
     {
         //----- params -----
 

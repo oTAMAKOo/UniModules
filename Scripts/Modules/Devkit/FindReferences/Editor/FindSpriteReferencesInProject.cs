@@ -279,7 +279,7 @@ namespace Modules.Devkit.FindReferences
             return result;
         }
 
-        private class ProgressCounter
+        private sealed class ProgressCounter
         {
             public int Count;
         }

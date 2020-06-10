@@ -1,13 +1,11 @@
 ﻿﻿﻿
 using UnityEngine;
 using UnityEditor;
-using System.Linq;
-using Extensions.Devkit;
 
 namespace Extensions.Devkit
 {
     [CustomPropertyDrawer(typeof(Prefab))]
-    public class PrefabPropertyDrawer : PropertyDrawer
+    public sealed class PrefabPropertyDrawer : PropertyDrawer
     {
         public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
         {

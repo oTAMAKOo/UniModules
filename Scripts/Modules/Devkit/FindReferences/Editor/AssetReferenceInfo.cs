@@ -5,7 +5,7 @@ using Object = UnityEngine.Object;
 
 namespace Modules.Devkit.FindReferences
 {
-    public class AssetReferenceInfo
+    public sealed class AssetReferenceInfo
     {
         //----- params -----
 

@@ -12,13 +12,13 @@ using Object = UnityEngine.Object;
 
 namespace Modules.ExternalResource.Editor
 {
-    public class InvalidDependantWindow : SingletonEditorWindow<InvalidDependantWindow>
+    public sealed class InvalidDependantWindow : SingletonEditorWindow<InvalidDependantWindow>
     {
         //----- params -----
 
         private static readonly string[] IgnoreExtensions = { ".cs" };
 
-        private class AssetInfo
+        private sealed class AssetInfo
         {
             public string AssetPath { get; private set; }
             public string[] InvalidDependants { get; private set; }
@@ -36,7 +36,7 @@ namespace Modules.ExternalResource.Editor
             Path
         }
 
-        private class DependantInfoScrollView : EditorGUIFastScrollView<AssetInfo>
+        private sealed class DependantInfoScrollView : EditorGUIFastScrollView<AssetInfo>
         {
             private HashSet<int> openedIds = null;
             private GUIStyle textAreaStyle = null;

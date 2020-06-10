@@ -5,7 +5,7 @@ using UnityEditor;
 
 namespace Extensions.Devkit
 {
-    public class DisableScope : GUI.Scope
+    public sealed class DisableScope : GUI.Scope
     {
         //----- params -----
 

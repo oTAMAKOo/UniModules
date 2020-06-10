@@ -8,7 +8,7 @@ using Extensions.Devkit;
 
 namespace Modules.Dicing
 {
-    public class DicingSpriteSelector : ScriptableWizard
+    public sealed class DicingSpriteSelector : ScriptableWizard
     {
         //----- params -----
 

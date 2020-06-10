@@ -9,7 +9,7 @@ using Extensions.Devkit;
 namespace Modules.Dicing
 {
     [CustomEditor(typeof(DicingImage))]
-    public class DicingImageInspector : UnityEditor.Editor
+    public sealed class DicingImageInspector : UnityEditor.Editor
     {
         //----- params -----
 

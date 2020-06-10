@@ -1,9 +1,7 @@
 ﻿
 using UnityEngine;
-using UnityEngine.UI;
 using UnityEditor;
 using UnityEditorInternal;
-using System;
 using System.Linq;
 using System.Collections.Generic;
 using System.Security.Cryptography;
@@ -14,7 +12,7 @@ using Extensions.Devkit;
 namespace Modules.UI.TextEffect
 {
     [CustomEditor(typeof(FontKerningSetting))]
-    public class FontKerningSettingInspector : UnityEditor.Editor
+    public sealed class FontKerningSettingInspector : UnityEditor.Editor
     {
         //----- params -----
 

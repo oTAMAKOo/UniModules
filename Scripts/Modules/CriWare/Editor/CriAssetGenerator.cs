@@ -1,8 +1,6 @@
 ﻿
 #if ENABLE_CRIWARE_ADX || ENABLE_CRIWARE_SOFDEC
 ﻿﻿
-using UnityEngine;
-using UnityEditor;
 using System;
 using System.IO;
 using System.Linq;
@@ -11,7 +9,7 @@ using Modules.ExternalResource;
 
 namespace Modules.CriWare.Editor
 {
-	public class CriAssetGenerator
+	public sealed class CriAssetGenerator
     {
         //----- params -----
 

@@ -3,15 +3,13 @@ using UnityEngine;
 using UnityEditor;
 using UnityEngine.SceneManagement;
 using System.Linq;
-using System.Collections.Generic;
-using UniRx;
 using Extensions;
 using Extensions.Devkit;
 using Modules.Devkit.Prefs;
 
 namespace Modules.Devkit.Pinning
 {
-    public class HierarchyPinningWindow : PinningWindow<HierarchyPinningWindow>
+    public sealed class HierarchyPinningWindow : PinningWindow<HierarchyPinningWindow>
     {
         //----- params -----
 

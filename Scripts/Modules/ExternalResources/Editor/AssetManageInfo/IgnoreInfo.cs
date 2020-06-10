@@ -2,12 +2,10 @@
 using UnityEngine;
 using UnityEditor;
 using System;
+using System.IO;
 using System.Linq;
-using System.Collections.Generic;
-using Extensions;
 
 using Object = UnityEngine.Object;
-using System.IO;
 
 namespace Modules.ExternalResource.Editor
 {
@@ -24,7 +22,7 @@ namespace Modules.ExternalResource.Editor
     }
 
     [Serializable]
-    public class IgnoreInfo
+    public sealed class IgnoreInfo
     {
         //----- params -----
 

@@ -9,7 +9,7 @@ namespace Modules.UI.Layout
 {
     [CanEditMultipleObjects]
     [CustomEditor(typeof (PreferredSizeCopy))]
-    public class PreferredSizeCopyInspector : UnityEditor.Editor
+    public sealed class PreferredSizeCopyInspector : UnityEditor.Editor
     {
         public override void OnInspectorGUI()
         {

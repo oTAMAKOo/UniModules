@@ -1,17 +1,12 @@
 ﻿
 using UnityEngine;
 using UnityEditor;
-using Unity.Linq;
-using System;
-using System.Linq;
-using System.Collections.Generic;
 using UniRx;
-using Extensions;
 using Extensions.Devkit;
 
 namespace Modules.Devkit.EventHook
 {
-    public class AdditionalComponentInScene : AdditionalComponent
+    public sealed class AdditionalComponentInScene : AdditionalComponent
     {
         //----- params -----
 

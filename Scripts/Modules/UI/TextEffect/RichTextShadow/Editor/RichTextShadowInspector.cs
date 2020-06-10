@@ -1,8 +1,6 @@
-﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿
+﻿
 using UnityEngine;
 using UnityEditor;
-using UnityEditorInternal;
-using System;
 using System.Linq;
 using System.Collections.Generic;
 using Extensions;
@@ -11,7 +9,7 @@ using Extensions.Devkit;
 namespace Modules.UI.TextEffect
 {
     [CustomEditor(typeof(RichTextShadow))]
-    public class RichTextShadowInspector : UnityEditor.Editor
+    public sealed class RichTextShadowInspector : UnityEditor.Editor
     {
         //----- params -----
 

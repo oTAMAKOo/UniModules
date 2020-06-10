@@ -1,5 +1,4 @@
-﻿﻿﻿
-using UnityEngine;
+﻿
 using System;
 using System.Collections.Generic;
 
@@ -8,7 +7,7 @@ using Object = UnityEngine.Object;
 namespace Modules.ExternalResource.Editor
 {
     [Serializable]
-    public class GroupInfo
+    public sealed class GroupInfo
     {
         /// <summary> グループ名 </summary>
         public string groupName = null;

@@ -12,7 +12,7 @@ using Object = UnityEngine.Object;
 
 namespace Modules.Devkit.AssetBundles
 {
-    public class FindDependencyAssetsWindow : SingletonEditorWindow<FindDependencyAssetsWindow>
+    public sealed class FindDependencyAssetsWindow : SingletonEditorWindow<FindDependencyAssetsWindow>
     {
         //----- params -----
 
@@ -24,7 +24,7 @@ namespace Modules.Devkit.AssetBundles
             Reference,
         }
 
-        public class AssetBundleInfo
+        public sealed class AssetBundleInfo
         {
             public string AssetBundleName { get; private set; }
             public Object[] Assets { get; private set; }
@@ -42,7 +42,7 @@ namespace Modules.Devkit.AssetBundles
             }
         }
 
-        public class AssetReferenceInfo
+        public sealed class AssetReferenceInfo
         {
             public Object Asset { get; private set; }
             public Object[] ReferenceAssets { get; private set; }

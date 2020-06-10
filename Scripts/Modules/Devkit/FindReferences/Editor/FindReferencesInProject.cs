@@ -14,7 +14,7 @@ using Object = UnityEngine.Object;
 
 namespace Modules.Devkit.FindReferences
 {
-    public class FindReferencesInProject : UnityEditor.Editor
+    public sealed class FindReferencesInProject : UnityEditor.Editor
     {
         private const string MenuItemLabel = "Assets/Find References In Project";
 
@@ -118,7 +118,7 @@ namespace Modules.Devkit.FindReferences
         /// <summary>
         /// 依存される側の情報
         /// </summary>
-        private class TargetAssetInfo
+        private sealed class TargetAssetInfo
         {
             //----- params -----
 
@@ -183,7 +183,7 @@ namespace Modules.Devkit.FindReferences
         /// <summary>
         /// 参照を持っているアセット(依存を持つ側)の情報.
         /// </summary>
-        private class AssetDependencyInfo
+        private sealed class AssetDependencyInfo
         {
             public string FullPath { get; private set; }
 
@@ -199,7 +199,7 @@ namespace Modules.Devkit.FindReferences
             }
         }
 
-        private class FindReferenceContext
+        private sealed class FindReferenceContext
         {
             public AssetDependencyInfo[] Scenes { get; private set; }
             public AssetDependencyInfo[] Prefabs { get; private set; }
@@ -231,7 +231,7 @@ namespace Modules.Devkit.FindReferences
                 reportProgress(progress.Count, total);
             }
 
-            private class Progress
+            private sealed class Progress
             {
                 public int Count;
             }

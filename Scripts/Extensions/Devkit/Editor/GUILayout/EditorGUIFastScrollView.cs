@@ -19,7 +19,7 @@ namespace Extensions.Devkit
             Horizontal,
         }
 
-        private class ItemInfo
+        private sealed class ItemInfo
         {
             public T content { get; private set; }
             public Rect? rect { get; set; }

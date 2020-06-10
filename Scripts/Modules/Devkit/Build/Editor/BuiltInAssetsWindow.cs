@@ -14,7 +14,7 @@ using Object = UnityEngine.Object;
 
 namespace Modules.Devkit.Build
 {
-    public class BuiltInAssetsWindow : SingletonEditorWindow<BuiltInAssetsWindow>
+    public sealed class BuiltInAssetsWindow : SingletonEditorWindow<BuiltInAssetsWindow>
     {
         //----- params -----
 

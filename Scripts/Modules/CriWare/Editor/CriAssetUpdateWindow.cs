@@ -3,29 +3,11 @@
 
 using UnityEngine;
 using UnityEditor;
-using System;
-using System.Linq;
-using System.Collections.Generic;
-using UniRx;
-using Extensions;
 using Extensions.Devkit;
-using Modules.Devkit.Project;
-
-#if ENABLE_CRIWARE_ADX
-
-using Modules.SoundManagement.Editor;
-
-#endif
-
-#if ENABLE_CRIWARE_SOFDEC
-
-using Modules.MovieManagement.Editor;
-
-#endif
 
 namespace Modules.CriWare.Editor
 {
-    public class CriAssetUpdateWindow : SingletonEditorWindow<CriAssetUpdateWindow>
+    public sealed class CriAssetUpdateWindow : SingletonEditorWindow<CriAssetUpdateWindow>
     {
         //----- params -----
 

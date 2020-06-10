@@ -1,15 +1,11 @@
-﻿﻿﻿﻿
+﻿
 using UnityEngine;
 using UnityEditor;
 using UnityEditor.Build;
-using System;
 using System.Linq;
-using System.Collections.Generic;
 using System.IO;
-using UniRx;
 using Extensions;
 using Modules.Devkit.Prefs;
-using Extensions.Devkit;
 
 namespace Modules.Devkit.Build
 {
@@ -38,7 +34,7 @@ namespace Modules.Devkit.Build
             }
         }
 
-        public class ActiveBuildTargetListener : IActiveBuildTargetChanged
+        public sealed class ActiveBuildTargetListener : IActiveBuildTargetChanged
         {
             public int callbackOrder { get { return 0; } }
 

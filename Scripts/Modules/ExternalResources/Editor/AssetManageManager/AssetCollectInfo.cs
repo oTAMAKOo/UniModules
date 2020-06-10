@@ -1,16 +1,9 @@
 ﻿
-using UnityEngine;
-using UnityEditor;
-using System;
-using System.Linq;
-using System.Collections.Generic;
-using System.IO;
-using UniRx;
 using Extensions;
 
 namespace Modules.ExternalResource.Editor
 {
-	public class AssetCollectInfo
+    public sealed class AssetCollectInfo
     {
         //----- params -----
 

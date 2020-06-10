@@ -41,7 +41,7 @@ namespace Modules.Devkit.Spreadsheet
 
     // Google Spreadsheetにアクセスする為のクラス.
     // リファレンス： https://developers.google.com/google-apps/spreadsheets/
-    public class SpreadsheetConnector
+    public sealed class SpreadsheetConnector
 	{
         //----- params -----
 

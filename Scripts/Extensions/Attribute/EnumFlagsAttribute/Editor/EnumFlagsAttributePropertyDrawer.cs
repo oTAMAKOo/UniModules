@@ -6,7 +6,7 @@ using System;
 namespace Extensions
 {
     [CustomPropertyDrawer(typeof(EnumFlagsAttribute))]
-    public class EnumFlagsAttributePropertyDrawer : PropertyDrawer
+    public sealed class EnumFlagsAttributePropertyDrawer : PropertyDrawer
     {
         //----- params -----
 

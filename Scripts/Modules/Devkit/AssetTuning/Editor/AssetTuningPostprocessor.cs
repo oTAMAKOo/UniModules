@@ -2,11 +2,10 @@
 using UnityEngine;
 using UnityEditor;
 using System;
-using Extensions.Devkit;
 
 namespace Modules.Devkit.AssetTuning
 {
-    public class AssetTuningPostprocessor : AssetPostprocessor
+    public sealed class AssetTuningPostprocessor : AssetPostprocessor
     {
         //----- params -----
 
