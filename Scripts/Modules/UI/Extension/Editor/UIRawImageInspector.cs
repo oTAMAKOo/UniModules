@@ -6,7 +6,6 @@ using Extensions.Devkit;
 
 namespace Modules.UI.Extension
 {
-    [CanEditMultipleObjects]
     [CustomEditor(typeof(UIRawImage), true)]
     public sealed class UIRawImageInspector : ScriptlessEditor
     {

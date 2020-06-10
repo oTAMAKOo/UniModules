@@ -8,7 +8,6 @@ using Extensions.Devkit;
 
 namespace Modules.UI.Extension
 {
-    [CanEditMultipleObjects]
     [CustomEditor(typeof(UIImage), true)]
     public sealed class UIImageInspector : ScriptlessEditor
     {
