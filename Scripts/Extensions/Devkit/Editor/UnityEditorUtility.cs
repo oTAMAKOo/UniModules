@@ -21,8 +21,6 @@ namespace Extensions.Devkit
 
         public const string MetaFileExtension = ".meta";
 
-        private const string EditingAssetTag = "Editing";
-
         /// <summary>
         /// 編集履歴に登録.
         /// </summary>
