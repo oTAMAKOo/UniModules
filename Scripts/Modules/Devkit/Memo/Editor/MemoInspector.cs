@@ -9,9 +9,6 @@ namespace Modules.Devkit.Memo
     [CustomEditor(typeof(Memo))]
     public sealed class MemoInspector : Editor
     {
-        private const string AESKey = "Vk7DpPac9AMkRPLkP2nCdMxCKRHFzxtp";
-        private const string AESIv = "4ieA3xRf88JfP9pN";
-
         private string text = null;
         private Vector2 scrollPosition = Vector2.zero;
 
@@ -19,9 +16,11 @@ namespace Modules.Devkit.Memo
 
         void OnEnable()
         {
+            var config = MemoConfig.Instance;
+
             if (aesManaged == null)
             {
-                aesManaged = AESExtension.CreateAesManaged(AESKey, AESIv);
+                aesManaged = AESExtension.CreateAesManaged(config.AESKey, config.AESIv);
             }
 
             var instance = target as Memo;
@@ -37,6 +36,13 @@ namespace Modules.Devkit.Memo
         public override void OnInspectorGUI()
         {
             var memo = target as Memo;
+
+            var config = MemoConfig.Instance;
+
+            if (aesManaged == null)
+            {
+                aesManaged = AESExtension.CreateAesManaged(config.AESKey, config.AESIv);
+            }
 
             EditorGUILayout.Separator();
 
