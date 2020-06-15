@@ -39,8 +39,7 @@ namespace Extensions
         }
 
         /// <summary> コンポーネント付きのGameObjectを生成 </summary>
-        public static T CreateGameObject<T>(GameObject parent, string name, bool worldPositionStays = false)
-            where T : Component
+        public static T CreateGameObject<T>(GameObject parent, string name, bool worldPositionStays = false) where T : Component
         {
             var gameObject = new GameObject();
 
@@ -68,8 +67,7 @@ namespace Extensions
         }
 
         /// <summary> Prefabからインスタンス生成 </summary>
-        public static GameObject Instantiate(GameObject parent, UnityEngine.Object prefab,
-            bool instantiateInWorldSpace = false)
+        public static GameObject Instantiate(GameObject parent, UnityEngine.Object prefab, bool instantiateInWorldSpace = false)
         {
             if (prefab != null)
             {
@@ -126,8 +124,7 @@ namespace Extensions
         }
 
         /// <summary> Resource パスから生成 + Component取得 </summary>
-        public static T Instantiate<T>(GameObject parent, string path, bool instantiateInWorldSpace = false)
-            where T : Component
+        public static T Instantiate<T>(GameObject parent, string path, bool instantiateInWorldSpace = false) where T : Component
         {
             var gameObject = Instantiate(parent, path, instantiateInWorldSpace);
 
@@ -135,8 +132,7 @@ namespace Extensions
         }
 
         /// <summary> Prefab から生成 + Component取得 </summary>
-        public static T Instantiate<T>(GameObject parent, UnityEngine.Object prefab,
-            bool instantiateInWorldSpace = false) where T : Component
+        public static T Instantiate<T>(GameObject parent, UnityEngine.Object prefab, bool instantiateInWorldSpace = false) where T : Component
         {
             var gameObject = Instantiate(parent, prefab, instantiateInWorldSpace);
 
@@ -144,8 +140,7 @@ namespace Extensions
         }
 
         /// <summary> Prefabから複数のインスタンスを高速生成 + Component取得 </summary>
-        public static IEnumerable<T> Instantiate<T>(GameObject parent, UnityEngine.Object prefab, int count,
-            bool instantiateInWorldSpace = false) where T : Component
+        public static IEnumerable<T> Instantiate<T>(GameObject parent, UnityEngine.Object prefab, int count, bool instantiateInWorldSpace = false) where T : Component
         {
             var gameObjects = Instantiate(parent, prefab, count, instantiateInWorldSpace);
             
@@ -403,7 +398,7 @@ namespace Extensions
         #endregion
 
         #region Find Objects
-        
+
         /// <summary>
         /// カメラ取得.
         /// ※ layerMaskは <code>1 &lt;&lt; (int)layer</code>された状態の物を受け取る.
