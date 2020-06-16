@@ -30,6 +30,8 @@ namespace Modules.UI.Extension
 
         private void ApplyDevelopmentAsset()
         {
+            if (Application.isPlaying) { return; }
+
             DeleteCreatedAsset();
 
             if (RawImage.texture != null) { return; }
@@ -61,16 +63,17 @@ namespace Modules.UI.Extension
 
         private void DeleteCreatedAsset()
         {
-            if (RawImage != null)
+            if (Application.isPlaying) { return; }
+
+            if (RawImage == null) { return; }
+
+            var texture = RawImage.texture;
+
+            if (texture != null && texture.name == DevelopmentAssetName)
             {
-                var texture = RawImage.texture;
+                RawImage.texture = null;
 
-                if (texture != null && texture.name == DevelopmentAssetName)
-                {
-                    RawImage.texture = null;
-
-                    UnityUtility.SafeDelete(texture);
-                }
+                UnityUtility.SafeDelete(texture);
             }
         }
     }
