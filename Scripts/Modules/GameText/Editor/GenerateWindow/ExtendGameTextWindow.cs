@@ -58,21 +58,7 @@ namespace Modules.GameText.Editor
                 {
                     if (GUILayout.Button("Generate"))
                     {
-                        var assetFolderName = gameText.GetAssetFolderName();
-
-                        var assetFileName = GameText.GetAssetFileName(GameText.AssetType.Extend, info.Identifier);
-
-                        var assetPath = PathUtility.Combine(new string[] { extendGameTextSetting.AseetFolderPath, assetFolderName, assetFileName });
-
-                        var generateInfo = new GameTextGenerater.GenerateInfo
-                        {
-                            assetPath = assetPath,
-                            contentsFolderPath = extendGameTextSetting.GetContentsFolderPath(),
-                            scriptFolderPath = string.Empty,
-                            textIndex = info.TextIndex,
-                        };
-
-                        GameTextGenerater.Generate(generateInfo);
+                        GameTextGenerater.Generate(GameText.AssetType.Extend, info);
 
                         Repaint();
                     }

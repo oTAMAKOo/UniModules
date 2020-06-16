@@ -44,8 +44,6 @@ namespace Modules.GameText.Editor
 
         void OnGUI()
         {
-            var gameText = GameText.Instance;
-
             var generateInfos = GameTextLanguage.Infos;
 
             if (generateInfos == null) { return; }
@@ -92,43 +90,20 @@ namespace Modules.GameText.Editor
                 {
                     if (GUILayout.Button("Generate"))
                     {
-                        var assetFolderName = gameText.GetAssetFolderName();
-
                         var assetType = GameText.AssetType.BuiltIn;
-
-                        var aseetFolderPath = string.Empty;
-
-                        var scriptFolderPath = string.Empty;
 
                         switch (mode)
                         {
                             case Mode.BuiltIn:
                                 assetType = GameText.AssetType.BuiltIn;
-                                scriptFolderPath = builtInGameTextSetting.ScriptFolderPath;
-                                aseetFolderPath = builtInGameTextSetting.AseetFolderPath;
                                 break;
 
                             case Mode.AssetBundle:
                                 assetType = GameText.AssetType.Update;
-                                aseetFolderPath = updateGameTextSetting.AseetFolderPath;
                                 break;
                         }
 
-                        var assetFileName = GameText.GetAssetFileName(assetType, info.Identifier);
-
-                        var assetPath = PathUtility.Combine(new string[] { aseetFolderPath, assetFolderName, assetFileName });
-
-                        var contentsFolderPath = builtInGameTextSetting.GetContentsFolderPath();
-
-                        var generateInfo = new GameTextGenerater.GenerateInfo
-                        {
-                            assetPath = assetPath,
-                            contentsFolderPath = contentsFolderPath,
-                            scriptFolderPath = scriptFolderPath,
-                            textIndex = info.TextIndex,
-                        };
-
-                        GameTextGenerater.Generate(generateInfo);
+                        GameTextGenerater.Generate(assetType, info);
 
                         Repaint();
                     }
