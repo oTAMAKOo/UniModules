@@ -29,8 +29,6 @@ namespace Modules.GameText.Editor
 
         //----- method -----
 
-        //string language
-
         public static void Generate(GameText.AssetType type, GameTextLanguage.Info info)
         {
             var gameText = GameText.Instance;
@@ -93,10 +91,10 @@ namespace Modules.GameText.Editor
                 textIndex = info.TextIndex,
             };
 
-            Generate(generateInfo);
+            GenerateProcess(generateInfo);
         }
         
-        private static void Generate(GenerateInfo generateInfo)
+        private static void GenerateProcess(GenerateInfo generateInfo)
         {
             var progressTitle = "Generate GameText";
 
