@@ -11,7 +11,6 @@ using Modules.Devkit.Prefs;
 
 #if ENABLE_CRIWARE_ADX || ENABLE_CRIWARE_SOFDEC
 
-using Modules.CriWare;
 using Modules.CriWare.Editor;
 
 #endif
@@ -24,7 +23,7 @@ namespace Modules.ExternalResource.Editor
 
         private const string ExportFolderName = "ExternalResources";
 
-        public static class Prefs
+        private static class Prefs
         {
             public static string exportPath
             {
@@ -71,7 +70,7 @@ namespace Modules.ExternalResource.Editor
                 CriAssetGenerator.Generate(exportPath, externalResourcesPath, assetInfoManifest);
 
                 #endif
-
+                
                 // AssetBundleをビルド.
                 var assetBundleManifest = BuildAssetBundle.BuildAllAssetBundles();
 

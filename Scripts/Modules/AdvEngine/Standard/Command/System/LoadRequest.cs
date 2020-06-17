@@ -81,7 +81,7 @@ namespace Modules.AdvKit.Standard
                 }
             }
 
-            using (new DisableStackTraceScope(LogType.Log))
+            using (new DisableStackTraceScope())
             {
                 Debug.Log(builder.ToString());
             }
