@@ -8,7 +8,7 @@ namespace Extensions
     {
         //----- params -----
 
-        private static readonly LogType[] TargetLogTypes = new LogType[]
+        private static readonly LogType[] DefaultTargetLogTypes = new LogType[]
         {
             LogType.Log, LogType.Warning, LogType.Error, LogType.Assert,
         };
@@ -25,14 +25,25 @@ namespace Extensions
         {
             resumeDictionary = new Dictionary<LogType, StackTraceLogType>();
 
-            foreach (var logType in TargetLogTypes)
+            foreach (var logType in DefaultTargetLogTypes)
             {
-                var stackTraceLogType = Application.GetStackTraceLogType(LogType.Log);
+                var stackTraceLogType = Application.GetStackTraceLogType(logType);
 
                 Application.SetStackTraceLogType(logType, StackTraceLogType.None);
 
                 resumeDictionary.Add(logType, stackTraceLogType);
             }
+        }
+
+        public DisableStackTraceScope(LogType logType)
+        {
+            resumeDictionary = new Dictionary<LogType, StackTraceLogType>();
+
+            var stackTraceLogType = Application.GetStackTraceLogType(logType);
+
+            Application.SetStackTraceLogType(logType, StackTraceLogType.None);
+
+            resumeDictionary.Add(logType, stackTraceLogType);
         }
 
         protected override void CloseScope()
