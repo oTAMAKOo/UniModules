@@ -38,58 +38,6 @@ namespace VisualStudioToolsUnity
         };
 
         /// <summary>
-        /// プロジェクト ファイル (.csproj) 内に C# 言語バージョン (&lt;LangVersion&gt;) を追加.
-        /// </summary>
-        public static void SetCSharpLangVersion(ProjectFileGenerationArgs args, double langVersion)
-        {
-            // UnityVersion が書いてあるノードを取得.
-            var document = args.Content;
-            XElement unityVersionNode = null;
-
-            if (document != null)
-            {
-                unityVersionNode = document.Root.Nodes()
-                    .OfType<XElement>()
-                    .Where(x => x.Name.LocalName == "PropertyGroup")
-                    .SelectMany(x => x.Nodes())
-                    .Where(x => x != null)
-                    .OfType<XElement>()
-                    .SingleOrDefault(x => x.Name.LocalName == "UnityVersion");
-            }
-
-            // UnityVersion と同じところに (同じ親の子として) LangVersion を書き込む.
-
-            if(unityVersionNode != null && unityVersionNode.Parent != null)
-            {
-                var root = document.Root != null ? document.Root.Name.Namespace : null;
-
-                unityVersionNode.Parent.Add(new XElement(root + "LangVersion", langVersion));
-            }
-        }
-
-        /// <summary>
-        /// プロジェクト ファイル (.csproj) 内に既定の名前空間の設定を追加するためのフック処理を実行.
-        /// </summary>
-        public static void SetRootNamespace(ProjectFileGenerationArgs args, string @namespace)
-        {
-            if (!string.IsNullOrEmpty(@namespace) && args.Content.Root != null)
-            {
-                var node = args.Content.Root.Nodes()
-                    .OfType<XElement>()
-                    .Where(x => x.Name.LocalName == "PropertyGroup")
-                    .SelectMany(x => x.Nodes())
-                    .Where(x => x != null)
-                    .OfType<XElement>()
-                    .SingleOrDefault(x => x.Name.LocalName == "RootNamespace");
-
-                if (node != null)
-                {
-                    node.SetValue(@namespace);
-                }
-            }
-        }
-
-        /// <summary>
         /// プロジェクト ファイル (.csproj) 内から 不要な.Lang への参照を削除するためのフック処理を実行.
         /// </summary>
         public static void ExcludeAnotherLanguageReference(ProjectFileGenerationArgs args)
