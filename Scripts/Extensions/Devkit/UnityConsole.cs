@@ -66,7 +66,7 @@ namespace Modules.Devkit
 
             if (DisableEventNames.Contains(eventName)) { return; }
 
-            using (new DisableStackTraceScope(LogType.Log))
+            using (new DisableStackTraceScope())
             {
                 var colorCode = color.ColorToHex(false);
 
