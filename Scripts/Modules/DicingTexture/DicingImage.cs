@@ -130,38 +130,7 @@ namespace Modules.Dicing
         {
             get { return sourceTexture != null ? currentTextureName : null; }
 
-            set
-            {
-                if (dicingTexture == null) { return; }
-
-                var textureName = Path.GetFileNameWithoutExtension(value);
-
-                if (value != null)
-                {
-                    if (sourceTexture == null || currentTextureName != textureName)
-                    {
-                        if (CheckCrossFade(textureName))
-                        {
-                            StartCrossFade();
-                        }
-
-                        sourceTexture = dicingTexture.GetDicingSource(textureName);
-                        currentTextureName = textureName;
-
-                        if (sourceTexture == null)
-                        {
-                            Debug.LogErrorFormat("This texture is not found. {0}", textureName);
-                        }
-
-                        SetAllDirty();
-                    }
-                }
-                else
-                {
-                    sourceTexture = null;
-                    currentTextureName = null;
-                }
-            }
+            set { SetPatternName(value); }
         }
 
         //----- method -----
@@ -430,6 +399,39 @@ namespace Modules.Dicing
             crossFadeTextureName = null;
 
             SetAllDirty();
+        }
+
+        private void SetPatternName(string patternName)
+        {
+            if (dicingTexture == null) { return; }
+
+            var textureName = Path.GetFileNameWithoutExtension(patternName);
+
+            if (patternName != null)
+            {
+                if (sourceTexture == null || currentTextureName != textureName)
+                {
+                    if (CheckCrossFade(textureName))
+                    {
+                        StartCrossFade();
+                    }
+
+                    sourceTexture = dicingTexture.GetDicingSource(textureName);
+                    currentTextureName = textureName;
+
+                    if (sourceTexture == null)
+                    {
+                        Debug.LogErrorFormat("This texture is not found. {0}", textureName);
+                    }
+
+                    SetAllDirty();
+                }
+            }
+            else
+            {
+                sourceTexture = null;
+                currentTextureName = null;
+            }
         }
     }
 }

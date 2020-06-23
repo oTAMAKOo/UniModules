@@ -179,7 +179,7 @@ namespace Modules.Dicing
                 result.Add(item);
             }
 
-            return result.ToArray();
+            return result.OrderBy(x => x.textureName, new NaturalComparer()).ToArray();
         }
 
         // 抽出した差分データを書き出し.
