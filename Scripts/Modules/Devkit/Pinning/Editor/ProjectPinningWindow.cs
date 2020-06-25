@@ -1,8 +1,13 @@
 ﻿
-using UnityEngine;
 using UnityEditor;
+using System;
+using System.Collections.Generic;
 using System.Linq;
+using Extensions;
+using Extensions.Devkit;
 using Modules.Devkit.Prefs;
+
+using Object = UnityEngine.Object;
 
 namespace Modules.Devkit.Pinning
 {
@@ -10,13 +15,21 @@ namespace Modules.Devkit.Pinning
     {
         //----- params -----
 
+        private const string PinnedPrefsKey = "ProjectPinningPrefs-Pinned";
+
+        [Serializable]
+        private sealed class SaveData
+        {
+            public string guid = null;
+
+            public string comment = null;
+        }
+
         //----- field -----
 
         //----- property -----
 
         protected override string WindowTitle { get { return "Project Pin"; } }
-
-        protected override string PinnedPrefsKey { get { return "ProjectPinningPrefs-Pinned"; } }
 
         //----- method -----
 
@@ -36,26 +49,64 @@ namespace Modules.Devkit.Pinning
 
         protected override void Save()
         {
-            var pinnedObjectGUIDs = pinnedObject
-                .Where(x => x != null)
-                .Select(x => AssetDatabase.AssetPathToGUID(AssetDatabase.GetAssetPath(x)))
-                .ToArray();
+            var saveData = new List<SaveData>();
 
-            ProjectPrefs.SetString(PinnedPrefsKey, string.Join(",", pinnedObjectGUIDs));
+            foreach (var item in pinning)
+            {
+                if (item == null || item.target == null){ continue; }
+
+                var guid = UnityEditorUtility.GetAssetGUID(item.target);
+
+                var data = new SaveData()
+                {
+                    guid = guid,
+                    comment = item.comment,
+                };
+
+                saveData.Add(data);
+            }
+
+            if (saveData.Any())
+            {
+                ProjectPrefs.Set(PinnedPrefsKey, saveData);
+            }
+            else
+            {
+                if (ProjectPrefs.HasKey(PinnedPrefsKey))
+                {
+                    ProjectPrefs.DeleteKey(PinnedPrefsKey);
+                }
+            }
         }
 
         protected override void Load()
         {
-            var pinned = ProjectPrefs.GetString(PinnedPrefsKey);
+            pinning = new List<PinnedItem>();
 
-            if (string.IsNullOrEmpty(pinned)) { return; }
+            var saveData = ProjectPrefs.Get<List<SaveData>>(PinnedPrefsKey, null);
 
-            pinnedObject = pinned
-                .Split(',')
-                .Select(x => AssetDatabase.GUIDToAssetPath(x))
-                .Select(x => AssetDatabase.LoadAssetAtPath<Object>(x))
-                .Where(x => x != null)
-                .ToList();
+            if (saveData == null) { return; }
+
+            foreach (var data in saveData)
+            {
+                if (string.IsNullOrEmpty(data.guid)){ continue; }
+
+                var assetPath = AssetDatabase.GUIDToAssetPath(data.guid);
+
+                if (string.IsNullOrEmpty(assetPath)){ continue;}
+
+                var asset = AssetDatabase.LoadAssetAtPath<Object>(assetPath);
+
+                if (asset == null) { continue; }
+
+                var item = new PinnedItem()
+                {
+                    target = asset,
+                    comment = data.comment,
+                };
+
+                pinning.Add(item);
+            }
         }
 
         protected override string GetToolTipText(Object item)

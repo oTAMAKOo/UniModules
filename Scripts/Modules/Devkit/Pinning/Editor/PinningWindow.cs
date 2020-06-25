@@ -1,9 +1,12 @@
 ﻿﻿﻿
 using UnityEngine;
 using UnityEditor;
+using System;
 using System.Linq;
 using System.Collections.Generic;
 using Extensions.Devkit;
+
+using Object = UnityEngine.Object;
 
 namespace Modules.Devkit.Pinning
 {
@@ -11,25 +14,34 @@ namespace Modules.Devkit.Pinning
     {
         //----- params -----
 
+        [Serializable]
+        protected sealed class PinnedItem
+        {
+            public Object target = null;
+
+            public string comment = null;
+        }
+
         //----- field -----
 
         [SerializeField]
-        protected List<Object> pinnedObject = null;
+        protected List<PinnedItem> pinning = null;
 
         private Vector2 scrollPosition = Vector2.zero;
+
+        private PinnedItem commentInputTarget = null;
 
         //----- property -----
 
         protected abstract string WindowTitle { get; }
-        protected abstract string PinnedPrefsKey { get; }
-
+        
         //----- method -----
 
-        public virtual void Initialize()
+        public void Initialize()
         {
             titleContent = new GUIContent(WindowTitle);
 
-            pinnedObject = new List<Object>();
+            pinning = new List<PinnedItem>();
 
             Load();
 
@@ -39,10 +51,14 @@ namespace Modules.Devkit.Pinning
         void OnEnable()
         {
             Load();
+
+            commentInputTarget = null;
         }
 
         void OnGUI()
         {
+            if (pinning == null){ return; }
+
             var e = Event.current;
 
             UpdatePinnedObject();
@@ -52,18 +68,25 @@ namespace Modules.Devkit.Pinning
                 if (GUILayout.Button("+", EditorStyles.toolbarButton, GUILayout.ExpandWidth(false)))
                 {
                     Pin(Selection.activeObject);
+
+                    commentInputTarget = null;
                 }
 
                 GUILayout.FlexibleSpace();
 
                 if (GUILayout.Button("Clear", EditorStyles.toolbarButton, GUILayout.Width(45f)))
                 {
-                    pinnedObject.Clear();
+                    pinning.Clear();
+
+                    commentInputTarget = null;
+
                     Save();
                 }
 
                 GUILayout.Space(4f);
             }
+
+            GUILayout.Space(2f);
 
             using (var scrollViewScope = new EditorGUILayout.ScrollViewScope(scrollPosition))
             {
@@ -71,18 +94,21 @@ namespace Modules.Devkit.Pinning
 
                 var iconSize = new Vector2(16f, 16f);
 
-                var labelStyle = GUI.skin.label;
+                var requestSave = false;
+
+                var labelStyle = new GUIStyle(GUI.skin.label);
+
                 labelStyle.alignment = TextAnchor.MiddleLeft;
 
                 EditorGUIUtility.SetIconSize(iconSize);
 
-                for (var i = 0; i < pinnedObject.Count; i++)
+                for (var i = 0; i < pinning.Count; i++)
                 {
-                    var item = pinnedObject[i];
+                    var item = pinning[i];
 
-                    if (item == null) { continue; }
+                    if (item == null || item.target == null) { continue; }
 
-                    var thumbnail = (Texture)AssetPreview.GetMiniThumbnail(item);
+                    var thumbnail = (Texture)AssetPreview.GetMiniThumbnail(item.target);
 
                     using (new EditorGUILayout.HorizontalScope())
                     {
@@ -92,7 +118,7 @@ namespace Modules.Devkit.Pinning
 
                             //------ icon ------
 
-                            var toolTipText = GetToolTipText(item);
+                            var toolTipText = GetToolTipText(item.target);
 
                             var originLabelWidth = EditorGUIUtility.labelWidth;
 
@@ -107,11 +133,36 @@ namespace Modules.Devkit.Pinning
 
                             //------ label ------
 
-                            var labelText = GetLabelName(item);
+                            var labelText = GetLabelName(item.target);
 
                             var labelContent = new GUIContent(labelText, toolTipText);
 
                             GUILayout.Label(labelContent, labelStyle, GUILayout.Height(18f));
+
+                            //------ comment ------
+
+                            if (commentInputTarget != null)
+                            {
+                                EditorGUI.BeginChangeCheck();
+
+                                var comment = EditorGUILayout.DelayedTextField(item.comment);
+
+                                if (EditorGUI.EndChangeCheck())
+                                {
+                                    item.comment = comment;
+
+                                    commentInputTarget = null;
+
+                                    requestSave = true;
+                                }
+                            }
+                            else
+                            {
+                                if (!string.IsNullOrEmpty(item.comment))
+                                {
+                                    EditorGUILayout.LabelField(item.comment, EditorStyles.miniLabel);
+                                }
+                            }
                         }
 
                         //------ mouse action ------
@@ -135,6 +186,11 @@ namespace Modules.Devkit.Pinning
                     }
                 }
 
+                if (requestSave)
+                {
+                    Save();
+                }
+
                 EditorGUIUtility.SetIconSize(originIconSize);
 
                 scrollPosition = scrollViewScope.scrollPosition;
@@ -144,32 +200,32 @@ namespace Modules.Devkit.Pinning
                 {
                     case EventType.DragUpdated:
                     case EventType.DragPerform:
-
-                        var validate = ValidatePinned(DragAndDrop.objectReferences);
-
-                        DragAndDrop.visualMode = validate ? DragAndDropVisualMode.Copy : DragAndDropVisualMode.Rejected;
-
-                        if (e.type == EventType.DragPerform)
                         {
-                            DragAndDrop.AcceptDrag();
-                            DragAndDrop.activeControlID = 0;
+                            var validate = ValidatePinned(DragAndDrop.objectReferences);
 
-                            if (validate)
+                            DragAndDrop.visualMode = validate ? DragAndDropVisualMode.Copy : DragAndDropVisualMode.Rejected;
+
+                            if (e.type == EventType.DragPerform)
                             {
-                                Pin(DragAndDrop.objectReferences);
+                                DragAndDrop.AcceptDrag();
+                                DragAndDrop.activeControlID = 0;
+
+                                if (validate)
+                                {
+                                    Pin(DragAndDrop.objectReferences);
+                                }
                             }
                         }
-
                         break;
                 }
             }
         }
 
-        private void MouseLeftButton(Rect rect, Event e, Object item)
+        private void MouseLeftButton(Rect rect, Event e, PinnedItem item)
         {
             if (e.type == EventType.MouseDown)
             {
-                OnMouseLeftDown(item, e.clickCount);
+                OnMouseLeftDown(item.target, e.clickCount);
             }
 
             if (e.type == EventType.DragPerform || e.type == EventType.DragUpdated)
@@ -187,7 +243,7 @@ namespace Modules.Devkit.Pinning
                         var toAbove = new Rect(rect.position, new Vector2(rect.width, rect.height * 0.5f))
                             .Contains(e.mousePosition);
 
-                        Pin(DragAndDrop.objectReferences, item, toAbove);
+                        Pin(DragAndDrop.objectReferences, item.target, toAbove);
                     }
 
                     e.Use();
@@ -197,22 +253,30 @@ namespace Modules.Devkit.Pinning
             if (e.type == EventType.MouseDrag)
             {
                 DragAndDrop.PrepareStartDrag();
-                DragAndDrop.objectReferences = new[] { item };
+                DragAndDrop.objectReferences = new[] { item.target };
                 DragAndDrop.StartDrag("Dragging");
 
                 e.Use();
             }
         }
 
-        private void MouseRightButton(Rect rect, Event e, Object item)
+        private void MouseRightButton(Rect rect, Event e, PinnedItem item)
         {
             if (e.type == EventType.MouseDown)
             {
                 var menu = new GenericMenu();
 
+                GenericMenu.MenuFunction onMenuCommentCommand = () =>
+                {
+                    commentInputTarget = item;
+                };
+
+                menu.AddItem(new GUIContent("Comment"), false, onMenuCommentCommand);
+
                 GenericMenu.MenuFunction onMenuRemoveCommand = () =>
                 {
-                    pinnedObject.Remove(item);
+                    pinning.Remove(item);
+
                     Save();
                 };
 
@@ -235,22 +299,26 @@ namespace Modules.Devkit.Pinning
         {
             foreach (var obj in targets)
             {
-                if (pinnedObject.Contains(obj))
+                var item = pinning.FirstOrDefault(x => x.target == obj);
+
+                if (item != null)
                 {
-                    pinnedObject.Remove(obj);
+                    pinning.Remove(item);
                 }
 
-                if (adjacentObject != null && pinnedObject.Any())
+                var newItem = new PinnedItem() { target = obj };
+
+                if (adjacentObject != null && pinning.Any())
                 {
-                    var insertion = pinnedObject.IndexOf(adjacentObject) + (toAbove ? 0 : 1);
+                    var insertion = pinning.FindIndex(x => x.target == adjacentObject) + (toAbove ? 0 : 1);
 
-                    var index = Mathf.Clamp(insertion, 0, pinnedObject.Count);
+                    var index = Mathf.Clamp(insertion, 0, pinning.Count);
 
-                    pinnedObject.Insert(index, obj);
+                    pinning.Insert(index, newItem);
                 }
                 else
                 {
-                    pinnedObject.Add(obj);
+                    pinning.Add(newItem);
                 }
             }
 
@@ -262,11 +330,11 @@ namespace Modules.Devkit.Pinning
         protected virtual void UpdatePinnedObject()
         {
             // NullになったObjectの削除.
-            for (var i = pinnedObject.Count - 1; 0 <= i; --i)
+            for (var i = pinning.Count - 1; 0 <= i; --i)
             {
-                if (pinnedObject[i] == null)
+                if (pinning[i].target == null)
                 {
-                    pinnedObject.RemoveAt(i);
+                    pinning.RemoveAt(i);
                 }
             }
         }

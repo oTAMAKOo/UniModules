@@ -2,10 +2,14 @@
 using UnityEngine;
 using UnityEditor;
 using UnityEngine.SceneManagement;
+using System;
+using System.Collections.Generic;
 using System.Linq;
 using Extensions;
 using Extensions.Devkit;
 using Modules.Devkit.Prefs;
+
+using Object = UnityEngine.Object;
 
 namespace Modules.Devkit.Pinning
 {
@@ -13,22 +17,23 @@ namespace Modules.Devkit.Pinning
     {
         //----- params -----
 
+        private const string PinnedPrefsKeyFormat = "HierarchyPinningPrefs-Pinned-{0}";
+
+        [Serializable]
+        private sealed class SaveData
+        {
+            public int identifier = -1;
+
+            public string comment = null;
+        }
+
         //----- field -----
 
-        private Scene currentScene;
-        private int[] pinnedObjectIds = null;
+        private string currentScenePath = null;
 
         //----- property -----
 
         protected override string WindowTitle { get { return "Hierarchy Pin"; } }
-
-        protected override string PinnedPrefsKey
-        {
-            get
-            {
-                return string.Format("HierarchyPinningPrefs-Pinned-{0}", currentScene.path.GetHashCode());
-            }
-        }
 
         //----- method -----
 
@@ -46,49 +51,81 @@ namespace Modules.Devkit.Pinning
             }
         }
 
-        public override void Initialize()
-        {
-            base.Initialize();
-
-            EditorApplication.hierarchyChanged += () => { UpdatePinnedObjectIds(); };
-        }
-
         protected override void Save()
         {
-            currentScene = SceneManager.GetActiveScene();
+            var prefsKey = GetPinnedPrefsKey();
 
-            UpdatePinnedObjectIds();
+            var saveData = new List<SaveData>();
 
-            ProjectPrefs.SetString(PinnedPrefsKey, string.Join(",", pinnedObjectIds.Select(x => x.ToString()).ToArray()));
+            foreach (var item in pinning)
+            {
+                if (item == null || item.target == null) { continue; }
+
+                var identifier = LocalIdentifierInFile.Get(item.target);
+
+                if (identifier == -1){ continue; }
+
+                var data = new SaveData()
+                {
+                    identifier = identifier,
+                    comment = item.comment,
+                };
+
+                saveData.Add(data);
+            }
+
+            if (saveData.Any())
+            {
+                ProjectPrefs.Set(prefsKey, saveData);
+            }
+            else
+            {
+                if (ProjectPrefs.HasKey(prefsKey))
+                {
+                    ProjectPrefs.DeleteKey(prefsKey);
+                }
+            }
         }
 
         protected override void Load()
         {
-            currentScene = SceneManager.GetActiveScene();
+            pinning = new List<PinnedItem>();
 
-            var pinned = ProjectPrefs.GetString(PinnedPrefsKey);
+            var prefsKey = GetPinnedPrefsKey();
 
-            if (string.IsNullOrEmpty(pinned)) { return; }
+            var saveData = ProjectPrefs.Get<List<SaveData>>(prefsKey, null);
 
-            // Hierarchy上のGameObjectを検索して取得.
-            var hierarchyObjects = UnityEditorUtility.FindAllObjectsInHierarchy();
+            if (saveData == null) { return; }
 
-            pinnedObject = pinned
-                .Split(',')
-                .Select(x => hierarchyObjects.FirstOrDefault(y => LocalIdentifierInFile.Get(y).ToString() == x) as Object)
-                .Where(x => x != null)
-                .ToList();
+            if (saveData.Any())
+            {
+                // Hierarchy上のGameObjectを検索して取得.
+                var hierarchyObjects = UnityEditorUtility.FindAllObjectsInHierarchy();
 
-            UpdatePinnedObjectIds();
+                foreach (var data in saveData)
+                {
+                    if (data.identifier == -1){ continue; }
+
+                    var targetObject = hierarchyObjects.FirstOrDefault(y => LocalIdentifierInFile.Get(y) == data.identifier) as Object;
+
+                    if (targetObject == null) { continue; }
+
+                    var item = new PinnedItem()
+                    {
+                        target = targetObject,
+                        comment = data.comment,
+                    };
+
+                    pinning.Add(item);
+                }
+            }
         }
 
-        private void UpdatePinnedObjectIds()
+        private string GetPinnedPrefsKey()
         {
-            pinnedObjectIds = pinnedObject
-                .Select(x => x as GameObject)
-                .Where(x => x != null)
-                .Select(x => LocalIdentifierInFile.Get(x))
-                .ToArray();
+            var currentScene = SceneManager.GetActiveScene();
+            
+            return string.Format(PinnedPrefsKeyFormat, currentScene.path.GetCRC());
         }
 
         protected override string GetToolTipText(Object item)
@@ -131,10 +168,15 @@ namespace Modules.Devkit.Pinning
         {
             var scene = SceneManager.GetActiveScene();
 
-            if (currentScene != scene)
+            if (!string.IsNullOrEmpty(currentScenePath))
             {
-                Load();
+                if (currentScenePath != scene.path)
+                {
+                    Load();
+                }
             }
+
+            currentScenePath = scene.path;
 
             base.UpdatePinnedObject();
         }
