@@ -18,15 +18,15 @@ namespace Modules.StateControl
 
         private LifetimeDisposable lifetimeDisposable = null;
 
-        private IState<T> currentState = null;
+        private IStateNode<T> currentState = null;
 
-        private Dictionary<T, IState<T>> stateTable = null;
+        private Dictionary<T, IStateNode<T>> stateTable = null;
 
         private IDisposable changeStateDisposable = null;
 
         //----- property -----
 
-        public T Current { get { return currentState != null ? currentState.Type : default; } }
+        public T Current { get { return currentState != null ? currentState.State : default; } }
 
         //----- method -----
 
@@ -34,19 +34,19 @@ namespace Modules.StateControl
         {
             lifetimeDisposable = new LifetimeDisposable();
 
-            stateTable = new Dictionary<T, IState<T>>();
+            stateTable = new Dictionary<T, IStateNode<T>>();
         }
 
-        /// <summary> 登録済みのステートを取得 </summary>
-        public TState GetState<TState>() where TState : class, IState<T>
+        /// <summary> 登録済みのノードを取得 </summary>
+        public TStateNode GetNode<TStateNode>(T state) where TStateNode : class, IStateNode<T>
         {
-            return stateTable.Values.FirstOrDefault(x => x is TState) as TState;
+            return stateTable.GetValueOrDefault(state) as TStateNode;
         }
 
         /// <summary> ステートを登録 </summary>
-        public void Register(IState<T> stateInstance)
+        public void Register(IStateNode<T> stateInstance)
         {
-            var type = stateInstance.Type;
+            var type = stateInstance.State;
 
             if (stateTable.ContainsKey(type))
             {
@@ -112,7 +112,7 @@ namespace Modules.StateControl
 
             // 引数を設定.
 
-            var stateClass = currentState as State<T, TArgument>;
+            var stateClass = currentState as StateNode<T, TArgument>;
 
             if (stateClass != null)
             {
