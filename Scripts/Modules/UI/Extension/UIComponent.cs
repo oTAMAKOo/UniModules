@@ -4,7 +4,7 @@ using Extensions;
 
 namespace Modules.UI.Extension
 {
-    [ExecuteInEditMode]
+    [ExecuteAlways]
     public abstract class UIComponentBehaviour : MonoBehaviour
     {
         //----- params -----

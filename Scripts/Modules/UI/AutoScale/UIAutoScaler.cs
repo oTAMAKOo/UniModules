@@ -5,7 +5,7 @@ using Extensions;
 
 namespace Modules.UI
 {
-    [ExecuteInEditMode]
+    [ExecuteAlways]
 	public sealed class UIAutoScaler : UIBehaviour
 	{
 		//----- params -----

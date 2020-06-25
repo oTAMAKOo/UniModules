@@ -3,7 +3,6 @@ using UnityEngine;
 using Unity.Linq;
 using System;
 using System.Collections;
-using System.Collections.Generic;
 using System.Linq;
 using UniRx;
 using Extensions;
@@ -41,7 +40,7 @@ namespace Modules.Particle
         Death,
     }
 
-    [ExecuteInEditMode]
+    [ExecuteAlways]
     [DisallowMultipleComponent]
     public sealed partial class ParticlePlayer : MonoBehaviour
     {

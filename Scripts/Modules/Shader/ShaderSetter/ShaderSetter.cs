@@ -1,15 +1,11 @@
 ﻿﻿﻿﻿﻿﻿﻿﻿
 using UnityEngine;
 using UnityEngine.UI;
-using System;
-using System.Linq;
-using System.Collections.Generic;
-using UniRx;
 using Extensions;
 
 namespace Modules.Shaders
 {
-    [ExecuteInEditMode]
+    [ExecuteAlways]
     public sealed class ShaderSetter : MonoBehaviour
 	{
         //----- params -----

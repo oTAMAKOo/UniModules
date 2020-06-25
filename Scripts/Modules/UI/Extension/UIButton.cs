@@ -7,7 +7,7 @@ using Extensions;
 
 namespace Modules.UI.Extension
 {
-    [ExecuteInEditMode]
+    [ExecuteAlways]
     [RequireComponent(typeof(Button))]
     public abstract class UIButton : UIComponent<Button>
     {

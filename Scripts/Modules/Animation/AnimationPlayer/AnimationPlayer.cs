@@ -9,7 +9,7 @@ using Modules.StateMachine;
 
 namespace Modules.Animation
 {
-    [ExecuteInEditMode]
+    [ExecuteAlways]
     [DisallowMultipleComponent]
     [RequireComponent(typeof(Animator))]
     public sealed class AnimationPlayer : MonoBehaviour, IStateMachineEventHandler

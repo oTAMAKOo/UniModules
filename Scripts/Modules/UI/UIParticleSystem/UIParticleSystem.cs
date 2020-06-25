@@ -9,7 +9,7 @@ using Extensions;
 
 namespace Modules.UI.Particle
 {
-    [ExecuteInEditMode]
+    [ExecuteAlways]
     [RequireComponent(typeof(CanvasRenderer), typeof(ParticleSystem))]
     public sealed class UIParticleSystem : MaskableGraphic
     {

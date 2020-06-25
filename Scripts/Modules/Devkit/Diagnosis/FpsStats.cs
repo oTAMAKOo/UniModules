@@ -6,7 +6,7 @@ using Extensions;
 
 namespace Modules.Devkit.Diagnosis
 {
-    [ExecuteInEditMode()]
+    [ExecuteAlways]
     public sealed class FpsStats : MonoBehaviour
     {
         //----- params -----

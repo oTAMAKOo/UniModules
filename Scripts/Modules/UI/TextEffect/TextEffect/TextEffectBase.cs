@@ -1,29 +1,11 @@
 ﻿
 using UnityEngine;
 using UnityEngine.UI;
-using Unity.Linq;
-using System;
-using System.Collections;
-using System.Linq;
-using System.Collections.Generic;
-using UniRx;
 using Extensions;
-
-#if ENABLE_SOFT_MASK
-
-using SoftMasking;
-
-#endif
-
-#if UNITY_EDITOR
-
-using UnityEditor.Callbacks;
-
-#endif
 
 namespace Modules.UI.TextEffect
 {
-    [ExecuteInEditMode]
+    [ExecuteAlways]
     public abstract class TextEffectBase : MonoBehaviour
     {
         //----- params -----

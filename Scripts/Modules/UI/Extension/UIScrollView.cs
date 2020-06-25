@@ -9,7 +9,7 @@ using Extensions;
 
 namespace Modules.UI.Extension
 {
-    [ExecuteInEditMode]
+    [ExecuteAlways]
     [RequireComponent(typeof(ScrollRect))]
     public abstract class UIScrollView : UIComponent<ScrollRect>
     {

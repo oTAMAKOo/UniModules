@@ -12,7 +12,7 @@ namespace Modules.Hyphenation
 {
     // ※ BestFitと併用すると相互にサイズをし合い最終サイズが正しく取得できない為、併用しない.
 
-    [ExecuteInEditMode]
+    [ExecuteAlways]
     [RequireComponent(typeof(Text))]
     public sealed class UITextHyphenation : UIBehaviour
     {

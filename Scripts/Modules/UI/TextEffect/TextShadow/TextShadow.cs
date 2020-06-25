@@ -7,7 +7,7 @@ namespace Modules.UI.TextEffect
 {
     // ※ このComponentを使用するにはTextに指定されたFontのmetaデータのcharacterPaddingを4以上に変更する必要があります.
 
-    [ExecuteInEditMode]
+    [ExecuteAlways]
     [DisallowMultipleComponent]
     [RequireComponent(typeof(Text))]
     public sealed class TextShadow : TextEffectBase

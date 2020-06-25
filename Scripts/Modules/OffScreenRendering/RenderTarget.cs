@@ -1,14 +1,10 @@
 ﻿
 using UnityEngine;
-using System;
-using System.Linq;
-using System.Collections.Generic;
-using UniRx;
 using Extensions;
 
 namespace Modules.OffScreenRendering
 {
-    [ExecuteInEditMode]
+    [ExecuteAlways]
     [RequireComponent(typeof(Camera))]
     public sealed class RenderTarget : MonoBehaviour
     {

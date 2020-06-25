@@ -9,7 +9,7 @@ using Modules.UI.Extension;
 
 namespace Modules.LetterBox
 {
-    [ExecuteInEditMode]
+    [ExecuteAlways]
     public sealed class LetterBox : SingletonMonoBehaviour<LetterBox>
     {
         //----- params -----

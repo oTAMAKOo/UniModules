@@ -8,7 +8,7 @@ using UniRx;
 
 namespace Modules.GameText.Components
 {
-    [ExecuteInEditMode]
+    [ExecuteAlways]
     [DisallowMultipleComponent]
     public sealed partial class GameTextSetter : MonoBehaviour
 	{

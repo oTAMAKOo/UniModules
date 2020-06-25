@@ -5,7 +5,7 @@ using Extensions;
 
 namespace Modules.SortingLayerSetter
 {
-    [ExecuteInEditMode]
+    [ExecuteAlways]
     public sealed class SortingLayerSetter : MonoBehaviour
     {
         //----- field -----
