@@ -67,24 +67,24 @@ namespace Extensions
         }
 
         /// <summary> Prefabからインスタンス生成 </summary>
-        public static GameObject Instantiate(GameObject parent, UnityEngine.Object origin, bool instantiateInWorldSpace = false)
+        public static GameObject Instantiate(GameObject parent, UnityEngine.Object original, bool instantiateInWorldSpace = false)
         {
-            if (origin != null)
+            if (original != null)
             {
                 GameObject gameObject = null;
 
                 if (parent == null)
                 {
-                    gameObject = UnityEngine.Object.Instantiate(origin) as GameObject;
+                    gameObject = UnityEngine.Object.Instantiate(original) as GameObject;
                 }
                 else
                 {
-                    gameObject = UnityEngine.Object.Instantiate(origin, parent.transform, instantiateInWorldSpace) as GameObject;
+                    gameObject = UnityEngine.Object.Instantiate(original, parent.transform, instantiateInWorldSpace) as GameObject;
                 }
 
                 if (gameObject != null)
                 {
-                    gameObject.transform.name = origin.name + PrefabTag;
+                    gameObject.transform.name = original.name + PrefabTag;
                 }
 
                 return gameObject;
@@ -94,13 +94,13 @@ namespace Extensions
         }
 
         /// <summary> Prefabから複数のインスタンスを高速生成 </summary>
-        public static IEnumerable<GameObject> Instantiate(GameObject parent, UnityEngine.Object origin, int count, bool instantiateInWorldSpace = false)
+        public static IEnumerable<GameObject> Instantiate(GameObject parent, UnityEngine.Object original, int count, bool instantiateInWorldSpace = false)
         {
             var list = new List<GameObject>();
 
             var instanceName = string.Empty;
 
-            var sourceObject = origin;
+            var sourceObject = original;
 
             for (var i = 0; i < count; i++)
             {
@@ -132,17 +132,17 @@ namespace Extensions
         }
 
         /// <summary> Prefab から生成 + Component取得 </summary>
-        public static T Instantiate<T>(GameObject parent, UnityEngine.Object origin, bool instantiateInWorldSpace = false) where T : Component
+        public static T Instantiate<T>(GameObject parent, UnityEngine.Object original, bool instantiateInWorldSpace = false) where T : Component
         {
-            var gameObject = Instantiate(parent, origin, instantiateInWorldSpace);
+            var gameObject = Instantiate(parent, original, instantiateInWorldSpace);
 
             return GetComponent<T>(gameObject);
         }
 
         /// <summary> Prefabから複数のインスタンスを高速生成 + Component取得 </summary>
-        public static IEnumerable<T> Instantiate<T>(GameObject parent, UnityEngine.Object origin, int count, bool instantiateInWorldSpace = false) where T : Component
+        public static IEnumerable<T> Instantiate<T>(GameObject parent, UnityEngine.Object original, int count, bool instantiateInWorldSpace = false) where T : Component
         {
-            var gameObjects = Instantiate(parent, origin, count, instantiateInWorldSpace);
+            var gameObjects = Instantiate(parent, original, count, instantiateInWorldSpace);
             
             return gameObjects.Select(x => GetComponent<T>(x));
         }
