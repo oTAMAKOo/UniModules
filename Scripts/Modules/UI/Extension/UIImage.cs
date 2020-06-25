@@ -4,7 +4,7 @@ using UnityEngine.UI;
 
 namespace Modules.UI.Extension
 {
-    [ExecuteInEditMode]
+    [ExecuteAlways]
     [RequireComponent(typeof(Image))]
     public abstract partial class UIImage : UIComponent<Image>
     {

@@ -5,7 +5,7 @@ using Extensions;
 
 namespace Extensions
 {
-    [ExecuteInEditMode]
+    [ExecuteAlways]
     public abstract class SingletonMonoBehaviour<T> : MonoBehaviour where T : SingletonMonoBehaviour<T>
     {
         //----- param -----

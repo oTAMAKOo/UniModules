@@ -9,7 +9,7 @@ using Modules.UI.Extension;
 
 namespace Modules.UI.Reactive
 {
-    [ExecuteInEditMode]
+    [ExecuteAlways]
     [RequireComponent(typeof(UIText))]
     public sealed class ButtonReactiveText : MonoBehaviour
     {

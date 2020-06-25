@@ -4,7 +4,7 @@ using UnityEngine.UI;
 
 namespace Modules.UI.Extension
 {
-    [ExecuteInEditMode]
+    [ExecuteAlways]
     [RequireComponent(typeof(Slider))]
     public abstract class UISlider : UIComponent<Slider>
     {

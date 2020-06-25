@@ -7,7 +7,7 @@ using Extensions;
 
 namespace Modules.UI
 {
-    [ExecuteInEditMode]
+    [ExecuteAlways]
     public sealed class GraphicGroup : Graphic
     {
         //----- params -----

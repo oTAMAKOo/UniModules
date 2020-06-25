@@ -9,7 +9,7 @@ using Extensions;
 
 namespace Modules.UI.TextColorTag
 {
-    [ExecuteInEditMode]
+    [ExecuteAlways]
     [RequireComponent(typeof(Text))]
     public sealed class TextColorTag : MonoBehaviour
     {

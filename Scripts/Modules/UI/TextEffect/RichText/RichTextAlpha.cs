@@ -7,7 +7,7 @@ using Extensions;
 
 namespace Modules.UI
 {
-    [ExecuteInEditMode]
+    [ExecuteAlways]
     [RequireComponent(typeof(Text))]
     public sealed class RichTextAlpha : MonoBehaviour
     {

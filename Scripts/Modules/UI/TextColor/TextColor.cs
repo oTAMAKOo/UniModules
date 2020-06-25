@@ -9,7 +9,7 @@ using Modules.UI.TextEffect;
 
 namespace Modules.UI.TextColor
 {
-    [ExecuteInEditMode]
+    [ExecuteAlways]
     [RequireComponent(typeof(Text))]
     public sealed class TextColor : MonoBehaviour
     {

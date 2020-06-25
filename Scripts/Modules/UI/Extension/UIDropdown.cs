@@ -6,7 +6,7 @@ using UniRx;
 
 namespace Modules.UI.Extension
 {
-    [ExecuteInEditMode]
+    [ExecuteAlways]
     [RequireComponent(typeof(Dropdown))]
     public abstract class UIDropdown : UIComponent<Dropdown>
     {

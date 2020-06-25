@@ -6,7 +6,7 @@ using UniRx;
 
 namespace Modules.UI.Extension
 {
-    [ExecuteInEditMode]
+    [ExecuteAlways]
     [RequireComponent(typeof(Toggle))]
     public abstract class UIToggle : UIComponent<Toggle>
     {

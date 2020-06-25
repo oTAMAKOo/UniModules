@@ -9,7 +9,7 @@ using Extensions;
 
 namespace Modules.UI.Extension
 {
-    [ExecuteInEditMode]
+    [ExecuteAlways]
     [RequireComponent(typeof(InputField))]
     public abstract class UIInputField : UIComponent<InputField>
     {

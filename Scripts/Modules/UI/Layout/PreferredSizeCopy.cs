@@ -7,7 +7,7 @@ using Extensions.Serialize;
 
 namespace Modules.UI.Layout
 {
-    [ExecuteInEditMode]
+    [ExecuteAlways]
     [RequireComponent(typeof(RectTransform))]
     public sealed class PreferredSizeCopy : LayoutElement, ILayoutSelfController
     {

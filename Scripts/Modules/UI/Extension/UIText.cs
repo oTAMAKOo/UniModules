@@ -9,7 +9,7 @@ using Modules.UI.TextEffect;
 
 namespace Modules.UI.Extension
 {
-    [ExecuteInEditMode]
+    [ExecuteAlways]
     [RequireComponent(typeof(Text))]
     public abstract partial class UIText : UIComponent<Text>
     {

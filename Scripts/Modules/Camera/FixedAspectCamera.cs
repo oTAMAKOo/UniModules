@@ -5,7 +5,7 @@ using System.Collections;
 
 namespace Modules.FixedAspectCamera
 {
-    [ExecuteInEditMode]
+    [ExecuteAlways]
     [RequireComponent(typeof(Camera))]
     public sealed class FixedAspectCamera : MonoBehaviour
     {

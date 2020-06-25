@@ -4,7 +4,7 @@ using UnityEngine.UI;
 
 namespace Modules.UI.Extension
 {
-    [ExecuteInEditMode]
+    [ExecuteAlways]
     [RequireComponent(typeof(RawImage))]
     public abstract partial class UIRawImage : UIComponent<RawImage>
     {

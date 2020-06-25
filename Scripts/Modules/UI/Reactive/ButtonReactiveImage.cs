@@ -6,7 +6,7 @@ using Modules.UI.Extension;
 
 namespace Modules.UI.Reactive
 {
-    [ExecuteInEditMode]
+    [ExecuteAlways]
     [RequireComponent(typeof(UIImage))]
     public sealed class ButtonReactiveImage : MonoBehaviour
     {
