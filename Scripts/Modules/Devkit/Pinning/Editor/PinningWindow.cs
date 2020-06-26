@@ -51,8 +51,18 @@ namespace Modules.Devkit.Pinning
         void OnEnable()
         {
             Load();
+        }
 
+        void OnFocus()
+        {
             commentInputTarget = null;
+        }
+
+        void OnLostFocus()
+        {
+            commentInputTarget = null;
+
+            Repaint();
         }
 
         void OnGUI()
@@ -141,7 +151,7 @@ namespace Modules.Devkit.Pinning
 
                             //------ comment ------
 
-                            if (commentInputTarget != null)
+                            if (item == commentInputTarget)
                             {
                                 EditorGUI.BeginChangeCheck();
 
