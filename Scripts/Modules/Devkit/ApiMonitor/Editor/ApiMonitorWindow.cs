@@ -114,7 +114,7 @@ namespace Modules.Networking
         {
             var apiMonitorBridge = ApiMonitorBridge.Instance;
 
-            using (new EditorGUILayout.VerticalScope(EditorLayoutTools.TextAreaStyle))
+            using (new EditorGUILayout.VerticalScope(EditorStyles.textArea))
             {
                 GUILayout.Space(2f);
 

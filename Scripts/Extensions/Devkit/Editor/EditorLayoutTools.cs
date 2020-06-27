@@ -13,16 +13,6 @@ namespace Extensions.Devkit
     {
         //----- params -----
 
-        #if UNITY_4_7 || UNITY_5_5 || UNITY_5_6
-        
-        public static string TextAreaStyle = "AS TextArea";
-        
-        #else
-        
-        public static string TextAreaStyle = "TextArea";
-        
-        #endif
-
         public struct IntRange
         {
             public int x;
@@ -196,10 +186,10 @@ namespace Extensions.Devkit
                 else
                 {
                     GUILayout.Label(leftCaption + " ", GUILayout.Width(48f));
-                    GUILayout.Label(x.ToString(), TextAreaStyle, GUILayout.MinWidth(30f));
+                    GUILayout.Label(x.ToString(), EditorStyles.textArea, GUILayout.MinWidth(30f));
 
                     GUILayout.Label(rightCaption + " ", GUILayout.Width(48f));
-                    GUILayout.Label(y.ToString(), TextAreaStyle, GUILayout.MinWidth(30f));
+                    GUILayout.Label(y.ToString(), EditorStyles.textArea, GUILayout.MinWidth(30f));
                 }
 
                 SetLabelWidth(originLabelWidth);
@@ -458,8 +448,7 @@ namespace Extensions.Devkit
                 fontStyle = fontStyle,
                 normal = labelStyleState,
             };
-
-            var style = new GUIStyle(TextAreaStyle);
+            
             var size = labelStyle.CalcSize(new GUIContent(text));
 
             using (new BackgroundColorScope(backgroundColor.HasValue ? backgroundColor.Value : BackgroundColor))
@@ -468,7 +457,7 @@ namespace Extensions.Devkit
                     new GUILayoutOption[] { GUILayout.Width(width.Value), GUILayout.Height(size.y) } :
                     new GUILayoutOption[] { GUILayout.Height(size.y) };
 
-                using (new EditorGUILayout.HorizontalScope(style, layoutOptions))
+                using (new EditorGUILayout.HorizontalScope(EditorStyles.textArea, layoutOptions))
                 {
                     GUILayout.Space(10f);
 
@@ -725,7 +714,7 @@ namespace Extensions.Devkit
 
         public static void BeginContents()
         {
-            EditorGUILayout.BeginHorizontal(TextAreaStyle);
+            EditorGUILayout.BeginHorizontal(EditorStyles.textArea);
 
             EditorGUILayout.BeginVertical();
 

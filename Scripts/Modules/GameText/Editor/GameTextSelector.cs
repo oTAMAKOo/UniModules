@@ -274,7 +274,7 @@ namespace Modules.GameText.Components
 
                     size.y += 6f;
 
-                    using (new EditorGUILayout.HorizontalScope(EditorLayoutTools.TextAreaStyle, GUILayout.Height(size.y)))
+                    using (new EditorGUILayout.HorizontalScope(EditorStyles.textArea, GUILayout.Height(size.y)))
                     {
                         var labelStyle = new GUIStyle("IN TextField")
                         {

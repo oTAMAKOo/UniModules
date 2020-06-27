@@ -62,7 +62,7 @@ namespace Modules.UI.TextEffect
                         GUILayout.Space(2f);
 
                         var colorText = ColorUtility.ToHtmlStringRGBA(textOutline.Color);
-                        EditorGUILayout.SelectableLabel(colorText, new GUIStyle("TextArea"), GUILayout.Width(95f), GUILayout.Height(18f));
+                        EditorGUILayout.SelectableLabel(colorText, EditorStyles.textArea, GUILayout.Width(95f), GUILayout.Height(18f));
 
                         GUILayout.Space(2f);
 

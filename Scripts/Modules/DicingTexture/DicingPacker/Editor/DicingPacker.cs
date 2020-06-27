@@ -337,7 +337,7 @@ namespace Modules.Dicing
 
                             GUI.backgroundColor = highlight ? Color.white : new Color(0.8f, 0.8f, 0.8f);
 
-                            using (new EditorGUILayout.HorizontalScope(EditorLayoutTools.TextAreaStyle, GUILayout.MinHeight(20f)))
+                            using (new EditorGUILayout.HorizontalScope(EditorStyles.textArea, GUILayout.MinHeight(20f)))
                             {
                                 GUI.backgroundColor = Color.white;
                                 GUILayout.Label(index.ToString(), GUILayout.Width(24f));

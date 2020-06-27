@@ -128,7 +128,7 @@ namespace Modules.Devkit.SceneLaunch
 
                             size.y += 6f;
 
-                            GUILayout.BeginHorizontal(EditorLayoutTools.TextAreaStyle, GUILayout.Height(size.y));
+                            GUILayout.BeginHorizontal(EditorStyles.textArea, GUILayout.Height(size.y));
                             {
                                 var labelStyle = new GUIStyle("IN TextField");
                                 labelStyle.alignment = TextAnchor.MiddleLeft;

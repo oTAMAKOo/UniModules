@@ -123,7 +123,7 @@ namespace Modules.Dicing
 
                     if (instance.Current != null)
                     {
-                        EditorGUILayout.SelectableLabel(instance.Current.textureName, new GUIStyle("TextArea"), GUILayout.Height(18f));
+                        EditorGUILayout.SelectableLabel(instance.Current.textureName, EditorStyles.textArea, GUILayout.Height(18f));
                     }
                 }
 

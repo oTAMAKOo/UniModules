@@ -132,7 +132,7 @@ namespace Modules.Devkit.Inspector
                     break;
 
                 case AssetViewMode.Path:
-                    GUILayout.Label(info.assetPath, EditorLayoutTools.TextAreaStyle);
+                    GUILayout.Label(info.assetPath, EditorStyles.textArea);
                     break;
             }
 

@@ -41,14 +41,18 @@ namespace Modules.Dicing
                     {
                         var data = sourceData[i];
 
+                        var guidHash = string.IsNullOrEmpty(data.guid) ? null : data.guid.GetCRC();
+
                         using (new EditorGUILayout.HorizontalScope())
                         {
                             using (new LabelWidthScope(20f))
                             {
                                 EditorGUILayout.PrefixLabel(i.ToString(), EditorStyles.miniLabel);
                             }
+                            
+                            EditorGUILayout.SelectableLabel(guidHash, EditorStyles.textArea, GUILayout.Width(75f), GUILayout.Height(18f));
 
-                            EditorGUILayout.SelectableLabel(data.textureName, new GUIStyle("TextArea"), GUILayout.Height(18f));
+                            EditorGUILayout.SelectableLabel(data.textureName, EditorStyles.textArea, GUILayout.Height(18f));
 
                             using (new DisableScope(previewGuid == data.guid))
                             {
