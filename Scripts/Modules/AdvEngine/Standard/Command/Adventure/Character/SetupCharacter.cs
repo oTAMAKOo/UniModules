@@ -3,7 +3,7 @@
 
 using System;
 using Modules.AdvKit;
-using Modules.Dicing;
+using Modules.PatternTexture;
 
 namespace Modules.AdvKit.Standard
 {
@@ -30,7 +30,7 @@ namespace Modules.AdvKit.Standard
             
             var resourcePath = advEngine.Resource.GetResourcePath<AdvCharacter>(fileName);
 
-            advEngine.Resource.Request<DicingTexture>(resourcePath);
+            advEngine.Resource.Request<PatternTexture.PatternTexture>(resourcePath);
 
             var advCharacter = advEngine.ObjectManager.Create<AdvCharacter>(identifier);
             

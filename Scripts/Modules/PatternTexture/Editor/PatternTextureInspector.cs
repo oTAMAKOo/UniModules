@@ -4,10 +4,10 @@ using UnityEditor;
 using Extensions;
 using Extensions.Devkit;
 
-namespace Modules.Dicing
+namespace Modules.PatternTexture
 {
-    [CustomEditor(typeof(DicingTexture))]
-    public sealed class DicingTextureInspector : Editor
+    [CustomEditor(typeof(PatternTexture))]
+    public sealed class PatternTextureInspector : Editor
     {
         //----- params -----
 
@@ -27,7 +27,7 @@ namespace Modules.Dicing
 
         public override void OnInspectorGUI()
         {
-            var dicingTexture = target as DicingTexture;
+            var dicingTexture = target as PatternTexture;
 
             EditorLayoutTools.DrawContentTitle("Contents");
 
@@ -35,13 +35,11 @@ namespace Modules.Dicing
             {
                 using (var scrollViewScope = new EditorGUILayout.ScrollViewScope(scrollPosition, GUILayout.Height(350f)))
                 {
-                    var sourceData = dicingTexture.GetAllDicingSource();
+                    var sourceData = dicingTexture.GetAllPatternData();
 
-                    for (var i = 0; i < sourceData.Length; i++)
+                    for (var i = 0; i < sourceData.Count; i++)
                     {
                         var data = sourceData[i];
-
-                        var guidHash = string.IsNullOrEmpty(data.guid) ? null : data.guid.GetCRC();
 
                         using (new EditorGUILayout.HorizontalScope())
                         {
@@ -50,11 +48,9 @@ namespace Modules.Dicing
                                 EditorGUILayout.PrefixLabel(i.ToString(), EditorStyles.miniLabel);
                             }
                             
-                            EditorGUILayout.SelectableLabel(guidHash, EditorStyles.textArea, GUILayout.Width(75f), GUILayout.Height(18f));
+                            EditorGUILayout.SelectableLabel(data.TextureName, EditorStyles.textArea, GUILayout.Height(18f));
 
-                            EditorGUILayout.SelectableLabel(data.textureName, EditorStyles.textArea, GUILayout.Height(18f));
-
-                            using (new DisableScope(previewGuid == data.guid))
+                            using (new DisableScope(previewGuid == data.Guid))
                             {
                                 using (new EditorGUILayout.VerticalScope(GUILayout.Width(50f)))
                                 {
@@ -62,7 +58,7 @@ namespace Modules.Dicing
 
                                     if (GUILayout.Button("select", EditorStyles.miniButton, GUILayout.Width(50f)))
                                     {
-                                        previewGuid = data.guid;
+                                        previewGuid = data.Guid;
 
                                         var assetPath = AssetDatabase.GUIDToAssetPath(previewGuid);
 

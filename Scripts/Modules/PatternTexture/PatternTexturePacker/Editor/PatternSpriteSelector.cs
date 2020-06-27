@@ -6,15 +6,15 @@ using System.Linq;
 using Extensions;
 using Extensions.Devkit;
 
-namespace Modules.Dicing
+namespace Modules.PatternTexture
 {
-    public sealed class DicingSpriteSelector : ScriptableWizard
+    public sealed class PatternSpriteSelector : ScriptableWizard
     {
         //----- params -----
 
         //----- field -----
 
-        private DicingTexture dicingTexture = null;
+        private PatternTexture dicingTexture = null;
         private Texture2D[] sourceTextures = null;
         private float preViewSize = 0;
         private Vector2 scrollPosition = Vector2.zero;
@@ -23,7 +23,7 @@ namespace Modules.Dicing
         private Action<string> onSelectAction = null;
         private Action onCloseAction = null;
 
-        public static DicingSpriteSelector instance;
+        public static PatternSpriteSelector instance = null;
 
         //----- property -----
 
@@ -50,7 +50,7 @@ namespace Modules.Dicing
 
             if (dicingTexture == null)
             {
-                EditorGUILayout.HelpBox("No DicingTexture selected.", MessageType.Info);
+                EditorGUILayout.HelpBox("No PatternTexture selected.", MessageType.Info);
                 return;
             }
            
@@ -60,7 +60,7 @@ namespace Modules.Dicing
             {
                 GUILayout.Space(10f);
 
-                EditorGUILayout.ObjectField(instance.dicingTexture, typeof(DicingTexture), false, GUILayout.Width(400f));
+                EditorGUILayout.ObjectField(instance.dicingTexture, typeof(PatternTexture), false, GUILayout.Width(400f));
 
                 GUILayout.FlexibleSpace();
 
@@ -201,7 +201,7 @@ namespace Modules.Dicing
             }
         }
 
-        public static void Show(DicingTexture dicingTexture, string selection, Action<string> onSelectAction, Action onCloseAction)
+        public static void Show(PatternTexture patternTexture, string selection, Action<string> onSelectAction, Action onCloseAction)
         {
             if (instance != null)
             {
@@ -209,19 +209,19 @@ namespace Modules.Dicing
                 instance = null;
             }
 
-            var comp = DisplayWizard<DicingSpriteSelector>("Select DicingSprite");
+            var comp = DisplayWizard<PatternSpriteSelector>("Select Sprite");
 
             comp.onSelectAction = onSelectAction;
             comp.onCloseAction = onCloseAction;
             
-            comp.dicingTexture = dicingTexture;
+            comp.dicingTexture = patternTexture;
             comp.selectionTextureName = selection;
             comp.preViewSize = 200f;
 
-            comp.sourceTextures = dicingTexture.GetAllDicingSource()
+            comp.sourceTextures = patternTexture.GetAllPatternData()
                     .Select(x =>
                         {
-                            var path = AssetDatabase.GUIDToAssetPath(x.guid);
+                            var path = AssetDatabase.GUIDToAssetPath(x.Guid);
                             return AssetDatabase.LoadMainAssetAtPath(path) as Texture2D;
                         })
                     .Where(x => x != null)

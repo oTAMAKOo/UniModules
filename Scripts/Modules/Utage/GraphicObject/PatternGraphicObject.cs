@@ -7,21 +7,21 @@ using System.Linq;
 using System.Collections.Generic;
 using UniRx;
 using Extensions;
-using Modules.Dicing;
+using Modules.PatternTexture;
 using Utage;
 using UtageExtensions;
 
-using DicingImage = Modules.Dicing.DicingImage;
+using PatternImage = Modules.PatternTexture.PatternImage;
 
 namespace Modules.UtageExtension
 {
-	public sealed class DicingGraphicObject : AdvGraphicObjectUguiBase
+	public sealed class PatternGraphicObject : AdvGraphicObjectUguiBase
     {
         //----- params -----
 
         //----- field -----
 
-        private DicingImage dicingImage = null;
+        private PatternImage patternImage = null;
 
         //クロスフェード用のファイル参照
         private AssetFileReference crossFadeReference = null;
@@ -30,36 +30,36 @@ namespace Modules.UtageExtension
 
         protected override Material Material
         {
-            get { return dicingImage.material; }
-            set { dicingImage.material = value; }
+            get { return patternImage.material; }
+            set { patternImage.material = value; }
         }
 
         //----- method -----
 
         protected override void AddGraphicComponentOnInit()
         {
-            dicingImage = gameObject.AddComponent<DicingImage>();
+            patternImage = gameObject.AddComponent<PatternImage>();
         }
 
         internal override void ChangeResourceOnDraw(AdvGraphicInfo graphic, float fadeTime)
         {
-            dicingImage.material = graphic.RenderTextureSetting.GetRenderMaterialIfEnable(dicingImage.material);
+            patternImage.material = graphic.RenderTextureSetting.GetRenderMaterialIfEnable(patternImage.material);
 
             // 既に描画されている場合は、クロスフェード用のイメージを作成.
-            var crossFade = TryCreateCrossFadeImage(dicingImage.PatternName, fadeTime, graphic);
+            var crossFade = TryCreateCrossFadeImage(patternImage.PatternName, fadeTime, graphic);
 
             if (!crossFade)
             {
                 ReleaseCrossFadeReference();
             }
 
-            dicingImage.CrossFade = crossFade;
+            patternImage.CrossFade = crossFade;
 
-            var dicingTexture = graphic.File.UnityObject as DicingTexture;
+            var patternTexture = graphic.File.UnityObject as Modules.PatternTexture.PatternTexture;
 
-            dicingImage.DicingTexture = dicingTexture;
-            dicingImage.PatternName = graphic.SubFileName;
-            dicingImage.SetNativeSize();
+            patternImage.PatternTexture = patternTexture;
+            patternImage.PatternName = graphic.SubFileName;
+            patternImage.SetNativeSize();
 
             if (!crossFade)
             {
@@ -70,7 +70,7 @@ namespace Modules.UtageExtension
         // 文字列指定でのパターンチェンジ.
         public override void ChangePattern(string pattern)
         {
-            dicingImage.PatternName = pattern;
+            patternImage.PatternName = pattern;
         }
 
         protected bool TryCreateCrossFadeImage(string patternName, float time, AdvGraphicInfo graphic)
@@ -84,7 +84,7 @@ namespace Modules.UtageExtension
                 crossFadeReference = gameObject.AddComponent<AssetFileReference>();
                 crossFadeReference.Init(LastResource.File);
 
-                dicingImage.CrossFadeTime = time;
+                patternImage.CrossFadeTime = time;
 
                 return true;
             }
@@ -104,17 +104,17 @@ namespace Modules.UtageExtension
         // 今の表示状態と比較して、クロスフェード可能か.
         private bool EnableCrossFade(AdvGraphicInfo graphic)
         {
-            var dicingTexture = graphic.File.UnityObject as DicingTexture;
+            var patternTexture = graphic.File.UnityObject as PatternTexture.PatternTexture;
 
             var pattern = graphic.SubFileName;
-            var data = dicingImage.GetPatternData(pattern);
+            var data = patternImage.GetPatternData(pattern);
 
             if (data == null) { return false; }
 
-            return dicingImage.DicingTexture == dicingTexture
-                && dicingImage.rectTransform.pivot == graphic.Pivot
-                && dicingImage.Current.width == data.width
-                && dicingImage.Current.height == data.height;
+            return patternImage.PatternTexture == patternTexture
+                && patternImage.rectTransform.pivot == graphic.Pivot
+                && patternImage.Current.width == data.width
+                && patternImage.Current.height == data.height;
         }
 
         internal override bool CheckFailedCrossFade(AdvGraphicInfo graphic)

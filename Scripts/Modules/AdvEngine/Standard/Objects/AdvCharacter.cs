@@ -1,7 +1,7 @@
 ﻿
 using UnityEngine;
 using Extensions;
-using Modules.Dicing;
+using Modules.PatternTexture;
 
 namespace Modules.AdvKit.Standard
 {
@@ -14,7 +14,7 @@ namespace Modules.AdvKit.Standard
         //----- field -----
 
         [SerializeField]
-        private DicingImage dicingImage = null;
+        private PatternImage patternImage = null;
 
         private string characterName = null;
         private string resourcePath = null;
@@ -23,7 +23,7 @@ namespace Modules.AdvKit.Standard
 
         public string CharacterName { get { return characterName; } }
 
-        public DicingImage DicingImage { get { return dicingImage; } }
+        public PatternImage PatternImage { get { return patternImage; } }
 
         //----- method -----
 
@@ -37,18 +37,18 @@ namespace Modules.AdvKit.Standard
         {
             var advEngine = AdvEngine.Instance;
 
-            dicingImage.DicingTexture = advEngine.Resource.Get<DicingTexture>(resourcePath);
+            patternImage.PatternTexture = advEngine.Resource.Get<PatternTexture.PatternTexture>(resourcePath);
 
-            dicingImage.PatternName = patternName;
+            patternImage.PatternName = patternName;
 
-            dicingImage.SetNativeSize();
+            patternImage.SetNativeSize();
 
             UnityUtility.SetActive(gameObject, true);
         }
 
         public void Hide()
         {
-            dicingImage.DicingTexture = null;
+            patternImage.PatternTexture = null;
 
             UnityUtility.SetActive(gameObject, false);
         }

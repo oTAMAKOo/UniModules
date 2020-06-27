@@ -9,30 +9,32 @@ using System.Linq;
 using Extensions;
 using UniRx;
 
-namespace Modules.Dicing
+namespace Modules.PatternTexture
 {
     [ExecuteAlways, RequireComponent(typeof(RectTransform))]
-    public sealed class DicingImage : MaskableGraphic, ICanvasRaycastFilter
+    public sealed class PatternImage : MaskableGraphic, ICanvasRaycastFilter
     {
         //----- params -----
 
         private sealed class BlockInfo
         {
             public Rect Rect { get; set; }
-            public DicingBlockData BlockData { get; set; }
+            public PatternBlockData BlockData { get; set; }
         }
 
         //----- field -----
 
         [SerializeField]
-        private DicingTexture dicingTexture = null;
+        private PatternTexture patternTexture = null;
         [SerializeField]
         private bool crossFade = false;
         [SerializeField]
         private float crossFadeTime = 0.2f;
+        [SerializeField]
+        private string selectionPatternName = null;
 
         // 現在のテクスチャ.
-        private DicingSourceData sourceTexture = null;
+        private PatternData sourceTexture = null;
         // 当たり判定用のブロック情報.
         private List<BlockInfo> blockInfos = new List<BlockInfo>();
         // 当たり判定用座標.
@@ -53,7 +55,7 @@ namespace Modules.Dicing
         {
             get
             {
-                if (dicingTexture == null)
+                if (patternTexture == null)
                 {
                     if (material != null && material.mainTexture != null)
                     {
@@ -62,25 +64,25 @@ namespace Modules.Dicing
                     return s_WhiteTexture;
                 }
 
-                return dicingTexture.Texture;
+                return patternTexture.Texture;
             }
         }
 
-        public DicingTexture DicingTexture
+        public PatternTexture PatternTexture
         {
-            get { return dicingTexture; }
+            get { return patternTexture; }
             set
             {
-                if (dicingTexture != value)
+                if (patternTexture != value)
                 {
                     currentTextureName = null;
                 }
 
-                dicingTexture = value;
+                patternTexture = value;
             }
         }
 
-        public DicingSourceData Current
+        public PatternData Current
         {
             get { return sourceTexture; }
         }
@@ -135,36 +137,46 @@ namespace Modules.Dicing
 
         //----- method -----
 
+        protected override void OnEnable()
+        {
+            base.OnEnable();
+
+            if (!string.IsNullOrEmpty(selectionPatternName))
+            {
+                SetPatternName(selectionPatternName);
+            }
+        }
+
         public override void SetNativeSize()
         {
-            if (dicingTexture == null) { return; }
+            if (patternTexture == null) { return; }
 
             if (sourceTexture == null) { return; }
 
             rectTransform.anchorMax = rectTransform.anchorMin;
 
-            rectTransform.sizeDelta = new Vector2(sourceTexture.width, sourceTexture.height);
+            rectTransform.sizeDelta = new Vector2(sourceTexture.Width, sourceTexture.Height);
 
             SetAllDirty();
         }
 
         public string[] GetAllPatternName()
         {
-            if (dicingTexture == null) { return new string[0]; }
+            if (patternTexture == null) { return new string[0]; }
 
-            var sourceTextures = dicingTexture.GetAllDicingSource();
-            var patternNames = sourceTextures.Select(x => x.textureName).ToArray();
+            var patternData = patternTexture.GetAllPatternData();
+            var patternNames = patternData.Select(x => x.TextureName).ToArray();
 
             return patternNames;
         }
 
-        public DicingSourceData GetPatternData(string patternName)
+        public PatternData GetPatternData(string patternName)
         {
             if (string.IsNullOrEmpty(patternName)) { return null; }
 
-            if (dicingTexture == null) { return null; }
+            if (patternTexture == null) { return null; }
 
-            return dicingTexture.GetDicingSource(patternName);
+            return patternTexture.GetPatternData(patternName);
         }
 
         protected override void OnPopulateMesh(VertexHelper vh)
@@ -173,7 +185,7 @@ namespace Modules.Dicing
 
             vh.Clear();
 
-            if (dicingTexture == null) { return; }
+            if (patternTexture == null) { return; }
 
             if (sourceTexture == null) { return; }
 
@@ -185,22 +197,22 @@ namespace Modules.Dicing
 
             var pos = new Vector3(rect.x, rect.y);
 
-            var textureWidth = (float)dicingTexture.Texture.width;
-            var textureHeight = (float)dicingTexture.Texture.height;
+            var textureWidth = (float)patternTexture.Texture.width;
+            var textureHeight = (float)patternTexture.Texture.height;
 
-            for (var by = 0; by < sourceTexture.yblock; by++)
+            for (var by = 0; by < sourceTexture.YBlock; by++)
             {
                 var vertexSizeY = 0f;
 
-                for (var bx = 0; bx < sourceTexture.xblock; bx++)
+                for (var bx = 0; bx < sourceTexture.XBlock; bx++)
                 {
-                    var block = dicingTexture.GetBlockData(currentTextureName, bx, by);
+                    var block = patternTexture.GetBlockData(currentTextureName, bx, by);
 
                     if (block == null) { continue; }
 
-                    var vertexSizeX = rect.width * ((float)block.w / sourceTexture.width);
+                    var vertexSizeX = rect.width * ((float)block.w / sourceTexture.Width);
 
-                    vertexSizeY = rect.height * ((float)block.h / sourceTexture.height);
+                    vertexSizeY = rect.height * ((float)block.h / sourceTexture.Height);
 
                     // 左上
                     var lt = UIVertex.simpleVert;
@@ -301,11 +313,11 @@ namespace Modules.Dicing
 
             if (sourceTexture == null) { return false; }
 
-            var dicingSource = dicingTexture.GetDicingSource(textureName);
+            var dicingSource = patternTexture.GetPatternData(textureName);
 
             if (dicingSource == null) { return false; }
 
-            if (sourceTexture.width != dicingSource.width || sourceTexture.height != dicingSource.height)
+            if (sourceTexture.Width != dicingSource.Width || sourceTexture.Height != dicingSource.Height)
             {
                 return false;
             }
@@ -339,9 +351,9 @@ namespace Modules.Dicing
 
         private void DrawCrossFade(VertexHelper vh, int bx, int by, Vector3 pos, float textureWidth, float textureHeight, float vertexSizeX, float vertexSizeY)
         {
-            var block = dicingTexture.GetBlockData(currentTextureName, bx, by);
+            var block = patternTexture.GetBlockData(currentTextureName, bx, by);
 
-            var crossFadeBlock = dicingTexture.GetBlockData(crossFadeTextureName, bx, by);
+            var crossFadeBlock = patternTexture.GetBlockData(crossFadeTextureName, bx, by);
 
             if (block == null || crossFadeBlock == null) { return; }
 
@@ -403,7 +415,7 @@ namespace Modules.Dicing
 
         private void SetPatternName(string patternName)
         {
-            if (dicingTexture == null) { return; }
+            if (patternTexture == null) { return; }
 
             var textureName = Path.GetFileNameWithoutExtension(patternName);
 
@@ -416,7 +428,7 @@ namespace Modules.Dicing
                         StartCrossFade();
                     }
 
-                    sourceTexture = dicingTexture.GetDicingSource(textureName);
+                    sourceTexture = patternTexture.GetPatternData(textureName);
                     currentTextureName = textureName;
 
                     if (sourceTexture == null)
@@ -425,12 +437,15 @@ namespace Modules.Dicing
                     }
 
                     SetAllDirty();
+
+                    selectionPatternName = patternName;
                 }
             }
             else
             {
                 sourceTexture = null;
                 currentTextureName = null;
+                selectionPatternName = null;
             }
         }
     }

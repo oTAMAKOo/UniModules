@@ -6,10 +6,10 @@ using System;
 using Extensions;
 using Extensions.Devkit;
 
-namespace Modules.Dicing
+namespace Modules.PatternTexture
 {
-    [CustomEditor(typeof(DicingImage))]
-    public sealed class DicingImageInspector : UnityEditor.Editor
+    [CustomEditor(typeof(PatternImage))]
+    public sealed class PatternImageInspector : UnityEditor.Editor
     {
         //----- params -----
 
@@ -20,7 +20,7 @@ namespace Modules.Dicing
 
         private static Texture2D previewBackdrop = null;
 
-        private DicingImage instance = null;
+        private PatternImage instance = null;
 
         //----- property -----
 
@@ -28,18 +28,18 @@ namespace Modules.Dicing
 
         public override void OnInspectorGUI()
         {
-            instance = target as DicingImage;
+            instance = target as PatternImage;
 
             EditorGUILayout.Separator();
 
             EditorGUI.BeginChangeCheck();
 
-            var dicingTexture = EditorLayoutTools.ObjectField("DicingTexture", instance.DicingTexture, false);
+            var patternTexture = EditorLayoutTools.ObjectField("PatternTexture", instance.PatternTexture, false);
 
             if(EditorGUI.EndChangeCheck())
             {
-                UnityEditorUtility.RegisterUndo("DicingImageInspector-Undo", instance);
-                instance.DicingTexture = dicingTexture;
+                UnityEditorUtility.RegisterUndo("PatternImageInspector-Undo", instance);
+                instance.PatternTexture = patternTexture;
             }
 
             // Color.
@@ -49,7 +49,7 @@ namespace Modules.Dicing
 
             if (EditorGUI.EndChangeCheck())
             {
-                UnityEditorUtility.RegisterUndo("DicingImageInspector-Undo", instance);
+                UnityEditorUtility.RegisterUndo("PatternImageInspector-Undo", instance);
                 instance.Color = color;
             }
 
@@ -61,7 +61,7 @@ namespace Modules.Dicing
 
             if (EditorGUI.EndChangeCheck())
             {
-                UnityEditorUtility.RegisterUndo("DicingImageInspector-Undo", instance);
+                UnityEditorUtility.RegisterUndo("PatternImageInspector-Undo", instance);
                 instance.Material = material;
             }
 
@@ -72,7 +72,7 @@ namespace Modules.Dicing
 
             if (EditorGUI.EndChangeCheck())
             {
-                UnityEditorUtility.RegisterUndo("DicingImageInspector-Undo", instance);
+                UnityEditorUtility.RegisterUndo("PatternImageInspector-Undo", instance);
                 instance.RaycastTarget = raycastTarget;
             }
 
@@ -83,7 +83,7 @@ namespace Modules.Dicing
 
             if (EditorGUI.EndChangeCheck())
             {
-                UnityEditorUtility.RegisterUndo("DicingImageInspector-Undo", instance);
+                UnityEditorUtility.RegisterUndo("PatternImageInspector-Undo", instance);
                 instance.CrossFade = crossFade;
             }
 
@@ -95,39 +95,44 @@ namespace Modules.Dicing
 
                 if (EditorGUI.EndChangeCheck())
                 {
-                    UnityEditorUtility.RegisterUndo("DicingImageInspector-Undo", instance);
+                    UnityEditorUtility.RegisterUndo("PatternImageInspector-Undo", instance);
                     instance.CrossFadeTime = crossFadeTime;
                 }
             }
 
             GUILayout.Space(2f);
 
-            if (instance.DicingTexture != null)
+            if (instance.PatternTexture != null)
             {
                 using (new EditorGUILayout.HorizontalScope())
                 {
-                    if (EditorLayoutTools.DrawPrefixButton("Sprite"))
+                    using (new EditorGUILayout.VerticalScope(GUILayout.Width(76f)))
                     {
-                        Action<string> onSelection = x =>
+                        GUILayout.Space(2f);
+
+                        if (EditorLayoutTools.DrawPrefixButton("Sprite", GUILayout.Width(76f), GUILayout.Height(18f)))
                         {
-                            instance.PatternName = x;
+                            Action<string> onSelection = x =>
+                            {
+                                instance.PatternName = x;
 
-                            EditorUtility.SetDirty(instance);
-                            InternalEditorUtility.RepaintAllViews();
-                        };
+                                EditorUtility.SetDirty(instance);
+                                InternalEditorUtility.RepaintAllViews();
+                            };
 
-                        var selection = instance.Current != null ? instance.Current.textureName : null;
+                            var selection = instance.Current != null ? instance.Current.TextureName : null;
 
-                        DicingSpriteSelector.Show(instance.DicingTexture, selection, onSelection, null);
+                            PatternSpriteSelector.Show(instance.PatternTexture, selection, onSelection, null);
+                        }
                     }
+
+                    GUILayout.Space(4f);
 
                     if (instance.Current != null)
                     {
-                        EditorGUILayout.SelectableLabel(instance.Current.textureName, EditorStyles.textArea, GUILayout.Height(18f));
+                        EditorGUILayout.SelectableLabel(instance.Current.TextureName, EditorStyles.textArea, GUILayout.Height(18f));
                     }
                 }
-
-                GUILayout.Space(5f);
 
                 if (instance.Current != null)
                 {
@@ -139,7 +144,7 @@ namespace Modules.Dicing
                         {
                             instance.SetNativeSize();
                         }
-                    }                    
+                    }
                 }
             }
         }
@@ -153,12 +158,12 @@ namespace Modules.Dicing
         {
             if(instance.Current == null) { return; }
 
-            if(previewTexture == null || previewGuid != instance.Current.guid)
+            if(previewTexture == null || previewGuid != instance.Current.Guid)
             {
-                var assetPath = AssetDatabase.GUIDToAssetPath(instance.Current.guid);
+                var assetPath = AssetDatabase.GUIDToAssetPath(instance.Current.Guid);
                 previewTexture = AssetDatabase.LoadMainAssetAtPath(assetPath) as Texture2D;
 
-                previewGuid = instance.Current.guid;
+                previewGuid = instance.Current.Guid;
             }
 
             if(previewTexture == null) { return; }

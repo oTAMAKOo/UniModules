@@ -10,9 +10,9 @@ using Extensions.Devkit;
 using Modules.Devkit.Generators;
 using Modules.Devkit.Prefs;
 
-namespace Modules.Dicing
+namespace Modules.PatternTexture
 {
-	public sealed partial class DicingPacker : SingletonEditorWindow<DicingPacker>
+	public sealed class PatternTexturePacker : SingletonEditorWindow<PatternTexturePacker>
 	{
         //----- params -----
 
@@ -20,8 +20,8 @@ namespace Modules.Dicing
         {
             public static string exportPath
             {
-                get { return ProjectPrefs.GetString("DicingPackerPrefs-exportPath", null); }
-                set { ProjectPrefs.SetString("DicingPackerPrefs-exportPath", value); }
+                get { return ProjectPrefs.GetString("PatternTexturePackerPrefs-exportPath", null); }
+                set { ProjectPrefs.SetString("PatternTexturePackerPrefs-exportPath", value); }
             }
         }
 
@@ -56,8 +56,8 @@ namespace Modules.Dicing
 
         //----- field -----
 
-        private DicingTexture selectDicingTexture = null;
-        private DicingTextureGenerator generator = null;
+        private PatternTexture selectPatternTexture = null;
+        private PatternTextureGenerator generator = null;
 
         private int blockSize = DefaultBlockSize;
         private int padding = DefaultPadding;
@@ -77,7 +77,7 @@ namespace Modules.Dicing
 
         private bool initialized = false;
 
-        public static DicingPacker instance = null;
+        public static PatternTexturePacker instance = null;
 
         //----- property -----
 
@@ -96,10 +96,10 @@ namespace Modules.Dicing
         {
             if(initialized) { return; }
 
-            titleContent = new GUIContent("DicingPacker");
+            titleContent = new GUIContent("PatternTexturePacker");
             minSize = WindowSize;
 
-            generator = new DicingTextureGenerator();
+            generator = new PatternTextureGenerator();
 
             initialized = true;
         }
@@ -120,7 +120,9 @@ namespace Modules.Dicing
         {
             if(instance == null) { return; }
 
-            instance.BuildTextureInfos();
+            var selectionTextures = GetSelectionTextures();
+
+            instance.BuildTextureInfos(selectionTextures);
         }
 
         void OnGUI()
@@ -131,16 +133,18 @@ namespace Modules.Dicing
 
             EditorGUI.BeginChangeCheck();
 
-            selectDicingTexture = EditorLayoutTools.ObjectField(selectDicingTexture, false);
+            selectPatternTexture = EditorLayoutTools.ObjectField(selectPatternTexture, false);
 
             if (EditorGUI.EndChangeCheck())
             {
-                if(selectDicingTexture != null)
+                if(selectPatternTexture != null)
                 {
-                    blockSize = selectDicingTexture.BlockSize;
-                    padding = selectDicingTexture.Padding;
+                    blockSize = selectPatternTexture.BlockSize;
+                    padding = selectPatternTexture.Padding;
 
-                    BuildTextureInfos();
+                    Selection.objects = new UnityEngine.Object[0];
+
+                    BuildTextureInfos(null);
                 }
                 else
                 {
@@ -157,42 +161,37 @@ namespace Modules.Dicing
 
             GUILayout.Space(5f);
 
-            if (selectDicingTexture == null)
+            if (selectPatternTexture == null)
             {
                 DrawCreateGUI(selectionTextures);
             }
             else
             {
-                DrawUpdateGUI(selectDicingTexture);
+                DrawUpdateGUI(selectPatternTexture);
             }
         }
 
-        public void BuildTextureInfos()
+        public void BuildTextureInfos(Texture2D[] addTextures)
         {
-            // 選択中テクスチャ.
-            var selectionTextures = Selection.objects != null ? 
-                Selection.objects.OfType<Texture2D>().ToArray() : 
-                new Texture2D[0];
-
             // パック済みのテクスチャは除外.
-            if(selectDicingTexture != null)
+            if (selectPatternTexture != null && addTextures != null)
             {
-                selectionTextures = selectionTextures
-                    .Where(x => x != selectDicingTexture.Texture)
+                addTextures = addTextures
+                    .Where(x => x != selectPatternTexture.Texture)
                     .ToArray();
             }
 
-            var allDicingSource = selectDicingTexture != null ? 
-                selectDicingTexture.GetAllDicingSource() :
-                new DicingSourceData[0];
+            var allPatternData = selectPatternTexture != null ? 
+                selectPatternTexture.GetAllPatternData() :
+                new PatternData[0];
 
             var textureInfoByGuid = new Dictionary<string, TextureInfo>();
 
-            foreach (var item in allDicingSource)
+            foreach (var item in allPatternData)
             {
-                if(string.IsNullOrEmpty(item.guid)) { continue; }
+                if(string.IsNullOrEmpty(item.Guid)) { continue; }
 
-                var assetPath = AssetDatabase.GUIDToAssetPath(item.guid);
+                var assetPath = AssetDatabase.GUIDToAssetPath(item.Guid);
                 var texture = AssetDatabase.LoadMainAssetAtPath(assetPath) as Texture2D;
 
                 var info = new TextureInfo();
@@ -204,7 +203,7 @@ namespace Modules.Dicing
                     var fullPath = UnityPathUtility.ConvertAssetPathToFullPath(assetPath);
                     var lastUpdate = File.GetLastWriteTime(fullPath).ToUnixTime();
 
-                    if (item.lastUpdate != lastUpdate)
+                    if (item.LastUpdate != lastUpdate)
                     {
                         info.status = TextureStatus.Update;
                     }
@@ -212,35 +211,38 @@ namespace Modules.Dicing
                     info.texture = texture;
                 }
 
-                textureInfoByGuid.Add(item.guid, info);
+                textureInfoByGuid.Add(item.Guid, info);
             }
 
-            foreach (var texture in selectionTextures)
+            if (addTextures != null)
             {
-                var assetPath = AssetDatabase.GetAssetPath(texture);
-                var guid = AssetDatabase.AssetPathToGUID(assetPath);
-
-                var info = textureInfoByGuid.GetValueOrDefault(guid);
-
-                if(info == null)
+                foreach (var texture in addTextures)
                 {
-                    info = new TextureInfo()
+                    var assetPath = AssetDatabase.GetAssetPath(texture);
+                    var guid = AssetDatabase.AssetPathToGUID(assetPath);
+
+                    var info = textureInfoByGuid.GetValueOrDefault(guid);
+
+                    if (info == null)
                     {
-                        status = TextureStatus.Add,
-                        texture = texture,
-                    };
+                        info = new TextureInfo()
+                        {
+                            status = TextureStatus.Add,
+                            texture = texture,
+                        };
 
-                    textureInfoByGuid.Add(guid, info);
-                }
-                else
-                {
-                    textureInfoByGuid[guid].status = TextureStatus.Update;
+                        textureInfoByGuid.Add(guid, info);
+                    }
+                    else
+                    {
+                        textureInfoByGuid[guid].status = TextureStatus.Update;
+                    }
                 }
             }
 
             textureInfos = textureInfoByGuid.Values.ToArray();
 
-            CalcPerformance(selectDicingTexture);
+            CalcPerformance(selectPatternTexture);
 
             Repaint();
         }
@@ -294,7 +296,7 @@ namespace Modules.Dicing
 
                     if (GUILayout.Button("Create"))
                     {
-                        GenerateDicingTexture(null);
+                        GeneratePatternTexture(null);
                     }
 
                     GUI.backgroundColor = defaultBackgroundColor;
@@ -304,7 +306,7 @@ namespace Modules.Dicing
             }
         }
 
-        private void DrawUpdateGUI(DicingTexture dicingTexture)
+        private void DrawUpdateGUI(PatternTexture patternTexture)
         {
             var labelStyle = new GUIStyle(EditorStyles.label);
 
@@ -439,9 +441,9 @@ namespace Modules.Dicing
 
                 GUILayout.FlexibleSpace();
 
-                if (GUILayout.Button("Apply", GUILayout.Width(150f)))
+                if (GUILayout.Button("Generate", GUILayout.Width(150f)))
                 {
-                    GenerateDicingTexture(dicingTexture);
+                    GeneratePatternTexture(patternTexture);
                 }
 
                 GUI.backgroundColor = defaultBackgroundColor;
@@ -456,7 +458,7 @@ namespace Modules.Dicing
                         Repaint();
                     };
 
-                    DicingSpriteSelector.Show(dicingTexture, selectionTextureName, onSelection, null);
+                    PatternSpriteSelector.Show(patternTexture, selectionTextureName, onSelection, null);
                 }
 
                 GUILayout.FlexibleSpace();
@@ -464,19 +466,19 @@ namespace Modules.Dicing
 
             if(delete)
             {
-                GenerateDicingTexture(dicingTexture);
+                GeneratePatternTexture(patternTexture);
             }
 
             GUILayout.Space(5f);
         }
 
-        private void CalcPerformance(DicingTexture dicingTexture)
+        private void CalcPerformance(PatternTexture patternTexture)
         {
             calcPerformance = false;
 
-            if (dicingTexture != null)
+            if (patternTexture != null)
             {
-                var assetPath = AssetDatabase.GetAssetPath(dicingTexture);
+                var assetPath = AssetDatabase.GetAssetPath(patternTexture);
                 var fullPath = UnityPathUtility.ConvertAssetPathToFullPath(assetPath);
 
                 var fileInfo = new FileInfo(fullPath);
@@ -488,8 +490,8 @@ namespace Modules.Dicing
                 return;
             }
 
-            var textures = dicingTexture.GetAllDicingSource()
-                .Select(x => AssetDatabase.GUIDToAssetPath(x.guid))
+            var textures = patternTexture.GetAllPatternData()
+                .Select(x => AssetDatabase.GUIDToAssetPath(x.Guid))
                 .Select(x => AssetDatabase.LoadMainAssetAtPath(x) as Texture2D)
                 .Where(x => x != null)
                 .ToArray();
@@ -504,10 +506,10 @@ namespace Modules.Dicing
                 });
             totalMemSize /= MB;
 
-            if (dicingTexture.Texture != null)
+            if (patternTexture.Texture != null)
             {
-                var mem = Mathf.NextPowerOfTwo(dicingTexture.Texture.width) * Mathf.NextPowerOfTwo(dicingTexture.Texture.height);
-                mem *= !dicingTexture.Texture.alphaIsTransparency ? 3 : 4;
+                var mem = Mathf.NextPowerOfTwo(patternTexture.Texture.width) * Mathf.NextPowerOfTwo(patternTexture.Texture.height);
+                mem *= !patternTexture.Texture.alphaIsTransparency ? 3 : 4;
                 totalAtlasMemSize = (float)mem / MB;
             }
 
@@ -518,9 +520,9 @@ namespace Modules.Dicing
                 .Select(x => new FileInfo(x))
                 .ForEach(x => totalFileSize += (float)x.Length / MB);
 
-            if (dicingTexture.Texture != null)
+            if (patternTexture.Texture != null)
             {
-                var assetPath = AssetDatabase.GetAssetPath(dicingTexture.Texture);
+                var assetPath = AssetDatabase.GetAssetPath(patternTexture.Texture);
                 var fullPath = UnityPathUtility.ConvertAssetPathToFullPath(assetPath);
 
                 var fileInfo = new FileInfo(fullPath);
@@ -531,7 +533,7 @@ namespace Modules.Dicing
             calcPerformance = true;
         }
 
-        private void GenerateDicingTexture(DicingTexture target)
+        private void GeneratePatternTexture(PatternTexture target)
         {
             var exportPath = string.Empty;
 
@@ -556,7 +558,7 @@ namespace Modules.Dicing
                     path = Prefs.exportPath;
                 }
 
-                exportPath = EditorUtility.SaveFilePanelInProject("Save As", "New DicingTexture.asset", "asset", "Save as...", path);
+                exportPath = EditorUtility.SaveFilePanelInProject("Save As", "New PatternTexture.asset", "asset", "Save as...", path);
             }
             else
             {
@@ -565,25 +567,36 @@ namespace Modules.Dicing
 
             if (!string.IsNullOrEmpty(exportPath))
             {
-                var dicingData = generator.Generate(exportPath, blockSize, padding, textures, hasAlphaMap);
+                var patternData = generator.Generate(exportPath, blockSize, padding, textures, hasAlphaMap);
 
-                target = ScriptableObjectGenerator.Generate<DicingTexture>(exportPath);
+                target = ScriptableObjectGenerator.Generate<PatternTexture>(exportPath);
 
-                target.Set(dicingData.Texture, blockSize, padding, dicingData.SourceTextures, dicingData.DicingBlocks, hasAlphaMap);
+                target.Set(patternData.Texture, blockSize, padding, patternData.PatternData, patternData.PatternBlocks, hasAlphaMap);
                 target.Texture.filterMode = filterMode;
 
                 UnityEditorUtility.SaveAsset(target);
 
                 Prefs.exportPath = exportPath;
 
-                selectDicingTexture = target;
+                selectPatternTexture = target;
 
-                BuildTextureInfos();
+                var selectionTextures = GetSelectionTextures();
+
+                BuildTextureInfos(selectionTextures);
 
                 deleteNames.Clear();
 
                 Repaint();
             }
+        }
+
+        private static Texture2D[] GetSelectionTextures()
+        {
+            var selectionObjects = Selection.objects;
+
+            if (selectionObjects == null) { return new Texture2D[0]; }
+
+            return selectionObjects.OfType<Texture2D>().ToArray();
         }
     }
 }

@@ -2,10 +2,10 @@
 using System;
 using Extensions;
 
-namespace Modules.Dicing
+namespace Modules.PatternTexture
 {
     [Serializable]
-    public sealed class DicingBlockData
+    public sealed class PatternBlockData
     {
         // ピクセル開始位置.
         public int x = 0;

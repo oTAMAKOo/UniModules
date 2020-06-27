@@ -1,13 +1,12 @@
 ﻿
-using System;
 using UnityEngine;
 using System.Linq;
 using System.Collections.Generic;
 using Extensions;
 
-namespace Modules.Dicing
+namespace Modules.PatternTexture
 {
-    public sealed class DicingTexture : ScriptableObject
+    public sealed class PatternTexture : ScriptableObject
 	{
         //----- params -----
 
@@ -26,11 +25,11 @@ namespace Modules.Dicing
 
         // 元テクスチャ情報.
         [SerializeField, ReadOnly]
-        private DicingSourceData[] sourceData = null;
+        private PatternData[] sourceData = null;
 
         // パックされたテクスチャ情報.
         [SerializeField, ReadOnly]
-        private DicingBlockData[] blockData = null;
+        private PatternBlockData[] blockData = null;
 
         [SerializeField, ReadOnly]
         private Texture2D texture = null;
@@ -39,7 +38,7 @@ namespace Modules.Dicing
         private Dictionary<string, Dictionary<string, ushort?>> pixelIdDictionary = null;
 
         // 同じピクセル情報のブロックは存在しないはずなのでディクショナリで高速アクセスできる.
-        private Dictionary<ushort, DicingBlockData> blockByPixelId= null;
+        private Dictionary<ushort, PatternBlockData> blockByPixelId= null;
 
         //----- property -----
 
@@ -63,18 +62,18 @@ namespace Modules.Dicing
                 {
                     var blockDictionary = new Dictionary<string, ushort?>();
 
-                    for (var y = 0; y < data.yblock; y++)
+                    for (var y = 0; y < data.YBlock; y++)
                     {
-                        for (var x = 0; x < data.xblock; x++)
+                        for (var x = 0; x < data.XBlock; x++)
                         {
                             var key = string.Format(PixelHashFormat, x, y);
-                            var id = data.blockIds[y * data.xblock + x];
+                            var id = data.BlockIds[y * data.XBlock + x];
 
                             blockDictionary.Add(key, id);
                         }
                     }
 
-                    pixelIdDictionary.Add(data.textureName, blockDictionary);
+                    pixelIdDictionary.Add(data.TextureName, blockDictionary);
                 }
             }
 
@@ -84,7 +83,7 @@ namespace Modules.Dicing
             }
         }
 
-        public void Set(Texture2D texture, int blockSize, int padding, DicingSourceData[] sourceData, DicingBlockData[] blockData, bool alphaMap)
+        public void Set(Texture2D texture, int blockSize, int padding, PatternData[] sourceData, PatternBlockData[] blockData, bool alphaMap)
         {
             this.texture = texture;
             this.blockSize = blockSize;
@@ -97,21 +96,21 @@ namespace Modules.Dicing
             blockByPixelId = null;
         }
 
-        public DicingSourceData[] GetAllDicingSource()
+        public IReadOnlyList<PatternData> GetAllPatternData()
         {
             Build();
 
             return sourceData;
         }
 
-        public DicingSourceData GetDicingSource(string textureName)
+        public PatternData GetPatternData(string textureName)
         {
             Build();
 
-            return sourceData.FirstOrDefault(x => x.textureName == textureName);
+            return sourceData.FirstOrDefault(x => x.TextureName == textureName);
         }
 
-        public DicingBlockData GetBlockData(string textureName, int bx, int by)
+        public PatternBlockData GetBlockData(string textureName, int bx, int by)
         {
             Build();
 

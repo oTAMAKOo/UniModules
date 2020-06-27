@@ -9,20 +9,20 @@ using System.Text;
 using Extensions;
 using Modules.Devkit.TextureEdit;
 
-namespace Modules.Dicing
+namespace Modules.PatternTexture
 {
-    public sealed class DicingData
+    public sealed class PatternTextureData
     {
-        public DicingSourceData[] SourceTextures { get; set; }
-        public DicingBlockData[] DicingBlocks { get; set; }
+        public PatternData[] PatternData { get; set; }
+        public PatternBlockData[] PatternBlocks { get; set; }
         public Texture2D Texture { get; set; }
     }
 
-    public sealed class DicingTextureGenerator
+    public sealed class PatternTextureGenerator
     {
 		//----- params -----
         
-        private sealed class DicingTargetData
+        private sealed class PatternTargetData
         {
             public Texture2D texture;
             public int bx;
@@ -50,9 +50,9 @@ namespace Modules.Dicing
 
         //----- method -----
 
-        public DicingData Generate(string exportPath, int blockSize, int padding, Texture2D[] sourceTextures, bool hasAlphaMap)
+        public PatternTextureData Generate(string exportPath, int blockSize, int padding, Texture2D[] sourceTextures, bool hasAlphaMap)
         {
-            var result = new DicingData();
+            var patternTextureData = new PatternTextureData();
 
             blockId = 0;
             blockIdbyHashCode = new Dictionary<string, ushort?>();
@@ -84,24 +84,24 @@ namespace Modules.Dicing
 
             var texture = TextureUtility.CreateEmptyTexture(textureSize, textureSize);
 
-            result.SourceTextures = BuildDicingSourceData(dicingTargets);
+            patternTextureData.PatternData = BuildPatternData(dicingTargets);
 
-            result.DicingBlocks = BitBlockTransfer(texture, blockSize, padding, dicingTargets, hasAlphaMap);
+            patternTextureData.PatternBlocks = BitBlockTransfer(texture, blockSize, padding, dicingTargets, hasAlphaMap);
 
             File.WriteAllBytes(texturePath, texture.EncodeToPNG());
 
             AssetDatabase.ImportAsset(texturePath);
             AssetDatabase.Refresh();
 
-            result.Texture = AssetDatabase.LoadMainAssetAtPath(texturePath) as Texture2D;
+            patternTextureData.Texture = AssetDatabase.LoadMainAssetAtPath(texturePath) as Texture2D;
 
-            return result;
+            return patternTextureData;
         }
 
         // テクスチャを読み込み.
-        private DicingTargetData[] ReadTextureBlock(int blockSize, Texture2D[] textures)
+        private PatternTargetData[] ReadTextureBlock(int blockSize, Texture2D[] textures)
         {
-            var list = new List<DicingTargetData>();
+            var list = new List<PatternTargetData>();
 
             foreach (var texture in textures)
             {
@@ -126,7 +126,7 @@ namespace Modules.Dicing
                     }
                 }
 
-                list.Add(new DicingTargetData() { texture = texture, bx = bx, by = by, blocks = blockList.ToArray() });
+                list.Add(new PatternTargetData() { texture = texture, bx = bx, by = by, blocks = blockList.ToArray() });
             }
 
             return list.ToArray();
@@ -154,38 +154,35 @@ namespace Modules.Dicing
         }
 
         // 元になったテクスチャ情報構築.
-        private DicingSourceData[] BuildDicingSourceData(DicingTargetData[] targetDatas)
+        private PatternData[] BuildPatternData(PatternTargetData[] targetDatas)
         {
-            var result = new List<DicingSourceData>();
+            var result = new List<PatternData>();
 
             foreach (var targetData in targetDatas)
             {
                 var texture = targetData.texture;
                 var assetPath = AssetDatabase.GetAssetPath(texture);
                 var fullPath = UnityPathUtility.ConvertAssetPathToFullPath(assetPath);
+                
+                var textureName = Path.GetFileNameWithoutExtension(assetPath);
+                var assetGuid = AssetDatabase.AssetPathToGUID(assetPath);
+                var lastUpdate = File.GetLastWriteTime(fullPath).ToUnixTime();
+                var width = texture.width;
+                var height = texture.height;
+                var blockIds = targetData.blocks.Select(x => x.blockId).ToArray();
 
-                var item = new DicingSourceData()
-                {
-                    textureName = Path.GetFileNameWithoutExtension(assetPath),
-                    guid = AssetDatabase.AssetPathToGUID(assetPath),
-                    lastUpdate = File.GetLastWriteTime(fullPath).ToUnixTime(),
-                    width = texture.width,
-                    height = texture.height,
-                    xblock = targetData.bx,
-                    yblock = targetData.by,
-                    blockIds = targetData.blocks.Select(x => x.blockId).ToArray(),
-                };
+                var item = new PatternData(textureName, assetGuid, lastUpdate, width, height, targetData.bx, targetData.by, blockIds);
 
                 result.Add(item);
             }
 
-            return result.OrderBy(x => x.textureName, new NaturalComparer()).ToArray();
+            return result.OrderBy(x => x.TextureName, new NaturalComparer()).ToArray();
         }
 
         // 抽出した差分データを書き出し.
-        private DicingBlockData[] BitBlockTransfer(Texture2D texture, int blockSize, int padding, DicingTargetData[] dicingTargets, bool hasAlphaMap)
+        private PatternBlockData[] BitBlockTransfer(Texture2D texture, int blockSize, int padding, PatternTargetData[] dicingTargets, bool hasAlphaMap)
         {
-            var dicingDictionary = new Dictionary<int, DicingBlockData>();
+            var dicingDictionary = new Dictionary<int, PatternBlockData>();
 
             var x_start = padding;
             var y_start = padding;
@@ -223,7 +220,7 @@ namespace Modules.Dicing
                         var compressedAlphaMap = alphaMap.Compress(); 
 
                         // ブロック情報を追加.
-                        var dicingBlockData = new DicingBlockData()
+                        var dicingBlockData = new PatternBlockData()
                         {
                             x = transX,
                             y = transY,

@@ -31,13 +31,13 @@ namespace Modules.AdvKit.Standard
 
             var advCharacter = advEngine.ObjectManager.Get<AdvCharacter>(identifier);
 
-            var dicingImage = advCharacter.DicingImage;
+            var patternImage = advCharacter.PatternImage;
 
-            dicingImage.PatternName = patternName;
+            patternImage.PatternName = patternName;
 
-            if (dicingImage.CrossFade)
+            if (patternImage.CrossFade)
             {
-                var timeSpan = TimeSpan.FromSeconds(dicingImage.CrossFadeTime + 1);
+                var timeSpan = TimeSpan.FromSeconds(patternImage.CrossFadeTime + 1);
 
                 Action onFaceSwitchComplete = () =>
                 {
@@ -52,7 +52,7 @@ namespace Modules.AdvKit.Standard
                     .AddTo(Disposable);
             }
 
-            return wait && dicingImage.CrossFade ? YieldWait : DynValue.Nil;
+            return wait && patternImage.CrossFade ? YieldWait : DynValue.Nil;
         }
     }
 }

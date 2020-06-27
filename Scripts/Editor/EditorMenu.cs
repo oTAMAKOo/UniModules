@@ -4,7 +4,7 @@ using System.IO;
 using Extensions.Devkit;
 
 // Modules.
-using Modules.Dicing;
+using Modules.PatternTexture;
 using Modules.GameText.Editor;
 using Modules.MessagePack;
 using Modules.Master;
@@ -306,10 +306,10 @@ namespace Modules
             ComponentCleaner.Execute();
         }
 
-        [MenuItem(itemName: ToolsMenu + "Open DicingPacker")]
-        public static void OpenDicingPacker()
+        [MenuItem(itemName: ToolsMenu + "Open PatternTexturePacker")]
+        public static void OpenPatternTexturePacker()
         {
-            DicingPacker.Open();
+            PatternTexturePacker.Open();
         }
 
         [MenuItem(itemName: ToolsMenu + "Open AssetBundleDependencyChecker")]
