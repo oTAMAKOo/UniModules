@@ -32,7 +32,9 @@ namespace Modules.PatternTexture
         {
             target = UnityUtility.GetComponent<PatternImage>(gameObject);
 
-            patternNames = GetPatternNames();
+            var patternTable = GetPatternTable();
+
+            patternNames = patternTable.Keys.ToArray();
 
             if (target != null)
             {
@@ -56,7 +58,8 @@ namespace Modules.PatternTexture
                 }
             }
         }
-
-        public abstract IReadOnlyList<string> GetPatternNames();
+        
+        /// <summary> パターン名・表示名取得. </summary>
+        public abstract IReadOnlyDictionary<string, string> GetPatternTable();
     }
 }

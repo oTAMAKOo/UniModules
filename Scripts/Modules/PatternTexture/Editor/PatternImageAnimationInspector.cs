@@ -35,7 +35,10 @@ namespace Modules.PatternTexture
             EditorGUI.BeginChangeCheck();
 
             var index = Reflection.GetPrivateField<PatternImageAnimation, int>(instance, "patternIndex");
-            var labels = instance.GetPatternNames();
+
+            var patternTable = instance.GetPatternTable();
+
+            var labels = patternTable.Values.ToArray();
 
             index = EditorGUILayout.Popup("PatternName", index, labels.ToArray());
 
