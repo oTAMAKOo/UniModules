@@ -1,18 +1,14 @@
 ﻿
 using UnityEngine;
 using UnityEditorInternal;
-using System;
-using System.Linq;
 using System.Collections.Generic;
-using UniRx;
-using Extensions;
 
 namespace Modules.Devkit.EventHook
 {
     public static class AdditionalComponentUtility
     {
         /// <summary>
-        /// T1の上にT2のコンポーネントを移動する.
+        /// parentの上にtargetのコンポーネントを移動する.
         /// </summary>
         public static void SetScriptOrder(GameObject gameObject, Component parent, Component target)
         {
