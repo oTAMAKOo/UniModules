@@ -38,24 +38,61 @@ namespace Modules.StateControl
         }
 
         /// <summary> ノードを取得 </summary>
-        public TStateNode GetNode<TStateNode>(T state) where TStateNode : StateNodeBase<T>, new()
+        public StateNode<T> GetNode(T state)
         {
-            var stateInstance = stateTable.GetValueOrDefault(state);
+            StateNode<T> stateInstance = null;
 
-            if (stateInstance == null)
+            if (stateTable.ContainsKey(state))
             {
-                stateInstance = new TStateNode();
+                stateInstance = stateTable[state] as StateNode<T>;
+                
+                // 登録済みのクラスと違う型で取得しようとしている.
+                if (stateInstance == null)
+                {
+                    throw new Exception("Does not match registered class type.");
+                }
+            }
+            else
+            {
+                stateInstance = new StateNode<T>();
 
                 stateInstance.Initialize(state);
-                
+
                 stateTable[state] = stateInstance;
             }
 
-            return stateInstance as TStateNode;
+            return stateInstance;
+        }
+
+        /// <summary> ノードを取得 </summary>
+        public StateNode<T, TArgument> GetNode<TArgument>(T state) where TArgument : StateArgument, new()
+        {
+            StateNode<T, TArgument> stateInstance = null;
+
+            if (stateTable.ContainsKey(state))
+            {
+                stateInstance = stateTable[state] as StateNode<T, TArgument>;
+
+                // 登録済みのクラスと違う型で取得しようとしている.
+                if (stateInstance == null)
+                {
+                    throw new Exception("Does not match registered class type.");
+                }
+            }
+            else
+            {
+                stateInstance = new StateNode<T, TArgument>();
+
+                stateInstance.Initialize(state);
+
+                stateTable[state] = stateInstance;
+            }
+
+            return stateInstance;
         }
 
         /// <summary> 登録されたステートをクリア </summary>
-        public void Reset()
+        public void Clear()
         {
             if (changeStateDisposable != null)
             {
