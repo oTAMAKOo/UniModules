@@ -18,9 +18,9 @@ namespace Modules.StateControl
 
         private LifetimeDisposable lifetimeDisposable = null;
 
-        private IStateNode<T> currentState = null;
+        private StateNodeBase<T> currentState = null;
 
-        private Dictionary<T, IStateNode<T>> stateTable = null;
+        private Dictionary<T, StateNodeBase<T>> stateTable = null;
 
         private IDisposable changeStateDisposable = null;
 
@@ -34,26 +34,31 @@ namespace Modules.StateControl
         {
             lifetimeDisposable = new LifetimeDisposable();
 
-            stateTable = new Dictionary<T, IStateNode<T>>();
+            stateTable = new Dictionary<T, StateNodeBase<T>>();
         }
 
-        /// <summary> 登録済みのノードを取得 </summary>
-        public TStateNode GetNode<TStateNode>(T state) where TStateNode : class, IStateNode<T>
+        /// <summary> ノードを取得 </summary>
+        public TStateNode GetNode<TStateNode>(T state) where TStateNode : StateNodeBase<T>, new()
         {
-            return stateTable.GetValueOrDefault(state) as TStateNode;
-        }
+            var stateInstance = stateTable.GetValueOrDefault(state);
 
-        /// <summary> ステートを登録 </summary>
-        public void Register(IStateNode<T> stateInstance)
-        {
-            var type = stateInstance.State;
-
-            if (stateTable.ContainsKey(type))
+            if (stateInstance == null)
             {
-                throw new ArgumentException(string.Format("This state is already registered: {0}", type));
+                stateInstance = new TStateNode();
+
+                stateInstance.Initialize(state);
+
+                var type = stateInstance.State;
+
+                if (stateTable.ContainsKey(type))
+                {
+                    throw new ArgumentException(string.Format("This state is already registered: {0}", type));
+                }
+
+                stateTable[state] = stateInstance;
             }
 
-            stateTable[type] = stateInstance;
+            return stateInstance as TStateNode;
         }
 
         /// <summary> 登録されたステートをクリア </summary>

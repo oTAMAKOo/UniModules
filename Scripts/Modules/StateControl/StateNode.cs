@@ -10,13 +10,24 @@ namespace Modules.StateControl
 {
     public abstract class StateArgument { }
 
-    public interface IStateNode<T> where T : Enum
+    public abstract class StateNodeBase<T> where T : Enum
     {
-        T State { get; }
+        protected bool initialized = false;
 
-        IEnumerator Enter();
+        public T State { get; private set; }
 
-        IEnumerator Exit();
+        public virtual void Initialize(T state)
+        {
+            if (initialized){ return; }
+
+            State = state;
+
+            initialized = true;
+        }
+
+        public abstract IEnumerator Enter();
+
+        public abstract IEnumerator Exit();
     }
 
     public sealed class StateNode<T> : StateNode<T, StateNode<T>.EmptyArgument> where T : Enum
@@ -30,8 +41,6 @@ namespace Modules.StateControl
         //----- property -----
 
         //----- method -----
-
-        public StateNode(T state) : base(state) { }
 
         /// <summary> 開始イベント追加 </summary>
         public void AddEnterFunction(Func<IEnumerator> function, int priority = 0)
@@ -47,7 +56,7 @@ namespace Modules.StateControl
         }
     }
 
-    public class StateNode<T, TArgument> : IStateNode<T> where T : Enum where TArgument : StateArgument, new()
+    public class StateNode<T, TArgument> : StateNodeBase<T> where T : Enum where TArgument : StateArgument, new()
     {
         //----- params -----
 
@@ -61,13 +70,13 @@ namespace Modules.StateControl
 
         //----- property -----
 
-        public T State { get; private set; }
-
         //----- method -----
 
-        public StateNode(T state)
+        public override void Initialize(T state)
         {
-            State = state;
+            if (initialized){ return; }
+
+            base.Initialize(state);
 
             enterFunctions = new SortedDictionary<int, List<Func<TArgument, IEnumerator>>>();
             exitFunctions = new SortedDictionary<int, List<Func<IEnumerator>>>();
@@ -102,7 +111,7 @@ namespace Modules.StateControl
         }
 
         /// <summary> 開始処理実行 </summary>
-        public IEnumerator Enter()
+        public override IEnumerator Enter()
         {
             foreach (var item in enterFunctions.Values)
             {
@@ -116,7 +125,7 @@ namespace Modules.StateControl
         }
 
         /// <summary> 終了処理実行 </summary>
-        public IEnumerator Exit()
+        public override IEnumerator Exit()
         {
             foreach (var item in exitFunctions.Values)
             {
