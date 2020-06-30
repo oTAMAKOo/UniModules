@@ -47,14 +47,7 @@ namespace Modules.StateControl
                 stateInstance = new TStateNode();
 
                 stateInstance.Initialize(state);
-
-                var type = stateInstance.State;
-
-                if (stateTable.ContainsKey(type))
-                {
-                    throw new ArgumentException(string.Format("This state is already registered: {0}", type));
-                }
-
+                
                 stateTable[state] = stateInstance;
             }
 
