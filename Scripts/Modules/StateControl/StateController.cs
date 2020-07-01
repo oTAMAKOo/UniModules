@@ -24,6 +24,8 @@ namespace Modules.StateControl
 
         private IDisposable changeStateDisposable = null;
 
+        private bool isExecute = false;
+
         //----- property -----
 
         public T Current { get { return currentState != null ? currentState.State : default; } }
@@ -106,22 +108,41 @@ namespace Modules.StateControl
         }
 
         /// <summary> ステート変更を要求 </summary>
-        public void Request(T next)
+        public void Request(T next, bool force = false)
         {
-            Request(next, new StateEmptyArgument());
+            Request(next, new StateEmptyArgument(), force);
         }
 
         /// <summary> ステート変更を要求 </summary>
-        public void Request<TArgument>(T next, TArgument argument) where TArgument : StateArgument, new()
+        public void Request<TArgument>(T next, TArgument argument, bool force = false) where TArgument : StateArgument, new()
         {
-            if (changeStateDisposable != null)
+            if (isExecute)
             {
-                changeStateDisposable.Dispose();
-                changeStateDisposable = null;
+                if (force)
+                {
+                    if (changeStateDisposable != null)
+                    {
+                        changeStateDisposable.Dispose();
+                        changeStateDisposable = null;
+                    }
+                }
+                else
+                {
+                    return;
+                }
             }
 
+            isExecute = true;
+
+            // ※ changeStateDisposableで実行中判定しようとすると中でyield breakしているだけの場合Finallyが先に呼ばれてしまう為実行中フラグで管理する.
+
             changeStateDisposable = Observable.FromCoroutine(() => ChangeState(next, argument))
-                .Subscribe(_ => changeStateDisposable = null)
+                .Finally(() =>
+                    {
+                        changeStateDisposable = null;
+                        isExecute = false;
+                    })
+                .Subscribe()
                 .AddTo(lifetimeDisposable.Disposable);
         }
 

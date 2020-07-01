@@ -113,10 +113,21 @@ namespace Modules.StateControl
         /// <summary> 開始処理実行 </summary>
         public override IEnumerator Enter()
         {
-            foreach (var item in enterFunctions.Values)
+            foreach (var functions in enterFunctions.Values)
             {
-                var enterYield = item.Select(x => Observable.FromCoroutine(() => x(argument))).WhenAll().ToYieldInstruction();
+                var observers = new List<IObservable<Unit>>();
 
+                foreach (var function in functions)
+                {
+                    var func = function;
+
+                    var observer = Observable.Defer(() => Observable.FromCoroutine(() => func(argument)));
+
+                    observers.Add(observer);
+                }
+
+                var enterYield = observers.WhenAll().ToYieldInstruction();
+                
                 while (!enterYield.IsDone)
                 {
                     yield return null;
@@ -127,9 +138,20 @@ namespace Modules.StateControl
         /// <summary> 終了処理実行 </summary>
         public override IEnumerator Exit()
         {
-            foreach (var item in exitFunctions.Values)
+            foreach (var functions in exitFunctions.Values)
             {
-                var exitYield = item.Select(x => Observable.FromCoroutine(x)).WhenAll().ToYieldInstruction();
+                var observers = new List<IObservable<Unit>>();
+
+                foreach (var function in functions)
+                {
+                    var func = function;
+
+                    var observer = Observable.Defer(() => Observable.FromCoroutine(() => func()));
+
+                    observers.Add(observer);
+                }
+
+                var exitYield = observers.WhenAll().ToYieldInstruction();
 
                 while (!exitYield.IsDone)
                 {
