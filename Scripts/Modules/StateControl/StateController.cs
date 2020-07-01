@@ -1,4 +1,5 @@
 ﻿
+using UnityEngine;
 using System;
 using System.Linq;
 using System.Collections;
@@ -51,7 +52,7 @@ namespace Modules.StateControl
                 // 登録済みのクラスと違う型で取得しようとしている.
                 if (stateInstance == null)
                 {
-                    throw new Exception("Does not match registered class type.");
+                    Debug.LogError("Does not match registered class type.");
                 }
             }
             else
@@ -78,7 +79,7 @@ namespace Modules.StateControl
                 // 登録済みのクラスと違う型で取得しようとしている.
                 if (stateInstance == null)
                 {
-                    throw new Exception("Does not match registered class type.");
+                    Debug.LogError("Does not match registered class type.");
                 }
             }
             else
@@ -156,7 +157,7 @@ namespace Modules.StateControl
 
             if (prevState != null)
             {
-                var exitYield = prevState.Exit().ToYieldInstruction();
+                var exitYield = prevState.Exit(next).ToYieldInstruction();
 
                 while (!exitYield.IsDone)
                 {

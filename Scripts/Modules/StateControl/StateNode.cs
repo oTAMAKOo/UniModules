@@ -27,7 +27,7 @@ namespace Modules.StateControl
 
         public abstract IEnumerator Enter();
 
-        public abstract IEnumerator Exit();
+        public abstract IEnumerator Exit(T nextState);
     }
 
     public sealed class StateNode<T> : StateNode<T, StateNode<T>.EmptyArgument> where T : Enum
@@ -64,7 +64,7 @@ namespace Modules.StateControl
 
         protected SortedDictionary<int, List<Func<TArgument, IEnumerator>>> enterFunctions = null;
 
-        protected SortedDictionary<int, List<Func<IEnumerator>>> exitFunctions = null;
+        protected SortedDictionary<int, List<Func<T, IEnumerator>>> exitFunctions = null;
 
         protected TArgument argument = null;
 
@@ -79,7 +79,7 @@ namespace Modules.StateControl
             base.Initialize(state);
 
             enterFunctions = new SortedDictionary<int, List<Func<TArgument, IEnumerator>>>();
-            exitFunctions = new SortedDictionary<int, List<Func<IEnumerator>>>();
+            exitFunctions = new SortedDictionary<int, List<Func<T, IEnumerator>>>();
         }
 
         public void SetArgument(StateArgument enterArgument)
@@ -103,9 +103,9 @@ namespace Modules.StateControl
         }
 
         /// <summary> 終了イベント追加 </summary>
-        public void AddExitFunction(Func<IEnumerator> function, int priority = 0)
+        public void AddExitFunction(Func<T, IEnumerator> function, int priority = 0)
         {
-            var list = exitFunctions.GetOrAdd(priority, i => new List<Func<IEnumerator>>());
+            var list = exitFunctions.GetOrAdd(priority, i => new List<Func<T, IEnumerator>>());
 
             list.Add(function);
         }
@@ -136,7 +136,7 @@ namespace Modules.StateControl
         }
 
         /// <summary> 終了処理実行 </summary>
-        public override IEnumerator Exit()
+        public override IEnumerator Exit(T nextState)
         {
             foreach (var functions in exitFunctions.Values)
             {
@@ -146,7 +146,7 @@ namespace Modules.StateControl
                 {
                     var func = function;
 
-                    var observer = Observable.Defer(() => Observable.FromCoroutine(() => func()));
+                    var observer = Observable.Defer(() => Observable.FromCoroutine(() => func(nextState)));
 
                     observers.Add(observer);
                 }
