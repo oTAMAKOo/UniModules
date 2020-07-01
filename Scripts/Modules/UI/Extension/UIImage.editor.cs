@@ -15,6 +15,13 @@ namespace Modules.UI.Extension
 
         public const string DevelopmentAssetName = "*Sprite (Development)";
 
+        private sealed class AssetCacheInfo
+        {
+            public string assetGuid { get; set; }
+            public string spriteId { get; set; }
+            public Sprite spriteAsset { get; set; }
+        }
+
         //----- field -----
 
         #pragma warning disable 0414
@@ -23,6 +30,8 @@ namespace Modules.UI.Extension
         private string assetGuid = null;
         [SerializeField, HideInInspector]
         private string spriteId = null;
+
+        private static FixedQueue<AssetCacheInfo> spriteAssetCache = null;
 
         #pragma warning restore 0414
 
@@ -34,21 +43,51 @@ namespace Modules.UI.Extension
         {
             if (Application.isPlaying){ return; }
 
-            DeleteCreatedAsset();
-
             if (Image.sprite != null) { return; }
 
             if (string.IsNullOrEmpty(assetGuid)) { return; }
 
             if (string.IsNullOrEmpty(spriteId)) { return; }
-        
+
             var assetPath = AssetDatabase.GUIDToAssetPath(assetGuid);
 
             if (string.IsNullOrEmpty(assetPath)) { return; }
+            
+            if (spriteAssetCache == null)
+            {
+                spriteAssetCache = new FixedQueue<AssetCacheInfo>(250);
+            }
 
-            var spriteAsset = AssetDatabase.LoadAllAssetsAtPath(assetPath)
-                .OfType<Sprite>()
-                .FirstOrDefault(x => x.GetSpriteID().ToString() == spriteId);
+            Sprite spriteAsset = null;
+
+            var cacheAssetInfo = spriteAssetCache.FirstOrDefault(x => x.assetGuid == assetGuid && x.spriteId == spriteId);
+
+            if (cacheAssetInfo == null)
+            {
+                spriteAsset = AssetDatabase.LoadAllAssetsAtPath(assetPath)
+                    .OfType<Sprite>()
+                    .FirstOrDefault(x => x.GetSpriteID().ToString() == spriteId);
+
+                if (spriteAsset != null)
+                {
+                    cacheAssetInfo = new AssetCacheInfo()
+                    {
+                        assetGuid = assetGuid,
+                        spriteId = spriteId,
+                        spriteAsset = spriteAsset,
+                    };
+
+                    spriteAssetCache.Enqueue(cacheAssetInfo);
+                }
+            }
+            else
+            {
+                spriteAsset = cacheAssetInfo.spriteAsset;
+
+                spriteAssetCache.Remove(cacheAssetInfo);
+
+                spriteAssetCache.Enqueue(cacheAssetInfo);
+            }
 
             if (spriteAsset == null) { return; }
 

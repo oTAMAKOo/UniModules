@@ -3,6 +3,7 @@
 
 using UnityEngine;
 using UnityEditor;
+using System.Linq;
 using Extensions;
 
 namespace Modules.UI.Extension
@@ -13,14 +14,20 @@ namespace Modules.UI.Extension
 
         public const string DevelopmentAssetName = "*Texture (Development)";
 
+        private sealed class AssetCacheInfo
+        {
+            public string assetGuid { get; set; }
+            public Texture textureAsset { get; set; }
+        }
+
         //----- field -----
 
         #pragma warning disable 0414
 
         [SerializeField, HideInInspector]
         private string assetGuid = null;
-        [SerializeField, HideInInspector]
-        private string spriteId = null;
+
+        private static FixedQueue<AssetCacheInfo> textureAssetCache = null;
 
         #pragma warning restore 0414
 
@@ -42,7 +49,38 @@ namespace Modules.UI.Extension
 
             if (string.IsNullOrEmpty(assetPath)) { return; }
 
-            var textureAsset = AssetDatabase.LoadMainAssetAtPath(assetPath) as Texture;
+            if (textureAssetCache == null)
+            {
+                textureAssetCache = new FixedQueue<AssetCacheInfo>(100);
+            }
+
+            Texture textureAsset = null;
+
+            var cacheAssetInfo = textureAssetCache.FirstOrDefault(x => x.assetGuid == assetGuid);
+
+            if (cacheAssetInfo == null)
+            {
+                textureAsset = AssetDatabase.LoadMainAssetAtPath(assetPath) as Texture;
+
+                if (textureAsset != null)
+                {
+                    cacheAssetInfo = new AssetCacheInfo()
+                    {
+                        assetGuid = assetGuid,
+                        textureAsset = textureAsset,
+                    };
+
+                    textureAssetCache.Enqueue(cacheAssetInfo);
+                }
+            }
+            else
+            {
+                textureAsset = cacheAssetInfo.textureAsset;
+
+                textureAssetCache.Remove(cacheAssetInfo);
+
+                textureAssetCache.Enqueue(cacheAssetInfo);
+            }
 
             if (textureAsset == null) { return; }
             
