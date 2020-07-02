@@ -23,23 +23,5 @@ namespace Modules.UI.Extension
         }
 
         //----- method -----
-
-        void OnEnable()
-        {
-            #if UNITY_EDITOR
-
-            ApplyDevelopmentAsset();
-
-            #endif
-        }
-
-        void OnDisable()
-        {
-            #if UNITY_EDITOR
-
-            DeleteCreatedAsset();
-
-            #endif
-        }
     }
 }

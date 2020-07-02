@@ -4,10 +4,10 @@ using UnityEditor;
 using Extensions;
 using Extensions.Devkit;
 
-namespace Modules.UI.Extension
+namespace Modules.Devkit.DummyAssetSetter
 {
-    [CustomEditor(typeof(UIRawImage), true)]
-    public sealed class UIRawImageInspector : ScriptlessEditor
+    [CustomEditor(typeof(DummyTextureSetter))]
+    public sealed class DummyTextureSetterInspector : ScriptlessEditor
     {
         //----- params -----
 
@@ -15,7 +15,7 @@ namespace Modules.UI.Extension
 
         private Texture textureAsset = null;
 
-        private Texture developmentTexture = null;
+        private Texture dummyTexture = null;
 
         //----- property -----
 
@@ -23,11 +23,11 @@ namespace Modules.UI.Extension
 
         void OnEnable()
         {
-            var instance = target as UIRawImage;
+            var instance = target as DummyTextureSetter;
 
             textureAsset = null;
 
-            var assetGuid = Reflection.GetPrivateField<UIRawImage, string>(instance, "assetGuid");
+            var assetGuid = Reflection.GetPrivateField<DummyTextureSetter, string>(instance, "assetGuid");
 
             if (!string.IsNullOrEmpty(assetGuid))
             {
@@ -39,23 +39,32 @@ namespace Modules.UI.Extension
                 }
             }
 
-            if (instance.texture != null && instance.texture.name == UIRawImage.DevelopmentAssetName)
+            var rawImage = instance.RawImage;
+
+            if (rawImage != null)
             {
-                developmentTexture = instance.texture;
+                if (rawImage.texture != null && rawImage.texture.name == DummyTextureSetter.DummyAssetName)
+                {
+                    dummyTexture = rawImage.texture;
+                }
             }
         }
 
         public override void OnInspectorGUI()
         {
-            var instance = target as UIRawImage;
+            var instance = target as DummyTextureSetter;
+
+            var rawImage = instance.RawImage;
+
+            if (rawImage == null){ return; }
 
             GUILayout.Space(4f);
 
             DrawDefaultScriptlessInspector();
-            
+
             using (new EditorGUILayout.HorizontalScope())
             {
-                EditorGUILayout.PrefixLabel("Development Texture");
+                EditorGUILayout.PrefixLabel("Dummy Texture");
 
                 EditorGUI.BeginChangeCheck();
 
@@ -63,7 +72,7 @@ namespace Modules.UI.Extension
 
                 if (EditorGUI.EndChangeCheck())
                 {
-                    UnityEditorUtility.RegisterUndo("UIRawImageInspector-undo", instance);
+                    UnityEditorUtility.RegisterUndo("DummyTextureSetterInspector-Undo", instance);
 
                     var assetGuid = textureAsset != null ? UnityEditorUtility.GetAssetGUID(textureAsset) : string.Empty;
 
@@ -71,31 +80,31 @@ namespace Modules.UI.Extension
 
                     if (textureAsset == null)
                     {
-                        if (instance.texture != null && instance.texture.name == UIRawImage.DevelopmentAssetName)
+                        if (rawImage.texture != null && rawImage.texture.name == DummyTextureSetter.DummyAssetName)
                         {
-                            instance.texture = null;                            
+                            rawImage.texture = null;
                         }
                     }
                     else
                     {
-                        Reflection.InvokePrivateMethod(instance, "ApplyDevelopmentAsset");
+                        Reflection.InvokePrivateMethod(instance, "ApplyDummyAsset");
                     }
                 }
             }
 
-            if (developmentTexture != null)
+            if (dummyTexture != null)
             {
-                if (instance.texture != developmentTexture)
+                if (rawImage.texture != dummyTexture)
                 {
-                    UnityUtility.SafeDelete(developmentTexture);
+                    UnityUtility.SafeDelete(dummyTexture);
 
-                    developmentTexture = null;
+                    dummyTexture = null;
                 }
             }
 
-            if (instance.texture != null && instance.texture.name == UIImage.DevelopmentAssetName)
+            if (rawImage.texture != null && rawImage.texture.name == DummyTextureSetter.DummyAssetName)
             {
-                developmentTexture = instance.texture;
+                dummyTexture = rawImage.texture;
             }
         }
     }

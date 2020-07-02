@@ -1,19 +1,27 @@
 ﻿
-#if UNITY_EDITOR
-
 using UnityEngine;
-using UnityEditor;
-using UnityEditor.Experimental.U2D;
+using UnityEngine.UI;
+using System;
 using System.Linq;
+using System.Collections.Generic;
 using Extensions;
 
-namespace Modules.UI.Extension
+#if UNITY_EDITOR
+
+using UnityEditor;
+using UnityEditor.Experimental.U2D;
+
+#endif
+
+namespace Modules.Devkit.DummyAssetSetter
 {
-    public abstract partial class UIImage
+    public sealed class DummySpriteSetter : MonoBehaviour
     {
+        #if UNITY_EDITOR
+
         //----- params -----
 
-        public const string DevelopmentAssetName = "*Sprite (Development)";
+        public const string DummyAssetName = "*Sprite (DummyAsset)";
 
         private sealed class AssetCacheInfo
         {
@@ -24,26 +32,39 @@ namespace Modules.UI.Extension
 
         //----- field -----
 
-        #pragma warning disable 0414
-
         [SerializeField, HideInInspector]
         private string assetGuid = null;
         [SerializeField, HideInInspector]
         private string spriteId = null;
 
-        private static FixedQueue<AssetCacheInfo> spriteAssetCache = null;
+        private Image image = null;
 
-        #pragma warning restore 0414
+        private static FixedQueue<AssetCacheInfo> spriteAssetCache = null;
 
         //----- property -----
 
+        public Image Image
+        {
+            get { return image ?? (image = UnityUtility.GetComponent<Image>(gameObject)); }
+        }
+
         //----- method -----
 
-        private void ApplyDevelopmentAsset()
+        void OnEnable()
+        {
+            ApplyDummyAsset();
+        }
+
+        void OnDisable()
+        {
+            DeleteCreatedAsset();
+        }
+
+        private void ApplyDummyAsset()
         {
             if (Application.isPlaying){ return; }
 
-            if (Image.sprite != null) { return; }
+            if (Image.sprite != null && Image.sprite.name != DummyAssetName) { return; }
 
             if (string.IsNullOrEmpty(assetGuid)) { return; }
 
@@ -91,6 +112,8 @@ namespace Modules.UI.Extension
 
             if (spriteAsset == null) { return; }
 
+            DeleteCreatedAsset();
+
             var texture = spriteAsset.texture;
             var rect = spriteAsset.rect;
             var pivot = spriteAsset.pivot;
@@ -99,7 +122,7 @@ namespace Modules.UI.Extension
 
             var sprite = Sprite.Create(texture, rect, pivot, pixelsPerUnit, 0, SpriteMeshType.FullRect, border);
 
-            sprite.name = DevelopmentAssetName;
+            sprite.name = DummyAssetName;
 
             sprite.hideFlags = HideFlags.DontSaveInEditor;
 
@@ -114,14 +137,14 @@ namespace Modules.UI.Extension
 
             var sprite = Image.sprite;
 
-            if (sprite != null && sprite.name == DevelopmentAssetName)
+            if (sprite != null && sprite.name == DummyAssetName)
             {
                 Image.sprite = null;
 
                 UnityUtility.SafeDelete(sprite);
             }
         }
+
+        #endif
     }
 }
-
-#endif

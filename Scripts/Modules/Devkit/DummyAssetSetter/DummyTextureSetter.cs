@@ -1,18 +1,26 @@
 ﻿
-#if UNITY_EDITOR
-
 using UnityEngine;
-using UnityEditor;
+using UnityEngine.UI;
 using System.Linq;
 using Extensions;
 
-namespace Modules.UI.Extension
+#if UNITY_EDITOR
+
+using UnityEditor;
+
+#endif
+
+namespace Modules.Devkit.DummyAssetSetter
 {
-    public abstract partial class UIRawImage
+    [ExecuteAlways]
+    [RequireComponent(typeof(RawImage))]
+    public sealed class DummyTextureSetter : MonoBehaviour
     {
+        #if UNITY_EDITOR
+
         //----- params -----
 
-        public const string DevelopmentAssetName = "*Texture (Development)";
+        public const string DummyAssetName = "*Texture (DummyAsset)";
 
         private sealed class AssetCacheInfo
         {
@@ -22,26 +30,39 @@ namespace Modules.UI.Extension
 
         //----- field -----
 
-        #pragma warning disable 0414
-
         [SerializeField, HideInInspector]
         private string assetGuid = null;
 
-        private static FixedQueue<AssetCacheInfo> textureAssetCache = null;
+        private RawImage rawImage = null;
 
-        #pragma warning restore 0414
+        private static FixedQueue<AssetCacheInfo> textureAssetCache = null;
 
         //----- property -----
 
+        public RawImage RawImage
+        {
+            get { return rawImage ?? (rawImage = UnityUtility.GetComponent<RawImage>(gameObject)); }
+        }
+
         //----- method -----
 
-        private void ApplyDevelopmentAsset()
+        void OnEnable()
+        {
+            ApplyDummyAsset();
+        }
+
+        void OnDisable()
+        {
+            DeleteCreatedAsset();
+        }
+
+        private void ApplyDummyAsset()
         {
             if (Application.isPlaying) { return; }
 
             DeleteCreatedAsset();
 
-            if (RawImage.texture != null) { return; }
+            if (RawImage.texture != null && RawImage.texture.name != DummyAssetName) { return; }
 
             if (string.IsNullOrEmpty(assetGuid)) { return; }
 
@@ -83,10 +104,12 @@ namespace Modules.UI.Extension
             }
 
             if (textureAsset == null) { return; }
-            
+
+            DeleteCreatedAsset();
+
             var texture = new Texture2D(textureAsset.width, textureAsset.height, TextureFormat.ARGB32, false);
 
-            texture.name = DevelopmentAssetName;
+            texture.name = DummyAssetName;
 
             texture.hideFlags = HideFlags.DontSaveInEditor;
 
@@ -107,14 +130,14 @@ namespace Modules.UI.Extension
 
             var texture = RawImage.texture;
 
-            if (texture != null && texture.name == DevelopmentAssetName)
+            if (texture != null && texture.name == DummyAssetName)
             {
                 RawImage.texture = null;
 
                 UnityUtility.SafeDelete(texture);
             }
         }
+        
+        #endif
     }
 }
-
-#endif
