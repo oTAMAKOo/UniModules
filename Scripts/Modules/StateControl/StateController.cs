@@ -7,15 +7,13 @@ using Extensions;
 
 namespace Modules.StateControl
 {
-    public sealed class StateController<T> where T : Enum
+    public sealed class StateController<T> : LifetimeDisposable where T : Enum
     {
         //----- params -----
 
         private sealed class StateEmptyArgument : StateArgument { }
 
         //----- field -----
-
-        private LifetimeDisposable lifetimeDisposable = null;
 
         private State<T> currentState = null;
 
@@ -33,8 +31,6 @@ namespace Modules.StateControl
 
         public StateController()
         {
-            lifetimeDisposable = new LifetimeDisposable();
-
             stateTable = new Dictionary<T, State<T>>();
         }
 
@@ -103,7 +99,7 @@ namespace Modules.StateControl
                         isExecute = false;
                     })
                 .Subscribe()
-                .AddTo(lifetimeDisposable.Disposable);
+                .AddTo(Disposable);
         }
 
         private IEnumerator ChangeState<TArgument>(T next, TArgument argument) where TArgument : StateArgument
