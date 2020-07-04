@@ -117,7 +117,7 @@ namespace Modules.StateControl
 
             if (prevState != null)
             {
-                var exitYield = Observable.FromCoroutine(() => Exit(prevState, nextState.Type)).ToYieldInstruction();
+                var exitYield = Exit(prevState, nextState.Type).ToYieldInstruction();
 
                 while (!exitYield.IsDone)
                 {
@@ -131,7 +131,7 @@ namespace Modules.StateControl
 
             // ステートの開始.
 
-            var enterYield = Observable.FromCoroutine(() => Enter(currentState, argument)).ToYieldInstruction();
+            var enterYield = Enter(currentState, argument).ToYieldInstruction();
 
             while (!enterYield.IsDone)
             {
