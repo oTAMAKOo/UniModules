@@ -1,7 +1,5 @@
 ﻿
-using UnityEngine;
 using System;
-using System.Linq;
 using System.Collections;
 using System.Collections.Generic;
 using UniRx;
@@ -19,9 +17,9 @@ namespace Modules.StateControl
 
         private LifetimeDisposable lifetimeDisposable = null;
 
-        private StateNodeBase<T> currentState = null;
+        private State<T> currentState = null;
 
-        private Dictionary<T, StateNodeBase<T>> stateTable = null;
+        private Dictionary<T, State<T>> stateTable = null;
 
         private IDisposable changeStateDisposable = null;
 
@@ -29,7 +27,7 @@ namespace Modules.StateControl
 
         //----- property -----
 
-        public T Current { get { return currentState != null ? currentState.State : default; } }
+        public T Current { get { return currentState != null ? currentState.Type : default; } }
 
         //----- method -----
 
@@ -37,57 +35,18 @@ namespace Modules.StateControl
         {
             lifetimeDisposable = new LifetimeDisposable();
 
-            stateTable = new Dictionary<T, StateNodeBase<T>>();
+            stateTable = new Dictionary<T, State<T>>();
         }
 
         /// <summary> ノードを取得 </summary>
-        public StateNode<T> GetNode(T state)
+        public State<T> Get(T state)
         {
-            StateNode<T> stateInstance = null;
+            var stateInstance = stateTable.GetValueOrDefault(state);
 
-            if (stateTable.ContainsKey(state))
+            if (stateInstance == null)
             {
-                stateInstance = stateTable[state] as StateNode<T>;
+                stateInstance = new State<T>(state);
                 
-                // 登録済みのクラスと違う型で取得しようとしている.
-                if (stateInstance == null)
-                {
-                    Debug.LogError("Does not match registered class type.");
-                }
-            }
-            else
-            {
-                stateInstance = new StateNode<T>();
-
-                stateInstance.Initialize(state);
-
-                stateTable[state] = stateInstance;
-            }
-
-            return stateInstance;
-        }
-
-        /// <summary> ノードを取得 </summary>
-        public StateNode<T, TArgument> GetNode<TArgument>(T state) where TArgument : StateArgument, new()
-        {
-            StateNode<T, TArgument> stateInstance = null;
-
-            if (stateTable.ContainsKey(state))
-            {
-                stateInstance = stateTable[state] as StateNode<T, TArgument>;
-
-                // 登録済みのクラスと違う型で取得しようとしている.
-                if (stateInstance == null)
-                {
-                    Debug.LogError("Does not match registered class type.");
-                }
-            }
-            else
-            {
-                stateInstance = new StateNode<T, TArgument>();
-
-                stateInstance.Initialize(state);
-
                 stateTable[state] = stateInstance;
             }
 
@@ -147,17 +106,22 @@ namespace Modules.StateControl
                 .AddTo(lifetimeDisposable.Disposable);
         }
 
-        private IEnumerator ChangeState<TArgument>(T next, TArgument argument) where TArgument : StateArgument, new()
+        private IEnumerator ChangeState<TArgument>(T next, TArgument argument) where TArgument : StateArgument
         {
             var prevState = currentState;
 
             var nextState = stateTable.GetValueOrDefault(next);
 
+            if (nextState == null)
+            {
+                throw new KeyNotFoundException(string.Format("This state is not registered. Type: {0}", next));
+            }
+
             // 前のステートの終了待ち.
 
             if (prevState != null)
             {
-                var exitYield = prevState.Exit(next).ToYieldInstruction();
+                var exitYield = Observable.FromCoroutine(() => Exit(prevState, nextState.Type)).ToYieldInstruction();
 
                 while (!exitYield.IsDone)
                 {
@@ -165,24 +129,71 @@ namespace Modules.StateControl
                 }
             }
 
-            currentState = nextState ?? throw new ArgumentException(string.Format("The specified state is not registered. State: {0}", next));
+            // 現在のステートを更新.
 
-            // 引数を設定.
-
-            var stateClass = currentState as StateNode<T, TArgument>;
-
-            if (stateClass != null)
-            {
-                stateClass.SetArgument(argument);
-            }
+            currentState = nextState;
 
             // ステートの開始.
 
-            var enterYield = currentState.Enter().ToYieldInstruction();
+            var enterYield = Observable.FromCoroutine(() => Enter(currentState, argument)).ToYieldInstruction();
 
             while (!enterYield.IsDone)
             {
                 yield return null;
+            }
+        }
+
+        /// <summary> 開始処理実行 </summary>
+        private IEnumerator Enter<TArgument>(State<T> state, TArgument argument) where TArgument : StateArgument
+        {
+            var enterFunctions = state.GetEnterFunctions();
+
+            foreach (var functions in enterFunctions)
+            {
+                var observers = new List<IObservable<Unit>>();
+
+                foreach (var function in functions)
+                {
+                    var func = function;
+
+                    var observer = Observable.Defer(() => Observable.FromCoroutine(() => func(argument)));
+
+                    observers.Add(observer);
+                }
+
+                var enterYield = observers.WhenAll().ToYieldInstruction();
+
+                while (!enterYield.IsDone)
+                {
+                    yield return null;
+                }
+            }
+        }
+
+        /// <summary> 終了処理実行 </summary>
+        private IEnumerator Exit(State<T> state, T nextState)
+        {
+            var exitFunctions = state.GetExitFunctions();
+
+            foreach (var functions in exitFunctions)
+            {
+                var observers = new List<IObservable<Unit>>();
+
+                foreach (var function in functions)
+                {
+                    var func = function;
+
+                    var observer = Observable.Defer(() => Observable.FromCoroutine(() => func(nextState)));
+
+                    observers.Add(observer);
+                }
+
+                var exitYield = observers.WhenAll().ToYieldInstruction();
+
+                while (!exitYield.IsDone)
+                {
+                    yield return null;
+                }
             }
         }
     }
