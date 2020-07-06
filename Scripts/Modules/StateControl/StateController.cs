@@ -90,15 +90,14 @@ namespace Modules.StateControl
 
             isExecute = true;
 
-            // ※ changeStateDisposableで実行中判定しようとすると中でyield breakしているだけの場合Finallyが先に呼ばれてしまう為実行中フラグで管理する.
+            // ※ changeStateDisposableで実行中判定しようとすると中でyield breakしているだけの場合Subscribeが先に呼ばれてしまう為実行中フラグで管理する.
 
             changeStateDisposable = Observable.FromCoroutine(() => ChangeState(next, argument))
-                .Finally(() =>
+                .Subscribe(_ =>
                     {
                         changeStateDisposable = null;
                         isExecute = false;
                     })
-                .Subscribe()
                 .AddTo(Disposable);
         }
 
@@ -142,55 +141,99 @@ namespace Modules.StateControl
         /// <summary> 開始処理実行 </summary>
         private IEnumerator Enter<TArgument>(State<T> state, TArgument argument) where TArgument : StateArgument
         {
+            int? finishedPriority = null;
+
+            var count = 0;
+
             var enterFunctions = state.GetEnterFunctions();
-
-            foreach (var functions in enterFunctions)
+            
+            do
             {
-                var observers = new List<IObservable<Unit>>();
+                count = enterFunctions.Count;
 
-                foreach (var function in functions)
+                foreach (var enterFunction in enterFunctions)
                 {
-                    var func = function;
+                    // 既に実行済みのプライオリティ以下の関数は呼び出ししない.
+                    if (finishedPriority.HasValue && enterFunction.Key <= finishedPriority.Value) { continue; }
 
-                    var observer = Observable.Defer(() => Observable.FromCoroutine(() => func(argument)));
+                    var functions = enterFunction.Value;
 
-                    observers.Add(observer);
+                    var observers = new List<IObservable<Unit>>();
+
+                    foreach (var function in functions)
+                    {
+                        var func = function;
+
+                        var observer = Observable.Defer(() => Observable.FromCoroutine(() => func(argument)));
+
+                        observers.Add(observer);
+                    }
+
+                    var enterYield = observers.WhenAll().ToYieldInstruction();
+
+                    while (!enterYield.IsDone)
+                    {
+                        yield return null;
+                    }
+
+                    finishedPriority = enterFunction.Key;
+
+                    // 要素が増えていたら終了.
+                    if (count != enterFunctions.Count) { break; }
                 }
 
-                var enterYield = observers.WhenAll().ToYieldInstruction();
-
-                while (!enterYield.IsDone)
-                {
-                    yield return null;
-                }
+                enterFunctions = state.GetEnterFunctions();
             }
+            while (count != enterFunctions.Count);
         }
 
         /// <summary> 終了処理実行 </summary>
         private IEnumerator Exit(State<T> state, T nextState)
         {
+            int? finishedPriority = null;
+
+            var count = 0;
+
             var exitFunctions = state.GetExitFunctions();
 
-            foreach (var functions in exitFunctions)
+            do
             {
-                var observers = new List<IObservable<Unit>>();
+                count = exitFunctions.Count;
 
-                foreach (var function in functions)
+                foreach (var exitFunction in exitFunctions)
                 {
-                    var func = function;
+                    // 既に実行済みのプライオリティ以下の関数は呼び出ししない.
+                    if (finishedPriority.HasValue && exitFunction.Key <= finishedPriority.Value) { continue; }
 
-                    var observer = Observable.Defer(() => Observable.FromCoroutine(() => func(nextState)));
+                    var functions = exitFunction.Value;
 
-                    observers.Add(observer);
+                    var observers = new List<IObservable<Unit>>();
+
+                    foreach (var function in functions)
+                    {
+                        var func = function;
+
+                        var observer = Observable.Defer(() => Observable.FromCoroutine(() => func(nextState)));
+
+                        observers.Add(observer);
+                    }
+
+                    var enterYield = observers.WhenAll().ToYieldInstruction();
+
+                    while (!enterYield.IsDone)
+                    {
+                        yield return null;
+                    }
+
+                    finishedPriority = exitFunction.Key;
+
+                    // 要素が増えていたら終了.
+                    if (count != exitFunctions.Count) { break; }
                 }
 
-                var exitYield = observers.WhenAll().ToYieldInstruction();
-
-                while (!exitYield.IsDone)
-                {
-                    yield return null;
-                }
+                exitFunctions = state.GetExitFunctions();
             }
+            while (count != exitFunctions.Count);
         }
     }
 }

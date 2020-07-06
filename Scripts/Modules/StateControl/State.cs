@@ -1,8 +1,8 @@
 ﻿
+using UnityEngine;
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
 using Extensions;
 
 namespace Modules.StateControl
@@ -68,9 +68,7 @@ namespace Modules.StateControl
 
                     if (argument == null)
                     {
-                        var message = string.Format("The argument type is invalid.\nRequire Type: {0}\nTArgument Type:{1}", typeof(TArgument).FullName, x.GetType().FullName);
-
-                        throw new ArgumentException(message);
+                        Debug.LogErrorFormat("Invalid Argument type.\nRequire : {0}\nTArgument : {1}", typeof(TArgument).Name, x.GetType().Name);
                     }
                 }
 
@@ -88,14 +86,14 @@ namespace Modules.StateControl
             list.Add(function);
         }
 
-        public IReadOnlyList<List<Func<object, IEnumerator>>> GetEnterFunctions()
+        public IReadOnlyDictionary<int, List<Func<object, IEnumerator>>> GetEnterFunctions()
         {
-            return enterFunctions.Values.ToArray();
+            return enterFunctions;
         }
 
-        public IReadOnlyList<List<Func<T, IEnumerator>>> GetExitFunctions()
+        public IReadOnlyDictionary<int, List<Func<T, IEnumerator>>> GetExitFunctions()
         {
-            return exitFunctions.Values.ToArray();
+            return exitFunctions;
         }
     }
 }
