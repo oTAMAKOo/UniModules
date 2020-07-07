@@ -56,15 +56,16 @@ namespace Modules.FixedAspectCamera
 
         void Update()
         {
-            if (IsChangeAspect()) { return; }
+            if (!IsChangeAspect()) { return; }
 
             UpdateScreenRate();
         }
 
         private void UpdateScreenRate()
         {
-            float nowAspect = (float)Screen.width / (float)Screen.height;
-            float changeAspect;
+            var nowAspect = (float)Screen.width / (float)Screen.height;
+
+            var changeAspect = 0f;
 
             if (aspectRate > nowAspect)
             {
@@ -82,7 +83,7 @@ namespace Modules.FixedAspectCamera
 
         private bool IsChangeAspect()
         {
-            return target.aspect == aspectRate;
+            return target.aspect != aspectRate;
         }
     }
 }
