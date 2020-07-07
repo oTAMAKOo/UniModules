@@ -148,6 +148,14 @@ namespace Modules.StandAloneWindows.WindowAspectRatio
 
             Application.wantsToQuit += ApplicationWantsToQuit;
 
+            pixelHeightOfCurrentScreen = Screen.currentResolution.height;
+            pixelWidthOfCurrentScreen = Screen.currentResolution.width;
+
+            setHeight = Screen.height;
+            setWidth = Mathf.RoundToInt(Screen.height * aspect);
+
+            wasFullscreenLastFrame = Screen.fullScreen;
+
             // Find window handle of main Unity window.
             EnumThreadWindows(GetCurrentThreadId(), (hWnd, lParam) =>
             {
@@ -162,15 +170,21 @@ namespace Modules.StandAloneWindows.WindowAspectRatio
                 return true;
             }, IntPtr.Zero);
 
-            SetAspectRatio(aspectRatioWidth, aspectRatioHeight, true);
+            SetAspectRatio(aspectRatioWidth, aspectRatioHeight);
 
-            wasFullscreenLastFrame = Screen.fullScreen;
+            Apply();
 
             wndProcDelegate = WindowProc;
+
             newWndProcPtr = Marshal.GetFunctionPointerForDelegate(wndProcDelegate);
             oldWndProcPtr = SetWindowLong(unityHWnd, GWLP_WNDPROC, newWndProcPtr);
 
             initialized = true;
+        }
+
+        public void SetAllowFullscreen(bool allowFullscreen)
+        {
+            this.allowFullscreen = allowFullscreen;
         }
 
         public void SetMinSize(int minWidthPixel, int minHeightPixel)
@@ -185,17 +199,22 @@ namespace Modules.StandAloneWindows.WindowAspectRatio
             this.maxHeightPixel = maxHeightPixel;
         }
 
-        public void SetAspectRatio(float newAspectWidth, float newAspectHeight, bool apply)
+        public void SetAspectRatio(float newAspectWidth, float newAspectHeight)
         {
-            // Calculate new aspect ratio.
             aspectRatioWidth = newAspectWidth;
             aspectRatioHeight = newAspectHeight;
             aspect = aspectRatioWidth / aspectRatioHeight;
+        }
 
-            if (apply)
-            {
-                Screen.SetResolution(Screen.width, Mathf.RoundToInt(Screen.width / aspect), Screen.fullScreen);
-            }
+        public void Apply()
+        {
+            var width = Mathf.Clamp(Screen.width, minWidthPixel, maxWidthPixel);
+
+            var height = Mathf.RoundToInt(Screen.width / aspect);
+
+            height = Mathf.Clamp(height, minHeightPixel, maxHeightPixel);
+
+            Screen.SetResolution(width, height, allowFullscreen);
         }
 
         private IntPtr WindowProc(IntPtr hWnd, uint msg, IntPtr wParam, IntPtr lParam)
@@ -306,9 +325,10 @@ namespace Modules.StandAloneWindows.WindowAspectRatio
             else if (!Screen.fullScreen && wasFullscreenLastFrame)
             {
                 Screen.SetResolution(setWidth, setHeight, false);
+
                 resolutionChangedEvent.Invoke(setWidth, setHeight, false);
             }
-            else if (!Screen.fullScreen && setWidth != -1 && setHeight != -1 && (Screen.width != setWidth || Screen.height != setHeight))
+            else if (!Screen.fullScreen && (Screen.width != setWidth || Screen.height != setHeight))
             {
                 setHeight = Screen.height;
                 setWidth = Mathf.RoundToInt(Screen.height * aspect);
