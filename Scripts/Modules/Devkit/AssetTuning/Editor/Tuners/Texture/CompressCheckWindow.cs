@@ -20,6 +20,7 @@ namespace Modules.Devkit.AssetTuning
         {
             BuildTargetGroup.Android,
             BuildTargetGroup.iOS,
+            BuildTargetGroup.Standalone,
         };
 
         public enum ViewMode
@@ -303,11 +304,11 @@ namespace Modules.Devkit.AssetTuning
 
             var compress = false;
 
-            var isCompressASTC = Platforms.Any(x => textureImporter.IsCompressASTC(x));
+            var isBlockCompress = Platforms.Any(x => textureImporter.IsBlockCompress(x));
 
             var size = textureImporter.GetPreImportTextureSize();
 
-            if (isCompressASTC)
+            if (isBlockCompress)
             {
                 compress = IsMultipleOf4(size.x) && IsMultipleOf4(size.y);
             }

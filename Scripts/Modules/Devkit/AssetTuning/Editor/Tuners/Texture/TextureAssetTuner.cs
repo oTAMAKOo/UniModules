@@ -17,6 +17,7 @@ namespace Modules.Devkit.AssetTuning
         {
             BuildTargetGroup.Android,
             BuildTargetGroup.iOS,
+            BuildTargetGroup.Standalone,
         };
 
         //----- field -----
@@ -164,6 +165,9 @@ namespace Modules.Devkit.AssetTuning
 
                 case BuildTargetGroup.Android:
                     format = hasAlpha ? TextureImporterFormat.ASTC_RGBA_4x4 : TextureImporterFormat.ASTC_RGB_4x4;
+                    break;
+                case BuildTargetGroup.Standalone:
+                    format = hasAlpha ? TextureImporterFormat.DXT5 : TextureImporterFormat.DXT1;
                     break;
             }
 

@@ -5,6 +5,7 @@ using System;
 using System.IO;
 using Extensions;
 using Extensions.Devkit;
+using Modules.AssetBundles;
 using Modules.AssetBundles.Editor;
 using Modules.Devkit;
 using Modules.Devkit.Prefs;
@@ -128,7 +129,9 @@ namespace Modules.ExternalResource.Editor
 
             Prefs.exportPath = path;
 
-            return PathUtility.Combine(path, UnityPathUtility.GetPlatformName()) + PathUtility.PathSeparator;
+            var platformAssetFolderName = PlatformUtility.GetPlatformAssetFolderName();
+
+            return PathUtility.Combine(path, platformAssetFolderName) + PathUtility.PathSeparator;
         }        
     }
 }

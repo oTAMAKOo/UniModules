@@ -5,6 +5,7 @@ using UnityEditor.Build;
 using System.Linq;
 using System.IO;
 using Extensions;
+using Modules.AssetBundles;
 using Modules.Devkit.Prefs;
 
 namespace Modules.Devkit.Build
@@ -128,8 +129,12 @@ namespace Modules.Devkit.Build
 
             if (string.IsNullOrEmpty(directory)) { return; }
 
-            directory = PathUtility.Combine(directory, EditorUserBuildSettings.development ? "Development" : "Release");
-            directory = PathUtility.Combine(directory, UnityPathUtility.GetPlatformName());
+            var platformAssetFolderName = PlatformUtility.GetPlatformAssetFolderName();
+
+            var targetBuild = EditorUserBuildSettings.development ? "Development" : "Release";
+
+            directory = PathUtility.Combine(directory, targetBuild);
+            directory = PathUtility.Combine(directory, platformAssetFolderName);
 
             // 既存の成果物を破棄.
             FileUtil.DeleteFileOrDirectory(directory);

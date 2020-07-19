@@ -14,6 +14,12 @@ using Modules.Devkit;
 using Modules.ExternalResource;
 using Modules.UniRxExtension;
 
+#if UNITY_EDITOR
+
+using UnityEditor;
+
+#endif
+
 namespace Modules.AssetBundles
 {
     public sealed partial class AssetBundleManager : Singleton<AssetBundleManager>
@@ -185,9 +191,9 @@ namespace Modules.AssetBundles
 
         private string BuildDownloadUrl(AssetInfo assetInfo)
         {
-            var platformName = UnityPathUtility.GetPlatformName();
+            var folderName = PlatformUtility.GetPlatformAssetFolderName();
 
-            var url = PathUtility.Combine(new string[] { remoteUrl, platformName, assetInfo.FileName });
+            var url = PathUtility.Combine(new string[] { remoteUrl, folderName, assetInfo.FileName });
             
             return string.Format("{0}{1}?v={2}", url, PackageExtension, assetInfo.FileHash);
         }

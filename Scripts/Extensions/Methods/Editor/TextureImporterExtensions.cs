@@ -2,19 +2,25 @@
 using UnityEngine;
 using UnityEditor;
 using System;
+using System.Linq;
 
 namespace Extensions
 {
     public static class TextureImporterExtensions
     {
-        /// <summary> 圧縮設定がASTC系統か </summary>
-        public static bool IsCompressASTC(this TextureImporter importer, BuildTargetGroup platform)
+        private static readonly string[] BlockCompressFormatTable = new string[]
+        {
+            "ASTC_RGB_", "ASTC_RGBA_", "DXT",
+        };
+
+        /// <summary> 圧縮設定がブロック圧縮か </summary>
+        public static bool IsBlockCompress(this TextureImporter importer, BuildTargetGroup platform)
         {
             var setting = importer.GetPlatformTextureSetting(platform);
 
             var format = setting.format.ToString();
 
-            return format.StartsWith("ASTC_RGB_") || format.StartsWith("ASTC_RGBA_");
+            return BlockCompressFormatTable.Any(x => format.StartsWith(x));
         }
 
         /// <summary> テクスチャ設定取得 </summary>
