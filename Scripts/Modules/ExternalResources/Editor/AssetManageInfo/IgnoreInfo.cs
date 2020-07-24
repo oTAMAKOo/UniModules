@@ -36,6 +36,9 @@ namespace Modules.ExternalResource.Editor
         private string[] ignoreFolder = null;           // フォルダ名が含まれる場合対象外.
         [SerializeField]
         private string[] ignoreExtension = null;        // 対象外の拡張子.
+        
+        private string[] ignoreManagePaths = null;
+        private string[] ignoreAssetBundlePaths = null;
 
         //----- property -----
 
@@ -54,6 +57,9 @@ namespace Modules.ExternalResource.Editor
 
                 return string.IsNullOrEmpty(assetPath);
             };
+
+            ignoreManagePaths = null;
+            ignoreAssetBundlePaths = null;
 
             //====== ignoreManage ======
 
@@ -113,10 +119,13 @@ namespace Modules.ExternalResource.Editor
         /// <summary> 除外対象のパスか検証 </summary>
         public IgnoreType? GetIgnoreType(string assetPath)
         {
-            var ignoreManagePaths = ignoreManage
-                .Select(x => AssetDatabase.GetAssetPath(x))
-                .OrderByDescending(x => x.Length)
-                .ToArray();
+            if (ignoreManagePaths == null)
+            {
+                ignoreManagePaths = ignoreManage
+                    .Select(x => AssetDatabase.GetAssetPath(x))
+                    .OrderByDescending(x => x.Length)
+                    .ToArray();
+            }
 
             foreach (var item in ignoreManagePaths)
             {
@@ -126,10 +135,13 @@ namespace Modules.ExternalResource.Editor
                 }
             }
 
-            var ignoreAssetBundlePaths = ignoreAssetBundle
-                .Select(x => AssetDatabase.GetAssetPath(x))
-                .OrderByDescending(x => x.Length)
-                .ToArray();
+            if (ignoreAssetBundlePaths == null)
+            {
+                ignoreAssetBundlePaths = ignoreAssetBundle
+                    .Select(x => AssetDatabase.GetAssetPath(x))
+                    .OrderByDescending(x => x.Length)
+                    .ToArray();
+            }
 
             foreach (var item in ignoreAssetBundlePaths)
             {

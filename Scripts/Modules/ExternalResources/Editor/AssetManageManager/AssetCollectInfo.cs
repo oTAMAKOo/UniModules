@@ -9,8 +9,6 @@ namespace Modules.ExternalResource.Editor
 
         //----- field -----
 
-        private AssetManageManager assetManageManager = null;
-
         //----- property -----
 
         public string AssetPath { get; private set; }
@@ -23,17 +21,15 @@ namespace Modules.ExternalResource.Editor
 
         //----- method -----
 
-        public AssetCollectInfo(AssetManageManager assetManageManager, string assetPath, AssetInfo assetInfo, ManageInfo manageInfo, IgnoreType? ignoreType)
+        public AssetCollectInfo(string assetPath, AssetInfo assetInfo, ManageInfo manageInfo, IgnoreType? ignoreType)
         {
-            this.assetManageManager = assetManageManager;
-
             AssetPath = assetPath;
             AssetInfo = assetInfo;
             ManageInfo = manageInfo;
             Ignore = ignoreType;
         }
 
-        public bool ApplyAssetBundleName()
+        public bool ApplyAssetBundleName(AssetManageManager assetManageManager)
         {
             var result = false;
 

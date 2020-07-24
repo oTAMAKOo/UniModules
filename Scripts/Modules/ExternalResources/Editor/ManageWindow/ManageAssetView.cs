@@ -255,7 +255,7 @@ namespace Modules.ExternalResource.Editor
                 foreach (var info in infos)
                 {
                     // アセットバンドル名適用.
-                    refresh |= info.ApplyAssetBundleName();
+                    refresh |= info.ApplyAssetBundleName(assetManageManager);
                 }
             }
 
@@ -377,12 +377,12 @@ namespace Modules.ExternalResource.Editor
             {
                 // 追加された子階層の情報を再収集.
 
-                var progress = new ScheduledNotifier<Tuple<string, float>>();
+                var progress = new ScheduledNotifier<float>();
 
                 progress.Subscribe(
                         x =>
                         {
-                            EditorUtility.DisplayProgressBar("Collect asset info", x.Item1, x.Item2);
+                            EditorUtility.DisplayProgressBar("Progress", "Collecting asset info", x);
                         })
                     .AddTo(Disposable);
 

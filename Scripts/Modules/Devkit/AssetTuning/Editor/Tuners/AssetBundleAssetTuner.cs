@@ -40,7 +40,7 @@ namespace Modules.Devkit.AssetTuning
 
                 foreach (var info in infos)
                 {
-                    info.ApplyAssetBundleName();
+                    info.ApplyAssetBundleName(assetManageManager);
                 }
             }
         }
@@ -65,7 +65,7 @@ namespace Modules.Devkit.AssetTuning
 
                 foreach (var info in infos)
                 {
-                    info.ApplyAssetBundleName();
+                    info.ApplyAssetBundleName(assetManageManager);
                 }
             }
         }

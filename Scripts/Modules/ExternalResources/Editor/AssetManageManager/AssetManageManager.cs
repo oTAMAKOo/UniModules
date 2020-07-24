@@ -77,13 +77,12 @@ namespace Modules.ExternalResource.Editor
 
         public void CollectInfo()
         {
-            var progress = new ScheduledNotifier<Tuple<string, float>>();
+            var progress = new ScheduledNotifier<float>();
 
-            progress.Subscribe(
-                    x =>
-                    {
-                        EditorUtility.DisplayProgressBar("Collect asset info", x.Item1, x.Item2);
-                    })
+            progress.Subscribe(x =>
+                   {
+                       EditorUtility.DisplayProgressBar("Progress", "Collecting asset info", x);
+                   })
                 .AddTo(Disposable);
 
             assetCollectInfoByAssetPath.Clear();
@@ -93,10 +92,8 @@ namespace Modules.ExternalResource.Editor
             EditorUtility.ClearProgressBar();
         }
 
-        public AssetCollectInfo[] CollectInfo(string targetAssetPath, IProgress<Tuple<string, float>> progress = null)
+        public AssetCollectInfo[] CollectInfo(string targetAssetPath, IProgress<float> progress = null)
         {
-            var list = new List<AssetCollectInfo>();
-
             var assetPaths = new string[0];
 
             if (AssetDatabase.IsValidFolder(targetAssetPath))
@@ -110,35 +107,39 @@ namespace Modules.ExternalResource.Editor
             {
                 assetPaths = new string[] { targetAssetPath };
             }
+            
+            assetPaths = assetPaths.Where(x => !string.IsNullOrEmpty(x) && !AssetDatabase.IsValidFolder(x)).ToArray();
 
-            for (var i = 0; i < assetPaths.Length; i++)
+            assetCollectInfoByAssetPath = new Dictionary<string, AssetCollectInfo>();
+
+            var totalAssetCount = assetPaths.Length;
+
+            for (var i = 0; i < totalAssetCount; i++)
             {
                 var assetPath = assetPaths[i];
 
-                if (AssetDatabase.IsValidFolder(assetPath)) { continue; }
+                var assetCollectInfo = BuildAssetCollectInfo(assetPath);
 
-                if(progress != null)
+                assetCollectInfoByAssetPath[assetCollectInfo.AssetPath] = assetCollectInfo;
+
+                if (progress != null)
                 {
-                    progress.Report(Tuple.Create(assetPath, (float)i / assetPaths.Length));
+                    progress.Report((float)i / totalAssetCount);
                 }
-
-                var info = CreateAssetCollectInfo(assetPath);
-
-                assetCollectInfoByAssetPath[assetPath] = info;
-
-                list.Add(info);
             }
 
-            return list.ToArray();
+            return assetCollectInfoByAssetPath.Values.ToArray();
         }
 
-        public AssetCollectInfo CreateAssetCollectInfo(string assetPath)
+        private AssetCollectInfo BuildAssetCollectInfo(string targetAssetPath)
         {
-            var assetInfo = GetAssetInfo(assetPath);
-            var manageInfo = GetManageInfo(assetPath);
-            var ignoreType = GetIgnoreType(assetPath);
+            var ignoreType = GetIgnoreType(targetAssetPath);
 
-            var assetCollectInfo = new AssetCollectInfo(this, assetPath, assetInfo, manageInfo, ignoreType);
+            var manageInfo = GetManageInfo(targetAssetPath, ignoreType);
+
+            var assetInfo = GetAssetInfo(targetAssetPath, manageInfo);
+
+            var assetCollectInfo = new AssetCollectInfo(targetAssetPath, assetInfo, manageInfo, ignoreType);
 
             return assetCollectInfo;
         }
@@ -372,7 +373,7 @@ namespace Modules.ExternalResource.Editor
             return true;
         }
 
-        private ManageInfo GetManageInfo(string assetPath)
+        private ManageInfo GetManageInfo(string assetPath, IgnoreType? ignoreType = null)
         {
             // Tuple<管理アセットのパス, 管理情報>をパスの長い順に抽出.
             if (manageInfoSearchCache == null)
@@ -383,8 +384,11 @@ namespace Modules.ExternalResource.Editor
                     .ToArray();
             }
 
-            // 除外対象.                
-            var ignoreType = GetIgnoreType(assetPath);
+            // 除外対象.
+            if (!ignoreType.HasValue)
+            {
+                ignoreType = GetIgnoreType(assetPath);
+            }
 
             // 管理対象外 or 除外対象のフォルダ名が含まれている.
             var ignore = ignoreType.HasValue && (ignoreType == IgnoreType.IgnoreManage || ignoreType == IgnoreType.IgnoreFolder);
@@ -418,7 +422,7 @@ namespace Modules.ExternalResource.Editor
 
         #region AssetInfo
 
-        public AssetInfo GetAssetInfo(string assetPath)
+        public AssetInfo GetAssetInfo(string assetPath, ManageInfo manageInfo = null)
         {
             // フォルダは収集しない.
             if (AssetDatabase.IsValidFolder(assetPath)) { return null; }
@@ -426,32 +430,31 @@ namespace Modules.ExternalResource.Editor
             var metaPath = AssetDatabase.GetTextMetaFilePathFromAssetPath(assetPath);
 
             // metaファイルがある場合は管理下のAsset.
-            if (!string.IsNullOrEmpty(metaPath))
+            if (string.IsNullOrEmpty(metaPath)) { return null; }
+
+            if (manageInfo == null)
             {
-                var manageInfo = GetManageInfo(assetPath);
-
-                if (manageInfo != null)
-                {
-                    var loadPath = GetAssetLoadPath(assetPath);
-                    var groupName = GetAssetGroupName(manageInfo);
-                    var tag = manageInfo.tag;
-
-                    var assetInfo = new AssetInfo(loadPath, groupName, tag);
-
-                    if (manageInfo.isAssetBundle)
-                    {
-                        var assetBundleName = GetAssetBundleName(assetPath, manageInfo);
-
-                        var assetBundleInfo = new AssetBundleInfo(assetBundleName);
-                        
-                        assetInfo.SetAssetBundleInfo(assetBundleInfo);
-                    }
-
-                    return assetInfo;
-                }
+                manageInfo = GetManageInfo(assetPath);
             }
 
-            return null;
+            if (manageInfo == null) { return null; }
+            
+            var loadPath = GetAssetLoadPath(assetPath);
+            var groupName = GetAssetGroupName(manageInfo);
+            var tag = manageInfo.tag;
+
+            var assetInfo = new AssetInfo(loadPath, groupName, tag);
+
+            if (manageInfo.isAssetBundle)
+            {
+                var assetBundleName = GetAssetBundleName(assetPath, manageInfo);
+
+                var assetBundleInfo = new AssetBundleInfo(assetBundleName);
+                
+                assetInfo.SetAssetBundleInfo(assetBundleInfo);
+            }
+
+            return assetInfo;
         }
 
         public string GetAssetLoadPath(string assetPath)

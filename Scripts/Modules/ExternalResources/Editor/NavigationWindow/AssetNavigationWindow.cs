@@ -244,6 +244,7 @@ namespace Modules.ExternalResource.Editor
             if (info == null) { return false; }
 
             var guid = AssetDatabase.AssetPathToGUID(assetPath);
+
             Prefs.selectionAssetGUID = guid;
 
             return true;
