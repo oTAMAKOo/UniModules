@@ -43,7 +43,7 @@ namespace Modules.CriWare.Editor
         {
             EditorGUILayout.Separator();
 
-            var backgroundColor = new Color(0.8f, 1.0f, 0.3f);
+            var backgroundColor = new Color(0.3f, 0.3f, 0.3f);
             var labelColor = new Color(0.8f, 0.8f, 0.8f, 0.8f);
 
             EditorLayoutTools.DrawLabelWithBackground("Import from AtomCraft folder", backgroundColor, labelColor);
