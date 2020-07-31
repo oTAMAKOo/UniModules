@@ -22,7 +22,7 @@ namespace Modules.Devkit.Pinning
         [Serializable]
         private sealed class SaveData
         {
-            public int identifier = -1;
+            public long localIdentifierInFile = -1;
 
             public string comment = null;
         }
@@ -61,13 +61,13 @@ namespace Modules.Devkit.Pinning
             {
                 if (item == null || item.target == null) { continue; }
 
-                var identifier = LocalIdentifierInFile.Get(item.target);
+                var localIdentifierInFile = UnityEditorUtility.GetLocalIdentifierInFile(item.target);
 
-                if (identifier == -1){ continue; }
+                if (localIdentifierInFile == -1){ continue; }
 
                 var data = new SaveData()
                 {
-                    identifier = identifier,
+                    localIdentifierInFile = localIdentifierInFile,
                     comment = item.comment,
                 };
 
@@ -104,9 +104,9 @@ namespace Modules.Devkit.Pinning
 
                 foreach (var data in saveData)
                 {
-                    if (data.identifier == -1){ continue; }
+                    if (data.localIdentifierInFile == -1){ continue; }
 
-                    var targetObject = hierarchyObjects.FirstOrDefault(y => LocalIdentifierInFile.Get(y) == data.identifier) as Object;
+                    var targetObject = hierarchyObjects.FirstOrDefault(y => UnityEditorUtility.GetLocalIdentifierInFile(y) == data.localIdentifierInFile) as Object;
 
                     if (targetObject == null) { continue; }
 
@@ -152,10 +152,10 @@ namespace Modules.Devkit.Pinning
 
             foreach (var item in items)
             {
-                var fileId = LocalIdentifierInFile.Get(item);
+                var localIdentifierInFile = UnityEditorUtility.GetLocalIdentifierInFile(item);
 
                 // Sceneに保存されていないGameObjectは登録不可.
-                if (fileId == item.GetInstanceID()){ return false; }
+                if (localIdentifierInFile <= 0){ return false; }
 
                 // Hierarchyのオブジェクト以外が登録不可.
                 if (EditorUtility.IsPersistent(item)){ return false; }

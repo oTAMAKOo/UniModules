@@ -329,5 +329,31 @@ namespace Extensions.Devkit
         }
 
         #endregion
+
+        #region Identifier
+
+        private static PropertyInfo cachedInspectorModeInfo = null;
+
+        public static long GetLocalIdentifierInFile(Object unityObject)
+        {
+            long id = -1;
+
+            if (unityObject == null) return id;
+
+            if (cachedInspectorModeInfo == null)
+            {
+                cachedInspectorModeInfo = typeof(SerializedObject).GetProperty("inspectorMode", BindingFlags.NonPublic | BindingFlags.Instance);
+            }
+
+            var serializedObject = new SerializedObject(unityObject);
+
+            cachedInspectorModeInfo.SetValue(serializedObject, InspectorMode.Debug, null);
+
+            var serializedProperty = serializedObject.FindProperty("m_LocalIdentfierInFile");
+
+            return serializedProperty.longValue;
+        }
+
+        #endregion
     }
 }

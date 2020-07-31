@@ -141,7 +141,7 @@ namespace Modules.Devkit.FindReferences
                 // DLLでMonoScriptだったらDLLの中のコンポーネントなのでfileIDを取り出す.
                 if (path.EndsWith(".dll") && target is MonoScript)
                 {
-                    fileId = LocalIdentifierInFile.Get(target).ToString();
+                    fileId = UnityEditorUtility.GetLocalIdentifierInFile(target).ToString();
                 }
             }
 
