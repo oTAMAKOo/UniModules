@@ -10,10 +10,12 @@ using System;
 using System.Collections;
 using System.Runtime.InteropServices;
 using System.Text;
+using AOT;
+using Extensions;
 
 namespace Modules.StandAloneWindows.WindowAspectRatio
 {
-    public sealed class AspectRatioController : MonoBehaviour
+    public sealed class AspectRatioController : SingletonMonoBehaviour<AspectRatioController>
     {
         //----- params -----
 
@@ -217,7 +219,8 @@ namespace Modules.StandAloneWindows.WindowAspectRatio
             Screen.SetResolution(width, height, allowFullscreen);
         }
 
-        private IntPtr WindowProc(IntPtr hWnd, uint msg, IntPtr wParam, IntPtr lParam)
+        [MonoPInvokeCallback(typeof(WndProcDelegate))]
+        private static IntPtr WindowProc(IntPtr hWnd, uint msg, IntPtr wParam, IntPtr lParam)
         {
             if (msg == WM_SIZING)
             {
@@ -226,10 +229,10 @@ namespace Modules.StandAloneWindows.WindowAspectRatio
 
                 // Calculate window border width and height.
                 var windowRect = new RECT();
-                GetWindowRect(unityHWnd, ref windowRect);
+                GetWindowRect(Instance.unityHWnd, ref windowRect);
 
                 var clientRect = new RECT();
-                GetClientRect(unityHWnd, ref clientRect);
+                GetClientRect(Instance.unityHWnd, ref clientRect);
 
                 var borderWidth = windowRect.Right - windowRect.Left - (clientRect.Right - clientRect.Left);
                 var borderHeight = windowRect.Bottom - windowRect.Top - (clientRect.Bottom - clientRect.Top);
@@ -239,58 +242,58 @@ namespace Modules.StandAloneWindows.WindowAspectRatio
                 rc.Bottom -= borderHeight;
 
                 // Clamp window size.
-                var newWidth = Mathf.Clamp(rc.Right - rc.Left, minWidthPixel, maxWidthPixel);
-                var newHeight = Mathf.Clamp(rc.Bottom - rc.Top, minHeightPixel, maxHeightPixel);
+                var newWidth = Mathf.Clamp(rc.Right - rc.Left, Instance.minWidthPixel, Instance.maxWidthPixel);
+                var newHeight = Mathf.Clamp(rc.Bottom - rc.Top, Instance.minHeightPixel, Instance.maxHeightPixel);
 
                 // Resize according to aspect ratio and resize direction.
                 switch (wParam.ToInt32())
                 {
                     case WMSZ_LEFT:
                         rc.Left = rc.Right - newWidth;
-                        rc.Bottom = rc.Top + Mathf.RoundToInt(newWidth / aspect);
+                        rc.Bottom = rc.Top + Mathf.RoundToInt(newWidth / Instance.aspect);
                         break;
                     case WMSZ_RIGHT:
                         rc.Right = rc.Left + newWidth;
-                        rc.Bottom = rc.Top + Mathf.RoundToInt(newWidth / aspect);
+                        rc.Bottom = rc.Top + Mathf.RoundToInt(newWidth / Instance.aspect);
                         break;
                     case WMSZ_TOP:
                         rc.Top = rc.Bottom - newHeight;
-                        rc.Right = rc.Left + Mathf.RoundToInt(newHeight * aspect);
+                        rc.Right = rc.Left + Mathf.RoundToInt(newHeight * Instance.aspect);
                         break;
                     case WMSZ_BOTTOM:
                         rc.Bottom = rc.Top + newHeight;
-                        rc.Right = rc.Left + Mathf.RoundToInt(newHeight * aspect);
+                        rc.Right = rc.Left + Mathf.RoundToInt(newHeight * Instance.aspect);
                         break;
                     case WMSZ_RIGHT + WMSZ_BOTTOM:
                         rc.Right = rc.Left + newWidth;
-                        rc.Bottom = rc.Top + Mathf.RoundToInt(newWidth / aspect);
+                        rc.Bottom = rc.Top + Mathf.RoundToInt(newWidth / Instance.aspect);
                         break;
                     case WMSZ_RIGHT + WMSZ_TOP:
                         rc.Right = rc.Left + newWidth;
-                        rc.Top = rc.Bottom - Mathf.RoundToInt(newWidth / aspect);
+                        rc.Top = rc.Bottom - Mathf.RoundToInt(newWidth / Instance.aspect);
                         break;
                     case WMSZ_LEFT + WMSZ_BOTTOM:
                         rc.Left = rc.Right - newWidth;
-                        rc.Bottom = rc.Top + Mathf.RoundToInt(newWidth / aspect);
+                        rc.Bottom = rc.Top + Mathf.RoundToInt(newWidth / Instance.aspect);
                         break;
                     case WMSZ_LEFT + WMSZ_TOP:
                         rc.Left = rc.Right - newWidth;
-                        rc.Top = rc.Bottom - Mathf.RoundToInt(newWidth / aspect);
+                        rc.Top = rc.Bottom - Mathf.RoundToInt(newWidth / Instance.aspect);
                         break;
                 }
 
-                setWidth = rc.Right - rc.Left;
-                setHeight = rc.Bottom - rc.Top;
+                Instance.setWidth = rc.Right - rc.Left;
+                Instance.setHeight = rc.Bottom - rc.Top;
 
                 rc.Right += borderWidth;
                 rc.Bottom += borderHeight;
-                
-                resolutionChangedEvent.Invoke(setWidth, setHeight, Screen.fullScreen);
+
+                Instance.resolutionChangedEvent.Invoke(Instance.setWidth, Instance.setHeight, Screen.fullScreen);
 
                 Marshal.StructureToPtr(rc, lParam, true);
             }
             
-            return CallWindowProc(oldWndProcPtr, hWnd, msg, wParam, lParam);
+            return CallWindowProc(Instance.oldWndProcPtr, hWnd, msg, wParam, lParam);
         }
 
         void Update()
