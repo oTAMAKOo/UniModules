@@ -18,13 +18,13 @@ namespace Modules.Devkit.ModifyComponent
 
         //----- method -----
 
-        public bool ModifyTargetComponent(TComponent target)
+        public bool ModifyTargetComponent(string assetPath, TComponent target)
         {
             if (target == null) { return false; }
 
             if (PrefabUtility.IsPartOfPrefabInstance(target)) { return false; }
 
-            var modified = Modify(target);
+            var modified = Modify(assetPath, target);
 
             if (modified)
             {
@@ -71,7 +71,7 @@ namespace Modules.Devkit.ModifyComponent
 
             foreach (var target in targets)
             {
-                var hasUpdate = ModifyTargetComponent(target);
+                var hasUpdate = ModifyTargetComponent(scene.path, target);
 
                 if (hasUpdate)
                 {
@@ -119,7 +119,7 @@ namespace Modules.Devkit.ModifyComponent
 
             foreach (var target in targets)
             {
-                var hasUpdate = ModifyTargetComponent(target);
+                var hasUpdate = ModifyTargetComponent(assetPath, target);
 
                 if (hasUpdate)
                 {
@@ -137,6 +137,6 @@ namespace Modules.Devkit.ModifyComponent
             PrefabUtility.UnloadPrefabContents(go);
         }
 
-        protected abstract bool Modify(TComponent target);
+        protected abstract bool Modify(string assetPath, TComponent target);
     }
 }
