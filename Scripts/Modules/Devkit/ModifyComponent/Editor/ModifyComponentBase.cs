@@ -109,7 +109,7 @@ namespace Modules.Devkit.ModifyComponent
             EditorUtility.ClearProgressBar();
         }
 
-        private void UpdatePrefabComponent(string assetPath)
+        public void UpdatePrefabComponent(string assetPath)
         {
             var go = PrefabUtility.LoadPrefabContents(assetPath);
 
