@@ -334,9 +334,13 @@ namespace Extensions.Devkit
 
         private static PropertyInfo cachedInspectorModeInfo = null;
 
+        /// <summary>
+        /// ファイル内での識別子を取得.
+        /// </summary>
+        /// <returns>正常に取得できた時は1以上の値が返る. 失敗時・ファイルに保存されていないオブジェクトの場合は0が返る</returns>
         public static long GetLocalIdentifierInFile(Object unityObject)
         {
-            long id = -1;
+            long id = 0;
 
             if (unityObject == null) return id;
 
