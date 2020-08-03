@@ -11,6 +11,7 @@ using System.Collections;
 using System.Runtime.InteropServices;
 using System.Text;
 using AOT;
+using UniRx;
 using Extensions;
 
 namespace Modules.StandAloneWindows.WindowAspectRatio
@@ -19,8 +20,22 @@ namespace Modules.StandAloneWindows.WindowAspectRatio
     {
         //----- params -----
 
-        [Serializable]
-        public class ResolutionChangedEvent : UnityEvent<int, int, bool> { }
+        public sealed class ResolutionChangeInfo
+        {
+            /// <summary> 幅 </summary>
+            public float Width { get; private set; }
+            /// <summary> 高さ </summary>
+            public float Height { get; private set; }
+            /// <summary> フルスクリーンか </summary>
+            public bool FullScreen { get; private set; }
+
+            public ResolutionChangeInfo(float width, float height, bool fullScreen)
+            {
+                Width = width;
+                Height = height;
+                FullScreen = fullScreen;
+            }
+        }
 
         #region WINAPI
 
@@ -63,8 +78,8 @@ namespace Modules.StandAloneWindows.WindowAspectRatio
         private int maxWidthPixel = 2048;
         [SerializeField]
         private int maxHeightPixel = 2048;
-        [SerializeField]
-        private ResolutionChangedEvent resolutionChangedEvent = null;
+ 
+        private Subject<ResolutionChangeInfo> onResolutionChanged = null;
 
         private float aspect = 0f;
 
@@ -137,8 +152,6 @@ namespace Modules.StandAloneWindows.WindowAspectRatio
         private bool initialized = false;
 
         //----- property -----
-
-        public ResolutionChangedEvent OnResolutionChanged { get { return resolutionChangedEvent; } }
 
         //----- method -----
 
@@ -292,7 +305,12 @@ namespace Modules.StandAloneWindows.WindowAspectRatio
                 rc.Right += borderWidth;
                 rc.Bottom += borderHeight;
 
-                Instance.resolutionChangedEvent.Invoke(Instance.setWidth, Instance.setHeight, Screen.fullScreen);
+                if (Instance.onResolutionChanged != null)
+                {
+                    var resolutionChangeInfo = new ResolutionChangeInfo(Instance.setWidth, Instance.setHeight, Screen.fullScreen);
+
+                    Instance.onResolutionChanged.OnNext(resolutionChangeInfo);
+                }
 
                 Marshal.StructureToPtr(rc, lParam, true);
             }
@@ -309,7 +327,9 @@ namespace Modules.StandAloneWindows.WindowAspectRatio
                 Screen.fullScreen = false;
             }
 
-            if (Screen.fullScreen && !wasFullscreenLastFrame)
+            var isFullScreen = Screen.fullScreen;
+
+            if (isFullScreen && !wasFullscreenLastFrame)
             {
                 var width = 0;
                 var height = 0;
@@ -327,31 +347,47 @@ namespace Modules.StandAloneWindows.WindowAspectRatio
                     height = Mathf.RoundToInt(pixelWidthOfCurrentScreen / aspect);
                 }
 
-                Screen.SetResolution(width, height, true);
+                Screen.SetResolution(width, height, isFullScreen);
+                
+                if (onResolutionChanged != null)
+                {
+                    var resolutionChangeInfo = new ResolutionChangeInfo(width, height, isFullScreen);
 
-                resolutionChangedEvent.Invoke(width, height, true);
+                    onResolutionChanged.OnNext(resolutionChangeInfo);
+                }
             }
-            else if (!Screen.fullScreen && wasFullscreenLastFrame)
+            else if (!isFullScreen && wasFullscreenLastFrame)
             {
-                Screen.SetResolution(setWidth, setHeight, false);
+                Screen.SetResolution(setWidth, setHeight, isFullScreen);
+                
+                if (onResolutionChanged != null)
+                {
+                    var resolutionChangeInfo = new ResolutionChangeInfo(setWidth, setHeight, isFullScreen);
 
-                resolutionChangedEvent.Invoke(setWidth, setHeight, false);
+                    onResolutionChanged.OnNext(resolutionChangeInfo);
+                }
             }
-            else if (!Screen.fullScreen && (Screen.width != setWidth || Screen.height != setHeight))
+            else if (!isFullScreen && (Screen.width != setWidth || Screen.height != setHeight))
             {
                 setHeight = Screen.height;
                 setWidth = Mathf.RoundToInt(Screen.height * aspect);
 
-                Screen.SetResolution(setWidth, setHeight, Screen.fullScreen);
-                resolutionChangedEvent.Invoke(setWidth, setHeight, Screen.fullScreen);
+                Screen.SetResolution(setWidth, setHeight, isFullScreen);
+
+                if (onResolutionChanged != null)
+                {
+                    var resolutionChangeInfo = new ResolutionChangeInfo(setWidth, setHeight, isFullScreen);
+
+                    onResolutionChanged.OnNext(resolutionChangeInfo);
+                }
             }
-            else if (!Screen.fullScreen)
+            else if (!isFullScreen)
             {
                 pixelHeightOfCurrentScreen = Screen.currentResolution.height;
                 pixelWidthOfCurrentScreen = Screen.currentResolution.width;
             }
             
-            wasFullscreenLastFrame = Screen.fullScreen;
+            wasFullscreenLastFrame = isFullScreen;
             
             #if UNITY_EDITOR
 
@@ -360,7 +396,12 @@ namespace Modules.StandAloneWindows.WindowAspectRatio
                 setWidth = Screen.width;
                 setHeight = Screen.height;
 
-                resolutionChangedEvent.Invoke(setWidth, setHeight, Screen.fullScreen);
+                if (onResolutionChanged != null)
+                {
+                    var resolutionChangeInfo = new ResolutionChangeInfo(setWidth, setHeight, isFullScreen);
+
+                    onResolutionChanged.OnNext(resolutionChangeInfo);
+                }
             }
 
             #endif
@@ -399,6 +440,11 @@ namespace Modules.StandAloneWindows.WindowAspectRatio
             quitStarted = true;
 
             Application.Quit();
+        }
+
+        public IObservable<ResolutionChangeInfo> OnResolutionChangedAsObservable()
+        {
+            return onResolutionChanged ?? (onResolutionChanged = new Subject<ResolutionChangeInfo>());
         }
     }
 }
