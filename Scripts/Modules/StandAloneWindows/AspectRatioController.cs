@@ -157,20 +157,8 @@ namespace Modules.StandAloneWindows.WindowAspectRatio
             setWidth = Mathf.RoundToInt(Screen.height * aspect);
 
             wasFullscreenLastFrame = Screen.fullScreen;
-
-            // Find window handle of main Unity window.
-            EnumThreadWindows(GetCurrentThreadId(), (hWnd, lParam) =>
-            {
-                var classText = new StringBuilder(UNITY_WND_CLASSNAME.Length + 1);
-                GetClassName(hWnd, classText, classText.Capacity);
-
-                if (classText.ToString() == UNITY_WND_CLASSNAME)
-                {
-                    unityHWnd = hWnd;
-                    return false;
-                }
-                return true;
-            }, IntPtr.Zero);
+            
+            EnumThreadWindows(GetCurrentThreadId(), FindWindowProc, IntPtr.Zero);
 
             SetAspectRatio(aspectRatioWidth, aspectRatioHeight);
 
@@ -217,6 +205,22 @@ namespace Modules.StandAloneWindows.WindowAspectRatio
             height = Mathf.Clamp(height, minHeightPixel, maxHeightPixel);
 
             Screen.SetResolution(width, height, allowFullscreen);
+        }
+
+        [MonoPInvokeCallback(typeof(EnumWindowsProc))]
+        public static bool FindWindowProc(IntPtr hWnd, IntPtr lParam)
+        {
+            var classText = new StringBuilder(UNITY_WND_CLASSNAME.Length + 1);
+
+            GetClassName(hWnd, classText, classText.Capacity);
+
+            if (classText.ToString() == UNITY_WND_CLASSNAME)
+            {
+                Instance.unityHWnd = hWnd;
+                return false;
+            }
+
+            return true;
         }
 
         [MonoPInvokeCallback(typeof(WndProcDelegate))]
@@ -298,6 +302,8 @@ namespace Modules.StandAloneWindows.WindowAspectRatio
 
         void Update()
         {
+            if (!initialized) { return; }
+
             if (!allowFullscreen && Screen.fullScreen)
             {
                 Screen.fullScreen = false;
