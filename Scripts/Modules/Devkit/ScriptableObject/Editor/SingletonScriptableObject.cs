@@ -42,10 +42,17 @@ namespace Modules.Devkit.ScriptableObjects
 
         protected static T LoadInstance()
         {
-            return AssetDatabase.FindAssets(string.Format("t:{0}", typeof(T).FullName))
-                .Select(x => AssetDatabase.GUIDToAssetPath(x))
-                .Select(x => AssetDatabase.LoadAssetAtPath<T>(x))
-                .FirstOrDefault(x => x != null);
+            var targetAsset = AssetDatabase.FindAssets(string.Format("t:{0}", typeof(T).FullName))
+                    .Select(x => AssetDatabase.GUIDToAssetPath(x))
+                    .Select(x => AssetDatabase.LoadAssetAtPath<T>(x))
+                    .FirstOrDefault(x => x != null);
+
+            if (targetAsset == null)
+            {
+                Debug.LogErrorFormat("Not found a matching instance.\nclass : {0}", typeof(T).FullName);
+            }
+
+            return targetAsset;
         }
     }
 }
