@@ -58,6 +58,8 @@ namespace Modules.ExternalResource.Editor
 
             this.externalResourcesPath = externalResourcesPath;
 
+            managedAssets.DeleteInvalidInfo();
+
             managedInfos = managedAssets.GetAllInfos().ToDictionary(x => x.guid);
 
             ManageConfig.OnReloadAsObservable()
@@ -82,7 +84,9 @@ namespace Modules.ExternalResource.Editor
 
             if (managedInfo == null) { return null; }
 
-            var assetInfo = new AssetInfo(assetPath, managedInfo.category, managedInfo.tag);
+            var resourcePath = GetAssetLoadPath(assetPath);
+
+            var assetInfo = new AssetInfo(resourcePath, managedInfo.category, managedInfo.tag);
 
             var assetBundleName = GetAssetBundleName(assetPath, managedInfo);
 
@@ -358,10 +362,12 @@ namespace Modules.ExternalResource.Editor
 
         private ManageInfo GetAssetManagedInfo(string assetPath)
         {
+            if (string.IsNullOrEmpty(assetPath)){ return null; }
+
             var path = assetPath;
 
             // 除外対象.
-            
+
             var ignoreType = GetIgnoreType(assetPath);
 
             if (ignoreType.HasValue)
@@ -390,11 +396,12 @@ namespace Modules.ExternalResource.Editor
         public bool ValidateManageInfo(Object assetObject)
         {
             var assetPath = AssetDatabase.GetAssetPath(assetObject);
+            var assetGuid = AssetDatabase.AssetPathToGUID(assetPath);
 
             // 既に登録済み.
             var manageInfo = GetAssetManagedInfo(assetPath);
 
-            if (manageInfo != null)
+            if (manageInfo != null && manageInfo.guid == assetGuid)
             {
                 Debug.Log("Already registered.");
                 return false;

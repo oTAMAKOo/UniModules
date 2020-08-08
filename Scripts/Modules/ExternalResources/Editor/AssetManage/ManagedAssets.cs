@@ -4,6 +4,7 @@ using UnityEditor;
 using System;
 using System.Linq;
 using System.Collections.Generic;
+using System.IO;
 using Extensions;
 using Extensions.Devkit;
 using Modules.Devkit.ScriptableObjects;
@@ -16,7 +17,7 @@ namespace Modules.ExternalResource.Editor
 
         //----- field -----
         
-        [SerializeField]//, HideInInspector]
+        [SerializeField, HideInInspector]
         private ManageInfo[] manageInfos = null;
 
         private Dictionary<string, ManageInfo> manageInfoDictionary = null;
@@ -24,6 +25,11 @@ namespace Modules.ExternalResource.Editor
         //----- property -----
 
         //----- method -----
+
+        protected override void OnLoadInstance()
+        {
+            DeleteInvalidInfo();
+        }
 
         public void SetManageInfos(ManageInfo[] manageInfos)
         {
@@ -57,6 +63,44 @@ namespace Modules.ExternalResource.Editor
             }
 
             return manageInfoDictionary.GetValueOrDefault(assetGuid);
+        }
+
+        public void DeleteInvalidInfo()
+        {
+            var list = new List<ManageInfo>();
+
+            for (var i = 0; i < manageInfos.Length; i++)
+            {
+                var manageInfo = manageInfos[i];
+
+                if (manageInfo == null){ continue; }
+
+                if (string.IsNullOrEmpty(manageInfo.guid)) { continue; }
+
+                var assetPath = AssetDatabase.GUIDToAssetPath(manageInfo.guid);
+
+                var path = UnityPathUtility.ConvertAssetPathToFullPath(assetPath);
+
+                var isFolder = AssetDatabase.IsValidFolder(assetPath);
+
+                if (isFolder)
+                {
+                    if (!Directory.Exists(path)) { continue; }
+                }
+                else
+                {
+                    if (!File.Exists(path)) { continue; }
+                }
+
+                list.Add(manageInfo);
+            }
+
+            if (list.Count != manageInfos.Length)
+            {
+                manageInfos = list.ToArray();
+
+                UnityEditorUtility.SaveAsset(this);
+            }
         }
     }
 }
