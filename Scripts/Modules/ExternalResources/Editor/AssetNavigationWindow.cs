@@ -39,6 +39,8 @@ namespace Modules.ExternalResource.Editor
         private string assetBundleName = null;
         private string assetLoadPath = null;
 
+        private GUIContent clipboardIcon = null;
+
         private bool initialized = false;
 
         //----- property -----
@@ -86,7 +88,9 @@ namespace Modules.ExternalResource.Editor
 				UpdateViewInfo(selectionAssetObject);
 			}
 
-			initialized = true;
+            clipboardIcon = EditorGUIUtility.IconContent("Clipboard");
+
+            initialized = true;
 
 			Repaint();
 		}
@@ -124,20 +128,17 @@ namespace Modules.ExternalResource.Editor
                 {
                     GUILayout.Space(4f);
 
-                    using (new ContentsScope())
+                    if (!string.IsNullOrEmpty(assetCategory))
                     {
-                        if (!string.IsNullOrEmpty(assetCategory))
-                        {
-                            DrawContentGUI("GroupName", assetCategory);
-                        }
-
-                        if (!string.IsNullOrEmpty(assetBundleName))
-                        {
-                            DrawContentGUI("AssetBundleName", assetBundleName);
-                        }
-
-                        DrawContentGUI("LoadPath", assetLoadPath);
+                        DrawContentGUI("Category", assetCategory);
                     }
+
+                    if (!string.IsNullOrEmpty(assetBundleName))
+                    {
+                        DrawContentGUI("AssetBundleName", assetBundleName);
+                    }
+
+                    DrawContentGUI("LoadPath", assetLoadPath);
                 }
             }
             else
@@ -152,13 +153,13 @@ namespace Modules.ExternalResource.Editor
 
         private void DrawContentGUI(string label, string content)
         {
-            EditorLayoutTools.DrawLabelWithBackground(label, new Color(0.3f, 0.3f, 0.5f), new Color(0.8f, 0.8f, 0.8f, 0.8f));
+            EditorLayoutTools.DrawLabelWithBackground(label);
 
             using (new EditorGUILayout.HorizontalScope())
             {
-                using (new EditorGUILayout.VerticalScope())
+                using (new EditorGUILayout.VerticalScope(GUILayout.Height(18f)))
                 {
-                    if (GUILayout.Button("copy", GUILayout.Width(45f), GUILayout.Height(18f)))
+                    if (GUILayout.Button(clipboardIcon, GUILayout.Width(24f), GUILayout.Height(18f)))
                     {
                         UniClipboard.SetText(content);
                     }
@@ -166,17 +167,26 @@ namespace Modules.ExternalResource.Editor
                     GUILayout.Space(2f);
                 }
 
-                var textStyle = new GUIStyle();
-                var textSize = textStyle.CalcSize(new GUIContent(content));
+                GUILayout.Space(-4f);
 
-                var originLabelWidth = EditorLayoutTools.SetLabelWidth(textSize.x);
+                using (new EditorGUILayout.VerticalScope(GUILayout.Height(18f)))
+                {
+                    GUILayout.Space(4f);
 
-                GUILayout.Label(content, GUILayout.Height(20f));
+                    var textStyle = new GUIStyle();
+                    var textSize = textStyle.CalcSize(new GUIContent(content));
 
-                EditorLayoutTools.SetLabelWidth(originLabelWidth);
+                    var originLabelWidth = EditorLayoutTools.SetLabelWidth(textSize.x);
+
+                    GUILayout.Label(content, GUILayout.Height(18f));
+
+                    EditorLayoutTools.SetLabelWidth(originLabelWidth);
+                }
 
                 GUILayout.FlexibleSpace();
             }
+
+            GUILayout.Space(2f);
         }
 
         private void UpdateDragAndDrop()

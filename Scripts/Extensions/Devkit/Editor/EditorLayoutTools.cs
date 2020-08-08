@@ -513,7 +513,7 @@ namespace Extensions.Devkit
             {
                 EditorGUI.BeginChangeCheck();
 
-                var seachTextFieldStyleName = isToolbar ? "ToolbarSeachTextField" : "SeachTextField";
+                var seachTextFieldStyleName = isToolbar ? "ToolbarSeachTextField" : "SearchTextField";
 
                 if (isDelayed)
                 {
@@ -532,7 +532,7 @@ namespace Extensions.Devkit
                     }
                 }
 
-                var seachCancelButtonStyleName = isToolbar ? "ToolbarSeachCancelButton" : "SeachCancelButton";
+                var seachCancelButtonStyleName = isToolbar ? "ToolbarSeachCancelButton" : "SearchCancelButton";
 
                 if (GUILayout.Button(string.Empty, seachCancelButtonStyleName, GUILayout.Width(18f)))
                 {

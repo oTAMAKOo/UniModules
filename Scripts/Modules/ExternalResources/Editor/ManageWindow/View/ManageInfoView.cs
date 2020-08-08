@@ -30,6 +30,7 @@ namespace Modules.ExternalResource.Editor
 
         private Object manageAsset = null;
         private string manageAssetPath = null;
+        private string displayManageAssetPath = null;
 
         private string contentDetailName = null;
         private Dictionary<string, AssetInfo[]> assetContents = null;
@@ -58,6 +59,8 @@ namespace Modules.ExternalResource.Editor
         {
             this.ignoreType = ignoreType;
 
+            var externalResourcesDir = assetManagement.ExternalResourcesPath + PathUtility.PathSeparator;
+
             // 確定するまで元のインスタンスに影響を与えないようにコピーに対して編集を行う.
             ManageInfo = manageInfo.DeepCopy();
 
@@ -67,6 +70,8 @@ namespace Modules.ExternalResource.Editor
             manageAssetPath = AssetDatabase.GUIDToAssetPath(manageInfo.guid);
             manageAsset = AssetDatabase.LoadMainAssetAtPath(manageAssetPath);
 
+            displayManageAssetPath = manageAssetPath.Substring(externalResourcesDir.Length, manageAssetPath.Length - externalResourcesDir.Length);
+            
             contentsScrollView = new ContentsScrollView();
 
             contentsScrollView.OnRequestDetailViewAsObservable()
@@ -74,6 +79,8 @@ namespace Modules.ExternalResource.Editor
                 .AddTo(Disposable);
 
             contentAssetsScrollView = new ContentAssetsScrollView();
+
+            contentAssetsScrollView.AssetManagement = assetManagement;
 
             BuildContentsInfo(assetManagement); 
         }
@@ -85,7 +92,7 @@ namespace Modules.ExternalResource.Editor
                 winbtnWinCloseIconContent = EditorGUIUtility.IconContent("winbtn_win_close");
             }
 
-            IsOpen = EditorLayoutTools.DrawHeader(manageAssetPath, IsOpen);
+            IsOpen = EditorLayoutTools.DrawHeader(displayManageAssetPath, IsOpen);
 
             if (IsOpen)
             {
@@ -406,11 +413,14 @@ namespace Modules.ExternalResource.Editor
 
                 GUILayout.FlexibleSpace();
 
-                if (GUILayout.Button(tabNextIconContent, EditorStyles.label, GUILayout.Width(20f), GUILayout.Height(20f)))
+                if (content.isAssetBundle)
                 {
-                    if (onRequestDetailView != null)
+                    if (GUILayout.Button(tabNextIconContent, EditorStyles.label, GUILayout.Width(20f), GUILayout.Height(20f)))
                     {
-                        onRequestDetailView.OnNext(content.label);
+                        if (onRequestDetailView != null)
+                        {
+                            onRequestDetailView.OnNext(content.label);
+                        }
                     }
                 }
             }
@@ -426,11 +436,24 @@ namespace Modules.ExternalResource.Editor
     {
         private Object[] assets = null;
 
+        public AssetManagement AssetManagement { get; set; }
+
         public override Direction Type { get { return Direction.Vertical; } }
 
         protected override void OnContentsUpdate()
         {
-            assets = Contents.Select(x => AssetDatabase.LoadMainAssetAtPath(x.ResourcePath)).ToArray();
+            Func<AssetInfo, Object> load_asset = info =>
+            {
+                var externalResourcesPath = AssetManagement.ExternalResourcesPath;
+
+                var assetPath = PathUtility.Combine(externalResourcesPath, info.ResourcePath);
+
+                var asset = AssetDatabase.LoadMainAssetAtPath(assetPath);
+
+                return asset;
+            };
+
+            assets = Contents.Select(x => load_asset(x)).ToArray();
         }
 
         protected override void DrawContent(int index, AssetInfo content)

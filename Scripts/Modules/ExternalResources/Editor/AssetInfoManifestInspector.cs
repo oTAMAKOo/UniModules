@@ -14,14 +14,14 @@ namespace Modules.ExternalResource.Editor
     {
         //----- params -----
 
-        private sealed class AssetGroupInfo
+        private sealed class AssetCategoryInfo
         {
             public string Category { get; private set; }
             public AssetInfo[] AssetInfos { get; private set; }
             public AssetInfo[] SearchedInfos { get; private set; }
             public HashSet<int> OpenedIds { get; private set; }
 
-            public AssetGroupInfo(string category, AssetInfo[] assetInfos)
+            public AssetCategoryInfo(string category, AssetInfo[] assetInfos)
             {
                 Category = category;
                 AssetInfos = assetInfos;
@@ -78,7 +78,7 @@ namespace Modules.ExternalResource.Editor
             }
         }
 
-        private sealed class AsstInfoScrollView : EditorGUIFastScrollView<AssetGroupInfo>
+        private sealed class AsstInfoScrollView : EditorGUIFastScrollView<AssetCategoryInfo>
         {
             private HashSet<int> openedIds = null;
             private GUIStyle textAreaStyle = null;
@@ -93,7 +93,7 @@ namespace Modules.ExternalResource.Editor
                 get { return Direction.Vertical; }
             }
 
-            protected override void DrawContent(int index, AssetGroupInfo content)
+            protected override void DrawContent(int index, AssetCategoryInfo content)
             {
                 if (textAreaStyle == null)
                 {
@@ -129,7 +129,7 @@ namespace Modules.ExternalResource.Editor
                 }
             }
 
-            private void DrawGroupContent(AssetGroupInfo assetGroupInfo)
+            private void DrawGroupContent(AssetCategoryInfo assetGroupInfo)
             {
                 var assetInfos = assetGroupInfo.SearchedInfos ?? assetGroupInfo.AssetInfos;
 
@@ -206,8 +206,8 @@ namespace Modules.ExternalResource.Editor
 
         //----- field -----
         
-        private AssetGroupInfo[] currentInfos = null;
-        private AssetGroupInfo[] searchedInfos = null;
+        private AssetCategoryInfo[] currentInfos = null;
+        private AssetCategoryInfo[] searchedInfos = null;
         private AsstInfoScrollView asstInfoScrollView = null;
         private string totalAssetCountText = null;
         private string searchText = null;
@@ -230,7 +230,8 @@ namespace Modules.ExternalResource.Editor
                 var assetInfos = Reflection.GetPrivateField<AssetInfoManifest, AssetInfo[]>(instance, "assetInfos");
 
                 currentInfos = assetInfos.GroupBy(x => x.Category)
-                    .Select(x => new AssetGroupInfo(x.Key, x.ToArray()))
+                    .Select(x => new AssetCategoryInfo(x.Key, x.ToArray()))
+                    .OrderBy(x => x.Category, new NaturalComparer())
                     .ToArray();
 
                 asstInfoScrollView = new AsstInfoScrollView();
@@ -252,22 +253,22 @@ namespace Modules.ExternalResource.Editor
 
             using (new EditorGUILayout.HorizontalScope())
             {
-                EditorGUI.BeginChangeCheck();
+                GUILayout.FlexibleSpace();
 
-                searchText = GUILayout.TextField(searchText, "SearchTextField", GUILayout.Width(250));
-
-                if (EditorGUI.EndChangeCheck())
+                Action<string> onChangeSearchText = x =>
                 {
+                    searchText = x;
+
                     var searchKeywords = BuildSearchKeywords();
 
-                    searchedInfos = currentInfos.Where(x => x.IsSearchedHit(searchKeywords)).ToArray();
+                    searchedInfos = currentInfos.Where(info => info.IsSearchedHit(searchKeywords)).ToArray();
                     asstInfoScrollView.ScrollPosition = Vector2.zero;
                     asstInfoScrollView.Contents = searchedInfos;
 
                     Repaint();
-                }
+                };
 
-                if (GUILayout.Button(string.Empty, "SearchCancelButton", GUILayout.Width(18f)))
+                Action onSearchCancel = () =>
                 {
                     searchText = string.Empty;
                     searchedInfos = null;
@@ -278,7 +279,9 @@ namespace Modules.ExternalResource.Editor
                     asstInfoScrollView.Contents = currentInfos;
 
                     Repaint();
-                }
+                };
+
+                EditorLayoutTools.DrawSearchTextField(searchText, onChangeSearchText, onSearchCancel, GUILayout.Width(250f));
             }
 
             EditorGUILayout.Separator();

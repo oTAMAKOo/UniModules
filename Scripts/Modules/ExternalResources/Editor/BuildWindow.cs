@@ -1,10 +1,12 @@
-﻿﻿﻿﻿﻿﻿
-using System.Linq;
+﻿
 using UnityEngine;
 using UnityEditor;
+using System.IO;
+using System.Linq;
+using System.Text;
 using Extensions.Devkit;
-using Modules.Devkit.Project;
 using Extensions;
+using Modules.Devkit.Project;
 
 #if ENABLE_CRIWARE_ADX || ENABLE_CRIWARE_SOFDEC
 
@@ -19,6 +21,8 @@ namespace Modules.ExternalResource.Editor
         //----- params -----
 
         private readonly Vector2 WindowSize = new Vector2(280f, 100f);
+
+        private static readonly string[] IgnoreDependentCheckExtensions = { ".cs" };
 
         //----- field -----
 
@@ -63,11 +67,8 @@ namespace Modules.ExternalResource.Editor
             var externalResourcesPath = editorConfig.ExternalResourcesPath;
 
             EditorGUILayout.Separator();
-
-            var backgroundColor = new Color(0.3f, 0.3f, 0.5f);
-            var labelColor = new Color(0.8f, 0.8f, 0.8f, 0.8f);
-
-            EditorLayoutTools.DrawLabelWithBackground("AssetInfoManifest", backgroundColor, labelColor);
+            
+            EditorLayoutTools.DrawLabelWithBackground("AssetInfoManifest");
 
             if (GUILayout.Button("Generate"))
             {
@@ -77,7 +78,7 @@ namespace Modules.ExternalResource.Editor
 
             GUILayout.Space(6f);
 
-            EditorLayoutTools.DrawLabelWithBackground("ExternalResource", backgroundColor, labelColor);
+            EditorLayoutTools.DrawLabelWithBackground("ExternalResource");
 
             if (GUILayout.Button("Generate"))
             {
@@ -144,8 +145,30 @@ namespace Modules.ExternalResource.Editor
 
                 var dependencies = AssetDatabase.GetDependencies(assetPath);
 
-                if (dependencies.Any(x => !x.StartsWith(externalResourcesPath)))
+                var invalidDependencies = dependencies
+                    .Where(x =>
+                           {
+                               var extension = Path.GetExtension(x);
+
+                               return IgnoreDependentCheckExtensions.All(y => y != extension);
+                           })
+                    .Where(x => !x.StartsWith(externalResourcesPath))
+                    .ToArray();
+
+                if (invalidDependencies.Any())
                 {
+                    var builder = new StringBuilder();
+
+                    builder.AppendFormat("Asset: {0}", assetPath).AppendLine();
+                    builder.AppendLine("Invalid Dependencies:");
+
+                    foreach (var item in invalidDependencies)
+                    {
+                        builder.AppendLine(item);
+                    }
+
+                    Debug.LogWarningFormat(builder.ToString());
+
                     return false;
                 }
             }

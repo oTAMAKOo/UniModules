@@ -6,6 +6,7 @@ using System.Linq;
 using System.Collections.Generic;
 using UniRx;
 using Extensions;
+using Extensions.Devkit;
 
 namespace Modules.ExternalResource.Editor
 {
@@ -51,25 +52,24 @@ namespace Modules.ExternalResource.Editor
             {
                 GUILayout.FlexibleSpace();
 
-                EditorGUI.BeginChangeCheck();
-
-                searchText = EditorGUILayout.TextField(string.Empty, searchText, "SearchTextField", GUILayout.Width(200f));
-
-                if (EditorGUI.EndChangeCheck())
+                Action<string> onChangeSearchText = x =>
                 {
                     scrollPosition = Vector2.zero;
-                    UpdateSearchedEntrys();
-                }
+                    UpdateSearchedViews();
+                };
 
-                if (GUILayout.Button(string.Empty, "SearchCancelButton", GUILayout.Width(18f)))
+                Action onSearchCancel = () =>
                 {
                     searchText = string.Empty;
-                    GUIUtility.keyboardControl = 0;
                     scrollPosition = Vector2.zero;
 
-                    UpdateSearchedEntrys();
-                }
+                    UpdateSearchedViews();
+                };
+
+                EditorLayoutTools.DrawSearchTextField(searchText, onChangeSearchText, onSearchCancel, GUILayout.Width(250f));
             }
+
+            GUILayout.Space(4f);
 
             if (currentManageInfoViews != null)
             {
@@ -111,7 +111,7 @@ namespace Modules.ExternalResource.Editor
                 {
                     var assetPath = PathUtility.Combine(assetManagement.ExternalResourcesPath, info.ResourcePath);
 
-                    EditorUtility.DisplayProgressBar("Update asset info", assetPath, (float)i / targetAssetPaths.Length);
+                    EditorUtility.DisplayProgressBar("Update asset info", info.ResourcePath, (float)i / targetAssetPaths.Length);
 
                     if (info.AssetBundle == null){ continue; }
 
@@ -218,15 +218,18 @@ namespace Modules.ExternalResource.Editor
 
             manageInfoViews = views.ToArray();
 
-            UpdateSearchedEntrys();
+            UpdateSearchedViews();
 
-            if (onRequestRepaint != null)
+            EditorApplication.delayCall += () =>
             {
-                onRequestRepaint.OnNext(Unit.Default);
-            }
+                if (onRequestRepaint != null)
+                {
+                    onRequestRepaint.OnNext(Unit.Default);
+                }
+            };
         }
 
-        private void UpdateSearchedEntrys()
+        private void UpdateSearchedViews()
         {
             currentManageInfoViews = string.IsNullOrEmpty(searchText) ?
                 manageInfoViews :
