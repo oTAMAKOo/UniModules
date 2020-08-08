@@ -27,21 +27,15 @@ namespace Modules.ExternalResource.Editor
                 get { return ProjectPrefs.GetString("AssetNavigationWindowPrefs-externalResourcesPath"); }
                 set { ProjectPrefs.SetString("AssetNavigationWindowPrefs-externalResourcesPath", value); }
             }
-
-            public static string assetManageConfigGUID
-            {
-                get { return ProjectPrefs.GetString("AssetNavigationWindowPrefs-assetManageConfigGUID"); }
-                set { ProjectPrefs.SetString("AssetNavigationWindowPrefs-assetManageConfigGUID", value); }
-            }
         }
 
 		//----- field -----
 
-		private AssetManageManager assetManageManager = null;
+		private AssetManagement assetManagement = null;
 
         private Object selectionAssetObject = null;
 
-        private string assetGroupName = null;
+        private string assetCategory = null;
         private string assetBundleName = null;
         private string assetLoadPath = null;
 
@@ -64,31 +58,25 @@ namespace Modules.ExternalResource.Editor
         {
             if (initialized) { return; }
 
-			var config = AssetManageConfig.Instance;
-
 			Prefs.externalResourcesPath = externalResourcesPath;
-            Prefs.assetManageConfigGUID = AssetDatabase.AssetPathToGUID(AssetDatabase.GetAssetPath(config));
 
-			Setup();
+            ManageConfig.OnReloadAsObservable()
+                .Subscribe(_ => Setup())
+                .AddTo(Disposable);
+
+            Setup();
 
 			initialized = true;
         }
 
 		private void Setup()
 		{
-			if (string.IsNullOrEmpty(Prefs.externalResourcesPath) || string.IsNullOrEmpty(Prefs.assetManageConfigGUID))
-			{
-				return;
-			}
+			if (string.IsNullOrEmpty(Prefs.externalResourcesPath)) { return; }
 
 			var externalResourcesPath = Prefs.externalResourcesPath;
-			var assetManageConfigPath = AssetDatabase.GUIDToAssetPath(Prefs.assetManageConfigGUID);
-			var assetManageConfig = AssetDatabase.LoadMainAssetAtPath(assetManageConfigPath) as AssetManageConfig;
 
-			AssetManageConfig.OnReloadAsObservable().Subscribe(_ => Setup()).AddTo(Disposable);
-
-			assetManageManager = AssetManageManager.Instance;
-			assetManageManager.Initialize(externalResourcesPath, assetManageConfig);
+            assetManagement = AssetManagement.Instance;
+			assetManagement.Initialize(externalResourcesPath);
 
 			if (!string.IsNullOrEmpty(Prefs.selectionAssetGUID))
 			{
@@ -111,7 +99,6 @@ namespace Modules.ExternalResource.Editor
         void OnDestroy()
         {
             Prefs.externalResourcesPath = null;
-            Prefs.assetManageConfigGUID = null;
             Prefs.selectionAssetGUID = null;
         }
 
@@ -139,9 +126,9 @@ namespace Modules.ExternalResource.Editor
 
                     using (new ContentsScope())
                     {
-                        if (!string.IsNullOrEmpty(assetGroupName))
+                        if (!string.IsNullOrEmpty(assetCategory))
                         {
-                            DrawContentGUI("GroupName", assetGroupName);
+                            DrawContentGUI("GroupName", assetCategory);
                         }
 
                         if (!string.IsNullOrEmpty(assetBundleName))
@@ -201,7 +188,7 @@ namespace Modules.ExternalResource.Editor
                 case EventType.DragUpdated:
                 case EventType.DragPerform:
 
-                    var validate = assetManageManager.IsExternalResourcesTarget(DragAndDrop.objectReferences);
+                    var validate = assetManagement.IsExternalResourcesTarget(DragAndDrop.objectReferences);
 
                     DragAndDrop.visualMode = validate ? DragAndDropVisualMode.Copy : DragAndDropVisualMode.Rejected;
 
@@ -234,12 +221,14 @@ namespace Modules.ExternalResource.Editor
         {
             var assetPath = AssetDatabase.GetAssetPath(assetObject);
 
-            var info = assetManageManager.GetAssetInfo(assetPath);
+            var infos = assetManagement.GetAssetInfos(assetPath);
 
+            var info = infos.FirstOrDefault();
+            
             selectionAssetObject = info != null ? assetObject : null;
-            assetGroupName = info != null ? info.GroupName : null;
+            assetCategory = info != null ? info.Category : null;
             assetBundleName = info != null && info.IsAssetBundle ? info.AssetBundle.AssetBundleName : null;
-            assetLoadPath = string.IsNullOrEmpty(assetPath) ? string.Empty : assetManageManager.GetAssetLoadPath(assetPath);
+            assetLoadPath = string.IsNullOrEmpty(assetPath) ? string.Empty : assetManagement.GetAssetLoadPath(assetPath);
 
             if (info == null) { return false; }
 

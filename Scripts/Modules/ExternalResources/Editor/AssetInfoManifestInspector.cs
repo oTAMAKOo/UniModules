@@ -16,14 +16,14 @@ namespace Modules.ExternalResource.Editor
 
         private sealed class AssetGroupInfo
         {
-            public string GroupName { get; private set; }
+            public string Category { get; private set; }
             public AssetInfo[] AssetInfos { get; private set; }
             public AssetInfo[] SearchedInfos { get; private set; }
             public HashSet<int> OpenedIds { get; private set; }
 
-            public AssetGroupInfo(string groupName, AssetInfo[] assetInfos)
+            public AssetGroupInfo(string category, AssetInfo[] assetInfos)
             {
-                GroupName = groupName;
+                Category = category;
                 AssetInfos = assetInfos;
 
                 OpenedIds = new HashSet<int>();
@@ -33,8 +33,8 @@ namespace Modules.ExternalResource.Editor
             {
                 var isHit = false;
 
-                // グループ名が一致.
-                isHit |= GroupName.IsMatch(keywords);
+                // カテゴリーが一致.
+                isHit |= Category.IsMatch(keywords);
 
                 // アセット情報が一致.
                 SearchedInfos = AssetInfos.Where(x => IsAssetInfoSearchedHit(x, keywords)).ToArray();
@@ -107,7 +107,7 @@ namespace Modules.ExternalResource.Editor
 
                 using (new EditorGUILayout.VerticalScope())
                 {
-                    var open = EditorLayoutTools.DrawHeader(content.GroupName, opened);
+                    var open = EditorLayoutTools.DrawHeader(content.Category, opened);
 
                     if (open)
                     {
@@ -152,8 +152,8 @@ namespace Modules.ExternalResource.Editor
                             EditorGUILayout.LabelField("ResourcesPath");
                             EditorGUILayout.SelectableLabel(assetInfo.ResourcePath, textAreaStyle, GUILayout.Height(18f));
 
-                            EditorGUILayout.LabelField("GroupName");
-                            EditorGUILayout.SelectableLabel(assetInfo.GroupName, textAreaStyle, GUILayout.Height(18f));
+                            EditorGUILayout.LabelField("Category");
+                            EditorGUILayout.SelectableLabel(assetInfo.Category, textAreaStyle, GUILayout.Height(18f));
 
                             EditorGUILayout.LabelField("Tag");
                             EditorGUILayout.SelectableLabel(assetInfo.Tag, textAreaStyle, GUILayout.Height(18f));
@@ -229,7 +229,7 @@ namespace Modules.ExternalResource.Editor
             {
                 var assetInfos = Reflection.GetPrivateField<AssetInfoManifest, AssetInfo[]>(instance, "assetInfos");
 
-                currentInfos = assetInfos.GroupBy(x => x.GroupName)
+                currentInfos = assetInfos.GroupBy(x => x.Category)
                     .Select(x => new AssetGroupInfo(x.Key, x.ToArray()))
                     .ToArray();
 

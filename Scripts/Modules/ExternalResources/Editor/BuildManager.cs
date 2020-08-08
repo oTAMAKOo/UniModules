@@ -18,7 +18,7 @@ using Modules.CriWare.Editor;
 
 namespace Modules.ExternalResource.Editor
 {
-    public static partial class ExternalResourceManager
+    public static class BuildManager
     {
         //----- params -----
 
@@ -44,7 +44,7 @@ namespace Modules.ExternalResource.Editor
             return EditorUtility.DisplayDialog("Confirmation", "外部アセットを生成します.", "実行", "中止");
         }
 
-        public static void Build(string externalResourcesPath, AssetManageConfig assetManageConfig)
+        public static void Build(string externalResourcesPath)
         {
             var exportPath = GetExportPath();
 
@@ -59,8 +59,10 @@ namespace Modules.ExternalResource.Editor
 
             try
             {
+                var manageConfig = ManageConfig.Instance;
+
                 // アセット情報ファイルを生成.
-                var assetInfoManifest = AssetInfoManifestGenerator.Generate(externalResourcesPath, assetManageConfig);
+                var assetInfoManifest = AssetInfoManifestGenerator.Generate(externalResourcesPath);
 
                 // キャッシュ済みアセットバンドルのハッシュ値取得.
                 var cachedAssetBundleHashs = BuildAssetBundle.GetCachedAssetBundleHash();
@@ -100,7 +102,7 @@ namespace Modules.ExternalResource.Editor
                 BuildAssetBundle.CleanOldPackage(cachedAssetBundleHashs);
 
                 // AssetBundleファイルをパッケージ化.
-                BuildAssetBundle.BuildPackage(exportPath, assetInfoManifest, assetManageConfig.CryptPassword);
+                BuildAssetBundle.BuildPackage(exportPath, assetInfoManifest, manageConfig.CryptPassword);
 
                 // 出力先フォルダを開く.
                 UnityEditorUtility.OpenFolder(exportPath);

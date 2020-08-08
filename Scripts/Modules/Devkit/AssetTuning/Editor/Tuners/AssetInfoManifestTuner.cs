@@ -15,7 +15,7 @@ namespace Modules.Devkit.AssetTuning
 
         //----- field -----
 
-        private AssetManageManager assetManageManager = null;
+        private AssetManagement assetManagement = null;
         private AssetInfoManifest assetInfoManifest = null;
 
         private string externalResourcesPath = null;
@@ -30,26 +30,25 @@ namespace Modules.Devkit.AssetTuning
 
         public override bool Validate(string path)
         {
-            return assetManageManager != null && assetInfoManifest != null;
+            return assetManagement != null && assetInfoManifest != null;
         }
 
         public override void OnBegin()
         {
-            assetManageManager = null;
+            assetManagement = null;
             assetInfoManifest = null;
 
             changeAssetInfo = false;
 
             var projectFolders = ProjectFolders.Instance;
-            var assetManageConfig = AssetManageConfig.Instance;
-
-            if (projectFolders != null && assetManageConfig != null)
+            
+            if (projectFolders != null)
             {
-                assetManageManager = AssetManageManager.Instance;
+                assetManagement = AssetManagement.Instance;
 
                 externalResourcesPath = projectFolders.ExternalResourcesPath;
 
-                assetManageManager.Initialize(externalResourcesPath, assetManageConfig);
+                assetManagement.Initialize(externalResourcesPath);
 
                 var manifestPath = PathUtility.Combine(externalResourcesPath, AssetInfoManifest.ManifestFileName);
 
@@ -121,11 +120,11 @@ namespace Modules.Devkit.AssetTuning
 
         private void AddAssetInfo(string path)
         {
-            var assetInfo = assetManageManager.GetAssetInfo(path);
+            var infos = assetManagement.GetAssetInfos(path);
 
-            if (assetInfo != null)
+            foreach (var info in infos)
             {
-                assetInfos = assetInfos.Append(assetInfo).ToArray();
+                assetInfos = assetInfos.Append(info).ToArray();
 
                 changeAssetInfo = true;
             }

@@ -27,15 +27,15 @@ namespace Modules.ExternalResource.Editor
 
         //----- method -----
 
-        public static AssetInfoManifest Generate(string externalResourcesPath, AssetManageConfig config)
+        public static AssetInfoManifest Generate(string externalResourcesPath)
         {
-            var assetManageManager = AssetManageManager.Instance;
+            var assetManagement = AssetManagement.Instance;
 
-            assetManageManager.Initialize(externalResourcesPath, config);
+            assetManagement.Initialize(externalResourcesPath);
 
-            var manifest = GenerateManifest(assetManageManager);
+            var manifest = GenerateManifest(assetManagement);
 
-            ApplyAssetBundleName(assetManageManager, manifest);
+            ApplyAssetBundleName(assetManagement, manifest);
 
             UnityEditorUtility.SaveAsset(manifest);
 
@@ -132,7 +132,7 @@ namespace Modules.ExternalResource.Editor
 
         #endif
 
-        private static void ApplyAssetBundleName(AssetManageManager assetManageManager, AssetInfoManifest manifest)
+        private static void ApplyAssetBundleName(AssetManagement assetManagement, AssetInfoManifest manifest)
         {
             var assetInfos = manifest.GetAssetInfos().ToArray();
 
@@ -146,11 +146,11 @@ namespace Modules.ExternalResource.Editor
 
                 EditorUtility.DisplayProgressBar("ApplyAssetBundleName", assetInfo.ResourcePath, (float)i / count);
 
-                var assetPath = PathUtility.Combine(assetManageManager.ExternalResourcesPath, assetInfo.ResourcePath);
+                var assetPath = PathUtility.Combine(assetManagement.ExternalResourcesPath, assetInfo.ResourcePath);
 
                 if (assetInfo.IsAssetBundle)
                 {
-                    assetManageManager.SetAssetBundleName(assetPath, assetInfo.AssetBundle.AssetBundleName);
+                    assetManagement.SetAssetBundleName(assetPath, assetInfo.AssetBundle.AssetBundleName);
                 }
             }
 
@@ -159,15 +159,12 @@ namespace Modules.ExternalResource.Editor
             EditorUtility.ClearProgressBar();
         }
 
-        private static AssetInfoManifest GenerateManifest(AssetManageManager assetManageManager)
+        private static AssetInfoManifest GenerateManifest(AssetManagement assetManagement)
         {
-            // アセット情報を収集.
-            assetManageManager.CollectInfo();
-
-            var allAssetInfos = assetManageManager.GetAllAssetInfos().ToArray();
+            var allAssetInfos = assetManagement.GetAllAssetInfos().ToArray();
 
             // アセット情報を更新.
-            var manifestPath = GetManifestPath(assetManageManager.ExternalResourcesPath);
+            var manifestPath = GetManifestPath(assetManagement.ExternalResourcesPath);
             var manifest = ScriptableObjectGenerator.Generate<AssetInfoManifest>(manifestPath);
 
             Reflection.SetPrivateField(manifest, "assetInfos", allAssetInfos);

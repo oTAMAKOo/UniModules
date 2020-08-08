@@ -204,7 +204,7 @@ namespace Modules
         [MenuItem(itemName: ResourcesMenu + "Build", priority = 1)]
         public static void ExternalResourceBuild()
         {
-            ExternalResourceBuildWindow.Open();
+            BuildWindow.Open();
         }
 
         //------ 外部アセット管理ウィンドウ ------
@@ -214,7 +214,7 @@ namespace Modules
         {
             var projectFolders = ProjectFolders.Instance;
 
-            AssetManageWindow.Open(projectFolders.ExternalResourcesPath);
+            ManageWindow.Open(projectFolders.ExternalResourcesPath);
         }
 
         [MenuItem(itemName: ResourcesMenu + "Open AssetNavigationWindow", priority = 13)]

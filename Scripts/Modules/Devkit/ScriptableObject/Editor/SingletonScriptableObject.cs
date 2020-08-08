@@ -15,7 +15,23 @@ namespace Modules.Devkit.ScriptableObjects
 
         //----- property -----
 
-        public static T Instance { get { return instance ?? (instance = LoadInstance()); } }
+        public static T Instance
+        {
+            get
+            {
+                if (instance == null)
+                {
+                    instance = LoadInstance();
+
+                    if (instance != null)
+                    {
+                        instance.OnLoadInstance();
+                    }
+                }
+
+                return instance;
+            }
+        }
 
         //----- method -----
 
@@ -54,5 +70,7 @@ namespace Modules.Devkit.ScriptableObjects
 
             return targetAsset;
         }
+
+        protected virtual void OnLoadInstance() { }
     }
 }

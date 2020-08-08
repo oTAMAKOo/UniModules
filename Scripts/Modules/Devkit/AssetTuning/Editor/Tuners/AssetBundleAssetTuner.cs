@@ -1,73 +1,88 @@
 ﻿
+using Extensions;
+using UnityEditor;
 using Modules.ExternalResource.Editor;
 using Modules.Devkit.Project;
+using Modules.ExternalResource;
 
 namespace Modules.Devkit.AssetTuning
 {
 	public sealed class AssetBundleAssetTuner : AssetTuner
     {
-        private AssetManageManager assetManageManager = null;
+        private AssetManagement assetManagement = null;
 
         public override int Priority { get { return 75; } }
 
         public override void OnBegin()
         {
-            assetManageManager = null;
+            assetManagement = null;
 
             var projectFolders = ProjectFolders.Instance;
-            var assetManageConfig = AssetManageConfig.Instance;
 
-            if (projectFolders != null && assetManageConfig != null)
+            if (projectFolders != null)
             {
-                assetManageManager = AssetManageManager.Instance;
+                assetManagement = AssetManagement.Instance;
 
                 var externalResourcesPath = projectFolders.ExternalResourcesPath;
 
-                assetManageManager.Initialize(externalResourcesPath, assetManageConfig);
+                assetManagement.Initialize(externalResourcesPath);
             }
         }
 
-        public override bool Validate(string path)
+        public override bool Validate(string assetPath)
         {
-            return assetManageManager != null;
+            return assetManagement != null;
         }
         
-        public override void OnAssetImport(string path)
+        public override void OnAssetImport(string assetPath)
         {
-            if (path.StartsWith(assetManageManager.ExternalResourcesPath))
+            if (assetPath.StartsWith(assetManagement.ExternalResourcesPath))
             {
-                var infos = assetManageManager.CollectInfo(path);
+                var infos = assetManagement.GetAssetInfos(assetPath);
 
                 foreach (var info in infos)
                 {
-                    info.ApplyAssetBundleName(assetManageManager);
+                    ApplyAssetBundleName(assetManagement.ExternalResourcesPath, info);
                 }
             }
         }
 
-        public override void OnAssetMove(string path, string from)
+        public override void OnAssetMove(string assetPath, string from)
         {
             // 対象から外れる場合.
 
-            if (from.StartsWith(assetManageManager.ExternalResourcesPath))
+            if (from.StartsWith(assetManagement.ExternalResourcesPath))
             {
-                if (!path.StartsWith(assetManageManager.ExternalResourcesPath))
+                if (!assetPath.StartsWith(assetManagement.ExternalResourcesPath))
                 {
-                    assetManageManager.SetAssetBundleName(path, string.Empty);
+                    assetManagement.SetAssetBundleName(assetPath, string.Empty);
                 }
             }
 
             // 対象に追加される場合.
 
-            if (path.StartsWith(assetManageManager.ExternalResourcesPath))
+            if (assetPath.StartsWith(assetManagement.ExternalResourcesPath))
             {
-                var infos = assetManageManager.CollectInfo(path);
+                var infos = assetManagement.GetAssetInfos(assetPath);
 
                 foreach (var info in infos)
                 {
-                    info.ApplyAssetBundleName(assetManageManager);
+                    ApplyAssetBundleName(assetManagement.ExternalResourcesPath, info);
                 }
             }
+        }
+
+        private void ApplyAssetBundleName(string externalResourcesPath, AssetInfo assetInfo)
+        {
+            if (assetInfo == null){ return; }
+
+            if (!assetInfo.IsAssetBundle){ return; }
+
+            if (assetInfo.AssetBundle == null){ return; }
+
+            var assetPath = PathUtility.Combine(externalResourcesPath, assetInfo.ResourcePath);
+
+            assetManagement.SetAssetBundleName(assetPath, assetInfo.AssetBundle.AssetBundleName);
         }
     }
 }

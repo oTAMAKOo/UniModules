@@ -18,7 +18,7 @@ namespace Modules.ExternalResource
         [SerializeField]
         private string resourcePath = null;
         [SerializeField]
-        private string groupName = null;
+        private string category = null;
         [SerializeField]
         private string tag = null;
         [SerializeField]
@@ -34,8 +34,8 @@ namespace Modules.ExternalResource
 
         /// <summary> 読み込みパス </summary>
         public string ResourcePath { get { return resourcePath; } }
-        /// <summary> グループ名 </summary>
-        public string GroupName { get { return groupName; } }
+        /// <summary> カテゴリ </summary>
+        public string Category { get { return category; } }
         /// <summary> タグ </summary>
         public string Tag { get { return tag; } }
         /// <summary> ファイル名 </summary>
@@ -55,10 +55,10 @@ namespace Modules.ExternalResource
 
         //----- method -----
 
-        public AssetInfo(string resourcePath, string groupName, string tag)
+        public AssetInfo(string resourcePath, string category, string tag)
         {
             this.resourcePath = PathUtility.ConvertPathSeparator(resourcePath);
-            this.groupName = groupName;
+            this.category = category;
             this.tag = tag;
 
             SetFileName();
@@ -158,7 +158,7 @@ namespace Modules.ExternalResource
         [SerializeField, ReadOnly]
         private AssetInfo[] assetInfos = new AssetInfo[0];
 
-        private ILookup<string, AssetInfo> assetInfoByGroupName = null;
+        private ILookup<string, AssetInfo> assetInfoByCategory = null;
         private Dictionary<string, AssetInfo> assetInfoByResourcesPath = null;
 
         //----- property -----
@@ -186,22 +186,22 @@ namespace Modules.ExternalResource
             return manifestAssetInfo;
         }
 
-        public IEnumerable<AssetInfo> GetAssetInfos(string groupName = null)
+        public IEnumerable<AssetInfo> GetAssetInfos(string category = null)
         {
             BuildCache();
 
-            if (string.IsNullOrEmpty(groupName))
+            if (string.IsNullOrEmpty(category))
             {
                 return assetInfos;
             }
 
-            if (!assetInfoByGroupName.Contains(groupName))
+            if (!assetInfoByCategory.Contains(category))
             {
                 return new AssetInfo[0];
             }
 
-            return assetInfoByGroupName
-                .Where(x => x.Key == groupName)
+            return assetInfoByCategory
+                .Where(x => x.Key == category)
                 .SelectMany(x => x);
         }
 
@@ -216,9 +216,9 @@ namespace Modules.ExternalResource
         
         public void BuildCache(bool forceUpdate = false)
         {
-            if (assetInfoByGroupName == null || forceUpdate)
+            if (assetInfoByCategory == null || forceUpdate)
             {
-                assetInfoByGroupName = assetInfos.ToLookup(x => x.GroupName);
+                assetInfoByCategory = assetInfos.ToLookup(x => x.Category);
             }
 
             if (assetInfoByResourcesPath == null || forceUpdate)

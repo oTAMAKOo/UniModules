@@ -1,8 +1,10 @@
 ﻿﻿﻿﻿﻿﻿
+using System.Linq;
 using UnityEngine;
 using UnityEditor;
 using Extensions.Devkit;
 using Modules.Devkit.Project;
+using Extensions;
 
 #if ENABLE_CRIWARE_ADX || ENABLE_CRIWARE_SOFDEC
 
@@ -12,7 +14,7 @@ using Modules.CriWare.Editor;
 
 namespace Modules.ExternalResource.Editor
 {
-	public sealed class ExternalResourceBuildWindow : SingletonEditorWindow<ExternalResourceBuildWindow>
+	public sealed class BuildWindow : SingletonEditorWindow<BuildWindow>
     {
         //----- params -----
 
@@ -57,7 +59,6 @@ namespace Modules.ExternalResource.Editor
             if (!initialized) { return; }
 
             var editorConfig = ProjectFolders.Instance;
-            var assetManageConfig = AssetManageConfig.Instance;
 
             var externalResourcesPath = editorConfig.ExternalResourcesPath;
 
@@ -71,7 +72,7 @@ namespace Modules.ExternalResource.Editor
             if (GUILayout.Button("Generate"))
             {
                 // アセット情報ファイルを生成.
-                AssetInfoManifestGenerator.Generate(externalResourcesPath, assetManageConfig);
+                AssetInfoManifestGenerator.Generate(externalResourcesPath);
             }
 
             GUILayout.Space(6f);
@@ -80,7 +81,7 @@ namespace Modules.ExternalResource.Editor
 
             if (GUILayout.Button("Generate"))
             {
-                if (ExternalResourceManager.BuildConfirm())
+                if (BuildManager.BuildConfirm())
                 {
                     var build = true;
 
@@ -96,16 +97,16 @@ namespace Modules.ExternalResource.Editor
                         EditorApplication.LockReloadAssemblies();
 
                         // アセット情報ファイルを生成.
-                        AssetInfoManifestGenerator.Generate(externalResourcesPath, assetManageConfig);
+                        AssetInfoManifestGenerator.Generate(externalResourcesPath);
 
                         // 依存関係の検証.
-                        var validate = AssetDependencies.Validate(externalResourcesPath);
+                        var validate = AssetDependenciesValidate(externalResourcesPath);
 
                         if (!validate)
                         {
-                            var messeage = "There is an incorrect reference.\nDo you want to cancel the build?";
-
-                            if (!EditorUtility.DisplayDialog("InvalidDependant", messeage, "build", "cancel"))
+                            var message = "There is an incorrect reference.\nDo you want to cancel the build?";
+                            
+                            if (!EditorUtility.DisplayDialog("Invalid Dependencies", message, "build", "cancel"))
                             {
                                 build = false;
 
@@ -117,7 +118,7 @@ namespace Modules.ExternalResource.Editor
                         // ビルド.
                         if (build)
                         {
-                            ExternalResourceManager.Build(externalResourcesPath, assetManageConfig);
+                            BuildManager.Build(externalResourcesPath);
                         }
                     }
                     finally
@@ -128,6 +129,28 @@ namespace Modules.ExternalResource.Editor
             }
 
             EditorGUILayout.Separator();
+        }
+
+        private bool AssetDependenciesValidate(string externalResourcesPath)
+        {
+            var manifestPath = PathUtility.Combine(externalResourcesPath, AssetInfoManifest.ManifestFileName);
+            var assetInfoManifest = AssetDatabase.LoadAssetAtPath<AssetInfoManifest>(manifestPath);
+
+            var allAssetInfos = assetInfoManifest.GetAssetInfos().ToArray();
+
+            foreach (var assetInfo in allAssetInfos)
+            {
+                var assetPath = PathUtility.Combine(externalResourcesPath, assetInfo.ResourcePath);
+
+                var dependencies = AssetDatabase.GetDependencies(assetPath);
+
+                if (dependencies.Any(x => !x.StartsWith(externalResourcesPath)))
+                {
+                    return false;
+                }
+            }
+
+            return true;
         }
 
         private void Reload()

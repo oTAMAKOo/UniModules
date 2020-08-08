@@ -1,7 +1,7 @@
 ﻿
+using System;
 using UnityEngine;
 using UnityEditor;
-using System;
 using System.Linq;
 using System.Collections.Generic;
 using UniRx;
@@ -25,13 +25,14 @@ namespace Modules.ExternalResource.Editor
         //----- field -----
 
         private ViewMode viewMode = ViewMode.Contents;
-        private ManageInfo manageInfo = null;
+
         private IgnoreType? ignoreType = null;
-        private AssetCollectInfo[] assetInfos = null;
+
+        private Object manageAsset = null;
         private string manageAssetPath = null;
 
         private string contentDetailName = null;
-        private Dictionary<string, AssetCollectInfo[]> assetContents = null;
+        private Dictionary<string, AssetInfo[]> assetContents = null;
 
         private ContentsScrollView contentsScrollView = null;
         private ContentAssetsScrollView contentAssetsScrollView = null;
@@ -47,24 +48,24 @@ namespace Modules.ExternalResource.Editor
 
         public bool IsEdit { get; private set; }
 
-        public ManageInfo ManageInfo { get { return manageInfo; } }
+        public ManageInfo ManageInfo { get; private set; }
 
-        public AssetCollectInfo[] Infos { get { return assetInfos; } }
+        public IReadOnlyList<AssetInfo> ManagedAssetInfos { get; private set; }
 
         //----- method -----
 
-        public ManageInfoView(ManageInfo manageInfo, AssetCollectInfo[] assetInfos, IgnoreType? ignoreType, bool open, bool edit)
+        public ManageInfoView(AssetManagement assetManagement, ManageInfo manageInfo, IgnoreType? ignoreType, bool open, bool edit)
         {
             this.ignoreType = ignoreType;
-            this.assetInfos = assetInfos;
 
             // 確定するまで元のインスタンスに影響を与えないようにコピーに対して編集を行う.
-            this.manageInfo = new ManageInfo(manageInfo);
+            ManageInfo = manageInfo.DeepCopy();
 
             IsOpen = open;
             IsEdit = edit;
-            
-            manageAssetPath = AssetDatabase.GetAssetPath(manageInfo.assetObject);
+
+            manageAssetPath = AssetDatabase.GUIDToAssetPath(manageInfo.guid);
+            manageAsset = AssetDatabase.LoadMainAssetAtPath(manageAssetPath);
 
             contentsScrollView = new ContentsScrollView();
 
@@ -74,7 +75,7 @@ namespace Modules.ExternalResource.Editor
 
             contentAssetsScrollView = new ContentAssetsScrollView();
 
-            BuildContentsInfo(); 
+            BuildContentsInfo(assetManagement); 
         }
 
         public void Draw()
@@ -90,7 +91,7 @@ namespace Modules.ExternalResource.Editor
             {
                 using (new ContentsScope())
                 {
-                    EditorGUI.BeginDisabledGroup(!IsEdit);
+                    using (new DisableScope(!IsEdit))
                     {
                         var layoutWidth = 350f;
 
@@ -105,7 +106,7 @@ namespace Modules.ExternalResource.Editor
                                 // このフィールドは編集不可.
                                 EditorGUI.BeginDisabledGroup(true);
                                 {
-                                    EditorGUILayout.ObjectField(string.Empty, manageInfo.assetObject, typeof(Object), false, GUILayout.Width(350f));
+                                    EditorGUILayout.ObjectField(string.Empty, manageAsset, typeof(Object), false, GUILayout.Width(350f));
                                 }
                                 EditorGUI.EndDisabledGroup();
                             }
@@ -142,18 +143,18 @@ namespace Modules.ExternalResource.Editor
                                 // 必要なパラメータが足りない時はApplyさせない.
                                 var apply = true;
 
-                                switch (manageInfo.assetBundleNameType)
+                                switch (ManageInfo.assetBundleNamingRule)
                                 {
-                                    case ManageInfo.NameType.Specified:
-                                    case ManageInfo.NameType.PrefixAndChildAssetName:
-                                        if (string.IsNullOrEmpty(manageInfo.assetBundleNameStr))
+                                    case AssetBundleNamingRule.Specified:
+                                    case AssetBundleNamingRule.PrefixAndChildAssetName:
+                                        if (string.IsNullOrEmpty(ManageInfo.assetBundleNameStr))
                                         {
                                             apply = false;
                                         }
                                         break;
                                 }
 
-                                EditorGUI.BeginDisabledGroup(!apply);
+                                using (new DisableScope(!apply))
                                 {
                                     if (GUILayout.Button("Apply"))
                                     {
@@ -165,7 +166,6 @@ namespace Modules.ExternalResource.Editor
                                         }
                                     }
                                 }
-                                EditorGUI.EndDisabledGroup();
                             }
 
                             GUILayout.Space(5f);
@@ -179,57 +179,66 @@ namespace Modules.ExternalResource.Editor
                         {
                             EditorGUI.BeginChangeCheck();
 
-                            var isAssetBundle = EditorGUILayout.Toggle("AssetBundle", manageInfo.isAssetBundle, GUILayout.Width(100f));
+                            var isAssetBundle = EditorGUILayout.Toggle("AssetBundle", ManageInfo.isAssetBundle, GUILayout.Width(100f));
 
                             if (EditorGUI.EndChangeCheck())
                             {
-                                manageInfo.isAssetBundle = isAssetBundle;
+                                ManageInfo.isAssetBundle = isAssetBundle;
                             }
                         }
 
                         GUILayout.Space(2f);
 
-                        if (manageInfo.isAssetBundle)
+                        if (ManageInfo.isAssetBundle)
                         {
                             EditorGUI.BeginChangeCheck();
 
-                            var assetBundleNameType = manageInfo.assetBundleNameType;
+                            var selectRuleTable = new AssetBundleNamingRule[]
+                            {
+                                AssetBundleNamingRule.ManageAssetName,
+                                AssetBundleNamingRule.ChildAssetName,
+                                AssetBundleNamingRule.PrefixAndChildAssetName,
+                                AssetBundleNamingRule.Specified,
+                            };
 
-                            assetBundleNameType = (ManageInfo.NameType)EditorGUILayout.EnumPopup("Type", assetBundleNameType, GUILayout.Width(layoutWidth));
+                            var labels = selectRuleTable.Select(x => x.ToString()).ToArray();
+
+                            var index = selectRuleTable.IndexOf(x => x == ManageInfo.assetBundleNamingRule);
+
+                            index = EditorGUILayout.Popup("Type", index, labels, GUILayout.Width(layoutWidth));
 
                             if (EditorGUI.EndChangeCheck())
                             {
-                                manageInfo.assetBundleNameType = assetBundleNameType;
-                                manageInfo.assetBundleNameStr = null;
+                                ManageInfo.assetBundleNamingRule = index != -1 ? selectRuleTable[index] : AssetBundleNamingRule.None;
+                                ManageInfo.assetBundleNameStr = null;
                             }
 
                             GUILayout.Space(2f);
 
-                            var assetBundleNameStr = manageInfo.assetBundleNameStr;
+                            var assetBundleNameStr = ManageInfo.assetBundleNameStr;
 
-                            switch (manageInfo.assetBundleNameType)
+                            switch (ManageInfo.assetBundleNamingRule)
                             {
-                                case ManageInfo.NameType.Specified:
+                                case AssetBundleNamingRule.Specified:
                                     assetBundleNameStr = EditorGUILayout.DelayedTextField("Specified", assetBundleNameStr, GUILayout.Width(layoutWidth));
-                                    manageInfo.assetBundleNameStr = assetBundleNameStr != null ? assetBundleNameStr.ToLower() : string.Empty;
+                                    ManageInfo.assetBundleNameStr = assetBundleNameStr != null ? assetBundleNameStr.ToLower() : string.Empty;
                                     break;
 
-                                case ManageInfo.NameType.PrefixAndChildAssetName:
+                                case AssetBundleNamingRule.PrefixAndChildAssetName:
                                     assetBundleNameStr = EditorGUILayout.DelayedTextField("Prefix", assetBundleNameStr, GUILayout.Width(layoutWidth));
-                                    manageInfo.assetBundleNameStr = assetBundleNameStr != null ? assetBundleNameStr.ToLower() : string.Empty;
+                                    ManageInfo.assetBundleNameStr = assetBundleNameStr != null ? assetBundleNameStr.ToLower() : string.Empty;
                                     break;
                             }
                         }
 
-                        manageInfo.tag = EditorGUILayout.DelayedTextField("Tag", manageInfo.tag, GUILayout.Width(layoutWidth));
+                        ManageInfo.tag = EditorGUILayout.DelayedTextField("Tag", ManageInfo.tag, GUILayout.Width(layoutWidth));
 
                         GUILayout.Space(2f);
 
-                        manageInfo.comment = EditorGUILayout.DelayedTextField("Memo", manageInfo.comment, GUILayout.Width(layoutWidth), GUILayout.Height(38f));
+                        ManageInfo.comment = EditorGUILayout.DelayedTextField("Memo", ManageInfo.comment, GUILayout.Width(layoutWidth), GUILayout.Height(38f));
 
                         EditorLayoutTools.SetLabelWidth(originLabelWidth);
                     }
-                    EditorGUI.EndDisabledGroup();
 
                     EditorGUILayout.Separator();
 
@@ -281,15 +290,19 @@ namespace Modules.ExternalResource.Editor
             }
         }
 
-        private void BuildContentsInfo()
+        private void BuildContentsInfo(AssetManagement assetManagement)
         {
-            assetContents = new Dictionary<string, AssetCollectInfo[]>();
+            assetContents = new Dictionary<string, AssetInfo[]>();
 
             var contents = new List<ContentsScrollView.Content>();
 
-            var assetBundleTargets = assetInfos
-                .Where(x => x.AssetInfo.IsAssetBundle)
-                .GroupBy(x => x.AssetInfo.AssetBundle.AssetBundleName)
+            var manageAssetPaths = assetManagement.GetManageAssetPaths(ManageInfo);
+
+            ManagedAssetInfos = manageAssetPaths.Select(x => assetManagement.GetAssetInfo(x, ManageInfo)).ToArray();
+
+            var assetBundleTargets = ManagedAssetInfos
+                .Where(x => x.IsAssetBundle)
+                .GroupBy(x => x.AssetBundle.AssetBundleName)
                 .ToArray();
             
             foreach (var assetBundleTarget in assetBundleTargets)
@@ -305,15 +318,15 @@ namespace Modules.ExternalResource.Editor
                 assetContents.Add(assetBundleTarget.Key, assetBundleTarget.ToArray());
             }
 
-            var otherAssetTargets = assetInfos
-                .Where(x => !x.AssetInfo.IsAssetBundle)
+            var otherAssetTargets = ManagedAssetInfos
+                .Where(x => !x.IsAssetBundle)
                 .ToArray();
 
             foreach (var otherAssetTarget in otherAssetTargets)
             {
                 var assetContent = new ContentsScrollView.Content()
                 {
-                    label = otherAssetTarget.AssetInfo.ResourcePath,
+                    label = otherAssetTarget.ResourcePath,
                     isAssetBundle = false,
                 };
 
@@ -374,6 +387,8 @@ namespace Modules.ExternalResource.Editor
                 tabNextIconContent = EditorGUIUtility.IconContent("tab_next");
             }
 
+            GUILayout.Space(2f);
+
             using (new EditorGUILayout.HorizontalScope())
             {
                 var type = content.isAssetBundle ? "AssetBundle" : "Other Assets";
@@ -381,7 +396,7 @@ namespace Modules.ExternalResource.Editor
 
                 var originLabelWidth = EditorLayoutTools.SetLabelWidth(75f);
 
-                EditorLayoutTools.DrawLabelWithBackground(type, color, width: 70f, options: GUILayout.Height(15f));
+                EditorLayoutTools.DrawLabelWithBackground(type, color, width: 70f, options: GUILayout.Height(14f));
 
                 EditorLayoutTools.SetLabelWidth(content.label);
 
@@ -407,7 +422,7 @@ namespace Modules.ExternalResource.Editor
         }
     }
 
-    public sealed class ContentAssetsScrollView : EditorGUIFastScrollView<AssetCollectInfo>
+    public sealed class ContentAssetsScrollView : EditorGUIFastScrollView<AssetInfo>
     {
         private Object[] assets = null;
 
@@ -415,10 +430,10 @@ namespace Modules.ExternalResource.Editor
 
         protected override void OnContentsUpdate()
         {
-            assets = Contents.Select(x => AssetDatabase.LoadMainAssetAtPath(x.AssetPath)).ToArray();
+            assets = Contents.Select(x => AssetDatabase.LoadMainAssetAtPath(x.ResourcePath)).ToArray();
         }
 
-        protected override void DrawContent(int index, AssetCollectInfo content)
+        protected override void DrawContent(int index, AssetInfo content)
         {
             EditorGUILayout.ObjectField(assets[index], typeof(Object), false);
         }

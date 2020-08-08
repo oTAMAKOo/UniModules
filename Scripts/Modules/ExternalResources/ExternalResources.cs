@@ -489,9 +489,9 @@ namespace Modules.ExternalResource
                 builder.AppendFormat("AssetBundleName = {0}", assetBundleName).AppendLine();
                 builder.AppendFormat("Hash = {0}", assetInfo.FileHash).AppendLine();
 
-                if (!string.IsNullOrEmpty(assetInfo.GroupName))
+                if (!string.IsNullOrEmpty(assetInfo.Category))
                 {
-                    builder.AppendFormat("Group = {0}", assetInfo.GroupName).AppendLine();
+                    builder.AppendFormat("Category = {0}", assetInfo.Category).AppendLine();
                 }
 
                 UnityConsole.Event(ConsoleEventName, ConsoleEventColor, builder.ToString());

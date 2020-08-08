@@ -188,14 +188,11 @@ namespace Extensions.Devkit
         }
 
         /// <summary>
-        /// フォルダ内の全Assetを取得.
+        /// フォルダ内の全AssetPathを取得.
         /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <param name="folderPath"></param>
-        /// <returns></returns>
-        public static T[] LoadAssetsInFolder<T>(string folderPath) where T : UnityEngine.Object
+        public static string[] GetAllAssetPathInFolder(string folderPath)
         {
-            var assets = new List<T>();
+            var assetPaths = new List<string>();
 
             if (folderPath.StartsWith(AssetsFolderName))
             {
@@ -207,7 +204,8 @@ namespace Extensions.Devkit
             if (!Directory.Exists(dir))
             {
                 Debug.LogFormat("指定されたディレクトリが存在しません.\n{0}", dir);
-                return new T[0];
+
+                return null;
             }
 
             var queue = new Queue();
@@ -221,19 +219,45 @@ namespace Extensions.Devkit
                 var files = Directory.GetFiles(d);
                 foreach (var file in files)
                 {
-                    var path = file.Replace(Application.dataPath, "Assets");
-                    var asset = AssetDatabase.LoadAssetAtPath<T>(path);
+                    var assetPath = file.Replace(Application.dataPath, "Assets");
 
-                    if (asset != null)
+                    var guid = AssetDatabase.AssetPathToGUID(assetPath);
+
+                    if (!string.IsNullOrEmpty(guid))
                     {
-                        assets.Add(asset);
+                        assetPaths.Add(assetPath);
                     }
                 }
 
                 var dirs = Directory.GetDirectories(d);
+
                 foreach (var s in dirs)
                 {
                     queue.Enqueue(s);
+                }
+            }
+
+            return assetPaths.ToArray();
+        }
+
+        /// <summary>
+        /// フォルダ内の全Assetを取得.
+        /// </summary>
+        public static T[] LoadAssetsInFolder<T>(string folderPath) where T : UnityEngine.Object
+        {
+            var assetPathInFolder = GetAllAssetPathInFolder(folderPath);
+
+            if (assetPathInFolder == null){ return null; }
+
+            var assets = new List<T>();
+
+            foreach (var assetPath in assetPathInFolder)
+            {
+                var asset = AssetDatabase.LoadAssetAtPath<T>(assetPath);
+
+                if (asset != null)
+                {
+                    assets.Add(asset);
                 }
             }
 
