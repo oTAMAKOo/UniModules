@@ -95,6 +95,8 @@ namespace Modules.ExternalResource.Editor
                                             assetManagement.RenameCategory(currentCategory, editCategoryName);
 
                                             currentCategory = editCategoryName;
+
+                                            categoryNames = assetManagement.GetAllCategoryNames().ToList();
                                         }
                                     }
                                     break;
@@ -137,6 +139,8 @@ namespace Modules.ExternalResource.Editor
                             if (EditorUtility.DisplayDialog("確認", "カテゴリーを削除します", "実行", "中止"))
                             {
                                 assetManagement.DeleteCategory(currentCategory);
+
+                                categoryNames = assetManagement.GetAllCategoryNames().ToList();
 
                                 if (onChangeSelectCategory != null)
                                 {
