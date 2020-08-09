@@ -34,7 +34,7 @@ namespace Modules.ExternalResource.Editor
         {
             if (EditorApplication.isCompiling)
             {
-                EditorUtility.DisplayDialog("Error", "Can not open while compiling.", "OK");
+                EditorUtility.DisplayDialog("Error", "Can not open while compiling.", "Close");
                 return;
             }
             

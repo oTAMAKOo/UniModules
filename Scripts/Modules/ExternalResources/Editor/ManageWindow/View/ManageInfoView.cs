@@ -136,7 +136,7 @@ namespace Modules.ExternalResource.Editor
                             {
                                 if (GUILayout.Button("Delete", GUILayout.Width(60f)))
                                 {
-                                    if (EditorUtility.DisplayDialog("確認", "命名規則を削除します", "続行", "中止"))
+                                    if (EditorUtility.DisplayDialog("Confirm", "Remove naming rule.", "Apply", "Cancel"))
                                     {
                                         if (onDeleteManageInfo != null)
                                         {

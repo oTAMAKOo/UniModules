@@ -143,7 +143,7 @@ namespace Modules.ExternalResource.Editor
             }
             else
             {
-                EditorGUILayout.HelpBox("Drag and drop assetbundle asset.", MessageType.Info);
+                EditorGUILayout.HelpBox("Drag and drop AssetBundle asset.", MessageType.Info);
             }
 
             EditorGUILayout.Separator();
@@ -217,7 +217,7 @@ namespace Modules.ExternalResource.Editor
 
                                 if (!enable)
                                 {
-                                    Debug.LogError("ExternalResourceの対象ではありません.");
+                                    Debug.LogError("Not target of ExternalResource.");
                                 }
                             }
                         }

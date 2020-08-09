@@ -127,16 +127,16 @@ namespace Modules.ExternalResource.Editor
                 }
                 else
                 {
-                    if (GUILayout.Button("追加", EditorStyles.toolbarButton))
+                    if (GUILayout.Button("Add", EditorStyles.toolbarButton))
                     {
                         nameEditMode = NameEditMode.New;
                     }
 
                     if (!string.IsNullOrEmpty(currentCategory))
                     {
-                        if (GUILayout.Button("削除", EditorStyles.toolbarButton))
+                        if (GUILayout.Button("Delete", EditorStyles.toolbarButton))
                         {
-                            if (EditorUtility.DisplayDialog("確認", "カテゴリーを削除します", "実行", "中止"))
+                            if (EditorUtility.DisplayDialog("Confirm", "Remove selection category.", "Apply", "Cancel"))
                             {
                                 assetManagement.DeleteCategory(currentCategory);
 

@@ -403,7 +403,7 @@ namespace Modules.ExternalResource.Editor
 
             if (manageInfo != null && manageInfo.guid == assetGuid)
             {
-                Debug.Log("Already registered.");
+                Debug.LogWarningFormat("Already registered.\nCategory : {0}", manageInfo.category);
                 return false;
             }
 
@@ -413,13 +413,13 @@ namespace Modules.ExternalResource.Editor
 
             if (ignoreType == IgnoreType.IgnoreManage)
             {
-                Debug.Log("This asset is ignore manage asset.");
+                Debug.LogWarning("This asset is ignore manage asset.");
                 return false;
             }
 
             if (ignoreType == IgnoreType.IgnoreExtension)
             {
-                Debug.Log("This asset is ignore extension asset.");
+                Debug.LogWarning("This asset is ignore extension asset.");
                 return false;
             }
 
