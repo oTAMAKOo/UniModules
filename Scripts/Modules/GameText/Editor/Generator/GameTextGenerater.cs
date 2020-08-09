@@ -5,9 +5,12 @@ using System.IO;
 using System.Collections.Generic;
 using System.Linq;
 using Extensions;
+using Extensions.Devkit;
 using Modules.Devkit;
 using Modules.Devkit.Generators;
 using Modules.GameText.Components;
+
+using DirectoryUtility = Extensions.DirectoryUtility;
 
 namespace Modules.GameText.Editor
 {
@@ -116,36 +119,37 @@ namespace Modules.GameText.Editor
 
             try
             {
-                AssetDatabase.StartAssetEditing();
-
-                // Script.
-
-                if (generateScript)
+                using (new AssetEditingScope())
                 {
-                    EditorApplication.LockReloadAssemblies();
+                    // Script.
 
-                    DirectoryUtility.Clean(generateInfo.scriptFolderPath);
+                    if (generateScript)
+                    {
+                        EditorApplication.LockReloadAssemblies();
 
-                    AssetDatabase.ImportAsset(generateInfo.scriptFolderPath, ImportAssetOptions.ForceUpdate);
+                        DirectoryUtility.Clean(generateInfo.scriptFolderPath);
 
-                    EditorUtility.DisplayProgressBar(progressTitle, "Generate script.", 0.25f);
+                        AssetDatabase.ImportAsset(generateInfo.scriptFolderPath, ImportAssetOptions.ForceUpdate);
 
-                    CategoryScriptGenerator.Generate(sheets, generateInfo.scriptFolderPath);
+                        EditorUtility.DisplayProgressBar(progressTitle, "Generate script.", 0.25f);
 
-                    GameTextScriptGenerator.Generate(sheets, generateInfo.scriptFolderPath);
+                        CategoryScriptGenerator.Generate(sheets, generateInfo.scriptFolderPath);
 
-                    ContentsScriptGenerator.Generate(sheets, generateInfo.scriptFolderPath, generateInfo.textIndex);
+                        GameTextScriptGenerator.Generate(sheets, generateInfo.scriptFolderPath);
+
+                        ContentsScriptGenerator.Generate(sheets, generateInfo.scriptFolderPath, generateInfo.textIndex);
+                    }
+
+                    // Asset.
+
+                    EditorUtility.DisplayProgressBar(progressTitle, "Generate asset.", 0.5f);
+
+                    var gameTextAsset = LoadAsset(generateInfo.assetPath);
+
+                    GameTextAssetGenerator.Build(gameTextAsset, sheets, generateInfo.textIndex, aesManaged);
+
+                    EditorUtility.DisplayProgressBar(progressTitle, "Complete.", 1f);
                 }
-
-                // Asset.
-
-                EditorUtility.DisplayProgressBar(progressTitle, "Generate asset.", 0.5f);
-                
-                var gameTextAsset = LoadAsset(generateInfo.assetPath);
-
-                GameTextAssetGenerator.Build(gameTextAsset, sheets, generateInfo.textIndex, aesManaged);
-
-                EditorUtility.DisplayProgressBar(progressTitle, "Complete.", 1f);
 
                 UnityConsole.Info("GameTextを出力しました");
 
@@ -157,8 +161,6 @@ namespace Modules.GameText.Editor
                 {
                     EditorApplication.UnlockReloadAssemblies();
                 }
-
-                AssetDatabase.StopAssetEditing();
 
                 AssetDatabase.Refresh();
 

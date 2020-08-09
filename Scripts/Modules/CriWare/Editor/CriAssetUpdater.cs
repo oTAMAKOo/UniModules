@@ -154,19 +154,20 @@ namespace Modules.CriWare.Editor
             var assetDirInternal = PathUtility.Combine(new string[] { UnityPathUtility.AssetsFolder, streamingAssetFolderName, rootFolderName });
             var assetDirExternal = PathUtility.Combine(new string[] { UnityPathUtility.AssetsFolder, externalResourcesFolderName, rootFolderName });
 
-            AssetDatabase.StartAssetEditing();
+            var updateScript = false;
 
-            // InternalResources.
-            var upedateScript = ImportCriAsset(criExportDirInternal, assetDirInternal, assetExtensions);
-            DeleteCriAsset(criExportDirInternal, assetDirInternal);
+            using (new AssetEditingScope())
+            {
+                // InternalResources.
+                updateScript = ImportCriAsset(criExportDirInternal, assetDirInternal, assetExtensions);
+                DeleteCriAsset(criExportDirInternal, assetDirInternal);
 
-            // ExternalResources.
-            ImportCriAsset(criExportDirExternal, assetDirExternal, assetExtensions);
-            DeleteCriAsset(criExportDirExternal, assetDirExternal);
+                // ExternalResources.
+                ImportCriAsset(criExportDirExternal, assetDirExternal, assetExtensions);
+                DeleteCriAsset(criExportDirExternal, assetDirExternal);
+            }
 
-            AssetDatabase.StopAssetEditing();
-
-            return upedateScript;
+            return updateScript;
         }
 
         private static bool ImportCriAsset(string sourceFolderPath, string assetFolderPath, string[] assetExtensions)

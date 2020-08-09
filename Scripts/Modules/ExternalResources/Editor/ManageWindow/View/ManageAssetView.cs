@@ -98,33 +98,32 @@ namespace Modules.ExternalResource.Editor
         {
             var refresh = false;
 
-            AssetDatabase.StartAssetEditing();
-
-            for (var i = 0; i < targetAssetPaths.Length; i++)
+            using (new AssetEditingScope())
             {
-                var targetAssetPath = targetAssetPaths[i];
-
-                // アセット情報収集.
-                var infos = assetManagement.GetAssetInfos(targetAssetPath);
-
-                foreach (var info in infos)
+                for (var i = 0; i < targetAssetPaths.Length; i++)
                 {
-                    var assetPath = PathUtility.Combine(assetManagement.ExternalResourcesPath, info.ResourcePath);
+                    var targetAssetPath = targetAssetPaths[i];
 
-                    EditorUtility.DisplayProgressBar("Update asset info", info.ResourcePath, (float)i / targetAssetPaths.Length);
+                    // アセット情報収集.
+                    var infos = assetManagement.GetAssetInfos(targetAssetPath);
 
-                    if (info.AssetBundle == null){ continue; }
+                    foreach (var info in infos)
+                    {
+                        var assetPath = PathUtility.Combine(assetManagement.ExternalResourcesPath, info.ResourcePath);
 
-                    var assetBundleName = info.AssetBundle.AssetBundleName;
+                        EditorUtility.DisplayProgressBar("Update asset info", info.ResourcePath, (float)i / targetAssetPaths.Length);
 
-                    // アセットバンドル名適用.
-                    refresh |= assetManagement.SetAssetBundleName(assetPath, assetBundleName);
+                        if (info.AssetBundle == null) { continue; }
+
+                        var assetBundleName = info.AssetBundle.AssetBundleName;
+
+                        // アセットバンドル名適用.
+                        refresh |= assetManagement.SetAssetBundleName(assetPath, assetBundleName);
+                    }
                 }
+
+                EditorUtility.ClearProgressBar();
             }
-
-            EditorUtility.ClearProgressBar();
-
-            AssetDatabase.StopAssetEditing();
 
             if (refresh)
             {

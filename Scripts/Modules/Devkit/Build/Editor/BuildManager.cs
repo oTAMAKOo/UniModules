@@ -5,7 +5,7 @@ using UnityEditor.Build;
 using System.Linq;
 using System.IO;
 using Extensions;
-using Modules.AssetBundles;
+using Extensions.Devkit;
 using Modules.Devkit.Prefs;
 
 namespace Modules.Devkit.Build
@@ -108,12 +108,11 @@ namespace Modules.Devkit.Build
         private static void ApplyBuildSettings(bool isBuild)
         {
             // ビルド設定適用.
-            AssetDatabase.StartAssetEditing();
-
-            buildParam.Apply(isBuild);
-            buildParam.Restore();
-
-            AssetDatabase.StopAssetEditing();
+            using (new AssetEditingScope())
+            {
+                buildParam.Apply(isBuild);
+                buildParam.Restore();
+            }
         }
 
         private static void BuildPlayer()

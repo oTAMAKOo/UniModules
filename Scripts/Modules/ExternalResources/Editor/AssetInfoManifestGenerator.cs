@@ -138,23 +138,22 @@ namespace Modules.ExternalResource.Editor
 
             var count = assetInfos.Length;
 
-            AssetDatabase.StartAssetEditing();
-
-            for (var i = 0; i < count; i++)
+            using (new AssetEditingScope())
             {
-                var assetInfo = assetInfos[i];
-
-                EditorUtility.DisplayProgressBar("ApplyAssetBundleName", assetInfo.ResourcePath, (float)i / count);
-
-                var assetPath = PathUtility.Combine(assetManagement.ExternalResourcesPath, assetInfo.ResourcePath);
-
-                if (assetInfo.IsAssetBundle)
+                for (var i = 0; i < count; i++)
                 {
-                    assetManagement.SetAssetBundleName(assetPath, assetInfo.AssetBundle.AssetBundleName);
+                    var assetInfo = assetInfos[i];
+
+                    EditorUtility.DisplayProgressBar("ApplyAssetBundleName", assetInfo.ResourcePath, (float)i / count);
+
+                    var assetPath = PathUtility.Combine(assetManagement.ExternalResourcesPath, assetInfo.ResourcePath);
+
+                    if (assetInfo.IsAssetBundle)
+                    {
+                        assetManagement.SetAssetBundleName(assetPath, assetInfo.AssetBundle.AssetBundleName);
+                    }
                 }
             }
-
-            AssetDatabase.StopAssetEditing();
 
             EditorUtility.ClearProgressBar();
         }

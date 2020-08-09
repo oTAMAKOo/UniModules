@@ -5,6 +5,7 @@ using UnityEditor.SceneManagement;
 using UnityEngine.SceneManagement;
 using Unity.Linq;
 using System.Linq;
+using Extensions.Devkit;
 
 namespace Modules.Devkit.ModifyComponent
 {
@@ -36,30 +37,29 @@ namespace Modules.Devkit.ModifyComponent
 
         public void UpdateAllSceneComponent()
         {
-            AssetDatabase.StartAssetEditing();
-
-            var sceneAssetPaths = AssetDatabase.FindAssets("t:scene")
-                .Select(x => AssetDatabase.GUIDToAssetPath(x))
-                .ToArray();
-
-            var totalCount = sceneAssetPaths.Length;
-
-            var title = string.Format("Update all scene component : {0}", typeof(TComponent).Name);
-
-            for (var i = 0; i < totalCount; i++)
+            using (new AssetEditingScope())
             {
-                var sceneAssetPath = sceneAssetPaths[i];
+                var sceneAssetPaths = AssetDatabase.FindAssets("t:scene")
+                    .Select(x => AssetDatabase.GUIDToAssetPath(x))
+                    .ToArray();
 
-                var scene = EditorSceneManager.OpenScene(sceneAssetPath);
+                var totalCount = sceneAssetPaths.Length;
 
-                EditorUtility.DisplayProgressBar(title, sceneAssetPath, (float)i / totalCount);
+                var title = string.Format("Update all scene component : {0}", typeof(TComponent).Name);
 
-                UpdateSceneComponent(scene);
+                for (var i = 0; i < totalCount; i++)
+                {
+                    var sceneAssetPath = sceneAssetPaths[i];
+
+                    var scene = EditorSceneManager.OpenScene(sceneAssetPath);
+
+                    EditorUtility.DisplayProgressBar(title, sceneAssetPath, (float)i / totalCount);
+
+                    UpdateSceneComponent(scene);
+                }
+
+                EditorUtility.ClearProgressBar();
             }
-
-            EditorUtility.ClearProgressBar();
-
-            AssetDatabase.StopAssetEditing();
         }
 
         public void UpdateSceneComponent(Scene scene)

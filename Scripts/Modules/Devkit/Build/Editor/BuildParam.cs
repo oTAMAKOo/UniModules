@@ -185,42 +185,41 @@ namespace Modules.Devkit.Build
 
             var clonedAssets = new List<string>();
 
-            AssetDatabase.StartAssetEditing();
-
-            foreach (var cloneAsset in cloneAssets)
+            using (new AssetEditingScope())
             {
-                if (string.IsNullOrEmpty(cloneAsset.Source) || string.IsNullOrEmpty(cloneAsset.To))
+                foreach (var cloneAsset in cloneAssets)
                 {
-                    Debug.LogError("アセットコピーの設定が正しくありません.");
-                    continue;
+                    if (string.IsNullOrEmpty(cloneAsset.Source) || string.IsNullOrEmpty(cloneAsset.To))
+                    {
+                        Debug.LogError("アセットコピーの設定が正しくありません.");
+                        continue;
+                    }
+
+                    var projectFolder = UnityPathUtility.GetProjectFolderPath();
+
+                    var source = PathUtility.RelativePathToFullPath(projectFolder, cloneAsset.Source);
+                    var dest = PathUtility.RelativePathToFullPath(projectFolder, cloneAsset.To);
+
+                    // 除外対象か判定.
+                    Func<string, bool> ignoreCheck = x =>
+                    {
+                        return Path.GetExtension(x) != ".meta" &&
+                            !string.IsNullOrEmpty(Path.GetFileNameWithoutExtension(x));
+                    };
+
+                    // メタファイルはコピーしない.
+                    var cloned = DirectoryUtility.Clone(source, dest, ignoreCheck)
+                        .Select(x => UnityPathUtility.ConvertFullPathToAssetPath(x))
+                        .ToArray();
+
+                    foreach (var item in cloned)
+                    {
+                        AssetDatabase.ImportAsset(item);
+                    }
+
+                    clonedAssets.AddRange(cloned);
                 }
-
-                var projectFolder = UnityPathUtility.GetProjectFolderPath();
-
-                var source = PathUtility.RelativePathToFullPath(projectFolder, cloneAsset.Source);
-                var dest = PathUtility.RelativePathToFullPath(projectFolder, cloneAsset.To);
-
-				// 除外対象か判定.
-				Func<string, bool> ignoreCheck = x => 
-				{
-					return Path.GetExtension(x) != ".meta" && 
-						!string.IsNullOrEmpty(Path.GetFileNameWithoutExtension(x));
-				};
-
-                // メタファイルはコピーしない.
-				var cloned = DirectoryUtility.Clone(source, dest, ignoreCheck)
-                    .Select(x => UnityPathUtility.ConvertFullPathToAssetPath(x))
-                    .ToArray();
-
-                foreach (var item in cloned)
-                {
-                    AssetDatabase.ImportAsset(item);
-                }
-
-                clonedAssets.AddRange(cloned);
             }
-
-            AssetDatabase.StopAssetEditing();
 
             Prefs.clonedAssets = clonedAssets.Select(x => AssetDatabase.AssetPathToGUID(x)).ToArray();
         }
@@ -237,14 +236,13 @@ namespace Modules.Devkit.Build
                 .OrderByDescending(x => x.Length)
                 .ToArray();
 
-            AssetDatabase.StartAssetEditing();
-
-            foreach (var clonedAssetPath in clonedAssetPaths)
+            using (new AssetEditingScope())
             {
-                AssetDatabase.DeleteAsset(clonedAssetPath);
+                foreach (var clonedAssetPath in clonedAssetPaths)
+                {
+                    AssetDatabase.DeleteAsset(clonedAssetPath);
+                }
             }
-
-            AssetDatabase.StopAssetEditing();
         }
 
         private string GetFullPath(string relativePath)

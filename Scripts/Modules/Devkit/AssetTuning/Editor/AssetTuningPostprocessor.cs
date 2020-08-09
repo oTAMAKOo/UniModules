@@ -2,6 +2,7 @@
 using UnityEngine;
 using UnityEditor;
 using System;
+using Extensions.Devkit;
 
 namespace Modules.Devkit.AssetTuning
 {
@@ -35,59 +36,56 @@ namespace Modules.Devkit.AssetTuning
 
             try
             {
-                AssetDatabase.StartAssetEditing();
-                
-                foreach (var tuner in assetTuners)
+                using (new AssetEditingScope())
                 {
-                    tuner.OnBegin();
-                }
-
-                foreach (var tuner in assetTuners)
-                {
-                    foreach (var path in importedAssets)
+                    foreach (var tuner in assetTuners)
                     {
-                        if (!tuner.Validate(path)) { continue; }
+                        tuner.OnBegin();
+                    }
 
-                        if (assetTuneManager.IsFirstImport(path))
+                    foreach (var tuner in assetTuners)
+                    {
+                        foreach (var path in importedAssets)
                         {
-                            tuner.OnAssetCreate(path);
+                            if (!tuner.Validate(path)) { continue; }
+
+                            if (assetTuneManager.IsFirstImport(path))
+                            {
+                                tuner.OnAssetCreate(path);
+                            }
+
+                            tuner.OnAssetImport(path);
                         }
 
-                        tuner.OnAssetImport(path);
+                        foreach (var path in deletedAssets)
+                        {
+                            if (!tuner.Validate(path)) { continue; }
+
+                            tuner.OnAssetDelete(path);
+                        }
+
+                        for (var i = 0; i < movedAssets.Length; i++)
+                        {
+                            if (!tuner.Validate(movedAssets[i])) { continue; }
+
+                            tuner.OnAssetMove(movedAssets[i], movedFromPath[i]);
+                        }
                     }
 
-                    foreach (var path in deletedAssets)
+                    foreach (var path in importedAssets)
                     {
-                        if (!tuner.Validate(path)) { continue; }
-
-                        tuner.OnAssetDelete(path);
+                        assetTuneManager.FinishFirstImport(path);
                     }
 
-                    for (var i = 0; i < movedAssets.Length; i++)
+                    foreach (var tuner in assetTuners)
                     {
-                        if (!tuner.Validate(movedAssets[i])) { continue; }
-
-                        tuner.OnAssetMove(movedAssets[i], movedFromPath[i]);
+                        tuner.OnFinish();
                     }
-                }
-
-                foreach (var path in importedAssets)
-                {
-                    assetTuneManager.FinishFirstImport(path);
-                }
-
-                foreach (var tuner in assetTuners)
-                {
-                    tuner.OnFinish();
                 }
             }
             catch (Exception ex)
             {
                 Debug.LogException(ex);
-            }
-            finally
-            {
-                AssetDatabase.StopAssetEditing();
             }
         }
     }
