@@ -143,6 +143,7 @@ namespace Modules.GameText.Components
 
             if (textMeshProComponent != null)
             {
+                textMeshProComponent.ForceMeshUpdate();
                 textMeshProComponent.SetText(text);
             }
         }
