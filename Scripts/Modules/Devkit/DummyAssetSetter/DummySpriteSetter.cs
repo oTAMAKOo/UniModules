@@ -1,9 +1,7 @@
 ﻿
 using UnityEngine;
 using UnityEngine.UI;
-using System;
 using System.Linq;
-using System.Collections.Generic;
 using Extensions;
 
 #if UNITY_EDITOR
@@ -15,6 +13,8 @@ using UnityEditor.Experimental.U2D;
 
 namespace Modules.Devkit.DummyAssetSetter
 {
+    [ExecuteAlways]
+    [RequireComponent(typeof(Image))]
     public sealed class DummySpriteSetter : MonoBehaviour
     {
         #if UNITY_EDITOR

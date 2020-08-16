@@ -123,6 +123,16 @@ namespace Modules.SoundManagement
             initialized = true;
         }
 
+        public IReadOnlyList<SoundElement> GetAllSounds(bool playing = true)
+        {
+            if (playing)
+            {
+                return soundElements.Where(x => x.IsPlaying).ToArray();
+            }
+
+            return soundElements;
+        }
+
         /// <summary>
         /// 再生設定を登録.
         /// </summary>
