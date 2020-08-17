@@ -29,20 +29,46 @@ namespace Modules.ExternalResource.Editor
 
         public static AssetInfoManifest Generate(string externalResourcesPath)
         {
+            AssetInfoManifest manifest = null;
+
             var assetManagement = AssetManagement.Instance;
 
             assetManagement.Initialize(externalResourcesPath);
 
-            var manifest = GenerateManifest(assetManagement);
+            using (new AssetEditingScope())
+            {
+                DeleteUndefinedAssetBundleNames(assetManagement);
 
-            ApplyAssetBundleName(assetManagement, manifest);
+                manifest = GenerateManifest(assetManagement);
 
-            UnityEditorUtility.SaveAsset(manifest);
+                ApplyAssetBundleName(assetManagement, manifest);
+
+                UnityEditorUtility.SaveAsset(manifest);
+            }
 
             AssetDatabase.RemoveUnusedAssetBundleNames();
             AssetDatabase.Refresh();
 
             return manifest;
+        }
+
+        /// <summary> 定義されていないアセットバンドル名を削除 </summary>
+        public static void DeleteUndefinedAssetBundleNames(AssetManagement assetManagement)
+        {
+            var assetBundleNames = assetManagement.GetAllAssetInfos()
+                .Where(x => x.IsAssetBundle && x.AssetBundle != null)
+                .Select(x => x.AssetBundle.AssetBundleName)
+                .Distinct()
+                .ToHashSet();
+
+            var allAssetBundleNames = AssetDatabase.GetAllAssetBundleNames();
+
+            foreach (var assetBundleName in allAssetBundleNames)
+            {
+                if (assetBundleNames.Contains(assetBundleName)) { continue; }
+
+                AssetDatabase.RemoveAssetBundleName(assetBundleName, true);
+            }
         }
 
         public static void SetAssetBundleFileInfo(string exportPath, string externalResourcesPath, AssetBundleManifest assetBundleManifest)
