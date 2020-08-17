@@ -23,7 +23,7 @@ using Modules.Devkit.ShaderVariant;
 using Modules.Devkit.Project;
 using Modules.Devkit.SceneImporter;
 using Modules.Devkit.SceneLaunch;
-using Modules.Devkit.HierarchyComponentIcon;
+using Modules.Devkit.Hierarchy;
 using Modules.Devkit.AssetTuning;
 
 #if ENABLE_CRIWARE_ADX || ENABLE_CRIWARE_SOFDEC
@@ -349,18 +349,46 @@ namespace Modules
             return true;
         }
 
-        //------ コンポーネントアイコン表示 ------
+        //------ Hierarchy表示 ------
 
-        [MenuItem(itemName: SettingsMenu + "Draw HierarchyComponentIcon", priority = 3)]
+        protected const string SettingsHierarchyMenu = SettingsMenu + "Hierarchy/";
+
+        [MenuItem(itemName: SettingsHierarchyMenu + "ComponentIcon", priority = 1)]
         public static void ToggleHierarchyComponentIcon()
         {
-            HierarchyComponentIcon.Prefs.enable = !HierarchyComponentIcon.Prefs.enable;
+            ComponentIconDrawer.Prefs.enable = !ComponentIconDrawer.Prefs.enable;
         }
 
-        [MenuItem(itemName: SettingsMenu + "Draw HierarchyComponentIcon", validate = true)]
+        [MenuItem(itemName: SettingsHierarchyMenu + "ComponentIcon", validate = true)]
         public static bool ToggleHierarchyComponentIconValidate()
         {
-            UnityEditor.Menu.SetChecked(SettingsMenu + "Draw HierarchyComponentIcon", HierarchyComponentIcon.Prefs.enable);
+            UnityEditor.Menu.SetChecked(SettingsHierarchyMenu + "ComponentIcon", ComponentIconDrawer.Prefs.enable);
+            return true;
+        }
+
+        [MenuItem(itemName: SettingsHierarchyMenu + "MissingComponent", priority = 2)]
+        public static void ToggleHierarchyMissingComponent()
+        {
+            MissingComponentDrawer.Prefs.enable = !MissingComponentDrawer.Prefs.enable;
+        }
+
+        [MenuItem(itemName: SettingsHierarchyMenu + "MissingComponent", validate = true)]
+        public static bool ToggleHierarchyMissingComponentValidate()
+        {
+            UnityEditor.Menu.SetChecked(SettingsHierarchyMenu + "MissingComponent", MissingComponentDrawer.Prefs.enable);
+            return true;
+        }
+
+        [MenuItem(itemName: SettingsHierarchyMenu + "ActiveToggle", priority = 3)]
+        public static void ToggleHierarchyActiveToggle()
+        {
+            ActiveToggleDrawer.Prefs.enable = !ActiveToggleDrawer.Prefs.enable;
+        }
+
+        [MenuItem(itemName: SettingsHierarchyMenu + "ActiveToggle", validate = true)]
+        public static bool ToggleHierarchyActiveToggleValidate()
+        {
+            UnityEditor.Menu.SetChecked(SettingsHierarchyMenu + "ActiveToggle", ActiveToggleDrawer.Prefs.enable);
             return true;
         }
 
