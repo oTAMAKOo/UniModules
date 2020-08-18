@@ -2,13 +2,13 @@
 using UnityEngine;
 using UnityEditor;
 using UnityEditorInternal;
+using Unity.Linq;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using UniRx;
 using Extensions;
 using Extensions.Devkit;
-using Unity.Linq;
 
 using SortingLayer = Constants.SortingLayer;
 
@@ -65,53 +65,59 @@ namespace Modules.Particle
         {
             instance = target as ParticlePlayer;
 
-            if (!instance.IsInitialized)
+            if (!IsPrefabAssetInspector())
             {
-                Reflection.InvokePrivateMethod(instance, "Initialize");
-            }
+                if (!instance.IsInitialized)
+                {
+                    Reflection.InvokePrivateMethod(instance, "Initialize");
+                }
 
-            if (!Application.isPlaying)
-            {
-                ParticlePlayerEmulator.update -= Emulate;
-                ParticlePlayerEmulator.update += Emulate;
+                if (!Application.isPlaying)
+                {
+                    ParticlePlayerEmulator.update -= Emulate;
+                    ParticlePlayerEmulator.update += Emulate;
 
-                var colorCode = Color.magenta.ColorToHex();
+                    var colorCode = Color.magenta.ColorToHex();
 
-                eventLogDisposable = instance.OnEventAsObservable()
-                    .Subscribe(x => Debug.LogFormat("<color=#{0}><b>[ParticlePlayer Event]</b></color> {1}", colorCode, x))
-                    .AddTo(disposable.Disposable);
-            }
-            else
-            {
-                updateDisposable = instance
-                    .ObserveEveryValueChanged(x => x.CurrentTime)
-                    .Subscribe(x => Repaint())
-                    .AddTo(disposable.Disposable);
+                    eventLogDisposable = instance.OnEventAsObservable()
+                        .Subscribe(x => Debug.LogFormat("<color=#{0}><b>[ParticlePlayer Event]</b></color> {1}", colorCode, x))
+                        .AddTo(disposable.Disposable);
+                }
+                else
+                {
+                    updateDisposable = instance
+                        .ObserveEveryValueChanged(x => x.CurrentTime)
+                        .Subscribe(x => Repaint())
+                        .AddTo(disposable.Disposable);
+                }
             }
         }
 
         void OnDisable()
         {
-            if(Application.isPlaying)
+            if (!IsPrefabAssetInspector())
             {
-                if (updateDisposable != null)
+                RepaintParticleSystem();
+
+                if (Application.isPlaying)
                 {
-                    updateDisposable.Dispose();
+                    if (updateDisposable != null)
+                    {
+                        updateDisposable.Dispose();
+                    }
+                }
+                else
+                {
+                    ParticlePlayerEmulator.update -= Emulate;
+
+                    instance.Stop(true, true);
+
+                    if (eventLogDisposable != null)
+                    {
+                        eventLogDisposable.Dispose();
+                    }
                 }
             }
-            else
-            {
-                ParticlePlayerEmulator.update -= Emulate;
-                
-                instance.Stop(true, true);
-
-                if (eventLogDisposable != null)
-                {
-                    eventLogDisposable.Dispose();
-                }
-            }
-
-            SetParticleSystemsDirty();
         }
 
         private void Emulate(float time)
@@ -127,7 +133,7 @@ namespace Modules.Particle
                     Reflection.InvokePrivateMethod(instance, "ResetContents");
                 }
 
-                SetParticleSystemsDirty();
+                RepaintParticleSystem();
                 
                 Repaint();
             }
@@ -136,7 +142,7 @@ namespace Modules.Particle
         public override void OnInspectorGUI()
         {
             instance = target as ParticlePlayer;
-            
+
             var activateOnPlay = Reflection.GetPrivateField<ParticlePlayer, bool>(instance, "activateOnPlay");
             var endActionType = Reflection.GetPrivateField<ParticlePlayer, EndActionType>(instance, "endActionType");
             var ignoreTimeScale = Reflection.GetPrivateField<ParticlePlayer, bool>(instance, "ignoreTimeScale");
@@ -148,78 +154,81 @@ namespace Modules.Particle
 
             if (!Application.isPlaying)
             {
-                using(new EditorGUILayout.HorizontalScope())
+                if (!IsPrefabAssetInspector())
                 {
-                    if (State.Play == instance.State)
+                    using (new EditorGUILayout.HorizontalScope())
                     {
-                        if (GUILayout.Button("Pause"))
+                        if (State.Play == instance.State)
                         {
-                            instance.Pause = true;
-                            Repaint();
-                        }
-                    }
-                    else
-                    {
-                        if (GUILayout.Button("Play"))
-                        {
-                            if (instance.State == State.Pause)
+                            if (GUILayout.Button("Pause"))
                             {
-                                instance.Pause = false;
+                                instance.Pause = true;
+                                Repaint();
                             }
-                            else
+                        }
+                        else
+                        {
+                            if (GUILayout.Button("Play"))
                             {
-                                if (emulateDisposable != null)
+                                if (instance.State == State.Pause)
                                 {
-                                    emulateDisposable.Dispose();
-                                    emulateDisposable = null;
+                                    instance.Pause = false;
+                                }
+                                else
+                                {
+                                    if (emulateDisposable != null)
+                                    {
+                                        emulateDisposable.Dispose();
+                                        emulateDisposable = null;
+                                    }
+
+                                    Reflection.InvokePrivateMethod(instance, "RunCollectContents");
+
+                                    emulateDisposable = instance.Play()
+                                        .Subscribe(_ =>
+                                            {
+                                                instance.Stop(true, true);
+
+                                                if (emulateDisposable != null)
+                                                {
+                                                    emulateDisposable.Dispose();
+                                                    emulateDisposable = null;
+                                                }
+                                            })
+                                        .AddTo(disposable.Disposable);
                                 }
 
-                                Reflection.InvokePrivateMethod(instance, "RunCollectContents");
-
-                                emulateDisposable = instance.Play()
-                                    .Subscribe(_ =>
-                                        {
-                                            instance.Stop(true, true);
-
-                                            if (emulateDisposable != null)
-                                            {
-                                                emulateDisposable.Dispose();
-                                                emulateDisposable = null;
-                                            }
-                                        })
-                                    .AddTo(disposable.Disposable);
+                                Repaint();
                             }
+                        }
+
+                        GUI.enabled = State.Play == instance.State || State.Pause == instance.State;
+
+                        if (GUILayout.Button("Stop"))
+                        {
+                            if (emulateDisposable != null)
+                            {
+                                emulateDisposable.Dispose();
+                                emulateDisposable = null;
+                            }
+
+                            RepaintParticleSystem();
+
+                            instance.Stop(true, true);
 
                             Repaint();
                         }
+
+                        GUI.enabled = true;
+
+                        GUILayout.Space(20f);
+
+                        var centeredStyle = GUI.skin.GetStyle("TextArea");
+                        centeredStyle.alignment = TextAnchor.MiddleRight;
+
+                        var value = string.Format("{0:f2}", instance.CurrentTime);
+                        GUILayout.Label(value, centeredStyle, GUILayout.Width(60f), GUILayout.Height(18f));
                     }
-
-                    GUI.enabled = State.Play == instance.State || State.Pause == instance.State;
-
-                    if (GUILayout.Button("Stop"))
-                    {
-                        if (emulateDisposable != null)
-                        {
-                            emulateDisposable.Dispose();
-                            emulateDisposable = null;
-                        }
-
-                        instance.Stop(true, true);
-
-                        Repaint();
-
-                        SetParticleSystemsDirty();
-                    }
-
-                    GUI.enabled = true;
-
-                    GUILayout.Space(20f);
-
-                    var centeredStyle = GUI.skin.GetStyle("TextArea");
-                    centeredStyle.alignment = TextAnchor.MiddleRight;
-
-                    var value = string.Format("{0:f2}", instance.CurrentTime);
-                    GUILayout.Label(value, centeredStyle, GUILayout.Width(60f), GUILayout.Height(18f));
                 }
             }
 
@@ -480,18 +489,26 @@ namespace Modules.Particle
             return delete;
         }
 
-        private void SetParticleSystemsDirty()
+        private void RepaintParticleSystem()
         {
             var particleInfos = Reflection.GetPrivateField<ParticlePlayer, ParticlePlayer.ParticleInfo[]>(instance, "particleInfos");
 
-            foreach (var info in particleInfos)
+            var requestRepaint = particleInfos.Where(x => !UnityUtility.IsNull(x.ParticleSystem)).Any(x => x.ParticleSystem.particleCount != 0);
+
+            if (requestRepaint)
             {
-                if (UnityUtility.IsNull(info.ParticleSystem)) { continue; }
-
-                EditorUtility.SetDirty(info.ParticleSystem.gameObject);
+                InternalEditorUtility.RepaintAllViews();
             }
+        }
 
-            InternalEditorUtility.RepaintAllViews();
+        private bool IsPrefabAssetInspector()
+        {
+            if (instance == null){ return true; }
+
+            var prefabAssetType = PrefabUtility.GetPrefabAssetType(instance);
+            var instanceStatus = PrefabUtility.GetPrefabInstanceStatus(instance);
+
+            return prefabAssetType == PrefabAssetType.Regular && instanceStatus == PrefabInstanceStatus.NotAPrefab;
         }
     }
 }
