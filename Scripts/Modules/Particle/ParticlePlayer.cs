@@ -491,6 +491,8 @@ namespace Modules.Particle
             {
                 foreach (var particleInfo in particleInfos)
                 {
+                    if (particleInfo.ParticleSystem == null) { continue; }
+
                     var emission = particleInfo.ParticleSystem.emission;
                     emission.enabled = true;
 
