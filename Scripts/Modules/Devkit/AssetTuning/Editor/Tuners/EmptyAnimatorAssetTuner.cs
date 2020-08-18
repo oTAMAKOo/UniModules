@@ -7,7 +7,7 @@ using System.Linq;
 using Extensions.Devkit;
 using Modules.Devkit.AssetTuning;
 
-namespace Modules.Devkit.Animator
+namespace Modules.Devkit.AssetTuning
 {
     public sealed class EmptyAnimatorAssetTuner : AssetTuner
     {

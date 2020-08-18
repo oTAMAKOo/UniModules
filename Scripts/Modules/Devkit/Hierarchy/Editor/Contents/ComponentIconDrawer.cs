@@ -29,6 +29,7 @@ namespace Modules.Devkit.Hierarchy
         {
             typeof(Camera),
             typeof(ParticleSystem),
+            typeof(Animator),
             typeof(EventSystem),
 
             typeof(Canvas),
