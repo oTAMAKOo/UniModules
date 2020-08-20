@@ -201,7 +201,7 @@ namespace Modules.ExternalResource.Editor
 
                     var displayLabels = displayCategoryNames.Select(x => ConvertSlashToUnicodeSlash(x)).ToArray();
 
-                    index = EditorGUILayout.Popup(string.Empty, index, displayLabels, EditorStyles.toolbarDropDown, GUILayout.Width(180f));
+                    index = EditorGUILayout.Popup(string.Empty, index, displayLabels, EditorStyles.toolbarDropDown, GUILayout.Width(250f));
 
                     if (EditorGUI.EndChangeCheck())
                     {
