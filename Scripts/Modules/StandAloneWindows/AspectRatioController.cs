@@ -81,8 +81,6 @@ namespace Modules.StandAloneWindows.WindowAspectRatio
  
         private Subject<ResolutionChangeInfo> onResolutionChanged = null;
 
-        private float aspect = 0f;
-
         private int setWidth = -1;
         private int setHeight = -1;
 
@@ -153,6 +151,8 @@ namespace Modules.StandAloneWindows.WindowAspectRatio
 
         //----- property -----
 
+        public float AspectRatio { get; private set; }
+
         //----- method -----
 
         public void Initialize()
@@ -167,7 +167,7 @@ namespace Modules.StandAloneWindows.WindowAspectRatio
             pixelWidthOfCurrentScreen = Screen.currentResolution.width;
 
             setHeight = Screen.height;
-            setWidth = Mathf.RoundToInt(Screen.height * aspect);
+            setWidth = Mathf.RoundToInt(Screen.height * AspectRatio);
 
             wasFullscreenLastFrame = Screen.fullScreen;
             
@@ -206,14 +206,14 @@ namespace Modules.StandAloneWindows.WindowAspectRatio
         {
             aspectRatioWidth = newAspectWidth;
             aspectRatioHeight = newAspectHeight;
-            aspect = aspectRatioWidth / aspectRatioHeight;
+            AspectRatio = aspectRatioWidth / aspectRatioHeight;
         }
 
         public void Apply()
         {
             var width = Mathf.Clamp(Screen.width, minWidthPixel, maxWidthPixel);
 
-            var height = Mathf.RoundToInt(Screen.width / aspect);
+            var height = Mathf.RoundToInt(Screen.width / AspectRatio);
 
             height = Mathf.Clamp(height, minHeightPixel, maxHeightPixel);
 
@@ -267,35 +267,35 @@ namespace Modules.StandAloneWindows.WindowAspectRatio
                 {
                     case WMSZ_LEFT:
                         rc.Left = rc.Right - newWidth;
-                        rc.Bottom = rc.Top + Mathf.RoundToInt(newWidth / Instance.aspect);
+                        rc.Bottom = rc.Top + Mathf.RoundToInt(newWidth / Instance.AspectRatio);
                         break;
                     case WMSZ_RIGHT:
                         rc.Right = rc.Left + newWidth;
-                        rc.Bottom = rc.Top + Mathf.RoundToInt(newWidth / Instance.aspect);
+                        rc.Bottom = rc.Top + Mathf.RoundToInt(newWidth / Instance.AspectRatio);
                         break;
                     case WMSZ_TOP:
                         rc.Top = rc.Bottom - newHeight;
-                        rc.Right = rc.Left + Mathf.RoundToInt(newHeight * Instance.aspect);
+                        rc.Right = rc.Left + Mathf.RoundToInt(newHeight * Instance.AspectRatio);
                         break;
                     case WMSZ_BOTTOM:
                         rc.Bottom = rc.Top + newHeight;
-                        rc.Right = rc.Left + Mathf.RoundToInt(newHeight * Instance.aspect);
+                        rc.Right = rc.Left + Mathf.RoundToInt(newHeight * Instance.AspectRatio);
                         break;
                     case WMSZ_RIGHT + WMSZ_BOTTOM:
                         rc.Right = rc.Left + newWidth;
-                        rc.Bottom = rc.Top + Mathf.RoundToInt(newWidth / Instance.aspect);
+                        rc.Bottom = rc.Top + Mathf.RoundToInt(newWidth / Instance.AspectRatio);
                         break;
                     case WMSZ_RIGHT + WMSZ_TOP:
                         rc.Right = rc.Left + newWidth;
-                        rc.Top = rc.Bottom - Mathf.RoundToInt(newWidth / Instance.aspect);
+                        rc.Top = rc.Bottom - Mathf.RoundToInt(newWidth / Instance.AspectRatio);
                         break;
                     case WMSZ_LEFT + WMSZ_BOTTOM:
                         rc.Left = rc.Right - newWidth;
-                        rc.Bottom = rc.Top + Mathf.RoundToInt(newWidth / Instance.aspect);
+                        rc.Bottom = rc.Top + Mathf.RoundToInt(newWidth / Instance.AspectRatio);
                         break;
                     case WMSZ_LEFT + WMSZ_TOP:
                         rc.Left = rc.Right - newWidth;
-                        rc.Top = rc.Bottom - Mathf.RoundToInt(newWidth / Instance.aspect);
+                        rc.Top = rc.Bottom - Mathf.RoundToInt(newWidth / Instance.AspectRatio);
                         break;
                 }
 
@@ -334,17 +334,17 @@ namespace Modules.StandAloneWindows.WindowAspectRatio
                 var width = 0;
                 var height = 0;
 
-                var blackBarsLeftRight = aspect < (float)pixelWidthOfCurrentScreen / pixelHeightOfCurrentScreen;
+                var blackBarsLeftRight = AspectRatio < (float)pixelWidthOfCurrentScreen / pixelHeightOfCurrentScreen;
 
                 if (blackBarsLeftRight)
                 {
                     height = pixelHeightOfCurrentScreen;
-                    width = Mathf.RoundToInt(pixelHeightOfCurrentScreen * aspect);
+                    width = Mathf.RoundToInt(pixelHeightOfCurrentScreen * AspectRatio);
                 }
                 else
                 {
                     width = pixelWidthOfCurrentScreen;
-                    height = Mathf.RoundToInt(pixelWidthOfCurrentScreen / aspect);
+                    height = Mathf.RoundToInt(pixelWidthOfCurrentScreen / AspectRatio);
                 }
 
                 Screen.SetResolution(width, height, isFullScreen);
@@ -370,7 +370,7 @@ namespace Modules.StandAloneWindows.WindowAspectRatio
             else if (!isFullScreen && (Screen.width != setWidth || Screen.height != setHeight))
             {
                 setHeight = Screen.height;
-                setWidth = Mathf.RoundToInt(Screen.height * aspect);
+                setWidth = Mathf.RoundToInt(Screen.height * AspectRatio);
 
                 Screen.SetResolution(setWidth, setHeight, isFullScreen);
 
