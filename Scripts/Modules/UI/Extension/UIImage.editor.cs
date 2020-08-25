@@ -1,24 +1,16 @@
 ﻿
+#if UNITY_EDITOR
+
 using UnityEngine;
-using UnityEngine.UI;
+using UnityEditor;
+using UnityEditor.Experimental.U2D;
 using System.Linq;
 using Extensions;
 
-#if UNITY_EDITOR
-
-using UnityEditor;
-using UnityEditor.Experimental.U2D;
-
-#endif
-
-namespace Modules.Devkit.DummyAssetSetter
+namespace Modules.UI.Extension
 {
-    [ExecuteAlways]
-    [RequireComponent(typeof(Image))]
-    public sealed class DummySpriteSetter : MonoBehaviour
+    public partial class UIImage
     {
-        #if UNITY_EDITOR
-
         //----- params -----
 
         public const string DummyAssetName = "*Sprite (DummyAsset)";
@@ -37,16 +29,9 @@ namespace Modules.Devkit.DummyAssetSetter
         [SerializeField, HideInInspector]
         private string spriteId = null;
 
-        private Image image = null;
-
         private static FixedQueue<AssetCacheInfo> spriteAssetCache = null;
 
         //----- property -----
-
-        public Image Image
-        {
-            get { return image ?? (image = UnityUtility.GetComponent<Image>(gameObject)); }
-        }
 
         //----- method -----
 
@@ -62,7 +47,7 @@ namespace Modules.Devkit.DummyAssetSetter
 
         private void ApplyDummyAsset()
         {
-            if (Application.isPlaying){ return; }
+            if (Application.isPlaying) { return; }
 
             if (Image.sprite != null && Image.sprite.name != DummyAssetName) { return; }
 
@@ -73,7 +58,7 @@ namespace Modules.Devkit.DummyAssetSetter
             var assetPath = AssetDatabase.GUIDToAssetPath(assetGuid);
 
             if (string.IsNullOrEmpty(assetPath)) { return; }
-            
+
             if (spriteAssetCache == null)
             {
                 spriteAssetCache = new FixedQueue<AssetCacheInfo>(250);
@@ -133,7 +118,7 @@ namespace Modules.Devkit.DummyAssetSetter
         {
             if (Application.isPlaying) { return; }
 
-            if (Image == null){ return; }
+            if (Image == null) { return; }
 
             var sprite = Image.sprite;
 
@@ -144,7 +129,7 @@ namespace Modules.Devkit.DummyAssetSetter
                 UnityUtility.SafeDelete(sprite);
             }
         }
-
-        #endif
     }
 }
+
+#endif

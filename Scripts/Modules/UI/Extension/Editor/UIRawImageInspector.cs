@@ -1,13 +1,14 @@
 ﻿
-using UnityEngine;
-using UnityEditor;
 using Extensions;
+using UnityEditor;
+using UnityEngine;
 using Extensions.Devkit;
 
-namespace Modules.Devkit.DummyAssetSetter
+namespace Modules.UI.Extension
 {
-    [CustomEditor(typeof(DummyTextureSetter))]
-    public sealed class DummyTextureSetterInspector : ScriptlessEditor
+    [CanEditMultipleObjects]
+    [CustomEditor(typeof(UIRawImage), true)]
+    public sealed class UIRawImageInspector : ScriptlessEditor
     {
         //----- params -----
 
@@ -23,11 +24,11 @@ namespace Modules.Devkit.DummyAssetSetter
 
         void OnEnable()
         {
-            var instance = target as DummyTextureSetter;
+            var instance = target as UIRawImage;
 
             textureAsset = null;
 
-            var assetGuid = Reflection.GetPrivateField<DummyTextureSetter, string>(instance, "assetGuid");
+            var assetGuid = Reflection.GetPrivateField<UIRawImage, string>(instance, "assetGuid");
 
             if (!string.IsNullOrEmpty(assetGuid))
             {
@@ -43,7 +44,7 @@ namespace Modules.Devkit.DummyAssetSetter
 
             if (rawImage != null)
             {
-                if (rawImage.texture != null && rawImage.texture.name == DummyTextureSetter.DummyAssetName)
+                if (rawImage.texture != null && rawImage.texture.name == UIRawImage.DummyAssetName)
                 {
                     dummyTexture = rawImage.texture;
                 }
@@ -52,11 +53,11 @@ namespace Modules.Devkit.DummyAssetSetter
 
         public override void OnInspectorGUI()
         {
-            var instance = target as DummyTextureSetter;
+            var instance = target as UIRawImage;
 
             var rawImage = instance.RawImage;
 
-            if (rawImage == null){ return; }
+            if (rawImage == null) { return; }
 
             GUILayout.Space(4f);
 
@@ -72,7 +73,7 @@ namespace Modules.Devkit.DummyAssetSetter
 
                 if (EditorGUI.EndChangeCheck())
                 {
-                    UnityEditorUtility.RegisterUndo("DummyTextureSetterInspector-Undo", instance);
+                    UnityEditorUtility.RegisterUndo("UIRawImageInspector-Undo", instance);
 
                     var assetGuid = textureAsset != null ? UnityEditorUtility.GetAssetGUID(textureAsset) : string.Empty;
 
@@ -80,7 +81,7 @@ namespace Modules.Devkit.DummyAssetSetter
 
                     if (textureAsset == null)
                     {
-                        if (rawImage.texture != null && rawImage.texture.name == DummyTextureSetter.DummyAssetName)
+                        if (rawImage.texture != null && rawImage.texture.name == UIRawImage.DummyAssetName)
                         {
                             rawImage.texture = null;
                         }
@@ -102,7 +103,7 @@ namespace Modules.Devkit.DummyAssetSetter
                 }
             }
 
-            if (rawImage.texture != null && rawImage.texture.name == DummyTextureSetter.DummyAssetName)
+            if (rawImage.texture != null && rawImage.texture.name == UIRawImage.DummyAssetName)
             {
                 dummyTexture = rawImage.texture;
             }

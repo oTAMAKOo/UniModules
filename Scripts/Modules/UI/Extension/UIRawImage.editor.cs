@@ -1,23 +1,15 @@
 ﻿
+#if UNITY_EDITOR
+
 using UnityEngine;
-using UnityEngine.UI;
+using UnityEditor;
 using System.Linq;
 using Extensions;
 
-#if UNITY_EDITOR
-
-using UnityEditor;
-
-#endif
-
-namespace Modules.Devkit.DummyAssetSetter
+namespace Modules.UI.Extension
 {
-    [ExecuteAlways]
-    [RequireComponent(typeof(RawImage))]
-    public sealed class DummyTextureSetter : MonoBehaviour
+    public partial class UIRawImage
     {
-        #if UNITY_EDITOR
-
         //----- params -----
 
         public const string DummyAssetName = "*Texture (DummyAsset)";
@@ -33,16 +25,9 @@ namespace Modules.Devkit.DummyAssetSetter
         [SerializeField, HideInInspector]
         private string assetGuid = null;
 
-        private RawImage rawImage = null;
-
         private static FixedQueue<AssetCacheInfo> textureAssetCache = null;
 
         //----- property -----
-
-        public RawImage RawImage
-        {
-            get { return rawImage ?? (rawImage = UnityUtility.GetComponent<RawImage>(gameObject)); }
-        }
 
         //----- method -----
 
@@ -137,7 +122,7 @@ namespace Modules.Devkit.DummyAssetSetter
                 UnityUtility.SafeDelete(texture);
             }
         }
-        
-        #endif
     }
 }
+
+#endif

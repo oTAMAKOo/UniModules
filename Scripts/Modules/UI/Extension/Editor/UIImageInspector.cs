@@ -1,15 +1,16 @@
 ﻿
+using System.Linq;
 using UnityEngine;
 using UnityEditor;
 using UnityEditor.Experimental.U2D;
-using System.Linq;
 using Extensions;
 using Extensions.Devkit;
 
-namespace Modules.Devkit.DummyAssetSetter
+namespace Modules.UI.Extension
 {
-    [CustomEditor(typeof(DummySpriteSetter))]
-    public sealed class DummySpriteSetterInspector : ScriptlessEditor
+    [CanEditMultipleObjects]
+    [CustomEditor(typeof(UIImage), true)]
+    public sealed class UIImageInspector : ScriptlessEditor
     {
         //----- params -----
 
@@ -25,13 +26,13 @@ namespace Modules.Devkit.DummyAssetSetter
 
         void OnEnable()
         {
-            var instance = target as DummySpriteSetter;
+            var instance = target as UIImage;
 
             spriteAsset = null;
 
-            var assetGuid = Reflection.GetPrivateField<DummySpriteSetter, string>(instance, "assetGuid");
+            var assetGuid = Reflection.GetPrivateField<UIImage, string>(instance, "assetGuid");
 
-            var spriteId = Reflection.GetPrivateField<DummySpriteSetter, string>(instance, "spriteId");
+            var spriteId = Reflection.GetPrivateField<UIImage, string>(instance, "spriteId");
 
             if (!string.IsNullOrEmpty(assetGuid) && !string.IsNullOrEmpty(spriteId))
             {
@@ -47,7 +48,7 @@ namespace Modules.Devkit.DummyAssetSetter
 
             var image = instance.Image;
 
-            if (image.sprite != null && image.sprite.name == DummySpriteSetter.DummyAssetName)
+            if (image.sprite != null && image.sprite.name == UIImage.DummyAssetName)
             {
                 dummySprite = image.sprite;
             }
@@ -55,11 +56,11 @@ namespace Modules.Devkit.DummyAssetSetter
 
         public override void OnInspectorGUI()
         {
-            var instance = target as DummySpriteSetter;
+            var instance = target as UIImage;
 
             var image = instance.Image;
 
-            if (image == null){ return; }
+            if (image == null) { return; }
 
             GUILayout.Space(4f);
 
@@ -75,7 +76,7 @@ namespace Modules.Devkit.DummyAssetSetter
 
                 if (EditorGUI.EndChangeCheck())
                 {
-                    UnityEditorUtility.RegisterUndo("DummySpriteSetterInspector-Undo", instance);
+                    UnityEditorUtility.RegisterUndo("UIImageInspector-Undo", instance);
 
                     var assetGuid = spriteAsset != null ? UnityEditorUtility.GetAssetGUID(spriteAsset.texture) : string.Empty;
 
@@ -87,7 +88,7 @@ namespace Modules.Devkit.DummyAssetSetter
 
                     if (spriteAsset == null)
                     {
-                        if (image.sprite != null && image.sprite.name == DummySpriteSetter.DummyAssetName)
+                        if (image.sprite != null && image.sprite.name == UIImage.DummyAssetName)
                         {
                             image.sprite = null;
                         }
@@ -109,7 +110,7 @@ namespace Modules.Devkit.DummyAssetSetter
                 }
             }
 
-            if (image.sprite != null && image.sprite.name == DummySpriteSetter.DummyAssetName)
+            if (image.sprite != null && image.sprite.name == UIImage.DummyAssetName)
             {
                 dummySprite = image.sprite;
             }
