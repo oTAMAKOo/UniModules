@@ -304,8 +304,6 @@ namespace Modules.Devkit.SceneLaunch
             if (scene.path != Prefs.targetScenePath) { return; }
             
             ResumeSuspendObject(scene.GetRootGameObjects());
-
-            Debug.Log("OnSceneLoaded");
         }
 
         private void OnSelectScene(string targetScenePath)
