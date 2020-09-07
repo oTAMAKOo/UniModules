@@ -22,7 +22,7 @@ namespace Extensions.Devkit
 
         public CompositeDisposable Disposable { get { return lifetimeDisposable.Disposable; } }
 
-        public static bool IsExsist { get { return FindInstance() != null; } }
+        public static bool IsExist { get { return FindInstance() != null; } }
 
         //----- method -----
 

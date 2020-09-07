@@ -45,7 +45,7 @@ namespace Modules.Devkit.Pinning
         [InitializeOnLoadMethod]
         private static void InitializeOnLoadMethod()
         {
-            if (IsExsist)
+            if (IsExist)
             {
                 Instance.Load();
             }

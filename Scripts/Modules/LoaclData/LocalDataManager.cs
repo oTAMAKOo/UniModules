@@ -36,6 +36,8 @@ namespace Modules.LocalData
 
         private AesManaged aesManaged = null;
 
+        private string fileDirectory = null;
+
         private Dictionary<Type, string> filePathDictionary = null;
 
         //----- property -----
@@ -45,11 +47,23 @@ namespace Modules.LocalData
         protected override void OnCreate()
         {
             filePathDictionary = new Dictionary<Type, string>();
+
+            fileDirectory = Application.persistentDataPath + "/LocalData/";
         }
 
         public static void SetAesManaged(AesManaged aesManaged)
         {
             Instance.aesManaged = aesManaged;
+        }
+
+        public void SetFileDirectory(string directory)
+        {
+            if (!Directory.Exists(directory))
+            {
+                Directory.CreateDirectory(directory);
+            }
+
+            fileDirectory = directory;
         }
 
         public static T Get<T>() where T : LocalData, new()
@@ -110,11 +124,6 @@ namespace Modules.LocalData
             }
         }
 
-        private static string GetFileDirectory()
-        {
-            return Application.persistentDataPath + "/LocalData/";
-        }
-
         private string GetLocalDataFilePath<T>() where T : LocalData, new()
         {
             var filePath = filePathDictionary.GetValueOrDefault(typeof(T));
@@ -122,19 +131,17 @@ namespace Modules.LocalData
             if (string.IsNullOrEmpty(filePath))
             {
                 var tempInstance = new T();
-
-                var directory = GetFileDirectory();
-
-                if (!Directory.Exists(directory))
+                
+                if (!Directory.Exists(fileDirectory))
                 {
-                    Directory.CreateDirectory(directory);
+                    Directory.CreateDirectory(fileDirectory);
                 }
 
                 var aesManaged = GetAesManaged();
 
                 var fileName = tempInstance.FileName.Encrypt(aesManaged).GetHash();
 
-                filePath = directory + fileName;
+                filePath = fileDirectory + fileName;
 
                 filePathDictionary.Add(typeof(T), filePath);
             }
@@ -152,11 +159,9 @@ namespace Modules.LocalData
             return aesManaged;
         }
 
-        public static void DeleteAll()
+        public void DeleteAll()
         {
-            var directory = GetFileDirectory();
-
-            DirectoryUtility.Clean(directory);
+            DirectoryUtility.Clean(fileDirectory);
         }
     }
 }

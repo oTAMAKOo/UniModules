@@ -52,7 +52,7 @@ namespace Modules.Devkit.FindReferences
 
         public static void Open(Object targetAsset, AssetReferenceInfo assetReferenceInfo)
         {
-            if(!IsExsist)
+            if(!IsExist)
             {
                 Instance.titleContent = new GUIContent("Find References In Project");
                 Instance.Show();

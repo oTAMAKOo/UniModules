@@ -85,7 +85,7 @@ namespace Modules.PatternTexture
         
         public static void Open()
         {
-            if(!IsExsist)
+            if(!IsExist)
             {
                 Instance.Initialize();
                 instance.Show();

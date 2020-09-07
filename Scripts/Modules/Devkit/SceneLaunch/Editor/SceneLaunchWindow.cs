@@ -16,34 +16,34 @@ namespace Modules.Devkit.SceneLaunch
     public sealed class SceneLaunchWindow : SingletonEditorWindow<SceneLaunchWindow>
     {
         //----- params -----
-
+        
         private static class Prefs
         {
             public static string targetScenePath
             {
-                get { return ProjectPrefs.GetString("SceneExecuterPrefs-targetScenePath"); }
-                set { ProjectPrefs.SetString("SceneExecuterPrefs-targetScenePath", value); }
+                get { return ProjectPrefs.GetString("SceneLaunchPrefs-targetScenePath"); }
+                set { ProjectPrefs.SetString("SceneLaunchPrefs-targetScenePath", value); }
             }
 
             public static bool resume
             {
-                get { return ProjectPrefs.GetBool("SceneExecuterPrefs-resume", false); }
-                set { ProjectPrefs.SetBool("SceneExecuterPrefs-resume", value); }
+                get { return ProjectPrefs.GetBool("SceneLaunchPrefs-resume", false); }
+                set { ProjectPrefs.SetBool("SceneLaunchPrefs-resume", value); }
             }
 
             public static bool standbyInitializer
             {
-                get { return ProjectPrefs.GetBool("SceneExecuterPrefs-standbyInitializer", false); }
-                set { ProjectPrefs.SetBool("SceneExecuterPrefs-standbyInitializer", value); }
+                get { return ProjectPrefs.GetBool("SceneLaunchPrefs-standbyInitializer", false); }
+                set { ProjectPrefs.SetBool("SceneLaunchPrefs-standbyInitializer", value); }
             }
 
             public static string[] suspendObjectNames
             {
-                get { return ProjectPrefs.Get<string[]>("SceneExecuterPrefs-suspendObjectNames", new string[0]); }
-                set { ProjectPrefs.Set<string[]>("SceneExecuterPrefs-suspendObjectNames", value); }
+                get { return ProjectPrefs.Get<string[]>("SceneLaunchPrefs-suspendObjectNames", new string[0]); }
+                set { ProjectPrefs.Set<string[]>("SceneLaunchPrefs-suspendObjectNames", value); }
             }
         }
-
+        
         /// <summary>
         /// 全ヒエラルキーを非アクティブ化.
         /// </summary>
@@ -96,7 +96,7 @@ namespace Modules.Devkit.SceneLaunch
             static SceneResume()
             {
                 EditorApplication.update += UpdateCallback;
-                EditorApplication.playModeStateChanged += PlaymodeStateChangedCallback;
+                EditorApplication.playModeStateChanged += PlayModeStateChangedCallback;
             }
 
             private static void UpdateCallback()
@@ -115,7 +115,7 @@ namespace Modules.Devkit.SceneLaunch
                 }
             }
 
-            private static void PlaymodeStateChangedCallback(PlayModeStateChange state)
+            private static void PlayModeStateChangedCallback(PlayModeStateChange state)
             {
                 if (!Prefs.resume) { return; }
 
@@ -186,7 +186,8 @@ namespace Modules.Devkit.SceneLaunch
             if (initialized) { return; }
 
             titleContent = new GUIContent("Launch Scene");
-            minSize = new Vector2(0f, 55f);
+
+            minSize = new Vector2(250f, 60f);
 
             targetScenePath = Prefs.targetScenePath;
 

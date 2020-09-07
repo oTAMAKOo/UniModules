@@ -88,12 +88,18 @@ namespace Modules.Devkit.Generators
 
             if (instance == null)
             {
-                var projectPath = UnityPathUtility.ConvertProjectPath(assetPath);
-                var path = PathUtility.Combine(Application.dataPath, projectPath);
+                var path = UnityPathUtility.ConvertAssetPathToFullPath(assetPath);
 
                 if (!File.Exists(path))
                 {
                     instance = CreateInstance(type);
+
+                    var directory = Path.GetDirectoryName(path);
+
+                    if (!Directory.Exists(directory))
+                    {
+                        Directory.CreateDirectory(directory);
+                    }
 
                     AssetDatabase.CreateAsset(instance, assetPath);
 
