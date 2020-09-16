@@ -45,6 +45,12 @@ namespace Extensions
             return percentage != 0 && RandomInRange(1, max) <= percentage;
         }
 
+        /// <summary> 0-max%を入力してヒットしたかを判定.</summary>
+        public static bool IsPercentageHit(float percentage, float max)
+        {
+            return percentage != 0f && RandomInRange(1f, max) <= percentage;
+        }
+
         //-----------------------------------------------
         // Random Type : Float.
         //-----------------------------------------------
