@@ -117,7 +117,7 @@ namespace Modules.Devkit.AssetTuning
                 Func<TextureImporterPlatformSettings, TextureImporterPlatformSettings> update = settings =>
                 {
                     settings.overridden = true;
-                    settings.compressionQuality = (int)UnityEngine.TextureCompressionQuality.Normal;
+                    settings.compressionQuality = 50;
                     settings.textureCompression = TextureImporterCompression.Compressed;
                     settings.androidETC2FallbackOverride = AndroidETC2FallbackOverride.UseBuildSettings;
                     settings.format = GetPlatformCompressionType(textureImporter, platform);

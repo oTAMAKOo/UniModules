@@ -106,7 +106,7 @@ namespace Modules.Devkit.TextureEdit
                     platformSettingsChanged |= ValueUpdate(platformTextureSetting, false, "allowsAlphaSplitting");
                     platformSettingsChanged |= ValueUpdate(platformTextureSetting, false, "overridden");
                     platformSettingsChanged |= ValueUpdate(platformTextureSetting, TextureImporterFormat.ARGB32, "format");
-                    platformSettingsChanged |= ValueUpdate(platformTextureSetting, (int)UnityEngine.TextureCompressionQuality.Normal, "compressionQuality");
+                    platformSettingsChanged |= ValueUpdate(platformTextureSetting, 50, "compressionQuality");
                     platformSettingsChanged |= ValueUpdate(platformTextureSetting, TextureImporterCompression.Uncompressed, "textureCompression");
 
                     if (platformSettingsChanged)

@@ -40,7 +40,15 @@ namespace Modules.Devkit.CompileNotice
         {
             CompileNotificationViewPrefs.enable = state;
 
+            #if UNITY_2019_4_OR_NEWER
+
+            SceneView.duringSceneGui -= OnSceneView;
+
+            #else
+
             SceneView.onSceneGUIDelegate -= OnSceneView;
+
+            #endif
 
             var labelStyleState = new GUIStyleState();
             labelStyleState.textColor = Color.white;
@@ -54,13 +62,17 @@ namespace Modules.Devkit.CompileNotice
             {
                 backgroundTexture = EditorGUIUtility.whiteTexture;
 
+                #if UNITY_2019_4_OR_NEWER
+
+                SceneView.duringSceneGui += OnSceneView;
+
+                #else
+
                 SceneView.onSceneGUIDelegate += OnSceneView;
 
-                onCompileFinishDisposable = CompileNotification.OnCompileFinishAsObservable().Subscribe(
-                    _ =>
-                    {
-                        SceneView.RepaintAll();
-                    });
+                #endif
+
+                onCompileFinishDisposable = CompileNotification.OnCompileFinishAsObservable().Subscribe(_ => SceneView.RepaintAll());
             }
         }
 
