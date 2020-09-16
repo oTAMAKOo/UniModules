@@ -11,7 +11,6 @@ using Modules.MessagePack;
 
 namespace Modules.LocalData
 {
-    [MessagePackObject(true)]
     public abstract class LocalData
     {
         public abstract string FileName { get; }        
