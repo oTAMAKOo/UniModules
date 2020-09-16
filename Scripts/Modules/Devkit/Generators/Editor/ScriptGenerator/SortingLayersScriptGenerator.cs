@@ -51,9 +51,8 @@ namespace Constants
             script = Regex.Replace(script, "#ENUMS#", enums.ToString());
 
             script = script.FixLineEnd();
-
-            var folderPath = PathUtility.Combine(scriptPath, @"Constants");
-            ScriptGenerateUtility.GenerateScript(folderPath, @"SortingLayer.cs", script);
+            
+            ScriptGenerateUtility.GenerateScript(scriptPath, @"SortingLayer.cs", script);
         }
     }
 }

@@ -96,9 +96,8 @@ namespace Constants
             script = Regex.Replace(script, "#CONTENTS#", contents.ToString());
 
             script = script.FixLineEnd();
-
-            var folderPath = PathUtility.Combine(scriptPath, @"Constants");
-            ScriptGenerateUtility.GenerateScript(folderPath, @"Scenes.cs", script);
+            
+            ScriptGenerateUtility.GenerateScript(scriptPath, @"Scenes.cs", script);
         }
     }
 }

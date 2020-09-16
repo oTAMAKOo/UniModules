@@ -67,9 +67,8 @@ namespace Constants
             script = Regex.Replace(script, "#ALL#", all.ToString());
 
             script = script.FixLineEnd();
-
-            var folderPath = PathUtility.Combine(scriptPath, @"Constants");
-            ScriptGenerateUtility.GenerateScript(folderPath, @"Tags.cs", script);
+            
+            ScriptGenerateUtility.GenerateScript(scriptPath, @"Tags.cs", script);
         }
     }
 }

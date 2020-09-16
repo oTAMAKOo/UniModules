@@ -58,16 +58,16 @@ namespace Modules
             var sceneImporterConfig = SceneImporterConfig.Instance;
 
             // SceneNames.
-            ScenesScriptGenerator.Generate(sceneImporterConfig.ManagedFolders, editorConfig.ScriptPath);
+            ScenesScriptGenerator.Generate(sceneImporterConfig.ManagedFolders, editorConfig.ConstantsScriptPath);
 
             // Tags.
-            TagsScriptGenerator.Generate(editorConfig.ScriptPath);
+            TagsScriptGenerator.Generate(editorConfig.ConstantsScriptPath);
 
             // Layers.
-            LayersScriptGenerator.Generate(editorConfig.ScriptPath);
+            LayersScriptGenerator.Generate(editorConfig.ConstantsScriptPath);
 
             // SortingLayers.
-            SortingLayersScriptGenerator.Generate(editorConfig.ScriptPath);
+            SortingLayersScriptGenerator.Generate(editorConfig.ConstantsScriptPath);
         }
 
         [MenuItem(GeneratorsScripts + "  - Scenes.cs", priority = 1)]
@@ -76,7 +76,7 @@ namespace Modules
             var editorConfig = ProjectFolders.Instance;
             var sceneImporterConfig = SceneImporterConfig.Instance;
 
-            ScenesScriptGenerator.Generate(sceneImporterConfig.ManagedFolders, editorConfig.ScriptPath);
+            ScenesScriptGenerator.Generate(sceneImporterConfig.ManagedFolders, editorConfig.ConstantsScriptPath);
         }
 
         [MenuItem(GeneratorsScripts + "  - Tags.cs", priority = 2)]
@@ -84,7 +84,7 @@ namespace Modules
         {
             var editorConfig = ProjectFolders.Instance;
 
-            TagsScriptGenerator.Generate(editorConfig.ScriptPath);
+            TagsScriptGenerator.Generate(editorConfig.ConstantsScriptPath);
         }
 
         [MenuItem(GeneratorsScripts + "  - Layers.cs", priority = 3)]
@@ -92,7 +92,7 @@ namespace Modules
         {
             var editorConfig = ProjectFolders.Instance;
 
-            LayersScriptGenerator.Generate(editorConfig.ScriptPath);
+            LayersScriptGenerator.Generate(editorConfig.ConstantsScriptPath);
         }
 
         [MenuItem(GeneratorsScripts + "  - SortingLayers.cs", priority = 4)]
@@ -100,7 +100,7 @@ namespace Modules
         {
             var editorConfig = ProjectFolders.Instance;
 
-            SortingLayersScriptGenerator.Generate(editorConfig.ScriptPath);
+            SortingLayersScriptGenerator.Generate(editorConfig.ConstantsScriptPath);
         }
 
         [MenuItem(itemName: GeneratorsMenu + "Generate ScenesInBuild", priority = 15)]

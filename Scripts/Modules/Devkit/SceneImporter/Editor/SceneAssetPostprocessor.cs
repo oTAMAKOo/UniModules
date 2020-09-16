@@ -50,7 +50,7 @@ namespace Modules.Devkit.SceneImporter
                 if (scenes.Length != buildTargetScenes.Length)
                 {
                     EditorBuildSettings.scenes = scenes;
-                    ScenesScriptGenerator.Generate(sceneImporterConfig.ManagedFolders, editorConfig.EditorScriptPath);
+                    ScenesScriptGenerator.Generate(sceneImporterConfig.ManagedFolders, editorConfig.ConstantsScriptPath);
                     AssetDatabase.SaveAssets();
 
                     EditorUtility.DisplayDialog("SceneAssetPostprocessor", "ビルドターゲットに入っているシーンの\n重複項目を削除しました", "確認");

@@ -89,9 +89,8 @@ namespace Modules.MovieManagement
 
             script = Regex.Replace(script, "@ENUMS", enums.ToString());
             script = Regex.Replace(script, "@CONTENTS", contents.ToString());
-
-            var folderPath = PathUtility.Combine(scriptPath, @"Constants");
-            ScriptGenerateUtility.GenerateScript(folderPath, @"Movies.cs", script);
+            
+            ScriptGenerateUtility.GenerateScript(scriptPath, @"Movies.cs", script);
         }
 
         private static ManaInfo[] LoadUsmInfo(string path)

@@ -102,8 +102,7 @@ namespace Modules.SoundManagement
             script = Regex.Replace(script, "@ENUMS", enums.ToString());
             script = Regex.Replace(script, "@CONTENTS", contents.ToString());
 
-            var folderPath = PathUtility.Combine(scriptPath, @"Constants");
-            ScriptGenerateUtility.GenerateScript(folderPath, @"Sounds.cs", script);
+            ScriptGenerateUtility.GenerateScript(scriptPath, @"Sounds.cs", script);
         }
 
         private static CueInfo[] LoadAcbInfo(string path)

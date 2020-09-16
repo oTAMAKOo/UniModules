@@ -1,5 +1,4 @@
-﻿
-using UnityEngine;
+﻿using UnityEngine;
 using UnityEditor;
 using Modules.Devkit.ScriptableObjects;
 
@@ -16,7 +15,7 @@ namespace Modules.Devkit.Project
         [SerializeField]
         private Object scriptFolder = null;
         [SerializeField]
-        private Object clientScriptFolder = null;
+        private Object scriptConstantsFolder = null;
         [SerializeField]
         private Object editorScriptFolder = null;
         [SerializeField]
@@ -31,7 +30,7 @@ namespace Modules.Devkit.Project
         //----- property -----
 
         public string ScriptPath { get { return AssetDatabase.GetAssetPath(scriptFolder); } }
-        public string ClientScriptFolder { get { return AssetDatabase.GetAssetPath(clientScriptFolder); } }
+        public string ConstantsScriptPath { get { return AssetDatabase.GetAssetPath(scriptConstantsFolder); } }
         public string EditorScriptPath { get { return AssetDatabase.GetAssetPath(editorScriptFolder); } }
         public string ResourcesPath { get { return AssetDatabase.GetAssetPath(resourcesFolder); } }
         public string InternalResourcesPath { get { return AssetDatabase.GetAssetPath(internalResourcesFolder); } }
