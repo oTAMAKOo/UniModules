@@ -39,7 +39,7 @@ namespace Constants
             var contents = new StringBuilder();
 
             // 最も一致率の高いパスから検索する為長さで並べ替え.
-            var sceneFolderPaths = sceneFolders.OrderBy(x => x.Length);
+            var sceneFolderPaths = sceneFolders.OrderBy(x => x.Length).ToArray();
 
             var scenes = EditorBuildSettings.scenes;
 
@@ -68,7 +68,7 @@ namespace Constants
                     {
                         var scenePath = path.SafeSubstring(sceneFolderPath.Length).Replace(PathUtility.PathSeparator, '_');
 
-                        enumName = Path.GetFileNameWithoutExtension(scenePath);
+                        enumName = Path.GetFileNameWithoutExtension(scenePath).Replace(" ", "_");
 
                         break;
                     }
@@ -96,7 +96,7 @@ namespace Constants
             script = Regex.Replace(script, "#CONTENTS#", contents.ToString());
 
             script = script.FixLineEnd();
-            
+
             ScriptGenerateUtility.GenerateScript(scriptPath, @"Scenes.cs", script);
         }
     }

@@ -44,7 +44,9 @@ namespace Modules.Devkit.SceneImporter
             // ビルドセッティングファイルの更新時.
             if (importedAssets.Any(x => Path.GetFileName(x) == BuildSettingsFileName))
             {
-                var buildTargetScenes = EditorBuildSettings.scenes;
+                var buildTargetScenes = EditorBuildSettings.scenes
+                    .Where(x => !string.IsNullOrEmpty(x.path))
+                    .ToArray();
 
                 var scenes = buildTargetScenes
                     .Where(x => x != null)
