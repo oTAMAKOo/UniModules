@@ -57,6 +57,7 @@ namespace Modules.Devkit.Diagnosis.SRDebugger
         public bool IsEnable
         {
             get { return isEnable.HasValue ? isEnable.Value : UnityEngine.Debug.isDebugBuild; }
+            set { isEnable = value; }
         }
 
         //----- method -----
