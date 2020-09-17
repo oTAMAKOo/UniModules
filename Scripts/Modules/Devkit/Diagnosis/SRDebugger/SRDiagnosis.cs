@@ -48,20 +48,22 @@ namespace Modules.Devkit.Diagnosis.SRDebugger
 
         private float lastShowLogTime = 0f;
 
+        private bool? isEnable = null;
+
         private bool initialized = false;
 
         //----- property -----
 
-        //----- method -----
-
-        private bool IsEnable()
+        public bool IsEnable
         {
-            return UnityEngine.Debug.isDebugBuild;
+            get { return isEnable.HasValue ? isEnable.Value : UnityEngine.Debug.isDebugBuild; }
         }
+
+        //----- method -----
 
         public void Initialize()
         {
-            if (!initialized && IsEnable())
+            if (!initialized && IsEnable)
             {
                 SRDebug.Init();
 
