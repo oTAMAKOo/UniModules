@@ -156,7 +156,7 @@ namespace Modules.Devkit.SceneImporter
 
                 if (isChanged)
                 {
-                    ScenesInBuildGenerator.UpdateBuildTargetScenes(sceneImporterConfig, editorConfig.ScriptPath, buildTargetScenes);
+                    ScenesInBuildGenerator.UpdateBuildTargetScenes(sceneImporterConfig, editorConfig.ConstantsScriptPath, buildTargetScenes);
                 }
             }
         }
