@@ -45,7 +45,11 @@ namespace Modules.Devkit.SceneImporter
             if (importedAssets.Any(x => Path.GetFileName(x) == BuildSettingsFileName))
             {
                 var buildTargetScenes = EditorBuildSettings.scenes;
-                var scenes = buildTargetScenes.DistinctBy(x => x.path).ToArray();
+
+                var scenes = buildTargetScenes
+                    .Where(x => x != null)
+                    .Where(x => !string.IsNullOrEmpty(x.path))
+                    .DistinctBy(x => x.path).ToArray();
 
                 if (scenes.Length != buildTargetScenes.Length)
                 {
@@ -53,7 +57,7 @@ namespace Modules.Devkit.SceneImporter
                     ScenesScriptGenerator.Generate(sceneImporterConfig.ManagedFolders, editorConfig.ConstantsScriptPath);
                     AssetDatabase.SaveAssets();
 
-                    EditorUtility.DisplayDialog("SceneAssetPostprocessor", "ビルドターゲットに入っているシーンの\n重複項目を削除しました", "確認");
+                    EditorUtility.DisplayDialog("SceneAssetPostprocessor", "Fix BuildSettings asset.", "close");
                 }
             }
 
