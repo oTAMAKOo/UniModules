@@ -649,21 +649,21 @@ namespace Modules.SceneManagement
         }
 
         /// <summary> 加算シーンをアンロード </summary>
-        public void UnloadAppendScene(ISceneBase scene, bool disableSceneContents = true)
+        public void UnloadAppendScene(ISceneBase scene, bool deactivateSceneObjects = true)
         {
             var sceneInstance = appendSceneInstances.FirstOrDefault(x => x.Instance == scene);
 
             if (sceneInstance == null) { return; }
 
-            UnloadAppendScene(sceneInstance, disableSceneContents);
+            UnloadAppendScene(sceneInstance, deactivateSceneObjects);
         }
 
         /// <summary> 加算シーンをアンロード </summary>
-        public void UnloadAppendScene(SceneInstance sceneInstance, bool disableSceneContents = true)
+        public void UnloadAppendScene(SceneInstance sceneInstance, bool deactivateSceneObjects = true)
         {
             if (!appendSceneInstances.Contains(sceneInstance)){ return; }
 
-            if (disableSceneContents)
+            if (deactivateSceneObjects)
             {
                 sceneInstance.Disable();
             }
