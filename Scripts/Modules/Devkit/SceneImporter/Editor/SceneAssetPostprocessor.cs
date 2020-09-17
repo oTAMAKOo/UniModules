@@ -46,12 +46,15 @@ namespace Modules.Devkit.SceneImporter
             {
                 var buildTargetScenes = EditorBuildSettings.scenes;
 
+                var sceneCount = buildTargetScenes.Length;
+
                 var scenes = buildTargetScenes
                     .Where(x => x != null)
                     .Where(x => !string.IsNullOrEmpty(x.path))
-                    .DistinctBy(x => x.path).ToArray();
+                    .DistinctBy(x => x.path)
+                    .ToArray();
 
-                if (scenes.Length != buildTargetScenes.Length)
+                if (scenes.Length != sceneCount)
                 {
                     EditorBuildSettings.scenes = scenes;
                     ScenesScriptGenerator.Generate(sceneImporterConfig.ManagedFolders, editorConfig.ConstantsScriptPath);
