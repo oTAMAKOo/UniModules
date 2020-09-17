@@ -44,9 +44,7 @@ namespace Modules.Devkit.SceneImporter
             // ビルドセッティングファイルの更新時.
             if (importedAssets.Any(x => Path.GetFileName(x) == BuildSettingsFileName))
             {
-                var buildTargetScenes = EditorBuildSettings.scenes
-                    .Where(x => !string.IsNullOrEmpty(x.path))
-                    .ToArray();
+                var buildTargetScenes = EditorBuildSettings.scenes;
 
                 var scenes = buildTargetScenes
                     .Where(x => x != null)
@@ -59,7 +57,7 @@ namespace Modules.Devkit.SceneImporter
                     ScenesScriptGenerator.Generate(sceneImporterConfig.ManagedFolders, editorConfig.ConstantsScriptPath);
                     AssetDatabase.SaveAssets();
 
-                    EditorUtility.DisplayDialog("SceneAssetPostprocessor", "Fix BuildSettings asset.", "close");
+                    Debug.Log("Update BuildSettings asset.");
                 }
             }
 
