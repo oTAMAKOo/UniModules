@@ -2,9 +2,14 @@
 using System.Linq;
 using UnityEngine;
 using UnityEditor;
-using UnityEditor.Experimental.U2D;
 using Extensions;
 using Extensions.Devkit;
+
+#if UNITY_2019_4_OR_NEWER
+using UnityEditor.U2D;
+#else
+using UnityEditor.Experimental.U2D;
+#endif
 
 namespace Modules.UI.Extension
 {
