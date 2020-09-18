@@ -143,13 +143,34 @@ namespace Modules.Master
             return Observable.FromMicroCoroutine<bool>(observer => LoadInternal(observer, aesManaged));
         }
 
-        protected virtual byte[] LoadCacheFile(string installPath, AesManaged aesManaged)
+        protected virtual IEnumerator LoadCacheFile(IObserver<byte[]> observer, string installPath, AesManaged aesManaged)
         {
-            // ファイル読み込み.
-            var data = File.ReadAllBytes(installPath);
+            Func<string, AesManaged, byte[]> loadAndDecrypt = (_installPath, _aesManaged) =>
+            {
+                // ファイル読み込み.
+                var data = File.ReadAllBytes(_installPath);
 
-            // 復号化.               
-            return data.Decrypt(aesManaged);
+                // 復号化.               
+                return data.Decrypt(_aesManaged);
+            };
+
+            // ファイルの読み込みと復号化をスレッドプールで実行.
+            var loadYield = Observable.Start(() => loadAndDecrypt(installPath, aesManaged)).ObserveOnMainThread().ToYieldInstruction();
+
+            while (!loadYield.IsDone)
+            {
+                yield return null;
+            }
+
+            if (!loadYield.HasError && loadYield.HasResult)
+            {
+                observer.OnNext(loadYield.Result);
+                observer.OnCompleted();
+            }
+            else
+            {
+                observer.OnError(loadYield.Error);
+            }
         }
 
         private IEnumerator LoadInternal(IObserver<bool> observer, AesManaged aesManaged)
@@ -171,36 +192,33 @@ namespace Modules.Master
 
             var installPath = MasterManager.Instance.GetInstallPath<TMaster>();
 
-            // ファイルの読み込みと復号化をスレッドプールで実行.
-            var loadYield = Observable.Start(() => LoadCacheFile(installPath, aesManaged)).ObserveOnMainThread().ToYieldInstruction();
+            // ファイルの読み込みと復号化.
+            var loadYield = Observable.FromMicroCoroutine<byte[]>(x => LoadCacheFile(x, installPath, aesManaged)).ToYieldInstruction();
 
             while (!loadYield.IsDone)
             {
                 yield return null;
             }
 
-            if (!loadYield.HasError)
+            if (!loadYield.HasError && loadYield.HasResult)
             {
-                if (loadYield.HasResult)
+                var bytes = loadYield.Result;
+
+                try
                 {
-                    var bytes = loadYield.Result;
+                    var options = StandardResolverAllowPrivate.Options
+                        .WithCompression(MessagePackCompression.Lz4BlockArray)
+                        .WithResolver(UnityContractResolver.Instance);
 
-                    try
-                    {
-                        var options = StandardResolverAllowPrivate.Options
-                                .WithCompression(MessagePackCompression.Lz4BlockArray)
-                                .WithResolver(UnityContractResolver.Instance);
+                    var container = MessagePackSerializer.Deserialize<TMasterContainer>(bytes, options);
 
-                        var container = MessagePackSerializer.Deserialize<TMasterContainer>(bytes, options);
+                    SetRecords(container.records);
 
-                        SetRecords(container.records);
-
-                        result = true;
-                    }
-                    catch (Exception exception)
-                    {
-                        Debug.LogException(exception);
-                    }
+                    result = true;
+                }
+                catch (Exception exception)
+                {
+                    Debug.LogException(exception);
                 }
             }
             else
