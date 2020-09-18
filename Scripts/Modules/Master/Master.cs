@@ -143,6 +143,15 @@ namespace Modules.Master
             return Observable.FromMicroCoroutine<bool>(observer => LoadInternal(observer, aesManaged));
         }
 
+        protected virtual byte[] LoadCacheFile(string installPath, AesManaged aesManaged)
+        {
+            // ファイル読み込み.
+            var data = File.ReadAllBytes(installPath);
+
+            // 復号化.               
+            return data.Decrypt(aesManaged);
+        }
+
         private IEnumerator LoadInternal(IObserver<bool> observer, AesManaged aesManaged)
         {
             var result = false;
@@ -162,17 +171,8 @@ namespace Modules.Master
 
             var installPath = MasterManager.Instance.GetInstallPath<TMaster>();
 
-            Func<string, AesManaged, byte[]> loadCacheFile = (_installPath, _aesManaged) =>
-            {
-                // ファイル読み込み.
-                var data = File.ReadAllBytes(_installPath);
-
-                // 復号化.               
-                return data.Decrypt(_aesManaged);
-            };
-
             // ファイルの読み込みと復号化をスレッドプールで実行.
-            var loadYield = Observable.Start(() => loadCacheFile(installPath, aesManaged)).ObserveOnMainThread().ToYieldInstruction();
+            var loadYield = Observable.Start(() => LoadCacheFile(installPath, aesManaged)).ObserveOnMainThread().ToYieldInstruction();
 
             while (!loadYield.IsDone)
             {
