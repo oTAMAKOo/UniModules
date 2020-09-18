@@ -35,14 +35,7 @@ namespace Modules.UI.Extension
 
         void OnEnable()
         {
-            if (Application.isPlaying)
-            {
-                // 開発用画像が設定されていた箇所は空画像の時は非表示.
-                if (!string.IsNullOrEmpty(assetGuid))
-                {
-                    StartEmptySpriteCheck();
-                }
-            }
+            StartEmptySpriteCheck();
 
             #if UNITY_EDITOR
 
@@ -62,7 +55,13 @@ namespace Modules.UI.Extension
 
         private void StartEmptySpriteCheck()
         {
+            if (!Application.isPlaying) { return; }
+
             if (Image == null) { return; }
+
+            if (string.IsNullOrEmpty(assetGuid)) { return; }
+
+            // 開発用画像が設定されていた箇所は空画像の時は非表示.
 
             Action onSpriteChanged = () =>
             {
