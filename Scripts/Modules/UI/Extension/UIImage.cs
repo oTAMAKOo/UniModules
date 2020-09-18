@@ -1,6 +1,8 @@
-﻿﻿﻿﻿﻿
+﻿
+using System;
 using UnityEngine;
 using UnityEngine.UI;
+using UniRx;
 
 namespace Modules.UI.Extension
 {
@@ -11,6 +13,13 @@ namespace Modules.UI.Extension
         //----- params -----
 
         //----- field -----
+
+        // 開発アセット登録用.
+
+        [SerializeField, HideInInspector]
+        private string assetGuid = null;
+        [SerializeField, HideInInspector]
+        private string spriteId = null;
 
         //----- property -----
 
@@ -23,5 +32,49 @@ namespace Modules.UI.Extension
         }
 
         //----- method -----
+
+        void OnEnable()
+        {
+            // 開発用画像が設定されていた箇所は空画像の時は非表示.
+            if (!string.IsNullOrEmpty(assetGuid))
+            {
+                StartEmptySpriteCheck();
+            }
+
+            #if UNITY_EDITOR
+
+            ApplyDummyAsset();
+
+            #endif
+        }
+        
+        void OnDisable()
+        {
+            #if UNITY_EDITOR
+
+            DeleteCreatedAsset();
+
+            #endif
+        }
+
+        private void StartEmptySpriteCheck()
+        {
+            if (Image == null) { return; }
+
+            Action onSpriteChanged = () =>
+            {
+                if (Image != null)
+                {
+                    Image.enabled = sprite != null;
+                }
+            };
+
+            Image.ObserveEveryValueChanged(x => x.sprite)
+                .TakeUntilDisable(this)
+                .Subscribe(_ => onSpriteChanged())
+                .AddTo(this);
+
+            onSpriteChanged.Invoke();
+        }
     }
 }

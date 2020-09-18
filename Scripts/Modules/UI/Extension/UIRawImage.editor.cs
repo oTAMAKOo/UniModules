@@ -22,24 +22,11 @@ namespace Modules.UI.Extension
 
         //----- field -----
 
-        [SerializeField, HideInInspector]
-        private string assetGuid = null;
-
         private static FixedQueue<AssetCacheInfo> textureAssetCache = null;
 
         //----- property -----
 
         //----- method -----
-
-        void OnEnable()
-        {
-            ApplyDummyAsset();
-        }
-
-        void OnDisable()
-        {
-            DeleteCreatedAsset();
-        }
 
         private void ApplyDummyAsset()
         {
