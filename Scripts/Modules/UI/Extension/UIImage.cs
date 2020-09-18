@@ -35,10 +35,13 @@ namespace Modules.UI.Extension
 
         void OnEnable()
         {
-            // 開発用画像が設定されていた箇所は空画像の時は非表示.
-            if (!string.IsNullOrEmpty(assetGuid))
+            if (Application.isPlaying)
             {
-                StartEmptySpriteCheck();
+                // 開発用画像が設定されていた箇所は空画像の時は非表示.
+                if (!string.IsNullOrEmpty(assetGuid))
+                {
+                    StartEmptySpriteCheck();
+                }
             }
 
             #if UNITY_EDITOR
