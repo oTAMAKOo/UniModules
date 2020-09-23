@@ -1,7 +1,5 @@
 ﻿
 using UnityEditor;
-using System.IO;
-using Extensions.Devkit;
 
 // Modules.
 using Modules.PatternTexture;
@@ -10,6 +8,7 @@ using Modules.MessagePack;
 using Modules.Master;
 using Modules.ExternalResource;
 using Modules.ExternalResource.Editor;
+using Modules.BehaviorControl;
 using Modules.Devkit.AssetBundles;
 using Modules.Devkit.AssetDependencies;
 using Modules.Devkit.CompileNotice;
@@ -496,6 +495,12 @@ namespace Modules
         public static void OpenShaderVariantUpdateWindow()
         {
             ShaderVariantUpdateWindow.Open();
+        }
+
+        [MenuItem(itemName: WindowsMenu + "Open BehaviorControlMonitor", priority = 5)]
+        public static void OpenBehaviorControlMonitor()
+        {
+            BehaviorControlMonitor.Open();
         }
 
         #endregion
