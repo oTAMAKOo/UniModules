@@ -52,7 +52,8 @@ namespace Modules.BehaviorControl
             
             foreach (var behavior in behaviorData.Behaviors)
             {
-                var probability = behavior.SuccessRate * 100f;
+                // 0f - 1fの範囲内に丸める.
+                var probability = Math.Min(Math.Max(behavior.SuccessRate, 0f), 1f) * 100f;
 
                 //====== ログデータ構築 ======
 
