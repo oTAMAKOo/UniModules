@@ -92,6 +92,13 @@ namespace Modules.UI.Particle
             initialized = true;
         }
 
+        void Update()
+        {
+            UpdateRenderingSource();
+
+            SetAllDirty();
+        }
+
         private void UpdateRenderingSource()
         {
             var particleSystemRenderer = GetParticleSystemRenderer();
@@ -103,18 +110,6 @@ namespace Modules.UI.Particle
             particleTexture = material != null && material.mainTexture != null ?
                 material.mainTexture :
                 Texture2D.whiteTexture;
-        }
-
-        void Update()
-        {
-            var particleSystemRenderer = GetParticleSystemRenderer();
-
-            if (!particleSystemRenderer.enabled)
-            {
-                UpdateRenderingSource();
-
-                SetAllDirty();
-            }
         }
 
         protected override void OnPopulateMesh(VertexHelper vh)
