@@ -374,7 +374,7 @@ namespace Modules.UI.Particle
             return quad;
         }
 
-        public static UIVertex[] GenerateModel(float width, float height, float scalefactor, Color32 color, Vector4 uv)
+        private static UIVertex[] GenerateModel(float width, float height, float scalefactor, Color32 color, Vector4 uv)
         {
             var quad = new UIVertex[4];
             var halfWidth = width / 2;
