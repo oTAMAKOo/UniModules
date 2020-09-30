@@ -21,11 +21,11 @@ namespace Modules.StateControl
 
         private IDisposable changeStateDisposable = null;
 
-        private bool isExecute = false;
-
         //----- property -----
 
         public T Current { get { return currentState != null ? currentState.Type : default; } }
+
+        public bool IsExecute { get; private set; }
 
         //----- method -----
 
@@ -72,7 +72,7 @@ namespace Modules.StateControl
         /// <summary> ステート変更を要求 </summary>
         public void Request<TArgument>(T next, TArgument argument, bool force = false) where TArgument : StateArgument, new()
         {
-            if (isExecute)
+            if (IsExecute)
             {
                 if (force)
                 {
@@ -88,7 +88,7 @@ namespace Modules.StateControl
                 }
             }
 
-            isExecute = true;
+            IsExecute = true;
 
             // ※ changeStateDisposableで実行中判定しようとすると中でyield breakしているだけの場合Subscribeが先に呼ばれてしまう為実行中フラグで管理する.
 
@@ -96,7 +96,7 @@ namespace Modules.StateControl
                 .Subscribe(_ =>
                     {
                         changeStateDisposable = null;
-                        isExecute = false;
+                        IsExecute = false;
                     })
                 .AddTo(Disposable);
         }
