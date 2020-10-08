@@ -122,7 +122,7 @@ namespace Modules.ExternalResource.Editor
 
             if (selectionAssetObject != null)
             {
-                EditorGUILayout.ObjectField(string.Empty, selectionAssetObject, typeof(Object), false, GUILayout.Width(250f));
+                EditorGUILayout.ObjectField(string.Empty, selectionAssetObject, typeof(Object), false);
 
                 if (selectionAssetObject != null)
                 {
