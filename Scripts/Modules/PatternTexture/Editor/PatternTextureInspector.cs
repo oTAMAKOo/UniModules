@@ -27,7 +27,7 @@ namespace Modules.PatternTexture
 
         public override void OnInspectorGUI()
         {
-            var dicingTexture = target as PatternTexture;
+            var patternTexture = target as PatternTexture;
 
             EditorLayoutTools.DrawContentTitle("Contents");
 
@@ -35,7 +35,7 @@ namespace Modules.PatternTexture
             {
                 using (var scrollViewScope = new EditorGUILayout.ScrollViewScope(scrollPosition, GUILayout.Height(350f)))
                 {
-                    var sourceData = dicingTexture.GetAllPatternData();
+                    var sourceData = patternTexture.GetAllPatternData();
 
                     for (var i = 0; i < sourceData.Count; i++)
                     {

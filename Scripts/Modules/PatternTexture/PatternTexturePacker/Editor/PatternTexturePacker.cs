@@ -414,10 +414,10 @@ namespace Modules.PatternTexture
                 {
                     GUILayout.Label("MemorySize", GUILayout.Width(75f));
 
-                    var dicingMemSize = infoFileSize + totalAtlasMemSize;
+                    var memSize = infoFileSize + totalAtlasMemSize;
 
-                    labelStyle.normal.textColor = totalMemSize < dicingMemSize ? Color.red : defaultColor;
-                    GUILayout.Label(string.Format("{0:F1} MB >>> {1:F1} MB : {2:F1}% ", totalMemSize, dicingMemSize, 100.0f * dicingMemSize / totalMemSize), labelStyle);
+                    labelStyle.normal.textColor = totalMemSize < memSize ? Color.red : defaultColor;
+                    GUILayout.Label(string.Format("{0:F1} MB >>> {1:F1} MB : {2:F1}% ", totalMemSize, memSize, 100.0f * memSize / totalMemSize), labelStyle);
                     labelStyle.normal.textColor = defaultColor;
                 }
 
@@ -425,10 +425,10 @@ namespace Modules.PatternTexture
                 {
                     GUILayout.Label("FileSize", GUILayout.Width(75f));
 
-                    var dicingFileSize = infoFileSize + atlasFileSize;
+                    var fileSize = infoFileSize + atlasFileSize;
 
                     labelStyle.normal.textColor = totalFileSize < atlasFileSize ? Color.red : defaultColor;
-                    GUILayout.Label(string.Format("{0:F1} MB >>> {1:F1} MB : {2:F1}% ", totalFileSize, dicingFileSize, 100.0f * dicingFileSize / totalFileSize), labelStyle);
+                    GUILayout.Label(string.Format("{0:F1} MB >>> {1:F1} MB : {2:F1}% ", totalFileSize, fileSize, 100.0f * fileSize / totalFileSize), labelStyle);
                     labelStyle.normal.textColor = defaultColor;
                 }
             }
@@ -533,7 +533,7 @@ namespace Modules.PatternTexture
             calcPerformance = true;
         }
 
-        private void GeneratePatternTexture(PatternTexture target)
+        private void GeneratePatternTexture(PatternTexture patternTexture)
         {
             var exportPath = string.Empty;
 
@@ -545,40 +545,33 @@ namespace Modules.PatternTexture
                 .Select(x => x.texture)
                 .ToArray();
 
-            if (target == null)
+            if (patternTexture == null)
             {
-                var path = string.Empty;
+                var directory = Directory.GetParent(Prefs.exportPath);
 
-                if (string.IsNullOrEmpty(Prefs.exportPath) || !Directory.Exists(path))
-                {
-                    path = UnityPathUtility.AssetsFolder;
-                }
-                else
-                {
-                    path = Prefs.exportPath;
-                }
+                var path = directory != null ? directory.FullName : UnityPathUtility.AssetsFolder;
 
                 exportPath = EditorUtility.SaveFilePanelInProject("Save As", "New PatternTexture.asset", "asset", "Save as...", path);
             }
             else
             {
-                exportPath = AssetDatabase.GetAssetPath(target);
+                exportPath = AssetDatabase.GetAssetPath(patternTexture);
             }
 
             if (!string.IsNullOrEmpty(exportPath))
             {
+                patternTexture = ScriptableObjectGenerator.Generate<PatternTexture>(exportPath);
+
                 var patternData = generator.Generate(exportPath, blockSize, padding, textures, hasAlphaMap);
 
-                target = ScriptableObjectGenerator.Generate<PatternTexture>(exportPath);
+                patternTexture.Set(patternData.Texture, blockSize, padding, patternData.PatternData, patternData.PatternBlocks, hasAlphaMap);
+                patternTexture.Texture.filterMode = filterMode;
 
-                target.Set(patternData.Texture, blockSize, padding, patternData.PatternData, patternData.PatternBlocks, hasAlphaMap);
-                target.Texture.filterMode = filterMode;
-
-                UnityEditorUtility.SaveAsset(target);
+                UnityEditorUtility.SaveAsset(patternTexture);
 
                 Prefs.exportPath = exportPath;
 
-                selectPatternTexture = target;
+                selectPatternTexture = patternTexture;
 
                 var selectionTextures = GetSelectionTextures();
 

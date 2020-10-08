@@ -64,13 +64,13 @@ namespace Modules.PatternTexture
                 editableTexture.Editable();
             }
 
-            var dicingTargets = ReadTextureBlock(blockSize, sourceTextures);
+            var patternTargetDatas = ReadTextureBlock(blockSize, sourceTextures);
 
             // 補間用ピクセル分のパディングを追加.
             padding += 2;
 
             // 透明ピクセル、同じピクセル情報のブロックは対象外.
-            var totalBlockCount = dicingTargets
+            var totalBlockCount = patternTargetDatas
                 .SelectMany(x => x.blocks)
                 .Select(x => x.blockId)
                 .Distinct()
@@ -84,16 +84,15 @@ namespace Modules.PatternTexture
 
             var texture = TextureUtility.CreateEmptyTexture(textureSize, textureSize);
 
-            patternTextureData.PatternData = BuildPatternData(dicingTargets);
+            patternTextureData.PatternData = BuildPatternData(patternTargetDatas);
 
-            patternTextureData.PatternBlocks = BitBlockTransfer(texture, blockSize, padding, dicingTargets, hasAlphaMap);
+            patternTextureData.PatternBlocks = BitBlockTransfer(texture, blockSize, padding, patternTargetDatas, hasAlphaMap);
 
             File.WriteAllBytes(texturePath, texture.EncodeToPNG());
 
             AssetDatabase.ImportAsset(texturePath);
-            AssetDatabase.Refresh();
 
-            patternTextureData.Texture = AssetDatabase.LoadMainAssetAtPath(texturePath) as Texture2D;
+            patternTextureData.Texture = AssetDatabase.LoadAssetAtPath<Texture2D>(texturePath);
 
             return patternTextureData;
         }
@@ -180,9 +179,9 @@ namespace Modules.PatternTexture
         }
 
         // 抽出した差分データを書き出し.
-        private PatternBlockData[] BitBlockTransfer(Texture2D texture, int blockSize, int padding, PatternTargetData[] dicingTargets, bool hasAlphaMap)
+        private PatternBlockData[] BitBlockTransfer(Texture2D texture, int blockSize, int padding, PatternTargetData[] patternTargetDatas, bool hasAlphaMap)
         {
-            var dicingDictionary = new Dictionary<int, PatternBlockData>();
+            var blockDataDictionary = new Dictionary<int, PatternBlockData>();
 
             var x_start = padding;
             var y_start = padding;
@@ -190,16 +189,16 @@ namespace Modules.PatternTexture
             var transX = x_start;
             var transY = y_start;
 
-            for (var i = 0; i < dicingTargets.Length; i++)
+            for (var i = 0; i < patternTargetDatas.Length; i++)
             {
-                var fileName = Path.GetFileName(AssetDatabase.GetAssetPath(dicingTargets[i].texture));
+                var fileName = Path.GetFileName(AssetDatabase.GetAssetPath(patternTargetDatas[i].texture));
                 var message = string.Format("Writing texture {0} ...", fileName);
 
-                EditorUtility.DisplayProgressBar("Please wait...", message, (float)i / dicingTargets.Length);
+                EditorUtility.DisplayProgressBar("Please wait...", message, (float)i / patternTargetDatas.Length);
 
-                foreach (var item in dicingTargets[i].blocks)
+                foreach (var item in patternTargetDatas[i].blocks)
                 {
-                    if (!dicingDictionary.ContainsKey(item.blockId))
+                    if (!blockDataDictionary.ContainsKey(item.blockId))
                     {
                         if (texture.width < transX + item.width + padding)
                         {
@@ -220,7 +219,7 @@ namespace Modules.PatternTexture
                         var compressedAlphaMap = alphaMap.Compress(); 
 
                         // ブロック情報を追加.
-                        var dicingBlockData = new PatternBlockData()
+                        var blockData = new PatternBlockData()
                         {
                             x = transX,
                             y = transY,
@@ -230,7 +229,7 @@ namespace Modules.PatternTexture
                             blockId = item.blockId,
                         };
 
-                        dicingDictionary.Add(item.blockId, dicingBlockData);
+                        blockDataDictionary.Add(item.blockId, blockData);
 
                         // 次の位置.
                         transX += item.width + padding;
@@ -242,7 +241,7 @@ namespace Modules.PatternTexture
 
             texture.Apply(true, false);
 
-            return dicingDictionary.Values.ToArray();
+            return blockDataDictionary.Values.ToArray();
         }
 
         // 補完時に周りのピクセル情報を巻き込まないように外周にピクセルを追加.

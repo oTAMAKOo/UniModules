@@ -14,7 +14,7 @@ namespace Modules.PatternTexture
 
         //----- field -----
 
-        private PatternTexture dicingTexture = null;
+        private PatternTexture patternTexture = null;
         private Texture2D[] sourceTextures = null;
         private float preViewSize = 0;
         private Vector2 scrollPosition = Vector2.zero;
@@ -48,7 +48,7 @@ namespace Modules.PatternTexture
         {
             EditorLayoutTools.SetLabelWidth(80f);
 
-            if (dicingTexture == null)
+            if (patternTexture == null)
             {
                 EditorGUILayout.HelpBox("No PatternTexture selected.", MessageType.Info);
                 return;
@@ -60,7 +60,7 @@ namespace Modules.PatternTexture
             {
                 GUILayout.Space(10f);
 
-                EditorGUILayout.ObjectField(instance.dicingTexture, typeof(PatternTexture), false, GUILayout.Width(400f));
+                EditorGUILayout.ObjectField(instance.patternTexture, typeof(PatternTexture), false, GUILayout.Width(400f));
 
                 GUILayout.FlexibleSpace();
 
@@ -214,7 +214,7 @@ namespace Modules.PatternTexture
             comp.onSelectAction = onSelectAction;
             comp.onCloseAction = onCloseAction;
             
-            comp.dicingTexture = patternTexture;
+            comp.patternTexture = patternTexture;
             comp.selectionTextureName = selection;
             comp.preViewSize = 200f;
 

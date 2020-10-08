@@ -313,11 +313,11 @@ namespace Modules.PatternTexture
 
             if (sourceTexture == null) { return false; }
 
-            var dicingSource = patternTexture.GetPatternData(textureName);
+            var patternData = patternTexture.GetPatternData(textureName);
 
-            if (dicingSource == null) { return false; }
+            if (patternData == null) { return false; }
 
-            if (sourceTexture.Width != dicingSource.Width || sourceTexture.Height != dicingSource.Height)
+            if (sourceTexture.Width != patternData.Width || sourceTexture.Height != patternData.Height)
             {
                 return false;
             }
