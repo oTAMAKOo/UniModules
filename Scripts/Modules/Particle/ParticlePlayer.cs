@@ -53,17 +53,17 @@ namespace Modules.Particle
             public ParticlePlayerSortingOrder SortingOrder { get; private set; }
             public float StartRotation { get; private set; }
             public float DefaultSpeed { get; private set; }
-            public bool IsSubemitter { get; private set; }
+            public bool IsSubEmitter { get; private set; }
             public LifecycleType LifeCycle { get; set; }
 
-            public ParticleInfo(ParticleSystem particleSystem, bool isSubemitter)
+            public ParticleInfo(ParticleSystem particleSystem, bool isSubEmitter)
             {
                 ParticleSystem = particleSystem;
                 StartRotation = particleSystem.main.startRotationMultiplier;
                 Renderer = particleSystem.GetComponent<ParticleSystemRenderer>();
                 SortingOrder = particleSystem.GetComponent<ParticlePlayerSortingOrder>();
                 DefaultSpeed = particleSystem.main.simulationSpeed;
-                IsSubemitter = isSubemitter;
+                IsSubEmitter = isSubEmitter;
                 LifeCycle = LifecycleType.None;
             }
         }
@@ -587,7 +587,7 @@ namespace Modules.Particle
                 particleSystem.Simulate(time, false, false);
 
                 // 状態更新.
-                var playback = particleSystem.IsPlayback(particleInfo.IsSubemitter);
+                var playback = particleSystem.IsPlayback(particleInfo.IsSubEmitter);
 
                 switch (particleInfo.LifeCycle)
                 {
@@ -674,7 +674,7 @@ namespace Modules.Particle
                         {
                             var info = particleInfos[i];
 
-                            result |= info.ParticleSystem.IsPlayback(info.IsSubemitter);
+                            result |= info.ParticleSystem.IsPlayback(info.IsSubEmitter);
                         }
                     }
                     break;
@@ -693,9 +693,9 @@ namespace Modules.Particle
             var descendants = gameObject.DescendantsAndSelf().ToArray();
 
             var particleSystems = descendants.OfComponent<ParticleSystem>().ToArray();
-            var subemitters = particleSystems.SelectMany(x => x.GetSubemitters()).ToArray();
+            var subEmitters = particleSystems.SelectMany(x => x.GetSubemitters()).ToArray();
 
-            particleInfos = particleSystems.Select(x => new ParticleInfo(x, subemitters.Any(y => y == x))).ToArray();
+            particleInfos = particleSystems.Select(x => new ParticleInfo(x, subEmitters.Any(y => y == x))).ToArray();
 
             // Apply Settings.
             foreach (var ps in particleInfos)
