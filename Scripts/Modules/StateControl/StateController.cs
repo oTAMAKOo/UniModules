@@ -1,4 +1,5 @@
 ﻿
+using UnityEngine;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -21,6 +22,10 @@ namespace Modules.StateControl
 
         private IDisposable changeStateDisposable = null;
 
+        private Subject<T> onChangeStateStart = null;
+
+        private Subject<T> onChangeStateFinish = null;
+
         //----- property -----
 
         public T Current { get { return currentState != null ? currentState.Type : default; } }
@@ -42,7 +47,7 @@ namespace Modules.StateControl
             if (stateInstance == null)
             {
                 stateInstance = new State<T>(state);
-                
+
                 stateTable[state] = stateInstance;
             }
 
@@ -93,16 +98,19 @@ namespace Modules.StateControl
             // ※ changeStateDisposableで実行中判定しようとすると中でyield breakしているだけの場合Subscribeが先に呼ばれてしまう為実行中フラグで管理する.
 
             changeStateDisposable = Observable.FromCoroutine(() => ChangeState(next, argument))
+                .ObserveOnMainThread()
                 .Subscribe(_ =>
-                    {
-                        changeStateDisposable = null;
-                        IsExecute = false;
-                    })
+                   {
+                       changeStateDisposable = null;
+                       IsExecute = false;
+                   })
                 .AddTo(Disposable);
         }
-
+        
         private IEnumerator ChangeState<TArgument>(T next, TArgument argument) where TArgument : StateArgument
         {
+            var prev = Current;
+
             var prevState = currentState;
 
             var nextState = stateTable.GetValueOrDefault(next);
@@ -112,15 +120,25 @@ namespace Modules.StateControl
                 throw new KeyNotFoundException(string.Format("This state is not registered. Type: {0}", next));
             }
 
+            if (onChangeStateStart != null)
+            {
+                onChangeStateStart.OnNext(next);
+            }
+
             // 前のステートの終了待ち.
 
             if (prevState != null)
             {
-                var exitYield = Exit(prevState, nextState.Type).ToYieldInstruction();
+                var exitYield = Exit(prevState, nextState.Type).ToYieldInstruction(true);
 
                 while (!exitYield.IsDone)
                 {
                     yield return null;
+                }
+
+                if (exitYield.HasError)
+                {
+                    Debug.LogException(exitYield.Error);
                 }
             }
 
@@ -130,11 +148,21 @@ namespace Modules.StateControl
 
             // ステートの開始.
 
-            var enterYield = Enter(currentState, argument).ToYieldInstruction();
+            var enterYield = Enter(currentState, argument).ToYieldInstruction(true);
 
             while (!enterYield.IsDone)
             {
                 yield return null;
+            }
+
+            if (enterYield.HasError)
+            {
+                Debug.LogException(enterYield.Error);
+            }
+
+            if (onChangeStateFinish != null)
+            {
+                onChangeStateFinish.OnNext(prev);
             }
         }
 
@@ -146,7 +174,7 @@ namespace Modules.StateControl
             var count = 0;
 
             var enterFunctions = state.GetEnterFunctions();
-            
+
             do
             {
                 count = enterFunctions.Count;
@@ -164,16 +192,21 @@ namespace Modules.StateControl
                     {
                         var func = function;
 
-                        var observer = Observable.Defer(() => Observable.FromCoroutine(() => func(argument)));
+                        var observer = Observable.Defer(() => Observable.FromCoroutine(() => func(argument)).ObserveOnMainThread());
 
                         observers.Add(observer);
                     }
 
-                    var enterYield = observers.WhenAll().ToYieldInstruction();
+                    var enterYield = observers.WhenAll().ToYieldInstruction(true);
 
                     while (!enterYield.IsDone)
                     {
                         yield return null;
+                    }
+
+                    if (enterYield.HasError)
+                    {
+                        Debug.LogException(enterYield.Error);
                     }
 
                     finishedPriority = enterFunction.Key;
@@ -213,16 +246,21 @@ namespace Modules.StateControl
                     {
                         var func = function;
 
-                        var observer = Observable.Defer(() => Observable.FromCoroutine(() => func(nextState)));
+                        var observer = Observable.Defer(() => Observable.FromCoroutine(() => func(nextState)).ObserveOnMainThread());
 
                         observers.Add(observer);
                     }
 
-                    var enterYield = observers.WhenAll().ToYieldInstruction();
+                    var exitYield = observers.WhenAll().ToYieldInstruction(true);
 
-                    while (!enterYield.IsDone)
+                    while (!exitYield.IsDone)
                     {
                         yield return null;
+                    }
+
+                    if (exitYield.HasError)
+                    {
+                        Debug.LogException(exitYield.Error);
                     }
 
                     finishedPriority = exitFunction.Key;
@@ -234,6 +272,24 @@ namespace Modules.StateControl
                 exitFunctions = state.GetExitFunctions();
             }
             while (count != exitFunctions.Count);
+        }
+
+        /// <summary>
+        /// 遷移開始時のイベント.
+        /// </summary>
+        /// <returns> 遷移先のState </returns>
+        public IObservable<T> OnChangeStateStartAsObservable()
+        {
+            return onChangeStateStart ?? (onChangeStateStart = new Subject<T>());
+        }
+
+        /// <summary>
+        /// 遷移完了時のイベント.
+        /// </summary>
+        /// <returns> 遷移元のState </returns>
+        public IObservable<T> OnChangeStateFinishAsObservable()
+        {
+            return onChangeStateFinish ?? (onChangeStateFinish = new Subject<T>());
         }
     }
 }
