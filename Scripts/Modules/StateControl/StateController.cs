@@ -192,7 +192,7 @@ namespace Modules.StateControl
                     {
                         var func = function;
 
-                        var observer = Observable.Defer(() => Observable.FromCoroutine(() => func(argument)).ObserveOnMainThread());
+                        var observer = Observable.Defer(() => Observable.FromCoroutine(() => func(argument)));
 
                         observers.Add(observer);
                     }
@@ -246,7 +246,7 @@ namespace Modules.StateControl
                     {
                         var func = function;
 
-                        var observer = Observable.Defer(() => Observable.FromCoroutine(() => func(nextState)).ObserveOnMainThread());
+                        var observer = Observable.Defer(() => Observable.FromCoroutine(() => func(nextState)));
 
                         observers.Add(observer);
                     }
