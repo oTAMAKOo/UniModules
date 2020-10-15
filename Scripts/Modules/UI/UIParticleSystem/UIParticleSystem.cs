@@ -25,6 +25,8 @@ namespace Modules.UI.Particle
         private Texture particleTexture = null;
         private Material particleMaterial = null;
 
+        private Material originMaterial = null;
+
         private ParticleSystem.Particle[] particles = null;
 
         private ParticleSystem.TextureSheetAnimationModule textureSheetAnimation;
@@ -132,9 +134,14 @@ namespace Modules.UI.Particle
             
             if (useOverrideMaterial)
             {
-                if (particleMaterial != null)
+                if (originMaterial != null)
                 {
-                    if (particleMaterial.shader != particleSystemRenderer.sharedMaterial.shader)
+                    var materialReset = false;
+
+                    materialReset |= originMaterial != particleSystemRenderer.sharedMaterial;
+                    materialReset |= originMaterial.shader != particleSystemRenderer.sharedMaterial.shader;
+
+                    if (materialReset)
                     {
                         ResetParticleMaterial();
                     }
@@ -147,6 +154,8 @@ namespace Modules.UI.Particle
                         name = string.Format("{0}(UIParticleSystem)", particleSystemRenderer.sharedMaterial.name),
                         hideFlags = HideFlags.HideInInspector,
                     };
+
+                    originMaterial = particleSystemRenderer.sharedMaterial;
                 }
 
                 material = particleMaterial;
@@ -370,7 +379,9 @@ namespace Modules.UI.Particle
         public void ResetParticleMaterial()
         {
             UnityUtility.SafeDelete(particleMaterial);
+
             particleMaterial = null;
+            originMaterial = null;
         }
 
         #region Quad
