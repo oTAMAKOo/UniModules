@@ -152,7 +152,6 @@ namespace Modules.UI.Particle
                     particleMaterial = new Material(particleSystemRenderer.sharedMaterial)
                     {
                         name = string.Format("{0}(UIParticleSystem)", particleSystemRenderer.sharedMaterial.name),
-                        hideFlags = HideFlags.HideInInspector,
                     };
 
                     originMaterial = particleSystemRenderer.sharedMaterial;
