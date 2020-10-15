@@ -58,8 +58,7 @@ namespace Modules.UI.Particle
             {
                 if (useOverrideMaterial != value)
                 {
-                    UnityUtility.SafeDelete(particleMaterial);
-                    particleMaterial = null;
+                    ResetParticleMaterial();
                 }
 
                 useOverrideMaterial = value;
@@ -137,8 +136,7 @@ namespace Modules.UI.Particle
                 {
                     if (particleMaterial.shader != particleSystemRenderer.sharedMaterial.shader)
                     {
-                        UnityUtility.SafeDelete(particleMaterial);
-                        particleMaterial = null;
+                        ResetParticleMaterial();
                     }
                 }
 
@@ -146,12 +144,10 @@ namespace Modules.UI.Particle
                 {
                     particleMaterial = new Material(particleSystemRenderer.sharedMaterial)
                     {
+                        name = string.Format("{0}(UIParticleSystem)", particleSystemRenderer.sharedMaterial.name),
                         hideFlags = HideFlags.HideInInspector,
                     };
                 }
-                
-                particleMaterial.name = string.Format("{0}(UIParticleSystem)", particleSystemRenderer.sharedMaterial.name);
-                particleMaterial.CopyPropertiesFromMaterial(particleSystemRenderer.sharedMaterial);
 
                 material = particleMaterial;
             }
@@ -240,12 +236,12 @@ namespace Modules.UI.Particle
         private UIVertex[] GenerateStretchedMesh(Color32 meshColor, Vector2 size, Vector2 position, float rotation, Vector4 uv, int particleId)
         {
             var velocity = particles[particleId].velocity;
-            var scalefactor = CalculateScale(velocity);
+            var scaleFactor = CalculateScale(velocity);
 
             var width = size.x;
             var height = CalculateHeight(size, velocity);
 
-            var quad = GenerateModel(width, height, scalefactor, meshColor, uv);
+            var quad = GenerateModel(width, height, scaleFactor, meshColor, uv);
             var finalAngle = CalculateAngle(velocity, rotation);
 
             quad = ApplyPositionAndRotationTransform(quad, position, finalAngle);
@@ -272,9 +268,9 @@ namespace Modules.UI.Particle
             var v3M = velocity.magnitude;
             var v2M = Math.Sqrt(cubeX + cubeY);
 
-            var scalefactor = (float)v2M / v3M;
+            var scaleFactor = (float)v2M / v3M;
 
-            return scalefactor;
+            return scaleFactor;
         }
 
         private static float CalculateAngle(Vector3 velocity, float rotation)
@@ -369,6 +365,12 @@ namespace Modules.UI.Particle
             }
 
             return result;
+        }
+
+        public void ResetParticleMaterial()
+        {
+            UnityUtility.SafeDelete(particleMaterial);
+            particleMaterial = null;
         }
 
         #region Quad
