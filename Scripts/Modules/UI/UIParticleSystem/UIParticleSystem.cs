@@ -19,7 +19,11 @@ namespace Modules.UI.Particle
 
         //----- field -----
 
+        [SerializeField]
+        private bool useOverrideMaterial = false;
+
         private Texture particleTexture = null;
+        private Material particleMaterial = null;
 
         private ParticleSystem.Particle[] particles = null;
 
@@ -41,10 +45,25 @@ namespace Modules.UI.Particle
         {
             get { return particleTexture; }
         }
-
+        
         public ParticleSystem ParticleSystem
         {
             get { return GetParticleSystem(); }
+        }
+
+        public bool UseOverrideMaterial
+        {
+            get { return useOverrideMaterial; }
+            set
+            {
+                if (useOverrideMaterial != value)
+                {
+                    UnityUtility.SafeDelete(particleMaterial);
+                    particleMaterial = null;
+                }
+
+                useOverrideMaterial = value;
+            }
         }
 
         //----- method -----
@@ -54,6 +73,15 @@ namespace Modules.UI.Particle
             base.OnEnable();
 
             Initialize();
+
+            particleMaterial = null;
+        }
+
+        protected override void OnDestroy()
+        {
+            base.OnDestroy();
+
+            UnityUtility.SafeDelete(particleMaterial);
         }
 
         private void Initialize()
@@ -84,7 +112,7 @@ namespace Modules.UI.Particle
 
             raycastTarget = false;
 
-            // desable particle renderer.
+            // disable particle renderer.
             var particleSystemRenderer = GetParticleSystemRenderer();
 
             particleSystemRenderer.enabled = false;
@@ -102,14 +130,37 @@ namespace Modules.UI.Particle
         private void UpdateRenderingSource()
         {
             var particleSystemRenderer = GetParticleSystemRenderer();
+            
+            if (useOverrideMaterial)
+            {
+                if (particleMaterial != null)
+                {
+                    if (particleMaterial.shader != particleSystemRenderer.sharedMaterial.shader)
+                    {
+                        UnityUtility.SafeDelete(particleMaterial);
+                        particleMaterial = null;
+                    }
+                }
 
-            material = Application.isPlaying ?
-                particleSystemRenderer.material :
-                particleSystemRenderer.sharedMaterial;
+                if (particleMaterial == null)
+                {
+                    particleMaterial = new Material(particleSystemRenderer.sharedMaterial)
+                    {
+                        hideFlags = HideFlags.HideInInspector,
+                    };
+                }
+                
+                particleMaterial.name = string.Format("{0}(UIParticleSystem)", particleSystemRenderer.sharedMaterial.name);
+                particleMaterial.CopyPropertiesFromMaterial(particleSystemRenderer.sharedMaterial);
 
-            particleTexture = material != null && material.mainTexture != null ?
-                material.mainTexture :
-                Texture2D.whiteTexture;
+                material = particleMaterial;
+            }
+            else
+            {
+                material = particleSystemRenderer.sharedMaterial;
+            }
+
+            particleTexture = material != null && material.mainTexture != null ? material.mainTexture : Texture2D.whiteTexture;
         }
 
         protected override void OnPopulateMesh(VertexHelper vh)
@@ -374,7 +425,7 @@ namespace Modules.UI.Particle
             return quad;
         }
 
-        private static UIVertex[] GenerateModel(float width, float height, float scalefactor, Color32 color, Vector4 uv)
+        public static UIVertex[] GenerateModel(float width, float height, float scalefactor, Color32 color, Vector4 uv)
         {
             var quad = new UIVertex[4];
             var halfWidth = width / 2;

@@ -1,5 +1,8 @@
 ﻿
+using UnityEngine;
 using UnityEditor;
+using Extensions;
+using Extensions.Devkit;
 
 namespace Modules.UI.Particle
 {
@@ -14,6 +17,20 @@ namespace Modules.UI.Particle
 
         //----- method -----
 
-        public override void OnInspectorGUI(){}
+        public override void OnInspectorGUI()
+        {
+            var instance = target as UIParticleSystem;
+
+            EditorGUI.BeginChangeCheck();
+
+            var useOverrideMaterial = EditorGUILayout.Toggle("Use Override Material", instance.UseOverrideMaterial);
+
+            if (EditorGUI.EndChangeCheck())
+            {
+                UnityEditorUtility.RegisterUndo("UIParticleSystemInspector-Undo", instance);
+
+                instance.UseOverrideMaterial = useOverrideMaterial;
+            }
+        }
     }
 }
