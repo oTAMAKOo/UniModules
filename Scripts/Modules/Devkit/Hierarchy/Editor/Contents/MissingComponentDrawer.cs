@@ -15,7 +15,7 @@ namespace Modules.Devkit.Hierarchy
 
         private static readonly Vector2 MissingIconSize = new Vector2(16f, 14f);
 
-        private const int UpdateInterval = 1000;
+        private const int UpdateInterval = 3000;
 
         public static class Prefs
         {
