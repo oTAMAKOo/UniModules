@@ -68,6 +68,11 @@ namespace Modules.Devkit.Hierarchy
             }
         }
 
+        public T GetDrawer<T>() where T : ItemContentDrawer
+        {
+            return drawerList.FirstOrDefault(x => x is T) as T;
+        }
+
         public T AddDrawer<T>() where T : ItemContentDrawer
         {
             var drawer = Activator.CreateInstance<T>() as ItemContentDrawer;

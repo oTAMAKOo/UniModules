@@ -17,15 +17,15 @@ using SoftMasking;
 
 namespace Modules.Devkit.Hierarchy
 {
-    public sealed class ComponentIconDrawer : ItemContentDrawer
+    public class ComponentIconDrawer : ItemContentDrawer
     {
         //----- params -----
 
         private const float MissingIconSize = 16f;
 
         private const float ComponentIconSize = 13f;
-        
-        private static readonly Type[] DefaultDrawIconTypes = new Type[]
+
+        public static readonly Type[] DefaultDrawIconTypes = new Type[]
         {
             typeof(Camera),
             typeof(ParticleSystem),
@@ -131,19 +131,41 @@ namespace Modules.Devkit.Hierarchy
 
         public void SetDisplayIconTypes(Type[] displayTypes)
         {
-            iconGUIContentDictionary.Clear();
-
             foreach (var type in displayTypes)
             {
-                if (type == null){ continue; }
+                if (type == null) { continue; }
 
                 var content = EditorGUIUtility.ObjectContent(null, type.UnderlyingSystemType);
 
-                if (content == null){ continue; }
+                if (content == null) { continue; }
 
                 if (content.image == null) { continue; }
 
                 iconGUIContentDictionary.Add(type, new GUIContent(content.image));
+            }
+        }
+
+        public void SetCustomDisplayIconTypes(Dictionary<Type, string> displayInfos)
+        {
+            foreach (var info in displayInfos)
+            {
+                var type = info.Key;
+                var assetPath = info.Value;
+
+                var texture = AssetDatabase.LoadMainAssetAtPath(assetPath) as Texture;
+
+                if (texture != null)
+                {
+                    iconGUIContentDictionary.Add(type, new GUIContent(texture));
+                }
+            }
+        }
+
+        public void Clear()
+        {
+            if (iconGUIContentDictionary != null)
+            {
+                iconGUIContentDictionary.Clear();
             }
         }
     }
