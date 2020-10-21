@@ -145,20 +145,18 @@ namespace Modules.Devkit.Hierarchy
             }
         }
 
-        public void SetCustomDisplayIconTypes(Dictionary<Type, string> displayInfos)
+        public void AddCustomDisplayType(Type type, string iconAssetPath)
         {
-            foreach (var info in displayInfos)
-            {
-                var type = info.Key;
-                var assetPath = info.Value;
+            var texture = AssetDatabase.LoadMainAssetAtPath(iconAssetPath) as Texture;
 
-                var texture = AssetDatabase.LoadMainAssetAtPath(assetPath) as Texture;
+            AddCustomDisplayType(type, texture);
+        }
 
-                if (texture != null)
-                {
-                    iconGUIContentDictionary.Add(type, new GUIContent(texture));
-                }
-            }
+        public void AddCustomDisplayType(Type type, Texture iconTextue)
+        {
+            if (iconTextue == null){ return; }
+
+            iconGUIContentDictionary.Add(type, new GUIContent(iconTextue));
         }
 
         public void Clear()
