@@ -154,9 +154,16 @@ namespace Modules.Devkit.Hierarchy
 
         public void AddCustomDisplayType(Type type, Texture iconTextue)
         {
-            if (iconTextue == null){ return; }
+            if (iconTextue == null) { return; }
 
-            iconGUIContentDictionary.Add(type, new GUIContent(iconTextue));
+            AddCustomDisplayType(type, new GUIContent(iconTextue));
+        }
+
+        public void AddCustomDisplayType(Type type, GUIContent iconContent)
+        {
+            if (iconContent == null) { return; }
+
+            iconGUIContentDictionary.Add(type, iconContent);
         }
 
         public void Clear()
