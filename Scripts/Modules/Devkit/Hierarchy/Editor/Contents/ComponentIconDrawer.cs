@@ -18,7 +18,7 @@ using SoftMasking;
 
 namespace Modules.Devkit.Hierarchy
 {
-    public sealed partial class ComponentIconDrawer : ItemContentDrawer
+    public sealed class ComponentIconDrawer : ItemContentDrawer
     {
         //----- params -----
 
