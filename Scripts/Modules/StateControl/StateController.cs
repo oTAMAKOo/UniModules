@@ -16,9 +16,9 @@ namespace Modules.StateControl
 
         //----- field -----
 
-        private State<T> currentState = null;
+        private StateNode<T> currentState = null;
 
-        private Dictionary<T, State<T>> stateTable = null;
+        private Dictionary<T, StateNode<T>> stateTable = null;
 
         private IDisposable changeStateDisposable = null;
 
@@ -36,17 +36,17 @@ namespace Modules.StateControl
 
         public StateController()
         {
-            stateTable = new Dictionary<T, State<T>>();
+            stateTable = new Dictionary<T, StateNode<T>>();
         }
 
         /// <summary> ノードを取得 </summary>
-        public State<T> Get(T state)
+        public StateNode<T> Get(T state)
         {
             var stateInstance = stateTable.GetValueOrDefault(state);
 
             if (stateInstance == null)
             {
-                stateInstance = new State<T>(state);
+                stateInstance = new StateNode<T>(state);
 
                 stateTable[state] = stateInstance;
             }
@@ -167,7 +167,7 @@ namespace Modules.StateControl
         }
 
         /// <summary> 開始処理実行 </summary>
-        private IEnumerator Enter<TArgument>(State<T> state, TArgument argument) where TArgument : StateArgument
+        private IEnumerator Enter<TArgument>(StateNode<T> state, TArgument argument) where TArgument : StateArgument
         {
             int? finishedPriority = null;
 
@@ -221,7 +221,7 @@ namespace Modules.StateControl
         }
 
         /// <summary> 終了処理実行 </summary>
-        private IEnumerator Exit(State<T> state, T nextState)
+        private IEnumerator Exit(StateNode<T> state, T nextState)
         {
             int? finishedPriority = null;
 

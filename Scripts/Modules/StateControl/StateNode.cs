@@ -9,7 +9,7 @@ namespace Modules.StateControl
 {
     public abstract class StateArgument { }
 
-    public sealed class State<T> where T : Enum
+    public sealed class StateNode<T> where T : Enum
     {
         //----- params -----
 
@@ -25,7 +25,7 @@ namespace Modules.StateControl
 
         //----- method -----
 
-        public State(T state)
+        public StateNode(T state)
         {
             Type = state;
 
