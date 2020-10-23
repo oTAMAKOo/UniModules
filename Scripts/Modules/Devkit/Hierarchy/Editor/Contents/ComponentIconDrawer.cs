@@ -6,6 +6,7 @@ using UnityEditor;
 using System;
 using System.Linq;
 using System.Collections.Generic;
+using TMPro;
 using Extensions;
 using Modules.Devkit.Prefs;
 
@@ -17,7 +18,7 @@ using SoftMasking;
 
 namespace Modules.Devkit.Hierarchy
 {
-    public class ComponentIconDrawer : ItemContentDrawer
+    public sealed class ComponentIconDrawer : ItemContentDrawer
     {
         //----- params -----
 
@@ -27,10 +28,14 @@ namespace Modules.Devkit.Hierarchy
 
         public static readonly Type[] DefaultDrawIconTypes = new Type[]
         {
+            //----- Standard -----
+
             typeof(Camera),
             typeof(ParticleSystem),
             typeof(Animator),
             typeof(EventSystem),
+
+            //----- uGUI -----
 
             typeof(Canvas),
             typeof(Text),
@@ -53,6 +58,12 @@ namespace Modules.Devkit.Hierarchy
             typeof(HorizontalLayoutGroup),
             typeof(VerticalLayoutGroup),
             typeof(GridLayoutGroup),
+
+            //----- TextMeshPro -----
+
+            typeof(TextMeshProUGUI),
+
+            //----- SoftMask -----
 
             #if ENABLE_SOFT_MASK
 
