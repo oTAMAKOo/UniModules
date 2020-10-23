@@ -18,7 +18,7 @@ using SoftMasking;
 
 namespace Modules.Devkit.Hierarchy
 {
-    public sealed class ComponentIconDrawer : ItemContentDrawer
+    public sealed partial class ComponentIconDrawer : ItemContentDrawer
     {
         //----- params -----
 
@@ -28,8 +28,6 @@ namespace Modules.Devkit.Hierarchy
 
         public static readonly Type[] DefaultDrawIconTypes = new Type[]
         {
-            //----- Standard -----
-
             typeof(Camera),
             typeof(ParticleSystem),
             typeof(Animator),
@@ -59,10 +57,6 @@ namespace Modules.Devkit.Hierarchy
             typeof(VerticalLayoutGroup),
             typeof(GridLayoutGroup),
 
-            //----- TextMeshPro -----
-
-            typeof(TextMeshProUGUI),
-
             //----- SoftMask -----
 
             #if ENABLE_SOFT_MASK
@@ -70,6 +64,15 @@ namespace Modules.Devkit.Hierarchy
             typeof(SoftMask),
 
             #endif
+        };
+
+        private const string TextMeshProPackageAssetPath = "Packages/com.unity.textmeshpro/Editor Resources/Gizmos/";
+
+        public static readonly Dictionary<Type, string> TextMeshProIconInfoTable = new Dictionary<Type, string>
+        {
+            { typeof(TMP_Dropdown), "TMP - Dropdown Icon.psd" },
+            { typeof(TMP_InputField), "TMP - Input Field Icon.psd" },
+            { typeof(TextMeshProUGUI), "TMP - Text Component Icon.psd" },
         };
 
         public static class Prefs
@@ -98,6 +101,7 @@ namespace Modules.Devkit.Hierarchy
             iconGUIContentDictionary = new Dictionary<Type, GUIContent>();
 
             SetDisplayIconTypes(DefaultDrawIconTypes);
+            RegisterTextMeshProTypes();
         }
 
         public override Rect Draw(GameObject targetObject, Rect rect)
@@ -182,6 +186,18 @@ namespace Modules.Devkit.Hierarchy
             if (iconGUIContentDictionary != null)
             {
                 iconGUIContentDictionary.Clear();
+            }
+        }
+
+        public void RegisterTextMeshProTypes()
+        {
+            foreach (var item in TextMeshProIconInfoTable)
+            {
+                var iconAssetPath = TextMeshProPackageAssetPath + item.Value;
+
+                var texture = AssetDatabase.LoadAssetAtPath(iconAssetPath, typeof(Texture2D)) as Texture2D;
+
+                AddCustomDisplayType(item.Key, texture);
             }
         }
     }
