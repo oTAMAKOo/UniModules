@@ -284,6 +284,17 @@ namespace Extensions
         }
 
         /// <summary>
+        /// 指定したインデックス位置にある要素を返します.
+        /// インデックスが範囲外の場合は既定値を返します.
+        /// </summary>
+        public static T ElementAtOrDefault<T>(this IEnumerable<T> source, int index, T defaultValue)
+        {
+            var array = source.ToArray();
+
+            return index >= 0 && index < array.Length ? array[index] : defaultValue;
+        }
+
+        /// <summary>
         /// 最小値を持つ要素を返します.
         /// </summary>
         public static TSource FindMin<TSource, TResult>(this IEnumerable<TSource> source, Func<TSource, TResult> selector)
