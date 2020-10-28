@@ -6,7 +6,7 @@ using Newtonsoft.Json;
 
 namespace Extensions
 {
-    public static class PlayerPrefsEx
+    public static class SecurePrefs
     {
         private const string PrefsKey = "Sa0HbfDqeF6hw4s1";
 
@@ -14,7 +14,7 @@ namespace Extensions
 
         public static void SetAesManaged(AesManaged aesManaged)
         {
-            PlayerPrefsEx.aesManaged = aesManaged;
+            SecurePrefs.aesManaged = aesManaged;
         }
 
         //====== Utility ======
