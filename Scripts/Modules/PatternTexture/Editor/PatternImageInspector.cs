@@ -84,7 +84,7 @@ namespace Modules.PatternTexture
 
             if (!hasAlphaMap)
             {
-                EditorGUILayout.HelpBox("Require generate alpha map for raycastTarget", MessageType.Info);
+                EditorGUILayout.HelpBox("Require generate alpha map for RaycastTarget", MessageType.Info);
             }
 
             // CrossFade.
