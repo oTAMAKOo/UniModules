@@ -24,6 +24,7 @@ using Modules.Devkit.SceneImporter;
 using Modules.Devkit.SceneLaunch;
 using Modules.Devkit.Hierarchy;
 using Modules.Devkit.AssetTuning;
+using Modules.Devkit.U2D;
 
 #if ENABLE_CRIWARE_ADX || ENABLE_CRIWARE_SOFDEC
 
@@ -467,37 +468,43 @@ namespace Modules
             SceneLaunchWindow.Open();
         }
 
-        [MenuItem(itemName: WindowsMenu + "Open ProjectPinWindow", priority = 1)]
+        [MenuItem(itemName: WindowsMenu + "Open RaycastViewerWindow", priority = 1)]
+        public static void OpenRaycastViewerWindow()
+        {
+            RaycastViewerWindow.Open();
+        }
+
+        [MenuItem(itemName: WindowsMenu + "Open ProjectPinWindow", priority = 2)]
         public static void OpenProjectPinWindow()
         {
             ProjectPinningWindow.Open();
         }
 
-        [MenuItem(itemName: WindowsMenu + "Open HierarchyPinWindow", priority = 2)]
+        [MenuItem(itemName: WindowsMenu + "Open HierarchyPinWindow", priority = 3)]
         public static void OpenHierarchyPinWindow()
         {
             HierarchyPinningWindow.Open();
         }
 
-        [MenuItem(itemName: WindowsMenu + "Open AssetDependenciesWindow", priority = 3)]
+        [MenuItem(itemName: WindowsMenu + "Open AssetDependenciesWindow", priority = 4)]
         public static void OpenAssetDependenciesWindow()
         {
             AssetDependenciesWindow.Open();
         }
 
-        [MenuItem(itemName: WindowsMenu + "Open CleanDirectoryWindow", priority = 4)]
+        [MenuItem(itemName: WindowsMenu + "Open CleanDirectoryWindow", priority = 5)]
         public static void OpenCleanDirectoryWindow()
         {
             CleanDirectoryWindow.Open();
         }
 
-        [MenuItem(itemName: WindowsMenu + "Open ShaderVariantWindow", priority = 5)]
+        [MenuItem(itemName: WindowsMenu + "Open ShaderVariantWindow", priority = 6)]
         public static void OpenShaderVariantUpdateWindow()
         {
             ShaderVariantUpdateWindow.Open();
         }
 
-        [MenuItem(itemName: WindowsMenu + "Open BehaviorControlMonitor", priority = 5)]
+        [MenuItem(itemName: WindowsMenu + "Open BehaviorControlMonitor", priority = 7)]
         public static void OpenBehaviorControlMonitor()
         {
             BehaviorControlMonitor.Open();

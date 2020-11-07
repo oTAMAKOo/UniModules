@@ -66,14 +66,25 @@ namespace Modules.PatternTexture
             }
 
             // RaycastTarget.
-            EditorGUI.BeginChangeCheck();
 
-            var raycastTarget = EditorGUILayout.Toggle("RaycastTarget", instance.RaycastTarget);
+            var hasAlphaMap = instance.PatternTexture.HasAlphaMap;
 
-            if (EditorGUI.EndChangeCheck())
+            using (new DisableScope(!hasAlphaMap))
             {
-                UnityEditorUtility.RegisterUndo("PatternImageInspector-Undo", instance);
-                instance.RaycastTarget = raycastTarget;
+                EditorGUI.BeginChangeCheck();
+
+                var raycastTarget = EditorGUILayout.Toggle("RaycastTarget", instance.RaycastTarget);
+
+                if (EditorGUI.EndChangeCheck())
+                {
+                    UnityEditorUtility.RegisterUndo("PatternImageInspector-Undo", instance);
+                    instance.RaycastTarget = raycastTarget;
+                }
+            }
+
+            if (!hasAlphaMap)
+            {
+                EditorGUILayout.HelpBox("Require generate alpha map for raycastTarget", MessageType.Info);
             }
 
             // CrossFade.
