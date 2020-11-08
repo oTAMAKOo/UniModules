@@ -83,6 +83,8 @@ namespace Modules.Devkit.U2D
                         {
                             var gameObject = raycastResult.gameObject;
 
+                            if (UnityUtility.IsNull(gameObject)){ continue; }
+
                             var thumbnail = (Texture)AssetPreview.GetMiniThumbnail(gameObject);
 
                             using (new EditorGUILayout.HorizontalScope())
