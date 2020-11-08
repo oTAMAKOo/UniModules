@@ -60,12 +60,12 @@ namespace Modules.Devkit.U2D
 
             if (Application.isPlaying)
             {
+                // 削除されたオブジェクトを除外.
+                raycastResults = raycastResults.Where(x => !UnityUtility.IsNull(x.gameObject)).ToArray();
+
                 if (raycastResults.Any())
                 {
                     GUILayout.Space(3f);
-
-                    
-                    GUILayout.Space(2f);
 
                     var labelStyle = new GUIStyle(GUI.skin.label);
 
@@ -82,8 +82,6 @@ namespace Modules.Devkit.U2D
                         foreach (var raycastResult in raycastResults)
                         {
                             var gameObject = raycastResult.gameObject;
-
-                            if (UnityUtility.IsNull(gameObject)){ continue; }
 
                             var thumbnail = (Texture)AssetPreview.GetMiniThumbnail(gameObject);
 
