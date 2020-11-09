@@ -6,7 +6,7 @@ using UnityEditorInternal;
 using UniRx;
 using Modules.Devkit.Prefs;
 
-namespace Modules.Devkit.CompileNotice
+namespace Modules.Devkit.AssemblyCompilation
 {
     public static class CompileNotificationPrefs
     {

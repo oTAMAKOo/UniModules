@@ -7,7 +7,7 @@ using System.Collections.Generic;
 using UniRx;
 using Extensions;
 using Extensions.Devkit;
-using Modules.Devkit.CompileNotice;
+using Modules.Devkit.AssemblyCompilation;
 
 namespace Modules.GameText.Components
 {

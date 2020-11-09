@@ -11,7 +11,7 @@ using Modules.ExternalResource.Editor;
 using Modules.BehaviorControl;
 using Modules.Devkit.AssetBundles;
 using Modules.Devkit.AssetDependencies;
-using Modules.Devkit.CompileNotice;
+using Modules.Devkit.AssemblyCompilation;
 using Modules.Devkit.Generators;
 using Modules.Devkit.Pinning;
 using Modules.Devkit.Build;
