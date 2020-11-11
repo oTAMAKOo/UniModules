@@ -315,8 +315,10 @@ namespace Modules.Devkit.Pinning
                 {
                     pinning.Remove(item);
                 }
-
-                var newItem = new PinnedItem() { target = obj };
+                else
+                {
+                    item = new PinnedItem() { target = obj };
+                }
 
                 if (adjacentObject != null && pinning.Any())
                 {
@@ -324,11 +326,11 @@ namespace Modules.Devkit.Pinning
 
                     var index = Mathf.Clamp(insertion, 0, pinning.Count);
 
-                    pinning.Insert(index, newItem);
+                    pinning.Insert(index, item);
                 }
                 else
                 {
-                    pinning.Add(newItem);
+                    pinning.Add(item);
                 }
             }
 
