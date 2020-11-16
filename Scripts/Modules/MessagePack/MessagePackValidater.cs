@@ -1,6 +1,7 @@
 ﻿
 using UnityEngine;
 using System;
+using System.Collections.Generic;
 using MessagePack;
 
 namespace Modules.MessagePack
@@ -16,8 +17,20 @@ namespace Modules.MessagePack
         {
             if (!Debug.isDebugBuild) { return; }
 
-            // 値型, クラス型, Enum, 文字列は除外.
-            if (type.IsValueType || !type.IsClass || type.IsEnum || type == typeof(string)) { return; }
+            // 配列.
+            if (type.IsArray)
+            {
+                type = type.GetElementType();
+            }
+
+            // リスト.
+            if (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(List<>))
+            {
+                type = type.GetGenericArguments()[0];
+            }
+
+            // 値型, Enum, 文字列は除外.
+            if (type.IsValueType || type.IsEnum || type == typeof(string)) { return; }
 
             var attribute = Attribute.GetCustomAttribute(type, typeof(MessagePackObjectAttribute), false) as MessagePackObjectAttribute;
 

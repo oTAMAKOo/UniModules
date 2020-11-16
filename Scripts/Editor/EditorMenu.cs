@@ -1,5 +1,7 @@
 ﻿
+using UnityEngine;
 using UnityEditor;
+using Extensions;
 
 // Modules.
 using Modules.PatternTexture;
@@ -29,7 +31,6 @@ using Modules.Devkit.U2D;
 #if ENABLE_CRIWARE_ADX || ENABLE_CRIWARE_SOFDEC
 
 using Modules.CriWare.Editor;
-using Modules.SoundManagement.Editor;
 
 #endif
 
@@ -524,6 +525,47 @@ namespace Modules
         public static void OpenBuiltInAssetsWindow()
         {
             BuiltInAssetsWindow.Open();
+        }
+
+        #endregion
+
+        //===============================================================
+        //  Directory.
+        //===============================================================
+
+        #region Directory
+
+        protected const string DirectoryMenu = MenuRoot + "Directory/";
+
+        [MenuItem(itemName: DirectoryMenu + "Open PersistentDataPath", priority = 0)]
+        public static void OpenPersistentDataPath()
+        {
+            OpenDirectory(Application.persistentDataPath);
+        }
+
+        [MenuItem(itemName: DirectoryMenu + "Open TemporaryCachePath", priority = 1)]
+        public static void OpenTemporaryCachePath()
+        {
+            OpenDirectory(Application.temporaryCachePath);
+        }
+
+        [MenuItem(itemName: DirectoryMenu + "Open StreamingAssetsPath", priority = 2)]
+        private static void OpenStreamingAssetsPath()
+        {
+            OpenDirectory(Application.streamingAssetsPath);
+        }
+
+        [MenuItem(itemName: DirectoryMenu + "Open OpenConsoleLogPath", priority = 3)]
+        private static void OpenConsoleLogPath()
+        {
+            OpenDirectory(Application.consoleLogPath);
+        }
+
+        private static void OpenDirectory(string path)
+        {
+            path = PathUtility.ConvertPathSeparator(path);
+
+            EditorUtility.RevealInFinder(path);
         }
 
         #endregion
