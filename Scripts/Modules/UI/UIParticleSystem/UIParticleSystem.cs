@@ -352,7 +352,11 @@ namespace Modules.UI.Particle
 
                         var row = animModule.rowIndex;
 
+                        #if UNITY_2019_1_OR_NEWER
+                        if(animModule.rowMode == ParticleSystemAnimationRowMode.Random)
+                        #else
                         if (animModule.useRandomRow)
+                        #endif
                         {
                             UnityEngine.Random.InitState((int)particle.randomSeed);
                             row = UnityEngine.Random.Range(0, animModule.numTilesY);
@@ -383,7 +387,7 @@ namespace Modules.UI.Particle
             originMaterial = null;
         }
 
-        #region Quad
+#region Quad
 
         private const float HalfPi = Mathf.PI / 2;
 
@@ -482,9 +486,9 @@ namespace Modules.UI.Particle
             return new Vector2((float)x, (float)y);
         }
 
-        #endregion
+#endregion
 
-        #region Cache
+#region Cache
 
         private Transform GetTransform()
         {
@@ -530,6 +534,6 @@ namespace Modules.UI.Particle
             return mainModuleCache.Value;
         }
 
-        #endregion
+#endregion
     }
 }

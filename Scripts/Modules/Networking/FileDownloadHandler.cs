@@ -12,7 +12,7 @@ namespace Modules.Networking
 
         private FileStream fileStream = null;
         private int offset = 0;
-        private int length = 0;
+        private ulong length = 0;
 
         //----- property -----
 
@@ -40,7 +40,7 @@ namespace Modules.Networking
         }
 
         // ダウンロードするサイズ
-        protected override void ReceiveContentLength(int contentLength)
+        protected override void ReceiveContentLengthHeader(ulong contentLength)
         {
             length = contentLength;
         }

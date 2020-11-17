@@ -1,11 +1,6 @@
 ﻿
-using UnityEngine;
 using UnityEngine.Networking;
-using System;
-using System.Linq;
-using System.Collections.Generic;
 using System.IO;
-using Extensions;
 
 namespace Modules.AssetBundles
 {
@@ -17,7 +12,7 @@ namespace Modules.AssetBundles
 
         private FileStream fs = null;
         private int offset = 0;
-        private int length = 0;
+        private ulong length = 0;
 
         //----- property -----
 
@@ -42,8 +37,9 @@ namespace Modules.AssetBundles
             fs.Flush();
             fs.Close();
         }
+
         // ダウンロードするサイズ.
-        protected override void ReceiveContentLength(int contentLength)
+        protected override void ReceiveContentLengthHeader(ulong contentLength)
         {
             length = contentLength;
         }
