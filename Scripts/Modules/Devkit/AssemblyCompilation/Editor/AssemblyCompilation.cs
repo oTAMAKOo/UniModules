@@ -2,12 +2,9 @@
 using UnityEditor;
 using UnityEditor.Compilation;
 using System.Collections.Generic;
-using System;
-using System.Collections;
 using System.Linq;
 using System.Reflection;
 using Newtonsoft.Json;
-using UniRx;
 using Extensions;
 using Modules.Devkit.Prefs;
 
@@ -74,16 +71,10 @@ namespace Modules.Devkit.AssemblyCompilation
                     var results = JsonConvert.DeserializeObject<CompileResult[]>(json);
 
                     EditorApplication.LockReloadAssemblies();
+                    
+                    OnCompilationFinished(results);
 
-                    Action finallyAction = () =>
-                    {
-                        EditorApplication.UnlockReloadAssemblies();
-                    };
-
-                    Observable.FromCoroutine(() => OnCompilationFinished(results))
-                        .Finally(finallyAction)
-                        .Subscribe()
-                        .AddTo(Disposable);
+                    EditorApplication.UnlockReloadAssemblies();
 
                     Prefs.result = null;
                 }
@@ -165,6 +156,6 @@ namespace Modules.Devkit.AssemblyCompilation
             #endif
         }
 
-        protected abstract IEnumerator OnCompilationFinished(CompileResult[] results);
+        protected abstract void OnCompilationFinished(CompileResult[] results);
     }
 }
