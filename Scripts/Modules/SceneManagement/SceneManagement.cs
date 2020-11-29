@@ -765,8 +765,14 @@ namespace Modules.SceneManagement
                 {
                     var rootObjects = scene.Value.GetRootGameObjects();
 
+                    // 回収するオブジェクトが非アクティブ化されているのを一時的に戻す.
+                    sceneInstance.Enable();
+
                     // UniqueComponentsを回収.
                     CollectUniqueComponents(rootObjects);
+
+                    // 回収後オブジェクトの状態を非アクティブ化.
+                    sceneInstance.Disable();
 
                     loadedScenes.Add(identifier, sceneInstance);
 
