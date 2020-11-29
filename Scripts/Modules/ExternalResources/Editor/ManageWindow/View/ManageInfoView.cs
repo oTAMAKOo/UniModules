@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using UniRx;
 using Extensions;
 using Extensions.Devkit;
+using Modules.Devkit.Project;
 
 using Object = UnityEngine.Object;
 
@@ -27,6 +28,8 @@ namespace Modules.ExternalResource.Editor
         private ViewMode viewMode = ViewMode.Contents;
 
         private IgnoreType? ignoreType = null;
+
+        private string externalResourcesPath = null;
 
         private Object manageAsset = null;
         private string manageAssetPath = null;
@@ -55,11 +58,12 @@ namespace Modules.ExternalResource.Editor
 
         //----- method -----
 
-        public ManageInfoView(AssetManagement assetManagement, ManageInfo manageInfo, IgnoreType? ignoreType, bool open, bool edit)
+        public ManageInfoView(AssetManagement assetManagement, ManageInfo manageInfo, string externalResourcesPath, IgnoreType? ignoreType, bool open, bool edit)
         {
+            this.externalResourcesPath = externalResourcesPath;
             this.ignoreType = ignoreType;
 
-            var externalResourcesDir = assetManagement.ExternalResourcesPath + PathUtility.PathSeparator;
+            var externalResourcesDir = externalResourcesPath + PathUtility.PathSeparator;
 
             // 確定するまで元のインスタンスに影響を与えないようにコピーに対して編集を行う.
             ManageInfo = manageInfo.DeepCopy();
@@ -78,10 +82,8 @@ namespace Modules.ExternalResource.Editor
                 .Subscribe(x => SetDetailView(x))
                 .AddTo(Disposable);
 
-            contentAssetsScrollView = new ContentAssetsScrollView();
-
-            contentAssetsScrollView.AssetManagement = assetManagement;
-
+            contentAssetsScrollView = new ContentAssetsScrollView(externalResourcesPath);
+            
             BuildContentsInfo(assetManagement); 
         }
 
@@ -436,16 +438,19 @@ namespace Modules.ExternalResource.Editor
     {
         private Object[] assets = null;
 
-        public AssetManagement AssetManagement { get; set; }
+        private string externalResourcesPath = null;
 
         public override Direction Type { get { return Direction.Vertical; } }
+
+        public ContentAssetsScrollView(string externalResourcesPath)
+        {
+            this.externalResourcesPath = externalResourcesPath;
+        }
 
         protected override void OnContentsUpdate()
         {
             Func<AssetInfo, Object> load_asset = info =>
             {
-                var externalResourcesPath = AssetManagement.ExternalResourcesPath;
-
                 var assetPath = PathUtility.Combine(externalResourcesPath, info.ResourcePath);
 
                 var asset = AssetDatabase.LoadMainAssetAtPath(assetPath);

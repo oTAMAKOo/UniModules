@@ -1,11 +1,12 @@
 ﻿
-using System;
 using UnityEngine;
 using UnityEditor;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Extensions;
+using Modules.Devkit.Project;
 using Modules.ExternalResource;
 
 namespace Modules.AssetBundles.Editor
@@ -70,8 +71,14 @@ namespace Modules.AssetBundles.Editor
         }
 
         /// <summary> 情報書き込み後のAssetInfoManifestをビルド </summary>
-        public static void BuildAssetInfoManifest(string externalResourcesPath)
+        public static void BuildAssetInfoManifest()
         {
+            var projectFolders = ProjectFolders.Instance;
+
+            if (projectFolders == null){ return; }
+
+            var externalResourcesPath = projectFolders.ExternalResourcesPath;
+
             var assetBundlePath = GetAssetBundleOutputPath();
 
             var manifestPath = PathUtility.Combine(externalResourcesPath, AssetInfoManifest.ManifestFileName);
@@ -104,17 +111,17 @@ namespace Modules.AssetBundles.Editor
         {
             var assetBundlePath = GetAssetBundleOutputPath();
 
-            var assetbundlePackageBuilder = new BuildAssetbundlePackage();
+            var assetBundlePackageBuilder = new BuildAssetbundlePackage();
 
             Action<int, int> reportProgress = (current, total) =>
             {
-                var title = "Build　AssetbundlePackage";
+                var title = "Build　AssetBundle Package";
                 var info = string.Format("Build progress ({0}/{1})", current, total);
 
                 EditorUtility.DisplayProgressBar(title, info, current / (float)total);
             };
 
-            assetbundlePackageBuilder.Build(exportPath, assetBundlePath, assetInfoManifest, password, reportProgress);
+            assetBundlePackageBuilder.Build(exportPath, assetBundlePath, assetInfoManifest, password, reportProgress);
 
             EditorUtility.ClearProgressBar();
         }

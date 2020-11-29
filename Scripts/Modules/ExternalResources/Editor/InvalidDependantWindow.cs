@@ -7,6 +7,7 @@ using System.Linq;
 using System.Collections.Generic;
 using Extensions;
 using Extensions.Devkit;
+using Modules.Devkit.Project;
 
 using Object = UnityEngine.Object;
 
@@ -129,8 +130,12 @@ namespace Modules.ExternalResource.Editor
 
         //----- method -----
 
-        public static void Open(string externalResourcesPath)
+        public static void Open()
         {
+            var projectFolders = ProjectFolders.Instance;
+
+            var externalResourcesPath = projectFolders.ExternalResourcesPath;
+
             Instance.Initialize(externalResourcesPath);
         }
 

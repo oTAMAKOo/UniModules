@@ -21,12 +21,6 @@ namespace Modules.ExternalResource.Editor
                 get { return ProjectPrefs.GetString("AssetNavigationWindowPrefs-selectionAssetGUID"); }
                 set { ProjectPrefs.SetString("AssetNavigationWindowPrefs-selectionAssetGUID", value); }
             }
-
-            public static string externalResourcesPath
-            {
-                get { return ProjectPrefs.GetString("AssetNavigationWindowPrefs-externalResourcesPath"); }
-                set { ProjectPrefs.SetString("AssetNavigationWindowPrefs-externalResourcesPath", value); }
-            }
         }
 
 		//----- field -----
@@ -51,17 +45,15 @@ namespace Modules.ExternalResource.Editor
         {
 			Instance.titleContent = new GUIContent("Asset Navigation");
 
-            Instance.Initialize(externalResourcesPath);
+            Instance.Initialize();
 
             Instance.Show();
         }
 
-        private void Initialize(string externalResourcesPath)
+        private void Initialize()
         {
             if (initialized) { return; }
-
-			Prefs.externalResourcesPath = externalResourcesPath;
-
+            
             ManageConfig.OnReloadAsObservable()
                 .Subscribe(_ => Setup())
                 .AddTo(Disposable);
@@ -73,12 +65,8 @@ namespace Modules.ExternalResource.Editor
 
 		private void Setup()
 		{
-			if (string.IsNullOrEmpty(Prefs.externalResourcesPath)) { return; }
-
-			var externalResourcesPath = Prefs.externalResourcesPath;
-
             assetManagement = AssetManagement.Instance;
-			assetManagement.Initialize(externalResourcesPath);
+			assetManagement.Initialize();
 
 			if (!string.IsNullOrEmpty(Prefs.selectionAssetGUID))
 			{
@@ -102,7 +90,6 @@ namespace Modules.ExternalResource.Editor
 
         void OnDestroy()
         {
-            Prefs.externalResourcesPath = null;
             Prefs.selectionAssetGUID = null;
         }
 

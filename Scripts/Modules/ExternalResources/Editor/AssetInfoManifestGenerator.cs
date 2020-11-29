@@ -8,7 +8,7 @@ using UniRx;
 using Extensions;
 using Extensions.Devkit;
 using Modules.Devkit.Generators;
-
+using Modules.Devkit.Project;
 #if ENABLE_CRIWARE_ADX || ENABLE_CRIWARE_SOFDEC
 
 using Modules.CriWare;
@@ -27,13 +27,13 @@ namespace Modules.ExternalResource.Editor
 
         //----- method -----
 
-        public static AssetInfoManifest Generate(string externalResourcesPath)
+        public static AssetInfoManifest Generate()
         {
             AssetInfoManifest manifest = null;
 
             var assetManagement = AssetManagement.Instance;
 
-            assetManagement.Initialize(externalResourcesPath);
+            assetManagement.Initialize();
 
             using (new AssetEditingScope())
             {
@@ -44,6 +44,8 @@ namespace Modules.ExternalResource.Editor
                 ApplyAssetBundleName(assetManagement, manifest);
 
                 UnityEditorUtility.SaveAsset(manifest);
+
+                AssetManagement.Prefs.manifestUpdateRequest = false;
             }
 
             AssetDatabase.RemoveUnusedAssetBundleNames();
@@ -71,8 +73,12 @@ namespace Modules.ExternalResource.Editor
             }
         }
 
-        public static void SetAssetBundleFileInfo(string exportPath, string externalResourcesPath, AssetBundleManifest assetBundleManifest)
+        public static void SetAssetBundleFileInfo(string exportPath, AssetBundleManifest assetBundleManifest)
         {
+            var projectFolders = ProjectFolders.Instance;
+
+            var externalResourcesPath = projectFolders.ExternalResourcesPath;
+
             var manifestPath = GetManifestPath(externalResourcesPath);
             var assetInfoManifest = AssetDatabase.LoadAssetAtPath<AssetInfoManifest>(manifestPath);
 
@@ -114,8 +120,12 @@ namespace Modules.ExternalResource.Editor
 
         #if ENABLE_CRIWARE_ADX || ENABLE_CRIWARE_SOFDEC
 
-        public static void SetCriAssetFileInfo(string exportPath, string externalResourcesPath, AssetBundleManifest assetBundleManifest)
+        public static void SetCriAssetFileInfo(string exportPath, AssetBundleManifest assetBundleManifest)
         {
+            var projectFolders = ProjectFolders.Instance;
+
+            var externalResourcesPath = projectFolders.ExternalResourcesPath;
+
             var manifestPath = GetManifestPath(externalResourcesPath);
             var assetInfoManifest = AssetDatabase.LoadAssetAtPath<AssetInfoManifest>(manifestPath);
 
@@ -160,6 +170,10 @@ namespace Modules.ExternalResource.Editor
 
         private static void ApplyAssetBundleName(AssetManagement assetManagement, AssetInfoManifest manifest)
         {
+            var projectFolders = ProjectFolders.Instance;
+
+            var externalResourcesPath = projectFolders.ExternalResourcesPath;
+
             var assetInfos = manifest.GetAssetInfos().ToArray();
 
             var count = assetInfos.Length;
@@ -172,7 +186,7 @@ namespace Modules.ExternalResource.Editor
 
                     EditorUtility.DisplayProgressBar("ApplyAssetBundleName", assetInfo.ResourcePath, (float)i / count);
 
-                    var assetPath = PathUtility.Combine(assetManagement.ExternalResourcesPath, assetInfo.ResourcePath);
+                    var assetPath = PathUtility.Combine(externalResourcesPath, assetInfo.ResourcePath);
 
                     if (assetInfo.IsAssetBundle)
                     {
@@ -186,10 +200,14 @@ namespace Modules.ExternalResource.Editor
 
         private static AssetInfoManifest GenerateManifest(AssetManagement assetManagement)
         {
+            var projectFolders = ProjectFolders.Instance;
+
+            var externalResourcesPath = projectFolders.ExternalResourcesPath;
+
             var allAssetInfos = assetManagement.GetAllAssetInfos().ToArray();
 
             // アセット情報を更新.
-            var manifestPath = GetManifestPath(assetManagement.ExternalResourcesPath);
+            var manifestPath = GetManifestPath(externalResourcesPath);
             var manifest = ScriptableObjectGenerator.Generate<AssetInfoManifest>(manifestPath);
 
             Reflection.SetPrivateField(manifest, "assetInfos", allAssetInfos);

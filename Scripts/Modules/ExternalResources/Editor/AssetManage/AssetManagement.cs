@@ -1,5 +1,4 @@
 ﻿
-using System;
 using UnityEngine;
 using UnityEditor;
 using System.Linq;
@@ -8,6 +7,9 @@ using System.IO;
 using UniRx;
 using Extensions;
 using Extensions.Devkit;
+using Modules.Devkit.Prefs;
+using Modules.Devkit.Project;
+
 using Object = UnityEngine.Object;
 
 namespace Modules.ExternalResource.Editor
@@ -30,6 +32,15 @@ namespace Modules.ExternalResource.Editor
 
         private const string AssetNameSeparator = "_";
 
+        public static class Prefs
+        {
+            public static bool manifestUpdateRequest
+            {
+                get { return ProjectPrefs.GetBool("AssetManagementPrefs-manifestUpdateRequest", false); }
+                set { ProjectPrefs.SetBool("AssetManagementPrefs-manifestUpdateRequest", value); }
+            }
+        }
+
         //----- field -----
 
         private string externalResourcesPath = null;
@@ -44,19 +55,32 @@ namespace Modules.ExternalResource.Editor
 
         //----- property -----
 
-        public string ExternalResourcesPath { get { return externalResourcesPath; } }
-
         //----- method -----
 
-        public void Initialize(string externalResourcesPath)
+        [InitializeOnLoadMethod]
+        private static void InitializeOnLoadMethod()
         {
+            if (Application.isBatchMode){ return; }
+
+            if (Prefs.manifestUpdateRequest)
+            {
+                AssetInfoManifestGenerator.Generate();
+            }
+        }
+
+        public void Initialize()
+        {
+            var projectFolders = ProjectFolders.Instance;
+
+            if (projectFolders == null) { return; }
+
             var managedAssets = ManagedAssets.Instance;
 
             if (managedAssets == null) { return; }
 
             if (initialized) { return; }
 
-            this.externalResourcesPath = externalResourcesPath;
+            externalResourcesPath = projectFolders.ExternalResourcesPath;
 
             managedAssets.DeleteInvalidInfo();
 
@@ -205,7 +229,7 @@ namespace Modules.ExternalResource.Editor
         {
             if (string.IsNullOrEmpty(assetPath)) { return string.Empty; }
 
-            var externalResourcesDir = ExternalResourcesPath + PathUtility.PathSeparator;
+            var externalResourcesDir = externalResourcesPath + PathUtility.PathSeparator;
 
             var assetLoadPath = assetPath.Substring(externalResourcesDir.Length, assetPath.Length - externalResourcesDir.Length);
 
@@ -465,6 +489,8 @@ namespace Modules.ExternalResource.Editor
             var infos = managedInfos.Values.ToArray();
 
             managedAssets.SetManageInfos(infos);
+
+            Prefs.manifestUpdateRequest = true;
         }
 
         /// <summary> 除外対象のパスか検証 </summary>

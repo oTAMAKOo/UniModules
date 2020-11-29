@@ -1,6 +1,5 @@
 ﻿
 using Extensions;
-using UnityEditor;
 using Modules.ExternalResource.Editor;
 using Modules.Devkit.Project;
 using Modules.ExternalResource;
@@ -22,10 +21,7 @@ namespace Modules.Devkit.AssetTuning
             if (projectFolders != null)
             {
                 assetManagement = AssetManagement.Instance;
-
-                var externalResourcesPath = projectFolders.ExternalResourcesPath;
-
-                assetManagement.Initialize(externalResourcesPath);
+                assetManagement.Initialize();
             }
         }
 
@@ -36,24 +32,32 @@ namespace Modules.Devkit.AssetTuning
         
         public override void OnAssetImport(string assetPath)
         {
-            if (assetPath.StartsWith(assetManagement.ExternalResourcesPath))
+            var externalResourcesPath = GetExternalResourcesPath();
+
+            if (string.IsNullOrEmpty(externalResourcesPath)){ return; }
+
+            if (assetPath.StartsWith(externalResourcesPath))
             {
                 var infos = assetManagement.GetAssetInfos(assetPath);
 
                 foreach (var info in infos)
                 {
-                    ApplyAssetBundleName(assetManagement.ExternalResourcesPath, info);
+                    ApplyAssetBundleName(externalResourcesPath, info);
                 }
             }
         }
 
         public override void OnAssetMove(string assetPath, string from)
         {
+            var externalResourcesPath = GetExternalResourcesPath();
+
+            if (string.IsNullOrEmpty(externalResourcesPath)) { return; }
+
             // 対象から外れる場合.
 
-            if (from.StartsWith(assetManagement.ExternalResourcesPath))
+            if (from.StartsWith(externalResourcesPath))
             {
-                if (!assetPath.StartsWith(assetManagement.ExternalResourcesPath))
+                if (!assetPath.StartsWith(externalResourcesPath))
                 {
                     assetManagement.SetAssetBundleName(assetPath, string.Empty);
                 }
@@ -61,13 +65,13 @@ namespace Modules.Devkit.AssetTuning
 
             // 対象に追加される場合.
 
-            if (assetPath.StartsWith(assetManagement.ExternalResourcesPath))
+            if (assetPath.StartsWith(externalResourcesPath))
             {
                 var infos = assetManagement.GetAssetInfos(assetPath);
 
                 foreach (var info in infos)
                 {
-                    ApplyAssetBundleName(assetManagement.ExternalResourcesPath, info);
+                    ApplyAssetBundleName(externalResourcesPath, info);
                 }
             }
         }
@@ -83,6 +87,13 @@ namespace Modules.Devkit.AssetTuning
             var assetPath = PathUtility.Combine(externalResourcesPath, assetInfo.ResourcePath);
 
             assetManagement.SetAssetBundleName(assetPath, assetInfo.AssetBundle.AssetBundleName);
+        }
+
+        private string GetExternalResourcesPath()
+        {
+            var projectFolders = ProjectFolders.Instance;
+
+            return projectFolders != null ? projectFolders.ExternalResourcesPath : null;
         }
     }
 }

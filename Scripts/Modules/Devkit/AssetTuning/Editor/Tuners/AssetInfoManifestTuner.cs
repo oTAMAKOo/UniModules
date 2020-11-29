@@ -48,7 +48,7 @@ namespace Modules.Devkit.AssetTuning
 
                 externalResourcesPath = projectFolders.ExternalResourcesPath;
 
-                assetManagement.Initialize(externalResourcesPath);
+                assetManagement.Initialize();
 
                 var manifestPath = PathUtility.Combine(externalResourcesPath, AssetInfoManifest.ManifestFileName);
 

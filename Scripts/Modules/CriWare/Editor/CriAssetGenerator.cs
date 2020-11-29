@@ -5,6 +5,7 @@ using System;
 using System.IO;
 using System.Linq;
 using Extensions;
+using Modules.Devkit.Project;
 using Modules.ExternalResource;
 
 namespace Modules.CriWare.Editor
@@ -22,8 +23,14 @@ namespace Modules.CriWare.Editor
         /// <summary>
         /// CriAssetをアセットバンドルの出力先にコピー.
         /// </summary>
-        public static void Generate(string exportPath, string externalResourcesPath, AssetInfoManifest assetInfoManifest)
+        public static void Generate(string exportPath, AssetInfoManifest assetInfoManifest)
         {
+            var projectFolders = ProjectFolders.Instance;
+
+            if (projectFolders == null){ return; }
+
+            var externalResourcesPath = projectFolders.ExternalResourcesPath;
+
             Func<AssetInfo, bool> isCriAssetInfo = x =>
             {
                 if (string.IsNullOrEmpty(x.FileName)) { return false; }

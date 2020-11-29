@@ -61,11 +61,7 @@ namespace Modules.ExternalResource.Editor
         void OnGUI()
         {
             if (!initialized) { return; }
-
-            var editorConfig = ProjectFolders.Instance;
-
-            var externalResourcesPath = editorConfig.ExternalResourcesPath;
-
+            
             EditorGUILayout.Separator();
             
             EditorLayoutTools.DrawLabelWithBackground("AssetInfoManifest");
@@ -73,7 +69,7 @@ namespace Modules.ExternalResource.Editor
             if (GUILayout.Button("Generate"))
             {
                 // アセット情報ファイルを生成.
-                AssetInfoManifestGenerator.Generate(externalResourcesPath);
+                AssetInfoManifestGenerator.Generate();
             }
 
             GUILayout.Space(6f);
@@ -98,10 +94,10 @@ namespace Modules.ExternalResource.Editor
                         EditorApplication.LockReloadAssemblies();
 
                         // アセット情報ファイルを生成.
-                        AssetInfoManifestGenerator.Generate(externalResourcesPath);
+                        AssetInfoManifestGenerator.Generate();
 
                         // 依存関係の検証.
-                        var validate = AssetDependenciesValidate(externalResourcesPath);
+                        var validate = AssetDependenciesValidate();
 
                         if (!validate)
                         {
@@ -112,14 +108,14 @@ namespace Modules.ExternalResource.Editor
                                 build = false;
 
                                 // ExternalResourceフォルダ以外の参照が含まれる場合は依存関係を表示.
-                                InvalidDependantWindow.Open(externalResourcesPath);
+                                InvalidDependantWindow.Open();
                             }
                         }
 
                         // ビルド.
                         if (build)
                         {
-                            BuildManager.Build(externalResourcesPath);
+                            BuildManager.Build();
                         }
                     }
                     finally
@@ -132,8 +128,12 @@ namespace Modules.ExternalResource.Editor
             EditorGUILayout.Separator();
         }
 
-        private bool AssetDependenciesValidate(string externalResourcesPath)
+        private bool AssetDependenciesValidate()
         {
+            var projectFolders = ProjectFolders.Instance;
+
+            var externalResourcesPath = projectFolders.ExternalResourcesPath;
+
             var manifestPath = PathUtility.Combine(externalResourcesPath, AssetInfoManifest.ManifestFileName);
             var assetInfoManifest = AssetDatabase.LoadAssetAtPath<AssetInfoManifest>(manifestPath);
 

@@ -9,7 +9,7 @@ using Modules.AssetBundles;
 using Modules.AssetBundles.Editor;
 using Modules.Devkit;
 using Modules.Devkit.Prefs;
-
+using Modules.Devkit.Project;
 #if ENABLE_CRIWARE_ADX || ENABLE_CRIWARE_SOFDEC
 
 using Modules.CriWare.Editor;
@@ -44,7 +44,7 @@ namespace Modules.ExternalResource.Editor
             return EditorUtility.DisplayDialog("Confirmation", "外部アセットを生成します.", "実行", "中止");
         }
 
-        public static void Build(string externalResourcesPath)
+        public static void Build()
         {
             var exportPath = GetExportPath();
 
@@ -62,7 +62,7 @@ namespace Modules.ExternalResource.Editor
                 var manageConfig = ManageConfig.Instance;
 
                 // アセット情報ファイルを生成.
-                var assetInfoManifest = AssetInfoManifestGenerator.Generate(externalResourcesPath);
+                var assetInfoManifest = AssetInfoManifestGenerator.Generate();
 
                 // キャッシュ済みアセットバンドルのハッシュ値取得.
                 var cachedAssetBundleHashs = BuildAssetBundle.GetCachedAssetBundleHash();
@@ -70,7 +70,7 @@ namespace Modules.ExternalResource.Editor
                 // CRIアセットを生成.
                 #if ENABLE_CRIWARE_ADX || ENABLE_CRIWARE_SOFDEC
 
-                CriAssetGenerator.Generate(exportPath, externalResourcesPath, assetInfoManifest);
+                CriAssetGenerator.Generate(exportPath, assetInfoManifest);
 
                 #endif
                 
@@ -84,11 +84,11 @@ namespace Modules.ExternalResource.Editor
 
                 var assetBundlePath = BuildAssetBundle.GetAssetBundleOutputPath();
 
-                AssetInfoManifestGenerator.SetAssetBundleFileInfo(assetBundlePath, externalResourcesPath, assetBundleManifest);
+                AssetInfoManifestGenerator.SetAssetBundleFileInfo(assetBundlePath, assetBundleManifest);
 
                 #if ENABLE_CRIWARE_ADX || ENABLE_CRIWARE_SOFDEC
 
-                AssetInfoManifestGenerator.SetCriAssetFileInfo(exportPath, externalResourcesPath, assetBundleManifest);
+                AssetInfoManifestGenerator.SetCriAssetFileInfo(exportPath, assetBundleManifest);
 
                 #endif
 
@@ -96,7 +96,7 @@ namespace Modules.ExternalResource.Editor
                 BuildAssetBundle.SetDependencies(assetInfoManifest, assetBundleManifest);
 
                 // 再度AssetInfoManifestだけビルドを実行.
-                BuildAssetBundle.BuildAssetInfoManifest(externalResourcesPath);
+                BuildAssetBundle.BuildAssetInfoManifest();
 
                 // 更新が必要なパッケージファイルを削除.
                 BuildAssetBundle.CleanOldPackage(cachedAssetBundleHashs);

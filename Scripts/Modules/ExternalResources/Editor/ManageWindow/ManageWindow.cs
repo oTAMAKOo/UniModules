@@ -55,7 +55,7 @@ namespace Modules.ExternalResource.Editor
 
             assetManagement = AssetManagement.Instance;
 
-            assetManagement.Initialize(externalResourcesPath);
+            assetManagement.Initialize();
 
             // HeaderView.
 
@@ -78,7 +78,7 @@ namespace Modules.ExternalResource.Editor
 
             manageAssetView = new ManageAssetView();
 
-            manageAssetView.Initialize(assetManagement);
+            manageAssetView.Initialize(assetManagement, externalResourcesPath);
 
             manageAssetView.OnRequestRepaintAsObservable()
                 .Subscribe(_ => Repaint())
@@ -89,6 +89,11 @@ namespace Modules.ExternalResource.Editor
 
         void OnDestroy()
         {
+            if (AssetManagement.Prefs.manifestUpdateRequest)
+            {
+                AssetInfoManifestGenerator.Generate();
+            }
+
             Disposable.Dispose();
         }
 
