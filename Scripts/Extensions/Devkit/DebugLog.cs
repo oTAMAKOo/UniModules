@@ -5,27 +5,27 @@ using UnityEngine;
 
 public static class Debug
 {
-    private static bool? isDevlopmentBuild = null;
+    private static bool? isDevelopmentBuild = null;
 
     public static bool isDebugBuild
     {
         get
         {
-            if(!isDevlopmentBuild.HasValue)
+            if(!isDevelopmentBuild.HasValue)
             {
-                isDevlopmentBuild = UnityEngine.Debug.isDebugBuild;
+                isDevelopmentBuild = UnityEngine.Debug.isDebugBuild;
             }
 
-            return isDevlopmentBuild.Value;
+            return isDevelopmentBuild.Value;
         }
     }
 
     [RuntimeInitializeOnLoadMethod]
     static void RuntimeInitializeOnLoadMethod()
     {
-        if (!isDevlopmentBuild.HasValue)
+        if (!isDevelopmentBuild.HasValue)
         {
-            isDevlopmentBuild = UnityEngine.Debug.isDebugBuild;
+            isDevelopmentBuild = UnityEngine.Debug.isDebugBuild;
         }
     }
 
@@ -142,6 +142,13 @@ public static class Debug
         if (!isDebugBuild) { return; }
 
         UnityEngine.Debug.LogAssertionFormat(format, args);
+    }
+
+    public static void LogAssertionFormat(Object context, string format, params object[] args)
+    {
+        if (!isDebugBuild) { return; }
+
+        UnityEngine.Debug.LogAssertionFormat(context, format, args);
     }
 
     public static void Assert(bool condition)
