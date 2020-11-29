@@ -53,9 +53,13 @@ namespace Modules.SceneManagement
 
             if (!scene.Value.isLoaded || !scene.Value.IsValid()) { return false; }
 
+            var rootObjects = scene.Value.GetRootGameObjects();
+
             foreach (var rootObject in activeRoots)
             {
                 if (UnityUtility.IsNull(rootObject)) { continue; }
+
+                if (!rootObjects.Contains(rootObject)) { continue; }
 
                 var ignoreControl = UnityUtility.GetComponent<IgnoreControl>(rootObject);
 
@@ -80,8 +84,12 @@ namespace Modules.SceneManagement
 
             if (!scene.Value.isLoaded || !scene.Value.IsValid()) { return false; }
 
+            var rootObjects = scene.Value.GetRootGameObjects();
+
             foreach (var rootObject in activeRoots)
             {
+                if (!rootObjects.Contains(rootObject)){ continue; }
+                
                 var ignoreControl = UnityUtility.GetComponent<IgnoreControl>(rootObject);
 
                 if (ignoreControl != null)
