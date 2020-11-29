@@ -14,12 +14,16 @@ namespace Modules.UI.Extension
 
         //----- field -----
 
+        #pragma warning disable 0414
+
         // 開発アセット登録用.
 
         [SerializeField, HideInInspector]
         private string assetGuid = null;
         [SerializeField, HideInInspector]
         private string spriteId = null;
+
+        #pragma warning restore 0414
 
         //----- property -----
 
