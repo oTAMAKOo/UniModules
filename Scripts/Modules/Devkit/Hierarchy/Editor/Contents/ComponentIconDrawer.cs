@@ -79,7 +79,7 @@ namespace Modules.Devkit.Hierarchy
         {
             public static bool enable
             {
-                get { return ProjectPrefs.GetBool("ComponentIconDrawerPrefs-enable", true); }
+                get { return ProjectPrefs.GetBool("ComponentIconDrawerPrefs-enable", false); }
                 set { ProjectPrefs.SetBool("ComponentIconDrawerPrefs-enable", value); }
             }
         }

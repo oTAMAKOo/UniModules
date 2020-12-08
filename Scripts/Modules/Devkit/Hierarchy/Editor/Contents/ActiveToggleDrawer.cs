@@ -15,7 +15,7 @@ namespace Modules.Devkit.Hierarchy
         {
             public static bool enable
             {
-                get { return ProjectPrefs.GetBool("ActiveToggleDrawerPrefs-enable", true); }
+                get { return ProjectPrefs.GetBool("ActiveToggleDrawerPrefs-enable", false); }
                 set { ProjectPrefs.SetBool("ActiveToggleDrawerPrefs-enable", value); }
             }
         }
