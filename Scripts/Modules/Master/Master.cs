@@ -143,37 +143,9 @@ namespace Modules.Master
 
         public IObservable<bool> Load(AesManaged aesManaged)
         {
+            Refresh();
+
             return Observable.FromMicroCoroutine<bool>(observer => LoadInternal(observer, aesManaged));
-        }
-
-        protected virtual IEnumerator LoadCacheFile(IObserver<byte[]> observer, string installPath, AesManaged aesManaged)
-        {
-            Func<string, AesManaged, byte[]> loadAndDecrypt = (_installPath, _aesManaged) =>
-            {
-                // ファイル読み込み.
-                var data = File.ReadAllBytes(_installPath);
-
-                // 復号化.               
-                return data.Decrypt(_aesManaged);
-            };
-
-            // ファイルの読み込みと復号化をスレッドプールで実行.
-            var loadYield = Observable.Start(() => loadAndDecrypt(installPath, aesManaged)).ObserveOnMainThread().ToYieldInstruction();
-
-            while (!loadYield.IsDone)
-            {
-                yield return null;
-            }
-
-            if (!loadYield.HasError && loadYield.HasResult)
-            {
-                observer.OnNext(loadYield.Result);
-                observer.OnCompleted();
-            }
-            else
-            {
-                observer.OnError(loadYield.Error);
-            }
         }
 
         private IEnumerator LoadInternal(IObserver<bool> observer, AesManaged aesManaged)
@@ -242,6 +214,36 @@ namespace Modules.Master
             observer.OnCompleted();
         }
 
+        protected virtual IEnumerator LoadCacheFile(IObserver<byte[]> observer, string installPath, AesManaged aesManaged)
+        {
+            Func<string, AesManaged, byte[]> loadAndDecrypt = (_installPath, _aesManaged) =>
+            {
+                // ファイル読み込み.
+                var data = File.ReadAllBytes(_installPath);
+
+                // 復号化.               
+                return data.Decrypt(_aesManaged);
+            };
+
+            // ファイルの読み込みと復号化をスレッドプールで実行.
+            var loadYield = Observable.Start(() => loadAndDecrypt(installPath, aesManaged)).ObserveOnMainThread().ToYieldInstruction();
+
+            while (!loadYield.IsDone)
+            {
+                yield return null;
+            }
+
+            if (!loadYield.HasError && loadYield.HasResult)
+            {
+                observer.OnNext(loadYield.Result);
+                observer.OnCompleted();
+            }
+            else
+            {
+                observer.OnError(loadYield.Error);
+            }
+        }
+
         public IObservable<bool> Update(string masterVersion, CancellationToken cancelToken)
         {
             return Observable.FromMicroCoroutine<bool>(observer => UpdateInternal(observer, masterVersion, cancelToken));
@@ -291,9 +293,15 @@ namespace Modules.Master
 
         protected virtual void OnError()
         {
+            // キャッシュデータなどをクリア.
+            Refresh();
+
             // 強制更新させる為バージョン情報を削除.
             ClearVersion();
         }
+
+        /// <summary> キャッシュデータなど内部で保持しているデータをクリア. </summary>
+        protected virtual void Refresh() { }
 
         protected abstract string GetRecordKey(TMasterRecord masterRecord);
 
