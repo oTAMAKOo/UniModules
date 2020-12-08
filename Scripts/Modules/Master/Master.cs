@@ -71,6 +71,9 @@ namespace Modules.Master
         /// <summary> バージョン. </summary>
         public string Version { get { return versionPrefs.version; } }
 
+        /// <summary> LZ4圧縮を使用するか. </summary>
+        public bool UseLz4Compression { get; set; } = true;
+
         //----- method -----
 
         public void SetRecords(TMasterRecord[] masterRecords)
@@ -206,9 +209,12 @@ namespace Modules.Master
 
                 try
                 {
-                    var options = StandardResolverAllowPrivate.Options
-                        .WithCompression(MessagePackCompression.Lz4BlockArray)
-                        .WithResolver(UnityContractResolver.Instance);
+                    var options = StandardResolverAllowPrivate.Options.WithResolver(UnityContractResolver.Instance);
+
+                    if (UseLz4Compression)
+                    {
+                        options = options.WithCompression(MessagePackCompression.Lz4BlockArray);
+                    }
 
                     var container = MessagePackSerializer.Deserialize<TMasterContainer>(bytes, options);
 
