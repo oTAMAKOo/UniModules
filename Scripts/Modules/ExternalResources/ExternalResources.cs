@@ -33,6 +33,9 @@ namespace Modules.ExternalResource
         public static readonly string ConsoleEventName = "ExternalResources";
         public static readonly Color ConsoleEventColor = new Color(0.8f, 1f, 0.1f);
 
+        // 最大同時ダウンロード数.
+        private readonly uint MaxDownloadCount = 4;
+
         //----- field -----
 
         // アセットバンドル管理.
@@ -108,7 +111,7 @@ namespace Modules.ExternalResource
 
             // AssetBundleManager初期化.
             assetBundleManager = AssetBundleManager.CreateInstance();
-            assetBundleManager.Initialize(installDir, localMode, simulateMode);
+            assetBundleManager.Initialize(installDir, MaxDownloadCount, localMode, simulateMode);
             assetBundleManager.RegisterYieldCancel(yieldCancel);
             assetBundleManager.OnTimeOutAsObservable().Subscribe(x => OnTimeout(x)).AddTo(Disposable);
             assetBundleManager.OnErrorAsObservable().Subscribe(x => OnError(x)).AddTo(Disposable);
@@ -118,7 +121,7 @@ namespace Modules.ExternalResource
             // CriAssetManager初期化.
 
             criAssetManager = CriAssetManager.CreateInstance();
-            criAssetManager.Initialize(installDir, resourceDir, 4, localMode, simulateMode);
+            criAssetManager.Initialize(installDir, resourceDir, MaxDownloadCount, localMode, simulateMode);
             criAssetManager.OnTimeOutAsObservable().Subscribe(x => OnTimeout(x)).AddTo(Disposable);
             criAssetManager.OnErrorAsObservable().Subscribe(x => OnError(x)).AddTo(Disposable);
             

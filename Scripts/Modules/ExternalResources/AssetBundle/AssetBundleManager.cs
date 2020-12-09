@@ -53,6 +53,9 @@ namespace Modules.AssetBundles
 
         //----- field -----
 
+        // 同時ダウンロード数.
+        private uint maxDownloadCount = 0;
+
         // アセット管理.
         private AssetInfoManifest manifest = null;
 
@@ -61,6 +64,9 @@ namespace Modules.AssetBundles
 
         // ダウンロード元URL.
         private string remoteUrl = null;
+
+        // ダウンロード中アセットバンドル.
+        private HashSet<string> downloadList = null;
 
         // ダウンロード待ちアセットバンドル.
         private Dictionary<string, IObservable<string>> downloadQueueing = null;
@@ -108,17 +114,20 @@ namespace Modules.AssetBundles
         /// Initializeで設定した値はstatic変数として保存されます。
         /// </summary>
         /// <param name="installPath"></param>
+        /// <param name="maxDownloadCount">同時ダウンロード数</param>
         /// <param name="localMode"><see cref="installPath"/>のファイルからアセットを取得</param>
         /// <param name="simulateMode">AssetDataBaseからアセットを取得(EditorOnly)</param>
         /// <param name="cryptPassword">暗号化用パスワード(16文字) AssetManageConfig.assetのCryptPasswordと一致している必要があります</param>
-        public void Initialize(string installPath, bool localMode = false, bool simulateMode = false, string cryptPassword = DefaultPassword)
+        public void Initialize(string installPath, uint maxDownloadCount, bool localMode = false, bool simulateMode = false, string cryptPassword = DefaultPassword)
         {
             if (isInitialized) { return; }
 
             this.installPath = installPath;
+            this.maxDownloadCount = maxDownloadCount;
             this.localMode = localMode;
             this.simulateMode = Application.isEditor && simulateMode;
 
+            downloadList = new HashSet<string>();
             downloadQueueing = new Dictionary<string, IObservable<string>>();
             assetBundleCache = new Dictionary<string, CachedInfo>();
             cacheQueueing = new Dictionary<string, IObservable<Tuple<AssetBundle, string>>>();
@@ -258,52 +267,106 @@ namespace Modules.AssetBundles
 
             if (!assetBundleCache.ContainsKey(assetBundleName))
             {
-                var allBundles = new string[] { assetBundleName }.Concat(GetDependencies(assetBundleName)).ToArray();
+                // ネットワークの接続待ち.
 
-                var loadAllBundles = allBundles
-                    .Select(x =>
-                        {
-                            var cached = assetBundleCache.GetValueOrDefault(x);
+                var readyForDownloadYield = ReadyForDownload().ToYieldInstruction(yieldCancel.Token);
 
-                            if (cached != null)
-                            {
-                                UnloadAsset(x, true);
-                            }
-
-                            var downloadTask = downloadQueueing.GetValueOrDefault(x);
-
-                            if (downloadTask != null)
-                            {
-                                return downloadTask;
-                            }
-                            
-                            var info = assetInfosByAssetBundleName.GetValueOrDefault(x).FirstOrDefault();
-
-                            downloadQueueing[x] = Observable.FromMicroCoroutine(() => DownloadAssetBundle(info, progress))
-                                    .Select(_ => x)
-                                    .Share();
-
-                            return downloadQueueing[x];
-                        })
-                    .ToArray();
-
-                var loadAssetYield = Observable.WhenAll(loadAllBundles)
-                    .Do(xs =>
-                        {
-                            foreach (var item in xs)
-                            {
-                                if (downloadQueueing.ContainsKey(item))
-                                {
-                                    downloadQueueing.Remove(item);
-                                }
-                            }
-                        })
-                    .ToYieldInstruction(false, yieldCancel.Token);
-
-                while (!loadAssetYield.IsDone)
+                while (!readyForDownloadYield.IsDone)
                 {
                     yield return null;
                 }
+
+                // アセットバンドルと依存アセットバンドルをまとめてダウンロード.
+
+                var allBundles = new string[] { assetBundleName }.Concat(GetDependencies(assetBundleName)).ToArray();
+
+                var loadAllBundles = new Dictionary<string, IObservable<string>>();
+
+                foreach (var target in allBundles)
+                {
+                    var cached = assetBundleCache.GetValueOrDefault(target);
+
+                    if (cached != null)
+                    {
+                        UnloadAsset(target, true);
+                    }
+
+                    var downloadTask = downloadQueueing.GetValueOrDefault(target);
+
+                    if (downloadTask == null)
+                    {
+                        var info = assetInfosByAssetBundleName.GetValueOrDefault(target).FirstOrDefault();
+                        
+                        downloadQueueing[target] = Observable.FromMicroCoroutine(() => DownloadAssetBundle(info, progress))
+                            .Select(_ => target)
+                            .Share();
+
+                        downloadTask = downloadQueueing[target];
+                    }
+
+                    loadAllBundles[target] = downloadTask;
+                }
+
+                foreach (var downloadTask in loadAllBundles)
+                {
+                    // ダウンロードキューが空くまで待つ.
+                    while (maxDownloadCount <= downloadList.Count)
+                    {
+                        yield return null;
+                    }
+                    
+                    // ダウンロード中でなかったらリストに追加.
+                    if (!downloadList.Contains(downloadTask.Key))
+                    {
+                        downloadList.Add(downloadTask.Key);
+                    }
+                    
+                    // ダウンロード実行.
+
+                    var downloadYield = downloadTask.Value.ToYieldInstruction(yieldCancel.Token);
+
+                    while (!downloadYield.IsDone)
+                    {
+                        yield return null;
+                    }
+
+                    // ダウンロード中リストから除外.
+                    if (downloadList.Contains(downloadTask.Key))
+                    {
+                        downloadList.Remove(downloadTask.Key);
+                    }
+
+                    // ダウンロード待ちリストから除外.
+                    if (downloadQueueing.ContainsKey(downloadTask.Key))
+                    {
+                        downloadQueueing.Remove(downloadTask.Key);
+                    }
+                }
+            }
+        }
+
+        private IEnumerator DownloadAssetBundle(AssetInfo assetInfo, IProgress<float> progress = null)
+        {
+            //----------------------------------------------------------------------------------
+            // ※ 呼び出し頻度が高いのでFromMicroCoroutineで呼び出される.
+            //    戻り値を返す時はyield return null以外使わない.
+            //----------------------------------------------------------------------------------
+            
+            var downloadUrl = BuildDownloadUrl(assetInfo);
+
+            var filePath = BuildFilePath(assetInfo);
+
+            var downloader = Observable.Defer(() => Observable.FromMicroCoroutine(() => FileDownload(downloadUrl, filePath, progress)));
+
+            var downloadYield = downloader
+                    .Timeout(TimeoutLimit)
+                    .OnErrorRetry((TimeoutException ex) => OnTimeout(assetInfo, ex), RetryCount, RetryDelaySeconds)
+                    .DoOnError(x => OnError(x))
+                    .ToYieldInstruction(false, yieldCancel.Token);
+
+            while (!downloadYield.IsDone)
+            {
+                yield return null;
             }
         }
 
@@ -330,31 +393,6 @@ namespace Modules.AssetBundles
                     progress.Report(webRequest.downloadProgress);
                 }
 
-                yield return null;
-            }
-        }
-
-        private IEnumerator DownloadAssetBundle(AssetInfo assetInfo, IProgress<float> progress = null)
-        {
-            //----------------------------------------------------------------------------------
-            // ※ 呼び出し頻度が高いのでFromMicroCoroutineで呼び出される.
-            //    戻り値を返す時はyield return null以外使わない.
-            //----------------------------------------------------------------------------------
-            
-            var downloadUrl = BuildDownloadUrl(assetInfo);
-
-            var filePath = BuildFilePath(assetInfo);
-
-            var downloader = Observable.Defer(() => Observable.FromMicroCoroutine(() => FileDownload(downloadUrl, filePath, progress)));
-
-            var downloadYield = downloader
-                    .Timeout(TimeoutLimit)
-                    .OnErrorRetry((TimeoutException ex) => OnTimeout(assetInfo, ex), RetryCount, RetryDelaySeconds)
-                    .DoOnError(x => OnError(x))
-                    .ToYieldInstruction(false, yieldCancel.Token);
-
-            while (!downloadYield.IsDone)
-            {
                 yield return null;
             }
         }
