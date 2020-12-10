@@ -25,9 +25,9 @@ namespace Modules.Master
         IObservable<bool> Load(AesManaged aesManaged);
     }
 
-    public abstract class MasterContainer<TMasterData>
+    public abstract class MasterContainer<TMasterRecord>
     {
-        public TMasterData[] records = null;
+        public TMasterRecord[] records = null;
     }
 
     public abstract class Master<TMaster, TMasterContainer, TMasterRecord> : IMaster

@@ -56,7 +56,6 @@ namespace Modules.ExternalResource
 
         #endif
 
-
         // 外部アセットディレクトリ.
         private string resourceDir = null;
 
