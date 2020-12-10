@@ -4,27 +4,27 @@ using Extensions;
 
 namespace Modules.Master
 {
-    public sealed class CacheData<Tkey, TValue> : ICacheData where Tkey : struct
+    public sealed class CacheData<TKey, TValue> : ICacheData where TKey : struct
     {
         //----- params -----
 
         //----- field -----
 
-        private Dictionary<Tkey, TValue> cache = null;
+        private Dictionary<TKey, TValue> cache = null;
 
-        private Func<Tkey, TValue> function = null;
+        private Func<TKey, TValue> function = null;
 
         //----- property -----
 
         //----- method -----
 
-        public CacheData(Func<Tkey, TValue> function)
+        public CacheData(Func<TKey, TValue> function)
         {
             CacheDataManager.Instance.Add(this);
 
             this.function = function;
 
-            cache = new Dictionary<Tkey, TValue>();
+            cache = new Dictionary<TKey, TValue>();
         }
 
         ~CacheData()
@@ -32,7 +32,7 @@ namespace Modules.Master
             CacheDataManager.Instance.Remove(this);
         }
 
-        public TValue Get(Tkey key, TValue defaultValue = default)
+        public TValue Get(TKey key, TValue defaultValue = default)
         {
             if (function == null) { return defaultValue; }
 
