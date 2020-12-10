@@ -4,7 +4,7 @@ using Extensions;
 
 namespace Modules.Master
 {
-    public sealed class CacheData<Tkey, TValue> where Tkey : struct
+    public sealed class CacheData<Tkey, TValue> : ICacheData where Tkey : struct
     {
         //----- params -----
 
@@ -20,9 +20,16 @@ namespace Modules.Master
 
         public CacheData(Func<Tkey, TValue> function)
         {
+            CacheDataManager.Instance.Add(this);
+
             this.function = function;
 
             cache = new Dictionary<Tkey, TValue>();
+        }
+
+        ~CacheData()
+        {
+            CacheDataManager.Instance.Remove(this);
         }
 
         public TValue Get(Tkey key, TValue defaultValue = default)

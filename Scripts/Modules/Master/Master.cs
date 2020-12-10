@@ -300,7 +300,7 @@ namespace Modules.Master
             ClearVersion();
         }
 
-        /// <summary> キャッシュデータなど内部で保持しているデータをクリア. </summary>
+        /// <summary> 内部で保持しているデータをクリア. </summary>
         protected virtual void Refresh() { }
 
         protected abstract string GetRecordKey(TMasterRecord masterRecord);
