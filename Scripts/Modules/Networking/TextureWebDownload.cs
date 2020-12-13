@@ -6,7 +6,7 @@ using System;
 using System.Collections;
 using System.Text;
 using UniRx;
-using Modules.Devkit;
+using Modules.Devkit.Console;
 
 namespace Modules.Networking
 {

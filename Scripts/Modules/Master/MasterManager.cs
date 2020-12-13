@@ -45,9 +45,9 @@ namespace Modules.Master
 
         public static string GetMasterFileName(Type type)
         {
-            if (!(type is IMaster))
+            if (!typeof(IMaster).IsAssignableFrom(type))
             {
-                throw new InvalidDataException();
+                throw new InvalidDataException(string.Format("Type error : {0}", type.FullName));
             }
 
             // 通常はクラス名をそのままマスター名として扱う.

@@ -10,7 +10,7 @@ using System.Text;
 using UniRx;
 using Extensions;
 using Constants;
-using Modules.Devkit;
+using Modules.Devkit.Console;
 using Modules.SceneManagement.Diagnostics;
 
 namespace Modules.SceneManagement

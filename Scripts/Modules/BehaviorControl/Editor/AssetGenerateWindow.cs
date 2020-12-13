@@ -9,7 +9,7 @@ using System.Diagnostics;
 using System.Text;
 using Extensions;
 using Extensions.Devkit;
-using Modules.Devkit;
+using Modules.Devkit.Console;
 using Modules.Devkit.Generators;
 using Modules.Devkit.Prefs;
 

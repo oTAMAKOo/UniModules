@@ -3,7 +3,7 @@ using UnityEngine;
 using System.Collections.Generic;
 using Extensions;
 
-namespace Modules.Devkit
+namespace Modules.Devkit.Console
 {
     // ※ 色コードは下記参照.
     // http://arikalog.hateblo.jp/entry/2013/12/02/215401
@@ -20,7 +20,7 @@ namespace Modules.Devkit
 
         //----- field -----
 
-        private static bool? isDevlopmentBuild = null;
+        private static bool? isDevelopmentBuild = null;
 
         //----- property -----
 
@@ -37,12 +37,12 @@ namespace Modules.Devkit
         {
             get
             {
-                if (!isDevlopmentBuild.HasValue)
+                if (!isDevelopmentBuild.HasValue)
                 {
-                    isDevlopmentBuild = UnityEngine.Debug.isDebugBuild;
+                    isDevelopmentBuild = UnityEngine.Debug.isDebugBuild;
                 }
 
-                return isDevlopmentBuild.Value;
+                return isDevelopmentBuild.Value;
             }
         }
 
@@ -66,6 +66,12 @@ namespace Modules.Devkit
 
             if (DisableEventNames.Contains(eventName)) { return; }
 
+            #if UNITY_EDITOR
+
+            if (!CheckEnable(eventName)) { return; }
+
+            #endif
+
             using (new DisableStackTraceScope())
             {
                 var colorCode = color.ColorToHex(false);
@@ -76,11 +82,20 @@ namespace Modules.Devkit
 
         public static void Event(string eventName, Color color, string format, params object[] args)
         {
-            if (!isDebugBuild) { return; }
-
-            if (DisableEventNames.Contains(eventName)) { return; }
-
             Event(eventName, color, string.Format(format, args));
         }
+
+        #if UNITY_EDITOR
+
+        private static bool CheckEnable(string eventName)
+        {
+            var unityConsoleManager = UnityConsoleManager.Instance;
+
+            if (!unityConsoleManager.IsEnable()){ return false; }
+
+            return unityConsoleManager.IsEventEnable(eventName);
+        }
+
+        #endif
     }
 }

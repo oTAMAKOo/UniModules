@@ -58,7 +58,7 @@ namespace Modules.GameText.Editor
                 {
                     if (GUILayout.Button("Generate"))
                     {
-                        GameTextGenerater.Generate(GameText.AssetType.Extend, info);
+                        GameTextGenerator.Generate(GameText.AssetType.Extend, info);
 
                         Repaint();
                     }

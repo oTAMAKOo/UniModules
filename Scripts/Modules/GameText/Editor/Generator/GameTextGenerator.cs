@@ -6,7 +6,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Extensions;
 using Extensions.Devkit;
-using Modules.Devkit;
+using Modules.Devkit.Console;
 using Modules.Devkit.Generators;
 using Modules.GameText.Components;
 
@@ -14,7 +14,7 @@ using DirectoryUtility = Extensions.DirectoryUtility;
 
 namespace Modules.GameText.Editor
 {
-    public static class GameTextGenerater
+    public static class GameTextGenerator
     {
         //----- params -----
 
@@ -42,7 +42,7 @@ namespace Modules.GameText.Editor
 
             var contentsFolderPath = string.Empty;
 
-            var aseetFolderPath = string.Empty;
+            var assetFolderPath = string.Empty;
 
             switch (type)
             {
@@ -52,7 +52,7 @@ namespace Modules.GameText.Editor
 
                         scriptFolderPath = builtInGameTextSetting.ScriptFolderPath;
                         contentsFolderPath = builtInGameTextSetting.GetContentsFolderPath();
-                        aseetFolderPath = builtInGameTextSetting.AseetFolderPath;
+                        assetFolderPath = builtInGameTextSetting.AseetFolderPath;
                     }
                     break;
 
@@ -64,7 +64,7 @@ namespace Modules.GameText.Editor
                         if (!updateGameTextSetting.Enable) { return; }
 
                         contentsFolderPath = builtInGameTextSetting.GetContentsFolderPath();
-                        aseetFolderPath = updateGameTextSetting.AseetFolderPath;
+                        assetFolderPath = updateGameTextSetting.AseetFolderPath;
                     }
                     break;
 
@@ -75,7 +75,7 @@ namespace Modules.GameText.Editor
                         if (!extendGameTextSetting.Enable) { return; }
 
                         contentsFolderPath = extendGameTextSetting.GetContentsFolderPath();
-                        aseetFolderPath = extendGameTextSetting.AseetFolderPath;
+                        assetFolderPath = extendGameTextSetting.AseetFolderPath;
                     }
                     break;
             }
@@ -84,7 +84,7 @@ namespace Modules.GameText.Editor
 
             var assetFileName = GameText.GetAssetFileName(type, info.Identifier);
 
-            var assetPath = PathUtility.Combine(new string[] { aseetFolderPath, assetFolderName, assetFileName });
+            var assetPath = PathUtility.Combine(new string[] { assetFolderPath, assetFolderName, assetFileName });
 
             var generateInfo = new GenerateInfo
             {

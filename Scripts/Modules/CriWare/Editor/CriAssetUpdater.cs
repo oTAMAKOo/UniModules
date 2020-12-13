@@ -7,13 +7,9 @@ using System;
 using System.Text;
 using System.IO;
 using System.Linq;
-using System.Collections;
-using System.Collections.Generic;
-using UniRx;
 using Extensions;
 using Extensions.Devkit;
-
-using Modules.Devkit;
+using Modules.Devkit.Console;
 using Modules.Devkit.Project;
 
 #if ENABLE_CRIWARE_ADX

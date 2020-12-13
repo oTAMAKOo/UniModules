@@ -10,7 +10,7 @@ using System.Collections.Generic;
 using System.Text;
 using UniRx;
 using Extensions;
-using Modules.Devkit;
+using Modules.Devkit.Console;
 
 namespace Modules.SoundManagement
 {

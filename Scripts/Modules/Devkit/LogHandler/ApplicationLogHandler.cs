@@ -4,7 +4,7 @@ using UnityEngine;
 using UniRx;
 using Extensions;
 
-namespace Modules.Devkit.Log
+namespace Modules.Devkit.LogHandler
 {
     public sealed class ApplicationLogHandler : Singleton<ApplicationLogHandler>
     {

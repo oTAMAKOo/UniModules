@@ -9,7 +9,7 @@ using UniRx;
 using Extensions;
 using MessagePack;
 using MessagePack.Resolvers;
-using Modules.Devkit;
+using Modules.Devkit.Console;
 using Modules.MessagePack;
 
 namespace Modules.Networking

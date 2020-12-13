@@ -3,7 +3,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using UniRx;
 using Extensions;
-using Modules.Devkit.Log;
+using Modules.Devkit.LogHandler;
 
 #if ENABLE_SRDEBUGGER
 

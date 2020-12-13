@@ -6,7 +6,7 @@ using System.IO;
 using System.Text;
 using System.Text.RegularExpressions;
 using Extensions;
-using Modules.Devkit;
+using Modules.Devkit.Console;
 using Modules.Devkit.Generators;
 
 namespace Modules.GameText.Editor

@@ -103,7 +103,7 @@ namespace Modules.GameText.Editor
                                 break;
                         }
 
-                        GameTextGenerater.Generate(assetType, info);
+                        GameTextGenerator.Generate(assetType, info);
 
                         Repaint();
                     }

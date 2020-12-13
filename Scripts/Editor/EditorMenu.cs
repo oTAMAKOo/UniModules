@@ -26,6 +26,7 @@ using Modules.Devkit.SceneImporter;
 using Modules.Devkit.SceneLaunch;
 using Modules.Devkit.Hierarchy;
 using Modules.Devkit.AssetTuning;
+using Modules.Devkit.Console;
 using Modules.Devkit.U2D;
 
 #if ENABLE_CRIWARE_ADX || ENABLE_CRIWARE_SOFDEC
@@ -505,7 +506,13 @@ namespace Modules
             ShaderVariantUpdateWindow.Open();
         }
 
-        [MenuItem(itemName: WindowsMenu + "Open BehaviorControlMonitor", priority = 7)]
+        [MenuItem(itemName: WindowsMenu + "Open UnityConsoleConfigWindow", priority = 7)]
+        public static void OpenUnityConsoleConfigWindow()
+        {
+            UnityConsoleConfigWindow.Open();
+        }
+
+        [MenuItem(itemName: WindowsMenu + "Open BehaviorControlMonitor", priority = 8)]
         public static void OpenBehaviorControlMonitor()
         {
             BehaviorControlMonitor.Open();

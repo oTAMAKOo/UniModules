@@ -448,7 +448,7 @@ namespace Extensions.Devkit
                 fontStyle = fontStyle,
                 normal = labelStyleState,
             };
-            
+
             var size = labelStyle.CalcSize(new GUIContent(text));
 
             using (new BackgroundColorScope(backgroundColor.HasValue ? backgroundColor.Value : BackgroundColor))

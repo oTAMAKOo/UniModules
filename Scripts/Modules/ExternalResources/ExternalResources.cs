@@ -8,8 +8,8 @@ using System.Collections.Generic;
 using System.Text;
 using UniRx;
 using Extensions;
-using Modules.Devkit;
 using Modules.AssetBundles;
+using Modules.Devkit.Console;
 using Modules.UniRxExtension;
 
 #if ENABLE_CRIWARE_ADX || ENABLE_CRIWARE_SOFDEC

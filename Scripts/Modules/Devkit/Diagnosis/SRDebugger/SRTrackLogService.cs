@@ -6,7 +6,7 @@ using UnityEngine;
 using System.Collections.Generic;
 using UniRx;
 using Extensions;
-using Modules.Devkit.Log;
+using Modules.Devkit.LogHandler;
 
 namespace Modules.Devkit.Diagnosis.SRDebugger
 {

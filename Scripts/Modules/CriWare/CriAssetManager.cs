@@ -10,7 +10,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UniRx;
 using Extensions;
-using Modules.Devkit;
+using Modules.Devkit.Console;
 using Modules.ExternalResource;
 
 namespace Modules.CriWare

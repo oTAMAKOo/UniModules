@@ -10,7 +10,7 @@ using System.Text;
 using System.Security.Cryptography;
 using UniRx;
 using Extensions;
-using Modules.Devkit;
+using Modules.Devkit.Console;
 using Modules.ExternalResource;
 using Modules.UniRxExtension;
 

@@ -5,7 +5,7 @@ using System.Linq;
 using System.Collections.Generic;
 using UniRx;
 using Extensions;
-using Modules.Devkit.Log;
+using Modules.Devkit.LogHandler;
 
 namespace Modules.InputProtection
 {
