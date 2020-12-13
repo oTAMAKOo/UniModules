@@ -102,7 +102,12 @@ namespace Modules.Devkit.Console
                                 consoleInfo.enable = EditorGUILayout.Toggle(consoleInfo.enable, GUILayout.Width(18f));
                             }
 
-                            using (new DisableScope(consoleInfo.eventName == UnityConsole.InfoEvent.ConsoleEventName))
+                            var disableDelete = false;
+
+                            disableDelete |= consoleInfo.eventName == UnityConsole.InfoEvent.ConsoleEventName;
+                            disableDelete |= IsDefinedInfo(consoleInfo.eventName);
+
+                            using (new DisableScope(disableDelete))
                             {
                                 if (GUILayout.Button("-", GUILayout.Height(18f)))
                                 {
@@ -208,6 +213,17 @@ namespace Modules.Devkit.Console
             {
                 unityConsoleManager.Save(consoleInfos);
             }
+        }
+
+        private bool IsDefinedInfo(string eventName)
+        {
+            var config = UnityConsoleConfig.Instance;
+
+            if (config == null) { return false; }
+
+            var definedInfos = config.GetDefinedInfos();
+
+            return definedInfos.Any(x => x.eventName == eventName);
         }
     }
 }
