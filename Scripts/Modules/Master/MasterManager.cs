@@ -47,7 +47,7 @@ namespace Modules.Master
         {
             if (!typeof(IMaster).IsAssignableFrom(type))
             {
-                throw new InvalidDataException(string.Format("Type error : {0}", type.FullName));
+                throw new InvalidDataException(string.Format("Type error require IMaster interface. : {0}", type.FullName));
             }
 
             // 通常はクラス名をそのままマスター名として扱う.
