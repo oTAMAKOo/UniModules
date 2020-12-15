@@ -30,8 +30,9 @@ namespace Modules.Master
         public TMasterRecord[] records = null;
     }
 
-    public abstract class Master<TMaster, TMasterContainer, TMasterRecord> : IMaster
-        where TMaster : Master<TMaster, TMasterContainer, TMasterRecord>, new()
+    public abstract class Master<TKey, TMaster, TMasterContainer, TMasterRecord> : IMaster
+        where TKey : IConvertible
+        where TMaster : Master<TKey, TMaster, TMasterContainer, TMasterRecord>, new()
         where TMasterContainer : MasterContainer<TMasterRecord>
     {
         //----- params -----
@@ -47,7 +48,8 @@ namespace Modules.Master
 
         //----- field -----
 
-        private Dictionary<string, TMasterRecord> records = new Dictionary<string, TMasterRecord>();
+        private Dictionary<TKey, TMasterRecord> records = new Dictionary<TKey, TMasterRecord>();
+
         private Prefs versionPrefs = new Prefs();
 
         private static TMaster instance = null;
@@ -286,7 +288,7 @@ namespace Modules.Master
             return records.Values;
         }
 
-        public TMasterRecord GetRecord(string key)
+        public TMasterRecord GetRecord(TKey key)
         {
             return records.GetValueOrDefault(key);
         }
@@ -303,7 +305,7 @@ namespace Modules.Master
         /// <summary> 内部で保持しているデータをクリア. </summary>
         protected virtual void Refresh() { }
 
-        protected abstract string GetRecordKey(TMasterRecord masterRecord);
+        protected abstract TKey GetRecordKey(TMasterRecord masterRecord);
 
         protected abstract IObservable<Unit> DownloadMaster();
     }
