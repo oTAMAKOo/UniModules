@@ -168,26 +168,11 @@ namespace Modules.Devkit.MasterViewer
         {
             var allMasters = GetAllMasters();
             
-            var loadFinishCount = 0;
-            var totalMasterCount = allMasters.Length;
-
-            Action displayProgressBar = () =>
-            {
-                EditorUtility.DisplayProgressBar("Load Progress", "Loading all masters", loadFinishCount / totalMasterCount);
-            };
-
-            Action onLoadFinish = () =>
-            {
-                loadFinishCount++;
-
-                displayProgressBar();
-            };
-
             var aesManaged = GetAesManaged();
 
             Func<IMaster, IObservable<Unit>> createMasterLoadObservable = master =>
             {
-                return Observable.Defer(() => master.Load(aesManaged, false).Do(_ => onLoadFinish())).AsUnitObservable();
+                return Observable.Defer(() => master.Load(aesManaged, false)).AsUnitObservable();
             };
 
             Action onLoadComplete = () =>
@@ -207,8 +192,6 @@ namespace Modules.Devkit.MasterViewer
 
                 Repaint();
             };
-
-            displayProgressBar();
 
             allMasters.Select(x => createMasterLoadObservable(x)).WhenAll()
                 .Finally(() => EditorUtility.ClearProgressBar())
