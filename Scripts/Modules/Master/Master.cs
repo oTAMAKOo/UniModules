@@ -210,6 +210,7 @@ namespace Modules.Master
             {
                 if (cleanOnError)
                 {
+                    // 強制更新させる為バージョン情報を削除.
                     ClearVersion();
                 }
 
@@ -301,9 +302,6 @@ namespace Modules.Master
         {
             // キャッシュデータなどをクリア.
             Refresh();
-
-            // 強制更新させる為バージョン情報を削除.
-            ClearVersion();
         }
 
         /// <summary> 内部で保持しているデータをクリア. </summary>
