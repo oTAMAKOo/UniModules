@@ -21,9 +21,9 @@ namespace Modules.Devkit.MasterViewer
 
         private Vector2 scrollPosition = Vector2.zero;
 
-        private MasterController[] displayContents = null;
+        private MasterControllerBase[] displayContents = null;
 
-        private MasterController[] masterControllers = null;
+        private MasterControllerBase[] masterControllers = null;
 
         [NonSerialized]
         private bool initialized = false;
@@ -42,7 +42,7 @@ namespace Modules.Devkit.MasterViewer
 
             minSize = WindowSize;
 
-            masterControllers = new MasterController[0];
+            masterControllers = new MasterControllerBase[0];
 
             // マスターロード実行.
             LoadMasterData().Subscribe().AddTo(Disposable);
@@ -57,7 +57,7 @@ namespace Modules.Devkit.MasterViewer
             windows.ForEach(x => x.Close());
         }
 
-        protected void SetMasterController(MasterController[] masterControllers)
+        protected void SetMasterController(MasterControllerBase[] masterControllers)
         {
             this.masterControllers = masterControllers;
 
@@ -151,11 +151,11 @@ namespace Modules.Devkit.MasterViewer
             }
         }
 
-        private MasterController[] GetDisplayMasters()
+        private MasterControllerBase[] GetDisplayMasters()
         {
             if (string.IsNullOrEmpty(searchText)) { return masterControllers; }
 
-            var list = new List<MasterController>();
+            var list = new List<MasterControllerBase>();
 
             var keywords = searchText.Split(new char[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
 

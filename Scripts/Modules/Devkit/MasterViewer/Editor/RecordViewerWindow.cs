@@ -21,7 +21,7 @@ namespace Modules.Devkit.MasterViewer
 
         //----- field -----
 
-        private MasterController masterController = null;
+        private MasterControllerBase masterController = null;
 
         private RecordScrollView recordScrollView = null;
 
@@ -49,7 +49,7 @@ namespace Modules.Devkit.MasterViewer
 
         //----- method -----
 
-        public static RecordViewerWindow Open(MasterController masterController)
+        public static RecordViewerWindow Open(MasterControllerBase masterController)
         {
             RecordViewerWindow recordViewerWindow = null;
 
@@ -83,7 +83,7 @@ namespace Modules.Devkit.MasterViewer
             return (RecordViewerWindow[])Resources.FindObjectsOfTypeAll(typeof(RecordViewerWindow));
         }
 
-        public void Initialize(MasterController masterController)
+        public void Initialize(MasterControllerBase masterController)
         {
             this.masterController = masterController;
 
@@ -478,7 +478,7 @@ namespace Modules.Devkit.MasterViewer
 
         //----- field -----
 
-        private MasterController masterController = null;
+        private MasterControllerBase masterController = null;
 
         private Subject<Unit> onChangeRecord = null;
 
@@ -490,7 +490,7 @@ namespace Modules.Devkit.MasterViewer
 
         //----- method -----
 
-        public RecordScrollView(MasterController masterController)
+        public RecordScrollView(MasterControllerBase masterController)
         {
             this.masterController = masterController;
         }

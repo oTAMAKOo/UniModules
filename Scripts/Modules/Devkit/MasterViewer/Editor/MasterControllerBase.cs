@@ -9,7 +9,7 @@ using Extensions;
 
 namespace Modules.Devkit.MasterViewer
 {
-    public abstract class MasterController
+    public abstract class MasterControllerBase
     {
         //----- params -----
 
