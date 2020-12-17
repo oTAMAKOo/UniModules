@@ -22,7 +22,7 @@ namespace Modules.Master
         void ClearVersion();
 
         IObservable<bool> Update(string masterVersion, CancellationToken cancelToken);
-        IObservable<bool> Load(AesManaged aesManaged);
+        IObservable<bool> Load(AesManaged aesManaged, bool cleanOnError);
     }
 
     public abstract class MasterContainer<TMasterRecord>
@@ -143,14 +143,14 @@ namespace Modules.Master
             records.Clear();
         }
 
-        public IObservable<bool> Load(AesManaged aesManaged)
+        public IObservable<bool> Load(AesManaged aesManaged, bool cleanOnError)
         {
             Refresh();
 
-            return Observable.FromMicroCoroutine<bool>(observer => LoadInternal(observer, aesManaged));
+            return Observable.FromMicroCoroutine<bool>(observer => LoadInternal(observer, aesManaged, cleanOnError));
         }
 
-        private IEnumerator LoadInternal(IObserver<bool> observer, AesManaged aesManaged)
+        private IEnumerator LoadInternal(IObserver<bool> observer, AesManaged aesManaged, bool cleanOnError)
         {
             var result = false;
 
@@ -208,7 +208,11 @@ namespace Modules.Master
 
             if (!result)
             {
-                File.Delete(installPath);
+                if (cleanOnError)
+                {
+                    ClearVersion();
+                }
+
                 OnError();
             }
 
