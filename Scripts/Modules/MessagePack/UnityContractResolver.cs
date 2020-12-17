@@ -59,6 +59,9 @@ namespace Modules.MessagePack
             {
                 GeneratedResolver.Instance,
 
+                // DateTime.
+                DateTimeResolver.Instance,
+
                 // Builtin.
                 BuiltinResolver.Instance,
 
@@ -84,6 +87,9 @@ namespace Modules.MessagePack
         {
             return new IFormatterResolver[]
             {
+                // DateTime.
+                DateTimeResolver.Instance,
+
                 // Builtin.
                 BuiltinResolver.Instance,
 
@@ -105,7 +111,7 @@ namespace Modules.MessagePack
                 
                 // Object (Map Mode).
                 DynamicContractlessObjectResolver.Instance,
-
+                
                 // Primitive.
                 PrimitiveObjectResolver.Instance,
             };
