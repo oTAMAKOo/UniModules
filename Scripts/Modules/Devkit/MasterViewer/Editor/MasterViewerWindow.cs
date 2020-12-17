@@ -54,12 +54,9 @@ namespace Modules.Devkit.MasterViewer
 
             masterControllers = new List<TMasterController>();
 
-            // 読み込み先設定.
-            var loadDirectory = GetLoadDirectory();
-
-            masterManager.SetInstallDirectory(loadDirectory);
-
             loadMasterRequest = true;
+
+            OnInitialize();
 
             initialized = true;
         }
@@ -248,7 +245,7 @@ namespace Modules.Devkit.MasterViewer
             return list.ToArray();
         }
 
-        protected abstract string GetLoadDirectory();
+        protected virtual void OnInitialize() { }
 
         protected abstract AesManaged GetAesManaged();
 
