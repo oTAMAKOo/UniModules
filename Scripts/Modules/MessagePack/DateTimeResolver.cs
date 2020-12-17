@@ -9,7 +9,7 @@ namespace Modules.MessagePack
     {
         public static IFormatterResolver Instance = new DateTimeResolver();
 
-        DateTimeResolver() { }
+        private DateTimeResolver() { }
 
         public IMessagePackFormatter<T> GetFormatter<T>()
         {
@@ -29,11 +29,11 @@ namespace Modules.MessagePack
             {
                 if (t == typeof(DateTime))
                 {
-                    return new DateTimeFormatter();
+                    return DateTimeFormatter.Instance;
                 }
                 else if (t == typeof(DateTime?))
                 {
-                    return new StaticNullableFormatter<DateTime>(new DateTimeFormatter());
+                    return new StaticNullableFormatter<DateTime>(DateTimeFormatter.Instance);
                 }
 
                 return null;
@@ -43,11 +43,11 @@ namespace Modules.MessagePack
 
     public class DateTimeFormatter : IMessagePackFormatter<DateTime>
     {
+        public static readonly DateTimeFormatter Instance = new DateTimeFormatter();
+
         public void Serialize(ref MessagePackWriter writer, DateTime value, MessagePackSerializerOptions options)
         {
-            var dateData = value.ToBinary();
-
-            writer.Write(dateData);
+            NativeDateTimeFormatter.Instance.Serialize(ref writer, value, options);
         }
 
         public DateTime Deserialize(ref MessagePackReader reader, MessagePackSerializerOptions options)
@@ -60,9 +60,7 @@ namespace Modules.MessagePack
             }
             else
             {
-                var dateData = reader.ReadInt64();
-
-                return DateTime.FromBinary(dateData);
+                return NativeDateTimeFormatter.Instance.Deserialize(ref reader, options);
             }           
         }
     }
