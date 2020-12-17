@@ -29,7 +29,9 @@ namespace Modules.Devkit.MasterViewer
 
         private TMasterController[] displayContents = null;
 
-        private TMasterController[] masterControllers = null;
+        private List<TMasterController> masterControllers = null;
+
+        private bool loadMasterRequest = false;
 
         [NonSerialized]
         private bool initialized = false;
@@ -50,15 +52,14 @@ namespace Modules.Devkit.MasterViewer
 
             minSize = WindowSize;
 
-            masterControllers = new TMasterController[0];
+            masterControllers = new List<TMasterController>();
 
             // 読み込み先設定.
             var loadDirectory = GetLoadDirectory();
 
             masterManager.SetInstallDirectory(loadDirectory);
 
-            // マスターロード実行.
-            LoadAllMasterData();
+            loadMasterRequest = true;
 
             initialized = true;
         }
@@ -70,16 +71,16 @@ namespace Modules.Devkit.MasterViewer
             windows.ForEach(x => x.Close());
         }
 
-        protected void SetMasterController(TMasterController[] masterControllers)
-        {
-            this.masterControllers = masterControllers;
-
-            displayContents = GetDisplayMasters();
-        }
-
         void OnGUI()
         {
             Initialize();
+
+            // マスターロード実行.
+
+            if (loadMasterRequest)
+            {
+                LoadAllMasterData().Subscribe().AddTo(Disposable);
+            }
 
             // Toolbar.
 
@@ -105,7 +106,7 @@ namespace Modules.Devkit.MasterViewer
                 {
                     if (GUILayout.Button("Load", EditorStyles.toolbarButton, GUILayout.Width(40f)))
                     {
-                        LoadAllMasterData();
+                        LoadAllMasterData().Subscribe().AddTo(Disposable);
                     }
                 }
 
@@ -164,20 +165,41 @@ namespace Modules.Devkit.MasterViewer
             }
         }
 
-        private void LoadAllMasterData()
+        public IObservable<Unit> LoadAllMasterData()
         {
+            loadMasterRequest = false;
+
+            var isComplete = false;
+
             var allMasters = GetAllMasters();
             
             var aesManaged = GetAesManaged();
 
+            var loadFinishCount = 0;
+            var totalMasterCount = allMasters.Length;
+
+            Action displayProgressBar = () =>
+            {
+                if (isComplete) { return; }
+
+                EditorUtility.DisplayProgressBar("Load Progress", "Loading all masters", loadFinishCount / totalMasterCount);
+            };
+
+            Action onLoadFinish = () =>
+            {
+                loadFinishCount++;
+
+                displayProgressBar();
+            };
+
             Func<IMaster, IObservable<Unit>> createMasterLoadObservable = master =>
             {
-                return Observable.Defer(() => master.Load(aesManaged, false)).AsUnitObservable();
+                return Observable.Defer(() => master.Load(aesManaged, false).Do(_ => onLoadFinish())).AsUnitObservable();
             };
 
             Action onLoadComplete = () =>
             {
-                var masterControllers = new List<TMasterController>();
+                masterControllers = new List<TMasterController>();
 
                 foreach (var master in allMasters)
                 {
@@ -188,20 +210,23 @@ namespace Modules.Devkit.MasterViewer
                     masterControllers.Add(masterController);
                 }
 
-                SetMasterController(masterControllers.ToArray());
-
+                displayContents = GetDisplayMasters();
+                
                 Repaint();
+
+                isComplete = true;
             };
 
-            allMasters.Select(x => createMasterLoadObservable(x)).WhenAll()
+            return allMasters.Select(x => createMasterLoadObservable(x)).WhenAll()
+                .Do(_ => onLoadComplete())
                 .Finally(() => EditorUtility.ClearProgressBar())
-                .Subscribe(_ => onLoadComplete())
-                .AddTo(Disposable);
+                .DelayFrame(1)  // プログレスバーが消えるのを待つ.
+                .AsUnitObservable();
         }
 
         private TMasterController[] GetDisplayMasters()
         {
-            if (string.IsNullOrEmpty(searchText)) { return masterControllers; }
+            if (string.IsNullOrEmpty(searchText)) { return masterControllers.ToArray(); }
 
             var list = new List<TMasterController>();
 
