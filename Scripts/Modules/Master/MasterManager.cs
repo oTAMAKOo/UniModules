@@ -45,6 +45,8 @@ namespace Modules.Master
 
         public static string GetMasterFileName(Type type)
         {
+            const string MasterSuffix = "Master";
+
             if (!typeof(IMaster).IsAssignableFrom(type))
             {
                 throw new InvalidDataException(string.Format("Type error require IMaster interface. : {0}", type.FullName));
@@ -52,6 +54,11 @@ namespace Modules.Master
 
             // 通常はクラス名をそのままマスター名として扱う.
             var fileName = type.Name;
+
+            if (fileName.EndsWith(MasterSuffix))
+            {
+                fileName = fileName.SafeSubstring(0, fileName.Length - MasterSuffix.Length);
+            }
 
             // FileNameAttributeを持っている場合はそちらの名前を採用する.
 
