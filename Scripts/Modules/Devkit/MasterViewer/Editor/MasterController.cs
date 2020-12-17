@@ -4,18 +4,22 @@ using UnityEditor;
 using System;
 using System.Collections;
 using System.Linq;
+using System.Reflection;
 using System.Collections.Generic;
 using Extensions;
+using Modules.Master;
 
 namespace Modules.Devkit.MasterViewer
 {
-    public abstract class MasterControllerBase
+    public class MasterController
     {
         //----- params -----
 
         //----- field -----
 
         private Dictionary<object, object> changedRecords = null;
+
+        protected Dictionary<string, PropertyInfo> propertyInfos = null;
 
         private bool initialized = false;
 
@@ -35,14 +39,27 @@ namespace Modules.Devkit.MasterViewer
 
         //----- method -----
 
-        public void Initialize(Type masterType, object[] records)
+        public void Initialize(IMaster master)
         {
             if (initialized) { return; }
 
             changedRecords = new Dictionary<object, object>();
 
-            MasterType = masterType;
-            Records = records;
+            MasterType = master.GetType();
+
+            // レコード一覧取得.
+
+            var methodInfo = MasterType.GetMethods().FirstOrDefault(x => x.Name == "GetAllRecords");
+
+            var allRecords = (IEnumerable)methodInfo.Invoke(master, null);
+
+            Records = allRecords.Cast<object>().ToArray();
+
+            // レコードのプロパティ情報取得.
+
+            var recordType = Reflection.GetElementTypeOfGenericEnumerable(allRecords);
+
+            propertyInfos = recordType.GetProperties().ToDictionary(x => x.Name);
 
             // フィールド幅計算.
 
@@ -200,21 +217,54 @@ namespace Modules.Devkit.MasterViewer
         }
 
         /// <summary> データ保持用レコードインスタンス生成. </summary>
-        protected abstract object CreateRecordInstance(Type recordType, Dictionary<string, object> arguments);
-
-        /// <summary> マスター表示名取得. </summary>
-        public abstract string GetDisplayMasterName();
+        protected object CreateRecordInstance(Type recordType, Dictionary<string, object> arguments)
+        {
+            return Activator.CreateInstance(recordType, arguments.Values.ToArray());
+        }
 
         /// <summary> 値名取得. </summary>
-        public abstract string[] GetValueNames();
+        public string[] GetValueNames()
+        {
+            return propertyInfos.Keys.ToArray();
+        }
 
         /// <summary> 値の型取得. </summary>
-        public abstract Type GetValueType(string valueName);
+        public Type GetValueType(string valueName)
+        {
+            var propertyInfo = propertyInfos.GetValueOrDefault(valueName);
+
+            return propertyInfo.PropertyType;
+        }
 
         /// <summary> 値の設定. </summary>
-        public abstract void SetValue(object record, string valueName, object value);
+        public void SetValue(object record, string valueName, object value)
+        {
+            var propertyInfo = propertyInfos.GetValueOrDefault(valueName);
+
+            propertyInfo.SetValue(record, Convert.ChangeType(value, propertyInfo.PropertyType));
+        }
 
         /// <summary> 値の取得. </summary>
-        public abstract object GetValue(object record, string valueName);
+        public object GetValue(object record, string valueName)
+        {
+            var propertyInfo = propertyInfos.GetValueOrDefault(valueName);
+
+            return propertyInfo.GetValue(record);
+        }
+
+        /// <summary> マスター表示名取得. </summary>
+        public virtual string GetDisplayMasterName()
+        {
+            const string MasterSuffix = "Master";
+
+            var masterName = MasterType.Name;
+
+            if (masterName.EndsWith(MasterSuffix))
+            {
+                masterName = masterName.SafeSubstring(0, masterName.Length - MasterSuffix.Length);
+            }
+
+            return masterName;
+        }
     }
 }

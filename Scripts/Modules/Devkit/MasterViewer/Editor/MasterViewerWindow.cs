@@ -2,14 +2,20 @@
 using UnityEngine;
 using UnityEditor;
 using System;
+using System.Linq;
+using System.Collections;
 using System.Collections.Generic;
+using System.Security.Cryptography;
+using UniRx;
 using Extensions;
 using Extensions.Devkit;
-using UniRx;
+using Modules.Master;
 
 namespace Modules.Devkit.MasterViewer
 {
-    public abstract class MasterViewerWindow<T> : SingletonEditorWindow<T> where T : MasterViewerWindow<T>
+    public abstract class MasterViewerWindow<T, TMasterController> : SingletonEditorWindow<T>
+        where T : MasterViewerWindow<T, TMasterController>
+        where TMasterController : MasterController, new()
     {
         //----- params -----
 
@@ -21,9 +27,9 @@ namespace Modules.Devkit.MasterViewer
 
         private Vector2 scrollPosition = Vector2.zero;
 
-        private MasterControllerBase[] displayContents = null;
+        private TMasterController[] displayContents = null;
 
-        private MasterControllerBase[] masterControllers = null;
+        private TMasterController[] masterControllers = null;
 
         [NonSerialized]
         private bool initialized = false;
@@ -38,14 +44,21 @@ namespace Modules.Devkit.MasterViewer
         {
             if (initialized) { return; }
 
+            var masterManager = MasterManager.Instance;
+
             titleContent = new GUIContent("MasterViewer");
 
             minSize = WindowSize;
 
-            masterControllers = new MasterControllerBase[0];
+            masterControllers = new TMasterController[0];
+
+            // 読み込み先設定.
+            var loadDirectory = GetLoadDirectory();
+
+            masterManager.SetInstallDirectory(loadDirectory);
 
             // マスターロード実行.
-            LoadMasterData().Subscribe().AddTo(Disposable);
+            LoadAllMasterData();
 
             initialized = true;
         }
@@ -57,7 +70,7 @@ namespace Modules.Devkit.MasterViewer
             windows.ForEach(x => x.Close());
         }
 
-        protected void SetMasterController(MasterControllerBase[] masterControllers)
+        protected void SetMasterController(TMasterController[] masterControllers)
         {
             this.masterControllers = masterControllers;
 
@@ -92,7 +105,7 @@ namespace Modules.Devkit.MasterViewer
                 {
                     if (GUILayout.Button("Load", EditorStyles.toolbarButton, GUILayout.Width(40f)))
                     {
-                        LoadMasterData().Subscribe(_ => Repaint()).AddTo(Disposable);
+                        LoadAllMasterData();
                     }
                 }
 
@@ -151,11 +164,63 @@ namespace Modules.Devkit.MasterViewer
             }
         }
 
-        private MasterControllerBase[] GetDisplayMasters()
+        private void LoadAllMasterData()
+        {
+            var allMasters = GetAllMasters();
+            
+            var loadFinishCount = 0;
+            var totalMasterCount = allMasters.Length;
+
+            Action displayProgressBar = () =>
+            {
+                EditorUtility.DisplayProgressBar("Load Progress", "Loading all masters", loadFinishCount / totalMasterCount);
+            };
+
+            Action onLoadFinish = () =>
+            {
+                loadFinishCount++;
+
+                displayProgressBar();
+            };
+
+            var aesManaged = GetAesManaged();
+
+            Func<IMaster, IObservable<Unit>> createMasterLoadObservable = master =>
+            {
+                return Observable.Defer(() => master.Load(aesManaged, false).Do(_ => onLoadFinish())).AsUnitObservable();
+            };
+
+            Action onLoadComplete = () =>
+            {
+                var masterControllers = new List<TMasterController>();
+
+                foreach (var master in allMasters)
+                {
+                    var masterController = new TMasterController();
+
+                    masterController.Initialize(master);
+
+                    masterControllers.Add(masterController);
+                }
+
+                SetMasterController(masterControllers.ToArray());
+
+                Repaint();
+            };
+
+            displayProgressBar();
+
+            allMasters.Select(x => createMasterLoadObservable(x)).WhenAll()
+                .Finally(() => EditorUtility.ClearProgressBar())
+                .Subscribe(_ => onLoadComplete())
+                .AddTo(Disposable);
+        }
+
+        private TMasterController[] GetDisplayMasters()
         {
             if (string.IsNullOrEmpty(searchText)) { return masterControllers; }
 
-            var list = new List<MasterControllerBase>();
+            var list = new List<TMasterController>();
 
             var keywords = searchText.Split(new char[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
 
@@ -175,6 +240,10 @@ namespace Modules.Devkit.MasterViewer
             return list.ToArray();
         }
 
-        protected abstract IObservable<Unit> LoadMasterData();
+        protected abstract string GetLoadDirectory();
+
+        protected abstract AesManaged GetAesManaged();
+
+        protected abstract IMaster[] GetAllMasters();
     }
 }
