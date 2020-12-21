@@ -157,7 +157,7 @@ namespace Extensions
 
                         var encrypted = memoryStream.ToArray();
 
-                        result = Convert.ToBase64String(encrypted);
+                        result = Convert.ToBase64String(encrypted).Replace('+', '-').Replace('/', '_');
                     }
                 }
             }
@@ -176,7 +176,7 @@ namespace Extensions
 
             using (var decryptor = aesManaged.CreateDecryptor())
             {
-                var encrypted = Convert.FromBase64String(value);
+                var encrypted = Convert.FromBase64String(value.Replace('-', '+').Replace('_', '/'));
                 var fromEncrypt = new byte[encrypted.Length];
 
                 using (var memoryStream = new MemoryStream(encrypted))
