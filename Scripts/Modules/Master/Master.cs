@@ -21,8 +21,8 @@ namespace Modules.Master
         bool CheckVersion(string masterVersion);
         void ClearVersion();
 
-        IObservable<bool> Update(string masterVersion, CancellationToken cancelToken);
-        IObservable<bool> Load(AesManaged aesManaged, bool cleanOnError);
+        IObservable<Tuple<bool, double>> Update(string masterVersion, CancellationToken cancelToken);
+        IObservable<Tuple<bool, double>> Load(AesManaged aesManaged, bool cleanOnError);
     }
 
     public abstract class MasterContainer<TMasterRecord>
@@ -143,16 +143,18 @@ namespace Modules.Master
             records.Clear();
         }
 
-        public IObservable<bool> Load(AesManaged aesManaged, bool cleanOnError)
+        public IObservable<Tuple<bool, double>> Load(AesManaged aesManaged, bool cleanOnError)
         {
             Refresh();
 
-            return Observable.FromMicroCoroutine<bool>(observer => LoadInternal(observer, aesManaged, cleanOnError));
+            return Observable.FromMicroCoroutine<Tuple<bool, double>>(observer => LoadInternal(observer, aesManaged, cleanOnError));
         }
 
-        private IEnumerator LoadInternal(IObserver<bool> observer, AesManaged aesManaged, bool cleanOnError)
+        private IEnumerator LoadInternal(IObserver<Tuple<bool, double>> observer, AesManaged aesManaged, bool cleanOnError)
         {
             var result = false;
+
+            double time = 0;
 
             #if UNITY_EDITOR
 
@@ -170,7 +172,7 @@ namespace Modules.Master
             var installPath = MasterManager.Instance.GetInstallPath<TMaster>();
 
             // ファイルの読み込みと復号化.
-            var loadYield = Observable.FromMicroCoroutine<byte[]>(x => LoadCacheFile(x, installPath, aesManaged)).ToYieldInstruction();
+            var loadYield = Observable.FromMicroCoroutine<Tuple<byte[], double>>(x => LoadCacheFile(x, installPath, aesManaged)).ToYieldInstruction();
 
             while (!loadYield.IsDone)
             {
@@ -179,7 +181,11 @@ namespace Modules.Master
 
             if (!loadYield.HasError && loadYield.HasResult)
             {
-                var bytes = loadYield.Result;
+                var bytes = loadYield.Result.Item1;
+
+                time += loadYield.Result.Item2;
+
+                var sw = System.Diagnostics.Stopwatch.StartNew();
 
                 try
                 {
@@ -200,6 +206,10 @@ namespace Modules.Master
                 {
                     Debug.LogException(exception);
                 }
+
+                sw.Stop();
+
+                time += sw.Elapsed.TotalMilliseconds;
             }
             else
             {
@@ -217,19 +227,25 @@ namespace Modules.Master
                 OnError();
             }
 
-            observer.OnNext(result);
+            observer.OnNext(Tuple.Create(result, time));
             observer.OnCompleted();
         }
 
-        protected virtual IEnumerator LoadCacheFile(IObserver<byte[]> observer, string installPath, AesManaged aesManaged)
+        protected virtual IEnumerator LoadCacheFile(IObserver<Tuple<byte[], double>> observer, string installPath, AesManaged aesManaged)
         {
-            Func<string, AesManaged, byte[]> loadAndDecrypt = (_installPath, _aesManaged) =>
+            Func<string, AesManaged, Tuple<byte[], double>> loadAndDecrypt = (_installPath, _aesManaged) =>
             {
+                var sw = System.Diagnostics.Stopwatch.StartNew();
+
                 // ファイル読み込み.
                 var data = File.ReadAllBytes(_installPath);
 
                 // 復号化.               
-                return data.Decrypt(_aesManaged);
+                var bytes = data.Decrypt(_aesManaged);
+
+                sw.Stop();
+
+                return Tuple.Create(bytes, sw.Elapsed.TotalMilliseconds);
             };
 
             // ファイルの読み込みと復号化をスレッドプールで実行.
@@ -251,14 +267,16 @@ namespace Modules.Master
             }
         }
 
-        public IObservable<bool> Update(string masterVersion, CancellationToken cancelToken)
+        public IObservable<Tuple<bool, double>> Update(string masterVersion, CancellationToken cancelToken)
         {
-            return Observable.FromMicroCoroutine<bool>(observer => UpdateInternal(observer, masterVersion, cancelToken));
+            return Observable.FromMicroCoroutine<Tuple<bool, double>>(observer => UpdateInternal(observer, masterVersion, cancelToken));
         }
 
-        private IEnumerator UpdateInternal(IObserver<bool> observer, string masterVersion, CancellationToken cancelToken)
+        private IEnumerator UpdateInternal(IObserver<Tuple<bool, double>> observer, string masterVersion, CancellationToken cancelToken)
         {
             var result = true;
+
+            var sw = System.Diagnostics.Stopwatch.StartNew();
 
             var installPath = MasterManager.Instance.GetInstallPath<TMaster>();
 
@@ -284,7 +302,9 @@ namespace Modules.Master
             // バージョン情報を更新.
             versionPrefs.version = result ? masterVersion : string.Empty;
 
-            observer.OnNext(result);
+            sw.Stop();
+
+            observer.OnNext(Tuple.Create(result, sw.Elapsed.TotalMilliseconds));
             observer.OnCompleted();
         }
 
