@@ -41,8 +41,8 @@ namespace Modules.Master
         {
             public string version
             {
-                get { return PlayerPrefs.GetString(string.Format("{0}_VERSION", typeof(TMaster).Name.ToUpper())); }
-                set { PlayerPrefs.SetString(string.Format("{0}_VERSION", typeof(TMaster).Name.ToUpper()), value); }
+                get { return SecurePrefs.GetString(string.Format("{0}_VERSION", typeof(TMaster).Name.ToUpper())); }
+                set { SecurePrefs.SetString(string.Format("{0}_VERSION", typeof(TMaster).Name.ToUpper()), value); }
             }
         }
 

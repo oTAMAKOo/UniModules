@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Security.Cryptography;
 using Extensions;
 
 namespace Modules.Master
@@ -21,6 +22,8 @@ namespace Modules.Master
 
         public string InstallDirectory { get; private set; }
 
+        public AesManaged FileNameEncryptor { get; private set; }
+
         //----- method -----
 
         private MasterManager()
@@ -33,19 +36,27 @@ namespace Modules.Master
             InstallDirectory = PathUtility.Combine(installDirectory, "Master");
         }
 
+        /// <summary> ファイル名暗号化オブジェクトを取得 </summary>
+        public void SetFileNameEncryptor(AesManaged aesManaged)
+        {
+            FileNameEncryptor = aesManaged;
+        }
+
         public string GetInstallPath<T>() where T : IMaster
         {
             return PathUtility.Combine(InstallDirectory, GetMasterFileName<T>());
         }
 
-        public static string GetMasterFileName<T>() where T : IMaster
+        public string GetMasterFileName<T>() where T : IMaster
         {
             return GetMasterFileName(typeof(T));
         }
 
-        public static string GetMasterFileName(Type type)
+        public string GetMasterFileName(Type type)
         {
             const string MasterSuffix = "Master";
+
+            var fileName = string.Empty;
 
             if (!typeof(IMaster).IsAssignableFrom(type))
             {
@@ -53,11 +64,12 @@ namespace Modules.Master
             }
 
             // 通常はクラス名をそのままマスター名として扱う.
-            var fileName = type.Name;
+            fileName = type.Name;
 
+            // 末尾が「Master」だったら末尾を削る.
             if (fileName.EndsWith(MasterSuffix))
             {
-                fileName = fileName.SafeSubstring(0, fileName.Length - MasterSuffix.Length);
+                fileName = fileName.SafeSubstring(0, fileName.Length - MasterSuffix.Length) + MasterFileExtension;
             }
 
             // FileNameAttributeを持っている場合はそちらの名前を採用する.
@@ -68,10 +80,17 @@ namespace Modules.Master
 
             if (fileNameAttribute != null)
             {
-                fileName = fileNameAttribute.FileName;
+                fileName = fileNameAttribute.FileName + MasterFileExtension;
             }
 
-            return fileName + MasterFileExtension;
+            // 暗号化オブジェクトが設定されていたら暗号化.
+            
+            if (FileNameEncryptor != null)
+            {
+                fileName = fileName.Encrypt(FileNameEncryptor);
+            }
+            
+            return fileName;
         }
     }
 }
