@@ -74,7 +74,7 @@ namespace Modules.Master
         public string Version { get { return versionPrefs.version; } }
 
         /// <summary> LZ4圧縮を使用するか. </summary>
-        public bool UseLz4Compression { get; set; } = true;
+        protected virtual bool UseLz4Compression { get { return true; } }
 
         //----- method -----
 
@@ -235,13 +235,15 @@ namespace Modules.Master
         {
             Func<string, AesManaged, Tuple<byte[], double>> loadAndDecrypt = (_installPath, _aesManaged) =>
             {
+                byte[] bytes = null;
+
                 var sw = System.Diagnostics.Stopwatch.StartNew();
 
                 // ファイル読み込み.
-                var data = File.ReadAllBytes(_installPath);
+                bytes = File.ReadAllBytes(_installPath);
 
                 // 復号化.               
-                var bytes = data.Decrypt(_aesManaged);
+                bytes = bytes.Decrypt(_aesManaged);
 
                 sw.Stop();
 
