@@ -177,7 +177,7 @@ namespace Modules.TimeLine.Component
 
                                 using (new EditorGUILayout.VerticalScope())
                                 {
-                                    EditorLayoutTools.DrawContentTitle("Argument");
+                                    EditorLayoutTools.ContentTitle("Argument");
 
                                     using (new ContentsScope())
                                     {

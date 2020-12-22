@@ -213,16 +213,26 @@ namespace Modules.Devkit.Build
                                             ignoreBuiltInAssetTargetPaths.Any(x => item.assetPath.StartsWith(x)) ||     // 含まれてはいけないディレクトリに存在.
                                             ignoreBuiltInFolderNames.Any(x => item.assetPath.Split('/').Contains(x));   // 含まれていけないフォルダ名が含まれているか.
 
+                                        var titleStyle = new EditorLayoutTools.TitleGUIStyle();
+
                                         // 指定されたAsset置き場にない or 同梱しないAsset置き場のAssetが混入.
                                         if (isInvalidAsset)
                                         {
-                                            EditorLayoutTools.DrawLabelWithBackground("InvalidAsset", Color.red, Color.gray, width: 85f);
+                                            titleStyle.backgroundColor = Color.red;
+                                            titleStyle.labelColor = Color.gray;
+                                            titleStyle.width = 85f;
+
+                                            EditorLayoutTools.Title("InvalidAsset", titleStyle);
                                         }
 
                                         // ファイルサイズが指定された値を超えている.
                                         if (warningAssetSize <= item.size)
                                         {
-                                            EditorLayoutTools.DrawLabelWithBackground("LargeAsset", Color.yellow, Color.gray, width: 80f);
+                                            titleStyle.backgroundColor = Color.yellow;
+                                            titleStyle.labelColor = Color.gray;
+                                            titleStyle.width = 80f;
+
+                                            EditorLayoutTools.Title("LargeAsset", titleStyle);
                                         }
 
                                         GUILayout.Space(5f);

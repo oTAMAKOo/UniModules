@@ -121,7 +121,7 @@ namespace Modules.PatternTexture
                     {
                         GUILayout.Space(2f);
 
-                        if (EditorLayoutTools.DrawPrefixButton("Sprite", GUILayout.Width(76f), GUILayout.Height(18f)))
+                        if (EditorLayoutTools.PrefixButton("Sprite", GUILayout.Width(76f), GUILayout.Height(18f)))
                         {
                             Action<string> onSelection = x =>
                             {

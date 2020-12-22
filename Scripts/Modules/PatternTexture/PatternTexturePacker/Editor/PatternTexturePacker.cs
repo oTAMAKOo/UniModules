@@ -251,7 +251,7 @@ namespace Modules.PatternTexture
         {
             var labelWidth = 80f;
 
-            EditorLayoutTools.DrawLabelWithBackground("Settings", EditorLayoutTools.BackgroundColor, EditorLayoutTools.LabelColor);
+            EditorLayoutTools.Title("Settings", EditorLayoutTools.BackgroundColor, EditorLayoutTools.LabelColor);
 
             using (new EditorGUILayout.HorizontalScope())
             {
@@ -317,7 +317,7 @@ namespace Modules.PatternTexture
 
             if (textureInfos.Any())
             {
-                EditorLayoutTools.DrawLabelWithBackground("Sprites", EditorLayoutTools.BackgroundColor, EditorLayoutTools.LabelColor);
+                EditorLayoutTools.Title("Sprites", EditorLayoutTools.BackgroundColor, EditorLayoutTools.LabelColor);
 
                 EditorGUILayout.Separator();
 
@@ -408,7 +408,7 @@ namespace Modules.PatternTexture
             {
                 GUILayout.Space(5f);
 
-                EditorLayoutTools.DrawLabelWithBackground("Result", EditorLayoutTools.BackgroundColor, EditorLayoutTools.LabelColor);
+                EditorLayoutTools.Title("Result", EditorLayoutTools.BackgroundColor, EditorLayoutTools.LabelColor);
 
                 using (new EditorGUILayout.HorizontalScope())
                 {

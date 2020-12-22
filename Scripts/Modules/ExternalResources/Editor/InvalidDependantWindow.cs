@@ -68,7 +68,7 @@ namespace Modules.ExternalResource.Editor
 
                 using (new EditorGUILayout.VerticalScope())
                 {
-                    var open = EditorLayoutTools.DrawHeader(content.AssetPath, opened);
+                    var open = EditorLayoutTools.Header(content.AssetPath, opened);
 
                     if (open)
                     {
@@ -78,7 +78,7 @@ namespace Modules.ExternalResource.Editor
 
                             EditorGUILayout.ObjectField(targetAsset, typeof(Object), false);
 
-                            EditorLayoutTools.DrawLabelWithBackground("InvalidDependants", Color.red, Color.white);
+                            EditorLayoutTools.Title("InvalidDependants", Color.red, Color.white);
 
                             using (new ContentsScope())
                             {

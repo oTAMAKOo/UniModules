@@ -158,7 +158,7 @@ namespace Modules.Devkit.AssetTuning
         {
             var scrollViewHeight = Mathf.Min(scrollView.Contents.Length * 18f, 150f);
 
-            if (EditorLayoutTools.DrawHeader(title, string.Format("TextureAssetTunerConfigInspector-{0}", title)))
+            if (EditorLayoutTools.Header(title, string.Format("TextureAssetTunerConfigInspector-{0}", title)))
             {
                 using (new ContentsScope())
                 {

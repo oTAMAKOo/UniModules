@@ -54,7 +54,7 @@ namespace Modules.Devkit.Build.Editor
             var pathTextStyle = GUI.skin.GetStyle("TextArea");
             pathTextStyle.alignment = TextAnchor.MiddleLeft;
 
-            if (EditorLayoutTools.DrawHeader("Version", "BuildParamInspector-Version"))
+            if (EditorLayoutTools.Header("Version", "BuildParamInspector-Version"))
             {
                 using (new ContentsScope())
                 {
@@ -74,7 +74,7 @@ namespace Modules.Devkit.Build.Editor
 
             var originLabelWidth = EditorLayoutTools.SetLabelWidth(80f);
 
-            if (EditorLayoutTools.DrawHeader("CloneAssets", "BuildParamInspector-CloneAssets"))
+            if (EditorLayoutTools.Header("CloneAssets", "BuildParamInspector-CloneAssets"))
             {
                 using (new ContentsScope())
                 {

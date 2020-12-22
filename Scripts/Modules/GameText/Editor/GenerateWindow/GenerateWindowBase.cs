@@ -42,7 +42,7 @@ namespace Modules.GameText.Editor
         // エクセル制御GUI描画.
         protected void ControlExcelGUIContents(GameTextConfig.GenerateAssetSetting setting)
         {
-            EditorLayoutTools.DrawContentTitle("Excel");
+            EditorLayoutTools.ContentTitle("Excel");
 
             using (new ContentsScope())
             {
@@ -109,7 +109,7 @@ namespace Modules.GameText.Editor
 
             if (labels.Length <= 1) { return; }
 
-            EditorLayoutTools.DrawContentTitle("Language");
+            EditorLayoutTools.ContentTitle("Language");
 
             using (new ContentsScope())
             {

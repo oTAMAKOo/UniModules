@@ -80,7 +80,7 @@ namespace Modules.Devkit.ShaderVariant
         {
             var labelBackgroundColor = new Color(0.2f, 0.8f, 0.5f, 0.8f);
 
-            EditorLayoutTools.DrawLabelWithBackground("ShaderVariantCollection", labelBackgroundColor, EditorLayoutTools.LabelColor);
+            EditorLayoutTools.Title("ShaderVariantCollection", labelBackgroundColor, EditorLayoutTools.LabelColor);
 
             EditorGUI.BeginChangeCheck();
 
@@ -95,7 +95,7 @@ namespace Modules.Devkit.ShaderVariant
 
             GUILayout.Space(2f);
 
-            EditorLayoutTools.DrawLabelWithBackground("TargetFolder", labelBackgroundColor, EditorLayoutTools.LabelColor);
+            EditorLayoutTools.Title("TargetFolder", labelBackgroundColor, EditorLayoutTools.LabelColor);
 
             EditorGUI.BeginChangeCheck();
 
@@ -124,7 +124,7 @@ namespace Modules.Devkit.ShaderVariant
                 {
                     using (new EditorGUILayout.HorizontalScope())
                     {
-                        EditorLayoutTools.DrawLabelWithBackground("Shaders", labelBackgroundColor, EditorLayoutTools.LabelColor);
+                        EditorLayoutTools.Title("Shaders", labelBackgroundColor, EditorLayoutTools.LabelColor);
 
                         assetViewMode = (AssetViewMode)EditorGUILayout.EnumPopup(assetViewMode, GUILayout.Width(60f));
                     }

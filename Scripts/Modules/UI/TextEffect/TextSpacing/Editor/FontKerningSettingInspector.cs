@@ -2,6 +2,7 @@
 using UnityEngine;
 using UnityEditor;
 using UnityEditorInternal;
+using System;
 using System.Linq;
 using System.Collections.Generic;
 using System.Security.Cryptography;
@@ -53,7 +54,7 @@ namespace Modules.UI.TextEffect
 
             EditorGUILayout.Separator();
 
-            EditorLayoutTools.DrawLabelWithBackground("Font", HeaderColor);
+            EditorLayoutTools.Title("Font", HeaderColor);
 
             GUILayout.Space(2f);
 
@@ -79,7 +80,7 @@ namespace Modules.UI.TextEffect
                 }
                 else
                 {
-                    EditorLayoutTools.DrawLabelWithBackground("Character settings", HeaderColor);
+                    EditorLayoutTools.Title("Character settings", HeaderColor);
 
                     GUILayout.Space(2f);
 
@@ -162,7 +163,7 @@ namespace Modules.UI.TextEffect
 
             //------ Description ------
 
-            EditorLayoutTools.DrawLabelWithBackground("Description", HeaderColor);
+            EditorLayoutTools.Title("Description", HeaderColor);
 
             var textBytes = description.Decrypt(aesManaged);
             var descriptionText = textBytes != null ? Encoding.UTF8.GetString(textBytes) : string.Empty;
@@ -186,17 +187,17 @@ namespace Modules.UI.TextEffect
 
         private void DrawCharInfoHeaderGUI(int itemCount)
         {
-            var headerItems = new List<EditorLayoutTools.ColumnHeaderContent>();
+            var headerItems = new List<Tuple<string, GUILayoutOptions>>();
 
-            headerItems.Add(new EditorLayoutTools.ColumnHeaderContent("Char", GUILayout.Width(55f)));
-            headerItems.Add(new EditorLayoutTools.ColumnHeaderContent("Space (Left)", GUILayout.MinWidth(50f)));
-            headerItems.Add(new EditorLayoutTools.ColumnHeaderContent("Space (Right)", GUILayout.MinWidth(50f)));
+            headerItems.Add(Tuple.Create("Char", new GUILayoutOptions(GUILayout.Width(55f))));
+            headerItems.Add(Tuple.Create("Space (Left)", new GUILayoutOptions(GUILayout.MinWidth(50f))));
+            headerItems.Add(Tuple.Create("Space (Right)", new GUILayoutOptions(GUILayout.MinWidth(50f))));
 
             using (new EditorGUILayout.HorizontalScope())
             {
                 GUILayout.Space(2f);
 
-                EditorLayoutTools.DrawColumnHeader(headerItems.ToArray());
+                EditorLayoutTools.ColumnHeader(headerItems.ToArray());
 
                 GUILayout.Space(35f);
 

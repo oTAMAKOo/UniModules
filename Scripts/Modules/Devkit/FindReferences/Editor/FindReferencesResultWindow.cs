@@ -98,7 +98,7 @@ namespace Modules.Devkit.FindReferences
 
                         GUILayout.Space(5f);
 
-                        EditorLayoutTools.DrawLabelWithBackground("References", EditorLayoutTools.BackgroundColor, EditorLayoutTools.LabelColor);
+                        EditorLayoutTools.Title("References", EditorLayoutTools.BackgroundColor, EditorLayoutTools.LabelColor);
 
                         using (var scrollViewScope = new EditorGUILayout.ScrollViewScope(scrollPosition))
                         {

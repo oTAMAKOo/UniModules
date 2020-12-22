@@ -140,7 +140,7 @@ namespace Modules.ExternalResource.Editor
 
         private void DrawContentGUI(string label, string content)
         {
-            EditorLayoutTools.DrawLabelWithBackground(label);
+            EditorLayoutTools.Title(label);
 
             using (new EditorGUILayout.HorizontalScope())
             {

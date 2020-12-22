@@ -94,7 +94,7 @@ namespace Modules.ExternalResource.Editor
                 winbtnWinCloseIconContent = EditorGUIUtility.IconContent("winbtn_win_close");
             }
 
-            IsOpen = EditorLayoutTools.DrawHeader(displayManageAssetPath, IsOpen);
+            IsOpen = EditorLayoutTools.Header(displayManageAssetPath, IsOpen);
 
             if (IsOpen)
             {
@@ -255,7 +255,7 @@ namespace Modules.ExternalResource.Editor
                     {
                         case ViewMode.Contents:
                             {
-                                EditorLayoutTools.DrawLabelWithBackground("Contents", new Color(0.7f, 0.9f, 0.7f));
+                                EditorLayoutTools.Title("Contents", new Color(0.7f, 0.9f, 0.7f));
 
                                 using (new ContentsScope())
                                 {
@@ -274,7 +274,7 @@ namespace Modules.ExternalResource.Editor
                             {
                                 using (new EditorGUILayout.HorizontalScope())
                                 {
-                                    EditorLayoutTools.DrawLabelWithBackground(contentDetailName, new Color(0.3f, 0.3f, 1f));
+                                    EditorLayoutTools.Title(contentDetailName, new Color(0.3f, 0.3f, 1f));
 
                                     if (GUILayout.Button(winbtnWinCloseIconContent, GUILayout.Width(20f), GUILayout.Height(18f)))
                                     {
@@ -405,7 +405,13 @@ namespace Modules.ExternalResource.Editor
 
                 var originLabelWidth = EditorLayoutTools.SetLabelWidth(75f);
 
-                EditorLayoutTools.DrawLabelWithBackground(type, color, width: 70f, options: GUILayout.Height(14f));
+                var titleStyle = new EditorLayoutTools.TitleGUIStyle
+                {
+                    backgroundColor = color,
+                    width = 70f,
+                };
+
+                EditorLayoutTools.Title(type, titleStyle, GUILayout.Height(14f));
 
                 EditorLayoutTools.SetLabelWidth(content.label);
 

@@ -130,7 +130,7 @@ namespace Modules.Devkit.AssetDependencies
 
                 if (dependencies.Any())
                 {
-                    EditorLayoutTools.DrawLabelWithBackground("Dependencies");
+                    EditorLayoutTools.Title("Dependencies");
 
                     GUILayout.Space(-2f);
 

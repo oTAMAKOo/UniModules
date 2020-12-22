@@ -53,7 +53,7 @@ namespace Modules.CriWare.Editor
             var acfAssetSourcePathProperty = serializedObject.FindProperty("acfAssetSourceFullPath");
             var acfAssetExportPathProperty = serializedObject.FindProperty("acfAssetExportPath");
 
-            if (EditorLayoutTools.DrawHeader("Sound", "CriAssetConfigInspector-Sound"))
+            if (EditorLayoutTools.Header("Sound", "CriAssetConfigInspector-Sound"))
             {
                 using (new ContentsScope())
                 {
@@ -124,7 +124,7 @@ namespace Modules.CriWare.Editor
 
         private void DrawMovieAssetConfigGUI(CriAssetConfig instance)
         {
-            if (EditorLayoutTools.DrawHeader("Movie", "CriAssetConfigInspector-Movie"))
+            if (EditorLayoutTools.Header("Movie", "CriAssetConfigInspector-Movie"))
             {
                 using (new ContentsScope())
                 {

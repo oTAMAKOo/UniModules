@@ -31,7 +31,7 @@ namespace Modules.UI.Layout
             {
                 var horizontal = Reflection.GetPrivateField<PreferredSizeCopy, PreferredSizeCopy.LayoutInfo>(instance, "horizontal");
 
-                if(EditorLayoutTools.DrawHeader("Horizontal", "PreferredSizeCopyEditor-Horizontal"))
+                if(EditorLayoutTools.Header("Horizontal", "PreferredSizeCopyEditor-Horizontal"))
                 {
                     using (new ContentsScope())
                     {
@@ -142,7 +142,7 @@ namespace Modules.UI.Layout
 
                 var vertical = Reflection.GetPrivateField<PreferredSizeCopy, PreferredSizeCopy.LayoutInfo>(instance, "vertical");
 
-                if (EditorLayoutTools.DrawHeader("Vertical", "PreferredSizeCopyEditor-Vertical"))
+                if (EditorLayoutTools.Header("Vertical", "PreferredSizeCopyEditor-Vertical"))
                 {
                     using (new ContentsScope())
                     {

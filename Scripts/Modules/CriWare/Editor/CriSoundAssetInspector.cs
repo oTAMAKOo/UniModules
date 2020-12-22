@@ -80,7 +80,7 @@ namespace Modules.CriWare
             
             var acbPath = AssetDatabase.GetAssetPath(target);
 
-            EditorLayoutTools.DrawLabelWithBackground("Asset Path");
+            EditorLayoutTools.Title("Asset Path");
 
             using (new EditorGUILayout.HorizontalScope())
             {
@@ -100,7 +100,7 @@ namespace Modules.CriWare
             }
             else
             {
-                EditorLayoutTools.DrawLabelWithBackground("Contents");
+                EditorLayoutTools.Title("Contents");
 
                 using (new ContentsScope())
                 {

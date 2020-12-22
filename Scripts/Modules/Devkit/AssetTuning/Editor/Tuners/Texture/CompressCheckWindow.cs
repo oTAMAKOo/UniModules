@@ -203,7 +203,7 @@ namespace Modules.Devkit.AssetTuning
 
             EditorGUILayout.Separator();
 
-            EditorLayoutTools.DrawLabelWithBackground("Assets");
+            EditorLayoutTools.Title("Assets");
 
             switch (viewMode)
             {

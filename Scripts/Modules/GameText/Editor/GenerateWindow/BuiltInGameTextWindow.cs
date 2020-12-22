@@ -59,7 +59,7 @@ namespace Modules.GameText.Editor
 
             GUILayout.Space(2f);
 
-            EditorLayoutTools.DrawContentTitle("Asset");
+            EditorLayoutTools.ContentTitle("Asset");
 
             using (new ContentsScope())
             {

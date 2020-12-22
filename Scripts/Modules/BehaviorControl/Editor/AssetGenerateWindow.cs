@@ -83,7 +83,7 @@ namespace Modules.BehaviorControl
 
             using (new EditorGUILayout.HorizontalScope())
             {
-                if (EditorLayoutTools.DrawPrefixButton("ImportPath", GUILayout.Width(90f), GUILayout.Height(18f)))
+                if (EditorLayoutTools.PrefixButton("ImportPath", GUILayout.Width(90f), GUILayout.Height(18f)))
                 {
                     OpenSelectImportPathDialog(setting);
                 }

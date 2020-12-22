@@ -24,9 +24,15 @@ namespace Modules.Devkit.AssetBundles
 
             using (new EditorGUILayout.HorizontalScope())
             {
-                var backgroundColor = new Color(1f, 0.65f, 0f, 0.5f);
+                var titleStyle = new EditorLayoutTools.TitleGUIStyle
+                {
+                    backgroundColor = new Color(1f, 0.65f, 0f, 0.5f),
+                    alignment = TextAnchor.MiddleCenter,
+                    fontStyle = FontStyle.Bold,
+                    width = 30f,
+                };
 
-                EditorLayoutTools.DrawLabelWithBackground(count.ToString(), backgroundColor, null, TextAnchor.MiddleCenter, FontStyle.Bold, 30f);
+                EditorLayoutTools.Title(count.ToString(), titleStyle);
                 EditorGUILayout.ObjectField("", content.Asset, typeof(Object), false, GUILayout.Width(250f));
             }
         }

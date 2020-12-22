@@ -168,7 +168,7 @@ namespace Modules.Devkit.Inspector
 
         public override void DrawGUI(params GUILayoutOption[] option)
         {
-            if (EditorLayoutTools.DrawHeader(title, headerKey))
+            if (EditorLayoutTools.Header(title, headerKey))
             {
                 using (new ContentsScope())
                 {

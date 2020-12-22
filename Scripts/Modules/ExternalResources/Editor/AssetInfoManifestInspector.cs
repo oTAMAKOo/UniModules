@@ -107,7 +107,7 @@ namespace Modules.ExternalResource.Editor
 
                 using (new EditorGUILayout.VerticalScope())
                 {
-                    var open = EditorLayoutTools.DrawHeader(content.Category, opened);
+                    var open = EditorLayoutTools.Header(content.Category, opened);
 
                     if (open)
                     {
@@ -143,7 +143,7 @@ namespace Modules.ExternalResource.Editor
 
                     var color = isAssetBundle ? new Color(0.7f, 0.7f, 1f) : new Color(0.7f, 1f, 0.7f);
 
-                    var open = EditorLayoutTools.DrawHeader(assetInfo.ResourcePath, opened, color);
+                    var open = EditorLayoutTools.Header(assetInfo.ResourcePath, opened, color);
 
                     if (open)
                     {
@@ -169,7 +169,7 @@ namespace Modules.ExternalResource.Editor
 
                             if (isAssetBundle)
                             {
-                                EditorLayoutTools.DrawContentTitle("AssetBundle");
+                                EditorLayoutTools.ContentTitle("AssetBundle");
 
                                 using (new ContentsScope())
                                 {

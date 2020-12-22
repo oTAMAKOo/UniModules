@@ -58,7 +58,7 @@ namespace Modules.UI.Reactive
 
             var originLabelWidth = EditorLayoutTools.SetLabelWidth(60f);
 
-            EditorLayoutTools.DrawLabelWithBackground("Text", backgroundColor, labelColor);
+            EditorLayoutTools.Title("Text", backgroundColor, labelColor);
 
             using (new EditorGUILayout.HorizontalScope())
             {
@@ -93,7 +93,7 @@ namespace Modules.UI.Reactive
 
             if (useShadow)
             {
-                EditorLayoutTools.DrawLabelWithBackground("Shadow", backgroundColor, labelColor);
+                EditorLayoutTools.Title("Shadow", backgroundColor, labelColor);
 
                 using (new EditorGUILayout.HorizontalScope())
                 {
@@ -129,7 +129,7 @@ namespace Modules.UI.Reactive
 
             if (useOutline)
             {
-                EditorLayoutTools.DrawLabelWithBackground("Outline", backgroundColor, labelColor);
+                EditorLayoutTools.Title("Outline", backgroundColor, labelColor);
 
                 using (new EditorGUILayout.HorizontalScope())
                 {

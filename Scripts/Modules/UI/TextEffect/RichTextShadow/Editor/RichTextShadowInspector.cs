@@ -65,7 +65,7 @@ namespace Modules.UI.TextEffect
 
                         if (direction != 0)
                         {
-                            if (EditorLayoutTools.DrawHeader("Distance", "RichTextShadowInspector-Distance"))
+                            if (EditorLayoutTools.Header("Distance", "RichTextShadowInspector-Distance"))
                             {
                                 var infos = Reflection.GetPrivateField<RichTextShadow, RichTextShadow.Info[]>(instance, "infos");
 
@@ -119,7 +119,7 @@ namespace Modules.UI.TextEffect
 
                 case RichTextShadow.Placement.Custom:
                     {
-                        if (EditorLayoutTools.DrawHeader("Distance", "RichShadowInspector-Distance"))
+                        if (EditorLayoutTools.Header("Distance", "RichShadowInspector-Distance"))
                         {
                             var infos = Reflection.GetPrivateField<RichTextShadow, RichTextShadow.Info[]>(instance, "infos");
                             var list = infos.ToList();

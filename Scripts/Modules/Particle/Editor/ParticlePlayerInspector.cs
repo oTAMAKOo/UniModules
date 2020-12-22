@@ -234,7 +234,7 @@ namespace Modules.Particle
 
             EditorGUILayout.Separator();
 
-            if (EditorLayoutTools.DrawHeader("SortingLayer", "ParticlePlayerInspector-SortingLayer"))
+            if (EditorLayoutTools.Header("SortingLayer", "ParticlePlayerInspector-SortingLayer"))
             {
                 using(new ContentsScope())
                 {
@@ -279,7 +279,7 @@ namespace Modules.Particle
                 }
             }
 
-            if (EditorLayoutTools.DrawHeader("Option", "ParticlePlayerInspector-Option"))
+            if (EditorLayoutTools.Header("Option", "ParticlePlayerInspector-Option"))
             {
                 using (new ContentsScope())
                 {
@@ -316,7 +316,7 @@ namespace Modules.Particle
                 }
             }
 
-            if (EditorLayoutTools.DrawHeader("Event", "ParticlePlayerInspector-Event"))
+            if (EditorLayoutTools.Header("Event", "ParticlePlayerInspector-Event"))
             {
                 var updated = false;
                 var eventList = events != null ? events.ToList() : new List<ParticlePlayer.EventInfo>();
@@ -410,17 +410,17 @@ namespace Modules.Particle
 
         private void DrawEventHeaderGUI(int itemCount)
         {
-            var headerItems = new List<EditorLayoutTools.ColumnHeaderContent>();
+            var headerItems = new List<Tuple<string, GUILayoutOptions>>();
 
-            headerItems.Add(new EditorLayoutTools.ColumnHeaderContent("Trigger", GUILayout.Width(60f)));
-            headerItems.Add(new EditorLayoutTools.ColumnHeaderContent("Invoke", GUILayout.MinWidth(100f)));
-            headerItems.Add(new EditorLayoutTools.ColumnHeaderContent("Message", GUILayout.MinWidth(100f)));
+            headerItems.Add(Tuple.Create("Trigger", new GUILayoutOptions(GUILayout.Width(60f))));
+            headerItems.Add(Tuple.Create("Invoke", new GUILayoutOptions(GUILayout.MinWidth(100f))));
+            headerItems.Add(Tuple.Create("Message", new GUILayoutOptions(GUILayout.MinWidth(100f))));
 
             using (new EditorGUILayout.HorizontalScope())
             {
                 GUILayout.FlexibleSpace();
 
-                EditorLayoutTools.DrawColumnHeader(headerItems.ToArray());
+                EditorLayoutTools.ColumnHeader(headerItems.ToArray());
 
                 GUILayout.Space(30f);
 

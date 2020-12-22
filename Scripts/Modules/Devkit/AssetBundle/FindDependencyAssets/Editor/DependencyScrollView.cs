@@ -18,7 +18,7 @@ namespace Modules.Devkit.AssetBundles
 
         protected override void DrawContent(int index, FindDependencyAssetsWindow.AssetBundleInfo content)
         {
-            content.IsOpen = EditorLayoutTools.DrawHeader(content.AssetBundleName, content.IsOpen);
+            content.IsOpen = EditorLayoutTools.Header(content.AssetBundleName, content.IsOpen);
 
             if (content.IsOpen)
             {
@@ -30,9 +30,16 @@ namespace Modules.Devkit.AssetBundles
                         {
                             using (new EditorGUILayout.HorizontalScope())
                             {
-                                var backgroundColor = new Color(0.9f, 0.4f, 0.4f, 0.3f);
+                                var titleStyle = new EditorLayoutTools.TitleGUIStyle
+                                {
+                                    backgroundColor = new Color(0.9f, 0.4f, 0.4f, 0.3f),
+                                    alignment = TextAnchor.MiddleCenter,
+                                    fontStyle = FontStyle.Bold,
+                                    width = 90f,
+                                };
 
-                                EditorLayoutTools.DrawLabelWithBackground("Asset", backgroundColor, null, TextAnchor.MiddleCenter, FontStyle.Bold, 90f);
+                                EditorLayoutTools.Title("Asset", titleStyle);
+
                                 EditorGUILayout.ObjectField("", asset, typeof(Object), false, GUILayout.Width(250f));
                             }
                         }
@@ -44,9 +51,16 @@ namespace Modules.Devkit.AssetBundles
                         {
                             using (new EditorGUILayout.HorizontalScope())
                             {
-                                var backgroundColor = new Color(0.4f, 0.4f, 0.9f, 0.5f);
+                                var titleStyle = new EditorLayoutTools.TitleGUIStyle
+                                {
+                                    backgroundColor = new Color(0.4f, 0.4f, 0.9f, 0.5f),
+                                    alignment = TextAnchor.MiddleCenter,
+                                    fontStyle = FontStyle.Bold,
+                                    width = 90f,
+                                };
 
-                                EditorLayoutTools.DrawLabelWithBackground("Dependent", backgroundColor, null, TextAnchor.MiddleCenter, FontStyle.Bold, 90f);
+                                EditorLayoutTools.Title("Dependent", titleStyle);
+
                                 EditorGUILayout.ObjectField("", dependentAsset, typeof(Object), false, GUILayout.Width(250f));
                             }
                         }

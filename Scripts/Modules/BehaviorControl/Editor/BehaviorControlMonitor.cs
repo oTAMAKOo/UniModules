@@ -121,7 +121,7 @@ namespace Modules.BehaviorControl
 
                             var backgroundColor = selectionData == log ? SelectionColor : LineColor;
 
-                            EditorLayoutTools.DrawLabelWithBackground(log.BehaviorName, backgroundColor);
+                            EditorLayoutTools.Title(log.BehaviorName, backgroundColor);
 
                             if (e.type == EventType.MouseDown)
                             {
@@ -156,7 +156,7 @@ namespace Modules.BehaviorControl
                         {
                             using (var scrollViewScope = new EditorGUILayout.ScrollViewScope(detailScrollPosition, GUILayout.Height(300f)))
                             {
-                                EditorLayoutTools.DrawLabelWithBackground(selectionData.BehaviorName, SelectionColor);
+                                EditorLayoutTools.Title(selectionData.BehaviorName, SelectionColor);
 
                                 GUILayout.Space(2f);
 
@@ -166,7 +166,7 @@ namespace Modules.BehaviorControl
                                     {
                                         GUILayout.Space(2f);
 
-                                        EditorLayoutTools.DrawLabelWithBackground("Action");
+                                        EditorLayoutTools.Title("Action");
 
                                         using (new EditorGUILayout.HorizontalScope())
                                         {
@@ -179,7 +179,7 @@ namespace Modules.BehaviorControl
 
                                         GUILayout.Space(2f);
 
-                                        EditorLayoutTools.DrawLabelWithBackground("Probability");
+                                        EditorLayoutTools.Title("Probability");
 
                                         using (new EditorGUILayout.HorizontalScope())
                                         {
@@ -194,7 +194,7 @@ namespace Modules.BehaviorControl
 
                                         GUILayout.Space(2f);
 
-                                        EditorLayoutTools.DrawLabelWithBackground("Target");
+                                        EditorLayoutTools.Title("Target");
 
                                         using (new EditorGUILayout.HorizontalScope())
                                         {
@@ -209,7 +209,7 @@ namespace Modules.BehaviorControl
 
                                         if (element.ConditionNodes.Any())
                                         {
-                                            EditorLayoutTools.DrawLabelWithBackground("Condition");
+                                            EditorLayoutTools.Title("Condition");
                                         }
 
                                         for (var i = 0; i < element.ConditionNodes.Length; i++)

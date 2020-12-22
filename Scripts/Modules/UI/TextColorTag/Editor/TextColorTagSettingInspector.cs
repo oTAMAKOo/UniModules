@@ -30,16 +30,16 @@ namespace Modules.UI.TextColorTag
 
             EditorGUILayout.Separator();
 
-            var headerItems = new List<EditorLayoutTools.ColumnHeaderContent>();
+            var headerItems = new List<Tuple<string, GUILayoutOptions>>();
 
-            headerItems.Add(new EditorLayoutTools.ColumnHeaderContent("Color", GUILayout.Width(65f)));
-            headerItems.Add(new EditorLayoutTools.ColumnHeaderContent("Tag", GUILayout.MinWidth(150f)));
+            headerItems.Add(Tuple.Create("Color", new GUILayoutOptions(GUILayout.Width(65f))));
+            headerItems.Add(Tuple.Create("Tag", new GUILayoutOptions(GUILayout.MinWidth(150f))));
 
             using (new EditorGUILayout.HorizontalScope())
             {
                 GUILayout.Space(5f);
 
-                EditorLayoutTools.DrawColumnHeader(headerItems.ToArray());
+                EditorLayoutTools.ColumnHeader(headerItems.ToArray());
 
                 GUILayout.Space(35f);
 

@@ -100,7 +100,7 @@ namespace Modules.Devkit.Build
                 using (new EditorGUILayout.VerticalScope())
                 {
                     // 環境毎のビルド設定.
-                    EditorLayoutTools.DrawLabelWithBackground("Parameter", BackgroundColor, LabelColor);
+                    EditorLayoutTools.Title("Parameter", BackgroundColor, LabelColor);
                     {
                         EditorGUILayout.Separator();
 
@@ -112,7 +112,7 @@ namespace Modules.Devkit.Build
                     EditorGUILayout.Separator();
 
                     // ビルドオプション.
-                    EditorLayoutTools.DrawLabelWithBackground("Build Options", BackgroundColor, LabelColor);
+                    EditorLayoutTools.Title("Build Options", BackgroundColor, LabelColor);
                     {
                         EditorGUILayout.Separator();
 

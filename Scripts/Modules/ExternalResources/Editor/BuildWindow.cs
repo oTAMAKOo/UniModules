@@ -64,7 +64,7 @@ namespace Modules.ExternalResource.Editor
             
             EditorGUILayout.Separator();
             
-            EditorLayoutTools.DrawLabelWithBackground("AssetInfoManifest");
+            EditorLayoutTools.Title("AssetInfoManifest");
 
             if (GUILayout.Button("Generate"))
             {
@@ -74,7 +74,7 @@ namespace Modules.ExternalResource.Editor
 
             GUILayout.Space(6f);
 
-            EditorLayoutTools.DrawLabelWithBackground("ExternalResource");
+            EditorLayoutTools.Title("ExternalResource");
 
             if (GUILayout.Button("Generate"))
             {

@@ -97,7 +97,7 @@ namespace Modules.MessagePack
 
             //------ コードジェネレーター ------
 
-            EditorLayoutTools.DrawContentTitle("CodeGenerator");
+            EditorLayoutTools.ContentTitle("CodeGenerator");
 
             using (new ContentsScope())
             {
@@ -142,7 +142,7 @@ namespace Modules.MessagePack
 
             //------ 基本設定 ------
 
-            EditorLayoutTools.DrawContentTitle("MessagePack Script Export");
+            EditorLayoutTools.ContentTitle("MessagePack Script Export");
 
             using (new ContentsScope())
             {
@@ -175,7 +175,7 @@ namespace Modules.MessagePack
 
             //------ オプション設定 ------
 
-            EditorLayoutTools.DrawContentTitle("CodeGenerator Options");
+            EditorLayoutTools.ContentTitle("CodeGenerator Options");
 
             using (new ContentsScope())
             {

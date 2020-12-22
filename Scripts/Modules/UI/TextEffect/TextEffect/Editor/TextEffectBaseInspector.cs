@@ -62,7 +62,7 @@ namespace Modules.UI.TextEffect
 
             GUILayout.Space(2f);
 
-            if (EditorLayoutTools.DrawHeader("MaterialSelector", "TextEffectBaseInspector.MaterialSelector"))
+            if (EditorLayoutTools.Header("MaterialSelector", "TextEffectBaseInspector.MaterialSelector"))
             {
                 using (new ContentsScope())
                 {

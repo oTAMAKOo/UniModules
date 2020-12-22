@@ -219,7 +219,7 @@ namespace Modules.Devkit.SceneLaunch
 
                 var sceneName = Path.GetFileName(targetScenePath);
 
-                if (EditorLayoutTools.DrawPrefixButton("Scene", GUILayout.Width(65f), GUILayout.Height(18f)))
+                if (EditorLayoutTools.PrefixButton("Scene", GUILayout.Width(65f), GUILayout.Height(18f)))
                 {
                     SceneSelectorPrefs.selectedScenePath = targetScenePath;
                     SceneSelector.Open().Subscribe(OnSelectScene);

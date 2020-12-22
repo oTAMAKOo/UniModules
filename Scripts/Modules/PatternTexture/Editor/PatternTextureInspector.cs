@@ -29,7 +29,7 @@ namespace Modules.PatternTexture
         {
             var patternTexture = target as PatternTexture;
 
-            EditorLayoutTools.DrawContentTitle("Contents");
+            EditorLayoutTools.ContentTitle("Contents");
 
             using (new ContentsScope())
             {

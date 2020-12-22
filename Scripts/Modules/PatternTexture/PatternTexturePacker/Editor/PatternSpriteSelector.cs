@@ -170,7 +170,7 @@ namespace Modules.PatternTexture
 
                                 if (selectionTextureName == texture.name)
                                 {
-                                    EditorLayoutTools.DrawOutline(rect, new Color(0.4f, 1f, 0f, 1f));
+                                    EditorLayoutTools.Outline(rect, new Color(0.4f, 1f, 0f, 1f));
                                 }
                             }
 

@@ -29,18 +29,18 @@ namespace Modules.UI.TextColor
 
             var colorInfos = instance.ColorInfos;
 
-            var headerItems = new List<EditorLayoutTools.ColumnHeaderContent>();
+            var headerItems = new List<Tuple<string, GUILayoutOptions>>();
 
-            headerItems.Add(new EditorLayoutTools.ColumnHeaderContent("Name", GUILayout.MinWidth(100f)));
-            headerItems.Add(new EditorLayoutTools.ColumnHeaderContent("Color", GUILayout.Width(65f)));
-            headerItems.Add(new EditorLayoutTools.ColumnHeaderContent("Outline", GUILayout.Width(85f)));
-            headerItems.Add(new EditorLayoutTools.ColumnHeaderContent("Shadow", GUILayout.Width(85f)));
+            headerItems.Add(Tuple.Create("Name", new GUILayoutOptions(GUILayout.MinWidth(100f))));
+            headerItems.Add(Tuple.Create("Color", new GUILayoutOptions(GUILayout.Width(65f))));
+            headerItems.Add(Tuple.Create("Outline", new GUILayoutOptions(GUILayout.Width(85f))));
+            headerItems.Add(Tuple.Create("Shadow", new GUILayoutOptions(GUILayout.Width(85f))));
 
             using (new EditorGUILayout.HorizontalScope())
             {
                 GUILayout.Space(5f);
 
-                EditorLayoutTools.DrawColumnHeader(headerItems.ToArray());
+                EditorLayoutTools.ColumnHeader(headerItems.ToArray());
 
                 GUILayout.Space(35f);
 

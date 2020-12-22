@@ -64,7 +64,7 @@ namespace Modules.Devkit.SceneImporter
             EditorGUILayout.Separator();
 
             // AutoAdditionFolders.
-            EditorLayoutTools.DrawLabelWithBackground("Managed Folders");
+            EditorLayoutTools.Title("Managed Folders");
 
             var change = false;
 
