@@ -141,7 +141,7 @@ namespace Extensions.Devkit
 
         public static bool Header(string text, bool state, Color? color = null)
         {
-            var c = color ?? Color.white;
+            var c = color ?? DefaultHeaderColor;
 
             var backgroundColor = Color.white;
 
@@ -153,8 +153,6 @@ namespace Extensions.Devkit
             {
                 backgroundColor = c;
             }
-
-            GUILayout.BeginHorizontal();
 
             text = "<b><size=11>" + text + "</size></b>";
 
