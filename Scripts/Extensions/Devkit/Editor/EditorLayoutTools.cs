@@ -63,6 +63,11 @@ namespace Extensions.Devkit
             }
         }
 
+        public static Color DefaultHeaderColor
+        {
+            get { return EditorGUIUtility.isProSkin ? new Color(0.8f, 0.8f, 0.8f) : new Color(0.85f, 0.85f, 0.85f); }
+        }
+
         public static Color DefaultContentColor
         {
             get { return EditorGUIUtility.isProSkin ? Color.white : Color.black; }
@@ -407,17 +412,30 @@ namespace Extensions.Devkit
             }
         }
 
-        public static void DrawContentTitle(string text)
+        public static void DrawContentTitle(string text, Color? color = null)
         {
             GUILayout.Space(2f);
 
-            using (new EditorGUILayout.HorizontalScope())
+            if (!color.HasValue)
             {
-                text = "<b><size=11>" + text + "</size></b>";
+                color = DefaultHeaderColor;
+            }
 
-                GUILayout.Toggle(true, text, "dragtab", GUILayout.MinWidth(20f));
+            using (new BackgroundColorScope(color.Value))
+            {
+                using (new EditorGUILayout.HorizontalScope("Toolbar"))
+                {
+                    text = "<b><size=11>" + text + "</size></b>";
 
-                GUILayout.Space(2f);
+                    var style = new GUIStyle(EditorStyles.label)
+                    {
+                        richText = true,
+                    };
+
+                    GUILayout.Label(text, style, GUILayout.MinWidth(20f));
+
+                    GUILayout.Space(2f);
+                }
             }
 
             GUILayout.Space(-2f);
