@@ -1,6 +1,7 @@
 ﻿
 using UnityEngine;
 using UnityEditor;
+using UniRx;
 using Extensions;
 
 // Modules.
@@ -114,7 +115,7 @@ namespace Modules
         [MenuItem(itemName: GeneratorsMenu + "Generate MessagePack", priority = 19)]
         public static void GenerateMessagePackCode()
         {
-            MessagePackCodeGenerator.Generate(10);
+            MessagePackCodeGenerator.Generate().Subscribe();
         }
 
         [MenuItem(itemName: GeneratorsMenu + "Generate ScriptableObject", priority = 100)]

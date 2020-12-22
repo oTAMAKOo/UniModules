@@ -2,9 +2,10 @@
 using UnityEngine;
 using UnityEditor;
 using System;
+using System.Collections;
 using System.IO;
 using System.Reflection;
-using System.Text;
+using UniRx;
 using Extensions;
 
 namespace Modules.MessagePack
@@ -14,50 +15,55 @@ namespace Modules.MessagePack
         //----- params -----
 
         private const string CSProjExtension = ".csproj";
-
-        private const string UnhandledErrorMessage = "Unhandled Error:System.AggregateException: One or more errors occurred";
-
+        
         //----- field -----
 
         //----- property -----
 
         //----- method -----
 
-        public static bool Generate(int retryCount)
+        public static IObservable<Tuple<bool, string>> FindDotnet()
+        {
+            Tuple<bool, string> result = null;
+
+            return ProcessUtility.InvokeStartAsync("dotnet", "--version").ToObservable()
+                .Do(x => result = Tuple.Create(true, x.Item2))
+                .DoOnError(x => result = Tuple.Create(false, (string)null))
+                .Select(_ => result);
+        }
+
+        public static IObservable<bool> Generate()
         {
             var messagePackConfig = MessagePackConfig.Instance;
 
-            for (var i = 0; i < retryCount; i++)
+            Action<bool> onComplete = result =>
             {
-                try
+                if (result)
                 {
-                    var result = GenerateCode(messagePackConfig);
+                    var csFilePath = GetScriptGeneratePath(messagePackConfig);
 
-                    if (result)
+                    if (File.Exists(csFilePath))
                     {
-                        Debug.LogFormat("Generate: {0}", GetScriptGeneratePath(messagePackConfig));
-
-                        return true;
-                    }
-                }
-                catch(Exception e)
-                {
-                    if (e.Message.Contains(UnhandledErrorMessage))
-                    {
-                        Debug.LogErrorFormat("MessagePack code generate retry. [{0}/{1}]", i + 1, retryCount);
+                        Debug.LogFormat("Generate: {0}", csFilePath);
                     }
                     else
                     {
-                        Debug.LogException(e);
-                        return false;
+                        Debug.LogError("MessagePack code generate failed.");
                     }
                 }
-            }
+            };
 
-            return false;
+            Action<Exception> onError = (Exception e) =>
+            {
+                Debug.LogException(e);
+            };
+
+            return Observable.FromMicroCoroutine<bool>(observer => GenerateCode(observer, messagePackConfig))
+                .DoOnError(onError)
+                .Do(onComplete);
         }
 
-        private static bool GenerateCode(MessagePackConfig messagePackConfig)
+        private static IEnumerator GenerateCode(IObserver<bool> observer, MessagePackConfig messagePackConfig)
         {
             //------ Solution同期 ------
 
@@ -69,7 +75,7 @@ namespace Modules.MessagePack
 
             //------ csproj検索 ------
 
-            var csproj = string.Empty;
+            var csprojPath = string.Empty;
 
             var projectFolder = UnityPathUtility.GetProjectFolderPath();
 
@@ -81,125 +87,104 @@ namespace Modules.MessagePack
 
                 if (File.Exists(path))
                 {
-                    csproj = path;
+                    csprojPath = path;
                     break;
                 }
             }
 
-            if (!File.Exists(csproj))
+            if (!File.Exists(csprojPath))
             {
-                throw new FileNotFoundException("csproj file not found");
+                observer.OnError(new FileNotFoundException(string.Format("csproj file not found.\n{0}", csprojPath)));
             }
+
+            //------ mpc ------
+
+            var codeGeneratorPath = messagePackConfig.CodeGeneratorPath;
+
+            if (!File.Exists(codeGeneratorPath))
+            {
+                observer.OnError(new FileNotFoundException(string.Format("MessagePack Code Generator file not found.\n{0}", codeGeneratorPath)));
+                yield break;
+            }
+
+            #if UNITY_EDITOR_OSX
+
+            // mpc権限変更.
+            ExecuteProcess("/bin/bash", string.Format("-c 'chmod 755 {0}'", codeGeneratorPath));
+
+            #endif
+
+            //------ msbuild ------
+
+            #if UNITY_EDITOR_OSX
+
+            var environmentPath = Environment.GetEnvironmentVariable("PATH", EnvironmentVariableTarget.Process);
+
+            var path = string.Format("{0}:{1}", environmentPath, MessagePackConfig.Prefs.msbuildPath);
+
+            Environment.SetEnvironmentVariable("PATH", path, EnvironmentVariableTarget.Process);
+
+            #endif
 
             //------ mpc実行 ------
 
-            var compilerPath = messagePackConfig.CompilerPath;
+            var generatePath = GetScriptGeneratePath(messagePackConfig);
 
-            if (File.Exists(compilerPath))
+            var commnadLineArguments = string.Empty;
+            
+            commnadLineArguments += $" --input { ReplaceCommnadLinePathSeparator(csprojPath) }";
+
+            commnadLineArguments += $" --output { ReplaceCommnadLinePathSeparator(generatePath) }";
+
+            if (messagePackConfig.UseMapMode)
             {
-                var generatePath = GetScriptGeneratePath(messagePackConfig);
-
-                var arguments = string.Format(" --input {0} --output {1} --usemapmode", csproj, generatePath);
-
-                #if UNITY_EDITOR_WIN
-
-                // 実行.
-                var result = ExecuteProcess(compilerPath, arguments);
-
-                if (result.Item1 == 1)
-                {
-                    throw new Exception(result.Item2);
-                }
-
-                #elif UNITY_EDITOR_OSX
-
-                // msbuildへのパスを設定.
-
-                var environmentPath = Environment.GetEnvironmentVariable("PATH", EnvironmentVariableTarget.Process);
-
-                var path = string.Format("{0}:{1}", environmentPath, MessagePackConfig.Prefs.msbuildPath);
-
-                Environment.SetEnvironmentVariable("PATH", path, EnvironmentVariableTarget.Process);
-
-                // mpc権限変更.
-                ExecuteProcess("/bin/bash", string.Format("-c 'chmod 755 {0}'", compilerPath));
-
-                // 実行.
-                var result = ExecuteProcess(compilerPath, arguments);
-
-                if (result.Item1 == 1)
-                {
-                    throw new Exception(result.Item2);
-                }
-
-                #endif
-
-                AssetDatabase.ImportAsset(generatePath, ImportAssetOptions.ForceUpdate);
-            }
-            else
-            {
-                throw new FileNotFoundException("MessagePack compiler not found.");
+                commnadLineArguments += " --usemapmode";
             }
 
-            return true;
+            if (!string.IsNullOrEmpty(messagePackConfig.ResolverNameSpace))
+            {
+                commnadLineArguments += $" --namespace {messagePackConfig.ResolverNameSpace}";
+            }
+
+            if (!string.IsNullOrEmpty(messagePackConfig.ResolverName))
+            {
+                commnadLineArguments += $" --resolverName {messagePackConfig.ResolverName}";
+            }
+
+            if (!string.IsNullOrEmpty(messagePackConfig.ConditionalCompilerSymbols))
+            {
+                commnadLineArguments += $" --conditionalSymbol {messagePackConfig.ConditionalCompilerSymbols}";
+            }
+
+            // 実行.
+            var task = ProcessUtility.InvokeStartAsync(codeGeneratorPath, commnadLineArguments);
+
+            while (!task.IsCompleted)
+            {
+                yield return null;
+            }
+
+            if (task.Result.Item1 == 1)
+            {
+                observer.OnError(new Exception(task.Result.Item2));
+            }
+
+            var csFilePath = UnityPathUtility.ConvertFullPathToAssetPath(generatePath);
+
+            AssetDatabase.ImportAsset(csFilePath, ImportAssetOptions.ForceUpdate);
+
+            observer.OnNext(true);
+            observer.OnCompleted();
+        }
+
+        private static string ReplaceCommnadLinePathSeparator(string path)
+        {
+            return path.Replace('/', Path.DirectorySeparatorChar);
         }
 
         private static string GetScriptGeneratePath(MessagePackConfig messagePackConfig)
         {
             return PathUtility.Combine(messagePackConfig.ScriptExportDir, messagePackConfig.ExportScriptName);
-        }
-
-        private static Tuple<int, string> ExecuteProcess(string fileName, string arguments)
-        {
-            var exitCode = 0;
-
-            // タイムアウト時間 (120秒).
-            var timeout = TimeSpan.FromSeconds(120);
-
-            // ログ.
-            var compileLog = new StringBuilder();
-            
-            using (var process = new System.Diagnostics.Process())
-            {
-                var processStartInfo = new System.Diagnostics.ProcessStartInfo
-                {
-                    FileName = fileName,
-                    Arguments = arguments,
-
-                    // エラー出力をリダイレクト.
-                    RedirectStandardOutput = true,
-                    RedirectStandardError = true,
-
-                    // シェル実行しない.
-                    UseShellExecute = false,
-
-                    // ウィンドウ非表示.
-                    CreateNoWindow = true,
-                    WindowStyle = System.Diagnostics.ProcessWindowStyle.Hidden,
-                };
-
-                process.StartInfo = processStartInfo;
-
-                System.Diagnostics.DataReceivedEventHandler processOutputDataReceived = (sender, e) =>
-                {
-                    compileLog.AppendLine(e.Data);
-                };
-
-                process.OutputDataReceived += processOutputDataReceived;
-
-                //起動.
-                process.Start();
-
-                process.BeginOutputReadLine();
-
-                // 結果待ち.
-                process.WaitForExit((int)timeout.TotalMilliseconds);
-
-                // 終了コード.
-                exitCode = process.ExitCode;
-            }
-            
-            return new Tuple<int, string>(exitCode, compileLog.ToString());
         }
     }
 }

@@ -1,6 +1,10 @@
 ﻿﻿﻿﻿
 using UnityEngine;
 using UnityEditor;
+using System;
+using System.Collections;
+using System.Collections.Generic;
+using UniRx;
 using Extensions;
 using Extensions.Devkit;
 
@@ -11,117 +15,242 @@ namespace Modules.MessagePack
     {
         //----- params -----
 
+        private const string RequireDotnetSDKVersion = "3.1";
+
         //----- field -----
 
+        private GUIStyle pathTextStyle = null;
+
         private MessagePackConfig instance = null;
+
+        private bool isLoading = false;
+
+        [NonSerialized]
+        private bool initialized = false;
+
+        private static bool isDotnetInstalled = false;
+        private static string dotnetVersion = null;
 
         //----- property -----
 
         //----- method -----
 
+        private void Initialize()
+        {
+            if (initialized) { return; }
+
+            if (pathTextStyle == null)
+            {
+                pathTextStyle = GUI.skin.GetStyle("TextArea");
+                pathTextStyle.alignment = TextAnchor.MiddleLeft;
+            }
+
+            if (!isDotnetInstalled)
+            {
+                isLoading = true;
+
+                Observable.FromMicroCoroutine(() => FindDotnet()).Subscribe(_ => isLoading = false);
+            }
+
+            initialized = true;
+        }
+
         public override void OnInspectorGUI()
         {
             instance = target as MessagePackConfig;
 
+            Initialize();
+
             serializedObject.Update();
 
-            var winCompilerRelativePath = serializedObject.FindProperty("winCompilerRelativePath");
-            var osxCompilerRelativePath = serializedObject.FindProperty("osxCompilerRelativePath");
+            var winMpcRelativePath = serializedObject.FindProperty("winMpcRelativePath");
+            var osxMpcRelativePath = serializedObject.FindProperty("osxMpcRelativePath");
             var scriptExportAssetDir = serializedObject.FindProperty("scriptExportAssetDir");
             var scriptName = serializedObject.FindProperty("scriptName");
+            var useMapMode = serializedObject.FindProperty("useMapMode");
+            var resolverNameSpace = serializedObject.FindProperty("resolverNameSpace");
+            var resolverName = serializedObject.FindProperty("resolverName");
+            var conditionalCompilerSymbols = serializedObject.FindProperty("conditionalCompilerSymbols");
 
-            // Style.
-            var pathTextStyle = GUI.skin.GetStyle("TextArea");
-            pathTextStyle.alignment = TextAnchor.MiddleLeft;
+            if (isLoading) { return; }
 
-            GUILayout.Label("MessagePack compiler (Win)");
+            //------ .Netバージョン ------
 
-            using (new EditorGUILayout.HorizontalScope())
+            if (!string.IsNullOrEmpty(dotnetVersion))
             {
-                GUILayout.Label(winCompilerRelativePath.stringValue, pathTextStyle);
+                EditorGUILayout.HelpBox(string.Format(".NET Core SDK {0}(Require Version {1})", dotnetVersion, RequireDotnetSDKVersion), MessageType.Info);
+            }
 
-                if (GUILayout.Button("Edit", GUILayout.Width(45f)))
+            //------ インストール ------
+
+            if (!isDotnetInstalled)
+            {
+                EditorGUILayout.HelpBox(".NET Core SDK not found.\nMessagePack CodeGen requires .NET Core Runtime.", MessageType.Error);
+
+                if (GUILayout.Button("Open .NET Core install page."))
                 {
-                    UnityEditorUtility.RegisterUndo("MessagePackConfigInspector Undo", instance);
+                    Application.OpenURL("https://dotnet.microsoft.com/download");
+                }
 
-                    var path = EditorUtility.OpenFilePanel("Select MessagePack compiler", Application.dataPath, "exe");
+                EditorGUILayout.Separator();
+            }
 
-                    winCompilerRelativePath.stringValue = UnityPathUtility.MakeRelativePath(path);
+            //------ コードジェネレーター ------
 
-                    serializedObject.ApplyModifiedProperties();
+            EditorLayoutTools.DrawContentTitle("CodeGenerator");
+
+            using (new ContentsScope())
+            {
+                GUILayout.Label("Windows");
+
+                using (new EditorGUILayout.HorizontalScope())
+                {
+                    GUILayout.Label(winMpcRelativePath.stringValue, pathTextStyle);
+
+                    if (GUILayout.Button("Edit", GUILayout.Width(45f)))
+                    {
+                        UnityEditorUtility.RegisterUndo("MessagePackConfigInspector Undo", instance);
+
+                        var path = EditorUtility.OpenFilePanel("Select MessagePack compiler", Application.dataPath, "exe");
+
+                        winMpcRelativePath.stringValue = UnityPathUtility.MakeRelativePath(path);
+
+                        serializedObject.ApplyModifiedProperties();
+                    }
+                }
+
+                GUILayout.Label("MacOSX");
+
+                using (new EditorGUILayout.HorizontalScope())
+                {
+                    GUILayout.Label(osxMpcRelativePath.stringValue, pathTextStyle);
+
+                    if (GUILayout.Button("Edit", GUILayout.Width(45f)))
+                    {
+                        UnityEditorUtility.RegisterUndo("MessagePackConfigInspector Undo", instance);
+
+                        var path = EditorUtility.OpenFilePanel("Select MessagePack compiler", Application.dataPath, "");
+
+                        osxMpcRelativePath.stringValue = UnityPathUtility.MakeRelativePath(path);
+
+                        serializedObject.ApplyModifiedProperties();
+                    }
                 }
             }
 
-            GUILayout.Label("MessagePack compiler (OSX)");
+            GUILayout.Space(4f);
 
-            using (new EditorGUILayout.HorizontalScope())
+            //------ 基本設定 ------
+
+            EditorLayoutTools.DrawContentTitle("MessagePack Script Export");
+
+            using (new ContentsScope())
             {
-                GUILayout.Label(osxCompilerRelativePath.stringValue, pathTextStyle);
-
-                if (GUILayout.Button("Edit", GUILayout.Width(45f)))
+                using (new EditorGUILayout.HorizontalScope())
                 {
-                    UnityEditorUtility.RegisterUndo("MessagePackConfigInspector Undo", instance);
+                    GUILayout.Label(scriptExportAssetDir.stringValue, pathTextStyle);
 
-                    var path = EditorUtility.OpenFilePanel("Select MessagePack compiler", Application.dataPath, "");
+                    if (GUILayout.Button("Edit", GUILayout.Width(45f)))
+                    {
+                        UnityEditorUtility.RegisterUndo("MessagePackConfigInspector Undo", instance);
 
-                    osxCompilerRelativePath.stringValue = UnityPathUtility.MakeRelativePath(path);
+                        var path = EditorUtility.OpenFolderPanel("Select Export Folder", Application.dataPath, string.Empty);
 
-                    serializedObject.ApplyModifiedProperties();
+                        scriptExportAssetDir.stringValue = UnityPathUtility.MakeRelativePath(path);
+
+                        serializedObject.ApplyModifiedProperties();
+                    }
                 }
+
+                EditorGUI.BeginChangeCheck();
+
+                GUILayout.Label("Export FileName");
+
+                scriptName.stringValue = EditorGUILayout.DelayedTextField(scriptName.stringValue);
+
+                useMapMode.boolValue = EditorGUILayout.Toggle("MapMode", useMapMode.boolValue);
             }
 
-            GUILayout.Label("MessagePack Script Export");
+            GUILayout.Space(4f);
 
-            using (new EditorGUILayout.HorizontalScope())
+            //------ オプション設定 ------
+
+            EditorLayoutTools.DrawContentTitle("CodeGenerator Options");
+
+            using (new ContentsScope())
             {
-                GUILayout.Label(scriptExportAssetDir.stringValue, pathTextStyle);
+                GUILayout.Label("NameSpace");
 
-                if (GUILayout.Button("Edit", GUILayout.Width(45f)))
-                {
-                    UnityEditorUtility.RegisterUndo("MessagePackConfigInspector Undo", instance);
+                resolverNameSpace.stringValue = EditorGUILayout.DelayedTextField(resolverNameSpace.stringValue);
 
-                    var path = EditorUtility.OpenFolderPanel("Select Export Folder", Application.dataPath, string.Empty);
+                GUILayout.Label("ClassName");
 
-                    scriptExportAssetDir.stringValue = UnityPathUtility.MakeRelativePath(path);
+                resolverName.stringValue = EditorGUILayout.DelayedTextField(resolverName.stringValue);
 
-                    serializedObject.ApplyModifiedProperties();
-                }
+                GUILayout.Label("Conditional Compiler Symbols");
+
+                conditionalCompilerSymbols.stringValue = EditorGUILayout.DelayedTextField(conditionalCompilerSymbols.stringValue);
             }
 
-            EditorGUI.BeginChangeCheck();
-
-            GUILayout.Label("Export FileName");
-            scriptName.stringValue = EditorGUILayout.DelayedTextField(scriptName.stringValue);
-
-            if(EditorGUI.EndChangeCheck())
-            {
-                UnityEditorUtility.RegisterUndo("MessagePackConfigInspector Undo", instance);
-
-                serializedObject.ApplyModifiedProperties();
-            }
-
-            GUILayout.Space(25f);
+            GUILayout.Space(4f);
 
             //------ Private settings ------
 
             #if UNITY_EDITOR_OSX
 
-            EditorLayoutTools.DrawLabelWithBackground("Private settings", new Color(1f, 1f, 0f, 1f));
+            EditorLayoutTools.DrawContentTitle("Private settings", new Color(1f, 1f, 0f, 1f));
 
             using (new ContentsScope())
             {   
-                EditorGUI.BeginChangeCheck();
-
                 GUILayout.Label("MsBuild Path");
-                MessagePackConfig.Prefs.msbuildPath = EditorGUILayout.DelayedTextField(MessagePackConfig.Prefs.msbuildPath);
 
-                if(EditorGUI.EndChangeCheck())
-                {
-                    UnityEditorUtility.RegisterUndo("MessagePackConfigInspector Undo", instance);
-                }
+                MessagePackConfig.Prefs.msbuildPath = EditorGUILayout.DelayedTextField(MessagePackConfig.Prefs.msbuildPath);                
             }
 
             #endif
+
+            if (EditorGUI.EndChangeCheck())
+            {
+                UnityEditorUtility.RegisterUndo("MessagePackConfigInspector Undo", instance);
+
+                serializedObject.ApplyModifiedProperties();
+            }
+        }
+
+        private IEnumerator FindDotnet()
+        {
+            if (isDotnetInstalled) { yield break; }
+
+            dotnetVersion = string.Empty;
+
+            var processTitle = "MessagePackConfig";
+            var processMessage = "Find .NET Core SDK";
+
+            EditorUtility.DisplayProgressBar(processTitle, processMessage, 0f);
+
+            var findYield = MessagePackCodeGenerator.FindDotnet().ToYieldInstruction();
+
+            while (!findYield.IsDone)
+            {
+                yield return null;
+            }
+
+            if (findYield.HasResult)
+            {
+                isDotnetInstalled = findYield.Result.Item1;
+                dotnetVersion = findYield.Result.Item2;
+            }
+
+            if (string.IsNullOrEmpty(dotnetVersion))
+            {
+                Debug.LogError("Failed get .NET Core SDK version.");
+            }
+
+            EditorUtility.DisplayProgressBar(processTitle, processMessage, 1f);
+
+            Repaint();
+
+            EditorApplication.delayCall += EditorUtility.ClearProgressBar;
         }
     }
 }
