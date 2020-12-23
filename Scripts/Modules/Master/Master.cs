@@ -66,7 +66,7 @@ namespace Modules.Master
 
                     instance = new TMaster();
 
-                    masterManager.All.Add(instance);
+                    masterManager.Register(instance);
                 }
 
                 return instance;
@@ -98,8 +98,8 @@ namespace Modules.Master
 
             if (records.ContainsKey(key))
             {
-                var message = "Master register error!\nRegistered keys can not be registered.";
-                var typeName = GetType().FullName;
+                var message = "Master record error!\nRecords with the same key already exists.";
+                var typeName = typeof(TMaster).FullName;
 
                 Debug.LogErrorFormat("{0}\n\n Master : {1}\nKey : {2}\n", message, typeName, key);
             }
@@ -109,10 +109,18 @@ namespace Modules.Master
             }
         }
 
-        public bool CheckVersion(string masterVersion)
+        private string GetInstallPath()
         {
             var masterManager = MasterManager.Instance;
 
+            var installDirectory = masterManager.InstallDirectory;
+            var fileName = masterManager.GetMasterFileName<TMaster>();
+
+            return PathUtility.Combine(installDirectory, fileName);
+        }
+
+        public bool CheckVersion(string masterVersion)
+        {
             #if UNITY_EDITOR
 
             if (!MasterManager.Prefs.checkVersion) { return true; }
@@ -121,7 +129,7 @@ namespace Modules.Master
 
             var result = true;
 
-            var installPath = masterManager.GetInstallPath<TMaster>();
+            var installPath = GetInstallPath();
 
             // ファイルがなかったらバージョン不一致.
             result &= File.Exists(installPath);
@@ -134,9 +142,7 @@ namespace Modules.Master
 
         public void ClearVersion()
         {
-            var masterManager = MasterManager.Instance;
-
-            var installPath = masterManager.GetInstallPath<TMaster>();
+            var installPath = GetInstallPath();
 
             if (File.Exists(installPath))
             {
@@ -156,12 +162,6 @@ namespace Modules.Master
 
         private IEnumerator LoadInternal(IObserver<Tuple<bool, double>> observer, AesManaged aesManaged, bool cleanOnError)
         {
-            var masterManager = MasterManager.Instance;
-
-            var result = false;
-
-            double time = 0;
-
             #if UNITY_EDITOR
 
             try
@@ -175,36 +175,48 @@ namespace Modules.Master
 
             #endif
 
-            var installPath = masterManager.GetInstallPath<TMaster>();
+            var result = false;
 
-            // 読み込み.
-            var loadYield = Observable.FromMicroCoroutine<Tuple<TMasterContainer, double>>(x => LoadMasterFile(x, installPath, aesManaged)).ToYieldInstruction();
+            double time = 0;
 
-            while (!loadYield.IsDone)
+            var installPath = GetInstallPath();
+
+            // ファイル存在チェック.
+            if (File.Exists(installPath))
             {
-                yield return null;
-            }
+                // ファイルの読み込み・復号化・デシリアライズをスレッドプールで実行.
+                var loadYield = Observable.Start(() => LoadMasterFile(installPath, aesManaged)).ObserveOnMainThread().ToYieldInstruction(false);
 
-            if (!loadYield.HasError && loadYield.HasResult)
-            {
-                var container = loadYield.Result.Item1;
-
-                time = loadYield.Result.Item2;
-
-                try
+                while (!loadYield.IsDone)
                 {
-                    SetRecords(container.records);
-
-                    result = true;
+                    yield return null;
                 }
-                catch (Exception exception)
+
+                if (!loadYield.HasError && loadYield.HasResult)
                 {
-                    Debug.LogException(exception);
+                    var container = loadYield.Result.Item1;
+
+                    time = loadYield.Result.Item2;
+
+                    try
+                    {
+                        SetRecords(container.records);
+
+                        result = true;
+                    }
+                    catch (Exception exception)
+                    {
+                        Debug.LogException(exception);
+                    }
+                }
+                else
+                {
+                    Debug.LogException(loadYield.Error);
                 }
             }
             else
             {
-                Debug.LogException(loadYield.Error);
+                Debug.LogErrorFormat("Load master failed. File not exists.\n\nClass : {0}\nFile : {1}", typeof(TMaster).FullName, installPath);
             }
 
             if (!result)
@@ -222,28 +234,7 @@ namespace Modules.Master
             observer.OnCompleted();
         }
 
-        private IEnumerator LoadMasterFile(IObserver<Tuple<TMasterContainer, double>> observer, string installPath, AesManaged aesManaged)
-        {
-            // ファイルの読み込みと復号化をスレッドプールで実行.
-            var loadYield = Observable.Start(() => LoadMasterFileCore(installPath, aesManaged)).ObserveOnMainThread().ToYieldInstruction();
-
-            while (!loadYield.IsDone)
-            {
-                yield return null;
-            }
-
-            if (!loadYield.HasError && loadYield.HasResult)
-            {
-                observer.OnNext(loadYield.Result);
-                observer.OnCompleted();
-            }
-            else
-            {
-                observer.OnError(loadYield.Error);
-            }
-        }
-
-        protected virtual Tuple<TMasterContainer, double> LoadMasterFileCore(string filePath, AesManaged aesManaged)
+        protected virtual Tuple<TMasterContainer, double> LoadMasterFile(string filePath, AesManaged aesManaged)
         {
             var masterManager = MasterManager.Instance;
 
@@ -280,13 +271,11 @@ namespace Modules.Master
 
         private IEnumerator UpdateInternal(IObserver<Tuple<bool, double>> observer, string masterVersion, CancellationToken cancelToken)
         {
-            var masterManager = MasterManager.Instance;
-
             var result = true;
 
             var sw = System.Diagnostics.Stopwatch.StartNew();
 
-            var installPath = masterManager.GetInstallPath<TMaster>();
+            var installPath = GetInstallPath();
 
             // 既存のファイル削除.
             if (File.Exists(installPath))

@@ -19,13 +19,18 @@ namespace Modules.Master
 
         //----- field -----
 
+        private Dictionary<Type, IMaster> masters = null;
+
         private bool useLz4Compression = true;
 
         private MessagePackSerializerOptions serializerOptions = null;
 
         //----- property -----
 
-        public List<IMaster> All { get; private set; }
+        public IReadOnlyCollection<IMaster> Masters
+        {
+            get { return masters.Values; }
+        }
 
         /// <summary> 保存先. </summary>
         public string InstallDirectory { get; private set; }
@@ -48,7 +53,21 @@ namespace Modules.Master
 
         private MasterManager()
         {
-            All = new List<IMaster>();
+            masters = new Dictionary<Type, IMaster>();
+        }
+
+        public void Register(IMaster master)
+        {
+            var type = master.GetType();
+
+            if (masters.ContainsKey(type)) { return; }
+
+            masters.Add(type, master);
+        }
+
+        public void Clear()
+        {
+            masters.Clear();
         }
 
         public void SetInstallDirectory(string installDirectory)
@@ -61,12 +80,7 @@ namespace Modules.Master
         {
             FileNameEncryptor = aesManaged;
         }
-
-        public string GetInstallPath<T>() where T : IMaster
-        {
-            return PathUtility.Combine(InstallDirectory, GetMasterFileName<T>());
-        }
-
+        
         public string GetMasterFileName<T>() where T : IMaster
         {
             return GetMasterFileName(typeof(T));
