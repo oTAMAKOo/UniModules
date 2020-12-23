@@ -4,7 +4,10 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Security.Cryptography;
+using MessagePack;
+using MessagePack.Resolvers;
 using Extensions;
+using Modules.MessagePack;
 
 namespace Modules.Master
 {
@@ -16,13 +19,30 @@ namespace Modules.Master
 
         //----- field -----
 
+        private bool useLz4Compression = true;
+
+        private MessagePackSerializerOptions serializerOptions = null;
+
         //----- property -----
 
         public List<IMaster> All { get; private set; }
 
+        /// <summary> 保存先. </summary>
         public string InstallDirectory { get; private set; }
 
+        /// <summary> ファイル名暗号化キー. </summary>
         public AesManaged FileNameEncryptor { get; private set; }
+
+        /// <summary> LZ4圧縮を使用するか. </summary>
+        public bool UseLz4Compression
+        {
+            get { return useLz4Compression; }
+            set
+            {
+                useLz4Compression = value;
+                serializerOptions = null;
+            }
+        }
 
         //----- method -----
 
@@ -91,6 +111,22 @@ namespace Modules.Master
             }
             
             return fileName;
+        }
+
+        public MessagePackSerializerOptions GetSerializerOptions()
+        {
+            if (serializerOptions != null) { return serializerOptions; }
+
+            var options = StandardResolverAllowPrivate.Options.WithResolver(UnityContractResolver.Instance);
+
+            if (UseLz4Compression)
+            {
+                options = options.WithCompression(MessagePackCompression.Lz4BlockArray);
+            }
+
+            serializerOptions = options;
+
+            return serializerOptions;
         }
     }
 }

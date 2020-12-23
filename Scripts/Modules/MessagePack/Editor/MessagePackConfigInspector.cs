@@ -198,7 +198,7 @@ namespace Modules.MessagePack
 
             #if UNITY_EDITOR_OSX
 
-            EditorLayoutTools.DrawContentTitle("Private settings", new Color(1f, 1f, 0f, 1f));
+            EditorLayoutTools.Title("Private settings", new Color(1f, 1f, 0f, 1f));
 
             using (new ContentsScope())
             {   

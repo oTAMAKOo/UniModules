@@ -62,8 +62,11 @@ namespace Modules.Master
             {
                 if (instance == null)
                 {
+                    var masterManager = MasterManager.Instance;
+
                     instance = new TMaster();
-                    MasterManager.Instance.All.Add(instance);
+
+                    masterManager.All.Add(instance);
                 }
 
                 return instance;
@@ -72,9 +75,6 @@ namespace Modules.Master
 
         /// <summary> バージョン. </summary>
         public string Version { get { return versionPrefs.version; } }
-
-        /// <summary> LZ4圧縮を使用するか. </summary>
-        protected virtual bool UseLz4Compression { get { return true; } }
 
         //----- method -----
 
@@ -111,6 +111,8 @@ namespace Modules.Master
 
         public bool CheckVersion(string masterVersion)
         {
+            var masterManager = MasterManager.Instance;
+
             #if UNITY_EDITOR
 
             if (!MasterManager.Prefs.checkVersion) { return true; }
@@ -119,7 +121,7 @@ namespace Modules.Master
 
             var result = true;
 
-            var installPath = MasterManager.Instance.GetInstallPath<TMaster>();
+            var installPath = masterManager.GetInstallPath<TMaster>();
 
             // ファイルがなかったらバージョン不一致.
             result &= File.Exists(installPath);
@@ -132,7 +134,9 @@ namespace Modules.Master
 
         public void ClearVersion()
         {
-            var installPath = MasterManager.Instance.GetInstallPath<TMaster>();
+            var masterManager = MasterManager.Instance;
+
+            var installPath = masterManager.GetInstallPath<TMaster>();
 
             if (File.Exists(installPath))
             {
@@ -152,6 +156,8 @@ namespace Modules.Master
 
         private IEnumerator LoadInternal(IObserver<Tuple<bool, double>> observer, AesManaged aesManaged, bool cleanOnError)
         {
+            var masterManager = MasterManager.Instance;
+
             var result = false;
 
             double time = 0;
@@ -169,10 +175,10 @@ namespace Modules.Master
 
             #endif
 
-            var installPath = MasterManager.Instance.GetInstallPath<TMaster>();
+            var installPath = masterManager.GetInstallPath<TMaster>();
 
-            // ファイルの読み込みと復号化.
-            var loadYield = Observable.FromMicroCoroutine<Tuple<byte[], double>>(x => LoadCacheFile(x, installPath, aesManaged)).ToYieldInstruction();
+            // 読み込み.
+            var loadYield = Observable.FromMicroCoroutine<Tuple<TMasterContainer, double>>(x => LoadMasterFile(x, installPath, aesManaged)).ToYieldInstruction();
 
             while (!loadYield.IsDone)
             {
@@ -181,23 +187,12 @@ namespace Modules.Master
 
             if (!loadYield.HasError && loadYield.HasResult)
             {
-                var bytes = loadYield.Result.Item1;
+                var container = loadYield.Result.Item1;
 
-                time += loadYield.Result.Item2;
-
-                var sw = System.Diagnostics.Stopwatch.StartNew();
+                time = loadYield.Result.Item2;
 
                 try
                 {
-                    var options = StandardResolverAllowPrivate.Options.WithResolver(UnityContractResolver.Instance);
-
-                    if (UseLz4Compression)
-                    {
-                        options = options.WithCompression(MessagePackCompression.Lz4BlockArray);
-                    }
-
-                    var container = MessagePackSerializer.Deserialize<TMasterContainer>(bytes, options);
-
                     SetRecords(container.records);
 
                     result = true;
@@ -206,10 +201,6 @@ namespace Modules.Master
                 {
                     Debug.LogException(exception);
                 }
-
-                sw.Stop();
-
-                time += sw.Elapsed.TotalMilliseconds;
             }
             else
             {
@@ -231,27 +222,10 @@ namespace Modules.Master
             observer.OnCompleted();
         }
 
-        protected virtual IEnumerator LoadCacheFile(IObserver<Tuple<byte[], double>> observer, string installPath, AesManaged aesManaged)
+        private IEnumerator LoadMasterFile(IObserver<Tuple<TMasterContainer, double>> observer, string installPath, AesManaged aesManaged)
         {
-            Func<string, AesManaged, Tuple<byte[], double>> loadAndDecrypt = (_installPath, _aesManaged) =>
-            {
-                byte[] bytes = null;
-
-                var sw = System.Diagnostics.Stopwatch.StartNew();
-
-                // ファイル読み込み.
-                bytes = File.ReadAllBytes(_installPath);
-
-                // 復号化.               
-                bytes = bytes.Decrypt(_aesManaged);
-
-                sw.Stop();
-
-                return Tuple.Create(bytes, sw.Elapsed.TotalMilliseconds);
-            };
-
             // ファイルの読み込みと復号化をスレッドプールで実行.
-            var loadYield = Observable.Start(() => loadAndDecrypt(installPath, aesManaged)).ObserveOnMainThread().ToYieldInstruction();
+            var loadYield = Observable.Start(() => LoadMasterFileCore(installPath, aesManaged)).ObserveOnMainThread().ToYieldInstruction();
 
             while (!loadYield.IsDone)
             {
@@ -269,6 +243,36 @@ namespace Modules.Master
             }
         }
 
+        protected virtual Tuple<TMasterContainer, double> LoadMasterFileCore(string filePath, AesManaged aesManaged)
+        {
+            var masterManager = MasterManager.Instance;
+
+            byte[] bytes = null;
+
+            var sw = System.Diagnostics.Stopwatch.StartNew();
+
+            // ファイル読み込み.
+
+            bytes = File.ReadAllBytes(filePath);
+
+            // 復号化.
+
+            if (aesManaged != null)
+            {
+                bytes = bytes.Decrypt(aesManaged);
+            }
+
+            // デシリアライズ.
+
+            var options = masterManager.GetSerializerOptions();
+
+            var container = MessagePackSerializer.Deserialize<TMasterContainer>(bytes, options);
+
+            sw.Stop();
+
+            return Tuple.Create(container, sw.Elapsed.TotalMilliseconds);
+        }
+
         public IObservable<Tuple<bool, double>> Update(string masterVersion, CancellationToken cancelToken)
         {
             return Observable.FromMicroCoroutine<Tuple<bool, double>>(observer => UpdateInternal(observer, masterVersion, cancelToken));
@@ -276,11 +280,13 @@ namespace Modules.Master
 
         private IEnumerator UpdateInternal(IObserver<Tuple<bool, double>> observer, string masterVersion, CancellationToken cancelToken)
         {
+            var masterManager = MasterManager.Instance;
+
             var result = true;
 
             var sw = System.Diagnostics.Stopwatch.StartNew();
 
-            var installPath = MasterManager.Instance.GetInstallPath<TMaster>();
+            var installPath = masterManager.GetInstallPath<TMaster>();
 
             // 既存のファイル削除.
             if (File.Exists(installPath))
