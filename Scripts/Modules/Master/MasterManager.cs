@@ -19,7 +19,7 @@ namespace Modules.Master
 
         //----- field -----
 
-        private Dictionary<Type, IMaster> masters = null;
+        private Dictionary<string, IMaster> masters = null;
 
         private bool useLz4Compression = true;
 
@@ -53,16 +53,23 @@ namespace Modules.Master
 
         private MasterManager()
         {
-            masters = new Dictionary<Type, IMaster>();
+            masters = new Dictionary<string, IMaster>();
         }
 
         public void Register(IMaster master)
         {
             var type = master.GetType();
 
-            if (masters.ContainsKey(type)) { return; }
+            var fileName = GetMasterFileName(type);
 
-            masters.Add(type, master);
+            if (masters.ContainsKey(fileName))
+            {
+                var message = string.Format("File name has already been registered.\n\nClass : {0}\nFile : {1}", type.FullName, fileName);
+
+                throw new InvalidDataException(message);
+            }
+
+            masters.Add(fileName, master);
         }
 
         public void Clear()

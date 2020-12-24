@@ -244,7 +244,15 @@ namespace Modules.Master
 
             // ファイル読み込み.
 
-            bytes = File.ReadAllBytes(filePath);
+            using (var fileStream = File.Open(filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+            {
+                using (var memoryStream = new MemoryStream())
+                {
+                    fileStream.CopyTo(memoryStream);
+
+                    bytes = memoryStream.ToArray();
+                }
+            }
 
             // 復号化.
 
@@ -293,6 +301,11 @@ namespace Modules.Master
 
             if (!downloadYield.HasResult || downloadYield.HasError || !File.Exists(installPath))
             {
+                if (downloadYield.HasError)
+                {
+                    Debug.LogException(downloadYield.Error);
+                }
+
                 result = false;
             }
 
