@@ -20,7 +20,7 @@ namespace Modules.Networking
 
         public FileDownloadHandler(string path, byte[] buffer) : base(buffer)
         {
-            fileStream = new FileStream(path, FileMode.Create, FileAccess.Write);
+            fileStream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.ReadWrite);
         }
 
         // データを受信すると呼び出される

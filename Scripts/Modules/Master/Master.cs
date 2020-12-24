@@ -312,6 +312,12 @@ namespace Modules.Master
             // バージョン情報を更新.
             versionPrefs.version = result ? masterVersion : string.Empty;
 
+            // ファイルが閉じるまで待つ.
+            while(FileUtility.IsFileLocked(installPath))
+            {
+                yield return null;
+            }
+
             sw.Stop();
 
             observer.OnNext(Tuple.Create(result, sw.Elapsed.TotalMilliseconds));

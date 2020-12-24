@@ -41,29 +41,40 @@ namespace Modules.Networking
             }
         }
 
-        private void BuildUnityWebRequest()
-        {
-            request = new UnityWebRequest(Url);
-
-            request.timeout = TimeOutSeconds;
-
-            request.downloadHandler = new FileDownloadHandler(FilePath, buffer);
-        }
-
         public IObservable<Unit> Download(IProgress<float> progress)
         {
-            BuildUnityWebRequest();
+            request = new UnityWebRequest(Url)
+            {
+                timeout = TimeOutSeconds,
+                downloadHandler = new FileDownloadHandler(FilePath, buffer),
+            };
 
-            return request.Send(progress).AsUnitObservable();
+            Action onFinally = () =>
+            {
+                request.Dispose();
+                request = null;
+            };
+
+            return request.Send(progress).Finally(onFinally).AsUnitObservable();
         }
-        
+
         public void Cancel(bool throwException = false)
         {
-            request.Abort();
+            if (request == null) { return; }
 
             if (throwException)
             {
                 throw new UnityWebRequestErrorException(request);
+            }
+
+            try
+            {
+                request.Abort();
+            }
+            finally
+            {
+                request.Dispose();
+                request = null;
             }
         }
     }
