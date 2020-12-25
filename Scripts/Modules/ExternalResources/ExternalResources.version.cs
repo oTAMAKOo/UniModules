@@ -24,7 +24,9 @@ namespace Modules.ExternalResource
         //----- params -----
 
         private const string VersionFileName = "ExternalResources.version";
-        private const string AESKey = @"TK4yH6hyD1dz8je24jq0PdF9oYqJ2fCF";
+
+        private const string VersionAESKey = "nEPCjiTpNJffJbBWN1YmlTpBQtcAEqwc";
+        private const string VersionAESIv = "2FGG3clpRJ6TjfuB";
 
         [MessagePackObject(true)]
         public sealed class Version
@@ -45,17 +47,17 @@ namespace Modules.ExternalResource
 
         private Dictionary<string, Version.Info> versions = null;
 
-        private static AesManaged aesManaged = null;
+        private static AesCryptoKey versionCryptoKey = null;
 
         //----- property -----
 
-        private AesManaged AesManaged
+        //----- method -----
+
+        private AesCryptoKey GetVersionCryptoKey()
         {
-            get { return aesManaged ?? (aesManaged = AESExtension.CreateAesManaged(AESKey)); }
+            return versionCryptoKey ?? (versionCryptoKey = new AesCryptoKey(VersionAESKey, VersionAESIv));
         }
 
-        //----- method -----
-        
         /// <summary>
         /// アセットバンドルのバージョンが最新か確認.
         /// (同梱された別アセットが更新された場合でもtrueを返す)
@@ -227,7 +229,9 @@ namespace Modules.ExternalResource
 
                 var data = MessagePackSerializer.Serialize(version, options);
 
-                var encrypt = data.Encrypt(aesManaged);
+                var cryptoKey = GetVersionCryptoKey();
+
+                var encrypt = data.Encrypt(cryptoKey);
 
                 File.WriteAllBytes(versionFilePath, encrypt);
             }
@@ -254,7 +258,9 @@ namespace Modules.ExternalResource
 
                 try
                 {
-                    decrypt = data.Decrypt(aesManaged);
+                    var cryptoKey = GetVersionCryptoKey();
+
+                    decrypt = data.Decrypt(cryptoKey);
                 }
                 catch (Exception exception)
                 {

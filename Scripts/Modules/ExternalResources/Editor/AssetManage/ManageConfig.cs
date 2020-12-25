@@ -3,7 +3,6 @@ using UnityEngine;
 using UnityEditor;
 using System;
 using System.Linq;
-using System.Collections.Generic;
 using Extensions;
 using Extensions.Devkit;
 using Modules.AssetBundles;
@@ -19,8 +18,10 @@ namespace Modules.ExternalResource.Editor
 
         //----- field -----
 
-        [SerializeField]
-        private string cryptPassword = AssetBundleManager.DefaultPassword;
+        [SerializeField, Tooltip("32文字で設定")]
+        private string cryptKey = AssetBundleManager.DefaultAESKey;
+        [SerializeField, Tooltip("16文字で設定")]
+        private string cryptIv = AssetBundleManager.DefaultAESIv;
 
         [Header("Ignore")]
 
@@ -35,8 +36,10 @@ namespace Modules.ExternalResource.Editor
 
         //----- property -----
 
-        /// <summary> 暗号化用パスワード </summary>
-        public string CryptPassword { get { return cryptPassword; } }
+        /// <summary> 暗号化Key(32文字) </summary>
+        public string CryptKey { get { return cryptKey; } }
+        /// <summary> 暗号化Iv (16文字)</summary>
+        public string CryptIv { get { return cryptIv; } }
 
         /// <summary> 除外対象(管理しない) </summary>
         public Object[] IgnoreManage { get { return ignoreManage; } }

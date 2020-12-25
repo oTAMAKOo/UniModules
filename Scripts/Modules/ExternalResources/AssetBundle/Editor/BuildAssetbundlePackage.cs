@@ -29,7 +29,7 @@ namespace Modules.AssetBundles.Editor
 
         //----- method -----
 
-        public void Build(string exportPath, string assetBundlePath, AssetInfoManifest assetInfoManifest, string password, Action<int, int> reportProgress)
+        public void Build(string exportPath, string assetBundlePath, AssetInfoManifest assetInfoManifest, string aesKey, string aesIv, Action<int, int> reportProgress)
         {
             var assetInfos = assetInfoManifest.GetAssetInfos()
                 .Where(x => x.IsAssetBundle)
@@ -69,7 +69,7 @@ namespace Modules.AssetBundles.Editor
             {
                 if (item == null) { continue; }
 
-                events.Add(StartWorker(exportPath, assetBundlePath, password, item.ToArray(), progress));
+                events.Add(StartWorker(exportPath, assetBundlePath, aesKey, aesIv, item.ToArray(), progress));
             }
 
             while (!WaitHandle.WaitAll(events.ToArray(), 100))
@@ -80,7 +80,7 @@ namespace Modules.AssetBundles.Editor
             reportProgress(progress.count, total);
         }
         
-        private static ManualResetEvent StartWorker(string exportPath, string assetBundlePath, string password, AssetInfo[] assetInfos, Progress progress)
+        private static ManualResetEvent StartWorker(string exportPath, string assetBundlePath, string aesKey, string aesIv, AssetInfo[] assetInfos, Progress progress)
         {
             var queue = new Queue<AssetInfo>(assetInfos);
             var resetEvent = new ManualResetEvent(false);
@@ -101,7 +101,7 @@ namespace Modules.AssetBundles.Editor
 
                         if (assetInfo == null) { break; }
 
-                        CreatePackage(exportPath, assetBundlePath, assetInfo, password);
+                        CreatePackage(exportPath, assetBundlePath, assetInfo, aesKey, aesIv);
 
                         Interlocked.Increment(ref progress.count);
                     }
@@ -120,9 +120,9 @@ namespace Modules.AssetBundles.Editor
         /// <summary>
         /// パッケージファイル化(暗号化).
         /// </summary>
-        private static void CreatePackage(string exportPath, string assetBundlePath, AssetInfo assetInfo, string password)
+        private static void CreatePackage(string exportPath, string assetBundlePath, AssetInfo assetInfo, string aesKey, string aesIv)
         {
-            var aesManaged = AESExtension.CreateAesManaged(password);
+            var cryptoKey = new AesCryptoKey(aesKey, aesIv);
 
             // ※ パッケージファイルが存在する時は内容に変更がない時なのでそのままコピーする.
 
@@ -159,7 +159,7 @@ namespace Modules.AssetBundles.Editor
 
                 using (var fileStream = new FileStream(packageFilePath, FileMode.Create, FileAccess.Write))
                 {
-                    data = data.Encrypt(aesManaged);
+                    data = data.Encrypt(cryptoKey);
 
                     fileStream.Write(data, 0, data.Length);
                 }

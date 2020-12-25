@@ -4,12 +4,10 @@ using System;
 using System.Collections;
 using System.IO;
 using System.Collections.Generic;
-using System.Security.Cryptography;
 using System.Threading;
 using UniRx;
 using Extensions;
 using MessagePack;
-using MessagePack.Resolvers;
 using Modules.MessagePack;
 
 namespace Modules.Master
@@ -22,7 +20,7 @@ namespace Modules.Master
         void ClearVersion();
 
         IObservable<Tuple<bool, double>> Update(string masterVersion, CancellationToken cancelToken);
-        IObservable<Tuple<bool, double>> Load(AesManaged aesManaged, bool cleanOnError);
+        IObservable<Tuple<bool, double>> Load(AesCryptoKey cryptoKey, bool cleanOnError);
     }
 
     public abstract class MasterContainer<TMasterRecord>
@@ -153,14 +151,14 @@ namespace Modules.Master
             records.Clear();
         }
 
-        public IObservable<Tuple<bool, double>> Load(AesManaged aesManaged, bool cleanOnError)
+        public IObservable<Tuple<bool, double>> Load(AesCryptoKey cryptoKey, bool cleanOnError)
         {
             Refresh();
 
-            return Observable.FromMicroCoroutine<Tuple<bool, double>>(observer => LoadInternal(observer, aesManaged, cleanOnError));
+            return Observable.FromMicroCoroutine<Tuple<bool, double>>(observer => LoadInternal(observer, cryptoKey, cleanOnError));
         }
 
-        private IEnumerator LoadInternal(IObserver<Tuple<bool, double>> observer, AesManaged aesManaged, bool cleanOnError)
+        private IEnumerator LoadInternal(IObserver<Tuple<bool, double>> observer, AesCryptoKey cryptoKey, bool cleanOnError)
         {
             #if UNITY_EDITOR
 
@@ -175,7 +173,7 @@ namespace Modules.Master
 
             #endif
 
-            var result = false;
+            var success = false;
 
             double time = 0;
 
@@ -184,8 +182,8 @@ namespace Modules.Master
             // ファイル存在チェック.
             if (File.Exists(installPath))
             {
-                // ファイルの読み込み・復号化・デシリアライズをスレッドプールで実行.
-                var loadYield = Observable.Start(() => LoadMasterFile(installPath, aesManaged)).ObserveOnMainThread().ToYieldInstruction(false);
+                // 読み込みをスレッドプールで実行.
+                var loadYield = Observable.Start(() => LoadMasterFile(installPath, cryptoKey)).ObserveOnMainThread().ToYieldInstruction(false);
 
                 while (!loadYield.IsDone)
                 {
@@ -194,20 +192,8 @@ namespace Modules.Master
 
                 if (!loadYield.HasError && loadYield.HasResult)
                 {
-                    var container = loadYield.Result.Item1;
-
-                    time = loadYield.Result.Item2;
-
-                    try
-                    {
-                        SetRecords(container.records);
-
-                        result = true;
-                    }
-                    catch (Exception exception)
-                    {
-                        Debug.LogException(exception);
-                    }
+                    success = true;
+                    time = loadYield.Result;
                 }
                 else
                 {
@@ -219,7 +205,7 @@ namespace Modules.Master
                 Debug.LogErrorFormat("Load master failed. File not exists.\n\nClass : {0}\nFile : {1}", typeof(TMaster).FullName, installPath);
             }
 
-            if (!result)
+            if (!success)
             {
                 if (cleanOnError)
                 {
@@ -230,11 +216,11 @@ namespace Modules.Master
                 OnError();
             }
 
-            observer.OnNext(Tuple.Create(result, time));
+            observer.OnNext(Tuple.Create(success, time));
             observer.OnCompleted();
         }
 
-        protected virtual Tuple<TMasterContainer, double> LoadMasterFile(string filePath, AesManaged aesManaged)
+        protected virtual double LoadMasterFile(string filePath, AesCryptoKey cryptoKey)
         {
             var masterManager = MasterManager.Instance;
 
@@ -256,9 +242,9 @@ namespace Modules.Master
 
             // 復号化.
 
-            if (aesManaged != null)
+            if (cryptoKey != null)
             {
-                bytes = bytes.Decrypt(aesManaged);
+                bytes = bytes.Decrypt(cryptoKey);
             }
 
             // デシリアライズ.
@@ -267,9 +253,12 @@ namespace Modules.Master
 
             var container = MessagePackSerializer.Deserialize<TMasterContainer>(bytes, options);
 
+            // レコード登録.
+            SetRecords(container.records);
+
             sw.Stop();
 
-            return Tuple.Create(container, sw.Elapsed.TotalMilliseconds);
+            return sw.Elapsed.TotalMilliseconds;
         }
 
         public IObservable<Tuple<bool, double>> Update(string masterVersion, CancellationToken cancelToken)

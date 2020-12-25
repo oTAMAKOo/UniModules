@@ -2,8 +2,6 @@
 using System;
 using UnityEngine;
 using System.Linq;
-using System.Collections.Generic;
-using System.Security.Cryptography;
 using Extensions;
 using Modules.GameText.Components;
 using UniRx;
@@ -25,7 +23,7 @@ namespace Modules.GameText
 
         //----- field -----
 
-        private AesManaged aesManaged = null;
+        private static AesCryptoKey aesCryptoKey = null;
 
         private long? builtInAssetUpdateAt = null;
 
@@ -37,9 +35,9 @@ namespace Modules.GameText
 
         private GameText(){ }
 
-        public AesManaged GetAesManaged()
+        public AesCryptoKey GetAesCryptoKey()
         {
-            return aesManaged ?? (aesManaged = AESExtension.CreateAesManaged(GetAesKey(), GetAesIv()));
+            return aesCryptoKey ?? (aesCryptoKey = new AesCryptoKey(GetAesKey(), GetAesIv()));
         }
 
         /// <summary> 内蔵テキストを読み込み </summary>
@@ -55,9 +53,9 @@ namespace Modules.GameText
 
             var contents = asset.Contents.ToArray();
 
-            var aesManaged = GetAesManaged();
+            var cryptoKey = GetAesCryptoKey();
 
-            cache = contents.ToDictionary(x => x.Guid, x => x.Text.Decrypt(aesManaged));
+            cache = contents.ToDictionary(x => x.Guid, x => x.Text.Decrypt(cryptoKey));
 
             builtInAssetUpdateAt = asset.UpdateAt;
 
@@ -86,9 +84,9 @@ namespace Modules.GameText
 
             var contents = asset.Contents.ToArray();
 
-            var aesManaged = GetAesManaged();
+            var cryptoKey = GetAesCryptoKey();
 
-            var textContents = contents.ToDictionary(x => x.Guid, x => x.Text.Decrypt(aesManaged));
+            var textContents = contents.ToDictionary(x => x.Guid, x => x.Text.Decrypt(cryptoKey));
 
             foreach (var textContent in textContents)
             {

@@ -19,7 +19,7 @@ namespace Modules.UI.TextEffect
 
         private static readonly Color HeaderColor = new Color(0.5f, 0.2f, 0.8f);
 
-        private static readonly AesManaged aesManaged = AESExtension.CreateAesManaged("D1AHKKDqFV2JU4Zs");
+        private static readonly AesCryptoKey cryptoKey = new AesCryptoKey("D1AHKKDqFV2JU4Zs");
         
         //----- field -----
 
@@ -165,7 +165,7 @@ namespace Modules.UI.TextEffect
 
             EditorLayoutTools.Title("Description", HeaderColor);
 
-            var textBytes = description.Decrypt(aesManaged);
+            var textBytes = description.Decrypt(cryptoKey);
             var descriptionText = textBytes != null ? Encoding.UTF8.GetString(textBytes) : string.Empty;
 
             using (var scrollViewScope = new EditorGUILayout.ScrollViewScope(descriptionScrollPosition, GUILayout.Height(60f)))
@@ -176,7 +176,7 @@ namespace Modules.UI.TextEffect
 
                 if (EditorGUI.EndChangeCheck())
                 {
-                    textBytes = Encoding.UTF8.GetBytes(descriptionText).Encrypt(aesManaged);
+                    textBytes = Encoding.UTF8.GetBytes(descriptionText).Encrypt(cryptoKey);
 
                     Reflection.SetPrivateField(instance, "description", textBytes);
                 }

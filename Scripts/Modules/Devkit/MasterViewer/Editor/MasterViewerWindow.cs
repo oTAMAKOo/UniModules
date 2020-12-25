@@ -3,9 +3,7 @@ using UnityEngine;
 using UnityEditor;
 using System;
 using System.Linq;
-using System.Collections;
 using System.Collections.Generic;
-using System.Security.Cryptography;
 using UniRx;
 using Extensions;
 using Extensions.Devkit;
@@ -170,7 +168,7 @@ namespace Modules.Devkit.MasterViewer
 
             var allMasters = GetAllMasters();
             
-            var aesManaged = GetAesManaged();
+            var cryptoKey = GetAesCryptoKey();
 
             var loadFinishCount = 0;
             var totalMasterCount = allMasters.Length;
@@ -179,7 +177,7 @@ namespace Modules.Devkit.MasterViewer
             {
                 if (isComplete) { return; }
 
-                EditorUtility.DisplayProgressBar("Load Progress", "Loading all masters", loadFinishCount / totalMasterCount);
+                EditorUtility.DisplayProgressBar("Load Progress", "Loading all masters", (float)loadFinishCount / totalMasterCount);
             };
 
             Action onLoadFinish = () =>
@@ -191,7 +189,7 @@ namespace Modules.Devkit.MasterViewer
 
             Func<IMaster, IObservable<Unit>> createMasterLoadObservable = master =>
             {
-                return Observable.Defer(() => master.Load(aesManaged, false).Do(_ => onLoadFinish())).AsUnitObservable();
+                return Observable.Defer(() => master.Load(cryptoKey, false).Do(_ => onLoadFinish())).AsUnitObservable();
             };
 
             Action onLoadComplete = () =>
@@ -247,7 +245,7 @@ namespace Modules.Devkit.MasterViewer
 
         protected virtual void OnInitialize() { }
 
-        protected abstract AesManaged GetAesManaged();
+        protected abstract AesCryptoKey GetAesCryptoKey();
 
         protected abstract IMaster[] GetAllMasters();
     }

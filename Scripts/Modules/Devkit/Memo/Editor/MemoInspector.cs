@@ -1,7 +1,6 @@
 ﻿
 using UnityEngine;
 using UnityEditor;
-using System.Security.Cryptography;
 using Extensions;
 
 namespace Modules.Devkit.Memo
@@ -12,15 +11,15 @@ namespace Modules.Devkit.Memo
         private string text = null;
         private Vector2 scrollPosition = Vector2.zero;
 
-        private static AesManaged aesManaged = null;
+        private static AesCryptoKey aesCryptoKey = null;
 
         void OnEnable()
         {
             var config = MemoConfig.Instance;
 
-            if (aesManaged == null)
+            if (aesCryptoKey == null)
             {
-                aesManaged = AESExtension.CreateAesManaged(config.AESKey, config.AESIv);
+                aesCryptoKey = new AesCryptoKey(config.AESKey, config.AESIv);
             }
 
             var instance = target as Memo;
@@ -29,7 +28,7 @@ namespace Modules.Devkit.Memo
 
             if (!string.IsNullOrEmpty(memo))
             {
-                text = memo.Decrypt(aesManaged);
+                text = memo.Decrypt(aesCryptoKey);
             }
         }
 
@@ -39,9 +38,9 @@ namespace Modules.Devkit.Memo
 
             var config = MemoConfig.Instance;
 
-            if (aesManaged == null)
+            if (aesCryptoKey == null)
             {
-                aesManaged = AESExtension.CreateAesManaged(config.AESKey, config.AESIv);
+                aesCryptoKey = new AesCryptoKey(config.AESKey, config.AESIv);
             }
 
             EditorGUILayout.Separator();
@@ -61,7 +60,7 @@ namespace Modules.Devkit.Memo
 
                     if (EditorGUI.EndChangeCheck())
                     {
-                        Reflection.SetPrivateField(memo, "memo", text.Encrypt(aesManaged));
+                        Reflection.SetPrivateField(memo, "memo", text.Encrypt(aesCryptoKey));
                     }
                 }
 

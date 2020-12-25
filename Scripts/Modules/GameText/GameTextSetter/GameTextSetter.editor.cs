@@ -3,7 +3,6 @@
 
 using System;
 using UnityEngine;
-using System.Security.Cryptography;
 using Extensions;
 
 namespace Modules.GameText.Components
@@ -26,7 +25,7 @@ namespace Modules.GameText.Components
 
         #pragma warning restore 0414
 
-        private static AesManaged aesManaged = null;
+        private static AesCryptoKey aesCryptoKey = null;
 
         //----- property -----
 
@@ -34,24 +33,24 @@ namespace Modules.GameText.Components
 
         private string GetDevelopmentText()
         {
-            if (aesManaged == null)
+            if (aesCryptoKey == null)
             {
-                aesManaged = AESExtension.CreateAesManaged(AESKey, AESIv);
+                aesCryptoKey = new AesCryptoKey(AESKey, AESIv);
             }
 
             if (string.IsNullOrEmpty(developmentText)) { return string.Empty; }
 
-            return string.Format("{0}{1}", DevelopmentMark, developmentText.Decrypt(aesManaged));
+            return string.Format("{0}{1}", DevelopmentMark, developmentText.Decrypt(aesCryptoKey));
         }
 
         private void SetDevelopmentText(string text)
         {
-            if (aesManaged == null)
+            if (aesCryptoKey == null)
             {
-                aesManaged = AESExtension.CreateAesManaged(AESKey, AESIv);
+                aesCryptoKey = new AesCryptoKey(AESKey, AESIv);
             }
 
-            developmentText = string.IsNullOrEmpty(text) ? string.Empty : text.Encrypt(aesManaged);
+            developmentText = string.IsNullOrEmpty(text) ? string.Empty : text.Encrypt(aesCryptoKey);
 
             ImportText();
         }

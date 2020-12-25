@@ -9,7 +9,6 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Text;
-using System.Security.Cryptography;
 using UniRx;
 using Extensions;
 
@@ -22,6 +21,12 @@ using SRDebugger.Internal;
 
 namespace Modules.Devkit.Diagnosis.SRDebugger
 {
+    public enum PostDataType
+    {
+        Foam,
+        Json,
+    }
+
     public abstract class SendReportSheetController : MonoBehaviour
     {
         #if ENABLE_SRDEBUGGER
@@ -50,15 +55,17 @@ namespace Modules.Devkit.Diagnosis.SRDebugger
         [SerializeField]
         private Text progressBarText = null;
 
-        private List<IMultipartFormSection> reportForm = null;
-        
+        private Dictionary<string, string> reportData = null;
+
         private IDisposable sendReportDisposable = null;
 
-        private AesManaged aesManaged = null;
+        private AesCryptoKey aesCryptoKey = null;
 
         protected bool initialized = false;
 
         //----- property -----
+
+        public PostDataType PostDataType { get; protected set; }
 
         //----- method -----
 
@@ -67,8 +74,9 @@ namespace Modules.Devkit.Diagnosis.SRDebugger
         {
             if (initialized) { return; }
 
-            aesManaged = CreateAesManaged();
-            reportForm = new List<IMultipartFormSection>();
+            reportData = new Dictionary<string, string>();
+
+            aesCryptoKey = CreateCryptoKey();
 
             var srDebug = SRDebug.Instance;
 
@@ -134,7 +142,7 @@ namespace Modules.Devkit.Diagnosis.SRDebugger
 
         private IEnumerator PostReport()
         {
-            yield return CaptureScreenshot();
+            yield return CaptureScreenShot();
 
             yield return new WaitForEndOfFrame();
 
@@ -144,7 +152,7 @@ namespace Modules.Devkit.Diagnosis.SRDebugger
             var notifier = new ScheduledNotifier<float>();
             notifier.Subscribe(x => UpdatePostProgress(x));
 
-            reportForm.Clear();
+            reportData.Clear();
 
             // 送信内容構築.
             BuildPostContent();
@@ -153,7 +161,18 @@ namespace Modules.Devkit.Diagnosis.SRDebugger
 
             var url = GetReportUrl();
 
-            var webRequest = UnityWebRequest.Post(url, reportForm);
+            UnityWebRequest webRequest = null;
+
+            switch (PostDataType)
+            {
+                case PostDataType.Foam:
+                    webRequest = UnityWebRequest.Post(url, CreateReportFormSections());
+                    break;
+
+                case PostDataType.Json:
+                    webRequest = UnityWebRequest.Post(url, reportData.ToJson());
+                    break;
+            }
 
             webRequest.timeout = 30;
 
@@ -176,7 +195,7 @@ namespace Modules.Devkit.Diagnosis.SRDebugger
             // 終了.
             OnReportComplete(errorMessage);
 
-            reportForm.Clear();
+            reportData.Clear();
         }
 
         private void UpdatePostProgress(float progress)
@@ -232,7 +251,7 @@ namespace Modules.Devkit.Diagnosis.SRDebugger
             UpdateView();
         }
 
-        private IEnumerator CaptureScreenshot()
+        private IEnumerator CaptureScreenShot()
         {
             BugReportScreenshotUtil.ScreenshotData = null;
 
@@ -278,7 +297,7 @@ namespace Modules.Devkit.Diagnosis.SRDebugger
 
         private void BuildPostContent()
         {
-            reportForm = new List<IMultipartFormSection>();
+            reportData = new Dictionary<string, string>();
 
             const uint mega = 1024 * 1024;
 
@@ -286,7 +305,7 @@ namespace Modules.Devkit.Diagnosis.SRDebugger
 
             var bytes = BugReportScreenshotUtil.ScreenshotData;
 
-            var screenshotBase64 = Convert.ToBase64String(bytes);
+            var screenShotBase64 = Convert.ToBase64String(bytes);
 
             // スクリーンショット情報破棄.
             BugReportScreenshotUtil.ScreenshotData = null;
@@ -299,7 +318,7 @@ namespace Modules.Devkit.Diagnosis.SRDebugger
             AddReportContent("SystemMemorySize", (SystemInfo.systemMemorySize * mega).ToString());
             AddReportContent("UseMemorySize", GC.GetTotalMemory(false).ToString());
             AddReportContent("Log", GetReportTextPostData());
-            AddReportContent("ScreenShotBase64", screenshotBase64);
+            AddReportContent("ScreenShotBase64", screenShotBase64);
 
             // ユーザー入力情報.
 
@@ -321,16 +340,16 @@ namespace Modules.Devkit.Diagnosis.SRDebugger
         /// <summary> 送信情報に追加 </summary>
         protected void AddReportContent(string key, string value)
         {
-            if (reportForm == null) { return; }
+            if (reportData == null) { return; }
 
             if (string.IsNullOrEmpty(value))
             {
                 value = "---";
             }
 
-            value = aesManaged != null ? value.Encrypt(aesManaged) : value;
+            value = aesCryptoKey != null ? value.Encrypt(aesCryptoKey) : value;
 
-            reportForm.Add(new MultipartFormDataSection(key, value));
+            reportData.Add(key, value);
         }
 
         /// <summary> InputFieldを初期化 </summary>
@@ -351,8 +370,20 @@ namespace Modules.Devkit.Diagnosis.SRDebugger
             return !string.IsNullOrEmpty(titleInputField.text);
         }
 
-        /// <summary> AESクラス生成 </summary>
-        protected virtual AesManaged CreateAesManaged() { return null; }
+        private List<IMultipartFormSection> CreateReportFormSections()
+        {
+            var reportForm = new List<IMultipartFormSection>();
+
+            foreach (var item in reportData)
+            {
+                reportForm.Add(new MultipartFormDataSection(item.Key, item.Value));
+            }
+
+            return reportForm;
+        }
+
+        /// <summary> 暗号化キー生成 </summary>
+        protected virtual AesCryptoKey CreateCryptoKey() { return null; }
 
         /// <summary> 拡張情報を追加 </summary>
         protected virtual void SetExtendContents() { }

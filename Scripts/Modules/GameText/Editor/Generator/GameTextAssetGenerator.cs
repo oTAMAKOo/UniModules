@@ -19,7 +19,7 @@ namespace Modules.GameText.Editor
 
         //----- method -----
 
-        public static void Build(GameTextAsset asset, SheetData[] sheets, int textIndex, AesManaged aesManaged)
+        public static void Build(GameTextAsset asset, SheetData[] sheets, int textIndex, AesCryptoKey aesCryptoKey)
         {
             var contents = new List<TextContent>();
 
@@ -33,7 +33,7 @@ namespace Modules.GameText.Editor
 
                     var contentData = record.contents.ElementAtOrDefault(textIndex);
 
-                    var text = contentData != null ? contentData.text.Encrypt(aesManaged) : string.Empty;
+                    var text = contentData != null ? contentData.text.Encrypt(aesCryptoKey) : string.Empty;
 
                     var textContent = new TextContent(record.guid, text);
 

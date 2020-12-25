@@ -33,7 +33,7 @@ namespace Modules.LocalData
 
         //----- field -----
 
-        private AesManaged aesManaged = null;
+        private AesCryptoKey aesCryptoKey = null;
 
         private string fileDirectory = null;
 
@@ -50,9 +50,9 @@ namespace Modules.LocalData
             fileDirectory = Application.persistentDataPath + "/LocalData/";
         }
 
-        public static void SetAesManaged(AesManaged aesManaged)
+        public static void SetCryptoKey(AesCryptoKey cryptoKey)
         {
-            Instance.aesManaged = aesManaged;
+            Instance.aesCryptoKey = cryptoKey;
         }
 
         public void SetFileDirectory(string directory)
@@ -81,9 +81,9 @@ namespace Modules.LocalData
 
                     fileStream.Read(bytes, 0, bytes.Length);
 
-                    var aesManaged = Instance.GetAesManaged();
+                    var cryptoKey = Instance.GetCryptoKey();
 
-                    bytes = bytes.Decrypt(aesManaged);
+                    bytes = bytes.Decrypt(cryptoKey);
 
                     var options = StandardResolverAllowPrivate.Options
                         .WithCompression(MessagePackCompression.Lz4BlockArray)
@@ -115,9 +115,9 @@ namespace Modules.LocalData
 
                 var bytes = MessagePackSerializer.Serialize(data, options);
 
-                var aesManaged = Instance.GetAesManaged();
+                var cryptoKey = Instance.GetCryptoKey();
 
-                bytes = bytes.Encrypt(aesManaged);
+                bytes = bytes.Encrypt(cryptoKey);
 
                 fileStream.Write(bytes, 0, bytes.Length);
             }
@@ -136,9 +136,9 @@ namespace Modules.LocalData
                     Directory.CreateDirectory(fileDirectory);
                 }
 
-                var aesManaged = GetAesManaged();
+                var cryptoKey = GetCryptoKey();
 
-                var fileName = tempInstance.FileName.Encrypt(aesManaged).GetHash();
+                var fileName = tempInstance.FileName.Encrypt(cryptoKey).GetHash();
 
                 filePath = fileDirectory + fileName;
 
@@ -148,14 +148,14 @@ namespace Modules.LocalData
             return filePath;
         }
 
-        private AesManaged GetAesManaged()
+        private AesCryptoKey GetCryptoKey()
         {
-            if (aesManaged == null)
+            if (aesCryptoKey == null)
             {
-                aesManaged = AESExtension.CreateAesManaged(DefaultKey, DefaultIv);
+                aesCryptoKey = new AesCryptoKey(DefaultKey, DefaultIv);
             }
 
-            return aesManaged;
+            return aesCryptoKey;
         }
 
         public void DeleteAll()

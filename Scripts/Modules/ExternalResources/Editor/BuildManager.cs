@@ -101,7 +101,11 @@ namespace Modules.ExternalResource.Editor
                 BuildAssetBundle.CleanOldPackage(cachedAssetBundleHashs);
 
                 // AssetBundleファイルをパッケージ化.
-                BuildAssetBundle.BuildPackage(exportPath, assetInfoManifest, manageConfig.CryptPassword);
+
+                var cryptKey = manageConfig.CryptKey;
+                var cryptIv = manageConfig.CryptIv;
+
+                BuildAssetBundle.BuildPackage(exportPath, assetInfoManifest, cryptKey, cryptIv);
 
                 // 出力先フォルダを開く.
                 UnityEditorUtility.OpenFolder(exportPath);

@@ -1,32 +1,32 @@
 ﻿
 using UnityEngine;
 using System;
-using System.Security.Cryptography;
 using Newtonsoft.Json;
 
 namespace Extensions
 {
     public static class SecurePrefs
     {
-        private const string PrefsKey = "Sa0HbfDqeF6hw4s1";
+        private const string AESKey = "5kaDpFGc1A9iRaLkv2n3dMxCmjjFzxOX";
+        private const string AESIv = "1i233x1fs8J1K9Tp";
 
-        private static AesManaged aesManaged = AESExtension.CreateAesManaged(PrefsKey);
+        private static AesCryptoKey aesCryptoKey = new AesCryptoKey(AESKey, AESIv);
 
-        public static void SetAesManaged(AesManaged aesManaged)
+        public static void SetCryptoKey(AesCryptoKey aesCryptoKey)
         {
-            SecurePrefs.aesManaged = aesManaged;
+            SecurePrefs.aesCryptoKey = aesCryptoKey;
         }
 
         //====== Utility ======
 
         public static bool HasKey(string name)
         {
-            return PlayerPrefs.HasKey(name.Encrypt(aesManaged));
+            return PlayerPrefs.HasKey(name.Encrypt(aesCryptoKey));
         }
 
         public static void DeleteKey(string name)
         {
-            PlayerPrefs.DeleteKey(name.Encrypt(aesManaged));
+            PlayerPrefs.DeleteKey(name.Encrypt(aesCryptoKey));
         }
 
         public static void DeleteAll()
@@ -43,14 +43,14 @@ namespace Extensions
 
         public static void SetString(string name, string value)
         {
-            PlayerPrefs.SetString(name.Encrypt(aesManaged), value.Encrypt(aesManaged));
+            PlayerPrefs.SetString(name.Encrypt(aesCryptoKey), value.Encrypt(aesCryptoKey));
         }
 
         public static string GetString(string name, string defaultValue = "")
         {
             if (!HasKey(name)) { return defaultValue; }
 
-            return PlayerPrefs.GetString(name.Encrypt(aesManaged)).Decrypt(aesManaged);
+            return PlayerPrefs.GetString(name.Encrypt(aesCryptoKey)).Decrypt(aesCryptoKey);
         }
 
         //====== Int ======

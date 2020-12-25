@@ -107,7 +107,7 @@ namespace Modules.AssetBundles.Editor
         }
 
         /// <summary> アセットバンドルをパッケージ化 </summary>
-        public static void BuildPackage(string exportPath, AssetInfoManifest assetInfoManifest, string password)
+        public static void BuildPackage(string exportPath, AssetInfoManifest assetInfoManifest, string aesKey, string aesIv)
         {
             var assetBundlePath = GetAssetBundleOutputPath();
 
@@ -121,7 +121,7 @@ namespace Modules.AssetBundles.Editor
                 EditorUtility.DisplayProgressBar(title, info, current / (float)total);
             };
 
-            assetBundlePackageBuilder.Build(exportPath, assetBundlePath, assetInfoManifest, password, reportProgress);
+            assetBundlePackageBuilder.Build(exportPath, assetBundlePath, assetInfoManifest, aesKey, aesIv, reportProgress);
 
             EditorUtility.ClearProgressBar();
         }
