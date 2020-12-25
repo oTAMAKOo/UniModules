@@ -36,7 +36,7 @@ namespace Modules.Master
         public string InstallDirectory { get; private set; }
 
         /// <summary> ファイル名暗号化キー. </summary>
-        public AesManaged FileNameEncryptor { get; private set; }
+        public AesManaged FileNameAesManaged { get; private set; }
 
         /// <summary> LZ4圧縮を使用するか. </summary>
         public bool UseLz4Compression
@@ -83,9 +83,9 @@ namespace Modules.Master
         }
 
         /// <summary> ファイル名暗号化オブジェクトを取得 </summary>
-        public void SetFileNameEncryptor(AesManaged aesManaged)
+        public void SetFileNameAesManaged(AesManaged aesManaged)
         {
-            FileNameEncryptor = aesManaged;
+            FileNameAesManaged = aesManaged;
         }
         
         public string GetMasterFileName<T>() where T : IMaster
@@ -126,9 +126,9 @@ namespace Modules.Master
 
             // 暗号化オブジェクトが設定されていたら暗号化.
             
-            if (FileNameEncryptor != null)
+            if (FileNameAesManaged != null)
             {
-                fileName = fileName.Encrypt(FileNameEncryptor);
+                fileName = fileName.Encrypt(FileNameAesManaged);
             }
             
             return fileName;
