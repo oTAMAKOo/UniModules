@@ -47,6 +47,8 @@ namespace Modules.MessagePack
 
         private static IEnumerator GenerateInternal(IObserver<bool> observer)
         {
+            var isSuccess = false;
+            
             var messagePackConfig = MessagePackConfig.Instance;
 
             var lastUpdateTime = DateTime.MinValue;
@@ -93,6 +95,8 @@ namespace Modules.MessagePack
 
                     if (isCsFileUpdate)
                     {
+                        isSuccess = true;
+                        
                         logBuilder.Insert(0, "MessagePack code generate success!");
 
                         Debug.Log(logBuilder.ToString());
@@ -112,6 +116,9 @@ namespace Modules.MessagePack
                     Debug.LogException(generateCodeYield.Error);
                 }
             }
+
+            observer.OnNext(isSuccess);
+            observer.OnCompleted();
         }
 
         private static IEnumerator GenerateCodeCore(IObserver<GenerateInfo> observer, MessagePackConfig messagePackConfig)
