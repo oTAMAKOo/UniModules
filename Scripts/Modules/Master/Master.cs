@@ -96,15 +96,14 @@ namespace Modules.Master
 
             if (records.ContainsKey(key))
             {
-                var message = "Master record error!\nRecords with the same key already exists.";
                 var typeName = typeof(TMaster).FullName;
 
-                Debug.LogErrorFormat("{0}\n\n Master : {1}\nKey : {2}\n", message, typeName, key);
+                var message = string.Format("Master record error!\nRecords same key already exists.\n\n Master : {0}\nKey : {1}\n", typeName, key);
+
+                throw new InvalidDataException(message);
             }
-            else
-            {
-                records.Add(key, masterRecord);
-            }
+
+            records.Add(key, masterRecord);
         }
 
         private string GetInstallPath()
@@ -160,19 +159,6 @@ namespace Modules.Master
 
         private IEnumerator LoadInternal(IObserver<Tuple<bool, double>> observer, AesCryptoKey cryptoKey, bool cleanOnError)
         {
-            #if UNITY_EDITOR
-
-            try
-            {
-                MessagePackValidater.ValidateAttribute(typeof(TMasterRecord));
-            }
-            catch (Exception exception)
-            {
-                Debug.LogException(exception);
-            }
-
-            #endif
-
             var success = false;
 
             double time = 0;
@@ -223,6 +209,12 @@ namespace Modules.Master
         protected virtual double LoadMasterFile(string filePath, AesCryptoKey cryptoKey)
         {
             var masterManager = MasterManager.Instance;
+
+            #if UNITY_EDITOR
+
+            MessagePackValidater.ValidateAttribute(typeof(TMasterRecord));
+
+            #endif
 
             byte[] bytes = null;
 

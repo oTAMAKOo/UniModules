@@ -1,22 +1,19 @@
 ﻿
-using UnityEngine;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using MessagePack;
 
 namespace Modules.MessagePack
 {
     public static class MessagePackValidater
     {
-        /// <summary>
-        /// <see cref="MessagePackObjectAttribute"/>がクラスに付与されているか検証.
-        /// (デバッグビルド時のみ有効)
-        /// </summary>
-        /// <param name="type"></param>
+        /// <summary> <see cref="MessagePackObjectAttribute"/>がクラスに付与されているか検証. (Editor時のみ有効) </summary>
+        [Conditional("UNITY_EDITOR")]
         public static void ValidateAttribute(Type type)
         {
-            if (!Debug.isDebugBuild) { return; }
-
+            #if UNITY_EDITOR
+            
             // 配列.
             if (type.IsArray)
             {
@@ -82,6 +79,8 @@ namespace Modules.MessagePack
                 // クラスを検証.
                 ValidateAttribute(propertyType.IsArray ? propertyType.GetElementType() : propertyType);
             }
+
+            #endif
         }
     }
 }
