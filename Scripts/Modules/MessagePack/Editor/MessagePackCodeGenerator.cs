@@ -37,8 +37,6 @@ namespace Modules.MessagePack
                 lastUpdateTime = fileInfo.LastWriteTime;
             }
 
-            SyncSolution();
-
             #if !UNITY_EDITOR_OSX
 
             SetCodeGeneratorPermissions(generateInfo.CodeGeneratorPath);
@@ -83,8 +81,6 @@ namespace Modules.MessagePack
                 lastUpdateTime = fileInfo.LastWriteTime;
             }
 
-            SyncSolution();
-
             #if !UNITY_EDITOR_OSX
             
             var setPermissionsTask = SetCodeGeneratorPermissionsAsync(generateInfo.CodeGeneratorPath);
@@ -118,15 +114,6 @@ namespace Modules.MessagePack
 
             observer.OnNext(isSuccess);
             observer.OnCompleted();
-        }
-
-        private static void SyncSolution()
-        {
-            var unitySyncVS = Type.GetType("UnityEditor.SyncVS,UnityEditor");
-
-            var syncSolution = unitySyncVS.GetMethod("SyncSolution", BindingFlags.Public | BindingFlags.Static);
-
-            syncSolution.Invoke(null, null);
         }
 
         private static Tuple<int, string> SetCodeGeneratorPermissions(string codeGeneratorPath)

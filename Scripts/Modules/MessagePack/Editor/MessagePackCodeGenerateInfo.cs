@@ -1,10 +1,7 @@
 ﻿
-using UnityEngine;
 using System;
-using System.Linq;
-using System.Collections.Generic;
 using System.IO;
-using UniRx;
+using System.Reflection;
 using Extensions;
 
 namespace Modules.MessagePack
@@ -29,6 +26,8 @@ namespace Modules.MessagePack
         {
             var messagePackConfig = MessagePackConfig.Instance;
 
+            SyncSolution();
+
             var csprojPath = FindAssemblyCSharp();
 
             if (!File.Exists(csprojPath))
@@ -46,6 +45,15 @@ namespace Modules.MessagePack
             CsFilePath = GetScriptGeneratePath(messagePackConfig);
 
             CommandLineArguments = CreateCommandLineArguments(messagePackConfig, csprojPath, CsFilePath);
+        }
+
+        private static void SyncSolution()
+        {
+            var unitySyncVS = Type.GetType("UnityEditor.SyncVS,UnityEditor");
+
+            var syncSolution = unitySyncVS.GetMethod("SyncSolution", BindingFlags.Public | BindingFlags.Static);
+
+            syncSolution.Invoke(null, null);
         }
 
         private static string FindAssemblyCSharp()
