@@ -5,7 +5,6 @@ using System;
 using System.Collections;
 using System.IO;
 using System.Text;
-using System.Threading.Tasks;
 using UniRx;
 using Extensions;
 
@@ -37,8 +36,6 @@ namespace Modules.MessagePack
             }
 
             #if !UNITY_EDITOR_OSX
-
-            SetCodeGeneratorPermissions(generateInfo.CodeGeneratorPath);
 
             SetMsBuildPath();
 
@@ -81,14 +78,7 @@ namespace Modules.MessagePack
             }
 
             #if !UNITY_EDITOR_OSX
-            
-            var setPermissionsTask = SetCodeGeneratorPermissionsAsync(generateInfo.CodeGeneratorPath);
 
-            while (!setPermissionsTask.IsCompleted)
-            {
-                yield return null;
-            }
-            
             SetMsBuildPath();
 
             #endif
@@ -113,18 +103,6 @@ namespace Modules.MessagePack
 
             observer.OnNext(isSuccess);
             observer.OnCompleted();
-        }
-
-        private static Tuple<int, string> SetCodeGeneratorPermissions(string codeGeneratorPath)
-        {
-            return ProcessUtility.Start("/bin/bash", string.Format("-c 'chmod 777 {0}'", codeGeneratorPath));
-        }
-
-        private static async Task<Tuple<int, string>> SetCodeGeneratorPermissionsAsync(string codeGeneratorPath)
-        {
-            var result = await ProcessUtility.StartAsync("/bin/bash", string.Format("-c 'chmod 777 {0}'", codeGeneratorPath));
-
-            return result;
         }
 
         private static void SetMsBuildPath()
