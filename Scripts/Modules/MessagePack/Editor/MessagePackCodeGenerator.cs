@@ -5,7 +5,6 @@ using System;
 using System.Collections;
 using System.IO;
 using System.Text;
-using System.Reflection;
 using System.Threading.Tasks;
 using UniRx;
 using Extensions;
@@ -118,12 +117,12 @@ namespace Modules.MessagePack
 
         private static Tuple<int, string> SetCodeGeneratorPermissions(string codeGeneratorPath)
         {
-            return ProcessUtility.Start("/bin/bash", string.Format("-c 'chmod 755 {0}'", codeGeneratorPath));
+            return ProcessUtility.Start("/bin/bash", string.Format("-c 'chmod 777 {0}'", codeGeneratorPath));
         }
 
         private static async Task<Tuple<int, string>> SetCodeGeneratorPermissionsAsync(string codeGeneratorPath)
         {
-            var result = await ProcessUtility.StartAsync("/bin/bash", string.Format("-c 'chmod 755 {0}'", codeGeneratorPath));
+            var result = await ProcessUtility.StartAsync("/bin/bash", string.Format("-c 'chmod 777 {0}'", codeGeneratorPath));
 
             return result;
         }
