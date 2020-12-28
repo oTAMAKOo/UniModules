@@ -115,7 +115,7 @@ namespace Modules
         [MenuItem(itemName: GeneratorsMenu + "Generate MessagePack", priority = 19)]
         public static void GenerateMessagePackCode()
         {
-            MessagePackCodeGenerator.Generate().Subscribe();
+            MessagePackCodeGenerator.GenerateAsync().Subscribe();
         }
 
         [MenuItem(itemName: GeneratorsMenu + "Generate ScriptableObject", priority = 100)]

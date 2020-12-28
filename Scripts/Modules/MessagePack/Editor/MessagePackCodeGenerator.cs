@@ -6,6 +6,7 @@ using System.Collections;
 using System.IO;
 using System.Text;
 using System.Reflection;
+using System.Threading.Tasks;
 using UniRx;
 using Extensions;
 
@@ -15,251 +16,194 @@ namespace Modules.MessagePack
     {
         //----- params -----
 
-        private const string CSProjExtension = ".csproj";
-
-        private sealed class GenerateInfo
-        {
-            public string codeGeneratorPath = null;
-            public string commnadLineArguments = null;
-            public string csFilePath = null;
-        }
-
         //----- field -----
 
         //----- property -----
 
         //----- method -----
 
-        public static IObservable<Tuple<bool, string>> FindDotnet()
-        {
-            Tuple<bool, string> result = null;
-
-            return ProcessUtility.InvokeStartAsync("dotnet", "--version").ToObservable()
-                .Do(x => result = Tuple.Create(true, x.Item2))
-                .DoOnError(x => result = Tuple.Create(false, (string)null))
-                .Select(_ => result);
-        }
-
-        public static IObservable<bool> Generate()
-        {
-            return Observable.FromMicroCoroutine<bool>(observer => GenerateInternal(observer));
-        }
-
-        private static IEnumerator GenerateInternal(IObserver<bool> observer)
+        public static bool Generate()
         {
             var isSuccess = false;
-            
-            var messagePackConfig = MessagePackConfig.Instance;
+
+            var generateInfo = new MessagePackCodeGenerateInfo();
 
             var lastUpdateTime = DateTime.MinValue;
 
-            var csFilePath = GetScriptGeneratePath(messagePackConfig);
-
-            if (File.Exists(csFilePath))
+            if (File.Exists(generateInfo.CsFilePath))
             {
-                var fileInfo = new FileInfo(csFilePath);
+                var fileInfo = new FileInfo(generateInfo.CsFilePath);
 
                 lastUpdateTime = fileInfo.LastWriteTime;
             }
 
-            var generateCodeYield = Observable.FromMicroCoroutine<GenerateInfo>(x => GenerateCodeCore(x, messagePackConfig)).ToYieldInstruction(false);
+            SyncSolution();
 
-            while(!generateCodeYield.IsDone)
+            #if !UNITY_EDITOR_OSX
+
+            SetCodeGeneratorPermissions(generateInfo.CodeGeneratorPath);
+
+            SetMsBuildPath();
+
+            #endif
+
+            var codeGenerateResult = ProcessUtility.Start(generateInfo.CodeGeneratorPath, generateInfo.CommandLineArguments);
+
+            if (codeGenerateResult.Item1 == 0)
+            {
+                isSuccess = CsFileUpdate(generateInfo, lastUpdateTime);
+
+                OutputGenerateLog(isSuccess, generateInfo);
+            }
+            else
+            {
+                throw new Exception(codeGenerateResult.Item2);
+            }
+
+            return isSuccess;
+        }
+
+        public static IObservable<bool> GenerateAsync()
+        {
+            return Observable.FromMicroCoroutine<bool>(observer => GenerateInternalAsync(observer));
+        }
+
+        private static IEnumerator GenerateInternalAsync(IObserver<bool> observer)
+        {
+            var isSuccess = false;
+            
+            var generateInfo = new MessagePackCodeGenerateInfo();
+
+            var lastUpdateTime = DateTime.MinValue;
+            
+            if (File.Exists(generateInfo.CsFilePath))
+            {
+                var fileInfo = new FileInfo(generateInfo.CsFilePath);
+
+                lastUpdateTime = fileInfo.LastWriteTime;
+            }
+
+            SyncSolution();
+
+            #if !UNITY_EDITOR_OSX
+            
+            var setPermissionsTask = SetCodeGeneratorPermissionsAsync(generateInfo.CodeGeneratorPath);
+
+            while (!setPermissionsTask.IsCompleted)
+            {
+                yield return null;
+            }
+            
+            SetMsBuildPath();
+
+            #endif
+
+            var codeGenerateTask = ProcessUtility.StartAsync(generateInfo.CodeGeneratorPath, generateInfo.CommandLineArguments);
+
+            while (!codeGenerateTask.IsCompleted)
             {
                 yield return null;
             }
 
-            if (generateCodeYield.HasResult)
+            if (codeGenerateTask.Result.Item1 == 0)
             {
-                var info = generateCodeYield.Result;
+                isSuccess = CsFileUpdate(generateInfo, lastUpdateTime);
 
-                var isCsFileUpdate = false;
-
-                if (File.Exists(csFilePath))
-                {
-                    var fileInfo = new FileInfo(csFilePath);
-
-                    isCsFileUpdate = lastUpdateTime < fileInfo.LastWriteTime;
-                }
-
-                using (new DisableStackTraceScope())
-                {
-                    var logBuilder = new StringBuilder();
-
-                    logBuilder.AppendLine();
-                    logBuilder.AppendLine();
-                    logBuilder.AppendFormat("MessagePack file : {0}", info.csFilePath).AppendLine();
-                    logBuilder.AppendLine();
-                    logBuilder.AppendFormat("Command:").AppendLine();
-                    logBuilder.AppendLine(info.codeGeneratorPath + info.commnadLineArguments);
-
-                    if (isCsFileUpdate)
-                    {
-                        isSuccess = true;
-                        
-                        logBuilder.Insert(0, "MessagePack code generate success!");
-
-                        Debug.Log(logBuilder.ToString());
-                    }
-                    else
-                    {
-                        logBuilder.Insert(0, "MessagePack code generate failed.");
-
-                        Debug.LogError(logBuilder.ToString());
-                    }
-                }
+                OutputGenerateLog(isSuccess, generateInfo);
             }
-            else if(generateCodeYield.HasError)
+            else
             {
-                using (new DisableStackTraceScope())
-                {
-                    Debug.LogException(generateCodeYield.Error);
-                }
+                observer.OnError(new Exception(codeGenerateTask.Result.Item2));
             }
 
             observer.OnNext(isSuccess);
             observer.OnCompleted();
         }
 
-        private static IEnumerator GenerateCodeCore(IObserver<GenerateInfo> observer, MessagePackConfig messagePackConfig)
+        private static void SyncSolution()
         {
-            var generateInfo = new GenerateInfo();
-
-            //------ Solution同期 ------
-
             var unitySyncVS = Type.GetType("UnityEditor.SyncVS,UnityEditor");
 
             var syncSolution = unitySyncVS.GetMethod("SyncSolution", BindingFlags.Public | BindingFlags.Static);
 
             syncSolution.Invoke(null, null);
-
-            //------ csproj検索 ------
-
-            var csprojPath = string.Empty;
-
-            var projectFolder = UnityPathUtility.GetProjectFolderPath();
-
-            var csprojNames = new string[] { "Assembly-CSharp", UnityPathUtility.GetProjectName() };
-
-            foreach (var csprojName in csprojNames)
-            {
-                var path = PathUtility.Combine(projectFolder, string.Format("{0}{1}", csprojName, CSProjExtension));
-
-                if (File.Exists(path))
-                {
-                    csprojPath = path;
-                    break;
-                }
-            }
-
-            if (!File.Exists(csprojPath))
-            {
-                observer.OnError(new FileNotFoundException(string.Format("csproj file not found.\n{0}", csprojPath)));
-            }
-
-            //------ mpc ------
-
-            var codeGeneratorPath = messagePackConfig.CodeGeneratorPath;
-
-            if (!File.Exists(codeGeneratorPath))
-            {
-                observer.OnError(new FileNotFoundException(string.Format("MessagePack Code Generator file not found.\n{0}", codeGeneratorPath)));
-                yield break;
-            }
-
-            generateInfo.codeGeneratorPath = codeGeneratorPath;
-
-            #if UNITY_EDITOR_OSX
-            {
-                //------ mpc権限変更 ------
-            
-                var task = ProcessUtility.InvokeStartAsync("/bin/bash", string.Format("-c 'chmod 755 {0}'", codeGeneratorPath));
-
-                while (!task.IsCompleted)
-                {
-                    yield return null;
-                }
-
-                //------ msbuild ------
-
-                var environmentPath = Environment.GetEnvironmentVariable("PATH", EnvironmentVariableTarget.Process);
-
-                var path = string.Format("{0}:{1}", environmentPath, MessagePackConfig.Prefs.msbuildPath);
-
-                Environment.SetEnvironmentVariable("PATH", path, EnvironmentVariableTarget.Process);
-            }
-            #endif
-
-            //------ 出力先 ------
-
-            var generatePath = GetScriptGeneratePath(messagePackConfig);
-
-            generateInfo.csFilePath = generatePath;
-
-            //------ mpc実行 ------
-
-            var commnadLineArguments = string.Empty;
-            
-            commnadLineArguments += $" --input { ReplaceCommnadLinePathSeparator(csprojPath) }";
-
-            commnadLineArguments += $" --output { ReplaceCommnadLinePathSeparator(generatePath) }";
-
-            if (messagePackConfig.UseMapMode)
-            {
-                commnadLineArguments += " --usemapmode";
-            }
-
-            if (!string.IsNullOrEmpty(messagePackConfig.ResolverNameSpace))
-            {
-                commnadLineArguments += $" --namespace {messagePackConfig.ResolverNameSpace}";
-            }
-
-            if (!string.IsNullOrEmpty(messagePackConfig.ResolverName))
-            {
-                commnadLineArguments += $" --resolverName {messagePackConfig.ResolverName}";
-            }
-
-            if (!string.IsNullOrEmpty(messagePackConfig.ConditionalCompilerSymbols))
-            {
-                commnadLineArguments += $" --conditionalSymbol {messagePackConfig.ConditionalCompilerSymbols}";
-            }
-
-            generateInfo.commnadLineArguments = commnadLineArguments;
-
-            // 実行.
-            {
-                var task = ProcessUtility.InvokeStartAsync(codeGeneratorPath, commnadLineArguments);
-
-                while (!task.IsCompleted)
-                {
-                    yield return null;
-                }
-
-                if (task.Result.Item1 == 1)
-                {
-                    observer.OnError(new Exception(task.Result.Item2));
-                }
-            }
-
-            var csFilePath = UnityPathUtility.ConvertFullPathToAssetPath(generatePath);
-
-            if (File.Exists(generatePath))
-            {
-                AssetDatabase.ImportAsset(csFilePath, ImportAssetOptions.ForceUpdate);
-            }
-
-            observer.OnNext(generateInfo);
-            observer.OnCompleted();
         }
 
-        private static string ReplaceCommnadLinePathSeparator(string path)
+        private static Tuple<int, string> SetCodeGeneratorPermissions(string codeGeneratorPath)
         {
-            return path.Replace('/', Path.DirectorySeparatorChar);
+            return ProcessUtility.Start("/bin/bash", string.Format("-c 'chmod 755 {0}'", codeGeneratorPath));
         }
 
-        private static string GetScriptGeneratePath(MessagePackConfig messagePackConfig)
+        private static async Task<Tuple<int, string>> SetCodeGeneratorPermissionsAsync(string codeGeneratorPath)
         {
-            return PathUtility.Combine(messagePackConfig.ScriptExportDir, messagePackConfig.ExportScriptName);
+            var result = await ProcessUtility.StartAsync("/bin/bash", string.Format("-c 'chmod 755 {0}'", codeGeneratorPath));
+
+            return result;
+        }
+
+        private static void SetMsBuildPath()
+        {
+            var msbuildPath = MessagePackConfig.Prefs.msbuildPath;
+
+            var environmentPath = Environment.GetEnvironmentVariable("PATH", EnvironmentVariableTarget.Process);
+
+            var path = string.Format("{0}:{1}", environmentPath, msbuildPath);
+
+            Environment.SetEnvironmentVariable("PATH", path, EnvironmentVariableTarget.Process);
+        }
+
+        private static void ImportGeneratedCsFile(MessagePackCodeGenerateInfo generateInfo)
+        {
+            var assetPath = UnityPathUtility.ConvertFullPathToAssetPath(generateInfo.CsFilePath);
+
+            if (File.Exists(generateInfo.CsFilePath))
+            {
+                AssetDatabase.ImportAsset(assetPath, ImportAssetOptions.ForceUpdate);
+            }
+        }
+
+        private static bool CsFileUpdate(MessagePackCodeGenerateInfo generateInfo, DateTime lastUpdateTime)
+        {
+            var isCsFileUpdate = false;
+
+            if (File.Exists(generateInfo.CsFilePath))
+            {
+                var fileInfo = new FileInfo(generateInfo.CsFilePath);
+
+                isCsFileUpdate = lastUpdateTime < fileInfo.LastWriteTime;
+            }
+
+            ImportGeneratedCsFile(generateInfo);
+
+            return isCsFileUpdate;
+        }
+
+        private static void OutputGenerateLog(bool result, MessagePackCodeGenerateInfo generateInfo)
+        {
+            using (new DisableStackTraceScope())
+            {
+                var logBuilder = new StringBuilder();
+
+                logBuilder.AppendLine();
+                logBuilder.AppendLine();
+                logBuilder.AppendFormat("MessagePack file : {0}", generateInfo.CsFilePath).AppendLine();
+                logBuilder.AppendLine();
+                logBuilder.AppendFormat("Command:").AppendLine();
+                logBuilder.AppendLine(generateInfo.CodeGeneratorPath + generateInfo.CommandLineArguments);
+
+                if (result)
+                {
+                    logBuilder.Insert(0, "MessagePack code generate success!");
+
+                    Debug.Log(logBuilder.ToString());
+                }
+                else
+                {
+                    logBuilder.Insert(0, "MessagePack code generate failed.");
+
+                    Debug.LogError(logBuilder.ToString());
+                }
+            }
         }
     }
 }

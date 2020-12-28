@@ -228,7 +228,13 @@ namespace Modules.MessagePack
 
             EditorUtility.DisplayProgressBar(processTitle, processMessage, 0f);
 
-            var findYield = MessagePackCodeGenerator.FindDotnet().ToYieldInstruction();
+            Tuple<bool, string> result = null;
+
+            var findYield = ProcessUtility.StartAsync("dotnet", "--version").ToObservable()
+                .Do(x => result = Tuple.Create(true, x.Item2))
+                .DoOnError(x => result = Tuple.Create(false, (string)null))
+                .Select(_ => result)
+                .ToYieldInstruction();
 
             while (!findYield.IsDone)
             {
