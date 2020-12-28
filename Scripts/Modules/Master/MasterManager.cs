@@ -127,7 +127,7 @@ namespace Modules.Master
             
             if (FileNameCryptoKey != null)
             {
-                fileName = fileName.Encrypt(FileNameCryptoKey);
+                fileName = fileName.Encrypt(FileNameCryptoKey, true);
             }
             
             return fileName;

@@ -43,14 +43,14 @@ namespace Extensions
 
         public static void SetString(string name, string value)
         {
-            PlayerPrefs.SetString(name.Encrypt(aesCryptoKey), value.Encrypt(aesCryptoKey));
+            PlayerPrefs.SetString(name.Encrypt(aesCryptoKey), value.Encrypt(aesCryptoKey, true));
         }
 
         public static string GetString(string name, string defaultValue = "")
         {
             if (!HasKey(name)) { return defaultValue; }
 
-            return PlayerPrefs.GetString(name.Encrypt(aesCryptoKey)).Decrypt(aesCryptoKey);
+            return PlayerPrefs.GetString(name.Encrypt(aesCryptoKey)).Decrypt(aesCryptoKey, true);
         }
 
         //====== Int ======

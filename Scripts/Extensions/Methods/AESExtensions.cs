@@ -63,7 +63,7 @@ namespace Extensions
         /// <summary>
         /// 文字列をAESで暗号化.
         /// </summary>
-        public static string Encrypt(this string value, AesCryptoKey aesCryptoKey)
+        public static string Encrypt(this string value, AesCryptoKey aesCryptoKey, bool escape = false)
         {
             if (string.IsNullOrEmpty(value)) { return null; }
 
@@ -82,7 +82,12 @@ namespace Extensions
 
                         var encrypted = memoryStream.ToArray();
 
-                        result = Convert.ToBase64String(encrypted).Replace('+', '-').Replace('/', '_');
+                        result = Convert.ToBase64String(encrypted);
+
+                        if (escape)
+                        {
+                            result = result.Replace('+', '-').Replace('/', '_');
+                        }
                     }
                 }
             }
@@ -93,13 +98,18 @@ namespace Extensions
         /// <summary>
         /// 文字列をAESで復号化.
         /// </summary>
-        public static string Decrypt(this string value, AesCryptoKey aesCryptoKey)
+        public static string Decrypt(this string value, AesCryptoKey aesCryptoKey, bool escape = false)
         {
             if (string.IsNullOrEmpty(value)) { return null; }
 
             string result = null;
-            
-            var encrypted = Convert.FromBase64String(value.Replace('-', '+').Replace('_', '/'));
+
+            if (escape)
+            {
+                value = value.Replace('-', '+').Replace('_', '/');
+            }
+
+            var encrypted = Convert.FromBase64String(value);
             var fromEncrypt = new byte[encrypted.Length];
 
             using (var decryptor = aesCryptoKey.AesManaged.CreateDecryptor())
