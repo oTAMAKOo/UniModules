@@ -168,6 +168,7 @@ namespace Extensions
             var aesManaged = new AesManaged()
             {
                 BlockSize = 128,
+                KeySize = 256,
                 Padding = PaddingMode.PKCS7,
                 Mode = CipherMode.CBC,
             };
