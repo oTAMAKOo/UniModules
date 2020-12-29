@@ -588,11 +588,11 @@ namespace Modules.SceneManagement
 
         /// <summary>
         /// シーンを追加で読み込み.
-        /// <para> Prepar, Enter, Leaveは自動で呼び出されないので自分で制御する </para>
+        /// <para> Prepare, Enter, Leaveは自動で呼び出されないので自分で制御する </para>
         /// </summary>
         public IObservable<SceneInstance> Append<TArgument>(TArgument sceneArgument, bool activeOnLoad = true) where TArgument : ISceneArgument
         {
-            return Observable.FromCoroutine<SceneInstance>(observer => AppendCore(observer, sceneArgument.Identifier, activeOnLoad))
+            return Observable.FromMicroCoroutine<SceneInstance>(observer => AppendCore(observer, sceneArgument.Identifier, activeOnLoad))
                 .Do(x =>
                 {
                     // シーンルート引数設定.
@@ -605,11 +605,11 @@ namespace Modules.SceneManagement
 
         /// <summary>
         /// シーンを追加で読み込み.
-        /// <para> Prepar, Enter, Leaveは自動で呼び出されないので自分で制御する </para>
+        /// <para> Prepare, Enter, Leaveは自動で呼び出されないので自分で制御する </para>
         /// </summary>
         public IObservable<SceneInstance> Append(Scenes identifier, bool activeOnLoad = true)
         {
-            return Observable.FromCoroutine<SceneInstance>(observer => AppendCore(observer, identifier, activeOnLoad));
+            return Observable.FromMicroCoroutine<SceneInstance>(observer => AppendCore(observer, identifier, activeOnLoad));
         }
 
         private IEnumerator AppendCore(IObserver<SceneInstance> observer, Scenes? identifier, bool activeOnLoad)
@@ -624,8 +624,11 @@ namespace Modules.SceneManagement
 
             var loadYield = LoadScene(identifier.Value, LoadSceneMode.Additive).ToYieldInstruction();
 
-            yield return loadYield;
-
+            while (!loadYield.IsDone)
+            {
+                yield return null;
+            }
+            
             if (loadYield.HasResult)
             {
                 sceneInstance = loadYield.Result;
@@ -684,7 +687,7 @@ namespace Modules.SceneManagement
 
             if (observable == null)
             {
-                observable = Observable.Defer(() => Observable.FromCoroutine<SceneInstance>(observer => LoadSceneCore(observer, identifier, mode))
+                observable = Observable.Defer(() => Observable.FromMicroCoroutine<SceneInstance>(observer => LoadSceneCore(observer, identifier, mode))
                     .Do(_ => loadingScenes.Remove(identifier)))
                     .Share();
 
@@ -776,7 +779,8 @@ namespace Modules.SceneManagement
 
                     loadedScenes.Add(identifier, sceneInstance);
 
-                    yield return new WaitForEndOfFrame();
+                    // 1フレーム待つ.
+                    yield return null;
 
                     if (onLoadSceneComplete != null)
                     {
@@ -790,7 +794,12 @@ namespace Modules.SceneManagement
 
                         foreach (var target in targets)
                         {
-                            yield return target.OnLoadSceneAsObservable().ToYieldInstruction();
+                            var loadSceneYield = target.OnLoadSceneAsObservable().ToYieldInstruction();
+
+                            while (!loadSceneYield.IsDone)
+                            {
+                                yield return null;
+                            }
                         }
                     }
                 }
@@ -800,7 +809,12 @@ namespace Modules.SceneManagement
                 // シーンの初期化処理.
                 if (sceneInstance.Instance != null)
                 {
-                    yield return sceneInstance.Instance.Initialize().ToYieldInstruction();
+                    var initializeYield = sceneInstance.Instance.Initialize().ToYieldInstruction();
+
+                    while (!initializeYield.IsDone)
+                    {
+                        yield return null;
+                    }
                 }
             }
             else
@@ -858,7 +872,7 @@ namespace Modules.SceneManagement
 
             if (observable == null)
             {
-                observable = Observable.Defer(() => Observable.FromCoroutine(() => UnloadSceneCore(sceneInstance))
+                observable = Observable.Defer(() => Observable.FromMicroCoroutine(() => UnloadSceneCore(sceneInstance))
                     .Do(_ => unloadingScenes.Remove(identifier)))
                     .Share();
 
@@ -912,7 +926,12 @@ namespace Modules.SceneManagement
 
                 foreach (var target in targets)
                 {
-                    yield return target.OnUnloadSceneAsObservable().ToYieldInstruction();
+                    var unloadYield = target.OnUnloadSceneAsObservable().ToYieldInstruction();
+
+                    while (!unloadYield.IsDone)
+                    {
+                        yield return null;
+                    }
                 }
             }
 
@@ -940,7 +959,7 @@ namespace Modules.SceneManagement
 
             while (!op.isDone)
             {
-                yield return op;
+                yield return null;
             }
 
             SceneManager.sceneUnloaded -= sceneUnloaded;
@@ -1107,7 +1126,12 @@ namespace Modules.SceneManagement
 
         private static IEnumerator CleanUp()
         {
-            yield return Resources.UnloadUnusedAssets();
+            var unloadOperation = Resources.UnloadUnusedAssets();
+
+            while (!unloadOperation.isDone)
+            {
+                yield return null;
+            }
 
             GC.Collect();
         }
