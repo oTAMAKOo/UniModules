@@ -30,7 +30,7 @@ namespace Modules.View
 
         private TViewModel GetViewModel()
         {
-            if (viewModel != null && viewModel.Disposed)
+            if (viewModel != null && viewModel.IsDisposed)
             {
                 viewModel = null;
             }

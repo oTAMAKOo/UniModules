@@ -1,7 +1,5 @@
 ﻿
 using System;
-using System.Linq;
-using System.Collections.Generic;
 using UniRx;
 using Extensions;
 
@@ -19,16 +17,18 @@ namespace Modules.View
 
         protected CompositeDisposable Disposable
         {
-            get { return lifetimeDisposable.Disposable; }
+            get { return lifetimeDisposable != null ? lifetimeDisposable.Disposable : null; }
         }
 
-        public bool Disposed { get; private set; }
+        public bool IsDisposed { get; private set; }
 
         //----- method -----
 
         protected ViewModel()
         {
             lifetimeDisposable = new LifetimeDisposable();
+
+            IsDisposed = false;
         }
 
         ~ViewModel()
@@ -38,7 +38,7 @@ namespace Modules.View
 
         public void Dispose()
         {
-            Disposed = true;
+            IsDisposed = true;
 
             if (lifetimeDisposable != null)
             {
