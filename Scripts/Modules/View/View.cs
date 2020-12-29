@@ -49,5 +49,10 @@ namespace Modules.View
 
             return viewModel;
         }
+
+        public void SetViewModel(TViewModel viewModel)
+        {
+            this.viewModel = viewModel;
+        }
     }
 }
