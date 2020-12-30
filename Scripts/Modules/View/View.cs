@@ -45,6 +45,10 @@ namespace Modules.View
                 {
                     viewModel = viewRoot.GetViewModel() as TViewModel;
                 }
+                else
+                {
+                    Debug.LogError("IViewRoot interface not found in ancestors hierarchy.");
+                }
             }
 
             return viewModel;
