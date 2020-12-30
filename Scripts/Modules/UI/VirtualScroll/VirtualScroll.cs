@@ -347,7 +347,10 @@ namespace Modules.UI
                 yield return null;
             }
 
-            // 更新イベント.
+            //-----  更新イベント -----
+
+            OnUpdateContents();
+
             if (onUpdateContents != null)
             {
                 onUpdateContents.OnNext(Unit.Default);
@@ -357,6 +360,8 @@ namespace Modules.UI
         private IEnumerator InitializeItem(VirtualScrollItem<T> item)
         {
             UnityUtility.SetActive(item, true);
+
+            OnCreateItem(item);
 
             if (onCreateItem != null)
             {
@@ -834,6 +839,8 @@ namespace Modules.UI
 
             item.transform.name = index.ToString();
 
+            OnUpdateItem(item);
+
             if (onUpdateItem != null)
             {
                 onUpdateItem.OnNext(item);
@@ -870,5 +877,14 @@ namespace Modules.UI
         {
             return onUpdateContents ?? (onUpdateContents = new Subject<Unit>());
         }
+
+        /// <summary> リストアイテム生成時イベント </summary>
+        protected virtual void OnCreateItem(VirtualScrollItem<T> item) { }
+
+        /// <summary> リストアイテム更新時イベント </summary>
+        protected virtual void OnUpdateItem(VirtualScrollItem<T> item) { }
+
+        /// <summary> リスト内容更新完了イベント </summary>
+        protected virtual void OnUpdateContents() { }
     }
 }

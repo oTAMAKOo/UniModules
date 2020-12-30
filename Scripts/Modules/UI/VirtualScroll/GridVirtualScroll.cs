@@ -1,10 +1,7 @@
 ﻿
 using UnityEngine;
-using System;
 using System.Linq;
 using System.Collections.Generic;
-using UniRx;
-using Extensions;
 using Modules.UI.VirtualScroll;
 
 namespace Modules.UI
@@ -37,15 +34,6 @@ namespace Modules.UI
         
         //----- method -----
 
-        protected override void Initialize()
-        {
-            base.Initialize();
-
-            OnCreateItemAsObservable()
-                .Subscribe(x => OnCreateItem(x))
-                .AddTo(this);
-        }
-
         public void SetLineElementCount(int count)
         {
             lineElementCount = count;
@@ -64,7 +52,7 @@ namespace Modules.UI
             base.SetContents(contents);
         }
 
-        private void OnCreateItem(VirtualScrollItem<GridElement> item)
+        protected override void OnCreateItem(VirtualScrollItem<GridElement> item)
         {
             var gridScrollItem = item as IGirdScrollItem;
 

@@ -26,9 +26,6 @@ namespace Modules.UI
 
         //----- method -----
         
-        /// <summary> 初期化. </summary>
-        public virtual IObservable<Unit> Initialize() { return Observable.ReturnUnit(); }
-
         public IObservable<Unit> UpdateItem(int index, IReadOnlyList<T> contents)
         {
             Index = index;
@@ -39,6 +36,9 @@ namespace Modules.UI
 
             return UpdateContents(contents[index]);
         }
+
+        /// <summary> 初期化. </summary>
+        public virtual IObservable<Unit> Initialize() { return Observable.ReturnUnit(); }
 
         protected abstract IObservable<Unit> UpdateContents(T content);
     }
