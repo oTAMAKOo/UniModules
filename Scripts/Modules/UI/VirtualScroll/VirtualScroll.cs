@@ -77,8 +77,8 @@ namespace Modules.UI
         private GraphicCast hitBox = null;
 
         private Subject<Unit> onUpdateContents = null;
-        private Subject<VirtualScrollItem<T>> onCreateItem = null;
-        private Subject<VirtualScrollItem<T>> onUpdateItem = null;
+        private Subject<IVirtualScrollItem> onCreateItem = null;
+        private Subject<IVirtualScrollItem> onUpdateItem = null;
 
         private IObservable<Unit> updateQueueing = null;
 
@@ -282,11 +282,16 @@ namespace Modules.UI
                     initializeObservers[i] = Observable.Defer(() => Observable.FromMicroCoroutine(() => InitializeItem(item)));
                 }
 
-                var initializeYield = initializeObservers.WhenAll().ToYieldInstruction();
+                var initializeYield = initializeObservers.WhenAll().ToYieldInstruction(false);
 
                 while (!initializeYield.IsDone)
                 {
                     yield return null;
+                }
+
+                if (initializeYield.HasError)
+                {
+                    Debug.LogException(initializeYield.Error);
                 }
             }
 
@@ -340,11 +345,16 @@ namespace Modules.UI
 
             //----- リストアイテム更新 -----
 
-            var updateItemYield = updateObservers.WhenAll().ToYieldInstruction();
+            var updateItemYield = updateObservers.WhenAll().ToYieldInstruction(false);
 
             while (!updateItemYield.IsDone)
             {
                 yield return null;
+            }
+
+            if (updateItemYield.HasError)
+            {
+                Debug.LogException(updateItemYield.Error);
             }
 
             //-----  更新イベント -----
@@ -369,11 +379,16 @@ namespace Modules.UI
             }
 
             // 初期化.
-            var initializeYield = item.Initialize().ToYieldInstruction();
+            var initializeYield = item.Initialize().ToYieldInstruction(false);
 
             while (!initializeYield.IsDone)
             {
                 yield return null;
+            }
+
+            if (initializeYield.HasError)
+            {
+                Debug.LogException(initializeYield.Error);
             }
 
             UnityUtility.SetActive(item, false);
@@ -861,15 +876,15 @@ namespace Modules.UI
         }
 
         /// <summary> リストアイテム生成時イベント </summary>
-        public IObservable<VirtualScrollItem<T>> OnCreateItemAsObservable()
+        public IObservable<IVirtualScrollItem> OnCreateItemAsObservable()
         {
-            return onCreateItem ?? (onCreateItem = new Subject<VirtualScrollItem<T>>());
+            return onCreateItem ?? (onCreateItem = new Subject<IVirtualScrollItem>());
         }
 
         /// <summary> リストアイテム更新時イベント </summary>
-        public IObservable<VirtualScrollItem<T>> OnUpdateItemAsObservable()
+        public IObservable<IVirtualScrollItem> OnUpdateItemAsObservable()
         {
-            return onUpdateItem ?? (onUpdateItem = new Subject<VirtualScrollItem<T>>());
+            return onUpdateItem ?? (onUpdateItem = new Subject<IVirtualScrollItem>());
         }
 
         /// <summary> リスト内容更新完了イベント </summary>
@@ -879,10 +894,10 @@ namespace Modules.UI
         }
 
         /// <summary> リストアイテム生成時イベント </summary>
-        protected virtual void OnCreateItem(VirtualScrollItem<T> item) { }
+        protected virtual void OnCreateItem(IVirtualScrollItem item) { }
 
         /// <summary> リストアイテム更新時イベント </summary>
-        protected virtual void OnUpdateItem(VirtualScrollItem<T> item) { }
+        protected virtual void OnUpdateItem(IVirtualScrollItem item) { }
 
         /// <summary> リスト内容更新完了イベント </summary>
         protected virtual void OnUpdateContents() { }

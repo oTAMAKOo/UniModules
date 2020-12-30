@@ -2,7 +2,6 @@
 using UnityEngine;
 using System.Linq;
 using System.Collections.Generic;
-using Modules.UI.VirtualScroll;
 
 namespace Modules.UI
 {
@@ -50,15 +49,6 @@ namespace Modules.UI
         private new void SetContents(GridElement[] contents)
         {
             base.SetContents(contents);
-        }
-
-        protected override void OnCreateItem(VirtualScrollItem<GridElement> item)
-        {
-            var gridScrollItem = item as IGirdScrollItem;
-
-            if (gridScrollItem == null) { return; }
-
-            gridScrollItem.SetScrollDirection(Direction);
         }
 
         // データを入れる順番を変更したい時はこの関数をoverrideする.

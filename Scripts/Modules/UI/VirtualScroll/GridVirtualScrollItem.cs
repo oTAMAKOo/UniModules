@@ -11,15 +11,7 @@ using Modules.UI.VirtualScroll;
 
 namespace Modules.UI
 {
-    namespace VirtualScroll
-    {
-        public interface IGirdScrollItem
-        {
-            void SetScrollDirection(Direction direction);
-        }
-    }
-
-    public abstract class GridVirtualScrollItem<T, TComponent> : VirtualScrollItem<GridVirtualScroll<T>.GridElement>, IGirdScrollItem
+    public abstract class GridVirtualScrollItem<T, TComponent> : VirtualScrollItem<GridVirtualScroll<T>.GridElement>
         where T : class where TComponent : Component
     {
         //----- params -----
@@ -32,19 +24,12 @@ namespace Modules.UI
         private GameObject elementParent = null;
 
         private List<TComponent> elements = null;
-
-        private Direction scrollViewDirection = Direction.Vertical;
-
+        
         //----- property -----
 
         public IReadOnlyList<TComponent> Elements { get { return elements; } }
 
         //----- method -----
-
-        public void SetScrollDirection(Direction direction)
-        {
-            scrollViewDirection = direction;
-        }
 
         public override IObservable<Unit> Initialize()
         {
@@ -73,31 +58,38 @@ namespace Modules.UI
 
             var elementCount = info.Elements.Count;
 
-            // 多い.
-            if (elementCount < elementObjectCount)
+            try
             {
-                var num = elementObjectCount - elementCount;
-
-                for (var i = 0; i < num; i++)
+                // 多い.
+                if (elementCount < elementObjectCount)
                 {
-                    elements.RemoveAt(0);
+                    var num = elementObjectCount - elementCount;
+
+                    for (var i = 0; i < num; i++)
+                    {
+                        elements.RemoveAt(0);
+                    }
+                }
+                // 足りない.
+                else if (elementObjectCount < elementCount)
+                {
+                    var num = elementCount - elementObjectCount;
+
+                    var newElements = UnityUtility.Instantiate<TComponent>(elementParent, elementPrefab, num).ToArray();
+
+                    foreach (var newElement in newElements)
+                    {
+                        OnCreateElement(newElement);
+                    }
+
+                    elements.AddRange(newElements);
                 }
             }
-            // 足りない.
-            else if (elementObjectCount < elementCount)
+            catch (Exception e)
             {
-                var num = elementCount - elementObjectCount;
-
-                var newElements = UnityUtility.Instantiate<TComponent>(elementParent, elementPrefab, num).ToArray();
-
-                foreach (var newElement in newElements)
-                {
-                    OnCreateElement(newElement);
-                }
-
-                elements.AddRange(newElements);
+                Debug.LogException(e);
             }
-            
+
             var observers = new List<IObservable<Unit>>();
             
             for (var i = 0; i < elementCount; i++)
@@ -111,11 +103,16 @@ namespace Modules.UI
                 observers.Add(observer);
             }
 
-            var updateContentsYield = observers.WhenAll().ToYieldInstruction();
+            var updateContentsYield = observers.WhenAll().ToYieldInstruction(false);
 
             while (!updateContentsYield.IsDone)
             {
                 yield return null;
+            }
+
+            if (updateContentsYield.HasError)
+            {
+                Debug.LogException(updateContentsYield.Error);
             }
         }
 

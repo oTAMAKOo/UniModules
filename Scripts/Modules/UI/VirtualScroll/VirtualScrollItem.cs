@@ -7,7 +7,12 @@ using UniRx;
 
 namespace Modules.UI
 {
-    public abstract class VirtualScrollItem<T> : MonoBehaviour
+    public interface IVirtualScrollItem
+    {
+        int Index { get; }
+    }
+
+    public abstract class VirtualScrollItem<T> : MonoBehaviour, IVirtualScrollItem
     {
         //----- params -----
 
