@@ -847,12 +847,17 @@ namespace Modules.UI
                         }
 
                         observable = Observable.Defer(() => item.UpdateItem(index, Contents));
+
                         UnityUtility.SetActive(item.gameObject, true);
                     }
                     break;
             }
 
+            #if UNITY_EDITOR
+
             item.transform.name = index.ToString();
+
+            #endif
 
             OnUpdateItem(item);
 
