@@ -167,14 +167,16 @@ namespace Modules.PatternTexture
 
         public override void OnPreviewGUI(Rect r, GUIStyle background)
         {
-            if(instance.Current == null) { return; }
+            if(instance == null || instance.Current == null) { return; }
 
-            if(previewTexture == null || previewGuid != instance.Current.Guid)
+            var current = instance.Current;
+
+            if (previewTexture == null || previewGuid != current.Guid)
             {
-                var assetPath = AssetDatabase.GUIDToAssetPath(instance.Current.Guid);
+                var assetPath = AssetDatabase.GUIDToAssetPath(current.Guid);
                 previewTexture = AssetDatabase.LoadMainAssetAtPath(assetPath) as Texture2D;
 
-                previewGuid = instance.Current.Guid;
+                previewGuid = current.Guid;
             }
 
             if(previewTexture == null) { return; }
