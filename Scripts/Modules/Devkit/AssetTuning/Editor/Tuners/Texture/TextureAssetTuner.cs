@@ -159,11 +159,11 @@ namespace Modules.Devkit.AssetTuning
             switch (platform)
             {
                 case BuildTargetGroup.iOS:
-                    format = hasAlpha ? TextureImporterFormat.ASTC_RGBA_4x4 : TextureImporterFormat.ASTC_RGB_4x4;
+                    format = TextureImporterFormat.ASTC_RGB_4x4;
                     break;
 
                 case BuildTargetGroup.Android:
-                    format = hasAlpha ? TextureImporterFormat.ASTC_RGBA_4x4 : TextureImporterFormat.ASTC_RGB_4x4;
+                    format = TextureImporterFormat.ASTC_RGB_4x4;
                     break;
                 case BuildTargetGroup.Standalone:
                     format = hasAlpha ? TextureImporterFormat.DXT5 : TextureImporterFormat.DXT1;
