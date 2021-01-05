@@ -3,6 +3,7 @@ using UnityEngine;
 using UnityEditor;
 using System;
 using System.Linq;
+using System.Reflection;
 
 namespace Extensions
 {
@@ -12,6 +13,8 @@ namespace Extensions
         {
             "ASTC_RGB_", "ASTC_RGBA_", "DXT",
         };
+
+        private static MethodInfo getWidthAndHeightMethodInfo = null;
 
         /// <summary> 圧縮設定がブロック圧縮か </summary>
         public static bool IsBlockCompress(this TextureImporter importer, BuildTargetGroup platform)
@@ -60,7 +63,12 @@ namespace Extensions
 
             var args = new object[] { 0, 0 };
 
-            Reflection.InvokePrivateMethod(importer, "GetWidthAndHeight", args);
+            if (getWidthAndHeightMethodInfo == null)
+            {
+                getWidthAndHeightMethodInfo = typeof(TextureImporter).GetMethod("GetWidthAndHeight", BindingFlags.NonPublic | BindingFlags.Instance);
+            }
+            
+            getWidthAndHeightMethodInfo.Invoke(importer, args);
 
             return new Vector2((int)args[0], (int)args[1]);
         }
