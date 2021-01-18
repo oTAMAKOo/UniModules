@@ -57,8 +57,8 @@ namespace Modules.Devkit.Build
 
             var logFilePath = EditorUtility.OpenFilePanel("Open File As", unityEditorLogDirectory, "log");
 
-            if (!string.IsNullOrEmpty(logFilePath)) { return; }
-            
+            if (string.IsNullOrEmpty(logFilePath)) { return; }
+
             if (!File.Exists(logFilePath)) { return; }
 
             Instance.Initialize(logFilePath);
