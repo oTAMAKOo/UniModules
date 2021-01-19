@@ -183,7 +183,7 @@ namespace Modules.Master
                 }
                 else
                 {
-                    Debug.LogException(loadYield.Error);
+                    Debug.LogErrorFormat("Load master failed.\n\nClass : {0}\nFile : {1}\n\nException : \n{2}", typeof(TMaster).FullName, installPath, loadYield.Error);
                 }
             }
             else
