@@ -36,14 +36,14 @@ namespace Modules.Master
         {
             if (function == null) { return defaultValue; }
 
-            var value = cache.GetValueOrDefault(key, defaultValue);
-
-            if (value == null)
+            if (!cache.ContainsKey(key))
             {
-                cache[key] = function.Invoke(key);
+                var value = function.Invoke(key);
+
+                cache[key] = value != null ? value : defaultValue;
             }
 
-            return value;
+            return cache[key];
         }
 
         public void Clear()
