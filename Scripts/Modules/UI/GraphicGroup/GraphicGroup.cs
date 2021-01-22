@@ -72,7 +72,7 @@ namespace Modules.UI
         public void CollectChildGraphic()
         {
             childGraphics = gameObject.Descendants().OfComponent<Graphic>()
-                .Where(x => !ignoreTargets.Contains(x.gameObject))
+                .Where(x => !IgnoreTargets.Contains(x.gameObject))
                 .ToArray();
         }
 
