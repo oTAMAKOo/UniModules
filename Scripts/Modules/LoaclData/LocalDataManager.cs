@@ -2,6 +2,7 @@
 using UnityEngine;
 using System;
 using System.IO;
+using System.Linq;
 using System.Collections.Generic;
 using Extensions;
 using MessagePack;
@@ -10,14 +11,11 @@ using Modules.MessagePack;
 
 namespace Modules.LocalData
 {
-    public abstract class LocalData
-    {
-        public abstract string FileName { get; }        
-    }
+    public interface ILocalData { }
 
     public static class LocalDataExtension
     {
-        public static void Save<T>(this T data) where T : LocalData, new()
+        public static void Save<T>(this T data) where T : ILocalData, new()
         {
             LocalDataManager.Save(data);
         }
@@ -64,9 +62,9 @@ namespace Modules.LocalData
             fileDirectory = directory;
         }
 
-        public static T Get<T>() where T : LocalData, new()
+        public static T Get<T>() where T : ILocalData, new()
         {
-            T result = null;
+            var result = default(T);
 
             MessagePackValidater.ValidateAttribute(typeof(T));
 
@@ -100,7 +98,7 @@ namespace Modules.LocalData
             return result;
         }
 
-        public static void Save<T>(T data) where T : LocalData, new()
+        public static void Save<T>(T data) where T : ILocalData, new()
         {
             MessagePackValidater.ValidateAttribute(typeof(T));
 
@@ -122,27 +120,39 @@ namespace Modules.LocalData
             }
         }
 
-        private string GetLocalDataFilePath<T>() where T : LocalData, new()
+        private string GetLocalDataFilePath<T>() where T : ILocalData, new()
         {
             var filePath = filePathDictionary.GetValueOrDefault(typeof(T));
 
-            if (string.IsNullOrEmpty(filePath))
+            if (!string.IsNullOrEmpty(filePath)){ return filePath; }
+            
+            if (!Directory.Exists(fileDirectory))
             {
-                var tempInstance = new T();
-                
-                if (!Directory.Exists(fileDirectory))
-                {
-                    Directory.CreateDirectory(fileDirectory);
-                }
-
-                var cryptoKey = GetCryptoKey();
-
-                var fileName = tempInstance.FileName.Encrypt(cryptoKey).GetHash();
-
-                filePath = fileDirectory + fileName;
-
-                filePathDictionary.Add(typeof(T), filePath);
+                Directory.CreateDirectory(fileDirectory);
             }
+
+            var fileName = string.Empty;
+
+            var cryptoKey = GetCryptoKey();
+            
+            var type = typeof(T);
+
+            var fileNameAttribute = type.GetCustomAttributes(typeof(FileNameAttribute), false)
+                .Cast<FileNameAttribute>()
+                .FirstOrDefault();
+
+            if (fileNameAttribute != null)
+            {
+                fileName = fileNameAttribute.FileName.Encrypt(cryptoKey).GetHash();
+            }
+            else
+            {
+                throw new Exception(string.Format("FileNameAttribute is not set for this class.\n{0}", type.FullName));
+            }
+
+            filePath = fileDirectory + fileName;
+
+            filePathDictionary.Add(typeof(T), filePath);
 
             return filePath;
         }
@@ -157,9 +167,20 @@ namespace Modules.LocalData
             return aesCryptoKey;
         }
 
-        public void DeleteAll()
+        public static void Delete<T>() where T : ILocalData, new()
         {
-            DirectoryUtility.Clean(fileDirectory);
+            var filePath = Instance.GetLocalDataFilePath<T>();
+
+            if (!File.Exists(filePath)){ return; }
+
+            File.Delete(filePath);
+        }
+
+        public static void DeleteAll()
+        {
+            var directory = Instance.fileDirectory;
+
+            DirectoryUtility.Clean(directory);
         }
     }
 }
