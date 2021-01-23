@@ -26,9 +26,9 @@ namespace Extensions
         }
 
         /// <summary> Json文字列に変換  </summary>
-        public static string ToJson<T>(this T obj)
+        public static string ToJson<T>(this T obj, bool indented = false)
         {
-            return JsonConvert.SerializeObject(obj);
+            return JsonConvert.SerializeObject(obj, indented ? Formatting.Indented : Formatting.None);
         }
 
         /// <summary> 指定されたEnumに変換 </summary>
