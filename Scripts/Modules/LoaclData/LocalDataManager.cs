@@ -15,7 +15,7 @@ namespace Modules.LocalData
 
     public static class LocalDataExtension
     {
-        public static void Save<T>(this T data) where T : ILocalData, new()
+        public static void Save<T>(this T data) where T : class, ILocalData, new()
         {
             LocalDataManager.Save(data);
         }
@@ -34,7 +34,9 @@ namespace Modules.LocalData
 
         private string fileDirectory = null;
 
-        private Dictionary<Type, string> filePathDictionary = null;
+        private Dictionary<Type, string> filePathCache = null;
+
+        private Dictionary<Type, ILocalData> dataCache = null;
 
         //----- property -----
 
@@ -42,7 +44,8 @@ namespace Modules.LocalData
 
         protected override void OnCreate()
         {
-            filePathDictionary = new Dictionary<Type, string>();
+            filePathCache = new Dictionary<Type, string>();
+            dataCache = new Dictionary<Type, ILocalData>();
 
             fileDirectory = Application.persistentDataPath + "/LocalData/";
         }
@@ -62,13 +65,15 @@ namespace Modules.LocalData
             fileDirectory = directory;
         }
 
-        public static T Get<T>() where T : ILocalData, new()
+        public static void Load<T>() where T : class, ILocalData, new()
         {
-            var result = default(T);
+            var type = typeof(T);
 
-            MessagePackValidater.ValidateAttribute(typeof(T));
+            MessagePackValidater.ValidateAttribute(type);
 
             var filePath = Instance.GetLocalDataFilePath<T>();
+
+            var data = default(T);
 
             if (File.Exists(filePath))
             {
@@ -86,19 +91,32 @@ namespace Modules.LocalData
                         .WithCompression(MessagePackCompression.Lz4BlockArray)
                         .WithResolver(UnityContractResolver.Instance);
 
-                    result = MessagePackSerializer.Deserialize<T>(bytes, options);
+                    data = MessagePackSerializer.Deserialize<T>(bytes, options);
                 }
             }
-
-            if (result == null)
+            else
             {
-                result = new T();
+                data = new T();
             }
 
-            return result;
+            Instance.dataCache[type] = data;
         }
 
-        public static void Save<T>(T data) where T : ILocalData, new()
+        public static T Get<T>() where T : class, ILocalData, new()
+        {
+            var type = typeof(T);
+
+            var dataCache = Instance.dataCache;
+
+            if (!dataCache.ContainsKey(type))
+            {
+                Load<T>();
+            }
+
+            return dataCache.GetValueOrDefault(typeof(T)) as T;
+        }
+
+        public static void Save<T>(T data) where T : class, ILocalData, new()
         {
             MessagePackValidater.ValidateAttribute(typeof(T));
 
@@ -120,9 +138,9 @@ namespace Modules.LocalData
             }
         }
 
-        private string GetLocalDataFilePath<T>() where T : ILocalData, new()
+        private string GetLocalDataFilePath<T>() where T : class, ILocalData, new()
         {
-            var filePath = filePathDictionary.GetValueOrDefault(typeof(T));
+            var filePath = filePathCache.GetValueOrDefault(typeof(T));
 
             if (!string.IsNullOrEmpty(filePath)){ return filePath; }
             
@@ -152,7 +170,7 @@ namespace Modules.LocalData
 
             filePath = fileDirectory + fileName;
 
-            filePathDictionary.Add(typeof(T), filePath);
+            filePathCache.Add(typeof(T), filePath);
 
             return filePath;
         }
@@ -167,20 +185,35 @@ namespace Modules.LocalData
             return aesCryptoKey;
         }
 
-        public static void Delete<T>() where T : ILocalData, new()
+        public static void Delete<T>() where T : class, ILocalData, new()
         {
+            var type = typeof(T);
+
             var filePath = Instance.GetLocalDataFilePath<T>();
+            var dataCache = Instance.dataCache;
 
-            if (!File.Exists(filePath)){ return; }
+            if (File.Exists(filePath))
+            {
+                File.Delete(filePath);
+            }
 
-            File.Delete(filePath);
+            if (dataCache != null && dataCache.ContainsKey(type))
+            {
+                dataCache.Remove(type);
+            }
         }
 
         public static void DeleteAll()
         {
             var directory = Instance.fileDirectory;
+            var dataCache = Instance.dataCache;
 
             DirectoryUtility.Clean(directory);
+
+            if (dataCache != null)
+            {
+                dataCache.Clear();
+            }
         }
     }
 }
