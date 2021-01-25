@@ -51,7 +51,9 @@ namespace Modules.MessagePack
             }
             else
             {
-                throw new Exception(codeGenerateResult.Item2);
+                Debug.LogError(codeGenerateResult.Item2);
+
+                throw new Exception();
             }
 
             return isSuccess;
