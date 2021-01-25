@@ -118,14 +118,14 @@ namespace Extensions.Devkit
             return GUILayout.Button(text, "DropDown", options);
         }
 
-        public static bool Header(string text)
+        public static bool Header(string text, Color? color = null, bool defaultState = true)
         {
-            return Header(text, text);
+            return Header(text, text, color, defaultState);
         }
 
-        public static bool Header(string text, string key, Color? color = null)
+        public static bool Header(string text, string key, Color? color = null, bool defaultState = true)
         {
-            var state = ProjectPrefs.GetBool(key, true);
+            var state = ProjectPrefs.GetBool(key, defaultState);
 
             EditorGUI.BeginChangeCheck();
 
@@ -145,14 +145,7 @@ namespace Extensions.Devkit
 
             var backgroundColor = Color.white;
 
-            if (!state)
-            {
-                backgroundColor = new Color(c.r - 0.2f, c.g - 0.2f, c.b - 0.2f);
-            }
-            else
-            {
-                backgroundColor = c;
-            }
+            backgroundColor = state ? c : new Color(c.r - 0.2f, c.g - 0.2f, c.b - 0.2f);
 
             text = "<b><size=11>" + text + "</size></b>";
 
