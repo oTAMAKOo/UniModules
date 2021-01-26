@@ -35,7 +35,7 @@ namespace Modules.MessagePack
                 lastUpdateTime = fileInfo.LastWriteTime;
             }
 
-            #if !UNITY_EDITOR_OSX
+            #if UNITY_EDITOR_OSX
 
             SetMsBuildPath();
 
@@ -46,17 +46,20 @@ namespace Modules.MessagePack
             if (codeGenerateResult.Item1 == 0)
             {
                 isSuccess = CsFileUpdate(generateInfo, lastUpdateTime);
-
-                OutputGenerateLog(isSuccess, generateInfo);
             }
-            else
+
+            OutputGenerateLog(isSuccess, generateInfo);
+
+            if (!isSuccess)
             {
-                Debug.LogError(codeGenerateResult.Item2);
+                var error = codeGenerateResult.Item2;
+                
+                Debug.LogError(error);
 
-                throw new Exception();
+                throw new Exception(error);
             }
 
-            return isSuccess;
+            return true;
         }
 
         public static IObservable<bool> GenerateAsync()
@@ -79,7 +82,7 @@ namespace Modules.MessagePack
                 lastUpdateTime = fileInfo.LastWriteTime;
             }
 
-            #if !UNITY_EDITOR_OSX
+            #if UNITY_EDITOR_OSX
 
             SetMsBuildPath();
 
@@ -95,15 +98,22 @@ namespace Modules.MessagePack
             if (codeGenerateTask.Result.Item1 == 0)
             {
                 isSuccess = CsFileUpdate(generateInfo, lastUpdateTime);
-
-                OutputGenerateLog(isSuccess, generateInfo);
             }
-            else
+
+            OutputGenerateLog(isSuccess, generateInfo);
+
+            if (!isSuccess)
             {
-                observer.OnError(new Exception(codeGenerateTask.Result.Item2));
+                var error = codeGenerateTask.Result.Item2;
+
+                Debug.LogError(error);
+                
+                observer.OnError(new Exception(error));
+
+                yield break;
             }
 
-            observer.OnNext(isSuccess);
+            observer.OnNext(true);
             observer.OnCompleted();
         }
 

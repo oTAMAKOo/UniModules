@@ -9,6 +9,7 @@ using UniRx;
 using Extensions;
 using MessagePack;
 using Modules.MessagePack;
+using UnityEngine.Networking;
 
 namespace Modules.Master
 {
@@ -206,7 +207,7 @@ namespace Modules.Master
             observer.OnCompleted();
         }
 
-        protected virtual double LoadMasterFile(string filePath, AesCryptoKey cryptoKey)
+        protected double LoadMasterFile(string filePath, AesCryptoKey cryptoKey)
         {
             var masterManager = MasterManager.Instance;
 
@@ -216,11 +217,36 @@ namespace Modules.Master
 
             #endif
 
-            byte[] bytes = null;
-
             var sw = System.Diagnostics.Stopwatch.StartNew();
 
             // ファイル読み込み.
+            var bytes = FileLoad(filePath);
+
+            if (bytes == null)
+            {
+                throw new FileLoadException();
+            }
+
+            // 復号化.
+            if (cryptoKey != null)
+            {
+                bytes = Decrypt(bytes, cryptoKey);
+            }
+
+            // デシリアライズ.
+            var records = Deserialize(bytes, masterManager.GetSerializerOptions());
+
+            // レコード登録.
+            SetRecords(records);
+
+            sw.Stop();
+
+            return sw.Elapsed.TotalMilliseconds;
+        }
+
+        protected virtual byte[] FileLoad(string filePath)
+        {
+            byte[] bytes = null;
 
             using (var fileStream = File.Open(filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
             {
@@ -232,27 +258,21 @@ namespace Modules.Master
                 }
             }
 
-            // 復号化.
-
-            if (cryptoKey != null)
-            {
-                bytes = bytes.Decrypt(cryptoKey);
-            }
-
-            // デシリアライズ.
-
-            var options = masterManager.GetSerializerOptions();
-
-            var container = MessagePackSerializer.Deserialize<TMasterContainer>(bytes, options);
-
-            // レコード登録.
-            SetRecords(container.records);
-
-            sw.Stop();
-
-            return sw.Elapsed.TotalMilliseconds;
+            return bytes;
         }
 
+        protected virtual byte[] Decrypt(byte[] bytes, AesCryptoKey cryptoKey)
+        {
+            return bytes.Decrypt(cryptoKey);
+        }
+
+        protected virtual TMasterRecord[] Deserialize(byte[] bytes, MessagePackSerializerOptions options)
+        {
+            var container = MessagePackSerializer.Deserialize<TMasterContainer>(bytes, options);
+
+            return container.records;
+        }
+        
         public IObservable<Tuple<bool, double>> Update(string masterVersion, CancellationToken cancelToken)
         {
             return Observable.FromMicroCoroutine<Tuple<bool, double>>(observer => UpdateInternal(observer, masterVersion, cancelToken));
