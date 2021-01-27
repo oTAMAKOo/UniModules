@@ -16,6 +16,8 @@ namespace Modules.Master
 
         private const string MasterFileExtension = ".master";
 
+        private const string MasterSuffix = "Master";
+
         //----- field -----
 
         private Dictionary<string, IMaster> masters = null;
@@ -94,23 +96,12 @@ namespace Modules.Master
 
         public string GetMasterFileName(Type type)
         {
-            const string MasterSuffix = "Master";
-
-            var fileName = string.Empty;
-
             if (!typeof(IMaster).IsAssignableFrom(type))
             {
                 throw new InvalidDataException(string.Format("Type error require IMaster interface. : {0}", type.FullName));
             }
 
-            // 通常はクラス名をそのままマスター名として扱う.
-            fileName = type.Name;
-
-            // 末尾が「Master」だったら末尾を削る.
-            if (fileName.EndsWith(MasterSuffix))
-            {
-                fileName = fileName.SafeSubstring(0, fileName.Length - MasterSuffix.Length) + MasterFileExtension;
-            }
+            var fileName = string.Empty;
 
             // FileNameAttributeを持っている場合はそちらの名前を採用する.
 
@@ -122,14 +113,25 @@ namespace Modules.Master
             {
                 fileName = fileNameAttribute.FileName + MasterFileExtension;
             }
+            else
+            {
+                // クラス名をファイル名として採用.
+                fileName = type.Name;
+
+                // 末尾が「Master」だったら末尾を削る.
+                if (fileName.EndsWith(MasterSuffix))
+                {
+                    fileName = fileName.SafeSubstring(0, fileName.Length - MasterSuffix.Length) + MasterFileExtension;
+                }
+            }
 
             // 暗号化オブジェクトが設定されていたら暗号化.
-            
+
             if (FileNameCryptoKey != null)
             {
                 fileName = fileName.Encrypt(FileNameCryptoKey, true);
             }
-            
+
             return fileName;
         }
 
