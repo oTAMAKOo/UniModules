@@ -166,30 +166,30 @@ namespace Modules.Master
 
             var installPath = GetInstallPath();
 
-            // ファイル存在チェック.
-            if (File.Exists(installPath))
+            // 読み込み準備.
+            var prepareLoadYield = PrepareLoad(installPath).ToYieldInstruction();
+
+            while (!prepareLoadYield.IsDone)
             {
-                // 読み込みをスレッドプールで実行.
-                var loadYield = Observable.Start(() => LoadMasterFile(installPath, cryptoKey)).ObserveOnMainThread().ToYieldInstruction(false);
+                yield return null;
+            }
 
-                while (!loadYield.IsDone)
-                {
-                    yield return null;
-                }
+            // 読み込みをスレッドプールで実行.
+            var loadYield = Observable.Start(() => LoadMasterFile(installPath, cryptoKey)).ObserveOnMainThread().ToYieldInstruction(false);
 
-                if (!loadYield.HasError && loadYield.HasResult)
-                {
-                    success = true;
-                    time = loadYield.Result;
-                }
-                else
-                {
-                    Debug.LogErrorFormat("Load master failed.\n\nClass : {0}\nFile : {1}\n\nException : \n{2}", typeof(TMaster).FullName, installPath, loadYield.Error);
-                }
+            while (!loadYield.IsDone)
+            {
+                yield return null;
+            }
+
+            if (!loadYield.HasError && loadYield.HasResult)
+            {
+                success = true;
+                time = loadYield.Result;
             }
             else
             {
-                Debug.LogErrorFormat("Load master failed. File not exists.\n\nClass : {0}\nFile : {1}", typeof(TMaster).FullName, installPath);
+                Debug.LogErrorFormat("Load master failed.\n\nClass : {0}\nFile : {1}\n\nException : \n{2}", typeof(TMaster).FullName, installPath, loadYield.Error);
             }
 
             if (!success)
@@ -207,7 +207,7 @@ namespace Modules.Master
             observer.OnCompleted();
         }
 
-        protected double LoadMasterFile(string filePath, AesCryptoKey cryptoKey)
+        private double LoadMasterFile(string filePath, AesCryptoKey cryptoKey)
         {
             var masterManager = MasterManager.Instance;
 
@@ -216,6 +216,13 @@ namespace Modules.Master
             MessagePackValidater.ValidateAttribute(typeof(TMasterRecord));
 
             #endif
+
+            if (!File.Exists(filePath))
+            {
+                var exceptionMessage = string.Format("File not found.\n\nClass : {0}\nFile : {1}", typeof(TMaster).FullName, filePath);
+
+                throw new FileNotFoundException(exceptionMessage);
+            }
 
             var sw = System.Diagnostics.Stopwatch.StartNew();
 
@@ -333,6 +340,11 @@ namespace Modules.Master
         public TMasterRecord GetRecord(TKey key)
         {
             return records.GetValueOrDefault(key);
+        }
+
+        protected virtual IEnumerator PrepareLoad(string installPath)
+        {
+            yield break;
         }
 
         protected virtual void OnError()
