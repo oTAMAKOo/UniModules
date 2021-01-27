@@ -217,13 +217,6 @@ namespace Modules.Master
 
             #endif
 
-            if (!File.Exists(filePath))
-            {
-                var exceptionMessage = string.Format("File not found.\n\nClass : {0}\nFile : {1}", typeof(TMaster).FullName, filePath);
-
-                throw new FileNotFoundException(exceptionMessage);
-            }
-
             var sw = System.Diagnostics.Stopwatch.StartNew();
 
             // ファイル読み込み.
@@ -253,6 +246,11 @@ namespace Modules.Master
 
         protected virtual byte[] FileLoad(string filePath)
         {
+            if (!File.Exists(filePath))
+            {
+                throw new FileNotFoundException(filePath);
+            }
+
             byte[] bytes = null;
 
             using (var fileStream = File.Open(filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
