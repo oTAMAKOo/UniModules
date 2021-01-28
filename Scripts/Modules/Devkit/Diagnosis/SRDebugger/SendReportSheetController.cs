@@ -55,7 +55,7 @@ namespace Modules.Devkit.Diagnosis.SRDebugger
         [SerializeField]
         private Text progressBarText = null;
 
-        private Dictionary<string, string> reportData = null;
+        protected Dictionary<string, string> reportData = null;
 
         private IDisposable sendReportDisposable = null;
 
@@ -101,7 +101,7 @@ namespace Modules.Devkit.Diagnosis.SRDebugger
                         }
                         else
                         {
-                            sendReportDisposable = Observable.FromCoroutine(() => PostReport())
+                            sendReportDisposable = Observable.FromCoroutine(() => SendReport())
                                 .Subscribe(__ =>
                                     {
                                         sendReportDisposable = null;
@@ -140,7 +140,7 @@ namespace Modules.Devkit.Diagnosis.SRDebugger
             UpdateView();
         }
 
-        private IEnumerator PostReport()
+        private IEnumerator SendReport()
         {
             yield return CaptureScreenShot();
 
@@ -156,9 +156,24 @@ namespace Modules.Devkit.Diagnosis.SRDebugger
 
             // 送信内容構築.
             BuildPostContent();
-
+            
             // 送信.
 
+            var postReportYield = Observable.FromMicroCoroutine<string>(observer => PostReport(observer, notifier)).ToYieldInstruction();
+
+            while (!postReportYield.IsDone)
+            {
+                yield return null;
+            }
+
+            // 終了.
+            OnReportComplete(postReportYield.Result);
+            
+            reportData.Clear();
+        }
+
+        protected virtual IEnumerator PostReport(IObserver<string> observer, IProgress<float> progress)
+        {
             var url = GetReportUrl();
 
             UnityWebRequest webRequest = null;
@@ -180,7 +195,7 @@ namespace Modules.Devkit.Diagnosis.SRDebugger
 
             while (!operation.isDone)
             {
-                notifier.Report(operation.progress);
+                progress.Report(operation.progress);
 
                 yield return null;
             }
@@ -192,10 +207,8 @@ namespace Modules.Devkit.Diagnosis.SRDebugger
                 errorMessage = string.Format("[{0}]{1}", webRequest.responseCode, webRequest.error);
             }
 
-            // 終了.
-            OnReportComplete(errorMessage);
-
-            reportData.Clear();
+            observer.OnNext(errorMessage);
+            observer.OnCompleted();
         }
 
         private void UpdatePostProgress(float progress)
@@ -370,7 +383,7 @@ namespace Modules.Devkit.Diagnosis.SRDebugger
             return !string.IsNullOrEmpty(titleInputField.text);
         }
 
-        private List<IMultipartFormSection> CreateReportFormSections()
+        protected List<IMultipartFormSection> CreateReportFormSections()
         {
             var reportForm = new List<IMultipartFormSection>();
 
@@ -380,6 +393,11 @@ namespace Modules.Devkit.Diagnosis.SRDebugger
             }
 
             return reportForm;
+        }
+
+        protected string CreateReportJson()
+        {
+            return reportData.ToJson();
         }
 
         /// <summary> 暗号化キー生成 </summary>
