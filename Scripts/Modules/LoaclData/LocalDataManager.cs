@@ -50,7 +50,7 @@ namespace Modules.LocalData
             fileDirectory = Application.persistentDataPath + "/LocalData/";
         }
 
-        public static void SetCryptoKey(AesCryptoKey cryptoKey)
+        public void SetCryptoKey(AesCryptoKey cryptoKey)
         {
             Instance.aesCryptoKey = cryptoKey;
         }
@@ -63,6 +63,19 @@ namespace Modules.LocalData
             }
 
             fileDirectory = directory;
+        }
+
+        public void CacheClear()
+        {
+            if (filePathCache != null)
+            {
+                filePathCache.Clear();
+            }
+
+            if (dataCache != null)
+            {
+                dataCache.Clear();
+            }
         }
 
         public static void Load<T>() where T : class, ILocalData, new()
@@ -168,7 +181,7 @@ namespace Modules.LocalData
                 throw new Exception(string.Format("FileNameAttribute is not set for this class.\n{0}", type.FullName));
             }
 
-            filePath = fileDirectory + fileName;
+            filePath = PathUtility.Combine(fileDirectory, fileName);
 
             filePathCache.Add(typeof(T), filePath);
 
