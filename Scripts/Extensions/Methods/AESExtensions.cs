@@ -17,7 +17,14 @@ namespace Extensions
 
             byte[] result = null;
 
-            using (var encryptor = aesCryptoKey.AesManaged.CreateEncryptor())
+            ICryptoTransform encryptor = null;
+
+            lock (aesCryptoKey.AesManaged)
+            {
+                encryptor = aesCryptoKey.AesManaged.CreateEncryptor();
+            }
+
+            using (encryptor)
             {
                 using (var memoryStream = new MemoryStream())
                 {
@@ -43,7 +50,14 @@ namespace Extensions
 
             byte[] result = null;
 
-            using (var decryptor = aesCryptoKey.AesManaged.CreateDecryptor())
+            ICryptoTransform decryptor = null;
+
+            lock (aesCryptoKey.AesManaged)
+            {
+                decryptor = aesCryptoKey.AesManaged.CreateDecryptor();
+            }
+
+            using (decryptor)
             {
                 using (var memoryStream = new MemoryStream())
                 {
@@ -56,7 +70,7 @@ namespace Extensions
                     }
                 }
             }
-            
+
             return result;
         }
 
@@ -68,8 +82,15 @@ namespace Extensions
             if (string.IsNullOrEmpty(value)) { return null; }
 
             string result = null;
-            
-            using (var encryptor = aesCryptoKey.AesManaged.CreateEncryptor())
+
+            ICryptoTransform encryptor = null;
+
+            lock (aesCryptoKey.AesManaged)
+            {
+                encryptor = aesCryptoKey.AesManaged.CreateEncryptor();
+            }
+
+            using (encryptor)
             {
                 using (var memoryStream = new MemoryStream())
                 {
@@ -91,7 +112,7 @@ namespace Extensions
                     }
                 }
             }
-            
+
             return result;
         }
 
@@ -112,7 +133,14 @@ namespace Extensions
             var encrypted = Convert.FromBase64String(value);
             var fromEncrypt = new byte[encrypted.Length];
 
-            using (var decryptor = aesCryptoKey.AesManaged.CreateDecryptor())
+            ICryptoTransform decryptor = null;
+
+            lock (aesCryptoKey.AesManaged)
+            {
+                decryptor = aesCryptoKey.AesManaged.CreateDecryptor();
+            }
+
+            using (decryptor)
             {
                 using (var memoryStream = new MemoryStream(encrypted))
                 {
