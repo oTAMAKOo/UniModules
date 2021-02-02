@@ -47,10 +47,6 @@ namespace Modules.Devkit.Diagnosis.SRDebugger
         [SerializeField]
         private Text sendReportButtonText = null;
         [SerializeField]
-        private InputField titleInputField = null;
-        [SerializeField]
-        private InputField commentInputField = null;
-        [SerializeField]
         private Slider progressBar = null;
         [SerializeField]
         private Text progressBarText = null;
@@ -112,9 +108,6 @@ namespace Modules.Devkit.Diagnosis.SRDebugger
                     })
                 .AddTo(this);
 
-            titleInputField.text = string.Empty;
-            commentInputField.text = string.Empty;
-
             initialized = true;
         }
 
@@ -124,7 +117,7 @@ namespace Modules.Devkit.Diagnosis.SRDebugger
 
             Observable.NextFrame()
                 .TakeUntilDisable(this)
-                .Subscribe(_ => RefreshInputField())
+                .Subscribe(_ => OnRequestRefreshInputText())
                 .AddTo(this);
 
             Observable.EveryUpdate()
@@ -239,7 +232,7 @@ namespace Modules.Devkit.Diagnosis.SRDebugger
 
             if (string.IsNullOrEmpty(errorMessage))
             {
-                RefreshInputField();
+                OnRequestRefreshInputText();
 
                 Debug.Log("Bug report submitted successfully.");
             }
@@ -333,18 +326,6 @@ namespace Modules.Devkit.Diagnosis.SRDebugger
             AddReportContent("Log", GetReportTextPostData());
             AddReportContent("ScreenShotBase64", screenShotBase64);
 
-            // ユーザー入力情報.
-
-            if (!string.IsNullOrEmpty(titleInputField.text))
-            {
-                AddReportContent("Title", titleInputField.text);
-            }
-
-            if (!string.IsNullOrEmpty(commentInputField.text))
-            {
-                AddReportContent("Comment", commentInputField.text);
-            }
-
             // 拡張情報を追加.
 
             SetExtendContents();
@@ -365,24 +346,6 @@ namespace Modules.Devkit.Diagnosis.SRDebugger
             reportData.Add(key, value);
         }
 
-        /// <summary> InputFieldを初期化 </summary>
-        protected virtual void RefreshInputField()
-        {
-            titleInputField.text = string.Empty;
-            titleInputField.MoveTextEnd(false);
-            titleInputField.OnDeselect(new BaseEventData(EventSystem.current));
-
-            commentInputField.text = string.Empty;
-            commentInputField.MoveTextEnd(false);
-            commentInputField.OnDeselect(new BaseEventData(EventSystem.current));
-        }
-
-        /// <summary> レポートボタンが有効か </summary>
-        protected virtual bool IsSendReportButtonEnable()
-        {
-            return !string.IsNullOrEmpty(titleInputField.text);
-        }
-
         protected List<IMultipartFormSection> CreateReportFormSections()
         {
             var reportForm = new List<IMultipartFormSection>();
@@ -400,8 +363,22 @@ namespace Modules.Devkit.Diagnosis.SRDebugger
             return reportData.ToJson();
         }
 
+        /// <summary> InputFieldをリフレッシュ </summary>
+        protected void RefreshInputField(InputField inputField)
+        {
+            inputField.text = string.Empty;
+            inputField.MoveTextEnd(false);
+            inputField.OnDeselect(new BaseEventData(EventSystem.current));
+        }
+
         /// <summary> 暗号化キー生成 </summary>
         protected virtual AesCryptoKey CreateCryptoKey() { return null; }
+
+        /// <summary> 以前の入力をリフレッシュ </summary>
+        protected virtual void OnRequestRefreshInputText() { }
+
+        /// <summary> レポートボタンが有効か </summary>
+        protected virtual bool IsSendReportButtonEnable() { return true; }
 
         /// <summary> 拡張情報を追加 </summary>
         protected virtual void SetExtendContents() { }

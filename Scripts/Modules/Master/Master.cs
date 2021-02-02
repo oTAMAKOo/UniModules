@@ -221,11 +221,6 @@ namespace Modules.Master
             // ファイル読み込み.
             var bytes = FileLoad(filePath);
 
-            if (bytes == null)
-            {
-                throw new FileLoadException();
-            }
-
             // 復号化.
             if (cryptoKey != null)
             {
@@ -262,11 +257,21 @@ namespace Modules.Master
                 }
             }
 
+            if (bytes == null)
+            {
+                throw new FileLoadException();
+            }
+
             return bytes;
         }
 
         protected virtual byte[] Decrypt(byte[] bytes, AesCryptoKey cryptoKey)
         {
+            if (bytes.Length == 0)
+            {
+                throw new InvalidDataException();
+            }
+
             return bytes.Decrypt(cryptoKey);
         }
 
