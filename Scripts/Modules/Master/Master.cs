@@ -210,12 +210,6 @@ namespace Modules.Master
         {
             var masterManager = MasterManager.Instance;
 
-            #if UNITY_EDITOR
-
-            MessagePackValidater.ValidateAttribute(typeof(TMasterRecord));
-
-            #endif
-
             var sw = System.Diagnostics.Stopwatch.StartNew();
 
             // ファイル読み込み.

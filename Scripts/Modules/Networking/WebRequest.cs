@@ -181,8 +181,6 @@ namespace Modules.Networking
 
                 case DataFormat.MessagePack:
                     {
-                        MessagePackValidater.ValidateAttribute(typeof(TResult));
-
                         if (value != null && value.Any())
                         {
                             var options = StandardResolverAllowPrivate.Options.WithResolver(UnityContractResolver.Instance);
@@ -255,6 +253,7 @@ namespace Modules.Networking
                 case DataFormat.Json:
                     {
                         var json = JsonConvert.SerializeObject(content);
+
                         bodyData = Encoding.UTF8.GetBytes(json);
                         
                         if (Compress)
@@ -266,8 +265,6 @@ namespace Modules.Networking
 
                 case DataFormat.MessagePack:
                     {
-                        MessagePackValidater.ValidateAttribute(typeof(TContent));
-
                         var options = StandardResolverAllowPrivate.Options.WithResolver(UnityContractResolver.Instance);
 
                         if (Compress)

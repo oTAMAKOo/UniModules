@@ -82,8 +82,6 @@ namespace Modules.LocalData
         {
             var type = typeof(T);
 
-            MessagePackValidater.ValidateAttribute(type);
-
             var filePath = Instance.GetLocalDataFilePath<T>();
 
             var data = default(T);
@@ -131,8 +129,6 @@ namespace Modules.LocalData
 
         public static void Save<T>(T data) where T : class, ILocalData, new()
         {
-            MessagePackValidater.ValidateAttribute(typeof(T));
-
             var filePath = Instance.GetLocalDataFilePath<T>();
 
             using (var fileStream = new FileStream(filePath, FileMode.Create, FileAccess.Write))
