@@ -146,21 +146,16 @@ namespace Modules.Networking
                 //------ 通信失敗 ------
 
                 // エラーハンドリングを待つ.
-                var waitErrorHandling = WaitErrorHandling(downloadRequest, requestYield.Error).ToYieldInstruction(false);
+                var waitErrorHandlingYield = OnError(downloadRequest, requestYield.Error).ToYieldInstruction(false);
 
-                while (!waitErrorHandling.IsDone)
+                while (!waitErrorHandlingYield.IsDone)
                 {
                     yield return null;
                 }
 
-                if (waitErrorHandling.HasError)
+                if (waitErrorHandlingYield.HasResult)
                 {
-                    throw waitErrorHandling.Error;
-                }
-
-                if (waitErrorHandling.HasResult)
-                {
-                    switch (waitErrorHandling.Result)
+                    switch (waitErrorHandlingYield.Result)
                     {
                         case RequestErrorHandle.Retry:
                             retryCount++;
@@ -168,7 +163,7 @@ namespace Modules.Networking
                     }
 
                     // キャンセル時は通信終了.
-                    if (waitErrorHandling.Result == RequestErrorHandle.Cancel)
+                    if (waitErrorHandlingYield.Result == RequestErrorHandle.Cancel)
                     {
                         break;
                     }
@@ -184,8 +179,9 @@ namespace Modules.Networking
 
             }
 
-            // 正常終了.
             sw.Stop();
+
+            // 正常終了.
             OnComplete(downloadRequest, sw.Elapsed.TotalMilliseconds);
 
             // 通信完了.
@@ -246,12 +242,9 @@ namespace Modules.Networking
 
         /// <summary> 成功時イベント. </summary>
         protected abstract void OnComplete(TDownloadRequest downloadRequest, double totalMilliseconds);
-
+        
         /// <summary> 通信エラー時イベント. </summary>
-        protected abstract void OnError(TDownloadRequest downloadRequest, Exception ex);
-
-        /// <summary> 通信エラーのハンドリング. </summary>
-        protected abstract IObservable<RequestErrorHandle> WaitErrorHandling(TDownloadRequest downloadRequest, Exception ex);
+        protected abstract IObservable<RequestErrorHandle> OnError(TDownloadRequest downloadRequest, Exception ex);
 
         /// <summary> リトライ回数を超えた時のイベント. </summary>
         protected abstract void OnRetryLimit(TDownloadRequest downloadRequest);
