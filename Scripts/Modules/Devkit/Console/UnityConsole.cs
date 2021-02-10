@@ -22,10 +22,9 @@ namespace Modules.Devkit.Console
 
         private static bool? isDevelopmentBuild = null;
 
-        //----- property -----
+        private static bool enableNextLogStackTrace = false;
 
-        /// <summary> 次に出力するログのスタックトレースを有効化 </summary>
-        public static bool EnableNextLogStackTrace { get; set; }
+        //----- property -----
 
         /// <summary> 無効化するイベント名 </summary>
         public static HashSet<string> DisableEventNames { get; private set; }
@@ -34,7 +33,8 @@ namespace Modules.Devkit.Console
 
         static UnityConsole()
         {
-            EnableNextLogStackTrace = false;
+            enableNextLogStackTrace = false;
+
             DisableEventNames = new HashSet<string>();
         }
 
@@ -81,7 +81,7 @@ namespace Modules.Devkit.Console
 
             var text = string.Format("<color=#{0}><b>[{1}]</b></color> {2}", colorCode, eventName, message);
 
-            if (EnableNextLogStackTrace)
+            if (enableNextLogStackTrace)
             {
                 Debug.Log(text);
             }
@@ -93,12 +93,18 @@ namespace Modules.Devkit.Console
                 }
             }
 
-            EnableNextLogStackTrace = false;
+            enableNextLogStackTrace = false;
         }
 
         public static void Event(string eventName, Color color, string format, params object[] args)
         {
             Event(eventName, color, string.Format(format, args));
+        }
+
+        /// <summary> 次に出力するログのスタックトレースを有効化 </summary>
+        public static void EnableNextLogStackTrace()
+        {
+            enableNextLogStackTrace = true;
         }
 
         #if UNITY_EDITOR

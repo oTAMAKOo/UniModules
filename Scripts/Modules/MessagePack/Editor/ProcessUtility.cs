@@ -11,72 +11,100 @@ namespace Modules.MessagePack
     {
         private static readonly TimeSpan TimeOut = TimeSpan.FromSeconds(120);
 
-        public static Tuple<int, string> Start(string fileName, string arguments)
+        public static Tuple<int, string, string> Start(string fileName, string arguments)
         {
-            var process = new Process();
+            Tuple<int, string, string> result = null;
 
-            var output = new StringBuilder();
+            var outputLogBuilder = new StringBuilder();
+            var errorLogBuilder = new StringBuilder();
 
             try
             {
-                process.StartInfo = CreateProcessStartInfo(fileName, arguments);
-
-                DataReceivedEventHandler processOutputDataReceived = (sender, e) =>
+                using (var process = new Process())
                 {
-                    output.AppendLine(e.Data);
-                };
+                    process.StartInfo = CreateProcessStartInfo(fileName, arguments);
 
-                process.OutputDataReceived += processOutputDataReceived;
+                    DataReceivedEventHandler processOutputDataReceived = (sender, e) =>
+                    {
+                        outputLogBuilder.AppendLine(e.Data);
+                    };
 
-                process.Start();
+                    process.OutputDataReceived += processOutputDataReceived;
 
-                process.BeginOutputReadLine();
+                    DataReceivedEventHandler processErrorDataReceived = (sender, e) =>
+                    {
+                        errorLogBuilder.AppendLine(e.Data);
+                    };
 
-                process.WaitForExit((int)TimeOut.TotalMilliseconds);
+                    process.ErrorDataReceived += processErrorDataReceived;
+
+                    process.Start();
+
+                    process.BeginOutputReadLine();
+
+                    process.WaitForExit((int)TimeOut.TotalMilliseconds);
+
+                    result = Tuple.Create(process.ExitCode, outputLogBuilder.ToString(), errorLogBuilder.ToString());
+                }
             }
             catch (Exception ex)
             {
-                return Tuple.Create(1, ex.Message);
+                return Tuple.Create(1, string.Empty, ex.Message);
             }
-
-            var exitCode = process.ExitCode;
-
-            process.Dispose();
-            process = null;
-
-            return Tuple.Create(exitCode, output.ToString());
+            
+            return result;
         }
 
-        public static Task<Tuple<int, string>> StartAsync(string fileName, string arguments)
+        public static Task<Tuple<int, string, string>> StartAsync(string fileName, string arguments)
         {
-            var process = new Process();
+            var tcs = new TaskCompletionSource<Tuple<int, string, string>>();
 
-            var tcs = new TaskCompletionSource<Tuple<int, string>>();
+            var outputLogBuilder = new StringBuilder();
+            var errorLogBuilder = new StringBuilder();
 
             try
             {
-                process.StartInfo = CreateProcessStartInfo(fileName, arguments);
-
-                process.EnableRaisingEvents = true;
-
-                process.Exited += (object sender, EventArgs e) =>
+                using (var process = new Process())
                 {
-                    var exitCode = process.ExitCode;
-                    var output = string.Empty;
+                    process.StartInfo = CreateProcessStartInfo(fileName, arguments);
 
-                    output = exitCode == 0 ? process.StandardOutput.ReadToEnd() : process.StandardError.ReadToEnd();
+                    DataReceivedEventHandler processOutputDataReceived = (sender, e) =>
+                    {
+                        outputLogBuilder.AppendLine(e.Data);
+                    };
 
-                    process.Dispose();
-                    process = null;
+                    process.OutputDataReceived += processOutputDataReceived;
 
-                    tcs.TrySetResult(Tuple.Create(exitCode, output));
-                };
+                    DataReceivedEventHandler processErrorDataReceived = (sender, e) =>
+                    {
+                        errorLogBuilder.AppendLine(e.Data);
+                    };
 
-                process.Start();
+                    process.ErrorDataReceived += processErrorDataReceived;
+
+                    process.EnableRaisingEvents = true;
+
+                    process.Exited += (object sender, EventArgs e) =>
+                    {
+                        var result = Tuple.Create(process.ExitCode, outputLogBuilder.ToString(), errorLogBuilder.ToString());
+
+                        tcs.TrySetResult(result);
+                    };
+
+                    process.Start();
+
+                    process.BeginErrorReadLine();
+                    process.BeginOutputReadLine();
+
+                    process.WaitForExit();
+
+                    process.CancelOutputRead();
+                    process.CancelErrorRead();
+                }
             }
             catch (Exception ex)
             {
-                return Task.FromException<Tuple<int, string>>(ex);
+                return Task.FromException<Tuple<int, string, string>>(ex);
             }
 
             return tcs.Task;

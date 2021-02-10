@@ -14,6 +14,8 @@ namespace Modules.MessagePack
     {
         //----- params -----
 
+        private const string CodeGenerateCommand = "mpc";
+
         //----- field -----
 
         //----- property -----
@@ -41,7 +43,7 @@ namespace Modules.MessagePack
 
             #endif
 
-            var codeGenerateResult = ProcessUtility.Start(generateInfo.CodeGeneratorPath, generateInfo.CommandLineArguments);
+            var codeGenerateResult = ProcessUtility.Start(CodeGenerateCommand, generateInfo.CommandLineArguments);
 
             if (codeGenerateResult.Item1 == 0)
             {
@@ -88,7 +90,7 @@ namespace Modules.MessagePack
 
             #endif
 
-            var codeGenerateTask = ProcessUtility.StartAsync(generateInfo.CodeGeneratorPath, generateInfo.CommandLineArguments);
+            var codeGenerateTask = ProcessUtility.StartAsync(CodeGenerateCommand, generateInfo.CommandLineArguments);
 
             while (!codeGenerateTask.IsCompleted)
             {
@@ -106,7 +108,10 @@ namespace Modules.MessagePack
             {
                 var error = codeGenerateTask.Result.Item2;
 
-                Debug.LogError(error);
+                using (new DisableStackTraceScope())
+                {
+                    Debug.LogError(error);
+                }
                 
                 observer.OnError(new Exception(error));
 
@@ -165,7 +170,7 @@ namespace Modules.MessagePack
                 logBuilder.AppendFormat("MessagePack file : {0}", generateInfo.CsFilePath).AppendLine();
                 logBuilder.AppendLine();
                 logBuilder.AppendFormat("Command:").AppendLine();
-                logBuilder.AppendLine(generateInfo.CodeGeneratorPath + generateInfo.CommandLineArguments);
+                logBuilder.AppendLine(CodeGenerateCommand + generateInfo.CommandLineArguments);
 
                 if (result)
                 {

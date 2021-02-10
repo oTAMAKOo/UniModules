@@ -23,15 +23,6 @@ namespace Modules.MessagePack
 
         //----- field -----
 
-        #pragma warning disable 0414
-
-        [SerializeField]
-        private string winMpcRelativePath = null;  // コンパイラまでのパス(相対パス).
-        [SerializeField]
-        private string osxMpcRelativePath = null;  // コンパイラまでのパス(相対パス).
-
-        #pragma warning restore 0414
-
         [SerializeField]
         private string scriptExportAssetDir = null;
         [SerializeField]
@@ -54,29 +45,6 @@ namespace Modules.MessagePack
         public string ScriptExportDir
         {
             get { return UnityPathUtility.ConvertAssetPathToFullPath(scriptExportAssetDir); }
-        }
-
-        /// <summary> コードジェネレーターパス. </summary>
-        public string CodeGeneratorPath
-        {
-            get
-            {
-                var relativePath = string.Empty;
-
-                #if UNITY_EDITOR_WIN
-
-                relativePath = winMpcRelativePath;
-
-                #endif
-
-                #if UNITY_EDITOR_OSX
-
-                relativePath = osxMpcRelativePath;
-
-                #endif
-
-                return UnityPathUtility.RelativePathToFullPath(relativePath);
-            }
         }
 
         /// <summary> 出力スクリプト名. </summary>
