@@ -24,12 +24,17 @@ namespace Modules.Devkit.Console
 
         //----- property -----
 
+        /// <summary> 次に出力するログのスタックトレースを有効化 </summary>
+        public static bool EnableNextLogStackTrace { get; set; }
+
+        /// <summary> 無効化するイベント名 </summary>
         public static HashSet<string> DisableEventNames { get; private set; }
 
         //----- method -----
 
         static UnityConsole()
         {
+            EnableNextLogStackTrace = false;
             DisableEventNames = new HashSet<string>();
         }
 
@@ -71,13 +76,24 @@ namespace Modules.Devkit.Console
             if (!CheckEnable(eventName)) { return; }
 
             #endif
+            
+            var colorCode = color.ColorToHex(false);
 
-            using (new DisableStackTraceScope())
+            var text = string.Format("<color=#{0}><b>[{1}]</b></color> {2}", colorCode, eventName, message);
+
+            if (EnableNextLogStackTrace)
             {
-                var colorCode = color.ColorToHex(false);
+                Debug.Log(text);
+            }
+            else
+            {
+                using (new DisableStackTraceScope())
+                {
+                    Debug.Log(text);
+                }
+            }
 
-                Debug.Log(string.Format("<color=#{0}><b>[{1}]</b></color> {2}", colorCode, eventName, message));
-            }            
+            EnableNextLogStackTrace = false;
         }
 
         public static void Event(string eventName, Color color, string format, params object[] args)
