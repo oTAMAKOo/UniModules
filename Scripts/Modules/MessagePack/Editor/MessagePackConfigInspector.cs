@@ -62,9 +62,7 @@ namespace Modules.MessagePack
             Initialize();
 
             serializedObject.Update();
-
-            var winMpcRelativePath = serializedObject.FindProperty("winMpcRelativePath");
-            var osxMpcRelativePath = serializedObject.FindProperty("osxMpcRelativePath");
+            
             var scriptExportAssetDir = serializedObject.FindProperty("scriptExportAssetDir");
             var scriptName = serializedObject.FindProperty("scriptName");
             var useMapMode = serializedObject.FindProperty("useMapMode");
@@ -94,51 +92,6 @@ namespace Modules.MessagePack
 
                 EditorGUILayout.Separator();
             }
-
-            //------ コードジェネレーター ------
-
-            EditorLayoutTools.ContentTitle("CodeGenerator");
-
-            using (new ContentsScope())
-            {
-                GUILayout.Label("Windows");
-
-                using (new EditorGUILayout.HorizontalScope())
-                {
-                    GUILayout.Label(winMpcRelativePath.stringValue, pathTextStyle);
-
-                    if (GUILayout.Button("Edit", GUILayout.Width(45f)))
-                    {
-                        UnityEditorUtility.RegisterUndo("MessagePackConfigInspector Undo", instance);
-
-                        var path = EditorUtility.OpenFilePanel("Select MessagePack compiler", Application.dataPath, "exe");
-
-                        winMpcRelativePath.stringValue = UnityPathUtility.MakeRelativePath(path);
-
-                        serializedObject.ApplyModifiedProperties();
-                    }
-                }
-
-                GUILayout.Label("MacOSX");
-
-                using (new EditorGUILayout.HorizontalScope())
-                {
-                    GUILayout.Label(osxMpcRelativePath.stringValue, pathTextStyle);
-
-                    if (GUILayout.Button("Edit", GUILayout.Width(45f)))
-                    {
-                        UnityEditorUtility.RegisterUndo("MessagePackConfigInspector Undo", instance);
-
-                        var path = EditorUtility.OpenFilePanel("Select MessagePack compiler", Application.dataPath, "");
-
-                        osxMpcRelativePath.stringValue = UnityPathUtility.MakeRelativePath(path);
-
-                        serializedObject.ApplyModifiedProperties();
-                    }
-                }
-            }
-
-            GUILayout.Space(4f);
 
             //------ 基本設定 ------
 
