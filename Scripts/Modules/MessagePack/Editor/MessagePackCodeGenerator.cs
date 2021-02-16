@@ -14,6 +14,8 @@ namespace Modules.MessagePack
     {
         //----- params -----
 
+        private const string CodeGenerateCommand = "mpc";
+
         //----- field -----
 
         //----- property -----
@@ -97,7 +99,7 @@ namespace Modules.MessagePack
 
             #if UNITY_EDITOR_WIN
 
-            fileName = "mpc";
+            fileName = CodeGenerateCommand;
             arguments = generateInfo.CommandLineArguments;
 
             #endif
@@ -105,7 +107,7 @@ namespace Modules.MessagePack
             #if UNITY_EDITOR_OSX
 
             fileName = "/bin/bash";
-            arguments = string.Format("-c mpc {0}", generateInfo.CommandLineArguments);
+            arguments = string.Format("-c {0}{1}", CodeGenerateCommand, generateInfo.CommandLineArguments);
 
             #endif
 
