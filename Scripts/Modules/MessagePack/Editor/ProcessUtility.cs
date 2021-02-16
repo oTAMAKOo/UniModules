@@ -14,44 +14,29 @@ namespace Modules.MessagePack
         public static Tuple<int, string, string> Start(string fileName, string arguments)
         {
             Tuple<int, string, string> result = null;
-
-            var outputLogBuilder = new StringBuilder();
-            var errorLogBuilder = new StringBuilder();
-
+            
             try
             {
                 using (var process = new Process())
                 {
                     process.StartInfo = CreateProcessStartInfo(fileName, arguments);
-
-                    DataReceivedEventHandler processOutputDataReceived = (sender, e) =>
-                    {
-                        outputLogBuilder.AppendLine(e.Data);
-                    };
-
-                    process.OutputDataReceived += processOutputDataReceived;
-
-                    DataReceivedEventHandler processErrorDataReceived = (sender, e) =>
-                    {
-                        errorLogBuilder.AppendLine(e.Data);
-                    };
-
-                    process.ErrorDataReceived += processErrorDataReceived;
-
+                    
                     process.Start();
-
-                    process.BeginOutputReadLine();
 
                     process.WaitForExit((int)TimeOut.TotalMilliseconds);
 
-                    result = Tuple.Create(process.ExitCode, outputLogBuilder.ToString(), errorLogBuilder.ToString());
+                    var exitCode = process.ExitCode;
+                    var outputLog = process.StandardOutput.ReadToEnd();
+                    var errorLog = process.StandardError.ReadToEnd();
+
+                    result = Tuple.Create(exitCode, outputLog, errorLog);
                 }
             }
             catch (Exception ex)
             {
                 return Tuple.Create(1, string.Empty, ex.Message);
             }
-            
+
             return result;
         }
 
@@ -70,14 +55,20 @@ namespace Modules.MessagePack
 
                     DataReceivedEventHandler processOutputDataReceived = (sender, e) =>
                     {
-                        outputLogBuilder.AppendLine(e.Data);
+                        if (!string.IsNullOrEmpty(e.Data))
+                        {
+                            outputLogBuilder.AppendLine(e.Data);
+                        }
                     };
 
                     process.OutputDataReceived += processOutputDataReceived;
 
                     DataReceivedEventHandler processErrorDataReceived = (sender, e) =>
                     {
-                        errorLogBuilder.AppendLine(e.Data);
+                        if (!string.IsNullOrEmpty(e.Data))
+                        {
+                            errorLogBuilder.AppendLine(e.Data);
+                        }
                     };
 
                     process.ErrorDataReceived += processErrorDataReceived;
@@ -86,15 +77,19 @@ namespace Modules.MessagePack
 
                     process.Exited += (object sender, EventArgs e) =>
                     {
-                        var result = Tuple.Create(process.ExitCode, outputLogBuilder.ToString(), errorLogBuilder.ToString());
+                        var exitCode = process.ExitCode;
+                        var outputLog = outputLogBuilder.ToString();
+                        var errorLog = errorLogBuilder.ToString();
+
+                        var result = Tuple.Create(exitCode, outputLog, errorLog);
 
                         tcs.TrySetResult(result);
                     };
 
                     process.Start();
 
-                    process.BeginErrorReadLine();
                     process.BeginOutputReadLine();
+                    process.BeginErrorReadLine();
 
                     process.WaitForExit();
 
@@ -128,7 +123,7 @@ namespace Modules.MessagePack
                 StandardOutputEncoding = Encoding.GetEncoding("Shift_JIS"),
                 StandardErrorEncoding = Encoding.GetEncoding("Shift_JIS"),
 
-                // エラー出力をリダイレクト.
+                // ログ出力をリダイレクト.
                 RedirectStandardOutput = true,
                 RedirectStandardError = true,
 

@@ -147,21 +147,6 @@ namespace Modules.MessagePack
 
             GUILayout.Space(4f);
 
-            //------ Private settings ------
-
-            #if UNITY_EDITOR_OSX
-
-            EditorLayoutTools.Title("Private settings", new Color(1f, 1f, 0f, 1f));
-
-            using (new ContentsScope())
-            {   
-                GUILayout.Label("MsBuild Path");
-
-                MessagePackConfig.Prefs.msbuildPath = EditorGUILayout.DelayedTextField(MessagePackConfig.Prefs.msbuildPath);                
-            }
-
-            #endif
-
             if (EditorGUI.EndChangeCheck())
             {
                 UnityEditorUtility.RegisterUndo("MessagePackConfigInspector Undo", instance);
@@ -183,7 +168,24 @@ namespace Modules.MessagePack
 
             Tuple<bool, string> result = null;
 
-            var findYield = ProcessUtility.StartAsync("dotnet", "--version").ToObservable()
+            var fileName = string.Empty;
+            var arguments = string.Empty;
+
+            #if UNITY_EDITOR_WIN
+
+            fileName = "dotnet";
+            arguments = "--version";
+
+            #endif
+
+            #if UNITY_EDITOR_OSX
+
+            fileName = "/bin/bash";
+            arguments = "-c dotnet --version";
+
+            #endif
+
+            var findYield = ProcessUtility.StartAsync(fileName, arguments).ToObservable()
                 .Do(x => result = Tuple.Create(true, x.Item2))
                 .DoOnError(x => result = Tuple.Create(false, (string)null))
                 .Select(_ => result)

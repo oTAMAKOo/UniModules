@@ -9,18 +9,7 @@ namespace Modules.MessagePack
     public sealed class MessagePackConfig : ReloadableScriptableObject<MessagePackConfig>
     {
         //----- params -----
-
-        private const string DefaultMsBuildPath = "/Library/Frameworks/Mono.framework/Versions/Current/bin";
-
-        public static class Prefs
-        {
-            public static string msbuildPath
-            {
-                get { return ProjectPrefs.GetString("MessagePackConfigPrefs-msbuildPath", DefaultMsBuildPath); }
-                set { ProjectPrefs.SetString("MessagePackConfigPrefs-msbuildPath", value); }
-            }
-        }
-
+        
         //----- field -----
 
         [SerializeField]

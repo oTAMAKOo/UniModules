@@ -14,8 +14,6 @@ namespace Modules.MessagePack
     {
         //----- params -----
 
-        private const string CodeGenerateCommand = "mpc";
-
         //----- field -----
 
         //----- property -----
@@ -37,13 +35,24 @@ namespace Modules.MessagePack
                 lastUpdateTime = fileInfo.LastWriteTime;
             }
 
-            #if UNITY_EDITOR_OSX
+            var fileName = string.Empty;
+            var arguments = string.Empty;
 
-            SetMsBuildPath();
+            #if UNITY_EDITOR_WIN
+
+            fileName = "mpc";
+            arguments = generateInfo.CommandLineArguments;
 
             #endif
 
-            var codeGenerateResult = ProcessUtility.Start(CodeGenerateCommand, generateInfo.CommandLineArguments);
+            #if UNITY_EDITOR_OSX
+
+            fileName = "/bin/bash";
+            arguments = string.Format("-c mpc {0}", generateInfo.CommandLineArguments);
+
+            #endif
+
+            var codeGenerateResult = ProcessUtility.Start(fileName, arguments);
 
             if (codeGenerateResult.Item1 == 0)
             {
@@ -54,14 +63,13 @@ namespace Modules.MessagePack
 
             if (!isSuccess)
             {
-                var error = codeGenerateResult.Item2;
-                
-                Debug.LogError(error);
-
-                throw new Exception(error);
+                using (new DisableStackTraceScope())
+                {
+                    Debug.LogError(codeGenerateResult.Item2);
+                }
             }
 
-            return true;
+            return isSuccess;
         }
 
         public static IObservable<bool> GenerateAsync()
@@ -84,13 +92,24 @@ namespace Modules.MessagePack
                 lastUpdateTime = fileInfo.LastWriteTime;
             }
 
-            #if UNITY_EDITOR_OSX
+            var fileName = string.Empty;
+            var arguments = string.Empty;
 
-            SetMsBuildPath();
+            #if UNITY_EDITOR_WIN
+
+            fileName = "mpc";
+            arguments = generateInfo.CommandLineArguments;
 
             #endif
 
-            var codeGenerateTask = ProcessUtility.StartAsync(CodeGenerateCommand, generateInfo.CommandLineArguments);
+            #if UNITY_EDITOR_OSX
+
+            fileName = "/bin/bash";
+            arguments = string.Format("-c mpc {0}", generateInfo.CommandLineArguments);
+
+            #endif
+
+            var codeGenerateTask = ProcessUtility.StartAsync(fileName, arguments);
 
             while (!codeGenerateTask.IsCompleted)
             {
@@ -106,31 +125,14 @@ namespace Modules.MessagePack
 
             if (!isSuccess)
             {
-                var error = codeGenerateTask.Result.Item2;
-
                 using (new DisableStackTraceScope())
                 {
-                    Debug.LogError(error);
+                    Debug.LogError(codeGenerateTask.Result.Item2);
                 }
-                
-                observer.OnError(new Exception(error));
-
-                yield break;
             }
 
-            observer.OnNext(true);
+            observer.OnNext(isSuccess);
             observer.OnCompleted();
-        }
-
-        private static void SetMsBuildPath()
-        {
-            var msbuildPath = MessagePackConfig.Prefs.msbuildPath;
-
-            var environmentPath = Environment.GetEnvironmentVariable("PATH", EnvironmentVariableTarget.Process);
-
-            var path = string.Format("{0}:{1}", environmentPath, msbuildPath);
-
-            Environment.SetEnvironmentVariable("PATH", path, EnvironmentVariableTarget.Process);
         }
 
         private static void ImportGeneratedCsFile(MessagePackCodeGenerateInfo generateInfo)
