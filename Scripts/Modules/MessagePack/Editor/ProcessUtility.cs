@@ -74,10 +74,26 @@ namespace Modules.MessagePack
                     process.ErrorDataReceived += processErrorDataReceived;
 
                     process.EnableRaisingEvents = true;
-
+                    
                     process.Exited += (object sender, EventArgs e) =>
                     {
-                        var exitCode = process.ExitCode;
+                        var exitCode = -1;
+
+                        try
+                        {
+                            var senderProcess = sender as Process;
+
+                            if (senderProcess != null)
+                            {
+                                exitCode = senderProcess.ExitCode;
+                            }
+
+                        }
+                        catch
+                        {
+                            exitCode = -2;
+                        }
+
                         var outputLog = outputLogBuilder.ToString();
                         var errorLog = errorLogBuilder.ToString();
 

@@ -24,6 +24,7 @@ namespace Modules.MessagePack
         private MessagePackConfig instance = null;
 
         private bool isLoading = false;
+        private bool findDotnet = false;
 
         [NonSerialized]
         private bool initialized = false;
@@ -45,21 +46,27 @@ namespace Modules.MessagePack
                 pathTextStyle.alignment = TextAnchor.MiddleLeft;
             }
 
-            if (!isDotnetInstalled)
-            {
-                isLoading = true;
-
-                Observable.FromMicroCoroutine(() => FindDotnet()).Subscribe(_ => isLoading = false);
-            }
-
             initialized = true;
         }
 
+        void OnEnable()
+        {
+            findDotnet = true;
+        }
+        
         public override void OnInspectorGUI()
         {
             instance = target as MessagePackConfig;
 
             Initialize();
+            
+            if (findDotnet)
+            {
+                isLoading = true;
+                findDotnet = false;
+
+                Observable.FromMicroCoroutine(() => FindDotnet()).Subscribe(_ => isLoading = false);
+            }
 
             serializedObject.Update();
             
@@ -198,8 +205,9 @@ namespace Modules.MessagePack
 
             if (findYield.HasResult)
             {
-                isDotnetInstalled = findYield.Result.Item1;
                 dotnetVersion = findYield.Result.Item2;
+
+                isDotnetInstalled = findYield.Result.Item1 && !string.IsNullOrEmpty(dotnetVersion);
             }
 
             if (string.IsNullOrEmpty(dotnetVersion))

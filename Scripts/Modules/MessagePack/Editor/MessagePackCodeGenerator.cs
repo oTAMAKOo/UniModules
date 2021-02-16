@@ -4,6 +4,7 @@ using UnityEditor;
 using System;
 using System.Collections;
 using System.IO;
+using System.Security.Cryptography;
 using System.Text;
 using UniRx;
 using Extensions;
@@ -13,8 +14,18 @@ namespace Modules.MessagePack
     public static class MessagePackCodeGenerator
     {
         //----- params -----
+        
+        #if UNITY_EDITOR_WIN
 
         private const string CodeGenerateCommand = "mpc";
+
+        #endif
+
+        #if UNITY_EDITOR_OSX
+
+        private const string CodeGenerateCommand = "dotnet mpc";
+
+        #endif
 
         //----- field -----
 
@@ -24,18 +35,9 @@ namespace Modules.MessagePack
 
         public static bool Generate()
         {
-            var isSuccess = false;
-
             var generateInfo = new MessagePackCodeGenerateInfo();
 
-            var lastUpdateTime = DateTime.MinValue;
-
-            if (File.Exists(generateInfo.CsFilePath))
-            {
-                var fileInfo = new FileInfo(generateInfo.CsFilePath);
-
-                lastUpdateTime = fileInfo.LastWriteTime;
-            }
+            var csFileHash = GetCsFileHash(generateInfo);
 
             var fileName = string.Empty;
             var arguments = string.Empty;
@@ -50,20 +52,21 @@ namespace Modules.MessagePack
             #if UNITY_EDITOR_OSX
 
             fileName = "/bin/bash";
-            arguments = string.Format("-c mpc {0}", generateInfo.CommandLineArguments);
+            arguments = string.Format("-c {0} {1}", CodeGenerateCommand, generateInfo.CommandLineArguments);
 
             #endif
 
             var codeGenerateResult = ProcessUtility.Start(fileName, arguments);
-
-            if (codeGenerateResult.Item1 == 0)
-            {
-                isSuccess = CsFileUpdate(generateInfo, lastUpdateTime);
-            }
+            
+            var isSuccess = codeGenerateResult.Item1 == 0;
 
             OutputGenerateLog(isSuccess, generateInfo);
 
-            if (!isSuccess)
+            if (isSuccess)
+            {
+                ImportGeneratedCsFile(generateInfo, csFileHash);
+            }
+            else
             {
                 using (new DisableStackTraceScope())
                 {
@@ -81,18 +84,9 @@ namespace Modules.MessagePack
 
         private static IEnumerator GenerateInternalAsync(IObserver<bool> observer)
         {
-            var isSuccess = false;
-            
             var generateInfo = new MessagePackCodeGenerateInfo();
 
-            var lastUpdateTime = DateTime.MinValue;
-            
-            if (File.Exists(generateInfo.CsFilePath))
-            {
-                var fileInfo = new FileInfo(generateInfo.CsFilePath);
-
-                lastUpdateTime = fileInfo.LastWriteTime;
-            }
+            var csFileHash = GetCsFileHash(generateInfo);
 
             var fileName = string.Empty;
             var arguments = string.Empty;
@@ -107,7 +101,7 @@ namespace Modules.MessagePack
             #if UNITY_EDITOR_OSX
 
             fileName = "/bin/bash";
-            arguments = string.Format("-c {0}{1}", CodeGenerateCommand, generateInfo.CommandLineArguments);
+            arguments = string.Format("-c {0} {1}", CodeGenerateCommand, generateInfo.CommandLineArguments);
 
             #endif
 
@@ -118,14 +112,15 @@ namespace Modules.MessagePack
                 yield return null;
             }
 
-            if (codeGenerateTask.Result.Item1 == 0)
-            {
-                isSuccess = CsFileUpdate(generateInfo, lastUpdateTime);
-            }
+            var isSuccess = codeGenerateTask.Result.Item1 == 0;
 
             OutputGenerateLog(isSuccess, generateInfo);
 
-            if (!isSuccess)
+            if (isSuccess)
+            {
+                ImportGeneratedCsFile(generateInfo, csFileHash);
+            }
+            else
             {
                 using (new DisableStackTraceScope())
                 {
@@ -137,30 +132,39 @@ namespace Modules.MessagePack
             observer.OnCompleted();
         }
 
-        private static void ImportGeneratedCsFile(MessagePackCodeGenerateInfo generateInfo)
+        private static void ImportGeneratedCsFile(MessagePackCodeGenerateInfo generateInfo, string csFileHash)
         {
             var assetPath = UnityPathUtility.ConvertFullPathToAssetPath(generateInfo.CsFilePath);
 
+            var hash = GetCsFileHash(generateInfo);
+
             if (File.Exists(generateInfo.CsFilePath))
             {
-                AssetDatabase.ImportAsset(assetPath, ImportAssetOptions.ForceUpdate);
+                if (csFileHash != hash)
+                {
+                    AssetDatabase.ImportAsset(assetPath, ImportAssetOptions.ForceUpdate);
+                }
             }
         }
 
-        private static bool CsFileUpdate(MessagePackCodeGenerateInfo generateInfo, DateTime lastUpdateTime)
+        private static string GetCsFileHash(MessagePackCodeGenerateInfo generateInfo)
         {
-            var isCsFileUpdate = false;
+            var hash = string.Empty;
 
-            if (File.Exists(generateInfo.CsFilePath))
+            if (!File.Exists(generateInfo.CsFilePath)){ return string.Empty; }
+
+            using (var fs = new FileStream(generateInfo.CsFilePath, FileMode.Open, FileAccess.Read, FileShare.Read))
             {
-                var fileInfo = new FileInfo(generateInfo.CsFilePath);
+                var md5 = new MD5CryptoServiceProvider();
 
-                isCsFileUpdate = lastUpdateTime < fileInfo.LastWriteTime;
+                var bs = md5.ComputeHash(fs);
+
+                md5.Clear();
+
+                hash = BitConverter.ToString(bs).ToLower().Replace("-", "");
             }
 
-            ImportGeneratedCsFile(generateInfo);
-
-            return isCsFileUpdate;
+            return hash;
         }
 
         private static void OutputGenerateLog(bool result, MessagePackCodeGenerateInfo generateInfo)
