@@ -44,7 +44,7 @@ namespace Modules.MessagePack
 
             #if UNITY_EDITOR_WIN
 
-            fileName = "mpc";
+            fileName = CodeGenerateCommand;
             arguments = generateInfo.CommandLineArguments;
 
             #endif
