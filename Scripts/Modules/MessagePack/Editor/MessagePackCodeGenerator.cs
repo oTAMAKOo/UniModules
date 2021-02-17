@@ -14,18 +14,8 @@ namespace Modules.MessagePack
     public static class MessagePackCodeGenerator
     {
         //----- params -----
-        
-        #if UNITY_EDITOR_WIN
 
-        private const string CodeGenerateCommand = "mpc";
-
-        #endif
-
-        #if UNITY_EDITOR_OSX
-
-        private const string CodeGenerateCommand = "dotnet mpc";
-
-        #endif
+        private const string ProcessCommand = "mpc";
 
         //----- field -----
 
@@ -38,25 +28,8 @@ namespace Modules.MessagePack
             var generateInfo = new MessagePackCodeGenerateInfo();
 
             var csFileHash = GetCsFileHash(generateInfo);
-
-            var fileName = string.Empty;
-            var arguments = string.Empty;
-
-            #if UNITY_EDITOR_WIN
-
-            fileName = CodeGenerateCommand;
-            arguments = generateInfo.CommandLineArguments;
-
-            #endif
-
-            #if UNITY_EDITOR_OSX
-
-            fileName = "/bin/bash";
-            arguments = string.Format("-c {0} {1}", CodeGenerateCommand, generateInfo.CommandLineArguments);
-
-            #endif
-
-            var codeGenerateResult = ProcessUtility.Start(fileName, arguments);
+            
+            var codeGenerateResult = ProcessUtility.Start(ProcessCommand, generateInfo.CommandLineArguments);
             
             var isSuccess = codeGenerateResult.Item1 == 0;
 
@@ -87,25 +60,8 @@ namespace Modules.MessagePack
             var generateInfo = new MessagePackCodeGenerateInfo();
 
             var csFileHash = GetCsFileHash(generateInfo);
-
-            var fileName = string.Empty;
-            var arguments = string.Empty;
-
-            #if UNITY_EDITOR_WIN
-
-            fileName = CodeGenerateCommand;
-            arguments = generateInfo.CommandLineArguments;
-
-            #endif
-
-            #if UNITY_EDITOR_OSX
-
-            fileName = "/bin/bash";
-            arguments = string.Format("-c {0} {1}", CodeGenerateCommand, generateInfo.CommandLineArguments);
-
-            #endif
-
-            var codeGenerateTask = ProcessUtility.StartAsync(fileName, arguments);
+            
+            var codeGenerateTask = ProcessUtility.StartAsync(ProcessCommand, generateInfo.CommandLineArguments);
 
             while (!codeGenerateTask.IsCompleted)
             {
@@ -178,7 +134,7 @@ namespace Modules.MessagePack
                 logBuilder.AppendFormat("MessagePack file : {0}", generateInfo.CsFilePath).AppendLine();
                 logBuilder.AppendLine();
                 logBuilder.AppendFormat("Command:").AppendLine();
-                logBuilder.AppendLine(CodeGenerateCommand + generateInfo.CommandLineArguments);
+                logBuilder.AppendLine(ProcessCommand + generateInfo.CommandLineArguments);
 
                 if (result)
                 {

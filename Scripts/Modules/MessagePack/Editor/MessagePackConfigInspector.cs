@@ -81,23 +81,24 @@ namespace Modules.MessagePack
 
             //------ .Netバージョン ------
 
-            if (!string.IsNullOrEmpty(dotnetVersion))
+            if (string.IsNullOrEmpty(dotnetVersion))
+            {
+                if (!isDotnetInstalled)
+                {
+                    EditorGUILayout.HelpBox(".NET Core SDK not found.\nMessagePack CodeGen requires .NET Core Runtime.", MessageType.Error);
+
+                    // インストールページ.
+                    if (GUILayout.Button("Open .NET Core install page."))
+                    {
+                        Application.OpenURL("https://dotnet.microsoft.com/download");
+                    }
+
+                    EditorGUILayout.Separator();
+                }
+            }
+            else
             {
                 EditorGUILayout.HelpBox(string.Format(".NET Core SDK {0}(Require Version {1})", dotnetVersion, RequireDotnetSDKVersion), MessageType.Info);
-            }
-
-            //------ インストール ------
-
-            if (!isDotnetInstalled)
-            {
-                EditorGUILayout.HelpBox(".NET Core SDK not found.\nMessagePack CodeGen requires .NET Core Runtime.", MessageType.Error);
-
-                if (GUILayout.Button("Open .NET Core install page."))
-                {
-                    Application.OpenURL("https://dotnet.microsoft.com/download");
-                }
-
-                EditorGUILayout.Separator();
             }
 
             //------ 基本設定 ------
@@ -175,24 +176,7 @@ namespace Modules.MessagePack
 
             Tuple<bool, string> result = null;
 
-            var fileName = string.Empty;
-            var arguments = string.Empty;
-
-            #if UNITY_EDITOR_WIN
-
-            fileName = "dotnet";
-            arguments = "--version";
-
-            #endif
-
-            #if UNITY_EDITOR_OSX
-
-            fileName = "/bin/bash";
-            arguments = "-c dotnet --version";
-
-            #endif
-
-            var findYield = ProcessUtility.StartAsync(fileName, arguments).ToObservable()
+            var findYield = ProcessUtility.StartAsync("dotnet", "--version").ToObservable()
                 .Do(x => result = Tuple.Create(true, x.Item2))
                 .DoOnError(x => result = Tuple.Create(false, (string)null))
                 .Select(_ => result)
