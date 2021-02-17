@@ -43,7 +43,7 @@ namespace Modules.MessagePack
             {
                 using (new DisableStackTraceScope())
                 {
-                    Debug.LogError(codeGenerateResult.Item2);
+                    Debug.LogError(codeGenerateResult.Item3);
                 }
             }
 
@@ -80,7 +80,7 @@ namespace Modules.MessagePack
             {
                 using (new DisableStackTraceScope())
                 {
-                    Debug.LogError(codeGenerateTask.Result.Item2);
+                    Debug.LogError(codeGenerateTask.Result.Item3);
                 }
             }
 
