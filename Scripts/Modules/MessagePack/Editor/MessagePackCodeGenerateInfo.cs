@@ -15,7 +15,8 @@ namespace Modules.MessagePack
         //----- field -----
 
         //----- property -----
-        
+
+        public string CodeGeneratorPath { get; private set; }
         public string CsFilePath { get; private set; }
         public string CommandLineArguments { get; private set; }
 
@@ -26,6 +27,13 @@ namespace Modules.MessagePack
             var messagePackConfig = MessagePackConfig.Instance;
 
             SyncSolution();
+
+            CodeGeneratorPath = messagePackConfig.CodeGeneratorPath;
+
+            if (!File.Exists(CodeGeneratorPath))
+            {
+                throw new FileNotFoundException(string.Format("MessagePack Code Generator file not found.\n{0}", CodeGeneratorPath));
+            }
 
             var csprojPath = FindAssemblyCSharp();
 
