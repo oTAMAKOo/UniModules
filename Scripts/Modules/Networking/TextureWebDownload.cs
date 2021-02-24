@@ -191,7 +191,7 @@ namespace Modules.Networking
             {
                 var builder = new StringBuilder();
 
-                builder.AppendFormat("URL: {0} ({1}ms)", currentRequest.url, totalMilliseconds).AppendLine();
+                builder.AppendFormat("URL: {0} ({1:F1}ms)", currentRequest.url, totalMilliseconds).AppendLine();
                 builder.AppendLine();
 
                 UnityConsole.Event(ConsoleEventName, ConsoleEventColor, builder.ToString());

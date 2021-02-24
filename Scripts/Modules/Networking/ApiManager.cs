@@ -342,7 +342,7 @@ namespace Modules.Networking
 
                 var builder = new StringBuilder();
 
-                builder.AppendFormat("{0} ({1}ms)", webRequest.HostUrl.Replace(ServerUrl, string.Empty), totalMilliseconds).AppendLine();
+                builder.AppendFormat("{0} ({1:F1}ms)", webRequest.HostUrl.Replace(ServerUrl, string.Empty), totalMilliseconds).AppendLine();
                 builder.AppendLine();
                 builder.AppendFormat("URL: {0}", webRequest.Url).AppendLine();
                 builder.AppendFormat("Result: {0}", json).AppendLine();
