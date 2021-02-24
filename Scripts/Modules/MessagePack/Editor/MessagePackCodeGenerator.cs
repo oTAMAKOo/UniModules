@@ -78,7 +78,14 @@ namespace Modules.MessagePack
             {
                 using (new DisableStackTraceScope())
                 {
-                    Debug.LogError(codeGenerateTask.Result.Item3);
+                    var message = codeGenerateTask.Result.Item3;
+
+                    if (string.IsNullOrEmpty(message))
+                    {
+                        message = codeGenerateTask.Result.Item2;
+                    }
+
+                    Debug.LogError(message);
                 }
             }
 
