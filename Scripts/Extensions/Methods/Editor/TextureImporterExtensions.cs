@@ -11,7 +11,7 @@ namespace Extensions
     {
         private static readonly string[] BlockCompressFormatTable = new string[]
         {
-            "ASTC_RGB_", "ASTC_RGBA_", "DXT",
+            "ASTC_", "ASTC_RGB_", "ASTC_RGBA_", "ASTC_HDR_", "DXT",
         };
 
         private static MethodInfo getWidthAndHeightMethodInfo = null;
