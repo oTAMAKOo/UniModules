@@ -263,6 +263,10 @@ namespace Modules.Devkit.AssetTuning
                 {
                     var texturePath = AssetDatabase.GUIDToAssetPath(item.Value[i]);
 
+                    var textureImporter = AssetImporter.GetAtPath(texturePath) as TextureImporter;
+
+                    if (textureImporter == null){ continue; }
+
                     var parts = texturePath.Substring(item.Key.Length).Split(PathUtility.PathSeparator);
 
                     if (parts.Any(x => ignoreCompressFolderNames.Contains(x))) { continue; }
@@ -339,8 +343,8 @@ namespace Modules.Devkit.AssetTuning
     public sealed class CompressFolderScrollView : EditorGUIFastScrollView<Object>
     {
         private GUIContent viewToolZoomIcon = null;
-        private GUIContent vcscheckIcon = null;
-        private GUIContent vcsdeleteIcon = null;
+        private GUIContent greenLightIcon = null;
+        private GUIContent redLightIcon = null;
         private Subject<Object> onSearchRequest = null;
 
         public CompressCheckWindow.CompressFolderInfo[] CompressFolderInfos { get; set; }
@@ -355,14 +359,14 @@ namespace Modules.Devkit.AssetTuning
                 viewToolZoomIcon = EditorGUIUtility.IconContent("ViewToolZoom");
             }
 
-            if (vcscheckIcon == null)
+            if (greenLightIcon == null)
             {
-                vcscheckIcon = EditorGUIUtility.IconContent("vcs_check");
+                greenLightIcon = EditorGUIUtility.IconContent("d_greenLight");
             }
 
-            if (vcsdeleteIcon == null)
+            if (redLightIcon == null)
             {
-                vcsdeleteIcon = EditorGUIUtility.IconContent("vcs_delete");
+                redLightIcon = EditorGUIUtility.IconContent("d_redLight");
             }
 
             using (new EditorGUILayout.HorizontalScope())
@@ -373,13 +377,13 @@ namespace Modules.Devkit.AssetTuning
                 {
                     var originLabelWidth = EditorLayoutTools.SetLabelWidth(12f);
 
-                    var icon = info.compress ? vcscheckIcon : vcsdeleteIcon;
+                    var icon = info.compress ? greenLightIcon : redLightIcon;
 
                     using (new EditorGUILayout.VerticalScope(GUILayout.Width(12f)))
                     {
-                        GUILayout.Space(-1f);
+                        GUILayout.Space(4f);
 
-                        EditorGUILayout.LabelField(icon, GUILayout.Width(20f), GUILayout.Height(20f));
+                        EditorGUILayout.LabelField(icon, GUILayout.Width(16f), GUILayout.Height(16f));
                     }
 
                     EditorLayoutTools.SetLabelWidth(originLabelWidth);
@@ -417,8 +421,8 @@ namespace Modules.Devkit.AssetTuning
     public sealed class TextureAssetInfoScrollView : EditorGUIFastScrollView<CompressCheckWindow.TextureAssetInfo>
     {
         private GUIStyle labelStyle = null;
-        private GUIContent vcscheckIcon = null;
-        private GUIContent vcsdeleteIcon = null;
+        private GUIContent greenLightIcon = null;
+        private GUIContent redLightIcon = null;
 
         private ObjectCache<Texture> textureCache = null;
 
@@ -443,27 +447,27 @@ namespace Modules.Devkit.AssetTuning
                 labelStyle.stretchWidth = false;
             }
 
-            if (vcscheckIcon == null)
+            if (greenLightIcon == null)
             {
-                vcscheckIcon = EditorGUIUtility.IconContent("vcs_check");
+                greenLightIcon = EditorGUIUtility.IconContent("d_greenLight");
             }
-            
-            if (vcsdeleteIcon == null)
+
+            if (redLightIcon == null)
             {
-                vcsdeleteIcon = EditorGUIUtility.IconContent("vcs_delete");
+                redLightIcon = EditorGUIUtility.IconContent("d_redLight");
             }
 
             using (new EditorGUILayout.HorizontalScope())
             {
                 var originLabelWidth = EditorLayoutTools.SetLabelWidth(12f);
 
-                var icon = content.compress ? vcscheckIcon : vcsdeleteIcon;
+                var icon = content.compress ? greenLightIcon : redLightIcon;
 
                 using (new EditorGUILayout.VerticalScope(GUILayout.Width(12f)))
                 {
-                    GUILayout.Space(-1f);
+                    GUILayout.Space(4f);
 
-                    EditorGUILayout.LabelField(icon, GUILayout.Width(20f), GUILayout.Height(20f));
+                    EditorGUILayout.LabelField(icon, GUILayout.Width(16f), GUILayout.Height(16f));
                 }
 
                 EditorLayoutTools.SetLabelWidth(originLabelWidth);

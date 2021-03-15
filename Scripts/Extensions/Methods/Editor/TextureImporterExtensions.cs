@@ -19,6 +19,8 @@ namespace Extensions
         /// <summary> 圧縮設定がブロック圧縮か </summary>
         public static bool IsBlockCompress(this TextureImporter importer, BuildTargetGroup platform)
         {
+            if (importer == null){ return false; }
+
             var setting = importer.GetPlatformTextureSetting(platform);
 
             var format = setting.format.ToString();
@@ -29,6 +31,8 @@ namespace Extensions
         /// <summary> テクスチャ設定取得 </summary>
         public static TextureImporterPlatformSettings GetPlatformTextureSetting(this TextureImporter importer, BuildTargetGroup platform)
         {
+            if (importer == null){ return null; }
+
             var settings = new TextureImporterPlatformSettings();
 
             var platformTextureSetting = importer.GetPlatformTextureSettings(platform.ToString());
