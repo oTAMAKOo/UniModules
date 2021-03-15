@@ -1,6 +1,7 @@
 ﻿
 
 using UnityEngine;
+using UnityEditor;
 using System;
 using System.Linq;
 using System.Collections.Generic;
@@ -104,6 +105,8 @@ namespace Modules.Devkit.AssetTuning
             if (firstImportAssets.Contains(assetPath))
             {
                 firstImportAssets.Remove(assetPath);
+
+                AssetDatabase.ImportAsset(assetPath, ImportAssetOptions.ForceUpdate);
             }
         }
     }
