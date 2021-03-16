@@ -44,7 +44,7 @@ namespace Modules.Devkit.AssetTuning
 
         private TextureAssetTunerConfig instance = null;
 
-        private bool applyOnImport = false;
+        private bool changeSettingOnImport = false;
 
         //----- property -----
 
@@ -132,7 +132,7 @@ namespace Modules.Devkit.AssetTuning
 
             //------ Options ------
 
-            applyOnImport = TextureAssetTunerConfig.Prefs.applyOnImport;
+            changeSettingOnImport = TextureAssetTunerConfig.Prefs.changeSettingOnImport;
         }
 
         public override void OnInspectorGUI()
@@ -165,11 +165,11 @@ namespace Modules.Devkit.AssetTuning
             {
                 EditorGUI.BeginChangeCheck();
 
-                applyOnImport = EditorGUILayout.Toggle("Change setting on import", applyOnImport);
+                changeSettingOnImport = EditorGUILayout.Toggle("Change setting on import", changeSettingOnImport);
 
                 if (EditorGUI.EndChangeCheck())
                 {
-                    TextureAssetTunerConfig.Prefs.applyOnImport = applyOnImport;
+                    TextureAssetTunerConfig.Prefs.changeSettingOnImport = changeSettingOnImport;
                 }
 
                 GUILayout.Space(3f);
