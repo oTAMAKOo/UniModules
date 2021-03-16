@@ -8,11 +8,12 @@ using Extensions;
 using Extensions.Devkit;
 using Modules.ObjectCache;
 using UniRx;
+
 using Object = UnityEngine.Object;
 
 namespace Modules.Devkit.AssetTuning
 {
-    public sealed class CompressCheckWindow : SingletonEditorWindow<CompressCheckWindow>
+    public sealed class TextureAssetWindow : SingletonEditorWindow<TextureAssetWindow>
     {
         //----- params -----
 
@@ -37,7 +38,7 @@ namespace Modules.Devkit.AssetTuning
 
         public sealed class CompressFolderInfo
         {
-            public bool compress;
+            public bool hasWarning;
             public Object folder;
             public TextureAssetInfo[] textureAssetInfos;
         }
@@ -46,7 +47,7 @@ namespace Modules.Devkit.AssetTuning
         {
             public string textureGuid;
             public Vector2 size;
-            public bool compress;
+            public string warning;
         }
 
         //----- field -----
@@ -77,7 +78,7 @@ namespace Modules.Devkit.AssetTuning
         {
             if (initialized) { return; }
 
-            titleContent = new GUIContent("CompressCheckWindow");
+            titleContent = new GUIContent("TextureAssetWindow");
             minSize = new Vector2(650f, 450f);
 
             var config = TextureAssetTunerConfig.Instance;
@@ -241,7 +242,7 @@ namespace Modules.Devkit.AssetTuning
                 var compressFolderInfo = new CompressFolderInfo()
                 {
                     folder = folder,
-                    compress = false,
+                    hasWarning = false,
                     textureAssetInfos = new TextureAssetInfo[0],
                 };
 
@@ -277,7 +278,7 @@ namespace Modules.Devkit.AssetTuning
 
                     if (failedOnly)
                     {
-                        if (!info.compress)
+                        if (!string.IsNullOrEmpty(info.warning))
                         {
                             textureAssetInfos.Add(info);
                         }
@@ -292,7 +293,7 @@ namespace Modules.Devkit.AssetTuning
 
                 if (compressFolderInfo != null)
                 {
-                    compressFolderInfo.compress = textureAssetInfos.All(x => x.compress);
+                    compressFolderInfo.hasWarning = textureAssetInfos.All(x => string.IsNullOrEmpty(x.warning));
                     compressFolderInfo.textureAssetInfos = textureAssetInfos.ToArray();
                 }
             }
@@ -306,22 +307,15 @@ namespace Modules.Devkit.AssetTuning
         {
             var textureImporter = AssetImporter.GetAtPath(assetPath) as TextureImporter;
 
-            var compress = false;
-
-            var isBlockCompress = Platforms.Any(x => textureImporter.IsBlockCompress(x));
-
             var size = textureImporter.GetPreImportTextureSize();
 
-            if (isBlockCompress)
-            {
-                compress = IsMultipleOf4(size.x) && IsMultipleOf4(size.y);
-            }
+            var warning = textureImporter.GetImportWarning();
 
             var info = new TextureAssetInfo()
             {
                 textureGuid = AssetDatabase.AssetPathToGUID(assetPath),
                 size = size,
-                compress = compress,
+                warning = warning,
             };
 
             return info;
@@ -331,24 +325,19 @@ namespace Modules.Devkit.AssetTuning
         {
             if (!failedOnly) { return textureAssetInfos; }
 
-            return textureAssetInfos.Where(x => !x.compress).ToArray();
-        }
-
-        private static bool IsMultipleOf4(float value)
-        {
-            return value % 4 == 0;
+            return textureAssetInfos.Where(x => !string.IsNullOrEmpty(x.warning)).ToArray();
         }
     }
 
     public sealed class CompressFolderScrollView : EditorGUIFastScrollView<Object>
     {
         private GUIContent viewToolZoomIcon = null;
-        private GUIContent greenLightIcon = null;
-        private GUIContent redLightIcon = null;
+        private GUIContent testPassedIcon = null;
+        private GUIContent warnIcon = null;
         private Subject<Object> onSearchRequest = null;
 
-        public CompressCheckWindow.CompressFolderInfo[] CompressFolderInfos { get; set; }
-        public CompressCheckWindow.AssetViewMode AssetViewMode { get; set; }
+        public TextureAssetWindow.CompressFolderInfo[] CompressFolderInfos { get; set; }
+        public TextureAssetWindow.AssetViewMode AssetViewMode { get; set; }
 
         public override Direction Type { get { return Direction.Vertical; } }
         
@@ -359,14 +348,14 @@ namespace Modules.Devkit.AssetTuning
                 viewToolZoomIcon = EditorGUIUtility.IconContent("ViewToolZoom");
             }
 
-            if (greenLightIcon == null)
+            if (testPassedIcon == null)
             {
-                greenLightIcon = EditorGUIUtility.IconContent("d_greenLight");
+                testPassedIcon = EditorGUIUtility.IconContent("TestPassed");
             }
 
-            if (redLightIcon == null)
+            if (warnIcon == null)
             {
-                redLightIcon = EditorGUIUtility.IconContent("d_redLight");
+                warnIcon = EditorGUIUtility.IconContent("Warning");
             }
 
             using (new EditorGUILayout.HorizontalScope())
@@ -377,13 +366,13 @@ namespace Modules.Devkit.AssetTuning
                 {
                     var originLabelWidth = EditorLayoutTools.SetLabelWidth(12f);
 
-                    var icon = info.compress ? greenLightIcon : redLightIcon;
+                    var icon = info.hasWarning ? warnIcon : testPassedIcon;
 
                     using (new EditorGUILayout.VerticalScope(GUILayout.Width(12f)))
                     {
                         GUILayout.Space(4f);
 
-                        EditorGUILayout.LabelField(icon, GUILayout.Width(16f), GUILayout.Height(16f));
+                        EditorGUILayout.LabelField(icon, GUILayout.Width(18f), GUILayout.Height(16f));
                     }
 
                     EditorLayoutTools.SetLabelWidth(originLabelWidth);
@@ -393,11 +382,11 @@ namespace Modules.Devkit.AssetTuning
 
                 switch (AssetViewMode)
                 {
-                    case CompressCheckWindow.AssetViewMode.Asset:
+                    case TextureAssetWindow.AssetViewMode.Asset:
                         EditorGUILayout.ObjectField(content, typeof(Object), false);
                         break;
 
-                    case CompressCheckWindow.AssetViewMode.Path:
+                    case TextureAssetWindow.AssetViewMode.Path:
                         GUILayout.Label(AssetDatabase.GetAssetPath(content), EditorStyles.textArea);
                         break;
                 }
@@ -418,15 +407,15 @@ namespace Modules.Devkit.AssetTuning
         }
     }
 
-    public sealed class TextureAssetInfoScrollView : EditorGUIFastScrollView<CompressCheckWindow.TextureAssetInfo>
+    public sealed class TextureAssetInfoScrollView : EditorGUIFastScrollView<TextureAssetWindow.TextureAssetInfo>
     {
         private GUIStyle labelStyle = null;
-        private GUIContent greenLightIcon = null;
-        private GUIContent redLightIcon = null;
+        private GUIContent testPassedIcon = null;
+        private GUIContent warnIcon = null;
 
         private ObjectCache<Texture> textureCache = null;
 
-        public CompressCheckWindow.AssetViewMode AssetViewMode { get; set; }
+        public TextureAssetWindow.AssetViewMode AssetViewMode { get; set; }
 
         public override Direction Type { get { return Direction.Vertical; } }
 
@@ -435,7 +424,7 @@ namespace Modules.Devkit.AssetTuning
             textureCache = new ObjectCache<Texture>();
         }
 
-        protected override void DrawContent(int index, CompressCheckWindow.TextureAssetInfo content)
+        protected override void DrawContent(int index, TextureAssetWindow.TextureAssetInfo content)
         {
             if (content == null) { return; }
 
@@ -447,27 +436,27 @@ namespace Modules.Devkit.AssetTuning
                 labelStyle.stretchWidth = false;
             }
 
-            if (greenLightIcon == null)
+            if (testPassedIcon == null)
             {
-                greenLightIcon = EditorGUIUtility.IconContent("d_greenLight");
+                testPassedIcon = EditorGUIUtility.IconContent("TestPassed");
             }
 
-            if (redLightIcon == null)
+            if (warnIcon == null)
             {
-                redLightIcon = EditorGUIUtility.IconContent("d_redLight");
+                warnIcon = EditorGUIUtility.IconContent("Warning");
             }
 
             using (new EditorGUILayout.HorizontalScope())
             {
                 var originLabelWidth = EditorLayoutTools.SetLabelWidth(12f);
 
-                var icon = content.compress ? greenLightIcon : redLightIcon;
+                var icon = string.IsNullOrEmpty(content.warning) ? testPassedIcon : warnIcon;
 
                 using (new EditorGUILayout.VerticalScope(GUILayout.Width(12f)))
                 {
                     GUILayout.Space(4f);
 
-                    EditorGUILayout.LabelField(icon, GUILayout.Width(16f), GUILayout.Height(16f));
+                    EditorGUILayout.LabelField(icon, GUILayout.Width(18f), GUILayout.Height(16f));
                 }
 
                 EditorLayoutTools.SetLabelWidth(originLabelWidth);
@@ -476,7 +465,7 @@ namespace Modules.Devkit.AssetTuning
 
                 switch (AssetViewMode)
                 {
-                    case CompressCheckWindow.AssetViewMode.Asset:
+                    case TextureAssetWindow.AssetViewMode.Asset:
                         {
                             Texture texture = null;
 
@@ -497,7 +486,7 @@ namespace Modules.Devkit.AssetTuning
                         }
                         break;
 
-                    case CompressCheckWindow.AssetViewMode.Path:
+                    case TextureAssetWindow.AssetViewMode.Path:
                         EditorGUILayout.SelectableLabel(assetPath, EditorStyles.textArea);
                         break;
                 }

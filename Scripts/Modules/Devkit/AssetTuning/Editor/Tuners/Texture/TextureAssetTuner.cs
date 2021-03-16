@@ -100,17 +100,6 @@ namespace Modules.Devkit.AssetTuning
                 return;
             }
 
-            var size = textureImporter.GetPreImportTextureSize();
-
-            // ブロックが使えるか(4の倍数なら圧縮設定).
-            var isMultipleOf4 = IsMultipleOf4(size.x) && IsMultipleOf4(size.y);
-
-            if (!isMultipleOf4)
-            {
-                SetDefaultSettings(textureImporter);
-                return;
-            }
-
             foreach (var platform in Platforms)
             {
                 Func<TextureImporterPlatformSettings, TextureImporterPlatformSettings> update = settings =>
@@ -212,11 +201,6 @@ namespace Modules.Devkit.AssetTuning
             }
 
             return false;
-        }
-
-        public static bool IsMultipleOf4(float value)
-        {
-            return value % 4 == 0;
         }
     }
 }

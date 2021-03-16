@@ -9,23 +9,17 @@ namespace Extensions
 {
     public static class TextureImporterExtensions
     {
-        private static readonly string[] BlockCompressFormatTable = new string[]
-        {
-            "ASTC_", "ASTC_RGB_", "ASTC_RGBA_", "ASTC_HDR_", "DXT",
-        };
-
         private static MethodInfo getWidthAndHeightMethodInfo = null;
 
-        /// <summary> 圧縮設定がブロック圧縮か </summary>
-        public static bool IsBlockCompress(this TextureImporter importer, BuildTargetGroup platform)
+        /// <summary> テクスチャの警告取得 </summary>
+        public static string GetImportWarning(this TextureImporter importer)
         {
-            if (importer == null){ return false; }
+            if (importer == null){ return null; }
 
-            var setting = importer.GetPlatformTextureSetting(platform);
+            // ※ GetImportWarningsはinternalなのでリフレクションで呼び出す.
+            var warning = Reflection.InvokePrivateMethod(importer, "GetImportWarnings") as string;
 
-            var format = setting.format.ToString();
-
-            return BlockCompressFormatTable.Any(x => format.StartsWith(x));
+            return warning;
         }
 
         /// <summary> テクスチャ設定取得 </summary>

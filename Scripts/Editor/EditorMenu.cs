@@ -321,12 +321,6 @@ namespace Modules
             FindDependencyAssetsWindow.Open();
         }
 
-        [MenuItem(itemName: ToolsMenu + "Open TextureCompressChecker")]
-        public static void OpenTextureCompressChecker()
-        {
-            CompressCheckWindow.Open();
-        }
-
         #endregion
 
         //===============================================================
@@ -507,13 +501,19 @@ namespace Modules
             ShaderVariantUpdateWindow.Open();
         }
 
-        [MenuItem(itemName: WindowsMenu + "Open UnityConsoleConfigWindow", priority = 7)]
+        [MenuItem(itemName: WindowsMenu + "Open TextureCheckWindow", priority = 7)]
+        public static void OpenTextureAssetWindow()
+        {
+            TextureAssetWindow.Open();
+        }
+
+        [MenuItem(itemName: WindowsMenu + "Open UnityConsoleConfigWindow", priority = 8)]
         public static void OpenUnityConsoleConfigWindow()
         {
             UnityConsoleConfigWindow.Open();
         }
 
-        [MenuItem(itemName: WindowsMenu + "Open BehaviorControlMonitor", priority = 8)]
+        [MenuItem(itemName: WindowsMenu + "Open BehaviorControlMonitor", priority = 9)]
         public static void OpenBehaviorControlMonitor()
         {
             BehaviorControlMonitor.Open();
