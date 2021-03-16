@@ -17,7 +17,7 @@ namespace Modules.Devkit.AssetTuning
         [SerializeField]
         private Object[] compressFolders = null;
         [SerializeField]
-        private string[] ignoreCompressFolderNames = null;
+        private string[] ignoreCompressFolders = null;
 
         // sprite
 
@@ -26,7 +26,7 @@ namespace Modules.Devkit.AssetTuning
         [SerializeField]
         private string[] spriteFolderNames = null;
         [SerializeField]
-        private string[] ignoreSpriteFolderNames = null;
+        private string[] ignoreSpriteFolders = null;
 
         //----- property -----
 
@@ -37,9 +37,9 @@ namespace Modules.Devkit.AssetTuning
         }
 
         /// <summary> 圧縮設定の適用から除外するフォルダ名. </summary>
-        public string[] IgnoreCompressFolderNames
+        public string[] IgnoreCompressFolders
         {
-            get { return ignoreCompressFolderNames ?? (ignoreCompressFolderNames = new string[0]); }
+            get { return ignoreCompressFolders ?? (ignoreCompressFolders = new string[0]); }
         }
 
         /// <summary> TextureTypeをSpriteに設定するフォルダ. </summary>
@@ -55,9 +55,9 @@ namespace Modules.Devkit.AssetTuning
         }
 
         /// <summary> TextureTypeをSpriteに設定適用から除外するフォルダ名. </summary>
-        public string[] IgnoreSpriteFolderNames
+        public string[] IgnoreSpriteFolders
         {
-            get { return ignoreSpriteFolderNames ?? (ignoreSpriteFolderNames = new string[0]); }
+            get { return ignoreSpriteFolders ?? (ignoreSpriteFolders = new string[0]); }
         }
 
         //----- method -----

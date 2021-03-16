@@ -93,14 +93,14 @@ namespace Modules.Devkit.AssetTuning
             ignoreCompressFolderNameScrollView = new FolderNameRegisterScrollView();
 
             ignoreCompressFolderNameScrollView.OnUpdateContentsAsObservable()
-                .Subscribe(x => SaveIgnoreCompressFolderNames(x))
+                .Subscribe(x => SaveIgnoreCompressFolders(x))
                 .AddTo(lifetimeDisposable.Disposable);
 
             ignoreCompressFolderNameScrollView.OnRepaintRequestAsObservable()
                 .Subscribe(_ => Repaint())
                 .AddTo(lifetimeDisposable.Disposable);
 
-            ignoreCompressFolderNameScrollView.SetContents(instance.IgnoreCompressFolderNames);
+            ignoreCompressFolderNameScrollView.SetContents(instance.IgnoreCompressFolders);
 
             //------ Sprite Folder Name ------
 
@@ -121,14 +121,14 @@ namespace Modules.Devkit.AssetTuning
             ignoreSpriteFolderNameScrollView = new FolderNameRegisterScrollView();
 
             ignoreSpriteFolderNameScrollView.OnUpdateContentsAsObservable()
-                .Subscribe(x => SaveIgnoreSpriteFolderNames(x))
+                .Subscribe(x => SaveIgnoreSpriteFolders(x))
                 .AddTo(lifetimeDisposable.Disposable);
 
             ignoreSpriteFolderNameScrollView.OnRepaintRequestAsObservable()
                 .Subscribe(_ => Repaint())
                 .AddTo(lifetimeDisposable.Disposable);
 
-            ignoreSpriteFolderNameScrollView.SetContents(instance.IgnoreSpriteFolderNames);
+            ignoreSpriteFolderNameScrollView.SetContents(instance.IgnoreSpriteFolders);
         }
 
         public override void OnInspectorGUI()
@@ -139,7 +139,7 @@ namespace Modules.Devkit.AssetTuning
 
             GUILayout.Space(2f);
 
-            DrawRegisterIgnoreFolderNameGUI(ignoreCompressFolderNameScrollView, "Ignore Compress FolderName");
+            DrawRegisterIgnoreFolderNameGUI(ignoreCompressFolderNameScrollView, "Ignore Compress Folders");
 
             GUILayout.Space(2f);
 
@@ -151,7 +151,7 @@ namespace Modules.Devkit.AssetTuning
 
             GUILayout.Space(2f);
 
-            DrawRegisterIgnoreFolderNameGUI(ignoreSpriteFolderNameScrollView, "Ignore Sprite FolderName");
+            DrawRegisterIgnoreFolderNameGUI(ignoreSpriteFolderNameScrollView, "Ignore Sprite Folders");
         }
 
         private void DrawRegisterIgnoreFolderNameGUI(FolderNameRegisterScrollView scrollView, string title)
@@ -174,11 +174,11 @@ namespace Modules.Devkit.AssetTuning
             Reflection.SetPrivateField(instance, "compressFolders", folders);
         }
 
-        private void SaveIgnoreCompressFolderNames(string[] folderNames)
+        private void SaveIgnoreCompressFolders(string[] folders)
         {
             UnityEditorUtility.RegisterUndo("TextureAssetTunerConfigInspector-Undo", instance);
 
-            Reflection.SetPrivateField(instance, "ignoreCompressFolderNames", folderNames);
+            Reflection.SetPrivateField(instance, "ignoreCompressFolders", folders);
         }
 
         private void SaveSpriteFolders(Object[] folders)
@@ -195,11 +195,11 @@ namespace Modules.Devkit.AssetTuning
             Reflection.SetPrivateField(instance, "spriteFolderNames", folderNames);
         }
 
-        private void SaveIgnoreSpriteFolderNames(string[] folderNames)
+        private void SaveIgnoreSpriteFolders(string[] folders)
         {
             UnityEditorUtility.RegisterUndo("TextureAssetTunerConfigInspector-Undo", instance);
 
-            Reflection.SetPrivateField(instance, "ignoreSpriteFolderNames", folderNames);
+            Reflection.SetPrivateField(instance, "ignoreSpriteFolders", folders);
         }
     }
 }

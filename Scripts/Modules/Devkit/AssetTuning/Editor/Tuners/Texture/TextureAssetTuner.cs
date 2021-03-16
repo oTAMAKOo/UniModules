@@ -95,7 +95,7 @@ namespace Modules.Devkit.AssetTuning
 
             if (config == null) { return; }
 
-            if (!IsFolderItem(textureImporter.assetPath, config.CompressFolders, config.IgnoreCompressFolderNames))
+            if (!IsFolderItem(textureImporter.assetPath, config.CompressFolders, config.IgnoreCompressFolders))
             {
                 return;
             }
@@ -129,7 +129,7 @@ namespace Modules.Devkit.AssetTuning
 
             isTarget |= parts.Any(x => config.SpriteFolderNames.Contains(x));
 
-            isTarget |= IsFolderItem(textureImporter.assetPath, config.SpriteFolders, config.IgnoreSpriteFolderNames);
+            isTarget |= IsFolderItem(textureImporter.assetPath, config.SpriteFolders, config.IgnoreSpriteFolders);
 
             if (isTarget)
             {
@@ -179,9 +179,11 @@ namespace Modules.Devkit.AssetTuning
             }
         }
 
-        public static bool IsFolderItem(string assetPath, Object[] folders, string[] ignoreFolderNames)
+        public static bool IsFolderItem(string assetPath, Object[] folders, string[] ignoreFolders)
         {
             assetPath = PathUtility.ConvertPathSeparator(assetPath);
+
+            ignoreFolders = ignoreFolders.Select(x => PathUtility.ConvertPathSeparator(x)).ToArray();
 
             var targetPaths = folders.Where(x => x != null).Select(x => AssetDatabase.GetAssetPath(x));
 
@@ -191,12 +193,19 @@ namespace Modules.Devkit.AssetTuning
 
                 if (assetPath.StartsWith(path + PathUtility.PathSeparator))
                 {
+                    // フォルダパスで除外.
+
+                    var ignoreFolderPaths = ignoreFolders.Where(x => x.EndsWith(PathUtility.PathSeparator.ToString())).ToArray();
+
+                    if (ignoreFolderPaths.Any(x => assetPath.Contains(x))) { continue; }
+
+                    // フォルダ名で除外.
+
                     var parts = assetPath.Substring(path.Length).Split(PathUtility.PathSeparator);
 
-                    if (parts.All(x => !ignoreFolderNames.Contains(x)))
-                    {
-                        return true;
-                    }
+                    if (parts.Any(x => ignoreFolders.Contains(x))) { continue; }
+
+                    return true;
                 }
             }
 

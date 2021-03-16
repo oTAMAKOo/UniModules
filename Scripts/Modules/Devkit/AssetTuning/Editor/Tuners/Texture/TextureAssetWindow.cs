@@ -249,7 +249,7 @@ namespace Modules.Devkit.AssetTuning
                 compressFolderInfos.Add(compressFolderInfo);
             }
 
-            var ignoreCompressFolderNames = config.IgnoreCompressFolderNames;
+            var ignoreCompressFolders = config.IgnoreCompressFolders.Select(x => PathUtility.ConvertPathSeparator(x)).ToArray();
 
             var count = 0;
             var totalCount = guidsByFolderPath.SelectMany(x => x.Value).Count();
@@ -268,9 +268,17 @@ namespace Modules.Devkit.AssetTuning
 
                     if (textureImporter == null){ continue; }
 
+                    // フォルダパスで除外.
+
+                    var ignoreFolderPaths = ignoreCompressFolders.Where(x => x.EndsWith(PathUtility.PathSeparator.ToString())).ToArray();
+
+                    if (ignoreFolderPaths.Any(x => texturePath.Contains(x))) { continue; }
+
+                    // フォルダ名で除外.
+
                     var parts = texturePath.Substring(item.Key.Length).Split(PathUtility.PathSeparator);
 
-                    if (parts.Any(x => ignoreCompressFolderNames.Contains(x))) { continue; }
+                    if (parts.Any(x => ignoreCompressFolders.Contains(x))) { continue; }
 
                     EditorUtility.DisplayProgressBar(title, texturePath, (float)count++ / totalCount);
 
