@@ -160,7 +160,16 @@ namespace Modules.Devkit.AssetTuning
                     format = TextureImporterFormat.ASTC_RGB_4x4;
                     break;
                 case BuildTargetGroup.Standalone:
-                    format = hasAlpha ? TextureImporterFormat.DXT5 : TextureImporterFormat.DXT1;
+                    {
+                        if (textureImporter.textureType == TextureImporterType.NormalMap)
+                        {
+                            format = TextureImporterFormat.DXT5;
+                        }
+                        else
+                        {
+                            format = hasAlpha ? TextureImporterFormat.DXT5 : TextureImporterFormat.DXT1;
+                        }
+                    }
                     break;
             }
 
