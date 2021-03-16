@@ -61,8 +61,11 @@ namespace Modules.Devkit.AssetTuning
             }
             else
             {
-                SetTextureTypeSettings(textureImporter);
-                SetCompressionSettings(textureImporter);
+                if (TextureAssetTunerConfig.Prefs.forceApply)
+                {
+                    SetTextureTypeSettings(textureImporter);
+                    SetCompressionSettings(textureImporter);
+                }
             }
         }
 
@@ -122,6 +125,8 @@ namespace Modules.Devkit.AssetTuning
             var config = TextureAssetTunerConfig.Instance;
 
             if (config == null) { return false; }
+
+            if (textureImporter.textureType != TextureImporterType.Default){ return false; }
 
             var isTarget = false;
 

@@ -1,9 +1,7 @@
 ﻿
 using UnityEngine;
 using UnityEditor;
-using System;
 using System.Linq;
-using System.Collections.Generic;
 using UniRx;
 using Extensions;
 using Extensions.Devkit;
@@ -45,6 +43,8 @@ namespace Modules.Devkit.AssetTuning
         private LifetimeDisposable lifetimeDisposable = null;
 
         private TextureAssetTunerConfig instance = null;
+
+        private bool forceApplyStatus = false;
 
         //----- property -----
 
@@ -129,6 +129,10 @@ namespace Modules.Devkit.AssetTuning
                 .AddTo(lifetimeDisposable.Disposable);
 
             ignoreSpriteFolderNameScrollView.SetContents(instance.IgnoreSpriteFolders);
+
+            //------ Options ------
+
+            forceApplyStatus = TextureAssetTunerConfig.Prefs.forceApply;
         }
 
         public override void OnInspectorGUI()
@@ -152,6 +156,26 @@ namespace Modules.Devkit.AssetTuning
             GUILayout.Space(2f);
 
             DrawRegisterIgnoreFolderNameGUI(ignoreSpriteFolderNameScrollView, "Ignore Sprite Folders");
+
+            GUILayout.Space(2f);
+
+            EditorLayoutTools.Title("Options");
+
+            using (new ContentsScope())
+            {
+                EditorGUI.BeginChangeCheck();
+
+                forceApplyStatus = EditorGUILayout.Toggle("Force Apply", forceApplyStatus);
+
+                if (EditorGUI.EndChangeCheck())
+                {
+                    TextureAssetTunerConfig.Prefs.forceApply = forceApplyStatus;
+                }
+
+                GUILayout.Space(3f);
+
+                EditorGUILayout.HelpBox("Please enable this flag if you require force update.", MessageType.Info);
+            }
         }
 
         private void DrawRegisterIgnoreFolderNameGUI(FolderNameRegisterScrollView scrollView, string title)

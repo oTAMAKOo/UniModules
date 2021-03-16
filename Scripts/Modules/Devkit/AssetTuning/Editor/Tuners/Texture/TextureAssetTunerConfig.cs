@@ -1,5 +1,6 @@
 ﻿
 using UnityEngine;
+using Modules.Devkit.Prefs;
 using Modules.Devkit.ScriptableObjects;
 
 using Object = UnityEngine.Object;
@@ -10,10 +11,19 @@ namespace Modules.Devkit.AssetTuning
     {
         //----- params -----
 
+        public static class Prefs
+        {
+            public static bool forceApply
+            {
+                get { return ProjectPrefs.GetBool("TextureAssetTunerConfigPrefs-forceApply", false); }
+                set { ProjectPrefs.SetBool("TextureAssetTunerConfigPrefs-forceApply", value); }
+            }
+        }
+
         //----- field -----
 
         // compress
-        
+
         [SerializeField]
         private Object[] compressFolders = null;
         [SerializeField]
@@ -27,7 +37,7 @@ namespace Modules.Devkit.AssetTuning
         private string[] spriteFolderNames = null;
         [SerializeField]
         private string[] ignoreSpriteFolders = null;
-
+        
         //----- property -----
 
         /// <summary> 圧縮設定を適用するフォルダ. </summary>
