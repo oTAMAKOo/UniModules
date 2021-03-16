@@ -187,15 +187,17 @@ namespace Modules.Devkit.AssetTuning
 
             var targetPaths = folders.Where(x => x != null).Select(x => AssetDatabase.GetAssetPath(x));
 
+            var pathSeparatorStr = PathUtility.PathSeparator.ToString();
+
             foreach (var targetPath in targetPaths)
             {
                 var path = PathUtility.ConvertPathSeparator(targetPath);
 
-                if (assetPath.StartsWith(path + PathUtility.PathSeparator))
+                if (assetPath.StartsWith(path + pathSeparatorStr))
                 {
                     // フォルダパスで除外.
 
-                    var ignoreFolderPaths = ignoreFolders.Where(x => x.EndsWith(PathUtility.PathSeparator.ToString())).ToArray();
+                    var ignoreFolderPaths = ignoreFolders.Where(x => x.EndsWith(pathSeparatorStr)).ToArray();
 
                     if (ignoreFolderPaths.Any(x => assetPath.Contains(x))) { continue; }
 
