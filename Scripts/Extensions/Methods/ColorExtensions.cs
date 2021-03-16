@@ -3,6 +3,7 @@ using UnityEngine;
 using System;
 using System.Linq;
 using System.Collections.Generic;
+using System.Text;
 
 namespace Extensions
 {
@@ -43,5 +44,24 @@ namespace Extensions
             return new Color32(r, g, b, a);
         }
 
+        /// <summary> 文字列から一意のカラーコードを生成 </summary>
+        public static string ToHexCode(this string str)
+        {
+            return str.ToHexCode(Encoding.UTF8);
+        }
+
+        /// <summary> 文字列から一意のカラーコードを生成 </summary>
+        public static string ToHexCode(this string str, Encoding enc)
+        {
+            var crc = str.GetCRC();
+
+            var bytes = enc.GetBytes(crc);
+
+            var r = (bytes[0] & 0xFF) % 100;
+            var g = (bytes[1] & 0xFF) % 100;
+            var b = (bytes[2] & 0xFF) % 100;
+
+            return string.Format("0x{0:D2}{1:D2}{2:D2}", r, g, b);
+        }
     }
 }
