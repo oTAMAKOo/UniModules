@@ -61,7 +61,7 @@ namespace Modules.Devkit.AssetTuning
             }
             else
             {
-                if (TextureAssetTunerConfig.Prefs.forceApply)
+                if (TextureAssetTunerConfig.Prefs.changeSettingOnImport)
                 {
                     SetTextureTypeSettings(textureImporter);
                     SetCompressionSettings(textureImporter);

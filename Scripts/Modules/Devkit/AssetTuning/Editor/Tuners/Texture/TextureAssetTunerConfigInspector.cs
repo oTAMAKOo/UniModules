@@ -44,7 +44,7 @@ namespace Modules.Devkit.AssetTuning
 
         private TextureAssetTunerConfig instance = null;
 
-        private bool forceApplyStatus = false;
+        private bool applyOnImport = false;
 
         //----- property -----
 
@@ -132,7 +132,7 @@ namespace Modules.Devkit.AssetTuning
 
             //------ Options ------
 
-            forceApplyStatus = TextureAssetTunerConfig.Prefs.forceApply;
+            applyOnImport = TextureAssetTunerConfig.Prefs.applyOnImport;
         }
 
         public override void OnInspectorGUI()
@@ -165,16 +165,16 @@ namespace Modules.Devkit.AssetTuning
             {
                 EditorGUI.BeginChangeCheck();
 
-                forceApplyStatus = EditorGUILayout.Toggle("Force Apply", forceApplyStatus);
+                applyOnImport = EditorGUILayout.Toggle("Change setting on import", applyOnImport);
 
                 if (EditorGUI.EndChangeCheck())
                 {
-                    TextureAssetTunerConfig.Prefs.forceApply = forceApplyStatus;
+                    TextureAssetTunerConfig.Prefs.applyOnImport = applyOnImport;
                 }
 
                 GUILayout.Space(3f);
 
-                EditorGUILayout.HelpBox("Please enable this flag if you require force update.", MessageType.Info);
+                EditorGUILayout.HelpBox("When this flag is enabled, the settings will be changed at the time of import..", MessageType.Info);
             }
         }
 

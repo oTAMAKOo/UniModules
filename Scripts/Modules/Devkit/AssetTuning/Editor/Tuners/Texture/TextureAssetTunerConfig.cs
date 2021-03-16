@@ -13,10 +13,10 @@ namespace Modules.Devkit.AssetTuning
 
         public static class Prefs
         {
-            public static bool forceApply
+            public static bool changeSettingOnImport
             {
-                get { return ProjectPrefs.GetBool("TextureAssetTunerConfigPrefs-forceApply", false); }
-                set { ProjectPrefs.SetBool("TextureAssetTunerConfigPrefs-forceApply", value); }
+                get { return ProjectPrefs.GetBool("TextureAssetTunerConfigPrefs-changeSettingOnImport", false); }
+                set { ProjectPrefs.SetBool("TextureAssetTunerConfigPrefs-changeSettingOnImport", value); }
             }
         }
 
