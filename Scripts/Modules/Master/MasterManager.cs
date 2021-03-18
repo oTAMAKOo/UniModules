@@ -67,7 +67,7 @@ namespace Modules.Master
             {
                 var message = string.Format("File name has already been registered.\n\nClass : {0}\nFile : {1}", type.FullName, fileName);
 
-                throw new InvalidDataException(message);
+                throw new Exception(message);
             }
 
             masters.Add(fileName, master);
@@ -98,7 +98,7 @@ namespace Modules.Master
         {
             if (!typeof(IMaster).IsAssignableFrom(type))
             {
-                throw new InvalidDataException(string.Format("Type error require IMaster interface. : {0}", type.FullName));
+                throw new Exception(string.Format("Type error require IMaster interface. : {0}", type.FullName));
             }
 
             var fileName = string.Empty;

@@ -100,7 +100,7 @@ namespace Modules.Master
 
                 var message = string.Format("Master record error!\nRecords same key already exists.\n\n Master : {0}\nKey : {1}\n", typeName, key);
 
-                throw new InvalidDataException(message);
+                throw new Exception(message);
             }
 
             records.Add(key, masterRecord);
@@ -261,10 +261,7 @@ namespace Modules.Master
 
         protected virtual byte[] Decrypt(byte[] bytes, AesCryptoKey cryptoKey)
         {
-            if (bytes.Length == 0)
-            {
-                throw new InvalidDataException();
-            }
+            if (bytes.Length == 0){ return new byte[0]; }
 
             return bytes.Decrypt(cryptoKey);
         }
