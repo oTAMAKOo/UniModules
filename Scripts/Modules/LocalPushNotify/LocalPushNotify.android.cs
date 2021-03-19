@@ -19,8 +19,8 @@ namespace Modules.LocalPushNotify
         {
             public static int[] notificationKeys
             {
-                get { return PlayerPrefsEx.Get<int[]>("NotificationKeys"); }
-                set { PlayerPrefsEx.Set<int[]>("NotificationKeys", value); }
+                get { return SecurePrefs.Get<int[]>("NotificationKeys"); }
+                set { SecurePrefs.Set<int[]>("NotificationKeys", value); }
             }
         }
 

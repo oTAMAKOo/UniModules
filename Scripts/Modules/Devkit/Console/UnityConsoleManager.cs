@@ -9,6 +9,8 @@ using Modules.Devkit.Prefs;
 
 namespace Modules.Devkit.Console
 {
+    #if UNITY_EDITOR
+
     [Serializable]
     public sealed class ConsoleInfo
     {
@@ -105,4 +107,6 @@ namespace Modules.Devkit.Console
             Prefs.config = json;
         }
     }
+
+    #endif
 }
