@@ -74,6 +74,10 @@ namespace Modules.ExternalResource
         private Subject<AssetInfo> onTimeOut = null;
         private Subject<Exception> onError = null;
 
+        private Subject<string> onUpdateAsset = null;
+        private Subject<string> onLoadAsset = null;
+        private Subject<string> onUnloadAsset = null;
+
         private bool initialized = false;
 
         //----- property -----
@@ -450,6 +454,11 @@ namespace Modules.ExternalResource
                 builder.AppendFormat("Hash = {0}", assetInfo.FileHash).AppendLine();
 
                 UnityConsole.Event(ConsoleEventName, ConsoleEventColor, builder.ToString());
+
+                if (onUnloadAsset != null)
+                {
+                    onUnloadAsset.OnNext(resourcePath);
+                }
             }
 
             var isLoading = loadingAssets.Contains(assetInfo);
@@ -497,6 +506,11 @@ namespace Modules.ExternalResource
                 }
 
                 UnityConsole.Event(ConsoleEventName, ConsoleEventColor, builder.ToString());
+
+                if (onLoadAsset != null)
+                {
+                    onLoadAsset.OnNext(resourcePath);
+                }
             }
 
             observer.OnNext(result);
@@ -512,6 +526,21 @@ namespace Modules.ExternalResource
         /// <summary> 全てのAssetbundleを解放 </summary>
         public static void UnloadAllAssetBundles(bool unloadAllLoadedObjects = false)
         {
+            Instance.UnloadAllAssetsInternal(unloadAllLoadedObjects);
+        }
+
+        private void UnloadAllAssetsInternal(bool unloadAllLoadedObjects)
+        {
+            if (onUnloadAsset != null)
+            {
+                var loadedAssets = GetLoadedAssets();
+
+                foreach (var loadedAsset in loadedAssets)
+                {
+                    onUnloadAsset.OnNext(loadedAsset.Item1);
+                }
+            }
+
             Instance.assetBundleManager.UnloadAllAsset(unloadAllLoadedObjects);
         }
 
@@ -543,6 +572,11 @@ namespace Modules.ExternalResource
             }
 
             assetBundleManager.UnloadAsset(assetInfo.AssetBundle.AssetBundleName);
+
+            if (onUnloadAsset != null)
+            {
+                onUnloadAsset.OnNext(resourcePath);
+            }
         }
 
         #endregion
@@ -606,11 +640,21 @@ namespace Modules.ExternalResource
                     builder.AppendFormat("Hash = {0}", assetInfo.FileHash).AppendLine();
 
                     UnityConsole.Event(ConsoleEventName, ConsoleEventColor, builder.ToString());
+
+                    if (onUpdateAsset != null)
+                    {
+                        onUpdateAsset.OnNext(resourcePath);
+                    }
                 }
 
                 filePath = PathUtility.GetPathWithoutExtension(filePath) + CriAssetDefinition.AcbExtension;
 
                 observer.OnNext(File.Exists(filePath) ? new CueInfo(cue, filePath) : null);
+
+                if (onLoadAsset != null)
+                {
+                    onLoadAsset.OnNext(resourcePath);
+                }
             }
 
             observer.OnCompleted();
@@ -666,12 +710,22 @@ namespace Modules.ExternalResource
                         builder.AppendFormat("Hash = {0}", assetInfo.FileHash).AppendLine();
 
                         UnityConsole.Event(ConsoleEventName, ConsoleEventColor, builder.ToString());
+
+                        if (onUpdateAsset != null)
+                        {
+                            onUpdateAsset.OnNext(resourcePath);
+                        }
                     }
                 }
 
                 filePath = PathUtility.GetPathWithoutExtension(filePath) + CriAssetDefinition.UsmExtension;
 
                 observer.OnNext(File.Exists(filePath) ? new ManaInfo(filePath) : null);
+
+                if (onLoadAsset != null)
+                {
+                    onLoadAsset.OnNext(resourcePath);
+                }
             }
 
             observer.OnCompleted();
@@ -701,20 +755,34 @@ namespace Modules.ExternalResource
             }
         }
 
-        /// <summary>
-        /// タイムアウト時のイベント.
-        /// </summary>
+        /// <summary> タイムアウト時イベント. </summary>
         public IObservable<AssetInfo> OnTimeOutAsObservable()
         {
             return onTimeOut ?? (onTimeOut = new Subject<AssetInfo>());
         }
 
-        /// <summary>
-        /// エラー時のイベント.
-        /// </summary>
+        /// <summary> エラー時イベント. </summary>
         public IObservable<Exception> OnErrorAsObservable()
         {
             return onError ?? (onError = new Subject<Exception>());
+        }
+
+        /// <summary> アセット更新時イベント. </summary>
+        public IObservable<string> OnUpdateAssetAsObservable()
+        {
+            return onUpdateAsset ?? (onUpdateAsset = new Subject<string>());
+        }
+
+        /// <summary> アセット読み込み時イベント. </summary>
+        public IObservable<string> OnLoadAssetAsObservable()
+        {
+            return onLoadAsset ?? (onLoadAsset = new Subject<string>());
+        }
+
+        /// <summary> アセット解放時イベント. </summary>
+        public IObservable<string> OnUnloadAssetAsObservable()
+        {
+            return onUnloadAsset ?? (onUnloadAsset = new Subject<string>());
         }
     }
 }
