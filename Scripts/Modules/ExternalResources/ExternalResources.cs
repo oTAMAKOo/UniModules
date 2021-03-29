@@ -350,6 +350,11 @@ namespace Modules.ExternalResource
             }
 
             UpdateVersion(resourcePath);
+
+            if (onUnloadAsset != null)
+            {
+                onUnloadAsset.OnNext(resourcePath);
+            }
         }
 
         private void CancelAllCoroutines()
@@ -454,11 +459,6 @@ namespace Modules.ExternalResource
                 builder.AppendFormat("Hash = {0}", assetInfo.FileHash).AppendLine();
 
                 UnityConsole.Event(ConsoleEventName, ConsoleEventColor, builder.ToString());
-
-                if (onUnloadAsset != null)
-                {
-                    onUnloadAsset.OnNext(resourcePath);
-                }
             }
 
             var isLoading = loadingAssets.Contains(assetInfo);
@@ -640,11 +640,6 @@ namespace Modules.ExternalResource
                     builder.AppendFormat("Hash = {0}", assetInfo.FileHash).AppendLine();
 
                     UnityConsole.Event(ConsoleEventName, ConsoleEventColor, builder.ToString());
-
-                    if (onUpdateAsset != null)
-                    {
-                        onUpdateAsset.OnNext(resourcePath);
-                    }
                 }
 
                 filePath = PathUtility.GetPathWithoutExtension(filePath) + CriAssetDefinition.AcbExtension;
@@ -710,11 +705,6 @@ namespace Modules.ExternalResource
                         builder.AppendFormat("Hash = {0}", assetInfo.FileHash).AppendLine();
 
                         UnityConsole.Event(ConsoleEventName, ConsoleEventColor, builder.ToString());
-
-                        if (onUpdateAsset != null)
-                        {
-                            onUpdateAsset.OnNext(resourcePath);
-                        }
                     }
                 }
 
