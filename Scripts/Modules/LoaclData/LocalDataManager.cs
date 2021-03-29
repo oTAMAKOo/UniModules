@@ -29,16 +29,16 @@ namespace Modules.LocalData
         private const string DefaultIv = "YiEs3x1as8JhK9qp";
 
         //----- field -----
-
+        
         private AesCryptoKey aesCryptoKey = null;
-
-        private string fileDirectory = null;
 
         private Dictionary<Type, string> filePathCache = null;
 
         private Dictionary<Type, ILocalData> dataCache = null;
 
         //----- property -----
+
+        public string FileDirectory { get; private set; }
 
         //----- method -----
 
@@ -47,7 +47,7 @@ namespace Modules.LocalData
             filePathCache = new Dictionary<Type, string>();
             dataCache = new Dictionary<Type, ILocalData>();
 
-            fileDirectory = Application.persistentDataPath + "/LocalData/";
+            FileDirectory = Application.persistentDataPath + "/LocalData/";
         }
 
         public void SetCryptoKey(AesCryptoKey cryptoKey)
@@ -57,12 +57,14 @@ namespace Modules.LocalData
 
         public void SetFileDirectory(string directory)
         {
+            if (string.IsNullOrEmpty(directory)) { return; }
+
             if (!Directory.Exists(directory))
             {
                 Directory.CreateDirectory(directory);
             }
 
-            fileDirectory = directory;
+            FileDirectory = directory;
         }
 
         public void CacheClear()
@@ -153,9 +155,9 @@ namespace Modules.LocalData
 
             if (!string.IsNullOrEmpty(filePath)){ return filePath; }
             
-            if (!Directory.Exists(fileDirectory))
+            if (!Directory.Exists(FileDirectory))
             {
-                Directory.CreateDirectory(fileDirectory);
+                Directory.CreateDirectory(FileDirectory);
             }
 
             var fileName = string.Empty;
@@ -177,7 +179,7 @@ namespace Modules.LocalData
                 throw new Exception(string.Format("FileNameAttribute is not set for this class.\n{0}", type.FullName));
             }
 
-            filePath = PathUtility.Combine(fileDirectory, fileName);
+            filePath = PathUtility.Combine(FileDirectory, fileName);
 
             filePathCache.Add(typeof(T), filePath);
 
@@ -214,7 +216,7 @@ namespace Modules.LocalData
 
         public static void DeleteAll()
         {
-            var directory = Instance.fileDirectory;
+            var directory = Instance.FileDirectory;
             var dataCache = Instance.dataCache;
 
             DirectoryUtility.Clean(directory);
