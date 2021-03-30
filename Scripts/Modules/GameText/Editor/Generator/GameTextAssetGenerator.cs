@@ -31,11 +31,11 @@ namespace Modules.GameText.Editor
                 {
                     var record = records[j];
 
-                    var contentData = record.contents.ElementAtOrDefault(textIndex);
+                    var text = record.texts.ElementAtOrDefault(textIndex);
+                    
+                    var cryptText = string.IsNullOrEmpty(text) ? string.Empty : text.Encrypt(aesCryptoKey);
 
-                    var text = contentData != null ? contentData.text.Encrypt(aesCryptoKey) : string.Empty;
-
-                    var textContent = new TextContent(record.guid, text);
+                    var textContent = new TextContent(record.guid, cryptText);
 
                     contents.Add(textContent);
                 }

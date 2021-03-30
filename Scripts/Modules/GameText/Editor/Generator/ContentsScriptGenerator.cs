@@ -72,9 +72,7 @@ namespace Modules.GameText
 
                     if (string.IsNullOrEmpty(enumName)) { continue; }
 
-                    var contentData = record.contents.ElementAtOrDefault(textIndex);
-
-                    var text = contentData != null ? contentData.text : string.Empty;
+                    var text = record.texts.ElementAtOrDefault(textIndex);
 
                     var summary = string.Format(SummaryTemplate, string.IsNullOrEmpty(text) ? string.Empty : text.Replace("\r\n", "").Replace("\n", ""));
 

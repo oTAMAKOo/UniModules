@@ -22,11 +22,6 @@ namespace Modules.GameText.Editor
 
         public string guid { get; set; } = null;
 
-        public ContentData[] contents { get; set; } = null;
-    }
-
-    public sealed class ContentData
-    {
-        public string text { get; set; } = null;
+        public string[] texts { get; set; } = null;
     }
 }
