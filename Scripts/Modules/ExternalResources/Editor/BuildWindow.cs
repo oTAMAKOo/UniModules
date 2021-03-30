@@ -115,7 +115,12 @@ namespace Modules.ExternalResource.Editor
                         // ビルド.
                         if (build)
                         {
-                            BuildManager.Build();
+                            var exportPath = BuildManager.SelectExportPath();
+
+                            if (!string.IsNullOrEmpty(exportPath))
+                            {
+                                BuildManager.Build(exportPath);
+                            }
                         }
                     }
                     finally

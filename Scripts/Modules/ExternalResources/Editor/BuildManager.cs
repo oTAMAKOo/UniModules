@@ -43,10 +43,8 @@ namespace Modules.ExternalResource.Editor
             return EditorUtility.DisplayDialog("Confirmation", "外部アセットを生成します.", "実行", "中止");
         }
 
-        public static void Build()
+        public static void Build(string exportPath)
         {
-            var exportPath = GetExportPath();
-
             if (string.IsNullOrEmpty(exportPath)) { return; }
 
             if (Directory.Exists(exportPath))
@@ -123,7 +121,7 @@ namespace Modules.ExternalResource.Editor
             }
         }
         
-        private static string GetExportPath()
+        public static string SelectExportPath()
         {
             var directory = string.IsNullOrEmpty(Prefs.exportPath) ? null : Path.GetDirectoryName(Prefs.exportPath);
             var folderName = string.IsNullOrEmpty(Prefs.exportPath) ? ExportFolderName : Path.GetFileName(Prefs.exportPath);
