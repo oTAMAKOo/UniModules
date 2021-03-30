@@ -37,6 +37,8 @@ namespace Modules.GameText.Editor
         {
             titleContent = new GUIContent(WindowTitle);
 
+            minSize = new Vector2(350, 200f);
+
             mode = Mode.BuiltIn;
 
             Show(true);

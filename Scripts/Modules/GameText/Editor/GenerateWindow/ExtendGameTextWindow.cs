@@ -27,13 +27,13 @@ namespace Modules.GameText.Editor
         {
             titleContent = new GUIContent(WindowTitle);
 
+            minSize = new Vector2(350, 200f);
+
             Show(true);
         }
 
         void OnGUI()
         {
-            var gameText = GameText.Instance;
-
             var generateInfos = GameTextLanguage.Infos;
 
             if (generateInfos == null) { return; }

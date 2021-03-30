@@ -31,9 +31,16 @@ namespace Modules.GameText.Editor
 
             GameTextLanguage.Info info = null;
 
-            if (selection.HasValue)
+            if (generateInfos.Length == 1)
             {
-                info = generateInfos.ElementAtOrDefault(selection.Value);
+                info = generateInfos.First();
+            }
+            else
+            {
+                if (selection.HasValue)
+                {
+                    info = generateInfos.ElementAtOrDefault(selection.Value);
+                }
             }
 
             return info;
