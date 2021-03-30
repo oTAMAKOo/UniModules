@@ -22,7 +22,7 @@ namespace Modules.Amazon.S3
         private AmazonS3Client client = null;
 
         //----- property -----
-        
+
         public string IdentityPoolId { get; protected set; }
 
         public string BucketName { get; protected set; }
@@ -88,7 +88,7 @@ namespace Modules.Amazon.S3
                 BucketName = BucketName,
                 Key = objectPath,
             };
-            
+
             return await GetObjectMetaData(request);
         }
 
@@ -132,7 +132,34 @@ namespace Modules.Amazon.S3
 
         #endregion
 
-        
+        #region Upload
+
+        public async Task Upload(string uploadFilePath, string objectPath = null)
+        {
+            var fileTransferUtility = new TransferUtility(client);
+
+            if (string.IsNullOrEmpty(objectPath))
+            {
+                // Upload a file. The file name is used as the object key name.
+                await fileTransferUtility.UploadAsync(uploadFilePath, BucketName);
+            }
+            else
+            {
+                // Specify object key name explicitly.
+                await fileTransferUtility.UploadAsync(uploadFilePath, BucketName, objectPath);
+            }
+        }
+
+        public async Task Upload(TransferUtilityUploadRequest uploadRequest)
+        {
+            var fileTransferUtility = new TransferUtility(client);
+
+            uploadRequest.BucketName = BucketName;
+
+            await fileTransferUtility.UploadAsync(uploadRequest);
+        }
+
+        #endregion
 
         #region Delete
 
