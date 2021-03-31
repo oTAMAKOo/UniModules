@@ -4,12 +4,14 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
 using Amazon;
 using Amazon.CognitoIdentity;
 using Amazon.S3;
 using Amazon.S3.Model;
 using Amazon.S3.Transfer;
+using Extensions;
 
 namespace Modules.Amazon.S3
 {
@@ -45,12 +47,22 @@ namespace Modules.Amazon.S3
 
         #region Get
 
-        public async Task<S3Object[]> GetObjectList(int? maxKeys = null)
+        public async Task<S3Object[]> GetObjectList(string prefix = null, int? maxKeys = null)
         {
             var request = new ListObjectsV2Request
             {
                 BucketName = BucketName,
             };
+
+            if (!string.IsNullOrEmpty(prefix))
+            {
+                if (prefix.EndsWith(PathUtility.PathSeparator.ToString()))
+                {
+                    prefix += PathUtility.PathSeparator;
+                }
+
+                request.Prefix = prefix;
+            }
 
             if (maxKeys.HasValue)
             {
@@ -136,34 +148,49 @@ namespace Modules.Amazon.S3
 
         public async Task Upload(string uploadFilePath, string objectPath = null)
         {
-            var fileTransferUtility = new TransferUtility(client);
-
-            if (string.IsNullOrEmpty(objectPath))
+            using (var fileTransferUtility = new TransferUtility(client))
             {
-                // Upload a file. The file name is used as the object key name.
-                await fileTransferUtility.UploadAsync(uploadFilePath, BucketName);
-            }
-            else
-            {
-                // Specify object key name explicitly.
-                await fileTransferUtility.UploadAsync(uploadFilePath, BucketName, objectPath);
+                if (string.IsNullOrEmpty(objectPath))
+                {
+                    // Upload a file. The file name is used as the object key name.
+                    await fileTransferUtility.UploadAsync(uploadFilePath, BucketName);
+                }
+                else
+                {
+                    // Specify object key name explicitly.
+                    await fileTransferUtility.UploadAsync(uploadFilePath, BucketName, objectPath);
+                }
             }
         }
 
         public async Task Upload(TransferUtilityUploadRequest uploadRequest)
         {
-            var fileTransferUtility = new TransferUtility(client);
+            using (var fileTransferUtility = new TransferUtility(client))
+            {
+                uploadRequest.BucketName = BucketName;
 
-            uploadRequest.BucketName = BucketName;
+                await fileTransferUtility.UploadAsync(uploadRequest);
+            }
+        }
 
-            await fileTransferUtility.UploadAsync(uploadRequest);
+        #endregion
+
+        #region Put
+
+        public async Task<PutObjectResponse> Put(PutObjectRequest request)
+        {
+            request.BucketName = BucketName;
+
+            var response = await client.PutObjectAsync(request);
+
+            return response;
         }
 
         #endregion
 
         #region Delete
 
-        public async Task DeleteObject(string objectPath)
+        public async Task<DeleteObjectResponse> DeleteObject(string objectPath)
         {
             var request = new DeleteObjectRequest
             {
@@ -171,14 +198,64 @@ namespace Modules.Amazon.S3
                 Key = objectPath,
             };
 
-            await client.DeleteObjectAsync(request);
+            var response = await client.DeleteObjectAsync(request);
+
+            return response;
         }
 
-        public async Task DeleteObject(DeleteObjectRequest request)
+        public async Task<DeleteObjectResponse> DeleteObject(DeleteObjectRequest request)
         {
             request.BucketName = BucketName;
 
-            await client.DeleteObjectAsync(request);
+            var response = await client.DeleteObjectAsync(request);
+
+            return response;
+        }
+
+        public async Task<DeleteObjectsResponse> DeleteObjects(string[] objectPaths, string[] versionIds = null)
+        {
+            var keyVersions = new List<KeyVersion>();
+
+            for (var i = 0; i < objectPaths.Length; i++)
+            {
+                var objectPath = objectPaths[i];
+
+                var keyVersion = new KeyVersion()
+                {
+                    Key = objectPath,
+                };
+
+                if (versionIds != null)
+                {
+                    var versionId = versionIds.ElementAtOrDefault(i);
+
+                    if (!string.IsNullOrEmpty(versionId))
+                    {
+                        keyVersion.VersionId = versionId;
+                    }
+                }
+
+                keyVersions.Add(keyVersion);
+            }
+
+            var request = new DeleteObjectsRequest
+            {
+                BucketName = BucketName,
+                Objects = keyVersions,
+            };
+
+            var response = await client.DeleteObjectsAsync(request);
+
+            return response;
+        }
+
+        public async Task<DeleteObjectsResponse> DeleteObjects(DeleteObjectsRequest request)
+        {
+            request.BucketName = BucketName;
+
+            var response = await client.DeleteObjectsAsync(request);
+
+            return response;
         }
 
         #endregion

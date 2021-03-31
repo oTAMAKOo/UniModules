@@ -336,5 +336,20 @@ namespace Extensions
 
             return list;
         }
+
+        /// <summary>
+        /// 指定された個数ずつの要素に分割.
+        /// </summary>
+        public static IEnumerable<IEnumerable<T>> Chunk<T>(this IEnumerable<T> source, int chunkSize)
+        {
+            if (chunkSize <= 0)
+            {
+                throw new ArgumentException("Chunk size must be greater than 0.", nameof(chunkSize));
+            }
+
+            return source.Select((v, i) => new { v, i })
+                .GroupBy(x => x.i / chunkSize)
+                .Select(g => g.Select(x => x.v));
+        }
     }
 }
