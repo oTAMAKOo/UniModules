@@ -42,23 +42,25 @@ namespace Modules.Devkit.ScriptableObjects
 
             var time = File.GetLastWriteTime(instance.assetFullPath);
 
-            var update = !instance.lastWriteTime.HasValue || instance.lastWriteTime.Value != time;
-            
-            if(update)
+            if (instance.lastWriteTime != time)
             {
-				if (onReload != null)
-				{
-					onReload.OnNext(Unit.Default);
-				}
+                if (onReload != null)
+                {
+                    onReload.OnNext(Unit.Default);
+                }
 
-				instance = LoadInstance();
+                if (instance.lastWriteTime.HasValue)
+                {
+                    instance = LoadInstance();
+                }
+
                 instance.lastWriteTime = time;
             }
 
             return instance;
         }
 
-		public static IObservable<Unit> OnReloadAsObservable()
+        public static IObservable<Unit> OnReloadAsObservable()
 		{
 			return onReload ?? (onReload = new Subject<Unit>());
 		}

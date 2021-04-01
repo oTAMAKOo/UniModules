@@ -2,6 +2,7 @@
 using UnityEngine;
 using UnityEditor;
 using System.Linq;
+using Extensions.Devkit;
 
 namespace Modules.Devkit.ScriptableObjects
 {
@@ -37,9 +38,7 @@ namespace Modules.Devkit.ScriptableObjects
 
         void Awake()
         {
-            var target = LoadInstance();
-
-            if (target != null && target != this)
+            if (instance != null && instance != this)
             {
                 EditorApplication.delayCall += () =>
                 {
@@ -58,10 +57,7 @@ namespace Modules.Devkit.ScriptableObjects
 
         protected static T LoadInstance()
         {
-            var targetAsset = AssetDatabase.FindAssets(string.Format("t:{0}", typeof(T).FullName))
-                    .Select(x => AssetDatabase.GUIDToAssetPath(x))
-                    .Select(x => AssetDatabase.LoadAssetAtPath<T>(x))
-                    .FirstOrDefault(x => x != null);
+            var targetAsset = UnityEditorUtility.FindAssetsByType<T>(string.Format("t:{0}", typeof(T).FullName)).FirstOrDefault();
 
             if (targetAsset == null)
             {
