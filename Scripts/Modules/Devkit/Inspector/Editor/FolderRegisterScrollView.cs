@@ -141,13 +141,13 @@ namespace Modules.Devkit.Inspector
 
         protected override FolderInfo CreateNewContent()
         {
-            var compressFolder = new FolderInfo()
+            var folderInfo = new FolderInfo()
             {
                 asset = null,
                 assetPath = string.Empty,
             };
 
-            return compressFolder;
+            return folderInfo;
         }
 
         protected override void DrawHeaderContent()
@@ -172,7 +172,7 @@ namespace Modules.Devkit.Inspector
             {
                 using (new ContentsScope())
                 {
-                    var scrollViewHeight = Mathf.Min(Contents.Length * 18f, 150f);
+                    var scrollViewHeight = Mathf.Min(Contents.Length * 20f, 150f);
 
                     var options = new List<GUILayoutOption>();
 
