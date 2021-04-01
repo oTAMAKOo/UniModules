@@ -10,7 +10,7 @@ using Object = UnityEngine.Object;
 
 namespace Modules.Devkit.Inspector
 {
-    public sealed class AssetRegisterScrollView : RegisterScrollView<AssetRegisterScrollView.AssetInfo>
+    public class AssetRegisterScrollView : RegisterScrollView<AssetRegisterScrollView.AssetInfo>
     {
         //----- params -----
 
@@ -65,6 +65,9 @@ namespace Modules.Devkit.Inspector
             RemoveChildrenAssets = false;
         }
 
+        // 外部公開しない.
+        private new void SetContents(AssetInfo[] contents) { }
+
         public void SetContents(string[] guids)
         {
             if (guids == null)
@@ -111,29 +114,6 @@ namespace Modules.Devkit.Inspector
                                 assetPath = assetPath,
                                 asset = asset,
                             };
-
-                            // 一旦ローカル配列に変換してから上書き.
-                            var contents = Contents.ToArray();
-
-                            contents[index] = info;
-
-                            // 親が登録された場合子階層を除外.
-                            if (RemoveChildrenAssets)
-                            {
-                                if (CheckParentFolderRegisted(asset, Contents))
-                                {
-                                    var removeChildrenInfos = GetRemoveChildrenAssets(asset, Contents);
-
-                                    if (removeChildrenInfos.Any())
-                                    {
-                                        EditorUtility.DisplayDialog("Removed Assets", "Removed registration of child assets.", "Close");
-
-                                        contents = contents.Where(x => !removeChildrenInfos.Contains(x)).ToArray();
-                                    }
-                                }
-                            }
-
-                            Contents = contents;
                         }
                     }
                     break;
@@ -192,36 +172,76 @@ namespace Modules.Devkit.Inspector
             }
         }
 
-        protected static bool CheckParentFolderRegisted(Object asset, AssetInfo[] assetInfos)
+        // 登録された際に削除されるアセット情報取得.
+        protected override void ValidateContent(AssetInfo newAssetInfo)
         {
-            var assetPath = AssetDatabase.GetAssetPath(asset);
-
-            var registedAssetInfo = assetInfos
-                .Where(x => x.asset != null && !string.IsNullOrEmpty(x.assetPath))
-                .FirstOrDefault(x => x.assetPath.Length <= assetPath.Length && assetPath.StartsWith(x.assetPath));
-
-            if (registedAssetInfo != null)
+            // 親が登録された場合子階層を除外.
+            if (RemoveChildrenAssets)
             {
-                EditorUtility.DisplayDialog("Register failed", "This folder is registed.", "Close");
+                var removeInfos = new List<AssetInfo>();
 
-                EditorGUIUtility.PingObject(registedAssetInfo.asset);
+                // 同じオブジェクトが複数登録済み.
 
-                return false;
+                var infos = Contents.Where(x => x.guid == newAssetInfo.guid).ToArray();
+
+                if (1 < infos.Length)
+                {
+                    for (var i = 1; i < infos.Length; i++)
+                    {
+                        removeInfos.Add(infos[i]);
+                    }
+                }
+
+                // 親階層のフォルダが既に登録済み.
+
+                var folderInfos = Contents.Where(x => AssetDatabase.IsValidFolder(x.assetPath));
+
+                foreach (var folderInfo in folderInfos)
+                {
+                    if (newAssetInfo.assetPath.Length <= folderInfo.assetPath.Length) { continue; }
+
+                    if (newAssetInfo.assetPath.StartsWith(folderInfo.assetPath))
+                    {
+                        removeInfos.Add(newAssetInfo);
+                    }
+                }
+
+                // 子が登録済み.
+
+                if (AssetDatabase.IsValidFolder(newAssetInfo.assetPath))
+                {
+                    foreach (var assetInfo in Contents)
+                    {
+                        if (assetInfo.assetPath.Length <= newAssetInfo.assetPath.Length) { continue; }
+
+                        if (assetInfo.assetPath.StartsWith(newAssetInfo.assetPath))
+                        {
+                            removeInfos.Add(assetInfo);
+                        }
+                    }
+                }
+
+                // 除外対象を除外.
+
+                if (removeInfos.Any())
+                {
+                    EditorUtility.DisplayDialog("Removed Assets", "Removed registration of child assets.", "Close");
+
+                    var contents = Contents.ToList();
+
+                    foreach (var info in removeInfos)
+                    {
+                        var content = contents.FirstOrDefault(x => x.guid == info.guid);
+
+                        if (content != null)
+                        {
+                            contents.Remove(content);
+                        }
+                    }
+
+                    Contents = contents.ToArray();
+                }
             }
-
-            return true;
-        }
-
-        // 親フォルダが登録された際に削除されるアセット情報取得.
-        private static AssetInfo[] GetRemoveChildrenAssets(Object asset, AssetInfo[] assetInfos)
-        {
-            if (asset == null) { return new AssetInfo[0]; }
-
-            var assetPath = AssetDatabase.GetAssetPath(asset);
-
-            if (!AssetDatabase.IsValidFolder(assetPath)) { return new AssetInfo[0]; }
-
-            return assetInfos.Where(x => assetPath.Length < x.assetPath.Length && x.assetPath.StartsWith(assetPath)).ToArray();
         }
     }
 }

@@ -18,12 +18,14 @@ namespace Modules.Devkit.Inspector
         private sealed class FastScrollView : EditorGUIFastScrollView<T>
         {
             private RegisterScrollView<T> instance = null;
-            
+
+            private Subject<T> onRequestValidate = null;
+
             public override Direction Type { get { return Direction.Vertical; } }
 
             public FastScrollView(RegisterScrollView<T> instance)
             {
-                this.instance = instance;                
+                this.instance = instance;
             }
 
             protected override void DrawContent(int index, T content)
@@ -41,6 +43,11 @@ namespace Modules.Devkit.Inspector
                         list[index] = content;
 
                         Contents = list.ToArray();
+
+                        if (onRequestValidate != null)
+                        {
+                            onRequestValidate.OnNext(content);
+                        }
 
                         if (instance.onUpdateContents != null)
                         {
@@ -64,6 +71,11 @@ namespace Modules.Devkit.Inspector
                         RequestRepaint();
                     }
                 }
+            }
+
+            public IObservable<T> OnRequestValidateAsObservable()
+            {
+                return onRequestValidate ?? (onRequestValidate = new Subject<T>());
             }
         }
 
@@ -102,6 +114,10 @@ namespace Modules.Devkit.Inspector
                             onRepaintRequest.OnNext(Unit.Default);
                         }
                     })
+                .AddTo(Disposable);
+
+            scrollView.OnRequestValidateAsObservable()
+                .Subscribe(x => ValidateContent(x))
                 .AddTo(Disposable);
         }
 
@@ -151,6 +167,8 @@ namespace Modules.Devkit.Inspector
         }
 
         protected virtual void DrawHeaderContent() { }
+
+        protected virtual void ValidateContent(T content) { }
 
         protected abstract T CreateNewContent();
 

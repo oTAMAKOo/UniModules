@@ -70,7 +70,11 @@ namespace Modules.Devkit.AssetTuning
                 .Subscribe(_ => Repaint())
                 .AddTo(lifetimeDisposable.Disposable);
 
-            compressFolderView.SetContents(instance.CompressFolders);
+            var compressFolderGuids = instance.CompressFolders
+                .Select(x => UnityEditorUtility.GetAssetGUID(x))
+                .ToArray();
+
+            compressFolderView.SetContents(compressFolderGuids);
 
             //------ Sprite Folder ------
 
@@ -86,7 +90,11 @@ namespace Modules.Devkit.AssetTuning
                 .Subscribe(_ => Repaint())
                 .AddTo(lifetimeDisposable.Disposable);
 
-            spriteFolderView.SetContents(instance.SpriteFolders);
+            var spriteFolderGuids = instance.SpriteFolders
+                .Select(x => UnityEditorUtility.GetAssetGUID(x))
+                .ToArray();
+
+            spriteFolderView.SetContents(spriteFolderGuids);
 
             //------ Ignore Compress FolderName ------
 
