@@ -1,18 +1,15 @@
 ﻿
 #if ENABLE_CRIWARE_ADX
 
-using UnityEngine;
 using UnityEditor;
-using System;
 using System.Linq;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using System.Text.RegularExpressions;
-using UniRx;
+using CriWare;
 using Extensions;
 using Modules.Devkit.Generators;
-using Modules.Devkit;
 using Modules.CriWare;
 using Modules.CriWare.Editor;
 

@@ -2,6 +2,7 @@
 #if ENABLE_CRIWARE_ADX
 
 using System.IO;
+using CriWare;
 using Modules.CriWare;
 
 namespace Modules.SoundManagement

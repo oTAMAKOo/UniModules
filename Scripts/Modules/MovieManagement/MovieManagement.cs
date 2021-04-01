@@ -5,7 +5,8 @@ using UnityEngine;
 using UnityEngine.UI;
 using System.Collections.Generic;
 using UniRx;
-using CriMana;
+using CriWare;
+using CriWare.CriMana;
 using Extensions;
 using Modules.CriWare;
 using System.IO;
@@ -140,7 +141,7 @@ namespace Modules.MovieManagement
 
                 movieElement.Update();
 
-                if(movieElement.Status.HasValue && movieElement.Status.Value == CriMana.Player.Status.PlayEnd)
+                if(movieElement.Status.HasValue && movieElement.Status.Value == Player.Status.PlayEnd)
                 {
                     releaseElements.Add(movieElement);                    
                 }

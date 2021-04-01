@@ -1,7 +1,8 @@
 ﻿
 #if ENABLE_CRIWARE_ADX || ENABLE_CRIWARE_SOFDEC
-﻿﻿
+
 using UnityEngine;
+using CriWare;
 using Extensions;
 
 namespace Modules.CriWare.Editor
@@ -11,6 +12,7 @@ namespace Modules.CriWare.Editor
         public static void Initialize()
         {
             var initializerCreate = false;
+
             CriWareInitializer initializer = null;
 
             if (!CriWareInitializer.IsInitialized())

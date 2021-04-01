@@ -8,6 +8,7 @@ using System.Text;
 using System.Linq;
 using System.Collections;
 using System.Collections.Generic;
+using CriWare;
 using UniRx;
 using Extensions;
 using Modules.Devkit.Console;
@@ -19,7 +20,7 @@ namespace Modules.CriWare
     {
         //----- params -----
 
-#if ENABLE_CRIWARE_FILESYSTEM
+        #if ENABLE_CRIWARE_FILESYSTEM
 
         private sealed class CriAssetInstall
         {
@@ -107,7 +108,7 @@ namespace Modules.CriWare
         // リトライするまでの時間(秒).
         private readonly TimeSpan RetryDelaySeconds = TimeSpan.FromSeconds(2f);
 
-#endif
+        #endif
 
         //----- field -----
 
@@ -129,12 +130,12 @@ namespace Modules.CriWare
         // フォルダディレクトリ.
         private string sourceDir = null;
 
-#if ENABLE_CRIWARE_FILESYSTEM
+        #if ENABLE_CRIWARE_FILESYSTEM
 
         // ダウンロード待ち.
         private Dictionary<string, CriAssetInstall> installQueueing = null;
 
-#endif
+        #endif
 
         // 同時インストール数.
         private uint numInstallers = 0;
@@ -161,7 +162,7 @@ namespace Modules.CriWare
             this.simulateMode = Application.isEditor && simulateMode;
             this.numInstallers = numInstallers;
 
-#if ENABLE_CRIWARE_FILESYSTEM
+            #if ENABLE_CRIWARE_FILESYSTEM
 
             installQueueing = new Dictionary<string, CriAssetInstall>();
 
@@ -180,7 +181,7 @@ namespace Modules.CriWare
                 .Subscribe(_ => CriFsWebInstaller.ExecuteMain())
                 .AddTo(Disposable);
 
-#endif
+            #endif
 
             isInitialized = true;
         }
@@ -189,7 +190,7 @@ namespace Modules.CriWare
         {
             if (isInitialized)
             {
-#if ENABLE_CRIWARE_FILESYSTEM
+                #if ENABLE_CRIWARE_FILESYSTEM
 
                 foreach (var item in installQueueing.Values)
                 {
@@ -201,7 +202,7 @@ namespace Modules.CriWare
 
                 CriFsWebInstaller.FinalizeModule();
 
-#endif
+                #endif
             }
         }
 
@@ -220,7 +221,7 @@ namespace Modules.CriWare
             CleanUnuseCache();
         }
 
-#if ENABLE_CRIWARE_FILESYSTEM
+        #if ENABLE_CRIWARE_FILESYSTEM
 
         /// <summary>
         /// 指定されたアセットを更新.
@@ -327,7 +328,7 @@ namespace Modules.CriWare
             }
         }
 
-#endif
+        #endif
 
         /// <summary>
         /// マニフェストファイルに存在しないキャッシュファイルを破棄.
