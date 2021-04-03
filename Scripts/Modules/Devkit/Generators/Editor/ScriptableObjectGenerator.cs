@@ -69,7 +69,10 @@ namespace Modules.Devkit.Generators
             
             if (instance != null && log)
             {
-                Debug.LogFormat("Generate: {0}", path);
+                using (new DisableStackTraceScope())
+                {
+                    Debug.LogFormat("Generate : {0}", path);
+                }
             }
 
             return instance;

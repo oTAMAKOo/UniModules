@@ -211,6 +211,7 @@ namespace Modules.ExternalResource.Editor
         private AsstInfoScrollView asstInfoScrollView = null;
         private string totalAssetCountText = null;
         private string searchText = null;
+        private GUIStyle hashGuiStyle = null;
 
         [NonSerialized]
         private bool initialized = false;
@@ -237,6 +238,11 @@ namespace Modules.ExternalResource.Editor
                 asstInfoScrollView = new AsstInfoScrollView();
                 asstInfoScrollView.Contents = currentInfos;
 
+                hashGuiStyle = new GUIStyle(EditorStyles.miniBoldLabel)
+                {
+                    alignment = TextAnchor.MiddleLeft,
+                };
+
                 totalAssetCountText = string.Format("Total Asset Count : {0}", assetInfos.Length);
 
                 initialized = true;
@@ -247,14 +253,21 @@ namespace Modules.ExternalResource.Editor
 
         private void DrawInspector()
         {
-            EditorGUILayout.LabelField(totalAssetCountText);
+            if (!string.IsNullOrEmpty(instance.VersionHash))
+            {
+                EditorGUILayout.LabelField("Version:", GUILayout.Width(50f));
+
+                GUILayout.Space(-5f);
+
+                EditorGUILayout.SelectableLabel(instance.VersionHash, hashGuiStyle, GUILayout.Height(14f));
+            }
+
+            EditorGUILayout.LabelField(totalAssetCountText, GUILayout.Width(150f));
 
             EditorGUILayout.Separator();
 
             using (new EditorGUILayout.HorizontalScope())
             {
-                GUILayout.FlexibleSpace();
-
                 Action<string> onChangeSearchText = x =>
                 {
                     searchText = x;
@@ -281,10 +294,10 @@ namespace Modules.ExternalResource.Editor
                     Repaint();
                 };
 
-                EditorLayoutTools.DrawSearchTextField(searchText, onChangeSearchText, onSearchCancel, GUILayout.Width(250f));
+                EditorLayoutTools.DrawSearchTextField(searchText, onChangeSearchText, onSearchCancel);
             }
 
-            EditorGUILayout.Separator();
+            GUILayout.Space(3f);
 
             asstInfoScrollView.Draw();
         }

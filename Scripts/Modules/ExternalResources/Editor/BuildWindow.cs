@@ -4,6 +4,7 @@ using UnityEditor;
 using System.IO;
 using System.Linq;
 using System.Text;
+using UniRx;
 using Extensions.Devkit;
 using Extensions;
 using Modules.Devkit.Project;
@@ -94,10 +95,10 @@ namespace Modules.ExternalResource.Editor
                         EditorApplication.LockReloadAssemblies();
 
                         // アセット情報ファイルを生成.
-                        AssetInfoManifestGenerator.Generate();
+                        var assetInfoManifest = AssetInfoManifestGenerator.Generate();
 
                         // 依存関係の検証.
-                        var validate = AssetDependenciesValidate();
+                        var validate = AssetDependenciesValidate(assetInfoManifest);
 
                         if (!validate)
                         {
@@ -119,7 +120,10 @@ namespace Modules.ExternalResource.Editor
 
                             if (!string.IsNullOrEmpty(exportPath))
                             {
-                                BuildManager.Build(exportPath);
+                                BuildManager.Build(exportPath, assetInfoManifest)
+                                    .ToObservable()
+                                    .Subscribe()
+                                    .AddTo(Disposable);
                             }
                         }
                     }
@@ -133,15 +137,12 @@ namespace Modules.ExternalResource.Editor
             EditorGUILayout.Separator();
         }
 
-        private bool AssetDependenciesValidate()
+        private bool AssetDependenciesValidate(AssetInfoManifest assetInfoManifest)
         {
             var projectFolders = ProjectFolders.Instance;
 
             var externalResourcesPath = projectFolders.ExternalResourcesPath;
-
-            var manifestPath = PathUtility.Combine(externalResourcesPath, AssetInfoManifest.ManifestFileName);
-            var assetInfoManifest = AssetDatabase.LoadAssetAtPath<AssetInfoManifest>(manifestPath);
-
+            
             var allAssetInfos = assetInfoManifest.GetAssetInfos().ToArray();
 
             foreach (var assetInfo in allAssetInfos)

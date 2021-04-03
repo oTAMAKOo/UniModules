@@ -84,7 +84,7 @@ namespace Modules.ExternalResource.Editor
 
             var progress = new ScheduledNotifier<Tuple<string,float>>();
 
-            progress.Subscribe(prog => EditorUtility.DisplayProgressBar("Update assetbundle file info", prog.Item1, prog.Item2));
+            progress.Subscribe(x => EditorUtility.DisplayProgressBar("Update AssetBundle file info", x.Item1, x.Item2));
 
             var assetInfos = Reflection.GetPrivateField<AssetInfoManifest, AssetInfo[]>(assetInfoManifest, "assetInfos");
             

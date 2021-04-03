@@ -215,14 +215,23 @@ namespace Modules.ExternalResource.Editor
 
             if (importer.assetBundleName != assetBundleName)
             {
-                importer.assetBundleName = assetBundleName;
-
-                EditorUtility.SetDirty(importer);
+                ApplyAssetBundleName(assetPath, assetBundleName);
 
                 changed = true;
             }
 
             return changed;
+        }
+
+        private void ApplyAssetBundleName(string assetPath, string assetBundleName)
+        {
+            var importer = AssetImporter.GetAtPath(assetPath);
+
+            if (importer == null) { return; }
+
+            importer.assetBundleName = assetBundleName;
+
+            EditorUtility.SetDirty(importer);
         }
 
         public string GetAssetLoadPath(string assetPath)
@@ -334,6 +343,33 @@ namespace Modules.ExternalResource.Editor
             }
 
             return false;
+        }
+        
+        public void ApplyAllAssetBundleName()
+        {
+            var allAssetInfos = GetAllAssetInfos().ToArray();
+
+            using (new AssetEditingScope())
+            {
+                var count = allAssetInfos.Length;
+
+                for (var i = 0; i < count; i++)
+                {
+                    var assetInfo = allAssetInfos[i];
+
+                    if (!assetInfo.IsAssetBundle) { continue; }
+
+                    EditorUtility.DisplayProgressBar("Apply AssetBundleName", assetInfo.FileName, (float)i / count);
+
+                    if (assetInfo.AssetBundle == null) { continue; }
+
+                    var assetPath = PathUtility.Combine(externalResourcesPath, assetInfo.ResourcePath);
+
+                    ApplyAssetBundleName(assetPath, assetInfo.AssetBundle.AssetBundleName);
+                }
+
+                EditorUtility.ClearProgressBar();
+            }
         }
 
         #region ManageInfo

@@ -156,12 +156,19 @@ namespace Modules.ExternalResource
         //----- field -----
 
         [SerializeField, ReadOnly]
+        private string versionHash = null;
+        [SerializeField, ReadOnly]
         private AssetInfo[] assetInfos = new AssetInfo[0];
 
         private ILookup<string, AssetInfo> assetInfoByCategory = null;
         private Dictionary<string, AssetInfo> assetInfoByResourcesPath = null;
 
         //----- property -----
+
+        public string VersionHash
+        {
+            get { return versionHash; }
+        }
 
         public static string AssetBundleName
         {

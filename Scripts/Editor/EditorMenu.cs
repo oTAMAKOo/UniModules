@@ -228,6 +228,18 @@ namespace Modules
             AssetNavigationWindow.Open(projectFolders.ExternalResourcesPath);
         }
 
+        //------ 全アセットバンドル名を再設定 ------
+
+        [MenuItem(itemName: ResourcesMenu + "Apply AssetBundleNames", priority = 35)]
+        public static void ApplyAssetBundleNames()
+        {
+            var assetManagement = AssetManagement.Instance;
+
+            assetManagement.Initialize();
+
+            assetManagement.ApplyAllAssetBundleName();
+        }
+
         #endregion
 
         //===============================================================
@@ -236,7 +248,7 @@ namespace Modules
 
         #region CriWare
 
-        #if ENABLE_CRIWARE_ADX || ENABLE_CRIWARE_SOFDEC
+#if ENABLE_CRIWARE_ADX || ENABLE_CRIWARE_SOFDEC
 
         protected const string CriWareMenu = MenuRoot + "CriWare/";
 

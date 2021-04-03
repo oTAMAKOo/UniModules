@@ -3,6 +3,8 @@ using UnityEngine;
 using UnityEditor;
 using System;
 using System.IO;
+using System.Text;
+using System.Threading.Tasks;
 using Extensions;
 using Extensions.Devkit;
 using Modules.AssetBundles.Editor;
@@ -43,7 +45,7 @@ namespace Modules.ExternalResource.Editor
             return EditorUtility.DisplayDialog("Confirmation", "外部アセットを生成します.", "実行", "中止");
         }
 
-        public static void Build(string exportPath)
+        public static async Task Build(string exportPath, AssetInfoManifest assetInfoManifest, bool openExportFolder = true)
         {
             if (string.IsNullOrEmpty(exportPath)) { return; }
 
@@ -56,59 +58,106 @@ namespace Modules.ExternalResource.Editor
 
             try
             {
+                var logBuilder = new StringBuilder();
+
                 var manageConfig = ManageConfig.Instance;
 
-                // アセット情報ファイルを生成.
-                var assetInfoManifest = AssetInfoManifestGenerator.Generate();
+                using (new DisableStackTraceScope())
+                {
+                    var sw = System.Diagnostics.Stopwatch.StartNew();
 
-                // キャッシュ済みアセットバンドルのハッシュ値取得.
-                var cachedAssetBundleHashs = BuildAssetBundle.GetCachedAssetBundleHash();
+                    //------ キャッシュ済みアセットバンドルのハッシュ値取得 ------
 
-                // CRIアセットを生成.
-                #if ENABLE_CRIWARE_ADX || ENABLE_CRIWARE_SOFDEC
+                    var cachedAssetBundleHashTable = await BuildAssetBundle.GetCachedAssetBundleHash();
 
-                CriAssetGenerator.Generate(exportPath, assetInfoManifest);
+                    AddBuildTimeLog(logBuilder, sw, "GetCachedAssetBundleHash");
 
-                #endif
-                
-                // AssetBundleをビルド.
-                var assetBundleManifest = BuildAssetBundle.BuildAllAssetBundles();
+                    //------ CRIアセットを生成 ------
 
-                // 不要になった古いAssetBundle削除.
-                BuildAssetBundle.CleanUnUseAssetBundleFiles();
+                    #if ENABLE_CRIWARE_ADX || ENABLE_CRIWARE_SOFDEC
 
-                // ビルド成果物の情報をAssetInfoManifestに書き込み.
+                    CriAssetGenerator.Generate(exportPath, assetInfoManifest);
 
-                var assetBundlePath = BuildAssetBundle.GetAssetBundleOutputPath();
+                    AddBuildTimeLog(logBuilder, sw, "Generate CriAsset");
 
-                AssetInfoManifestGenerator.SetAssetBundleFileInfo(assetBundlePath, assetBundleManifest);
+                    #endif
 
-                #if ENABLE_CRIWARE_ADX || ENABLE_CRIWARE_SOFDEC
+                    //------ AssetBundleをビルド ------
 
-                AssetInfoManifestGenerator.SetCriAssetFileInfo(exportPath, assetBundleManifest);
+                    var assetBundleManifest = BuildAssetBundle.BuildAllAssetBundles();
 
-                #endif
+                    BuildAssetBundle.CreateTemporarilyAssetBundleManifestFile();
 
-                // アセットバンドルの参照情報をAssetInfoManifestに書き込み.
-                BuildAssetBundle.SetDependencies(assetInfoManifest, assetBundleManifest);
+                    AddBuildTimeLog(logBuilder, sw, "BuildAllAssetBundles");
 
-                // 再度AssetInfoManifestだけビルドを実行.
-                BuildAssetBundle.BuildAssetInfoManifest();
+                    //------ 不要になった古いAssetBundle削除 ------
 
-                // 更新が必要なパッケージファイルを削除.
-                BuildAssetBundle.CleanOldPackage(cachedAssetBundleHashs);
+                    BuildAssetBundle.CleanUnUseAssetBundleFiles();
 
-                // AssetBundleファイルをパッケージ化.
+                    AddBuildTimeLog(logBuilder, sw, "CleanUnUseAssetBundleFiles");
 
-                var cryptKey = manageConfig.CryptKey;
-                var cryptIv = manageConfig.CryptIv;
+                    //------ ビルド成果物の情報をAssetInfoManifestに書き込み ------
 
-                BuildAssetBundle.BuildPackage(exportPath, assetInfoManifest, cryptKey, cryptIv);
+                    var assetBundlePath = BuildAssetBundle.GetAssetBundleOutputPath();
 
-                // 出力先フォルダを開く.
-                UnityEditorUtility.OpenFolder(exportPath);
+                    AssetInfoManifestGenerator.SetAssetBundleFileInfo(assetBundlePath, assetBundleManifest);
 
-                UnityConsole.Event(ExternalResources.ConsoleEventName, ExternalResources.ConsoleEventColor, "Build ExternalResource Complete.");
+                    #if ENABLE_CRIWARE_ADX || ENABLE_CRIWARE_SOFDEC
+
+                    AssetInfoManifestGenerator.SetCriAssetFileInfo(exportPath, assetBundleManifest);
+
+                    #endif
+
+                    AddBuildTimeLog(logBuilder, sw, "AssetInfoManifest : SetAssetBundleFileInfo");
+
+                    //------ アセットバンドルの参照情報をAssetInfoManifestに書き込み ------
+
+                    BuildAssetBundle.SetDependencies(assetInfoManifest, assetBundleManifest);
+
+                    AddBuildTimeLog(logBuilder, sw, "AssetInfoManifest : SetAssetBundleDependencies");
+
+                    //------ バージョンハッシュ情報をAssetInfoManifestに書き込み ------
+
+                    BuildAssetBundle.SetAssetInfoHash(assetInfoManifest);
+
+                    AddBuildTimeLog(logBuilder, sw, "AssetInfoManifest : SetAssetInfoHash");
+
+                    //------ 再度AssetInfoManifestだけビルドを実行 ------
+
+                    BuildAssetBundle.BuildAssetInfoManifest();
+
+                    BuildAssetBundle.RestoreAssetBundleManifestFile();
+
+                    AddBuildTimeLog(logBuilder, sw, "Rebuild AssetInfoManifest");
+
+                    //------ 更新が必要なパッケージファイルを削除 ------
+
+                    BuildAssetBundle.CleanOldPackage(cachedAssetBundleHashTable);
+
+                    AddBuildTimeLog(logBuilder, sw, "CleanOldPackage");
+
+                    //------ AssetBundleファイルをパッケージ化 ------
+
+                    var cryptKey = manageConfig.CryptKey;
+                    var cryptIv = manageConfig.CryptIv;
+
+                    BuildAssetBundle.BuildPackage(exportPath, assetInfoManifest, cryptKey, cryptIv);
+
+                    AddBuildTimeLog(logBuilder, sw, "BuildPackage");
+                }
+
+                //------ ログ出力------
+
+                var logText = string.Format("Build ExternalResource Complete.\n\nVersionHash : {0}\n\n{1}", assetInfoManifest.VersionHash, logBuilder);
+
+                UnityConsole.Event(ExternalResources.ConsoleEventName, ExternalResources.ConsoleEventColor, logText);
+
+                //------ 出力先フォルダを開く------
+
+                if (openExportFolder)
+                {
+                    UnityEditorUtility.OpenFolder(exportPath);
+                }
             }
             catch (Exception e)
             {
@@ -120,7 +169,16 @@ namespace Modules.ExternalResource.Editor
                 EditorApplication.UnlockReloadAssemblies();
             }
         }
-        
+
+        private static void AddBuildTimeLog(StringBuilder logBuilder, System.Diagnostics.Stopwatch sw, string text)
+        {
+            sw.Stop();
+
+            logBuilder.AppendFormat("{0} : ({1:F1}sec)", text, sw.Elapsed.TotalSeconds).AppendLine();
+
+            sw.Restart();
+        }
+
         public static string SelectExportPath()
         {
             var directory = string.IsNullOrEmpty(Prefs.exportPath) ? null : Path.GetDirectoryName(Prefs.exportPath);

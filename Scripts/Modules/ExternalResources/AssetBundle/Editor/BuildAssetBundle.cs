@@ -5,6 +5,8 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
 using Extensions;
 using Modules.Devkit.Project;
 using Modules.ExternalResource;
@@ -16,6 +18,8 @@ namespace Modules.AssetBundles.Editor
         //----- params -----
 
         private const string ManifestFileExtension = ".manifest";
+
+        private const string ManifestTemporarilyFileExtension = ".buidtemp";
 
         private const string AssetBundleCacheFolder = "AssetBundleBuildCache";
 
@@ -70,6 +74,36 @@ namespace Modules.AssetBundles.Editor
             }
         }
 
+        /// <summary> アセットのルートハッシュ情報を書き込み </summary>
+        public static void SetAssetInfoHash(AssetInfoManifest assetInfoManifest)
+        {
+            // 文字数が大きくなりすぎないように300ファイル分毎に分割.
+            var chunkInfos = assetInfoManifest.GetAssetInfos()
+                .OrderBy(x => x.ResourcePath.Length)
+                .Chunk(300)
+                .ToArray();
+
+            var versionHashBuilder = new StringBuilder();
+
+            foreach (var assetInfos in chunkInfos)
+            {
+                var hashBuilder = new StringBuilder();
+
+                foreach (var assetInfo in assetInfos)
+                {
+                    hashBuilder.AppendLine(assetInfo.FileHash);
+                }
+
+                var hash = hashBuilder.ToString().GetHash();
+
+                versionHashBuilder.AppendLine(hash);
+            }
+
+            var versionHash = versionHashBuilder.ToString().GetHash();
+
+            Reflection.SetPrivateField(assetInfoManifest, "versionHash", versionHash);
+        }
+
         /// <summary> 情報書き込み後のAssetInfoManifestをビルド </summary>
         public static void BuildAssetInfoManifest()
         {
@@ -104,6 +138,53 @@ namespace Modules.AssetBundles.Editor
             var targetPlatform = EditorUserBuildSettings.activeBuildTarget;
 
             BuildPipeline.BuildAssetBundles(assetBundlePath, buildMap, BuildAssetBundleOptions.ChunkBasedCompression, targetPlatform);
+        }
+
+        /// <summary> 現在のアセットバンドルマニフェストを一時退避 </summary>
+        public static void CreateTemporarilyAssetBundleManifestFile()
+        {
+            var targetPlatform = EditorUserBuildSettings.activeBuildTarget;
+
+            var manifestFilePath = GetAssetBundleManifestFilePath(targetPlatform);
+            
+            var main = Path.ChangeExtension(manifestFilePath, string.Empty);
+            var manifest = Path.ChangeExtension(manifestFilePath, ManifestFileExtension);
+
+            File.Copy(main, main + ManifestTemporarilyFileExtension, true);
+            File.Copy(manifest, manifest + ManifestTemporarilyFileExtension, true);
+        }
+
+        /// <summary> 一時退避したアセットバンドルマニフェストを復元 </summary>
+        public static void RestoreAssetBundleManifestFile()
+        {
+            var targetPlatform = EditorUserBuildSettings.activeBuildTarget;
+
+            var manifestFilePath = GetAssetBundleManifestFilePath(targetPlatform);
+
+            var main = Path.ChangeExtension(manifestFilePath, string.Empty);
+            var manifest = Path.ChangeExtension(manifestFilePath, ManifestFileExtension);
+
+            if (File.Exists(main))
+            {
+                File.Delete(main);
+            }
+
+            File.Move(main + ManifestTemporarilyFileExtension, main);
+
+            if (File.Exists(manifest))
+            {
+                File.Delete(manifest);
+            }
+
+            File.Move(manifest + ManifestTemporarilyFileExtension, manifest);
+        }
+
+        /// <summary> アセットバンドルマニフェストのファイルパス取得 </summary>
+        private static string GetAssetBundleManifestFilePath(BuildTarget targetPlatform)
+        {
+            var assetBundlePath = GetAssetBundleOutputPath();
+            
+            return PathUtility.Combine(assetBundlePath, targetPlatform.ToString());
         }
 
         /// <summary> アセットバンドルをパッケージ化 </summary>
@@ -143,6 +224,8 @@ namespace Modules.AssetBundles.Editor
 
                 if (extension == ManifestFileExtension) { continue; }
 
+                if (extension == ManifestTemporarilyFileExtension) { continue; }
+
                 if (extension == AssetBundleManager.PackageExtension) { continue; }
 
                 var path = PathUtility.ConvertPathSeparator(file);
@@ -170,7 +253,7 @@ namespace Modules.AssetBundles.Editor
         }
 
         /// <summary> キャッシュ済みアセットバンドルファイルのハッシュ値を取得 </summary>
-        public static Dictionary<string, string> GetCachedAssetBundleHash()
+        public static async Task<Dictionary<string, string>> GetCachedAssetBundleHash()
         {
             var assetBundlePath = GetAssetBundleOutputPath();
 
@@ -182,16 +265,28 @@ namespace Modules.AssetBundles.Editor
 
             var dictionary = new Dictionary<string, string>();
 
+            var tasks = new List<Task>();
+
             foreach (var file in allFiles)
             {
                 var path = PathUtility.ConvertPathSeparator(file);
 
                 if (assetBundleNames.All(x => !path.EndsWith(x))) { continue; }
 
-                var hash = FileUtility.GetHash(path);
+                var task = Task.Run(() =>
+                {
+                    var hash = FileUtility.GetHash(path);
 
-                dictionary.Add(path, hash);
+                    lock (dictionary)
+                    {
+                        dictionary.Add(path, hash);
+                    }
+                });
+
+                tasks.Add(task);
             }
+
+            await Task.WhenAll(tasks);
 
             return dictionary;
         }
