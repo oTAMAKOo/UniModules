@@ -54,6 +54,10 @@ namespace Modules.ExternalResource.Editor
                 Directory.Delete(exportPath, true);
             }
 
+            var assetManagement = AssetManagement.Instance;
+
+            assetManagement.Initialize();
+
             EditorApplication.LockReloadAssemblies();
 
             try
@@ -65,6 +69,12 @@ namespace Modules.ExternalResource.Editor
                 using (new DisableStackTraceScope())
                 {
                     var sw = System.Diagnostics.Stopwatch.StartNew();
+
+                    //------ アセットバンドル名を設定------
+
+                    assetManagement.ApplyAllAssetBundleName();
+
+                    AddBuildTimeLog(logBuilder, sw, "ApplyAllAssetBundleName");
 
                     //------ キャッシュ済みアセットバンドルのハッシュ値取得 ------
 
