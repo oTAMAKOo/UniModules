@@ -100,11 +100,11 @@ namespace Modules.ExternalResource.Editor
 
                 BuildPipeline.GetCRCForAssetBundle(filePath, out var crc);
 
-                var hashSource = string.Format("{0}-{1}", assetBundleName, crc);
+                assetInfo.AssetBundle.SetCRC(crc);
 
-                var assetBundleHash = hashSource.GetHash();
-
-                assetInfo.SetFileInfo(filePath, assetBundleHash);
+                BuildPipeline.GetHashForAssetBundle(filePath, out var hash);
+                
+                assetInfo.SetFileInfo(filePath, hash.ToString());
 
                 progress.Report(Tuple.Create(assetInfo.ResourcePath, (float)i / assetInfos.Length));
             }
