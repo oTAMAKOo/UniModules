@@ -98,10 +98,6 @@ namespace Modules.ExternalResource.Editor
 
                 var filePath = PathUtility.Combine(new string[] { exportPath, assetBundleName });
 
-                BuildPipeline.GetCRCForAssetBundle(filePath, out var crc);
-
-                assetInfo.AssetBundle.SetCRC(crc);
-
                 BuildPipeline.GetHashForAssetBundle(filePath, out var hash);
                 
                 assetInfo.SetFileInfo(filePath, hash.ToString());
