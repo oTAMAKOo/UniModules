@@ -116,10 +116,14 @@ namespace Modules.SoundManagement
             CriAtomExSequencer.SetEventCallback(SoundEventCallback, SoundEventSeparator.ToString());
 
             // サウンドの状態更新.
-            Observable.EveryEndOfFrame().Subscribe(_ => UpdateElement());
+            Observable.EveryEndOfFrame()
+                .Subscribe(_ => UpdateElement())
+                .AddTo(Disposable); ;
 
             // 一定周期で未使用状態になったAcbの解放を行う.
-            Observable.Interval(TimeSpan.FromSeconds(5f)).Subscribe(_ => ReleaseSoundSheet());
+            Observable.Interval(TimeSpan.FromSeconds(5f))
+                .Subscribe(_ => ReleaseSoundSheet())
+                .AddTo(Disposable);
 
             initialized = true;
         }
