@@ -38,7 +38,7 @@ namespace Modules.Devkit.Console
             DisableEventNames = new HashSet<string>();
         }
 
-        private static bool isDebugBuild
+        public static bool Enable
         {
             get
             {
@@ -53,21 +53,21 @@ namespace Modules.Devkit.Console
 
         public static void Info(string message)
         {
-            if (!isDebugBuild) { return; }
+            if (!Enable) { return; }
             
             Event(InfoEvent.ConsoleEventName, InfoEvent.ConsoleEventColor, message);
         }
 
         public static void Info(string format, params object[] args)
         {
-            if (!isDebugBuild) { return; }
+            if (!Enable) { return; }
 
             Info(string.Format(format, args));
         }
 
         public static void Event(string eventName, Color color, string message)
         {
-            if (!isDebugBuild) { return; }
+            if (!Enable) { return; }
 
             if (DisableEventNames.Contains(eventName)) { return; }
 

@@ -447,7 +447,7 @@ namespace Modules.SoundManagement
                 managedSoundSheets.Add(soundSheet.AssetPath, soundSheet);
 
 
-                if (LogEnable && Debug.isDebugBuild)
+                if (LogEnable && UnityConsole.Enable)
                 {
                     var builder = new StringBuilder();
 
