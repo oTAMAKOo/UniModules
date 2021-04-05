@@ -456,7 +456,11 @@ namespace Modules.ExternalResource
                 builder.AppendFormat("LoadPath = {0}", assetPath).AppendLine();
                 builder.AppendFormat("FileName = {0}", assetInfo.FileName).AppendLine();
                 builder.AppendFormat("AssetBundleName = {0}", assetBundleName).AppendLine();
-                builder.AppendFormat("Hash = {0}", assetInfo.FileHash).AppendLine();
+
+                if (!string.IsNullOrEmpty(assetInfo.FileHash))
+                {
+                    builder.AppendFormat("Hash = {0}", assetInfo.FileHash).AppendLine();
+                }
 
                 UnityConsole.Event(ConsoleEventName, ConsoleEventColor, builder.ToString());
             }
@@ -637,7 +641,11 @@ namespace Modules.ExternalResource
                     builder.AppendLine();
                     builder.AppendFormat("LoadPath = {0}", assetPath).AppendLine();
                     builder.AppendFormat("FileName = {0}", assetInfo.FileName).AppendLine();
-                    builder.AppendFormat("Hash = {0}", assetInfo.FileHash).AppendLine();
+
+                    if (!string.IsNullOrEmpty(assetInfo.FileHash))
+                    {
+                        builder.AppendFormat("Hash = {0}", assetInfo.FileHash).AppendLine();
+                    }
 
                     UnityConsole.Event(ConsoleEventName, ConsoleEventColor, builder.ToString());
                 }
@@ -702,7 +710,11 @@ namespace Modules.ExternalResource
                         builder.AppendLine();
                         builder.AppendFormat("LoadPath = {0}", assetPath).AppendLine();
                         builder.AppendFormat("FileName = {0}", assetInfo.FileName).AppendLine();
-                        builder.AppendFormat("Hash = {0}", assetInfo.FileHash).AppendLine();
+
+                        if (!string.IsNullOrEmpty(assetInfo.FileHash))
+                        {
+                            builder.AppendFormat("Hash = {0}", assetInfo.FileHash).AppendLine();
+                        }
 
                         UnityConsole.Event(ConsoleEventName, ConsoleEventColor, builder.ToString());
                     }
