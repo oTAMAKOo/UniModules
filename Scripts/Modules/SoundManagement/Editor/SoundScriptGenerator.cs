@@ -12,6 +12,7 @@ using Extensions;
 using Modules.Devkit.Generators;
 using Modules.CriWare;
 using Modules.CriWare.Editor;
+using Modules.Devkit.Project;
 
 namespace Modules.SoundManagement.Editor
 {
@@ -44,8 +45,24 @@ namespace Modules.SoundManagement
 
         public static CueInfo GetCueInfo(Cue cue)
         {
+            var fileDirectory = string.Empty;
+
+            #if UNITY_EDITOR
+
+            var editorStreamingAssetsFolderPath = @EDITOR_STREAMING_ASSETS_FOLDER_PATH;
+
+            fileDirectory = UnityPathUtility.ConvertAssetPathToFullPath(editorStreamingAssetsFolderPath);
+
+            #else
+
+            fileDirectory = Application.streamingAssetsPath;
+
+            #endif
+
             var info = internalSounds.GetValueOrDefault(cue);
-            var path = PathUtility.Combine(UnityPathUtility.GetProjectFolderPath(), info.CueSheetPath);
+
+            var path = PathUtility.Combine(fileDirectory, info.CueSheetPath);
+
             return new CueInfo(info.Cue, path);
         }
     }
@@ -65,6 +82,8 @@ namespace Modules.SoundManagement
 
         public static void Generate(string scriptPath, string assetFolderPath, string rootFolderName)
         {
+            var projectFolders = ProjectFolders.Instance;
+
             var infos = LoadAcbInfo(assetFolderPath);
 
             var enums = new StringBuilder();
@@ -94,10 +113,13 @@ namespace Modules.SoundManagement
                 }
             }
 
+            var editorStreamingAssetsFolderPath = projectFolders.StreamingAssetPath;
+
             var script = ScriptTemplate;
 
             script = Regex.Replace(script, "@ENUMS", enums.ToString());
             script = Regex.Replace(script, "@CONTENTS", contents.ToString());
+            script = Regex.Replace(script, "@EDITOR_STREAMING_ASSETS_FOLDER_PATH", @"""" + editorStreamingAssetsFolderPath + @"""");
 
             ScriptGenerateUtility.GenerateScript(scriptPath, @"Sounds.cs", script);
         }

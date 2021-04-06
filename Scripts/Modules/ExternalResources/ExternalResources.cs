@@ -56,9 +56,16 @@ namespace Modules.ExternalResource
 
         #endif
 
+        /// <summary> シュミレーションモード (Editorのみ有効). </summary>
         private bool simulateMode = false;
+
+        /// <summary> ローカルモード (Editorのみ有効). </summary>
         private bool localMode = false;
 
+        /// <summary> 外部アセットディレクトリ. </summary>
+        public string resourceDirectory = null;
+
+        /// <summary> 読み込み中アセット群. </summary>
         private HashSet<AssetInfo> loadingAssets = new HashSet<AssetInfo>();
 
         // Coroutine中断用.
@@ -81,9 +88,6 @@ namespace Modules.ExternalResource
             get { return Instance != null && Instance.initialized; }
         }
 
-        /// <summary> 外部アセットディレクトリ. </summary>
-        public string ResourceDirectory { get; private set; }
-
         /// <summary> ダウンロード先. </summary>
         public string InstallDirectory { get; private set; }
 
@@ -102,8 +106,8 @@ namespace Modules.ExternalResource
             if (initialized) { return; }
 
             this.localMode = localMode;
+            this.resourceDirectory = resourceDir;
 
-            ResourceDirectory = resourceDir;
             InstallDirectory = installDir;
 
             // 中断用登録.
@@ -239,7 +243,7 @@ namespace Modules.ExternalResource
 
             if (simulateMode)
             {
-                manifestFileName = PathUtility.Combine(ResourceDirectory, manifestFileName);
+                manifestFileName = PathUtility.Combine(resourceDirectory, manifestFileName);
             }
 
             #endif
@@ -427,7 +431,7 @@ namespace Modules.ExternalResource
                 yield break;
             }
 
-            var assetPath = PathUtility.Combine(ResourceDirectory, resourcePath);
+            var assetPath = PathUtility.Combine(resourceDirectory, resourcePath);
 
             // ローカルバージョンが古い場合はダウンロード.
             if (!CheckAssetBundleVersion(assetInfo) && !localMode)
@@ -609,7 +613,7 @@ namespace Modules.ExternalResource
             var assetInfo = GetAssetInfo(resourcePath);
 
             return simulateMode ?
-                PathUtility.Combine(new string[] { UnityPathUtility.GetProjectFolderPath(), ResourceDirectory, resourcePath }) :
+                PathUtility.Combine(new string[] { UnityPathUtility.GetProjectFolderPath(), resourceDirectory, resourcePath }) :
                 criAssetManager.BuildFilePath(assetInfo);
         }
 
@@ -637,7 +641,7 @@ namespace Modules.ExternalResource
                 if (!CheckAssetVersion(resourcePath, filePath) && !localMode)
                 {
                     var assetInfo = GetAssetInfo(resourcePath);
-                    var assetPath = PathUtility.Combine(ResourceDirectory, resourcePath);
+                    var assetPath = PathUtility.Combine(resourceDirectory, resourcePath);
 
                     var sw = System.Diagnostics.Stopwatch.StartNew();
 
@@ -709,7 +713,7 @@ namespace Modules.ExternalResource
                     if (!CheckAssetVersion(resourcePath, filePath))
                     {
                         var assetInfo = GetAssetInfo(resourcePath);
-                        var assetPath = PathUtility.Combine(ResourceDirectory, resourcePath);
+                        var assetPath = PathUtility.Combine(resourceDirectory, resourcePath);
 
                         var sw = System.Diagnostics.Stopwatch.StartNew();
 

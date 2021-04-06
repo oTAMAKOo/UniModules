@@ -326,7 +326,7 @@ namespace Modules.ExternalResource
 
         private string GetVersionFilePath()
         {
-            return PathUtility.Combine(installDir, VersionFileName);
+            return PathUtility.Combine(InstallDirectory, VersionFileName);
         }
     }
 }

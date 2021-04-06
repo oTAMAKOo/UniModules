@@ -10,6 +10,7 @@ using System.Text.RegularExpressions;
 using Extensions;
 using Modules.Devkit.Generators;
 using Modules.CriWare;
+using Modules.Devkit.Project;
 
 namespace Modules.MovieManagement.Editor
 {
@@ -42,8 +43,24 @@ namespace Modules.MovieManagement
 
         public static ManaInfo GetManaInfo(Mana mana)
         {
+            var fileDirectory = string.Empty;
+
+            #if UNITY_EDITOR
+
+            var editorStreamingAssetsFolderPath = @EDITOR_STREAMING_ASSETS_FOLDER_PATH;
+
+            fileDirectory = UnityPathUtility.ConvertAssetPathToFullPath(editorStreamingAssetsFolderPath);
+
+            #else
+
+            fileDirectory = Application.streamingAssetsPath;
+
+            #endif
+
             var info = internalMovies.GetValueOrDefault(mana);
-            var path = PathUtility.Combine(PathUtility.GetProjectFolderPath(), info.UsmPath);
+
+            var path = PathUtility.Combine(fileDirectory, info.UsmPath);
+
             return new ManaInfo(path);
         }
     }
@@ -63,6 +80,8 @@ namespace Modules.MovieManagement
 
         public static void Generate(string scriptPath, string rootFolderPath)
         {
+            var projectFolders = ProjectFolders.Instance;
+
             var infos = LoadUsmInfo(rootFolderPath);
 
             var enums = new StringBuilder();
@@ -85,11 +104,14 @@ namespace Modules.MovieManagement
                 }
             }
 
+            var editorStreamingAssetsFolderPath = projectFolders.StreamingAssetPath;
+
             var script = ScriptTemplate;
 
             script = Regex.Replace(script, "@ENUMS", enums.ToString());
             script = Regex.Replace(script, "@CONTENTS", contents.ToString());
-            
+            script = Regex.Replace(script, "@EDITOR_STREAMING_ASSETS_FOLDER_PATH", @"""" + editorStreamingAssetsFolderPath + @"""");
+
             ScriptGenerateUtility.GenerateScript(scriptPath, @"Movies.cs", script);
         }
 
