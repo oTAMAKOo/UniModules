@@ -26,6 +26,7 @@ namespace Modules.SoundManagement.Editor
 
 #if ENABLE_CRIWARE_ADX
 
+using UnityEngine;
 using System.Collections.Generic;
 using Extensions;
 
