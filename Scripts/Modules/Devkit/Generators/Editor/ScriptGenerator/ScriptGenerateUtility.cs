@@ -33,21 +33,36 @@ namespace Modules.Devkit.Generators
 
         public static bool GenerateScript(string folderPath, string fileName, string script)
         {
-            if (AssetDatabase.IsValidFolder(folderPath))
+            if (!AssetDatabase.IsValidFolder(folderPath)){ return false; }
+            
+            var folder = PathUtility.Combine(Application.dataPath, folderPath);
+            
+            if (!Directory.Exists(folder))
             {
-                var path = PathUtility.Combine(folderPath, fileName);
-                File.WriteAllText(path, script, Encoding.UTF8);
-                AssetDatabase.ImportAsset(path);
-
-                return true;
-            }
-            else
-            {
-                var path = PathUtility.Combine(Application.dataPath, folderPath);
-                EditorUtility.DisplayDialog("Folder NotFound", string.Format("生成先のフォルダが存在しません\n{0}", path), "閉じる");
+                Directory.CreateDirectory(folder);
             }
 
-            return false;
+            var assetPath = PathUtility.Combine(folderPath, fileName);
+
+            var fullPath = UnityPathUtility.ConvertAssetPathToFullPath(assetPath);
+
+            var requireUpdate = false;
+
+            using (var sr = new StreamReader(fullPath, Encoding.UTF8))
+            {
+                var text = sr.ReadToEnd();
+
+                requireUpdate = text != script;
+            }
+
+            if (requireUpdate)
+            {
+                File.WriteAllText(fullPath, script, Encoding.UTF8);
+
+                AssetDatabase.ImportAsset(assetPath);
+            }
+
+            return true;
         }
 
         /// <summary>

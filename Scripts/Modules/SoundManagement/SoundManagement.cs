@@ -85,6 +85,8 @@ namespace Modules.SoundManagement
 
         //----- property -----
 
+        public CriAtomExPlayer Player { get { return player; } }
+
         public bool LogEnable { get; set; }
 
         public float ReleaseTime { get; set; }

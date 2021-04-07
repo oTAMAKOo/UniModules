@@ -179,7 +179,7 @@ namespace Modules.CriWare.Editor
 
             if (!Directory.Exists(sourceFolderPath))
             {
-                Debug.LogWarningFormat("Path Notfound. {0}", sourceFolderPath);
+                Debug.LogWarningFormat("Path NotFound. {0}", sourceFolderPath);
                 return false;
             }
 
