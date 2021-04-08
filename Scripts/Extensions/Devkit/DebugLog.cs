@@ -5,27 +5,16 @@ using UnityEngine;
 
 public static class Debug
 {
-    private static bool? isDevelopmentBuild = null;
-
     public static bool isDebugBuild
+    {
+        get { return UnityEngine.Debug.isDebugBuild; }
+    }
+
+    private static bool enable
     {
         get
         {
-            if(!isDevelopmentBuild.HasValue)
-            {
-                isDevelopmentBuild = UnityEngine.Debug.isDebugBuild;
-            }
-
-            return isDevelopmentBuild.Value;
-        }
-    }
-
-    [RuntimeInitializeOnLoadMethod]
-    static void RuntimeInitializeOnLoadMethod()
-    {
-        if (!isDevelopmentBuild.HasValue)
-        {
-            isDevelopmentBuild = UnityEngine.Debug.isDebugBuild;
+            return isDebugBuild || Application.isBatchMode;
         }
     }
 
@@ -33,30 +22,30 @@ public static class Debug
 
     // Log.
 
-    public static void Log( object message )
+    public static void Log(object message)
     {
-        if (!isDebugBuild) { return; }
+        if (!enable) { return; }
 
         UnityEngine.Debug.Log(message);
     }
 
-    public static void Log( object message, Object context )
+    public static void Log(object message, Object context)
     {
-        if (!isDebugBuild) { return; }
+        if (!enable) { return; }
 
         UnityEngine.Debug.Log(message, context);
     }
 
     public static void LogFormat(string format, params object[] args)
     {
-        if (!isDebugBuild) { return; }
+        if (!enable) { return; }
 
         UnityEngine.Debug.LogFormat(format, args);
     }
 
     public static void LogFormat(Object context, string format, params object[] args)
     {
-        if (!isDebugBuild) { return; }
+        if (!enable) { return; }
 
         UnityEngine.Debug.LogFormat(context, format, args);
     }
@@ -65,28 +54,28 @@ public static class Debug
 
     public static void LogWarning(object message)
     {
-        if (!isDebugBuild) { return; }
+        if (!enable) { return; }
 
         UnityEngine.Debug.LogWarning(message);
     }
 
     public static void LogWarning(object message, Object context)
     {
-        if (!isDebugBuild) { return; }
+        if (!enable) { return; }
 
         UnityEngine.Debug.LogWarning(message, context);
     }
 
     public static void LogWarningFormat(string format, params object[] args)
     {
-        if (!isDebugBuild) { return; }
+        if (!enable) { return; }
 
         UnityEngine.Debug.LogWarningFormat(format, args);
     }
 
     public static void LogWarningFormat(Object context, string format, params object[] args)
     {
-        if (!isDebugBuild) { return; }
+        if (!enable) { return; }
 
         UnityEngine.Debug.LogWarningFormat(context, format, args);
     }
@@ -95,28 +84,28 @@ public static class Debug
 
     public static void LogError(object message)
     {
-        if (!isDebugBuild) { return; }
+        if (!enable) { return; }
 
         UnityEngine.Debug.LogError(message);
     }
 
     public static void LogError(object message, Object context)
     {
-        if (!isDebugBuild) { return; }
+        if (!enable) { return; }
 
         UnityEngine.Debug.LogError(message, context);
     }
 
     public static void LogErrorFormat(string format, params object[] args)
     {
-        if (!isDebugBuild) { return; }
+        if (!enable) { return; }
 
         UnityEngine.Debug.LogErrorFormat(format, args);
     }
 
     public static void LogErrorFormat(Object context, string format, params object[] args)
     {
-        if (!isDebugBuild) { return; }
+        if (!enable) { return; }
 
         UnityEngine.Debug.LogErrorFormat(context, format, args);
     }
@@ -125,28 +114,28 @@ public static class Debug
 
     public static void LogAssertion(object message)
     {
-        if (!isDebugBuild) { return; }
+        if (!enable) { return; }
 
         UnityEngine.Debug.LogAssertion(message);
     }
 
     public static void LogAssertion(object message, Object context)
     {
-        if (!isDebugBuild) { return; }
+        if (!enable) { return; }
 
         UnityEngine.Debug.LogAssertion(message, context);
     }
 
     public static void LogAssertionFormat(string format, params object[] args)
     {
-        if (!isDebugBuild) { return; }
+        if (!enable) { return; }
 
         UnityEngine.Debug.LogAssertionFormat(format, args);
     }
 
     public static void LogAssertionFormat(Object context, string format, params object[] args)
     {
-        if (!isDebugBuild) { return; }
+        if (!enable) { return; }
 
         UnityEngine.Debug.LogAssertionFormat(context, format, args);
     }
@@ -158,7 +147,7 @@ public static class Debug
 
     public static void Assert(bool condition, string message)
     {
-        if (!isDebugBuild){ return; }
+        if (!enable) { return; }
 
         UnityEngine.Debug.Assert(condition, message);
     }
@@ -167,14 +156,14 @@ public static class Debug
 
     public static void LogException(System.Exception exception)
     {
-        if (!isDebugBuild) { return; }
+        if (!enable) { return; }
 
         UnityEngine.Debug.LogException(exception);
     }
 
     public static void LogException(System.Exception exception, Object context)
     {
-        if (!isDebugBuild) { return; }
+        if (!enable) { return; }
 
         UnityEngine.Debug.LogException(exception, context);
     }
@@ -183,14 +172,14 @@ public static class Debug
 
     public static void Break()
     {
-        if (!isDebugBuild) { return; }
+        if (!enable) { return; }
 
         UnityEngine.Debug.Break();
     }
 
     public static void Fail(string message)
     {
-        if (!isDebugBuild) { return; }
+        if (!enable) { return; }
 
         System.Diagnostics.Debug.Fail(message);
     }
@@ -199,28 +188,28 @@ public static class Debug
 
     public static void DrawLine(Vector3 start, Vector3 end)
     {
-        if (!isDebugBuild) { return; }
+        if (!enable) { return; }
 
         UnityEngine.Debug.DrawLine(start, end);
     }
 
     public static void DrawLine(Vector3 start, Vector3 end, Color color)
     {
-        if (!isDebugBuild) { return; }
+        if (!enable) { return; }
 
         UnityEngine.Debug.DrawLine(start, end, color);
     }
 
     public static void DrawLine(Vector3 start, Vector3 end, Color color, float duration)
     {
-        if (!isDebugBuild) { return; }
+        if (!enable) { return; }
 
         UnityEngine.Debug.DrawLine(start, end, color, duration);
     }
 
     public static void DrawLine(Vector3 start, Vector3 end, Color color, float duration, bool depthTest)
     {
-        if (!isDebugBuild) { return; }
+        if (!enable) { return; }
 
         UnityEngine.Debug.DrawLine(start, end, color, duration, depthTest);        
     }
