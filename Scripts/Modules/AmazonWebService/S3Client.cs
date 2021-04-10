@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Net;
 using System.Threading.Tasks;
 using Amazon;
 using Amazon.CognitoIdentity;
@@ -20,6 +21,10 @@ namespace Modules.Amazon.S3
         //----- params -----
 
         //----- field -----
+
+        private CognitoAWSCredentials credentials = null;
+
+        private RegionEndpoint bucketRegionEndpoint = null;
 
         private AmazonS3Client client = null;
 
@@ -38,11 +43,11 @@ namespace Modules.Amazon.S3
 
             var credentialsRegionSystemName = RegionEndpoint.GetBySystemName(credentialsRegion.SystemName);
 
-            var credentials = new CognitoAWSCredentials(identityPoolId, credentialsRegionSystemName);
+            credentials = new CognitoAWSCredentials(identityPoolId, credentialsRegionSystemName);
 
-            var bucketRegionSystemName = RegionEndpoint.GetBySystemName(bucketRegion.SystemName);
+            bucketRegionEndpoint = RegionEndpoint.GetBySystemName(bucketRegion.SystemName);
 
-            client = new AmazonS3Client(credentials, bucketRegionSystemName);
+            client = new AmazonS3Client(credentials, bucketRegionEndpoint);
         }
 
         #region Get
@@ -170,6 +175,14 @@ namespace Modules.Amazon.S3
                 uploadRequest.BucketName = BucketName;
 
                 await fileTransferUtility.UploadAsync(uploadRequest);
+            }
+        }
+
+        public async Task UploadDirectory(string uploadDirectoryPath)
+        {
+            using (var fileTransferUtility = new TransferUtility(client))
+            {
+                await fileTransferUtility.UploadDirectoryAsync(uploadDirectoryPath, BucketName);
             }
         }
 

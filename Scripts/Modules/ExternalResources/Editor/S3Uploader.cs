@@ -378,6 +378,8 @@ namespace Modules.ExternalResource.Editor
 
                 // ファイルをアップロード.
 
+                const long PartSize = 5 * 1024 * 1024; // 5MB単位.
+
                 var tasks = new List<Task>();
 
                 foreach (var uploadTarget in uploadTargets)
@@ -388,7 +390,7 @@ namespace Modules.ExternalResource.Editor
                         {
                             FilePath = uploadTarget.FilePath,
                             StorageClass = S3StorageClass.StandardInfrequentAccess,
-                            PartSize = 6291456,
+                            PartSize = PartSize,
                             Key = uploadTarget.ObjectPath,
                             CannedACL = UploadFileCannedACL,
                         };

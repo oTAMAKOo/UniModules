@@ -433,51 +433,54 @@ namespace Modules.ExternalResource
 
             var assetPath = PathUtility.Combine(resourceDirectory, resourcePath);
 
-            // ローカルバージョンが古い場合はダウンロード.
-            if (!CheckAssetBundleVersion(assetInfo) && !localMode)
+            if (!localMode && !simulateMode)
             {
-                var downloadYield = UpdateAsset(resourcePath).ToYieldInstruction(false, yieldCancel.Token);
-
-                // 読み込み実行 (読み込み中の場合は読み込み待ちのObservableが返る).
-                sw = System.Diagnostics.Stopwatch.StartNew();
-
-                while (!downloadYield.IsDone)
+                // ローカルバージョンが古い場合はダウンロード.
+                if (!CheckAssetBundleVersion(assetInfo))
                 {
-                    yield return null;
-                }
+                    var downloadYield = UpdateAsset(resourcePath).ToYieldInstruction(false, yieldCancel.Token);
 
-                if (downloadYield.HasError)
-                {
-                    Debug.LogException(downloadYield.Error);
+                    // 読み込み実行 (読み込み中の場合は読み込み待ちのObservableが返る).
+                    sw = System.Diagnostics.Stopwatch.StartNew();
 
-                    if (onError != null)
+                    while (!downloadYield.IsDone)
                     {
-                        onError.OnNext(downloadYield.Error);
+                        yield return null;
                     }
 
-                    observer.OnError(downloadYield.Error);
-                }
-
-                sw.Stop();
-
-                if (LogEnable && UnityConsole.Enable)
-                {
-                    var builder = new StringBuilder();
-
-                    var assetBundleName = assetInfo.AssetBundle.AssetBundleName;
-
-                    builder.AppendFormat("Update: {0} ({1:F2}ms)", Path.GetFileName(assetPath), sw.Elapsed.TotalMilliseconds).AppendLine();
-                    builder.AppendLine();
-                    builder.AppendFormat("LoadPath = {0}", assetPath).AppendLine();
-                    builder.AppendFormat("FileName = {0}", assetInfo.FileName).AppendLine();
-                    builder.AppendFormat("AssetBundleName = {0}", assetBundleName).AppendLine();
-
-                    if (!string.IsNullOrEmpty(assetInfo.FileHash))
+                    if (downloadYield.HasError)
                     {
-                        builder.AppendFormat("Hash = {0}", assetInfo.FileHash).AppendLine();
+                        Debug.LogException(downloadYield.Error);
+
+                        if (onError != null)
+                        {
+                            onError.OnNext(downloadYield.Error);
+                        }
+
+                        observer.OnError(downloadYield.Error);
                     }
 
-                    UnityConsole.Event(ConsoleEventName, ConsoleEventColor, builder.ToString());
+                    sw.Stop();
+
+                    if (LogEnable && UnityConsole.Enable)
+                    {
+                        var builder = new StringBuilder();
+
+                        var assetBundleName = assetInfo.AssetBundle.AssetBundleName;
+
+                        builder.AppendFormat("Update: {0} ({1:F2}ms)", Path.GetFileName(assetPath), sw.Elapsed.TotalMilliseconds).AppendLine();
+                        builder.AppendLine();
+                        builder.AppendFormat("LoadPath = {0}", assetPath).AppendLine();
+                        builder.AppendFormat("FileName = {0}", assetInfo.FileName).AppendLine();
+                        builder.AppendFormat("AssetBundleName = {0}", assetBundleName).AppendLine();
+
+                        if (!string.IsNullOrEmpty(assetInfo.FileHash))
+                        {
+                            builder.AppendFormat("Hash = {0}", assetInfo.FileHash).AppendLine();
+                        }
+
+                        UnityConsole.Event(ConsoleEventName, ConsoleEventColor, builder.ToString());
+                    }
                 }
             }
 
@@ -638,37 +641,40 @@ namespace Modules.ExternalResource
             {
                 var filePath = ConvertCriFilePath(resourcePath);
 
-                if (!CheckAssetVersion(resourcePath, filePath) && !localMode)
+                if (!localMode && !simulateMode)
                 {
-                    var assetInfo = GetAssetInfo(resourcePath);
-                    var assetPath = PathUtility.Combine(resourceDirectory, resourcePath);
-
-                    var sw = System.Diagnostics.Stopwatch.StartNew();
-
-                    var updateYield = UpdateAsset(resourcePath).ToYieldInstruction(false, yieldCancel.Token);
-
-                    while (!updateYield.IsDone)
+                    if (!CheckAssetVersion(resourcePath, filePath))
                     {
-                        yield return null;
-                    }
+                        var assetInfo = GetAssetInfo(resourcePath);
+                        var assetPath = PathUtility.Combine(resourceDirectory, resourcePath);
 
-                    sw.Stop();
+                        var sw = System.Diagnostics.Stopwatch.StartNew();
 
-                    if (LogEnable && UnityConsole.Enable)
-                    {
-                        var builder = new StringBuilder();
+                        var updateYield = UpdateAsset(resourcePath).ToYieldInstruction(false, yieldCancel.Token);
 
-                        builder.AppendFormat("Update: {0} ({1:F2}ms)", Path.GetFileName(filePath), sw.Elapsed.TotalMilliseconds).AppendLine();
-                        builder.AppendLine();
-                        builder.AppendFormat("LoadPath = {0}", assetPath).AppendLine();
-                        builder.AppendFormat("FileName = {0}", assetInfo.FileName).AppendLine();
-
-                        if (!string.IsNullOrEmpty(assetInfo.FileHash))
+                        while (!updateYield.IsDone)
                         {
-                            builder.AppendFormat("Hash = {0}", assetInfo.FileHash).AppendLine();
+                            yield return null;
                         }
 
-                        UnityConsole.Event(ConsoleEventName, ConsoleEventColor, builder.ToString());
+                        sw.Stop();
+
+                        if (LogEnable && UnityConsole.Enable)
+                        {
+                            var builder = new StringBuilder();
+
+                            builder.AppendFormat("Update: {0} ({1:F2}ms)", Path.GetFileName(filePath), sw.Elapsed.TotalMilliseconds).AppendLine();
+                            builder.AppendLine();
+                            builder.AppendFormat("LoadPath = {0}", assetPath).AppendLine();
+                            builder.AppendFormat("FileName = {0}", assetInfo.FileName).AppendLine();
+
+                            if (!string.IsNullOrEmpty(assetInfo.FileHash))
+                            {
+                                builder.AppendFormat("Hash = {0}", assetInfo.FileHash).AppendLine();
+                            }
+
+                            UnityConsole.Event(ConsoleEventName, ConsoleEventColor, builder.ToString());
+                        }
                     }
                 }
 
@@ -708,7 +714,7 @@ namespace Modules.ExternalResource
             {
                 var filePath = ConvertCriFilePath(resourcePath);
 
-                if (!localMode)
+                if (!localMode && !simulateMode)
                 {
                     if (!CheckAssetVersion(resourcePath, filePath))
                     {
