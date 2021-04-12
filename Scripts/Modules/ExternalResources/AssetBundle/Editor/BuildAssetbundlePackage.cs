@@ -42,7 +42,10 @@ namespace Modules.AssetBundles.Editor
                 {
                     if (assetInfo == null) { return; }
 
-                    CreatePackage(assetBundlePath, assetInfo, cryptoKey);
+                    // アセットバンドルファイルパス.
+                    var assetBundleFilePath = PathUtility.Combine(assetBundlePath, assetInfo.AssetBundle.AssetBundleName);
+
+                    CreatePackage(assetBundlePath, cryptoKey);
 
                     ExportPackage(exportPath, assetBundlePath, assetInfo);
                 });
@@ -54,13 +57,10 @@ namespace Modules.AssetBundles.Editor
         }
     
         /// <summary> パッケージファイル化(暗号化). </summary>
-        private static void CreatePackage(string assetBundlePath, AssetInfo assetInfo, AesCryptoKey cryptoKey)
+        private static void CreatePackage(string assetBundleFilePath, AesCryptoKey cryptoKey)
         {
             try
             {
-                // アセットバンドルファイルパス.
-                var assetBundleFilePath = PathUtility.Combine(assetBundlePath, assetInfo.AssetBundle.AssetBundleName);
-                
                 // 作成するパッケージファイルのパス.
                 var packageFilePath = Path.ChangeExtension(assetBundleFilePath, AssetBundleManager.PackageExtension);
 
@@ -78,12 +78,15 @@ namespace Modules.AssetBundles.Editor
                     fileStream.Read(data, 0, data.Length);
                 }
 
-                // 暗号化して書き込み.
+                // 暗号化.
+
+                data = data.Encrypt(cryptoKey);
+
+
+                // 書き込み.
 
                 using (var fileStream = new FileStream(packageFilePath, FileMode.Create, FileAccess.Write))
                 {
-                    data = data.Encrypt(cryptoKey);
-
                     fileStream.Write(data, 0, data.Length);
                 }
             }
@@ -94,13 +97,10 @@ namespace Modules.AssetBundles.Editor
         }
 
         /// <summary> パッケージファイルの名前を変更し出力先にコピー. </summary>
-        private static void ExportPackage(string exportPath, string assetBundlePath, AssetInfo assetInfo)
+        private static void ExportPackage(string exportPath, string assetBundleFilePath, AssetInfo assetInfo)
         {
             try
             {
-                // アセットバンドルファイルパス.
-                var assetBundleFilePath = PathUtility.Combine(assetBundlePath, assetInfo.AssetBundle.AssetBundleName);
-
                 // パッケージファイルパス.
                 var packageFilePath = Path.ChangeExtension(assetBundleFilePath, AssetBundleManager.PackageExtension);
 
