@@ -1,27 +1,19 @@
 ﻿
 using UnityEngine;
+using UnityEditor;
 using System;
 using System.Linq;
 using System.Collections.Generic;
 using System.IO;
-using System.Threading;
+using System.Threading.Tasks;
 using Extensions;
 using Modules.ExternalResource;
 
 namespace Modules.AssetBundles.Editor
 {
-    public sealed class BuildAssetbundlePackage
+    public sealed class BuildAssetBundlePackage
     {
         //----- params -----
-
-        private const string AssetBundleManifestName = "AssetBundle";
-
-        private const int MaxWorkerCount = 20;
-
-        private sealed class Progress
-        {
-            public int count;
-        }
 
         //----- field -----
 
@@ -29,7 +21,7 @@ namespace Modules.AssetBundles.Editor
 
         //----- method -----
 
-        public void Build(string exportPath, string assetBundlePath, AssetInfoManifest assetInfoManifest, string aesKey, string aesIv, Action<int, int> reportProgress)
+        public static async Task Build(string exportPath, string assetBundlePath, AssetInfoManifest assetInfoManifest, string aesKey, string aesIv)
         {
             var assetInfos = assetInfoManifest.GetAssetInfos()
                 .Where(x => x.IsAssetBundle)
@@ -40,109 +32,45 @@ namespace Modules.AssetBundles.Editor
 
             assetInfos.Add(AssetInfoManifest.GetManifestAssetInfo());
 
-            var total = assetInfos.Count;
+            var cryptoKey = new AesCryptoKey(aesKey, aesIv);
 
-            reportProgress(0, total);
-
-            var progress = new Progress();
-
-            var events = new List<WaitHandle>();
-
-            // スレッドで分割処理.
-
-            var workerNo = 0;
-            var workerPaths = new List<AssetInfo>[MaxWorkerCount];
+            var tasks = new List<Task>();
 
             foreach (var assetInfo in assetInfos)
             {
-                if(workerPaths[workerNo] == null)
+                var task = Task.Run(() =>
                 {
-                    workerPaths[workerNo] = new List<AssetInfo>();
-                }
+                    if (assetInfo == null) { return; }
 
-                workerPaths[workerNo].Add(assetInfo);
+                    CreatePackage(assetBundlePath, assetInfo, cryptoKey);
 
-                workerNo = (workerNo + 1) % MaxWorkerCount;
-            }
-
-            foreach (var item in workerPaths)
-            {
-                if (item == null) { continue; }
-
-                events.Add(StartWorker(exportPath, assetBundlePath, aesKey, aesIv, item.ToArray(), progress));
-            }
-
-            while (!WaitHandle.WaitAll(events.ToArray(), 100))
-            {
-                reportProgress(progress.count, total);
-            }
-
-            reportProgress(progress.count, total);
-        }
-        
-        private static ManualResetEvent StartWorker(string exportPath, string assetBundlePath, string aesKey, string aesIv, AssetInfo[] assetInfos, Progress progress)
-        {
-            var queue = new Queue<AssetInfo>(assetInfos);
-            var resetEvent = new ManualResetEvent(false);
-            var completedCount = 0;
-
-            for (var i = 0; i < Environment.ProcessorCount; i++)
-            {
-                ThreadPool.QueueUserWorkItem(state =>
-                {
-                    while (true)
-                    {
-                        AssetInfo assetInfo = null;
-
-                        lock (queue)
-                        {
-                            if (queue.Any()) { assetInfo = queue.Dequeue(); }
-                        }
-
-                        if (assetInfo == null) { break; }
-
-                        CreatePackage(exportPath, assetBundlePath, assetInfo, aesKey, aesIv);
-
-                        Interlocked.Increment(ref progress.count);
-                    }
-
-                    // 完了.
-                    if (Interlocked.Increment(ref completedCount) == Environment.ProcessorCount)
-                    {
-                        resetEvent.Set();
-                    }
+                    ExportPackage(exportPath, assetBundlePath, assetInfo);
                 });
+
+                tasks.Add(task);
             }
 
-            return resetEvent;
+            await Task.WhenAll(tasks);
         }
-
-        /// <summary>
-        /// パッケージファイル化(暗号化).
-        /// </summary>
-        private static void CreatePackage(string exportPath, string assetBundlePath, AssetInfo assetInfo, string aesKey, string aesIv)
+    
+        /// <summary> パッケージファイル化(暗号化). </summary>
+        private static void CreatePackage(string assetBundlePath, AssetInfo assetInfo, AesCryptoKey cryptoKey)
         {
-            var cryptoKey = new AesCryptoKey(aesKey, aesIv);
-
-            // ※ パッケージファイルが存在する時は内容に変更がない時なのでそのままコピーする.
-
             try
             {
                 // アセットバンドルファイルパス.
                 var assetBundleFilePath = PathUtility.Combine(assetBundlePath, assetInfo.AssetBundle.AssetBundleName);
-
-                // パッケージファイル名.
-                var packageFileName = Path.ChangeExtension(assetInfo.FileName, AssetBundleManager.PackageExtension);
-
-                // 作成する圧縮ファイルのパス.
-                var packageFilePath = PathUtility.Combine(assetBundlePath, packageFileName);
-
-                // 作成したファイルの出力先.
-                var packageExportPath = PathUtility.Combine(exportPath, packageFileName);
                 
+                // 作成するパッケージファイルのパス.
+                var packageFilePath = Path.ChangeExtension(assetBundleFilePath, AssetBundleManager.PackageExtension);
+
+                // パッケージファイルが存在する時は内容に変更がない時なのでそのままコピーする.
+                if (File.Exists(packageFilePath)){ return; }
+
                 byte[] data = null;
 
-                // 読み込み.
+                // アセットバンドル読み込み.
+
                 using (var fileStream = new FileStream(assetBundleFilePath, FileMode.Open, FileAccess.Read))
                 {
                     data = new byte[fileStream.Length];
@@ -152,17 +80,35 @@ namespace Modules.AssetBundles.Editor
 
                 // 暗号化して書き込み.
 
-                if (File.Exists(packageFilePath))
-                {
-                    File.Delete(packageFilePath);
-                }
-
                 using (var fileStream = new FileStream(packageFilePath, FileMode.Create, FileAccess.Write))
                 {
                     data = data.Encrypt(cryptoKey);
 
                     fileStream.Write(data, 0, data.Length);
                 }
+            }
+            catch (Exception exception)
+            {
+                Debug.LogException(exception);
+            }
+        }
+
+        /// <summary> パッケージファイルの名前を変更し出力先にコピー. </summary>
+        private static void ExportPackage(string exportPath, string assetBundlePath, AssetInfo assetInfo)
+        {
+            try
+            {
+                // アセットバンドルファイルパス.
+                var assetBundleFilePath = PathUtility.Combine(assetBundlePath, assetInfo.AssetBundle.AssetBundleName);
+
+                // パッケージファイルパス.
+                var packageFilePath = Path.ChangeExtension(assetBundleFilePath, AssetBundleManager.PackageExtension);
+
+                // パッケージファイル名.
+                var packageFileName = Path.ChangeExtension(assetInfo.FileName, AssetBundleManager.PackageExtension);
+
+                // ファイルの出力先.
+                var packageExportPath = PathUtility.Combine(exportPath, packageFileName);
 
                 // ディレクトリ作成.
                 var directory = Path.GetDirectoryName(packageExportPath);
@@ -173,8 +119,6 @@ namespace Modules.AssetBundles.Editor
                 }
                 
                 File.Copy(packageFilePath, packageExportPath, true);
-
-                File.Delete(packageFilePath);
             }
             catch (Exception exception)
             {

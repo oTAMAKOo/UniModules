@@ -78,9 +78,9 @@ namespace Modules.ExternalResource.Editor
 
                     //------ キャッシュ済みアセットバンドルのハッシュ値取得 ------
 
-                    var cachedAssetBundleHashTable = await BuildAssetBundle.GetCachedAssetBundleHash();
+                    var cachedFileLastWriteTimeTable = await BuildAssetBundle.GetCachedFileLastWriteTimeTable();
 
-                    AddBuildTimeLog(logBuilder, sw, "GetCachedAssetBundleHash");
+                    AddBuildTimeLog(logBuilder, sw, "GetCachedFileLastWriteTimeTable");
 
                     //------ CRIアセットを生成 ------
 
@@ -140,18 +140,18 @@ namespace Modules.ExternalResource.Editor
 
                     AddBuildTimeLog(logBuilder, sw, "Rebuild AssetInfoManifest");
 
-                    //------ 更新が必要なパッケージファイルを削除 ------
+                    //------ 更新予定のパッケージファイルを削除 ------
 
-                    BuildAssetBundle.CleanOldPackage(cachedAssetBundleHashTable);
+                    await BuildAssetBundle.DeleteUpdateTargetPackage(assetInfoManifest, cachedFileLastWriteTimeTable);
 
-                    AddBuildTimeLog(logBuilder, sw, "CleanOldPackage");
+                    AddBuildTimeLog(logBuilder, sw, "DeleteUpdateTargetPackage");
 
                     //------ AssetBundleファイルをパッケージ化 ------
 
                     var cryptKey = manageConfig.CryptKey;
                     var cryptIv = manageConfig.CryptIv;
 
-                    BuildAssetBundle.BuildPackage(exportPath, assetInfoManifest, cryptKey, cryptIv);
+                    await BuildAssetBundle.BuildPackage(exportPath, assetInfoManifest, cryptKey, cryptIv);
 
                     AddBuildTimeLog(logBuilder, sw, "BuildPackage");
                 }

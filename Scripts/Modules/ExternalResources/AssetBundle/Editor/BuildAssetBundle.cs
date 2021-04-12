@@ -109,7 +109,7 @@ namespace Modules.AssetBundles.Editor
         {
             var projectFolders = ProjectFolders.Instance;
 
-            if (projectFolders == null){ return; }
+            if (projectFolders == null) { return; }
 
             var externalResourcesPath = projectFolders.ExternalResourcesPath;
 
@@ -146,7 +146,7 @@ namespace Modules.AssetBundles.Editor
             var targetPlatform = EditorUserBuildSettings.activeBuildTarget;
 
             var manifestFilePath = GetAssetBundleManifestFilePath(targetPlatform);
-            
+
             var main = Path.ChangeExtension(manifestFilePath, string.Empty);
             var manifest = Path.ChangeExtension(manifestFilePath, ManifestFileExtension);
 
@@ -183,28 +183,8 @@ namespace Modules.AssetBundles.Editor
         private static string GetAssetBundleManifestFilePath(BuildTarget targetPlatform)
         {
             var assetBundlePath = GetAssetBundleOutputPath();
-            
+
             return PathUtility.Combine(assetBundlePath, targetPlatform.ToString());
-        }
-
-        /// <summary> アセットバンドルをパッケージ化 </summary>
-        public static void BuildPackage(string exportPath, AssetInfoManifest assetInfoManifest, string aesKey, string aesIv)
-        {
-            var assetBundlePath = GetAssetBundleOutputPath();
-
-            var assetBundlePackageBuilder = new BuildAssetbundlePackage();
-
-            Action<int, int> reportProgress = (current, total) =>
-            {
-                var title = "Build　AssetBundle Package";
-                var info = string.Format("Build progress ({0}/{1})", current, total);
-
-                EditorUtility.DisplayProgressBar(title, info, current / (float)total);
-            };
-
-            assetBundlePackageBuilder.Build(exportPath, assetBundlePath, assetInfoManifest, aesKey, aesIv, reportProgress);
-
-            EditorUtility.ClearProgressBar();
         }
 
         /// <summary> 不要になったアセットバンドルを削除 </summary>
@@ -216,8 +196,10 @@ namespace Modules.AssetBundles.Editor
                 .Select(x => PathUtility.ConvertPathSeparator(x))
                 .ToArray();
 
-            var allFiles = Directory.GetFiles(assetBundlePath, "*.*", SearchOption.AllDirectories);
-            
+            var allFiles = Directory.GetFiles(assetBundlePath, "*.*", SearchOption.AllDirectories)
+                .Select(x => PathUtility.ConvertPathSeparator(x))
+                .ToArray();
+
             foreach (var file in allFiles)
             {
                 var extension = Path.GetExtension(file);
@@ -228,21 +210,26 @@ namespace Modules.AssetBundles.Editor
 
                 if (extension == AssetBundleManager.PackageExtension) { continue; }
 
-                var path = PathUtility.ConvertPathSeparator(file);
+                if (assetBundleNames.Any(x => file.EndsWith(x))) { continue; }
 
-                if (assetBundleNames.Any(x => path.EndsWith(x))){ continue; }
-
-                if (File.Exists(path))
+                if (File.Exists(file))
                 {
-                    File.Delete(path);
+                    File.Delete(file);
                 }
 
-                var manifestFilePath = Path.ChangeExtension(path, ManifestFileExtension);
+                var manifestFilePath = Path.ChangeExtension(file, ManifestFileExtension);
 
                 if (File.Exists(manifestFilePath))
                 {
                     File.Delete(manifestFilePath);
-                }                
+                }
+
+                var packageFilePath = Path.ChangeExtension(file, AssetBundleManager.PackageExtension);
+
+                if (File.Exists(packageFilePath))
+                {
+                    File.Delete(packageFilePath);
+                }
             }
 
             // 空フォルダ削除.
@@ -252,8 +239,8 @@ namespace Modules.AssetBundles.Editor
             }
         }
 
-        /// <summary> キャッシュ済みアセットバンドルファイルのハッシュ値を取得 </summary>
-        public static async Task<Dictionary<string, string>> GetCachedAssetBundleHash()
+        /// <summary> キャッシュ済みアセットバンドルファイルの最終更新日テーブルを取得 </summary>
+        public static async Task<Dictionary<string, DateTime>> GetCachedFileLastWriteTimeTable()
         {
             var assetBundlePath = GetAssetBundleOutputPath();
 
@@ -261,9 +248,12 @@ namespace Modules.AssetBundles.Editor
                 .Select(x => PathUtility.ConvertPathSeparator(x))
                 .ToArray();
 
-            var allFiles = Directory.GetFiles(assetBundlePath, "*.*", SearchOption.AllDirectories);
+            var allFiles = Directory.GetFiles(assetBundlePath, "*.*", SearchOption.AllDirectories)
+                .Where(x => Path.GetExtension(x) == string.Empty)
+                .Select(x => PathUtility.ConvertPathSeparator(x))
+                .ToArray();
 
-            var dictionary = new Dictionary<string, string>();
+            var dictionary = new Dictionary<string, DateTime>();
 
             var tasks = new List<Task>();
 
@@ -271,15 +261,15 @@ namespace Modules.AssetBundles.Editor
             {
                 var path = PathUtility.ConvertPathSeparator(file);
 
-                if (assetBundleNames.All(x => !path.EndsWith(x))) { continue; }
-
                 var task = Task.Run(() =>
                 {
-                    var hash = FileUtility.GetHash(path);
+                    if (assetBundleNames.All(x => !path.EndsWith(x))) { return; }
+
+                    var lastWriteTime = File.GetLastWriteTime(path);
 
                     lock (dictionary)
                     {
-                        dictionary.Add(path, hash);
+                        dictionary.Add(path, lastWriteTime);
                     }
                 });
 
@@ -291,24 +281,62 @@ namespace Modules.AssetBundles.Editor
             return dictionary;
         }
 
-        /// <summary> 更新が必要なパッケージファイルを削除 </summary>
-        public static void CleanOldPackage(Dictionary<string, string> cachedAssetBundleHashs)
+        /// <summary> 更新予定のパッケージファイルを削除 </summary>
+        public static async Task DeleteUpdateTargetPackage(AssetInfoManifest assetInfoManifest, Dictionary<string, DateTime> lastWriteTimeTable)
         {
-            foreach (var item in cachedAssetBundleHashs)
+            var assetBundlePath = GetAssetBundleOutputPath();
+
+            var assetInfos = assetInfoManifest.GetAssetInfos()
+                .Where(x => x.IsAssetBundle)
+                .Where(x => !string.IsNullOrEmpty(x.AssetBundle.AssetBundleName))
+                .GroupBy(x => x.AssetBundle.AssetBundleName)
+                .Select(x => x.FirstOrDefault())
+                .ToList();
+
+            assetInfos.Add(AssetInfoManifest.GetManifestAssetInfo());
+
+            var tasks = new List<Task>();
+
+            foreach (var item in assetInfos)
             {
-                var file = item.Key;
+                var assetInfo = item;
 
-                var hash = FileUtility.GetHash(file);
-                
-                if (hash == item.Value) { continue; }
-
-                var packageFile = Path.ChangeExtension(file, AssetBundleManager.PackageExtension);
-
-                if (File.Exists(packageFile))
+                var task = Task.Run(() =>
                 {
-                    File.Delete(packageFile);
-                }
+                    // アセットバンドルファイルパス.
+                    var assetBundleFilePath = PathUtility.Combine(assetBundlePath, assetInfo.AssetBundle.AssetBundleName);
+
+                    // パッケージファイルパス.
+                    var packageFilePath = Path.ChangeExtension(assetBundleFilePath, AssetBundleManager.PackageExtension);
+
+                    // 最終更新日を比較.
+
+                    if (File.Exists(packageFilePath))
+                    {
+                        var prevLastWriteTime = lastWriteTimeTable.GetValueOrDefault(assetBundleFilePath, DateTime.MinValue);
+
+                        var currentLastWriteTime = File.GetLastWriteTime(assetBundleFilePath);
+
+                        // ビルド前と後で更新日時が変わっていたら更新対象なのでファイルを削除.
+                        if (currentLastWriteTime != prevLastWriteTime)
+                        {
+                            File.Delete(packageFilePath);
+                        }
+                    }
+                });
+
+                tasks.Add(task);
             }
+
+            await Task.WhenAll(tasks);
+        }
+
+        /// <summary> キャッシュ済みアセットバンドルファイルの最終更新日テーブルを取得 </summary>
+        public static async Task BuildPackage(string exportPath, AssetInfoManifest assetInfoManifest, string aesKey, string aesIv)
+        {
+            var assetBundlePath = GetAssetBundleOutputPath();
+
+            await BuildAssetBundlePackage.Build(exportPath, assetBundlePath, assetInfoManifest, aesKey, aesIv);
         }
     }
 }
