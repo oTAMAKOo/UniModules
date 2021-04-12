@@ -36,18 +36,29 @@ namespace Modules.AssetBundles.Editor
 
             var tasks = new List<Task>();
 
-            foreach (var assetInfo in assetInfos)
+            foreach (var info in assetInfos)
             {
-                var task = Task.Run(() =>
+                var assetInfo = info;
+
+                if (assetInfo == null) { continue; }
+
+                var task = Task.Run(async () =>
                 {
-                    if (assetInfo == null) { return; }
+                    try
+                    {
+                        // アセットバンドルファイルパス.
+                        var assetBundleFilePath = PathUtility.Combine(assetBundlePath, assetInfo.AssetBundle.AssetBundleName);
 
-                    // アセットバンドルファイルパス.
-                    var assetBundleFilePath = PathUtility.Combine(assetBundlePath, assetInfo.AssetBundle.AssetBundleName);
+                        // 更新があったパッケージを作成.
+                        await CreatePackage(assetBundleFilePath, cryptoKey);
 
-                    CreatePackage(assetBundlePath, cryptoKey);
-
-                    ExportPackage(exportPath, assetBundlePath, assetInfo);
+                        // 出力先にパッケージファイルをコピー.
+                        await ExportPackage(exportPath, assetBundleFilePath, assetInfo);
+                    }
+                    catch (Exception exception)
+                    {
+                        Debug.LogException(exception);
+                    }
                 });
 
                 tasks.Add(task);
@@ -57,72 +68,66 @@ namespace Modules.AssetBundles.Editor
         }
     
         /// <summary> パッケージファイル化(暗号化). </summary>
-        private static void CreatePackage(string assetBundleFilePath, AesCryptoKey cryptoKey)
+        private static async Task CreatePackage(string assetBundleFilePath, AesCryptoKey cryptoKey)
         {
-            try
+            // 作成するパッケージファイルのパス.
+            var packageFilePath = Path.ChangeExtension(assetBundleFilePath, AssetBundleManager.PackageExtension);
+
+            // パッケージファイルが存在する時は内容に変更がない時なのでそのままコピーする.
+            if (File.Exists(packageFilePath)){ return; }
+
+            byte[] data = null;
+
+            // アセットバンドル読み込み.
+
+            using (var fileStream = new FileStream(assetBundleFilePath, FileMode.Open, FileAccess.Read))
             {
-                // 作成するパッケージファイルのパス.
-                var packageFilePath = Path.ChangeExtension(assetBundleFilePath, AssetBundleManager.PackageExtension);
+                data = new byte[fileStream.Length];
 
-                // パッケージファイルが存在する時は内容に変更がない時なのでそのままコピーする.
-                if (File.Exists(packageFilePath)){ return; }
-
-                byte[] data = null;
-
-                // アセットバンドル読み込み.
-
-                using (var fileStream = new FileStream(assetBundleFilePath, FileMode.Open, FileAccess.Read))
-                {
-                    data = new byte[fileStream.Length];
-
-                    fileStream.Read(data, 0, data.Length);
-                }
-
-                // 暗号化.
-
-                data = data.Encrypt(cryptoKey);
-
-
-                // 書き込み.
-
-                using (var fileStream = new FileStream(packageFilePath, FileMode.Create, FileAccess.Write))
-                {
-                    fileStream.Write(data, 0, data.Length);
-                }
+                await fileStream.ReadAsync(data, 0, data.Length);
             }
-            catch (Exception exception)
+
+            // 暗号化.
+
+            data = data.Encrypt(cryptoKey);
+
+            // 書き込み.
+
+            using (var fileStream = new FileStream(packageFilePath, FileMode.Create, FileAccess.Write))
             {
-                Debug.LogException(exception);
+                await fileStream.WriteAsync(data, 0, data.Length);
             }
         }
 
         /// <summary> パッケージファイルの名前を変更し出力先にコピー. </summary>
-        private static void ExportPackage(string exportPath, string assetBundleFilePath, AssetInfo assetInfo)
+        private static async Task ExportPackage(string exportPath, string assetBundleFilePath, AssetInfo assetInfo)
         {
-            try
+            // パッケージファイルパス.
+            var packageFilePath = Path.ChangeExtension(assetBundleFilePath, AssetBundleManager.PackageExtension);
+
+            // パッケージファイル名.
+            var packageFileName = Path.ChangeExtension(assetInfo.FileName, AssetBundleManager.PackageExtension);
+
+            // ファイルの出力先.
+            var packageExportPath = PathUtility.Combine(exportPath, packageFileName);
+
+            // ディレクトリ作成.
+
+            var directory = Path.GetDirectoryName(packageExportPath);
+
+            if (!Directory.Exists(directory))
             {
-                // パッケージファイルパス.
-                var packageFilePath = Path.ChangeExtension(assetBundleFilePath, AssetBundleManager.PackageExtension);
-
-                // パッケージファイル名.
-                var packageFileName = Path.ChangeExtension(assetInfo.FileName, AssetBundleManager.PackageExtension);
-
-                // ファイルの出力先.
-                var packageExportPath = PathUtility.Combine(exportPath, packageFileName);
-
-                // ディレクトリ作成.
-                var directory = Path.GetDirectoryName(packageExportPath);
-
-                if (!Directory.Exists(directory))
-                {
-                    Directory.CreateDirectory(directory);
-                }
-                
-                File.Copy(packageFilePath, packageExportPath, true);
+                Directory.CreateDirectory(directory);
             }
-            catch (Exception exception)
+
+            // ファイルコピー.
+
+            using (var sourceStream = File.Open(packageFilePath, FileMode.Open))
             {
-                Debug.LogException(exception);
+                using (var destinationStream = File.Create(packageExportPath))
+                {
+                    await sourceStream.CopyToAsync(destinationStream);
+                }
             }
         }
     }
