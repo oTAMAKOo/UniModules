@@ -46,14 +46,16 @@ namespace Modules.ExternalResource.Editor
             return EditorUtility.DisplayDialog("Confirmation", "外部アセットを生成します.", "実行", "中止");
         }
 
-        public static async Task Build(string exportPath, AssetInfoManifest assetInfoManifest, bool openExportFolder = true)
+        public static async Task<string> Build(string exportPath, AssetInfoManifest assetInfoManifest, bool openExportFolder = true)
         {
-            if (string.IsNullOrEmpty(exportPath)) { return; }
+            if (string.IsNullOrEmpty(exportPath)) { return null; }
 
             if (Directory.Exists(exportPath))
             {
                 Directory.Delete(exportPath, true);
             }
+
+            var versionHash = string.Empty;
 
             var assetManagement = AssetManagement.Instance;
 
@@ -162,6 +164,8 @@ namespace Modules.ExternalResource.Editor
                     AddBuildTimeLog(logBuilder, sw, "BuildPackage");
                 }
 
+                versionHash = assetInfoManifest.VersionHash;
+
                 //------ ログ出力------
 
                 // ビルド情報.
@@ -170,7 +174,7 @@ namespace Modules.ExternalResource.Editor
 
                 buildLogText.Append("Build ExternalResource Complete.").AppendLine();
                 buildLogText.AppendLine();
-                buildLogText.AppendFormat("VersionHash : {0}", assetInfoManifest.VersionHash).AppendLine();
+                buildLogText.AppendFormat("VersionHash : {0}", versionHash).AppendLine();
                 buildLogText.AppendLine();
                 buildLogText.AppendLine(logBuilder.ToString());
                 buildLogText.AppendLine();
@@ -193,6 +197,8 @@ namespace Modules.ExternalResource.Editor
             {
                 EditorApplication.UnlockReloadAssemblies();
             }
+
+            return versionHash;
         }
 
         private static void AddBuildTimeLog(StringBuilder logBuilder, System.Diagnostics.Stopwatch sw, string text)
