@@ -3,6 +3,7 @@ using UnityEngine;
 using UnityEditor;
 using System;
 using System.IO;
+using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Extensions;
@@ -142,7 +143,12 @@ namespace Modules.ExternalResource.Editor
 
                     //------ 更新予定のパッケージファイルを削除 ------
 
-                    await BuildAssetBundle.DeleteUpdateTargetPackage(assetInfoManifest, cachedFileLastWriteTimeTable);
+                    var deleteTargets = await BuildAssetBundle.GetUpdateTargetAssetInfo(assetInfoManifest, cachedFileLastWriteTimeTable);
+
+                    if (deleteTargets.Any())
+                    {
+                        BuildAssetBundle.DeleteUpdateTargetPackage(deleteTargets);
+                    }
 
                     AddBuildTimeLog(logBuilder, sw, "DeleteUpdateTargetPackage");
 
@@ -158,9 +164,18 @@ namespace Modules.ExternalResource.Editor
 
                 //------ ログ出力------
 
-                var logText = string.Format("Build ExternalResource Complete.\n\nVersionHash : {0}\n\n{1}", assetInfoManifest.VersionHash, logBuilder);
+                // ビルド情報.
 
-                UnityConsole.Event(ExternalResources.ConsoleEventName, ExternalResources.ConsoleEventColor, logText);
+                var buildLogText = new StringBuilder();
+
+                buildLogText.Append("Build ExternalResource Complete.").AppendLine();
+                buildLogText.AppendLine();
+                buildLogText.AppendFormat("VersionHash : {0}", assetInfoManifest.VersionHash).AppendLine();
+                buildLogText.AppendLine();
+                buildLogText.AppendLine(logBuilder.ToString());
+                buildLogText.AppendLine();
+
+                UnityConsole.Event(ExternalResources.ConsoleEventName, ExternalResources.ConsoleEventColor, buildLogText.ToString());
 
                 //------ 出力先フォルダを開く------
 

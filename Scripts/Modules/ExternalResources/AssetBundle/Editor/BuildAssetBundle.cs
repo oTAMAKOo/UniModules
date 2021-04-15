@@ -281,8 +281,8 @@ namespace Modules.AssetBundles.Editor
             return dictionary;
         }
 
-        /// <summary> 更新予定のパッケージファイルを削除 </summary>
-        public static async Task DeleteUpdateTargetPackage(AssetInfoManifest assetInfoManifest, Dictionary<string, DateTime> lastWriteTimeTable)
+        /// <summary> 更新されたアセット情報取得 </summary>
+        public static async Task<AssetInfo[]> GetUpdateTargetAssetInfo(AssetInfoManifest assetInfoManifest, Dictionary<string, DateTime> lastWriteTimeTable)
         {
             var assetBundlePath = GetAssetBundleOutputPath();
 
@@ -295,6 +295,8 @@ namespace Modules.AssetBundles.Editor
 
             assetInfos.Add(AssetInfoManifest.GetManifestAssetInfo());
 
+            var list = new List<AssetInfo>();
+
             var tasks = new List<Task>();
 
             foreach (var item in assetInfos)
@@ -305,23 +307,17 @@ namespace Modules.AssetBundles.Editor
                 {
                     // アセットバンドルファイルパス.
                     var assetBundleFilePath = PathUtility.Combine(assetBundlePath, assetInfo.AssetBundle.AssetBundleName);
-
-                    // パッケージファイルパス.
-                    var packageFilePath = Path.ChangeExtension(assetBundleFilePath, AssetBundleManager.PackageExtension);
-
+                    
                     // 最終更新日を比較.
 
-                    if (File.Exists(packageFilePath))
+                    var prevLastWriteTime = lastWriteTimeTable.GetValueOrDefault(assetBundleFilePath, DateTime.MinValue);
+
+                    var currentLastWriteTime = File.GetLastWriteTime(assetBundleFilePath);
+
+                    // ビルド前と後で更新日時が変わっていたら更新対象.
+                    if (currentLastWriteTime != prevLastWriteTime)
                     {
-                        var prevLastWriteTime = lastWriteTimeTable.GetValueOrDefault(assetBundleFilePath, DateTime.MinValue);
-
-                        var currentLastWriteTime = File.GetLastWriteTime(assetBundleFilePath);
-
-                        // ビルド前と後で更新日時が変わっていたら更新対象なのでファイルを削除.
-                        if (currentLastWriteTime != prevLastWriteTime)
-                        {
-                            File.Delete(packageFilePath);
-                        }
+                        list.Add(assetInfo);
                     }
                 });
 
@@ -329,6 +325,28 @@ namespace Modules.AssetBundles.Editor
             }
 
             await Task.WhenAll(tasks);
+
+            return list.ToArray();
+        }
+
+        /// <summary> 更新予定のパッケージファイルを削除 </summary>
+        public static void DeleteUpdateTargetPackage(AssetInfo[] assetInfos)
+        {
+            var assetBundlePath = GetAssetBundleOutputPath();
+
+            foreach (var assetInfo in assetInfos)
+            {
+                // アセットバンドルファイルパス.
+                var assetBundleFilePath = PathUtility.Combine(assetBundlePath, assetInfo.AssetBundle.AssetBundleName);
+
+                // パッケージファイルパス.
+                var packageFilePath = Path.ChangeExtension(assetBundleFilePath, AssetBundleManager.PackageExtension);
+
+                if (File.Exists(packageFilePath))
+                {
+                    File.Delete(packageFilePath);
+                }
+            }
         }
 
         /// <summary> キャッシュ済みアセットバンドルファイルの最終更新日テーブルを取得 </summary>
