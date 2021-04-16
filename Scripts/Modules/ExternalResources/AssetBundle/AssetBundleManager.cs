@@ -119,11 +119,10 @@ namespace Modules.AssetBundles
         /// <param name="localMode"><see cref="installPath"/>のファイルからアセットを取得</param>
         /// <param name="simulateMode">AssetDataBaseからアセットを取得(EditorOnly)</param>
         /// <param name="cryptoKey">暗号化キー(Key,IVがModules.ExternalResource.Editor.ManageConfigのAssetのCryptKeyと一致している必要があります.)</param>
-        public void Initialize(string installPath, uint maxDownloadCount, bool localMode = false, bool simulateMode = false, AesCryptoKey cryptoKey = null)
+        public void Initialize(uint maxDownloadCount, bool localMode = false, bool simulateMode = false, AesCryptoKey cryptoKey = null)
         {
             if (isInitialized) { return; }
 
-            this.installPath = installPath;
             this.maxDownloadCount = maxDownloadCount;
             this.localMode = localMode;
             this.simulateMode = Application.isEditor && simulateMode;
@@ -141,6 +140,12 @@ namespace Modules.AssetBundles
             BuildAssetInfoTable();
 
             isInitialized = true;
+        }
+
+        /// <summary> データ保存先設定. </summary>
+        public void SetInstallDirectory(string installDirectory)
+        {
+            installPath = installDirectory;
         }
 
         /// <summary>

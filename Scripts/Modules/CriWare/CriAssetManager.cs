@@ -152,11 +152,10 @@ namespace Modules.CriWare
 
         private CriAssetManager() { }
 
-        public void Initialize(string installPath, string sourceDir, uint numInstallers, bool localMode = false, bool simulateMode = false)
+        public void Initialize(string sourceDir, uint numInstallers, bool localMode = false, bool simulateMode = false)
         {
             if (isInitialized) { return; }
 
-            this.installPath = installPath;
             this.sourceDir = sourceDir;
             this.localMode = localMode;
             this.simulateMode = Application.isEditor && simulateMode;
@@ -206,9 +205,13 @@ namespace Modules.CriWare
             }
         }
 
-        /// <summary>
-        /// URLを設定.
-        /// </summary>
+        /// <summary> データ保存先設定. </summary>
+        public void SetInstallDirectory(string installDirectory)
+        {
+            installPath = installDirectory;
+        }
+
+        /// <summary> URLを設定. </summary>
         public void SetUrl(string remoteUrl)
         {
             this.remoteUrl = remoteUrl;

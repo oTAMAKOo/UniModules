@@ -1,4 +1,5 @@
 ﻿
+using UnityEngine;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -81,6 +82,15 @@ namespace Modules.Master
         public void SetInstallDirectory(string installDirectory)
         {
             InstallDirectory = PathUtility.Combine(installDirectory, "Master");
+
+            #if UNITY_IOS
+
+            if (InstallDirectory.StartsWith(Application.persistentDataPath))
+            {
+                UnityEngine.iOS.Device.SetNoBackupFlag(InstallDirectory);
+            }
+
+            #endif
         }
 
         /// <summary> ファイル名暗号化オブジェクトを設定 </summary>

@@ -101,14 +101,16 @@ namespace Modules.ExternalResource
             LogEnable = true;
         }
 
-        public void Initialize(string resourceDir, string installDir, bool localMode = false)
+        public void Initialize(string resourceDir, bool localMode = false)
         {
             if (initialized) { return; }
 
             this.localMode = localMode;
             this.resourceDirectory = resourceDir;
 
-            InstallDirectory = installDir;
+            var installDir = Application.persistentDataPath;
+
+            SetInstallDirectory(installDir);
 
             // 中断用登録.
             yieldCancel = new YieldCancel();
@@ -123,7 +125,7 @@ namespace Modules.ExternalResource
 
             // AssetBundleManager初期化.
             assetBundleManager = AssetBundleManager.CreateInstance();
-            assetBundleManager.Initialize(installDir, MaxDownloadCount, localMode, simulateMode);
+            assetBundleManager.Initialize(MaxDownloadCount, localMode, simulateMode);
             assetBundleManager.RegisterYieldCancel(yieldCancel);
             assetBundleManager.OnTimeOutAsObservable().Subscribe(x => OnTimeout(x)).AddTo(Disposable);
             assetBundleManager.OnErrorAsObservable().Subscribe(x => OnError(x)).AddTo(Disposable);
@@ -133,7 +135,7 @@ namespace Modules.ExternalResource
             // CriAssetManager初期化.
 
             criAssetManager = CriAssetManager.CreateInstance();
-            criAssetManager.Initialize(installDir, resourceDir, MaxDownloadCount, localMode, simulateMode);
+            criAssetManager.Initialize(resourceDir, MaxDownloadCount, localMode, simulateMode);
             criAssetManager.OnTimeOutAsObservable().Subscribe(x => OnTimeout(x)).AddTo(Disposable);
             criAssetManager.OnErrorAsObservable().Subscribe(x => OnError(x)).AddTo(Disposable);
             
@@ -143,6 +145,28 @@ namespace Modules.ExternalResource
             LoadVersion();
 
             initialized = true;
+        }
+
+        public void SetInstallDirectory(string directory)
+        {
+            InstallDirectory = PathUtility.Combine(directory, "ExternalResources");
+
+            #if UNITY_IOS
+
+            if (InstallDirectory.StartsWith(Application.persistentDataPath))
+            {
+                UnityEngine.iOS.Device.SetNoBackupFlag(InstallDirectory);
+            }
+
+            #endif
+
+            assetBundleManager.SetInstallDirectory(InstallDirectory);
+
+            #if ENABLE_CRIWARE_ADX || ENABLE_CRIWARE_SOFDEC
+
+            criAssetManager.SetInstallDirectory(InstallDirectory);
+
+            #endif
         }
 
         /// <summary>
