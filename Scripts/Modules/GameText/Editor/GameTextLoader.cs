@@ -54,7 +54,18 @@ namespace Modules.GameText.Editor
 
             var config = GameTextConfig.Instance;
 
-            var gameTextInfo = GameTextLanguage.Infos.ElementAtOrDefault(GameTextLanguage.Prefs.selection);
+            GameTextLanguage.Info gameTextInfo = null;
+
+            if (1 < GameTextLanguage.Infos.Length)
+            {
+                var selection = GameTextLanguage.Prefs.selection;
+
+                gameTextInfo = GameTextLanguage.Infos.ElementAtOrDefault(selection);
+            }
+            else
+            {
+                gameTextInfo = GameTextLanguage.Infos.FirstOrDefault();
+            }
 
             if (gameTextInfo == null) { return; }
 
