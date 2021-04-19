@@ -108,10 +108,6 @@ namespace Modules.ExternalResource
             this.localMode = localMode;
             this.resourceDirectory = resourceDir;
 
-            var installDir = Application.persistentDataPath;
-
-            SetInstallDirectory(installDir);
-
             // 中断用登録.
             yieldCancel = new YieldCancel();
 
@@ -140,6 +136,9 @@ namespace Modules.ExternalResource
             criAssetManager.OnErrorAsObservable().Subscribe(x => OnError(x)).AddTo(Disposable);
             
             #endif
+
+            // 保存先設定.
+            SetInstallDirectory(Application.persistentDataPath);
 
             // バージョン情報を読み込み.
             LoadVersion();

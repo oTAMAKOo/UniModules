@@ -56,6 +56,9 @@ namespace Modules.Master
         private MasterManager()
         {
             masters = new Dictionary<string, IMaster>();
+
+            // 保存先設定.
+            SetInstallDirectory(Application.persistentDataPath);
         }
 
         public void Register(IMaster master)
