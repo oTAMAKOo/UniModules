@@ -59,8 +59,6 @@ namespace Modules.LocalPushNotify
 
         private Subject<Unit> onNotifyRegister = null;
 
-        private LifetimeDisposable disposable = null;
-
         //----- property -----
 
         //----- method -----
@@ -69,24 +67,28 @@ namespace Modules.LocalPushNotify
 
         public void Initialize()
         {
-            disposable = new LifetimeDisposable();
-
             initializedTime = (int)DateTime.Now.ToUnixTime();
             incrementCount = 0;
 
             notifications = new Dictionary<long, NotificationInfo>();
 
-            ApplicationEventHandler.OnQuitAsObservable().Subscribe(_ => OnSuspend()).AddTo(disposable.Disposable);
+            // イベント登録.
 
-            ApplicationEventHandler.OnSuspendAsObservable().Subscribe(_ => OnSuspend()).AddTo(disposable.Disposable);
+            ApplicationEventHandler.OnQuitAsObservable()
+                .Subscribe(_ => OnSuspend())
+                .AddTo(Disposable);
 
-            ApplicationEventHandler.OnResumeAsObservable().Subscribe(_ => OnResume()).AddTo(disposable.Disposable);
+            ApplicationEventHandler.OnSuspendAsObservable()
+                .Subscribe(_ => OnSuspend())
+                .AddTo(Disposable);
 
-            #if UNITY_ANDROID && !UNITY_EDITOR
+            ApplicationEventHandler.OnResumeAsObservable()
+                .Subscribe(_ => OnResume())
+                .AddTo(Disposable);
 
-            PlatformInitialize();
+            // プラットフォーム毎の初期化.
 
-            #elif UNITY_IOS && !UNITY_EDITOR
+            #if (UNITY_ANDROID || UNITY_IOS) && !UNITY_EDITOR
 
             PlatformInitialize();
 
@@ -122,11 +124,7 @@ namespace Modules.LocalPushNotify
                 onNotifyRegister.OnNext(Unit.Default);
             }
 
-            #if UNITY_ANDROID && !UNITY_EDITOR
-
-            SetNotify();
-                    
-            #elif UNITY_IOS && !UNITY_EDITOR
+            #if (UNITY_ANDROID || UNITY_IOS) && !UNITY_EDITOR
 
             SetNotify();
 
@@ -137,11 +135,7 @@ namespace Modules.LocalPushNotify
 
         private void Clear()
         {
-            #if UNITY_ANDROID && !UNITY_EDITOR
-
-            ClearNotify();
-                    
-            #elif UNITY_IOS && !UNITY_EDITOR
+            #if (UNITY_ANDROID || UNITY_IOS) && !UNITY_EDITOR
 
             ClearNotify();
 
