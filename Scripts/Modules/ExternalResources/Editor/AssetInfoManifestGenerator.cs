@@ -73,15 +73,8 @@ namespace Modules.ExternalResource.Editor
             }
         }
 
-        public static void SetAssetBundleFileInfo(string exportPath, AssetBundleManifest assetBundleManifest)
+        public static void SetAssetBundleFileInfo(string exportPath, AssetInfoManifest assetInfoManifest)
         {
-            var projectFolders = ProjectFolders.Instance;
-
-            var externalResourcesPath = projectFolders.ExternalResourcesPath;
-
-            var manifestPath = GetManifestPath(externalResourcesPath);
-            var assetInfoManifest = AssetDatabase.LoadAssetAtPath<AssetInfoManifest>(manifestPath);
-
             var progress = new ScheduledNotifier<Tuple<string,float>>();
 
             progress.Subscribe(x => EditorUtility.DisplayProgressBar("Update AssetBundle file info", x.Item1, x.Item2));
@@ -116,15 +109,8 @@ namespace Modules.ExternalResource.Editor
 
         #if ENABLE_CRIWARE_ADX || ENABLE_CRIWARE_SOFDEC
 
-        public static void SetCriAssetFileInfo(string exportPath, AssetBundleManifest assetBundleManifest)
+        public static void SetCriAssetFileInfo(string exportPath, AssetInfoManifest assetInfoManifest)
         {
-            var projectFolders = ProjectFolders.Instance;
-
-            var externalResourcesPath = projectFolders.ExternalResourcesPath;
-
-            var manifestPath = GetManifestPath(externalResourcesPath);
-            var assetInfoManifest = AssetDatabase.LoadAssetAtPath<AssetInfoManifest>(manifestPath);
-
             var progress = new ScheduledNotifier<Tuple<string, float>>();
 
             progress.Subscribe(prog => EditorUtility.DisplayProgressBar("Update cri file info", prog.Item1, prog.Item2));

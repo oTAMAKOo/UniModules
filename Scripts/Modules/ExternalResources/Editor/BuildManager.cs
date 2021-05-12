@@ -113,11 +113,11 @@ namespace Modules.ExternalResource.Editor
 
                     var assetBundlePath = BuildAssetBundle.GetAssetBundleOutputPath();
 
-                    AssetInfoManifestGenerator.SetAssetBundleFileInfo(assetBundlePath, assetBundleManifest);
+                    AssetInfoManifestGenerator.SetAssetBundleFileInfo(assetBundlePath, assetInfoManifest);
 
                     #if ENABLE_CRIWARE_ADX || ENABLE_CRIWARE_SOFDEC
 
-                    AssetInfoManifestGenerator.SetCriAssetFileInfo(exportPath, assetBundleManifest);
+                    AssetInfoManifestGenerator.SetCriAssetFileInfo(exportPath, assetInfoManifest);
 
                     #endif
 
