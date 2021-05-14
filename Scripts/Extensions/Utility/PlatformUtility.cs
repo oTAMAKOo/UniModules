@@ -74,7 +74,7 @@ namespace Extensions
                     break;
 
                 case BuildTarget.iOS:
-                    folderName = "IPhone";
+                    folderName = "iOS";
                     break;
 
                 case BuildTarget.StandaloneWindows:
@@ -99,7 +99,7 @@ namespace Extensions
                     break;
 
                 case RuntimePlatform.IPhonePlayer:
-                    folderName = "IPhone";
+                    folderName = "iOS";
                     break;
 
                 case RuntimePlatform.WindowsPlayer:
