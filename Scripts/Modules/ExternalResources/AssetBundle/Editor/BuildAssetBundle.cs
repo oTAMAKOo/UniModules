@@ -32,7 +32,7 @@ namespace Modules.AssetBundles.Editor
         public static string GetAssetBundleOutputPath()
         {
             var projectPath = UnityPathUtility.GetProjectFolderPath();
-            var folderName = PlatformUtility.GetPlatformAssetFolderName();
+            var folderName = PlatformUtility.GetPlatformTypeName();
 
             var paths = new string[] { projectPath, UnityPathUtility.LibraryFolder, AssetBundleCacheFolder, folderName };
 

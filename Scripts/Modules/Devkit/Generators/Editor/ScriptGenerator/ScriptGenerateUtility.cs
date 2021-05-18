@@ -46,13 +46,16 @@ namespace Modules.Devkit.Generators
 
             var fullPath = UnityPathUtility.ConvertAssetPathToFullPath(assetPath);
 
-            var requireUpdate = false;
+            var requireUpdate = true;
 
-            using (var sr = new StreamReader(fullPath, Encoding.UTF8))
+            if (File.Exists(fullPath))
             {
-                var text = sr.ReadToEnd();
+                using (var sr = new StreamReader(fullPath, Encoding.UTF8))
+                {
+                    var text = sr.ReadToEnd();
 
-                requireUpdate = text != script;
+                    requireUpdate = text != script;
+                }
             }
 
             if (requireUpdate)

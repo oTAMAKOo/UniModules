@@ -217,7 +217,7 @@ namespace Modules.AssetBundles
 
         private string BuildDownloadUrl(AssetInfo assetInfo)
         {
-            var folderName = PlatformUtility.GetPlatformAssetFolderName();
+            var folderName = PlatformUtility.GetPlatformTypeName();
 
             var url = PathUtility.Combine(new string[] { remoteUrl, folderName, assetInfo.FileName });
             

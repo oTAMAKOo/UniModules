@@ -3,9 +3,9 @@ using UnityEditor;
 using UnityEditor.Compilation;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
 using Newtonsoft.Json;
 using Extensions;
+using Extensions.Devkit;
 using Modules.Devkit.Prefs;
 
 namespace Modules.Devkit.AssemblyCompilation
@@ -94,7 +94,7 @@ namespace Modules.Devkit.AssemblyCompilation
             Prefs.reserve = false;
 
             // コンパイル要求.
-            RequestScriptCompilation();
+            UnityEditorUtility.RequestScriptCompilation();
 
             CompilationPipeline.assemblyCompilationStarted -= OnAssemblyCompilationStarted;
             CompilationPipeline.assemblyCompilationStarted += OnAssemblyCompilationStarted;
@@ -129,31 +129,6 @@ namespace Modules.Devkit.AssemblyCompilation
             var results = compileResults.Values.ToArray();
 
             Prefs.result = results.ToJson();
-        }
-
-        private static void RequestScriptCompilation()
-        {
-            #if UNITY_2019_3_OR_NEWER
-
-            CompilationPipeline.RequestScriptCompilation();
-
-            #elif UNITY_2017_1_OR_NEWER
-
-            var editorAssembly = typeof(Editor).Assembly;
-
-            var compilationInterface = editorAssembly.GetType("UnityEditor.Scripting.ScriptCompilation.EditorCompilationInterface");
-
-            if (compilationInterface != null)
-            {
-              var staticBindingFlags = BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic;
-              var dirtyAllScriptsMethod = compilationInterface.GetMethod("DirtyAllScripts", staticBindingFlags);
-
-              dirtyAllScriptsMethod.Invoke(null, null);
-            }
-
-            AssetDatabase.Refresh();
-
-            #endif
         }
 
         protected abstract void OnCompilationFinished(CompileResult[] results);

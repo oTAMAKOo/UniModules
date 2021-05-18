@@ -221,7 +221,7 @@ namespace Modules.ExternalResource.Editor
 
             Prefs.exportPath = path;
 
-            var platformAssetFolderName = PlatformUtility.GetPlatformAssetFolderName();
+            var platformAssetFolderName = PlatformUtility.GetPlatformTypeName();
 
             return PathUtility.Combine(path, platformAssetFolderName) + PathUtility.PathSeparator;
         }        

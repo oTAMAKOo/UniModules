@@ -58,8 +58,8 @@ namespace Extensions
             #endif
         }
 
-        /// <summary> 現在のプラットホームのアセットフォルダ名を取得 </summary>
-        public static string GetPlatformAssetFolderName()
+        /// <summary> 現在のプラットホームの種別名を取得 </summary>
+        public static string GetPlatformTypeName()
         {
             var folderName = string.Empty;
 

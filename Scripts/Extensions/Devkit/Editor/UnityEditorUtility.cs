@@ -1,6 +1,7 @@
 ﻿
 using UnityEngine;
 using UnityEditor;
+using UnityEditor.Compilation;
 using UnityEditor.SceneManagement;
 using Unity.Linq;
 using System;
@@ -66,6 +67,32 @@ namespace Extensions.Devkit
             var gameObjects = rootObjects.SelectMany(x => x.DescendantsAndSelf());
 
             return inactive ? gameObjects.ToArray() : gameObjects.Where(x => x.activeSelf).ToArray();
+        }
+
+        /// <summary> コンパイル実行. </summary>
+        public static void RequestScriptCompilation()
+        {
+            #if UNITY_2019_3_OR_NEWER
+
+            CompilationPipeline.RequestScriptCompilation();
+
+            #elif UNITY_2017_1_OR_NEWER
+
+            var editorAssembly = typeof(Editor).Assembly;
+
+            var compilationInterface = editorAssembly.GetType("UnityEditor.Scripting.ScriptCompilation.EditorCompilationInterface");
+
+            if (compilationInterface != null)
+            {
+              var staticBindingFlags = BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic;
+              var dirtyAllScriptsMethod = compilationInterface.GetMethod("DirtyAllScripts", staticBindingFlags);
+
+              dirtyAllScriptsMethod.Invoke(null, null);
+            }
+
+            AssetDatabase.Refresh();
+
+            #endif
         }
 
         #region Prefab
