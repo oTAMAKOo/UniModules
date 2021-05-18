@@ -68,18 +68,18 @@ namespace Modules.Devkit.Build
         {
             if (isInitialized) { return; }
 
-            var buildConfig = BuildConfig.Instance;
+            var builtInAssetConfig = BuiltInAssetConfig.Instance;
 
             titleContent = new GUIContent("BuiltInAssets Report");
             minSize = WindowSize;
 
             builtInAssetInfo = new BuiltInAssets.BuiltInAssetInfo[0];
-            builtInAssetTargetPaths = buildConfig.BuiltInAssetTargets.Select(x => AssetDatabase.GetAssetPath(x)).ToArray();
-            ignoreBuiltInAssetTargetPaths = buildConfig.IgnoreBuiltInAssetTargets.Select(x => AssetDatabase.GetAssetPath(x)).ToArray();
-            ignoreBuiltInFolderNames = buildConfig.IgnoreBuiltInFolderNames;
-            ignoreValidationPaths = buildConfig.IgnoreValidationAssets.Select(x => AssetDatabase.GetAssetPath(x)).ToArray();
-            ignoreValidationExtensions = buildConfig.IgnoreValidationExtensions;
-            warningAssetSize = buildConfig.WarningAssetSize;
+            builtInAssetTargetPaths = builtInAssetConfig.BuiltInAssetTargets.Select(x => AssetDatabase.GetAssetPath(x)).ToArray();
+            ignoreBuiltInAssetTargetPaths = builtInAssetConfig.IgnoreBuiltInAssetTargets.Select(x => AssetDatabase.GetAssetPath(x)).ToArray();
+            ignoreBuiltInFolderNames = builtInAssetConfig.IgnoreBuiltInFolderNames;
+            ignoreValidationPaths = builtInAssetConfig.IgnoreValidationAssets.Select(x => AssetDatabase.GetAssetPath(x)).ToArray();
+            ignoreValidationExtensions = builtInAssetConfig.IgnoreValidationExtensions;
+            warningAssetSize = builtInAssetConfig.WarningAssetSize;
 
             // 読み込みが終わったら表示.
             CollectBuiltInAssets(logFilePath).Subscribe(_ => ShowUtility()).AddTo(Disposable);

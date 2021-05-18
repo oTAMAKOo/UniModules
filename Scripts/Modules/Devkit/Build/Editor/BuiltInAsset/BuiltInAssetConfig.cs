@@ -9,28 +9,12 @@ using Object = UnityEngine.Object;
 
 namespace Modules.Devkit.Build
 {
-    [Serializable]
-    public sealed class BuildParamInfo
-    {
-        public string name;
-        public BuildTargetGroup buildGroup;
-        public BuildTarget buildTarget;
-        public BuildParam buildParam;
-
-        public override string ToString()
-        {
-            return string.Format("[{0}] {1}", buildTarget, name);
-        }
-    }
-
-    public sealed class BuildConfig : ReloadableScriptableObject<BuildConfig>
+    public sealed class BuiltInAssetConfig : ReloadableScriptableObject<BuiltInAssetConfig>
     {
         //----- params -----
 
         //----- field -----
 
-        [SerializeField, ReadOnly, Tooltip("保存されたビルド設定")]
-        private BuildParamInfo[] customBuildParams = null;
         [SerializeField, Tooltip("内蔵アセットの対象")]
         private Object[] builtInAssetTargets = null;
         [SerializeField, Tooltip("内蔵アセットに含まない対象")]
@@ -45,12 +29,6 @@ namespace Modules.Devkit.Build
         private float warningAssetSize = 1024 * 2f;
 
         //----- property -----
-
-        public BuildParamInfo[] CustomBuildParams
-        {
-            get { return customBuildParams ?? new BuildParamInfo[0]; }
-            set { customBuildParams = value; }
-        }
 
         public Object[] BuiltInAssetTargets
         {
