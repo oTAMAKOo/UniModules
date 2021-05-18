@@ -263,10 +263,8 @@ namespace Modules.Devkit.Build
                     return null;
                 }
             }
-
-            var projectName = UnityPathUtility.GetProjectName();
-
-            return PathUtility.Combine(directory, projectName);
+            
+            return PathUtility.Combine(directory, "Build");
         }
 
         private static string GetBuildTargetExtension(BuildTarget target)
