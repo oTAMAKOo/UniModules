@@ -24,12 +24,6 @@ namespace Modules.Devkit.Build
                 set { ProjectPrefs.SetBool("BuildManagerPrefs-buildRequest", value); }
             }
 
-            public static bool batchMode
-            {
-                get { return ProjectPrefs.GetBool("BuildManagerPrefs-batchMode", false); }
-                set { ProjectPrefs.SetBool("BuildManagerPrefs-batchMode", value); }
-            }
-
             public static string builderClassTypeName
             {
                 get { return ProjectPrefs.GetString("BuildManagerPrefs-builderClassTypeName", null); }
@@ -56,10 +50,10 @@ namespace Modules.Devkit.Build
 
             var applicationBuilder = CreateSavedBuilderInstance();
 
-            await Build(applicationBuilder, Prefs.batchMode);
+            await Build(applicationBuilder);
         }
 
-        public static async Task Build(IApplicationBuilder applicationBuilder, bool batchMode)
+        public static async Task Build(IApplicationBuilder applicationBuilder)
         {
             if (applicationBuilder == null)
             {
@@ -68,10 +62,11 @@ namespace Modules.Devkit.Build
             }
 
             Prefs.buildRequest = true;
-            Prefs.batchMode = batchMode;
+
+            var batchMode = Application.isBatchMode;
 
             var buildTarget = applicationBuilder.BuildTarget;
-            var buildTargetGroup = BuildPipeline.GetBuildTargetGroup(buildTarget); ;
+            var buildTargetGroup = BuildPipeline.GetBuildTargetGroup(buildTarget);
 
             // ビルドクラスの型を保存.
             Prefs.builderClassTypeName = applicationBuilder.GetType().FullName;
