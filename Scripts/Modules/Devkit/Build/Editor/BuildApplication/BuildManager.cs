@@ -1,12 +1,11 @@
 ﻿
 using System;
-using System.Collections.Generic;
 using UnityEngine;
 using UnityEditor;
 using UnityEditor.Callbacks;
+using UnityEditor.Build.Reporting;
 using System.IO;
 using System.Threading.Tasks;
-using UniRx;
 using Extensions;
 using Modules.Devkit.Prefs;
 
@@ -139,12 +138,12 @@ namespace Modules.Devkit.Build
 
                         var buildReport = BuildPipeline.BuildPlayer(scenePaths, path, buildTarget, option);
 
-                        success = buildReport.summary.result == UnityEditor.Build.Reporting.BuildResult.Succeeded;
+                        success = buildReport.summary.result == BuildResult.Succeeded;
 
                         // ビルド結果処理.
                         if (success)
                         {
-                            await applicationBuilder.OnBuildSuccess();
+                            await applicationBuilder.OnBuildSuccess(buildReport);
                         }
                         else
                         {

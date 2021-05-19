@@ -39,7 +39,7 @@ namespace Modules.Devkit.Build
         Task OnAfterBuild(bool isSuccess);
 
         /// <summary> ビルド成功時処理. </summary>
-        Task OnBuildSuccess();
+        Task OnBuildSuccess(BuildReport buildReport);
 
         /// <summary> ビルドエラー時処理. </summary>
         Task OnBuildError(BuildReport buildReport);
@@ -145,7 +145,7 @@ namespace Modules.Devkit.Build
         }
 
         /// <summary> ビルド成功時処理. </summary>
-        public virtual Task OnBuildSuccess()
+        public virtual Task OnBuildSuccess(BuildReport buildReport)
         {
             Debug.Log("Build success.");
 
