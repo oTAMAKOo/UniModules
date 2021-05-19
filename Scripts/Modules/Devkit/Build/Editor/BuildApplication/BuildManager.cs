@@ -268,7 +268,7 @@ namespace Modules.Devkit.Build
             switch (target)
             {
                 case BuildTarget.Android:
-                    extension = ".apk";
+                    extension = EditorUserBuildSettings.buildAppBundle ? ".aab" : ".apk";
                     break;
 
                 case BuildTarget.iOS:
