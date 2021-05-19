@@ -139,7 +139,7 @@ namespace Modules.Devkit.Build
 
                         var buildReport = BuildPipeline.BuildPlayer(scenePaths, path, buildTarget, option);
 
-                        success = buildReport == null;
+                        success = buildReport.summary.result == UnityEditor.Build.Reporting.BuildResult.Succeeded;
 
                         // ビルド結果処理.
                         if (success)
