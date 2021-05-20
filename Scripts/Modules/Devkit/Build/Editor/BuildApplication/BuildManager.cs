@@ -98,7 +98,10 @@ namespace Modules.Devkit.Build
             {
                 EditorUserBuildSettings.SwitchActiveBuildTarget(buildTargetGroup, buildTarget);
 
-                return;
+                if (!batchMode)
+                {
+                    return;
+                }
             }
 
             // アセンブリリロードを停止.
