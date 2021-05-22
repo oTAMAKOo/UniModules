@@ -61,7 +61,7 @@ namespace Modules.Notifications
 
         //----- method -----
 
-        private LocalPushNotification() { }
+        protected LocalPushNotification() { }
 
         public void Initialize()
         {
