@@ -7,9 +7,9 @@ using UniRx;
 using Extensions;
 using Modules.ApplicationEvent;
 
-namespace Modules.LocalPushNotify
+namespace Modules.Notifications
 {
-    public sealed partial class LocalPushNotify : Singleton<LocalPushNotify>
+    public abstract partial class LocalPushNotification<Tinstance> : Singleton<Tinstance> where Tinstance : LocalPushNotification<Tinstance>
     {
         //----- params -----
 
@@ -23,12 +23,10 @@ namespace Modules.LocalPushNotify
             public string Message { get; private set; }
 
             // オプション.
-            public bool Sound { get; set; }
-            public bool Vibrate { get; set; }
-            public bool Lights { get; set; }
+            public int BadgeCount { get; set; }
             public string LargeIconResource { get; set; }
             public string SmallIconResource { get; set; }
-            public Color32 BgColor { get; set; }
+            public Color32? Color { get; set; }
 
             public NotificationInfo(long unixTime, string title, string message)
             {
@@ -41,12 +39,10 @@ namespace Modules.LocalPushNotify
                 Title = title;
                 Message = message;
 
-                Sound = true;
-                Vibrate = true;
-                Lights = true;
                 LargeIconResource = null;
                 SmallIconResource = "notify_icon_small";
-                BgColor = new Color(0xff, 0x44, 0x44, 255);
+                Color = null;
+                BadgeCount = 1;
             }
         }
 
@@ -57,13 +53,15 @@ namespace Modules.LocalPushNotify
 
         private Dictionary<long, NotificationInfo> notifications = null;
 
-        private Subject<Unit> onNotifyRegister = null;
+        private Subject<Unit> onNotificationRegister = null;
 
         //----- property -----
 
+        public abstract long CurrentTime { get; }
+
         //----- method -----
 
-        private LocalPushNotify() { }
+        private LocalPushNotification() { }
 
         public void Initialize()
         {
@@ -85,14 +83,6 @@ namespace Modules.LocalPushNotify
             ApplicationEventHandler.OnResumeAsObservable()
                 .Subscribe(_ => OnResume())
                 .AddTo(Disposable);
-
-            // プラットフォーム毎の初期化.
-
-            #if (UNITY_ANDROID || UNITY_IOS) && !UNITY_EDITOR
-
-            PlatformInitialize();
-
-            #endif
 
             // 過去に登録した通知を削除.
             Clear();
@@ -119,9 +109,9 @@ namespace Modules.LocalPushNotify
             Clear();
 
             // 通知登録イベント.
-            if(onNotifyRegister != null)
+            if(onNotificationRegister != null)
             {
-                onNotifyRegister.OnNext(Unit.Default);
+                onNotificationRegister.OnNext(Unit.Default);
             }
 
             #if (UNITY_ANDROID || UNITY_IOS) && !UNITY_EDITOR
@@ -132,12 +122,12 @@ namespace Modules.LocalPushNotify
 
             notifications.Clear();
         }
-
+        /// <summary> 通知をすべてクリア </summary>
         private void Clear()
         {
             #if (UNITY_ANDROID || UNITY_IOS) && !UNITY_EDITOR
 
-            ClearNotify();
+            ClearNotifications();
 
             #endif
         }
@@ -154,7 +144,7 @@ namespace Modules.LocalPushNotify
 
         public static IObservable<Unit> OnNotifyRegisterAsObservable()
         {
-            return Instance.onNotifyRegister ?? (Instance.onNotifyRegister = new Subject<Unit>());
+            return Instance.onNotificationRegister ?? (Instance.onNotificationRegister = new Subject<Unit>());
         }
     }
 }
