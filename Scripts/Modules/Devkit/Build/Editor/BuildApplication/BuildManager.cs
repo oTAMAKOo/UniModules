@@ -94,14 +94,11 @@ namespace Modules.Devkit.Build
 
             //------ プラットフォーム切り替え ------
 
-            if (EditorUserBuildSettings.activeBuildTarget != buildTarget)
+            if (!batchMode && EditorUserBuildSettings.activeBuildTarget != buildTarget)
             {
                 EditorUserBuildSettings.SwitchActiveBuildTarget(buildTargetGroup, buildTarget);
 
-                if (!batchMode)
-                {
-                    return;
-                }
+                return;
             }
 
             // アセンブリリロードを停止.
