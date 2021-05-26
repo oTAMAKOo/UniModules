@@ -57,9 +57,10 @@ namespace Modules.Devkit.FindReferences
                 var scenes = FindAllFiles(assetPath, "*.unity");
                 var prefabs = FindAllFiles(assetPath, "*.prefab");
                 var materials = FindAllFiles(assetPath, "*.mat");
+                var animations = FindAllFiles(assetPath, "*.anim");
                 var assets = FindAllFiles(assetPath, "*.asset");
 
-                var ctx = new FindReferenceContext(scenes, prefabs, materials, assets, reportProgress);
+                var ctx = new FindReferenceContext(scenes, prefabs, materials, animations, assets, reportProgress);
 
                 return FindReferencesCore(ctx, targetObject);
             }
@@ -96,7 +97,13 @@ namespace Modules.Devkit.FindReferences
 
                 targetAssetInfo = new TargetAssetInfo(targetObject, targetObjectFullPath.Substring(projectPath.Length + 1), targetObjectFullPath);
 
-                var assets = ctx.Scenes.Concat(ctx.Prefabs).Concat(ctx.Materials).Concat(ctx.Assets);
+                var assets = new List<AssetDependencyInfo>();
+
+                assets.AddRange(ctx.Scenes);
+                assets.AddRange(ctx.Prefabs);
+                assets.AddRange(ctx.Materials);
+                assets.AddRange(ctx.Animations);
+                assets.AddRange(ctx.Assets);
                 
                 foreach (var asset in assets)
                 {
@@ -204,9 +211,10 @@ namespace Modules.Devkit.FindReferences
             public AssetDependencyInfo[] Scenes { get; private set; }
             public AssetDependencyInfo[] Prefabs { get; private set; }
             public AssetDependencyInfo[] Materials { get; private set; }
+            public AssetDependencyInfo[] Animations { get; private set; }
             public AssetDependencyInfo[] Assets { get; private set; }
 
-            public FindReferenceContext(string[] scenes, string[] prefabs, string[] materials, string[] assets, Action<int, int> reportProgress)
+            public FindReferenceContext(string[] scenes, string[] prefabs, string[] materials, string[] animations, string[] assets, Action<int, int> reportProgress)
             {
                 var total = scenes.Length + prefabs.Length + materials.Length + assets.Length;
 
@@ -220,6 +228,7 @@ namespace Modules.Devkit.FindReferences
                     StartResolveReferencesWorker(scenes, (metadata) => Scenes = metadata, progress),
                     StartResolveReferencesWorker(prefabs, (metadata) => Prefabs = metadata, progress),
                     StartResolveReferencesWorker(materials, (metadata) => Materials = metadata, progress),
+                    StartResolveReferencesWorker(animations, (metadata) => Animations = metadata, progress),
                     StartResolveReferencesWorker(assets, (metadata) => Assets = metadata, progress),
                 };
 
