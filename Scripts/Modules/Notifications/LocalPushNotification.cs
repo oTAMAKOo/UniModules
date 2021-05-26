@@ -48,14 +48,35 @@ namespace Modules.Notifications
 
         //----- field -----
 
+        private bool enable = false;
+
         private int initializedTime = 0;
+
         private int incrementCount = 0;
 
         private Dictionary<long, NotificationInfo> notifications = null;
 
         private Subject<Unit> onNotificationRegister = null;
 
+        private bool initialized = false;
+
         //----- property -----
+
+        public bool Enable
+        {
+            get { return enable; }
+
+            set
+            {
+                // 有効に切り替わった過去に登録した通知を削除.
+                if (!enable && value)
+                {
+                    Clear();
+                }
+
+                enable = value;
+            }
+        }
 
         public abstract long CurrentTime { get; }
 
@@ -65,7 +86,12 @@ namespace Modules.Notifications
 
         public void Initialize()
         {
+            if (initialized){ return; }
+
+            enable = false;
+
             initializedTime = (int)DateTime.Now.ToUnixTime();
+
             incrementCount = 0;
 
             notifications = new Dictionary<long, NotificationInfo>();
@@ -84,27 +110,39 @@ namespace Modules.Notifications
                 .Subscribe(_ => OnResume())
                 .AddTo(Disposable);
 
-            // 過去に登録した通知を削除.
-            Clear();
+            initialized = true;
         }
 
-        public static long Set(NotificationInfo info)
+        /// <summary>
+        /// 通知を登録.
+        /// </summary>
+        /// <param name="info"> 通知のパラメータ</param>
+        /// <returns> 登録成功時は正のID、失敗時は-1</returns>
+        public long Set(NotificationInfo info)
         {
-            Instance.notifications.Add(info.Identifier, info);
+            if(!enable) { return -1; }
+
+            notifications.Add(info.Identifier, info);
 
             return info.Identifier;
         }
 
-        public static void Remove(long id)
+        public void Remove(long id)
         {
-            if(Instance.notifications.ContainsKey(id))
+            if (!enable){ return; }
+
+            if (id == -1){ return; }
+
+            if(notifications.ContainsKey(id))
             {
-                Instance.notifications.Remove(id);
+                notifications.Remove(id);
             }
         }
 
         private void Register()
         {
+            if (!initialized || !enable) { return; }
+
             // 二重登録されないように一旦クリア.
             Clear();
 
@@ -125,6 +163,8 @@ namespace Modules.Notifications
         /// <summary> 通知をすべてクリア </summary>
         private void Clear()
         {
+            if (!initialized || !enable) { return; }
+
             #if (UNITY_ANDROID || UNITY_IOS) && !UNITY_EDITOR
 
             ClearNotifications();
@@ -142,9 +182,9 @@ namespace Modules.Notifications
             Clear();
         }
 
-        public static IObservable<Unit> OnNotifyRegisterAsObservable()
+        public IObservable<Unit> OnNotifyRegisterAsObservable()
         {
-            return Instance.onNotificationRegister ?? (Instance.onNotificationRegister = new Subject<Unit>());
+            return onNotificationRegister ?? (onNotificationRegister = new Subject<Unit>());
         }
     }
 }
