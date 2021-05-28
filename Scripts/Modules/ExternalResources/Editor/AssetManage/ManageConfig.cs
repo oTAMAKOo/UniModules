@@ -23,7 +23,7 @@ namespace Modules.ExternalResource.Editor
         [SerializeField, Tooltip("16文字で設定")]
         private string cryptIv = AssetBundleManager.DefaultAESIv;
 
-        [Header("Ignore")]
+        [Header("Ignore AssetManagement")]
 
         [SerializeField, Tooltip("除外対象(管理しない)")]
         private Object[] ignoreManage = null;
@@ -33,6 +33,10 @@ namespace Modules.ExternalResource.Editor
         private string[] ignoreFolder = null;
         [SerializeField, Tooltip("除外対象(対象外の拡張子)")]
         private string[] ignoreExtension = null;
+
+        [Header("Invalid Dependencies Check")]
+        [SerializeField, Tooltip("検査除外対象")]
+        private Object[] ignoreValidateTarget = null;
 
         //----- property -----
 
@@ -49,6 +53,8 @@ namespace Modules.ExternalResource.Editor
         public string[] IgnoreFolder { get { return ignoreFolder; } }
         /// <summary> 除外対象(対象外の拡張子) </summary>
         public string[] IgnoreExtension { get { return ignoreExtension; } }
+        /// <summary> 検査除外対象 </summary>
+        public Object[] IgnoreValidateTarget { get { return ignoreValidateTarget; } }
 
         //----- method -----
 
@@ -92,7 +98,7 @@ namespace Modules.ExternalResource.Editor
                 }
             }
 
-            //====== ignoreManage ======
+            //====== ignoreAssetBundle ======
 
             if (ignoreAssetBundle != null)
             {
@@ -105,7 +111,7 @@ namespace Modules.ExternalResource.Editor
                 }
             }
 
-            //====== ignoreManage ======
+            //====== ignoreFolder ======
 
             if (ignoreFolder != null)
             {
@@ -118,7 +124,7 @@ namespace Modules.ExternalResource.Editor
                 }
             }
 
-            //====== ignoreManage ======
+            //====== ignoreExtension ======
 
             if (ignoreExtension != null)
             {
@@ -127,6 +133,19 @@ namespace Modules.ExternalResource.Editor
                 if (ignoreExtension.Length != values.Length)
                 {
                     ignoreExtension = values;
+                    change = true;
+                }
+            }
+
+            //====== ignoreValidateTarget ======
+
+            if (ignoreValidateTarget != null)
+            {
+                var values = ignoreValidateTarget.Where(x => !IsMissing(x)).ToArray();
+
+                if (ignoreValidateTarget.Length != values.Length)
+                {
+                    ignoreValidateTarget = values;
                     change = true;
                 }
             }

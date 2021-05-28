@@ -1,4 +1,5 @@
 ﻿
+using System;
 using UnityEngine;
 using UnityEditor;
 using System.IO;
@@ -141,9 +142,35 @@ namespace Modules.ExternalResource.Editor
         {
             var projectFolders = ProjectFolders.Instance;
 
+            var config = ManageConfig.Instance;
+
             var externalResourcesPath = projectFolders.ExternalResourcesPath;
             
             var allAssetInfos = assetInfoManifest.GetAssetInfos().ToArray();
+
+            var ignoreValidatePaths = config.IgnoreValidateTarget
+                  .Where(x => x != null)
+                  .Select(x => AssetDatabase.GetAssetPath(x))
+                  .ToArray();
+
+            Func<string, bool> checkInvalid = path =>
+            {
+                // 除外対象拡張子はチェック対象外.
+
+                var extension = Path.GetExtension(path);
+
+                if (IgnoreDependentCheckExtensions.Any(y => y == extension)) { return false; }
+
+                // 除外対象.
+
+                if (ignoreValidatePaths.Any(x => path.StartsWith(x))) { return false; }
+
+                // 外部アセット対象ではない.
+
+                if (!path.StartsWith(externalResourcesPath)) { return true; }
+
+                return false;
+            };
 
             foreach (var assetInfo in allAssetInfos)
             {
@@ -151,15 +178,7 @@ namespace Modules.ExternalResource.Editor
 
                 var dependencies = AssetDatabase.GetDependencies(assetPath);
 
-                var invalidDependencies = dependencies
-                    .Where(x =>
-                           {
-                               var extension = Path.GetExtension(x);
-
-                               return IgnoreDependentCheckExtensions.All(y => y != extension);
-                           })
-                    .Where(x => !x.StartsWith(externalResourcesPath))
-                    .ToArray();
+                var invalidDependencies = dependencies.Where(x => checkInvalid(x)).ToArray();
 
                 if (invalidDependencies.Any())
                 {
