@@ -89,8 +89,9 @@ namespace Modules.Networking
         {
             var uri = BuildUri();
 
-            request = new UnityWebRequest(uri, method);
-            
+            request = new UnityWebRequest(uri);
+
+            request.method = method;
             request.timeout = TimeOutSeconds;
 
             SetRequestHeaders();
@@ -120,6 +121,18 @@ namespace Modules.Networking
         public IObservable<TResult> Put<TResult, TContent>(TContent content, IProgress<float> progress = null) where TResult : class
         {
             CreateWebRequest(UnityWebRequest.kHttpVerbPUT);
+
+            request.uploadHandler = CreateUploadHandler(content);
+            request.downloadHandler = CreateDownloadHandler();
+
+            return SendRequest<TResult>(progress);
+        }
+
+        public IObservable<TResult> Patch<TResult, TContent>(TContent content, IProgress<float> progress = null) where TResult : class
+        {
+            const string kHttpVerbPatch = "PATCH";
+
+            CreateWebRequest(kHttpVerbPatch);
 
             request.uploadHandler = CreateUploadHandler(content);
             request.downloadHandler = CreateDownloadHandler();

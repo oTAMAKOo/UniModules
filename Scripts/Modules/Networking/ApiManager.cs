@@ -102,6 +102,14 @@ namespace Modules.Networking
             return Observable.FromMicroCoroutine<TResult>(observer => SendRequestInternal(observer, webRequest, requestObserver));
         }
 
+        /// <summary> リソースの部分更新. </summary>
+        protected IObservable<TResult> Patch<TResult, TContent>(TWebRequest webRequest, TContent content, IProgress<float> progress = null) where TResult : class
+        {
+            var requestObserver = Observable.Defer(() => webRequest.Patch<TResult, TContent>(content, progress));
+
+            return Observable.FromMicroCoroutine<TResult>(observer => SendRequestInternal(observer, webRequest, requestObserver));
+        }
+
         /// <summary> リソースの削除. </summary>
         protected IObservable<TResult> Delete<TResult, TContent>(TWebRequest webRequest, TContent content, IProgress<float> progress = null) where TResult : class
         {
