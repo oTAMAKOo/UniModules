@@ -24,8 +24,6 @@ namespace Modules.ExternalResource.Editor
 
         private readonly Vector2 WindowSize = new Vector2(280f, 100f);
 
-        private static readonly string[] IgnoreDependentCheckExtensions = { ".cs" };
-
         //----- field -----
 
         private bool initialized = false;
@@ -99,7 +97,7 @@ namespace Modules.ExternalResource.Editor
                         var assetInfoManifest = AssetInfoManifestGenerator.Generate();
 
                         // 依存関係の検証.
-                        var validate = AssetDependenciesValidate(assetInfoManifest);
+                        var validate = BuildManager.AssetDependenciesValidate(assetInfoManifest);
 
                         if (!validate)
                         {
@@ -136,69 +134,6 @@ namespace Modules.ExternalResource.Editor
             }
 
             EditorGUILayout.Separator();
-        }
-
-        private bool AssetDependenciesValidate(AssetInfoManifest assetInfoManifest)
-        {
-            var projectFolders = ProjectFolders.Instance;
-
-            var config = ManageConfig.Instance;
-
-            var externalResourcesPath = projectFolders.ExternalResourcesPath;
-            
-            var allAssetInfos = assetInfoManifest.GetAssetInfos().ToArray();
-
-            var ignoreValidatePaths = config.IgnoreValidateTarget
-                  .Where(x => x != null)
-                  .Select(x => AssetDatabase.GetAssetPath(x))
-                  .ToArray();
-
-            Func<string, bool> checkInvalid = path =>
-            {
-                // 除外対象拡張子はチェック対象外.
-
-                var extension = Path.GetExtension(path);
-
-                if (IgnoreDependentCheckExtensions.Any(y => y == extension)) { return false; }
-
-                // 除外対象.
-
-                if (ignoreValidatePaths.Any(x => path.StartsWith(x))) { return false; }
-
-                // 外部アセット対象ではない.
-
-                if (!path.StartsWith(externalResourcesPath)) { return true; }
-
-                return false;
-            };
-
-            foreach (var assetInfo in allAssetInfos)
-            {
-                var assetPath = PathUtility.Combine(externalResourcesPath, assetInfo.ResourcePath);
-
-                var dependencies = AssetDatabase.GetDependencies(assetPath);
-
-                var invalidDependencies = dependencies.Where(x => checkInvalid(x)).ToArray();
-
-                if (invalidDependencies.Any())
-                {
-                    var builder = new StringBuilder();
-
-                    builder.AppendFormat("Asset: {0}", assetPath).AppendLine();
-                    builder.AppendLine("Invalid Dependencies:");
-
-                    foreach (var item in invalidDependencies)
-                    {
-                        builder.AppendLine(item);
-                    }
-
-                    Debug.LogWarningFormat(builder.ToString());
-
-                    return false;
-                }
-            }
-
-            return true;
         }
 
         private void Reload()

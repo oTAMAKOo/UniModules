@@ -11,6 +11,7 @@ using Extensions.Devkit;
 using Modules.AssetBundles.Editor;
 using Modules.Devkit.Console;
 using Modules.Devkit.Prefs;
+using Modules.Devkit.Project;
 
 #if ENABLE_CRIWARE_ADX || ENABLE_CRIWARE_SOFDEC
 
@@ -24,8 +25,6 @@ namespace Modules.ExternalResource.Editor
     {
         //----- params -----
 
-        private const string ExportFolderName = "ExternalResources";
-
         private static class Prefs
         {
             public static string exportPath
@@ -34,6 +33,10 @@ namespace Modules.ExternalResource.Editor
                 set { ProjectPrefs.SetString("ExternalResourceManager-Prefs-exportPath", value); }
             }
         }
+
+        private const string ExportFolderName = "ExternalResources";
+
+        private static readonly string[] IgnoreDependentCheckExtensions = { ".cs" };
 
         //----- field -----
 
@@ -224,6 +227,72 @@ namespace Modules.ExternalResource.Editor
             var platformAssetFolderName = PlatformUtility.GetPlatformTypeName();
 
             return PathUtility.Combine(path, platformAssetFolderName) + PathUtility.PathSeparator;
-        }        
+        }
+
+        public static bool AssetDependenciesValidate(AssetInfoManifest assetInfoManifest)
+        {
+            var projectFolders = ProjectFolders.Instance;
+
+            var config = ManageConfig.Instance;
+
+            var externalResourcesPath = projectFolders.ExternalResourcesPath;
+
+            var allAssetInfos = assetInfoManifest.GetAssetInfos().ToArray();
+
+            var ignoreValidatePaths = config.IgnoreValidateTarget
+                  .Where(x => x != null)
+                  .Select(x => AssetDatabase.GetAssetPath(x))
+                  .ToArray();
+
+            Func<string, bool> checkInvalid = path =>
+            {
+                // 除外対象拡張子はチェック対象外.
+
+                var extension = Path.GetExtension(path);
+
+                if (IgnoreDependentCheckExtensions.Any(y => y == extension)) { return false; }
+
+                // 除外対象.
+
+                if (ignoreValidatePaths.Any(x => path.StartsWith(x))) { return false; }
+
+                // 外部アセット対象ではない.
+
+                if (!path.StartsWith(externalResourcesPath)) { return true; }
+
+                return false;
+            };
+
+            using (new DisableStackTraceScope())
+            {
+                foreach (var assetInfo in allAssetInfos)
+                {
+                    var assetPath = PathUtility.Combine(externalResourcesPath, assetInfo.ResourcePath);
+
+                    var dependencies = AssetDatabase.GetDependencies(assetPath);
+
+                    var invalidDependencies = dependencies.Where(x => checkInvalid(x)).ToArray();
+
+                    if (invalidDependencies.Any())
+                    {
+                        var builder = new StringBuilder();
+
+                        builder.AppendFormat("Asset: {0}", assetPath).AppendLine();
+                        builder.AppendLine("Invalid Dependencies:");
+
+                        foreach (var item in invalidDependencies)
+                        {
+                            builder.AppendLine(item);
+                        }
+
+                        Debug.LogWarningFormat(builder.ToString());
+
+                        return false;
+                    }
+                }
+            }
+
+            return true;
+        }
     }
 }
