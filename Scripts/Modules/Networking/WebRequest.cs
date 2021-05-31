@@ -163,16 +163,16 @@ namespace Modules.Networking
         {
             Connecting = true;
 
-            return request.Send(progress).Select(x => Deserialize<TResult>(x)).Do(x => Connecting = false);
+            return request.Send(progress).Select(x => ReceiveResponse<TResult>(x)).Do(x => Connecting = false);
         }
 
-        private TResult Deserialize<TResult>(byte[] value) where TResult : class
+        private TResult ReceiveResponse<TResult>(byte[] value) where TResult : class
         {
             if (value == null || value.IsEmpty()) { return null; }
 
             TResult result = null;
 
-            value = Decrypt(value);
+            value = DecryptResponseData(value);
 
             switch (Format)
             {
@@ -225,8 +225,12 @@ namespace Modules.Networking
                 queryBuilder.Append(i == 0 ? "?" : "&");
 
                 var query = string.Format("{0}={1}", item.Key, item.Value);
-                
-                queryBuilder.Append(Uri.EscapeUriString(query));
+
+                var encryptQuery = EncryptUriQuery(query);
+
+                var escapeStr = Uri.EscapeDataString(encryptQuery);
+
+                queryBuilder.Append(escapeStr);
             }
 
             var uriBuilder = new UriBuilder(HostUrl)
@@ -290,21 +294,24 @@ namespace Modules.Networking
                     break;
             }
 
-            bodyData = Encrypt(bodyData);
+            bodyData = EncryptBodyData(bodyData);
 
             return new UploadHandlerRaw(bodyData);
         }
 
-        /// <summary> 常時付与されるURLパラメータを登録 </summary>
-        protected virtual void RegisterDefaultUrlParams() { }
-
         /// <summary> 常時付与されるヘッダー情報を登録 </summary>
         protected virtual void RegisterDefaultHeader() { }
 
-        /// <summary> 送信データ暗号化. </summary>
-        protected abstract byte[] Encrypt(byte[] bytes);
+        /// <summary> 常時付与されるURLパラメータを登録 </summary>
+        protected virtual void RegisterDefaultUrlParams() { }
 
-        /// <summary> 受信データ復号化. </summary>
-        protected abstract byte[] Decrypt(byte[] bytes);
+        /// <summary> URLパラメータ暗号化. </summary>
+        protected abstract string EncryptUriQuery(string query);
+
+        /// <summary> リクエストボディデータ暗号化. </summary>
+        protected abstract byte[] EncryptBodyData(byte[] bytes);
+
+        /// <summary> レスポンスデータ復号化. </summary>
+        protected abstract byte[] DecryptResponseData(byte[] bytes);
     }
 }

@@ -111,7 +111,7 @@ namespace Modules.Networking
         }
 
         /// <summary> リソースの削除. </summary>
-        protected IObservable<TResult> Delete<TResult, TContent>(TWebRequest webRequest, TContent content, IProgress<float> progress = null) where TResult : class
+        protected IObservable<TResult> Delete<TResult>(TWebRequest webRequest, IProgress<float> progress = null) where TResult : class
         {
             var requestObserver = Observable.Defer(() => webRequest.Delete<TResult>(progress));
 
