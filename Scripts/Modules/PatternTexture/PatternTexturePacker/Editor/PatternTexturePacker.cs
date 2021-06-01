@@ -535,6 +535,11 @@ namespace Modules.PatternTexture
 
         private void GeneratePatternTexture(PatternTexture patternTexture)
         {
+            if (textureInfos == null)
+            {
+                Debug.LogError("Require select texture.");
+            }
+
             var exportPath = string.Empty;
 
             var textures = textureInfos
@@ -547,9 +552,20 @@ namespace Modules.PatternTexture
 
             if (patternTexture == null)
             {
-                var directory = Directory.GetParent(Prefs.exportPath);
+                var path = string.Empty;
 
-                var path = directory != null ? directory.FullName : UnityPathUtility.AssetsFolder;
+                var savedExportPath = Prefs.exportPath;
+
+                if (string.IsNullOrEmpty(savedExportPath) || !string.IsNullOrEmpty(savedExportPath) && !Directory.Exists(savedExportPath))
+                {
+                    path = UnityPathUtility.AssetsFolder;
+                }
+                else
+                {
+                    var directory = Directory.GetParent(savedExportPath);
+
+                    path = directory.FullName;
+                }
 
                 exportPath = EditorUtility.SaveFilePanelInProject("Save As", "New PatternTexture.asset", "asset", "Save as...", path);
             }
