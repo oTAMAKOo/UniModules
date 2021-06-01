@@ -557,7 +557,7 @@ namespace Modules.PatternTexture
 
                 var savedExportPath = Prefs.exportPath;
 
-                if (string.IsNullOrEmpty(savedExportPath) || !string.IsNullOrEmpty(savedExportPath) && !Directory.Exists(savedExportPath))
+                if (string.IsNullOrEmpty(savedExportPath) || !File.Exists(savedExportPath))
                 {
                     path = UnityPathUtility.AssetsFolder;
                 }
