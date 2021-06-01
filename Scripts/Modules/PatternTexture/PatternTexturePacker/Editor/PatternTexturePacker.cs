@@ -538,6 +538,7 @@ namespace Modules.PatternTexture
             if (textureInfos == null)
             {
                 Debug.LogError("Require select texture.");
+                return;
             }
 
             var exportPath = string.Empty;
