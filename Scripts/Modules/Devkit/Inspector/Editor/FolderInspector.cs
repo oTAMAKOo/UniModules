@@ -12,9 +12,7 @@ namespace Modules.Devkit.Inspector
         //----- field -----
 
         private string folderAssetPath = null;
-
-        private AssetImporter assetImporter = null;
-
+        
         private int lineCount = 0;
 
         private string description = null;
@@ -69,9 +67,9 @@ namespace Modules.Devkit.Inspector
         {
             folderAssetPath = AssetDatabase.GetAssetPath(target);
 
-            assetImporter = AssetImporter.GetAtPath(folderAssetPath);
+            var assetImporter = AssetImporter.GetAtPath(folderAssetPath);
 
-            LoadMetaData();
+            description = assetImporter.userData;
 
             UpdateLineCount();
 
@@ -80,7 +78,17 @@ namespace Modules.Devkit.Inspector
 
         public override void OnDisable(UnityEngine.Object target)
         {
-            SaveMetaData();
+            var assetImporter = AssetImporter.GetAtPath(folderAssetPath);
+
+            if (assetImporter != null)
+            {
+                if (assetImporter.userData != description)
+                {
+                    assetImporter.userData = description;
+
+                    assetImporter.SaveAndReimport();
+                }
+            }
         }
 
         public override void OnDestroy(UnityEngine.Object target) { }
@@ -88,21 +96,6 @@ namespace Modules.Devkit.Inspector
         private void UpdateLineCount()
         {
             lineCount = description.Split('\n').Length;
-        }
-
-        private void LoadMetaData()
-        {
-            description = assetImporter.userData;
-        }
-
-        private void SaveMetaData()
-        {
-            if (assetImporter.userData != description)
-            {
-                assetImporter.userData = description;
-
-                assetImporter.SaveAndReimport();
-            }
         }
 
         private static void RepaintInspector()
