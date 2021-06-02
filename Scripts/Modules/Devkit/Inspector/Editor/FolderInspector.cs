@@ -83,10 +83,7 @@ namespace Modules.Devkit.Inspector
             SaveMetaData();
         }
 
-        public override void OnDestroy(UnityEngine.Object target)
-        {
-            SaveMetaData();
-        }
+        public override void OnDestroy(UnityEngine.Object target) { }
 
         private void UpdateLineCount()
         {
