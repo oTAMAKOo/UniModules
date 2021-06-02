@@ -575,7 +575,7 @@ namespace Modules
             OpenDirectory(Application.streamingAssetsPath);
         }
 
-        [MenuItem(itemName: DirectoryMenu + "Open OpenConsoleLogPath", priority = 3)]
+        [MenuItem(itemName: DirectoryMenu + "Open ConsoleLogPath", priority = 3)]
         private static void OpenConsoleLogPath()
         {
             OpenDirectory(Application.consoleLogPath);
