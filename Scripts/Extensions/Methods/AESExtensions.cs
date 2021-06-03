@@ -17,25 +17,17 @@ namespace Extensions
 
             byte[] result = null;
 
-            ICryptoTransform encryptor = null;
-
-            lock (aesCryptoKey.AesManaged)
+            using (var memoryStream = new MemoryStream())
             {
-                encryptor = aesCryptoKey.AesManaged.CreateEncryptor();
-            }
-
-            using (encryptor)
-            {
-                using (var memoryStream = new MemoryStream())
+                lock (aesCryptoKey.Encryptor)
                 {
-                    using (var cryptoStream = new CryptoStream(memoryStream, encryptor, CryptoStreamMode.Write))
+                    using (var cryptoStream = new CryptoStream(memoryStream, aesCryptoKey.Encryptor, CryptoStreamMode.Write))
                     {
                         cryptoStream.Write(value, 0, value.Length);
                         cryptoStream.Close();
-
-                        result = memoryStream.ToArray();
                     }
                 }
+                result = memoryStream.ToArray();
             }
 
             return result;
@@ -49,26 +41,19 @@ namespace Extensions
             if (value == null || value.IsEmpty()) { return null; }
 
             byte[] result = null;
-
-            ICryptoTransform decryptor = null;
-
-            lock (aesCryptoKey.AesManaged)
+            
+            using (var memoryStream = new MemoryStream())
             {
-                decryptor = aesCryptoKey.AesManaged.CreateDecryptor();
-            }
-
-            using (decryptor)
-            {
-                using (var memoryStream = new MemoryStream())
+                lock (aesCryptoKey.Decryptor)
                 {
-                    using (var cryptoStream = new CryptoStream(memoryStream, decryptor, CryptoStreamMode.Write))
+                    using (var cryptoStream = new CryptoStream(memoryStream, aesCryptoKey.Decryptor, CryptoStreamMode.Write))
                     {
                         cryptoStream.Write(value, 0, value.Length);
                         cryptoStream.Close();
-
-                        result = memoryStream.ToArray();
                     }
                 }
+
+                result = memoryStream.ToArray();
             }
 
             return result;
@@ -82,34 +67,27 @@ namespace Extensions
             if (string.IsNullOrEmpty(value)) { return null; }
 
             string result = null;
-
-            ICryptoTransform encryptor = null;
-
-            lock (aesCryptoKey.AesManaged)
+            
+            using (var memoryStream = new MemoryStream())
             {
-                encryptor = aesCryptoKey.AesManaged.CreateEncryptor();
-            }
-
-            using (encryptor)
-            {
-                using (var memoryStream = new MemoryStream())
+                lock (aesCryptoKey.Encryptor)
                 {
-                    using (var cryptoStream = new CryptoStream(memoryStream, encryptor, CryptoStreamMode.Write))
+                    using (var cryptoStream = new CryptoStream(memoryStream, aesCryptoKey.Encryptor, CryptoStreamMode.Write))
                     {
                         var toEncrypt = Encoding.UTF8.GetBytes(value);
 
                         cryptoStream.Write(toEncrypt, 0, toEncrypt.Length);
                         cryptoStream.FlushFinalBlock();
-
-                        var encrypted = memoryStream.ToArray();
-
-                        result = Convert.ToBase64String(encrypted);
-
-                        if (escape)
-                        {
-                            result = result.Replace('+', '-').Replace('/', '_');
-                        }
                     }
+                }
+
+                var encrypted = memoryStream.ToArray();
+
+                result = Convert.ToBase64String(encrypted);
+
+                if (escape)
+                {
+                    result = result.Replace('+', '-').Replace('/', '_');
                 }
             }
 
@@ -133,24 +111,18 @@ namespace Extensions
             var encrypted = Convert.FromBase64String(value);
             var fromEncrypt = new byte[encrypted.Length];
 
-            ICryptoTransform decryptor = null;
-
-            lock (aesCryptoKey.AesManaged)
+            
+            using (var memoryStream = new MemoryStream(encrypted))
             {
-                decryptor = aesCryptoKey.AesManaged.CreateDecryptor();
-            }
-
-            using (decryptor)
-            {
-                using (var memoryStream = new MemoryStream(encrypted))
+                lock (aesCryptoKey.Decryptor)
                 {
-                    using (var cryptoStream = new CryptoStream(memoryStream, decryptor, CryptoStreamMode.Read))
+                    using (var cryptoStream = new CryptoStream(memoryStream, aesCryptoKey.Decryptor, CryptoStreamMode.Read))
                     {
                         cryptoStream.Read(fromEncrypt, 0, fromEncrypt.Length);
-
-                        result = Encoding.UTF8.GetString(fromEncrypt);
                     }
                 }
+
+                result = Encoding.UTF8.GetString(fromEncrypt);
             }
 
             // string.Lengthした際に終端にNull文字が混入する為Null文字を削る.
@@ -165,10 +137,39 @@ namespace Extensions
         private static readonly byte[] Salt = { 0xe6, 0xdc, 0xff, 0x74, 0xad, 0xad, 0x7a, 0xee, 0xc5, 0xfe, 0x50, 0xaf, 0x4d, 0x08, 0x2d, 0x3c };
 
         //----- field -----
-        
+
+        private AesManaged aesManaged = null;
+
+        private ICryptoTransform encryptor = null;
+        private ICryptoTransform decryptor = null;
+
         //----- property -----
 
-        public AesManaged AesManaged { get; private set; }
+        public ICryptoTransform Encryptor
+        {
+            get
+            {
+                if (encryptor == null || !encryptor.CanReuseTransform)
+                {
+                    encryptor = CreateEncryptor();
+                }
+
+                return encryptor;
+            }
+        }
+
+        public ICryptoTransform Decryptor
+        {
+            get
+            {
+                if (decryptor == null || !decryptor.CanReuseTransform)
+                {
+                    decryptor = CreateDecryptor();
+                }
+
+                return decryptor;
+            }
+        }
 
         //----- method -----
 
@@ -182,10 +183,10 @@ namespace Extensions
             // 疑似乱数を使用してパスワードを暗号化.
             var pdb = new Rfc2898DeriveBytes(password, Salt, 64);
 
-            AesManaged = CreateAesManaged();
+            aesManaged = CreateAesManaged();
 
-            AesManaged.Key = pdb.GetBytes(32);
-            AesManaged.IV = pdb.GetBytes(16);
+            aesManaged.Key = pdb.GetBytes(32);
+            aesManaged.IV = pdb.GetBytes(16);
         }
 
         public AesCryptoKey(string key, string iv)
@@ -195,12 +196,32 @@ namespace Extensions
                 throw new ArgumentException("Require key and iv string.");
             }
 
-            AesManaged = CreateAesManaged();
+            aesManaged = CreateAesManaged();
 
-            AesManaged.Key = Encoding.UTF8.GetBytes(key);
-            AesManaged.IV = Encoding.UTF8.GetBytes(iv);
+            aesManaged.Key = Encoding.UTF8.GetBytes(key);
+            aesManaged.IV = Encoding.UTF8.GetBytes(iv);
         }
-        
+
+        private ICryptoTransform CreateEncryptor()
+        {
+            lock (aesManaged)
+            {
+                encryptor = aesManaged.CreateEncryptor();
+            }
+            
+            return encryptor;
+        }
+
+        private ICryptoTransform CreateDecryptor()
+        {
+            lock (aesManaged)
+            {
+                decryptor = aesManaged.CreateDecryptor();
+            }
+
+            return decryptor;
+        }
+
         private static AesManaged CreateAesManaged()
         {
             var aesManaged = new AesManaged()
