@@ -9,6 +9,7 @@ using System.Linq;
 using UniRx;
 using Extensions;
 using Extensions.Devkit;
+using Modules.UI.Particle;
 
 using SortingLayer = Constants.SortingLayer;
 
@@ -493,8 +494,50 @@ namespace Modules.Particle
         {
             var particleInfos = Reflection.GetPrivateField<ParticlePlayer, ParticlePlayer.ParticleInfo[]>(instance, "particleInfos");
 
-            var requestRepaint = particleInfos.Where(x => !UnityUtility.IsNull(x.ParticleSystem)).Any(x => x.ParticleSystem.particleCount != 0);
+            var requestRepaint = false;
+            var requestCanvasUpdate = false;
 
+            var rectTransform = instance.transform as RectTransform;
+            
+            foreach (var particleInfo in particleInfos)
+            {
+                var particleSystem = particleInfo.ParticleSystem;
+                
+                if (UnityUtility.IsNull(particleSystem)) { continue; }
+
+                if (particleSystem.particleCount != 0)
+                {
+                    requestRepaint = true;
+                }
+
+                if (rectTransform != null)
+                {
+                    var uiParticleSystem = UnityUtility.GetComponent<UIParticleSystem>(particleSystem);
+
+                    if (uiParticleSystem != null)
+                    {
+                        uiParticleSystem.SetAllDirty();
+
+                        requestCanvasUpdate = true;
+                    }
+                }
+            }
+
+            if (requestCanvasUpdate)
+            {
+                // 実行中でない時はRectTransformの更新が正しく実行されないので一瞬座標を書き換える事で強制的に更新を行う.
+                
+                var localScale = rectTransform.localScale;
+                
+                localScale.z++;
+
+                rectTransform.localScale = localScale;
+
+                localScale.z--;
+
+                rectTransform.localScale = localScale;
+            }
+            
             if (requestRepaint)
             {
                 InternalEditorUtility.RepaintAllViews();
