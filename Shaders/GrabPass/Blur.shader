@@ -73,12 +73,13 @@ Shader "Custom/GrabPass/Blur"
                     fixed4 col = fixed4(0, 0, 0, 0);
                     float weight_total = 0;
 
-                    [loop]
                     for (float x = -distortion; x <= distortion; x += 1)
                     {
                         float distance_normalized = abs(x / distortion);
                         float weight = exp(-0.5 * pow(distance_normalized, 2) * 5.0);
+
                         weight_total += weight;
+                        
                         col += tex2Dproj(_GrabTexture, i.grabPos + float4(x * _GrabTexture_TexelSize.x, 0, 0, 0)) * weight;
                     }
 
@@ -86,6 +87,7 @@ Shader "Custom/GrabPass/Blur"
 
                     return col;
                 }
+
                 ENDCG
             }
 
@@ -141,12 +143,13 @@ Shader "Custom/GrabPass/Blur"
                     fixed4 col = (0, 0, 0, 0);
                     float weight_total = 0;
 
-                    [loop]
                     for (float y = -distortion; y <= distortion; y += 1)
                     {
                         float distance_normalized = abs(y / distortion);
                         float weight = exp(-0.5 * pow(distance_normalized, 2) * 5.0);
+
                         weight_total += weight;
+
                         col += tex2Dproj(_GrabTexture, i.grabPos + float4(0, y * _GrabTexture_TexelSize.y, 0, 0)) * weight;
                     }
 
