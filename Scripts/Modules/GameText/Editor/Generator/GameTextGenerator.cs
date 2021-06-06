@@ -113,7 +113,7 @@ namespace Modules.GameText.Editor
 
             if (sheets == null) { return; }
 
-            var cryptoKey = gameText.GetAesCryptoKey();
+            var cryptKey = gameText.GetAesCryptKey();
 
             var generateScript = !string.IsNullOrEmpty(generateInfo.scriptFolderPath);
 
@@ -146,7 +146,7 @@ namespace Modules.GameText.Editor
 
                     var gameTextAsset = LoadAsset(generateInfo.assetPath);
 
-                    GameTextAssetGenerator.Build(gameTextAsset, sheets, generateInfo.textIndex, cryptoKey);
+                    GameTextAssetGenerator.Build(gameTextAsset, sheets, generateInfo.textIndex, cryptKey);
 
                     EditorUtility.DisplayProgressBar(progressTitle, "Complete.", 1f);
                 }

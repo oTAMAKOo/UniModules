@@ -4,8 +4,6 @@ using System;
 using System.IO;
 using System.Linq;
 using System.Collections.Generic;
-using System.Security.Cryptography;
-using UniRx;
 using Extensions;
 using MessagePack;
 using MessagePack.Resolvers;
@@ -47,15 +45,15 @@ namespace Modules.ExternalResource
 
         private Dictionary<string, Version.Info> versions = null;
 
-        private static AesCryptoKey versionCryptoKey = null;
+        private static AesCryptKey versionCryptKey = null;
 
         //----- property -----
 
         //----- method -----
 
-        private AesCryptoKey GetVersionCryptoKey()
+        private AesCryptKey GetVersionCryptKey()
         {
-            return versionCryptoKey ?? (versionCryptoKey = new AesCryptoKey(VersionAESKey, VersionAESIv));
+            return versionCryptKey ?? (versionCryptKey = new AesCryptKey(VersionAESKey, VersionAESIv));
         }
 
         /// <summary>
@@ -229,9 +227,9 @@ namespace Modules.ExternalResource
 
                 var data = MessagePackSerializer.Serialize(version, options);
 
-                var cryptoKey = GetVersionCryptoKey();
+                var cryptKey = GetVersionCryptKey();
 
-                var encrypt = data.Encrypt(cryptoKey);
+                var encrypt = data.Encrypt(cryptKey);
 
                 File.WriteAllBytes(versionFilePath, encrypt);
             }
@@ -258,9 +256,9 @@ namespace Modules.ExternalResource
 
                 try
                 {
-                    var cryptoKey = GetVersionCryptoKey();
+                    var cryptKey = GetVersionCryptKey();
 
-                    decrypt = data.Decrypt(cryptoKey);
+                    decrypt = data.Decrypt(cryptKey);
                 }
                 catch (Exception exception)
                 {

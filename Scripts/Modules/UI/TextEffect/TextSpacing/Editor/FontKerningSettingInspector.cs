@@ -5,7 +5,6 @@ using UnityEditorInternal;
 using System;
 using System.Linq;
 using System.Collections.Generic;
-using System.Security.Cryptography;
 using System.Text;
 using Extensions;
 using Extensions.Devkit;
@@ -19,7 +18,7 @@ namespace Modules.UI.TextEffect
 
         private static readonly Color HeaderColor = new Color(0.5f, 0.2f, 0.8f);
 
-        private static readonly AesCryptoKey cryptoKey = new AesCryptoKey("D1AHKKDqFV2JU4Zs");
+        private static readonly AesCryptKey cryptKey = new AesCryptKey("D1AHKKDqFV2JU4Zs");
         
         //----- field -----
 
@@ -165,7 +164,7 @@ namespace Modules.UI.TextEffect
 
             EditorLayoutTools.Title("Description", HeaderColor);
 
-            var textBytes = description.Decrypt(cryptoKey);
+            var textBytes = description.Decrypt(cryptKey);
             var descriptionText = textBytes != null ? Encoding.UTF8.GetString(textBytes) : string.Empty;
 
             using (var scrollViewScope = new EditorGUILayout.ScrollViewScope(descriptionScrollPosition, GUILayout.Height(60f)))
@@ -176,7 +175,7 @@ namespace Modules.UI.TextEffect
 
                 if (EditorGUI.EndChangeCheck())
                 {
-                    textBytes = Encoding.UTF8.GetBytes(descriptionText).Encrypt(cryptoKey);
+                    textBytes = Encoding.UTF8.GetBytes(descriptionText).Encrypt(cryptKey);
 
                     Reflection.SetPrivateField(instance, "description", textBytes);
                 }

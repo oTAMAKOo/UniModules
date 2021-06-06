@@ -3,7 +3,6 @@ using UnityEditor;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Security.Cryptography;
 using Extensions;
 using Modules.GameText.Components;
 
@@ -19,7 +18,7 @@ namespace Modules.GameText.Editor
 
         //----- method -----
 
-        public static void Build(GameTextAsset asset, SheetData[] sheets, int textIndex, AesCryptoKey aesCryptoKey)
+        public static void Build(GameTextAsset asset, SheetData[] sheets, int textIndex, AesCryptKey aesCryptKey)
         {
             var contents = new List<TextContent>();
 
@@ -33,7 +32,7 @@ namespace Modules.GameText.Editor
 
                     var text = record.texts.ElementAtOrDefault(textIndex);
                     
-                    var cryptText = string.IsNullOrEmpty(text) ? string.Empty : text.Encrypt(aesCryptoKey);
+                    var cryptText = string.IsNullOrEmpty(text) ? string.Empty : text.Encrypt(aesCryptKey);
 
                     var textContent = new TextContent(record.guid, cryptText);
 

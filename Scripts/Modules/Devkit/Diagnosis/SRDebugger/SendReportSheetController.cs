@@ -55,7 +55,7 @@ namespace Modules.Devkit.Diagnosis.SRDebugger
 
         private IDisposable sendReportDisposable = null;
 
-        private AesCryptoKey aesCryptoKey = null;
+        private AesCryptKey aesCryptKey = null;
 
         protected bool initialized = false;
 
@@ -72,7 +72,7 @@ namespace Modules.Devkit.Diagnosis.SRDebugger
 
             reportData = new Dictionary<string, string>();
 
-            aesCryptoKey = CreateCryptoKey();
+            aesCryptKey = CreateCryptKey();
 
             var srDebug = SRDebug.Instance;
 
@@ -341,7 +341,7 @@ namespace Modules.Devkit.Diagnosis.SRDebugger
                 value = "---";
             }
 
-            value = aesCryptoKey != null ? value.Encrypt(aesCryptoKey) : value;
+            value = aesCryptKey != null ? value.Encrypt(aesCryptKey) : value;
 
             reportData.Add(key, value);
         }
@@ -372,7 +372,7 @@ namespace Modules.Devkit.Diagnosis.SRDebugger
         }
 
         /// <summary> 暗号化キー生成 </summary>
-        protected virtual AesCryptoKey CreateCryptoKey() { return null; }
+        protected virtual AesCryptKey CreateCryptKey() { return null; }
 
         /// <summary> 以前の入力をリフレッシュ </summary>
         protected virtual void OnRequestRefreshInputText() { }

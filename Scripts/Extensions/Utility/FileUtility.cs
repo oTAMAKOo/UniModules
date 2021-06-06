@@ -14,13 +14,13 @@ namespace Extensions
         {
             byte[] bytes;
             
-            var crypto256 = new SHA256CryptoServiceProvider();
+            var crypt256 = new SHA256CryptoServiceProvider();
 
             using (var fs = File.Open(path, FileMode.Open, FileAccess.Read, FileShare.Read))
             {
-                bytes = crypto256.ComputeHash(fs);
+                bytes = crypt256.ComputeHash(fs);
 
-                crypto256.Clear();
+                crypt256.Clear();
             }
             
             var hashedText = new StringBuilder();

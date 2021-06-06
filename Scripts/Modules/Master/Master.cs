@@ -20,7 +20,7 @@ namespace Modules.Master
         void ClearVersion();
 
         IObservable<Tuple<bool, double>> Update(string masterVersion, CancellationToken cancelToken);
-        IObservable<Tuple<bool, double>> Load(AesCryptoKey cryptoKey, bool cleanOnError);
+        IObservable<Tuple<bool, double>> Load(AesCryptKey cryptKey, bool cleanOnError);
     }
 
     public abstract class MasterContainer<TMasterRecord>
@@ -150,14 +150,14 @@ namespace Modules.Master
             records.Clear();
         }
 
-        public IObservable<Tuple<bool, double>> Load(AesCryptoKey cryptoKey, bool cleanOnError)
+        public IObservable<Tuple<bool, double>> Load(AesCryptKey cryptKey, bool cleanOnError)
         {
             Refresh();
 
-            return Observable.FromMicroCoroutine<Tuple<bool, double>>(observer => LoadInternal(observer, cryptoKey, cleanOnError));
+            return Observable.FromMicroCoroutine<Tuple<bool, double>>(observer => LoadInternal(observer, cryptKey, cleanOnError));
         }
 
-        private IEnumerator LoadInternal(IObserver<Tuple<bool, double>> observer, AesCryptoKey cryptoKey, bool cleanOnError)
+        private IEnumerator LoadInternal(IObserver<Tuple<bool, double>> observer, AesCryptKey cryptKey, bool cleanOnError)
         {
             var success = false;
 
@@ -174,7 +174,7 @@ namespace Modules.Master
             }
 
             // 読み込みをスレッドプールで実行.
-            var loadYield = Observable.Start(() => LoadMasterFile(installPath, cryptoKey)).ObserveOnMainThread().ToYieldInstruction(false);
+            var loadYield = Observable.Start(() => LoadMasterFile(installPath, cryptKey)).ObserveOnMainThread().ToYieldInstruction(false);
 
             while (!loadYield.IsDone)
             {
@@ -206,7 +206,7 @@ namespace Modules.Master
             observer.OnCompleted();
         }
 
-        private double LoadMasterFile(string filePath, AesCryptoKey cryptoKey)
+        private double LoadMasterFile(string filePath, AesCryptKey cryptKey)
         {
             var masterManager = MasterManager.Instance;
 
@@ -216,9 +216,9 @@ namespace Modules.Master
             var bytes = FileLoad(filePath);
 
             // 復号化.
-            if (cryptoKey != null)
+            if (cryptKey != null)
             {
-                bytes = Decrypt(bytes, cryptoKey);
+                bytes = Decrypt(bytes, cryptKey);
             }
 
             // デシリアライズ.
@@ -259,11 +259,11 @@ namespace Modules.Master
             return bytes;
         }
 
-        protected virtual byte[] Decrypt(byte[] bytes, AesCryptoKey cryptoKey)
+        protected virtual byte[] Decrypt(byte[] bytes, AesCryptKey cryptKey)
         {
             if (bytes.Length == 0){ return new byte[0]; }
 
-            return bytes.Decrypt(cryptoKey);
+            return bytes.Decrypt(cryptKey);
         }
 
         protected virtual TMasterRecord[] Deserialize(byte[] bytes, MessagePackSerializerOptions options)

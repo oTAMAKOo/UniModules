@@ -172,7 +172,7 @@ namespace Modules.ExternalResource.Editor
 
             assetInfoManifestFilePath = GetAssetInfoManifestFilePath(files);
 
-            var aesCryptoKey = GetCryptoKey();
+            var aesCryptKey = GetCryptKey();
 
             var bytes = new byte[0];
 
@@ -182,7 +182,7 @@ namespace Modules.ExternalResource.Editor
 
                 fileStream.Read(bytes, 0, bytes.Length);
 
-                bytes = bytes.Decrypt(aesCryptoKey);
+                bytes = bytes.Decrypt(aesCryptKey);
             }
 
             var bundleLoadRequest = AssetBundle.LoadFromMemoryAsync(bytes);
@@ -521,6 +521,6 @@ namespace Modules.ExternalResource.Editor
 
         public abstract RegionEndpoint GetCredentialsRegion();
 
-        public abstract AesCryptoKey GetCryptoKey();
+        public abstract AesCryptKey GetCryptKey();
     }
 }

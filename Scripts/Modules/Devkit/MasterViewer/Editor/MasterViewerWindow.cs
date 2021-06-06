@@ -168,7 +168,7 @@ namespace Modules.Devkit.MasterViewer
 
             var allMasters = GetAllMasters();
             
-            var cryptoKey = GetAesCryptoKey();
+            var cryptKey = GetAesCryptKey();
 
             var loadFinishCount = 0;
             var totalMasterCount = allMasters.Length;
@@ -189,7 +189,7 @@ namespace Modules.Devkit.MasterViewer
 
             Func<IMaster, IObservable<Unit>> createMasterLoadObservable = master =>
             {
-                return Observable.Defer(() => master.Load(cryptoKey, false).Do(_ => onLoadFinish())).AsUnitObservable();
+                return Observable.Defer(() => master.Load(cryptKey, false).Do(_ => onLoadFinish())).AsUnitObservable();
             };
 
             Action onLoadComplete = () =>
@@ -245,7 +245,7 @@ namespace Modules.Devkit.MasterViewer
 
         protected virtual void OnInitialize() { }
 
-        protected abstract AesCryptoKey GetAesCryptoKey();
+        protected abstract AesCryptKey GetAesCryptKey();
 
         protected abstract IMaster[] GetAllMasters();
     }

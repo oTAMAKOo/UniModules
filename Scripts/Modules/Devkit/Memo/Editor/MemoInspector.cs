@@ -11,15 +11,15 @@ namespace Modules.Devkit.Memo
         private string text = null;
         private Vector2 scrollPosition = Vector2.zero;
 
-        private static AesCryptoKey aesCryptoKey = null;
+        private static AesCryptKey aesCryptKey = null;
 
         void OnEnable()
         {
             var config = MemoConfig.Instance;
 
-            if (aesCryptoKey == null)
+            if (aesCryptKey == null)
             {
-                aesCryptoKey = new AesCryptoKey(config.AESKey, config.AESIv);
+                aesCryptKey = new AesCryptKey(config.AESKey, config.AESIv);
             }
 
             var instance = target as Memo;
@@ -28,7 +28,7 @@ namespace Modules.Devkit.Memo
 
             if (!string.IsNullOrEmpty(memo))
             {
-                text = memo.Decrypt(aesCryptoKey);
+                text = memo.Decrypt(aesCryptKey);
             }
         }
 
@@ -38,9 +38,9 @@ namespace Modules.Devkit.Memo
 
             var config = MemoConfig.Instance;
 
-            if (aesCryptoKey == null)
+            if (aesCryptKey == null)
             {
-                aesCryptoKey = new AesCryptoKey(config.AESKey, config.AESIv);
+                aesCryptKey = new AesCryptKey(config.AESKey, config.AESIv);
             }
 
             EditorGUILayout.Separator();
@@ -60,7 +60,7 @@ namespace Modules.Devkit.Memo
 
                     if (EditorGUI.EndChangeCheck())
                     {
-                        Reflection.SetPrivateField(memo, "memo", text.Encrypt(aesCryptoKey));
+                        Reflection.SetPrivateField(memo, "memo", text.Encrypt(aesCryptKey));
                     }
                 }
 

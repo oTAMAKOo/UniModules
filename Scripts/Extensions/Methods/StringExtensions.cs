@@ -89,9 +89,9 @@ namespace Extensions
         {
             var byteValues = enc.GetBytes(value);
 
-            var crypto256 = new SHA256CryptoServiceProvider();
+            var crypt256 = new SHA256CryptoServiceProvider();
 
-            var hash256Value = crypto256.ComputeHash(byteValues);
+            var hash256Value = crypt256.ComputeHash(byteValues);
             
             var hashedText = new StringBuilder();
 

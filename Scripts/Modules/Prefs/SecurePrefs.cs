@@ -10,23 +10,23 @@ namespace Extensions
         private const string AESKey = "5kaDpFGc1A9iRaLkv2n3dMxCmjjFzxOX";
         private const string AESIv = "1i233x1fs8J1K9Tp";
 
-        private static AesCryptoKey aesCryptoKey = new AesCryptoKey(AESKey, AESIv);
+        private static AesCryptKey aesCryptKey = new AesCryptKey(AESKey, AESIv);
 
-        public static void SetCryptoKey(AesCryptoKey aesCryptoKey)
+        public static void SetCryptKey(AesCryptKey aesCryptKey)
         {
-            SecurePrefs.aesCryptoKey = aesCryptoKey;
+            SecurePrefs.aesCryptKey = aesCryptKey;
         }
 
         //====== Utility ======
 
         public static bool HasKey(string name)
         {
-            return PlayerPrefs.HasKey(name.Encrypt(aesCryptoKey));
+            return PlayerPrefs.HasKey(name.Encrypt(aesCryptKey));
         }
 
         public static void DeleteKey(string name)
         {
-            PlayerPrefs.DeleteKey(name.Encrypt(aesCryptoKey));
+            PlayerPrefs.DeleteKey(name.Encrypt(aesCryptKey));
         }
 
         public static void DeleteAll()
@@ -43,14 +43,14 @@ namespace Extensions
 
         public static void SetString(string name, string value)
         {
-            PlayerPrefs.SetString(name.Encrypt(aesCryptoKey), value.Encrypt(aesCryptoKey, true));
+            PlayerPrefs.SetString(name.Encrypt(aesCryptKey), value.Encrypt(aesCryptKey, true));
         }
 
         public static string GetString(string name, string defaultValue = "")
         {
             if (!HasKey(name)) { return defaultValue; }
 
-            return PlayerPrefs.GetString(name.Encrypt(aesCryptoKey)).Decrypt(aesCryptoKey, true);
+            return PlayerPrefs.GetString(name.Encrypt(aesCryptKey)).Decrypt(aesCryptKey, true);
         }
 
         //====== Int ======

@@ -25,7 +25,7 @@ namespace Modules.GameText.Components
 
         #pragma warning restore 0414
 
-        private static AesCryptoKey aesCryptoKey = null;
+        private static AesCryptKey aesCryptKey = null;
 
         //----- property -----
 
@@ -33,24 +33,24 @@ namespace Modules.GameText.Components
 
         private string GetDevelopmentText()
         {
-            if (aesCryptoKey == null)
+            if (aesCryptKey == null)
             {
-                aesCryptoKey = new AesCryptoKey(AESKey, AESIv);
+                aesCryptKey = new AesCryptKey(AESKey, AESIv);
             }
 
             if (string.IsNullOrEmpty(developmentText)) { return string.Empty; }
 
-            return string.Format("{0}{1}", DevelopmentMark, developmentText.Decrypt(aesCryptoKey));
+            return string.Format("{0}{1}", DevelopmentMark, developmentText.Decrypt(aesCryptKey));
         }
 
         private void SetDevelopmentText(string text)
         {
-            if (aesCryptoKey == null)
+            if (aesCryptKey == null)
             {
-                aesCryptoKey = new AesCryptoKey(AESKey, AESIv);
+                aesCryptKey = new AesCryptKey(AESKey, AESIv);
             }
 
-            developmentText = string.IsNullOrEmpty(text) ? string.Empty : text.Encrypt(aesCryptoKey);
+            developmentText = string.IsNullOrEmpty(text) ? string.Empty : text.Encrypt(aesCryptKey);
 
             ImportText();
         }

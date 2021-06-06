@@ -23,7 +23,7 @@ namespace Modules.GameText
 
         //----- field -----
 
-        private static AesCryptoKey aesCryptoKey = null;
+        private static AesCryptKey aesCryptKey = null;
 
         private long? builtInAssetUpdateAt = null;
 
@@ -35,9 +35,9 @@ namespace Modules.GameText
 
         private GameText(){ }
 
-        public AesCryptoKey GetAesCryptoKey()
+        public AesCryptKey GetAesCryptKey()
         {
-            return aesCryptoKey ?? (aesCryptoKey = new AesCryptoKey(GetAesKey(), GetAesIv()));
+            return aesCryptKey ?? (aesCryptKey = new AesCryptKey(GetAesKey(), GetAesIv()));
         }
 
         /// <summary> 内蔵テキストを読み込み </summary>
@@ -53,9 +53,9 @@ namespace Modules.GameText
 
             var contents = asset.Contents.ToArray();
 
-            var cryptoKey = GetAesCryptoKey();
+            var cryptKey = GetAesCryptKey();
 
-            cache = contents.ToDictionary(x => x.Guid, x => x.Text.Decrypt(cryptoKey));
+            cache = contents.ToDictionary(x => x.Guid, x => x.Text.Decrypt(cryptKey));
 
             builtInAssetUpdateAt = asset.UpdateAt;
 
@@ -84,9 +84,9 @@ namespace Modules.GameText
 
             var contents = asset.Contents.ToArray();
 
-            var cryptoKey = GetAesCryptoKey();
+            var cryptKey = GetAesCryptKey();
 
-            var textContents = contents.ToDictionary(x => x.Guid, x => x.Text.Decrypt(cryptoKey));
+            var textContents = contents.ToDictionary(x => x.Guid, x => x.Text.Decrypt(cryptKey));
 
             foreach (var textContent in textContents)
             {

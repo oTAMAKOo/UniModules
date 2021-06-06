@@ -30,7 +30,7 @@ namespace Modules.LocalData
 
         //----- field -----
         
-        private AesCryptoKey aesCryptoKey = null;
+        private AesCryptKey aesCryptKey = null;
 
         private Dictionary<Type, string> filePathCache = null;
 
@@ -50,9 +50,9 @@ namespace Modules.LocalData
             FileDirectory = Application.persistentDataPath + "/LocalData/";
         }
 
-        public void SetCryptoKey(AesCryptoKey cryptoKey)
+        public void SetCryptKey(AesCryptKey cryptKey)
         {
-            Instance.aesCryptoKey = cryptoKey;
+            Instance.aesCryptKey = cryptKey;
         }
 
         public void SetFileDirectory(string directory)
@@ -96,9 +96,9 @@ namespace Modules.LocalData
 
                     fileStream.Read(bytes, 0, bytes.Length);
 
-                    var cryptoKey = Instance.GetCryptoKey();
+                    var cryptKey = Instance.GetCryptKey();
 
-                    bytes = bytes.Decrypt(cryptoKey);
+                    bytes = bytes.Decrypt(cryptKey);
 
                     var options = StandardResolverAllowPrivate.Options
                         .WithCompression(MessagePackCompression.Lz4BlockArray)
@@ -141,9 +141,9 @@ namespace Modules.LocalData
 
                 var bytes = MessagePackSerializer.Serialize(data, options);
 
-                var cryptoKey = Instance.GetCryptoKey();
+                var cryptKey = Instance.GetCryptKey();
 
-                bytes = bytes.Encrypt(cryptoKey);
+                bytes = bytes.Encrypt(cryptKey);
 
                 fileStream.Write(bytes, 0, bytes.Length);
             }
@@ -162,7 +162,7 @@ namespace Modules.LocalData
 
             var fileName = string.Empty;
 
-            var cryptoKey = GetCryptoKey();
+            var cryptKey = GetCryptKey();
             
             var type = typeof(T);
 
@@ -172,7 +172,7 @@ namespace Modules.LocalData
 
             if (fileNameAttribute != null)
             {
-                fileName = fileNameAttribute.FileName.Encrypt(cryptoKey).GetHash();
+                fileName = fileNameAttribute.FileName.Encrypt(cryptKey).GetHash();
             }
             else
             {
@@ -186,14 +186,14 @@ namespace Modules.LocalData
             return filePath;
         }
 
-        private AesCryptoKey GetCryptoKey()
+        private AesCryptKey GetCryptKey()
         {
-            if (aesCryptoKey == null)
+            if (aesCryptKey == null)
             {
-                aesCryptoKey = new AesCryptoKey(DefaultKey, DefaultIv);
+                aesCryptKey = new AesCryptKey(DefaultKey, DefaultIv);
             }
 
-            return aesCryptoKey;
+            return aesCryptKey;
         }
 
         public static void Delete<T>() where T : class, ILocalData, new()

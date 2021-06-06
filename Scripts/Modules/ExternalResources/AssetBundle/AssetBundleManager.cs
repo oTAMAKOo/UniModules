@@ -7,7 +7,6 @@ using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
-using System.Security.Cryptography;
 using UniRx;
 using Extensions;
 using Modules.Devkit.Console;
@@ -100,7 +99,7 @@ namespace Modules.AssetBundles
         private Subject<AssetInfo> onTimeOut = null;
         private Subject<Exception> onError = null;
 
-        private AesCryptoKey aesCryptoKey = null;
+        private AesCryptKey aesCryptKey = null;
 
         private bool isInitialized = false;
 
@@ -114,12 +113,11 @@ namespace Modules.AssetBundles
         /// 初期設定をします。
         /// Initializeで設定した値はstatic変数として保存されます。
         /// </summary>
-        /// <param name="installPath"></param>
         /// <param name="maxDownloadCount">同時ダウンロード数</param>
         /// <param name="localMode"><see cref="installPath"/>のファイルからアセットを取得</param>
         /// <param name="simulateMode">AssetDataBaseからアセットを取得(EditorOnly)</param>
-        /// <param name="cryptoKey">暗号化キー(Key,IVがModules.ExternalResource.Editor.ManageConfigのAssetのCryptKeyと一致している必要があります.)</param>
-        public void Initialize(uint maxDownloadCount, bool localMode = false, bool simulateMode = false, AesCryptoKey cryptoKey = null)
+        /// <param name="cryptKey">暗号化キー(Key,IVがModules.ExternalResource.Editor.ManageConfigのAssetのCryptKeyと一致している必要があります.)</param>
+        public void Initialize(uint maxDownloadCount, bool localMode = false, bool simulateMode = false, AesCryptKey cryptKey = null)
         {
             if (isInitialized) { return; }
 
@@ -135,7 +133,7 @@ namespace Modules.AssetBundles
             assetInfosByAssetBundleName = new Dictionary<string, AssetInfo[]>();
             dependencies = new Dictionary<string, string[]>();
 
-            aesCryptoKey = cryptoKey ?? new AesCryptoKey(DefaultAESKey, DefaultAESIv);
+            aesCryptKey = cryptKey ?? new AesCryptKey(DefaultAESKey, DefaultAESIv);
 
             BuildAssetInfoTable();
 
@@ -154,9 +152,9 @@ namespace Modules.AssetBundles
         /// </summary>
         /// <param name="key">暗号化Key(32文字)</param>
         /// <param name="iv">暗号化IV(16文字)</param>
-        public void SetCryptoKey(string key, string iv)
+        public void SetCryptKey(string key, string iv)
         {
-            this.aesCryptoKey = new AesCryptoKey(key, iv);
+            this.aesCryptKey = new AesCryptKey(key, iv);
         }
 
         /// <summary>
@@ -647,7 +645,7 @@ namespace Modules.AssetBundles
                     fileStream.Read(bytes, 0, bytes.Length);
 
                     // 復号化
-                    bytes = bytes.Decrypt(aesCryptoKey);
+                    bytes = bytes.Decrypt(aesCryptKey);
                 }
 
                 return bytes;

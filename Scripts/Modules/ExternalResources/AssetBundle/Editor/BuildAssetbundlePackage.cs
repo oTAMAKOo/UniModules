@@ -32,7 +32,7 @@ namespace Modules.AssetBundles.Editor
 
             assetInfos.Add(AssetInfoManifest.GetManifestAssetInfo());
 
-            var cryptoKey = new AesCryptoKey(aesKey, aesIv);
+            var cryptKey = new AesCryptKey(aesKey, aesIv);
 
             var tasks = new List<Task>();
 
@@ -50,7 +50,7 @@ namespace Modules.AssetBundles.Editor
                         var assetBundleFilePath = PathUtility.Combine(assetBundlePath, assetInfo.AssetBundle.AssetBundleName);
 
                         // 更新があったパッケージを作成.
-                        await CreatePackage(assetBundleFilePath, cryptoKey);
+                        await CreatePackage(assetBundleFilePath, cryptKey);
 
                         // 出力先にパッケージファイルをコピー.
                         await ExportPackage(exportPath, assetBundleFilePath, assetInfo);
@@ -68,7 +68,7 @@ namespace Modules.AssetBundles.Editor
         }
     
         /// <summary> パッケージファイル化(暗号化). </summary>
-        private static async Task CreatePackage(string assetBundleFilePath, AesCryptoKey cryptoKey)
+        private static async Task CreatePackage(string assetBundleFilePath, AesCryptKey cryptKey)
         {
             // 作成するパッケージファイルのパス.
             var packageFilePath = Path.ChangeExtension(assetBundleFilePath, AssetBundleManager.PackageExtension);
@@ -89,7 +89,7 @@ namespace Modules.AssetBundles.Editor
 
             // 暗号化.
 
-            data = data.Encrypt(cryptoKey);
+            data = data.Encrypt(cryptKey);
 
             // 書き込み.
 
