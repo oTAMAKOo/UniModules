@@ -23,7 +23,7 @@ namespace Modules.Master
 
         private Dictionary<string, IMaster> masters = null;
 
-        private bool useLz4Compression = true;
+        private bool lz4Compression = true;
 
         private MessagePackSerializerOptions serializerOptions = null;
 
@@ -41,12 +41,12 @@ namespace Modules.Master
         public AesCryptKey FileNameCryptKey { get; private set; }
 
         /// <summary> LZ4圧縮を使用するか. </summary>
-        public bool UseLz4Compression
+        public bool Lz4Compression
         {
-            get { return useLz4Compression; }
+            get { return lz4Compression; }
             set
             {
-                useLz4Compression = value;
+                lz4Compression = value;
                 serializerOptions = null;
             }
         }
@@ -107,7 +107,7 @@ namespace Modules.Master
             return GetMasterFileName(typeof(T));
         }
 
-        public string GetMasterFileName(Type type)
+        public string GetMasterFileName(Type type, bool encrypt = true)
         {
             if (!typeof(IMaster).IsAssignableFrom(type))
             {
@@ -124,25 +124,32 @@ namespace Modules.Master
 
             if (fileNameAttribute != null)
             {
-                fileName = fileNameAttribute.FileName + MasterFileExtension;
+                fileName = fileNameAttribute.FileName;
             }
             else
             {
                 // クラス名をファイル名として採用.
-                fileName = type.Name;
-
-                // 末尾が「Master」だったら末尾を削る.
-                if (fileName.EndsWith(MasterSuffix))
-                {
-                    fileName = fileName.SafeSubstring(0, fileName.Length - MasterSuffix.Length) + MasterFileExtension;
-                }
+                fileName = DeleteMasterSuffix(type.Name);
             }
+
+            fileName = Path.ChangeExtension(fileName, MasterFileExtension);
 
             // 暗号化オブジェクトが設定されていたら暗号化.
 
-            if (FileNameCryptKey != null)
+            if (encrypt && FileNameCryptKey != null)
             {
                 fileName = fileName.Encrypt(FileNameCryptKey, true);
+            }
+
+            return fileName;
+        }
+
+        public static string DeleteMasterSuffix(string fileName)
+        {
+            // 末尾が「Master」だったら末尾を削る.
+            if (fileName.EndsWith(MasterSuffix))
+            {
+                fileName = fileName.SafeSubstring(0, fileName.Length - MasterSuffix.Length);
             }
 
             return fileName;
@@ -154,7 +161,7 @@ namespace Modules.Master
 
             var options = StandardResolverAllowPrivate.Options.WithResolver(UnityContractResolver.Instance);
 
-            if (UseLz4Compression)
+            if (Lz4Compression)
             {
                 options = options.WithCompression(MessagePackCompression.Lz4BlockArray);
             }

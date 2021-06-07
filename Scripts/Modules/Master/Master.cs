@@ -80,8 +80,6 @@ namespace Modules.Master
         {
             records.Clear();
 
-            if (records == null) { return; }
-
             foreach (var masterRecord in masterRecords)
             {
                 SetRecord(masterRecord);
