@@ -33,6 +33,10 @@ namespace Modules.ExternalResource
         public static readonly string ConsoleEventName = "ExternalResources";
         public static readonly Color ConsoleEventColor = new Color(0.8f, 1f, 0.1f);
 
+        public const string ShareCategoryName = "Share";
+
+        public const string ShareCategoryPrefix = ShareCategoryName + ":";
+
         // 最大同時ダウンロード数.
         private readonly uint MaxDownloadCount = 4;
 
@@ -64,6 +68,8 @@ namespace Modules.ExternalResource
 
         /// <summary> 外部アセットディレクトリ. </summary>
         public string resourceDirectory = null;
+        /// <summary> 共有外部アセットディレクトリ. </summary>
+        public string shareDirectory = null;
 
         /// <summary> 読み込み中アセット群. </summary>
         private HashSet<AssetInfo> loadingAssets = new HashSet<AssetInfo>();
@@ -101,12 +107,13 @@ namespace Modules.ExternalResource
             LogEnable = true;
         }
 
-        public void Initialize(string resourceDir, bool localMode = false)
+        public void Initialize(string resourceDirectory, string shareDirectory, bool localMode = false)
         {
             if (initialized) { return; }
 
             this.localMode = localMode;
-            this.resourceDirectory = resourceDir;
+            this.resourceDirectory = resourceDirectory;
+            this.shareDirectory = shareDirectory;
 
             // 中断用登録.
             yieldCancel = new YieldCancel();
@@ -131,7 +138,7 @@ namespace Modules.ExternalResource
             // CriAssetManager初期化.
 
             criAssetManager = CriAssetManager.CreateInstance();
-            criAssetManager.Initialize(resourceDir, MaxDownloadCount, localMode, simulateMode);
+            criAssetManager.Initialize(resourceDirectory, MaxDownloadCount, localMode, simulateMode);
             criAssetManager.OnTimeOutAsObservable().Subscribe(x => OnTimeout(x)).AddTo(Disposable);
             criAssetManager.OnErrorAsObservable().Subscribe(x => OnError(x)).AddTo(Disposable);
             
@@ -232,9 +239,7 @@ namespace Modules.ExternalResource
             return assetInfosByResourcePath.GetValueOrDefault(resourcePath);
         }
 
-        /// <summary>
-        /// キャッシュ削除.
-        /// </summary>
+        /// <summary> キャッシュ削除. </summary>
         public void CleanCache()
         {
             UnloadAllAssetBundles(false);
@@ -244,6 +249,16 @@ namespace Modules.ExternalResource
             DirectoryUtility.Clean(InstallDirectory);
 
             Caching.ClearCache();
+        }
+
+        public static string DeleteShareResourcePrefix(string resourcePath)
+        {
+            if (resourcePath.StartsWith(ShareCategoryPrefix))
+            {
+                resourcePath = resourcePath.Substring(ShareCategoryPrefix.Length);
+            }
+
+            return resourcePath;
         }
 
         /// <summary>
@@ -454,7 +469,18 @@ namespace Modules.ExternalResource
                 yield break;
             }
 
-            var assetPath = PathUtility.Combine(resourceDirectory, resourcePath);
+            var assetPath = string.Empty;
+
+            if (resourcePath.StartsWith(ShareCategoryPrefix))
+            {
+                var shareResourcePath = DeleteShareResourcePrefix(resourcePath);
+
+                assetPath = PathUtility.Combine(shareDirectory, shareResourcePath);
+            }
+            else
+            {
+                assetPath = PathUtility.Combine(resourceDirectory, resourcePath);
+            }
 
             if (!localMode && !simulateMode)
             {

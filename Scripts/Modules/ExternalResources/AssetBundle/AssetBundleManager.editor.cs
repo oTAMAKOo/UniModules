@@ -2,10 +2,11 @@
 #if UNITY_EDITOR
 
 using System;
+using Extensions;
 using UnityEngine;
 using UnityEditor;
 using UniRx;
-using Extensions;
+using Modules.ExternalResource;
 
 namespace Modules.AssetBundles
 {
@@ -17,7 +18,7 @@ namespace Modules.AssetBundles
 
             if (asset == null)
             {
-                Debug.LogError("Asset load error:" + assetPath);
+                Debug.LogError("Asset load error : " + assetPath);
 
                 return Observable.Return<T>(default(T));
             }

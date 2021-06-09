@@ -28,7 +28,7 @@ namespace Modules.ExternalResource.Editor
 
         //----- method -----
 
-        public static void Open(string externalResourcesPath)
+        public static void Open(string externalResourcesPath, string shareResourcesPath)
         {
             if (EditorApplication.isCompiling)
             {
@@ -39,12 +39,12 @@ namespace Modules.ExternalResource.Editor
             Instance.minSize = WindowSize;
             Instance.titleContent = new GUIContent("ExternalResource Manage Asset");
 
-            Instance.Initialize(externalResourcesPath);
+            Instance.Initialize(externalResourcesPath, shareResourcesPath);
 
             Instance.ShowUtility();
         }
 
-        private void Initialize(string externalResourcesPath)
+        private void Initialize(string externalResourcesPath, string shareResourcesPath)
         {
             // コンパイルが始まったら閉じる.
             CompileNotification.OnCompileStartAsObservable()
@@ -78,7 +78,7 @@ namespace Modules.ExternalResource.Editor
 
             manageAssetView = new ManageAssetView();
 
-            manageAssetView.Initialize(assetManagement, externalResourcesPath);
+            manageAssetView.Initialize(assetManagement, externalResourcesPath, shareResourcesPath);
 
             manageAssetView.OnRequestRepaintAsObservable()
                 .Subscribe(_ => Repaint())

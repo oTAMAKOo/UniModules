@@ -237,7 +237,7 @@ namespace Modules.Master
             return container;
         }
         
-        private static async Task<SortedDictionary<string, object>> LoadAllRecords(string recordFileDirectory, Type recordType, SerializationFileUtility.Format format)
+        private static async Task<IDictionary<string, object>> LoadAllRecords(string recordFileDirectory, Type recordType, SerializationFileUtility.Format format)
         {
             var recordFiles = Directory.GetFiles(recordFileDirectory, "*" + RecordFileExtension, SearchOption.TopDirectoryOnly);
 

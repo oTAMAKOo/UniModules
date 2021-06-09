@@ -29,8 +29,6 @@ namespace Modules.ExternalResource.Editor
 
         private IgnoreType? ignoreType = null;
 
-        private string externalResourcesPath = null;
-
         private Object manageAsset = null;
         private string manageAssetPath = null;
         private string displayManageAssetPath = null;
@@ -40,6 +38,8 @@ namespace Modules.ExternalResource.Editor
 
         private ContentsScrollView contentsScrollView = null;
         private ContentAssetsScrollView contentAssetsScrollView = null;
+
+        private bool isShareAsset = false;
 
         private Subject<Unit> onUpdateManageInfo = null;
         private Subject<Unit> onDeleteManageInfo = null;
@@ -58,12 +58,12 @@ namespace Modules.ExternalResource.Editor
 
         //----- method -----
 
-        public ManageInfoView(AssetManagement assetManagement, ManageInfo manageInfo, string externalResourcesPath, IgnoreType? ignoreType, bool open, bool edit)
+        public ManageInfoView(AssetManagement assetManagement, ManageInfo manageInfo, string externalResourcesPath, string shareResourcesPath, IgnoreType? ignoreType, bool open, bool edit)
         {
-            this.externalResourcesPath = externalResourcesPath;
             this.ignoreType = ignoreType;
 
             var externalResourcesDir = externalResourcesPath + PathUtility.PathSeparator;
+            var shareResourcesDir = shareResourcesPath + PathUtility.PathSeparator;
 
             // 確定するまで元のインスタンスに影響を与えないようにコピーに対して編集を行う.
             ManageInfo = manageInfo.DeepCopy();
@@ -74,8 +74,19 @@ namespace Modules.ExternalResource.Editor
             manageAssetPath = AssetDatabase.GUIDToAssetPath(manageInfo.guid);
             manageAsset = AssetDatabase.LoadMainAssetAtPath(manageAssetPath);
 
-            displayManageAssetPath = manageAssetPath.Substring(externalResourcesDir.Length, manageAssetPath.Length - externalResourcesDir.Length);
-            
+            displayManageAssetPath = string.Empty;
+
+            if (manageAssetPath.StartsWith(externalResourcesDir))
+            {
+                isShareAsset = false;
+                displayManageAssetPath = manageAssetPath.Substring(externalResourcesDir.Length, manageAssetPath.Length - externalResourcesDir.Length);
+            }
+            else if(manageAssetPath.StartsWith(shareResourcesDir))
+            {
+                isShareAsset = true;
+                displayManageAssetPath = manageAssetPath.Substring(shareResourcesDir.Length, manageAssetPath.Length - shareResourcesDir.Length);
+            }
+
             contentsScrollView = new ContentsScrollView();
 
             contentsScrollView.OnRequestDetailViewAsObservable()
@@ -184,19 +195,23 @@ namespace Modules.ExternalResource.Editor
 
                         var originLabelWidth = EditorLayoutTools.SetLabelWidth(80f);
 
-                        if (!ignoreType.HasValue || ignoreType != IgnoreType.IgnoreAssetBundle)
+                        // 共有アセットはアセットバンドルのみ対応なので常にアセットバンドル.
+                        if (!isShareAsset)
                         {
-                            EditorGUI.BeginChangeCheck();
-
-                            var isAssetBundle = EditorGUILayout.Toggle("AssetBundle", ManageInfo.isAssetBundle, GUILayout.Width(100f));
-
-                            if (EditorGUI.EndChangeCheck())
+                            if (!ignoreType.HasValue || ignoreType != IgnoreType.IgnoreAssetBundle)
                             {
-                                ManageInfo.isAssetBundle = isAssetBundle;
+                                EditorGUI.BeginChangeCheck();
+
+                                var isAssetBundle = EditorGUILayout.Toggle("AssetBundle", ManageInfo.isAssetBundle, GUILayout.Width(100f));
+
+                                if (EditorGUI.EndChangeCheck())
+                                {
+                                    ManageInfo.isAssetBundle = isAssetBundle;
+                                }
+
+                                GUILayout.Space(2f);
                             }
                         }
-
-                        GUILayout.Space(2f);
 
                         if (ManageInfo.isAssetBundle)
                         {

@@ -44,6 +44,7 @@ namespace Modules.ExternalResource.Editor
         //----- field -----
 
         private string externalResourcesPath = null;
+        private string shareResourcesPath = null;
 
         private Dictionary<string, ManageInfo> managedInfos = null;
 
@@ -81,6 +82,7 @@ namespace Modules.ExternalResource.Editor
             if (initialized) { return; }
 
             externalResourcesPath = projectFolders.ExternalResourcesPath;
+            shareResourcesPath = projectFolders.ShareResourcesFolder;
 
             managedAssets.DeleteInvalidInfo();
 
@@ -179,6 +181,7 @@ namespace Modules.ExternalResource.Editor
             return managedInfos.Values.Select(x => x.category)
                 .Where(x => !string.IsNullOrEmpty(x))
                 .Distinct()
+                .Append(ExternalResources.ShareCategoryName)
                 .ToArray();
         }
 
@@ -238,9 +241,23 @@ namespace Modules.ExternalResource.Editor
         {
             if (string.IsNullOrEmpty(assetPath)) { return string.Empty; }
 
-            var externalResourcesDir = externalResourcesPath + PathUtility.PathSeparator;
+            var resourcesDir = string.Empty;
 
-            var assetLoadPath = assetPath.Substring(externalResourcesDir.Length, assetPath.Length - externalResourcesDir.Length);
+            if (assetPath.StartsWith(externalResourcesPath))
+            {
+                resourcesDir = externalResourcesPath + PathUtility.PathSeparator;
+            }
+            else if (assetPath.StartsWith(shareResourcesPath))
+            {
+                resourcesDir = shareResourcesPath + PathUtility.PathSeparator;
+            }
+
+            var assetLoadPath = assetPath.Substring(resourcesDir.Length, assetPath.Length - resourcesDir.Length);
+
+            if (assetPath.StartsWith(shareResourcesPath))
+            {
+                assetLoadPath = ExternalResources.ShareCategoryPrefix + assetLoadPath;
+            }
 
             return assetLoadPath;
         }
@@ -264,14 +281,26 @@ namespace Modules.ExternalResource.Editor
 
             if (!string.IsNullOrEmpty(category))
             {
-                assetBundleName = category + PathUtility.PathSeparator;
+                assetBundleName += category + PathUtility.PathSeparator;
             }
 
             // 管理アセットの親フォルダパス.
             var managePath = AssetDatabase.GUIDToAssetPath(manageInfo.guid);
+
             var parentDir = PathUtility.ConvertPathSeparator(Directory.GetParent(managePath).ToString() + PathUtility.PathSeparator);
-            var externalResourcesDir = externalResourcesPath + PathUtility.PathSeparator;
-            var folder = parentDir.Substring(externalResourcesDir.Length);
+
+            var resourcesDir = string.Empty;
+
+            if (assetPath.StartsWith(externalResourcesPath))
+            {
+                resourcesDir = externalResourcesPath + PathUtility.PathSeparator;
+            }
+            else if (assetPath.StartsWith(shareResourcesPath))
+            {
+                resourcesDir = shareResourcesPath + PathUtility.PathSeparator;
+            }
+
+            var folder = parentDir.Substring(resourcesDir.Length);
 
             assetBundleName += folder.Replace(PathUtility.PathSeparator.ToString(), AssetNameSeparator);
 
@@ -291,7 +320,7 @@ namespace Modules.ExternalResource.Editor
                             folder += Path.GetFileNameWithoutExtension(managePath) + AssetNameSeparator;
                         }
 
-                        var resourcePath = assetPath.Substring((externalResourcesDir + folder).Length);
+                        var resourcePath = assetPath.Substring((resourcesDir + folder).Length);
 
                         switch (manageInfo.assetBundleNamingRule)
                         {
@@ -327,7 +356,12 @@ namespace Modules.ExternalResource.Editor
             {
                 var path = AssetDatabase.GetAssetPath(dropObject);
 
-                if (!path.StartsWith(externalResourcesPath)) { return false; }
+                var isTarget = false;
+
+                isTarget |= path.StartsWith(externalResourcesPath);
+                isTarget |= path.StartsWith(shareResourcesPath);
+
+                if (!isTarget) { return false; }
             }
 
             return true;

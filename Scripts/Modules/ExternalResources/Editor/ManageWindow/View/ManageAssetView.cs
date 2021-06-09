@@ -18,6 +18,7 @@ namespace Modules.ExternalResource.Editor
 
         private AssetManagement assetManagement = null;
         private string externalResourcesPath = null;
+        private string shareResourcesPath = null;
 
         private ManageInfoView[] manageInfoViews = null;
         private ManageInfoView[] currentManageInfoViews = null;
@@ -36,12 +37,13 @@ namespace Modules.ExternalResource.Editor
 
         //----- method -----
 
-        public void Initialize(AssetManagement assetManagement, string externalResourcesPath)
+        public void Initialize(AssetManagement assetManagement, string externalResourcesPath, string shareResourcesPath)
         {
             if (initialized) { return; }
             
             this.assetManagement = assetManagement;
             this.externalResourcesPath = externalResourcesPath;
+            this.shareResourcesPath = shareResourcesPath;
 
             BuildManageInfoViews();
 
@@ -111,7 +113,8 @@ namespace Modules.ExternalResource.Editor
 
                     foreach (var info in infos)
                     {
-                        var assetPath = PathUtility.Combine(externalResourcesPath, info.ResourcePath);
+                        var assetDir = info.Category == ExternalResources.ShareCategoryName ? shareResourcesPath : externalResourcesPath;
+                        var assetPath = PathUtility.Combine(assetDir, info.ResourcePath);
 
                         EditorUtility.DisplayProgressBar("Update asset info", info.ResourcePath, (float)i / targetAssetPaths.Length);
 
@@ -139,7 +142,7 @@ namespace Modules.ExternalResource.Editor
             var manageAssetPath = AssetDatabase.GUIDToAssetPath(manageInfo.guid);
             var ignoreType = assetManagement.GetIgnoreType(manageAssetPath);
             
-            var view = new ManageInfoView(assetManagement, manageInfo, externalResourcesPath, ignoreType, opened, edited);
+            var view = new ManageInfoView(assetManagement, manageInfo, externalResourcesPath, shareResourcesPath, ignoreType, opened, edited);
 
             view.OnUpdateManageInfoAsObservable()
                 .DelayFrame(1)

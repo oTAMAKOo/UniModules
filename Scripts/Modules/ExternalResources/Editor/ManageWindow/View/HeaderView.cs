@@ -76,7 +76,11 @@ namespace Modules.ExternalResource.Editor
 
                     if (EditorGUI.EndChangeCheck())
                     {
-                        if (!string.IsNullOrEmpty(editCategoryName))
+                        if (editCategoryName == ExternalResources.ShareCategoryName)
+                        {
+                            EditorUtility.DisplayDialog("Error", "This name is reserved and cannot be used..", "Close");
+                        }
+                        else if (!string.IsNullOrEmpty(editCategoryName))
                         {
                             switch (nameEditMode)
                             {
@@ -127,25 +131,42 @@ namespace Modules.ExternalResource.Editor
                 }
                 else
                 {
-                    if (GUILayout.Button("Add", EditorStyles.toolbarButton))
+                    if (currentCategory != ExternalResources.ShareCategoryName)
                     {
-                        nameEditMode = NameEditMode.New;
-                    }
-
-                    if (!string.IsNullOrEmpty(currentCategory))
-                    {
-                        if (GUILayout.Button("Delete", EditorStyles.toolbarButton))
+                        if (GUILayout.Button("Add", EditorStyles.toolbarButton))
                         {
-                            if (EditorUtility.DisplayDialog("Confirm", "Remove selection category.", "Apply", "Cancel"))
+                            nameEditMode = NameEditMode.New;
+                        }
+
+                        if (!string.IsNullOrEmpty(currentCategory))
+                        {
+                            if (GUILayout.Button("Delete", EditorStyles.toolbarButton))
                             {
-                                assetManagement.DeleteCategory(currentCategory);
-
-                                categoryNames = assetManagement.GetAllCategoryNames().ToList();
-
-                                if (onChangeSelectCategory != null)
+                                if (EditorUtility.DisplayDialog("Confirm", "Remove selection category.", "Apply", "Cancel"))
                                 {
-                                    onChangeSelectCategory.OnNext(Unit.Default);
+                                    assetManagement.DeleteCategory(currentCategory);
+
+                                    categoryNames = assetManagement.GetAllCategoryNames().ToList();
+
+                                    if (onChangeSelectCategory != null)
+                                    {
+                                        onChangeSelectCategory.OnNext(Unit.Default);
+                                    }
+
+                                    if (onRequestRepaint != null)
+                                    {
+                                        onRequestRepaint.OnNext(Unit.Default);
+                                    }
+
+                                    return;
                                 }
+                            }
+
+                            if (GUILayout.Button("リネーム", EditorStyles.toolbarButton))
+                            {
+                                nameEditMode = NameEditMode.Rename;
+
+                                editCategoryName = currentCategory;
 
                                 if (onRequestRepaint != null)
                                 {
@@ -154,20 +175,6 @@ namespace Modules.ExternalResource.Editor
 
                                 return;
                             }
-                        }
-
-                        if (GUILayout.Button("リネーム", EditorStyles.toolbarButton))
-                        {
-                            nameEditMode = NameEditMode.Rename;
-
-                            editCategoryName = currentCategory;
-
-                            if (onRequestRepaint != null)
-                            {
-                                onRequestRepaint.OnNext(Unit.Default);
-                            }
-
-                            return;
                         }
                     }
 
