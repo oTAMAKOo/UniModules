@@ -394,8 +394,6 @@ namespace Modules.Master
 
             var rootVersion = allVersionText.GetHash();
 
-            Debug.Log(allVersionText);
-
             return rootVersion;
         }
 
