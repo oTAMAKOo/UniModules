@@ -66,8 +66,16 @@ namespace Extensions
             return Instantiate(parent, (GameObject)Resources.Load(path), instantiateInWorldSpace);
         }
 
-        /// <summary> Prefabからインスタンス生成 </summary>
-        public static GameObject Instantiate(GameObject parent, UnityEngine.Object original, bool instantiateInWorldSpace = false)
+        /// <summary> インスタンス生成 </summary>
+        public static GameObject Instantiate(GameObject parent, Component component, bool instantiateInWorldSpace = false)
+        {
+            if (component == null){ return null; }
+
+            return Instantiate(parent, component.gameObject, instantiateInWorldSpace);
+        }
+
+        /// <summary> インスタンス生成 </summary>
+        public static GameObject Instantiate(GameObject parent, GameObject original, bool instantiateInWorldSpace = false)
         {
             if (original != null)
             {
@@ -75,11 +83,11 @@ namespace Extensions
 
                 if (parent == null)
                 {
-                    gameObject = UnityEngine.Object.Instantiate(original) as GameObject;
+                    gameObject = UnityEngine.Object.Instantiate(original);
                 }
                 else
                 {
-                    gameObject = UnityEngine.Object.Instantiate(original, parent.transform, instantiateInWorldSpace) as GameObject;
+                    gameObject = UnityEngine.Object.Instantiate(original, parent.transform, instantiateInWorldSpace);
                 }
 
                 if (gameObject != null)
@@ -93,8 +101,16 @@ namespace Extensions
             return null;
         }
 
-        /// <summary> Prefabから複数のインスタンスを高速生成 </summary>
-        public static IEnumerable<GameObject> Instantiate(GameObject parent, UnityEngine.Object original, int count, bool instantiateInWorldSpace = false)
+        /// <summary> 複数のインスタンスを高速生成 </summary>
+        public static IEnumerable<GameObject> Instantiate(GameObject parent, Component component, int count, bool instantiateInWorldSpace = false)
+        {
+            if (component == null) { return null; }
+
+            return Instantiate(parent, component.gameObject, count, instantiateInWorldSpace);
+        }
+
+        /// <summary> 複数のインスタンスを高速生成 </summary>
+        public static IEnumerable<GameObject> Instantiate(GameObject parent, GameObject original, int count, bool instantiateInWorldSpace = false)
         {
             var list = new List<GameObject>();
 
@@ -123,7 +139,7 @@ namespace Extensions
             return list;
         }
 
-        /// <summary> Resource パスから生成 + Component取得 </summary>
+        /// <summary> Resourcesパスから生成 + Component取得 </summary>
         public static T Instantiate<T>(GameObject parent, string path, bool instantiateInWorldSpace = false) where T : Component
         {
             var gameObject = Instantiate(parent, path, instantiateInWorldSpace);
@@ -131,16 +147,32 @@ namespace Extensions
             return GetComponent<T>(gameObject);
         }
 
-        /// <summary> Prefab から生成 + Component取得 </summary>
-        public static T Instantiate<T>(GameObject parent, UnityEngine.Object original, bool instantiateInWorldSpace = false) where T : Component
+        /// <summary> インスタンス生成 + Component取得 </summary>
+        public static T Instantiate<T>(GameObject parent, Component component, bool instantiateInWorldSpace = false) where T : Component
+        {
+            if (component == null) { return null; }
+
+            return Instantiate<T>(parent, component.gameObject, instantiateInWorldSpace);
+        }
+
+        /// <summary> インスタンス生成 + Component取得 </summary>
+        public static T Instantiate<T>(GameObject parent, GameObject original, bool instantiateInWorldSpace = false) where T : Component
         {
             var gameObject = Instantiate(parent, original, instantiateInWorldSpace);
 
             return GetComponent<T>(gameObject);
         }
 
-        /// <summary> Prefabから複数のインスタンスを高速生成 + Component取得 </summary>
-        public static IEnumerable<T> Instantiate<T>(GameObject parent, UnityEngine.Object original, int count, bool instantiateInWorldSpace = false) where T : Component
+        /// <summary> 複数のインスタンスを高速生成 + Component取得 </summary>
+        public static IEnumerable<T> Instantiate<T>(GameObject parent, Component component, int count, bool instantiateInWorldSpace = false) where T : Component
+        {
+            if (component == null) { return null; }
+            
+            return Instantiate<T>(parent, component.gameObject, count, instantiateInWorldSpace);
+        }
+
+        /// <summary> 複数のインスタンスを高速生成 + Component取得 </summary>
+        public static IEnumerable<T> Instantiate<T>(GameObject parent, GameObject original, int count, bool instantiateInWorldSpace = false) where T : Component
         {
             var gameObjects = Instantiate(parent, original, count, instantiateInWorldSpace);
             

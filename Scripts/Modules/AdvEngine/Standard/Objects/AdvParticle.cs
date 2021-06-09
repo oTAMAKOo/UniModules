@@ -32,7 +32,7 @@ namespace Modules.AdvKit.Standard
 
             var resourcePath = advEngine.Resource.GetResourcePath<AdvParticle>(fileName);
 
-            var prefab = advEngine.Resource.Get<Sprite>(resourcePath);
+            var prefab = advEngine.Resource.Get<GameObject>(resourcePath);
 
             particlePlayer = UnityUtility.Instantiate<ParticlePlayer>(gameObject, prefab);
 
