@@ -413,7 +413,7 @@ namespace Modules.Master
 
             foreach (var item in versionHashDictionary)
             {
-                builder.AppendFormat("{0}, {1}", item.Key, item.Value).AppendLine();
+                builder.AppendFormat("{0},{1}", item.Key, item.Value).AppendLine();
             }
             
             var versionText = builder.ToString();
