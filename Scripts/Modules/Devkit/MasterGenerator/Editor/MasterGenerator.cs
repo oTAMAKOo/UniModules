@@ -109,7 +109,7 @@ namespace Modules.Master
 
             try
             {
-                var fileHashDictionary = new Dictionary<string, string>();
+                var fileHashDictionary = new SortedDictionary<string, string>(new NaturalComparer());
 
                 var tasks = new List<Task>();
 
@@ -153,13 +153,15 @@ namespace Modules.Master
 
                             var filePath = GetGenerateMasterFilePath(exportDirectory, masterFileName, fileNameCryptKey);
 
-                            var fileHash = await GenerateMasterFile(filePath, master,  dataCryptKey, lz4Compression);
+                            var fileName = Path.GetFileNameWithoutExtension(filePath);
+
+                            var versionHash = await GenerateMasterFile(filePath, master,  dataCryptKey, lz4Compression);
 
                             // バージョンハッシュ.
 
                             lock (fileHashDictionary)
                             {
-                                fileHashDictionary.Add(filePath, fileHash);
+                                fileHashDictionary.Add(fileName, versionHash);
                             }
 
                             sw.Stop();
@@ -167,7 +169,7 @@ namespace Modules.Master
                             lock (logBuilder)
                             {
                                 logBuilder.AppendFormat("{0} ({1:F2}ms)", masterName, sw.Elapsed.TotalMilliseconds).AppendLine();
-                                logBuilder.AppendFormat("[ {0} ]", fileHash).AppendLine();
+                                logBuilder.AppendFormat("[ {0} ]", versionHash).AppendLine();
                                 logBuilder.AppendLine();
                             }
                         }
@@ -235,13 +237,13 @@ namespace Modules.Master
             return container;
         }
         
-        private static async Task<object[]> LoadAllRecords(string recordFileDirectory, Type recordType, SerializationFileUtility.Format format)
+        private static async Task<SortedDictionary<string, object>> LoadAllRecords(string recordFileDirectory, Type recordType, SerializationFileUtility.Format format)
         {
             var recordFiles = Directory.GetFiles(recordFileDirectory, "*" + RecordFileExtension, SearchOption.TopDirectoryOnly);
 
             // 読み込み.
 
-            var records = new List<object>();
+            var records = new SortedDictionary<string, object>(new NaturalComparer());
 
             var tasks = new List<Task>();
 
@@ -251,13 +253,15 @@ namespace Modules.Master
 
                 var task = Task.Run(() =>
                 {
+                    var fileName = Path.GetFileNameWithoutExtension(filePath);
+
                     var record = SerializationFileUtility.LoadFile(filePath, recordType, format);
 
                     if (record != null)
                     {
                         lock (records)
                         {
-                            records.Add(record);
+                            records.Add(fileName, record);
                         }
                     }
                 });
@@ -267,10 +271,10 @@ namespace Modules.Master
 
             await Task.WhenAll(tasks);
 
-            return records.ToArray();
+            return records;
         }
 
-        private static object BuildMasterContainer(Type containerType, Type recordType, object[] records)
+        private static object BuildMasterContainer(Type containerType, Type recordType, IDictionary<string, object> records)
         {
             // コンテナ作成.
             var container = Activator.CreateInstance(containerType);
@@ -283,9 +287,11 @@ namespace Modules.Master
 
             // 配列化.
 
-            var recordArray = Array.CreateInstance(recordType, records.Length);
+            var array = records.Values.ToArray();
 
-            Array.Copy(records, recordArray, records.Length);
+            var recordArray = Array.CreateInstance(recordType, array.Length);
+
+            Array.Copy(array, recordArray, array.Length);
 
             // 設定.
 
@@ -340,8 +346,8 @@ namespace Modules.Master
             {
                 await file.WriteAsync(bytes, 0, bytes.Length);
             }
-
-            var fileHash = FileUtility.GetHash(filePath);
+            
+            var fileHash = json.GetHash();
 
             return fileHash;
         }
@@ -359,18 +365,36 @@ namespace Modules.Master
 
         #region Version
 
-        private static string GetRootVersion(Dictionary<string, string> versionHashDictionary)
+        private static string GetRootVersion(IDictionary<string, string> versionHashDictionary)
         {
             var builder = new StringBuilder();
 
-            foreach (var item in versionHashDictionary)
+            var chunkElements = versionHashDictionary.Chunk(5);
+
+            foreach (var chunkElement in chunkElements)
             {
-                builder.Append(item.Value).AppendLine();
+                var str = builder.ToString();
+
+                if (!string.IsNullOrEmpty(str))
+                {
+                    var hash = str.GetHash();
+
+                    builder.Clear();
+
+                    builder.Append(hash).AppendLine();
+                }
+
+                foreach (var element in chunkElement)
+                {
+                    builder.Append(element.Value).AppendLine();
+                }
             }
 
             var allVersionText = builder.ToString();
 
             var rootVersion = allVersionText.GetHash();
+
+            Debug.Log(allVersionText);
 
             return rootVersion;
         }
@@ -385,15 +409,13 @@ namespace Modules.Master
             }
         }
 
-        private static void GenerateMasterVersionFile(string filePath, Dictionary<string, string> versionHashDictionary)
+        private static void GenerateMasterVersionFile(string filePath, IDictionary<string, string> versionHashDictionary)
         {
             var builder = new StringBuilder();
 
             foreach (var item in versionHashDictionary)
             {
-                var masterFileName = Path.GetFileNameWithoutExtension(item.Key);
-
-                builder.AppendFormat("{0}, {1}", masterFileName, item.Value).AppendLine();
+                builder.AppendFormat("{0}, {1}", item.Key, item.Value).AppendLine();
             }
             
             var versionText = builder.ToString();
