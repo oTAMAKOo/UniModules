@@ -124,6 +124,8 @@ namespace Modules.ExternalResource
         private string assetBundleName = null;
         [SerializeField]
         private string[] dependencies = null;
+        [SerializeField]
+        private uint crc = 0;
 
         //----- property -----
 
@@ -131,6 +133,8 @@ namespace Modules.ExternalResource
         public string AssetBundleName { get { return assetBundleName; } }
         /// <summary> 依存関係 </summary>
         public string[] Dependencies { get { return dependencies; } }
+        /// <summary> CRC-32 チェックサム </summary>
+        public uint CRC { get { return crc; } }
 
         //----- method -----
 
@@ -139,6 +143,11 @@ namespace Modules.ExternalResource
             this.assetBundleName = assetBundleName;
 
             SetDependencies(null);
+        }
+
+        public void SetCRC(uint crc)
+        {
+            this.crc = crc;
         }
 
         public void SetDependencies(string[] dependencies)

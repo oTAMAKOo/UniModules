@@ -632,7 +632,8 @@ namespace Modules.AssetBundles
             AssetBundle assetBundle = null;
 
             var filePath = BuildFilePath(assetInfo);
-            var assetBundleName = assetInfo.AssetBundle.AssetBundleName;
+            var assetBundleInfo = assetInfo.AssetBundle;
+            var assetBundleName = assetBundleInfo.AssetBundleName;
 
             Func<byte[]> loadCacheFile = () =>
             {
@@ -662,8 +663,9 @@ namespace Modules.AssetBundles
             if (loadYield.HasResult)
             {
                 var bytes = loadYield.Result;
+                var crc = assetBundleInfo.CRC;
 
-                var bundleLoadRequest = AssetBundle.LoadFromMemoryAsync(bytes);
+                var bundleLoadRequest = AssetBundle.LoadFromMemoryAsync(bytes, crc);
 
                 while (!bundleLoadRequest.isDone)
                 {
