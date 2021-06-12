@@ -198,7 +198,16 @@ namespace Modules.ExternalResource.Editor
                         // 共有アセットはアセットバンドルのみ対応なので常にアセットバンドル.
                         if (!isShareAsset)
                         {
-                            if (!ignoreType.HasValue || ignoreType != IgnoreType.IgnoreAssetBundle)
+                            var ignoreAssetBundle = ignoreType.HasValue && ignoreType == IgnoreType.IgnoreAssetBundle;
+
+                            if (ignoreAssetBundle)
+                            {
+                                if (ManageInfo.isAssetBundle)
+                                {
+                                    ManageInfo.isAssetBundle = false;
+                                }
+                            }
+                            else
                             {
                                 EditorGUI.BeginChangeCheck();
 
