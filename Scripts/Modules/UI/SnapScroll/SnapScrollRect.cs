@@ -3,14 +3,12 @@ using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.EventSystems;
 using System;
-using System.Linq;
-using System.Collections.Generic;
 using UniRx;
 using Extensions;
 
 namespace Modules.UI
 {
-	public sealed class SnapScrollRect : ScrollRect
+    public sealed class SnapScrollRect : ScrollRect
     {
         //----- params -----
 
@@ -47,6 +45,7 @@ namespace Modules.UI
         public override void OnBeginDrag(PointerEventData eventData)
         {
             base.OnBeginDrag(eventData);
+
             dragging = true;
         }
 

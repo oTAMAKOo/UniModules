@@ -206,7 +206,7 @@ namespace Modules.Master
             }
             catch (Exception e)
             {
-                UnityConsole.Info("Generate master failed. \n{0}", logBuilder.ToString());
+                UnityConsole.Info("Generate master failed. \n\n{0}", logBuilder.ToString());
 
                 Debug.LogException(e);
 

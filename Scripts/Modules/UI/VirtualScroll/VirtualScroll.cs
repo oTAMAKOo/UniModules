@@ -68,7 +68,7 @@ namespace Modules.UI
         private RectTransform scrollRectTransform = null;
         private float itemSize = -1f;
         private float prevScrollPosition = 0f;
-        private Tweener centerToTweener = null;
+        private Tweener centerToTween = null;
 
         private List<VirtualScrollItem<T>> itemList = null;
 
@@ -147,6 +147,16 @@ namespace Modules.UI
             ScrollPosition = 0f;
 
             initialize = Status.Initialize;
+        }
+
+        protected override void OnEnable()
+        {
+            base.OnEnable();
+
+            Observable.EveryUpdate()
+                .TakeUntilDisable(this)
+                .Subscribe(_ => UpdateScroll())
+                .AddTo(this);
         }
 
         public virtual void SetContents(T[] contents)
@@ -325,7 +335,7 @@ namespace Modules.UI
                     new Vector2(0, basePosition - offset) :
                     new Vector2(basePosition + offset, 0);
 
-                updateObservers[i] = UpdateItem(item, i);
+                updateObservers[i] = Observable.Defer(() => UpdateItem(item, i));
             }
 
             //----- 並べ替え -----
@@ -442,16 +452,16 @@ namespace Modules.UI
 
             var currentPosition = scrollRect.content.anchoredPosition;
 
-            if (centerToTweener != null)
+            if (centerToTween != null)
             {
-                centerToTweener.Kill();
-                centerToTweener = null;
+                centerToTween.Kill();
+                centerToTween = null;
             }
 
             switch (direction)
             {
                 case Direction.Vertical:
-                    centerToTweener = DOTween.To(() => currentPosition.y,
+                    centerToTween = DOTween.To(() => currentPosition.y,
                             x => scrollRect.content.anchoredPosition = Vector.SetY(scrollRect.content.anchoredPosition, x),
                             targetPosition.y,
                             duration)
@@ -459,7 +469,7 @@ namespace Modules.UI
                     break;
 
                 case Direction.Horizontal:
-                    centerToTweener = DOTween.To(() => currentPosition.x,
+                    centerToTween = DOTween.To(() => currentPosition.x,
                             x => scrollRect.content.anchoredPosition = Vector.SetX(scrollRect.content.anchoredPosition, x),
                             targetPosition.x,
                             duration)
@@ -467,12 +477,12 @@ namespace Modules.UI
                     break;
             }
 
-            if (centerToTweener == null) { return Observable.ReturnUnit(); }
+            if (centerToTween == null) { return Observable.ReturnUnit(); }
 
-            centerToTweener.Play();
+            centerToTween.Play();
 
             return Observable.EveryUpdate()
-                .SkipWhile(x => centerToTweener.IsPlaying())
+                .SkipWhile(x => centerToTween.IsPlaying())
                 .First()
                 .Do(_ => OnMoveEnd())
                 .AsUnitObservable();
@@ -489,19 +499,19 @@ namespace Modules.UI
                 case Direction.Vertical:
                     {
                         var contentHeight = scrollRect.content.rect.height;
-                        var scrollHeigh = scrollRectTransform.rect.height;
+                        var scrollHeight = scrollRectTransform.rect.height;
 
-                        var top = -contentHeight * 0.5f + scrollHeigh * 0.5f;
-                        var bottom = contentHeight * 0.5f - scrollHeigh * 0.5f;
+                        var top = -contentHeight * 0.5f + scrollHeight * 0.5f;
+                        var bottom = contentHeight * 0.5f - scrollHeight * 0.5f;
 
                         switch (to)
                         {
                             case ScrollTo.First:
-                                scrollToPosition.y += scrollHeigh * 0.5f;
+                                scrollToPosition.y += scrollHeight * 0.5f;
                                 break;
 
                             case ScrollTo.Last:
-                                scrollToPosition.y -= scrollHeigh * 0.5f;
+                                scrollToPosition.y -= scrollHeight * 0.5f;
                                 break;
                         }
 
@@ -632,11 +642,6 @@ namespace Modules.UI
             UpdateScroll();
 
             scrollRect.StopMovement();
-        }
-
-        void Update()
-        {
-            UpdateScroll();
         }
 
         private void UpdateScroll()
