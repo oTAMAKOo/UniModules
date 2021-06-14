@@ -482,11 +482,25 @@ namespace Modules.UI
 
             centerToTween.Play();
 
-            return Observable.EveryUpdate()
-                .SkipWhile(x => centerToTween.IsPlaying())
-                .First()
-                .Do(_ => OnMoveEnd())
-                .AsUnitObservable();
+            return Observable.FromMicroCoroutine(() => WaitTweenEnd()).AsUnitObservable();
+        }
+
+        private IEnumerator WaitTweenEnd()
+        {
+            while (true)
+            {
+                if (centerToTween == null) { break; }
+
+                if (!centerToTween.IsActive()) { break; }
+
+                if (!centerToTween.IsPlaying())
+                {
+                    OnMoveEnd();
+                    break;
+                }
+
+                yield return null;
+            }
         }
 
         private Vector2 GetScrollToPosition(int index, ScrollTo to)

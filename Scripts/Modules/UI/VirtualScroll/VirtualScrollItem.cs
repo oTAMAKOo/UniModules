@@ -1,5 +1,4 @@
-﻿﻿
-using UnityEngine;
+﻿using UnityEngine;
 using System;
 using System.Collections.Generic;
 using Extensions;
@@ -24,13 +23,15 @@ namespace Modules.UI
 
         public int Index { get; private set; }
 
+        public T Content { get; private set; }
+
         public RectTransform RectTransform
         {
             get { return rectTransform ?? (rectTransform = UnityUtility.GetComponent<RectTransform>(gameObject)); }
         }
 
         //----- method -----
-        
+
         public IObservable<Unit> UpdateItem(int index, IReadOnlyList<T> contents)
         {
             Index = index;
@@ -39,7 +40,9 @@ namespace Modules.UI
 
             if (index < 0 || contents.Count <= index) { return Observable.ReturnUnit(); }
 
-            return UpdateContents(contents[index]);
+            Content = contents[index];
+
+            return UpdateContents(Content);
         }
 
         /// <summary> 初期化. </summary>

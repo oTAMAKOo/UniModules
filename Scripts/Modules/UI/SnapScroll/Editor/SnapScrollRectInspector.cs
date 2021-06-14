@@ -24,6 +24,7 @@ namespace Modules.UI
 
             EditorGUILayout.PropertyField(serializedObject.FindProperty("smoothness"));
             EditorGUILayout.PropertyField(serializedObject.FindProperty("fitRange"));
+            EditorGUILayout.PropertyField(serializedObject.FindProperty("offset"));
 
             if (EditorGUI.EndChangeCheck())
             {

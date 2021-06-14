@@ -18,6 +18,8 @@ namespace Modules.UI
         private float smoothness = 10f;
         [SerializeField]
         private float fitRange = 10f;
+        [SerializeField]
+        private Vector2 offset = Vector2.zero;
 
         private GameObject snapTarget = null;
         private Vector3? targetPosition = null;
