@@ -325,6 +325,7 @@ namespace Modules.UI
             // 位置、情報を更新.
             for (var i = 0; i < itemList.Count; i++)
             {
+                var index = i;
                 var item = itemList[i];
 
                 var offset = itemSize * i;
@@ -335,7 +336,7 @@ namespace Modules.UI
                     new Vector2(0, basePosition - offset) :
                     new Vector2(basePosition + offset, 0);
 
-                updateObservers[i] = Observable.Defer(() => UpdateItem(item, i));
+                updateObservers[i] = Observable.Defer(() => UpdateItem(item, index));
             }
 
             //----- 並べ替え -----
