@@ -634,7 +634,7 @@ namespace Modules.AssetBundles
             var filePath = BuildFilePath(assetInfo);
             var assetBundleInfo = assetInfo.AssetBundle;
             var assetBundleName = assetBundleInfo.AssetBundleName;
-
+            
             Func<byte[]> loadCacheFile = () =>
             {
                 var bytes = new byte[0];
@@ -663,9 +663,8 @@ namespace Modules.AssetBundles
             if (loadYield.HasResult)
             {
                 var bytes = loadYield.Result;
-                var crc = assetBundleInfo.CRC;
 
-                var bundleLoadRequest = AssetBundle.LoadFromMemoryAsync(bytes, crc);
+                var bundleLoadRequest = AssetBundle.LoadFromMemoryAsync(bytes, assetBundleInfo.CRC);
 
                 while (!bundleLoadRequest.isDone)
                 {
@@ -673,17 +672,25 @@ namespace Modules.AssetBundles
                 }
 
                 assetBundle = bundleLoadRequest.assetBundle;
-
-                if (assetBundle == null)
-                {
-                    Debug.LogErrorFormat("Failed to load AssetBundle!\nFile : {0}\nAssetBundleName : {1}", filePath, assetBundleName);
-                }
             }
-            else
-            {
-                var message = string.Format("Failed to load AssetBundle!\nFile : {0}\nAssetBundleName : {1}", filePath, assetBundleName);
 
-                throw new Exception(message);
+            // 読み込めなかった時はファイルを削除して次回読み込み時にダウンロードし直す.
+            if (assetBundle == null)
+            {
+                if (File.Exists(filePath))
+                {
+                    File.Delete(filePath);
+                }
+
+                var builder = new StringBuilder();
+
+                builder.Append("Failed to load AssetBundle!").AppendLine();
+                builder.AppendLine();
+                builder.AppendFormat("File : {0}", filePath).AppendLine();
+                builder.AppendFormat("AssetBundleName : {0}", assetBundleName).AppendLine();
+                builder.AppendFormat("CRC : {0}", assetBundleInfo.CRC).AppendLine();
+                
+                throw new Exception(builder.ToString());
             }
 
             observer.OnNext(assetBundle);

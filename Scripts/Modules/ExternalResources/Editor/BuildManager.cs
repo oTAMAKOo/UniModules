@@ -72,6 +72,8 @@ namespace Modules.ExternalResource.Editor
 
                 var manageConfig = ManageConfig.Instance;
 
+                var assetBundlePath = BuildAssetBundle.GetAssetBundleOutputPath();
+
                 using (new DisableStackTraceScope())
                 {
                     var sw = System.Diagnostics.Stopwatch.StartNew();
@@ -112,15 +114,33 @@ namespace Modules.ExternalResource.Editor
 
                     AddBuildTimeLog(logBuilder, sw, "CleanUnUseAssetBundleFiles");
 
+                    //------ 更新予定のパッケージファイルを削除 ------
+
+                    var deleteTargets = await BuildAssetBundle.GetUpdateTargetAssetInfo(assetInfoManifest, cachedFileLastWriteTimeTable);
+
+                    if (deleteTargets.Any())
+                    {
+                        BuildAssetBundle.DeleteUpdateTargetPackage(deleteTargets);
+                    }
+
+                    AddBuildTimeLog(logBuilder, sw, "DeleteUpdateTargetPackage");
+
+                    //------ AssetBundleファイルをパッケージ化 ------
+
+                    var cryptKey = manageConfig.CryptKey;
+                    var cryptIv = manageConfig.CryptIv;
+
+                    await BuildAssetBundlePackage.BuildAllAssetBundlePackage(exportPath, assetBundlePath, assetInfoManifest, cryptKey, cryptIv);
+
+                    AddBuildTimeLog(logBuilder, sw, "BuildPackage");
+
                     //------ ビルド成果物の情報をAssetInfoManifestに書き込み ------
 
-                    var assetBundlePath = BuildAssetBundle.GetAssetBundleOutputPath();
-
-                    AssetInfoManifestGenerator.SetAssetBundleFileInfo(assetBundlePath, assetInfoManifest);
+                    await AssetInfoManifestGenerator.SetAssetBundleFileInfo(assetBundlePath, assetInfoManifest);
 
                     #if ENABLE_CRIWARE_ADX || ENABLE_CRIWARE_SOFDEC
 
-                    AssetInfoManifestGenerator.SetCriAssetFileInfo(exportPath, assetInfoManifest);
+                    await AssetInfoManifestGenerator.SetCriAssetFileInfo(exportPath, assetInfoManifest);
 
                     #endif
 
@@ -146,25 +166,11 @@ namespace Modules.ExternalResource.Editor
 
                     AddBuildTimeLog(logBuilder, sw, "Rebuild AssetInfoManifest");
 
-                    //------ 更新予定のパッケージファイルを削除 ------
+                    //------ AssetInfoManifestファイルをパッケージ化 ------
 
-                    var deleteTargets = await BuildAssetBundle.GetUpdateTargetAssetInfo(assetInfoManifest, cachedFileLastWriteTimeTable);
+                    await BuildAssetBundlePackage.BuildAssetInfoManifestPackage(exportPath, assetBundlePath, cryptKey, cryptIv);
 
-                    if (deleteTargets.Any())
-                    {
-                        BuildAssetBundle.DeleteUpdateTargetPackage(deleteTargets);
-                    }
-
-                    AddBuildTimeLog(logBuilder, sw, "DeleteUpdateTargetPackage");
-
-                    //------ AssetBundleファイルをパッケージ化 ------
-
-                    var cryptKey = manageConfig.CryptKey;
-                    var cryptIv = manageConfig.CryptIv;
-
-                    await BuildAssetBundle.BuildPackage(exportPath, assetInfoManifest, cryptKey, cryptIv);
-
-                    AddBuildTimeLog(logBuilder, sw, "BuildPackage");
+                    AddBuildTimeLog(logBuilder, sw, "BuildPackage AssetInfoManifest");
                 }
 
                 versionHash = assetInfoManifest.VersionHash;

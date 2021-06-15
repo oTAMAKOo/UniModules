@@ -2,13 +2,15 @@
 using UnityEngine;
 using UnityEditor;
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using UniRx;
+using System.Threading.Tasks;
 using Extensions;
 using Extensions.Devkit;
 using Modules.Devkit.Generators;
 using Modules.Devkit.Project;
+using Modules.AssetBundles;
 
 #if ENABLE_CRIWARE_ADX || ENABLE_CRIWARE_SOFDEC
 
@@ -74,13 +76,11 @@ namespace Modules.ExternalResource.Editor
             }
         }
 
-        public static void SetAssetBundleFileInfo(string exportPath, AssetInfoManifest assetInfoManifest)
+        public static async Task SetAssetBundleFileInfo(string exportPath, AssetInfoManifest assetInfoManifest)
         {
-            var progress = new ScheduledNotifier<Tuple<string,float>>();
-
-            progress.Subscribe(x => EditorUtility.DisplayProgressBar("Update AssetBundle file info", x.Item1, x.Item2));
-
             var assetInfos = Reflection.GetPrivateField<AssetInfoManifest, AssetInfo[]>(assetInfoManifest, "assetInfos");
+
+            var tasks = new List<Task>();
             
             for (var i = 0; i < assetInfos.Length; i++)
             {
@@ -92,16 +92,25 @@ namespace Modules.ExternalResource.Editor
 
                 var filePath = PathUtility.Combine(new string[] { exportPath, assetBundleName });
 
+                // CRC設定.
+
                 BuildPipeline.GetCRCForAssetBundle(filePath, out var crc);
 
                 assetInfo.AssetBundle.SetCRC(crc);
 
-                BuildPipeline.GetHashForAssetBundle(filePath, out var hash);
-                
-                assetInfo.SetFileInfo(filePath, hash.ToString());
+                // ファイルハッシュ・ファイルサイズ設定.
 
-                progress.Report(Tuple.Create(assetInfo.ResourcePath, (float)i / assetInfos.Length));
+                var packageFilePath = Path.ChangeExtension(filePath, AssetBundleManager.PackageExtension);
+
+                var task = Task.Run(() =>
+                {
+                    assetInfo.SetFileInfo(packageFilePath);
+                });
+
+                tasks.Add(task);
             }
+
+            await Task.WhenAll(tasks);
 
             Reflection.SetPrivateField(assetInfoManifest, "assetInfos", assetInfos);
 
@@ -114,13 +123,11 @@ namespace Modules.ExternalResource.Editor
 
         #if ENABLE_CRIWARE_ADX || ENABLE_CRIWARE_SOFDEC
 
-        public static void SetCriAssetFileInfo(string exportPath, AssetInfoManifest assetInfoManifest)
+        public static async Task SetCriAssetFileInfo(string exportPath, AssetInfoManifest assetInfoManifest)
         {
-            var progress = new ScheduledNotifier<Tuple<string, float>>();
-
-            progress.Subscribe(prog => EditorUtility.DisplayProgressBar("Update cri file info", prog.Item1, prog.Item2));
-
             var assetInfos = Reflection.GetPrivateField<AssetInfoManifest, AssetInfo[]>(assetInfoManifest, "assetInfos");
+
+            var tasks = new List<Task>();
 
             for (var i = 0; i < assetInfos.Length; i++)
             {
@@ -129,20 +136,21 @@ namespace Modules.ExternalResource.Editor
                 if (assetInfo.IsAssetBundle) { continue; }
 
                 var extension = Path.GetExtension(assetInfo.FileName);
-
-                var filePath = string.Empty;
-
+                
                 if (CriAssetDefinition.AssetAllExtensions.Any(x => x == extension))
                 {
-                    filePath = PathUtility.Combine(new string[] { exportPath, assetInfo.FileName });
+                    var filePath = PathUtility.Combine(new string[] { exportPath, assetInfo.FileName });
+
+                    var task = Task.Run(() =>
+                    {
+                        assetInfo.SetFileInfo(filePath);
+                    });
+
+                    tasks.Add(task);
                 }
-
-                var fileHash = FileUtility.GetHash(filePath);
-
-                assetInfo.SetFileInfo(filePath, fileHash);
-
-                progress.Report(Tuple.Create(assetInfo.ResourcePath, (float)i / assetInfos.Length));
             }
+
+            await Task.WhenAll(tasks);
 
             Reflection.SetPrivateField(assetInfoManifest, "assetInfos", assetInfos);
 

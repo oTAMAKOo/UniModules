@@ -21,7 +21,18 @@ namespace Modules.AssetBundles.Editor
 
         //----- method -----
 
-        public static async Task Build(string exportPath, string assetBundlePath, AssetInfoManifest assetInfoManifest, string aesKey, string aesIv)
+        public static async Task BuildAssetInfoManifestPackage(string exportPath, string assetBundlePath, string aesKey, string aesIv)
+        {
+            var assetInfo = AssetInfoManifest.GetManifestAssetInfo();
+
+            var cryptKey = new AesCryptKey(aesKey, aesIv);
+
+            var task = CreateBuildTask(exportPath, assetBundlePath, assetInfo, cryptKey);
+
+            await task;
+        }
+
+        public static async Task BuildAllAssetBundlePackage(string exportPath, string assetBundlePath, AssetInfoManifest assetInfoManifest, string aesKey, string aesIv)
         {
             var assetInfos = assetInfoManifest.GetAssetInfos()
                 .Where(x => x.IsAssetBundle)
@@ -29,8 +40,6 @@ namespace Modules.AssetBundles.Editor
                 .GroupBy(x => x.AssetBundle.AssetBundleName)
                 .Select(x => x.FirstOrDefault())
                 .ToList();
-
-            assetInfos.Add(AssetInfoManifest.GetManifestAssetInfo());
 
             var cryptKey = new AesCryptKey(aesKey, aesIv);
 
@@ -42,31 +51,43 @@ namespace Modules.AssetBundles.Editor
 
                 if (assetInfo == null) { continue; }
 
-                var task = Task.Run(async () =>
+                var task = CreateBuildTask(exportPath, assetBundlePath, assetInfo, cryptKey);
+
+                if (task != null)
                 {
-                    try
-                    {
-                        // アセットバンドルファイルパス.
-                        var assetBundleFilePath = PathUtility.Combine(assetBundlePath, assetInfo.AssetBundle.AssetBundleName);
-
-                        // 更新があったパッケージを作成.
-                        await CreatePackage(assetBundleFilePath, cryptKey);
-
-                        // 出力先にパッケージファイルをコピー.
-                        await ExportPackage(exportPath, assetBundleFilePath, assetInfo);
-                    }
-                    catch (Exception exception)
-                    {
-                        Debug.LogException(exception);
-                    }
-                });
-
-                tasks.Add(task);
+                    tasks.Add(task);
+                }
             }
 
             await Task.WhenAll(tasks);
         }
-    
+
+        private static Task CreateBuildTask(string exportPath, string assetBundlePath, AssetInfo assetInfo, AesCryptKey cryptKey)
+        {
+            if (assetInfo == null) { return null; }
+
+            var task = Task.Run(async () =>
+            {
+                try
+                {
+                    // アセットバンドルファイルパス.
+                    var assetBundleFilePath = PathUtility.Combine(assetBundlePath, assetInfo.AssetBundle.AssetBundleName);
+
+                    // 更新があったパッケージを作成.
+                    await CreatePackage(assetBundleFilePath, cryptKey);
+
+                    // 出力先にパッケージファイルをコピー.
+                    await ExportPackage(exportPath, assetBundleFilePath, assetInfo);
+                }
+                catch (Exception exception)
+                {
+                    Debug.LogException(exception);
+                }
+            });
+
+            return task;
+        }
+
         /// <summary> パッケージファイル化(暗号化). </summary>
         private static async Task CreatePackage(string assetBundleFilePath, AesCryptKey cryptKey)
         {

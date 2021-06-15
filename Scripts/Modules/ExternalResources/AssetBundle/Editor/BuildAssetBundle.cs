@@ -348,13 +348,5 @@ namespace Modules.AssetBundles.Editor
                 }
             }
         }
-
-        /// <summary> キャッシュ済みアセットバンドルファイルの最終更新日テーブルを取得 </summary>
-        public static async Task BuildPackage(string exportPath, AssetInfoManifest assetInfoManifest, string aesKey, string aesIv)
-        {
-            var assetBundlePath = GetAssetBundleOutputPath();
-
-            await BuildAssetBundlePackage.Build(exportPath, assetBundlePath, assetInfoManifest, aesKey, aesIv);
-        }
     }
 }
