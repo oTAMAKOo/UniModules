@@ -77,15 +77,26 @@ namespace Modules.AssetBundles.Editor
         /// <summary> アセットのルートハッシュ情報を書き込み </summary>
         public static void SetAssetInfoHash(AssetInfoManifest assetInfoManifest)
         {
-            var allAssetInfos = assetInfoManifest.GetAssetInfos()
+            // 文字数が大きくなりすぎないように300ファイル分毎に分割.
+            var chunkInfos = assetInfoManifest.GetAssetInfos()
                 .OrderBy(x => x.ResourcePath.Length)
+                .Chunk(300)
                 .ToArray();
 
             var versionHashBuilder = new StringBuilder();
 
-            foreach (var assetInfo in allAssetInfos)
+            foreach (var assetInfos in chunkInfos)
             {
-                versionHashBuilder.Append(assetInfo.FileHash).AppendLine();
+                var hashBuilder = new StringBuilder();
+
+                foreach (var assetInfo in assetInfos)
+                {
+                    hashBuilder.AppendLine(assetInfo.FileHash);
+                }
+
+                var hash = hashBuilder.ToString().GetHash();
+
+                versionHashBuilder.AppendLine(hash);
             }
 
             var versionHash = versionHashBuilder.ToString().GetHash();
