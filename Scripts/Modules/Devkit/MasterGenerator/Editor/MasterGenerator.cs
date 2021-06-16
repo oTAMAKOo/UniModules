@@ -368,26 +368,10 @@ namespace Modules.Master
         private static string GetRootVersion(IDictionary<string, string> versionHashDictionary)
         {
             var builder = new StringBuilder();
-
-            var chunkElements = versionHashDictionary.Chunk(5);
-
-            foreach (var chunkElement in chunkElements)
+            
+            foreach (var item in versionHashDictionary)
             {
-                var str = builder.ToString();
-
-                if (!string.IsNullOrEmpty(str))
-                {
-                    var hash = str.GetHash();
-
-                    builder.Clear();
-
-                    builder.Append(hash).AppendLine();
-                }
-
-                foreach (var element in chunkElement)
-                {
-                    builder.Append(element.Value).AppendLine();
-                }
+                builder.Append(item.Value).AppendLine();
             }
 
             var allVersionText = builder.ToString();
