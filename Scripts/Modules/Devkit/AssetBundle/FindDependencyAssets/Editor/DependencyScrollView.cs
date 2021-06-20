@@ -2,15 +2,20 @@
 using UnityEngine;
 using UnityEditor;
 using System.Linq;
-using System.Collections.Generic;
-using UniRx;
-using Extensions;
 using Extensions.Devkit;
+using Modules.ObjectCache;
+
+using Object = UnityEngine.Object;
 
 namespace Modules.Devkit.AssetBundles
 {
     public sealed class DependencyScrollView : EditorGUIFastScrollView<FindDependencyAssetsWindow.AssetBundleInfo>
     {
+        private ObjectCache<Object> assetCache = null;
+
+        private EditorLayoutTools.TitleGUIStyle assetTitleGuiStyle = null;
+        private EditorLayoutTools.TitleGUIStyle dependentTitleGuiStyle = null;
+
         public override Direction Type
         {
             get { return Direction.Vertical; }
@@ -26,19 +31,24 @@ namespace Modules.Devkit.AssetBundles
                 {
                     if (content.Assets.Any())
                     {
-                        foreach (var asset in content.Assets)
+                        foreach (var assetPath in content.Assets)
                         {
+                            var asset = GetAsset(assetPath);
+
                             using (new EditorGUILayout.HorizontalScope())
                             {
-                                var titleStyle = new EditorLayoutTools.TitleGUIStyle
+                                if (assetTitleGuiStyle == null)
                                 {
-                                    backgroundColor = new Color(0.9f, 0.4f, 0.4f, 0.3f),
-                                    alignment = TextAnchor.MiddleCenter,
-                                    fontStyle = FontStyle.Bold,
-                                    width = 90f,
-                                };
+                                    assetTitleGuiStyle = new EditorLayoutTools.TitleGUIStyle
+                                    {
+                                        backgroundColor = new Color(0.9f, 0.4f, 0.4f, 0.3f),
+                                        alignment = TextAnchor.MiddleCenter,
+                                        fontStyle = FontStyle.Bold,
+                                        width = 90f,
+                                    };
+                                }
 
-                                EditorLayoutTools.Title("Asset", titleStyle);
+                                EditorLayoutTools.Title("Asset", assetTitleGuiStyle);
 
                                 EditorGUILayout.ObjectField("", asset, typeof(Object), false, GUILayout.Width(250f));
                             }
@@ -47,19 +57,24 @@ namespace Modules.Devkit.AssetBundles
 
                     if (content.DependentAssets.Any())
                     {
-                        foreach (var dependentAsset in content.DependentAssets)
+                        foreach (var dependentAssetPath in content.DependentAssets)
                         {
+                            var dependentAsset = GetAsset(dependentAssetPath);
+
                             using (new EditorGUILayout.HorizontalScope())
                             {
-                                var titleStyle = new EditorLayoutTools.TitleGUIStyle
+                                if (dependentTitleGuiStyle == null)
                                 {
-                                    backgroundColor = new Color(0.4f, 0.4f, 0.9f, 0.5f),
-                                    alignment = TextAnchor.MiddleCenter,
-                                    fontStyle = FontStyle.Bold,
-                                    width = 90f,
-                                };
+                                    dependentTitleGuiStyle = new EditorLayoutTools.TitleGUIStyle
+                                    {
+                                        backgroundColor = new Color(0.4f, 0.4f, 0.9f, 0.5f),
+                                        alignment = TextAnchor.MiddleCenter,
+                                        fontStyle = FontStyle.Bold,
+                                        width = 90f,
+                                    };
+                                }
 
-                                EditorLayoutTools.Title("Dependent", titleStyle);
+                                EditorLayoutTools.Title("Dependent", dependentTitleGuiStyle);
 
                                 EditorGUILayout.ObjectField("", dependentAsset, typeof(Object), false, GUILayout.Width(250f));
                             }
@@ -67,6 +82,29 @@ namespace Modules.Devkit.AssetBundles
                     }
                 }
             }
+        }
+
+        private Object GetAsset(string assetPath)
+        {
+            if (assetCache == null)
+            {
+                assetCache = new ObjectCache<Object>();
+            }
+
+            Object asset = null;
+
+            if (assetCache.HasCache(assetPath))
+            {
+                asset = assetCache.Get(assetPath);
+            }
+            else
+            {
+                asset = AssetDatabase.LoadMainAssetAtPath(assetPath);
+
+                assetCache.Add(assetPath, asset);
+            }
+
+            return asset;
         }
     }
 }

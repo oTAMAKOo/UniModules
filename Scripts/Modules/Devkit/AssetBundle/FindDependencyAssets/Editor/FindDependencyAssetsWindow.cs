@@ -27,12 +27,12 @@ namespace Modules.Devkit.AssetBundles
         public sealed class AssetBundleInfo
         {
             public string AssetBundleName { get; private set; }
-            public Object[] Assets { get; private set; }
-            public Object[] DependentAssets { get; private set; }
+            public string[] Assets { get; private set; }
+            public string[] DependentAssets { get; private set; }
 
             public bool IsOpen { get; set; }
 
-            public AssetBundleInfo(string assetBundleName, Object[] assets, Object[] dependentAssets)
+            public AssetBundleInfo(string assetBundleName, string[] assets, string[] dependentAssets)
             {
                 this.AssetBundleName = assetBundleName;
                 this.Assets = assets;
@@ -44,10 +44,10 @@ namespace Modules.Devkit.AssetBundles
 
         public sealed class AssetReferenceInfo
         {
-            public Object Asset { get; private set; }
-            public Object[] ReferenceAssets { get; private set; }
+            public string Asset { get; private set; }
+            public string[] ReferenceAssets { get; private set; }
 
-            public AssetReferenceInfo(Object asset, Object[] referenceAssets)
+            public AssetReferenceInfo(string asset, string[] referenceAssets)
             {
                 this.Asset = asset;
                 this.ReferenceAssets = referenceAssets;
@@ -63,7 +63,7 @@ namespace Modules.Devkit.AssetBundles
         private ViewType selection = ViewType.Dependencies;
         private DependencyScrollView dependencyScrollView = null;
         private ReferenceScrollView referenceScrollView = null;
-        private bool ignoreDependentAssetbundle = false;
+        private bool ignoreDependentAssetBundle = false;
         private bool ignoreScriptAsset = false;
         private string searchText = string.Empty;
 
@@ -99,11 +99,8 @@ namespace Modules.Devkit.AssetBundles
                 foreach (var item in findDependencyAssets.AssetBundleDependentInfos)
                 {
                     EditorUtility.DisplayProgressBar("Find Dependency", item.Key, (float)count / size);
-
-                    var assets = item.Value.AssetPaths.Select(y => AssetDatabase.LoadMainAssetAtPath(y)).ToArray();
-                    var dependentAssets = item.Value.DependentAssetPaths.Select(y => AssetDatabase.LoadMainAssetAtPath(y)).ToArray();
-
-                    list.Add(new AssetBundleInfo(item.Key, assets, dependentAssets));
+                    
+                    list.Add(new AssetBundleInfo(item.Key, item.Value.AssetPaths, item.Value.DependentAssetPaths));
 
                     count++;
                 }
@@ -129,10 +126,7 @@ namespace Modules.Devkit.AssetBundles
                 {
                     EditorUtility.DisplayProgressBar("Find Reference", item.AssetPath, (float)count / size);
 
-                    var asset = AssetDatabase.LoadMainAssetAtPath(item.AssetPath);
-                    var referenceAssets = item.ReferenceAssetBundles.Select(y => AssetDatabase.LoadMainAssetAtPath(y)).ToArray();
-
-                    list.Add(new AssetReferenceInfo(asset, referenceAssets));
+                    list.Add(new AssetReferenceInfo(item.AssetPath, item.ReferenceAssetBundles.ToArray()));
 
                     count++;
                 }
@@ -162,7 +156,6 @@ namespace Modules.Devkit.AssetBundles
 
             DrawHeader();
             DrawContents();
-            DrawFooter();
         }
 
         private void DrawHeader()
@@ -190,26 +183,18 @@ namespace Modules.Devkit.AssetBundles
                             break;
                     }
                 }
-            }
 
-            EditorGUILayout.Separator();
-        }
+                GUILayout.FlexibleSpace();
 
-        private void DrawFooter()
-        {
-            switch (selection)
-            {
-                case ViewType.Reference:
-                    {
-                        using (new EditorGUILayout.HorizontalScope())
+                switch (selection)
+                {
+                    case ViewType.Reference:
                         {
-                            GUILayout.FlexibleSpace();
-
                             var originLabelWidth = EditorLayoutTools.SetLabelWidth(180f);
 
                             EditorGUI.BeginChangeCheck();
 
-                            ignoreDependentAssetbundle = EditorGUILayout.Toggle("Ignore dependent assetbundle", ignoreDependentAssetbundle);
+                            ignoreDependentAssetBundle = EditorGUILayout.Toggle("Ignore dependent assetbundle", ignoreDependentAssetBundle);
 
                             if (EditorGUI.EndChangeCheck())
                             {
@@ -231,11 +216,13 @@ namespace Modules.Devkit.AssetBundles
 
                             EditorLayoutTools.SetLabelWidth(originLabelWidth);
                         }
-                    }
-                    break;
+                        break;
+                }
             }
-        }
 
+            EditorGUILayout.Space(2f);
+        }
+        
         private void DrawContents()
         {
             var updateSearch = false;
@@ -292,19 +279,15 @@ namespace Modules.Devkit.AssetBundles
         }
 
 
-        private static bool HasAssetBundleName(Object asset)
+        private static bool HasAssetBundleName(string assetPath)
         {
-            var assetPath = AssetDatabase.GetAssetPath(asset);
-
             var assetBundleName = UnityEditorUtility.GetAssetBundleName(assetPath);
 
             return !string.IsNullOrEmpty(assetBundleName);
         }
 
-        private static bool IsScriptAssets(Object asset)
+        private static bool IsScriptAssets(string assetPath)
         {
-            var assetPath = AssetDatabase.GetAssetPath(asset);
-
             return Path.GetExtension(assetPath) == ".cs";
         }
 
@@ -313,7 +296,7 @@ namespace Modules.Devkit.AssetBundles
             // 条件フィルタ.
             var infos = assetReferenceInfo
                 // アセットバンドル名が付いていたら除外.
-                .Where(x => !ignoreDependentAssetbundle || HasAssetBundleName(x.Asset) == false)
+                .Where(x => !ignoreDependentAssetBundle || HasAssetBundleName(x.Asset) == false)
                 // スクリプト(.cs)なら除外.
                 .Where(x => !ignoreScriptAsset || IsScriptAssets(x.Asset) == false)
                 .ToArray();
@@ -329,9 +312,7 @@ namespace Modules.Devkit.AssetBundles
 
             Func<AssetReferenceInfo, bool> filter = info =>
             {
-                var assetPath = AssetDatabase.GetAssetPath(info.Asset);
-
-                return assetPath.IsMatch(keywords);
+                return info.Asset.IsMatch(keywords);
             };
 
             return infos.Where(x => filter(x)).ToArray();
@@ -353,7 +334,7 @@ namespace Modules.Devkit.AssetBundles
                 var result = false;
 
                 result |= info.AssetBundleName.IsMatch(keywords);
-                result |= info.DependentAssets.Any(y => AssetDatabase.GetAssetPath(y).IsMatch(keywords));
+                result |= info.DependentAssets.Any(y => y.IsMatch(keywords));
 
                 return result;
             };
