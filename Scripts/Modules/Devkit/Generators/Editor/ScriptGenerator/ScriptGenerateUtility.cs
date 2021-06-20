@@ -34,8 +34,10 @@ namespace Modules.Devkit.Generators
         public static bool GenerateScript(string folderPath, string fileName, string script)
         {
             if (!AssetDatabase.IsValidFolder(folderPath)){ return false; }
-            
-            var folder = PathUtility.Combine(Application.dataPath, folderPath);
+
+            var projectPath = UnityPathUtility.GetProjectFolderPath();
+
+            var folder = PathUtility.Combine(projectPath, folderPath);
             
             if (!Directory.Exists(folder))
             {
