@@ -264,73 +264,61 @@ namespace Modules
             CriAssetUpdater.Execute();
         }
 
-        #endif
+#endif
 
         #endregion
 
         //===============================================================
-        //  Tools.
+        //  Cleaner.
         //===============================================================
 
         #region Tools
 
-        protected const string ToolsMenu = MenuRoot + "Tools/";
+        protected const string CleanerMenu = MenuRoot + "Cleaner/";
 
-        [MenuItem(itemName: ToolsMenu + "Cleaner/Clean CanvasRenderer On", priority = 0)]
+        [MenuItem(itemName: CleanerMenu + "Clean CanvasRenderer On", priority = 0)]
         public static void ToggleCanvasRendererCleanerAutoMode()
         {
             CanvasRendererCleaner.Prefs.autoClean = !CanvasRendererCleaner.Prefs.autoClean;
         }
 
-        [MenuItem(itemName: ToolsMenu + "Cleaner/Clean CanvasRenderer On", validate = true)]
+        [MenuItem(itemName: CleanerMenu + "Clean CanvasRenderer On", validate = true)]
         public static bool ToggleCanvasRendererCleanerAutoModeValidate()
         {
-            UnityEditor.Menu.SetChecked(ToolsMenu + "Cleaner/Clean CanvasRenderer On", CanvasRendererCleaner.Prefs.autoClean);
+            UnityEditor.Menu.SetChecked(CleanerMenu + "Clean CanvasRenderer On", CanvasRendererCleaner.Prefs.autoClean);
             return true;
         }
 
-        [MenuItem(itemName: ToolsMenu + "Cleaner/Clean Text On", priority = 1)]
+        [MenuItem(itemName: CleanerMenu + "Clean Text On", priority = 1)]
         public static void ToggleTextCleanerAutoMode()
         {
             TextComponentCleaner.Prefs.autoClean = !TextComponentCleaner.Prefs.autoClean;
         }
 
-        [MenuItem(itemName: ToolsMenu + "Cleaner/Clean Text On", validate = true)]
+        [MenuItem(itemName: CleanerMenu + "Clean Text On", validate = true)]
         public static bool ToggleTextCleanerAutoModeValidate()
         {
-            UnityEditor.Menu.SetChecked(ToolsMenu + "Cleaner/Clean Text On", TextComponentCleaner.Prefs.autoClean);
+            UnityEditor.Menu.SetChecked(CleanerMenu + "Clean Text On", TextComponentCleaner.Prefs.autoClean);
             return true;
         }
 
-        [MenuItem(itemName: ToolsMenu + "Cleaner/Clean ParticleSystem On", priority = 2)]
+        [MenuItem(itemName: CleanerMenu + "Clean ParticleSystem On", priority = 2)]
         public static void ToggleParticleSystemCleanerAutoMode()
         {
             TextComponentCleaner.Prefs.autoClean = !ParticleComponentCleaner.Prefs.autoClean;
         }
 
-        [MenuItem(itemName: ToolsMenu + "Cleaner/Clean ParticleSystem On", validate = true)]
+        [MenuItem(itemName: CleanerMenu + "Clean ParticleSystem On", validate = true)]
         public static bool ToggleParticleSystemCleanerAutoModeValidate()
         {
-            UnityEditor.Menu.SetChecked(ToolsMenu + "Cleaner/Clean ParticleSystem On", ParticleComponentCleaner.Prefs.autoClean);
+            UnityEditor.Menu.SetChecked(CleanerMenu + "Clean ParticleSystem On", ParticleComponentCleaner.Prefs.autoClean);
             return true;
         }
 
-        [MenuItem(itemName: ToolsMenu + "Cleaner/Execute Clean Scene", priority = 20)]
+        [MenuItem(itemName: CleanerMenu + "Execute Clean Scene", priority = 20)]
         public static void ExecComponentCleaner()
         {
             ComponentCleaner.Execute();
-        }
-
-        [MenuItem(itemName: ToolsMenu + "Open PatternTexturePacker")]
-        public static void OpenPatternTexturePacker()
-        {
-            PatternTexturePacker.Open();
-        }
-
-        [MenuItem(itemName: ToolsMenu + "Open AssetBundleDependencyChecker")]
-        public static void OpenAssetBundleDependency()
-        {
-            FindDependencyAssetsWindow.Open();
         }
 
         #endregion
@@ -464,84 +452,86 @@ namespace Modules
         #endregion
 
         //===============================================================
-        //  Window.
+        //  Tools.
         //===============================================================
 
         #region Windows
 
-        protected const string WindowsMenu = MenuRoot + "Window/";
+        protected const string ToolsMenu = MenuRoot + "Tools/";
 
-        [MenuItem(itemName: WindowsMenu + "Open SceneLaunchWindow", priority = 0)]
+        [MenuItem(itemName: ToolsMenu + "Open SceneLaunchWindow", priority = 0)]
         public static void OpenSceneLaunchWindow()
         {
             SceneLaunchWindow.Open();
         }
 
-        [MenuItem(itemName: WindowsMenu + "Open RaycastViewerWindow", priority = 1)]
+        [MenuItem(itemName: ToolsMenu + "Open RaycastViewerWindow", priority = 1)]
         public static void OpenRaycastViewerWindow()
         {
             RaycastViewerWindow.Open();
         }
 
-        [MenuItem(itemName: WindowsMenu + "Open ProjectPinWindow", priority = 2)]
+        [MenuItem(itemName: ToolsMenu + "Open ProjectPinWindow", priority = 2)]
         public static void OpenProjectPinWindow()
         {
             ProjectPinningWindow.Open();
         }
 
-        [MenuItem(itemName: WindowsMenu + "Open HierarchyPinWindow", priority = 3)]
+        [MenuItem(itemName: ToolsMenu + "Open HierarchyPinWindow", priority = 3)]
         public static void OpenHierarchyPinWindow()
         {
             HierarchyPinningWindow.Open();
         }
 
-        [MenuItem(itemName: WindowsMenu + "Open AssetDependenciesWindow", priority = 4)]
+        [MenuItem(itemName: ToolsMenu + "Open AssetDependenciesWindow", priority = 4)]
         public static void OpenAssetDependenciesWindow()
         {
             AssetDependenciesWindow.Open();
         }
 
-        [MenuItem(itemName: WindowsMenu + "Open CleanDirectoryWindow", priority = 5)]
+        [MenuItem(itemName: ToolsMenu + "Open CleanDirectoryWindow", priority = 5)]
         public static void OpenCleanDirectoryWindow()
         {
             CleanDirectoryWindow.Open();
         }
 
-        [MenuItem(itemName: WindowsMenu + "Open ShaderVariantWindow", priority = 6)]
+        [MenuItem(itemName: ToolsMenu + "Open ShaderVariantWindow", priority = 6)]
         public static void OpenShaderVariantUpdateWindow()
         {
             ShaderVariantUpdateWindow.Open();
         }
 
-        [MenuItem(itemName: WindowsMenu + "Open TextureCheckWindow", priority = 7)]
+        [MenuItem(itemName: ToolsMenu + "Open TextureCheckWindow", priority = 7)]
         public static void OpenTextureAssetWindow()
         {
             TextureAssetWindow.Open();
         }
 
-        [MenuItem(itemName: WindowsMenu + "Open UnityConsoleConfigWindow", priority = 8)]
+        [MenuItem(itemName: ToolsMenu + "Open UnityConsoleConfigWindow", priority = 8)]
         public static void OpenUnityConsoleConfigWindow()
         {
             UnityConsoleConfigWindow.Open();
         }
 
-        [MenuItem(itemName: WindowsMenu + "Open BehaviorControlMonitor", priority = 9)]
+        [MenuItem(itemName: ToolsMenu + "Open BehaviorControlMonitor", priority = 9)]
         public static void OpenBehaviorControlMonitor()
         {
             BehaviorControlMonitor.Open();
         }
 
-        #endregion
+        [MenuItem(itemName: ToolsMenu + "Open PatternTexturePacker", priority = 10)]
+        public static void OpenPatternTexturePacker()
+        {
+            PatternTexturePacker.Open();
+        }
 
-        //===============================================================
-        //  Build.
-        //===============================================================
+        [MenuItem(itemName: ToolsMenu + "Open AssetBundleDependencyChecker", priority = 11)]
+        public static void OpenAssetBundleDependency()
+        {
+            FindDependencyAssetsWindow.Open();
+        }
 
-        #region Build
-
-        protected const string BuildMenu = MenuRoot + "Build/";
-
-        [MenuItem(itemName: BuildMenu + "Open BuiltInAssetsWindow", priority = 50)]
+        [MenuItem(itemName: ToolsMenu + "Open BuiltInAssetsWindow", priority = 12)]
         public static void OpenBuiltInAssetsWindow()
         {
             BuiltInAssetsWindow.Open();

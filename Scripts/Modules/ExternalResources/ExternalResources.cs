@@ -63,9 +63,6 @@ namespace Modules.ExternalResource
         /// <summary> シュミレーションモード (Editorのみ有効). </summary>
         private bool simulateMode = false;
 
-        /// <summary> ローカルモード (Editorのみ有効). </summary>
-        private bool localMode = false;
-
         /// <summary> 外部アセットディレクトリ. </summary>
         public string resourceDirectory = null;
         /// <summary> 共有外部アセットディレクトリ. </summary>
@@ -94,6 +91,9 @@ namespace Modules.ExternalResource
             get { return Instance != null && Instance.initialized; }
         }
 
+        /// <summary> ローカルモード. </summary>
+        public bool LocalMode { get; private set; }
+
         /// <summary> ダウンロード先. </summary>
         public string InstallDirectory { get; private set; }
 
@@ -107,11 +107,10 @@ namespace Modules.ExternalResource
             LogEnable = true;
         }
 
-        public void Initialize(string resourceDirectory, string shareDirectory, bool localMode = false)
+        public void Initialize(string resourceDirectory, string shareDirectory)
         {
             if (initialized) { return; }
 
-            this.localMode = localMode;
             this.resourceDirectory = resourceDirectory;
             this.shareDirectory = shareDirectory;
 
@@ -128,7 +127,7 @@ namespace Modules.ExternalResource
 
             // AssetBundleManager初期化.
             assetBundleManager = AssetBundleManager.CreateInstance();
-            assetBundleManager.Initialize(MaxDownloadCount, localMode, simulateMode);
+            assetBundleManager.Initialize(MaxDownloadCount, simulateMode);
             assetBundleManager.RegisterYieldCancel(yieldCancel);
             assetBundleManager.OnTimeOutAsObservable().Subscribe(x => OnTimeout(x)).AddTo(Disposable);
             assetBundleManager.OnErrorAsObservable().Subscribe(x => OnError(x)).AddTo(Disposable);
@@ -138,7 +137,7 @@ namespace Modules.ExternalResource
             // CriAssetManager初期化.
 
             criAssetManager = CriAssetManager.CreateInstance();
-            criAssetManager.Initialize(resourceDirectory, MaxDownloadCount, localMode, simulateMode);
+            criAssetManager.Initialize(resourceDirectory, MaxDownloadCount, simulateMode);
             criAssetManager.OnTimeOutAsObservable().Subscribe(x => OnTimeout(x)).AddTo(Disposable);
             criAssetManager.OnErrorAsObservable().Subscribe(x => OnError(x)).AddTo(Disposable);
             
@@ -153,6 +152,21 @@ namespace Modules.ExternalResource
             initialized = true;
         }
 
+        /// <summary> ローカルモード設定. </summary>
+        public void SetLocalMode(bool localMode)
+        {
+            LocalMode = localMode;
+
+            assetBundleManager.SetLocalMode(localMode);
+
+            #if ENABLE_CRIWARE_ADX || ENABLE_CRIWARE_SOFDEC
+
+            criAssetManager.SetLocalMode(localMode);
+
+            #endif
+        }
+
+        /// <summary> 保存先ディレクトリ設定. </summary>
         public void SetInstallDirectory(string directory)
         {
             InstallDirectory = PathUtility.Combine(directory, "ExternalResources");
@@ -249,6 +263,8 @@ namespace Modules.ExternalResource
             DirectoryUtility.Clean(InstallDirectory);
 
             Caching.ClearCache();
+
+            GC.Collect();
         }
 
         public static string DeleteShareResourcePrefix(string resourcePath)
@@ -264,12 +280,12 @@ namespace Modules.ExternalResource
         /// <summary>
         /// マニフェストファイルを更新.
         /// </summary>
-        public IObservable<Unit> UpdateManifest(IProgress<float> progress = null)
+        public IObservable<Unit> UpdateManifest()
         {
-            return Observable.FromCoroutine(() => UpdateManifestInternal(progress));
+            return Observable.FromCoroutine(() => UpdateManifestInternal());
         }
 
-        private IEnumerator UpdateManifestInternal(IProgress<float> progress = null)
+        private IEnumerator UpdateManifestInternal()
         {
             var sw = System.Diagnostics.Stopwatch.StartNew();
 
@@ -327,7 +343,7 @@ namespace Modules.ExternalResource
         /// </summary>
         public static IObservable<Unit> UpdateAsset(string resourcePath, IProgress<float> progress = null)
         {
-            if (instance.localMode) { return Observable.ReturnUnit(); }
+            if (instance.LocalMode) { return Observable.ReturnUnit(); }
 
             if (string.IsNullOrEmpty(resourcePath)) { return Observable.ReturnUnit(); }
 
@@ -482,7 +498,7 @@ namespace Modules.ExternalResource
                 assetPath = PathUtility.Combine(resourceDirectory, resourcePath);
             }
 
-            if (!localMode && !simulateMode)
+            if (!LocalMode && !simulateMode)
             {
                 // ローカルバージョンが古い場合はダウンロード.
                 if (!CheckAssetBundleVersion(assetInfo))
@@ -690,7 +706,7 @@ namespace Modules.ExternalResource
             {
                 var filePath = ConvertCriFilePath(resourcePath);
 
-                if (!localMode && !simulateMode)
+                if (!LocalMode && !simulateMode)
                 {
                     if (!CheckAssetVersion(resourcePath, filePath))
                     {
@@ -763,7 +779,7 @@ namespace Modules.ExternalResource
             {
                 var filePath = ConvertCriFilePath(resourcePath);
 
-                if (!localMode && !simulateMode)
+                if (!LocalMode && !simulateMode)
                 {
                     if (!CheckAssetVersion(resourcePath, filePath))
                     {
