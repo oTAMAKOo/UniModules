@@ -1,26 +1,21 @@
 ﻿// Upgrade NOTE: replaced 'mul(UNITY_MATRIX_MVP,*)' with 'UnityObjectToClipPos(*)'
 
-Shader "Custom/Unlit/AddMultiply" 
+Shader "Custom/Unlit/SoftParticle/AddMultiply" 
 {
     Properties
     {
         _MainTex("Particle Texture", 2D) = "white" {}
         _TintColor("Tint Color", Color) = (0.5,0.5,0.5,0.5)
         _Contrast("Contrast Factor", Range(0.5,1.0)) = 0.1
-
-        _StencilComp("Stencil Comparison", Float) = 8
-        _Stencil("Stencil ID", Float) = 0
-        _StencilOp("Stencil Operation", Float) = 0
-        _StencilWriteMask("Stencil Write Mask", Float) = 255
-        _StencilReadMask("Stencil Read Mask", Float) = 255
-        _ColorMask("Color Mask", Float) = 15
+        _InvFade("Soft Particles Factor", Range(0.01,3.0)) = 1.0
     }
 
     CGINCLUDE
 
     #pragma exclude_renderers gles
     #pragma target 3.0
-    #pragma vertex vert         
+    #pragma vertex vert
+    #pragma multi_compile_particles
     #pragma fragmentoption ARB_precision_hint_fastest
 
     #include "UnityCG.cginc"
@@ -37,6 +32,12 @@ Shader "Custom/Unlit/AddMultiply"
         float4 vertex : POSITION;
         fixed4 color : COLOR;
         float2 texcoord : TEXCOORD0;
+    
+        #ifdef SOFTPARTICLES_ON
+
+        float4 projPos : TEXCOORD1;
+        
+        #endif
     };
 
     float4 _MainTex_ST;
@@ -45,9 +46,18 @@ Shader "Custom/Unlit/AddMultiply"
     {
         v2f o;
         o.vertex = UnityObjectToClipPos(v.vertex);
+
+        #ifdef SOFTPARTICLES_ON
+
+        o.projPos = ComputeScreenPos(o.vertex);
+        COMPUTE_EYEDEPTH(o.projPos.z);
+
+        #endif
     
         o.color = v.color;
         o.texcoord = TRANSFORM_TEX(v.texcoord, _MainTex);
+
+        UNITY_TRANSFER_FOG(o, o.vertex);
 
         return o;
     }
@@ -70,7 +80,6 @@ Shader "Custom/Unlit/AddMultiply"
     }
 
     ENDCG
-
 
     Category
     {
@@ -117,6 +126,16 @@ Shader "Custom/Unlit/AddMultiply"
                     col.g = gain(col.g , _Contrast);
                     col.b = gain(col.b , _Contrast);
 
+                    #ifdef SOFTPARTICLES_ON
+
+                    float sceneZ = LinearEyeDepth(UNITY_SAMPLE_DEPTH(tex2Dproj(_CameraDepthTexture, UNITY_PROJ_COORD(i.projPos))));
+                    float partZ = i.projPos.z;
+                    float fade = saturate(_InvFade * (sceneZ - partZ));
+
+                    col.a *= fade;
+
+                    #endif
+
                     return lerp(half4(1,1,1,1), col, col.a);
                 }
 
@@ -141,7 +160,20 @@ Shader "Custom/Unlit/AddMultiply"
                     col.g = gain(col.g , _Contrast);
                     col.b = gain(col.b , _Contrast);
 
+                    #ifdef SOFTPARTICLES_ON
+
+                    float sceneZ = LinearEyeDepth(UNITY_SAMPLE_DEPTH(tex2Dproj(_CameraDepthTexture, UNITY_PROJ_COORD(i.projPos))));
+                    float partZ = i.projPos.z;
+                    float fade = saturate(_InvFade * (sceneZ - partZ));
+
+                    col.a *= fade;
+
+                    #endif
+
+                    UNITY_APPLY_FOG(i.fogCoord, col);
+
                     return col;
+
                 }
 
                 ENDCG
