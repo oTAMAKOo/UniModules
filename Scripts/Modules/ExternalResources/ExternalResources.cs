@@ -418,13 +418,13 @@ namespace Modules.ExternalResource
 
             UpdateVersion(resourcePath);
 
-            if (onUnloadAsset != null)
+            if (onUpdateAsset != null)
             {
-                onUnloadAsset.OnNext(resourcePath);
+                onUpdateAsset.OnNext(resourcePath);
             }
         }
 
-        private void CancelAllCoroutines()
+        private void CancelAllCoroutine()
         {
             if (yieldCancel != null)
             {
@@ -835,7 +835,7 @@ namespace Modules.ExternalResource
         
         private void OnTimeout(AssetInfo assetInfo)
         {
-            CancelAllCoroutines();
+            CancelAllCoroutine();
 
             if (onTimeOut != null)
             {
@@ -845,7 +845,7 @@ namespace Modules.ExternalResource
 
         private void OnError(Exception exception)
         {
-            CancelAllCoroutines();
+            CancelAllCoroutine();
 
             if (onError != null)
             {
