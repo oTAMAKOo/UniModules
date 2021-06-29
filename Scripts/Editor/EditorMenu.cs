@@ -28,6 +28,7 @@ using Modules.Devkit.SceneLaunch;
 using Modules.Devkit.Hierarchy;
 using Modules.Devkit.AssetTuning;
 using Modules.Devkit.Console;
+using Modules.Devkit.SerializeAssets;
 using Modules.Devkit.U2D;
 
 #if ENABLE_CRIWARE_ADX || ENABLE_CRIWARE_SOFDEC
@@ -269,12 +270,22 @@ namespace Modules
         #endregion
 
         //===============================================================
-        //  Cleaner.
+        //  Utility.
         //===============================================================
 
-        #region Tools
+        #region Utility
 
-        protected const string CleanerMenu = MenuRoot + "Cleaner/";
+        protected const string UtilityMenu = MenuRoot + "Utility/";
+
+        [MenuItem(itemName: UtilityMenu + "ForceReSerialize SelectionAssets", priority = 100)]
+        public static void ForceReSerializeSelectionAssets()
+        {
+            ForceReSerializeAssets.Execute(Selection.objects);
+        }
+
+        #region Cleaner
+
+        protected const string CleanerMenu = UtilityMenu + "Cleaner/";
 
         [MenuItem(itemName: CleanerMenu + "Clean CanvasRenderer On", priority = 0)]
         public static void ToggleCanvasRendererCleanerAutoMode()
@@ -320,6 +331,8 @@ namespace Modules
         {
             ComponentCleaner.Execute();
         }
+
+        #endregion
 
         #endregion
 
