@@ -15,13 +15,15 @@ namespace Modules.TouchEffect
         //----- field -----
 
         [SerializeField]
+        private GameObject rootObject = null;
+        [SerializeField]
         private GameObject touchEffectPrefab = null;
         [SerializeField]
         private GameObject dragEffectPrefab = null;
         [SerializeField]
         private float intervalDistance = 8f;
 
-        private Camera renderCamera = null;
+        protected Camera renderCamera = null;
 
         private GameObject touchEffectRoot = null;
         private GameObject dragEffectRoot = null;
@@ -53,13 +55,13 @@ namespace Modules.TouchEffect
             if (touchEffectPrefab != null)
             {
                 cachedTouchEffects = new Queue<ParticlePlayer>();
-                touchEffectRoot = UnityUtility.CreateEmptyGameObject(gameObject, "Cache (Touch)", true);
+                touchEffectRoot = UnityUtility.CreateEmptyGameObject(rootObject, "Cache (Touch)", true);
             }
 
             if (dragEffectPrefab != null)
             {
                 cachedDragEffects = new Queue<ParticlePlayer>();
-                dragEffectRoot = UnityUtility.CreateEmptyGameObject(gameObject, "Cache (Drag)", true);
+                dragEffectRoot = UnityUtility.CreateEmptyGameObject(rootObject, "Cache (Drag)", true);
             }
 
             isInitialized = true;
@@ -135,11 +137,16 @@ namespace Modules.TouchEffect
                     .AddTo(this);
             }
 
-            var originPosition = renderCamera.ScreenToWorldPoint(screenPosition);
-
-            particleController.transform.position = new Vector3(originPosition.x, originPosition.y);
+            SetTouchEffectPosition(particleController, screenPosition);
 
             particleController.Play().Subscribe().AddTo(this);
+        }
+
+        protected virtual void SetTouchEffectPosition(ParticlePlayer particleController, Vector3 screenPosition)
+        {
+            var originPosition = renderCamera.ScreenToWorldPoint(screenPosition);
+            
+            particleController.transform.position = new Vector3(originPosition.x, originPosition.y);
         }
 
         private void SetDragEffect(Vector3 screenPosition)
