@@ -1,7 +1,5 @@
 ﻿
-using UnityEngine;
 using UnityEditor;
-using Extensions;
 using Extensions.Devkit;
 
 namespace Modules.UI.Particle

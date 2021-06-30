@@ -170,10 +170,8 @@ namespace Modules.TouchEffect
 
                 particleController.OnEndAsObservable().Subscribe(x => cachedDragEffects.Enqueue(x)).AddTo(this);
             }
-
-            var originPosition = renderCamera.ScreenToWorldPoint(screenPosition);
-
-            particleController.transform.position = new Vector3(originPosition.x, originPosition.y);
+            
+            SetTouchEffectPosition(particleController, screenPosition);
 
             particleController.Play().Subscribe().AddTo(this);
         }
