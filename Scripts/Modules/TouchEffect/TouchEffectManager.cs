@@ -1,18 +1,14 @@
 ﻿﻿
 using UnityEngine;
-using Unity.Linq;
-using System;
 using System.Linq;
-using System.Collections;
 using System.Collections.Generic;
 using UniRx;
-using Constants;
 using Extensions;
 using Modules.Particle;
 
 namespace Modules.TouchEffect
 {
-    public class TouchEffectManager<TInstance> : SingletonMonoBehaviour<TInstance> where TInstance : TouchEffectManager<TInstance>, new()
+    public abstract class TouchEffectManager<TInstance> : SingletonMonoBehaviour<TInstance> where TInstance : TouchEffectManager<TInstance>, new()
     {
         //----- params -----
 
@@ -42,13 +38,17 @@ namespace Modules.TouchEffect
 
         public virtual bool IsEnable { get; set; }
 
+        public abstract int TargetLayer { get; }
+
+        public abstract int TargetLayerMask { get; }
+
         //----- method -----
 
         public virtual void Initialize()
         {
             if (isInitialized) { return; }
 
-            renderCamera = UnityUtility.FindCameraForLayer(Layer.Overlap.ToLayerMask()).FirstOrDefault();
+            renderCamera = UnityUtility.FindCameraForLayer(TargetLayerMask).FirstOrDefault();
 
             if (touchEffectPrefab != null)
             {
@@ -122,7 +122,7 @@ namespace Modules.TouchEffect
             {
                 particleController = UnityUtility.Instantiate<ParticlePlayer>(touchEffectRoot, touchEffectPrefab);
 
-                UnityUtility.SetLayer((int)Layer.Overlap, particleController.gameObject, true);
+                UnityUtility.SetLayer(TargetLayer, particleController.gameObject, true);
 
                 // キャッシュ目的なのでDeactiveを指定.
                 particleController.EndActionType = EndActionType.Deactivate;
@@ -156,7 +156,7 @@ namespace Modules.TouchEffect
             {
                 particleController = UnityUtility.Instantiate<ParticlePlayer>(dragEffectRoot, dragEffectPrefab);
 
-                UnityUtility.SetLayer((int)Layer.Overlap, particleController.gameObject, true);
+                UnityUtility.SetLayer(TargetLayer, particleController.gameObject, true);
 
                 // キャッシュ目的なのでDeactiveを指定.
                 particleController.EndActionType = EndActionType.Deactivate;
