@@ -22,7 +22,6 @@ namespace Modules.UI.Particle
         [SerializeField]
         private bool useOverrideMaterial = false;
 
-        private Texture particleTexture = null;
         private Material particleMaterial = null;
 
         private Material originMaterial = null;
@@ -30,6 +29,7 @@ namespace Modules.UI.Particle
         private ParticleSystem.Particle[] particles = null;
 
         private ParticleSystem.TextureSheetAnimationModule textureSheetAnimation;
+        private int? textureSheetAnimationCurrentFrame = null;
         private int textureSheetAnimationFrames = 0;
         private Vector2 textureSheetAnimationFrameSize = Vector2.zero;
 
@@ -45,7 +45,7 @@ namespace Modules.UI.Particle
 
         public override Texture mainTexture
         {
-            get { return particleTexture; }
+            get { return GetMainTexture(); }
         }
         
         public ParticleSystem ParticleSystem
@@ -128,6 +128,35 @@ namespace Modules.UI.Particle
             SetAllDirty();
         }
 
+        private Texture GetMainTexture()
+        {
+            Texture texture = null;
+
+            if (material != null)
+            {
+                texture = material.mainTexture;
+            }
+
+            if (texture == null)
+            {
+                var animModule = textureSheetAnimation;
+
+                if (animModule.enabled && textureSheetAnimationCurrentFrame.HasValue)
+                {
+                    var sprite = animModule.GetSprite(textureSheetAnimationCurrentFrame.Value);
+
+                    texture = sprite.texture;
+                }
+            }
+
+            if (texture == null)
+            {
+                texture = Texture2D.whiteTexture;
+            }
+
+            return texture;
+        }
+
         private void UpdateRenderingSource()
         {
             var particleSystemRenderer = GetParticleSystemRenderer();
@@ -163,8 +192,6 @@ namespace Modules.UI.Particle
             {
                 material = particleSystemRenderer.sharedMaterial;
             }
-
-            particleTexture = material != null && material.mainTexture != null ? material.mainTexture : Texture2D.whiteTexture;
         }
 
         protected override void OnPopulateMesh(VertexHelper vh)
@@ -298,6 +325,8 @@ namespace Modules.UI.Particle
         {
             var result = new Vector4(0, 0, 1, 1);
 
+            textureSheetAnimationCurrentFrame = null;
+
             var animModule = textureSheetAnimation;
 
             if (animModule.enabled)
@@ -339,16 +368,16 @@ namespace Modules.UI.Particle
                         break;
                 }
 
-                var frame = 0f;
+                var frame = 0;
 
                 switch (animModule.animation)
                 {
                     case ParticleSystemAnimationType.WholeSheet:
-                        frame = Mathf.CeilToInt(frameProgress * textureSheetAnimationFrames);
+                        textureSheetAnimationCurrentFrame = Mathf.CeilToInt(frameProgress * textureSheetAnimationFrames);
                         break;
 
                     case ParticleSystemAnimationType.SingleRow:
-                        frame = Mathf.FloorToInt(frameProgress * animModule.numTilesX);
+                        textureSheetAnimationCurrentFrame = Mathf.FloorToInt(frameProgress * animModule.numTilesX);
 
                         var row = animModule.rowIndex;
 
@@ -361,7 +390,7 @@ namespace Modules.UI.Particle
                             UnityEngine.Random.InitState((int)particle.randomSeed);
                             row = UnityEngine.Random.Range(0, animModule.numTilesY);
                         }
-                        frame += row * animModule.numTilesX;
+                        textureSheetAnimationCurrentFrame += row * animModule.numTilesX;
                         break;
                 }
 
@@ -374,6 +403,8 @@ namespace Modules.UI.Particle
                 result.y = (numTiles.y - Mathf.FloorToInt(frame / numTiles.x)) * frameSize.y - frameSize.y;
                 result.z = result.x + frameSize.x;
                 result.w = result.y + frameSize.y;
+
+                textureSheetAnimationCurrentFrame = frame;
             }
 
             return result;
@@ -387,7 +418,7 @@ namespace Modules.UI.Particle
             originMaterial = null;
         }
 
-#region Quad
+        #region Quad
 
         private const float HalfPi = Mathf.PI / 2;
 
@@ -486,9 +517,9 @@ namespace Modules.UI.Particle
             return new Vector2((float)x, (float)y);
         }
 
-#endregion
+        #endregion
 
-#region Cache
+        #region Cache
 
         private Transform GetTransform()
         {
@@ -534,6 +565,6 @@ namespace Modules.UI.Particle
             return mainModuleCache.Value;
         }
 
-#endregion
+        #endregion
     }
 }
