@@ -1,7 +1,7 @@
 ﻿// Upgrade NOTE: replaced 'mul(UNITY_MATRIX_MVP,*)' with 'UnityObjectToClipPos(*)'
 
 
-Shader "Custom/Mask/Unlit/Transparent Alpha" 
+Shader "Custom/Unlit/Transparent Alpha" 
 {
 	Properties
 	{
@@ -45,6 +45,7 @@ Shader "Custom/Mask/Unlit/Transparent Alpha"
 			#pragma vertex vert
 			#pragma fragment frag
 			#pragma multi_compile_fog
+            #pragma multi_compile_local _ UNITY_UI_ALPHACLIP
 
 			#include "UnityCG.cginc"
 
@@ -78,6 +79,13 @@ Shader "Custom/Mask/Unlit/Transparent Alpha"
 			{
 				fixed4 col = tex2D(_MainTex, i.texcoord) * _Color;
 				UNITY_APPLY_FOG(i.fogCoord, col);
+
+                #ifdef UNITY_UI_ALPHACLIP
+
+                clip(col.a - 0.001);
+                
+                #endif
+
 				return col;
 			}
 			ENDCG

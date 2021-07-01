@@ -42,8 +42,6 @@ Shader "Custom/UI/Text-Shadow"
             WriteMask [_StencilWriteMask]
         }
 
-        ColorMask [_ColorMask]
-
 		Cull Off
 		Lighting Off
 		ZWrite Off
@@ -60,9 +58,11 @@ Shader "Custom/UI/Text-Shadow"
 			#pragma vertex vert
 			#pragma fragment frag
 			#pragma multi_compile _PIXELSNAP_ON
+            #pragma multi_compile_local _ UNITY_UI_ALPHACLIP
 
 			#include "UnityCG.cginc"
-			
+            #include "UnityUI.cginc"
+
 			struct appdata_t
 			{
 				float4 vertex   : POSITION;
@@ -124,6 +124,13 @@ Shader "Custom/UI/Text-Shadow"
 			{
 				fixed4 c = SampleSpriteTexture (IN.texcoord) * IN.color;
 				c.rgb *= c.a;
+
+                #ifdef UNITY_UI_ALPHACLIP
+
+                clip(col.a - 0.001);
+                
+                #endif
+
 				return c;
 			}
 
@@ -137,8 +144,10 @@ Shader "Custom/UI/Text-Shadow"
 
             #pragma vertex vert
             #pragma fragment frag
+            #pragma multi_compile_local _ UNITY_UI_ALPHACLIP
 
             #include "UnityCG.cginc"
+            #include "UnityUI.cginc"
 
             struct appdata_t 
             {
@@ -174,6 +183,12 @@ Shader "Custom/UI/Text-Shadow"
                 half a0 = tex2D(_MainTex, i.uv).a;
 
                 col.a *= a0;
+
+                #ifdef UNITY_UI_ALPHACLIP
+
+                clip(col.a - 0.001);
+                
+                #endif
 
                 return col;
             }

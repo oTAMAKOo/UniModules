@@ -149,6 +149,12 @@ Shader "Custom/UI/Text-Shadow (SoftMask)"
                
                 color.a *= SOFTMASK_GET_MASK(i);
 
+                #ifdef UNITY_UI_ALPHACLIP
+
+                clip(color.a - 0.001);
+                
+                #endif
+
                 return color;
 			}
 
@@ -218,6 +224,12 @@ Shader "Custom/UI/Text-Shadow (SoftMask)"
                 half4 color = (tex2D(_MainTex, i.texcoord) + _TextureSampleAdd) * i.color;
                
                 color.a *= SOFTMASK_GET_MASK(i);
+
+                #ifdef UNITY_UI_ALPHACLIP
+
+                clip(color.a - 0.001);
+                
+                #endif
 
                 return color;
             }
