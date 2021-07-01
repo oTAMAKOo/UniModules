@@ -140,7 +140,7 @@ Shader "Custom/GrabPass/Blur"
                     float distortion = _Distortion;
                     distortion = max(1, distortion);
 
-                    fixed4 col = (0, 0, 0, 0);
+                    fixed4 col = fixed4(0, 0, 0, 0);
                     float weight_total = 0;
 
                     for (float y = -distortion; y <= distortion; y += 1)

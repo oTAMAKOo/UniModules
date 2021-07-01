@@ -78,7 +78,7 @@ Shader "Custom/Sprites/Outline-Shadow (SoftMask)"
 
 			#include "UnityCG.cginc"
             #include "UnityUI.cginc"
-            #include "Assets/UnityAssets/SoftMask/Shaders/SoftMask.cginc"
+            #include "Assets/ThirdParty/SoftMask/Shaders/SoftMask.cginc"
 			
 			struct appdata_t
 			{
@@ -177,7 +177,7 @@ Shader "Custom/Sprites/Outline-Shadow (SoftMask)"
 
             #include "UnityCG.cginc"
             #include "UnityUI.cginc"
-            #include "Assets/UnityAssets/SoftMask/Shaders/SoftMask.cginc"
+            #include "Assets/ThirdParty/SoftMask/Shaders/SoftMask.cginc"
 
             struct appdata_t 
             {
@@ -268,7 +268,7 @@ Shader "Custom/Sprites/Outline-Shadow (SoftMask)"
 
             #include "UnityCG.cginc"
             #include "UnityUI.cginc"
-            #include "Assets/UnityAssets/SoftMask/Shaders/SoftMask.cginc"
+            #include "Assets/ThirdParty/SoftMask/Shaders/SoftMask.cginc"
 
             struct appdata_t 
             {
