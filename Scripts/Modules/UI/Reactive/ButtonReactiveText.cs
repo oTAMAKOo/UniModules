@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using UniRx;
 using Extensions;
 using Modules.UI.Extension;
+using UnityEngine.UI;
 
 namespace Modules.UI.Reactive
 {
@@ -87,31 +88,32 @@ namespace Modules.UI.Reactive
         {
             uiText.Text.color = interactable ? enableColor : disableColor;
 
+            var components = UnityUtility.GetComponents<Component>(gameObject).ToArray();
+
             if (useShadow)
             {
-                if (uiText.Shadow != null)
-                {
-                    uiText.Shadow.SetColor(interactable ? enableShadowColor : disableShadowColor);
-                }
+                var shadowComponent = FindComponent<Shadow>(components);
 
-                if (uiText.RichShadow != null)
+                if (shadowComponent != null)
                 {
-                    uiText.RichShadow.effectColor = interactable ? enableShadowColor : disableShadowColor;
+                    shadowComponent.effectColor = interactable ? enableShadowColor : disableShadowColor;
                 }
             }
 
             if (useOutline)
             {
-                if (uiText.Outline != null)
-                {
-                    uiText.Outline.SetColor(interactable ? enableOutlineColor : disableOutlineColor);
-                }
+                var outlineComponent = FindComponent<Outline>(components);
 
-                if (uiText.RichOutline != null)
+                if (outlineComponent != null)
                 {
-                    uiText.RichOutline.effectColor = interactable ? enableOutlineColor : disableOutlineColor;
+                    outlineComponent.effectColor = interactable? enableOutlineColor : disableOutlineColor;
                 }
             }
+        }
+
+        private T FindComponent<T>(IEnumerable<Component> components)
+        {
+            return components.Where(x => x.GetType() == typeof(T)).Cast<T>().FirstOrDefault();
         }
     }
 }

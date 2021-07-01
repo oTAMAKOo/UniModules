@@ -6,6 +6,7 @@ using System.Linq;
 using System.Collections.Generic;
 using Extensions;
 using Modules.UI.TextEffect;
+using TMPro;
 
 namespace Modules.UI.TextColor
 {
@@ -90,52 +91,36 @@ namespace Modules.UI.TextColor
                 textComponent.color = info.textColor;
             }
 
+            var textMeshProComponent = FindComponent<TextMeshProUGUI>(components);
+
+            if (textMeshProComponent != null)
+            {
+                textMeshProComponent.color = info.textColor;
+            }
+
             if (info.hasOutline)
             {
-                var textOutlineComponent = FindComponent<TextOutline>(components);
-
-                if (textOutlineComponent != null)
-                {
-                    textOutlineComponent.SetColor(info.outlineColor);
-                }
-
-                var richTextOutlineComponent = FindComponent<RichTextOutline>(components);
-
-                if (richTextOutlineComponent != null)
-                {
-                    richTextOutlineComponent.effectColor = info.outlineColor;
-                }
-
                 var outlineComponent = FindComponent<Outline>(components);
 
                 if (outlineComponent != null)
                 {
                     outlineComponent.effectColor = info.outlineColor;
                 }
+
+                if (textMeshProComponent != null)
+                {
+                    textMeshProComponent.outlineColor = info.outlineColor;
+                }
             }
 
             if (info.hasShadow)
             {
-                var textShadowComponent = FindComponent<TextShadow>(components);
-
-                if (textShadowComponent != null)
-                {
-                    textShadowComponent.SetColor(info.shadowColor);
-                }
-
-                var richTextShadowComponent = FindComponent<RichTextShadow>(components);
-
-                if (richTextShadowComponent != null)
-                {
-                    richTextShadowComponent.effectColor = info.shadowColor;
-                }
-
                 var shadowComponent = FindComponent<Shadow>(components);
 
                 if (shadowComponent != null)
                 {
                     shadowComponent.effectColor = info.shadowColor;
-                }             
+                }
             }
         }
 

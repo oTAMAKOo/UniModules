@@ -94,7 +94,7 @@ namespace Modules.UI.TextColor
 
                     if (info.hasOutline)
                     {
-                        var hasOutline = HasComponent(components, new Type[] { typeof(Outline), typeof(TextOutline), typeof(RichTextOutline) });
+                        var hasOutline = HasComponent(components, new Type[] { typeof(Outline) });
 
                         if (!hasOutline)
                         {
@@ -104,7 +104,7 @@ namespace Modules.UI.TextColor
 
                     if (info.hasShadow)
                     {
-                        var hasShadow = HasComponent(components, new Type[] { typeof(Shadow), typeof(TextShadow), typeof(RichTextShadow) });
+                        var hasShadow = HasComponent(components, new Type[] { typeof(Shadow) });
 
                         if (!hasShadow)
                         {
