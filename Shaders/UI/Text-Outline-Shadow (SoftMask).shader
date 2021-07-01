@@ -54,8 +54,9 @@ Shader "Custom/UI/Text-Outline-Shadow (SoftMask)"
         Lighting Off
         ZWrite Off
         ZTest[unity_GUIZTestMode]
-        Blend SrcAlpha OneMinusSrcAlpha
         ColorMask[_ColorMask]
+
+        Blend SrcAlpha OneMinusSrcAlpha
 
 		// draw shadow
 		Pass
@@ -72,7 +73,7 @@ Shader "Custom/UI/Text-Outline-Shadow (SoftMask)"
 
 			#include "UnityCG.cginc"
             #include "UnityUI.cginc"
-            #include "Assets/UnityAssets/SoftMask/Shaders/SoftMask.cginc"
+            #include "Assets/ThirdParty/SoftMask/Shaders/SoftMask.cginc"
 			
 			struct appdata_t
 			{
@@ -171,7 +172,7 @@ Shader "Custom/UI/Text-Outline-Shadow (SoftMask)"
 
             #include "UnityCG.cginc"
             #include "UnityUI.cginc"
-            #include "Assets/UnityAssets/SoftMask/Shaders/SoftMask.cginc"
+            #include "Assets/ThirdParty/SoftMask/Shaders/SoftMask.cginc"
 
             struct appdata_t 
             {
@@ -268,7 +269,7 @@ Shader "Custom/UI/Text-Outline-Shadow (SoftMask)"
 
             #include "UnityCG.cginc"
             #include "UnityUI.cginc"
-            #include "Assets/UnityAssets/SoftMask/Shaders/SoftMask.cginc"
+            #include "Assets/ThirdParty/SoftMask/Shaders/SoftMask.cginc"
 
             struct appdata_t 
             {

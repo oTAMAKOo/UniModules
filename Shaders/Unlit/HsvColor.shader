@@ -46,9 +46,10 @@ Shader "Custom/Unlit/HsvColor"
         Cull Off
         Lighting Off
         ZWrite Off
-        ZTest [unity_GUIZTestMode]
+        ZTest[unity_GUIZTestMode]
+        ColorMask[_ColorMask]
+
         Blend SrcAlpha OneMinusSrcAlpha
-        ColorMask [_ColorMask]
 
         Pass
         {

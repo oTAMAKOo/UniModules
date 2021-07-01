@@ -48,9 +48,12 @@ Shader "Custom/UI/Text-Outline-Shadow"
             WriteMask [_StencilWriteMask]
         }
 
-        ColorMask [_ColorMask]
+        Lighting Off
+        Cull Off
+        ZWrite Off
+        ZTest[unity_GUIZTestMode]
+        ColorMask[_ColorMask]
 
-        Lighting Off Cull Off ZTest Always ZWrite Off
         Blend SrcAlpha OneMinusSrcAlpha
 
 		// draw shadow

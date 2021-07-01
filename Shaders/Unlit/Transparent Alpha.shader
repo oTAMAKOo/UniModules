@@ -14,6 +14,7 @@ Shader "Custom/Mask/Unlit/Transparent Alpha"
 		_StencilOp("Stencil Operation", Float) = 0
 		_StencilWriteMask("Stencil Write Mask", Float) = 255
 		_StencilReadMask("Stencil Read Mask", Float) = 255
+
 		_ColorMask("Color Mask", Float) = 15
 	}
 
@@ -23,6 +24,9 @@ Shader "Custom/Mask/Unlit/Transparent Alpha"
 		LOD 100
 
 		ZWrite Off
+        ZTest[unity_GUIZTestMode]
+        ColorMask[_ColorMask]
+
 		Blend SrcAlpha OneMinusSrcAlpha
 
 		// required for UI.Mask

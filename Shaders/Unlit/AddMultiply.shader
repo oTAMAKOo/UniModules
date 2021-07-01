@@ -13,6 +13,7 @@ Shader "Custom/Unlit/AddMultiply"
         _StencilOp("Stencil Operation", Float) = 0
         _StencilWriteMask("Stencil Write Mask", Float) = 255
         _StencilReadMask("Stencil Read Mask", Float) = 255
+
         _ColorMask("Color Mask", Float) = 15
     }
 
@@ -79,7 +80,8 @@ Shader "Custom/Unlit/AddMultiply"
         Cull Off 
         Lighting Off
         ZWrite Off 
-        ColorMask RGB
+        ZTest[unity_GUIZTestMode]
+        ColorMask[_ColorMask]
 
         Fog { Color(0,0,0,0) }
         

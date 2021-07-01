@@ -48,9 +48,10 @@ Shader "Custom/RenderTexture/Transparent RenderTexture"
         Lighting Off
         ZWrite Off
         ZTest[unity_GUIZTestMode]
-        Blend SrcAlpha OneMinusSrcAlpha
         ColorMask[_ColorMask]
-
+            
+        Blend SrcAlpha OneMinusSrcAlpha
+        
         Pass
         {
             Name "Default"
