@@ -101,6 +101,8 @@ namespace Modules.ExternalResource.Editor
 
         public AssetInfo GetAssetInfo(string assetPath, ManageInfo managedInfo = null)
         {
+            assetPath = PathUtility.ConvertPathSeparator(assetPath);
+
             if (IsIgnoreManageAsset(assetPath)){ return null; }
 
             if (managedInfo == null)
@@ -322,14 +324,16 @@ namespace Modules.ExternalResource.Editor
 
                         var resourcePath = assetPath.Substring((resourcesDir + folder).Length);
 
+                        var targetName = resourcePath.Split(PathUtility.PathSeparator).FirstOrDefault(x => !string.IsNullOrEmpty(x));
+
                         switch (manageInfo.assetBundleNamingRule)
                         {
                             case AssetBundleNamingRule.ChildAssetName:
-                                assetBundleName += Path.GetFileNameWithoutExtension(resourcePath);
+                                assetBundleName += Path.GetFileNameWithoutExtension(targetName);
                                 break;
 
                             case AssetBundleNamingRule.PrefixAndChildAssetName:
-                                assetBundleName += manageInfo.assetBundleNameStr + AssetNameSeparator + Path.GetFileNameWithoutExtension(resourcePath);
+                                assetBundleName += manageInfo.assetBundleNameStr + AssetNameSeparator + Path.GetFileNameWithoutExtension(targetName);
                                 break;
                         }
                     }
@@ -352,16 +356,21 @@ namespace Modules.ExternalResource.Editor
 
         public bool IsExternalResourcesTarget(Object[] dropObjects)
         {
+            return CheckResourcesTarget(externalResourcesPath, dropObjects);
+        }
+
+        public bool IsShareResourcesTarget(Object[] dropObjects)
+        {
+            return CheckResourcesTarget(shareResourcesPath, dropObjects);
+        }
+
+        private bool CheckResourcesTarget(string targetPath, Object[] dropObjects)
+        {
             foreach (var dropObject in dropObjects)
             {
                 var path = AssetDatabase.GetAssetPath(dropObject);
 
-                var isTarget = false;
-
-                isTarget |= path.StartsWith(externalResourcesPath);
-                isTarget |= path.StartsWith(shareResourcesPath);
-
-                if (!isTarget) { return false; }
+                if (!path.StartsWith(targetPath)) { return false; }
             }
 
             return true;

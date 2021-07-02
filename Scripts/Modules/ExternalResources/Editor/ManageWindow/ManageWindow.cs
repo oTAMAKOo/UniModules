@@ -134,7 +134,19 @@ namespace Modules.ExternalResource.Editor
                 case EventType.DragUpdated:
                 case EventType.DragPerform:
 
-                    var validate = assetManagement.IsExternalResourcesTarget(DragAndDrop.objectReferences);
+                    var validate = false;
+
+                    if (!string.IsNullOrEmpty(headerView.Category))
+                    {
+                        if (headerView.Category == ExternalResources.ShareCategoryName)
+                        {
+                            validate = assetManagement.IsShareResourcesTarget(DragAndDrop.objectReferences);
+                        }
+                        else
+                        {
+                            validate = assetManagement.IsExternalResourcesTarget(DragAndDrop.objectReferences);
+                        }
+                    }
 
                     DragAndDrop.visualMode = validate ? DragAndDropVisualMode.Copy : DragAndDropVisualMode.Rejected;
 
