@@ -218,7 +218,7 @@ namespace Modules
         {
             var projectFolders = ProjectFolders.Instance;
 
-            ManageWindow.Open(projectFolders.ExternalResourcesPath, projectFolders.ShareResourcesFolder);
+            ManageWindow.Open(projectFolders.ExternalResourcesPath, projectFolders.ShareResourcesPath);
         }
 
         [MenuItem(itemName: ResourcesMenu + "Open AssetNavigationWindow", priority = 13)]

@@ -29,20 +29,29 @@ namespace Modules.Devkit.AssetTuning
         {
             return assetManagement != null;
         }
-        
+
         public override void OnAssetImport(string assetPath)
         {
             var externalResourcesPath = GetExternalResourcesPath();
+            var shareResourcesPath = GetShareResourcesPath();
 
-            if (string.IsNullOrEmpty(externalResourcesPath)){ return; }
-
-            if (assetPath.StartsWith(externalResourcesPath))
+            var targetPaths = new string[]
             {
+                externalResourcesPath,
+                shareResourcesPath,
+            };
+
+            foreach (var targetPath in targetPaths)
+            {
+                if (string.IsNullOrEmpty(targetPath)) { continue; }
+
+                if (!assetPath.StartsWith(targetPath)) { continue; }
+
                 var infos = assetManagement.GetAssetInfos(assetPath);
 
                 foreach (var info in infos)
                 {
-                    ApplyAssetBundleName(externalResourcesPath, info);
+                    ApplyAssetBundleName(externalResourcesPath, shareResourcesPath, info);
                 }
             }
         }
@@ -50,41 +59,51 @@ namespace Modules.Devkit.AssetTuning
         public override void OnAssetMove(string assetPath, string from)
         {
             var externalResourcesPath = GetExternalResourcesPath();
+            var shareResourcesPath = GetShareResourcesPath();
 
-            if (string.IsNullOrEmpty(externalResourcesPath)) { return; }
-
-            // 対象から外れる場合.
-
-            if (from.StartsWith(externalResourcesPath))
+            var targetPaths = new string[]
             {
-                if (!assetPath.StartsWith(externalResourcesPath))
+                externalResourcesPath,
+                shareResourcesPath,
+            };
+
+            foreach (var targetPath in targetPaths)
+            {
+                if (string.IsNullOrEmpty(targetPath)) { continue; }
+
+                // 対象から外れる場合.
+
+                if (from.StartsWith(targetPath))
                 {
-                    assetManagement.SetAssetBundleName(assetPath, string.Empty);
+                    if (!assetPath.StartsWith(targetPath))
+                    {
+                        assetManagement.SetAssetBundleName(assetPath, string.Empty);
+                    }
                 }
-            }
 
-            // 対象に追加される場合.
+                // 対象に追加される場合.
 
-            if (assetPath.StartsWith(externalResourcesPath))
-            {
-                var infos = assetManagement.GetAssetInfos(assetPath);
-
-                foreach (var info in infos)
+                if (assetPath.StartsWith(targetPath))
                 {
-                    ApplyAssetBundleName(externalResourcesPath, info);
+                    var infos = assetManagement.GetAssetInfos(assetPath);
+
+                    foreach (var info in infos)
+                    {
+                        ApplyAssetBundleName(externalResourcesPath, shareResourcesPath, info);
+                    }
                 }
             }
         }
 
-        private void ApplyAssetBundleName(string externalResourcesPath, AssetInfo assetInfo)
+        private void ApplyAssetBundleName(string externalResourcesPath, string shareResourcesPath, AssetInfo assetInfo)
         {
             if (assetInfo == null){ return; }
 
             if (!assetInfo.IsAssetBundle){ return; }
 
             if (assetInfo.AssetBundle == null){ return; }
-
-            var assetPath = PathUtility.Combine(externalResourcesPath, assetInfo.ResourcePath);
+            
+            var assetPath = ExternalResources.GetAssetPathFromAssetInfo(externalResourcesPath, shareResourcesPath, assetInfo);
 
             assetManagement.SetAssetBundleName(assetPath, assetInfo.AssetBundle.AssetBundleName);
         }
@@ -94,6 +113,13 @@ namespace Modules.Devkit.AssetTuning
             var projectFolders = ProjectFolders.Instance;
 
             return projectFolders != null ? projectFolders.ExternalResourcesPath : null;
+        }
+
+        private string GetShareResourcesPath()
+        {
+            var projectFolders = ProjectFolders.Instance;
+
+            return projectFolders != null ? projectFolders.ShareResourcesPath : null;
         }
     }
 }

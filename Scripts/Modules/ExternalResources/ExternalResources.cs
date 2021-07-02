@@ -267,16 +267,6 @@ namespace Modules.ExternalResource
             GC.Collect();
         }
 
-        public static string DeleteShareResourcePrefix(string resourcePath)
-        {
-            if (resourcePath.StartsWith(ShareCategoryPrefix))
-            {
-                resourcePath = resourcePath.Substring(ShareCategoryPrefix.Length);
-            }
-
-            return resourcePath;
-        }
-
         /// <summary>
         /// マニフェストファイルを更新.
         /// </summary>
@@ -437,6 +427,43 @@ namespace Modules.ExternalResource
             }
         }
 
+        public static string GetAssetPathFromAssetInfo(string externalResourcesPath, string shareResourcesPath, AssetInfo assetInfo)
+        {
+            var assetPath = string.Empty;
+
+            if (HasSharePrefix(assetInfo.ResourcePath))
+            {
+                var path = ConvertToShareResourcePath(assetInfo.ResourcePath);
+
+                assetPath = PathUtility.Combine(shareResourcesPath, path);
+            }
+            else
+            {
+                assetPath = PathUtility.Combine(externalResourcesPath, assetInfo.ResourcePath);
+            }
+
+            return assetPath;
+        }
+
+        #region Share
+
+        private static bool HasSharePrefix(string resourcePath)
+        {
+            return resourcePath.StartsWith(ShareCategoryPrefix);
+        }
+
+        private static string ConvertToShareResourcePath(string resourcePath)
+        {
+            if (HasSharePrefix(resourcePath))
+            {
+                resourcePath = resourcePath.Substring(ShareCategoryPrefix.Length);
+            }
+
+            return resourcePath;
+        }
+
+        #endregion
+
         #region AssetBundle
 
         /// <summary> Assetbundleを読み込み (非同期) </summary>
@@ -485,18 +512,7 @@ namespace Modules.ExternalResource
                 yield break;
             }
 
-            var assetPath = string.Empty;
-
-            if (resourcePath.StartsWith(ShareCategoryPrefix))
-            {
-                var shareResourcePath = DeleteShareResourcePrefix(resourcePath);
-
-                assetPath = PathUtility.Combine(shareDirectory, shareResourcePath);
-            }
-            else
-            {
-                assetPath = PathUtility.Combine(resourceDirectory, resourcePath);
-            }
+            var assetPath = GetAssetPathFromAssetInfo(resourceDirectory, shareDirectory, assetInfo);
 
             if (!LocalMode && !simulateMode)
             {

@@ -82,7 +82,7 @@ namespace Modules.ExternalResource.Editor
             if (initialized) { return; }
 
             externalResourcesPath = projectFolders.ExternalResourcesPath;
-            shareResourcesPath = projectFolders.ShareResourcesFolder;
+            shareResourcesPath = projectFolders.ShareResourcesPath;
 
             managedAssets.DeleteInvalidInfo();
 
@@ -404,6 +404,9 @@ namespace Modules.ExternalResource.Editor
 
                 EditorUtility.ClearProgressBar();
             }
+
+            AssetDatabase.RemoveUnusedAssetBundleNames();
+            AssetDatabase.Refresh();
         }
 
         #region ManageInfo

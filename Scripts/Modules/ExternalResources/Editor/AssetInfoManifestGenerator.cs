@@ -168,6 +168,7 @@ namespace Modules.ExternalResource.Editor
             var projectFolders = ProjectFolders.Instance;
 
             var externalResourcesPath = projectFolders.ExternalResourcesPath;
+            var shareResourcesPath = projectFolders.ShareResourcesPath;
 
             var assetInfos = manifest.GetAssetInfos().ToArray();
 
@@ -181,10 +182,10 @@ namespace Modules.ExternalResource.Editor
 
                     EditorUtility.DisplayProgressBar("ApplyAssetBundleName", assetInfo.ResourcePath, (float)i / count);
 
-                    var assetPath = PathUtility.Combine(externalResourcesPath, assetInfo.ResourcePath);
-
                     if (assetInfo.IsAssetBundle)
                     {
+                        var assetPath = ExternalResources.GetAssetPathFromAssetInfo(externalResourcesPath, shareResourcesPath, assetInfo);
+
                         assetManagement.SetAssetBundleName(assetPath, assetInfo.AssetBundle.AssetBundleName);
                     }
                 }

@@ -93,7 +93,7 @@ namespace Modules.ExternalResource.Editor
                 .Subscribe(x => SetDetailView(x))
                 .AddTo(Disposable);
 
-            contentAssetsScrollView = new ContentAssetsScrollView(externalResourcesPath);
+            contentAssetsScrollView = new ContentAssetsScrollView(externalResourcesPath, shareResourcesPath);
             
             BuildContentsInfo(assetManagement); 
         }
@@ -466,22 +466,24 @@ namespace Modules.ExternalResource.Editor
 
     public sealed class ContentAssetsScrollView : EditorGUIFastScrollView<AssetInfo>
     {
-        private Object[] assets = null;
-
         private string externalResourcesPath = null;
+        private string shareResourcesPath = null;
 
+        private Object[] assets = null;
+        
         public override Direction Type { get { return Direction.Vertical; } }
 
-        public ContentAssetsScrollView(string externalResourcesPath)
+        public ContentAssetsScrollView(string externalResourcesPath, string shareResourcesPath)
         {
             this.externalResourcesPath = externalResourcesPath;
+            this.shareResourcesPath = shareResourcesPath;
         }
 
         protected override void OnContentsUpdate()
         {
             Func<AssetInfo, Object> load_asset = info =>
             {
-                var assetPath = PathUtility.Combine(externalResourcesPath, info.ResourcePath);
+                var assetPath = ExternalResources.GetAssetPathFromAssetInfo(externalResourcesPath, shareResourcesPath, info);
 
                 var asset = AssetDatabase.LoadMainAssetAtPath(assetPath);
 

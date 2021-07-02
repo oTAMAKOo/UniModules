@@ -36,7 +36,7 @@ namespace Modules.Devkit.Project
         public string EditorScriptPath { get { return AssetDatabase.GetAssetPath(editorScriptFolder); } }
         public string ResourcesPath { get { return AssetDatabase.GetAssetPath(resourcesFolder); } }
         public string InternalResourcesPath { get { return AssetDatabase.GetAssetPath(internalResourcesFolder); } }
-        public string ShareResourcesFolder { get { return AssetDatabase.GetAssetPath(shareResourcesFolder); } }
+        public string ShareResourcesPath { get { return AssetDatabase.GetAssetPath(shareResourcesFolder); } }
         public string ExternalResourcesPath { get { return AssetDatabase.GetAssetPath(externalResourcesFolder); } }
         public string StreamingAssetPath { get { return AssetDatabase.GetAssetPath(streamingAssetFolder); } }
 
