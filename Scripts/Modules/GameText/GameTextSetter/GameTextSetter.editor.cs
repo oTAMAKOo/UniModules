@@ -1,8 +1,8 @@
 ﻿
 #if UNITY_EDITOR
 
-using System;
 using UnityEngine;
+using UnityEngine.UI;
 using Extensions;
 
 namespace Modules.GameText.Components
@@ -66,6 +66,13 @@ namespace Modules.GameText.Components
             var text = GetDevelopmentText();
 
             ApplyText(text);
+
+            var rt = transform as RectTransform;
+
+            if (rt != null)
+            {
+                LayoutRebuilder.ForceRebuildLayoutImmediate(rt);
+            }
         }
 
         private bool CleanDevelopmentText()

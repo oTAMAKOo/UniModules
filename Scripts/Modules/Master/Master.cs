@@ -268,7 +268,7 @@ namespace Modules.Master
         {
             var container = MessagePackSerializer.Deserialize<TMasterContainer>(bytes, options);
 
-            return container.records;
+            return container != null ? container.records : new TMasterRecord[0];
         }
         
         public IObservable<Tuple<bool, double>> Update(string masterVersion, CancellationToken cancelToken)

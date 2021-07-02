@@ -132,14 +132,20 @@ namespace Modules.TouchEffect
                 particleController.OnEndAsObservable()
                     .Subscribe(endEffect =>
                         {
-                            cachedTouchEffects.Enqueue(endEffect);
+                            if (endEffect != null)
+                            {
+                                cachedTouchEffects.Enqueue(endEffect);
+                            }
                         })
                     .AddTo(this);
             }
 
-            SetTouchEffectPosition(particleController, screenPosition);
+            if (!UnityUtility.IsNull(particleController))
+            {
+                SetTouchEffectPosition(particleController, screenPosition);
 
-            particleController.Play().Subscribe().AddTo(this);
+                particleController.Play().Subscribe().AddTo(this);
+            }
         }
 
         protected virtual void SetTouchEffectPosition(ParticlePlayer particleController, Vector3 screenPosition)

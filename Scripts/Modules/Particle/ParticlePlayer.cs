@@ -368,7 +368,11 @@ namespace Modules.Particle
                 if (State == State.Stop) { break; }                
             }
 
-            EndAction();
+
+            if (!UnityUtility.IsNull(this))
+            {
+                EndAction();
+            }
         }
 
         // 更新.

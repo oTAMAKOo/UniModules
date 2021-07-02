@@ -84,9 +84,9 @@ namespace Modules.UI.Reactive
             }
         }
 
-        private void Apply(bool interactable)
+        private void Apply(bool interactive)
         {
-            uiText.Text.color = interactable ? enableColor : disableColor;
+            uiText.Text.color = interactive ? enableColor : disableColor;
 
             var components = UnityUtility.GetComponents<Component>(gameObject).ToArray();
 
@@ -96,7 +96,7 @@ namespace Modules.UI.Reactive
 
                 if (shadowComponent != null)
                 {
-                    shadowComponent.effectColor = interactable ? enableShadowColor : disableShadowColor;
+                    shadowComponent.effectColor = interactive ? enableShadowColor : disableShadowColor;
                 }
             }
 
@@ -106,14 +106,17 @@ namespace Modules.UI.Reactive
 
                 if (outlineComponent != null)
                 {
-                    outlineComponent.effectColor = interactable? enableOutlineColor : disableOutlineColor;
+                    outlineComponent.effectColor = interactive ? enableOutlineColor : disableOutlineColor;
                 }
             }
         }
 
         private T FindComponent<T>(IEnumerable<Component> components)
         {
-            return components.Where(x => x.GetType() == typeof(T)).Cast<T>().FirstOrDefault();
+            return components.Where(x => x != null)
+                .Where(x => x.GetType() == typeof(T))
+                .Cast<T>()
+                .FirstOrDefault();
         }
     }
 }
