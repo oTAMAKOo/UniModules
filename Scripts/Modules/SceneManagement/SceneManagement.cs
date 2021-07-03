@@ -12,6 +12,7 @@ using Extensions;
 using Constants;
 using Modules.Devkit.Console;
 using Modules.SceneManagement.Diagnostics;
+using Modules.UniRxExtension;
 
 namespace Modules.SceneManagement
 {
@@ -53,7 +54,7 @@ namespace Modules.SceneManagement
 
         private List<ISceneArgument> history = null;
 
-        private IDisposable preLoadDisposable = null;
+        private LifetimeDisposable preLoadDisposable = null;
 
         private Subject<ISceneArgument> onPrepare = null;
         private Subject<ISceneArgument> onPrepareComplete = null;
@@ -578,10 +579,8 @@ namespace Modules.SceneManagement
             UnityConsole.Event(ConsoleEventName, ConsoleEventColor, "{0} → {1} ({2:F2}ms)\n\n{3}", prevScene, nextScene, total, detail);
 
             //====== PreLoad ======
-            
-            preLoadDisposable = PreLoadScene(sceneArgument.PreLoadScenes)
-                .Subscribe(_ => preLoadDisposable = null)
-                .AddTo(Disposable);
+
+            RequestPreLoad(sceneArgument.PreLoadScenes);
         }
 
         #region Scene Additive
@@ -987,7 +986,18 @@ namespace Modules.SceneManagement
 
         #endregion
 
-        #region Scene Preload 
+        #region Scene Preload
+
+        /// <summary> 事前読み込み要求. </summary>
+        public void RequestPreLoad(Scenes[] targetScenes)
+        {
+            if (preLoadDisposable == null)
+            {
+                preLoadDisposable = new LifetimeDisposable();
+            }
+
+            PreLoadScene(targetScenes).Subscribe().AddTo(preLoadDisposable.Disposable);
+        }
 
         private IObservable<Unit> PreLoadScene(Scenes[] targetScenes)
         {
