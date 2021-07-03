@@ -30,8 +30,6 @@ namespace Modules.PatternTexture
         {
             instance = target as PatternImage;
 
-            EditorGUILayout.Separator();
-
             EditorGUI.BeginChangeCheck();
 
             var patternTexture = EditorLayoutTools.ObjectField("PatternTexture", instance.PatternTexture, false);
@@ -42,118 +40,121 @@ namespace Modules.PatternTexture
                 instance.PatternTexture = patternTexture;
             }
 
-            // Color.
-            EditorGUI.BeginChangeCheck();
-
-            var color = EditorGUILayout.ColorField("Color", instance.Color, GUILayout.Height(18f));
-
-            if (EditorGUI.EndChangeCheck())
-            {
-                UnityEditorUtility.RegisterUndo("PatternImageInspector-Undo", instance);
-                instance.Color = color;
-            }
-
-            // Material.
-            EditorGUI.BeginChangeCheck();
-
-            var material = instance.Material.name == "Default UI Material" ? null : instance.Material;
-            material = EditorLayoutTools.ObjectField("Material", material, false, GUILayout.Height(18f));
-
-            if (EditorGUI.EndChangeCheck())
-            {
-                UnityEditorUtility.RegisterUndo("PatternImageInspector-Undo", instance);
-                instance.Material = material;
-            }
-
-            // RaycastTarget.
-
-            var hasAlphaMap = instance.PatternTexture.HasAlphaMap;
-
-            using (new DisableScope(!hasAlphaMap))
-            {
-                EditorGUI.BeginChangeCheck();
-
-                var raycastTarget = EditorGUILayout.Toggle("RaycastTarget", instance.RaycastTarget);
-
-                if (EditorGUI.EndChangeCheck())
-                {
-                    UnityEditorUtility.RegisterUndo("PatternImageInspector-Undo", instance);
-                    instance.RaycastTarget = raycastTarget;
-                }
-            }
-
-            if (!hasAlphaMap)
-            {
-                EditorGUILayout.HelpBox("Require generate alpha map for RaycastTarget", MessageType.Info);
-            }
-
-            // CrossFade.
-            EditorGUI.BeginChangeCheck();
-
-            var crossFade = EditorGUILayout.Toggle("CrossFade", instance.CrossFade, GUILayout.Height(18f));
-
-            if (EditorGUI.EndChangeCheck())
-            {
-                UnityEditorUtility.RegisterUndo("PatternImageInspector-Undo", instance);
-                instance.CrossFade = crossFade;
-            }
-
-            if(instance.CrossFade)
-            {
-                EditorGUI.BeginChangeCheck();
-
-                var crossFadeTime = EditorGUILayout.FloatField("FadeTime", instance.CrossFadeTime, GUILayout.Height(18f));
-
-                if (EditorGUI.EndChangeCheck())
-                {
-                    UnityEditorUtility.RegisterUndo("PatternImageInspector-Undo", instance);
-                    instance.CrossFadeTime = crossFadeTime;
-                }
-            }
-
-            GUILayout.Space(2f);
-
             if (instance.PatternTexture != null)
             {
-                using (new EditorGUILayout.HorizontalScope())
+                // Color.
+                EditorGUI.BeginChangeCheck();
+
+                var color = EditorGUILayout.ColorField("Color", instance.Color, GUILayout.Height(18f));
+
+                if (EditorGUI.EndChangeCheck())
                 {
-                    using (new EditorGUILayout.VerticalScope(GUILayout.Width(76f)))
+                    UnityEditorUtility.RegisterUndo("PatternImageInspector-Undo", instance);
+                    instance.Color = color;
+                }
+
+                // Material.
+                EditorGUI.BeginChangeCheck();
+
+                var material = instance.Material.name == "Default UI Material" ? null : instance.Material;
+                material = EditorLayoutTools.ObjectField("Material", material, false, GUILayout.Height(18f));
+
+                if (EditorGUI.EndChangeCheck())
+                {
+                    UnityEditorUtility.RegisterUndo("PatternImageInspector-Undo", instance);
+                    instance.Material = material;
+                }
+
+                // RaycastTarget.
+
+                var hasAlphaMap = instance.PatternTexture.HasAlphaMap;
+
+                using (new DisableScope(!hasAlphaMap))
+                {
+                    EditorGUI.BeginChangeCheck();
+
+                    var raycastTarget = EditorGUILayout.Toggle("RaycastTarget", instance.RaycastTarget);
+
+                    if (EditorGUI.EndChangeCheck())
                     {
-                        GUILayout.Space(2f);
-
-                        if (EditorLayoutTools.PrefixButton("Sprite", GUILayout.Width(76f), GUILayout.Height(18f)))
-                        {
-                            Action<string> onSelection = x =>
-                            {
-                                instance.PatternName = x;
-
-                                EditorUtility.SetDirty(instance);
-                                InternalEditorUtility.RepaintAllViews();
-                            };
-
-                            var selection = instance.Current != null ? instance.Current.TextureName : null;
-
-                            PatternSpriteSelector.Show(instance.PatternTexture, selection, onSelection, null);
-                        }
-                    }
-
-                    GUILayout.Space(4f);
-
-                    if (instance.Current != null)
-                    {
-                        EditorGUILayout.SelectableLabel(instance.Current.TextureName, EditorStyles.textArea, GUILayout.Height(18f));
+                        UnityEditorUtility.RegisterUndo("PatternImageInspector-Undo", instance);
+                        instance.RaycastTarget = raycastTarget;
                     }
                 }
 
-                if (instance.Current != null)
+                if (!hasAlphaMap)
+                {
+                    EditorGUILayout.HelpBox("Require generate alpha map for RaycastTarget", MessageType.Info);
+                }
+
+                // CrossFade.
+                EditorGUI.BeginChangeCheck();
+
+                var crossFade = EditorGUILayout.Toggle("CrossFade", instance.CrossFade, GUILayout.Height(18f));
+
+                if (EditorGUI.EndChangeCheck())
+                {
+                    UnityEditorUtility.RegisterUndo("PatternImageInspector-Undo", instance);
+                    instance.CrossFade = crossFade;
+                }
+
+                if (instance.CrossFade)
+                {
+                    EditorGUI.BeginChangeCheck();
+
+                    var crossFadeTime = EditorGUILayout.FloatField("FadeTime", instance.CrossFadeTime, GUILayout.Height(18f));
+
+                    if (EditorGUI.EndChangeCheck())
+                    {
+                        UnityEditorUtility.RegisterUndo("PatternImageInspector-Undo", instance);
+                        instance.CrossFadeTime = crossFadeTime;
+                    }
+                }
+
+                GUILayout.Space(2f);
+
+                if (instance.PatternTexture != null)
                 {
                     using (new EditorGUILayout.HorizontalScope())
                     {
-                        GUILayout.Space(EditorGUIUtility.labelWidth);
-
-                        if (GUILayout.Button("SetNativeSize"))
+                        using (new EditorGUILayout.VerticalScope(GUILayout.Width(76f)))
                         {
-                            instance.SetNativeSize();
+                            GUILayout.Space(2f);
+
+                            if (EditorLayoutTools.PrefixButton("Sprite", GUILayout.Width(76f), GUILayout.Height(18f)))
+                            {
+                                Action<string> onSelection = x =>
+                                {
+                                    instance.PatternName = x;
+
+                                    EditorUtility.SetDirty(instance);
+                                    InternalEditorUtility.RepaintAllViews();
+                                };
+
+                                var selection = instance.Current != null ? instance.Current.TextureName : null;
+
+                                PatternSpriteSelector.Show(instance.PatternTexture, selection, onSelection, null);
+                            }
+                        }
+
+                        GUILayout.Space(4f);
+
+                        if (instance.Current != null)
+                        {
+                            EditorGUILayout.SelectableLabel(instance.Current.TextureName, EditorStyles.textArea, GUILayout.Height(18f));
+                        }
+                    }
+
+                    if (instance.Current != null)
+                    {
+                        using (new EditorGUILayout.HorizontalScope())
+                        {
+                            GUILayout.Space(EditorGUIUtility.labelWidth);
+
+                            if (GUILayout.Button("SetNativeSize"))
+                            {
+                                instance.SetNativeSize();
+                            }
                         }
                     }
                 }
