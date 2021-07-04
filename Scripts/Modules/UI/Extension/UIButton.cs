@@ -31,6 +31,40 @@ namespace Modules.UI.Extension
             Button.navigation = navigation;
         }
 
+        #region Button Event Extension
+
+        public IObservable<Unit> OnClickAsObservable()
+        {
+            return component.OnClickAsObservable();
+        }
+
+        public IObservable<Unit> OnPressAsObservable()
+        {
+            return component.OnClickAsObservable();
+        }
+
+        public IObservable<float> OnReleaseAsObservable()
+        {
+            return component.OnReleaseAsObservable();
+        }
+
+        public IObservable<Unit> OnLongPressAsObservable()
+        {
+            return component.OnLongPressAsObservable();
+        }
+
+        public IObservable<float> OnLongPressReleaseAsObservable()
+        {
+            return component.OnLongPressReleaseAsObservable();
+        }
+
+        public IObservable<Unit> OnCancelAsObservable()
+        {
+            return component.OnCancelAsObservable();
+        }
+
+        #endregion
+
         #region Button Action Extension
 
         public void SetLongPressDuration(float duration)
@@ -40,7 +74,7 @@ namespace Modules.UI.Extension
 
         public IDisposable OnClick(Action action)
         {
-            return component.OnClickAsObservable().Subscribe(_ => action()).AddTo(this);
+            return OnClickAsObservable().Subscribe(_ => action()).AddTo(this);
         }
 
         public IDisposable OnPress(Action action)

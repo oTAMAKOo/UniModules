@@ -73,6 +73,12 @@ namespace Modules.CriWare
                     #endif
                 }
 
+                // インゲームプレビュー無効化.
+                if (!Debug.isDebugBuild)
+                {
+                    Initializer.atomConfig.usesInGamePreview = false;
+                }
+
                 // ファイルハンドルの使用数を節約する為、ファイルアクセスが行われるタイミングでのみハンドルを利用するよう変更.
                 // ※ 逐次オープンとなるためファイルアクセスの性能は低下する.
                 Initializer.fileSystemConfig.numberOfBinders = 65535;

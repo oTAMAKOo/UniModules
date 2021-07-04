@@ -3,8 +3,7 @@
 
 using System;
 using UniRx;
-using CriWare;
-using CriWare.CriMana;
+using CriMana;
 using Extensions;
 
 namespace Modules.MovieManagement
