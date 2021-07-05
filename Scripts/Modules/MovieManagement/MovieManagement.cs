@@ -86,6 +86,9 @@ namespace Modules.MovieManagement
             var movieController = UnityUtility.GetOrAddComponent<CriManaMovieControllerForUI>(targetGraphic.gameObject);
 
             movieController.target = targetGraphic;
+            movieController.enabled = true;
+
+            UnityUtility.SetActive(movieController.gameObject, true);
 
             var manaPlayer = movieController.player;
 

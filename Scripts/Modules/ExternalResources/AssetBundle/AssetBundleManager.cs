@@ -114,7 +114,6 @@ namespace Modules.AssetBundles
         /// Initializeで設定した値はstatic変数として保存されます。
         /// </summary>
         /// <param name="maxDownloadCount">同時ダウンロード数</param>
-        /// <param name="localMode"><see cref="installPath"/>のファイルからアセットを取得</param>
         /// <param name="simulateMode">AssetDataBaseからアセットを取得(EditorOnly)</param>
         /// <param name="cryptKey">暗号化キー(Key,IVがModules.ExternalResource.Editor.ManageConfigのAssetのCryptKeyと一致している必要があります.)</param>
         public void Initialize(uint maxDownloadCount, bool simulateMode = false, AesCryptKey cryptKey = null)

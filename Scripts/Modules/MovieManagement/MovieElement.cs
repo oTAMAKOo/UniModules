@@ -65,6 +65,10 @@ namespace Modules.MovieManagement
 
             if (prevStatus != Status && Status == Player.Status.PlayEnd)
             {
+                movieController.enabled = false;
+
+                UnityUtility.SetActive(movieController.gameObject, false);
+
                 if (onFinish != null)
                 {
                     onFinish.OnNext(Unit.Default);
