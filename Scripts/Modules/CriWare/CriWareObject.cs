@@ -2,6 +2,7 @@
 using UnityEngine;
 using CriWare;
 using Extensions;
+using UniRx;
 
 namespace Modules.CriWare
 {
@@ -35,6 +36,17 @@ namespace Modules.CriWare
 
         public void Initialize(string decryptKey)
         {
+            #if ENABLE_CRIWARE_SOFDEC
+
+            // VP9初期化.
+
+            if (CriManaVp9.SupportCurrentPlatform())
+            {
+                CriManaVp9.SetupVp9Decoder();
+            }
+
+            #endif
+
             #if ENABLE_CRIWARE_ADX || ENABLE_CRIWARE_SOFDEC
 
             // CRIの管理GameObject名にリネーム.
@@ -102,11 +114,6 @@ namespace Modules.CriWare
                 ErrorHandler.dontDestroyOnLoad = false;
 
                 UnityUtility.SetActive(errorHandlerObject, true);
-            }
-
-            if(!CriWareInitializer.IsInitialized())
-            {
-                Initializer.Initialize();
             }
 
             #if ENABLE_CRIWARE_FILESYSTEM

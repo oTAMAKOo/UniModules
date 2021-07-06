@@ -834,11 +834,22 @@ namespace Modules.ExternalResource
 
                 filePath = PathUtility.GetPathWithoutExtension(filePath) + CriAssetDefinition.UsmExtension;
 
-                observer.OnNext(File.Exists(filePath) ? new ManaInfo(filePath) : null);
-
-                if (onLoadAsset != null)
+                if (File.Exists(filePath))
                 {
-                    onLoadAsset.OnNext(resourcePath);
+                    var manaInfo = new ManaInfo(filePath);
+
+                    observer.OnNext(manaInfo);
+
+                    if (onLoadAsset != null)
+                    {
+                        onLoadAsset.OnNext(resourcePath);
+                    }
+                }
+                else
+                {
+                    Debug.LogErrorFormat("File not found.\n{0}", filePath);
+
+                    observer.OnError(new FileNotFoundException(filePath));
                 }
             }
 

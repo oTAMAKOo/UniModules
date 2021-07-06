@@ -83,6 +83,11 @@ namespace Modules.MovieManagement
         /// </summary>
         public static MovieElement CreateElement(string moviePath, Graphic targetGraphic, Player.ShaderDispatchCallback shaderOverrideCallBack = null)
         {
+            if (!File.Exists(moviePath))
+            {
+                throw new FileNotFoundException(moviePath);
+            }
+
             var movieController = UnityUtility.GetOrAddComponent<CriManaMovieControllerForUI>(targetGraphic.gameObject);
 
             movieController.target = targetGraphic;
@@ -109,6 +114,8 @@ namespace Modules.MovieManagement
         /// <summary> ExternalResources内や、直接指定での動画再生. </summary>
         public static MovieElement Play(ManaInfo movieInfo, Graphic targetGraphic, Player.ShaderDispatchCallback shaderOverrideCallBack = null)
         {
+            if (movieInfo == null){ return null; }
+
             var moviePath = Path.ChangeExtension(movieInfo.UsmPath, CriAssetDefinition.UsmExtension);
 
             return Play(moviePath, targetGraphic, shaderOverrideCallBack);
@@ -117,11 +124,14 @@ namespace Modules.MovieManagement
         /// <summary> 直接指定での動画再生. </summary>
         public static MovieElement Play(string moviePath, Graphic targetGraphic, Player.ShaderDispatchCallback shaderOverrideCallBack = null)
         {
-            var movieElement = CreateElement(moviePath, targetGraphic, shaderOverrideCallBack);
+            var element = CreateElement(moviePath, targetGraphic, shaderOverrideCallBack);
 
-            movieElement.Player.Start();
+            if (element != null)
+            {
+                element.Player.Start();
+            }
 
-            return movieElement;
+            return element;
         }
 
         #endregion
