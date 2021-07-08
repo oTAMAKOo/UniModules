@@ -12,7 +12,7 @@ namespace Modules.Cache
 
         private SpriteAtlas spriteAtlas = null;
 
-        private ObjectCache<Sprite> spriteCache = null;
+        private Cache<Sprite> spriteCache = null;
 
         //----- property -----
 
@@ -24,7 +24,7 @@ namespace Modules.Cache
         {
             this.spriteAtlas = spriteAtlas;
 
-            spriteCache = new ObjectCache<Sprite>(referenceName);
+            spriteCache = new Cache<Sprite>(referenceName);
         }
 
         public Sprite GetSprite(string spriteName)

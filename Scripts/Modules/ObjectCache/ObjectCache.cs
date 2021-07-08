@@ -9,14 +9,14 @@ namespace Modules.Cache
     /// <summary>
     /// オブジェクトをメモリ上にキャッシュ.
     /// </summary>
-    public sealed class ObjectCache<T> : IDisposable where T : class
+    public sealed class Cache<T> : IDisposable where T : class
     {
         //----- params -----
 
         private sealed class Reference
         {
             public int referenceCount = 0;
-            public ObjectCache<T> cacheInstance = null;
+            public Cache<T> cacheInstance = null;
         }
 
         //----- field -----
@@ -36,7 +36,7 @@ namespace Modules.Cache
 
         //----- method -----
 
-        public ObjectCache(string referenceName = null)
+        public Cache(string referenceName = null)
         {
             this.referenceName = referenceName;
 
@@ -66,7 +66,7 @@ namespace Modules.Cache
             }
         }
 
-        ~ObjectCache()
+        ~Cache()
         {
             Dispose();
         }
@@ -184,9 +184,9 @@ namespace Modules.Cache
             return instance.Keys.Contains(key);
         }
 
-        private ObjectCache<T> GetInstance()
+        private Cache<T> GetInstance()
         {
-            ObjectCache<T> cacheInstance = null;
+            Cache<T> cacheInstance = null;
 
             if (string.IsNullOrEmpty(referenceName))
             {

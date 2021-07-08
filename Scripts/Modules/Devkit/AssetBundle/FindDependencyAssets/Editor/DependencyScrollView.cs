@@ -11,7 +11,7 @@ namespace Modules.Devkit.AssetBundles
 {
     public sealed class DependencyScrollView : EditorGUIFastScrollView<FindDependencyAssetsWindow.AssetBundleInfo>
     {
-        private ObjectCache<Object> assetCache = null;
+        private Cache<Object> assetCache = null;
 
         private EditorLayoutTools.TitleGUIStyle assetTitleGuiStyle = null;
         private EditorLayoutTools.TitleGUIStyle dependentTitleGuiStyle = null;
@@ -88,7 +88,7 @@ namespace Modules.Devkit.AssetBundles
         {
             if (assetCache == null)
             {
-                assetCache = new ObjectCache<Object>();
+                assetCache = new Cache<Object>();
             }
 
             Object asset = null;

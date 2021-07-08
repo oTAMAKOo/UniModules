@@ -10,7 +10,7 @@ namespace Modules.Devkit.AssetBundles
 {
     public sealed class ReferenceScrollView : EditorGUIFastScrollView<FindDependencyAssetsWindow.AssetReferenceInfo>
     {
-        private ObjectCache<Object> assetCache = null;
+        private Cache<Object> assetCache = null;
 
         private EditorLayoutTools.TitleGUIStyle titleGuiStyle = null;
 
@@ -49,7 +49,7 @@ namespace Modules.Devkit.AssetBundles
         {
             if (assetCache == null)
             {
-                assetCache = new ObjectCache<Object>();
+                assetCache = new Cache<Object>();
             }
 
             Object asset = null;

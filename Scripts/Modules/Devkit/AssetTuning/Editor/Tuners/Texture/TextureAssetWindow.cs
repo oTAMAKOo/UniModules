@@ -421,7 +421,7 @@ namespace Modules.Devkit.AssetTuning
         private GUIContent testPassedIcon = null;
         private GUIContent warnIcon = null;
 
-        private ObjectCache<Texture> textureCache = null;
+        private Cache<Texture> textureCache = null;
 
         public TextureAssetWindow.AssetViewMode AssetViewMode { get; set; }
 
@@ -429,7 +429,7 @@ namespace Modules.Devkit.AssetTuning
 
         public TextureAssetInfoScrollView()
         {
-            textureCache = new ObjectCache<Texture>();
+            textureCache = new Cache<Texture>();
         }
 
         protected override void DrawContent(int index, TextureAssetWindow.TextureAssetInfo content)
