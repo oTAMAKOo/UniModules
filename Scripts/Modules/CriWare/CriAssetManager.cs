@@ -236,25 +236,21 @@ namespace Modules.CriWare
         /// <summary>
         /// 指定されたアセットを更新.
         /// </summary>
-        public IObservable<Unit> UpdateCriAsset(string resourcePath, IProgress<float> progress = null)
+        public IObservable<Unit> UpdateCriAsset(AssetInfo assetInfo, IProgress<float> progress = null)
         {
             if (simulateMode) { return Observable.ReturnUnit(); }
 
             if (localMode) { return Observable.ReturnUnit(); }
 
-            if (Path.GetExtension(resourcePath) == CriAssetDefinition.AwbExtension) { return Observable.ReturnUnit(); }
+            var resourcePath = assetInfo.ResourcePath;
+            var extension = Path.GetExtension(assetInfo.ResourcePath);
 
-            var installList = new List<CriAssetInstall>();
-
-            var extension = Path.GetExtension(resourcePath);
-
-            var assetInfo = manifest.GetAssetInfo(resourcePath);
-
-            if (assetInfo == null)
+            if (extension == CriAssetDefinition.AwbExtension)
             {
-                OnError(new FileNotFoundException(string.Format("File NotFound.\n[{0}]", resourcePath)));
                 return Observable.ReturnUnit();
             }
+
+            var installList = new List<CriAssetInstall>();
 
             CriAssetInstall install = null;
 

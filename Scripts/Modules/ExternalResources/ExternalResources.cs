@@ -74,6 +74,11 @@ namespace Modules.ExternalResource
         // Coroutine中断用.
         private YieldCancel yieldCancel = null;
 
+        // 外部制御ハンドラ.
+
+        private IUpdateAssetHandler updateAssetHandler = null;
+        private ILoadAssetHandler loadAssetHandler = null;
+
         // イベント通知.
         private Subject<AssetInfo> onTimeOut = null;
         private Subject<Exception> onError = null;
@@ -333,80 +338,134 @@ namespace Modules.ExternalResource
         /// </summary>
         public static IObservable<Unit> UpdateAsset(string resourcePath, IProgress<float> progress = null)
         {
-            if (instance.LocalMode) { return Observable.ReturnUnit(); }
-
-            if (string.IsNullOrEmpty(resourcePath)) { return Observable.ReturnUnit(); }
-
             return Observable.FromCoroutine(() => instance.UpdateAssetInternal(resourcePath, progress));
         }
 
         private IEnumerator UpdateAssetInternal(string resourcePath, IProgress<float> progress = null)
         {
-            #if ENABLE_CRIWARE_FILESYSTEM
+            if (string.IsNullOrEmpty(resourcePath)) { yield break; }
 
-            var extension = Path.GetExtension(resourcePath);
-            
-            if (CriAssetDefinition.AssetAllExtensions.Any(x => x == extension))
+            var assetInfo = GetAssetInfo(resourcePath);
+
+            if (assetInfo == null)
             {
-                var filePath = ConvertCriFilePath(resourcePath);
+                var exception = new Exception(string.Format("AssetManageInfo not found.\n{0}", resourcePath));
 
-                // ローカルバージョンが最新の場合は更新しない.
-                if (CheckAssetVersion(resourcePath, filePath))
-                {
-                    yield break;
-                }
+                OnError(exception);
 
-                var updateYield = instance.criAssetManager
-                    .UpdateCriAsset(resourcePath, progress)
+                yield break;
+            }
+
+            // 外部処理.
+
+            if (instance.updateAssetHandler != null)
+            {
+                var updateRequestYield = instance.updateAssetHandler
+                    .OnUpdateRequest(assetInfo)
                     .ToYieldInstruction(false, yieldCancel.Token);
 
-                while (!updateYield.IsDone)
+                while (!updateRequestYield.IsDone)
                 {
                     yield return null;
                 }
 
-                if (updateYield.IsCanceled || updateYield.HasError)
+                if (updateRequestYield.HasError)
                 {
+                    OnError(updateRequestYield.Error);
+
                     yield break;
                 }
             }
-            else
-            
-            #endif
 
+            // ローカルモードなら更新しない.
+
+            if (!instance.LocalMode)
             {
-                var assetInfo = GetAssetInfo(resourcePath);
+                #if ENABLE_CRIWARE_FILESYSTEM
 
-                if (assetInfo == null)
+                var extension = Path.GetExtension(resourcePath);
+                
+                if (CriAssetDefinition.AssetAllExtensions.Any(x => x == extension))
                 {
-                    Debug.LogErrorFormat("AssetManageInfo not found.\n{0}", resourcePath);
-                    yield break;
-                }
+                    var filePath = ConvertCriFilePath(resourcePath);
 
-                // ローカルバージョンが最新の場合は更新しない.
-                if (CheckAssetBundleVersion(assetInfo))
-                {
-                    if(progress != null)
+                    // ローカルバージョンが最新の場合は更新しない.
+                    if (CheckAssetVersion(resourcePath, filePath))
                     {
-                        progress.Report(1f);
+                        yield break;
                     }
 
-                    yield break;
+                    var updateYield = instance.criAssetManager
+                        .UpdateCriAsset(assetInfo, progress)
+                        .ToYieldInstruction(false, yieldCancel.Token);
+
+                    while (!updateYield.IsDone)
+                    {
+                        yield return null;
+                    }
+
+                    if (updateYield.IsCanceled || updateYield.HasError)
+                    {
+                        yield break;
+                    }
+                }
+                else
+                
+                #endif
+
+                {
+                    // ローカルバージョンが最新の場合は更新しない.
+                    if (CheckAssetBundleVersion(assetInfo))
+                    {
+                        if(progress != null)
+                        {
+                            progress.Report(1f);
+                        }
+
+                        yield break;
+                    }
+
+                    var updateYield = instance.assetBundleManager
+                        .UpdateAssetBundle(assetInfo, progress)
+                        .ToYieldInstruction(false, yieldCancel.Token);
+
+                    while (!updateYield.IsDone)
+                    {
+                        yield return null;
+                    }
+
+                    if (updateYield.IsCanceled || updateYield.HasError)
+                    {
+                        yield break;
+                    }
                 }
 
-                var updateYield = instance.assetBundleManager
-                    .UpdateAssetBundle(assetInfo, progress)
+                // バージョン更新.
+                UpdateVersion(resourcePath);
+            }
+
+            // 外部処理.
+
+            if (instance.updateAssetHandler != null)
+            {
+                var updateFinishYield = instance.updateAssetHandler
+                    .OnUpdateFinish(assetInfo)
                     .ToYieldInstruction(false, yieldCancel.Token);
 
-                yield return updateYield;
-
-                if (updateYield.IsCanceled || updateYield.HasError)
+                while (!updateFinishYield.IsDone)
                 {
+                    yield return null;
+                }
+
+                if (updateFinishYield.HasError)
+                {
+                    OnError(updateFinishYield.Error);
+
                     yield break;
                 }
             }
 
-            UpdateVersion(resourcePath);
+            // イベント発行.
 
             if (onUpdateAsset != null)
             {
@@ -414,7 +473,7 @@ namespace Modules.ExternalResource
             }
         }
 
-        private void CancelAllCoroutine()
+        public void CancelAll()
         {
             if (yieldCancel != null)
             {
@@ -466,7 +525,7 @@ namespace Modules.ExternalResource
 
         #region AssetBundle
 
-        /// <summary> Assetbundleを読み込み (非同期) </summary>
+        /// <summary> AssetBundleを読み込み (非同期) </summary>
         public static IObservable<T> LoadAsset<T>(string resourcePath, bool autoUnload = true) where T : UnityEngine.Object
         {
             return Observable.FromMicroCoroutine<T>(observer => Instance.LoadAssetInternal(observer, resourcePath, autoUnload));
@@ -482,12 +541,7 @@ namespace Modules.ExternalResource
             {
                 var exception = new Exception("AssetInfoManifest is null.");
 
-                Debug.LogException(exception);
-
-                if (onError != null)
-                {
-                    onError.OnNext(exception);
-                }
+                OnError(exception);
 
                 observer.OnError(exception);
 
@@ -500,17 +554,37 @@ namespace Modules.ExternalResource
             {
                 var exception = new Exception(string.Format("AssetInfo not found.\n{0}", resourcePath));
 
-                Debug.LogException(exception);
-
-                if (onError != null)
-                {
-                    onError.OnNext(exception);
-                }
+                OnError(exception);
 
                 observer.OnError(exception);
 
                 yield break;
             }
+
+            // 外部処理.
+
+            if (instance.loadAssetHandler != null)
+            {
+                var loadRequestYield = instance.loadAssetHandler
+                    .OnLoadRequest(assetInfo)
+                    .ToYieldInstruction(false, yieldCancel.Token);
+
+                while (!loadRequestYield.IsDone)
+                {
+                    yield return null;
+                }
+
+                if (loadRequestYield.HasError)
+                {
+                    OnError(loadRequestYield.Error);
+
+                    observer.OnError(loadRequestYield.Error);
+
+                    yield break;
+                }
+            }
+
+            // 読み込み.
 
             var assetPath = GetAssetPathFromAssetInfo(resourceDirectory, shareDirectory, assetInfo);
 
@@ -531,14 +605,11 @@ namespace Modules.ExternalResource
 
                     if (downloadYield.HasError)
                     {
-                        Debug.LogException(downloadYield.Error);
-
-                        if (onError != null)
-                        {
-                            onError.OnNext(downloadYield.Error);
-                        }
+                        OnError(downloadYield.Error);
 
                         observer.OnError(downloadYield.Error);
+
+                        yield break;
                     }
 
                     sw.Stop();
@@ -572,8 +643,11 @@ namespace Modules.ExternalResource
                 loadingAssets.Add(assetInfo);
             }
 
-            // 読み込み実行 (読み込み中の場合は読み込み待ちのObservableが返る).
+            // 時間計測開始.
+
             sw = System.Diagnostics.Stopwatch.StartNew();
+
+            // 読み込み実行 (読み込み中の場合は読み込み待ちのObservableが返る).
 
             var loadYield = assetBundleManager.LoadAsset<T>(assetInfo, assetPath, autoUnload).ToYieldInstruction();
 
@@ -584,12 +658,39 @@ namespace Modules.ExternalResource
 
             result = loadYield.Result;
 
-            sw.Stop();
+            // 読み込み中リストから外す.
 
             if (loadingAssets.Contains(assetInfo))
             {
                 loadingAssets.Remove(assetInfo);
             }
+
+            // 外部処理.
+
+            if (instance.loadAssetHandler != null)
+            {
+                var loadFinishYield = instance.loadAssetHandler
+                    .OnLoadFinish(assetInfo)
+                    .ToYieldInstruction(false, yieldCancel.Token);
+
+                while (!loadFinishYield.IsDone)
+                {
+                    yield return null;
+                }
+
+                if (loadFinishYield.HasError)
+                {
+                    OnError(loadFinishYield.Error);
+
+                    observer.OnError(loadFinishYield.Error);
+
+                    yield break;
+                }
+            }
+
+            // 時間計測終了.
+
+            sw.Stop();
 
             // 読み込み中だった場合はログを表示しない.
             if (result != null && !isLoading)
@@ -624,13 +725,13 @@ namespace Modules.ExternalResource
             observer.OnCompleted();
         }
 
-        /// <summary> Assetbundleを解放 </summary>
+        /// <summary> AssetBundleを解放 </summary>
         public static void UnloadAssetBundle(string resourcePath)
         {
             Instance.UnloadAssetInternal(resourcePath);
         }
 
-        /// <summary> 全てのAssetbundleを解放 </summary>
+        /// <summary> 全てのAssetBundleを解放 </summary>
         public static void UnloadAllAssetBundles(bool unloadAllLoadedObjects = false)
         {
             Instance.UnloadAllAssetsInternal(unloadAllLoadedObjects);
@@ -651,7 +752,7 @@ namespace Modules.ExternalResource
             Instance.assetBundleManager.UnloadAllAsset(unloadAllLoadedObjects);
         }
 
-        /// <summary> 読み込み済みAssetbundle一覧取得 </summary>
+        /// <summary> 読み込み済みAssetBundle一覧取得 </summary>
         public static Tuple<string, int>[] GetLoadedAssets()
         {
             return Instance.assetBundleManager.GetLoadedAssetBundleNames();
@@ -859,11 +960,23 @@ namespace Modules.ExternalResource
         #endif
 
         #endregion
-        
+
+        #region Extend Handler
+
+        public void SetUpdateAssetHandler(IUpdateAssetHandler handler)
+        {
+            this.updateAssetHandler = handler;
+        }
+
+        public void SetLoadAssetHandler(ILoadAssetHandler handler)
+        {
+            this.loadAssetHandler = handler;
+        }
+
+        #endregion
+
         private void OnTimeout(AssetInfo assetInfo)
         {
-            CancelAllCoroutine();
-
             if (onTimeOut != null)
             {
                 onTimeOut.OnNext(assetInfo);
@@ -872,7 +985,7 @@ namespace Modules.ExternalResource
 
         private void OnError(Exception exception)
         {
-            CancelAllCoroutine();
+            Debug.LogException(exception);
 
             if (onError != null)
             {
