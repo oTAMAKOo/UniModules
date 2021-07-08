@@ -4,7 +4,7 @@ using UnityEngine.U2D;
 using System;
 using UniRx;
 using Extensions;
-using Modules.ObjectCache;
+using Modules.Cache;
 
 namespace Modules.U2D
 {

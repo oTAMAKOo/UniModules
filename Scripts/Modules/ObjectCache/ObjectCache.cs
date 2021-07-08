@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Extensions;
 
-namespace Modules.ObjectCache
+namespace Modules.Cache
 {
     /// <summary>
     /// オブジェクトをメモリ上にキャッシュ.

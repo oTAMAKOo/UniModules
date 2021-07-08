@@ -2,7 +2,7 @@
 using UnityEngine;
 using UnityEngine.U2D;
 
-namespace Modules.ObjectCache
+namespace Modules.Cache
 {
     public sealed class SpriteAtlasCache
     {
