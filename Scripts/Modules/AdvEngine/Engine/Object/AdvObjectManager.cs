@@ -105,14 +105,14 @@ namespace Modules.AdvKit
 
             advObjects.Remove(identifier);
 
-            UnityUtility.SafeDelete(advObject);
+            UnityUtility.DeleteGameObject(advObject);
         }
 
         public void DeleteAll()
         {
             foreach (var item in advObjects.Values)
             {
-                UnityUtility.SafeDelete(item);
+                UnityUtility.DeleteGameObject(item);
             }
 
             advObjects.Clear();

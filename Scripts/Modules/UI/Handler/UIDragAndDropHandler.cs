@@ -72,7 +72,7 @@ namespace Modules.UI
 
         void OnDestroy()
         {
-            UnityUtility.SafeDelete(eventTrigger);
+            UnityUtility.DeleteGameObject(eventTrigger);
         }  
 
         public IObservable<Vector2> OnDragStartAsObservable()

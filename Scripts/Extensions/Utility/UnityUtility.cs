@@ -220,8 +220,7 @@ namespace Extensions
             }
         }
 
-        /// <summary> コンポーネントの削除 </summary>
-        public static void SafeDelete<T>(T component, bool immediate = false) where T : Component
+        public static void DeleteComponent<T>(T component, bool immediate = false) where T : Component
         {
             if (component != null)
             {
@@ -236,16 +235,37 @@ namespace Extensions
             }
         }
 
-        /// <summary> コンポーネントの削除 </summary>
-        public static void SafeDelete<T>(GameObject instance, bool immediate = false) where T : Component
+        public static void DeleteComponent<T>(GameObject instance, bool immediate = false) where T : Component
         {
             var component = GetComponent<T>(instance);
 
-            SafeDelete<T>(component, immediate);
+            DeleteComponent(component, immediate);
+        }
+
+        public static void DeleteGameObject<T>(T component, bool immediate = false) where T : Component
+        {
+            if (component != null)
+            {
+                if (!Application.isPlaying || immediate)
+                {
+                    UnityEngine.Object.DestroyImmediate(component);
+                }
+                else
+                {
+                    UnityEngine.Object.Destroy(component);
+                }
+            }
+        }
+
+        public static void DeleteGameObject<T>(GameObject instance, bool immediate = false) where T : Component
+        {
+            var component = GetComponent<T>(instance);
+
+            DeleteGameObject<T>(component, immediate);
         }
 
         /// <summary> 複数オブジェクトの削除 </summary>
-        public static void SafeDelete(IEnumerable<GameObject> targets)
+        public static void DeleteGameObject(IEnumerable<GameObject> targets)
         {
             foreach (var target in targets)
             {

@@ -67,7 +67,7 @@ namespace Modules.MovieManagement
             {
                 UnityUtility.SetActive(movieController.gameObject, false);
 
-                UnityUtility.SafeDelete(movieController);
+                UnityUtility.DeleteComponent(movieController);
 
                 if (onFinish != null)
                 {

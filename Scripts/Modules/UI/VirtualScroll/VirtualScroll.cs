@@ -428,7 +428,7 @@ namespace Modules.UI
             }
             else
             {
-                UnityUtility.SafeDelete(hitBox);
+                UnityUtility.DeleteGameObject(hitBox);
             }
         }
 

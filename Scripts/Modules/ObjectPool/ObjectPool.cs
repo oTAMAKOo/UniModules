@@ -110,7 +110,7 @@ namespace Modules.ObjectPool
                 for (var i = 0; i < deleteCount; i++)
                 {
                     var item = cachedObjects.Dequeue();
-                    UnityUtility.SafeDelete(item);
+                    UnityUtility.DeleteGameObject(item);
                 }
             }
             else

@@ -40,7 +40,7 @@ namespace Modules.Devkit.CleanComponent
 
                 if (graphicComponents.Any()) { continue; }
 
-                UnityUtility.SafeDelete(canvasRenderer);
+                UnityUtility.DeleteGameObject(canvasRenderer);
 
                 EditorUtility.SetDirty(gameObject);
             }
