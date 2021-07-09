@@ -43,31 +43,31 @@ namespace Modules.MovieManagement
 
         //----- method -----
 
-        public MovieElement(Player manaPlayer, CriManaMovieControllerForUI movieController, string moviePath)
+        public MovieElement(Player moviePlayer, CriManaMovieControllerForUI movieController, string moviePath)
         {
             this.movieController = movieController;
 
             MoviePath = moviePath;
-            Player = manaPlayer;
-            Status = manaPlayer.status;
+            Player = moviePlayer;
+            Status = moviePlayer.status;
         }
 
         public void Update()
         {
+            if (UnityUtility.IsNull(movieController)) { return; }
+
             var prevStatus = Status;
 
-            Status = UnityUtility.IsNull(movieController) ?
-                     Player.Status.PlayEnd :
-                     Player.status;
+            Status = Player.status;
 
             PlayTime = GetPlayTime();
             TotalTime = GetTotalTime();
 
             if (prevStatus != Status && Status == Player.Status.PlayEnd)
             {
-                movieController.enabled = false;
-
                 UnityUtility.SetActive(movieController.gameObject, false);
+
+                UnityUtility.SafeDelete(movieController);
 
                 if (onFinish != null)
                 {

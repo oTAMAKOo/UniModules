@@ -95,16 +95,16 @@ namespace Modules.MovieManagement
 
             UnityUtility.SetActive(movieController.gameObject, true);
 
-            var manaPlayer = movieController.player;
+            var moviePlayer = movieController.player;
 
-            manaPlayer.SetFile(null, moviePath);
+            moviePlayer.SetFile(null, moviePath);
 
             if (shaderOverrideCallBack != null)
             {
-                manaPlayer.SetShaderDispatchCallback(shaderOverrideCallBack);
+                moviePlayer.SetShaderDispatchCallback(shaderOverrideCallBack);
             }
 
-            var movieElement = new MovieElement(manaPlayer, movieController, moviePath);
+            var movieElement = new MovieElement(moviePlayer, movieController, moviePath);
 
             Instance.movieElements.Add(movieElement);
 

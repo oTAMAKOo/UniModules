@@ -221,14 +221,27 @@ namespace Extensions
         }
 
         /// <summary> コンポーネントの削除 </summary>
+        public static void SafeDelete<T>(T component, bool immediate = false) where T : Component
+        {
+            if (component != null)
+            {
+                if (!Application.isPlaying || immediate)
+                {
+                    UnityEngine.Object.DestroyImmediate(component);
+                }
+                else
+                {
+                    UnityEngine.Object.Destroy(component);
+                }
+            }
+        }
+
+        /// <summary> コンポーネントの削除 </summary>
         public static void SafeDelete<T>(GameObject instance, bool immediate = false) where T : Component
         {
             var component = GetComponent<T>(instance);
 
-            if (component != null)
-            {
-                SafeDelete(component, immediate);
-            }
+            SafeDelete<T>(component, immediate);
         }
 
         /// <summary> 複数オブジェクトの削除 </summary>
