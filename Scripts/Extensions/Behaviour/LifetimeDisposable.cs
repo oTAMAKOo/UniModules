@@ -10,9 +10,11 @@ namespace Extensions
 
         //----- field -----
 
-        private CompositeDisposable disposables;
+        private CompositeDisposable disposables = null;
 
         //----- property -----
+
+        public bool IsDisposed { get; private set; }
 
         public CompositeDisposable Disposable
         {
@@ -21,6 +23,11 @@ namespace Extensions
 
         //----- method -----
 
+        public LifetimeDisposable()
+        {
+            IsDisposed = false;
+        }
+
         ~LifetimeDisposable()
         {
             Dispose();
@@ -28,6 +35,10 @@ namespace Extensions
 
         public void Dispose()
         {
+            IsDisposed = true;
+
+            OnDispose();
+
             if (disposables != null)
             {
                 disposables.Dispose();
@@ -35,5 +46,7 @@ namespace Extensions
 
             GC.SuppressFinalize(this);
         }
+
+        protected virtual void OnDispose(){ }
     }
 }
