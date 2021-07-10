@@ -7,7 +7,7 @@ using UniRx;
 
 namespace Modules.SceneManagement
 {
-    public sealed class WaitEntity : IDisposable
+    public sealed class WaitHandler : IDisposable
     {
         //----- params -----
 
@@ -25,7 +25,7 @@ namespace Modules.SceneManagement
 
         //----- method -----
 
-        ~WaitEntity()
+        ~WaitHandler()
         {
             Dispose();
         }
@@ -52,7 +52,7 @@ namespace Modules.SceneManagement
 
         //----- field -----
 
-        private HashSet<int> waitEntityIds = null;
+        private HashSet<int> waitHandlerIds = null;
 
         //----- property -----
 
@@ -61,41 +61,41 @@ namespace Modules.SceneManagement
         /// <summary>
         /// 遷移中に外部処理の待機開始.
         /// </summary>
-        public WaitEntity BeginWait()
+        public WaitHandler BeginWait()
         {
-            var entity = new WaitEntity();
+            var waitHandler = new WaitHandler();
 
-            entity.OnDisposeAsObservable()
-                .Subscribe(_ => FinishWait(entity))
+            waitHandler.OnDisposeAsObservable()
+                .Subscribe(_ => FinishWait(waitHandler))
                 .AddTo(Disposable);
 
-            waitEntityIds.Add(entity.Identifier);
+            waitHandlerIds.Add(waitHandler.Identifier);
 
-            return entity;
+            return waitHandler;
         }
 
         /// <summary>
-        /// <see cref="BeginWait"/>から取得された<see cref="WaitEntity"/>で待ち状態を解除.
+        /// <see cref="BeginWait"/>から取得された<see cref="WaitHandler"/>で待ち状態を解除.
         /// </summary>
-        public void FinishWait(WaitEntity entity)
+        public void FinishWait(WaitHandler waitHandler)
         {
-            if (entity == null) { return; }
+            if (waitHandler == null) { return; }
 
-            if (!waitEntityIds.Contains(entity.Identifier)) { return; }
+            if (!waitHandlerIds.Contains(waitHandler.Identifier)) { return; }
 
-            waitEntityIds.Remove(entity.Identifier);
+            waitHandlerIds.Remove(waitHandler.Identifier);
         }
 
         /// <summary> 全ての外部の処理待ちをキャンセル </summary>
         public void CancelAllTransitionWait()
         {
-            waitEntityIds.Clear();
+            waitHandlerIds.Clear();
         }
 
         /// <summary> 外部の処理待ち </summary>
         private IEnumerator TransitionWait()
         {
-            while (waitEntityIds.Any())
+            while (waitHandlerIds.Any())
             {
                 yield return null;
             }

@@ -148,7 +148,11 @@ namespace Modules.CriWare
 
                 foreach (var item in list)
                 {
-                    cueInfos.Add(new CueInfo(item.name, PathUtility.GetPathWithoutExtension(assetPath), item.userData));
+                    var path = PathUtility.GetPathWithoutExtension(assetPath);
+
+                    var cueInfo = new CueInfo(item.name, path, item.userData);
+
+                    cueInfos.Add(cueInfo);
                 }
 
                 acb.Dispose();

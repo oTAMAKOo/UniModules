@@ -96,7 +96,6 @@ namespace Modules.SceneManagement
 
         protected override void OnCreate()
         {
-
             loadedScenes = new Dictionary<Scenes, SceneInstance>();
             cacheScenes = new FixedQueue<SceneInstance>(CacheSize);
 
@@ -106,14 +105,14 @@ namespace Modules.SceneManagement
             appendSceneInstances = new List<SceneInstance>();
 
             history = new List<ISceneArgument>();
-            waitEntityIds = new HashSet<int>();
+            waitHandlerIds = new HashSet<int>();
 
             // キャッシュ許容数を超えたらアンロード.
             cacheScenes.OnExtrudedAsObservable()
                 .Subscribe(x => UnloadCacheScene(x))
                 .AddTo(Disposable);
         }
-        
+
         public IObservable<Unit> WaitBootSceneReady()
         {
             var observers = new List<IObservable<Unit>>();
