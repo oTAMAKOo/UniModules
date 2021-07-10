@@ -422,7 +422,15 @@ namespace Modules.SceneManagement
                     yield return null;
                 }
 
-                if (!loadYield.HasResult) { yield break; }
+                if (loadYield.HasError)
+                {
+                    OnLoadError(loadYield.Error, identifier);
+                }
+
+                if (!loadYield.HasResult)
+                {
+                    yield break;
+                }
 
                 sceneInfo = loadYield.Result;
 
@@ -626,6 +634,11 @@ namespace Modules.SceneManagement
             {
                 yield return null;
             }
+
+            if (loadYield.HasError)
+            {
+                OnLoadError(loadYield.Error, identifier);
+            }
             
             if (loadYield.HasResult)
             {
@@ -739,14 +752,7 @@ namespace Modules.SceneManagement
                 }
                 catch (Exception e)
                 {
-                    Debug.LogException(e);
-
                     SceneManager.sceneLoaded -= sceneLoaded;
-
-                    if (onLoadError != null)
-                    {
-                        onLoadError.OnNext(Unit.Default);
-                    }
 
                     observer.OnError(e);
 
@@ -823,6 +829,18 @@ namespace Modules.SceneManagement
 
             observer.OnNext(sceneInstance);
             observer.OnCompleted();
+        }
+
+        private void OnLoadError(Exception exception, Scenes? identifier)
+        {
+            Debug.LogErrorFormat("Load scene error : {0}", identifier);
+
+            Debug.LogException(exception);
+
+            if (onLoadError != null)
+            {
+                onLoadError.OnNext(Unit.Default);
+            }
         }
 
         public IObservable<SceneInstance> OnLoadSceneAsObservable()
@@ -1044,11 +1062,18 @@ namespace Modules.SceneManagement
                 yield return null;
             }
 
-            sw.Stop();
+            if (!loadYield.HasError)
+            {
+                sw.Stop();
 
-            var time = sw.Elapsed.TotalMilliseconds;
+                var time = sw.Elapsed.TotalMilliseconds;
 
-            builder.AppendLine(string.Format("{0} ({1:F2}ms)", targetScene, time));
+                builder.AppendLine(string.Format("{0} ({1:F2}ms)", targetScene, time));
+            }
+            else
+            {
+                OnLoadError(loadYield.Error, targetScene);
+            }
         }
 
         #endregion

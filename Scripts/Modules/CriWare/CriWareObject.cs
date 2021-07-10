@@ -38,11 +38,14 @@ namespace Modules.CriWare
         {
             #if ENABLE_CRIWARE_SOFDEC
 
-            // VP9初期化.
-
-            if (CriManaVp9.SupportCurrentPlatform())
+            if (!CriManaPlugin.IsLibraryInitialized())
             {
-                CriManaVp9.SetupVp9Decoder();
+                // VP9初期化.
+
+                if (CriManaVp9.SupportCurrentPlatform())
+                {
+                    CriManaVp9.SetupVp9Decoder();
+                }
             }
 
             #endif

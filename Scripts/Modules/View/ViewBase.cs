@@ -37,7 +37,7 @@ namespace Modules.View
 
             if (viewModel == null)
             {
-                var viewRoot = gameObject.Ancestors()
+                var viewRoot = gameObject.AncestorsAndSelf()
                     .Select(x => UnityUtility.GetInterface<IViewRoot>(x))
                     .FirstOrDefault(x => x != null);
 
