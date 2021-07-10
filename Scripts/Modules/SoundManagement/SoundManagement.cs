@@ -39,18 +39,6 @@ namespace Modules.SoundManagement
         public bool cancelIfPlaying = false;
     }
 
-    public sealed class SoundEventParam
-    {
-        /// <summary>イベント位置 (sec) </summary>
-        public int position;
-
-        /// <summary>イベントID </summary>
-        public int eventId;
-
-        /// <summary>イベントタグ文字列 </summary>
-        public string tag;
-    }
-
     public sealed class SoundManagement : Singleton<SoundManagement>
     {
         //----- params -----
@@ -79,7 +67,7 @@ namespace Modules.SoundManagement
         private Subject<SoundElement> onResume = null;
 
         // サウンドイベント.
-        private Subject<SoundEventParam> onSoundEvent = null;
+        private Subject<CriAtomExSequencer.CriAtomExSequenceEventInfo> onSoundEvent = null;
 
         private bool initialized = false;
 
@@ -115,7 +103,16 @@ namespace Modules.SoundManagement
             SetSoundParam();
 
             // サウンドイベントを受信.
-            CriAtomExSequencer.SetEventCallback(SoundEventCallback, SoundEventSeparator.ToString());
+
+            CriAtomExSequencer.EventCallback soundEventCallback = (ref CriAtomExSequencer.CriAtomExSequenceEventInfo info) =>
+            {
+                if (onSoundEvent != null)
+                {
+                    onSoundEvent.OnNext(info);
+                }
+            };
+
+            CriAtomExSequencer.OnCallback += soundEventCallback;
 
             // サウンドの状態更新.
             Observable.EveryEndOfFrame()
@@ -602,34 +599,6 @@ namespace Modules.SoundManagement
             }
         }
 
-        private void SoundEventCallback(string eventParam)
-        {
-            // イベント には ID やその他の情報が含まれる.
-            if (onSoundEvent != null)
-            {
-                SoundEventParam param = null;
-
-                try
-                {
-                    var strParams = eventParam.Split(SoundEventSeparator);
-
-                    param = new SoundEventParam()
-                    {
-                        position = int.Parse(strParams[0]),
-                        eventId = int.Parse(strParams[1]),
-                        tag = strParams[4],
-                    };
-                }
-                catch (Exception)
-                {
-                    Debug.LogErrorFormat("Invalid sound event.\nparam : {0}", eventParam);
-                    throw;
-                }
-
-                onSoundEvent.OnNext(param);
-            }
-        }
-
         /// <summary> 再生通知 </summary>
         public IObservable<SoundElement> OnPlayAsObservable()
         {
@@ -655,9 +624,9 @@ namespace Modules.SoundManagement
         }
 
         /// <summary> サウンドに埋め込まれたイベント通知 </summary>
-        public IObservable<SoundEventParam> OnSoundEventAsObservable()
+        public IObservable<CriAtomExSequencer.CriAtomExSequenceEventInfo> OnSoundEventAsObservable()
         {
-            return onSoundEvent ?? (onSoundEvent = new Subject<SoundEventParam>());
+            return onSoundEvent ?? (onSoundEvent = new Subject<CriAtomExSequencer.CriAtomExSequenceEventInfo>());
         }
     }
 }
