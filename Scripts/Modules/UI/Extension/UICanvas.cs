@@ -1,4 +1,5 @@
 ﻿
+using System.Linq;
 using UnityEngine;
 using UnityEngine.UI;
 using UniRx;
@@ -58,13 +59,20 @@ namespace Modules.UI.Extension
                 Observable.EveryUpdate()
                     .TakeUntilDisable(this)
                     .Subscribe(_ =>
-                    {
-                        if (modifyCanvasCamera && Canvas.worldCamera == null)
                         {
-                            ModifyCanvasCamera();
-                        }
-                    })
+                            if (modifyCanvasCamera && Canvas.worldCamera == null)
+                            {
+                                ModifyCanvasCamera();
+                            }
+                        })
                     .AddTo(this);
+            }
+            else
+            {
+                if (modifyCanvasCamera && Canvas.worldCamera == null)
+                {
+                    ModifyCanvasCamera();
+                }
             }
 
             ModifyCanvasRoot();
@@ -93,19 +101,10 @@ namespace Modules.UI.Extension
 
             if (!modifyCanvasCamera) { return; }
 
-            var layer = 1 << canvas.gameObject.layer;
+            var layerMask = 1 << canvas.gameObject.layer;
 
             // 最初に一致したカメラを適用.
-            foreach (var camera in Cameras)
-            {
-                if (UnityUtility.IsNull(camera)) { continue; }
-
-                if ((layer & camera.cullingMask) != 0)
-                {
-                    canvasCamera = camera;
-                    break;
-                }
-            }
+            canvasCamera = UnityUtility.FindCameraForLayer(layerMask).FirstOrDefault();
 
             if (canvasCamera != null)
             {

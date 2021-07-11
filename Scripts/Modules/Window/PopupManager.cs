@@ -40,6 +40,10 @@ namespace Modules.Window
 
         public GameObject ParentGlobal { get { return parentGlobal != null ? parentGlobal.Parent : null; } }
 
+        public IReadOnlyList<Window> ScenePopups { get { return scenePopups; } }
+
+        public IReadOnlyList<Window> GlobalPopups { get { return globalPopups; } }
+
         //----- method -----
 
         protected abstract int ParentInSceneLayer { get; }
@@ -140,7 +144,7 @@ namespace Modules.Window
 
             UnityUtility.SetLayer(layer, popupParent.gameObject, true);
 
-            popupParent.Canvas.worldCamera = UnityUtility.FindCameraForLayer(layer).FirstOrDefault();
+            popupParent.Canvas.worldCamera = UnityUtility.FindCameraForLayer(1 << layer).FirstOrDefault();
 
             return popupParent;
         }

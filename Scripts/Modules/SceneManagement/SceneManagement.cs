@@ -147,6 +147,8 @@ namespace Modules.SceneManagement
             var definition = ScenePaths.FirstOrDefault(x => x.Value == scene.path);
             var identifier = definition.Equals(default(KeyValuePair<Scenes, string>)) ? null : (Scenes?)definition.Key;
 
+            var sceneArgument = new BootSceneArgument(identifier);
+
             var sceneInstance = UnityUtility.FindObjectsOfInterface<ISceneBase>().FirstOrDefault();
 
             CollectUniqueComponents(scene.GetRootGameObjects());
@@ -156,7 +158,7 @@ namespace Modules.SceneManagement
                 currentScene = new SceneInstance(identifier, sceneInstance, SceneManager.GetSceneAt(0));
 
                 // 起動シーンは引数なしで遷移してきたという扱い.
-                history.Add(new BootSceneArgument(identifier));
+                history.Add(sceneArgument);
             }
 
             if (currentScene == null || currentScene.Instance == null)
@@ -180,6 +182,11 @@ namespace Modules.SceneManagement
                 yield return null;
             }
 
+            if (onPrepare != null)
+            {
+                onPrepare.OnNext(sceneArgument);
+            }
+
             var prepareYield = currentScene.Instance.Prepare(false).ToYieldInstruction();
 
             while (!prepareYield.IsDone)
@@ -187,7 +194,22 @@ namespace Modules.SceneManagement
                 yield return null;
             }
 
+            if (onPrepareComplete != null)
+            {
+                onPrepare.OnNext(sceneArgument);
+            }
+
+            if (onEnter != null)
+            {
+                onEnter.OnNext(sceneArgument);
+            }
+
             currentScene.Instance.Enter(false);
+
+            if (onEnterComplete != null)
+            {
+                onEnterComplete.OnNext(sceneArgument);
+            }
         }
 
         /// <summary> 初期シーン登録時のイベント </summary>
