@@ -3,6 +3,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using UniRx;
 using Extensions;
+using Modules.Devkit.Diagnosis.LogTracker;
 using Modules.Devkit.LogHandler;
 
 #if ENABLE_SRDEBUGGER
@@ -69,6 +70,8 @@ namespace Modules.Devkit.Diagnosis.SRDebugger
                 SRDebug.Init();
 
                 var srDebug = SRDebug.Instance;
+                var logTracker = UnityLogTracker.Instance;
+                var applicationLogHandler = ApplicationLogHandler.Instance;
 
                 UnityUtility.SetActive(blockCollider, srDebug.IsDebugPanelVisible);
 
@@ -90,15 +93,11 @@ namespace Modules.Devkit.Diagnosis.SRDebugger
                     .Subscribe(_ => srDebug.ShowDebugPanel())
                     .AddTo(this);
 
-                ApplicationLogHandler.Instance.OnLogReceiveAsObservable()
+                applicationLogHandler.OnLogReceiveAsObservable()
                     .Subscribe(x => OnLogReceive(x))
                     .AddTo(this);
 
-                #if ENABLE_SRDEBUGGER
-
-                SRTrackLogService.Initialize();
-
-                #endif
+                logTracker.Initialize();
 
                 UnityUtility.SetActive(blockCollider, false);
 

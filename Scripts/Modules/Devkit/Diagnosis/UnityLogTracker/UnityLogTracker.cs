@@ -1,14 +1,12 @@
 ﻿
-#if ENABLE_SRDEBUGGER
-
-using System;
 using UnityEngine;
+using System;
 using System.Collections.Generic;
 using UniRx;
 using Extensions;
 using Modules.Devkit.LogHandler;
 
-namespace Modules.Devkit.Diagnosis.SRDebugger
+namespace Modules.Devkit.Diagnosis.LogTracker
 {
     [Serializable]
     public sealed class LogEntry
@@ -18,7 +16,7 @@ namespace Modules.Devkit.Diagnosis.SRDebugger
         public string stackTrace = null;
     }
 
-    public static class SRTrackLogService
+    public sealed class UnityLogTracker : Singleton<UnityLogTracker>
     {
         //----- params -----
 
@@ -34,7 +32,7 @@ namespace Modules.Devkit.Diagnosis.SRDebugger
 
         //----- property -----
 
-        public static int ReportLogNum
+        public int ReportLogNum
         {
             get { return reportQueue.Length; }
 
@@ -46,11 +44,11 @@ namespace Modules.Devkit.Diagnosis.SRDebugger
             }
         }
 
-        public static IReadOnlyList<LogEntry> Logs { get { return reportQueue.ToArray(); } }
+        public IReadOnlyList<LogEntry> Logs { get { return reportQueue.ToArray(); } }
 
         //----- method -----
 
-        public static void Initialize()
+        public void Initialize()
         {
             if (initialized) { return; }
 
@@ -65,7 +63,7 @@ namespace Modules.Devkit.Diagnosis.SRDebugger
             initialized = true;
         }
 
-        private static void LogCallback(ApplicationLogHandler.LogInfo log)
+        private void LogCallback(ApplicationLogHandler.LogInfo log)
         {
             if (log == null) { return; }
 
@@ -78,7 +76,5 @@ namespace Modules.Devkit.Diagnosis.SRDebugger
 
             reportQueue.Enqueue(item);
         }
-    }    
+    }
 }
-
-#endif

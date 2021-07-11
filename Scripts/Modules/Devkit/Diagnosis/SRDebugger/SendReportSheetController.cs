@@ -1,42 +1,28 @@
 ﻿
 using UnityEngine;
 using UnityEngine.UI;
-using UnityEngine.Networking;
 using UnityEngine.EventSystems;
 using System;
 using System.Collections;
-using System.Collections.Generic;
-using System.Globalization;
-using System.Linq;
 using System.Text;
 using UniRx;
 using Extensions;
+using Modules.Devkit.Diagnosis.LogTracker;
+using Modules.Devkit.Diagnosis.SendReport;
 
 #if ENABLE_SRDEBUGGER
 
 using SRDebugger;
-using SRDebugger.Internal;
 
 #endif
 
 namespace Modules.Devkit.Diagnosis.SRDebugger
 {
-    public enum PostDataType
-    {
-        Foam,
-        Json,
-    }
-
     public abstract class SendReportSheetController : MonoBehaviour
     {
         #if ENABLE_SRDEBUGGER
 
         //----- params -----
-
-        public sealed class LogContainer
-        {
-            public LogEntry[] contents = null;
-        }
 
         //----- field -----
 
@@ -51,17 +37,11 @@ namespace Modules.Devkit.Diagnosis.SRDebugger
         [SerializeField]
         private Text progressBarText = null;
 
-        protected Dictionary<string, string> reportData = null;
-
         private IDisposable sendReportDisposable = null;
-
-        private AesCryptKey aesCryptKey = null;
 
         protected bool initialized = false;
 
         //----- property -----
-
-        public PostDataType PostDataType { get; protected set; }
 
         //----- method -----
 
@@ -70,11 +50,9 @@ namespace Modules.Devkit.Diagnosis.SRDebugger
         {
             if (initialized) { return; }
 
-            reportData = new Dictionary<string, string>();
-
-            aesCryptKey = CreateCryptKey();
-
             var srDebug = SRDebug.Instance;
+
+            var sendReportManager = SendReportManager.Instance;
 
             VisibilityChangedDelegate onPanelVisibilityChanged = visible =>
             {
@@ -88,6 +66,14 @@ namespace Modules.Devkit.Diagnosis.SRDebugger
 
             UpdateView();
 
+            sendReportManager.OnRequestReportAsObservable()
+                .Subscribe(_ => UpdateView())
+                .AddTo(this);
+
+            sendReportManager.OnReportCompleteAsObservable()
+                .Subscribe(x => OnReportComplete(x))
+                .AddTo(this);
+
             sendReportButton.OnClickAsObservable()
                 .Subscribe(_ =>
                     {
@@ -98,12 +84,8 @@ namespace Modules.Devkit.Diagnosis.SRDebugger
                         else
                         {
                             sendReportDisposable = Observable.FromCoroutine(() => SendReport())
-                                .Subscribe(__ =>
-                                    {
-                                        sendReportDisposable = null;
-                                    })
+                                .Subscribe(__ => sendReportDisposable = null)
                                 .AddTo(this);
-
                         }
                     })
                 .AddTo(this);
@@ -135,73 +117,25 @@ namespace Modules.Devkit.Diagnosis.SRDebugger
 
         private IEnumerator SendReport()
         {
+            var sendReportManager = SendReportManager.Instance;
+
+            UpdatePostProgress(0f);
+
             yield return CaptureScreenShot();
 
             yield return new WaitForEndOfFrame();
 
-            UpdateView();
-
             // 進捗.
             var notifier = new ScheduledNotifier<float>();
+
             notifier.Subscribe(x => UpdatePostProgress(x));
 
-            reportData.Clear();
+            var sendYield = sendReportManager.Send(notifier).ToYieldInstruction(false);
 
-            // 送信内容構築.
-            BuildPostContent();
-            
-            // 送信.
-
-            var postReportYield = Observable.FromMicroCoroutine<string>(observer => PostReport(observer, notifier)).ToYieldInstruction();
-
-            while (!postReportYield.IsDone)
+            while (!sendYield.IsDone)
             {
                 yield return null;
             }
-
-            // 終了.
-            OnReportComplete(postReportYield.Result);
-            
-            reportData.Clear();
-        }
-
-        protected virtual IEnumerator PostReport(IObserver<string> observer, IProgress<float> progress)
-        {
-            var url = GetReportUrl();
-
-            UnityWebRequest webRequest = null;
-
-            switch (PostDataType)
-            {
-                case PostDataType.Foam:
-                    webRequest = UnityWebRequest.Post(url, CreateReportFormSections());
-                    break;
-
-                case PostDataType.Json:
-                    webRequest = UnityWebRequest.Post(url, reportData.ToJson());
-                    break;
-            }
-
-            webRequest.timeout = 30;
-
-            var operation = webRequest.SendWebRequest();
-
-            while (!operation.isDone)
-            {
-                progress.Report(operation.progress);
-
-                yield return null;
-            }
-
-            var errorMessage = string.Empty;
-
-            if (webRequest.isNetworkError || webRequest.isHttpError)
-            {
-                errorMessage = string.Format("[{0}]{1}", webRequest.responseCode, webRequest.error);
-            }
-
-            observer.OnNext(errorMessage);
-            observer.OnCompleted();
         }
 
         private void UpdatePostProgress(float progress)
@@ -215,6 +149,7 @@ namespace Modules.Devkit.Diagnosis.SRDebugger
             var status = sendReportDisposable == null;
 
             sendReportButtonText.text = status ? "Send Report" : "Cancel";
+
             UnityUtility.SetActive(progressBar, !status);
 
             // 送信中.
@@ -259,18 +194,20 @@ namespace Modules.Devkit.Diagnosis.SRDebugger
 
         private IEnumerator CaptureScreenShot()
         {
-            BugReportScreenshotUtil.ScreenshotData = null;
-
+            var sendReportManager = SendReportManager.Instance;
+            
             SRDebug.Instance.HideDebugPanel();
 
-            yield return BugReportScreenshotUtil.ScreenshotCaptureCo();
+            yield return sendReportManager.CaptureScreenShot();
 
             SRDebug.Instance.ShowDebugPanel(false);
         }
 
         private void SetReportText()
         {
-            var logs = SRTrackLogService.Logs;
+            var logTracker = UnityLogTracker.Instance;
+
+            var logs = logTracker.Logs;
 
             var builder = new StringBuilder();
 
@@ -290,79 +227,6 @@ namespace Modules.Devkit.Diagnosis.SRDebugger
             reportContentText.text = reportText;
         }
 
-        private string GetReportTextPostData()
-        {
-            var logs = SRTrackLogService.Logs.ToArray();
-
-            if (logs.IsEmpty()) { return string.Empty; }
-
-            var container = new LogContainer() { contents = logs };
-            
-            return JsonUtility.ToJson(container);
-        }
-
-        private void BuildPostContent()
-        {
-            reportData = new Dictionary<string, string>();
-
-            const uint mega = 1024 * 1024;
-
-            //------ ScreenShot ------
-
-            var bytes = BugReportScreenshotUtil.ScreenshotData;
-
-            var screenShotBase64 = Convert.ToBase64String(bytes);
-
-            // スクリーンショット情報破棄.
-            BugReportScreenshotUtil.ScreenshotData = null;
-
-            //------ ReportContent ------
-
-            AddReportContent("Time", DateTime.Now.ToString(CultureInfo.InvariantCulture));
-            AddReportContent("OperatingSystem", SystemInfo.operatingSystem);
-            AddReportContent("DeviceModel", SystemInfo.deviceModel);
-            AddReportContent("SystemMemorySize", (SystemInfo.systemMemorySize * mega).ToString());
-            AddReportContent("UseMemorySize", GC.GetTotalMemory(false).ToString());
-            AddReportContent("Log", GetReportTextPostData());
-            AddReportContent("ScreenShotBase64", screenShotBase64);
-
-            // 拡張情報を追加.
-
-            SetExtendContents();
-        }
-
-        /// <summary> 送信情報に追加 </summary>
-        protected void AddReportContent(string key, string value)
-        {
-            if (reportData == null) { return; }
-
-            if (string.IsNullOrEmpty(value))
-            {
-                value = "---";
-            }
-
-            value = aesCryptKey != null ? value.Encrypt(aesCryptKey) : value;
-
-            reportData.Add(key, value);
-        }
-
-        protected List<IMultipartFormSection> CreateReportFormSections()
-        {
-            var reportForm = new List<IMultipartFormSection>();
-
-            foreach (var item in reportData)
-            {
-                reportForm.Add(new MultipartFormDataSection(item.Key, item.Value));
-            }
-
-            return reportForm;
-        }
-
-        protected string CreateReportJson()
-        {
-            return reportData.ToJson();
-        }
-
         /// <summary> InputFieldをリフレッシュ </summary>
         protected void RefreshInputField(InputField inputField)
         {
@@ -371,20 +235,11 @@ namespace Modules.Devkit.Diagnosis.SRDebugger
             inputField.OnDeselect(new BaseEventData(EventSystem.current));
         }
 
-        /// <summary> 暗号化キー生成 </summary>
-        protected virtual AesCryptKey CreateCryptKey() { return null; }
-
         /// <summary> 以前の入力をリフレッシュ </summary>
         protected virtual void OnRequestRefreshInputText() { }
 
         /// <summary> レポートボタンが有効か </summary>
         protected virtual bool IsSendReportButtonEnable() { return true; }
-
-        /// <summary> 拡張情報を追加 </summary>
-        protected virtual void SetExtendContents() { }
-
-        /// <summary> 送信先URL </summary>
-        protected abstract string GetReportUrl();
 
         #endif
     }
