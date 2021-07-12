@@ -158,7 +158,14 @@ namespace Modules.UI.Particle
 
                 if (animModule.enabled && textureSheetAnimationCurrentFrame.HasValue)
                 {
-                    var sprite = animModule.GetSprite(textureSheetAnimationCurrentFrame.Value);
+                    var index = textureSheetAnimationCurrentFrame.Value;
+
+                    if (animModule.spriteCount < index)
+                    {
+                        index = animModule.spriteCount;
+                    }
+
+                    var sprite = animModule.GetSprite(index);
 
                     texture = sprite.texture;
                 }
