@@ -17,7 +17,7 @@ namespace Modules.LetterBox
         //----- field -----
 
         [SerializeField]
-        private UICanvas canvas = null;
+        private UICanvas uiCanvas = null;
         [SerializeField]
         private RectTransform statusBar = null;
         [SerializeField]
@@ -42,7 +42,8 @@ namespace Modules.LetterBox
 
         public void Apply()
         {
-            var canvasScaler = UnityUtility.GetComponent<CanvasScaler>(canvas.gameObject);
+            var canvas = uiCanvas.Canvas;
+            var canvasScaler = UnityUtility.GetComponent<CanvasScaler>(uiCanvas);
 
             var enable = canvasScaler.uiScaleMode == CanvasScaler.ScaleMode.ScaleWithScreenSize;
 
@@ -50,16 +51,12 @@ namespace Modules.LetterBox
 
             if (!enable) { return; }
 
-            canvas.ModifyCanvasScaler();
-
-            var canvasRectTransform = UnityUtility.GetComponent<RectTransform>(canvas.gameObject);
-
-            LayoutRebuilder.ForceRebuildLayoutImmediate(canvasRectTransform);
+            uiCanvas.ModifyCanvasScaler();
 
             var letterBoxSize = new Vector2()
             {
-                x = (canvasRectTransform.GetWidth() - canvasScaler.referenceResolution.x) * 0.5f,
-                y = (canvasRectTransform.GetHeight() - canvasScaler.referenceResolution.y) * 0.5f,
+                x = (canvas.renderingDisplaySize.x - canvasScaler.referenceResolution.x) * 0.5f,
+                y = (canvas.renderingDisplaySize.y - canvasScaler.referenceResolution.y) * 0.5f,
             };
 
             var fitVertical = canvasScaler.matchWidthOrHeight == 1;
