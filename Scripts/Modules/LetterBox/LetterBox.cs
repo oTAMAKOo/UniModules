@@ -52,11 +52,15 @@ namespace Modules.LetterBox
             if (!enable) { return; }
 
             uiCanvas.ModifyCanvasScaler();
+            
+            var canvasRectTransform = UnityUtility.GetComponent<RectTransform>(canvas.gameObject);
 
+            LayoutRebuilder.ForceRebuildLayoutImmediate(canvasRectTransform);
+            
             var letterBoxSize = new Vector2()
             {
-                x = (canvas.renderingDisplaySize.x - canvasScaler.referenceResolution.x) * 0.5f,
-                y = (canvas.renderingDisplaySize.y - canvasScaler.referenceResolution.y) * 0.5f,
+                x = (canvasRectTransform.GetWidth() - canvasScaler.referenceResolution.x) * 0.5f,
+                y = (canvasRectTransform.GetHeight() - canvasScaler.referenceResolution.y) * 0.5f,
             };
 
             var fitVertical = canvasScaler.matchWidthOrHeight == 1;

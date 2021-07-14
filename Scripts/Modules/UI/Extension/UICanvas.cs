@@ -140,6 +140,8 @@ namespace Modules.UI.Extension
 
             if (canvasScaler != null)
             {
+                canvasScaler.enabled = false;
+
                 canvasScaler.uiScaleMode = ScaleMode;
 
                 if (canvasScaler.uiScaleMode == CanvasScaler.ScaleMode.ScaleWithScreenSize)
@@ -169,6 +171,8 @@ namespace Modules.UI.Extension
 
                     canvasScaler.matchWidthOrHeight = currentAspectRatio < referenceAspectRatio ? 0 : 1;
                 }
+
+                canvasScaler.enabled = true;
             }
         }
     }
