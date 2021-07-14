@@ -9,6 +9,23 @@ namespace Extensions
     {
         private static Random random = new Random();
 
+        public static int Seed { get; private set; }
+
+        static RandomUtility()
+        {
+            SetRandomSeed();
+        }
+
+        public static void SetRandomSeed(int? seed = null)
+        {
+            Seed = seed.HasValue ? seed.Value : Environment.TickCount;
+            
+            lock (random)
+            {
+                random = new Random(Seed);
+            }
+        }
+
         private static int Range(int min, int max)
         {
             lock (random)

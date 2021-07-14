@@ -11,6 +11,11 @@ namespace Extensions
 {
     public static partial class StringExtensions
     {
+        public static bool IsNullOrEmpty(this string value)
+        {
+            return string.IsNullOrEmpty(value);
+        }
+
         /// <summary> SringBuilderを使って複数の文字列を連結. </summary>
         public static string Combine(this string value, string[] targets)
         {
