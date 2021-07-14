@@ -29,8 +29,6 @@ namespace Modules.LetterBox
         [SerializeField]
         private RectTransform right = null;
 
-        private IObservable<Unit> applyObserver = null;
-
         //----- property -----
 
         public float StatusBarHeight { get; set; }
@@ -39,22 +37,10 @@ namespace Modules.LetterBox
 
         void OnEnable()
         {
-            Apply().Subscribe().AddTo(this);
+            Apply();
         }
 
-        public IObservable<Unit> Apply()
-        {
-            if (applyObserver != null) { return applyObserver; }
-
-            applyObserver = Observable.FromCoroutine(() => ApplyInternal())
-                .Do(_ => applyObserver = null)
-                .PublishLast()
-                .RefCount();
-
-            return applyObserver;
-        }
-
-        private IEnumerator ApplyInternal()
+        public void Apply()
         {
             var canvasScaler = UnityUtility.GetComponent<CanvasScaler>(canvas.gameObject);
 
@@ -62,14 +48,13 @@ namespace Modules.LetterBox
 
             UnityUtility.SetActive(gameObject, enable);
 
-            if (!enable) { yield break; }
+            if (!enable) { return; }
 
             canvas.ModifyCanvasScaler();
 
             var canvasRectTransform = UnityUtility.GetComponent<RectTransform>(canvas.gameObject);
 
-            // CanvasScalerの値が適用されない為1フレーム待つ.
-            yield return null;
+            LayoutRebuilder.ForceRebuildLayoutImmediate(canvasRectTransform);
 
             var letterBoxSize = new Vector2()
             {
