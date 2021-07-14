@@ -5,6 +5,12 @@ using UnityEngine.UI;
 using UniRx;
 using Extensions;
 
+#if UNITY_EDITOR
+
+using UnityEditor;
+
+#endif
+
 namespace Modules.UI.Extension
 {
     [ExecuteAlways]
@@ -141,7 +147,24 @@ namespace Modules.UI.Extension
                     canvasScaler.referenceResolution = ReferenceResolution;
                     canvasScaler.screenMatchMode = CanvasScaler.ScreenMatchMode.MatchWidthOrHeight;
 
-                    var currentAspectRatio = (float)Screen.width / Screen.height;
+                    var screenWidth = 0;
+                    var screenHeight = 0;
+
+                    #if UNITY_EDITOR
+
+                    var res = UnityStats.screenRes.Split('x');
+
+                    screenWidth = int.Parse(res[0]);
+                    screenHeight = int.Parse(res[1]);
+
+                    #else
+
+                    screenWidth = Screen.width;
+                    screenHeight = Screen.height;
+
+                    #endif
+
+                    var currentAspectRatio = (float)screenWidth / screenHeight;
                     var referenceAspectRatio = canvasScaler.referenceResolution.x / canvasScaler.referenceResolution.y;
 
                     canvasScaler.matchWidthOrHeight = currentAspectRatio < referenceAspectRatio ? 0 : 1;
