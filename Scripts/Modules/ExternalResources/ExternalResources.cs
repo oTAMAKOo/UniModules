@@ -5,24 +5,10 @@ using System.IO;
 using System.Collections;
 using System.Linq;
 using System.Collections.Generic;
-using System.Text;
 using UniRx;
 using Extensions;
-using Modules.AssetBundles;
 using Modules.Devkit.Console;
 using Modules.UniRxExtension;
-
-#if ENABLE_CRIWARE_ADX || ENABLE_CRIWARE_SOFDEC
-using Modules.CriWare;
-#endif
-
-#if ENABLE_CRIWARE_ADX
-using Modules.SoundManagement;
-#endif
-
-#if ENABLE_CRIWARE_SOFDEC
-using Modules.MovieManagement;
-#endif
 
 namespace Modules.ExternalResource
 {
@@ -33,40 +19,22 @@ namespace Modules.ExternalResource
         public static readonly string ConsoleEventName = "ExternalResources";
         public static readonly Color ConsoleEventColor = new Color(0.8f, 1f, 0.1f);
 
-        public const string ShareCategoryName = "Share";
-
-        public const string ShareCategoryPrefix = ShareCategoryName + ":";
-
         // 最大同時ダウンロード数.
         private readonly uint MaxDownloadCount = 4;
 
         //----- field -----
 
-        // アセットバンドル管理.
-        private AssetBundleManager assetBundleManager = null;
         // アセット管理情報.
         private AssetInfoManifest assetInfoManifest = null;
 
-        // アセットバンドル名でグループ化したアセット情報.
-        private ILookup<string, AssetInfo> assetInfosByAssetBundleName = null;
-
         // アセットロードパスをキーとしたアセット情報.
         private Dictionary<string, AssetInfo> assetInfosByResourcePath = null;
-
-        #if ENABLE_CRIWARE_ADX || ENABLE_CRIWARE_SOFDEC
-
-        // CriWare管理.
-        private CriAssetManager criAssetManager = null;
-
-        #endif
 
         /// <summary> シュミレーションモード (Editorのみ有効). </summary>
         private bool simulateMode = false;
 
         /// <summary> 外部アセットディレクトリ. </summary>
         public string resourceDirectory = null;
-        /// <summary> 共有外部アセットディレクトリ. </summary>
-        public string shareDirectory = null;
 
         /// <summary> 読み込み中アセット群. </summary>
         private HashSet<AssetInfo> loadingAssets = new HashSet<AssetInfo>();
@@ -131,20 +99,14 @@ namespace Modules.ExternalResource
             #endif
 
             // AssetBundleManager初期化.
-            assetBundleManager = AssetBundleManager.CreateInstance();
-            assetBundleManager.Initialize(MaxDownloadCount, simulateMode);
-            assetBundleManager.RegisterYieldCancel(yieldCancel);
-            assetBundleManager.OnTimeOutAsObservable().Subscribe(x => OnTimeout(x)).AddTo(Disposable);
-            assetBundleManager.OnErrorAsObservable().Subscribe(x => OnError(x)).AddTo(Disposable);
+
+            InitializeAssetBundle();
+
+            // CRI初期化.
 
             #if ENABLE_CRIWARE_ADX || ENABLE_CRIWARE_SOFDEC
 
-            // CriAssetManager初期化.
-
-            criAssetManager = CriAssetManager.CreateInstance();
-            criAssetManager.Initialize(resourceDirectory, MaxDownloadCount, simulateMode);
-            criAssetManager.OnTimeOutAsObservable().Subscribe(x => OnTimeout(x)).AddTo(Disposable);
-            criAssetManager.OnErrorAsObservable().Subscribe(x => OnError(x)).AddTo(Disposable);
+            InitializeCri();
             
             #endif
 
@@ -385,26 +347,16 @@ namespace Modules.ExternalResource
 
                 var extension = Path.GetExtension(resourcePath);
                 
-                if (CriAssetDefinition.AssetAllExtensions.Any(x => x == extension))
+                if (IsCriAsset(extension))
                 {
-                    var filePath = ConvertCriFilePath(resourcePath);
+                    var updateCriAssetYield = UpdateCriAsset(assetInfo, progress).ToYieldInstruction();
 
-                    // ローカルバージョンが最新の場合は更新しない.
-                    if (CheckAssetVersion(resourcePath, filePath))
-                    {
-                        yield break;
-                    }
-
-                    var updateYield = instance.criAssetManager
-                        .UpdateCriAsset(assetInfo, progress)
-                        .ToYieldInstruction(false, yieldCancel.Token);
-
-                    while (!updateYield.IsDone)
+                    while (!updateCriAssetYield.IsDone)
                     {
                         yield return null;
                     }
 
-                    if (updateYield.IsCanceled || updateYield.HasError)
+                    if (!updateCriAssetYield.HasResult || !updateCriAssetYield.Result)
                     {
                         yield break;
                     }
@@ -503,463 +455,6 @@ namespace Modules.ExternalResource
 
             return assetPath;
         }
-
-        #region Share
-
-        private static bool HasSharePrefix(string resourcePath)
-        {
-            return resourcePath.StartsWith(ShareCategoryPrefix);
-        }
-
-        private static string ConvertToShareResourcePath(string resourcePath)
-        {
-            if (HasSharePrefix(resourcePath))
-            {
-                resourcePath = resourcePath.Substring(ShareCategoryPrefix.Length);
-            }
-
-            return resourcePath;
-        }
-
-        #endregion
-
-        #region AssetBundle
-
-        /// <summary> AssetBundleを読み込み (非同期) </summary>
-        public static IObservable<T> LoadAsset<T>(string resourcePath, bool autoUnload = true) where T : UnityEngine.Object
-        {
-            return Observable.FromMicroCoroutine<T>(observer => Instance.LoadAssetInternal(observer, resourcePath, autoUnload));
-        }
-
-        private IEnumerator LoadAssetInternal<T>(IObserver<T> observer, string resourcePath, bool autoUnload) where T : UnityEngine.Object
-        {
-            System.Diagnostics.Stopwatch sw = null;
-
-            T result = null;
-
-            if (assetInfoManifest == null)
-            {
-                var exception = new Exception("AssetInfoManifest is null.");
-
-                OnError(exception);
-
-                observer.OnError(exception);
-
-                yield break;
-            }
-
-            var assetInfo = GetAssetInfo(resourcePath);
-
-            if (assetInfo == null)
-            {
-                var exception = new Exception(string.Format("AssetInfo not found.\n{0}", resourcePath));
-
-                OnError(exception);
-
-                observer.OnError(exception);
-
-                yield break;
-            }
-
-            // 外部処理.
-
-            if (instance.loadAssetHandler != null)
-            {
-                var loadRequestYield = instance.loadAssetHandler
-                    .OnLoadRequest(assetInfo)
-                    .ToYieldInstruction(false, yieldCancel.Token);
-
-                while (!loadRequestYield.IsDone)
-                {
-                    yield return null;
-                }
-
-                if (loadRequestYield.HasError)
-                {
-                    OnError(loadRequestYield.Error);
-
-                    observer.OnError(loadRequestYield.Error);
-
-                    yield break;
-                }
-            }
-
-            // 読み込み.
-
-            var assetPath = GetAssetPathFromAssetInfo(resourceDirectory, shareDirectory, assetInfo);
-
-            if (!LocalMode && !simulateMode)
-            {
-                // ローカルバージョンが古い場合はダウンロード.
-                if (!CheckAssetBundleVersion(assetInfo))
-                {
-                    var downloadYield = UpdateAsset(resourcePath).ToYieldInstruction(false, yieldCancel.Token);
-
-                    // 読み込み実行 (読み込み中の場合は読み込み待ちのObservableが返る).
-                    sw = System.Diagnostics.Stopwatch.StartNew();
-
-                    while (!downloadYield.IsDone)
-                    {
-                        yield return null;
-                    }
-
-                    if (downloadYield.HasError)
-                    {
-                        OnError(downloadYield.Error);
-
-                        observer.OnError(downloadYield.Error);
-
-                        yield break;
-                    }
-
-                    sw.Stop();
-
-                    if (LogEnable && UnityConsole.Enable)
-                    {
-                        var builder = new StringBuilder();
-
-                        var assetBundleName = assetInfo.AssetBundle.AssetBundleName;
-
-                        builder.AppendFormat("Update: {0} ({1:F2}ms)", Path.GetFileName(assetPath), sw.Elapsed.TotalMilliseconds).AppendLine();
-                        builder.AppendLine();
-                        builder.AppendFormat("LoadPath = {0}", assetPath).AppendLine();
-                        builder.AppendFormat("FileName = {0}", assetInfo.FileName).AppendLine();
-                        builder.AppendFormat("AssetBundleName = {0}", assetBundleName).AppendLine();
-
-                        if (!string.IsNullOrEmpty(assetInfo.FileHash))
-                        {
-                            builder.AppendFormat("Hash = {0}", assetInfo.FileHash).AppendLine();
-                        }
-
-                        UnityConsole.Event(ConsoleEventName, ConsoleEventColor, builder.ToString());
-                    }
-                }
-            }
-
-            var isLoading = loadingAssets.Contains(assetInfo);
-
-            if(!isLoading)
-            {
-                loadingAssets.Add(assetInfo);
-            }
-
-            // 時間計測開始.
-
-            sw = System.Diagnostics.Stopwatch.StartNew();
-
-            // 読み込み実行 (読み込み中の場合は読み込み待ちのObservableが返る).
-
-            var loadYield = assetBundleManager.LoadAsset<T>(assetInfo, assetPath, autoUnload).ToYieldInstruction();
-
-            while (!loadYield.IsDone)
-            {
-                yield return null;
-            }
-
-            result = loadYield.Result;
-
-            // 読み込み中リストから外す.
-
-            if (loadingAssets.Contains(assetInfo))
-            {
-                loadingAssets.Remove(assetInfo);
-            }
-
-            // 外部処理.
-
-            if (instance.loadAssetHandler != null)
-            {
-                var loadFinishYield = instance.loadAssetHandler
-                    .OnLoadFinish(assetInfo)
-                    .ToYieldInstruction(false, yieldCancel.Token);
-
-                while (!loadFinishYield.IsDone)
-                {
-                    yield return null;
-                }
-
-                if (loadFinishYield.HasError)
-                {
-                    OnError(loadFinishYield.Error);
-
-                    observer.OnError(loadFinishYield.Error);
-
-                    yield break;
-                }
-            }
-
-            // 時間計測終了.
-
-            sw.Stop();
-
-            // 読み込み中だった場合はログを表示しない.
-            if (result != null && !isLoading)
-            {
-                if (LogEnable && UnityConsole.Enable)
-                {
-                    var builder = new StringBuilder();
-
-                    var assetBundleName = assetInfo.AssetBundle.AssetBundleName;
-
-                    builder.AppendFormat("Load: {0} ({1:F2}ms)", Path.GetFileName(assetPath), sw.Elapsed.TotalMilliseconds).AppendLine();
-                    builder.AppendLine();
-                    builder.AppendFormat("LoadPath = {0}", assetPath).AppendLine();
-                    builder.AppendFormat("AssetBundleName = {0}", assetBundleName).AppendLine();
-                    builder.AppendFormat("Hash = {0}", assetInfo.FileHash).AppendLine();
-
-                    if (!string.IsNullOrEmpty(assetInfo.Category))
-                    {
-                        builder.AppendFormat("Category = {0}", assetInfo.Category).AppendLine();
-                    }
-
-                    UnityConsole.Event(ConsoleEventName, ConsoleEventColor, builder.ToString());
-                }
-
-                if (onLoadAsset != null)
-                {
-                    onLoadAsset.OnNext(resourcePath);
-                }
-            }
-
-            observer.OnNext(result);
-            observer.OnCompleted();
-        }
-
-        /// <summary> AssetBundleを解放 </summary>
-        public static void UnloadAssetBundle(string resourcePath)
-        {
-            Instance.UnloadAssetInternal(resourcePath);
-        }
-
-        /// <summary> 全てのAssetBundleを解放 </summary>
-        public static void UnloadAllAssetBundles(bool unloadAllLoadedObjects = false)
-        {
-            Instance.UnloadAllAssetsInternal(unloadAllLoadedObjects);
-        }
-
-        private void UnloadAllAssetsInternal(bool unloadAllLoadedObjects)
-        {
-            if (onUnloadAsset != null)
-            {
-                var loadedAssets = GetLoadedAssets();
-
-                foreach (var loadedAsset in loadedAssets)
-                {
-                    onUnloadAsset.OnNext(loadedAsset.Item1);
-                }
-            }
-
-            Instance.assetBundleManager.UnloadAllAsset(unloadAllLoadedObjects);
-        }
-
-        /// <summary> 読み込み済みAssetBundle一覧取得 </summary>
-        public static Tuple<string, int>[] GetLoadedAssets()
-        {
-            return Instance.assetBundleManager.GetLoadedAssetBundleNames();
-        }
-
-        private void UnloadAssetInternal(string resourcePath)
-        {
-            if (string.IsNullOrEmpty(resourcePath)) { return; }
-
-            if (assetInfoManifest == null)
-            {
-                Debug.LogError("AssetInfoManifest is null.");
-            }
-
-            var assetInfo = GetAssetInfo(resourcePath);
-
-            if (assetInfo == null)
-            {
-                Debug.LogErrorFormat("AssetInfo not found.\n{0}", resourcePath);
-            }
-
-            if (!assetInfo.IsAssetBundle)
-            {
-                Debug.LogErrorFormat("This file is not an assetBundle.\n{0}", resourcePath);
-            }
-
-            assetBundleManager.UnloadAsset(assetInfo.AssetBundle.AssetBundleName);
-
-            if (onUnloadAsset != null)
-            {
-                onUnloadAsset.OnNext(resourcePath);
-            }
-        }
-
-        #endregion
-
-        #if ENABLE_CRIWARE_ADX || ENABLE_CRIWARE_SOFDEC
-
-        private string ConvertCriFilePath(string resourcePath)
-        {
-            if (string.IsNullOrEmpty(resourcePath)){ return null; }
-
-            var assetInfo = GetAssetInfo(resourcePath);
-
-            return simulateMode ?
-                PathUtility.Combine(new string[] { UnityPathUtility.GetProjectFolderPath(), resourceDirectory, resourcePath }) :
-                criAssetManager.BuildFilePath(assetInfo);
-        }
-
-        #endif
-
-        #region Sound
-
-        #if ENABLE_CRIWARE_ADX
-        
-        public static IObservable<CueInfo> GetCueInfo(string resourcePath, string cue)
-        {
-            return Observable.FromMicroCoroutine<CueInfo>(observer => Instance.GetCueInfoInternal(observer, resourcePath, cue));
-        }
-
-        private IEnumerator GetCueInfoInternal(IObserver<CueInfo> observer, string resourcePath, string cue)
-        {
-            if (string.IsNullOrEmpty(resourcePath))
-            {
-                observer.OnError(new ArgumentException("resourcePath"));
-            }
-            else
-            {
-                var filePath = ConvertCriFilePath(resourcePath);
-
-                if (!LocalMode && !simulateMode)
-                {
-                    if (!CheckAssetVersion(resourcePath, filePath))
-                    {
-                        var assetInfo = GetAssetInfo(resourcePath);
-                        var assetPath = PathUtility.Combine(resourceDirectory, resourcePath);
-
-                        var sw = System.Diagnostics.Stopwatch.StartNew();
-
-                        var updateYield = UpdateAsset(resourcePath).ToYieldInstruction(false, yieldCancel.Token);
-
-                        while (!updateYield.IsDone)
-                        {
-                            yield return null;
-                        }
-
-                        sw.Stop();
-
-                        if (LogEnable && UnityConsole.Enable)
-                        {
-                            var builder = new StringBuilder();
-
-                            builder.AppendFormat("Update: {0} ({1:F2}ms)", Path.GetFileName(filePath), sw.Elapsed.TotalMilliseconds).AppendLine();
-                            builder.AppendLine();
-                            builder.AppendFormat("LoadPath = {0}", assetPath).AppendLine();
-                            builder.AppendFormat("FileName = {0}", assetInfo.FileName).AppendLine();
-
-                            if (!string.IsNullOrEmpty(assetInfo.FileHash))
-                            {
-                                builder.AppendFormat("Hash = {0}", assetInfo.FileHash).AppendLine();
-                            }
-
-                            UnityConsole.Event(ConsoleEventName, ConsoleEventColor, builder.ToString());
-                        }
-                    }
-                }
-
-                filePath = PathUtility.GetPathWithoutExtension(filePath) + CriAssetDefinition.AcbExtension;
-
-                observer.OnNext(File.Exists(filePath) ? new CueInfo(cue, filePath) : null);
-
-                if (onLoadAsset != null)
-                {
-                    onLoadAsset.OnNext(resourcePath);
-                }
-            }
-
-            observer.OnCompleted();
-        }
-
-        #endif
-
-        #endregion
-
-        #region Movie
-
-        #if ENABLE_CRIWARE_SOFDEC
-
-        public static IObservable<ManaInfo> GetMovieInfo(string resourcePath)
-        {
-            return Observable.FromMicroCoroutine<ManaInfo>(observer => Instance.GetMovieInfoInternal(observer, resourcePath));
-        }
-
-        private IEnumerator GetMovieInfoInternal(IObserver<ManaInfo> observer, string resourcePath)
-        {
-            if (string.IsNullOrEmpty(resourcePath))
-            {
-                observer.OnError(new ArgumentException("resourcePath"));
-            }
-            else
-            {
-                var filePath = ConvertCriFilePath(resourcePath);
-
-                if (!LocalMode && !simulateMode)
-                {
-                    if (!CheckAssetVersion(resourcePath, filePath))
-                    {
-                        var assetInfo = GetAssetInfo(resourcePath);
-                        var assetPath = PathUtility.Combine(resourceDirectory, resourcePath);
-
-                        var sw = System.Diagnostics.Stopwatch.StartNew();
-
-                        var updateYield = UpdateAsset(resourcePath).ToYieldInstruction(false, yieldCancel.Token);
-
-                        while (!updateYield.IsDone)
-                        {
-                            yield return null;
-                        }
-
-                        sw.Stop();
-
-                        if (LogEnable && UnityConsole.Enable)
-                        {
-                            var builder = new StringBuilder();
-
-                            builder.AppendFormat("Update: {0} ({1:F2}ms)", Path.GetFileName(filePath), sw.Elapsed.TotalMilliseconds).AppendLine();
-                            builder.AppendLine();
-                            builder.AppendFormat("LoadPath = {0}", assetPath).AppendLine();
-                            builder.AppendFormat("FileName = {0}", assetInfo.FileName).AppendLine();
-
-                            if (!string.IsNullOrEmpty(assetInfo.FileHash))
-                            {
-                                builder.AppendFormat("Hash = {0}", assetInfo.FileHash).AppendLine();
-                            }
-
-                            UnityConsole.Event(ConsoleEventName, ConsoleEventColor, builder.ToString());
-                        }
-                    }
-                }
-
-                filePath = PathUtility.GetPathWithoutExtension(filePath) + CriAssetDefinition.UsmExtension;
-
-                if (File.Exists(filePath))
-                {
-                    var manaInfo = new ManaInfo(filePath);
-
-                    observer.OnNext(manaInfo);
-
-                    if (onLoadAsset != null)
-                    {
-                        onLoadAsset.OnNext(resourcePath);
-                    }
-                }
-                else
-                {
-                    Debug.LogErrorFormat("File not found.\n{0}", filePath);
-
-                    observer.OnError(new FileNotFoundException(filePath));
-                }
-            }
-
-            observer.OnCompleted();
-        }
-
-        #endif
-
-        #endregion
 
         #region Extend Handler
 
