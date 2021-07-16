@@ -238,6 +238,18 @@ namespace Modules.SceneManagement
                 .AddTo(Disposable);
         }
 
+        /// <summary> シーン再読み込み. </summary>
+        public void Reload()
+        {
+            // 遷移中は遷移不可.
+            if (IsTransition) { return; }
+
+            // ※ 呼び出し元でAddTo(this)されるとシーン遷移中にdisposableされてしまうのでIObservableで公開しない.
+            transitionDisposable = Observable.FromMicroCoroutine(() => TransitionCore(currentSceneArgument, LoadSceneMode.Additive, false, false))
+                .Subscribe(_ => transitionDisposable = null)
+                .AddTo(Disposable);
+        }
+
         /// <summary>
         /// シーン遷移を中止.
         /// </summary>
