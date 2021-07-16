@@ -1,4 +1,5 @@
 ﻿
+using UnityEngine;
 using UnityEngine.U2D;
 using UnityEditor;
 using UnityEditor.U2D;
@@ -49,9 +50,7 @@ namespace Modules.Devkit.AssetTuning
 
             var packingSettings = spriteAtlas.GetPackingSettings();
 
-            packingSettings.padding = 2;
-            packingSettings.enableTightPacking = false;
-            packingSettings.enableRotation = false;
+            SetPackingSettings(ref packingSettings);
 
             spriteAtlas.SetPackingSettings(packingSettings);
 
@@ -59,23 +58,43 @@ namespace Modules.Devkit.AssetTuning
 
             var textureSettings = spriteAtlas.GetTextureSettings();
 
-            textureSettings.readable = false;
-            textureSettings.generateMipMaps = false;
+            SetTextureSettings(ref textureSettings);
 
             spriteAtlas.SetTextureSettings(textureSettings);
 
             //------ PlatformSettings ------
-            
+
             foreach (var platformName in DefaultTargetPlatforms)
             {
                 var platformSetting = spriteAtlas.GetPlatformSettings(platformName.ToString());
 
-                platformSetting.overridden = true;
-                platformSetting.format = TextureImporterFormat.ASTC_RGBA_4x4;
-                platformSetting.maxTextureSize = 1024;
+                SetTexturePlatformSettings(ref platformSetting);
 
                 spriteAtlas.SetPlatformSettings(platformSetting);
             }
+        }
+
+        protected virtual void SetPackingSettings(ref SpriteAtlasPackingSettings packingSettings)
+        {
+            packingSettings.padding = 2;
+            packingSettings.enableTightPacking = false;
+            packingSettings.enableRotation = false;
+        }
+
+        protected virtual void SetTextureSettings(ref SpriteAtlasTextureSettings textureSettings)
+        {
+            textureSettings.readable = false;
+            textureSettings.generateMipMaps = false;
+            textureSettings.filterMode = FilterMode.Bilinear;
+        }
+
+        protected virtual void SetTexturePlatformSettings(ref TextureImporterPlatformSettings platformSetting)
+        {
+            platformSetting.overridden = true;
+            platformSetting.format = TextureImporterFormat.ASTC_4x4;
+            platformSetting.maxTextureSize = 1024;
+            platformSetting.compressionQuality = 100;
+            platformSetting.textureCompression = TextureImporterCompression.Compressed;
         }
     }
 }

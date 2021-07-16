@@ -1,6 +1,7 @@
 ﻿
-using UnityEditor;
 using System;
+using UnityEngine;
+using UnityEditor;
 using System.Linq;
 using Extensions;
 
@@ -69,15 +70,14 @@ namespace Modules.Devkit.AssetTuning
             }
         }
 
-        protected virtual void OnFirstImport(TextureImporter textureImporter)
+        protected virtual void SetTextureSettings(ref TextureImporter textureImporter)
         {
-            if (textureImporter == null) { return; }
-
             textureImporter.alphaSource = TextureImporterAlphaSource.FromInput;
             textureImporter.alphaIsTransparency = true;
             textureImporter.mipmapEnabled = false;
             textureImporter.isReadable = false;
             textureImporter.npotScale = TextureImporterNPOTScale.None;
+            textureImporter.filterMode = FilterMode.Bilinear;
 
             var settings = new TextureImporterSettings();
 
@@ -86,6 +86,13 @@ namespace Modules.Devkit.AssetTuning
             settings.spriteGenerateFallbackPhysicsShape = false;
 
             textureImporter.SetTextureSettings(settings);
+        }
+
+        protected virtual void OnFirstImport(TextureImporter textureImporter)
+        {
+            if (textureImporter == null) { return; }
+
+            SetTextureSettings(ref textureImporter);
 
             SetTextureTypeSettings(textureImporter);
 
@@ -103,14 +110,14 @@ namespace Modules.Devkit.AssetTuning
                 return;
             }
 
-            foreach (var platform in Platforms)
+            for (var i = 0; i < Platforms.Length; i++)
             {
+                var platform = Platforms[i];
+
                 Func<TextureImporterPlatformSettings, TextureImporterPlatformSettings> update = settings =>
                 {
-                    settings.overridden = true;
-                    settings.compressionQuality = 50;
-                    settings.textureCompression = TextureImporterCompression.Compressed;
-                    settings.androidETC2FallbackOverride = AndroidETC2FallbackOverride.UseBuildSettings;
+                    SetPlatformCompressionSettings(ref settings);
+
                     settings.format = GetPlatformCompressionType(textureImporter, platform);
 
                     return settings;
@@ -144,6 +151,14 @@ namespace Modules.Devkit.AssetTuning
             return isTarget;
         }
 
+        protected virtual void SetPlatformCompressionSettings(ref TextureImporterPlatformSettings platformSetting)
+        {
+            platformSetting.overridden = true;
+            platformSetting.compressionQuality = 50;
+            platformSetting.androidETC2FallbackOverride = AndroidETC2FallbackOverride.UseBuildSettings;
+            platformSetting.textureCompression = TextureImporterCompression.Compressed;
+        }
+
         protected virtual TextureImporterFormat GetPlatformCompressionType(TextureImporter textureImporter, BuildTargetGroup platform)
         {
             var format = TextureImporterFormat.RGBA32;
@@ -153,11 +168,11 @@ namespace Modules.Devkit.AssetTuning
             switch (platform)
             {
                 case BuildTargetGroup.iOS:
-                    format = TextureImporterFormat.ASTC_RGB_4x4;
+                    format = TextureImporterFormat.ASTC_4x4;
                     break;
 
                 case BuildTargetGroup.Android:
-                    format = TextureImporterFormat.ASTC_RGB_4x4;
+                    format = TextureImporterFormat.ASTC_4x4;
                     break;
                 case BuildTargetGroup.Standalone:
                     {
@@ -175,23 +190,6 @@ namespace Modules.Devkit.AssetTuning
 
             return format;
 		}
-
-        protected void SetDefaultSettings(TextureImporter textureImporter)
-        {
-            foreach (var platform in Platforms)
-            {
-                var platformTextureSetting = textureImporter.GetPlatformTextureSettings(platform.ToString());
-
-                Func<TextureImporterPlatformSettings, TextureImporterPlatformSettings> update = settings =>
-                {
-                    platformTextureSetting.overridden = false;
-
-                    return platformTextureSetting;
-                };
-
-                textureImporter.SetPlatformTextureSetting(platform, update);
-            }
-        }
 
         public static bool IsFolderItem(string assetPath, Object[] folders, string[] ignoreFolders)
         {
