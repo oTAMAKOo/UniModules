@@ -79,10 +79,23 @@ namespace Modules.Devkit.AssetTuning
             textureImporter.npotScale = TextureImporterNPOTScale.None;
             textureImporter.filterMode = FilterMode.Bilinear;
 
+            if (textureImporter.textureType == TextureImporterType.Sprite)
+            {
+                SetSpriteSettings(textureImporter);
+            }
+        }
+
+        protected virtual void SetSpriteSettings(TextureImporter textureImporter)
+        {
+            textureImporter.spriteImportMode = SpriteImportMode.Single;
+
             var settings = new TextureImporterSettings();
 
             textureImporter.ReadTextureSettings(settings);
 
+            settings.textureShape = TextureImporterShape.Texture2D;
+            settings.alphaIsTransparency = true;
+            settings.spriteMeshType = SpriteMeshType.FullRect;
             settings.spriteGenerateFallbackPhysicsShape = false;
 
             textureImporter.SetTextureSettings(settings);
