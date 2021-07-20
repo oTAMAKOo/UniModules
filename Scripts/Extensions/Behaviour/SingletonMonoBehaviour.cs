@@ -1,7 +1,5 @@
 ﻿﻿
 using UnityEngine;
-using System;
-using Extensions;
 
 namespace Extensions
 {
@@ -16,7 +14,13 @@ namespace Extensions
 
         //----- property -----
 
-        public static T Instance { get { return instance; } }
+        public static T Instance
+        {
+            get
+            {
+                return instance ?? (instance = UnityUtility.FindObjectOfType<T>());
+            }
+        }
 
         //----- method -----
 
