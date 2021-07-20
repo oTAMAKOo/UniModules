@@ -249,7 +249,7 @@ namespace Modules
 
         #region CriWare
 
-#if ENABLE_CRIWARE_ADX || ENABLE_CRIWARE_SOFDEC
+        #if ENABLE_CRIWARE_ADX || ENABLE_CRIWARE_SOFDEC
 
         protected const string CriWareMenu = MenuRoot + "CriWare/";
 
@@ -265,7 +265,7 @@ namespace Modules
             CriAssetUpdater.Execute();
         }
 
-#endif
+        #endif
 
         #endregion
 

@@ -73,7 +73,7 @@ namespace Modules.Devkit.Pinning
 
             UpdatePinnedObject();
 
-            using (new EditorGUILayout.HorizontalScope(EditorStyles.toolbarButton))
+            using (new EditorGUILayout.HorizontalScope(EditorStyles.toolbar))
             {
                 if (GUILayout.Button("+", EditorStyles.toolbarButton, GUILayout.ExpandWidth(false)))
                 {

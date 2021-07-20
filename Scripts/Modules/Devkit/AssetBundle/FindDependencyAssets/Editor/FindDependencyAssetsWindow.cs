@@ -160,7 +160,7 @@ namespace Modules.Devkit.AssetBundles
 
         private void DrawHeader()
         {
-            using (new EditorGUILayout.HorizontalScope(EditorStyles.toolbarButton))
+            using (new EditorGUILayout.HorizontalScope(EditorStyles.toolbar))
             {
                 EditorGUI.BeginChangeCheck();
 
