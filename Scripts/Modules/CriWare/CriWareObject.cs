@@ -34,7 +34,7 @@ namespace Modules.CriWare
 
         //----- method -----
 
-        public void Initialize(string decryptKey)
+        public void Initialize(string cryptoKey)
         {
             #if ENABLE_CRIWARE_SOFDEC
 
@@ -76,14 +76,14 @@ namespace Modules.CriWare
                 // 手動管理する為無効化.
                 Initializer.dontDestroyOnLoad = false;
 
-                if (!string.IsNullOrEmpty(decryptKey))
+                if (!string.IsNullOrEmpty(cryptoKey))
                 {
                     // ※ ADX2-LEは自動で暗号化処理が掛かるのでdecrypterConfig自体が存在しない.
 
                     #if !ENABLE_CRIWARE_ADX_LE
 
                     // 認証キー.
-                    Initializer.decrypterConfig.key = decryptKey;
+                    Initializer.decrypterConfig.key = cryptoKey;
 
                     #endif
                 }

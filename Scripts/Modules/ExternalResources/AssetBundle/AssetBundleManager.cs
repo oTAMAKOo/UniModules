@@ -27,9 +27,6 @@ namespace Modules.AssetBundles
 
         public const string PackageExtension = ".package";
 
-        public const string DefaultAESKey = "MprvQauVXRXUvC532oe861pPVTy5UtFK";
-        public const string DefaultAESIv = "rw6mpYs7jsSgfVEV";
-
         // タイムアウトまでの時間.
         private readonly TimeSpan TimeoutLimit = TimeSpan.FromSeconds(60f);
 
@@ -99,7 +96,7 @@ namespace Modules.AssetBundles
         private Subject<AssetInfo> onTimeOut = null;
         private Subject<Exception> onError = null;
 
-        private AesCryptKey aesCryptKey = null;
+        private AesCryptoKey aesCryptoKey = null;
 
         private bool isInitialized = false;
 
@@ -115,8 +112,8 @@ namespace Modules.AssetBundles
         /// </summary>
         /// <param name="maxDownloadCount">同時ダウンロード数</param>
         /// <param name="simulateMode">AssetDataBaseからアセットを取得(EditorOnly)</param>
-        /// <param name="cryptKey">暗号化キー(Key,IVがModules.ExternalResource.Editor.ManageConfigのAssetのCryptKeyと一致している必要があります.)</param>
-        public void Initialize(uint maxDownloadCount, bool simulateMode = false, AesCryptKey cryptKey = null)
+        /// <param name="cryptoKey">暗号化キー(Key,IVがModules.ExternalResource.Editor.ManageConfigのAssetのCryptKeyと一致している必要があります.)</param>
+        public void Initialize(uint maxDownloadCount, bool simulateMode = false, AesCryptoKey cryptoKey = null)
         {
             if (isInitialized) { return; }
 
@@ -130,8 +127,6 @@ namespace Modules.AssetBundles
             downloadingErrors = new Dictionary<string, string>();
             assetInfosByAssetBundleName = new Dictionary<string, AssetInfo[]>();
             dependencies = new Dictionary<string, string[]>();
-
-            aesCryptKey = cryptKey ?? new AesCryptKey(DefaultAESKey, DefaultAESIv);
 
             BuildAssetInfoTable();
 
@@ -158,9 +153,22 @@ namespace Modules.AssetBundles
         /// </summary>
         /// <param name="key">暗号化Key(32文字)</param>
         /// <param name="iv">暗号化IV(16文字)</param>
-        public void SetCryptKey(string key, string iv)
+        public void SetCryptoKey(string key, string iv)
         {
-            this.aesCryptKey = new AesCryptKey(key, iv);
+            this.aesCryptoKey = new AesCryptoKey(key, iv);
+        }
+
+        /// <summary>
+        /// 暗号化キー取得.
+        /// </summary>
+        public AesCryptoKey GetCryptoKey()
+        {
+            if (aesCryptoKey == null)
+            {
+                aesCryptoKey = new AesCryptoKey("MprvQauVXRXUvC532oe861pPVTy5UtFK", "rw6mpYs7jsSgfVEV");
+            }
+
+            return aesCryptoKey;
         }
 
         /// <summary>
@@ -640,7 +648,9 @@ namespace Modules.AssetBundles
             var filePath = BuildFilePath(assetInfo);
             var assetBundleInfo = assetInfo.AssetBundle;
             var assetBundleName = assetBundleInfo.AssetBundleName;
-            
+
+            var cryptoKey = GetCryptoKey();
+
             Func<byte[]> loadCacheFile = () =>
             {
                 var bytes = new byte[0];
@@ -652,7 +662,7 @@ namespace Modules.AssetBundles
                     fileStream.Read(bytes, 0, bytes.Length);
 
                     // 復号化
-                    bytes = bytes.Decrypt(aesCryptKey);
+                    bytes = bytes.Decrypt(cryptoKey);
                 }
 
                 return bytes;

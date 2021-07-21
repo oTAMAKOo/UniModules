@@ -11,7 +11,7 @@ namespace Extensions
         /// <summary>
         /// バイト配列をAESで暗号化.
         /// </summary>
-        public static byte[] Encrypt(this byte[] value, AesCryptKey aesCryptKey)
+        public static byte[] Encrypt(this byte[] value, AesCryptoKey aesCryptoKey)
         {
             if (value == null || value.IsEmpty()) { return null; }
 
@@ -19,9 +19,9 @@ namespace Extensions
 
             using (var memoryStream = new MemoryStream())
             {
-                lock (aesCryptKey.Encryptor)
+                lock (aesCryptoKey.Encryptor)
                 {
-                    using (var cryptoStream = new CryptoStream(memoryStream, aesCryptKey.Encryptor, CryptoStreamMode.Write))
+                    using (var cryptoStream = new CryptoStream(memoryStream, aesCryptoKey.Encryptor, CryptoStreamMode.Write))
                     {
                         cryptoStream.Write(value, 0, value.Length);
                         cryptoStream.Close();
@@ -36,7 +36,7 @@ namespace Extensions
         /// <summary>
         /// バイト配列をAESで復号化.
         /// </summary>
-        public static byte[] Decrypt(this byte[] value, AesCryptKey aesCryptKey)
+        public static byte[] Decrypt(this byte[] value, AesCryptoKey aesCryptoKey)
         {
             if (value == null || value.IsEmpty()) { return null; }
 
@@ -44,9 +44,9 @@ namespace Extensions
             
             using (var memoryStream = new MemoryStream())
             {
-                lock (aesCryptKey.Decryptor)
+                lock (aesCryptoKey.Decryptor)
                 {
-                    using (var cryptoStream = new CryptoStream(memoryStream, aesCryptKey.Decryptor, CryptoStreamMode.Write))
+                    using (var cryptoStream = new CryptoStream(memoryStream, aesCryptoKey.Decryptor, CryptoStreamMode.Write))
                     {
                         cryptoStream.Write(value, 0, value.Length);
                         cryptoStream.Close();
@@ -62,7 +62,7 @@ namespace Extensions
         /// <summary>
         /// 文字列をAESで暗号化.
         /// </summary>
-        public static string Encrypt(this string value, AesCryptKey aesCryptKey, bool escape = false)
+        public static string Encrypt(this string value, AesCryptoKey aesCryptoKey, bool escape = false)
         {
             if (string.IsNullOrEmpty(value)) { return null; }
 
@@ -70,9 +70,9 @@ namespace Extensions
             
             using (var memoryStream = new MemoryStream())
             {
-                lock (aesCryptKey.Encryptor)
+                lock (aesCryptoKey.Encryptor)
                 {
-                    using (var cryptoStream = new CryptoStream(memoryStream, aesCryptKey.Encryptor, CryptoStreamMode.Write))
+                    using (var cryptoStream = new CryptoStream(memoryStream, aesCryptoKey.Encryptor, CryptoStreamMode.Write))
                     {
                         var toEncrypt = Encoding.UTF8.GetBytes(value);
 
@@ -97,7 +97,7 @@ namespace Extensions
         /// <summary>
         /// 文字列をAESで復号化.
         /// </summary>
-        public static string Decrypt(this string value, AesCryptKey aesCryptKey, bool escape = false)
+        public static string Decrypt(this string value, AesCryptoKey aesCryptoKey, bool escape = false)
         {
             if (string.IsNullOrEmpty(value)) { return null; }
 
@@ -114,9 +114,9 @@ namespace Extensions
             
             using (var memoryStream = new MemoryStream(encrypted))
             {
-                lock (aesCryptKey.Decryptor)
+                lock (aesCryptoKey.Decryptor)
                 {
-                    using (var cryptoStream = new CryptoStream(memoryStream, aesCryptKey.Decryptor, CryptoStreamMode.Read))
+                    using (var cryptoStream = new CryptoStream(memoryStream, aesCryptoKey.Decryptor, CryptoStreamMode.Read))
                     {
                         cryptoStream.Read(fromEncrypt, 0, fromEncrypt.Length);
                     }
@@ -130,7 +130,7 @@ namespace Extensions
         }
     }
 
-    public sealed class AesCryptKey
+    public sealed class AesCryptoKey
     {
         //----- params -----
         
@@ -173,7 +173,7 @@ namespace Extensions
 
         //----- method -----
 
-        public AesCryptKey(string password)
+        public AesCryptoKey(string password)
         {
             if (string.IsNullOrEmpty(password))
             {
@@ -189,7 +189,7 @@ namespace Extensions
             aesManaged.IV = pdb.GetBytes(16);
         }
 
-        public AesCryptKey(string key, string iv)
+        public AesCryptoKey(string key, string iv)
         {
             if (string.IsNullOrEmpty(key) || string.IsNullOrEmpty(iv))
             {

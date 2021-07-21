@@ -46,9 +46,9 @@ namespace Modules.GameText
 
             if (asset == null) { return; }
 
-            var aesCryptKey = GetAesCryptKey();
+            var cryptoKey = GetCryptoKey();
 
-            extendTextContents = asset.Contents.ToDictionary(x => x.Guid, x => x.Text.Decrypt(aesCryptKey));
+            extendTextContents = asset.Contents.ToDictionary(x => x.Guid, x => x.Text.Decrypt(cryptoKey));
         }
     }
 }

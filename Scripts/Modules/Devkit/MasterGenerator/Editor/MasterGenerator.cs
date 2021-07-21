@@ -89,18 +89,18 @@ namespace Modules.Master
 
             // 暗号化キー.
 
-            AesCryptKey dataCryptKey = null;
+            AesCryptoKey dataCryptoKey = null;
 
             if (!string.IsNullOrEmpty(config.DataCryptKey) && !string.IsNullOrEmpty(config.DataCryptIv))
             {
-                dataCryptKey = new AesCryptKey(config.DataCryptKey, config.DataCryptIv);
+                dataCryptoKey = new AesCryptoKey(config.DataCryptKey, config.DataCryptIv);
             }
 
-            AesCryptKey fileNameCryptKey = null;
+            AesCryptoKey fileNameCryptoKey = null;
 
             if (!string.IsNullOrEmpty(config.FileNameCryptKey) && !string.IsNullOrEmpty(config.FileNameCryptIv))
             {
-                fileNameCryptKey = new AesCryptKey(config.FileNameCryptKey, config.FileNameCryptIv);
+                fileNameCryptoKey = new AesCryptoKey(config.FileNameCryptKey, config.FileNameCryptIv);
             }
 
             // 実行.
@@ -151,11 +151,11 @@ namespace Modules.Master
 
                             // MessagePackファイル作成.
 
-                            var filePath = GetGenerateMasterFilePath(exportDirectory, masterFileName, fileNameCryptKey);
+                            var filePath = GetGenerateMasterFilePath(exportDirectory, masterFileName, fileNameCryptoKey);
 
                             var fileName = Path.GetFileNameWithoutExtension(filePath);
 
-                            var versionHash = await GenerateMasterFile(filePath, master,  dataCryptKey, lz4Compression);
+                            var versionHash = await GenerateMasterFile(filePath, master,  dataCryptoKey, lz4Compression);
 
                             // バージョンハッシュ.
 
@@ -304,11 +304,11 @@ namespace Modules.Master
 
         #region Generate File
 
-        private static string GetGenerateMasterFilePath(string exportPath, string masterFileName, AesCryptKey fileNameCryptKey)
+        private static string GetGenerateMasterFilePath(string exportPath, string masterFileName, AesCryptoKey fileNameCryptoKey)
         {
-            if (fileNameCryptKey != null)
+            if (fileNameCryptoKey != null)
             {
-                masterFileName = masterFileName.Encrypt(fileNameCryptKey, true);
+                masterFileName = masterFileName.Encrypt(fileNameCryptoKey, true);
             }
 
             var filePath = PathUtility.Combine(exportPath, masterFileName);
@@ -316,7 +316,7 @@ namespace Modules.Master
             return filePath;
         }
 
-        private static async Task<string> GenerateMasterFile(string filePath, object master, AesCryptKey dataCryptKey, bool lz4Compression)
+        private static async Task<string> GenerateMasterFile(string filePath, object master, AesCryptoKey dataCryptoKey, bool lz4Compression)
         {
             var options = StandardResolverAllowPrivate.Options.WithResolver(UnityContractResolver.Instance);
 
@@ -333,9 +333,9 @@ namespace Modules.Master
 
             // 暗号化.
 
-            if (dataCryptKey != null)
+            if (dataCryptoKey != null)
             {
-                bytes = bytes.Encrypt(dataCryptKey);
+                bytes = bytes.Encrypt(dataCryptoKey);
             }
 
             // ファイル出力.

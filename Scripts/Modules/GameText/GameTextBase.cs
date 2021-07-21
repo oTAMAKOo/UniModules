@@ -51,8 +51,6 @@ namespace Modules.GameText.Components
 
         protected virtual IReadOnlyDictionary<Enum, string> FindCategoryTexts(string categoryGuid) { return null; }
 
-        protected abstract string GetAesKey();
-
-        protected abstract string GetAesIv();
+        protected abstract AesCryptoKey GetCryptKey();
     }
 }

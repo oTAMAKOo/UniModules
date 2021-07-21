@@ -131,7 +131,7 @@ namespace Modules.Master
                 {
                     UnityEditorUtility.RegisterUndo("MasterGeneratorConfigInspector Undo", instance);
 
-                    Reflection.SetPrivateField(instance, "dataCryptKey", dataCryptKey);
+                    Reflection.SetPrivateField(instance, "dataCryptoKey", dataCryptKey);
                     Reflection.SetPrivateField(instance, "dataCryptIv", dataCryptIv);
                 }
             }
@@ -152,7 +152,7 @@ namespace Modules.Master
                 {
                     UnityEditorUtility.RegisterUndo("MasterGeneratorConfigInspector Undo", instance);
 
-                    Reflection.SetPrivateField(instance, "fileNameCryptKey", fileNameCryptKey);
+                    Reflection.SetPrivateField(instance, "fileNameCryptoKey", fileNameCryptKey);
                     Reflection.SetPrivateField(instance, "fileNameCryptIv", fileNameCryptIv);
                 }
             }

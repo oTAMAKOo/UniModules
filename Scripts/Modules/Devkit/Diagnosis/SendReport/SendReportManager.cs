@@ -43,7 +43,7 @@ namespace Modules.Devkit.Diagnosis.SendReport
 
         private ISendReportBuilder[] sendReportBuilders = null;
 
-        private AesCryptKey aesCryptKey = null;
+        private AesCryptoKey aesCryptoKey = null;
 
         public byte[] screenShotData = null;
         
@@ -75,9 +75,9 @@ namespace Modules.Devkit.Diagnosis.SendReport
             this.reportUrl = reportUrl;
         }
 
-        public void SetCryptKey(AesCryptKey aesCryptKey)
+        public void SetCryptKey(AesCryptoKey aesCryptoKey)
         {
-            this.aesCryptKey = aesCryptKey;
+            this.aesCryptoKey = aesCryptoKey;
         }
 
         public void SetReportBuilders(ISendReportBuilder[] sendReportBuilders)
@@ -224,7 +224,7 @@ namespace Modules.Devkit.Diagnosis.SendReport
                 value = "---";
             }
 
-            value = aesCryptKey != null ? value.Encrypt(aesCryptKey) : value;
+            value = aesCryptoKey != null ? value.Encrypt(aesCryptoKey) : value;
 
             reportContents.Add(key, value);
         }

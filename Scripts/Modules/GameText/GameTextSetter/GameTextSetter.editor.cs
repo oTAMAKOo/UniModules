@@ -11,9 +11,6 @@ namespace Modules.GameText.Components
     {
         //----- params -----
 
-        private const string AESKey = "5k7DpFGc9A9iRaLkv2nCdMxCmjHFzxOX";
-        private const string AESIv = "FiEA3x1fs8JhK9Tp";
-
         public const char DevelopmentMark = '#';
 
         //----- field -----
@@ -25,32 +22,36 @@ namespace Modules.GameText.Components
 
         #pragma warning restore 0414
 
-        private static AesCryptKey aesCryptKey = null;
+        private static AesCryptoKey aesCryptoKey = null;
 
         //----- property -----
 
         //----- method -----
 
+        private AesCryptoKey GetCryptoKey()
+        {
+            if (aesCryptoKey == null)
+            {
+                aesCryptoKey = new AesCryptoKey("5k7DpFGc9A9iRaLkv2nCdMxCmjHFzxOX", "FiEA3x1fs8JhK9Tp");
+            }
+
+            return aesCryptoKey;
+        }
+
         private string GetDevelopmentText()
         {
-            if (aesCryptKey == null)
-            {
-                aesCryptKey = new AesCryptKey(AESKey, AESIv);
-            }
+            var cryptoKey = GetCryptoKey();
 
             if (string.IsNullOrEmpty(developmentText)) { return string.Empty; }
 
-            return string.Format("{0}{1}", DevelopmentMark, developmentText.Decrypt(aesCryptKey));
+            return string.Format("{0}{1}", DevelopmentMark, developmentText.Decrypt(cryptoKey));
         }
 
         private void SetDevelopmentText(string text)
         {
-            if (aesCryptKey == null)
-            {
-                aesCryptKey = new AesCryptKey(AESKey, AESIv);
-            }
+            var cryptoKey = GetCryptoKey();
 
-            developmentText = string.IsNullOrEmpty(text) ? string.Empty : text.Encrypt(aesCryptKey);
+            developmentText = string.IsNullOrEmpty(text) ? string.Empty : text.Encrypt(cryptoKey);
 
             ImportText();
         }

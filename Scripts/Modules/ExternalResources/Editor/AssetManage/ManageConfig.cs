@@ -19,9 +19,9 @@ namespace Modules.ExternalResource.Editor
         //----- field -----
 
         [SerializeField, Tooltip("32文字で設定")]
-        private string cryptKey = AssetBundleManager.DefaultAESKey;
+        private string cryptoKey = "MprvQauVXRXUvC532oe861pPVTy5UtFK";
         [SerializeField, Tooltip("16文字で設定")]
-        private string cryptIv = AssetBundleManager.DefaultAESIv;
+        private string cryptoIv = "rw6mpYs7jsSgfVEV";
 
         [Header("Ignore AssetManagement")]
 
@@ -41,9 +41,9 @@ namespace Modules.ExternalResource.Editor
         //----- property -----
 
         /// <summary> 暗号化Key(32文字) </summary>
-        public string CryptKey { get { return cryptKey; } }
+        public string CryptoKey { get { return cryptoKey; } }
         /// <summary> 暗号化Iv (16文字)</summary>
-        public string CryptIv { get { return cryptIv; } }
+        public string CryptoIv { get { return cryptoIv; } }
 
         /// <summary> 除外対象(管理しない) </summary>
         public Object[] IgnoreManage { get { return ignoreManage; } }

@@ -127,10 +127,10 @@ namespace Modules.ExternalResource.Editor
 
                     //------ AssetBundleファイルをパッケージ化 ------
 
-                    var cryptKey = manageConfig.CryptKey;
-                    var cryptIv = manageConfig.CryptIv;
+                    var cryptoKey = manageConfig.CryptoKey;
+                    var cryptoIv = manageConfig.CryptoIv;
 
-                    await BuildAssetBundlePackage.BuildAllAssetBundlePackage(exportPath, assetBundlePath, assetInfoManifest, cryptKey, cryptIv);
+                    await BuildAssetBundlePackage.BuildAllAssetBundlePackage(exportPath, assetBundlePath, assetInfoManifest, cryptoKey, cryptoIv);
 
                     AddBuildTimeLog(logBuilder, sw, "BuildPackage");
 
@@ -168,7 +168,7 @@ namespace Modules.ExternalResource.Editor
 
                     //------ AssetInfoManifestファイルをパッケージ化 ------
 
-                    await BuildAssetBundlePackage.BuildAssetInfoManifestPackage(exportPath, assetBundlePath, cryptKey, cryptIv);
+                    await BuildAssetBundlePackage.BuildAssetInfoManifestPackage(exportPath, assetBundlePath, cryptoKey, cryptoIv);
 
                     AddBuildTimeLog(logBuilder, sw, "BuildPackage AssetInfoManifest");
                 }

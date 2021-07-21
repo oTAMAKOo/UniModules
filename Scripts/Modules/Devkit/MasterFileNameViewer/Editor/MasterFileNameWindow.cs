@@ -36,7 +36,7 @@ namespace Modules.Master
 
         //----- method -----
 
-        protected void Initialize(IMaster[] masters, AesCryptKey cryptKey)
+        protected void Initialize(IMaster[] masters, AesCryptoKey cryptoKey)
         {
             if (initialized){ return; }
 
@@ -48,7 +48,7 @@ namespace Modules.Master
 
             var masterManager = MasterManager.Instance;
 
-            masterManager.SetFileNameCryptKey(cryptKey);
+            masterManager.SetFileNameCryptKey(cryptoKey);
 
             masterNameDictionary = new Dictionary<IMaster, string>();
 

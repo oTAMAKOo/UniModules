@@ -7,26 +7,39 @@ namespace Extensions
 {
     public static class SecurePrefs
     {
-        private const string AESKey = "5kaDpFGc1A9iRaLkv2n3dMxCmjjFzxOX";
-        private const string AESIv = "1i233x1fs8J1K9Tp";
+        private static AesCryptoKey aesCryptoKey = null;
 
-        private static AesCryptKey aesCryptKey = new AesCryptKey(AESKey, AESIv);
+        //====== CryptKey ======
 
-        public static void SetCryptKey(AesCryptKey aesCryptKey)
+        public static void SetCryptoKey(AesCryptoKey aesCryptoKey)
         {
-            SecurePrefs.aesCryptKey = aesCryptKey;
+            SecurePrefs.aesCryptoKey = aesCryptoKey;
+        }
+
+        private static AesCryptoKey GetCryptoKey()
+        {
+            if (aesCryptoKey == null)
+            {
+                aesCryptoKey = new AesCryptoKey("5kaDpFGc1A9iRaLkv2n3dMxCmjjFzxOX", "1i233x1fs8J1K9Tp");
+            }
+
+            return aesCryptoKey;
         }
 
         //====== Utility ======
 
         public static bool HasKey(string name)
         {
-            return PlayerPrefs.HasKey(name.Encrypt(aesCryptKey));
+            var cryptoKey = GetCryptoKey();
+
+            return PlayerPrefs.HasKey(name.Encrypt(cryptoKey));
         }
 
         public static void DeleteKey(string name)
         {
-            PlayerPrefs.DeleteKey(name.Encrypt(aesCryptKey));
+            var cryptoKey = GetCryptoKey();
+
+            PlayerPrefs.DeleteKey(name.Encrypt(cryptoKey));
         }
 
         public static void DeleteAll()
@@ -43,14 +56,18 @@ namespace Extensions
 
         public static void SetString(string name, string value)
         {
-            PlayerPrefs.SetString(name.Encrypt(aesCryptKey), value.Encrypt(aesCryptKey, true));
+            var cryptoKey = GetCryptoKey();
+
+            PlayerPrefs.SetString(name.Encrypt(cryptoKey), value.Encrypt(cryptoKey, true));
         }
 
         public static string GetString(string name, string defaultValue = "")
         {
             if (!HasKey(name)) { return defaultValue; }
 
-            return PlayerPrefs.GetString(name.Encrypt(aesCryptKey)).Decrypt(aesCryptKey, true);
+            var cryptoKey = GetCryptoKey();
+
+            return PlayerPrefs.GetString(name.Encrypt(cryptoKey)).Decrypt(cryptoKey, true);
         }
 
         //====== Int ======

@@ -11,37 +11,25 @@ namespace Modules.Devkit.Memo
         private string text = null;
         private Vector2 scrollPosition = Vector2.zero;
 
-        private static AesCryptKey aesCryptKey = null;
+        private static AesCryptoKey cryptoKey = null;
 
         void OnEnable()
         {
-            var config = MemoConfig.Instance;
-
-            if (aesCryptKey == null)
-            {
-                aesCryptKey = new AesCryptKey(config.AESKey, config.AESIv);
-            }
-
             var instance = target as Memo;
+
+            var cryptoKey = GetCryptoKey();
 
             var memo = Reflection.GetPrivateField<Memo, string>(instance, "memo");
 
             if (!string.IsNullOrEmpty(memo))
             {
-                text = memo.Decrypt(aesCryptKey);
+                text = memo.Decrypt(cryptoKey);
             }
         }
 
         public override void OnInspectorGUI()
         {
             var memo = target as Memo;
-
-            var config = MemoConfig.Instance;
-
-            if (aesCryptKey == null)
-            {
-                aesCryptKey = new AesCryptKey(config.AESKey, config.AESIv);
-            }
 
             EditorGUILayout.Separator();
 
@@ -60,12 +48,26 @@ namespace Modules.Devkit.Memo
 
                     if (EditorGUI.EndChangeCheck())
                     {
-                        Reflection.SetPrivateField(memo, "memo", text.Encrypt(aesCryptKey));
+                        var cryptoKey = GetCryptoKey();
+
+                        Reflection.SetPrivateField(memo, "memo", text.Encrypt(cryptoKey));
                     }
                 }
 
                 scrollPosition = scrollViewScope.scrollPosition;
             }
+        }
+
+        private AesCryptoKey GetCryptoKey()
+        {
+            var config = MemoConfig.Instance;
+
+            if (cryptoKey == null)
+            {
+                cryptoKey = new AesCryptoKey(config.AESKey, config.AESIv);
+            }
+
+            return cryptoKey;
         }
     }
 }

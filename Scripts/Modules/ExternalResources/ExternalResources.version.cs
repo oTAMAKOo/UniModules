@@ -23,9 +23,6 @@ namespace Modules.ExternalResource
 
         private const string VersionFileName = "ExternalResources.version";
 
-        private const string VersionAESKey = "nEPCjiTpNJffJbBWN1YmlTpBQtcAEqwc";
-        private const string VersionAESIv = "2FGG3clpRJ6TjfuB";
-
         [MessagePackObject(true)]
         public sealed class Version
         {
@@ -45,15 +42,20 @@ namespace Modules.ExternalResource
 
         private Dictionary<string, Version.Info> versions = null;
 
-        private static AesCryptKey versionCryptKey = null;
+        private static AesCryptoKey versionCryptoKey = null;
 
         //----- property -----
 
         //----- method -----
 
-        private AesCryptKey GetVersionCryptKey()
+        private AesCryptoKey GetVersionCryptoKey()
         {
-            return versionCryptKey ?? (versionCryptKey = new AesCryptKey(VersionAESKey, VersionAESIv));
+            if (versionCryptoKey == null)
+            {
+                versionCryptoKey = new AesCryptoKey("nEPCjiTpNJffJbBWN1YmlTpBQtcAEqwc", "2FGG3clpRJ6TjfuB");
+            }
+
+            return versionCryptoKey;
         }
 
         /// <summary>
@@ -227,9 +229,9 @@ namespace Modules.ExternalResource
 
                 var data = MessagePackSerializer.Serialize(version, options);
 
-                var cryptKey = GetVersionCryptKey();
+                var cryptoKey = GetVersionCryptoKey();
 
-                var encrypt = data.Encrypt(cryptKey);
+                var encrypt = data.Encrypt(cryptoKey);
 
                 File.WriteAllBytes(versionFilePath, encrypt);
             }
@@ -256,9 +258,9 @@ namespace Modules.ExternalResource
 
                 try
                 {
-                    var cryptKey = GetVersionCryptKey();
+                    var cryptoKey = GetVersionCryptoKey();
 
-                    decrypt = data.Decrypt(cryptKey);
+                    decrypt = data.Decrypt(cryptoKey);
                 }
                 catch (Exception exception)
                 {
