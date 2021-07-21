@@ -25,9 +25,6 @@ namespace Modules.LocalData
     {
         //----- params -----
 
-        private const string DefaultKey = "5k7DpsG19A91R7Lkv261AMxCmjHFFFxX";
-        private const string DefaultIv = "YiEs3x1as8JhK9qp";
-
         //----- field -----
         
         private AesCryptoKey aesCryptoKey = null;
@@ -190,7 +187,7 @@ namespace Modules.LocalData
         {
             if (aesCryptoKey == null)
             {
-                aesCryptoKey = new AesCryptoKey(DefaultKey, DefaultIv);
+                aesCryptoKey = new AesCryptoKey("5k7DpsG19A91R7Lkv261AMxCmjHFFFxX", "YiEs3x1as8JhK9qp");
             }
 
             return aesCryptoKey;
