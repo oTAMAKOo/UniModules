@@ -53,6 +53,16 @@ namespace Extensions
             }
         }
 
+        public static T CreateInstance()
+        {
+            if (UnityUtility.IsNull(instance))
+            {
+                instance = UnityUtility.CreateGameObject<T>(null, typeof(T).Name);
+            }
+
+            return instance;
+        }
+
         public static void DestroyInstance()
         {
             if (!UnityUtility.IsNull(instance))
