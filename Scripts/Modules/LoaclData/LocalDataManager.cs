@@ -47,7 +47,7 @@ namespace Modules.LocalData
             FileDirectory = Application.persistentDataPath + "/LocalData/";
         }
 
-        public void SetCryptKey(AesCryptoKey cryptoKey)
+        public void SetCryptoKey(AesCryptoKey cryptoKey)
         {
             Instance.aesCryptoKey = cryptoKey;
         }
