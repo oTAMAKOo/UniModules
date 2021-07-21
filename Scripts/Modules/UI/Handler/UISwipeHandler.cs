@@ -39,7 +39,11 @@ namespace Modules.UI
             eventTrigger
                 .OnBeginDragAsObservable()
                 .TakeUntilDisable(this)
-                .Where(eventData => eventData.pointerDrag.gameObject == gameObject)
+                .Where(eventData =>
+                   {
+                       return eventData.pointerDrag != null &&
+                              eventData.pointerDrag.gameObject == gameObject;
+                   })
                 .Select(eventData => eventData.position)
                 .Subscribe(position =>
                     {
