@@ -13,7 +13,7 @@ using Modules.SoundManagement;
 
 namespace Modules.AdvKit
 {
-    public class SoundInfo
+    public sealed class SoundInfo
     {
         public SoundType SoundType { get; private set; }
         public string ResourcePath { get; private set; }
