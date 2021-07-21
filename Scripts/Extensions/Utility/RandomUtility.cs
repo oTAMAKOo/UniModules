@@ -7,9 +7,9 @@ namespace Extensions
 {
     public static class RandomUtility
     {
-        private static Random random = new Random();
-
         public static int Seed { get; private set; }
+
+        public static Random Random { get; private set; }
 
         static RandomUtility()
         {
@@ -19,26 +19,33 @@ namespace Extensions
         public static void SetRandomSeed(int? seed = null)
         {
             Seed = seed.HasValue ? seed.Value : Environment.TickCount;
-            
-            lock (random)
+
+            if (Random == null)
             {
-                random = new Random(Seed);
+                Random = new Random(Seed);
+            }
+            else
+            {
+                lock (Random)
+                {
+                    Random = new Random(Seed);
+                }
             }
         }
 
         private static int Range(int min, int max)
         {
-            lock (random)
+            lock (Random)
             {
-                return random.Next(min, max);
+                return Random.Next(min, max);
             }
         }
 
         private static double Range(double min, double max)
         {
-            lock (random)
+            lock (Random)
             {
-                return min + (random.NextDouble() * (max - min));
+                return min + (Random.NextDouble() * (max - min));
             }
         }
 
@@ -103,6 +110,17 @@ namespace Extensions
         public static bool RandomBool()
         {
             return (RandomInt() % 2) == 0;
+        }
+
+        //-----------------------------------------------
+        // Random Type : String.
+        //-----------------------------------------------
+
+        public static string RandomString(int length)
+        {
+            const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+
+            return new string(Enumerable.Repeat(chars, length).Select(s => s[Random.Next(s.Length)]).ToArray());
         }
 
         //-----------------------------------------------
