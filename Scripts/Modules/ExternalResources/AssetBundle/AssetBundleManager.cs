@@ -655,7 +655,7 @@ namespace Modules.AssetBundles
             {
                 var bytes = new byte[0];
 
-                using (var fileStream = new FileStream(filePath, FileMode.Open, FileAccess.Read))
+                using (var fileStream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
                 {
                     bytes = new byte[fileStream.Length];
 

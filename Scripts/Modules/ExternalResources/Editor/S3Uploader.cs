@@ -234,9 +234,16 @@ namespace Modules.ExternalResource.Editor
             {
                 var fileName = Path.GetFileNameWithoutExtension(file);
 
-                if (assetInfoManifestFileName == fileName){ continue; }
+                var hash = string.Empty;
 
-                var hash = fileHashTable.GetValueOrDefault(fileName);
+                if (assetInfoManifestFileName == fileName)
+                {
+                    hash = FileUtility.GetHash(file);
+                }
+                else
+                {
+                    hash = fileHashTable.GetValueOrDefault(fileName);
+                }
 
                 if (string.IsNullOrEmpty(hash))
                 {

@@ -190,7 +190,7 @@ namespace Modules
 
         //------ AssetDataBaseから読込 ------
 
-        [MenuItem(itemName: ResourcesMenu + "Simulate Mode", priority = 0)]
+        [MenuItem(itemName: ResourcesMenu + "Simulate Mode", priority = 500)]
         public static void ToggleSimulateExternalResources()
         {
             ExternalResources.Prefs.isSimulate = !ExternalResources.Prefs.isSimulate;
