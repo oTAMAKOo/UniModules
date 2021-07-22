@@ -336,8 +336,16 @@ namespace Modules.AssetBundles.Editor
 
             foreach (var assetInfo in assetInfos)
             {
+                var assetBundleInfo = assetInfo.AssetBundle;
+
+                if (assetBundleInfo == null)
+                {
+                    Debug.LogErrorFormat("AssetBundleInfo not found.\n{0}", assetInfo.ResourcePath);
+                    continue;
+                }
+
                 // アセットバンドルファイルパス.
-                var assetBundleFilePath = PathUtility.Combine(assetBundlePath, assetInfo.AssetBundle.AssetBundleName);
+                var assetBundleFilePath = PathUtility.Combine(assetBundlePath, assetBundleInfo.AssetBundleName);
 
                 // パッケージファイルパス.
                 var packageFilePath = Path.ChangeExtension(assetBundleFilePath, AssetBundleManager.PackageExtension);
