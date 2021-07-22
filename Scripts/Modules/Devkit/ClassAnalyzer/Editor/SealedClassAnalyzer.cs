@@ -58,25 +58,50 @@ namespace Modules.Devkit.ClassAnalyzer
                 // 指定された名前空間以外は除外.
                 if (nameSpace.All(y => !x.Namespace.StartsWith(y))) { return false; }
 
-                // virtualプロパティがあったら除外.
+                // [フィールド] protectedがあったら除外.
+
+                Func<FieldInfo, bool> checkField = f =>
+                {
+                    return f.DeclaringType == x && f.IsFamily;
+                };
+
+                var fields = x.GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
+
+                if (fields.Any(f => checkField.Invoke(f))) { return false; }
+
+                // [プロパティ] virtual・protectedがあったら除外.
 
                 Func<PropertyInfo, bool> checkProperty = p =>
                 {
-                    var accessor = p.GetAccessors()[0];
+                    var accessors = p.GetAccessors(true);
 
-                    return p.DeclaringType == x && accessor.IsVirtual;
+                    if (p.DeclaringType != x){ return false; }
+
+                    foreach (var accessor in accessors)
+                    {
+                        if (accessor.IsVirtual || accessor.IsFamily)
+                        {
+                            return true;
+                        }
+                    }
+
+                    return false;
                 };
 
-                if (x.GetProperties().Any(p => checkProperty.Invoke(p))) { return false; }
+                var properties = x.GetProperties(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
 
-                // virtual関数があったら除外.
+                if (properties.Any(p => checkProperty.Invoke(p))) { return false; }
+
+                // [メソッド] virtual・protected関数があったら除外.
 
                 Func<MethodInfo, bool> checkMethod = m =>
                 {
-                    return m.DeclaringType == x && m.IsVirtual;
+                    return m.DeclaringType == x && (m.IsVirtual || m.IsFamily);
                 };
 
-                if (x.GetMethods().Any(m => checkMethod.Invoke(m))) { return false; }
+                var methods = x.GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
+
+                if (methods.Any(m => checkMethod.Invoke(m))) { return false; }
 
                 // 除外対象の型.
                 if (ignoreTypes.Contains(x)) { return false; }

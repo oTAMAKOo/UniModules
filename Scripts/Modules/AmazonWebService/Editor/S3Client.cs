@@ -16,23 +16,19 @@ using Extensions;
 
 namespace Modules.Amazon.S3
 {
-    public class S3Client
+    public sealed class S3Client
     {
         //----- params -----
 
         //----- field -----
-
-        private CognitoAWSCredentials credentials = null;
-
-        private RegionEndpoint bucketRegionEndpoint = null;
-
+        
         private AmazonS3Client client = null;
 
         //----- property -----
 
-        public string IdentityPoolId { get; protected set; }
+        public string IdentityPoolId { get; private set; }
 
-        public string BucketName { get; protected set; }
+        public string BucketName { get; private set; }
 
         //----- method -----
 
@@ -43,9 +39,9 @@ namespace Modules.Amazon.S3
 
             var credentialsRegionSystemName = RegionEndpoint.GetBySystemName(credentialsRegion.SystemName);
 
-            credentials = new CognitoAWSCredentials(identityPoolId, credentialsRegionSystemName);
+            var credentials = new CognitoAWSCredentials(identityPoolId, credentialsRegionSystemName);
 
-            bucketRegionEndpoint = RegionEndpoint.GetBySystemName(bucketRegion.SystemName);
+            var bucketRegionEndpoint = RegionEndpoint.GetBySystemName(bucketRegion.SystemName);
 
             client = new AmazonS3Client(credentials, bucketRegionEndpoint);
         }

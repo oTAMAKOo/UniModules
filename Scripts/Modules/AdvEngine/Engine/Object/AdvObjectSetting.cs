@@ -6,7 +6,7 @@ using Extensions;
 
 namespace Modules.AdvKit
 {
-    public class AdvObjectSetting : ScriptableObject
+    public sealed class AdvObjectSetting : ScriptableObject
     {
         #if ENABLE_MOONSHARP
 
