@@ -364,18 +364,11 @@ namespace Modules.ExternalResource.Editor
                 uploadTargets.Add(fileInfo);
             }
 
-            // AssetInfoManifestは必ずアップロードする.
+            // 重複除外・パスが短い順にソート.
 
-            var assetInfoManifestFileInfo = fileInfos.FirstOrDefault(x => x.FilePath == assetInfoManifestFilePath);
-
-            if (assetInfoManifestFileInfo != null)
-            {
-                uploadTargets.Add(assetInfoManifestFileInfo);
-            }
-
-            // パスが短い順にソート.
-
-            uploadTargets = uploadTargets.OrderBy(x => x.ObjectPath.Length).ToList();
+            uploadTargets = uploadTargets.Distinct()
+                .OrderBy(x => x.ObjectPath.Length)
+                .ToList();
 
             // アップロード.
 
