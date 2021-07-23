@@ -483,6 +483,8 @@ namespace Modules.ExternalResource
 
         private void OnTimeout(AssetInfo assetInfo)
         {
+            Debug.LogErrorFormat("Timeout {0}", assetInfo.ResourcePath);
+
             if (onTimeOut != null)
             {
                 onTimeOut.OnNext(assetInfo);
@@ -491,6 +493,8 @@ namespace Modules.ExternalResource
 
         private void OnError(Exception exception)
         {
+            Debug.LogException(exception);
+
             if (onError != null)
             {
                 onError.OnNext(exception);
