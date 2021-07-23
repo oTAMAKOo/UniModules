@@ -708,7 +708,7 @@ namespace Modules.AssetBundles
 
                 if (File.Exists(filePath))
                 {
-                //    File.Delete(filePath);
+                    File.Delete(filePath);
                 }
 
                 var builder = new StringBuilder();
