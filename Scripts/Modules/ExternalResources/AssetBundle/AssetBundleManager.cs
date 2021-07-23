@@ -5,6 +5,7 @@ using System;
 using System.Linq;
 using System.Collections;
 using System.Collections.Generic;
+using System.Security.Cryptography;
 using System.IO;
 using System.Text;
 using UniRx;
@@ -163,11 +164,6 @@ namespace Modules.AssetBundles
         /// </summary>
         public AesCryptoKey GetCryptoKey()
         {
-            if (aesCryptoKey == null)
-            {
-                aesCryptoKey = new AesCryptoKey("MprvQauVXRXUvC532oe861pPVTy5UtFK", "rw6mpYs7jsSgfVEV");
-            }
-
             return aesCryptoKey;
         }
 
@@ -232,8 +228,15 @@ namespace Modules.AssetBundles
             var folderName = PlatformUtility.GetPlatformTypeName();
 
             var url = PathUtility.Combine(new string[] { remoteUrl, folderName, assetInfo.FileName });
-            
-            return string.Format("{0}{1}?v={2}", url, PackageExtension, assetInfo.FileHash);
+
+            var downloadUrl = string.Format("{0}{1}", url, PackageExtension);
+
+            if (!assetInfo.FileHash.IsNullOrEmpty())
+            {
+                downloadUrl = string.Format("{0}?v={1}", downloadUrl, assetInfo.FileHash);
+            }
+
+            return downloadUrl;
         }
 
         public string BuildFilePath(AssetInfo assetInfo)
@@ -655,21 +658,29 @@ namespace Modules.AssetBundles
             {
                 var bytes = new byte[0];
 
-                using (var fileStream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+                try
                 {
-                    bytes = new byte[fileStream.Length];
+                    using (var fileStream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+                    {
+                        bytes = new byte[fileStream.Length];
 
-                    fileStream.Read(bytes, 0, bytes.Length);
+                        fileStream.Read(bytes, 0, bytes.Length);
+                    }
 
-                    // 復号化
+                    // 復号化.
                     bytes = bytes.Decrypt(cryptoKey);
+                }
+                catch (Exception e)
+                {
+                    Debug.LogException(e);
+                    throw;
                 }
 
                 return bytes;
             };
 
             // ファイルの読み込みと復号化をスレッドプールで実行.
-            var loadYield = Observable.Start(() => loadCacheFile()).ObserveOnMainThread().ToYieldInstruction();
+            var loadYield = Observable.Start(() => loadCacheFile()).ObserveOnMainThread().ToYieldInstruction(false);
 
             while (!loadYield.IsDone)
             {
@@ -693,9 +704,11 @@ namespace Modules.AssetBundles
             // 読み込めなかった時はファイルを削除して次回読み込み時にダウンロードし直す.
             if (assetBundle == null)
             {
+                UnloadAsset(assetBundleName);
+
                 if (File.Exists(filePath))
                 {
-                    File.Delete(filePath);
+                //    File.Delete(filePath);
                 }
 
                 var builder = new StringBuilder();
@@ -705,11 +718,20 @@ namespace Modules.AssetBundles
                 builder.AppendFormat("File : {0}", filePath).AppendLine();
                 builder.AppendFormat("AssetBundleName : {0}", assetBundleName).AppendLine();
                 builder.AppendFormat("CRC : {0}", assetBundleInfo.CRC).AppendLine();
-                
-                throw new Exception(builder.ToString());
+                builder.AppendLine();
+
+                if (loadYield.HasError)
+                {
+                    builder.AppendFormat("Detail:\n{0}", loadYield.Error);
+                }
+
+                observer.OnError(new Exception(builder.ToString()));
+            }
+            else
+            {
+                observer.OnNext(assetBundle);
             }
 
-            observer.OnNext(assetBundle);
             observer.OnCompleted();
         }
 
@@ -888,7 +910,10 @@ namespace Modules.AssetBundles
 
         private void OnTimeout(AssetInfo assetInfo, Exception exception)
         {
-            Debug.LogErrorFormat("[Download Timeout] \n{0}", exception);
+            using (new DisableStackTraceScope())
+            {
+                Debug.LogErrorFormat("[Timeout] {0}", exception);
+            }
 
             if (onTimeOut != null)
             {
@@ -898,7 +923,10 @@ namespace Modules.AssetBundles
 
         private void OnError(Exception exception)
         {
-            Debug.LogErrorFormat("[Download Error] \n{0}", exception);
+            using (new DisableStackTraceScope())
+            {
+                Debug.LogErrorFormat("[Error] {0}", exception);
+            }
 
             if (onError != null)
             {

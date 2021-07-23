@@ -1,6 +1,5 @@
 ﻿
 using UnityEngine;
-using UnityEditor;
 using System;
 using System.Linq;
 using System.Collections.Generic;
@@ -40,7 +39,7 @@ namespace Modules.AssetBundles.Editor
                 .GroupBy(x => x.AssetBundle.AssetBundleName)
                 .Select(x => x.FirstOrDefault())
                 .ToList();
-
+            
             var cryptoKey = new AesCryptoKey(aesKey, aesIv);
 
             var tasks = new List<Task>();
@@ -73,7 +72,7 @@ namespace Modules.AssetBundles.Editor
                     // アセットバンドルファイルパス.
                     var assetBundleFilePath = PathUtility.Combine(assetBundlePath, assetInfo.AssetBundle.AssetBundleName);
 
-                    // 更新があったパッケージを作成.
+                    // パッケージを作成.
                     await CreatePackage(assetBundleFilePath, cryptoKey);
 
                     // 出力先にパッケージファイルをコピー.
@@ -94,14 +93,11 @@ namespace Modules.AssetBundles.Editor
             // 作成するパッケージファイルのパス.
             var packageFilePath = Path.ChangeExtension(assetBundleFilePath, AssetBundleManager.PackageExtension);
 
-            // パッケージファイルが存在する時は内容に変更がない時なのでそのままコピーする.
-            if (File.Exists(packageFilePath)){ return; }
+            // アセットバンドル読み込み.
 
             byte[] data = null;
 
-            // アセットバンドル読み込み.
-
-            using (var fileStream = new FileStream(assetBundleFilePath, FileMode.Open, FileAccess.Read))
+            using (var fileStream = new FileStream(assetBundleFilePath, FileMode.Open, FileAccess.Read, FileShare.Read))
             {
                 data = new byte[fileStream.Length];
 
@@ -114,7 +110,7 @@ namespace Modules.AssetBundles.Editor
 
             // 書き込み.
 
-            using (var fileStream = new FileStream(packageFilePath, FileMode.Create, FileAccess.Write))
+            using (var fileStream = new FileStream(packageFilePath, FileMode.Create, FileAccess.Write, FileShare.ReadWrite))
             {
                 await fileStream.WriteAsync(data, 0, data.Length);
             }

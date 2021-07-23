@@ -181,9 +181,9 @@ namespace Modules.ExternalResource.Editor
                 bytes = new byte[fileStream.Length];
 
                 fileStream.Read(bytes, 0, bytes.Length);
-
-                bytes = bytes.Decrypt(aesCryptoKey);
             }
+
+            bytes = bytes.Decrypt(aesCryptoKey);
 
             var bundleLoadRequest = AssetBundle.LoadFromMemoryAsync(bytes);
 
@@ -374,7 +374,7 @@ namespace Modules.ExternalResource.Editor
 
             if (uploadTargets.Any())
             {
-                Debug.LogFormat("Upload {0} files to s3 {1}.", uploadTargets.Count, bucketFolder);
+                Debug.LogFormat("Uploading {0} files to s3 {1}.", uploadTargets.Count, bucketFolder);
 
                 // ファイルをアップロード.
 
@@ -418,7 +418,7 @@ namespace Modules.ExternalResource.Editor
 
                     targets.ForEach(x => builder.AppendLine(x));
 
-                    Debug.LogFormat("Upload S3 objects. [{0}/{1}]\n{2}", index, num, builder.ToString());
+                    Debug.LogFormat("Uploaded S3 objects. [{0}/{1}]\n{2}", index, num, builder.ToString());
                 };
 
                 ChunkAction(uploadObjectPaths, logOutput);

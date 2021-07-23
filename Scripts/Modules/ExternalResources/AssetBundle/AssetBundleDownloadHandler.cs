@@ -20,7 +20,7 @@ namespace Modules.AssetBundles
 
         public AssetBundleDownloadHandler(string path, byte[] buffer) : base(buffer)
         {
-            fs = new FileStream(path, FileMode.Create, FileAccess.Write);
+            fs = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.ReadWrite);
         }
 
         // データを受信すると呼び出される.

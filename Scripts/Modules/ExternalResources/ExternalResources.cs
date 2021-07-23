@@ -171,6 +171,17 @@ namespace Modules.ExternalResource
             #endif
         }
 
+        /// <summary>
+        /// 暗号化キー設定.
+        /// Key,IVがModules.ExternalResource.Editor.ManageConfigのAssetのCryptKeyと一致している必要があります.
+        /// </summary>
+        /// <param name="key">暗号化Key(32文字)</param>
+        /// <param name="iv">暗号化IV(16文字)</param>
+        public void SetCryptoKey(string key, string iv)
+        {
+            assetBundleManager.SetCryptoKey(key, iv);
+        }
+
         // アセット管理マニュフェスト情報を更新.
         private void SetAssetInfoManifest(AssetInfoManifest manifest)
         {
@@ -480,8 +491,6 @@ namespace Modules.ExternalResource
 
         private void OnError(Exception exception)
         {
-            Debug.LogException(exception);
-
             if (onError != null)
             {
                 onError.OnNext(exception);

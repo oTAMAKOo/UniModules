@@ -142,6 +142,8 @@ namespace Extensions
         /// <summary> 文字列に指定されたキーワード群が含まれるか判定 </summary>
         public static bool IsMatch(this string text, string[] keywords)
         {
+            if (keywords == null){ return false; }
+
             keywords = keywords.Select(x => x.ToLower()).ToArray();
 
             if (!string.IsNullOrEmpty(text))

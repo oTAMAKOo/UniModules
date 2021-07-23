@@ -24,9 +24,9 @@ namespace Extensions
                     using (var cryptoStream = new CryptoStream(memoryStream, aesCryptoKey.Encryptor, CryptoStreamMode.Write))
                     {
                         cryptoStream.Write(value, 0, value.Length);
-                        cryptoStream.Close();
                     }
                 }
+
                 result = memoryStream.ToArray();
             }
 
@@ -49,7 +49,6 @@ namespace Extensions
                     using (var cryptoStream = new CryptoStream(memoryStream, aesCryptoKey.Decryptor, CryptoStreamMode.Write))
                     {
                         cryptoStream.Write(value, 0, value.Length);
-                        cryptoStream.Close();
                     }
                 }
 
@@ -70,18 +69,19 @@ namespace Extensions
             
             using (var memoryStream = new MemoryStream())
             {
+                byte[] encrypted = null;
+
                 lock (aesCryptoKey.Encryptor)
                 {
+                    var toEncrypt = Encoding.UTF8.GetBytes(value);
+
                     using (var cryptoStream = new CryptoStream(memoryStream, aesCryptoKey.Encryptor, CryptoStreamMode.Write))
                     {
-                        var toEncrypt = Encoding.UTF8.GetBytes(value);
-
                         cryptoStream.Write(toEncrypt, 0, toEncrypt.Length);
-                        cryptoStream.FlushFinalBlock();
                     }
                 }
 
-                var encrypted = memoryStream.ToArray();
+                encrypted = memoryStream.ToArray();
 
                 result = Convert.ToBase64String(encrypted);
 
@@ -111,7 +111,6 @@ namespace Extensions
             var encrypted = Convert.FromBase64String(value);
             var fromEncrypt = new byte[encrypted.Length];
 
-            
             using (var memoryStream = new MemoryStream(encrypted))
             {
                 lock (aesCryptoKey.Decryptor)

@@ -85,13 +85,20 @@ namespace Modules.ExternalResource
             observer.OnCompleted();
         }
 
-                #if ENABLE_CRIWARE_ADX || ENABLE_CRIWARE_SOFDEC
+        #if ENABLE_CRIWARE_ADX || ENABLE_CRIWARE_SOFDEC
 
         private string ConvertCriFilePath(string resourcePath)
         {
             if (string.IsNullOrEmpty(resourcePath)){ return null; }
 
             var assetInfo = GetAssetInfo(resourcePath);
+
+            if (assetInfo == null)
+            {
+                Debug.LogErrorFormat("AssetInfo not found.\n{0}", resourcePath);
+
+                return null;
+            }
 
             return simulateMode ?
                 PathUtility.Combine(new string[] { UnityPathUtility.GetProjectFolderPath(), resourceDirectory, resourcePath }) :

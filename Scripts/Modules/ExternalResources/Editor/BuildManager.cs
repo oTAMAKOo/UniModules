@@ -72,6 +72,9 @@ namespace Modules.ExternalResource.Editor
 
                 var manageConfig = ManageConfig.Instance;
 
+                var cryptoKey = manageConfig.CryptoKey;
+                var cryptoIv = manageConfig.CryptoIv;
+
                 var assetBundlePath = BuildAssetBundle.GetAssetBundleOutputPath();
 
                 using (new DisableStackTraceScope())
@@ -83,13 +86,7 @@ namespace Modules.ExternalResource.Editor
                     assetManagement.ApplyAllAssetBundleName();
 
                     AddBuildTimeLog(logBuilder, sw, "ApplyAllAssetBundleName");
-
-                    //------ キャッシュ済みアセットバンドルのハッシュ値取得 ------
-
-                    var cachedFileLastWriteTimeTable = await BuildAssetBundle.GetCachedFileLastWriteTimeTable();
-
-                    AddBuildTimeLog(logBuilder, sw, "GetCachedFileLastWriteTimeTable");
-
+                    
                     //------ CRIアセットを生成 ------
 
                     #if ENABLE_CRIWARE_ADX || ENABLE_CRIWARE_SOFDEC
@@ -114,21 +111,7 @@ namespace Modules.ExternalResource.Editor
 
                     AddBuildTimeLog(logBuilder, sw, "CleanUnUseAssetBundleFiles");
 
-                    //------ 更新予定のパッケージファイルを削除 ------
-
-                    var deleteTargets = await BuildAssetBundle.GetUpdateTargetAssetInfo(assetInfoManifest, cachedFileLastWriteTimeTable);
-
-                    if (deleteTargets.Any())
-                    {
-                        BuildAssetBundle.DeleteUpdateTargetPackage(deleteTargets);
-                    }
-
-                    AddBuildTimeLog(logBuilder, sw, "DeleteUpdateTargetPackage");
-
                     //------ AssetBundleファイルをパッケージ化 ------
-
-                    var cryptoKey = manageConfig.CryptoKey;
-                    var cryptoIv = manageConfig.CryptoIv;
 
                     await BuildAssetBundlePackage.BuildAllAssetBundlePackage(exportPath, assetBundlePath, assetInfoManifest, cryptoKey, cryptoIv);
 
