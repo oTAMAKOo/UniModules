@@ -77,6 +77,10 @@ namespace Modules.ExternalResource.Editor
 
                 var assetBundlePath = BuildAssetBundle.GetAssetBundleOutputPath();
 
+                // 暗号化鍵情報の変更チェック.
+
+                var cryptoChanged = BuildAssetBundlePackage.CheckCryptoFile(assetBundlePath, cryptoKey, cryptoIv);
+
                 using (new DisableStackTraceScope())
                 {
                     var sw = System.Diagnostics.Stopwatch.StartNew();
@@ -86,6 +90,12 @@ namespace Modules.ExternalResource.Editor
                     assetManagement.ApplyAllAssetBundleName();
 
                     AddBuildTimeLog(logBuilder, sw, "ApplyAllAssetBundleName");
+
+                    //------ キャッシュ済みアセットバンドルの最終更新日時取得 ------
+
+                    var cachedFileLastWriteTimeTable = await BuildAssetBundle.GetCachedFileLastWriteTimeTable();
+
+                    AddBuildTimeLog(logBuilder, sw, "GetCachedFileLastWriteTimeTable");
                     
                     //------ CRIアセットを生成 ------
 
@@ -93,7 +103,7 @@ namespace Modules.ExternalResource.Editor
 
                     CriAssetGenerator.Generate(exportPath, assetInfoManifest);
 
-                    AddBuildTimeLog(logBuilder, sw, "Generate CriAsset");
+                    AddBuildTimeLog(logBuilder, sw, "GenerateCriAsset");
 
                     #endif
 
@@ -113,7 +123,24 @@ namespace Modules.ExternalResource.Editor
 
                     //------ AssetBundleファイルをパッケージ化 ------
 
-                    await BuildAssetBundlePackage.BuildAllAssetBundlePackage(exportPath, assetBundlePath, assetInfoManifest, cryptoKey, cryptoIv);
+                    // 暗号化鍵情報の書き込み.
+
+                    BuildAssetBundlePackage.CreateCryptoFile(assetBundlePath, cryptoKey, cryptoIv);
+
+                    // 更新対象のアセット情報取得.
+
+                    var assetInfos = BuildAssetBundle.GetAllTargetAssetInfo(assetInfoManifest);
+
+                    var updatedAssetInfos = new AssetInfo[0];
+
+                    if (!cryptoChanged)
+                    {
+                        updatedAssetInfos = await BuildAssetBundle.GetUpdateTargetAssetInfo(assetInfoManifest, cachedFileLastWriteTimeTable);
+                    }
+
+                    // パッケージファイル作成.
+
+                    await BuildAssetBundlePackage.BuildAllAssetBundlePackage(exportPath, assetBundlePath, assetInfos, updatedAssetInfos, cryptoKey, cryptoIv);
 
                     AddBuildTimeLog(logBuilder, sw, "BuildPackage");
 

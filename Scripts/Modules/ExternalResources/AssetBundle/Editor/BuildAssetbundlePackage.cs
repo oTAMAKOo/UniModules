@@ -5,6 +5,7 @@ using System.Linq;
 using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
+using Newtonsoft.Json;
 using Extensions;
 using Modules.ExternalResource;
 
@@ -14,11 +15,72 @@ namespace Modules.AssetBundles.Editor
     {
         //----- params -----
 
+        private const string CryptoFileName = "package_crypto.txt";
+
+        [Serializable]
+        private sealed class PackageCrypto
+        {
+            public string cryptoKey = null;
+
+            public string cryptoIv = null;
+        }
+
         //----- field -----
 
         //----- property -----
 
         //----- method -----
+
+        public static bool CheckCryptoFile(string assetBundlePath, string aesKey, string aesIv)
+        {
+            var changed = true;
+
+            var packageCryptoFilePath = PathUtility.Combine(assetBundlePath, CryptoFileName);
+
+            var packageCrypto = new PackageCrypto
+            {
+                cryptoKey = aesKey,
+                cryptoIv = aesIv,
+            };
+
+            var text = string.Empty;
+
+            if (File.Exists(packageCryptoFilePath))
+            {
+                try
+                {
+                    text = File.ReadAllText(packageCryptoFilePath);
+
+                    var prev = JsonConvert.DeserializeObject<PackageCrypto>(text);
+
+                    if (prev.cryptoKey == packageCrypto.cryptoKey && prev.cryptoIv == packageCrypto.cryptoIv)
+                    {
+                        changed = false;
+                    }
+                }
+                catch
+                {
+                    /* Ignore Exception */
+                }
+            }
+
+            return changed;
+        }
+
+        public static void CreateCryptoFile(string assetBundlePath, string aesKey, string aesIv)
+        {
+            var packageCryptoFilePath = PathUtility.Combine(assetBundlePath, CryptoFileName);
+
+            var packageCrypto = new PackageCrypto
+            {
+                cryptoKey = aesKey,
+                cryptoIv = aesIv,
+            };
+
+            var json = packageCrypto.ToJson(true);
+
+            File.WriteAllText(packageCryptoFilePath, json);
+        }
 
         public static async Task BuildAssetInfoManifestPackage(string exportPath, string assetBundlePath, string aesKey, string aesIv)
         {
@@ -26,20 +88,13 @@ namespace Modules.AssetBundles.Editor
 
             var cryptoKey = new AesCryptoKey(aesKey, aesIv);
 
-            var task = CreateBuildTask(exportPath, assetBundlePath, assetInfo, cryptoKey);
+            var task = CreateBuildTask(exportPath, assetBundlePath, assetInfo, true, cryptoKey);
 
             await task;
         }
 
-        public static async Task BuildAllAssetBundlePackage(string exportPath, string assetBundlePath, AssetInfoManifest assetInfoManifest, string aesKey, string aesIv)
+        public static async Task BuildAllAssetBundlePackage(string exportPath, string assetBundlePath, AssetInfo[] assetInfos, AssetInfo[] updatedAssetInfos, string aesKey, string aesIv)
         {
-            var assetInfos = assetInfoManifest.GetAssetInfos()
-                .Where(x => x.IsAssetBundle)
-                .Where(x => !string.IsNullOrEmpty(x.AssetBundle.AssetBundleName))
-                .GroupBy(x => x.AssetBundle.AssetBundleName)
-                .Select(x => x.FirstOrDefault())
-                .ToList();
-            
             var cryptoKey = new AesCryptoKey(aesKey, aesIv);
 
             var tasks = new List<Task>();
@@ -50,7 +105,9 @@ namespace Modules.AssetBundles.Editor
 
                 if (assetInfo == null) { continue; }
 
-                var task = CreateBuildTask(exportPath, assetBundlePath, assetInfo, cryptoKey);
+                var createPackage = updatedAssetInfos.Contains(assetInfo);
+
+                var task = CreateBuildTask(exportPath, assetBundlePath, assetInfo, createPackage, cryptoKey);
 
                 if (task != null)
                 {
@@ -61,7 +118,7 @@ namespace Modules.AssetBundles.Editor
             await Task.WhenAll(tasks);
         }
 
-        private static Task CreateBuildTask(string exportPath, string assetBundlePath, AssetInfo assetInfo, AesCryptoKey cryptoKey)
+        private static Task CreateBuildTask(string exportPath, string assetBundlePath, AssetInfo assetInfo, bool createPackage, AesCryptoKey cryptoKey)
         {
             if (assetInfo == null) { return null; }
 
@@ -73,7 +130,10 @@ namespace Modules.AssetBundles.Editor
                     var assetBundleFilePath = PathUtility.Combine(assetBundlePath, assetInfo.AssetBundle.AssetBundleName);
 
                     // パッケージを作成.
-                    await CreatePackage(assetBundleFilePath, cryptoKey);
+                    if (createPackage)
+                    {
+                        await CreatePackage(assetBundleFilePath, cryptoKey);
+                    }
 
                     // 出力先にパッケージファイルをコピー.
                     await ExportPackage(exportPath, assetBundleFilePath, assetInfo);

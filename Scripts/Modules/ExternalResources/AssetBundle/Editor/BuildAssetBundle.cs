@@ -238,5 +238,102 @@ namespace Modules.AssetBundles.Editor
                 DirectoryUtility.DeleteEmpty(assetBundlePath);
             }
         }
+
+        /// <summary> キャッシュ済みアセットバンドルファイルの最終更新日テーブルを取得 </summary>
+        public static async Task<Dictionary<string, DateTime>> GetCachedFileLastWriteTimeTable()
+        {
+            var assetBundlePath = GetAssetBundleOutputPath();
+
+            var assetBundleNames = AssetDatabase.GetAllAssetBundleNames()
+                .Select(x => PathUtility.ConvertPathSeparator(x))
+                .ToArray();
+
+            var allFiles = Directory.GetFiles(assetBundlePath, "*.*", SearchOption.AllDirectories)
+                .Where(x => Path.GetExtension(x) == string.Empty)
+                .Select(x => PathUtility.ConvertPathSeparator(x))
+                .ToArray();
+
+            var dictionary = new Dictionary<string, DateTime>();
+
+            var tasks = new List<Task>();
+
+            foreach (var file in allFiles)
+            {
+                var path = PathUtility.ConvertPathSeparator(file);
+
+                var task = Task.Run(() =>
+                {
+                    if (assetBundleNames.All(x => !path.EndsWith(x))) { return; }
+
+                    var lastWriteTime = File.GetLastWriteTime(path);
+
+                    lock (dictionary)
+                    {
+                        dictionary.Add(path, lastWriteTime);
+                    }
+                });
+
+                tasks.Add(task);
+            }
+
+            await Task.WhenAll(tasks);
+
+            return dictionary;
+        }
+
+        public static AssetInfo[] GetAllTargetAssetInfo(AssetInfoManifest assetInfoManifest)
+        {
+            var assetInfos = assetInfoManifest.GetAssetInfos()
+                .Where(x => x.IsAssetBundle)
+                .Where(x => !string.IsNullOrEmpty(x.AssetBundle.AssetBundleName))
+                .GroupBy(x => x.AssetBundle.AssetBundleName)
+                .Select(x => x.FirstOrDefault())
+                .ToList();
+
+            assetInfos.Add(AssetInfoManifest.GetManifestAssetInfo());
+
+            return assetInfos.ToArray();
+        }
+
+        /// <summary> 更新されたアセット情報取得 </summary>
+        public static async Task<AssetInfo[]> GetUpdateTargetAssetInfo(AssetInfoManifest assetInfoManifest, Dictionary<string, DateTime> lastWriteTimeTable)
+        {
+            var assetBundlePath = GetAssetBundleOutputPath();
+
+            var assetInfos = GetAllTargetAssetInfo(assetInfoManifest);
+
+            var list = new List<AssetInfo>();
+
+            var tasks = new List<Task>();
+
+            foreach (var item in assetInfos)
+            {
+                var assetInfo = item;
+
+                var task = Task.Run(() =>
+                {
+                    // アセットバンドルファイルパス.
+                    var assetBundleFilePath = PathUtility.Combine(assetBundlePath, assetInfo.AssetBundle.AssetBundleName);
+                    
+                    // 最終更新日を比較.
+
+                    var prevLastWriteTime = lastWriteTimeTable.GetValueOrDefault(assetBundleFilePath, DateTime.MinValue);
+
+                    var currentLastWriteTime = File.GetLastWriteTime(assetBundleFilePath);
+
+                    // ビルド前と後で更新日時が変わっていたら更新対象.
+                    if (currentLastWriteTime != prevLastWriteTime)
+                    {
+                        list.Add(assetInfo);
+                    }
+                });
+
+                tasks.Add(task);
+            }
+
+            await Task.WhenAll(tasks);
+
+            return list.ToArray();
+        }
     }
 }
