@@ -45,14 +45,12 @@ namespace Modules.ExternalResource.Editor
                 manifest = GenerateManifest(assetManagement);
 
                 ApplyAssetBundleName(assetManagement, manifest);
-
-                UnityEditorUtility.SaveAsset(manifest);
-
-                AssetManagement.Prefs.manifestUpdateRequest = false;
             }
 
             AssetDatabase.RemoveUnusedAssetBundleNames();
             AssetDatabase.Refresh();
+
+            AssetManagement.Prefs.manifestUpdateRequest = false;
 
             return manifest;
         }
@@ -90,7 +88,7 @@ namespace Modules.ExternalResource.Editor
 
                 var assetBundleName = assetInfo.AssetBundle.AssetBundleName;
 
-                var filePath = PathUtility.Combine(new string[] { exportPath, assetBundleName });
+                var filePath = PathUtility.Combine(exportPath, assetBundleName);
 
                 // CRC設定.
 
@@ -121,48 +119,6 @@ namespace Modules.ExternalResource.Editor
             EditorUtility.ClearProgressBar();
         }
 
-        #if ENABLE_CRIWARE_ADX || ENABLE_CRIWARE_SOFDEC
-
-        public static async Task SetCriAssetFileInfo(string exportPath, AssetInfoManifest assetInfoManifest)
-        {
-            var assetInfos = Reflection.GetPrivateField<AssetInfoManifest, AssetInfo[]>(assetInfoManifest, "assetInfos");
-
-            var tasks = new List<Task>();
-
-            for (var i = 0; i < assetInfos.Length; i++)
-            {
-                var assetInfo = assetInfos[i];
-
-                if (assetInfo.IsAssetBundle) { continue; }
-
-                var extension = Path.GetExtension(assetInfo.FileName);
-                
-                if (CriAssetDefinition.AssetAllExtensions.Any(x => x == extension))
-                {
-                    var filePath = PathUtility.Combine(new string[] { exportPath, assetInfo.FileName });
-
-                    var task = Task.Run(() =>
-                    {
-                        assetInfo.SetFileInfo(filePath);
-                    });
-
-                    tasks.Add(task);
-                }
-            }
-
-            await Task.WhenAll(tasks);
-
-            Reflection.SetPrivateField(assetInfoManifest, "assetInfos", assetInfos);
-
-            UnityEditorUtility.SaveAsset(assetInfoManifest);
-
-            assetInfoManifest.BuildCache(true);
-
-            EditorUtility.ClearProgressBar();
-        }
-
-        #endif
-
         private static void ApplyAssetBundleName(AssetManagement assetManagement, AssetInfoManifest manifest)
         {
             var projectFolders = ProjectFolders.Instance;
@@ -180,13 +136,18 @@ namespace Modules.ExternalResource.Editor
                 {
                     var assetInfo = assetInfos[i];
 
-                    EditorUtility.DisplayProgressBar("ApplyAssetBundleName", assetInfo.ResourcePath, (float)i / count);
+                    var apply = false;
 
                     if (assetInfo.IsAssetBundle)
                     {
                         var assetPath = ExternalResources.GetAssetPathFromAssetInfo(externalResourcesPath, shareResourcesPath, assetInfo);
 
-                        assetManagement.SetAssetBundleName(assetPath, assetInfo.AssetBundle.AssetBundleName);
+                        apply = assetManagement.SetAssetBundleName(assetPath, assetInfo.AssetBundle.AssetBundleName);
+                    }
+
+                    if (apply)
+                    {
+                        EditorUtility.DisplayProgressBar("ApplyAssetBundleName", assetInfo.ResourcePath, (float)i / count);
                     }
                 }
             }
@@ -212,11 +173,54 @@ namespace Modules.ExternalResource.Editor
 
             // アセットバンドル名設定.
             var importer = AssetImporter.GetAtPath(AssetDatabase.GetAssetPath(manifest));
+
             importer.assetBundleName = AssetInfoManifest.AssetBundleName;
             importer.SaveAndReimport();
 
             return manifest;
         }
+
+        #if ENABLE_CRIWARE_ADX || ENABLE_CRIWARE_SOFDEC
+
+        public static async Task SetCriAssetFileInfo(string exportPath, AssetInfoManifest assetInfoManifest)
+        {
+            var assetInfos = Reflection.GetPrivateField<AssetInfoManifest, AssetInfo[]>(assetInfoManifest, "assetInfos");
+
+            var tasks = new List<Task>();
+
+            for (var i = 0; i < assetInfos.Length; i++)
+            {
+                var assetInfo = assetInfos[i];
+
+                if (assetInfo.IsAssetBundle) { continue; }
+
+                var extension = Path.GetExtension(assetInfo.FileName);
+
+                if (CriAssetDefinition.AssetAllExtensions.Any(x => x == extension))
+                {
+                    var filePath = PathUtility.Combine(new string[] { exportPath, assetInfo.FileName });
+
+                    var task = Task.Run(() =>
+                    {
+                        assetInfo.SetFileInfo(filePath);
+                    });
+
+                    tasks.Add(task);
+                }
+            }
+
+            await Task.WhenAll(tasks);
+
+            Reflection.SetPrivateField(assetInfoManifest, "assetInfos", assetInfos);
+
+            UnityEditorUtility.SaveAsset(assetInfoManifest);
+
+            assetInfoManifest.BuildCache(true);
+
+            EditorUtility.ClearProgressBar();
+        }
+
+        #endif
 
         private static string GetManifestPath(string externalResourcesPath)
         {
