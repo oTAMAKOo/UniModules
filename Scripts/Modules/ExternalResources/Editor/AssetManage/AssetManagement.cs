@@ -218,25 +218,30 @@ namespace Modules.ExternalResource.Editor
 
             // アセットバンドル名設定.
 
-            if (importer.assetBundleName != assetBundleName)
+            if (ApplyAssetBundleName(importer, assetBundleName))
             {
-                ApplyAssetBundleName(assetPath, assetBundleName);
-
                 changed = true;
             }
 
             return changed;
         }
 
-        private void ApplyAssetBundleName(string assetPath, string assetBundleName)
+        private bool ApplyAssetBundleName(AssetImporter importer, string assetBundleName)
         {
-            var importer = AssetImporter.GetAtPath(assetPath);
+            var apply = false;
 
-            if (importer == null) { return; }
+            if (importer == null) { return false; }
 
-            importer.assetBundleName = assetBundleName;
+            if (importer.assetBundleName != assetBundleName)
+            {
+                importer.assetBundleName = assetBundleName;
 
-            EditorUtility.SetDirty(importer);
+                EditorUtility.SetDirty(importer);
+
+                apply = true;
+            }
+
+            return apply;
         }
 
         public string GetAssetLoadPath(string assetPath)
@@ -401,14 +406,15 @@ namespace Modules.ExternalResource.Editor
                     var assetInfo = allAssetInfos[i];
 
                     if (!assetInfo.IsAssetBundle) { continue; }
-
-                    EditorUtility.DisplayProgressBar("Apply AssetBundleName", assetInfo.FileName, (float)i / count);
-
-                    if (assetInfo.AssetBundle == null) { continue; }
-
+                    
                     var assetPath = PathUtility.Combine(externalResourcesPath, assetInfo.ResourcePath);
 
-                    ApplyAssetBundleName(assetPath, assetInfo.AssetBundle.AssetBundleName);
+                    var importer = AssetImporter.GetAtPath(assetPath);
+
+                    if (ApplyAssetBundleName(importer, assetInfo.AssetBundle.AssetBundleName))
+                    {
+                        EditorUtility.DisplayProgressBar("Apply AssetBundleName", assetInfo.FileName, (float)i / count);
+                    }
                 }
 
                 EditorUtility.ClearProgressBar();
