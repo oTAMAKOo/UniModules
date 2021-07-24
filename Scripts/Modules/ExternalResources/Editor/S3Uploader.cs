@@ -366,8 +366,19 @@ namespace Modules.ExternalResource.Editor
 
             // 重複除外・パスが短い順にソート.
 
-            uploadTargets = uploadTargets.Distinct()
-                .OrderBy(x => x.ObjectPath.Length)
+            Func<string, int> sortFunc = x =>
+            {
+                var path = PathUtility.ConvertPathSeparator(x);
+
+                var separatorCount = path.Split(PathUtility.PathSeparator).Length;
+
+                return separatorCount;
+            };
+
+            uploadTargets = uploadTargets
+                .Distinct()
+                .OrderBy(x => sortFunc.Invoke(x.ObjectPath))
+                .ThenBy(x => x.ObjectPath.Length)
                 .ToList();
 
             // アップロード.

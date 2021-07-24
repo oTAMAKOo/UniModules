@@ -79,7 +79,6 @@ namespace Modules.AssetBundles.Editor
         {
             // 文字数が大きくなりすぎないように300ファイル分毎に分割.
             var chunkInfos = assetInfoManifest.GetAssetInfos()
-                .OrderBy(x => x.ResourcePath.Length)
                 .Chunk(300)
                 .ToArray();
 

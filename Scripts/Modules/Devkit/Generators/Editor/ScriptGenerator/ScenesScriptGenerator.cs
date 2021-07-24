@@ -1,4 +1,5 @@
 ﻿
+using System;
 using UnityEditor;
 using System.IO;
 using System.Linq;
@@ -38,8 +39,20 @@ namespace Constants
             var enums = new StringBuilder();
             var contents = new StringBuilder();
 
+            Func<string, int> sortFunc = x =>
+            {
+                var path = PathUtility.ConvertPathSeparator(x);
+
+                var separatorCount = path.Split(PathUtility.PathSeparator).Length;
+
+                return separatorCount;
+            };
+
             // 最も一致率の高いパスから検索する為長さで並べ替え.
-            var sceneFolderPaths = sceneFolders.OrderBy(x => x.Length).ToArray();
+            var sceneFolderPaths = sceneFolders
+                .OrderBy(x => sortFunc.Invoke(x))
+                .ThenBy(x => x.Length)
+                .ToArray();
 
             var scenes = EditorBuildSettings.scenes;
 

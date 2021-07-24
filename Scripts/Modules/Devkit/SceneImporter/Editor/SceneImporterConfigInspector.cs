@@ -1,6 +1,7 @@
 ﻿﻿﻿
 using UnityEngine;
 using UnityEditor;
+using System;
 using System.Linq;
 using Extensions.Devkit;
 using Extensions;
@@ -117,7 +118,21 @@ namespace Modules.Devkit.SceneImporter
 
                 if (change)
                 {
-                    Reflection.SetPrivateField(instance, "managedFolders", managedFolders.OrderBy(x => x).ToList());
+                    Func<string, int> sortFunc = x =>
+                    {
+                        var path = PathUtility.ConvertPathSeparator(x);
+
+                        var separatorCount = path.Split(PathUtility.PathSeparator).Length;
+
+                        return separatorCount;
+                    };
+
+                    var folders = managedFolders
+                        .OrderBy(x => sortFunc.Invoke(x))
+                        .ThenBy(x => x.Length)
+                        .ToList();
+
+                    Reflection.SetPrivateField(instance, "managedFolders", folders);
                     UnityEditorUtility.RegisterUndo("SceneImporterSettingsObject Undo", instance);
                 }
             }
