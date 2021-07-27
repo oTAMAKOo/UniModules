@@ -87,6 +87,18 @@ namespace Modules.PatternTexture
                     EditorGUILayout.HelpBox("Require generate alpha map for RaycastTarget", MessageType.Info);
                 }
 
+                // Maskable.
+
+                EditorGUI.BeginChangeCheck();
+
+                var maskable = EditorGUILayout.Toggle("Maskable", instance.maskable);
+
+                if (EditorGUI.EndChangeCheck())
+                {
+                    UnityEditorUtility.RegisterUndo("PatternImageInspector-Undo", instance);
+                    instance.maskable = maskable;
+                }
+
                 // CrossFade.
                 EditorGUI.BeginChangeCheck();
 
