@@ -78,6 +78,9 @@ namespace Modules.ExternalResource.Editor
         {
             var assetInfos = Reflection.GetPrivateField<AssetInfoManifest, AssetInfo[]>(assetInfoManifest, "assetInfos");
 
+            var crcCache = new Dictionary<string, uint>();
+            var fileInfoCache = new Dictionary<string, Tuple<long, string>>();
+
             var tasks = new List<Task>();
             
             for (var i = 0; i < assetInfos.Length; i++)
@@ -92,7 +95,18 @@ namespace Modules.ExternalResource.Editor
 
                 // CRC設定.
 
-                BuildPipeline.GetCRCForAssetBundle(filePath, out var crc);
+                uint crc = 0;
+
+                if (crcCache.ContainsKey(filePath))
+                {
+                    crc = crcCache[filePath];
+                }
+                else
+                {
+                    BuildPipeline.GetCRCForAssetBundle(filePath, out crc);
+
+                    crcCache[filePath] = crc;
+                }
 
                 assetInfo.AssetBundle.SetCRC(crc);
 
@@ -102,7 +116,7 @@ namespace Modules.ExternalResource.Editor
 
                 var task = Task.Run(() =>
                 {
-                    assetInfo.SetFileInfo(packageFilePath);
+                    SetFileInfo(assetInfo, fileInfoCache, packageFilePath);
                 });
 
                 tasks.Add(task);
@@ -185,7 +199,7 @@ namespace Modules.ExternalResource.Editor
         public static async Task SetCriAssetFileInfo(string exportPath, AssetInfoManifest assetInfoManifest)
         {
             var assetInfos = Reflection.GetPrivateField<AssetInfoManifest, AssetInfo[]>(assetInfoManifest, "assetInfos");
-
+            
             var tasks = new List<Task>();
 
             for (var i = 0; i < assetInfos.Length; i++)
@@ -202,9 +216,9 @@ namespace Modules.ExternalResource.Editor
 
                     var task = Task.Run(() =>
                     {
-                        assetInfo.SetFileInfo(filePath);
+                        SetFileInfo(assetInfo, null, filePath);
                     });
-
+                    
                     tasks.Add(task);
                 }
             }
@@ -221,6 +235,47 @@ namespace Modules.ExternalResource.Editor
         }
 
         #endif
+
+        private static void SetFileInfo(AssetInfo assetInfo, Dictionary<string, Tuple<long, string>> fileInfoCache, string filePath)
+        {
+            if (!File.Exists(filePath)) { return; }
+
+            Tuple<long, string> info = null;
+
+            long fileSize = 0;
+            string fileHash = null;
+
+            if (fileInfoCache != null)
+            {
+                lock (fileInfoCache)
+                {
+                    info = fileInfoCache.GetValueOrDefault(filePath);
+                }
+            }
+
+            if (info != null)
+            {
+                fileSize = info.Item1;
+                fileHash = info.Item2;
+            }
+            else
+            {
+                var fileInfo = new FileInfo(filePath);
+
+                fileSize = fileInfo.Exists ? fileInfo.Length : -1;
+                fileHash = FileUtility.GetHash(filePath);
+
+                if (fileInfoCache != null)
+                {
+                    lock (fileInfoCache)
+                    {
+                        fileInfoCache[filePath] = Tuple.Create(fileSize, fileHash);
+                    }
+                }
+            }
+
+            assetInfo.SetFileInfo(fileSize, fileHash);
+        }
 
         private static string GetManifestPath(string externalResourcesPath)
         {

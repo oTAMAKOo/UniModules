@@ -64,15 +64,10 @@ namespace Modules.ExternalResource
             SetFileName();
         }
 
-        public void SetFileInfo(string filePath)
+        public void SetFileInfo(long fileSize, string fileHash)
         {
-            if (!File.Exists(filePath)){ return; }
-
-            var fileInfo = new FileInfo(filePath);
-
-            fileSize = fileInfo.Exists ? fileInfo.Length : -1;
-
-            fileHash = FileUtility.GetHash(filePath);
+            this.fileSize = fileSize;
+            this.fileHash = fileHash;
         }
 
         public void SetAssetBundleInfo(AssetBundleInfo assetBundleInfo)

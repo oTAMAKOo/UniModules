@@ -30,12 +30,14 @@ namespace Modules.AssetBundles
         // リトライするまでの時間(秒).
         private readonly TimeSpan RetryDelaySeconds = TimeSpan.FromSeconds(2f);
 
-        private sealed class CachedInfo
+        // 読み込み済みアセットバンドル.
+        private sealed class LoadedAssetBundle
         {
             public AssetBundle assetBundle = null;
+
             public int referencedCount = 0;
 
-            public CachedInfo(AssetBundle assetBundle)
+            public LoadedAssetBundle(AssetBundle assetBundle)
             {
                 this.assetBundle = assetBundle;
                 this.referencedCount = 1;
@@ -62,11 +64,11 @@ namespace Modules.AssetBundles
         // ダウンロード待ちアセットバンドル.
         private Dictionary<string, IObservable<string>> downloadQueueing = null;
 
-        // 読み込み済みアセットバンドル.
-        private Dictionary<string, CachedInfo> assetBundleCache = null;
-
         // 読み込み待ちアセットバンドル.
-        private Dictionary<string, IObservable<Tuple<AssetBundle, string>>> cacheQueueing = null;
+        private Dictionary<string, IObservable<Tuple<AssetBundle, string>>> loadQueueing = null;
+
+        // 読み込み済みアセットバンドル.
+        private Dictionary<string, LoadedAssetBundle> loadedAssetBundles = null;
 
         // ダウンロードエラー一覧.
         private Dictionary<string, string> downloadingErrors = null;
@@ -116,8 +118,8 @@ namespace Modules.AssetBundles
 
             downloadList = new HashSet<string>();
             downloadQueueing = new Dictionary<string, IObservable<string>>();
-            assetBundleCache = new Dictionary<string, CachedInfo>();
-            cacheQueueing = new Dictionary<string, IObservable<Tuple<AssetBundle, string>>>();
+            loadQueueing = new Dictionary<string, IObservable<Tuple<AssetBundle, string>>>();
+            loadedAssetBundles = new Dictionary<string, LoadedAssetBundle>();
             downloadingErrors = new Dictionary<string, string>();
             assetInfosByAssetBundleName = new Dictionary<string, AssetInfo[]>();
             dependencies = new Dictionary<string, string[]>();
@@ -211,8 +213,8 @@ namespace Modules.AssetBundles
         /// <summary> 展開中のアセットバンドル名一覧取得 </summary>
         public Tuple<string, int>[] GetLoadedAssetBundleNames()
         {
-            return assetBundleCache != null ?
-                assetBundleCache.Select(x => Tuple.Create(x.Key, x.Value.referencedCount)).ToArray() : 
+            return loadedAssetBundles != null ?
+                loadedAssetBundles.Select(x => Tuple.Create(x.Key, x.Value.referencedCount)).ToArray() : 
                 new Tuple<string, int>[0];
         }
 
@@ -290,7 +292,7 @@ namespace Modules.AssetBundles
 
             var assetBundleName = assetInfo.AssetBundle.AssetBundleName;
 
-            if (!assetBundleCache.ContainsKey(assetBundleName))
+            if (!loadedAssetBundles.ContainsKey(assetBundleName))
             {
                 // ネットワークの接続待ち.
 
@@ -309,7 +311,7 @@ namespace Modules.AssetBundles
 
                 foreach (var target in allBundles)
                 {
-                    var cached = assetBundleCache.GetValueOrDefault(target);
+                    var cached = loadedAssetBundles.GetValueOrDefault(target);
 
                     if (cached != null)
                     {
@@ -544,23 +546,23 @@ namespace Modules.AssetBundles
                 // アセットバンドル名は小文字なので小文字に変換.
                 var assetBundleName = assetInfo.AssetBundle.AssetBundleName.ToLower();
 
-                var cache = assetBundleCache.GetValueOrDefault(assetBundleName);
+                var loadedAssetBundle = loadedAssetBundles.GetValueOrDefault(assetBundleName);
 
-                if (cache == null)
+                if (loadedAssetBundle == null)
                 {
                     var allBundles = new string[] { assetBundleName }.Concat(GetDependencies(assetBundleName)).ToArray();
 
                     var loadAllBundles = allBundles
                         .Select(x =>
                             {
-                                var cached = assetBundleCache.GetValueOrDefault(x);
+                                var cached = loadedAssetBundles.GetValueOrDefault(x);
 
                                 if (cached != null)
                                 {
                                     return Observable.Return(Tuple.Create(cached.assetBundle, x));
                                 }
 
-                                var loadTask = cacheQueueing.GetValueOrDefault(x);
+                                var loadTask = loadQueueing.GetValueOrDefault(x);
 
                                 if (loadTask != null)
                                 {   
@@ -569,14 +571,14 @@ namespace Modules.AssetBundles
 
                                 var info = assetInfosByAssetBundleName.GetValueOrDefault(x).FirstOrDefault();
 
-                                cacheQueueing[x] = Observable.FromMicroCoroutine<AssetBundle>(_observer => LoadAssetBundleFromCache(_observer, info))
+                                loadQueueing[x] = Observable.FromMicroCoroutine<AssetBundle>(_observer => LoadAssetBundleFromCache(_observer, info))
                                     .Timeout(TimeoutLimit)
                                     .OnErrorRetry((TimeoutException ex) => OnTimeout(info, ex), RetryCount, RetryDelaySeconds)
                                     .DoOnError(error => OnError(error))
                                     .Select(y => Tuple.Create(y, x))
                                     .Share();
 
-                                return cacheQueueing[x];
+                                return loadQueueing[x];
                             })
                         .ToArray();
 
@@ -585,11 +587,11 @@ namespace Modules.AssetBundles
                         {
                             foreach (var item in xs)
                             {
-                                assetBundleCache[item.Item2] = new CachedInfo(item.Item1);
+                                loadedAssetBundles[item.Item2] = new LoadedAssetBundle(item.Item1);
 
-                                if (cacheQueueing.ContainsKey(item.Item2))
+                                if (loadQueueing.ContainsKey(item.Item2))
                                 {
-                                    cacheQueueing.Remove(item.Item2);
+                                    loadQueueing.Remove(item.Item2);
                                 }
                             }
 
@@ -598,8 +600,9 @@ namespace Modules.AssetBundles
                 }
                 else
                 {
-                    cache.referencedCount++;
-                    loader = Observable.Defer(() => Observable.Return(cache.assetBundle));
+                    loadedAssetBundle.referencedCount++;
+
+                    loader = Observable.Defer(() => Observable.Return(loadedAssetBundle.assetBundle));
                 }
 
                 var loadYield = loader
@@ -750,14 +753,14 @@ namespace Modules.AssetBundles
         {
             if (simulateMode) { return; }
 
-            var assetBundleNames = assetBundleCache.Keys.ToArray();
+            var assetBundleNames = loadedAssetBundles.Keys.ToArray();
 
             foreach (var assetBundleName in assetBundleNames)
             {
                 UnloadAsset(assetBundleName, unloadAllLoadedObjects, true);
             }
 
-            assetBundleCache.Clear();
+            loadedAssetBundles.Clear();
         }
 
         private void UnloadDependencies(string assetBundleName, bool unloadAllLoadedObjects, bool force = false)
@@ -777,7 +780,7 @@ namespace Modules.AssetBundles
 
         private void UnloadAssetBundleInternal(string assetBundleName, bool unloadAllLoadedObjects, bool force = false)
         {
-            var info = GetCachedInfo(assetBundleName);
+            var info = GetLoadedInfo(assetBundleName);
 
             if (info == null) { return; }
 
@@ -791,7 +794,7 @@ namespace Modules.AssetBundles
                     info.assetBundle = null;
                 }
 
-                assetBundleCache.Remove(assetBundleName);
+                loadedAssetBundles.Remove(assetBundleName);
             }
         }
 
@@ -864,13 +867,13 @@ namespace Modules.AssetBundles
         }
 
         /// <summary>
-        /// キャッシュ済みのアセット情報を取得.
+        /// 読み込み済みのアセット情報を取得.
         /// </summary>
         /// <param name="assetBundleName"></param>
         /// <returns></returns>
-        private CachedInfo GetCachedInfo(string assetBundleName)
+        private LoadedAssetBundle GetLoadedInfo(string assetBundleName)
         {
-            var info = assetBundleCache.GetValueOrDefault(assetBundleName);
+            var info = loadedAssetBundles.GetValueOrDefault(assetBundleName);
 
             if (info == null) { return null; }
 
@@ -890,7 +893,7 @@ namespace Modules.AssetBundles
                     return info;
                 }
 
-                var dependentBundle = assetBundleCache.GetValueOrDefault(item);
+                var dependentBundle = loadedAssetBundles.GetValueOrDefault(item);
 
                 if (dependentBundle == null)
                 {
