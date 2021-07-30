@@ -1,9 +1,6 @@
 ﻿
 using UnityEngine;
 using UnityEngine.UI;
-using System;
-using System.Collections;
-using UniRx;
 using Extensions;
 using Modules.UI.Extension;
 

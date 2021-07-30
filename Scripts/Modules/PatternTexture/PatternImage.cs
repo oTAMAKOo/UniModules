@@ -280,24 +280,24 @@ namespace Modules.PatternTexture
         {
             if (eventCamera == null) { return null; }
 
-            var localPosition = Vector2.zero;
+            var pos = Vector2.zero;
 
-            RectTransformUtility.ScreenPointToLocalPointInRectangle(rectTransform, rayCastPosition, eventCamera, out localPosition);
+            RectTransformUtility.ScreenPointToLocalPointInRectangle(rectTransform, rayCastPosition, eventCamera, out pos);
 
-            if (!GetPixelAdjustedRect().Contains(localPosition)) { return null; }
+            if (!GetPixelAdjustedRect().Contains(pos)) { return null; }
 
             if (blockInfos.IsEmpty()) { return null; }
 
             foreach (var blockInfo in blockInfos)
             {
-                if (blockInfo.Rect.Contains(localPosition))
+                if (blockInfo.Rect.Contains(pos))
                 {
-                    var px = localPosition.x - blockInfo.Rect.x;
-                    var py = localPosition.y - blockInfo.Rect.y;
+                    var px = pos.x - blockInfo.Rect.x;
+                    var py = pos.y - blockInfo.Rect.y;
 
                     if (blockInfo.BlockData.HasAlpha((int)px, (int)py))
                     {
-                        return localPosition;
+                        return pos;
                     }
                 }
             }
