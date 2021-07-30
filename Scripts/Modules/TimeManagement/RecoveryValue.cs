@@ -3,6 +3,9 @@ using System;
 
 namespace Modules.TimeManagement
 {
+    /// <summary>
+    /// 時間経過で回復していく値を管理するクラス.
+    /// </summary>
     public sealed class RecoveryValue
     {
         //----- params -----

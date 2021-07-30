@@ -7,6 +7,9 @@ using Extensions;
 
 namespace Modules.TimeManagement
 {
+    /// <summary>
+    /// 指定された時間になると通知イベントを発行するクラス.
+    /// </summary>
     public static class TimeNotice
     {
         //----- params -----

@@ -5,6 +5,9 @@ using UniRx;
 
 namespace Modules.TimeManagement
 {
+    /// <summary>
+    /// TimeScaleに影響されない現実時間クラス.
+    /// </summary>
     public sealed class RealTime : Singleton<RealTime>
     {
         //----- params -----
@@ -21,7 +24,7 @@ namespace Modules.TimeManagement
         {
             get
             {
-                return Application.isPlaying ? Instance.realTime : Time.realtimeSinceStartup;
+                return Application.isPlaying ? Instance.realTime : realtimeSinceStartup;
             }
         }
 
@@ -33,11 +36,16 @@ namespace Modules.TimeManagement
             }
         }
 
+        private static float realtimeSinceStartup
+        {
+            get { return UnityEngine.Time.realtimeSinceStartup; }
+        }
+
         //----- method -----
 
         protected override void OnCreate()
         {
-            realTime = Time.realtimeSinceStartup;
+            realTime = realtimeSinceStartup;
 
             Observable.EveryUpdate()
                 .Subscribe(_ => UpdateTime())
@@ -46,11 +54,9 @@ namespace Modules.TimeManagement
         
         private void UpdateTime()
         {
-            var rt = Time.realtimeSinceStartup;
+            realDelta = Mathf.Clamp01(realtimeSinceStartup - realTime);
 
-            realDelta = Mathf.Clamp01(rt - realTime);
-
-            realTime = rt;
+            realTime = realtimeSinceStartup;
         }
     }
 }
