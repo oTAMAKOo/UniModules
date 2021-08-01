@@ -1,4 +1,5 @@
 ﻿
+using UnityEngine;
 using UnityEditor;
 using UnityEditor.Compilation;
 using System.Collections.Generic;
@@ -16,16 +17,16 @@ namespace Modules.Devkit.AssemblyCompilation
 
         private sealed class Prefs
         {
-            public static bool reserve
+            public static bool RequestCompile
             {
-                get { return ProjectPrefs.GetBool("AssemblyCompilation-reserve", false); }
-                set { ProjectPrefs.SetBool("AssemblyCompilation-reserve", value); }
+                get { return ProjectPrefs.GetBool(typeof(TInstance).FullName + "-RequestCompile", false); }
+                set { ProjectPrefs.SetBool(typeof(TInstance).FullName + "-RequestCompile", value); }
             }
 
-            public static string result
+            public static string Result
             {
-                get { return ProjectPrefs.GetString("AssemblyCompilation-result", string.Empty); }
-                set { ProjectPrefs.SetString("AssemblyCompilation-result", value); }
+                get { return ProjectPrefs.GetString(typeof(TInstance).FullName + "-Result", string.Empty); }
+                set { ProjectPrefs.SetString(typeof(TInstance).FullName + "-Result", value); }
             }
         }
 
@@ -48,9 +49,9 @@ namespace Modules.Devkit.AssemblyCompilation
 
         //----- field -----
 
-        private static Dictionary<string, double> timeStamps = null;
+        private Dictionary<string, double> timeStamps = null;
 
-        private static Dictionary<string, CompileResult> compileResults = null;
+        private Dictionary<string, CompileResult> compileResults = null;
 
         //----- property -----
 
@@ -58,13 +59,13 @@ namespace Modules.Devkit.AssemblyCompilation
 
         protected void OnAssemblyReload()
         {
-            if (Prefs.reserve)
+            if (Prefs.RequestCompile)
             {
-                RequestCompilation();
+                RequestCompile();
             }
             else
             {
-                var json = Prefs.result;
+                var json = Prefs.Result;
 
                 if (!string.IsNullOrEmpty(json))
                 {
@@ -72,26 +73,26 @@ namespace Modules.Devkit.AssemblyCompilation
 
                     EditorApplication.LockReloadAssemblies();
                     
-                    OnCompilationFinished(results);
+                    OnCompileFinished(results);
 
                     EditorApplication.UnlockReloadAssemblies();
 
-                    Prefs.result = null;
+                    Prefs.Result = null;
                 }
             }
         }
 
-        protected void RequestCompilation()
+        protected void RequestCompile()
         {
             // コンパイル中は予約だけして実行しない.
             if (EditorApplication.isCompiling)
             {
-                Prefs.reserve = true;
+                Prefs.RequestCompile = true;
 
                 return;
             }
 
-            Prefs.reserve = false;
+            Prefs.RequestCompile = false;
 
             // コンパイル要求.
             UnityEditorUtility.RequestScriptCompilation();
@@ -108,6 +109,38 @@ namespace Modules.Devkit.AssemblyCompilation
             timeStamps = new Dictionary<string, double>();
 
             compileResults = new Dictionary<string, CompileResult>();
+        }
+
+        protected void SetBuildTarget(BuildTarget buildTarget)
+        {
+            if(Application.isBatchMode)
+            {
+                var errorMessage = @"This method is not available when running Editor in batch mode.\nUse the buildTarget command line switch to set the build target to use in batch mode.";
+
+                Debug.LogError(errorMessage);
+
+                return;
+            }
+
+            var buildTargetGroup = BuildPipeline.GetBuildTargetGroup(buildTarget);
+
+            if (EditorUserBuildSettings.selectedBuildTargetGroup != buildTargetGroup ||
+                EditorUserBuildSettings.activeBuildTarget != buildTarget)
+            {
+                EditorUserBuildSettings.SwitchActiveBuildTarget(buildTargetGroup, buildTarget);
+            }
+        }
+
+        protected void SetScriptingDefineSymbols(BuildTarget buildTarget, string defineSymbols)
+        {
+            var buildTargetGroup = BuildPipeline.GetBuildTargetGroup(buildTarget);
+
+            var currentDefineSymbols = PlayerSettings.GetScriptingDefineSymbolsForGroup(buildTargetGroup);
+
+            if (currentDefineSymbols != defineSymbols)
+            {
+                PlayerSettings.SetScriptingDefineSymbolsForGroup(buildTargetGroup, defineSymbols);
+            }
         }
 
         private void OnAssemblyCompilationStarted(string assemblyName)
@@ -128,9 +161,9 @@ namespace Modules.Devkit.AssemblyCompilation
         {
             var results = compileResults.Values.ToArray();
 
-            Prefs.result = results.ToJson();
+            Prefs.Result = results.ToJson();
         }
 
-        protected abstract void OnCompilationFinished(CompileResult[] results);
+        protected abstract void OnCompileFinished(CompileResult[] results);
     }
 }
