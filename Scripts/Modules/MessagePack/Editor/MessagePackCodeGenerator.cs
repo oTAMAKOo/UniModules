@@ -41,7 +41,7 @@ namespace Modules.MessagePack
             {
                 using (new DisableStackTraceScope())
                 {
-                    Debug.LogError(codeGenerateResult.Item3);
+                    Debug.LogError(codeGenerateResult.Item2);
                 }
             }
 
