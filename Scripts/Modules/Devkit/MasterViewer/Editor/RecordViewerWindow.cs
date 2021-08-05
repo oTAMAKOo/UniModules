@@ -384,7 +384,20 @@ namespace Modules.Devkit.MasterViewer
 
             var list = new List<object>();
 
-            var keywords = searchText.Split(new char[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+            var searchTextKeywords = searchText;
+
+            var searchValueName = searchText.Split(new char[] { ':' }, StringSplitOptions.RemoveEmptyEntries).FirstOrDefault();
+
+            if (!string.IsNullOrEmpty(searchValueName))
+            {
+                searchValueName = searchValueName.ToLower();
+
+                var searchValueNameIndex = searchText.IndexOf(':');
+
+                searchTextKeywords = searchText.SafeSubstring(searchValueNameIndex + 1);
+            }
+
+            var keywords = searchTextKeywords.Split(new char[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
 
             for (var i = 0; i < keywords.Length; ++i)
             {
@@ -399,6 +412,11 @@ namespace Modules.Devkit.MasterViewer
             {
                 foreach (var valueName in valueNames)
                 {
+                    if (!string.IsNullOrEmpty(searchValueName))
+                    {
+                        if (searchValueName != valueName.ToLower()) { continue; }
+                    }
+
                     var value = masterController.GetValue(record, valueName);
 
                     if (value != null)
@@ -415,7 +433,6 @@ namespace Modules.Devkit.MasterViewer
 
             searchedRecords = list.ToArray();
         }
-
 
         private object[] GetDisplayRecords()
         {
