@@ -200,15 +200,7 @@ namespace Extensions
             
             var gameObject = instance as GameObject;
 
-            if (gameObject != null)
-            {
-                gameObject.SetActive(false);
-
-                if (!(gameObject.transform is RectTransform))
-                {
-                    gameObject.transform.parent = null;
-                }
-            }
+            SetActive(gameObject, false);
 
             if (!Application.isPlaying || immediate)
             {
