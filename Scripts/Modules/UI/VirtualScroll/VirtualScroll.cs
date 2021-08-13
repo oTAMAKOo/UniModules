@@ -849,11 +849,7 @@ namespace Modules.UI
             {
                 case ScrollType.Limited:
                     {
-                        item.SetContent(index, Contents);
-
                         observable = Observable.Defer(() => item.UpdateItem());
-
-                        UnityUtility.SetActive(item.gameObject, item.Content != null);
                     }
                     break;
 
@@ -868,15 +864,15 @@ namespace Modules.UI
                         {
                             index = 0;
                         }
-
-                        item.SetContent(index, Contents);
-
+                        
                         observable = Observable.Defer(() => item.UpdateItem());
-
-                        UnityUtility.SetActive(item.gameObject, true);
                     }
                     break;
             }
+
+            item.SetContent(index, Contents);
+
+            UnityUtility.SetActive(item, item.Content != null);
 
             #if UNITY_EDITOR
 

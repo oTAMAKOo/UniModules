@@ -41,7 +41,7 @@ namespace Modules.UI
 
         public IObservable<Unit> UpdateItem()
         {
-            return UpdateContents(Content);
+            return Content != null ? UpdateContents(Content) : Observable.ReturnUnit();
         }
 
         /// <summary> 初期化. </summary>
