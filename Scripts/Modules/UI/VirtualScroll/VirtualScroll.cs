@@ -339,21 +339,6 @@ namespace Modules.UI
                 updateObservers[i] = Observable.Defer(() => UpdateItem(item, index));
             }
 
-            //----- 並べ替え -----
-
-            UpdateSibling();
-
-            //----- スクロール位置設定 -----
-
-            if (keepScrollPosition)
-            {
-                ScrollPosition = scrollPosition;
-            }
-            else
-            {
-                ScrollToItem(0, ScrollTo.First);
-            }
-
             //----- リストアイテム更新 -----
 
             var updateItemYield = updateObservers.WhenAll().ToYieldInstruction(false);
@@ -367,6 +352,21 @@ namespace Modules.UI
             {
                 Debug.LogException(updateItemYield.Error);
             }
+
+            //----- スクロール位置設定 -----
+
+            if (keepScrollPosition)
+            {
+                ScrollPosition = scrollPosition;
+            }
+            else
+            {
+                ScrollToItem(0, ScrollTo.First);
+            }
+
+            //----- 並べ替え -----
+
+            UpdateSibling();
 
             //-----  更新イベント -----
 
@@ -669,7 +669,9 @@ namespace Modules.UI
 
             if (!ScrollEnable()) { return; }
 
-            ScrollUpdate(0 < scrollPosition - prevScrollPosition);
+            var scrollPlus = prevScrollPosition < scrollPosition;
+
+            ScrollUpdate(scrollPlus);
 
             prevScrollPosition = scrollPosition;
         }
@@ -711,8 +713,8 @@ namespace Modules.UI
                 var offset = itemSize + itemSpacing;
 
                 firstItem.RectTransform.localPosition = direction == Direction.Vertical ?
-                    new Vector2(0, lastItem.RectTransform.localPosition.y - offset) :
-                    new Vector2(lastItem.RectTransform.localPosition.x + offset, 0);
+                    new Vector3(0f, lastItem.RectTransform.localPosition.y - offset, 0f) :
+                    new Vector3(lastItem.RectTransform.localPosition.x + offset, 0f, 0f);
 
                 var updateItemDisposable = updateItemDisposables.GetValueOrDefault(firstItem);
 
@@ -757,8 +759,8 @@ namespace Modules.UI
                 var offset = itemSize + itemSpacing;
 
                 lastItem.RectTransform.localPosition = direction == Direction.Vertical ?
-                    new Vector2(0, firstItem.RectTransform.localPosition.y + offset) :
-                    new Vector2(firstItem.RectTransform.localPosition.x - offset, 0);
+                    new Vector3(0f, firstItem.RectTransform.localPosition.y + offset, 0f) :
+                    new Vector3(firstItem.RectTransform.localPosition.x - offset, 0f, 0f);
 
                 var updateItemDisposable = updateItemDisposables.GetValueOrDefault(lastItem);
 
