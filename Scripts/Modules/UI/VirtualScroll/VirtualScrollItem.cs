@@ -11,7 +11,7 @@ namespace Modules.UI
         int Index { get; }
     }
 
-    public abstract class VirtualScrollItem<T> : MonoBehaviour, IVirtualScrollItem
+    public abstract class VirtualScrollItem<T> : MonoBehaviour, IVirtualScrollItem where T : class
     {
         //----- params -----
 
@@ -32,16 +32,15 @@ namespace Modules.UI
 
         //----- method -----
 
-        public IObservable<Unit> UpdateItem(int index, IReadOnlyList<T> contents)
+        public void SetContent(int index, IReadOnlyList<T> contents)
         {
             Index = index;
 
-            if (contents == null) { return Observable.ReturnUnit(); }
+            Content = contents != null ? contents.ElementAtOrDefault(index, null) : null;
+        }
 
-            if (index < 0 || contents.Count <= index) { return Observable.ReturnUnit(); }
-
-            Content = contents[index];
-
+        public IObservable<Unit> UpdateItem()
+        {
             return UpdateContents(Content);
         }
 

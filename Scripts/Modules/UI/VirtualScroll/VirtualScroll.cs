@@ -35,7 +35,7 @@ namespace Modules.UI
         }
     }
 
-    public abstract class VirtualScroll<T> : UIBehaviour
+    public abstract class VirtualScroll<T> : UIBehaviour where T : class
     {
         //----- params -----
 
@@ -849,10 +849,11 @@ namespace Modules.UI
             {
                 case ScrollType.Limited:
                     {
-                        var enable = Contents != null && 0 <= index && index < Contents.Count;
+                        item.SetContent(index, Contents);
 
-                        observable = Observable.Defer(() => item.UpdateItem(index, Contents));
-                        UnityUtility.SetActive(item.gameObject, enable);
+                        observable = Observable.Defer(() => item.UpdateItem());
+
+                        UnityUtility.SetActive(item.gameObject, item.Content != null);
                     }
                     break;
 
@@ -868,7 +869,9 @@ namespace Modules.UI
                             index = 0;
                         }
 
-                        observable = Observable.Defer(() => item.UpdateItem(index, Contents));
+                        item.SetContent(index, Contents);
+
+                        observable = Observable.Defer(() => item.UpdateItem());
 
                         UnityUtility.SetActive(item.gameObject, true);
                     }
