@@ -172,7 +172,14 @@ namespace Extensions.Devkit
                 }
             }
             
-            if (!state) { GUILayout.Space(3f); }
+            if (!state)
+            {
+                GUILayout.Space(3f);
+            }
+            else
+            {
+                GUILayout.Space(-4f);
+            }
 
             return state;
         }
@@ -227,24 +234,6 @@ namespace Extensions.Devkit
             }
 
             GUILayout.Space(-2f);
-        }
-
-        public static void BeginContents()
-        {
-            EditorGUILayout.BeginHorizontal(EditorStyles.textArea);
-
-            EditorGUILayout.BeginVertical();
-
-            GUILayout.Space(2f);
-        }
-
-        public static void EndContents()
-        {
-            GUILayout.Space(2f);
-
-            EditorGUILayout.EndVertical();
-
-            EditorGUILayout.EndHorizontal();
         }
 
         public static void Outline(Rect rect, Color color)

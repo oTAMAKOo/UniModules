@@ -15,12 +15,12 @@ namespace Extensions.Devkit
 
         public ContentsScope()
         {
-            EditorLayoutTools.BeginContents();
+            EditorGUIContentLayout.BeginContents();
         }
 
         protected override void CloseScope()
         {
-            EditorLayoutTools.EndContents();
+            EditorGUIContentLayout.EndContents();
         }
     }
 }
