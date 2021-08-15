@@ -243,11 +243,14 @@ namespace Modules.Networking
 
             var newContents = apiTracker.GetHistory();
 
-            var selectionInfo = contents.FirstOrDefault(x => x.Id == selectionId);
-
-            if (selectionInfo != null)
+            if (contents != null)
             {
-                historyView.SetSelection(new List<int>() { selectionId });
+                var selectionInfo = contents.FirstOrDefault(x => x.Id == selectionId);
+
+                if (selectionInfo != null)
+                {
+                    historyView.SetSelection(new List<int>() { selectionId });
+                }
             }
 
             contents = newContents;
