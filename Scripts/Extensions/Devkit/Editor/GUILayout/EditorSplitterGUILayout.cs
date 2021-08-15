@@ -7,7 +7,7 @@ using System.Reflection;
 
 namespace Extensions.Devkit
 {
-    public static class SplitterGUILayout
+    public static class EditorSplitterGUILayout
     {
         //----- params -----
 
@@ -29,12 +29,15 @@ namespace Extensions.Devkit
 
         //----- method -----
 
-        public static void BeginVerticalSplit(float[] relativeSizes, int[] minSizes, int[] maxSizes, params GUILayoutOption[] options)
+        public static object CreateSplitterState(float[] relativeSizes, int[] minSizes, int[] maxSizes)
         {
             var ctor = GetSplitterStateCtor();
 
-            var splitterState = ctor.Invoke(new object[] { relativeSizes, minSizes, maxSizes });
+            return ctor.Invoke(new object[] { relativeSizes, minSizes, maxSizes });
+        }
 
+        public static void BeginVerticalSplit(object splitterState, params GUILayoutOption[] options)
+        {
             var methodInfo = GetBeginVerticalSplitMethodInfo();
 
             methodInfo.Invoke(null, new object[] { splitterState, options });

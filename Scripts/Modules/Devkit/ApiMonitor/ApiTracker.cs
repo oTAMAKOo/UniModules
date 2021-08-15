@@ -1,11 +1,9 @@
 ﻿
 using UnityEngine;
 using System;
-using System.Linq;
 using System.Collections.Generic;
 using UniRx;
 using Extensions;
-using Modules.Networking;
 
 namespace Modules.Networking
 {
@@ -36,16 +34,27 @@ namespace Modules.Networking
             Cancel,
         }
 
-        public string url = null;
-        public RequestType requestType = RequestType.None;
-        public RequestStatus status = RequestStatus.None;
-        public ulong retryCount = 0;
-        public string result = null;
-        public string statusCode = null;
-        public Exception exception = null;
+        public int Id { get; private set; }
+
+        public DateTime Time { get; private set; }
+
+        public string Url { get; set; }
+        public RequestType Request { get; set; }
+        public RequestStatus Status { get; set; }
+        public ulong RetryCount { get; set; }
+        public string Result { get; set; }
+        public string StatusCode { get; set; }
+        public Exception Exception { get; set; }
+        public string StackTrace { get; set; }
+
+        public WebRequestInfo(int id)
+        {
+            Id = id;
+            Time = DateTime.Now;
+        }
     }
 
-    public sealed class ApiMonitorBridge : Singleton<ApiMonitorBridge>
+    public sealed class ApiTracker : Singleton<ApiTracker>
     {
         //----- params -----
 
@@ -53,17 +62,17 @@ namespace Modules.Networking
 
         //----- field -----
 
-        private string serverUrl = null;
-
         private Dictionary<WebRequest, WebRequestInfo> webRequestInfos = null;
 
         private FixedQueue<WebRequestInfo> requestInfoHistory = null;
 
         private Subject<Unit> onUpdateInfo = null;
 
+        private int currentTrackerId = 0;
+
         //----- property -----
 
-        public string ServerUrl { get { return serverUrl; } }
+        public string ServerUrl { get; private set; }
 
         //----- method -----
 
@@ -80,18 +89,19 @@ namespace Modules.Networking
 
         public void SetServerUrl(string serverUrl)
         {
-            this.serverUrl = serverUrl;
+            this.ServerUrl = serverUrl;
         }
 
         public void Start(WebRequest webRequest)
         {
-            var url = webRequest.HostUrl.Replace(serverUrl, string.Empty);
+            var url = webRequest.HostUrl.Replace(ServerUrl, string.Empty);
 
-            var info = new WebRequestInfo()
+            var info = new WebRequestInfo(currentTrackerId++)
             {
-                url = url,
-                requestType = GetRequestType(webRequest),
-                status = WebRequestInfo.RequestStatus.Connection,
+                Url = url,
+                Request = GetRequestType(webRequest),
+                Status = WebRequestInfo.RequestStatus.Connection,
+                StackTrace = StackTraceUtility.ExtractStackTrace(),
             };
 
             webRequestInfos.Add(webRequest, info);
@@ -110,9 +120,9 @@ namespace Modules.Networking
 
             if (info == null) { return; }
 
-            info.status = WebRequestInfo.RequestStatus.Success;
-            info.statusCode = webRequest.StatusCode;
-            info.result = result;
+            info.Status = WebRequestInfo.RequestStatus.Success;
+            info.StatusCode = webRequest.StatusCode;
+            info.Result = result;
 
             webRequestInfos.Remove(webRequest);
 
@@ -128,8 +138,8 @@ namespace Modules.Networking
 
             if (info == null) { return; }
 
-            info.status = WebRequestInfo.RequestStatus.Retry;
-            info.retryCount++;
+            info.Status = WebRequestInfo.RequestStatus.Retry;
+            info.RetryCount++;
 
             if (onUpdateInfo != null)
             {
@@ -143,8 +153,8 @@ namespace Modules.Networking
 
             if (info == null) { return; }
 
-            info.status = WebRequestInfo.RequestStatus.Failure;
-            info.statusCode = webRequest.StatusCode;
+            info.Status = WebRequestInfo.RequestStatus.Failure;
+            info.StatusCode = webRequest.StatusCode;
 
             webRequestInfos.Remove(webRequest);
 
@@ -160,9 +170,9 @@ namespace Modules.Networking
 
             if (info == null) { return; }
 
-            info.status = WebRequestInfo.RequestStatus.Failure;
-            info.statusCode = webRequest.StatusCode;
-            info.exception = ex;
+            info.Status = WebRequestInfo.RequestStatus.Failure;
+            info.StatusCode = webRequest.StatusCode;
+            info.Exception = ex;
 
             webRequestInfos.Remove(webRequest);
 
@@ -178,7 +188,7 @@ namespace Modules.Networking
             {
                 var info = webRequestInfo.Value;
 
-                info.status = WebRequestInfo.RequestStatus.Cancel;
+                info.Status = WebRequestInfo.RequestStatus.Cancel;
             }
 
             webRequestInfos.Clear();

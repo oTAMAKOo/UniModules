@@ -73,7 +73,7 @@ namespace Modules.Networking
 
             #if UNITY_EDITOR
 
-            ApiMonitorBridge.Instance.SetServerUrl(serverUrl);
+            ApiTracker.Instance.SetServerUrl(serverUrl);
 
             #endif
         }
@@ -147,7 +147,7 @@ namespace Modules.Networking
 
                 if (retryCount == 0)
                 {
-                    ApiMonitorBridge.Instance.Start(webRequest);                    
+                    ApiTracker.Instance.Start(webRequest);                    
                 }
 
                 #endif
@@ -263,7 +263,7 @@ namespace Modules.Networking
 
             #if UNITY_EDITOR
 
-            ApiMonitorBridge.Instance.OnForceCancelAll();
+            ApiTracker.Instance.OnForceCancelAll();
 
             #endif
         }
@@ -360,7 +360,7 @@ namespace Modules.Networking
 
                 #if UNITY_EDITOR
 
-                ApiMonitorBridge.Instance.OnComplete(webRequest, json);
+                ApiTracker.Instance.OnComplete(webRequest, json);
 
                 #endif
             }
@@ -370,7 +370,7 @@ namespace Modules.Networking
         {
             #if UNITY_EDITOR
 
-            ApiMonitorBridge.Instance.OnRetry(webRequest);
+            ApiTracker.Instance.OnRetry(webRequest);
 
             #endif
 
@@ -381,7 +381,7 @@ namespace Modules.Networking
         {
             #if UNITY_EDITOR
 
-            ApiMonitorBridge.Instance.OnRetryLimit(webRequest);
+            ApiTracker.Instance.OnRetryLimit(webRequest);
 
             #endif
 
@@ -393,7 +393,7 @@ namespace Modules.Networking
         {
             #if UNITY_EDITOR
 
-            ApiMonitorBridge.Instance.OnError(webRequest, ex);
+            ApiTracker.Instance.OnError(webRequest, ex);
 
             #endif
 

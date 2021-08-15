@@ -22,17 +22,21 @@ namespace Modules.Networking
 
         //----- field -----
 
-        private int selectionIndex = -1;
-        
-        private Vector2 scrollPosition = Vector2.zero;
+        private int selectionId = -1;
+
+        private int detailTabIndex = 0;
+
+        private Vector2 historyScrollPosition = Vector2.zero;
+        private Vector2 detailScrollPosition = Vector2.zero;
 
         private WebRequestInfo[] contents = null;
 
-        private GUIStyle statusLabelStyle = null;
-        private GUIStyle serverUrlLabelStyle = null;
-        private GUIStyle apiNameLabelStyle = null;
+        private object splitterState = null;
+        private ApiHistoryView historyView = null;
 
-        private Dictionary<WebRequestInfo.RequestType, Texture2D> statusLabelTexture = null;
+        private GUIStyle historyStyle = null;
+        private GUIStyle serverUrlLabelStyle = null;
+        private GUIStyle detailStyle = null;
 
         [NonSerialized]
         private bool initialized = false;
@@ -52,29 +56,33 @@ namespace Modules.Networking
         {
             if (initialized) { return; }
 
-            var apiMonitorBridge = ApiMonitorBridge.Instance;
+            var apiTracker = ApiTracker.Instance;
 
             titleContent = new GUIContent("ApiMonitor");
 
             minSize = WindowSize;
 
-            contents = apiMonitorBridge.GetHistory();
+            splitterState = EditorSplitterGUILayout.CreateSplitterState(new float[] { 75f, 25f }, new int[] { 32, 32 }, null);
+
+            historyView = new ApiHistoryView();
 
             //------ Event ------
 
-            apiMonitorBridge.OnUpdateInfoAsObservable()
+            apiTracker.OnUpdateInfoAsObservable()
                 .Subscribe(_ => UpdateContents())
                 .AddTo(Disposable);
 
-            //------ Texture ------
+            historyView.OnChangeSelectAsObservable()
+                .Subscribe(x =>
+                   {
+                       selectionId = x;
+                       detailTabIndex = 0;
+                   })
+                .AddTo(Disposable);
 
-            statusLabelTexture = new Dictionary<WebRequestInfo.RequestType, Texture2D>()
-            {
-                { WebRequestInfo.RequestType.Post,   EditorGUIUtility.FindTexture("sv_label_3") },
-                { WebRequestInfo.RequestType.Put,    EditorGUIUtility.FindTexture("sv_label_5") },
-                { WebRequestInfo.RequestType.Get,    EditorGUIUtility.FindTexture("sv_label_1") },
-                { WebRequestInfo.RequestType.Delete, EditorGUIUtility.FindTexture("sv_label_7") },
-            };
+            //------ Update ------
+
+            UpdateContents();
 
             initialized = true;
         }
@@ -87,127 +95,118 @@ namespace Modules.Networking
 
             DrawToolbarGUI();
 
-            DrawApiHistoryGUI();
+            EditorSplitterGUILayout.BeginVerticalSplit(splitterState);
+            {
+                DrawApiHistoryGUI();
 
-            DrawApiDetailGUI();
+                DrawApiDetailGUI();
+            }
+            EditorSplitterGUILayout.EndVerticalSplit();
         }
 
         private void DrawToolbarGUI()
         {
-            var apiMonitorBridge = ApiMonitorBridge.Instance;
+            var apiTracker = ApiTracker.Instance;
 
             using (new EditorGUILayout.HorizontalScope(EditorStyles.toolbar, GUILayout.Height(15f)))
             {
-                EditorGUILayout.LabelField(apiMonitorBridge.ServerUrl, serverUrlLabelStyle, GUILayout.Width(500f));
+                EditorGUILayout.LabelField(apiTracker.ServerUrl, serverUrlLabelStyle, GUILayout.Width(500f));
 
                 GUILayout.FlexibleSpace();
 
                 if (GUILayout.Button("Clear", EditorStyles.toolbarButton, GUILayout.Width(50f)))
                 {
-                    apiMonitorBridge.Clear();
-                    scrollPosition = Vector2.zero;
+                    apiTracker.Clear();
+
+                    historyScrollPosition = Vector2.zero;
+                    detailScrollPosition = Vector2.zero;
+                    detailTabIndex = 0;
                 }
             }
         }
 
         private void DrawApiHistoryGUI()
         {
-            var apiMonitorBridge = ApiMonitorBridge.Instance;
-
-            using (new EditorGUILayout.VerticalScope(EditorStyles.textArea))
+            using (new EditorGUILayout.VerticalScope(historyStyle))
             {
-                GUILayout.Space(2f);
-
-                using (var scrollView = new EditorGUILayout.ScrollViewScope(scrollPosition))
+                using (var scrollView = new EditorGUILayout.ScrollViewScope(historyScrollPosition, GUILayout.ExpandWidth(true)))
                 {
-                    for (var i = 0; i < contents.Length; i++)
-                    {
-                        var content = contents[i];
+                    var controlRect = EditorGUILayout.GetControlRect(GUILayout.ExpandHeight(true), GUILayout.ExpandWidth(true));
 
-                        var selection = i == selectionIndex;
+                    historyView.OnGUI(controlRect);
 
-                        var backgroundColor = Color.clear;
-
-                        if (!selection)
-                        {
-                            backgroundColor = i % 2 == 0 ? EvenLineColor : OddLineColor;
-                        }
-                        else
-                        {
-                            backgroundColor = SelectionLineColor;
-                        }
-
-                        var contentRect = new Rect();
-
-                        using (var horizontalScope = new EditorGUILayout.HorizontalScope(GUILayout.Height(18f)))
-                        {
-                            contentRect = horizontalScope.rect;
-
-                            using (new BackgroundColorScope(backgroundColor))
-                            {
-                                var rect = new Rect(contentRect);
-
-                                rect.height += 2.5f;
-
-                                GUI.Box(rect, GUIContent.none);
-                            }
-
-                            GUILayout.Space(5f);
-
-                            using (new EditorGUILayout.VerticalScope())
-                            {
-                                GUILayout.Space(3f);
-
-                                var texture = statusLabelTexture.GetValueOrDefault(content.requestType);
-
-                                if (texture != null)
-                                {
-                                    statusLabelStyle.normal.background = texture;
-                                }
-
-                                var requestName = content.requestType.ToLabelName();
-
-                                using (new EditorGUILayout.HorizontalScope())
-                                {
-                                    GUILayout.Label(requestName, statusLabelStyle, GUILayout.Width(46f), GUILayout.Height(16f));
-
-                                    var apiName = content.url.Replace(apiMonitorBridge.ServerUrl, string.Empty);
-
-                                    GUILayout.Label(apiName, apiNameLabelStyle, GUILayout.Height(16f));
-                                }
-                            }
-                        }
-
-                        using (new BackgroundColorScope(Color.clear))
-                        {
-                            if (GUI.Button(contentRect, string.Empty))
-                            {
-                                selectionIndex = i;
-                            }
-                        }
-                    }
-
-                    scrollPosition = scrollView.scrollPosition;
+                    historyScrollPosition = scrollView.scrollPosition;
                 }
-
-                GUILayout.Space(2f);
             }
         }
 
         private void DrawApiDetailGUI()
         {
-            var info = contents.ElementAtOrDefault(selectionIndex);
+            var info = contents.FirstOrDefault(x => x.Id == selectionId);
             
             using (new ContentsScope())
             {
-                using (new EditorGUILayout.VerticalScope(GUILayout.Height(150f)))
+                using (new EditorGUILayout.VerticalScope())
                 {
                     if (info != null)
                     {
+                        var tabs = new List<string>()
+                        {
+                            info.Result.IsNullOrEmpty() ? string.Empty : "Result",
+                            info.Exception == null ? string.Empty : "Exception",
+                            info.StackTrace.IsNullOrEmpty() ? string.Empty : "StackTrace",
+                        };
 
+                        var tabToggles = tabs.Where(x => !x.IsNullOrEmpty()).ToArray();
+
+                        using (new EditorGUILayout.HorizontalScope(EditorStyles.toolbar))
+                        {
+                            EditorGUI.BeginChangeCheck();
+
+                            detailTabIndex = GUILayout.Toolbar(detailTabIndex, tabToggles, new GUIStyle(EditorStyles.toolbarButton), GUI.ToolbarButtonSize.FitToContents);
+
+                            if (EditorGUI.EndChangeCheck())
+                            {
+                                EditorGUI.FocusTextInControl(string.Empty);
+                            }
+                        }
+
+                        var detailText = string.Empty;
+
+                        var tabName = tabToggles.ElementAtOrDefault(detailTabIndex);
+
+                        switch (tabName)
+                        {
+                            case "Result":
+                                detailText = info.Result;
+                                break;
+
+                            case "Exception":
+                                detailText = info.Exception.ToString();
+                                break;
+
+                            case "StackTrace":
+                                detailText = info.StackTrace;
+                                break;
+                        }
+
+                        using (var scrollView = new EditorGUILayout.ScrollViewScope(detailScrollPosition))
+                        {
+                            var vector = detailStyle.CalcSize(new GUIContent(detailText));
+
+                            var layoutOption = new GUILayoutOption[]
+                            {
+                                GUILayout.ExpandHeight(true),
+                                GUILayout.ExpandWidth(true),
+                                GUILayout.MinWidth(vector.x),
+                                GUILayout.MinHeight(vector.y)
+                            };
+
+                            EditorGUILayout.SelectableLabel(detailText, detailStyle, layoutOption);
+
+                            detailScrollPosition = scrollView.scrollPosition;
+                        }
                     }
-
-                    GUILayout.FlexibleSpace();
                 }
             }
         }
@@ -218,51 +217,42 @@ namespace Modules.Networking
             {
                 serverUrlLabelStyle = new GUIStyle(EditorStyles.miniLabel)
                 {
-                    fontSize = 10,
-                };
-            }
-
-            if (statusLabelStyle == null)
-            {
-                statusLabelStyle = new GUIStyle(GUI.skin.label)
-                {
-                    alignment = TextAnchor.MiddleCenter,
-                    contentOffset = new Vector2(2f, 0f),
-                    border = new RectOffset(10, 10, 4, 4),
-                    fontSize = 9,
-                    fontStyle = FontStyle.Bold,
-                };
-
-                statusLabelStyle.normal.textColor = Color.white;
-            }
-
-            if (apiNameLabelStyle == null)
-            {
-                apiNameLabelStyle = new GUIStyle(GUI.skin.label)
-                {
                     alignment = TextAnchor.MiddleLeft,
-                    fontSize = 10,
-                    fontStyle = FontStyle.Bold,
                 };
+            }
 
-                statusLabelStyle.normal.textColor = Color.white;
+            if (historyStyle == null)
+            {
+                historyStyle = new GUIStyle("CN Box");
+                historyStyle.margin.top = 0;
+                historyStyle.padding.left = 3;
+            }
+
+            if (detailStyle == null)
+            {
+                detailStyle = new GUIStyle(EditorStyles.wordWrappedLabel);
+                detailStyle.wordWrap = false;
+                detailStyle.stretchHeight = true;
+                detailStyle.margin.right = 15;
             }
         }
 
         private void UpdateContents()
         {
-            var apiMonitorBridge = ApiMonitorBridge.Instance;
+            var apiTracker = ApiTracker.Instance;
 
-            var newContents = apiMonitorBridge.GetHistory();
+            var newContents = apiTracker.GetHistory();
 
-            var selectionInfo = contents.ElementAtOrDefault(selectionIndex);
+            var selectionInfo = contents.FirstOrDefault(x => x.Id == selectionId);
 
             if (selectionInfo != null)
             {
-                selectionIndex = newContents.IndexOf(x => x == selectionInfo);
+                historyView.SetSelection(new List<int>() { selectionId });
             }
 
             contents = newContents;
+
+            historyView.SetContents(contents);
 
             Repaint();
         }
