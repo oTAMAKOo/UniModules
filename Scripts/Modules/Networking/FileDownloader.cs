@@ -53,14 +53,13 @@ namespace Modules.Networking
 
         //----- method -----
 
-        public void Initialize(string serverUrl, int multiDownloadNum = 5, int retryCount = 3, float retryDelaySeconds = 2)
+        public void Initialize(int multiDownloadNum = 5, int retryCount = 3, float retryDelaySeconds = 2)
         {
             if (initialized) { return; }
 
             downloading = new Dictionary<string, DownloadInfo>();
             downloadQueueing = new Queue<TDownloadRequest>();
 
-            ServerUrl = serverUrl;
             MaxMultiDownloadNum = multiDownloadNum;
             RetryCount = retryCount;
             RetryDelaySeconds = retryDelaySeconds;
@@ -68,6 +67,11 @@ namespace Modules.Networking
             OnInitialize();
 
             initialized = true;
+        }
+
+        public void SetServerUrl(string serverUrl)
+        {
+            ServerUrl = serverUrl;
         }
 
         protected TDownloadRequest SetupDownloadRequest(string url, string downloadDirectory)
