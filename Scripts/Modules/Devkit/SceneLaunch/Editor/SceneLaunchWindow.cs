@@ -16,19 +16,27 @@ namespace Modules.Devkit.SceneLaunch
     public sealed class SceneLaunchWindow : SingletonEditorWindow<SceneLaunchWindow>
     {
         //----- params -----
+
+        private enum Status
+        {
+            None = 0,
+
+            ResumeScene,
+            ResumeObject,
+        }
         
         private static class Prefs
         {
+            public static Status status
+            {
+                get { return ProjectPrefs.GetEnum("SceneLaunchPrefs-resume", Status.None); }
+                set { ProjectPrefs.SetEnum("SceneLaunchPrefs-resume", value); }
+            }
+
             public static string targetScenePath
             {
                 get { return ProjectPrefs.GetString("SceneLaunchPrefs-targetScenePath"); }
                 set { ProjectPrefs.SetString("SceneLaunchPrefs-targetScenePath", value); }
-            }
-
-            public static bool resume
-            {
-                get { return ProjectPrefs.GetBool("SceneLaunchPrefs-resume", false); }
-                set { ProjectPrefs.SetBool("SceneLaunchPrefs-resume", value); }
             }
 
             public static bool standbyInitializer
@@ -105,7 +113,7 @@ namespace Modules.Devkit.SceneLaunch
 
                 if (EditorApplication.isCompiling) { return; }
 
-                if (!Prefs.resume) { return; }
+                if (Prefs.status == Status.None) { return; }
 
                 if (CheckInterval < frameCount++)
                 {
@@ -117,7 +125,7 @@ namespace Modules.Devkit.SceneLaunch
 
             private static void PlayModeStateChangedCallback(PlayModeStateChange state)
             {
-                if (!Prefs.resume) { return; }
+                if (Prefs.status == Status.None) { return; }
 
                 if (state != PlayModeStateChange.EnteredEditMode){ return; }
 
@@ -148,13 +156,14 @@ namespace Modules.Devkit.SceneLaunch
                             disposable = null;
                         }
 
-                        disposable = EditorSceneChanger.SceneResume().Subscribe(_ => Prefs.resume = false);
+                        disposable = EditorSceneChanger.SceneResume()
+                            .Subscribe(_ => Prefs.status = Status.ResumeObject);
                     }
                     else
                     {
                         ResumeSceneInstance();
 
-                        Prefs.resume = false;
+                        Prefs.status = Status.None;
                     }
 
                     Prefs.suspendObjectNames = new string[0];
@@ -272,7 +281,7 @@ namespace Modules.Devkit.SceneLaunch
                     {
                         if (x)
                         {
-                            Prefs.resume = true;
+                            Prefs.status = Status.ResumeScene;
                             Prefs.standbyInitializer = true;
 
                             SuspendSceneInstance();
