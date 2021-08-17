@@ -11,21 +11,21 @@ namespace Modules.SoundManagement
         public int CueId { get; private set; }
         public string CueSheet { get; private set; }
         public string Cue { get; private set; }
-        public string CueSheetPath { get; private set; }
+        public string FilePath { get; private set; }
         public string Summary { get; private set; }
 
-        public CueInfo(string cue, string path, string summary) : this(cue, path)
+        public CueInfo(string filePath, string cueSheetPath, string cue)
         {
-            this.Summary = summary;
+            FilePath = filePath;
+            CueSheet = cueSheetPath;
+            Cue = cue;
+
+            CueId = string.Format("{0}-{1}", FilePath, Cue).GetHashCode();
         }
 
-        public CueInfo(string cue, string path)
+        public CueInfo(string filePath, string cueSheetPath, string cue, string summary) : this(filePath, cueSheetPath, cue)
         {
-            this.Cue = cue;
-            this.CueSheetPath = path;
-
-            this.CueSheet = Path.GetFileNameWithoutExtension(path);
-            this.CueId = CueSheetPath.GetHashCode();
+            Summary = summary;
         }
     }
 }

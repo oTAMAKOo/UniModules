@@ -169,7 +169,7 @@ namespace Modules.ExternalResource
 
                 filePath = PathUtility.GetPathWithoutExtension(filePath) + CriAssetDefinition.AcbExtension;
 
-                observer.OnNext(File.Exists(filePath) ? new CueInfo(cue, filePath) : null);
+                observer.OnNext(File.Exists(filePath) ? new CueInfo(filePath, resourcePath, cue) : null);
 
                 if (onLoadAsset != null)
                 {

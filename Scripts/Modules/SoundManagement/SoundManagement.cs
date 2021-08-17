@@ -416,7 +416,7 @@ namespace Modules.SoundManagement
         {
             if (cueInfo == null) { return null; }
 
-            var assetPath = cueInfo.CueSheetPath;
+            var assetPath = cueInfo.FilePath;
             var soundSheet = managedSoundSheets.GetValueOrDefault(assetPath);
 
             if (soundSheet == null)

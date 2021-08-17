@@ -150,7 +150,7 @@ namespace Modules.CriWare
                 {
                     var path = PathUtility.GetPathWithoutExtension(assetPath);
 
-                    var cueInfo = new CueInfo(item.name, path, item.userData);
+                    var cueInfo = new CueInfo(string.Empty, path, item.name, item.userData);
 
                     cueInfos.Add(cueInfo);
                 }

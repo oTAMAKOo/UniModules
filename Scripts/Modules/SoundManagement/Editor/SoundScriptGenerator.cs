@@ -7,7 +7,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using System.Text.RegularExpressions;
-using CriWare;
 using Extensions;
 using Modules.Devkit.Generators;
 using Modules.CriWare;
@@ -26,7 +25,7 @@ namespace Modules.SoundManagement.Editor
 
 #if ENABLE_CRIWARE_ADX
 
-using UnityEngine;
+using System;
 using System.Collections.Generic;
 using Extensions;
 
@@ -39,7 +38,7 @@ namespace Modules.SoundManagement
 @ENUMS
         }
 
-        private static Dictionary<Cue, CueInfo> internalSounds = new Dictionary<Cue, CueInfo>()
+        private static Dictionary<Cue, Tuple<string, string, string>> internalSounds = new Dictionary<Cue, Tuple<string, string, string>>()
         {
 @CONTENTS
         };
@@ -62,9 +61,9 @@ namespace Modules.SoundManagement
 
             var info = internalSounds.GetValueOrDefault(cue);
 
-            var path = PathUtility.Combine(fileDirectory, info.CueSheetPath);
+            var filePath = PathUtility.Combine(fileDirectory, info.Item1);
 
-            return new CueInfo(info.Cue, path);
+            return new CueInfo(filePath, info.Item1, info.Item2, info.Item3);
         }
     }
 }
@@ -73,7 +72,7 @@ namespace Modules.SoundManagement
 ";
         private const string EnumTemplate = @"{0},";
         private const string SummaryTemplate = @"/// <summary> {0} </summary>";
-        private const string ContentsTemplate = @"{{ Cue.{0}, new CueInfo(""{1}"", ""{2}"", ""{3}"") }},";
+        private const string ContentsTemplate = @"{{ Cue.{0}, Tuple.Create(""{1}"", ""{2}"", ""{3}"") }},";
 
         //----- field -----
 
@@ -99,13 +98,13 @@ namespace Modules.SoundManagement
                     enums.Append("\t\t\t").AppendFormat(SummaryTemplate, info.Summary).AppendLine();
                 }
 
-                var assetPath = info.CueSheetPath.Replace(assetFolderPath + PathUtility.PathSeparator, string.Empty);
+                var assetPath = info.CueSheet.Replace(assetFolderPath + PathUtility.PathSeparator, string.Empty);
                 var enumName = ScriptGenerateUtility.GetCSharpName(assetPath) + "_" + ScriptGenerateUtility.GetCSharpName(info.Cue, false);
 
-                var cueSheetPath = PathUtility.Combine(rootFolderName, info.CueSheetPath);
+                var cueSheetPath = PathUtility.Combine(rootFolderName, info.CueSheet);
 
                 enums.Append("\t\t\t").AppendFormat(EnumTemplate, enumName);
-                contents.Append("\t\t\t").AppendFormat(ContentsTemplate, enumName, info.Cue, cueSheetPath, info.Summary);
+                contents.Append("\t\t\t").AppendFormat(ContentsTemplate, enumName, cueSheetPath, info.Cue, info.Summary);
 
                 if (i < infos.Length - 1)
                 {
@@ -156,7 +155,7 @@ namespace Modules.SoundManagement
 
                         acbPath = PathUtility.GetPathWithoutExtension(acbPath);
 
-                        result.Add(new CueInfo(cueInfo.name, acbPath, cueInfo.userData));
+                        result.Add(new CueInfo(string.Empty, acbPath, cueInfo.name, cueInfo.userData));
                     }
 
                     acb.Dispose();
