@@ -8,16 +8,30 @@ namespace Modules.Devkit.Memo
     [CustomEditor(typeof(Memo))]
     public sealed class MemoInspector : Editor
     {
+        //----- params -----
+
+        private const string CryptoKey = "M97JjGTAe977jUVH56bnbzu25hs5cETX";
+        private const string CryptoIv = "cnAQQxwDcewmKBcm";
+
+        //----- field -----
+
         private string text = null;
         private Vector2 scrollPosition = Vector2.zero;
 
         private static AesCryptoKey cryptoKey = null;
 
+        //----- property -----
+
+        //----- method -----
+
         void OnEnable()
         {
             var instance = target as Memo;
 
-            var cryptoKey = GetCryptoKey();
+            if (cryptoKey == null)
+            {
+                cryptoKey = new AesCryptoKey(CryptoKey, CryptoIv);
+            }
 
             var memo = Reflection.GetPrivateField<Memo, string>(instance, "memo");
 
@@ -48,26 +62,12 @@ namespace Modules.Devkit.Memo
 
                     if (EditorGUI.EndChangeCheck())
                     {
-                        var cryptoKey = GetCryptoKey();
-
                         Reflection.SetPrivateField(memo, "memo", text.Encrypt(cryptoKey));
                     }
                 }
 
                 scrollPosition = scrollViewScope.scrollPosition;
             }
-        }
-
-        private AesCryptoKey GetCryptoKey()
-        {
-            var config = MemoConfig.Instance;
-
-            if (cryptoKey == null)
-            {
-                cryptoKey = new AesCryptoKey(config.AESKey, config.AESIv);
-            }
-
-            return cryptoKey;
         }
     }
 }

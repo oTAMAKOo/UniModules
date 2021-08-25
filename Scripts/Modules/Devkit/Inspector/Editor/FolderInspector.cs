@@ -9,6 +9,9 @@ namespace Modules.Devkit.Inspector
     {
         //----- params -----
 
+        private const string CryptoKey = "6bc4YaYLrKVGJxue4mAHWC8GfN6dzrrQ";
+        private const string CryptoIv = "T8P4GtP4NMkxTtt8";
+
         //----- field -----
 
         private string folderAssetPath = null;
@@ -16,6 +19,8 @@ namespace Modules.Devkit.Inspector
         private int lineCount = 0;
 
         private string description = null;
+
+        private static AesCryptoKey cryptoKey = null;
 
         //----- property -----
 
@@ -69,7 +74,12 @@ namespace Modules.Devkit.Inspector
 
             var assetImporter = AssetImporter.GetAtPath(folderAssetPath);
 
-            description = assetImporter.userData;
+            if (cryptoKey == null)
+            {
+                cryptoKey = new AesCryptoKey(CryptoKey, CryptoIv);
+            }
+
+            description = assetImporter.userData.Decrypt(cryptoKey);
 
             UpdateLineCount();
 
@@ -82,9 +92,16 @@ namespace Modules.Devkit.Inspector
 
             if (assetImporter != null)
             {
-                if (assetImporter.userData != description)
+                if (cryptoKey == null)
                 {
-                    assetImporter.userData = description;
+                    cryptoKey = new AesCryptoKey(CryptoKey, CryptoIv);
+                }
+
+                var cryptoText = description.Encrypt(cryptoKey);
+
+                if (assetImporter.userData != cryptoText)
+                {
+                    assetImporter.userData = cryptoText;
 
                     assetImporter.SaveAndReimport();
                 }
@@ -95,7 +112,7 @@ namespace Modules.Devkit.Inspector
 
         private void UpdateLineCount()
         {
-            lineCount = description.Split('\n').Length;
+            lineCount = string.IsNullOrEmpty(description) ? 0 : description.Split('\n').Length;
         }
 
         private static void RepaintInspector()
