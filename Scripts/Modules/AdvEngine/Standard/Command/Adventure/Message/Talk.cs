@@ -1,6 +1,7 @@
 ﻿
 #if ENABLE_MOONSHARP
 
+using UnityEngine;
 using System;
 using UniRx;
 using MoonSharp.Interpreter;
@@ -30,39 +31,46 @@ namespace Modules.AdvKit.Standard
 
         private DynValue CommandFunction(string identifier, string text, string name = null)
         {
-            var advEngine = AdvEngine.Instance;
-
-            if (text == null)
+            try
             {
-                MessageWindow.Hide();
+                var advEngine = AdvEngine.Instance;
 
-                return DynValue.Nil;
-            }
-
-            var displayName = name;
-
-            if (string.IsNullOrEmpty(displayName))
-            {
-                if (!string.IsNullOrEmpty(identifier))
+                if (text == null)
                 {
-                    var advCharacter = advEngine.ObjectManager.Get<AdvCharacter>(identifier);
+                    MessageWindow.Hide();
 
-                    if (advCharacter != null)
+                    return DynValue.Nil;
+                }
+
+                var displayName = name;
+
+                if (string.IsNullOrEmpty(displayName))
+                {
+                    if (!string.IsNullOrEmpty(identifier))
                     {
-                        displayName = advCharacter.CharacterName;
+                        var advCharacter = advEngine.ObjectManager.Get<AdvCharacter>(identifier);
+
+                        if (advCharacter != null)
+                        {
+                            displayName = advCharacter.CharacterName;
+                        }
                     }
                 }
-            }
 
-            if (showMessageFinishDisposable == null)
+                if (showMessageFinishDisposable == null)
+                {
+                    showMessageFinishDisposable = MessageWindow.OnShowMessageFinish()
+                        .Subscribe(_ => advEngine.Resume())
+                        .AddTo(Disposable);
+                }
+
+                MessageWindow.ShowMessage(displayName, text);
+            }
+            catch (Exception e)
             {
-                showMessageFinishDisposable = MessageWindow.OnShowMessageFinish()
-                    .Subscribe(_ => advEngine.Resume())
-                    .AddTo(Disposable);
+                Debug.LogException(e);
             }
 
-            MessageWindow.ShowMessage(displayName, text);
-            
             return YieldWait;
         }
     }

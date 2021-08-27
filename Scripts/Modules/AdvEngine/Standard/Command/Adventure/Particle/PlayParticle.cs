@@ -4,6 +4,7 @@
 using System;
 using UniRx;
 using MoonSharp.Interpreter;
+using UnityEngine;
 
 namespace Modules.AdvKit.Standard
 {
@@ -26,28 +27,39 @@ namespace Modules.AdvKit.Standard
 
         private DynValue CommandFunction(string identifier, string fileIdentifier, bool wait = true, int? sortingOrder = null, bool restart = true)
         {
-            var advEngine = AdvEngine.Instance;
-            
-            var advParticle = advEngine.ObjectManager.Create<AdvParticle>(identifier);
+            var returnValue = DynValue.Nil;
 
-            var fileName = advEngine.Resource.FindFileName<AdvParticle>(fileIdentifier);
-
-            if (advParticle != null)
+            try
             {
-                Action onComplete = () =>
-                {
-                    if (wait)
-                    {
-                        advEngine.Resume();
-                    }
-                };
+                var advEngine = AdvEngine.Instance;
 
-                advParticle.Play(fileName, restart, sortingOrder)
-                    .Subscribe(_ => onComplete())
-                    .AddTo(Disposable);
+                var advParticle = advEngine.ObjectManager.Create<AdvParticle>(identifier);
+
+                var fileName = advEngine.Resource.FindFileName<AdvParticle>(fileIdentifier);
+
+                if (advParticle != null)
+                {
+                    Action onComplete = () =>
+                    {
+                        if (wait)
+                        {
+                            advEngine.Resume();
+                        }
+                    };
+
+                    advParticle.Play(fileName, restart, sortingOrder)
+                        .Subscribe(_ => onComplete())
+                        .AddTo(Disposable);
+                }
+
+                returnValue = wait ? YieldWait : DynValue.Nil;
+            }
+            catch (Exception e)
+            {
+                Debug.LogException(e);
             }
 
-            return wait ? YieldWait : DynValue.Nil;
+            return returnValue;
         }
     }
 }

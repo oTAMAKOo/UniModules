@@ -147,6 +147,7 @@ namespace Modules.AdvKit
 
             return luaController.ExecuteScript(luaScript)
                 .Do(_ => finishCallBack())
+                .DoOnError(x => Debug.LogException(x))
                 .AsUnitObservable();
         }
 

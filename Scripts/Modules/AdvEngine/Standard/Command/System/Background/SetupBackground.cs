@@ -27,19 +27,26 @@ namespace Modules.AdvKit.Standard
 
         private void CommandFunction(string fileIdentifier, string fileName)
         {
-            var advEngine = AdvEngine.Instance;
-
-            advEngine.Resource.RegisterFileName<AdvBackground>(fileIdentifier, fileName);
-
-            var resourcePath = advEngine.Resource.GetResourcePath<AdvBackground>(fileName);
-
-            advEngine.Resource.Request<Sprite>(resourcePath);
-            
-            if (advBackground == null)
+            try
             {
-                advBackground = advEngine.ObjectManager.Create<AdvBackground>(AdvBackground.UniqueIdentifier);
+                var advEngine = AdvEngine.Instance;
 
-                advBackground.transform.SetAsFirstSibling();
+                advEngine.Resource.RegisterFileName<AdvBackground>(fileIdentifier, fileName);
+
+                var resourcePath = advEngine.Resource.GetResourcePath<AdvBackground>(fileName);
+
+                advEngine.Resource.Request<Sprite>(resourcePath);
+
+                if (advBackground == null)
+                {
+                    advBackground = advEngine.ObjectManager.Create<AdvBackground>(AdvBackground.UniqueIdentifier);
+
+                    advBackground.transform.SetAsFirstSibling();
+                }
+            }
+            catch (Exception e)
+            {
+                Debug.LogException(e);
             }
         }
     }

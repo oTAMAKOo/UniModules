@@ -31,49 +31,56 @@ namespace Modules.AdvKit.Standard
         {
             var returnValue = DynValue.Nil;
 
-            var advEngine = AdvEngine.Instance;
-
-            var advCharacter = advEngine.ObjectManager.Get<AdvCharacter>(identifier);
-
-            if (advCharacter != null)
+            try
             {
-                advCharacter.SetPriority(priority.HasValue ? priority.Value : 0);
+                var advEngine = AdvEngine.Instance;
 
-                advCharacter.Show(patternName);
+                var advCharacter = advEngine.ObjectManager.Get<AdvCharacter>(identifier);
 
-                advCharacter.transform.localPosition = pos;                
-            }
-
-            var canvasGroup = UnityUtility.GetComponent<CanvasGroup>(advCharacter);
-
-            if (canvasGroup != null)
-            {
-                if (duration != 0)
+                if (advCharacter != null)
                 {
-                    TweenCallback onComplete = () =>
+                    advCharacter.SetPriority(priority.HasValue ? priority.Value : 0);
+
+                    advCharacter.Show(patternName);
+
+                    advCharacter.transform.localPosition = pos;
+                }
+
+                var canvasGroup = UnityUtility.GetComponent<CanvasGroup>(advCharacter);
+
+                if (canvasGroup != null)
+                {
+                    if (duration != 0)
                     {
-                        if (wait)
+                        TweenCallback onComplete = () =>
                         {
-                            advEngine.Resume();
-                        }
-                    };
+                            if (wait)
+                            {
+                                advEngine.Resume();
+                            }
+                        };
 
-                    var ease = EnumExtensions.FindByName(easingType, Ease.Linear);
+                        var ease = EnumExtensions.FindByName(easingType, Ease.Linear);
 
-                    canvasGroup.alpha = 0f;
+                        canvasGroup.alpha = 0f;
 
-                    var tweener = canvasGroup.DOFade(1f, duration)
-                        .SetEase(ease)
-                        .OnComplete(onComplete);
+                        var tweener = canvasGroup.DOFade(1f, duration)
+                            .SetEase(ease)
+                            .OnComplete(onComplete);
 
-                    advEngine.SetTweenTimeScale(tweener);
+                        advEngine.SetTweenTimeScale(tweener);
 
-                    returnValue = wait ? YieldWait : DynValue.Nil;
+                        returnValue = wait ? YieldWait : DynValue.Nil;
+                    }
+                    else
+                    {
+                        canvasGroup.alpha = 1f;
+                    }
                 }
-                else
-                {
-                    canvasGroup.alpha = 1f;
-                }
+            }
+            catch (Exception e)
+            {
+                Debug.LogException(e);
             }
 
             return returnValue;

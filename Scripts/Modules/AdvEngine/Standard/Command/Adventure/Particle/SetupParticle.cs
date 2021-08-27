@@ -25,13 +25,20 @@ namespace Modules.AdvKit.Standard
 
         private void CommandFunction(string fileIdentifier, string fileName)
         {
-            var advEngine = AdvEngine.Instance;
+            try
+            {
+                var advEngine = AdvEngine.Instance;
 
-            advEngine.Resource.RegisterFileName<AdvParticle>(fileIdentifier, fileName);
+                advEngine.Resource.RegisterFileName<AdvParticle>(fileIdentifier, fileName);
 
-            var resourcePath = advEngine.Resource.GetResourcePath<AdvParticle>(fileName);
+                var resourcePath = advEngine.Resource.GetResourcePath<AdvParticle>(fileName);
 
-            advEngine.Resource.Request<GameObject>(resourcePath);
+                advEngine.Resource.Request<GameObject>(resourcePath);
+            }
+            catch (Exception e)
+            {
+                Debug.LogException(e);
+            }
         }
     }
 }

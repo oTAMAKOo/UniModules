@@ -4,6 +4,7 @@
 using UnityEngine.UI;
 using System;
 using Extensions;
+using UnityEngine;
 
 namespace Modules.AdvKit.Standard
 {
@@ -28,11 +29,18 @@ namespace Modules.AdvKit.Standard
 
         private void CommandFunction(bool show, string colorCode = "#000000FF")
         {
-            var color = colorCode.HexToColor();
+            try
+            {
+                var color = colorCode.HexToColor();
 
-            FadeImage.color = color;
-            
-            UnityUtility.SetActive(FadeImage, show);
+                FadeImage.color = color;
+
+                UnityUtility.SetActive(FadeImage, show);
+            }
+            catch (Exception e)
+            {
+                Debug.LogException(e);
+            }
         }
     }
 }

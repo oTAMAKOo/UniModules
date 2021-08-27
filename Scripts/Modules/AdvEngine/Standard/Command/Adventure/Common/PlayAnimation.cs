@@ -29,35 +29,46 @@ namespace Modules.AdvKit.Standard
 
         private DynValue CommandFunction(string identifier, string animation, bool wait = true)
         {
-            var advEngine = AdvEngine.Instance;
+            var returnValue = DynValue.Nil;
 
-            var advObject = advEngine.ObjectManager.Get<AdvObject>(identifier);
-
-            if (advObject != null)
+            try
             {
-                var animationPlayer = UnityUtility.GetComponent<AnimationPlayer>(advObject);
+                var advEngine = AdvEngine.Instance;
 
-                if (animationPlayer != null)
+                var advObject = advEngine.ObjectManager.Get<AdvObject>(identifier);
+
+                if (advObject != null)
                 {
-                    Action onComplete = () =>
+                    var animationPlayer = UnityUtility.GetComponent<AnimationPlayer>(advObject);
+
+                    if (animationPlayer != null)
                     {
-                        if(wait)
+                        Action onComplete = () =>
                         {
-                            advEngine.Resume();
-                        }
-                    };
+                            if (wait)
+                            {
+                                advEngine.Resume();
+                            }
+                        };
 
-                    animationPlayer.Play(animation)
-                        .Subscribe(_ => onComplete())
-                        .AddTo(Disposable);
+                        animationPlayer.Play(animation)
+                            .Subscribe(_ => onComplete())
+                            .AddTo(Disposable);
+                    }
+                    else
+                    {
+                        Debug.LogErrorFormat("AnimationPlayer component not found. [{0}]", identifier);
+                    }
                 }
-                else
-                {
-                    Debug.LogErrorFormat("AnimationPlayer component not found. [{0}]", identifier);   
-                }
+
+                returnValue = wait ? YieldWait : DynValue.Nil;
+            }
+            catch (Exception e)
+            {
+                Debug.LogException(e);
             }
 
-            return wait ? YieldWait : DynValue.Nil;
+            return returnValue;
         }
     }
 }

@@ -112,7 +112,11 @@ namespace Modules.AdvKit
         {            
             var resource = resourceLibrary.GetValueOrDefault(path);
 
-            if (resource == null) { return null; }
+            if (resource == null)
+            {
+                Debug.LogErrorFormat("Resource not found!!.\n{0}", path);
+                return null;
+            }
 
             return resource as T;
         }

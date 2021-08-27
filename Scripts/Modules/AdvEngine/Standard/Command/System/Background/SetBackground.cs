@@ -3,6 +3,7 @@
 
 using System;
 using Extensions;
+using UnityEngine;
 
 namespace Modules.AdvKit.Standard
 {
@@ -25,23 +26,30 @@ namespace Modules.AdvKit.Standard
 
         private void CommandFunction(string fileIdentifier)
         {
-            var advEngine = AdvEngine.Instance;
-
-            var fileName = string.Empty;
-            
-            if (!string.IsNullOrEmpty(fileIdentifier))
+            try
             {
-                fileName = advEngine.Resource.FindFileName<AdvBackground>(fileIdentifier);
+                var advEngine = AdvEngine.Instance;
+
+                var fileName = string.Empty;
+
+                if (!string.IsNullOrEmpty(fileIdentifier))
+                {
+                    fileName = advEngine.Resource.FindFileName<AdvBackground>(fileIdentifier);
+                }
+
+                var advBackground = advEngine.ObjectManager.Get<AdvBackground>(AdvBackground.UniqueIdentifier);
+
+                if (advBackground != null)
+                {
+                    advBackground.Set(fileName);
+                }
+
+                UnityUtility.SetActive(advBackground, !string.IsNullOrEmpty(fileName));
             }
-
-            var advBackground = advEngine.ObjectManager.Get<AdvBackground>(AdvBackground.UniqueIdentifier);
-
-            if (advBackground != null)
+            catch (Exception e)
             {
-                advBackground.Set(fileName);
+                Debug.LogException(e);
             }
-
-            UnityUtility.SetActive(advBackground, !string.IsNullOrEmpty(fileName));
         }
     }
 }

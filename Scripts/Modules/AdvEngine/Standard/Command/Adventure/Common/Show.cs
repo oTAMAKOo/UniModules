@@ -30,42 +30,49 @@ namespace Modules.AdvKit.Standard
         {
             var returnValue = DynValue.Nil;
 
-            var advEngine = AdvEngine.Instance;
-
-            var advObject = advEngine.ObjectManager.Get<AdvObject>(identifier);
-
-            if (advObject == null) { return DynValue.Nil; }
-
-            UnityUtility.SetActive(advObject, true);
-
-            var canvasGroup = UnityUtility.GetComponent<CanvasGroup>(advObject);
-
-            if (canvasGroup != null)
+            try
             {
-                if (duration != 0)
+                var advEngine = AdvEngine.Instance;
+
+                var advObject = advEngine.ObjectManager.Get<AdvObject>(identifier);
+
+                if (advObject == null) { return DynValue.Nil; }
+
+                UnityUtility.SetActive(advObject, true);
+
+                var canvasGroup = UnityUtility.GetComponent<CanvasGroup>(advObject);
+
+                if (canvasGroup != null)
                 {
-                    TweenCallback onComplete = () =>
+                    if (duration != 0)
                     {
-                        if (wait)
+                        TweenCallback onComplete = () =>
                         {
-                            advEngine.Resume();
-                        }
-                    };
-                    
-                    var ease = EnumExtensions.FindByName(easingType, Ease.Linear);
+                            if (wait)
+                            {
+                                advEngine.Resume();
+                            }
+                        };
 
-                    var tweener = canvasGroup.DOFade(1f, duration)
-                        .SetEase(ease)
-                        .OnComplete(onComplete);
+                        var ease = EnumExtensions.FindByName(easingType, Ease.Linear);
 
-                    advEngine.SetTweenTimeScale(tweener);
+                        var tweener = canvasGroup.DOFade(1f, duration)
+                            .SetEase(ease)
+                            .OnComplete(onComplete);
 
-                    returnValue = wait ? YieldWait : DynValue.Nil;
+                        advEngine.SetTweenTimeScale(tweener);
+
+                        returnValue = wait ? YieldWait : DynValue.Nil;
+                    }
+                    else
+                    {
+                        canvasGroup.alpha = 1f;
+                    }
                 }
-                else
-                {
-                    canvasGroup.alpha = 1f;
-                }
+            }
+            catch (Exception e)
+            {
+                Debug.LogException(e);
             }
 
             return returnValue;

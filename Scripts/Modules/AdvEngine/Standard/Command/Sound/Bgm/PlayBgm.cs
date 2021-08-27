@@ -2,6 +2,7 @@
 #if ENABLE_MOONSHARP
 
 using System;
+using UnityEngine;
 
 namespace Modules.AdvKit.Standard
 {
@@ -24,9 +25,16 @@ namespace Modules.AdvKit.Standard
 
         private void CommandFunction(string soundIdentifier)
         {
-            var advEngine = AdvEngine.Instance;
+            try
+            {
+                var advEngine = AdvEngine.Instance;
 
-            advEngine.Sound.PlayBgm(soundIdentifier);
+                advEngine.Sound.PlayBgm(soundIdentifier);
+            }
+            catch (Exception e)
+            {
+                Debug.LogException(e);
+            }
         }
     }
 }

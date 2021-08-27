@@ -5,6 +5,7 @@ using System;
 using DG.Tweening;
 using Extensions;
 using MoonSharp.Interpreter;
+using UnityEngine;
 
 namespace Modules.AdvKit.Standard
 {
@@ -27,30 +28,41 @@ namespace Modules.AdvKit.Standard
 
         private DynValue CommandFunction(string identifier, float position, float duration = 0, string easingType = null, bool wait = true)
         {
-            var advEngine = AdvEngine.Instance;
+            var returnValue = DynValue.Nil;
 
-            var advObject = advEngine.ObjectManager.Get<AdvObject>(identifier);
-
-            if (advObject != null)
+            try
             {
-                TweenCallback onComplete = () =>
+                var advEngine = AdvEngine.Instance;
+
+                var advObject = advEngine.ObjectManager.Get<AdvObject>(identifier);
+
+                if (advObject != null)
                 {
-                    if (wait)
+                    TweenCallback onComplete = () =>
                     {
-                        advEngine.Resume();
-                    }
-                };
+                        if (wait)
+                        {
+                            advEngine.Resume();
+                        }
+                    };
 
-                var ease = EnumExtensions.FindByName(easingType, Ease.Linear);
+                    var ease = EnumExtensions.FindByName(easingType, Ease.Linear);
 
-                var tweener = advObject.transform.DOLocalMoveY(position, duration)
-                    .SetEase(ease)
-                    .OnComplete(onComplete);
+                    var tweener = advObject.transform.DOLocalMoveY(position, duration)
+                        .SetEase(ease)
+                        .OnComplete(onComplete);
 
-                advEngine.SetTweenTimeScale(tweener);
+                    advEngine.SetTweenTimeScale(tweener);
+                }
+
+                returnValue = wait ? YieldWait : DynValue.Nil;
+            }
+            catch (Exception e)
+            {
+                Debug.LogException(e);
             }
 
-            return wait ? YieldWait : DynValue.Nil;
+            return returnValue;
         }
     }
 }

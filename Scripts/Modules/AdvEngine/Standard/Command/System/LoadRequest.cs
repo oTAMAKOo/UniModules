@@ -53,63 +53,74 @@ namespace Modules.AdvKit.Standard
 
         private DynValue CommandFunction()
         {
-            var advEngine = AdvEngine.Instance;
+            var returnValue = DynValue.Nil;
 
-            var requests = advEngine.Resource.GetRequests();
-
-            var resourcePaths = requests.Select(x => x.Key).Distinct().ToArray();
-
-            var assetInfos = new List<AssetInfo>();
-
-            var builder = new StringBuilder();
-
-            builder.Append("Request Files").AppendLine();
-
-            foreach (var resourcePath in resourcePaths)
+            try
             {
-                var assetInfo = ExternalResources.Instance.GetAssetInfo(resourcePath);
+                var advEngine = AdvEngine.Instance;
 
-                if (assetInfo != null)
+                var requests = advEngine.Resource.GetRequests();
+
+                var resourcePaths = requests.Select(x => x.Key).Distinct().ToArray();
+
+                var assetInfos = new List<AssetInfo>();
+
+                var builder = new StringBuilder();
+
+                builder.Append("Request Files").AppendLine();
+
+                foreach (var resourcePath in resourcePaths)
                 {
-                    assetInfos.Add(assetInfo);
+                    var assetInfo = ExternalResources.Instance.GetAssetInfo(resourcePath);
 
-                    builder.AppendFormat("{0} ({1}byte)", assetInfo.ResourcePath, assetInfo.FileSize).AppendLine();
+                    if (assetInfo != null)
+                    {
+                        assetInfos.Add(assetInfo);
+
+                        builder.AppendFormat("{0} ({1}byte)", assetInfo.ResourcePath, assetInfo.FileSize).AppendLine();
+                    }
+                    else
+                    {
+                        Debug.LogErrorFormat("AssetInfo not found. {0}", resourcePath);
+                    }
+                }
+
+                using (new DisableStackTraceScope())
+                {
+                    Debug.Log(builder.ToString());
+                }
+
+                Action execteLoad = () =>
+                {
+                    loadDisposable = requests.Select(x => x.Value).WhenAll()
+                        .Subscribe(_ => advEngine.Resume())
+                        .AddTo(Disposable);
+                };
+
+                if (onLoadRequest != null && onLoadRequest.HasObservers)
+                {
+                    var request = new Request(assetInfos.ToArray());
+
+                    onLoadRequest.OnNext(request);
+
+                    Observable.EveryUpdate().SkipWhile(x => !request.IsStart)
+                        .First()
+                        .Subscribe(_ => execteLoad())
+                        .AddTo(Disposable);
                 }
                 else
                 {
-                    Debug.LogErrorFormat("AssetInfo not found. {0}", resourcePath);
+                    execteLoad();
                 }
+
+                returnValue = YieldWait;
+            }
+            catch (Exception e)
+            {
+                Debug.LogException(e);
             }
 
-            using (new DisableStackTraceScope())
-            {
-                Debug.Log(builder.ToString());
-            }
-
-            Action execteLoad = () =>
-            {
-                loadDisposable = requests.Select(x => x.Value).WhenAll()
-                    .Subscribe(_ => advEngine.Resume())
-                    .AddTo(Disposable);
-            };
-
-            if (onLoadRequest != null && onLoadRequest.HasObservers)
-            {
-                var request = new Request(assetInfos.ToArray());
-
-                onLoadRequest.OnNext(request);
-
-                Observable.EveryUpdate().SkipWhile(x => !request.IsStart)
-                    .First()
-                    .Subscribe(_ => execteLoad())
-                    .AddTo(Disposable);
-            }
-            else
-            {
-                execteLoad();
-            }
-
-            return YieldWait;
+            return returnValue;
         }
 
         public void Cancel()

@@ -2,6 +2,7 @@
 #if ENABLE_MOONSHARP
 
 using System;
+using UnityEngine;
 
 namespace Modules.AdvKit.Standard
 {
@@ -24,13 +25,20 @@ namespace Modules.AdvKit.Standard
 
         private void CommandFunction(string identifier, int priority)
         {
-            var advEngine = AdvEngine.Instance;
-
-            var advObject = advEngine.ObjectManager.Get<AdvObject>(identifier);
-
-            if (advObject != null)
+            try
             {
-                advObject.SetPriority(priority);
+                var advEngine = AdvEngine.Instance;
+
+                var advObject = advEngine.ObjectManager.Get<AdvObject>(identifier);
+
+                if (advObject != null)
+                {
+                    advObject.SetPriority(priority);
+                }
+            }
+            catch (Exception e)
+            {
+                Debug.LogException(e);
             }
         }
     }

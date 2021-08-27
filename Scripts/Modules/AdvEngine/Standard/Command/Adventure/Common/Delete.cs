@@ -3,6 +3,7 @@
 
 using System;
 using Extensions;
+using UnityEngine;
 
 namespace Modules.AdvKit.Standard
 {
@@ -25,9 +26,16 @@ namespace Modules.AdvKit.Standard
 
         private void CommandFunction(string identifier)
         {
-            var advEngine = AdvEngine.Instance;
-            
-            advEngine.ObjectManager.Delete(identifier);
+            try
+            {
+                var advEngine = AdvEngine.Instance;
+
+                advEngine.ObjectManager.Delete(identifier);
+            }
+            catch (Exception e)
+            {
+                Debug.LogException(e);
+            }
         }
     }
 }

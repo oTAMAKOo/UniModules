@@ -4,6 +4,7 @@
 using System;
 using UniRx;
 using MoonSharp.Interpreter;
+using UnityEngine;
 
 namespace Modules.AdvKit.Standard
 {
@@ -37,29 +38,38 @@ namespace Modules.AdvKit.Standard
             return (Func<string, string, DynValue>)CommandFunction;
         }
 
-        private DynValue CommandFunction(string text, string name = null)
+        private DynValue CommandFunction(string text, string displayName = null)
         {
-            var advEngine = AdvEngine.Instance;
+            var returnValue = DynValue.Nil;
 
-            if (text == null)
+            try
             {
-                MessageWindow.Hide();
+                var advEngine = AdvEngine.Instance;
 
-                return DynValue.Nil;
+                if (text == null)
+                {
+                    MessageWindow.Hide();
+
+                    return DynValue.Nil;
+                }
+
+                if (showMessageFinishDisposable == null)
+                {
+                    showMessageFinishDisposable = MessageWindow.OnShowMessageFinish()
+                        .Subscribe(_ => advEngine.Resume())
+                        .AddTo(Disposable);
+                }
+
+                MessageWindow.ShowMessage(displayName, text);
+
+                returnValue = YieldWait;
+            }
+            catch (Exception e)
+            {
+                Debug.LogException(e);
             }
 
-            var displayName = name;
-
-            if (showMessageFinishDisposable == null)
-            {
-                showMessageFinishDisposable = MessageWindow.OnShowMessageFinish()
-                    .Subscribe(_ => advEngine.Resume())
-                    .AddTo(Disposable);
-            }
-
-            MessageWindow.ShowMessage(displayName, text);
-            
-            return YieldWait;
+            return returnValue;
         }
     }
 }

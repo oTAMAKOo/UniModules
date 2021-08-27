@@ -6,6 +6,7 @@ using System;
 using DG.Tweening;
 using Extensions;
 using MoonSharp.Interpreter;
+using UnityEngine;
 
 namespace Modules.AdvKit.Standard
 {
@@ -35,28 +36,35 @@ namespace Modules.AdvKit.Standard
 
         private DynValue CommandFunction(float time = 0.4f, string colorCode = "#000000", string easingType = null)
         {
-            var advEngine = AdvEngine.Instance;
-
-            UnityUtility.SetActive(FadeImage, true);
-
-            var color = colorCode.HexToColor();
-
-            color.a = 0f;
-
-            TweenCallback onComplete = () =>
+            try
             {
-               advEngine.Resume();
-            };
+                var advEngine = AdvEngine.Instance;
 
-            FadeImage.color = color;
+                UnityUtility.SetActive(FadeImage, true);
 
-            var ease = EnumExtensions.FindByName(easingType, Ease.Linear);
+                var color = colorCode.HexToColor();
 
-            var tweener = FadeImage.DOFade(1f, time)
-                .SetEase(ease)
-                .OnComplete(onComplete);
+                color.a = 0f;
 
-            advEngine.SetTweenTimeScale(tweener);
+                TweenCallback onComplete = () =>
+                {
+                    advEngine.Resume();
+                };
+
+                FadeImage.color = color;
+
+                var ease = EnumExtensions.FindByName(easingType, Ease.Linear);
+
+                var tweener = FadeImage.DOFade(1f, time)
+                    .SetEase(ease)
+                    .OnComplete(onComplete);
+
+                advEngine.SetTweenTimeScale(tweener);
+            }
+            catch (Exception e)
+            {
+                Debug.LogException(e);
+            }
 
             return YieldWait;
         }

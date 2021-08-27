@@ -6,6 +6,7 @@ using System;
 using DG.Tweening;
 using Extensions;
 using MoonSharp.Interpreter;
+using UnityEngine;
 
 namespace Modules.AdvKit.Standard
 {
@@ -35,31 +36,42 @@ namespace Modules.AdvKit.Standard
 
         private DynValue CommandFunction(float time = 0.4f, string colorCode = "#000000", string easingType = null)
         {
-            var advEngine = AdvEngine.Instance;
+            var returnValue = DynValue.Nil;
 
-            var color = colorCode.HexToColor();
-
-            color.a = 1f;
-
-            UnityUtility.SetActive(FadeImage, true);
-
-            TweenCallback onComplete = () =>
+            try
             {
-                UnityUtility.SetActive(FadeImage, false);
-                advEngine.Resume();
-            };
+                var advEngine = AdvEngine.Instance;
 
-            FadeImage.color = color;
+                var color = colorCode.HexToColor();
 
-            var ease = EnumExtensions.FindByName(easingType, Ease.Linear);
+                color.a = 1f;
 
-            var tweener = FadeImage.DOFade(0f, time)
-                .SetEase(ease)
-                .OnComplete(onComplete);
+                UnityUtility.SetActive(FadeImage, true);
 
-            advEngine.SetTweenTimeScale(tweener);
+                TweenCallback onComplete = () =>
+                {
+                    UnityUtility.SetActive(FadeImage, false);
+                    advEngine.Resume();
+                };
 
-            return YieldWait;
+                FadeImage.color = color;
+
+                var ease = EnumExtensions.FindByName(easingType, Ease.Linear);
+
+                var tweener = FadeImage.DOFade(0f, time)
+                    .SetEase(ease)
+                    .OnComplete(onComplete);
+
+                advEngine.SetTweenTimeScale(tweener);
+
+                returnValue = YieldWait;
+            }
+            catch (Exception e)
+            {
+                Debug.LogException(e);
+            }
+
+            return returnValue;
         }
     }
 }

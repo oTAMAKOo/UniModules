@@ -38,11 +38,14 @@ namespace Modules.Lua
 
             classTable = new Dictionary<Type, LuaClass>();
 
+            Script.GlobalOptions.RethrowExceptionNested = true;
+
             LuaScript = new Script(CoreModules.Preset_Default)
             {
                 Options =
                 {
-                    DebugPrint = log => Debug.Log(log),
+                    UseLuaErrorLocations = true,
+                    DebugPrint = log => Debug.LogFormat("[Lua] {0}", log),
                 }
             };
         }
@@ -122,7 +125,7 @@ namespace Modules.Lua
         private IEnumerator ExecuteScriptInternal(string script)
         {
             var luaFunc = DynValue.Nil;
-
+            
             try
             {
                 luaFunc = LuaScript.DoString(script);
@@ -130,6 +133,10 @@ namespace Modules.Lua
             catch (InterpreterException ex)
             {
                 Debug.LogErrorFormat("Lua Execute error:\n{0}", ex.DecoratedMessage);
+            }
+            catch (Exception ex)
+            {
+                Debug.LogException(ex);
             }
 
             if (luaFunc.IsNil()) { yield break; }

@@ -3,6 +3,7 @@
 
 using System;
 using Modules.SoundManagement;
+using UnityEngine;
 
 namespace Modules.AdvKit.Standard
 {
@@ -25,13 +26,19 @@ namespace Modules.AdvKit.Standard
 
         private void CommandFunction(string soundIdentifier, string acbName, string cueName)
         {
-            var advEngine = AdvEngine.Instance;
+            try
+            {
+                var advEngine = AdvEngine.Instance;
 
-            var soundInfo = advEngine.Sound.Register(soundIdentifier, SoundType.Voice, acbName, cueName);
+                var soundInfo = advEngine.Sound.Register(soundIdentifier, SoundType.Voice, acbName, cueName);
 
-            advEngine.Resource.Request(soundInfo.ResourcePath);
+                advEngine.Resource.Request(soundInfo.ResourcePath);
+            }
+            catch (Exception e)
+            {
+                Debug.LogException(e);
+            }
         }
-
     }
 }
 

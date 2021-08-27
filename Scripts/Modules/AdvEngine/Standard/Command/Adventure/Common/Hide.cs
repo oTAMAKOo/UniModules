@@ -30,48 +30,55 @@ namespace Modules.AdvKit.Standard
         {
             var returnValue = DynValue.Nil;
 
-            var advEngine = AdvEngine.Instance;
-
-            var advObject = advEngine.ObjectManager.Get<AdvObject>(identifier);
-
-            if (advObject == null) { return DynValue.Nil; }
-
-            var canvasGroup = UnityUtility.GetComponent<CanvasGroup>(advObject);
-
-            if (canvasGroup != null)
+            try
             {
-                if (duration != 0)
+                var advEngine = AdvEngine.Instance;
+
+                var advObject = advEngine.ObjectManager.Get<AdvObject>(identifier);
+
+                if (advObject == null) { return DynValue.Nil; }
+
+                var canvasGroup = UnityUtility.GetComponent<CanvasGroup>(advObject);
+
+                if (canvasGroup != null)
                 {
-                    TweenCallback onComplete = () =>
+                    if (duration != 0)
                     {
-                        UnityUtility.SetActive(advObject, false);
-
-                        if (wait)
+                        TweenCallback onComplete = () =>
                         {
-                            advEngine.Resume();
-                        }
-                    };
-                    
-                    var ease = EnumExtensions.FindByName(easingType, Ease.Linear);
+                            UnityUtility.SetActive(advObject, false);
 
-                    var tweener = canvasGroup.DOFade(0f, duration)
-                        .SetEase(ease)
-                        .OnComplete(onComplete);
+                            if (wait)
+                            {
+                                advEngine.Resume();
+                            }
+                        };
 
-                    advEngine.SetTweenTimeScale(tweener);
+                        var ease = EnumExtensions.FindByName(easingType, Ease.Linear);
 
-                    returnValue = wait ? YieldWait : DynValue.Nil;
+                        var tweener = canvasGroup.DOFade(0f, duration)
+                            .SetEase(ease)
+                            .OnComplete(onComplete);
+
+                        advEngine.SetTweenTimeScale(tweener);
+
+                        returnValue = wait ? YieldWait : DynValue.Nil;
+                    }
+                    else
+                    {
+                        canvasGroup.alpha = 0f;
+
+                        UnityUtility.SetActive(advObject, false);
+                    }
                 }
                 else
                 {
-                    canvasGroup.alpha = 0f;
-
                     UnityUtility.SetActive(advObject, false);
                 }
             }
-            else
+            catch (Exception e)
             {
-                UnityUtility.SetActive(advObject, false);
+                Debug.LogException(e);
             }
 
             return returnValue;

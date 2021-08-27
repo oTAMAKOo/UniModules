@@ -5,6 +5,7 @@ using System;
 using UniRx;
 using Modules.AdvKit;
 using MoonSharp.Interpreter;
+using UnityEngine;
 
 namespace Modules.AdvKit.Standard
 {
@@ -27,32 +28,43 @@ namespace Modules.AdvKit.Standard
 
         private DynValue CommandFunction(string identifier, string patternName, bool wait = false)
         {
-            var advEngine = AdvEngine.Instance;
+            var returnValue = DynValue.Nil;
 
-            var advCharacter = advEngine.ObjectManager.Get<AdvCharacter>(identifier);
-
-            var patternImage = advCharacter.PatternImage;
-
-            patternImage.PatternName = patternName;
-
-            if (patternImage.CrossFade)
+            try
             {
-                var timeSpan = TimeSpan.FromSeconds(patternImage.CrossFadeTime + 1);
+                var advEngine = AdvEngine.Instance;
 
-                Action onFaceSwitchComplete = () =>
+                var advCharacter = advEngine.ObjectManager.Get<AdvCharacter>(identifier);
+
+                var patternImage = advCharacter.PatternImage;
+
+                patternImage.PatternName = patternName;
+
+                if (patternImage.CrossFade)
                 {
-                    if(wait)
-                    {
-                        advEngine.Resume();
-                    }
-                };
+                    var timeSpan = TimeSpan.FromSeconds(patternImage.CrossFadeTime + 1);
 
-                Observable.Timer(timeSpan)
-                    .Subscribe(_ => onFaceSwitchComplete())
-                    .AddTo(Disposable);
+                    Action onFaceSwitchComplete = () =>
+                    {
+                        if (wait)
+                        {
+                            advEngine.Resume();
+                        }
+                    };
+
+                    Observable.Timer(timeSpan)
+                        .Subscribe(_ => onFaceSwitchComplete())
+                        .AddTo(Disposable);
+                }
+
+                returnValue = wait && patternImage.CrossFade ? YieldWait : DynValue.Nil;
+            }
+            catch (Exception e)
+            {
+                Debug.LogException(e);
             }
 
-            return wait && patternImage.CrossFade ? YieldWait : DynValue.Nil;
+            return returnValue;
         }
     }
 }

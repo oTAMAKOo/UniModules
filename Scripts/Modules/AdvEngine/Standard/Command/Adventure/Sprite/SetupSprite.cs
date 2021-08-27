@@ -25,13 +25,20 @@ namespace Modules.AdvKit.Standard
 
         private void CommandFunction(string fileIdentifier, string fileName)
         {
-            var advEngine = AdvEngine.Instance;
+            try
+            {
+                var advEngine = AdvEngine.Instance;
 
-            advEngine.Resource.RegisterFileName<AdvSprite>(fileIdentifier, fileName);
+                advEngine.Resource.RegisterFileName<AdvSprite>(fileIdentifier, fileName);
 
-            var resourcePath = advEngine.Resource.GetResourcePath<AdvSprite>(fileName);
+                var resourcePath = advEngine.Resource.GetResourcePath<AdvSprite>(fileName);
 
-            advEngine.Resource.Request<Sprite>(resourcePath);            
+                advEngine.Resource.Request<Sprite>(resourcePath);
+            }
+            catch (Exception e)
+            {
+                Debug.LogException(e);
+            }
         }
     }
 }

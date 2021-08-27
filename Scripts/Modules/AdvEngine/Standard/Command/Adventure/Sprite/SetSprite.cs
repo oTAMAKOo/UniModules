@@ -31,52 +31,59 @@ namespace Modules.AdvKit.Standard
         {
             var returnValue = DynValue.Nil;
 
-            var advEngine = AdvEngine.Instance;
-
-            var advSprite = advEngine.ObjectManager.Create<AdvSprite>(identifier);
-
-            var fileName = advEngine.Resource.FindFileName<AdvSprite>(fileIdentifier);
-
-            if (advSprite != null)
+            try
             {
-                advSprite.SetPriority(priority.HasValue ? priority.Value : 0);
+                var advEngine = AdvEngine.Instance;
 
-                var width = size.HasValue ? (float?)size.Value.x : null;
-                var height = size.HasValue ? (float?)size.Value.y : null;
+                var advSprite = advEngine.ObjectManager.Create<AdvSprite>(identifier);
 
-                advSprite.Show(fileName, width, height);
-            }
+                var fileName = advEngine.Resource.FindFileName<AdvSprite>(fileIdentifier);
 
-            var canvasGroup = UnityUtility.GetComponent<CanvasGroup>(advSprite);
-
-            if (canvasGroup != null)
-            {
-                if (duration != 0)
+                if (advSprite != null)
                 {
-                    TweenCallback onComplete = () =>
+                    advSprite.SetPriority(priority.HasValue ? priority.Value : 0);
+
+                    var width = size.HasValue ? (float?)size.Value.x : null;
+                    var height = size.HasValue ? (float?)size.Value.y : null;
+
+                    advSprite.Show(fileName, width, height);
+                }
+
+                var canvasGroup = UnityUtility.GetComponent<CanvasGroup>(advSprite);
+
+                if (canvasGroup != null)
+                {
+                    if (duration != 0)
                     {
-                        if (wait)
+                        TweenCallback onComplete = () =>
                         {
-                            advEngine.Resume();
-                        }
-                    };
+                            if (wait)
+                            {
+                                advEngine.Resume();
+                            }
+                        };
 
-                    var ease = EnumExtensions.FindByName(easingType, Ease.Linear);
+                        var ease = EnumExtensions.FindByName(easingType, Ease.Linear);
 
-                    canvasGroup.alpha = 0f;
+                        canvasGroup.alpha = 0f;
 
-                    var tweener = canvasGroup.DOFade(1f, duration)
-                        .SetEase(ease)
-                        .OnComplete(onComplete);
+                        var tweener = canvasGroup.DOFade(1f, duration)
+                            .SetEase(ease)
+                            .OnComplete(onComplete);
 
-                    advEngine.SetTweenTimeScale(tweener);
+                        advEngine.SetTweenTimeScale(tweener);
 
-                    returnValue = wait ? YieldWait : DynValue.Nil;
+                        returnValue = wait ? YieldWait : DynValue.Nil;
+                    }
+                    else
+                    {
+                        canvasGroup.alpha = 1f;
+                    }
                 }
-                else
-                {
-                    canvasGroup.alpha = 1f;
-                }
+            }
+            catch (Exception e)
+            {
+                Debug.LogException(e);
             }
 
             return returnValue;

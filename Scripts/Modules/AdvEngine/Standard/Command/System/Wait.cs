@@ -28,11 +28,18 @@ namespace Modules.AdvKit.Standard
 
         private DynValue CommandFunction(float seconds)
         {
-            var advEngine = AdvEngine.Instance;
+            try
+            {
+                var advEngine = AdvEngine.Instance;
 
-            Observable.FromMicroCoroutine(() => WaitTimer(seconds))
-                .Subscribe(_ => advEngine.Resume())
-                .AddTo(Disposable);
+                Observable.FromMicroCoroutine(() => WaitTimer(seconds))
+                    .Subscribe(_ => advEngine.Resume())
+                    .AddTo(Disposable);
+            }
+            catch (Exception e)
+            {
+                Debug.LogException(e);
+            }
 
             return YieldWait;
         }
