@@ -7,53 +7,6 @@ using Extensions;
 
 namespace Modules.Networking
 {
-    public sealed class WebRequestInfo
-    {
-        public enum RequestType
-        {
-            None,
-
-            [Label("POST")]
-            Post,
-            [Label("PUT")]
-            Put,
-            [Label("GET")]
-            Get,
-            [Label("DELETE")]
-            Delete,
-        }
-
-        public enum RequestStatus
-        {
-            None = 0,
-
-            Connection,
-            Success,
-            Failure,
-            Retry,
-            Cancel,
-        }
-
-        public int Id { get; private set; }
-
-        public DateTime Time { get; private set; }
-
-        public string Url { get; set; }
-        public RequestType Request { get; set; }
-        public RequestStatus Status { get; set; }
-        public ulong RetryCount { get; set; }
-        public string Result { get; set; }
-        public string StatusCode { get; set; }
-        public Exception Exception { get; set; }
-        public string StackTrace { get; set; }
-
-        public WebRequestInfo(int id)
-        {
-            Id = id;
-            Time = DateTime.Now;
-        }
-    }
-
     public sealed class ApiTracker : Singleton<ApiTracker>
     {
         //----- params -----
@@ -62,9 +15,9 @@ namespace Modules.Networking
 
         //----- field -----
 
-        private Dictionary<WebRequest, WebRequestInfo> webRequestInfos = null;
+        private Dictionary<WebRequest, ApiInfo> apiInfos = null;
 
-        private FixedQueue<WebRequestInfo> requestInfoHistory = null;
+        private FixedQueue<ApiInfo> apiInfoHistory = null;
 
         private Subject<Unit> onUpdateInfo = null;
 
@@ -78,13 +31,13 @@ namespace Modules.Networking
 
         protected override void OnCreate()
         {
-            webRequestInfos = new Dictionary<WebRequest, WebRequestInfo>();
-            requestInfoHistory = new FixedQueue<WebRequestInfo>(HistoryCount);
+            apiInfos = new Dictionary<WebRequest, ApiInfo>();
+            apiInfoHistory = new FixedQueue<ApiInfo>(HistoryCount);
         }
 
-        public WebRequestInfo[] GetHistory()
+        public ApiInfo[] GetHistory()
         {
-            return requestInfoHistory.ToArray();
+            return apiInfoHistory.ToArray();
         }
 
         public void SetServerUrl(string serverUrl)
@@ -96,17 +49,21 @@ namespace Modules.Networking
         {
             var url = webRequest.HostUrl.Replace(ServerUrl, string.Empty);
 
-            var info = new WebRequestInfo(currentTrackerId++)
+            var info = new ApiInfo(currentTrackerId++)
             {
                 Url = url,
                 Request = GetRequestType(webRequest),
-                Status = WebRequestInfo.RequestStatus.Connection,
+                Headers = webRequest.GetHeaderString(),
+                UriParams = webRequest.GetUrlParamsString(),
+                Body = webRequest.GetBodyString(),
+                Status = ApiInfo.RequestStatus.Connection,
                 StackTrace = StackTraceUtility.ExtractStackTrace(),
+                Start = DateTime.Now,
             };
 
-            webRequestInfos.Add(webRequest, info);
+            apiInfos.Add(webRequest, info);
 
-            requestInfoHistory.Enqueue(info);
+            apiInfoHistory.Enqueue(info);
 
             if (onUpdateInfo != null)
             {
@@ -114,17 +71,19 @@ namespace Modules.Networking
             }
         }
 
-        public void OnComplete(WebRequest webRequest, string result)
+        public void OnComplete(WebRequest webRequest, string result, double elapsedTime)
         {
-            var info = webRequestInfos.GetValueOrDefault(webRequest);
+            var info = apiInfos.GetValueOrDefault(webRequest);
 
             if (info == null) { return; }
 
-            info.Status = WebRequestInfo.RequestStatus.Success;
+            info.Finish = DateTime.Now;
+            info.ElapsedTime = elapsedTime;
+            info.Status = ApiInfo.RequestStatus.Success;
             info.StatusCode = webRequest.StatusCode;
             info.Result = result;
 
-            webRequestInfos.Remove(webRequest);
+            apiInfos.Remove(webRequest);
 
             if (onUpdateInfo != null)
             {
@@ -134,11 +93,11 @@ namespace Modules.Networking
 
         public void OnRetry(WebRequest webRequest)
         {
-            var info = webRequestInfos.GetValueOrDefault(webRequest);
+            var info = apiInfos.GetValueOrDefault(webRequest);
 
             if (info == null) { return; }
 
-            info.Status = WebRequestInfo.RequestStatus.Retry;
+            info.Status = ApiInfo.RequestStatus.Retry;
             info.RetryCount++;
 
             if (onUpdateInfo != null)
@@ -149,14 +108,14 @@ namespace Modules.Networking
 
         public void OnRetryLimit(WebRequest webRequest)
         {
-            var info = webRequestInfos.GetValueOrDefault(webRequest);
+            var info = apiInfos.GetValueOrDefault(webRequest);
 
             if (info == null) { return; }
 
-            info.Status = WebRequestInfo.RequestStatus.Failure;
+            info.Status = ApiInfo.RequestStatus.Failure;
             info.StatusCode = webRequest.StatusCode;
 
-            webRequestInfos.Remove(webRequest);
+            apiInfos.Remove(webRequest);
 
             if (onUpdateInfo != null)
             {
@@ -166,15 +125,15 @@ namespace Modules.Networking
 
         public void OnError(WebRequest webRequest, Exception ex)
         {
-            var info = webRequestInfos.GetValueOrDefault(webRequest);
+            var info = apiInfos.GetValueOrDefault(webRequest);
 
             if (info == null) { return; }
 
-            info.Status = WebRequestInfo.RequestStatus.Failure;
+            info.Status = ApiInfo.RequestStatus.Failure;
             info.StatusCode = webRequest.StatusCode;
             info.Exception = ex;
 
-            webRequestInfos.Remove(webRequest);
+            apiInfos.Remove(webRequest);
 
             if (onUpdateInfo != null)
             {
@@ -184,14 +143,14 @@ namespace Modules.Networking
 
         public void OnForceCancelAll()
         {
-            foreach (var webRequestInfo in webRequestInfos)
+            foreach (var webRequestInfo in apiInfos)
             {
                 var info = webRequestInfo.Value;
 
-                info.Status = WebRequestInfo.RequestStatus.Cancel;
+                info.Status = ApiInfo.RequestStatus.Cancel;
             }
 
-            webRequestInfos.Clear();
+            apiInfos.Clear();
 
             if (onUpdateInfo != null)
             {
@@ -201,8 +160,8 @@ namespace Modules.Networking
 
         public void Clear()
         {
-            requestInfoHistory.Clear();
-            webRequestInfos.Clear();
+            apiInfoHistory.Clear();
+            apiInfos.Clear();
 
             if (onUpdateInfo != null)
             {
@@ -210,23 +169,23 @@ namespace Modules.Networking
             }
         }
 
-        private WebRequestInfo.RequestType GetRequestType(WebRequest webRequest)
+        private ApiInfo.RequestType GetRequestType(WebRequest webRequest)
         {
-            var requestType = WebRequestInfo.RequestType.None;
+            var requestType = ApiInfo.RequestType.None;
 
             switch (webRequest.Method)
             {
                 case "GET":
-                    requestType = WebRequestInfo.RequestType.Get;
+                    requestType = ApiInfo.RequestType.Get;
                     break;
                 case "POST":
-                    requestType = WebRequestInfo.RequestType.Post;
+                    requestType = ApiInfo.RequestType.Post;
                     break;
                 case "PUT":
-                    requestType = WebRequestInfo.RequestType.Put;
+                    requestType = ApiInfo.RequestType.Put;
                     break;
                 case "DELETE":
-                    requestType = WebRequestInfo.RequestType.Delete;
+                    requestType = ApiInfo.RequestType.Delete;
                     break;
             }
 

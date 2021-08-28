@@ -46,8 +46,8 @@ namespace Modules.Networking
         /// <summary> データ内容フォーマット. </summary>
         public DataFormat Format { get; private set; }
 
-        /// <summary> ヘッダー情報. </summary>
-        public IDictionary<string, string> Headers { get; private set; }
+        /// <summary> ヘッダー情報 [key, (encrypted, value)]. </summary>
+        public IDictionary<string, Tuple<bool, string>> Headers { get; private set; }
 
         /// <summary> リトライ回数. </summary>
         public int RetryCount { get; private set; }
@@ -60,7 +60,7 @@ namespace Modules.Networking
         protected ApiManager()
         {
             webRequestQueue = new Queue<TWebRequest>();
-            Headers = new Dictionary<string, string>();
+            Headers = new Dictionary<string, Tuple<bool, string>>();
         }
 
         public virtual void Initialize(string serverUrl, bool compress = true, DataFormat format = DataFormat.MessagePack, int retryCount = 3, float retryDelaySeconds = 2)
@@ -360,7 +360,7 @@ namespace Modules.Networking
 
                 #if UNITY_EDITOR
 
-                ApiTracker.Instance.OnComplete(webRequest, json);
+                ApiTracker.Instance.OnComplete(webRequest, json, totalMilliseconds);
 
                 #endif
             }

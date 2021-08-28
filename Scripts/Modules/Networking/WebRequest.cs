@@ -28,6 +28,13 @@ namespace Modules.Networking
 
         protected UnityWebRequest request = null;
 
+        protected bool encryptHeader = true;
+        protected bool encryptUriQuery = true;
+        protected bool encryptBody = true;
+        protected bool decryptResponse = true;
+
+        protected static AesCryptoKey cryptoKey = null;
+
         //----- property -----
 
         /// <summary> リクエストタイプ. </summary>
@@ -40,7 +47,7 @@ namespace Modules.Networking
         public string Url { get; private set; }
 
         /// <summary> ヘッダー情報. </summary>
-        public IDictionary<string, string> Headers { get; private set; }
+        public IDictionary<string, Tuple<bool, string>> Headers { get; private set; }
         
         /// <summary> URLパラメータ. </summary>
         public IDictionary<string, object> UrlParams { get; private set; }
@@ -77,12 +84,17 @@ namespace Modules.Networking
             Compress = compress;
             Format = format;
 
-            Headers = new Dictionary<string, string>();
+            Headers = new Dictionary<string, Tuple<bool, string>>();
             UrlParams = new Dictionary<string, object>();
 
             DownloadHandler = CreateDownloadHandler();
 
             Connecting = false;
+        }
+
+        public static void SetCryptoKey(AesCryptoKey cryptoKey)
+        {
+            WebRequest.cryptoKey = cryptoKey;
         }
 
         protected virtual void CreateWebRequest(string method)
@@ -172,7 +184,10 @@ namespace Modules.Networking
 
             TResult result = null;
 
-            value = DecryptResponseData(value);
+            if (decryptResponse)
+            {
+                value = value.Decrypt(cryptoKey);
+            }
 
             switch (Format)
             {
@@ -225,10 +240,13 @@ namespace Modules.Networking
                 queryBuilder.Append(i == 0 ? "?" : "&");
 
                 var query = string.Format("{0}={1}", item.Key, item.Value);
+                
+                if (encryptUriQuery)
+                {
+                    query = query.Encrypt(cryptoKey);
+                }
 
-                var encryptQuery = EncryptUriQuery(query);
-
-                var escapeStr = Uri.EscapeDataString(encryptQuery);
+                var escapeStr = Uri.EscapeDataString(query);
 
                 queryBuilder.Append(escapeStr);
             }
@@ -248,9 +266,21 @@ namespace Modules.Networking
             foreach (var header in Headers)
             {
                 var key = header.Key.TrimEnd('\0');
-                var value = header.Value.TrimEnd('\0');
+                var value = header.Value.Item2.TrimEnd('\0');
 
                 request.SetRequestHeader(key, value);
+            }
+        }
+
+        protected void SetHeader(string key, string value, bool encrypt = false)
+        {
+            if (encryptHeader && encrypt)
+            {
+                Headers[key] = Tuple.Create(true, value.Encrypt(cryptoKey));
+            }
+            else
+            {
+                Headers[key] = Tuple.Create(false, value);
             }
         }
 
@@ -263,19 +293,19 @@ namespace Modules.Networking
         {
             if (content == null) { return null; }
 
-            byte[] bodyData = null;
-
+            var bytes = new byte[0];
+            
             switch (Format)
             {
                 case DataFormat.Json:
                     {
                         var json = JsonConvert.SerializeObject(content);
 
-                        bodyData = Encoding.UTF8.GetBytes(json);
+                        bytes = Encoding.UTF8.GetBytes(json);
                         
                         if (Compress)
                         {
-                            bodyData = bodyData.Compress();
+                            bytes = bytes.Compress();
                         }
                     }
                     break;
@@ -289,14 +319,93 @@ namespace Modules.Networking
                             options = options.WithCompression(MessagePackCompression.Lz4Block);
                         }
 
-                        bodyData = MessagePackSerializer.Serialize(content, options);
+                        bytes = MessagePackSerializer.Serialize(content, options);
                     }
                     break;
             }
 
-            bodyData = EncryptBodyData(bodyData);
+            if (encryptBody)
+            {
+                bytes = bytes.Encrypt(cryptoKey);
+            }
 
-            return new UploadHandlerRaw(bodyData);
+            return new UploadHandlerRaw(bytes);
+        }
+
+        public string GetUrlParamsString()
+        {
+            var builder = new StringBuilder();
+
+            foreach (var item in UrlParams)
+            {
+                builder.AppendFormat("{0} = {1}", item.Key, item.Value).AppendLine();
+            }
+
+            return builder.ToString();
+        }
+
+        public string GetHeaderString()
+        {
+            var builder = new StringBuilder();
+
+            foreach (var item in Headers)
+            {
+                var value = item.Value.Item2;
+
+                if(item.Value.Item1)
+                {
+                    value = value.Decrypt(cryptoKey);
+                }
+
+                builder.AppendFormat("{0} = {1}", item.Key, value).AppendLine();
+            }
+
+            return builder.ToString();
+        }
+
+        public string GetBodyString()
+        {
+            if (UploadHandler == null){ return null; }
+
+            if (UploadHandler.data == null){ return null; }
+
+            var json = string.Empty;
+
+            var bytes = UploadHandler.data;
+
+            if (encryptBody)
+            {
+                bytes = bytes.Decrypt(cryptoKey);
+            }
+
+            switch (Format)
+            {
+                case DataFormat.Json:
+                    {
+                        if (Compress)
+                        {
+                            bytes = bytes.Decompress();
+                        }
+
+                        json = Encoding.UTF8.GetString(bytes);
+                    }
+                    break;
+
+                case DataFormat.MessagePack:
+                    {
+                        var options = StandardResolverAllowPrivate.Options.WithResolver(UnityContractResolver.Instance);
+
+                        if (Compress)
+                        {
+                            options = options.WithCompression(MessagePackCompression.Lz4Block);
+                        }
+
+                        json = MessagePackSerializer.ConvertToJson(bytes, options);
+                    }
+                    break;
+            }
+
+            return json;
         }
 
         /// <summary> 常時付与されるヘッダー情報を登録 </summary>
@@ -304,14 +413,5 @@ namespace Modules.Networking
 
         /// <summary> 常時付与されるURLパラメータを登録 </summary>
         protected virtual void RegisterDefaultUrlParams() { }
-
-        /// <summary> URLパラメータ暗号化. </summary>
-        protected abstract string EncryptUriQuery(string query);
-
-        /// <summary> リクエストボディデータ暗号化. </summary>
-        protected abstract byte[] EncryptBodyData(byte[] bytes);
-
-        /// <summary> レスポンスデータ復号化. </summary>
-        protected abstract byte[] DecryptResponseData(byte[] bytes);
     }
 }

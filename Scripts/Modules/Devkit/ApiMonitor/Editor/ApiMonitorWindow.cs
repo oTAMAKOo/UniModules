@@ -29,7 +29,7 @@ namespace Modules.Networking
         private Vector2 historyScrollPosition = Vector2.zero;
         private Vector2 detailScrollPosition = Vector2.zero;
 
-        private WebRequestInfo[] contents = null;
+        private ApiInfo[] contents = null;
 
         private object splitterState = null;
         private ApiHistoryView historyView = null;
@@ -143,19 +143,31 @@ namespace Modules.Networking
         private void DrawApiDetailGUI()
         {
             var info = contents.FirstOrDefault(x => x.Id == selectionId);
-            
+
             using (new ContentsScope())
             {
                 using (new EditorGUILayout.VerticalScope())
                 {
                     if (info != null)
                     {
-                        var tabs = new List<string>()
+                        var tabData = new Tuple<string, string>[]
                         {
-                            info.Result.IsNullOrEmpty() ? string.Empty : "Result",
-                            info.Exception == null ? string.Empty : "Exception",
-                            info.StackTrace.IsNullOrEmpty() ? string.Empty : "StackTrace",
+                            Tuple.Create("Result", info.Result),
+                            Tuple.Create("Exception", info.Exception.ToString()),
+                            Tuple.Create("StackTrace", info.StackTrace),
+                            Tuple.Create("Header", info.Headers),
+                            Tuple.Create("UriParam", info.UriParams),
+                            Tuple.Create("Body", info.Body),
                         };
+
+                        var tabs = new List<string>();
+
+                        foreach (var data in tabData)
+                        {
+                            if (data.Item2.IsNullOrEmpty()){ continue; }
+
+                            tabs.Add(data.Item1);
+                        }
 
                         var tabToggles = tabs.Where(x => !x.IsNullOrEmpty()).ToArray();
 
@@ -171,28 +183,13 @@ namespace Modules.Networking
                             }
                         }
 
-                        var detailText = string.Empty;
-
                         var tabName = tabToggles.ElementAtOrDefault(detailTabIndex);
 
-                        switch (tabName)
-                        {
-                            case "Result":
-                                detailText = info.Result;
-                                break;
-
-                            case "Exception":
-                                detailText = info.Exception.ToString();
-                                break;
-
-                            case "StackTrace":
-                                detailText = info.StackTrace;
-                                break;
-                        }
-
+                        var selectionTab = tabData.FirstOrDefault(x => x.Item1 == tabName);
+                        
                         using (var scrollView = new EditorGUILayout.ScrollViewScope(detailScrollPosition))
                         {
-                            var vector = detailStyle.CalcSize(new GUIContent(detailText));
+                            var vector = detailStyle.CalcSize(new GUIContent(selectionTab.Item2));
 
                             var layoutOption = new GUILayoutOption[]
                             {
@@ -202,7 +199,7 @@ namespace Modules.Networking
                                 GUILayout.MinHeight(vector.y)
                             };
 
-                            EditorGUILayout.SelectableLabel(detailText, detailStyle, layoutOption);
+                            EditorGUILayout.SelectableLabel(selectionTab.Item2, detailStyle, layoutOption);
 
                             detailScrollPosition = scrollView.scrollPosition;
                         }

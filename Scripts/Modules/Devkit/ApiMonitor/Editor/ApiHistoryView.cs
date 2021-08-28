@@ -14,11 +14,23 @@ namespace Modules.Networking
     {
         //----- params -----
 
+        private enum Column
+        {
+            Status      = 0,
+            Type        = 1,
+            Api         = 2,
+            StatusCode  = 3,
+            ElapsedTime = 4,
+            RetryCount  = 5,
+            StartTime   = 6,
+            FinishTime  = 7,
+        }
+
         private sealed class ApiHistoryViewItem : TreeViewItem
         {
-            public WebRequestInfo Info { get; private set; }
+            public ApiInfo Info { get; private set; }
 
-            public ApiHistoryViewItem(WebRequestInfo info) : base(info.Id)
+            public ApiHistoryViewItem(ApiInfo info) : base(info.Id)
             {
                 Info = info;
             }
@@ -28,10 +40,10 @@ namespace Modules.Networking
 
         private IReadOnlyList<TreeViewItem> currentItems = null;
 
-        private WebRequestInfo[] contentsInfos = null;
+        private ApiInfo[] contentsInfos = null;
 
-        private Dictionary<WebRequestInfo.RequestType, Texture2D> statusLabelTexture = null;
-        private Dictionary<WebRequestInfo.RequestStatus, Texture2D> requestStatusTexture = null;
+        private Dictionary<ApiInfo.RequestType, Texture2D> statusLabelTexture = null;
+        private Dictionary<ApiInfo.RequestStatus, Texture2D> requestStatusTexture = null;
 
         private GUIStyle statusLabelStyle = null;
         private GUIStyle requestStatusStyle = null;
@@ -48,7 +60,7 @@ namespace Modules.Networking
             rowHeight = 20;
             showAlternatingRowBackgrounds = true;
             showBorder = true;
-
+            
             SetColumns();
 
             LoadTextures();
@@ -56,95 +68,116 @@ namespace Modules.Networking
 
         private void SetColumns()
         {
-            var columns = new MultiColumnHeaderState.Column[]
+            var columnCount = Enum.GetValues(typeof(Column)).Length;
+
+            var columns = new MultiColumnHeaderState.Column[columnCount];
+
+            columns[(int)Column.Status] = new MultiColumnHeaderState.Column()
             {
-                new MultiColumnHeaderState.Column()
-                {
-                    headerContent = new GUIContent(string.Empty),
-                    width = 20,
-                    maxWidth = 20,
-                    minWidth = 20,
-                    headerTextAlignment = TextAlignment.Center,
-                    canSort = false,
-                },
-
-                new MultiColumnHeaderState.Column()
-                {
-                    headerContent = new GUIContent("Type"),
-                    width = 60,
-                    maxWidth = 60,
-                    minWidth = 60,
-                    headerTextAlignment = TextAlignment.Center,
-                    canSort = false,
-                },
-
-                new MultiColumnHeaderState.Column()
-                {
-                    headerContent = new GUIContent("API"),
-                    width = 200,
-                    headerTextAlignment = TextAlignment.Left,
-                    canSort = false,
-                },
-
-                new MultiColumnHeaderState.Column()
-                {
-                    headerContent = new GUIContent("StatusCode"),
-                    width = 75,
-                    maxWidth = 75,
-                    minWidth = 75,
-                    headerTextAlignment = TextAlignment.Center,
-                    canSort = false,
-                },
-
-                new MultiColumnHeaderState.Column()
-                {
-                    headerContent = new GUIContent("RetryCount"),
-                    width = 80,
-                    maxWidth = 80,
-                    minWidth = 80,
-                    headerTextAlignment = TextAlignment.Center,
-                    canSort = false,
-                },
-
-                new MultiColumnHeaderState.Column()
-                {
-                    headerContent = new GUIContent("Time"),
-                    width = 80,
-                    headerTextAlignment = TextAlignment.Left,
-                    canSort = false,
-                },
+                headerContent = new GUIContent(string.Empty),
+                width = 20,
+                maxWidth = 20,
+                minWidth = 20,
+                headerTextAlignment = TextAlignment.Center,
+                canSort = false,
             };
 
-            contentsInfos = new WebRequestInfo[0];
+            columns[(int)Column.Type] = new MultiColumnHeaderState.Column()
+            {
+                headerContent = new GUIContent("Type"),
+                width = 60,
+                maxWidth = 60,
+                minWidth = 60,
+                headerTextAlignment = TextAlignment.Center,
+                canSort = false,
+            };
 
+            columns[(int)Column.Api] = new MultiColumnHeaderState.Column()
+            {
+                headerContent = new GUIContent("API"),
+                width = 200,
+                headerTextAlignment = TextAlignment.Left,
+                canSort = false,
+            };
+
+            columns[(int)Column.StatusCode] = new MultiColumnHeaderState.Column()
+            {
+                headerContent = new GUIContent("StatusCode"),
+                width = 75,
+                maxWidth = 75,
+                minWidth = 75,
+                headerTextAlignment = TextAlignment.Center,
+                canSort = false,
+            };
+
+            columns[(int)Column.RetryCount] = new MultiColumnHeaderState.Column()
+            {
+                headerContent = new GUIContent("RetryCount"),
+                width = 80,
+                maxWidth = 80,
+                minWidth = 80,
+                headerTextAlignment = TextAlignment.Center,
+                canSort = false,
+            };
+
+            columns[(int)Column.ElapsedTime] = new MultiColumnHeaderState.Column()
+            {
+                headerContent = new GUIContent("Elapsed"),
+                width = 80,
+                maxWidth = 80,
+                minWidth = 80,
+                headerTextAlignment = TextAlignment.Center,
+                canSort = false,
+            };
+
+            columns[(int)Column.StartTime] = new MultiColumnHeaderState.Column()
+            {
+                headerContent = new GUIContent("StartTime"),
+                width = 100,
+                minWidth = 100,
+                headerTextAlignment = TextAlignment.Left,
+                canSort = false,
+            };
+
+            columns[(int)Column.FinishTime] = new MultiColumnHeaderState.Column()
+            {
+                headerContent = new GUIContent("FinishTime"),
+                width = 100,
+                minWidth = 100,
+                headerTextAlignment = TextAlignment.Left,
+                canSort = false,
+            };
+            
             multiColumnHeader = new MultiColumnHeader(new MultiColumnHeaderState(columns));
 
             multiColumnHeader.ResizeToFit();
+
+            contentsInfos = new ApiInfo[0];
 
             Reload();
         }
 
         private void LoadTextures()
         {
-            statusLabelTexture = new Dictionary<WebRequestInfo.RequestType, Texture2D>()
+            statusLabelTexture = new Dictionary<ApiInfo.RequestType, Texture2D>()
             {
-                { WebRequestInfo.RequestType.Post,   EditorGUIUtility.FindTexture("sv_label_3") },
-                { WebRequestInfo.RequestType.Put,    EditorGUIUtility.FindTexture("sv_label_5") },
-                { WebRequestInfo.RequestType.Get,    EditorGUIUtility.FindTexture("sv_label_1") },
-                { WebRequestInfo.RequestType.Delete, EditorGUIUtility.FindTexture("sv_label_7") },
+                { ApiInfo.RequestType.Post,   EditorGUIUtility.FindTexture("sv_label_3") },
+                { ApiInfo.RequestType.Put,    EditorGUIUtility.FindTexture("sv_label_5") },
+                { ApiInfo.RequestType.Get,    EditorGUIUtility.FindTexture("sv_label_1") },
+                { ApiInfo.RequestType.Delete, EditorGUIUtility.FindTexture("sv_label_7") },
             };
 
-            requestStatusTexture = new Dictionary<WebRequestInfo.RequestStatus, Texture2D>()
+            requestStatusTexture = new Dictionary<ApiInfo.RequestStatus, Texture2D>()
             {
-                { WebRequestInfo.RequestStatus.Connection, EditorGUIUtility.IconContent("d_lightRim").image as Texture2D   },
-                { WebRequestInfo.RequestStatus.Success,    EditorGUIUtility.IconContent("d_greenLight").image as Texture2D },
-                { WebRequestInfo.RequestStatus.Failure,    EditorGUIUtility.IconContent("d_redLight").image as Texture2D   },
-                { WebRequestInfo.RequestStatus.Retry,      EditorGUIUtility.IconContent("d_orangeLight").image as Texture2D },
-                { WebRequestInfo.RequestStatus.Cancel,     EditorGUIUtility.IconContent("d_lightOff").image as Texture2D   },
+                { ApiInfo.RequestStatus.Connection, EditorGUIUtility.IconContent("d_lightRim").image as Texture2D   },
+                { ApiInfo.RequestStatus.Success,    EditorGUIUtility.IconContent("d_greenLight").image as Texture2D },
+                { ApiInfo.RequestStatus.Failure,    EditorGUIUtility.IconContent("d_redLight").image as Texture2D   },
+                { ApiInfo.RequestStatus.Retry,      EditorGUIUtility.IconContent("d_orangeLight").image as Texture2D },
+                { ApiInfo.RequestStatus.Cancel,     EditorGUIUtility.IconContent("d_lightOff").image as Texture2D   },
             };
         }
 
-        public void SetContents(WebRequestInfo[] contentsInfos)
+        public void SetContents(ApiInfo[] contentsInfos)
         {
             var currentSelected = state.selectedIDs;
 
@@ -244,6 +277,8 @@ namespace Modules.Networking
 
             var info = item.Info;
 
+            var columns = Enum.GetValues(typeof(Column)).Cast<Column>().ToArray();
+
             for (var visibleColumnIndex = 0; visibleColumnIndex < args.GetNumVisibleColumns(); visibleColumnIndex++)
             {
                 var rect = args.GetCellRect(visibleColumnIndex);
@@ -254,10 +289,12 @@ namespace Modules.Networking
                 labelStyle.alignment = TextAnchor.MiddleLeft;
 
                 CenterRectUsingSingleLineHeight(ref rect);
-                
-                switch (columnIndex)
+
+                var column = columns.ElementAt(columnIndex);
+
+                switch (column)
                 {
-                    case 0:
+                    case Column.Status:
                         {
                             var texture = requestStatusTexture.GetValueOrDefault(info.Status);
 
@@ -272,7 +309,7 @@ namespace Modules.Networking
                         }
                         break;
 
-                    case 1:
+                    case Column.Type:
                         {
                             var texture = statusLabelTexture.GetValueOrDefault(info.Request);
 
@@ -289,7 +326,7 @@ namespace Modules.Networking
                         }
                         break;
 
-                    case 2:
+                    case Column.Api:
                         {
                             var apiName = info.Url.Replace(apiTracker.ServerUrl, string.Empty);
 
@@ -297,22 +334,24 @@ namespace Modules.Networking
                         }
                         break;
 
-                    case 3:
-                        {
-                            EditorGUI.LabelField(rect, info.StatusCode, labelStyle);
-                        }
+                    case Column.StatusCode:
+                        EditorGUI.LabelField(rect, info.StatusCode.IsNullOrEmpty() ? "---" : info.StatusCode, labelStyle);
                         break;
 
-                    case 4:
-                        {
-                            EditorGUI.LabelField(rect, info.RetryCount.ToString(), labelStyle);
-                        }
+                    case Column.ElapsedTime:
+                        EditorGUI.LabelField(rect, info.ElapsedTime.HasValue ? info.ElapsedTime.ToString() : "---", labelStyle);
                         break;
 
-                    case 5:
-                        {
-                            EditorGUI.LabelField(rect, info.Time.ToString(), labelStyle);
-                        }
+                    case Column.RetryCount:
+                        EditorGUI.LabelField(rect, info.RetryCount.ToString(), labelStyle);
+                        break;
+
+                    case Column.StartTime:
+                        EditorGUI.LabelField(rect, info.Start.HasValue ? info.Start.ToString() : "---", labelStyle);
+                        break;
+
+                    case Column.FinishTime:
+                        EditorGUI.LabelField(rect, info.Finish.HasValue ? info.Finish.ToString() : "---", labelStyle);
                         break;
 
                     default:
