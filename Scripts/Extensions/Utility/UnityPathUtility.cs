@@ -26,6 +26,8 @@ namespace Extensions
 
         //----- field -----
 
+        private static string privateDataPath = null;
+
         //----- property -----
 
         //----- method -----
@@ -43,6 +45,34 @@ namespace Extensions
         public static string GetProjectFolderPath()
         {
             return Application.dataPath.Replace(AssetsFolder, string.Empty);
+        }
+
+        /// <summary>
+        /// 内部データ保存用のパスを取得
+        /// <para>※ 内部ストレージのパスを返すので大容量のファイルをこの領域には書き込まない.</para>
+        /// </summary>
+        public static string GetPrivateDataPath()
+        {
+            if (privateDataPath.IsNullOrEmpty())
+            {
+                #if !UNITY_EDITOR && UNITY_ANDROID
+
+                using (var unityPlayer = new AndroidJavaClass("com.unity3d.player.UnityPlayer"))
+                using (var currentActivity = unityPlayer.GetStatic<AndroidJavaObject>("currentActivity"))
+                using (var getFilesDir = currentActivity.Call<AndroidJavaObject>("getFilesDir"))
+                {
+                    privateDataPath = getFilesDir.Call<string>("getCanonicalPath");
+                }
+
+                #endif
+
+                if (privateDataPath.IsNullOrEmpty())
+                {
+                    privateDataPath = Application.persistentDataPath;
+                }
+            }
+
+            return privateDataPath;
         }
 
         /// <summary> ストリーミング用のアセットパスを取得 </summary>

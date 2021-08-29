@@ -44,7 +44,9 @@ namespace Modules.LocalData
             filePathCache = new Dictionary<Type, string>();
             dataCache = new Dictionary<Type, ILocalData>();
 
-            FileDirectory = Application.persistentDataPath + "/LocalData/";
+            var fileDir = UnityPathUtility.GetPrivateDataPath();
+
+            FileDirectory = fileDir + "/LocalData/";
         }
 
         public void SetCryptoKey(AesCryptoKey cryptoKey)
