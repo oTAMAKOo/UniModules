@@ -68,6 +68,8 @@ namespace Modules.AssetBundles.Editor
 
             foreach (var assetInfo in assetInfos)
             {
+                if (assetInfo.AssetBundle == null){ continue; }
+
                 var dependencies = assetBundleManifest.GetDirectDependencies(assetInfo.AssetBundle.AssetBundleName);
 
                 assetInfo.AssetBundle.SetDependencies(dependencies);
@@ -149,8 +151,15 @@ namespace Modules.AssetBundles.Editor
             var main = Path.ChangeExtension(manifestFilePath, string.Empty);
             var manifest = Path.ChangeExtension(manifestFilePath, ManifestFileExtension);
 
-            File.Copy(main, main + ManifestTemporarilyFileExtension, true);
-            File.Copy(manifest, manifest + ManifestTemporarilyFileExtension, true);
+            if (File.Exists(main))
+            {
+                File.Copy(main, main + ManifestTemporarilyFileExtension, true);
+            }
+
+            if (File.Exists(manifest))
+            {
+                File.Copy(manifest, manifest + ManifestTemporarilyFileExtension, true);
+            }
         }
 
         /// <summary> 一時退避したアセットバンドルマニフェストを復元 </summary>
@@ -168,14 +177,20 @@ namespace Modules.AssetBundles.Editor
                 File.Delete(main);
             }
 
-            File.Move(main + ManifestTemporarilyFileExtension, main);
+            if (File.Exists(main + ManifestTemporarilyFileExtension))
+            {
+                File.Move(main + ManifestTemporarilyFileExtension, main);
+            }
 
             if (File.Exists(manifest))
             {
                 File.Delete(manifest);
             }
 
-            File.Move(manifest + ManifestTemporarilyFileExtension, manifest);
+            if (File.Exists(manifest + ManifestTemporarilyFileExtension))
+            {
+                File.Move(manifest + ManifestTemporarilyFileExtension, manifest);
+            }
         }
 
         /// <summary> アセットバンドルマニフェストのファイルパス取得 </summary>

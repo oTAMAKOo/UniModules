@@ -129,14 +129,17 @@ namespace Modules.AssetBundles.Editor
                     // アセットバンドルファイルパス.
                     var assetBundleFilePath = PathUtility.Combine(assetBundlePath, assetInfo.AssetBundle.AssetBundleName);
 
-                    // パッケージを作成.
-                    if (createPackage)
+                    if (File.Exists(assetBundleFilePath))
                     {
-                        await CreatePackage(assetBundleFilePath, cryptoKey);
-                    }
+                        // パッケージを作成.
+                        if (createPackage)
+                        {
+                            await CreatePackage(assetBundleFilePath, cryptoKey);
+                        }
 
-                    // 出力先にパッケージファイルをコピー.
-                    await ExportPackage(exportPath, assetBundleFilePath, assetInfo);
+                        // 出力先にパッケージファイルをコピー.
+                        await ExportPackage(exportPath, assetBundleFilePath, assetInfo);
+                    }
                 }
                 catch (Exception exception)
                 {
@@ -150,6 +153,8 @@ namespace Modules.AssetBundles.Editor
         /// <summary> パッケージファイル化(暗号化). </summary>
         private static async Task CreatePackage(string assetBundleFilePath, AesCryptoKey cryptoKey)
         {
+            if (!File.Exists(assetBundleFilePath)){ return; }
+
             // 作成するパッケージファイルのパス.
             var packageFilePath = Path.ChangeExtension(assetBundleFilePath, AssetBundleManager.PackageExtension);
 
@@ -181,6 +186,8 @@ namespace Modules.AssetBundles.Editor
         {
             // パッケージファイルパス.
             var packageFilePath = Path.ChangeExtension(assetBundleFilePath, AssetBundleManager.PackageExtension);
+
+            if (!File.Exists(packageFilePath)){ return; }
 
             // パッケージファイル名.
             var packageFileName = Path.ChangeExtension(assetInfo.FileName, AssetBundleManager.PackageExtension);
