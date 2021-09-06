@@ -13,11 +13,17 @@ namespace Modules.Devkit.Build
     {
         private AssetRegisterScrollView assetListView = null;
 
+        private bool changed = false;
+
+        private AssetRegisterScrollView.AssetInfo[] infos = null;
+
         private DeleteAssetSetting instance = null;
 
         void OnEnable()
         {
             instance = target as DeleteAssetSetting;
+
+            changed = false;
 
             var guids = Reflection.GetPrivateField<DeleteAssetSetting, string[]>(instance, "targetGuids");
 
@@ -26,6 +32,22 @@ namespace Modules.Devkit.Build
             assetListView.SetContents(guids);
 
             assetListView.OnUpdateContentsAsObservable().Subscribe(x => OnUpdateContents(x));
+        }
+
+        void OnDisable()
+        {
+            if (changed)
+            {
+                var guids = infos.Select(x => x.guid)
+                    .Where(x => !string.IsNullOrEmpty(x))
+                    .ToArray();
+
+                UnityEditorUtility.RegisterUndo("DeleteAssetSettingInspector Undo", instance);
+
+                Reflection.SetPrivateField<DeleteAssetSetting, string[]>(instance, "targetGuids", guids);
+
+                UnityEditorUtility.SaveAsset(instance);
+            }
         }
 
         public override void OnInspectorGUI()
@@ -37,15 +59,9 @@ namespace Modules.Devkit.Build
 
         private void OnUpdateContents(AssetRegisterScrollView.AssetInfo[] infos)
         {
-            var guids = infos.Select(x => x.guid)
-                .Where(x => !string.IsNullOrEmpty(x))
-                .ToArray();
+            this.infos = infos;
 
-            UnityEditorUtility.RegisterUndo("DeleteAssetSettingInspector Undo", instance);
-
-            Reflection.SetPrivateField<DeleteAssetSetting, string[]>(instance, "targetGuids", guids);
-
-            UnityEditorUtility.SaveAsset(instance);
+            changed = true;
         }
     }
 }

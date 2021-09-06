@@ -154,6 +154,8 @@ namespace Modules.Devkit.Inspector
             GUILayout.Space(2f);
 
             scrollView.Draw(true, options);
+
+            GUILayout.Space(2f);
         }
 
         public IObservable<T[]> OnUpdateContentsAsObservable()

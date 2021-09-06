@@ -43,12 +43,19 @@ namespace Modules.Devkit.Inspector
         /// </summary>
         public bool RemoveChildrenAssets { get; set; }
 
+        /// <summary>
+        /// スクロールビューの高さ.
+        /// </summary>
+        public float ScrollAreaHeight { get; private set; } 
+
         //----- method -----
 
-        public AssetRegisterScrollView(string title, string headerKey)
+        public AssetRegisterScrollView(string title, string headerKey, float scrollAreaHeight = 270)
         {
             this.title = title;
             this.headerKey = headerKey;
+
+            ScrollAreaHeight = scrollAreaHeight;
 
             OnUpdateContentsAsObservable()
                 .Subscribe(x =>
@@ -160,7 +167,7 @@ namespace Modules.Devkit.Inspector
             {
                 using (new ContentsScope())
                 {
-                    var scrollViewHeight = Mathf.Min(Contents.Length * 20f, 150f);
+                    var scrollViewHeight = Mathf.Min(Contents.Length * 20f, ScrollAreaHeight);
 
                     var options = new List<GUILayoutOption>();
 
