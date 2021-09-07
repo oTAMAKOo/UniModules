@@ -5,18 +5,18 @@
 // https://github.com/DenchiSoft/UnityAspectRatioController/blob/master/AspectRatioControllerTest/Assets/AspectRatioController/AspectRatioController.cs
 
 using UnityEngine;
-using UnityEngine.Events;
 using System;
-using System.Collections;
 using System.Runtime.InteropServices;
 using System.Text;
+using System.Threading.Tasks;
 using AOT;
 using UniRx;
 using Extensions;
+using UnityEngine.Rendering;
 
 namespace Modules.StandAloneWindows.WindowAspectRatio
 {
-    public sealed class AspectRatioController : SingletonMonoBehaviour<AspectRatioController>
+    public sealed class AspectRatioController : Singleton<AspectRatioController>
     {
         //----- params -----
 
@@ -63,20 +63,15 @@ namespace Modules.StandAloneWindows.WindowAspectRatio
 
         //----- field -----
 
-        [SerializeField]
         private bool allowFullscreen = true;
-        [SerializeField]
+
         private float aspectRatioWidth = 16;
-        [SerializeField]
         private float aspectRatioHeight = 9;
         
-        [SerializeField]
         private int minWidthPixel = 512;
-        [SerializeField]
         private int minHeightPixel = 512;
-        [SerializeField]
+
         private int maxWidthPixel = 2048;
-        [SerializeField]
         private int maxHeightPixel = 2048;
  
         private Subject<ResolutionChangeInfo> onResolutionChanged = null;
@@ -174,7 +169,7 @@ namespace Modules.StandAloneWindows.WindowAspectRatio
             EnumThreadWindows(GetCurrentThreadId(), FindWindowProc, IntPtr.Zero);
 
             SetAspectRatio(aspectRatioWidth, aspectRatioHeight);
-
+            
             Apply();
 
             wndProcDelegate = WindowProc;
@@ -182,6 +177,8 @@ namespace Modules.StandAloneWindows.WindowAspectRatio
             newWndProcPtr = Marshal.GetFunctionPointerForDelegate(wndProcDelegate);
             oldWndProcPtr = SetWindowLong(unityHWnd, GWLP_WNDPROC, newWndProcPtr);
 
+            Task.Run(() => UpdateAspectRatio());
+            
             initialized = true;
         }
 
@@ -318,93 +315,79 @@ namespace Modules.StandAloneWindows.WindowAspectRatio
             return CallWindowProc(Instance.oldWndProcPtr, hWnd, msg, wParam, lParam);
         }
 
-        void Update()
+        private async Task UpdateAspectRatio()
         {
-            if (!initialized) { return; }
-
-            if (!allowFullscreen && Screen.fullScreen)
+            while (true)
             {
-                Screen.fullScreen = false;
-            }
-
-            var isFullScreen = Screen.fullScreen;
-
-            if (isFullScreen && !wasFullscreenLastFrame)
-            {
-                var width = 0;
-                var height = 0;
-
-                var blackBarsLeftRight = AspectRatio < (float)pixelWidthOfCurrentScreen / pixelHeightOfCurrentScreen;
-
-                if (blackBarsLeftRight)
+                if (!allowFullscreen && Screen.fullScreen)
                 {
-                    height = pixelHeightOfCurrentScreen;
-                    width = Mathf.RoundToInt(pixelHeightOfCurrentScreen * AspectRatio);
-                }
-                else
-                {
-                    width = pixelWidthOfCurrentScreen;
-                    height = Mathf.RoundToInt(pixelWidthOfCurrentScreen / AspectRatio);
+                    Screen.fullScreen = false;
                 }
 
-                Screen.SetResolution(width, height, isFullScreen);
+                var isFullScreen = Screen.fullScreen;
+
+                if (isFullScreen && !wasFullscreenLastFrame)
+                {
+                    var width = 0;
+                    var height = 0;
+
+                    var blackBarsLeftRight = AspectRatio < (float)pixelWidthOfCurrentScreen / pixelHeightOfCurrentScreen;
+
+                    if (blackBarsLeftRight)
+                    {
+                        height = pixelHeightOfCurrentScreen;
+                        width = Mathf.RoundToInt(pixelHeightOfCurrentScreen * AspectRatio);
+                    }
+                    else
+                    {
+                        width = pixelWidthOfCurrentScreen;
+                        height = Mathf.RoundToInt(pixelWidthOfCurrentScreen / AspectRatio);
+                    }
+
+                    Screen.SetResolution(width, height, isFullScreen);
+                    
+                    if (onResolutionChanged != null)
+                    {
+                        var resolutionChangeInfo = new ResolutionChangeInfo(width, height, isFullScreen);
+
+                        onResolutionChanged.OnNext(resolutionChangeInfo);
+                    }
+                }
+                else if (!isFullScreen && wasFullscreenLastFrame)
+                {
+                    Screen.SetResolution(setWidth, setHeight, isFullScreen);
+                    
+                    if (onResolutionChanged != null)
+                    {
+                        var resolutionChangeInfo = new ResolutionChangeInfo(setWidth, setHeight, isFullScreen);
+
+                        onResolutionChanged.OnNext(resolutionChangeInfo);
+                    }
+                }
+                else if (!isFullScreen && (Screen.width != setWidth || Screen.height != setHeight))
+                {
+                    setHeight = Screen.height;
+                    setWidth = Mathf.RoundToInt(Screen.height * AspectRatio);
+
+                    Screen.SetResolution(setWidth, setHeight, isFullScreen);
+
+                    if (onResolutionChanged != null)
+                    {
+                        var resolutionChangeInfo = new ResolutionChangeInfo(setWidth, setHeight, isFullScreen);
+
+                        onResolutionChanged.OnNext(resolutionChangeInfo);
+                    }
+                }
+                else if (!isFullScreen)
+                {
+                    pixelHeightOfCurrentScreen = Screen.currentResolution.height;
+                    pixelWidthOfCurrentScreen = Screen.currentResolution.width;
+                }
                 
-                if (onResolutionChanged != null)
-                {
-                    var resolutionChangeInfo = new ResolutionChangeInfo(width, height, isFullScreen);
+                wasFullscreenLastFrame = isFullScreen;
 
-                    onResolutionChanged.OnNext(resolutionChangeInfo);
-                }
+                await Task.Delay(30);
             }
-            else if (!isFullScreen && wasFullscreenLastFrame)
-            {
-                Screen.SetResolution(setWidth, setHeight, isFullScreen);
-                
-                if (onResolutionChanged != null)
-                {
-                    var resolutionChangeInfo = new ResolutionChangeInfo(setWidth, setHeight, isFullScreen);
-
-                    onResolutionChanged.OnNext(resolutionChangeInfo);
-                }
-            }
-            else if (!isFullScreen && (Screen.width != setWidth || Screen.height != setHeight))
-            {
-                setHeight = Screen.height;
-                setWidth = Mathf.RoundToInt(Screen.height * AspectRatio);
-
-                Screen.SetResolution(setWidth, setHeight, isFullScreen);
-
-                if (onResolutionChanged != null)
-                {
-                    var resolutionChangeInfo = new ResolutionChangeInfo(setWidth, setHeight, isFullScreen);
-
-                    onResolutionChanged.OnNext(resolutionChangeInfo);
-                }
-            }
-            else if (!isFullScreen)
-            {
-                pixelHeightOfCurrentScreen = Screen.currentResolution.height;
-                pixelWidthOfCurrentScreen = Screen.currentResolution.width;
-            }
-            
-            wasFullscreenLastFrame = isFullScreen;
-            
-            #if UNITY_EDITOR
-
-            if (Screen.width != setWidth || Screen.height != setHeight)
-            {
-                setWidth = Screen.width;
-                setHeight = Screen.height;
-
-                if (onResolutionChanged != null)
-                {
-                    var resolutionChangeInfo = new ResolutionChangeInfo(setWidth, setHeight, isFullScreen);
-
-                    onResolutionChanged.OnNext(resolutionChangeInfo);
-                }
-            }
-
-            #endif
         }
 
         private static IntPtr SetWindowLong(IntPtr hWnd, int nIndex, IntPtr dwNewLong)
@@ -419,11 +402,13 @@ namespace Modules.StandAloneWindows.WindowAspectRatio
 
         private bool ApplicationWantsToQuit()
         {
-            if (!initialized) { return false; }
-            
             if (!quitStarted)
             {
-                StartCoroutine(DelayedQuit());
+                SetWindowLong(unityHWnd, GWLP_WNDPROC, oldWndProcPtr);
+
+                if (!SplashScreen.isFinished) { return true; }
+
+                Task.Run(() => DelayedQuit());
 
                 return false;
             }
@@ -431,11 +416,9 @@ namespace Modules.StandAloneWindows.WindowAspectRatio
             return true;
         }
 
-        private IEnumerator DelayedQuit()
+        private async Task DelayedQuit()
         {
-            SetWindowLong(unityHWnd, GWLP_WNDPROC, oldWndProcPtr);
-
-            yield return new WaitForEndOfFrame();
+            await Task.Delay(10);
 
             quitStarted = true;
 
