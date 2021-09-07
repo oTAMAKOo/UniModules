@@ -156,7 +156,7 @@ namespace Modules.StandAloneWindows.WindowAspectRatio
 
             if (initialized) { return; }
 
-            Application.wantsToQuit += ApplicationWantsToQuit;
+            Application.quitting += ApplicationQuitting;
 
             pixelHeightOfCurrentScreen = Screen.currentResolution.height;
             pixelWidthOfCurrentScreen = Screen.currentResolution.width;
@@ -400,29 +400,9 @@ namespace Modules.StandAloneWindows.WindowAspectRatio
             return SetWindowLongPtr64(hWnd, nIndex, dwNewLong);
         }
 
-        private bool ApplicationWantsToQuit()
+        private void ApplicationQuitting()
         {
-            if (!quitStarted)
-            {
-                SetWindowLong(unityHWnd, GWLP_WNDPROC, oldWndProcPtr);
-
-                if (!SplashScreen.isFinished) { return true; }
-
-                Task.Run(() => DelayedQuit());
-
-                return false;
-            }
-
-            return true;
-        }
-
-        private async Task DelayedQuit()
-        {
-            await Task.Delay(10);
-
-            quitStarted = true;
-
-            Application.Quit();
+            SetWindowLong(unityHWnd, GWLP_WNDPROC, oldWndProcPtr);
         }
 
         public IObservable<ResolutionChangeInfo> OnResolutionChangedAsObservable()
