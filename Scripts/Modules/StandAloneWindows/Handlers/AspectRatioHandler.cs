@@ -1,5 +1,5 @@
 ﻿
-#if UNITY_STANDALONE
+#if UNITY_STANDALONE_WIN
 
 // Reference from.
 // https://github.com/DenchiSoft/UnityAspectRatioController/blob/master/AspectRatioControllerTest/Assets/AspectRatioController/AspectRatioController.cs
@@ -7,16 +7,14 @@
 using UnityEngine;
 using System;
 using System.Runtime.InteropServices;
-using System.Text;
 using System.Threading.Tasks;
 using AOT;
 using UniRx;
 using Extensions;
-using UnityEngine.Rendering;
 
-namespace Modules.StandAloneWindows.WindowAspectRatio
+namespace Modules.StandAloneWindows
 {
-    public sealed class AspectRatioController : Singleton<AspectRatioController>
+    public sealed class AspectRatioHandler : Singleton<AspectRatioHandler>
     {
         //----- params -----
 
@@ -84,27 +82,12 @@ namespace Modules.StandAloneWindows.WindowAspectRatio
         private int pixelHeightOfCurrentScreen = 0;
         private int pixelWidthOfCurrentScreen = 0;
 
-        private bool quitStarted = false;
-
         #region WINAPI
-
+        
         // Delegate to set as new WindowProc callback function.
         private delegate IntPtr WndProcDelegate(IntPtr hWnd, uint msg, IntPtr wParam, IntPtr lParam);
+        
         private WndProcDelegate wndProcDelegate;
-
-        // Retrieves the thread identifier of the calling thread.
-        [DllImport("kernel32.dll")]
-        private static extern uint GetCurrentThreadId();
-
-        // Retrieves the name of the class to which the specified window belongs.
-        [DllImport("user32.dll", CharSet = CharSet.Auto, SetLastError = true)]
-        private static extern int GetClassName(IntPtr hWnd, StringBuilder lpString, int nMaxCount);
-
-        // Enumerates all nonchild windows associated with a thread by passing the handle to
-        // each window, in turn, to an application-defined callback function.
-        [DllImport("user32.dll")]
-        private static extern bool EnumThreadWindows(uint dwThreadId, EnumWindowsProc lpEnumFunc, IntPtr lParam);
-        private delegate bool EnumWindowsProc(IntPtr hWnd, IntPtr lParam);
 
         // Passes message information to the specified window procedure.
         [DllImport("user32.dll")]
@@ -130,9 +113,6 @@ namespace Modules.StandAloneWindows.WindowAspectRatio
         // offset in the extra window memory. 
         [DllImport("user32.dll", EntryPoint = "SetWindowLongPtr", CharSet = CharSet.Auto)]
         private static extern IntPtr SetWindowLongPtr64(IntPtr hWnd, int nIndex, IntPtr dwNewLong);
-
-        // Window handle of Unity window.
-        private IntPtr unityHWnd;
 
         // Pointer to old WindowProc callback function.
         private IntPtr oldWndProcPtr;
@@ -165,8 +145,6 @@ namespace Modules.StandAloneWindows.WindowAspectRatio
             setWidth = Mathf.RoundToInt(Screen.height * AspectRatio);
 
             wasFullscreenLastFrame = Screen.fullScreen;
-            
-            EnumThreadWindows(GetCurrentThreadId(), FindWindowProc, IntPtr.Zero);
 
             SetAspectRatio(aspectRatioWidth, aspectRatioHeight);
             
@@ -174,8 +152,10 @@ namespace Modules.StandAloneWindows.WindowAspectRatio
 
             wndProcDelegate = WindowProc;
 
+            var windowHandle = WindowHandle.Get();
+
             newWndProcPtr = Marshal.GetFunctionPointerForDelegate(wndProcDelegate);
-            oldWndProcPtr = SetWindowLong(unityHWnd, GWLP_WNDPROC, newWndProcPtr);
+            oldWndProcPtr = SetWindowLong(windowHandle, GWLP_WNDPROC, newWndProcPtr);
 
             Task.Run(() => UpdateAspectRatio());
             
@@ -217,25 +197,11 @@ namespace Modules.StandAloneWindows.WindowAspectRatio
             Screen.SetResolution(width, height, allowFullscreen);
         }
 
-        [MonoPInvokeCallback(typeof(EnumWindowsProc))]
-        public static bool FindWindowProc(IntPtr hWnd, IntPtr lParam)
-        {
-            var classText = new StringBuilder(UNITY_WND_CLASSNAME.Length + 1);
-
-            GetClassName(hWnd, classText, classText.Capacity);
-
-            if (classText.ToString() == UNITY_WND_CLASSNAME)
-            {
-                Instance.unityHWnd = hWnd;
-                return false;
-            }
-
-            return true;
-        }
-
         [MonoPInvokeCallback(typeof(WndProcDelegate))]
         private static IntPtr WindowProc(IntPtr hWnd, uint msg, IntPtr wParam, IntPtr lParam)
         {
+            var windowHandle = WindowHandle.Get();
+            
             if (msg == WM_SIZING)
             {
                 // Get window size struct.
@@ -243,10 +209,10 @@ namespace Modules.StandAloneWindows.WindowAspectRatio
 
                 // Calculate window border width and height.
                 var windowRect = new RECT();
-                GetWindowRect(Instance.unityHWnd, ref windowRect);
+                GetWindowRect(windowHandle, ref windowRect);
 
                 var clientRect = new RECT();
-                GetClientRect(Instance.unityHWnd, ref clientRect);
+                GetClientRect(windowHandle, ref clientRect);
 
                 var borderWidth = windowRect.Right - windowRect.Left - (clientRect.Right - clientRect.Left);
                 var borderHeight = windowRect.Bottom - windowRect.Top - (clientRect.Bottom - clientRect.Top);
@@ -402,7 +368,9 @@ namespace Modules.StandAloneWindows.WindowAspectRatio
 
         private void ApplicationQuitting()
         {
-            SetWindowLong(unityHWnd, GWLP_WNDPROC, oldWndProcPtr);
+            var windowHandle = WindowHandle.Get();
+            
+            SetWindowLong(windowHandle, GWLP_WNDPROC, oldWndProcPtr);
         }
 
         public IObservable<ResolutionChangeInfo> OnResolutionChangedAsObservable()
