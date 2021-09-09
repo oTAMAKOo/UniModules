@@ -1,6 +1,9 @@
 ﻿
 #if UNITY_STANDALONE_WIN
 
+// Reference from.
+// https://github.com/DenchiSoft/UnityAspectRatioController/blob/master/AspectRatioControllerTest/Assets/AspectRatioController/AspectRatioController.cs
+
 using UnityEngine;
 using System;
 using System.Runtime.InteropServices;
@@ -33,7 +36,7 @@ namespace Modules.StandAloneWindows
         }
 
         #region WINAPI
-
+        
         private const int WM_SIZING = 0x214;
 
         private const int WMSZ_LEFT   = 1;
@@ -53,6 +56,8 @@ namespace Modules.StandAloneWindows
             public int Right;
             public int Bottom;
         }
+
+        private delegate IntPtr WndProcDelegate(IntPtr hWnd, uint msg, IntPtr wParam, IntPtr lParam);
 
         #endregion
 
@@ -81,9 +86,9 @@ namespace Modules.StandAloneWindows
 
         #region WINAPI
         
-        // Delegate to set as new WindowProc callback function.
-        private delegate IntPtr WndProcDelegate(IntPtr hWnd, uint msg, IntPtr wParam, IntPtr lParam);
-        
+        private IntPtr oldWndProcPtr;
+        private IntPtr newWndProcPtr;
+
         private WndProcDelegate wndProcDelegate;
 
         [DllImport("user32.dll")]
@@ -94,15 +99,6 @@ namespace Modules.StandAloneWindows
 
         [DllImport("user32.dll")]
         private static extern bool GetClientRect(IntPtr hWnd, ref RECT lpRect);
-
-        [DllImport("user32.dll", EntryPoint = "SetWindowLong", CharSet = CharSet.Auto)]
-        private static extern IntPtr SetWindowLong32(IntPtr hWnd, int nIndex, IntPtr dwNewLong);
-
-        [DllImport("user32.dll", EntryPoint = "SetWindowLongPtr", CharSet = CharSet.Auto)]
-        private static extern IntPtr SetWindowLongPtr64(IntPtr hWnd, int nIndex, IntPtr dwNewLong);
-
-        private IntPtr oldWndProcPtr = IntPtr.Zero;
-        private IntPtr newWndProcPtr = IntPtr.Zero;
 
         #endregion
 
@@ -135,14 +131,12 @@ namespace Modules.StandAloneWindows
             Apply();
 
             wndProcDelegate = WindowProc;
-
-            var windowHandle = WindowHandle.Get();
-
+            
             newWndProcPtr = Marshal.GetFunctionPointerForDelegate(wndProcDelegate);
-            oldWndProcPtr = SetWindowLong(windowHandle, GWLP_WNDPROC, newWndProcPtr);
+            oldWndProcPtr = WindowHandle.SetWindowLong(GWLP_WNDPROC, newWndProcPtr);
 
             Task.Run(() => UpdateAspectRatio());
-            
+
             initialized = true;
         }
 
@@ -188,10 +182,8 @@ namespace Modules.StandAloneWindows
             
             if (msg == WM_SIZING)
             {
-                // Get window size struct.
                 var rc = (RECT)Marshal.PtrToStructure(lParam, typeof(RECT));
 
-                // Calculate window border width and height.
                 var windowRect = new RECT();
                 GetWindowRect(windowHandle, ref windowRect);
 
@@ -201,15 +193,12 @@ namespace Modules.StandAloneWindows
                 var borderWidth = windowRect.Right - windowRect.Left - (clientRect.Right - clientRect.Left);
                 var borderHeight = windowRect.Bottom - windowRect.Top - (clientRect.Bottom - clientRect.Top);
 
-                // Remove borders (including window title bar) before applying aspect ratio.
                 rc.Right -= borderWidth;
                 rc.Bottom -= borderHeight;
 
-                // Clamp window size.
                 var newWidth = Mathf.Clamp(rc.Right - rc.Left, Instance.minWidthPixel, Instance.maxWidthPixel);
                 var newHeight = Mathf.Clamp(rc.Bottom - rc.Top, Instance.minHeightPixel, Instance.maxHeightPixel);
 
-                // Resize according to aspect ratio and resize direction.
                 switch (wParam.ToInt32())
                 {
                     case WMSZ_LEFT:
@@ -251,13 +240,6 @@ namespace Modules.StandAloneWindows
 
                 rc.Right += borderWidth;
                 rc.Bottom += borderHeight;
-
-                if (Instance.onResolutionChanged != null)
-                {
-                    var resolutionChangeInfo = new ResolutionChangeInfo(Instance.setWidth, Instance.setHeight, Screen.fullScreen);
-
-                    Instance.onResolutionChanged.OnNext(resolutionChangeInfo);
-                }
 
                 Marshal.StructureToPtr(rc, lParam, true);
             }
@@ -336,25 +318,13 @@ namespace Modules.StandAloneWindows
                 
                 wasFullscreenLastFrame = isFullScreen;
 
-                await Task.Delay(30);
+                await Task.Delay(10);
             }
-        }
-
-        private static IntPtr SetWindowLong(IntPtr hWnd, int nIndex, IntPtr dwNewLong)
-        {
-            if (IntPtr.Size == 4)
-            {
-                return SetWindowLong32(hWnd, nIndex, dwNewLong);
-            }
-
-            return SetWindowLongPtr64(hWnd, nIndex, dwNewLong);
         }
 
         private void ApplicationQuitting()
         {
-            var windowHandle = WindowHandle.Get();
-            
-            SetWindowLong(windowHandle, GWLP_WNDPROC, oldWndProcPtr);
+            WindowHandle.SetWindowLong(GWLP_WNDPROC, oldWndProcPtr);
         }
 
         public IObservable<ResolutionChangeInfo> OnResolutionChangedAsObservable()

@@ -1,7 +1,8 @@
 ﻿
 #if UNITY_STANDALONE_WIN
 
-using UnityEngine;using System;
+using UnityEngine;
+using System;
 using System.Runtime.InteropServices;
 using Extensions;
 
@@ -74,12 +75,6 @@ namespace Modules.StandAloneWindows
 
         #region WINAPI
         
-        [DllImport("user32.dll")]
-        private static extern int SetWindowLong(IntPtr hWnd, int nIndex, int dwNewLong);
-        
-        [DllImport("user32.dll")]
-        private static extern int GetWindowLong(IntPtr hWnd, int nIndex);
-
         [DllImport("user32.dll", EntryPoint = "SetWindowPos")]
         private static extern int SetWindowPos(IntPtr hwnd, int hwndInsertAfter, int x, int y, int cx, int cy, uint uFlags);
 
@@ -97,18 +92,16 @@ namespace Modules.StandAloneWindows
             
             if (initialize) { return; }
 
-            WindowStyle = GetStyle();
+            WindowStyle = (int)GetStyle();
 
             initialize = true;
         }
 
-        public int GetStyle()
+        public IntPtr GetStyle()
         {
-            if (Application.isEditor) { return -1; }
+            if (Application.isEditor) { return IntPtr.Zero; }
             
-            var windowHandle = WindowHandle.Get();
-
-            return GetWindowLong(windowHandle, GWL_STYLE);
+            return WindowHandle.GetWindowLong(GWL_STYLE);
         }
 
         public void Apply()
@@ -117,7 +110,7 @@ namespace Modules.StandAloneWindows
             
             var windowHandle = WindowHandle.Get();
 
-            SetWindowLong(windowHandle, GWL_STYLE, WindowStyle);
+            WindowHandle.SetWindowLong(GWL_STYLE, (IntPtr)WindowStyle);
 
             SetWindowPos(windowHandle, HWND_TOP, 0, 0, 0, 0, SWP_NOSIZE | SWP_NOMOVE | SWP_FRAMECHANGED | SWP_SHOWWINDOW);
         }
