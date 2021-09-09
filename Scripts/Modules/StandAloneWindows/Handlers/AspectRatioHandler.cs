@@ -1,9 +1,6 @@
 ﻿
 #if UNITY_STANDALONE_WIN
 
-// Reference from.
-// https://github.com/DenchiSoft/UnityAspectRatioController/blob/master/AspectRatioControllerTest/Assets/AspectRatioController/AspectRatioController.cs
-
 using UnityEngine;
 using System;
 using System.Runtime.InteropServices;
@@ -89,36 +86,23 @@ namespace Modules.StandAloneWindows
         
         private WndProcDelegate wndProcDelegate;
 
-        // Passes message information to the specified window procedure.
         [DllImport("user32.dll")]
         private static extern IntPtr CallWindowProc(IntPtr lpPrevWndFunc, IntPtr hWnd, uint Msg, IntPtr wParam, IntPtr lParam);
 
-        // Retrieves the dimensions of the bounding rectangle of the specified window.
-        // The dimensions are given in screen coordinates that are relative to the upper-left corner of the screen.
         [DllImport("user32.dll", SetLastError = true)]
         private static extern bool GetWindowRect(IntPtr hwnd, ref RECT lpRect);
 
-        // Retrieves the coordinates of a window's client area. The client coordinates specify the upper-left
-        // and lower-right corners of the client area. Because client coordinates are relative to the upper-left
-        // corner of a window's client area, the coordinates of the upper-left corner are (0,0).
         [DllImport("user32.dll")]
         private static extern bool GetClientRect(IntPtr hWnd, ref RECT lpRect);
 
-        // Changes an attribute of the specified window. The function also sets the 32-bit (long) value
-        // at the specified offset into the extra window memory.
         [DllImport("user32.dll", EntryPoint = "SetWindowLong", CharSet = CharSet.Auto)]
         private static extern IntPtr SetWindowLong32(IntPtr hWnd, int nIndex, IntPtr dwNewLong);
 
-        // Changes an attribute of the specified window. The function also sets a value at the specified
-        // offset in the extra window memory. 
         [DllImport("user32.dll", EntryPoint = "SetWindowLongPtr", CharSet = CharSet.Auto)]
         private static extern IntPtr SetWindowLongPtr64(IntPtr hWnd, int nIndex, IntPtr dwNewLong);
 
-        // Pointer to old WindowProc callback function.
-        private IntPtr oldWndProcPtr;
-
-        // Pointer to our own WindowProc callback function.
-        private IntPtr newWndProcPtr;
+        private IntPtr oldWndProcPtr = IntPtr.Zero;
+        private IntPtr newWndProcPtr = IntPtr.Zero;
 
         #endregion
 
