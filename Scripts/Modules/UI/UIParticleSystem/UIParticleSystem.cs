@@ -1,6 +1,5 @@
-﻿/// Credit glennpow
-/// Sourced from - http://forum.unity3d.com/threads/free-script-particle-systems-in-ui-screen-space-overlay.406862/
-/// *Note - experimental.  Currently renders in scene view and not game view.
+﻿
+// Sourced from - http://forum.unity3d.com/threads/free-script-particle-systems-in-ui-screen-space-overlay.406862/
 
 using UnityEngine;
 using UnityEngine.UI;
@@ -26,12 +25,11 @@ namespace Modules.UI.Particle
 
         private Material originMaterial = null;
 
+        private int?[] startFrames = null;
         private ParticleSystem.Particle[] particles = null;
 
         private ParticleSystem.TextureSheetAnimationModule textureSheetAnimation;
         private int? textureSheetAnimationCurrentFrame = null;
-        private int textureSheetAnimationFrames = 0;
-        private Vector2 textureSheetAnimationFrameSize = Vector2.zero;
 
         private Transform transformCache = null;
         private ParticleSystem particleSystemCache = null;
@@ -74,9 +72,7 @@ namespace Modules.UI.Particle
             base.OnEnable();
 
             Initialize();
-
-            Setup();
-
+            
             particleMaterial = null;
         }
 
@@ -100,6 +96,8 @@ namespace Modules.UI.Particle
             // automatically set scaling.         
             mainModule.scalingMode = ParticleSystemScalingMode.Hierarchy;
 
+            startFrames = new int?[particleSystem.main.maxParticles];
+            
             particles = new ParticleSystem.Particle[particleSystem.main.maxParticles];
 
             // prepare texture sheet animation.
@@ -113,27 +111,6 @@ namespace Modules.UI.Particle
             particleSystemRenderer.enabled = false;
 
             initialized = true;
-        }
-
-        private void Setup()
-        {
-            textureSheetAnimationFrames = 0;
-            textureSheetAnimationFrameSize = Vector2.zero;
-
-            if (textureSheetAnimation.enabled)
-            {
-                switch (textureSheetAnimation.mode)
-                {
-                    case ParticleSystemAnimationMode.Grid:
-                        textureSheetAnimationFrames = textureSheetAnimation.numTilesX * textureSheetAnimation.numTilesY;
-                        textureSheetAnimationFrameSize = new Vector2(1f / textureSheetAnimation.numTilesX, 1f / textureSheetAnimation.numTilesY);
-                        break;
-
-                    case ParticleSystemAnimationMode.Sprites:
-                        textureSheetAnimationFrames = textureSheetAnimation.spriteCount;
-                        break;
-                }
-            }
         }
 
         void Update()
@@ -226,8 +203,6 @@ namespace Modules.UI.Particle
             if (!Application.isPlaying && !initialized)
             {
                 Initialize();
-
-                Setup();
             }
 
             #endif
@@ -242,7 +217,6 @@ namespace Modules.UI.Particle
             var particleSystem = GetParticleSystem();
             var mainModule = GetMainModule();
 
-            // iterate through current particles
             var count = particleSystem.GetParticles(particles);
 
             for (var i = 0; i < count; ++i)
@@ -268,7 +242,7 @@ namespace Modules.UI.Particle
 
                 // apply uv.
 
-                var particleUv = CalculateUv(particle);
+                var particleUv = CalculateUv(i, particle);
 
                 UIVertex[] quad;
 
@@ -342,46 +316,28 @@ namespace Modules.UI.Particle
             return finalAngle;
         }
 
-        private Vector4 CalculateUv(ParticleSystem.Particle particle)
+        private Vector4 CalculateUv(int index, ParticleSystem.Particle particle)
         {
             var result = new Vector4(0, 0, 1, 1);
 
             textureSheetAnimationCurrentFrame = null;
-            
+
             if (textureSheetAnimation.enabled)
             {
-                var frameProgress = 0f;
+                var frameOverTimeModule = textureSheetAnimation.frameOverTime;
 
-                switch (textureSheetAnimation.frameOverTime.mode)
-                {
-                    case ParticleSystemCurveMode.Constant:
-                        frameProgress = textureSheetAnimation.frameOverTime.constant;
-                        break;
-
-                    case ParticleSystemCurveMode.Curve:
-                        var time = 1 - particle.remainingLifetime * textureSheetAnimation.cycleCount / particle.startLifetime;
-                        frameProgress = textureSheetAnimation.frameOverTime.curve.Evaluate(time);
-                        break;
-
-                    case ParticleSystemCurveMode.TwoConstants:
-                        var constantMin = textureSheetAnimation.frameOverTime.constantMin;
-                        var constantMax = textureSheetAnimation.frameOverTime.constantMax;
-                        frameProgress = UnityEngine.Random.Range(constantMin, constantMax);
-                        break;
-
-                    case ParticleSystemCurveMode.TwoCurves:
-                        Debug.LogErrorFormat("This mode is not supported: {0}", ParticleSystemCurveMode.TwoCurves);
-                        break;
-                }
-
+                var time = 1 - particle.remainingLifetime * textureSheetAnimation.cycleCount / particle.startLifetime;
+                
+                var frameProgress = frameOverTimeModule.Evaluate(time);
+                
                 switch (textureSheetAnimation.mode)
                 {
                     case ParticleSystemAnimationMode.Grid:
-                        result = GetGridModeUv(frameProgress, particle.randomSeed);
+                        result = GetGridModeUv(index, frameProgress, particle.randomSeed);
                         break;
 
                     case ParticleSystemAnimationMode.Sprites:
-                        result = GetSpriteModeUv(frameProgress);
+                        result = GetSpriteModeUv(index, frameProgress);
                         break;
                 }
             }
@@ -389,26 +345,90 @@ namespace Modules.UI.Particle
             return result;
         }
 
-        private Vector4 GetGridModeUv(float frameProgress, uint randomSeed)
+        public void ResetParticleMaterial()
+        {
+            UnityUtility.SafeDelete(particleMaterial);
+
+            particleMaterial = null;
+            originMaterial = null;
+        }
+
+        #region TextureSheetAnimation
+
+        private int GetTextureSheetAnimationFrames()
+        {
+            var textureSheetAnimationFrames = 0;
+
+            if (textureSheetAnimation.enabled)
+            {
+                switch (textureSheetAnimation.mode)
+                {
+                    case ParticleSystemAnimationMode.Grid:
+                        textureSheetAnimationFrames = textureSheetAnimation.numTilesX * textureSheetAnimation.numTilesY;
+                        break;
+
+                    case ParticleSystemAnimationMode.Sprites:
+                        textureSheetAnimationFrames = textureSheetAnimation.spriteCount;
+                        break;
+                }
+            }
+
+            return textureSheetAnimationFrames;
+        }
+
+        private Vector2 GetTextureSheetAnimationFrameSize()
+        {
+            var textureSheetAnimationFrameSize = Vector2.zero;
+
+            if (textureSheetAnimation.enabled)
+            {
+                if (textureSheetAnimation.mode == ParticleSystemAnimationMode.Grid)
+                {
+                    textureSheetAnimationFrameSize = new Vector2(1f / textureSheetAnimation.numTilesX, 1f / textureSheetAnimation.numTilesY);
+                }
+            }
+
+            return textureSheetAnimationFrameSize;
+        }
+
+        private int GetTextureSheetAnimationStartFrame(int index)
+        {
+            var startFrame = startFrames[index];
+
+            if (!startFrame.HasValue)
+            {
+                switch (textureSheetAnimation.startFrame.mode)
+                {
+                    case ParticleSystemCurveMode.Constant:
+                        startFrame = Mathf.FloorToInt(textureSheetAnimation.startFrame.constant);
+                        break;
+                        
+                    case ParticleSystemCurveMode.TwoConstants:
+                        var constantMin = textureSheetAnimation.startFrame.constantMin;
+                        var constantMax = textureSheetAnimation.startFrame.constantMax;
+                        startFrame = Mathf.FloorToInt(UnityEngine.Random.Range(constantMin, constantMax));
+                        break;
+                    default:
+                        startFrame = 0;
+                        break;
+                }
+
+                startFrames[index] = startFrame;
+            }
+
+            return startFrame.Value;
+        }
+
+        private Vector4 GetGridModeUv(int index, float frameProgress, uint randomSeed)
         {
             var result = new Vector4(0, 0, 1, 1);
-
-            var startFrame = 0;
-
+            
             var numTiles = new Vector2Int(textureSheetAnimation.numTilesX, textureSheetAnimation.numTilesY);
 
-            switch (textureSheetAnimation.startFrame.mode)
-            {
-                case ParticleSystemCurveMode.Constant:
-                    startFrame = Mathf.RoundToInt(textureSheetAnimation.startFrame.constant * textureSheetAnimationFrames);
-                    break;
+            var textureSheetAnimationFrames = GetTextureSheetAnimationFrames();
+            var textureSheetAnimationFrameSize = GetTextureSheetAnimationFrameSize();
 
-                case ParticleSystemCurveMode.TwoConstants:
-                    var min = textureSheetAnimation.startFrame.constantMin;
-                    var max = textureSheetAnimation.startFrame.constantMax;
-                    startFrame = Mathf.RoundToInt(UnityEngine.Random.Range(min, max) * textureSheetAnimationFrames);
-                    break;
-            }
+            var startFrame = GetTextureSheetAnimationStartFrame(index);
 
             var frame = 0;
 
@@ -423,16 +443,18 @@ namespace Modules.UI.Particle
                         frame = Mathf.FloorToInt(frameProgress * numTiles.x);
 
                         var row = textureSheetAnimation.rowIndex;
-
-                        #if UNITY_2019_1_OR_NEWER
+                        
                         if(textureSheetAnimation.rowMode == ParticleSystemAnimationRowMode.Random)
-                        #else
-                        if (textureSheetAnimation.useRandomRow)
-                        #endif
                         {
+                            var originSeed = UnityEngine.Random.state;
+
                             UnityEngine.Random.InitState((int)randomSeed);
+
                             row = UnityEngine.Random.Range(0, numTiles.y);
+
+                            UnityEngine.Random.state = originSeed;
                         }
+                        
                         frame += row * numTiles.x;
                     }
                     break;
@@ -452,11 +474,15 @@ namespace Modules.UI.Particle
             return result;
         }
 
-        private Vector4 GetSpriteModeUv(float frameProgress)
+        private Vector4 GetSpriteModeUv(int index, float frameProgress)
         {
+            var textureSheetAnimationFrames = GetTextureSheetAnimationFrames();
+
+            var startFrame = GetTextureSheetAnimationStartFrame(index);
+            
             var frame = Mathf.RoundToInt(frameProgress * textureSheetAnimationFrames);
 
-            frame = Mathf.Clamp(frame, 0, textureSheetAnimationFrames - 1);
+            frame = Mathf.Clamp(startFrame + frame, 0, textureSheetAnimationFrames - 1);
 
             var sprite = textureSheetAnimation.GetSprite(frame);
 
@@ -476,13 +502,7 @@ namespace Modules.UI.Particle
             return result;
         }
 
-        public void ResetParticleMaterial()
-        {
-            UnityUtility.SafeDelete(particleMaterial);
-
-            particleMaterial = null;
-            originMaterial = null;
-        }
+        #endregion
 
         #region Quad
 
