@@ -7,6 +7,8 @@ namespace Extensions
 {
     public static class SecurePrefs
     {
+        private static string keyPrefix = string.Empty;
+
         private static AesCryptoKey aesCryptoKey = null;
 
         //====== CryptKey ======
@@ -26,20 +28,36 @@ namespace Extensions
             return aesCryptoKey;
         }
 
-        //====== Utility ======
+        //====== Key ======
 
-        public static bool HasKey(string name)
+        private static void SetKeyPrefix(string prefix)
         {
-            var cryptoKey = GetCryptoKey();
-
-            return PlayerPrefs.HasKey(name.Encrypt(cryptoKey));
+            keyPrefix = prefix;
         }
 
-        public static void DeleteKey(string name)
+        private static string GetKey(string keyName)
         {
             var cryptoKey = GetCryptoKey();
 
-            PlayerPrefs.DeleteKey(name.Encrypt(cryptoKey));
+            var key = string.IsNullOrEmpty(keyPrefix) ? keyName : $"{ keyPrefix }-{ keyName }"; 
+
+            return key.Encrypt(cryptoKey);
+        }
+
+        //====== Utility ======
+
+        public static bool HasKey(string keyName)
+        {
+            var key = GetKey(keyName);
+
+            return PlayerPrefs.HasKey(key);
+        }
+
+        public static void DeleteKey(string keyName)
+        {
+            var key = GetKey(keyName);
+
+            PlayerPrefs.DeleteKey(key);
         }
 
         public static void DeleteAll()
@@ -54,34 +72,38 @@ namespace Extensions
 
         //====== String ======
 
-        public static void SetString(string name, string value)
+        public static void SetString(string keyName, string value)
         {
+            var key = GetKey(keyName);
+
             var cryptoKey = GetCryptoKey();
 
-            PlayerPrefs.SetString(name.Encrypt(cryptoKey), value.Encrypt(cryptoKey, true));
+            PlayerPrefs.SetString(key, value.Encrypt(cryptoKey, true));
         }
 
-        public static string GetString(string name, string defaultValue = "")
+        public static string GetString(string keyName, string defaultValue = "")
         {
-            if (!HasKey(name)) { return defaultValue; }
+            if (!HasKey(keyName)) { return defaultValue; }
 
             var cryptoKey = GetCryptoKey();
 
-            return PlayerPrefs.GetString(name.Encrypt(cryptoKey)).Decrypt(cryptoKey, true);
+            var key = GetKey(keyName);
+
+            return PlayerPrefs.GetString(key).Decrypt(cryptoKey, true);
         }
 
         //====== Int ======
 
-        public static void SetInt(string name, int value)
+        public static void SetInt(string keyName, int value)
         {
-            SetString(name, value.ToString());
+            SetString(keyName, value.ToString());
         }
 
-        public static int GetInt(string name, int defaultValue = 0)
+        public static int GetInt(string keyName, int defaultValue = 0)
         {
-            if (!HasKey(name)) { return defaultValue; }
+            if (!HasKey(keyName)) { return defaultValue; }
 
-            var value = GetString(name);
+            var value = GetString(keyName);
 
             if (string.IsNullOrEmpty(value)) { return defaultValue; }
 
@@ -97,16 +119,16 @@ namespace Extensions
 
         //====== Float ======
 
-        public static void SetFloat(string name, float value)
+        public static void SetFloat(string keyName, float value)
         {
-            SetString(name, value.ToString());
+            SetString(keyName, value.ToString());
         }
 
-        public static float GetFloat(string name, float defaultValue = 0f)
+        public static float GetFloat(string keyName, float defaultValue = 0f)
         {
-            if (!HasKey(name)) { return defaultValue; }
+            if (!HasKey(keyName)) { return defaultValue; }
 
-            var value = GetString(name);
+            var value = GetString(keyName);
 
             if (string.IsNullOrEmpty(value)) { return defaultValue; }
 
@@ -122,31 +144,31 @@ namespace Extensions
 
         //====== Bool ======
 
-        public static void SetBool(string name, bool value)
+        public static void SetBool(string keyName, bool value)
         {
-            SetInt(name, value ? 1 : 0);
+            SetInt(keyName, value ? 1 : 0);
         }
 
-        public static bool GetBool(string name, bool defaultValue = false)
+        public static bool GetBool(string keyName, bool defaultValue = false)
         {
-            return GetInt(name, defaultValue ? 1 : 0) != 0;
+            return GetInt(keyName, defaultValue ? 1 : 0) != 0;
         }
 
         //====== DateTime ======
 
-        public static void SetDateTime(string name, DateTime value)
+        public static void SetDateTime(string keyName, DateTime value)
         {
-            SetString(name, value.ToString());
+            SetString(keyName, value.ToString());
         }
 
-        public static DateTime GetDateTime(string name, DateTime? defaultValue = null)
+        public static DateTime GetDateTime(string keyName, DateTime? defaultValue = null)
         {
             if (!defaultValue.HasValue)
             {
                 defaultValue = DateTime.MinValue;
             }
 
-            var value = GetString(name);
+            var value = GetString(keyName);
 
             if (string.IsNullOrEmpty(value)) { return defaultValue.Value; }
 
@@ -162,19 +184,19 @@ namespace Extensions
 
         //====== Color ======
 
-        public static void SetColor(string name, Color value)
+        public static void SetColor(string keyName, Color value)
         {
-            SetString(name, string.Format("{0},{1},{2},{3}", value.r, value.g, value.b, value.a));
+            SetString(keyName, string.Format("{0},{1},{2},{3}", value.r, value.g, value.b, value.a));
         }
 
-        public static Color GetColor(string name, Color? defaultValue = null)
+        public static Color GetColor(string keyName, Color? defaultValue = null)
         {
             if (!defaultValue.HasValue)
             {
                 defaultValue = Color.white;
             }
 
-            var value = GetString(name);
+            var value = GetString(keyName);
 
             if (string.IsNullOrEmpty(value)) { return defaultValue.Value; }
 
@@ -199,14 +221,14 @@ namespace Extensions
 
         //====== Enum ======
 
-        public static void SetEnum(string name, System.Enum value)
+        public static void SetEnum(string keyName, System.Enum value)
         {
-            SetString(name, value.ToString());
+            SetString(keyName, value.ToString());
         }
 
-        public static T GetEnum<T>(string name, T defaultValue = default(T))
+        public static T GetEnum<T>(string keyName, T defaultValue = default(T))
         {
-            var val = GetString(name, defaultValue.ToString());
+            var val = GetString(keyName, defaultValue.ToString());
 
             var names = System.Enum.GetNames(typeof(T));
 
@@ -225,16 +247,16 @@ namespace Extensions
 
         //====== Generic ======
 
-        public static void Set<T>(string name, T value)
+        public static void Set<T>(string keyName, T value)
         {
             var json = JsonConvert.SerializeObject(value);
 
-            SetString(name, json);
+            SetString(keyName, json);
         }
 
-        public static T Get<T>(string name, T defaultValue = default(T))
+        public static T Get<T>(string keyName, T defaultValue = default(T))
         {
-            var json = GetString(name, null);
+            var json = GetString(keyName, null);
 
             return string.IsNullOrEmpty(json) ? defaultValue : JsonConvert.DeserializeObject<T>(json);
         }
