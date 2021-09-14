@@ -66,29 +66,16 @@ namespace Extensions
             if (string.IsNullOrEmpty(value)) { return null; }
 
             string result = null;
-            
-            using (var memoryStream = new MemoryStream())
+
+            var bytes = Encoding.UTF8.GetBytes(value);
+
+            bytes = Encrypt(bytes, aesCryptoKey);
+
+            result = Convert.ToBase64String(bytes);
+
+            if (escape)
             {
-                byte[] encrypted = null;
-
-                lock (aesCryptoKey.Encryptor)
-                {
-                    var toEncrypt = Encoding.UTF8.GetBytes(value);
-
-                    using (var cryptoStream = new CryptoStream(memoryStream, aesCryptoKey.Encryptor, CryptoStreamMode.Write))
-                    {
-                        cryptoStream.Write(toEncrypt, 0, toEncrypt.Length);
-                    }
-                }
-
-                encrypted = memoryStream.ToArray();
-
-                result = Convert.ToBase64String(encrypted);
-
-                if (escape)
-                {
-                    result = result.Replace('+', '-').Replace('/', '_');
-                }
+                result = result.Replace('+', '-').Replace('/', '_');
             }
 
             return result;
@@ -108,21 +95,11 @@ namespace Extensions
                 value = value.Replace('-', '+').Replace('_', '/');
             }
 
-            var encrypted = Convert.FromBase64String(value);
-            var fromEncrypt = new byte[encrypted.Length];
+            var bytes = Convert.FromBase64String(value);
+            
+            bytes = Decrypt(bytes, aesCryptoKey);
 
-            using (var memoryStream = new MemoryStream(encrypted))
-            {
-                lock (aesCryptoKey.Decryptor)
-                {
-                    using (var cryptoStream = new CryptoStream(memoryStream, aesCryptoKey.Decryptor, CryptoStreamMode.Read))
-                    {
-                        cryptoStream.Read(fromEncrypt, 0, fromEncrypt.Length);
-                    }
-                }
-
-                result = Encoding.UTF8.GetString(fromEncrypt);
-            }
+            result = Encoding.UTF8.GetString(bytes);
 
             // string.Lengthした際に終端にNull文字が混入する為Null文字を削る.
             return result.TrimEnd('\0');
