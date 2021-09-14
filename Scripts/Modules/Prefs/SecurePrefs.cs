@@ -30,7 +30,7 @@ namespace Extensions
 
         //====== Key ======
 
-        private static void SetKeyPrefix(string prefix)
+        public static void SetKeyPrefix(string prefix)
         {
             keyPrefix = prefix;
         }
