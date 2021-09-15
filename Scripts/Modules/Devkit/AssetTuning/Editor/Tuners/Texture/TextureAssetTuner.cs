@@ -31,7 +31,7 @@ namespace Modules.Devkit.AssetTuning
         }
 
         //----- method -----
-       
+
         public override bool Validate(string assetPath)
         {
             var textureImporter = AssetImporter.GetAtPath(assetPath) as TextureImporter;
@@ -64,13 +64,14 @@ namespace Modules.Devkit.AssetTuning
             {
                 if (TextureAssetTunerConfig.Prefs.changeSettingOnImport)
                 {
-                    SetTextureTypeSettings(textureImporter);
-                    SetCompressionSettings(textureImporter);
+                    SetTextureSettings(textureImporter, false);
+                    SetTextureTypeSettings(textureImporter, false);
+                    SetCompressionSettings(textureImporter, false);
                 }
             }
         }
 
-        protected virtual void SetTextureSettings(ref TextureImporter textureImporter)
+        protected virtual void SetTextureSettings(TextureImporter textureImporter, bool firstImport)
         {
             textureImporter.alphaSource = TextureImporterAlphaSource.FromInput;
             textureImporter.alphaIsTransparency = true;
@@ -81,11 +82,11 @@ namespace Modules.Devkit.AssetTuning
 
             if (textureImporter.textureType == TextureImporterType.Sprite)
             {
-                SetSpriteSettings(textureImporter);
+                SetSpriteSettings(textureImporter, firstImport);
             }
         }
 
-        protected virtual void SetSpriteSettings(TextureImporter textureImporter)
+        protected virtual void SetSpriteSettings(TextureImporter textureImporter, bool firstImport)
         {
             textureImporter.spriteImportMode = SpriteImportMode.Single;
 
@@ -105,14 +106,14 @@ namespace Modules.Devkit.AssetTuning
         {
             if (textureImporter == null) { return; }
 
-            SetTextureSettings(ref textureImporter);
+            SetTextureSettings(textureImporter, true);
 
-            SetTextureTypeSettings(textureImporter);
+            SetTextureTypeSettings(textureImporter, true);
 
-            SetCompressionSettings(textureImporter);
+            SetCompressionSettings(textureImporter, true);
         }
 
-        protected virtual void SetCompressionSettings(TextureImporter textureImporter)
+        protected virtual void SetCompressionSettings(TextureImporter textureImporter, bool firstImport)
         {
             var config = TextureAssetTunerConfig.Instance;
 
@@ -129,7 +130,7 @@ namespace Modules.Devkit.AssetTuning
 
                 Func<TextureImporterPlatformSettings, TextureImporterPlatformSettings> update = settings =>
                 {
-                    SetPlatformCompressionSettings(ref settings);
+                    SetPlatformCompressionSettings(ref settings, firstImport);
 
                     settings.format = GetPlatformCompressionType(textureImporter, platform);
 
@@ -140,13 +141,13 @@ namespace Modules.Devkit.AssetTuning
             }
         }
 
-        protected virtual bool SetTextureTypeSettings(TextureImporter textureImporter)
+        protected virtual bool SetTextureTypeSettings(TextureImporter textureImporter, bool firstImport)
         {
             var config = TextureAssetTunerConfig.Instance;
 
             if (config == null) { return false; }
 
-            if (textureImporter.textureType != TextureImporterType.Default){ return false; }
+            if (textureImporter.textureType != TextureImporterType.Default) { return false; }
 
             var isTarget = false;
 
@@ -164,12 +165,16 @@ namespace Modules.Devkit.AssetTuning
             return isTarget;
         }
 
-        protected virtual void SetPlatformCompressionSettings(ref TextureImporterPlatformSettings platformSetting)
+        protected virtual void SetPlatformCompressionSettings(ref TextureImporterPlatformSettings platformSetting, bool firstImport)
         {
             platformSetting.overridden = true;
-            platformSetting.compressionQuality = 50;
             platformSetting.androidETC2FallbackOverride = AndroidETC2FallbackOverride.UseBuildSettings;
-            platformSetting.textureCompression = TextureImporterCompression.Compressed;
+
+            if (firstImport)
+            {
+                platformSetting.compressionQuality = 50;
+                platformSetting.textureCompression = TextureImporterCompression.Compressed;
+            }
         }
 
         protected virtual TextureImporterFormat GetPlatformCompressionType(TextureImporter textureImporter, BuildTargetGroup platform)
@@ -202,7 +207,7 @@ namespace Modules.Devkit.AssetTuning
             }
 
             return format;
-		}
+        }
 
         public static bool IsFolderItem(string assetPath, Object[] folders, string[] ignoreFolders)
         {
