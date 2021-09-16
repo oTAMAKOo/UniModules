@@ -121,6 +121,10 @@ namespace Extensions
 
         //----- property -----
 
+        public byte[] Key { get { return aesManaged.Key; } }
+
+        public byte[] Iv { get { return aesManaged.IV; } }
+
         public ICryptoTransform Encryptor
         {
             get
