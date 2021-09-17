@@ -26,14 +26,14 @@ namespace Modules.LocalData
         //----- params -----
 
         //----- field -----
-        
-        private AesCryptoKey aesCryptoKey = null;
 
         private Dictionary<Type, string> filePathCache = null;
 
         private Dictionary<Type, ILocalData> dataCache = null;
 
         //----- property -----
+
+        public AesCryptoKey AesCryptoKey { get; private set; }
 
         public string FileDirectory { get; private set; }
 
@@ -51,7 +51,7 @@ namespace Modules.LocalData
 
         public void SetCryptoKey(AesCryptoKey cryptoKey)
         {
-            Instance.aesCryptoKey = cryptoKey;
+            Instance.AesCryptoKey = cryptoKey;
         }
 
         public void SetFileDirectory(string directory)
