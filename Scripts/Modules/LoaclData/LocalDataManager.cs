@@ -27,13 +27,13 @@ namespace Modules.LocalData
 
         //----- field -----
 
+        private AesCryptoKey cryptoKey = null;
+
         private Dictionary<Type, string> filePathCache = null;
 
         private Dictionary<Type, ILocalData> dataCache = null;
 
         //----- property -----
-
-        public AesCryptoKey AesCryptoKey { get; private set; }
 
         public string FileDirectory { get; private set; }
 
@@ -47,11 +47,6 @@ namespace Modules.LocalData
             var fileDir = UnityPathUtility.GetPrivateDataPath();
 
             FileDirectory = fileDir + "/LocalData/";
-        }
-
-        public void SetCryptoKey(AesCryptoKey cryptoKey)
-        {
-            Instance.AesCryptoKey = cryptoKey;
         }
 
         public void SetFileDirectory(string directory)
@@ -185,14 +180,19 @@ namespace Modules.LocalData
             return filePath;
         }
 
+        public void SetCryptoKey(AesCryptoKey cryptoKey)
+        {
+            this.cryptoKey = cryptoKey;
+        }
+
         private AesCryptoKey GetCryptoKey()
         {
-            if (aesCryptoKey == null)
+            if (cryptoKey == null)
             {
-                aesCryptoKey = new AesCryptoKey("5k7DpsG19A91R7Lkv261AMxCmjHFFFxX", "YiEs3x1as8JhK9qp");
+                cryptoKey = new AesCryptoKey("5k7DpsG19A91R7Lkv261AMxCmjHFFFxX", "YiEs3x1as8JhK9qp");
             }
 
-            return aesCryptoKey;
+            return cryptoKey;
         }
 
         public static void Delete<T>() where T : class, ILocalData, new()
