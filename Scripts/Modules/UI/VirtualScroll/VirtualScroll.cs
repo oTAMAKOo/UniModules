@@ -743,6 +743,7 @@ namespace Modules.UI
         {
             var firstItem = itemList.FirstOrDefault();
             var lastItem = itemList.LastOrDefault();
+
             var scrollArea = GetWorldRect(scrollRectTransform);
             var scrollEdge = direction == Direction.Vertical ? scrollArea.yMin : scrollArea.xMax;
 
