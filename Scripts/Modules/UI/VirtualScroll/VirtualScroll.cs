@@ -678,6 +678,8 @@ namespace Modules.UI
 
         public void ScrollUpdate(bool scrollPlus)
         {
+            if (!HasListItem){ return; }
+
             while (true)
             {
                 if (scrollPlus)
@@ -694,8 +696,8 @@ namespace Modules.UI
         // 上 / 左にスクロール.
         private bool ScrollMinus()
         {
-            var firstItem = itemList.FirstOrDefault();
-            var lastItem = itemList.LastOrDefault();
+            var firstItem = itemList.First();
+            var lastItem = itemList.Last();
 
             var scrollArea = GetWorldRect(scrollRectTransform);
             var scrollEdge = direction == Direction.Vertical ? scrollArea.yMax : scrollArea.xMin;
@@ -741,8 +743,8 @@ namespace Modules.UI
         // 下 / 右 にスクロール.
         private bool ScrollPlus()
         {
-            var firstItem = itemList.FirstOrDefault();
-            var lastItem = itemList.LastOrDefault();
+            var firstItem = itemList.First();
+            var lastItem = itemList.Last();
 
             var scrollArea = GetWorldRect(scrollRectTransform);
             var scrollEdge = direction == Direction.Vertical ? scrollArea.yMin : scrollArea.xMax;
