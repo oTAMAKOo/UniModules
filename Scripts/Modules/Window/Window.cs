@@ -30,6 +30,9 @@ namespace Modules.Window
             set { deleteOnClose = value; }
         }
 
+        /// <summary> 表示優先度 </summary>
+        public int DisplayPriority { get; set; }
+
         //----- method -----
 
         public IObservable<Unit> OnOpenAsObservable()

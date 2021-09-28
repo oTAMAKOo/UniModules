@@ -106,6 +106,8 @@ namespace Modules.Window
                 globalPopups.Remove(popupWindow);
                 globalPopups.Add(popupWindow);
             }
+
+            globalPopups = globalPopups.OrderBy(x => x.DisplayPriority).ToList();
         }
 
         private void RegisterScene(Window popupWindow)
@@ -133,6 +135,8 @@ namespace Modules.Window
                 scenePopups.Remove(popupWindow);
                 scenePopups.Add(popupWindow);
             }
+
+            scenePopups = scenePopups.OrderBy(x => x.DisplayPriority).ToList();
         }
 
         private PopupParent CreatePopupParent(string instanceName, GameObject parent, int layer, int canvasOrder)
@@ -185,15 +189,17 @@ namespace Modules.Window
 
                 parent = parentInScene.Parent;
                 touchBlocIndex = 0;
+                
+                var lastPopup = scenePopups.LastOrDefault();
 
-                foreach (var item in scenePopups)
+                foreach (var popup in scenePopups)
                 {
-                    if (item == scenePopups.LastOrDefault())
+                    if (popup == lastPopup)
                     {
                         touchBlocIndex = index++;
                     }
 
-                    item.transform.SetSiblingIndex(index++);
+                    popup.transform.SetSiblingIndex(index++);
                 }
             }
 
@@ -203,15 +209,17 @@ namespace Modules.Window
 
                 parent = parentGlobal.Parent;
                 touchBlocIndex = 0;
+                
+                var lastPopup = globalPopups.LastOrDefault();
 
-                foreach (var item in globalPopups)
+                foreach (var popup in globalPopups)
                 {
-                    if (item == globalPopups.LastOrDefault())
+                    if (popup == lastPopup)
                     {
                         touchBlocIndex = index++;
                     }
 
-                    item.transform.SetSiblingIndex(index++);
+                    popup.transform.SetSiblingIndex(index++);
                 }
             }
 
