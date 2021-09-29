@@ -2,8 +2,6 @@
 using UnityEngine;
 using System;
 using System.Collections;
-using System.Linq;
-using System.Collections.Generic;
 using UniRx;
 using Extensions;
 using Modules.InputProtection;
@@ -16,7 +14,10 @@ namespace Modules.Window
 
         //----- field -----
 
+        [SerializeField]
         private bool deleteOnClose = true;
+        [SerializeField]
+        private int displayPriority = 0;
 
         private Subject<Unit> onOpen = null;
         private Subject<Unit> onClose = null;
@@ -31,19 +32,13 @@ namespace Modules.Window
         }
 
         /// <summary> 表示優先度 </summary>
-        public int DisplayPriority { get; set; }
+        public int DisplayPriority
+        {
+            get { return displayPriority; }
+            set { displayPriority = value; }
+        }
 
         //----- method -----
-
-        public IObservable<Unit> OnOpenAsObservable()
-        {
-            return onOpen ?? (onOpen = new Subject<Unit>());
-        }
-
-        public IObservable<Unit> OnCloseAsObservable()
-        {
-            return onClose ?? (onClose = new Subject<Unit>());
-        }
 
         public IObservable<Unit> Open(bool inputProtect = true)
         {
@@ -113,8 +108,20 @@ namespace Modules.Window
             }
         }
 
+        public IObservable<Unit> OnOpenAsObservable()
+        {
+            return onOpen ?? (onOpen = new Subject<Unit>());
+        }
+
+        public IObservable<Unit> OnCloseAsObservable()
+        {
+            return onClose ?? (onClose = new Subject<Unit>());
+        }
+
         protected virtual IObservable<Unit> Prepare() { return Observable.ReturnUnit(); }
+
         protected virtual IObservable<Unit> OnOpen() { return Observable.ReturnUnit(); }
+
         protected virtual IObservable<Unit> OnClose() { return Observable.ReturnUnit(); }
     }
 }
