@@ -8,7 +8,6 @@ using System.Threading;
 using UniRx;
 using Extensions;
 using MessagePack;
-using Modules.MessagePack;
 
 namespace Modules.Master
 {
@@ -104,7 +103,7 @@ namespace Modules.Master
             records.Add(key, masterRecord);
         }
 
-        private string GetInstallPath()
+        private string GetFilePath()
         {
             var masterManager = MasterManager.Instance;
 
@@ -124,10 +123,10 @@ namespace Modules.Master
 
             var result = true;
 
-            var installPath = GetInstallPath();
+            var filePath = GetFilePath();
 
             // ファイルがなかったらバージョン不一致.
-            result &= File.Exists(installPath);
+            result &= File.Exists(filePath);
 
             // ローカル保存されているバージョンと一致するか.
             result &= versionPrefs.version == masterVersion;
@@ -137,11 +136,11 @@ namespace Modules.Master
 
         public void ClearVersion()
         {
-            var installPath = GetInstallPath();
+            var filePath = GetFilePath();
 
-            if (File.Exists(installPath))
+            if (File.Exists(filePath))
             {
-                File.Delete(installPath);
+                File.Delete(filePath);
             }
 
             versionPrefs.version = string.Empty;
@@ -161,10 +160,10 @@ namespace Modules.Master
 
             double time = 0;
 
-            var installPath = GetInstallPath();
+            var filePath = GetFilePath();
 
             // 読み込み準備.
-            var prepareLoadYield = PrepareLoad(installPath).ToYieldInstruction();
+            var prepareLoadYield = PrepareLoad(filePath).ToYieldInstruction();
 
             while (!prepareLoadYield.IsDone)
             {
@@ -172,7 +171,7 @@ namespace Modules.Master
             }
 
             // 読み込みをスレッドプールで実行.
-            var loadYield = Observable.Start(() => LoadMasterFile(installPath, cryptoKey)).ObserveOnMainThread().ToYieldInstruction(false);
+            var loadYield = Observable.Start(() => LoadMasterFile(filePath, cryptoKey)).ObserveOnMainThread().ToYieldInstruction(false);
 
             while (!loadYield.IsDone)
             {
@@ -186,7 +185,7 @@ namespace Modules.Master
             }
             else
             {
-                Debug.LogErrorFormat("Load master failed.\n\nClass : {0}\nFile : {1}\n\nException : \n{2}", typeof(TMaster).FullName, installPath, loadYield.Error);
+                Debug.LogErrorFormat("Load master failed.\n\nClass : {0}\nFile : {1}\n\nException : \n{2}", typeof(TMaster).FullName, filePath, loadYield.Error);
             }
 
             if (!success)
@@ -282,12 +281,12 @@ namespace Modules.Master
 
             var sw = System.Diagnostics.Stopwatch.StartNew();
 
-            var installPath = GetInstallPath();
+            var filePath = GetFilePath();
 
             // 既存のファイル削除.
-            if (File.Exists(installPath))
+            if (File.Exists(filePath))
             {
-                File.Delete(installPath);
+                File.Delete(filePath);
             }
 
             // ダウンロード.
@@ -298,7 +297,7 @@ namespace Modules.Master
                 yield return null;
             }
 
-            if (!downloadYield.HasResult || downloadYield.HasError || !File.Exists(installPath))
+            if (!downloadYield.HasResult || downloadYield.HasError || !File.Exists(filePath))
             {
                 if (downloadYield.HasError)
                 {
@@ -312,7 +311,7 @@ namespace Modules.Master
             versionPrefs.version = result ? masterVersion : string.Empty;
 
             // ファイルが閉じるまで待つ.
-            while(FileUtility.IsFileLocked(installPath))
+            while(FileUtility.IsFileLocked(filePath))
             {
                 yield return null;
             }
