@@ -144,7 +144,10 @@ namespace Modules.UI.Particle
 
                     var sprite = animModule.GetSprite(index);
 
-                    texture = sprite.texture;
+                    if (sprite != null)
+                    {
+                        texture = sprite.texture;
+                    }
                 }
             }
 
