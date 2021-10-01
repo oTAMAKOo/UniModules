@@ -1,13 +1,19 @@
 ﻿
 using UnityEngine;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text;
+using System.Threading;
+using UniRx;
 using MessagePack;
 using MessagePack.Resolvers;
 using Extensions;
+using Modules.Devkit.Console;
 using Modules.MessagePack;
+using Modules.UniRxExtension;
 
 namespace Modules.Master
 {
@@ -19,23 +25,39 @@ namespace Modules.Master
 
         private const string MasterSuffix = "Master";
 
+        private static readonly string ConsoleEventName = "Master";
+
+        private static readonly Color ConsoleEventColor = new Color(0.45f, 0.45f, 0.85f);
+
         //----- field -----
 
-        private Dictionary<string, IMaster> masters = null;
+        private List<IMaster> masters = null;
+
+        private Dictionary<Type, string> masterFileNames = null;
+
+        private MessagePackSerializerOptions serializerOptions = null;
 
         private bool lz4Compression = true;
 
-        private MessagePackSerializerOptions serializerOptions = null;
+        private Subject<Unit> onUpdateMaster = null;
+        private Subject<Unit> onError = null;
+        private Subject<Unit> onLoadFinish = null;
 
         //----- property -----
 
         public IReadOnlyCollection<IMaster> Masters
         {
-            get { return masters.Values; }
+            get { return masters; }
         }
+
+        /// <summary> ダウンロード先URL. </summary>
+        public string DownloadUrl { get; private set; }
 
         /// <summary> 保存先. </summary>
         public string InstallDirectory { get; private set; }
+
+        /// <summary> データ暗号化キー. </summary>
+        public AesCryptoKey DataCryptoKey { get; private set; }
 
         /// <summary> ファイル名暗号化キー. </summary>
         public AesCryptoKey FileNameCryptoKey { get; private set; }
@@ -55,7 +77,8 @@ namespace Modules.Master
 
         private MasterManager()
         {
-            masters = new Dictionary<string, IMaster>();
+            masters = new List<IMaster>();
+            masterFileNames = new Dictionary<Type, string>();
 
             // 保存先設定.
             SetInstallDirectory(Application.persistentDataPath);
@@ -67,19 +90,291 @@ namespace Modules.Master
 
             var fileName = GetMasterFileName(type);
 
-            if (masters.ContainsKey(fileName))
+            if (masterFileNames.ContainsKey(type))
             {
                 var message = string.Format("File name has already been registered.\n\nClass : {0}\nFile : {1}", type.FullName, fileName);
 
                 throw new Exception(message);
             }
+            
+            masters.Add(master);
+            masterFileNames.Add(type, fileName);
+        }
 
-            masters.Add(fileName, master);
+        public IObservable<bool> LoadMaster(Dictionary<IMaster, string> versionTable, IProgress<float> progress = null)
+        {
+            CacheDataManager.Instance.Clear();
+
+            return Observable.FromCoroutine<bool>(observer => LoadMasterInternal(observer, versionTable, progress));
+        }
+
+        private IEnumerator LoadMasterInternal(IObserver<bool> observer, Dictionary<IMaster, string> versionTable, IProgress<float> progress)
+        {
+            #if UNITY_EDITOR
+
+            if (!Prefs.checkVersion)
+            {
+                UnityConsole.Event(ConsoleEventName, ConsoleEventColor, "Use CachedMasterFile.");
+            }
+
+            #endif
+
+            var result = false;
+            
+            var updateLog = new StringBuilder();
+            var loadLog = new StringBuilder();
+
+            var stopwatch = System.Diagnostics.Stopwatch.StartNew();
+
+            if (versionTable != null)
+            {
+                if (progress != null) { progress.Report(0f); }
+
+                var yieldCancel = new YieldCancel();
+                var cancellationToken = yieldCancel.Token;
+                
+                var amount = 1f / versionTable.Count;
+                var progressAmount = 0f;
+
+                // 並行で処理.
+                var observers = new List<IObservable<Unit>>();
+
+                foreach (var element in versionTable)
+                {
+                    var master = element.Key;
+                    var masterVersion = element.Value;
+
+                    var masterType = master.GetType();
+                    var masterName = masterType.Name;
+
+                    var masterFileName = masterFileNames.GetValueOrDefault(masterType);
+
+                    var localVersion = master.Version;
+
+                    IObservable<Unit> observable = null;
+
+                    Action<bool, double> onUpdateFinish = (state, time) =>
+                    {
+                        if (state)
+                        {
+                            var localVersionText = string.IsNullOrEmpty(localVersion) ? "---" : localVersion;
+                            var message = string.Format("{0} ({1:F1}ms) : {2} >> {3}", masterName, time, localVersionText, masterVersion);
+
+                            updateLog.AppendLine(message);
+                        }
+                        else
+                        {
+                            Debug.LogErrorFormat("Update master failed.\nClass : {0}\nFile : {1}\n", masterType.FullName, masterFileName);
+                        }
+
+                        result &= state;
+                        progressAmount += amount;
+
+                        if (progress != null)
+                        {
+                            progress.Report(progressAmount);
+                        }
+
+                        if (onUpdateMaster != null)
+                        {
+                            onUpdateMaster.OnNext(Unit.Default);
+                        }
+                    };
+
+                    Action<bool, double> onLoadFinish = (state, time) =>
+                    {
+                        if (state)
+                        {
+                            loadLog.AppendFormat("{0} ({1:F1}ms)", masterName, time).AppendLine();
+                        }
+                        else
+                        {
+                            Debug.LogErrorFormat("Load master failed.\nClass : {0}\nFile : {1}\n", masterType.FullName, masterFileName);
+                        }
+
+                        result &= state;
+                        progressAmount += amount;
+
+                        if (progress != null)
+                        {
+                            progress.Report(progressAmount);
+                        }
+                    };
+
+                    if (master.CheckVersion(masterVersion))
+                    {
+                        // 読み込み.
+                        observable = Observable.Defer(() =>
+                        {
+                            return MasterLoad(master, onLoadFinish).AsUnitObservable();
+                        });
+
+                        observers.Add(observable);
+                    }
+                    else
+                    {
+                        // ダウンロード + 読み込み.
+                        observable = Observable.Defer(() =>
+                        {
+                            return MasterUpdate(master, masterVersion, onUpdateFinish, cancellationToken)
+                                .SelectMany(x => x ? MasterLoad(master, onLoadFinish) : Observable.Return(false))
+                                .AsUnitObservable();
+                        });
+
+                        observers.Add(observable);
+                    }
+                }
+
+                // 実行.
+                var loadYield = observers.WhenAll().ToYieldInstruction(false, cancellationToken);
+
+                yield return loadYield;
+
+                if (loadYield.HasError)
+                {
+                    Debug.LogException(loadYield.Error);
+                    result = false;
+                }                
+
+                if (progress != null) { progress.Report(1f); }
+
+                yieldCancel.Dispose();
+            }
+
+            stopwatch.Stop();
+
+            if (result)
+            {
+                var logBuilder = new StringBuilder();
+
+                logBuilder.AppendLine(string.Format("Master : ({0:F1}ms)", stopwatch.Elapsed.TotalMilliseconds));
+                logBuilder.AppendLine();
+
+                if (0 < updateLog.Length)
+                {
+                    logBuilder.AppendLine("---------- Download ----------");
+                    logBuilder.AppendLine();
+                    logBuilder.AppendLine(updateLog.ToString());
+                }
+
+                if (0 < loadLog.Length)
+                {
+                    logBuilder.AppendLine("------------ Load ------------");
+                    logBuilder.AppendLine();
+                    logBuilder.AppendLine(loadLog.ToString());
+                }
+
+                UnityConsole.Event(ConsoleEventName, ConsoleEventColor, logBuilder.ToString());
+
+                if(onLoadFinish != null)
+                {
+                    onLoadFinish.OnNext(Unit.Default);
+                }
+            }
+            else
+            {
+                if (onError != null)
+                {
+                    onError.OnNext(Unit.Default);
+                }
+            }
+
+            observer.OnNext(result);
+            observer.OnCompleted();
+        }
+
+        private IObservable<bool> MasterUpdate(IMaster master, string masterVersion, Action<bool, double> onUpdateFinish, CancellationToken cancellationToken)
+        {
+            Action<Exception> onErrorRetry = exception =>
+            {
+                var masterType = master.GetType();
+                var masterName = masterType.Name;
+
+                using (new DisableStackTraceScope())
+                {
+                    Debug.LogErrorFormat("{0} update retry.\n\n{1}", masterName, exception);
+                }
+            };
+
+            return master.Update(masterVersion, cancellationToken)
+                .OnErrorRetry((Exception ex)  => onErrorRetry.Invoke(ex), 3, TimeSpan.FromSeconds(5))
+                .Do(x => onUpdateFinish(x.Item1, x.Item2))
+                .Select(x => x.Item1);
+        }
+
+        private IObservable<bool> MasterLoad(IMaster master, Action<bool, double> onLoadFinish)
+        {
+            Action<Exception> onErrorRetry = exception =>
+            {
+                var masterType = master.GetType();
+                var masterName = masterType.Name;
+
+                using (new DisableStackTraceScope())
+                {
+                    Debug.LogErrorFormat("{0} load retry.\n\n{1}", masterName, exception);
+                }
+            };
+
+            return master.Load(DataCryptoKey, true)
+                .OnErrorRetry((Exception ex)  => onErrorRetry.Invoke(ex), 3, TimeSpan.FromSeconds(5))
+                .Do(x => onLoadFinish(x.Item1, x.Item2))
+                .Select(x => x.Item1);
+        }
+
+        public void ClearMasterVersion()
+        {
+            masters.ForEach(x => x.ClearVersion());
+            
+            CacheDataManager.Instance.Clear();
+
+            UnityConsole.Event(ConsoleEventName, ConsoleEventColor, "Clear MasterVersion");
+        }
+
+        /// <summary> 更新が必要なマスターの数 </summary>
+        public int RequireUpdateMasterCount(Dictionary<IMaster, string> versionTable)
+        {
+            var requireCount = 0;
+
+            foreach (var item in versionTable)
+            {
+                var master = item.Key;
+                var masterVersion = item.Value;
+
+                if (!master.CheckVersion(masterVersion))
+                {
+                    requireCount++;
+                }
+            }
+
+            return requireCount;
+        }
+
+        /// <summary> 更新が必要なマスターのファイルサイズ </summary>
+        public ulong RequireUpdateMasterFileSize(Dictionary<IMaster, string> versionTable, Dictionary<IMaster, ulong> fileSizeTable)
+        {
+            ulong totalFileSize = 0;
+
+            foreach (var master in masters)
+            {
+                var masterVersion = versionTable.GetValueOrDefault(master);
+
+                if (!master.CheckVersion(masterVersion))
+                {
+                    totalFileSize += fileSizeTable.GetValueOrDefault(master);
+                }
+            }
+
+            return totalFileSize;
         }
 
         public void Clear()
         {
             masters.Clear();
+        }
+
+        public void SetDownloadUrl(string downloadUrl)
+        {
+            DownloadUrl = downloadUrl;
         }
 
         public void SetInstallDirectory(string installDirectory)
@@ -94,6 +389,12 @@ namespace Modules.Master
             }
 
             #endif
+        }
+
+        /// <summary> データ暗号化オブジェクトを設定 </summary>
+        public void SetDataCryptoKey(AesCryptoKey aesCryptoKey)
+        {
+            DataCryptoKey = aesCryptoKey;
         }
 
         /// <summary> ファイル名暗号化オブジェクトを設定 </summary>
@@ -169,6 +470,21 @@ namespace Modules.Master
             serializerOptions = options;
 
             return serializerOptions;
+        }
+
+        public IObservable<Unit> OnLoadFinishAsObservable()
+        {
+            return onLoadFinish ?? (onLoadFinish = new Subject<Unit>());
+        }
+
+        public IObservable<Unit> OnUpdateMasterAsObservable()
+        {
+            return onUpdateMaster ?? (onUpdateMaster = new Subject<Unit>());
+        }
+
+        public IObservable<Unit> OnErrorAsObservable()
+        {
+            return onError ?? (onError = new Subject<Unit>());
         }
     }
 }
