@@ -119,7 +119,7 @@ namespace Modules.Master
 
             #endif
 
-            var result = false;
+            var result = true;
             
             var updateLog = new StringBuilder();
             var loadLog = new StringBuilder();
