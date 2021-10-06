@@ -12,25 +12,7 @@ namespace Modules.MessagePack
 
         private const string DefaultMsBuildPath = "/Library/Frameworks/Mono.framework/Versions/Current/bin";
 
-        public static class Prefs
-        {
-            public static string msbuildPath
-            {
-                get { return ProjectPrefs.GetString("MessagePackConfigPrefs-msbuildPath", DefaultMsBuildPath); }
-                set { ProjectPrefs.SetString("MessagePackConfigPrefs-msbuildPath", value); }
-            }
-        }
-
         //----- field -----
-
-        #pragma warning disable 0414
-
-        [SerializeField]
-        private string winMpcRelativePath = null; // コンパイラまでのパス(相対パス).
-        [SerializeField]
-        private string osxMpcRelativePath = null; // コンパイラまでのパス(相対パス).
-
-        #pragma warning restore 0414
 
         [SerializeField]
         private string scriptExportAssetDir = null;
@@ -49,29 +31,6 @@ namespace Modules.MessagePack
         private string conditionalCompilerSymbols = null;
 
         //----- property -----
-
-        /// <summary> コードジェネレーターパス. </summary>
-        public string CodeGeneratorPath
-        {
-            get
-            {
-                var relativePath = string.Empty;
-
-                #if UNITY_EDITOR_WIN
-
-                relativePath = winMpcRelativePath;
-
-                #endif
-
-                #if UNITY_EDITOR_OSX
-
-                relativePath = osxMpcRelativePath;
-
-                #endif
-
-                return UnityPathUtility.RelativePathToFullPath(relativePath);
-            }
-        }
 
         /// <summary> スクリプト出力先. </summary>
         public string ScriptExportDir
