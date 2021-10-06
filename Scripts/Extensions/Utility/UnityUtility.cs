@@ -4,6 +4,7 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using Unity.Linq;
 
 namespace Extensions
@@ -346,25 +347,6 @@ namespace Extensions
             }
         }
 
-        /// <summary> Hierarchy上の子オブジェクトのパス取得 </summary>
-        /// <param name="root">基点オブジェクト</param>
-        /// <param name="target">目標オブジェクト</param>
-        /// <returns></returns>
-        public static string GetChildHierarchyPath(GameObject root, GameObject target)
-        {
-            var path = string.Empty;
-
-            var trans = target.transform.parent;
-
-            while (trans != null && root != trans.gameObject)
-            {
-                path = PathUtility.Combine(trans.name, path);
-                trans = trans.parent;
-            }
-
-            return path;
-        }
-
         #endregion
 
         #region Layer
@@ -569,6 +551,56 @@ namespace Extensions
             var components = FindObjectsOfType<Component>(rootObject);
 
             return components.Select(x => x as T).Where(x => x != null);
+        }
+
+        #endregion
+
+        #region HierarchyPath
+
+        /// <summary> Hierarchy上のオブジェクトのパス取得 </summary>
+        public static string GetHierarchyPath(GameObject target)
+        {
+            if (target == null){ return string.Empty; }
+            
+            var trans = target.transform;
+
+            var builder = new StringBuilder();
+
+            while (trans != null)
+            {
+                if (0 < builder.Length)
+                {
+                    builder.Insert(0, "/");
+                }
+
+                builder.Insert(0, trans.name);
+
+                trans = trans.parent;
+            }
+
+            return builder.ToString();
+        }
+
+        /// <summary> Hierarchy上の子オブジェクトのパス取得 </summary>
+        public static string GetChildHierarchyPath(GameObject root, GameObject target)
+        {
+            var trans = target.transform.parent;
+
+            var builder = new StringBuilder();
+
+            while (trans != null && root != trans.gameObject)
+            {
+                if (0 < builder.Length)
+                {
+                    builder.Insert(0, "/");
+                }
+
+                builder.Insert(0, trans.name);
+
+                trans = trans.parent;
+            }
+
+            return builder.ToString();
         }
 
         #endregion
