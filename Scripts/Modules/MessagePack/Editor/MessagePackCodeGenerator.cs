@@ -29,7 +29,13 @@ namespace Modules.MessagePack
 
             var csFileHash = GetCsFileHash(generateInfo);
 
-            var codeGenerateResult = ProcessUtility.Start(MpcCommand, generateInfo.CommandLineArguments);
+            var commandLineProcess = new CommandLine(MpcCommand, generateInfo.CommandLineArguments)
+            {
+                WorkingDirectory = Application.dataPath,
+                ProcessExecute = true,
+            };
+
+            var codeGenerateResult = commandLineProcess.Start();
             
             var isSuccess = codeGenerateResult.Item1 == 0;
 
@@ -60,8 +66,14 @@ namespace Modules.MessagePack
             var generateInfo = new MessagePackCodeGenerateInfo();
 
             var csFileHash = GetCsFileHash(generateInfo);
+
+            var commandLineProcess = new CommandLine(MpcCommand, generateInfo.CommandLineArguments)
+            {
+                WorkingDirectory = Application.dataPath,
+                ProcessExecute = true,
+            };
             
-            var codeGenerateTask = ProcessUtility.StartAsync(MpcCommand, generateInfo.CommandLineArguments);
+            var codeGenerateTask = commandLineProcess.StartAsync();
 
             while (!codeGenerateTask.IsCompleted)
             {

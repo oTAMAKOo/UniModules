@@ -1,17 +1,43 @@
 ﻿
-using UnityEngine;
 using System;
 using System.Text;
 using System.Diagnostics;
 using System.Threading.Tasks;
 
-namespace Modules.MessagePack
+namespace Extensions
 {
-    internal static class ProcessUtility
+    public sealed class CommandLine
     {
+        //----- params -----
+
         private static readonly TimeSpan TimeOut = TimeSpan.FromSeconds(120);
 
-        public static Tuple<int, string, string> Start(string fileName, string arguments)
+        //----- field -----
+
+        //----- property -----
+
+        public string WorkingDirectory { get; set; }
+
+        public Encoding Encoding { get; set; }
+
+        public string Command { get; set; }
+
+        public string Arguments { get; set; }
+
+        /// <summary> コマンドライン上で他のプロセスを実行するか </summary>
+        public bool ProcessExecute { get; set; }
+
+        //----- method -----
+
+        public CommandLine(string command, string arguments)
+        {
+            Encoding = Encoding.GetEncoding("Shift_JIS");
+
+            Command = command;
+            Arguments = arguments;
+        }
+        
+        public Tuple<int, string, string> Start()
         {
             Tuple<int, string, string> result = null;
             
@@ -19,7 +45,7 @@ namespace Modules.MessagePack
             {
                 using (var process = new Process())
                 {
-                    process.StartInfo = CreateProcessStartInfo(fileName, arguments);
+                    process.StartInfo = CreateProcessStartInfo();
                     
                     process.Start();
 
@@ -40,7 +66,7 @@ namespace Modules.MessagePack
             return result;
         }
 
-        public static Task<Tuple<int, string, string>> StartAsync(string fileName, string arguments)
+        public Task<Tuple<int, string, string>> StartAsync()
         {
             var tcs = new TaskCompletionSource<Tuple<int, string, string>>();
 
@@ -51,7 +77,7 @@ namespace Modules.MessagePack
             {
                 using (var process = new Process())
                 {
-                    process.StartInfo = CreateProcessStartInfo(fileName, arguments);
+                    process.StartInfo = CreateProcessStartInfo();
 
                     DataReceivedEventHandler processOutputDataReceived = (sender, e) =>
                     {
@@ -121,23 +147,56 @@ namespace Modules.MessagePack
             return tcs.Task;
         }
 
-        private static ProcessStartInfo CreateProcessStartInfo(string fileName, string arguments)
+        private ProcessStartInfo CreateProcessStartInfo()
         {
+            var processFileName = string.Empty;
+            var processArgument = new StringBuilder();
+
+            if (Environment.OSVersion.Platform == PlatformID.Win32NT)
+            {
+                processFileName = "cmd.exe";
+
+                if (ProcessExecute)
+                {
+                    processArgument.Append("/C ");
+                }
+
+                processArgument.Append(Command);
+                processArgument.Append(Arguments);
+            }
+            else if (Environment.OSVersion.Platform == PlatformID.MacOSX)
+            {
+                processFileName = "/bin/bash";
+                
+                if (ProcessExecute)
+                {
+                    processArgument.Append("-c \"");
+                }
+
+                processArgument.Append(Command);
+                processArgument.Append(Arguments);
+                processArgument.Append("\"");
+            }
+            else
+            {
+                throw new NotSupportedException();
+            }
+
             var processStartInfo = new ProcessStartInfo()
             {
-                FileName = fileName,
-                Arguments = arguments,
+                FileName = processFileName,
+                Arguments = processArgument.ToString(),
 
                 // ディレクトリ.
-                WorkingDirectory = Application.dataPath,
+                WorkingDirectory = WorkingDirectory,
 
                 // ウィンドウ非表示.
                 CreateNoWindow = true,
                 WindowStyle = ProcessWindowStyle.Hidden,
 
                 // 文字コード.
-                StandardOutputEncoding = Encoding.GetEncoding("Shift_JIS"),
-                StandardErrorEncoding = Encoding.GetEncoding("Shift_JIS"),
+                StandardOutputEncoding = Encoding,
+                StandardErrorEncoding = Encoding,
 
                 // ログ出力をリダイレクト.
                 RedirectStandardOutput = true,

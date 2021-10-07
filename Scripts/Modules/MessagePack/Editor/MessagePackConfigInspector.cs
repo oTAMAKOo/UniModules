@@ -179,7 +179,9 @@ namespace Modules.MessagePack
 
             Tuple<bool, string> result = null;
 
-            var findYield = ProcessUtility.StartAsync("dotnet", "--version").ToObservable()
+            var commandLineProcess = new CommandLine("dotnet", "--version");
+
+            var findYield = commandLineProcess.StartAsync().ToObservable()
                 .Do(x => result = Tuple.Create(true, x.Item2))
                 .DoOnError(x => result = Tuple.Create(false, (string)null))
                 .Select(_ => result)
