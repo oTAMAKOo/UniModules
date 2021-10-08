@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace Extensions
 {
-    public sealed class CommandLine
+    public sealed class ProcessExecute
     {
         //----- params -----
 
@@ -24,14 +24,11 @@ namespace Extensions
 
         public string Arguments { get; set; }
 
-        /// <summary> コマンドライン上で他のプロセスを実行するか </summary>
-        public bool ProcessExecute { get; set; }
-
         //----- method -----
 
-        public CommandLine(string command, string arguments)
+        public ProcessExecute(string command, string arguments)
         {
-            Encoding = Encoding.GetEncoding("Shift_JIS");
+            Encoding = Encoding.UTF8;
 
             Command = command;
             Arguments = arguments;
@@ -149,51 +146,10 @@ namespace Extensions
 
         private ProcessStartInfo CreateProcessStartInfo()
         {
-            var processFileName = string.Empty;
-            var processArgument = new StringBuilder();
-
-            var platform = Environment.OSVersion.Platform;
-
-            switch (platform)
-            {
-                case PlatformID.Win32NT:
-                    {
-                        processFileName = "cmd.exe";
-
-                        if (ProcessExecute)
-                        {
-                            processArgument.Append("/C ");
-                        }
-
-                        processArgument.Append(Command);
-                        processArgument.Append(Arguments);
-                    }
-                    break;
-
-                case PlatformID.MacOSX:
-                case PlatformID.Unix:
-                    {
-                        processFileName = "/bin/bash";
-                    
-                        if (ProcessExecute)
-                        {
-                            processArgument.Append("-c \"");
-                        }
-
-                        processArgument.Append(Command);
-                        processArgument.Append(Arguments);
-                        processArgument.Append("\"");
-                    }
-                    break;
-
-                default:
-                    throw new NotSupportedException();
-            }
-
             var processStartInfo = new ProcessStartInfo()
             {
-                FileName = processFileName,
-                Arguments = processArgument.ToString(),
+                FileName = Command,
+                Arguments = Arguments,
 
                 // ディレクトリ.
                 WorkingDirectory = WorkingDirectory,

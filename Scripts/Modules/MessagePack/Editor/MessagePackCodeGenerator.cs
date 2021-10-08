@@ -29,9 +29,9 @@ namespace Modules.MessagePack
 
             var csFileHash = GetCsFileHash(generateInfo);
 
-            var commandLineProcess = new CommandLine(MpcCommand, generateInfo.CommandLineArguments)
+            var commandLineProcess = new ProcessExecute(MpcCommand, generateInfo.CommandLineArguments)
             {
-                ProcessExecute = true,
+                Encoding = Encoding.GetEncoding("Shift_JIS"),
             };
 
             var codeGenerateResult = commandLineProcess.Start();
@@ -66,10 +66,9 @@ namespace Modules.MessagePack
 
             var csFileHash = GetCsFileHash(generateInfo);
 
-            var commandLineProcess = new CommandLine(MpcCommand, generateInfo.CommandLineArguments)
+            var commandLineProcess = new ProcessExecute(MpcCommand, generateInfo.CommandLineArguments)
             {
-                WorkingDirectory = Application.dataPath,
-                ProcessExecute = true,
+                Encoding = Encoding.GetEncoding("Shift_JIS"),
             };
             
             var codeGenerateTask = commandLineProcess.StartAsync();
