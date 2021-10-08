@@ -166,7 +166,7 @@ namespace Modules.MessagePack
 
             var platform = Environment.OSVersion.Platform;
 
-            if (platform == PlatformID.MacOSX || platform == PlatformID.Unix ||  platform == PlatformID.Win32NT)
+            if (platform == PlatformID.MacOSX || platform == PlatformID.Unix)
             {
                 EditorLayoutTools.ContentTitle("MsBuild Path (User local setting)");
 
