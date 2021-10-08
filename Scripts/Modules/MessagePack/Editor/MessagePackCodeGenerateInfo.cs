@@ -2,6 +2,7 @@
 using System;
 using System.IO;
 using System.Reflection;
+using System.Text;
 using Extensions;
 
 namespace Modules.MessagePack
@@ -17,7 +18,7 @@ namespace Modules.MessagePack
         //----- property -----
 
         public string CsFilePath { get; private set; }
-        public string CommandLineArguments { get; private set; }
+        public string MpcArgument { get; private set; }
 
         //----- method -----
 
@@ -36,7 +37,7 @@ namespace Modules.MessagePack
 
             CsFilePath = GetScriptGeneratePath(messagePackConfig);
 
-            CommandLineArguments = CreateCommandLineArguments(messagePackConfig, csprojPath, CsFilePath);
+            MpcArgument = CreateMpcArgument(messagePackConfig, csprojPath, CsFilePath);
         }
 
         private static void SyncSolution()
@@ -75,38 +76,38 @@ namespace Modules.MessagePack
             return PathUtility.Combine(messagePackConfig.ScriptExportDir, messagePackConfig.ExportScriptName);
         }
 
-        private static string CreateCommandLineArguments(MessagePackConfig messagePackConfig, string csprojPath, string generatePath)
+        private static string CreateMpcArgument(MessagePackConfig messagePackConfig, string csprojPath, string generatePath)
         {
-            var commandLineArguments = string.Empty;
+            var processArgument = new StringBuilder();
 
-            commandLineArguments += $" --input { ReplaceCommandLinePathSeparator(csprojPath) }";
+            processArgument.AppendFormat(" --input {0}", ReplacePathSeparator(csprojPath));
 
-            commandLineArguments += $" --output { ReplaceCommandLinePathSeparator(generatePath) }";
+            processArgument.AppendFormat(" --output {0}", ReplacePathSeparator(generatePath));
 
             if (messagePackConfig.UseMapMode)
             {
-                commandLineArguments += " --usemapmode";
+                processArgument.Append(" --usemapmode");
             }
 
             if (!string.IsNullOrEmpty(messagePackConfig.ResolverNameSpace))
             {
-                commandLineArguments += $" --namespace {messagePackConfig.ResolverNameSpace}";
+                processArgument.AppendFormat(" --namespace {0}", messagePackConfig.ResolverNameSpace);
             }
 
             if (!string.IsNullOrEmpty(messagePackConfig.ResolverName))
             {
-                commandLineArguments += $" --resolverName {messagePackConfig.ResolverName}";
+                processArgument.AppendFormat(" --resolverName {0}", messagePackConfig.ResolverName);
             }
 
             if (!string.IsNullOrEmpty(messagePackConfig.ConditionalCompilerSymbols))
             {
-                commandLineArguments += $" --conditionalSymbol {messagePackConfig.ConditionalCompilerSymbols}";
+                processArgument.AppendFormat(" --conditionalSymbol {0}", messagePackConfig.ConditionalCompilerSymbols);
             }
 
-            return commandLineArguments;
+            return processArgument.ToString();
         }
 
-        private static string ReplaceCommandLinePathSeparator(string path)
+        private static string ReplacePathSeparator(string path)
         {
             return path.Replace('/', Path.DirectorySeparatorChar);
         }

@@ -29,22 +29,21 @@ namespace Modules.MessagePack
 
             var generateInfo = new MessagePackCodeGenerateInfo();
 
-            var csFileHash = GetCsFileHash(generateInfo);
+            var csFilePath = generateInfo.CsFilePath;
 
-            var commandLineProcess = new ProcessExecute(MpcCommand, generateInfo.CommandLineArguments)
-            {
-                Encoding = Encoding.GetEncoding("Shift_JIS"),
-            };
+            var csFileHash = GetCsFileHash(csFilePath);
 
-            var codeGenerateResult = commandLineProcess.Start();
+            var processExecute = CreateMpcProcess(generateInfo);
+
+            var codeGenerateResult = processExecute.Start();
             
             var isSuccess = codeGenerateResult.Item1 == 0;
 
-            OutputGenerateLog(isSuccess, generateInfo);
+            OutputGenerateLog(isSuccess, csFilePath, processExecute);
 
             if (isSuccess)
             {
-                ImportGeneratedCsFile(generateInfo, csFileHash);
+                ImportGeneratedCsFile(csFilePath, csFileHash);
             }
             else
             {
@@ -68,14 +67,13 @@ namespace Modules.MessagePack
 
             var generateInfo = new MessagePackCodeGenerateInfo();
 
-            var csFileHash = GetCsFileHash(generateInfo);
+            var csFilePath = generateInfo.CsFilePath;
 
-            var commandLineProcess = new ProcessExecute(MpcCommand, generateInfo.CommandLineArguments)
-            {
-                Encoding = Encoding.GetEncoding("Shift_JIS"),
-            };
-            
-            var codeGenerateTask = commandLineProcess.StartAsync();
+            var csFileHash = GetCsFileHash(csFilePath);
+
+            var processExecute = CreateMpcProcess(generateInfo);
+
+            var codeGenerateTask = processExecute.StartAsync();
 
             while (!codeGenerateTask.IsCompleted)
             {
@@ -84,11 +82,11 @@ namespace Modules.MessagePack
 
             var isSuccess = codeGenerateTask.Result.Item1 == 0;
 
-            OutputGenerateLog(isSuccess, generateInfo);
+            OutputGenerateLog(isSuccess, csFilePath, processExecute);
 
             if (isSuccess)
             {
-                ImportGeneratedCsFile(generateInfo, csFileHash);
+                ImportGeneratedCsFile(csFilePath, csFileHash);
             }
             else
             {
@@ -109,6 +107,38 @@ namespace Modules.MessagePack
             observer.OnCompleted();
         }
 
+        private static ProcessExecute CreateMpcProcess(MessagePackCodeGenerateInfo generateInfo)
+        {
+            var command = string.Empty;
+            var argument = string.Empty;
+
+            var platform = Environment.OSVersion.Platform;
+
+            switch (platform)
+            {
+                case PlatformID.Win32NT:
+                    command = MpcCommand;
+                    argument = generateInfo.MpcArgument;
+                    break;
+
+                case PlatformID.MacOSX:
+                case PlatformID.Unix:
+                    command = "/bin/bash";
+                    argument = $"-c {MpcCommand} {generateInfo.MpcArgument}";
+                    break;
+
+                default:
+                    throw new NotSupportedException();
+            }
+
+            var processExecute = new ProcessExecute(command, argument)
+            {
+                Encoding = Encoding.GetEncoding("Shift_JIS"),
+            };
+
+            return processExecute;
+        }
+
         /// <summary> 環境変数を設定. </summary>
         private static void SetEnvironmentVariable()
         {
@@ -125,13 +155,13 @@ namespace Modules.MessagePack
             }
         }
 
-        private static void ImportGeneratedCsFile(MessagePackCodeGenerateInfo generateInfo, string csFileHash)
+        private static void ImportGeneratedCsFile(string csFilePath, string csFileHash)
         {
-            var assetPath = UnityPathUtility.ConvertFullPathToAssetPath(generateInfo.CsFilePath);
+            var assetPath = UnityPathUtility.ConvertFullPathToAssetPath(csFilePath);
 
-            var hash = GetCsFileHash(generateInfo);
+            var hash = GetCsFileHash(csFilePath);
 
-            if (File.Exists(generateInfo.CsFilePath))
+            if (File.Exists(csFilePath))
             {
                 if (csFileHash != hash)
                 {
@@ -140,13 +170,13 @@ namespace Modules.MessagePack
             }
         }
 
-        private static string GetCsFileHash(MessagePackCodeGenerateInfo generateInfo)
+        private static string GetCsFileHash(string csFilePath)
         {
             var hash = string.Empty;
 
-            if (!File.Exists(generateInfo.CsFilePath)){ return string.Empty; }
+            if (!File.Exists(csFilePath)){ return string.Empty; }
 
-            using (var fs = new FileStream(generateInfo.CsFilePath, FileMode.Open, FileAccess.Read, FileShare.Read))
+            using (var fs = new FileStream(csFilePath, FileMode.Open, FileAccess.Read, FileShare.Read))
             {
                 var md5 = new MD5CryptoServiceProvider();
 
@@ -160,7 +190,7 @@ namespace Modules.MessagePack
             return hash;
         }
 
-        private static void OutputGenerateLog(bool result, MessagePackCodeGenerateInfo generateInfo)
+        private static void OutputGenerateLog(bool result, string csFilePath, ProcessExecute processExecute)
         {
             using (new DisableStackTraceScope())
             {
@@ -168,10 +198,10 @@ namespace Modules.MessagePack
 
                 logBuilder.AppendLine();
                 logBuilder.AppendLine();
-                logBuilder.AppendFormat("MessagePack file : {0}", generateInfo.CsFilePath).AppendLine();
+                logBuilder.AppendFormat("MessagePack file : {0}", csFilePath).AppendLine();
                 logBuilder.AppendLine();
-                logBuilder.AppendFormat("Command:").AppendLine();
-                logBuilder.AppendLine(MpcCommand + generateInfo.CommandLineArguments);
+                logBuilder.AppendFormat("Execute:").AppendLine();
+                logBuilder.AppendLine($"{processExecute.Command} {processExecute.Arguments}");
 
                 if (result)
                 {
