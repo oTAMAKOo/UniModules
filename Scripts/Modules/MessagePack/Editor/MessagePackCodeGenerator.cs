@@ -31,7 +31,6 @@ namespace Modules.MessagePack
 
             var commandLineProcess = new CommandLine(MpcCommand, generateInfo.CommandLineArguments)
             {
-                WorkingDirectory = Application.dataPath,
                 ProcessExecute = true,
             };
 
