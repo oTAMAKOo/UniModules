@@ -25,6 +25,8 @@ namespace Modules.MessagePack
 
         public static bool Generate()
         {
+            SetEnvironmentVariable();
+
             var generateInfo = new MessagePackCodeGenerateInfo();
 
             var csFileHash = GetCsFileHash(generateInfo);
@@ -62,6 +64,8 @@ namespace Modules.MessagePack
 
         private static IEnumerator GenerateInternalAsync(IObserver<bool> observer)
         {
+            SetEnvironmentVariable();
+
             var generateInfo = new MessagePackCodeGenerateInfo();
 
             var csFileHash = GetCsFileHash(generateInfo);
@@ -103,6 +107,22 @@ namespace Modules.MessagePack
 
             observer.OnNext(isSuccess);
             observer.OnCompleted();
+        }
+
+        /// <summary> 環境変数を設定. </summary>
+        private static void SetEnvironmentVariable()
+        {
+            var platform = Environment.OSVersion.Platform;
+
+            // msbuild.
+            if (platform == PlatformID.MacOSX || platform == PlatformID.Unix)
+            {
+                var environmentPath = Environment.GetEnvironmentVariable("PATH", EnvironmentVariableTarget.Process);
+
+                var path = string.Format("{0}:{1}", environmentPath, MessagePackConfig.Prefs.msbuildPath);
+
+                Environment.SetEnvironmentVariable("PATH", path, EnvironmentVariableTarget.Process);
+            }
         }
 
         private static void ImportGeneratedCsFile(MessagePackCodeGenerateInfo generateInfo, string csFileHash)

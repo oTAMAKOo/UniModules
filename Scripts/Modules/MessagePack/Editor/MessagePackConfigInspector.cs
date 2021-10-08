@@ -70,9 +70,6 @@ namespace Modules.MessagePack
 
             serializedObject.Update();
 
-            var winMpcRelativePath = serializedObject.FindProperty("winMpcRelativePath");
-            var osxMpcRelativePath = serializedObject.FindProperty("osxMpcRelativePath");
-
             var scriptExportAssetDir = serializedObject.FindProperty("scriptExportAssetDir");
             var scriptName = serializedObject.FindProperty("scriptName");
             var useMapMode = serializedObject.FindProperty("useMapMode");
@@ -164,6 +161,27 @@ namespace Modules.MessagePack
 
                 serializedObject.ApplyModifiedProperties();
             }
+
+            //------ MsBuild Path ------
+
+            var platform = Environment.OSVersion.Platform;
+
+            if (platform == PlatformID.MacOSX || platform == PlatformID.Unix ||  platform == PlatformID.Win32NT)
+            {
+                EditorLayoutTools.ContentTitle("MsBuild Path (User local setting)");
+
+                using (new ContentsScope())
+                {   
+                    EditorGUI.BeginChangeCheck();
+
+                    MessagePackConfig.Prefs.msbuildPath = EditorGUILayout.DelayedTextField(MessagePackConfig.Prefs.msbuildPath);
+
+                    if(EditorGUI.EndChangeCheck())
+                    {
+                        UnityEditorUtility.RegisterUndo("MessagePackConfigInspector Undo", instance);
+                    }
+                }
+            }
         }
 
         private IEnumerator FindDotnet()
@@ -179,7 +197,29 @@ namespace Modules.MessagePack
 
             Tuple<bool, string> result = null;
 
-            var commandLineProcess = new ProcessExecute("dotnet", "--version");
+            var command = string.Empty;
+            var arguments = string.Empty;
+
+            var platform = Environment.OSVersion.Platform;
+
+            switch (platform)
+            {
+                case PlatformID.Win32NT:
+                    command = "dotnet";
+                    arguments = "--version";
+                    break;
+
+                case PlatformID.MacOSX:
+                case PlatformID.Unix:
+                    command = "/bin/bash";
+                    arguments = "-c dotnet --version";
+                    break;
+
+                default:
+                    throw new NotSupportedException();
+            }
+
+            var commandLineProcess = new ProcessExecute(command, arguments);
 
             var findYield = commandLineProcess.StartAsync().ToObservable()
                 .Do(x => result = Tuple.Create(true, x.Item2))
