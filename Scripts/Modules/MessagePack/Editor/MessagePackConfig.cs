@@ -14,8 +14,6 @@ namespace Modules.MessagePack
 
         private const string DefaultMpcPath = "$HOME/.dotnet/tools/mpc";
 
-        private const string DefaultMsBuildPath = "/Library/Frameworks/Mono.framework/Versions/Current/bin";
-
         public static class Prefs
         {
             public static string DotnetPath

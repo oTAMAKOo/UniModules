@@ -61,8 +61,6 @@ namespace Modules.MessagePack
 
         private static IEnumerator GenerateInternalAsync(IObserver<bool> observer)
         {
-            SetEnvironmentVariable();
-
             var generateInfo = new MessagePackCodeGenerateInfo();
 
             var csFilePath = generateInfo.CsFilePath;

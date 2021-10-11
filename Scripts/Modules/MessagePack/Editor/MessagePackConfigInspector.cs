@@ -16,6 +16,8 @@ namespace Modules.MessagePack
         //----- params -----
 
         private const string RequireDotnetSDKVersion = "3.1";
+        
+        private const string DefaultMsBuildPath = "/Library/Frameworks/Mono.framework/Versions/Current/bin";
 
         //----- field -----
 
@@ -185,6 +187,12 @@ namespace Modules.MessagePack
                     GUILayout.Label("Mpc Path");
 
                     MessagePackConfig.Prefs.MpcPath = EditorGUILayout.DelayedTextField(MessagePackConfig.Prefs.MpcPath);
+
+                    // MSBuild.
+
+                    var message = string.Format("Environment variables need to be registered.\nPATH: {0}", DefaultMsBuildPath);
+
+                    EditorGUILayout.HelpBox(message, MessageType.Info);
                 }
             }
         }
