@@ -189,6 +189,8 @@ namespace Modules.MessagePack
                     MessagePackConfig.Prefs.DotnetPath = EditorGUILayout.DelayedTextField(MessagePackConfig.Prefs.DotnetPath);
 
                     // MSBuild.
+                    
+                    GUILayout.Label("MSBuild Path");
 
                     var message = string.Format("Environment variables need to be registered.\nPATH: {0}", DefaultMsBuildPath);
 
