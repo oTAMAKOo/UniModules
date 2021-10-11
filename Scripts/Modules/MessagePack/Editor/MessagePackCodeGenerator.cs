@@ -23,8 +23,6 @@ namespace Modules.MessagePack
 
         public static bool Generate()
         {
-            SetEnvironmentVariable();
-
             var generateInfo = new MessagePackCodeGenerateInfo();
 
             var csFilePath = generateInfo.CsFilePath;
