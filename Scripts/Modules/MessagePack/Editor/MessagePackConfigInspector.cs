@@ -162,19 +162,35 @@ namespace Modules.MessagePack
                 serializedObject.ApplyModifiedProperties();
             }
 
-            //------ MsBuild Path ------
+            //------ User local setting ------
 
             var platform = Environment.OSVersion.Platform;
 
             if (platform == PlatformID.MacOSX || platform == PlatformID.Unix)
             {
-                EditorLayoutTools.ContentTitle("MsBuild Path (User local setting)");
+                EditorLayoutTools.ContentTitle("User local setting");
 
                 using (new ContentsScope())
-                {   
+                {
                     EditorGUI.BeginChangeCheck();
 
-                    MessagePackConfig.Prefs.msbuildPath = EditorGUILayout.DelayedTextField(MessagePackConfig.Prefs.msbuildPath);
+                    // DotNet.
+
+                    GUILayout.Label("DotNet Path");
+
+                    MessagePackConfig.Prefs.DotnetPath = EditorGUILayout.DelayedTextField(MessagePackConfig.Prefs.DotnetPath);
+
+                    // Mpc.
+
+                    GUILayout.Label("Mpc Path");
+
+                    MessagePackConfig.Prefs.MpcPath = EditorGUILayout.DelayedTextField(MessagePackConfig.Prefs.MpcPath);
+
+                    // MSBuild.
+
+                    GUILayout.Label("MsBuild Path");
+
+                    MessagePackConfig.Prefs.MsbuildPath = EditorGUILayout.DelayedTextField(MessagePackConfig.Prefs.MsbuildPath);
 
                     if(EditorGUI.EndChangeCheck())
                     {
@@ -205,14 +221,20 @@ namespace Modules.MessagePack
             switch (platform)
             {
                 case PlatformID.Win32NT:
-                    command = "dotnet";
-                    arguments = "--version";
+                    {
+                        command = "dotnet";
+                        arguments = "--version";
+                    }
                     break;
 
                 case PlatformID.MacOSX:
                 case PlatformID.Unix:
-                    command = "/bin/bash";
-                    arguments = "-c dotnet --version";
+                    {
+                        var dotnetPath = MessagePackConfig.Prefs.DotnetPath;
+
+                        command = "/bin/bash";
+                        arguments = $"-c \"{dotnetPath} --version\"";
+                    }
                     break;
 
                 default:

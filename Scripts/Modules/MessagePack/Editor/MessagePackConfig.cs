@@ -10,11 +10,27 @@ namespace Modules.MessagePack
     {
         //----- params -----
         
+        private const string DefaultDotNetPath = "/usr/local/share/dotnet/dotnet";
+
+        private const string DefaultMpcPath = "$HOME/.dotnet/tools/mpc";
+
         private const string DefaultMsBuildPath = "/Library/Frameworks/Mono.framework/Versions/Current/bin";
 
         public static class Prefs
         {
-            public static string msbuildPath
+            public static string DotnetPath
+            {
+                get { return ProjectPrefs.GetString("MessagePackConfigPrefs-dotnetPath", DefaultDotNetPath); }
+                set { ProjectPrefs.SetString("MessagePackConfigPrefs-dotnetPath", value); }
+            }
+
+            public static string MpcPath
+            {
+                get { return ProjectPrefs.GetString("MessagePackConfigPrefs-mpcPath", DefaultMpcPath); }
+                set { ProjectPrefs.SetString("MessagePackConfigPrefs-mpcPath", value); }
+            }
+
+            public static string MsbuildPath
             {
                 get { return ProjectPrefs.GetString("MessagePackConfigPrefs-msbuildPath", DefaultMsBuildPath); }
                 set { ProjectPrefs.SetString("MessagePackConfigPrefs-msbuildPath", value); }

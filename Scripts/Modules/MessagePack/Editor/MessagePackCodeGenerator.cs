@@ -15,8 +15,6 @@ namespace Modules.MessagePack
     {
         //----- params -----
 
-        private const string MpcCommand = "mpc";
-        
         //----- field -----
 
         //----- property -----
@@ -117,14 +115,20 @@ namespace Modules.MessagePack
             switch (platform)
             {
                 case PlatformID.Win32NT:
-                    command = MpcCommand;
-                    argument = generateInfo.MpcArgument;
+                    {
+                        command = "mpc";
+                        argument = generateInfo.MpcArgument;
+                    }
                     break;
 
                 case PlatformID.MacOSX:
                 case PlatformID.Unix:
-                    command = "/bin/bash";
-                    argument = $"-c {MpcCommand} {generateInfo.MpcArgument}";
+                    {
+                        var mpcPath = MessagePackConfig.Prefs.MpcPath;
+
+                        command = "/bin/bash";
+                        argument = $"-c \"{mpcPath}{generateInfo.MpcArgument}\"";
+                    }
                     break;
 
                 default:
@@ -147,9 +151,11 @@ namespace Modules.MessagePack
             // msbuild.
             if (platform == PlatformID.MacOSX || platform == PlatformID.Unix)
             {
+                var msbuildPath = MessagePackConfig.Prefs.MsbuildPath;
+
                 var environmentPath = Environment.GetEnvironmentVariable("PATH", EnvironmentVariableTarget.Process);
 
-                var path = string.Format("{0}:{1}", environmentPath, MessagePackConfig.Prefs.msbuildPath);
+                var path = string.Format("{0}:{1}", environmentPath, msbuildPath);
 
                 Environment.SetEnvironmentVariable("PATH", path, EnvironmentVariableTarget.Process);
             }
