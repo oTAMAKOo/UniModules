@@ -79,6 +79,9 @@ namespace Modules.MessagePack
             var resolverName = serializedObject.FindProperty("resolverName");
             var conditionalCompilerSymbols = serializedObject.FindProperty("conditionalCompilerSymbols");
 
+            var winMpcRelativePath = serializedObject.FindProperty("winMpcRelativePath");
+            var osxMpcRelativePath = serializedObject.FindProperty("osxMpcRelativePath");
+
             if (isLoading) { return; }
 
             //------ .Netバージョン ------
@@ -136,6 +139,51 @@ namespace Modules.MessagePack
 
             GUILayout.Space(4f);
 
+            //------ コードジェネレーター ------
+
+            EditorLayoutTools.ContentTitle("CodeGenerator");
+
+            using (new ContentsScope())
+            {
+                GUILayout.Label("Windows");
+
+                using (new EditorGUILayout.HorizontalScope())
+                {
+                    GUILayout.Label(winMpcRelativePath.stringValue, pathTextStyle);
+
+                    if (GUILayout.Button("Edit", GUILayout.Width(45f)))
+                    {
+                        UnityEditorUtility.RegisterUndo("MessagePackConfigInspector Undo", instance);
+
+                        var path = EditorUtility.OpenFilePanel("Select MessagePack compiler", Application.dataPath, "exe");
+
+                        winMpcRelativePath.stringValue = UnityPathUtility.MakeRelativePath(path);
+
+                        serializedObject.ApplyModifiedProperties();
+                    }
+                }
+
+                GUILayout.Label("MacOSX");
+
+                using (new EditorGUILayout.HorizontalScope())
+                {
+                    GUILayout.Label(osxMpcRelativePath.stringValue, pathTextStyle);
+
+                    if (GUILayout.Button("Edit", GUILayout.Width(45f)))
+                    {
+                        UnityEditorUtility.RegisterUndo("MessagePackConfigInspector Undo", instance);
+
+                        var path = EditorUtility.OpenFilePanel("Select MessagePack compiler", Application.dataPath, "");
+
+                        osxMpcRelativePath.stringValue = UnityPathUtility.MakeRelativePath(path);
+
+                        serializedObject.ApplyModifiedProperties();
+                    }
+                }
+            }
+
+            GUILayout.Space(4f);
+
             //------ オプション設定 ------
 
             EditorLayoutTools.ContentTitle("CodeGenerator Options");
@@ -168,20 +216,14 @@ namespace Modules.MessagePack
 
             var platform = Environment.OSVersion.Platform;
 
-            EditorLayoutTools.ContentTitle("User local setting");
-
-            EditorGUI.BeginChangeCheck();
-
-            using (new ContentsScope())
+            if (platform == PlatformID.MacOSX || platform == PlatformID.Unix)
             {
-                // Mpc.
+                EditorLayoutTools.ContentTitle("User local setting");
 
-                GUILayout.Label("Mpc Path");
-
-                MessagePackConfig.Prefs.MpcPath = EditorGUILayout.DelayedTextField(MessagePackConfig.Prefs.MpcPath);
-
-                if (platform == PlatformID.MacOSX || platform == PlatformID.Unix)
+                using (new ContentsScope())
                 {
+                    EditorGUI.BeginChangeCheck();
+    
                     // DotNet.
 
                     GUILayout.Label("DotNet Path");
@@ -190,17 +232,17 @@ namespace Modules.MessagePack
 
                     // MSBuild.
                     
-                    GUILayout.Label("MSBuild Path");
+                    GUILayout.Label("MSBuild");
 
                     var message = string.Format("Environment variables need to be registered.\nPATH: {0}", DefaultMsBuildPath);
 
                     EditorGUILayout.HelpBox(message, MessageType.Info);
+                 
+                    if(EditorGUI.EndChangeCheck())
+                    {
+                        UnityEditorUtility.RegisterUndo("MessagePackConfigInspector Undo", instance);
+                    }
                 }
-            }
-
-            if(EditorGUI.EndChangeCheck())
-            {
-                UnityEditorUtility.RegisterUndo("MessagePackConfigInspector Undo", instance);
             }
         }
 

@@ -29,12 +29,6 @@ namespace Modules.MessagePack
                 get { return ProjectPrefs.GetString("MessagePackConfigPrefs-dotnetPath", DefaultDotNetPath); }
                 set { ProjectPrefs.SetString("MessagePackConfigPrefs-dotnetPath", value); }
             }
-
-            public static string MpcPath
-            {
-                get { return ProjectPrefs.GetString("MessagePackConfigPrefs-mpcPath", DefaultMpcPath); }
-                set { ProjectPrefs.SetString("MessagePackConfigPrefs-mpcPath", value); }
-            }
         }
 
         //----- field -----
@@ -54,6 +48,15 @@ namespace Modules.MessagePack
         [SerializeField]
         [Tooltip("(option) Split with ','.")]
         private string conditionalCompilerSymbols = null;
+
+        #pragma warning disable 0414
+
+        [SerializeField]
+        private string winMpcRelativePath = null; // コンパイラまでのパス(相対パス).
+        [SerializeField]
+        private string osxMpcRelativePath = null; // コンパイラまでのパス(相対パス).
+
+        #pragma warning restore 0414
 
         //----- property -----
 
@@ -77,6 +80,29 @@ namespace Modules.MessagePack
 
         /// <summary> 条件付きコンパイラシンボル. </summary>
         public string ConditionalCompilerSymbols { get { return conditionalCompilerSymbols; } }
+
+        /// <summary> コードジェネレーターパス. </summary>
+        public string CodeGeneratorPath
+        {
+            get
+            {
+                var relativePath = string.Empty;
+
+                #if UNITY_EDITOR_WIN
+
+                relativePath = winMpcRelativePath;
+
+                #endif
+
+                #if UNITY_EDITOR_OSX
+
+                relativePath = osxMpcRelativePath;
+
+                #endif
+
+                return UnityPathUtility.RelativePathToFullPath(relativePath);
+            }
+        }
 
         //----- method -----
     }

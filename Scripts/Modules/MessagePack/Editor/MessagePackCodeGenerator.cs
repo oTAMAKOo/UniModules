@@ -103,6 +103,8 @@ namespace Modules.MessagePack
 
         private static ProcessExecute CreateMpcProcess(MessagePackCodeGenerateInfo generateInfo)
         {
+            var messagePackConfig = MessagePackConfig.Instance;
+
             var command = string.Empty;
             var argument = string.Empty;
 
@@ -112,7 +114,7 @@ namespace Modules.MessagePack
             {
                 case PlatformID.Win32NT:
                     {
-                        command = MessagePackConfig.Prefs.MpcPath;
+                        command = messagePackConfig.CodeGeneratorPath;
                         argument = generateInfo.MpcArgument;
                     }
                     break;
@@ -121,7 +123,7 @@ namespace Modules.MessagePack
                 case PlatformID.Unix:
                     {
                         command = "/bin/bash";
-                        argument = $"-c \"{MessagePackConfig.Prefs.MpcPath}{generateInfo.MpcArgument}\"";
+                        argument = $"-c \"{ messagePackConfig.CodeGeneratorPath }{ generateInfo.MpcArgument }\"";
                     }
                     break;
 
