@@ -12,7 +12,15 @@ namespace Modules.MessagePack
         
         private const string DefaultDotNetPath = "/usr/local/share/dotnet/dotnet";
 
+        #if UNITY_EDITOR_WIN
+
+        private const string DefaultMpcPath = "mpc";
+
+        #elif UNITY_EDITOR_OSX
+
         private const string DefaultMpcPath = "$HOME/.dotnet/tools/mpc";
+
+        #endif
 
         public static class Prefs
         {

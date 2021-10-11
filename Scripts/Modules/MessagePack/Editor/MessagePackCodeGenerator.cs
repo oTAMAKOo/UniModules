@@ -112,7 +112,7 @@ namespace Modules.MessagePack
             {
                 case PlatformID.Win32NT:
                     {
-                        command = "mpc";
+                        command = MessagePackConfig.Prefs.MpcPath;
                         argument = generateInfo.MpcArgument;
                     }
                     break;
@@ -120,10 +120,8 @@ namespace Modules.MessagePack
                 case PlatformID.MacOSX:
                 case PlatformID.Unix:
                     {
-                        var mpcPath = MessagePackConfig.Prefs.MpcPath;
-
                         command = "/bin/bash";
-                        argument = $"-c \"{mpcPath}{generateInfo.MpcArgument}\"";
+                        argument = $"-c \"{MessagePackConfig.Prefs.MpcPath}{generateInfo.MpcArgument}\"";
                     }
                     break;
 

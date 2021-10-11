@@ -168,25 +168,25 @@ namespace Modules.MessagePack
 
             var platform = Environment.OSVersion.Platform;
 
-            if (platform == PlatformID.MacOSX || platform == PlatformID.Unix)
+            EditorLayoutTools.ContentTitle("User local setting");
+
+            EditorGUI.BeginChangeCheck();
+
+            using (new ContentsScope())
             {
-                EditorLayoutTools.ContentTitle("User local setting");
+                // Mpc.
 
-                using (new ContentsScope())
+                GUILayout.Label("Mpc Path");
+
+                MessagePackConfig.Prefs.MpcPath = EditorGUILayout.DelayedTextField(MessagePackConfig.Prefs.MpcPath);
+
+                if (platform == PlatformID.MacOSX || platform == PlatformID.Unix)
                 {
-                    EditorGUI.BeginChangeCheck();
-
                     // DotNet.
 
                     GUILayout.Label("DotNet Path");
 
                     MessagePackConfig.Prefs.DotnetPath = EditorGUILayout.DelayedTextField(MessagePackConfig.Prefs.DotnetPath);
-
-                    // Mpc.
-
-                    GUILayout.Label("Mpc Path");
-
-                    MessagePackConfig.Prefs.MpcPath = EditorGUILayout.DelayedTextField(MessagePackConfig.Prefs.MpcPath);
 
                     // MSBuild.
 
@@ -194,6 +194,11 @@ namespace Modules.MessagePack
 
                     EditorGUILayout.HelpBox(message, MessageType.Info);
                 }
+            }
+
+            if(EditorGUI.EndChangeCheck())
+            {
+                UnityEditorUtility.RegisterUndo("MessagePackConfigInspector Undo", instance);
             }
         }
 
