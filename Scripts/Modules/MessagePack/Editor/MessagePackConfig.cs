@@ -29,12 +29,6 @@ namespace Modules.MessagePack
                 get { return ProjectPrefs.GetString("MessagePackConfigPrefs-mpcPath", DefaultMpcPath); }
                 set { ProjectPrefs.SetString("MessagePackConfigPrefs-mpcPath", value); }
             }
-
-            public static string MsbuildPath
-            {
-                get { return ProjectPrefs.GetString("MessagePackConfigPrefs-msbuildPath", DefaultMsBuildPath); }
-                set { ProjectPrefs.SetString("MessagePackConfigPrefs-msbuildPath", value); }
-            }
         }
 
         //----- field -----

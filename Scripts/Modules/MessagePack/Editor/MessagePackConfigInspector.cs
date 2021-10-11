@@ -185,17 +185,6 @@ namespace Modules.MessagePack
                     GUILayout.Label("Mpc Path");
 
                     MessagePackConfig.Prefs.MpcPath = EditorGUILayout.DelayedTextField(MessagePackConfig.Prefs.MpcPath);
-
-                    // MSBuild.
-
-                    GUILayout.Label("MsBuild Path");
-
-                    MessagePackConfig.Prefs.MsbuildPath = EditorGUILayout.DelayedTextField(MessagePackConfig.Prefs.MsbuildPath);
-
-                    if(EditorGUI.EndChangeCheck())
-                    {
-                        UnityEditorUtility.RegisterUndo("MessagePackConfigInspector Undo", instance);
-                    }
                 }
             }
         }

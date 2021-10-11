@@ -143,24 +143,6 @@ namespace Modules.MessagePack
             return processExecute;
         }
 
-        /// <summary> 環境変数を設定. </summary>
-        private static void SetEnvironmentVariable()
-        {
-            var platform = Environment.OSVersion.Platform;
-
-            // msbuild.
-            if (platform == PlatformID.MacOSX || platform == PlatformID.Unix)
-            {
-                var msbuildPath = MessagePackConfig.Prefs.MsbuildPath;
-
-                var environmentPath = Environment.GetEnvironmentVariable("PATH", EnvironmentVariableTarget.Process);
-
-                var path = string.Format("{0}:{1}", environmentPath, msbuildPath);
-
-                Environment.SetEnvironmentVariable("PATH", path, EnvironmentVariableTarget.Process);
-            }
-        }
-
         private static void ImportGeneratedCsFile(string csFilePath, string csFileHash)
         {
             var assetPath = UnityPathUtility.ConvertFullPathToAssetPath(csFilePath);
