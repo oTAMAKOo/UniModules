@@ -1,6 +1,7 @@
 ﻿
 using UnityEngine;
 using UnityEditor;
+using System;
 using System.Linq;
 using System.Collections.Generic;
 using UniRx;
@@ -82,22 +83,22 @@ namespace Modules.Devkit.Inspector
                 guids = new string[0];
             }
 
-            Contents = guids
-                .Select(x =>
+            Func<string, AssetInfo> createAssetInfoFromGuid = guid =>
+            {
+                var assetPath = guid != null ? AssetDatabase.GUIDToAssetPath(guid) : string.Empty;
+                var asset = string.IsNullOrEmpty(assetPath) ? null : AssetDatabase.LoadAssetAtPath(assetPath, typeof(Object));
+
+                var info = new AssetInfo()
                 {
-                    var assetPath = x != null ? AssetDatabase.GUIDToAssetPath(x) : string.Empty;
-                    var asset = string.IsNullOrEmpty(assetPath) ? null : AssetDatabase.LoadAssetAtPath(assetPath, typeof(Object));
+                    guid = guid,
+                    assetPath = assetPath,
+                    asset = asset,
+                };
 
-                    var info = new AssetInfo()
-                    {
-                        guid = x,
-                        assetPath = assetPath,
-                        asset = asset,
-                    };
+                return info;
+            };
 
-                    return info;
-                })
-                .ToArray();
+            contents = guids.Select(x => createAssetInfoFromGuid.Invoke(x)).ToList();
         }
 
         protected override AssetInfo DrawContent(int index, AssetInfo info)
@@ -167,7 +168,7 @@ namespace Modules.Devkit.Inspector
             {
                 using (new ContentsScope())
                 {
-                    var scrollViewHeight = Mathf.Min(Contents.Length * 20f, ScrollAreaHeight);
+                    var scrollViewHeight = Mathf.Min(Contents.Count * 20f, ScrollAreaHeight);
 
                     var options = new List<GUILayoutOption>();
 
@@ -234,8 +235,6 @@ namespace Modules.Devkit.Inspector
                 {
                     EditorUtility.DisplayDialog("Removed Assets", "Removed registration of child assets.", "Close");
 
-                    var contents = Contents.ToList();
-
                     foreach (var info in removeInfos)
                     {
                         var content = contents.FirstOrDefault(x => x.guid == info.guid);
@@ -245,8 +244,6 @@ namespace Modules.Devkit.Inspector
                             contents.Remove(content);
                         }
                     }
-
-                    Contents = contents.ToArray();
                 }
             }
         }

@@ -31,7 +31,7 @@ namespace Modules.Devkit.Inspector
             {
                 EditorUtility.DisplayDialog("Error", "Require registration is folder.", "Close");
 
-                Contents = Contents.Where(x => x.guid != newAssetInfo.guid).ToArray();
+                contents = contents.Where(x => x.guid != newAssetInfo.guid).ToList();
             }
         }
     }

@@ -19,8 +19,6 @@ namespace Modules.Devkit.Build
 
         private bool changed = false;
         
-        private AssetRegisterScrollView.AssetInfo[] infos = null;
-
         private DeleteAssetSetting instance = null;
 
         //----- property -----
@@ -46,14 +44,6 @@ namespace Modules.Devkit.Build
         {
             if (changed)
             {
-                var guids = infos.Select(x => x.guid)
-                    .Where(x => !string.IsNullOrEmpty(x))
-                    .ToArray();
-
-                UnityEditorUtility.RegisterUndo("DeleteAssetSettingInspector Undo", instance);
-
-                Reflection.SetPrivateField(instance, "guids", guids);
-
                 UnityEditorUtility.SaveAsset(instance);
             }
         }
@@ -68,7 +58,7 @@ namespace Modules.Devkit.Build
             {
                 EditorGUI.BeginChangeCheck();
 
-                var tag = EditorGUILayout.TextArea(instance.Tag);
+                var tag = EditorGUILayout.DelayedTextField(instance.Tag);
 
                 if (EditorGUI.EndChangeCheck())
                 {
@@ -85,7 +75,14 @@ namespace Modules.Devkit.Build
 
         private void OnUpdateContents(AssetRegisterScrollView.AssetInfo[] infos)
         {
-            this.infos = infos;
+            var guids = infos.Select(x => x.guid)
+                .Where(x => !string.IsNullOrEmpty(x))
+                .ToArray();
+
+            UnityEditorUtility.RegisterUndo("DeleteAssetSettingInspector Undo", instance);
+
+            Reflection.SetPrivateField(instance, "guids", guids);
+
 
             changed = true;
         }

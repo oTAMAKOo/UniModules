@@ -1,13 +1,11 @@
 ﻿
-using System;
 using UnityEngine;
-using System.Collections;
-using System.Collections.Generic;
-using System.Linq;
-using Extensions;
-using Extensions.Devkit;
-using UniRx;
 using UnityEditor;
+using System;
+using System.Linq;
+using System.Collections.Generic;
+using UniRx;
+using Extensions;
 
 namespace Modules.Devkit.Inspector
 {
@@ -15,115 +13,35 @@ namespace Modules.Devkit.Inspector
     {
         //----- params -----
 
-        private sealed class FastScrollView : EditorGUIFastScrollView<T>
-        {
-            private RegisterScrollView<T> instance = null;
-
-            private Subject<T> onRequestValidate = null;
-
-            public override Direction Type { get { return Direction.Vertical; } }
-
-            public FastScrollView(RegisterScrollView<T> instance)
-            {
-                this.instance = instance;
-            }
-
-            protected override void DrawContent(int index, T content)
-            {
-                using (new EditorGUILayout.HorizontalScope())
-                {
-                    EditorGUI.BeginChangeCheck();
-
-                    content = instance.DrawContent(index, content);
-
-                    if (EditorGUI.EndChangeCheck())
-                    {
-                        var list = Contents.ToList();
-
-                        list[index] = content;
-
-                        Contents = list.ToArray();
-
-                        if (onRequestValidate != null)
-                        {
-                            onRequestValidate.OnNext(content);
-                        }
-
-                        if (instance.onUpdateContents != null)
-                        {
-                            instance.onUpdateContents.OnNext(Contents);
-                        }
-                    }
-
-                    if (GUILayout.Button(instance.toolbarMinusIcon, EditorStyles.miniButton, GUILayout.Width(24f), GUILayout.Height(15f)))
-                    {
-                        var list = Contents.ToList();
-
-                        list.RemoveAt(index);
-
-                        Contents = list.ToArray();
-
-                        if (instance.onUpdateContents != null)
-                        {
-                            instance.onUpdateContents.OnNext(Contents);
-                        }
-
-                        RequestRepaint();
-                    }
-                }
-            }
-
-            public IObservable<T> OnRequestValidateAsObservable()
-            {
-                return onRequestValidate ?? (onRequestValidate = new Subject<T>());
-            }
-        }
-
         //----- field -----
 
-        private FastScrollView scrollView = null;
+        protected List<T> contents = null;
+
+        private Vector2 scrollPosition = Vector2.zero;
 
         private GUIContent toolbarPlusIcon = null;
         private GUIContent toolbarMinusIcon = null;
 
         private Subject<T[]> onUpdateContents = null;
-        private Subject<Unit> onRepaintRequest = null;
 
         //----- property -----
 
-        public T[] Contents
+        public IReadOnlyList<T> Contents
         {
-            get { return scrollView.Contents; }
-            protected set { scrollView.Contents = value; }
+            get { return contents; }
         }
 
         //----- method -----
 
         public RegisterScrollView()
         {
-            scrollView = new FastScrollView(this);
-
             toolbarPlusIcon = EditorGUIUtility.IconContent("Toolbar Plus");
             toolbarMinusIcon = EditorGUIUtility.IconContent("Toolbar Minus");
-
-            scrollView.OnRepaintRequestAsObservable()
-                .Subscribe(_ =>
-                    {
-                        if (onRepaintRequest != null)
-                        {
-                            onRepaintRequest.OnNext(Unit.Default);
-                        }
-                    })
-                .AddTo(Disposable);
-
-            scrollView.OnRequestValidateAsObservable()
-                .Subscribe(x => ValidateContent(x))
-                .AddTo(Disposable);
         }
 
         public void SetContents(T[] contents)
         {
-            scrollView.Contents = contents;
+            this.contents = contents.ToList();
         }
 
         public virtual void DrawGUI(params GUILayoutOption[] options)
@@ -138,22 +56,50 @@ namespace Modules.Devkit.Inspector
 
                 if (GUILayout.Button(toolbarPlusIcon, EditorStyles.miniButton, GUILayout.Width(24f), GUILayout.Height(15f)))
                 {
-                    var list = Contents.ToList();
-
-                    list.Add(CreateNewContent());
-
-                    Contents = list.ToArray();
-
-                    if (onRepaintRequest != null)
-                    {
-                        onRepaintRequest.OnNext(Unit.Default);
-                    }
+                    contents.Add(CreateNewContent());
                 }
             }
 
             GUILayout.Space(2f);
 
-            scrollView.Draw(true, options);
+            using (new EditorGUILayout.ScrollViewScope(scrollPosition))
+            {
+                for (var index = 0; index < contents.Count; index++)
+                {
+                    var content = Contents.ElementAtOrDefault(index);
+
+                    if (content == null){ continue; }
+
+                    using (new EditorGUILayout.HorizontalScope())
+                    {
+                        EditorGUI.BeginChangeCheck();
+
+                        content = DrawContent(index, content);
+
+                        if (EditorGUI.EndChangeCheck())
+                        {
+                            contents[index] = content;
+
+                            ValidateContent(content);
+
+                            if (onUpdateContents != null)
+                            {
+                                onUpdateContents.OnNext(Contents.ToArray());
+                            }
+                        }
+
+                        if (GUILayout.Button(toolbarMinusIcon, EditorStyles.miniButton, GUILayout.Width(24f), GUILayout.Height(15f)))
+                        {
+                            contents.RemoveAt(index);
+                            
+                            if (onUpdateContents != null)
+                            {
+                                onUpdateContents.OnNext(contents.ToArray());
+                            }
+                        }
+                    }
+                }
+            }
 
             GUILayout.Space(2f);
         }
@@ -161,11 +107,6 @@ namespace Modules.Devkit.Inspector
         public IObservable<T[]> OnUpdateContentsAsObservable()
         {
             return onUpdateContents ?? (onUpdateContents = new Subject<T[]>());
-        }
-
-        public IObservable<Unit> OnRepaintRequestAsObservable()
-        {
-            return onRepaintRequest ?? (onRepaintRequest = new Subject<Unit>());
         }
 
         protected virtual void DrawHeaderContent() { }

@@ -66,10 +66,6 @@ namespace Modules.Devkit.AssetTuning
                 .Subscribe(x => SaveCompressFolders(x.Select(y => y.asset).ToArray()))
                 .AddTo(lifetimeDisposable.Disposable);
 
-            compressFolderView.OnRepaintRequestAsObservable()
-                .Subscribe(_ => Repaint())
-                .AddTo(lifetimeDisposable.Disposable);
-
             var compressFolderGuids = instance.CompressFolders
                 .Select(x => UnityEditorUtility.GetAssetGUID(x))
                 .ToArray();
@@ -86,10 +82,6 @@ namespace Modules.Devkit.AssetTuning
                 .Subscribe(x => SaveSpriteFolders(x.Select(y => y.asset).ToArray()))
                 .AddTo(lifetimeDisposable.Disposable);
 
-            spriteFolderView.OnRepaintRequestAsObservable()
-                .Subscribe(_ => Repaint())
-                .AddTo(lifetimeDisposable.Disposable);
-
             var spriteFolderGuids = instance.SpriteFolders
                 .Select(x => UnityEditorUtility.GetAssetGUID(x))
                 .ToArray();
@@ -104,10 +96,6 @@ namespace Modules.Devkit.AssetTuning
                 .Subscribe(x => SaveIgnoreCompressFolders(x))
                 .AddTo(lifetimeDisposable.Disposable);
 
-            ignoreCompressFolderNameScrollView.OnRepaintRequestAsObservable()
-                .Subscribe(_ => Repaint())
-                .AddTo(lifetimeDisposable.Disposable);
-
             ignoreCompressFolderNameScrollView.SetContents(instance.IgnoreCompressFolders);
 
             //------ Sprite Folder Name ------
@@ -118,10 +106,6 @@ namespace Modules.Devkit.AssetTuning
                 .Subscribe(x => SaveSpriteFolderNames(x))
                 .AddTo(lifetimeDisposable.Disposable);
 
-            spriteFolderNameScrollView.OnRepaintRequestAsObservable()
-                .Subscribe(_ => Repaint())
-                .AddTo(lifetimeDisposable.Disposable);
-
             spriteFolderNameScrollView.SetContents(instance.SpriteFolderNames);
 
             //------ Ignore Sprite FolderName ------
@@ -130,10 +114,6 @@ namespace Modules.Devkit.AssetTuning
 
             ignoreSpriteFolderNameScrollView.OnUpdateContentsAsObservable()
                 .Subscribe(x => SaveIgnoreSpriteFolders(x))
-                .AddTo(lifetimeDisposable.Disposable);
-
-            ignoreSpriteFolderNameScrollView.OnRepaintRequestAsObservable()
-                .Subscribe(_ => Repaint())
                 .AddTo(lifetimeDisposable.Disposable);
 
             ignoreSpriteFolderNameScrollView.SetContents(instance.IgnoreSpriteFolders);
@@ -188,7 +168,7 @@ namespace Modules.Devkit.AssetTuning
 
         private void DrawRegisterIgnoreFolderNameGUI(FolderNameRegisterScrollView scrollView, string title)
         {
-            var scrollViewHeight = Mathf.Min(scrollView.Contents.Length * 18f, 150f);
+            var scrollViewHeight = Mathf.Min(scrollView.Contents.Count * 18f, 150f);
 
             if (EditorLayoutTools.Header(title, string.Format("TextureAssetTunerConfigInspector-{0}", title)))
             {
