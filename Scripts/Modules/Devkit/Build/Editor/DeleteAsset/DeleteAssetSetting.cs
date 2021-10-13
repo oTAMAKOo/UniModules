@@ -20,7 +20,7 @@ namespace Modules.Devkit.Build
 
         //----- property -----
 
-        public string Tag { get { return tag; } }
+        public string Tag { get { return tag.Trim(); } }
         
         public IReadOnlyList<string> Guids
         {
@@ -29,9 +29,13 @@ namespace Modules.Devkit.Build
 
         //----- method -----
 
-        public static IReadOnlyCollection<Object> GetTargets(string[] tags)
+        public static IReadOnlyCollection<Object> GetTargets(IEnumerable<string> tags)
         {
-            if (tags == null || tags.IsEmpty()){ return new Object[0]; }
+            if (tags == null){ return new Object[0]; }
+
+            var tagList = tags.Select(x => x.Trim()).ToList();
+
+            if (tagList.IsEmpty()){ return new Object[0]; }
 
             var settingGuids = AssetDatabase.FindAssets("t:DeleteAssetSetting");
 
@@ -39,7 +43,7 @@ namespace Modules.Devkit.Build
                 .Select(x => AssetDatabase.LoadMainAssetAtPath(x) as DeleteAssetSetting)
                 .ToArray();
 
-            var guids = settings.Where(x => tags.Contains(x.Tag))
+            var guids = settings.Where(x => tagList.Contains(x.Tag))
                 .SelectMany(x => x.Guids)
                 .Where(x => !string.IsNullOrEmpty(x))
                 .ToArray();
