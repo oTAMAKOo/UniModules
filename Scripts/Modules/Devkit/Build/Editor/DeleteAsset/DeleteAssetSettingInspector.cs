@@ -11,23 +11,31 @@ namespace Modules.Devkit.Build
     [CustomEditor(typeof(DeleteAssetSetting))]
     public sealed class DeleteAssetSettingInspector : UnityEditor.Editor
     {
+        //----- params -----
+
+        //----- field -----
+
         private AssetRegisterScrollView assetListView = null;
 
         private bool changed = false;
-
+        
         private AssetRegisterScrollView.AssetInfo[] infos = null;
 
         private DeleteAssetSetting instance = null;
+
+        //----- property -----
+
+        //----- method -----
 
         void OnEnable()
         {
             instance = target as DeleteAssetSetting;
 
             changed = false;
+            
+            var guids = instance.Guids.ToArray();
 
-            var guids = Reflection.GetPrivateField<DeleteAssetSetting, string[]>(instance, "targetGuids");
-
-            assetListView = new AssetRegisterScrollView("Delete Assets", "DeleteAssetSettingInspector-Delete Assets");
+            assetListView = new AssetRegisterScrollView("Delete Targets", "DeleteAssetSettingInspector-Delete Targets");
             assetListView.RemoveChildrenAssets = true;
             assetListView.SetContents(guids);
 
@@ -44,7 +52,7 @@ namespace Modules.Devkit.Build
 
                 UnityEditorUtility.RegisterUndo("DeleteAssetSettingInspector Undo", instance);
 
-                Reflection.SetPrivateField<DeleteAssetSetting, string[]>(instance, "targetGuids", guids);
+                Reflection.SetPrivateField(instance, "guids", guids);
 
                 UnityEditorUtility.SaveAsset(instance);
             }
@@ -54,6 +62,24 @@ namespace Modules.Devkit.Build
         {
             instance = target as DeleteAssetSetting;
 
+            EditorLayoutTools.ContentTitle("Label");
+
+            using (new ContentsScope())
+            {
+                EditorGUI.BeginChangeCheck();
+
+                var tag = EditorGUILayout.TextArea(instance.Tag);
+
+                if (EditorGUI.EndChangeCheck())
+                {
+                    UnityEditorUtility.RegisterUndo("DeleteAssetSettingInspector Undo", instance);
+
+                    Reflection.SetPrivateField(instance, "tag", tag);
+
+                    UnityEditorUtility.SaveAsset(instance);
+                }
+            }
+            
             assetListView.DrawGUI();
         }
 
