@@ -62,7 +62,7 @@ namespace Modules.Devkit.Inspector
 
             GUILayout.Space(2f);
 
-            using (new EditorGUILayout.ScrollViewScope(scrollPosition))
+            using (var scrollViewScope = new EditorGUILayout.ScrollViewScope(scrollPosition, options))
             {
                 for (var index = 0; index < contents.Count; index++)
                 {
@@ -99,6 +99,8 @@ namespace Modules.Devkit.Inspector
                         }
                     }
                 }
+
+                scrollPosition = scrollViewScope.scrollPosition;
             }
 
             GUILayout.Space(2f);
