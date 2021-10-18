@@ -153,6 +153,12 @@ namespace Extensions
 
         //----- method -----
 
+        public static Rfc2898DeriveBytes CreateRfc2898DeriveBytes(string password)
+        {
+            // 疑似乱数を使用してパスワードを暗号化.
+            return new Rfc2898DeriveBytes(password, Salt, 64);
+        }
+
         public AesCryptoKey(string password)
         {
             if (string.IsNullOrEmpty(password))
@@ -160,8 +166,7 @@ namespace Extensions
                 throw new ArgumentException("Require password string.");
             }
 
-            // 疑似乱数を使用してパスワードを暗号化.
-            var pdb = new Rfc2898DeriveBytes(password, Salt, 64);
+            var pdb = CreateRfc2898DeriveBytes(password);
 
             aesManaged = CreateAesManaged();
 
