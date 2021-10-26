@@ -1,13 +1,11 @@
 ﻿
 using UnityEngine;
-using UnityEngine.UI;
 using System;
 using System.Collections;
 using System.Linq;
 using System.Collections.Generic;
 using UniRx;
 using Extensions;
-using Modules.UI.VirtualScroll;
 
 namespace Modules.UI
 {
@@ -39,9 +37,11 @@ namespace Modules.UI
 
             if (parentObjectRt != null)
             {
+                UnityUtility.GetOrAddComponent<Canvas>(gameObject);
+
                 parentObjectRt.FillRect();
             }
-            
+
             return base.Initialize();
         }
         
@@ -60,18 +60,8 @@ namespace Modules.UI
 
             try
             {
-                // 多い.
-                if (elementCount < elementObjectCount)
-                {
-                    var num = elementObjectCount - elementCount;
-
-                    for (var i = 0; i < num; i++)
-                    {
-                        elements.RemoveAt(0);
-                    }
-                }
                 // 足りない.
-                else if (elementObjectCount < elementCount)
+                if (elementObjectCount < elementCount)
                 {
                     var num = elementCount - elementObjectCount;
 
@@ -84,12 +74,16 @@ namespace Modules.UI
 
                     elements.AddRange(newElements);
                 }
+
+                // 一旦全てを非表示.
+                elements.ForEach(x => UnityUtility.SetActive(x, false));
             }
             catch (Exception e)
             {
                 Debug.LogException(e);
             }
 
+            var activeElements = new List<TComponent>();
             var observers = new List<IObservable<Unit>>();
             
             for (var i = 0; i < elementCount; i++)
@@ -98,9 +92,14 @@ namespace Modules.UI
                 var elementInfo = info.Elements.ElementAtOrDefault(i);
                 var element = elements.ElementAtOrDefault(i);
 
-                var observer = Observable.Defer(() => UpdateContents(elementIndex, elementInfo, element));
+                if (element != null && elementInfo != null)
+                {
+                    activeElements.Add(element);
 
-                observers.Add(observer);
+                    var observer = Observable.Defer(() => UpdateContents(elementIndex, elementInfo, element));
+
+                    observers.Add(observer);
+                }
             }
 
             var updateContentsYield = observers.WhenAll().ToYieldInstruction(false);
@@ -114,6 +113,9 @@ namespace Modules.UI
             {
                 Debug.LogException(updateContentsYield.Error);
             }
+
+            // 有効なオブジェクトだけ表示.
+            activeElements.ForEach(x => UnityUtility.SetActive(x, true));
         }
 
         /// <summary> 要素初期化処理 </summary>
