@@ -6,6 +6,7 @@ using System;
 using System.Collections;
 using System.Linq;
 using System.Collections.Generic;
+using Cysharp.Threading.Tasks;
 using DG.Tweening;
 using UniRx;
 using Extensions;
@@ -390,7 +391,7 @@ namespace Modules.UI
             }
 
             // 初期化.
-            var initializeYield = item.Initialize().ToYieldInstruction(false);
+            var initializeYield = item.Initialize().ToObservable().ToYieldInstruction(false);
 
             while (!initializeYield.IsDone)
             {

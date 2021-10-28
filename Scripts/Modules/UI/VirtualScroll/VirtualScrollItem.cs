@@ -1,6 +1,7 @@
 ﻿using UnityEngine;
 using System;
 using System.Collections.Generic;
+using Cysharp.Threading.Tasks;
 using Extensions;
 using UniRx;
 
@@ -41,12 +42,12 @@ namespace Modules.UI
 
         public IObservable<Unit> UpdateItem()
         {
-            return Content != null ? UpdateContents(Content) : Observable.ReturnUnit();
+            return Content != null ? Observable.FromUniTask(_ => UpdateContents(Content)) : Observable.ReturnUnit();
         }
 
         /// <summary> 初期化. </summary>
-        public virtual IObservable<Unit> Initialize() { return Observable.ReturnUnit(); }
+        public virtual UniTask Initialize() { return UniTask.CompletedTask; }
 
-        protected abstract IObservable<Unit> UpdateContents(T content);
+        protected abstract UniTask UpdateContents(T content);
     }
 }
