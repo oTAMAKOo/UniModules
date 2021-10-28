@@ -1,8 +1,8 @@
 ﻿
 using System;
-using System.Collections;
 using System.Linq;
 using System.Collections.Generic;
+using Cysharp.Threading.Tasks;
 using UniRx;
 
 namespace Modules.SceneManagement
@@ -93,12 +93,9 @@ namespace Modules.SceneManagement
         }
 
         /// <summary> 外部の処理待ち </summary>
-        private IEnumerator TransitionWait()
+        private async UniTask TransitionWait()
         {
-            while (waitHandlerIds.Any())
-            {
-                yield return null;
-            }
+            await UniTask.WaitWhile(() => waitHandlerIds.Any());
         }
     }
 }

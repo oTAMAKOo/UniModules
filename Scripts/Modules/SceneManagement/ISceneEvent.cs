@@ -1,10 +1,5 @@
 ﻿
-using UnityEngine;
-using System;
-using System.Linq;
-using System.Collections.Generic;
-using UniRx;
-using Extensions;
+using Cysharp.Threading.Tasks;
 
 namespace Modules.SceneManagement
 {
@@ -12,8 +7,9 @@ namespace Modules.SceneManagement
 	public interface ISceneEvent
 	{
         /// <summary> シーン読込時 </summary>
-        IObservable<Unit> OnLoadSceneAsObservable();
+        UniTask OnLoadSceneAsObservable();
+
         /// <summary> シーン解放時 </summary>
-        IObservable<Unit> OnUnloadSceneAsObservable();
+        UniTask OnUnloadSceneAsObservable();
     }
 }

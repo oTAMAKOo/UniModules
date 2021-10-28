@@ -1,5 +1,6 @@
 ﻿
 using UnityEngine;
+using UnityEngine.UI;
 using System;
 using System.Collections;
 using System.Linq;
@@ -38,6 +39,8 @@ namespace Modules.UI
             if (parentObjectRt != null)
             {
                 UnityUtility.GetOrAddComponent<Canvas>(gameObject);
+
+                UnityUtility.GetOrAddComponent<GraphicRaycaster>(gameObject);
 
                 parentObjectRt.FillRect();
             }

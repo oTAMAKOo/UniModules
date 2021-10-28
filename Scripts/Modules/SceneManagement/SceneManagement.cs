@@ -10,6 +10,7 @@ using System.Text;
 using UniRx;
 using Extensions;
 using Constants;
+using Cysharp.Threading.Tasks;
 using Modules.Devkit.Console;
 using Modules.SceneManagement.Diagnostics;
 using Modules.UniRxExtension;
@@ -175,7 +176,7 @@ namespace Modules.SceneManagement
                 yield return null;
             }
 
-            var initializeYield = currentScene.Instance.Initialize().ToYieldInstruction();
+            var initializeYield = currentScene.Instance.Initialize().ToObservable().ToYieldInstruction();
 
             while (!initializeYield.IsDone)
             {
@@ -187,7 +188,7 @@ namespace Modules.SceneManagement
                 onPrepare.OnNext(sceneArgument);
             }
 
-            var prepareYield = currentScene.Instance.Prepare(false).ToYieldInstruction();
+            var prepareYield = currentScene.Instance.Prepare(false).ToObservable().ToYieldInstruction();
 
             while (!prepareYield.IsDone)
             {
@@ -196,7 +197,7 @@ namespace Modules.SceneManagement
 
             if (onPrepareComplete != null)
             {
-                onPrepare.OnNext(sceneArgument);
+                onPrepareComplete.OnNext(sceneArgument);
             }
 
             if (onEnter != null)
@@ -372,7 +373,7 @@ namespace Modules.SceneManagement
                 }
 
                 // 現在のシーンの終了処理を実行.
-                var leaveYield = prev.Instance.Leave().ToYieldInstruction();
+                var leaveYield = prev.Instance.Leave().ToObservable().ToYieldInstruction();
 
                 while (!leaveYield.IsDone)
                 {
@@ -413,7 +414,7 @@ namespace Modules.SceneManagement
                     // キャッシュ対象でない.
                     result &= cacheScenes.All(x => x != sceneInstance);
 
-                    // 次のシーンのPreload対象ではない.
+                    // 次のシーンのPreLoad対象ではない.
                     result &= currentSceneArgument.PreLoadScenes.All(y => y != sceneInstance.Identifier);
 
                     return result;
@@ -523,7 +524,7 @@ namespace Modules.SceneManagement
             // 次のシーンの準備処理実行.
             if (currentScene.Instance != null)
             {
-                var prepareYield = currentScene.Instance.Prepare(isSceneBack).ToYieldInstruction();
+                var prepareYield = currentScene.Instance.Prepare(isSceneBack).ToObservable().ToYieldInstruction();
 
                 while (!prepareYield.IsDone)
                 {
@@ -565,7 +566,7 @@ namespace Modules.SceneManagement
 
             // 外部処理待機.
 
-            var transitionWaitYield = Observable.FromMicroCoroutine(() => TransitionWait()).ToYieldInstruction();
+            var transitionWaitYield = TransitionWait().ToObservable().ToYieldInstruction();
 
             while (!transitionWaitYield.IsDone)
             {
@@ -832,7 +833,7 @@ namespace Modules.SceneManagement
 
                         foreach (var target in targets)
                         {
-                            var loadSceneYield = target.OnLoadSceneAsObservable().ToYieldInstruction();
+                            var loadSceneYield = target.OnLoadSceneAsObservable().ToObservable().ToYieldInstruction();
 
                             while (!loadSceneYield.IsDone)
                             {
@@ -847,7 +848,7 @@ namespace Modules.SceneManagement
                 // シーンの初期化処理.
                 if (sceneInstance.Instance != null)
                 {
-                    var initializeYield = sceneInstance.Instance.Initialize().ToYieldInstruction();
+                    var initializeYield = sceneInstance.Instance.Initialize().ToObservable().ToYieldInstruction();
 
                     while (!initializeYield.IsDone)
                     {
@@ -976,7 +977,7 @@ namespace Modules.SceneManagement
 
                 foreach (var target in targets)
                 {
-                    var unloadYield = target.OnUnloadSceneAsObservable().ToYieldInstruction();
+                    var unloadYield = target.OnUnloadSceneAsObservable().ToObservable().ToYieldInstruction();
 
                     while (!unloadYield.IsDone)
                     {

@@ -1,7 +1,6 @@
 ﻿
 using UnityEngine;
-using System;
-using UniRx;
+using Cysharp.Threading.Tasks;
 using Constants;
 
 namespace Modules.SceneManagement
@@ -25,16 +24,16 @@ namespace Modules.SceneManagement
         void SetArgument(ISceneArgument argument);
 
         /// <summary> シーンの初期化 </summary>
-        IObservable<Unit> Initialize();
+        UniTask Initialize();
 
         /// <summary> シーンの準備 (通信、読み込みなど) </summary>
-        IObservable<Unit> Prepare(bool isSceneBack = false);
+        UniTask Prepare(bool isSceneBack = false);
 
         /// <summary> シーンの開始 </summary>
         void Enter(bool isSceneBack = false);
 
         /// <summary> シーンの終了 </summary>
-        IObservable<Unit> Leave();
+        UniTask Leave();
 
         /// <summary> シーンの再読み込み  </summary>
         void Reload();
@@ -46,16 +45,16 @@ namespace Modules.SceneManagement
         public abstract void SetArgument(ISceneArgument argument);
 
         /// <summary> シーンの初期化 </summary>
-        public abstract IObservable<Unit> Initialize();
+        public abstract UniTask Initialize();
 
         /// <summary> シーン準備処理 </summary>
-        public abstract IObservable<Unit> Prepare(bool isSceneBack);
+        public abstract UniTask Prepare(bool isSceneBack);
 
         /// <summary> シーン開始時処理 </summary>
         public abstract void Enter(bool isSceneBack);
 
         /// <summary> シーン離脱時処理 </summary>
-        public abstract IObservable<Unit> Leave();
+        public abstract UniTask Leave();
 
         /// <summary> シーン再読み込み時処理 </summary>
         public abstract void Reload();
