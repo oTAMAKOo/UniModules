@@ -1,8 +1,8 @@
-﻿using UnityEngine;
-using System;
+﻿
+using UnityEngine;
 using System.Collections.Generic;
+using Cysharp.Threading.Tasks;
 using Extensions;
-using UniRx;
 
 namespace Modules.UI
 {
@@ -39,14 +39,17 @@ namespace Modules.UI
             Content = contents != null ? contents.ElementAtOrDefault(index, null) : null;
         }
 
-        public IObservable<Unit> UpdateItem()
+        public async UniTask UpdateItem()
         {
-            return Content != null ? UpdateContents(Content) : Observable.ReturnUnit();
+            if (Content != null)
+            {
+                await UpdateContents(Content);
+            }
         }
 
         /// <summary> 初期化. </summary>
-        public virtual IObservable<Unit> Initialize() { return Observable.ReturnUnit(); }
+        public virtual UniTask Initialize() { return UniTask.CompletedTask; }
 
-        protected abstract IObservable<Unit> UpdateContents(T content);
+        protected abstract UniTask UpdateContents(T content);
     }
 }

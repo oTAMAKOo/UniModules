@@ -6,8 +6,9 @@ using System;
 using System.Collections;
 using System.Linq;
 using System.Collections.Generic;
-using DG.Tweening;
+using Cysharp.Threading.Tasks;
 using UniRx;
+using DG.Tweening;
 using Extensions;
 using Modules.UI.VirtualScroll;
 
@@ -390,7 +391,7 @@ namespace Modules.UI
             }
 
             // 初期化.
-            var initializeYield = item.Initialize().ToYieldInstruction(false);
+            var initializeYield = item.Initialize().ToObservable().ToYieldInstruction(false);
 
             while (!initializeYield.IsDone)
             {
@@ -846,13 +847,13 @@ namespace Modules.UI
 
         private IObservable<Unit> UpdateItem(VirtualScrollItem<T> item, int index)
         {
-            var observable = Observable.ReturnUnit();
+            var task = UniTask.CompletedTask;
 
             switch (scrollType)
             {
                 case ScrollType.Limited:
                     {
-                        observable = Observable.Defer(() => item.UpdateItem());
+                        task = UniTask.Defer(() => item.UpdateItem());
                     }
                     break;
 
@@ -868,7 +869,7 @@ namespace Modules.UI
                             index = 0;
                         }
                         
-                        observable = Observable.Defer(() => item.UpdateItem());
+                        task = UniTask.Defer(() => item.UpdateItem());
                     }
                     break;
             }
@@ -890,7 +891,7 @@ namespace Modules.UI
                 onUpdateItem.OnNext(item);
             }
 
-            return observable;
+            return task.ToObservable().AsUnitObservable();
         }
 
         private static Rect GetWorldRect(RectTransform trans)

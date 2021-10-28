@@ -5,6 +5,7 @@ using System;
 using System.Collections;
 using System.Linq;
 using System.Collections.Generic;
+using Cysharp.Threading.Tasks;
 using UniRx;
 using Extensions;
 
@@ -30,7 +31,7 @@ namespace Modules.UI
 
         //----- method -----
 
-        public override IObservable<Unit> Initialize()
+        public override UniTask Initialize()
         {
             elements = new List<TComponent>();
 
@@ -45,17 +46,12 @@ namespace Modules.UI
                 parentObjectRt.FillRect();
             }
 
-            return base.Initialize();
+            return UniTask.CompletedTask;
         }
         
-        protected override IObservable<Unit> UpdateContents(GridVirtualScroll<T>.GridElement info)
+        protected override async UniTask UpdateContents(GridVirtualScroll<T>.GridElement info)
         {
-            return Observable.FromMicroCoroutine(() => UpdateContentsInternal(info));
-        }
-
-        private IEnumerator UpdateContentsInternal(GridVirtualScroll<T>.GridElement info)
-        {
-            if (elements == null) { yield break; }
+            if (elements == null) { return; }
 
             var elementObjectCount = elements.Count;
 
@@ -87,7 +83,7 @@ namespace Modules.UI
             }
 
             var activeElements = new List<TComponent>();
-            var observers = new List<IObservable<Unit>>();
+            var tasks = new List<UniTask>();
             
             for (var i = 0; i < elementCount; i++)
             {
@@ -99,22 +95,19 @@ namespace Modules.UI
                 {
                     activeElements.Add(element);
 
-                    var observer = Observable.Defer(() => UpdateContents(elementIndex, elementInfo, element));
+                    var task = UniTask.Defer(() => UpdateContents(elementIndex, elementInfo, element));
 
-                    observers.Add(observer);
+                    tasks.Add(task);
                 }
             }
 
-            var updateContentsYield = observers.WhenAll().ToYieldInstruction(false);
-
-            while (!updateContentsYield.IsDone)
+            try
             {
-                yield return null;
+                await UniTask.WhenAll(tasks);
             }
-
-            if (updateContentsYield.HasError)
+            catch (Exception e)
             {
-                Debug.LogException(updateContentsYield.Error);
+                Debug.LogException(e);
             }
 
             // 有効なオブジェクトだけ表示.
@@ -125,6 +118,6 @@ namespace Modules.UI
         protected virtual void OnCreateElement(TComponent element) { }
         
         /// <summary> 要素更新処理 </summary>
-        protected abstract IObservable<Unit> UpdateContents(int index, T content, TComponent element);
+        protected abstract UniTask UpdateContents(int index, T content, TComponent element);
     }
 }
