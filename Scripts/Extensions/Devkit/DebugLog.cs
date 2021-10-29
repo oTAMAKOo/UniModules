@@ -1,6 +1,11 @@
 ﻿﻿﻿﻿
 using UnityEngine;
 
+public static class UnityLog
+{
+    public static bool ForceEnable { get; set; }
+}
+
 #if !UNITY_EDITOR
 
 public static class Debug
@@ -14,7 +19,7 @@ public static class Debug
     {
         get
         {
-            return isDebugBuild || Application.isBatchMode;
+            return UnityLog.ForceEnable || isDebugBuild || Application.isBatchMode;
         }
     }
 
