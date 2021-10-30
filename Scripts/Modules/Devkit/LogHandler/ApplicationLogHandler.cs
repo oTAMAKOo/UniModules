@@ -26,11 +26,25 @@ namespace Modules.Devkit.LogHandler
 
         //----- field -----
 
-        private Subject<LogInfo> onLogReceive = null;
+        private Subject<LogInfo> onReceivedAll = null;
 
-        private Subject<Unit> onReceiveWarning = null;
-        private Subject<Unit> onReceiveError = null;
-        private Subject<Unit> onReceiveException = null;
+        private Subject<LogInfo> onReceivedLog = null;
+
+        private Subject<LogInfo> onReceivedWarning = null;
+
+        private Subject<LogInfo> onReceivedError = null;
+
+        private Subject<LogInfo> onReceivedException = null;
+
+        private Subject<LogInfo> onReceivedThreadedAll = null;
+
+        private Subject<LogInfo> onReceivedThreadedLog = null;
+
+        private Subject<LogInfo> onReceivedThreadedWarning = null;
+
+        private Subject<LogInfo> onReceivedThreadedError = null;
+
+        private Subject<LogInfo> onReceivedThreadedException = null;
 
         //----- property -----
 
@@ -38,65 +52,111 @@ namespace Modules.Devkit.LogHandler
 
         private ApplicationLogHandler()
         {
-            Application.logMessageReceived += OnLogReceived;
+            Application.logMessageReceived += OnLogMessageReceived;
+
+            Application.logMessageReceivedThreaded += OnLogMessageReceivedThreaded;
         }
 
-        private void OnLogReceived(string condition, string stackTrace, LogType type)
+        private void OnLogMessageReceived(string condition, string stackTrace, LogType type)
         {
-            if (onLogReceive != null)
-            {
-                onLogReceive.OnNext(new LogInfo(condition, stackTrace, type));
-            }
+            var logInfo = new LogInfo(condition, stackTrace, type);
 
             switch (type)
             {
+                case LogType.Log:
+                    onReceivedLog?.OnNext(logInfo);
+                    break;
+
                 case LogType.Warning:
-
-                    if(onReceiveWarning != null)
-                    {
-                        onReceiveWarning.OnNext(Unit.Default);
-                    }
-
+                    onReceivedWarning?.OnNext(logInfo);
                     break;
                 
                 case LogType.Error:
-
-                    if (onReceiveError != null)
-                    {
-                        onReceiveError.OnNext(Unit.Default);
-                    }
-
+                    onReceivedError?.OnNext(logInfo);
                     break;
 
                 case LogType.Exception:
-
-                    if (onReceiveException != null)
-                    {
-                        onReceiveException.OnNext(Unit.Default);
-                    }
-
+                    onReceivedException?.OnNext(logInfo);
                     break;
             }
+
+            onReceivedAll?.OnNext(logInfo);
         }
 
-        public IObservable<LogInfo> OnLogReceiveAsObservable()
+        private void OnLogMessageReceivedThreaded(string condition, string stackTrace, LogType type)
         {
-            return onLogReceive ?? (onLogReceive = new Subject<LogInfo>());
+            var logInfo = new LogInfo(condition, stackTrace, type);
+
+            switch (type)
+            {
+                case LogType.Log:
+                    onReceivedThreadedLog?.OnNext(logInfo);
+                    break;
+
+                case LogType.Warning:
+                    onReceivedThreadedWarning?.OnNext(logInfo);
+                    break;
+                
+                case LogType.Error:
+                    onReceivedThreadedError?.OnNext(logInfo);
+                    break;
+
+                case LogType.Exception:
+                    onReceivedThreadedException?.OnNext(logInfo);
+                    break;
+            }
+
+            onReceivedThreadedAll?.OnNext(logInfo);
         }
 
-        public IObservable<Unit> OnReceiveWarningAsObservable()
+        public IObservable<LogInfo> OnReceivedAllAsObservable()
         {
-            return onReceiveWarning ?? (onReceiveWarning = new Subject<Unit>());
+            return onReceivedAll ?? (onReceivedAll = new Subject<LogInfo>());
         }
 
-        public IObservable<Unit> OnReceiveErrorAsObservable()
+        public IObservable<LogInfo> OnReceivedLogAsObservable()
         {
-            return onReceiveError ?? (onReceiveError = new Subject<Unit>());
+            return onReceivedLog ?? (onReceivedLog = new Subject<LogInfo>());
         }
 
-        public IObservable<Unit> OnReceiveExceptionAsObservable()
+        public IObservable<LogInfo> OnReceivedWarningAsObservable()
         {
-            return onReceiveException ?? (onReceiveException = new Subject<Unit>());
+            return onReceivedWarning ?? (onReceivedWarning = new Subject<LogInfo>());
+        }
+
+        public IObservable<LogInfo> OnReceivedErrorAsObservable()
+        {
+            return onReceivedError ?? (onReceivedError = new Subject<LogInfo>());
+        }
+
+        public IObservable<LogInfo> OnReceivedExceptionAsObservable()
+        {
+            return onReceivedException ?? (onReceivedException = new Subject<LogInfo>());
+        }
+
+        public IObservable<LogInfo> OnReceivedThreadedAllAsObservable()
+        {
+            return onReceivedThreadedAll ?? (onReceivedThreadedAll = new Subject<LogInfo>());
+        }
+
+        public IObservable<LogInfo> OnReceivedThreadedLogAsObservable()
+        {
+            return onReceivedThreadedLog ?? (onReceivedThreadedLog = new Subject<LogInfo>());
+        }
+
+        public IObservable<LogInfo> OnReceivedThreadedWarningAsObservable()
+        {
+            return onReceivedThreadedWarning ?? (onReceivedThreadedWarning = new Subject<LogInfo>());
+        }
+
+        public IObservable<LogInfo> OnReceivedThreadedErrorAsObservable()
+        {
+            return onReceivedThreadedError ?? (onReceivedThreadedError = new Subject<LogInfo>());
+        }
+
+        public IObservable<LogInfo> OnReceivedThreadedExceptionAsObservable()
+        {
+            return onReceivedThreadedException ?? (onReceivedThreadedException = new Subject<LogInfo>());
         }
     }
 }

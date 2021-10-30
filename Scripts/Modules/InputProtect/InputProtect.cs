@@ -57,7 +57,7 @@ namespace Modules.InputProtection
         private InputProtectManager()
         {
             // Exception発生時に強制解除.
-            ApplicationLogHandler.Instance.OnReceiveExceptionAsObservable()
+            ApplicationLogHandler.Instance.OnReceivedExceptionAsObservable()
                 .Subscribe(x => ForceUnlock())
                 .AddTo(Disposable);
         }

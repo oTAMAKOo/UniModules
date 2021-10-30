@@ -93,7 +93,7 @@ namespace Modules.Devkit.Diagnosis.SRDebugger
                     .Subscribe(_ => srDebug.ShowDebugPanel())
                     .AddTo(this);
 
-                applicationLogHandler.OnLogReceiveAsObservable()
+                applicationLogHandler.OnReceivedThreadedAllAsObservable()
                     .Subscribe(x => OnLogReceive(x))
                     .AddTo(this);
 

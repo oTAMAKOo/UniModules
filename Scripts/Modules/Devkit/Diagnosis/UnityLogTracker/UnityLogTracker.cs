@@ -56,7 +56,7 @@ namespace Modules.Devkit.Diagnosis.LogTracker
 
             reportQueue = new FixedQueue<LogEntry>(DefaultReportLogNum);
 
-            ApplicationLogHandler.Instance.OnLogReceiveAsObservable()
+            ApplicationLogHandler.Instance.OnReceivedThreadedAllAsObservable()
                 .Subscribe(x => LogCallback(x))
                 .AddTo(disposable.Disposable);
 
