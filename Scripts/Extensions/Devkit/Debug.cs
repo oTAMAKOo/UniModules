@@ -1,12 +1,8 @@
-﻿﻿﻿﻿
-using UnityEngine;
-
-public static class UnityLog
-{
-    public static bool ForceEnable { get; set; }
-}
-
+﻿
 #if !UNITY_EDITOR
+
+using UnityEngine;
+using Modules.Devkit.Log;
 
 public static class Debug
 {
@@ -19,7 +15,7 @@ public static class Debug
     {
         get
         {
-            return UnityLog.ForceEnable || isDebugBuild || Application.isBatchMode;
+            return isDebugBuild || Application.isBatchMode;
         }
     }
 
@@ -29,6 +25,8 @@ public static class Debug
 
     public static void Log(object message)
     {
+        DebugLog.ReceiveLog(message?.ToString());
+
         if (!enable) { return; }
 
         UnityEngine.Debug.Log(message);
@@ -36,6 +34,8 @@ public static class Debug
 
     public static void Log(object message, Object context)
     {
+        DebugLog.ReceiveLog(message?.ToString());
+
         if (!enable) { return; }
 
         UnityEngine.Debug.Log(message, context);
@@ -43,6 +43,8 @@ public static class Debug
 
     public static void LogFormat(string format, params object[] args)
     {
+        DebugLog.ReceiveLog(string.Format(format, args));
+
         if (!enable) { return; }
 
         UnityEngine.Debug.LogFormat(format, args);
@@ -50,6 +52,8 @@ public static class Debug
 
     public static void LogFormat(Object context, string format, params object[] args)
     {
+        DebugLog.ReceiveLog(string.Format(format, args));
+
         if (!enable) { return; }
 
         UnityEngine.Debug.LogFormat(context, format, args);
@@ -59,6 +63,8 @@ public static class Debug
 
     public static void LogWarning(object message)
     {
+        DebugLog.ReceiveWarning(message?.ToString());
+
         if (!enable) { return; }
 
         UnityEngine.Debug.LogWarning(message);
@@ -66,6 +72,8 @@ public static class Debug
 
     public static void LogWarning(object message, Object context)
     {
+        DebugLog.ReceiveWarning(message?.ToString());
+
         if (!enable) { return; }
 
         UnityEngine.Debug.LogWarning(message, context);
@@ -73,6 +81,8 @@ public static class Debug
 
     public static void LogWarningFormat(string format, params object[] args)
     {
+        DebugLog.ReceiveWarning(string.Format(format, args));
+
         if (!enable) { return; }
 
         UnityEngine.Debug.LogWarningFormat(format, args);
@@ -80,6 +90,8 @@ public static class Debug
 
     public static void LogWarningFormat(Object context, string format, params object[] args)
     {
+        DebugLog.ReceiveWarning(string.Format(format, args));
+
         if (!enable) { return; }
 
         UnityEngine.Debug.LogWarningFormat(context, format, args);
@@ -89,6 +101,8 @@ public static class Debug
 
     public static void LogError(object message)
     {
+        DebugLog.ReceiveError(message?.ToString());
+
         if (!enable) { return; }
 
         UnityEngine.Debug.LogError(message);
@@ -96,6 +110,8 @@ public static class Debug
 
     public static void LogError(object message, Object context)
     {
+        DebugLog.ReceiveError(message?.ToString());
+
         if (!enable) { return; }
 
         UnityEngine.Debug.LogError(message, context);
@@ -103,6 +119,8 @@ public static class Debug
 
     public static void LogErrorFormat(string format, params object[] args)
     {
+        DebugLog.ReceiveError(string.Format(format, args));
+
         if (!enable) { return; }
 
         UnityEngine.Debug.LogErrorFormat(format, args);
@@ -110,6 +128,8 @@ public static class Debug
 
     public static void LogErrorFormat(Object context, string format, params object[] args)
     {
+        DebugLog.ReceiveError(string.Format(format, args));
+
         if (!enable) { return; }
 
         UnityEngine.Debug.LogErrorFormat(context, format, args);
@@ -119,6 +139,8 @@ public static class Debug
 
     public static void LogAssertion(object message)
     {
+        DebugLog.ReceiveAssert(message?.ToString());
+
         if (!enable) { return; }
 
         UnityEngine.Debug.LogAssertion(message);
@@ -126,6 +148,8 @@ public static class Debug
 
     public static void LogAssertion(object message, Object context)
     {
+        DebugLog.ReceiveAssert(message?.ToString());
+
         if (!enable) { return; }
 
         UnityEngine.Debug.LogAssertion(message, context);
@@ -133,6 +157,8 @@ public static class Debug
 
     public static void LogAssertionFormat(string format, params object[] args)
     {
+        DebugLog.ReceiveAssert(string.Format(format, args));
+
         if (!enable) { return; }
 
         UnityEngine.Debug.LogAssertionFormat(format, args);
@@ -140,6 +166,8 @@ public static class Debug
 
     public static void LogAssertionFormat(Object context, string format, params object[] args)
     {
+        DebugLog.ReceiveAssert(string.Format(format, args));
+
         if (!enable) { return; }
 
         UnityEngine.Debug.LogAssertionFormat(context, format, args);
@@ -147,11 +175,23 @@ public static class Debug
 
     public static void Assert(bool condition)
     {
+        if (condition)
+        {
+            DebugLog.ReceiveAssert(null);
+        }
+
+        if (!enable) { return; }
+
         UnityEngine.Debug.Assert(condition);
     }
 
     public static void Assert(bool condition, string message)
     {
+        if (condition)
+        {
+            DebugLog.ReceiveAssert(message);
+        }
+
         if (!enable) { return; }
 
         UnityEngine.Debug.Assert(condition, message);
@@ -161,6 +201,8 @@ public static class Debug
 
     public static void LogException(System.Exception exception)
     {
+        DebugLog.ReceiveException(exception);
+
         if (!enable) { return; }
 
         UnityEngine.Debug.LogException(exception);
@@ -168,6 +210,8 @@ public static class Debug
 
     public static void LogException(System.Exception exception, Object context)
     {
+        DebugLog.ReceiveException(exception);
+
         if (!enable) { return; }
 
         UnityEngine.Debug.LogException(exception, context);
