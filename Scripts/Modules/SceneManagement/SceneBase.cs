@@ -20,43 +20,43 @@ namespace Modules.SceneManagement
 
     public interface ISceneBase
     {
-        /// <summary> シーン引数を設定 </summary>
+        /// <summary> 引数を設定 </summary>
         void SetArgument(ISceneArgument argument);
 
-        /// <summary> シーンの初期化 </summary>
+        /// <summary> 初期化 </summary>
         UniTask Initialize();
 
-        /// <summary> シーンの準備 (通信、読み込みなど) </summary>
+        /// <summary> 準備 (通信、読み込みなど) </summary>
         UniTask Prepare(bool isSceneBack = false);
 
-        /// <summary> シーンの開始 </summary>
+        /// <summary> 開始 </summary>
         void Enter(bool isSceneBack = false);
 
-        /// <summary> シーンの終了 </summary>
+        /// <summary> 終了 </summary>
         UniTask Leave();
 
-        /// <summary> シーンの再読み込み  </summary>
+        /// <summary> 再読み込み  </summary>
         void Reload();
     }
 
     public abstract class SceneBase : MonoBehaviour, ISceneBase
     {
-        /// <summary> シーン引数を設定 </summary>
+        /// <summary> 引数を設定 </summary>
         public abstract void SetArgument(ISceneArgument argument);
 
-        /// <summary> シーンの初期化 </summary>
-        public abstract UniTask Initialize();
+        /// <summary> 初期化 </summary>
+        public virtual UniTask Initialize() { return UniTask.CompletedTask; }
 
-        /// <summary> シーン準備処理 </summary>
-        public abstract UniTask Prepare(bool isSceneBack);
+        /// <summary> 準備処理 </summary>
+        public virtual UniTask Prepare(bool isSceneBack) { return UniTask.CompletedTask; }
 
-        /// <summary> シーン開始時処理 </summary>
-        public abstract void Enter(bool isSceneBack);
+        /// <summary> 開始時処理 </summary>
+        public virtual void Enter(bool isSceneBack) { }
 
-        /// <summary> シーン離脱時処理 </summary>
-        public abstract UniTask Leave();
+        /// <summary> 離脱時処理 </summary>
+        public virtual UniTask Leave(){ return UniTask.CompletedTask; }
 
-        /// <summary> シーン再読み込み時処理 </summary>
-        public abstract void Reload();
+        /// <summary> 再読み込み時処理 </summary>
+        public virtual void Reload(){ }
     }
 }

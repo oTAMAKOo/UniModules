@@ -1097,17 +1097,17 @@ namespace Modules.SceneManagement
                 yield return null;
             }
 
-            if (!loadYield.HasError)
+            if (loadYield.HasError)
+            {
+                OnLoadError(loadYield.Error, targetScene);
+            }
+            else
             {
                 sw.Stop();
 
                 var time = sw.Elapsed.TotalMilliseconds;
 
                 builder.AppendLine(string.Format("{0} ({1:F2}ms)", targetScene, time));
-            }
-            else
-            {
-                OnLoadError(loadYield.Error, targetScene);
             }
         }
 
