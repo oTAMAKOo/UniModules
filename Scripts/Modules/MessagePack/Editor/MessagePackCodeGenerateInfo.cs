@@ -80,9 +80,9 @@ namespace Modules.MessagePack
         {
             var processArgument = new StringBuilder();
 
-            processArgument.AppendFormat(" --input {0}", ReplacePathSeparator(csprojPath));
+            processArgument.AppendFormat(" --input \"{0}\"", ReplacePathSeparator(csprojPath));
 
-            processArgument.AppendFormat(" --output {0}", ReplacePathSeparator(generatePath));
+            processArgument.AppendFormat(" --output \"{0}\"", ReplacePathSeparator(generatePath));
 
             if (messagePackConfig.UseMapMode)
             {
