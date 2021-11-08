@@ -139,51 +139,6 @@ namespace Modules.MessagePack
 
             GUILayout.Space(4f);
 
-            //------ コードジェネレーター ------
-
-            EditorLayoutTools.ContentTitle("CodeGenerator");
-
-            using (new ContentsScope())
-            {
-                GUILayout.Label("Windows");
-
-                using (new EditorGUILayout.HorizontalScope())
-                {
-                    GUILayout.Label(winMpcRelativePath.stringValue, pathTextStyle);
-
-                    if (GUILayout.Button("Edit", GUILayout.Width(45f)))
-                    {
-                        UnityEditorUtility.RegisterUndo("MessagePackConfigInspector Undo", instance);
-
-                        var path = EditorUtility.OpenFilePanel("Select MessagePack compiler", Application.dataPath, "exe");
-
-                        winMpcRelativePath.stringValue = UnityPathUtility.MakeRelativePath(path);
-
-                        serializedObject.ApplyModifiedProperties();
-                    }
-                }
-
-                GUILayout.Label("MacOSX");
-
-                using (new EditorGUILayout.HorizontalScope())
-                {
-                    GUILayout.Label(osxMpcRelativePath.stringValue, pathTextStyle);
-
-                    if (GUILayout.Button("Edit", GUILayout.Width(45f)))
-                    {
-                        UnityEditorUtility.RegisterUndo("MessagePackConfigInspector Undo", instance);
-
-                        var path = EditorUtility.OpenFilePanel("Select MessagePack compiler", Application.dataPath, "");
-
-                        osxMpcRelativePath.stringValue = UnityPathUtility.MakeRelativePath(path);
-
-                        serializedObject.ApplyModifiedProperties();
-                    }
-                }
-            }
-
-            GUILayout.Space(4f);
-
             //------ オプション設定 ------
 
             EditorLayoutTools.ContentTitle("CodeGenerator Options");
@@ -222,25 +177,25 @@ namespace Modules.MessagePack
 
                 using (new ContentsScope())
                 {
-                    EditorGUI.BeginChangeCheck();
-    
-                    // DotNet.
+                    // Mpc.
 
-                    GUILayout.Label("DotNet Path");
+                    GUILayout.Label("Mpc Path");
 
-                    MessagePackConfig.Prefs.DotnetPath = EditorGUILayout.DelayedTextField(MessagePackConfig.Prefs.DotnetPath);
+                    MessagePackConfig.Prefs.MpcPath = EditorGUILayout.DelayedTextField(MessagePackConfig.Prefs.MpcPath);
 
-                    // MSBuild.
-                    
-                    GUILayout.Label("MSBuild");
-
-                    var message = string.Format("Environment variables need to be registered.\nPATH: {0}", DefaultMsBuildPath);
-
-                    EditorGUILayout.HelpBox(message, MessageType.Info);
-                 
-                    if(EditorGUI.EndChangeCheck())
+                    if (platform == PlatformID.MacOSX || platform == PlatformID.Unix)
                     {
-                        UnityEditorUtility.RegisterUndo("MessagePackConfigInspector Undo", instance);
+                        // DotNet.
+
+                        GUILayout.Label("DotNet Path");
+
+                        MessagePackConfig.Prefs.DotnetPath = EditorGUILayout.DelayedTextField(MessagePackConfig.Prefs.DotnetPath);
+
+                        // MSBuild.
+
+                        var message = string.Format("Environment variables need to be registered.\nPATH: {0}", DefaultMsBuildPath);
+
+                        EditorGUILayout.HelpBox(message, MessageType.Info);
                     }
                 }
             }

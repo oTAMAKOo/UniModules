@@ -114,7 +114,7 @@ namespace Modules.MessagePack
             {
                 case PlatformID.Win32NT:
                     {
-                        command = messagePackConfig.CodeGeneratorPath;
+                        command = MessagePackConfig.Prefs.MpcPath;
                         argument = generateInfo.MpcArgument;
                     }
                     break;
@@ -123,7 +123,7 @@ namespace Modules.MessagePack
                 case PlatformID.Unix:
                     {
                         command = "/bin/bash";
-                        argument = $"-c \"{ messagePackConfig.CodeGeneratorPath }{ generateInfo.MpcArgument }\"";
+                        argument = $"-c \"{MessagePackConfig.Prefs.MpcPath}{generateInfo.MpcArgument}\"";
                     }
                     break;
 
