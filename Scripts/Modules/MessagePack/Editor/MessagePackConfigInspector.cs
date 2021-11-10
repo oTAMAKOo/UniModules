@@ -3,7 +3,6 @@ using UnityEngine;
 using UnityEditor;
 using System;
 using System.Collections;
-using System.Collections.Generic;
 using UniRx;
 using Extensions;
 using Extensions.Devkit;
@@ -79,18 +78,21 @@ namespace Modules.MessagePack
             var resolverName = serializedObject.FindProperty("resolverName");
             var conditionalCompilerSymbols = serializedObject.FindProperty("conditionalCompilerSymbols");
 
-            var winMpcRelativePath = serializedObject.FindProperty("winMpcRelativePath");
-            var osxMpcRelativePath = serializedObject.FindProperty("osxMpcRelativePath");
-
             if (isLoading) { return; }
-
+            
             //------ .Netバージョン ------
 
             if (string.IsNullOrEmpty(dotnetVersion))
             {
                 if (!isDotnetInstalled)
                 {
-                    EditorGUILayout.HelpBox(".NET Core SDK not found.\nMessagePack CodeGen requires .NET Core Runtime.", MessageType.Error);
+                    EditorGUILayout.HelpBox(".NET Core SDK not found.", MessageType.Error);
+
+                    #if UNITY_EDITOR_OSX
+                    
+                    EditorGUILayout.HelpBox("If installed and not found.\n\nTerminal run this command:\nln -s /usr/local/share/dotnet/dotnet /usr/local/bin/", MessageType.Info);
+
+                    #endif
 
                     // インストールページ.
                     if (GUILayout.Button("Open .NET Core install page."))
@@ -169,36 +171,26 @@ namespace Modules.MessagePack
 
             //------ User local setting ------
 
-            var platform = Environment.OSVersion.Platform;
+            #if UNITY_EDITOR_OSX
+            
+            EditorLayoutTools.ContentTitle("User local setting");
 
-            if (platform == PlatformID.MacOSX || platform == PlatformID.Unix)
+            using (new ContentsScope())
             {
-                EditorLayoutTools.ContentTitle("User local setting");
+                // Mpc.
 
-                using (new ContentsScope())
-                {
-                    // Mpc.
+                GUILayout.Label("Mpc Path");
 
-                    GUILayout.Label("Mpc Path");
+                MessagePackConfig.Prefs.MpcPath = EditorGUILayout.DelayedTextField(MessagePackConfig.Prefs.MpcPath);
 
-                    MessagePackConfig.Prefs.MpcPath = EditorGUILayout.DelayedTextField(MessagePackConfig.Prefs.MpcPath);
+                // MSBuild.
 
-                    if (platform == PlatformID.MacOSX || platform == PlatformID.Unix)
-                    {
-                        // DotNet.
+                var message = string.Format("Environment variables need to be registered.\nPATH: {0}", DefaultMsBuildPath);
 
-                        GUILayout.Label("DotNet Path");
-
-                        MessagePackConfig.Prefs.DotnetPath = EditorGUILayout.DelayedTextField(MessagePackConfig.Prefs.DotnetPath);
-
-                        // MSBuild.
-
-                        var message = string.Format("Environment variables need to be registered.\nPATH: {0}", DefaultMsBuildPath);
-
-                        EditorGUILayout.HelpBox(message, MessageType.Info);
-                    }
-                }
+                EditorGUILayout.HelpBox(message, MessageType.Info);
             }
+
+            #endif
         }
 
         private IEnumerator FindDotnet()
@@ -214,35 +206,7 @@ namespace Modules.MessagePack
 
             Tuple<bool, string> result = null;
 
-            var command = string.Empty;
-            var arguments = string.Empty;
-
-            var platform = Environment.OSVersion.Platform;
-
-            switch (platform)
-            {
-                case PlatformID.Win32NT:
-                    {
-                        command = "dotnet";
-                        arguments = "--version";
-                    }
-                    break;
-
-                case PlatformID.MacOSX:
-                case PlatformID.Unix:
-                    {
-                        var dotnetPath = MessagePackConfig.Prefs.DotnetPath;
-
-                        command = "/bin/bash";
-                        arguments = $"-c \"{dotnetPath} --version\"";
-                    }
-                    break;
-
-                default:
-                    throw new NotSupportedException();
-            }
-
-            var commandLineProcess = new ProcessExecute(command, arguments);
+            var commandLineProcess = new ProcessExecute("dotnet", "--version");
 
             var findYield = commandLineProcess.StartAsync().ToObservable()
                 .Do(x => result = Tuple.Create(true, x.Item2))

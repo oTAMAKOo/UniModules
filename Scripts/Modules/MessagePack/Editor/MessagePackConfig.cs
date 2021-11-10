@@ -9,32 +9,18 @@ namespace Modules.MessagePack
     public sealed class MessagePackConfig : ReloadableScriptableObject<MessagePackConfig>
     {
         //----- params -----
-        
-        private const string DefaultDotNetPath = "/usr/local/share/dotnet/dotnet";
-
-        #if UNITY_EDITOR_WIN
-
-        private const string DefaultMpcPath = "mpc";
-
-        #elif UNITY_EDITOR_OSX
-
-        private const string DefaultMpcPath = "$HOME/.dotnet/tools/mpc";
-
-        #endif
 
         public static class Prefs
         {
-            public static string DotnetPath
-            {
-                get { return ProjectPrefs.GetString("MessagePackConfigPrefs-dotnetPath", DefaultDotNetPath); }
-                set { ProjectPrefs.SetString("MessagePackConfigPrefs-dotnetPath", value); }
-            }
+            #if UNITY_EDITOR_OSX
 
             public static string MpcPath
             {
-                get { return ProjectPrefs.GetString("MessagePackConfigPrefs-mpcPath", DefaultMpcPath); }
+                get { return ProjectPrefs.GetString("MessagePackConfigPrefs-mpcPath", ".dotnet/tools/mpc"); }
                 set { ProjectPrefs.SetString("MessagePackConfigPrefs-mpcPath", value); }
             }
+
+            #endif
         }
 
         //----- field -----

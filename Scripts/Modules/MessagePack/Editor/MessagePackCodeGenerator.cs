@@ -103,35 +103,20 @@ namespace Modules.MessagePack
 
         private static ProcessExecute CreateMpcProcess(MessagePackCodeGenerateInfo generateInfo)
         {
-            var messagePackConfig = MessagePackConfig.Instance;
+            #if UNITY_EDITOR_WIN
 
-            var command = string.Empty;
-            var argument = string.Empty;
+            var command = "mpc";
 
-            var platform = Environment.OSVersion.Platform;
+            #elif UNITY_EDITOR_OSX
 
-            switch (platform)
-            {
-                case PlatformID.Win32NT:
-                    {
-                        command = MessagePackConfig.Prefs.MpcPath;
-                        argument = generateInfo.MpcArgument;
-                    }
-                    break;
+            var personalFolderPath = Environment.GetFolderPath(Environment.SpecialFolder.Personal);
+            var mpcPath = MessagePackConfig.Prefs.MpcPath;
 
-                case PlatformID.MacOSX:
-                case PlatformID.Unix:
-                    {
-                        command = "/bin/bash";
-                        argument = $"-c \"{MessagePackConfig.Prefs.MpcPath}{generateInfo.MpcArgument}\"";
-                    }
-                    break;
+            var command = PathUtility.Combine(personalFolderPath, mpcPath);
 
-                default:
-                    throw new NotSupportedException();
-            }
+            #endif
 
-            var processExecute = new ProcessExecute(command, argument)
+            var processExecute = new ProcessExecute(command, generateInfo.MpcArgument)
             {
                 Encoding = Encoding.GetEncoding("Shift_JIS"),
             };
