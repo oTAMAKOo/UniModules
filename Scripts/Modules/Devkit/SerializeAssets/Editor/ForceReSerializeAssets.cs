@@ -3,24 +3,34 @@ using UnityEngine;
 using UnityEditor;
 using System.Linq;
 using Extensions;
+using Extensions.Devkit;
 
 namespace Modules.Devkit.SerializeAssets
 {
     public static class ForceReSerializeAssets
     {
-        public static void Execute(Object[] targetAssets)
+        public static void Execute(string[] assetPaths, ForceReserializeAssetsOptions options = ForceReserializeAssetsOptions.ReserializeAssetsAndMetadata)
         {
-            if (targetAssets == null || targetAssets.IsEmpty()){ return; }
+            if (assetPaths == null || assetPaths.IsEmpty()){ return; }
             
-            var targetAssetPaths = targetAssets
-                .Where(x => AssetDatabase.IsMainAsset(x))
-                .Select(x => AssetDatabase.GetAssetPath(x))
+            var targets = assetPaths
+                .Where(x => !string.IsNullOrEmpty(x))
                 .Distinct()
                 .ToArray();
 
-            if (targetAssetPaths.Any())
+            if (targets.Any())
             {
-                AssetDatabase.ForceReserializeAssets(targetAssetPaths);
+                using (new AssetEditingScope())
+                {
+                    AssetDatabase.ForceReserializeAssets(targets, options);
+                }
+
+                AssetDatabase.Refresh(ImportAssetOptions.ForceUpdate);
+
+                using (new DisableStackTraceScope())
+                {
+                    Debug.LogFormat("Finish {0}.", options);
+                }
             }
             else
             {

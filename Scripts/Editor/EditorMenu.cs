@@ -1,4 +1,5 @@
 ﻿
+using System.Linq;
 using UnityEngine;
 using UnityEditor;
 using UniRx;
@@ -280,7 +281,12 @@ namespace Modules
         [MenuItem(itemName: UtilityMenu + "ForceReSerialize SelectionAssets", priority = 100)]
         public static void ForceReSerializeSelectionAssets()
         {
-            ForceReSerializeAssets.Execute(Selection.objects);
+            var assetPaths = Selection.objects
+                .Where(x => AssetDatabase.IsMainAsset(x))
+                .Select(x => AssetDatabase.GetAssetPath(x))
+                .ToArray();
+
+            ForceReSerializeAssets.Execute(assetPaths);
         }
 
         #region Cleaner
