@@ -25,6 +25,8 @@ namespace Modules.Devkit.SerializeAssets
                     AssetDatabase.ForceReserializeAssets(targets, options);
                 }
 
+                AssetDatabase.SaveAssets();
+                
                 AssetDatabase.Refresh(ImportAssetOptions.ForceUpdate);
 
                 using (new DisableStackTraceScope())
