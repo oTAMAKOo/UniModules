@@ -115,7 +115,7 @@ namespace Modules.ExternalResource.Editor
                         // ビルド.
                         if (build)
                         {
-                            var exportPath = BuildManager.SelectExportPath();
+                            var exportPath = BuildManager.GetExportPath();
 
                             if (!string.IsNullOrEmpty(exportPath))
                             {
@@ -123,6 +123,17 @@ namespace Modules.ExternalResource.Editor
                                     .ToObservable()
                                     .Subscribe()
                                     .AddTo(Disposable);
+                            }
+                            else
+                            {
+                                Debug.LogError("The export path is not set.");
+
+                                var config = ManageConfig.Instance;
+
+                                if (config != null)
+                                {
+                                    Selection.activeObject = config;
+                                }
                             }
                         }
                     }

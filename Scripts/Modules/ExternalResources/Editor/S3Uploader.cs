@@ -23,18 +23,6 @@ namespace Modules.ExternalResource.Editor
 
         protected const string MetaDataHashKey = "x-amz-meta-hash";
 
-        public enum UploadType
-        {
-            /// <summary> 全オブジェクトを削除後に全アップロード </summary>
-            Full,
-
-            /// <summary>
-            /// アップロード先のmetadataのハッシュ値と一致しないオブジェクトをアップロード.
-            /// ※ AssetInfoManifestは必ずアップロードされる.
-            /// </summary>
-            Incremental,
-        }
-
         /// <summary> ローカルにあるファイル情報 </summary>
         protected sealed class FileInfo
         {
@@ -72,20 +60,22 @@ namespace Modules.ExternalResource.Editor
 
         //----- method -----
 
-        public async Task<bool> Execute(UploadType uploadType, string folderPath, string bucketFolder)
+        public async Task<string> Execute(string folderPath, string bucketFolder)
         {
+            var versionHash = string.Empty;
+
             this.folderPath = folderPath;
-            this.bucketFolder = bucketFolder;
+
+            var ignoreExtensions = new string[]{ ".txt" };
 
             // ファイルパス : オブジェクトパスのディクショナリ作成.
             files = Directory.GetFiles(folderPath)
                 .Select(x => PathUtility.ConvertPathSeparator(x))
+                .Where(x => !ignoreExtensions.Contains(Path.GetExtension(x)))
                 .ToArray();
 
             using (new DisableStackTraceScope())
             {
-                s3Client = CreateS3Client();
-
                 AssetBundle.UnloadAllAssetBundles(true);
 
                 try
@@ -97,27 +87,25 @@ namespace Modules.ExternalResource.Editor
                     if (assetInfoManifest == null)
                     {
                         Debug.LogError("AssetInfoManifest.package file load error.");
-                        return false;
+
+                        return null;
                     }
+
+                    versionHash = assetInfoManifest.VersionHash;
+
+                    this.bucketFolder = PathUtility.Combine(bucketFolder, versionHash);
 
                     //------- アップロードファイル情報作成 -------
 
                     var fileInfos = BuildUploadFileInfos();
 
+                    //------- S3クライアント作成 -------
+
+                    s3Client = CreateS3Client();
+
                     //------- S3のファイル一覧取得 -------
 
                     var s3Objects = await GetUploadedObjects();
-
-                    //------- S3内の全ファイル削除 -------
-
-                    if (uploadType == UploadType.Full)
-                    {
-                        // 対象のパス以下のファイル削除.
-                        await DeleteAllPackageFromS3(s3Objects);
-
-                        // 全削除したので空にする.
-                        s3Objects = new S3Object[0];
-                    }
 
                     //------- S3ファイル情報作成 -------
 
@@ -125,10 +113,7 @@ namespace Modules.ExternalResource.Editor
 
                     //------- 削除対象のファイルをS3から削除 -------
 
-                    if (uploadType == UploadType.Incremental)
-                    {
-                        await DeleteDeletedPackageFromS3(fileInfos, s3FileInfos);
-                    }
+                    await DeleteDeletedPackageFromS3(fileInfos, s3FileInfos);
 
                     //------- 新規・更新対象のファイルをS3にアップロード -------
 
@@ -136,13 +121,13 @@ namespace Modules.ExternalResource.Editor
                 }
                 catch (Exception e)
                 {
-                    Debug.LogError(e.Message);
+                    Debug.LogErrorFormat("S3 upload process error. \n{0}", e.Message);
 
-                    return false;
+                    return null;
                 }
             }
 
-            return true;
+            return versionHash;
         }
 
         private S3Client CreateS3Client()
@@ -473,36 +458,6 @@ namespace Modules.ExternalResource.Editor
                     var builder = new StringBuilder();
 
                     targets.ForEach(x => builder.AppendLine(x.ObjectPath));
-
-                    Debug.LogFormat("Delete S3 objects. [{0}/{1}]\n{2}", index, num, builder.ToString());
-                };
-
-                ChunkAction(deleteTargets, logOutput);
-            }
-        }
-
-        /// <summary> S3内の全ファイル削除 </summary>
-        private async Task DeleteAllPackageFromS3(S3Object[] s3Objects)
-        {
-            // 削除.
-
-            var deleteTargets = s3Objects.Select(x => x.Key).ToArray();
-
-            if (deleteTargets.Any())
-            {
-                Debug.LogFormat("Delete s3 {0} all objects.", bucketFolder);
-
-                await s3Client.DeleteObjects(deleteTargets);
-            }
-
-            // ログ.
-            if (deleteTargets.Any())
-            {
-                Action<int, int, string[]> logOutput = (index, num, targets) =>
-                {
-                    var builder = new StringBuilder();
-
-                    targets.ForEach(x => builder.AppendLine(x));
 
                     Debug.LogFormat("Delete S3 objects. [{0}/{1}]\n{2}", index, num, builder.ToString());
                 };

@@ -10,7 +10,6 @@ using Extensions;
 using Extensions.Devkit;
 using Modules.AssetBundles.Editor;
 using Modules.Devkit.Console;
-using Modules.Devkit.Prefs;
 using Modules.Devkit.Project;
 
 #if ENABLE_CRIWARE_ADX || ENABLE_CRIWARE_SOFDEC
@@ -25,16 +24,9 @@ namespace Modules.ExternalResource.Editor
     {
         //----- params -----
 
-        private static class Prefs
-        {
-            public static string exportPath
-            {
-                get { return ProjectPrefs.GetString("ExternalResourceManager-Prefs-exportPath", UnityPathUtility.GetProjectFolderPath()); }
-                set { ProjectPrefs.SetString("ExternalResourceManager-Prefs-exportPath", value); }
-            }
-        }
-
         private const string ExportFolderName = "ExternalResources";
+
+        public const string VersionFileName = "Version.txt";
 
         private static readonly string[] IgnoreDependentCheckExtensions = { ".cs" };
 
@@ -185,6 +177,10 @@ namespace Modules.ExternalResource.Editor
 
                 versionHash = assetInfoManifest.VersionHash;
 
+                //------ バージョンをファイル出力------
+
+                GenerateVersionFile(exportPath, versionHash);
+
                 //------ ログ出力------
 
                 // ビルド情報.
@@ -229,20 +225,19 @@ namespace Modules.ExternalResource.Editor
             sw.Restart();
         }
 
-        public static string SelectExportPath()
+        public static string GetExportPath()
         {
-            var directory = string.IsNullOrEmpty(Prefs.exportPath) ? null : Path.GetDirectoryName(Prefs.exportPath);
-            var folderName = string.IsNullOrEmpty(Prefs.exportPath) ? ExportFolderName : Path.GetFileName(Prefs.exportPath);
+            var config = ManageConfig.Instance;
+            
+            var exportDirectory = config.ExportDirectory;
 
-            var path = EditorUtility.OpenFolderPanel("Select export folder.", directory, folderName);
+            if (string.IsNullOrEmpty(exportDirectory)) { return null; }
+            
+            var platformFolderName = PlatformUtility.GetPlatformTypeName();
 
-            if (string.IsNullOrEmpty(path)) { return null; }    
+            var paths = new string[]{ exportDirectory, ExportFolderName, platformFolderName };
 
-            Prefs.exportPath = path;
-
-            var platformAssetFolderName = PlatformUtility.GetPlatformTypeName();
-
-            return PathUtility.Combine(path, platformAssetFolderName) + PathUtility.PathSeparator;
+            return PathUtility.Combine(paths) + PathUtility.PathSeparator;
         }
 
         public static bool AssetDependenciesValidate(AssetInfoManifest assetInfoManifest)
@@ -309,6 +304,16 @@ namespace Modules.ExternalResource.Editor
             }
 
             return true;
+        }
+
+        private static void GenerateVersionFile(string filePath, string version)
+        {
+            var path = PathUtility.Combine(filePath, VersionFileName);
+
+            using (var writer = new StreamWriter(path, false))
+            {
+                writer.Write(version);
+            }
         }
     }
 }

@@ -5,7 +5,6 @@ using System;
 using System.Linq;
 using Extensions;
 using Extensions.Devkit;
-using Modules.AssetBundles;
 using Modules.Devkit.ScriptableObjects;
 
 using Object = UnityEngine.Object;
@@ -17,6 +16,10 @@ namespace Modules.ExternalResource.Editor
         //----- params -----
 
         //----- field -----
+        [SerializeField]
+        private string exportDirectory = null;
+
+        [Header("Crypto")]
 
         [SerializeField, Tooltip("32文字で設定")]
         private string cryptoKey = "MprvQauVXRXUvC532oe861pPVTy5UtFK";
@@ -39,6 +42,15 @@ namespace Modules.ExternalResource.Editor
         private Object[] ignoreValidateTarget = null;
 
         //----- property -----
+
+        /// <summary> 出力先 </summary>
+        public string ExportDirectory
+        {
+            get
+            {
+                return string.IsNullOrEmpty(exportDirectory) ? null : UnityPathUtility.RelativePathToFullPath(exportDirectory);
+            }
+        }
 
         /// <summary> 暗号化Key(32文字) </summary>
         public string CryptoKey { get { return cryptoKey; } }
