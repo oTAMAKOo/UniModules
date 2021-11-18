@@ -32,9 +32,9 @@ namespace Modules.Master
 
         private const string ExportFolderName = "Masters";
 
-        private const string RootVersionFileName = "RootVersion.txt";
+        public const string RootVersionFileName = "RootVersion.txt";
 
-        private const string VersionFileName = "MasterVersion.txt";
+        public const string VersionFileName = "MasterVersion.txt";
 
         //----- field -----
 
@@ -46,25 +46,17 @@ namespace Modules.Master
         {
             var masterManager = MasterManager.Instance;
 
-            var config = MasterGeneratorConfig.Instance;
-
-            var sourceDirectory = config.SourceDirectory;
-
-            var exportDirectory = config.ExportDirectory;
+            var config = MasterConfig.Instance;
 
             var lz4Compression = config.Lz4Compression;
 
+            var sourceDirectory = config.SourceDirectory;
+
             if (string.IsNullOrEmpty(sourceDirectory)) { return false; }
 
-            if (!Application.isBatchMode)
-            {
-                exportDirectory = EditorUtility.OpenFolderPanel("Select Export Directory", exportDirectory, string.Empty);
-            }
+            var exportDirectory = GetExportDirectory();
 
             if (string.IsNullOrEmpty(exportDirectory)){ return false; }
-
-            // 「Master」フォルダ追加.
-            exportDirectory = PathUtility.Combine(exportDirectory, ExportFolderName);
 
             if (Directory.Exists(exportDirectory))
             {
@@ -214,6 +206,20 @@ namespace Modules.Master
             }
 
             return true;
+        }
+
+        public static string GetExportDirectory()
+        {
+            var config = MasterConfig.Instance;
+
+            var exportDirectory = config.ExportDirectory;
+
+            if (string.IsNullOrEmpty(exportDirectory)){ return null; }
+
+            // 「Master」フォルダ追加.
+            exportDirectory = PathUtility.Combine(exportDirectory, ExportFolderName);
+
+            return exportDirectory;
         }
 
         #region Load Data

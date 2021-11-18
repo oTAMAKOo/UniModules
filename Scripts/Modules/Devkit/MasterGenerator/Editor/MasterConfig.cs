@@ -1,11 +1,11 @@
 ﻿
+using UnityEngine;
 using Extensions;
 using Modules.Devkit.ScriptableObjects;
-using UnityEngine;
 
 namespace Modules.Master
 {
-    public sealed class MasterGeneratorConfig : ReloadableScriptableObject<MasterGeneratorConfig>
+    public sealed class MasterConfig : ReloadableScriptableObject<MasterConfig>
     {
         //----- params -----
 
@@ -34,12 +34,18 @@ namespace Modules.Master
 
         public string SourceDirectory
         {
-            get { return UnityPathUtility.RelativePathToFullPath(sourceDirectory); }
+            get
+            {
+                return string.IsNullOrEmpty(sourceDirectory) ? null : UnityPathUtility.RelativePathToFullPath(sourceDirectory);
+            }
         }
 
         public string ExportDirectory
         {
-            get { return UnityPathUtility.RelativePathToFullPath(exportDirectory); }
+            get
+            {
+                return string.IsNullOrEmpty(exportDirectory) ? null : UnityPathUtility.RelativePathToFullPath(exportDirectory);
+            }
         }
 
         public string DataCryptKey { get { return dataCryptKey; } }

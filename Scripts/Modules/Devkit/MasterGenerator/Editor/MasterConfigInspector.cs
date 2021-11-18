@@ -2,15 +2,13 @@
 using UnityEngine;
 using UnityEditor;
 using System;
-using System.Linq;
-using System.Collections.Generic;
 using Extensions;
 using Extensions.Devkit;
 
 namespace Modules.Master
 {
-    [CustomEditor(typeof(MasterGeneratorConfig))]
-    public sealed class MasterGeneratorConfigInspector : UnityEditor.Editor
+    [CustomEditor(typeof(MasterConfig))]
+    public sealed class MasterConfigInspector : UnityEditor.Editor
     {
         //----- params -----
 
@@ -22,12 +20,12 @@ namespace Modules.Master
 
         public override void OnInspectorGUI()
         {
-            var instance = target as MasterGeneratorConfig;
+            var instance = target as MasterConfig;
 
             DrawMasterGeneratorConfigGUI(instance);
         }
 
-        private void DrawMasterGeneratorConfigGUI(MasterGeneratorConfig instance)
+        private void DrawMasterGeneratorConfigGUI(MasterConfig instance)
         {
             // Style.
             var pathTextStyle = GUI.skin.GetStyle("TextArea");
