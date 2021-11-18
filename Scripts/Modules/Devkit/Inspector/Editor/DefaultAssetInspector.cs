@@ -65,6 +65,8 @@ namespace Modules.Devkit.Inspector
 
         public override void OnInspectorGUI()
         {
+            base.OnInspectorGUI();
+
             foreach (var extendInspector in extendInspectors)
             {
                 GUI.enabled = true;
