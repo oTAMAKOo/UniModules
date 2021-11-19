@@ -32,8 +32,6 @@ namespace Modules.Master
 
         private const string ExportFolderName = "Masters";
 
-        public const string RootVersionFileName = "RootVersion.txt";
-
         public const string VersionFileName = "MasterVersion.txt";
 
         //----- field -----
@@ -186,13 +184,11 @@ namespace Modules.Master
 
                 // バージョンファイル作成.
 
-                var rootVersion = GetRootVersion(fileHashDictionary);
-
-                GenerateRootVersionFile(exportDirectory, rootVersion);
+                var commitHash = await GetCommitHash();
 
                 GenerateMasterVersionFile(exportDirectory, fileHashDictionary);
 
-                logBuilder.Insert(0, string.Format("RootVersion : {0}\n\n", rootVersion));
+                logBuilder.Insert(0, string.Format("CommitHash : {0}\n\n", commitHash));
 
                 UnityConsole.Info("Generate master complete.\n\n{0}", logBuilder.ToString());
             }
@@ -371,46 +367,23 @@ namespace Modules.Master
 
         #region Version
 
-        private static string GetRootVersion(IDictionary<string, string> versionHashDictionary)
+        public static async Task<string> GetCommitHash()
         {
-            var builder = new StringBuilder();
+            var masterConfig = MasterConfig.Instance;
 
-            var chunkElements = versionHashDictionary.Chunk(5);
+            if (string.IsNullOrEmpty(masterConfig.SourceDirectory)){ return null; }
 
-            foreach (var chunkElement in chunkElements)
+            var processExecute = new ProcessExecute("git", "log --pretty=%H -n 1")
             {
-                var str = builder.ToString();
+                WorkingDirectory = masterConfig.SourceDirectory,
+            };
 
-                if (!string.IsNullOrEmpty(str))
-                {
-                    var hash = str.GetHash();
+            var result = await processExecute.StartAsync();
 
-                    builder.Clear();
+            if (string.IsNullOrEmpty(result.Item2)){ return null; }
 
-                    builder.Append(hash).AppendLine();
-                }
-
-                foreach (var element in chunkElement)
-                {
-                    builder.Append(element.Value).AppendLine();
-                }
-            }
-
-            var allVersionText = builder.ToString();
-
-            var rootVersion = allVersionText.GetHash();
-
-            return rootVersion;
-        }
-
-        private static void GenerateRootVersionFile(string filePath, string rootVersion)
-        {
-            var path = PathUtility.Combine(filePath, RootVersionFileName);
-
-            using (var writer = new StreamWriter(path, false))
-            {
-                writer.Write(rootVersion);
-            }
+            // 改行コードを削除.
+            return result.Item2.Replace("\r", "").Replace("\n", "");
         }
 
         private static void GenerateMasterVersionFile(string filePath, IDictionary<string, string> versionHashDictionary)

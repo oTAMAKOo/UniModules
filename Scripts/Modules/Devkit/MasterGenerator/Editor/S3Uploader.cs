@@ -162,7 +162,7 @@ namespace Modules.Master.Editor
 
             if (fileInfos.Any())
             {
-                Debug.LogFormat("Uploading {0} files to s3 {1}.", fileInfos.Length, bucketFolder);
+                Debug.LogFormat("Uploading {0} files to s3 {1}", fileInfos.Length, bucketFolder);
 
                 // ファイルをアップロード.
 

@@ -254,7 +254,7 @@ namespace Modules.ExternalResource.Editor
 
             if (uploadTargets.Any())
             {
-                Debug.LogFormat("Uploading {0} files to s3 {1}.", uploadTargets.Count, bucketFolder);
+                Debug.LogFormat("Uploading {0} files to s3 {1}", uploadTargets.Count, bucketFolder);
 
                 // ファイルをアップロード.
 
