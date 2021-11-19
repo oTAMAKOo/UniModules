@@ -26,7 +26,7 @@ namespace Modules.ExternalResource.Editor
 
         private const string ExportFolderName = "ExternalResources";
 
-        public const string VersionFileName = "Version.txt";
+        public const string RootHashFileName = "RootHash.txt";
 
         private static readonly string[] IgnoreDependentCheckExtensions = { ".cs" };
 
@@ -125,7 +125,13 @@ namespace Modules.ExternalResource.Editor
 
                     var updatedAssetInfos = new AssetInfo[0];
 
-                    if (!cryptoChanged)
+                    // 暗号化キーが変わっていたら全て更新対象.
+                    if (cryptoChanged)
+                    {
+                        updatedAssetInfos = assetInfos;
+                    }
+                    // 差分がある対象だけ抽出.
+                    else
                     {
                         updatedAssetInfos = await BuildAssetBundle.GetUpdateTargetAssetInfo(assetInfoManifest, cachedFileLastWriteTimeTable);
                     }
@@ -308,7 +314,7 @@ namespace Modules.ExternalResource.Editor
 
         private static void GenerateVersionFile(string filePath, string version)
         {
-            var path = PathUtility.Combine(filePath, VersionFileName);
+            var path = PathUtility.Combine(filePath, RootHashFileName);
 
             using (var writer = new StreamWriter(path, false))
             {

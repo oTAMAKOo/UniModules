@@ -129,17 +129,23 @@ namespace Modules.AssetBundles.Editor
                     // アセットバンドルファイルパス.
                     var assetBundleFilePath = PathUtility.Combine(assetBundlePath, assetInfo.AssetBundle.AssetBundleName);
 
-                    if (File.Exists(assetBundleFilePath))
+                    if (!File.Exists(assetBundleFilePath))
                     {
-                        // パッケージを作成.
-                        if (createPackage)
-                        {
-                            await CreatePackage(assetBundleFilePath, cryptoKey);
-                        }
-
-                        // 出力先にパッケージファイルをコピー.
-                        await ExportPackage(exportPath, assetBundleFilePath, assetInfo);
+                        throw new FileNotFoundException(assetBundleFilePath);
                     }
+
+                    // 作成するパッケージファイルのパス.
+                    var packageFilePath = Path.ChangeExtension(assetBundleFilePath, AssetBundleManager.PackageExtension);
+
+                    // パッケージを作成.
+                    if (!File.Exists(packageFilePath) || createPackage)
+                    {
+                        await CreatePackage(assetBundleFilePath, packageFilePath, cryptoKey);
+                    }
+
+                    // 出力先にパッケージファイルをコピー.
+                    await ExportPackage(exportPath, assetBundleFilePath, assetInfo);
+
                 }
                 catch (Exception exception)
                 {
@@ -151,13 +157,8 @@ namespace Modules.AssetBundles.Editor
         }
 
         /// <summary> パッケージファイル化(暗号化). </summary>
-        private static async Task CreatePackage(string assetBundleFilePath, AesCryptoKey cryptoKey)
+        private static async Task CreatePackage(string assetBundleFilePath, string packageFilePath, AesCryptoKey cryptoKey)
         {
-            if (!File.Exists(assetBundleFilePath)){ return; }
-
-            // 作成するパッケージファイルのパス.
-            var packageFilePath = Path.ChangeExtension(assetBundleFilePath, AssetBundleManager.PackageExtension);
-
             // アセットバンドル読み込み.
 
             byte[] data = null;
