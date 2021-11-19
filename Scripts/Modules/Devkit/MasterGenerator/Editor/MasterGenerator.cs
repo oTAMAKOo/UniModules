@@ -1,5 +1,4 @@
 ﻿
-using UnityEditor;
 using UnityEngine;
 using System;
 using System.Collections.Generic;
@@ -32,7 +31,7 @@ namespace Modules.Master
 
         private const string ExportFolderName = "Masters";
 
-        public const string VersionFileName = "MasterVersion.txt";
+        public const string VersionFileName = "version.txt";
 
         //----- field -----
 
