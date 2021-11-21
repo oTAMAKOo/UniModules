@@ -32,7 +32,7 @@ namespace Modules.GameText.Editor
 
         //----- method -----
 
-        public static void Generate(GameText.AssetType type, GameTextLanguage.Info info)
+        public static void Generate(ContentType type, GameTextLanguage.Info info)
         {
             var gameText = GameText.Instance;
 
@@ -46,43 +46,31 @@ namespace Modules.GameText.Editor
 
             switch (type)
             {
-                case GameText.AssetType.BuiltIn:
+                case ContentType.Embedded:
                     {
-                        var builtInGameTextSetting = config.BuiltInGameText;
+                        var embedded = config.Embedded;
 
-                        scriptFolderPath = builtInGameTextSetting.ScriptFolderPath;
-                        contentsFolderPath = builtInGameTextSetting.GetContentsFolderPath();
-                        assetFolderPath = builtInGameTextSetting.AseetFolderPath;
+                        scriptFolderPath = embedded.ScriptFolderPath;
+                        contentsFolderPath = embedded.GetContentsFolderPath();
+                        assetFolderPath = embedded.AseetFolderPath;
                     }
                     break;
 
-                case GameText.AssetType.Update:
+                case ContentType.Distribution:
                     {
-                        var builtInGameTextSetting = config.BuiltInGameText;
-                        var updateGameTextSetting = config.UpdateGameText;
+                        var distribution = config.Distribution;
 
-                        if (!updateGameTextSetting.Enable) { return; }
+                        if (!distribution.Enable) { return; }
 
-                        contentsFolderPath = builtInGameTextSetting.GetContentsFolderPath();
-                        assetFolderPath = updateGameTextSetting.AseetFolderPath;
-                    }
-                    break;
-
-                case GameText.AssetType.Extend:
-                    {
-                        var extendGameTextSetting = config.ExtendGameText;
-
-                        if (!extendGameTextSetting.Enable) { return; }
-
-                        contentsFolderPath = extendGameTextSetting.GetContentsFolderPath();
-                        assetFolderPath = extendGameTextSetting.AseetFolderPath;
+                        contentsFolderPath = distribution.GetContentsFolderPath();
+                        assetFolderPath = distribution.AseetFolderPath;
                     }
                     break;
             }
 
             var assetFolderName = gameText.GetAssetFolderName();
 
-            var assetFileName = GameText.GetAssetFileName(type, info.Identifier);
+            var assetFileName = GameText.GetAssetFileName(info.Identifier);
 
             var assetPath = PathUtility.Combine(new string[] { assetFolderPath, assetFolderName, assetFileName });
 
@@ -94,10 +82,10 @@ namespace Modules.GameText.Editor
                 textIndex = info.TextIndex,
             };
 
-            GenerateProcess(generateInfo);
+            GenerateProcess(type, generateInfo);
         }
         
-        private static void GenerateProcess(GenerateInfo generateInfo)
+        private static void GenerateProcess(ContentType contentType, GenerateInfo generateInfo)
         {
             var progressTitle = "Generate GameText";
 
@@ -146,12 +134,12 @@ namespace Modules.GameText.Editor
 
                     var gameTextAsset = LoadAsset(generateInfo.assetPath);
 
-                    GameTextAssetGenerator.Build(gameTextAsset, sheets, generateInfo.textIndex, cryptoKey);
+                    GameTextAssetGenerator.Build(gameTextAsset, contentType, sheets, generateInfo.textIndex, cryptoKey);
 
                     EditorUtility.DisplayProgressBar(progressTitle, "Complete.", 1f);
                 }
 
-                UnityConsole.Info("GameTextを出力しました");
+                UnityConsole.Info("GameText generate finish.");
 
                 AssetDatabase.SaveAssets();
             }

@@ -1,7 +1,9 @@
 ﻿
-using System;
 using UnityEngine;
+using System;
+using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using Extensions;
 using Modules.GameText.Components;
 using UniRx;
@@ -12,20 +14,11 @@ namespace Modules.GameText
     {
         //----- params -----
 
-        public enum AssetType
-        {
-            BuiltIn,
-            Update,
-            Extend,
-        }
-
         private const string AssetFileName = "GameText";
 
         //----- field -----
 
         private static AesCryptoKey aesCryptoKey = null;
-
-        private long? builtInAssetUpdateAt = null;
 
         private Subject<Unit> onUpdateContents = null;
 
@@ -33,7 +26,7 @@ namespace Modules.GameText
         
         //----- method -----
 
-        private GameText(){ }
+        private GameText() { }
 
         public AesCryptoKey GetCryptoKey()
         {
@@ -41,7 +34,7 @@ namespace Modules.GameText
         }
 
         /// <summary> 内蔵テキストを読み込み </summary>
-        public void LoadBuiltInAsset(string resourcesPath)
+        public void LoadEmbedded(string resourcesPath)
         {
             var path = PathUtility.GetPathWithoutExtension(resourcesPath);
 
@@ -51,56 +44,35 @@ namespace Modules.GameText
 
             Clear();
 
-            var contents = asset.Contents.ToArray();
-
-            var cryptoKey = GetCryptoKey();
-
-            cache = contents.ToDictionary(x => x.Guid, x => x.Text.Decrypt(cryptoKey));
-
-            builtInAssetUpdateAt = asset.UpdateAt;
-
-            if (onUpdateContents != null)
-            {
-                onUpdateContents.OnNext(Unit.Default);
-            }
+            AddContents(asset);
         }
 
         /// <summary> 追加でテキストを取り込み </summary>
-        public void ImportAsset(GameTextAsset asset, bool force = false)
+        public void AddContents(GameTextAsset asset)
         {
             if (asset == null) { return; }
             
-            // 内蔵テキストを読み込んでいない時は追加取り込みさせない.
-            if (!builtInAssetUpdateAt.HasValue) { return; }
-
-            if (!force)
+            foreach (var categoriesContent in asset.Contents)
             {
-                // 生成日時がない時は取り込まない.
-                if (!asset.UpdateAt.HasValue) { return; }
-
-                // 内蔵テキストより古いテキストは取り込まない.
-                if (asset.UpdateAt.Value < builtInAssetUpdateAt.Value) { return; }
-            }
-
-            var contents = asset.Contents.ToArray();
-
-            var cryptoKey = GetCryptoKey();
-
-            var textContents = contents.ToDictionary(x => x.Guid, x => x.Text.Decrypt(cryptoKey));
-
-            foreach (var textContent in textContents)
-            {
-                // 更新.
-                if (cache.ContainsKey(textContent.Key))
+                foreach (var textContent in categoriesContent.Texts)
                 {
-                    cache[textContent.Key] = textContent.Value;
-                }
-                // 追加.
-                else
-                {
-                    cache.Add(textContent.Key, textContent.Value);
+                    var content = new TextInfo()
+                    {
+                        categoryGuid = categoriesContent.Guid,
+                        textGuid = textContent.Guid,
+                        text = textContent.Text,
+                        encrypt = true,
+                    };
+
+                    texts[textContent.Guid] = content;
                 }
             }
+
+            #if UNITY_EDITOR
+
+            AddEditorContents(asset);
+
+            #endif
 
             if (onUpdateContents != null)
             {
@@ -110,21 +82,23 @@ namespace Modules.GameText
 
         public void Clear()
         {
-            cache.Clear();
-
-            builtInAssetUpdateAt = null;
+            texts.Clear();
         }
 
-        public static string GetAssetFileName(AssetType assetType, string identifier)
+        public static string GetAssetFileName(string identifier)
         {
-            var identifierStr = string.Empty;
+            var fileNameBuilder = new StringBuilder();
+
+            fileNameBuilder.Append(AssetFileName);
 
             if (!string.IsNullOrEmpty(identifier))
             {
-                identifierStr = "-" + identifier;
+                fileNameBuilder.AppendFormat("-{0}", identifier);
             }
+
+            fileNameBuilder.Append(".asset");
             
-            return string.Format("{0}-{1}{2}.asset", AssetFileName, assetType.ToString(), identifierStr);
+            return fileNameBuilder.ToString();
         }
 
         /// <summary> テキスト更新イベント. </summary>

@@ -1,8 +1,5 @@
 ﻿
-using System;
 using UnityEngine;
-using UnityEditor;
-using Extensions;
 using Modules.Devkit.ScriptableObjects;
 
 namespace Modules.GameText.Editor
@@ -17,11 +14,9 @@ namespace Modules.GameText.Editor
         private FileLoader.Format fileFormat = FileLoader.Format.Yaml;
         
         [SerializeField]
-        private BuiltInGameTextSetting builtInGameTextSetting = null;
+        private EmbeddedSetting embedded = null;
         [SerializeField]
-        private UpdateGameTextSetting updateGameTextSetting = null;
-        [SerializeField]
-        private ExtendGameTextSetting extendGameTextSetting = null;
+        private DistributionSetting distribution = null;
 
         #pragma warning disable 414
 
@@ -45,11 +40,9 @@ namespace Modules.GameText.Editor
 
         public FileLoader.Format FileFormat { get { return fileFormat; } }
         
-        public BuiltInGameTextSetting BuiltInGameText { get { return builtInGameTextSetting; } }
+        public EmbeddedSetting Embedded { get { return embedded; } }
 
-        public UpdateGameTextSetting UpdateGameText { get { return updateGameTextSetting; } }
-
-        public ExtendGameTextSetting ExtendGameText { get { return extendGameTextSetting; } }
+        public DistributionSetting Distribution { get { return distribution; } }
 
         //----- method -----
     }

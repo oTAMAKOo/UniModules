@@ -77,41 +77,29 @@ namespace Modules.GameText.Editor
 
             if (config != null)
             {
-                var assetFileName = GameText.GetAssetFileName(GameText.AssetType.BuiltIn, identifier);
+                var assetFileName = GameText.GetAssetFileName(identifier);
 
                 var resourcesPath = PathUtility.Combine(assetFolderName, assetFileName);
 
-                gameText.LoadBuiltInAsset(resourcesPath);
+                gameText.LoadEmbedded(resourcesPath);
             }
 
-            // 更新テキスト読み込み.
+            // 配信テキスト読み込み.
 
-            if (config != null && config.UpdateGameText.Enable)
+            if (config != null && config.Distribution.Enable)
             {
-                var assetFileName = GameText.GetAssetFileName(GameText.AssetType.Update, identifier);
+                var assetFileName = GameText.GetAssetFileName(identifier);
 
-                var aseetFolderPath = config.UpdateGameText.AseetFolderPath;
-
-                var assetPath = PathUtility.Combine(new string[] { aseetFolderPath, assetFolderName, assetFileName });
-
-                var updateGameTextAsset = AssetDatabase.LoadMainAssetAtPath(assetPath) as GameTextAsset;
-
-                gameText.ImportAsset(updateGameTextAsset);
-            }
-
-            // 拡張テキスト読み込み.
-
-            if (config != null && config.ExtendGameText.Enable)
-            {
-                var assetFileName = GameText.GetAssetFileName(GameText.AssetType.Extend, identifier);
-
-                var aseetFolderPath = config.ExtendGameText.AseetFolderPath;
+                var aseetFolderPath = config.Distribution.AseetFolderPath;
 
                 var assetPath = PathUtility.Combine(new string[] { aseetFolderPath, assetFolderName, assetFileName });
                 
-                var extendGameTextAsset = AssetDatabase.LoadMainAssetAtPath(assetPath) as GameTextAsset;
+                var distributionAsset = AssetDatabase.LoadMainAssetAtPath(assetPath) as GameTextAsset;
 
-                Reflection.InvokePrivateMethod(gameText, "LoadExtend", new object[] { extendGameTextAsset });
+                if (distributionAsset != null)
+                {
+                    gameText.AddContents(distributionAsset);
+                }
             }
 
             // 適用.

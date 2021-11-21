@@ -15,13 +15,15 @@ namespace Modules.GameText.Components
     {
         //----- params -----
 
+        private const string WindowTitle = "GameTextSelector";
+
         private sealed class SelectionInfo
         {
             public string TextGuid { get; private set; }
             public string Name { get; private set; }
             public string Text { get; private set; }
 
-            public SelectionInfo(string textGuid, string name, string text)
+            public SelectionInfo(string name, string textGuid, string text)
             {
                 TextGuid = textGuid;
                 Name = name;
@@ -55,15 +57,7 @@ namespace Modules.GameText.Components
                 instance = null;
             }
 
-            var gameText = GameText.Instance;
-            
-            var selectionCategoryGuid = GameTextSetterInspector.Current.SelectionCategoryGuid;
-
-            var category = (Enum)Reflection.InvokePrivateMethod(gameText, "FindCategoryEnumFromCategoryGuid", new object[] { selectionCategoryGuid });
-
-            var titleText = string.Format("GameTextSelector : {0}", category.ToLabelName());
-
-            instance = DisplayWizard<GameTextSelector>(titleText);
+            instance = DisplayWizard<GameTextSelector>(WindowTitle);
 
             instance.Initialize();
         }
@@ -107,8 +101,6 @@ namespace Modules.GameText.Components
                 EditorGUILayout.HelpBox("Need Select GameTextSetter GameObject.", MessageType.Info);
                 return;
             }
-
-            var gameText = GameText.Instance;
 
             var setter = GameTextSetterInspector.Current.Instance;
 
@@ -177,12 +169,6 @@ namespace Modules.GameText.Components
 
                 // Contents.
 
-                var categoryTexts = GetCategoryTexts(gameText, selectionCategoryGuid);
-
-                scrollView.Setter = setter;
-                scrollView.SetterInspector = setterInspector;
-                scrollView.CategoryTexts = categoryTexts;
-
                 scrollView.Draw();
             }
             else
@@ -195,9 +181,12 @@ namespace Modules.GameText.Components
         {
             var gameText = GameText.Instance;
 
+            var setter = GameTextSetterInspector.Current.Instance;
+            var setterInspector = GameTextSetterInspector.Current;
+
             categoryGuid = GameTextSetterInspector.Current.SelectionCategoryGuid;
 
-            var categoryTexts = GetCategoryTexts(gameText, categoryGuid);
+            var categoryTexts = GetCategoryTextGuids(gameText, categoryGuid);
 
             var list = new List<SelectionInfo>();
 
@@ -205,13 +194,15 @@ namespace Modules.GameText.Components
             {
                 var text = gameText.FindText(textData.Value);
 
-                var info = new SelectionInfo(textData.Value, textData.Key.ToString(), text);
+                var info = new SelectionInfo(textData.Key, textData.Value, text);
 
                 list.Add(info);
             }
             
             selectionCache = list.ToArray();
 
+            scrollView.Setter = setter;
+            scrollView.SetterInspector = setterInspector;
             scrollView.Contents = GetMatchOfList();
         }
 
@@ -237,9 +228,20 @@ namespace Modules.GameText.Components
             return list.ToArray();
         }
 
-        private IReadOnlyDictionary<Enum, string> GetCategoryTexts(GameText gameText, string categoryGuid)
+        private IReadOnlyDictionary<string, string> GetCategoryTextGuids(GameText gameText, string categoryGuid)
         {
-            return (IReadOnlyDictionary<Enum, string>)Reflection.InvokePrivateMethod(gameText, "FindCategoryTexts", new object[] { categoryGuid });
+            var categoryTexts = new Dictionary<string, string>();
+
+            var textInfos = gameText.Texts.Values.Where(x => x.categoryGuid == categoryGuid).ToArray();
+
+            foreach (var textInfo in textInfos)
+            {
+                var enumName = gameText.GetEnumName(textInfo.textGuid);
+                
+                categoryTexts.Add(enumName, textInfo.textGuid);
+            }
+
+            return categoryTexts;
         }
 
         private sealed class GameTextSelectorScrollView : EditorGUIFastScrollView<SelectionInfo>
@@ -247,6 +249,8 @@ namespace Modules.GameText.Components
             //----- params -----
 
             //----- field -----
+
+            public string[] textGuids { get; set; }
 
             private Subject<Unit> onSelect = null;
 
@@ -258,8 +262,6 @@ namespace Modules.GameText.Components
 
             public GameTextSetterInspector SetterInspector { get; set; }
 
-            public IReadOnlyDictionary<Enum, string> CategoryTexts { get; set; }
-
             //----- method -----
 
             protected override void DrawContent(int index, SelectionInfo content)
@@ -268,7 +270,7 @@ namespace Modules.GameText.Components
 
                 var originBackgroundColor = GUI.backgroundColor;
 
-                using (new BackgroundColorScope(highlight ? new Color(0.6f, 1f, 0.9f) : new Color(0.95f, 0.95f, 0.95f)))
+                using (new BackgroundColorScope(highlight ? new Color(0.6f, 0.8f, 0.85f) : new Color(0.95f, 0.95f, 0.95f)))
                 {
                     var size = EditorStyles.label.CalcSize(new GUIContent(content.Text));
 
@@ -300,12 +302,10 @@ namespace Modules.GameText.Components
                                 if (GUILayout.Button("Select", GUILayout.Width(75f), GUILayout.Height(buttonHeight)))
                                 {
                                     UnityEditorUtility.RegisterUndo("GameTextSelector-Select", Setter);
-
-                                    var textInfo = CategoryTexts.FirstOrDefault(x => x.Value == content.TextGuid);
-
-                                    if (!textInfo.Equals(default(KeyValuePair<Enum, string>)))
+                                    
+                                    if (!string.IsNullOrEmpty(content.TextGuid))
                                     {
-                                        Reflection.InvokePrivateMethod(Setter, "SetTextEnum", new object[] { textInfo.Key });
+                                        Reflection.InvokePrivateMethod(Setter, "SetTextGuid", new object[] { content.TextGuid });
 
                                         SetterInspector.Repaint();
 

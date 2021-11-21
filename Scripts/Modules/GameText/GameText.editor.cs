@@ -12,43 +12,81 @@ namespace Modules.GameText
     {
         //----- params -----
 
+        public sealed class Category
+        {
+            public ContentType ContentType { get; private set; }
+
+            public string Guid { get; private set; }
+
+            public string DisplayName { get; private set; }
+
+            public string Name { get; private set; }
+
+            public Category(ContentType contentType, string guid, string displayName, string name)
+            {
+                ContentType = contentType;
+                Guid = guid;
+                DisplayName = displayName;
+                Name = name;
+            }
+        }
+
         //----- field -----
         
-        private Dictionary<string, string> extendTextContents = null;
+        private Dictionary<string, Category> categories = null;
+
+        private Dictionary<string, string> enumNames = null;
 
         //----- property -----
 
-        //----- method -----
-
-        public override string FindText(string textGuid)
+        public IReadOnlyList<Category> Categories
         {
-            if (string.IsNullOrEmpty(textGuid)) { return string.Empty; }
-
-            textGuid = textGuid.Trim();
-
-            var text = base.FindText(textGuid);
-
-            // 内包テキストデータに存在しない場合拡張テキストを検索.
-            if (extendTextContents != null)
-            {
-                if (string.IsNullOrEmpty(text))
-                {
-                    text = extendTextContents.GetValueOrDefault(textGuid);
-                }
-            }
-
-            return text;
+            get { return categories.Values.ToArray(); }
         }
 
-        private void LoadExtend(GameTextAsset asset)
-        {
-            extendTextContents = null;
+        //----- method -----
 
+        private void AddEditorContents(GameTextAsset asset)
+        {
             if (asset == null) { return; }
+
+            if (categories == null)
+            {
+                categories = new Dictionary<string, Category>();
+            }
+
+            if (enumNames == null)
+            {
+                enumNames = new Dictionary<string, string>();
+            }
 
             var cryptoKey = GetCryptoKey();
 
-            extendTextContents = asset.Contents.ToDictionary(x => x.Guid, x => x.Text.Decrypt(cryptoKey));
+            foreach (var categoriesContent in asset.Contents)
+            {
+                var contentType = asset.ContentType;
+                var categoryGuid = categoriesContent.Guid;
+                var categoryName = categoriesContent.Name.Decrypt(cryptoKey);
+                var categoryDisplayName = categoriesContent.DisplayName.Decrypt(cryptoKey);
+
+                categories[categoryGuid] = new Category(contentType, categoryGuid, categoryDisplayName, categoryName);
+
+                foreach (var textContent in categoriesContent.Texts)
+                {
+                    enumNames[textContent.Guid] = textContent.EnumName;
+                }
+            }
+        }
+
+        public string GetEnumName(string textGuid)
+        {
+            if (enumNames == null) { return null; }
+
+            var cryptoKey = GetCryptoKey();
+
+            var enumName = enumNames.GetValueOrDefault(textGuid);
+
+            return enumName != null ? enumName.Decrypt(cryptoKey) : string.Empty;
         }
     }
 }

@@ -161,22 +161,10 @@ namespace Modules
 
         protected const string GameTextMenu = MenuRoot + "GameText/";
 
-        [MenuItem(itemName: GameTextMenu + "Open BuiltIn Window", priority = 0)]
+        [MenuItem(itemName: GameTextMenu + "Open Generate Window", priority = 0)]
         public static void OpenBuiltInGameTextWindow()
         {
-            BuiltInGameTextWindow.Open();
-        }
-
-        [MenuItem(itemName: GameTextMenu + "Open Extend Window", priority = 1)]
-        public static void OpenExtendnGameTextWindow()
-        {
-            ExtendGameTextWindow.Open();
-        }
-
-        [MenuItem(itemName: GameTextMenu + "Open Extend Window", true)]
-        private static bool ValidateOpenExtendnGameTextWindow()
-        {
-            return GameTextConfig.Instance.ExtendGameText.Enable;
+            GenerateWindow.Open();
         }
 
         #endregion

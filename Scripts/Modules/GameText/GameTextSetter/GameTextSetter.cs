@@ -14,18 +14,12 @@ namespace Modules.GameText.Components
 	{
         //----- params -----
 
-        public enum SourceType
-        {
-            BuiltIn,            
-            Extend,
-        }
-
         //----- field -----
 
 	    #pragma warning disable 414
 
         [SerializeField]
-	    private SourceType sourceType = SourceType.BuiltIn;
+	    private ContentType type = ContentType.Embedded;
 
         #pragma warning restore 414
 
@@ -39,8 +33,10 @@ namespace Modules.GameText.Components
 	    private TextMeshProUGUI textMeshProComponent = null;
 
         //----- property -----
-        
-	    public string TextGuid { get { return textGuid; } }
+
+        public ContentType ContentType { get { return type; } }
+
+        public string TextGuid { get { return textGuid; } }
 
         public string Content { get { return content; } }
 
@@ -96,19 +92,8 @@ namespace Modules.GameText.Components
             ApplyText(content);
             ApplyGameText();
         }
-        
-	    private void SetTextEnum(Enum textType)
-        {
-            var gameText = GameText.Instance;
 
-            if (gameText == null) { return; }
-
-            var newTextGuid = textType == null ? null : gameText.FindTextGuid(textType);
-
-            SetTextGuid(newTextGuid);
-        }
-
-	    private void ImportText()
+        private void ImportText()
         {
             #if UNITY_EDITOR
 
@@ -123,7 +108,7 @@ namespace Modules.GameText.Components
         {
             var gameText = GameText.Instance;
 
-            if (gameText == null || gameText.Cache == null) { return; }
+            if (gameText == null || gameText.Texts == null) { return; }
 
             if (string.IsNullOrEmpty(textGuid)) { return; }
 

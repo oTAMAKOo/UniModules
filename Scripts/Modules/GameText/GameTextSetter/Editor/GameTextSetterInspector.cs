@@ -45,8 +45,6 @@ namespace Modules.GameText.Components
 
             currentTextGuid = instance.TextGuid;
 
-            UpdateSelectionAssetType(gameText, instance.TextGuid);
-
             setup = true;
         }
 
@@ -76,34 +74,42 @@ namespace Modules.GameText.Components
 
             Setup();
 
-            GUILayout.Space(4f);
+            EditorGUILayout.Separator();
 
             var gameText = GameText.Instance;
+            
+            UpdateCurrentInfo(gameText);
+
+            DrawSourceSelectGUI(gameText);
+
+            DrawEmbeddedTextSelectGUI(gameText);
+
+            DrawDistributionTextSelectGUI(gameText);
+
+            DrawDevelopmentTextSelectGUI();
+        }
+
+        private void DrawSourceSelectGUI(GameText gameText)
+        {
+            var contentType = instance.ContentType;
 
             var config = GameTextConfig.Instance;
 
-            var extendGameTextSetting = config.ExtendGameText;
-
-            // 更新.
-            UpdateCurrentInfo(gameText);
-
-            //------ Source Select ------
-
-            var sourceType = Reflection.GetPrivateField<GameTextSetter, GameTextSetter.SourceType>(instance, "sourceType");
+            var distributionSetting = config.Distribution;
 
             using (new DisableScope(!string.IsNullOrEmpty(currentTextGuid)))
             {
-                if (extendGameTextSetting.Enable)
+                if (distributionSetting.Enable)
                 {
                     using (new EditorGUILayout.HorizontalScope())
                     {
-                        EditorGUILayout.LabelField("Source Asset", GUILayout.Width(45f));
+                        EditorGUILayout.LabelField("Source", GUILayout.Width(45f));
 
                         GUILayout.FlexibleSpace();
 
-                        var enumValues = Enum.GetValues(typeof(GameTextSetter.SourceType)).Cast<GameTextSetter.SourceType>().ToArray();
+                        var enumValues = Enum.GetValues(typeof(ContentType)).Cast<ContentType>().ToArray();
 
-                        var index = enumValues.IndexOf(x => x == sourceType);
+                        var index = enumValues.IndexOf(x => x == contentType);
 
                         var tabItems = enumValues.Select(x => x.ToString()).ToArray();
                         
@@ -117,7 +123,7 @@ namespace Modules.GameText.Components
 
                             var selection = enumValues.ElementAtOrDefault(index);
 
-                            Reflection.SetPrivateField(instance, "sourceType", selection);
+                            Reflection.SetPrivateField(instance, "type", selection);
 
                             SetTextGuid(null);
 
@@ -130,165 +136,127 @@ namespace Modules.GameText.Components
 
                 GUILayout.Space(2f);
             }
+        }
 
-            //------ BuiltIn Text ------
+        private void DrawEmbeddedTextSelectGUI(GameText gameText)
+        {
+            var contentType = instance.ContentType;
 
-            if (sourceType == GameTextSetter.SourceType.BuiltIn)
+            if (contentType != ContentType.Embedded){ return; }
+            
+            DrawTextSelectGUI(gameText, contentType);
+        }
+
+        private void DrawDistributionTextSelectGUI(GameText gameText)
+        {
+            var contentType = instance.ContentType;
+
+            if (contentType != ContentType.Distribution){ return; }
+            
+            DrawTextSelectGUI(gameText, contentType);
+        }
+
+        private void DrawTextSelectGUI(GameText gameText, ContentType contentType)
+        {
+            var categoryChanged = false;
+
+            using (new EditorGUILayout.HorizontalScope())
             {
-                var categoryChanged = false;
+                var categories = gameText.Categories.Where(x => x.ContentType == contentType).ToArray();
 
-                using (new EditorGUILayout.HorizontalScope())
-                {
-                    var categoryType = (Type)Reflection.InvokePrivateMethod(gameText, "GetCategoriesType");
+                // Noneが入るので1ずれる.
+                var categoryIndex = categories.IndexOf(x => x.Guid == SelectionCategoryGuid) + 1;
 
-                    var categories = Enum.GetValues(categoryType).Cast<Enum>().ToList();
+                var categoryLabels = categories.Select(x => x.DisplayName).ToArray();
 
-                    var categoryIndex = 0;
+                var labels = new List<string> { "None" };
 
-                    for (var i = 0; i < categories.Count; i++)
-                    {
-                        var categoryGuid = FindCategoryGuid(gameText, categories[i]);
+                labels.AddRange(categoryLabels);
 
-                        if (categoryGuid == SelectionCategoryGuid)
-                        {
-                            // Noneが入るので1ずれる.
-                            categoryIndex = i + 1;
-                            break;
-                        }
-                    }
-
-                    var categoryLabels = categories.Select(x => x.ToLabelName());
-
-                    var labels = new List<string> { "None" };
-
-                    labels.AddRange(categoryLabels);
-
-                    EditorGUI.BeginChangeCheck();
-
-                    categoryIndex = EditorGUILayout.Popup("GameText", categoryIndex, labels.ToArray());
-
-                    if (EditorGUI.EndChangeCheck())
-                    {
-                        UnityEditorUtility.RegisterUndo("GameTextSetterInspector-Undo", instance);
-                        
-                        var newCategory = 1 <= categoryIndex ? categories[categoryIndex - 1] : null;
-
-                        var newCategoryGuid = FindCategoryGuid(gameText, newCategory);
-
-                        if (currentCategoryGuid != newCategoryGuid)
-                        {
-                            SetTextGuid(null);
-
-                            UpdateCurrentInfo(gameText);
-
-                            currentCategoryGuid = newCategoryGuid;
-
-                            categoryChanged = true;
-                        }
-                    }
-
-                    using (new DisableScope(categoryIndex == 0 || GameText.Instance.Cache == null))
-                    {
-                        GUILayout.Space(2f);
-
-                        if (GUILayout.Button("select", EditorStyles.miniButton, GUILayout.Width(75f)))
-                        {
-                            GameTextSelector.Open();
-                        }
-                    }
-                }
-
-                if (categoryChanged && string.IsNullOrEmpty(currentCategoryGuid))
-                {
-                    SetDevelopmentText(string.Empty);
-                }
-            }
-
-            //------ Extend Text ------
-
-            if (sourceType == GameTextSetter.SourceType.Extend)
-            {
                 EditorGUI.BeginChangeCheck();
 
-                var newTextGuid = EditorGUILayout.DelayedTextField("Text Guid", instance.TextGuid);
+                categoryIndex = EditorGUILayout.Popup("GameText", categoryIndex, labels.ToArray());
 
                 if (EditorGUI.EndChangeCheck())
                 {
-                    if (!string.IsNullOrEmpty(newTextGuid))
-                    {
-                        var text = gameText.FindText(newTextGuid);
+                    UnityEditorUtility.RegisterUndo("GameTextSetterInspector-Undo", instance);
+                    
+                    var newCategory = 1 <= categoryIndex ? categories[categoryIndex - 1] : null;
 
-                        if (!string.IsNullOrEmpty(text))
-                        {
-                            UnityEditorUtility.RegisterUndo("GameTextSetterInspector-Undo", instance);
+                    var newCategoryGuid = newCategory != null ? newCategory.Guid : string.Empty;
 
-                            SetTextGuid(newTextGuid);
-
-                            UpdateSelectionAssetType(gameText, newTextGuid);
-                        }
-                        else
-                        {
-                            Debug.LogError("This guid is not defined asset.");
-                        }
-                    }
-                    else
+                    if (currentCategoryGuid != newCategoryGuid)
                     {
                         SetTextGuid(null);
+
+                        UpdateCurrentInfo(gameText);
+
+                        currentCategoryGuid = newCategoryGuid;
+
+                        categoryChanged = true;
+                    }
+                }
+
+                using (new DisableScope(categoryIndex == 0 || GameText.Instance.Texts == null))
+                {
+                    GUILayout.Space(2f);
+
+                    if (GUILayout.Button("select", EditorStyles.miniButton, GUILayout.Width(75f)))
+                    {
+                        GameTextSelector.Open();
                     }
                 }
             }
 
-            GUILayout.Space(2f);
-
-            //------ Development Text ------
-
-            var enableDevelopmentText = string.IsNullOrEmpty(currentTextGuid);
-
-            if (sourceType == GameTextSetter.SourceType.BuiltIn)
+            if (categoryChanged && string.IsNullOrEmpty(currentCategoryGuid))
             {
-                enableDevelopmentText &= string.IsNullOrEmpty(currentCategoryGuid);
+                SetDevelopmentText(string.Empty);
             }
+        }
 
-            if (enableDevelopmentText)
+        private void DrawDevelopmentTextSelectGUI()
+        {
+            var enableDevelopmentText = string.IsNullOrEmpty(currentTextGuid) && string.IsNullOrEmpty(currentCategoryGuid);
+
+            if (!enableDevelopmentText) { return; }
+            
+            using (new EditorGUILayout.HorizontalScope())
             {
-                using (new EditorGUILayout.HorizontalScope())
+                var labelWidth = EditorGUIUtility.labelWidth - 10f;
+
+                EditorGUILayout.LabelField("Development Text", GUILayout.Width(labelWidth));
+
+                var developmentText = (string)Reflection.InvokePrivateMethod(instance, "GetDevelopmentText");
+
+                var editText = developmentText.TrimStart(GameTextSetter.DevelopmentMark);
+
+                var prevText = editText;
+
+                EditorGUI.BeginChangeCheck();
+
+                var lineCount = editText.Count(x => x == '\n') + 1;
+
+                lineCount = Mathf.Clamp(lineCount, 1, 5);
+
+                var textAreaHeight = lineCount * 18f;
+
+                editText = EditorGUILayout.TextArea(editText, GUILayout.ExpandWidth(true), GUILayout.Height(textAreaHeight));
+
+                if (EditorGUI.EndChangeCheck())
                 {
-                    var labelWidth = EditorGUIUtility.labelWidth - 10f;
+                    UnityEditorUtility.RegisterUndo("GameTextSetterInspector-Undo", instance);
 
-                    EditorGUILayout.LabelField("Development Text", GUILayout.Width(labelWidth));
-
-                    var developmentText = (string)Reflection.InvokePrivateMethod(instance, "GetDevelopmentText");
-
-                    var editText = developmentText.TrimStart(GameTextSetter.DevelopmentMark);
-
-                    var prevText = editText;
-
-                    EditorGUI.BeginChangeCheck();
-
-                    var lineCount = editText.Count(x => x == '\n') + 1;
-
-                    lineCount = Mathf.Clamp(lineCount, 1, 5);
-
-                    var textAreaHeight = lineCount * 18f;
-
-                    editText = EditorGUILayout.TextArea(editText, GUILayout.ExpandWidth(true), GUILayout.Height(textAreaHeight));
-
-                    if (EditorGUI.EndChangeCheck())
+                    if (!string.IsNullOrEmpty(prevText))
                     {
-                        UnityEditorUtility.RegisterUndo("GameTextSetterInspector-Undo", instance);
-
-                        if (!string.IsNullOrEmpty(prevText))
-                        {
-                            Reflection.InvokePrivateMethod(instance, "ApplyText", new object[] { null });
-                        }
-
-                        if (!string.IsNullOrEmpty(editText))
-                        {
-                            editText = editText.FixLineEnd();
-                        }
-
-                        SetDevelopmentText(editText);
+                        Reflection.InvokePrivateMethod(instance, "ApplyText", new object[] { null });
                     }
+
+                    if (!string.IsNullOrEmpty(editText))
+                    {
+                        editText = editText.FixLineEnd();
+                    }
+
+                    SetDevelopmentText(editText);
                 }
             }
         }
@@ -301,17 +269,6 @@ namespace Modules.GameText.Components
             currentTextGuid = instance.TextGuid;
 
             currentCategoryGuid = GetCategoryGuid(gameText, instance.TextGuid);
-        }
-
-        private void UpdateSelectionAssetType(GameText gameText, string textGuid)
-        {
-            var categoryGuid = GetCategoryGuid(gameText, textGuid);
-
-            if (!string.IsNullOrEmpty(categoryGuid))
-            {
-                // 内包テキストに含まれるGuidだった場合は内包テキストモードに変更.
-                Reflection.SetPrivateField(instance, "sourceType", GameTextSetter.SourceType.BuiltIn);
-            }
         }
 
         private void SetTextGuid(string textGuid)
@@ -328,16 +285,17 @@ namespace Modules.GameText.Components
 
         private string GetCategoryGuid(GameText gameText, string textGuid)
         {
-            var categoryEnum = (Enum)Reflection.InvokePrivateMethod(gameText, "FindCategoryEnumFromTextGuid", new object[] { textGuid });
-            
-            return FindCategoryGuid(gameText, categoryEnum);
-        }
+            if (string.IsNullOrEmpty(textGuid)) { return null; }
 
-        private string FindCategoryGuid(GameText gameText, Enum categoryEnum)
-        {
-            if (categoryEnum == null) { return null; }
+            var contents = gameText.Texts  as Dictionary<string, TextInfo>;
 
-            return (string)Reflection.InvokePrivateMethod(gameText, "FindCategoryGuid", new object[] { categoryEnum });
+            if (contents == null) { return null; }
+
+            var content = contents.GetValueOrDefault(textGuid);
+
+            if (content == null) { return null; }
+
+            return content.categoryGuid;
         }
 
         private void OnUndoRedo()

@@ -53,7 +53,6 @@ namespace Modules.GameText
     }
 }
 ";
-        private const string CategoryLabelTemplate = @"[Label(""{0}"")]";
 
         private const string EnumContentsTemplate = @"{0},";
 
@@ -73,8 +72,6 @@ namespace Modules.GameText
             for (var i = 0; i < sheets.Length; ++i)
             {
                 var sheet = sheets[i];
-
-                enums.Append("\t\t").AppendFormat(CategoryLabelTemplate, sheet.displayName).AppendLine();
 
                 enums.Append("\t\t").AppendFormat(EnumContentsTemplate, sheet.sheetName);
 

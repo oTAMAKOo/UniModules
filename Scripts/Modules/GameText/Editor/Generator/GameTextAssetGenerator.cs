@@ -18,29 +18,42 @@ namespace Modules.GameText.Editor
 
         //----- method -----
 
-        public static void Build(GameTextAsset asset, SheetData[] sheets, int textIndex, AesCryptoKey aesCryptoKey)
+        public static void Build(GameTextAsset asset, ContentType contentType, SheetData[] sheets, int textIndex, AesCryptoKey aesCryptoKey)
         {
-            var contents = new List<TextContent>();
+            var categoryContents = new List<GameTextAsset.CategoryContent>();
 
             for (var i = 0; i < sheets.Length; i++)
             {
+                var sheetGuid = sheets[i].guid;
+                var sheetName = sheets[i].sheetName.Encrypt(aesCryptoKey);
+                var sheetDisplayName = sheets[i].displayName.Encrypt(aesCryptoKey);
                 var records = sheets[i].records;
+
+                if (string.IsNullOrEmpty(sheetName)){ continue; }
+
+                var textContents = new List<GameTextAsset.TextContent>();
 
                 for (var j = 0; j < records.Length; j++)
                 {
                     var record = records[j];
 
                     var text = record.texts.ElementAtOrDefault(textIndex);
+
+                    var enumName = record.enumName.Encrypt(aesCryptoKey);
                     
                     var cryptText = string.IsNullOrEmpty(text) ? string.Empty : text.Encrypt(aesCryptoKey);
 
-                    var textContent = new TextContent(record.guid, cryptText);
+                    var textContent = new GameTextAsset.TextContent(record.guid, enumName, cryptText);
 
-                    contents.Add(textContent);
+                    textContents.Add(textContent);
                 }
+
+                var sheetContent = new GameTextAsset.CategoryContent(sheetGuid, sheetName, sheetDisplayName, textContents.ToArray());
+
+                categoryContents.Add(sheetContent);
             }
             
-            asset.SetContents(contents.ToArray(), DateTime.Now.ToUnixTime());
+            asset.SetContents(contentType, DateTime.Now.ToUnixTime(), categoryContents.ToArray());
 
             EditorUtility.SetDirty(asset);
         }

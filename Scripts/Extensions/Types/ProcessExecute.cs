@@ -24,6 +24,8 @@ namespace Extensions
 
         public string Arguments { get; set; }
 
+        public bool ErrorDialog { get; set; }
+
         //----- method -----
 
         public ProcessExecute(string command, string arguments)
@@ -168,6 +170,9 @@ namespace Extensions
 
                 // シェル実行しない.
                 UseShellExecute = false,
+
+                // エラーダイアログ表示.
+                ErrorDialog = ErrorDialog,
             };
 
             return processStartInfo;

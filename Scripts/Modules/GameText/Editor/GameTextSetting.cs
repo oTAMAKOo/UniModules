@@ -103,7 +103,7 @@ namespace Modules.GameText.Editor
         }
 
         [Serializable]
-        public sealed class BuiltInGameTextSetting : GenerateAssetSetting
+        public sealed class EmbeddedSetting : GenerateAssetSetting
         {
             [SerializeField]
             private UnityEngine.Object scriptFolder = null;
@@ -115,23 +115,7 @@ namespace Modules.GameText.Editor
         }
 
         [Serializable]
-        public sealed class UpdateGameTextSetting
-        {
-            [SerializeField]
-            private UnityEngine.Object aseetFolder = null;
-            [SerializeField]
-            private bool enable = false;
-
-            public bool Enable { get { return enable; } }
-
-            public string AseetFolderPath
-            {
-                get { return aseetFolder != null ? AssetDatabase.GetAssetPath(aseetFolder) : null; }
-            }
-        }
-
-        [Serializable]
-        public sealed class ExtendGameTextSetting : GenerateAssetSetting
+        public sealed class DistributionSetting : GenerateAssetSetting
         {
             [SerializeField]
             private bool enable = false;
