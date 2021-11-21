@@ -50,56 +50,6 @@ namespace Modules.GameText.Editor
 
                 return PathUtility.Combine(workspacePath, ContentsFolderName);
             }
-
-            public string GetImporterPath()
-            {
-                var config = GameTextConfig.Instance;
-
-                var workspacePath = GetGameTextWorkspacePath();
-
-                var fileName = string.Empty;
-
-                #if UNITY_EDITOR_WIN
-
-                fileName = config.windowsImporterFileName;
-
-                #endif
-
-                #if UNITY_EDITOR_OSX
-
-                fileName = config.osxImporterFileName;
-
-                #endif
-
-                if (string.IsNullOrEmpty(fileName)) { return null; }
-
-                return PathUtility.Combine(workspacePath, fileName);
-            }
-
-            public string GetExporterPath()
-            {
-                var config = GameTextConfig.Instance;
-
-                var workspacePath = GetGameTextWorkspacePath();
-
-                var fileName = string.Empty;
-
-                #if UNITY_EDITOR_WIN
-
-                fileName = config.windowsExporterFileName;
-
-                #endif
-
-                #if UNITY_EDITOR_OSX
-
-                fileName = config.osxExporterFileName;
-
-                #endif
-
-                if (string.IsNullOrEmpty(fileName)) { return null; }
-
-                return PathUtility.Combine(workspacePath, fileName);
-            }
         }
 
         [Serializable]

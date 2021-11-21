@@ -1,11 +1,11 @@
 ﻿
+using UnityEngine;
 using UnityEditor;
 using UnityEditor.Callbacks;
 using System.Linq;
 using Extensions;
 using Extensions.Devkit;
 using Modules.GameText.Components;
-using UnityEngine;
 
 namespace Modules.GameText.Editor
 {
@@ -53,53 +53,20 @@ namespace Modules.GameText.Editor
             var gameText = GameText.Instance;
 
             var config = GameTextConfig.Instance;
-
-            GameTextLanguage.Info gameTextInfo = null;
-
-            if (1 < GameTextLanguage.Infos.Length)
-            {
-                var selection = GameTextLanguage.Prefs.selection;
-
-                gameTextInfo = GameTextLanguage.Infos.ElementAtOrDefault(selection);
-            }
-            else
-            {
-                gameTextInfo = GameTextLanguage.Infos.FirstOrDefault();
-            }
-
-            if (gameTextInfo == null) { return; }
-
-            var identifier = gameTextInfo.Identifier;
-
-            var assetFolderName = gameText.GetAssetFolderName();
-
+            
             // 内包テキスト読み込み.
 
-            if (config != null)
-            {
-                var assetFileName = GameText.GetAssetFileName(identifier);
+            var embeddedAsset = LoadGameTextAsset(ContentType.Embedded);
 
-                var resourcesPath = PathUtility.Combine(assetFolderName, assetFileName);
-
-                gameText.LoadEmbedded(resourcesPath);
-            }
+            gameText.LoadEmbedded(embeddedAsset);
 
             // 配信テキスト読み込み.
 
             if (config != null && config.Distribution.Enable)
             {
-                var assetFileName = GameText.GetAssetFileName(identifier);
+                var distributionAsset = LoadGameTextAsset(ContentType.Distribution);
 
-                var aseetFolderPath = config.Distribution.AseetFolderPath;
-
-                var assetPath = PathUtility.Combine(new string[] { aseetFolderPath, assetFolderName, assetFileName });
-                
-                var distributionAsset = AssetDatabase.LoadMainAssetAtPath(assetPath) as GameTextAsset;
-
-                if (distributionAsset != null)
-                {
-                    gameText.AddContents(distributionAsset);
-                }
+                gameText.AddContents(distributionAsset);
             }
 
             // 適用.
@@ -117,6 +84,53 @@ namespace Modules.GameText.Editor
             }
 
             IsLoaded = true;
+        }
+
+        public static GameTextAsset LoadGameTextAsset(ContentType contentType)
+        {
+            GameTextAsset gameTextAsset = null;
+
+            var gameText = GameText.Instance;
+
+            var config = GameTextConfig.Instance;
+
+            var languageInfo = GameTextLanguage.GetCurrentInfo();
+
+            if (languageInfo == null) { return null; }
+
+            var identifier = languageInfo.Identifier;
+
+            var assetFolderName = gameText.GetAssetFolderName();
+
+            var assetFileName = GameText.GetAssetFileName(identifier);
+
+            switch (contentType)
+            {
+                case ContentType.Embedded:
+                    {
+                        var resourcesPath = PathUtility.Combine(assetFolderName, assetFileName);
+
+                        var path = PathUtility.GetPathWithoutExtension(resourcesPath);
+
+                        gameTextAsset = Resources.Load<GameTextAsset>(path);
+                    }
+                    break;
+
+                case ContentType.Distribution:
+                    {
+                        if (config != null && config.Distribution.Enable)
+                        {
+                            var aseetFolderPath = config.Distribution.AseetFolderPath;
+
+                            var assetPath = PathUtility.Combine(new string[] { aseetFolderPath, assetFolderName, assetFileName });
+                    
+                            gameTextAsset = AssetDatabase.LoadMainAssetAtPath(assetPath) as GameTextAsset;
+                        }
+                    }
+                    break;
+            }
+
+            return gameTextAsset;
         }
     }
 }

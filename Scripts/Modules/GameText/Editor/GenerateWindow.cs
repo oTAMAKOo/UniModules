@@ -4,10 +4,9 @@ using UnityEditor;
 using System;
 using System.IO;
 using System.Linq;
-using System.Text;
-using System.Threading;
 using Extensions;
 using Extensions.Devkit;
+using Modules.Devkit.Console;
 using Modules.GameText.Components;
 
 namespace Modules.GameText.Editor
@@ -67,27 +66,6 @@ namespace Modules.GameText.Editor
             DrawLanguageGUI();
         }
 
-        private GameTextLanguage.Info GetCurrentLanguageInfo()
-        {
-            var generateInfos = GameTextLanguage.Infos;
-
-            GameTextLanguage.Info info = null;
-
-            if (generateInfos.Length == 1)
-            {
-                info = generateInfos.First();
-            }
-            else
-            {
-                if (selection.HasValue)
-                {
-                    info = generateInfos.ElementAtOrDefault(selection.Value);
-                }
-            }
-
-            return info;
-        }
-
         // タイプGUI描画.
         private void DrawGameTextTypeGUI()
         {
@@ -112,18 +90,20 @@ namespace Modules.GameText.Editor
         // 生成制御GUI描画.
         private void DrawGenerateGUI()
         {
-            var info = GetCurrentLanguageInfo();
+            var languageInfo = GameTextLanguage.GetCurrentInfo();
 
             EditorLayoutTools.Title("Asset");
             
             GUILayout.Space(4f);
             
             // 生成制御.
-            using (new DisableScope(info == null))
+            using (new DisableScope(languageInfo == null))
             {
                 if (GUILayout.Button("Generate"))
                 {
-                    GameTextGenerator.Generate(contentType, info);
+                    GameTextGenerator.Generate(contentType, languageInfo);
+
+                    UnityConsole.Info("GameText generate finish.");
 
                     Repaint();
                 }
@@ -160,24 +140,21 @@ namespace Modules.GameText.Editor
             {
                 if (GUILayout.Button("Open"))
                 {
-                    OpenGameTextExcel(setting);
+                    GameTxetExcel.Open(setting);
                 }
             }
 
             GUILayout.Space(4f);
 
-            using (new DisableScope(IsExcelFileLocked(setting)))
+            var isLock = GameTxetExcel.IsExcelFileLocked(setting);
+
+            using (new DisableScope(isLock))
             {
                 if (GUILayout.Button("Import"))
                 {
-                    var importerPath = setting.GetImporterPath();
+                    var nowait = GameTxetExcel.Import(contentType);
 
-                    var result = ExecuteProcess(importerPath, setting);
-
-                    if (result.Item1 != 0)
-                    {
-                        Debug.LogError(result.Item2);
-                    }
+                    UnityConsole.Info("GameText import record finish.");
                 }
             }
 
@@ -187,14 +164,9 @@ namespace Modules.GameText.Editor
             {
                 if (GUILayout.Button("Export"))
                 {
-                    var exporterPath = setting.GetExporterPath();
+                    var nowait = GameTxetExcel.Export(contentType);
 
-                    var result = ExecuteProcess(exporterPath, setting);
-
-                    if (result.Item1 != 0)
-                    {
-                        Debug.LogError(result.Item2);
-                    }
+                    UnityConsole.Info("GameText export record finish.");
                 }
             }
 
@@ -228,97 +200,6 @@ namespace Modules.GameText.Editor
             }
 
             GUILayout.Space(4f);
-        }
-
-        private bool IsExcelFileLocked(GameTextConfig.GenerateAssetSetting setting)
-        {
-            var editExcelPath = setting.GetExcelPath();
-            
-            if (!File.Exists(editExcelPath)) { return false; }
-
-            return FileUtility.IsFileLocked(editExcelPath) ;
-        }
-
-        private void OpenGameTextExcel(GameTextConfig.GenerateAssetSetting setting)
-        {
-            var path = setting.GetExcelPath();
-
-            if(!File.Exists(path))
-            {
-                Debug.LogError("GameText excel file not found.");
-                return;
-            }
-
-            using (var process = new System.Diagnostics.Process())
-            {
-                var processStartInfo = new System.Diagnostics.ProcessStartInfo
-                {
-                    FileName = path,
-                };
-
-                process.StartInfo = processStartInfo;
-
-                //起動.
-                process.Start();
-            }
-        }
-
-        private Tuple<int, string> ExecuteProcess(string path, GameTextConfig.GenerateAssetSetting setting)
-        {
-            var exitCode = 0;
-            
-            // タイムアウト時間 (30秒).
-            var timeout = TimeSpan.FromSeconds(30);
-
-            // ログ.
-            var log = new StringBuilder();
-
-            using (var process = new System.Diagnostics.Process())
-            {
-                var processStartInfo = new System.Diagnostics.ProcessStartInfo
-                {
-                    WorkingDirectory = setting.GetGameTextWorkspacePath(),
-                    FileName = path,
-
-                    // エラー出力をリダイレクト.
-                    RedirectStandardOutput = true,
-                    RedirectStandardError = true,
-
-                    // 起動できなかった時にエラーダイアログを表示.
-                    ErrorDialog = true,
-
-                    // シェル実行しない.
-                    UseShellExecute = false,                    
-                };
-
-                process.StartInfo = processStartInfo;
-
-                System.Diagnostics.DataReceivedEventHandler processOutputDataReceived = (sender, e) =>
-                {
-                    log.AppendLine(e.Data);
-                };
-
-                process.OutputDataReceived += processOutputDataReceived;
-
-                //起動.
-                process.Start();
-
-                process.BeginOutputReadLine();
-
-                // 結果待ち.
-                process.WaitForExit((int)timeout.TotalMilliseconds);
-
-                while (!process.HasExited)
-                {
-                    process.Refresh();
-                    Thread.Sleep(5);
-                }
-
-                // 終了コード.
-                exitCode = process.ExitCode;
-            }
-
-            return new Tuple<int, string>(exitCode, log.ToString());
         }
 
         private void Reload()

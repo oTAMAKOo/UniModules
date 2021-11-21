@@ -39,12 +39,18 @@ namespace Modules.GameText
             var path = PathUtility.GetPathWithoutExtension(resourcesPath);
 
             var asset = Resources.Load<GameTextAsset>(path);
+            
+            LoadEmbedded(asset);
+        }
 
-            if (asset == null) { return; }
+        /// <summary> 内蔵テキストを読み込み </summary>
+        public void LoadEmbedded(GameTextAsset gameTextAsset)
+        {
+            if (gameTextAsset == null) { return; }
 
             Clear();
 
-            AddContents(asset);
+            AddContents(gameTextAsset);
         }
 
         /// <summary> 追加でテキストを取り込み </summary>

@@ -24,6 +24,8 @@ namespace Extensions
 
         public string Arguments { get; set; }
 
+        public bool Hide { get; set; }
+
         public bool ErrorDialog { get; set; }
 
         //----- method -----
@@ -34,6 +36,7 @@ namespace Extensions
 
             Command = command;
             Arguments = arguments;
+            Hide = true;
         }
         
         public Tuple<int, string, string> Start()
@@ -99,7 +102,7 @@ namespace Extensions
                     process.ErrorDataReceived += processErrorDataReceived;
 
                     process.EnableRaisingEvents = true;
-                    
+
                     process.Exited += (object sender, EventArgs e) =>
                     {
                         var exitCode = -1;
@@ -110,6 +113,8 @@ namespace Extensions
 
                             if (senderProcess != null)
                             {
+                                senderProcess.WaitForExit();
+
                                 exitCode = senderProcess.ExitCode;
                             }
 
@@ -156,10 +161,6 @@ namespace Extensions
                 // ディレクトリ.
                 WorkingDirectory = WorkingDirectory,
 
-                // ウィンドウ非表示.
-                CreateNoWindow = true,
-                WindowStyle = ProcessWindowStyle.Hidden,
-
                 // 文字コード.
                 StandardOutputEncoding = Encoding,
                 StandardErrorEncoding = Encoding,
@@ -174,6 +175,13 @@ namespace Extensions
                 // エラーダイアログ表示.
                 ErrorDialog = ErrorDialog,
             };
+
+            // 非表示.
+            if (Hide)
+            {
+                processStartInfo.CreateNoWindow = true;
+                processStartInfo.WindowStyle = ProcessWindowStyle.Hidden;
+            }
 
             return processStartInfo;
         }

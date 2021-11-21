@@ -6,7 +6,6 @@ using System.Collections.Generic;
 using System.Linq;
 using Extensions;
 using Extensions.Devkit;
-using Modules.Devkit.Console;
 using Modules.Devkit.Generators;
 using Modules.GameText.Components;
 
@@ -82,10 +81,10 @@ namespace Modules.GameText.Editor
                 textIndex = info.TextIndex,
             };
 
-            GenerateProcess(type, generateInfo);
+            GenerateGameText(type, generateInfo);
         }
         
-        private static void GenerateProcess(ContentType contentType, GenerateInfo generateInfo)
+        private static void GenerateGameText(ContentType contentType, GenerateInfo generateInfo)
         {
             var progressTitle = "Generate GameText";
 
@@ -138,8 +137,6 @@ namespace Modules.GameText.Editor
 
                     EditorUtility.DisplayProgressBar(progressTitle, "Complete.", 1f);
                 }
-
-                UnityConsole.Info("GameText generate finish.");
 
                 AssetDatabase.SaveAssets();
             }

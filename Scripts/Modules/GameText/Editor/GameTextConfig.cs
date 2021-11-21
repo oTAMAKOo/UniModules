@@ -1,4 +1,5 @@
 ﻿
+using Extensions;
 using UnityEngine;
 using Modules.Devkit.ScriptableObjects;
 
@@ -23,16 +24,12 @@ namespace Modules.GameText.Editor
         [Header("Windows")]
 
         [SerializeField]
-        private string windowsImporterFileName = null;
-        [SerializeField]
-        private string windowsExporterFileName = null;
+        private string windowsConverterPath = null;
 
         [Header("Mac")]
 
         [SerializeField]
-        private string osxImporterFileName = null;
-        [SerializeField]
-        private string osxExporterFileName = null;
+        private string osxConverterPath = null;
 
         #pragma warning restore 414
 
@@ -43,6 +40,28 @@ namespace Modules.GameText.Editor
         public EmbeddedSetting Embedded { get { return embedded; } }
 
         public DistributionSetting Distribution { get { return distribution; } }
+
+        public string ConverterPath
+        {
+            get
+            {
+                var converterPath = string.Empty;
+
+                #if UNITY_EDITOR_WIN
+
+                converterPath = windowsConverterPath;
+
+                #endif
+
+                #if UNITY_EDITOR_OSX
+
+                converterPath = osxConverterPath;
+
+                #endif
+                
+                return string.IsNullOrEmpty(converterPath) ? null : UnityPathUtility.RelativePathToFullPath(converterPath);
+            }
+        }
 
         //----- method -----
     }

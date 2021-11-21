@@ -1,4 +1,5 @@
 ﻿
+using System.Linq;
 using Modules.Devkit.Prefs;
 
 namespace Modules.GameText.Editor
@@ -29,5 +30,23 @@ namespace Modules.GameText.Editor
         }
 
         public static Info[] Infos { get; set; }
+
+        public static Info GetCurrentInfo()
+        {
+            Info languageInfo = null;
+
+            if (1 < Infos.Length)
+            {
+                var selection = Prefs.selection;
+
+                languageInfo = Infos.ElementAtOrDefault(selection);
+            }
+            else
+            {
+                languageInfo = Infos.FirstOrDefault();
+            }
+
+            return languageInfo;
+        }
     }
 }

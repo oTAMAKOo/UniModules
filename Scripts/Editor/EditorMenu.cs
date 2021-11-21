@@ -167,6 +167,21 @@ namespace Modules
             GenerateWindow.Open();
         }
 
+        //------ Excel保存時に自動更新 ------
+
+        [MenuItem(itemName: GameTextMenu + "Update on save excel", priority = 1)]
+        public static void ToggleUpdateOnSaveExcel()
+        {
+            GameTextAssetUpdater.Prefs.autoUpdate = !GameTextAssetUpdater.Prefs.autoUpdate;
+        }
+
+        [MenuItem(itemName: GameTextMenu + "Update on save excel", isValidateFunction: true)]
+        public static bool ToggleUpdateOnSaveExcelValidate()
+        {
+            Menu.SetChecked(GameTextMenu + "Update on save excel", GameTextAssetUpdater.Prefs.autoUpdate);
+            return true;
+        }
+
         #endregion
 
         //===============================================================
