@@ -33,7 +33,7 @@ namespace Modules.MessagePack
 
             var codeGenerateResult = processExecute.Start();
             
-            var isSuccess = codeGenerateResult.Item1 == 0;
+            var isSuccess = codeGenerateResult.ExitCode == 0;
 
             OutputGenerateLog(isSuccess, csFilePath, processExecute);
 
@@ -45,7 +45,7 @@ namespace Modules.MessagePack
             {
                 using (new DisableStackTraceScope())
                 {
-                    Debug.LogError(codeGenerateResult.Item2);
+                    Debug.LogError(codeGenerateResult.Output);
                 }
             }
 
@@ -74,7 +74,7 @@ namespace Modules.MessagePack
                 yield return null;
             }
 
-            var isSuccess = codeGenerateTask.Result.Item1 == 0;
+            var isSuccess = codeGenerateTask.Result.ExitCode == 0;
 
             OutputGenerateLog(isSuccess, csFilePath, processExecute);
 
@@ -86,11 +86,11 @@ namespace Modules.MessagePack
             {
                 using (new DisableStackTraceScope())
                 {
-                    var message = codeGenerateTask.Result.Item3;
+                    var message = codeGenerateTask.Result.Error;
 
                     if (string.IsNullOrEmpty(message))
                     {
-                        message = codeGenerateTask.Result.Item2;
+                        message = codeGenerateTask.Result.Output;
                     }
 
                     Debug.LogError(message);

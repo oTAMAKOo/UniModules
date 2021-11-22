@@ -139,7 +139,7 @@ namespace Modules.GameText.Editor
 
             var result = await processExecute.StartAsync();
 
-            return Tuple.Create(result.Item1, result.Item3);
+            return Tuple.Create(result.ExitCode, result.Error);
         }
     }
 }

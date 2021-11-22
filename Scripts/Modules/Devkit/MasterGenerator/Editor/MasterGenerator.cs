@@ -379,10 +379,10 @@ namespace Modules.Master
 
             var result = await processExecute.StartAsync();
 
-            if (string.IsNullOrEmpty(result.Item2)){ return null; }
+            if (string.IsNullOrEmpty(result.Output)){ return null; }
 
             // 改行コードを削除.
-            return result.Item2.Replace("\r", "").Replace("\n", "");
+            return result.Output.Replace("\r", "").Replace("\n", "");
         }
 
         private static void GenerateMasterVersionFile(string filePath, IDictionary<string, string> versionHashDictionary)

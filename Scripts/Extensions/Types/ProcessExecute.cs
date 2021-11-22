@@ -12,6 +12,22 @@ namespace Extensions
 
         private static readonly TimeSpan TimeOut = TimeSpan.FromSeconds(120);
 
+        public sealed class Result
+        {
+            public int ExitCode { get; private set; }
+            
+            public string Output { get; private set; }
+            
+            public string Error { get; private set; }
+
+            public Result(int exitCode, string output, string error)
+            {
+                ExitCode = exitCode;
+                Output = output;
+                Error = error;
+            }
+        }
+
         //----- field -----
 
         //----- property -----
@@ -42,9 +58,9 @@ namespace Extensions
             UseShellExecute = false;
         }
         
-        public Tuple<int, string, string> Start()
+        public Result Start()
         {
-            Tuple<int, string, string> result = null;
+            Result result = null;
             
             try
             {
@@ -60,20 +76,20 @@ namespace Extensions
                     var outputLog = process.StandardOutput.ReadToEnd();
                     var errorLog = process.StandardError.ReadToEnd();
 
-                    result = Tuple.Create(exitCode, outputLog, errorLog);
+                    result = new Result(exitCode, outputLog, errorLog);
                 }
             }
             catch (Exception ex)
             {
-                return Tuple.Create(1, string.Empty, ex.Message);
+                return new Result(1, string.Empty, ex.Message);
             }
 
             return result;
         }
 
-        public Task<Tuple<int, string, string>> StartAsync()
+        public Task<Result> StartAsync()
         {
-            var tcs = new TaskCompletionSource<Tuple<int, string, string>>();
+            var tcs = new TaskCompletionSource<Result>();
 
             var outputLogBuilder = new StringBuilder();
             var errorLogBuilder = new StringBuilder();
@@ -133,7 +149,7 @@ namespace Extensions
                         var outputLog = outputLogBuilder.ToString();
                         var errorLog = errorLogBuilder.ToString();
 
-                        var result = Tuple.Create(exitCode, outputLog, errorLog);
+                        var result = new Result(exitCode, outputLog, errorLog);
 
                         tcs.TrySetResult(result);
                     };
@@ -157,7 +173,7 @@ namespace Extensions
             }
             catch (Exception ex)
             {
-                return Task.FromException<Tuple<int, string, string>>(ex);
+                return Task.FromException<Result>(ex);
             }
 
             return tcs.Task;

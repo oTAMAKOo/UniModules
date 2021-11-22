@@ -209,7 +209,7 @@ namespace Modules.MessagePack
             var commandLineProcess = new ProcessExecute("dotnet", "--version");
 
             var findYield = commandLineProcess.StartAsync().ToObservable()
-                .Do(x => result = Tuple.Create(true, x.Item2))
+                .Do(x => result = Tuple.Create(true, x.Output))
                 .DoOnError(x => result = Tuple.Create(false, (string)null))
                 .Select(_ => result)
                 .ToYieldInstruction();
