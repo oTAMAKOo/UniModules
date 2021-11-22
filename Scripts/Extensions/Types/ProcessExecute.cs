@@ -24,6 +24,8 @@ namespace Extensions
 
         public string Arguments { get; set; }
 
+        public bool UseShellExecute { get; set; }
+
         public bool Hide { get; set; }
 
         public bool ErrorDialog { get; set; }
@@ -37,6 +39,7 @@ namespace Extensions
             Command = command;
             Arguments = arguments;
             Hide = true;
+            UseShellExecute = false;
         }
         
         public Tuple<int, string, string> Start()
@@ -81,25 +84,28 @@ namespace Extensions
                 {
                     process.StartInfo = CreateProcessStartInfo();
 
-                    DataReceivedEventHandler processOutputDataReceived = (sender, e) =>
+                    if (!UseShellExecute)
                     {
-                        if (!string.IsNullOrEmpty(e.Data))
+                        DataReceivedEventHandler processOutputDataReceived = (sender, e) =>
                         {
-                            outputLogBuilder.AppendLine(e.Data);
-                        }
-                    };
+                            if (!string.IsNullOrEmpty(e.Data))
+                            {
+                                outputLogBuilder.AppendLine(e.Data);
+                            }
+                        };
 
-                    process.OutputDataReceived += processOutputDataReceived;
+                        process.OutputDataReceived += processOutputDataReceived;
 
-                    DataReceivedEventHandler processErrorDataReceived = (sender, e) =>
-                    {
-                        if (!string.IsNullOrEmpty(e.Data))
+                        DataReceivedEventHandler processErrorDataReceived = (sender, e) =>
                         {
-                            errorLogBuilder.AppendLine(e.Data);
-                        }
-                    };
+                            if (!string.IsNullOrEmpty(e.Data))
+                            {
+                                errorLogBuilder.AppendLine(e.Data);
+                            }
+                        };
 
-                    process.ErrorDataReceived += processErrorDataReceived;
+                        process.ErrorDataReceived += processErrorDataReceived;
+                    }
 
                     process.EnableRaisingEvents = true;
 
@@ -134,13 +140,19 @@ namespace Extensions
 
                     process.Start();
 
-                    process.BeginOutputReadLine();
-                    process.BeginErrorReadLine();
+                    if (!UseShellExecute)
+                    {
+                        process.BeginOutputReadLine();
+                        process.BeginErrorReadLine();
+                    }
 
                     process.WaitForExit();
 
-                    process.CancelOutputRead();
-                    process.CancelErrorRead();
+                    if (!UseShellExecute)
+                    {
+                        process.CancelOutputRead();
+                        process.CancelErrorRead();
+                    }
                 }
             }
             catch (Exception ex)
@@ -158,23 +170,24 @@ namespace Extensions
                 FileName = Command,
                 Arguments = Arguments,
 
-                // ディレクトリ.
                 WorkingDirectory = WorkingDirectory,
 
-                // 文字コード.
-                StandardOutputEncoding = Encoding,
-                StandardErrorEncoding = Encoding,
-
-                // ログ出力をリダイレクト.
-                RedirectStandardOutput = true,
-                RedirectStandardError = true,
-
                 // シェル実行しない.
-                UseShellExecute = false,
+                UseShellExecute = UseShellExecute,
 
                 // エラーダイアログ表示.
                 ErrorDialog = ErrorDialog,
             };
+
+            // シェル実行時はリダイレクト出来ない.
+            if (!UseShellExecute)
+            {
+                processStartInfo.StandardOutputEncoding = Encoding;
+                processStartInfo.RedirectStandardOutput = true;
+
+                processStartInfo.StandardErrorEncoding = Encoding;
+                processStartInfo.RedirectStandardError = true;
+            }
 
             // 非表示.
             if (Hide)

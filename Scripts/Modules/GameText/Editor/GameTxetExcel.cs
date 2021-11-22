@@ -1,12 +1,10 @@
 ﻿
-using UnityEngine;
 using System;
 using System.IO;
 using System.Text;
 using System.Threading.Tasks;
 using System.Diagnostics;
 using Extensions;
-using Modules.Devkit.Console;
 using Modules.GameText.Components;
 
 using Debug = UnityEngine.Debug;
@@ -53,7 +51,7 @@ namespace Modules.GameText.Editor
             }
         }
 
-        public static async Task Import(ContentType contentType)
+        public static async Task Import(ContentType contentType, bool displayConsole)
         {
             var config = GameTextConfig.Instance;
 
@@ -70,7 +68,7 @@ namespace Modules.GameText.Editor
                     break;
             }
             
-            var result = await ExecuteProcess(setting, Mode.Import);
+            var result = await ExecuteProcess(setting, Mode.Import, displayConsole);
 
             if (result.Item1 != 0)
             {
@@ -78,7 +76,7 @@ namespace Modules.GameText.Editor
             }
         }
 
-        public static async Task Export(ContentType contentType)
+        public static async Task Export(ContentType contentType, bool displayConsole)
         {
             var config = GameTextConfig.Instance;
 
@@ -95,7 +93,7 @@ namespace Modules.GameText.Editor
                     break;
             }
             
-            var result = await ExecuteProcess(setting, Mode.Export);
+            var result = await ExecuteProcess(setting, Mode.Export, displayConsole);
 
             if (result.Item1 != 0)
             {
@@ -112,7 +110,7 @@ namespace Modules.GameText.Editor
             return FileUtility.IsFileLocked(editExcelPath) ;
         }
 
-        private static async Task<Tuple<int, string>> ExecuteProcess(GameTextConfig.GenerateAssetSetting setting, Mode mode)
+        private static async Task<Tuple<int, string>> ExecuteProcess(GameTextConfig.GenerateAssetSetting setting, Mode mode, bool displayConsole)
         {
             var config = GameTextConfig.Instance;
 
@@ -135,6 +133,8 @@ namespace Modules.GameText.Editor
             {
                 Encoding = Encoding.GetEncoding("Shift_JIS"),
                 WorkingDirectory = setting.GetGameTextWorkspacePath(),
+                UseShellExecute = displayConsole,
+                Hide = !displayConsole,
             };
 
             var result = await processExecute.StartAsync();

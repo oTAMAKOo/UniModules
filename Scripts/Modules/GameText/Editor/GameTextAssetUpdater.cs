@@ -1,11 +1,8 @@
 ﻿
-using UnityEngine;
 using UnityEditor;
 using UnityEditor.Callbacks;
 using System;
 using System.IO;
-using System.Linq;
-using System.Collections.Generic;
 using System.Threading.Tasks;
 using Extensions;
 using Modules.Devkit.Console;
@@ -105,7 +102,7 @@ namespace Modules.GameText.Editor
 
             var languageInfo = GameTextLanguage.GetCurrentInfo();
 
-            await GameTxetExcel.Export(gameTextAsset.ContentType);
+            await GameTxetExcel.Export(gameTextAsset.ContentType, false);
 
             GameTextGenerator.Generate(gameTextAsset.ContentType, languageInfo);
 

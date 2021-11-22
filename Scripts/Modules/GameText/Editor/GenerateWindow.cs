@@ -152,7 +152,7 @@ namespace Modules.GameText.Editor
             {
                 if (GUILayout.Button("Import"))
                 {
-                    var nowait = GameTxetExcel.Import(contentType);
+                    var nowait = GameTxetExcel.Import(contentType, true);
 
                     UnityConsole.Info("GameText import record finish.");
                 }
@@ -164,7 +164,7 @@ namespace Modules.GameText.Editor
             {
                 if (GUILayout.Button("Export"))
                 {
-                    var nowait = GameTxetExcel.Export(contentType);
+                    var nowait = GameTxetExcel.Export(contentType, true);
 
                     UnityConsole.Info("GameText export record finish.");
                 }
