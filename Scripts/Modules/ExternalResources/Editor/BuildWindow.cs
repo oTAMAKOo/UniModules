@@ -22,7 +22,7 @@ namespace Modules.ExternalResource.Editor
     {
         //----- params -----
 
-        private readonly Vector2 WindowSize = new Vector2(280f, 100f);
+        private readonly Vector2 WindowSize = new Vector2(280f, 106f);
 
         //----- field -----
 
@@ -66,6 +66,8 @@ namespace Modules.ExternalResource.Editor
             
             EditorLayoutTools.Title("AssetInfoManifest");
 
+            GUILayout.Space(2f);
+
             if (GUILayout.Button("Generate"))
             {
                 // アセット情報ファイルを生成.
@@ -75,6 +77,8 @@ namespace Modules.ExternalResource.Editor
             GUILayout.Space(6f);
 
             EditorLayoutTools.Title("ExternalResource");
+
+            GUILayout.Space(2f);
 
             if (GUILayout.Button("Generate"))
             {
