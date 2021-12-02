@@ -687,14 +687,17 @@ namespace Modules.AssetBundles
             {
                 var bytes = loadYield.Result;
 
-                var bundleLoadRequest = AssetBundle.LoadFromMemoryAsync(bytes, assetBundleInfo.CRC);
-
-                while (!bundleLoadRequest.isDone)
+                if (bytes != null)
                 {
-                    yield return null;
-                }
+                    var bundleLoadRequest = AssetBundle.LoadFromMemoryAsync(bytes, assetBundleInfo.CRC);
 
-                assetBundle = bundleLoadRequest.assetBundle;
+                    while (!bundleLoadRequest.isDone)
+                    {
+                        yield return null;
+                    }
+
+                    assetBundle = bundleLoadRequest.assetBundle;
+                }
             }
 
             // 読み込めなかった時はファイルを削除して次回読み込み時にダウンロードし直す.
