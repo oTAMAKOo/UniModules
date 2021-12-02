@@ -120,6 +120,7 @@ namespace Modules.CriWare
 
         // ダウンロード元URL.
         private string remoteUrl = null;
+        private string versionHash = null;
 
         // シュミュレートモードか.
         private bool simulateMode = false;
@@ -219,9 +220,10 @@ namespace Modules.CriWare
         }
 
         /// <summary> URLを設定. </summary>
-        public void SetUrl(string remoteUrl)
+        public void SetUrl(string remoteUrl, string versionHash)
         {
             this.remoteUrl = remoteUrl;
+            this.versionHash = versionHash;
         }
 
         public void SetManifest(AssetInfoManifest manifest)
@@ -404,9 +406,9 @@ namespace Modules.CriWare
 
         public string BuildDownloadUrl(AssetInfo assetInfo)
         {
-            var folderName = PlatformUtility.GetPlatformTypeName();
+            var platformName = PlatformUtility.GetPlatformTypeName();
 
-            var url = PathUtility.Combine(new string[] { remoteUrl, folderName, assetInfo.FileName });
+            var url = PathUtility.Combine(new string[] { remoteUrl, platformName, versionHash, assetInfo.FileName });
 
             return string.Format("{0}?v={1}", url, assetInfo.FileHash);
         }

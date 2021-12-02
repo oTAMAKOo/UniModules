@@ -57,6 +57,7 @@ namespace Modules.AssetBundles
 
         // ダウンロード元URL.
         private string remoteUrl = null;
+        private string versionHash = null;
 
         // ダウンロード中アセットバンドル.
         private HashSet<string> downloadList = null;
@@ -170,13 +171,13 @@ namespace Modules.AssetBundles
             this.yieldCancel = yieldCancel;
         }
 
-        /// <summary>
-        /// URLを設定.
-        /// </summary>
+        /// <summary> URLを設定. </summary>
         /// <param name="remoteUrl">アセットバンドルのディレクトリURLを指定</param>
-        public void SetUrl(string remoteUrl)
+        /// <param name="versionHash">バージョンハッシュを指定</param>
+        public void SetUrl(string remoteUrl, string versionHash)
         {
             this.remoteUrl = remoteUrl;
+            this.versionHash = versionHash;
         }
 
         private void BuildAssetInfoTable()
@@ -220,9 +221,9 @@ namespace Modules.AssetBundles
 
         private string BuildDownloadUrl(AssetInfo assetInfo)
         {
-            var folderName = PlatformUtility.GetPlatformTypeName();
+            var platformName = PlatformUtility.GetPlatformTypeName();
 
-            var url = PathUtility.Combine(new string[] { remoteUrl, folderName, assetInfo.FileName });
+            var url = PathUtility.Combine(new string[] { remoteUrl, platformName, versionHash, assetInfo.FileName });
 
             var downloadUrl = string.Format("{0}{1}", url, PackageExtension);
 

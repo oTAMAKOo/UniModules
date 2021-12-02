@@ -156,17 +156,14 @@ namespace Modules.ExternalResource
             #endif
         }
 
-        /// <summary>
-        /// URLを設定.
-        /// </summary>
-        /// <param name="remoteUrl"></param>
-        public void SetUrl(string remoteUrl)
+        /// <summary> URLを設定. </summary>
+        public void SetUrl(string remoteUrl, string versionHash)
         {
-            assetBundleManager.SetUrl(remoteUrl);
+            assetBundleManager.SetUrl(remoteUrl, versionHash);
 
             #if ENABLE_CRIWARE_ADX || ENABLE_CRIWARE_SOFDEC
 
-            criAssetManager.SetUrl(remoteUrl);
+            criAssetManager.SetUrl(remoteUrl, versionHash);
 
             #endif
         }
