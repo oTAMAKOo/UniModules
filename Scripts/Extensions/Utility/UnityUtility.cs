@@ -435,6 +435,22 @@ namespace Extensions
 
         #region Find Objects
 
+        /// <summary> 自身と子階層のGameObjectを取得 </summary>
+        public static IEnumerable<GameObject> GetChildrenAndSelf(GameObject root)
+        {
+            if (root == null){ yield break; }
+
+            yield return root;
+
+            foreach (Transform item in root.transform)
+            {
+                foreach (var child in GetChildrenAndSelf(item.gameObject))
+                {
+                    yield return child.gameObject;
+                }
+            }
+        }
+
         /// <summary>
         /// カメラ取得.
         /// ※ layerMaskは <code>1 &lt;&lt; (int)layer</code>された状態の物を受け取る.
@@ -514,21 +530,6 @@ namespace Extensions
             }
 
             return list;
-        }
-
-        private static IEnumerable<GameObject> GetChildrenAndSelf(GameObject root)
-        {
-            if (root == null){ yield break; }
-
-            yield return root;
-
-            foreach (Transform item in root.transform)
-            {
-                foreach (var child in GetChildrenAndSelf(item.gameObject))
-                {
-                    yield return child.gameObject;
-                }
-            }
         }
 
         /// <summary>

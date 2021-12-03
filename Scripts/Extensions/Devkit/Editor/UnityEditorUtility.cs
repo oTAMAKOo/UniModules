@@ -3,14 +3,11 @@ using UnityEngine;
 using UnityEditor;
 using UnityEditor.Compilation;
 using UnityEditor.SceneManagement;
-using Unity.Linq;
-using System;
 using System.Linq;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
-using Extensions;
 
 using Object = UnityEngine.Object;
 
@@ -64,7 +61,7 @@ namespace Extensions.Devkit
         {
             var currentScene = EditorSceneManager.GetActiveScene();
             var rootObjects = currentScene.GetRootGameObjects();
-            var gameObjects = rootObjects.SelectMany(x => x.DescendantsAndSelf());
+            var gameObjects = rootObjects.SelectMany(x => UnityUtility.GetChildrenAndSelf(x));
 
             return inactive ? gameObjects.ToArray() : gameObjects.Where(x => x.activeSelf).ToArray();
         }

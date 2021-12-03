@@ -1,8 +1,6 @@
 ﻿
 using UnityEngine;
 using UnityEngine.UI;
-using Unity.Linq;
-using System.Linq;
 using Modules.UI.Layout;
 
 namespace Extensions
@@ -152,7 +150,7 @@ namespace Extensions
         /// <returns></returns>
         public static Bounds CalculateRelativeWorldRect(this RectTransform trans)
         {
-            var gameObjects = trans.gameObject.DescendantsAndSelf().ToArray();
+            var gameObjects = UnityUtility.GetChildrenAndSelf(trans.gameObject);
 
             // ※ 複数のコンポーネントを検証出来る様にforeachで実行.
 
