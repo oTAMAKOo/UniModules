@@ -5,7 +5,6 @@ using UnityEngine.SceneManagement;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using Unity.Linq;
 
 namespace Extensions
 {
@@ -502,7 +501,7 @@ namespace Extensions
 
             var list = new List<T>();
 
-            var objects = rootObject.DescendantsAndSelf();
+            var objects = GetChildrenAndSelf(rootObject);
 
             foreach (var item in objects)
             {
@@ -515,6 +514,21 @@ namespace Extensions
             }
 
             return list;
+        }
+
+        private static IEnumerable<GameObject> GetChildrenAndSelf(GameObject origin)
+        {
+            if (origin == null){ yield break; }
+
+            yield return origin;
+
+            foreach (Transform item in origin.transform)
+            {
+                foreach (var child in GetChildrenAndSelf(item.gameObject))
+                {
+                    yield return child.gameObject;
+                }
+            }
         }
 
         /// <summary>
