@@ -516,13 +516,13 @@ namespace Extensions
             return list;
         }
 
-        private static IEnumerable<GameObject> GetChildrenAndSelf(GameObject origin)
+        private static IEnumerable<GameObject> GetChildrenAndSelf(GameObject root)
         {
-            if (origin == null){ yield break; }
+            if (root == null){ yield break; }
 
-            yield return origin;
+            yield return root;
 
-            foreach (Transform item in origin.transform)
+            foreach (Transform item in root.transform)
             {
                 foreach (var child in GetChildrenAndSelf(item.gameObject))
                 {
