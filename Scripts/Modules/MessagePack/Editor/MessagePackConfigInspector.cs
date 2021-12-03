@@ -3,6 +3,7 @@ using UnityEngine;
 using UnityEditor;
 using System;
 using System.Collections;
+using System.Text;
 using UniRx;
 using Extensions;
 using Extensions.Devkit;
@@ -185,14 +186,18 @@ namespace Modules.MessagePack
 
                 // MSBuild.
 
-                var helpMessage1 = string.Format("Environment variables need to be registered.\nPATH: {0}", DefaultMsBuildPath);
-
-                EditorGUILayout.HelpBox(helpMessage1, MessageType.Info);
-
                 // ※ パスを通すフォルダはUsers配下のフォルダではなくルート階層の配下の「Library」フォルダのパスを通す必要がある.
-                var helpMessage2 = "The library folder is not a folder in the User hierarchy but a folder in the root hierarchy.";
 
-                EditorGUILayout.HelpBox(helpMessage2, MessageType.Info);
+                var helpMessageBuilder = new StringBuilder();
+
+                helpMessageBuilder.Append("Environment variables need to be registered.").AppendLine();
+                helpMessageBuilder.AppendLine();
+                helpMessageBuilder.Append("Default Path:").AppendLine();
+                helpMessageBuilder.Append(DefaultMsBuildPath).AppendLine();
+                helpMessageBuilder.AppendLine();
+                helpMessageBuilder.Append("The library folder is not a folder in the User hierarchy but a folder in the root hierarchy.");
+                
+                EditorGUILayout.HelpBox(helpMessageBuilder.ToString(), MessageType.Info);
             }
 
             #endif
