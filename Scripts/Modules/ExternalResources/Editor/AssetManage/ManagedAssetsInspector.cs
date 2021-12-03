@@ -112,15 +112,24 @@ namespace Modules.ExternalResource.Editor
 
                     EditorGUILayout.TextField("Category", manageInfo.category);
 
-                    EditorGUILayout.TextField("Tag", manageInfo.tag);
+                    if (!string.IsNullOrEmpty(manageInfo.tag))
+                    {
+                        EditorGUILayout.TextField("Tag", manageInfo.tag);
+                    }
 
-                    EditorGUILayout.TextField("Comment", manageInfo.comment);
+                    if (!string.IsNullOrEmpty(manageInfo.comment))
+                    {
+                        EditorGUILayout.TextField("Comment", manageInfo.comment);
+                    }
 
                     if (manageInfo.isAssetBundle)
                     {
                         EditorGUILayout.EnumPopup("NamingRule", manageInfo.assetBundleNamingRule);
 
-                        EditorGUILayout.TextField("NameStr", manageInfo.assetBundleNameStr);
+                        if (!string.IsNullOrEmpty(manageInfo.assetBundleNameStr))
+                        {
+                            EditorGUILayout.TextField("NameStr", manageInfo.assetBundleNameStr);
+                        }
                     }
                 }
             }
