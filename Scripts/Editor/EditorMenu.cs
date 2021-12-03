@@ -281,7 +281,11 @@ namespace Modules
 
         protected const string UtilityMenu = MenuRoot + "Utility/";
 
-        [MenuItem(itemName: UtilityMenu + "ForceReSerialize SelectionAssets", priority = 100)]
+        #region ForceReSerialize
+
+        protected const string ForceReSerializeMenu = UtilityMenu + "ForceReSerialize/";
+
+        [MenuItem(itemName: ForceReSerializeMenu + "SelectionAssets", priority = 0)]
         public static void ForceReSerializeSelectionAssets()
         {
             var assetPaths = Selection.objects
@@ -291,6 +295,18 @@ namespace Modules
 
             ForceReSerializeAssets.Execute(assetPaths);
         }
+
+        [MenuItem(itemName: ForceReSerializeMenu + "All Prefabs", priority = 12)]
+        public static void ForceReSerializeAllPrefabs()
+        {
+            var prefabs = AssetDatabase.FindAssets("t:prefab")
+                .Select(x => AssetDatabase.GUIDToAssetPath(x))
+                .ToArray();
+            
+            ForceReSerializeAssets.Execute(prefabs);
+        }
+
+        #endregion
 
         #region Cleaner
 
