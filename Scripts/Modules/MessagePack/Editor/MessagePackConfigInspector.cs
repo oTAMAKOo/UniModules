@@ -78,6 +78,8 @@ namespace Modules.MessagePack
             var resolverNameSpace = serializedObject.FindProperty("resolverNameSpace");
             var resolverName = serializedObject.FindProperty("resolverName");
             var conditionalCompilerSymbols = serializedObject.FindProperty("conditionalCompilerSymbols");
+            var winMpcRelativePath = serializedObject.FindProperty("winMpcRelativePath");
+            var osxMpcRelativePath = serializedObject.FindProperty("osxMpcRelativePath");
 
             if (isLoading) { return; }
             
@@ -169,38 +171,73 @@ namespace Modules.MessagePack
 
                 serializedObject.ApplyModifiedProperties();
             }
-
-            //------ User local setting ------
-
-            #if UNITY_EDITOR_OSX
             
-            EditorLayoutTools.ContentTitle("User local setting");
+            //------ CustomCodeGenerator ------
+
+            EditorLayoutTools.ContentTitle("CodeGenerator");
 
             using (new ContentsScope())
             {
-                // Mpc.
+                EditorGUILayout.HelpBox("When the mpc command is not used.\n the code generator is directly specified for generation.", MessageType.Info);
 
-                GUILayout.Label("Mpc Path");
+                GUILayout.Label("Windows");
 
-                MessagePackConfig.Prefs.MpcPath = EditorGUILayout.DelayedTextField(MessagePackConfig.Prefs.MpcPath);
+                using (new EditorGUILayout.HorizontalScope())
+                {
+                    GUILayout.Label(winMpcRelativePath.stringValue, pathTextStyle);
 
-                // MSBuild.
+                    if (GUILayout.Button("Edit", GUILayout.Width(45f)))
+                    {
+                        UnityEditorUtility.RegisterUndo("MessagePackConfigInspector Undo", instance);
 
-                // ※ パスを通すフォルダはUsers配下のフォルダではなくルート階層の配下の「Library」フォルダのパスを通す必要がある.
+                        var path = EditorUtility.OpenFilePanel("Select MessagePack compiler", Application.dataPath, "exe");
 
-                var helpMessageBuilder = new StringBuilder();
+                        if (!string.IsNullOrEmpty(path))
+                        {
+                            winMpcRelativePath.stringValue = UnityPathUtility.MakeRelativePath(path);
 
-                helpMessageBuilder.Append("Environment variables need to be registered.").AppendLine();
-                helpMessageBuilder.AppendLine();
-                helpMessageBuilder.Append("Default Path:").AppendLine();
-                helpMessageBuilder.Append(DefaultMsBuildPath).AppendLine();
-                helpMessageBuilder.AppendLine();
-                helpMessageBuilder.Append("The library folder is not a folder in the User hierarchy but a folder in the root hierarchy.");
-                
-                EditorGUILayout.HelpBox(helpMessageBuilder.ToString(), MessageType.Info);
+                            serializedObject.ApplyModifiedProperties();
+                        }
+                    }
+
+                    if (GUILayout.Button("Clear", GUILayout.Width(45f)))
+                    {
+                        winMpcRelativePath.stringValue = string.Empty;
+
+                        serializedObject.ApplyModifiedProperties();
+                    }
+                }
+
+                GUILayout.Label("MacOSX");
+
+                using (new EditorGUILayout.HorizontalScope())
+                {
+                    GUILayout.Label(osxMpcRelativePath.stringValue, pathTextStyle);
+
+                    if (GUILayout.Button("Edit", GUILayout.Width(45f)))
+                    {
+                        UnityEditorUtility.RegisterUndo("MessagePackConfigInspector Undo", instance);
+
+                        var path = EditorUtility.OpenFilePanel("Select MessagePack compiler", Application.dataPath, "");
+
+                        if (!string.IsNullOrEmpty(path))
+                        {
+                            osxMpcRelativePath.stringValue = UnityPathUtility.MakeRelativePath(path);
+
+                            serializedObject.ApplyModifiedProperties();
+                        }
+                    }
+
+                    if (GUILayout.Button("Clear", GUILayout.Width(45f)))
+                    {
+                        osxMpcRelativePath.stringValue = string.Empty;
+
+                        serializedObject.ApplyModifiedProperties();
+                    }
+                }
             }
 
-            #endif
+            GUILayout.Space(4f);
         }
 
         private IEnumerator FindDotnet()

@@ -1,7 +1,6 @@
 ﻿
 using UnityEngine;
 using Extensions;
-using Modules.Devkit.Prefs;
 using Modules.Devkit.ScriptableObjects;
 
 namespace Modules.MessagePack
@@ -9,19 +8,6 @@ namespace Modules.MessagePack
     public sealed class MessagePackConfig : ReloadableScriptableObject<MessagePackConfig>
     {
         //----- params -----
-
-        public static class Prefs
-        {
-            #if UNITY_EDITOR_OSX
-
-            public static string MpcPath
-            {
-                get { return ProjectPrefs.GetString("MessagePackConfigPrefs-mpcPath", ".dotnet/tools/mpc"); }
-                set { ProjectPrefs.SetString("MessagePackConfigPrefs-mpcPath", value); }
-            }
-
-            #endif
-        }
 
         //----- field -----
 
@@ -40,6 +26,15 @@ namespace Modules.MessagePack
         [SerializeField]
         [Tooltip("(option) Split with ','.")]
         private string conditionalCompilerSymbols = null;
+        
+        #pragma warning disable 0414
+
+        [SerializeField]
+        private string winMpcRelativePath = null;
+        [SerializeField]
+        private string osxMpcRelativePath = null;
+
+        #pragma warning restore 0414
 
         //----- property -----
 
@@ -64,8 +59,28 @@ namespace Modules.MessagePack
         /// <summary> 条件付きコンパイラシンボル. </summary>
         public string ConditionalCompilerSymbols { get { return conditionalCompilerSymbols; } }
 
-        /// <summary> コードジェネレーターのコマンド. </summary>
-        public string MpcCommand { get { return resolverName; } }
+        /// <summary> コードジェネレータまでのパス(相対パス). </summary>
+        public string MpcRelativePath
+        {
+            get
+            {
+                var relativePath = string.Empty;
+
+                #if UNITY_EDITOR_WIN
+
+                relativePath = winMpcRelativePath;
+
+                #endif
+
+                #if UNITY_EDITOR_OSX
+
+                relativePath = osxMpcRelativePath;
+
+                #endif
+                
+                return string.IsNullOrEmpty(relativePath) ? null : UnityPathUtility.RelativePathToFullPath(relativePath);
+            }
+        }
 
         //----- method -----
     }

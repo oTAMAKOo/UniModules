@@ -103,20 +103,16 @@ namespace Modules.MessagePack
 
         private static ProcessExecute CreateMpcProcess(MessagePackCodeGenerateInfo generateInfo)
         {
-            #if UNITY_EDITOR_WIN
+            var messagePackConfig = MessagePackConfig.Instance;
 
-            var command = "mpc";
+            var mpc = messagePackConfig.MpcRelativePath;
 
-            #elif UNITY_EDITOR_OSX
+            if (string.IsNullOrEmpty(mpc))
+            {
+                mpc = "mpc";
+            }
 
-            var personalFolderPath = Environment.GetFolderPath(Environment.SpecialFolder.Personal);
-            var mpcPath = MessagePackConfig.Prefs.MpcPath;
-
-            var command = PathUtility.Combine(personalFolderPath, mpcPath);
-
-            #endif
-
-            var processExecute = new ProcessExecute(command, generateInfo.MpcArgument)
+            var processExecute = new ProcessExecute(mpc, generateInfo.MpcArgument)
             {
                 Encoding = Encoding.GetEncoding("Shift_JIS"),
             };
