@@ -10,6 +10,7 @@ using Modules.PatternTexture;
 using Modules.GameText.Editor;
 using Modules.MessagePack;
 using Modules.Master;
+using Modules.Crypto;
 using Modules.ExternalResource;
 using Modules.ExternalResource.Editor;
 using Modules.BehaviorControl;
@@ -573,6 +574,12 @@ namespace Modules
         public static void OpenBuiltInAssetsWindow()
         {
             BuiltInAssetsWindow.Open();
+        }
+
+        [MenuItem(itemName: ToolsMenu + "Open KeyFileWinodow", priority = 13)]
+        public static void OpenKeyFileWinodow()
+        {
+            KeyFileWinodow.Open();
         }
 
         #endregion
