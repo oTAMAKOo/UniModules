@@ -20,7 +20,10 @@ namespace Modules.Devkit.Build
 
         //----- property -----
 
-        public string Tag { get { return tag.Trim(); } }
+        public string Tag
+        {
+            get { return string.IsNullOrEmpty(tag) ? string.Empty : tag.Trim(); }
+        }
         
         public IReadOnlyList<string> Guids
         {
