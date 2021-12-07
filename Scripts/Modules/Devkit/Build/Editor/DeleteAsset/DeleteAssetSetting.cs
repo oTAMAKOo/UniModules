@@ -32,13 +32,13 @@ namespace Modules.Devkit.Build
 
         //----- method -----
 
-        public static IReadOnlyCollection<Object> GetTargets(IEnumerable<string> tags)
+        public static IReadOnlyCollection<string> GetTargetAssetPaths(IEnumerable<string> tags)
         {
-            if (tags == null){ return new Object[0]; }
+            if (tags == null){ return new string[0]; }
 
             var tagList = tags.Select(x => x.Trim()).ToList();
 
-            if (tagList.IsEmpty()){ return new Object[0]; }
+            if (tagList.IsEmpty()){ return new string[0]; }
 
             var settingGuids = AssetDatabase.FindAssets("t:DeleteAssetSetting");
 
@@ -53,7 +53,7 @@ namespace Modules.Devkit.Build
 
             var targets = guids.Select(x => AssetDatabase.GUIDToAssetPath(x))
                 .Where(x => !string.IsNullOrEmpty(x))
-                .Select(x => AssetDatabase.LoadAssetAtPath(x, typeof(Object)))
+                .Distinct()
                 .ToArray();
 
             return targets;
