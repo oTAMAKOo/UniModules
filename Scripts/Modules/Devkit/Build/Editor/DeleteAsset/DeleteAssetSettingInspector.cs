@@ -83,7 +83,6 @@ namespace Modules.Devkit.Build
 
             Reflection.SetPrivateField(instance, "guids", guids);
 
-
             changed = true;
         }
     }
