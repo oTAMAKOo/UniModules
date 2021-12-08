@@ -92,7 +92,7 @@ namespace Modules.AssetBundles.Editor
 
                 foreach (var assetInfo in assetInfos)
                 {
-                    hashBuilder.AppendLine(assetInfo.FileHash);
+                    hashBuilder.AppendLine(assetInfo.Hash);
                 }
 
                 var hash = hashBuilder.ToString().GetHash();

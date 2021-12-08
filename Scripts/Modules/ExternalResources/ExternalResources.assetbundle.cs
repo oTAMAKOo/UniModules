@@ -137,9 +137,9 @@ namespace Modules.ExternalResource
                         builder.AppendFormat("FileName = {0}", assetInfo.FileName).AppendLine();
                         builder.AppendFormat("AssetBundleName = {0}", assetBundleName).AppendLine();
 
-                        if (!string.IsNullOrEmpty(assetInfo.FileHash))
+                        if (!string.IsNullOrEmpty(assetInfo.Hash))
                         {
-                            builder.AppendFormat("Hash = {0}", assetInfo.FileHash).AppendLine();
+                            builder.AppendFormat("Hash = {0}", assetInfo.Hash).AppendLine();
                         }
 
                         UnityConsole.Event(ConsoleEventName, ConsoleEventColor, builder.ToString());
@@ -216,7 +216,7 @@ namespace Modules.ExternalResource
                     builder.AppendLine();
                     builder.AppendFormat("LoadPath = {0}", assetPath).AppendLine();
                     builder.AppendFormat("AssetBundleName = {0}", assetBundleName).AppendLine();
-                    builder.AppendFormat("Hash = {0}", assetInfo.FileHash).AppendLine();
+                    builder.AppendFormat("Hash = {0}", assetInfo.Hash).AppendLine();
 
                     if (!string.IsNullOrEmpty(assetInfo.Category))
                     {

@@ -24,9 +24,11 @@ namespace Modules.ExternalResource
         [SerializeField]
         private string fileName = null;
         [SerializeField]
-        private long fileSize = 0;
+        private long size = 0;
         [SerializeField]
-        private string fileHash = null;
+        private string crc = null;
+        [SerializeField]
+        private string hash = null;
         [SerializeField]
         private AssetBundleInfo assetBundle = null;
 
@@ -41,9 +43,11 @@ namespace Modules.ExternalResource
         /// <summary> ファイル名 </summary>
         public string FileName { get { return fileName; } }
         /// <summary> ファイルサイズ(byte) </summary>
-        public long FileSize { get { return fileSize; } }
-        /// <summary> ファイルハッシュ </summary>
-        public string FileHash { get { return fileHash; } }
+        public long Size { get { return size; } }
+        /// <summary> 誤り検出符号(CRC-32) </summary>
+        public string CRC { get { return crc; } }
+        /// <summary> ハッシュ(SHA256) </summary>
+        public string Hash { get { return hash; } }
         /// <summary> アセットバンドル情報 </summary>
         public AssetBundleInfo AssetBundle { get { return assetBundle; } }
         
@@ -64,10 +68,11 @@ namespace Modules.ExternalResource
             SetFileName();
         }
 
-        public void SetFileInfo(long fileSize, string fileHash)
+        public void SetFileInfo(long fileSize, string fileCRC, string fileHash)
         {
-            this.fileSize = fileSize;
-            this.fileHash = fileHash;
+            this.size = fileSize;
+            this.crc = fileCRC;
+            this.hash = fileHash;
         }
 
         public void SetAssetBundleInfo(AssetBundleInfo assetBundleInfo)

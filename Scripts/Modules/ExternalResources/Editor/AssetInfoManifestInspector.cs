@@ -161,11 +161,14 @@ namespace Modules.ExternalResource.Editor
                             EditorGUILayout.LabelField("FileName");
                             EditorGUILayout.SelectableLabel(assetInfo.FileName, textAreaStyle, GUILayout.Height(18f));
 
-                            EditorGUILayout.LabelField("FileHash");
-                            EditorGUILayout.SelectableLabel(assetInfo.FileHash, textAreaStyle, GUILayout.Height(18f));
+                            EditorGUILayout.LabelField("CRC");
+                            EditorGUILayout.SelectableLabel(assetInfo.CRC, textAreaStyle, GUILayout.Height(18f));
 
-                            EditorGUILayout.LabelField("FileSize");
-                            EditorGUILayout.SelectableLabel(assetInfo.FileSize.ToString(), textAreaStyle, GUILayout.Height(18f));
+                            EditorGUILayout.LabelField("Hash");
+                            EditorGUILayout.SelectableLabel(assetInfo.Hash, textAreaStyle, GUILayout.Height(18f));
+
+                            EditorGUILayout.LabelField("Size");
+                            EditorGUILayout.SelectableLabel(assetInfo.Size.ToString(), textAreaStyle, GUILayout.Height(18f));
 
                             if (isAssetBundle)
                             {

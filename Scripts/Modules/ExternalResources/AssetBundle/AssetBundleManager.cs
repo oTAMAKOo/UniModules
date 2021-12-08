@@ -227,9 +227,9 @@ namespace Modules.AssetBundles
 
             var downloadUrl = string.Format("{0}{1}", url, PackageExtension);
 
-            if (!assetInfo.FileHash.IsNullOrEmpty())
+            if (!assetInfo.Hash.IsNullOrEmpty())
             {
-                downloadUrl = string.Format("{0}?v={1}", downloadUrl, assetInfo.FileHash);
+                downloadUrl = string.Format("{0}?v={1}", downloadUrl, assetInfo.Hash);
             }
 
             return downloadUrl;

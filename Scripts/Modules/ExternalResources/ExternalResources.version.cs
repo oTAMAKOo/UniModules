@@ -89,7 +89,7 @@ namespace Modules.ExternalResource
                 if (versionInfo == null) { return false; }
 
                 // アセットバンドル内のアセットが更新されている.
-                if (versionInfo.hash != info.FileHash) { return false; }
+                if (versionInfo.hash != info.Hash) { return false; }
             }
 
             return true;
@@ -116,7 +116,7 @@ namespace Modules.ExternalResource
             // ローカルにバージョンが存在しない.
             if (versionInfo == null) { return false; }
 
-            return versionInfo.hash == assetInfo.FileHash;
+            return versionInfo.hash == assetInfo.Hash;
         }
 
         /// <summary>
@@ -203,7 +203,7 @@ namespace Modules.ExternalResource
                         var info = new Version.Info()
                         {
                             resourcePath = item.ResourcePath,
-                            hash = item.FileHash,
+                            hash = item.Hash,
                         };
 
                         versions[item.ResourcePath] = info;
@@ -215,7 +215,7 @@ namespace Modules.ExternalResource
                     var info = new Version.Info()
                     {
                         resourcePath = assetInfo.ResourcePath,
-                        hash = assetInfo.FileHash,
+                        hash = assetInfo.Hash,
                     };
 
                     versions[assetInfo.ResourcePath] = info;

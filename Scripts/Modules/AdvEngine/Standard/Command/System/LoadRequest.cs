@@ -77,7 +77,7 @@ namespace Modules.AdvKit.Standard
                     {
                         assetInfos.Add(assetInfo);
 
-                        builder.AppendFormat("{0} ({1}byte)", assetInfo.ResourcePath, assetInfo.FileSize).AppendLine();
+                        builder.AppendFormat("{0} ({1}byte)", assetInfo.ResourcePath, assetInfo.Size).AppendLine();
                     }
                     else
                     {

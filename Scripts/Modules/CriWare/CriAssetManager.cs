@@ -410,7 +410,7 @@ namespace Modules.CriWare
 
             var url = PathUtility.Combine(new string[] { remoteUrl, platformName, versionHash, assetInfo.FileName });
 
-            return string.Format("{0}?v={1}", url, assetInfo.FileHash);
+            return string.Format("{0}?v={1}", url, assetInfo.Hash);
         }
 
         public string BuildFilePath(AssetInfo assetInfo)

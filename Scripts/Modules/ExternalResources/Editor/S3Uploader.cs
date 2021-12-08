@@ -209,7 +209,7 @@ namespace Modules.ExternalResource.Editor
 
                 if (fileHashTable.ContainsKey(fileName)){ continue; }
 
-                fileHashTable.Add(fileName, assetInfo.FileHash);
+                fileHashTable.Add(fileName, assetInfo.Hash);
             }
 
             foreach (var file in files)
