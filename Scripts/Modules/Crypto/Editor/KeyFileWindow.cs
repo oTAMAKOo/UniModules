@@ -104,6 +104,8 @@ namespace Modules.Crypto
                             {
                                 Debug.LogFormat("Generate success.\n\nFilePath: {0}\n\nKey: {1}\nIv: {2}", filePath, keyFile.Item1, keyFile.Item2);
                             }
+
+                            AssetDatabase.ImportAsset(path);
                         }
                     }
                 }

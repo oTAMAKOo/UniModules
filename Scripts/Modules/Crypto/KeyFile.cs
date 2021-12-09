@@ -69,6 +69,13 @@ namespace Modules.Crypto
                 }
             }
 
+            return Load(bytes);
+        }
+
+        public static Tuple<string, string> Load(byte[] bytes)
+        {
+            if (bytes == null || bytes.IsEmpty()){ return null; }
+
             for (var i = 0; i < bytes.Length; i++)
             {
                 bytes[i] = (byte)~bytes[i];
