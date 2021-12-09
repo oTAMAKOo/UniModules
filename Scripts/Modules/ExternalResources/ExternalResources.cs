@@ -113,9 +113,6 @@ namespace Modules.ExternalResource
             // 保存先設定.
             SetInstallDirectory(Application.persistentDataPath);
 
-            // バージョン情報を読み込み.
-            LoadVersion();
-
             initialized = true;
         }
 

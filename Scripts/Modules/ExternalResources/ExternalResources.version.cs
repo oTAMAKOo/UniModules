@@ -48,14 +48,9 @@ namespace Modules.ExternalResource
 
         //----- method -----
 
-        private AesCryptoKey GetVersionCryptoKey()
+        public void SetVersionCryptoKey(string key, string iv)
         {
-            if (versionCryptoKey == null)
-            {
-                versionCryptoKey = new AesCryptoKey("nEPCjiTpNJffJbBWN1YmlTpBQtcAEqwc", "2FGG3clpRJ6TjfuB");
-            }
-
-            return versionCryptoKey;
+            versionCryptoKey = new AesCryptoKey(key, iv);
         }
 
         /// <summary>
@@ -157,7 +152,6 @@ namespace Modules.ExternalResource
 
             {
                 requireUpdate = !CheckAssetBundleVersion(assetInfo);
-
             }            
 
             return requireUpdate;
@@ -228,10 +222,8 @@ namespace Modules.ExternalResource
                     .WithResolver(UnityContractResolver.Instance);
 
                 var data = MessagePackSerializer.Serialize(version, options);
-
-                var cryptoKey = GetVersionCryptoKey();
-
-                var encrypt = data.Encrypt(cryptoKey);
+                
+                var encrypt = data.Encrypt(versionCryptoKey);
 
                 File.WriteAllBytes(versionFilePath, encrypt);
             }
@@ -241,7 +233,7 @@ namespace Modules.ExternalResource
             }
         }
 
-        private void LoadVersion()
+        public void LoadVersion()
         {
             var success = true;
 
@@ -258,9 +250,7 @@ namespace Modules.ExternalResource
 
                 try
                 {
-                    var cryptoKey = GetVersionCryptoKey();
-
-                    decrypt = data.Decrypt(cryptoKey);
+                    decrypt = data.Decrypt(versionCryptoKey);
                 }
                 catch (Exception exception)
                 {
