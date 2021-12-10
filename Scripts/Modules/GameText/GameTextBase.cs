@@ -27,6 +27,8 @@ namespace Modules.GameText.Components
 
         //----- field -----
 
+        protected AesCryptoKey cryptoKey = null;
+
         protected Dictionary<string, TextInfo> texts = null;
 
         //----- property -----
@@ -55,13 +57,16 @@ namespace Modules.GameText.Components
             // 復号化していない状態の場合は復号化.
             if (info.encrypt)
             {
-                var cryptKey = GetCryptKey();
-
-                info.text = info.text.Decrypt(cryptKey);
+                info.text = info.text.Decrypt(cryptoKey);
                 info.encrypt = false;
             }
 
             return info.text;
+        }
+
+        public void SetCryptoKey(string key, string iv)
+        {
+            cryptoKey = new AesCryptoKey(key, iv);
         }
 
         public virtual string GetAssetFolderName() { return string.Empty; }
@@ -69,7 +74,5 @@ namespace Modules.GameText.Components
         public virtual string FindTextGuid(Enum textType) { return null; }
 
         protected virtual void BuildGenerateContents() { }
-
-        protected abstract AesCryptoKey GetCryptKey();
     }
 }

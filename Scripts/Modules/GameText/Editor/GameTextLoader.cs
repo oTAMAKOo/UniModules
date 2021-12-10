@@ -53,6 +53,10 @@ namespace Modules.GameText.Editor
             var gameText = GameText.Instance;
 
             var config = GameTextConfig.Instance;
+
+            // 暗号化キー設定.
+
+            gameText.SetCryptoKey(config.CryptoKey, config.CryptoIv);
             
             // 内包テキスト読み込み.
 

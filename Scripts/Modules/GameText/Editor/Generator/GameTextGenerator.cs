@@ -87,9 +87,7 @@ namespace Modules.GameText.Editor
         private static void GenerateGameText(ContentType contentType, GenerateInfo generateInfo)
         {
             var progressTitle = "Generate GameText";
-
-            var gameText = GameText.Instance;
-
+            
             var config = GameTextConfig.Instance;
 
             // 読み込み.
@@ -100,7 +98,7 @@ namespace Modules.GameText.Editor
 
             if (sheets == null) { return; }
 
-            var cryptoKey = gameText.GetCryptoKey();
+            var cryptoKey = new AesCryptoKey(config.CryptoKey, config.CryptoIv);
 
             var generateScript = !string.IsNullOrEmpty(generateInfo.scriptFolderPath);
 

@@ -60,8 +60,6 @@ namespace Modules.GameText
                 enumNames = new Dictionary<string, string>();
             }
 
-            var cryptoKey = GetCryptoKey();
-
             foreach (var categoriesContent in asset.Contents)
             {
                 var contentType = asset.ContentType;
@@ -81,8 +79,6 @@ namespace Modules.GameText
         public string GetEnumName(string textGuid)
         {
             if (enumNames == null) { return null; }
-
-            var cryptoKey = GetCryptoKey();
 
             var enumName = enumNames.GetValueOrDefault(textGuid);
 

@@ -1,8 +1,6 @@
 ﻿
 using UnityEngine;
 using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Text;
 using Extensions;
 using Modules.GameText.Components;
@@ -17,9 +15,7 @@ namespace Modules.GameText
         private const string AssetFileName = "GameText";
 
         //----- field -----
-
-        private static AesCryptoKey aesCryptoKey = null;
-
+        
         private Subject<Unit> onUpdateContents = null;
 
         //----- property -----
@@ -27,11 +23,6 @@ namespace Modules.GameText
         //----- method -----
 
         private GameText() { }
-
-        public AesCryptoKey GetCryptoKey()
-        {
-            return aesCryptoKey ?? (aesCryptoKey = GetCryptKey());
-        }
 
         /// <summary> 内蔵テキストを読み込み </summary>
         public void LoadEmbedded(string resourcesPath)
