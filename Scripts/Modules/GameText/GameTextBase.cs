@@ -66,6 +66,8 @@ namespace Modules.GameText.Components
 
         public void SetCryptoKey(string key, string iv)
         {
+            if (string.IsNullOrEmpty(key) || string.IsNullOrEmpty(iv)){ return; }
+
             cryptoKey = new AesCryptoKey(key, iv);
         }
 
