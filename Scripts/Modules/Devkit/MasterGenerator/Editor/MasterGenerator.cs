@@ -78,18 +78,11 @@ namespace Modules.Master
 
             // 暗号化キー.
 
-            AesCryptoKey dataCryptoKey = null;
+            AesCryptoKey cryptoKey = null;
 
-            if (!string.IsNullOrEmpty(config.DataCryptKey) && !string.IsNullOrEmpty(config.DataCryptIv))
+            if (!string.IsNullOrEmpty(config.CryptoKey) && !string.IsNullOrEmpty(config.CryptoIv))
             {
-                dataCryptoKey = new AesCryptoKey(config.DataCryptKey, config.DataCryptIv);
-            }
-
-            AesCryptoKey fileNameCryptoKey = null;
-
-            if (!string.IsNullOrEmpty(config.FileNameCryptKey) && !string.IsNullOrEmpty(config.FileNameCryptIv))
-            {
-                fileNameCryptoKey = new AesCryptoKey(config.FileNameCryptKey, config.FileNameCryptIv);
+                cryptoKey = new AesCryptoKey(config.CryptoKey, config.CryptoIv);
             }
 
             // 実行.
@@ -140,11 +133,11 @@ namespace Modules.Master
 
                             // MessagePackファイル作成.
 
-                            var filePath = GetGenerateMasterFilePath(exportDirectory, masterFileName, fileNameCryptoKey);
+                            var filePath = GetGenerateMasterFilePath(exportDirectory, masterFileName, cryptoKey);
 
                             var fileName = Path.GetFileNameWithoutExtension(filePath);
 
-                            var versionHash = await GenerateMasterFile(filePath, master,  dataCryptoKey, lz4Compression);
+                            var versionHash = await GenerateMasterFile(filePath, master,  cryptoKey, lz4Compression);
 
                             // バージョンハッシュ.
 

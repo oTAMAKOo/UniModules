@@ -90,9 +90,7 @@ namespace Modules.LocalData
 
                     fileStream.Read(bytes, 0, bytes.Length);
 
-                    var cryptoKey = Instance.GetCryptoKey();
-
-                    bytes = bytes.Decrypt(cryptoKey);
+                    bytes = bytes.Decrypt(Instance.cryptoKey);
 
                     var options = StandardResolverAllowPrivate.Options
                         .WithCompression(MessagePackCompression.Lz4BlockArray)
@@ -134,10 +132,8 @@ namespace Modules.LocalData
                     .WithResolver(UnityContractResolver.Instance);
 
                 var bytes = MessagePackSerializer.Serialize(data, options);
-
-                var cryptoKey = Instance.GetCryptoKey();
-
-                bytes = bytes.Encrypt(cryptoKey);
+                
+                bytes = bytes.Encrypt(Instance.cryptoKey);
 
                 fileStream.Write(bytes, 0, bytes.Length);
             }
@@ -164,8 +160,6 @@ namespace Modules.LocalData
 
             if (fileNameAttribute != null)
             {
-                var cryptoKey = GetCryptoKey();
-
                 fileName = fileNameAttribute.FileName.Encrypt(cryptoKey).GetHash();
             }
             else
@@ -183,16 +177,6 @@ namespace Modules.LocalData
         public void SetCryptoKey(AesCryptoKey cryptoKey)
         {
             this.cryptoKey = cryptoKey;
-        }
-
-        private AesCryptoKey GetCryptoKey()
-        {
-            if (cryptoKey == null)
-            {
-                cryptoKey = new AesCryptoKey("5k7DpsG19A91R7Lkv261AMxCmjHFFFxX", "YiEs3x1as8JhK9qp");
-            }
-
-            return cryptoKey;
         }
 
         public static void Delete<T>() where T : class, ILocalData, new()

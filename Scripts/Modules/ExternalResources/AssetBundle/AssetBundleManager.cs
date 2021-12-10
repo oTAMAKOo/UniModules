@@ -155,6 +155,11 @@ namespace Modules.AssetBundles
             this.aesCryptoKey = new AesCryptoKey(key, iv);
         }
 
+        public void SetCryptoKey(AesCryptoKey cryptoKey)
+        {
+            this.aesCryptoKey = cryptoKey;
+        }
+
         /// <summary>
         /// 暗号化キー取得.
         /// </summary>

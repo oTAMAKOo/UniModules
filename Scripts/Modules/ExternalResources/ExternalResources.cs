@@ -24,6 +24,8 @@ namespace Modules.ExternalResource
 
         //----- field -----
 
+        private static AesCryptoKey cryptoKey = null;
+
         // アセット管理情報.
         private AssetInfoManifest assetInfoManifest = null;
 
@@ -173,7 +175,9 @@ namespace Modules.ExternalResource
         /// <param name="iv">暗号化IV(16文字)</param>
         public void SetCryptoKey(string key, string iv)
         {
-            assetBundleManager.SetCryptoKey(key, iv);
+            cryptoKey = new AesCryptoKey(key, iv);
+
+            assetBundleManager.SetCryptoKey(cryptoKey);
         }
 
         // アセット管理マニュフェスト情報を更新.

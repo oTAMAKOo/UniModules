@@ -7,6 +7,9 @@ namespace Extensions
 {
     public static class SecurePrefs
     {
+        private const string DefaultKey = "5kaDpFGc1A9iRaLkv2n3dMxCmjjFzxOX";
+        private const string DefaultIv = "1i233x1fs8J1K9Tp";
+
         private static string keyPrefix = string.Empty;
 
         private static AesCryptoKey aesCryptoKey = null;
@@ -22,7 +25,7 @@ namespace Extensions
         {
             if (aesCryptoKey == null)
             {
-                aesCryptoKey = new AesCryptoKey("5kaDpFGc1A9iRaLkv2n3dMxCmjjFzxOX", "1i233x1fs8J1K9Tp");
+                aesCryptoKey = new AesCryptoKey(DefaultKey, DefaultIv);
             }
 
             return aesCryptoKey;

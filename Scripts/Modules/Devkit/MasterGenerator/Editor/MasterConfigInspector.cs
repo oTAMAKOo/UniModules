@@ -121,9 +121,9 @@ namespace Modules.Master
             {
                 EditorGUI.BeginChangeCheck();
 
-                var dataCryptKey = EditorGUILayout.DelayedTextField("Key", instance.DataCryptKey);
+                var dataCryptKey = EditorGUILayout.DelayedTextField("Key", instance.CryptoKey);
 
-                var dataCryptIv = EditorGUILayout.DelayedTextField("Iv", instance.DataCryptIv);
+                var dataCryptIv = EditorGUILayout.DelayedTextField("Iv", instance.CryptoIv);
 
                 if (EditorGUI.EndChangeCheck())
                 {
@@ -131,27 +131,6 @@ namespace Modules.Master
 
                     Reflection.SetPrivateField(instance, "dataCryptoKey", dataCryptKey);
                     Reflection.SetPrivateField(instance, "dataCryptIv", dataCryptIv);
-                }
-            }
-
-            EditorGUILayout.Separator();
-
-            EditorLayoutTools.Title("FileNameCrypt");
-
-            using (new ContentsScope())
-            {
-                EditorGUI.BeginChangeCheck();
-
-                var fileNameCryptKey = EditorGUILayout.DelayedTextField("Key", instance.FileNameCryptKey);
-
-                var fileNameCryptIv = EditorGUILayout.DelayedTextField("Iv", instance.FileNameCryptIv);
-
-                if (EditorGUI.EndChangeCheck())
-                {
-                    UnityEditorUtility.RegisterUndo("MasterGeneratorConfigInspector Undo", instance);
-
-                    Reflection.SetPrivateField(instance, "fileNameCryptoKey", fileNameCryptKey);
-                    Reflection.SetPrivateField(instance, "fileNameCryptIv", fileNameCryptIv);
                 }
             }
 

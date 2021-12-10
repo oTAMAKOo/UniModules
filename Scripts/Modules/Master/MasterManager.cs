@@ -56,11 +56,8 @@ namespace Modules.Master
         /// <summary> 保存先. </summary>
         public string InstallDirectory { get; private set; }
 
-        /// <summary> データ暗号化キー. </summary>
-        public AesCryptoKey DataCryptoKey { get; private set; }
-
-        /// <summary> ファイル名暗号化キー. </summary>
-        public AesCryptoKey FileNameCryptoKey { get; private set; }
+        /// <summary> 暗号化キー. </summary>
+        public AesCryptoKey CryptoKey { get; private set; }
 
         /// <summary> LZ4圧縮を使用するか. </summary>
         public bool Lz4Compression
@@ -315,7 +312,7 @@ namespace Modules.Master
                 }
             };
 
-            return master.Load(DataCryptoKey, true)
+            return master.Load(CryptoKey, true)
                 .OnErrorRetry((Exception ex)  => onErrorRetry.Invoke(ex), 3, TimeSpan.FromSeconds(5))
                 .Do(x => onLoadFinish(x.Item1, x.Item2))
                 .Select(x => x.Item1);
@@ -391,18 +388,12 @@ namespace Modules.Master
             #endif
         }
 
-        /// <summary> データ暗号化オブジェクトを設定 </summary>
-        public void SetDataCryptoKey(AesCryptoKey aesCryptoKey)
+        /// <summary> 暗号化キー設定 </summary>
+        public void SetCryptoKey(AesCryptoKey cryptoKey)
         {
-            DataCryptoKey = aesCryptoKey;
+            CryptoKey = cryptoKey;
         }
 
-        /// <summary> ファイル名暗号化オブジェクトを設定 </summary>
-        public void SetFileNameCryptKey(AesCryptoKey aesCryptoKey)
-        {
-            FileNameCryptoKey = aesCryptoKey;
-        }
-        
         public string GetMasterFileName<T>() where T : IMaster
         {
             return GetMasterFileName(typeof(T));
@@ -437,9 +428,9 @@ namespace Modules.Master
 
             // 暗号化オブジェクトが設定されていたら暗号化.
 
-            if (encrypt && FileNameCryptoKey != null)
+            if (encrypt && CryptoKey != null)
             {
-                fileName = fileName.Encrypt(FileNameCryptoKey, true);
+                fileName = fileName.Encrypt(CryptoKey, true);
             }
 
             return fileName;

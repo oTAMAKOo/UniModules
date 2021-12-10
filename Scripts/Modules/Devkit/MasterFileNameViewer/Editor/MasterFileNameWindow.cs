@@ -48,7 +48,7 @@ namespace Modules.Master
 
             var masterManager = MasterManager.Instance;
 
-            masterManager.SetFileNameCryptKey(cryptoKey);
+            masterManager.SetCryptoKey(cryptoKey);
 
             masterNameDictionary = new Dictionary<IMaster, string>();
 

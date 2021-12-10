@@ -18,13 +18,9 @@ namespace Modules.Master
         [SerializeField]
         private string exportDirectory = null;
         [SerializeField]
-        private string dataCryptKey = null;
+        private string cryptoKey = null;
         [SerializeField]
-        private string dataCryptIv = null;
-        [SerializeField]
-        private string fileNameCryptKey = null;
-        [SerializeField]
-        private string fileNameCryptIv = null;
+        private string cryptoIv = null;
         [SerializeField]
         private bool lz4Compression = true;
 
@@ -48,13 +44,9 @@ namespace Modules.Master
             }
         }
 
-        public string DataCryptKey { get { return dataCryptKey; } }
+        public string CryptoKey { get { return cryptoKey; } }
 
-        public string DataCryptIv { get { return dataCryptIv; } }
-
-        public string FileNameCryptKey { get { return fileNameCryptKey; } }
-
-        public string FileNameCryptIv { get { return fileNameCryptIv; } }
+        public string CryptoIv { get { return cryptoIv; } }
 
         public bool Lz4Compression { get { return lz4Compression; } }
 

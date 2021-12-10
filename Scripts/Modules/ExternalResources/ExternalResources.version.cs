@@ -42,16 +42,9 @@ namespace Modules.ExternalResource
 
         private Dictionary<string, Version.Info> versions = null;
 
-        private static AesCryptoKey versionCryptoKey = null;
-
         //----- property -----
 
         //----- method -----
-
-        public void SetVersionCryptoKey(string key, string iv)
-        {
-            versionCryptoKey = new AesCryptoKey(key, iv);
-        }
 
         /// <summary>
         /// アセットバンドルのバージョンが最新か確認.
@@ -223,7 +216,7 @@ namespace Modules.ExternalResource
 
                 var data = MessagePackSerializer.Serialize(version, options);
                 
-                var encrypt = data.Encrypt(versionCryptoKey);
+                var encrypt = data.Encrypt(cryptoKey);
 
                 File.WriteAllBytes(versionFilePath, encrypt);
             }
@@ -250,7 +243,7 @@ namespace Modules.ExternalResource
 
                 try
                 {
-                    decrypt = data.Decrypt(versionCryptoKey);
+                    decrypt = data.Decrypt(cryptoKey);
                 }
                 catch (Exception exception)
                 {
