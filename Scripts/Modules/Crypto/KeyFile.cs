@@ -10,6 +10,19 @@ namespace Modules.Crypto
     {
         //----- params -----
 
+        public sealed class KeyData
+        {
+            public string Key { get; private set; }
+
+            public string Iv { get; private set; }
+
+            public KeyData(string key, string iv)
+            {
+                Key = key;
+                Iv = iv;
+            }
+        }
+
         private const string Separator = ":*";
 
         //----- field -----
@@ -50,7 +63,7 @@ namespace Modules.Crypto
             }
         }
 
-        public static Tuple<string, string> Load(string filePath)
+        public static KeyData Load(string filePath)
         {
             if (!File.Exists(filePath))
             {
@@ -72,7 +85,7 @@ namespace Modules.Crypto
             return Load(bytes);
         }
 
-        public static Tuple<string, string> Load(byte[] bytes)
+        public static KeyData Load(byte[] bytes)
         {
             if (bytes == null || bytes.IsEmpty()){ return null; }
 
@@ -99,7 +112,7 @@ namespace Modules.Crypto
             var key = encryptKey.Decrypt(aesKey);
             var iv = encryptIv.Decrypt(aesKey);
 
-            return Tuple.Create(key, iv);
+            return new KeyData(key, iv);
         }
     }
 }

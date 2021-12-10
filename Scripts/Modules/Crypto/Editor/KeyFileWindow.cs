@@ -102,7 +102,7 @@ namespace Modules.Crypto
                         {
                             using (new DisableStackTraceScope())
                             {
-                                Debug.LogFormat("Generate success.\n\nFilePath: {0}\n\nKey: {1}\nIv: {2}", filePath, keyFile.Item1, keyFile.Item2);
+                                Debug.LogFormat("Generate success.\n\nFilePath: {0}\n\nKey: {1}\nIv: {2}", filePath, keyFile.Key, keyFile.Iv);
                             }
 
                             AssetDatabase.ImportAsset(path);
@@ -135,7 +135,7 @@ namespace Modules.Crypto
 
                         using (new DisableStackTraceScope())
                         {
-                            Debug.LogFormat("Key: {0}\nIv: {1}", keyFile.Item1, keyFile.Item2);
+                            Debug.LogFormat("Key: {0}\nIv: {1}", keyFile.Key, keyFile.Iv);
                         }
                     }
                 }
