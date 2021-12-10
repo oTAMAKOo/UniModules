@@ -24,6 +24,8 @@ namespace Modules.GameText.Editor
         [DidReloadScripts]
         private static void DidReloadScripts()
         {
+            SetupCryptoKey();
+
             if (EditorApplication.isPlayingOrWillChangePlaymode) { return; }
 
             var frameCount = 0;
@@ -46,17 +48,32 @@ namespace Modules.GameText.Editor
             EditorApplication.update += reloadGameText;
         }
 
+        public static void SetupCryptoKey()
+        {
+            var gameText = GameText.Instance;
+
+            if (gameText == null){ return; }
+
+            var config = GameTextConfig.Instance;
+
+            if (config == null) { return; }
+
+            // 暗号化キー設定.
+
+            gameText.SetCryptoKey(config.CryptoKey, config.CryptoIv);
+        }
+
         public static void Reload()
         {
             if (EditorApplication.isPlayingOrWillChangePlaymode) { return; }
 
             var gameText = GameText.Instance;
 
+            if (gameText == null){ return; }
+
             var config = GameTextConfig.Instance;
 
-            // 暗号化キー設定.
-
-            gameText.SetCryptoKey(config.CryptoKey, config.CryptoIv);
+            if (config == null) { return; }
             
             // 内包テキスト読み込み.
 
