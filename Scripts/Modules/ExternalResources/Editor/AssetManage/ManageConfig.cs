@@ -21,10 +21,10 @@ namespace Modules.ExternalResource.Editor
 
         [Header("Crypto")]
 
-        [SerializeField, Tooltip("32文字で設定")]
-        private string cryptoKey = "MprvQauVXRXUvC532oe861pPVTy5UtFK";
-        [SerializeField, Tooltip("16文字で設定")]
-        private string cryptoIv = "rw6mpYs7jsSgfVEV";
+        [SerializeField, Tooltip("32文字")]
+        private string cryptoKey = null;
+        [SerializeField, Tooltip("16文字")]
+        private string cryptoIv = null;
 
         [Header("Ignore AssetManagement")]
 
