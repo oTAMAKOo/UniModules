@@ -32,7 +32,7 @@ namespace Modules.GameText.Components
         {
             if (aesCryptoKey == null)
             {
-                aesCryptoKey = new AesCryptoKey("5k7DpFGc9A9iRaLkv2nCdMxCmjHFzxOX", "FiEA3x1fs8JhK9Tp");
+                aesCryptoKey = Reflection.GetPrivateField<GameText, AesCryptoKey>(GameText.Instance, "cryptoKey");
             }
 
             return aesCryptoKey;
@@ -44,14 +44,36 @@ namespace Modules.GameText.Components
 
             if (string.IsNullOrEmpty(developmentText)) { return string.Empty; }
 
-            return string.Format("{0}{1}", DevelopmentMark, developmentText.Decrypt(cryptoKey));
+            var text = string.Empty;
+
+            try
+            {
+                text = developmentText.Decrypt(cryptoKey);
+            }
+            catch
+            {
+                developmentText = null;
+
+                Debug.LogError("DevelopmentText decrypt failed.");
+            }
+
+            return string.Format("{0}{1}", DevelopmentMark, text);
         }
 
         private void SetDevelopmentText(string text)
         {
             var cryptoKey = GetCryptoKey();
 
-            developmentText = string.IsNullOrEmpty(text) ? string.Empty : text.Encrypt(cryptoKey);
+            try
+            {
+                developmentText = string.IsNullOrEmpty(text) ? string.Empty : text.Encrypt(cryptoKey);
+            }
+            catch
+            {
+                developmentText = null;
+                
+                Debug.LogError("DevelopmentText encrypt failed.");
+            }
 
             ImportText();
         }
