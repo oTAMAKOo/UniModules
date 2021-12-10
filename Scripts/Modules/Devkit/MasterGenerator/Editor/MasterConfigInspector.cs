@@ -121,16 +121,16 @@ namespace Modules.Master
             {
                 EditorGUI.BeginChangeCheck();
 
-                var dataCryptKey = EditorGUILayout.DelayedTextField("Key", instance.CryptoKey);
+                var cryptoKey = EditorGUILayout.DelayedTextField("Key", instance.CryptoKey);
 
-                var dataCryptIv = EditorGUILayout.DelayedTextField("Iv", instance.CryptoIv);
+                var cryptoIv = EditorGUILayout.DelayedTextField("Iv", instance.CryptoIv);
 
                 if (EditorGUI.EndChangeCheck())
                 {
                     UnityEditorUtility.RegisterUndo("MasterGeneratorConfigInspector Undo", instance);
 
-                    Reflection.SetPrivateField(instance, "dataCryptoKey", dataCryptKey);
-                    Reflection.SetPrivateField(instance, "dataCryptIv", dataCryptIv);
+                    Reflection.SetPrivateField(instance, "cryptoKey", cryptoKey);
+                    Reflection.SetPrivateField(instance, "cryptoIv", cryptoIv);
                 }
             }
 
