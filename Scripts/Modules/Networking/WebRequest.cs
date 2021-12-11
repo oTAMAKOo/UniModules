@@ -227,7 +227,7 @@ namespace Modules.Networking
             return result;
         }
         
-        private Uri BuildUri()
+        protected virtual Uri BuildUri()
         {
             RegisterDefaultUrlParams();
 
