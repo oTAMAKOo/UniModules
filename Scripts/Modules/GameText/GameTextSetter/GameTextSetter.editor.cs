@@ -2,8 +2,8 @@
 #if UNITY_EDITOR
 
 using UnityEngine;
-using UnityEngine.UI;
 using UnityEditor;
+using UnityEngine.UI;
 using Extensions;
 
 namespace Modules.GameText.Components
@@ -65,7 +65,7 @@ namespace Modules.GameText.Components
                 EditorUtility.SetDirty(this);
             }
 
-            return string.Format("{0}{1}", DevelopmentMark, text);
+            return string.IsNullOrEmpty(text) ? null : string.Format("{0}{1}", DevelopmentMark, text);
         }
 
         private void SetDevelopmentText(string text)
@@ -86,7 +86,7 @@ namespace Modules.GameText.Components
                     
                     Debug.LogErrorFormat("DevelopmentText encrypt failed.\n{0}", hierarchyPath);
                 }
-
+                
                 EditorUtility.SetDirty(this);
             }
 

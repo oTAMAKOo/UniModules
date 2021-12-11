@@ -35,6 +35,8 @@ namespace Modules.Devkit.CleanComponent
         {
             if (!Prefs.autoClean) { return; }
 
+            GameTextLoader.SetupCryptoKey();
+
             GameTextLoader.Reload();
 
             var activeScene = EditorSceneManager.GetActiveScene();
