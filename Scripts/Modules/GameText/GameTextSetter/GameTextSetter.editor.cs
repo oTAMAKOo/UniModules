@@ -3,6 +3,7 @@
 
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEditor;
 using Extensions;
 
 namespace Modules.GameText.Components
@@ -54,7 +55,14 @@ namespace Modules.GameText.Components
             {
                 developmentText = null;
 
-                Debug.LogError("DevelopmentText decrypt failed.");
+                using (new DisableStackTraceScope())
+                {
+                    var hierarchyPath = UnityUtility.GetHierarchyPath(gameObject);
+
+                    Debug.LogErrorFormat("DevelopmentText decrypt failed.\n{0}", hierarchyPath);
+                }
+
+                EditorUtility.SetDirty(this);
             }
 
             return string.Format("{0}{1}", DevelopmentMark, text);
@@ -71,8 +79,15 @@ namespace Modules.GameText.Components
             catch
             {
                 developmentText = null;
-                
-                Debug.LogError("DevelopmentText encrypt failed.");
+
+                using (new DisableStackTraceScope())
+                {
+                    var hierarchyPath = UnityUtility.GetHierarchyPath(gameObject);
+                    
+                    Debug.LogErrorFormat("DevelopmentText encrypt failed.\n{0}", hierarchyPath);
+                }
+
+                EditorUtility.SetDirty(this);
             }
 
             ImportText();

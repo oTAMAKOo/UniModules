@@ -64,8 +64,20 @@ namespace Modules.GameText
             {
                 var contentType = asset.ContentType;
                 var categoryGuid = categoriesContent.Guid;
-                var categoryName = categoriesContent.Name.Decrypt(cryptoKey);
-                var categoryDisplayName = categoriesContent.DisplayName.Decrypt(cryptoKey);
+
+                var categoryName = string.Empty;
+
+                if (!string.IsNullOrEmpty(categoriesContent.Name))
+                {
+                    categoryName = categoriesContent.Name.Decrypt(cryptoKey);
+                }
+
+                var categoryDisplayName = string.Empty;
+
+                if (!string.IsNullOrEmpty(categoriesContent.DisplayName))
+                {
+                    categoryDisplayName = categoriesContent.DisplayName.Decrypt(cryptoKey);
+                }
 
                 categories[categoryGuid] = new Category(contentType, categoryGuid, categoryDisplayName, categoryName);
 

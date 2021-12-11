@@ -1,5 +1,4 @@
 ﻿﻿﻿﻿
-using System;
 using UnityEngine;
 using UnityEngine.UI;
 using Extensions;
@@ -45,7 +44,7 @@ namespace Modules.GameText.Components
         void Awake()
         {
             ImportText();
-            
+
             if (Application.isPlaying)
             {
                 // テキスト更新通知を受け取ったら再度テキストを適用.
