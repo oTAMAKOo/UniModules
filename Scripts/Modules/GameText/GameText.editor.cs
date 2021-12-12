@@ -67,14 +67,14 @@ namespace Modules.GameText
 
                 var categoryName = string.Empty;
 
-                if (!string.IsNullOrEmpty(categoriesContent.Name))
+                if (!string.IsNullOrEmpty(categoriesContent.Name) && cryptoKey != null)
                 {
                     categoryName = categoriesContent.Name.Decrypt(cryptoKey);
                 }
 
                 var categoryDisplayName = string.Empty;
 
-                if (!string.IsNullOrEmpty(categoriesContent.DisplayName))
+                if (!string.IsNullOrEmpty(categoriesContent.DisplayName) && cryptoKey != null)
                 {
                     categoryDisplayName = categoriesContent.DisplayName.Decrypt(cryptoKey);
                 }
@@ -94,7 +94,12 @@ namespace Modules.GameText
 
             var enumName = enumNames.GetValueOrDefault(textGuid);
 
-            return enumName != null ? enumName.Decrypt(cryptoKey) : string.Empty;
+            if (!string.IsNullOrEmpty(enumName) && cryptoKey != null)
+            {
+                return enumName.Decrypt(cryptoKey);
+            }
+
+            return null;
         }
     }
 }

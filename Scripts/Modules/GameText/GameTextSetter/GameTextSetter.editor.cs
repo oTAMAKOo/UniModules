@@ -1,6 +1,6 @@
 ﻿
 #if UNITY_EDITOR
-
+using System;
 using UnityEngine;
 using UnityEditor;
 using UnityEngine.UI;
@@ -51,7 +51,7 @@ namespace Modules.GameText.Components
             {
                 text = developmentText.Decrypt(cryptoKey);
             }
-            catch
+            catch (Exception e)
             {
                 developmentText = null;
 
