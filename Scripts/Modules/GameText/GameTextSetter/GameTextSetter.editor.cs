@@ -51,10 +51,8 @@ namespace Modules.GameText.Components
             {
                 text = developmentText.Decrypt(cryptoKey);
             }
-            catch (Exception e)
+            catch
             {
-                developmentText = null;
-
                 using (new DisableStackTraceScope())
                 {
                     var hierarchyPath = UnityUtility.GetHierarchyPath(gameObject);
@@ -78,16 +76,12 @@ namespace Modules.GameText.Components
             }
             catch
             {
-                developmentText = null;
-
                 using (new DisableStackTraceScope())
                 {
                     var hierarchyPath = UnityUtility.GetHierarchyPath(gameObject);
                     
                     Debug.LogErrorFormat("DevelopmentText encrypt failed.\n{0}", hierarchyPath);
                 }
-                
-                EditorUtility.SetDirty(this);
             }
 
             ImportText();

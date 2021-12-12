@@ -21,6 +21,12 @@ namespace Modules.GameText.Editor
 
         //----- method -----
 
+        [InitializeOnLoadMethod]
+        private static void InitializeOnLoadMethod()
+        {
+            SetupCryptoKey();
+        }
+
         [DidReloadScripts]
         private static void DidReloadScripts()
         {
