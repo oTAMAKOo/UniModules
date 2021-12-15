@@ -7,6 +7,7 @@
 using UnityEngine;
 using System;
 using System.Runtime.InteropServices;
+using System.Threading;
 using System.Threading.Tasks;
 using AOT;
 using UniRx;
@@ -84,6 +85,8 @@ namespace Modules.StandAloneWindows
         private int pixelHeightOfCurrentScreen = 0;
         private int pixelWidthOfCurrentScreen = 0;
 
+        private CancellationTokenSource updateAspectRatioCancel = null;
+
         #region WINAPI
         
         private IntPtr oldWndProcPtr;
@@ -135,7 +138,9 @@ namespace Modules.StandAloneWindows
             newWndProcPtr = Marshal.GetFunctionPointerForDelegate(wndProcDelegate);
             oldWndProcPtr = WindowHandle.SetWindowLong(GWLP_WNDPROC, newWndProcPtr);
 
-            Task.Run(() => UpdateAspectRatio());
+            updateAspectRatioCancel = new CancellationTokenSource();
+
+            Task.Run(() => UpdateAspectRatio(), updateAspectRatioCancel.Token);
 
             initialized = true;
         }
@@ -179,6 +184,8 @@ namespace Modules.StandAloneWindows
         private static IntPtr WindowProc(IntPtr hWnd, uint msg, IntPtr wParam, IntPtr lParam)
         {
             var windowHandle = WindowHandle.Get();
+
+            if (windowHandle == IntPtr.Zero){ return IntPtr.Zero; }
             
             if (msg == WM_SIZING)
             {
@@ -235,8 +242,11 @@ namespace Modules.StandAloneWindows
                         break;
                 }
 
-                Instance.setWidth = rc.Right - rc.Left;
-                Instance.setHeight = rc.Bottom - rc.Top;
+                if (Instance != null)
+                {
+                    Instance.setWidth = rc.Right - rc.Left;
+                    Instance.setHeight = rc.Bottom - rc.Top;
+                }
 
                 rc.Right += borderWidth;
                 rc.Bottom += borderHeight;
@@ -251,6 +261,8 @@ namespace Modules.StandAloneWindows
         {
             while (true)
             {
+                if (Instance == null){ break; }
+
                 if (!allowFullscreen && Screen.fullScreen)
                 {
                     Screen.fullScreen = false;
@@ -319,11 +331,22 @@ namespace Modules.StandAloneWindows
                 wasFullscreenLastFrame = isFullScreen;
 
                 await Task.Delay(10);
+
+                if (updateAspectRatioCancel == null || updateAspectRatioCancel.IsCancellationRequested)
+                {
+                    break;
+                }
             }
         }
 
         private void ApplicationQuitting()
         {
+            if (updateAspectRatioCancel != null)
+            {
+                updateAspectRatioCancel.Dispose();
+                updateAspectRatioCancel = null;
+            }
+
             WindowHandle.SetWindowLong(GWLP_WNDPROC, oldWndProcPtr);
         }
 

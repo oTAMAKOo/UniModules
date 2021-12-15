@@ -39,6 +39,8 @@ namespace Modules.StandAloneWindows
         /// <summary> Window handle of Unity window. </summary>
         public static IntPtr Get()
         {
+            if (Instance == null) { return IntPtr.Zero; }
+
             if (Instance.windowHandle != IntPtr.Zero)
             {
                 return Instance.windowHandle;
@@ -53,6 +55,8 @@ namespace Modules.StandAloneWindows
 
         public static IntPtr GetWindowLong(int nIndex)
         {
+            if (Instance == null) { return IntPtr.Zero; }
+
             var windowHandle = Get();
             
             return GetWindowLong(windowHandle, nIndex);
@@ -61,6 +65,8 @@ namespace Modules.StandAloneWindows
         public static IntPtr SetWindowLong(int nIndex, IntPtr dwNewLong)
         {
             var windowHandle = Get();
+
+            if (windowHandle == IntPtr.Zero) { return IntPtr.Zero; }
 
             if (IntPtr.Size == 4)
             {
