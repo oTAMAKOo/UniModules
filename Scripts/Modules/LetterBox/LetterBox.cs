@@ -1,6 +1,7 @@
 ﻿
 using UnityEngine;
 using UnityEngine.UI;
+using Cysharp.Threading.Tasks;
 using Extensions;
 using Modules.UI.Extension;
 
@@ -32,15 +33,20 @@ namespace Modules.LetterBox
 
         //----- method -----
 
-        void OnEnable()
+        async void OnEnable()
         {
-            Apply();
+            await Apply();
         }
 
-        public void Apply()
+        public async UniTask Apply()
         {
             var canvas = uiCanvas.Canvas;
+
             var canvasScaler = UnityUtility.GetComponent<CanvasScaler>(uiCanvas);
+            
+            Canvas.ForceUpdateCanvases();
+
+            await UniTask.WaitForEndOfFrame();
 
             var enable = canvasScaler.uiScaleMode == CanvasScaler.ScaleMode.ScaleWithScreenSize;
 
@@ -53,7 +59,7 @@ namespace Modules.LetterBox
             var canvasRectTransform = UnityUtility.GetComponent<RectTransform>(canvas.gameObject);
 
             LayoutRebuilder.ForceRebuildLayoutImmediate(canvasRectTransform);
-            
+
             var letterBoxSize = new Vector2()
             {
                 x = (canvasRectTransform.GetWidth() - canvasScaler.referenceResolution.x) * 0.5f,
