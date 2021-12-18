@@ -33,20 +33,26 @@ namespace Modules.LetterBox
 
         //----- method -----
 
-        async void OnEnable()
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
+        private static void OnAfterSceneLoad()
         {
-            await Apply();
+            if (Instance == null) { return; }
+
+            Instance.Apply();
         }
 
-        public async UniTask Apply()
+        void OnEnable()
+        {
+            Apply();
+        }
+
+        public void Apply()
         {
             var canvas = uiCanvas.Canvas;
 
             var canvasScaler = UnityUtility.GetComponent<CanvasScaler>(uiCanvas);
             
             Canvas.ForceUpdateCanvases();
-
-            await UniTask.WaitForEndOfFrame();
 
             var enable = canvasScaler.uiScaleMode == CanvasScaler.ScaleMode.ScaleWithScreenSize;
 
