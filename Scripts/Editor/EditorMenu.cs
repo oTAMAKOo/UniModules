@@ -428,36 +428,6 @@ namespace Modules
             return true;
         }
 
-        //------ コンポーネント調整無効化 ------
-
-        [MenuItem(itemName: SettingsMenu + "Auto Component Tuning/Disable", priority = 4)]
-        public static void AutoComponentTuningDisable()
-        {
-            ComponentTuning.Prefs.Enable = !ComponentTuning.Prefs.Enable;
-        }
-
-        [MenuItem(itemName: SettingsMenu + "Auto Component Tuning/Disable", validate = true)]
-        public static bool AutoComponentTuningDisableValidate()
-        {
-            UnityEditor.Menu.SetChecked(SettingsMenu + "Auto Component Tuning/Disable", !ComponentTuning.Prefs.Enable);
-            return true;
-        }
-
-        //------ コンポーネント調整時のログ表示 ------
-
-        [MenuItem(itemName: SettingsMenu + "Auto Component Tuning/Log", priority = 4)]
-        public static void ToggleAutoComponentTuningLog()
-        {
-            ComponentTuning.Prefs.LogEnable = !ComponentTuning.Prefs.LogEnable;
-        }
-
-        [MenuItem(itemName: SettingsMenu + "Auto Component Tuning/Log", validate = true)]
-        public static bool ToggleAutoComponentTuningValidate()
-        {
-            UnityEditor.Menu.SetChecked(SettingsMenu + "Auto Component Tuning/Log", ComponentTuning.Prefs.LogEnable);
-            return true;
-        }
-
         //------ コンポーネント自動追加無効化 ------
 
         [MenuItem(itemName: SettingsMenu + "Auto Add Component/Disable", priority = 5)]
