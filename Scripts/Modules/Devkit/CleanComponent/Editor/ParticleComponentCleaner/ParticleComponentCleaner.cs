@@ -85,7 +85,7 @@ namespace Modules.Devkit.CleanComponent
 
                 if (!collisionModule.enabled || collisionModule.type != ParticleSystemCollisionType.Planes)
                 {
-                    for (var i = 0; i < collisionModule.maxPlaneCount; i++)
+                    for (var i = 0; i < collisionModule.planeCount; i++)
                     {
                         collisionModule.SetPlane(i, null);
                     }
@@ -97,7 +97,7 @@ namespace Modules.Devkit.CleanComponent
 
                 if (!triggerModule.enabled)
                 {
-                    for (var i = 0; i < triggerModule.maxColliderCount; i++)
+                    for (var i = 0; i < triggerModule.colliderCount; i++)
                     {
                         triggerModule.SetCollider(i, null);
                     }
@@ -190,7 +190,7 @@ namespace Modules.Devkit.CleanComponent
 
             if (!collisionModule.enabled || collisionModule.type != ParticleSystemCollisionType.Planes)
             {
-                for (var i = 0; i < collisionModule.maxPlaneCount; i++)
+                for (var i = 0; i < collisionModule.planeCount; i++)
                 {
                     var plane = collisionModule.GetPlane(i);
 
@@ -204,12 +204,12 @@ namespace Modules.Devkit.CleanComponent
 
             if (!triggerModule.enabled)
             {
-                for (var i = 0; i < triggerModule.maxColliderCount; i++)
+                for (var i = 0; i < triggerModule.colliderCount; i++)
                 {
                     var collider = triggerModule.GetCollider(i);
 
                     if (collider != null) { return true; }
-            }
+                }
             }
 
             //------ TextureSheetAnimationModule ------
