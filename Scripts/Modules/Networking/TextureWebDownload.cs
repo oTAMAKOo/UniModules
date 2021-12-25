@@ -116,7 +116,7 @@ namespace Modules.Networking
 
             yield return currentRequest.SendWebRequest();
 
-            if (currentRequest.isNetworkError || currentRequest.isHttpError)
+            if (currentRequest.result == UnityWebRequest.Result.ConnectionError || currentRequest.result == UnityWebRequest.Result.ProtocolError)
             {
                 observer.OnError(new Exception(currentRequest.error));
                 yield break;

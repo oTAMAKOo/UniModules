@@ -69,8 +69,11 @@ namespace Modules.Networking
                             error = true;
                         }
                     }
-                    
-                    if (!request.isNetworkError && SuccessStatus.Contains((HttpStatusCode)request.responseCode) && !error)
+
+                    var isError = request.result == UnityWebRequest.Result.ConnectionError;
+                    var isSuccess = SuccessStatus.Contains((HttpStatusCode)request.responseCode);
+
+                    if (!isError && isSuccess && !error)
                     {
                         observer.OnNext(request.downloadHandler != null ? request.downloadHandler.data : null);
                         observer.OnCompleted();

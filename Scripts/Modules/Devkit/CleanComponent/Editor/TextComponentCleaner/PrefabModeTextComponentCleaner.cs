@@ -71,7 +71,7 @@ namespace Modules.Devkit.CleanComponent
             if (changed)
             {
                 var prefabRoot = prefabStage.prefabContentsRoot;
-                var assetPath = prefabStage.prefabAssetPath;
+                var assetPath = prefabStage.assetPath;
                 
                 PrefabUtility.SaveAsPrefabAsset(prefabRoot, assetPath);
 

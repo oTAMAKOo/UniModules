@@ -42,7 +42,7 @@ namespace Modules.Devkit.CleanComponent
             }
 
             var prefabRoot = prefabStage.prefabContentsRoot;
-            var assetPath = prefabStage.prefabAssetPath;
+            var assetPath = prefabStage.assetPath;
 
             PrefabUtility.SaveAsPrefabAsset(prefabRoot, assetPath);
         }

@@ -155,7 +155,7 @@ namespace Modules.Devkit.Diagnosis.SendReport
 
             var errorMessage = string.Empty;
 
-            if (webRequest.isNetworkError || webRequest.isHttpError)
+            if (webRequest.result == UnityWebRequest.Result.ConnectionError || webRequest.result == UnityWebRequest.Result.ProtocolError)
             {
                 errorMessage = string.Format("[{0}]{1}", webRequest.responseCode, webRequest.error);
             }
