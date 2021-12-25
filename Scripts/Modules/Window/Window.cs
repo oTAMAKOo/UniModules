@@ -2,6 +2,7 @@
 using UnityEngine;
 using System;
 using System.Collections;
+using Cysharp.Threading.Tasks;
 using UniRx;
 using Extensions;
 using Modules.InputProtection;
@@ -45,8 +46,9 @@ namespace Modules.Window
             var protect = inputProtect ? new InputProtect() : null;
 
             return Prepare()
+                .ToObservable()
                 .Do(_ => UnityUtility.SetActive(gameObject, true))
-                .SelectMany(_ => OnOpen())
+                .SelectMany(_ => OnOpen().ToObservable())
                 .Do(_ =>
                     {
                         if (protect != null)
@@ -68,6 +70,7 @@ namespace Modules.Window
             var protect = inputProtect ? new InputProtect() : null;
 
             return OnClose()
+                .ToObservable()
                 .Do(_ =>
                     {
                         UnityUtility.SetActive(gameObject, false);
@@ -118,10 +121,10 @@ namespace Modules.Window
             return onClose ?? (onClose = new Subject<Unit>());
         }
 
-        protected virtual IObservable<Unit> Prepare() { return Observable.ReturnUnit(); }
+        protected virtual UniTask Prepare() { return UniTask.CompletedTask; }
 
-        protected virtual IObservable<Unit> OnOpen() { return Observable.ReturnUnit(); }
+        protected virtual UniTask OnOpen() { return UniTask.CompletedTask; }
 
-        protected virtual IObservable<Unit> OnClose() { return Observable.ReturnUnit(); }
+        protected virtual UniTask OnClose() { return UniTask.CompletedTask; }
     }
 }
