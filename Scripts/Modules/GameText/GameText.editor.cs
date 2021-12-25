@@ -41,7 +41,15 @@ namespace Modules.GameText
 
         public IReadOnlyList<Category> Categories
         {
-            get { return categories.Values.ToArray(); }
+            get
+            {
+                if (categories == null)
+                {
+                    categories = new Dictionary<string, Category>();
+                }
+
+                return categories.Values.ToArray();
+            }
         }
 
         //----- method -----

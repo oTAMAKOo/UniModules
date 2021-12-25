@@ -288,7 +288,7 @@ namespace Modules.ExternalResource
 
             if (LogEnable && UnityConsole.Enable)
             {
-                var message = string.Format("UpdateManifest: ({0}ms)", sw.Elapsed.TotalMilliseconds);
+                var message = string.Format("UpdateManifest: ({0:F2}ms)", sw.Elapsed.TotalMilliseconds);
 
                 UnityConsole.Event(ConsoleEventName, ConsoleEventColor, message);
             }
