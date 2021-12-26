@@ -3,6 +3,7 @@ using UnityEngine;
 using System;
 using Cysharp.Threading.Tasks;
 using UniRx;
+using Extensions;
 
 namespace Modules.WebView
 {
@@ -23,18 +24,30 @@ namespace Modules.WebView
 
         //----- method -----
 
+        private void CreateWebViewContent(GameObject prefab)
+        {
+            if (webViewContent != null){ return; }
+
+            // AwakeÇé¿çsÇ≥ÇπÇÈà◊àÍíUÉãÅ[ÉgäKëwÇ…ê∂ê¨.
+            webViewContent = UnityUtility.Instantiate<WebViewContent>(null, prefab);
+
+            if (webViewContent != null)
+            {
+                webViewContent.Initialize();
+
+                UnityUtility.SetParent(webViewContent.gameObject, gameObject);
+            }
+        }
+
         public async UniTask Initialize()
         {
             if (initialized) { return; }
 
-            webViewContent = await CreateContent();
+            var prefab = GetContentPrefab();
+
+            CreateWebViewContent(prefab);
 
             await OnInitialize();
-
-            if (webViewContent != null)
-            {
-                await webViewContent.Initialize();
-            }
 
             initialized = true;
         }
@@ -77,7 +90,7 @@ namespace Modules.WebView
                 onLoad.OnNext(Unit.Default);
             }
 
-            await UniTask.DelayFrame(30);
+            await UniTask.NextFrame();
         }
 
         public virtual UniTask OnLoad(string url)
@@ -112,6 +125,6 @@ namespace Modules.WebView
             return onStop ?? (onStop = new Subject<Unit>());
         }
 
-        protected abstract UniTask<WebViewContent> CreateContent();
+        protected abstract GameObject GetContentPrefab();
     }
 }

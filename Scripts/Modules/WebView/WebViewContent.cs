@@ -37,10 +37,7 @@ namespace Modules.WebView
 
         //----- method -----
 
-        public virtual UniTask Initialize()
-        {
-            return UniTask.CompletedTask;
-        }
+        public virtual void Initialize() { }
 
         public virtual UniTask Load(string url)
         {

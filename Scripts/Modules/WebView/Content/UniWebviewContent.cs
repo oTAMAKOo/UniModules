@@ -22,12 +22,9 @@ namespace Modules.WebView
 
         //----- method -----
 
-        public override async UniTask Initialize()
+        public override void Initialize()
         {
             UniWebView = UnityUtility.GetComponent<UniWebView>(gameObject);
-
-            // UniWebViewはAwakeで初期化されるのでアクティブになるまで待つ.
-            await UniTask.WaitUntil(() => gameObject.activeInHierarchy);
 
             // RectTransform追従.
 

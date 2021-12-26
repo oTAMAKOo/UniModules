@@ -25,12 +25,9 @@ namespace Modules.WebView
 
         //----- method -----
 
-        public override async UniTask Initialize()
+        public override void Initialize()
         {
             EmbeddedBrowser = UnityUtility.GetComponent<Browser>(gameObject);
-
-            // BrowserはAwakeで初期化されるのでアクティブになるまで待つ.
-            await UniTask.WaitUntil(() => gameObject.activeInHierarchy);
 
             EmbeddedBrowser.RegisterFunction("openurl", OpenUrlCallback);
 
@@ -46,6 +43,8 @@ namespace Modules.WebView
                     })
                 .AddTo(this);
 
+            Loading = false;
+
             EmbeddedBrowser.onLoad += OnLoadCallbak;
         }
 
@@ -55,7 +54,9 @@ namespace Modules.WebView
 
             EmbeddedBrowser.Url = url;
 
-            await UniTask.WaitUntil(() => EmbeddedBrowser.IsReady);
+            // ※ EmbeddedBrowserは読み込み待ちできない.
+            // 読み込み時間が気になる場合はLoadHTMLで処理を行う.
+            Loading = false;
 
             await WaitForLoadFinish(url);
         }
@@ -63,8 +64,6 @@ namespace Modules.WebView
         public override async UniTask LoadHTML(string html, string url)
         {
             EmbeddedBrowser.LoadHTML(html, url);
-
-            await UniTask.WaitUntil(() => EmbeddedBrowser.IsReady);
 
             await UniTask.NextFrame();
         }
@@ -93,8 +92,6 @@ namespace Modules.WebView
 
         protected virtual void OnLoadCallbak(JSONNode data)
         {
-            Loading = false;
-
             var nodeDictionary = data.Value as IDictionary<string, JSONNode>;
 
             if (nodeDictionary != null)
