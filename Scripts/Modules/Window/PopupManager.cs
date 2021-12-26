@@ -24,15 +24,17 @@ namespace Modules.Window
         [SerializeField]
         private int globalCanvasOrder = 1;
 
-        private PopupParent parentInScene = null;
-        private PopupParent parentGlobal = null;
+        protected PopupParent parentInScene = null;
+        protected PopupParent parentGlobal = null;
 
-        private TouchBloc touchBloc = null;
-        private IDisposable touchBlocDisposable = null;
+        protected TouchBloc touchBloc = null;
+        protected IDisposable touchBlocDisposable = null;
 
         // 登録されているポップアップ.
         protected List<Window> scenePopups = new List<Window>();
         protected List<Window> globalPopups = new List<Window>();
+
+        private Subject<Unit> onBlocTouch = null;
 
         //----- property -----
 
@@ -52,7 +54,9 @@ namespace Modules.Window
 
         public virtual void Initialize()
         {
-            parentGlobal = CreatePopupParent("Popup (Global)", gameObject, ParentGlobalLayer, globalCanvasOrder);
+            parentGlobal = CreatePopupParent("Popup (Global)", null, ParentGlobalLayer, globalCanvasOrder);
+
+            DontDestroyOnLoad(parentGlobal);
 
             UpdateContents();
         }
@@ -172,16 +176,31 @@ namespace Modules.Window
             parentInScene = popupParent;
         }
 
+        private void CreateTouchBloc()
+        {
+            if (touchBloc != null){ return; }
+
+            touchBloc = UnityUtility.Instantiate<TouchBloc>(parentGlobal.Parent, touchBlocPrefab);
+
+            touchBloc.Initialize();
+
+            touchBloc.OnBlocTouchAsObservable()
+                .Subscribe(_ =>
+                   {
+                       if (onBlocTouch != null)
+                       {
+                           onBlocTouch.OnNext(Unit.Default);
+                       }
+                   })
+                .AddTo(this);
+        }
+
         protected void UpdateContents()
         {
             var touchBlocIndex = 0;
             GameObject parent = null;
 
-            if (touchBloc == null)
-            {
-                touchBloc = UnityUtility.Instantiate<TouchBloc>(parentGlobal.Parent, touchBlocPrefab);
-                touchBloc.Initialize();
-            }
+            CreateTouchBloc();
 
             if (scenePopups.Any())
             {
@@ -244,6 +263,8 @@ namespace Modules.Window
                     touchBlocDisposable = null;
                 }
 
+                UnityUtility.SetActive(touchBloc, true);
+
                 touchBlocDisposable = touchBloc.FadeIn().Subscribe().AddTo(this);
             }
 
@@ -256,7 +277,9 @@ namespace Modules.Window
                     touchBlocDisposable = null;
                 }
 
-                touchBlocDisposable = touchBloc.FadeOut().Subscribe().AddTo(this);
+                touchBlocDisposable = touchBloc.FadeOut()
+                    .Subscribe(_ => UnityUtility.SetActive(touchBloc, false))
+                    .AddTo(this);
             }
         }
 
@@ -283,6 +306,26 @@ namespace Modules.Window
                 touchBloc.Hide();
                 touchBloc.transform.SetSiblingIndex(0);
             }
+        }
+
+        public Window GetCurrentWindow()
+        {
+            if (globalPopups.Any())
+            {
+                return globalPopups.FirstOrDefault();
+            }
+
+            if (scenePopups.Any())
+            {
+                return scenePopups.FirstOrDefault();
+            }
+
+            return null;
+        }
+
+        public IObservable<Unit> OnBlocTouchAsObservable()
+        {
+            return onBlocTouch ?? (onBlocTouch = new Subject<Unit>());
         }
     }
 }

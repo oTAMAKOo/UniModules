@@ -1,5 +1,6 @@
 ﻿
 using UnityEngine;
+using UnityEngine.UI;
 using System;
 using System.Collections;
 using UniRx;
@@ -16,9 +17,13 @@ namespace Modules.Window
         [SerializeField]
         private CanvasGroup canvasGroup = null;
         [SerializeField]
+        private Button blocTouch = null;
+        [SerializeField]
         private float fadeAmount = 0.1f;
 
         private float fadeAlpha = 0f;
+
+        private Subject<Unit> onBlocTouch = null;
 
         private bool initialized = false;
 
@@ -31,6 +36,21 @@ namespace Modules.Window
         public void Initialize()
         {
             if (initialized) { return; }
+
+            if (blocTouch != null)
+            {
+                Action onTouchBloc = () =>
+                {
+                    if (onBlocTouch != null)
+                    {
+                        onBlocTouch.OnNext(Unit.Default);
+                    }
+                };
+
+                blocTouch.OnClickAsObservable()
+                    .Subscribe(_ => onTouchBloc.Invoke())
+                    .AddTo(this);
+            }
 
             SetAlpha(0f);
 
@@ -92,6 +112,11 @@ namespace Modules.Window
             }
             
             SetAlpha(1f);
+        }
+
+        public IObservable<Unit> OnBlocTouchAsObservable()
+        {
+            return onBlocTouch ?? (onBlocTouch = new Subject<Unit>());
         }
     }
 }
