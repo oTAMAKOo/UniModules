@@ -79,7 +79,7 @@ namespace Modules.WebView
             await Initialize();
 
             await OnLoad(url);
-            
+
             if (webViewContent != null)
             {
                 await webViewContent.LoadHTML(html, url);

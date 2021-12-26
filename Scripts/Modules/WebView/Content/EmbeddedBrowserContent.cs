@@ -29,11 +29,20 @@ namespace Modules.WebView
         {
             EmbeddedBrowser = UnityUtility.GetComponent<Browser>(gameObject);
 
+            var customEmbeddedBrowser = EmbeddedBrowser as CustomEmbeddedBrowser;
+            
+            if (customEmbeddedBrowser != null)
+            {
+                customEmbeddedBrowser.SetForceUpdateCallback();
+            }
+
+            EmbeddedBrowser = customEmbeddedBrowser;
+
             EmbeddedBrowser.RegisterFunction("openurl", OpenUrlCallback);
 
             EmbeddedBrowser.onConsoleMessage += (message, source) =>
             {
-                Debug.LogFormat("{0}, {2}", message, source);
+                Debug.LogFormat("{0}, {1}", message, source);
             };
 
             EmbeddedBrowser.OnDestroyAsObservable()
