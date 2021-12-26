@@ -58,6 +58,8 @@ namespace Modules.GameText.Components
                     var hierarchyPath = UnityUtility.GetHierarchyPath(gameObject);
 
                     Debug.LogErrorFormat("DevelopmentText decrypt failed.\n{0}", hierarchyPath);
+
+                    developmentText = null;
                 }
 
                 EditorUtility.SetDirty(this);
@@ -81,6 +83,8 @@ namespace Modules.GameText.Components
                     var hierarchyPath = UnityUtility.GetHierarchyPath(gameObject);
                     
                     Debug.LogErrorFormat("DevelopmentText encrypt failed.\n{0}", hierarchyPath);
+
+                    developmentText = null;
                 }
             }
 

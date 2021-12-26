@@ -226,9 +226,14 @@ namespace Modules.GameText.Components
 
                 EditorGUILayout.LabelField("Development Text", GUILayout.Width(labelWidth));
 
+                var editText = string.Empty;
+
                 var developmentText = (string)Reflection.InvokePrivateMethod(instance, "GetDevelopmentText");
 
-                var editText = developmentText.TrimStart(GameTextSetter.DevelopmentMark);
+                if (!string.IsNullOrEmpty(developmentText))
+                {
+                    editText = developmentText.TrimStart(GameTextSetter.DevelopmentMark);
+                }
 
                 var prevText = editText;
 
