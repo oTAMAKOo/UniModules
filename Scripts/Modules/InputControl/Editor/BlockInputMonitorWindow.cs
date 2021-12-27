@@ -133,7 +133,7 @@ namespace Modules.InputControl
             var lineColor1 = new Color(0.3f, 0.3f, 0.3f, 0.5f);
             var lineColor2 = new Color(0.3f, 0.3f, 0.3f, 0.3f);
 
-            var maxId = infos.Select(x => x.id).Max();
+            var maxId = infos.Any() ? infos.Select(x => x.id).Max() : 0;
 
             var idLabelSize = EditorStyles.label.CalcSize(new GUIContent(maxId.ToString()));
 
@@ -245,6 +245,8 @@ namespace Modules.InputControl
             }
 
             infos = list.ToArray();
+
+            selectionId = null;
 
             Repaint();
         }

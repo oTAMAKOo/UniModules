@@ -46,16 +46,16 @@ namespace Modules.InputControl
 
             blockingIds.Add(blockingId);
 
-            if (isBlocking != IsBlocking && onUpdateStatus != null)
-            {
-                onUpdateStatus.OnNext(IsBlocking);
-            }
-
             #if UNITY_EDITOR
 
             AddTracker(blockingId);
 
             #endif
+
+            if (isBlocking != IsBlocking && onUpdateStatus != null)
+            {
+                onUpdateStatus.OnNext(IsBlocking);
+            }
         }
 
         public void Unlock(ulong blockingId)
@@ -66,16 +66,16 @@ namespace Modules.InputControl
 
             blockingIds.Remove(blockingId);
 
-            if (isBlocked != IsBlocking && onUpdateStatus != null)
-            {
-                onUpdateStatus.OnNext(IsBlocking);
-            }
-
             #if UNITY_EDITOR
 
             RemoveTracker(blockingId);
 
             #endif
+
+            if (isBlocked != IsBlocking && onUpdateStatus != null)
+            {
+                onUpdateStatus.OnNext(IsBlocking);
+            }
         }
 
         public void ForceUnlock()
@@ -85,17 +85,17 @@ namespace Modules.InputControl
             var isBlocked = IsBlocking;
 
             blockingIds.Clear();
-
-            if (isBlocked != IsBlocking && onUpdateStatus != null)
-            {
-                onUpdateStatus.OnNext(IsBlocking);
-            }
-
+            
             #if UNITY_EDITOR
 
             ClearTracker();
 
             #endif
+
+            if (isBlocked != IsBlocking && onUpdateStatus != null)
+            {
+                onUpdateStatus.OnNext(IsBlocking);
+            }
         }
 
         public IObservable<bool> OnUpdateStatusAsObservable()
