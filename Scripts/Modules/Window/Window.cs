@@ -5,7 +5,7 @@ using System.Collections;
 using Cysharp.Threading.Tasks;
 using UniRx;
 using Extensions;
-using Modules.InputProtection;
+using Modules.InputControl;
 
 namespace Modules.Window
 {
@@ -41,9 +41,9 @@ namespace Modules.Window
 
         //----- method -----
 
-        public IObservable<Unit> Open(bool inputProtect = true)
+        public IObservable<Unit> Open(bool blockInput = true)
         {
-            var protect = inputProtect ? new InputProtect() : null;
+            var inputBlock = blockInput ? new BlockInput() : null;
 
             return Prepare()
                 .ToObservable()
@@ -51,10 +51,10 @@ namespace Modules.Window
                 .SelectMany(_ => OnOpen().ToObservable())
                 .Do(_ =>
                     {
-                        if (protect != null)
+                        if (inputBlock != null)
                         {
-                            protect.Dispose();
-                            protect = null;
+                            inputBlock.Dispose();
+                            inputBlock = null;
                         }
 
                         if (onOpen != null)
@@ -65,9 +65,9 @@ namespace Modules.Window
                 .AsUnitObservable();
         }
 
-        public IObservable<Unit> Close(bool inputProtect = true)
+        public IObservable<Unit> Close(bool blockInput = true)
         {
-            var protect = inputProtect ? new InputProtect() : null;
+            var inputBlock = blockInput ? new BlockInput() : null;
 
             return OnClose()
                 .ToObservable()
@@ -75,10 +75,10 @@ namespace Modules.Window
                     {
                         UnityUtility.SetActive(gameObject, false);
 
-                        if (protect != null)
+                        if (inputBlock != null)
                         {
-                            protect.Dispose();
-                            protect = null;
+                            inputBlock.Dispose();
+                            inputBlock = null;
                         }
 
                         if (onClose != null)

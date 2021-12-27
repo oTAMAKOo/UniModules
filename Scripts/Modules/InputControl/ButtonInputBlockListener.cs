@@ -1,21 +1,15 @@
 ﻿
 using UnityEngine;
 using UnityEngine.UI;
+using Unity.Linq;
 using System.Linq;
 using System.Collections.Generic;
 using Extensions;
-using Unity.Linq;
 
-#if UNITY_EDITOR
-
-using UnityEditor;
-
-#endif
-
-namespace Modules.InputProtection.Components
+namespace Modules.InputControl.Components
 {
     [RequireComponent(typeof(Button))]
-    public sealed class ButtonInputProtection : InputProtection
+    public sealed class ButtonInputBlockListener : InputBlockListener
     {
         //----- params -----
 
@@ -29,7 +23,7 @@ namespace Modules.InputProtection.Components
 
         //----- method -----
 
-        protected override void UpdateProtect(bool isProtect)
+        protected override void UpdateInputBlock(bool isBlock)
         {
             if (raycastGraphics == null)
             {
@@ -44,7 +38,7 @@ namespace Modules.InputProtection.Components
             // interactiveの状態でTintColorが変わってしまうのを防ぐ.
             if (target.targetGraphic != null)
             {
-                if (isProtect)
+                if (isBlock)
                 {
                     var graphics = target.targetGraphic.gameObject
                         .DescendantsAndSelf()
@@ -72,15 +66,5 @@ namespace Modules.InputProtection.Components
                 }
             }
         }
-
-        #if UNITY_EDITOR
-
-        [CustomEditor(typeof(ButtonInputProtection))]
-        private sealed class ButtonInputProtectionInspector : Editor
-        {
-            public override void OnInspectorGUI(){}
-        }
-
-        #endif
     }
 }

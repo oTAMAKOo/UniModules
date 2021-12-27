@@ -14,6 +14,7 @@ using Modules.Crypto;
 using Modules.ExternalResource;
 using Modules.ExternalResource.Editor;
 using Modules.BehaviorControl;
+using Modules.InputControl;
 using Modules.Devkit.AssetBundles;
 using Modules.Devkit.AssetDependencies;
 using Modules.Devkit.AssemblyCompilation;
@@ -546,7 +547,13 @@ namespace Modules
             BuiltInAssetsWindow.Open();
         }
 
-        [MenuItem(itemName: ToolsMenu + "Open KeyFileWinodow", priority = 13)]
+        [MenuItem(itemName: ToolsMenu + "Open ProjectPinWindow", priority = 13)]
+        public static void OpenBlockInputMonitorWindow()
+        {
+            BlockInputMonitorWindow.Open();
+        }
+
+        [MenuItem(itemName: ToolsMenu + "Open KeyFileWindow", priority = 14)]
         public static void OpenKeyFileWinodow()
         {
             KeyFileWinodow.Open();

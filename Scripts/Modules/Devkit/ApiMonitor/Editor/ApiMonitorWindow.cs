@@ -16,10 +16,6 @@ namespace Modules.Networking
 
         private readonly Vector2 WindowSize = new Vector2(300f, 250f);
 
-        private static readonly Color SelectionLineColor = new Color(0f, 1f, 0f, 0.2f);
-        private static readonly Color EvenLineColor = new Color(0.8f, 0.8f, 0.8f, 0.3f);
-        private static readonly Color OddLineColor = new Color(0.5f, 0.5f, 0.5f, 0.2f);
-
         //----- field -----
 
         private int selectionId = -1;
