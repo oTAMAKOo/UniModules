@@ -547,7 +547,7 @@ namespace Modules
             BuiltInAssetsWindow.Open();
         }
 
-        [MenuItem(itemName: ToolsMenu + "Open ProjectPinWindow", priority = 13)]
+        [MenuItem(itemName: ToolsMenu + "Open BlockInputMonitorWindow", priority = 13)]
         public static void OpenBlockInputMonitorWindow()
         {
             BlockInputMonitorWindow.Open();
