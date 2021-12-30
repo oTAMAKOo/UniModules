@@ -18,7 +18,11 @@ namespace Modules.Devkit.U2D
         //----- field -----
 
         private RaycastResult[] raycastResults = null;
+
         private Vector2 scrollPosition = Vector2.zero;
+
+        private GUIContent infoIconContent = null;
+        private GUIContent warnIconContent = null;
 
         [NonSerialized]
         private bool initialized = false;
@@ -42,6 +46,16 @@ namespace Modules.Devkit.U2D
 
             raycastResults = new RaycastResult[0];
 
+            if (infoIconContent == null)
+            {
+                infoIconContent = EditorGUIUtility.IconContent("console.infoicon.sml");
+            }
+
+            if (warnIconContent == null)
+            {
+                warnIconContent = EditorGUIUtility.IconContent("Warning");
+            }
+
             Observable.EveryUpdate().Where(_ => Input.GetMouseButtonDown(0))
                 .Subscribe(_ => UpdateRaycastObjects())
                 .AddTo(Disposable);
@@ -58,108 +72,119 @@ namespace Modules.Devkit.U2D
                 Initialize();
             }
 
+            // 削除されたオブジェクトを除外.
+            raycastResults = raycastResults.Where(x => !UnityUtility.IsNull(x.gameObject)).ToArray();
+
             if (Application.isPlaying)
             {
-                // 削除されたオブジェクトを除外.
-                raycastResults = raycastResults.Where(x => !UnityUtility.IsNull(x.gameObject)).ToArray();
-
-                if (raycastResults.Any())
+                if (raycastResults.IsEmpty())
                 {
-                    GUILayout.Space(3f);
-
-                    var labelStyle = new GUIStyle(GUI.skin.label);
-
-                    labelStyle.alignment = TextAnchor.MiddleLeft;
-
-                    var originIconSize = EditorGUIUtility.GetIconSize();
-
-                    var iconSize = new Vector2(16f, 16f);
-
-                    EditorGUIUtility.SetIconSize(iconSize);
-
-                    using (var scrollView = new EditorGUILayout.ScrollViewScope(scrollPosition))
+                    using (new EditorGUILayout.HorizontalScope(EditorStyles.toolbar, GUILayout.Height(15f)))
                     {
-                        foreach (var raycastResult in raycastResults)
-                        {
-                            var gameObject = raycastResult.gameObject;
+                        GUILayout.Label(infoIconContent, GUILayout.Width(infoIconContent.image.width + 3.5f)); 
 
-                            var thumbnail = (Texture)AssetPreview.GetMiniThumbnail(gameObject);
-
-                            using (new EditorGUILayout.HorizontalScope())
-                            {
-                                using (new EditorGUILayout.HorizontalScope())
-                                {
-                                    GUILayout.Space(3f);
-
-                                    //------ icon ------
-
-                                    var hierarchyPath = UnityUtility.GetChildHierarchyPath(null, gameObject);
-
-                                    var toolTipText = PathUtility.Combine(hierarchyPath, gameObject.transform.name);
-
-                                    var originLabelWidth = EditorGUIUtility.labelWidth;
-
-                                    EditorGUIUtility.labelWidth = 0f;
-
-                                    var iconContent = new GUIContent(thumbnail, toolTipText);
-
-                                    // アイコンが見切れるのでサイズを補正. 
-                                    GUILayout.Label(iconContent, labelStyle, GUILayout.Width(iconSize.x + 3.5f));
-
-                                    EditorGUIUtility.labelWidth = originLabelWidth;
-
-                                    //------ label ------
-
-                                    var labelText = gameObject.name;
-
-                                    var labelContent = new GUIContent(labelText, toolTipText);
-
-                                    GUILayout.Label(labelContent, labelStyle, GUILayout.Height(18f));
-
-                                    GUILayout.FlexibleSpace();
-
-                                    //------ depth ------
-
-                                    var depthText = raycastResult.depth.ToString();
-
-                                    var depthContent = new GUIContent(depthText);
-
-                                    GUILayout.Label(depthContent, labelStyle, GUILayout.Height(18f));
-
-                                    GUILayout.Space(5f);
-                                }
-
-                                //------ mouse action ------
-
-                                var rect = GUILayoutUtility.GetLastRect();
-
-                                if (rect.Contains(e.mousePosition))
-                                {
-                                    switch (e.button)
-                                    {
-                                        case 0:
-                                            Selection.activeGameObject = gameObject;
-                                            break;
-                                    }
-                                }
-                            }
-                        }
-
-                        EditorGUIUtility.SetIconSize(originIconSize);
-
-                        scrollPosition = scrollView.scrollPosition;
+                        GUILayout.Label("Click GameView to search for objects.");
                     }
-
-                    GUILayout.Space(3f);
-                }
-                else
-                {
-                    EditorGUILayout.HelpBox("Click GameView to search for objects.", MessageType.Info);
                 }
             }
             else
             {
-                EditorGUILayout.HelpBox("Only works while playing.", MessageType.Warning);
+                using (new EditorGUILayout.HorizontalScope(EditorStyles.toolbar, GUILayout.Height(15f)))
+                {
+                    GUILayout.Label(warnIconContent, GUILayout.Width(warnIconContent.image.width + 3.5f)); 
+
+                    GUILayout.Label("Works in play mode.");
+                }
+            }
+
+            if (raycastResults.Any())
+            {
+                GUILayout.Space(3f);
+
+                var labelStyle = new GUIStyle(GUI.skin.label);
+
+                labelStyle.alignment = TextAnchor.MiddleLeft;
+
+                var originIconSize = EditorGUIUtility.GetIconSize();
+
+                var iconSize = new Vector2(16f, 16f);
+
+                EditorGUIUtility.SetIconSize(iconSize);
+
+                using (var scrollView = new EditorGUILayout.ScrollViewScope(scrollPosition))
+                {
+                    foreach (var raycastResult in raycastResults)
+                    {
+                        var gameObject = raycastResult.gameObject;
+
+                        var thumbnail = (Texture)AssetPreview.GetMiniThumbnail(gameObject);
+
+                        using (new EditorGUILayout.HorizontalScope())
+                        {
+                            using (new EditorGUILayout.HorizontalScope())
+                            {
+                                GUILayout.Space(3f);
+
+                                //------ icon ------
+
+                                var hierarchyPath = UnityUtility.GetChildHierarchyPath(null, gameObject);
+
+                                var toolTipText = PathUtility.Combine(hierarchyPath, gameObject.transform.name);
+
+                                var originLabelWidth = EditorGUIUtility.labelWidth;
+
+                                EditorGUIUtility.labelWidth = 0f;
+
+                                var iconContent = new GUIContent(thumbnail, toolTipText);
+
+                                // アイコンが見切れるのでサイズを補正. 
+                                GUILayout.Label(iconContent, labelStyle, GUILayout.Width(iconSize.x + 3.5f));
+
+                                EditorGUIUtility.labelWidth = originLabelWidth;
+
+                                //------ label ------
+
+                                var labelText = gameObject.name;
+
+                                var labelContent = new GUIContent(labelText, toolTipText);
+
+                                GUILayout.Label(labelContent, labelStyle, GUILayout.Height(18f));
+
+                                GUILayout.FlexibleSpace();
+
+                                //------ depth ------
+
+                                var depthText = raycastResult.depth.ToString();
+
+                                var depthContent = new GUIContent(depthText);
+
+                                GUILayout.Label(depthContent, labelStyle, GUILayout.Height(18f));
+
+                                GUILayout.Space(5f);
+                            }
+
+                            //------ mouse action ------
+
+                            var rect = GUILayoutUtility.GetLastRect();
+
+                            if (rect.Contains(e.mousePosition))
+                            {
+                                switch (e.button)
+                                {
+                                    case 0:
+                                        Selection.activeGameObject = gameObject;
+                                        break;
+                                }
+                            }
+                        }
+                    }
+
+                    EditorGUIUtility.SetIconSize(originIconSize);
+
+                    scrollPosition = scrollView.scrollPosition;
+                }
+
+                GUILayout.Space(3f);
             }
         }
 
