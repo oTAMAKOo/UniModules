@@ -150,10 +150,10 @@ namespace Modules.Devkit.TextureViewer
                 // 除外フォルダ名を含まない.
                 .Where(x =>
                    {
-                       var assetFolder = Path.GetDirectoryName(x.Value);
-                       var items = assetFolder.Split(PathUtility.PathSeparator);
+                       var assetFolderPath = PathUtility.ConvertPathSeparator(Path.GetDirectoryName(x.Value));
+                       var folders = assetFolderPath.Split(PathUtility.PathSeparator);
 
-                       return ignoreFolderNames.All(y => !items.Contains(y));
+                       return folders.All(y => !ignoreFolderNames.Contains(y));
                    })
                 .ToArray();
 
