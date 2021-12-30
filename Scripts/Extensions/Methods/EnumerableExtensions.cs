@@ -351,5 +351,11 @@ namespace Extensions
                 .GroupBy(x => x.i / chunkSize)
                 .Select(g => g.Select(x => x.v));
         }
+
+        /// <summary> 昇順・降順指定ソート. </summary>
+        public static IOrderedEnumerable<T> Order<T, TKey>(this IEnumerable<T> source, bool ascending, Func<T, TKey> keySelector, IComparer<TKey> comparer = null)
+        {
+            return ascending ? source.OrderBy(keySelector, comparer) : source.OrderByDescending(keySelector, comparer);
+        }
     }
 }

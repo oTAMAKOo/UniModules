@@ -13,6 +13,7 @@ using Modules.Master;
 using Modules.Crypto;
 using Modules.ExternalResource;
 using Modules.ExternalResource.Editor;
+using Modules.Networking;
 using Modules.BehaviorControl;
 using Modules.InputControl;
 using Modules.Devkit.AssetBundles;
@@ -29,9 +30,9 @@ using Modules.Devkit.Project;
 using Modules.Devkit.SceneImporter;
 using Modules.Devkit.SceneLaunch;
 using Modules.Devkit.Hierarchy;
-using Modules.Devkit.AssetTuning;
 using Modules.Devkit.Console;
 using Modules.Devkit.SerializeAssets;
+using Modules.Devkit.TextureViewer;
 using Modules.Devkit.U2D;
 
 #if ENABLE_CRIWARE_ADX || ENABLE_CRIWARE_SOFDEC
@@ -511,10 +512,10 @@ namespace Modules
             ShaderVariantUpdateWindow.Open();
         }
 
-        [MenuItem(itemName: ToolsMenu + "Open TextureCheckWindow", priority = 7)]
-        public static void OpenTextureAssetWindow()
+        [MenuItem(itemName: ToolsMenu + "Open TextureViewerWindow", priority = 7)]
+        public static void OpenTextureViewerWindow()
         {
-            TextureAssetWindow.Open();
+            TextureViewerWindow.Open();
         }
 
         [MenuItem(itemName: ToolsMenu + "Open UnityConsoleConfigWindow", priority = 8)]
@@ -609,6 +610,12 @@ namespace Modules
         #region Prerelease
 
         protected const string PrereleaseMenu = MenuRoot + "Prerelease/";
+
+        [MenuItem(itemName: PrereleaseMenu + "Open ApiMonitorWindow", priority = 0)]
+        public static void OpenApiMonitorWindow()
+        {
+            ApiMonitorWindow.Open();
+        }
 
         #endregion
     }
