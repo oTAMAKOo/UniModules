@@ -315,9 +315,12 @@ namespace Modules.Devkit.TextureViewer
                 this.textureInfos = sortCallback.Invoke(multiColumnHeader.sortedColumnIndex, ascending, textureInfos);
             }
 
-            var maxFormatTextWidth = textureInfos.Max(x => x.GetFormatTextWidth(platform));
+            if (textureInfos.Any())
+            {
+                var maxFormatTextWidth = textureInfos.Max(x => x.GetFormatTextWidth(platform));
 
-            columnWidthCache[CompressInfoView.TextureFormatLabel] = maxFormatTextWidth + 30f;
+                columnWidthCache[CompressInfoView.TextureFormatLabel] = maxFormatTextWidth + 30f;
+            }
 
             Reload();
         }
