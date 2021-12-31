@@ -182,15 +182,29 @@ namespace Modules.Devkit.TextureViewer
         {
             var chunk = textureInfos.Chunk(10).ToArray();
 
+            var count = 0;
+            var totalCount = textureInfos.Length;
+
             foreach (var textureInfos in chunk)
             {
                 foreach (var textureInfo in textureInfos)
                 {
                     textureInfo.GetTexture();
+                    count++;
                 }
+
+                var loadingText = string.Format("Loading Texture [{0} / {1}]", count, totalCount);
+
+                footerView.SetLoadingProgressText(loadingText);
+
+                Repaint();
 
                 yield return null;
             }
+
+            footerView.SetLoadingProgressText(null);
+
+            Repaint();
         }
         
         private TextureInfo[] GetTextureInfos(string searchText)

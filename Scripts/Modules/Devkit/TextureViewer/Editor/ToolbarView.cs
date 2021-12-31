@@ -22,9 +22,9 @@ namespace Modules.Devkit.TextureViewer
 
         //----- field -----
 
-        public BuildTargetGroup platform = default;
+        private BuildTargetGroup platform = default;
 
-        public DisplayMode displayMode  = default;
+        private DisplayMode displayMode  = default;
 
         private Subject<BuildTargetGroup> onChangePlatform = null;
 
@@ -63,7 +63,7 @@ namespace Modules.Devkit.TextureViewer
                 DrawModeTabGUI();
 
                 GUILayout.FlexibleSpace();
-
+                
                 DrawSortResetGUI();
 
                 GUILayout.Space(10f);

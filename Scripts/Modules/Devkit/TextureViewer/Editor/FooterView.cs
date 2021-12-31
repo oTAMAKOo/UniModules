@@ -15,6 +15,10 @@ namespace Modules.Devkit.TextureViewer
 
         private GUIStyle assetPathLabelStyle = null;
 
+        private GUIStyle loadingProgressLabelStyle = null;
+        
+        private string loadingProgressText = null;
+
         [NonSerialized]
         private bool initialized = false;
 
@@ -38,6 +42,14 @@ namespace Modules.Devkit.TextureViewer
                 assetPathLabelStyle.alignment = TextAnchor.MiddleLeft;
                 assetPathLabelStyle.fontSize = 11;
             }
+
+            if (loadingProgressLabelStyle == null)
+            {
+                loadingProgressLabelStyle = new GUIStyle(EditorStyles.label);
+
+                loadingProgressLabelStyle.alignment = TextAnchor.MiddleRight;
+                loadingProgressLabelStyle.fontSize = 10;
+            }
         }
 
         public void DrawGUI()
@@ -51,12 +63,27 @@ namespace Modules.Devkit.TextureViewer
                 var assetPath = selectionTextureInfo != null ? selectionTextureInfo.AssetPath : string.Empty;
 
                 EditorGUILayout.SelectableLabel(assetPath, assetPathLabelStyle);
+
+                GUILayout.FlexibleSpace();
+
+                if (!string.IsNullOrEmpty(loadingProgressText))
+                {
+                    var size = EditorStyles.label.CalcSize(new GUIContent(loadingProgressText));
+
+                    EditorGUILayout.LabelField(loadingProgressText, loadingProgressLabelStyle, GUILayout.Width(size.x));
+
+                    GUILayout.Space(5f);
+                }
             }
         }
-
         public void SetSelection(TextureInfo textureInfo)
         {
             selectionTextureInfo = textureInfo;
+        }
+
+        public void SetLoadingProgressText(string text)
+        {
+            loadingProgressText = text;
         }
     }
 }
