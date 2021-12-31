@@ -70,9 +70,7 @@ namespace Modules.Devkit.MasterViewer
 
             if (loadMasterRequest)
             {
-                LoadAllMasterData()
-                    .Subscribe(_ => loadMasterRequest = false)
-                    .AddTo(Disposable);
+                LoadAllMasterData().Subscribe().AddTo(Disposable);
             }
 
             // Toolbar.
