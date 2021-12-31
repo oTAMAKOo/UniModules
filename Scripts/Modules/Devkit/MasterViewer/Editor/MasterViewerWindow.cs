@@ -169,18 +169,13 @@ namespace Modules.Devkit.MasterViewer
             var loadFinishCount = 0;
             var totalMasterCount = allMasters.Length;
 
-            Action displayProgressBar = () =>
-            {
-                if (isComplete) { return; }
-
-                EditorUtility.DisplayProgressBar("Load Progress", "Loading all masters", (float)loadFinishCount / totalMasterCount);
-            };
-
             Action onLoadFinish = () =>
             {
                 loadFinishCount++;
 
-                displayProgressBar();
+                if (isComplete) { return; }
+
+                EditorUtility.DisplayProgressBar("progress", "Loading all masters", (float)loadFinishCount / totalMasterCount);
             };
 
             Action onLoadComplete = () =>

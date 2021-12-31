@@ -129,6 +129,13 @@ namespace Modules.Devkit.MasterViewer
 
             columnHeader.Initialize();
 
+            columnHeader.OnChangeVisibilityAsObservable()
+                .Subscribe(_ =>
+                   {
+                       RefreshCustomRowHeights();
+                   })
+                .AddTo(lifetimeDisposable.Disposable);
+
             multiColumnHeader = columnHeader;
 
             Reload();
@@ -148,24 +155,31 @@ namespace Modules.Devkit.MasterViewer
             var item = treeViewItem as RecordViewItem;
 
             var valueNames = masterController.GetValueNames();
-
-            var valueName = valueNames.ElementAtOrDefault(row);
-
+            
             var customRowHeight = 0f;
-
-            if (!string.IsNullOrEmpty(valueName))
+            
+            for (var i = 0; i < valueNames.Length; i++)
             {
+                var valueName = valueNames[i];
+
+                if (!multiColumnHeader.IsColumnVisible(i)){ continue; }
+
                 var valueType = masterController.GetValueType(valueName);
 
                 if (valueType == typeof(string))
                 {
                     var value = masterController.GetValue(item.Record, valueName) as string;
 
-                    customRowHeight = EditorRecordFieldUtility.GetTextFieldHight(value);
-                    
-                    if (EditorGUIUtility.singleLineHeight < customRowHeight)
+                    var hight = EditorRecordFieldUtility.GetTextFieldHight(value);
+
+                    if (customRowHeight < hight)
                     {
-                        customRowHeight += 4f;
+                        customRowHeight = hight;
+
+                        if (EditorGUIUtility.singleLineHeight < customRowHeight)
+                        {
+                            customRowHeight += 4f;
+                        }
                     }
                 }
             }

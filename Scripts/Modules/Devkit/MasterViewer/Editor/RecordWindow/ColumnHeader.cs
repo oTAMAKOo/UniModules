@@ -4,6 +4,7 @@ using UnityEditor;
 using UnityEditor.IMGUI.Controls;
 using System;
 using System.Linq;
+using UniRx;
 
 namespace Modules.Devkit.MasterViewer
 {
@@ -12,6 +13,8 @@ namespace Modules.Devkit.MasterViewer
         //----- params -----
 
         //----- field -----
+
+        private Subject<Unit> onChangeVisibility = null;
 
         [NonSerialized]
         private bool initialized = false;
@@ -56,6 +59,16 @@ namespace Modules.Devkit.MasterViewer
         private void ToggleVisibility(object userData)
         {
             base.ToggleVisibility((int) userData);
+            
+            if (onChangeVisibility != null)
+            {
+                onChangeVisibility.OnNext(Unit.Default);
+            }
+        }
+
+        public IObservable<Unit> OnChangeVisibilityAsObservable()
+        {
+            return onChangeVisibility ?? (onChangeVisibility = new Subject<Unit>());
         }
     }
 }
