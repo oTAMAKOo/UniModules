@@ -16,14 +16,30 @@ namespace Modules.Networking
 
         private enum Column
         {
-            Status      = 0,
-            Type        = 1,
-            Api         = 2,
-            StatusCode  = 3,
-            ElapsedTime = 4,
-            RetryCount  = 5,
-            StartTime   = 6,
-            FinishTime  = 7,
+            Status,
+            Type,
+            Api,
+            StatusCode,
+            ElapsedTime,
+            RetryCount,
+            StartTime,
+            FinishTime,
+        }
+
+        private sealed class ColumnInfo
+        {
+            public string Label { get; private set; }
+
+            public float Width { get; private set; }
+            
+            public bool FixedWidth  { get; private set; }
+
+            public ColumnInfo(string label, float width, bool fixedWidth = true)
+            {
+                Label = label;
+                Width = width;
+                FixedWidth = fixedWidth;
+            }
         }
 
         private sealed class ApiHistoryViewItem : TreeViewItem
@@ -60,6 +76,8 @@ namespace Modules.Networking
             rowHeight = 20;
             showAlternatingRowBackgrounds = true;
             showBorder = true;
+
+            contentsInfos = new ApiInfo[0];
             
             SetColumns();
 
@@ -72,87 +90,44 @@ namespace Modules.Networking
 
             var columns = new MultiColumnHeaderState.Column[columnCount];
 
-            columns[(int)Column.Status] = new MultiColumnHeaderState.Column()
+            var columnTable = new Dictionary<Column, ColumnInfo>()
             {
-                headerContent = new GUIContent(string.Empty),
-                width = 20,
-                maxWidth = 20,
-                minWidth = 20,
-                headerTextAlignment = TextAlignment.Center,
-                canSort = false,
+                { Column.Status,      new ColumnInfo(string.Empty, 20) },
+                { Column.Type,        new ColumnInfo("Type", 60) },
+                { Column.Api,         new ColumnInfo("API", 200, false) },
+                { Column.StatusCode,  new ColumnInfo("StatusCode", 75) },
+                { Column.RetryCount,  new ColumnInfo("RetryCount", 80) },
+                { Column.ElapsedTime, new ColumnInfo("Elapsed", 80) },
+                { Column.StartTime,   new ColumnInfo("StartTime", 100) },
+                { Column.FinishTime,  new ColumnInfo("FinishTime", 100) },
             };
 
-            columns[(int)Column.Type] = new MultiColumnHeaderState.Column()
+            foreach (var item in columnTable)
             {
-                headerContent = new GUIContent("Type"),
-                width = 60,
-                maxWidth = 60,
-                minWidth = 60,
-                headerTextAlignment = TextAlignment.Center,
-                canSort = false,
-            };
+                var column = new MultiColumnHeaderState.Column();
 
-            columns[(int)Column.Api] = new MultiColumnHeaderState.Column()
-            {
-                headerContent = new GUIContent("API"),
-                width = 200,
-                headerTextAlignment = TextAlignment.Left,
-                canSort = false,
-            };
+                var info = item.Value;
 
-            columns[(int)Column.StatusCode] = new MultiColumnHeaderState.Column()
-            {
-                headerContent = new GUIContent("StatusCode"),
-                width = 75,
-                maxWidth = 75,
-                minWidth = 75,
-                headerTextAlignment = TextAlignment.Center,
-                canSort = false,
-            };
+                column.headerContent = new GUIContent(info.Label);
+                column.width = info.Width;
+                column.headerTextAlignment = TextAlignment.Center;
+                column.canSort = false;
+                column.autoResize = false;
 
-            columns[(int)Column.RetryCount] = new MultiColumnHeaderState.Column()
-            {
-                headerContent = new GUIContent("RetryCount"),
-                width = 80,
-                maxWidth = 80,
-                minWidth = 80,
-                headerTextAlignment = TextAlignment.Center,
-                canSort = false,
-            };
+                if (info.FixedWidth)
+                {
+                    column.minWidth = info.Width;
+                    column.maxWidth = info.Width;
+                }
 
-            columns[(int)Column.ElapsedTime] = new MultiColumnHeaderState.Column()
-            {
-                headerContent = new GUIContent("Elapsed"),
-                width = 80,
-                maxWidth = 80,
-                minWidth = 80,
-                headerTextAlignment = TextAlignment.Center,
-                canSort = false,
-            };
+                columns[(int)item.Key] = column;
+            }
 
-            columns[(int)Column.StartTime] = new MultiColumnHeaderState.Column()
-            {
-                headerContent = new GUIContent("StartTime"),
-                width = 100,
-                minWidth = 100,
-                headerTextAlignment = TextAlignment.Left,
-                canSort = false,
-            };
+            var columnHeader = new ColumnHeader(new MultiColumnHeaderState(columns));
 
-            columns[(int)Column.FinishTime] = new MultiColumnHeaderState.Column()
-            {
-                headerContent = new GUIContent("FinishTime"),
-                width = 100,
-                minWidth = 100,
-                headerTextAlignment = TextAlignment.Left,
-                canSort = false,
-            };
-            
-            multiColumnHeader = new MultiColumnHeader(new MultiColumnHeaderState(columns));
+            columnHeader.Initialize();
 
-            multiColumnHeader.ResizeToFit();
-
-            contentsInfos = new ApiInfo[0];
+            multiColumnHeader = columnHeader;
 
             Reload();
         }

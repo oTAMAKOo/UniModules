@@ -106,10 +106,6 @@ namespace Modules.Networking
 
             using (new EditorGUILayout.HorizontalScope(EditorStyles.toolbar, GUILayout.Height(15f)))
             {
-                EditorGUILayout.LabelField(apiTracker.ServerUrl, serverUrlLabelStyle, GUILayout.Width(500f));
-
-                GUILayout.FlexibleSpace();
-
                 if (GUILayout.Button("Clear", EditorStyles.toolbarButton, GUILayout.Width(50f)))
                 {
                     apiTracker.Clear();
@@ -118,6 +114,10 @@ namespace Modules.Networking
                     detailScrollPosition = Vector2.zero;
                     detailTabIndex = 0;
                 }
+
+                GUILayout.Space(10f);
+
+                EditorGUILayout.LabelField(apiTracker.ServerUrl, serverUrlLabelStyle);
             }
         }
 
