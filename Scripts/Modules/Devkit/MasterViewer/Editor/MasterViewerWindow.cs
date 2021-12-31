@@ -183,11 +183,6 @@ namespace Modules.Devkit.MasterViewer
                 displayProgressBar();
             };
 
-            Func<IMaster, IObservable<Unit>> createMasterLoadObservable = master =>
-            {
-                return Observable.Defer(() => master.Load(cryptoKey, false).Do(_ => onLoadFinish())).AsUnitObservable();
-            };
-
             Action onLoadComplete = () =>
             {
                 masterControllers = new List<MasterController>();
@@ -202,13 +197,23 @@ namespace Modules.Devkit.MasterViewer
                 }
 
                 displayContents = GetDisplayMasters();
-                
+
                 Repaint();
 
                 isComplete = true;
             };
 
-            return allMasters.Select(x => createMasterLoadObservable(x)).WhenAll()
+            var observers = new List<IObservable<Unit>>();
+
+            foreach (var master in allMasters)
+            {
+                var observable = Observable.Defer(() => master.Load(cryptoKey, false).Do(_ => onLoadFinish())).AsUnitObservable();
+
+                observers.Add(observable);
+            }
+
+            return observers
+                .WhenAll()
                 .Do(_ => onLoadComplete())
                 .Finally(() => EditorUtility.ClearProgressBar())
                 .DelayFrame(1)  // プログレスバーが消えるのを待つ.
