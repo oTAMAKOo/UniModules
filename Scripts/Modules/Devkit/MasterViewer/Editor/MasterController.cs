@@ -11,7 +11,7 @@ using Modules.Master;
 
 namespace Modules.Devkit.MasterViewer
 {
-    public class MasterController
+    public sealed class MasterController
     {
         //----- params -----
 
@@ -19,11 +19,14 @@ namespace Modules.Devkit.MasterViewer
 
         private Dictionary<object, object> changedRecords = null;
 
-        protected Dictionary<string, PropertyInfo> propertyInfos = null;
+        private Dictionary<string, PropertyInfo> propertyInfos = null;
 
         private bool initialized = false;
 
         //----- property -----
+
+        /// <summary> 編集可能か. </summary>
+        public static bool CanEdit { get { return Application.isPlaying; } }
 
         /// <summary> データ型. </summary>
         public Type MasterType { get; private set; }
@@ -80,7 +83,9 @@ namespace Modules.Devkit.MasterViewer
 
         public void UpdateValue(object record, string valueName, object value)
         {
-            if (!Application.isPlaying)
+            // 非実行中は書き換え不可.
+
+            if (!CanEdit)
             {
                 EditorUtility.DisplayDialog("Require playing", "Editing values can only playing.", "Close");
 
@@ -89,9 +94,26 @@ namespace Modules.Devkit.MasterViewer
                 return;
             }
 
+            // 対象の型に変換できない値は処理しない.
+            
+            var valueType = GetValueType(valueName);
+
+            var convert = ConvertValue(ref value, valueType);
+
+            if (!convert){ return; }
+
+            // 元の値と同じなので処理しない.
+
             var currentValue = GetValue(record, valueName);
 
-            if (currentValue.Equals(value)) { return; }
+            if (currentValue == null && value == null) { return; }
+
+            if (currentValue != null && value != null)
+            {
+                if (currentValue.Equals(value)) { return; }
+            }
+
+            // 変更情報を保存.
 
             var originData = changedRecords.GetValueOrDefault(record);
 
@@ -111,14 +133,18 @@ namespace Modules.Devkit.MasterViewer
                 changedRecords.Add(record, originData);
             }
 
+            // 書き換え.
+
             try
             {
                 SetValue(record, valueName, value);
             }
             catch (Exception e)
             {
-                EditorUtility.DisplayDialog("Error", e.Message, "close");
+                Debug.LogException(e);
             }
+
+            // 書き換え前の値に戻ったら変更情報から除外.
 
             var hasChanged = false;
 
@@ -134,6 +160,19 @@ namespace Modules.Devkit.MasterViewer
             if (!hasChanged)
             {
                 changedRecords.Remove(record);
+            }
+        }
+
+        public void ResetAll()
+        {
+            var valueNames = GetValueNames();
+
+            foreach (var record in Records)
+            {
+                foreach (var valueName in valueNames)
+                {
+                    ResetValue(record, valueName);
+                }
             }
         }
 
@@ -194,30 +233,12 @@ namespace Modules.Devkit.MasterViewer
 
                 return false;
             }
-
-            if (valueType.IsGenericType)
-            {
-                if (valueType.GetGenericTypeDefinition() == typeof(Nullable<>))
-                {
-                    var displayType = EditorRecordFieldUtility.GetDisplayType(valueType);
-
-                    if (originValue == null)
-                    {
-                        originValue = displayType.GetDefaultValue();
-                    }
-
-                    if (currentValue == null)
-                    {
-                        currentValue = displayType.GetDefaultValue();
-                    }
-                }
-            }
-
+            
             return originValue == null ? currentValue != null : !originValue.Equals(currentValue);
         }
 
         /// <summary> データ保持用レコードインスタンス生成. </summary>
-        protected object CreateRecordInstance(Type recordType, Dictionary<string, object> arguments)
+        private object CreateRecordInstance(Type recordType, Dictionary<string, object> arguments)
         {
             return Activator.CreateInstance(recordType, arguments.Values.ToArray());
         }
@@ -232,7 +253,7 @@ namespace Modules.Devkit.MasterViewer
         public Type GetValueType(string valueName)
         {
             var propertyInfo = propertyInfos.GetValueOrDefault(valueName);
-
+            
             return propertyInfo.PropertyType;
         }
 
@@ -240,8 +261,13 @@ namespace Modules.Devkit.MasterViewer
         public void SetValue(object record, string valueName, object value)
         {
             var propertyInfo = propertyInfos.GetValueOrDefault(valueName);
+            
+            var convert = ConvertValue(ref value, propertyInfo.PropertyType);
 
-            propertyInfo.SetValue(record, Convert.ChangeType(value, propertyInfo.PropertyType));
+            if (convert)
+            {
+                propertyInfo.SetValue(record, value);
+            }
         }
 
         /// <summary> 値の取得. </summary>
@@ -253,7 +279,7 @@ namespace Modules.Devkit.MasterViewer
         }
 
         /// <summary> マスター表示名取得. </summary>
-        public virtual string GetDisplayMasterName()
+        public string GetDisplayMasterName()
         {
             const string MasterSuffix = "Master";
 
@@ -266,5 +292,47 @@ namespace Modules.Devkit.MasterViewer
 
             return masterName;
         }
+
+        private static bool ConvertValue(ref object value, Type valueType)
+        {
+            var isNullableType = valueType.IsNullable();
+
+            // Null非許容型にnullが来た時は失敗.
+            if (value == null && !isNullableType) { return false; }
+
+            try
+            {
+                if (value != null)
+                {
+                    var type = valueType;
+
+                    if (isNullableType)
+                    {
+                        type = Nullable.GetUnderlyingType(valueType);
+
+                        if (type == null)
+                        {
+                            type = valueType;
+                        }
+                    }
+
+                    if (value.GetType() != type)
+                    {
+                        value = Convert.ChangeType(value, type);
+                    }
+                }
+            }
+            catch (Exception e)
+            {
+                var message = "Value convert failed.\nvalue : {0}\ntype : {1} -> {2}\n\n{3}";
+
+                Debug.LogErrorFormat(message, value, value != null ? value.GetType().ToString() : "null", valueType, e.Message);
+
+                return false;
+            }
+
+            return true;
+        }
+
     }
 }

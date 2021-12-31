@@ -5,11 +5,17 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Extensions;
+using Extensions.Devkit;
 
 namespace Modules.Devkit.MasterViewer
 {
     public static class EditorRecordFieldUtility
     {
+        private static readonly Type[] ValueTypeTable = new Type[]
+        {
+            typeof(byte), typeof(short), typeof(ushort), typeof(int), typeof(uint),
+        };
+    
         public static bool IsArrayType(Type valueType)
         {
             if (valueType.IsArray) { return true; }
@@ -53,83 +59,83 @@ namespace Modules.Devkit.MasterViewer
             return type;
         }
 
-        public static object DrawRecordField(object value, Type valueType, params GUILayoutOption[] options)
+        public static object DrawField(Rect rect, object value, Type valueType)
         {
             var type = GetDisplayType(valueType);
-
+            
             object result = null;
+
+            // Nullable Field.
+
+            if (valueType != typeof(string) && valueType.IsNullable())
+            {
+                const float ToggleWidth = 20f;
+
+                var toggleRect = new Rect(rect);
+                
+                toggleRect.width = ToggleWidth;
+
+                var isNull = value == null;
+
+                var toggle = EditorGUI.Toggle(toggleRect, !isNull);
+
+                if (isNull == toggle)
+                {
+                    value = toggle ? type.GetDefaultValue() : null;
+
+                    result = value;
+                }
+
+                rect.width -= ToggleWidth;
+                rect.x += ToggleWidth;
+            }
+
+            // Value Field.
 
             if (value == null)
             {
-                value = type.GetDefaultValue();
+                using (new DisableScope(true))
+                {
+                    EditorGUI.TextField(rect, "null");
+                }
             }
-
-            var valueTypeTable = new Type[]
+            else if (ValueTypeTable.Contains(type))
             {
-                typeof(byte), typeof(short), typeof(ushort), typeof(int), typeof(uint),
-            };
-
-            if (valueTypeTable.Contains(type))
-            {
-                result = EditorGUILayout.IntField(Convert.ToInt32(value), options);
+                result = EditorGUI.IntField(rect, Convert.ToInt32(value));
             }
             else if (type == typeof(long) || type == typeof(ulong))
             {
-                result = EditorGUILayout.LongField(Convert.ToInt64(value), options);
+                result = EditorGUI.LongField(rect, Convert.ToInt64(value));
             }
             else if (type == typeof(float))
             {
-                result = EditorGUILayout.FloatField(Convert.ToSingle(value), options);
+                result = EditorGUI.FloatField(rect, Convert.ToSingle(value));
             }
             else if (type == typeof(double))
             {
-                result = EditorGUILayout.DoubleField(Convert.ToDouble(value), options);
+                result = EditorGUI.DoubleField(rect, Convert.ToDouble(value));
             }
             else if (type == typeof(bool))
             {
-                result = EditorGUILayout.Toggle(Convert.ToBoolean(value), options);
+                result = EditorGUI.Toggle(rect, Convert.ToBoolean(value));
             }
             else if (type == typeof(string))
             {
-                var text = Convert.ToString(value).FixLineEnd();
+                var text = Convert.ToString(value);
 
-                if (!string.IsNullOrEmpty(text))
-                {
-                    var lineCount = text.Count(c => c == '\n') + 1;
-
-                    if (1 < lineCount)
-                    {
-                        var hight = EditorGUIUtility.singleLineHeight * Math.Min(3, lineCount);
-
-                        var optionlist = options.ToList();
-
-                        optionlist.Add(GUILayout.Height(hight));
-
-                        options = optionlist.ToArray();
-
-                        result = EditorGUILayout.TextArea(text, options);
-                    }
-                    else
-                    {
-                        result = EditorGUILayout.TextField(text, options);
-                    }
-                }
-                else
-                {
-                    result = EditorGUILayout.TextField(text, options);
-                }
+                result = EditorGUI.TextArea(rect, text);
             }
             else if (type == typeof(Vector2))
             {
-                result = EditorGUILayout.Vector2Field(string.Empty, (Vector2)value, options);
+                result = EditorGUI.Vector2Field(rect, string.Empty, (Vector2)value);
             }
             else if (type == typeof(Vector3))
             {
-                result = EditorGUILayout.Vector3Field(string.Empty, (Vector3)value, options);
+                result = EditorGUI.Vector3Field(rect, string.Empty, (Vector3)value);
             }
             else if (type == typeof(Vector4))
             {
-                result = EditorGUILayout.Vector4Field(string.Empty, (Vector4)value, options);
+                result = EditorGUI.Vector4Field(rect, string.Empty, (Vector4)value);
             }
             else if (type == typeof(DateTime))
             {
@@ -137,20 +143,18 @@ namespace Modules.Devkit.MasterViewer
 
                 var from = Convert.ToString(value);
 
-                var to = EditorGUILayout.DelayedTextField(string.Empty, from, options);
+                var to = EditorGUI.DelayedTextField(rect, string.Empty, from);
 
                 result = value;
 
                 if (from != to)
                 {
-                    var parseValue = dateTime;
-
-                    result = DateTime.TryParse(to, out parseValue) ? parseValue : dateTime;
+                    result = DateTime.TryParse(to, out var parseValue) ? parseValue : dateTime;
                 }
             }
             else if (type.IsEnum)
             {
-                result = EditorGUILayout.EnumPopup((Enum)value, options);
+                result = EditorGUI.EnumPopup(rect, (Enum)value);
             }
             else
             {
@@ -158,6 +162,30 @@ namespace Modules.Devkit.MasterViewer
             }
 
             return result;
+        }
+
+        public static int GetTextFieldLineCount(string text)
+        {
+            if (string.IsNullOrEmpty(text)) { return 1; }
+
+            text = text.FixLineEnd();
+
+            var lineCount = text.Count(c => c == '\n') + 1;
+
+            return lineCount;
+        }
+
+        public static float GetTextFieldHight(string text)
+        {
+            var singleLineHeight = EditorGUIUtility.singleLineHeight;
+
+            var lineCount = GetTextFieldLineCount(text);
+
+            if (lineCount <= 1){ return singleLineHeight; }
+            
+            var hight = singleLineHeight * Math.Min(3, lineCount);
+
+            return singleLineHeight < hight ? hight : singleLineHeight;
         }
     }
 }

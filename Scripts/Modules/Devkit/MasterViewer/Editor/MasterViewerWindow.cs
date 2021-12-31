@@ -11,13 +11,13 @@ using Modules.Master;
 
 namespace Modules.Devkit.MasterViewer
 {
-    public abstract class MasterViewerWindow<T, TMasterController> : SingletonEditorWindow<T>
-        where T : MasterViewerWindow<T, TMasterController>
-        where TMasterController : MasterController, new()
+    public abstract class MasterViewerWindow<T> : SingletonEditorWindow<T> where T : MasterViewerWindow<T>
     {
         //----- params -----
 
-        private readonly Vector2 WindowSize = new Vector2(300f, 300f);
+        private static readonly Vector2 WindowSize = new Vector2(350f, 500f);
+
+        private static readonly Color EditedColor = new Color(0.2f, 1f, 1f, 1f);
 
         //----- field -----
 
@@ -25,9 +25,9 @@ namespace Modules.Devkit.MasterViewer
 
         private Vector2 scrollPosition = Vector2.zero;
 
-        private TMasterController[] displayContents = null;
+        private MasterController[] displayContents = null;
 
-        private List<TMasterController> masterControllers = null;
+        private List<MasterController> masterControllers = null;
 
         private bool loadMasterRequest = false;
 
@@ -43,14 +43,12 @@ namespace Modules.Devkit.MasterViewer
         protected void Initialize()
         {
             if (initialized) { return; }
-
-            var masterManager = MasterManager.Instance;
-
+            
             titleContent = new GUIContent("MasterViewer");
 
             minSize = WindowSize;
 
-            masterControllers = new List<TMasterController>();
+            masterControllers = new List<MasterController>();
 
             loadMasterRequest = true;
 
@@ -61,9 +59,7 @@ namespace Modules.Devkit.MasterViewer
 
         void OnDestroy()
         {
-            var windows = RecordViewerWindow.FindAllWindow();
-
-            windows.ForEach(x => x.Close());
+            CloseAllRecordWindow();
         }
 
         void OnGUI()
@@ -74,7 +70,9 @@ namespace Modules.Devkit.MasterViewer
 
             if (loadMasterRequest)
             {
-                LoadAllMasterData().Subscribe().AddTo(Disposable);
+                LoadAllMasterData()
+                    .Subscribe(_ => loadMasterRequest = false)
+                    .AddTo(Disposable);
             }
 
             // Toolbar.
@@ -107,9 +105,7 @@ namespace Modules.Devkit.MasterViewer
 
                 if (GUILayout.Button("Close All", EditorStyles.toolbarButton, GUILayout.Width(60f)))
                 {
-                    var windows = RecordViewerWindow.FindAllWindow();
-
-                    windows.ForEach(x => x.Close());
+                    CloseAllRecordWindow();
                 }
             }
 
@@ -129,13 +125,13 @@ namespace Modules.Devkit.MasterViewer
 
                             var masterName = content.GetDisplayMasterName();
 
-                            var color = content.HasChangedRecord ? Color.yellow : Color.white;
+                            var color = content.HasChangedRecord ? EditedColor : Color.white;
 
                             using (new BackgroundColorScope(color))
                             {
                                 if (GUILayout.Button(masterName))
                                 {
-                                    var recordViewerWindow = RecordViewerWindow.Open(content);
+                                    var recordViewerWindow = RecordWindow.Open(content);
 
                                     if (recordViewerWindow != null)
                                     {
@@ -194,11 +190,11 @@ namespace Modules.Devkit.MasterViewer
 
             Action onLoadComplete = () =>
             {
-                masterControllers = new List<TMasterController>();
+                masterControllers = new List<MasterController>();
 
                 foreach (var master in allMasters)
                 {
-                    var masterController = new TMasterController();
+                    var masterController = new MasterController();
 
                     masterController.Initialize(master);
 
@@ -219,11 +215,11 @@ namespace Modules.Devkit.MasterViewer
                 .AsUnitObservable();
         }
 
-        private TMasterController[] GetDisplayMasters()
+        private MasterController[] GetDisplayMasters()
         {
             if (string.IsNullOrEmpty(searchText)) { return masterControllers.ToArray(); }
 
-            var list = new List<TMasterController>();
+            var list = new List<MasterController>();
 
             var keywords = searchText.Split(new char[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
 
@@ -241,6 +237,27 @@ namespace Modules.Devkit.MasterViewer
             }
 
             return list.ToArray();
+        }
+
+        private void CloseAllRecordWindow()
+        {
+            var recordWindows = Resources.FindObjectsOfTypeAll<RecordWindow>();
+
+            foreach (var recordWindow in recordWindows)
+            {
+                if (recordWindow == null) { continue; }
+
+                try
+                {
+                    recordWindow.Close();
+
+                    UnityUtility.SafeDelete(recordWindow);
+                }
+                catch
+                {
+                    // ignored
+                }
+            }
         }
 
         protected virtual void OnInitialize() { }

@@ -62,16 +62,17 @@ namespace Modules.Devkit.MasterViewer
         {
             if (elements == null) { return; }
 
-            using (new EditorGUILayout.HorizontalScope(EditorStyles.toolbar, GUILayout.Height(15f)))
+            using (new EditorGUILayout.HorizontalScope(EditorStyles.toolbar, GUILayout.Height(12f)))
             {
-                if (GUILayout.Button(toolbarPlusIcon, EditorStyles.toolbarButton, GUILayout.Width(50f)))
+                if (MasterController.CanEdit)
                 {
-                    elements.Add(elementType.GetDefaultValue());
+                    if (GUILayout.Button(toolbarPlusIcon, EditorStyles.toolbarButton, GUILayout.Width(25f)))
+                    {
+                        elements.Add(elementType.GetDefaultValue());
 
-                    OnUpdateElements();
+                        OnUpdateElements();
+                    }
                 }
-
-                GUILayout.FlexibleSpace();
             }
 
             using (var scrollViewScope = new EditorGUILayout.ScrollViewScope(scrollPosition))
@@ -84,16 +85,21 @@ namespace Modules.Devkit.MasterViewer
                     {
                         EditorGUI.BeginChangeCheck();
 
-                        elements[i] = EditorRecordFieldUtility.DrawRecordField(elements[i], elementType);
+                        var fieldRect = EditorGUILayout.GetControlRect(false, EditorGUIUtility.singleLineHeight);
 
-                        if (EditorGUI.EndChangeCheck())
+                        elements[i] = EditorRecordFieldUtility.DrawField(fieldRect, elements[i], elementType);
+
+                        if (EditorGUI.EndChangeCheck() && MasterController.CanEdit)
                         {
                             OnUpdateElements();
                         }
 
-                        if (GUILayout.Button(toolbarMinusIcon, GUILayout.Width(20f)))
+                        if (MasterController.CanEdit)
                         {
-                            removeIndexs.Add(i);
+                            if (GUILayout.Button(toolbarMinusIcon, EditorStyles.miniButton, GUILayout.Width(25f)))
+                            {
+                                removeIndexs.Add(i);
+                            }
                         }
                     }
                 }
