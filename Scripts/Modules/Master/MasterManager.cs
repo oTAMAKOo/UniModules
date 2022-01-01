@@ -100,7 +100,7 @@ namespace Modules.Master
 
         public IObservable<bool> LoadMaster(Dictionary<IMaster, string> versionTable, IProgress<float> progress = null)
         {
-            CacheDataManager.Instance.Clear();
+            Reference.Clear();
 
             return Observable.FromCoroutine<bool>(observer => LoadMasterInternal(observer, versionTable, progress));
         }
@@ -322,7 +322,7 @@ namespace Modules.Master
         {
             masters.ForEach(x => x.ClearVersion());
             
-            CacheDataManager.Instance.Clear();
+            Reference.Clear();
 
             UnityConsole.Event(ConsoleEventName, ConsoleEventColor, "Clear MasterVersion");
         }
