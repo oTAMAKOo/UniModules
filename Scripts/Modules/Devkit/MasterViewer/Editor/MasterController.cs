@@ -35,9 +35,6 @@ namespace Modules.Devkit.MasterViewer
         /// <summary> レコード. </summary>
         public object[] Records { get; private set; }
 
-        /// <summary> フィールド幅. </summary>
-        public float[] FieldWidth { get; private set; }
-
         /// <summary> 編集済みレコードがあるか. </summary>
         public bool HasChangedRecord { get { return changedRecords.Any(); } }
 
@@ -69,27 +66,13 @@ namespace Modules.Devkit.MasterViewer
 
             foreach (var property in properties)
             {
+                // setter, getter両方が実装されてない場合は対象外.
                 if (!property.CanRead || !property.CanWrite) { continue; }
 
-                var customAttributes = property.CustomAttributes;
-
-                if (customAttributes.Any(x => x.AttributeType == typeof(IgnoreMemberAttribute))) { continue; }
+                // IgnoreMemberがついている場合は対象外.
+                if (property.CustomAttributes.Any(x => x.AttributeType == typeof(IgnoreMemberAttribute))) { continue; }
 
                 propertyInfos.Add(property.Name, property);
-            }
-
-            // フィールド幅計算.
-
-            var valueNames = GetValueNames();
-
-            FieldWidth = new float[valueNames.Length];
-
-            for (var i = 0; i < valueNames.Length; i++)
-            {
-                var content = new GUIContent(valueNames[i]);
-                var size = EditorStyles.label.CalcSize(content);
-
-                FieldWidth[i] = Mathf.Max(80f, size.x + 20f);
             }
 
             initialized = true;
