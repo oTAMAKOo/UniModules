@@ -6,6 +6,7 @@ using System.Collections;
 using System.Linq;
 using System.Reflection;
 using System.Collections.Generic;
+using MessagePack;
 using Extensions;
 using Modules.Master;
 
@@ -60,9 +61,22 @@ namespace Modules.Devkit.MasterViewer
 
             // レコードのプロパティ情報取得.
 
+            propertyInfos = new Dictionary<string, PropertyInfo>();
+
             var recordType = Reflection.GetElementTypeOfGenericEnumerable(allRecords);
 
-            propertyInfos = recordType.GetProperties().ToDictionary(x => x.Name);
+            var properties = recordType.GetProperties();
+
+            foreach (var property in properties)
+            {
+                if (!property.CanRead || !property.CanWrite) { continue; }
+
+                var customAttributes = property.CustomAttributes;
+
+                if (customAttributes.Any(x => x.AttributeType == typeof(IgnoreMemberAttribute))) { continue; }
+
+                propertyInfos.Add(property.Name, property);
+            }
 
             // フィールド幅計算.
 
