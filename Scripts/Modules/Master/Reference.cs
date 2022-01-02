@@ -37,19 +37,19 @@ namespace Modules.Master
             referenceCache = new Dictionary<Tuple<Type, string>, ICacheContainer>();
         }
 
-        public static TResult Get<TRecord, TValue, TResult>(TRecord record, string keyName, Func<TRecord, TValue> keySelector, Func<TValue, TResult> valueSelector)
+        public static TValue Get<TRecord, TKey, TValue>(TRecord record, string keyName, Func<TRecord, TKey> keySelector, Func<TKey, TValue> valueSelector)
         {
             var cahce = Instance.referenceCache;
 
             var cacheKey = Tuple.Create(typeof(TRecord), keyName);
 
-            var container = cahce.GetValueOrDefault(cacheKey) as CacheContainer<TValue, TResult>;
+            var container = cahce.GetValueOrDefault(cacheKey) as CacheContainer<TKey, TValue>;
 
             if (container == null)
             {
-                container = new CacheContainer<TValue, TResult>()
+                container = new CacheContainer<TKey, TValue>()
                 {
-                    elements = new Dictionary<TValue, TResult>(),
+                    elements = new Dictionary<TKey, TValue>(),
                 };
 
                 cahce[cacheKey] = container;
@@ -67,6 +67,23 @@ namespace Modules.Master
             }
 
             return value;
+        }
+
+        public static void Remove<TRecord, TKey, TValue>(TRecord record, string keyName, Func<TRecord, TKey> keySelector)
+        {
+            var cahce = Instance.referenceCache;
+
+            var cacheKey = Tuple.Create(typeof(TRecord), keyName);
+
+            var container = cahce.GetValueOrDefault(cacheKey) as CacheContainer<TKey, TValue>;
+
+            if (container == null){ return; }
+
+            var key = keySelector.Invoke(record);
+            
+            if (!container.elements.ContainsKey(key)){ return; }
+
+            container.elements.Remove(key);
         }
 
         public static void Clear()
