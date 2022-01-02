@@ -207,11 +207,9 @@ namespace Modules.Devkit.Diagnosis.SendReport
 
             var logs = unityLogTracker.Logs.ToArray();
 
-            if (logs.IsEmpty()) { return string.Empty; }
-
-            var container = new LogContainer() { contents = logs };
-
-            return JsonUtility.ToJson(container);
+            return logs.Any() ? 
+                   JsonUtility.ToJson(new LogContainer { contents = logs }) : 
+                   JsonUtility.ToJson(string.Empty);
         }
 
         /// <summary> 送信情報に追加 </summary>
