@@ -62,7 +62,12 @@ namespace Modules.Devkit.TextureViewer
 
                 var assetPath = selectionTextureInfo != null ? selectionTextureInfo.AssetPath : string.Empty;
 
-                EditorGUILayout.SelectableLabel(assetPath, assetPathLabelStyle);
+                if (!string.IsNullOrEmpty(assetPath))
+                {
+                    var size = EditorStyles.label.CalcSize(new GUIContent(assetPath));
+
+                    EditorGUILayout.SelectableLabel(assetPath, assetPathLabelStyle, GUILayout.Width(size.x));
+                }
 
                 GUILayout.FlexibleSpace();
 
