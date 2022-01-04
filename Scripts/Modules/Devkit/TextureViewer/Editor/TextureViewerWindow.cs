@@ -137,44 +137,49 @@ namespace Modules.Devkit.TextureViewer
             var ignoreFolderPaths = config.IgnoreFolderPaths;
             var ignoreFolderNames = config.IgnoreFolderNames;
 
-            var infos = new List<TextureInfo>();
-
-            var assetPathByGuid = AssetDatabase.FindAssets("t:texture")
-                .ToDictionary(x => x, x => PathUtility.ConvertPathSeparator(AssetDatabase.GUIDToAssetPath(x)));
-                
-            var targets = assetPathByGuid
-                // Assets以下のファイル.
-                .Where(x => x.Value.StartsWith(UnityEditorUtility.AssetsFolderName))
-                // 除外フォルダ以下のファイルではない.
-                .Where(x => ignoreFolderPaths.All(y => !x.Value.StartsWith(y)))
-                // 除外フォルダ名を含まない.
-                .Where(x =>
-                   {
-                       var assetFolderPath = PathUtility.ConvertPathSeparator(Path.GetDirectoryName(x.Value));
-                       var folders = assetFolderPath.Split(PathUtility.PathSeparator);
-
-                       return folders.All(y => !ignoreFolderNames.Contains(y));
-                   })
-                .ToArray();
-
             var textureType = typeof(Texture);
 
-            var count = targets.Length;
+            var infos = new List<TextureInfo>();
+
+            var guids = AssetDatabase.FindAssets("t:texture").ToArray();
+
+            var count = guids.Length;
 
             for (var i = 0; i < count; i++)
             {
-                var guid = targets[i].Key;
-                var assetPath = targets[i].Value;
+                var guid = guids[i];
 
-                var info = new TextureInfo(i, guid, assetPath);
+                var assetPath = PathUtility.ConvertPathSeparator(AssetDatabase.GUIDToAssetPath(guid));
+
+                // Assets以外のファイル除外.
+                if (!assetPath.StartsWith(UnityEditorUtility.AssetsFolderName)) { continue; }
+
+                // 除外フォルダ以下のファイル除外.
+                if (ignoreFolderPaths.Any(y => assetPath.StartsWith(y))) { continue; }
+
+                // 除外フォルダ名を含むファイル除外.
+
+                var assetFolderPath = PathUtility.ConvertPathSeparator(Path.GetDirectoryName(assetPath));
+                var folders = assetFolderPath.Split(PathUtility.PathSeparator);
+
+                if (folders.Any(x => ignoreFolderNames.Contains(x))) { continue; }
+
+                // Texture型派生以外は除外.
                 
                 var type = AssetDatabase.GetMainAssetTypeAtPath(assetPath);
 
-                // Texture型派生以外は除外.
                 if (!type.IsSubclassOf(textureType)) { continue; }
 
+                // 追加.
+
+                var info = new TextureInfo(i, guid, assetPath);
+
                 infos.Add(info);
+
+                EditorUtility.DisplayProgressBar("progress", assetPath, (float)i / count);
             }
+
+            EditorUtility.ClearProgressBar();
 
             return infos.ToArray();
         }
