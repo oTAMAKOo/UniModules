@@ -1,4 +1,4 @@
-
+ï»¿
 using UnityEngine;
 using UnityEditor;
 using System;
@@ -59,12 +59,12 @@ namespace Modules.Devkit.TextureViewer
             
             textureInfos = LoadTextureInfos();
 
-            // ƒoƒbƒNƒOƒ‰ƒEƒ“ƒh“Ç‚Ýž‚Ý.
+            // ãƒãƒƒã‚¯ã‚°ãƒ©ã‚¦ãƒ³ãƒ‰èª­ã¿è¾¼ã¿.
             Observable.FromMicroCoroutine(() => LoadMainTextureBackground())
                 .Subscribe()
                 .AddTo(Disposable);
 
-            // View‰Šú‰».
+            // ViewåˆæœŸåŒ–.
 
             var platform = EditorUserBuildSettings.selectedBuildTargetGroup;
 
@@ -77,7 +77,7 @@ namespace Modules.Devkit.TextureViewer
             footerView = new FooterView();
             footerView.Initialize();
 
-            // •\Ž¦ƒ‚[ƒh•ÏX.
+            // è¡¨ç¤ºãƒ¢ãƒ¼ãƒ‰å¤‰æ›´.
             toolbarView.OnChangeDisplayModeAsObservable()
                 .Subscribe(x =>
                    {
@@ -86,7 +86,7 @@ namespace Modules.Devkit.TextureViewer
                    })
                 .AddTo(Disposable);
 
-            // ƒvƒ‰ƒbƒgƒtƒH[ƒ€•ÏX.
+            // ãƒ—ãƒ©ãƒƒãƒˆãƒ•ã‚©ãƒ¼ãƒ å¤‰æ›´.
             toolbarView.OnChangePlatformAsObservable()
                 .Subscribe(x =>
                    {
@@ -95,7 +95,7 @@ namespace Modules.Devkit.TextureViewer
                    })
                 .AddTo(Disposable);
 
-            // ƒtƒBƒ‹ƒ^ƒeƒLƒXƒg•ÏX.
+            // ãƒ•ã‚£ãƒ«ã‚¿ãƒ†ã‚­ã‚¹ãƒˆå¤‰æ›´.
             toolbarView.OnUpdateSearchTextAsObservable()
                 .Subscribe(x =>
                    {
@@ -104,12 +104,12 @@ namespace Modules.Devkit.TextureViewer
                    })
                 .AddTo(Disposable);
 
-            // ƒ\[ƒgƒŠƒZƒbƒg.
+            // ã‚½ãƒ¼ãƒˆãƒªã‚»ãƒƒãƒˆ.
             toolbarView.OnRequestSortResetAsObservable()
                 .Subscribe(_ => infoTreeView.ResetSort())
                 .AddTo(Disposable);
 
-            // ‘I‘ð•ÏX.
+            // é¸æŠžå¤‰æ›´.
             infoTreeView.OnSelectionChangedAsObservable()
                 .Subscribe(x => footerView.SetSelection(x))
                 .AddTo(Disposable);
@@ -143,11 +143,11 @@ namespace Modules.Devkit.TextureViewer
                 .ToDictionary(x => x, x => PathUtility.ConvertPathSeparator(AssetDatabase.GUIDToAssetPath(x)));
                 
             var targets = assetPathByGuid
-                // AssetsˆÈ‰º‚Ìƒtƒ@ƒCƒ‹.
+                // Assetsä»¥ä¸‹ã®ãƒ•ã‚¡ã‚¤ãƒ«.
                 .Where(x => x.Value.StartsWith(UnityEditorUtility.AssetsFolderName))
-                // œŠOƒtƒHƒ‹ƒ_ˆÈ‰º‚Ìƒtƒ@ƒCƒ‹‚Å‚Í‚È‚¢.
+                // é™¤å¤–ãƒ•ã‚©ãƒ«ãƒ€ä»¥ä¸‹ã®ãƒ•ã‚¡ã‚¤ãƒ«ã§ã¯ãªã„.
                 .Where(x => ignoreFolderPaths.All(y => !x.Value.StartsWith(y)))
-                // œŠOƒtƒHƒ‹ƒ_–¼‚ðŠÜ‚Ü‚È‚¢.
+                // é™¤å¤–ãƒ•ã‚©ãƒ«ãƒ€åã‚’å«ã¾ãªã„.
                 .Where(x =>
                    {
                        var assetFolderPath = PathUtility.ConvertPathSeparator(Path.GetDirectoryName(x.Value));
@@ -157,6 +157,8 @@ namespace Modules.Devkit.TextureViewer
                    })
                 .ToArray();
 
+            var textureType = typeof(Texture);
+
             var count = targets.Length;
 
             for (var i = 0; i < count; i++)
@@ -164,26 +166,22 @@ namespace Modules.Devkit.TextureViewer
                 var guid = targets[i].Key;
                 var assetPath = targets[i].Value;
 
-                EditorUtility.DisplayProgressBar("progress", assetPath, (float)i / count);
-
                 var info = new TextureInfo(i, guid, assetPath);
                 
-                if (info.TextureImporter == null)
-                {
-                    continue;
-                }
+                var type = AssetDatabase.GetMainAssetTypeAtPath(assetPath);
+
+                // Textureåž‹æ´¾ç”Ÿä»¥å¤–ã¯é™¤å¤–.
+                if (!type.IsSubclassOf(textureType)) { continue; }
 
                 infos.Add(info);
             }
-
-            EditorUtility.ClearProgressBar();
 
             return infos.ToArray();
         }
 
         private IEnumerator LoadMainTextureBackground()
         {
-            var chunk = textureInfos.Chunk(10).ToArray();
+            var chunk = textureInfos.Chunk(25).ToArray();
 
             var count = 0;
             var totalCount = textureInfos.Length;
