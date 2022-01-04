@@ -168,7 +168,10 @@ namespace Modules.Devkit.TextureViewer
 
                 var info = new TextureInfo(i, guid, assetPath);
                 
-                if (info.TextureImporter == null) { continue; }
+                if (info.TextureImporter == null)
+                {
+                    continue;
+                }
 
                 infos.Add(info);
             }
