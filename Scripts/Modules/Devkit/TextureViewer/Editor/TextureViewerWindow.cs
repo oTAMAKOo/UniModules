@@ -164,19 +164,19 @@ namespace Modules.Devkit.TextureViewer
 
                 if (folders.Any(x => ignoreFolderNames.Contains(x))) { continue; }
 
-                // Texture型派生以外は除外.
-                
-                var type = AssetDatabase.GetMainAssetTypeAtPath(assetPath);
-
-                if (!type.IsSubclassOf(textureType)) { continue; }
-
-                // 追加.
+                // 生成.
 
                 var info = new TextureInfo(i, guid, assetPath);
 
-                infos.Add(info);
-
+                // TextureImporterが取得できない場合は除外.
+                
+                if (info.TextureImporter == null) { continue; }
+                
+                // 追加.
+                
                 EditorUtility.DisplayProgressBar("progress", assetPath, (float)i / count);
+                
+                infos.Add(info);
             }
 
             EditorUtility.ClearProgressBar();
