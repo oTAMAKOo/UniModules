@@ -6,22 +6,31 @@ using Extensions;
 
 namespace Modules.Crypto
 {
-    public static class KeyFile
+    public sealed class KeyData
+    {
+        public string Key { get; private set; }
+
+        public string Iv { get; private set; }
+
+        public KeyData(string key, string iv)
+        {
+            Key = key;
+            Iv = iv;
+        }
+    }
+
+    public interface IKeyFileManager
+    {
+        void Create(string filePath, string key, string iv);
+
+        KeyData Load(string filePath);
+
+        KeyData Load(byte[] bytes);
+    }
+
+    public abstract class KeyFileManager<TInstance> : Singleton<TInstance>, IKeyFileManager where TInstance : KeyFileManager<TInstance>
     {
         //----- params -----
-
-        public sealed class KeyData
-        {
-            public string Key { get; private set; }
-
-            public string Iv { get; private set; }
-
-            public KeyData(string key, string iv)
-            {
-                Key = key;
-                Iv = iv;
-            }
-        }
 
         private const string Separator = ":*";
 
@@ -31,7 +40,7 @@ namespace Modules.Crypto
 
         //----- method -----
 
-        public static void Create(string filePath, string key, string iv)
+        public void Create(string filePath, string key, string iv)
         {
             var directory = Path.GetDirectoryName(filePath);
 
@@ -52,10 +61,7 @@ namespace Modules.Crypto
 
             var bytes = Encoding.UTF8.GetBytes(str);
 
-            for (var i = 0; i < bytes.Length; i++)
-            {
-                bytes[i] = (byte)~bytes[i];
-            }
+            bytes = CustomEncode(bytes);
 
             using (var file = new FileStream(filePath, FileMode.Create, FileAccess.Write, FileShare.ReadWrite))
             {
@@ -63,7 +69,7 @@ namespace Modules.Crypto
             }
         }
 
-        public static KeyData Load(string filePath)
+        public KeyData Load(string filePath)
         {
             if (!File.Exists(filePath))
             {
@@ -85,14 +91,11 @@ namespace Modules.Crypto
             return Load(bytes);
         }
 
-        public static KeyData Load(byte[] bytes)
+        public KeyData Load(byte[] bytes)
         {
             if (bytes == null || bytes.IsEmpty()){ return null; }
 
-            for (var i = 0; i < bytes.Length; i++)
-            {
-                bytes[i] = (byte)~bytes[i];
-            }
+            bytes = CustomDecode(bytes);
 
             var str = Encoding.UTF8.GetString(bytes);
 
@@ -114,5 +117,9 @@ namespace Modules.Crypto
 
             return new KeyData(key, iv);
         }
+
+        protected virtual byte[] CustomEncode(byte[] bytes) { return bytes; }
+
+        protected virtual byte[] CustomDecode(byte[] bytes) { return bytes; }
     }
 }

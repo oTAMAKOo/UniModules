@@ -17,16 +17,20 @@ namespace Modules.Crypto
         private string encryptKey = null;
         private string encryptIv = null;
 
+        private IKeyFileManager keyFileManager = null;
+
         //----- property -----
 
         //----- method -----
 
-        public static void Open()
+        public static void Open(IKeyFileManager keyFileManager)
         {
             Instance.maxSize = WindowSize;
             Instance.minSize = WindowSize;
 
             Instance.titleContent = new GUIContent("Generate KeyFile");
+
+            Instance.keyFileManager = keyFileManager;
 
             Instance.ShowUtility();
         }
@@ -94,9 +98,9 @@ namespace Modules.Crypto
 
                         var filePath = UnityPathUtility.ConvertAssetPathToFullPath(path);
 
-                        KeyFile.Create(filePath, encryptKey, encryptIv);
+                        keyFileManager.Create(filePath, encryptKey, encryptIv);
 
-                        var keyFile = KeyFile.Load(filePath);
+                        var keyFile = keyFileManager.Load(filePath);
 
                         if (keyFile != null)
                         {
@@ -131,7 +135,7 @@ namespace Modules.Crypto
 
                     if (!filePath.IsNullOrEmpty())
                     {
-                        var keyFile = KeyFile.Load(filePath);
+                        var keyFile = keyFileManager.Load(filePath);
 
                         using (new DisableStackTraceScope())
                         {

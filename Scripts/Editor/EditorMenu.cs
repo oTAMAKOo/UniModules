@@ -554,12 +554,6 @@ namespace Modules
             BlockInputMonitorWindow.Open();
         }
 
-        [MenuItem(itemName: ToolsMenu + "Open KeyFileWindow", priority = 14)]
-        public static void OpenKeyFileWinodow()
-        {
-            KeyFileWinodow.Open();
-        }
-
         #endregion
 
         //===============================================================
