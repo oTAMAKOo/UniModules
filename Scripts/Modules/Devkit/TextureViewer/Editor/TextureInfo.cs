@@ -16,12 +16,21 @@ namespace Modules.Devkit.TextureViewer
 
         private Texture texture = null;
 
+        private TextureImporter textureImporter = null;
+
+        private string textureName = null;
+
         private string textureSizeText = null;
 
         private string fileSizeText = null;
+
+        private float? nameWidth = null;
         
         private string importWarning = null;
-        
+        private long? fileSize = null;
+
+        private long? textureSize = null;
+
         //----- property -----
 
         public int Id { get; private set; }
@@ -30,24 +39,14 @@ namespace Modules.Devkit.TextureViewer
 
         public string AssetPath { get; private set; }
 
-        public string TextureName { get; private set; }
-
-        public float NameWidth { get; private set; }
-        
-        public long TextureSize { get; private set; }
-
-        public long FileSize { get; private set; }
-
-        public TextureImporter TextureImporter { get; private set; }
-
-        public bool HasWarning
+        public TextureImporter TextureImporter
         {
             get
             {
-                return !string.IsNullOrEmpty(importWarning);
+                return textureImporter ?? (textureImporter = AssetImporter.GetAtPath(AssetPath) as TextureImporter);
             }
         }
-                
+
         //----- method -----
 
         public TextureInfo(int id, string guid, string assetPath)
@@ -57,20 +56,6 @@ namespace Modules.Devkit.TextureViewer
             Guid = guid;
 
             AssetPath = assetPath;
-
-            TextureName = Path.GetFileNameWithoutExtension(AssetPath);
-
-            TextureImporter = AssetImporter.GetAtPath(AssetPath) as TextureImporter;
-
-            importWarning = TextureImporter.GetImportWarning();
-
-            var filePath = UnityPathUtility.ConvertAssetPathToFullPath(AssetPath);
-            
-            FileSize = new FileInfo(filePath).Length;
-
-            var labelLayoutSize = EditorStyles.label.CalcSize(new GUIContent(TextureName));
-
-            NameWidth = labelLayoutSize.x;
         }
 
         public Texture GetTextureIcon()
@@ -88,11 +73,21 @@ namespace Modules.Devkit.TextureViewer
             if (texture == null)
             {
                 texture = AssetDatabase.LoadMainAssetAtPath(AssetPath) as Texture;
-
-                TextureSize = texture.width * texture.height;
             }
 
             return texture;
+        }
+
+        public long GetTextureSize()
+        {
+            if (!textureSize.HasValue)
+            {
+                var texture = GetTexture();
+
+                textureSize = texture.width * texture.height;
+            }
+
+            return textureSize.Value;
         }
 
         public string GetTextureSizeText()
@@ -107,21 +102,41 @@ namespace Modules.Devkit.TextureViewer
             return textureSizeText;
         }
 
+        public string GetTextureName()
+        {
+            return textureName ?? (textureName = Path.GetFileNameWithoutExtension(AssetPath));
+        }
+
+        public float GetNameWidth()
+        {
+            if (!nameWidth.HasValue)
+            {
+                var name = GetTextureName();
+                var labelLayoutSize = EditorStyles.label.CalcSize(new GUIContent(name));
+
+                nameWidth = labelLayoutSize.x;
+            }
+
+            return nameWidth.Value;
+        }
+
         public string GetFileSizeText()
         {
             if (string.IsNullOrEmpty(fileSizeText))
             {
-                if (1024.0f * 1024.0f * 1024.0f <= FileSize) // GB
+                var size = GetFileSize();
+
+                if (1024.0f * 1024.0f * 1024.0f <= size) // GB
                 {
-                    fileSizeText = string.Format("{0:F1}GB", FileSize / (1024.0f * 1024.0f * 1024.0f));
+                    fileSizeText = string.Format("{0:F1}GB", size / (1024.0f * 1024.0f * 1024.0f));
                 }
-                else if (1024.0f * 1024.0f <= FileSize) // MB
+                else if (1024.0f * 1024.0f <= size) // MB
                 {
-                    fileSizeText = string.Format("{0:F1}MB", FileSize / (1024.0f * 1024.0f));
+                    fileSizeText = string.Format("{0:F1}MB", size / (1024.0f * 1024.0f));
                 }
                 else // KB
                 {
-                    fileSizeText = string.Format("{0:F1}KB", FileSize / 1024.0f);
+                    fileSizeText = string.Format("{0:F1}KB", size / 1024.0f);
                 }
             }
 
@@ -156,6 +171,28 @@ namespace Modules.Devkit.TextureViewer
             var textureSettings = TextureImporter.GetPlatformTextureSettings(platform.ToString());
 
             return textureSettings.maxTextureSize;
+        }
+
+        public bool HasWarning()
+        {
+            if (importWarning == null)
+            {
+                importWarning = TextureImporter.GetImportWarning();
+            }
+
+            return !string.IsNullOrEmpty(importWarning);
+        }
+
+        public long GetFileSize()
+        {
+            if (!fileSize.HasValue)
+            {
+                var filePath = UnityPathUtility.ConvertAssetPathToFullPath(AssetPath);
+
+                fileSize = File.Exists(filePath) ? new FileInfo(filePath).Length : 0;
+            }
+
+            return fileSize.Value;
         }
 
         public bool IsMatch(string[] keywords)

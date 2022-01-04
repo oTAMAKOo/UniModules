@@ -85,7 +85,7 @@ namespace Modules.Devkit.TextureViewer
 
             if (textureInfos.Any())
             {
-                var maxTextureNameWidth = textureInfos.Max(x => x.NameWidth);
+                var maxTextureNameWidth = textureInfos.Max(x => x.GetNameWidth());
 
                 columnWidthCache[TextureNameLabel] = maxTextureNameWidth + 30f;
 

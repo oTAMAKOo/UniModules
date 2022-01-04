@@ -55,7 +55,7 @@ namespace Modules.Devkit.TextureViewer
                 case CompressColumn.Warning:
                     return null;
                 case CompressColumn.TextureName:
-                    return textureInfo.TextureName;
+                    return textureInfo.GetTextureName();
                 case CompressColumn.TextureSize:
                     return textureInfo.GetTextureSizeText();
                 case CompressColumn.Overridden:
@@ -82,13 +82,13 @@ namespace Modules.Devkit.TextureViewer
             switch (column)
             {
                 case CompressColumn.Warning:
-                    orderedInfos = infos.Order(ascending, x => x.HasWarning);
+                    orderedInfos = infos.Order(ascending, x => x.HasWarning());
                     break;
                 case CompressColumn.TextureName:
-                    orderedInfos = infos.Order(ascending, x => x.TextureName, new NaturalComparer());
+                    orderedInfos = infos.Order(ascending, x => x.GetTextureName(), new NaturalComparer());
                     break;
                 case CompressColumn.TextureSize:
-                    orderedInfos = infos.Order(ascending, x => x.TextureSize);
+                    orderedInfos = infos.Order(ascending, x => x.GetTextureSize());
                     break;
                 case CompressColumn.Overridden:
                     orderedInfos = infos.Order(ascending, x => x.GetCompressOverridden(Platform));
@@ -100,7 +100,7 @@ namespace Modules.Devkit.TextureViewer
                     orderedInfos = infos.Order(ascending, x => x.GetMaxTextureSize(Platform));
                     break;
                 case CompressColumn.FileSize:
-                    orderedInfos = infos.Order(ascending, x => x.FileSize);
+                    orderedInfos = infos.Order(ascending, x => x.GetFileSize());
                     break;
             }
 

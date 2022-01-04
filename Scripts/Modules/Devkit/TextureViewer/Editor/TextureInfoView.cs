@@ -55,7 +55,7 @@ namespace Modules.Devkit.TextureViewer
                 case TextureColumn.Warning:
                     return null;
                 case TextureColumn.TextureName:
-                    return textureInfo.TextureName;
+                    return textureInfo.GetTextureName();
                 case TextureColumn.TextureType:
                     return textureInfo.TextureImporter.textureType.ToString();
                 case TextureColumn.NonPowerOfTwo:
@@ -86,13 +86,13 @@ namespace Modules.Devkit.TextureViewer
             switch (column)
             {
                 case TextureColumn.Warning:
-                    orderedInfos = infos.Order(ascending, x => x.HasWarning);
+                    orderedInfos = infos.Order(ascending, x => x.HasWarning());
                     break;
                 case TextureColumn.TextureName:
-                    orderedInfos = infos.Order(ascending, x => x.TextureName, new NaturalComparer());
+                    orderedInfos = infos.Order(ascending, x => x.GetTextureName(), new NaturalComparer());
                     break;
                 case TextureColumn.TextureSize:
-                    orderedInfos = infos.Order(ascending, x => x.TextureSize);
+                    orderedInfos = infos.Order(ascending, x => x.GetTextureSize());
                     break;
                 case TextureColumn.TextureType:
                     orderedInfos = infos.Order(ascending, x => x.TextureImporter.textureType.ToString());
@@ -110,7 +110,7 @@ namespace Modules.Devkit.TextureViewer
                     orderedInfos = infos.Order(ascending, x => x.TextureImporter.isReadable);
                     break;
                 case TextureColumn.FileSize:
-                    orderedInfos = infos.Order(ascending, x => x.FileSize);
+                    orderedInfos = infos.Order(ascending, x => x.GetFileSize());
                     break;
             }
 

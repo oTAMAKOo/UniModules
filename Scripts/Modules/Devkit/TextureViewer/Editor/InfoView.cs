@@ -64,7 +64,7 @@ namespace Modules.Devkit.TextureViewer
 
         private void DrawWarningIcon(Rect rect, TextureInfo textureInfo)
         {
-            if (!textureInfo.HasWarning){ return; }
+            if (!textureInfo.HasWarning()){ return; }
             
             var iconRect = rect;
 
