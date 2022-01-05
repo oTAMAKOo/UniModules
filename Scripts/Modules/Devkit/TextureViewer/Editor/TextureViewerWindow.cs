@@ -137,8 +137,6 @@ namespace Modules.Devkit.TextureViewer
             var ignoreFolderPaths = config.IgnoreFolderPaths;
             var ignoreFolderNames = config.IgnoreFolderNames;
 
-            var textureType = typeof(Texture);
-
             var infos = new List<TextureInfo>();
 
             var guids = AssetDatabase.FindAssets("t:texture").ToArray();

@@ -152,7 +152,12 @@ namespace Modules.Devkit.TextureViewer
 
             var asset = AssetDatabase.LoadMainAssetAtPath(textureInfo.AssetPath);
 
-            EditorGUIUtility.PingObject(asset);
+            if (asset != null)
+            {
+                Selection.activeObject = asset;
+
+                EditorGUIUtility.PingObject(asset);
+            }
         }
 
         protected override void SelectionChanged(IList<int> selectedIds)
