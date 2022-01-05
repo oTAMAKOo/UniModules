@@ -3,7 +3,6 @@ using UnityEngine;
 using UnityEditor;
 using System;
 using System.Linq;
-using Extensions;
 
 namespace Modules.Devkit.TextureViewer
 {
@@ -15,6 +14,8 @@ namespace Modules.Devkit.TextureViewer
 
         private Texture warnIcon = null;
 
+        private TColumn[] columns = null;
+
         //----- property -----
 
         protected abstract TColumn WarningColumn { get; }
@@ -22,6 +23,11 @@ namespace Modules.Devkit.TextureViewer
         protected abstract TColumn TextureNameColumn { get; }
 
         //----- method -----
+
+        public InfoView()
+        {
+            columns = GetDefaultColumns();
+        }
 
         protected virtual void InitializeStyle()
         {
@@ -36,12 +42,20 @@ namespace Modules.Devkit.TextureViewer
             }
         }
 
+        public TColumn[] GetDefaultColumns()
+        {
+            return Enum.GetValues(typeof(TColumn)).Cast<TColumn>().ToArray();
+        }
+
+        public void SetCustomColumns(TColumn[] columns)
+        {
+            this.columns = columns;
+        }
+
         public void DrawRowGUI(Rect rect, int columnIndex, TextureInfo textureInfo)
         {
             InitializeStyle();
-
-            var columns = Enum.GetValues(typeof(TColumn)).Cast<TColumn>().ToArray();
-
+            
             var column = columns.ElementAt(columnIndex);
 
             var value = GetValue(column, textureInfo);

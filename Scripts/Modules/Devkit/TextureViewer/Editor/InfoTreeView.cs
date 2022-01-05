@@ -1,4 +1,4 @@
-
+﻿
 using UnityEngine;
 using UnityEditor;
 using UnityEditor.IMGUI.Controls;
@@ -201,18 +201,21 @@ namespace Modules.Devkit.TextureViewer
             }
         }
 
-        public void SetPlatform( BuildTargetGroup platform)
+        public void SetPlatform(BuildTargetGroup platform)
         {
             this.platform = platform;
 
             compressInfoView.Platform = platform;
+
+            if (currentDisplayMode.HasValue)
+            {
+                SetDisplayMode(currentDisplayMode.Value);
+            }
         }
 
         public void SetDisplayMode(DisplayMode displayMode)
         {
-            if (currentDisplayMode == displayMode) { return; }
-
-            // �J�������X�V����O�ɕ���ۑ�. 
+            // カラムを更新する前に幅を保存. 
             if (multiColumnHeader != null)
             {
                 foreach (var column in multiColumnHeader.state.columns)
@@ -226,32 +229,47 @@ namespace Modules.Devkit.TextureViewer
             switch (displayMode)
             {
                 case DisplayMode.Texture:
-                    sortCallback = textureInfoView.Sort;
-                    SetColumns(TextureInfoView.ColumnInfos);
+                    {
+                        sortCallback = textureInfoView.Sort;
+
+                        var columns = textureInfoView.GetDefaultColumns();
+
+                        SetColumns(TextureInfoView.ColumnInfos, columns);
+                    }
                     break;
 
                 case DisplayMode.Compress:
-                    sortCallback = compressInfoView.Sort;
-                    SetColumns(CompressInfoView.ColumnInfos);
+                    {
+                        sortCallback = compressInfoView.Sort;
+
+                        var columns = compressInfoView.GetDefaultColumns().ToList();
+
+                        // 現在のプラットフォーム以外のメモリ使用量は表示しない.
+
+                        var selectedBuildTargetGroup = EditorUserBuildSettings.selectedBuildTargetGroup;
+                        
+                        if (selectedBuildTargetGroup != platform)
+                        {
+                            columns.Remove(CompressInfoView.CompressColumn.MemorySize);
+                        }
+
+                        compressInfoView.SetCustomColumns(columns.ToArray());
+
+                        SetColumns(CompressInfoView.ColumnInfos, columns.ToArray());
+                    }
                     break;
             }
         }
 
-        private void SetColumns<T>(Dictionary<T, ColumnInfo> columnInfos) where T : Enum
+        private void SetColumns<T>(Dictionary<T, ColumnInfo> columnInfos, T[] displayColumns) where T : Enum
         {
-            var type = typeof(T);
+            var columns = new MultiColumnHeaderState.Column[displayColumns.Length];
 
-            var elements = Enum.GetValues(type).Cast<T>();
-
-            var columnCount = Enum.GetValues(type).Length;
-
-            var columns = new MultiColumnHeaderState.Column[columnCount];
-
-            foreach (var element in elements)
+            for (var i = 0; i < displayColumns.Length; i++)
             {
-                var index = Convert.ToInt32(element);
+                var displayColumn = displayColumns[i];
 
-                var columnInfo = columnInfos.GetValueOrDefault(element);
+                var columnInfo = columnInfos.GetValueOrDefault(displayColumn);
 
                 if (columnInfo == null){ continue; }
 
@@ -280,7 +298,7 @@ namespace Modules.Devkit.TextureViewer
                 column.headerTextAlignment = TextAlignment.Center;
                 column.autoResize = false;
 
-                columns[index] = column;
+                columns[i] = column;
             }
 
             multiColumnHeader = new MultiColumnHeader(new MultiColumnHeaderState(columns));
