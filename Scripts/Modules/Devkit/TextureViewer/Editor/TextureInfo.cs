@@ -173,14 +173,21 @@ namespace Modules.Devkit.TextureViewer
             return textureSettings.maxTextureSize;
         }
 
-        public bool HasWarning()
+        public string GetImportWarning()
         {
             if (importWarning == null)
             {
                 importWarning = TextureImporter.GetImportWarning();
             }
 
-            return !string.IsNullOrEmpty(importWarning);
+            return importWarning;
+        }
+
+        public bool HasWarning()
+        {
+            var warning = GetImportWarning();
+
+            return !string.IsNullOrEmpty(warning);
         }
 
         public long GetFileSize()

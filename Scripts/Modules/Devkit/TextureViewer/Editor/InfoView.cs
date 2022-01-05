@@ -66,13 +66,15 @@ namespace Modules.Devkit.TextureViewer
         {
             if (!textureInfo.HasWarning()){ return; }
             
+            var warning = textureInfo.GetImportWarning();
+
             var iconRect = rect;
 
             iconRect.x += rect.width * 0.5f - warnIcon.width * 0.5f;
             iconRect.y += 2f;
             iconRect.size = new Vector2(warnIcon.width, warnIcon.height);
 
-            GUI.DrawTexture(iconRect, warnIcon);
+            GUI.Label(iconRect, new GUIContent(warnIcon, warning));
         }
 
         private void DrawNameLabel(Rect rect, Texture icon, object value)
