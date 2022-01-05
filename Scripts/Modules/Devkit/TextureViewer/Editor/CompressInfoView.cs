@@ -1,10 +1,9 @@
 
-using UnityEngine;
+using UnityEditor;
 using System;
 using System.Linq;
 using System.Collections.Generic;
 using Extensions;
-using UnityEditor;
 
 namespace Modules.Devkit.TextureViewer
 {
@@ -22,6 +21,7 @@ namespace Modules.Devkit.TextureViewer
             Overridden,
             Format,
             MaxSize,
+            MemorySize,
             FileSize,
         }
 
@@ -33,6 +33,7 @@ namespace Modules.Devkit.TextureViewer
             { CompressColumn.Overridden, new ColumnInfo("Overridden", 80f) },
             { CompressColumn.Format, new ColumnInfo(TextureFormatLabel, 150f) },
             { CompressColumn.MaxSize, new ColumnInfo("MaxSize", 70f) },
+            { CompressColumn.MemorySize, new ColumnInfo("MemorySize", 80f) },
             { CompressColumn.FileSize, new ColumnInfo("FileSize", 80f) },
         };
 
@@ -64,6 +65,8 @@ namespace Modules.Devkit.TextureViewer
                     return textureInfo.GetFormatText(Platform);
                 case CompressColumn.MaxSize:
                     return textureInfo.GetMaxTextureSize(Platform).ToString();
+                case CompressColumn.MemorySize:
+                    return textureInfo.GetMemorySizeText();
                 case CompressColumn.FileSize:
                     return textureInfo.GetFileSizeText();
                 default:
@@ -98,6 +101,9 @@ namespace Modules.Devkit.TextureViewer
                     break;
                 case CompressColumn.MaxSize:
                     orderedInfos = infos.Order(ascending, x => x.GetMaxTextureSize(Platform));
+                    break;
+                case CompressColumn.MemorySize:
+                    orderedInfos = infos.Order(ascending, x => x.GetMemorySize());
                     break;
                 case CompressColumn.FileSize:
                     orderedInfos = infos.Order(ascending, x => x.GetFileSize());

@@ -22,11 +22,16 @@ namespace Modules.Devkit.TextureViewer
 
         private string textureSizeText = null;
 
+        private string memorySizeText = null;
+
         private string fileSizeText = null;
 
         private float? nameWidth = null;
         
         private string importWarning = null;
+
+        private long? memorySize = null;
+
         private long? fileSize = null;
 
         private long? textureSize = null;
@@ -120,24 +125,25 @@ namespace Modules.Devkit.TextureViewer
             return nameWidth.Value;
         }
 
+        public string GetMemorySizeText()
+        {
+            if (string.IsNullOrEmpty(memorySizeText))
+            {
+                var size = GetMemorySize();
+                
+                memorySizeText = EditorUtility.FormatBytes(size);
+            }
+
+            return memorySizeText;
+        }
+
         public string GetFileSizeText()
         {
             if (string.IsNullOrEmpty(fileSizeText))
             {
                 var size = GetFileSize();
 
-                if (1024.0f * 1024.0f * 1024.0f <= size) // GB
-                {
-                    fileSizeText = string.Format("{0:F1}GB", size / (1024.0f * 1024.0f * 1024.0f));
-                }
-                else if (1024.0f * 1024.0f <= size) // MB
-                {
-                    fileSizeText = string.Format("{0:F1}MB", size / (1024.0f * 1024.0f));
-                }
-                else // KB
-                {
-                    fileSizeText = string.Format("{0:F1}KB", size / 1024.0f);
-                }
+                fileSizeText = EditorUtility.FormatBytes(size);
             }
 
             return fileSizeText;
@@ -188,6 +194,18 @@ namespace Modules.Devkit.TextureViewer
             var warning = GetImportWarning();
 
             return !string.IsNullOrEmpty(warning);
+        }
+
+        public long GetMemorySize()
+        {
+            if (!memorySize.HasValue)
+            {
+                var texture = GetTexture();
+
+                memorySize = TextureEditorUtility.GetStorageMemorySizeLong(texture);
+            }
+
+            return memorySize.Value;
         }
 
         public long GetFileSize()
