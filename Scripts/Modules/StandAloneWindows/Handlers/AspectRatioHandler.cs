@@ -46,8 +46,6 @@ namespace Modules.StandAloneWindows
         private const int WMSZ_BOTTOM = 6;
 
         private const int GWLP_WNDPROC = -4;
-
-        private const string UNITY_WND_CLASSNAME = "UnityWndClass";
         
         [StructLayout(LayoutKind.Sequential)]
         private struct RECT
