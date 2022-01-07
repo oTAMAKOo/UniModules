@@ -2,6 +2,7 @@
 #if UNITY_STANDALONE_WIN
 
 using System;
+using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Text;
 using AOT;
@@ -16,6 +17,8 @@ namespace Modules.StandAloneWindows
 
         private static IntPtr windowHandle = IntPtr.Zero;
 
+        private static int processId = 0;
+
         #region WINAPI
         
         private delegate bool EnumWindowsDelegate(IntPtr hWnd, IntPtr lparam);
@@ -29,8 +32,8 @@ namespace Modules.StandAloneWindows
         [DllImport("user32.dll", CharSet = CharSet.Auto, SetLastError = true)]
         private static extern int GetWindowTextLength(IntPtr hWnd);
 
-        [DllImport("user32.dll", CharSet = CharSet.Auto, SetLastError = true)]
-        private static extern int GetClassName(IntPtr hWnd, StringBuilder lpClassName, int nMaxCount);
+        [DllImport("user32.dll", SetLastError=true)]
+        private static extern uint GetWindowThreadProcessId(IntPtr hWnd, out uint processId);
 
         [DllImport("user32.dll")]
         private static extern IntPtr GetWindowLong(IntPtr hWnd, int nIndex);
@@ -60,6 +63,10 @@ namespace Modules.StandAloneWindows
             {
                 throw new ArgumentException();
             }
+
+            var process = Process.GetCurrentProcess();
+
+            processId = process.Id;
             
             EnumWindows(EnumWindowCallBack, IntPtr.Zero);
             
@@ -100,9 +107,14 @@ namespace Modules.StandAloneWindows
 
                 if (tsb.ToString() == WindowTitle)
                 {
-                    windowHandle = hWnd;
+                    GetWindowThreadProcessId(hWnd, out var pid);
+                    
+                    if (processId == pid)
+                    {
+                        windowHandle = hWnd;
 
-                    return false;
+                        return false;
+                    }
                 }
             }
 
