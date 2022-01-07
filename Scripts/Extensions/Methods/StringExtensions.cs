@@ -2,7 +2,6 @@
 using System;
 using System.Linq;
 using System.Text;
-using System.IO;
 using System.Security.Cryptography;
 using System.Text.RegularExpressions;
 using Extensions.Serialize;
@@ -16,7 +15,7 @@ namespace Extensions
             return string.IsNullOrEmpty(value);
         }
 
-        /// <summary> SringBuilderを使って複数の文字列を連結. </summary>
+        /// <summary> 複数の文字列を連結. </summary>
         public static string Combine(this string value, string[] targets)
         {
             var builder = new StringBuilder(value);

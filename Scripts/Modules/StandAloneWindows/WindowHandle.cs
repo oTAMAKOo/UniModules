@@ -1,25 +1,36 @@
 ﻿
 #if UNITY_STANDALONE_WIN
 
-using UnityEngine;
 using System;
 using System.Runtime.InteropServices;
-using Extensions;
+using System.Text;
+using AOT;
 
 namespace Modules.StandAloneWindows
 {
-    public sealed class WindowHandle : Singleton<WindowHandle>
+    public static class WindowHandle
     {
         //----- params -----
 
         //----- field -----
 
-        private IntPtr windowHandle = IntPtr.Zero;
+        private static IntPtr windowHandle = IntPtr.Zero;
 
         #region WINAPI
         
-        [DllImport("user32.dll", EntryPoint = "FindWindow")]
-        private static extern IntPtr FindWindow(string className, string windowName);
+        private delegate bool EnumWindowsDelegate(IntPtr hWnd, IntPtr lparam);
+
+        [DllImport("user32.dll")]
+        private static extern bool EnumWindows(EnumWindowsDelegate lpEnumFunc, IntPtr lparam);
+
+        [DllImport("user32.dll", CharSet = CharSet.Auto, SetLastError = true)]
+        private static extern int GetWindowText(IntPtr hWnd, StringBuilder lpString, int nMaxCount);
+
+        [DllImport("user32.dll", CharSet = CharSet.Auto, SetLastError = true)]
+        private static extern int GetWindowTextLength(IntPtr hWnd);
+
+        [DllImport("user32.dll", CharSet = CharSet.Auto, SetLastError = true)]
+        private static extern int GetClassName(IntPtr hWnd, StringBuilder lpClassName, int nMaxCount);
 
         [DllImport("user32.dll")]
         private static extern IntPtr GetWindowLong(IntPtr hWnd, int nIndex);
@@ -34,29 +45,29 @@ namespace Modules.StandAloneWindows
 
         //----- property -----
 
+        public static string WindowTitle { get; set; }
+
         //----- method -----
 
-        /// <summary> Window handle of Unity window. </summary>
         public static IntPtr Get()
         {
-            if (Instance == null) { return IntPtr.Zero; }
-
-            if (Instance.windowHandle != IntPtr.Zero)
+            if (windowHandle != IntPtr.Zero)
             {
-                return Instance.windowHandle;
+                return windowHandle;
             }
 
-            var title = Application.productName;
-
-            Instance.windowHandle = FindWindow(null, title);
+            if (string.IsNullOrEmpty(WindowTitle))
+            {
+                throw new ArgumentException();
+            }
             
-            return Instance.windowHandle != IntPtr.Zero ? Instance.windowHandle : IntPtr.Zero;
+            EnumWindows(EnumWindowCallBack, IntPtr.Zero);
+            
+            return windowHandle != IntPtr.Zero ? windowHandle : IntPtr.Zero;
         }
 
         public static IntPtr GetWindowLong(int nIndex)
         {
-            if (Instance == null) { return IntPtr.Zero; }
-
             var windowHandle = Get();
             
             return GetWindowLong(windowHandle, nIndex);
@@ -74,6 +85,28 @@ namespace Modules.StandAloneWindows
             }
 
             return SetWindowLongPtr64(windowHandle, nIndex, dwNewLong);
+        }
+
+        [MonoPInvokeCallback(typeof(EnumWindowsDelegate))]
+        private static bool EnumWindowCallBack(IntPtr hWnd, IntPtr lparam)
+        {
+            var textLen = GetWindowTextLength(hWnd);
+
+            if (0 < textLen)
+            {
+                var tsb = new StringBuilder(textLen + 1);
+
+                GetWindowText(hWnd, tsb, tsb.Capacity);
+
+                if (tsb.ToString() == WindowTitle)
+                {
+                    windowHandle = hWnd;
+
+                    return false;
+                }
+            }
+
+            return true;
         }
     }
 }
