@@ -236,6 +236,12 @@ namespace Modules
             AssetNavigationWindow.Open(projectFolders.ExternalResourcesPath);
         }
 
+        [MenuItem(itemName: ResourcesMenu + "Open AssetBundleDependencyChecker", priority = 14)]
+        public static void OpenAssetBundleDependency()
+        {
+            FindDependencyAssetsWindow.Open();
+        }
+
         //------ 全アセットバンドル名を再設定 ------
 
         [MenuItem(itemName: ResourcesMenu + "Apply AssetBundleNames", priority = 35)]
@@ -371,6 +377,12 @@ namespace Modules
         #region Settings
 
         protected const string SettingsMenu = MenuRoot + "Settings/";
+
+        [MenuItem(itemName: SettingsMenu + "Open UnityConsoleConfigWindow", priority = 0)]
+        public static void OpenUnityConsoleConfigWindow()
+        {
+            UnityConsoleConfigWindow.Open();
+        }
         
         //------ コンパイル時のSceneView表示 ------
 
@@ -482,18 +494,6 @@ namespace Modules
             RaycastViewerWindow.Open();
         }
 
-        [MenuItem(itemName: ToolsMenu + "Open ProjectPinWindow", priority = 2)]
-        public static void OpenProjectPinWindow()
-        {
-            ProjectPinningWindow.Open();
-        }
-
-        [MenuItem(itemName: ToolsMenu + "Open HierarchyPinWindow", priority = 3)]
-        public static void OpenHierarchyPinWindow()
-        {
-            HierarchyPinningWindow.Open();
-        }
-
         [MenuItem(itemName: ToolsMenu + "Open AssetDependenciesWindow", priority = 4)]
         public static void OpenAssetDependenciesWindow()
         {
@@ -518,12 +518,6 @@ namespace Modules
             TextureViewerWindow.Open();
         }
 
-        [MenuItem(itemName: ToolsMenu + "Open UnityConsoleConfigWindow", priority = 8)]
-        public static void OpenUnityConsoleConfigWindow()
-        {
-            UnityConsoleConfigWindow.Open();
-        }
-
         [MenuItem(itemName: ToolsMenu + "Open BehaviorControlMonitor", priority = 9)]
         public static void OpenBehaviorControlMonitor()
         {
@@ -536,12 +530,6 @@ namespace Modules
             PatternTexturePacker.Open();
         }
 
-        [MenuItem(itemName: ToolsMenu + "Open AssetBundleDependencyChecker", priority = 11)]
-        public static void OpenAssetBundleDependency()
-        {
-            FindDependencyAssetsWindow.Open();
-        }
-
         [MenuItem(itemName: ToolsMenu + "Open BuiltInAssetsWindow", priority = 12)]
         public static void OpenBuiltInAssetsWindow()
         {
@@ -552,6 +540,18 @@ namespace Modules
         public static void OpenBlockInputMonitorWindow()
         {
             BlockInputMonitorWindow.Open();
+        }
+
+        [MenuItem(itemName: ToolsMenu + "Pining/Open ProjectPinWindow", priority = 1)]
+        public static void OpenProjectPinWindow()
+        {
+            ProjectPinningWindow.Open();
+        }
+
+        [MenuItem(itemName: ToolsMenu + "Pining/Open HierarchyPinWindow", priority = 2)]
+        public static void OpenHierarchyPinWindow()
+        {
+            HierarchyPinningWindow.Open();
         }
 
         #endregion
