@@ -4,6 +4,8 @@
 using UnityEngine;
 using System;
 using System.Runtime.InteropServices;
+using System.Threading;
+using Cysharp.Threading.Tasks;
 using Extensions;
 
 namespace Modules.StandAloneWindows
@@ -71,6 +73,8 @@ namespace Modules.StandAloneWindows
 
         //----- field -----
 
+        private CancellationTokenSource updateWindowStyleCancel = null;
+
         private bool initialize = false;
 
         #region WINAPI
@@ -92,7 +96,13 @@ namespace Modules.StandAloneWindows
             
             if (initialize) { return; }
 
+            Application.quitting += ApplicationQuitting;
+
+            updateWindowStyleCancel = new CancellationTokenSource();
+
             WindowStyle = (int)GetStyle();
+
+            UniTask.Run(() => UpdateWindowStyle()).Forget();
 
             initialize = true;
         }
@@ -113,6 +123,35 @@ namespace Modules.StandAloneWindows
             WindowHandle.SetWindowLong(GWL_STYLE, (IntPtr)WindowStyle);
 
             SetWindowPos(windowHandle, HWND_TOP, 0, 0, 0, 0, SWP_NOSIZE | SWP_NOMOVE | SWP_FRAMECHANGED | SWP_SHOWWINDOW);
+        }
+
+        private async UniTask UpdateWindowStyle()
+        {
+            while (true)
+            {
+                var windowStyle = WindowHandle.GetWindowLong(GWL_STYLE);
+
+                if ((IntPtr)WindowStyle != IntPtr.Zero && windowStyle != (IntPtr)WindowStyle)
+                {
+                    Apply();
+                }
+
+                await UniTask.DelayFrame(1);
+
+                if (updateWindowStyleCancel == null || updateWindowStyleCancel.IsCancellationRequested)
+                {
+                    break;
+                }
+            }
+        }
+
+        private void ApplicationQuitting()
+        {
+            if (updateWindowStyleCancel != null)
+            {
+                updateWindowStyleCancel.Dispose();
+                updateWindowStyleCancel = null;
+            }
         }
     }
 }

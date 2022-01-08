@@ -8,8 +8,8 @@ using UnityEngine;
 using System;
 using System.Runtime.InteropServices;
 using System.Threading;
-using System.Threading.Tasks;
 using AOT;
+using Cysharp.Threading.Tasks;
 using UniRx;
 using Extensions;
 
@@ -138,7 +138,7 @@ namespace Modules.StandAloneWindows
 
             updateAspectRatioCancel = new CancellationTokenSource();
 
-            Task.Run(() => UpdateAspectRatio(), updateAspectRatioCancel.Token);
+            UniTask.Run(() => UpdateAspectRatio()).Forget();
 
             initialized = true;
         }
@@ -255,7 +255,7 @@ namespace Modules.StandAloneWindows
             return CallWindowProc(Instance.oldWndProcPtr, hWnd, msg, wParam, lParam);
         }
 
-        private async Task UpdateAspectRatio()
+        private async UniTask UpdateAspectRatio()
         {
             while (true)
             {
@@ -328,7 +328,7 @@ namespace Modules.StandAloneWindows
                 
                 wasFullscreenLastFrame = isFullScreen;
 
-                await Task.Delay(10);
+                await UniTask.DelayFrame(1);
 
                 if (updateAspectRatioCancel == null || updateAspectRatioCancel.IsCancellationRequested)
                 {
