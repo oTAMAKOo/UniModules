@@ -172,16 +172,16 @@ namespace Modules
 
         //------ Excel保存時に自動更新 ------
 
-        [MenuItem(itemName: GameTextMenu + "Update on save excel", priority = 1)]
+        [MenuItem(itemName: GameTextMenu + "Updated when save Excel", priority = 1)]
         public static void ToggleUpdateOnSaveExcel()
         {
             GameTextAssetUpdater.Prefs.autoUpdate = !GameTextAssetUpdater.Prefs.autoUpdate;
         }
 
-        [MenuItem(itemName: GameTextMenu + "Update on save excel", isValidateFunction: true)]
+        [MenuItem(itemName: GameTextMenu + "Updated when save Excel", isValidateFunction: true)]
         public static bool ToggleUpdateOnSaveExcelValidate()
         {
-            Menu.SetChecked(GameTextMenu + "Update on save excel", GameTextAssetUpdater.Prefs.autoUpdate);
+            Menu.SetChecked(GameTextMenu + "Updated when save Excel", GameTextAssetUpdater.Prefs.autoUpdate);
             return true;
         }
 
