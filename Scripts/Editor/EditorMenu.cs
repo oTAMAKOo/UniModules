@@ -10,7 +10,6 @@ using Modules.PatternTexture;
 using Modules.GameText.Editor;
 using Modules.MessagePack;
 using Modules.Master;
-using Modules.Crypto;
 using Modules.ExternalResource;
 using Modules.ExternalResource.Editor;
 using Modules.Networking;
@@ -31,6 +30,7 @@ using Modules.Devkit.SceneImporter;
 using Modules.Devkit.SceneLaunch;
 using Modules.Devkit.Hierarchy;
 using Modules.Devkit.Console;
+using Modules.Devkit.DefineSymbol;
 using Modules.Devkit.SerializeAssets;
 using Modules.Devkit.TextureViewer;
 using Modules.Devkit.U2D;
@@ -378,7 +378,13 @@ namespace Modules
 
         protected const string SettingsMenu = MenuRoot + "Settings/";
 
-        [MenuItem(itemName: SettingsMenu + "Open UnityConsoleConfigWindow", priority = 0)]
+        [MenuItem(itemName: SettingsMenu + "Open DefineSymbolWindow", priority = 0)]
+        public static void OpenDefineSymbolWindow()
+        {
+            DefineSymbolWindow.Open();
+        }
+
+        [MenuItem(itemName: SettingsMenu + "Open UnityConsoleConfigWindow", priority = 1)]
         public static void OpenUnityConsoleConfigWindow()
         {
             UnityConsoleConfigWindow.Open();

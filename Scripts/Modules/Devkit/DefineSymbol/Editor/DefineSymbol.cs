@@ -3,7 +3,7 @@ using UnityEditor;
 using System.Linq;
 using System.Collections.Generic;
 
-namespace Modules.Devkit.Define
+namespace Modules.Devkit.DefineSymbol
 {
     public static class DefineSymbol
     {
