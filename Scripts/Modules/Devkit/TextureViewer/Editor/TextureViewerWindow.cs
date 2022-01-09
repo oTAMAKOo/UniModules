@@ -198,7 +198,7 @@ namespace Modules.Devkit.TextureViewer
 
         private IEnumerator LoadMainTextureBackground()
         {
-            var chunk = textureInfos.Chunk(25).ToArray();
+            var chunk = textureInfos.Chunk(15).ToArray();
 
             var count = 0;
             var totalCount = textureInfos.Length;
