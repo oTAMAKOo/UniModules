@@ -32,6 +32,8 @@ namespace Modules.Devkit.TextureViewer
 
         private TextureInfo[] textureInfos = null;
 
+        private bool initalLoading = false;
+
         [NonSerialized]
         private bool initialized = false;
 
@@ -60,6 +62,9 @@ namespace Modules.Devkit.TextureViewer
             textureInfos = LoadTextureInfos();
 
             // バックグラウンド読み込み.
+
+            initalLoading = true;
+
             Observable.FromMicroCoroutine(() => LoadMainTextureBackground())
                 .Subscribe()
                 .AddTo(Disposable);
@@ -113,9 +118,18 @@ namespace Modules.Devkit.TextureViewer
             infoTreeView.OnSelectionChangedAsObservable()
                 .Subscribe(x => footerView.SetSelection(x))
                 .AddTo(Disposable);
+            
+            // 読み込みを2秒待ってから表示.
 
-            Show();
-
+            Observable.Timer(TimeSpan.FromSeconds(2))
+                .Subscribe(_ =>
+                   {
+                       initalLoading = false;
+                       EditorUtility.ClearProgressBar();
+                       Show();
+                   })
+                .AddTo(Disposable);
+ 
             initialized = true;
         }
 
@@ -199,11 +213,21 @@ namespace Modules.Devkit.TextureViewer
 
                 var loadingText = string.Format("Loading Texture [{0} / {1}]", count, totalCount);
 
+                if (initalLoading)
+                {
+                    EditorUtility.DisplayProgressBar("Loading", loadingText, (float)count / totalCount);
+                }
+
                 footerView.SetLoadingProgressText(loadingText);
 
                 Repaint();
 
                 yield return null;
+            }
+
+            if (initalLoading)
+            {
+                EditorUtility.ClearProgressBar();
             }
 
             footerView.SetLoadingProgressText(null);
