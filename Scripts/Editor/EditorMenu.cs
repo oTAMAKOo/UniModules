@@ -139,9 +139,9 @@ namespace Modules
 
         protected const string MasterMenu = MenuRoot + "Master/";
 
-        //------ AssetDataBaseから読込 ------
+        //------ バージョンチェックを行わずローカルのマスターを読込 ------
 
-        [MenuItem(itemName: MasterMenu + "Use CachedMasterFile", priority = 0)]
+        [MenuItem(itemName: MasterMenu + "Use CachedMasterFile", priority = 25)]
         public static void ToggleUseCachedMasterFile()
         {
             MasterManager.Prefs.checkVersion = !MasterManager.Prefs.checkVersion;
@@ -290,6 +290,66 @@ namespace Modules
 
         protected const string UtilityMenu = MenuRoot + "Utility/";
 
+        [MenuItem(itemName: UtilityMenu + "Open SceneLaunchWindow", priority = 0)]
+        public static void OpenSceneLaunchWindow()
+        {
+            SceneLaunchWindow.Open();
+        }
+
+        [MenuItem(itemName: UtilityMenu + "Open RaycastViewerWindow", priority = 1)]
+        public static void OpenRaycastViewerWindow()
+        {
+            RaycastViewerWindow.Open();
+        }
+
+        [MenuItem(itemName: UtilityMenu + "Open TextureViewerWindow", priority = 2)]
+        public static void OpenTextureViewerWindow()
+        {
+            TextureViewerWindow.Open();
+        }
+
+        [MenuItem(itemName: UtilityMenu + "Open BuiltInAssetsWindow", priority = 3)]
+        public static void OpenBuiltInAssetsWindow()
+        {
+            BuiltInAssetsWindow.Open();
+        }
+
+        [MenuItem(itemName: UtilityMenu + "Open AssetDependenciesWindow", priority = 4)]
+        public static void OpenAssetDependenciesWindow()
+        {
+            AssetDependenciesWindow.Open();
+        }
+
+        [MenuItem(itemName: UtilityMenu + "Open BlockInputMonitorWindow", priority = 5)]
+        public static void OpenBlockInputMonitorWindow()
+        {
+            BlockInputMonitorWindow.Open();
+        }
+
+        [MenuItem(itemName: UtilityMenu + "Open BehaviorControlMonitor", priority = 6)]
+        public static void OpenBehaviorControlMonitor()
+        {
+            BehaviorControlMonitor.Open();
+        }
+
+        #region Pining
+
+        protected const string PiningMenu = UtilityMenu + "Pining/";
+
+        [MenuItem(itemName: PiningMenu + "Open ProjectPinWindow", priority = 1)]
+        public static void OpenProjectPinWindow()
+        {
+            ProjectPinningWindow.Open();
+        }
+
+        [MenuItem(itemName: PiningMenu + "Open HierarchyPinWindow", priority = 2)]
+        public static void OpenHierarchyPinWindow()
+        {
+            HierarchyPinningWindow.Open();
+        }
+
+        #endregion
+
         #region ForceReSerialize
 
         protected const string ForceReSerializeMenu = UtilityMenu + "ForceReSerialize/";
@@ -305,7 +365,7 @@ namespace Modules
             ForceReSerializeAssets.Execute(assetPaths);
         }
 
-        [MenuItem(itemName: ForceReSerializeMenu + "All Prefabs", priority = 12)]
+        [MenuItem(itemName: ForceReSerializeMenu + "All Prefabs", priority = 1)]
         public static void ForceReSerializeAllPrefabs()
         {
             var prefabs = AssetDatabase.FindAssets("t:prefab")
@@ -321,7 +381,13 @@ namespace Modules
 
         protected const string CleanerMenu = UtilityMenu + "Cleaner/";
 
-        [MenuItem(itemName: CleanerMenu + "Clean CanvasRenderer On", priority = 0)]
+        [MenuItem(itemName: CleanerMenu + "Open CleanDirectoryWindow", priority = 0)]
+        public static void OpenCleanDirectoryWindow()
+        {
+            CleanDirectoryWindow.Open();
+        }
+
+        [MenuItem(itemName: CleanerMenu + "Clean CanvasRenderer On", priority = 15)]
         public static void ToggleCanvasRendererCleanerAutoMode()
         {
             CanvasRendererCleaner.Prefs.autoClean = !CanvasRendererCleaner.Prefs.autoClean;
@@ -334,7 +400,7 @@ namespace Modules
             return true;
         }
 
-        [MenuItem(itemName: CleanerMenu + "Clean Text On", priority = 1)]
+        [MenuItem(itemName: CleanerMenu + "Clean Text On", priority = 16)]
         public static void ToggleTextCleanerAutoMode()
         {
             TextComponentCleaner.Prefs.autoClean = !TextComponentCleaner.Prefs.autoClean;
@@ -347,7 +413,7 @@ namespace Modules
             return true;
         }
 
-        [MenuItem(itemName: CleanerMenu + "Clean ParticleSystem On", priority = 2)]
+        [MenuItem(itemName: CleanerMenu + "Clean ParticleSystem On", priority = 17)]
         public static void ToggleParticleSystemCleanerAutoMode()
         {
             TextComponentCleaner.Prefs.autoClean = !ParticleComponentCleaner.Prefs.autoClean;
@@ -484,33 +550,9 @@ namespace Modules
         //  Tools.
         //===============================================================
 
-        #region Windows
+        #region Tools
 
         protected const string ToolsMenu = MenuRoot + "Tools/";
-
-        [MenuItem(itemName: ToolsMenu + "Open SceneLaunchWindow", priority = 0)]
-        public static void OpenSceneLaunchWindow()
-        {
-            SceneLaunchWindow.Open();
-        }
-
-        [MenuItem(itemName: ToolsMenu + "Open RaycastViewerWindow", priority = 1)]
-        public static void OpenRaycastViewerWindow()
-        {
-            RaycastViewerWindow.Open();
-        }
-
-        [MenuItem(itemName: ToolsMenu + "Open AssetDependenciesWindow", priority = 4)]
-        public static void OpenAssetDependenciesWindow()
-        {
-            AssetDependenciesWindow.Open();
-        }
-
-        [MenuItem(itemName: ToolsMenu + "Open CleanDirectoryWindow", priority = 5)]
-        public static void OpenCleanDirectoryWindow()
-        {
-            CleanDirectoryWindow.Open();
-        }
 
         [MenuItem(itemName: ToolsMenu + "Open ShaderVariantWindow", priority = 6)]
         public static void OpenShaderVariantUpdateWindow()
@@ -518,46 +560,10 @@ namespace Modules
             ShaderVariantUpdateWindow.Open();
         }
 
-        [MenuItem(itemName: ToolsMenu + "Open TextureViewerWindow", priority = 7)]
-        public static void OpenTextureViewerWindow()
-        {
-            TextureViewerWindow.Open();
-        }
-
-        [MenuItem(itemName: ToolsMenu + "Open BehaviorControlMonitor", priority = 9)]
-        public static void OpenBehaviorControlMonitor()
-        {
-            BehaviorControlMonitor.Open();
-        }
-
         [MenuItem(itemName: ToolsMenu + "Open PatternTexturePacker", priority = 10)]
         public static void OpenPatternTexturePacker()
         {
             PatternTexturePacker.Open();
-        }
-
-        [MenuItem(itemName: ToolsMenu + "Open BuiltInAssetsWindow", priority = 12)]
-        public static void OpenBuiltInAssetsWindow()
-        {
-            BuiltInAssetsWindow.Open();
-        }
-
-        [MenuItem(itemName: ToolsMenu + "Open BlockInputMonitorWindow", priority = 13)]
-        public static void OpenBlockInputMonitorWindow()
-        {
-            BlockInputMonitorWindow.Open();
-        }
-
-        [MenuItem(itemName: ToolsMenu + "Pining/Open ProjectPinWindow", priority = 1)]
-        public static void OpenProjectPinWindow()
-        {
-            ProjectPinningWindow.Open();
-        }
-
-        [MenuItem(itemName: ToolsMenu + "Pining/Open HierarchyPinWindow", priority = 2)]
-        public static void OpenHierarchyPinWindow()
-        {
-            HierarchyPinningWindow.Open();
         }
 
         #endregion
