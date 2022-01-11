@@ -29,7 +29,7 @@ namespace Modules.ExternalResource
             [MessagePackObject(true)]
             public sealed class Info
             {
-                public string resourcePath = string.Empty;
+                public string fileName = string.Empty;
                 public string hash = string.Empty;
             }
 
@@ -39,6 +39,8 @@ namespace Modules.ExternalResource
         //----- field -----
 
         private Version version = null;
+
+        private MessagePackSerializerOptions versionSerializerOptions = null;
 
         private Dictionary<string, Version.Info> versions = null;
 
@@ -71,7 +73,7 @@ namespace Modules.ExternalResource
 
             foreach (var info in infos)
             {
-                var versionInfo = versions.GetValueOrDefault(info.ResourcePath);
+                var versionInfo = versions.GetValueOrDefault(info.FileName);
 
                 // ローカルにバージョンが存在しない.
                 if (versionInfo == null) { return false; }
@@ -99,7 +101,7 @@ namespace Modules.ExternalResource
             // アセット管理情報内に存在しないので最新扱い.
             if (assetInfo == null) { return true; }
 
-            var versionInfo = versions.GetValueOrDefault(resourcePath);
+            var versionInfo = versions.GetValueOrDefault(assetInfo.FileName);
 
             // ローカルにバージョンが存在しない.
             if (versionInfo == null) { return false; }
@@ -189,11 +191,11 @@ namespace Modules.ExternalResource
                     {
                         var info = new Version.Info()
                         {
-                            resourcePath = item.ResourcePath,
+                            fileName = item.FileName,
                             hash = item.Hash,
                         };
 
-                        versions[item.ResourcePath] = info;
+                        versions[item.FileName] = info;
                     }
                 }
                 // アセットバンドル以外.
@@ -201,28 +203,36 @@ namespace Modules.ExternalResource
                 {
                     var info = new Version.Info()
                     {
-                        resourcePath = assetInfo.ResourcePath,
+                        fileName = assetInfo.FileName,
                         hash = assetInfo.Hash,
                     };
 
-                    versions[assetInfo.ResourcePath] = info;
+                    versions[assetInfo.FileName] = info;
                 }
 
                 version.infos = versions.Select(x => x.Value).ToArray();
 
-                var options = StandardResolverAllowPrivate.Options
-                    .WithCompression(MessagePackCompression.Lz4BlockArray)
-                    .WithResolver(UnityContractResolver.Instance);
+                if (versionSerializerOptions == null)
+                {
+                    versionSerializerOptions = StandardResolverAllowPrivate.Options
+                        .WithCompression(MessagePackCompression.Lz4BlockArray)
+                        .WithResolver(UnityContractResolver.Instance);
+                }
 
-                var data = MessagePackSerializer.Serialize(version, options);
-                
-                var encrypt = data.Encrypt(cryptoKey);
+                var bytes = MessagePackSerializer.Serialize(version, versionSerializerOptions);
 
-                File.WriteAllBytes(versionFilePath, encrypt);
+                // ※ ファイル名(暗号化済み)とバージョン文字列だけのデータなので暗号化は行わない.
+
+                File.WriteAllBytes(versionFilePath, bytes);
             }
             catch (Exception exception)
             {
                 Debug.LogException(exception);
+
+                if (File.Exists(versionFilePath))
+                {
+                    File.Delete(versionFilePath);
+                }
             }
         }
 
@@ -236,28 +246,18 @@ namespace Modules.ExternalResource
 
             if (File.Exists(versionFilePath))
             {
-                var data = File.ReadAllBytes(versionFilePath);
-
-                // 復号化.
-                var decrypt = new byte[0];
+                var bytes = File.ReadAllBytes(versionFilePath);
 
                 try
                 {
-                    decrypt = data.Decrypt(cryptoKey);
-                }
-                catch (Exception exception)
-                {
-                    Debug.LogException(exception);
-                    success = false;
-                }
+                    if (versionSerializerOptions == null)
+                    {
+                        versionSerializerOptions = StandardResolverAllowPrivate.Options
+                            .WithCompression(MessagePackCompression.Lz4BlockArray)
+                            .WithResolver(UnityContractResolver.Instance);
+                    }
 
-                try
-                {
-                    var options = StandardResolverAllowPrivate.Options
-                        .WithCompression(MessagePackCompression.Lz4BlockArray)
-                        .WithResolver(UnityContractResolver.Instance);
-
-                    version = MessagePackSerializer.Deserialize<Version>(decrypt, options);
+                    version = MessagePackSerializer.Deserialize<Version>(bytes, versionSerializerOptions);
                 }
                 catch (Exception exception)
                 {
@@ -268,11 +268,12 @@ namespace Modules.ExternalResource
                 if (!success)
                 {
                     version = new Version();
+
                     File.Delete(versionFilePath);
                 }
             }
 
-            versions = version.infos.ToDictionary(x => x.resourcePath, x => x);
+            versions = version.infos.ToDictionary(x => x.fileName, x => x);
         }
 
         private void ClearVersion()
