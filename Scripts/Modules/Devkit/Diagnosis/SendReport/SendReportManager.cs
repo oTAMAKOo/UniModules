@@ -8,6 +8,7 @@ using System.Linq;
 using UniRx;
 using Extensions;
 using Modules.Devkit.Diagnosis.LogTracker;
+using Modules.Networking;
 
 namespace Modules.Devkit.Diagnosis.SendReport
 {
@@ -136,20 +137,7 @@ namespace Modules.Devkit.Diagnosis.SendReport
 
             var errorMessage = string.Empty;
 
-            var hasError = false;
-
-            #if UNITY_2020_1_OR_NEWER
-
-            hasError = webRequest.result == UnityWebRequest.Result.ConnectionError || 
-                       webRequest.result == UnityWebRequest.Result.ProtocolError;
-            
-            #else
-
-            hasError = webRequest.isNetworkError || webRequest.isHttpError;
-
-            #endif
-
-            if(hasError)
+            if (webRequest.HasError())
             {
                 errorMessage = string.Format("[{0}]{1}", webRequest.responseCode, webRequest.error);
             }
