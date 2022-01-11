@@ -353,11 +353,16 @@ namespace Modules.SceneManagement
 
             diagnostics.Begin(TimeDiagnostics.Measure.Total);
 
-            var transitionStartYield = TransitionStart(currentSceneArgument).ToYieldInstruction();
+            var transitionStartYield = TransitionStart(currentSceneArgument).ToYieldInstruction(false);
 
             while (!transitionStartYield.IsDone)
             {
                 yield return null;
+            }
+
+            if (transitionStartYield.HasError)
+            {
+                Debug.LogException(transitionStartYield.Error);
             }
 
             if (prev != null)
@@ -373,11 +378,16 @@ namespace Modules.SceneManagement
                 }
 
                 // 現在のシーンの終了処理を実行.
-                var leaveYield = prev.Instance.Leave().ToObservable().ToYieldInstruction();
+                var leaveYield = prev.Instance.Leave().ToObservable().ToYieldInstruction(false);
 
                 while (!leaveYield.IsDone)
                 {
                     yield return null;
+                }
+
+                if (leaveYield.HasError)
+                {
+                    Debug.LogException(leaveYield.Error);
                 }
 
                 // PlayerPrefsを保存.
@@ -425,11 +435,16 @@ namespace Modules.SceneManagement
 
                 foreach (var unloadScene in unloadScenes)
                 {
-                    var unloadSceneYield = UnloadScene(unloadScene).ToYieldInstruction();
+                    var unloadSceneYield = UnloadScene(unloadScene).ToYieldInstruction(false);
 
                     while (!unloadSceneYield.IsDone)
                     {
                         yield return null;
+                    }
+
+                    if (unloadSceneYield.HasError)
+                    {
+                        Debug.LogException(unloadSceneYield.Error);
                     }
 
                     if (unloadScene.Identifier.HasValue)
@@ -450,7 +465,7 @@ namespace Modules.SceneManagement
 
             if (sceneInfo == null)
             {
-                var loadYield = LoadScene(identifier, mode).ToYieldInstruction();
+                var loadYield = LoadScene(identifier, mode).ToYieldInstruction(false);
 
                 while (!loadYield.IsDone)
                 {
@@ -524,11 +539,16 @@ namespace Modules.SceneManagement
             // 次のシーンの準備処理実行.
             if (currentScene.Instance != null)
             {
-                var prepareYield = currentScene.Instance.Prepare(isSceneBack).ToObservable().ToYieldInstruction();
+                var prepareYield = currentScene.Instance.Prepare(isSceneBack).ToObservable().ToYieldInstruction(false);
 
                 while (!prepareYield.IsDone)
                 {
                     yield return null;
+                }
+
+                if (prepareYield.HasError)
+                {
+                    Debug.LogException(prepareYield.Error);
                 }
             }
 
@@ -545,11 +565,16 @@ namespace Modules.SceneManagement
             // キャッシュ対象でない場合はアンロード.
             if (prevSceneArgument == null || !prevSceneArgument.Cache)
             {
-                var unloadSceneYield = UnloadScene(prev).ToYieldInstruction();
+                var unloadSceneYield = UnloadScene(prev).ToYieldInstruction(false);
 
                 while (!unloadSceneYield.IsDone)
                 {
                     yield return null;
+                }
+
+                if (unloadSceneYield.HasError)
+                {
+                    Debug.LogException(unloadSceneYield.Error);
                 }
             }
 
@@ -557,20 +582,30 @@ namespace Modules.SceneManagement
 
             // メモリ解放.
 
-            var cleanUpYield = CleanUp().ToYieldInstruction();
+            var cleanUpYield = CleanUp().ToYieldInstruction(false);
 
             while (!cleanUpYield.IsDone)
             {
                 yield return null;
             }
 
+            if (cleanUpYield.HasError)
+            {
+                Debug.LogException(cleanUpYield.Error);
+            }
+
             // 外部処理待機.
 
-            var transitionWaitYield = TransitionWait().ToObservable().ToYieldInstruction();
+            var transitionWaitYield = TransitionWait().ToObservable().ToYieldInstruction(false);
 
             while (!transitionWaitYield.IsDone)
             {
                 yield return null;
+            }
+
+            if (transitionWaitYield.HasError)
+            {
+                Debug.LogException(transitionWaitYield.Error);
             }
 
             // シーンを有効化.
@@ -581,11 +616,16 @@ namespace Modules.SceneManagement
 
             // シーン遷移終了.
 
-            var transitionFinishYield = TransitionFinish(currentSceneArgument).ToYieldInstruction();
+            var transitionFinishYield = TransitionFinish(currentSceneArgument).ToYieldInstruction(false);
 
             while (!transitionFinishYield.IsDone)
             {
                 yield return null;
+            }
+
+            if (transitionFinishYield.HasError)
+            {
+                Debug.LogException(transitionFinishYield.Error);
             }
 
             //====== Scene Enter ======
@@ -663,7 +703,7 @@ namespace Modules.SceneManagement
 
             diagnostics.Begin(TimeDiagnostics.Measure.Append);
 
-            var loadYield = LoadScene(identifier.Value, LoadSceneMode.Additive).ToYieldInstruction();
+            var loadYield = LoadScene(identifier.Value, LoadSceneMode.Additive).ToYieldInstruction(false);
 
             while (!loadYield.IsDone)
             {
@@ -833,11 +873,16 @@ namespace Modules.SceneManagement
 
                         foreach (var target in targets)
                         {
-                            var loadSceneYield = target.OnLoadSceneAsObservable().ToObservable().ToYieldInstruction();
+                            var loadSceneYield = target.OnLoadSceneAsObservable().ToObservable().ToYieldInstruction(false);
 
                             while (!loadSceneYield.IsDone)
                             {
                                 yield return null;
+                            }
+
+                            if (loadSceneYield.HasError)
+                            {
+                                Debug.LogException(loadSceneYield.Error);
                             }
                         }
                     }
@@ -848,11 +893,16 @@ namespace Modules.SceneManagement
                 // シーンの初期化処理.
                 if (sceneInstance.Instance != null)
                 {
-                    var initializeYield = sceneInstance.Instance.Initialize().ToObservable().ToYieldInstruction();
+                    var initializeYield = sceneInstance.Instance.Initialize().ToObservable().ToYieldInstruction(false);
 
                     while (!initializeYield.IsDone)
                     {
                         yield return null;
+                    }
+
+                    if (initializeYield.HasError)
+                    {
+                        Debug.LogException(initializeYield.Error);
                     }
                 }
             }
@@ -977,11 +1027,16 @@ namespace Modules.SceneManagement
 
                 foreach (var target in targets)
                 {
-                    var unloadYield = target.OnUnloadSceneAsObservable().ToObservable().ToYieldInstruction();
+                    var unloadYield = target.OnUnloadSceneAsObservable().ToObservable().ToYieldInstruction(false);
 
                     while (!unloadYield.IsDone)
                     {
                         yield return null;
+                    }
+
+                    if (unloadYield.HasError)
+                    {
+                        Debug.LogException(unloadYield.Error);
                     }
                 }
             }
@@ -1090,7 +1145,7 @@ namespace Modules.SceneManagement
         {
             var sw = System.Diagnostics.Stopwatch.StartNew();
 
-            var loadYield = LoadScene(targetScene, LoadSceneMode.Additive).ToYieldInstruction();
+            var loadYield = LoadScene(targetScene, LoadSceneMode.Additive).ToYieldInstruction(false);
 
             while (!loadYield.IsDone)
             {
