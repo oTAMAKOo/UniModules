@@ -4,6 +4,7 @@ using System;
 using System.Collections;
 using System.IO;
 using System.Collections.Generic;
+using System.Text;
 using System.Threading;
 using UniRx;
 using Extensions;
@@ -13,8 +14,7 @@ namespace Modules.Master
 {
     public interface IMaster
     {
-        string Version { get; }
-
+        string LoadVersion();
         bool CheckVersion(string masterVersion);
         void ClearVersion();
 
@@ -34,20 +34,11 @@ namespace Modules.Master
     {
         //----- params -----
 
-        private sealed class Prefs
-        {
-            public string version
-            {
-                get { return SecurePrefs.GetString(string.Format("{0}_VERSION", typeof(TMaster).Name.ToUpper())); }
-                set { SecurePrefs.SetString(string.Format("{0}_VERSION", typeof(TMaster).Name.ToUpper()), value); }
-            }
-        }
+        private const string VersionFileExtension = ".version";
 
         //----- field -----
-
+        
         private Dictionary<TKey, TMasterRecord> records = new Dictionary<TKey, TMasterRecord>();
-
-        private Prefs versionPrefs = new Prefs();
 
         private static TMaster instance = null;
 
@@ -69,9 +60,6 @@ namespace Modules.Master
                 return instance;
             }
         }
-
-        /// <summary> バージョン. </summary>
-        public string Version { get { return versionPrefs.version; } }
 
         //----- method -----
 
@@ -113,6 +101,57 @@ namespace Modules.Master
             return PathUtility.Combine(installDirectory, fileName);
         }
 
+        public string LoadVersion()
+        {
+            var filePath = GetFilePath();
+
+            var versionFilePath = Path.ChangeExtension(filePath, VersionFileExtension);
+
+            var version = string.Empty;
+
+            try
+            {
+                if (File.Exists(versionFilePath))
+                {
+                    var bytes = File.ReadAllBytes(versionFilePath);
+
+                    version = Encoding.UTF8.GetString(bytes);
+                }
+            }
+            catch
+            {
+                version = null;
+
+                if (File.Exists(versionFilePath))
+                {
+                    File.Delete(versionFilePath);
+                }
+            }
+
+            return version;
+        }
+
+        private void UpdateVersion(string newVersion)
+        {
+            var filePath = GetFilePath();
+
+            var versionFilePath = Path.ChangeExtension(filePath, VersionFileExtension);
+
+            try
+            {
+                var bytes = Encoding.UTF8.GetBytes(newVersion);
+
+                File.WriteAllBytes(versionFilePath, bytes);
+            }
+            catch
+            {
+                if (File.Exists(versionFilePath))
+                {
+                    File.Delete(versionFilePath);
+                }
+            }
+        }
+
         public bool CheckVersion(string masterVersion)
         {
             #if UNITY_EDITOR
@@ -123,13 +162,15 @@ namespace Modules.Master
 
             var result = true;
 
+            var version = LoadVersion();
+
             var filePath = GetFilePath();
 
             // ファイルがなかったらバージョン不一致.
             result &= File.Exists(filePath);
 
             // ローカル保存されているバージョンと一致するか.
-            result &= versionPrefs.version == masterVersion;
+            result &= version == masterVersion;
 
             return result;
         }
@@ -143,7 +184,13 @@ namespace Modules.Master
                 File.Delete(filePath);
             }
 
-            versionPrefs.version = string.Empty;
+            var versionFilePath = Path.ChangeExtension(filePath, VersionFileExtension);
+
+            if (File.Exists(versionFilePath))
+            {
+                File.Delete(versionFilePath);
+            }
+            
             records.Clear();
         }
 
@@ -307,14 +354,16 @@ namespace Modules.Master
                 result = false;
             }
 
-            // バージョン情報を更新.
-            versionPrefs.version = result ? masterVersion : string.Empty;
-
             // ファイルが閉じるまで待つ.
             while(FileUtility.IsFileLocked(filePath))
             {
                 yield return null;
             }
+
+            // バージョン情報を更新.
+            var version = result ? masterVersion : string.Empty;
+            
+            UpdateVersion(version);
 
             sw.Stop();
 

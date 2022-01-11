@@ -146,7 +146,7 @@ namespace Modules.Master
 
                     var masterFileName = masterFileNames.GetValueOrDefault(masterType);
 
-                    var localVersion = master.Version;
+                    var localVersion = master.LoadVersion();
 
                     IObservable<Unit> observable = null;
 
