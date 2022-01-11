@@ -400,23 +400,10 @@ namespace Modules
             return true;
         }
 
-        [MenuItem(itemName: CleanerMenu + "Clean Text On", priority = 16)]
-        public static void ToggleTextCleanerAutoMode()
-        {
-            TextComponentCleaner.Prefs.autoClean = !TextComponentCleaner.Prefs.autoClean;
-        }
-
-        [MenuItem(itemName: CleanerMenu + "Clean Text On", validate = true)]
-        public static bool ToggleTextCleanerAutoModeValidate()
-        {
-            UnityEditor.Menu.SetChecked(CleanerMenu + "Clean Text On", TextComponentCleaner.Prefs.autoClean);
-            return true;
-        }
-
         [MenuItem(itemName: CleanerMenu + "Clean ParticleSystem On", priority = 17)]
         public static void ToggleParticleSystemCleanerAutoMode()
         {
-            TextComponentCleaner.Prefs.autoClean = !ParticleComponentCleaner.Prefs.autoClean;
+            ParticleComponentCleaner.Prefs.autoClean = !ParticleComponentCleaner.Prefs.autoClean;
         }
 
         [MenuItem(itemName: CleanerMenu + "Clean ParticleSystem On", validate = true)]
