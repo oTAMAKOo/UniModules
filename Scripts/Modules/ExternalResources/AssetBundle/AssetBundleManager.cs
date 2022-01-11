@@ -695,7 +695,7 @@ namespace Modules.AssetBundles
 
                 if (bytes != null)
                 {
-                    var bundleLoadRequest = AssetBundle.LoadFromMemoryAsync(bytes, assetBundleInfo.CRC);
+                    var bundleLoadRequest = AssetBundle.LoadFromMemoryAsync(bytes);
 
                     while (!bundleLoadRequest.isDone)
                     {
@@ -844,20 +844,29 @@ namespace Modules.AssetBundles
                     .Distinct()
                     .ToHashSet();
 
-                var targets = cacheFiles
+                var deleteFilePaths = cacheFiles
                     .Select(x => PathUtility.ConvertPathSeparator(x))
                     .Where(x => Path.GetExtension(x) == PackageExtension)
                     .Where(x => !managedFiles.Contains(x))
                     .ToArray();
 
-                foreach (var target in targets)
+                foreach (var deleteFilePath in deleteFilePaths)
                 {
-                    if (!File.Exists(target)) { continue; }
+                    if (File.Exists(deleteFilePath))
+                    {
+                        File.SetAttributes(deleteFilePath, FileAttributes.Normal);
+                        File.Delete(deleteFilePath);
+                    }
 
-                    File.SetAttributes(target, FileAttributes.Normal);
-                    File.Delete(target);
+                    var versionFilePath = deleteFilePath + AssetInfoManifest.VersionFileExtension;
 
-                    builder.AppendLine(target);
+                    if (File.Exists(versionFilePath))
+                    {
+                        File.SetAttributes(versionFilePath, FileAttributes.Normal);
+                        File.Delete(versionFilePath);
+                    }
+
+                    builder.AppendLine(deleteFilePath);
                 }
 
                 var deleteDirectories = DirectoryUtility.DeleteEmpty(installDir);

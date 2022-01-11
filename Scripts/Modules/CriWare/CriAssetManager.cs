@@ -368,25 +368,34 @@ namespace Modules.CriWare
                     .Distinct()
                     .ToHashSet();
 
-                var targets = cacheFiles
+                var deleteFilePaths = cacheFiles
                     .Select(x => PathUtility.ConvertPathSeparator(x))
                     .Where(x =>
-                           {
-                               var extension = Path.GetExtension(x);
+                       {
+                           var extension = Path.GetExtension(x);
 
-                               return CriAssetDefinition.AssetAllExtensions.Any(y => y == extension);
-                           })
+                           return CriAssetDefinition.AssetAllExtensions.Any(y => y == extension);
+                       })
                     .Where(x => !managedFiles.Contains(x))
                     .ToArray();
 
-                foreach (var target in targets)
+                foreach (var deleteFilePath in deleteFilePaths)
                 {
-                    if (!File.Exists(target)) { continue; }
+                    if (File.Exists(deleteFilePath))
+                    {
+                        File.SetAttributes(deleteFilePath, FileAttributes.Normal);
+                        File.Delete(deleteFilePath);
+                    }
 
-                    File.SetAttributes(target, FileAttributes.Normal);
-                    File.Delete(target);
+                    var versionFilePath = deleteFilePath + AssetInfoManifest.VersionFileExtension;
 
-                    builder.AppendLine(target);
+                    if (File.Exists(versionFilePath))
+                    {
+                        File.SetAttributes(versionFilePath, FileAttributes.Normal);
+                        File.Delete(versionFilePath);
+                    }
+
+                    builder.AppendLine(deleteFilePath);
                 }
 
                 var deleteDirectorys = DirectoryUtility.DeleteEmpty(installDir);

@@ -157,6 +157,8 @@ namespace Modules.ExternalResource
 
         public const string ManifestFileName = "AssetInfoManifest.asset";
 
+        public const string VersionFileExtension = ".version";
+
         //----- field -----
 
         [SerializeField, ReadOnly]
