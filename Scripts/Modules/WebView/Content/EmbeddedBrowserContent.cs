@@ -1,6 +1,8 @@
 ﻿
 #if ENABLE_EMBEDDEDBROWSER
 
+#if UNITY_EDITOR || UNITY_STANDALONE_WIN || UNITY_STANDALONE_OSX
+
 using UnityEngine;
 using System.Collections.Generic;
 using Cysharp.Threading.Tasks;
@@ -146,5 +148,7 @@ namespace Modules.WebView
         #endif
     }
 }
+
+#endif
 
 #endif

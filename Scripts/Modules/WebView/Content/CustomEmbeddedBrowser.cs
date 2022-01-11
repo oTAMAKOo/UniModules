@@ -1,6 +1,8 @@
 
 #if ENABLE_EMBEDDEDBROWSER
 
+#if UNITY_EDITOR || UNITY_STANDALONE_WIN || UNITY_STANDALONE_OSX
+
 using UniRx;
 using ZenFulcrum.EmbeddedBrowser;
 
@@ -40,5 +42,7 @@ namespace Modules.WebView
         }
     }
 }
+
+#endif
 
 #endif
