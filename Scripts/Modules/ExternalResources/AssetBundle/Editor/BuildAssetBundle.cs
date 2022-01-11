@@ -338,7 +338,10 @@ namespace Modules.AssetBundles.Editor
                     // ビルド前と後で更新日時が変わっていたら更新対象.
                     if (currentLastWriteTime != prevLastWriteTime)
                     {
-                        list.Add(assetInfo);
+                        lock (list)
+                        {
+                            list.Add(assetInfo);
+                        }
                     }
                 });
 

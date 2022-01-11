@@ -316,9 +316,19 @@ namespace Modules.ExternalResource.Editor
         {
             var path = PathUtility.Combine(filePath, RootHashFileName);
 
-            using (var writer = new StreamWriter(path, false))
+            var directory = Path.GetDirectoryName(path);
+
+            if (!Directory.Exists(directory))
             {
-                writer.Write(version);
+                Directory.CreateDirectory(directory);
+            }
+            
+            using (var fs = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.ReadWrite)) 
+            {
+                using (var sw = new StreamWriter(fs, Encoding.UTF8)) 
+                {
+                    sw.Write(version);
+                }
             }
         }
     }
