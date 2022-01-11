@@ -31,7 +31,7 @@ namespace Modules.Devkit.Diagnosis.SendReport
 
         private Dictionary<string, string> reportContents = null;
 
-        private ISendReportBuilder[] sendReportBuilders = null;
+        private ISendReportBuilder sendReportBuilder = null;
 
         private AesCryptoKey aesCryptoKey = null;
 
@@ -53,7 +53,7 @@ namespace Modules.Devkit.Diagnosis.SendReport
 
             reportContents = new Dictionary<string, string>();
 
-            sendReportBuilders = new[] { new DefaultSendReportBuilder(), };
+            sendReportBuilder = new DefaultSendReportBuilder();
 
             initialized = true;
         }
@@ -68,9 +68,9 @@ namespace Modules.Devkit.Diagnosis.SendReport
             this.aesCryptoKey = aesCryptoKey;
         }
 
-        public void SetReportBuilders(ISendReportBuilder[] sendReportBuilders)
+        public void SetReportBuilder(ISendReportBuilder sendReportBuilder)
         {
-            this.sendReportBuilders = sendReportBuilders;
+            this.sendReportBuilder = sendReportBuilder;
         }
 
         public IObservable<Unit> Send(IProgress<float> progressNotifier = null)
@@ -100,10 +100,12 @@ namespace Modules.Devkit.Diagnosis.SendReport
 
             reportContents.Clear();
 
+            var completeMessage = postReportYield.HasError ? postReportYield.Error.Message : postReportYield.Result;
+
             // 終了イベント.
             if (onReportComplete != null)
             {
-                onReportComplete.OnNext(postReportYield.Result);
+                onReportComplete.OnNext(completeMessage);
             }
         }
 
@@ -113,8 +115,10 @@ namespace Modules.Devkit.Diagnosis.SendReport
             {
                 throw new Exception("report url is empty.");
             }
+
+            var reportJson = CreateReportJson();
             
-            var webRequest = UnityWebRequest.Post(reportUrl, CreateReportJson());
+            var webRequest = UnityWebRequest.Post(reportUrl, reportJson);
 
             webRequest.timeout = 30;
 
@@ -172,10 +176,7 @@ namespace Modules.Devkit.Diagnosis.SendReport
 
             //------ ReportContent ------
 
-            foreach (var builder in sendReportBuilders)
-            {
-                builder.Build(screenShotBase64, logData);
-            }
+            sendReportBuilder.Build(screenShotBase64, logData);
         }
 
         private string GetReportTextPostData()

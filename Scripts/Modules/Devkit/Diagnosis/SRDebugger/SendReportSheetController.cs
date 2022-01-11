@@ -27,7 +27,7 @@ namespace Modules.Devkit.Diagnosis.SRDebugger
         //----- field -----
 
         [SerializeField]
-        private Text reportContentText = null;
+        private InputField titleInputField = null;
         [SerializeField]
         private Button sendReportButton = null;
         [SerializeField]
@@ -42,6 +42,8 @@ namespace Modules.Devkit.Diagnosis.SRDebugger
         protected bool initialized = false;
 
         //----- property -----
+
+        public string ReportTitle { get { return titleInputField.text; } }
 
         //----- method -----
 
@@ -58,7 +60,7 @@ namespace Modules.Devkit.Diagnosis.SRDebugger
             {
                 if (visible && gameObject.activeInHierarchy)
                 {
-                    UpdateContents();
+                    UpdateView();
                 }
             };
 
@@ -67,7 +69,11 @@ namespace Modules.Devkit.Diagnosis.SRDebugger
             UpdateView();
 
             sendReportManager.OnRequestReportAsObservable()
-                .Subscribe(_ => UpdateView())
+                .Subscribe(_ =>
+                   {
+                       AddReportTitle();
+                       UpdateView();
+                   })
                 .AddTo(this);
 
             sendReportManager.OnReportCompleteAsObservable()
@@ -95,7 +101,7 @@ namespace Modules.Devkit.Diagnosis.SRDebugger
 
         void OnEnable()
         {
-            UpdateContents();
+            UpdateView();
 
             Observable.NextFrame()
                 .TakeUntilDisable(this)
@@ -108,11 +114,15 @@ namespace Modules.Devkit.Diagnosis.SRDebugger
                 .AddTo(this);
         }
 
-        private void UpdateContents()
+        private void AddReportTitle()
         {
-            SetReportText();
+            var sendReportManager = SendReportManager.Instance;
 
-            UpdateView();
+            var reportTitle = titleInputField.text;
+
+            if (string.IsNullOrEmpty(reportTitle)) { return; }
+
+            sendReportManager.AddReportContent("Title", titleInputField.text);
         }
 
         private IEnumerator SendReport()
@@ -165,18 +175,23 @@ namespace Modules.Devkit.Diagnosis.SRDebugger
 
             SRDebug.Instance.ShowDebugPanel(false);
 
-            if (string.IsNullOrEmpty(errorMessage))
+            using (new DisableStackTraceScope())
             {
-                OnRequestRefreshInputText();
+                if (string.IsNullOrEmpty(errorMessage))
+                {
+                    OnRequestRefreshInputText();
 
-                Debug.Log("Bug report submitted successfully.");
-            }
-            else
-            {
-                Debug.LogErrorFormat("Error sending bug report." + "\n\n" + errorMessage);
+                    Debug.Log("Bug report submitted successfully.");
+                }
+                else
+                {
+                    Debug.LogErrorFormat("Error sending bug report." + "\n\n" + errorMessage);
+                }
             }
 
             sendReportDisposable = null;
+
+            RefreshInputField(titleInputField);
 
             UpdateView();
         }
@@ -201,30 +216,6 @@ namespace Modules.Devkit.Diagnosis.SRDebugger
             yield return sendReportManager.CaptureScreenShot();
 
             SRDebug.Instance.ShowDebugPanel(false);
-        }
-
-        private void SetReportText()
-        {
-            var logTracker = UnityLogTracker.Instance;
-
-            var logs = logTracker.Logs;
-
-            var builder = new StringBuilder();
-
-            foreach (var log in logs)
-            {
-                builder.AppendLine(log.message).AppendLine();
-            }
-
-            var reportText = builder.ToString();
-
-            // Unityは15000文字くらいまでしか表示対応していない.
-            if (14000 < reportText.Length)
-            {
-                reportText = reportText.SafeSubstring(0, 14000) + "<message truncated>";
-            }
-
-            reportContentText.text = reportText;
         }
 
         /// <summary> InputFieldをリフレッシュ </summary>
