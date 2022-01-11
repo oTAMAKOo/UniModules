@@ -169,18 +169,28 @@ namespace Modules.SceneManagement
                 yield break;
             }
 
-            var registerYield = OnRegisterCurrentScene(currentScene).ToYieldInstruction();
+            var registerYield = OnRegisterCurrentScene(currentScene).ToYieldInstruction(false);
 
             while (!registerYield.IsDone)
             {
                 yield return null;
             }
 
-            var initializeYield = currentScene.Instance.Initialize().ToObservable().ToYieldInstruction();
+            if (registerYield.HasError)
+            {
+                Debug.LogException(registerYield.Error);
+            }
+
+            var initializeYield = currentScene.Instance.Initialize().ToObservable().ToYieldInstruction(false);
 
             while (!initializeYield.IsDone)
             {
                 yield return null;
+            }
+
+            if (initializeYield.HasError)
+            {
+                Debug.LogException(initializeYield.Error);
             }
 
             if (onPrepare != null)
@@ -188,11 +198,16 @@ namespace Modules.SceneManagement
                 onPrepare.OnNext(sceneArgument);
             }
 
-            var prepareYield = currentScene.Instance.Prepare(false).ToObservable().ToYieldInstruction();
+            var prepareYield = currentScene.Instance.Prepare(false).ToObservable().ToYieldInstruction(false);
 
             while (!prepareYield.IsDone)
             {
                 yield return null;
+            }
+
+            if (prepareYield.HasError)
+            {
+                Debug.LogException(prepareYield.Error);
             }
 
             if (onPrepareComplete != null)
