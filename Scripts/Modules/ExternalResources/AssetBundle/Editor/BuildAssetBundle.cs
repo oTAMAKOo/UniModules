@@ -68,7 +68,7 @@ namespace Modules.AssetBundles.Editor
 
             foreach (var assetInfo in assetInfos)
             {
-                if (assetInfo.AssetBundle == null){ continue; }
+                if (!assetInfo.IsAssetBundle){ continue; }
 
                 var dependencies = assetBundleManifest.GetDirectDependencies(assetInfo.AssetBundle.AssetBundleName);
 

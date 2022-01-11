@@ -92,10 +92,13 @@ namespace Modules.ExternalResource.Editor
 
                 var filePath = PathUtility.Combine(exportPath, assetBundleName);
 
-                // CRC設定.
-                BuildPipeline.GetCRCForAssetBundle(filePath, out var crc);
+                // CRC.
+                BuildPipeline.GetCRCForAssetBundle(filePath, out var assetBundleCrc);
 
-                assetInfo.AssetBundle.SetCRC(crc);
+                assetInfo.AssetBundle.SetCRC(assetBundleCrc);
+
+                // Hash.
+                BuildPipeline.GetHashForAssetBundle(filePath, out var assetBundleHash);
 
                 // ファイルハッシュ・ファイルサイズ設定.
 
@@ -103,7 +106,14 @@ namespace Modules.ExternalResource.Editor
 
                 var task = Task.Run(() =>
                 {
-                    SetFileInfo(assetInfo, packageFilePath);
+                    if (!File.Exists(packageFilePath)) { return; }
+            
+                    var fileInfo = new FileInfo(packageFilePath);
+
+                    var size = fileInfo.Exists ? fileInfo.Length : -1;
+                    var crc = FileUtility.GetCRC(packageFilePath);
+
+                    assetInfo.SetFileInfo(size, crc, assetBundleHash.ToString());
                 });
 
                 tasks.Add(assetBundleName, task);
@@ -203,7 +213,15 @@ namespace Modules.ExternalResource.Editor
 
                     var task = Task.Run(() =>
                     {
-                        SetFileInfo(assetInfo, filePath);
+                        if (!File.Exists(filePath)) { return; }
+            
+                        var fileInfo = new FileInfo(filePath);
+
+                        var size = fileInfo.Exists ? fileInfo.Length : -1;
+                        var crc = FileUtility.GetCRC(filePath);
+                        var hash = FileUtility.GetHash(filePath);
+
+                        assetInfo.SetFileInfo(size, crc, hash);
                     });
                     
                     tasks.Add(task);
@@ -222,19 +240,6 @@ namespace Modules.ExternalResource.Editor
         }
 
         #endif
-
-        private static void SetFileInfo(AssetInfo assetInfo, string filePath)
-        {
-            if (!File.Exists(filePath)) { return; }
-            
-            var fileInfo = new FileInfo(filePath);
-
-            var size = fileInfo.Exists ? fileInfo.Length : -1;
-            var crc = FileUtility.GetCRC(filePath);
-            var hash = FileUtility.GetHash(filePath);
-
-            assetInfo.SetFileInfo(size, crc, hash);
-        }
 
         private static string GetManifestPath(string externalResourcesPath)
         {
