@@ -125,8 +125,6 @@ namespace Modules.Devkit.Diagnosis.SRDebugger
                 if (logInfo.Condition.StartsWith(ignore)) { return; }
             }
             
-            //-----------------------------------------------------------------------------------
-
             if(currentLogType.HasValue)
             {
                 var priority = LogPriority.IndexOf(x => x == logInfo.Type);
