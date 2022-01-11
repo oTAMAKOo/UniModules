@@ -10,6 +10,7 @@ using UnityEditor;
 
 namespace Modules.UI
 {
+    [RequireComponent(typeof(CanvasRenderer))]
     public sealed class GraphicCast : Graphic
     {
         //----- params -----
