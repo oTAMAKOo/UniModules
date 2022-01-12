@@ -71,7 +71,7 @@ namespace Modules.ExternalResource.Editor
                 .Select(x => PathUtility.ConvertPathSeparator(x))
                 .ToArray();
 
-            using (new DisableStackTraceScope())
+            using (new DisableStackTraceScope(LogType.Log))
             {
                 AssetBundle.UnloadAllAssetBundles(true);
 
@@ -320,6 +320,11 @@ namespace Modules.ExternalResource.Editor
         /// <summary> ファイルをS3にアップロード </summary>
         private async Task UploadPackagesToS3(FileInfo[] fileInfos, S3FileInfo[] s3FileInfos)
         {
+            var isBatchMode = Application.isBatchMode;
+
+            var count = 0;
+            var logBuilder = new StringBuilder();
+
             var assetInfoManifestFilePath = GetAssetInfoManifestFilePath(files);
 
             var uploadTargets = new List<FileInfo>();
@@ -340,21 +345,11 @@ namespace Modules.ExternalResource.Editor
                 uploadTargets.Add(fileInfo);
             }
 
-            // 重複除外・パスが短い順にソート.
-
-            Func<string, int> sortFunc = x =>
-            {
-                var path = PathUtility.ConvertPathSeparator(x);
-
-                var separatorCount = path.Split(PathUtility.PathSeparator).Length;
-
-                return separatorCount;
-            };
+            // 重複除外・パス順にソート.
 
             uploadTargets = uploadTargets
                 .Distinct()
-                .OrderBy(x => sortFunc.Invoke(x.ObjectPath))
-                .ThenBy(x => x.ObjectPath.Length)
+                .OrderBy(x => x.ObjectPath, new NaturalComparer())
                 .ToList();
 
             // アップロード.
@@ -388,30 +383,45 @@ namespace Modules.ExternalResource.Editor
                         }
 
                         await s3Client.Upload(fileTransferUtilityRequest);
+                        
+                        if (isBatchMode)
+                        {
+                            Debug.LogFormat(uploadTarget.FilePath);
+                        }
+                        else
+                        {
+                            lock (logBuilder)
+                            {
+                                logBuilder.AppendLine(uploadTarget.FilePath);
+
+                                count++;
+
+                                if (50 < count)
+                                {
+                                    Debug.Log(logBuilder.ToString());
+ 
+                                    logBuilder.Clear();
+                                    count = 0;
+                                }
+                            }
+                        }
                     });
 
                     tasks.Add(task);
                 }
 
-                await Task.WhenAll(tasks.ToArray());
+                using (new DisableStackTraceScope(LogType.Log))
+                {
+                    await Task.WhenAll(tasks.ToArray());
+                }
             }
 
-            // ログ.
-
-            if (uploadTargets.Any())
+            if (isBatchMode)
             {
-                var uploadObjectPaths = uploadTargets.Select(x => x.ObjectPath).ToArray();
-
-                Action<int, int, string[]> logOutput = (index, num, targets) =>
+                if (count != 0)
                 {
-                    var builder = new StringBuilder();
-
-                    targets.ForEach(x => builder.AppendLine(x));
-
-                    Debug.LogFormat("Uploaded S3 objects. [{0}/{1}]\n{2}", index, num, builder.ToString());
-                };
-
-                ChunkAction(uploadObjectPaths, logOutput);
+                    Debug.Log(logBuilder.ToString());
+                }
             }
         }
 
@@ -447,29 +457,18 @@ namespace Modules.ExternalResource.Editor
 
             if (deleteObjectPaths.Any())
             {
-                Action<int, int, S3FileInfo[]> logOutput = (index, num, targets) =>
+                var chunk = deleteTargets.Chunk(100).ToArray();
+
+                var num = chunk.Length;
+
+                for (var i = 0; i < num; i++)
                 {
                     var builder = new StringBuilder();
 
-                    targets.ForEach(x => builder.AppendLine(x.ObjectPath));
+                    chunk[i].ForEach(x => builder.AppendLine(x.ObjectPath));
 
-                    Debug.LogFormat("Delete S3 objects. [{0}/{1}]\n{2}", index, num, builder.ToString());
-                };
-
-                ChunkAction(deleteTargets, logOutput);
-            }
-        }
-
-        private void ChunkAction<T>(IEnumerable<T> targets, Action<int, int, T[]> action)
-        {
-            // 100要素ずつに分割.
-            var chunk = targets.Chunk(100).ToArray();
-
-            var num = chunk.Length;
-
-            for (var i = 0; i < num; i++)
-            {
-                action.Invoke(i + 1, num, chunk[i].ToArray());
+                    Debug.LogFormat("Delete S3 objects. [{0}/{1}]\n{2}", i + 1, num, builder.ToString());
+                }
             }
         }
 

@@ -4,6 +4,7 @@ using System;
 using System.Linq;
 using System.Collections.Generic;
 using System.IO;
+using System.Text;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
 using Extensions;
@@ -95,9 +96,14 @@ namespace Modules.AssetBundles.Editor
 
         public static async Task BuildAllAssetBundlePackage(string exportPath, string assetBundlePath, AssetInfo[] assetInfos, AssetInfo[] updatedAssetInfos, string aesKey, string aesIv)
         {
+            var isBatchMode = Application.isBatchMode;
+
             var cryptoKey = new AesCryptoKey(aesKey, aesIv);
 
             var tasks = new List<Task>();
+
+            var count = 0;
+            var logBuilder = new StringBuilder();
 
             foreach (var info in assetInfos)
             {
@@ -107,7 +113,36 @@ namespace Modules.AssetBundles.Editor
 
                 var createPackage = updatedAssetInfos.Contains(assetInfo);
 
-                var task = CreateBuildTask(exportPath, assetBundlePath, assetInfo, createPackage, cryptoKey);
+                var assetBundleName = assetInfo.AssetBundle.AssetBundleName;
+
+                var buildTask = CreateBuildTask(exportPath, assetBundlePath, assetInfo, createPackage, cryptoKey);
+
+                var task = Task.Run(async () =>
+                {
+                    await buildTask;
+
+                    if (isBatchMode)
+                    {
+                        Debug.LogFormat(assetBundleName);
+                    }
+                    else
+                    {
+                        lock (logBuilder)
+                        {
+                            logBuilder.AppendLine(assetBundleName);
+
+                            count++;
+
+                            if (50 < count)
+                            {
+                                Debug.Log(logBuilder.ToString());
+ 
+                                logBuilder.Clear();
+                                count = 0;
+                            }
+                        }
+                    }
+                });
 
                 if (task != null)
                 {
@@ -115,7 +150,18 @@ namespace Modules.AssetBundles.Editor
                 }
             }
 
-            await Task.WhenAll(tasks);
+            using (new DisableStackTraceScope(LogType.Log))
+            {
+                await Task.WhenAll(tasks);
+            }
+
+            if (isBatchMode)
+            {
+                if (count != 0)
+                {
+                    Debug.Log(logBuilder.ToString());
+                }
+            }
         }
 
         private static Task CreateBuildTask(string exportPath, string assetBundlePath, AssetInfo assetInfo, bool createPackage, AesCryptoKey cryptoKey)
@@ -145,7 +191,6 @@ namespace Modules.AssetBundles.Editor
 
                     // 出力先にパッケージファイルをコピー.
                     await ExportPackage(exportPath, assetBundleFilePath, assetInfo);
-
                 }
                 catch (Exception exception)
                 {

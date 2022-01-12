@@ -4,6 +4,7 @@ using UnityEditor;
 using System;
 using System.IO;
 using System.Linq;
+using System.Collections.Generic;
 using System.Text;
 using System.Threading.Tasks;
 using Extensions;
@@ -29,6 +30,31 @@ namespace Modules.ExternalResource.Editor
         public const string RootHashFileName = "RootHash.txt";
 
         private static readonly string[] IgnoreDependentCheckExtensions = { ".cs" };
+
+        private sealed class BuildLogScope : Scope
+        {
+            private string processName = null;
+            private StringBuilder logBuilder = null;
+            private System.Diagnostics.Stopwatch stopwatch = null;
+
+            public BuildLogScope(StringBuilder logBuilder, System.Diagnostics.Stopwatch stopwatch, string processName)
+            {
+                this.logBuilder = logBuilder;
+                this.stopwatch = stopwatch;
+                this.processName = processName;
+
+                UnityConsole.Event(ExternalResources.ConsoleEventName, ExternalResources.ConsoleEventColor, processName);
+            }
+
+            protected override void CloseScope()
+            {
+                stopwatch.Stop();
+                
+                logBuilder.AppendFormat("{0} : ({1:F1}sec)", processName, stopwatch.Elapsed.TotalSeconds).AppendLine();
+
+                stopwatch.Restart();
+            }
+        }
 
         //----- field -----
 
@@ -79,23 +105,28 @@ namespace Modules.ExternalResource.Editor
 
                     //------ アセットバンドル名を設定------
 
-                    assetManagement.ApplyAllAssetBundleName();
-
-                    AddBuildTimeLog(logBuilder, sw, "ApplyAllAssetBundleName");
+                    using (new BuildLogScope(logBuilder, sw, "ApplyAllAssetBundleName"))
+                    {
+                        assetManagement.ApplyAllAssetBundleName();
+                    }
 
                     //------ キャッシュ済みアセットバンドルの最終更新日時取得 ------
 
-                    var cachedFileLastWriteTimeTable = await BuildAssetBundle.GetCachedFileLastWriteTimeTable();
+                    Dictionary<string, DateTime> cachedFileLastWriteTimeTable = null;
 
-                    AddBuildTimeLog(logBuilder, sw, "GetCachedFileLastWriteTimeTable");
-                    
+                    using (new BuildLogScope(logBuilder, sw, "GetCachedFileLastWriteTimeTable"))
+                    {
+                        cachedFileLastWriteTimeTable = await BuildAssetBundle.GetCachedFileLastWriteTimeTable();
+                    }
+
                     //------ CRIアセットを生成 ------
 
                     #if ENABLE_CRIWARE_ADX || ENABLE_CRIWARE_SOFDEC
 
-                    CriAssetGenerator.Generate(exportPath, assetInfoManifest);
-
-                    AddBuildTimeLog(logBuilder, sw, "GenerateCriAsset");
+                    using (new BuildLogScope(logBuilder, sw, "GenerateCriAsset"))
+                    {
+                        CriAssetGenerator.Generate(exportPath, assetInfoManifest);
+                    }
 
                     #endif
 
@@ -103,82 +134,97 @@ namespace Modules.ExternalResource.Editor
 
                     var assetBundleManifest = BuildAssetBundle.BuildAllAssetBundles();
 
-                    BuildAssetBundle.CreateTemporarilyAssetBundleManifestFile();
-
-                    AddBuildTimeLog(logBuilder, sw, "BuildAllAssetBundles");
+                    using (new BuildLogScope(logBuilder, sw, "BuildAllAssetBundles"))
+                    {
+                        BuildAssetBundle.CreateTemporarilyAssetBundleManifestFile();
+                    }
 
                     //------ 不要になった古いAssetBundle削除 ------
 
-                    BuildAssetBundle.CleanUnUseAssetBundleFiles();
-
-                    AddBuildTimeLog(logBuilder, sw, "CleanUnUseAssetBundleFiles");
+                    using (new BuildLogScope(logBuilder, sw, "CleanUnUseAssetBundleFiles"))
+                    {
+                        BuildAssetBundle.CleanUnUseAssetBundleFiles();
+                    }
 
                     //------ AssetBundleファイルをパッケージ化 ------
 
                     // 暗号化鍵情報の書き込み.
 
-                    BuildAssetBundlePackage.CreateCryptoFile(assetBundlePath, cryptoKey, cryptoIv);
+                    using (new BuildLogScope(logBuilder, sw, "CreateCryptoFile"))
+                    {
+                        BuildAssetBundlePackage.CreateCryptoFile(assetBundlePath, cryptoKey, cryptoIv);
+                    }
 
                     // 更新対象のアセット情報取得.
 
-                    var assetInfos = BuildAssetBundle.GetAllTargetAssetInfo(assetInfoManifest);
-
+                    var assetInfos = new AssetInfo[0];
                     var updatedAssetInfos = new AssetInfo[0];
 
-                    // 暗号化キーが変わっていたら全て更新対象.
-                    if (cryptoChanged)
+                    using (new BuildLogScope(logBuilder, sw, "GetUpdateTargetAssetInfo"))
                     {
-                        updatedAssetInfos = assetInfos;
-                    }
-                    // 差分がある対象だけ抽出.
-                    else
-                    {
-                        updatedAssetInfos = await BuildAssetBundle.GetUpdateTargetAssetInfo(assetInfoManifest, cachedFileLastWriteTimeTable);
+                        assetInfos = BuildAssetBundle.GetAllTargetAssetInfo(assetInfoManifest);
+
+                        // 暗号化キーが変わっていたら全て更新対象.
+                        if (cryptoChanged)
+                        {
+                            updatedAssetInfos = assetInfos;
+                        }
+                        // 差分がある対象だけ抽出.
+                        else
+                        {
+                            updatedAssetInfos = await BuildAssetBundle.GetUpdateTargetAssetInfo(assetInfoManifest, cachedFileLastWriteTimeTable);
+                        }
                     }
 
                     // パッケージファイル作成.
 
-                    await BuildAssetBundlePackage.BuildAllAssetBundlePackage(exportPath, assetBundlePath, assetInfos, updatedAssetInfos, cryptoKey, cryptoIv);
-
-                    AddBuildTimeLog(logBuilder, sw, "BuildPackage");
+                    using (new BuildLogScope(logBuilder, sw, "BuildPackage"))
+                    {
+                        await BuildAssetBundlePackage.BuildAllAssetBundlePackage(exportPath, assetBundlePath, assetInfos, updatedAssetInfos, cryptoKey, cryptoIv);
+                    }
 
                     //------ ビルド成果物の情報をAssetInfoManifestに書き込み ------
 
-                    await AssetInfoManifestGenerator.SetAssetBundleFileInfo(assetBundlePath, assetInfoManifest);
+                    using (new BuildLogScope(logBuilder, sw, "AssetInfoManifest : SetAssetBundleFileInfo"))
+                    {
+                        await AssetInfoManifestGenerator.SetAssetBundleFileInfo(assetBundlePath, assetInfoManifest);
 
-                    #if ENABLE_CRIWARE_ADX || ENABLE_CRIWARE_SOFDEC
+                        #if ENABLE_CRIWARE_ADX || ENABLE_CRIWARE_SOFDEC
 
-                    await AssetInfoManifestGenerator.SetCriAssetFileInfo(exportPath, assetInfoManifest);
+                        await AssetInfoManifestGenerator.SetCriAssetFileInfo(exportPath, assetInfoManifest);
 
-                    #endif
-
-                    AddBuildTimeLog(logBuilder, sw, "AssetInfoManifest : SetAssetBundleFileInfo");
+                        #endif
+                    }
 
                     //------ アセットバンドルの参照情報をAssetInfoManifestに書き込み ------
 
-                    BuildAssetBundle.SetDependencies(assetInfoManifest, assetBundleManifest);
-
-                    AddBuildTimeLog(logBuilder, sw, "AssetInfoManifest : SetAssetBundleDependencies");
+                    using (new BuildLogScope(logBuilder, sw, "AssetInfoManifest : SetAssetBundleDependencies"))
+                    {
+                        BuildAssetBundle.SetDependencies(assetInfoManifest, assetBundleManifest);
+                    }
 
                     //------ バージョンハッシュ情報をAssetInfoManifestに書き込み ------
 
-                    BuildAssetBundle.SetAssetInfoHash(assetInfoManifest);
-
-                    AddBuildTimeLog(logBuilder, sw, "AssetInfoManifest : SetAssetInfoHash");
+                    using (new BuildLogScope(logBuilder, sw, "AssetInfoManifest : SetAssetInfoHash"))
+                    {
+                        BuildAssetBundle.SetAssetInfoHash(assetInfoManifest);
+                    }
 
                     //------ 再度AssetInfoManifestだけビルドを実行 ------
 
-                    BuildAssetBundle.BuildAssetInfoManifest();
+                    using (new BuildLogScope(logBuilder, sw, "Rebuild AssetInfoManifest"))
+                    {
+                        BuildAssetBundle.BuildAssetInfoManifest();
 
-                    BuildAssetBundle.RestoreAssetBundleManifestFile();
-
-                    AddBuildTimeLog(logBuilder, sw, "Rebuild AssetInfoManifest");
+                        BuildAssetBundle.RestoreAssetBundleManifestFile();
+                    }
 
                     //------ AssetInfoManifestファイルをパッケージ化 ------
 
-                    await BuildAssetBundlePackage.BuildAssetInfoManifestPackage(exportPath, assetBundlePath, cryptoKey, cryptoIv);
-
-                    AddBuildTimeLog(logBuilder, sw, "BuildPackage AssetInfoManifest");
+                    using (new BuildLogScope(logBuilder, sw, "BuildPackage AssetInfoManifest"))
+                    {
+                        await BuildAssetBundlePackage.BuildAssetInfoManifestPackage(exportPath, assetBundlePath, cryptoKey, cryptoIv);
+                    }
                 }
 
                 versionHash = assetInfoManifest.VersionHash;
@@ -220,15 +266,6 @@ namespace Modules.ExternalResource.Editor
             }
 
             return versionHash;
-        }
-
-        private static void AddBuildTimeLog(StringBuilder logBuilder, System.Diagnostics.Stopwatch sw, string text)
-        {
-            sw.Stop();
-
-            logBuilder.AppendFormat("{0} : ({1:F1}sec)", text, sw.Elapsed.TotalSeconds).AppendLine();
-
-            sw.Restart();
         }
 
         public static string GetExportPath()
