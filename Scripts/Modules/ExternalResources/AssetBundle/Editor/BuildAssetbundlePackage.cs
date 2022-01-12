@@ -133,7 +133,7 @@ namespace Modules.AssetBundles.Editor
 
                             count++;
 
-                            if (50 < count)
+                            if (100 < count)
                             {
                                 Debug.Log(logBuilder.ToString());
  
@@ -153,13 +153,13 @@ namespace Modules.AssetBundles.Editor
             using (new DisableStackTraceScope(LogType.Log))
             {
                 await Task.WhenAll(tasks);
-            }
 
-            if (isBatchMode)
-            {
-                if (count != 0)
+                if (isBatchMode)
                 {
-                    Debug.Log(logBuilder.ToString());
+                    if (count != 0)
+                    {
+                        Debug.Log(logBuilder.ToString());
+                    }
                 }
             }
         }

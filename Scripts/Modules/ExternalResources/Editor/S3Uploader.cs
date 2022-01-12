@@ -320,11 +320,6 @@ namespace Modules.ExternalResource.Editor
         /// <summary> ファイルをS3にアップロード </summary>
         private async Task UploadPackagesToS3(FileInfo[] fileInfos, S3FileInfo[] s3FileInfos)
         {
-            var isBatchMode = Application.isBatchMode;
-
-            var count = 0;
-            var logBuilder = new StringBuilder();
-
             var assetInfoManifestFilePath = GetAssetInfoManifestFilePath(files);
 
             var uploadTargets = new List<FileInfo>();
@@ -356,71 +351,76 @@ namespace Modules.ExternalResource.Editor
 
             if (uploadTargets.Any())
             {
-                Debug.LogFormat("Uploading {0} files to s3 {1}", uploadTargets.Count, bucketFolder);
+                var isBatchMode = Application.isBatchMode;
 
-                // ファイルをアップロード.
-
-                const long PartSize = 5 * 1024 * 1024; // 5MB単位.
-
-                var tasks = new List<Task>();
-
-                foreach (var uploadTarget in uploadTargets)
-                {
-                    var task = Task.Run(async () =>
-                    {
-                        var fileTransferUtilityRequest = new TransferUtilityUploadRequest
-                        {
-                            FilePath = uploadTarget.FilePath,
-                            StorageClass = S3StorageClass.StandardInfrequentAccess,
-                            PartSize = PartSize,
-                            Key = uploadTarget.ObjectPath,
-                            CannedACL = UploadFileCannedACL,
-                        };
-
-                        if (!string.IsNullOrEmpty(uploadTarget.Hash))
-                        {
-                            fileTransferUtilityRequest.Metadata.Add(MetaDataHashKey, uploadTarget.Hash);
-                        }
-
-                        await s3Client.Upload(fileTransferUtilityRequest);
-                        
-                        if (isBatchMode)
-                        {
-                            Debug.LogFormat(uploadTarget.FilePath);
-                        }
-                        else
-                        {
-                            lock (logBuilder)
-                            {
-                                logBuilder.AppendLine(uploadTarget.FilePath);
-
-                                count++;
-
-                                if (50 < count)
-                                {
-                                    Debug.Log(logBuilder.ToString());
- 
-                                    logBuilder.Clear();
-                                    count = 0;
-                                }
-                            }
-                        }
-                    });
-
-                    tasks.Add(task);
-                }
+                var count = 0;
+                var logBuilder = new StringBuilder();
 
                 using (new DisableStackTraceScope(LogType.Log))
                 {
+                    Debug.LogFormat("Uploading {0} files to s3 {1}", uploadTargets.Count, bucketFolder);
+
+                    // ファイルをアップロード.
+
+                    const long PartSize = 5 * 1024 * 1024; // 5MB単位.
+
+                    var tasks = new List<Task>();
+
+                    foreach (var uploadTarget in uploadTargets)
+                    {
+                        var task = Task.Run(async () =>
+                        {
+                            var fileTransferUtilityRequest = new TransferUtilityUploadRequest
+                            {
+                                FilePath = uploadTarget.FilePath,
+                                StorageClass = S3StorageClass.StandardInfrequentAccess,
+                                PartSize = PartSize,
+                                Key = uploadTarget.ObjectPath,
+                                CannedACL = UploadFileCannedACL,
+                            };
+
+                            if (!string.IsNullOrEmpty(uploadTarget.Hash))
+                            {
+                                fileTransferUtilityRequest.Metadata.Add(MetaDataHashKey, uploadTarget.Hash);
+                            }
+
+                            await s3Client.Upload(fileTransferUtilityRequest);
+                            
+                            if (isBatchMode)
+                            {
+                                Debug.LogFormat(uploadTarget.FilePath);
+                            }
+                            else
+                            {
+                                lock (logBuilder)
+                                {
+                                    logBuilder.AppendLine(uploadTarget.FilePath);
+
+                                    count++;
+
+                                    if (100 < count)
+                                    {
+                                        Debug.Log(logBuilder.ToString());
+     
+                                        logBuilder.Clear();
+                                        count = 0;
+                                    }
+                                }
+                            }
+                        });
+
+                        tasks.Add(task);
+                    }
+                    
                     await Task.WhenAll(tasks.ToArray());
                 }
-            }
 
-            if (isBatchMode)
-            {
-                if (count != 0)
+                if (isBatchMode)
                 {
-                    Debug.Log(logBuilder.ToString());
+                    if (count != 0)
+                    {
+                        Debug.Log(logBuilder.ToString());
+                    }
                 }
             }
         }
