@@ -154,12 +154,9 @@ namespace Modules.AssetBundles.Editor
             {
                 await Task.WhenAll(tasks);
 
-                if (isBatchMode)
+                if (!isBatchMode && count != 0)
                 {
-                    if (count != 0)
-                    {
-                        Debug.Log(logBuilder.ToString());
-                    }
+                    Debug.Log(logBuilder.ToString());
                 }
             }
         }
