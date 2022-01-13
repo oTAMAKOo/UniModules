@@ -612,8 +612,13 @@ namespace Modules.AssetBundles
                 }
 
                 var loadYield = loader
-                    .SelectMany(x => x.LoadAssetAsync(assetPath, typeof(T)).AsAsyncOperationObservable())
-                    .Select(x => x.asset as T)
+                    .SelectMany(x =>
+                        {
+                            return x != null ?
+                                   x.LoadAssetAsync(assetPath, typeof(T)).AsAsyncOperationObservable() : 
+                                   Observable.Return<AssetBundleRequest>(null);
+                        })
+                    .Select(x => x != null ? x.asset as T : null)
                     .ToYieldInstruction(false);
 
                 while (!loadYield.IsDone)
@@ -652,38 +657,51 @@ namespace Modules.AssetBundles
             var bytes = new byte[0];
             var error = string.Empty;
             
-            try
+            Func<byte[]> loadCacheFile = () =>
             {
-                // 読み込み.
-
-                using (var fileStream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+                try
                 {
-                    bytes = new byte[fileStream.Length];
+                    var cryptoKey = GetCryptoKey();
 
-                    fileStream.Read(bytes, 0, bytes.Length);
+                    using (var fileStream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+                    {
+                        bytes = new byte[fileStream.Length];
+
+                        fileStream.Read(bytes, 0, bytes.Length);
+                    }
+
+                    // 復号化.
+                    bytes = bytes.Decrypt(cryptoKey);
+                }
+                catch (Exception e)
+                {
+                    error = e.Message;
                 }
 
-                // 復号化.
+                return bytes;
+            };
 
-                var cryptoKey = GetCryptoKey();
+            // ファイルの読み込みと復号化をスレッドプールで実行.
+            var loadYield = Observable.Start(() => loadCacheFile()).ObserveOnMainThread().ToYieldInstruction(false);
 
-                bytes = bytes.Decrypt(cryptoKey);
-            }
-            catch (Exception e)
+            while (!loadYield.IsDone)
             {
-                error = e.Message;
+                yield return null;
             }
 
-            if (bytes != null)
+            if (loadYield.HasResult)
             {
-                var bundleLoadRequest = AssetBundle.LoadFromMemoryAsync(bytes);
-
-                while (!bundleLoadRequest.isDone)
+                if (bytes != null)
                 {
-                    yield return null;
-                }
+                    var bundleLoadRequest = AssetBundle.LoadFromMemoryAsync(bytes);
 
-                assetBundle = bundleLoadRequest.assetBundle;
+                    while (!bundleLoadRequest.isDone)
+                    {
+                        yield return null;
+                    }
+
+                    assetBundle = bundleLoadRequest.assetBundle;
+                }
             }
 
             // 読み込めなかった時はファイルを削除して次回読み込み時にダウンロードし直す.
