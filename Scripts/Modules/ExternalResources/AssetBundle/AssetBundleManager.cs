@@ -613,6 +613,7 @@ namespace Modules.AssetBundles
 
                 var loadYield = loader
                     .SelectMany(x => x.LoadAssetAsync(assetPath, typeof(T)).AsAsyncOperationObservable())
+                    .ObserveOnMainThread()
                     .Select(x =>
                         {
                             var asset = x.asset as T;
@@ -629,7 +630,7 @@ namespace Modules.AssetBundles
 
                             return asset;
                         })
-                    .ToYieldInstruction();
+                    .ToYieldInstruction(false);
 
                 while (!loadYield.IsDone)
                 {
