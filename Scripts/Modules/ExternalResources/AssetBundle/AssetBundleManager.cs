@@ -613,23 +613,7 @@ namespace Modules.AssetBundles
 
                 var loadYield = loader
                     .SelectMany(x => x.LoadAssetAsync(assetPath, typeof(T)).AsAsyncOperationObservable())
-                    .ObserveOnMainThread()
-                    .Select(x =>
-                        {
-                            var asset = x.asset as T;
-
-                            if (asset == null)
-                            {
-                                Debug.LogErrorFormat("[AssetBundle Load Error]\nAssetBundleName = {0}\nAssetPath = {1}", assetBundleName, assetPath);
-                            }
-
-                            if (autoUnLoad)
-                            {
-                                UnloadAsset(assetBundleName);
-                            }
-
-                            return asset;
-                        })
+                    .Select(x => x.asset as T)
                     .ToYieldInstruction(false);
 
                 while (!loadYield.IsDone)
@@ -640,6 +624,16 @@ namespace Modules.AssetBundles
                 if (loadYield.HasResult && !loadYield.HasError && !loadYield.IsCanceled)
                 {
                     result = loadYield.Result;
+
+                    if (result == null)
+                    {
+                        Debug.LogErrorFormat("[AssetBundle Load Error]\nAssetBundleName = {0}\nAssetPath = {1}", assetBundleName, assetPath);
+                    }
+                }
+
+                if (autoUnLoad)
+                {
+                    UnloadAsset(assetBundleName);
                 }
             }
 
@@ -655,56 +649,41 @@ namespace Modules.AssetBundles
             var assetBundleInfo = assetInfo.AssetBundle;
             var assetBundleName = assetBundleInfo.AssetBundleName;
 
-            var cryptoKey = GetCryptoKey();
-
-            Func<byte[]> loadCacheFile = () =>
+            var bytes = new byte[0];
+            var error = string.Empty;
+            
+            try
             {
-                var bytes = new byte[0];
+                // 読み込み.
 
-                try
+                using (var fileStream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
                 {
-                    using (var fileStream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
-                    {
-                        bytes = new byte[fileStream.Length];
+                    bytes = new byte[fileStream.Length];
 
-                        fileStream.Read(bytes, 0, bytes.Length);
-                    }
-
-                    // 復号化.
-                    bytes = bytes.Decrypt(cryptoKey);
-                }
-                catch (Exception e)
-                {
-                    Debug.LogException(e);
-                    throw;
+                    fileStream.Read(bytes, 0, bytes.Length);
                 }
 
-                return bytes;
-            };
+                // 復号化.
 
-            // ファイルの読み込みと復号化をスレッドプールで実行.
-            var loadYield = Observable.Start(() => loadCacheFile()).ObserveOnMainThread().ToYieldInstruction(false);
+                var cryptoKey = GetCryptoKey();
 
-            while (!loadYield.IsDone)
+                bytes = bytes.Decrypt(cryptoKey);
+            }
+            catch (Exception e)
             {
-                yield return null;
+                error = e.Message;
             }
 
-            if (loadYield.HasResult)
+            if (bytes != null)
             {
-                var bytes = loadYield.Result;
+                var bundleLoadRequest = AssetBundle.LoadFromMemoryAsync(bytes);
 
-                if (bytes != null)
+                while (!bundleLoadRequest.isDone)
                 {
-                    var bundleLoadRequest = AssetBundle.LoadFromMemoryAsync(bytes);
-
-                    while (!bundleLoadRequest.isDone)
-                    {
-                        yield return null;
-                    }
-
-                    assetBundle = bundleLoadRequest.assetBundle;
+                    yield return null;
                 }
+
+                assetBundle = bundleLoadRequest.assetBundle;
             }
 
             // 読み込めなかった時はファイルを削除して次回読み込み時にダウンロードし直す.
@@ -726,9 +705,9 @@ namespace Modules.AssetBundles
                 builder.AppendFormat("CRC : {0}", assetBundleInfo.CRC).AppendLine();
                 builder.AppendLine();
 
-                if (loadYield.HasError)
+                if (!string.IsNullOrEmpty(error))
                 {
-                    builder.AppendFormat("Detail:\n{0}", loadYield.Error);
+                    builder.AppendFormat("Detail:\n{0}", error);
                 }
 
                 observer.OnError(new Exception(builder.ToString()));
