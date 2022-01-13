@@ -94,6 +94,7 @@ namespace Modules.Devkit.Diagnosis.SRDebugger
                     .AddTo(this);
 
                 applicationLogHandler.OnReceivedThreadedAllAsObservable()
+                    .ObserveOnMainThread()
                     .Subscribe(x => OnLogReceive(x))
                     .AddTo(this);
 
