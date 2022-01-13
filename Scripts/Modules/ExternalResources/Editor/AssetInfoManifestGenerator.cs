@@ -78,17 +78,19 @@ namespace Modules.ExternalResource.Editor
         {
             var assetInfos = Reflection.GetPrivateField<AssetInfoManifest, AssetInfo[]>(assetInfoManifest, "assetInfos");
 
+            var assetBundleGroups = assetInfos
+                .Where(x => x.IsAssetBundle)
+                .GroupBy(x => x.AssetBundle.AssetBundleName);
+
             var tasks = new Dictionary<string, Task>();
-            
-            for (var i = 0; i < assetInfos.Length; i++)
+
+            foreach (var assetBundleGroup in assetBundleGroups)
             {
-                var assetInfo = assetInfos[i];
-
-                if (!assetInfo.IsAssetBundle) { continue; }
-
-                var assetBundleName = assetInfo.AssetBundle.AssetBundleName;
+                var assetBundleName = assetBundleGroup.Key;
 
                 if (tasks.ContainsKey(assetBundleName)){ continue; }
+                
+                var assetInfo = assetBundleGroup.First();
 
                 var filePath = PathUtility.Combine(exportPath, assetBundleName);
 
@@ -112,8 +114,13 @@ namespace Modules.ExternalResource.Editor
 
                     var size = fileInfo.Exists ? fileInfo.Length : -1;
                     var crc = FileUtility.GetCRC(packageFilePath);
+                    var hash = assetBundleHash.ToString();
 
-                    assetInfo.SetFileInfo(size, crc, assetBundleHash.ToString());
+                    // 同じアセットバンドル名の全アセット情報を更新.
+                    foreach (var item in assetBundleGroup)
+                    {
+                        item.SetFileInfo(size, crc, hash);
+                    }
                 });
 
                 tasks.Add(assetBundleName, task);
