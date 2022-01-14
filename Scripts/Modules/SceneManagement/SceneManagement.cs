@@ -13,27 +13,12 @@ using Constants;
 using Cysharp.Threading.Tasks;
 using Modules.Devkit.Console;
 using Modules.SceneManagement.Diagnostics;
-using Modules.UniRxExtension;
 
 namespace Modules.SceneManagement
 {
     public abstract partial class SceneManagement<T> : Singleton<T> where T : SceneManagement<T>
     {
         //----- params -----
-
-        // 起動シーン用の空引数.
-        private sealed class BootSceneArgument : ISceneArgument
-        {
-            public Scenes? Identifier { get; private set; }
-
-            public Scenes[] PreLoadScenes { get { return new Scenes[0]; } }
-            public bool Cache { get { return false; } }
-
-            public BootSceneArgument(Scenes? identifier)
-            {
-                Identifier = identifier;
-            }
-        }
 
         public readonly string ConsoleEventName = "Scene";
         public readonly Color ConsoleEventColor = new Color(0.4f, 1f, 0.4f);
@@ -129,12 +114,12 @@ namespace Modules.SceneManagement
             return observers.WhenAll().AsUnitObservable();
         }
 
-        public IObservable<Unit> RegisterCurrentScene()
+        public IObservable<Unit> RegisterCurrentScene(ISceneArgument sceneArgument)
         {
-            return Observable.FromMicroCoroutine(() => RegisterCurrentSceneCore());
+            return Observable.FromMicroCoroutine(() => RegisterCurrentSceneCore(sceneArgument));
         }
 
-        private IEnumerator RegisterCurrentSceneCore()
+        private IEnumerator RegisterCurrentSceneCore(ISceneArgument sceneArgument)
         {
             if (currentScene != null) { yield break; }
 
@@ -148,8 +133,6 @@ namespace Modules.SceneManagement
             var definition = ScenePaths.FirstOrDefault(x => x.Value == scene.path);
             var identifier = definition.Equals(default(KeyValuePair<Scenes, string>)) ? null : (Scenes?)definition.Key;
 
-            var sceneArgument = new BootSceneArgument(identifier);
-
             var sceneInstance = UnityUtility.FindObjectsOfInterface<ISceneBase>().FirstOrDefault();
 
             CollectUniqueComponents(scene.GetRootGameObjects());
@@ -157,9 +140,6 @@ namespace Modules.SceneManagement
             if (sceneInstance != null)
             {
                 currentScene = new SceneInstance(identifier, sceneInstance, SceneManager.GetSceneAt(0));
-
-                // 起動シーンは引数なしで遷移してきたという扱い.
-                history.Add(sceneArgument);
             }
 
             if (currentScene == null || currentScene.Instance == null)
@@ -168,6 +148,8 @@ namespace Modules.SceneManagement
 
                 yield break;
             }
+
+            currentScene.Instance.SetArgument(sceneArgument);
 
             var registerYield = OnRegisterCurrentScene(currentScene).ToYieldInstruction(false);
 
@@ -179,6 +161,10 @@ namespace Modules.SceneManagement
             if (registerYield.HasError)
             {
                 Debug.LogException(registerYield.Error);
+            }
+            else
+            {
+                history.Add(sceneArgument);
             }
 
             var initializeYield = currentScene.Instance.Initialize().ToObservable().ToYieldInstruction(false);
