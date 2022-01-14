@@ -1,4 +1,4 @@
-
+ï»¿
 // Reference from: https://stackoverflow.com/questions/5026409/how-to-add-seek-and-position-capabilities-to-cryptostream
 
 using System;
@@ -40,29 +40,29 @@ namespace Extensions
             var nonce = new byte[blockSizeInByte];
             var init = false;
 
-            lock (encryptor)
+            for (var i = offset; i < count; i++)
             {
-                for (var i = offset; i < count; i++)
+                // â€» nonceã‚’æš—å·åŒ–ã—ã¦æ¬¡ã®xorãƒãƒƒãƒ•ã‚¡ã‚’ä½œæˆ.
+
+                if (!init || keyPos % blockSizeInByte == 0)
                 {
-                    // ¦ nonce‚ðˆÃ†‰»‚µ‚ÄŽŸ‚Ìxorƒoƒbƒtƒ@‚ðì¬.
-
-                    if (!init || keyPos % blockSizeInByte == 0)
+                    BitConverter.GetBytes(blockNumber).CopyTo(nonce, 0);
+                        
+                    lock (encryptor)
                     {
-                        BitConverter.GetBytes(blockNumber).CopyTo(nonce, 0);
-
                         encryptor.TransformBlock(nonce, 0, nonce.Length, outBuffer, 0);
-
-                        if (init){ keyPos = 0; }
-                    
-                        init = true;
-                    
-                        blockNumber++;
                     }
-                
-                    buffer[i] ^= outBuffer[keyPos];
 
-                    keyPos++;
+                    if (init){ keyPos = 0; }
+                    
+                    init = true;
+                    
+                    blockNumber++;
                 }
+                
+                buffer[i] ^= outBuffer[keyPos];
+
+                keyPos++;
             }
         }
 
