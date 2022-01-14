@@ -587,33 +587,42 @@ namespace Modules.AssetBundles
                     loader = Observable.Defer(() => Observable.Return(loadedAssetBundle));
                 }
 
-                var loadYield = loader
-                    .SelectMany(x =>
-                        {
-                            return x != null ?
-                                   x.assetBundle.LoadAssetAsync(assetPath, typeof(T)).AsAsyncOperationObservable() : 
-                                   Observable.Return<AssetBundleRequest>(null);
-                        })
-                    .Select(x => x != null ? x.asset as T : null)
-                    .ToYieldInstruction(false);
+                var loadYield = loader.ToYieldInstruction(false);
 
                 while (!loadYield.IsDone)
                 {
                     yield return null;
                 }
-
-                if (loadYield.HasResult && !loadYield.HasError && !loadYield.IsCanceled)
+                
+                if (loadYield.HasError)
                 {
-                    result = loadYield.Result;
+                    Debug.LogException(loadYield.Error);
+                }
 
-                    if (result == null)
-                    {
-                        Debug.LogErrorFormat("[AssetBundle Load Error]\nAssetBundleName = {0}\nAssetPath = {1}", assetBundleName, assetPath);
-                    }
+                if (loadYield.HasResult)
+                {
+                    var seekableAssetBundle = loadYield.Result;
 
-                    if (autoUnLoad)
+                    if (seekableAssetBundle != null)
                     {
-                        UnloadAsset(assetBundleName);
+                        var assetBundleRequest = seekableAssetBundle.assetBundle.LoadAssetAsync(assetPath, typeof(T));
+
+                        while (!assetBundleRequest.isDone)
+                        {
+                            yield return null;
+                        }
+
+                        result = assetBundleRequest.asset as T;
+
+                        if (result == null)
+                        {
+                            Debug.LogErrorFormat("[AssetBundle Load Error]\nAssetBundleName = {0}\nAssetPath = {1}", assetBundleName, assetPath);
+                        }
+
+                        if (autoUnLoad)
+                        {
+                            UnloadAsset(assetBundleName);
+                        }
                     }
                 }
             }
@@ -624,8 +633,6 @@ namespace Modules.AssetBundles
 
         private IEnumerator LoadAssetBundleFromCache(IObserver<SeekableAssetBundle> observer, AssetInfo assetInfo)
         {
-            AssetBundle assetBundle = null;
-
             var filePath = BuildFilePath(assetInfo);
             var assetBundleInfo = assetInfo.AssetBundle;
             var assetBundleName = assetBundleInfo.AssetBundleName;
@@ -641,7 +648,7 @@ namespace Modules.AssetBundles
                 yield return null;
             }
 
-            assetBundle = bundleLoadRequest.assetBundle;
+            var assetBundle = bundleLoadRequest.assetBundle;
 
             // 読み込めなかった時はファイルを削除して次回読み込み時にダウンロードし直す.
             if (assetBundle == null)
