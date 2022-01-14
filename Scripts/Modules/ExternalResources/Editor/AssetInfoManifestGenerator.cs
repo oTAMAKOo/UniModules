@@ -102,6 +102,8 @@ namespace Modules.ExternalResource.Editor
                 // Hash.
                 BuildPipeline.GetHashForAssetBundle(filePath, out var assetBundleHash);
 
+                assetInfo.AssetBundle.SetHash(assetBundleHash.ToString());
+
                 // ファイルハッシュ・ファイルサイズ設定.
 
                 var packageFilePath = Path.ChangeExtension(filePath, AssetBundleManager.PackageExtension);
@@ -114,7 +116,7 @@ namespace Modules.ExternalResource.Editor
 
                     var size = fileInfo.Exists ? fileInfo.Length : -1;
                     var crc = FileUtility.GetCRC(packageFilePath);
-                    var hash = assetBundleHash.ToString();
+                    var hash = FileUtility.GetHash(filePath);
 
                     // 同じアセットバンドル名の全アセット情報を更新.
                     foreach (var item in assetBundleGroup)

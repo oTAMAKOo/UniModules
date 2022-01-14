@@ -30,20 +30,6 @@ namespace Modules.AssetBundles
         // リトライするまでの時間(秒).
         private readonly TimeSpan RetryDelaySeconds = TimeSpan.FromSeconds(2f);
 
-        // 読み込み済みアセットバンドル.
-        private sealed class LoadedAssetBundle
-        {
-            public AssetBundle assetBundle = null;
-
-            public int referencedCount = 0;
-
-            public LoadedAssetBundle(AssetBundle assetBundle)
-            {
-                this.assetBundle = assetBundle;
-                this.referencedCount = 1;
-            }
-        }
-
         //----- field -----
 
         // 同時ダウンロード数.
@@ -66,7 +52,7 @@ namespace Modules.AssetBundles
         private Dictionary<string, IObservable<string>> downloadQueueing = null;
 
         // 読み込み待ちアセットバンドル.
-        private Dictionary<string, IObservable<Tuple<AssetBundle, string>>> loadQueueing = null;
+        private Dictionary<string, IObservable<Tuple<SeekableAssetBundle, string>>> loadQueueing = null;
 
         // 読み込み済みアセットバンドル.
         private Dictionary<string, LoadedAssetBundle> loadedAssetBundles = null;
@@ -93,7 +79,7 @@ namespace Modules.AssetBundles
         private Subject<AssetInfo> onTimeOut = null;
         private Subject<Exception> onError = null;
 
-        private AesCryptoKey aesCryptoKey = null;
+        private AesCryptoStreamKey cryptoKey = null;
 
         private bool isInitialized = false;
 
@@ -119,7 +105,7 @@ namespace Modules.AssetBundles
 
             downloadList = new HashSet<string>();
             downloadQueueing = new Dictionary<string, IObservable<string>>();
-            loadQueueing = new Dictionary<string, IObservable<Tuple<AssetBundle, string>>>();
+            loadQueueing = new Dictionary<string, IObservable<Tuple<SeekableAssetBundle, string>>>();
             loadedAssetBundles = new Dictionary<string, LoadedAssetBundle>();
             downloadingErrors = new Dictionary<string, string>();
             assetInfosByAssetBundleName = new Dictionary<string, AssetInfo[]>();
@@ -152,20 +138,7 @@ namespace Modules.AssetBundles
         /// <param name="iv">暗号化IV(16文字)</param>
         public void SetCryptoKey(string key, string iv)
         {
-            this.aesCryptoKey = new AesCryptoKey(key, iv);
-        }
-
-        public void SetCryptoKey(AesCryptoKey cryptoKey)
-        {
-            this.aesCryptoKey = cryptoKey;
-        }
-
-        /// <summary>
-        /// 暗号化キー取得.
-        /// </summary>
-        public AesCryptoKey GetCryptoKey()
-        {
-            return aesCryptoKey;
+            cryptoKey = new AesCryptoStreamKey(key, iv);
         }
 
         /// <summary>
@@ -547,7 +520,7 @@ namespace Modules.AssetBundles
             #endif
 
             {
-                IObservable<AssetBundle> loader = null;
+                IObservable<SeekableAssetBundle> loader = null;
 
                 // アセットバンドル名は小文字なので小文字に変換.
                 var assetBundleName = assetInfo.AssetBundle.AssetBundleName.ToLower();
@@ -565,7 +538,7 @@ namespace Modules.AssetBundles
 
                                 if (cached != null)
                                 {
-                                    return Observable.Return(Tuple.Create(cached.assetBundle, x));
+                                    return Observable.Return(Tuple.Create((SeekableAssetBundle)cached, x));
                                 }
 
                                 var loadTask = loadQueueing.GetValueOrDefault(x);
@@ -577,11 +550,14 @@ namespace Modules.AssetBundles
 
                                 var info = assetInfosByAssetBundleName.GetValueOrDefault(x).FirstOrDefault();
 
-                                loadQueueing[x] = Observable.FromMicroCoroutine<AssetBundle>(_observer => LoadAssetBundleFromCache(_observer, info))
+                                loadQueueing[x] = Observable.FromMicroCoroutine<SeekableAssetBundle>(_observer =>
+                                        {
+                                            return LoadAssetBundleFromCache(_observer, info);
+                                        })
                                     .Timeout(TimeoutLimit)
                                     .OnErrorRetry((TimeoutException ex) => OnTimeout(info, ex), RetryCount, RetryDelaySeconds)
                                     .DoOnError(error => OnError(error))
-                                    .Select(y => Tuple.Create(y, x))
+                                    .Select(ab => Tuple.Create(ab, x))
                                     .Share();
 
                                 return loadQueueing[x];
@@ -589,56 +565,65 @@ namespace Modules.AssetBundles
                         .ToArray();
 
                     loader = Observable.Defer(() => Observable.WhenAll(loadAllBundles)
-                        .Select(xs =>
+                        .Select(tuples =>
                         {
-                            foreach (var item in xs)
+                            foreach (var tuple in tuples)
                             {
-                                loadedAssetBundles[item.Item2] = new LoadedAssetBundle(item.Item1);
+                                loadedAssetBundles[tuple.Item2] = new LoadedAssetBundle(tuple.Item1);
 
-                                if (loadQueueing.ContainsKey(item.Item2))
+                                if (loadQueueing.ContainsKey(tuple.Item2))
                                 {
-                                    loadQueueing.Remove(item.Item2);
+                                    loadQueueing.Remove(tuple.Item2);
                                 }
                             }
 
-                            return xs[0].Item1;
+                            return tuples[0].Item1;
                         }));
                 }
                 else
                 {
                     loadedAssetBundle.referencedCount++;
 
-                    loader = Observable.Defer(() => Observable.Return(loadedAssetBundle.assetBundle));
+                    loader = Observable.Defer(() => Observable.Return(loadedAssetBundle));
                 }
 
-                var loadYield = loader
-                    .SelectMany(x =>
-                        {
-                            return x != null ?
-                                   x.LoadAssetAsync(assetPath, typeof(T)).AsAsyncOperationObservable() : 
-                                   Observable.Return<AssetBundleRequest>(null);
-                        })
-                    .Select(x => x != null ? x.asset as T : null)
-                    .ToYieldInstruction(false);
+                var loadYield = loader.ToYieldInstruction(false);
 
                 while (!loadYield.IsDone)
                 {
                     yield return null;
                 }
-
-                if (loadYield.HasResult && !loadYield.HasError && !loadYield.IsCanceled)
+                
+                if (loadYield.HasError)
                 {
-                    result = loadYield.Result;
-
-                    if (result == null)
-                    {
-                        Debug.LogErrorFormat("[AssetBundle Load Error]\nAssetBundleName = {0}\nAssetPath = {1}", assetBundleName, assetPath);
-                    }
+                    Debug.LogException(loadYield.Error);
                 }
 
-                if (autoUnLoad)
+                if (loadYield.HasResult)
                 {
-                    UnloadAsset(assetBundleName);
+                    var seekableAssetBundle = loadYield.Result;
+
+                    if (seekableAssetBundle != null)
+                    {
+                        var assetBundleRequest = seekableAssetBundle.assetBundle.LoadAssetAsync(assetPath, typeof(T));
+
+                        while (!assetBundleRequest.isDone)
+                        {
+                            yield return null;
+                        }
+
+                        result = assetBundleRequest.asset as T;
+
+                        if (result == null)
+                        {
+                            Debug.LogErrorFormat("[AssetBundle Load Error]\nAssetBundleName = {0}\nAssetPath = {1}", assetBundleName, assetPath);
+                        }
+
+                        if (autoUnLoad)
+                        {
+                            UnloadAsset(assetBundleName);
+                        }
+                    }
                 }
             }
 
@@ -646,68 +631,39 @@ namespace Modules.AssetBundles
             observer.OnCompleted();
         }
 
-        private IEnumerator LoadAssetBundleFromCache(IObserver<AssetBundle> observer, AssetInfo assetInfo)
+        private IEnumerator LoadAssetBundleFromCache(IObserver<SeekableAssetBundle> observer, AssetInfo assetInfo)
         {
-            AssetBundle assetBundle = null;
-
             var filePath = BuildFilePath(assetInfo);
             var assetBundleInfo = assetInfo.AssetBundle;
             var assetBundleName = assetBundleInfo.AssetBundleName;
-
-            var bytes = new byte[0];
-            var error = string.Empty;
             
-            Func<byte[]> loadCacheFile = () =>
-            {
-                try
-                {
-                    var cryptoKey = GetCryptoKey();
-
-                    using (var fileStream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
-                    {
-                        bytes = new byte[fileStream.Length];
-
-                        fileStream.Read(bytes, 0, bytes.Length);
-                    }
-
-                    // 復号化.
-                    bytes = bytes.Decrypt(cryptoKey);
-                }
-                catch (Exception e)
-                {
-                    error = e.Message;
-                }
-
-                return bytes;
-            };
-
-            // ファイルの読み込みと復号化をスレッドプールで実行.
-            var loadYield = Observable.Start(() => loadCacheFile()).ObserveOnMainThread().ToYieldInstruction(false);
-
-            while (!loadYield.IsDone)
+            var fileStream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read);
+            
+            var cryptoStream = new SeekableCryptoStream(fileStream, cryptoKey);
+            
+            var bundleLoadRequest = AssetBundle.LoadFromStreamAsync(cryptoStream);
+            
+            while (!bundleLoadRequest.isDone)
             {
                 yield return null;
             }
 
-            if (loadYield.HasResult)
-            {
-                if (bytes != null)
-                {
-                    var bundleLoadRequest = AssetBundle.LoadFromMemoryAsync(bytes);
-
-                    while (!bundleLoadRequest.isDone)
-                    {
-                        yield return null;
-                    }
-
-                    assetBundle = bundleLoadRequest.assetBundle;
-                }
-            }
+            var assetBundle = bundleLoadRequest.assetBundle;
 
             // 読み込めなかった時はファイルを削除して次回読み込み時にダウンロードし直す.
             if (assetBundle == null)
             {
                 UnloadAsset(assetBundleName);
+
+                if (cryptoStream != null)
+                {
+                    cryptoStream.Dispose();
+                }
+
+                if (fileStream != null)
+                {
+                    fileStream.Dispose();
+                }
 
                 if (File.Exists(filePath))
                 {
@@ -721,18 +677,14 @@ namespace Modules.AssetBundles
                 builder.AppendFormat("File : {0}", filePath).AppendLine();
                 builder.AppendFormat("AssetBundleName : {0}", assetBundleName).AppendLine();
                 builder.AppendFormat("CRC : {0}", assetBundleInfo.CRC).AppendLine();
-                builder.AppendLine();
-
-                if (!string.IsNullOrEmpty(error))
-                {
-                    builder.AppendFormat("Detail:\n{0}", error);
-                }
 
                 observer.OnError(new Exception(builder.ToString()));
             }
             else
             {
-                observer.OnNext(assetBundle);
+                var seekableAssetBundle = new SeekableAssetBundle(assetBundle, fileStream, cryptoStream);
+
+                observer.OnNext(seekableAssetBundle);
             }
 
             observer.OnCompleted();
@@ -800,6 +752,8 @@ namespace Modules.AssetBundles
                     info.assetBundle.Unload(unloadAllLoadedObjects);
                     info.assetBundle = null;
                 }
+
+                info.Dispose();
 
                 loadedAssetBundles.Remove(assetBundleName);
             }
