@@ -154,38 +154,33 @@ namespace Modules.ExternalResource.Editor
 
             assetInfoManifestFilePath = GetAssetInfoManifestFilePath(files);
 
-            var aesCryptoKey = GetCryptoKey();
+            var cryptoKey = GetCryptoKey();
 
-            var bytes = new byte[0];
-
-            using (var fileStream = new FileStream(assetInfoManifestFilePath, FileMode.Open, FileAccess.Read))
+            using (var fileStream = new FileStream(assetInfoManifestFilePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
             {
-                bytes = new byte[fileStream.Length];
+                using (var aesStream = new SeekableCryptoStream(fileStream, cryptoKey))
+                {
+                    var bundleLoadRequest = AssetBundle.LoadFromStreamAsync(aesStream);
 
-                fileStream.Read(bytes, 0, bytes.Length);
+                    while (!bundleLoadRequest.isDone)
+                    {
+                        await Task.Delay(25);
+                    }
+
+                    var assetBundle = bundleLoadRequest.assetBundle;
+
+                    var loadAssetAsync = assetBundle.LoadAssetAsync(AssetInfoManifest.ManifestFileName, typeof(AssetInfoManifest));
+
+                    while (!loadAssetAsync.isDone)
+                    {
+                        await Task.Delay(25);
+                    }
+
+                    assetInfoManifest = loadAssetAsync.asset as AssetInfoManifest;
+
+                    assetBundle.Unload(false);
+                }
             }
-
-            bytes = bytes.Decrypt(aesCryptoKey);
-
-            var bundleLoadRequest = AssetBundle.LoadFromMemoryAsync(bytes);
-
-            while (!bundleLoadRequest.isDone)
-            {
-                await Task.Delay(25);
-            }
-
-            var assetBundle = bundleLoadRequest.assetBundle;
-
-            var loadAssetAsync = assetBundle.LoadAssetAsync(AssetInfoManifest.ManifestFileName, typeof(AssetInfoManifest));
-
-            while (!loadAssetAsync.isDone)
-            {
-                await Task.Delay(25);
-            }
-
-            assetInfoManifest = loadAssetAsync.asset as AssetInfoManifest;
-
-            assetBundle.Unload(false);
         }
         
         /// <summary> アップロードするファイルデータ構築. </summary>
@@ -477,6 +472,6 @@ namespace Modules.ExternalResource.Editor
 
         public abstract RegionEndpoint GetCredentialsRegion();
 
-        public abstract AesCryptoKey GetCryptoKey();
+        public abstract AesCryptoStreamKey GetCryptoKey();
     }
 }

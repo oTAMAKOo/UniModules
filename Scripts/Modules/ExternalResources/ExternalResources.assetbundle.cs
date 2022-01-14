@@ -250,6 +250,8 @@ namespace Modules.ExternalResource
 
         private void UnloadAllAssetsInternal(bool unloadAllLoadedObjects)
         {
+            var assetBundleManager = Instance.assetBundleManager;
+
             if (onUnloadAsset != null)
             {
                 var loadedAssets = GetLoadedAssets();
@@ -260,7 +262,10 @@ namespace Modules.ExternalResource
                 }
             }
 
-            Instance.assetBundleManager.UnloadAllAsset(unloadAllLoadedObjects);
+            if (assetBundleManager != null)
+            {
+                assetBundleManager.UnloadAllAsset(unloadAllLoadedObjects);
+            }
         }
 
         /// <summary> 読み込み済みAssetBundle一覧取得 </summary>
