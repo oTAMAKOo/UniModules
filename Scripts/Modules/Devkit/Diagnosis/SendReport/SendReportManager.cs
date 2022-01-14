@@ -21,7 +21,15 @@ namespace Modules.Devkit.Diagnosis.SendReport
     {
         //----- params -----
 
-        public sealed class LogContainer
+        public enum ReportDataFormat
+        {
+            None = 0,
+
+            Form,
+            Json,
+        }
+
+        public sealed class LogContainer 
         {
             public LogEntry[] contents = null;
         }
@@ -29,6 +37,8 @@ namespace Modules.Devkit.Diagnosis.SendReport
         //----- field -----
 
         private string reportUrl = null;
+
+        private ReportDataFormat format = ReportDataFormat.None;
 
         private Dictionary<string, string> reportContents = null;
 
@@ -48,9 +58,11 @@ namespace Modules.Devkit.Diagnosis.SendReport
         //----- method -----
 
         /// <summary> 初期化. </summary>
-        public void Initialize()
+        public void Initialize(ReportDataFormat format = ReportDataFormat.Form)
         {
             if (initialized){ return; }
+
+            this.format = format;
 
             reportContents = new Dictionary<string, string>();
 
@@ -117,9 +129,18 @@ namespace Modules.Devkit.Diagnosis.SendReport
                 throw new Exception("report url is empty.");
             }
 
-            var reportJson = CreateReportJson();
-            
-            var webRequest = UnityWebRequest.Post(reportUrl, reportJson);
+            UnityWebRequest webRequest = null;
+
+            switch (format)
+            {
+                case ReportDataFormat.Form:
+                    webRequest = UnityWebRequest.Post(reportUrl, CreateReportFormSections());
+                    break;
+
+                case ReportDataFormat.Json:
+                    webRequest = UnityWebRequest.Post(reportUrl, CreateReportJson());
+                    break;
+            }
 
             webRequest.timeout = 30;
 
@@ -204,6 +225,18 @@ namespace Modules.Devkit.Diagnosis.SendReport
             value = aesCryptoKey != null ? value.Encrypt(aesCryptoKey) : value;
 
             reportContents.Add(key, value);
+        }
+
+        private List<IMultipartFormSection> CreateReportFormSections()
+        {
+            var reportForm = new List<IMultipartFormSection>();
+
+            foreach (var item in reportContents)
+            {
+                reportForm.Add(new MultipartFormDataSection(item.Key, item.Value));
+            }
+
+            return reportForm;
         }
 
         private string CreateReportJson()
