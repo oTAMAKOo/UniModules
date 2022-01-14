@@ -132,8 +132,6 @@ namespace Modules.ExternalResource
         public string[] Dependencies { get { return dependencies; } }
         /// <summary> CRC-32 チェックサム </summary>
         public uint CRC { get { return crc; } }
-        /// <summary> アセットバンドルハッシュ </summary>
-        public string Hash { get { return hash; } }
 
         //----- method -----
 
@@ -147,11 +145,6 @@ namespace Modules.ExternalResource
         public void SetCRC(uint crc)
         {
             this.crc = crc;
-        }
-
-        public void SetHash(string hash)
-        {
-            this.hash = hash;
         }
 
         public void SetDependencies(string[] dependencies)
