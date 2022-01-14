@@ -101,129 +101,134 @@ namespace Modules.ExternalResource.Editor
 
                 using (new DisableStackTraceScope())
                 {
-                    var sw = System.Diagnostics.Stopwatch.StartNew();
-
-                    //------ アセットバンドル名を設定------
-
-                    using (new BuildLogScope(logBuilder, sw, "ApplyAllAssetBundleName"))
+                    using (new AssetEditingScope())
                     {
-                        assetManagement.ApplyAllAssetBundleName();
-                    }
+                        var sw = System.Diagnostics.Stopwatch.StartNew();
 
-                    //------ キャッシュ済みアセットバンドルの最終更新日時取得 ------
+                        //------ アセットバンドル名を設定------
 
-                    Dictionary<string, DateTime> cachedFileLastWriteTimeTable = null;
-
-                    using (new BuildLogScope(logBuilder, sw, "GetCachedFileLastWriteTimeTable"))
-                    {
-                        cachedFileLastWriteTimeTable = await BuildAssetBundle.GetCachedFileLastWriteTimeTable();
-                    }
-
-                    //------ CRIアセットを生成 ------
-
-                    #if ENABLE_CRIWARE_ADX || ENABLE_CRIWARE_SOFDEC
-
-                    using (new BuildLogScope(logBuilder, sw, "GenerateCriAsset"))
-                    {
-                        CriAssetGenerator.Generate(exportPath, assetInfoManifest);
-                    }
-
-                    #endif
-
-                    //------ AssetBundleをビルド ------
-
-                    var assetBundleManifest = BuildAssetBundle.BuildAllAssetBundles();
-
-                    using (new BuildLogScope(logBuilder, sw, "BuildAllAssetBundles"))
-                    {
-                        BuildAssetBundle.CreateTemporarilyAssetBundleManifestFile();
-                    }
-
-                    //------ 不要になった古いAssetBundle削除 ------
-
-                    using (new BuildLogScope(logBuilder, sw, "CleanUnUseAssetBundleFiles"))
-                    {
-                        BuildAssetBundle.CleanUnUseAssetBundleFiles();
-                    }
-
-                    //------ AssetBundleファイルをパッケージ化 ------
-
-                    // 暗号化鍵情報の書き込み.
-
-                    using (new BuildLogScope(logBuilder, sw, "CreateCryptoFile"))
-                    {
-                        BuildAssetBundlePackage.CreateCryptoFile(assetBundlePath, cryptoKey, cryptoIv);
-                    }
-
-                    // 更新対象のアセット情報取得.
-
-                    var assetInfos = new AssetInfo[0];
-                    var updatedAssetInfos = new AssetInfo[0];
-
-                    using (new BuildLogScope(logBuilder, sw, "GetUpdateTargetAssetInfo"))
-                    {
-                        assetInfos = BuildAssetBundle.GetAllTargetAssetInfo(assetInfoManifest);
-
-                        // 暗号化キーが変わっていたら全て更新対象.
-                        if (cryptoChanged)
+                        using (new BuildLogScope(logBuilder, sw, "ApplyAllAssetBundleName"))
                         {
-                            updatedAssetInfos = assetInfos;
+                            assetManagement.ApplyAllAssetBundleName();
                         }
-                        // 差分がある対象だけ抽出.
-                        else
+
+                        //------ キャッシュ済みアセットバンドルの最終更新日時取得 ------
+
+                        Dictionary<string, DateTime> cachedFileLastWriteTimeTable = null;
+
+                        using (new BuildLogScope(logBuilder, sw, "GetCachedFileLastWriteTimeTable"))
                         {
-                            updatedAssetInfos = await BuildAssetBundle.GetUpdateTargetAssetInfo(assetInfoManifest, cachedFileLastWriteTimeTable);
+                            cachedFileLastWriteTimeTable = await BuildAssetBundle.GetCachedFileLastWriteTimeTable();
                         }
-                    }
 
-                    // パッケージファイル作成.
-
-                    using (new BuildLogScope(logBuilder, sw, "BuildPackage"))
-                    {
-                        await BuildAssetBundlePackage.BuildAllAssetBundlePackage(exportPath, assetBundlePath, assetInfos, updatedAssetInfos, cryptoKey, cryptoIv);
-                    }
-
-                    //------ ビルド成果物の情報をAssetInfoManifestに書き込み ------
-
-                    using (new BuildLogScope(logBuilder, sw, "AssetInfoManifest : SetAssetBundleFileInfo"))
-                    {
-                        await AssetInfoManifestGenerator.SetAssetBundleFileInfo(assetBundlePath, assetInfoManifest);
+                        //------ CRIアセットを生成 ------
 
                         #if ENABLE_CRIWARE_ADX || ENABLE_CRIWARE_SOFDEC
 
-                        await AssetInfoManifestGenerator.SetCriAssetFileInfo(exportPath, assetInfoManifest);
+                        using (new BuildLogScope(logBuilder, sw, "GenerateCriAsset"))
+                        {
+                            CriAssetGenerator.Generate(exportPath, assetInfoManifest);
+                        }
 
                         #endif
-                    }
 
-                    //------ アセットバンドルの参照情報をAssetInfoManifestに書き込み ------
+                        //------ AssetBundleをビルド ------
 
-                    using (new BuildLogScope(logBuilder, sw, "AssetInfoManifest : SetAssetBundleDependencies"))
-                    {
-                        BuildAssetBundle.SetDependencies(assetInfoManifest, assetBundleManifest);
-                    }
+                        AssetBundleManifest assetBundleManifest = null;
 
-                    //------ バージョンハッシュ情報をAssetInfoManifestに書き込み ------
+                        using (new BuildLogScope(logBuilder, sw, "BuildAllAssetBundles"))
+                        {
+                            assetBundleManifest = BuildAssetBundle.BuildAllAssetBundles();
 
-                    using (new BuildLogScope(logBuilder, sw, "AssetInfoManifest : SetAssetInfoHash"))
-                    {
-                        BuildAssetBundle.SetAssetInfoHash(assetInfoManifest);
-                    }
+                            BuildAssetBundle.CreateTemporarilyAssetBundleManifestFile();
+                        }
 
-                    //------ 再度AssetInfoManifestだけビルドを実行 ------
+                        //------ アセットバンドルの参照情報をAssetInfoManifestに書き込み ------
 
-                    using (new BuildLogScope(logBuilder, sw, "Rebuild AssetInfoManifest"))
-                    {
-                        BuildAssetBundle.BuildAssetInfoManifest();
+                        using (new BuildLogScope(logBuilder, sw, "AssetInfoManifest : SetAssetBundleDependencies"))
+                        {
+                            BuildAssetBundle.SetDependencies(assetInfoManifest, assetBundleManifest);
+                        }
 
-                        BuildAssetBundle.RestoreAssetBundleManifestFile();
-                    }
+                        //------ 不要になった古いAssetBundle削除 ------
 
-                    //------ AssetInfoManifestファイルをパッケージ化 ------
+                        using (new BuildLogScope(logBuilder, sw, "CleanUnUseAssetBundleFiles"))
+                        {
+                            BuildAssetBundle.CleanUnUseAssetBundleFiles();
+                        }
 
-                    using (new BuildLogScope(logBuilder, sw, "BuildPackage AssetInfoManifest"))
-                    {
-                        await BuildAssetBundlePackage.BuildAssetInfoManifestPackage(exportPath, assetBundlePath, cryptoKey, cryptoIv);
+                        //------ AssetBundleファイルをパッケージ化 ------
+
+                        // 暗号化鍵情報の書き込み.
+
+                        using (new BuildLogScope(logBuilder, sw, "CreateCryptoFile"))
+                        {
+                            BuildAssetBundlePackage.CreateCryptoFile(assetBundlePath, cryptoKey, cryptoIv);
+                        }
+
+                        // 更新対象のアセット情報取得.
+
+                        var assetInfos = new AssetInfo[0];
+                        var updatedAssetInfos = new AssetInfo[0];
+
+                        using (new BuildLogScope(logBuilder, sw, "GetUpdateTargetAssetInfo"))
+                        {
+                            assetInfos = BuildAssetBundle.GetAllTargetAssetInfo(assetInfoManifest);
+
+                            // 暗号化キーが変わっていたら全て更新対象.
+                            if (cryptoChanged)
+                            {
+                                updatedAssetInfos = assetInfos;
+                            }
+                            // 差分がある対象だけ抽出.
+                            else
+                            {
+                                updatedAssetInfos = await BuildAssetBundle.GetUpdateTargetAssetInfo(assetInfoManifest, cachedFileLastWriteTimeTable);
+                            }
+                        }
+
+                        // パッケージファイル作成.
+
+                        using (new BuildLogScope(logBuilder, sw, "BuildPackage"))
+                        {
+                            await BuildAssetBundlePackage.BuildAllAssetBundlePackage(exportPath, assetBundlePath, assetInfos, updatedAssetInfos, cryptoKey, cryptoIv);
+                        }
+
+                        //------ ビルド成果物の情報をAssetInfoManifestに書き込み ------
+
+                        using (new BuildLogScope(logBuilder, sw, "AssetInfoManifest : SetAssetBundleFileInfo"))
+                        {
+                            await AssetInfoManifestGenerator.SetAssetBundleFileInfo(assetBundlePath, assetInfoManifest);
+
+                            #if ENABLE_CRIWARE_ADX || ENABLE_CRIWARE_SOFDEC
+
+                            await AssetInfoManifestGenerator.SetCriAssetFileInfo(exportPath, assetInfoManifest);
+
+                            #endif
+                        }
+
+                        //------ バージョンハッシュ情報をAssetInfoManifestに書き込み ------
+
+                        using (new BuildLogScope(logBuilder, sw, "AssetInfoManifest : SetAssetInfoHash"))
+                        {
+                            BuildAssetBundle.SetAssetInfoHash(assetInfoManifest);
+                        }
+
+                        //------ 再度AssetInfoManifestだけビルドを実行 ------
+
+                        using (new BuildLogScope(logBuilder, sw, "Rebuild AssetInfoManifest"))
+                        {
+                            BuildAssetBundle.BuildAssetInfoManifest();
+
+                            BuildAssetBundle.RestoreAssetBundleManifestFile();
+                        }
+
+                        //------ AssetInfoManifestファイルをパッケージ化 ------
+
+                        using (new BuildLogScope(logBuilder, sw, "BuildPackage AssetInfoManifest"))
+                        {
+                            await BuildAssetBundlePackage.BuildAssetInfoManifestPackage(exportPath, assetBundlePath, cryptoKey, cryptoIv);
+                        }
                     }
                 }
 
