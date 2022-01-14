@@ -146,6 +146,11 @@ namespace Modules.Devkit.Diagnosis.SRDebugger
             {
                 yield return null;
             }
+
+            if (sendYield.HasError)
+            {
+                Debug.LogException(sendYield.Error);
+            }
         }
 
         private void UpdatePostProgress(float progress)
