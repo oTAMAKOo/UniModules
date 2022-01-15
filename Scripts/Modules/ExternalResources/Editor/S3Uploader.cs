@@ -90,6 +90,11 @@ namespace Modules.ExternalResource.Editor
 
                     versionHash = assetInfoManifest.VersionHash;
 
+                    if (string.IsNullOrEmpty(versionHash))
+                    {
+                        throw new InvalidDataException("VersionHash is empty.");
+                    }
+
                     this.bucketFolder = PathUtility.Combine(bucketFolder, versionHash);
 
                     //------- アップロードファイル情報作成 -------
