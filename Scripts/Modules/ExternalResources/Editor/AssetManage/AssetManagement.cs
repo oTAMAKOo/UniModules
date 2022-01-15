@@ -198,7 +198,7 @@ namespace Modules.ExternalResource.Editor
             return assetPaths.Where(x => !IsIgnoreManageAsset(x)).ToArray();
         }
 
-        public bool SetAssetBundleName(string assetPath, string assetBundleName)
+        public bool SetAssetBundleName(string assetPath, string assetBundleName, bool force = false)
         {
             var importer = AssetImporter.GetAtPath(assetPath);
 
@@ -218,7 +218,7 @@ namespace Modules.ExternalResource.Editor
 
             // アセットバンドル名設定.
 
-            if (ApplyAssetBundleName(importer, assetBundleName))
+            if (ApplyAssetBundleName(importer, assetBundleName, force))
             {
                 changed = true;
             }
@@ -226,13 +226,13 @@ namespace Modules.ExternalResource.Editor
             return changed;
         }
 
-        private bool ApplyAssetBundleName(AssetImporter importer, string assetBundleName)
+        private bool ApplyAssetBundleName(AssetImporter importer, string assetBundleName, bool force)
         {
             var apply = false;
 
             if (importer == null) { return false; }
 
-            if (importer.assetBundleName != assetBundleName)
+            if (force || importer.assetBundleName != assetBundleName)
             {
                 importer.assetBundleName = assetBundleName;
 
@@ -395,6 +395,8 @@ namespace Modules.ExternalResource.Editor
         
         public void ApplyAllAssetBundleName()
         {
+            AssetDatabase.Refresh(ImportAssetOptions.ForceUpdate);
+
             var allAssetInfos = GetAllAssetInfos().ToArray();
 
             using (new AssetEditingScope())
@@ -411,7 +413,7 @@ namespace Modules.ExternalResource.Editor
 
                     var importer = AssetImporter.GetAtPath(assetPath);
 
-                    if (ApplyAssetBundleName(importer, assetInfo.AssetBundle.AssetBundleName))
+                    if (ApplyAssetBundleName(importer, assetInfo.AssetBundle.AssetBundleName, true))
                     {
                         EditorUtility.DisplayProgressBar("Apply AssetBundleName", assetInfo.FileName, (float)i / count);
                     }
