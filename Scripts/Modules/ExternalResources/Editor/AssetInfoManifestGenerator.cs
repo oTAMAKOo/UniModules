@@ -114,7 +114,7 @@ namespace Modules.ExternalResource.Editor
 
                     var size = fileInfo.Exists ? fileInfo.Length : -1;
                     var crc = FileUtility.GetCRC(packageFilePath);
-                    var hash = string.Format("{0}_{1}", assetBundleName, assetBundleCrc).GetHash();
+                    var hash = assetBundleHash.ToString();
 
                     // 同じアセットバンドル名の全アセット情報を更新.
                     foreach (var item in assetBundleGroup)
