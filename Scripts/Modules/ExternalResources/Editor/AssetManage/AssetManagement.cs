@@ -393,7 +393,7 @@ namespace Modules.ExternalResource.Editor
             return false;
         }
         
-        public void ApplyAllAssetBundleName()
+        public void ApplyAllAssetBundleName(bool force = false)
         {
             AssetDatabase.Refresh(ImportAssetOptions.ForceUpdate);
 
@@ -413,7 +413,7 @@ namespace Modules.ExternalResource.Editor
 
                     var importer = AssetImporter.GetAtPath(assetPath);
 
-                    if (ApplyAssetBundleName(importer, assetInfo.AssetBundle.AssetBundleName, true))
+                    if (ApplyAssetBundleName(importer, assetInfo.AssetBundle.AssetBundleName, force))
                     {
                         EditorUtility.DisplayProgressBar("Apply AssetBundleName", assetInfo.FileName, (float)i / count);
                     }

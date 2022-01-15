@@ -251,7 +251,7 @@ namespace Modules
 
             assetManagement.Initialize();
 
-            assetManagement.ApplyAllAssetBundleName();
+            assetManagement.ApplyAllAssetBundleName(true);
         }
 
         #endregion
