@@ -223,6 +223,17 @@ namespace Modules.ExternalResource
                         builder.AppendFormat("Category = {0}", assetInfo.Category).AppendLine();
                     }
 
+                    if (assetInfo.AssetBundle.Dependencies.Any())
+                    {
+                        builder.AppendLine();
+                        builder.AppendLine("Dependencies:");
+
+                        foreach (var item in assetInfo.AssetBundle.Dependencies)
+                        {
+                            builder.AppendLine(item);
+                        }
+                    }
+
                     UnityConsole.Event(ConsoleEventName, ConsoleEventColor, builder.ToString());
                 }
 

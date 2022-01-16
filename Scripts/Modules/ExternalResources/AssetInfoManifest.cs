@@ -84,9 +84,12 @@ namespace Modules.ExternalResource
 
         private void SetFileName()
         {
-            if (string.IsNullOrEmpty(resourcePath)) { return; }
+            var isManifestFile = false;
 
-            var isManifestFile = Path.GetFileName(resourcePath) == AssetInfoManifest.ManifestFileName;
+            if (!string.IsNullOrEmpty(resourcePath))
+            {
+                isManifestFile = Path.GetFileName(resourcePath) == AssetInfoManifest.ManifestFileName;
+            }
 
             if (isManifestFile)
             {
@@ -98,7 +101,7 @@ namespace Modules.ExternalResource
                 {
                     fileName = assetBundle.AssetBundleName.GetHash();
                 }
-                else
+                else if(!string.IsNullOrEmpty(resourcePath))
                 {
                     var extension = Path.GetExtension(resourcePath);
 
@@ -188,6 +191,11 @@ namespace Modules.ExternalResource
             this.assetInfos = assetInfos;
         }
 
+        public void AddAssetInfo(AssetInfo assetInfo)
+        {
+            assetInfos = assetInfos.Append(assetInfo).ToArray();
+        }
+
         public static AssetInfo GetManifestAssetInfo()
         {
             var manifestAssetInfo = new AssetInfo(ManifestFileName, null, null);
@@ -236,7 +244,9 @@ namespace Modules.ExternalResource
 
             if (assetInfoByResourcesPath == null || forceUpdate)
             {
-                assetInfoByResourcesPath = assetInfos.ToDictionary(x => x.ResourcePath);
+                assetInfoByResourcesPath = assetInfos
+                    .Where(x => !string.IsNullOrEmpty(x.ResourcePath))
+                    .ToDictionary(x => x.ResourcePath);
             }
         }
     }

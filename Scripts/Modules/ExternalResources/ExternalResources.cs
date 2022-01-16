@@ -195,7 +195,9 @@ namespace Modules.ExternalResource
                 .ToLookup(x => x.AssetBundle.AssetBundleName);
 
             // アセット情報 (Key: リソースパス).
-            assetInfosByResourcePath = allAssetInfos.ToDictionary(x => x.ResourcePath);
+            assetInfosByResourcePath = allAssetInfos
+                .Where(x => !string.IsNullOrEmpty(x.ResourcePath))
+                .ToDictionary(x => x.ResourcePath);
 
             // アセットバンドル依存関係.
             var dependencies = allAssetInfos
@@ -437,6 +439,8 @@ namespace Modules.ExternalResource
         public static string GetAssetPathFromAssetInfo(string externalResourcesPath, string shareResourcesPath, AssetInfo assetInfo)
         {
             var assetPath = string.Empty;
+
+            if (string.IsNullOrEmpty(assetInfo.ResourcePath)){ return null; }
 
             if (HasSharePrefix(assetInfo.ResourcePath))
             {

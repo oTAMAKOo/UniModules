@@ -150,11 +150,18 @@ namespace Modules.ExternalResource.Editor
                         return null;
                     }
 
+                    //------ 未登録のアセットバンドル情報追加 ------
+
+                    using (new BuildLogScope(logBuilder, sw, "AddUnregisteredAssetInfos"))
+                    {
+                        buildAssetBundle.AddUnregisteredAssetInfos(assetInfoManifest, buildResult);
+                    }
+
                     //------ 不要になった古いAssetBundle削除 ------
 
                     using (new BuildLogScope(logBuilder, sw, "CleanUnUseAssetBundleFiles"))
                     {
-                        buildAssetBundle.CleanUnUseAssetBundleFiles();
+                        buildAssetBundle.CleanUnUseAssetBundleFiles(buildResult);
                     }
 
                     //------ AssetBundleファイルをパッケージ化 ------

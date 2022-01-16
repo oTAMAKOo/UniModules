@@ -62,6 +62,36 @@ namespace Modules.AssetBundles.Editor
             return bundlePipeline.Build(assetBundlePath);
         }
 
+        /// <summary> 未登録のアセットバンドル情報追加 </summary>
+        public void AddUnregisteredAssetInfos(AssetInfoManifest assetInfoManifest, BuildResult buildResult)
+        {
+            var assetBundleAssetInfos = assetInfoManifest.GetAssetInfos()
+                .Where(x => x.IsAssetBundle)
+                .GroupBy(x => x.AssetBundle.AssetBundleName)
+                .ToArray();
+
+            foreach (var bundleInfo in buildResult.BundleBuildResults.BundleInfos)
+            {
+                var assetBundleName = bundleInfo.Key;
+
+                // マニフェストファイルは登録しない.
+                if (AssetInfoManifest.AssetBundleName == assetBundleName){ continue; }
+
+                // 既に登録済み.
+                if (assetBundleAssetInfos.Any(x => x.Key == assetBundleName)){ continue; }
+                
+                var fileName = Path.GetFileName(bundleInfo.Value.FileName);
+
+                var assetInfo = new AssetInfo(fileName, "(undefined)", null);
+
+                var assetBundleInfo = new AssetBundleInfo(assetBundleName);
+
+                assetInfo.SetAssetBundleInfo(assetBundleInfo);
+                
+                assetInfoManifest.AddAssetInfo(assetInfo);
+            }
+        }
+
         /// <summary> アセットバンドルの参照情報を書き込み </summary>
         public void SetDependencies(AssetInfoManifest assetInfoManifest, BuildResult buildResult)
         {
@@ -148,11 +178,12 @@ namespace Modules.AssetBundles.Editor
         }
 
         /// <summary> 不要になったアセットバンドルを削除 </summary>
-        public void CleanUnUseAssetBundleFiles()
+        public void CleanUnUseAssetBundleFiles(BuildResult buildResult)
         {
             var assetBundlePath = GetAssetBundleOutputPath();
 
-            var assetBundleNames = AssetDatabase.GetAllAssetBundleNames()
+            var assetBundleNames = buildResult.BundleBuildResults.BundleInfos
+                .Select(x => x.Key)
                 .Select(x => PathUtility.ConvertPathSeparator(x))
                 .ToArray();
 

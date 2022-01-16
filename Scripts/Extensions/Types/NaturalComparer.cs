@@ -28,11 +28,12 @@ namespace Extensions
 
         public override int Compare(string x, string y)
         {
-            if (x == y)
-            {
-                return 0;
-            }
+            if (string.IsNullOrEmpty(x) && string.IsNullOrEmpty(x)){ return 0; }
+
+            if (x == y) { return 0; }
+
             string[] x1, y1;
+
             if (!table.TryGetValue(x, out x1))
             {
                 x1 = Regex.Split(x.Replace(" ", ""), "([0-9]+)");

@@ -21,7 +21,7 @@ namespace Extensions
         /// <summary> パス区切り文字を変換 </summary>
         public static string ConvertPathSeparator(string path)
         {
-            return path.Replace('\\', PathSeparator);
+            return string.IsNullOrEmpty(path) ? null : path.Replace('\\', PathSeparator);
         }
 
         /// <summary> ファイルかフォルダかを判別 </summary>
