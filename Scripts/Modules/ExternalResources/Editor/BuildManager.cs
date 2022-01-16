@@ -58,6 +58,8 @@ namespace Modules.ExternalResource.Editor
 
         //----- field -----
 
+        public static IBuildAssetBundlePipeline BundlePipeline { get; } = new BuildAssetBundlePipeline();
+
         //----- property -----
 
         //----- method -----
@@ -82,6 +84,8 @@ namespace Modules.ExternalResource.Editor
 
             assetManagement.Initialize();
 
+            var buildAssetBundle = new BuildAssetBundle(BundlePipeline);
+
             EditorApplication.LockReloadAssemblies();
 
             try
@@ -93,7 +97,7 @@ namespace Modules.ExternalResource.Editor
                 var cryptoKey = manageConfig.CryptoKey;
                 var cryptoIv = manageConfig.CryptoIv;
 
-                var assetBundlePath = BuildAssetBundle.GetAssetBundleOutputPath();
+                var assetBundlePath = buildAssetBundle.GetAssetBundleOutputPath();
 
                 // 暗号化鍵情報の変更チェック.
 
@@ -116,7 +120,7 @@ namespace Modules.ExternalResource.Editor
 
                     using (new BuildLogScope(logBuilder, sw, "GetCachedFileLastWriteTimeTable"))
                     {
-                        cachedFileLastWriteTimeTable = await BuildAssetBundle.GetCachedFileLastWriteTimeTable();
+                        cachedFileLastWriteTimeTable = await buildAssetBundle.GetCachedFileLastWriteTimeTable();
                     }
 
                     //------ CRIアセットを生成 ------
@@ -132,20 +136,25 @@ namespace Modules.ExternalResource.Editor
 
                     //------ AssetBundleをビルド ------
 
-                    AssetBundleManifest assetBundleManifest = null;
+                    BuildResult buildResult = null;
 
                     using (new BuildLogScope(logBuilder, sw, "BuildAllAssetBundles"))
                     {
-                        assetBundleManifest = BuildAssetBundle.BuildAllAssetBundles();
+                        buildResult = buildAssetBundle.BuildAllAssetBundles();
+                    }
 
-                        BuildAssetBundle.CreateTemporarilyAssetBundleManifestFile();
+                    if (!buildResult.IsSuccess)
+                    {
+                        Debug.LogError("Build ExternalResource failed.");
+
+                        return null;
                     }
 
                     //------ 不要になった古いAssetBundle削除 ------
 
                     using (new BuildLogScope(logBuilder, sw, "CleanUnUseAssetBundleFiles"))
                     {
-                        BuildAssetBundle.CleanUnUseAssetBundleFiles();
+                        buildAssetBundle.CleanUnUseAssetBundleFiles();
                     }
 
                     //------ AssetBundleファイルをパッケージ化 ------
@@ -164,7 +173,7 @@ namespace Modules.ExternalResource.Editor
 
                     using (new BuildLogScope(logBuilder, sw, "GetUpdateTargetAssetInfo"))
                     {
-                        assetInfos = BuildAssetBundle.GetAllTargetAssetInfo(assetInfoManifest);
+                        assetInfos = buildAssetBundle.GetAllTargetAssetInfo(assetInfoManifest);
 
                         // 暗号化キーが変わっていたら全て更新対象.
                         if (cryptoChanged)
@@ -174,7 +183,7 @@ namespace Modules.ExternalResource.Editor
                         // 差分がある対象だけ抽出.
                         else
                         {
-                            updatedAssetInfos = await BuildAssetBundle.GetUpdateTargetAssetInfo(assetInfoManifest, cachedFileLastWriteTimeTable);
+                            updatedAssetInfos = await buildAssetBundle.GetUpdateTargetAssetInfo(assetInfoManifest, cachedFileLastWriteTimeTable);
                         }
                     }
 
@@ -189,7 +198,7 @@ namespace Modules.ExternalResource.Editor
 
                     using (new BuildLogScope(logBuilder, sw, "AssetInfoManifest : SetAssetBundleFileInfo"))
                     {
-                        await AssetInfoManifestGenerator.SetAssetBundleFileInfo(assetBundlePath, assetInfoManifest);
+                        await AssetInfoManifestGenerator.SetAssetBundleFileInfo(assetBundlePath, assetInfoManifest, buildResult);
 
                         #if ENABLE_CRIWARE_ADX || ENABLE_CRIWARE_SOFDEC
 
@@ -202,23 +211,21 @@ namespace Modules.ExternalResource.Editor
 
                     using (new BuildLogScope(logBuilder, sw, "AssetInfoManifest : SetAssetBundleDependencies"))
                     {
-                        BuildAssetBundle.SetDependencies(assetInfoManifest, assetBundleManifest);
+                        buildAssetBundle.SetDependencies(assetInfoManifest, buildResult);
                     }
 
                     //------ バージョンハッシュ情報をAssetInfoManifestに書き込み ------
 
                     using (new BuildLogScope(logBuilder, sw, "AssetInfoManifest : SetAssetInfoHash"))
                     {
-                        BuildAssetBundle.SetAssetInfoHash(assetInfoManifest);
+                        buildAssetBundle.SetAssetInfoHash(assetInfoManifest);
                     }
 
                     //------ 再度AssetInfoManifestだけビルドを実行 ------
 
                     using (new BuildLogScope(logBuilder, sw, "Rebuild AssetInfoManifest"))
                     {
-                        BuildAssetBundle.BuildAssetInfoManifest();
-
-                        BuildAssetBundle.RestoreAssetBundleManifestFile();
+                        buildAssetBundle.BuildAssetInfoManifest();
                     }
 
                     //------ AssetInfoManifestファイルをパッケージ化 ------

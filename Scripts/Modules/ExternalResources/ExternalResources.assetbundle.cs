@@ -30,7 +30,7 @@ namespace Modules.ExternalResource
         private void InitializeAssetBundle()
         {
             assetBundleManager = AssetBundleManager.CreateInstance();
-            assetBundleManager.Initialize(MaxDownloadCount, simulateMode);
+            assetBundleManager.Initialize(resourceDirectory, MaxDownloadCount, simulateMode);
             assetBundleManager.RegisterYieldCancel(yieldCancel);
             assetBundleManager.OnTimeOutAsObservable().Subscribe(x => OnTimeout(x)).AddTo(Disposable);
             assetBundleManager.OnErrorAsObservable().Subscribe(x => OnError(x)).AddTo(Disposable);

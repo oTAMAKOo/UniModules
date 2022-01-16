@@ -2,13 +2,8 @@
 using System;
 using UnityEngine;
 using UnityEditor;
-using System.IO;
-using System.Linq;
-using System.Text;
 using UniRx;
 using Extensions.Devkit;
-using Extensions;
-using Modules.Devkit.Project;
 
 #if ENABLE_CRIWARE_ADX || ENABLE_CRIWARE_SOFDEC
 
@@ -25,6 +20,8 @@ namespace Modules.ExternalResource.Editor
         private readonly Vector2 WindowSize = new Vector2(280f, 106f);
 
         //----- field -----
+
+        private Subject<Unit> onBuildStart = null;
 
         private bool initialized = false;
 
@@ -123,6 +120,11 @@ namespace Modules.ExternalResource.Editor
 
                             if (!string.IsNullOrEmpty(exportPath))
                             {
+                                if(onBuildStart != null)
+                                {
+                                    onBuildStart.OnNext(Unit.Default);
+                                }
+
                                 BuildManager.Build(exportPath, assetInfoManifest)
                                     .ToObservable()
                                     .Subscribe()
@@ -156,6 +158,11 @@ namespace Modules.ExternalResource.Editor
             initialized = true;
 
             Repaint();
+        }
+
+        public IObservable<Unit> OnBuildStartAsObservable()
+        {
+            return onBuildStart ?? (onBuildStart = new Subject<Unit>());
         }
     }
 }

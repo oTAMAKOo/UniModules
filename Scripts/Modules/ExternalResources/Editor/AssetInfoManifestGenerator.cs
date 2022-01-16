@@ -11,7 +11,7 @@ using Extensions.Devkit;
 using Modules.Devkit.Generators;
 using Modules.Devkit.Project;
 using Modules.AssetBundles;
-
+using Modules.AssetBundles.Editor;
 #if ENABLE_CRIWARE_ADX || ENABLE_CRIWARE_SOFDEC
 
 using Modules.CriWare;
@@ -74,7 +74,7 @@ namespace Modules.ExternalResource.Editor
             }
         }
 
-        public static async Task SetAssetBundleFileInfo(string exportPath, AssetInfoManifest assetInfoManifest)
+        public static async Task SetAssetBundleFileInfo(string exportPath, AssetInfoManifest assetInfoManifest, BuildResult buildResult)
         {
             var assetInfos = Reflection.GetPrivateField<AssetInfoManifest, AssetInfo[]>(assetInfoManifest, "assetInfos");
 
@@ -92,17 +92,20 @@ namespace Modules.ExternalResource.Editor
                 
                 var assetInfo = assetBundleGroup.First();
 
+                var detail = buildResult.GetDetails(assetBundleName);
+
+                if (!detail.HasValue)
+                {
+                    throw new InvalidDataException("AssetBundle build info not found. : " + assetBundleName);
+                }
+
                 var filePath = PathUtility.Combine(exportPath, assetBundleName);
 
                 // CRC.
-                BuildPipeline.GetCRCForAssetBundle(filePath, out var assetBundleCrc);
-
-                assetInfo.AssetBundle.SetCRC(assetBundleCrc);
+                assetInfo.AssetBundle.SetCRC(detail.Value.Crc);
 
                 // Hash.
-                BuildPipeline.GetHashForAssetBundle(filePath, out var assetBundleHash);
-
-                var hash = assetBundleHash.ToString();
+                var assetBundleHash = detail.Value.Hash.ToString();
 
                 // ファイルハッシュ・ファイルサイズ設定.
 
@@ -110,7 +113,10 @@ namespace Modules.ExternalResource.Editor
 
                 var task = Task.Run(() =>
                 {
-                    if (!File.Exists(packageFilePath)) { return; }
+                    if (!File.Exists(packageFilePath))
+                    {
+                        throw new InvalidDataException("Package file not found. : " + packageFilePath);
+                    }
             
                     var fileInfo = new FileInfo(packageFilePath);
 
@@ -120,7 +126,7 @@ namespace Modules.ExternalResource.Editor
                     // 同じアセットバンドル名の全アセット情報を更新.
                     foreach (var item in assetBundleGroup)
                     {
-                        item.SetFileInfo(size, crc, hash);
+                        item.SetFileInfo(size, crc, assetBundleHash);
                     }
                 });
 

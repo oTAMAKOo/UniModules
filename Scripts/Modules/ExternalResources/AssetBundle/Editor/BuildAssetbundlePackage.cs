@@ -100,59 +100,64 @@ namespace Modules.AssetBundles.Editor
 
             var cryptoKey = new AesCryptoStreamKey(aesKey, aesIv);
 
-            var tasks = new List<Task>();
-
-            var count = 0;
-            var logBuilder = new StringBuilder();
-
-            foreach (var info in assetInfos)
-            {
-                var assetInfo = info;
-
-                if (assetInfo == null) { continue; }
-
-                var createPackage = updatedAssetInfos.Contains(assetInfo);
-
-                var assetBundleName = assetInfo.AssetBundle.AssetBundleName;
-
-                var buildTask = CreateBuildTask(exportPath, assetBundlePath, assetInfo, createPackage, cryptoKey);
-
-                var task = Task.Run(async () =>
-                {
-                    await buildTask;
-
-                    if (isBatchMode)
-                    {
-                        Debug.LogFormat(assetBundleName);
-                    }
-                    else
-                    {
-                        lock (logBuilder)
-                        {
-                            logBuilder.AppendLine(assetBundleName);
-
-                            count++;
-
-                            if (100 < count)
-                            {
-                                Debug.Log(logBuilder.ToString());
- 
-                                logBuilder.Clear();
-                                count = 0;
-                            }
-                        }
-                    }
-                });
-
-                if (task != null)
-                {
-                    tasks.Add(task);
-                }
-            }
-
             using (new DisableStackTraceScope(LogType.Log))
             {
-                await Task.WhenAll(tasks);
+                var count = 0;
+                var logBuilder = new StringBuilder();
+
+                var chunkedAssetInfos = assetInfos.Chunk(25);
+
+                foreach (var infos in chunkedAssetInfos)
+                {
+                    var tasks = new List<Task>();
+
+                    foreach (var info in infos)
+                    {
+                        var assetInfo = info;
+
+                        if (assetInfo == null) { continue; }
+
+                        var createPackage = updatedAssetInfos.Contains(assetInfo);
+
+                        var assetBundleName = assetInfo.AssetBundle.AssetBundleName;
+
+                        var buildTask = CreateBuildTask(exportPath, assetBundlePath, assetInfo, createPackage, cryptoKey);
+
+                        var task = Task.Run(async () =>
+                        {
+                            await buildTask;
+
+                            if (isBatchMode)
+                            {
+                                Debug.LogFormat(assetBundleName);
+                            }
+                            else
+                            {
+                                lock (logBuilder)
+                                {
+                                    logBuilder.AppendLine(assetBundleName);
+
+                                    count++;
+
+                                    if (25 < count)
+                                    {
+                                        Debug.Log(logBuilder.ToString());
+         
+                                        logBuilder.Clear();
+                                        count = 0;
+                                    }
+                                }
+                            }
+                        });
+
+                        if (task != null)
+                        {
+                            tasks.Add(task);
+                        }
+                    }
+
+                    await Task.WhenAll(tasks);
+                }
 
                 if (!isBatchMode && count != 0)
                 {

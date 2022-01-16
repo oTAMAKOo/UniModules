@@ -14,6 +14,7 @@ using Amazon.S3.Transfer;
 using Extensions;
 using Modules.Amazon.S3;
 using Modules.AssetBundles;
+using Modules.Devkit.Project;
 
 namespace Modules.ExternalResource.Editor
 {
@@ -157,6 +158,8 @@ namespace Modules.ExternalResource.Editor
         {
             Debug.Log("Load AssetInfoManifest.package.");
 
+            var projectFolders = ProjectFolders.Instance;
+
             assetInfoManifestFilePath = GetAssetInfoManifestFilePath(files);
 
             var cryptoKey = GetCryptoKey();
@@ -174,7 +177,9 @@ namespace Modules.ExternalResource.Editor
 
                     var assetBundle = bundleLoadRequest.assetBundle;
 
-                    var loadAssetAsync = assetBundle.LoadAssetAsync(AssetInfoManifest.ManifestFileName, typeof(AssetInfoManifest));
+                    var loadPath = PathUtility.Combine(projectFolders.ExternalResourcesPath, AssetInfoManifest.ManifestFileName);
+
+                    var loadAssetAsync = assetBundle.LoadAssetAsync(loadPath, typeof(AssetInfoManifest));
 
                     while (!loadAssetAsync.isDone)
                     {
