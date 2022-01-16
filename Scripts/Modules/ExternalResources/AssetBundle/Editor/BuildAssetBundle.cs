@@ -232,6 +232,8 @@ namespace Modules.AssetBundles.Editor
 
         public AssetInfo[] GetAllTargetAssetInfo(AssetInfoManifest assetInfoManifest)
         {
+            var projectFolders = ProjectFolders.Instance;
+
             var assetInfos = assetInfoManifest.GetAssetInfos()
                 .Where(x => x.IsAssetBundle)
                 .Where(x => !string.IsNullOrEmpty(x.AssetBundle.AssetBundleName))

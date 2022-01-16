@@ -252,23 +252,14 @@ namespace Modules.ExternalResource
             var sw = System.Diagnostics.Stopwatch.StartNew();
 
             // アセット管理情報読み込み.
-            
-            var manifestFileName = AssetInfoManifest.ManifestFileName;
-
-            #if UNITY_EDITOR
-
-            if (simulateMode)
-            {
-                manifestFileName = PathUtility.Combine(resourceDirectory, manifestFileName);
-            }
-
-            #endif
 
             var manifestAssetInfo = AssetInfoManifest.GetManifestAssetInfo();
 
+            var assetPath = PathUtility.Combine(resourceDirectory, manifestAssetInfo.ResourcePath);
+
             // AssetInfoManifestは常に最新に保たなくてはいけない為必ずダウンロードする.
             var loadYield = assetBundleManager.UpdateAssetInfoManifest()
-                .SelectMany(_ => assetBundleManager.LoadAsset<AssetInfoManifest>(manifestAssetInfo, manifestFileName))
+                .SelectMany(_ => assetBundleManager.LoadAsset<AssetInfoManifest>(manifestAssetInfo, assetPath))
                 .ToYieldInstruction(false);
 
             yield return loadYield;

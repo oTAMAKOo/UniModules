@@ -121,8 +121,6 @@ namespace Modules.ExternalResource
         private string[] dependencies = null;
         [SerializeField]
         private uint crc = 0;
-        [SerializeField]
-        private string hash = null;
 
         //----- property -----
 

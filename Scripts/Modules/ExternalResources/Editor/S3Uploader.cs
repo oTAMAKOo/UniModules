@@ -162,6 +162,10 @@ namespace Modules.ExternalResource.Editor
 
             assetInfoManifestFilePath = GetAssetInfoManifestFilePath(files);
 
+            var manifestAssetInfo = AssetInfoManifest.GetManifestAssetInfo();
+
+            var assetPath = PathUtility.Combine(projectFolders.ExternalResourcesPath, manifestAssetInfo.ResourcePath);
+
             var cryptoKey = GetCryptoKey();
 
             using (var fileStream = new FileStream(assetInfoManifestFilePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
@@ -176,10 +180,8 @@ namespace Modules.ExternalResource.Editor
                     }
 
                     var assetBundle = bundleLoadRequest.assetBundle;
-
-                    var loadPath = PathUtility.Combine(projectFolders.ExternalResourcesPath, AssetInfoManifest.ManifestFileName);
-
-                    var loadAssetAsync = assetBundle.LoadAssetAsync(loadPath, typeof(AssetInfoManifest));
+                    
+                    var loadAssetAsync = assetBundle.LoadAssetAsync(assetPath, typeof(AssetInfoManifest));
 
                     while (!loadAssetAsync.isDone)
                     {

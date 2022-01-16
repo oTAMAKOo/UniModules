@@ -38,9 +38,6 @@ namespace Modules.AssetBundles
         // アセット管理.
         private AssetInfoManifest manifest = null;
 
-        // ルートディレクトリ.
-        private string rootDirectory = null;
-
         // ダウンロード先パス.
         private string installPath = null;
 
@@ -96,15 +93,13 @@ namespace Modules.AssetBundles
         /// 初期設定をします。
         /// Initializeで設定した値はstatic変数として保存されます。
         /// </summary>
-        /// <param name="rootDirectory">ルートフォルダパス</param>
         /// <param name="maxDownloadCount">同時ダウンロード数</param>
         /// <param name="simulateMode">AssetDataBaseからアセットを取得(EditorOnly)</param>
         /// <param name="cryptoKey">暗号化キー(Key,IVがModules.ExternalResource.Editor.ManageConfigのAssetのCryptKeyと一致している必要があります.)</param>
-        public void Initialize(string rootDirectory, uint maxDownloadCount, bool simulateMode = false, AesCryptoKey cryptoKey = null)
+        public void Initialize(uint maxDownloadCount, bool simulateMode = false, AesCryptoKey cryptoKey = null)
         {
             if (isInitialized) { return; }
 
-            this.rootDirectory = rootDirectory;
             this.maxDownloadCount = maxDownloadCount;
             this.simulateMode = Application.isEditor && simulateMode;
 
@@ -610,9 +605,7 @@ namespace Modules.AssetBundles
 
                     if (seekableAssetBundle != null)
                     {
-                        var loadPath = PathUtility.Combine(rootDirectory, assetPath);
-
-                        var assetBundleRequest = seekableAssetBundle.assetBundle.LoadAssetAsync(loadPath, typeof(T));
+                        var assetBundleRequest = seekableAssetBundle.assetBundle.LoadAssetAsync(assetPath, typeof(T));
 
                         while (!assetBundleRequest.isDone)
                         {

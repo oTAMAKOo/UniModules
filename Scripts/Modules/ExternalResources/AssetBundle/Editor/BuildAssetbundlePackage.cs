@@ -8,6 +8,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
 using Extensions;
+using Modules.Devkit.Project;
 using Modules.ExternalResource;
 
 namespace Modules.AssetBundles.Editor
