@@ -73,9 +73,7 @@ namespace Modules.AssetBundles.Editor
 
             var buildContent = new BundleBuildContent(buildMap);
 
-            var tasks = new List<IBuildTask>();
-            
-            tasks.AddRange(DefaultBuildTasks.Create(DefaultBuildTasks.Preset.AssetBundleBuiltInShaderExtraction));
+            var tasks = DefaultBuildTasks.Create(DefaultBuildTasks.Preset.AssetBundleBuiltInShaderExtraction);
             
             var exitCode = ContentPipeline.BuildAssetBundles(buildParams, buildContent, out var results, tasks);
             
