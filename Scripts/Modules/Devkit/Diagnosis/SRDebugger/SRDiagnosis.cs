@@ -168,5 +168,7 @@ namespace Modules.Devkit.Diagnosis.SRDebugger
                 currentLogType = logInfo.Type;
             }            
         }
+
+        #endif
     }
 }
