@@ -1,10 +1,5 @@
 ﻿
 using UnityEngine;
-using System;
-using System.Linq;
-using System.Collections.Generic;
-using UniRx;
-using Extensions;
 using Modules.Devkit.Diagnosis.SRDebugger;
 
 namespace Modules.Devkit.Diagnosis
@@ -16,7 +11,7 @@ namespace Modules.Devkit.Diagnosis
         //----- field -----
 
         [SerializeField]
-        private GameObject touchBlockObject = null;
+        private GameObject touchBlock = null;
         [SerializeField]
         private FpsStats fpsStats = null;
         [SerializeField]
@@ -28,13 +23,24 @@ namespace Modules.Devkit.Diagnosis
 
         public void Initialize()
         {
-            UnityUtility.SetActive(touchBlockObject, false);
-
             fpsStats.Initialize();
 
             #if ENABLE_SRDEBUGGER
 
             srDiagnosis.Initialize();
+
+            #endif
+
+            SetTouchBlock(touchBlock);
+        }
+
+        public void SetTouchBlock(GameObject touchBlock)
+        {
+            this.touchBlock = touchBlock;
+
+            #if ENABLE_SRDEBUGGER
+
+            srDiagnosis.SetTouchBlock(touchBlock);
 
             #endif
         }

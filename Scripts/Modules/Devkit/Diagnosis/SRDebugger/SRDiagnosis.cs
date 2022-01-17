@@ -35,8 +35,6 @@ namespace Modules.Devkit.Diagnosis.SRDebugger
         [SerializeField]
         private Image background = null;
         [SerializeField]
-        private GameObject blockCollider = null;
-        [SerializeField]
         private Color defaultColor = Color.white;
         [SerializeField]
         private Color warningColor = Color.yellow;
@@ -44,6 +42,8 @@ namespace Modules.Devkit.Diagnosis.SRDebugger
         private Color errorColor = Color.red;
         [SerializeField]
         private Color exceptionColor = Color.magenta;
+
+        private GameObject touchBlock = null;
 
         private LogType? currentLogType = null;
 
@@ -73,7 +73,7 @@ namespace Modules.Devkit.Diagnosis.SRDebugger
                 var logTracker = UnityLogTracker.Instance;
                 var applicationLogHandler = ApplicationLogHandler.Instance;
 
-                UnityUtility.SetActive(blockCollider, srDebug.IsDebugPanelVisible);
+                SetTouchBlock(touchBlock);
 
                 VisibilityChangedDelegate onPanelVisibilityChanged = visible =>
                 {
@@ -84,7 +84,7 @@ namespace Modules.Devkit.Diagnosis.SRDebugger
                         lastShowLogTime = Time.realtimeSinceStartup;
                     }
 
-                    UnityUtility.SetActive(blockCollider, visible);
+                    UnityUtility.SetActive(touchBlock, visible);
                 };
 
                 srDebug.PanelVisibilityChanged += onPanelVisibilityChanged;
@@ -100,12 +100,19 @@ namespace Modules.Devkit.Diagnosis.SRDebugger
 
                 logTracker.Initialize();
 
-                UnityUtility.SetActive(blockCollider, false);
-
                 background.color = defaultColor;
 
                 initialized = true;
             }
+        }
+
+        public void SetTouchBlock(GameObject touchBlock)
+        {
+            this.touchBlock = touchBlock;
+
+            var srDebug = SRDebug.Instance;
+
+            UnityUtility.SetActive(touchBlock, srDebug.IsDebugPanelVisible);
         }
 
         private void OnLogReceive(ApplicationLogHandler.LogInfo logInfo)
@@ -161,7 +168,5 @@ namespace Modules.Devkit.Diagnosis.SRDebugger
                 currentLogType = logInfo.Type;
             }            
         }
-
-        #endif
     }
 }
