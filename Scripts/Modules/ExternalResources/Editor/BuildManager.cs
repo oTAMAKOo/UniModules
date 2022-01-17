@@ -261,7 +261,7 @@ namespace Modules.ExternalResource.Editor
 
                 var totalSeconds = stopwatch.Elapsed.TotalSeconds; 
 
-                buildLogText.AppendFormat("Build ExternalResource Complete. ({0:F2})", totalSeconds).AppendLine();
+                buildLogText.AppendFormat("Build ExternalResource Complete. ({0:F2}sec)", totalSeconds).AppendLine();
                 buildLogText.AppendLine();
                 buildLogText.AppendFormat("VersionHash : {0}", versionHash).AppendLine();
                 buildLogText.AppendLine();
