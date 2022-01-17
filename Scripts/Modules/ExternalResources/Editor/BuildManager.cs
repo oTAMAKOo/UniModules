@@ -90,6 +90,8 @@ namespace Modules.ExternalResource.Editor
 
             try
             {
+                var stopwatch = System.Diagnostics.Stopwatch.StartNew();
+
                 var logBuilder = new StringBuilder();
 
                 var manageConfig = ManageConfig.Instance;
@@ -105,11 +107,11 @@ namespace Modules.ExternalResource.Editor
 
                 using (new DisableStackTraceScope())
                 {
-                    var sw = System.Diagnostics.Stopwatch.StartNew();
+                    var processTime = System.Diagnostics.Stopwatch.StartNew();
 
                     //------ アセットバンドル名を設定------
 
-                    using (new BuildLogScope(logBuilder, sw, "ApplyAllAssetBundleName"))
+                    using (new BuildLogScope(logBuilder, processTime, "ApplyAllAssetBundleName"))
                     {
                         assetManagement.ApplyAllAssetBundleName();
                     }
@@ -118,7 +120,7 @@ namespace Modules.ExternalResource.Editor
 
                     Dictionary<string, DateTime> cachedFileLastWriteTimeTable = null;
 
-                    using (new BuildLogScope(logBuilder, sw, "GetCachedFileLastWriteTimeTable"))
+                    using (new BuildLogScope(logBuilder, processTime, "GetCachedFileLastWriteTimeTable"))
                     {
                         cachedFileLastWriteTimeTable = await buildAssetBundle.GetCachedFileLastWriteTimeTable();
                     }
@@ -127,7 +129,7 @@ namespace Modules.ExternalResource.Editor
 
                     #if ENABLE_CRIWARE_ADX || ENABLE_CRIWARE_SOFDEC
 
-                    using (new BuildLogScope(logBuilder, sw, "GenerateCriAsset"))
+                    using (new BuildLogScope(logBuilder, processTime, "GenerateCriAsset"))
                     {
                         CriAssetGenerator.Generate(exportPath, assetInfoManifest);
                     }
@@ -138,7 +140,7 @@ namespace Modules.ExternalResource.Editor
 
                     BuildResult buildResult = null;
 
-                    using (new BuildLogScope(logBuilder, sw, "BuildAllAssetBundles"))
+                    using (new BuildLogScope(logBuilder, processTime, "BuildAllAssetBundles"))
                     {
                         buildResult = buildAssetBundle.BuildAllAssetBundles();
                     }
@@ -152,14 +154,14 @@ namespace Modules.ExternalResource.Editor
 
                     //------ 未登録のアセットバンドル情報追加 ------
 
-                    using (new BuildLogScope(logBuilder, sw, "AddUnregisteredAssetInfos"))
+                    using (new BuildLogScope(logBuilder, processTime, "AddUnregisteredAssetInfos"))
                     {
                         buildAssetBundle.AddUnregisteredAssetInfos(assetInfoManifest, buildResult);
                     }
 
                     //------ 不要になった古いAssetBundle削除 ------
 
-                    using (new BuildLogScope(logBuilder, sw, "CleanUnUseAssetBundleFiles"))
+                    using (new BuildLogScope(logBuilder, processTime, "CleanUnUseAssetBundleFiles"))
                     {
                         buildAssetBundle.CleanUnUseAssetBundleFiles(buildResult);
                     }
@@ -168,7 +170,7 @@ namespace Modules.ExternalResource.Editor
 
                     // 暗号化鍵情報の書き込み.
 
-                    using (new BuildLogScope(logBuilder, sw, "CreateCryptoFile"))
+                    using (new BuildLogScope(logBuilder, processTime, "CreateCryptoFile"))
                     {
                         BuildAssetBundlePackage.CreateCryptoFile(assetBundlePath, cryptoKey, cryptoIv);
                     }
@@ -178,7 +180,7 @@ namespace Modules.ExternalResource.Editor
                     var assetInfos = new AssetInfo[0];
                     var updatedAssetInfos = new AssetInfo[0];
 
-                    using (new BuildLogScope(logBuilder, sw, "GetUpdateTargetAssetInfo"))
+                    using (new BuildLogScope(logBuilder, processTime, "GetUpdateTargetAssetInfo"))
                     {
                         assetInfos = buildAssetBundle.GetAllTargetAssetInfo(assetInfoManifest);
 
@@ -196,14 +198,14 @@ namespace Modules.ExternalResource.Editor
 
                     // パッケージファイル作成.
 
-                    using (new BuildLogScope(logBuilder, sw, "BuildPackage"))
+                    using (new BuildLogScope(logBuilder, processTime, "BuildPackage"))
                     {
                         await BuildAssetBundlePackage.BuildAllAssetBundlePackage(exportPath, assetBundlePath, assetInfos, updatedAssetInfos, cryptoKey, cryptoIv);
                     }
 
                     //------ ビルド成果物の情報をAssetInfoManifestに書き込み ------
 
-                    using (new BuildLogScope(logBuilder, sw, "AssetInfoManifest : SetAssetBundleFileInfo"))
+                    using (new BuildLogScope(logBuilder, processTime, "AssetInfoManifest : SetAssetBundleFileInfo"))
                     {
                         await AssetInfoManifestGenerator.SetAssetBundleFileInfo(assetBundlePath, assetInfoManifest, buildResult);
 
@@ -216,28 +218,28 @@ namespace Modules.ExternalResource.Editor
 
                     //------ アセットバンドルの参照情報をAssetInfoManifestに書き込み ------
 
-                    using (new BuildLogScope(logBuilder, sw, "AssetInfoManifest : SetAssetBundleDependencies"))
+                    using (new BuildLogScope(logBuilder, processTime, "AssetInfoManifest : SetAssetBundleDependencies"))
                     {
                         buildAssetBundle.SetDependencies(assetInfoManifest, buildResult);
                     }
 
                     //------ バージョンハッシュ情報をAssetInfoManifestに書き込み ------
 
-                    using (new BuildLogScope(logBuilder, sw, "AssetInfoManifest : SetAssetInfoHash"))
+                    using (new BuildLogScope(logBuilder, processTime, "AssetInfoManifest : SetAssetInfoHash"))
                     {
                         buildAssetBundle.SetAssetInfoHash(assetInfoManifest);
                     }
 
                     //------ 再度AssetInfoManifestだけビルドを実行 ------
 
-                    using (new BuildLogScope(logBuilder, sw, "Rebuild AssetInfoManifest"))
+                    using (new BuildLogScope(logBuilder, processTime, "Rebuild AssetInfoManifest"))
                     {
                         buildAssetBundle.BuildAssetInfoManifest();
                     }
 
                     //------ AssetInfoManifestファイルをパッケージ化 ------
 
-                    using (new BuildLogScope(logBuilder, sw, "BuildPackage AssetInfoManifest"))
+                    using (new BuildLogScope(logBuilder, processTime, "BuildPackage AssetInfoManifest"))
                     {
                         await BuildAssetBundlePackage.BuildAssetInfoManifestPackage(exportPath, assetBundlePath, cryptoKey, cryptoIv);
                     }
@@ -251,11 +253,15 @@ namespace Modules.ExternalResource.Editor
 
                 //------ ログ出力------
 
+                stopwatch.Stop();
+
                 // ビルド情報.
 
                 var buildLogText = new StringBuilder();
 
-                buildLogText.Append("Build ExternalResource Complete.").AppendLine();
+                var totalSeconds = stopwatch.Elapsed.TotalSeconds; 
+
+                buildLogText.AppendFormat("Build ExternalResource Complete. ({0:F2})", totalSeconds).AppendLine();
                 buildLogText.AppendLine();
                 buildLogText.AppendFormat("VersionHash : {0}", versionHash).AppendLine();
                 buildLogText.AppendLine();
