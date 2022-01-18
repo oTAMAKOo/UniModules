@@ -22,7 +22,6 @@ namespace Modules.Devkit.U2D
         private Vector2 scrollPosition = Vector2.zero;
 
         private GUIContent infoIconContent = null;
-        private GUIContent warnIconContent = null;
 
         [NonSerialized]
         private bool initialized = false;
@@ -49,11 +48,6 @@ namespace Modules.Devkit.U2D
             if (infoIconContent == null)
             {
                 infoIconContent = EditorGUIUtility.IconContent("console.infoicon.sml");
-            }
-
-            if (warnIconContent == null)
-            {
-                warnIconContent = EditorGUIUtility.IconContent("Warning");
             }
 
             Observable.EveryUpdate().Where(_ => Input.GetMouseButtonDown(0))
@@ -91,7 +85,7 @@ namespace Modules.Devkit.U2D
             {
                 using (new EditorGUILayout.HorizontalScope(EditorStyles.toolbar, GUILayout.Height(15f)))
                 {
-                    GUILayout.Label(warnIconContent, GUILayout.Width(warnIconContent.image.width + 3.5f)); 
+                    GUILayout.Label(infoIconContent, GUILayout.Width(infoIconContent.image.width + 3.5f)); 
 
                     GUILayout.Label("Works in play mode.");
                 }
