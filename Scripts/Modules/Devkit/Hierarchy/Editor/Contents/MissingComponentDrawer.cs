@@ -2,9 +2,9 @@
 using UnityEngine;
 using UnityEditor;
 using Unity.Linq;
-using System.Linq;
 using System.Collections.Generic;
 using Extensions;
+using Extensions.Devkit;
 using Modules.Devkit.Prefs;
 
 namespace Modules.Devkit.Hierarchy
@@ -56,11 +56,11 @@ namespace Modules.Devkit.Hierarchy
 
         public override Rect Draw(GameObject targetObject, Rect rect)
         {
-            SearchMissingComponents(targetObject);
+            SearchMissing(targetObject);
 
-            var hasMissingComponent = missingSearchDictionary.GetValueOrDefault(targetObject);
+            var hasMissing = missingSearchDictionary.GetValueOrDefault(targetObject);
             
-            if (hasMissingComponent)
+            if (hasMissing)
             {
                 var iconOffsetX = MissingIconSize.x - 0.5f;
 
@@ -91,7 +91,7 @@ namespace Modules.Devkit.Hierarchy
             }
         }
 
-        private bool SearchMissingComponents(GameObject targetObject)
+        private bool SearchMissing(GameObject targetObject)
         {
             // 既に検索済みなら検索しない.
             if (missingSearchDictionary.ContainsKey(targetObject))
@@ -101,24 +101,17 @@ namespace Modules.Devkit.Hierarchy
 
             var gameObjects = targetObject.Children();
 
-            var hasMissingComponent = HasMissingComponent(targetObject);
-            
+            var hasMissing = UnityEditorUtility.HasMissingReference(targetObject);
+
             foreach (var gameObject in gameObjects)
             {
-                hasMissingComponent |= SearchMissingComponents(gameObject);
+                hasMissing |= SearchMissing(gameObject);
             }
 
             // 子階層にMissingがある場合は自身もMissingを持つ状態にする.
-            missingSearchDictionary.Add(targetObject, hasMissingComponent);
+            missingSearchDictionary.Add(targetObject, hasMissing);
 
-            return hasMissingComponent;
-        }
-
-        private bool HasMissingComponent(GameObject gameObject)
-        {
-            var components = UnityUtility.GetComponents<Component>(gameObject);
-
-            return components.Any(x => x == null);
+            return hasMissing;
         }
     }
 }

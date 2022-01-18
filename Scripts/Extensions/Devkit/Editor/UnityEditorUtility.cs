@@ -66,6 +66,46 @@ namespace Extensions.Devkit
             return inactive ? gameObjects.ToArray() : gameObjects.Where(x => x.activeSelf).ToArray();
         }
 
+        /// <summary>
+        /// Missing状態のComponent or Fieldがあるか取得.
+        /// </summary>
+        public static bool HasMissingReference(GameObject gameObject)
+        {
+            var components = UnityUtility.GetComponents<Component>(gameObject).ToArray();
+
+            // コンポーネントのスクリプトがMissing.
+            
+            if (components.Any(x => x == null)){ return true; }
+
+            // コンポーネントのSerializeFieldがMissing.
+            
+            foreach (var component in components)
+            {
+                var so = new SerializedObject(component);
+
+                var sp = so.GetIterator();
+
+                while (sp.NextVisible(true))
+                {
+                    if (sp.propertyType != SerializedPropertyType.ObjectReference){ continue; }
+
+                    if (sp.objectReferenceValue != null ){ continue; }
+
+                    if (!sp.hasChildren ){ continue; }
+
+                    var fileId = sp.FindPropertyRelative( "m_FileID" );
+                    
+                    if (fileId == null){ continue; }
+                    
+                    if (fileId.intValue == 0) { continue; }
+
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
         /// <summary> コンパイル実行. </summary>
         public static void RequestScriptCompilation()
         {
