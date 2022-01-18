@@ -11,6 +11,8 @@ using Extensions.Devkit;
 using Modules.Devkit.EditorSceneChange;
 using Modules.Devkit.Prefs;
 
+using Object = UnityEngine.Object;
+
 namespace Modules.Devkit.SceneLaunch
 {
     public sealed class SceneLaunchWindow : SingletonEditorWindow<SceneLaunchWindow>
@@ -33,10 +35,10 @@ namespace Modules.Devkit.SceneLaunch
                 set { ProjectPrefs.SetEnum("SceneLaunchPrefs-resume", value); }
             }
 
-            public static string targetScenePath
+            public static string targetSceneGuid
             {
-                get { return ProjectPrefs.GetString("SceneLaunchPrefs-targetScenePath"); }
-                set { ProjectPrefs.SetString("SceneLaunchPrefs-targetScenePath", value); }
+                get { return ProjectPrefs.GetString("SceneLaunchPrefs-targetSceneGuid"); }
+                set { ProjectPrefs.SetString("SceneLaunchPrefs-targetSceneGuid", value); }
             }
 
             public static bool standbyInitializer
@@ -173,11 +175,14 @@ namespace Modules.Devkit.SceneLaunch
 
         //----- field -----
 
-        private string targetScenePath = null;
+        private SceneAsset sceneAsset = null;
 
         private GUIStyle sceneNameStyle = null;
 
         private bool initialized = false;
+
+        [NonSerialized]
+        private bool isSceneLoaded = false;
 
         //----- property -----
 
@@ -198,9 +203,30 @@ namespace Modules.Devkit.SceneLaunch
 
             minSize = new Vector2(250f, 60f);
 
-            targetScenePath = Prefs.targetScenePath;
-
+            LoadSceneAsset();
+            
             initialized = true;
+        }
+
+        private void LoadSceneAsset()
+        {
+            var sceneGuid = Prefs.targetSceneGuid;
+            
+            if (!string.IsNullOrEmpty(sceneGuid))
+            {
+                var assetPath = AssetDatabase.GUIDToAssetPath(Prefs.targetSceneGuid);
+
+                if (!string.IsNullOrEmpty(assetPath))
+                {
+                    sceneAsset = AssetDatabase.LoadMainAssetAtPath(assetPath) as SceneAsset;
+                }
+            }
+            else
+            {
+                sceneAsset = null;
+            }
+
+            isSceneLoaded = true;
         }
 
         void OnEnable()
@@ -210,9 +236,9 @@ namespace Modules.Devkit.SceneLaunch
 
         void Update()
         {
-            if (!initialized)
+            if (!isSceneLoaded)
             {
-                Initialize();
+                LoadSceneAsset();
             }
         }
 
@@ -224,13 +250,10 @@ namespace Modules.Devkit.SceneLaunch
 
             using (new EditorGUILayout.HorizontalScope())
             {
-                targetScenePath = string.IsNullOrEmpty(targetScenePath) ? Prefs.targetScenePath : targetScenePath;
-
-                var sceneName = Path.GetFileName(targetScenePath);
-
                 if (EditorLayoutTools.PrefixButton("Scene", GUILayout.Width(65f), GUILayout.Height(18f)))
                 {
-                    SceneSelectorPrefs.selectedScenePath = targetScenePath;
+                    SceneSelectorPrefs.selectedScenePath = sceneAsset != null ? AssetDatabase.GetAssetPath(sceneAsset) : null;
+
                     SceneSelector.Open().Subscribe(OnSelectScene);
                 }
 
@@ -244,7 +267,14 @@ namespace Modules.Devkit.SceneLaunch
                 {
                     GUILayout.Space(3f);
 
-                    EditorGUILayout.SelectableLabel(sceneName, sceneNameStyle, GUILayout.Height(18f));
+                    EditorGUI.BeginChangeCheck();
+
+                    sceneAsset = EditorGUILayout.ObjectField(sceneAsset, typeof(SceneAsset), false, GUILayout.Height(18f)) as SceneAsset;
+
+                    if (EditorGUI.EndChangeCheck())
+                    {
+                        Prefs.targetSceneGuid = UnityEditorUtility.GetAssetGUID(sceneAsset);
+                    }
                 }
 
                 GUILayout.Space(5f);
@@ -260,7 +290,7 @@ namespace Modules.Devkit.SceneLaunch
                 // ・実行中.
                 // ・ビルド中.
                 // ・遷移先シーンが未選択.
-                var disable = EditorApplication.isPlaying || EditorApplication.isCompiling || string.IsNullOrEmpty(targetScenePath);
+                var disable = EditorApplication.isPlaying || EditorApplication.isCompiling || sceneAsset == null;
 
                 using (new DisableScope(disable))
                 {
@@ -276,7 +306,11 @@ namespace Modules.Devkit.SceneLaunch
 
         private IObservable<Unit> Launch()
         {
-            return EditorSceneChanger.SceneChange(targetScenePath)
+            var sceneGuid = Prefs.targetSceneGuid;
+
+            var scenePath = string.IsNullOrEmpty(sceneGuid) ? null : AssetDatabase.GUIDToAssetPath(sceneGuid);
+
+            return EditorSceneChanger.SceneChange(scenePath)
                 .Do(x =>
                     {
                         if (x)
@@ -311,16 +345,20 @@ namespace Modules.Devkit.SceneLaunch
 
         private static void OnSceneLoaded(Scene scene, LoadSceneMode mode)
         {
-            if (scene.path != Prefs.targetScenePath) { return; }
+            var sceneGuid = Prefs.targetSceneGuid;
+
+            var scenePath = string.IsNullOrEmpty(sceneGuid) ? null : AssetDatabase.GUIDToAssetPath(sceneGuid);
+
+            if (scene.path != scenePath) { return; }
             
             ResumeSuspendObject(scene.GetRootGameObjects());
         }
 
         private void OnSelectScene(string targetScenePath)
         {
-            this.targetScenePath = targetScenePath;
+            Prefs.targetSceneGuid = AssetDatabase.AssetPathToGUID(targetScenePath);
 
-            Prefs.targetScenePath = targetScenePath;
+            LoadSceneAsset();
 
             SceneSelectorPrefs.selectedScenePath = targetScenePath;
 
