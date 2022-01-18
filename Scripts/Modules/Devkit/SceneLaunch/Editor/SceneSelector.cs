@@ -29,6 +29,8 @@ namespace Modules.Devkit.SceneLaunch
         private string searchText = null;
         private Vector2 scrollPos = Vector2.zero;
         private List<string> scenePaths = null;
+        private GUIStyle labelStyle = null;
+
         private Subject<string> onSelected = new Subject<string>();
 
         private static SceneSelector instance = null;
@@ -65,6 +67,15 @@ namespace Modules.Devkit.SceneLaunch
 
         void OnGUI()
         {
+            if (labelStyle == null)
+            {
+                labelStyle = new GUIStyle(EditorStyles.label)
+                {
+                    fontSize = 12,
+                    alignment = TextAnchor.MiddleLeft,
+                };
+            }
+
             GUILayout.Space(2f);
 
             using(new EditorGUILayout.HorizontalScope(EditorStyles.toolbar, GUILayout.Height(15f)))
@@ -88,8 +99,6 @@ namespace Modules.Devkit.SceneLaunch
                 EditorLayoutTools.DrawSearchTextField(searchText, onChangeSearchText, onSearchCancel, GUILayout.Width(250f));
             }
 
-            GUILayout.Space(4f);
-
             if (0 < scenePaths.Count)
             {
                 var infos = GetListOfScenePaths();
@@ -102,30 +111,21 @@ namespace Modules.Devkit.SceneLaunch
                         {
                             var highlight = SceneSelectorPrefs.selectedScenePath == path;
 
-                            var backgroundColor = highlight ? new Color(0.8f, 0.8f, 1f) : Color.white;
+                            var backgroundColor = highlight ? new Color(0.0f, 0.1f, 1f, 0.8f) : Color.white;
 
                             using (new BackgroundColorScope(backgroundColor))
                             {
-                                var size = EditorStyles.label.CalcSize(new GUIContent(path));
-
-                                size.y += 6f;
-
-                                using(new EditorGUILayout.HorizontalScope(EditorStyles.textArea, GUILayout.Height(size.y)))
+                                using(new EditorGUILayout.HorizontalScope(EditorStyles.toolbar))
                                 {
-                                    var labelStyle = new GUIStyle("IN TextField");
-                                    labelStyle.alignment = TextAnchor.MiddleLeft;
-
                                     GUILayout.Space(10f);
 
-                                    GUILayout.Label(path, labelStyle, GUILayout.MinWidth(65f), GUILayout.Height(size.y));
+                                    GUILayout.Label(path, labelStyle, GUILayout.MinWidth(65f));
 
                                     GUILayout.FlexibleSpace();
 
                                     using(new EditorGUILayout.VerticalScope())
                                     {
-                                        var buttonHeight = 20f;
-
-                                        GUILayout.Space((size.y - buttonHeight) * 0.5f);
+                                        GUILayout.Space(1f);
 
                                         using (new BackgroundColorScope(Color.white))
                                         {
@@ -134,8 +134,6 @@ namespace Modules.Devkit.SceneLaunch
                                                 Apply(path);
                                             }
                                         }
-
-                                        GUILayout.Space((size.y - buttonHeight) * 0.5f);
                                     }
 
                                     GUILayout.Space(8f);
