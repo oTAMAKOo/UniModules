@@ -212,19 +212,7 @@ namespace Modules.Devkit.SceneLaunch
         {
             var sceneGuid = Prefs.targetSceneGuid;
             
-            if (!string.IsNullOrEmpty(sceneGuid))
-            {
-                var assetPath = AssetDatabase.GUIDToAssetPath(Prefs.targetSceneGuid);
-
-                if (!string.IsNullOrEmpty(assetPath))
-                {
-                    sceneAsset = AssetDatabase.LoadMainAssetAtPath(assetPath) as SceneAsset;
-                }
-            }
-            else
-            {
-                sceneAsset = null;
-            }
+            sceneAsset = UnityEditorUtility.FindMainAsset(sceneGuid) as SceneAsset;
 
             isSceneLoaded = true;
         }
@@ -269,7 +257,7 @@ namespace Modules.Devkit.SceneLaunch
 
                     EditorGUI.BeginChangeCheck();
 
-                    sceneAsset = EditorGUILayout.ObjectField(sceneAsset, typeof(SceneAsset), false, GUILayout.Height(18f)) as SceneAsset;
+                    sceneAsset = EditorLayoutTools.ObjectField(sceneAsset, false);
 
                     if (EditorGUI.EndChangeCheck())
                     {

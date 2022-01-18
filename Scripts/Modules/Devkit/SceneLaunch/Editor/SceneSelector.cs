@@ -65,105 +65,87 @@ namespace Modules.Devkit.SceneLaunch
 
         void OnGUI()
         {
-            GUILayout.Space(12f);
+            GUILayout.Space(2f);
 
-            GUILayout.BeginHorizontal(GUILayout.MinHeight(20f));
+            using(new EditorGUILayout.HorizontalScope(EditorStyles.toolbar, GUILayout.Height(15f)))
             {
-                GUILayout.FlexibleSpace();
-
-                GUILayout.BeginHorizontal();
+                Action<string> onChangeSearchText = x =>
                 {
-                    var before = searchText;
-                    var after = EditorGUILayout.TextField(string.Empty, before, "SearchTextField", GUILayout.Width(200f));
+                    searchText = x;
+                    scrollPos = Vector2.zero;
+                    Repaint();
+                };
 
-                    if (before != after)
-                    {
-                        searchText = after;
-                        scrollPos = Vector2.zero;
-                    }
-
-                    if (GUILayout.Button(string.Empty, "SearchCancelButton", GUILayout.Width(18f)))
-                    {
-                        searchText = string.Empty;
-                        GUIUtility.keyboardControl = 0;
-                        scrollPos = Vector2.zero;
-                    }
-                }
-                GUILayout.EndHorizontal();
-
-                GUILayout.Space(15f);
-
-                if (GUILayout.Button("Clear", GUILayout.Width(70f), GUILayout.Height(20f)))
+                Action onSearchCancel = () =>
                 {
+                    searchText = string.Empty;
+                    GUIUtility.keyboardControl = 0;
+                    scrollPos = Vector2.zero;
+
                     Apply(null);
-                }
+                };
 
-                GUILayout.Space(10f);
+                EditorLayoutTools.DrawSearchTextField(searchText, onChangeSearchText, onSearchCancel, GUILayout.Width(250f));
             }
-            GUILayout.EndHorizontal();
 
-            EditorGUILayout.Separator();
+            GUILayout.Space(4f);
 
             if (0 < scenePaths.Count)
             {
-                EditorGUILayout.Separator();
-
                 var infos = GetListOfScenePaths();
 
-                GUILayout.BeginVertical();
+                using(new EditorGUILayout.VerticalScope())
                 {
-                    scrollPos = GUILayout.BeginScrollView(scrollPos);
+                    using(var scrollViewScope = new EditorGUILayout.ScrollViewScope(scrollPos))
                     {
-                        var backgroundColor = GUI.backgroundColor;
-
                         foreach (var path in infos)
                         {
-                            GUILayout.Space(-1f);
-
                             var highlight = SceneSelectorPrefs.selectedScenePath == path;
 
-                            GUI.backgroundColor = highlight ? Color.white : new Color(0.8f, 0.8f, 0.8f);
+                            var backgroundColor = highlight ? new Color(0.8f, 0.8f, 1f) : Color.white;
 
-                            var size = EditorStyles.label.CalcSize(new GUIContent(path));
-
-                            size.y += 6f;
-
-                            GUILayout.BeginHorizontal(EditorStyles.textArea, GUILayout.Height(size.y));
+                            using (new BackgroundColorScope(backgroundColor))
                             {
-                                var labelStyle = new GUIStyle("IN TextField");
-                                labelStyle.alignment = TextAnchor.MiddleLeft;
+                                var size = EditorStyles.label.CalcSize(new GUIContent(path));
 
-                                GUILayout.Space(10f);
+                                size.y += 6f;
 
-                                GUILayout.Label(path, labelStyle, GUILayout.MinWidth(65f), GUILayout.Height(size.y));
-
-                                GUILayout.FlexibleSpace();
-
-                                GUILayout.BeginVertical();
+                                using(new EditorGUILayout.HorizontalScope(EditorStyles.textArea, GUILayout.Height(size.y)))
                                 {
-                                    var buttonHeight = 20f;
+                                    var labelStyle = new GUIStyle("IN TextField");
+                                    labelStyle.alignment = TextAnchor.MiddleLeft;
 
-                                    GUILayout.Space((size.y - buttonHeight) * 0.5f);
+                                    GUILayout.Space(10f);
 
-                                    if (GUILayout.Button("Select", GUILayout.Width(75f), GUILayout.Height(buttonHeight)))
+                                    GUILayout.Label(path, labelStyle, GUILayout.MinWidth(65f), GUILayout.Height(size.y));
+
+                                    GUILayout.FlexibleSpace();
+
+                                    using(new EditorGUILayout.VerticalScope())
                                     {
-                                        Apply(path);
+                                        var buttonHeight = 20f;
+
+                                        GUILayout.Space((size.y - buttonHeight) * 0.5f);
+
+                                        using (new BackgroundColorScope(Color.white))
+                                        {
+                                            if (GUILayout.Button("Select", EditorStyles.miniButton, GUILayout.Width(65f)))
+                                            {
+                                                Apply(path);
+                                            }
+                                        }
+
+                                        GUILayout.Space((size.y - buttonHeight) * 0.5f);
                                     }
 
-                                    GUILayout.Space((size.y - buttonHeight) * 0.5f);
+                                    GUILayout.Space(8f);
                                 }
-                                GUILayout.EndVertical();
-
-                                GUILayout.Space(8f);
                             }
-                            GUILayout.EndHorizontal();
                         }
 
-                        GUI.backgroundColor = backgroundColor;
+                        scrollPos = scrollViewScope.scrollPosition;
                     }
-                    GUILayout.EndScrollView();
                 }
-                GUILayout.EndVertical();
             }
         }
 
