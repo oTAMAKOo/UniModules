@@ -74,8 +74,6 @@ namespace Modules.GameText.Components
 
             Setup();
 
-            EditorGUILayout.Separator();
-
             var gameText = GameText.Instance;
             
             UpdateCurrentInfo(gameText);
