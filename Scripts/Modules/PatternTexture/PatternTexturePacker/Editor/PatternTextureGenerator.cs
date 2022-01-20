@@ -7,7 +7,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using Extensions;
-using Modules.Devkit.TextureEdit;
+using Extensions.Devkit;
 
 namespace Modules.PatternTexture
 {
@@ -57,11 +57,19 @@ namespace Modules.PatternTexture
             blockId = 0;
             blockIdbyHashCode = new Dictionary<string, ushort?>();
 
-            foreach (var sourceTexture in sourceTextures)
+            using (new AssetEditingScope())
             {
-                var editableTexture = new EditableTexture(sourceTexture);
+                var changed = false;
 
-                editableTexture.Editable();
+                foreach (var sourceTexture in sourceTextures)
+                {
+                    changed |= SetTextureEditable(sourceTexture);
+                }
+
+                if (changed)
+                {
+                    AssetDatabase.Refresh();
+                }
             }
 
             var patternTargetDatas = ReadTextureBlock(blockSize, sourceTextures);
@@ -95,6 +103,34 @@ namespace Modules.PatternTexture
             patternTextureData.Texture = AssetDatabase.LoadAssetAtPath<Texture2D>(texturePath);
 
             return patternTextureData;
+        }
+
+        private bool SetTextureEditable(Texture texture)
+        {
+            var changed = false;
+
+            var assetPath = AssetDatabase.GetAssetPath(texture);
+
+            var textureImporter = AssetImporter.GetAtPath(assetPath) as TextureImporter;
+
+            if (!textureImporter.isReadable)
+            {
+                textureImporter.isReadable = true;
+                changed = true;
+            }
+
+            if (textureImporter.textureCompression != TextureImporterCompression.Uncompressed)
+            {
+                textureImporter.textureCompression = TextureImporterCompression.Uncompressed;
+                changed = true;
+            }
+
+            if (changed)
+            {
+                textureImporter.SaveAndReimport();
+            }
+            
+            return changed;
         }
 
         // テクスチャを読み込み.
