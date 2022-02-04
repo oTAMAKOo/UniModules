@@ -227,26 +227,12 @@ namespace Modules.ExternalResource
             return assetInfosByResourcePath.GetValueOrDefault(resourcePath);
         }
 
-        /// <summary> キャッシュ削除. </summary>
-        public void CleanCache()
-        {
-            UnloadAllAssetBundles(false);
-
-            ClearVersion();
-
-            DirectoryUtility.Clean(InstallDirectory);
-
-            Caching.ClearCache();
-
-            GC.Collect();
-        }
-
         /// <summary>
         /// マニフェストファイルを更新.
         /// </summary>
         public IObservable<Unit> UpdateManifest()
         {
-            return Observable.FromCoroutine(() => UpdateManifestInternal());
+            return Observable.FromMicroCoroutine(() => UpdateManifestInternal());
         }
 
         private IEnumerator UpdateManifestInternal()
@@ -264,7 +250,10 @@ namespace Modules.ExternalResource
                 .SelectMany(_ => assetBundleManager.LoadAsset<AssetInfoManifest>(manifestAssetInfo, assetPath))
                 .ToYieldInstruction(false);
 
-            yield return loadYield;
+            while (!loadYield.IsDone)
+            {
+                yield return null;
+            }
 
             if (loadYield.HasError || loadYield.IsCanceled)
             {
@@ -291,6 +280,19 @@ namespace Modules.ExternalResource
             criAssetManager.SetManifest(assetInfoManifest);
 
             #endif
+
+            // 不要になったファイル削除.
+            var deleteCacheYield = DeleteDisUsedCache().ToYieldInstruction(false);
+
+            while (!deleteCacheYield.IsDone)
+            {
+                yield return null;
+            }
+
+            if (deleteCacheYield.HasError)
+            {
+                Debug.LogException(deleteCacheYield.Error);
+            }
         }
 
         /// <summary>

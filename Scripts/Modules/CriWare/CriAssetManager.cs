@@ -35,7 +35,7 @@ namespace Modules.CriWare
                 AssetInfo = assetInfo;
 
                 var downloadUrl = Instance.BuildDownloadUrl(assetInfo);
-                var installPath = Instance.BuildFilePath(assetInfo);
+                var installPath = Instance.GetFilePath(assetInfo);
 
                 var directory = Path.GetDirectoryName(installPath);
 
@@ -229,8 +229,6 @@ namespace Modules.CriWare
         public void SetManifest(AssetInfoManifest manifest)
         {
             this.manifest = manifest;
-
-            CleanUnuseCache();
         }
 
         #if ENABLE_CRIWARE_FILESYSTEM
@@ -339,78 +337,37 @@ namespace Modules.CriWare
         #endif
 
         /// <summary>
-        /// マニフェストファイルに存在しないキャッシュファイルを破棄.
+        /// マニフェストファイルに存在しないキャッシュファイルパス取得.
         /// </summary>
-        private void CleanUnuseCache()
+        public string[] GetDisUsedFilePaths()
         {
-            if (simulateMode) { return; }
+            if (simulateMode) { return null; }
 
-            if (manifest == null) { return; }
+            if (manifest == null) { return null; }
 
-            var installDir = BuildFilePath(null);
+            var installDir = GetFilePath(null);
 
-            if (string.IsNullOrEmpty(installDir)) { return; }
+            if (string.IsNullOrEmpty(installDir)) { return null; }
 
-            if (!Directory.Exists(installDir)) { return; }
+            if (!Directory.Exists(installDir)) { return null; }
 
-            var sw = System.Diagnostics.Stopwatch.StartNew();
-
-            var builder = new StringBuilder();
             var directory = Path.GetDirectoryName(installDir);
 
-            if (Directory.Exists(directory))
-            {
-                var cacheFiles = Directory.GetFiles(installDir, "*", SearchOption.AllDirectories);
+            if (!Directory.Exists(directory)){ return null; }
+            
+            var cacheFiles = Directory.GetFiles(installDir, "*", SearchOption.AllDirectories)
+                .Where(x => IsCriAsset(x))
+                .Select(x => PathUtility.ConvertPathSeparator(x))
+                .ToArray();
 
-                var managedFiles = manifest.GetAssetInfos()
-                    .Select(x => BuildFilePath(x))
-                    .Select(x => PathUtility.ConvertPathSeparator(x))
-                    .Distinct()
-                    .ToHashSet();
+            var managedFiles = manifest.GetAssetInfos()
+                .Select(x => GetFilePath(x))
+                .Distinct()
+                .ToHashSet();
 
-                var deleteFilePaths = cacheFiles
-                    .Select(x => PathUtility.ConvertPathSeparator(x))
-                    .Where(x =>
-                       {
-                           var extension = Path.GetExtension(x);
-
-                           return CriAssetDefinition.AssetAllExtensions.Any(y => y == extension);
-                       })
-                    .Where(x => !managedFiles.Contains(x))
-                    .ToArray();
-
-                foreach (var deleteFilePath in deleteFilePaths)
-                {
-                    if (File.Exists(deleteFilePath))
-                    {
-                        File.SetAttributes(deleteFilePath, FileAttributes.Normal);
-                        File.Delete(deleteFilePath);
-                    }
-
-                    var versionFilePath = deleteFilePath + AssetInfoManifest.VersionFileExtension;
-
-                    if (File.Exists(versionFilePath))
-                    {
-                        File.SetAttributes(versionFilePath, FileAttributes.Normal);
-                        File.Delete(versionFilePath);
-                    }
-
-                    builder.AppendLine(deleteFilePath);
-                }
-
-                var deleteDirectorys = DirectoryUtility.DeleteEmpty(installDir);
-
-                deleteDirectorys.ForEach(x => builder.AppendLine(x));
-
-                sw.Stop();
-
-                var log = builder.ToString();
-
-                if (!string.IsNullOrEmpty(log))
-                {
-                    UnityConsole.Info("Delete unuse cached criassets ({0}ms)\n{1}", sw.Elapsed.TotalMilliseconds, log);
-                }
-            }
+            return cacheFiles
+                .Where(x => !managedFiles.Contains(x))
+                .ToArray();
         }
 
         public string BuildDownloadUrl(AssetInfo assetInfo)
@@ -422,7 +379,14 @@ namespace Modules.CriWare
             return string.Format("{0}?v={1}", url, assetInfo.Hash);
         }
 
-        public string BuildFilePath(AssetInfo assetInfo)
+        public bool IsCriAsset(string filePath)
+        {
+            var extension = Path.GetExtension(filePath);
+
+            return CriAssetDefinition.AssetAllExtensions.Any(y => y == extension);
+        }
+
+        public string GetFilePath(AssetInfo assetInfo)
         {
             var path = installPath;
 
@@ -431,7 +395,7 @@ namespace Modules.CriWare
                 path = PathUtility.Combine(installPath, assetInfo.FileName);
             }
 
-            return path;
+            return PathUtility.ConvertPathSeparator(path);
         }
 
         private void OnTimeout(AssetInfo assetInfo, Exception exception)

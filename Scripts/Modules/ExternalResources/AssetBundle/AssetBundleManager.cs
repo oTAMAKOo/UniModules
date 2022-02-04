@@ -182,11 +182,6 @@ namespace Modules.AssetBundles
             this.manifest = manifest;
 
             BuildAssetInfoTable();
-
-            if (manifest != null)
-            {
-                CleanUnUseCache();
-            }
         }
 
         /// <summary> 展開中のアセットバンドル名一覧取得 </summary>
@@ -213,7 +208,7 @@ namespace Modules.AssetBundles
             return downloadUrl;
         }
 
-        public string BuildFilePath(AssetInfo assetInfo)
+        public string GetFilePath(AssetInfo assetInfo)
         {
             var path = installPath;
 
@@ -222,7 +217,7 @@ namespace Modules.AssetBundles
                 path = PathUtility.Combine(installPath, assetInfo.FileName) + PackageExtension;
             }
 
-            return path;
+            return PathUtility.ConvertPathSeparator(path);
         }
 
         #region Download
@@ -360,7 +355,7 @@ namespace Modules.AssetBundles
             
             var downloadUrl = BuildDownloadUrl(assetInfo);
 
-            var filePath = BuildFilePath(assetInfo);
+            var filePath = GetFilePath(assetInfo);
 
             var downloader = Observable.Defer(() => Observable.FromMicroCoroutine(() => FileDownload(downloadUrl, filePath, progress)));
 
@@ -633,7 +628,7 @@ namespace Modules.AssetBundles
 
         private IEnumerator LoadAssetBundleFromCache(IObserver<SeekableAssetBundle> observer, AssetInfo assetInfo)
         {
-            var filePath = BuildFilePath(assetInfo);
+            var filePath = GetFilePath(assetInfo);
             var assetBundleInfo = assetInfo.AssetBundle;
             var assetBundleName = assetBundleInfo.AssetBundleName;
             
@@ -764,76 +759,38 @@ namespace Modules.AssetBundles
         /// <summary>
         /// マニフェストファイルに存在しないキャッシュファイルを破棄.
         /// </summary>
-        private void CleanUnUseCache()
+        public string[] GetDisUsedFilePaths()
         {
-            if (simulateMode) { return; }
+            if (simulateMode) { return null; }
 
-            if (manifest == null) { return; }
+            if (manifest == null) { return null; }
 
-            var installDir = BuildFilePath(null);
+            var installDir = GetFilePath(null);
 
-            if (string.IsNullOrEmpty(installDir)) { return; }
+            if (string.IsNullOrEmpty(installDir)) { return null; }
 
-            if (!Directory.Exists(installDir)) { return; }
-
-            var sw = System.Diagnostics.Stopwatch.StartNew();
-
-            var builder = new StringBuilder();
+            if (!Directory.Exists(installDir)) { return null; }
 
             var directory = Path.GetDirectoryName(installDir);
 
-            if (Directory.Exists(directory))
-            {
-                var cacheFiles = Directory.GetFiles(installDir, "*", SearchOption.AllDirectories);
+            if (!Directory.Exists(directory)) { return null; }
+            
+            var cacheFiles = Directory.GetFiles(installDir, "*", SearchOption.AllDirectories);
 
-                var allAssetInfos = manifest.GetAssetInfos().ToList();
+            var allAssetInfos = manifest.GetAssetInfos().ToList();
 
-                allAssetInfos.Add(AssetInfoManifest.GetManifestAssetInfo());
+            allAssetInfos.Add(AssetInfoManifest.GetManifestAssetInfo());
 
-                var managedFiles = allAssetInfos
-                    .Select(x => BuildFilePath(x))
-                    .Select(x => PathUtility.ConvertPathSeparator(x))
-                    .Distinct()
-                    .ToHashSet();
+            var managedFiles = allAssetInfos
+                .Select(x => GetFilePath(x))
+                .Distinct()
+                .ToHashSet();
 
-                var deleteFilePaths = cacheFiles
-                    .Select(x => PathUtility.ConvertPathSeparator(x))
-                    .Where(x => Path.GetExtension(x) == PackageExtension)
-                    .Where(x => !managedFiles.Contains(x))
-                    .ToArray();
-
-                foreach (var deleteFilePath in deleteFilePaths)
-                {
-                    if (File.Exists(deleteFilePath))
-                    {
-                        File.SetAttributes(deleteFilePath, FileAttributes.Normal);
-                        File.Delete(deleteFilePath);
-                    }
-
-                    var versionFilePath = deleteFilePath + AssetInfoManifest.VersionFileExtension;
-
-                    if (File.Exists(versionFilePath))
-                    {
-                        File.SetAttributes(versionFilePath, FileAttributes.Normal);
-                        File.Delete(versionFilePath);
-                    }
-
-                    builder.AppendLine(deleteFilePath);
-                }
-
-                var deleteDirectories = DirectoryUtility.DeleteEmpty(installDir);
-
-                deleteDirectories.ForEach(x => builder.AppendLine(x));
-
-                sw.Stop();
-
-                var log = builder.ToString();
-
-                if (!string.IsNullOrEmpty(log))
-                {
-                    UnityConsole.Info("Delete unuse cached assetbundles ({0}ms)\n{1}", sw.Elapsed.TotalMilliseconds, log);
-                }
-            }
+            return cacheFiles
+                .Select(x => PathUtility.ConvertPathSeparator(x))
+                .Where(x => Path.GetExtension(x) == PackageExtension)
+                .Where(x => !managedFiles.Contains(x))
+                .ToArray();
         }
 
         /// <summary>

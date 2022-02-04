@@ -33,7 +33,7 @@ namespace Modules.ExternalResource
         /// </summary>
         private bool CheckAssetBundleVersion(AssetInfo assetInfo)
         {
-            var filePath = assetBundleManager.BuildFilePath(assetInfo);
+            var filePath = assetBundleManager.GetFilePath(assetInfo);
 
             // ※ シュミレート時はpackageファイルをダウンロードしていないので常にファイルが存在しない.
 

@@ -59,7 +59,16 @@ namespace Modules.FileCache
 
         protected override void OnCreate()
         {
-            FileDirectory = PathUtility.Combine(Application.temporaryCachePath, "FileCache") + PathUtility.PathSeparator;
+            FileDirectory = GetCacheDirectory();
+        }
+
+        public string GetCacheDirectory()
+        {
+            var className = typeof(TInstance).FullName;
+
+            var hash = className.GetHash();
+
+            return PathUtility.Combine(Application.temporaryCachePath, hash) + PathUtility.PathSeparator;
         }
 
         public void SetCryptoKey(AesCryptoKey cryptoKey)

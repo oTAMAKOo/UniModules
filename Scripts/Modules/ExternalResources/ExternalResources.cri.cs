@@ -102,7 +102,7 @@ namespace Modules.ExternalResource
 
             return simulateMode ?
                 PathUtility.Combine(new string[] { UnityPathUtility.GetProjectFolderPath(), resourceDirectory, resourcePath }) :
-                criAssetManager.BuildFilePath(assetInfo);
+                criAssetManager.GetFilePath(assetInfo);
         }
 
         #endif
