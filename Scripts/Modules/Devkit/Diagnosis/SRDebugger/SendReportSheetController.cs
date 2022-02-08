@@ -191,9 +191,7 @@ namespace Modules.Devkit.Diagnosis.SRDebugger
                 if (string.IsNullOrEmpty(errorMessage))
                 {
                     OnRequestRefreshInputText();
-
-                    OnSubmitSuccess();
-
+                    
                     Debug.Log("Bug report submitted successfully.");
                 }
                 else
@@ -240,9 +238,6 @@ namespace Modules.Devkit.Diagnosis.SRDebugger
 
         /// <summary> レポートボタンが有効か </summary>
         protected virtual bool IsSendReportButtonEnable() { return true; }
-
-        /// <summary> 送信成功時関数 </summary>
-        protected virtual void OnSubmitSuccess() { }
 
         #endif
     }
