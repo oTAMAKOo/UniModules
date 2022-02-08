@@ -4,10 +4,8 @@ using UnityEngine.UI;
 using UnityEngine.EventSystems;
 using System;
 using System.Collections;
-using System.Text;
 using UniRx;
 using Extensions;
-using Modules.Devkit.Diagnosis.LogTracker;
 using Modules.Devkit.Diagnosis.SendReport;
 
 #if ENABLE_SRDEBUGGER
@@ -180,11 +178,21 @@ namespace Modules.Devkit.Diagnosis.SRDebugger
 
             SRDebug.Instance.ShowDebugPanel(false);
 
+            if (sendReportDisposable != null)
+            {
+                sendReportDisposable.Dispose();
+                sendReportDisposable = null;
+            }
+
+            RefreshInputField(titleInputField);
+
             using (new DisableStackTraceScope())
             {
                 if (string.IsNullOrEmpty(errorMessage))
                 {
                     OnRequestRefreshInputText();
+
+                    OnSubmitSuccess();
 
                     Debug.Log("Bug report submitted successfully.");
                 }
@@ -193,10 +201,6 @@ namespace Modules.Devkit.Diagnosis.SRDebugger
                     Debug.LogErrorFormat("Error sending bug report." + "\n\n" + errorMessage);
                 }
             }
-
-            sendReportDisposable = null;
-
-            RefreshInputField(titleInputField);
 
             UpdateView();
         }
@@ -236,6 +240,9 @@ namespace Modules.Devkit.Diagnosis.SRDebugger
 
         /// <summary> レポートボタンが有効か </summary>
         protected virtual bool IsSendReportButtonEnable() { return true; }
+
+        /// <summary> 送信成功時関数 </summary>
+        protected virtual void OnSubmitSuccess() { }
 
         #endif
     }
