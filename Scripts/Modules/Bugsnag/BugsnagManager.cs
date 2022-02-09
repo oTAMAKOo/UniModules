@@ -54,7 +54,7 @@ namespace Modules.Bugsnag
 
                 BugsnagUnity.Bugsnag.AddOnError(e => OnErrorCallback(e));
 
-                OnStartCallback();
+                OnAfterStart();
             }
         }
 
@@ -117,7 +117,7 @@ namespace Modules.Bugsnag
             return BugsnagSettingsObject.LoadConfiguration();
         }
 
-        protected virtual void OnStartCallback()
+        protected virtual void OnAfterStart()
         {
 
         }
