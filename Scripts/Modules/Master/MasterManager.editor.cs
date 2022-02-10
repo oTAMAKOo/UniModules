@@ -11,8 +11,8 @@ namespace Modules.Master
         {
             public static bool checkVersion
             {
-                get { return ProjectPrefs.GetBool("MasterManager-Prefs-checkVersion", true); }
-                set { ProjectPrefs.SetBool("MasterManager-Prefs-checkVersion", value); }
+                get { return ProjectPrefs.GetBool(typeof(Prefs).FullName + "-checkVersion", true); }
+                set { ProjectPrefs.SetBool(typeof(Prefs).FullName + "-checkVersion", value); }
             }
         }
     }

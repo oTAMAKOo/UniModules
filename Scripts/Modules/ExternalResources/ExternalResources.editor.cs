@@ -11,8 +11,8 @@ namespace Modules.ExternalResource
         {
             public static bool isSimulate
             {
-                get { return ProjectPrefs.GetBool("ExternalResources-Prefs-isSimulate", false); }
-                set { ProjectPrefs.SetBool("ExternalResources-Prefs-isSimulate", value); }
+                get { return ProjectPrefs.GetBool(typeof(Prefs).FullName + "-isSimulate", false); }
+                set { ProjectPrefs.SetBool(typeof(Prefs).FullName + "-isSimulate", value); }
             }
         }
     }

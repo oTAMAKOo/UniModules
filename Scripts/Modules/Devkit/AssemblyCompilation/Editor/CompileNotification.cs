@@ -8,24 +8,24 @@ using Modules.Devkit.Prefs;
 
 namespace Modules.Devkit.AssemblyCompilation
 {
-    public static class CompileNotificationPrefs
-    {
-        public static bool isCompiling
-        {
-            get { return ProjectPrefs.GetBool("CompileStatsPrefs-isCompiling", false); }
-            set { ProjectPrefs.SetBool("CompileStatsPrefs-isCompiling", value); }
-        }
-
-        public static string compileStartTime
-        {
-            get { return ProjectPrefs.GetString("CompileStatsPrefs-compileStartTime", string.Empty); }
-            set { ProjectPrefs.SetString("CompileStatsPrefs-compileStartTime", value); }
-        }
-    }
-
     public static class CompileNotification
     {
         //----- params -----
+
+        public static class Prefs
+        {
+            public static bool isCompiling
+            {
+                get { return ProjectPrefs.GetBool(typeof(Prefs).FullName + "-isCompiling", false); }
+                set { ProjectPrefs.SetBool(typeof(Prefs).FullName + "-isCompiling", value); }
+            }
+
+            public static string compileStartTime
+            {
+                get { return ProjectPrefs.GetString(typeof(Prefs).FullName + "-compileStartTime", string.Empty); }
+                set { ProjectPrefs.SetString(typeof(Prefs).FullName + "-compileStartTime", value); }
+            }
+        }
 
         //----- field -----
 
@@ -40,7 +40,7 @@ namespace Modules.Devkit.AssemblyCompilation
         [InitializeOnLoadMethod]
         private static void InitializeOnLoadMethod()
         {
-            CompileNotificationPrefs.isCompiling = false;
+            Prefs.isCompiling = false;
             EditorApplication.update += Update;
         }
 
@@ -50,9 +50,9 @@ namespace Modules.Devkit.AssemblyCompilation
             {
                 //------ コンパイル開始 ------
 
-                if (!CompileNotificationPrefs.isCompiling)
+                if (!Prefs.isCompiling)
                 {
-                    CompileNotificationPrefs.isCompiling = true;
+                    Prefs.isCompiling = true;
 
                     if (onCompileStart != null)
                     {
@@ -64,9 +64,9 @@ namespace Modules.Devkit.AssemblyCompilation
             {
                 //------ コンパイル終了 ------
 
-                if(CompileNotificationPrefs.isCompiling)
+                if(Prefs.isCompiling)
                 {
-                    CompileNotificationPrefs.isCompiling = false;
+                    Prefs.isCompiling = false;
 
                     if (onCompileFinish != null)
                     {

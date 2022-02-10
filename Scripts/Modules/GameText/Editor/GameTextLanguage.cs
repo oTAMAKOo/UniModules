@@ -10,8 +10,8 @@ namespace Modules.GameText.Editor
         {
             public static int selection
             {
-                get { return ProjectPrefs.GetInt("GameTextLanguagePrefs-selection", -1); }
-                set { ProjectPrefs.SetInt("GameTextLanguagePrefs-selection", value); }
+                get { return ProjectPrefs.GetInt(typeof(Prefs).FullName + "-selection", -1); }
+                set { ProjectPrefs.SetInt(typeof(Prefs).FullName + "-selection", value); }
             }
         }
 

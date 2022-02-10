@@ -19,20 +19,20 @@ namespace Modules.Devkit.Build
         {
             public static bool buildRequest
             {
-                get { return ProjectPrefs.GetBool("BuildManagerPrefs-buildRequest", false); }
-                set { ProjectPrefs.SetBool("BuildManagerPrefs-buildRequest", value); }
+                get { return ProjectPrefs.GetBool(typeof(Prefs).FullName + "-buildRequest", false); }
+                set { ProjectPrefs.SetBool(typeof(Prefs).FullName + "-buildRequest", value); }
             }
 
             public static string builderClassTypeName
             {
-                get { return ProjectPrefs.GetString("BuildManagerPrefs-builderClassTypeName", null); }
-                set { ProjectPrefs.SetString("BuildManagerPrefs-builderClassTypeName", value); }
+                get { return ProjectPrefs.GetString(typeof(Prefs).FullName + "-builderClassTypeName", null); }
+                set { ProjectPrefs.SetString(typeof(Prefs).FullName + "-builderClassTypeName", value); }
             }
 
             public static string exportDir
             {
-                get { return ProjectPrefs.GetString("BuildManagerPrefs-exportDir", null); }
-                set { ProjectPrefs.SetString("BuildManagerPrefs-exportDir", value); }
+                get { return ProjectPrefs.GetString(typeof(Prefs).FullName + "-exportDir", null); }
+                set { ProjectPrefs.SetString(typeof(Prefs).FullName + "-exportDir", value); }
             }
         }
 

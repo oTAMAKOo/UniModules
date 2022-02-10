@@ -15,8 +15,8 @@ namespace Modules.Devkit.AssetTuning
         {
             public static bool changeSettingOnImport
             {
-                get { return ProjectPrefs.GetBool("TextureAssetTunerConfigPrefs-changeSettingOnImport", false); }
-                set { ProjectPrefs.SetBool("TextureAssetTunerConfigPrefs-changeSettingOnImport", value); }
+                get { return ProjectPrefs.GetBool(typeof(Prefs).FullName + "-changeSettingOnImport", false); }
+                set { ProjectPrefs.SetBool(typeof(Prefs).FullName + "-changeSettingOnImport", value); }
             }
         }
 

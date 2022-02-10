@@ -36,8 +36,8 @@ namespace Modules.ExternalResource.Editor
         {
             public static bool manifestUpdateRequest
             {
-                get { return ProjectPrefs.GetBool("AssetManagementPrefs-manifestUpdateRequest", false); }
-                set { ProjectPrefs.SetBool("AssetManagementPrefs-manifestUpdateRequest", value); }
+                get { return ProjectPrefs.GetBool(typeof(Prefs).FullName + "-manifestUpdateRequest", false); }
+                set { ProjectPrefs.SetBool(typeof(Prefs).FullName + "-manifestUpdateRequest", value); }
             }
         }
 

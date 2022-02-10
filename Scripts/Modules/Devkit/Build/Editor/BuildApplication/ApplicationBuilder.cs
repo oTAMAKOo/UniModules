@@ -53,8 +53,8 @@ namespace Modules.Devkit.Build
         {
             public static TBuildParameter savedParameter
             {
-                get { return ProjectPrefs.Get<TBuildParameter>("ApplicationBuilderPrefs-savedParameter", null); }
-                set { ProjectPrefs.Set("ApplicationBuilderPrefs-savedParameter", value); }
+                get { return ProjectPrefs.Get<TBuildParameter>(typeof(Prefs).FullName + "-savedParameter", null); }
+                set { ProjectPrefs.Set(typeof(Prefs).FullName + "-savedParameter", value); }
             }
         }
 

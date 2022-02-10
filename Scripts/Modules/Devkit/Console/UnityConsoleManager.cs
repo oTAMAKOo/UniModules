@@ -26,14 +26,14 @@ namespace Modules.Devkit.Console
         {
             public static bool isEnable
             {
-                get { return ProjectPrefs.GetBool("UnityConsolePrefs-isEnable", true); }
-                set { ProjectPrefs.SetBool("UnityConsolePrefs-isEnable", value); }
+                get { return ProjectPrefs.GetBool(typeof(Prefs).FullName + "-isEnable", true); }
+                set { ProjectPrefs.SetBool(typeof(Prefs).FullName + "-isEnable", value); }
             }
 
             public static string config
             {
-                get { return ProjectPrefs.GetString("UnityConsolePrefs-config", string.Empty); }
-                set { ProjectPrefs.SetString("UnityConsolePrefs-config", value); }
+                get { return ProjectPrefs.GetString(typeof(Prefs).FullName + "-config", string.Empty); }
+                set { ProjectPrefs.SetString(typeof(Prefs).FullName + "-config", value); }
             }
         }
 

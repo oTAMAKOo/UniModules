@@ -28,8 +28,8 @@ namespace Modules.BehaviorControl
         {
             public static string ImportDirectory
             {
-                get { return ProjectPrefs.Get<string>("AssetGenerateWindowPrefs-importDirectory", null); }
-                set { ProjectPrefs.Set("AssetGenerateWindowPrefs-importDirectory", value); }
+                get { return ProjectPrefs.Get<string>(typeof(Prefs).FullName + "-importDirectory", null); }
+                set { ProjectPrefs.Set(typeof(Prefs).FullName + "-importDirectory", value); }
             }
         }
         

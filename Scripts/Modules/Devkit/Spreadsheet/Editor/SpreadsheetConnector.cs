@@ -11,39 +11,39 @@ using Google.GData.Spreadsheets;
 
 namespace Modules.Devkit.Spreadsheet
 {
-    public static class SpreadsheetConnectorPrefs
-    {
-        public static string accessTokenKey
-        {
-            get { return ProjectPrefs.GetString("SpreadsheetConnectorPrefs-accessTokenKey", string.Empty); }
-            set { ProjectPrefs.SetString("SpreadsheetConnectorPrefs-accessTokenKey", value); }
-        }
-
-        public static string refreshTokenKey
-        {
-            get { return ProjectPrefs.GetString("SpreadsheetConnectorPrefs-refreshTokenKey", string.Empty); }
-            set { ProjectPrefs.SetString("SpreadsheetConnectorPrefs-refreshTokenKey", value); }
-        }
-
-        public static string tokenExpiryKey
-        {
-            get { return ProjectPrefs.GetString("SpreadsheetConnectorPrefs-tokenExpiryKey", string.Empty); }
-            set { ProjectPrefs.SetString("SpreadsheetConnectorPrefs-tokenExpiryKey", value); }
-        }
-
-        public static void Clear()
-        {
-            accessTokenKey = null;
-            refreshTokenKey = null;
-            tokenExpiryKey = null;
-        }
-    }
-
     // Google Spreadsheetにアクセスする為のクラス.
     // リファレンス： https://developers.google.com/google-apps/spreadsheets/
     public sealed class SpreadsheetConnector
 	{
         //----- params -----
+
+        public static class Prefs
+        {
+            public static string accessTokenKey
+            {
+                get { return ProjectPrefs.GetString(typeof(Prefs).FullName + "-accessTokenKey", string.Empty); }
+                set { ProjectPrefs.SetString(typeof(Prefs).FullName + "-accessTokenKey", value); }
+            }
+
+            public static string refreshTokenKey
+            {
+                get { return ProjectPrefs.GetString(typeof(Prefs).FullName + "-refreshTokenKey", string.Empty); }
+                set { ProjectPrefs.SetString(typeof(Prefs).FullName + "-refreshTokenKey", value); }
+            }
+
+            public static string tokenExpiryKey
+            {
+                get { return ProjectPrefs.GetString(typeof(Prefs).FullName + "-tokenExpiryKey", string.Empty); }
+                set { ProjectPrefs.SetString(typeof(Prefs).FullName + "-tokenExpiryKey", value); }
+            }
+
+            public static void Clear()
+            {
+                accessTokenKey = null;
+                refreshTokenKey = null;
+                tokenExpiryKey = null;
+            }
+        }
 
         public enum AuthenticationState
         {
@@ -75,10 +75,10 @@ namespace Modules.Devkit.Spreadsheet
 
             parameters = GetRawOAuth2Parameters();
 
-            parameters.AccessToken = SpreadsheetConnectorPrefs.accessTokenKey;
-            parameters.RefreshToken = SpreadsheetConnectorPrefs.refreshTokenKey;
+            parameters.AccessToken = Prefs.accessTokenKey;
+            parameters.RefreshToken = Prefs.refreshTokenKey;
 
-            if (DateTime.TryParse(SpreadsheetConnectorPrefs.tokenExpiryKey, out dt))
+            if (DateTime.TryParse(Prefs.tokenExpiryKey, out dt))
             {
                 parameters.TokenExpiry = dt;
             }
@@ -114,9 +114,9 @@ namespace Modules.Devkit.Spreadsheet
                 // 同期WebRequest通信が中で走る.
                 OAuthUtil.GetAccessToken(parameters);
 
-                SpreadsheetConnectorPrefs.accessTokenKey  = parameters.AccessToken;
-                SpreadsheetConnectorPrefs.refreshTokenKey = parameters.RefreshToken;
-                SpreadsheetConnectorPrefs.tokenExpiryKey  = parameters.TokenExpiry.ToString();
+                Prefs.accessTokenKey  = parameters.AccessToken;
+                Prefs.refreshTokenKey = parameters.RefreshToken;
+                Prefs.tokenExpiryKey  = parameters.TokenExpiry.ToString();
 
                 service = CreateService(parameters);
 
@@ -135,9 +135,9 @@ namespace Modules.Devkit.Spreadsheet
         {
             parameters = GetRawOAuth2Parameters();
 
-            SpreadsheetConnectorPrefs.accessTokenKey = null;
-            SpreadsheetConnectorPrefs.refreshTokenKey = null;
-            SpreadsheetConnectorPrefs.tokenExpiryKey = null;
+            Prefs.accessTokenKey = null;
+            Prefs.refreshTokenKey = null;
+            Prefs.tokenExpiryKey = null;
 
             service = null;
 

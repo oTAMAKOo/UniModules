@@ -4,14 +4,11 @@ using UnityEngine.SceneManagement;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using System;
-using System.IO;
 using System.Linq;
 using UniRx;
 using Extensions.Devkit;
 using Modules.Devkit.EditorSceneChange;
 using Modules.Devkit.Prefs;
-
-using Object = UnityEngine.Object;
 
 namespace Modules.Devkit.SceneLaunch
 {
@@ -31,26 +28,26 @@ namespace Modules.Devkit.SceneLaunch
         {
             public static Status status
             {
-                get { return ProjectPrefs.GetEnum("SceneLaunchPrefs-resume", Status.None); }
-                set { ProjectPrefs.SetEnum("SceneLaunchPrefs-resume", value); }
+                get { return ProjectPrefs.GetEnum(typeof(Prefs).FullName + "-resume", Status.None); }
+                set { ProjectPrefs.SetEnum(typeof(Prefs).FullName + "-resume", value); }
             }
 
             public static string targetSceneGuid
             {
-                get { return ProjectPrefs.GetString("SceneLaunchPrefs-targetSceneGuid"); }
-                set { ProjectPrefs.SetString("SceneLaunchPrefs-targetSceneGuid", value); }
+                get { return ProjectPrefs.GetString(typeof(Prefs).FullName + "-targetSceneGuid"); }
+                set { ProjectPrefs.SetString(typeof(Prefs).FullName + "-targetSceneGuid", value); }
             }
 
             public static bool standbyInitializer
             {
-                get { return ProjectPrefs.GetBool("SceneLaunchPrefs-standbyInitializer", false); }
-                set { ProjectPrefs.SetBool("SceneLaunchPrefs-standbyInitializer", value); }
+                get { return ProjectPrefs.GetBool(typeof(Prefs).FullName + "-standbyInitializer", false); }
+                set { ProjectPrefs.SetBool(typeof(Prefs).FullName + "-standbyInitializer", value); }
             }
 
             public static string[] suspendObjectNames
             {
-                get { return ProjectPrefs.Get<string[]>("SceneLaunchPrefs-suspendObjectNames", new string[0]); }
-                set { ProjectPrefs.Set<string[]>("SceneLaunchPrefs-suspendObjectNames", value); }
+                get { return ProjectPrefs.Get(typeof(Prefs).FullName + "-suspendObjectNames", new string[0]); }
+                set { ProjectPrefs.Set(typeof(Prefs).FullName + "-suspendObjectNames", value); }
             }
         }
         
@@ -141,7 +138,7 @@ namespace Modules.Devkit.SceneLaunch
                 {
                     var currentScene = GetCurrentScenePath();
 
-                    var resumeScene = EditorSceneChangerPrefs.resumeScene;
+                    var resumeScene = EditorSceneChanger.Prefs.resumeScene;
 
                     var resume = true;
 
@@ -240,7 +237,7 @@ namespace Modules.Devkit.SceneLaunch
             {
                 if (EditorLayoutTools.PrefixButton("Scene", GUILayout.Width(65f), GUILayout.Height(18f)))
                 {
-                    SceneSelectorPrefs.selectedScenePath = sceneAsset != null ? AssetDatabase.GetAssetPath(sceneAsset) : null;
+                    SceneSelector.Prefs.selectedScenePath = sceneAsset != null ? AssetDatabase.GetAssetPath(sceneAsset) : null;
 
                     SceneSelector.Open().Subscribe(OnSelectScene);
                 }
@@ -348,7 +345,7 @@ namespace Modules.Devkit.SceneLaunch
 
             LoadSceneAsset();
 
-            SceneSelectorPrefs.selectedScenePath = targetScenePath;
+            SceneSelector.Prefs.selectedScenePath = targetScenePath;
 
             Repaint();
         }

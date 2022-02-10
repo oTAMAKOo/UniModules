@@ -17,8 +17,8 @@ namespace Modules.Devkit.CleanComponent
         {
             public static bool autoClean
             {
-                get { return ProjectPrefs.GetBool("CanvasRendererCleanerPrefs-autoClean", true); }
-                set { ProjectPrefs.SetBool("CanvasRendererCleanerPrefs-autoClean", value); }
+                get { return ProjectPrefs.GetBool(typeof(Prefs).FullName + "-autoClean", true); }
+                set { ProjectPrefs.SetBool(typeof(Prefs).FullName + "-autoClean", value); }
             }
         }
 

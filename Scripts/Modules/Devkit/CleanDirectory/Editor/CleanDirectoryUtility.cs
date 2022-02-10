@@ -1,13 +1,11 @@
 ﻿﻿﻿
 using UnityEngine;
+using UnityEditor;
 using System;
 using System.Linq;
 using System.IO;
 using System.Collections.Generic;
-using UniRx;
-using Extensions;
 using Modules.Devkit.Prefs;
-using UnityEditor;
 
 namespace Modules.Devkit.CleanDirectory
 {
@@ -17,14 +15,8 @@ namespace Modules.Devkit.CleanDirectory
         {
             public static bool cleanOnSave
             {
-                get
-                {
-                    return ProjectPrefs.GetBool("CleanDirectory-cleanOnSave", false);
-                }
-                set
-                {
-                    ProjectPrefs.SetBool("CleanDirectory-cleanOnSave", value);
-                }
+                get { return ProjectPrefs.GetBool(typeof(Prefs).FullName + "-cleanOnSave", false); }
+                set { ProjectPrefs.SetBool(typeof(Prefs).FullName + "-cleanOnSave", value); }
             }
         }
 

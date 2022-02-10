@@ -18,8 +18,8 @@ namespace Modules.ExternalResource.Editor
         {
             public static string selectionAssetGUID
             {
-                get { return ProjectPrefs.GetString("AssetNavigationWindowPrefs-selectionAssetGUID"); }
-                set { ProjectPrefs.SetString("AssetNavigationWindowPrefs-selectionAssetGUID", value); }
+                get { return ProjectPrefs.GetString(typeof(Prefs).FullName + "-selectionAssetGUID"); }
+                set { ProjectPrefs.SetString(typeof(Prefs).FullName + "-selectionAssetGUID", value); }
             }
         }
 

@@ -449,13 +449,13 @@ namespace Modules
         [MenuItem(itemName: SettingsMenu + "Show CompilingView", priority = 2)]
         public static void ToggleCompileNotificationMode()
         {
-            CompileNotificationView.SetEnable(!CompileNotificationViewPrefs.enable);
+            CompileNotificationView.SetEnable(!CompileNotificationView.Prefs.enable);
         }
 
         [MenuItem(itemName: SettingsMenu + "Show CompilingView", validate = true)]
         public static bool ToggleCompileNotificationModeValidate()
         {
-            UnityEditor.Menu.SetChecked(SettingsMenu + "Show CompilingView", CompileNotificationViewPrefs.enable);
+            UnityEditor.Menu.SetChecked(SettingsMenu + "Show CompilingView", CompileNotificationView.Prefs.enable);
             return true;
         }
 

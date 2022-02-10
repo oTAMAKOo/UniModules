@@ -19,8 +19,8 @@ namespace Modules.GameText.Editor
         {
             public static bool autoUpdate
             {
-                get { return ProjectPrefs.GetBool("GameTextAssetUpdaterPrefs-autoUpdate", false); }
-                set { ProjectPrefs.SetBool("GameTextAssetUpdaterPrefs-autoUpdate", value); }
+                get { return ProjectPrefs.GetBool(typeof(Prefs).FullName + "-autoUpdate", false); }
+                set { ProjectPrefs.SetBool(typeof(Prefs).FullName + "-autoUpdate", value); }
             }
         }
 

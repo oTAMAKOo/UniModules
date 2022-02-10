@@ -21,8 +21,8 @@ namespace Modules.Devkit.Hierarchy
         {
             public static bool enable
             {
-                get { return ProjectPrefs.GetBool("MissingComponentDrawerPrefs-enable", false); }
-                set { ProjectPrefs.SetBool("MissingComponentDrawerPrefs-enable", value); }
+                get { return ProjectPrefs.GetBool(typeof(Prefs).FullName + "-enable", false); }
+                set { ProjectPrefs.SetBool(typeof(Prefs).FullName + "-enable", value); }
             }
         }
 

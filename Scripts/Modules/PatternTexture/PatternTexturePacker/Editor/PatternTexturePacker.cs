@@ -20,8 +20,8 @@ namespace Modules.PatternTexture
         {
             public static string exportPath
             {
-                get { return ProjectPrefs.GetString("PatternTexturePackerPrefs-exportPath", null); }
-                set { ProjectPrefs.SetString("PatternTexturePackerPrefs-exportPath", value); }
+                get { return ProjectPrefs.GetString(typeof(Prefs).FullName + "-exportPath", null); }
+                set { ProjectPrefs.SetString(typeof(Prefs).FullName + "-exportPath", value); }
             }
         }
 

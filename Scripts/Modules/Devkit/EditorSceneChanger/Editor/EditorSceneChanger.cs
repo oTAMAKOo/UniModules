@@ -8,21 +8,6 @@ using Modules.Devkit.Prefs;
 
 namespace Modules.Devkit.EditorSceneChange
 {
-    public static class EditorSceneChangerPrefs
-    {
-        public static string targetScene
-        {
-            get { return ProjectPrefs.GetString("EditorSceneChangerPrefs-targetScene", null); }
-            set { ProjectPrefs.SetString("EditorSceneChangerPrefs-targetScene", value); }
-        }
-
-        public static string resumeScene
-        {
-            get { return ProjectPrefs.GetString("EditorSceneChangerPrefs-resumeScene", null); }
-            set { ProjectPrefs.SetString("EditorSceneChangerPrefs-resumeScene", value); }
-        }
-    }
-
     public enum SceneChangeState
     {
         None = 0,
@@ -33,6 +18,21 @@ namespace Modules.Devkit.EditorSceneChange
     public static class EditorSceneChanger
     {
         //----- params -----
+
+        public static class Prefs
+        {
+            public static string targetScene
+            {
+                get { return ProjectPrefs.GetString(typeof(Prefs).FullName + "-targetScene", null); }
+                set { ProjectPrefs.SetString(typeof(Prefs).FullName + "-targetScene", value); }
+            }
+
+            public static string resumeScene
+            {
+                get { return ProjectPrefs.GetString(typeof(Prefs).FullName + "-resumeScene", null); }
+                set { ProjectPrefs.SetString(typeof(Prefs).FullName + "-resumeScene", value); }
+            }
+        }
 
         //----- field -----
         
@@ -65,7 +65,7 @@ namespace Modules.Devkit.EditorSceneChange
             {
                 State = SceneChangeState.WaitOpenScene;
 
-                EditorSceneChangerPrefs.targetScene = targetScenePath;
+                Prefs.targetScene = targetScenePath;
                 EditorApplication.update += SceneChange;
 
                 onEditorSceneChange = new Subject<Unit>();
@@ -80,10 +80,10 @@ namespace Modules.Devkit.EditorSceneChange
         {
             if (State != SceneChangeState.None) { return Observable.ReturnUnit(); }
 
-            if (!string.IsNullOrEmpty(EditorSceneChangerPrefs.resumeScene))
+            if (!string.IsNullOrEmpty(Prefs.resumeScene))
             {
-                return SceneChange(EditorSceneChangerPrefs.resumeScene)
-                    .Do(_ => EditorSceneChangerPrefs.resumeScene = null)
+                return SceneChange(Prefs.resumeScene)
+                    .Do(_ => Prefs.resumeScene = null)
                     .AsUnitObservable();
             }
 
@@ -100,13 +100,13 @@ namespace Modules.Devkit.EditorSceneChange
                 {
                     case SceneChangeState.WaitOpenScene:
                         {
-                            if (!string.IsNullOrEmpty(EditorSceneChangerPrefs.targetScene))
+                            if (!string.IsNullOrEmpty(Prefs.targetScene))
                             {
                                 EditorApplication.LockReloadAssemblies();
 
-                                EditorSceneChangerPrefs.resumeScene = scene.path;
+                                Prefs.resumeScene = scene.path;
 
-                                EditorSceneManager.OpenScene(EditorSceneChangerPrefs.targetScene);
+                                EditorSceneManager.OpenScene(Prefs.targetScene);
 
                                 State = SceneChangeState.WaitSceneChange;
                             }
@@ -121,11 +121,11 @@ namespace Modules.Devkit.EditorSceneChange
 
                     case SceneChangeState.WaitSceneChange:
                         {
-                            if (scene.path == EditorSceneChangerPrefs.targetScene)
+                            if (scene.path == Prefs.targetScene)
                             {
                                 State = SceneChangeState.None;
 
-                                EditorSceneChangerPrefs.targetScene = null;
+                                Prefs.targetScene = null;
 
                                 onEditorSceneChange.OnNext(Unit.Default);
                                 onEditorSceneChange.OnCompleted();

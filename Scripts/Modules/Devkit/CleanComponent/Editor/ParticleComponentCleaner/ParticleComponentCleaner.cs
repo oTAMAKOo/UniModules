@@ -17,8 +17,8 @@ namespace Modules.Devkit.CleanComponent
         {
             public static bool autoClean
             {
-                get { return ProjectPrefs.GetBool("ParticleComponentCleanerPrefs-autoClean", true); }
-                set { ProjectPrefs.SetBool("ParticleComponentCleanerPrefs-autoClean", value); }
+                get { return ProjectPrefs.GetBool(typeof(Prefs).FullName + "-autoClean", true); }
+                set { ProjectPrefs.SetBool(typeof(Prefs).FullName + "-autoClean", value); }
             }
         }
 

@@ -16,14 +16,14 @@ namespace Modules.Devkit.EventHook
         {
             public static bool Enable
             {
-                get { return ProjectPrefs.GetBool("AdditionalComponentPrefs-Enable", true); }
-                set { ProjectPrefs.SetBool("AdditionalComponentPrefs-Enable", value); }
+                get { return ProjectPrefs.GetBool(typeof(Prefs).FullName + "-Enable", true); }
+                set { ProjectPrefs.SetBool(typeof(Prefs).FullName + "-Enable", value); }
             }
 
             public static bool LogEnable
             {
-                get { return ProjectPrefs.GetBool("AdditionalComponentPrefs-LogEnable", false); }
-                set { ProjectPrefs.SetBool("AdditionalComponentPrefs-LogEnable", value); }
+                get { return ProjectPrefs.GetBool(typeof(Prefs).FullName + "-LogEnable", false); }
+                set { ProjectPrefs.SetBool(typeof(Prefs).FullName + "-LogEnable", value); }
             }
         }
 

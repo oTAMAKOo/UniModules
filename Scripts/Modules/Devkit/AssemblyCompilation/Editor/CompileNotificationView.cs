@@ -7,18 +7,18 @@ using Modules.Devkit.Prefs;
 
 namespace Modules.Devkit.AssemblyCompilation
 {
-    public static class CompileNotificationViewPrefs
-    {
-        public static bool enable
-        {
-            get { return ProjectPrefs.GetBool("CompileNotificationViewPrefs-enable", false); }
-            set { ProjectPrefs.SetBool("CompileNotificationViewPrefs-enable", value); }
-        }
-    }
-
     public static class CompileNotificationView
     {
         //----- params -----
+
+        public static class Prefs
+        {
+            public static bool enable
+            {
+                get { return ProjectPrefs.GetBool(typeof(Prefs).FullName + "-enable", false); }
+                set { ProjectPrefs.SetBool(typeof(Prefs).FullName + "-enable", value); }
+            }
+        }
 
         //----- field -----
         
@@ -33,12 +33,12 @@ namespace Modules.Devkit.AssemblyCompilation
         [InitializeOnLoadMethod]
         private static void InitializeOnLoadMethod()
         {
-            SetEnable(CompileNotificationViewPrefs.enable);
+            SetEnable(Prefs.enable);
         }
 
         public static void SetEnable(bool state)
         {
-            CompileNotificationViewPrefs.enable = state;
+            Prefs.enable = state;
 
             #if UNITY_2019_4_OR_NEWER
 

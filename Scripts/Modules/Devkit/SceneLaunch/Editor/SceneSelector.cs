@@ -11,18 +11,18 @@ using Modules.Devkit.Prefs;
 
 namespace Modules.Devkit.SceneLaunch
 {
-    public static class SceneSelectorPrefs
-    {
-        public static string selectedScenePath
-        {
-            get { return ProjectPrefs.GetString("SceneSelectorPrefs-SelectedScenePath", null); }
-            set { ProjectPrefs.SetString("SceneSelectorPrefs-SelectedScenePath", value); }
-        }
-    }
-
     public sealed class SceneSelector : ScriptableWizard
     {
         //----- params -----
+
+        public static class Prefs
+        {
+            public static string selectedScenePath
+            {
+                get { return ProjectPrefs.GetString(typeof(Prefs).FullName + "-selectedScenePath", null); }
+                set { ProjectPrefs.SetString(typeof(Prefs).FullName + "-selectedScenePath", value); }
+            }
+        }
 
         //----- field -----
 
@@ -61,7 +61,7 @@ namespace Modules.Devkit.SceneLaunch
 
         void OnDisable()
         {
-            SceneSelectorPrefs.selectedScenePath = null;
+            Prefs.selectedScenePath = null;
             onSelected.Dispose();
         }
 
@@ -109,7 +109,7 @@ namespace Modules.Devkit.SceneLaunch
                     {
                         foreach (var path in infos)
                         {
-                            var highlight = SceneSelectorPrefs.selectedScenePath == path;
+                            var highlight = Prefs.selectedScenePath == path;
 
                             var backgroundColor = highlight ? new Color(0.0f, 0.1f, 1f, 0.8f) : Color.white;
 
