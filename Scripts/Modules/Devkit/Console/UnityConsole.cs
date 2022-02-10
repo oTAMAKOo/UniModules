@@ -1,4 +1,5 @@
 ﻿
+using System;
 using UnityEngine;
 using System.Collections.Generic;
 using Extensions;
@@ -65,7 +66,7 @@ namespace Modules.Devkit.Console
             Info(string.Format(format, args));
         }
 
-        public static void Event(string eventName, Color color, string message)
+        public static void Event(string eventName, Color color, string message, LogType logType = LogType.Log)
         {
             if (!Enable) { return; }
 
@@ -83,28 +84,42 @@ namespace Modules.Devkit.Console
 
             if (enableNextLogStackTrace)
             {
-                Debug.Log(text);
+                LogOutput(logType, text);
             }
             else
             {
                 using (new DisableStackTraceScope())
                 {
-                    Debug.Log(text);
+                    LogOutput(logType, text);
                 }
             }
 
             enableNextLogStackTrace = false;
         }
 
-        public static void Event(string eventName, Color color, string format, params object[] args)
-        {
-            Event(eventName, color, string.Format(format, args));
-        }
-
         /// <summary> 次に出力するログのスタックトレースを有効化 </summary>
         public static void EnableNextLogStackTrace()
         {
             enableNextLogStackTrace = true;
+        }
+
+        /// <summary> ログタイプ別出力 </summary>
+        private static void LogOutput(LogType logType, string text)
+        {
+            switch (logType)
+            {
+                case LogType.Log:
+                    Debug.Log(text);
+                    break;
+                case LogType.Warning:
+                    Debug.LogWarning(text);
+                    break;
+                case LogType.Error:
+                    Debug.LogError(text);
+                    break;
+                default:
+                    throw new NotSupportedException(string.Format("{0} not support. \n\n{1}", logType, text));
+            }
         }
 
         #if UNITY_EDITOR

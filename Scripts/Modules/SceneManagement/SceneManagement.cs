@@ -659,7 +659,9 @@ namespace Modules.SceneManagement
             var total = diagnostics.GetTime(TimeDiagnostics.Measure.Total);
             var detail = diagnostics.BuildDetailText();
 
-            UnityConsole.Event(ConsoleEventName, ConsoleEventColor, "{0} → {1} ({2:F2}ms)\n\n{3}", prevScene, nextScene, total, detail);
+            var message = string.Format("{0} → {1} ({2:F2}ms)\n\n{3}", prevScene, nextScene, total, detail);
+
+            UnityConsole.Event(ConsoleEventName, ConsoleEventColor, message);
 
             //====== PreLoad ======
 
@@ -726,7 +728,9 @@ namespace Modules.SceneManagement
 
                 var additiveTime = diagnostics.GetTime(TimeDiagnostics.Measure.Append);
 
-                UnityConsole.Event(ConsoleEventName, ConsoleEventColor, "{0} ({1:F2}ms)(Additive)", identifier.Value, additiveTime);
+                var message = string.Format("{0} ({1:F2}ms)(Additive)", identifier.Value, additiveTime);
+
+                UnityConsole.Event(ConsoleEventName, ConsoleEventColor, message);
 
                 if (activeOnLoad)
                 {
@@ -1137,7 +1141,9 @@ namespace Modules.SceneManagement
                         var time = sw.Elapsed.TotalMilliseconds;
                         var detail = builder.ToString();
 
-                        UnityConsole.Event(ConsoleEventName, ConsoleEventColor, "PreLoad Complete ({0:F2}ms)\n\n{1}", time, detail);
+                        var message = string.Format("PreLoad Complete ({0:F2}ms)\n\n{1}", time, detail);
+
+                        UnityConsole.Event(ConsoleEventName, ConsoleEventColor, message);
                     })
                 .AsUnitObservable();
         }

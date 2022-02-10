@@ -36,14 +36,21 @@ namespace Modules.InAppPurchasing
             }
         }
 
-        protected virtual void OnDeferredPurchase(Product product)
+        public string GetStoreName()
         {
-            Debug.Log($"Purchase of {product.definition.id} is deferred");
+            return GooglePlay.Name;
         }
 
         public virtual void OnStoreListenerInitialized(IStoreController controller, IExtensionProvider storeExtensionProvider)
         {
             googleExtensions = storeExtensionProvider.GetExtension<IGooglePlayStoreExtensions>();
+        }
+
+        public virtual void OnRestore() { }
+        
+        protected virtual void OnDeferredPurchase(Product product)
+        {
+            Debug.Log($"Purchase of {product.definition.id} is deferred");
         }
     }
 }

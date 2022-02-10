@@ -8,6 +8,7 @@ using System.Linq;
 using System.Collections.Generic;
 using System.Text;
 using Extensions;
+using Modules.Devkit.Console;
 using UniRx;
 
 namespace Modules.InAppPurchasing
@@ -43,8 +44,11 @@ namespace Modules.InAppPurchasing
     {
         //----- params -----
 
-        // UnityEditorのダミーストア名
-        private const string UnityEditorStore = "UnityEditorStore";
+        public readonly string ConsoleEventName = "Purchase";
+        public readonly Color ConsoleEventColor = new Color(0.2f, 0.6f, 0.8f);
+
+        // ダミーストア名.
+        private const string DummyStoreName = "DummyStore";
 
         //----- field -----
 
@@ -178,24 +182,12 @@ namespace Modules.InAppPurchasing
                 foreach (var productDefinition in productDefinitions)
                 {
                     var ids = new IDs();
-                    var storeName = string.Empty;
 
-                    switch (Application.platform)
+                    var storeName = DummyStoreName;
+
+                    if (storePurchasing != null)
                     {
-                        case RuntimePlatform.Android:
-                            storeName = GooglePlay.Name;
-                            break;
-
-                        case RuntimePlatform.IPhonePlayer:
-                            storeName = AppleAppStore.Name;
-                            break;
-
-                        case RuntimePlatform.WindowsPlayer:
-                        case RuntimePlatform.WindowsEditor:
-                        case RuntimePlatform.OSXPlayer:
-                        case RuntimePlatform.OSXEditor:
-                            storeName = UnityEditorStore;
-                            break;
+                        storeName = storePurchasing.GetStoreName();
                     }
 
                     if (!string.IsNullOrEmpty(storeName))
@@ -217,23 +209,28 @@ namespace Modules.InAppPurchasing
         /// <param name="productDefinitions"></param>
         private void UpdatePurchasing(ProductDefinition[] productDefinitions)
         {
-            storeController.FetchAdditionalProducts(
-                productDefinitions.ToHashSet(),
-                () =>
-                {
-                    StoreProducts = storeController.products.all
-                        .Where(x => !string.IsNullOrEmpty(x.metadata.localizedTitle))
-                        .Where(x => !string.IsNullOrEmpty(x.metadata.localizedPriceString))
-                        .Where(x => productDefinitions.Any(y => y.id == x.definition.id && y.storeSpecificId == x.definition.storeSpecificId))
-                        .ToArray();
+            Action successCallback = () =>
+            {
+                StoreProducts = storeController.products.all
+                    .Where(x => !string.IsNullOrEmpty(x.metadata.localizedTitle))
+                    .Where(x => !string.IsNullOrEmpty(x.metadata.localizedPriceString))
+                    .Where(x => productDefinitions.Any(y => y.id == x.definition.id && y.storeSpecificId == x.definition.storeSpecificId))
+                    .ToArray();
 
-                    if (onStoreProductsUpdate != null)
-                    {
-                        onStoreProductsUpdate.OnNext(StoreProducts);
-                    }
-                },
-                x => { Debug.LogErrorFormat("[PurchaseManager] UpdatePurchasing Error.({0})", x); }
-           );
+                if (onStoreProductsUpdate != null)
+                {
+                    onStoreProductsUpdate.OnNext(StoreProducts);
+                }
+            };
+
+            Action<InitializationFailureReason> failCallback = reason =>
+            {
+                var message = string.Format("UpdatePurchasing Error.({0})", reason);
+
+                UnityConsole.Event(ConsoleEventName, ConsoleEventColor, message, LogType.Error);
+            };
+
+            storeController.FetchAdditionalProducts(productDefinitions.ToHashSet(), successCallback, failCallback);
         }
 
         #region Purchase
@@ -256,12 +253,14 @@ namespace Modules.InAppPurchasing
                     builder.AppendLine("------- PurchaseProducts -------");
                     builder.AppendLine(GetProductString(product)).AppendLine();
 
-                    Debug.Log(builder.ToString());
+                    UnityConsole.Event(ConsoleEventName, ConsoleEventColor, builder.ToString());
                 }
             }
             else
             {
-                Debug.LogErrorFormat("[PurchaseManager] Purchase Error. ({0})", result);
+                var message = string.Format("Purchase Error. ({0})", result);
+
+                UnityConsole.Event(ConsoleEventName, ConsoleEventColor, message, LogType.Error);
             }
 
             return result;
@@ -312,6 +311,7 @@ namespace Modules.InAppPurchasing
                 {
                     storeController.InitiatePurchase(product);
                 }
+
                 IsPurchaseing = true;
 
                 return BuyFailureReason.None;
@@ -344,7 +344,9 @@ namespace Modules.InAppPurchasing
 
             if (result != BuyFailureReason.None)
             {
-                Debug.LogErrorFormat("[PurchaseManager] Restore Error. ({0})", result);
+                var message = string.Format("Restore Error. ({0})", result);
+
+                UnityConsole.Event(ConsoleEventName, ConsoleEventColor, message);
             }
 
             return result;
@@ -370,17 +372,10 @@ namespace Modules.InAppPurchasing
                 return BuyFailureReason.NetworkUnavailable;
             }
 
-            var platform = Application.platform;
-
-            if (platform == RuntimePlatform.IPhonePlayer || platform == RuntimePlatform.OSXPlayer)
+            // 各ストア用のリストア処理.
+            if (storePurchasing != null)
             {
-                var apple = storeExtensionProvider.GetExtension<IAppleExtensions>();
-
-                apple.RestoreTransactions(
-                    result =>
-                    {
-                        Debug.LogFormat("[PurchaseManager] RestorePurchases continuing: {0}", result);
-                    });
+                storePurchasing.OnRestore();
             }
 
             try
@@ -394,8 +389,10 @@ namespace Modules.InAppPurchasing
                     }
                 }
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                Debug.LogException(ex);
+
                 // 何らかのエラーが発生.
                 return BuyFailureReason.Unknown;
             }
@@ -473,7 +470,7 @@ namespace Modules.InAppPurchasing
                 builder.AppendLine("------- ConfirmPendingProducts -------");
                 builder.AppendLine(GetProductString(product)).AppendLine();
 
-                Debug.Log(builder.ToString());
+                UnityConsole.Event(ConsoleEventName, ConsoleEventColor, builder.ToString());
             }
 
             PendingProducts = pendingProducts.ToArray();
@@ -518,7 +515,7 @@ namespace Modules.InAppPurchasing
                     builder.AppendLine(GetProductString(item)).AppendLine();
                 }
 
-                Debug.Log(builder.ToString());
+                UnityConsole.Event(ConsoleEventName, ConsoleEventColor, builder.ToString());
             }
 
             // Pending状態のアイテムを更新.
@@ -538,7 +535,7 @@ namespace Modules.InAppPurchasing
                     builder.AppendLine(GetProductString(item)).AppendLine();
                 }
 
-                Debug.Log(builder.ToString());
+                UnityConsole.Event(ConsoleEventName, ConsoleEventColor, builder.ToString());
             }
 
             if (onStoreProductsUpdate != null)
@@ -555,8 +552,10 @@ namespace Modules.InAppPurchasing
         public void OnInitializeFailed(InitializationFailureReason error)
         {
             IsPurchaseReady = false;
+            
+            var message = string.Format("InitializeFailed. ({0})", error);
 
-            Debug.LogErrorFormat("[PurchaseManager] InitializeFailed. ({0})", error);
+            UnityConsole.Event(ConsoleEventName, ConsoleEventColor, message);
         }
 
         /// <summary>
@@ -620,15 +619,9 @@ namespace Modules.InAppPurchasing
                 onStorePurchaseComplete.OnNext(new PurchaseResult(product, failureReason));
             }
 
-            Debug.LogFormat("[PurchaseManager] PurchaseFailed. ({0})\n{1}", failureReason, GetProductString(product));
-        }
+            var message = string.Format("PurchaseFailed. ({0})\n{1}", failureReason, GetProductString(product));
 
-        /// <summary>
-        /// 各
-        /// </summary>
-        public void OnPurchaseDeferred(Product product)
-        {
-            Debug.LogFormat("Deferred product {0}", product.definition.id);
+            UnityConsole.Event(ConsoleEventName, ConsoleEventColor, message, LogType.Error);
         }
 
         #endregion

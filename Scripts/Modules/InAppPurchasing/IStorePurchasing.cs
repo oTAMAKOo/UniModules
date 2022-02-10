@@ -9,7 +9,11 @@ namespace Modules.InAppPurchasing
     {
         void Initialize();
 
+        string GetStoreName();
+
         void OnStoreListenerInitialized(IStoreController controller, IExtensionProvider storeExtensionProvider);
+
+        void OnRestore();
     }
 }
 

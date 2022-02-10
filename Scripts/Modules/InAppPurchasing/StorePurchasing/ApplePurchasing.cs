@@ -34,10 +34,18 @@ namespace Modules.InAppPurchasing
             }
         }
 
+        public string GetStoreName()
+        {
+            return AppleAppStore.Name;
+        }
+
         public virtual void OnStoreListenerInitialized(IStoreController controller, IExtensionProvider storeExtensionProvider)
         {
             appleExtensions = storeExtensionProvider.GetExtension<IAppleExtensions>();
-            
+        }
+
+        public virtual void OnRestore()
+        {
             if (appleExtensions != null)
             {
                 Action<bool> restoreTransactionsCallback = result =>

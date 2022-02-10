@@ -134,11 +134,15 @@ namespace Modules.Networking
 
             if (type == typeof(TimeoutException))
             {
-                UnityConsole.Event(ConsoleEventName, ConsoleEventColor, "WebRequest Retry\n{0}\n", currentRequest.url);
+                var message = string.Format("WebRequest Retry\n{0}\n", currentRequest.url);
+
+                UnityConsole.Event(ConsoleEventName, ConsoleEventColor, message);
             }
             else
             {
-                UnityConsole.Event(ConsoleEventName, ConsoleEventColor, "WebRequest TimeoutError\n{0}\n{1}\n", currentRequest.url, ex.Message);
+                var message = string.Format("WebRequest TimeoutError\n{0}\n{1}\n", currentRequest.url, ex.Message);
+
+                UnityConsole.Event(ConsoleEventName, ConsoleEventColor, message);
 
                 Cancel();
 
