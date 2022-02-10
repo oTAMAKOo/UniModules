@@ -1,6 +1,7 @@
 ﻿
 using UnityEngine;
 using UnityEditor;
+using System.IO;
 using Extensions;
 
 namespace Modules.Devkit.Inspector
@@ -89,6 +90,10 @@ namespace Modules.Devkit.Inspector
         public override void OnDisable(UnityEngine.Object target)
         {
             var assetImporter = AssetImporter.GetAtPath(folderAssetPath);
+
+            var metaFilePath = Path.ChangeExtension(assetImporter.assetPath, ".meta");
+
+            if (!File.Exists(metaFilePath)){ return; }
 
             if (assetImporter != null)
             {
