@@ -1,5 +1,4 @@
 ﻿
-
 #if UNITY_PURCHASING
 
 using UnityEngine;
@@ -40,7 +39,7 @@ namespace Modules.InAppPurchasing
         Unknown
     }
 
-    public abstract class PurchaseManager : IStoreListener
+    public abstract partial class PurchaseManager : IStoreListener
     {
         //----- params -----
 
@@ -54,6 +53,9 @@ namespace Modules.InAppPurchasing
 
         // 各ストアに依存する課金処理を行うオブジェクト.
         private IExtensionProvider storeExtensionProvider = null;
+
+        // 各ストア用の課金処理オブジェクト.
+        private IStorePurchasing storePurchasing = null;
 
         // 課金リスト更新通知.
         private Subject<Product[]> onStoreProductsUpdate = null;
@@ -86,6 +88,11 @@ namespace Modules.InAppPurchasing
         /// </summary>
         public bool IsPurchaseing { get; protected set; }
 
+        /// <summary>
+        /// 各ストア用の課金処理オブジェクト
+        /// </summary>
+        public IStorePurchasing StorePurchasing { get { return storePurchasing; } }
+
         //----- method -----
 
         public virtual void Initialize()
@@ -98,7 +105,32 @@ namespace Modules.InAppPurchasing
             IsPurchaseReady = false;
             IsPurchaseing = false;
 
+            SetupStorePurchasing();
+
             initialized = true;
+        }
+
+        protected virtual void SetupStorePurchasing()
+        {
+            var purchasingModule = StandardPurchasingModule.Instance();
+
+            var currentAppStore = purchasingModule.appStore;
+
+            switch (currentAppStore)
+            {
+                case AppStore.AppleAppStore:
+                    storePurchasing = new ApplePurchasing();
+                    break;
+
+                case AppStore.GooglePlay:
+                    storePurchasing = new GooglePlayStorePurchasing();
+                    break;
+            }
+
+            if (storePurchasing != null)
+            {
+                storePurchasing.Initialize();
+            }
         }
 
         /// <summary>
@@ -109,16 +141,16 @@ namespace Modules.InAppPurchasing
         {
             return FetchProducts()
                 .Do(x =>
-                {
-                    if (!IsPurchaseReady)
                     {
-                        InitializePurchasing(x);
-                    }
-                    else
-                    {
-                        UpdatePurchasing(x);
-                    }
-                })
+                        if (!IsPurchaseReady)
+                        {
+                            InitializePurchasing(x);
+                        }
+                        else
+                        {
+                            UpdatePurchasing(x);
+                        }
+                    })
                 .AsUnitObservable();
         }
 
@@ -466,6 +498,12 @@ namespace Modules.InAppPurchasing
             storeController = controller;
             storeExtensionProvider = extensions;
 
+            // 各ストアの拡張処理.
+            if (storePurchasing != null)
+            {
+                storePurchasing.OnStoreListenerInitialized(controller, extensions);
+            }
+
             // ストアに販売中のアイテムを更新.
             StoreProducts = controller.products.all;
 
@@ -583,6 +621,14 @@ namespace Modules.InAppPurchasing
             }
 
             Debug.LogFormat("[PurchaseManager] PurchaseFailed. ({0})\n{1}", failureReason, GetProductString(product));
+        }
+
+        /// <summary>
+        /// 各
+        /// </summary>
+        public void OnPurchaseDeferred(Product product)
+        {
+            Debug.LogFormat("Deferred product {0}", product.definition.id);
         }
 
         #endregion
