@@ -19,14 +19,14 @@ namespace Modules.Devkit.AssemblyCompilation
         {
             public static bool RequestCompile
             {
-                get { return ProjectPrefs.GetBool(typeof(TInstance).FullName + "-RequestCompile", false); }
-                set { ProjectPrefs.SetBool(typeof(TInstance).FullName + "-RequestCompile", value); }
+                get { return ProjectPrefs.GetBool(typeof(Prefs).FullName + "-RequestCompile", false); }
+                set { ProjectPrefs.SetBool(typeof(Prefs).FullName + "-RequestCompile", value); }
             }
 
             public static string Result
             {
-                get { return ProjectPrefs.GetString(typeof(TInstance).FullName + "-Result", string.Empty); }
-                set { ProjectPrefs.SetString(typeof(TInstance).FullName + "-Result", value); }
+                get { return ProjectPrefs.GetString(typeof(Prefs).FullName + "-Result", string.Empty); }
+                set { ProjectPrefs.SetString(typeof(Prefs).FullName + "-Result", value); }
             }
         }
 
