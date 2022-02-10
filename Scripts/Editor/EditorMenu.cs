@@ -1,7 +1,8 @@
 ﻿
-using System.Linq;
 using UnityEngine;
 using UnityEditor;
+using System.IO;
+using System.Linq;
 using UniRx;
 using Extensions;
 
@@ -585,6 +586,18 @@ namespace Modules
         private static void OpenConsoleLogPath()
         {
             OpenDirectory(Application.consoleLogPath);
+        }
+
+        [MenuItem(itemName: DirectoryMenu + "Open TemplateFilePath", priority = 4)]
+        private static void OpenTemplateFilePath()
+        {
+            const string TemplateFolder = "Resources/ScriptTemplates/";
+
+            var templateFilePath = PathUtility.Combine(EditorApplication.applicationContentsPath, TemplateFolder);
+
+            var filePath = Directory.GetFiles(templateFilePath).FirstOrDefault();
+
+            OpenDirectory(string.IsNullOrEmpty(filePath) ? templateFilePath : filePath);
         }
 
         private static void OpenDirectory(string path)
