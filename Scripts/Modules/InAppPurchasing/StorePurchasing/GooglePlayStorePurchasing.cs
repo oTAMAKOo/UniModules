@@ -1,8 +1,10 @@
 ﻿
 #if UNITY_PURCHASING
 
+using System;
 using UnityEngine;
 using UnityEngine.Purchasing;
+using UniRx;
 using Extensions;
 
 namespace Modules.InAppPurchasing
@@ -14,6 +16,8 @@ namespace Modules.InAppPurchasing
         //----- field -----
 
         private IGooglePlayStoreExtensions googleExtensions = null;
+
+        private Subject<Product> onDeferredPurchase = null;
 
         //----- property -----
 
@@ -31,7 +35,17 @@ namespace Modules.InAppPurchasing
 
                 if (googlePlayConfiguration != null)
                 {
-                    googlePlayConfiguration.SetDeferredPurchaseListener(OnDeferredPurchase);
+                    Action<Product> onDeferredPurchaseCallback = product =>
+                    {
+                        OnDeferredPurchase(product);
+
+                        if (onDeferredPurchase != null)
+                        {
+                            onDeferredPurchase.OnNext(product);
+                        }
+                    };
+
+                    googlePlayConfiguration.SetDeferredPurchaseListener(onDeferredPurchaseCallback);
                 }
             }
         }
@@ -48,9 +62,11 @@ namespace Modules.InAppPurchasing
 
         public virtual void OnRestore() { }
         
-        protected virtual void OnDeferredPurchase(Product product)
+        protected virtual void OnDeferredPurchase(Product product) { }
+
+        public IObservable<Product> OnDeferredPurchaseAsObservable()
         {
-            Debug.Log($"Purchase of {product.definition.id} is deferred");
+            return onDeferredPurchase ?? (onDeferredPurchase = new Subject<Product>());
         }
     }
 }
