@@ -1,22 +1,29 @@
 ﻿
-#if UNITY_IOS
-
+using UnityEngine;
 using UnityEditor;
 using UnityEditor.iOS.Xcode;
+using System;
 using System.IO;
-using Modules.Devkit.Prefs;
+using Extensions;
 
 namespace Modules.Devkit.Build
 {
+    /// <summary>
+    /// PostProcessBuildなどの中で呼び出しを行いPBXProjectを編集する.
+    /// </summary>
     public abstract class ProcessForXCode
     {
         //----- params -----
+        
+        protected const string EntitlementExtension = ".entitlements";
 
         //----- field -----
 
         //----- property -----
 
         protected PBXProject PbxProj { get; private set; }
+
+        protected ProjectCapabilityManager CapabilityManager { get; private set; }
     
         protected string TargetGuid { get; private set; }
 
@@ -26,20 +33,40 @@ namespace Modules.Devkit.Build
         {
             if (buildTarget != BuildTarget.iOS) { return; }
 
-            PbxProj = new PBXProject();
+            try 
+            {
+                PbxProj = new PBXProject();
 
-            var pbxProjPath = path + "/Unity-iPhone.xcodeproj/project.pbxproj";
+                var projectPath = PBXProject.GetPBXProjectPath(path);
+                
+                PbxProj.ReadFromString(File.ReadAllText(projectPath));
 
-            PbxProj.ReadFromString(File.ReadAllText(pbxProjPath));
+                #if UNITY_2020_2_OR_NEWER
 
-            TargetGuid = PbxProj.TargetGuidByName("Unity-iPhone");
+                TargetGuid= PbxProj.GetUnityMainTargetGuid();
+            
+                #else
+            
+                TargetGuid = PbxProj.TargetGuidByName("Unity-iPhone");
+            
+                #endif
 
-            EditPbxProj();
+                var entitlementFileName = Path.ChangeExtension(Application.productName, EntitlementExtension);
 
-            File.WriteAllText(pbxProjPath, PbxProj.WriteToString());
+                CapabilityManager = new ProjectCapabilityManager(projectPath, entitlementFileName, null, TargetGuid);
 
-            PbxProj = null;
-            TargetGuid = null;
+                EditPbxProj();
+
+                File.WriteAllText(projectPath, PbxProj.WriteToString());
+
+                PbxProj = null;
+                CapabilityManager = null;
+                TargetGuid = null;
+            } 
+            catch (Exception e) 
+            {
+                Debug.LogException(e);
+            }
         }
 
         protected void SetBuildProperty(string name, string value)
@@ -47,26 +74,9 @@ namespace Modules.Devkit.Build
             PbxProj.SetBuildProperty(TargetGuid, name, value);
         }
 
-        protected void AddCapability(PBXCapabilityType capabilityType)
-        {
-            PbxProj.AddCapability(TargetGuid, capabilityType);
-        }
-
         protected void AddFrameworkToProject(string name, bool weak = false)
         {
             PbxProj.AddFrameworkToProject(TargetGuid, name, weak);
-        }
-
-        protected void SetEntitlements(string entitlementSourcePath, string entitlementDestPath)
-        {
-            var src = entitlementSourcePath;
-            var file_name = Path.GetFileName(src);
-            var dst = entitlementDestPath + "/" + "Unity-iPhone" + "/" + file_name;
-
-            FileUtil.CopyFileOrDirectory(src, dst);
-
-            PbxProj.AddFile("Unity-iPhone" + "/" + file_name, file_name);
-            PbxProj.AddBuildProperty(TargetGuid, "CODE_SIGN_ENTITLEMENTS", "Unity-iPhone" + "/" + file_name);
         }
 
         protected void SetPlist(string plistPath, string key, string value)
@@ -87,5 +97,3 @@ namespace Modules.Devkit.Build
         protected abstract void EditPbxProj();
     }
 }
-
-#endif
