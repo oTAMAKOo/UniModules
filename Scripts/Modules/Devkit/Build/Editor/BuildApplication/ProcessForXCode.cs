@@ -57,6 +57,8 @@ namespace Modules.Devkit.Build
 
                 EditPbxProj();
 
+                CapabilityManager.WriteToFile(); 
+
                 File.WriteAllText(projectPath, PbxProj.WriteToString());
 
                 PbxProj = null;
