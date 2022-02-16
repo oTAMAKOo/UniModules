@@ -15,7 +15,7 @@ namespace Modules.Devkit.Build
     {
         //----- params -----
         
-        protected const string EntitlementExtension = ".entitlements";
+        protected const string EntitlementFileName = "Entitlements.entitlements";
 
         //----- field -----
 
@@ -51,9 +51,7 @@ namespace Modules.Devkit.Build
             
                 #endif
 
-                var entitlementFileName = Path.ChangeExtension(Application.productName, EntitlementExtension);
-
-                CapabilityManager = new ProjectCapabilityManager(projectPath, entitlementFileName, null, TargetGuid);
+                CapabilityManager = new ProjectCapabilityManager(projectPath, EntitlementFileName, null, TargetGuid);
 
                 EditPbxProj();
 
