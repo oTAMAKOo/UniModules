@@ -15,7 +15,7 @@ namespace Modules.Networking
 
         //----- field -----
 
-        private Dictionary<WebRequest, ApiInfo> apiInfos = null;
+        private Dictionary<IWebRequest, ApiInfo> apiInfos = null;
 
         private FixedQueue<ApiInfo> apiInfoHistory = null;
 
@@ -31,7 +31,7 @@ namespace Modules.Networking
 
         protected override void OnCreate()
         {
-            apiInfos = new Dictionary<WebRequest, ApiInfo>();
+            apiInfos = new Dictionary<IWebRequest, ApiInfo>();
             apiInfoHistory = new FixedQueue<ApiInfo>(HistoryCount);
         }
 
@@ -45,7 +45,7 @@ namespace Modules.Networking
             this.ServerUrl = serverUrl;
         }
 
-        public void Start(WebRequest webRequest)
+        public void Start(IWebRequest webRequest)
         {
             var url = webRequest.HostUrl.Replace(ServerUrl, string.Empty);
 
@@ -71,7 +71,7 @@ namespace Modules.Networking
             }
         }
 
-        public void OnComplete(WebRequest webRequest, string result, double elapsedTime)
+        public void OnComplete(IWebRequest webRequest, string result, double elapsedTime)
         {
             var info = apiInfos.GetValueOrDefault(webRequest);
 
@@ -91,7 +91,7 @@ namespace Modules.Networking
             }
         }
 
-        public void OnRetry(WebRequest webRequest)
+        public void OnRetry(IWebRequest webRequest)
         {
             var info = apiInfos.GetValueOrDefault(webRequest);
 
@@ -106,7 +106,7 @@ namespace Modules.Networking
             }
         }
 
-        public void OnRetryLimit(WebRequest webRequest)
+        public void OnRetryLimit(IWebRequest webRequest)
         {
             var info = apiInfos.GetValueOrDefault(webRequest);
 
@@ -123,7 +123,7 @@ namespace Modules.Networking
             }
         }
 
-        public void OnError(WebRequest webRequest, Exception ex)
+        public void OnError(IWebRequest webRequest, Exception ex)
         {
             var info = apiInfos.GetValueOrDefault(webRequest);
 
@@ -169,7 +169,7 @@ namespace Modules.Networking
             }
         }
 
-        private ApiInfo.RequestType GetRequestType(WebRequest webRequest)
+        private ApiInfo.RequestType GetRequestType(IWebRequest webRequest)
         {
             var requestType = ApiInfo.RequestType.None;
 

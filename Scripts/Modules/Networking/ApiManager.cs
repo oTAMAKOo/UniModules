@@ -15,7 +15,7 @@ using Modules.MessagePack;
 namespace Modules.Networking
 {
     public abstract class ApiManager<TInstance, TWebRequest> : Singleton<TInstance>
-        where TInstance : ApiManager<TInstance, TWebRequest> where TWebRequest : WebRequest, new()
+        where TInstance : ApiManager<TInstance, TWebRequest> where TWebRequest : class, IWebRequest, new()
     {
         //----- params -----
 
@@ -54,6 +54,9 @@ namespace Modules.Networking
 
         /// <summary> リトライするまでの時間(秒). </summary>
         public float RetryDelaySeconds { get; private set; }
+
+        /// <summary> ログ出力が有効か. </summary>
+        public bool LogEnable { get; protected set; }
 
         //----- method -----
 
@@ -322,7 +325,7 @@ namespace Modules.Networking
         /// <summary> 成功時イベント. </summary>
         protected virtual void OnComplete<TResult>(TWebRequest webRequest, TResult result, double totalMilliseconds)
         {
-            if (Debug.isDebugBuild || Application.isEditor)
+            if (LogEnable)
             {
                 var json = string.Empty;
 

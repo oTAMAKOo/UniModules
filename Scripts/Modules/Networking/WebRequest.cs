@@ -14,13 +14,7 @@ using Modules.MessagePack;
 
 namespace Modules.Networking
 {
-    public enum DataFormat
-    {
-        Json,
-        MessagePack,
-    }
-
-    public abstract class WebRequest
+    public abstract class WebRequest : IWebRequest
     {
         //----- params -----
 
