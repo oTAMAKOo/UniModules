@@ -132,6 +132,9 @@ namespace Modules.Net.WebRequest
             if (webRequest.IsCanceled){ return null; }
 
             // 通信中.
+
+            cancellationTokenSource = new CancellationTokenSource();
+
             current = webRequest;
 
             var sw = System.Diagnostics.Stopwatch.StartNew();
@@ -191,12 +194,15 @@ namespace Modules.Net.WebRequest
                     break;
                 }
 
-                //------ リトライ ------
+                if (!cancellationTokenSource.IsCancellationRequested)
+                {
+                    //------ リトライ ------
 
-                // リトライディレイ.
-                await Task.Delay(TimeSpan.FromSeconds(RetryDelaySeconds), cancellationTokenSource.Token);
+                    // リトライディレイ.
+                    await Task.Delay(TimeSpan.FromSeconds(RetryDelaySeconds), cancellationTokenSource.Token);
 
-                OnRetry(webRequest);
+                    OnRetry(webRequest);
+                }
             }
 
             if (result != null)
@@ -243,7 +249,6 @@ namespace Modules.Net.WebRequest
             if (cancellationTokenSource != null)
             {
                 cancellationTokenSource.Dispose();
-                cancellationTokenSource = null;
             }
 
             if (current != null)
