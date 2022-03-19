@@ -4,8 +4,9 @@ using System;
 using System.IO;
 using UniRx;
 using Extensions;
+using Modules.Net.WebRequest;
 
-namespace Modules.Networking
+namespace Modules.Net.WebDownload
 {
     public class DownloadRequest
     {

@@ -8,7 +8,7 @@ using UniRx;
 using Extensions;
 using Extensions.Devkit;
 
-namespace Modules.Networking
+namespace Modules.Net.WebRequest
 {
     public sealed class ApiMonitorWindow : SingletonEditorWindow<ApiMonitorWindow>
     {

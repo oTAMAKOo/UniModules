@@ -7,8 +7,9 @@ using System.Collections;
 using System.Text;
 using UniRx;
 using Modules.Devkit.Console;
+using Modules.Net.WebRequest;
 
-namespace Modules.Networking
+namespace Modules.Net.WebDownload
 {
 	public sealed class TextureWebDownload
 	{

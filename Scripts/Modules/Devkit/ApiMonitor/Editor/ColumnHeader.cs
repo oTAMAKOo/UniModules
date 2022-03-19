@@ -1,13 +1,9 @@
 
-using UnityEngine;
 using UnityEditor;
 using UnityEditor.IMGUI.Controls;
 using System;
-using System.Linq;
-using System.Collections.Generic;
-using Extensions;
 
-namespace Modules.Networking
+namespace Modules.Net.WebRequest
 {
     public sealed class ColumnHeader : MultiColumnHeader
     {

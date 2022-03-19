@@ -91,6 +91,8 @@ namespace Modules.Devkit.Inspector
         {
             var assetImporter = AssetImporter.GetAtPath(folderAssetPath);
 
+            if (assetImporter == null){ return; }
+
             var metaFilePath = Path.ChangeExtension(assetImporter.assetPath, ".meta");
 
             if (!File.Exists(metaFilePath)){ return; }

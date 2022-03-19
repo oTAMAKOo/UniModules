@@ -2,7 +2,7 @@
 using UnityEngine.Networking;
 using System.IO;
 
-namespace Modules.Networking
+namespace Modules.Net.WebDownload
 {
     public sealed class FileDownloadHandler : DownloadHandlerScript
     {

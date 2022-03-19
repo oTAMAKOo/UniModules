@@ -1,10 +1,10 @@
-﻿﻿
-using UnityEngine;
+﻿
 using UnityEngine.Networking;
 using System;
 using System.Linq;
 using System.Collections.Generic;
 using System.Text;
+using System.Threading.Tasks;
 using UniRx;
 using Newtonsoft.Json;
 using Extensions;
@@ -12,9 +12,9 @@ using MessagePack;
 using MessagePack.Resolvers;
 using Modules.MessagePack;
 
-namespace Modules.Networking
+namespace Modules.Net.WebRequest
 {
-    public abstract class WebRequest : IWebRequest
+    public abstract class UnityWebRequestClient : IWebRequestClient
     {
         //----- params -----
 
@@ -61,14 +61,20 @@ namespace Modules.Networking
         /// <summary> タイムアウト時間(秒). </summary>
         public virtual int TimeOutSeconds { get { return 3; } }
 
-        /// <summary> 通信中か. </summary>
-        public bool Connecting { get; private set; }
-
         /// <summary> ステータスコード. </summary>
         public string StatusCode
         {
             get { return request.GetResponseHeaders().GetValueOrDefault("STATUS"); }
         }
+
+        /// <summary> 通信中か. </summary>
+        public bool IsConnecting { get; private set; }
+
+        /// <summary> キャンセルされたか. </summary>
+        public bool IsCanceled { get; private set; }
+
+        /// <summary> 発生したエラー. </summary>
+        public Exception Error { get; private set; }
 
         //----- method -----
 
@@ -83,12 +89,13 @@ namespace Modules.Networking
 
             DownloadHandler = CreateDownloadHandler();
 
-            Connecting = false;
+            IsConnecting = false;
+            IsCanceled = false;
         }
 
         public static void SetCryptoKey(AesCryptoKey cryptoKey)
         {
-            WebRequest.cryptoKey = cryptoKey;
+            UnityWebRequestClient.cryptoKey = cryptoKey;
         }
 
         protected virtual void CreateWebRequest(string method)
@@ -105,36 +112,36 @@ namespace Modules.Networking
             Url = request.url;
         }
 
-        public IObservable<TResult> Get<TResult>(IProgress<float> progress = null) where TResult : class
+        public async Task<TResult> Get<TResult>(IProgress<float> progress = null) where TResult : class
         {
             CreateWebRequest(UnityWebRequest.kHttpVerbGET);
 
             request.downloadHandler = CreateDownloadHandler();
 
-            return SendRequest<TResult>(progress);
+            return await SendRequest<TResult>(progress);
         }
 
-        public IObservable<TResult> Post<TResult, TContent>(TContent content, IProgress<float> progress = null) where TResult : class
+        public async Task<TResult> Post<TResult, TContent>(TContent content, IProgress<float> progress = null) where TResult : class
         {
             CreateWebRequest(UnityWebRequest.kHttpVerbPOST);
 
             request.uploadHandler = CreateUploadHandler(content);
             request.downloadHandler = CreateDownloadHandler();
 
-            return SendRequest<TResult>(progress);
+            return await SendRequest<TResult>(progress);
         }
 
-        public IObservable<TResult> Put<TResult, TContent>(TContent content, IProgress<float> progress = null) where TResult : class
+        public async Task<TResult> Put<TResult, TContent>(TContent content, IProgress<float> progress = null) where TResult : class
         {
             CreateWebRequest(UnityWebRequest.kHttpVerbPUT);
 
             request.uploadHandler = CreateUploadHandler(content);
             request.downloadHandler = CreateDownloadHandler();
 
-            return SendRequest<TResult>(progress);
+            return await SendRequest<TResult>(progress);
         }
 
-        public IObservable<TResult> Patch<TResult, TContent>(TContent content, IProgress<float> progress = null) where TResult : class
+        public async Task<TResult> Patch<TResult, TContent>(TContent content, IProgress<float> progress = null) where TResult : class
         {
             const string kHttpVerbPatch = "PATCH";
 
@@ -143,16 +150,16 @@ namespace Modules.Networking
             request.uploadHandler = CreateUploadHandler(content);
             request.downloadHandler = CreateDownloadHandler();
 
-            return SendRequest<TResult>(progress);
+            return await SendRequest<TResult>(progress);
         }
 
-        public IObservable<TResult> Delete<TResult>(IProgress<float> progress = null) where TResult : class
+        public async Task<TResult> Delete<TResult>(IProgress<float> progress = null) where TResult : class
         {
             CreateWebRequest(UnityWebRequest.kHttpVerbDELETE);
 
             request.downloadHandler = CreateDownloadHandler();
 
-            return SendRequest<TResult>(progress);
+            return await SendRequest<TResult>(progress);
         }
 
         public void Cancel(bool throwException = false)
@@ -161,15 +168,35 @@ namespace Modules.Networking
 
             if (throwException)
             {
-                throw new UnityWebRequestErrorException(request);
+                Error = new UnityWebRequestErrorException(request);
+
+                throw Error;
             }
         }
 
-        private IObservable<TResult> SendRequest<TResult>(IProgress<float> progress) where TResult : class
+        private async Task<TResult> SendRequest<TResult>(IProgress<float> progress) where TResult : class
         {
-            Connecting = true;
+            TResult result = null;
 
-            return request.Send(progress).Select(x => ReceiveResponse<TResult>(x)).Do(x => Connecting = false);
+            IsConnecting = true;
+
+            try
+            {
+                var bytes = await request.Send(progress);
+
+                if (bytes != null )
+                {
+                    result = ReceiveResponse<TResult>(bytes);
+                }
+
+                IsConnecting = false;
+            }
+            catch (Exception e)
+            {
+                Error = e;
+            }
+
+            return result;
         }
 
         private TResult ReceiveResponse<TResult>(byte[] value) where TResult : class

@@ -1,5 +1,4 @@
 ﻿﻿
-using UnityEngine;
 using UnityEngine.Networking;
 using System;
 using System.Linq;
@@ -8,7 +7,7 @@ using System.Net;
 using System.Threading;
 using UniRx;
 
-namespace Modules.Networking
+namespace Modules.Net.WebRequest
 {
     public static class UnityWebRequestExtensions
     {

@@ -8,7 +8,7 @@ using System.Linq;
 using UniRx;
 using Extensions;
 using Modules.Devkit.Diagnosis.LogTracker;
-using Modules.Networking;
+using Modules.Net.WebRequest;
 
 namespace Modules.Devkit.Diagnosis.SendReport
 {

@@ -8,7 +8,7 @@ using System.Linq;
 using Extensions;
 using UniRx;
 
-namespace Modules.Networking
+namespace Modules.Net.WebRequest
 {
     public sealed class ApiHistoryView : TreeView
     {

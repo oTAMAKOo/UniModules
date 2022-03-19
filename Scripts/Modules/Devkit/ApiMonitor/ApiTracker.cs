@@ -5,7 +5,7 @@ using System.Collections.Generic;
 using UniRx;
 using Extensions;
 
-namespace Modules.Networking
+namespace Modules.Net.WebRequest
 {
     public sealed class ApiTracker : Singleton<ApiTracker>
     {
@@ -15,7 +15,7 @@ namespace Modules.Networking
 
         //----- field -----
 
-        private Dictionary<IWebRequest, ApiInfo> apiInfos = null;
+        private Dictionary<IWebRequestClient, ApiInfo> apiInfos = null;
 
         private FixedQueue<ApiInfo> apiInfoHistory = null;
 
@@ -31,7 +31,7 @@ namespace Modules.Networking
 
         protected override void OnCreate()
         {
-            apiInfos = new Dictionary<IWebRequest, ApiInfo>();
+            apiInfos = new Dictionary<IWebRequestClient, ApiInfo>();
             apiInfoHistory = new FixedQueue<ApiInfo>(HistoryCount);
         }
 
@@ -45,7 +45,7 @@ namespace Modules.Networking
             this.ServerUrl = serverUrl;
         }
 
-        public void Start(IWebRequest webRequest)
+        public void Start(IWebRequestClient webRequest)
         {
             var url = webRequest.HostUrl.Replace(ServerUrl, string.Empty);
 
@@ -71,7 +71,7 @@ namespace Modules.Networking
             }
         }
 
-        public void OnComplete(IWebRequest webRequest, string result, double elapsedTime)
+        public void OnComplete(IWebRequestClient webRequest, string result, double elapsedTime)
         {
             var info = apiInfos.GetValueOrDefault(webRequest);
 
@@ -91,7 +91,7 @@ namespace Modules.Networking
             }
         }
 
-        public void OnRetry(IWebRequest webRequest)
+        public void OnRetry(IWebRequestClient webRequest)
         {
             var info = apiInfos.GetValueOrDefault(webRequest);
 
@@ -106,7 +106,7 @@ namespace Modules.Networking
             }
         }
 
-        public void OnRetryLimit(IWebRequest webRequest)
+        public void OnRetryLimit(IWebRequestClient webRequest)
         {
             var info = apiInfos.GetValueOrDefault(webRequest);
 
@@ -123,7 +123,7 @@ namespace Modules.Networking
             }
         }
 
-        public void OnError(IWebRequest webRequest, Exception ex)
+        public void OnError(IWebRequestClient webRequest)
         {
             var info = apiInfos.GetValueOrDefault(webRequest);
 
@@ -131,7 +131,7 @@ namespace Modules.Networking
 
             info.Status = ApiInfo.RequestStatus.Failure;
             info.StatusCode = webRequest.StatusCode;
-            info.Exception = ex;
+            info.Exception = webRequest.Error;
 
             apiInfos.Remove(webRequest);
 
@@ -169,7 +169,7 @@ namespace Modules.Networking
             }
         }
 
-        private ApiInfo.RequestType GetRequestType(IWebRequest webRequest)
+        private ApiInfo.RequestType GetRequestType(IWebRequestClient webRequest)
         {
             var requestType = ApiInfo.RequestType.None;
 

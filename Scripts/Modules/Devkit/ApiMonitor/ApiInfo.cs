@@ -2,7 +2,7 @@
 using System;
 using Extensions;
 
-namespace Modules.Networking
+namespace Modules.Net.WebRequest
 {
     public class ApiInfo
     {

@@ -1,11 +1,9 @@
 ﻿﻿
-using UnityEngine;
 using UnityEngine.Networking;
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
-namespace Modules.Networking
+namespace Modules.Net.WebRequest
 {
     public sealed class UnityWebRequestErrorException : Exception
     {

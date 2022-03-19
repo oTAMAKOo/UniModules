@@ -13,7 +13,7 @@ using Modules.MessagePack;
 using Modules.Master;
 using Modules.ExternalResource;
 using Modules.ExternalResource.Editor;
-using Modules.Networking;
+using Modules.Net.WebRequest;
 using Modules.BehaviorControl;
 using Modules.InputControl;
 using Modules.Devkit.AssetBundles;

@@ -6,7 +6,7 @@ using System.Collections.Generic;
 using UniRx;
 using Extensions;
 
-namespace Modules.Networking
+namespace Modules.Net.WebDownload
 {
     public abstract class FileDownloader<TDownloadRequest> : LifetimeDisposable where TDownloadRequest : DownloadRequest, new()
     {
