@@ -21,7 +21,7 @@ namespace Modules.Devkit.Hierarchy
         {
             public static bool enable
             {
-                get { return ProjectPrefs.GetBool(typeof(Prefs).FullName + "-enable", false); }
+                get { return ProjectPrefs.GetBool(typeof(Prefs).FullName + "-enable", true); }
                 set { ProjectPrefs.SetBool(typeof(Prefs).FullName + "-enable", value); }
             }
         }
