@@ -1,8 +1,10 @@
 ﻿
 using UnityEngine;
 using UnityEditor;
+using System.IO;
 using Extensions;
 using Extensions.Devkit;
+using Modules.Devkit.Prefs;
 
 namespace Modules.Crypto
 {
@@ -12,10 +14,21 @@ namespace Modules.Crypto
 
         private static readonly Vector2 WindowSize = new Vector2(450f, 140f);
 
+        public static class Prefs
+        {
+            public static string FileDirectory
+            {
+                get { return ProjectPrefs.GetString(typeof(Prefs).FullName + "-FileDirectory"); }
+                set { ProjectPrefs.SetString(typeof(Prefs).FullName + "-FileDirectory", value); }
+            }
+        }
+
         //----- field -----
 
         private string encryptKey = null;
         private string encryptIv = null;
+
+        private string projectFolderPath = null;
 
         private IKeyFileManager keyFileManager = null;
 
@@ -39,13 +52,18 @@ namespace Modules.Crypto
         {
             EditorLayoutTools.Title("Generate KeyFile");
 
+            if (string.IsNullOrEmpty(projectFolderPath))
+            {
+                projectFolderPath = UnityPathUtility.GetProjectFolderPath();
+            }
+
             using (new LabelWidthScope(50f))
             {
                 GUILayout.Space(2f);
 
                 EditorGUI.BeginChangeCheck();
 
-                var key = EditorGUILayout.DelayedTextField("Key", encryptKey);
+                var key = EditorGUILayout.TextField("Key", encryptKey);
 
                 if (EditorGUI.EndChangeCheck())
                 {
@@ -66,7 +84,7 @@ namespace Modules.Crypto
                 
                 EditorGUI.BeginChangeCheck();
 
-                var iv = EditorGUILayout.DelayedTextField("Iv", encryptIv);
+                var iv = EditorGUILayout.TextField("Iv", encryptIv);
 
                 if (EditorGUI.EndChangeCheck())
                 {
@@ -94,22 +112,34 @@ namespace Modules.Crypto
                 {
                     if (GUILayout.Button("Generate", EditorStyles.miniButton, GUILayout.Width(250f)))
                     {
-                        var path = EditorUtility.SaveFilePanelInProject("Generate KeyFile", "keyfile", string.Empty, "Select key file path.");
+                        var fileDirectory = Prefs.FileDirectory;
 
-                        var filePath = UnityPathUtility.ConvertAssetPathToFullPath(path);
-
-                        keyFileManager.Create(filePath, encryptKey, encryptIv);
-
-                        var keyFile = keyFileManager.Load(filePath);
-
-                        if (keyFile != null)
+                        if (!Directory.Exists(fileDirectory))
                         {
-                            using (new DisableStackTraceScope())
-                            {
-                                Debug.LogFormat("Generate success.\n\nFilePath: {0}\n\nKey: {1}\nIv: {2}", filePath, keyFile.Key, keyFile.Iv);
-                            }
+                            fileDirectory = projectFolderPath;
+                        }
 
-                            AssetDatabase.ImportAsset(path);
+                        var filePath = EditorUtility.SaveFilePanel("Generate KeyFile", fileDirectory, "keyfile", string.Empty);
+
+                        if (!filePath.IsNullOrEmpty())
+                        {
+                            keyFileManager.Create(filePath, encryptKey, encryptIv);
+
+                            var keyFile = keyFileManager.Load(filePath);
+
+                            if (keyFile != null)
+                            {
+                                using (new DisableStackTraceScope())
+                                {
+                                    Debug.LogFormat("Generate success.\n\nFilePath: {0}\n\nKey: {1}\nIv: {2}", filePath, keyFile.Key, keyFile.Iv);
+                                }
+
+                                var assetPath = UnityPathUtility.ConvertFullPathToAssetPath(filePath);
+
+                                AssetDatabase.ImportAsset(assetPath);
+
+                                Prefs.FileDirectory = Path.GetDirectoryName(filePath);
+                            }
                         }
                     }
                 }
@@ -129,9 +159,14 @@ namespace Modules.Crypto
 
                 if (GUILayout.Button("Load", EditorStyles.miniButton, GUILayout.Width(250f)))
                 {
-                    var projectFolderPath = UnityPathUtility.GetProjectFolderPath();
+                    var fileDirectory = Prefs.FileDirectory;
 
-                    var filePath = EditorUtility.OpenFilePanel("Load KeyFile", projectFolderPath, string.Empty);
+                    if (!Directory.Exists(fileDirectory))
+                    {
+                        fileDirectory = projectFolderPath;
+                    }
+
+                    var filePath = EditorUtility.OpenFilePanel("Load KeyFile", fileDirectory, string.Empty);
 
                     if (!filePath.IsNullOrEmpty())
                     {
@@ -139,8 +174,10 @@ namespace Modules.Crypto
 
                         using (new DisableStackTraceScope())
                         {
-                            Debug.LogFormat("Key: {0}\nIv: {1}", keyFile.Key, keyFile.Iv);
+                            Debug.LogFormat("FilePath: {0}\nKey: {1}\nIv: {2}", filePath, keyFile.Key, keyFile.Iv);
                         }
+
+                        Prefs.FileDirectory = Path.GetDirectoryName(filePath);
                     }
                 }
 

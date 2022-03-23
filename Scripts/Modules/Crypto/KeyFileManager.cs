@@ -1,6 +1,7 @@
 ﻿
 using System;
 using System.IO;
+using System.Linq;
 using System.Text;
 using Extensions;
 
@@ -118,8 +119,8 @@ namespace Modules.Crypto
             return new KeyData(key, iv);
         }
 
-        protected virtual byte[] CustomEncode(byte[] bytes) { return bytes; }
+        protected virtual byte[] CustomEncode(byte[] bytes) { return bytes.Reverse().ToArray(); }
 
-        protected virtual byte[] CustomDecode(byte[] bytes) { return bytes; }
+        protected virtual byte[] CustomDecode(byte[] bytes) { return bytes.Reverse().ToArray(); }
     }
 }
