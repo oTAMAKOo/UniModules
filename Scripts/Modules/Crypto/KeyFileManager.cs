@@ -119,8 +119,8 @@ namespace Modules.Crypto
             return new KeyData(key, iv);
         }
 
-        protected virtual byte[] CustomEncode(byte[] bytes) { return bytes.Reverse().ToArray(); }
+        protected virtual byte[] CustomEncode(byte[] bytes) { return bytes; }
 
-        protected virtual byte[] CustomDecode(byte[] bytes) { return bytes.Reverse().ToArray(); }
+        protected virtual byte[] CustomDecode(byte[] bytes) { return bytes; }
     }
 }
