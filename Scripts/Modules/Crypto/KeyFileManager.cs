@@ -33,11 +33,11 @@ namespace Modules.Crypto
     {
         //----- params -----
 
-        private const string Separator = ":*";
-
         //----- field -----
 
         //----- property -----
+
+        protected abstract string Separator { get; }
 
         //----- method -----
 
