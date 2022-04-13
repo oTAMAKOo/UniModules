@@ -1,4 +1,4 @@
-﻿
+
 using UnityEngine;
 using UnityEditor;
 using System.IO;
@@ -89,7 +89,7 @@ namespace Modules.Devkit.Inspector
 
         public override void OnDisable(UnityEngine.Object target)
         {
-            var assetImporter = AssetImporter.GetAtPath(folderAssetPath);
+			var assetImporter = AssetImporter.GetAtPath(folderAssetPath);
 
             if (assetImporter == null){ return; }
 
@@ -105,6 +105,11 @@ namespace Modules.Devkit.Inspector
                 }
 
                 var cryptoText = description.Encrypt(cryptoKey);
+
+				if (cryptoText == null)
+                {
+					cryptoText = string.Empty;
+                }
 
                 if (assetImporter.userData != cryptoText)
                 {
