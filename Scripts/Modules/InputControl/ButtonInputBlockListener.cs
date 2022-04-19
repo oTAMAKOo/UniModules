@@ -1,4 +1,4 @@
-﻿
+
 using UnityEngine;
 using UnityEngine.UI;
 using Unity.Linq;
@@ -21,9 +21,11 @@ namespace Modules.InputControl.Components
 
         //----- property -----
 
+		protected override InputBlockType BlockType { get { return InputBlockType.Button; } }
+
         //----- method -----
 
-        protected override void UpdateInputBlock(bool isBlock)
+		protected override void UpdateInputBlock(bool isBlock)
         {
             if (raycastGraphics == null)
             {

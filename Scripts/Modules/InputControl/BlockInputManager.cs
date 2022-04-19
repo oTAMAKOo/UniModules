@@ -8,11 +8,17 @@ using Modules.Devkit.LogHandler;
 
 namespace Modules.InputControl
 {
+	public enum InputBlockType
+	{
+		EventSystem,
+		Button,
+	}
+
     public sealed partial class BlockInputManager : Singleton<BlockInputManager>
 	{
         //----- params -----
 
-        //----- field -----
+		//----- field -----
 
         private ulong nextBlockingId = 0;
 
@@ -21,13 +27,19 @@ namespace Modules.InputControl
 
         //----- property -----
 
+		/// <summary> å…¥åŠ›åˆ¶é™ã‚¿ã‚¤ãƒ— </summary>
+		public InputBlockType BlockType { get; private set; }
+
+		/// <summary> å…¥åŠ›åˆ¶é™ä¸­ã‹ </summary>
         public bool IsBlocking { get { return blockingIds.Any(); } }
 
         //----- method -----
         
         protected override void OnCreate()
         {
-            // Exception”­¶‚É‹­§‰ğœ.
+			BlockType = InputBlockType.EventSystem;
+
+            // Exceptionç™ºç”Ÿæ™‚ã«å¼·åˆ¶è§£é™¤.
             ApplicationLogHandler.Instance.OnReceivedExceptionAsObservable()
                 .Subscribe(_ => ForceUnlock())
                 .AddTo(Disposable);

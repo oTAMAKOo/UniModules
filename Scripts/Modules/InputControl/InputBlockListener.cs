@@ -1,4 +1,4 @@
-﻿﻿﻿
+﻿﻿
 using UnityEngine;
 using UniRx;
 
@@ -12,22 +12,27 @@ namespace Modules.InputControl
         
         //----- property -----
 
+		protected abstract InputBlockType BlockType { get; }
+
         //----- method -----
 
         void Start()
         {
             var blockInputManager = BlockInputManager.Instance;
 
-            blockInputManager.OnUpdateStatusAsObservable()
-                .Subscribe(x => UpdateInputBlock(x))
-                .AddTo(this);
+			if (blockInputManager.BlockType == BlockType)
+			{
+	            blockInputManager.OnUpdateStatusAsObservable()
+	                .Subscribe(x => UpdateInputBlock(x))
+	                .AddTo(this);
 
-            if (blockInputManager.IsBlocking)
-            {
-                UpdateInputBlock(blockInputManager.IsBlocking);
-            }
+	            if (blockInputManager.IsBlocking)
+	            {
+	                UpdateInputBlock(blockInputManager.IsBlocking);
+	            }
+			}
         }
 
-        protected abstract void UpdateInputBlock(bool isBlock);
+		protected abstract void UpdateInputBlock(bool isBlock);
     }
 }
