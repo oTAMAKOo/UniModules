@@ -8,8 +8,8 @@ namespace Modules.AssetBundles
 {
     public sealed partial class AssetBundleManager
     {
-        // シーク読み込みアセットバンドル.
-        private  class SeekableAssetBundle : IDisposable
+        // 繧ｷ繝ｼ繧ｯ隱ｭ縺ｿ霎ｼ縺ｿ繧｢繧ｻ繝�繝医ヰ繝ｳ繝峨Ν.
+        private class SeekableAssetBundle : IDisposable
         {
             public AssetBundle assetBundle = null;
 
@@ -60,7 +60,7 @@ namespace Modules.AssetBundles
             }
         }
 
-        // 読み込み済みアセットバンドル.
+        // 隱ｭ縺ｿ霎ｼ縺ｿ貂医∩繧｢繧ｻ繝�繝医ヰ繝ｳ繝峨Ν.
         private sealed class LoadedAssetBundle : SeekableAssetBundle
         {
             public int referencedCount = 0;
