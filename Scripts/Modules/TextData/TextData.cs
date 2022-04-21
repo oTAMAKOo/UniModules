@@ -3,16 +3,16 @@ using UnityEngine;
 using System;
 using System.Text;
 using Extensions;
-using Modules.GameText.Components;
+using Modules.TextData.Components;
 using UniRx;
 
-namespace Modules.GameText
+namespace Modules.TextData
 {
-    public sealed partial class GameText : GameTextBase<GameText>
+    public sealed partial class TextData : TextDataBase<TextData>
     {
         //----- params -----
 
-        private const string AssetFileName = "GameText";
+        private const string AssetFileName = "TextData";
 
         //----- field -----
         
@@ -22,30 +22,30 @@ namespace Modules.GameText
         
         //----- method -----
 
-        private GameText() { }
+        private TextData() { }
 
         /// <summary> 内蔵テキストを読み込み </summary>
         public void LoadEmbedded(string resourcesPath)
         {
             var path = PathUtility.GetPathWithoutExtension(resourcesPath);
 
-            var asset = Resources.Load<GameTextAsset>(path);
+            var asset = Resources.Load<TextDataAsset>(path);
             
             LoadEmbedded(asset);
         }
 
         /// <summary> 内蔵テキストを読み込み </summary>
-        public void LoadEmbedded(GameTextAsset gameTextAsset)
+        public void LoadEmbedded(TextDataAsset textDataAsset)
         {
-            if (gameTextAsset == null) { return; }
+            if (textDataAsset == null) { return; }
 
             Clear();
 
-            AddContents(gameTextAsset);
+            AddContents(textDataAsset);
         }
 
         /// <summary> 追加でテキストを取り込み </summary>
-        public void AddContents(GameTextAsset asset)
+        public void AddContents(TextDataAsset asset)
         {
             if (asset == null) { return; }
             

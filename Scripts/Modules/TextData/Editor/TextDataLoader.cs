@@ -1,15 +1,15 @@
-﻿
+
 using UnityEngine;
 using UnityEditor;
 using UnityEditor.Callbacks;
 using System.Linq;
 using Extensions;
 using Extensions.Devkit;
-using Modules.GameText.Components;
+using Modules.TextData.Components;
 
-namespace Modules.GameText.Editor
+namespace Modules.TextData.Editor
 {
-    public static class GameTextLoader
+    public static class TextDataLoader
     {
         //----- params -----
 
@@ -36,9 +36,9 @@ namespace Modules.GameText.Editor
 
             var frameCount = 0;
 
-            EditorApplication.CallbackFunction reloadGameText = null;
+            EditorApplication.CallbackFunction reloadTextData = null;
 
-            reloadGameText = () =>
+            reloadTextData = () =>
             {
                 if (frameCount < 30)
                 {
@@ -48,52 +48,52 @@ namespace Modules.GameText.Editor
 
                 Reload();
 
-                EditorApplication.update -= reloadGameText;
+                EditorApplication.update -= reloadTextData;
             };
 
-            EditorApplication.update += reloadGameText;
+            EditorApplication.update += reloadTextData;
         }
 
         public static void SetupCryptoKey()
         {
-            var gameText = GameText.Instance;
+            var textData = TextData.Instance;
 
-            if (gameText == null){ return; }
+            if (textData == null){ return; }
 
-            var config = GameTextConfig.Instance;
+            var config = TextDataConfig.Instance;
 
             if (config == null) { return; }
 
             // 暗号化キー設定.
 
-            gameText.SetCryptoKey(config.CryptoKey, config.CryptoIv);
+            textData.SetCryptoKey(config.CryptoKey, config.CryptoIv);
         }
 
         public static void Reload()
         {
             if (EditorApplication.isPlayingOrWillChangePlaymode) { return; }
 
-            var gameText = GameText.Instance;
+            var textData = TextData.Instance;
 
-            if (gameText == null){ return; }
+            if (textData == null){ return; }
 
-            var config = GameTextConfig.Instance;
+            var config = TextDataConfig.Instance;
 
             if (config == null) { return; }
             
             // 内包テキスト読み込み.
 
-            var embeddedAsset = LoadGameTextAsset(ContentType.Embedded);
+            var embeddedAsset = LoadTextDataAsset(ContentType.Embedded);
 
-            gameText.LoadEmbedded(embeddedAsset);
+            textData.LoadEmbedded(embeddedAsset);
 
             // 配信テキスト読み込み.
 
             if (config != null && config.Distribution.Enable)
             {
-                var distributionAsset = LoadGameTextAsset(ContentType.Distribution);
+                var distributionAsset = LoadTextDataAsset(ContentType.Distribution);
 
-                gameText.AddContents(distributionAsset);
+                textData.AddContents(distributionAsset);
             }
 
             // 適用.
@@ -102,7 +102,7 @@ namespace Modules.GameText.Editor
 
             foreach (var gameObject in gameObjects)
             {
-                var setter = gameObject.GetComponent<GameTextSetter>();
+                var setter = gameObject.GetComponent<TextSetter>();
 
                 if (setter != null)
                 {
@@ -113,23 +113,23 @@ namespace Modules.GameText.Editor
             IsLoaded = true;
         }
 
-        public static GameTextAsset LoadGameTextAsset(ContentType contentType)
+        public static TextDataAsset LoadTextDataAsset(ContentType contentType)
         {
-            GameTextAsset gameTextAsset = null;
+            TextDataAsset textDataAsset = null;
 
-            var gameText = GameText.Instance;
+            var textData = TextData.Instance;
 
-            var config = GameTextConfig.Instance;
+            var config = TextDataConfig.Instance;
 
-            var languageInfo = GameTextLanguage.GetCurrentInfo();
+            var languageInfo = TextDataLanguage.GetCurrentInfo();
 
             if (languageInfo == null) { return null; }
 
             var identifier = languageInfo.Identifier;
 
-            var assetFolderName = gameText.GetAssetFolderName();
+            var assetFolderName = textData.GetAssetFolderName();
 
-            var assetFileName = GameText.GetAssetFileName(identifier);
+            var assetFileName = TextData.GetAssetFileName(identifier);
 
             switch (contentType)
             {
@@ -139,7 +139,7 @@ namespace Modules.GameText.Editor
 
                         var path = PathUtility.GetPathWithoutExtension(resourcesPath);
 
-                        gameTextAsset = Resources.Load<GameTextAsset>(path);
+                        textDataAsset = Resources.Load<TextDataAsset>(path);
                     }
                     break;
 
@@ -151,13 +151,13 @@ namespace Modules.GameText.Editor
 
                             var assetPath = PathUtility.Combine(new string[] { aseetFolderPath, assetFolderName, assetFileName });
                     
-                            gameTextAsset = AssetDatabase.LoadMainAssetAtPath(assetPath) as GameTextAsset;
+                            textDataAsset = AssetDatabase.LoadMainAssetAtPath(assetPath) as TextDataAsset;
                         }
                     }
                     break;
             }
 
-            return gameTextAsset;
+            return textDataAsset;
         }
     }
 }

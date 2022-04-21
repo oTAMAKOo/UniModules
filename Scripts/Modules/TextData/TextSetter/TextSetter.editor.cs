@@ -1,4 +1,4 @@
-﻿
+
 #if UNITY_EDITOR
 using System;
 using UnityEngine;
@@ -6,9 +6,9 @@ using UnityEditor;
 using UnityEngine.UI;
 using Extensions;
 
-namespace Modules.GameText.Components
+namespace Modules.TextData.Components
 {
-    public partial class GameTextSetter
+    public partial class TextSetter
     {
         //----- params -----
 
@@ -33,7 +33,7 @@ namespace Modules.GameText.Components
         {
             if (aesCryptoKey == null)
             {
-                aesCryptoKey = Reflection.GetPrivateField<GameText, AesCryptoKey>(GameText.Instance, "cryptoKey");
+                aesCryptoKey = Reflection.GetPrivateField<TextData, AesCryptoKey>(TextData.Instance, "cryptoKey");
             }
 
             return aesCryptoKey;

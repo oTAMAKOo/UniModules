@@ -4,11 +4,11 @@
 using System.Collections.Generic;
 using System.Linq;
 using Extensions;
-using Modules.GameText.Components;
+using Modules.TextData.Components;
 
-namespace Modules.GameText
+namespace Modules.TextData
 {
-    public sealed partial class GameText
+    public sealed partial class TextData
     {
         //----- params -----
 
@@ -54,7 +54,7 @@ namespace Modules.GameText
 
         //----- method -----
 
-        private void AddEditorContents(GameTextAsset asset)
+        private void AddEditorContents(TextDataAsset asset)
         {
             if (asset == null) { return; }
 

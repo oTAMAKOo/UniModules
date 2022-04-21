@@ -2,9 +2,9 @@
 using System.Linq;
 using Modules.Devkit.Prefs;
 
-namespace Modules.GameText.Editor
+namespace Modules.TextData.Editor
 {
-    public static class GameTextLanguage
+    public static class TextDataLanguage
     {
         public static class Prefs
         {

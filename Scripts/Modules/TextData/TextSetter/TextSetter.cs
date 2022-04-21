@@ -1,15 +1,15 @@
-﻿﻿﻿﻿
+﻿﻿﻿
 using UnityEngine;
 using UnityEngine.UI;
 using Extensions;
 using TMPro;
 using UniRx;
 
-namespace Modules.GameText.Components
+namespace Modules.TextData.Components
 {
     [ExecuteAlways]
     [DisallowMultipleComponent]
-    public sealed partial class GameTextSetter : MonoBehaviour
+    public sealed partial class TextSetter : MonoBehaviour
 	{
         //----- params -----
 
@@ -48,7 +48,7 @@ namespace Modules.GameText.Components
             if (Application.isPlaying)
             {
                 // テキスト更新通知を受け取ったら再度テキストを適用.
-                GameText.Instance.OnUpdateContentsAsObservable()
+                TextData.Instance.OnUpdateContentsAsObservable()
                     .Subscribe(_ => ImportText())
                     .AddTo(this);
             }
@@ -66,9 +66,9 @@ namespace Modules.GameText.Components
 
         private void SetTextGuid(string guid)
         {
-            var gameText = GameText.Instance;
+            var textData = TextData.Instance;
 
-            if (gameText == null) { return; }
+            if (textData == null) { return; }
 
             if (string.IsNullOrEmpty(guid))
             {
@@ -78,7 +78,7 @@ namespace Modules.GameText.Components
             {
                 guid = guid.Trim();
 
-                var text = gameText.FindText(guid);
+                var text = textData.FindText(guid);
 
                 if (!string.IsNullOrEmpty(text))
                 {
@@ -89,7 +89,7 @@ namespace Modules.GameText.Components
             content = string.Empty;
 
             ApplyText(content);
-            ApplyGameText();
+            ApplyTextData();
         }
 
         private void ImportText()
@@ -100,18 +100,18 @@ namespace Modules.GameText.Components
 
             #endif
 
-            ApplyGameText();
+            ApplyTextData();
         }
 
-        private void ApplyGameText()
+        private void ApplyTextData()
         {
-            var gameText = GameText.Instance;
+            var textData = TextData.Instance;
 
-            if (gameText == null || gameText.Texts == null) { return; }
+            if (textData == null || textData.Texts == null) { return; }
 
             if (string.IsNullOrEmpty(textGuid)) { return; }
 
-            content = gameText.FindText(textGuid);
+            content = textData.FindText(textGuid);
 
             ApplyText(content);
         }

@@ -1,4 +1,4 @@
-﻿
+
 using UnityEngine;
 using UnityEditor;
 using System;
@@ -9,13 +9,13 @@ using Extensions;
 using Extensions.Devkit;
 using Modules.Devkit.AssemblyCompilation;
 
-namespace Modules.GameText.Components
+namespace Modules.TextData.Components
 {
-    public sealed class GameTextSelector : ScriptableWizard
+    public sealed class TextDataSelector : ScriptableWizard
     {
         //----- params -----
 
-        private const string WindowTitle = "GameTextSelector";
+        private const string WindowTitle = "TextDataSelector";
 
         private sealed class SelectionInfo
         {
@@ -35,7 +35,7 @@ namespace Modules.GameText.Components
 
         private string categoryGuid = null;
 
-        private GameTextSelectorScrollView scrollView = null;
+        private TextDataSelectorScrollView scrollView = null;
 
         private string searchText = null;
 
@@ -43,7 +43,7 @@ namespace Modules.GameText.Components
 
         private LifetimeDisposable lifetimeDisposable = null;
 
-        private static GameTextSelector instance = null;
+        private static TextDataSelector instance = null;
 
         //----- property -----
 
@@ -57,7 +57,7 @@ namespace Modules.GameText.Components
                 instance = null;
             }
 
-            instance = DisplayWizard<GameTextSelector>(WindowTitle);
+            instance = DisplayWizard<TextDataSelector>(WindowTitle);
 
             instance.Initialize();
         }
@@ -66,7 +66,7 @@ namespace Modules.GameText.Components
         {
             lifetimeDisposable = new LifetimeDisposable();
 
-            scrollView = new GameTextSelectorScrollView();
+            scrollView = new TextDataSelectorScrollView();
 
             Selection.selectionChanged += () => { Repaint(); };
 
@@ -94,15 +94,15 @@ namespace Modules.GameText.Components
 
         void OnGUI()
         {
-            var setterInspector = GameTextSetterInspector.Current;
+            var setterInspector = TextSetterInspector.Current;
 
             if(setterInspector == null)
             {
-                EditorGUILayout.HelpBox("Need Select GameTextSetter GameObject.", MessageType.Info);
+                EditorGUILayout.HelpBox("Need Select TextDataSetter GameObject.", MessageType.Info);
                 return;
             }
 
-            var setter = GameTextSetterInspector.Current.Instance;
+            var setter = TextSetterInspector.Current.Instance;
 
             if (setter == null) { return; }
 
@@ -173,28 +173,28 @@ namespace Modules.GameText.Components
             }
             else
             {
-                EditorGUILayout.HelpBox("GameText not found", MessageType.Warning);
+                EditorGUILayout.HelpBox("TextData not found", MessageType.Warning);
             }
         }
 
         private void BuildSelectionInfos()
         {
-            var gameText = GameText.Instance;
+            var textData = TextData.Instance;
 
-            var setter = GameTextSetterInspector.Current.Instance;
-            var setterInspector = GameTextSetterInspector.Current;
+            var setter = TextSetterInspector.Current.Instance;
+            var setterInspector = TextSetterInspector.Current;
 
-            categoryGuid = GameTextSetterInspector.Current.SelectionCategoryGuid;
+            categoryGuid = TextSetterInspector.Current.SelectionCategoryGuid;
 
-            var categoryTexts = GetCategoryTextGuids(gameText, categoryGuid);
+            var categoryTexts = GetCategoryTextGuids(textData, categoryGuid);
 
             var list = new List<SelectionInfo>();
 
-            foreach (var textData in categoryTexts)
+            foreach (var categoryText in categoryTexts)
             {
-                var text = gameText.FindText(textData.Value);
+                var text = textData.FindText(categoryText.Value);
 
-                var info = new SelectionInfo(textData.Key, textData.Value, text);
+                var info = new SelectionInfo(categoryText.Key, categoryText.Value, text);
 
                 list.Add(info);
             }
@@ -228,15 +228,15 @@ namespace Modules.GameText.Components
             return list.ToArray();
         }
 
-        private IReadOnlyDictionary<string, string> GetCategoryTextGuids(GameText gameText, string categoryGuid)
+        private IReadOnlyDictionary<string, string> GetCategoryTextGuids(TextData textData, string categoryGuid)
         {
             var categoryTexts = new Dictionary<string, string>();
 
-            var textInfos = gameText.Texts.Values.Where(x => x.categoryGuid == categoryGuid).ToArray();
+            var textInfos = textData.Texts.Values.Where(x => x.categoryGuid == categoryGuid).ToArray();
 
             foreach (var textInfo in textInfos)
             {
-                var enumName = gameText.GetEnumName(textInfo.textGuid);
+                var enumName = textData.GetEnumName(textInfo.textGuid);
                 
                 categoryTexts.Add(enumName, textInfo.textGuid);
             }
@@ -244,7 +244,7 @@ namespace Modules.GameText.Components
             return categoryTexts;
         }
 
-        private sealed class GameTextSelectorScrollView : EditorGUIFastScrollView<SelectionInfo>
+        private sealed class TextDataSelectorScrollView : EditorGUIFastScrollView<SelectionInfo>
         {
             //----- params -----
 
@@ -258,9 +258,9 @@ namespace Modules.GameText.Components
 
             public override Direction Type { get { return Direction.Vertical; } }
 
-            public GameTextSetter Setter { get; set; }
+            public TextSetter Setter { get; set; }
 
-            public GameTextSetterInspector SetterInspector { get; set; }
+            public TextSetterInspector SetterInspector { get; set; }
 
             //----- method -----
 
@@ -301,7 +301,7 @@ namespace Modules.GameText.Components
                             {
                                 if (GUILayout.Button("Select", GUILayout.Width(75f), GUILayout.Height(buttonHeight)))
                                 {
-                                    UnityEditorUtility.RegisterUndo("GameTextSelector-Select", Setter);
+                                    UnityEditorUtility.RegisterUndo("TextDataSelector-Select", Setter);
                                     
                                     if (!string.IsNullOrEmpty(content.TextGuid))
                                     {

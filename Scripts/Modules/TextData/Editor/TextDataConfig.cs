@@ -3,9 +3,9 @@ using Extensions;
 using UnityEngine;
 using Modules.Devkit.ScriptableObjects;
 
-namespace Modules.GameText.Editor
+namespace Modules.TextData.Editor
 {
-    public sealed partial class GameTextConfig : ReloadableScriptableObject<GameTextConfig>
+    public sealed partial class TextDataConfig : ReloadableScriptableObject<TextDataConfig>
     {
         //----- params -----
 

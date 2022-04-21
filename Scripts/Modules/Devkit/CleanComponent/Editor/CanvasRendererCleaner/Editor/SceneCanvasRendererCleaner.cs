@@ -4,7 +4,7 @@ using UnityEditor.SceneManagement;
 using UniRx;
 using Extensions;
 using Modules.Devkit.EventHook;
-using Modules.GameText.Editor;
+using Modules.TextData.Editor;
 
 namespace Modules.Devkit.CleanComponent
 {
@@ -35,9 +35,9 @@ namespace Modules.Devkit.CleanComponent
         {
             if (!Prefs.autoClean) { return; }
 
-            GameTextLoader.SetupCryptoKey();
+            TextDataLoader.SetupCryptoKey();
 
-            GameTextLoader.Reload();
+            TextDataLoader.Reload();
 
             var activeScene = EditorSceneManager.GetActiveScene();
 

@@ -1,10 +1,10 @@
-﻿
+
 using System.IO;
 using System.Text;
 using Newtonsoft.Json;
 using YamlDotNet.Serialization;
 
-namespace Modules.GameText.Editor
+namespace Modules.TextData.Editor
 {
     public static class FileLoader
     {

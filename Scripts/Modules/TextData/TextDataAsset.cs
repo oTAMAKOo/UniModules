@@ -5,9 +5,9 @@ using System.Collections.Generic;
 using Extensions;
 using Extensions.Serialize;
 
-namespace Modules.GameText.Components
+namespace Modules.TextData.Components
 {
-    public sealed class GameTextAsset : ScriptableObject
+    public sealed class TextDataAsset : ScriptableObject
 	{
         [Serializable]
         public sealed class TextContent

@@ -6,7 +6,7 @@ using System.Linq;
 using UniRx;
 using Extensions;
 using Modules.Devkit.EventHook;
-using Modules.GameText.Editor;
+using Modules.TextData.Editor;
 
 namespace Modules.Devkit.CleanComponent
 {
@@ -34,7 +34,7 @@ namespace Modules.Devkit.CleanComponent
 
             if (!CheckExecute(gameObjects)) { return; }
 
-            GameTextLoader.Reload();
+            TextDataLoader.Reload();
 
             foreach (var gameObject in gameObjects)
             {

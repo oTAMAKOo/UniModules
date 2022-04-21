@@ -3,7 +3,7 @@ using System;
 using System.Collections.Generic;
 using Extensions;
 
-namespace Modules.GameText.Components
+namespace Modules.TextData.Components
 {
     public enum ContentType
     {
@@ -21,7 +21,7 @@ namespace Modules.GameText.Components
         public bool encrypt = false;
     }
 
-    public abstract class GameTextBase<T> : Singleton<T> where T : GameTextBase<T>
+    public abstract class TextDataBase<T> : Singleton<T> where T : TextDataBase<T>
     {
         //----- params -----
 

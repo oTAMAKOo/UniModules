@@ -1,4 +1,4 @@
-﻿﻿﻿
+﻿﻿
 using UnityEngine;
 using UnityEditor;
 using System;
@@ -6,12 +6,12 @@ using System.Linq;
 using System.Collections.Generic;
 using Extensions;
 using Extensions.Devkit;
-using Modules.GameText.Editor;
+using Modules.TextData.Editor;
 
-namespace Modules.GameText.Components
+namespace Modules.TextData.Components
 {
-    [CustomEditor(typeof(GameTextSetter))]
-    public sealed class GameTextSetterInspector : UnityEditor.Editor
+    [CustomEditor(typeof(TextSetter))]
+    public sealed class TextSetterInspector : UnityEditor.Editor
     {
         //----- params -----
 
@@ -21,17 +21,17 @@ namespace Modules.GameText.Components
 
         private string currentTextGuid = null;
 
-        private GameTextSetter instance = null;
+        private TextSetter instance = null;
 
         private bool setup = false;
         
         //----- property -----
 
-        public GameTextSetter Instance { get { return instance; } }
+        public TextSetter Instance { get { return instance; } }
 
         public string SelectionCategoryGuid { get { return currentCategoryGuid; } }
 
-        public static GameTextSetterInspector Current { get; private set; }
+        public static TextSetterInspector Current { get; private set; }
 
         //----- method -----
 
@@ -39,9 +39,9 @@ namespace Modules.GameText.Components
         {
             if (setup) { return; }
 
-            var gameText = GameText.Instance;
+            var textData = TextData.Instance;
 
-            currentCategoryGuid = GetCategoryGuid(gameText, instance.TextGuid);
+            currentCategoryGuid = GetCategoryGuid(textData, instance.TextGuid);
 
             currentTextGuid = instance.TextGuid;
 
@@ -50,9 +50,9 @@ namespace Modules.GameText.Components
 
         void OnEnable()
         {
-            if (!GameTextLoader.IsLoaded)
+            if (!TextDataLoader.IsLoaded)
             {
-                GameTextLoader.Reload();
+                TextDataLoader.Reload();
             }
 
             Undo.undoRedoPerformed += OnUndoRedo;
@@ -68,30 +68,30 @@ namespace Modules.GameText.Components
 
         public override void OnInspectorGUI()
         {
-            instance = target as GameTextSetter;
+            instance = target as TextSetter;
             
             Current = this;
 
             Setup();
 
-            var gameText = GameText.Instance;
+            var textData = TextData.Instance;
             
-            UpdateCurrentInfo(gameText);
+            UpdateCurrentInfo(textData);
 
-            DrawSourceSelectGUI(gameText);
+            DrawSourceSelectGUI(textData);
 
-            DrawEmbeddedTextSelectGUI(gameText);
+            DrawEmbeddedTextSelectGUI(textData);
 
-            DrawDistributionTextSelectGUI(gameText);
+            DrawDistributionTextSelectGUI(textData);
 
             DrawDevelopmentTextSelectGUI();
         }
 
-        private void DrawSourceSelectGUI(GameText gameText)
+        private void DrawSourceSelectGUI(TextData textData)
         {
             var contentType = instance.ContentType;
 
-            var config = GameTextConfig.Instance;
+            var config = TextDataConfig.Instance;
 
             var distributionSetting = config.Distribution;
 
@@ -117,7 +117,7 @@ namespace Modules.GameText.Components
 
                         if (EditorGUI.EndChangeCheck())
                         {
-                            UnityEditorUtility.RegisterUndo("GameTextSetterInspector-Undo", instance);
+                            UnityEditorUtility.RegisterUndo("TextDataSetterInspector-Undo", instance);
 
                             var selection = enumValues.ElementAtOrDefault(index);
 
@@ -125,7 +125,7 @@ namespace Modules.GameText.Components
 
                             SetTextGuid(null);
 
-                            currentCategoryGuid = GetCategoryGuid(gameText, instance.TextGuid);
+                            currentCategoryGuid = GetCategoryGuid(textData, instance.TextGuid);
                         }
 
                         GUILayout.Space(4f);
@@ -136,31 +136,31 @@ namespace Modules.GameText.Components
             }
         }
 
-        private void DrawEmbeddedTextSelectGUI(GameText gameText)
+        private void DrawEmbeddedTextSelectGUI(TextData textData)
         {
             var contentType = instance.ContentType;
 
             if (contentType != ContentType.Embedded){ return; }
             
-            DrawTextSelectGUI(gameText, contentType);
+            DrawTextSelectGUI(textData, contentType);
         }
 
-        private void DrawDistributionTextSelectGUI(GameText gameText)
+        private void DrawDistributionTextSelectGUI(TextData textData)
         {
             var contentType = instance.ContentType;
 
             if (contentType != ContentType.Distribution){ return; }
             
-            DrawTextSelectGUI(gameText, contentType);
+            DrawTextSelectGUI(textData, contentType);
         }
 
-        private void DrawTextSelectGUI(GameText gameText, ContentType contentType)
+        private void DrawTextSelectGUI(TextData textData, ContentType contentType)
         {
             var categoryChanged = false;
 
             using (new EditorGUILayout.HorizontalScope())
             {
-                var categories = gameText.Categories.Where(x => x.ContentType == contentType).ToArray();
+                var categories = textData.Categories.Where(x => x.ContentType == contentType).ToArray();
 
                 // Noneが入るので1ずれる.
                 var categoryIndex = categories.IndexOf(x => x.Guid == SelectionCategoryGuid) + 1;
@@ -173,11 +173,11 @@ namespace Modules.GameText.Components
 
                 EditorGUI.BeginChangeCheck();
 
-                categoryIndex = EditorGUILayout.Popup("GameText", categoryIndex, labels.ToArray());
+                categoryIndex = EditorGUILayout.Popup("TextData", categoryIndex, labels.ToArray());
 
                 if (EditorGUI.EndChangeCheck())
                 {
-                    UnityEditorUtility.RegisterUndo("GameTextSetterInspector-Undo", instance);
+                    UnityEditorUtility.RegisterUndo("TextDataSetterInspector-Undo", instance);
                     
                     var newCategory = 1 <= categoryIndex ? categories[categoryIndex - 1] : null;
 
@@ -187,7 +187,7 @@ namespace Modules.GameText.Components
                     {
                         SetTextGuid(null);
 
-                        UpdateCurrentInfo(gameText);
+                        UpdateCurrentInfo(textData);
 
                         currentCategoryGuid = newCategoryGuid;
 
@@ -195,13 +195,13 @@ namespace Modules.GameText.Components
                     }
                 }
 
-                using (new DisableScope(categoryIndex == 0 || GameText.Instance.Texts == null))
+                using (new DisableScope(categoryIndex == 0 || TextData.Instance.Texts == null))
                 {
                     GUILayout.Space(2f);
 
                     if (GUILayout.Button("select", EditorStyles.miniButton, GUILayout.Width(75f)))
                     {
-                        GameTextSelector.Open();
+                        TextDataSelector.Open();
                     }
                 }
             }
@@ -230,7 +230,7 @@ namespace Modules.GameText.Components
 
                 if (!string.IsNullOrEmpty(developmentText))
                 {
-                    editText = developmentText.TrimStart(GameTextSetter.DevelopmentMark);
+                    editText = developmentText.TrimStart(TextSetter.DevelopmentMark);
                 }
 
                 var prevText = editText;
@@ -247,7 +247,7 @@ namespace Modules.GameText.Components
 
                 if (EditorGUI.EndChangeCheck())
                 {
-                    UnityEditorUtility.RegisterUndo("GameTextSetterInspector-Undo", instance);
+                    UnityEditorUtility.RegisterUndo("TextDataSetterInspector-Undo", instance);
 
                     if (!string.IsNullOrEmpty(prevText))
                     {
@@ -264,14 +264,14 @@ namespace Modules.GameText.Components
             }
         }
 
-        private void UpdateCurrentInfo(GameText gameText)
+        private void UpdateCurrentInfo(TextData textData)
         {
             // TextGuidが変化していたらカテゴリGuidを更新.
             if (currentTextGuid == instance.TextGuid) { return; }
 
             currentTextGuid = instance.TextGuid;
 
-            currentCategoryGuid = GetCategoryGuid(gameText, instance.TextGuid);
+            currentCategoryGuid = GetCategoryGuid(textData, instance.TextGuid);
         }
 
         private void SetTextGuid(string textGuid)
@@ -286,11 +286,11 @@ namespace Modules.GameText.Components
             Reflection.InvokePrivateMethod(instance, "SetDevelopmentText", new object[] { text });
         }
 
-        private string GetCategoryGuid(GameText gameText, string textGuid)
+        private string GetCategoryGuid(TextData textData, string textGuid)
         {
             if (string.IsNullOrEmpty(textGuid)) { return null; }
 
-            var contents = gameText.Texts  as Dictionary<string, TextInfo>;
+            var contents = textData.Texts  as Dictionary<string, TextInfo>;
 
             if (contents == null) { return null; }
 

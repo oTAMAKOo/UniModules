@@ -1,4 +1,4 @@
-﻿
+
 using UnityEditor;
 using UnityEditor.Callbacks;
 using System;
@@ -7,11 +7,11 @@ using System.Threading.Tasks;
 using Extensions;
 using Modules.Devkit.Console;
 using Modules.Devkit.Prefs;
-using Modules.GameText.Components;
+using Modules.TextData.Components;
 
-namespace Modules.GameText.Editor
+namespace Modules.TextData.Editor
 {
-    public sealed class GameTextAssetUpdater
+    public sealed class TextDataAssetUpdater
     {
         //----- params -----
 
@@ -28,9 +28,9 @@ namespace Modules.GameText.Editor
 
         //----- field -----
 
-        private static GameTextAsset embeddedAsset = null;
+        private static TextDataAsset embeddedAsset = null;
 
-        private static GameTextAsset distributionAsset = null;
+        private static TextDataAsset distributionAsset = null;
 
         private static DateTime? nextCheckTime = null;
 
@@ -43,10 +43,10 @@ namespace Modules.GameText.Editor
         {
             if (EditorApplication.isPlayingOrWillChangePlaymode) { return; }
 
-            EditorApplication.update += AutoUpdateGameTextAssetCallback;
+            EditorApplication.update += AutoUpdateTextDataAssetCallback;
         }
 
-        private static async void AutoUpdateGameTextAssetCallback()
+        private static async void AutoUpdateTextDataAssetCallback()
         {
             if (!Prefs.autoUpdate){ return; }
 
@@ -59,36 +59,36 @@ namespace Modules.GameText.Editor
 
             nextCheckTime = DateTime.Now.AddSeconds(CheckInterval);
 
-            var config = GameTextConfig.Instance;
+            var config = TextDataConfig.Instance;
 
             //------ Embedded ------
 
             if (embeddedAsset == null)
             {
-                embeddedAsset = GameTextLoader.LoadGameTextAsset(ContentType.Embedded);
+                embeddedAsset = TextDataLoader.LoadTextDataAsset(ContentType.Embedded);
             }
 
             if (embeddedAsset != null)
             {
-                await UpdateGameText(embeddedAsset, config.Embedded);
+                await UpdateTextData(embeddedAsset, config.Embedded);
             }
 
             //------ Distribution ------
 
             if (distributionAsset == null)
             {
-                distributionAsset = GameTextLoader.LoadGameTextAsset(ContentType.Distribution);
+                distributionAsset = TextDataLoader.LoadTextDataAsset(ContentType.Distribution);
             }
 
             if (distributionAsset != null)
             {
-                await UpdateGameText(distributionAsset, config.Distribution);
+                await UpdateTextData(distributionAsset, config.Distribution);
             }
         }
 
-        private static async Task UpdateGameText(GameTextAsset gameTextAsset, GameTextConfig.GenerateAssetSetting setting)
+        private static async Task UpdateTextData(TextDataAsset textDataAsset, TextDataConfig.GenerateAssetSetting setting)
         {
-            if (gameTextAsset == null){ return; }
+            if (textDataAsset == null){ return; }
 
             var excelPath = setting.GetExcelPath();
 
@@ -96,17 +96,17 @@ namespace Modules.GameText.Editor
 
             var lastUpdate = File.GetLastWriteTime(excelPath).ToUnixTime();
 
-            if (!gameTextAsset.UpdateAt.HasValue){ return; }
+            if (!textDataAsset.UpdateAt.HasValue){ return; }
             
-            if (lastUpdate < gameTextAsset.UpdateAt){ return; }
+            if (lastUpdate < textDataAsset.UpdateAt){ return; }
 
-            var languageInfo = GameTextLanguage.GetCurrentInfo();
+            var languageInfo = TextDataLanguage.GetCurrentInfo();
 
-            await GameTxetExcel.Export(gameTextAsset.ContentType, false);
+            await TextDataExcel.Export(textDataAsset.ContentType, false);
 
-            GameTextGenerator.Generate(gameTextAsset.ContentType, languageInfo);
+            TextDataGenerator.Generate(textDataAsset.ContentType, languageInfo);
 
-            UnityConsole.Info("GameText auto updated.");
+            UnityConsole.Info("TextData auto updated.");
         }
     }
 }

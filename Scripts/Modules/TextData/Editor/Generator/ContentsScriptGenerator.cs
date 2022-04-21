@@ -9,7 +9,7 @@ using Extensions;
 using Modules.Devkit.Console;
 using Modules.Devkit.Generators;
 
-namespace Modules.GameText.Editor
+namespace Modules.TextData.Editor
 {
     public sealed class ContentsScriptGenerator
     {
@@ -23,9 +23,9 @@ namespace Modules.GameText.Editor
 using System;
 using System.Collections.Generic;
 
-namespace Modules.GameText
+namespace Modules.TextData
 {
-    public partial class GameText
+    public partial class TextData
 	{
         #SUMMARY#
         public enum #ENUMNAME#
@@ -122,7 +122,7 @@ namespace Modules.GameText
                 var files = Directory.GetFiles(exportFullPath, "*", SearchOption.TopDirectoryOnly);
 
                 var deleteTargets = files
-                    .Where(x => Path.GetFileName(x) != GameTextScriptGenerator.GameTextScriptFileName)
+                    .Where(x => Path.GetFileName(x) != TextDataScriptGenerator.TextDataScriptFileName)
                     .Where(x => Path.GetFileName(x) != CategoryScriptGenerator.CategoryScriptFileName)
                     .Where(x => Path.GetExtension(x) != ".meta" && !generatedScripts.Contains(Path.GetFileName(x)))
                     .Select(x => UnityPathUtility.ConvertFullPathToAssetPath(x));

@@ -8,7 +8,7 @@ using Extensions;
 
 // Modules.
 using Modules.PatternTexture;
-using Modules.GameText.Editor;
+using Modules.TextData.Editor;
 using Modules.MessagePack;
 using Modules.Master;
 using Modules.ExternalResource;
@@ -158,31 +158,31 @@ namespace Modules
         #endregion
 
         //===============================================================
-        //  GameText.
+        //  TextData.
         //===============================================================
 
-        #region GameText
+        #region TextData
 
-        protected const string GameTextMenu = MenuRoot + "GameText/";
+        protected const string TextDataMenu = MenuRoot + "TextData/";
 
-        [MenuItem(itemName: GameTextMenu + "Open Generate Window", priority = 0)]
-        public static void OpenBuiltInGameTextWindow()
+        [MenuItem(itemName: TextDataMenu + "Open Generate Window", priority = 0)]
+        public static void OpenBuiltInTextDataWindow()
         {
             GenerateWindow.Open();
         }
 
         //------ Excel保存時に自動更新 ------
 
-        [MenuItem(itemName: GameTextMenu + "Updated when save Excel", priority = 1)]
+        [MenuItem(itemName: TextDataMenu + "Updated when save Excel", priority = 1)]
         public static void ToggleUpdateOnSaveExcel()
         {
-            GameTextAssetUpdater.Prefs.autoUpdate = !GameTextAssetUpdater.Prefs.autoUpdate;
+            TextDataAssetUpdater.Prefs.autoUpdate = !TextDataAssetUpdater.Prefs.autoUpdate;
         }
 
-        [MenuItem(itemName: GameTextMenu + "Updated when save Excel", isValidateFunction: true)]
+        [MenuItem(itemName: TextDataMenu + "Updated when save Excel", isValidateFunction: true)]
         public static bool ToggleUpdateOnSaveExcelValidate()
         {
-            Menu.SetChecked(GameTextMenu + "Updated when save Excel", GameTextAssetUpdater.Prefs.autoUpdate);
+            Menu.SetChecked(TextDataMenu + "Updated when save Excel", TextDataAssetUpdater.Prefs.autoUpdate);
             return true;
         }
 

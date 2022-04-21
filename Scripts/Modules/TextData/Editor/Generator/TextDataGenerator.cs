@@ -7,13 +7,13 @@ using System.Linq;
 using Extensions;
 using Extensions.Devkit;
 using Modules.Devkit.Generators;
-using Modules.GameText.Components;
+using Modules.TextData.Components;
 
 using DirectoryUtility = Extensions.DirectoryUtility;
 
-namespace Modules.GameText.Editor
+namespace Modules.TextData.Editor
 {
-    public static class GameTextGenerator
+    public static class TextDataGenerator
     {
         //----- params -----
 
@@ -31,11 +31,11 @@ namespace Modules.GameText.Editor
 
         //----- method -----
 
-        public static void Generate(ContentType type, GameTextLanguage.Info info)
+        public static void Generate(ContentType type, TextDataLanguage.Info info)
         {
-            var gameText = GameText.Instance;
+            var textData = TextData.Instance;
 
-            var config = GameTextConfig.Instance;
+            var config = TextDataConfig.Instance;
 
             var scriptFolderPath = string.Empty;
 
@@ -67,9 +67,9 @@ namespace Modules.GameText.Editor
                     break;
             }
 
-            var assetFolderName = gameText.GetAssetFolderName();
+            var assetFolderName = textData.GetAssetFolderName();
 
-            var assetFileName = GameText.GetAssetFileName(info.Identifier);
+            var assetFileName = TextData.GetAssetFileName(info.Identifier);
 
             var assetPath = PathUtility.Combine(new string[] { assetFolderPath, assetFolderName, assetFileName });
 
@@ -81,14 +81,14 @@ namespace Modules.GameText.Editor
                 textIndex = info.TextIndex,
             };
 
-            GenerateGameText(type, generateInfo);
+            GenerateTextData(type, generateInfo);
         }
         
-        private static void GenerateGameText(ContentType contentType, GenerateInfo generateInfo)
+        private static void GenerateTextData(ContentType contentType, GenerateInfo generateInfo)
         {
-            var progressTitle = "Generate GameText";
+            var progressTitle = "Generate TextData";
             
-            var config = GameTextConfig.Instance;
+            var config = TextDataConfig.Instance;
 
             // 読み込み.
 
@@ -120,7 +120,7 @@ namespace Modules.GameText.Editor
 
                         CategoryScriptGenerator.Generate(sheets, generateInfo.scriptFolderPath);
 
-                        GameTextScriptGenerator.Generate(sheets, generateInfo.scriptFolderPath);
+                        TextDataScriptGenerator.Generate(sheets, generateInfo.scriptFolderPath);
 
                         ContentsScriptGenerator.Generate(sheets, generateInfo.scriptFolderPath, generateInfo.textIndex);
                     }
@@ -129,9 +129,9 @@ namespace Modules.GameText.Editor
 
                     EditorUtility.DisplayProgressBar(progressTitle, "Generate asset.", 0.5f);
 
-                    var gameTextAsset = LoadAsset(generateInfo.assetPath);
+                    var textDataAsset = LoadAsset(generateInfo.assetPath);
 
-                    GameTextAssetGenerator.Build(gameTextAsset, contentType, sheets, generateInfo.textIndex, cryptoKey);
+                    TextDataAssetGenerator.Build(textDataAsset, contentType, sheets, generateInfo.textIndex, cryptoKey);
 
                     EditorUtility.DisplayProgressBar(progressTitle, "Complete.", 1f);
                 }
@@ -183,15 +183,15 @@ namespace Modules.GameText.Editor
             return list.OrderBy(x => x.index).ToArray();
         }
 
-        private static GameTextAsset LoadAsset(string assetPath)
+        private static TextDataAsset LoadAsset(string assetPath)
         {
             if (string.IsNullOrEmpty(assetPath)) { return null; }
 
-            var asset = AssetDatabase.LoadMainAssetAtPath(assetPath) as GameTextAsset;
+            var asset = AssetDatabase.LoadMainAssetAtPath(assetPath) as TextDataAsset;
 
             if (asset == null)
             {
-                asset = ScriptableObjectGenerator.Generate<GameTextAsset>(assetPath);
+                asset = ScriptableObjectGenerator.Generate<TextDataAsset>(assetPath);
             }
 
             return asset;

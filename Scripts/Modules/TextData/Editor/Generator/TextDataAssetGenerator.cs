@@ -4,11 +4,11 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Extensions;
-using Modules.GameText.Components;
+using Modules.TextData.Components;
 
-namespace Modules.GameText.Editor
+namespace Modules.TextData.Editor
 {
-    public sealed class GameTextAssetGenerator
+    public sealed class TextDataAssetGenerator
     {
         //----- params -----
 
@@ -18,9 +18,9 @@ namespace Modules.GameText.Editor
 
         //----- method -----
 
-        public static void Build(GameTextAsset asset, ContentType contentType, SheetData[] sheets, int textIndex, AesCryptoKey aesCryptoKey)
+        public static void Build(TextDataAsset asset, ContentType contentType, SheetData[] sheets, int textIndex, AesCryptoKey aesCryptoKey)
         {
-            var categoryContents = new List<GameTextAsset.CategoryContent>();
+            var categoryContents = new List<TextDataAsset.CategoryContent>();
 
             for (var i = 0; i < sheets.Length; i++)
             {
@@ -31,7 +31,7 @@ namespace Modules.GameText.Editor
 
                 if (string.IsNullOrEmpty(sheetName)){ continue; }
 
-                var textContents = new List<GameTextAsset.TextContent>();
+                var textContents = new List<TextDataAsset.TextContent>();
 
                 for (var j = 0; j < records.Length; j++)
                 {
@@ -43,12 +43,12 @@ namespace Modules.GameText.Editor
                     
                     var cryptText = string.IsNullOrEmpty(text) ? string.Empty : text.Encrypt(aesCryptoKey);
 
-                    var textContent = new GameTextAsset.TextContent(record.guid, enumName, cryptText);
+                    var textContent = new TextDataAsset.TextContent(record.guid, enumName, cryptText);
 
                     textContents.Add(textContent);
                 }
 
-                var sheetContent = new GameTextAsset.CategoryContent(sheetGuid, sheetName, sheetDisplayName, textContents.ToArray());
+                var sheetContent = new TextDataAsset.CategoryContent(sheetGuid, sheetName, sheetDisplayName, textContents.ToArray());
 
                 categoryContents.Add(sheetContent);
             }

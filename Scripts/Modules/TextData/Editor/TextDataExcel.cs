@@ -1,17 +1,17 @@
-﻿
+
 using System;
 using System.IO;
 using System.Text;
 using System.Threading.Tasks;
 using System.Diagnostics;
 using Extensions;
-using Modules.GameText.Components;
+using Modules.TextData.Components;
 
 using Debug = UnityEngine.Debug;
 
-namespace Modules.GameText.Editor
+namespace Modules.TextData.Editor
 {
-    public static class GameTxetExcel
+    public static class TextDataExcel
     {
         //----- params -----
 
@@ -27,13 +27,13 @@ namespace Modules.GameText.Editor
 
         //----- method -----
 
-        public static void Open(GameTextConfig.GenerateAssetSetting setting)
+        public static void Open(TextDataConfig.GenerateAssetSetting setting)
         {
             var path = setting.GetExcelPath();
 
             if(!File.Exists(path))
             {
-                Debug.LogError("GameText excel file not found.");
+                Debug.LogError("TextData excel file not found.");
                 return;
             }
 
@@ -53,9 +53,9 @@ namespace Modules.GameText.Editor
 
         public static async Task Import(ContentType contentType, bool displayConsole)
         {
-            var config = GameTextConfig.Instance;
+            var config = TextDataConfig.Instance;
 
-            GameTextConfig.GenerateAssetSetting setting = null;
+            TextDataConfig.GenerateAssetSetting setting = null;
 
             switch (contentType)
             {
@@ -78,9 +78,9 @@ namespace Modules.GameText.Editor
 
         public static async Task Export(ContentType contentType, bool displayConsole)
         {
-            var config = GameTextConfig.Instance;
+            var config = TextDataConfig.Instance;
 
-            GameTextConfig.GenerateAssetSetting setting = null;
+            TextDataConfig.GenerateAssetSetting setting = null;
 
             switch (contentType)
             {
@@ -101,7 +101,7 @@ namespace Modules.GameText.Editor
             }
         }
 
-        public static bool IsExcelFileLocked(GameTextConfig.GenerateAssetSetting setting)
+        public static bool IsExcelFileLocked(TextDataConfig.GenerateAssetSetting setting)
         {
             var editExcelPath = setting.GetExcelPath();
             
@@ -110,13 +110,13 @@ namespace Modules.GameText.Editor
             return FileUtility.IsFileLocked(editExcelPath) ;
         }
 
-        private static async Task<Tuple<int, string>> ExecuteProcess(GameTextConfig.GenerateAssetSetting setting, Mode mode, bool displayConsole)
+        private static async Task<Tuple<int, string>> ExecuteProcess(TextDataConfig.GenerateAssetSetting setting, Mode mode, bool displayConsole)
         {
-            var config = GameTextConfig.Instance;
+            var config = TextDataConfig.Instance;
 
             var arguments = new StringBuilder();
 
-            arguments.AppendFormat("--workspace {0} ", setting.GetGameTextWorkspacePath());
+            arguments.AppendFormat("--workspace {0} ", setting.GetTextDataWorkspacePath());
 
             switch (mode)
             {
@@ -132,7 +132,7 @@ namespace Modules.GameText.Editor
             var processExecute = new ProcessExecute(config.ConverterPath, arguments.ToString())
             {
                 Encoding = Encoding.GetEncoding("Shift_JIS"),
-                WorkingDirectory = setting.GetGameTextWorkspacePath(),
+                WorkingDirectory = setting.GetTextDataWorkspacePath(),
                 UseShellExecute = displayConsole,
                 Hide = !displayConsole,
             };

@@ -1,10 +1,10 @@
 ﻿
 using UnityEditor;
-using Modules.GameText.Components;
+using Modules.TextData.Components;
 
-namespace Modules.GameText.Editor
+namespace Modules.TextData.Editor
 {
-    public sealed class GameTextAssetPostprocessor : AssetPostprocessor
+    public sealed class TextDataAssetPostprocessor : AssetPostprocessor
     {
         //----- params -----
 
@@ -32,9 +32,9 @@ namespace Modules.GameText.Editor
             {
                 var asset = AssetDatabase.LoadMainAssetAtPath(importedAsset);
 
-                if (asset is GameTextAsset)
+                if (asset is TextDataAsset)
                 {
-                    GameTextLoader.Reload();
+                    TextDataLoader.Reload();
                     break;
                 }
             }

@@ -4,13 +4,13 @@ using System.Text.RegularExpressions;
 using Extensions;
 using Modules.Devkit.Generators;
 
-namespace Modules.GameText.Editor
+namespace Modules.TextData.Editor
 {
     public sealed class CategoryScriptGenerator
     {
         //----- params -----
 
-        public const string CategoryScriptFileName = @"GameText.category.cs";
+        public const string CategoryScriptFileName = @"TextData.category.cs";
 
         private const string CategoryScriptTemplate =
 @"
@@ -21,14 +21,14 @@ using System;
 using System.Collections.Generic;
 using Extensions;
 
-namespace Modules.GameText
+namespace Modules.TextData
 {
     public enum CategoryType
     {
 #ENUMS#
     }
 
-    public partial class GameText
+    public partial class TextData
     {
         public sealed class CategoryInfo
         {

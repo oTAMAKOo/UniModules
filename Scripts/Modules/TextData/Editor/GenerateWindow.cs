@@ -1,4 +1,4 @@
-﻿
+
 using UnityEngine;
 using UnityEditor;
 using System;
@@ -7,15 +7,15 @@ using System.Linq;
 using Extensions;
 using Extensions.Devkit;
 using Modules.Devkit.Console;
-using Modules.GameText.Components;
+using Modules.TextData.Components;
 
-namespace Modules.GameText.Editor
+namespace Modules.TextData.Editor
 {
     public sealed class GenerateWindow : SingletonEditorWindow<GenerateWindow>
     {
         //----- params -----
 
-        public const string WindowTitle = "GameText";
+        public const string WindowTitle = "TextData";
 
         //----- field -----
 
@@ -23,7 +23,7 @@ namespace Modules.GameText.Editor
 
         private int? selection = null;
 
-        private GameTextConfig config = null;
+        private TextDataConfig config = null;
 
         //----- property -----
 
@@ -45,7 +45,7 @@ namespace Modules.GameText.Editor
 
         void OnGUI()
         {
-            var generateInfos = GameTextLanguage.Infos;
+            var generateInfos = TextDataLanguage.Infos;
 
             if (generateInfos == null) { return; }
 
@@ -54,7 +54,7 @@ namespace Modules.GameText.Editor
             EditorGUILayout.Separator();
 
             // タイプ選択.
-            DrawGameTextTypeGUI();
+            DrawTextDataTypeGUI();
 
             // 生成.
             DrawGenerateGUI();
@@ -67,7 +67,7 @@ namespace Modules.GameText.Editor
         }
 
         // タイプGUI描画.
-        private void DrawGameTextTypeGUI()
+        private void DrawTextDataTypeGUI()
         {
             var enumValues = Enum.GetValues(typeof(ContentType)).Cast<ContentType>().ToArray();
 
@@ -90,7 +90,7 @@ namespace Modules.GameText.Editor
         // 生成制御GUI描画.
         private void DrawGenerateGUI()
         {
-            var languageInfo = GameTextLanguage.GetCurrentInfo();
+            var languageInfo = TextDataLanguage.GetCurrentInfo();
 
             EditorLayoutTools.Title("Asset");
             
@@ -101,9 +101,9 @@ namespace Modules.GameText.Editor
             {
                 if (GUILayout.Button("Generate"))
                 {
-                    GameTextGenerator.Generate(contentType, languageInfo);
+                    TextDataGenerator.Generate(contentType, languageInfo);
 
-                    UnityConsole.Info("GameText generate finish.");
+                    UnityConsole.Info("TextData generate finish.");
 
                     Repaint();
                 }
@@ -115,7 +115,7 @@ namespace Modules.GameText.Editor
         // エクセル制御GUI描画.
         private void DrawExcelControlGUI()
         {
-            GameTextConfig.GenerateAssetSetting setting = null;
+            TextDataConfig.GenerateAssetSetting setting = null;
 
             switch (contentType)
             {
@@ -140,21 +140,21 @@ namespace Modules.GameText.Editor
             {
                 if (GUILayout.Button("Open"))
                 {
-                    GameTxetExcel.Open(setting);
+					TextDataExcel.Open(setting);
                 }
             }
 
             GUILayout.Space(4f);
 
-            var isLock = GameTxetExcel.IsExcelFileLocked(setting);
+            var isLock = TextDataExcel.IsExcelFileLocked(setting);
 
             using (new DisableScope(isLock))
             {
                 if (GUILayout.Button("Import"))
                 {
-                    var nowait = GameTxetExcel.Import(contentType, true);
+                    var nowait = TextDataExcel.Import(contentType, true);
 
-                    UnityConsole.Info("GameText import record finish.");
+                    UnityConsole.Info("TextData import record finish.");
                 }
             }
 
@@ -164,9 +164,9 @@ namespace Modules.GameText.Editor
             {
                 if (GUILayout.Button("Export"))
                 {
-                    var nowait = GameTxetExcel.Export(contentType, true);
+                    var nowait = TextDataExcel.Export(contentType, true);
 
-                    UnityConsole.Info("GameText export record finish.");
+                    UnityConsole.Info("TextData export record finish.");
                 }
             }
 
@@ -176,7 +176,7 @@ namespace Modules.GameText.Editor
         // 言語選択GUI描画.
         private void DrawLanguageGUI()
         {
-            var generateInfos = GameTextLanguage.Infos;
+            var generateInfos = TextDataLanguage.Infos;
 
             var labels = generateInfos.Select(x => x.Language).ToArray();
 
@@ -188,15 +188,15 @@ namespace Modules.GameText.Editor
 
             EditorGUI.BeginChangeCheck();
 
-            var index = EditorGUILayout.Popup(GameTextLanguage.Prefs.selection, labels);
+            var index = EditorGUILayout.Popup(TextDataLanguage.Prefs.selection, labels);
 
             if (EditorGUI.EndChangeCheck())
             {
                 selection = index;
 
-                GameTextLanguage.Prefs.selection = index;
+                TextDataLanguage.Prefs.selection = index;
 
-                GameTextLoader.Reload();
+                TextDataLoader.Reload();
             }
 
             GUILayout.Space(4f);
@@ -204,11 +204,11 @@ namespace Modules.GameText.Editor
 
         private void Reload()
         {
-            config = GameTextConfig.Instance;
+            config = TextDataConfig.Instance;
 
-            if (!selection.HasValue && GameTextLanguage.Prefs.selection != -1)
+            if (!selection.HasValue && TextDataLanguage.Prefs.selection != -1)
             {
-                selection = GameTextLanguage.Prefs.selection;
+                selection = TextDataLanguage.Prefs.selection;
 
                 Repaint();
             }            

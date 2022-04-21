@@ -4,9 +4,9 @@ using UnityEditor;
 using System;
 using Extensions;
 
-namespace Modules.GameText.Editor
+namespace Modules.TextData.Editor
 {
-    public sealed partial class GameTextConfig
+    public sealed partial class TextDataConfig
     {
         [Serializable]
         public abstract class GenerateAssetSetting
@@ -26,7 +26,7 @@ namespace Modules.GameText.Editor
                 get { return aseetFolder != null ? AssetDatabase.GetAssetPath(aseetFolder) : null; }
             }
 
-            public string GetGameTextWorkspacePath()
+            public string GetTextDataWorkspacePath()
             {
                 if (string.IsNullOrEmpty(workspaceFolder)) { return null; }
 
@@ -39,14 +39,14 @@ namespace Modules.GameText.Editor
 
             public string GetExcelPath()
             {
-                var workspacePath = GetGameTextWorkspacePath();
+                var workspacePath = GetTextDataWorkspacePath();
 
                 return PathUtility.Combine(workspacePath, excelFileName);
             }
 
             public string GetContentsFolderPath()
             {
-                var workspacePath = GetGameTextWorkspacePath();
+                var workspacePath = GetTextDataWorkspacePath();
 
                 return PathUtility.Combine(workspacePath, ContentsFolderName);
             }
