@@ -1,4 +1,4 @@
-﻿
+
 using UnityEngine;
 using UnityEditor;
 using System;
@@ -162,7 +162,7 @@ namespace Modules.ExternalResource.Editor
                                 }
                             }
 
-                            if (GUILayout.Button("リネーム", EditorStyles.toolbarButton))
+                            if (GUILayout.Button("Rename", EditorStyles.toolbarButton))
                             {
                                 nameEditMode = NameEditMode.Rename;
 
