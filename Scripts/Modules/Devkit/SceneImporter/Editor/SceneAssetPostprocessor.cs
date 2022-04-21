@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 using UnityEditor;
 using System.Linq;
 using System.IO;
@@ -79,16 +79,16 @@ namespace Modules.Devkit.SceneImporter
 
                 for (var i = 0; i < movedAssets.Length; ++i)
                 {
-                    isChanged = true;
-
-                    if (!buildTargetScenes.ContainsKey(movedAssets[i])) { continue; }
+					if (!buildTargetScenes.ContainsKey(movedAssets[i])) { continue; }
 
                     // ビルド対象フォルダ内の移動は除外処理しない.
                     if (autoAdditionFolders.Any(y => movedAssets[i].StartsWith(y))){ continue; }
 
                     // ビルドターゲットに入っているシーンが移動した場合ビルド対象から外す.
                     buildTargetScenes.Remove(movedAssets[i]);
-                }
+
+					isChanged = true;
+				}
 
                 //--------------------------------------------------------------------
                 // 移動 (ビルド対象に追加される場合.).
