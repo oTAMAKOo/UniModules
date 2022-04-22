@@ -1,52 +1,54 @@
-﻿
+
+using System;
 using System.Linq;
-using Modules.Devkit.Prefs;
+using Extensions;
+using Modules.Localize;
 
 namespace Modules.TextData.Editor
 {
-    public static class TextDataLanguage
+	public sealed class LanguageInfo
+	{
+		public Enum Language { get; private set; }
+
+		public string Identifier { get; private set; }
+            
+		public int TextIndex { get; private set; }
+
+		public LanguageInfo(Enum language, string identifier, int textIndex)
+		{
+			Language = language;
+			Identifier = identifier;
+			TextIndex = textIndex;
+		}
+	}
+
+    public sealed class LanguageManager : Singleton<LanguageManager>
     {
-        public static class Prefs
-        {
-            public static int selection
-            {
-                get { return ProjectPrefs.GetInt(typeof(Prefs).FullName + "-selection", -1); }
-                set { ProjectPrefs.SetInt(typeof(Prefs).FullName + "-selection", value); }
-            }
-        }
+		//----- params -----
 
-        public sealed class Info
-        {
-            public string Language { get; private set; }
-            public string Identifier { get; private set; }
-            public int TextIndex { get; private set; }
+		//----- field -----
+		
+		private LanguageInfo[] languageInfos = null;
 
-            public Info(string language, string identifier, int textIndex)
-            {
-                Language = language;
-                Identifier = identifier;
-                TextIndex = textIndex;
-            }
-        }
+		//----- property -----
 
-        public static Info[] Infos { get; set; }
+		public LanguageInfo Current
+		{
+			get
+			{
+				if (languageInfos == null){ return null; }
 
-        public static Info GetCurrentInfo()
-        {
-            Info languageInfo = null;
+				var selection = Language.selection;
+			
+				return languageInfos.FirstOrDefault(x => Convert.ToInt32(x.Language) == selection);
+			}
+		}
 
-            if (1 < Infos.Length)
-            {
-                var selection = Prefs.selection;
+		//----- method -----
 
-                languageInfo = Infos.ElementAtOrDefault(selection);
-            }
-            else
-            {
-                languageInfo = Infos.FirstOrDefault();
-            }
-
-            return languageInfo;
-        }
-    }
+		public void Initialize(LanguageInfo[] languageInfos)
+		{
+			this.languageInfos = languageInfos;
+		}
+	}
 }

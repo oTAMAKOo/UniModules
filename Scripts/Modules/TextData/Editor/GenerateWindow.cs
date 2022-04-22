@@ -21,9 +21,7 @@ namespace Modules.TextData.Editor
 
         private ContentType contentType = ContentType.Embedded;
 
-        private int? selection = null;
-
-        private TextDataConfig config = null;
+		private TextDataConfig config = null;
 
         //----- property -----
 
@@ -45,26 +43,30 @@ namespace Modules.TextData.Editor
 
         void OnGUI()
         {
-            var generateInfos = TextDataLanguage.Infos;
+			var languageManager = LanguageManager.Instance;
 
-            if (generateInfos == null) { return; }
+            var generateInfos = languageManager.Current;
 
-            Reload();
+            if (generateInfos != null)
+            {
+				config = TextDataConfig.Instance;
 
-            EditorGUILayout.Separator();
+				EditorGUILayout.Separator();
 
-            // タイプ選択.
-            DrawTextDataTypeGUI();
+	            // タイプ選択.
+	            DrawTextDataTypeGUI();
 
-            // 生成.
-            DrawGenerateGUI();
+	            // 生成.
+	            DrawGenerateGUI();
 
-            // エクセル制御.
-            DrawExcelControlGUI();
-
-            // 言語選択.
-            DrawLanguageGUI();
-        }
+	            // エクセル制御.
+	            DrawExcelControlGUI();
+			}
+			else
+			{
+				EditorGUILayout.HelpBox("No language selected.\nPlease select language.", MessageType.Error);
+			}
+		}
 
         // タイプGUI描画.
         private void DrawTextDataTypeGUI()
@@ -90,7 +92,9 @@ namespace Modules.TextData.Editor
         // 生成制御GUI描画.
         private void DrawGenerateGUI()
         {
-            var languageInfo = TextDataLanguage.GetCurrentInfo();
+			var languageManager = LanguageManager.Instance;
+
+            var languageInfo = languageManager.Current;
 
             EditorLayoutTools.Title("Asset");
             
@@ -172,46 +176,5 @@ namespace Modules.TextData.Editor
 
             GUILayout.Space(4f);
         }
-
-        // 言語選択GUI描画.
-        private void DrawLanguageGUI()
-        {
-            var generateInfos = TextDataLanguage.Infos;
-
-            var labels = generateInfos.Select(x => x.Language).ToArray();
-
-            if (labels.Length <= 1) { return; }
-
-            EditorLayoutTools.Title("Language");
-            
-            GUILayout.Space(2f);
-
-            EditorGUI.BeginChangeCheck();
-
-            var index = EditorGUILayout.Popup(TextDataLanguage.Prefs.selection, labels);
-
-            if (EditorGUI.EndChangeCheck())
-            {
-                selection = index;
-
-                TextDataLanguage.Prefs.selection = index;
-
-                TextDataLoader.Reload();
-            }
-
-            GUILayout.Space(4f);
-        }
-
-        private void Reload()
-        {
-            config = TextDataConfig.Instance;
-
-            if (!selection.HasValue && TextDataLanguage.Prefs.selection != -1)
-            {
-                selection = TextDataLanguage.Prefs.selection;
-
-                Repaint();
-            }            
-        }
-    }
+	}
 }

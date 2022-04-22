@@ -1,4 +1,4 @@
-﻿
+
 using UnityEngine;
 using UnityEditor;
 using System.IO;
@@ -31,7 +31,7 @@ namespace Modules.TextData.Editor
 
         //----- method -----
 
-        public static void Generate(ContentType type, TextDataLanguage.Info info)
+        public static void Generate(ContentType type, LanguageInfo info)
         {
             var textData = TextData.Instance;
 

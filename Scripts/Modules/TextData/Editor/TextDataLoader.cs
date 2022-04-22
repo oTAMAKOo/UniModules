@@ -119,9 +119,11 @@ namespace Modules.TextData.Editor
 
             var textData = TextData.Instance;
 
-            var config = TextDataConfig.Instance;
+			var config = TextDataConfig.Instance;
 
-            var languageInfo = TextDataLanguage.GetCurrentInfo();
+			var languageManager = LanguageManager.Instance;
+
+            var languageInfo = languageManager.Current;
 
             if (languageInfo == null) { return null; }
 

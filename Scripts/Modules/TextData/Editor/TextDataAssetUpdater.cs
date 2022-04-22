@@ -100,7 +100,9 @@ namespace Modules.TextData.Editor
             
             if (lastUpdate < textDataAsset.UpdateAt){ return; }
 
-            var languageInfo = TextDataLanguage.GetCurrentInfo();
+			var languageManager = LanguageManager.Instance;
+
+            var languageInfo = languageManager.Current;
 
             await TextDataExcel.Export(textDataAsset.ContentType, false);
 
