@@ -1,4 +1,5 @@
-﻿﻿﻿
+﻿﻿
+using System;
 using UnityEngine;
 using Newtonsoft.Json;
 
@@ -93,14 +94,14 @@ namespace Modules.Devkit.Prefs
 
         //====== Enum ======
 
-        public static T GetEnum<T>(string key, T defaultValue)
+        public static T GetEnum<T>(string key, T defaultValue) where T : Enum
         {
             var val = GetString(key, defaultValue.ToString());
 
             var names = System.Enum.GetNames(typeof(T));
             var values = System.Enum.GetValues(typeof(T));
 
-            for (int i = 0; i < names.Length; ++i)
+            for (var i = 0; i < names.Length; ++i)
             {
                 if (names[i] == val)
                 {
