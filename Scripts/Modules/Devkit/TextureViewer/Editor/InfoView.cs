@@ -84,8 +84,8 @@ namespace Modules.Devkit.TextureViewer
 
             var iconRect = rect;
 
-            iconRect.x += rect.width * 0.5f - warnIcon.width * 0.5f;
-            iconRect.y += 2f;
+            iconRect.x = rect.center.x - warnIcon.width * 0.5f + 4f;
+            iconRect.y = rect.center.y - warnIcon.height * 0.5f - 1f;
             iconRect.size = new Vector2(warnIcon.width, warnIcon.height);
 
             GUI.Label(iconRect, new GUIContent(warnIcon, warning));
