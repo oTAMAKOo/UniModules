@@ -1,4 +1,4 @@
-﻿
+
 using UnityEngine;
 using UnityEditor;
 using System.IO;
@@ -8,7 +8,7 @@ using Modules.Devkit.Prefs;
 
 namespace Modules.Crypto
 {
-    public sealed class KeyFileWinodow : SingletonEditorWindow<KeyFileWinodow>
+    public sealed class KeyFileWindow : SingletonEditorWindow<KeyFileWindow>
     {
         //----- params -----
 
