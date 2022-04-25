@@ -1,7 +1,6 @@
-﻿﻿﻿﻿﻿﻿﻿
+﻿﻿﻿﻿﻿﻿
 using UnityEngine;
 using System;
-using System.Collections;
 using Cysharp.Threading.Tasks;
 using UniRx;
 using Extensions;
@@ -41,65 +40,54 @@ namespace Modules.Window
 
         //----- method -----
 
-        public IObservable<Unit> Open(bool blockInput = true)
+        public async UniTask Open(bool blockInput = true)
         {
             var inputBlock = blockInput ? new BlockInput() : null;
 
-            return Prepare()
-                .ToObservable()
-                .Do(_ => UnityUtility.SetActive(gameObject, true))
-                .SelectMany(_ => OnOpen().ToObservable())
-                .Do(_ =>
-                    {
-                        if (inputBlock != null)
-                        {
-                            inputBlock.Dispose();
-                            inputBlock = null;
-                        }
+            await Prepare();
 
-                        if (onOpen != null)
-                        {
-                            onOpen.OnNext(Unit.Default);
-                        }
-                    })
-                .AsUnitObservable();
+            UnityUtility.SetActive(gameObject, true);
+
+			await OnOpen();
+
+			if (inputBlock != null)
+			{
+				inputBlock.Dispose();
+				inputBlock = null;
+			}
+
+			if (onOpen != null)
+			{
+				onOpen.OnNext(Unit.Default);
+			}
         }
 
-        public IObservable<Unit> Close(bool blockInput = true)
+        public async UniTask Close(bool blockInput = true)
         {
             var inputBlock = blockInput ? new BlockInput() : null;
 
-            return OnClose()
-                .ToObservable()
-                .Do(_ =>
-                    {
-                        UnityUtility.SetActive(gameObject, false);
+            await OnClose();
 
-                        if (inputBlock != null)
-                        {
-                            inputBlock.Dispose();
-                            inputBlock = null;
-                        }
+            UnityUtility.SetActive(gameObject, false);
 
-                        if (onClose != null)
-                        {
-                            onClose.OnNext(Unit.Default);
-                        }
+            if (inputBlock != null)
+            {
+	            inputBlock.Dispose();
+	            inputBlock = null;
+            }
+
+            if (onClose != null)
+            {
+	            onClose.OnNext(Unit.Default);
+            }
                         
-                        if (deleteOnClose)
-                        {
-                            UnityUtility.SafeDelete(gameObject);
-                        }
-                    })
-                .AsUnitObservable();
+            if (deleteOnClose)
+            {
+	            UnityUtility.SafeDelete(gameObject);
+            }
         }
 
-        public IObservable<Unit> Wait()
-        {
-            return Observable.FromMicroCoroutine(() => WaitInternal());
-        }
-
-        private IEnumerator WaitInternal()
+        public async UniTask Wait()
         {
             while (true)
             {
@@ -107,7 +95,7 @@ namespace Modules.Window
 
                 if (!UnityUtility.IsActive(gameObject)) { break; }
 
-                yield return null;
+                await UniTask.NextFrame();
             }
         }
 

@@ -1,4 +1,4 @@
-
+﻿
 using Modules.Devkit.Prefs;
 
 namespace Modules.Localize

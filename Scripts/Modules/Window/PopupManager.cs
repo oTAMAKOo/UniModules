@@ -1,8 +1,9 @@
-﻿﻿
+﻿
 using UnityEngine;
 using System;
 using System.Linq;
 using System.Collections.Generic;
+using Cysharp.Threading.Tasks;
 using UniRx;
 using Extensions;
 using Modules.SceneManagement;
@@ -62,7 +63,7 @@ namespace Modules.Window
         }
 
         /// <summary> ポップアップを開く </summary>
-        public static IObservable<Unit> Open(Window popupWindow, bool isGlobal = false, bool inputProtect = true)
+        public static async UniTask Open(Window popupWindow, bool isGlobal = false, bool inputProtect = true)
         {
             if (popupWindow == null)
             {
@@ -82,7 +83,7 @@ namespace Modules.Window
 
             Instance.UpdateContents();
 
-            return popupWindow.Open(inputProtect);
+            await popupWindow.Open(inputProtect);
         }
 
         private void RegisterGlobal(Window popupWindow)
