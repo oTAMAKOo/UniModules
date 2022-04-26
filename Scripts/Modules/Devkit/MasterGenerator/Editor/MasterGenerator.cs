@@ -1,4 +1,4 @@
-﻿
+
 using UnityEngine;
 using System;
 using System.Collections.Generic;
@@ -15,15 +15,16 @@ using Modules.MessagePack;
 
 namespace Modules.Master
 {
+	public interface IRecordFileLoader
+	{
+		string GetRecordFileDirectory(string masterName);
+
+		Task<IDictionary<string, object>> LoadAllRecords(string masterName, string directory, Type containerType, Type recordType);
+	}
+
     public static class MasterGenerator
     {
         //----- params -----
-
-        private const string IndexFileExtension = ".index";
-
-        private const string RecordFileExtension = ".record";
-
-        private const string RecordFolderName = "Records";
 
         private const string ContainerClassName = "Container";
 
@@ -36,6 +37,8 @@ namespace Modules.Master
         //----- field -----
 
         //----- property -----
+
+        public static IRecordFileLoader RecordFileLoader { get; set; }
 
         //----- method -----
 
@@ -59,22 +62,6 @@ namespace Modules.Master
             {
                 DirectoryUtility.Clean(exportDirectory);
             }
-
-            // ファイル取得.
-
-            var indexFiles = Directory.GetFiles(sourceDirectory, "*" + IndexFileExtension, SearchOption.AllDirectories);
-
-            var indexFileTable = indexFiles.ToDictionary(
-                x =>
-                {
-                    var fileName = Path.GetFileNameWithoutExtension(x);
-                    
-                    return MasterManager.DeleteMasterSuffix(fileName).ToLower();
-                },
-                x =>
-                {
-                    return PathUtility.ConvertPathSeparator(x);
-                });
 
             // 暗号化キー.
 
@@ -101,14 +88,6 @@ namespace Modules.Master
 
                     var masterName = Path.GetFileNameWithoutExtension(masterFileName);
 
-                    var indexFilePath = indexFileTable.GetValueOrDefault(masterName.ToLower());
-
-                    if (string.IsNullOrEmpty(indexFilePath))
-                    {
-                        Debug.LogErrorFormat("Master index file not found.\n MasterFileName : {0}", masterName);
-                        continue;
-                    }
-                    
                     var task = Task.Run(async () =>
                     {
                         try
@@ -129,7 +108,9 @@ namespace Modules.Master
 
                             // マスター読み込み.
 
-                            var master = await LoadMasterData(indexFilePath, containerType, recordType, config.DataFormat);
+                            var directory = RecordFileLoader.GetRecordFileDirectory(masterName);
+
+                            var master = await LoadMasterData(masterName, directory, containerType, recordType);
 
                             // MessagePackファイル作成.
 
@@ -212,60 +193,19 @@ namespace Modules.Master
 
         #region Load Data
 
-        private static async Task<object> LoadMasterData(string indexFilePath, Type containerType, Type recordType, SerializationFileUtility.Format format)
+        private static async Task<object> LoadMasterData(string masterName, string directory, Type containerType, Type recordType)
         {
-            var masterDataDirectory = Directory.GetParent(indexFilePath);
+	        // Load records.
 
-            var recordFileDirectory = PathUtility.Combine(masterDataDirectory.FullName, RecordFolderName);
+            var records = await RecordFileLoader.LoadAllRecords(masterName, directory, containerType, recordType);
 
-            if (!Directory.Exists(recordFileDirectory)) { return null; }
-
-            // Load records.
-
-            var records = await LoadAllRecords(recordFileDirectory, recordType, format);
+            if (records == null) { return null; }
 
             // Create MessagePack binary.
 
             var container = BuildMasterContainer(containerType, recordType, records);
 
             return container;
-        }
-        
-        private static async Task<IDictionary<string, object>> LoadAllRecords(string recordFileDirectory, Type recordType, SerializationFileUtility.Format format)
-        {
-            var recordFiles = Directory.GetFiles(recordFileDirectory, "*" + RecordFileExtension, SearchOption.TopDirectoryOnly);
-
-            // 読み込み.
-
-            var records = new SortedDictionary<string, object>(new NaturalComparer());
-
-            var tasks = new List<Task>();
-
-            foreach (var recordFile in recordFiles)
-            {
-                var filePath = recordFile;
-
-                var task = Task.Run(() =>
-                {
-                    var fileName = Path.GetFileNameWithoutExtension(filePath);
-
-                    var record = SerializationFileUtility.LoadFile(filePath, recordType, format);
-
-                    if (record != null)
-                    {
-                        lock (records)
-                        {
-                            records.Add(fileName, record);
-                        }
-                    }
-                });
-
-                tasks.Add(task);
-            }
-
-            await Task.WhenAll(tasks);
-
-            return records;
         }
 
         private static object BuildMasterContainer(Type containerType, Type recordType, IDictionary<string, object> records)

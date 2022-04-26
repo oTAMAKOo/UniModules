@@ -1,4 +1,4 @@
-﻿
+
 using UnityEngine;
 using UnityEditor;
 using System;
@@ -30,21 +30,6 @@ namespace Modules.Master
             // Style.
             var pathTextStyle = GUI.skin.GetStyle("TextArea");
             pathTextStyle.alignment = TextAnchor.MiddleLeft;
-
-            // FileFormat.
-
-            GUILayout.Label("DataFormat");
-
-            EditorGUI.BeginChangeCheck();
-
-            var dataFormat = (SerializationFileUtility.Format)EditorGUILayout.EnumPopup(instance.DataFormat);
-
-            if (EditorGUI.EndChangeCheck())
-            {
-                UnityEditorUtility.RegisterUndo("MasterGeneratorConfigInspector Undo", instance);
-
-                Reflection.SetPrivateField(instance, "format", dataFormat);
-            }
 
             // Lz4Compression.
 

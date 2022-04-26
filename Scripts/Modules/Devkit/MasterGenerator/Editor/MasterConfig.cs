@@ -1,4 +1,4 @@
-﻿
+
 using UnityEngine;
 using Extensions;
 using Modules.Devkit.ScriptableObjects;
@@ -12,8 +12,6 @@ namespace Modules.Master
         //----- field -----
 
         [SerializeField]
-        private SerializationFileUtility.Format format = SerializationFileUtility.Format.Yaml;
-        [SerializeField]
         private string sourceDirectory = null;
         [SerializeField]
         private string exportDirectory = null;
@@ -25,8 +23,6 @@ namespace Modules.Master
         private bool lz4Compression = true;
 
         //----- property -----
-
-        public SerializationFileUtility.Format DataFormat { get { return format; } }
 
         public string SourceDirectory
         {
