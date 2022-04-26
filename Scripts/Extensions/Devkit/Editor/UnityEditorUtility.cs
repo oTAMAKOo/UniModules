@@ -329,10 +329,8 @@ namespace Extensions.Devkit
         }
 
         /// <summary> 型でアセットを検索 </summary>
-        public static IEnumerable<T> FindAssetsByType<T>(string[] searchInFolders = null) where T : UnityEngine.Object
+        public static IEnumerable<T> FindAssetsByType<T>(string filter, string[] searchInFolders = null) where T : UnityEngine.Object
         {
-			var filter = string.Format("t:{0}", typeof(T).FullName);
-
             return AssetDatabase.FindAssets(filter, searchInFolders)
                 .Select(x => AssetDatabase.GUIDToAssetPath(x))
                 .Select(x => AssetDatabase.LoadAssetAtPath<T>(x))
