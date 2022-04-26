@@ -22,8 +22,6 @@ namespace Modules.Master
 
 		//----- field -----
 
-		private string sourceDirectory = null;
-
 		private SerializationFileUtility.Format format = SerializationFileUtility.Format.Yaml;
 
 		private Dictionary<string, string> indexFileTable = null;
@@ -38,7 +36,7 @@ namespace Modules.Master
 
 			var config = MasterConfig.Instance;
 
-			sourceDirectory = config.SourceDirectory;
+			var sourceDirectory = config.SourceDirectory;
 
 			var indexFiles = Directory.GetFiles(sourceDirectory, "*" + IndexFileExtension, SearchOption.AllDirectories);
 				
@@ -52,17 +50,21 @@ namespace Modules.Master
 				PathUtility.ConvertPathSeparator);
 		}
 
-		public string GetRecordFileDirectory(string masterName)
+		public string GetRecordFileDirectory(Type masterType)
 		{
+			var masterName = GetMasterName(masterType);
+
 			return indexFileTable.GetValueOrDefault(masterName.ToLower());
 		}
 
-		public async Task<object[]> LoadAllRecords(string masterName, string directory, Type containerType, Type recordType)
+		public async Task<object[]> LoadAllRecords(string directory, Type masterType, Type recordType)
 		{
-			var indexFilePath = GetRecordFileDirectory(masterName);
+			var indexFilePath = GetRecordFileDirectory(masterType);
 
 			if (string.IsNullOrEmpty(indexFilePath))
 			{
+				var masterName = GetMasterName(masterType);
+
 				Debug.LogErrorFormat("Master index file not found.\n MasterFileName : {0}", masterName);
 			}
 
@@ -105,6 +107,17 @@ namespace Modules.Master
 			await Task.WhenAll(tasks);
 
 			return records.Values.ToArray();
+		}
+
+		private string GetMasterName(Type masterType)
+		{
+			var masterManager = MasterManager.Instance;
+
+			var masterFileName = masterManager.GetMasterFileName(masterType, false);
+
+			var masterName = Path.GetFileNameWithoutExtension(masterFileName);
+
+			return masterName;
 		}
 	}
 }

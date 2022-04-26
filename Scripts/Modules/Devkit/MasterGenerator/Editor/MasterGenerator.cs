@@ -17,9 +17,9 @@ namespace Modules.Master
 {
 	public interface IRecordFileLoader
 	{
-		string GetRecordFileDirectory(string masterName);
+		string GetRecordFileDirectory(Type masterType);
 
-		Task<object[]> LoadAllRecords(string masterName, string directory, Type containerType, Type recordType);
+		Task<object[]> LoadAllRecords(string directory, Type masterType, Type recordType);
 	}
 
     public static class MasterGenerator
@@ -44,9 +44,7 @@ namespace Modules.Master
 
         public static async Task<bool> Generate(Type[] masterTypes)
         {
-            var masterManager = MasterManager.Instance;
-
-            var config = MasterConfig.Instance;
+			var config = MasterConfig.Instance;
 
             var lz4Compression = config.Lz4Compression;
 
@@ -84,15 +82,16 @@ namespace Modules.Master
 
                 foreach (var masterType in masterTypes)
                 {
-                    var masterFileName = masterManager.GetMasterFileName(masterType, false);
-
-                    var masterName = Path.GetFileNameWithoutExtension(masterFileName);
-
                     var task = Task.Run(async () =>
                     {
                         try
                         {
                             var sw = System.Diagnostics.Stopwatch.StartNew();
+
+							// ファイル名.
+							var masterManager = MasterManager.Instance;
+
+							var masterFileName = masterManager.GetMasterFileName(masterType, false);
 
                             // マスターコンテナ型.
 
@@ -108,9 +107,9 @@ namespace Modules.Master
 
                             // マスター読み込み.
 
-                            var directory = RecordFileLoader.GetRecordFileDirectory(masterName);
+                            var directory = RecordFileLoader.GetRecordFileDirectory(masterType);
 
-                            var master = await LoadMasterData(masterName, directory, containerType, recordType);
+                            var master = await LoadMasterData(directory, masterType, containerType, recordType);
 
                             // MessagePackファイル作成.
 
@@ -131,7 +130,7 @@ namespace Modules.Master
 
                             lock (logBuilder)
                             {
-                                logBuilder.AppendFormat("{0} ({1:F2}ms)", masterName, sw.Elapsed.TotalMilliseconds).AppendLine();
+                                logBuilder.AppendFormat("{0} ({1:F2}ms)", masterType.FullName, sw.Elapsed.TotalMilliseconds).AppendLine();
                                 logBuilder.AppendFormat("[ {0} ]", versionHash).AppendLine();
                                 logBuilder.AppendLine();
                             }
@@ -193,11 +192,11 @@ namespace Modules.Master
 
         #region Load Data
 
-        private static async Task<object> LoadMasterData(string masterName, string directory, Type containerType, Type recordType)
+        private static async Task<object> LoadMasterData(string directory, Type masterType, Type containerType, Type recordType)
         {
 	        // Load records.
 
-            var records = await RecordFileLoader.LoadAllRecords(masterName, directory, containerType, recordType);
+            var records = await RecordFileLoader.LoadAllRecords(directory, masterType, recordType);
 
             if (records == null) { return null; }
 
