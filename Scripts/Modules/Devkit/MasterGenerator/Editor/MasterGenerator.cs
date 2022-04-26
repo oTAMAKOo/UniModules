@@ -19,7 +19,7 @@ namespace Modules.Master
 	{
 		string GetRecordFileDirectory(string masterName);
 
-		Task<IDictionary<string, object>> LoadAllRecords(string masterName, string directory, Type containerType, Type recordType);
+		Task<object[]> LoadAllRecords(string masterName, string directory, Type containerType, Type recordType);
 	}
 
     public static class MasterGenerator
@@ -208,7 +208,7 @@ namespace Modules.Master
             return container;
         }
 
-        private static object BuildMasterContainer(Type containerType, Type recordType, IDictionary<string, object> records)
+        private static object BuildMasterContainer(Type containerType, Type recordType, object[] records)
         {
             // コンテナ作成.
             var container = Activator.CreateInstance(containerType);
@@ -221,7 +221,7 @@ namespace Modules.Master
 
             // 配列化.
 
-            var array = records.Values.ToArray();
+            var array = records.ToArray();
 
             var recordArray = Array.CreateInstance(recordType, array.Length);
 

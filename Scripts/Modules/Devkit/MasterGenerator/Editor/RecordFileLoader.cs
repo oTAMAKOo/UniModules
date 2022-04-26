@@ -57,7 +57,7 @@ namespace Modules.Master
 			return indexFileTable.GetValueOrDefault(masterName.ToLower());
 		}
 
-		public async Task<IDictionary<string, object>> LoadAllRecords(string masterName, string directory, Type containerType, Type recordType)
+		public async Task<object[]> LoadAllRecords(string masterName, string directory, Type containerType, Type recordType)
 		{
 			var indexFilePath = GetRecordFileDirectory(masterName);
 
@@ -104,7 +104,7 @@ namespace Modules.Master
 
 			await Task.WhenAll(tasks);
 
-			return records;
+			return records.Values.ToArray();
 		}
 	}
 }
