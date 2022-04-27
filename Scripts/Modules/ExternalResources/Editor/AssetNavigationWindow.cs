@@ -1,4 +1,4 @@
-﻿
+
 using UnityEngine;
 using UnityEditor;
 using System.Linq;
@@ -148,7 +148,7 @@ namespace Modules.ExternalResource.Editor
                 {
                     if (GUILayout.Button(clipboardIcon, GUILayout.Width(24f), GUILayout.Height(18f)))
                     {
-                        UniClipboard.SetText(content);
+                        GUIUtility.systemCopyBuffer = content;
                     }
 
                     GUILayout.Space(2f);
