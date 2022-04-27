@@ -1,4 +1,4 @@
-﻿
+
 using System;
 
 namespace Modules.ExternalResource.Editor
@@ -32,7 +32,7 @@ namespace Modules.ExternalResource.Editor
         /// <summary> アセットバンドル対象か </summary>
         public bool isAssetBundle = true;
         /// <summary> 命名タイプ </summary>
-        public AssetBundleNamingRule assetBundleNamingRule = AssetBundleNamingRule.ManageAssetName;
+        public AssetBundleNamingRule assetBundleNamingRule = AssetBundleNamingRule.ChildAssetName;
         /// <summary> 命名文字列 </summary>
         public string assetBundleNameStr = null;
     }
