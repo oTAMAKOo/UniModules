@@ -50,25 +50,24 @@ namespace Modules.Master
 				PathUtility.ConvertPathSeparator);
 		}
 
-		public string GetRecordFileDirectory(Type masterType)
+		public async Task<object[]> LoadAllRecords(Type masterType, Type recordType)
 		{
-			var masterName = GetMasterName(masterType);
+			var masterManager = MasterManager.Instance;
 
-			return indexFileTable.GetValueOrDefault(masterName.ToLower());
-		}
+			var masterFileName = masterManager.GetMasterFileName(masterType, false);
 
-		public async Task<object[]> LoadAllRecords(string directory, Type masterType, Type recordType)
-		{
-			var indexFilePath = GetRecordFileDirectory(masterType);
+			var masterName = Path.GetFileNameWithoutExtension(masterFileName);
+
+			var indexFilePath = indexFileTable.GetValueOrDefault(masterName.ToLower());
 
 			if (string.IsNullOrEmpty(indexFilePath))
 			{
-				var masterName = GetMasterName(masterType);
-
 				Debug.LogErrorFormat("Master index file not found.\n MasterFileName : {0}", masterName);
+
+				return null;
 			}
 
-			var masterDataDirectory = Directory.GetParent(directory);
+			var masterDataDirectory = Directory.GetParent(indexFilePath);
 
 			var recordFileDirectory = PathUtility.Combine(masterDataDirectory.FullName, RecordFolderName);
 
@@ -107,17 +106,6 @@ namespace Modules.Master
 			await Task.WhenAll(tasks);
 
 			return records.Values.ToArray();
-		}
-
-		private string GetMasterName(Type masterType)
-		{
-			var masterManager = MasterManager.Instance;
-
-			var masterFileName = masterManager.GetMasterFileName(masterType, false);
-
-			var masterName = Path.GetFileNameWithoutExtension(masterFileName);
-
-			return masterName;
 		}
 	}
 }
