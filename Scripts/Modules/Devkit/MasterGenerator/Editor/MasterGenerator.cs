@@ -74,6 +74,8 @@ namespace Modules.Master
 
             try
             {
+	            var masterManager = MasterManager.Instance;
+
                 var fileHashDictionary = new SortedDictionary<string, string>(new NaturalComparer());
 
                 var tasks = new List<Task>();
@@ -87,7 +89,6 @@ namespace Modules.Master
                             var sw = System.Diagnostics.Stopwatch.StartNew();
 
 							// ファイル名.
-							var masterManager = MasterManager.Instance;
 
 							var masterFileName = masterManager.GetMasterFileName(masterType, false);
 
