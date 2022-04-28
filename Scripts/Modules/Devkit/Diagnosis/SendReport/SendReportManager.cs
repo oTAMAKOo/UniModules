@@ -1,4 +1,4 @@
-﻿
+
 using UnityEngine;
 using UnityEngine.Networking;
 using System;
@@ -12,6 +12,11 @@ using Modules.Net.WebRequest;
 
 namespace Modules.Devkit.Diagnosis.SendReport
 {
+	public interface ISendReportUploader
+	{
+		IObservable<string> Upload(Dictionary<string, string> reportContents, IProgress<float> progress);
+	}
+
     public interface ISendReportBuilder
     {
         void Build(string screenShotData, string logData);
@@ -21,14 +26,6 @@ namespace Modules.Devkit.Diagnosis.SendReport
     {
         //----- params -----
 
-        public enum ReportDataFormat
-        {
-            None = 0,
-
-            Form,
-            Json,
-        }
-
         public sealed class LogContainer 
         {
             public LogEntry[] contents = null;
@@ -36,11 +33,9 @@ namespace Modules.Devkit.Diagnosis.SendReport
 
         //----- field -----
 
-        private string reportUrl = null;
-
-        private ReportDataFormat format = ReportDataFormat.None;
-
         private Dictionary<string, string> reportContents = null;
+
+        private ISendReportUploader uploader = null;
 
         private ISendReportBuilder sendReportBuilder = null;
 
@@ -58,22 +53,17 @@ namespace Modules.Devkit.Diagnosis.SendReport
         //----- method -----
 
         /// <summary> 初期化. </summary>
-        public void Initialize(ReportDataFormat format = ReportDataFormat.Form)
+        public void Initialize(ISendReportUploader uploader)
         {
             if (initialized){ return; }
 
-            this.format = format;
+            this.uploader = uploader;
 
             reportContents = new Dictionary<string, string>();
 
             sendReportBuilder = new DefaultSendReportBuilder();
 
             initialized = true;
-        }
-
-        public void SetReportUrl(string reportUrl)
-        {
-            this.reportUrl = reportUrl;
         }
 
         public void SetCryptKey(AesCryptoKey aesCryptoKey)
@@ -104,8 +94,8 @@ namespace Modules.Devkit.Diagnosis.SendReport
 
             // 送信.
 
-            var postReportYield = Observable.FromMicroCoroutine<string>(observer => PostReport(observer, progressNotifier)).ToYieldInstruction();
-
+            var postReportYield = uploader.Upload(reportContents, progressNotifier).ToYieldInstruction();
+            
             while (!postReportYield.IsDone)
             {
                 yield return null;
@@ -120,51 +110,6 @@ namespace Modules.Devkit.Diagnosis.SendReport
             {
                 onReportComplete.OnNext(completeMessage);
             }
-        }
-
-        private IEnumerator PostReport(IObserver<string> observer, IProgress<float> progress)
-        {
-            if (string.IsNullOrEmpty(reportUrl))
-            {
-                throw new Exception("report url is empty.");
-            }
-
-            UnityWebRequest webRequest = null;
-
-            switch (format)
-            {
-                case ReportDataFormat.Form:
-                    webRequest = UnityWebRequest.Post(reportUrl, CreateReportFormSections());
-                    break;
-
-                case ReportDataFormat.Json:
-                    webRequest = UnityWebRequest.Post(reportUrl, CreateReportJson());
-                    break;
-            }
-
-            webRequest.timeout = 30;
-
-            var operation = webRequest.SendWebRequest();
-
-            while (!operation.isDone)
-            {
-                if (progress != null)
-                {
-                    progress.Report(operation.progress);
-                }
-
-                yield return null;
-            }
-
-            var errorMessage = string.Empty;
-
-            if (webRequest.HasError())
-            {
-                errorMessage = string.Format("[{0}]{1}", webRequest.responseCode, webRequest.error);
-            }
-
-            observer.OnNext(errorMessage);
-            observer.OnCompleted();
         }
 
         public IEnumerator CaptureScreenShot()
@@ -225,23 +170,6 @@ namespace Modules.Devkit.Diagnosis.SendReport
             value = aesCryptoKey != null ? value.Encrypt(aesCryptoKey) : value;
 
             reportContents.Add(key, value);
-        }
-
-        private List<IMultipartFormSection> CreateReportFormSections()
-        {
-            var reportForm = new List<IMultipartFormSection>();
-
-            foreach (var item in reportContents)
-            {
-                reportForm.Add(new MultipartFormDataSection(item.Key, item.Value));
-            }
-
-            return reportForm;
-        }
-
-        private string CreateReportJson()
-        {
-            return reportContents.ToJson();
         }
 
         public IObservable<Unit> OnRequestReportAsObservable()
