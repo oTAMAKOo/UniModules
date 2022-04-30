@@ -1,4 +1,4 @@
-﻿
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -33,6 +33,11 @@ namespace Modules.Cache
         {
             get { return cache != null ? cache.Keys.ToArray() : new string[0]; }
         }
+
+		public IReadOnlyList<T> Values
+		{
+			get { return cache != null ? cache.Values.ToArray() : new T[0]; }
+		}
 
         //----- method -----
 
