@@ -3,6 +3,7 @@ using UnityEngine;
 using UnityEditor;
 using System.IO;
 using Extensions;
+using Modules.Devkit.Project;
 
 namespace Modules.Devkit.Inspector
 {
@@ -10,10 +11,7 @@ namespace Modules.Devkit.Inspector
     {
         //----- params -----
 
-        private const string CryptoKey = "6bc4YaYLrKVGJxue4mAHWC8GfN6dzrrQ";
-        private const string CryptoIv = "T8P4GtP4NMkxTtt8";
-
-        //----- field -----
+		//----- field -----
 
         private string folderAssetPath = null;
         
@@ -77,7 +75,7 @@ namespace Modules.Devkit.Inspector
 
             if (cryptoKey == null)
             {
-                cryptoKey = new AesCryptoKey(CryptoKey, CryptoIv);
+                cryptoKey = ProjectCryptoKey.Instance.GetCryptoKey();
             }
 
             description = assetImporter.userData.Decrypt(cryptoKey);
@@ -101,7 +99,7 @@ namespace Modules.Devkit.Inspector
             {
                 if (cryptoKey == null)
                 {
-                    cryptoKey = new AesCryptoKey(CryptoKey, CryptoIv);
+					cryptoKey = ProjectCryptoKey.Instance.GetCryptoKey();
                 }
 
                 var cryptoText = description.Encrypt(cryptoKey);

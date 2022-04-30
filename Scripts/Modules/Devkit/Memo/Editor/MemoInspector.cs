@@ -1,7 +1,8 @@
-﻿
+
 using UnityEngine;
 using UnityEditor;
 using Extensions;
+using Modules.Devkit.Project;
 
 namespace Modules.Devkit.Memo
 {
@@ -10,10 +11,7 @@ namespace Modules.Devkit.Memo
     {
         //----- params -----
 
-        private const string CryptoKey = "M97JjGTAe977jUVH56bnbzu25hs5cETX";
-        private const string CryptoIv = "cnAQQxwDcewmKBcm";
-
-        //----- field -----
+		//----- field -----
 
         private string text = null;
         private Vector2 scrollPosition = Vector2.zero;
@@ -30,7 +28,7 @@ namespace Modules.Devkit.Memo
 
             if (cryptoKey == null)
             {
-                cryptoKey = new AesCryptoKey(CryptoKey, CryptoIv);
+                cryptoKey = ProjectCryptoKey.Instance.GetCryptoKey();
             }
 
             var memo = Reflection.GetPrivateField<Memo, string>(instance, "memo");
