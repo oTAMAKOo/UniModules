@@ -1,4 +1,4 @@
-﻿
+
 using Cysharp.Threading.Tasks;
 
 namespace Modules.SceneManagement
@@ -7,9 +7,9 @@ namespace Modules.SceneManagement
 	public interface ISceneEvent
 	{
         /// <summary> シーン読込時 </summary>
-        UniTask OnLoadSceneAsObservable();
+        UniTask OnLoadScene();
 
         /// <summary> シーン解放時 </summary>
-        UniTask OnUnloadSceneAsObservable();
+        UniTask OnUnloadScene();
     }
 }

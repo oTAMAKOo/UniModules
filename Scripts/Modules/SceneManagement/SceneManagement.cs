@@ -1,4 +1,4 @@
-﻿
+
 using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.SceneManagement;
@@ -99,35 +99,38 @@ namespace Modules.SceneManagement
                 .AddTo(Disposable);
         }
 
-        public IObservable<Unit> WaitBootSceneReady()
+        public async UniTask WaitBootSceneReady()
         {
-            var observers = new List<IObservable<Unit>>();
-
             var sceneCount = SceneManager.sceneCount;
 
-            for (var i = 0; i < sceneCount; i++)
-            {
-                var scene = SceneManager.GetSceneAt(i);
-                observers.Add(Observable.Defer(() => Observable.EveryUpdate().SkipWhile(_ => !scene.isLoaded).First().AsUnitObservable()));
-            }
+			// 読み込み待ち.
 
-            return observers.WhenAll().AsUnitObservable();
-        }
+			while (true)
+			{
+				var loadFinish = true;
 
-        public IObservable<Unit> RegisterCurrentScene(ISceneArgument sceneArgument)
+				for (var i = 0; i < sceneCount; i++)
+				{
+					var scene = SceneManager.GetSceneAt(i);
+
+					loadFinish &= scene.isLoaded;
+				}
+
+				if (loadFinish){ break; }
+
+				await UniTask.DelayFrame(1);
+			}
+		}
+
+        public async UniTask RegisterCurrentScene(ISceneArgument sceneArgument)
         {
-            return Observable.FromMicroCoroutine(() => RegisterCurrentSceneCore(sceneArgument));
-        }
-
-        private IEnumerator RegisterCurrentSceneCore(ISceneArgument sceneArgument)
-        {
-            if (currentScene != null) { yield break; }
+			if (currentScene != null) { return; }
 
             var scene = SceneManager.GetSceneAt(0);
 
             while (!scene.isLoaded)
             {
-                yield return null;
+				await UniTask.DelayFrame(1);
             }
 
             var definition = ScenePaths.FirstOrDefault(x => x.Value == scene.path);
@@ -146,62 +149,56 @@ namespace Modules.SceneManagement
             {
                 Debug.LogError("Current scene not found.");
 
-                yield break;
+                return;
             }
 
             currentScene.Instance.SetArgument(sceneArgument);
 
-            var registerYield = OnRegisterCurrentScene(currentScene).ToYieldInstruction(false);
+            await OnRegisterCurrentScene(currentScene);
+			
+			history.Add(sceneArgument);
 
-            while (!registerYield.IsDone)
-            {
-                yield return null;
-            }
+			// ISceneEvent.
 
-            if (registerYield.HasError)
-            {
-                Debug.LogException(registerYield.Error);
-            }
-            else
-            {
-                history.Add(sceneArgument);
-            }
+			var tasks = new List<UniTask>();
 
-            var initializeYield = currentScene.Instance.Initialize().ToObservable().ToYieldInstruction(false);
+			var rootObjects = scene.GetRootGameObjects();
 
-            while (!initializeYield.IsDone)
-            {
-                yield return null;
-            }
+			foreach (var rootObject in rootObjects)
+			{
+				var targets = UnityUtility.FindObjectsOfInterface<ISceneEvent>(rootObject);
 
-            if (initializeYield.HasError)
-            {
-                Debug.LogException(initializeYield.Error);
-            }
+				foreach (var target in targets)
+				{
+					var task = UniTask.Defer(() => target.OnLoadScene());
+
+					tasks.Add(task);
+				}
+			}
+
+			await UniTask.WhenAll(tasks);
+
+			// Initialize.
+        
+            await currentScene.Instance.Initialize();
+
+			// Prepare.
 
             if (onPrepare != null)
             {
                 onPrepare.OnNext(sceneArgument);
             }
 
-            var prepareYield = currentScene.Instance.Prepare(false).ToObservable().ToYieldInstruction(false);
-
-            while (!prepareYield.IsDone)
-            {
-                yield return null;
-            }
-
-            if (prepareYield.HasError)
-            {
-                Debug.LogException(prepareYield.Error);
-            }
+			await currentScene.Instance.Prepare(false);
 
             if (onPrepareComplete != null)
             {
                 onPrepareComplete.OnNext(sceneArgument);
             }
 
-            if (onEnter != null)
+			// Enter.
+
+			if (onEnter != null)
             {
                 onEnter.OnNext(sceneArgument);
             }
@@ -215,7 +212,10 @@ namespace Modules.SceneManagement
         }
 
         /// <summary> 初期シーン登録時のイベント </summary>
-        protected virtual IObservable<Unit> OnRegisterCurrentScene(SceneInstance currentInfo) { return Observable.ReturnUnit(); }
+        protected virtual UniTask OnRegisterCurrentScene(SceneInstance currentInfo)
+		{
+			return UniTask.CompletedTask;
+		}
 
         /// <summary> シーン遷移. </summary>
         public void Transition<TArgument>(TArgument sceneArgument, bool registerHistory = false) where TArgument : ISceneArgument
@@ -878,7 +878,7 @@ namespace Modules.SceneManagement
 
                         foreach (var target in targets)
                         {
-                            var loadSceneYield = target.OnLoadSceneAsObservable().ToObservable().ToYieldInstruction(false);
+                            var loadSceneYield = target.OnLoadScene().ToObservable().ToYieldInstruction(false);
 
                             while (!loadSceneYield.IsDone)
                             {
@@ -1032,7 +1032,7 @@ namespace Modules.SceneManagement
 
                 foreach (var target in targets)
                 {
-                    var unloadYield = target.OnUnloadSceneAsObservable().ToObservable().ToYieldInstruction(false);
+                    var unloadYield = target.OnUnloadScene().ToObservable().ToYieldInstruction(false);
 
                     while (!unloadYield.IsDone)
                     {
