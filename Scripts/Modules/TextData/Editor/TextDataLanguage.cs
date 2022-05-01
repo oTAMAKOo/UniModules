@@ -38,7 +38,7 @@ namespace Modules.TextData.Editor
 			{
 				if (languageInfos == null){ return null; }
 
-				var selection = Language.selection;
+				var selection = EditorLanguage.selection;
 			
 				return languageInfos.FirstOrDefault(x => Convert.ToInt32(x.Language) == selection);
 			}

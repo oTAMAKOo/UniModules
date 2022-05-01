@@ -45,11 +45,11 @@ namespace Modules.Localize.Editor
 
 			var names = System.Enum.GetNames(enumType);
 
-			var selection = EditorGUILayout.Popup(Language.selection, names);
+			var selection = EditorGUILayout.Popup(EditorLanguage.selection, names);
 
 			if (EditorGUI.EndChangeCheck())
 			{
-				Language.selection = selection;
+				EditorLanguage.selection = selection;
 
 				TextDataLoader.Reload();
 			}
