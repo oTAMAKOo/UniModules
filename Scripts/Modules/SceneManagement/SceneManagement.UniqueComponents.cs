@@ -1,9 +1,12 @@
-﻿﻿﻿
+﻿﻿
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using Unity.Linq;
 using System;
 using System.Linq;
 using System.Collections.Generic;
+using UniRx;
+using UniRx.Triggers;
 using Extensions;
 
 namespace Modules.SceneManagement
@@ -50,6 +53,50 @@ namespace Modules.SceneManagement
 
         //----- method -----
 
+        public void RegisterUniqueComponent<TComponent>(TComponent target) where TComponent : Behaviour
+        {
+            RegisterUniqueComponent(typeof(TComponent), target);
+        }
+
+        public void RegisterUniqueComponent(Type type, Behaviour target)
+        {
+            if (UnityUtility.IsNull(target)){ return; }
+
+            var capturedComponent = capturedComponents.GetValueOrDefault(type);
+
+            if (capturedComponent == target){ return; }
+
+            UnityUtility.SafeDelete(capturedComponent);
+
+            target.OnDestroyAsObservable()
+                .Subscribe(_ => capturedComponents.Remove(type))
+                .AddTo(Disposable);
+
+            capturedComponents[type] = target;
+
+            // 既に回収済みオブジェクトの子階層にある場合は親オブジェクトの変更は行わない.
+            var captured = uniqueComponentsRoot.Descendants().Contains(target.gameObject);
+
+            if (!captured)
+            {
+                UnityUtility.SetParent(target.gameObject, uniqueComponentsRoot);
+            }
+        }
+
+        public void CollectUniqueComponents()
+        {
+            var sceneCount = SceneManager.sceneCount;
+
+            for (var i = 0; i < sceneCount; i++)
+            {
+                var scene = SceneManager.GetSceneAt(i);
+
+                var rootObjects = scene.GetRootGameObjects();
+
+                CollectUniqueComponents(rootObjects);
+            }
+        }
+
         private void CollectUniqueComponents(GameObject[] rootObjects)
         {
             if (uniqueComponentsRoot == null)
@@ -74,20 +121,14 @@ namespace Modules.SceneManagement
                     // 対象のコンポーネントがなければなにもしない.
                     if (components.IsEmpty()) { continue; }
 
+                    var capturedComponent = capturedComponents.GetValueOrDefault(key);
+
                     // 管理中のコンポーネントがなければとりあえず1つ管理する.
-                    if (!capturedComponents.ContainsKey(key))
+                    if (UnityUtility.IsNull(capturedComponent))
                     {
                         var component = components.First();
 
-                        capturedComponents[key] = component;
-
-                        // 既に回収済みオブジェクトの子階層にある場合は親オブジェクトの変更は行わない.
-                        var captured = uniqueComponentsRoot.Descendants().Contains(component.gameObject);
-
-                        if (!captured)
-                        {
-                            UnityUtility.SetParent(component.gameObject, uniqueComponentsRoot);
-                        }
+                        RegisterUniqueComponent(key, component);
                     }
 
                     // 管理中のコンポーネントしかない場合終了.
