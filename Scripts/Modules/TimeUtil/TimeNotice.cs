@@ -1,11 +1,11 @@
-﻿
+
 using System;
 using System.Linq;
 using System.Collections.Generic;
 using UniRx;
 using Extensions;
 
-namespace Modules.TimeManagement
+namespace Modules.TimeUtil
 {
     /// <summary>
     /// 指定された時間になると通知イベントを発行するクラス.

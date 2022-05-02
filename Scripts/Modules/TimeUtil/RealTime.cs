@@ -1,9 +1,9 @@
-﻿
+
 using UnityEngine;
 using Extensions;
 using UniRx;
 
-namespace Modules.TimeManagement
+namespace Modules.TimeUtil
 {
     /// <summary>
     /// TimeScaleに影響されない現実時間クラス.

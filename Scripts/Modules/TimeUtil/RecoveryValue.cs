@@ -1,7 +1,7 @@
-﻿
+
 using System;
 
-namespace Modules.TimeManagement
+namespace Modules.TimeUtil
 {
     /// <summary>
     /// 時間経過で回復していく値を管理するクラス.
