@@ -20,10 +20,7 @@ namespace Modules.TimeUtil
 
 		public DateTime Now
 		{
-			get
-			{
-				return baseTime.AddSeconds(Time.realtimeSinceStartup - startTime);
-			}
+			get { return GetNowTime(); }
 		}
 
 		//----- method -----
@@ -33,6 +30,11 @@ namespace Modules.TimeUtil
 			this.baseTime = baseTime;
 
 			this.startTime = Time.realtimeSinceStartup;
+		}
+
+		protected DateTime GetNowTime()
+		{
+			return baseTime.AddSeconds(Time.realtimeSinceStartup - startTime);
 		}
 
 		/// <summary>
