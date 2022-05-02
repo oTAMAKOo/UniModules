@@ -1,6 +1,5 @@
 
 using UnityEngine;
-using UnityEngine.Networking;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -8,13 +7,12 @@ using System.Linq;
 using UniRx;
 using Extensions;
 using Modules.Devkit.Diagnosis.LogTracker;
-using Modules.Net.WebRequest;
 
 namespace Modules.Devkit.Diagnosis.SendReport
 {
 	public interface ISendReportUploader
 	{
-		IObservable<string> Upload(Dictionary<string, string> reportContents, IProgress<float> progress);
+		IObservable<string> Upload(string reportTitle, Dictionary<string, string> reportContents, IProgress<float> progress);
 	}
 
     public interface ISendReportBuilder
@@ -76,12 +74,12 @@ namespace Modules.Devkit.Diagnosis.SendReport
             this.sendReportBuilder = sendReportBuilder;
         }
 
-        public IObservable<Unit> Send(IProgress<float> progressNotifier = null)
+        public IObservable<Unit> Send(string reportTitle, IProgress<float> progressNotifier = null)
         {
-            return Observable.FromCoroutine(() => SendReport(progressNotifier));
+            return Observable.FromCoroutine(() => SendReport(reportTitle, progressNotifier));
         }
 
-        private IEnumerator SendReport(IProgress<float> progressNotifier)
+        private IEnumerator SendReport(string reportTitle, IProgress<float> progressNotifier)
         {
             // 送信内容構築.
             BuildPostContent();
@@ -94,7 +92,7 @@ namespace Modules.Devkit.Diagnosis.SendReport
 
             // 送信.
 
-            var postReportYield = uploader.Upload(reportContents, progressNotifier).ToYieldInstruction();
+            var postReportYield = uploader.Upload(reportTitle, reportContents, progressNotifier).ToYieldInstruction();
             
             while (!postReportYield.IsDone)
             {

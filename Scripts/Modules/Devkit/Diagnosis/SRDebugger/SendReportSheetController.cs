@@ -1,4 +1,4 @@
-﻿
+
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.EventSystems;
@@ -138,7 +138,7 @@ namespace Modules.Devkit.Diagnosis.SRDebugger
 
             notifier.Subscribe(x => UpdatePostProgress(x));
 
-            var sendYield = sendReportManager.Send(notifier).ToYieldInstruction(false);
+            var sendYield = sendReportManager.Send(ReportTitle, notifier).ToYieldInstruction(false);
 
             while (!sendYield.IsDone)
             {

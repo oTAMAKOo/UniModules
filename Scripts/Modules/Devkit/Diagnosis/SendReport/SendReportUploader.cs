@@ -35,7 +35,7 @@ namespace Modules.Devkit.Diagnosis.SendReport
 			this.format = format;
 		}
 
-		public IObservable<string> Upload(Dictionary<string, string> reportContents, IProgress<float> progress)
+		public IObservable<string> Upload(string reportTitle, Dictionary<string, string> reportContents, IProgress<float> progress)
 		{
 			return Observable.FromMicroCoroutine<string>(observer => PostReport(observer, reportContents, progress));
 		}
