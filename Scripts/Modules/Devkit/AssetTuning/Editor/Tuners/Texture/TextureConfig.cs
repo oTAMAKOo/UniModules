@@ -1,4 +1,4 @@
-﻿
+
 using UnityEngine;
 using Modules.Devkit.Prefs;
 using Modules.Devkit.ScriptableObjects;
@@ -7,7 +7,7 @@ using Object = UnityEngine.Object;
 
 namespace Modules.Devkit.AssetTuning
 {
-    public sealed class TextureAssetTunerConfig : ReloadableScriptableObject<TextureAssetTunerConfig>
+    public sealed class TextureConfig : ReloadableScriptableObject<TextureConfig>
     {
         //----- params -----
 

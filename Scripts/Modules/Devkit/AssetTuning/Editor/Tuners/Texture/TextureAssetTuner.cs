@@ -1,4 +1,4 @@
-﻿
+
 using System;
 using UnityEngine;
 using UnityEditor;
@@ -62,7 +62,7 @@ namespace Modules.Devkit.AssetTuning
             }
             else
             {
-                if (TextureAssetTunerConfig.Prefs.changeSettingOnImport)
+                if (TextureConfig.Prefs.changeSettingOnImport)
                 {
                     SetTextureSettings(textureImporter, false);
                     SetTextureTypeSettings(textureImporter, false);
@@ -115,7 +115,7 @@ namespace Modules.Devkit.AssetTuning
 
         protected virtual void SetCompressionSettings(TextureImporter textureImporter, bool firstImport)
         {
-            var config = TextureAssetTunerConfig.Instance;
+            var config = TextureConfig.Instance;
 
             if (config == null) { return; }
 
@@ -143,7 +143,7 @@ namespace Modules.Devkit.AssetTuning
 
         protected virtual bool SetTextureTypeSettings(TextureImporter textureImporter, bool firstImport)
         {
-            var config = TextureAssetTunerConfig.Instance;
+            var config = TextureConfig.Instance;
 
             if (config == null) { return false; }
 

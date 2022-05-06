@@ -1,4 +1,4 @@
-﻿
+
 using UnityEngine;
 using UnityEditor;
 using System.Linq;
@@ -11,8 +11,8 @@ using Object = UnityEngine.Object;
 
 namespace Modules.Devkit.AssetTuning
 {
-    [CustomEditor(typeof(TextureAssetTunerConfig))]
-    public sealed class TextureAssetTunerConfigInspector : UnityEditor.Editor
+    [CustomEditor(typeof(TextureConfig))]
+    public sealed class TextureConfigInspector : UnityEditor.Editor
     {
         //----- params -----
 
@@ -42,7 +42,7 @@ namespace Modules.Devkit.AssetTuning
 
         private LifetimeDisposable lifetimeDisposable = null;
 
-        private TextureAssetTunerConfig instance = null;
+        private TextureConfig instance = null;
 
         private bool changeSettingOnImport = false;
 
@@ -52,7 +52,7 @@ namespace Modules.Devkit.AssetTuning
 
         void OnEnable()
         {
-            instance = target as TextureAssetTunerConfig;
+            instance = target as TextureConfig;
 
             lifetimeDisposable = new LifetimeDisposable();
 
@@ -120,12 +120,12 @@ namespace Modules.Devkit.AssetTuning
 
             //------ Options ------
 
-            changeSettingOnImport = TextureAssetTunerConfig.Prefs.changeSettingOnImport;
+            changeSettingOnImport = TextureConfig.Prefs.changeSettingOnImport;
         }
 
         public override void OnInspectorGUI()
         {
-            instance = target as TextureAssetTunerConfig;
+            instance = target as TextureConfig;
 
             compressFolderView.DrawGUI();
 
@@ -157,7 +157,7 @@ namespace Modules.Devkit.AssetTuning
 
                 if (EditorGUI.EndChangeCheck())
                 {
-                    TextureAssetTunerConfig.Prefs.changeSettingOnImport = changeSettingOnImport;
+                    TextureConfig.Prefs.changeSettingOnImport = changeSettingOnImport;
                 }
 
                 GUILayout.Space(3f);

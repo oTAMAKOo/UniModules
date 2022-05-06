@@ -1,8 +1,9 @@
-﻿
+
 using UnityEngine;
 using UnityEngine.U2D;
 using UnityEditor;
 using UnityEditor.U2D;
+using System.Linq;
 
 namespace Modules.Devkit.AssetTuning
 {
@@ -44,9 +45,9 @@ namespace Modules.Devkit.AssetTuning
 
         protected virtual void OnFirstImport(SpriteAtlas spriteAtlas)
         {
-            spriteAtlas.SetIncludeInBuild(false);
+			SetIncludeInBuild(spriteAtlas);
 
-            //------- PackingSettings -------
+			//------- PackingSettings -------
 
             var packingSettings = spriteAtlas.GetPackingSettings();
 
@@ -96,5 +97,33 @@ namespace Modules.Devkit.AssetTuning
             platformSetting.compressionQuality = 100;
             platformSetting.textureCompression = TextureImporterCompression.Compressed;
         }
+
+		private void SetIncludeInBuild(SpriteAtlas spriteAtlas)
+		{
+			var config = SpriteAtlasConfig.Instance;
+
+			if (config == null){ return; }
+
+			var assetPath = AssetDatabase.GetAssetPath(spriteAtlas);
+
+			var targetFolderPaths =  config.DisableIncludeInBuildFolders
+				.Where(x => x != null)
+				.Select(x => AssetDatabase.GetAssetPath(x))
+				.OrderBy(x => x.Length)
+				.ToArray();
+
+			var includeInBuild = true;
+
+			foreach (var folderPath in targetFolderPaths)
+			{
+				if (assetPath.StartsWith(folderPath))
+				{
+					includeInBuild = false;
+					break;
+				}
+			}
+
+			spriteAtlas.SetIncludeInBuild(includeInBuild);
+		}
     }
 }

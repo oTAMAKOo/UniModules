@@ -1,15 +1,14 @@
-﻿
+
 using UnityEngine;
 using UnityEditor;
 using UnityEditor.Animations;
 using System.IO;
 using System.Linq;
 using Extensions.Devkit;
-using Modules.Devkit.AssetTuning;
 
 namespace Modules.Devkit.AssetTuning
 {
-    public sealed class EmptyAnimatorAssetTuner : AssetTuner
+    public class AnimatorAssetTuner : AssetTuner
     {
         //----- params -----
 
@@ -19,13 +18,7 @@ namespace Modules.Devkit.AssetTuning
 
         //----- method -----
 
-        [InitializeOnLoadMethod]
-        private static void InitializeOnLoadMethod()
-        {
-            AssetTuneManager.Instance.Register<EmptyAnimatorAssetTuner>();
-        }
-
-        public override bool Validate(string path)
+		public override bool Validate(string path)
         {
             if (Path.GetExtension(path) != ".controller") { return false; }
 
