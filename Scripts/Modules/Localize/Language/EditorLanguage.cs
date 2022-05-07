@@ -1,4 +1,6 @@
 
+#if UNITY_EDITOR
+
 using Modules.Devkit.Prefs;
 
 namespace Modules.Localize
@@ -12,3 +14,5 @@ namespace Modules.Localize
 		}
 	}
 }
+
+#endif

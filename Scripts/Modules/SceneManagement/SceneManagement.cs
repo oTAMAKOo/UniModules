@@ -99,30 +99,7 @@ namespace Modules.SceneManagement
                 .AddTo(Disposable);
         }
 
-        public async UniTask WaitBootSceneReady()
-        {
-            var sceneCount = SceneManager.sceneCount;
-
-			// 読み込み待ち.
-
-			while (true)
-			{
-				var loadFinish = true;
-
-				for (var i = 0; i < sceneCount; i++)
-				{
-					var scene = SceneManager.GetSceneAt(i);
-
-					loadFinish &= scene.isLoaded;
-				}
-
-				if (loadFinish){ break; }
-
-				await UniTask.DelayFrame(1);
-			}
-		}
-
-        public async UniTask RegisterCurrentScene(ISceneArgument sceneArgument)
+        public async UniTask RegisterBootScene()
         {
 			if (currentScene != null) { return; }
 
@@ -152,7 +129,11 @@ namespace Modules.SceneManagement
                 return;
             }
 
-            currentScene.Instance.SetArgument(sceneArgument);
+			var argumentType = currentScene.Instance.GetArgumentType();
+
+			var sceneArgument = Activator.CreateInstance(argumentType) as ISceneArgument;
+
+			currentScene.Instance.SetArgument(sceneArgument);
 
             await OnRegisterCurrentScene(currentScene);
 			
