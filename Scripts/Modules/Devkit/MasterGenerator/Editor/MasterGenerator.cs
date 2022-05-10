@@ -15,7 +15,7 @@ using Modules.MessagePack;
 
 namespace Modules.Master
 {
-	public interface IRecordFileLoader
+	public interface IRecordLoader
 	{
 		Task<object[]> LoadAllRecords(Type masterType, Type recordType);
 	}
@@ -36,7 +36,7 @@ namespace Modules.Master
 
         //----- property -----
 
-        public static IRecordFileLoader RecordFileLoader { get; set; }
+        public static IRecordLoader RecordLoader { get; set; }
 
         //----- method -----
 
@@ -193,7 +193,7 @@ namespace Modules.Master
         {
 	        // Load records.
 
-            var records = await RecordFileLoader.LoadAllRecords(masterType, recordType);
+            var records = await RecordLoader.LoadAllRecords(masterType, recordType);
 
             if (records == null) { return null; }
 

@@ -1,7 +1,6 @@
 
 using UnityEngine;
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -10,7 +9,7 @@ using Extensions;
 
 namespace Modules.Master
 {
-	public sealed class RecordFileLoader : IRecordFileLoader
+	public sealed class RecordLoader : IRecordLoader
 	{
 		//----- params -----
 
@@ -30,7 +29,7 @@ namespace Modules.Master
 
 		//----- method -----
 
-		public RecordFileLoader(SerializationFileUtility.Format format)
+		public RecordLoader(SerializationFileUtility.Format format)
 		{
 			this.format = format;
 
