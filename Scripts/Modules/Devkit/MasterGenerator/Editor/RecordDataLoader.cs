@@ -9,7 +9,7 @@ using Extensions;
 
 namespace Modules.Master
 {
-	public sealed class RecordLoader : IRecordLoader
+	public sealed class RecordDataLoader : IRecordDataLoader
 	{
 		//----- params -----
 
@@ -29,7 +29,7 @@ namespace Modules.Master
 
 		//----- method -----
 
-		public RecordLoader(SerializationFileUtility.Format format)
+		public RecordDataLoader(SerializationFileUtility.Format format)
 		{
 			this.format = format;
 
@@ -49,7 +49,7 @@ namespace Modules.Master
 				PathUtility.ConvertPathSeparator);
 		}
 
-		public async Task<object[]> LoadAllRecords(Type masterType, Type recordType)
+		public async Task<object[]> GetAllRecords(Type masterType, Type recordType)
 		{
 			var masterManager = MasterManager.Instance;
 

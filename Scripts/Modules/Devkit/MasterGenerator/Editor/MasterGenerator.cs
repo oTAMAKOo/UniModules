@@ -15,9 +15,9 @@ using Modules.MessagePack;
 
 namespace Modules.Master
 {
-	public interface IRecordLoader
+	public interface IRecordDataLoader
 	{
-		Task<object[]> LoadAllRecords(Type masterType, Type recordType);
+		Task<object[]> GetAllRecords(Type masterType, Type recordType);
 	}
 
     public static class MasterGenerator
@@ -36,11 +36,9 @@ namespace Modules.Master
 
         //----- property -----
 
-        public static IRecordLoader RecordLoader { get; set; }
-
         //----- method -----
 
-        public static async Task<bool> Generate(Type[] masterTypes)
+        public static async Task<bool> Generate(Type[] masterTypes, IRecordDataLoader recordDataLoader)
         {
 			var config = MasterConfig.Instance;
 
@@ -106,7 +104,7 @@ namespace Modules.Master
 
                             // マスター読み込み.
 
-                            var master = await LoadMasterData(masterType, containerType, recordType);
+                            var master = await LoadMasterData(recordDataLoader, masterType, containerType, recordType);
 
                             // MessagePackファイル作成.
 
@@ -189,11 +187,11 @@ namespace Modules.Master
 
         #region Load Data
 
-        private static async Task<object> LoadMasterData(Type masterType, Type containerType, Type recordType)
+        private static async Task<object> LoadMasterData(IRecordDataLoader recordDataLoader, Type masterType, Type containerType, Type recordType)
         {
 	        // Load records.
 
-            var records = await RecordLoader.LoadAllRecords(masterType, recordType);
+            var records = await recordDataLoader.GetAllRecords(masterType, recordType);
 
             if (records == null) { return null; }
 
