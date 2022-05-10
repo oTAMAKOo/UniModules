@@ -29,7 +29,7 @@ namespace Modules.Master
 		        return false;
 	        }
 
-			// バージョンファイルから作成時のコミットハッシュを取得.
+			// バージョンファイルからルートハッシュを取得.
 
 	        var versionFilePath = PathUtility.Combine(exportPath, MasterGenerator.VersionFileName);
 
@@ -40,16 +40,16 @@ namespace Modules.Master
 		        return false;
 	        }
 
-	        var commitHash = string.Empty;
+	        var rootHash = string.Empty;
 
 	        using (var streamReader = new StreamReader(versionFilePath, Encoding.UTF8, false))
 	        {
-		        commitHash = await streamReader.ReadLineAsync();
+				rootHash = await streamReader.ReadLineAsync();
 	        }
 
-	        if (string.IsNullOrEmpty(commitHash))
+	        if (string.IsNullOrEmpty(rootHash))
 	        {
-		        Debug.LogError("CommitHash not found.");
+		        Debug.LogError("RootHash empty.");
 
 		        return false;
 	        }
@@ -58,7 +58,7 @@ namespace Modules.Master
 
 	        var sw = System.Diagnostics.Stopwatch.StartNew();
 
-	        var result = await uploader.Execute(exportPath, commitHash);
+	        var result = await uploader.Execute(exportPath, rootHash);
 
 	        sw.Stop();
 
@@ -66,7 +66,7 @@ namespace Modules.Master
 	        {
 		        if (result)
 		        {
-			        Debug.LogFormat("Upload Complete. ({0:F2}sec)\n\nVersion: {1}", sw.Elapsed.TotalSeconds, commitHash);
+			        Debug.LogFormat("Upload Complete. ({0:F2}sec)\n\nVersion: {1}", sw.Elapsed.TotalSeconds, rootHash);
 		        }
 		        else
 		        {

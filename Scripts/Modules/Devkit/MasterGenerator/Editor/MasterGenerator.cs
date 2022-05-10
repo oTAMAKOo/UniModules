@@ -150,12 +150,7 @@ namespace Modules.Master
                 await Task.WhenAll(tasks);
 
                 // バージョンファイル作成.
-
-                var commitHash = await GetCommitHash();
-
-                GenerateMasterVersionFile(exportDirectory, fileHashDictionary);
-
-                logBuilder.Insert(0, string.Format("CommitHash : {0}\n\n", commitHash));
+				GenerateMasterVersionFile(exportDirectory, fileHashDictionary);
 
                 UnityConsole.Info("Generate master complete.\n\n{0}", logBuilder.ToString());
             }
@@ -293,30 +288,20 @@ namespace Modules.Master
 
         #region Version
 
-        public static async Task<string> GetCommitHash()
-        {
-            var masterConfig = MasterConfig.Instance;
-
-            if (string.IsNullOrEmpty(masterConfig.SourceDirectory)){ return null; }
-
-            var processExecute = new ProcessExecute("git", "log --pretty=%H -n 1")
-            {
-                WorkingDirectory = masterConfig.SourceDirectory,
-            };
-
-            var result = await processExecute.StartAsync();
-
-            if (string.IsNullOrEmpty(result.Output)){ return null; }
-
-            // 改行コードを削除.
-            return result.Output.Replace("\r", "").Replace("\n", "");
-        }
-
-        private static void GenerateMasterVersionFile(string filePath, IDictionary<string, string> versionHashDictionary)
+		private static void GenerateMasterVersionFile(string filePath, IDictionary<string, string> versionHashDictionary)
         {
             var builder = new StringBuilder();
 
-            foreach (var item in versionHashDictionary)
+			var rootHash =  string.Join(null, versionHashDictionary.Values).GetHash();
+
+			if (string.IsNullOrEmpty(rootHash))
+			{
+				throw new InvalidDataException();
+			}
+
+			builder.AppendLine(rootHash);
+
+			foreach (var item in versionHashDictionary)
             {
                 builder.AppendFormat("{0},{1}", item.Key, item.Value).AppendLine();
             }
