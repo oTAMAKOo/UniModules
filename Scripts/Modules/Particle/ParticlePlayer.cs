@@ -1,9 +1,10 @@
-﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿
+﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿
 using UnityEngine;
 using Unity.Linq;
 using System;
 using System.Collections;
 using System.Linq;
+using Cysharp.Threading.Tasks;
 using UniRx;
 using Extensions;
 
@@ -259,7 +260,7 @@ namespace Modules.Particle
 
             if (activateOnPlay && Application.isPlaying)
             {
-                playDisposable = Play().Subscribe().AddTo(disposable.Disposable);
+                playDisposable = PlayAsObservable().Subscribe().AddTo(disposable.Disposable);
             }
         }
 
@@ -274,7 +275,7 @@ namespace Modules.Particle
             {
                 if (play)
                 {
-                    playDisposable = Play().Subscribe().AddTo(disposable.Disposable);
+                    playDisposable = PlayAsObservable().Subscribe().AddTo(disposable.Disposable);
                 }
                 else
                 {
@@ -298,8 +299,13 @@ namespace Modules.Particle
             }
         }
 
-        public IObservable<Unit> Play(bool restart = true)
+        public async UniTask Play(bool restart = true)
         {
+			await PlayAsObservable(restart).ToUniTask();
+		}
+
+		private IObservable<Unit> PlayAsObservable(bool restart = true)
+		{
             if (!initialized)
             {
                 Initialize();
