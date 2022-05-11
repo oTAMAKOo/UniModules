@@ -239,6 +239,8 @@ namespace Modules.Animation
 
                 // ループ再生の場合は再度再生を行う.
                 PlayAnimator(hash, layer, normalizedTime);
+
+				await UniTask.NextFrame();
             }
 
             EndAction();
