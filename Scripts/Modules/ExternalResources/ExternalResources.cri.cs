@@ -1,4 +1,4 @@
-﻿
+
 #if ENABLE_CRIWARE_ADX || ENABLE_CRIWARE_SOFDEC
 
 using UnityEngine;
@@ -7,6 +7,7 @@ using System.Collections;
 using System.Linq;
 using System.IO;
 using System.Text;
+using Cysharp.Threading.Tasks;
 using UniRx;
 using Extensions;
 using Modules.CriWare;
@@ -111,73 +112,71 @@ namespace Modules.ExternalResource
 
         #if ENABLE_CRIWARE_ADX
         
-        public static IObservable<CueInfo> GetCueInfo(string resourcePath, string cue)
+        public static async UniTask<CueInfo> GetCueInfo(string resourcePath, string cue)
         {
-            return Observable.FromMicroCoroutine<CueInfo>(observer => Instance.GetCueInfoInternal(observer, resourcePath, cue));
+            return await Instance.GetCueInfoInternal(resourcePath, cue);
         }
 
-        private IEnumerator GetCueInfoInternal(IObserver<CueInfo> observer, string resourcePath, string cue)
+        private async UniTask<CueInfo> GetCueInfoInternal(string resourcePath, string cue)
         {
             if (string.IsNullOrEmpty(resourcePath))
             {
-                observer.OnError(new ArgumentException("resourcePath"));
+                throw new ArgumentException("resourcePath empty.");
             }
-            else
+
+            var filePath = ConvertCriFilePath(resourcePath);
+
+            if (!LocalMode && !simulateMode)
             {
-                var filePath = ConvertCriFilePath(resourcePath);
-
-                if (!LocalMode && !simulateMode)
+                if (!CheckAssetVersion(resourcePath, filePath))
                 {
-                    if (!CheckAssetVersion(resourcePath, filePath))
+                    var assetPath = PathUtility.Combine(resourceDirectory, resourcePath);
+
+                    var sw = System.Diagnostics.Stopwatch.StartNew();
+
+                    var updateYield = UpdateAsset(resourcePath).ToObservable().ToYieldInstruction(false, yieldCancel.Token);
+
+                    while (!updateYield.IsDone)
                     {
-                        var assetPath = PathUtility.Combine(resourceDirectory, resourcePath);
+                        await UniTask.NextFrame();
+                    }
 
-                        var sw = System.Diagnostics.Stopwatch.StartNew();
+                    sw.Stop();
 
-                        var updateYield = UpdateAsset(resourcePath).ToYieldInstruction(false, yieldCancel.Token);
+                    if (LogEnable && UnityConsole.Enable)
+                    {
+                        var assetInfo = GetAssetInfo(resourcePath);
 
-                        while (!updateYield.IsDone)
+                        if (assetInfo != null)
                         {
-                            yield return null;
-                        }
+                            var builder = new StringBuilder();
 
-                        sw.Stop();
+                            builder.AppendFormat("Update: {0} ({1:F2}ms)", Path.GetFileName(filePath), sw.Elapsed.TotalMilliseconds).AppendLine();
+                            builder.AppendLine();
+                            builder.AppendFormat("LoadPath = {0}", assetPath).AppendLine();
+                            builder.AppendFormat("FileName = {0}", assetInfo.FileName).AppendLine();
 
-                        if (LogEnable && UnityConsole.Enable)
-                        {
-                            var assetInfo = GetAssetInfo(resourcePath);
-
-                            if (assetInfo != null)
+                            if (!string.IsNullOrEmpty(assetInfo.Hash))
                             {
-                                var builder = new StringBuilder();
-
-                                builder.AppendFormat("Update: {0} ({1:F2}ms)", Path.GetFileName(filePath), sw.Elapsed.TotalMilliseconds).AppendLine();
-                                builder.AppendLine();
-                                builder.AppendFormat("LoadPath = {0}", assetPath).AppendLine();
-                                builder.AppendFormat("FileName = {0}", assetInfo.FileName).AppendLine();
-
-                                if (!string.IsNullOrEmpty(assetInfo.Hash))
-                                {
-                                    builder.AppendFormat("Hash = {0}", assetInfo.Hash).AppendLine();
-                                }
-
-                                UnityConsole.Event(ConsoleEventName, ConsoleEventColor, builder.ToString());
+                                builder.AppendFormat("Hash = {0}", assetInfo.Hash).AppendLine();
                             }
+
+                            UnityConsole.Event(ConsoleEventName, ConsoleEventColor, builder.ToString());
                         }
                     }
                 }
-
-                filePath = PathUtility.GetPathWithoutExtension(filePath) + CriAssetDefinition.AcbExtension;
-
-                observer.OnNext(File.Exists(filePath) ? new CueInfo(filePath, resourcePath, cue) : null);
-
-                if (onLoadAsset != null)
-                {
-                    onLoadAsset.OnNext(resourcePath);
-                }
             }
 
-            observer.OnCompleted();
+            filePath = PathUtility.GetPathWithoutExtension(filePath) + CriAssetDefinition.AcbExtension;
+
+            var cueInfo = File.Exists(filePath) ? new CueInfo(filePath, resourcePath, cue) : null;
+
+            if (onLoadAsset != null)
+            {
+                onLoadAsset.OnNext(resourcePath);
+            }
+            
+            return cueInfo;
         }
 
         #endif
@@ -188,84 +187,82 @@ namespace Modules.ExternalResource
 
         #if ENABLE_CRIWARE_SOFDEC
 
-        public static IObservable<ManaInfo> GetMovieInfo(string resourcePath)
+        public static async UniTask<ManaInfo> GetMovieInfo(string resourcePath)
         {
-            return Observable.FromMicroCoroutine<ManaInfo>(observer => Instance.GetMovieInfoInternal(observer, resourcePath));
+            return await Instance.GetMovieInfoInternal( resourcePath);
         }
 
-        private IEnumerator GetMovieInfoInternal(IObserver<ManaInfo> observer, string resourcePath)
+        private async UniTask<ManaInfo> GetMovieInfoInternal(string resourcePath)
         {
             if (string.IsNullOrEmpty(resourcePath))
             {
-                observer.OnError(new ArgumentException("resourcePath"));
+                throw new ArgumentException("resourcePath empty.");
+            }
+
+			var filePath = ConvertCriFilePath(resourcePath);
+
+            if (!LocalMode && !simulateMode)
+            {
+                if (!CheckAssetVersion(resourcePath, filePath))
+                {
+                    var assetPath = PathUtility.Combine(resourceDirectory, resourcePath);
+
+                    var sw = System.Diagnostics.Stopwatch.StartNew();
+
+                    var updateYield = UpdateAsset(resourcePath)
+						.ToObservable()
+						.ToYieldInstruction(false, yieldCancel.Token);
+
+                    while (!updateYield.IsDone)
+                    {
+                        await UniTask.NextFrame();
+                    }
+
+                    sw.Stop();
+
+                    if (LogEnable && UnityConsole.Enable)
+                    {
+                        var assetInfo = GetAssetInfo(resourcePath);
+
+                        if (assetInfo != null)
+                        {
+                            var builder = new StringBuilder();
+
+                            builder.AppendFormat("Update: {0} ({1:F2}ms)", Path.GetFileName(filePath), sw.Elapsed.TotalMilliseconds).AppendLine();
+                            builder.AppendLine();
+                            builder.AppendFormat("LoadPath = {0}", assetPath).AppendLine();
+                            builder.AppendFormat("FileName = {0}", assetInfo.FileName).AppendLine();
+
+                            if (!string.IsNullOrEmpty(assetInfo.Hash))
+                            {
+                                builder.AppendFormat("Hash = {0}", assetInfo.Hash).AppendLine();
+                            }
+
+                            UnityConsole.Event(ConsoleEventName, ConsoleEventColor, builder.ToString());
+                        }
+                    }
+                }
+            }
+
+            filePath = PathUtility.GetPathWithoutExtension(filePath) + CriAssetDefinition.UsmExtension;
+
+			ManaInfo movieInfo = null;
+
+            if (File.Exists(filePath))
+            {
+                movieInfo = new ManaInfo(filePath);
+				
+                if (onLoadAsset != null)
+                {
+                    onLoadAsset.OnNext(resourcePath);
+                }
             }
             else
             {
-                var filePath = ConvertCriFilePath(resourcePath);
+                Debug.LogErrorFormat("File not found.\n{0}", filePath);
+			}
 
-                if (!LocalMode && !simulateMode)
-                {
-                    if (!CheckAssetVersion(resourcePath, filePath))
-                    {
-                        var assetPath = PathUtility.Combine(resourceDirectory, resourcePath);
-
-                        var sw = System.Diagnostics.Stopwatch.StartNew();
-
-                        var updateYield = UpdateAsset(resourcePath).ToYieldInstruction(false, yieldCancel.Token);
-
-                        while (!updateYield.IsDone)
-                        {
-                            yield return null;
-                        }
-
-                        sw.Stop();
-
-                        if (LogEnable && UnityConsole.Enable)
-                        {
-                            var assetInfo = GetAssetInfo(resourcePath);
-
-                            if (assetInfo != null)
-                            {
-                                var builder = new StringBuilder();
-
-                                builder.AppendFormat("Update: {0} ({1:F2}ms)", Path.GetFileName(filePath), sw.Elapsed.TotalMilliseconds).AppendLine();
-                                builder.AppendLine();
-                                builder.AppendFormat("LoadPath = {0}", assetPath).AppendLine();
-                                builder.AppendFormat("FileName = {0}", assetInfo.FileName).AppendLine();
-
-                                if (!string.IsNullOrEmpty(assetInfo.Hash))
-                                {
-                                    builder.AppendFormat("Hash = {0}", assetInfo.Hash).AppendLine();
-                                }
-
-                                UnityConsole.Event(ConsoleEventName, ConsoleEventColor, builder.ToString());
-                            }
-                        }
-                    }
-                }
-
-                filePath = PathUtility.GetPathWithoutExtension(filePath) + CriAssetDefinition.UsmExtension;
-
-                if (File.Exists(filePath))
-                {
-                    var movieInfo = new ManaInfo(filePath);
-
-                    observer.OnNext(movieInfo);
-
-                    if (onLoadAsset != null)
-                    {
-                        onLoadAsset.OnNext(resourcePath);
-                    }
-                }
-                else
-                {
-                    Debug.LogErrorFormat("File not found.\n{0}", filePath);
-
-                    observer.OnError(new FileNotFoundException(filePath));
-                }
-            }
-
-            observer.OnCompleted();
+            return movieInfo;
         }
 
         #endif

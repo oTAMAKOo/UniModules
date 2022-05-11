@@ -1,4 +1,4 @@
-﻿
+
 #if ENABLE_MOONSHARP
 
 using UnityEngine;
@@ -6,6 +6,7 @@ using System;
 using System.Linq;
 using System.IO;
 using System.Collections.Generic;
+using Cysharp.Threading.Tasks;
 using UniRx;
 using Extensions;
 using Modules.ExternalResource;
@@ -108,6 +109,7 @@ namespace Modules.AdvKit
             if (soundInfo == null) { return; }
 
             ExternalResources.GetCueInfo(soundInfo.ResourcePath, soundInfo.CueName)
+				.ToObservable()
                 .Subscribe(x => bgm = SoundManagement.SoundManagement.Play(SoundType.Bgm, x))
                 .AddTo(Disposable);
         }
@@ -188,6 +190,7 @@ namespace Modules.AdvKit
             };
 
             ExternalResources.GetCueInfo(soundInfo.ResourcePath, soundInfo.CueName)
+				.ToObservable()
                 .Subscribe(x => onCueReady(x))
                 .AddTo(Disposable);
         }

@@ -1,12 +1,11 @@
 
 using UnityEngine;
 using System;
-using System.Collections;
 using System.Linq;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
-using UniRx;
+using Cysharp.Threading.Tasks;
 using Extensions;
 using Modules.Devkit.Console;
 
@@ -22,8 +21,8 @@ namespace Modules.ExternalResource
 
         //----- method -----
 
-        /// <summary> �S�L���b�V���폜. </summary>
-        public IObservable<Unit> DeleteAllCache()
+        /// <summary> 全キャッシュ削除. </summary>
+        public async UniTask DeleteAllCache()
         {
             ReleaseManagedAssets();
 
@@ -35,11 +34,11 @@ namespace Modules.ExternalResource
                 .Select(x => PathUtility.ConvertPathSeparator(x))
                 .ToArray();
 
-            return Observable.FromMicroCoroutine(() => DeleteCacheFiles(InstallDirectory, cacheFiles));
+            await DeleteCacheFiles(InstallDirectory, cacheFiles);
         }
 
-        /// <summary> �s�v�ɂȂ����L���b�V���폜. </summary>
-        public IObservable<Unit> DeleteDisUsedCache()
+        /// <summary> 不要になったキャッシュ削除. </summary>
+        public async UniTask DeleteDisUsedCache()
         {
             var targetFilePaths = new List<string>();
 
@@ -51,11 +50,11 @@ namespace Modules.ExternalResource
 
             #endif
 
-            return Observable.FromMicroCoroutine(() => DeleteCacheFiles(InstallDirectory, targetFilePaths.ToArray()));
+            await DeleteCacheFiles(InstallDirectory, targetFilePaths.ToArray());
         }
 
-        /// <summary> �w�肳�ꂽ�L���b�V���폜. </summary>
-        public IObservable<Unit> DeleteCache(AssetInfo[] assetInfos)
+        /// <summary> 指定されたキャッシュ削除. </summary>
+        public async UniTask DeleteCache(AssetInfo[] assetInfos)
         {
             var targetFilePaths = new List<string>();
 
@@ -85,16 +84,16 @@ namespace Modules.ExternalResource
                 }
             }
 
-            return Observable.FromMicroCoroutine(() => DeleteCacheFiles(InstallDirectory, targetFilePaths.ToArray()));
+            await DeleteCacheFiles(InstallDirectory, targetFilePaths.ToArray());
         }
 
-        private IEnumerator DeleteCacheFiles(string installDir, string[] filePaths)
+        private async UniTask DeleteCacheFiles(string installDir, string[] filePaths)
         {
-            if (filePaths.IsEmpty()) { yield break; }
+            if (filePaths.IsEmpty()) { return; }
 
             var builder = new StringBuilder();
 
-            // �t�@�C���폜.
+            // ファイル削除.
 
             Action<string> deleteFile = filePath =>
             {
@@ -135,16 +134,16 @@ namespace Modules.ExternalResource
                     deleteFile.Invoke(path);
                 }
                 
-                yield return null;
+                await UniTask.NextFrame();
             }
 
-            // ��f�B���N�g���폜.
+            // 空ディレクトリ削除.
 
             var deleteDirectorys = DirectoryUtility.DeleteEmpty(installDir);
 
             deleteDirectorys.ForEach(x => builder.AppendLine(x));
 
-            // ���O.
+            // ログ.
 
             sw.Stop();
 
@@ -156,7 +155,7 @@ namespace Modules.ExternalResource
             }
         }
 
-        /// <summary> �Ǘ����̃t�@�C�������. </summary>
+        /// <summary> 管理中のファイルを解放. </summary>
         private void ReleaseManagedAssets()
         {
             #if ENABLE_CRIWARE_ADX

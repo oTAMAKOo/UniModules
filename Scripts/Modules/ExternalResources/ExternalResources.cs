@@ -1,10 +1,10 @@
-﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿
+﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿
 using UnityEngine;
 using System;
 using System.IO;
-using System.Collections;
 using System.Linq;
 using System.Collections.Generic;
+using Cysharp.Threading.Tasks;
 using UniRx;
 using Extensions;
 using Modules.Devkit.Console;
@@ -230,14 +230,9 @@ namespace Modules.ExternalResource
         /// <summary>
         /// マニフェストファイルを更新.
         /// </summary>
-        public IObservable<Unit> UpdateManifest()
+        public async UniTask UpdateManifest()
         {
-            return Observable.FromMicroCoroutine(() => UpdateManifestInternal());
-        }
-
-        private IEnumerator UpdateManifestInternal()
-        {
-            var sw = System.Diagnostics.Stopwatch.StartNew();
+	        var sw = System.Diagnostics.Stopwatch.StartNew();
 
             // アセット管理情報読み込み.
 
@@ -246,27 +241,17 @@ namespace Modules.ExternalResource
             var assetPath = PathUtility.Combine(resourceDirectory, manifestAssetInfo.ResourcePath);
 
             // AssetInfoManifestは常に最新に保たなくてはいけない為必ずダウンロードする.
-            var loadYield = assetBundleManager.UpdateAssetInfoManifest()
-                .SelectMany(_ => assetBundleManager.LoadAsset<AssetInfoManifest>(manifestAssetInfo, assetPath))
-                .ToYieldInstruction(false);
+            await assetBundleManager.UpdateAssetInfoManifest().ToUniTask();
 
-            while (!loadYield.IsDone)
-            {
-                yield return null;
-            }
+            var manifest = await assetBundleManager.LoadAsset<AssetInfoManifest>(manifestAssetInfo, assetPath);
 
-            if (loadYield.HasError || loadYield.IsCanceled)
-            {
-                yield break;
-            }
-
-            SetAssetInfoManifest(loadYield.Result);
+            SetAssetInfoManifest(manifest);
 
             sw.Stop();
 
             if (LogEnable && UnityConsole.Enable)
             {
-                var message = string.Format("UpdateManifest: ({0:F2}ms)", sw.Elapsed.TotalMilliseconds);
+                var message = $"UpdateManifest: ({sw.Elapsed.TotalMilliseconds:F2}ms)";
 
                 UnityConsole.Event(ConsoleEventName, ConsoleEventColor, message);
             }
@@ -282,30 +267,27 @@ namespace Modules.ExternalResource
             #endif
 
             // 不要になったファイル削除.
-            var deleteCacheYield = DeleteDisUsedCache().ToYieldInstruction(false);
-
-            while (!deleteCacheYield.IsDone)
+            try
             {
-                yield return null;
+	            await DeleteDisUsedCache();
             }
-
-            if (deleteCacheYield.HasError)
+            catch (Exception e)
             {
-                Debug.LogException(deleteCacheYield.Error);
+	            Debug.LogException(e);
             }
         }
 
         /// <summary>
         /// アセットを更新.
         /// </summary>
-        public static IObservable<Unit> UpdateAsset(string resourcePath, IProgress<float> progress = null)
+        public static async UniTask UpdateAsset(string resourcePath, IProgress<float> progress = null)
         {
-            return Observable.FromCoroutine(() => instance.UpdateAssetInternal(resourcePath, progress));
+            await instance.UpdateAssetInternal(resourcePath, progress);
         }
 
-        private IEnumerator UpdateAssetInternal(string resourcePath, IProgress<float> progress = null)
+        private async UniTask UpdateAssetInternal(string resourcePath, IProgress<float> progress = null)
         {
-            if (string.IsNullOrEmpty(resourcePath)) { yield break; }
+            if (string.IsNullOrEmpty(resourcePath)) { return; }
 
             var assetInfo = GetAssetInfo(resourcePath);
 
@@ -315,7 +297,7 @@ namespace Modules.ExternalResource
 
                 OnError(exception);
 
-                yield break;
+                return;
             }
 
             // 外部処理.
@@ -328,14 +310,14 @@ namespace Modules.ExternalResource
 
                 while (!updateRequestYield.IsDone)
                 {
-                    yield return null;
+	                await UniTask.NextFrame();
                 }
 
                 if (updateRequestYield.HasError)
                 {
                     OnError(updateRequestYield.Error);
 
-                    yield break;
+                    return;
                 }
             }
 
@@ -353,12 +335,12 @@ namespace Modules.ExternalResource
 
                     while (!updateCriAssetYield.IsDone)
                     {
-                        yield return null;
+	                    await UniTask.NextFrame();
                     }
 
                     if (!updateCriAssetYield.HasResult || !updateCriAssetYield.Result)
                     {
-                        yield break;
+	                    return;
                     }
                 }
                 else
@@ -374,7 +356,7 @@ namespace Modules.ExternalResource
                             progress.Report(1f);
                         }
 
-                        yield break;
+                        return;
                     }
 
                     var updateYield = instance.assetBundleManager
@@ -383,12 +365,12 @@ namespace Modules.ExternalResource
 
                     while (!updateYield.IsDone)
                     {
-                        yield return null;
+	                    await UniTask.NextFrame();
                     }
 
                     if (updateYield.IsCanceled || updateYield.HasError)
                     {
-                        yield break;
+	                    return;
                     }
                 }
 
@@ -406,14 +388,14 @@ namespace Modules.ExternalResource
 
                 while (!updateFinishYield.IsDone)
                 {
-                    yield return null;
+	                await UniTask.NextFrame();
                 }
 
                 if (updateFinishYield.HasError)
                 {
                     OnError(updateFinishYield.Error);
 
-                    yield break;
+                    return;
                 }
             }
 

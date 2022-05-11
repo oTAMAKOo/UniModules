@@ -1,10 +1,10 @@
-﻿
+
 using UnityEngine;
 using System;
-using System.Collections;
 using System.Text;
 using System.IO;
 using System.Linq;
+using Cysharp.Threading.Tasks;
 using UniRx;
 using Modules.Devkit.Console;
 using Modules.AssetBundles;
@@ -37,12 +37,12 @@ namespace Modules.ExternalResource
         }
 
         /// <summary> AssetBundleを読み込み (非同期) </summary>
-        public static IObservable<T> LoadAsset<T>(string resourcePath, bool autoUnload = true) where T : UnityEngine.Object
+        public static async UniTask<T> LoadAsset<T>(string resourcePath, bool autoUnload = true) where T : UnityEngine.Object
         {
-            return Observable.FromMicroCoroutine<T>(observer => Instance.LoadAssetInternal(observer, resourcePath, autoUnload));
+            return await Instance.LoadAssetInternal<T>(resourcePath, autoUnload);
         }
 
-        private IEnumerator LoadAssetInternal<T>(IObserver<T> observer, string resourcePath, bool autoUnload) where T : UnityEngine.Object
+        private async UniTask<T> LoadAssetInternal<T>(string resourcePath, bool autoUnload) where T : UnityEngine.Object
         {
             System.Diagnostics.Stopwatch sw = null;
 
@@ -53,10 +53,8 @@ namespace Modules.ExternalResource
                 var exception = new Exception("AssetInfoManifest is null.");
 
                 OnError(exception);
-
-                observer.OnError(exception);
-
-                yield break;
+				
+				return null;
             }
 
             var assetInfo = GetAssetInfo(resourcePath);
@@ -67,32 +65,28 @@ namespace Modules.ExternalResource
 
                 OnError(exception);
 
-                observer.OnError(exception);
-
-                yield break;
-            }
+				return null;
+			}
 
             // 外部処理.
 
-            if (instance.loadAssetHandler != null)
+            if (loadAssetHandler != null)
             {
-                var loadRequestYield = instance.loadAssetHandler
+                var loadRequestYield = loadAssetHandler
                     .OnLoadRequest(assetInfo)
                     .ToYieldInstruction(false, yieldCancel.Token);
 
                 while (!loadRequestYield.IsDone)
                 {
-                    yield return null;
+                    await UniTask.NextFrame();
                 }
 
                 if (loadRequestYield.HasError)
                 {
                     OnError(loadRequestYield.Error);
 
-                    observer.OnError(loadRequestYield.Error);
-
-                    yield break;
-                }
+					return null;
+				}
             }
 
             // 読み込み.
@@ -104,23 +98,23 @@ namespace Modules.ExternalResource
                 // ローカルバージョンが古い場合はダウンロード.
                 if (!CheckAssetBundleVersion(assetInfo))
                 {
-                    var downloadYield = UpdateAsset(resourcePath).ToYieldInstruction(false, yieldCancel.Token);
+                    var downloadYield = UpdateAsset(resourcePath)
+						.ToObservable()
+						.ToYieldInstruction(false, yieldCancel.Token);
 
                     // 読み込み実行 (読み込み中の場合は読み込み待ちのObservableが返る).
                     sw = System.Diagnostics.Stopwatch.StartNew();
 
                     while (!downloadYield.IsDone)
                     {
-                        yield return null;
+                        await UniTask.NextFrame();
                     }
 
                     if (downloadYield.HasError)
                     {
                         OnError(downloadYield.Error);
 
-                        observer.OnError(downloadYield.Error);
-
-                        yield break;
+						return null;
                     }
 
                     sw.Stop();
@@ -164,7 +158,7 @@ namespace Modules.ExternalResource
 
             while (!loadYield.IsDone)
             {
-                yield return null;
+				await UniTask.NextFrame();
             }
 
             result = loadYield.Result;
@@ -186,16 +180,14 @@ namespace Modules.ExternalResource
 
                 while (!loadFinishYield.IsDone)
                 {
-                    yield return null;
+					await UniTask.NextFrame();
                 }
 
                 if (loadFinishYield.HasError)
                 {
                     OnError(loadFinishYield.Error);
 
-                    observer.OnError(loadFinishYield.Error);
-
-                    yield break;
+					return null;
                 }
             }
 
@@ -243,8 +235,7 @@ namespace Modules.ExternalResource
                 }
             }
 
-            observer.OnNext(result);
-            observer.OnCompleted();
+			return result;
         }
 
         /// <summary> AssetBundleを解放 </summary>
