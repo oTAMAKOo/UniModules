@@ -1,6 +1,7 @@
-﻿
+
 using UnityEngine;
 using System;
+using Cysharp.Threading.Tasks;
 using UniRx;
 using Extensions;
 using Modules.Particle;
@@ -41,7 +42,7 @@ namespace Modules.AdvKit.Standard
                 particlePlayer.SortingOrder = sortingOrder.Value;
             }
 
-            return particlePlayer.Play(restart).AsUnitObservable();
+            return particlePlayer.Play(restart).ToObservable().AsUnitObservable();
         }
 
         #endif

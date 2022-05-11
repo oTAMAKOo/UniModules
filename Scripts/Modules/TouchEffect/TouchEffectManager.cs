@@ -1,7 +1,8 @@
-﻿﻿
+﻿
 using UnityEngine;
 using System.Linq;
 using System.Collections.Generic;
+using Cysharp.Threading.Tasks;
 using UniRx;
 using Extensions;
 using Modules.Particle;
@@ -144,7 +145,7 @@ namespace Modules.TouchEffect
             {
                 SetTouchEffectPosition(particleController, screenPosition);
 
-                particleController.Play().Subscribe().AddTo(this);
+                particleController.Play().Forget();
             }
         }
 
@@ -179,7 +180,7 @@ namespace Modules.TouchEffect
             
             SetTouchEffectPosition(particleController, screenPosition);
 
-            particleController.Play().Subscribe().AddTo(this);
+            particleController.Play().Forget();
         }
 
         /// <summary>
