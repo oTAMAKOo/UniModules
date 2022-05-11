@@ -1,8 +1,8 @@
-﻿
+
 using UnityEngine;
 using System;
-using System.Collections;
 using System.Linq;
+using Cysharp.Threading.Tasks;
 using UniRx;
 using Extensions;
 using Modules.StateMachine;
@@ -148,9 +148,9 @@ namespace Modules.Animation
             Stop();
         }
 
-        public IObservable<Unit> Play(string animationName, int layer = -1, float normalizedTime = float.NegativeInfinity, bool immediate = true)
+        public async UniTask Play(string animationName, int layer = -1, float normalizedTime = float.NegativeInfinity, bool immediate = true)
         {
-            if (string.IsNullOrEmpty(animationName)) { return Observable.ReturnUnit(); }
+            if (string.IsNullOrEmpty(animationName)) { return; }
 
             UnityUtility.SetActive(gameObject, true);
 
@@ -159,7 +159,7 @@ namespace Modules.Animation
             {
                 Debug.LogErrorFormat("Animation can't play not active in hierarchy.\n{0}", gameObject.transform.name);
 
-                return Observable.ReturnUnit();
+                return;
             }
 
             this.layer = layer;
@@ -168,29 +168,28 @@ namespace Modules.Animation
 
             var hash = Animator.StringToHash(CurrentAnimationName);
 
-            if (Animator.HasState(GetCurrentLayerIndex(), hash))
+            if (!Animator.HasState(GetCurrentLayerIndex(), hash))
             {
-                PlayAnimator(hash, layer, normalizedTime);
+				CurrentAnimationName = null;
 
-                // 指定アニメーションへ遷移待ち.
-                // FromMicroCoroutineは次のフレームから始まるので即時遷移はこのタイミングで実行する.
-                if (immediate)
-                {
-                    if (!IsCurrentState(CurrentAnimationName, GetCurrentLayerIndex()))
-                    {
-                        WaitTransitionStateImmediate();
-                    }
-                }
+				Debug.LogErrorFormat("Animation State Not found. {0}", animationName);
 
-                return Observable.FromMicroCoroutine(() => PlayInternal(hash, layer, normalizedTime, immediate));
+				return;
             }
 
-            CurrentAnimationName = null;
+			PlayAnimator(hash, layer, normalizedTime);
 
-            Debug.LogErrorFormat("Animation State Not found. {0}", animationName);
+			// 指定アニメーションへ遷移待ち.
+			if (immediate)
+			{
+				if (!IsCurrentState(CurrentAnimationName, GetCurrentLayerIndex()))
+				{
+					WaitTransitionStateImmediate();
+				}
+			}
 
-            return Observable.ReturnUnit();
-        }
+			await PlayInternal(hash, layer, normalizedTime, immediate);
+		}
 
         private void PlayAnimator(int hash, int layer, float normalizedTime)
         {
@@ -213,7 +212,7 @@ namespace Modules.Animation
             return stateInfo.IsName(animationName);
         }
 
-        private IEnumerator PlayInternal(int hash, int layer, float normalizedTime, bool immediate)
+        private async UniTask PlayInternal(int hash, int layer, float normalizedTime, bool immediate)
         {
             while (true)
             {
@@ -222,12 +221,7 @@ namespace Modules.Animation
                 // 指定アニメーションへ遷移待ち.
                 if (!IsCurrentState(CurrentAnimationName, GetCurrentLayerIndex()))
                 {
-                    var waitTransitionStateYield = Observable.FromMicroCoroutine(() => WaitTransitionState()).ToYieldInstruction();
-
-                    while (!waitTransitionStateYield.IsDone)
-                    {
-                        yield return null;
-                    }
+                    await WaitTransitionState();
                 }
 
                 // アニメーション開始通知.
@@ -237,16 +231,11 @@ namespace Modules.Animation
                 }
 
                 // アニメーションの終了待ち.
-                var waitForEndYield = Observable.FromMicroCoroutine(() => WaitForEndOfAnimation()).ToYieldInstruction();
-
-                while (!waitForEndYield.IsDone)
-                {
-                    yield return null;
-                }
+                await WaitForEndOfAnimation();
 
                 if (endActionType != EndActionType.Loop) { break; }
 
-                if (State == State.Stop) { yield break; }
+                if (State == State.Stop) { return; }
 
                 // ループ再生の場合は再度再生を行う.
                 PlayAnimator(hash, layer, normalizedTime);
@@ -256,20 +245,20 @@ namespace Modules.Animation
         }
 
         // 指定アニメーションへ遷移待ち.
-        private IEnumerator WaitTransitionState()
+        private async UniTask WaitTransitionState()
         {
             // ステートの遷移待ち.
             while (true)
             {
-                if (UnityUtility.IsNull(this)) { yield break; }
+                if (UnityUtility.IsNull(this)) { return; }
 
-                if (UnityUtility.IsNull(gameObject)) { yield break; }
+                if (UnityUtility.IsNull(gameObject)) { return; }
 
                 if (!UnityUtility.IsActiveInHierarchy(gameObject)) { break; }
 
                 if (IsCurrentState(CurrentAnimationName, GetCurrentLayerIndex())) { break; }
 
-                yield return null;
+				await UniTask.NextFrame();
             }
         }
 
@@ -291,23 +280,23 @@ namespace Modules.Animation
         }
 
         // アニメーションの終了待ち.
-        private IEnumerator WaitForEndOfAnimation()
+        private async UniTask WaitForEndOfAnimation()
         {
-            if (!isInitialized) { yield break; }
+            if (!isInitialized) { return; }
 
             waitStateTransition = true;
 
             while (true)
             {
-                if (State == State.Stop) { yield break; }
+                if (State == State.Stop) { return; }
 
                 if (State == State.Play)
                 {
                     // 終了監視.
                     if (!IsAlive()) { break; }
                 }
-
-                yield return null;
+				
+				await UniTask.NextFrame();
             }
         }
 
@@ -399,29 +388,26 @@ namespace Modules.Animation
         /// <param name="parameters"></param>
         public void SetParameters(params StateMachineParameter[] parameters)
         {
-            DoLazyFunc(animator =>
-                {
-                    foreach (var parameter in parameters)
-                    {
-                        parameter.SetParameter(animator);
-                    }
-                    return Unit.Default;
-                })
-            .Subscribe()
-            .AddTo(this);
+			Func<Animator, Unit> func = animator =>
+			{
+				foreach (var parameter in parameters)
+				{
+					parameter.SetParameter(animator);
+				}
+
+				return Unit.Default;
+			};
+
+            DoLazyFunc(func).Forget();
         }
 
         /// <summary>
         /// 指定した型の<see cref="StateMachineBehaviour"/>をすべて取得.
         /// <see cref="Animator"/>の初期化が完了するまで取得出来ないため、非同期で取得.
         /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <returns></returns>
-        public IObservable<T[]> GetStateMachineBehavioursAsync<T>() where T : StateMachineBehaviour
+		public async UniTask<T[]> GetStateMachineBehavioursAsync<T>() where T : StateMachineBehaviour
         {
-            return DoLazyFunc(x => x.GetBehaviours<T>())
-                .SelectMany(x => x)
-                .ToArray();
+			return await DoLazyFunc(x => x.GetBehaviours<T>());
         }
 
         private void SetPauseState(bool pause)
@@ -490,20 +476,18 @@ namespace Modules.Animation
             return layer == -1 ? 0 : layer;
         }
 
-        private IObservable<TResult> DoLazyFunc<TResult>(Func<Animator, TResult> func)
+        private async UniTask<TResult> DoLazyFunc<TResult>(Func<Animator, TResult> func)
         {
             // 初期化済の場合は即座に実行.
             if (Animator.isInitialized)
             {
-                return Observable.Return(func(Animator));
+                return func(Animator);
             }
 
             // 初期化済でない場合は初期化完了を待つ.
-            // これは非アクティブでも回って欲しいのであえて Observable.EveryUpdateを使う.
-            return Observable.EveryUpdate()
-                .SkipWhile(_ => !Animator.isInitialized)
-                .Take(1)
-                .Select(_ => func(Animator));
+			await UniTask.WaitUntil(() => Animator.isInitialized);
+
+            return func(Animator);
         }
 
         public IObservable<AnimationPlayer> OnEnterAnimationAsObservable()

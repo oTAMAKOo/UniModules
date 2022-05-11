@@ -1,8 +1,9 @@
-﻿
+
 #if ENABLE_MOONSHARP
 
 using UnityEngine;
 using System;
+using Cysharp.Threading.Tasks;
 using UniRx;
 using Extensions;
 using Modules.Animation;
@@ -52,6 +53,7 @@ namespace Modules.AdvKit.Standard
                         };
 
                         animationPlayer.Play(animation)
+							.ToObservable()
                             .Subscribe(_ => onComplete())
                             .AddTo(Disposable);
                     }
