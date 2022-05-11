@@ -1,4 +1,4 @@
-﻿﻿﻿﻿﻿﻿
+﻿﻿﻿﻿﻿
 using UnityEngine;
 using UnityEditor;
 using UnityEditorInternal;
@@ -6,6 +6,7 @@ using Unity.Linq;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Cysharp.Threading.Tasks;
 using UniRx;
 using Extensions;
 using Extensions.Devkit;
@@ -186,6 +187,7 @@ namespace Modules.Particle
                                     Reflection.InvokePrivateMethod(instance, "RunCollectContents");
 
                                     emulateDisposable = instance.Play()
+										.ToObservable()
                                         .Subscribe(_ =>
                                             {
                                                 instance.Stop(true, true);
