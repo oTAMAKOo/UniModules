@@ -1,15 +1,14 @@
 
 using UnityEngine;
 using UnityEngine.UI;
-using UnityEngine.EventSystems;
-using Extensions;
 using Extensions.Serialize;
+using UniRx;
 
 namespace Modules.UI.ScreenRotation
 {
-	[ExecuteAlways]
+    [ExecuteAlways]
 	[RequireComponent(typeof(RectTransform))]
-	public sealed class RotationRoot : UIBehaviour
+	public sealed class RotationRoot : MonoBehaviour
     {
         //----- params -----
 
@@ -44,45 +43,60 @@ namespace Modules.UI.ScreenRotation
 
         //----- method -----
 		
-		protected override void Start()
+		void Awake()
 		{
-			base.Start();
-
-			if (!ignoreManage)
-			{
-				RotationManager.Instance.Add(this);
-			}
+            if (Application.isPlaying)
+            {
+                if (!ignoreManage)
+                {
+                    RotationManager.Instance.Add(this);
+                }
+            }
 		}
 
-		protected override void OnDestroy()
+		void OnDestroy()
 		{
-			base.OnDestroy();
-
-			if (!ignoreManage)
-			{
-				RotationManager.Instance.Remove(this);
-			}
+            if (Application.isPlaying)
+            {
+                if (!ignoreManage)
+                {
+                    RotationManager.Instance.Remove(this);
+                }
+            }
 		}
 
-		protected override void OnEnable()
+        void OnEnable()
 		{
-			base.OnEnable();
-
-			Apply();
-		}
+            // OnEnableのタイミングでApplyしてもRectTransformに反映されないので最初のUpdateで実行.
+            Observable.EveryUpdate()
+                .First()
+                .TakeUntilDisable(this)
+                .Subscribe(_ => Apply())
+                .AddTo(this);
+        }
 
 		private void SetOriginSize()
 		{
 			var rt = transform as RectTransform;
 
+            if (originWidth == null)
+            {
+                originWidth = new FloatNullable(null);
+            }
+
 			if (!originWidth.HasValue)
 			{
-				originWidth.Value = rt.GetWidth();
+				originWidth.Value = rt.sizeDelta.x;
 			}
 
-			if (!originHeight.HasValue)
+            if (originHeight == null)
+            {
+                originHeight = new FloatNullable(null);
+            }
+
+            if (!originHeight.HasValue)
 			{
-				originHeight.Value = rt.GetHeight();
+				originHeight.Value = rt.sizeDelta.y;
 			}
 		}
 
@@ -96,9 +110,8 @@ namespace Modules.UI.ScreenRotation
 			{
 				case RotateType.None:
 					{
-						rt.SetWidth(originWidth.Value);
-						rt.SetHeight(originHeight.Value);
-						rt.rotation = Quaternion.Euler(0f, 0f, 0f);
+                        rt.sizeDelta = new Vector2(originWidth.Value, originHeight.Value);
+						rt.localRotation = Quaternion.Euler(0f, 0f, 0f);
 
 						originWidth = null;
 						originHeight = null;
@@ -107,30 +120,27 @@ namespace Modules.UI.ScreenRotation
 
 				case RotateType.Degree90:
 					{
-						rt.SetWidth(originHeight.Value);
-						rt.SetHeight(originWidth.Value);
-						rt.rotation = Quaternion.Euler(0f, 0f, 90);
+						rt.sizeDelta = new Vector2(originHeight.Value, originWidth.Value);
+						rt.localRotation = Quaternion.Euler(0f, 0f, 90);
 					}
 					break;
 
 				case RotateType.DegreeMinus90:
 					{
-						rt.SetWidth(originHeight.Value);
-						rt.SetHeight(originWidth.Value);
-						rt.rotation = Quaternion.Euler(0f, 0f, -90);
+                        rt.sizeDelta = new Vector2(originHeight.Value, originWidth.Value);
+						rt.localRotation = Quaternion.Euler(0f, 0f, -90);
 					}
 					break;
 
 				case RotateType.Reverse:
 					{
-						rt.SetWidth(originWidth.Value);
-						rt.SetHeight(originHeight.Value);
-						rt.rotation = Quaternion.Euler(0f, 0f, 180);
+                        rt.sizeDelta = new Vector2(originWidth.Value, originHeight.Value);
+						rt.localRotation = Quaternion.Euler(0f, 0f, 180);
 					}
 					break;
 			}
-
-			LayoutRebuilder.ForceRebuildLayoutImmediate(rt);
+            
+            LayoutRebuilder.ForceRebuildLayoutImmediate(rt);
 		}
-	}
+    }
 }
