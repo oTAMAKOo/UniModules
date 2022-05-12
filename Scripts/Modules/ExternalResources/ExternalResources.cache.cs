@@ -30,11 +30,17 @@ namespace Modules.ExternalResource
 
             ClearVersion();
 
-            var cacheFiles =Directory.GetFiles(InstallDirectory, "*", SearchOption.AllDirectories)
-                .Select(x => PathUtility.ConvertPathSeparator(x))
-                .ToArray();
+			if (Directory.Exists(InstallDirectory))
+			{
+	            var cacheFiles = Directory.GetFiles(InstallDirectory, "*", SearchOption.AllDirectories)
+	                .Select(x => PathUtility.ConvertPathSeparator(x))
+	                .ToArray();
 
-            await DeleteCacheFiles(InstallDirectory, cacheFiles);
+				if (cacheFiles.Any())
+				{
+					await DeleteCacheFiles(InstallDirectory, cacheFiles);
+				}
+			}
         }
 
         /// <summary> 不要になったキャッシュ削除. </summary>
