@@ -1,4 +1,4 @@
-﻿
+
 using UnityEngine;
 using UnityEditor;
 using System;
@@ -110,7 +110,7 @@ namespace Modules.UI.TextColor
 
             if (updated)
             {
-                UnityEditorUtility.RegisterUndo("TextColorSettingInspector Undo", instance);
+                UnityEditorUtility.RegisterUndo(instance);
                 Reflection.SetPrivateField(instance, "colorInfos", list.ToArray());
             }
         }

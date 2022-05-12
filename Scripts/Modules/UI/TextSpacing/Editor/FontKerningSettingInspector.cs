@@ -1,4 +1,4 @@
-﻿
+
 using UnityEngine;
 using UnityEditor;
 using UnityEditorInternal;
@@ -149,7 +149,7 @@ namespace Modules.UI.TextEffect
 
             if (updated)
             {
-                UnityEditorUtility.RegisterUndo("FontKerningSettingInspector Undo", instance);
+                UnityEditorUtility.RegisterUndo(instance);
 
                 Reflection.SetPrivateField(instance, "font", font);
                 Reflection.SetPrivateField(instance, "infos", list.Where(x => x != null).ToArray());

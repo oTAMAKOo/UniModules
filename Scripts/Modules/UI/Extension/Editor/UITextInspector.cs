@@ -1,4 +1,4 @@
-﻿
+
 using UnityEditor;
 using System.Linq;
 using Extensions;
@@ -43,7 +43,7 @@ namespace Modules.UI.Extension
 
                 if (EditorGUI.EndChangeCheck())
                 {
-                    UnityEditorUtility.RegisterUndo("UITextInspector-Undo", instance);
+                    UnityEditorUtility.RegisterUndo(instance);
 
                     current = infos[select];
                     instance.SetColor(current.Type);

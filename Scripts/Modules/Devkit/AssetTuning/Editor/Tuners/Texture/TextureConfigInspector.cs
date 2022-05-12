@@ -181,35 +181,35 @@ namespace Modules.Devkit.AssetTuning
 
         private void SaveCompressFolders(Object[] folders)
         {
-            UnityEditorUtility.RegisterUndo("TextureAssetTunerConfigInspector-Undo", instance);
+            UnityEditorUtility.RegisterUndo(instance);
 
             Reflection.SetPrivateField(instance, "compressFolders", folders);
         }
 
         private void SaveIgnoreCompressFolders(string[] folders)
         {
-            UnityEditorUtility.RegisterUndo("TextureAssetTunerConfigInspector-Undo", instance);
+            UnityEditorUtility.RegisterUndo(instance);
 
             Reflection.SetPrivateField(instance, "ignoreCompressFolders", folders);
         }
 
         private void SaveSpriteFolders(Object[] folders)
         {
-            UnityEditorUtility.RegisterUndo("TextureAssetTunerConfigInspector-Undo", instance);
+            UnityEditorUtility.RegisterUndo(instance);
 
             Reflection.SetPrivateField(instance, "spriteFolders", folders);
         }
 
         private void SaveSpriteFolderNames(string[] folderNames)
         {
-            UnityEditorUtility.RegisterUndo("TextureAssetTunerConfigInspector-Undo", instance);
+            UnityEditorUtility.RegisterUndo(instance);
 
             Reflection.SetPrivateField(instance, "spriteFolderNames", folderNames);
         }
 
         private void SaveIgnoreSpriteFolders(string[] folders)
         {
-            UnityEditorUtility.RegisterUndo("TextureAssetTunerConfigInspector-Undo", instance);
+            UnityEditorUtility.RegisterUndo(instance);
 
             Reflection.SetPrivateField(instance, "ignoreSpriteFolders", folders);
         }

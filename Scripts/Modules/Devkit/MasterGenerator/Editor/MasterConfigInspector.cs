@@ -39,7 +39,7 @@ namespace Modules.Master
 
             if (EditorGUI.EndChangeCheck())
             {
-                UnityEditorUtility.RegisterUndo("MasterGeneratorConfigInspector Undo", instance);
+                UnityEditorUtility.RegisterUndo(instance);
 
                 Reflection.SetPrivateField(instance, "lz4Compression", lz4Compression);
             }
@@ -56,7 +56,7 @@ namespace Modules.Master
 
                 if (GUILayout.Button("Edit", EditorStyles.miniButton, GUILayout.Width(50f)))
                 {
-                    UnityEditorUtility.RegisterUndo("MasterGeneratorConfigInspector Undo", instance);
+                    UnityEditorUtility.RegisterUndo(instance);
 
                     var selectDirectory = EditorUtility.OpenFolderPanel("Select Directory", "", "");
 
@@ -83,7 +83,7 @@ namespace Modules.Master
 
                 if (GUILayout.Button("Edit", EditorStyles.miniButton, GUILayout.Width(50f)))
                 {
-                    UnityEditorUtility.RegisterUndo("MasterGeneratorConfigInspector Undo", instance);
+                    UnityEditorUtility.RegisterUndo(instance);
 
                     var selectDirectory = EditorUtility.OpenFolderPanel("Select Directory", "", "");
 
@@ -112,7 +112,7 @@ namespace Modules.Master
 
                 if (EditorGUI.EndChangeCheck())
                 {
-                    UnityEditorUtility.RegisterUndo("MasterGeneratorConfigInspector Undo", instance);
+                    UnityEditorUtility.RegisterUndo(instance);
 
                     Reflection.SetPrivateField(instance, "cryptoKey", cryptoKey);
                     Reflection.SetPrivateField(instance, "cryptoIv", cryptoIv);

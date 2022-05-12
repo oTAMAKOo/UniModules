@@ -1,22 +1,15 @@
-﻿
+
 using System;
 using System.IO;
-using System.Collections.Generic;
-using System.Net;
-using System.Text;
-using Cysharp.Threading.Tasks;
+using System.Net.Http;
+using System.Net.Http.Headers;
+using System.Threading.Tasks;
 
 namespace Modules.Devkit.ChatWork
 {
     public sealed class ChatWorkMessage
     {
         //----- params -----
-
-        private enum ContentType
-        {
-            Message,
-            File,
-        }
 
         //----- field -----
 
@@ -34,38 +27,30 @@ namespace Modules.Devkit.ChatWork
             this.roomId = roomId;
         }
 
-        public async UniTask<string> SendMessage(string message)
+        public async Task<string> SendMessage(string message, bool selfUnRead = false)
         {
-            var boundary = Environment.TickCount.ToString();
+            var requestMessage = CreateRequestMessage();
 
-            // 送信データ.
+            var requestUrl = GetRequestUrl();
 
-            var content = "body=" + Uri.EscapeDataString(message);
-            var bytes = Encoding.ASCII.GetBytes(content);
+            // 送信情報作成.
 
-            // WebRequest作成.
+            requestUrl += $"messages?body={message}&self_unread={(selfUnRead ? 1 : 0)}";
 
-            var webRequest = CreateWebRequest(ContentType.Message, boundary);
-
+            requestMessage.RequestUri = new Uri(requestUrl);
+            
             // 送信.
 
-            var messageId = await SendChatWork(webRequest, bytes);
-
-            return messageId;
+            return await SendRequest(requestMessage);
         }
 
-        public async UniTask<string> SendFile(string filePath, string displayName = null, string message = null)
+        public async Task<string> SendFile(string filePath, string displayName = null, string message = null)
         {
-            var boundary = Environment.TickCount.ToString();
+            if (!File.Exists(filePath)){ return null; }
 
-            // 送信データ.
+            // ファイル読み込み.
 
-            var fileBytes = new byte[0];
-
-            if (!File.Exists(filePath))
-            {
-                throw new FileNotFoundException();
-            }
+            var fileBytes = Array.Empty<byte>();
 
             using (var fileStream = new FileStream(filePath, FileMode.Open, FileAccess.Read))
             {
@@ -75,87 +60,101 @@ namespace Modules.Devkit.ChatWork
                 }
             }
 
-            if (string.IsNullOrEmpty(displayName))
+            var fileString = Convert.ToBase64String(fileBytes);
+
+            // 送信情報作成.
+
+            var requestMessage = CreateRequestMessage();
+
+            var requestUrl = GetRequestUrl();
+
+            bool selfUnRead = false;
+
+            requestUrl += $"files&self_unread={(selfUnRead ? 1 : 0)}";
+
+            requestMessage.RequestUri = new Uri(requestUrl);
+
+            var content = new MultipartFormDataContent();
+
+            // メッセージ.
+            if (!string.IsNullOrEmpty(message))
             {
-                displayName = Path.GetFileName(filePath);
+                var stringContent = new StringContent(message)
+                {
+                    Headers =
+                    {
+                        ContentDisposition = new ContentDispositionHeaderValue("form-data")
+                        {
+                            Name = "message",
+                        }
+                    }
+                };
+
+                content.Add(stringContent);
             }
 
-            var postData1 = "--------------------------" + boundary + "\r\n" +
-                            "Content-Disposition: form-data; name=\"file\"; filename=" + displayName + "\"\r\n" +
-                            "Content-Type: image/jpeg\r\n\r\n";
- 
-            var postData2 = "\r\n--------------------------" + boundary + "\r\n" +
-                            "Content-Disposition: form-data; name=\"message\"\r\n\r\n" +
-                            message + "\r\n" +
-                            "--------------------------" + boundary + "--";
-            
-            var postData = new List<byte>();
+            // ファイル.
 
-            postData.AddRange(Encoding.UTF8.GetBytes(postData1));
-            postData.AddRange(fileBytes);
-            postData.AddRange(Encoding.UTF8.GetBytes(postData2));
+            if (File.Exists(filePath))
+            {
+                if (string.IsNullOrEmpty(displayName))
+                {
+                    displayName = Path.GetFileName(filePath);
+                }
 
-            var bytes = postData.ToArray();
+                var fileContent = new StringContent($"data:application/octet-stream;name={displayName};base64,{fileString}")
+                {
+                    Headers =
+                    {
+                        ContentType = new MediaTypeHeaderValue("application/octet-stream"),
+                        ContentDisposition = new ContentDispositionHeaderValue("form-data")
+                        {
+                            Name = "file",
+                            FileName = displayName,
+                        }
+                    }
+                };
 
-            // WebRequest作成.
-
-            var webRequest = CreateWebRequest(ContentType.File, boundary);
+                content.Add(fileContent);
+            }
 
             // 送信.
 
-            var messageId = await SendChatWork(webRequest, bytes);
-
-            return messageId;
+            return await SendRequest(requestMessage);
         }
 
-        private HttpWebRequest CreateWebRequest(ContentType contentType, string boundary)
+        private string GetRequestUrl()
         {
-            var content = string.Empty;
-
-            var url = $"https://api.chatwork.com/v2/rooms/{roomId}/";
-
-            switch (contentType)
-            {
-                case ContentType.Message:
-                    url += "messages";
-                    content = "application/x-www-form-urlencoded";
-                    break;
-
-                case ContentType.File:
-                    url += "files";
-                    content = "multipart/form-data; boundary=" + boundary;
-                    break;
-            }
-
-            var webRequest = (HttpWebRequest)WebRequest.Create(url);
-
-            webRequest.Method = "POST";
-            webRequest.Headers.Set("X-ChatWorkToken", apiToken);
-            webRequest.ContentType = content;
-
-            return webRequest;
+            return $"https://api.chatwork.com/v2/rooms/{roomId}/";
         }
 
-        private async UniTask<string> SendChatWork(HttpWebRequest webRequest, byte[] bytes)
+        private HttpRequestMessage CreateRequestMessage()
         {
-            webRequest.ContentLength = bytes.Length;
-
-            // データ送信.
-
-            using (var requestStream = await webRequest.GetRequestStreamAsync())
+            var requestMessage = new HttpRequestMessage
             {
-                await requestStream.WriteAsync(bytes, 0, bytes.Length);
-            }
+                Method = HttpMethod.Post,
+                Headers =
+                {
+                    { "Accept", "application/json" },
+                    { "X-ChatWorkToken", apiToken },
+                },
+            };
 
-            var response = await webRequest.GetResponseAsync();
-            
-            // 結果取得.
+            return requestMessage;
+        }
 
+        private async Task<string> SendRequest(HttpRequestMessage requestMessage)
+        {
             var result = string.Empty;
 
-            using(var sr = new StreamReader(response.GetResponseStream()))
+            using (var client = new HttpClient())
             {
-                result = await sr.ReadToEndAsync();
+                using (var response = await client.SendAsync(requestMessage))
+                {
+                    response.EnsureSuccessStatusCode();
+
+                    result = await response.Content.ReadAsStringAsync();
+                }
             }
 
             return result;

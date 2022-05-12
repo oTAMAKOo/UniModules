@@ -1,4 +1,4 @@
-﻿﻿﻿﻿﻿
+﻿﻿﻿﻿
 using UnityEngine;
 using UnityEditor;
 using UnityEditorInternal;
@@ -249,7 +249,7 @@ namespace Modules.Particle
 
                     if (EditorGUI.EndChangeCheck())
                     {
-                        UnityEditorUtility.RegisterUndo("ParticlePlayerInspector Undo", instance);
+                        UnityEditorUtility.RegisterUndo(instance);
 
                         Reflection.InvokePrivateMethod(instance, "RunCollectContents");
                         instance.SortingLayer = sortingLayerState;
@@ -272,7 +272,7 @@ namespace Modules.Particle
 
                     if (instance.SortingOrder != sortingOrderState)
                     {
-                        UnityEditorUtility.RegisterUndo("ParticlePlayerInspector Undo", instance);
+                        UnityEditorUtility.RegisterUndo(instance);
 
                         Reflection.InvokePrivateMethod(instance, "RunCollectContents");
                         instance.SortingOrder = sortingOrderState;
@@ -305,7 +305,7 @@ namespace Modules.Particle
 
                     if (EditorGUI.EndChangeCheck())
                     {
-                        UnityEditorUtility.RegisterUndo("ParticlePlayerInspector Undo", instance);
+                        UnityEditorUtility.RegisterUndo(instance);
 
                         Reflection.SetPrivateField(instance, "activateOnPlay", activateOnPlay);
                         Reflection.SetPrivateField(instance, "endActionType", endActionType);

@@ -1,4 +1,4 @@
-﻿
+
 using UnityEditor;
 using Extensions.Devkit;
 
@@ -32,7 +32,7 @@ namespace Modules.Shaders
 
             if (EditorGUI.EndChangeCheck())
             {
-                UnityEditorUtility.RegisterUndo("ShaderSetterInspector Undo", instance);
+                UnityEditorUtility.RegisterUndo(instance);
 
                 instance.Set(shaderName);
             }

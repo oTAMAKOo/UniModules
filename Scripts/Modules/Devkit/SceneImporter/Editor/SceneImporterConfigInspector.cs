@@ -1,4 +1,4 @@
-﻿﻿﻿
+﻿﻿
 using UnityEngine;
 using UnityEditor;
 using System;
@@ -52,7 +52,7 @@ namespace Modules.Devkit.SceneImporter
 
                 if (GUILayout.Button("Select", GUILayout.Width(60f), GUILayout.Height(contentHeight)))
                 {
-                    UnityEditorUtility.RegisterUndo("SceneImporterConfigInspector-Undo", instance);
+                    UnityEditorUtility.RegisterUndo(instance);
 
                     var initialScenePath = EditorUtility.OpenFilePanelWithFilters("Select Initial Scene", "Assets", new string[]{ "SceneFile", "unity" });
 
@@ -133,7 +133,7 @@ namespace Modules.Devkit.SceneImporter
                         .ToList();
 
                     Reflection.SetPrivateField(instance, "managedFolders", folders);
-                    UnityEditorUtility.RegisterUndo("SceneImporterSettingsObject Undo", instance);
+                    UnityEditorUtility.RegisterUndo(instance);
                 }
             }
         }

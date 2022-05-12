@@ -1,4 +1,4 @@
-﻿
+
 using UnityEngine;
 using UnityEditor;
 using System;
@@ -33,7 +33,7 @@ namespace Modules.UI.TextColor
 
             if (EditorGUI.EndChangeCheck())
             {
-                UnityEditorUtility.RegisterUndo("TextColorInspector Undo", instance);
+                UnityEditorUtility.RegisterUndo(instance);
 
                 instance.Setting = setting;
                 instance.TextColorName = null;
@@ -61,7 +61,7 @@ namespace Modules.UI.TextColor
 
                     if (EditorGUI.EndChangeCheck())
                     {
-                        UnityEditorUtility.RegisterUndo("TextColorInspector Undo", instance);
+                        UnityEditorUtility.RegisterUndo(instance);
 
                         var newTextColorName = string.Empty;
 

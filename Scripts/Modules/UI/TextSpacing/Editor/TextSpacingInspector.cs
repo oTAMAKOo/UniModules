@@ -1,4 +1,4 @@
-﻿
+
 using UnityEngine;
 using UnityEditor;
 using System.Linq;
@@ -35,7 +35,7 @@ namespace Modules.UI.TextEffect
 
             if (EditorGUI.EndChangeCheck())
             {
-                UnityEditorUtility.RegisterUndo("TextSpacingInspector Undo", instance);
+                UnityEditorUtility.RegisterUndo(instance);
                 instance.Tracking = spacing;
             }
             
@@ -67,7 +67,7 @@ namespace Modules.UI.TextEffect
                     {
                         var kerningSetting = 0 < selection ? settings.ElementAtOrDefault(selection - 1) : null;
 
-                        UnityEditorUtility.RegisterUndo("TextSpacingInspector Undo", instance);
+                        UnityEditorUtility.RegisterUndo(instance);
 
                         instance.KerningSetting = kerningSetting;
                     }

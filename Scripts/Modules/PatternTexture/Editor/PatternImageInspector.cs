@@ -1,4 +1,4 @@
-﻿
+
 using UnityEngine;
 using UnityEditor;
 using UnityEditorInternal;
@@ -36,7 +36,7 @@ namespace Modules.PatternTexture
 
             if(EditorGUI.EndChangeCheck())
             {
-                UnityEditorUtility.RegisterUndo("PatternImageInspector-Undo", instance);
+                UnityEditorUtility.RegisterUndo(instance);
                 instance.PatternTexture = patternTexture;
             }
 
@@ -49,7 +49,7 @@ namespace Modules.PatternTexture
 
                 if (EditorGUI.EndChangeCheck())
                 {
-                    UnityEditorUtility.RegisterUndo("PatternImageInspector-Undo", instance);
+                    UnityEditorUtility.RegisterUndo(instance);
                     instance.Color = color;
                 }
 
@@ -61,7 +61,7 @@ namespace Modules.PatternTexture
 
                 if (EditorGUI.EndChangeCheck())
                 {
-                    UnityEditorUtility.RegisterUndo("PatternImageInspector-Undo", instance);
+                    UnityEditorUtility.RegisterUndo(instance);
                     instance.Material = material;
                 }
 
@@ -77,7 +77,7 @@ namespace Modules.PatternTexture
 
                     if (EditorGUI.EndChangeCheck())
                     {
-                        UnityEditorUtility.RegisterUndo("PatternImageInspector-Undo", instance);
+                        UnityEditorUtility.RegisterUndo(instance);
                         instance.RaycastTarget = raycastTarget;
                     }
                 }
@@ -95,7 +95,7 @@ namespace Modules.PatternTexture
 
                 if (EditorGUI.EndChangeCheck())
                 {
-                    UnityEditorUtility.RegisterUndo("PatternImageInspector-Undo", instance);
+                    UnityEditorUtility.RegisterUndo(instance);
                     instance.maskable = maskable;
                 }
 
@@ -106,7 +106,7 @@ namespace Modules.PatternTexture
 
                 if (EditorGUI.EndChangeCheck())
                 {
-                    UnityEditorUtility.RegisterUndo("PatternImageInspector-Undo", instance);
+                    UnityEditorUtility.RegisterUndo(instance);
                     instance.CrossFade = crossFade;
                 }
 
@@ -118,7 +118,7 @@ namespace Modules.PatternTexture
 
                     if (EditorGUI.EndChangeCheck())
                     {
-                        UnityEditorUtility.RegisterUndo("PatternImageInspector-Undo", instance);
+                        UnityEditorUtility.RegisterUndo(instance);
                         instance.CrossFadeTime = crossFadeTime;
                     }
                 }

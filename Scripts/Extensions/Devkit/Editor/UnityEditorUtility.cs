@@ -19,11 +19,13 @@ namespace Extensions.Devkit
 
         public const string MetaFileExtension = ".meta";
 
-        /// <summary>
-        /// 編集履歴に登録.
-        /// </summary>
-        /// <param name="name"></param>
-        /// <param name="objects"></param>
+		/// <summary> 編集履歴に登録. </summary>
+		public static void RegisterUndo<T>(T target) where T : Object
+		{
+			RegisterUndo(typeof(T).FullName + " Undo", target);
+		}
+
+        /// <summary> 編集履歴に登録. </summary>
         public static void RegisterUndo(string name, params Object[] objects)
         {
             if (objects != null && objects.Length > 0)

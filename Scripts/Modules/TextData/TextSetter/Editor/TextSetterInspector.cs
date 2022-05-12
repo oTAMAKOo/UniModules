@@ -1,4 +1,4 @@
-﻿﻿
+﻿
 using UnityEngine;
 using UnityEditor;
 using System;
@@ -117,7 +117,7 @@ namespace Modules.TextData.Components
 
                         if (EditorGUI.EndChangeCheck())
                         {
-                            UnityEditorUtility.RegisterUndo("TextDataSetterInspector-Undo", instance);
+                            UnityEditorUtility.RegisterUndo(instance);
 
                             var selection = enumValues.ElementAtOrDefault(index);
 
@@ -177,7 +177,7 @@ namespace Modules.TextData.Components
 
                 if (EditorGUI.EndChangeCheck())
                 {
-                    UnityEditorUtility.RegisterUndo("TextDataSetterInspector-Undo", instance);
+                    UnityEditorUtility.RegisterUndo(instance);
                     
                     var newCategory = 1 <= categoryIndex ? categories[categoryIndex - 1] : null;
 
@@ -247,7 +247,7 @@ namespace Modules.TextData.Components
 
                 if (EditorGUI.EndChangeCheck())
                 {
-                    UnityEditorUtility.RegisterUndo("TextDataSetterInspector-Undo", instance);
+                    UnityEditorUtility.RegisterUndo(instance);
 
                     if (!string.IsNullOrEmpty(prevText))
                     {

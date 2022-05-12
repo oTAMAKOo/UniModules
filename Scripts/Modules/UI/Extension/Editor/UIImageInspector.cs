@@ -1,4 +1,4 @@
-﻿
+
 using System.Linq;
 using UnityEngine;
 using UnityEditor;
@@ -81,7 +81,7 @@ namespace Modules.UI.Extension
 
                 if (EditorGUI.EndChangeCheck())
                 {
-                    UnityEditorUtility.RegisterUndo("UIImageInspector-Undo", instance);
+                    UnityEditorUtility.RegisterUndo(instance);
 
                     var assetGuid = spriteAsset != null ? UnityEditorUtility.GetAssetGUID(spriteAsset.texture) : string.Empty;
 

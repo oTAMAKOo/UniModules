@@ -1,4 +1,4 @@
-﻿
+
 using UnityEngine;
 using UnityEditor;
 using Extensions;
@@ -63,7 +63,7 @@ namespace Modules.Animation
 
                 if (EditorGUI.EndChangeCheck())
                 {
-                    UnityEditorUtility.RegisterUndo("AnimationPlayerInspector Undo", instance);
+                    UnityEditorUtility.RegisterUndo(instance);
 
                     Reflection.SetPrivateField(instance, "stopOnAwake", stopOnAwake);
                     Reflection.SetPrivateField(instance, "ignoreTimeScale", ignoreTimeScale);

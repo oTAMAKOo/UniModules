@@ -1,4 +1,4 @@
-﻿
+
 using UnityEditor;
 using Extensions.Devkit;
 
@@ -25,7 +25,7 @@ namespace Modules.UI.Particle
 
             if (EditorGUI.EndChangeCheck())
             {
-                UnityEditorUtility.RegisterUndo("UIParticleSystemInspector-Undo", instance);
+                UnityEditorUtility.RegisterUndo(instance);
 
                 instance.UseOverrideMaterial = useOverrideMaterial;
             }

@@ -1,4 +1,4 @@
-﻿
+
 using UnityEngine;
 using UnityEditor;
 using System;
@@ -99,7 +99,7 @@ namespace Modules.UI.TextColorTag
 
             if (updated)
             {
-                UnityEditorUtility.RegisterUndo("TextColorTagSettingInspector Undo", instance);
+                UnityEditorUtility.RegisterUndo(instance);
                 Reflection.SetPrivateField(instance, "colorTagInfos", list.ToArray());
             }
         }

@@ -1,4 +1,4 @@
-﻿﻿﻿
+﻿﻿
 using UnityEngine;
 using UnityEditor;
 using System;
@@ -37,7 +37,7 @@ namespace Modules.UI.Reactive
 
             if (EditorGUI.EndChangeCheck())
             {
-                UnityEditorUtility.RegisterUndo("ButtonReactiveTextInspector Undo", instance);
+                UnityEditorUtility.RegisterUndo(instance);
                 Reflection.SetPrivateField(instance, "useShadow", useShadow);
             }
 
@@ -49,7 +49,7 @@ namespace Modules.UI.Reactive
 
             if (EditorGUI.EndChangeCheck())
             {
-                UnityEditorUtility.RegisterUndo("ButtonReactiveTextInspector Undo", instance);
+                UnityEditorUtility.RegisterUndo(instance);
                 Reflection.SetPrivateField(instance, "useOutline", useOutline);
             }
 
@@ -72,7 +72,7 @@ namespace Modules.UI.Reactive
 
                 if (EditorGUI.EndChangeCheck())
                 {
-                    UnityEditorUtility.RegisterUndo("ButtonReactiveTextInspector Undo", instance);
+                    UnityEditorUtility.RegisterUndo(instance);
                     Reflection.SetPrivateField(instance, "enableColor", enableColor);
                 }
 
@@ -86,7 +86,7 @@ namespace Modules.UI.Reactive
 
                 if (EditorGUI.EndChangeCheck())
                 {
-                    UnityEditorUtility.RegisterUndo("ButtonReactiveTextInspector Undo", instance);
+                    UnityEditorUtility.RegisterUndo(instance);
                     Reflection.SetPrivateField(instance, "disableColor", disableColor);
                 }
             }
@@ -107,7 +107,7 @@ namespace Modules.UI.Reactive
 
                     if (EditorGUI.EndChangeCheck())
                     {
-                        UnityEditorUtility.RegisterUndo("ButtonReactiveTextInspector Undo", instance);
+                        UnityEditorUtility.RegisterUndo(instance);
                         Reflection.SetPrivateField(instance, "enableShadowColor", enableShadowColor);
                     }
 
@@ -121,7 +121,7 @@ namespace Modules.UI.Reactive
 
                     if (EditorGUI.EndChangeCheck())
                     {
-                        UnityEditorUtility.RegisterUndo("ButtonReactiveTextInspector Undo", instance);
+                        UnityEditorUtility.RegisterUndo(instance);
                         Reflection.SetPrivateField(instance, "disableShadowColor", disableShadowColor);
                     }
                 }
@@ -143,7 +143,7 @@ namespace Modules.UI.Reactive
 
                     if (EditorGUI.EndChangeCheck())
                     {
-                        UnityEditorUtility.RegisterUndo("ButtonReactiveTextInspector Undo", instance);
+                        UnityEditorUtility.RegisterUndo(instance);
                         Reflection.SetPrivateField(instance, "enableOutlineColor", enableOutlineColor);
                     }
 
@@ -157,7 +157,7 @@ namespace Modules.UI.Reactive
 
                     if (EditorGUI.EndChangeCheck())
                     {
-                        UnityEditorUtility.RegisterUndo("ButtonReactiveTextInspector Undo", instance);
+                        UnityEditorUtility.RegisterUndo(instance);
                         Reflection.SetPrivateField(instance, "disableOutlineColor", disableOutlineColor);
                     }
                 }

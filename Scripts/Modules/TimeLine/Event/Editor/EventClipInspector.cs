@@ -1,4 +1,4 @@
-﻿
+
 using UnityEngine;
 using UnityEditor;
 using System;
@@ -276,7 +276,7 @@ namespace Modules.TimeLine.Component
 
         private void Save()
         {
-            UnityEditorUtility.RegisterUndo("TimeLineEventInspector Undo", timeLineEvent);
+            UnityEditorUtility.RegisterUndo(timeLineEvent);
 
             // 上書きする為一旦全解放.
             var methods = Reflection.GetPrivateField<EventClip, EventMethod[]>(timeLineEvent, "methods");

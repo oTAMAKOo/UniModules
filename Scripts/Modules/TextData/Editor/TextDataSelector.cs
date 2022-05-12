@@ -301,7 +301,7 @@ namespace Modules.TextData.Components
                             {
                                 if (GUILayout.Button("Select", GUILayout.Width(75f), GUILayout.Height(buttonHeight)))
                                 {
-                                    UnityEditorUtility.RegisterUndo("TextDataSelector-Select", Setter);
+                                    UnityEditorUtility.RegisterUndo(Setter);
                                     
                                     if (!string.IsNullOrEmpty(content.TextGuid))
                                     {

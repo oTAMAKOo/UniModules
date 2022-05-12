@@ -1,4 +1,4 @@
-﻿
+
 using Extensions;
 using UnityEditor;
 using UnityEngine;
@@ -73,7 +73,7 @@ namespace Modules.UI.Extension
 
                 if (EditorGUI.EndChangeCheck())
                 {
-                    UnityEditorUtility.RegisterUndo("UIRawImageInspector-Undo", instance);
+                    UnityEditorUtility.RegisterUndo(instance);
 
                     var assetGuid = textureAsset != null ? UnityEditorUtility.GetAssetGUID(textureAsset) : string.Empty;
 

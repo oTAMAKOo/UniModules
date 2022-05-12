@@ -1,4 +1,4 @@
-﻿
+
 using UnityEditor;
 using System.Linq;
 using UniRx;
@@ -62,7 +62,7 @@ namespace Modules.Devkit.Build
 
                 if (EditorGUI.EndChangeCheck())
                 {
-                    UnityEditorUtility.RegisterUndo("DeleteAssetSettingInspector Undo", instance);
+                    UnityEditorUtility.RegisterUndo(instance);
 
                     Reflection.SetPrivateField(instance, "tag", tag);
 
@@ -79,7 +79,7 @@ namespace Modules.Devkit.Build
                 .Where(x => !string.IsNullOrEmpty(x))
                 .ToArray();
 
-            UnityEditorUtility.RegisterUndo("DeleteAssetSettingInspector Undo", instance);
+            UnityEditorUtility.RegisterUndo(instance);
 
             Reflection.SetPrivateField(instance, "guids", guids);
 

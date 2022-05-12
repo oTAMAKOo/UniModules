@@ -1,4 +1,4 @@
-﻿﻿﻿﻿﻿﻿﻿
+﻿﻿﻿﻿﻿﻿
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEditor;
@@ -23,7 +23,7 @@ namespace Modules.UI.Layout
 
             if (EditorGUI.EndChangeCheck())
             {
-                UnityEditorUtility.RegisterUndo("PreferredSizeCopyEditor-Undo", instance);
+                UnityEditorUtility.RegisterUndo(instance);
                 Reflection.SetPrivateField(instance, "copySource", copySource);
             }
 
@@ -131,7 +131,7 @@ namespace Modules.UI.Layout
 
                         if (edit)
                         {
-                            UnityEditorUtility.RegisterUndo("PreferredSizeCopyEditor-Undo", instance);
+                            UnityEditorUtility.RegisterUndo(instance);
                             Reflection.SetPrivateField(instance, "horizontal", horizontal);
                             Reflection.InvokePrivateMethod(instance, "SetDirty");
                         }
@@ -242,7 +242,7 @@ namespace Modules.UI.Layout
 
                         if (edit)
                         {
-                            UnityEditorUtility.RegisterUndo("PreferredSizeCopyEditor-Undo", instance);
+                            UnityEditorUtility.RegisterUndo(instance);
                             Reflection.SetPrivateField(instance, "vertical", vertical);
                             Reflection.InvokePrivateMethod(instance, "SetDirty");
 

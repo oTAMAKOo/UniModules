@@ -53,7 +53,7 @@ namespace Modules.Localize
 	                    
 			if (EditorGUI.EndChangeCheck())
 			{
-				UnityEditorUtility.RegisterUndo(GetType().FullName + "-Undo", instance);
+				UnityEditorUtility.RegisterUndo(instance);
 
 				AssetDatabase.TryGetGUIDAndLocalFileIdentifier<Sprite>(sprite, out var spriteGuid, out var localId);
 

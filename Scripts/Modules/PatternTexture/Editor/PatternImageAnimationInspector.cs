@@ -1,4 +1,4 @@
-﻿
+
 using UnityEngine;
 using UnityEditor;
 using System;
@@ -42,7 +42,7 @@ namespace Modules.PatternTexture
 
             if (EditorGUI.EndChangeCheck())
             {
-                UnityEditorUtility.RegisterUndo("PatternImageAnimationInspector-Undo", instance);
+                UnityEditorUtility.RegisterUndo(instance);
 
                 if (index == -1)
                 {

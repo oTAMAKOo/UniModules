@@ -1,4 +1,4 @@
-﻿
+
 #if ENABLE_CRIWARE_ADX || ENABLE_CRIWARE_SOFDEC
 
 using UnityEngine;
@@ -61,7 +61,7 @@ namespace Modules.CriWare.Editor
 
                     if (change)
                     {
-                        UnityEditorUtility.RegisterUndo("CriAssetConfigInspector Undo", instance);
+                        UnityEditorUtility.RegisterUndo(instance);
                     }
 
                     // Style.
@@ -76,7 +76,7 @@ namespace Modules.CriWare.Editor
 
                         if (GUILayout.Button("Edit", EditorStyles.miniButton, GUILayout.Width(50f)))
                         {
-                            UnityEditorUtility.RegisterUndo("CriAssetConfigInspector Undo", instance);
+                            UnityEditorUtility.RegisterUndo(instance);
 
                             var acfAssetSource = EditorUtility.OpenFilePanel("Select ACF", "", "");
 
@@ -96,7 +96,7 @@ namespace Modules.CriWare.Editor
 
                         if (GUILayout.Button("Edit", EditorStyles.miniButton, GUILayout.Width(50f)))
                         {
-                            UnityEditorUtility.RegisterUndo("CriAssetConfigInspector Undo", instance);
+                            UnityEditorUtility.RegisterUndo(instance);
 
                             var acfAssetDirectory = EditorUtility.OpenFolderPanel("Select CriSetting Folder", "", "");
 
@@ -132,7 +132,7 @@ namespace Modules.CriWare.Editor
 
                     if (change)
                     {
-                        UnityEditorUtility.RegisterUndo("CriAssetConfigInspector Undo", instance);
+                        UnityEditorUtility.RegisterUndo(instance);
                     }
                 }
             }

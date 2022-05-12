@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 using UnityEditor;
 using Extensions.Devkit;
 
@@ -28,7 +28,7 @@ namespace Modules.UI
 
             if (EditorGUI.EndChangeCheck())
             {
-                UnityEditorUtility.RegisterUndo("GraphicGroupInspector Undo", instance);
+                UnityEditorUtility.RegisterUndo(instance);
                 instance.raycastTarget = raycastTarget;
             }
 
@@ -40,7 +40,7 @@ namespace Modules.UI
 
             if (EditorGUI.EndChangeCheck())
             {
-                UnityEditorUtility.RegisterUndo("GraphicGroupInspector Undo", instance);
+                UnityEditorUtility.RegisterUndo(instance);
 
                 instance.ColorTint = colorTint;
             }
@@ -53,7 +53,7 @@ namespace Modules.UI
 
             if (EditorGUI.EndChangeCheck())
             {
-                UnityEditorUtility.RegisterUndo("GraphicGroupInspector Undo", instance);
+                UnityEditorUtility.RegisterUndo(instance);
 
                 serializedObject.ApplyModifiedProperties();
 

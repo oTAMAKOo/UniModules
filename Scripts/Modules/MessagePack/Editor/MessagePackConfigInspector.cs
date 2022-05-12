@@ -1,4 +1,4 @@
-﻿﻿﻿﻿
+﻿﻿﻿
 using UnityEngine;
 using UnityEditor;
 using System;
@@ -123,7 +123,7 @@ namespace Modules.MessagePack
 
                     if (GUILayout.Button("Edit", GUILayout.Width(45f)))
                     {
-                        UnityEditorUtility.RegisterUndo("MessagePackConfigInspector Undo", instance);
+                        UnityEditorUtility.RegisterUndo(instance);
 
                         var path = EditorUtility.OpenFolderPanel("Select Export Folder", Application.dataPath, string.Empty);
 
@@ -167,7 +167,7 @@ namespace Modules.MessagePack
 
             if (EditorGUI.EndChangeCheck())
             {
-                UnityEditorUtility.RegisterUndo("MessagePackConfigInspector Undo", instance);
+                UnityEditorUtility.RegisterUndo(instance);
 
                 serializedObject.ApplyModifiedProperties();
             }
@@ -188,7 +188,7 @@ namespace Modules.MessagePack
 
                     if (GUILayout.Button("Edit", GUILayout.Width(45f)))
                     {
-                        UnityEditorUtility.RegisterUndo("MessagePackConfigInspector Undo", instance);
+                        UnityEditorUtility.RegisterUndo(instance);
 
                         var path = EditorUtility.OpenFilePanel("Select MessagePack compiler", Application.dataPath, "exe");
 
@@ -216,7 +216,7 @@ namespace Modules.MessagePack
 
                     if (GUILayout.Button("Edit", GUILayout.Width(45f)))
                     {
-                        UnityEditorUtility.RegisterUndo("MessagePackConfigInspector Undo", instance);
+                        UnityEditorUtility.RegisterUndo(instance);
 
                         var path = EditorUtility.OpenFilePanel("Select MessagePack compiler", Application.dataPath, "");
 
