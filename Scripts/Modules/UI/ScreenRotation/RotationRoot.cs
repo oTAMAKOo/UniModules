@@ -2,15 +2,12 @@
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.EventSystems;
-using System;
-using System.Linq;
-using System.Collections.Generic;
-using UniRx;
 using Extensions;
 using Extensions.Serialize;
 
 namespace Modules.UI.ScreenRotation
 {
+	[ExecuteAlways]
 	[RequireComponent(typeof(RectTransform))]
 	public sealed class RotationRoot : UIBehaviour
     {
