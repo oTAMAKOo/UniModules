@@ -32,7 +32,15 @@ namespace Modules.UI.Extension
 
             position = ScrollRect.normalizedPosition;
 
-            lockPositionDisposable = Observable.EveryUpdate().Subscribe(_ => ScrollRect.normalizedPosition = position.Value).AddTo(this);
+            lockPositionDisposable = Observable.EveryUpdate()
+                .Subscribe(_ =>
+                    {
+                        if (!UnityUtility.IsNull(ScrollRect))
+                        {
+                            ScrollRect.normalizedPosition = position.Value;
+                        }
+                    })
+                .AddTo(this);
         }
 
         public void UnLockPosition()
