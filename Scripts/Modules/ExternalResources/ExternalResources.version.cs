@@ -1,4 +1,4 @@
-﻿
+
 using UnityEngine;
 using System;
 using System.IO;
@@ -290,6 +290,8 @@ namespace Modules.ExternalResource
 
         private string[] GetAllVersionFilePaths()
         {
+			if (!Directory.Exists(InstallDirectory)){ return new string[0]; }
+
             var directoryInfo = new DirectoryInfo(InstallDirectory);
 
             var files = directoryInfo.GetFiles("*" + AssetInfoManifest.VersionFileExtension, SearchOption.AllDirectories);
