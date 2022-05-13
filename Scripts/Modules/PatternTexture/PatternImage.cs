@@ -1,4 +1,4 @@
-﻿
+
 using System;
 using System.Collections;
 using UnityEngine;
@@ -6,13 +6,15 @@ using UnityEngine.UI;
 using System.IO;
 using System.Collections.Generic;
 using System.Linq;
-using Extensions;
 using UniRx;
+using Extensions;
 
 namespace Modules.PatternTexture
 {
-    [ExecuteAlways, RequireComponent(typeof(RectTransform))]
-    public sealed class PatternImage : MaskableGraphic, ICanvasRaycastFilter
+	[ExecuteAlways]
+	[RequireComponent(typeof(RectTransform))]
+	[RequireComponent(typeof(CanvasRenderer))]
+	public sealed class PatternImage : MaskableGraphic, ICanvasRaycastFilter
     {
         //----- params -----
 
