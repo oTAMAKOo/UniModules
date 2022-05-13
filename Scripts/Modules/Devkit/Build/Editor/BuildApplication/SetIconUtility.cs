@@ -3,6 +3,7 @@ using UnityEditor;
 using UnityEngine;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using Extensions;
 
@@ -48,6 +49,13 @@ namespace Modules.Devkit.Build
 
                 SetPlatformIcon(BuildTargetGroup.Android, UnityEditor.Android.AndroidPlatformIconKind.Round, iconFolderPath);
             }
+
+            //------ Legacy ------
+            {
+                var iconFolderPath = PathUtility.Combine(iconAssetDirectory, "Android/Icon/Legacy");
+
+                SetPlatformIcon(BuildTargetGroup.Android, UnityEditor.Android.AndroidPlatformIconKind.Legacy, iconFolderPath);
+            }
         }
 
         public static void SetPlatformIcon(BuildTargetGroup platform, PlatformIconKind kind, string folderPath, int layer = 0)
@@ -60,7 +68,7 @@ namespace Modules.Devkit.Build
 
             foreach (var iconSize in iconSizes)
             {
-                var fileName = string.Format("{0}x{1}.png", iconSize.Item1, iconSize.Item2);
+                var fileName = $"{iconSize.Item1}x{iconSize.Item2}";
 
                 iconNames.Add(fileName);
             }
@@ -86,7 +94,9 @@ namespace Modules.Devkit.Build
 
             foreach (var iconName in iconNames)
             {
-                var assetPath = PathUtility.Combine(folderPath, iconName);
+                var fileName = Path.ChangeExtension(iconName, ".png");
+
+                var assetPath = PathUtility.Combine(folderPath, fileName);
 
                 var texture = AssetDatabase.LoadAssetAtPath(assetPath, typeof(Texture2D)) as Texture2D;
 
