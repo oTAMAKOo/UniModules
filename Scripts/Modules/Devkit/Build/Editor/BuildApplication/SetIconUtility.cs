@@ -22,9 +22,40 @@ namespace Modules.Devkit.Build
 
         public static void SetiOSPlatformIcons(string iconAssetDirectory)
         {
-            var iconFolderPath = PathUtility.Combine(iconAssetDirectory, "iOS/Icon");
+            //------ Application ------
+            {
+                var iconFolderPath = PathUtility.Combine(iconAssetDirectory, "iOS/Icon/Application/");
 
-            SetPlatformIcon(BuildTargetGroup.iOS, UnityEditor.iOS.iOSPlatformIconKind.Application, iconFolderPath);
+                SetPlatformIcon(BuildTargetGroup.iOS, UnityEditor.iOS.iOSPlatformIconKind.Application, iconFolderPath);
+            }
+
+            //------ Spotlight ------
+            {
+                var iconFolderPath = PathUtility.Combine(iconAssetDirectory, "iOS/Icon/Spotlight/");
+
+                SetPlatformIcon(BuildTargetGroup.iOS, UnityEditor.iOS.iOSPlatformIconKind.Spotlight, iconFolderPath);
+            }
+
+            //------ Settings ------
+            {
+                var iconFolderPath = PathUtility.Combine(iconAssetDirectory, "iOS/Icon/Settings/");
+
+                SetPlatformIcon(BuildTargetGroup.iOS, UnityEditor.iOS.iOSPlatformIconKind.Settings, iconFolderPath);
+            }
+
+            //------ Notification ------
+            {
+                var iconFolderPath = PathUtility.Combine(iconAssetDirectory, "iOS/Icon/Notification/");
+
+                SetPlatformIcon(BuildTargetGroup.iOS, UnityEditor.iOS.iOSPlatformIconKind.Notification, iconFolderPath);
+            }
+
+            //------ Marketing ------
+            {
+                var iconFolderPath = PathUtility.Combine(iconAssetDirectory, "iOS/Icon/Marketing/");
+
+                SetPlatformIcon(BuildTargetGroup.iOS, UnityEditor.iOS.iOSPlatformIconKind.Marketing, iconFolderPath);
+            }
         }
 
         public static void SetAndroidPlatformIcons(string iconAssetDirectory)
