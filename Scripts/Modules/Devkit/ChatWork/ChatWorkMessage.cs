@@ -2,7 +2,7 @@
 using System;
 using System.IO;
 using System.Net.Http;
-using System.Net.Http.Headers;
+using System.Text;
 using System.Threading.Tasks;
 
 namespace Modules.Devkit.ChatWork
@@ -29,107 +29,6 @@ namespace Modules.Devkit.ChatWork
 
         public async Task<string> SendMessage(string message, bool selfUnRead = false)
         {
-            var requestMessage = CreateRequestMessage();
-
-            var requestUrl = GetRequestUrl();
-
-            // 送信情報作成.
-
-            requestUrl += $"messages?body={message}&self_unread={(selfUnRead ? 1 : 0)}";
-
-            requestMessage.RequestUri = new Uri(requestUrl);
-            
-            // 送信.
-
-            return await SendRequest(requestMessage);
-        }
-
-        public async Task<string> SendFile(string filePath, string displayName = null, string message = null)
-        {
-            if (!File.Exists(filePath)){ return null; }
-
-            // ファイル読み込み.
-
-            var fileBytes = Array.Empty<byte>();
-
-            using (var fileStream = new FileStream(filePath, FileMode.Open, FileAccess.Read))
-            {
-                using (var binaryReader = new BinaryReader(fileStream))
-                {
-                    fileBytes = binaryReader.ReadBytes((int)fileStream.Length);
-                }
-            }
-
-            var fileString = Convert.ToBase64String(fileBytes);
-
-            // 送信情報作成.
-
-            var requestMessage = CreateRequestMessage();
-
-            var requestUrl = GetRequestUrl();
-
-            bool selfUnRead = false;
-
-            requestUrl += $"files&self_unread={(selfUnRead ? 1 : 0)}";
-
-            requestMessage.RequestUri = new Uri(requestUrl);
-
-            var content = new MultipartFormDataContent();
-
-            // メッセージ.
-            if (!string.IsNullOrEmpty(message))
-            {
-                var stringContent = new StringContent(message)
-                {
-                    Headers =
-                    {
-                        ContentDisposition = new ContentDispositionHeaderValue("form-data")
-                        {
-                            Name = "message",
-                        }
-                    }
-                };
-
-                content.Add(stringContent);
-            }
-
-            // ファイル.
-
-            if (File.Exists(filePath))
-            {
-                if (string.IsNullOrEmpty(displayName))
-                {
-                    displayName = Path.GetFileName(filePath);
-                }
-
-                var fileContent = new StringContent($"data:application/octet-stream;name={displayName};base64,{fileString}")
-                {
-                    Headers =
-                    {
-                        ContentType = new MediaTypeHeaderValue("application/octet-stream"),
-                        ContentDisposition = new ContentDispositionHeaderValue("form-data")
-                        {
-                            Name = "file",
-                            FileName = displayName,
-                        }
-                    }
-                };
-
-                content.Add(fileContent);
-            }
-
-            // 送信.
-
-            return await SendRequest(requestMessage);
-        }
-
-        private string GetRequestUrl()
-        {
-            return $"https://api.chatwork.com/v2/rooms/{roomId}/";
-        }
-
-        private HttpRequestMessage CreateRequestMessage()
-        {
             var requestMessage = new HttpRequestMessage
             {
                 Method = HttpMethod.Post,
@@ -140,24 +39,88 @@ namespace Modules.Devkit.ChatWork
                 },
             };
 
-            return requestMessage;
-        }
+            var requestUrl = GetRequestUrl() + "messages";
 
-        private async Task<string> SendRequest(HttpRequestMessage requestMessage)
-        {
+            // 送信情報作成.
+
+            requestUrl += $"?body={message}&self_unread={(selfUnRead ? 1 : 0)}";
+
+            requestMessage.RequestUri = new Uri(requestUrl);
+            
+            // 送信.
+
             var result = string.Empty;
 
-            using (var client = new HttpClient())
+            using (var httpClient = new HttpClient())
             {
-                using (var response = await client.SendAsync(requestMessage))
+                using (var response = await httpClient.SendAsync(requestMessage))
                 {
-                    response.EnsureSuccessStatusCode();
-
-                    result = await response.Content.ReadAsStringAsync();
+                    if (response.IsSuccessStatusCode)
+                    {
+                        result = await response.Content.ReadAsStringAsync();
+                    }
                 }
             }
 
             return result;
+        }
+
+        public async Task<string> SendFile(string filePath, string message = null, string displayName = null)
+        {
+            if (!File.Exists(filePath)){ return null; }
+
+            if (string.IsNullOrEmpty(displayName))
+            {
+                displayName = Path.GetFileName(filePath);
+            }
+
+            var result = string.Empty;
+
+            using (var httpClient = new HttpClient())
+            {
+                httpClient.DefaultRequestHeaders.Add("X-ChatWorkToken", apiToken);
+
+                using (var multipart = new MultipartFormDataContent("---boundary---"))
+                {
+                    // ファイル.
+
+                    var fileContent = new StreamContent(File.OpenRead(filePath));
+
+                    fileContent.Headers.Add("Content-Disposition", $@"form-data; name=""file""; filename=""{displayName}""");
+
+                    multipart.Add(fileContent);
+
+                    // メッセージ.
+
+                    if (!string.IsNullOrEmpty(message))
+                    {
+                        var messageContent = new StreamContent(new MemoryStream(Encoding.UTF8.GetBytes(message)));
+
+                        messageContent.Headers.Add("Content-Disposition", $@"form-data; name=""message""");
+
+                        multipart.Add(messageContent);
+                    }
+
+                    // 送信.
+
+                    var requestUrl = GetRequestUrl() + "files";
+
+                    using (var response = await httpClient.PostAsync(requestUrl, multipart))
+                    {
+                        if (response.IsSuccessStatusCode)
+                        {
+                            result = await response.Content.ReadAsStringAsync();
+                        }
+                    }
+                }
+            }
+
+            return result;
+        }
+
+        private string GetRequestUrl()
+        {
+            return $"https://api.chatwork.com/v2/rooms/{roomId}/";
         }
     }
 }
