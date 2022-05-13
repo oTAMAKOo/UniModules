@@ -1,8 +1,8 @@
-﻿
+
 using UnityEngine;
 using UnityEngine.UI;
-using Cysharp.Threading.Tasks;
 using Extensions;
+using UniRx;
 using Modules.UI.Extension;
 
 namespace Modules.LetterBox
@@ -43,7 +43,12 @@ namespace Modules.LetterBox
 
         void OnEnable()
         {
-            Apply();
+            // OnEnableのタイミングでApplyしてもRectTransformに反映されないので最初のUpdateで実行.
+            Observable.EveryUpdate()
+                .First()
+                .TakeUntilDisable(this)
+                .Subscribe(_ => Apply())
+                .AddTo(this);
         }
 
         public void Apply()

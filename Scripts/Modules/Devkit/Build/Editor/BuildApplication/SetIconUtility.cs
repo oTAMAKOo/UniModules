@@ -1,4 +1,4 @@
-﻿
+
 using UnityEditor;
 using UnityEngine;
 using System;
@@ -10,7 +10,7 @@ namespace Modules.Devkit.Build
 {
     public static class SetIconUtility
     {
-        private static void SetDefaultIcon(string iconAssetDirectory, string iconFileName)
+        public static void SetDefaultIcon(string iconAssetDirectory, string iconFileName)
         {
             var iconFolderPath = PathUtility.Combine(iconAssetDirectory, "Icon");
 
