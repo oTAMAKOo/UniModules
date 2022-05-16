@@ -43,7 +43,7 @@ namespace Modules.Devkit.ChatWork
 
             // 送信情報作成.
 
-            requestUrl += $"?body={message}&self_unread={(selfUnRead ? 1 : 0)}";
+            requestUrl += $"?body={Uri.EscapeDataString(message)}&self_unread={(selfUnRead ? 1 : 0)}";
 
             requestMessage.RequestUri = new Uri(requestUrl);
             

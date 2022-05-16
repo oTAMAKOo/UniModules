@@ -1,4 +1,4 @@
-﻿
+
 using UnityEngine;
 using UnityEditor;
 using UnityEditor.Compilation;
@@ -57,8 +57,15 @@ namespace Modules.Devkit.AssemblyCompilation
 
         //----- method -----
 
-        protected void OnAssemblyReload()
+		protected void OnAssemblyReload()
         {
+			// 起動時にリセット.
+			if (EditorApplication.timeSinceStartup < 3)
+			{
+				Prefs.RequestCompile = false;
+				Prefs.Result = null;
+			}
+
             if (Prefs.RequestCompile)
             {
                 RequestCompile();
