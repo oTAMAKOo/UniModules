@@ -1,4 +1,4 @@
-﻿
+
 using UnityEngine;
 using UnityEngine.Networking;
 using System;
@@ -9,7 +9,6 @@ using System.IO;
 using System.Text;
 using UniRx;
 using Extensions;
-using Modules.Devkit.Console;
 using Modules.ExternalResource;
 using Modules.UniRxExtension;
 
@@ -95,8 +94,7 @@ namespace Modules.AssetBundles
         /// </summary>
         /// <param name="maxDownloadCount">同時ダウンロード数</param>
         /// <param name="simulateMode">AssetDataBaseからアセットを取得(EditorOnly)</param>
-        /// <param name="cryptoKey">暗号化キー(Key,IVがModules.ExternalResource.Editor.ManageConfigのAssetのCryptKeyと一致している必要があります.)</param>
-        public void Initialize(uint maxDownloadCount, bool simulateMode = false, AesCryptoKey cryptoKey = null)
+        public void Initialize(uint maxDownloadCount, bool simulateMode = false)
         {
             if (isInitialized) { return; }
 

@@ -1,4 +1,4 @@
-﻿
+
 using System;
 using UnityEngine;
 using System.Collections.Generic;
@@ -39,17 +39,15 @@ namespace Modules.Devkit.Console
             DisableEventNames = new HashSet<string>();
         }
 
+        [RuntimeInitializeOnLoadMethod]
+        private static void RuntimeInitializeOnLoadMethod()
+        {
+            isDevelopmentBuild = UnityEngine.Debug.isDebugBuild;
+        }
+
         public static bool Enable
         {
-            get
-            {
-                if (!isDevelopmentBuild.HasValue)
-                {
-                    isDevelopmentBuild = UnityEngine.Debug.isDebugBuild;
-                }
-
-                return isDevelopmentBuild.Value;
-            }
+            get { return isDevelopmentBuild.HasValue && isDevelopmentBuild.Value; }
         }
 
         public static void Info(string message)

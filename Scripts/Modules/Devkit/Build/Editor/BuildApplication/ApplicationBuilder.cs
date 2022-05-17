@@ -1,11 +1,11 @@
-﻿
+
 using UnityEngine;
 using UnityEditor;
 using UnityEditor.Build.Reporting;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading.Tasks;
+using Cysharp.Threading.Tasks;
 using Extensions;
 using Modules.Devkit.Prefs;
 
@@ -33,16 +33,16 @@ namespace Modules.Devkit.Build
         string[] GetAllScenePaths();
 
         /// <summary> ビルド前処理. </summary>
-        Task OnBeforeBuild();
+        UniTask<bool> OnBeforeBuild();
 
         /// <summary> ビルド後処理. </summary>
-        Task OnAfterBuild(bool isSuccess);
+        UniTask OnAfterBuild(bool isSuccess);
 
         /// <summary> ビルド成功時処理. </summary>
-        Task OnBuildSuccess(BuildReport buildReport);
+        UniTask OnBuildSuccess(BuildReport buildReport);
 
         /// <summary> ビルドエラー時処理. </summary>
-        Task OnBuildError(BuildReport buildReport);
+        UniTask OnBuildError(BuildReport buildReport);
     }
 
     public abstract class ApplicationBuilder<TBuildParameter> : IApplicationBuilder where TBuildParameter : BuildParameter, new()
@@ -133,31 +133,31 @@ namespace Modules.Devkit.Build
         }
 
         /// <summary> ビルド前処理. </summary>
-        public virtual Task OnBeforeBuild()
+        public virtual UniTask<bool> OnBeforeBuild()
         {
-            return Task.CompletedTask;
+            return UniTask.FromResult(false);
         }
 
         /// <summary> ビルド後処理. </summary>
-        public virtual Task OnAfterBuild(bool isSuccess)
+        public virtual UniTask OnAfterBuild(bool isSuccess)
         {
-            return Task.CompletedTask;
+            return UniTask.CompletedTask;
         }
 
         /// <summary> ビルド成功時処理. </summary>
-        public virtual Task OnBuildSuccess(BuildReport buildReport)
+        public virtual UniTask OnBuildSuccess(BuildReport buildReport)
         {
             Debug.Log("Build success.");
 
-            return Task.CompletedTask;
+            return UniTask.CompletedTask;
         }
 
         /// <summary> ビルドエラー時処理. </summary>
-        public virtual Task OnBuildError(BuildReport buildReport)
+        public virtual UniTask OnBuildError(BuildReport buildReport)
         {
             Debug.LogError("Build failed.");
 
-            return Task.CompletedTask;
+            return UniTask.CompletedTask;
         }
     }
 }

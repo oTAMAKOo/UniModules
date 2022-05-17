@@ -1,4 +1,4 @@
-﻿
+
 #if !UNITY_EDITOR
 
 using UnityEngine;
@@ -8,15 +8,22 @@ public static class Debug
 {
     public static bool isDebugBuild
     {
-        get { return UnityEngine.Debug.isDebugBuild; }
+        get { return debugBuild; }
     }
 
     private static bool enable
     {
-        get
-        {
-            return isDebugBuild || Application.isBatchMode;
-        }
+        get { return debugBuild || batchMode; }
+    }
+
+    private static bool debugBuild = false;
+    private static bool batchMode = false;
+
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterAssembliesLoaded)]
+    private static void RuntimeInitializeOnLoadMethod()
+    {
+        debugBuild = UnityEngine.Debug.isDebugBuild;
+        batchMode = Application.isBatchMode;
     }
 
     #region Log

@@ -1,11 +1,11 @@
-﻿
+
 using System;
 using UnityEngine;
 using UnityEditor;
 using UnityEditor.Callbacks;
 using UnityEditor.Build.Reporting;
 using System.IO;
-using System.Threading.Tasks;
+using Cysharp.Threading.Tasks;
 using Extensions;
 using Modules.Devkit.Prefs;
 
@@ -52,7 +52,7 @@ namespace Modules.Devkit.Build
             await Build(applicationBuilder);
         }
 
-        public static async Task Build(IApplicationBuilder applicationBuilder)
+        public static async UniTask Build(IApplicationBuilder applicationBuilder)
         {
             if (applicationBuilder == null)
             {
@@ -126,40 +126,45 @@ namespace Modules.Devkit.Build
 
                         // ビルド前処理.
 
-                        await applicationBuilder.OnBeforeBuild();
+                        var beforeBuildSuccess = await applicationBuilder.OnBeforeBuild();
 
-                        // ビルド実行.
-
-                        EditorUserBuildSettings.development = applicationBuilder.Development;
-
-                        var option = EditorUserBuildSettings.development ? BuildOptions.Development : BuildOptions.None;
-
-                        option = option | applicationBuilder.BuildOptions;
-
-                        var buildReport = BuildPipeline.BuildPlayer(scenePaths, path, buildTarget, option);
-
-                        success = buildReport.summary.result == BuildResult.Succeeded;
-
-                        // ビルド結果処理.
-                        if (success)
+                        if (beforeBuildSuccess)
                         {
-                            await applicationBuilder.OnBuildSuccess(buildReport);
-                        }
-                        else
-                        {
-                            await applicationBuilder.OnBuildError(buildReport);
-                        }
+	                        // ビルド実行.
 
-                        // ビルド後処理.
-                        await applicationBuilder.OnAfterBuild(success);
+	                        EditorUserBuildSettings.development = applicationBuilder.Development;
 
-                        // 出力先フォルダを開く.
-                        if (success && !batchMode)
-                        {
-                            if (EditorUtility.DisplayDialog("Build", "Build finish.", "Open Folder", "Close"))
-                            {
-                                System.Diagnostics.Process.Start(directory);
-                            }
+	                        var option = EditorUserBuildSettings.development
+		                        ? BuildOptions.Development
+		                        : BuildOptions.None;
+
+	                        option |= applicationBuilder.BuildOptions;
+
+	                        var buildReport = BuildPipeline.BuildPlayer(scenePaths, path, buildTarget, option);
+
+	                        success = buildReport.summary.result == BuildResult.Succeeded;
+
+	                        // ビルド結果処理.
+	                        if (success)
+	                        {
+		                        await applicationBuilder.OnBuildSuccess(buildReport);
+	                        }
+	                        else
+	                        {
+		                        await applicationBuilder.OnBuildError(buildReport);
+	                        }
+
+	                        // ビルド後処理.
+	                        await applicationBuilder.OnAfterBuild(success);
+
+	                        // 出力先フォルダを開く.
+	                        if (success && !batchMode)
+	                        {
+		                        if (EditorUtility.DisplayDialog("Build", "Build finish.", "Open Folder", "Close"))
+		                        {
+			                        System.Diagnostics.Process.Start(directory);
+		                        }
+	                        }
                         }
                     }
                 }
