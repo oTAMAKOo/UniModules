@@ -28,7 +28,7 @@ namespace Modules.WebView
         {
             if (webViewContent != null){ return; }
 
-            // Awake‚ğÀs‚³‚¹‚éˆ×ˆê’Uƒ‹[ƒgŠK‘w‚É¶¬.
+            // Awakeã‚’å®Ÿè¡Œã•ã›ã‚‹ç‚ºä¸€æ—¦ãƒ«ãƒ¼ãƒˆéšå±¤ã«ç”Ÿæˆ.
             webViewContent = UnityUtility.Instantiate<WebViewContent>(null, prefab);
 
             if (webViewContent != null)
@@ -109,6 +109,16 @@ namespace Modules.WebView
         }
 
         public virtual void OnStop() { }
+
+        public void Show()
+        {
+	        webViewContent.Show();
+        }
+
+        public void Hide()
+        {
+	        webViewContent.Hide();
+        }
 
         public void Reload()
         {
