@@ -1,4 +1,4 @@
-﻿
+
 using UnityEngine;
 using UnityEngine.Networking;
 using System.Collections.Generic;
@@ -88,7 +88,7 @@ namespace Modules.WebView
                 return null;
             }
 
-            return webRequest.downloadHandler.text;
+			return webRequest.result == UnityWebRequest.Result.Success ? webRequest.downloadHandler.text : null;
         }
     }
 }

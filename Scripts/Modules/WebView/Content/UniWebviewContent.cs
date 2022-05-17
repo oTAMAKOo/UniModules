@@ -1,4 +1,4 @@
-﻿
+
 #if ENABLE_UNIWEBVIEW
 
 using UnityEngine;
@@ -8,7 +8,7 @@ using Extensions;
 
 namespace Modules.WebView
 {
-    public class UniWebviewContent : WebViewContent
+    public class UniWebViewContent : WebViewContent
     {
         #if (!UNITY_EDITOR && (UNITY_IOS || UNITY_ANDROID)) || UNITY_EDITOR_OSX
 
@@ -33,6 +33,11 @@ namespace Modules.WebView
             if (rectTransform != null)
             {
                 UniWebView.ReferenceRectTransform = rectTransform;
+
+                // 代入した時点でのRectTransformしか参照しないので毎フレーム更新.
+                Observable.EveryUpdate()
+                    .Subscribe(_ => UniWebView.ReferenceRectTransform = rectTransform)
+                    .AddTo(this);
             }
 
             // URLリンクをデバイスのデフォルトブラウザで開くかどうかの設定.
