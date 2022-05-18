@@ -110,20 +110,29 @@ namespace Modules.WebView
 
         public virtual void OnStop() { }
 
-        public void Show()
-        {
-	        webViewContent.Show();
-        }
+		public void Show()
+		{
+			if (webViewContent != null)
+			{
+				webViewContent.Show();
+			}
+		}
 
-        public void Hide()
-        {
-	        webViewContent.Hide();
-        }
+		public void Hide()
+		{
+			if (webViewContent != null)
+			{
+				webViewContent.Hide();
+			}
+		}
 
-        public void Reload()
-        {
-            webViewContent.Reload();
-        }
+		public void Reload()
+		{
+			if (webViewContent != null)
+			{
+				webViewContent.Reload();
+			}
+		}
 
         public IObservable<Unit> OnLoadAsObservable()
         {
