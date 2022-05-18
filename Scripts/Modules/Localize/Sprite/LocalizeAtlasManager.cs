@@ -59,27 +59,27 @@ namespace Modules.Localize
 			this.localizeSpriteAsset.SetCryptoKey(cryptoKey);
 		}
 
-		public async UniTask LoadAtlas(string altasFolder, bool force = false)
+		public async UniTask LoadAtlas(string atlasFolder, bool force = false)
 		{
-			if (string.IsNullOrEmpty(altasFolder)){ return; }
+			if (string.IsNullOrEmpty(atlasFolder)){ return; }
 
-			altasFolder = PathUtility.ConvertPathSeparator(altasFolder);
+			atlasFolder = PathUtility.ConvertPathSeparator(atlasFolder);
 
-			altasFolder = altasFolder.TrimEnd(PathUtility.PathSeparator);
+			atlasFolder = atlasFolder.TrimEnd(PathUtility.PathSeparator);
 
-			var atlasCache = atlasCacheByAtlasFolder.GetValueOrDefault(altasFolder);
+			var atlasCache = atlasCacheByAtlasFolder.GetValueOrDefault(atlasFolder);
 
 			if (!force && atlasCache != null){ return; }
 
-			var atlas = await atlasLoader.Load(altasFolder);
+			var atlas = await atlasLoader.Load(atlasFolder);
 
 			if (atlas != null)
 			{
-				var atlasPath = atlasLoader.GetAtlasPath(altasFolder);
+				var atlasPath = atlasLoader.GetAtlasPath(atlasFolder);
 
 				atlasCache = new AtlasCache(atlasPath, atlas);
 
-				atlasCacheByAtlasFolder[altasFolder] = atlasCache;
+				atlasCacheByAtlasFolder[atlasFolder] = atlasCache;
 
 				if (onLoadAtlas != null)
 				{
@@ -88,15 +88,15 @@ namespace Modules.Localize
 			}
 		}
 
-		public void ReleaseAtlas(string altasFolder)
+		public void ReleaseAtlas(string atlasFolder)
 		{
-			if (string.IsNullOrEmpty(altasFolder)){ return; }
+			if (string.IsNullOrEmpty(atlasFolder)){ return; }
 
-			altasFolder = PathUtility.ConvertPathSeparator(altasFolder);
+			atlasFolder = PathUtility.ConvertPathSeparator(atlasFolder);
 
-			altasFolder = altasFolder.TrimEnd(PathUtility.PathSeparator);
+			atlasFolder = atlasFolder.TrimEnd(PathUtility.PathSeparator);
 			
-			var atlasCache = atlasCacheByAtlasFolder.GetValueOrDefault(altasFolder);
+			var atlasCache = atlasCacheByAtlasFolder.GetValueOrDefault(atlasFolder);
 
 			if (atlasCache == null){ return; }
 
@@ -104,7 +104,7 @@ namespace Modules.Localize
 
 			if (atlasCache.RefCount <= 0)
 			{
-				atlasCacheByAtlasFolder.Remove(altasFolder);
+				atlasCacheByAtlasFolder.Remove(atlasFolder);
 			}
 		}
 
@@ -114,9 +114,9 @@ namespace Modules.Localize
 			
 			var tasks = new List<UniTask>();
 
-			foreach (var altasFolder in atlasFolders)
+			foreach (var atlasFolder in atlasFolders)
 			{
-				var task = UniTask.Defer(() => LoadAtlas(altasFolder, true));
+				var task = UniTask.Defer(() => LoadAtlas(atlasFolder, true));
 
 				tasks.Add(task);
 			}
@@ -160,16 +160,16 @@ namespace Modules.Localize
 
 			if (localizeSpriteAsset == null){ return null; }
 
-			var altasFolder = localizeSpriteAsset.GetAtlasFolderPath(spriteGuid);
+			var atlasFolder = localizeSpriteAsset.GetAtlasFolderPath(spriteGuid);
 
 			// AtlasCache取得.
 
-			var atlasCache = atlasCacheByAtlasFolder.GetValueOrDefault(altasFolder);
+			var atlasCache = atlasCacheByAtlasFolder.GetValueOrDefault(atlasFolder);
 
 			if (atlasCache == null)
 			{
 				// 読み込みされていないのでエラーを出す.
-				Debug.LogErrorFormat("Atlas not loaded. Atlas pre load required.\nFolder : {0}", altasFolder);
+				Debug.LogErrorFormat("Atlas not loaded. Atlas pre load required.\nFolder : {0}", atlasFolder);
 			}
 
 			return atlasCache;
