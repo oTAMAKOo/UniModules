@@ -12,9 +12,9 @@ namespace Modules.Localize
 {
 	public abstract class LocalizeAtlasLoader
 	{
-		public abstract string GetAtlasPath(string altasFolder);
+		public abstract string GetAtlasPath(string atlasFolder);
 
-		public abstract UniTask<SpriteAtlas> Load(string altasFolder);
+		public abstract UniTask<SpriteAtlas> Load(string atlasFolder);
 	}
 
     public sealed class LocalizeAtlasManager : Singleton<LocalizeAtlasManager> 
