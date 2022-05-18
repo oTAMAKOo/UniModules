@@ -1,4 +1,4 @@
-﻿
+
 using UnityEngine;
 using UnityEditor;
 using System.Linq;
@@ -341,6 +341,16 @@ namespace Modules.ExternalResource.Editor
                                 assetBundleName += manageInfo.assetBundleNameStr + AssetNameSeparator + Path.GetFileNameWithoutExtension(targetName);
                                 break;
                         }
+                    }
+                    break;
+
+				case AssetBundleNamingRule.AssetFilePath:
+                    {
+                        var resourcePath = assetPath.Substring((resourcesDir + folder).Length);
+
+                        var targetName = resourcePath.Replace(PathUtility.PathSeparator, '_');
+
+                        assetBundleName += Path.GetFileNameWithoutExtension(targetName);
                     }
                     break;
 

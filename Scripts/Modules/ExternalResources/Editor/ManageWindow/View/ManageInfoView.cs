@@ -1,4 +1,4 @@
-﻿
+
 using System;
 using UnityEngine;
 using UnityEditor;
@@ -231,6 +231,7 @@ namespace Modules.ExternalResource.Editor
                                 AssetBundleNamingRule.ManageAssetName,
                                 AssetBundleNamingRule.ChildAssetName,
                                 AssetBundleNamingRule.PrefixAndChildAssetName,
+								AssetBundleNamingRule.AssetFilePath,
                                 AssetBundleNamingRule.Specified,
                             };
 

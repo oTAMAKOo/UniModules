@@ -13,6 +13,8 @@ namespace Modules.ExternalResource.Editor
         ChildAssetName,
         /// <summary> プレフィックス + 子アセット名. </summary>
         PrefixAndChildAssetName,
+		/// <summary> ファイルパス(1アセット = 1アセットバンドル). </summary>
+		AssetFilePath,
         /// <summary> 指定文字列. </summary>
         Specified,
     }
