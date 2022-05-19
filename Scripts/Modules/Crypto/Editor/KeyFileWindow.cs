@@ -5,6 +5,9 @@ using System;
 using System.Collections.Generic;
 using Extensions;
 using Extensions.Devkit;
+using System.IO;
+using Cysharp.Threading.Tasks;
+using Modules.Devkit.Project;
 
 namespace Modules.Crypto
 {
@@ -68,9 +71,11 @@ namespace Modules.Crypto
 							{
 								if (GUILayout.Button("Generate", EditorStyles.miniButton, GUILayout.Width(80f)))
 								{
-									var fileName = keyFileManager.GetFileName(keyInfo.KeyType);
+									var resourcesDirectory = ProjectFolders.Instance.ResourcesPath;
 
-									var filePath = PathUtility.Combine(keyFileManager.FileDirectory, fileName);
+									var resourcesPath = keyFileManager.GetResourcesPath(keyInfo.KeyType);
+
+									var filePath = PathUtility.Combine(resourcesDirectory, resourcesPath);
 
 									keyFileManager.Create(filePath, keyInfo.Key, keyInfo.Iv);
 
@@ -134,7 +139,7 @@ namespace Modules.Crypto
 		{
 			keyInfos = new List<KeyInfo>();
 
-			keyFileManager.ClearCache();
+			keyFileManager.Load();
 
 			var enumNames = Enum.GetNames(typeof(TKeyType));
 
@@ -142,10 +147,12 @@ namespace Modules.Crypto
 			{
 				var enumValue = EnumExtensions.FindByName(enumName , default(TKeyType));
 				
-				var fileName = keyFileManager.GetFileName(enumValue);
+				var resourcesPath = keyFileManager.GetResourcesPath(enumValue);
 
-				var keyData = keyFileManager.Get(enumValue);
+				var fileName = Path.GetFileName(resourcesPath);
 				
+				var keyData = keyFileManager.Get(enumValue);
+
 				var keyInfo = new KeyInfo()
 				{
 					KeyType = enumValue,

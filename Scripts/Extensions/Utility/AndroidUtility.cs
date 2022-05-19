@@ -1,9 +1,8 @@
 
-//#if UNITY_ANDROID && !UNITY_EDITOR
+#if UNITY_ANDROID && !UNITY_EDITOR
 
 using UnityEngine;
 using UnityEngine.Networking;
-using System;
 using System.IO;
 using Cysharp.Threading.Tasks;
 using Modules.Net.WebRequest;
@@ -85,4 +84,4 @@ namespace Extensions
 	}
 }
 
-//#endif
+#endif
