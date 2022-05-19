@@ -1,188 +1,161 @@
 
 using UnityEngine;
 using UnityEditor;
-using System.IO;
+using System;
+using System.Collections.Generic;
 using Extensions;
 using Extensions.Devkit;
-using Modules.Devkit.Prefs;
 
 namespace Modules.Crypto
 {
-    public sealed class KeyFileWindow : SingletonEditorWindow<KeyFileWindow>
+    public abstract class KeyFileWindow<TInstance, TKeyType> : SingletonEditorWindow<TInstance> 
+		where TInstance : KeyFileWindow<TInstance, TKeyType>
+		where TKeyType : Enum
     {
         //----- params -----
 
-        private static readonly Vector2 WindowSize = new Vector2(450f, 140f);
+        private static readonly Vector2 WindowSize = new Vector2(580f, 500f);
 
-        public static class Prefs
-        {
-            public static string FileDirectory
-            {
-                get { return ProjectPrefs.GetString(typeof(Prefs).FullName + "-FileDirectory"); }
-                set { ProjectPrefs.SetString(typeof(Prefs).FullName + "-FileDirectory", value); }
-            }
-        }
+		private sealed class KeyInfo
+		{
+			public TKeyType KeyType { get; set; } 
+			public string FileName { get; set; } 
+			public string Key { get; set; } 
+			public string Iv { get; set; } 
+		}
 
-        //----- field -----
+		//----- field -----
 
-        private string encryptKey = null;
-        private string encryptIv = null;
+		private List<KeyInfo> keyInfos = null;
 
-        private string projectFolderPath = null;
-
-        private IKeyFileManager keyFileManager = null;
+		private Vector2 scrollPosition = Vector2.zero;
+		
+        private IKeyFileManager<TKeyType> keyFileManager = null;
 
         //----- property -----
 
         //----- method -----
 
-        public static void Open(IKeyFileManager keyFileManager)
+        public static void Open(IKeyFileManager<TKeyType> keyFileManager)
         {
-            Instance.maxSize = WindowSize;
             Instance.minSize = WindowSize;
+			Instance.maxSize = WindowSize;
 
             Instance.titleContent = new GUIContent("Generate KeyFile");
 
             Instance.keyFileManager = keyFileManager;
 
-            Instance.ShowUtility();
+			Instance.LoadKeyInfo();
+
+			Instance.ShowUtility();
         }
 
         void OnGUI()
         {
-            EditorLayoutTools.Title("Generate KeyFile");
+			using (var scrollViewScope = new EditorGUILayout.ScrollViewScope(scrollPosition))
+			{
+				foreach (var keyInfo in keyInfos)
+				{
+					using (new ContentsScope())
+					{
+						using (new EditorGUILayout.HorizontalScope())
+						{
+							EditorGUILayout.SelectableLabel("KeyType : " + keyInfo.KeyType, GUILayout.Height(EditorGUIUtility.singleLineHeight));
 
-            if (string.IsNullOrEmpty(projectFolderPath))
-            {
-                projectFolderPath = UnityPathUtility.GetProjectFolderPath();
-            }
+							GUILayout.FlexibleSpace();
 
-            using (new LabelWidthScope(50f))
-            {
-                GUILayout.Space(2f);
+							using (new DisableScope(keyInfo.Key.IsNullOrEmpty() || keyInfo.Iv.IsNullOrEmpty()))
+							{
+								if (GUILayout.Button("Generate", EditorStyles.miniButton, GUILayout.Width(80f)))
+								{
+									var fileName = keyFileManager.GetFileName(keyInfo.KeyType);
 
-                EditorGUI.BeginChangeCheck();
+									var filePath = PathUtility.Combine(keyFileManager.FileDirectory, fileName);
 
-                var key = EditorGUILayout.TextField("Key", encryptKey);
+									keyFileManager.Create(filePath, keyInfo.Key, keyInfo.Iv);
 
-                if (EditorGUI.EndChangeCheck())
-                {
-                    if (!key.IsNullOrEmpty())
-                    {
-                        if (key.Length == 32)
-                        {
-                            encryptKey = key;
-                        }
-                        else
-                        {
-                            Debug.LogError("Key must be 32 characters");
-                        }
-                    }
-                }
+									var assetPath = UnityPathUtility.ConvertFullPathToAssetPath(filePath);
 
-                GUILayout.Space(2f);
-                
-                EditorGUI.BeginChangeCheck();
+									AssetDatabase.ImportAsset(assetPath);
+								}
+							}
+						}
 
-                var iv = EditorGUILayout.TextField("Iv", encryptIv);
+						EditorGUILayout.SelectableLabel("FileName : " + keyInfo.FileName, GUILayout.Height(EditorGUIUtility.singleLineHeight));
 
-                if (EditorGUI.EndChangeCheck())
-                {
-                    if (!iv.IsNullOrEmpty())
-                    {
-                        if (iv.Length == 16)
-                        {
-                            encryptIv = iv;
-                        }
-                        else
-                        {
-                            Debug.LogError("Iv must be 16 characters");
-                        }
-                    }
-                }
-            }
+						using (new LabelWidthScope(50f))
+						{
+							var key = EditorGUILayout.TextField("Key", keyInfo.Key);
 
-            GUILayout.Space(2f);
+							if (EditorGUI.EndChangeCheck())
+							{
+								if (!key.IsNullOrEmpty())
+								{
+									if (key.Length == 32)
+									{
+										keyInfo.Key = key;
+									}
+									else
+									{
+										Debug.LogError("Key must be 32 characters");
+									}
+								}
+							}
 
-            using (new EditorGUILayout.HorizontalScope())
-            {
-                GUILayout.FlexibleSpace();
+							GUILayout.Space(2f);
+	                
+							EditorGUI.BeginChangeCheck();
 
-                using (new DisableScope(encryptKey.IsNullOrEmpty() || encryptIv.IsNullOrEmpty()))
-                {
-                    if (GUILayout.Button("Generate", EditorStyles.miniButton, GUILayout.Width(250f)))
-                    {
-                        var fileDirectory = Prefs.FileDirectory;
+							var iv = EditorGUILayout.TextField("Iv", keyInfo.Iv);
 
-                        if (!Directory.Exists(fileDirectory))
-                        {
-                            fileDirectory = projectFolderPath;
-                        }
+							if (EditorGUI.EndChangeCheck())
+							{
+								if (!iv.IsNullOrEmpty())
+								{
+									if (iv.Length == 16)
+									{
+										keyInfo.Iv = iv;
+									}
+									else
+									{
+										Debug.LogError("Iv must be 16 characters");
+									}
+								}
+							}
+						}
+					}
+				}
 
-                        var filePath = EditorUtility.SaveFilePanel("Generate KeyFile", fileDirectory, "keyfile", string.Empty);
+				scrollPosition = scrollViewScope.scrollPosition;
+			}
+		}
 
-                        if (!filePath.IsNullOrEmpty())
-                        {
-                            keyFileManager.Create(filePath, encryptKey, encryptIv);
+		private void LoadKeyInfo()
+		{
+			keyInfos = new List<KeyInfo>();
 
-                            var keyFile = keyFileManager.Load(filePath);
+			keyFileManager.ClearCache();
 
-                            if (keyFile != null)
-                            {
-                                using (new DisableStackTraceScope())
-                                {
-                                    Debug.LogFormat("Generate success.\n\nFilePath: {0}\n\nKey: {1}\nIv: {2}", filePath, keyFile.Key, keyFile.Iv);
-                                }
+			var enumNames = Enum.GetNames(typeof(TKeyType));
 
-                                var assetPath = UnityPathUtility.ConvertFullPathToAssetPath(filePath);
+			foreach (var enumName in enumNames)
+			{
+				var enumValue = EnumExtensions.FindByName(enumName , default(TKeyType));
+				
+				var fileName = keyFileManager.GetFileName(enumValue);
 
-                                AssetDatabase.ImportAsset(assetPath);
+				var keyData = keyFileManager.Get(enumValue);
+				
+				var keyInfo = new KeyInfo()
+				{
+					KeyType = enumValue,
+					FileName = fileName,
+					Key = keyData != null ? keyData.Key : null,
+					Iv = keyData != null ? keyData.Iv : null,
+				};
 
-                                Prefs.FileDirectory = Path.GetDirectoryName(filePath);
-                            }
-                        }
-                    }
-                }
-
-                GUILayout.Space(5f);
-            }
-            
-            GUILayout.Space(4f);
-
-            EditorLayoutTools.Title("Check KeyFile");
-
-            GUILayout.Space(2f);
-
-            using (new EditorGUILayout.HorizontalScope())
-            {
-                GUILayout.FlexibleSpace();
-
-                if (GUILayout.Button("Load", EditorStyles.miniButton, GUILayout.Width(250f)))
-                {
-                    var fileDirectory = Prefs.FileDirectory;
-
-                    if (!Directory.Exists(fileDirectory))
-                    {
-                        fileDirectory = projectFolderPath;
-                    }
-
-                    var filePath = EditorUtility.OpenFilePanel("Load KeyFile", fileDirectory, string.Empty);
-
-                    if (!filePath.IsNullOrEmpty())
-                    {
-                        var keyFile = keyFileManager.Load(filePath);
-
-                        using (new DisableStackTraceScope())
-                        {
-                            Debug.LogFormat("FilePath: {0}\nKey: {1}\nIv: {2}", filePath, keyFile.Key, keyFile.Iv);
-                        }
-
-                        Prefs.FileDirectory = Path.GetDirectoryName(filePath);
-                    }
-                }
-
-                GUILayout.Space(5f);
-            }
-        }
-    }
+				keyInfos.Add(keyInfo);
+			}
+		}
+	}
 }

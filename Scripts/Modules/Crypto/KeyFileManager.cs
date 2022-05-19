@@ -1,8 +1,9 @@
-﻿
+
 using System;
+using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Text;
+using Cysharp.Threading.Tasks;
 using Extensions;
 
 namespace Modules.Crypto
@@ -20,26 +21,41 @@ namespace Modules.Crypto
         }
     }
 
-    public interface IKeyFileManager
+    public interface IKeyFileManager<TKeyType> where TKeyType : Enum
     {
-        void Create(string filePath, string key, string iv);
+		string FileDirectory { get; }
 
-        KeyData Load(string filePath);
+		void Create(string filePath, string key, string iv);
 
-        KeyData Load(byte[] bytes);
-    }
+		KeyData Get(TKeyType keyType);
 
-    public abstract class KeyFileManager<TInstance> : Singleton<TInstance>, IKeyFileManager where TInstance : KeyFileManager<TInstance>
+		string GetFileName(TKeyType keyType);
+
+		void ClearCache();
+	}
+
+    public abstract class KeyFileManager<TInstance, TKeyType> : Singleton<TInstance>, IKeyFileManager<TKeyType>
+		where TInstance : KeyFileManager<TInstance, TKeyType>
+		where TKeyType : Enum
     {
         //----- params -----
 
         //----- field -----
 
+		private Dictionary<TKeyType, KeyData> keyCache = null;
+
         //----- property -----
 
-        protected abstract string Separator { get; }
+		public abstract string FileDirectory { get; }
+
+		protected abstract string Separator { get; }
 
         //----- method -----
+
+		protected override void OnCreate()
+		{
+			keyCache = new Dictionary<TKeyType, KeyData>();
+		}
 
         public void Create(string filePath, string key, string iv)
         {
@@ -70,11 +86,11 @@ namespace Modules.Crypto
             }
         }
 
-        public KeyData Load(string filePath)
+        private KeyData Load(string filePath)
         {
             if (!File.Exists(filePath))
             {
-                throw new FileNotFoundException();
+                return new KeyData(string.Empty, string.Empty);
             }
 
             var bytes = new byte[0];
@@ -89,11 +105,6 @@ namespace Modules.Crypto
                 }
             }
 
-            return Load(bytes);
-        }
-
-        public KeyData Load(byte[] bytes)
-        {
             if (bytes == null || bytes.IsEmpty()){ return null; }
 
             bytes = CustomDecode(bytes);
@@ -119,7 +130,54 @@ namespace Modules.Crypto
             return new KeyData(key, iv);
         }
 
-        protected virtual byte[] CustomEncode(byte[] bytes) { return bytes; }
+		#pragma warning disable CS4014
+
+		public KeyData Get(TKeyType keyType)
+		{
+			var keyData = keyCache.GetValueOrDefault(keyType);
+
+			if (keyData != null){ return keyData; }
+
+			var fileName = GetFileName(keyType);
+
+			var filePath = PathUtility.Combine(FileDirectory, fileName);
+
+			// ※ AndroidではstreamingAssetsPathがWebRequestからしかアクセスできないのでtemporaryCachePathにファイルを複製する.
+
+			#if UNITY_ANDROID && !UNITY_EDITOR
+
+			if (filePath.StartsWith(UnityPathUtility.StreamingAssetsPath))
+			{
+				AndroidUtility.CopyStreamingToTemporary(filePath);
+			}
+			
+			#endif
+
+			keyData = Load(filePath);
+			
+			keyCache.Add(keyType, keyData);
+
+			return keyData;
+		}
+
+		#pragma warning restore CS4014
+		
+		public string GetFileName(TKeyType keyType)
+		{
+			var keyName = Enum.GetName(typeof(TKeyType), keyType);
+
+			return keyName.GetHash();
+		}
+
+		public void ClearCache()
+		{
+			if (keyCache != null)
+			{
+				keyCache.Clear();
+			}
+		}
+
+		protected virtual byte[] CustomEncode(byte[] bytes) { return bytes; }
 
         protected virtual byte[] CustomDecode(byte[] bytes) { return bytes; }
     }
