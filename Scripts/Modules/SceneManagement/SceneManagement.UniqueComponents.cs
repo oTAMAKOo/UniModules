@@ -60,13 +60,15 @@ namespace Modules.SceneManagement
 
         public void RegisterUniqueComponent(Type type, Behaviour target)
         {
+            if (type == null){ return; }
+
             if (UnityUtility.IsNull(target)){ return; }
 
             var capturedComponent = capturedComponents.GetValueOrDefault(type);
 
             if (capturedComponent == target){ return; }
 
-            UnityUtility.SafeDelete(capturedComponent);
+            UnityUtility.SafeDelete(capturedComponent, true);
 
             target.OnDestroyAsObservable()
                 .Subscribe(_ => capturedComponents.Remove(type))
@@ -105,50 +107,51 @@ namespace Modules.SceneManagement
                 UnityEngine.Object.DontDestroyOnLoad(uniqueComponentsRoot);
             }
 
+            var allComponents = new List<Behaviour>();
+
+            foreach (var rootObject in rootObjects)
+            {
+                var components = rootObject.DescendantsAndSelf().SelectMany(x => x.GetComponents<Behaviour>());
+
+                allComponents.AddRange(components);
+            }
+
             foreach (var uniqueComponent in UniqueComponents)
             {
                 var key = uniqueComponent.Key;
+                
+                var components = allComponents.Where(x => x.GetType() == key).ToArray();
 
-                foreach (var rootObject in rootObjects)
+                // 対象のコンポーネントがなければなにもしない.
+                if (components.IsEmpty()) { continue; }
+
+                var capturedComponent = capturedComponents.GetValueOrDefault(key);
+
+                // 管理中のコンポーネントがなければとりあえず1つ管理する.
+                if (UnityUtility.IsNull(capturedComponent))
                 {
-                    var allObjects = rootObject.DescendantsAndSelf().ToArray();
+                    var component = components.First();
 
-                    var components = allObjects
-                        .SelectMany(x => x.GetComponents(key))
-                        .OfType<Behaviour>()
-                        .ToArray();
+                    RegisterUniqueComponent(key, component);
+                }
 
-                    // 対象のコンポーネントがなければなにもしない.
-                    if (components.IsEmpty()) { continue; }
+                // 管理中のコンポーネントしかない場合終了.
+                if (components.Length == 1 && components.First() == capturedComponents[key]) { continue; }
 
-                    var capturedComponent = capturedComponents.GetValueOrDefault(key);
-
-                    // 管理中のコンポーネントがなければとりあえず1つ管理する.
-                    if (UnityUtility.IsNull(capturedComponent))
+                // 管理外のコンポーネント
+                foreach (var component in components.Where(x => x != capturedComponents[key]).Where(x => x.enabled))
+                {
+                    switch (uniqueComponent.Value.DuplicateAction)
                     {
-                        var component = components.First();
-
-                        RegisterUniqueComponent(key, component);
-                    }
-
-                    // 管理中のコンポーネントしかない場合終了.
-                    if (components.Length == 1 && components.First() == capturedComponents[key]) { continue; }
-
-                    // 管理外のコンポーネント
-                    foreach (var component in components.Where(x => x != capturedComponents[key]).Where(x => x.enabled))
-                    {
-                        switch (uniqueComponent.Value.DuplicateAction)
-                        {
-                            case DuplicatedAction.DisableComponent:
-                                component.enabled = false;
-                                break;
-                            case DuplicatedAction.DisableGameObject:
-                                UnityUtility.SetActive(component.gameObject, false);
-                                break;
-                            case DuplicatedAction.DestroyGameObject:
-                                UnityUtility.SafeDelete(component.gameObject);
-                                break;
-                        }
+                        case DuplicatedAction.DisableComponent:
+                            component.enabled = false;
+                            break;
+                        case DuplicatedAction.DisableGameObject:
+                            UnityUtility.SetActive(component.gameObject, false);
+                            break;
+                        case DuplicatedAction.DestroyGameObject:
+                            UnityUtility.SafeDelete(component.gameObject);
+                            break;
                     }
                 }
             }
