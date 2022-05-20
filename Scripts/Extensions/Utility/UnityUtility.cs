@@ -1,4 +1,4 @@
-﻿
+
 
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -283,31 +283,31 @@ namespace Extensions
         /// <summary> 状態取得 </summary>
         public static bool IsActive(GameObject instance)
         {
-            return instance && instance.activeSelf;
+            return !IsNull(instance) && instance.activeSelf;
         }
 
         /// <summary> 状態取得 </summary>
         public static bool IsActive<T>(T instance) where T : Component
         {
-            return instance && instance.gameObject.activeSelf;
+            return !IsNull(instance) && instance.gameObject.activeSelf;
         }
 
         /// <summary> 階層内状態取得 </summary>
         public static bool IsActiveInHierarchy(GameObject instance)
         {
-            return instance && instance.activeInHierarchy;
+            return !IsNull(instance) && instance.activeInHierarchy;
         }
 
         /// <summary> 階層内状態取得 </summary>
         public static bool IsActiveInHierarchy<T>(T instance) where T : Component
         {
-            return instance && instance.gameObject.activeInHierarchy;
+            return !IsNull(instance) && instance.gameObject.activeInHierarchy;
         }
 
         /// <summary> 状態設定 </summary>
         public static void SetActive(GameObject instance, bool state)
         {
-            if (instance == null) { return; }
+            if (IsNull(instance)) { return; }
 
             if (state == instance.activeSelf) { return; }
 
@@ -317,7 +317,7 @@ namespace Extensions
         /// <summary> 状態設定 </summary>
         public static void SetActive<T>(T instance, bool state) where T : Component
         {
-            if (instance == null) { return; }
+            if (IsNull(instance)) { return; }
 
             if (state == instance.gameObject.activeSelf) { return; }
 
@@ -331,7 +331,7 @@ namespace Extensions
         /// <summary> 親オブジェクト設定 </summary>
         public static void SetParent(GameObject instance, GameObject parent, bool worldPositionStays = false)
         {
-            if (instance != null)
+            if (!IsNull(instance))
             {
                 instance.transform.SetParent(parent != null ? parent.transform : null, worldPositionStays);
             }
@@ -340,7 +340,7 @@ namespace Extensions
         /// <summary> 親オブジェクト設定 </summary>
         public static void SetParent(Component instance, Component parent, bool worldPositionStays = false)
         {
-            if (instance != null)
+            if (!IsNull(instance))
             {
                 instance.transform.SetParent(parent != null ? parent.transform : null, worldPositionStays);
             }
