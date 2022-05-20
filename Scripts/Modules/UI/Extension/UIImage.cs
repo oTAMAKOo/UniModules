@@ -1,4 +1,4 @@
-﻿
+
 using System;
 using UnityEngine;
 using UnityEngine.UI;
@@ -34,6 +34,20 @@ namespace Modules.UI.Extension
             get { return component.sprite; }
             set { component.sprite = value; }
         }
+
+		public float alpha
+		{
+			get { return Image.color.a; }
+
+			set
+			{
+				var color = Image.color;
+
+				color.a = value;
+
+				Image.color = color;
+			}
+		}
 
         //----- method -----
 
