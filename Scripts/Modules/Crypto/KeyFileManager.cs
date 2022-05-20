@@ -122,7 +122,9 @@ namespace Modules.Crypto
 
 			#if UNITY_ANDROID && !UNITY_EDITOR
 
-			await AndroidUtility.CopyStreamingToTemporary(streamingAssetPath);
+			await AndroidUtility.CopyStreamingToTemporary(filePath);
+
+			filePath = AndroidUtility.ConvertStreamingAssetsLoadPath(filePath);
 
 			#endif
 
@@ -143,7 +145,7 @@ namespace Modules.Crypto
 				throw new FileNotFoundException(filePath);
 			}
 			
-			if(bytes != null && bytes.Any())
+			if (bytes.Any())
 			{
 				bytes = CustomDecode(bytes);
 
