@@ -1,7 +1,8 @@
 
-using System;
 using UnityEngine;
+using System;
 using System.Collections.Generic;
+using System.Threading;
 using Extensions;
 
 namespace Modules.Devkit.Console
@@ -21,6 +22,10 @@ namespace Modules.Devkit.Console
 
         //----- field -----
 
+        private static SynchronizationContext unitySynchronizationContext = null;
+
+        private static int mainThreadId = 0;
+
         private static bool? isDevelopmentBuild = null;
 
         private static bool enableNextLogStackTrace = false;
@@ -39,9 +44,13 @@ namespace Modules.Devkit.Console
             DisableEventNames = new HashSet<string>();
         }
 
-        [RuntimeInitializeOnLoadMethod]
-        private static void RuntimeInitializeOnLoadMethod()
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterAssembliesLoaded)]
+        private static void OnAfterAssembliesLoaded()
         {
+            unitySynchronizationContext = SynchronizationContext.Current;
+
+            mainThreadId = Thread.CurrentThread.ManagedThreadId;
+
             isDevelopmentBuild = UnityEngine.Debug.isDebugBuild;
         }
 
@@ -86,9 +95,21 @@ namespace Modules.Devkit.Console
             }
             else
             {
-                using (new DisableStackTraceScope())
+                Action output = () =>
                 {
-                    LogOutput(logType, text);
+                    using (new DisableStackTraceScope())
+                    {
+                        LogOutput(logType, text);
+                    }
+                };
+
+                if (mainThreadId != Thread.CurrentThread.ManagedThreadId)
+                {
+                    unitySynchronizationContext.Post(_ => output.Invoke(), null);
+                }
+                else
+                {
+                    output.Invoke();
                 }
             }
 
