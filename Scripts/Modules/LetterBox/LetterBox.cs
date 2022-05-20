@@ -43,12 +43,7 @@ namespace Modules.LetterBox
 
         void OnEnable()
         {
-            // OnEnableのタイミングでApplyしてもRectTransformに反映されないので最初のUpdateで実行.
-            Observable.EveryUpdate()
-                .First()
-                .TakeUntilDisable(this)
-                .Subscribe(_ => Apply())
-                .AddTo(this);
+			Apply();
         }
 
         public void Apply()
