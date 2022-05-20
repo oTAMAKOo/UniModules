@@ -3,10 +3,10 @@ using UnityEngine;
 using UnityEditor;
 using System;
 using System.Collections.Generic;
-using Extensions;
-using Extensions.Devkit;
 using System.IO;
 using Cysharp.Threading.Tasks;
+using Extensions;
+using Extensions.Devkit;
 using Modules.Devkit.Project;
 
 namespace Modules.Crypto
@@ -39,7 +39,7 @@ namespace Modules.Crypto
 
         //----- method -----
 
-        public static void Open(IKeyFileManager<TKeyType> keyFileManager)
+        public static async UniTask Open(IKeyFileManager<TKeyType> keyFileManager)
         {
             Instance.minSize = WindowSize;
 			Instance.maxSize = WindowSize;
@@ -48,13 +48,26 @@ namespace Modules.Crypto
 
             Instance.keyFileManager = keyFileManager;
 
-			Instance.LoadKeyInfo();
+			await Instance.LoadKeyInfo();
 
 			Instance.ShowUtility();
         }
 
         void OnGUI()
         {
+			var streamingAssetPath =  ProjectFolders.Instance.StreamingAssetPath;
+
+			if (string.IsNullOrEmpty(streamingAssetPath))
+			{
+				EditorGUILayout.HelpBox("StreamingAssets folder is not registered in ProjectFolders.", MessageType.Error);
+
+				return;
+			}
+
+			EditorGUILayout.Separator();
+
+			EditorGUILayout.SelectableLabel("KeyFile Path : " + streamingAssetPath, GUILayout.Height(EditorGUIUtility.singleLineHeight));
+
 			using (var scrollViewScope = new EditorGUILayout.ScrollViewScope(scrollPosition))
 			{
 				foreach (var keyInfo in keyInfos)
@@ -71,11 +84,9 @@ namespace Modules.Crypto
 							{
 								if (GUILayout.Button("Generate", EditorStyles.miniButton, GUILayout.Width(80f)))
 								{
-									var resourcesDirectory = ProjectFolders.Instance.ResourcesPath;
+									var loadPath = keyFileManager.GetLoadPath(keyInfo.KeyType);
 
-									var resourcesPath = keyFileManager.GetResourcesPath(keyInfo.KeyType);
-
-									var filePath = PathUtility.Combine(resourcesDirectory, resourcesPath);
+									var filePath = PathUtility.Combine(streamingAssetPath, loadPath);
 
 									keyFileManager.Create(filePath, keyInfo.Key, keyInfo.Iv);
 
@@ -135,11 +146,11 @@ namespace Modules.Crypto
 			}
 		}
 
-		private void LoadKeyInfo()
+		private async UniTask LoadKeyInfo()
 		{
 			keyInfos = new List<KeyInfo>();
 
-			keyFileManager.Load();
+			await keyFileManager.Load();
 
 			var enumNames = Enum.GetNames(typeof(TKeyType));
 
@@ -147,9 +158,9 @@ namespace Modules.Crypto
 			{
 				var enumValue = EnumExtensions.FindByName(enumName , default(TKeyType));
 				
-				var resourcesPath = keyFileManager.GetResourcesPath(enumValue);
+				var loadPath = keyFileManager.GetLoadPath(enumValue);
 
-				var fileName = Path.GetFileName(resourcesPath);
+				var fileName = Path.GetFileName(loadPath);
 				
 				var keyData = keyFileManager.Get(enumValue);
 

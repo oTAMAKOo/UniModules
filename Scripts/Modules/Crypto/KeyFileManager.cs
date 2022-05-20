@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
+using Cysharp.Threading.Tasks;
 using Extensions;
 
 namespace Modules.Crypto
@@ -24,17 +25,17 @@ namespace Modules.Crypto
 
     public interface IKeyFileManager<TKeyType> where TKeyType : Enum
     {
-		string ResourcesDirectory { get; }
+		string FileDirectory { get; }
 
 		void Create(string filePath, string key, string iv);
 
-		void Load();
+		UniTask Load();
 
 		void ClearCache();
 
 		KeyData Get(TKeyType keyType);
 
-		string GetResourcesPath(TKeyType keyType);
+		string GetLoadPath(TKeyType keyType);
 	}
 
     public abstract class KeyFileManager<TInstance, TKeyType> : Singleton<TInstance>, IKeyFileManager<TKeyType>
@@ -49,7 +50,7 @@ namespace Modules.Crypto
 
         //----- property -----
 
-		public abstract string ResourcesDirectory { get; }
+		public abstract string FileDirectory { get; }
 
 		protected abstract string Separator { get; }
 
@@ -89,49 +90,82 @@ namespace Modules.Crypto
             }
         }
 
-		public void Load()
+		public async UniTask Load()
 		{
 			keyCache = new Dictionary<TKeyType, KeyData>();
 
 			var keyTypes = Enum.GetValues(typeof(TKeyType)).Cast<TKeyType>();
 			
+			var tasks = new List<UniTask>();
+
 			foreach (var keyType in keyTypes)
 			{
-				var resourcesPath = GetResourcesPath(keyType);
+				var task = UniTask.Defer(() => LoadKeyFile(keyType));
 
-				var loadPath = PathUtility.GetPathWithoutExtension(resourcesPath);
+				tasks.Add(task);
+			}
 
-				var asset = Resources.Load(loadPath) as TextAsset;
+			await UniTask.WhenAll(tasks);
+		}
+		
+		public async UniTask LoadKeyFile(TKeyType keyType)
+		{
+			byte[] bytes = null;
 
-				if (asset != null)
+			var loadPath = GetLoadPath(keyType);
+
+            var streamingAssetPath = UnityPathUtility.StreamingAssetsPath;
+
+			var filePath = PathUtility.Combine(streamingAssetPath, loadPath);
+
+			// ※ AndroidではstreamingAssetsPathがWebRequestからしかアクセスできないのでtemporaryCachePathにファイルを複製する.
+
+			#if UNITY_ANDROID && !UNITY_EDITOR
+
+			await AndroidUtility.CopyStreamingToTemporary(streamingAssetPath);
+
+			#endif
+
+			if (File.Exists(filePath))
+			{
+				using (var fileStream = File.Open(filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
 				{
-					var bytes = asset.bytes;
-
-					if(bytes != null && bytes.Any())
+					using (var memoryStream = new MemoryStream())
 					{
-						bytes = CustomDecode(bytes);
+						await fileStream.CopyToAsync(memoryStream);
 
-						var str = Encoding.UTF8.GetString(bytes);
-
-						var parts = str.Split(new string[]{ Separator }, StringSplitOptions.None);
-
-						var encryptKey = parts.ElementAtOrDefault(0, string.Empty);
-						var encryptIv = parts.ElementAtOrDefault(1, string.Empty);
-						var fileKey = parts.ElementAtOrDefault(2, string.Empty);
-
-						if (string.IsNullOrEmpty(encryptKey) || string.IsNullOrEmpty(encryptIv) || string.IsNullOrEmpty(fileKey))
-						{
-							throw new InvalidDataException(resourcesPath);
-						}
-
-						var aesKey = new AesCryptoKey(fileKey);
-
-						var key = encryptKey.Decrypt(aesKey);
-						var iv = encryptIv.Decrypt(aesKey);
-			
-						keyCache.Add(keyType, new KeyData(key, iv));
+						bytes = memoryStream.ToArray();
 					}
 				}
+			}
+			else
+			{
+				throw new FileNotFoundException(filePath);
+			}
+			
+			if(bytes != null && bytes.Any())
+			{
+				bytes = CustomDecode(bytes);
+
+				var str = Encoding.UTF8.GetString(bytes);
+
+				var parts = str.Split(new string[]{ Separator }, StringSplitOptions.None);
+
+				var encryptKey = parts.ElementAtOrDefault(0, string.Empty);
+				var encryptIv = parts.ElementAtOrDefault(1, string.Empty);
+				var fileKey = parts.ElementAtOrDefault(2, string.Empty);
+
+				if (string.IsNullOrEmpty(encryptKey) || string.IsNullOrEmpty(encryptIv) || string.IsNullOrEmpty(fileKey))
+				{
+					throw new InvalidDataException(filePath);
+				}
+
+				var aesKey = new AesCryptoKey(fileKey);
+
+				var key = encryptKey.Decrypt(aesKey);
+				var iv = encryptIv.Decrypt(aesKey);
+			
+				keyCache.Add(keyType, new KeyData(key, iv));
 			}
 		}
 
@@ -140,13 +174,13 @@ namespace Modules.Crypto
 			return keyCache.GetValueOrDefault(keyType);
 		}
 
-		public string GetResourcesPath(TKeyType keyType)
+		public string GetLoadPath(TKeyType keyType)
 		{
 			var keyName = Enum.GetName(typeof(TKeyType), keyType);
 
-			var fileName = keyName.GetHash() + ".bytes";
+			var fileName = keyName.GetHash();
 
-			return PathUtility.Combine(ResourcesDirectory, fileName);
+			return PathUtility.Combine(FileDirectory, fileName);
 		}
 
 		public void ClearCache()
