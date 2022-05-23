@@ -545,7 +545,7 @@ namespace Modules.AssetBundles
 
                                 loadQueueing[x] = Observable.FromMicroCoroutine<SeekableAssetBundle>(_observer =>
                                         {
-                                            return LoadAssetBundleFromCache(_observer, info);
+                                            return LoadAssetBundle(_observer, info);
                                         })
                                     .Timeout(TimeoutLimit)
                                     .OnErrorRetry((TimeoutException ex) => OnTimeout(info, ex), RetryCount, RetryDelaySeconds)
@@ -624,11 +624,27 @@ namespace Modules.AssetBundles
             observer.OnCompleted();
         }
 
-        private IEnumerator LoadAssetBundleFromCache(IObserver<SeekableAssetBundle> observer, AssetInfo assetInfo)
+        private IEnumerator LoadAssetBundle(IObserver<SeekableAssetBundle> observer, AssetInfo assetInfo)
         {
             var filePath = GetFilePath(assetInfo);
             var assetBundleInfo = assetInfo.AssetBundle;
             var assetBundleName = assetBundleInfo.AssetBundleName;
+
+			#if UNITY_ANDROID && !UNITY_EDITOR
+
+            if (localMode && filePath.StartsWith(UnityPathUtility.StreamingAssetsPath))
+            {
+                var copyYield = AndroidUtility.CopyStreamingToTemporary(filePath).ToObservable().ToYieldInstruction();
+
+                while (!copyYield.IsDone)
+                {
+                    yield return null;
+                }
+
+                filePath = AndroidUtility.ConvertStreamingAssetsLoadPath(filePath);
+            }
+
+			#endif
             
             var fileStream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read);
             
