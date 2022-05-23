@@ -1,4 +1,4 @@
-﻿
+
 using System.Linq;
 using UnityEngine;
 using UnityEngine.UI;
@@ -14,9 +14,7 @@ namespace Modules.UI.Extension
         //----- params -----
 
         //----- field -----
-
-        [SerializeField]
-        protected RectTransform canvasRoot = null;
+		
         [SerializeField]
         protected bool modifyCanvasCamera = true;
         [SerializeField]
@@ -28,13 +26,7 @@ namespace Modules.UI.Extension
 
         public Canvas Canvas { get { return component; } }
 
-        public RectTransform CanvasRoot
-        {
-            get { return canvasRoot; }
-            set { canvasRoot = value; }
-        }
-
-        public bool CanvasCameraModify
+		public bool CanvasCameraModify
         {
             get { return modifyCanvasCamera; }
             set { modifyCanvasCamera = value; }
@@ -74,27 +66,12 @@ namespace Modules.UI.Extension
                     ModifyCanvasCamera();
                 }
             }
-
-            ModifyCanvasRoot();
+			
             ModifyCanvasCamera();
             ModifyCanvasScaler();
-        }
+		}
 
-        protected virtual void ModifyCanvasRoot()
-        {
-            if (canvasRoot == null) { return; }
-
-            if (!component.isRootCanvas) { return; }
-
-            canvasRoot.Reset();
-
-            canvasRoot.anchorMin = new Vector2(0.5f, 0.5f);
-            canvasRoot.anchorMax = new Vector2(0.5f, 0.5f);
-
-            canvasRoot.SetSize(ReferenceResolution);
-        }
-
-        // Canvasにカメラを適用.
+		// Canvasにカメラを適用.
         protected virtual void ModifyCanvasCamera()
         {
             var canvas = Canvas;
@@ -149,7 +126,7 @@ namespace Modules.UI.Extension
                     var referenceAspectRatio = canvasScaler.referenceResolution.x / canvasScaler.referenceResolution.y;
 
                     canvasScaler.matchWidthOrHeight = currentAspectRatio < referenceAspectRatio ? 0 : 1;
-                }
+				}
 
                 canvasScaler.enabled = true;
             }

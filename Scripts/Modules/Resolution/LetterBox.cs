@@ -5,7 +5,7 @@ using Extensions;
 using UniRx;
 using Modules.UI.Extension;
 
-namespace Modules.LetterBox
+namespace Modules.Resolution
 {
     [ExecuteAlways]
     public sealed class LetterBox : SingletonMonoBehaviour<LetterBox>
@@ -27,6 +27,9 @@ namespace Modules.LetterBox
         [SerializeField]
         private RectTransform right = null;
 
+		private CanvasScaler canvasScaler = null;
+		private Vector2? lastLetterBoxSize = null;
+
         //----- property -----
 
         public float StatusBarHeight { get; set; }
@@ -41,36 +44,56 @@ namespace Modules.LetterBox
             Instance.Apply();
         }
 
+		protected override void Awake()
+		{
+			base.Awake();
+
+			canvasScaler = UnityUtility.GetComponent<CanvasScaler>(uiCanvas);
+		}
+
         void OnEnable()
         {
+			UpdateCanvas();
 			Apply();
-        }
+		}
+
+		void Update()
+		{
+			Apply();
+		}
+
+		private void UpdateCanvas()
+		{
+			var canvas = uiCanvas.Canvas;
+
+			var enable = canvasScaler.uiScaleMode == CanvasScaler.ScaleMode.ScaleWithScreenSize;
+
+			UnityUtility.SetActive(gameObject, enable);
+
+			if (!enable) { return; }
+
+			uiCanvas.ModifyCanvasScaler();
+            
+			var canvasRectTransform = canvas.transform as RectTransform;
+
+			LayoutRebuilder.ForceRebuildLayoutImmediate(canvasRectTransform);
+		}
 
         public void Apply()
         {
-            var canvas = uiCanvas.Canvas;
+			var canvas = uiCanvas.Canvas;
 
-            var canvasScaler = UnityUtility.GetComponent<CanvasScaler>(uiCanvas);
-            
-            Canvas.ForceUpdateCanvases();
+			var canvasRectTransform = canvas.transform as RectTransform;
 
-            var enable = canvasScaler.uiScaleMode == CanvasScaler.ScaleMode.ScaleWithScreenSize;
-
-            UnityUtility.SetActive(gameObject, enable);
-
-            if (!enable) { return; }
-
-            uiCanvas.ModifyCanvasScaler();
-            
-            var canvasRectTransform = UnityUtility.GetComponent<RectTransform>(canvas.gameObject);
-
-            LayoutRebuilder.ForceRebuildLayoutImmediate(canvasRectTransform);
-
-            var letterBoxSize = new Vector2()
+			var letterBoxSize = new Vector2()
             {
                 x = (canvasRectTransform.GetWidth() - canvasScaler.referenceResolution.x) * 0.5f,
                 y = (canvasRectTransform.GetHeight() - canvasScaler.referenceResolution.y) * 0.5f,
             };
+
+			if (lastLetterBoxSize == letterBoxSize){ return; }
+
+			lastLetterBoxSize = letterBoxSize;
 
             var fitVertical = canvasScaler.matchWidthOrHeight == 1;
 
