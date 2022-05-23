@@ -38,8 +38,6 @@ namespace Modules.UI.Extension
             set { modifyCanvasScaler = value; }
         }
 
-        protected abstract Camera[] Cameras { get; }
-        protected abstract CanvasScaler.ScaleMode ScaleMode { get; }
         protected abstract Vector2 ReferenceResolution { get; }
 
         //----- method -----
@@ -113,23 +111,25 @@ namespace Modules.UI.Extension
             {
                 canvasScaler.enabled = false;
 
-                canvasScaler.uiScaleMode = ScaleMode;
-
-                if (canvasScaler.uiScaleMode == CanvasScaler.ScaleMode.ScaleWithScreenSize)
-                {
-                    canvasScaler.referenceResolution = ReferenceResolution;
-                    canvasScaler.screenMatchMode = CanvasScaler.ScreenMatchMode.MatchWidthOrHeight;
-
-                    var screenSize = ScreenUtility.GetSize();
-
-                    var currentAspectRatio = (float)screenSize.x / screenSize.y;
-                    var referenceAspectRatio = canvasScaler.referenceResolution.x / canvasScaler.referenceResolution.y;
-
-                    canvasScaler.matchWidthOrHeight = currentAspectRatio < referenceAspectRatio ? 0 : 1;
-				}
+                OnModifyCanvasScaler(canvasScaler);
 
                 canvasScaler.enabled = true;
             }
+        }
+
+        protected virtual void OnModifyCanvasScaler(CanvasScaler canvasScaler)
+        {
+            var screenSize = ScreenUtility.GetSize();
+
+            var currentAspectRatio = (float)screenSize.x / screenSize.y;
+            var referenceAspectRatio = canvasScaler.referenceResolution.x / canvasScaler.referenceResolution.y;
+
+            canvasScaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
+            canvasScaler.referenceResolution = ReferenceResolution;
+            canvasScaler.screenMatchMode = CanvasScaler.ScreenMatchMode.MatchWidthOrHeight;
+
+			// デフォルトは横持ち設定.
+            canvasScaler.matchWidthOrHeight = currentAspectRatio < referenceAspectRatio ? 0 : 1;
         }
     }
 }

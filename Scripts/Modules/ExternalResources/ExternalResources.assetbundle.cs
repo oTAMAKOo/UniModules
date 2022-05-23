@@ -204,11 +204,17 @@ namespace Modules.ExternalResource
 
                     var assetBundleName = assetInfo.AssetBundle.AssetBundleName;
 
-                    builder.AppendFormat("Load: {0} ({1:F2}ms)", Path.GetFileName(assetPath), sw.Elapsed.TotalMilliseconds).AppendLine();
-                    builder.AppendLine();
-                    builder.AppendFormat("LoadPath = {0}", assetPath).AppendLine();
-                    builder.AppendFormat("AssetBundleName = {0}", assetBundleName).AppendLine();
-                    builder.AppendFormat("Hash = {0}", assetInfo.Hash).AppendLine();
+					builder.AppendFormat("Load: {0} ({1:F2}ms)", Path.GetFileName(assetPath), sw.Elapsed.TotalMilliseconds).AppendLine();
+					builder.AppendLine();
+
+					if (LocalMode)
+					{
+						builder.AppendLine("<color=#DC143C><b>[LocalMode]</b></color>");
+					}
+
+					builder.AppendFormat("LoadPath = {0}", assetPath).AppendLine();
+					builder.AppendFormat("AssetBundleName = {0}", assetBundleName).AppendLine();
+					builder.AppendFormat("Hash = {0}", assetInfo.Hash).AppendLine();
 
                     if (!string.IsNullOrEmpty(assetInfo.Category))
                     {
