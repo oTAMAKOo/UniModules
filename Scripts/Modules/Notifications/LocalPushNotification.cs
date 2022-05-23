@@ -1,4 +1,4 @@
-﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿
+﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿
 using UnityEngine;
 using System;
 using System.Linq;
@@ -13,7 +13,7 @@ namespace Modules.Notifications
     {
         //----- params -----
 
-        public sealed class NotificationInfo
+        public sealed class Info
         {
             public int Identifier { get; private set; }
 
@@ -28,7 +28,7 @@ namespace Modules.Notifications
             public string SmallIconResource { get; set; }
             public Color32? Color { get; set; }
 
-            public NotificationInfo(long unixTime, string title, string message)
+            public Info(long unixTime, string title, string message)
             {
                 Identifier = Instance.initializedTime + Instance.incrementCount;
 
@@ -39,7 +39,7 @@ namespace Modules.Notifications
                 Title = title;
                 Message = message;
 
-                LargeIconResource = null;
+                LargeIconResource = "notify_icon_large";
                 SmallIconResource = "notify_icon_small";
                 Color = null;
                 BadgeCount = 1;
@@ -54,7 +54,7 @@ namespace Modules.Notifications
 
         private int incrementCount = 0;
 
-        private Dictionary<long, NotificationInfo> notifications = null;
+        private Dictionary<long, Info> notifications = null;
 
         private Subject<Unit> onNotificationRegister = null;
 
@@ -94,7 +94,7 @@ namespace Modules.Notifications
 
             incrementCount = 0;
 
-            notifications = new Dictionary<long, NotificationInfo>();
+            notifications = new Dictionary<long, Info>();
 
             // イベント登録.
 
@@ -118,7 +118,7 @@ namespace Modules.Notifications
         /// </summary>
         /// <param name="info"> 通知のパラメータ</param>
         /// <returns> 登録成功時は正のID、失敗時は-1</returns>
-        public long Set(NotificationInfo info)
+        public long Set(Info info)
         {
             if(!enable) { return -1; }
 
