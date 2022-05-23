@@ -1,7 +1,6 @@
-﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿
+﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿
 using UnityEngine;
 using System;
-using System.Linq;
 using System.Collections.Generic;
 using UniRx;
 using Extensions;
@@ -30,12 +29,9 @@ namespace Modules.Notifications
 
             public Info(long unixTime, string title, string message)
             {
-                Identifier = Instance.initializedTime + Instance.incrementCount;
+				Identifier = Prefs.identifier++;
 
-                // 通知IDを重複させない為カウンタを加算.
-                Instance.incrementCount++;
-
-                UnixTime = unixTime;
+				UnixTime = unixTime;
                 Title = title;
                 Message = message;
 
@@ -46,15 +42,20 @@ namespace Modules.Notifications
             }
         }
 
+		private sealed class Prefs
+		{
+			public static int identifier
+			{
+				get { return SecurePrefs.GetInt(typeof(Prefs).FullName + "-identifier", 1); }
+				set { SecurePrefs.SetInt(typeof(Prefs).FullName + "-identifier", value); }
+			}
+		}
+
         //----- field -----
 
         private bool enable = false;
 
-        private int initializedTime = 0;
-
-        private int incrementCount = 0;
-
-        private Dictionary<long, Info> notifications = null;
+		private Dictionary<long, Info> notifications = null;
 
         private Subject<Unit> onNotificationRegister = null;
 
@@ -68,13 +69,15 @@ namespace Modules.Notifications
 
             set
             {
-                // 有効に切り替わった過去に登録した通知を削除.
-                if (!enable && value)
-                {
-                    Clear();
-                }
+				var prev = enable;
 
-                enable = value;
+				enable = value;
+
+				// 過去に登録した通知を削除.
+				if (prev != value)
+				{
+					Clear();
+				}
             }
         }
 
@@ -89,10 +92,6 @@ namespace Modules.Notifications
             if (initialized){ return; }
 
             enable = false;
-
-            initializedTime = (int)DateTime.Now.ToUnixTime();
-
-            incrementCount = 0;
 
             notifications = new Dictionary<long, Info>();
 
@@ -139,7 +138,7 @@ namespace Modules.Notifications
             }
         }
 
-        private void Register()
+        private void Schedule()
         {
             if (!initialized || !enable) { return; }
 
@@ -154,7 +153,7 @@ namespace Modules.Notifications
 
             #if (UNITY_ANDROID || UNITY_IOS) && !UNITY_EDITOR
 
-            SetNotify();
+            AddSchedule();
 
             #endif
 
@@ -174,7 +173,8 @@ namespace Modules.Notifications
 
         private void OnSuspend()
         {
-            Register();
+			SecurePrefs.Save();
+			Schedule();
         }
 
         private void OnResume()

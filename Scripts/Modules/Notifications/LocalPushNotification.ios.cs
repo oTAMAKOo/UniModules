@@ -1,4 +1,4 @@
-﻿
+
 #if UNITY_IOS && !UNITY_EDITOR
 ﻿﻿﻿﻿
 using Unity.Notifications.iOS;
@@ -16,7 +16,7 @@ namespace Modules.Notifications
 
         //----- method -----
 
-        private void SetNotify()
+        private void AddSchedule()
         {
 			foreach (var info in notifications.Values)
             {

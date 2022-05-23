@@ -1,4 +1,4 @@
-﻿
+
 #if UNITY_ANDROID && !UNITY_EDITOR
 ﻿﻿﻿
 using UnityEngine;
@@ -12,7 +12,7 @@ namespace Modules.Notifications
     {
         //----- params -----
 
-        public partial class Prefs
+        private sealed partial class Prefs
         {
             public static int[] notificationKeys
             {
@@ -30,7 +30,7 @@ namespace Modules.Notifications
         //----- method -----
 
         /// <summary> Androidで使用するプッシュ通知用のチャンネルを登録 </summary>
-        public void RegisterChannel(string channelId, string title, string description)
+        public void RegisterChannel(string channelId, string title, Importance importance, string description)
         {
             // プッシュ通知用のチャンネルを登録.
 
@@ -38,14 +38,14 @@ namespace Modules.Notifications
             {
                 Id = channelId,
                 Name = title,
-                Importance = Importance.High,
+                Importance = importance,
                 Description = description,
             };
 
             AndroidNotificationCenter.RegisterNotificationChannel(notificationChannel);
         }
 
-        private void SetNotify()
+        private void AddSchedule()
         {
             var channelId = notificationChannel.Id;
 
@@ -86,8 +86,8 @@ namespace Modules.Notifications
 
         private void ClearNotifications()
         {
+            AndroidNotificationCenter.CancelAllDisplayedNotifications();
             AndroidNotificationCenter.CancelAllScheduledNotifications();
-
             AndroidNotificationCenter.CancelAllNotifications();
         }
     }
