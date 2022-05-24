@@ -9,7 +9,7 @@ using Extensions.Devkit;
 
 using Object = UnityEngine.Object;
 
-namespace Modules.ExternalResource.Editor
+namespace Modules.ExternalResource
 {
     [CustomEditor(typeof(ManagedAssets), true)]
     public sealed class ManagedAssetsInspector : UnityEditor.Editor

@@ -9,7 +9,7 @@ using Extensions;
 using Extensions.Devkit;
 using Modules.Devkit.ScriptableObjects;
 
-namespace Modules.ExternalResource.Editor
+namespace Modules.ExternalResource
 {
     public sealed class ManagedAssets : ReloadableScriptableObject<ManagedAssets>
     {

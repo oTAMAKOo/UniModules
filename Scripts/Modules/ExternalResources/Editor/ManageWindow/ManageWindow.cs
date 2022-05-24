@@ -1,4 +1,4 @@
-﻿
+
 using UnityEngine;
 using UnityEditor;
 using System.Linq;
@@ -9,7 +9,7 @@ using Modules.Devkit.AssemblyCompilation;
 
 using Object = UnityEngine.Object;
 
-namespace Modules.ExternalResource.Editor
+namespace Modules.ExternalResource
 {
     public sealed class ManageWindow : SingletonEditorWindow<ManageWindow>
     {

@@ -1,6 +1,6 @@
 ﻿
 using Extensions;
-using Modules.ExternalResource.Editor;
+using Modules.ExternalResource;
 using Modules.Devkit.Project;
 using Modules.ExternalResource;
 

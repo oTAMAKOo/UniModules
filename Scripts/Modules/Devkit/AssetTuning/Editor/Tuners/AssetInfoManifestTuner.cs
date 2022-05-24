@@ -4,7 +4,7 @@ using System.Linq;
 using Extensions;
 using Extensions.Devkit;
 using Modules.Devkit.Project;
-using Modules.ExternalResource.Editor;
+using Modules.ExternalResource;
 using Modules.ExternalResource;
 
 namespace Modules.Devkit.AssetTuning

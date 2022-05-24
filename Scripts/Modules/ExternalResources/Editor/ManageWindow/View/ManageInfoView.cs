@@ -11,7 +11,7 @@ using Modules.Devkit.Project;
 
 using Object = UnityEngine.Object;
 
-namespace Modules.ExternalResource.Editor
+namespace Modules.ExternalResource
 {
     public sealed class ManageInfoView : LifetimeDisposable
     {

@@ -7,7 +7,7 @@ using System.Collections.Generic;
 using Extensions;
 using Extensions.Devkit;
 
-namespace Modules.ExternalResource.Editor
+namespace Modules.ExternalResource
 {
     [CustomEditor(typeof(AssetInfoManifest))]
     public sealed class AssetInfoManifestInspector : UnityEditor.Editor

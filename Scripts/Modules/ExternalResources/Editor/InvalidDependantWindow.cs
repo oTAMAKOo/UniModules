@@ -1,4 +1,4 @@
-﻿
+
 using UnityEngine;
 using UnityEditor;
 using System;
@@ -11,7 +11,7 @@ using Modules.Devkit.Project;
 
 using Object = UnityEngine.Object;
 
-namespace Modules.ExternalResource.Editor
+namespace Modules.ExternalResource
 {
     public sealed class InvalidDependantWindow : SingletonEditorWindow<InvalidDependantWindow>
     {

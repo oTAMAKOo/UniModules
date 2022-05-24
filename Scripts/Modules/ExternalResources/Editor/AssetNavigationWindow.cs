@@ -8,7 +8,7 @@ using Modules.Devkit.Prefs;
 
 using Object = UnityEngine.Object;
 
-namespace Modules.ExternalResource.Editor
+namespace Modules.ExternalResource
 {
     public sealed class AssetNavigationWindow : SingletonEditorWindow<AssetNavigationWindow>
     {

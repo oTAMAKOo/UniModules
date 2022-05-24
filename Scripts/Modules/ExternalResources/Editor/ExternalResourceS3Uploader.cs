@@ -3,7 +3,7 @@ using UnityEngine;
 using System.Threading.Tasks;
 using Extensions;
 
-namespace Modules.ExternalResource.Editor
+namespace Modules.ExternalResource
 {
     public sealed class ExternalResourceS3Uploader
     {

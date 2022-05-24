@@ -1,4 +1,4 @@
-﻿
+
 using UnityEngine;
 using UnityEditor;
 using System;
@@ -8,7 +8,7 @@ using UniRx;
 using Extensions;
 using Extensions.Devkit;
 
-namespace Modules.ExternalResource.Editor
+namespace Modules.ExternalResource
 {
     public sealed class ManageAssetView : LifetimeDisposable
     {

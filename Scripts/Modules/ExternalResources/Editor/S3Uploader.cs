@@ -16,7 +16,7 @@ using Modules.Amazon.S3;
 using Modules.AssetBundles;
 using Modules.Devkit.Project;
 
-namespace Modules.ExternalResource.Editor
+namespace Modules.ExternalResource
 {
     public abstract class S3Uploader
     {

@@ -9,7 +9,7 @@ using Modules.Devkit.ScriptableObjects;
 
 using Object = UnityEngine.Object;
 
-namespace Modules.ExternalResource.Editor
+namespace Modules.ExternalResource
 {
     public sealed class ManageConfig : ReloadableScriptableObject<ManageConfig>
     {

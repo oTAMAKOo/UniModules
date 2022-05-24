@@ -1,7 +1,7 @@
 
 using System;
 
-namespace Modules.ExternalResource.Editor
+namespace Modules.ExternalResource
 {
     public enum AssetBundleNamingRule
     {

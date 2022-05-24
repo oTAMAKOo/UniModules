@@ -1,4 +1,4 @@
-﻿﻿﻿﻿
+﻿﻿﻿
 using UnityEngine;
 using UnityEditor;
 using System;
@@ -19,7 +19,7 @@ using Modules.CriWare.Editor;
 
 #endif
 
-namespace Modules.ExternalResource.Editor
+namespace Modules.ExternalResource
 {
     public static class BuildManager
     {

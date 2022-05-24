@@ -19,7 +19,7 @@ using Modules.CriWare;
 
 #endif
 
-namespace Modules.ExternalResource.Editor
+namespace Modules.ExternalResource
 {
     public sealed class AssetInfoManifestGenerator
     {

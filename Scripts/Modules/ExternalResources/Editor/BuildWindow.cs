@@ -1,4 +1,4 @@
-﻿
+
 using System;
 using UnityEngine;
 using UnityEditor;
@@ -11,7 +11,7 @@ using Modules.CriWare.Editor;
 
 #endif
 
-namespace Modules.ExternalResource.Editor
+namespace Modules.ExternalResource
 {
 	public sealed class BuildWindow : SingletonEditorWindow<BuildWindow>
     {

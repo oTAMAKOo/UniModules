@@ -8,7 +8,7 @@ using UniRx;
 using Extensions;
 using Extensions.Devkit;
 
-namespace Modules.ExternalResource.Editor
+namespace Modules.ExternalResource
 {
     public sealed class HeaderView : LifetimeDisposable
     {

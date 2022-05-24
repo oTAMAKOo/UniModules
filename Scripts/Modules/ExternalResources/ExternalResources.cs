@@ -167,7 +167,7 @@ namespace Modules.ExternalResource
 
         /// <summary>
         /// 暗号化キー設定.
-        /// Key,IVがModules.ExternalResource.Editor.ManageConfigのAssetのCryptKeyと一致している必要があります.
+        /// Key,IVがModules.ExternalResource.ManageConfigのAssetのCryptKeyと一致している必要があります.
         /// </summary>
         /// <param name="key">暗号化Key(32文字)</param>
         /// <param name="iv">暗号化IV(16文字)</param>
