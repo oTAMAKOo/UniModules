@@ -1,4 +1,4 @@
-﻿
+
 #if UNITY_STANDALONE_WIN
 
 using UnityEngine;
@@ -102,7 +102,7 @@ namespace Modules.StandAloneWindows
 
             WindowStyle = (int)GetStyle();
 
-            UniTask.Run(() => UpdateWindowStyle()).Forget();
+            UniTask.Create(() => UpdateWindowStyle()).Forget();
 
             initialize = true;
         }

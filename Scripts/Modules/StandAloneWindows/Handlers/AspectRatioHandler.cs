@@ -1,4 +1,4 @@
-﻿
+
 #if UNITY_STANDALONE_WIN
 
 // Reference from.
@@ -138,7 +138,7 @@ namespace Modules.StandAloneWindows
 
             updateAspectRatioCancel = new CancellationTokenSource();
 
-            UniTask.Run(() => UpdateAspectRatio()).Forget();
+            UniTask.Create(() => UpdateAspectRatio()).Forget();
 
             initialized = true;
         }
