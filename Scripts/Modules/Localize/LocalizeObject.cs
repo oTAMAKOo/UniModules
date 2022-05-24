@@ -16,7 +16,7 @@ namespace Modules.Localize
 
         //----- property -----
 
-		public static T CurrentLanguage { get; set; }
+		protected abstract T CurrentLanguage { get; }
 
 		//----- method -----
 

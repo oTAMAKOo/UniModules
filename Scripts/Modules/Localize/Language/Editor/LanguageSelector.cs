@@ -7,7 +7,7 @@ using Extensions.Devkit;
 using Modules.Devkit.Prefs;
 using Modules.TextData.Editor;
 
-namespace Modules.Localize.Editor
+namespace Modules.Localize
 {
 	public sealed class LanguageSelector : SingletonEditorWindow<LanguageSelector>
 	{

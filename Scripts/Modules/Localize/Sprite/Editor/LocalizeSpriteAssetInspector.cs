@@ -6,12 +6,11 @@ using System.Linq;
 using System.Collections.Generic;
 using Extensions;
 using Extensions.Devkit;
-using Modules.Devkit.Project;
 
 namespace Modules.Localize
 {
 	[CustomEditor(typeof(LocalizeSpriteAsset))]
-    public sealed class LocalizeSpriteObjectInspector : UnityEditor.Editor
+    public sealed class LocalizeSpriteAssetInspector : UnityEditor.Editor
     {
         //----- params -----
 
@@ -43,7 +42,9 @@ namespace Modules.Localize
 
 			var instance = target as LocalizeSpriteAsset;
 
-			cryptoKey = ProjectCryptoKey.Instance.GetCryptoKey();
+			var config = LocalizeSpriteConfig.Instance;
+
+			cryptoKey = config.GetCryptoKey();
 
 			toolbarPlusIcon = EditorGUIUtility.IconContent("Toolbar Plus");
 			toolbarMinusIcon = EditorGUIUtility.IconContent("Toolbar Minus");
@@ -85,8 +86,14 @@ namespace Modules.Localize
 
 		void OnDisable()
 		{
+			var instance = target as LocalizeSpriteAsset;
+
 			if (isChanged)
 			{
+				LocalizeSpriteAssetUpdater.SetFolderInfo(instance, cryptoKey);
+
+				LocalizeSpriteAssetUpdater.SetSpriteFolderInfo(instance);
+
 				UnityEditorUtility.SaveAsset(target);
 			}
 		}

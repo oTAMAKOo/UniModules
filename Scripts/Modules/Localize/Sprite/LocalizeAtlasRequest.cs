@@ -40,6 +40,8 @@ namespace Modules.Localize
 
 		public async UniTask RequestAtlas()
 		{
+			if (folderGuids.IsEmpty()){ return; }
+
 			var localizeAtlasManager = LocalizeAtlasManager.Instance;
 
 			var tasks = new List<UniTask>();
@@ -62,6 +64,8 @@ namespace Modules.Localize
 
 		public void ReleaseAtlas()
 		{
+			if (folderGuids.IsEmpty()){ return; }
+
 			var localizeAtlasManager = LocalizeAtlasManager.Instance;
 
 			foreach (var folderGuid in folderGuids)

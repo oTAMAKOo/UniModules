@@ -1,11 +1,9 @@
 
 using UnityEngine;
-using UnityEditor;
-using System.Linq;
 using Extensions;
 using Extensions.Devkit;
 
-namespace Modules.Localize.Editor
+namespace Modules.Localize
 {
     public static class LocalizeSpriteAssetBuilder
     {
@@ -27,9 +25,9 @@ namespace Modules.Localize.Editor
 
 			foreach (var target in targets)
 			{
-				SetFolderInfo(target, cryptoKey);
+				LocalizeSpriteAssetUpdater.SetFolderInfo(target, cryptoKey);
 
-				SetSpriteFolderInfo(target);
+				LocalizeSpriteAssetUpdater.SetSpriteFolderInfo(target);
 
 				UnityEditorUtility.SaveAsset(target);
 			}
@@ -38,51 +36,6 @@ namespace Modules.Localize.Editor
 			{
 				Debug.Log("Update LocalizeAsset complete.");
 			}
-		}
-
-		private static void SetFolderInfo(LocalizeSpriteAsset target, AesCryptoKey cryptoKey)
-		{
-			var folderDictionary = new LocalizeSpriteAsset.FolderDictionary();
-
-			var folderInfos = target.Infos.ToArray();
-
-			foreach (var folderInfo in folderInfos)
-			{
-				if (string.IsNullOrEmpty(folderInfo.guid)){ continue; }
-
-				var folderPath = AssetDatabase.GUIDToAssetPath(folderInfo.guid);
-
-				var encrypted = folderPath.Encrypt(cryptoKey);
-				
-				folderDictionary.Add(folderInfo.guid, encrypted);
-			}
-
-			Reflection.SetPrivateField(target, "folderDictionary", folderDictionary);
-		}
-
-		private static void SetSpriteFolderInfo(LocalizeSpriteAsset target)
-		{
-			var spriteDictionary = new LocalizeSpriteAsset.SpriteDictionary();
-
-			var folderInfos = target.Infos.ToArray();
-
-			foreach (var folderInfo in folderInfos)
-			{
-				if (string.IsNullOrEmpty(folderInfo.guid)){ continue; }
-
-				var folderPath = AssetDatabase.GUIDToAssetPath(folderInfo.guid);
-
-				if (string.IsNullOrEmpty(folderPath)){ continue; }
-
-				var spriteGuids = AssetDatabase.FindAssets("t:" + nameof(Sprite), new string[] { folderPath });
-
-				foreach (var spriteGuid in spriteGuids)
-				{
-					spriteDictionary.Add(spriteGuid, folderInfo.guid);
-				}
-			}
-
-			Reflection.SetPrivateField(target, "spriteDictionary", spriteDictionary);
 		}
 	}
 }
