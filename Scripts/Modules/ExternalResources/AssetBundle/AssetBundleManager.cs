@@ -3,10 +3,11 @@ using UnityEngine;
 using UnityEngine.Networking;
 using System;
 using System.Linq;
-using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
+using System.Threading;
+using Cysharp.Threading.Tasks;
 using UniRx;
 using Extensions;
 using Modules.ExternalResource;
@@ -65,10 +66,7 @@ namespace Modules.AssetBundles
         // 依存関係.
         private Dictionary<string, string[]> dependencies = null;
 
-        // ダウンロードキャンセル.
-        private YieldCancel yieldCancel = null;
-
-        // シュミュレートモードか.
+		// シュミュレートモードか.
         private bool simulateMode = false;
 
         // ローカルモードか.
@@ -99,7 +97,7 @@ namespace Modules.AssetBundles
             if (isInitialized) { return; }
 
             this.maxDownloadCount = maxDownloadCount;
-            this.simulateMode = Application.isEditor && simulateMode;
+            this.simulateMode = UnityUtility.isEditor && simulateMode;
 
             downloadList = new HashSet<string>();
             downloadQueueing = new Dictionary<string, IObservable<string>>();
@@ -139,15 +137,7 @@ namespace Modules.AssetBundles
             cryptoKey = new AesCryptoStreamKey(key, iv);
         }
 
-        /// <summary>
-        /// コルーチン中断用のクラスを登録.
-        /// </summary>
-        public void RegisterYieldCancel(YieldCancel yieldCancel)
-        {
-            this.yieldCancel = yieldCancel;
-        }
-
-        /// <summary> URLを設定. </summary>
+		/// <summary> URLを設定. </summary>
         /// <param name="remoteUrl">アセットバンドルのディレクトリURLを指定</param>
         /// <param name="versionHash">バージョンハッシュを指定</param>
         public void SetUrl(string remoteUrl, string versionHash)
@@ -220,27 +210,27 @@ namespace Modules.AssetBundles
 
         #region Download
 
-        private IEnumerator ReadyForDownload()
+        private async UniTask ReadyForDownload(CancellationToken cancelToken)
         {
             // wait network disconnect.
             while (Application.internetReachability == NetworkReachability.NotReachable)
             {
-                yield return null;
+                await UniTask.NextFrame(cancelToken);
             }
         }
 
         /// <summary>
         /// アセット情報ファイルを更新.
         /// </summary>
-        public IObservable<Unit> UpdateAssetInfoManifest()
+        public async UniTask UpdateAssetInfoManifest(CancellationToken cancelToken)
         {
-            if (simulateMode) { return Observable.ReturnUnit(); }
+            if (simulateMode) { return; }
 
-            if (localMode) { return Observable.ReturnUnit(); }
+            if (localMode) { return; }
 
             var manifestAssetInfo = AssetInfoManifest.GetManifestAssetInfo();
             
-            return Observable.FromMicroCoroutine(() => UpdateAssetBundleInternal(manifestAssetInfo));
+            await UpdateAssetBundleInternal(cancelToken, manifestAssetInfo);
         }
 
         /// <summary>
@@ -252,30 +242,20 @@ namespace Modules.AssetBundles
 
             if (localMode) { return Observable.ReturnUnit(); }
 
-            return Observable.FromMicroCoroutine(() => UpdateAssetBundleInternal(assetInfo, progress));
+            return Observable.FromUniTask(cancelToken => UpdateAssetBundleInternal(cancelToken, assetInfo, progress));
         }
 
-        private IEnumerator UpdateAssetBundleInternal(AssetInfo assetInfo, IProgress<float> progress = null)
+        private async UniTask UpdateAssetBundleInternal(CancellationToken cancelToken, AssetInfo assetInfo, IProgress<float> progress = null)
         {
-            //----------------------------------------------------------------------------------
-            // ※ 呼び出し頻度が高いのでFromMicroCoroutineで呼び出される.
-            //    戻り値を返す時はyield return null以外使わない.
-            //----------------------------------------------------------------------------------
-
-            var assetBundleName = assetInfo.AssetBundle.AssetBundleName;
+			var assetBundleName = assetInfo.AssetBundle.AssetBundleName;
 
             if (!loadedAssetBundles.ContainsKey(assetBundleName))
             {
                 // ネットワークの接続待ち.
 
-                var readyForDownloadYield = ReadyForDownload().ToYieldInstruction(yieldCancel.Token);
+				await ReadyForDownload(cancelToken);
 
-                while (!readyForDownloadYield.IsDone)
-                {
-                    yield return null;
-                }
-
-                // アセットバンドルと依存アセットバンドルをまとめてダウンロード.
+				// アセットバンドルと依存アセットバンドルをまとめてダウンロード.
 
                 var allBundles = new string[] { assetBundleName }.Concat(GetDependencies(assetBundleName)).ToArray();
 
@@ -296,14 +276,14 @@ namespace Modules.AssetBundles
                     {
                         var info = assetInfosByAssetBundleName.GetValueOrDefault(target).FirstOrDefault();
                         
-                        downloadQueueing[target] = Observable.FromMicroCoroutine(() => DownloadAssetBundle(info, progress))
-                            .Select(_ => target)
+                        downloadQueueing[target] = DownloadAssetBundle(info, progress)
+							.Select(_ => target)
                             .Share();
 
                         downloadTask = downloadQueueing[target];
                     }
-
-                    loadAllBundles[target] = downloadTask;
+					
+					loadAllBundles[target] = downloadTask;
                 }
 
                 foreach (var downloadTask in loadAllBundles)
@@ -311,7 +291,7 @@ namespace Modules.AssetBundles
                     // ダウンロードキューが空くまで待つ.
                     while (maxDownloadCount <= downloadList.Count)
                     {
-                        yield return null;
+                        await UniTask.NextFrame(cancelToken);
                     }
                     
                     // ダウンロード中でなかったらリストに追加.
@@ -319,15 +299,25 @@ namespace Modules.AssetBundles
                     {
                         downloadList.Add(downloadTask.Key);
                     }
-                    
+
                     // ダウンロード実行.
+					try
+					{
+						var awaiter = downloadTask.Value.GetAwaiter(cancelToken);
 
-                    var downloadYield = downloadTask.Value.ToYieldInstruction(yieldCancel.Token);
-
-                    while (!downloadYield.IsDone)
-                    {
-                        yield return null;
-                    }
+						while (!awaiter.IsCompleted)
+						{
+							await UniTask.NextFrame(cancelToken);
+						}
+					}
+					catch (OperationCanceledException) 
+					{
+						/* Canceled */
+					}
+					catch (Exception e)
+					{
+						Debug.LogErrorFormat("Exception : {0}\n{1}\n", downloadTask.Key, e);
+					}
 
                     // ダウンロード中リストから除外.
                     if (downloadList.Contains(downloadTask.Key))
@@ -344,32 +334,19 @@ namespace Modules.AssetBundles
             }
         }
 
-        private IEnumerator DownloadAssetBundle(AssetInfo assetInfo, IProgress<float> progress = null)
+        private IObservable<Unit> DownloadAssetBundle(AssetInfo assetInfo, IProgress<float> progress = null)
         {
-            //----------------------------------------------------------------------------------
-            // ※ 呼び出し頻度が高いのでFromMicroCoroutineで呼び出される.
-            //    戻り値を返す時はyield return null以外使わない.
-            //----------------------------------------------------------------------------------
-            
-            var downloadUrl = BuildDownloadUrl(assetInfo);
+			var downloadUrl = BuildDownloadUrl(assetInfo);
 
             var filePath = GetFilePath(assetInfo);
-
-            var downloader = Observable.Defer(() => Observable.FromMicroCoroutine(() => FileDownload(downloadUrl, filePath, progress)));
-
-            var downloadYield = downloader
+			
+            return Observable.FromUniTask(_cancelToken => FileDownload(_cancelToken, downloadUrl, filePath, progress))
                     .Timeout(TimeoutLimit)
                     .OnErrorRetry((TimeoutException ex) => OnTimeout(assetInfo, ex), RetryCount, RetryDelaySeconds)
-                    .DoOnError(x => OnError(x))
-                    .ToYieldInstruction(false, yieldCancel.Token);
+                    .DoOnError(x => OnError(x));
+		}
 
-            while (!downloadYield.IsDone)
-            {
-                yield return null;
-            }
-        }
-
-        private IEnumerator FileDownload(string url, string path, IProgress<float> progress = null)
+        private async UniTask FileDownload(CancellationToken cancelToken, string url, string path, IProgress<float> progress = null)
         {
             var webRequest = new UnityWebRequest(url);
             var buffer = new byte[256 * 1024];
@@ -383,18 +360,8 @@ namespace Modules.AssetBundles
 
             webRequest.downloadHandler = new AssetBundleDownloadHandler(path, buffer);
 
-            webRequest.SendWebRequest();
-
-            while (!webRequest.isDone)
-            {
-                if (progress != null)
-                {
-                    progress.Report(webRequest.downloadProgress);
-                }
-
-                yield return null;
-            }
-        }
+            await webRequest.SendWebRequest().ToUniTask(progress, cancellationToken: cancelToken);
+		}
 
         #endregion
 
@@ -476,38 +443,34 @@ namespace Modules.AssetBundles
             // コンポーネントを取得する場合はGameObjectから取得.
             if (typeof(T).IsSubclassOf(typeof(Component)))
             {
-                return Observable.FromMicroCoroutine<GameObject>(observer => LoadAssetInternal(observer, assetInfo, assetPath, autoUnLoad))
+                return Observable.FromUniTask(cancelToken => LoadAssetInternal<GameObject>(cancelToken, assetInfo, assetPath, autoUnLoad))
                     .Select(x => x != null ? x.GetComponent<T>() : null);                   
             }
 
-            return Observable.FromMicroCoroutine<T>(observer => LoadAssetInternal(observer, assetInfo, assetPath, autoUnLoad));
+            return Observable.FromUniTask(cancelToken => LoadAssetInternal<T>(cancelToken, assetInfo, assetPath, autoUnLoad));
         }
 
-        private IEnumerator LoadAssetInternal<T>(IObserver<T> observer, AssetInfo assetInfo, string assetPath, bool autoUnLoad) where T : UnityEngine.Object
+        private async UniTask<T> LoadAssetInternal<T>(CancellationToken cancelToken, AssetInfo assetInfo, string assetPath, bool autoUnLoad) where T : UnityEngine.Object
         {
-            //----------------------------------------------------------------------------------
-            // ※ 呼び出し頻度が高いのでFromMicroCoroutineで呼び出される.
-            //    戻り値を返す時はyield return null以外使わない.
-            //----------------------------------------------------------------------------------
-
             T result = null;
 
             #if UNITY_EDITOR
 
             if (simulateMode)
             {
-                var loadYield = SimulateLoadAsset<T>(assetPath).ToYieldInstruction(false, yieldCancel.Token);
-
-                while (!loadYield.IsDone)
-                {
-                    yield return null;
-                }
-
-                if (loadYield.HasResult && !loadYield.HasError && !loadYield.IsCanceled)
-                {
-                    result = loadYield.Result;
-                }
-            }
+				try
+				{
+					result = await SimulateLoadAsset<T>(assetPath).AttachExternalCancellation(cancelToken);
+				}
+				catch (OperationCanceledException)
+				{
+					/* Canceled */
+				}
+				catch (Exception e)
+				{
+					Debug.LogException(e);
+				}
+			}
             else
 
             #endif
@@ -543,10 +506,7 @@ namespace Modules.AssetBundles
 
                                 var info = assetInfosByAssetBundleName.GetValueOrDefault(x).FirstOrDefault();
 
-                                loadQueueing[x] = Observable.FromMicroCoroutine<SeekableAssetBundle>(_observer =>
-                                        {
-                                            return LoadAssetBundle(_observer, info);
-                                        })
+                                loadQueueing[x] = Observable.FromUniTask(_cancelToken => LoadAssetBundle(_cancelToken, info))
                                     .Timeout(TimeoutLimit)
                                     .OnErrorRetry((TimeoutException ex) => OnTimeout(info, ex), RetryCount, RetryDelaySeconds)
                                     .DoOnError(error => OnError(error))
@@ -580,51 +540,53 @@ namespace Modules.AssetBundles
                     loader = Observable.Defer(() => Observable.Return(loadedAssetBundle));
                 }
 
-                var loadYield = loader.ToYieldInstruction(false);
+				try
+				{
+					var awaiter = loader.GetAwaiter(cancelToken);
 
-                while (!loadYield.IsDone)
-                {
-                    yield return null;
-                }
-                
-                if (loadYield.HasError)
-                {
-                    Debug.LogException(loadYield.Error);
-                }
+					while (!awaiter.IsCompleted)
+					{
+						await UniTask.NextFrame(cancelToken);
+					}
 
-                if (loadYield.HasResult)
-                {
-                    var seekableAssetBundle = loadYield.Result;
+					var seekableAssetBundle = awaiter.GetResult();
 
-                    if (seekableAssetBundle != null)
-                    {
-                        var assetBundleRequest = seekableAssetBundle.assetBundle.LoadAssetAsync(assetPath, typeof(T));
+					if (seekableAssetBundle != null)
+					{
+						var assetBundleRequest = seekableAssetBundle.assetBundle.LoadAssetAsync(assetPath, typeof(T));
 
-                        while (!assetBundleRequest.isDone)
-                        {
-                            yield return null;
-                        }
+						while (!assetBundleRequest.isDone)
+						{
+							await UniTask.NextFrame(cancelToken);
+						}
 
-                        result = assetBundleRequest.asset as T;
+						result = assetBundleRequest.asset as T;
 
-                        if (result == null)
-                        {
-                            Debug.LogErrorFormat("[AssetBundle Load Error]\nAssetBundleName = {0}\nAssetPath = {1}", assetBundleName, assetPath);
-                        }
+						if (result == null)
+						{
+							Debug.LogErrorFormat("[AssetBundle Load Error]\nAssetBundleName = {0}\nAssetPath = {1}\n", assetBundleName, assetPath);
+						}
 
-                        if (autoUnLoad)
-                        {
-                            UnloadAsset(assetBundleName);
-                        }
-                    }
-                }
-            }
+						if (autoUnLoad)
+						{
+							UnloadAsset(assetBundleName);
+						}
+					}
+				}
+				catch (OperationCanceledException)
+				{
+					/* Canceled */
+				}
+				catch (Exception e)
+				{
+					Debug.LogException(e);
+				}
+			}
 
-            observer.OnNext(result);
-            observer.OnCompleted();
+			return result;
         }
 
-        private IEnumerator LoadAssetBundle(IObserver<SeekableAssetBundle> observer, AssetInfo assetInfo)
+        private async UniTask<SeekableAssetBundle> LoadAssetBundle(CancellationToken cancelToken, AssetInfo assetInfo)
         {
             var filePath = GetFilePath(assetInfo);
             var assetBundleInfo = assetInfo.AssetBundle;
@@ -634,15 +596,17 @@ namespace Modules.AssetBundles
 
             if (localMode && filePath.StartsWith(UnityPathUtility.StreamingAssetsPath))
             {
-                var copyYield = AndroidUtility.CopyStreamingToTemporary(filePath).ToObservable().ToYieldInstruction();
+				try
+				{
+					await AndroidUtility.CopyStreamingToTemporary(filePath).AttachExternalCancellation(cancelToken);
 
-                while (!copyYield.IsDone)
-                {
-                    yield return null;
-                }
-
-                filePath = AndroidUtility.ConvertStreamingAssetsLoadPath(filePath);
-            }
+					filePath = AndroidUtility.ConvertStreamingAssetsLoadPath(filePath);
+				}
+				catch (OperationCanceledException)
+				{
+					/* Canceled */
+				}
+			}
 
 			#endif
             
@@ -654,7 +618,7 @@ namespace Modules.AssetBundles
             
             while (!bundleLoadRequest.isDone)
             {
-                yield return null;
+                await UniTask.NextFrame(cancelToken);
             }
 
             var assetBundle = bundleLoadRequest.assetBundle;
@@ -686,18 +650,14 @@ namespace Modules.AssetBundles
                 builder.AppendFormat("File : {0}", filePath).AppendLine();
                 builder.AppendFormat("AssetBundleName : {0}", assetBundleName).AppendLine();
                 builder.AppendFormat("CRC : {0}", assetBundleInfo.CRC).AppendLine();
-
-                observer.OnError(new Exception(builder.ToString()));
-            }
-            else
-            {
-                var seekableAssetBundle = new SeekableAssetBundle(assetBundle, fileStream, cryptoStream);
-
-                observer.OnNext(seekableAssetBundle);
+				
+				throw new Exception(builder.ToString());
             }
 
-            observer.OnCompleted();
-        }
+			var seekableAssetBundle = new SeekableAssetBundle(assetBundle, fileStream, cryptoStream);
+
+			return seekableAssetBundle;
+		}
 
         #endregion
 
@@ -860,6 +820,9 @@ namespace Modules.AssetBundles
 
         private void OnError(Exception exception)
         {
+			// キャンセルはエラー扱いしない.
+			if (exception is OperationCanceledException){ return; }
+
             using (new DisableStackTraceScope())
             {
                 Debug.LogErrorFormat("[Error] {0}", exception);

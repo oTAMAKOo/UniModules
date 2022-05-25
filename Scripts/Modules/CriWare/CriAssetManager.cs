@@ -1,17 +1,15 @@
-﻿
+
 #if ENABLE_CRIWARE_ADX || ENABLE_CRIWARE_SOFDEC
 ﻿﻿﻿
 using UnityEngine;
 using System;
 using System.IO;
-using System.Text;
 using System.Linq;
-using System.Collections;
 using System.Collections.Generic;
-using CriWare;
+using System.Threading;
+using Cysharp.Threading.Tasks;
 using UniRx;
 using Extensions;
-using Modules.Devkit.Console;
 using Modules.ExternalResource;
 
 namespace Modules.CriWare
@@ -49,19 +47,19 @@ namespace Modules.CriWare
                     File.Delete(installPath);
                 }
 
-                Task = Observable.FromMicroCoroutine(() => Install(downloadUrl, installPath, progress))
+                Task = Observable.FromUniTask(cancelToken => Install(cancelToken, downloadUrl, installPath, progress))
                     .Select(_ => this)
                     .Share();
             }
 
-            private IEnumerator Install(string downloadUrl, string installPath, IProgress<float> progress = null)
+            private async UniTask Install(CancellationToken cancelToken, string downloadUrl, string installPath, IProgress<float> progress = null)
             {
                 var numInstallers = Instance.numInstallers;
 
                 // 同時インストール数待ち.
                 while (numInstallers <= installCount)
                 {
-                    yield return null;
+                    await UniTask.NextFrame(cancelToken);
                 }
 
                 installCount++;
@@ -86,7 +84,7 @@ namespace Modules.CriWare
                             break;
                         }
 
-                        yield return null;
+                        await UniTask.NextFrame(cancelToken);
                     }
 
                     if (statusInfo.error != CriFsWebInstaller.Error.None)
@@ -128,10 +126,7 @@ namespace Modules.CriWare
         // ローカルモードか.
         private bool localMode = false;
 
-        // フォルダディレクトリ.
-        private string sourceDir = null;
-
-        #if ENABLE_CRIWARE_FILESYSTEM
+		#if ENABLE_CRIWARE_FILESYSTEM
 
         // ダウンロード待ち.
         private Dictionary<string, CriAssetInstall> installQueueing = null;
@@ -153,12 +148,11 @@ namespace Modules.CriWare
 
         private CriAssetManager() { }
 
-        public void Initialize(string sourceDir, uint numInstallers, bool simulateMode = false)
+        public void Initialize(uint numInstallers, bool simulateMode = false)
         {
             if (isInitialized) { return; }
-
-            this.sourceDir = sourceDir;
-            this.simulateMode = Application.isEditor && simulateMode;
+			
+            this.simulateMode = UnityUtility.isEditor && simulateMode;
             this.numInstallers = numInstallers;
 
             #if ENABLE_CRIWARE_FILESYSTEM
@@ -236,19 +230,16 @@ namespace Modules.CriWare
         /// <summary>
         /// 指定されたアセットを更新.
         /// </summary>
-        public IObservable<Unit> UpdateCriAsset(AssetInfo assetInfo, IProgress<float> progress = null)
+        public async UniTask UpdateCriAsset(AssetInfo assetInfo, CancellationToken cancelToken, IProgress<float> progress = null)
         {
-            if (simulateMode) { return Observable.ReturnUnit(); }
+            if (simulateMode) { return; }
 
-            if (localMode) { return Observable.ReturnUnit(); }
+            if (localMode) { return; }
 
             var resourcePath = assetInfo.ResourcePath;
             var extension = Path.GetExtension(assetInfo.ResourcePath);
 
-            if (extension == CriAssetDefinition.AwbExtension)
-            {
-                return Observable.ReturnUnit();
-            }
+            if (extension == CriAssetDefinition.AwbExtension) { return; }
 
             var installList = new List<CriAssetInstall>();
 
@@ -289,17 +280,17 @@ namespace Modules.CriWare
             if (installList.IsEmpty())
             {
                 Debug.LogErrorFormat("UpdateCriAsset Error.\n{0}", assetInfo.ResourcePath);
-                return Observable.ReturnUnit();
+                return;
             }
 
-            return installList
+            await installList
                 .Select(x => x.Task)
                 .WhenAll()
                 .Timeout(TimeoutLimit)
                 .OnErrorRetry((TimeoutException ex) => OnTimeout(assetInfo, ex), RetryCount, RetryDelaySeconds)
                 .DoOnError(ex => OnError(ex))
                 .Finally(() => installList.ForEach(item => RemoveInternalQueue(item)))
-                .AsUnitObservable();
+                .ToUniTask(cancellationToken: cancelToken);
         }
 
         private CriAssetInstall GetCriAssetInstall(AssetInfo assetInfo, IProgress<float> progress)

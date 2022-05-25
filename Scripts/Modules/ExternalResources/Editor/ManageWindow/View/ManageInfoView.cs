@@ -1,13 +1,12 @@
 
-using System;
 using UnityEngine;
 using UnityEditor;
+using System;
 using System.Linq;
 using System.Collections.Generic;
 using UniRx;
 using Extensions;
 using Extensions.Devkit;
-using Modules.Devkit.Project;
 
 using Object = UnityEngine.Object;
 
@@ -30,7 +29,6 @@ namespace Modules.ExternalResource
         private IgnoreType? ignoreType = null;
 
         private Object manageAsset = null;
-        private string manageAssetPath = null;
         private string displayManageAssetPath = null;
 
         private string contentDetailName = null;
@@ -71,7 +69,8 @@ namespace Modules.ExternalResource
             IsOpen = open;
             IsEdit = edit;
 
-            manageAssetPath = AssetDatabase.GUIDToAssetPath(manageInfo.guid);
+            var manageAssetPath = AssetDatabase.GUIDToAssetPath(manageInfo.guid);
+
             manageAsset = AssetDatabase.LoadMainAssetAtPath(manageAssetPath);
 
             displayManageAssetPath = string.Empty;

@@ -1,7 +1,8 @@
 
-using System;
 using UnityEngine;
 using UnityEditor;
+using System;
+using Cysharp.Threading.Tasks;
 using UniRx;
 using Extensions.Devkit;
 
@@ -125,10 +126,12 @@ namespace Modules.ExternalResource
                                     onBuildStart.OnNext(Unit.Default);
                                 }
 
-                                BuildManager.Build(exportPath, assetInfoManifest)
-                                    .ToObservable()
-                                    .Subscribe()
-                                    .AddTo(Disposable);
+								Action<Exception> onError = e =>
+								{
+									Debug.LogException(e);
+								};
+
+                                BuildManager.Build(exportPath, assetInfoManifest).Forget(onError);
                             }
                             else
                             {

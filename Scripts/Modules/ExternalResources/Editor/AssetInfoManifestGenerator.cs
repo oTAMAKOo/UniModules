@@ -1,11 +1,9 @@
-﻿﻿﻿
-using UnityEngine;
+﻿﻿
 using UnityEditor;
-using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Threading.Tasks;
+using Cysharp.Threading.Tasks;
 using Extensions;
 using Extensions.Devkit;
 using Modules.Devkit.Generators;
@@ -75,7 +73,7 @@ namespace Modules.ExternalResource
             }
         }
 
-        public static async Task SetAssetBundleFileInfo(string exportPath, AssetInfoManifest assetInfoManifest, BuildResult buildResult)
+        public static async UniTask SetAssetBundleFileInfo(string exportPath, AssetInfoManifest assetInfoManifest, BuildResult buildResult)
         {
             var assetInfos = Reflection.GetPrivateField<AssetInfoManifest, AssetInfo[]>(assetInfoManifest, "assetInfos");
 
@@ -83,7 +81,7 @@ namespace Modules.ExternalResource
                 .Where(x => x.IsAssetBundle)
                 .GroupBy(x => x.AssetBundle.AssetBundleName);
 
-            var tasks = new Dictionary<string, Task>();
+            var tasks = new Dictionary<string, UniTask>();
 
             foreach (var assetBundleGroup in assetBundleGroups)
             {
@@ -112,7 +110,7 @@ namespace Modules.ExternalResource
 
                 var packageFilePath = Path.ChangeExtension(filePath, AssetBundleManager.PackageExtension);
 
-                var task = Task.Run(() =>
+                var task = UniTask.RunOnThreadPool(() =>
                 {
                     if (!File.Exists(packageFilePath))
                     {
@@ -134,7 +132,7 @@ namespace Modules.ExternalResource
                 tasks.Add(assetBundleName, task);
             }
 
-            await Task.WhenAll(tasks.Values);
+            await UniTask.WhenAll(tasks.Values);
 
             Reflection.SetPrivateField(assetInfoManifest, "assetInfos", assetInfos);
 
@@ -208,11 +206,11 @@ namespace Modules.ExternalResource
 
         #if ENABLE_CRIWARE_ADX || ENABLE_CRIWARE_SOFDEC
 
-        public static async Task SetCriAssetFileInfo(string exportPath, AssetInfoManifest assetInfoManifest)
+        public static async UniTask SetCriAssetFileInfo(string exportPath, AssetInfoManifest assetInfoManifest)
         {
             var assetInfos = Reflection.GetPrivateField<AssetInfoManifest, AssetInfo[]>(assetInfoManifest, "assetInfos");
             
-            var tasks = new List<Task>();
+            var tasks = new List<UniTask>();
 
             for (var i = 0; i < assetInfos.Length; i++)
             {
@@ -226,7 +224,7 @@ namespace Modules.ExternalResource
                 {
                     var filePath = PathUtility.Combine(new string[] { exportPath, assetInfo.FileName });
 
-                    var task = Task.Run(() =>
+                    var task = UniTask.RunOnThreadPool(() =>
                     {
                         if (!File.Exists(filePath)) { return; }
             
@@ -243,7 +241,7 @@ namespace Modules.ExternalResource
                 }
             }
 
-            await Task.WhenAll(tasks);
+            await UniTask.WhenAll(tasks);
 
             Reflection.SetPrivateField(assetInfoManifest, "assetInfos", assetInfos);
 

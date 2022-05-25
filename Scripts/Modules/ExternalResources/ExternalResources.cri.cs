@@ -7,6 +7,7 @@ using System.Collections;
 using System.Linq;
 using System.IO;
 using System.Text;
+using System.Threading;
 using Cysharp.Threading.Tasks;
 using UniRx;
 using Extensions;
@@ -41,7 +42,7 @@ namespace Modules.ExternalResource
             // CriAssetManager初期化.
 
             criAssetManager = CriAssetManager.CreateInstance();
-            criAssetManager.Initialize(resourceDirectory, MaxDownloadCount, simulateMode);
+            criAssetManager.Initialize(MaxDownloadCount, simulateMode);
             criAssetManager.OnTimeOutAsObservable().Subscribe(x => OnTimeout(x)).AddTo(Disposable);
             criAssetManager.OnErrorAsObservable().Subscribe(x => OnError(x)).AddTo(Disposable);
         }
@@ -51,14 +52,9 @@ namespace Modules.ExternalResource
             return CriAssetDefinition.AssetAllExtensions.Any(x => x == extension);
         }
 
-        private IObservable<bool> UpdateCriAsset(AssetInfo assetInfo, IProgress<float> progress = null)
+        private async UniTask<bool> UpdateCriAsset(CancellationToken cancelToken, AssetInfo assetInfo, IProgress<float> progress = null)
         {
-            return Observable.FromMicroCoroutine<bool>(observer => UpdateCriAssetInternal(observer, assetInfo, progress));
-        }
-
-        private IEnumerator UpdateCriAssetInternal(IObserver<bool> observer, AssetInfo assetInfo, IProgress<float> progress = null)
-        {
-            var result = true;
+			var result = true;
 
             var resourcePath = assetInfo.ResourcePath;
 
@@ -67,23 +63,19 @@ namespace Modules.ExternalResource
             // ローカルバージョンが最新の場合は更新しない.
             if (!CheckAssetVersion(resourcePath, filePath))
             {
-                var updateYield = instance.criAssetManager
-                    .UpdateCriAsset(assetInfo, progress)
-                    .ToYieldInstruction(false, yieldCancel.Token);
+				try
+				{
+					var criAssetManager = instance.criAssetManager;
 
-                while (!updateYield.IsDone)
-                {
-                    yield return null;
-                }
+					await criAssetManager.UpdateCriAsset(assetInfo, cancelToken, progress);
+				}
+				catch
+				{
+					result = false;
+				}
+			}
 
-                if (updateYield.IsCanceled || updateYield.HasError)
-                {
-                    result = false;
-                }
-            }
-
-            observer.OnNext(result);
-            observer.OnCompleted();
+			return result;
         }
 
         #if ENABLE_CRIWARE_ADX || ENABLE_CRIWARE_SOFDEC
@@ -134,14 +126,20 @@ namespace Modules.ExternalResource
 
                     var sw = System.Diagnostics.Stopwatch.StartNew();
 
-                    var updateYield = UpdateAsset(resourcePath).ToObservable().ToYieldInstruction(false, yieldCancel.Token);
+					try
+					{
+						await UpdateAsset(resourcePath).AttachExternalCancellation(cancelSource.Token);
+					}
+					catch (OperationCanceledException)
+					{
+						/* Canceled */
+					}
+					catch (Exception e)
+					{
+						Debug.LogException(e);
+					}
 
-                    while (!updateYield.IsDone)
-                    {
-                        await UniTask.NextFrame();
-                    }
-
-                    sw.Stop();
+					sw.Stop();
 
                     if (LogEnable && UnityConsole.Enable)
                     {
@@ -209,16 +207,20 @@ namespace Modules.ExternalResource
 
                     var sw = System.Diagnostics.Stopwatch.StartNew();
 
-                    var updateYield = UpdateAsset(resourcePath)
-						.ToObservable()
-						.ToYieldInstruction(false, yieldCancel.Token);
+					try
+					{
+						await UpdateAsset(resourcePath).AttachExternalCancellation(cancelSource.Token);
+					}
+					catch (OperationCanceledException)
+					{
+						/* Canceled */
+					}
+					catch (Exception e)
+					{
+						Debug.LogException(e);
+					}
 
-                    while (!updateYield.IsDone)
-                    {
-                        await UniTask.NextFrame();
-                    }
-
-                    sw.Stop();
+					sw.Stop();
 
                     if (LogEnable && UnityConsole.Enable)
                     {

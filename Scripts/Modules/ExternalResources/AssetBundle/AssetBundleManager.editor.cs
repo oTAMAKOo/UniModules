@@ -1,18 +1,15 @@
-﻿﻿
+﻿
 #if UNITY_EDITOR
 
-using System;
-using Extensions;
 using UnityEngine;
 using UnityEditor;
-using UniRx;
-using Modules.ExternalResource;
+using Cysharp.Threading.Tasks;
 
 namespace Modules.AssetBundles
 {
     public sealed partial class AssetBundleManager
     {
-        private IObservable<T> SimulateLoadAsset<T>(string assetPath) where T : UnityEngine.Object
+        private async UniTask<T> SimulateLoadAsset<T>(string assetPath) where T : UnityEngine.Object
         {
             var asset = AssetDatabase.LoadAssetAtPath<T>(assetPath);
 
@@ -20,10 +17,12 @@ namespace Modules.AssetBundles
             {
                 Debug.LogError("Asset load error : " + assetPath);
 
-                return Observable.Return<T>(default(T));
+                return default(T);
             }
 
-            return Observable.NextFrame().Select(_ => asset);
+			await UniTask.NextFrame();
+
+            return asset;
         }
     }
 }

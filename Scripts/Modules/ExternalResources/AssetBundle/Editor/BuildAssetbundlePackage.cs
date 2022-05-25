@@ -1,14 +1,13 @@
-﻿
+
 using UnityEngine;
 using System;
 using System.Linq;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
-using System.Threading.Tasks;
+using Cysharp.Threading.Tasks;
 using Newtonsoft.Json;
 using Extensions;
-using Modules.Devkit.Project;
 using Modules.ExternalResource;
 
 namespace Modules.AssetBundles.Editor
@@ -45,13 +44,11 @@ namespace Modules.AssetBundles.Editor
                 cryptoIv = aesIv,
             };
 
-            var text = string.Empty;
-
             if (File.Exists(packageCryptoFilePath))
             {
                 try
                 {
-                    text = File.ReadAllText(packageCryptoFilePath);
+                    var text = File.ReadAllText(packageCryptoFilePath);
 
                     var prev = JsonConvert.DeserializeObject<PackageCrypto>(text);
 
@@ -84,18 +81,16 @@ namespace Modules.AssetBundles.Editor
             File.WriteAllText(packageCryptoFilePath, json);
         }
 
-        public static async Task BuildAssetInfoManifestPackage(string exportPath, string assetBundlePath, string aesKey, string aesIv)
+        public static async UniTask BuildAssetInfoManifestPackage(string exportPath, string assetBundlePath, string aesKey, string aesIv)
         {
             var assetInfo = AssetInfoManifest.GetManifestAssetInfo();
 
             var cryptoKey = new AesCryptoStreamKey(aesKey, aesIv);
 
-            var task = CreateBuildTask(exportPath, assetBundlePath, assetInfo, true, cryptoKey);
+            await ExecuteBuildTask(exportPath, assetBundlePath, assetInfo, true, cryptoKey);
+		}
 
-            await task;
-        }
-
-        public static async Task BuildAllAssetBundlePackage(string exportPath, string assetBundlePath, AssetInfo[] assetInfos, AssetInfo[] updatedAssetInfos, string aesKey, string aesIv)
+        public static async UniTask BuildAllAssetBundlePackage(string exportPath, string assetBundlePath, AssetInfo[] assetInfos, AssetInfo[] updatedAssetInfos, string aesKey, string aesIv)
         {
             var isBatchMode = Application.isBatchMode;
 
@@ -110,7 +105,7 @@ namespace Modules.AssetBundles.Editor
 
                 foreach (var infos in chunkedAssetInfos)
                 {
-                    var tasks = new List<Task>();
+                    var tasks = new List<UniTask>();
 
                     foreach (var info in infos)
                     {
@@ -121,12 +116,10 @@ namespace Modules.AssetBundles.Editor
                         var createPackage = updatedAssetInfos.Contains(assetInfo);
 
                         var assetBundleName = assetInfo.AssetBundle.AssetBundleName;
-
-                        var buildTask = CreateBuildTask(exportPath, assetBundlePath, assetInfo, createPackage, cryptoKey);
-
-                        var task = Task.Run(async () =>
+						
+                        var task = UniTask.RunOnThreadPool(async () =>
                         {
-                            await buildTask;
+                            await ExecuteBuildTask(exportPath, assetBundlePath, assetInfo, createPackage, cryptoKey);
 
                             if (isBatchMode)
                             {
@@ -151,13 +144,10 @@ namespace Modules.AssetBundles.Editor
                             }
                         });
 
-                        if (task != null)
-                        {
-                            tasks.Add(task);
-                        }
+						tasks.Add(task);
                     }
 
-                    await Task.WhenAll(tasks);
+                    await UniTask.WhenAll(tasks);
                 }
 
                 if (!isBatchMode && count != 0)
@@ -167,45 +157,38 @@ namespace Modules.AssetBundles.Editor
             }
         }
 
-        private static Task CreateBuildTask(string exportPath, string assetBundlePath, AssetInfo assetInfo, bool createPackage, AesCryptoStreamKey cryptoKey)
+        private static async UniTask ExecuteBuildTask(string exportPath, string assetBundlePath, AssetInfo assetInfo, bool createPackage, AesCryptoStreamKey cryptoKey)
         {
-            if (assetInfo == null) { return null; }
+			try
+			{
+				// アセットバンドルファイルパス.
+				var assetBundleFilePath = PathUtility.Combine(assetBundlePath, assetInfo.AssetBundle.AssetBundleName);
 
-            var task = Task.Run(async () =>
-            {
-                try
-                {
-                    // アセットバンドルファイルパス.
-                    var assetBundleFilePath = PathUtility.Combine(assetBundlePath, assetInfo.AssetBundle.AssetBundleName);
+				if (!File.Exists(assetBundleFilePath))
+				{
+					throw new FileNotFoundException(assetBundleFilePath);
+				}
 
-                    if (!File.Exists(assetBundleFilePath))
-                    {
-                        throw new FileNotFoundException(assetBundleFilePath);
-                    }
+				// 作成するパッケージファイルのパス.
+				var packageFilePath = Path.ChangeExtension(assetBundleFilePath, AssetBundleManager.PackageExtension);
 
-                    // 作成するパッケージファイルのパス.
-                    var packageFilePath = Path.ChangeExtension(assetBundleFilePath, AssetBundleManager.PackageExtension);
+				// パッケージを作成.
+				if (!File.Exists(packageFilePath) || createPackage)
+				{
+					await CreatePackage(assetBundleFilePath, packageFilePath, cryptoKey);
+				}
 
-                    // パッケージを作成.
-                    if (!File.Exists(packageFilePath) || createPackage)
-                    {
-                        await CreatePackage(assetBundleFilePath, packageFilePath, cryptoKey);
-                    }
-
-                    // 出力先にパッケージファイルをコピー.
-                    await ExportPackage(exportPath, assetBundleFilePath, assetInfo);
-                }
-                catch (Exception exception)
-                {
-                    Debug.LogException(exception);
-                }
-            });
-
-            return task;
+				// 出力先にパッケージファイルをコピー.
+				await ExportPackage(exportPath, assetBundleFilePath, assetInfo);
+			}
+			catch (Exception exception)
+			{
+				Debug.LogException(exception);
+			}
         }
 
         /// <summary> パッケージファイル化(暗号化). </summary>
-        private static async Task CreatePackage(string assetBundleFilePath, string packageFilePath, AesCryptoStreamKey cryptoKey)
+        private static async UniTask CreatePackage(string assetBundleFilePath, string packageFilePath, AesCryptoStreamKey cryptoKey)
         {
             // アセットバンドル読み込み.
 
@@ -230,7 +213,7 @@ namespace Modules.AssetBundles.Editor
         }
 
         /// <summary> パッケージファイルの名前を変更し出力先にコピー. </summary>
-        private static async Task ExportPackage(string exportPath, string assetBundleFilePath, AssetInfo assetInfo)
+        private static async UniTask ExportPackage(string exportPath, string assetBundleFilePath, AssetInfo assetInfo)
         {
             // パッケージファイルパス.
             var packageFilePath = Path.ChangeExtension(assetBundleFilePath, AssetBundleManager.PackageExtension);

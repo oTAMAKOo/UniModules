@@ -1,6 +1,6 @@
 
 using UnityEngine;
-using System.Threading.Tasks;
+using Cysharp.Threading.Tasks;
 using Extensions;
 
 namespace Modules.ExternalResource
@@ -15,7 +15,7 @@ namespace Modules.ExternalResource
 
         //----- method -----
 
-        public static async Task<bool> Upload(S3Uploader uploader)
+        public static async UniTask<bool> Upload(S3Uploader uploader)
         {
 	        var exportPath = BuildManager.GetExportPath();
 

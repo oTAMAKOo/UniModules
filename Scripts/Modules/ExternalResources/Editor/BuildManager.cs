@@ -1,4 +1,4 @@
-﻿﻿﻿
+﻿
 using UnityEngine;
 using UnityEditor;
 using System;
@@ -6,7 +6,7 @@ using System.IO;
 using System.Linq;
 using System.Collections.Generic;
 using System.Text;
-using System.Threading.Tasks;
+using Cysharp.Threading.Tasks;
 using Extensions;
 using Extensions.Devkit;
 using Modules.AssetBundles.Editor;
@@ -69,7 +69,7 @@ namespace Modules.ExternalResource
             return EditorUtility.DisplayDialog("Confirmation", "外部アセットを生成します.", "実行", "中止");
         }
 
-        public static async Task<string> Build(string exportPath, AssetInfoManifest assetInfoManifest, bool openExportFolder = true)
+        public static async UniTask<string> Build(string exportPath, AssetInfoManifest assetInfoManifest, bool openExportFolder = true)
         {
             if (string.IsNullOrEmpty(exportPath)) { return null; }
 
@@ -147,7 +147,7 @@ namespace Modules.ExternalResource
 
                     if (!buildResult.IsSuccess)
                     {
-                        Debug.LogError("Build ExternalResource failed.");
+                        Debug.LogErrorFormat("Build ExternalResource failed.\n{0}", buildResult.ExitCode);
 
                         return null;
                     }

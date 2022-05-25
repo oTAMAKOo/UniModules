@@ -1,12 +1,11 @@
 
-using UnityEngine;
 using UnityEditor;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
+using Cysharp.Threading.Tasks;
 using Extensions;
 using Modules.Devkit.Project;
 using Modules.ExternalResource;
@@ -220,7 +219,7 @@ namespace Modules.AssetBundles.Editor
         }
 
         /// <summary> キャッシュ済みアセットバンドルファイルの最終更新日テーブルを取得 </summary>
-        public async Task<Dictionary<string, DateTime>> GetCachedFileLastWriteTimeTable()
+        public async UniTask<Dictionary<string, DateTime>> GetCachedFileLastWriteTimeTable()
         {
             var assetBundlePath = GetAssetBundleOutputPath();
 
@@ -235,13 +234,13 @@ namespace Modules.AssetBundles.Editor
 
             var dictionary = new Dictionary<string, DateTime>();
 
-            var tasks = new List<Task>();
+            var tasks = new List<UniTask>();
 
             foreach (var file in allFiles)
             {
                 var path = PathUtility.ConvertPathSeparator(file);
 
-                var task = Task.Run(() =>
+                var task = UniTask.RunOnThreadPool(() =>
                 {
                     if (assetBundleNames.All(x => !path.EndsWith(x))) { return; }
 
@@ -256,7 +255,7 @@ namespace Modules.AssetBundles.Editor
                 tasks.Add(task);
             }
 
-            await Task.WhenAll(tasks);
+            await UniTask.WhenAll(tasks);
 
             return dictionary;
         }
@@ -276,7 +275,7 @@ namespace Modules.AssetBundles.Editor
         }
 
         /// <summary> 更新されたアセット情報取得 </summary>
-        public async Task<AssetInfo[]> GetUpdateTargetAssetInfo(AssetInfoManifest assetInfoManifest, Dictionary<string, DateTime> lastWriteTimeTable)
+        public async UniTask<AssetInfo[]> GetUpdateTargetAssetInfo(AssetInfoManifest assetInfoManifest, Dictionary<string, DateTime> lastWriteTimeTable)
         {
             var assetBundlePath = GetAssetBundleOutputPath();
 
@@ -284,13 +283,13 @@ namespace Modules.AssetBundles.Editor
 
             var list = new List<AssetInfo>();
 
-            var tasks = new List<Task>();
+            var tasks = new List<UniTask>();
 
             foreach (var item in assetInfos)
             {
                 var assetInfo = item;
 
-                var task = Task.Run(() =>
+                var task = UniTask.RunOnThreadPool(() =>
                 {
                     // アセットバンドルファイルパス.
                     var assetBundleFilePath = PathUtility.Combine(assetBundlePath, assetInfo.AssetBundle.AssetBundleName);
@@ -314,7 +313,7 @@ namespace Modules.AssetBundles.Editor
                 tasks.Add(task);
             }
 
-            await Task.WhenAll(tasks);
+            await UniTask.WhenAll(tasks);
 
             return list.ToArray();
         }

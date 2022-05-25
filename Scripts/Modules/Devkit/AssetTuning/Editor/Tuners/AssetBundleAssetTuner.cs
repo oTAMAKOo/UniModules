@@ -1,8 +1,6 @@
-﻿
-using Extensions;
+
 using Modules.ExternalResource;
 using Modules.Devkit.Project;
-using Modules.ExternalResource;
 
 namespace Modules.Devkit.AssetTuning
 {

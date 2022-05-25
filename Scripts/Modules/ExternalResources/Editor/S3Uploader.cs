@@ -1,16 +1,15 @@
-﻿
+
 using UnityEngine;
 using System;
-using System.Collections;
 using System.IO;
 using System.Linq;
 using System.Collections.Generic;
 using System.Text;
-using System.Threading.Tasks;
 using Amazon;
 using Amazon.S3;
 using Amazon.S3.Model;
 using Amazon.S3.Transfer;
+using Cysharp.Threading.Tasks;
 using Extensions;
 using Modules.Amazon.S3;
 using Modules.AssetBundles;
@@ -61,7 +60,7 @@ namespace Modules.ExternalResource
 
         //----- method -----
 
-        public async Task<string> Execute(string folderPath, string bucketFolder)
+        public async UniTask<string> Execute(string folderPath, string bucketFolder)
         {
             var versionHash = string.Empty;
 
@@ -154,7 +153,7 @@ namespace Modules.ExternalResource
         }
 
         /// <summary> AssetInfoManifest読み込み </summary>
-        private async Task LoadAssetInfoManifest()
+        private async UniTask LoadAssetInfoManifest()
         {
             Debug.Log("Load AssetInfoManifest.package.");
 
@@ -176,7 +175,7 @@ namespace Modules.ExternalResource
 
                     while (!bundleLoadRequest.isDone)
                     {
-                        await Task.Delay(25);
+                        await UniTask.Delay(25);
                     }
 
                     var assetBundle = bundleLoadRequest.assetBundle;
@@ -185,7 +184,7 @@ namespace Modules.ExternalResource
 
                     while (!loadAssetAsync.isDone)
                     {
-                        await Task.Delay(25);
+                        await UniTask.Delay(25);
                     }
 
                     assetInfoManifest = loadAssetAsync.asset as AssetInfoManifest;
@@ -251,7 +250,7 @@ namespace Modules.ExternalResource
         }
 
         /// <summary> アップロード済みのオブジェクト一覧取得. </summary>
-        private async Task<S3Object[]> GetUploadedObjects()
+        private async UniTask<S3Object[]> GetUploadedObjects()
         {
             Debug.Log("Get s3 object list.");
 
@@ -268,7 +267,7 @@ namespace Modules.ExternalResource
         }
 
         /// <summary> アップロード済みのファイルデータ構築. </summary>
-        private async Task<S3FileInfo[]> BuildUploadedObjectInfos(S3Object[] s3Objects)
+        private async UniTask<S3FileInfo[]> BuildUploadedObjectInfos(S3Object[] s3Objects)
         {
             Debug.Log("Build uploaded objects info.");
 
@@ -296,15 +295,15 @@ namespace Modules.ExternalResource
         }
 
         /// <summary> アップロード済みのファイルのハッシュデータ取得. </summary>
-        private async Task<Dictionary<string, string>> GetUploadedObjectHashTable(S3Client s3Client, S3Object[] s3Objects)
+        private async UniTask<Dictionary<string, string>> GetUploadedObjectHashTable(S3Client s3Client, S3Object[] s3Objects)
         {
             var hashTable = new Dictionary<string, string>();
 
-            var tasks = new List<Task>();
+            var tasks = new List<UniTask>();
 
             foreach (var s3Object in s3Objects)
             {
-                var task = Task.Run(async () =>
+                var task = UniTask.RunOnThreadPool(async () =>
                 {
                     var metaDataResponse = await s3Client.GetObjectMetaData(s3Object.Key);
 
@@ -319,13 +318,13 @@ namespace Modules.ExternalResource
                 tasks.Add(task);
             }
 
-            await Task.WhenAll(tasks.ToArray());
+            await UniTask.WhenAll(tasks.ToArray());
 
             return hashTable;
         }
 
         /// <summary> ファイルをS3にアップロード </summary>
-        private async Task UploadPackagesToS3(FileInfo[] fileInfos, S3FileInfo[] s3FileInfos)
+        private async UniTask UploadPackagesToS3(FileInfo[] fileInfos, S3FileInfo[] s3FileInfos)
         {
             var assetInfoManifestFilePath = GetAssetInfoManifestFilePath(files);
 
@@ -371,11 +370,11 @@ namespace Modules.ExternalResource
 
                     const long PartSize = 5 * 1024 * 1024; // 5MB単位.
 
-                    var tasks = new List<Task>();
+                    var tasks = new List<UniTask>();
 
                     foreach (var uploadTarget in uploadTargets)
                     {
-                        var task = Task.Run(async () =>
+                        var task = UniTask.RunOnThreadPool(async () =>
                         {
                             var fileTransferUtilityRequest = new TransferUtilityUploadRequest
                             {
@@ -419,7 +418,7 @@ namespace Modules.ExternalResource
                         tasks.Add(task);
                     }
                     
-                    await Task.WhenAll(tasks.ToArray());
+                    await UniTask.WhenAll(tasks.ToArray());
                 }
 
                 if (!isBatchMode && count != 0)
@@ -430,7 +429,7 @@ namespace Modules.ExternalResource
         }
 
         /// <summary> 削除対象のファイルをS3から削除 </summary>
-        private async Task DeleteDeletedPackageFromS3(FileInfo[] fileInfos,  S3FileInfo[] s3FileInfos)
+        private async UniTask DeleteDeletedPackageFromS3(FileInfo[] fileInfos,  S3FileInfo[] s3FileInfos)
         {
             var deleteTargets = new List<S3FileInfo>();
 

@@ -340,6 +340,10 @@ namespace Modules.SceneManagement
 			{
 				await TransitionStart(currentSceneArgument).AttachExternalCancellation(cancelToken);
 			}
+			catch (OperationCanceledException) 
+			{
+				/* Canceled */
+			}
 			catch (Exception e)
 			{
 				Debug.LogException(e);
@@ -361,6 +365,10 @@ namespace Modules.SceneManagement
 				try
 				{
 					await prev.Instance.Leave().AttachExternalCancellation(cancelToken);
+				}
+				catch (OperationCanceledException) 
+				{
+					/* Canceled */
 				}
 				catch (Exception e)
 				{
@@ -416,6 +424,10 @@ namespace Modules.SceneManagement
 					{
 						await UnloadScene(unloadScene).ToUniTask(cancellationToken: cancelToken);
 					}
+					catch (OperationCanceledException) 
+					{
+						/* Canceled */
+					}
 					catch (Exception e)
 					{
 						Debug.LogException(e);
@@ -441,7 +453,18 @@ namespace Modules.SceneManagement
             {
 				try
 				{
-					sceneInfo = await LoadScene(identifier, mode).ToUniTask(cancellationToken: cancelToken);
+					var awaiter = LoadScene(identifier, mode).GetAwaiter(cancelToken);
+
+					while (!awaiter.IsCompleted)
+					{
+						await UniTask.NextFrame(cancelToken);
+					}
+
+					sceneInfo = awaiter.GetResult();
+				}
+				catch (OperationCanceledException) 
+				{
+					/* Canceled */
 				}
 				catch (Exception e)
 				{
@@ -507,7 +530,11 @@ namespace Modules.SceneManagement
             {
 				try
 				{
-					await currentScene.Instance.Prepare(isSceneBack);
+					await currentScene.Instance.Prepare(isSceneBack).AttachExternalCancellation(cancelToken);
+				}
+				catch (OperationCanceledException) 
+				{
+					/* Canceled */
 				}
 				catch (Exception e)
 				{
@@ -532,6 +559,10 @@ namespace Modules.SceneManagement
 				{
 					await UnloadScene(prev).ToUniTask(cancellationToken: cancelToken);
 				}
+				catch (OperationCanceledException) 
+				{
+					/* Canceled */
+				}
 				catch (Exception e)
 				{
 					Debug.LogException(e);
@@ -546,6 +577,10 @@ namespace Modules.SceneManagement
 			{
 				await CleanUp().AttachExternalCancellation(cancelToken);
 			}
+			catch (OperationCanceledException) 
+			{
+				/* Canceled */
+			}
 			catch (Exception e)
 			{
 				Debug.LogException(e);
@@ -556,6 +591,10 @@ namespace Modules.SceneManagement
 			try
 			{
 				await TransitionWait().AttachExternalCancellation(cancelToken);
+			}
+			catch (OperationCanceledException) 
+			{
+				/* Canceled */
 			}
 			catch (Exception e)
 			{
@@ -573,6 +612,10 @@ namespace Modules.SceneManagement
 			try
 			{
 				await TransitionFinish(currentSceneArgument).AttachExternalCancellation(cancelToken);
+			}
+			catch (OperationCanceledException) 
+			{
+				/* Canceled */
 			}
 			catch (Exception e)
 			{
@@ -658,7 +701,18 @@ namespace Modules.SceneManagement
 
 			try
 			{
-				sceneInstance = await LoadScene(identifier.Value, LoadSceneMode.Additive).ToUniTask(cancellationToken: cancelToken);
+				var awaiter = LoadScene(identifier.Value, LoadSceneMode.Additive).GetAwaiter(cancelToken);
+
+				while (!awaiter.IsCompleted)
+				{
+					await UniTask.NextFrame(cancelToken);
+				}
+
+				sceneInstance = awaiter.GetResult();
+			}
+			catch (OperationCanceledException) 
+			{
+				/* Canceled */
 			}
 			catch (Exception e)
 			{
@@ -773,20 +827,20 @@ namespace Modules.SceneManagement
                 try
                 {
                     op = SceneManager.LoadSceneAsync(scenePath, mode);
-                }
-                catch
-                {
-                    SceneManager.sceneLoaded -= sceneLoaded;
 
-					throw;
+					while (!op.isDone)
+					{
+						await UniTask.NextFrame(cancelToken);
+					}
                 }
-
-                while (!op.isDone)
-                {
-                    await UniTask.NextFrame(cancelToken);
-                }
-
-                SceneManager.sceneLoaded -= sceneLoaded;
+				catch (OperationCanceledException) 
+				{
+					/* Canceled */
+				}
+				finally
+				{
+					SceneManager.sceneLoaded -= sceneLoaded;
+				}
 
                 var scene = sceneInstance.GetScene();
 
@@ -824,6 +878,10 @@ namespace Modules.SceneManagement
 							{
 								await target.OnLoadScene().AttachExternalCancellation(cancelToken);
 							}
+							catch (OperationCanceledException) 
+							{
+								/* Canceled */
+							}
 							catch (Exception e)
 							{
 								Debug.LogException(e);
@@ -840,6 +898,10 @@ namespace Modules.SceneManagement
 					try
 					{
 						await sceneInstance.Instance.Initialize().AttachExternalCancellation(cancelToken);
+					}
+					catch (OperationCanceledException) 
+					{
+						/* Canceled */
 					}
 					catch (Exception e)
 					{
@@ -971,6 +1033,10 @@ namespace Modules.SceneManagement
 					{
 						await target.OnUnloadScene().AttachExternalCancellation(cancelToken);
 					}
+					catch (OperationCanceledException) 
+					{
+						/* Canceled */
+					}
 					catch (Exception e)
 					{
 						Debug.LogException(e);
@@ -986,6 +1052,10 @@ namespace Modules.SceneManagement
 
                 op = SceneManager.UnloadSceneAsync(scene.Value);
             }
+			catch (OperationCanceledException) 
+			{
+				/* Canceled */
+			}
             catch (Exception e)
             {
                 SceneManager.sceneUnloaded -= sceneUnloaded;
@@ -1086,7 +1156,16 @@ namespace Modules.SceneManagement
 
 			try
 			{
-				await LoadScene(targetScene, LoadSceneMode.Additive).ToUniTask(cancellationToken: cancelToken);
+				var awaiter = LoadScene(targetScene, LoadSceneMode.Additive).GetAwaiter(cancelToken);
+
+				while (!awaiter.IsCompleted)
+				{
+					await UniTask.NextFrame(cancelToken);
+				}
+			}
+			catch (OperationCanceledException) 
+			{
+				/* Canceled */
 			}
 			catch (Exception e)
 			{

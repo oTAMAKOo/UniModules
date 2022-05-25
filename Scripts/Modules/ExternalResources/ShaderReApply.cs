@@ -1,6 +1,5 @@
-﻿﻿
+﻿
 using UnityEngine;
-using System.Collections;
 
 namespace Modules.ExternalResource
 {
@@ -27,12 +26,12 @@ namespace Modules.ExternalResource
                 materials = renderer.sharedMaterials;
                 shaders = new string[materials.Length];
 
-                for (int i = 0; i < materials.Length; i++)
+                for (var i = 0; i < materials.Length; i++)
                 {
                     shaders[i] = materials[i].shader.name;
                 }
 
-                for (int i = 0; i < materials.Length; i++)
+                for (var i = 0; i < materials.Length; i++)
                 {
                     materials[i].shader = Shader.Find(shaders[i]);
                 }

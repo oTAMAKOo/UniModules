@@ -3,7 +3,6 @@ using UnityEngine;
 using UnityEditor;
 using System.Linq;
 using UniRx;
-using Extensions;
 using Extensions.Devkit;
 using Modules.Devkit.AssemblyCompilation;
 

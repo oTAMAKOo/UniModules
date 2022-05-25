@@ -1,14 +1,14 @@
-﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿
+﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿
 using UnityEngine;
 using System;
 using System.IO;
 using System.Linq;
 using System.Collections.Generic;
+using System.Threading;
 using Cysharp.Threading.Tasks;
 using UniRx;
 using Extensions;
 using Modules.Devkit.Console;
-using Modules.UniRxExtension;
 
 namespace Modules.ExternalResource
 {
@@ -39,8 +39,8 @@ namespace Modules.ExternalResource
         /// <summary> 読み込み中アセット群. </summary>
         private HashSet<AssetInfo> loadingAssets = new HashSet<AssetInfo>();
 
-        // Coroutine中断用.
-        private YieldCancel yieldCancel = null;
+        // 中断用.
+        private CancellationTokenSource cancelSource = null;
 
         // 外部制御ハンドラ.
 
@@ -87,8 +87,8 @@ namespace Modules.ExternalResource
             this.resourceDirectory = resourceDirectory;
             this.shareDirectory = shareDirectory;
 
-            // 中断用登録.
-            yieldCancel = new YieldCancel();
+            // 中断用.
+			cancelSource = new CancellationTokenSource();
 
             //----- AssetBundleManager初期化 -----
                         
@@ -241,13 +241,24 @@ namespace Modules.ExternalResource
             var assetPath = PathUtility.Combine(resourceDirectory, manifestAssetInfo.ResourcePath);
 
             // AssetInfoManifestは常に最新に保たなくてはいけない為必ずダウンロードする.
-            await assetBundleManager.UpdateAssetInfoManifest().ToUniTask();
+			try
+			{
+				await assetBundleManager.UpdateAssetInfoManifest(cancelSource.Token);
 
-            var manifest = await assetBundleManager.LoadAsset<AssetInfoManifest>(manifestAssetInfo, assetPath);
+				var manifest = await assetBundleManager.LoadAsset<AssetInfoManifest>(manifestAssetInfo, assetPath);
 
-            SetAssetInfoManifest(manifest);
+				SetAssetInfoManifest(manifest);
+			}
+			catch (OperationCanceledException)
+			{
+				/* Canceled */
+			}
+			catch (Exception e)
+			{
+				Debug.LogException(e);
+			}
 
-            sw.Stop();
+			sw.Stop();
 
             if (LogEnable && UnityConsole.Enable)
             {
@@ -271,7 +282,11 @@ namespace Modules.ExternalResource
             {
 	            await DeleteDisUsedCache();
             }
-            catch (Exception e)
+			catch (OperationCanceledException)
+			{
+				/* Canceled */
+			}
+			catch (Exception e)
             {
 	            Debug.LogException(e);
             }
@@ -304,22 +319,22 @@ namespace Modules.ExternalResource
 
             if (instance.updateAssetHandler != null)
             {
-                var updateRequestYield = instance.updateAssetHandler
-                    .OnUpdateRequest(assetInfo)
-                    .ToYieldInstruction(false, yieldCancel.Token);
+				try
+				{
+					var updateAssetHandler = instance.updateAssetHandler;
 
-                while (!updateRequestYield.IsDone)
-                {
-	                await UniTask.NextFrame();
-                }
-
-                if (updateRequestYield.HasError)
-                {
-                    OnError(updateRequestYield.Error);
-
-                    return;
-                }
-            }
+					await updateAssetHandler.OnUpdateRequest(assetInfo).AttachExternalCancellation(cancelSource.Token);
+				}
+				catch (OperationCanceledException)
+				{
+					/* Canceled */
+				}
+				catch (Exception e)
+				{
+					OnError(e);
+					return;
+				}
+			}
 
             // ローカルモードなら更新しない.
 
@@ -331,18 +346,20 @@ namespace Modules.ExternalResource
                 
                 if (IsCriAsset(extension))
                 {
-                    var updateCriAssetYield = UpdateCriAsset(assetInfo, progress).ToYieldInstruction();
-
-                    while (!updateCriAssetYield.IsDone)
-                    {
-	                    await UniTask.NextFrame();
-                    }
-
-                    if (!updateCriAssetYield.HasResult || !updateCriAssetYield.Result)
-                    {
-	                    return;
-                    }
-                }
+					try
+					{
+						await UpdateCriAsset(cancelSource.Token, assetInfo, progress);
+					}
+					catch (OperationCanceledException) 
+					{
+						/* Canceled */
+					}
+					catch (Exception e)
+					{
+						Debug.LogException(e);
+						return;
+					}
+				}
                 else
                 
                 #endif
@@ -359,20 +376,22 @@ namespace Modules.ExternalResource
                         return;
                     }
 
-                    var updateYield = instance.assetBundleManager
-                        .UpdateAssetBundle(assetInfo, progress)
-                        .ToYieldInstruction(false, yieldCancel.Token);
+					try
+					{
+						var assetBundleManager = instance.assetBundleManager;
 
-                    while (!updateYield.IsDone)
-                    {
-	                    await UniTask.NextFrame();
-                    }
-
-                    if (updateYield.IsCanceled || updateYield.HasError)
-                    {
-	                    return;
-                    }
-                }
+						await assetBundleManager.UpdateAssetBundle(assetInfo, progress).ToUniTask(cancellationToken: cancelSource.Token);
+					}
+					catch (OperationCanceledException)
+					{
+						/* Canceled */
+					}
+					catch (Exception e)
+					{
+						Debug.LogException(e);
+						return;
+					}
+				}
 
                 // バージョン更新.
                 UpdateVersion(resourcePath);
@@ -382,22 +401,23 @@ namespace Modules.ExternalResource
 
             if (instance.updateAssetHandler != null)
             {
-                var updateFinishYield = instance.updateAssetHandler
-                    .OnUpdateFinish(assetInfo)
-                    .ToYieldInstruction(false, yieldCancel.Token);
+				try
+				{
+					var updateAssetHandler = instance.updateAssetHandler;
 
-                while (!updateFinishYield.IsDone)
-                {
-	                await UniTask.NextFrame();
-                }
+					await updateAssetHandler.OnUpdateFinish(assetInfo).AttachExternalCancellation(cancelSource.Token);
+				}
+				catch (OperationCanceledException)
+				{
+					/* Canceled */
+				}
+				catch (Exception e)
+				{
+					OnError(e);
 
-                if (updateFinishYield.HasError)
-                {
-                    OnError(updateFinishYield.Error);
-
-                    return;
-                }
-            }
+					return;
+				}
+			}
 
             // イベント発行.
 
@@ -409,14 +429,12 @@ namespace Modules.ExternalResource
 
         public void CancelAll()
         {
-            if (yieldCancel != null)
+            if (cancelSource != null)
             {
-                yieldCancel.Dispose();
+				cancelSource.Cancel();
 
                 // キャンセルしたので再生成.
-                yieldCancel = new YieldCancel();
-
-                assetBundleManager.RegisterYieldCancel(yieldCancel);
+				cancelSource = new CancellationTokenSource();
             }
         }
 

@@ -31,7 +31,6 @@ namespace Modules.ExternalResource
         {
             assetBundleManager = AssetBundleManager.CreateInstance();
             assetBundleManager.Initialize(MaxDownloadCount, simulateMode);
-            assetBundleManager.RegisterYieldCancel(yieldCancel);
             assetBundleManager.OnTimeOutAsObservable().Subscribe(x => OnTimeout(x)).AddTo(Disposable);
             assetBundleManager.OnErrorAsObservable().Subscribe(x => OnError(x)).AddTo(Disposable);
         }
@@ -72,22 +71,21 @@ namespace Modules.ExternalResource
 
             if (loadAssetHandler != null)
             {
-                var loadRequestYield = loadAssetHandler
-                    .OnLoadRequest(assetInfo)
-                    .ToYieldInstruction(false, yieldCancel.Token);
-
-                while (!loadRequestYield.IsDone)
-                {
-                    await UniTask.NextFrame();
-                }
-
-                if (loadRequestYield.HasError)
-                {
-                    OnError(loadRequestYield.Error);
+				try
+				{
+					await loadAssetHandler.OnLoadRequest(assetInfo).AttachExternalCancellation(cancelSource.Token);
+				}
+				catch (OperationCanceledException) 
+				{
+					/* Canceled */
+				}
+				catch (Exception e)
+				{
+					OnError(e);
 
 					return null;
 				}
-            }
+			}
 
             // 読み込み.
 
@@ -98,26 +96,24 @@ namespace Modules.ExternalResource
                 // ローカルバージョンが古い場合はダウンロード.
                 if (!CheckAssetBundleVersion(assetInfo))
                 {
-                    var downloadYield = UpdateAsset(resourcePath)
-						.ToObservable()
-						.ToYieldInstruction(false, yieldCancel.Token);
+					sw = System.Diagnostics.Stopwatch.StartNew();
 
-                    // 読み込み実行 (読み込み中の場合は読み込み待ちのObservableが返る).
-                    sw = System.Diagnostics.Stopwatch.StartNew();
-
-                    while (!downloadYield.IsDone)
-                    {
-                        await UniTask.NextFrame();
-                    }
-
-                    if (downloadYield.HasError)
-                    {
-                        OnError(downloadYield.Error);
+					try
+					{
+						await UpdateAsset(resourcePath).AttachExternalCancellation(cancelSource.Token);
+					}
+					catch (OperationCanceledException) 
+					{
+						/* Canceled */
+					}
+					catch (Exception e)
+					{
+						OnError(e);
 
 						return null;
-                    }
+					}
 
-                    sw.Stop();
+					sw.Stop();
 
                     if (LogEnable && UnityConsole.Enable)
                     {
@@ -148,48 +144,52 @@ namespace Modules.ExternalResource
                 loadingAssets.Add(assetInfo);
             }
 
-            // 時間計測開始.
+			// 読み込み実行 (読み込み中の場合は読み込み待ちのObservableが返る).
 
-            sw = System.Diagnostics.Stopwatch.StartNew();
+			try
+			{
+				sw = System.Diagnostics.Stopwatch.StartNew();
 
-            // 読み込み実行 (読み込み中の場合は読み込み待ちのObservableが返る).
+				result = await assetBundleManager.LoadAsset<T>(assetInfo, assetPath, autoUnload).ToUniTask(cancellationToken: cancelSource.Token);
 
-            var loadYield = assetBundleManager.LoadAsset<T>(assetInfo, assetPath, autoUnload).ToYieldInstruction();
+				// 読み込み中リストから外す.
 
-            while (!loadYield.IsDone)
+				if (loadingAssets.Contains(assetInfo))
+				{
+					loadingAssets.Remove(assetInfo);
+				}
+
+			}
+			catch (OperationCanceledException) 
+			{
+				/* Canceled */
+			}
+			catch (Exception e)
+			{
+				OnError(e);
+
+				return null;
+			}
+
+			// 外部処理.
+
+            if (result != null && loadAssetHandler != null)
             {
-				await UniTask.NextFrame();
-            }
-
-            result = loadYield.Result;
-
-            // 読み込み中リストから外す.
-
-            if (loadingAssets.Contains(assetInfo))
-            {
-                loadingAssets.Remove(assetInfo);
-            }
-
-            // 外部処理.
-
-            if (instance.loadAssetHandler != null)
-            {
-                var loadFinishYield = instance.loadAssetHandler
-                    .OnLoadFinish(assetInfo)
-                    .ToYieldInstruction(false, yieldCancel.Token);
-
-                while (!loadFinishYield.IsDone)
-                {
-					await UniTask.NextFrame();
-                }
-
-                if (loadFinishYield.HasError)
-                {
-                    OnError(loadFinishYield.Error);
+				try
+				{
+					await loadAssetHandler.OnLoadFinish(assetInfo).AttachExternalCancellation(cancelSource.Token);
+				}
+				catch (OperationCanceledException) 
+				{
+					/* Canceled */
+				}
+				catch (Exception e)
+				{
+					OnError(e);
 
 					return null;
-                }
-            }
+				}
+			}
 
             // 時間計測終了.
 
