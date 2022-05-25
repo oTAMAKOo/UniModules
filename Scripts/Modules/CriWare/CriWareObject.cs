@@ -1,8 +1,7 @@
-﻿
+
 using UnityEngine;
 using CriWare;
 using Extensions;
-using UniRx;
 
 namespace Modules.CriWare
 {
@@ -134,7 +133,19 @@ namespace Modules.CriWare
 
             if (!string.IsNullOrEmpty(criAtom.acfFile))
             {
-                var acfPath = PathUtility.Combine(Common.streamingAssetsPath, criAtom.acfFile);
+				var streamingAssetsPath = string.Empty; 
+
+				#if UNITY_EDITOR
+
+				streamingAssetsPath = UnityPathUtility.StreamingAssetsPath;
+
+				#else
+
+				streamingAssetsPath = Common.streamingAssetsPath;
+
+				#endif
+
+                var acfPath = PathUtility.Combine(streamingAssetsPath, criAtom.acfFile);
 
                 acfPath += CriAssetDefinition.AcfExtension;
 

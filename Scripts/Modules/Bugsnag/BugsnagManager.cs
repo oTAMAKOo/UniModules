@@ -1,4 +1,4 @@
-﻿
+
 #if ENABLE_BUGSNAG
 
 using UnityEngine;
@@ -34,7 +34,7 @@ namespace Modules.Bugsnag
         { 
             get
             {
-                return !string.IsNullOrEmpty(apiKey) && !Application.isEditor;
+                return !string.IsNullOrEmpty(apiKey) && !UnityUtility.isEditor;
             }
         }
 

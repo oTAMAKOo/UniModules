@@ -10,6 +10,11 @@ namespace Extensions
 {
     public static class UnityUtility
     {
+		public static bool isEditor
+		{
+			get { return Application.installMode == ApplicationInstallMode.Editor; }
+		}
+
         #region Object Instantiate
 
         private const string PrefabTag = " (Clone)";
