@@ -63,6 +63,10 @@ namespace Modules.Localize
 		{
 			if (string.IsNullOrEmpty(atlasFolder)){ return; }
 
+			atlasFolder = PathUtility.ConvertPathSeparator(atlasFolder);
+
+			atlasFolder = atlasFolder.TrimEnd(PathUtility.PathSeparator);
+
 			var atlasCache = atlasCacheByAtlasFolder.GetValueOrDefault(atlasFolder);
 
 			if (!force && atlasCache != null){ return; }
@@ -88,6 +92,10 @@ namespace Modules.Localize
 		{
 			if (string.IsNullOrEmpty(atlasFolder)){ return; }
 
+			atlasFolder = PathUtility.ConvertPathSeparator(atlasFolder);
+
+			atlasFolder = atlasFolder.TrimEnd(PathUtility.PathSeparator);
+			
 			var atlasCache = atlasCacheByAtlasFolder.GetValueOrDefault(atlasFolder);
 
 			if (atlasCache == null){ return; }
@@ -125,13 +133,7 @@ namespace Modules.Localize
 		{
 			if (localizeSpriteAsset == null){ return null; }
 
-			var folderPath = localizeSpriteAsset.GetFolderPath(folderGuid);
-
-			folderPath = PathUtility.ConvertPathSeparator(folderPath);
-
-			folderPath = folderPath.TrimEnd(PathUtility.PathSeparator);
-
-			return folderPath;
+			return localizeSpriteAsset.GetFolderPath(folderGuid);
 		}
 
 		public SpriteAtlas GetSpriteAtlas(string spriteGuid)
@@ -156,22 +158,25 @@ namespace Modules.Localize
 		{
 			// Atlasパス取得.
 
-			if (localizeSpriteAsset == null){ return null; }
+            var atlasFolder = GetAtlasFolderPath(spriteGuid);
 
-			var atlasFolder = localizeSpriteAsset.GetAtlasFolderPath(spriteGuid);
+            if (string.IsNullOrEmpty(atlasFolder)){ return null; }
 
 			// AtlasCache取得.
 
 			var atlasCache = atlasCacheByAtlasFolder.GetValueOrDefault(atlasFolder);
 
-			if (atlasCache == null)
-			{
-				// 読み込みされていないのでエラーを出す.
-				Debug.LogErrorFormat("Atlas not loaded. Atlas pre load required.\nFolder : {0}", atlasFolder);
-			}
-
 			return atlasCache;
 		}
+
+        public string GetAtlasFolderPath(string spriteGuid)
+        {
+            if (localizeSpriteAsset == null){ return null; }
+
+            var atlasFolder = localizeSpriteAsset.GetAtlasFolderPath(spriteGuid);
+
+            return atlasFolder;
+        }
 
 		/// <summary> 読み込み済みのフォルダ一覧を取得 </summary>
 		public IReadOnlyList<string> GetLoadedFolders()

@@ -1,4 +1,3 @@
-
 using UnityEngine;
 using UnityEditor;
 using System;
@@ -8,20 +7,20 @@ using Extensions.Devkit;
 namespace Modules.Localize
 {
 	[CustomEditor(typeof(LocalizeSpriteSetter))]
-    public sealed class LocalizeSpriteSetterInspector : UnityEditor.Editor
-    {
-        //----- params -----
+	public sealed class LocalizeSpriteSetterInspector : UnityEditor.Editor
+	{
+		//----- params -----
 
-        //----- field -----
+		//----- field -----
 
 		private Sprite sprite = null;
 
 		[NonSerialized]
 		private bool initialized = false;
 
-        //----- property -----
+		//----- property -----
 
-        //----- method -----
+		//----- method -----
 
 		private void Initialize()
 		{
@@ -62,6 +61,13 @@ namespace Modules.Localize
 				Reflection.SetPrivateField(instance, "spriteGuid", spriteGuid);
 				Reflection.SetPrivateField(instance, "spriteName", spriteName);
 			}
+
+			var requireLoadAtlas = Reflection.GetPrivateField<LocalizeSpriteSetter, string>(instance, "requireLoadAtlas");
+
+			if (!string.IsNullOrEmpty(requireLoadAtlas))
+			{
+				EditorGUILayout.HelpBox($"Atlas not loaded. Atlas pre load required.\nFolder : {requireLoadAtlas}", MessageType.Warning);
+			}
 		}
-    }
+	}
 }

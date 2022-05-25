@@ -1,4 +1,3 @@
-﻿
 using System;
 using UnityEngine;
 using UnityEngine.UI;
@@ -9,11 +8,11 @@ using Extensions;
 namespace Modules.Localize
 {
 	[RequireComponent(typeof(Image))]
-    public sealed class LocalizeSpriteSetter : MonoBehaviour
-    {
-        //----- params -----
+	public sealed class LocalizeSpriteSetter : MonoBehaviour
+	{
+		//----- params -----
 
-        //----- field -----
+		//----- field -----
 
 		[SerializeField]
 		private string spriteGuid = null;
@@ -21,6 +20,8 @@ namespace Modules.Localize
 		private string spriteName = null;
 
 		private Image image = null;
+
+		private string requireLoadAtlas = null;
 
 		private Subject<Unit> onChangeAtlas = null;
 
@@ -36,25 +37,20 @@ namespace Modules.Localize
 			}
 		}
 
-        //----- method -----
+		//----- method -----
 
 		void Awake()
 		{
 			var localizeAtlasManager = LocalizeAtlasManager.Instance;
 
 			localizeAtlasManager.OnLoadAtlasAsObservable()
-				.Subscribe(_ => OnAtlasChanged())
-				.AddTo(this);
+			.Subscribe(_ => OnAtlasChanged())
+			.AddTo(this);
 		}
 
 		void OnEnable()
 		{
-			// シーン読み込み時にOnEnableが呼ばれてしまうので最初のUpdateまで遅延させる.
-            Observable.EveryUpdate()
-                .First()
-                .TakeUntilDisable(gameObject)
-                .Subscribe(_ => SetSprite())
-                .AddTo(this);
+			SetSprite();
 		}
 
 		private void SetSprite()
@@ -67,10 +63,16 @@ namespace Modules.Localize
 			if (image == null){ return; }
 
 			var localizeAtlasManager = LocalizeAtlasManager.Instance;
-			
+
 			var sprite = localizeAtlasManager.GetSprite(spriteGuid, spriteName);
 
 			image.sprite = sprite;
+
+			#if UNITY_EDITOR
+
+			requireLoadAtlas = sprite == null ? localizeAtlasManager.GetAtlasFolderPath(spriteGuid) : null;
+
+			#endif
 		}
 
 		private void OnAtlasChanged()
