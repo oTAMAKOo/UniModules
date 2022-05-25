@@ -77,11 +77,18 @@ namespace Modules.Localize
 			return folderPath;
 		}
 
+        public string GetGetAtlasFolderGuid(string spriteGuid)
+        {
+            if (string.IsNullOrEmpty(spriteGuid)){ return string.Empty; }
+
+            var folderGuid = spriteDictionary.GetValueOrDefault(spriteGuid);
+
+            return folderGuid;
+        }
+
 		public string GetAtlasFolderPath(string spriteGuid)
 		{
-			if (string.IsNullOrEmpty(spriteGuid)){ return string.Empty; }
-
-			var folderGuid = spriteDictionary.GetValueOrDefault(spriteGuid);
+			var folderGuid = GetGetAtlasFolderGuid(spriteGuid);
 			
 			return GetFolderPath(folderGuid);
 		}

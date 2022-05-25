@@ -63,10 +63,6 @@ namespace Modules.Localize
 		{
 			if (string.IsNullOrEmpty(atlasFolder)){ return; }
 
-			atlasFolder = PathUtility.ConvertPathSeparator(atlasFolder);
-
-			atlasFolder = atlasFolder.TrimEnd(PathUtility.PathSeparator);
-
 			var atlasCache = atlasCacheByAtlasFolder.GetValueOrDefault(atlasFolder);
 
 			if (!force && atlasCache != null){ return; }
@@ -92,10 +88,6 @@ namespace Modules.Localize
 		{
 			if (string.IsNullOrEmpty(atlasFolder)){ return; }
 
-			atlasFolder = PathUtility.ConvertPathSeparator(atlasFolder);
-
-			atlasFolder = atlasFolder.TrimEnd(PathUtility.PathSeparator);
-			
 			var atlasCache = atlasCacheByAtlasFolder.GetValueOrDefault(atlasFolder);
 
 			if (atlasCache == null){ return; }
@@ -133,7 +125,13 @@ namespace Modules.Localize
 		{
 			if (localizeSpriteAsset == null){ return null; }
 
-			return localizeSpriteAsset.GetFolderPath(folderGuid);
+			var folderPath = localizeSpriteAsset.GetFolderPath(folderGuid);
+
+			folderPath = PathUtility.ConvertPathSeparator(folderPath);
+
+			folderPath = folderPath.TrimEnd(PathUtility.PathSeparator);
+
+			return folderPath;
 		}
 
 		public SpriteAtlas GetSpriteAtlas(string spriteGuid)

@@ -1,4 +1,4 @@
-
+﻿
 using System;
 using UnityEngine;
 using UnityEngine.UI;
@@ -49,7 +49,12 @@ namespace Modules.Localize
 
 		void OnEnable()
 		{
-			SetSprite();
+			// シーン読み込み時にOnEnableが呼ばれてしまうので最初のUpdateまで遅延させる.
+            Observable.EveryUpdate()
+                .First()
+                .TakeUntilDisable(gameObject)
+                .Subscribe(_ => SetSprite())
+                .AddTo(this);
 		}
 
 		private void SetSprite()

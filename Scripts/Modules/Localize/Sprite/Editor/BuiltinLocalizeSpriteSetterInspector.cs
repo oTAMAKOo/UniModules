@@ -9,8 +9,8 @@ using Extensions;
 
 namespace Modules.Localize
 {
-	[CustomEditor(typeof(BuildinLocalizeSpriteSetter), true)]
-	public sealed class BuildinLocalizeSpriteSetterInspector : UnityEditor.Editor
+	[CustomEditor(typeof(BuiltinLocalizeSpriteSetter), true)]
+	public sealed class BuiltininLocalizeSpriteSetterInspector : UnityEditor.Editor
     {
         //----- params -----
 
@@ -22,7 +22,7 @@ namespace Modules.Localize
 
 		public override void OnInspectorGUI()
 		{
-			var instance = target as BuildinLocalizeSpriteSetter;
+			var instance = target as BuiltinLocalizeSpriteSetter;
 
 			var changed = false;
 			
@@ -31,7 +31,7 @@ namespace Modules.Localize
 			var languageNames = Enum.GetNames(languageType);
 			var languageEnums = Enum.GetValues(languageType).Cast<Enum>().ToArray();
 
-			var spriteDictionary = Reflection.GetPrivateField<BuildinLocalizeSpriteSetter, BuildinLocalizeSpriteSetter.SpriteDictionary>(instance, "spriteDictionary");
+			var spriteDictionary = Reflection.GetPrivateField<BuiltinLocalizeSpriteSetter, BuiltinLocalizeSpriteSetter.SpriteDictionary>(instance, "spriteDictionary");
 
 			for (var i = 0; i < languageEnums.Length; i++)
 			{

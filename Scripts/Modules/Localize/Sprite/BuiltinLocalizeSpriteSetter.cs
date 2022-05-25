@@ -8,7 +8,7 @@ using Extensions.Serialize;
 namespace Modules.Localize
 {
 	[RequireComponent(typeof(Image))]
-    public abstract class BuildinLocalizeSpriteSetter : MonoBehaviour
+    public abstract class BuiltinLocalizeSpriteSetter : MonoBehaviour
     {
         //----- params -----
 
