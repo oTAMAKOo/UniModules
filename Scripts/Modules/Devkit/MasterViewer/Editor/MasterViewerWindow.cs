@@ -1,9 +1,9 @@
-﻿
+
 using UnityEngine;
 using UnityEditor;
 using System;
-using System.Linq;
 using System.Collections.Generic;
+using Cysharp.Threading.Tasks;
 using UniRx;
 using Extensions;
 using Extensions.Devkit;
@@ -70,7 +70,7 @@ namespace Modules.Devkit.MasterViewer
 
             if (loadMasterRequest)
             {
-                LoadAllMasterData().Subscribe().AddTo(Disposable);
+                LoadAllMasterData().Forget();
             }
 
             // Toolbar.
@@ -97,7 +97,7 @@ namespace Modules.Devkit.MasterViewer
                 {
                     if (GUILayout.Button("Load", EditorStyles.toolbarButton, GUILayout.Width(40f)))
                     {
-                        LoadAllMasterData().Subscribe().AddTo(Disposable);
+                        LoadAllMasterData().Forget();
                     }
                 }
 
@@ -154,7 +154,7 @@ namespace Modules.Devkit.MasterViewer
             }
         }
 
-        public IObservable<Unit> LoadAllMasterData()
+        public async UniTask LoadAllMasterData()
         {
             loadMasterRequest = false;
 
@@ -196,22 +196,29 @@ namespace Modules.Devkit.MasterViewer
                 isComplete = true;
             };
 
-            var observers = new List<IObservable<Unit>>();
+            var tasks = new List<UniTask>();
 
             foreach (var master in allMasters)
             {
-                var observable = Observable.Defer(() => master.Load(cryptoKey, false).Do(_ => onLoadFinish())).AsUnitObservable();
+                var observable = UniTask.Defer(async () =>
+				{
+					var loadResult = await master.Load(cryptoKey, false);
 
-                observers.Add(observable);
+					if (loadResult != null && loadResult.Item1)
+					{
+						onLoadFinish();
+					}
+				});
+
+				tasks.Add(observable);
             }
 
-            return observers
-                .WhenAll()
-                .Do(_ => onLoadComplete())
-                .Finally(() => EditorUtility.ClearProgressBar())
-                .DelayFrame(1)  // プログレスバーが消えるのを待つ.
-                .AsUnitObservable();
-        }
+			await UniTask.WhenAll(tasks);
+
+			onLoadComplete();
+
+			EditorUtility.ClearProgressBar();
+		}
 
         private MasterController[] GetDisplayMasters()
         {

@@ -1,19 +1,17 @@
-﻿
+
 using UnityEngine;
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
-using System.Threading;
+using Cysharp.Threading.Tasks;
 using UniRx;
 using MessagePack;
 using MessagePack.Resolvers;
 using Extensions;
 using Modules.Devkit.Console;
 using Modules.MessagePack;
-using Modules.UniRxExtension;
 
 namespace Modules.Master
 {
@@ -98,15 +96,10 @@ namespace Modules.Master
             masterFileNames.Add(type, fileName);
         }
 
-        public IObservable<bool> LoadMaster(Dictionary<IMaster, string> versionTable, IProgress<float> progress = null)
+        public async UniTask<bool> LoadMaster(Dictionary<IMaster, string> versionTable, IProgress<float> progress = null)
         {
             Reference.Clear();
 
-            return Observable.FromCoroutine<bool>(observer => LoadMasterInternal(observer, versionTable, progress));
-        }
-
-        private IEnumerator LoadMasterInternal(IObserver<bool> observer, Dictionary<IMaster, string> versionTable, IProgress<float> progress)
-        {
             #if UNITY_EDITOR
 
             if (!Prefs.checkVersion)
@@ -116,7 +109,7 @@ namespace Modules.Master
 
             #endif
 
-            var result = true;
+            var result = false;
             
             var updateLog = new StringBuilder();
             var loadLog = new StringBuilder();
@@ -127,14 +120,11 @@ namespace Modules.Master
             {
                 if (progress != null) { progress.Report(0f); }
 
-                var yieldCancel = new YieldCancel();
-                var cancellationToken = yieldCancel.Token;
-                
-                var amount = 1f / versionTable.Count;
+				var amount = 1f / versionTable.Count;
                 var progressAmount = 0f;
 
                 // 並行で処理.
-                var observers = new List<IObservable<Unit>>();
+                var tasks = new List<UniTask>();
 
                 foreach (var element in versionTable)
                 {
@@ -147,8 +137,6 @@ namespace Modules.Master
                     var masterFileName = masterFileNames.GetValueOrDefault(masterType);
 
                     var localVersion = master.LoadVersion();
-
-                    IObservable<Unit> observable = null;
 
                     Action<bool, double> onUpdateFinish = (state, time) =>
                     {
@@ -201,42 +189,45 @@ namespace Modules.Master
                     if (master.CheckVersion(masterVersion))
                     {
                         // 読み込み.
-                        observable = Observable.Defer(() =>
-                        {
-                            return MasterLoad(master, onLoadFinish).AsUnitObservable();
-                        });
+						var task = UniTask.Defer(() => MasterLoad(master, onLoadFinish));
 
-                        observers.Add(observable);
+                        tasks.Add(task);
                     }
                     else
                     {
                         // ダウンロード + 読み込み.
-                        observable = Observable.Defer(() =>
-                        {
-                            return MasterUpdate(master, masterVersion, onUpdateFinish, cancellationToken)
-                                .SelectMany(x => x ? MasterLoad(master, onLoadFinish) : Observable.Return(false))
-                                .AsUnitObservable();
-                        });
+						var task = UniTask.Defer(async () =>
+						{
+							var success = await MasterUpdate(master, masterVersion, onUpdateFinish).ToUniTask();
 
-                        observers.Add(observable);
+							if (success)
+							{
+								await MasterLoad(master, onLoadFinish);
+							}
+						});
+
+						tasks.Add(task);
                     }
                 }
 
                 // 実行.
-                var loadYield = observers.WhenAll().ToYieldInstruction(false, cancellationToken);
+				try
+				{
+					await UniTask.WhenAll(tasks);
 
-                yield return loadYield;
+					result = true;
+				}
+				catch (OperationCanceledException)
+				{
+					/* Canceled */
+				}
+				catch (Exception e)
+				{
+					Debug.LogException(e);
+				}
 
-                if (loadYield.HasError)
-                {
-                    Debug.LogException(loadYield.Error);
-                    result = false;
-                }                
-
-                if (progress != null) { progress.Report(1f); }
-
-                yieldCancel.Dispose();
-            }
+				if (progress != null) { progress.Report(1f); }
+			}
 
             stopwatch.Stop();
 
@@ -276,11 +267,10 @@ namespace Modules.Master
                 }
             }
 
-            observer.OnNext(result);
-            observer.OnCompleted();
+            return result;
         }
 
-        private IObservable<bool> MasterUpdate(IMaster master, string masterVersion, Action<bool, double> onUpdateFinish, CancellationToken cancellationToken)
+        private IObservable<bool> MasterUpdate(IMaster master, string masterVersion, Action<bool, double> onUpdateFinish)
         {
             Action<Exception> onErrorRetry = exception =>
             {
@@ -293,14 +283,17 @@ namespace Modules.Master
                 }
             };
 
-            return master.Update(masterVersion, cancellationToken)
+            return master.Update(masterVersion)
+				.ToObservable()
                 .OnErrorRetry((Exception ex)  => onErrorRetry.Invoke(ex), 3, TimeSpan.FromSeconds(5))
                 .Do(x => onUpdateFinish(x.Item1, x.Item2))
                 .Select(x => x.Item1);
         }
 
-        private IObservable<bool> MasterLoad(IMaster master, Action<bool, double> onLoadFinish)
+        private async UniTask<bool> MasterLoad(IMaster master, Action<bool, double> onLoadFinish)
         {
+			var result = false;
+
             Action<Exception> onErrorRetry = exception =>
             {
                 var masterType = master.GetType();
@@ -312,11 +305,17 @@ namespace Modules.Master
                 }
             };
 
-            return master.Load(CryptoKey, true)
-                .OnErrorRetry((Exception ex)  => onErrorRetry.Invoke(ex), 3, TimeSpan.FromSeconds(5))
-                .Do(x => onLoadFinish(x.Item1, x.Item2))
-                .Select(x => x.Item1);
-        }
+			var loadResult = await master.Load(CryptoKey, true);
+
+			if (onLoadFinish != null)
+			{
+				onLoadFinish(loadResult.Item1, loadResult.Item2);
+			}
+
+			result = loadResult.Item1;
+
+			return result;
+		}
 
         public void ClearMasterVersion()
         {

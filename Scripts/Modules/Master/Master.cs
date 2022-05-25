@@ -1,12 +1,10 @@
 
 using UnityEngine;
 using System;
-using System.Collections;
 using System.IO;
 using System.Collections.Generic;
 using System.Text;
-using System.Threading;
-using UniRx;
+using Cysharp.Threading.Tasks;
 using Extensions;
 using MessagePack;
 
@@ -18,8 +16,8 @@ namespace Modules.Master
         bool CheckVersion(string masterVersion);
         void ClearVersion();
 
-        IObservable<Tuple<bool, double>> Update(string masterVersion, CancellationToken cancelToken);
-        IObservable<Tuple<bool, double>> Load(AesCryptoKey cryptoKey, bool cleanOnError);
+        UniTask<Tuple<bool, double>> Update(string masterVersion);
+		UniTask<Tuple<bool, double>> Load(AesCryptoKey cryptoKey, bool cleanOnError);
     }
 
     public abstract class MasterContainer<TMasterRecord>
@@ -194,48 +192,36 @@ namespace Modules.Master
             records.Clear();
         }
 
-        public IObservable<Tuple<bool, double>> Load(AesCryptoKey cryptoKey, bool cleanOnError)
+        public async UniTask<Tuple<bool, double>> Load(AesCryptoKey cryptoKey, bool cleanOnError)
         {
             Refresh();
 
-            return Observable.FromMicroCoroutine<Tuple<bool, double>>(observer => LoadInternal(observer, cryptoKey, cleanOnError));
-        }
-
-        private IEnumerator LoadInternal(IObserver<Tuple<bool, double>> observer, AesCryptoKey cryptoKey, bool cleanOnError)
-        {
-            var success = false;
+			var success = false;
 
             double time = 0;
 
             var filePath = GetFilePath();
 
             // 読み込み準備.
-            var prepareLoadYield = PrepareLoad(filePath).ToYieldInstruction();
+            await PrepareLoad(filePath);
 
-            while (!prepareLoadYield.IsDone)
-            {
-                yield return null;
-            }
+			// 読み込みをスレッドプールで実行.
+			try
+			{
+				time = await UniTask.RunOnThreadPool(() => LoadMasterFile(filePath, cryptoKey));
 
-            // 読み込みをスレッドプールで実行.
-            var loadYield = Observable.Start(() => LoadMasterFile(filePath, cryptoKey)).ObserveOnMainThread().ToYieldInstruction(false);
+				success = true;
+			}
+			catch (OperationCanceledException)
+			{
+				/* Canceled */
+			}
+			catch (Exception e)
+			{
+				Debug.LogErrorFormat("Load master failed.\n\nClass : {0}\nFile : {1}\n\nException : \n{2}", typeof(TMaster).FullName, filePath, e);
+			}
 
-            while (!loadYield.IsDone)
-            {
-                yield return null;
-            }
-
-            if (!loadYield.HasError && loadYield.HasResult)
-            {
-                success = true;
-                time = loadYield.Result;
-            }
-            else
-            {
-                Debug.LogErrorFormat("Load master failed.\n\nClass : {0}\nFile : {1}\n\nException : \n{2}", typeof(TMaster).FullName, filePath, loadYield.Error);
-            }
-
-            if (!success)
+			if (!success)
             {
                 if (cleanOnError)
                 {
@@ -245,9 +231,8 @@ namespace Modules.Master
 
                 OnError();
             }
-
-            observer.OnNext(Tuple.Create(success, time));
-            observer.OnCompleted();
+			
+			return Tuple.Create(success, time);
         }
 
         private double LoadMasterFile(string filePath, AesCryptoKey cryptoKey)
@@ -317,14 +302,9 @@ namespace Modules.Master
             return container != null ? container.records : new TMasterRecord[0];
         }
         
-        public IObservable<Tuple<bool, double>> Update(string masterVersion, CancellationToken cancelToken)
+        public async UniTask<Tuple<bool, double>> Update(string masterVersion)
         {
-            return Observable.FromMicroCoroutine<Tuple<bool, double>>(observer => UpdateInternal(observer, masterVersion, cancelToken));
-        }
-
-        private IEnumerator UpdateInternal(IObserver<Tuple<bool, double>> observer, string masterVersion, CancellationToken cancelToken)
-        {
-            var result = true;
+			var result = false;
 
             var sw = System.Diagnostics.Stopwatch.StartNew();
 
@@ -337,27 +317,28 @@ namespace Modules.Master
             }
 
             // ダウンロード.
-            var downloadYield = DownloadMaster().ToYieldInstruction(false, cancelToken);
+			try
+			{
+				await DownloadMaster();
 
-            while (!downloadYield.IsDone)
-            {
-                yield return null;
-            }
+				if (File.Exists(filePath))
+				{
+					result = true;
+				}
+			}
+			catch (OperationCanceledException)
+			{
+				/* Canceled */
+			}
+			catch (Exception e)
+			{
+				Debug.LogException(e);
+			}
 
-            if (!downloadYield.HasResult || downloadYield.HasError || !File.Exists(filePath))
-            {
-                if (downloadYield.HasError)
-                {
-                    Debug.LogException(downloadYield.Error);
-                }
-
-                result = false;
-            }
-
-            // ファイルが閉じるまで待つ.
+			// ファイルが閉じるまで待つ.
             while(FileUtility.IsFileLocked(filePath))
             {
-                yield return null;
+                await UniTask.NextFrame();
             }
 
             // バージョン情報を更新.
@@ -366,9 +347,8 @@ namespace Modules.Master
             UpdateVersion(version);
 
             sw.Stop();
-
-            observer.OnNext(Tuple.Create(result, sw.Elapsed.TotalMilliseconds));
-            observer.OnCompleted();
+			
+			return Tuple.Create(result, sw.Elapsed.TotalMilliseconds);
         }
 
         public IEnumerable<TMasterRecord> GetAllRecords()
@@ -381,9 +361,9 @@ namespace Modules.Master
             return records.GetValueOrDefault(key);
         }
 
-        protected virtual IEnumerator PrepareLoad(string installPath)
+        protected virtual UniTask PrepareLoad(string installPath)
         {
-            yield break;
+            return UniTask.CompletedTask;
         }
 
         protected virtual void OnError()
@@ -397,6 +377,6 @@ namespace Modules.Master
 
         protected abstract TKey GetRecordKey(TMasterRecord masterRecord);
 
-        protected abstract IObservable<Unit> DownloadMaster();
+        protected abstract UniTask DownloadMaster();
     }
 }
