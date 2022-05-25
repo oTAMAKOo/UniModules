@@ -1,4 +1,4 @@
-﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿
+﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿
 using UnityEngine;
 using System;
 using System.Collections.Generic;
@@ -42,7 +42,7 @@ namespace Modules.Notifications
             }
         }
 
-		private sealed class Prefs
+		private sealed partial class Prefs
 		{
 			public static int identifier
 			{
