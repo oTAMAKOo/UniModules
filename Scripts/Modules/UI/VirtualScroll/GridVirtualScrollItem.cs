@@ -1,12 +1,10 @@
-﻿
+
 using UnityEngine;
 using UnityEngine.UI;
 using System;
-using System.Collections;
 using System.Linq;
 using System.Collections.Generic;
 using Cysharp.Threading.Tasks;
-using UniRx;
 using Extensions;
 
 namespace Modules.UI
@@ -49,7 +47,7 @@ namespace Modules.UI
             return UniTask.CompletedTask;
         }
         
-        protected override async UniTask UpdateContents(GridVirtualScroll<T>.GridElement info)
+		public override async UniTask UpdateContents(GridVirtualScroll<T>.GridElement info)
         {
             if (elements == null) { return; }
 

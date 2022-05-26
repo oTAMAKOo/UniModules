@@ -1,9 +1,7 @@
-﻿using UnityEngine;
-using System;
+using UnityEngine;
 using System.Collections.Generic;
 using Cysharp.Threading.Tasks;
 using Extensions;
-using UniRx;
 
 namespace Modules.UI
 {
@@ -40,14 +38,9 @@ namespace Modules.UI
             Content = contents != null ? contents.ElementAtOrDefault(index, null) : null;
         }
 
-        public IObservable<Unit> UpdateItem()
-        {
-            return Content != null ? Observable.FromUniTask(_ => UpdateContents(Content)) : Observable.ReturnUnit();
-        }
-
-        /// <summary> 初期化. </summary>
+		/// <summary> 初期化. </summary>
         public virtual UniTask Initialize() { return UniTask.CompletedTask; }
 
-        protected abstract UniTask UpdateContents(T content);
+        public abstract UniTask UpdateContents(T content);
     }
 }

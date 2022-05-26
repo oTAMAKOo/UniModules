@@ -1,11 +1,11 @@
-﻿
+
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.EventSystems;
 using System;
-using System.Collections;
 using System.Linq;
 using System.Collections.Generic;
+using System.Threading;
 using Cysharp.Threading.Tasks;
 using DG.Tweening;
 using UniRx;
@@ -73,17 +73,16 @@ namespace Modules.UI
 
         private List<VirtualScrollItem<T>> itemList = null;
 
-        private Dictionary<VirtualScrollItem<T>, IDisposable> updateItemDisposables = null;
+		private CancellationTokenSource cancelSource = null;
+		private Dictionary<VirtualScrollItem<T>, IDisposable> updateItemDisposables = null;
 
-        private GraphicCast hitBox = null;
+		private GraphicCast hitBox = null;
 
         private Subject<Unit> onUpdateContents = null;
         private Subject<IVirtualScrollItem> onCreateItem = null;
         private Subject<IVirtualScrollItem> onUpdateItem = null;
 
-        private IObservable<Unit> updateQueueing = null;
-
-        private Status initialize = Status.None;
+		private Status initialize = Status.None;
 
         //----- property -----
 
@@ -135,8 +134,8 @@ namespace Modules.UI
         protected virtual void Initialize()
         {
             if (initialize != Status.None) { return; }
-
-            updateItemDisposables = new Dictionary<VirtualScrollItem<T>, IDisposable>();
+			
+			updateItemDisposables = new Dictionary<VirtualScrollItem<T>, IDisposable>();
 
             scrollRectTransform = UnityUtility.GetComponent<RectTransform>(scrollRect.gameObject);
 
@@ -160,54 +159,40 @@ namespace Modules.UI
                 .AddTo(this);
         }
 
-        public virtual void SetContents(T[] contents)
+		protected override void OnDestroy()
+		{
+			if (cancelSource != null)
+			{
+				cancelSource.Cancel();
+			}
+		}
+
+		public virtual void SetContents(T[] contents)
         {
             Contents = contents;
         }
 
-        public IObservable<Unit> UpdateContents(bool keepScrollPosition = false)
+        public async UniTask UpdateContents(bool keepScrollPosition = false)
         {
-            // 既に実行中の場合は実行中の物を返す.
-            if (updateQueueing != null) { return updateQueueing; }
+			if (initialize == Status.None)
+			{
+				Initialize();
+			}
+			
+			Cancel();
 
-            if (initialize == Status.None)
-            {
-                Initialize();
-            }
+			//----- Contentのサイズ設定 -----
 
-            if (updateItemDisposables.Any())
-            {
-                foreach (var item in updateItemDisposables)
-                {
-                    if (UnityUtility.IsNull(item.Key)) { continue; }
-
-                    item.Value.Dispose();
-                }
-
-                updateItemDisposables.Clear();
-            }
-
-            updateQueueing = Observable.FromMicroCoroutine(() => UpdateContentsInternal(keepScrollPosition))
-                .Do(_ => initialize = Status.Done)
-                .Do(_ => updateQueueing = null)
-                .Share();
-
-            return updateQueueing;
-        }
-
-        private IEnumerator UpdateContentsInternal(bool keepScrollPosition)
-        {
             var scrollPosition = ScrollPosition;
 
             if (itemSize == -1)
             {
                 var rt = UnityUtility.GetComponent<RectTransform>(itemPrefab);
+
                 itemSize = direction == Direction.Vertical ? rt.rect.height : rt.rect.width;
             }
 
-            //----- Contentのサイズ設定 -----
-
-            scrollRect.content.anchorMin = direction == Direction.Vertical ? new Vector2(0f, 0.5f) : new Vector2(0.5f, 0f);
+			scrollRect.content.anchorMin = direction == Direction.Vertical ? new Vector2(0f, 0.5f) : new Vector2(0.5f, 0f);
             scrollRect.content.anchorMax = direction == Direction.Vertical ? new Vector2(1f, 0.5f) : new Vector2(0.5f, 1f);
             scrollRect.content.pivot = new Vector2(0.5f, 0.5f);
 
@@ -283,28 +268,28 @@ namespace Modules.UI
                 addItems.ForEach(x => UnityUtility.SetActive(x, false));
 
                 // 生成したインスタンス初期化.
+				try
+				{
+					var tasks = new UniTask[addItems.Length];
 
-                var initializeObservers = new IObservable<Unit>[addItems.Length];
+					for (var i = 0; i < addItems.Length; i++)
+					{
+						var item = addItems[i];
 
-                for (var i = 0; i < addItems.Length; i++)
-                {
-                    var item = addItems[i];
+						tasks[i] = UniTask.Defer(() => InitializeItem(item));
+					}
 
-                    initializeObservers[i] = Observable.Defer(() => Observable.FromMicroCoroutine(() => InitializeItem(item)));
-                }
-
-                var initializeYield = initializeObservers.WhenAll().ToYieldInstruction(false);
-
-                while (!initializeYield.IsDone)
-                {
-                    yield return null;
-                }
-
-                if (initializeYield.HasError)
-                {
-                    Debug.LogException(initializeYield.Error);
-                }
-            }
+					await UniTask.WhenAll(tasks).AttachExternalCancellation(cancelSource.Token);
+				}
+				catch (OperationCanceledException)
+				{
+					/* Canceled */
+				}
+				catch (Exception e)
+				{
+					Debug.LogException(e);
+				}
+			}
 
             // 要素数が少ない時はスクロールを無効化.
             scrollRect.enabled = ScrollEnable();
@@ -316,43 +301,44 @@ namespace Modules.UI
                 UnityUtility.SetActive(scrollbar.gameObject, ScrollEnable());
             }
 
-            var updateObservers = new IObservable<Unit>[itemList.Count];
+			//----- リストアイテム更新 -----
 
-            // 配置初期位置(中央揃え想定なのでItemSize * 0.5f分ずらす).
-            var basePosition = direction == Direction.Vertical ?
-                scrollRect.content.rect.height * 0.5f - itemSize * 0.5f - edgeSpacing :
-                -scrollRect.content.rect.width * 0.5f + itemSize * 0.5f + edgeSpacing;
+			try
+			{
+				var tasks = new UniTask[itemList.Count];
 
-            // 位置、情報を更新.
-            for (var i = 0; i < itemList.Count; i++)
-            {
-                var index = i;
-                var item = itemList[i];
+				// 配置初期位置(中央揃え想定なのでItemSize * 0.5f分ずらす).
+				var basePosition = direction == Direction.Vertical ?
+									scrollRect.content.rect.height * 0.5f - itemSize * 0.5f - edgeSpacing :
+									-scrollRect.content.rect.width * 0.5f + itemSize * 0.5f + edgeSpacing;
 
-                var offset = itemSize * i;
+				// 位置、情報を更新.
+				for (var i = 0; i < itemList.Count; i++)
+				{
+					var index = i;
+					var item = itemList[i];
 
-                offset += 0 < i ? itemSpacing * i : 0;
+					var offset = itemSize * i;
 
-                item.RectTransform.anchoredPosition = direction == Direction.Vertical ?
-                    new Vector2(0, basePosition - offset) :
-                    new Vector2(basePosition + offset, 0);
+					offset += 0 < i ? itemSpacing * i : 0;
 
-                updateObservers[i] = Observable.Defer(() => UpdateItem(item, index));
-            }
+					item.RectTransform.anchoredPosition = direction == Direction.Vertical ?
+														new Vector2(0, basePosition - offset) :
+														new Vector2(basePosition + offset, 0);
 
-            //----- リストアイテム更新 -----
+					tasks[i] = UniTask.Defer(() => UpdateItem(cancelSource.Token, item, index));
+				}
 
-            var updateItemYield = updateObservers.WhenAll().ToYieldInstruction(false);
-
-            while (!updateItemYield.IsDone)
-            {
-                yield return null;
-            }
-
-            if (updateItemYield.HasError)
-            {
-                Debug.LogException(updateItemYield.Error);
-            }
+				await UniTask.WhenAll(tasks).AttachExternalCancellation(cancelSource.Token);
+			}
+			catch (OperationCanceledException)
+			{
+				/* Canceled */
+			}
+			catch (Exception e)
+			{
+				Debug.LogException(e);
+			}
 
             //----- スクロール位置設定 -----
 
@@ -371,7 +357,7 @@ namespace Modules.UI
 
             //-----  更新イベント -----
 
-            OnUpdateContents();
+            await OnUpdateContents().AttachExternalCancellation(cancelSource.Token);
 
             if (onUpdateContents != null)
             {
@@ -379,11 +365,11 @@ namespace Modules.UI
             }
         }
 
-        private IEnumerator InitializeItem(VirtualScrollItem<T> item)
+        private async UniTask InitializeItem(VirtualScrollItem<T> item)
         {
             UnityUtility.SetActive(item, true);
 
-            OnCreateItem(item);
+            await OnCreateItem(item).AttachExternalCancellation(cancelSource.Token);
 
             if (onCreateItem != null)
             {
@@ -391,20 +377,42 @@ namespace Modules.UI
             }
 
             // 初期化.
-            var initializeYield = item.Initialize().ToObservable().ToYieldInstruction(false);
+			try
+			{
+				await item.Initialize().AttachExternalCancellation(cancelSource.Token);
+			}
+			catch (OperationCanceledException)
+			{
+				/* Canceled */
+			}
+			catch (Exception e)
+			{
+				Debug.LogException(e);
+			}
 
-            while (!initializeYield.IsDone)
-            {
-                yield return null;
-            }
-
-            if (initializeYield.HasError)
-            {
-                Debug.LogException(initializeYield.Error);
-            }
-
-            UnityUtility.SetActive(item, false);
+			UnityUtility.SetActive(item, false);
         }
+
+		/// <summary> 実行中の処理を中断 </summary>
+		public void Cancel()
+		{
+			if (cancelSource != null)
+			{
+				cancelSource.Cancel();
+			}
+
+			cancelSource = new CancellationTokenSource();
+
+			if (updateItemDisposables != null)
+			{
+				foreach (var item in updateItemDisposables.Values)
+				{
+					item.Dispose();
+				}
+
+				updateItemDisposables.Clear();
+			}
+		}
 
         private void SetupHitBox()
         {
@@ -446,7 +454,7 @@ namespace Modules.UI
             OnMoveEnd();
         }
 
-        public IObservable<Unit> ScrollToItem(int index, ScrollTo to, float duration, Ease ease = Ease.Unset)
+        public async UniTask ScrollToItem(int index, ScrollTo to, float duration, Ease ease = Ease.Unset)
         {
             prevScrollPosition = GetCurrentPosition();
 
@@ -467,7 +475,8 @@ namespace Modules.UI
                             x => scrollRect.content.anchoredPosition = Vector.SetY(scrollRect.content.anchoredPosition, x),
                             targetPosition.y,
                             duration)
-                        .SetEase(ease);
+                        .SetEase(ease)
+						.SetLink(gameObject);
                     break;
 
                 case Direction.Horizontal:
@@ -475,36 +484,20 @@ namespace Modules.UI
                             x => scrollRect.content.anchoredPosition = Vector.SetX(scrollRect.content.anchoredPosition, x),
                             targetPosition.x,
                             duration)
-                        .SetEase(ease);
+                        .SetEase(ease)
+						.SetLink(gameObject);
                     break;
             }
 
-            if (centerToTween == null) { return Observable.ReturnUnit(); }
+            if (centerToTween != null)
+			{
+	            await centerToTween.Play().ToUniTask().AttachExternalCancellation(cancelSource.Token);
 
-            centerToTween.Play();
-
-            return Observable.FromMicroCoroutine(() => WaitTweenEnd()).AsUnitObservable();
+				OnMoveEnd();
+			}
         }
 
-        private IEnumerator WaitTweenEnd()
-        {
-            while (true)
-            {
-                if (centerToTween == null) { break; }
-
-                if (!centerToTween.IsActive()) { break; }
-
-                if (!centerToTween.IsPlaying())
-                {
-                    OnMoveEnd();
-                    break;
-                }
-
-                yield return null;
-            }
-        }
-
-        private Vector2 GetScrollToPosition(int index, ScrollTo to)
+		private Vector2 GetScrollToPosition(int index, ScrollTo to)
         {
             var scrollToPosition = GetItemScrollToPosition(index);
 
@@ -723,15 +716,15 @@ namespace Modules.UI
 
                 if (updateItemDisposable != null)
                 {
-                    updateItemDisposable.Dispose();
-                    updateItemDisposables.Remove(firstItem);
+					updateItemDisposable.Dispose();
+					updateItemDisposables.Remove(firstItem);
                 }
+				
+				updateItemDisposable = Observable.FromUniTask(cancelToken => UpdateItem(cancelToken, firstItem, lastItem.Index + 1))
+					.Subscribe(_ => updateItemDisposables.Remove(firstItem))
+					.AddTo(this);
 
-                updateItemDisposable = UpdateItem(firstItem, lastItem.Index + 1)
-                    .Subscribe(_ => updateItemDisposables.Remove(firstItem))
-                    .AddTo(this);
-
-                updateItemDisposables.Add(firstItem, updateItemDisposable);
+				updateItemDisposables.Add(firstItem, updateItemDisposable);
 
                 UpdateSibling();
 
@@ -774,7 +767,7 @@ namespace Modules.UI
                     updateItemDisposables.Remove(lastItem);
                 }
 
-                updateItemDisposable = UpdateItem(lastItem, firstItem.Index - 1)
+                updateItemDisposable = Observable.FromUniTask(cancelToken => UpdateItem(cancelToken, lastItem, firstItem.Index - 1))
                     .Subscribe(_ => updateItemDisposables.Remove(lastItem))
                     .AddTo(this);
 
@@ -845,36 +838,26 @@ namespace Modules.UI
             return result;
         }
 
-        private IObservable<Unit> UpdateItem(VirtualScrollItem<T> item, int index)
+        private async UniTask UpdateItem(CancellationToken cancelToken, VirtualScrollItem<T> item, int index)
         {
-            var observable = Observable.ReturnUnit();
+			if (item.Content == null){ return; }
 
-            switch (scrollType)
+			if (scrollType == ScrollType.Loop)
             {
-                case ScrollType.Limited:
-                    {
-                        observable = Observable.Defer(() => item.UpdateItem());
-                    }
-                    break;
+				if (index < 0)
+				{
+					index = Contents.Count - 1;
+				}
 
-                case ScrollType.Loop:
-                    {
-                        if (index < 0)
-                        {
-                            index = Contents.Count - 1;
-                        }
-
-                        if (Contents.Count <= index)
-                        {
-                            index = 0;
-                        }
-                        
-                        observable = Observable.Defer(() => item.UpdateItem());
-                    }
-                    break;
+				if (Contents.Count <= index)
+				{
+					index = 0;
+				}
             }
 
-            item.SetContent(index, Contents);
+			item.SetContent(index, Contents);
+
+			await item.UpdateContents(item.Content).AttachExternalCancellation(cancelToken);
 
             UnityUtility.SetActive(item, item.Content != null);
 
@@ -884,14 +867,12 @@ namespace Modules.UI
 
             #endif
 
-            OnUpdateItem(item);
+            await OnUpdateItem(item).AttachExternalCancellation(cancelToken);
 
-            if (onUpdateItem != null)
+			if (onUpdateItem != null)
             {
                 onUpdateItem.OnNext(item);
             }
-
-            return observable;
         }
 
         private static Rect GetWorldRect(RectTransform trans)
@@ -924,12 +905,12 @@ namespace Modules.UI
         }
 
         /// <summary> リストアイテム生成時イベント </summary>
-        protected virtual void OnCreateItem(IVirtualScrollItem item) { }
+        protected virtual UniTask OnCreateItem(IVirtualScrollItem item) { return UniTask.CompletedTask; }
 
         /// <summary> リストアイテム更新時イベント </summary>
-        protected virtual void OnUpdateItem(IVirtualScrollItem item) { }
+        protected virtual UniTask OnUpdateItem(IVirtualScrollItem item) { return UniTask.CompletedTask; }
 
         /// <summary> リスト内容更新完了イベント </summary>
-        protected virtual void OnUpdateContents() { }
+        protected virtual UniTask OnUpdateContents() { return UniTask.CompletedTask; }
     }
 }
