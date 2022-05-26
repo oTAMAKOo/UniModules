@@ -1,9 +1,9 @@
 
 using UnityEngine;
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using Cysharp.Threading.Tasks;
 using UniRx;
 using Extensions;
 using Modules.Devkit.Diagnosis.LogTracker;
@@ -12,7 +12,7 @@ namespace Modules.Devkit.Diagnosis.SendReport
 {
 	public interface ISendReportUploader
 	{
-		IObservable<string> Upload(string reportTitle, Dictionary<string, string> reportContents, IProgress<float> progress);
+		UniTask<string> Upload(string reportTitle, Dictionary<string, string> reportContents, IProgress<float> progress);
 	}
 
     public interface ISendReportBuilder
@@ -74,14 +74,9 @@ namespace Modules.Devkit.Diagnosis.SendReport
             this.sendReportBuilder = sendReportBuilder;
         }
 
-        public IObservable<Unit> Send(string reportTitle, IProgress<float> progressNotifier = null)
+        public async UniTask Send(string reportTitle, IProgress<float> progressNotifier = null)
         {
-            return Observable.FromCoroutine(() => SendReport(reportTitle, progressNotifier));
-        }
-
-        private IEnumerator SendReport(string reportTitle, IProgress<float> progressNotifier)
-        {
-            // 送信内容構築.
+			// 送信内容構築.
             BuildPostContent();
 
             // 送信要求イベント.
@@ -92,29 +87,33 @@ namespace Modules.Devkit.Diagnosis.SendReport
 
             // 送信.
 
-            var postReportYield = uploader.Upload(reportTitle, reportContents, progressNotifier).ToYieldInstruction();
-            
-            while (!postReportYield.IsDone)
-            {
-                yield return null;
-            }
+			var completeMessage = string.Empty;
 
-            reportContents.Clear();
+			try
+			{
+				completeMessage = await uploader.Upload(reportTitle, reportContents, progressNotifier);
 
-            var completeMessage = postReportYield.HasError ? postReportYield.Error.Message : postReportYield.Result;
+				reportContents.Clear();
+			}
+			catch (OperationCanceledException)
+			{
+				/* Canceled */
+			}
+			catch (Exception e)
+			{
+				completeMessage = e.Message;
+			}
 
-            // 終了イベント.
+			// 終了イベント.
             if (onReportComplete != null)
             {
                 onReportComplete.OnNext(completeMessage);
             }
         }
 
-        public IEnumerator CaptureScreenShot()
+        public void CaptureScreenShot()
         {
-            yield return new WaitForEndOfFrame();
-
-            var tex = new Texture2D(Screen.width, Screen.height, TextureFormat.RGB24, false);
+			var tex = new Texture2D(Screen.width, Screen.height, TextureFormat.RGB24, false);
 
             tex.ReadPixels(new Rect(0, 0, Screen.width, Screen.height), 0, 0);
             tex.Apply();

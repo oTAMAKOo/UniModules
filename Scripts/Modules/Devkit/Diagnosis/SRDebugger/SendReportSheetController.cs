@@ -3,7 +3,8 @@ using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.EventSystems;
 using System;
-using System.Collections;
+using System.Threading;
+using Cysharp.Threading.Tasks;
 using UniRx;
 using Extensions;
 using Modules.Devkit.Diagnosis.SendReport;
@@ -35,7 +36,7 @@ namespace Modules.Devkit.Diagnosis.SRDebugger
         [SerializeField]
         private Text progressBarText = null;
 
-        private IDisposable sendReportDisposable = null;
+        private CancellationTokenSource cancelSource = null;
 
         protected bool initialized = false;
 
@@ -79,17 +80,15 @@ namespace Modules.Devkit.Diagnosis.SRDebugger
                 .AddTo(this);
 
             sendReportButton.OnClickAsObservable()
-                .Subscribe(_ =>
+                .Subscribe(async _ =>
                     {
-                        if (sendReportDisposable != null)
+                        if (cancelSource != null)
                         {
                             PostCancel();
                         }
                         else
                         {
-                            sendReportDisposable = Observable.FromCoroutine(() => SendReport())
-                                .Subscribe(__ => sendReportDisposable = null)
-                                .AddTo(this);
+							await SendReport();
                         }
                     })
                 .AddTo(this);
@@ -123,33 +122,36 @@ namespace Modules.Devkit.Diagnosis.SRDebugger
             sendReportManager.AddReportContent("Title", titleInputField.text);
         }
 
-        private IEnumerator SendReport()
+        private async UniTask SendReport()
         {
             var sendReportManager = SendReportManager.Instance;
 
             UpdatePostProgress(0f);
 
-            yield return CaptureScreenShot();
+            await CaptureScreenShot();
 
-            yield return new WaitForEndOfFrame();
-
-            // 進捗.
+			// 進捗.
             var notifier = new ScheduledNotifier<float>();
 
             notifier.Subscribe(x => UpdatePostProgress(x));
 
-            var sendYield = sendReportManager.Send(ReportTitle, notifier).ToYieldInstruction(false);
+			try
+			{
+				cancelSource = new CancellationTokenSource();
 
-            while (!sendYield.IsDone)
-            {
-                yield return null;
-            }
+				await sendReportManager.Send(ReportTitle, notifier).AttachExternalCancellation(cancelSource.Token);
 
-            if (sendYield.HasError)
-            {
-                Debug.LogException(sendYield.Error);
-            }
-        }
+				cancelSource = null;
+			}
+			catch (OperationCanceledException)
+			{
+				/* Canceled */
+			}
+			catch (Exception e)
+			{
+				Debug.LogException(e);
+			}
+		}
 
         private void UpdatePostProgress(float progress)
         {
@@ -159,7 +161,7 @@ namespace Modules.Devkit.Diagnosis.SRDebugger
 
         private void UpdateView()
         {
-            var status = sendReportDisposable == null;
+            var status = cancelSource == null;
 
             sendReportButtonText.text = status ? "Send Report" : "Cancel";
 
@@ -178,13 +180,7 @@ namespace Modules.Devkit.Diagnosis.SRDebugger
 
             SRDebug.Instance.ShowDebugPanel(false);
 
-            if (sendReportDisposable != null)
-            {
-                sendReportDisposable.Dispose();
-                sendReportDisposable = null;
-            }
-
-            RefreshInputField(titleInputField);
+			RefreshInputField(titleInputField);
 
             using (new DisableStackTraceScope())
             {
@@ -205,24 +201,28 @@ namespace Modules.Devkit.Diagnosis.SRDebugger
 
         private void PostCancel()
         {
-            if (sendReportDisposable != null)
-            {
-                sendReportDisposable.Dispose();
-                sendReportDisposable = null;
-            }
+			if (cancelSource != null)
+			{
+				cancelSource.Cancel();
+			}
 
             UpdateView();
         }
 
-        private IEnumerator CaptureScreenShot()
+        private async UniTask CaptureScreenShot()
         {
+			var srDebug = SRDebug.Instance;
             var sendReportManager = SendReportManager.Instance;
             
-            SRDebug.Instance.HideDebugPanel();
+			srDebug.HideDebugPanel();
 
-            yield return sendReportManager.CaptureScreenShot();
+			await UniTask.NextFrame();
 
-            SRDebug.Instance.ShowDebugPanel(false);
+            sendReportManager.CaptureScreenShot();
+
+			srDebug.ShowDebugPanel(false);
+
+			await UniTask.NextFrame();
         }
 
         /// <summary> InputFieldをリフレッシュ </summary>

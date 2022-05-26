@@ -1,9 +1,8 @@
 
 using UnityEngine.Networking;
 using System;
-using System.Collections;
 using System.Collections.Generic;
-using UniRx;
+using Cysharp.Threading.Tasks;
 using Extensions;
 using Modules.Net.WebRequest;
 
@@ -35,12 +34,7 @@ namespace Modules.Devkit.Diagnosis.SendReport
 			this.format = format;
 		}
 
-		public IObservable<string> Upload(string reportTitle, Dictionary<string, string> reportContents, IProgress<float> progress)
-		{
-			return Observable.FromMicroCoroutine<string>(observer => PostReport(observer, reportContents, progress));
-		}
-
-		private IEnumerator PostReport(IObserver<string> observer, Dictionary<string, string> reportContents,  IProgress<float> progress)
+		public async UniTask<string> Upload(string reportTitle, Dictionary<string, string> reportContents, IProgress<float> progress)
 		{
 			if (string.IsNullOrEmpty(reportUrl))
 			{
@@ -61,18 +55,8 @@ namespace Modules.Devkit.Diagnosis.SendReport
 			}
 
 			webRequest.timeout = 30;
-
-			var operation = webRequest.SendWebRequest();
-
-			while (!operation.isDone)
-			{
-				if (progress != null)
-				{
-					progress.Report(operation.progress);
-				}
-
-				yield return null;
-			}
+			
+			await webRequest.SendWebRequest().ToUniTask(progress);
 
 			var errorMessage = string.Empty;
 
@@ -81,8 +65,7 @@ namespace Modules.Devkit.Diagnosis.SendReport
 				errorMessage = string.Format("[{0}]{1}", webRequest.responseCode, webRequest.error);
 			}
 
-			observer.OnNext(errorMessage);
-			observer.OnCompleted();
+			return errorMessage;
 		}
 
 		private List<IMultipartFormSection> CreateReportFormSections(Dictionary<string, string> reportContents)
