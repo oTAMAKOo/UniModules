@@ -1,12 +1,10 @@
-﻿﻿
+﻿
 using UnityEngine;
 using UnityEditor;
 using System;
-using System.Collections;
 using System.Linq;
 using System.Collections.Generic;
 using System.IO;
-using UniRx;
 using Extensions;
 using Extensions.Devkit;
 
@@ -81,21 +79,23 @@ namespace Modules.Devkit.Build
             ignoreValidationExtensions = builtInAssetConfig.IgnoreValidationExtensions;
             warningAssetSize = builtInAssetConfig.WarningAssetSize;
 
-            // 読み込みが終わったら表示.
-            CollectBuiltInAssets(logFilePath).Subscribe(_ => ShowUtility()).AddTo(Disposable);
+            CollectBuiltInAssets(logFilePath);
 
-            isInitialized = true;
+			ShowUtility();
+
+			isInitialized = true;
         }
 
-        private IObservable<Unit> CollectBuiltInAssets(string logFilePath)
+        private void CollectBuiltInAssets(string logFilePath)
         {
-            return BuiltInAssets.CollectBuiltInAssets(logFilePath)
-                .SelectMany(x => LoadBuiltInAssets(x).ToObservable())
-                .Do(_ => Repaint())
-                .AsUnitObservable();
-        }
+            var builtInAssets = BuiltInAssets.CollectBuiltInAssets(logFilePath);
 
-        private IEnumerator LoadBuiltInAssets(BuiltInAssets.BuiltInAssetInfo[] assetInfos)
+            LoadBuiltInAssets(builtInAssets);
+
+            Repaint();
+		}
+
+        private void LoadBuiltInAssets(BuiltInAssets.BuiltInAssetInfo[] assetInfos)
         {
             const int FrameLoadCount = 100;
 
@@ -131,8 +131,6 @@ namespace Modules.Devkit.Build
                     if (FrameLoadCount <= count++)
                     {
                         EditorUtility.DisplayProgressBar(progressTitle, progressMessage, (float)i / builtInAssetInfo.Length);
-
-                        yield return null;
                     }
                 }
 

@@ -19,11 +19,13 @@ namespace Extensions
 
         private string data = null;
 
-        private long position = 0;
-
         //----- property -----
 
         public bool EndOfStream { get; private set; }
+
+		public long Position { get; private set; }
+
+		public long Length { get { return fileStream != null ? fileStream.Length : 0; } }
 
         //----- method -----
 
@@ -34,7 +36,7 @@ namespace Extensions
 
             if (fileStream != null)
             {
-                position = fileStream.Seek(0, SeekOrigin.End);
+				Position = fileStream.Seek(0, SeekOrigin.End);
                 EndOfStream = false;
                 data = string.Empty;
             }
@@ -50,21 +52,21 @@ namespace Extensions
 
             var size = BufferSize;
 
-            if (position != 0)
+            if (Position != 0)
             {
                 bytes = new byte[BufferSize];
 
-                var oldPosition = position;
+                var oldPosition = Position;
 
-                if (position >= BufferSize)
+                if (Position >= BufferSize)
                 {
-                    position = fileStream.Seek(-1 * BufferSize, SeekOrigin.Current);
+					Position = fileStream.Seek(-1 * BufferSize, SeekOrigin.Current);
                 }
                 else
                 {
-                    position = fileStream.Seek(-1 * position, SeekOrigin.Current);
+					Position = fileStream.Seek(-1 * Position, SeekOrigin.Current);
 
-                    size = (int)(oldPosition - position);
+                    size = (int)(oldPosition - Position);
                     bytes = new byte[size];
                 }
 
@@ -89,7 +91,7 @@ namespace Extensions
                     data = data.Insert(0, temp);
                 }
 
-                EndOfStream = position == 0;
+                EndOfStream = Position == 0;
             }
 
 
@@ -127,7 +129,7 @@ namespace Extensions
 
             data = string.Empty;
 
-            position = -1;
+			Position = -1;
         }
     }
 }

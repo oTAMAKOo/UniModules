@@ -1,11 +1,10 @@
-﻿
+
 using UnityEditor;
 using System;
-using System.Collections;
 using System.Linq;
 using System.IO;
 using System.Collections.Generic;
-using UniRx;
+using Extensions;
 
 namespace Modules.Devkit.Build
 {
@@ -47,7 +46,7 @@ namespace Modules.Devkit.Build
 
             public string GetSizeText()
             {
-                return 1024f <= size ? string.Format("{0:0.0}mb", size / 1024f) : string.Format("{0:0.0}kb", size);
+				return 1024f <= size ? $"{size / 1024f:0.0}mb" : $"{size:0.0}kb";
             }
         }
 
@@ -57,60 +56,81 @@ namespace Modules.Devkit.Build
 
         //----- method -----
 
-        public static IObservable<BuiltInAssetInfo[]> CollectBuiltInAssets(string logFilePath)
-        {
-            var progress = new ScheduledNotifier<float>();
-            progress.Subscribe(prog => EditorUtility.DisplayProgressBar("progress", "Collect built-in assets from logfile.", prog));
-
-            return Observable.FromCoroutine<BuiltInAssetInfo[]>(observer => CollectBuiltInAssetsInternal(observer, logFilePath, progress))
-                .Do(x => EditorUtility.ClearProgressBar());
-        }
-
-        private static IEnumerator CollectBuiltInAssetsInternal(IObserver<BuiltInAssetInfo[]> observer, string logFilePath, IProgress<float> progress)
+        public static BuiltInAssetInfo[] CollectBuiltInAssets(string logFilePath)
         {
             var builtInAssets = new List<BuiltInAssetInfo>();
 
             if (File.Exists(logFilePath))
             {
-                var fs = new FileStream(logFilePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
-                var sr = new StreamReader(fs);
+				using (var fs = new FileStream(logFilePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+				{
+					using (var sr = new StreamReverseReader(fs))
+					{
+                        var line = string.Empty;
+                        var count = 0;
+                        var collect = false;
+                        var exit = false;
 
-                var line = string.Empty;
-                var count = 0;
+                        Action<StreamReverseReader> readLineWithProgress = reader =>
+                        {
+                            if (FrameReadLine <= count++)
+                            {
+                                count = 0;
 
-                progress.Report(0f);
+                                var progress = 1f - (float)reader.Position / reader.Length;
 
-                while (!sr.EndOfStream)
-                {
-                    line = sr.ReadLine();
+                                EditorUtility.DisplayProgressBar("progress", "Collect built-in assets from logfile.", progress);
+                            }
 
-                    if (FrameReadLine <= count++)
-                    {
-                        count = 0;
+                            line = reader.ReadLine();
+                        };
 
-                        var val = (float)sr.BaseStream.Position / sr.BaseStream.Length;
-                        progress.Report(val);
-                        yield return null;
-                    }
+                        while (!sr.EndOfStream)
+						{
+                            readLineWithProgress(sr);
 
-                    if (!line.StartsWith("Used Assets and files")) { continue; }
+                            if (collect)
+                            {
+                                builtInAssets.Clear();
 
-                    builtInAssets.Clear();
+                                while (!sr.EndOfStream)
+                                {
+                                    readLineWithProgress(sr);
 
-                    while (!sr.EndOfStream && (line = sr.ReadLine()).Contains("%"))
-                    {
-                        // プロジェクト内のAssetはAssets/から始まる.
-                        if (!line.Contains("Assets/")) { continue; }
+                                    // 開始位置まで読み込んだので終了.
+                                    if (line.StartsWith("Used Assets and files"))
+                                    {
+                                        exit = true;
+                                        break;
+                                    }
+                                    
+                                    // プロジェクト内のAssetはAssets/から始まる.
+                                    if (!line.Contains("Assets/")) { continue; }
 
-                        builtInAssets.Add(new BuiltInAssetInfo(line));
-                    }
-                }
+                                    if (line.Contains("%"))
+                                    {
+                                        builtInAssets.Add(new BuiltInAssetInfo(line));
+                                    }
+                                }
 
-                progress.Report(1f);
-            }
+                                if (exit){ break; }
+                            }
+                            else
+                            {
+                                // 終端にあるセパレータまでスキップ.
+                                if (line.StartsWith("---------------------------------------------"))
+                                {
+                                    collect = true;
+                                }
+                            }
+                        }
+					}
+				}
+			}
 
-            observer.OnNext(builtInAssets.ToArray());
-            observer.OnCompleted();
+			EditorUtility.ClearProgressBar();
+
+			return builtInAssets.OrderByDescending(x => x.size).ToArray();
         }
     }
 }
