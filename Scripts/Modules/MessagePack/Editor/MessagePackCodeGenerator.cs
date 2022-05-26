@@ -1,12 +1,11 @@
-﻿
+
 using UnityEngine;
 using UnityEditor;
 using System;
-using System.Collections;
 using System.IO;
 using System.Security.Cryptography;
 using System.Text;
-using UniRx;
+using Cysharp.Threading.Tasks;
 using Extensions;
 
 namespace Modules.MessagePack
@@ -52,12 +51,7 @@ namespace Modules.MessagePack
             return isSuccess;
         }
 
-        public static IObservable<bool> GenerateAsync()
-        {
-            return Observable.FromMicroCoroutine<bool>(observer => GenerateInternalAsync(observer));
-        }
-
-        private static IEnumerator GenerateInternalAsync(IObserver<bool> observer)
+        public static async UniTask<bool> GenerateAsync()
         {
             var generateInfo = new MessagePackCodeGenerateInfo();
 
@@ -67,38 +61,45 @@ namespace Modules.MessagePack
 
             var processExecute = CreateMpcProcess(generateInfo);
 
-            var codeGenerateTask = processExecute.StartAsync();
+            var isSuccess = false;
 
-            while (!codeGenerateTask.IsCompleted)
+            try
             {
-                yield return null;
-            }
+                var result = await processExecute.StartAsync().AsUniTask();
 
-            var isSuccess = codeGenerateTask.Result.ExitCode == 0;
+                isSuccess = result.ExitCode == 0;
 
-            OutputGenerateLog(isSuccess, csFilePath, processExecute);
+                OutputGenerateLog(isSuccess, csFilePath, processExecute);
 
-            if (isSuccess)
-            {
-                ImportGeneratedCsFile(csFilePath, csFileHash);
-            }
-            else
-            {
-                using (new DisableStackTraceScope())
+                if (isSuccess)
                 {
-                    var message = codeGenerateTask.Result.Error;
-
-                    if (string.IsNullOrEmpty(message))
+                    ImportGeneratedCsFile(csFilePath, csFileHash);
+                }
+                else
+                {
+                    using (new DisableStackTraceScope())
                     {
-                        message = codeGenerateTask.Result.Output;
-                    }
+                        var message = result.Error;
 
-                    Debug.LogError(message);
+                        if (string.IsNullOrEmpty(message))
+                        {
+                            message = result.Output;
+                        }
+
+                        Debug.LogError(message);
+                    }
                 }
             }
+            catch (OperationCanceledException)
+            {
+                /* Canceled */
+            }
+            catch (Exception e)
+            {
+                Debug.LogException(e);
+            }
 
-            observer.OnNext(isSuccess);
-            observer.OnCompleted();
+            return isSuccess;
         }
 
         private static ProcessExecute CreateMpcProcess(MessagePackCodeGenerateInfo generateInfo)

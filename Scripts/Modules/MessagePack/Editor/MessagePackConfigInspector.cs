@@ -1,10 +1,8 @@
-﻿﻿﻿
+﻿﻿
 using UnityEngine;
 using UnityEditor;
 using System;
-using System.Collections;
-using System.Text;
-using UniRx;
+using Cysharp.Threading.Tasks;
 using Extensions;
 using Extensions.Devkit;
 
@@ -64,10 +62,7 @@ namespace Modules.MessagePack
             
             if (findDotnet)
             {
-                isLoading = true;
-                findDotnet = false;
-
-                Observable.FromMicroCoroutine(() => FindDotnet()).Subscribe(_ => isLoading = false);
+				FindDotnet().Forget();
             }
 
             serializedObject.Update();
@@ -240,46 +235,43 @@ namespace Modules.MessagePack
             GUILayout.Space(4f);
         }
 
-        private IEnumerator FindDotnet()
+        private async UniTask FindDotnet()
         {
-            if (isDotnetInstalled) { yield break; }
+			if (isDotnetInstalled) { return; }
+
+			findDotnet = false;
+			isLoading = true;
 
             dotnetVersion = string.Empty;
+			
+			try
+			{
+				var commandLineProcess = new ProcessExecute("dotnet", "--version");
 
-            var processTitle = "MessagePackConfig";
-            var processMessage = "Find .NET Core SDK";
+				var result = await commandLineProcess.StartAsync().AsUniTask();
 
-            EditorUtility.DisplayProgressBar(processTitle, processMessage, 0f);
+				dotnetVersion = result.Output;
 
-            Tuple<bool, string> result = null;
+				isDotnetInstalled = !string.IsNullOrEmpty(dotnetVersion);
+			}
+			catch (OperationCanceledException)
+			{
+				/* Canceled */
+			}
+			catch (Exception e)
+			{
+				Debug.LogException(e);
+			}
+			finally
+			{
+				isLoading = false;
+			}
 
-            var commandLineProcess = new ProcessExecute("dotnet", "--version");
-
-            var findYield = commandLineProcess.StartAsync().ToObservable()
-                .Do(x => result = Tuple.Create(true, x.Output))
-                .DoOnError(x => result = Tuple.Create(false, (string)null))
-                .Select(_ => result)
-                .ToYieldInstruction();
-
-            while (!findYield.IsDone)
-            {
-                yield return null;
-            }
-
-            if (findYield.HasResult)
-            {
-                dotnetVersion = findYield.Result.Item2;
-
-                isDotnetInstalled = findYield.Result.Item1 && !string.IsNullOrEmpty(dotnetVersion);
-            }
-
-            if (string.IsNullOrEmpty(dotnetVersion))
+			if (string.IsNullOrEmpty(dotnetVersion))
             {
                 Debug.LogError("Failed get .NET Core SDK version.");
             }
-
-            EditorUtility.DisplayProgressBar(processTitle, processMessage, 1f);
-
+			
             Repaint();
 
             EditorApplication.delayCall += EditorUtility.ClearProgressBar;

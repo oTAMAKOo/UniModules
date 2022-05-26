@@ -3,6 +3,7 @@ using UnityEngine;
 using UnityEditor;
 using System.IO;
 using System.Linq;
+using Cysharp.Threading.Tasks;
 using UniRx;
 using Extensions;
 
@@ -120,7 +121,7 @@ namespace Modules
         [MenuItem(itemName: GeneratorsMenu + "Generate MessagePack", priority = 19)]
         public static void GenerateMessagePackCode()
         {
-            MessagePackCodeGenerator.GenerateAsync().Subscribe();
+            MessagePackCodeGenerator.GenerateAsync().Forget();
         }
 
         [MenuItem(itemName: GeneratorsMenu + "Generate ScriptableObject", priority = 100)]
