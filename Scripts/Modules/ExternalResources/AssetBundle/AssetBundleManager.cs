@@ -303,9 +303,9 @@ namespace Modules.AssetBundles
                     // ダウンロード実行.
 					try
 					{
-						var awaiter = downloadTask.Value.GetAwaiter(cancelToken);
+						var downloadYield = downloadTask.Value.ToYieldInstruction(cancelToken);
 
-						while (!awaiter.IsCompleted)
+						while (!downloadYield.IsDone)
 						{
 							await UniTask.NextFrame(cancelToken);
 						}
@@ -542,14 +542,14 @@ namespace Modules.AssetBundles
 
 				try
 				{
-					var awaiter = loader.GetAwaiter(cancelToken);
+					var loadYield = loader.ToYieldInstruction(cancelToken);
 
-					while (!awaiter.IsCompleted)
+					while (!loadYield.IsDone)
 					{
 						await UniTask.NextFrame(cancelToken);
 					}
 
-					var seekableAssetBundle = awaiter.GetResult();
+					var seekableAssetBundle = loadYield.Result;
 
 					if (seekableAssetBundle != null)
 					{

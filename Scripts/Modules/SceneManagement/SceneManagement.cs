@@ -453,14 +453,14 @@ namespace Modules.SceneManagement
             {
 				try
 				{
-					var awaiter = LoadScene(identifier, mode).GetAwaiter(cancelToken);
+					var loadYield = LoadScene(identifier, mode).ToYieldInstruction(cancelToken);
 
-					while (!awaiter.IsCompleted)
+					while (!loadYield.IsDone)
 					{
 						await UniTask.NextFrame(cancelToken);
 					}
 
-					sceneInfo = awaiter.GetResult();
+					sceneInfo = loadYield.Result;
 				}
 				catch (OperationCanceledException) 
 				{
@@ -701,14 +701,14 @@ namespace Modules.SceneManagement
 
 			try
 			{
-				var awaiter = LoadScene(identifier.Value, LoadSceneMode.Additive).GetAwaiter(cancelToken);
+				var loadYield = LoadScene(identifier.Value, LoadSceneMode.Additive).ToYieldInstruction(cancelToken);
 
-				while (!awaiter.IsCompleted)
+				while (!loadYield.IsDone)
 				{
 					await UniTask.NextFrame(cancelToken);
 				}
 
-				sceneInstance = awaiter.GetResult();
+				sceneInstance = loadYield.Result;
 			}
 			catch (OperationCanceledException) 
 			{
@@ -1156,9 +1156,9 @@ namespace Modules.SceneManagement
 
 			try
 			{
-				var awaiter = LoadScene(targetScene, LoadSceneMode.Additive).GetAwaiter(cancelToken);
+				var loadYield = LoadScene(targetScene, LoadSceneMode.Additive).ToYieldInstruction(cancelToken);
 
-				while (!awaiter.IsCompleted)
+				while (!loadYield.IsDone)
 				{
 					await UniTask.NextFrame(cancelToken);
 				}
