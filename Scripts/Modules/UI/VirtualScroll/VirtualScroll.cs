@@ -840,8 +840,6 @@ namespace Modules.UI
 
         private async UniTask UpdateItem(CancellationToken cancelToken, VirtualScrollItem<T> item, int index)
         {
-			if (item.Content == null){ return; }
-
 			if (scrollType == ScrollType.Loop)
             {
 				if (index < 0)
@@ -857,7 +855,10 @@ namespace Modules.UI
 
 			item.SetContent(index, Contents);
 
-			await item.UpdateContents(item.Content).AttachExternalCancellation(cancelToken);
+			if (item.Content != null)
+			{
+				await item.UpdateContents(item.Content).AttachExternalCancellation(cancelToken);
+			}
 
             UnityUtility.SetActive(item, item.Content != null);
 
