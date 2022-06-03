@@ -1,4 +1,4 @@
-﻿
+
 using UnityEngine;
 using UnityEngine.UI;
 using Modules.UI.Layout;
@@ -7,6 +7,8 @@ namespace Extensions
 {
     public static class RectTransformExtensions
     {
+        private static Vector3[] tempCorners = new Vector3[4];
+
         public static void Copy(this RectTransform transform, RectTransform source)
         {
             transform.localPosition = source.localPosition;
@@ -25,82 +27,87 @@ namespace Extensions
             trans.localScale = new Vector3(1, 1, 1);
         }
 
-        public static void SetPivotAndAnchors(this RectTransform trans, Vector2 aVec)
+        public static void SetPivotAndAnchors(this RectTransform self, Vector2 aVec)
         {
-            trans.pivot = aVec;
-            trans.anchorMin = aVec;
-            trans.anchorMax = aVec;
+			self.pivot = aVec;
+			self.anchorMin = aVec;
+			self.anchorMax = aVec;
         }
 
-        public static Vector2 GetSize(this RectTransform trans)
+        public static Vector2 GetSize(this RectTransform self)
         {
-            return trans.rect.size;
+            return self.rect.size;
         }
 
-        public static float GetWidth(this RectTransform trans)
+        public static float GetWidth(this RectTransform self)
         {
-            return trans.rect.width;
+            return self.rect.width;
         }
 
-        public static float GetHeight(this RectTransform trans)
+        public static float GetHeight(this RectTransform self)
         {
-            return trans.rect.height;
+            return self.rect.height;
         }
 
         /// <summary>
         /// アンカーの設定をFillに変更.
         /// </summary>
-        public static void FillRect(this RectTransform trans)
+        public static void FillRect(this RectTransform self)
         {
-            trans.anchorMin = new Vector2(0f, 0f);
-            trans.anchorMax = new Vector2(1f, 1f);
-            trans.offsetMin = new Vector2(0f, 0f);
-            trans.offsetMax = new Vector2(0f, 0f);
+			self.anchorMin = new Vector2(0f, 0f);
+			self.anchorMax = new Vector2(1f, 1f);
+			self.offsetMin = new Vector2(0f, 0f);
+			self.offsetMax = new Vector2(0f, 0f);
         }
 
-        public static void SetPositionOfPivot(this RectTransform trans, Vector2 newPos)
+        public static void SetPositionOfPivot(this RectTransform self, Vector2 newPos)
         {
-            trans.localPosition = new Vector3(newPos.x, newPos.y, trans.localPosition.z);
+			self.localPosition = new Vector3(newPos.x, newPos.y, self.localPosition.z);
         }
 
-        public static void SetLeftBottomPosition(this RectTransform trans, Vector2 newPos)
+        public static void SetLeftBottomPosition(this RectTransform self, Vector2 newPos)
         {
-            trans.localPosition = new Vector3(newPos.x + (trans.pivot.x * trans.rect.width), newPos.y + (trans.pivot.y * trans.rect.height), trans.localPosition.z);
-        }
-        public static void SetLeftTopPosition(this RectTransform trans, Vector2 newPos)
-        {
-            trans.localPosition = new Vector3(newPos.x + (trans.pivot.x * trans.rect.width), newPos.y - ((1f - trans.pivot.y) * trans.rect.height), trans.localPosition.z);
-        }
-        public static void SetRightBottomPosition(this RectTransform trans, Vector2 newPos)
-        {
-            trans.localPosition = new Vector3(newPos.x - ((1f - trans.pivot.x) * trans.rect.width), newPos.y + (trans.pivot.y * trans.rect.height), trans.localPosition.z);
-        }
-        public static void SetRightTopPosition(this RectTransform trans, Vector2 newPos)
-        {
-            trans.localPosition = new Vector3(newPos.x - ((1f - trans.pivot.x) * trans.rect.width), newPos.y - ((1f - trans.pivot.y) * trans.rect.height), trans.localPosition.z);
+			self.localPosition = new Vector3(newPos.x + (self.pivot.x * self.rect.width), newPos.y + (self.pivot.y * self.rect.height), self.localPosition.z);
         }
 
-        public static void SetSize(this RectTransform trans, Vector2 newSize)
+        public static void SetLeftTopPosition(this RectTransform self, Vector2 newPos)
         {
-            Vector2 oldSize = trans.rect.size;
+            self.localPosition = new Vector3(newPos.x + (self.pivot.x * self.rect.width), newPos.y - ((1f - self.pivot.y) * self.rect.height), self.localPosition.z);
+        }
+
+        public static void SetRightBottomPosition(this RectTransform self, Vector2 newPos)
+        {
+            self.localPosition = new Vector3(newPos.x - ((1f - self.pivot.x) * self.rect.width), newPos.y + (self.pivot.y * self.rect.height), self.localPosition.z);
+        }
+
+        public static void SetRightTopPosition(this RectTransform self, Vector2 newPos)
+        {
+            self.localPosition = new Vector3(newPos.x - ((1f - self.pivot.x) * self.rect.width), newPos.y - ((1f - self.pivot.y) * self.rect.height), self.localPosition.z);
+        }
+
+        public static void SetSize(this RectTransform self, Vector2 newSize)
+        {
+            Vector2 oldSize = self.rect.size;
             Vector2 deltaSize = newSize - oldSize;
-            trans.offsetMin = trans.offsetMin - new Vector2(deltaSize.x * trans.pivot.x, deltaSize.y * trans.pivot.y);
-            trans.offsetMax = trans.offsetMax + new Vector2(deltaSize.x * (1f - trans.pivot.x), deltaSize.y * (1f - trans.pivot.y));
-        }
-        public static void SetWidth(this RectTransform trans, float newSize)
-        {
-            SetSize(trans, new Vector2(newSize, trans.rect.size.y));
-        }
-        public static void SetHeight(this RectTransform trans, float newSize)
-        {
-            SetSize(trans, new Vector2(trans.rect.size.x, newSize));
+            self.offsetMin = self.offsetMin - new Vector2(deltaSize.x * self.pivot.x, deltaSize.y * self.pivot.y);
+            self.offsetMax = self.offsetMax + new Vector2(deltaSize.x * (1f - self.pivot.x), deltaSize.y * (1f - self.pivot.y));
         }
 
-        public static Vector2 CalcSize(this RectTransform trans)
+        public static void SetWidth(this RectTransform self, float newSize)
+        {
+            SetSize(self, new Vector2(newSize, self.rect.size.y));
+        }
+
+        public static void SetHeight(this RectTransform self, float newSize)
+        {
+            SetSize(self, new Vector2(self.rect.size.x, newSize));
+        }
+
+        public static Vector2 CalcSize(this RectTransform self)
         {
             Rect rect = new Rect();
 
-            var current = trans as Transform;
+            var current = self as Transform;
 
             while (current != null)
             {
@@ -132,13 +139,12 @@ namespace Extensions
         /// </summary>
         /// <param name="trans"></param>
         /// <returns></returns>
-        public static Rect GetWorldRect(this RectTransform trans)
+        public static Rect GetWorldRect(this RectTransform self)
         {
-            var corners = new Vector3[4];
-            trans.GetWorldCorners(corners);
+			self.GetWorldCorners(tempCorners);
 
-            var tl = corners[0];
-            var br = corners[2];
+            var tl = tempCorners[0];
+            var br = tempCorners[2];
 
             return new Rect(tl, new Vector2(br.x - tl.x, br.y - tl.y));
         }
@@ -146,11 +152,9 @@ namespace Extensions
         /// <summary>
         /// 子階層を含むレイアウトのRectを取得.
         /// </summary>
-        /// <param name="trans"></param>
-        /// <returns></returns>
-        public static Bounds CalculateRelativeWorldRect(this RectTransform trans)
+        public static Bounds CalculateRelativeWorldRect(this RectTransform self)
         {
-            var gameObjects = UnityUtility.GetChildrenAndSelf(trans.gameObject);
+            var gameObjects = UnityUtility.GetChildrenAndSelf(self.gameObject);
 
             // ※ 複数のコンポーネントを検証出来る様にforeachで実行.
 
@@ -169,20 +173,60 @@ namespace Extensions
                 }
             }
 
-            var bounds = RectTransformUtility.CalculateRelativeRectTransformBounds(trans);
+            var bounds = RectTransformUtility.CalculateRelativeRectTransformBounds(self);
 
-            var center = trans.TransformPoint(bounds.center);
-            var size = trans.TransformVector(bounds.size);
+            var center = self.TransformPoint(bounds.center);
+            var size = self.TransformVector(bounds.size);
 
             return new Bounds(center, size);
         }
 
-        public static Vector2 GetPreferredSize(this RectTransform trans)
+        public static Vector2 GetPreferredSize(this RectTransform self)
         {
-            var width = LayoutUtility.GetPreferredWidth(trans);
-            var hight = LayoutUtility.GetPreferredHeight(trans);
+            var width = LayoutUtility.GetPreferredWidth(self);
+            var hight = LayoutUtility.GetPreferredHeight(self);
 
             return new Vector2(width, hight);
+        }
+
+        public static bool Contains(this RectTransform self, RectTransform target)
+        {
+			var targetBounds = GetBounds(target);
+
+            return self.Contains(targetBounds);
+        }
+
+		public static bool Contains(this RectTransform self, Bounds bounds)
+		{
+			var selfBounds = GetBounds(self);
+
+			return selfBounds.Contains(new Vector3(bounds.min.x, bounds.min.y, 0f)) && 
+					selfBounds.Contains(new Vector3(bounds.max.x, bounds.max.y, 0f)) &&
+					selfBounds.Contains(new Vector3(bounds.min.x, bounds.max.y, 0f)) &&
+					selfBounds.Contains(new Vector3(bounds.max.x, bounds.min.y, 0f));
+		}
+
+        public static Bounds GetBounds(this RectTransform self)
+        {
+            var min = new Vector3(float.MaxValue, float.MaxValue, float.MaxValue);
+            var max = new Vector3(float.MinValue, float.MinValue, float.MinValue);
+
+            self.GetWorldCorners(tempCorners);
+
+            for (var i = 0; i < 4; i++)
+            {
+                min = Vector3.Min(tempCorners[i], min);
+                max = Vector3.Max(tempCorners[i], max);
+            }
+ 
+            max.z = 0f;
+            min.z = 0f;
+            
+            var bounds = new Bounds(min, Vector3.zero);
+
+            bounds.Encapsulate(max);
+
+            return bounds;
         }
     }
 }
