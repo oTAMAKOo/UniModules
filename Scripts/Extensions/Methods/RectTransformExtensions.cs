@@ -189,6 +189,7 @@ namespace Extensions
             return new Vector2(width, hight);
         }
 
+        /// <summary> 対象のRectTransformを内包しているか </summary>
         public static bool Contains(this RectTransform self, RectTransform target)
         {
 			var targetBounds = GetBounds(target);
@@ -196,17 +197,35 @@ namespace Extensions
             return self.Contains(targetBounds);
         }
 
+        /// <summary> 対象のRectTransformを内包しているか </summary>
 		public static bool Contains(this RectTransform self, Bounds bounds)
 		{
 			var selfBounds = GetBounds(self);
 
-			return selfBounds.Contains(new Vector3(bounds.min.x, bounds.min.y, 0f)) && 
+			return selfBounds.Contains(new Vector3(bounds.min.x, bounds.min.y, 0f)) &&
 					selfBounds.Contains(new Vector3(bounds.max.x, bounds.max.y, 0f)) &&
 					selfBounds.Contains(new Vector3(bounds.min.x, bounds.max.y, 0f)) &&
 					selfBounds.Contains(new Vector3(bounds.max.x, bounds.min.y, 0f));
 		}
 
-        public static Bounds GetBounds(this RectTransform self)
+        /// <summary> 対象のRectTransformに接触しているか </summary>
+        public static bool IsHit(this RectTransform self, RectTransform target)
+        {
+            var targetBounds = GetBounds(target);
+
+            return self.IsHit(targetBounds);
+        }
+
+        /// <summary> 対象のRectTransformに接触しているか </summary>
+        public static bool IsHit(this RectTransform self, Bounds bounds)
+        {
+            var selfBounds = GetBounds(self);
+
+            return Mathf.Abs(selfBounds.min.x - bounds.min.x) < selfBounds.size.x / 2 + bounds.size.x / 2 &&
+                   Mathf.Abs(selfBounds.min.y - bounds.min.y) < selfBounds.size.y / 2 + bounds.size.y / 2;
+        }
+
+        private static Bounds GetBounds(this RectTransform self)
         {
             var min = new Vector3(float.MaxValue, float.MaxValue, float.MaxValue);
             var max = new Vector3(float.MinValue, float.MinValue, float.MinValue);
