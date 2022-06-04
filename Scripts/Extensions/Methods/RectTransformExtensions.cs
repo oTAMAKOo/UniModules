@@ -197,7 +197,7 @@ namespace Extensions
             return self.Contains(targetBounds);
         }
 
-        /// <summary> 対象のRectTransformを内包しているか </summary>
+        /// <summary> 対象のBoundsを内包しているか </summary>
 		public static bool Contains(this RectTransform self, Bounds bounds)
 		{
 			var selfBounds = GetBounds(self);
@@ -216,7 +216,7 @@ namespace Extensions
             return self.IsHit(targetBounds);
         }
 
-        /// <summary> 対象のRectTransformに接触しているか </summary>
+        /// <summary> 対象のBoundsに接触しているか </summary>
         public static bool IsHit(this RectTransform self, Bounds bounds)
         {
             var selfBounds = GetBounds(self);
