@@ -6,7 +6,7 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Text;
-using System.Threading.Tasks;
+using Cysharp.Threading.Tasks;
 using Extensions;
 using MessagePack;
 using MessagePack.Resolvers;
@@ -17,7 +17,7 @@ namespace Modules.Master
 {
 	public interface IRecordDataLoader
 	{
-		Task<object[]> GetAllRecords(Type masterType, Type recordType);
+		UniTask<object[]> GetAllRecords(Type masterType, Type recordType);
 	}
 
     public static class MasterGenerator
@@ -38,7 +38,7 @@ namespace Modules.Master
 
         //----- method -----
 
-        public static async Task<bool> Generate(Type[] masterTypes, IRecordDataLoader recordDataLoader)
+        public static async UniTask<bool> Generate(Type[] masterTypes, IRecordDataLoader recordDataLoader)
         {
 			var config = MasterConfig.Instance;
 
@@ -76,11 +76,11 @@ namespace Modules.Master
 
                 var fileHashDictionary = new SortedDictionary<string, string>(new NaturalComparer());
 
-                var tasks = new List<Task>();
+                var tasks = new List<UniTask>();
 
                 foreach (var masterType in masterTypes)
                 {
-                    var task = Task.Run(async () =>
+                    var task = UniTask.RunOnThreadPool(async () =>
                     {
                         try
                         {
@@ -147,7 +147,7 @@ namespace Modules.Master
                     tasks.Add(task);
                 }
 
-                await Task.WhenAll(tasks);
+                await UniTask.WhenAll(tasks);
 
                 // バージョンファイル作成.
 				GenerateMasterVersionFile(exportDirectory, fileHashDictionary);
@@ -182,7 +182,7 @@ namespace Modules.Master
 
         #region Load Data
 
-        private static async Task<object> LoadMasterData(IRecordDataLoader recordDataLoader, Type masterType, Type containerType, Type recordType)
+        private static async UniTask<object> LoadMasterData(IRecordDataLoader recordDataLoader, Type masterType, Type containerType, Type recordType)
         {
 	        // Load records.
 
@@ -239,7 +239,7 @@ namespace Modules.Master
             return filePath;
         }
 
-        private static async Task<string> GenerateMasterFile(string filePath, object master, AesCryptoKey dataCryptoKey, bool lz4Compression)
+        private static async UniTask<string> GenerateMasterFile(string filePath, object master, AesCryptoKey dataCryptoKey, bool lz4Compression)
         {
             var options = StandardResolverAllowPrivate.Options.WithResolver(UnityContractResolver.Instance);
 

@@ -4,7 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Threading.Tasks;
+using Cysharp.Threading.Tasks;
 using Extensions;
 
 namespace Modules.Master
@@ -49,7 +49,7 @@ namespace Modules.Master
 				PathUtility.ConvertPathSeparator);
 		}
 
-		public async Task<object[]> GetAllRecords(Type masterType, Type recordType)
+		public async UniTask<object[]> GetAllRecords(Type masterType, Type recordType)
 		{
 			var masterManager = MasterManager.Instance;
 
@@ -78,13 +78,13 @@ namespace Modules.Master
 
 			var records = new SortedDictionary<string, object>(new NaturalComparer());
 
-			var tasks = new List<Task>();
+			var tasks = new List<UniTask>();
 
 			foreach (var recordFile in recordFiles)
 			{
 				var filePath = recordFile;
 
-				var task = Task.Run(() =>
+				var task = UniTask.RunOnThreadPool(() =>
 				{
 					var fileName = Path.GetFileNameWithoutExtension(filePath);
 
@@ -102,7 +102,7 @@ namespace Modules.Master
 				tasks.Add(task);
 			}
 
-			await Task.WhenAll(tasks);
+			await UniTask.WhenAll(tasks);
 
 			return records.Values.ToArray();
 		}
