@@ -104,7 +104,12 @@ namespace Modules.MessagePack
 Require add path from terminal command :
 where dotnet
 where mpc
-where MsBuild";
+where MsBuild
+
+Require fix dotnet version : 
+https://docs.microsoft.com/ja-jp/dotnet/core/tools/global-json
+csproj directory : global.json
+";
 
 				#endif
 

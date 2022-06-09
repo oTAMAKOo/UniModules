@@ -106,15 +106,24 @@ namespace Modules.MessagePack
         {
             var messagePackConfig = MessagePackConfig.Instance;
 
-            var mpc = messagePackConfig.MpcRelativePath;
+            var command = messagePackConfig.MpcRelativePath;
+            var argument = generateInfo.MpcArgument;
 
-            if (string.IsNullOrEmpty(mpc))
+            if (string.IsNullOrEmpty(command))
             {
+	            command = GetMpcCommand();
 
-	            mpc = GetMpcPath();
+				#if UNITY_EDITOR_OSX
+
+				if (command.EndsWith("dotnet"))
+				{
+					argument = "mpc " + argument;
+				}
+
+				#endif
             }
 
-            var processExecute = new ProcessExecute(mpc, generateInfo.MpcArgument)
+            var processExecute = new ProcessExecute(command, argument)
             {
                 Encoding = Encoding.GetEncoding("Shift_JIS"),
             };
@@ -122,7 +131,7 @@ namespace Modules.MessagePack
             return processExecute;
         }
 
-        private static string GetMpcPath()
+        private static string GetMpcCommand()
         {
 	        var result = "mpc";
 
@@ -151,12 +160,12 @@ namespace Modules.MessagePack
 
 			var mpcPathCandidate = new string[]
 			{
-				"/usr/local/bin",
+				"/usr/local/bin/",
 			};
 
 			foreach (var item in mpcPathCandidate)
 			{
-				var path = PathUtility.Combine(item, "mpc");
+				var path = PathUtility.Combine(item, "dotnet");
 
 				if (!File.Exists(path)){ continue; }
 
