@@ -1,7 +1,10 @@
-﻿﻿
+﻿
 using UnityEngine;
 using UnityEditor;
 using System;
+using System.IO;
+using System.Linq;
+using System.Text;
 using Cysharp.Threading.Tasks;
 using Extensions;
 using Extensions.Devkit;
@@ -12,10 +15,6 @@ namespace Modules.MessagePack
     public sealed class MessagePackConfigInspector : UnityEditor.Editor
     {
         //----- params -----
-
-        private const string RequireDotnetSDKVersion = "3.1";
-        
-        private const string DefaultMsBuildPath = "/Library/Frameworks/Mono.framework/Versions/Current/bin";
 
         //----- field -----
 
@@ -86,12 +85,6 @@ namespace Modules.MessagePack
                 {
                     EditorGUILayout.HelpBox(".NET Core SDK not found.", MessageType.Error);
 
-                    #if UNITY_EDITOR_OSX
-                    
-                    EditorGUILayout.HelpBox("If installed and not found.\n\nTerminal run this command:\nln -s /usr/local/share/dotnet/dotnet /usr/local/bin/", MessageType.Info);
-
-                    #endif
-
                     // インストールページ.
                     if (GUILayout.Button("Open .NET Core install page."))
                     {
@@ -103,7 +96,19 @@ namespace Modules.MessagePack
             }
             else
             {
-                EditorGUILayout.HelpBox(string.Format(".NET Core SDK {0}(Require Version {1})", dotnetVersion, RequireDotnetSDKVersion), MessageType.Info);
+	            var guideMessage = $".NET Core SDK {dotnetVersion}";
+
+	            #if UNITY_EDITOR_OSX
+
+	            guideMessage += @"
+Require add path from terminal command :
+where dotnet
+where mpc
+where MsBuild";
+
+				#endif
+
+                EditorGUILayout.HelpBox(guideMessage, MessageType.Info);
             }
 
             //------ 基本設定 ------
@@ -246,13 +251,20 @@ namespace Modules.MessagePack
 			
 			try
 			{
-				var commandLineProcess = new ProcessExecute("dotnet", "--version");
+				var dotNetPath = GetDotNetPath();
+
+				var commandLineProcess = new ProcessExecute(dotNetPath, "--version");
 
 				var result = await commandLineProcess.StartAsync().AsUniTask();
 
 				dotnetVersion = result.Output;
 
-				isDotnetInstalled = !string.IsNullOrEmpty(dotnetVersion);
+				if (!string.IsNullOrEmpty(dotnetVersion))
+				{
+					var major = int.Parse(dotnetVersion.Split('.').First());
+
+					isDotnetInstalled = 3 <= major;
+				}
 			}
 			catch (OperationCanceledException)
 			{
@@ -275,6 +287,54 @@ namespace Modules.MessagePack
             Repaint();
 
             EditorApplication.delayCall += EditorUtility.ClearProgressBar;
+        }
+
+		private static string GetDotNetPath()
+        {
+	        var result = "dotnet";
+
+			#if UNITY_EDITOR_WIN
+
+	        // 環境変数.
+	        var variable = Environment.GetEnvironmentVariable("Path", EnvironmentVariableTarget.Process);
+
+	        if (variable != null)
+	        {
+		        foreach (var item in variable.Split(';'))
+		        {
+			        var path = PathUtility.Combine(item, "dotnet.exe");
+
+			        if (!File.Exists(path)){ continue; }
+
+			        result = path;
+
+			        break;
+		        }
+	        }
+			
+			#endif
+
+			#if UNITY_EDITOR_OSX
+
+			var mpcPathCandidate = new string[]
+			{
+				"/usr/local/bin",
+			};
+
+			foreach (var item in mpcPathCandidate)
+			{
+				var path = PathUtility.Combine(item, "dotnet");
+
+				if (!File.Exists(path)){ continue; }
+
+				result = path;
+
+				break;
+			}
+
+			#endif
+
+	        return result;
         }
     }
 }

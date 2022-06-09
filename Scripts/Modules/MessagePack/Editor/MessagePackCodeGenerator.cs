@@ -110,7 +110,8 @@ namespace Modules.MessagePack
 
             if (string.IsNullOrEmpty(mpc))
             {
-                mpc = "mpc";
+
+	            mpc = GetMpcPath();
             }
 
             var processExecute = new ProcessExecute(mpc, generateInfo.MpcArgument)
@@ -119,6 +120,54 @@ namespace Modules.MessagePack
             };
 
             return processExecute;
+        }
+
+        private static string GetMpcPath()
+        {
+	        var result = "mpc";
+
+			#if UNITY_EDITOR_WIN
+
+	        // 環境変数.
+	        var variable = Environment.GetEnvironmentVariable("Path", EnvironmentVariableTarget.Process);
+
+	        if (variable != null)
+	        {
+		        foreach (var item in variable.Split(';'))
+		        {
+			        var path = PathUtility.Combine(item, "mpc.exe");
+
+			        if (!File.Exists(path)){ continue; }
+
+			        result = path;
+
+			        break;
+		        }
+	        }
+			
+			#endif
+
+			#if UNITY_EDITOR_OSX
+
+			var mpcPathCandidate = new string[]
+			{
+				"/usr/local/bin",
+			};
+
+			foreach (var item in mpcPathCandidate)
+			{
+				var path = PathUtility.Combine(item, "mpc");
+
+				if (!File.Exists(path)){ continue; }
+
+				result = path;
+
+				break;
+			}
+
+			#endif
+
+	        return result;
         }
 
         private static void ImportGeneratedCsFile(string csFilePath, string csFileHash)
