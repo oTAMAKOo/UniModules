@@ -1,4 +1,4 @@
-﻿
+
 using UnityEngine;
 using System;
 using System.IO;
@@ -15,7 +15,7 @@ using Modules.Amazon.S3;
 
 namespace Modules.Master.Editor
 {
-    public abstract class S3Uploader
+    public abstract class S3Uploader : ICognitoCredentials
     {
         //----- params -----
 
@@ -102,12 +102,10 @@ namespace Modules.Master.Editor
 
         private S3Client CreateS3Client()
         {
-            var identityPoolId = GetIdentityPoolId();
             var bucketName = GetBucketName();
             var bucketRegion = GetBucketRegion();
-            var credentialsRegion = GetCredentialsRegion();
 
-            var s3Client = new S3Client(identityPoolId, bucketName, bucketRegion, credentialsRegion);
+			var s3Client = new S3Client(bucketName, bucketRegion, this);
 
             return s3Client;
         }
@@ -254,12 +252,12 @@ namespace Modules.Master.Editor
             }
         }
 
-        public abstract string GetIdentityPoolId();
+		public abstract string GetIdentityPoolId();
+        
+		public abstract RegionEndpoint GetCredentialsRegion();
         
         public abstract string GetBucketName();
 
         public abstract RegionEndpoint GetBucketRegion();
-
-        public abstract RegionEndpoint GetCredentialsRegion();
     }
 }

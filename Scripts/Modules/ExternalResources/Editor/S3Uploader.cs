@@ -17,7 +17,7 @@ using Modules.Devkit.Project;
 
 namespace Modules.ExternalResource
 {
-    public abstract class S3Uploader
+    public abstract class S3Uploader : IBasicCredentials
     {
         //----- params -----
 
@@ -134,14 +134,12 @@ namespace Modules.ExternalResource
 
         private S3Client CreateS3Client()
         {
-            var identityPoolId = GetIdentityPoolId();
             var bucketName = GetBucketName();
             var bucketRegion = GetBucketRegion();
-            var credentialsRegion = GetCredentialsRegion();
 
-            var s3Client = new S3Client(identityPoolId, bucketName, bucketRegion, credentialsRegion);
+			var s3Client = new S3Client(bucketName, bucketRegion, this);
 
-            return s3Client;
+			return s3Client;
         }
 
         private string GetAssetInfoManifestFilePath(string[] files)
@@ -475,14 +473,14 @@ namespace Modules.ExternalResource
             }
         }
 
-        public abstract string GetIdentityPoolId();
-        
+		public abstract string GetAccessKey();
+
+		public abstract string GetSecretKey();
+
         public abstract string GetBucketName();
 
         public abstract RegionEndpoint GetBucketRegion();
 
-        public abstract RegionEndpoint GetCredentialsRegion();
-
-        public abstract AesCryptoStreamKey GetCryptoKey();
+		public abstract AesCryptoStreamKey GetCryptoKey();
     }
 }
