@@ -8,7 +8,7 @@ using Modules.Master.Editor;
 
 namespace Modules.Master
 {
-    public sealed class MasterS3Uploader
+    public sealed class MasterS3Uploader 
     {
         //----- params -----
 
@@ -76,5 +76,5 @@ namespace Modules.Master
 
 	        return result;
         }
-    }
+	}
 }

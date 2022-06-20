@@ -15,7 +15,7 @@ using Modules.Amazon.S3;
 
 namespace Modules.Master.Editor
 {
-    public abstract class S3Uploader : ICognitoCredentials
+    public abstract class S3Uploader
     {
         //----- params -----
 
@@ -102,12 +102,25 @@ namespace Modules.Master.Editor
 
         private S3Client CreateS3Client()
         {
-            var bucketName = GetBucketName();
-            var bucketRegion = GetBucketRegion();
+			S3Client s3Client = null;
 
-			var s3Client = new S3Client(bucketName, bucketRegion, this);
+			var bucketName = GetBucketName();
+			var bucketRegion = GetBucketRegion();
 
-            return s3Client;
+			if (this is IBasicCredentials)
+			{
+				s3Client = new S3Client(bucketName, bucketRegion, this as IBasicCredentials);
+			}
+			else if (this is ICognitoCredentials)
+			{
+				s3Client = new S3Client(bucketName, bucketRegion, this as ICognitoCredentials);
+			}
+			else
+			{
+				throw new Exception("Credentials not found.");
+			}
+
+			return s3Client;
         }
 
         /// <summary> アップロードするファイルデータ構築. </summary>
@@ -252,11 +265,7 @@ namespace Modules.Master.Editor
             }
         }
 
-		public abstract string GetIdentityPoolId();
-        
-		public abstract RegionEndpoint GetCredentialsRegion();
-        
-        public abstract string GetBucketName();
+		public abstract string GetBucketName();
 
         public abstract RegionEndpoint GetBucketRegion();
     }

@@ -17,7 +17,7 @@ using Modules.Devkit.Project;
 
 namespace Modules.ExternalResource
 {
-    public abstract class S3Uploader : IBasicCredentials
+    public abstract class S3Uploader
     {
         //----- params -----
 
@@ -134,15 +134,28 @@ namespace Modules.ExternalResource
 
         private S3Client CreateS3Client()
         {
+			S3Client s3Client = null;
+
             var bucketName = GetBucketName();
             var bucketRegion = GetBucketRegion();
 
-			var s3Client = new S3Client(bucketName, bucketRegion, this);
+			if (this is IBasicCredentials)
+			{
+				s3Client = new S3Client(bucketName, bucketRegion, this as IBasicCredentials);
+			}
+			else if (this is ICognitoCredentials)
+			{
+				s3Client = new S3Client(bucketName, bucketRegion, this as ICognitoCredentials);
+			}
+			else
+			{
+				throw new Exception("Credentials not found.");
+			}
 
 			return s3Client;
         }
 
-        private string GetAssetInfoManifestFilePath(string[] files)
+		private string GetAssetInfoManifestFilePath(string[] files)
         {
             var assetInfoManifestFileName = Path.ChangeExtension(AssetInfoManifest.ManifestFileName, AssetBundleManager.PackageExtension);
             var assetInfoManifestFilePath = files.FirstOrDefault(x => Path.GetFileName(x) == assetInfoManifestFileName);
@@ -473,11 +486,7 @@ namespace Modules.ExternalResource
             }
         }
 
-		public abstract string GetAccessKey();
-
-		public abstract string GetSecretKey();
-
-        public abstract string GetBucketName();
+		public abstract string GetBucketName();
 
         public abstract RegionEndpoint GetBucketRegion();
 
