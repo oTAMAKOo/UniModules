@@ -123,7 +123,7 @@ namespace Modules.ExternalResource
                 }
                 catch (Exception e)
                 {
-                    Debug.LogErrorFormat("S3 upload process error. \n{0}", e.Message);
+					Debug.LogErrorFormat("S3 upload process error. \n{0}", e);
 
                     return null;
                 }
