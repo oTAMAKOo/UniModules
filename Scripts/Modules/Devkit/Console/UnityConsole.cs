@@ -5,6 +5,12 @@ using System.Collections.Generic;
 using System.Threading;
 using Extensions;
 
+#if UNITY_EDITOR
+
+using UnityEditor;
+
+#endif
+
 namespace Modules.Devkit.Console
 {
     // ※ 色コードは下記参照.
@@ -30,6 +36,8 @@ namespace Modules.Devkit.Console
 
         private static bool enableNextLogStackTrace = false;
 
+        private static bool initialize = false;
+
         //----- property -----
 
         /// <summary> 無効化するイベント名 </summary>
@@ -44,21 +52,40 @@ namespace Modules.Devkit.Console
             DisableEventNames = new HashSet<string>();
         }
 
+        #if UNITY_EDITOR
+
+        [InitializeOnLoadMethod]
+        private static void OnInitializeOnLoadMethod()
+        {
+            Initialize();
+        }
+
+        #endif
+
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterAssembliesLoaded)]
         private static void OnAfterAssembliesLoaded()
         {
+            Initialize();
+        }
+
+        private static void Initialize()
+        {
+            if (initialize){ return; }
+
             unitySynchronizationContext = SynchronizationContext.Current;
 
             mainThreadId = Thread.CurrentThread.ManagedThreadId;
 
             isDevelopmentBuild = UnityEngine.Debug.isDebugBuild;
+
+            initialize = true;
         }
 
         public static bool Enable
         {
             get
-			{
-				#if UNITY_EDITOR
+            {
+                #if UNITY_EDITOR
 
 				return true;
 
@@ -67,7 +94,7 @@ namespace Modules.Devkit.Console
 				return isDevelopmentBuild.HasValue && isDevelopmentBuild.Value;
 
 				#endif
-			}
+            }
         }
 
         public static void Info(string message)
@@ -96,9 +123,18 @@ namespace Modules.Devkit.Console
 
             #endif
             
-            var colorCode = color.ColorToHex(false);
+			var text = string.Empty;
 
-            var text = string.Format("<color=#{0}><b>[{1}]</b></color> {2}", colorCode, eventName, message);
+			if (Application.isBatchMode)
+			{
+				text = $"[{eventName}] {message}";
+			}
+			else
+			{
+				var colorCode = color.ColorToHex(false);
+				
+				text = $"<color=#{colorCode}><b>[{eventName}]</b></color> {message}";
+			}
 
             if (enableNextLogStackTrace)
             {

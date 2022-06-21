@@ -34,22 +34,17 @@ namespace Modules.Devkit.AssemblyCompilation
         {
             /// <summary> アセンブリ名. </summary>
             public string Assembly { get; private set; }
-            /// <summary> 時間. </summary>
-            public double Time { get; private set; }
-            /// <summary> エラー. </summary>
+			/// <summary> エラー. </summary>
             public CompilerMessage[] Messages { get; private set; }
 
-            public CompileResult(string assembly, double time, CompilerMessage[] messages)
+            public CompileResult(string assembly, CompilerMessage[] messages)
             {
                 Assembly = assembly;
-                Time = time;
                 Messages = messages;
             }
         }
 
         //----- field -----
-
-        private Dictionary<string, double> timeStamps = null;
 
         private Dictionary<string, CompileResult> compileResults = null;
 
@@ -104,18 +99,13 @@ namespace Modules.Devkit.AssemblyCompilation
             // コンパイル要求.
             UnityEditorUtility.RequestScriptCompilation();
 
-            CompilationPipeline.assemblyCompilationStarted -= OnAssemblyCompilationStarted;
-            CompilationPipeline.assemblyCompilationStarted += OnAssemblyCompilationStarted;
-
-            CompilationPipeline.assemblyCompilationFinished -= OnAssemblyCompilationFinished;
+			CompilationPipeline.assemblyCompilationFinished -= OnAssemblyCompilationFinished;
             CompilationPipeline.assemblyCompilationFinished += OnAssemblyCompilationFinished;
 
             AssemblyReloadEvents.beforeAssemblyReload -= BeforeAssemblyReload;
             AssemblyReloadEvents.beforeAssemblyReload += BeforeAssemblyReload;
 
-            timeStamps = new Dictionary<string, double>();
-
-            compileResults = new Dictionary<string, CompileResult>();
+			compileResults = new Dictionary<string, CompileResult>();
         }
 
         protected void SetBuildTarget(BuildTarget buildTarget)
@@ -150,16 +140,9 @@ namespace Modules.Devkit.AssemblyCompilation
             }
         }
 
-        private void OnAssemblyCompilationStarted(string assemblyName)
+		private void OnAssemblyCompilationFinished(string assemblyName, CompilerMessage[] messages)
         {
-            timeStamps[assemblyName] = EditorApplication.timeSinceStartup;
-        }
-
-        private void OnAssemblyCompilationFinished(string assemblyName, CompilerMessage[] messages)
-        {
-            var time = EditorApplication.timeSinceStartup - timeStamps[assemblyName];
-
-            var result = new CompileResult(assemblyName, time, messages);
+            var result = new CompileResult(assemblyName, messages);
 
             compileResults[assemblyName] = result;
         }

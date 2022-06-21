@@ -294,7 +294,7 @@ namespace Modules.ExternalResource
             // 管理アセットの親フォルダパス.
             var managePath = AssetDatabase.GUIDToAssetPath(manageInfo.guid);
 
-            var parentDir = PathUtility.ConvertPathSeparator(Directory.GetParent(managePath).ToString() + PathUtility.PathSeparator);
+            var parentDir = PathUtility.ConvertPathSeparator(Path.GetDirectoryName(managePath) + PathUtility.PathSeparator);
 
             var resourcesDir = string.Empty;
 

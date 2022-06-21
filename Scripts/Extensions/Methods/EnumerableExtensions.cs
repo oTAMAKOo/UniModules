@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -47,6 +47,8 @@ namespace Extensions
             return Concat(source.AsEnumerable());
         }
 
+		#if !UNITY_2021_2_OR_NEWER
+
         public static HashSet<T> ToHashSet<T>(this IEnumerable<T> source)
         {
             return new HashSet<T>(source);
@@ -56,6 +58,8 @@ namespace Extensions
         {
             return new HashSet<T>(source, comparer);
         }
+
+		#endif
 
         /// <summary>
         /// 重み付き抽選を実行し抽選されたインデックスを取得.

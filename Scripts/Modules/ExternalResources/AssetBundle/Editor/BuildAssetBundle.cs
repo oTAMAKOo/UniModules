@@ -244,12 +244,19 @@ namespace Modules.AssetBundles.Editor
                 {
                     if (assetBundleNames.All(x => !path.EndsWith(x))) { return; }
 
-                    var lastWriteTime = File.GetLastWriteTime(path);
+					if (File.Exists(path))
+					{
+	                    var lastWriteTime = File.GetLastWriteTime(path);
 
-                    lock (dictionary)
-                    {
-                        dictionary.Add(path, lastWriteTime);
-                    }
+	                    lock (dictionary)
+	                    {
+	                        dictionary.Add(path, lastWriteTime);
+	                    }
+					}
+					else
+					{
+						throw new FileNotFoundException(path);
+					}
                 });
 
                 tasks.Add(task);
@@ -294,20 +301,27 @@ namespace Modules.AssetBundles.Editor
                     // アセットバンドルファイルパス.
                     var assetBundleFilePath = PathUtility.Combine(assetBundlePath, assetInfo.AssetBundle.AssetBundleName);
                     
-                    // 最終更新日を比較.
+					if (File.Exists(assetBundleFilePath))
+					{
+	                    // 最終更新日を比較.
 
-                    var prevLastWriteTime = lastWriteTimeTable.GetValueOrDefault(assetBundleFilePath, DateTime.MinValue);
+	                    var prevLastWriteTime = lastWriteTimeTable.GetValueOrDefault(assetBundleFilePath, DateTime.MinValue);
 
-                    var currentLastWriteTime = File.GetLastWriteTime(assetBundleFilePath);
+	                    var currentLastWriteTime = File.GetLastWriteTime(assetBundleFilePath);
 
-                    // ビルド前と後で更新日時が変わっていたら更新対象.
-                    if (currentLastWriteTime != prevLastWriteTime)
-                    {
-                        lock (list)
-                        {
-                            list.Add(assetInfo);
-                        }
-                    }
+	                    // ビルド前と後で更新日時が変わっていたら更新対象.
+	                    if (currentLastWriteTime != prevLastWriteTime)
+	                    {
+	                        lock (list)
+	                        {
+	                            list.Add(assetInfo);
+	                        }
+	                    }
+					}
+					else
+					{
+						throw new FileNotFoundException(assetBundleFilePath);
+					}
                 });
 
                 tasks.Add(task);
