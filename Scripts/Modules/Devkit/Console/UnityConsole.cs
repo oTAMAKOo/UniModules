@@ -56,7 +56,18 @@ namespace Modules.Devkit.Console
 
         public static bool Enable
         {
-            get { return isDevelopmentBuild.HasValue && isDevelopmentBuild.Value; }
+            get
+			{
+				#if UNITY_EDITOR
+
+				return true;
+
+				#else
+
+				return isDevelopmentBuild.HasValue && isDevelopmentBuild.Value;
+
+				#endif
+			}
         }
 
         public static void Info(string message)
