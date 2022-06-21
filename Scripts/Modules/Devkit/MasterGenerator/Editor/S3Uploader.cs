@@ -46,8 +46,8 @@ namespace Modules.Master.Editor
         
         //----- property -----
 
-        /// <summary> アップロードファイルのアクセス権 </summary>
-        protected S3CannedACL UploadFileCannedACL { get; set; } = S3CannedACL.PublicRead;
+		/// <summary> アップロードファイルのアクセス権 </summary>
+		protected virtual S3CannedACL UploadFileCannedACL { get { return S3CannedACL.PublicRead; } }
 
         //----- method -----
 
