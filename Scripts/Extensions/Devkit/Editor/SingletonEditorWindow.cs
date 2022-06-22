@@ -31,11 +31,11 @@ namespace Extensions.Devkit
         {
             get
             {
-                if (instance == null)
+                if (UnityUtility.IsNull(instance))
                 {
                     instance = FindInstance() ?? CreateInstance<T>();
 
-                    if (instance != null)
+                    if (!UnityUtility.IsNull(instance))
                     {
                         instance.OnCreateInstance();
                     }

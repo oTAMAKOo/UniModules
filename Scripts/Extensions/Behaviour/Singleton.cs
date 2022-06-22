@@ -32,6 +32,7 @@ namespace Extensions
             if (instance != null) { return instance; }
 
             var type = typeof(T);
+
             instance = Activator.CreateInstance(type, true) as T;
 
             instance.OnCreate();

@@ -1,4 +1,4 @@
-﻿
+
 using UnityEditor;
 using System;
 using System.IO;
@@ -26,12 +26,12 @@ namespace Modules.Devkit.ScriptableObjects
 
         private static T GetInstance()
         {
-            if (instance == null)
-            {
-                instance = LoadInstance();
-            }
+			if (UnityUtility.IsNull(instance))
+			{
+				instance = LoadInstance();
+			}
 
-            if (instance == null) { return null; }
+			if (UnityUtility.IsNull(instance)) { return null; }
 
             if (string.IsNullOrEmpty(instance.assetFullPath))
             {

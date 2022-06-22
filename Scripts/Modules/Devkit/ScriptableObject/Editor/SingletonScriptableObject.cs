@@ -3,6 +3,7 @@ using UnityEngine;
 using UnityEditor;
 using System;
 using System.Linq;
+using Extensions;
 using Extensions.Devkit;
 
 namespace Modules.Devkit.ScriptableObjects
@@ -22,7 +23,7 @@ namespace Modules.Devkit.ScriptableObjects
         {
             get
             {
-                if (instance == null)
+                if (UnityUtility.IsNull(instance))
                 {
                     instance = LoadInstance();
 
@@ -40,7 +41,7 @@ namespace Modules.Devkit.ScriptableObjects
 
         void Awake()
         {
-            if (instance != null && instance != this)
+            if (!UnityUtility.IsNull(instance) && instance != this)
             {
                 EditorApplication.delayCall += () =>
                 {

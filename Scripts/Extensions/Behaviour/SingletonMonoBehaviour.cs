@@ -1,74 +1,81 @@
-﻿﻿
+
 using UnityEngine;
+using System;
 
 namespace Extensions
 {
-    [ExecuteAlways]
-    public abstract class SingletonMonoBehaviour<T> : MonoBehaviour where T : SingletonMonoBehaviour<T>
-    {
-        //----- param -----
+	[ExecuteAlways]
+	public abstract class SingletonMonoBehaviour<T> : MonoBehaviour where T : SingletonMonoBehaviour<T>
+	{
+		//----- param -----
 
-        //----- field -----
+		//----- field -----
 
-        private static T instance = null;
+		[NonSerialized]
+		private static T instance = null;
 
-        //----- property -----
+		//----- property -----
 
-        public static T Instance
-        {
-            get
-            {
-                return instance ?? (instance = UnityUtility.FindObjectOfType<T>());
-            }
-        }
+		public static T Instance
+		{
+			get
+			{
+				if (UnityUtility.IsNull(instance))
+				{
+					instance = UnityUtility.FindObjectOfType<T>();
+				}
 
-        //----- method -----
+				return instance;
+			}
+		}
 
-        protected virtual void Awake()
-        {
-            if (instance == null)
-            {
-                instance = this as T;
-            }
+		//----- method -----
 
-            CheckInstance();
-        }
+		protected virtual void Awake()
+		{
+			if (UnityUtility.IsNull(instance))
+			{
+				instance = this as T;
+			}
 
-        protected virtual void OnDestroy()
-        {
-            if (instance == this)
-            {
-                instance = null;
-            }
-        }
+			CheckInstance();
+		}
 
-        private void CheckInstance()
-        {
-            if (instance != this)
-            {
-                if (Application.isPlaying)
-                {
-                    UnityUtility.SafeDelete(gameObject);
-                }
-            }
-        }
+		protected virtual void OnDestroy()
+		{
+			if (instance == this)
+			{
+				instance = null;
+			}
+		}
 
-        public static T CreateInstance()
-        {
-            if (UnityUtility.IsNull(instance))
-            {
-                instance = UnityUtility.CreateGameObject<T>(null, typeof(T).Name);
-            }
+		private void CheckInstance()
+		{
+			if (instance != this)
+			{
+				if (Application.isPlaying)
+				{
+					UnityUtility.SafeDelete(gameObject);
+				}
+			}
+		}
 
-            return instance;
-        }
+		public static T CreateInstance()
+		{
+			if (UnityUtility.IsNull(instance))
+			{
+				instance = UnityUtility.CreateGameObject<T>(null, typeof(T).Name);
+			}
 
-        public static void DestroyInstance()
-        {
-            if (!UnityUtility.IsNull(instance))
-            {
-                UnityUtility.SafeDelete(instance.gameObject);
-            }
-        }
-    }
+			return instance;
+		}
+
+		public static void DestroyInstance()
+		{
+			if (!UnityUtility.IsNull(instance))
+			{
+				UnityUtility.SafeDelete(instance.gameObject);
+			}
+		}
+	}
 }
