@@ -56,8 +56,6 @@ namespace Modules.TextData.Editor
 
         public static void SetupCryptoKey()
         {
-			if (Application.isBatchMode){ return; }
-
             var textData = TextData.Instance;
 
             if (textData == null){ return; }
@@ -73,8 +71,6 @@ namespace Modules.TextData.Editor
 
         public static void Reload()
         {
-			if (Application.isBatchMode){ return; }
-
             if (EditorApplication.isPlayingOrWillChangePlaymode) { return; }
 
             var textData = TextData.Instance;
