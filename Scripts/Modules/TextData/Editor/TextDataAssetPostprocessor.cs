@@ -1,4 +1,5 @@
-﻿
+
+using UnityEngine;
 using UnityEditor;
 using Modules.TextData.Components;
 
@@ -28,6 +29,8 @@ namespace Modules.TextData.Editor
         /// <param name="movedFromPath"> 移動されたアセットの移動前のファイルパス。 </param>
         private static void OnPostprocessAllAssets(string[] importedAssets, string[] deletedAssets, string[] movedAssets, string[] movedFromPath)
         {
+			if (Application.isBatchMode){ return; }
+
             foreach (var importedAsset in importedAssets)
             {
                 var asset = AssetDatabase.LoadMainAssetAtPath(importedAsset);

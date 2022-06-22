@@ -1,4 +1,4 @@
-﻿
+
 using UnityEngine;
 using UnityEditor;
 using System;
@@ -30,6 +30,8 @@ namespace Modules.Devkit.AssetTuning
         /// <param name="movedFromPath"> 移動されたアセットの移動前のファイルパス。 </param>
         static void OnPostprocessAllAssets(string[] importedAssets, string[] deletedAssets, string[] movedAssets, string[] movedFromPath)
         {
+			if (Application.isBatchMode){ return; }
+
             var assetTuneManager = AssetTuneManager.Instance;
 
             var assetTuners = assetTuneManager.AssetTuners;

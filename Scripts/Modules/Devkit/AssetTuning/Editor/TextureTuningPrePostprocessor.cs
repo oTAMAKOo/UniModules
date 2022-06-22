@@ -1,4 +1,4 @@
-﻿
+
 using UnityEngine;
 using UnityEditor;
 using System;
@@ -19,6 +19,8 @@ namespace Modules.Devkit.AssetTuning
 
         private void OnPreprocessTexture()
         {
+			if (Application.isBatchMode){ return; }
+
             var assetTuneManager = AssetTuneManager.Instance;
 
             try
