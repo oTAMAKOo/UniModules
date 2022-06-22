@@ -52,6 +52,62 @@ namespace Modules.Devkit.AssemblyCompilation
 
         //----- method -----
 
+		public void RequestCompile()
+		{
+			// コンパイル中は予約だけして実行しない.
+			if (EditorApplication.isCompiling)
+			{
+				Prefs.RequestCompile = true;
+
+				return;
+			}
+
+			Prefs.RequestCompile = false;
+
+			// コンパイル要求.
+			UnityEditorUtility.RequestScriptCompilation();
+
+			CompilationPipeline.assemblyCompilationFinished -= OnAssemblyCompilationFinished;
+			CompilationPipeline.assemblyCompilationFinished += OnAssemblyCompilationFinished;
+
+			AssemblyReloadEvents.beforeAssemblyReload -= BeforeAssemblyReload;
+			AssemblyReloadEvents.beforeAssemblyReload += BeforeAssemblyReload;
+
+			compileResults = new Dictionary<string, CompileResult>();
+		}
+
+		public void SetBuildTarget(BuildTarget buildTarget)
+		{
+			if(Application.isBatchMode)
+			{
+				var errorMessage = @"This method is not available when running Editor in batch mode.\nUse the buildTarget command line switch to set the build target to use in batch mode.";
+
+				Debug.LogError(errorMessage);
+
+				return;
+			}
+
+			var buildTargetGroup = BuildPipeline.GetBuildTargetGroup(buildTarget);
+
+			if (EditorUserBuildSettings.selectedBuildTargetGroup != buildTargetGroup ||
+				EditorUserBuildSettings.activeBuildTarget != buildTarget)
+			{
+				EditorUserBuildSettings.SwitchActiveBuildTarget(buildTargetGroup, buildTarget);
+			}
+		}
+
+		public void SetScriptingDefineSymbols(BuildTarget buildTarget, string defineSymbols)
+		{
+			var buildTargetGroup = BuildPipeline.GetBuildTargetGroup(buildTarget);
+
+			var currentDefineSymbols = PlayerSettings.GetScriptingDefineSymbolsForGroup(buildTargetGroup);
+
+			if (currentDefineSymbols != defineSymbols)
+			{
+				PlayerSettings.SetScriptingDefineSymbolsForGroup(buildTargetGroup, defineSymbols);
+			}
+		}
+
 		protected void OnAssemblyReload()
         {
 			// 起動時にリセット.
@@ -81,62 +137,6 @@ namespace Modules.Devkit.AssemblyCompilation
 
                     Prefs.Result = null;
                 }
-            }
-        }
-
-        protected void RequestCompile()
-        {
-            // コンパイル中は予約だけして実行しない.
-            if (EditorApplication.isCompiling)
-            {
-                Prefs.RequestCompile = true;
-
-                return;
-            }
-
-            Prefs.RequestCompile = false;
-
-            // コンパイル要求.
-            UnityEditorUtility.RequestScriptCompilation();
-
-			CompilationPipeline.assemblyCompilationFinished -= OnAssemblyCompilationFinished;
-            CompilationPipeline.assemblyCompilationFinished += OnAssemblyCompilationFinished;
-
-            AssemblyReloadEvents.beforeAssemblyReload -= BeforeAssemblyReload;
-            AssemblyReloadEvents.beforeAssemblyReload += BeforeAssemblyReload;
-
-			compileResults = new Dictionary<string, CompileResult>();
-        }
-
-        protected void SetBuildTarget(BuildTarget buildTarget)
-        {
-            if(Application.isBatchMode)
-            {
-                var errorMessage = @"This method is not available when running Editor in batch mode.\nUse the buildTarget command line switch to set the build target to use in batch mode.";
-
-                Debug.LogError(errorMessage);
-
-                return;
-            }
-
-            var buildTargetGroup = BuildPipeline.GetBuildTargetGroup(buildTarget);
-
-            if (EditorUserBuildSettings.selectedBuildTargetGroup != buildTargetGroup ||
-                EditorUserBuildSettings.activeBuildTarget != buildTarget)
-            {
-                EditorUserBuildSettings.SwitchActiveBuildTarget(buildTargetGroup, buildTarget);
-            }
-        }
-
-        protected void SetScriptingDefineSymbols(BuildTarget buildTarget, string defineSymbols)
-        {
-            var buildTargetGroup = BuildPipeline.GetBuildTargetGroup(buildTarget);
-
-            var currentDefineSymbols = PlayerSettings.GetScriptingDefineSymbolsForGroup(buildTargetGroup);
-
-            if (currentDefineSymbols != defineSymbols)
-            {
-                PlayerSettings.SetScriptingDefineSymbolsForGroup(buildTargetGroup, defineSymbols);
             }
         }
 

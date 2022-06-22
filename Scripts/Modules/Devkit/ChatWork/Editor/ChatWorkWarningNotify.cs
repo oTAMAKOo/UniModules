@@ -20,13 +20,8 @@ namespace Modules.Devkit.ChatWork
         //----- property -----
 
         //----- method -----
-        
-        public static void Execute()
-        {
-            Instance.RequestCompile();
-        }
 
-        [DidReloadScripts]
+		[DidReloadScripts]
         public static void OnDidReloadScripts()
         {
             Instance.OnAssemblyReload();
