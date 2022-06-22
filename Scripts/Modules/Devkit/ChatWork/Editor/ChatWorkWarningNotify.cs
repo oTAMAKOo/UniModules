@@ -64,33 +64,48 @@ namespace Modules.Devkit.ChatWork
                 }
             }
 
+            using (new DisableStackTraceScope())
+            {
+                Debug.Log("CompileFinished.");
+            }
+
             if (hasWarning)
             {
                 PostMessage(builder.ToString()).Forget();
             }
             else
             {
-                if (Application.isBatchMode)
-                {
-                    EditorApplication.Exit(0);
-                }
+                Exit(0).Forget();
             }
         }
 
         private async UniTask PostMessage(string message)
         {
+            var exitCode = 0;
+
             var config = ChatWorkNotifyConfig.Instance;
 
-            if (config == null){ return; }
-
-            var chatWorkMessage = new ChatWorkMessage(config.ApiToken, config.RoomId);
-
-            await chatWorkMessage.SendMessage(message);
-
-            if (Application.isBatchMode)
+            if (config != null)
             {
-                EditorApplication.Exit(0);
+                var chatWorkMessage = new ChatWorkMessage(config.ApiToken, config.RoomId);
+
+                await chatWorkMessage.SendMessage(message);
             }
+            else
+            {
+                exitCode = 1;
+            }
+
+            Exit(exitCode).Forget();
+        }
+
+        private async UniTask Exit(int exitCode)
+        {
+            if (!Application.isBatchMode) { return; }
+
+            await UniTask.NextFrame();
+
+            EditorApplication.Exit(exitCode);
         }
     }
 }
