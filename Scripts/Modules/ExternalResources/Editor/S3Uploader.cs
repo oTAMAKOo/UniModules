@@ -172,7 +172,12 @@ namespace Modules.ExternalResource
 
             assetInfoManifestFilePath = GetAssetInfoManifestFilePath(files);
 
-            var manifestAssetInfo = AssetInfoManifest.GetManifestAssetInfo();
+			if (!File.Exists(assetInfoManifestFilePath))
+			{
+				throw new FileNotFoundException(assetInfoManifestFilePath);
+			}
+
+			var manifestAssetInfo = AssetInfoManifest.GetManifestAssetInfo();
 
             var assetPath = PathUtility.Combine(projectFolders.ExternalResourcesPath, manifestAssetInfo.ResourcePath);
 

@@ -5,7 +5,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
-using Cysharp.Threading.Tasks;
 using Extensions;
 using Modules.Devkit.Project;
 using Modules.ExternalResource;
@@ -219,7 +218,7 @@ namespace Modules.AssetBundles.Editor
         }
 
         /// <summary> キャッシュ済みアセットバンドルファイルの最終更新日テーブルを取得 </summary>
-        public async UniTask<Dictionary<string, DateTime>> GetCachedFileLastWriteTimeTable()
+        public Dictionary<string, DateTime> GetCachedFileLastWriteTimeTable()
         {
             var assetBundlePath = GetAssetBundleOutputPath();
 
@@ -234,35 +233,22 @@ namespace Modules.AssetBundles.Editor
 
             var dictionary = new Dictionary<string, DateTime>();
 
-            var tasks = new List<UniTask>();
-
             foreach (var file in allFiles)
             {
                 var path = PathUtility.ConvertPathSeparator(file);
 
-                var task = UniTask.RunOnThreadPool(() =>
-                {
-                    if (assetBundleNames.All(x => !path.EndsWith(x))) { return; }
+				if (assetBundleNames.All(x => !path.EndsWith(x))) { continue; }
 
-					if (File.Exists(path))
+				if (File.Exists(path))
+				{
+					var lastWriteTime = File.GetLastWriteTime(path);
+
+					lock (dictionary)
 					{
-	                    var lastWriteTime = File.GetLastWriteTime(path);
-
-	                    lock (dictionary)
-	                    {
-	                        dictionary.Add(path, lastWriteTime);
-	                    }
+						dictionary.Add(path, lastWriteTime);
 					}
-					else
-					{
-						throw new FileNotFoundException(path);
-					}
-                });
-
-                tasks.Add(task);
+				}
             }
-
-            await UniTask.WhenAll(tasks);
 
             return dictionary;
         }
@@ -282,52 +268,39 @@ namespace Modules.AssetBundles.Editor
         }
 
         /// <summary> 更新されたアセット情報取得 </summary>
-        public async UniTask<AssetInfo[]> GetUpdateTargetAssetInfo(AssetInfoManifest assetInfoManifest, Dictionary<string, DateTime> lastWriteTimeTable)
+        public AssetInfo[] GetUpdateTargetAssetInfo(AssetInfoManifest assetInfoManifest, Dictionary<string, DateTime> lastWriteTimeTable)
         {
             var assetBundlePath = GetAssetBundleOutputPath();
 
             var assetInfos = GetAllTargetAssetInfo(assetInfoManifest);
 
             var list = new List<AssetInfo>();
-
-            var tasks = new List<UniTask>();
-
+			
             foreach (var item in assetInfos)
             {
                 var assetInfo = item;
 
-                var task = UniTask.RunOnThreadPool(() =>
-                {
-                    // アセットバンドルファイルパス.
-                    var assetBundleFilePath = PathUtility.Combine(assetBundlePath, assetInfo.AssetBundle.AssetBundleName);
+				// アセットバンドルファイルパス.
+				var assetBundleFilePath = PathUtility.Combine(assetBundlePath, assetInfo.AssetBundle.AssetBundleName);
                     
-					if (File.Exists(assetBundleFilePath))
+				if (File.Exists(assetBundleFilePath))
+				{
+					// 最終更新日を比較.
+
+					var prevLastWriteTime = lastWriteTimeTable.GetValueOrDefault(assetBundleFilePath, DateTime.MinValue);
+
+					var currentLastWriteTime = File.GetLastWriteTime(assetBundleFilePath);
+
+					// ビルド前と後で更新日時が変わっていたら更新対象.
+					if (currentLastWriteTime != prevLastWriteTime)
 					{
-	                    // 最終更新日を比較.
-
-	                    var prevLastWriteTime = lastWriteTimeTable.GetValueOrDefault(assetBundleFilePath, DateTime.MinValue);
-
-	                    var currentLastWriteTime = File.GetLastWriteTime(assetBundleFilePath);
-
-	                    // ビルド前と後で更新日時が変わっていたら更新対象.
-	                    if (currentLastWriteTime != prevLastWriteTime)
-	                    {
-	                        lock (list)
-	                        {
-	                            list.Add(assetInfo);
-	                        }
-	                    }
+						lock (list)
+						{
+							list.Add(assetInfo);
+						}
 					}
-					else
-					{
-						throw new FileNotFoundException(assetBundleFilePath);
-					}
-                });
-
-                tasks.Add(task);
+				}
             }
-
-            await UniTask.WhenAll(tasks);
 
             return list.ToArray();
         }

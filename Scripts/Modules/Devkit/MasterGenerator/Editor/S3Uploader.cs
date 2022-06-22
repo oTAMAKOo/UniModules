@@ -10,6 +10,7 @@ using Amazon;
 using Amazon.S3;
 using Amazon.S3.Model;
 using Amazon.S3.Transfer;
+using Cysharp.Threading.Tasks;
 using Extensions;
 using Modules.Amazon.S3;
 
@@ -51,7 +52,7 @@ namespace Modules.Master.Editor
 
         //----- method -----
 
-        public async Task<bool> Execute(string folderPath, string bucketFolder)
+        public async UniTask<bool> Execute(string folderPath, string bucketFolder)
         {
             this.folderPath = folderPath;
             this.bucketFolder = bucketFolder;
@@ -167,7 +168,7 @@ namespace Modules.Master.Editor
         }
 
         /// <summary> 対象のファイルをS3にアップロード </summary>
-        private async Task UploadMasterFilesToS3(FileInfo[] fileInfos)
+        private async UniTask UploadMasterFilesToS3(FileInfo[] fileInfos)
         {
             // アップロード.
 
@@ -179,11 +180,11 @@ namespace Modules.Master.Editor
 
                 const long PartSize = 5 * 1024 * 1024; // 5MB単位.
 
-                var tasks = new List<Task>();
+                var tasks = new List<UniTask>();
 
                 foreach (var fileInfo in fileInfos)
                 {
-                    var task = Task.Run(async () =>
+                    var task = UniTask.RunOnThreadPool(async () =>
                     {
                         var fileTransferUtilityRequest = new TransferUtilityUploadRequest
                         {
@@ -200,7 +201,7 @@ namespace Modules.Master.Editor
                     tasks.Add(task);
                 }
 
-                await Task.WhenAll(tasks.ToArray());
+                await UniTask.WhenAll(tasks.ToArray());
             }
 
             // ログ.
@@ -223,7 +224,7 @@ namespace Modules.Master.Editor
         }
 
         /// <summary> S3内の全ファイル削除 </summary>
-        private async Task DeleteAllPackageFromS3(S3Object[] s3Objects)
+        private async UniTask DeleteAllPackageFromS3(S3Object[] s3Objects)
         {
             // 削除.
 

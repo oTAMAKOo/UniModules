@@ -1,8 +1,9 @@
-﻿﻿
+﻿
 using UnityEditor;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 using Cysharp.Threading.Tasks;
 using Extensions;
 using Extensions.Devkit;
@@ -110,14 +111,14 @@ namespace Modules.ExternalResource
 
                 var packageFilePath = Path.ChangeExtension(filePath, AssetBundleManager.PackageExtension);
 
+				if (!File.Exists(packageFilePath))
+				{
+					throw new InvalidDataException("Package file not found. : " + packageFilePath);
+				}
+
                 var task = UniTask.RunOnThreadPool(() =>
                 {
-                    if (!File.Exists(packageFilePath))
-                    {
-                        throw new InvalidDataException("Package file not found. : " + packageFilePath);
-                    }
-            
-                    var fileInfo = new FileInfo(packageFilePath);
+					var fileInfo = new FileInfo(packageFilePath);
 
                     var size = fileInfo.Exists ? fileInfo.Length : -1;
                     var crc = FileUtility.GetCRC(packageFilePath);
@@ -224,11 +225,11 @@ namespace Modules.ExternalResource
                 {
                     var filePath = PathUtility.Combine(new string[] { exportPath, assetInfo.FileName });
 
+					if (!File.Exists(filePath)) { continue; }
+
                     var task = UniTask.RunOnThreadPool(() =>
                     {
-                        if (!File.Exists(filePath)) { return; }
-            
-                        var fileInfo = new FileInfo(filePath);
+						var fileInfo = new FileInfo(filePath);
 
                         var size = fileInfo.Exists ? fileInfo.Length : -1;
                         var crc = FileUtility.GetCRC(filePath);

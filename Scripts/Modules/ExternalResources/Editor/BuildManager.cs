@@ -1,4 +1,4 @@
-﻿
+
 using UnityEngine;
 using UnityEditor;
 using System;
@@ -122,7 +122,7 @@ namespace Modules.ExternalResource
 
                     using (new BuildLogScope(logBuilder, processTime, "GetCachedFileLastWriteTimeTable"))
                     {
-                        cachedFileLastWriteTimeTable = await buildAssetBundle.GetCachedFileLastWriteTimeTable();
+                        cachedFileLastWriteTimeTable = buildAssetBundle.GetCachedFileLastWriteTimeTable();
                     }
 
                     //------ CRIアセットを生成 ------
@@ -192,7 +192,7 @@ namespace Modules.ExternalResource
                         // 差分がある対象だけ抽出.
                         else
                         {
-                            updatedAssetInfos = await buildAssetBundle.GetUpdateTargetAssetInfo(assetInfoManifest, cachedFileLastWriteTimeTable);
+                            updatedAssetInfos = buildAssetBundle.GetUpdateTargetAssetInfo(assetInfoManifest, cachedFileLastWriteTimeTable);
                         }
                     }
 
