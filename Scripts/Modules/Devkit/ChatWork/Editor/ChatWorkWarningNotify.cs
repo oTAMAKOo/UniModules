@@ -38,7 +38,7 @@ namespace Modules.Devkit.ChatWork
 
             var builder = new StringBuilder();
 
-            var branch = GitUtility.GetBranchName(Application.dataPath).Result;
+            var branch = GitUtility.GetBranchName(Application.dataPath);
 
             builder.AppendFormat("(lightbulb) Warning Notify ({0} : {1}) (lightbulb)", EditorUserBuildSettings.activeBuildTarget, branch).AppendLine();
             builder.AppendLine();

@@ -1,12 +1,10 @@
 
-using System.Threading.Tasks;
-
 namespace Extensions
 {
     public static class GitUtility
     {
         /// <summary> 現在のブランチ名を取得 </summary>
-        public static async Task<string> GetBranchName(string workingDirectory, bool trimAsterisk = true)
+        public static string GetBranchName(string workingDirectory, bool trimAsterisk = true)
         {
             if (string.IsNullOrEmpty(workingDirectory)){ return null; }
 
@@ -15,7 +13,9 @@ namespace Extensions
                 WorkingDirectory = workingDirectory,
             };
 
-            var result = await processExecute.StartAsync();
+            var result = processExecute.Start();
+
+            if (result == null){ return string.Empty; }
 
             if (string.IsNullOrEmpty(result.Output)){ return null; }
 
@@ -31,7 +31,7 @@ namespace Extensions
         }
 
 		/// <summary> 現在のコミットハッシュを取得 </summary>
-		public static async Task<string> GetCommitHash(string workingDirectory)
+		public static string GetCommitHash(string workingDirectory)
 		{
 			if (string.IsNullOrEmpty(workingDirectory)){ return null; }
 
@@ -40,7 +40,7 @@ namespace Extensions
 				WorkingDirectory = workingDirectory,
 			};
 
-			var result = await processExecute.StartAsync();
+			var result = processExecute.Start();
 
 			if (string.IsNullOrEmpty(result.Output)){ return null; }
 
