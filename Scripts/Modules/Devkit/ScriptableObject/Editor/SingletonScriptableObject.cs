@@ -1,6 +1,7 @@
-﻿
+
 using UnityEngine;
 using UnityEditor;
+using System;
 using System.Linq;
 using Extensions.Devkit;
 
@@ -12,6 +13,7 @@ namespace Modules.Devkit.ScriptableObjects
 
         //----- field -----
 
+		[NonSerialized]
         protected static T instance = null;
 
         //----- property -----

@@ -1,4 +1,4 @@
-﻿
+
 using System;
 
 namespace Extensions
@@ -9,7 +9,8 @@ namespace Extensions
 
         //----- field -----
 
-        protected static T instance = null;
+		[NonSerialized]
+		protected static T instance = null;
 
         //----- property -----
 

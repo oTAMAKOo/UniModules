@@ -1,4 +1,4 @@
-﻿
+
 using System;
 using UnityEngine;
 using UnityEditor;
@@ -12,7 +12,8 @@ namespace Extensions.Devkit
 
         //----- field -----
 
-        private static T instance = null;
+		[NonSerialized]
+		private static T instance = null;
 
         private Subject<Unit> onDestroy = null;
 
