@@ -1,48 +1,67 @@
-﻿
+
 using UnityEngine;
+using Extensions;
 using Modules.Devkit.Diagnosis.SRDebugger;
 
 namespace Modules.Devkit.Diagnosis
 {
-    public sealed class Diagnosis : MonoBehaviour
-    {
-        //----- params -----
+	public sealed class Diagnosis : MonoBehaviour
+	{
+		//----- params -----
 
-        //----- field -----
+		//----- field -----
 
-        [SerializeField]
-        private GameObject touchBlock = null;
-        [SerializeField]
-        private FpsStats fpsStats = null;
-        [SerializeField]
-        private SRDiagnosis srDiagnosis = null;
+		[SerializeField]
+		private GameObject touchBlock = null;
+		[SerializeField]
+		private FpsStats fpsStats = null;
+		[SerializeField]
+		private SRDiagnosis srDiagnosis = null;
 
-        //----- property -----
+		//----- property -----
 
-        //----- method -----
+		//----- method -----
 
-        public void Initialize()
-        {
-            fpsStats.Initialize();
+		public void Initialize(bool fpsEnable = true, bool srDiagnosisEnable = true)
+		{
+			// FPS.
 
-            #if ENABLE_SRDEBUGGER
+			if (fpsEnable)
+			{
+				fpsStats.Initialize();
+			}
 
-            srDiagnosis.Initialize();
+			UnityUtility.SetActive(fpsStats, fpsEnable);
 
-            #endif
+			// SRDebugger.
 
-            SetTouchBlock(touchBlock);
-        }
+			#if ENABLE_SRDEBUGGER
 
-        public void SetTouchBlock(GameObject touchBlock)
-        {
-            this.touchBlock = touchBlock;
+			if (srDiagnosisEnable)
+			{
+				srDiagnosis.Initialize();
+			}
 
-            #if ENABLE_SRDEBUGGER
+			#endif
 
-            srDiagnosis.SetTouchBlock(touchBlock);
+			UnityUtility.SetActive(srDiagnosis, srDiagnosisEnable);
 
-            #endif
-        }
-    }
+			// Other.
+
+			SetTouchBlock(touchBlock);
+
+			UnityUtility.SetActive(gameObject, fpsEnable || srDiagnosisEnable);
+		}
+
+		public void SetTouchBlock(GameObject touchBlock)
+		{
+			this.touchBlock = touchBlock;
+
+			#if ENABLE_SRDEBUGGER
+
+			srDiagnosis.SetTouchBlock(touchBlock);
+
+			#endif
+		}
+	}
 }
