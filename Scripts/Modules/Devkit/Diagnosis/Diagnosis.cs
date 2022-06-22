@@ -1,6 +1,6 @@
 
-using UnityEngine;
 using Extensions;
+using UnityEngine;
 using Modules.Devkit.Diagnosis.SRDebugger;
 
 namespace Modules.Devkit.Diagnosis
@@ -22,16 +22,20 @@ namespace Modules.Devkit.Diagnosis
 
 		//----- method -----
 
-		public void Initialize(bool fpsEnable = true, bool srDiagnosisEnable = true)
+		public void Initialize(bool displayFps = true, bool srDiagnosisEnable = true)
 		{
+			SetTouchBlock(touchBlock);
+
+			UnityUtility.SetActive(gameObject, displayFps || srDiagnosisEnable);
+
 			// FPS.
 
-			if (fpsEnable)
+			if (displayFps)
 			{
 				fpsStats.Initialize();
 			}
 
-			UnityUtility.SetActive(fpsStats, fpsEnable);
+			UnityUtility.SetActive(fpsStats, displayFps);
 
 			// SRDebugger.
 
@@ -45,12 +49,6 @@ namespace Modules.Devkit.Diagnosis
 			#endif
 
 			UnityUtility.SetActive(srDiagnosis, srDiagnosisEnable);
-
-			// Other.
-
-			SetTouchBlock(touchBlock);
-
-			UnityUtility.SetActive(gameObject, fpsEnable || srDiagnosisEnable);
 		}
 
 		public void SetTouchBlock(GameObject touchBlock)

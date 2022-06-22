@@ -1,4 +1,4 @@
-﻿
+
 using UnityEngine;
 using UnityEngine.UI;
 using UniRx;
@@ -87,6 +87,7 @@ namespace Modules.Devkit.Diagnosis.SRDebugger
                     UnityUtility.SetActive(touchBlock, visible);
                 };
 
+				srDebug.IsTriggerEnabled = !button.gameObject.activeInHierarchy;
                 srDebug.PanelVisibilityChanged += onPanelVisibilityChanged;
 
                 button.OnClickAsObservable()
