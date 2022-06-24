@@ -277,7 +277,7 @@ namespace Modules.Devkit.Build
                     break;
 
                 case BuildTarget.iOS:
-                    extension = ".ipa";
+                    extension = ".project";
                     break;
 
                 case BuildTarget.StandaloneWindows:
