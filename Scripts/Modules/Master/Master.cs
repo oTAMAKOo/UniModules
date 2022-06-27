@@ -28,7 +28,7 @@ namespace Modules.Master
     public abstract class Master<TKey, TMaster, TMasterContainer, TMasterRecord> : IMaster
         where TKey : IComparable
         where TMaster : Master<TKey, TMaster, TMasterContainer, TMasterRecord>, new()
-        where TMasterContainer : MasterContainer<TMasterRecord>
+        where TMasterContainer : MasterContainer<TMasterRecord>, new()
     {
         //----- params -----
 
