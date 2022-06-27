@@ -1,4 +1,4 @@
-﻿
+
 using System;
 using System.Linq;
 using System.Collections.Generic;
@@ -131,12 +131,17 @@ namespace Modules.Net.WebRequest
             // キャンセルチェック.
             if (webRequest.IsCanceled){ return null; }
 
+			// キャンセルソース生成.
+
+			if (cancellationTokenSource == null || cancellationTokenSource.IsCancellationRequested)
+			{
+				cancellationTokenSource = new CancellationTokenSource();
+			}
+
             // 通信中.
 
-            cancellationTokenSource = new CancellationTokenSource();
-
-            current = webRequest;
-
+			current = webRequest;
+																				
             var sw = System.Diagnostics.Stopwatch.StartNew();
 
             var retryCount = 0;
