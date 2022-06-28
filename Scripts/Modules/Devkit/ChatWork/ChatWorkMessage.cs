@@ -13,6 +13,8 @@ namespace Modules.Devkit.ChatWork
 
         //----- field -----
 
+		private static HttpClient httpClient = null;
+
         private string apiToken = null;
 
         private ulong roomId = 0;
@@ -25,6 +27,16 @@ namespace Modules.Devkit.ChatWork
         {
             this.apiToken = apiToken;
             this.roomId = roomId;
+
+			if (httpClient == null)
+			{
+				httpClient = new HttpClient()
+				{
+					Timeout = TimeSpan.FromSeconds(30),
+				};
+
+				httpClient.DefaultRequestHeaders.Add("X-ChatWorkToken", apiToken);
+			}
         }
 
         public async Task<string> SendMessage(string message, bool selfUnRead = false)
@@ -49,20 +61,9 @@ namespace Modules.Devkit.ChatWork
             
             // 送信.
 
-            var result = string.Empty;
+            var result = await SendAsync(requestMessage);
 
-            using (var httpClient = new HttpClient())
-            {
-                using (var response = await httpClient.SendAsync(requestMessage))
-                {
-                    if (response.IsSuccessStatusCode)
-                    {
-                        result = await response.Content.ReadAsStringAsync();
-                    }
-                }
-            }
-
-            return result;
+			return result;
         }
 
         public async Task<string> SendFile(string filePath, string message = null, string displayName = null)
@@ -76,47 +77,74 @@ namespace Modules.Devkit.ChatWork
 
             var result = string.Empty;
 
-            using (var httpClient = new HttpClient())
-            {
-                httpClient.DefaultRequestHeaders.Add("X-ChatWorkToken", apiToken);
+			using (var multipart = new MultipartFormDataContent("---boundary---"))
+			{
+				// ファイル.
 
-                using (var multipart = new MultipartFormDataContent("---boundary---"))
-                {
-                    // ファイル.
+				var fileContent = new StreamContent(File.OpenRead(filePath));
 
-                    var fileContent = new StreamContent(File.OpenRead(filePath));
+				fileContent.Headers.Add("Content-Disposition", $@"form-data; name=""file""; filename=""{displayName}""");
 
-                    fileContent.Headers.Add("Content-Disposition", $@"form-data; name=""file""; filename=""{displayName}""");
+				multipart.Add(fileContent);
 
-                    multipart.Add(fileContent);
+				// メッセージ.
 
-                    // メッセージ.
+				if (!string.IsNullOrEmpty(message))
+				{
+					var messageContent = new StreamContent(new MemoryStream(Encoding.UTF8.GetBytes(message)));
 
-                    if (!string.IsNullOrEmpty(message))
-                    {
-                        var messageContent = new StreamContent(new MemoryStream(Encoding.UTF8.GetBytes(message)));
+					messageContent.Headers.Add("Content-Disposition", $@"form-data; name=""message""");
 
-                        messageContent.Headers.Add("Content-Disposition", $@"form-data; name=""message""");
+					multipart.Add(messageContent);
+				}
 
-                        multipart.Add(messageContent);
-                    }
+				// 送信.
 
-                    // 送信.
+				var requestUrl = GetRequestUrl() + "files";
 
-                    var requestUrl = GetRequestUrl() + "files";
-
-                    using (var response = await httpClient.PostAsync(requestUrl, multipart))
-                    {
-                        if (response.IsSuccessStatusCode)
-                        {
-                            result = await response.Content.ReadAsStringAsync();
-                        }
-                    }
-                }
-            }
+				result = await PostAsync(requestUrl, multipart);
+			}
 
             return result;
         }
+
+		private async Task<string> SendAsync(HttpRequestMessage requestMessage)
+		{
+			var result = string.Empty;
+
+			using (var response = await httpClient.SendAsync(requestMessage))
+			{
+				if (response.IsSuccessStatusCode)
+				{
+					result = await response.Content.ReadAsStringAsync();
+				}
+				else
+				{
+					throw new Exception(response.ToString());
+				}
+			}
+
+			return result;
+		}
+
+		private async Task<string> PostAsync(string requestUrl, MultipartFormDataContent multipart)
+		{
+			var result = string.Empty;
+
+			using (var response = await httpClient.PostAsync(requestUrl, multipart))
+			{
+				if (response.IsSuccessStatusCode)
+				{
+					result = await response.Content.ReadAsStringAsync();
+				}
+				else
+				{
+					throw new Exception(response.ToString());
+				}
+			}
+
+			return result;
+		}
 
         private string GetRequestUrl()
         {
