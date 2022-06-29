@@ -81,6 +81,11 @@ namespace Modules.Devkit.Build
                 defineSymbols = string.Join(";", applicationBuilder.DefineSymbols);
             }
 
+			using (new DisableStackTraceScope())
+			{
+				Debug.Log($"Set DefineSymbols : {defineSymbols}");
+			}
+
             if (defineSymbols != currentDefineSymbols)
             {
                 PlayerSettings.SetScriptingDefineSymbolsForGroup(buildTargetGroup, defineSymbols);
@@ -296,5 +301,5 @@ namespace Modules.Devkit.Build
 
             return extension;
         }
-    }
+	}
 }
