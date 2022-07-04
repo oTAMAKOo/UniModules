@@ -167,7 +167,7 @@ namespace Modules.Devkit.Build
 	                        {
 		                        if (EditorUtility.DisplayDialog("Build", "Build finish.", "Open Folder", "Close"))
 		                        {
-			                        System.Diagnostics.Process.Start(directory);
+			                        var _ = System.Diagnostics.Process.Start(directory);
 		                        }
 	                        }
                         }
