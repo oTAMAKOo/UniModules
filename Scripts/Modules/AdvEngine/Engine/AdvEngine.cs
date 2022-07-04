@@ -8,7 +8,7 @@ using System.Collections.Generic;
 using DG.Tweening;
 using UniRx;
 using Extensions;
-using Modules.Lua;
+using Modules.Lua.legacy;
 
 namespace Modules.AdvKit
 {

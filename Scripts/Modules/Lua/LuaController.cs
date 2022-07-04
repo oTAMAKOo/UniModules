@@ -12,7 +12,7 @@ using MoonSharp.Interpreter;
 
 using Coroutine = MoonSharp.Interpreter.Coroutine;
 
-namespace Modules.Lua
+namespace Modules.Lua.legacy
 {
     public sealed class LuaController
     {

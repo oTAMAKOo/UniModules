@@ -5,7 +5,7 @@ using UnityEngine;
 using Extensions;
 using MoonSharp.Interpreter;
 
-namespace Modules.Lua
+namespace Modules.Lua.legacy
 {
     public abstract class LuaClass : LifetimeDisposable
     {

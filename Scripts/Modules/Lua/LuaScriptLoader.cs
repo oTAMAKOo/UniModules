@@ -13,7 +13,7 @@ using MoonSharp.Interpreter;
 using MoonSharp.Interpreter.Loaders;
 using UnityEngine;
 
-namespace Modules.Lua
+namespace Modules.Lua.legacy
 {
     public abstract class LuaScriptLoader : ScriptLoaderBase
     {

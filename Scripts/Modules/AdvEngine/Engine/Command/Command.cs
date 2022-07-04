@@ -8,7 +8,7 @@ using System.Linq;
 using System.Collections.Generic;
 using UniRx;
 using Extensions;
-using Modules.Lua;
+using Modules.Lua.legacy;
 using MoonSharp.Interpreter;
 
 namespace Modules.AdvKit

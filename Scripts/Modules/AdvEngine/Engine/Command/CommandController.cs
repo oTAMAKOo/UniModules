@@ -7,7 +7,7 @@ using System.Linq;
 using System.Collections.Generic;
 using UniRx;
 using Extensions;
-using Modules.Lua;
+using Modules.Lua.legacy;
 
 namespace Modules.AdvKit
 {

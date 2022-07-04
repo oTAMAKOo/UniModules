@@ -5,7 +5,7 @@ using UnityEngine;
 using System;
 using MoonSharp.Interpreter;
 
-namespace Modules.Lua
+namespace Modules.Lua.legacy
 {
     public static class LuaVector
     {
