@@ -64,9 +64,7 @@ namespace Modules.ExternalResource
             return true;
         }
 
-        /// <summary>
-        /// アセットバンドル以外のアセットの更新が必要か確認.
-        /// </summary>
+        /// <summary> アセットバンドル以外のアセットの更新が必要か確認. </summary>
         private bool CheckAssetVersion(string resourcePath, string filePath)
         {
             // ファイルがない.
@@ -87,11 +85,7 @@ namespace Modules.ExternalResource
             return hash == assetInfo.Hash;
         }
 
-        /// <summary>
-        /// 更新が必要なアセット情報を取得.
-        /// </summary>
-        /// <param name="groupName"></param>
-        /// <returns></returns>
+        /// <summary> 更新が必要なアセット情報を取得. </summary>
         public IReadOnlyList<AssetInfo> GetRequireUpdateAssetInfos(string groupName = null)
         {
             if (simulateMode){ return new AssetInfo[0]; }
@@ -111,7 +105,8 @@ namespace Modules.ExternalResource
             return assetInfos.Where(x => IsRequireUpdate(x)).ToArray();
         }
 
-        public bool IsRequireUpdate(AssetInfo assetInfo)
+		/// <summary> 更新が必要か. </summary>
+		public bool IsRequireUpdate(AssetInfo assetInfo)
         {
             if (simulateMode){ return false; }
 
