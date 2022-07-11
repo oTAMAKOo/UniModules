@@ -8,7 +8,7 @@ using Constants;
 using UniRx;
 using Extensions;
 
-namespace Modules.SceneManagement.Diagnostics
+namespace Modules.Scene.Diagnostics
 {
     public sealed class TimeDiagnostics
     {

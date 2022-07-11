@@ -5,7 +5,7 @@ using System.Collections.Generic;
 using Cysharp.Threading.Tasks;
 using UniRx;
 
-namespace Modules.SceneManagement
+namespace Modules.Scene
 {
     public sealed class WaitHandler : IDisposable
     {
@@ -46,7 +46,7 @@ namespace Modules.SceneManagement
         }
     }
 
-    public partial class SceneManagement<T>
+    public partial class SceneManager<T>
     {
         //----- params -----
 

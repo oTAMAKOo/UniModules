@@ -62,7 +62,7 @@ namespace Modules.Devkit.ModifyComponent
             }
         }
 
-        public void UpdateSceneComponent(Scene scene)
+        public void UpdateSceneComponent(UnityEngine.SceneManagement.Scene scene)
         {
             var rootObjects = scene.GetRootGameObjects();
             var targets = rootObjects.SelectMany(x => x.DescendantsAndSelf().OfComponent<TComponent>()).ToArray();

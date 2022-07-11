@@ -9,9 +9,9 @@ using UniRx;
 using UniRx.Triggers;
 using Extensions;
 
-namespace Modules.SceneManagement
+namespace Modules.Scene
 {
-    public abstract partial class SceneManagement<T>
+    public abstract partial class SceneManager<T>
     {
         //----- params -----
 

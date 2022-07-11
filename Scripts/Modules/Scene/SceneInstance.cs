@@ -8,7 +8,7 @@ using Constants;
 using UniRx;
 using Extensions;
 
-namespace Modules.SceneManagement
+namespace Modules.Scene
 {
     /// <summary> シーン情報 </summary>
     public sealed class SceneInstance
@@ -17,7 +17,7 @@ namespace Modules.SceneManagement
 
         //----- field -----
 
-        private Scene? scene = null;
+        private UnityEngine.SceneManagement.Scene? scene = null;
         private bool enable = true;
         private GameObject[] activeRoots = null;
 
@@ -28,7 +28,7 @@ namespace Modules.SceneManagement
 
         //----- method -----
 
-        public SceneInstance(Scenes? identifier, ISceneBase instance, Scene? scene)
+        public SceneInstance(Scenes? identifier, ISceneBase instance, UnityEngine.SceneManagement.Scene? scene)
         {
             this.scene = scene;
             
@@ -105,7 +105,7 @@ namespace Modules.SceneManagement
             return true;
         }
 
-        public Scene? GetScene()
+        public UnityEngine.SceneManagement.Scene? GetScene()
         {
             return scene;
         }

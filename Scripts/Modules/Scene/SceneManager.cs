@@ -12,11 +12,11 @@ using UniRx;
 using Extensions;
 using Constants;
 using Modules.Devkit.Console;
-using Modules.SceneManagement.Diagnostics;
+using Modules.Scene.Diagnostics;
 
-namespace Modules.SceneManagement
+namespace Modules.Scene
 {
-    public abstract partial class SceneManagement<T> : Singleton<T> where T : SceneManagement<T>
+    public abstract partial class SceneManager<T> : Singleton<T> where T : SceneManager<T>
     {
         //----- params -----
 
@@ -78,7 +78,7 @@ namespace Modules.SceneManagement
 
         //----- method -----
 
-        protected SceneManagement() { }
+        protected SceneManager() { }
 
         protected override void OnCreate()
         {
@@ -794,7 +794,7 @@ namespace Modules.SceneManagement
             {
                 var scenePath = ScenePaths.GetValueOrDefault(identifier);
 
-                UnityAction<Scene, LoadSceneMode> sceneLoaded = (s, m) =>
+				UnityAction<UnityEngine.SceneManagement.Scene, LoadSceneMode> sceneLoaded = (s, m) =>
                 {
                     if (s.IsValid())
                     {
@@ -803,8 +803,8 @@ namespace Modules.SceneManagement
                         switch (m)
                         {
                             case LoadSceneMode.Single:
-                                loadedScenes.Clear();
-                                cacheScenes.Clear();
+								loadedScenes.Clear();
+								cacheScenes.Clear();
                                 break;
                         }
 
@@ -813,7 +813,7 @@ namespace Modules.SceneManagement
 
                         if (onLoadScene != null)
                         {
-                            onLoadScene.OnNext(sceneInstance);
+							onLoadScene.OnNext(sceneInstance);
                         }
                     }
                 };
@@ -995,7 +995,7 @@ namespace Modules.SceneManagement
 
             if (SceneManager.sceneCount <= 1){ return; }
 
-            UnityAction<Scene> sceneUnloaded = s =>
+			UnityAction<UnityEngine.SceneManagement.Scene> sceneUnloaded = s =>
             {
                 if (s.IsValid())
                 {
@@ -1005,18 +1005,18 @@ namespace Modules.SceneManagement
 
                         if (loadedScenes.ContainsKey(identifier))
                         {
-                            loadedScenes.Remove(identifier);
+							loadedScenes.Remove(identifier);
                         }
                     }
 
                     if (cacheScenes.Contains(sceneInstance))
                     {
-                        cacheScenes.Remove(sceneInstance);
+						cacheScenes.Remove(sceneInstance);
                     }
 
                     if (onUnloadScene != null)
                     {
-                        onUnloadScene.OnNext(sceneInstance);
+						onUnloadScene.OnNext(sceneInstance);
                     }
                 }
             };
@@ -1219,7 +1219,7 @@ namespace Modules.SceneManagement
             return loadedScenes.ContainsKey(identifier);
         }
 
-        private ISceneBase FindSceneObject(Scene scene)
+        private ISceneBase FindSceneObject(UnityEngine.SceneManagement.Scene scene)
         {
             ISceneBase sceneBase = null;
 
@@ -1240,9 +1240,9 @@ namespace Modules.SceneManagement
             return sceneBase;
         }
 
-        private Scene[] GetAllScenes()
+        private UnityEngine.SceneManagement.Scene[] GetAllScenes()
         {
-            var scenes = new List<Scene>();
+            var scenes = new List<UnityEngine.SceneManagement.Scene>();
 
             for (var i = 0; i < SceneManager.sceneCount; i++)
             {
@@ -1252,7 +1252,7 @@ namespace Modules.SceneManagement
             return scenes.ToArray();
         }
 
-        private void SetSceneActive(Scene? scene)
+        private void SetSceneActive(UnityEngine.SceneManagement.Scene? scene)
         {
             if (!scene.HasValue) { return; }
 

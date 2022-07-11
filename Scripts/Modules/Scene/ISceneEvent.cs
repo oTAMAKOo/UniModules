@@ -1,7 +1,7 @@
 
 using Cysharp.Threading.Tasks;
 
-namespace Modules.SceneManagement
+namespace Modules.Scene
 {
     /// <summary> シーンの読込、解放などのイベントを受け取る為のインターフェース </summary>
 	public interface ISceneEvent

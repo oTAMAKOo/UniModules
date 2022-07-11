@@ -16,7 +16,7 @@ namespace Modules.Devkit.EventHook
 
         //----- field -----
 
-        private static Scene? currentScene = null;
+        private static UnityEngine.SceneManagement.Scene? currentScene = null;
         private static GameObject[] hierarchyObjects = null;
 
         private static Subject<GameObject[]> onCreateAsObservable = null;

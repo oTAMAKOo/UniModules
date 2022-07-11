@@ -6,7 +6,7 @@ using System.Collections.Generic;
 using UniRx;
 using Extensions;
 
-namespace Modules.SceneManagement
+namespace Modules.Scene
 {
 	public sealed class IgnoreControl : MonoBehaviour
     {

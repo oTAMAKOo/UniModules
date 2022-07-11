@@ -328,7 +328,7 @@ namespace Modules.Devkit.SceneLaunch
             Prefs.standbyInitializer = false;            
         }
 
-        private static void OnSceneLoaded(Scene scene, LoadSceneMode mode)
+        private static void OnSceneLoaded(UnityEngine.SceneManagement.Scene scene, LoadSceneMode mode)
         {
             var sceneGuid = Prefs.targetSceneGuid;
 

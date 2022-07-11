@@ -4,7 +4,7 @@ using UnityEngine.SceneManagement;
 using System.Collections.Generic;
 using Cysharp.Threading.Tasks;
 using Extensions;
-using Modules.SceneManagement;
+using Modules.Scene;
 
 namespace Modules.Localize
 {

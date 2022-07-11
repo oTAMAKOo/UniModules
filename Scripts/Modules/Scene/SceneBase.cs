@@ -3,7 +3,7 @@ using System;
 using Cysharp.Threading.Tasks;
 using Constants;
 
-namespace Modules.SceneManagement
+namespace Modules.Scene
 {
 	/// <summary>
 	/// シーンに渡す引数.
