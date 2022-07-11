@@ -1,16 +1,16 @@
-﻿
+
 #if ENABLE_CRIWARE_SOFDEC
 ﻿﻿﻿
 using UnityEngine;
 using UnityEngine.UI;
+using System.IO;
 using System.Collections.Generic;
 using UniRx;
 using CriMana;
 using Extensions;
 using Modules.CriWare;
-using System.IO;
 
-namespace Modules.MovieManagement
+namespace Modules.Movie
 {
     public enum MovieAssetType
     {

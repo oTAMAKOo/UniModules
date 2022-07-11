@@ -20,7 +20,7 @@ using Modules.Sound.Editor;
 
 #if ENABLE_CRIWARE_SOFDEC
 
-using Modules.MovieManagement.Editor;
+using Modules.Movie.Editor;
 
 #endif
 

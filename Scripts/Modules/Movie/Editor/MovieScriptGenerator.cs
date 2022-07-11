@@ -12,7 +12,7 @@ using Modules.Devkit.Generators;
 using Modules.CriWare;
 using Modules.Devkit.Project;
 
-namespace Modules.MovieManagement.Editor
+namespace Modules.Movie.Editor
 {
     public static class MovieScriptGenerator
     {
@@ -28,7 +28,7 @@ using UnityEngine;
 using System.Collections.Generic;
 using Extensions;
 
-namespace Modules.MovieManagement
+namespace Modules.Movie
 {
     public static class Movies
 	{

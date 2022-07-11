@@ -19,7 +19,7 @@ using Modules.Sound;
 #endif
 
 #if ENABLE_CRIWARE_SOFDEC
-using Modules.MovieManagement;
+using Modules.Movie;
 #endif
 
 namespace Modules.ExternalResource

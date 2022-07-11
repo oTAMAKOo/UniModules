@@ -175,9 +175,9 @@ namespace Modules.ExternalResource
 
             #if ENABLE_CRIWARE_SOFDEC
 
-            if (MovieManagement.MovieManagement.Exists)
+            if (Movie.MovieManagement.Exists)
             {
-                MovieManagement.MovieManagement.ReleaseAll();
+                Movie.MovieManagement.ReleaseAll();
             }
 
             #endif

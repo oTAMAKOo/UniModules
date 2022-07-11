@@ -6,7 +6,7 @@ using UniRx;
 using CriMana;
 using Extensions;
 
-namespace Modules.MovieManagement
+namespace Modules.Movie
 {
     public sealed class MovieElement
 	{
