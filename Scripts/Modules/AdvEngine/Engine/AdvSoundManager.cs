@@ -10,7 +10,7 @@ using Cysharp.Threading.Tasks;
 using UniRx;
 using Extensions;
 using Modules.ExternalResource;
-using Modules.SoundManagement;
+using Modules.Sound;
 
 namespace Modules.AdvKit
 {
@@ -110,7 +110,7 @@ namespace Modules.AdvKit
 
             ExternalResources.GetCueInfo(soundInfo.ResourcePath, soundInfo.CueName)
 				.ToObservable()
-                .Subscribe(x => bgm = SoundManagement.SoundManagement.Play(SoundType.Bgm, x))
+                .Subscribe(x => bgm = Sound.SoundManagement.Play(SoundType.Bgm, x))
                 .AddTo(Disposable);
         }
 
@@ -118,7 +118,7 @@ namespace Modules.AdvKit
         {
             if (bgm == null) { return; }
 
-            SoundManagement.SoundManagement.Stop(bgm);
+            Sound.SoundManagement.Stop(bgm);
         }
 
         #endregion
@@ -180,7 +180,7 @@ namespace Modules.AdvKit
 
             Action<CueInfo> onCueReady = cue =>
             {
-                var soundElement = SoundManagement.SoundManagement.Play(soundType, cue);
+                var soundElement = Sound.SoundManagement.Play(soundType, cue);
 
                 soundElements.Add(identifier, soundElement);
 
@@ -201,7 +201,7 @@ namespace Modules.AdvKit
             {
                 var soundElement = soundElements.GetValueOrDefault(identifier);
 
-                SoundManagement.SoundManagement.Stop(soundElement);
+                Sound.SoundManagement.Stop(soundElement);
 
                 soundElements.Remove(identifier);
             }
@@ -211,13 +211,13 @@ namespace Modules.AdvKit
         {
             StopBgm();
 
-            se.ForEach(x => SoundManagement.SoundManagement.Stop(x.Value));
+            se.ForEach(x => Sound.SoundManagement.Stop(x.Value));
             se.Clear();
 
-            voice.ForEach(x => SoundManagement.SoundManagement.Stop(x.Value));
+            voice.ForEach(x => Sound.SoundManagement.Stop(x.Value));
             voice.Clear();
 
-            ambience.ForEach(x => SoundManagement.SoundManagement.Stop(x.Value));
+            ambience.ForEach(x => Sound.SoundManagement.Stop(x.Value));
             ambience.Clear();
         }
 

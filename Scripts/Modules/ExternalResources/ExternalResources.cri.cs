@@ -15,7 +15,7 @@ using Modules.CriWare;
 using Modules.Devkit.Console;
 
 #if ENABLE_CRIWARE_ADX
-using Modules.SoundManagement;
+using Modules.Sound;
 #endif
 
 #if ENABLE_CRIWARE_SOFDEC

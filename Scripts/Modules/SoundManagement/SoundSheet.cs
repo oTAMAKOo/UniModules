@@ -5,7 +5,7 @@ using System.IO;
 using CriWare;
 using Modules.CriWare;
 
-namespace Modules.SoundManagement
+namespace Modules.Sound
 {
     public sealed class SoundSheet
     {

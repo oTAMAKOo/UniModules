@@ -166,9 +166,9 @@ namespace Modules.ExternalResource
         {
             #if ENABLE_CRIWARE_ADX
 
-            if (SoundManagement.SoundManagement.Exists)
+            if (Sound.SoundManagement.Exists)
             {
-                SoundManagement.SoundManagement.Instance.ReleaseAll();
+                Sound.SoundManagement.Instance.ReleaseAll();
             }
 
             #endif

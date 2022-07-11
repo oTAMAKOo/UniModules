@@ -11,7 +11,7 @@ using Extensions;
 using Extensions.Devkit;
 using Modules.Devkit.Inspector;
 using Modules.CriWare.Editor;
-using Modules.SoundManagement;
+using Modules.Sound;
 
 namespace Modules.CriWare
 {

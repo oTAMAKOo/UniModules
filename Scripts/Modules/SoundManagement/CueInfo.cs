@@ -1,10 +1,10 @@
-﻿
+
 #if ENABLE_CRIWARE_ADX
 ﻿﻿
 using UnityEngine;
 using System.IO;
 
-namespace Modules.SoundManagement
+namespace Modules.Sound
 {
     public sealed class CueInfo
     {

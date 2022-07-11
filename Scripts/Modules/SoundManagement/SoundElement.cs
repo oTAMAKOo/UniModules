@@ -6,7 +6,7 @@ using System;
 using CriWare;
 using UniRx;
 
-namespace Modules.SoundManagement
+namespace Modules.Sound
 {
     public sealed class SoundElement
     {

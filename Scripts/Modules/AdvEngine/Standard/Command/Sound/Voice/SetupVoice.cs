@@ -2,7 +2,7 @@
 #if ENABLE_MOONSHARP
 
 using System;
-using Modules.SoundManagement;
+using Modules.Sound;
 using UnityEngine;
 
 namespace Modules.AdvKit.Standard

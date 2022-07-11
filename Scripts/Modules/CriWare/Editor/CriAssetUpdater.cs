@@ -14,7 +14,7 @@ using Modules.Devkit.Project;
 
 #if ENABLE_CRIWARE_ADX
 
-using Modules.SoundManagement.Editor;
+using Modules.Sound.Editor;
 
 #endif
 

@@ -1,4 +1,4 @@
-﻿
+
 #if ENABLE_CRIWARE_ADX
 
 using UnityEditor;
@@ -13,7 +13,7 @@ using Modules.CriWare;
 using Modules.CriWare.Editor;
 using Modules.Devkit.Project;
 
-namespace Modules.SoundManagement.Editor
+namespace Modules.Sound.Editor
 {
     public static class SoundScriptGenerator
     {
@@ -30,7 +30,7 @@ using System;
 using System.Collections.Generic;
 using Extensions;
 
-namespace Modules.SoundManagement
+namespace Modules.Sound
 {
     public static class Sounds
 	{
