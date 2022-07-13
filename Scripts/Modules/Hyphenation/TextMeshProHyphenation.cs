@@ -40,7 +40,7 @@ namespace Modules.Hyphenation
 		{
 			if (TextComponent.richText)
 			{
-				message = Regex.Replace(message, RITCH_TEXT_REPLACE, string.Empty, RegexOptions.IgnoreCase);
+				message = Regex.Replace(message, RitchTextReplace, string.Empty, RegexOptions.IgnoreCase);
 			}
 
 			Current = message;

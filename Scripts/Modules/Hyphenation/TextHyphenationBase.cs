@@ -40,6 +40,8 @@ namespace Modules.Hyphenation
 			get { return RectTransform.rect.width; }
 		}
 
+		public string RitchTextReplace { get; set; } = RITCH_TEXT_REPLACE;
+
 		protected abstract string Current { get; set; }
 
 		protected abstract bool HasTextComponent { get; }
