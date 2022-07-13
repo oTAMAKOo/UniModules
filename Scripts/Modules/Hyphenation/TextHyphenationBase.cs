@@ -1,72 +1,68 @@
-﻿
+
 using UnityEngine;
-using UnityEngine.UI;
 using UnityEngine.EventSystems;
-using System;
 using System.Collections.Generic;
-using System.Text.RegularExpressions;
 using System.Text;
 using Extensions;
 
 namespace Modules.Hyphenation
 {
-    // ※ BestFitと併用すると相互にサイズをし合い最終サイズが正しく取得できない為、併用しない.
-
-    [ExecuteAlways]
-    [RequireComponent(typeof(Text))]
-    public sealed class UITextHyphenation : UIBehaviour
+    public abstract class TextHyphenationBase : UIBehaviour
     {
         //----- params -----
 
-        private static readonly string RITCH_TEXT_REPLACE =
+		protected static readonly string RITCH_TEXT_REPLACE =
             "(\\<color=.*\\>|</color>|" +
             "\\<size=.n\\>|</size>|" +
+			"\\<link=.n\\>|</link>|" +
             "<b>|</b>|" +
             "<i>|</i>)";
 
         //----- field -----
 
-        private Text target = null;
-        private RectTransform rectTransform = null;
-        private string originText = null;
-        private string fixedText = null;
-        private float? fixedWidth = null;
+		private RectTransform rectTransform = null;
+
+		protected string originText = null;
+		protected string fixedText = null;
+		protected float? fixedWidth = null;
 
         //----- property -----
+		
+		protected RectTransform RectTransform
+		{
+			get { return rectTransform ?? (rectTransform = UnityUtility.GetComponent<RectTransform>(gameObject)); }
+		}
 
-        public Text Text { get { return target ?? (target = UnityUtility.GetComponent<Text>(gameObject)); } }
+		public float TextWidth
+		{
+			set { RectTransform.SetSizeWithCurrentAnchors(RectTransform.Axis.Horizontal, value); }
 
-        private RectTransform RectTransform
-        {
-            get { return rectTransform ?? (rectTransform = UnityUtility.GetComponent<RectTransform>(gameObject)); }
-        }
+			get { return RectTransform.rect.width; }
+		}
 
-        public float textWidth
-        {
-            set { RectTransform.SetSizeWithCurrentAnchors(RectTransform.Axis.Horizontal, value); }
+		protected abstract string Current { get; set; }
 
-            get { return RectTransform.rect.width; }
-        }
+		protected abstract bool HasTextComponent { get; }
 
         //----- method -----
 
-        // ※ Updateだと適用が反映されないのでLateUpdateで反映.
-        void LateUpdate()
+		// ※ Updateだと適用が反映されないのでLateUpdateで反映.
+		void LateUpdate()
+		{
+			if (!HasTextComponent) { return; }
+
+			if (RectTransform == null) { return; }
+
+			// ObserveEveryValueChangedで監視するとComponentが追加されてしまうのでUpdateで監視.
+			if (fixedText != Current)
+			{
+				UpdateText(Current);
+			}
+		}
+
+		public void UpdateText(string text)
         {
-            if (Text == null) { return; }
-
-            if (RectTransform == null) { return; }
-
-            // ObserveEveryValueChangedで監視するとComponentが追加されてしまうのでUpdateで監視.
-            if (fixedText != Text.text)
-            {
-                UpdateText(Text.text);
-            }
-        }
-
-        public void UpdateText(string text)
-        {
-            if (fixedText == text && fixedWidth == textWidth) { return; }
+            if (fixedText == text && fixedWidth == TextWidth) { return; }
 
             originText = text;
 
@@ -78,10 +74,10 @@ namespace Modules.Hyphenation
             else
             {
                 fixedText = GetFormatedText(originText.FixLineEnd());
-                fixedWidth = textWidth;
+                fixedWidth = TextWidth;
             }
 
-            Text.text = fixedText;
+			Current = fixedText;
         }
 
         private float GetSpaceWidth()
@@ -92,19 +88,7 @@ namespace Modules.Hyphenation
             return (tmp0 - tmp1);
         }
 
-        private float GetTextWidth(string message)
-        {
-            if (Text.supportRichText)
-            {
-                message = Regex.Replace(message, RITCH_TEXT_REPLACE, string.Empty, RegexOptions.IgnoreCase);
-            }
-
-            Text.text = message;
-
-            return Text.preferredWidth;
-        }
-
-        private string GetFormatedText(string text)
+		private string GetFormatedText(string text)
         {
             if (string.IsNullOrEmpty(text)) { return string.Empty; }
 
@@ -112,9 +96,8 @@ namespace Modules.Hyphenation
 
             var rectWidth = RectTransform.rect.width;
             var spaceCharacterWidth = GetSpaceWidth();
-
-            // override
-            Text.horizontalOverflow = HorizontalWrapMode.Overflow;
+			
+			SetTextOverflow();
 
             var lineBuilder = new StringBuilder();
 
@@ -187,5 +170,9 @@ namespace Modules.Hyphenation
 
             return words.ToArray();
         }
+
+		protected abstract float GetTextWidth(string message);
+
+		protected abstract void SetTextOverflow();
     }
 }
