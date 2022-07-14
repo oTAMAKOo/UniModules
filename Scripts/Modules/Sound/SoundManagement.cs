@@ -64,6 +64,7 @@ namespace Modules.Sound
         private Subject<SoundElement> onStop = null;
         private Subject<SoundElement> onPause = null;
         private Subject<SoundElement> onResume = null;
+		private Subject<SoundElement> onRelease = null;
 
         // サウンドイベント.
         private Subject<CriAtomExSequencer.CriAtomExSequenceEventInfo> onSoundEvent = null;
@@ -521,15 +522,22 @@ namespace Modules.Sound
         {
             for (var i = 0; i < soundElements.Count; ++i)
             {
-                if (!soundElements[i].FinishTime.HasValue)
+				var soundElement = soundElements[i];
+
+                if (!soundElement.FinishTime.HasValue)
                 {
                     continue;
                 }
 
                 // 終了確認した時間から一定時間経過していたら解放.
-                if (soundElements[i].FinishTime.Value + ReleaseTime < Time.realtimeSinceStartup)
+                if (soundElement.FinishTime.Value + ReleaseTime < Time.realtimeSinceStartup)
                 {
                     soundElements.RemoveAt(i);
+
+					if (onRelease != null)
+					{
+						onRelease.OnNext(soundElement);
+					}
                 }
             }
 
@@ -577,6 +585,11 @@ namespace Modules.Sound
             foreach (var item in releaseElements)
             {
                 soundElements.Remove(item);
+
+				if (onRelease != null)
+				{
+					onRelease.OnNext(item);
+				}
             }
 
             // 管理下の情報.
@@ -595,7 +608,7 @@ namespace Modules.Sound
                 CriAtom.RemoveCueSheet(item.Value.AssetPath);
 
                 managedSoundSheets.Remove(item.Key);
-            }
+			}
         }
 
         /// <summary> 再生通知 </summary>
@@ -622,7 +635,13 @@ namespace Modules.Sound
             return onResume ?? (onResume = new Subject<SoundElement>());
         }
 
-        /// <summary> サウンドに埋め込まれたイベント通知 </summary>
+		/// <summary> 解放通知 </summary>
+		public IObservable<SoundElement> OnReleaseAsObservable()
+		{
+			return onRelease ?? (onRelease = new Subject<SoundElement>());
+		}
+
+		/// <summary> サウンドに埋め込まれたイベント通知 </summary>
         public IObservable<CriAtomExSequencer.CriAtomExSequenceEventInfo> OnSoundEventAsObservable()
         {
             return onSoundEvent ?? (onSoundEvent = new Subject<CriAtomExSequencer.CriAtomExSequenceEventInfo>());
