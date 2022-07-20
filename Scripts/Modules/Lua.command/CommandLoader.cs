@@ -62,12 +62,6 @@ namespace Modules.Lua.Command
 
 			lua.Append(BuildFunctionDefileLua(commands));
 
-			// TODO: 消す.
-			using (new DisableStackTraceScope())
-			{
-				Debug.Log(lua.ToString());
-			}
-
 			return Encoding.UTF8.GetBytes(lua.ToString());
 		}
 
@@ -387,6 +381,6 @@ namespace Modules.Lua.Command
 			return builder.ToString();
 		}
 
-		protected abstract Type[] GetCommandTypes();
+		protected abstract IEnumerable<Type> GetCommandTypes();
 	}
 }
