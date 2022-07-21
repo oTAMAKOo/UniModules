@@ -36,6 +36,12 @@ namespace Modules.Sound
 
 		public float? FinishTime { get; private set; }
 
+		public float Volume
+		{
+			get { return Source.volume; }
+			set { Source.volume = value; }
+		}
+
         //----- method -----
 
 		public SoundElement(SoundType type, AudioSource source, AudioClip clip)

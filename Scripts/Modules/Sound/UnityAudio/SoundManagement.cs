@@ -5,6 +5,8 @@ using UnityEngine;
 using System;
 using System.Linq;
 using System.Collections.Generic;
+using Cysharp.Threading.Tasks;
+using DG.Tweening;
 using UniRx;
 using Extensions;
 using Modules.Devkit.Console;
@@ -40,6 +42,8 @@ namespace Modules.Sound
 
 		private Dictionary<SoundType, int> maxSoundLimit = null;
 
+		private HashSet<Tuple<SoundType, AudioClip>> framePlayedAudioClips = null;
+
 		private bool initialized = false;
 
         //----- property -----
@@ -51,6 +55,7 @@ namespace Modules.Sound
 			audioSourceList = new Dictionary<SoundType, List<AudioSource>>();
 			soundRoot = new Dictionary<SoundType, GameObject>();
 			maxSoundLimit = new Dictionary<SoundType, int>();
+			framePlayedAudioClips = new HashSet<Tuple<SoundType, AudioClip>>();
 
 			LogEnable = false;
 		}
@@ -89,6 +94,11 @@ namespace Modules.Sound
             Observable.Interval(TimeSpan.FromSeconds(5f))
                 .Subscribe(_ => UpdateSoundSource())
                 .AddTo(Disposable);
+
+			// 同一フレーム再生リストクリア.
+			Observable.EveryEndOfFrame()
+				.Subscribe(_ => framePlayedAudioClips.Clear())
+				.AddTo(Disposable);
 
 			initialized = true;
 		}
@@ -191,9 +201,25 @@ namespace Modules.Sound
 				Stop(remove);
 			}
 
+			var playingElement = FindPlayingElement(type, clip);
+
+			// 同一フレームで同じ音は再生しない.
+
+			if (framePlayedAudioClips.Contains(Tuple.Create(type, clip)))
+			{
+				element = playingElement;
+
+				if (element != null)
+				{
+					return element;
+				}
+			}
+
+			// パラメータで再生中キャンセルが有効.
+
 			if (soundParam != null && soundParam.cancelIfPlaying)
 			{
-				element = FindPlayingElement(type, clip);
+				element = playingElement;
 
 				if (element != null)
 				{
@@ -207,6 +233,11 @@ namespace Modules.Sound
 
 			element = new SoundElement(type, audioSource, clip);
 
+			if (soundParam != null)
+			{
+				element.Volume = soundParam.volume;
+			}
+
 			element.Source.Play();
 
 			element.Update();
@@ -216,6 +247,8 @@ namespace Modules.Sound
 				.AddTo(Disposable);
 			
 			soundElements.Add(element);
+
+			framePlayedAudioClips.Add(Tuple.Create(type, clip));
 
 			if (onPlay != null)
 			{
@@ -356,6 +389,28 @@ namespace Modules.Sound
 					audioSource.transform.Reset();
 				}
 			}
+		}
+
+		public async UniTask FadeIn(SoundElement element, float duration)
+		{
+			var tweener = DOTween.To(() => element.Source.volume, x => element.Source.volume = x, 1f, duration);
+
+			await tweener.Play();
+		}
+
+		public async UniTask FadeOut(SoundElement element, float duration)
+		{
+			var tweener = DOTween.To(() => element.Source.volume, x => element.Source.volume = x, 0f, duration);
+
+			await tweener.Play();
+		}
+
+		public async UniTask CrossFade(SoundElement inElement, SoundElement outElement, float duration)
+		{
+			var fadeInTask = FadeIn(inElement, duration);
+			var fadeOutTask = FadeOut(outElement, duration);
+
+			await UniTask.WhenAll(fadeInTask, fadeOutTask);
 		}
 
 		/// <summary> 対象のサウンドが再生中か. </summary>
