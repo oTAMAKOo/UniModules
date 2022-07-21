@@ -3,7 +3,6 @@
 
 using UnityEngine;
 using System;
-using CriWare;
 using UniRx;
 
 namespace Modules.Sound
@@ -42,12 +41,7 @@ namespace Modules.Sound
             return playback;
         }
 
-        public void SetVolume(float value)
-        {
-            SoundManagement.SetVolume(this, value);
-        }
-
-        public void Update()
+		public void Update()
         {
             if (FinishTime.HasValue) { return; }
 
