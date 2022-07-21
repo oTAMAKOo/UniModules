@@ -66,7 +66,7 @@ namespace Modules.Movie
         /// <summary>
         /// InternalResources内の動画再生.
         /// </summary>
-        public static MovieElement Play(Movies.Mana type, Graphic targetGraphic, Player.ShaderDispatchCallback shaderOverrideCallBack = null)
+        public MovieElement Play(Movies.Mana type, Graphic targetGraphic, Player.ShaderDispatchCallback shaderOverrideCallBack = null)
         {
             var info = Movies.GetManaInfo(type);
 
@@ -81,7 +81,7 @@ namespace Modules.Movie
         /// ExternalResources内や、直接指定での動画再生用のインスタンスを生成.
         /// ※ 頭出しなどを行う時はこの関数で生成したPlayerを使って頭出しを実装する.
         /// </summary>
-        public static MovieElement CreateElement(string moviePath, Graphic targetGraphic, Player.ShaderDispatchCallback shaderOverrideCallBack = null)
+        public MovieElement CreateElement(string moviePath, Graphic targetGraphic, Player.ShaderDispatchCallback shaderOverrideCallBack = null)
         {
             if (!File.Exists(moviePath))
             {
@@ -106,13 +106,13 @@ namespace Modules.Movie
 
             var movieElement = new MovieElement(moviePlayer, movieController, moviePath);
 
-            Instance.movieElements.Add(movieElement);
+            movieElements.Add(movieElement);
 
             return movieElement;
         }
         
         /// <summary> ExternalResources内や、直接指定での動画再生. </summary>
-        public static MovieElement Play(ManaInfo movieInfo, Graphic targetGraphic, Player.ShaderDispatchCallback shaderOverrideCallBack = null)
+        public MovieElement Play(ManaInfo movieInfo, Graphic targetGraphic, Player.ShaderDispatchCallback shaderOverrideCallBack = null)
         {
             if (movieInfo == null){ return null; }
 
@@ -122,7 +122,7 @@ namespace Modules.Movie
         }
 
         /// <summary> 直接指定での動画再生. </summary>
-        public static MovieElement Play(string moviePath, Graphic targetGraphic, Player.ShaderDispatchCallback shaderOverrideCallBack = null)
+        public MovieElement Play(string moviePath, Graphic targetGraphic, Player.ShaderDispatchCallback shaderOverrideCallBack = null)
         {
             var element = CreateElement(moviePath, targetGraphic, shaderOverrideCallBack);
 
@@ -136,7 +136,7 @@ namespace Modules.Movie
 
         #endregion
 
-        public static void Stop(MovieElement element)
+        public void Stop(MovieElement element)
         {
             if (element == null || element.Player == null) { return; }
 
@@ -172,10 +172,8 @@ namespace Modules.Movie
             }
         }
 
-        public static void ReleaseAll()
+        public void ReleaseAll()
         {
-            var movieElements = Instance.movieElements;
-
             foreach (var movieElement in movieElements)
             {
                 if (movieElement == null) { continue; }
