@@ -1,4 +1,4 @@
-﻿
+
 #if ENABLE_CRIWARE_ADX
 
 using UnityEngine;
@@ -8,7 +8,7 @@ using UniRx;
 
 namespace Modules.Sound
 {
-    public sealed class SoundElement
+    public sealed class SoundElement : ISoundElement
     {
         //----- params -----
 

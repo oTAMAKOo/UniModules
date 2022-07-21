@@ -14,68 +14,32 @@ using Modules.Devkit.Console;
 
 namespace Modules.Sound
 {
-    public enum SoundType
-    {
-        /// <summary>BGM</summary>
-        Bgm,
-
-        /// <summary>ジングル</summary>
-        Jingle,
-
-        /// <summary>ボイス</summary>
-        Voice,
-
-        /// <summary>SE</summary>
-        Se,
-
-        /// <summary>環境音</summary>
-        Ambience,
-    }
-
     public sealed class SoundParam
     {
         public float volume = 1f;
         public bool cancelIfPlaying = false;
     }
 
-    public sealed class SoundManagement : Singleton<SoundManagement>
+    public sealed class SoundManagement : SoundManagementBase<SoundManagement, SoundParam, SoundElement>
     {
         //----- params -----
 
         private const float DefaultReleaseTime = 30f;
 
-        private const char SoundEventSeparator = '\t';
-
-        public static readonly string ConsoleEventName = "Sound";
-        public static readonly Color ConsoleEventColor = new Color(0.85f, 0.45f, 0.85f);
-
-        //----- field -----
+		//----- field -----
 
         private CriAtomExPlayer player = null;
 
         private Dictionary<string, SoundSheet> managedSoundSheets = null;
-        private List<SoundElement> soundElements = null;
-
-        private SoundParam defaultSoundParam = null;
-        private Dictionary<SoundType, SoundParam> soundParams = null;
-
-        // サウンド通知.
-        private Subject<SoundElement> onPlay = null;
-        private Subject<SoundElement> onStop = null;
-        private Subject<SoundElement> onPause = null;
-        private Subject<SoundElement> onResume = null;
-		private Subject<SoundElement> onRelease = null;
-
+		
         // サウンドイベント.
         private Subject<CriAtomExSequencer.CriAtomExSequenceEventInfo> onSoundEvent = null;
 
-        private bool initialized = false;
+		private bool initialized = false;
 
         //----- property -----
 
         public CriAtomExPlayer Player { get { return player; } }
-
-        public bool LogEnable { get; set; }
 
         public float ReleaseTime { get; set; }
 
@@ -84,20 +48,17 @@ namespace Modules.Sound
         private SoundManagement()
         {
             ReleaseTime = DefaultReleaseTime;
-            LogEnable = false;
         }
 
         public void Initialize(SoundParam defaultSoundParam)
         {
             if (initialized) { return; }
 
-            this.defaultSoundParam = defaultSoundParam;
+			player = new CriAtomExPlayer();
 
-            player = new CriAtomExPlayer();
+            OnInitialize(defaultSoundParam);
 
-            soundParams = new Dictionary<SoundType, SoundParam>();
             managedSoundSheets = new Dictionary<string, SoundSheet>();
-            soundElements = new List<SoundElement>();
 
             // デフォルトのサウンド設定を適用.
             SetSoundParam();
@@ -114,15 +75,15 @@ namespace Modules.Sound
 
             CriAtomExSequencer.OnCallback += soundEventCallback;
 
-            // サウンドの状態更新.
-            Observable.EveryEndOfFrame()
-                .Subscribe(_ => UpdateElement())
-                .AddTo(Disposable); ;
-
-            // 一定周期で未使用状態になったAcbの解放を行う.
+			// 一定周期で未使用状態になったAcbの解放を行う.
             Observable.Interval(TimeSpan.FromSeconds(5f))
                 .Subscribe(_ => ReleaseSoundSheet())
                 .AddTo(Disposable);
+
+			// パラメータ更新通知.
+			OnUpdateParamAsObservable()
+				.Subscribe(x => ApplySoundParam(x))
+				.AddTo(Disposable);
 
             initialized = true;
         }
@@ -138,58 +99,6 @@ namespace Modules.Sound
         }
 
         /// <summary>
-        /// 再生設定を登録.
-        /// </summary>
-        /// <param name="type"></param>
-        /// <param name="param"></param>
-        public void RegisterSoundType(SoundType type, SoundParam param)
-        {
-            soundParams[type] = param;
-
-            // 再生中の音量に適用.
-            foreach (var soundElement in soundElements)
-            {
-                if (soundElement.Type == type)
-                {
-                    SetVolume(soundElement, soundParams[type].volume);
-                }
-            }
-        }
-
-        /// <summary>
-        /// 再生設定を抹消.
-        /// </summary>
-        /// <param name="type"></param>
-        public void RemoveSoundType(SoundType type)
-        {
-            if (soundParams.ContainsKey(type))
-            {
-                soundParams.Remove(type);
-            }
-        }
-
-        /// <summary>
-        /// 再生設定を取得.
-        /// </summary>
-        /// <param name="type"></param>
-        public SoundParam GetSoundParam(SoundType type)
-        {
-            var param = soundParams.GetValueOrDefault(type);
-
-            if (param == null)
-            {
-                // エラーが大量に発生しないように空のパラメータを追加.
-                soundParams[type] = new SoundParam();
-
-                param = soundParams[type];
-
-                Debug.LogErrorFormat("未登録の再生属性が指定されました. ({0})", type);
-            }
-
-            return param;
-        }
-
-        /// <summary>
         /// InternalResources内のサウンドを再生.
         /// </summary>
         public static SoundElement Play(SoundType type, Sounds.Cue cue)
@@ -197,7 +106,7 @@ namespace Modules.Sound
             var soundParam = Instance.GetSoundParam(type);
             var info = Sounds.GetCueInfo(cue);
 
-            if (soundParam.cancelIfPlaying)
+            if (soundParam != null && soundParam.cancelIfPlaying)
             {
                 var element = FindPlayingElement(type, info);
 
@@ -221,7 +130,7 @@ namespace Modules.Sound
 
             SoundElement element = null;
 
-            if (soundParam.cancelIfPlaying)
+            if (soundParam != null && soundParam.cancelIfPlaying)
             {
                 element = FindPlayingElement(type, info);
 
@@ -356,11 +265,7 @@ namespace Modules.Sound
             Instance.soundElements.Clear();
         }
 
-        /// <summary>
-        /// 個別に音量変更.
-        /// </summary>
-        /// <param name="element"></param>
-        /// <param name="value"></param>
+        /// <summary> 個別に音量変更. </summary>
         public static void SetVolume(SoundElement element, float value)
         {
             Instance.player.SetVolume(value);
@@ -370,9 +275,7 @@ namespace Modules.Sound
             Instance.SetSoundParam();
         }
 
-        /// <summary>
-        /// 対象のサウンドが再生中か.
-        /// </summary>
+        /// <summary> 対象のサウンドが再生中か. </summary>
         private static SoundElement FindPlayingElement(Enum type, CueInfo info)
         {
             // シート取得.
@@ -389,9 +292,7 @@ namespace Modules.Sound
             return element;
         }
 
-        /// <summary>
-        /// 個別設定を戻す.
-        /// </summary>
+        /// <summary> 個別設定を戻す. </summary>
         private static void ResetSoundParam(SoundElement element)
         {
             Instance.SetSoundParam(element.Type);
@@ -402,14 +303,15 @@ namespace Modules.Sound
             Instance.SetSoundParam();
         }
 
-        /// <summary>
-        /// CriAtomPlayerに再生設定を適用.
-        /// </summary>
-        private void SetSoundParam(SoundType? type = null)
+        /// <summary> CriAtomPlayerに再生設定を適用. </summary>
+        private void ApplySoundParam(SoundType? type = null)
         {
             var param = type != null ? GetSoundParam(type.Value) : defaultSoundParam;
 
-            player.SetVolume(param.volume);
+			if (param != null)
+			{
+	            player.SetVolume(param.volume);
+			}
         }
 
         private SoundSheet GetSoundSheet(CueInfo cueInfo)
@@ -509,16 +411,7 @@ namespace Modules.Sound
             playback.Resume(CriAtomEx.ResumeMode.PreparedPlayback);
         }
 
-        private void UpdateElement()
-        {
-            // 呼ばれる頻度が多いのでforeachを使わない.
-            for (var i = 0; i < soundElements.Count; ++i)
-            {
-                soundElements[i].Update();
-            }
-        }
-
-        private void ReleaseSoundSheet()
+		private void ReleaseSoundSheet()
         {
             for (var i = 0; i < soundElements.Count; ++i)
             {
@@ -566,7 +459,7 @@ namespace Modules.Sound
             foreach (var target in targets)
             {
                 CriAtom.RemoveCueSheet(target.AssetPath);
-                managedSoundSheets.Remove(target.AssetPath);                
+                managedSoundSheets.Remove(target.AssetPath);             
             }
         }
 
@@ -610,36 +503,6 @@ namespace Modules.Sound
                 managedSoundSheets.Remove(item.Key);
 			}
         }
-
-        /// <summary> 再生通知 </summary>
-        public IObservable<SoundElement> OnPlayAsObservable()
-        {
-            return onPlay ?? (onPlay = new Subject<SoundElement>());
-        }
-
-        /// <summary> 停止通知 </summary>
-        public IObservable<SoundElement> OnStopAsObservable()
-        {
-            return onStop ?? (onStop = new Subject<SoundElement>());
-        }
-
-        /// <summary> 中断通知 </summary>
-        public IObservable<SoundElement> OnPauseAsObservable()
-        {
-            return onPause ?? (onPause = new Subject<SoundElement>());
-        }
-
-        /// <summary> 復帰通知 </summary>
-        public IObservable<SoundElement> OnResumeAsObservable()
-        {
-            return onResume ?? (onResume = new Subject<SoundElement>());
-        }
-
-		/// <summary> 解放通知 </summary>
-		public IObservable<SoundElement> OnReleaseAsObservable()
-		{
-			return onRelease ?? (onRelease = new Subject<SoundElement>());
-		}
 
 		/// <summary> サウンドに埋め込まれたイベント通知 </summary>
         public IObservable<CriAtomExSequencer.CriAtomExSequenceEventInfo> OnSoundEventAsObservable()
