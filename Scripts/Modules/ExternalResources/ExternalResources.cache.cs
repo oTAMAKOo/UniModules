@@ -177,7 +177,7 @@ namespace Modules.ExternalResource
 
             if (Movie.MovieManagement.Exists)
             {
-                Movie.MovieManagement.ReleaseAll();
+                Movie.MovieManagement.Instance.ReleaseAll();
             }
 
             #endif
