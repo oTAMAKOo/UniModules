@@ -22,6 +22,8 @@ namespace Extensions.Devkit
 
         //----- field -----
 
+		private static GUIStyle dragtabStyle = null;
+
         //----- property -----
 
         //----- method -----
@@ -144,10 +146,8 @@ namespace Extensions.Devkit
         public static bool Header(string text, bool state, Color? color = null)
         {
             var c = color ?? DefaultHeaderColor;
-
-            var backgroundColor = Color.white;
-
-            backgroundColor = state ? c : new Color(c.r - 0.2f, c.g - 0.2f, c.b - 0.2f);
+			
+            var backgroundColor = state ? c : new Color(c.r - 0.2f, c.g - 0.2f, c.b - 0.2f);
 
             text = "<b><size=11>" + text + "</size></b>";
 
@@ -160,11 +160,16 @@ namespace Extensions.Devkit
                 text = "\u25BA " + text;
             }
 
+			if (dragtabStyle == null)
+			{
+				dragtabStyle = new GUIStyle("dragtab first");
+			}
+
             using (new BackgroundColorScope(backgroundColor))
             {
                 using (new EditorGUILayout.HorizontalScope())
                 {
-                    if (!GUILayout.Toggle(true, text, "dragtab", GUILayout.MinWidth(20f)))
+                    if (!GUILayout.Toggle(true, text, dragtabStyle, GUILayout.MinWidth(20f)))
                     {
                         if (Event.current.button == 0)
                         {
@@ -174,13 +179,13 @@ namespace Extensions.Devkit
                 }
             }
             
-            if (!state)
+            if (state)
             {
-                GUILayout.Space(3f);
+                GUILayout.Space(-3f);
             }
             else
             {
-                GUILayout.Space(-4f);
+                GUILayout.Space(3f);
             }
 
             return state;

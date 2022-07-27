@@ -1,4 +1,4 @@
-﻿
+
 using UnityEngine;
 using UnityEditor;
 using Extensions;
@@ -10,7 +10,7 @@ namespace Extensions.Devkit
         //----- params -----
 
         private static readonly Color LightSkinHeaderColor = new Color(0.85f, 0.85f, 0.85f, 1f);
-        private static readonly Color DarkSkinHeaderColor = new Color(0.8f, 0.8f, 0.8f, 1f);
+        private static readonly Color DarkSkinHeaderColor = new Color(0.7f, 0.7f, 0.7f, 1f);
 
         private static readonly Color LightSkinContentColor = new Color(0f, 0f, 0f, 1f);
         private static readonly Color DarkSkinContentColor = new Color(1f, 1f, 1f, 1f);
