@@ -93,9 +93,7 @@ namespace Extensions.Devkit
                     GUILayout.Space(10f);
                 }
             }
-
-			GUILayout.Space(-4f);
-        }
+		}
 
         public static bool ColorButton(string text, bool enabled, Color color, params GUILayoutOption[] options)
         {
@@ -181,7 +179,7 @@ namespace Extensions.Devkit
             
             if (state)
             {
-                GUILayout.Space(-3f);
+                GUILayout.Space(-2f);
             }
             else
             {

@@ -1,4 +1,4 @@
-﻿
+
 using UnityEngine;
 using UnityEditor;
 
@@ -16,6 +16,8 @@ namespace Extensions.Devkit
 
         public static void BeginContents()
         {
+			GUILayout.Space(-2f);
+
             EditorGUILayout.BeginHorizontal(GUI.skin.box);
 
             EditorGUILayout.BeginVertical();
