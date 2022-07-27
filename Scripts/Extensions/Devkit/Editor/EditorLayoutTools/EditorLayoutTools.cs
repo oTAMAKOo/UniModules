@@ -1,4 +1,4 @@
-﻿
+
 using UnityEngine;
 using UnityEditor;
 using System;
@@ -91,6 +91,8 @@ namespace Extensions.Devkit
                     GUILayout.Space(10f);
                 }
             }
+
+			GUILayout.Space(-4f);
         }
 
         public static bool ColorButton(string text, bool enabled, Color color, params GUILayoutOption[] options)
