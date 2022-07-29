@@ -13,9 +13,7 @@ namespace Modules.TagTect
 
         //----- property -----
 
-		public bool SyncRuby { get; set; } = false;
-
-        //----- method -----
+		//----- method -----
 
 		protected override Info[] EditTextInfos(Info[] infos)
 		{
@@ -66,18 +64,7 @@ namespace Modules.TagTect
 
 					if (fullLength != 0)
 					{
-						var ruby = string.Empty;
-
-						if (SyncRuby)
-						{
-							var len = (int)Math.Floor(info.Param.Length * ((float)currentLength / fullLength));
-							
-							ruby = info.Param.Substring(0, len);
-						}
-						else
-						{
-							ruby = currentLength == fullLength ? info.Param : string.Empty;
-						}
+						var ruby = currentLength == fullLength ? info.Param : string.Empty;
 
 						info.Text = $"<{info.Tag}={ruby}>";
 					}

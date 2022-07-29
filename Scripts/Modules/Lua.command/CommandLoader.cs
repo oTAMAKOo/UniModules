@@ -102,6 +102,8 @@ namespace Modules.Lua.Command
 						throw new Exception($"[Class Error] {type.FullName} create failed.\n");
 					}
 
+					OnCreateCommand(command);
+
 					// Luaに登録.
 
 					var luaName = GetInstanceLuaName(command);
@@ -380,6 +382,8 @@ namespace Modules.Lua.Command
 
 			return builder.ToString();
 		}
+
+		protected virtual void OnCreateCommand(ICommand command){ }
 
 		protected abstract IEnumerable<Type> GetCommandTypes();
 	}

@@ -10,6 +10,7 @@ using Extensions;
 // Modules.
 using Modules.PatternTexture;
 using Modules.TextData.Editor;
+using Modules.Lua;
 using Modules.MessagePack;
 using Modules.Master;
 using Modules.ExternalResource;
@@ -174,19 +175,50 @@ namespace Modules
         //------ Excel保存時に自動更新 ------
 
         [MenuItem(itemName: TextDataMenu + "Updated when save Excel", priority = 1)]
-        public static void ToggleUpdateOnSaveExcel()
+        public static void ToggleUpdateOnSaveTextDataExcel()
         {
             TextDataAssetUpdater.Prefs.autoUpdate = !TextDataAssetUpdater.Prefs.autoUpdate;
         }
 
         [MenuItem(itemName: TextDataMenu + "Updated when save Excel", isValidateFunction: true)]
-        public static bool ToggleUpdateOnSaveExcelValidate()
+        public static bool ToggleUpdateOnSaveTextDataExcelValidate()
         {
             Menu.SetChecked(TextDataMenu + "Updated when save Excel", TextDataAssetUpdater.Prefs.autoUpdate);
             return true;
         }
 
         #endregion
+
+		//===============================================================
+		//  LuaText.
+		//===============================================================
+
+		#region LuaText
+
+		protected const string LuaTextMenu = MenuRoot + "LuaText/";
+
+		[MenuItem(itemName: LuaTextMenu + "Open Generate Window", priority = 0)]
+		public static void OpenLuaTextWindow()
+		{
+			Lua.Text.GenerateWindow.Open();
+		}
+
+		//------ Excel保存時に自動更新 ------
+
+		[MenuItem(itemName: LuaTextMenu + "Updated when save Excel", priority = 1)]
+		public static void ToggleUpdateOnSaveLuaTextExcel()
+		{
+			Lua.Text.LuaTextAssetUpdater.Prefs.autoUpdate = !Lua.Text.LuaTextAssetUpdater.Prefs.autoUpdate;
+		}
+
+		[MenuItem(itemName: LuaTextMenu + "Updated when save Excel", isValidateFunction: true)]
+		public static bool ToggleUpdateOnSaveLuaTextExcelValidate()
+		{
+			Menu.SetChecked(LuaTextMenu + "Updated when save Excel", Lua.Text.LuaTextAssetUpdater.Prefs.autoUpdate);
+			return true;
+		}
+
+		#endregion
 
         //===============================================================
         //  Resource.

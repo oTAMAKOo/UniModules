@@ -1,4 +1,5 @@
 
+using UnityEngine;
 using UnityEditor;
 using UnityEditor.Callbacks;
 using System;
@@ -41,13 +42,13 @@ namespace Modules.TextData.Editor
         [DidReloadScripts]
         private static void DidReloadScripts()
         {
-            if (EditorApplication.isPlayingOrWillChangePlaymode) { return; }
-
             EditorApplication.update += AutoUpdateTextDataAssetCallback;
         }
 
         private static async void AutoUpdateTextDataAssetCallback()
         {
+			if (Application.isPlaying) { return; }
+
             if (!Prefs.autoUpdate){ return; }
 
             if (EditorApplication.isCompiling) { return; }

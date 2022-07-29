@@ -124,17 +124,13 @@ namespace Extensions.Devkit
 
         #region Prefab
 
-        /// <summary>
-        /// Prefabか判定.
-        /// </summary>
+        /// <summary> Prefabか判定 </summary>
         public static bool IsPrefab(Object instance)
         {
             return PrefabUtility.GetCorrespondingObjectFromOriginalSource(instance) != null;
         }
 
-        /// <summary>
-        /// Prefabから生成されたインスタンスか判定.
-        /// </summary>
+        /// <summary> Prefabから生成されたインスタンスか判定 </summary>
         public static bool IsPrefabInstance(Object instance)
         {
             return PrefabUtility.GetCorrespondingObjectFromSource(instance) != null && PrefabUtility.GetPrefabInstanceHandle(instance) != null;
@@ -143,6 +139,14 @@ namespace Extensions.Devkit
         #endregion
 
         #region Asset
+
+		/// <summary> アセットが存在するか </summary>
+		public static bool IsExists(string assetPath)
+		{
+			var path = UnityPathUtility.ConvertAssetPathToFullPath(assetPath);
+
+			return File.Exists(path);
+		}
 
         public static Object SelectAsset(string assetPath)
         {
@@ -161,10 +165,7 @@ namespace Extensions.Devkit
             return instance;
         }
 
-        /// <summary>
-        /// 指定されたアセットを保存.
-        /// </summary>
-        /// <param name="asset"></param>
+        /// <summary> 指定されたアセットを保存 </summary>
         public static void SaveAsset(Object asset)
         {
             if (AssetDatabase.IsMainAsset(asset) || AssetDatabase.IsSubAsset(asset))
@@ -178,11 +179,7 @@ namespace Extensions.Devkit
             }
         }
 
-        /// <summary>
-        /// フォルダ判定.
-        /// </summary>
-        /// <param name="assetObject"></param>
-        /// <returns></returns>
+        /// <summary> フォルダ判定 </summary>
         public static bool IsFolder(UnityEngine.Object assetObject)
         {
             var path = AssetDatabase.GetAssetPath(assetObject);
@@ -205,9 +202,7 @@ namespace Extensions.Devkit
             return false;
         }
 
-        /// <summary>
-        /// フォルダを開く.
-        /// </summary>
+        /// <summary> フォルダを開く </summary>
         public static void OpenFolder(string path)
         {
             if (Application.platform == RuntimePlatform.OSXEditor)
@@ -220,11 +215,7 @@ namespace Extensions.Devkit
             }
         }
 
-        /// <summary>
-        /// 指定Assetのフルパスを取得.
-        /// </summary>
-        /// <param name="assetObject"></param>
-        /// <returns></returns>
+        /// <summary> 指定Assetのフルパスを取得 </summary>
         public static string GetAssetFullPath(UnityEngine.Object assetObject)
         {
             if (assetObject == null) { return null; }
@@ -241,9 +232,7 @@ namespace Extensions.Devkit
             return result;
         }
 
-        /// <summary>
-        /// フォルダ内の全AssetPathを取得.
-        /// </summary>
+        /// <summary> フォルダ内の全AssetPathを取得 </summary>
         public static string[] GetAllAssetPathInFolder(string folderPath)
         {
             var assetPaths = new List<string>();
@@ -294,9 +283,7 @@ namespace Extensions.Devkit
             return assetPaths.ToArray();
         }
 
-        /// <summary>
-        /// フォルダ内の全Assetを取得.
-        /// </summary>
+        /// <summary> フォルダ内の全Assetを取得 </summary>
         public static T[] LoadAssetsInFolder<T>(string folderPath) where T : UnityEngine.Object
         {
             var assetPathInFolder = GetAllAssetPathInFolder(folderPath);
@@ -327,11 +314,7 @@ namespace Extensions.Devkit
                 .Where(x => x != null);
         }
 
-        /// <summary>
-        /// GUIDからAssetを取得.
-        /// </summary>
-        /// <param name="guid"></param>
-        /// <returns></returns>
+        /// <summary> GUIDからAssetを取得 </summary>
         public static Object FindMainAsset(string guid)
         {
             if (string.IsNullOrEmpty(guid)) { return null; }
@@ -341,11 +324,7 @@ namespace Extensions.Devkit
             return AssetDatabase.LoadMainAssetAtPath(assetPath);
         }
 
-        /// <summary>
-        /// AssetからGUIDを取得.
-        /// </summary>
-        /// <param name="asset"></param>
-        /// <returns></returns>
+        /// <summary> AssetからGUIDを取得 </summary>
         public static string GetAssetGUID(Object asset)
         {
             if (asset == null) { return null; }

@@ -2,7 +2,6 @@
 using UnityEngine;
 using UnityEditor;
 using UnityEditor.Callbacks;
-using System.Linq;
 using Extensions;
 using Extensions.Devkit;
 using Modules.TextData.Components;
@@ -32,14 +31,14 @@ namespace Modules.TextData.Editor
         {
             SetupCryptoKey();
 
-            if (EditorApplication.isPlayingOrWillChangePlaymode) { return; }
-
-            var frameCount = 0;
+			var frameCount = 0;
 
             EditorApplication.CallbackFunction reloadTextData = null;
 
             reloadTextData = () =>
             {
+				if (Application.isPlaying) { return; }
+
                 if (frameCount < 30)
                 {
                     frameCount++;
