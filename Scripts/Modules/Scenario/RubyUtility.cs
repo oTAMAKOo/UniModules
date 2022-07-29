@@ -1,21 +1,27 @@
-
 using System.Text;
 using System.Text.RegularExpressions;
 using Extensions;
 
-namespace Modules.Scenario
+namespace TMPro
 {
-    public static class RubyUtility
-    {
+	public partial class RubyTextMeshProUGUI
+	{
 		/// <summary> ルビタグを含む行の先頭に空のルビタグを追加  </summary>
-		public static string InsertRubyTag(string text)
+		public string InsertRubyTag(string text)
 		{
-			const string EmptyRubyText = "<ruby= ></ruby>";
-			
+			if (string.IsNullOrEmpty(text)){ return text; }
+
+			var s1 = GetPreferredValues("\u00A0a").x;
+			var s2 = GetPreferredValues("a").x;
+
+			var spaceW = (s1  - s2) * rubyScale;
+            
+			var emptyRubyText = $"<space=-{spaceW}><ruby= ></ruby>";
+
 			var builder = new StringBuilder();
 
 			var lines = text.FixLineEnd().Split('\n');
-
+            
 			var rubyTagRegex = new Regex("<ruby=[^>]*?>", RegexOptions.Compiled);
 
 			foreach (var line in lines)
@@ -27,7 +33,7 @@ namespace Modules.Scenario
 
 				if (rubyTagRegex.IsMatch(line))
 				{
-					builder.Append(EmptyRubyText);
+					builder.Append(emptyRubyText);
 				}
 				
 				builder.Append(line);
@@ -35,5 +41,5 @@ namespace Modules.Scenario
 
 			return builder.ToString();
 		}
-    }
+	}
 }

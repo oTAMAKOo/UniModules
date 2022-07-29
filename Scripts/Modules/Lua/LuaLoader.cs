@@ -101,7 +101,10 @@ namespace Modules.Lua
 		{
 			var filePath = luaPath.Replace(".", "/");
 
-			filePath = Path.ChangeExtension(filePath, LuaFileExtension);
+			if (!filePath.EndsWith(LuaFileExtension))
+			{
+				filePath = Path.ChangeExtension(filePath, LuaFileExtension);
+			}
 
 			return filePath;
 		}
