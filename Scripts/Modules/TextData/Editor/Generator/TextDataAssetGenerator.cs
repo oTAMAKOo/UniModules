@@ -1,4 +1,4 @@
-﻿
+
 using UnityEditor;
 using System;
 using System.Collections.Generic;
@@ -18,7 +18,7 @@ namespace Modules.TextData.Editor
 
         //----- method -----
 
-        public static void Build(TextDataAsset asset, ContentType contentType, SheetData[] sheets, int textIndex, AesCryptoKey aesCryptoKey)
+        public static void Build(TextDataAsset asset, ContentType contentType, SheetData[] sheets, string hash, int textIndex, AesCryptoKey aesCryptoKey)
         {
             var categoryContents = new List<TextDataAsset.CategoryContent>();
 
@@ -52,8 +52,8 @@ namespace Modules.TextData.Editor
 
                 categoryContents.Add(sheetContent);
             }
-            
-            asset.SetContents(contentType, DateTime.Now.ToUnixTime(), categoryContents.ToArray());
+			
+            asset.SetContents(contentType, hash, categoryContents.ToArray());
 
             EditorUtility.SetDirty(asset);
         }

@@ -1,4 +1,4 @@
-﻿
+
 using UnityEngine;
 using System;
 using System.Collections.Generic;
@@ -65,7 +65,7 @@ namespace Modules.TextData.Components
         [SerializeField, ReadOnly]
         private ContentType contentType = ContentType.Embedded;
 	    [SerializeField, ReadOnly]
-	    private LongNullable updateAt = null;
+	    private string hash = null;
         [SerializeField, HideInInspector]
         private CategoryContent[] categories = new CategoryContent[0];
         
@@ -73,13 +73,13 @@ namespace Modules.TextData.Components
 
         public IReadOnlyList<CategoryContent> Contents { get { return categories; } }
 
-	    public long? UpdateAt { get { return updateAt; } }
+	    public string Hash { get { return hash; } }
 
-        public void SetContents(ContentType contentType, long updateAt, CategoryContent[] categories)
+        public void SetContents(ContentType contentType, string hash, CategoryContent[] categories)
         {
             this.contentType = contentType;
             this.categories = categories;
-            this.updateAt = updateAt;
+            this.hash = hash;
         }
     }
 }

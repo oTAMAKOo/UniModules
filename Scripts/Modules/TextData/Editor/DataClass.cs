@@ -1,4 +1,4 @@
-﻿
+
 namespace Modules.TextData.Editor
 {
     public sealed class SheetData

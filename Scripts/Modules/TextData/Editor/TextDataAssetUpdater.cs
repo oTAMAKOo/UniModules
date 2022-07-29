@@ -23,6 +23,12 @@ namespace Modules.TextData.Editor
                 get { return ProjectPrefs.GetBool(typeof(Prefs).FullName + "-autoUpdate", false); }
                 set { ProjectPrefs.SetBool(typeof(Prefs).FullName + "-autoUpdate", value); }
             }
+
+			public static DateTime lastUpdate
+			{
+				get { return ProjectPrefs.Get(typeof(Prefs).FullName + "-lastUpdate", DateTime.MinValue); }
+				set { ProjectPrefs.Set(typeof(Prefs).FullName + "-lastUpdate", value); }
+			}
         }
 
         private const int CheckInterval = 1;
@@ -95,11 +101,9 @@ namespace Modules.TextData.Editor
 
             if (!File.Exists(excelPath)){ return; }
 
-            var lastUpdate = File.GetLastWriteTime(excelPath).ToUnixTime();
-
-            if (!textDataAsset.UpdateAt.HasValue){ return; }
-            
-            if (lastUpdate < textDataAsset.UpdateAt){ return; }
+            var lastUpdate = File.GetLastWriteTime(excelPath);
+			
+            if (lastUpdate <= Prefs.lastUpdate){ return; }
 
 			var languageManager = LanguageManager.Instance;
 
@@ -108,6 +112,8 @@ namespace Modules.TextData.Editor
             await TextDataExcel.Export(textDataAsset.ContentType, false);
 
             TextDataGenerator.Generate(textDataAsset.ContentType, languageInfo);
+
+			Prefs.lastUpdate = lastUpdate;
 
             UnityConsole.Info("TextData auto updated.");
         }

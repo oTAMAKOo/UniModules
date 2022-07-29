@@ -4,6 +4,7 @@ using UnityEditor;
 using System.IO;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using Extensions;
 using Extensions.Devkit;
 using Modules.Devkit.Generators;
@@ -94,18 +95,35 @@ namespace Modules.TextData.Editor
 
             EditorUtility.DisplayProgressBar(progressTitle, "Load contents.", 0f);
 
-            var sheets = LoadSheetData(config.FileFormat, generateInfo.contentsFolderPath);
+            var sheetDatas = LoadSheetData(config.FileFormat, generateInfo.contentsFolderPath);
 
-            if (sheets == null) { return; }
+			EditorUtility.ClearProgressBar();
+
+            if (sheetDatas == null) { return; }
 
             var cryptoKey = new AesCryptoKey(config.CryptoKey, config.CryptoIv);
 
             var generateScript = !string.IsNullOrEmpty(generateInfo.scriptFolderPath);
 
+			var hash = CreateSheetsHash(sheetDatas);
+
+			var textDataAsset = LoadAsset(generateInfo.assetPath);
+
+			// 中身のデータに変化がないので更新しない.
+			if (textDataAsset != null && textDataAsset.Hash == hash) { return; }
+
             try
             {
-                using (new AssetEditingScope())
+				using (new AssetEditingScope())
                 {
+					var sheets = sheetDatas.Keys.OrderBy(x => x.index).ToArray();
+
+					// Asset.
+
+					EditorUtility.DisplayProgressBar(progressTitle, "Generate asset.", 0.5f);
+
+					TextDataAssetGenerator.Build(textDataAsset, contentType, sheets, hash, generateInfo.textIndex, cryptoKey);
+
                     // Script.
 
                     if (generateScript)
@@ -125,15 +143,7 @@ namespace Modules.TextData.Editor
                         ContentsScriptGenerator.Generate(sheets, generateInfo.scriptFolderPath, generateInfo.textIndex);
                     }
 
-                    // Asset.
-
-                    EditorUtility.DisplayProgressBar(progressTitle, "Generate asset.", 0.5f);
-
-                    var textDataAsset = LoadAsset(generateInfo.assetPath);
-
-                    TextDataAssetGenerator.Build(textDataAsset, contentType, sheets, generateInfo.textIndex, cryptoKey);
-
-                    EditorUtility.DisplayProgressBar(progressTitle, "Complete.", 1f);
+					EditorUtility.DisplayProgressBar(progressTitle, "Complete.", 1f);
                 }
 
                 AssetDatabase.SaveAssets();
@@ -150,10 +160,24 @@ namespace Modules.TextData.Editor
                 EditorUtility.ClearProgressBar();
             }
 
-            EditorUtility.ClearProgressBar();
+			EditorUtility.ClearProgressBar();
         }
 
-        private static SheetData[] LoadSheetData(FileLoader.Format fileFormat, string recordDirectory)
+		private static string CreateSheetsHash(Dictionary<SheetData, string> sheetDatas)
+		{
+			var builder = new StringBuilder();
+
+			var items = sheetDatas.OrderBy(x => x.Key.index).ToArray();
+
+			foreach (var item in items)
+			{
+				builder.AppendLine(item.Value);
+			}
+
+			return builder.ToString().GetHash();
+		}
+
+        private static Dictionary<SheetData, string> LoadSheetData(FileLoader.Format fileFormat, string recordDirectory)
         {
             var extension = FileLoader.GetFileExtension(fileFormat);
 
@@ -168,19 +192,21 @@ namespace Modules.TextData.Editor
                 .Select(x => PathUtility.ConvertPathSeparator(x))
                 .ToArray();
 
-            var list = new List<SheetData>();
+            var dictionary = new Dictionary<SheetData, string>();
 
             foreach (var sheetFile in sheetFiles)
             {
                 var sheetData = FileLoader.LoadFile<SheetData>(sheetFile, fileFormat);
 
+				var hash = FileUtility.GetHash(sheetFile);
+
                 if (sheetData != null)
                 {
-                    list.Add(sheetData);
+					dictionary.Add(sheetData, hash);
                 }
             }
 
-            return list.OrderBy(x => x.index).ToArray();
+            return dictionary;
         }
 
         private static TextDataAsset LoadAsset(string assetPath)
