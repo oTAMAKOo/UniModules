@@ -24,10 +24,16 @@ namespace Modules.TextData.Editor
                 set { ProjectPrefs.SetBool(typeof(Prefs).FullName + "-autoUpdate", value); }
             }
 
-			public static DateTime lastUpdate
+			public static DateTime embeddedLastUpdate
 			{
-				get { return ProjectPrefs.Get(typeof(Prefs).FullName + "-lastUpdate", DateTime.MinValue); }
-				set { ProjectPrefs.Set(typeof(Prefs).FullName + "-lastUpdate", value); }
+				get { return ProjectPrefs.Get(typeof(Prefs).FullName + "-embeddedLastUpdate", DateTime.MinValue); }
+				set { ProjectPrefs.Set(typeof(Prefs).FullName + "-embeddedLastUpdate", value); }
+			}
+
+			public static DateTime distributionLastUpdate
+			{
+				get { return ProjectPrefs.Get(typeof(Prefs).FullName + "-distributionLastUpdate", DateTime.MinValue); }
+				set { ProjectPrefs.Set(typeof(Prefs).FullName + "-distributionLastUpdate", value); }
 			}
         }
 
@@ -77,7 +83,7 @@ namespace Modules.TextData.Editor
 
             if (embeddedAsset != null)
             {
-                await UpdateTextData(embeddedAsset, config.Embedded);
+                await UpdateTextData(embeddedAsset, config.Embedded, Prefs.embeddedLastUpdate, x => Prefs.embeddedLastUpdate = x);
             }
 
             //------ Distribution ------
@@ -89,11 +95,11 @@ namespace Modules.TextData.Editor
 
             if (distributionAsset != null)
             {
-                await UpdateTextData(distributionAsset, config.Distribution);
+                await UpdateTextData(distributionAsset, config.Distribution, Prefs.distributionLastUpdate, x => Prefs.distributionLastUpdate = x);
             }
         }
 
-        private static async Task UpdateTextData(TextDataAsset textDataAsset, TextDataConfig.GenerateAssetSetting setting)
+        private static async Task UpdateTextData(TextDataAsset textDataAsset, TextDataConfig.GenerateAssetSetting setting, DateTime lastUpdate, Action<DateTime> onUpdate)
         {
             if (textDataAsset == null){ return; }
 
@@ -101,9 +107,9 @@ namespace Modules.TextData.Editor
 
             if (!File.Exists(excelPath)){ return; }
 
-            var lastUpdate = File.GetLastWriteTime(excelPath);
+            var lastWriteTime = File.GetLastWriteTime(excelPath);
 			
-            if (lastUpdate <= Prefs.lastUpdate){ return; }
+            if (lastWriteTime <= lastUpdate){ return; }
 
 			var languageManager = LanguageManager.Instance;
 
@@ -113,7 +119,7 @@ namespace Modules.TextData.Editor
 
             TextDataGenerator.Generate(textDataAsset.ContentType, languageInfo);
 
-			Prefs.lastUpdate = lastUpdate;
+			onUpdate.Invoke(lastWriteTime);
 
             UnityConsole.Info("TextData auto updated.");
         }
