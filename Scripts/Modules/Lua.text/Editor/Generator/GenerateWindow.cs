@@ -1,7 +1,9 @@
 
 using UnityEngine;
 using UnityEditor;
+using System.Linq;
 using Cysharp.Threading.Tasks;
+using Extensions;
 using Extensions.Devkit;
 using Modules.Devkit.Console;
 
@@ -28,7 +30,7 @@ namespace Modules.Lua.Text
 		{
 			titleContent = new GUIContent(WindowTitle);
 
-			minSize = new Vector2(200, 120f);
+			minSize = new Vector2(200, 100f);
 
 			Show(true);
 		}
@@ -58,13 +60,24 @@ namespace Modules.Lua.Text
 
 			var languageInfo = languageManager.Current;
 
-			EditorLayoutTools.Title("Asset");
-            
 			GUILayout.Space(4f);
-            
-			// 全生成.
-			using (new DisableScope(languageInfo == null))
+
+            using (new DisableScope(languageInfo == null))
 			{
+                if (GUILayout.Button("Import All"))
+                {
+                    ImportAll().Forget();
+                }
+
+                GUILayout.Space(4f);
+
+                if (GUILayout.Button("Export All"))
+                {
+                    ExportAll().Forget();
+                }
+
+                GUILayout.Space(4f);
+
 				if (GUILayout.Button("Generate All"))
 				{
 					GenerateAll().Forget();
@@ -73,6 +86,68 @@ namespace Modules.Lua.Text
 
 			GUILayout.Space(4f);
 		}
+
+        private async UniTask ImportAll()
+        {
+            var config = LuaTextConfig.Instance;
+
+            var transferInfos = config.TransferInfos.ToArray();
+
+            var count = transferInfos.Length;
+
+            for (var i = 0; i < count; i++)
+            {
+                var transferInfo = transferInfos[i];
+
+                var directory = UnityPathUtility.RelativePathToFullPath(transferInfo.sourceFolderRelativePath);
+
+                var excelPaths = LuaTextExcel.FindExcelFile(directory);
+
+                EditorUtility.DisplayProgressBar("Import All", directory, (float)i / count);
+
+                if (excelPaths.Any())
+                {
+                    await LuaTextExcel.Import(directory, excelPaths, false);
+                }
+            }
+
+            EditorUtility.ClearProgressBar();
+
+            UnityConsole.Info("LuaText import all finish.");
+
+            Repaint();
+        }
+
+        private async UniTask ExportAll()
+        {
+            var config = LuaTextConfig.Instance;
+
+            var transferInfos = config.TransferInfos.ToArray();
+
+            var count = transferInfos.Length;
+
+            for (var i = 0; i < count; i++)
+            {
+                var transferInfo = transferInfos[i];
+
+                var directory = UnityPathUtility.RelativePathToFullPath(transferInfo.sourceFolderRelativePath);
+
+                var excelPaths = LuaTextExcel.FindExcelFile(directory);
+
+                EditorUtility.DisplayProgressBar("Export All", directory, (float)i / count);
+
+                if (excelPaths.Any())
+                {
+                    await LuaTextExcel.Export(directory, excelPaths, false);
+                }
+            }
+
+            EditorUtility.ClearProgressBar();
+
+            UnityConsole.Info("LuaText export all finish.");
+
+            Repaint();
+        }
 
 		private async UniTask GenerateAll()
 		{
