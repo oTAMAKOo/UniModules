@@ -14,7 +14,7 @@ namespace Modules.Scenario.Command
 
 		//----- property -----
 
-		public override string LuaName { get { return "DeleteAll"; } }
+		public override string LuaName { get { return "Delete"; } }
 
 		public override string Callback { get { return nameof(LuaCallback); } }
 
