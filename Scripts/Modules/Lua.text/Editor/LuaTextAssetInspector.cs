@@ -61,8 +61,6 @@ namespace Modules.Lua.Text
 
 		private string[] displayNames = null;
 
-		private string updateAtText = null;
-
 		private Dictionary<string, string> sheetSummary = null;
 
 		private Dictionary<string, List<LuaTextAsset.TextData>> sheetTexts = null;
@@ -133,16 +131,6 @@ namespace Modules.Lua.Text
 					})
 				.ToArray();
 
-			// 更新日時テキスト.
-
-			if (instance.UpdateAt.HasValue)
-			{
-				var updateAtDateTime = instance.UpdateAt.Value.UnixTimeToDateTime();
-				var localTime = TimeZoneInfo.ConvertTimeFromUtc(updateAtDateTime, TimeZoneInfo.Local);
-				
-				updateAtText = localTime.ToString("yyyy/MM/dd HH:mm:ss");
-			}
-
 			// リスト構築.
 
 			textInfoScrollView = new TextInfoScrollView();
@@ -177,19 +165,14 @@ namespace Modules.Lua.Text
 
 			Initialize();
 
-			if (!string.IsNullOrEmpty(updateAtText))
+			EditorGUILayout.Space(2f);
+
+			EditorLayoutTools.Title("Hash");
+
+			using (new ContentsScope())
 			{
-				EditorGUILayout.Space(2f);
-
-				using (new EditorGUILayout.HorizontalScope())
-				{
-					EditorGUILayout.PrefixLabel("UpdateAt");
-
-					EditorGUILayout.SelectableLabel(updateAtText, EditorStyles.textArea, GUILayout.Height(18f));
-				}
+				EditorGUILayout.SelectableLabel(instance.Hash, EditorStyles.textArea, GUILayout.Height(18f));
 			}
-
-			EditorGUILayout.Space(4f);
 
 			EditorLayoutTools.Title("Excel");
 

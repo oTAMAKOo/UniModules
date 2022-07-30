@@ -1,4 +1,5 @@
 
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEditor;
 using System.Linq;
@@ -151,7 +152,9 @@ namespace Modules.Lua.Text
 
 		private async UniTask GenerateAll()
 		{
-			var bookDatas = await DataLoader.LoadBookAllData();
+			var bookDatas = await DataLoader.GetAllBookData();
+
+			var tasks = new List<UniTask>();
 
 			var count = bookDatas.Length;
 
@@ -159,9 +162,22 @@ namespace Modules.Lua.Text
 			{
 				var bookData = bookDatas[i];
 
-				EditorUtility.DisplayProgressBar("Generate All", bookData.DestPath, (float)i / count);
+				if (LuaTextAssetGenerator.IsRequireUpdate(bookData))
+				{
+					var task = UniTask.Create(async () =>
+					{
+						var sheetDatas = await DataLoader.LoadSheetData(bookData);
+						
+						LuaTextAssetGenerator.Generate(bookData, sheetDatas);
+					});
 
-				LuaTextAssetGenerator.Generate(bookData);
+					tasks.Add(task);
+				}
+			}
+
+			using (new AssetEditingScope())
+			{
+				await UniTask.WhenAll(tasks);
 			}
 
 			EditorUtility.ClearProgressBar();

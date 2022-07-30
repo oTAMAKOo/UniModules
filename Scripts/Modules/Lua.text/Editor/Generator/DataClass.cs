@@ -1,15 +1,17 @@
 
 namespace Modules.Lua.Text
 {
-    public sealed class BookData
-    {
-        public string bookName = null;
+	public sealed class BookData
+	{
+		public string bookName = null;
 
-        public string sourceDirectory = null;
+		public string sourceDirectory = null;
 
 		public string destDirectory = null;
 
-        public SheetData[] sheets = null;
+		public string[] sheets = null;
+		
+		public string hash = null;
 
 		public string SourcePath { get { return $"{sourceDirectory}/{bookName}"; } }
 

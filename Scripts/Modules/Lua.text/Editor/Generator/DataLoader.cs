@@ -4,6 +4,7 @@ using UnityEditor;
 using System.IO;
 using System.Linq;
 using System.Collections.Generic;
+using System.Text;
 using Cysharp.Threading.Tasks;
 using Extensions;
 
@@ -19,25 +20,23 @@ namespace Modules.Lua.Text
 
         //----- method -----
 
-		public static async UniTask<BookData[]> LoadBookAllData()
+		public static async UniTask<BookData[]> GetAllBookData()
 		{
-			return await LoadBookDataInternal();
+			return await GetBookDataInternal();
 		}
 
-		public static async UniTask<BookData[]> LoadBookData(string[] excelPaths)
+		public static async UniTask<BookData[]> GetBookData(string[] excelPaths)
 		{
 			if (excelPaths == null || excelPaths.IsEmpty()){ return new BookData[0]; }
 
 			var targets = excelPaths.Select(x => PathUtility.GetPathWithoutExtension(x) + ".").ToArray();
 
-			return await LoadBookDataInternal(x => targets.Any(y => x.StartsWith(y)));
+			return await GetBookDataInternal(x => targets.Any(y => x.StartsWith(y)));
 		}
 
-		private static async UniTask<BookData[]> LoadBookDataInternal(Func<string, bool> filter = null)
+		private static async UniTask<BookData[]> GetBookDataInternal(Func<string, bool> filter = null)
 		{
 			var config = LuaTextConfig.Instance;
-
-			var extension = FileLoader.GetFileExtension(config.Format);
 
 			var list = new List<BookData>();
 
@@ -48,15 +47,11 @@ namespace Modules.Lua.Text
 				var sourceFolderPath = UnityPathUtility.RelativePathToFullPath(transferInfo.sourceFolderRelativePath);
 				var destFolderAssetPath = AssetDatabase.GUIDToAssetPath(transferInfo.destFolderGuid);
 
-				if (string.IsNullOrEmpty(sourceFolderPath) || string.IsNullOrEmpty(destFolderAssetPath)){ continue; }
+				if (string.IsNullOrEmpty(sourceFolderPath) || string.IsNullOrEmpty(destFolderAssetPath))				{ continue; }
 
-				var sheetFilePaths = Directory.EnumerateFiles(sourceFolderPath, "*.*", SearchOption.AllDirectories)
-					.Where(x => Path.GetExtension(x) == extension)
-					.Select(x => PathUtility.ConvertPathSeparator(x))
-					.Where(x => filter == null || filter(x))
-					.ToArray();
+				var sheetFilePaths = GetSheetFilePaths(sourceFolderPath, filter);
 
-				var bookDatas = await LoadBookDataFromSheetFiles(sheetFilePaths);
+				var bookDatas = await GetBookDataFromSheetFiles(sheetFilePaths);
 
 				foreach (var bookData in bookDatas)
 				{
@@ -66,84 +61,134 @@ namespace Modules.Lua.Text
 				}
 
 				list.AddRange(bookDatas);
+
+				await UniTask.Delay(1);
 			}
 
 			return list.ToArray();
 		}
 
-		private static async UniTask<BookData[]> LoadBookDataFromSheetFiles(string[] sheetPaths)
+		private static string[] GetSheetFilePaths(string sourceFolderPath, Func<string, bool> filter = null)
 		{
 			var config = LuaTextConfig.Instance;
 
+			var extension = FileLoader.GetFileExtension(config.Format);
+
+			var sheetFilePaths = Directory.EnumerateFiles(sourceFolderPath, "*.*", SearchOption.AllDirectories)
+				.Where(x => Path.GetExtension(x) == extension)
+				.Select(x => PathUtility.ConvertPathSeparator(x))
+				.Where(x => filter == null || filter(x))
+				.ToArray();
+
+			return sheetFilePaths;
+		}
+
+		private static async UniTask<BookData[]> GetBookDataFromSheetFiles(string[] sheetPaths)
+		{
 			var bookDatas = new List<BookData>();
 
-			var sheetDataDictionary = new Dictionary<string, List<SheetData>>();
+			var sheetList = new Dictionary<string, List<string>>();
+
+			var count = 0;
+			
+            // 同じ階層にあるブック名定義が同一のシートを纏めて1つのブックにする.
+
+            foreach (var filePath in sheetPaths)
+            {
+				var sourceDirectory = Path.GetDirectoryName(filePath);
+
+				sourceDirectory = PathUtility.ConvertPathSeparator(sourceDirectory);
+                
+				var fileName = Path.GetFileNameWithoutExtension(filePath);
+
+				var bookName = fileName.Split('.').FirstOrDefault();
+				
+				var bookData = bookDatas.FirstOrDefault(x => x.sourceDirectory == sourceDirectory && x.bookName == bookName);
+
+				if (bookData == null)
+				{
+					bookData = new BookData()
+					{
+						bookName = bookName,
+						sourceDirectory = sourceDirectory,
+					};
+
+					sheetList.Add(bookData.SourcePath, new List<string>());
+
+					bookDatas.Add(bookData);
+				}
+
+                var list = sheetList.GetValueOrDefault(bookData.SourcePath);
+
+                if (!list.Contains(filePath))
+                {
+                    list.Add(filePath);
+                }
+
+				if(150 < count++)
+				{
+					count = 0;
+					await UniTask.Delay(1);
+				}
+			}
+
+			count = 0;
+
+			var hashBuilder = new StringBuilder();
+
+			foreach (var item in sheetList)
+			{
+				var bookData = bookDatas.FirstOrDefault(x => x.SourcePath == item.Key);
+
+				bookData.sheets = item.Value.ToArray();
+
+				hashBuilder.Clear();
+
+				foreach (var sheet in bookData.sheets)
+				{
+					var hash = FileUtility.GetHash(sheet);
+
+					hashBuilder.AppendLine(hash);
+				}
+
+				bookData.hash = hashBuilder.ToString().GetHash();
+
+				if (150 < count++)
+				{
+					count = 0;
+					await UniTask.Delay(1);
+				}
+			}
+
+			return bookDatas.ToArray();
+		}
+
+		public static async UniTask<SheetData[]> LoadSheetData(BookData bookData)
+		{
+			var config = LuaTextConfig.Instance;
+			
+			var list = new List<SheetData>();
 
             var tasks = new List<UniTask>();
 
-            // 同じ階層にあるブック名定義が同一のシートを纏めて1つのブックにする.
-
-            foreach (var item in sheetPaths)
-            {
-                var filePath = item;
-
+            foreach (var sheet in bookData.sheets)
+			{
                 var task = UniTask.RunOnThreadPool(() =>
                 {
-                    var fileName = Path.GetFileNameWithoutExtension(filePath);
-					
-                    var sourceDirectory = Path.GetDirectoryName(filePath);
+					var sheetData = FileLoader.LoadFile<SheetData>(sheet, config.Format);
 
-					sourceDirectory = PathUtility.ConvertPathSeparator(sourceDirectory);
-                    
-                    var parts = fileName.Split('.').ToArray();
-
-                    var bookName = parts.FirstOrDefault();
-
-                    BookData bookData = null;
-
-                    lock (bookDatas)
-                    {
-                        bookData = bookDatas.FirstOrDefault(x => x.sourceDirectory == sourceDirectory && x.bookName == bookName);
-
-                        if (bookData == null)
-                        {
-                            bookData = new BookData()
-                            {
-                                bookName = bookName,
-                                sourceDirectory = sourceDirectory,
-                            };
-
-                            sheetDataDictionary.Add(bookData.SourcePath, new List<SheetData>());
-
-                            bookDatas.Add(bookData);
-                        }
-                    }
-
-					var sheetName = 1 < parts.Length ? parts[1] : bookName;
-
-                    var list = sheetDataDictionary.GetValueOrDefault(bookData.SourcePath);
-
-                    if (list.All(x => x.sheetName != sheetName))
-                    {
-                        var sheetData = FileLoader.LoadFile<SheetData>(filePath, config.Format);
-
-                        list.Add(sheetData);
-                    }
+					lock (list)
+					{
+						list.Add(sheetData);
+					}
 				});
-                
-                tasks.Add(task);
-            }
+
+				tasks.Add(task);
+			}
 
             await UniTask.WhenAll(tasks);
 
-            foreach (var bookData in bookDatas)
-            {
-				var list = sheetDataDictionary.GetValueOrDefault(bookData.SourcePath);
-
-                bookData.sheets = list.ToArray();
-            }
-			
-            return bookDatas.ToArray();
+			return list.ToArray();
 		}
 	}
 }

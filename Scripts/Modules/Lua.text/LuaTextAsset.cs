@@ -47,7 +47,7 @@ namespace Modules.Lua.Text
 		[SerializeField]
 		private string rootFolderGuid = null;
 		[SerializeField]
-		private LongNullable updateAt = null;
+		private string hash = null;
 		[SerializeField]
 		private Content[] contents = new Content[0];
 
@@ -59,16 +59,16 @@ namespace Modules.Lua.Text
 
 		public IReadOnlyList<Content> Contents { get { return contents; } }
 
-		public long? UpdateAt { get { return updateAt; } }
+		public string Hash { get { return hash; } }
 
         //----- method -----
 		
-		public void SetContents(string fileName, string rootFolderGuid, Content[] contents, long updateAt)
+		public void SetContents(string fileName, string rootFolderGuid, Content[] contents, string hash)
 		{
 			this.fileName = fileName;
 			this.rootFolderGuid = rootFolderGuid;
 			this.contents = contents;
-			this.updateAt = updateAt;
+			this.hash = hash;
 		}
     }
 }

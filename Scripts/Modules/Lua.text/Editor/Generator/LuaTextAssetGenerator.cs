@@ -19,7 +19,20 @@ namespace Modules.Lua.Text
 
         //----- method -----
 
-		public static void Generate(BookData bookData)
+		public static bool IsRequireUpdate(BookData bookData)
+		{
+			var language = LuaTextLanguage.Instance.Current;
+
+			var assetPath = LuaText.GetAssetFileName(bookData.DestPath, language.Identifier);
+
+			var asset = AssetDatabase.LoadAssetAtPath<LuaTextAsset>(assetPath);
+
+			if (asset == null){ return true; }
+
+			return asset.Hash != bookData.hash;
+		}
+
+		public static void Generate(BookData bookData, SheetData[] sheetDatas)
 		{
 			var config = LuaTextConfig.Instance;
 
@@ -40,7 +53,7 @@ namespace Modules.Lua.Text
 
 			var list = new List<LuaTextAsset.Content>();
 
-			foreach (var sheet in bookData.sheets)
+			foreach (var sheet in sheetDatas)
 			{
 				var sheetName = sheet.sheetName.Encrypt(aesCryptoKey);
 				var summary = sheet.summary.Encrypt(aesCryptoKey);
@@ -72,9 +85,9 @@ namespace Modules.Lua.Text
 			var fileName = bookData.bookName;
 			var rootFolderGuid = AssetDatabase.AssetPathToGUID(bookData.destDirectory);
 			var contents = list.ToArray();
-			var updateAt = DateTime.Now.ToUnixTime();
+			var hash = bookData.hash;
 			
-			asset.SetContents(fileName, rootFolderGuid, contents, updateAt);
+			asset.SetContents(fileName, rootFolderGuid, contents, hash);
 			
 			UnityEditorUtility.SaveAsset(asset);
 		}
