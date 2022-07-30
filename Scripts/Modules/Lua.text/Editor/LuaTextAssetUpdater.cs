@@ -141,18 +141,14 @@ namespace Modules.Lua.Text
 
 					var bookData = bookDatas.FirstOrDefault(x => x.SourcePath == sourcePath);
 
-					if (bookData != null)
-					{
-						var requireUpdate = LuaTextAssetGenerator.IsRequireUpdate(bookData);
+					// Excelは存在するがシートデータがないケース.
+					if (bookData == null){ continue; }
 
-						if (requireUpdate)
-						{
-							updateTargets.Add(bookData);
-						}
-					}
-					else
+					var requireUpdate = LuaTextAssetGenerator.IsRequireUpdate(bookData);
+
+					if (requireUpdate)
 					{
-						Debug.LogErrorFormat("BookData not found.\n{0}", excelPath);
+						updateTargets.Add(bookData);
 					}
 				}
 			}

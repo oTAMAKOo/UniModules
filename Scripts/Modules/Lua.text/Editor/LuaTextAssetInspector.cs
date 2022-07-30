@@ -5,6 +5,8 @@ using System;
 using System.IO;
 using System.Linq;
 using System.Collections.Generic;
+using Cysharp.Threading.Tasks;
+using UniRx;
 using Extensions;
 using Extensions.Devkit;
 
@@ -72,6 +74,10 @@ namespace Modules.Lua.Text
 		private string workspace = null;
 		private string excelPath = null;
 
+		private BookData bookData = null;
+
+		private LifetimeDisposable lifetimeDisposable = null;
+
 		[NonSerialized]
 		private bool initialized = false;
 
@@ -82,6 +88,8 @@ namespace Modules.Lua.Text
 		private void Initialize()
 		{
 			if (initialized){ return; }
+
+			lifetimeDisposable = new LifetimeDisposable();
 			
 			sheetNames = new List<string>();
 			sheetSummary = new Dictionary<string, string>();
@@ -137,13 +145,15 @@ namespace Modules.Lua.Text
 
 			UpdateSheetContents();
 
-			// Excelパス.
+			// 各種情報構築.
 
 			var transferInfo = config.TransferInfos.FirstOrDefault(x => x.destFolderGuid == instance.RootFolderGuid);
 
 			if (transferInfo != null)
 			{
 				workspace = UnityPathUtility.RelativePathToFullPath(transferInfo.sourceFolderRelativePath);
+
+				// Excelパス.
 
 				var rootFolderAssetPath = AssetDatabase.GUIDToAssetPath(instance.RootFolderGuid);
 
@@ -154,11 +164,22 @@ namespace Modules.Lua.Text
 				var localDirectory = Path.GetDirectoryName(localPath);
 				
 				excelPath = PathUtility.Combine(workspace, localDirectory) + instance.FileName + LuaTextExcel.ExcelExtension;
+
+				// Excelデータ.
+				
+				Observable.Timer(TimeSpan.Zero, TimeSpan.FromSeconds(3))
+					.Subscribe(async x =>
+						{
+							await UpdateBookData();
+
+							Repaint();
+						})
+					.AddTo(lifetimeDisposable.Disposable);
 			}
 
 			initialized = true;
 		}
-		
+
 		public override void OnInspectorGUI()
 		{
 			var instance = target as LuaTextAsset;
@@ -183,7 +204,7 @@ namespace Modules.Lua.Text
 					var isExists = File.Exists(excelPath);
 					var isLock = isExists && FileUtility.IsFileLocked(excelPath);
 
-					using (new DisableScope(!isExists))
+					using (new DisableScope(!isExists || isLock))
 					{
 						if (GUILayout.Button("Open"))
 						{
@@ -195,7 +216,24 @@ namespace Modules.Lua.Text
 					{
 						if (GUILayout.Button("Import"))
 						{
-							LuaTextExcel.Import(workspace, new string[]{ excelPath }, true).Forget();
+							var importTask = UniTask.Create(async () =>
+							{
+								await UpdateBookData();
+
+								if (bookData != null)
+								{
+									await LuaTextExcel.Import(workspace, new string[]{ excelPath }, true);
+								}
+								else
+								{
+									using (new DisableStackTraceScope())
+									{
+										EditorUtility.DisplayDialog("Import Failed", $"Sheet data not found.\n\n{excelPath}", "close");
+									}
+								}
+							});
+
+							importTask.Forget();
 						}
 					}
 
@@ -278,6 +316,15 @@ namespace Modules.Lua.Text
 			textInfoScrollView.Contents = GetDisplayTextInfos();
 
 			Repaint();
+		}
+
+		private async UniTask UpdateBookData()
+		{
+			if (string.IsNullOrEmpty(excelPath)){ return; }
+
+			var bookDatas = await DataLoader.GetBookData(new []{ excelPath });
+
+			bookData = bookDatas.FirstOrDefault();
 		}
 
 		private TextInfo[] GetDisplayTextInfos()

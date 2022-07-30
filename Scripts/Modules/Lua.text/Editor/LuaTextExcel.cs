@@ -67,23 +67,13 @@ namespace Modules.Lua.Text
 
         public static async Task Import(string workspace, string[] targets, bool displayConsole)
         {
-			var result = await ExecuteProcess(Mode.Import, workspace, targets, displayConsole);
-
-            if (result.Item1 != 0)
-            {
-                Debug.LogError(result.Item2);
-            }
-        }
+			await ExecuteProcess(Mode.Import, workspace, targets, displayConsole);
+		}
 
         public static async Task Export(string workspace, string[] targets, bool displayConsole)
         {
-			var result = await ExecuteProcess(Mode.Export, workspace, targets, displayConsole);
-
-            if (result.Item1 != 0)
-            {
-                Debug.LogError(result.Item2);
-            }
-        }
+			await ExecuteProcess(Mode.Export, workspace, targets, displayConsole);
+		}
 
 		private static async Task<Tuple<int, string>> ExecuteProcess(Mode mode, string workspace, string[] targets, bool displayConsole)
         {
@@ -122,6 +112,19 @@ namespace Modules.Lua.Text
             };
 
             var result = await processExecute.StartAsync();
+
+			if (result.ExitCode != 0 || !string.IsNullOrEmpty(result.Error))
+			{
+				var logBuilder = new StringBuilder();
+
+				logBuilder.AppendLine($"{mode} failed.");
+				logBuilder.AppendLine($"ExitCode : {result.ExitCode}");
+				logBuilder.AppendLine($"Error : {result.Error}");
+				logBuilder.AppendLine();
+				logBuilder.AppendLine($"{converterPath} {arguments}");
+
+				Debug.LogError(logBuilder.ToString());
+			}
 
             return Tuple.Create(result.ExitCode, result.Error);
         }

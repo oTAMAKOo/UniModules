@@ -108,7 +108,7 @@ namespace Modules.Lua.Text
 
                 if (excelPaths.Any())
                 {
-                    await LuaTextExcel.Import(directory, excelPaths, false);
+                    await LuaTextExcel.Import(directory, excelPaths, true);
                 }
             }
 
@@ -139,7 +139,7 @@ namespace Modules.Lua.Text
 
                 if (excelPaths.Any())
                 {
-                    await LuaTextExcel.Export(directory, excelPaths, false);
+                    await LuaTextExcel.Export(directory, excelPaths, true);
                 }
             }
 
