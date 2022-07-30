@@ -98,7 +98,7 @@ namespace Modules.Devkit.ChatWork
         {
             if (!Application.isBatchMode) { return; }
 
-            await UniTask.NextFrame();
+            await UniTask.Delay(1);
 
             EditorApplication.Exit(exitCode);
         }
