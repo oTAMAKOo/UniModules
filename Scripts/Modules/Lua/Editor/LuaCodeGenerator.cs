@@ -23,13 +23,9 @@ namespace Modules.Lua
 			{
 				DelegateBridge.Gen_Flag = true;
 
-				#if !XLUA_GENERAL
-
 				Generator.ClearAll();
 
 				Generator.GenAll();
-
-				#endif
 
 				UnityConsole.Info("Generate lua bridge csharp code.");
 			}
