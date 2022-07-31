@@ -1,4 +1,4 @@
-﻿
+
 #if ENABLE_EMBEDDEDBROWSER
 
 #if UNITY_EDITOR || UNITY_STANDALONE_WIN || UNITY_STANDALONE_OSX
@@ -107,7 +107,7 @@ namespace Modules.WebView
 
             if (nodeDictionary != null)
             {
-                var node = nodeDictionary.GetValueOrDefault("url");
+				nodeDictionary.TryGetValue("url", out var node);
 
                 if (node != null)
                 {
