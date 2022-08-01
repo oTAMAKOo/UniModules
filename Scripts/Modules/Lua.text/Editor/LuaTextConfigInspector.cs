@@ -1,4 +1,4 @@
-
+﻿
 using UnityEngine;
 using UnityEditor;
 using System;
@@ -128,15 +128,19 @@ namespace Modules.Lua.Text
 
 				var winConverterPath = Reflection.GetPrivateField<LuaTextConfig, string>(instance, "winConverterPath");
 
-				DrawRelativePathGUI(instance, winConverterPath, "Win", "winConverterPath");
+				DrawRelativePathGUI(instance, winConverterPath, "Win", "winConverterPath", true);
 
 				var osxConverterPath = Reflection.GetPrivateField<LuaTextConfig, string>(instance, "osxConverterPath");
 				
-				DrawRelativePathGUI(instance, osxConverterPath, "OSX", "osxConverterPath");
+				DrawRelativePathGUI(instance, osxConverterPath, "OSX", "osxConverterPath", true);
+
+                var workspaceRelativePath = Reflection.GetPrivateField<LuaTextConfig, string>(instance, "workspaceRelativePath");
+				
+                DrawRelativePathGUI(instance, workspaceRelativePath, "Workspace", "workspaceRelativePath", false);
 
 				var settingIniRelativePath = Reflection.GetPrivateField<LuaTextConfig, string>(instance, "settingIniRelativePath");
 				
-				DrawRelativePathGUI(instance, settingIniRelativePath, "Settings", "settingIniRelativePath");
+				DrawRelativePathGUI(instance, settingIniRelativePath, "Settings", "settingIniRelativePath", true);
 
 				GUILayout.Space(4f);
 			}
@@ -157,7 +161,7 @@ namespace Modules.Lua.Text
 			}
 		}
 
-		private void DrawRelativePathGUI(LuaTextConfig config, string relativePath, string label, string fieldName)
+		private void DrawRelativePathGUI(LuaTextConfig config, string relativePath, string label, string fieldName, bool fileSelect)
 		{
 			using (new EditorGUILayout.HorizontalScope())
 			{
@@ -172,14 +176,23 @@ namespace Modules.Lua.Text
 
 				if (GUILayout.Button("select", EditorStyles.miniButton, GUILayout.Width(50f)))
 				{
-					var selectDirectory = EditorUtility.OpenFilePanel("Select", "", "");
+					var selectPath = string.Empty;
 
-					if (!string.IsNullOrEmpty(selectDirectory))
+                    if (fileSelect)
+                    {
+                        selectPath = EditorUtility.OpenFilePanel("Select", "", "");
+                    }
+                    else
+                    {
+                        selectPath = EditorUtility.OpenFolderPanel("Select", "", "");
+                    }
+
+					if (!string.IsNullOrEmpty(selectPath))
 					{
 						UnityEditorUtility.RegisterUndo(config);
 
 						var assetFolderUri = new Uri(Application.dataPath);
-						var targetUri = new Uri(selectDirectory);
+						var targetUri = new Uri(selectPath);
 
 						relativePath = assetFolderUri.MakeRelativeUri(targetUri).ToString();
 

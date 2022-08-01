@@ -1,4 +1,4 @@
-
+﻿
 using System;
 using System.IO;
 using System.Text;
@@ -65,26 +65,27 @@ namespace Modules.Lua.Text
             }
         }
 
-        public static async Task Import(string workspace, string[] targets, bool displayConsole)
+        public static async Task Import(string contents, string[] targets, bool displayConsole)
         {
-			await ExecuteProcess(Mode.Import, workspace, targets, displayConsole);
+			await ExecuteProcess(Mode.Import, contents, targets, displayConsole);
 		}
 
-        public static async Task Export(string workspace, string[] targets, bool displayConsole)
+        public static async Task Export(string contents, string[] targets, bool displayConsole)
         {
-			await ExecuteProcess(Mode.Export, workspace, targets, displayConsole);
+			await ExecuteProcess(Mode.Export, contents, targets, displayConsole);
 		}
 
-		private static async Task<Tuple<int, string>> ExecuteProcess(Mode mode, string workspace, string[] targets, bool displayConsole)
+		private static async Task<Tuple<int, string>> ExecuteProcess(Mode mode, string contents, string[] targets, bool displayConsole)
         {
 			var config = LuaTextConfig.Instance;
 
 			var converterPath = config.GetConverterPath();
+            var workspace = config.GetWorkspacePath();
 			var settingsIniPath = config.GetSettingsIniPath();
 
 			var arguments = new StringBuilder();
 
-            arguments.AppendFormat("--workspace {0} ", workspace);
+            arguments.AppendFormat("--contents {0} ", contents);
 			arguments.AppendFormat("--settings {0} ", settingsIniPath);
 
             switch (mode)

@@ -1,4 +1,4 @@
-
+﻿
 using UnityEngine;
 using System;
 using System.Collections.Generic;
@@ -40,6 +40,8 @@ namespace Modules.Lua.Text
 
 		#pragma warning restore 0414
 
+        [SerializeField]
+        private string workspaceRelativePath = null;
 		[SerializeField]
 		private string settingIniRelativePath = null;
 
@@ -84,6 +86,11 @@ namespace Modules.Lua.Text
 
 			return string.IsNullOrEmpty(relativePath) ? null : UnityPathUtility.RelativePathToFullPath(relativePath);
 		}
+
+        public string GetWorkspacePath()
+        {
+            return UnityPathUtility.RelativePathToFullPath(workspaceRelativePath);
+        }
 
 		public string GetSettingsIniPath()
 		{
