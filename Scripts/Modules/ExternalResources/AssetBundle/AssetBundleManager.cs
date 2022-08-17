@@ -11,7 +11,6 @@ using Cysharp.Threading.Tasks;
 using UniRx;
 using Extensions;
 using Modules.ExternalResource;
-using Modules.UniRxExtension;
 
 namespace Modules.AssetBundles
 {
