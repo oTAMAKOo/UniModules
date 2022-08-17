@@ -1,13 +1,18 @@
-﻿
+
 using System;
 using System.Threading;
 using Cysharp.Threading.Tasks;
 
 namespace UniRx
 {
-    public partial class Observable
+    public static class ObservableEx
     {
-        public static IObservable<TResult> StartAsync<TResult>(Func<CancellationToken, UniTask<TResult>> functionAsync)
+		public static IObservable<TResult> FromUniTask<TResult>(Func<CancellationToken, UniTask<TResult>> functionAsync)
+		{
+			return Observable.Defer(() => StartAsync(functionAsync));
+		}
+
+		private static IObservable<TResult> StartAsync<TResult>(Func<CancellationToken, UniTask<TResult>> functionAsync)
         {
             var cancellable = new CancellationDisposable();
 
@@ -19,19 +24,24 @@ namespace UniRx
             }
             catch (Exception exception)
             {
-                return Throw<TResult>(exception);
+                return Observable.Throw<TResult>(exception);
             }
 
             var result = task.ToObservable();
 
-            return Create<TResult>(observer =>
+            return Observable.Create<TResult>(observer =>
             {
                 var subscription = result.Subscribe(observer);
                 return new CompositeDisposable(cancellable, subscription);
             });
         }
 
-        public static IObservable<Unit> StartAsync(Func<CancellationToken, UniTask> actionAsync)
+		public static IObservable<Unit> FromUniTask(Func<CancellationToken, UniTask> actionAsync)
+		{
+			return Observable.Defer(() => StartAsync(actionAsync));
+		}
+
+        private static IObservable<Unit> StartAsync(Func<CancellationToken, UniTask> actionAsync)
         {
             var cancellable = new CancellationDisposable();
 
@@ -42,27 +52,17 @@ namespace UniRx
             }
             catch (Exception exception)
             {
-                return Throw<Unit>(exception);
+                return Observable.Throw<Unit>(exception);
             }
 
             var result = task.ToObservable().AsUnitObservable();
 
-            return Create<Unit>(observer =>
+            return Observable.Create<Unit>(observer =>
             {
                 var subscription = result.Subscribe(observer);
 
                 return new CompositeDisposable(cancellable, subscription);
             });
-        }
-
-        public static IObservable<TResult> FromUniTask<TResult>(Func<CancellationToken, UniTask<TResult>> functionAsync)
-        {
-            return Defer(() => StartAsync(functionAsync));
-        }
-
-        public static IObservable<Unit> FromUniTask(Func<CancellationToken, UniTask> actionAsync)
-        {
-            return Defer(() => StartAsync(actionAsync));
         }
     }
 }

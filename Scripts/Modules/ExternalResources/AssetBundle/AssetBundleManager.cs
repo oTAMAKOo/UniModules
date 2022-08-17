@@ -242,7 +242,7 @@ namespace Modules.AssetBundles
 
             if (localMode) { return Observable.ReturnUnit(); }
 
-            return Observable.FromUniTask(cancelToken => UpdateAssetBundleInternal(cancelToken, assetInfo, progress));
+            return ObservableEx.FromUniTask(cancelToken => UpdateAssetBundleInternal(cancelToken, assetInfo, progress));
         }
 
         private async UniTask UpdateAssetBundleInternal(CancellationToken cancelToken, AssetInfo assetInfo, IProgress<float> progress = null)
@@ -340,7 +340,7 @@ namespace Modules.AssetBundles
 
             var filePath = GetFilePath(assetInfo);
 			
-            return Observable.FromUniTask(_cancelToken => FileDownload(_cancelToken, downloadUrl, filePath, progress))
+            return ObservableEx.FromUniTask(_cancelToken => FileDownload(_cancelToken, downloadUrl, filePath, progress))
                     .Timeout(TimeoutLimit)
                     .OnErrorRetry((TimeoutException ex) => OnTimeout(assetInfo, ex), RetryCount, RetryDelaySeconds)
                     .DoOnError(x => OnError(x));
@@ -443,11 +443,11 @@ namespace Modules.AssetBundles
             // コンポーネントを取得する場合はGameObjectから取得.
             if (typeof(T).IsSubclassOf(typeof(Component)))
             {
-                return Observable.FromUniTask(cancelToken => LoadAssetInternal<GameObject>(cancelToken, assetInfo, assetPath, autoUnLoad))
+                return ObservableEx.FromUniTask(cancelToken => LoadAssetInternal<GameObject>(cancelToken, assetInfo, assetPath, autoUnLoad))
                     .Select(x => x != null ? x.GetComponent<T>() : null);                   
             }
 
-            return Observable.FromUniTask(cancelToken => LoadAssetInternal<T>(cancelToken, assetInfo, assetPath, autoUnLoad));
+            return ObservableEx.FromUniTask(cancelToken => LoadAssetInternal<T>(cancelToken, assetInfo, assetPath, autoUnLoad));
         }
 
         private async UniTask<T> LoadAssetInternal<T>(CancellationToken cancelToken, AssetInfo assetInfo, string assetPath, bool autoUnLoad) where T : UnityEngine.Object
@@ -506,7 +506,7 @@ namespace Modules.AssetBundles
 
                                 var info = assetInfosByAssetBundleName.GetValueOrDefault(x).FirstOrDefault();
 
-                                loadQueueing[x] = Observable.FromUniTask(_cancelToken => LoadAssetBundle(_cancelToken, info))
+                                loadQueueing[x] = ObservableEx.FromUniTask(_cancelToken => LoadAssetBundle(_cancelToken, info))
                                     .Timeout(TimeoutLimit)
                                     .OnErrorRetry((TimeoutException ex) => OnTimeout(info, ex), RetryCount, RetryDelaySeconds)
                                     .DoOnError(error => OnError(error))
@@ -630,12 +630,12 @@ namespace Modules.AssetBundles
 
                 if (cryptoStream != null)
                 {
-                    cryptoStream.Dispose();
+                    await cryptoStream.DisposeAsync();
                 }
 
                 if (fileStream != null)
                 {
-                    fileStream.Dispose();
+					await fileStream.DisposeAsync();
                 }
 
                 if (File.Exists(filePath))

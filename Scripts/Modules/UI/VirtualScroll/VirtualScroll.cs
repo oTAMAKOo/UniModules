@@ -720,7 +720,7 @@ namespace Modules.UI
 					updateItemDisposables.Remove(firstItem);
                 }
 				
-				updateItemDisposable = Observable.FromUniTask(cancelToken => UpdateItem(cancelToken, firstItem, lastItem.Index + 1))
+				updateItemDisposable = ObservableEx.FromUniTask(cancelToken => UpdateItem(cancelToken, firstItem, lastItem.Index + 1))
 					.Subscribe(_ => updateItemDisposables.Remove(firstItem))
 					.AddTo(this);
 
@@ -767,7 +767,7 @@ namespace Modules.UI
                     updateItemDisposables.Remove(lastItem);
                 }
 
-                updateItemDisposable = Observable.FromUniTask(cancelToken => UpdateItem(cancelToken, lastItem, firstItem.Index - 1))
+                updateItemDisposable = ObservableEx.FromUniTask(cancelToken => UpdateItem(cancelToken, lastItem, firstItem.Index - 1))
                     .Subscribe(_ => updateItemDisposables.Remove(lastItem))
                     .AddTo(this);
 

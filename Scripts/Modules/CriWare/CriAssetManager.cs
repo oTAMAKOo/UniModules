@@ -47,7 +47,7 @@ namespace Modules.CriWare
                     File.Delete(installPath);
                 }
 
-                Task = Observable.FromUniTask(cancelToken => Install(cancelToken, downloadUrl, installPath, progress))
+                Task = ObservableEx.FromUniTask(cancelToken => Install(cancelToken, downloadUrl, installPath, progress))
                     .Select(_ => this)
                     .Share();
             }

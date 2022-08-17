@@ -205,7 +205,7 @@ namespace Modules.Scene
             if (IsTransition) { return; }
 
             // ※ 呼び出し元でAddTo(this)されるとシーン遷移中にdisposableされてしまうのでIObservableで公開しない.
-            transitionDisposable = Observable.FromUniTask(cancelToken => TransitionCore(sceneArgument, LoadSceneMode.Additive, false, registerHistory, cancelToken))
+            transitionDisposable = ObservableEx.FromUniTask(cancelToken => TransitionCore(sceneArgument, LoadSceneMode.Additive, false, registerHistory, cancelToken))
                 .Subscribe(_ => transitionDisposable = null)
                 .AddTo(Disposable);
         }
@@ -216,7 +216,7 @@ namespace Modules.Scene
             TransitionCancel();
 
             // ※ 呼び出し元でAddTo(this)されるとシーン遷移中にdisposableされてしまうのでIObservableで公開しない.
-            transitionDisposable = Observable.FromUniTask(cancelToken => TransitionCore(sceneArgument, LoadSceneMode.Single, false, registerHistory, cancelToken))
+            transitionDisposable = ObservableEx.FromUniTask(cancelToken => TransitionCore(sceneArgument, LoadSceneMode.Single, false, registerHistory, cancelToken))
                 .Subscribe(_ => transitionDisposable = null)
                 .AddTo(Disposable);
         }
@@ -228,7 +228,7 @@ namespace Modules.Scene
             if (IsTransition) { return; }
 
             // ※ 呼び出し元でAddTo(this)されるとシーン遷移中にdisposableされてしまうのでIObservableで公開しない.
-            transitionDisposable = Observable.FromUniTask(cancelToken => TransitionCore(currentSceneArgument, LoadSceneMode.Additive, false, false, cancelToken))
+            transitionDisposable = ObservableEx.FromUniTask(cancelToken => TransitionCore(currentSceneArgument, LoadSceneMode.Additive, false, false, cancelToken))
                 .Subscribe(_ => transitionDisposable = null)
                 .AddTo(Disposable);
         }
@@ -269,7 +269,7 @@ namespace Modules.Scene
 
             if (argument != null)
             {
-                transitionDisposable = Observable.FromUniTask(cancelToken => TransitionCore(argument, LoadSceneMode.Additive, true, false, cancelToken))
+                transitionDisposable = ObservableEx.FromUniTask(cancelToken => TransitionCore(argument, LoadSceneMode.Additive, true, false, cancelToken))
                     .Subscribe(_ => transitionDisposable = null)
                     .AddTo(Disposable);
             }
@@ -669,7 +669,7 @@ namespace Modules.Scene
         /// </summary>
         public IObservable<SceneInstance> Append<TArgument>(TArgument sceneArgument, bool activeOnLoad = true) where TArgument : ISceneArgument
         {
-            return Observable.FromUniTask(cancelToken => AppendCore(sceneArgument.Identifier, activeOnLoad, cancelToken))
+            return ObservableEx.FromUniTask(cancelToken => AppendCore(sceneArgument.Identifier, activeOnLoad, cancelToken))
                 .Do(x =>
                 {
                     // シーンルート引数設定.
@@ -686,7 +686,7 @@ namespace Modules.Scene
         /// </summary>
         public IObservable<SceneInstance> Append(Scenes identifier, bool activeOnLoad = true)
         {
-            return Observable.FromUniTask(cancelToken => AppendCore(identifier, activeOnLoad, cancelToken));
+            return ObservableEx.FromUniTask(cancelToken => AppendCore(identifier, activeOnLoad, cancelToken));
         }
 
         private async UniTask<SceneInstance> AppendCore(Scenes? identifier, bool activeOnLoad, CancellationToken cancelToken)
@@ -776,7 +776,7 @@ namespace Modules.Scene
 
             if (observable == null)
             {
-                observable = Observable.Defer(() => Observable.FromUniTask(cancelToken => LoadSceneCore(identifier, mode, cancelToken))
+                observable = Observable.Defer(() => ObservableEx.FromUniTask(cancelToken => LoadSceneCore(identifier, mode, cancelToken))
                     .Do(_ => loadingScenes.Remove(identifier)))
                     .Share();
 
@@ -975,7 +975,7 @@ namespace Modules.Scene
 
             if (observable == null)
             {
-                observable = Observable.Defer(() => Observable.FromUniTask(cancelToken => UnloadSceneCore(sceneInstance, cancelToken))
+                observable = Observable.Defer(() => ObservableEx.FromUniTask(cancelToken => UnloadSceneCore(sceneInstance, cancelToken))
                     .Do(_ => unloadingScenes.Remove(identifier)))
                     .Share();
 
@@ -1126,7 +1126,7 @@ namespace Modules.Scene
                 // キャッシュ済みのシーンがある場合はプリロードしない.
                 if (cacheScenes.Any(x => x.Identifier == scene)) { continue; }
 
-                var observer = Observable.Defer(() => Observable.FromUniTask(cancelToken => PreLoadCore(scene, builder, cancelToken)));
+                var observer = Observable.Defer(() => ObservableEx.FromUniTask(cancelToken => PreLoadCore(scene, builder, cancelToken)));
 
                 observers.Add(observer);
             }
