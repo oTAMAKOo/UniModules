@@ -625,8 +625,6 @@ namespace Modules.Vivox
 				{
 					case "SpeechDetected":
 						{
-							Log($"OnSpeechDetectedEvent: {username} in {channel}.");
-
 							if (onDetectedParticipant != null)
 							{
 								var data = new ParticipantValueChangedData(username, channel, valueEventArg.Value.SpeechDetected);
