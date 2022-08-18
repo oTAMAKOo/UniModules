@@ -150,14 +150,6 @@ namespace Modules.Vivox
 		{
 			if (client == null){ return; }
 
-			Log("Release client.");
-
-			DisconnectAllChannels();
-			
-			Logout();
-			
-			RemoveLoginSessionEvent(loginSession);
-
 			Client.Cleanup();
 
 			client.Uninitialize();
