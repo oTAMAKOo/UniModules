@@ -285,8 +285,8 @@ namespace Modules.Vivox
 					}
 				};
 
-				var connectAudio = connectType != ConnectType.AudioOnly;
-				var connectText = connectType != ConnectType.TextOnly;
+				var connectAudio = connectType != ConnectType.TextOnly;
+				var connectText = connectType != ConnectType.AudioOnly;
 
 				channelSession.BeginConnect(connectAudio, connectText, switchTransmission, token, callback);
 
