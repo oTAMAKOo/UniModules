@@ -66,8 +66,6 @@ namespace Modules.Master.Editor
             {
                 s3Client = CreateS3Client();
 
-                AssetBundle.UnloadAllAssetBundles(true);
-
                 try
                 {
                     //------- アップロードファイル情報作成 -------
