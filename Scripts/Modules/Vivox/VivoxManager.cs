@@ -232,7 +232,7 @@ namespace Modules.Vivox
 			return new ChannelId(Issuer, channelName, Domain, channelType, properties, environmentId);
 		}
 
-		public async UniTask<bool> JoinChannel(ChannelId channelId, ConnectType connectType)
+		public async UniTask<bool> JoinChannel(ChannelId channelId, ConnectType connectType, bool switchTransmission = false)
 		{
 			if (loginSession.State != LoginState.LoggedIn)
 			{
@@ -253,8 +253,6 @@ namespace Modules.Vivox
 
 				RegisterChannelSessionEvent(channelSession);
 				
-				var switchTransmission = true;
-
 				AsyncCallback callback = x =>
 				{
 					try

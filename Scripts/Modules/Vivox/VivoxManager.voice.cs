@@ -47,7 +47,7 @@ namespace Modules.Vivox
 
 		//----- method -----
 
-		public void SetupPositional()
+		public void BeginPositionalUpdate()
 		{
 			if (updatePositionDisposable != null)
 			{
