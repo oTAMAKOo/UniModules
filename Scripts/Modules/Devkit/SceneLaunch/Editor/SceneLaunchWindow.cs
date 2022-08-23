@@ -97,7 +97,7 @@ namespace Modules.Devkit.SceneLaunch
                 {
                     SceneSelector.Prefs.selectedScenePath = sceneAsset != null ? AssetDatabase.GetAssetPath(sceneAsset) : null;
 
-                    SceneSelector.Open().Subscribe(OnSelectScene);
+                    SceneSelector.Open().Subscribe(OnSelectScene).AddTo(Disposable);
                 }
 
                 if (sceneNameStyle == null)
