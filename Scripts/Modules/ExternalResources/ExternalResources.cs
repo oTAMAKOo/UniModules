@@ -1,4 +1,4 @@
-﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿
+﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿
 using UnityEngine;
 using System;
 using System.IO;
@@ -380,7 +380,7 @@ namespace Modules.ExternalResource
 					{
 						var assetBundleManager = instance.assetBundleManager;
 
-						await assetBundleManager.UpdateAssetBundle(assetInfo, progress).ToUniTask(cancellationToken: cancelSource.Token);
+						await assetBundleManager.UpdateAssetBundle(assetInfo, progress).AttachExternalCancellation(cancelSource.Token);
 					}
 					catch (OperationCanceledException)
 					{
