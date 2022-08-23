@@ -1,13 +1,10 @@
-﻿
+
 using UnityEngine;
-using UnityEngine.SceneManagement;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using System;
-using System.Linq;
 using UniRx;
 using Extensions.Devkit;
-using Modules.Devkit.EditorSceneChange;
 using Modules.Devkit.Prefs;
 
 namespace Modules.Devkit.SceneLaunch
@@ -16,161 +13,22 @@ namespace Modules.Devkit.SceneLaunch
     {
         //----- params -----
 
-        private enum Status
+		private static class Prefs
         {
-            None = 0,
-
-            ResumeScene,
-            ResumeObject,
-        }
-        
-        private static class Prefs
-        {
-            public static Status status
-            {
-                get { return ProjectPrefs.GetEnum(typeof(Prefs).FullName + "-resume", Status.None); }
-                set { ProjectPrefs.SetEnum(typeof(Prefs).FullName + "-resume", value); }
-            }
-
-            public static string targetSceneGuid
+			public static string targetSceneGuid
             {
                 get { return ProjectPrefs.GetString(typeof(Prefs).FullName + "-targetSceneGuid"); }
                 set { ProjectPrefs.SetString(typeof(Prefs).FullName + "-targetSceneGuid", value); }
             }
 
-            public static bool standbyInitializer
-            {
-                get { return ProjectPrefs.GetBool(typeof(Prefs).FullName + "-standbyInitializer", false); }
-                set { ProjectPrefs.SetBool(typeof(Prefs).FullName + "-standbyInitializer", value); }
-            }
+			public static bool requestLaunch
+			{
+				get { return ProjectPrefs.GetBool(typeof(Prefs).FullName + "-requestLaunch"); }
+				set { ProjectPrefs.SetBool(typeof(Prefs).FullName + "-requestLaunch", value); }
+			}
+		}
 
-            public static string[] suspendObjectNames
-            {
-                get { return ProjectPrefs.Get(typeof(Prefs).FullName + "-suspendObjectNames", new string[0]); }
-                set { ProjectPrefs.Set(typeof(Prefs).FullName + "-suspendObjectNames", value); }
-            }
-        }
-        
-        /// <summary>
-        /// 全ヒエラルキーを非アクティブ化.
-        /// </summary>
-        private static void SuspendSceneInstance()
-        {
-            var rootObjects = UnityEditorUtility.FindRootObjectsInHierarchy(false);
-
-            // SceneInitializerの初期化を待つ(Awake, Startを走らせない)為.
-            // 一時的にHierarchy上のオブジェクトを非アクティブ化.
-            foreach (var rootObject in rootObjects)
-            {
-                rootObject.SetActive(false);
-            }
-
-            Prefs.suspendObjectNames = rootObjects.Select(y => y.gameObject.name).ToArray();
-        }
-
-        /// <summary>
-        /// 非アクティブ化したObjectを復帰.
-        /// </summary>
-        private static void ResumeSceneInstance()
-        {
-            var rootObjects = UnityEditorUtility.FindRootObjectsInHierarchy();
-            
-            ResumeSuspendObject(rootObjects);
-        }
-
-        private static void ResumeSuspendObject(GameObject[] rootObjects)
-        {
-            var suspendObjectNames = Prefs.suspendObjectNames;
-
-            var targetObjects = rootObjects.Where(x => suspendObjectNames.Contains(x.gameObject.name)).ToArray();
-
-            // 非アクティブ化したオブジェクトを復元.
-            foreach (var targetObject in targetObjects)
-            {
-                targetObject.SetActive(true);
-            }
-        }
-
-        [InitializeOnLoad]
-        private sealed class SceneResume
-        {
-            private const int CheckInterval = 30;
-
-            private static int frameCount = 0;
-
-            private static IDisposable disposable = null;
-
-            static SceneResume()
-            {
-                EditorApplication.update += UpdateCallback;
-                EditorApplication.playModeStateChanged += PlayModeStateChangedCallback;
-            }
-
-            private static void UpdateCallback()
-            {
-                if (Application.isPlaying) { return; }
-
-                if (EditorApplication.isCompiling) { return; }
-
-                if (Prefs.status == Status.None) { return; }
-
-                if (CheckInterval < frameCount++)
-                {
-                    ResumeScene();
-
-                    frameCount = 0;
-                }
-            }
-
-            private static void PlayModeStateChangedCallback(PlayModeStateChange state)
-            {
-                if (Prefs.status == Status.None) { return; }
-
-                if (state != PlayModeStateChange.EnteredEditMode){ return; }
-
-                ResumeScene();
-            }
-
-            private static void ResumeScene()
-            {
-                // 遷移中ではない.
-                if (EditorSceneChanger.State == SceneChangeState.None)
-                {
-                    var currentScene = GetCurrentScenePath();
-
-                    var resumeScene = EditorSceneChanger.Prefs.resumeScene;
-
-                    var resume = true;
-
-                    // 戻り先シーンがある.
-                    resume &= !string.IsNullOrEmpty(resumeScene);
-                    // 現在のシーンが戻り先のシーンではない.
-                    resume &= currentScene != resumeScene;
-
-                    if (resume)
-                    {
-                        if (disposable != null)
-                        {
-                            disposable.Dispose();
-                            disposable = null;
-                        }
-
-                        disposable = EditorSceneChanger.SceneResume()
-                            .Subscribe(_ => Prefs.status = Status.ResumeObject);
-                    }
-                    else
-                    {
-                        ResumeSceneInstance();
-
-                        Prefs.status = Status.None;
-                    }
-
-                    Prefs.suspendObjectNames = new string[0];
-                }                
-            }
-        }
-
-        //----- field -----
+		//----- field -----
 
         private SceneAsset sceneAsset = null;
 
@@ -281,7 +139,7 @@ namespace Modules.Devkit.SceneLaunch
                 {
                     if (GUILayout.Button("Launch"))
                     {
-                        Launch().Subscribe();
+                        Launch();
                     }
                 }
 
@@ -289,57 +147,16 @@ namespace Modules.Devkit.SceneLaunch
             }
         }
 
-        private IObservable<Unit> Launch()
+        private void Launch()
         {
-            var sceneGuid = Prefs.targetSceneGuid;
+			Prefs.requestLaunch = true;
 
-            var scenePath = string.IsNullOrEmpty(sceneGuid) ? null : AssetDatabase.GUIDToAssetPath(sceneGuid);
+			EditorSceneManager.playModeStartScene = sceneAsset;
 
-            return EditorSceneChanger.SceneChange(scenePath)
-                .Do(x =>
-                    {
-                        if (x)
-                        {
-                            Prefs.status = Status.ResumeScene;
-                            Prefs.standbyInitializer = true;
+			EditorApplication.isPlaying = true;
+		}
 
-                            SuspendSceneInstance();
-
-                            // 実行状態にする.
-                            // ※ 次のフレームでメモリ内容が消滅する.
-                            EditorApplication.isPlaying = true;
-                        }
-                    })
-                .AsUnitObservable();
-        }
-
-
-        [InitializeOnLoadMethod]
-        private static void InitializeOnLoadMethod()
-        {
-            if (!Prefs.standbyInitializer) { return; }
-
-            // ScriptableObjectの初期化を待つ為少し待機.
-            Observable.TimerFrame(5).Subscribe(_ => ResumeSceneInstance());
-
-            SceneManager.sceneLoaded -= OnSceneLoaded;
-            SceneManager.sceneLoaded += OnSceneLoaded;
-
-            Prefs.standbyInitializer = false;            
-        }
-
-        private static void OnSceneLoaded(UnityEngine.SceneManagement.Scene scene, LoadSceneMode mode)
-        {
-            var sceneGuid = Prefs.targetSceneGuid;
-
-            var scenePath = string.IsNullOrEmpty(sceneGuid) ? null : AssetDatabase.GUIDToAssetPath(sceneGuid);
-
-            if (scene.path != scenePath) { return; }
-            
-            ResumeSuspendObject(scene.GetRootGameObjects());
-        }
-
-        private void OnSelectScene(string targetScenePath)
+		private void OnSelectScene(string targetScenePath)
         {
             Prefs.targetSceneGuid = AssetDatabase.AssetPathToGUID(targetScenePath);
 
@@ -350,25 +167,14 @@ namespace Modules.Devkit.SceneLaunch
             Repaint();
         }
 
-        private static string GetCurrentScenePath()
-        {
-            var scene = EditorSceneManager.GetSceneAt(0);
+		[InitializeOnLoadMethod]
+		private static void InitializeOnLoadMethod()
+		{
+			if (!Prefs.requestLaunch) { return; }
 
-            return scene.path;
-        }
-
-        private string AsSpacedCamelCase(string text)
-        {
-            var sb = new System.Text.StringBuilder(text.Length * 2);
-            sb.Append(char.ToUpper(text[0]));
-
-            for (var i = 1; i < text.Length; i++)
-            {
-                if (char.IsUpper(text[i]) && text[i - 1] != ' ')
-                    sb.Append(' ');
-                sb.Append(text[i]);
-            }
-            return sb.ToString();
-        }
-    }
+			EditorSceneManager.playModeStartScene = null;    
+			
+			Prefs.requestLaunch = false;
+		}
+	}
 }

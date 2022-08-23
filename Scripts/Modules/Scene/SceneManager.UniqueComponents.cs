@@ -1,4 +1,4 @@
-﻿﻿
+﻿
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using Unity.Linq;
@@ -111,7 +111,10 @@ namespace Modules.Scene
 
             foreach (var rootObject in rootObjects)
             {
-                var components = rootObject.DescendantsAndSelf().SelectMany(x => x.GetComponents<Behaviour>());
+                var components = rootObject
+					.DescendantsAndSelf()
+					.SelectMany(x => x.GetComponents<Behaviour>())
+					.Where(x => x != null);
 
                 allComponents.AddRange(components);
             }
