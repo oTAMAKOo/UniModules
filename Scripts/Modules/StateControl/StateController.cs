@@ -1,8 +1,8 @@
-﻿
-using UnityEngine;
+
 using System;
-using System.Collections;
 using System.Collections.Generic;
+using System.Threading;
+using Cysharp.Threading.Tasks;
 using UniRx;
 using Extensions;
 
@@ -12,23 +12,35 @@ namespace Modules.StateControl
     {
         //----- params -----
 
-        private sealed class StateEmptyArgument : StateArgument { }
+		private sealed class StateEmptyArgument : StateArgument { }
 
-        //----- field -----
+		public sealed class ChangeStateInfo
+		{
+			public T from;
+			public T to;
+		}
 
-        private StateNode<T> currentState = null;
+		//----- field -----
 
-        private Dictionary<T, StateNode<T>> stateTable = null;
+        private IStateNode<T> currentNode = null;
 
-        private IDisposable changeStateDisposable = null;
+        private Dictionary<T, IStateNode<T>> nodeTable = null;
 
-        private Subject<T> onChangeStateStart = null;
+        private CancellationTokenSource cancellationTokenSource = null;
 
-        private Subject<T> onChangeStateFinish = null;
+        private Subject<ChangeStateInfo> onChangeStateStart = null;
+
+        private Subject<ChangeStateInfo> onChangeStateFinish = null;
 
         //----- property -----
 
-        public T Current { get { return currentState != null ? currentState.Type : default; } }
+		public T Current
+		{
+			get
+			{
+				return currentNode != null ? currentNode.State : default;
+			}
+		}
 
         public bool IsExecute { get; private set; }
 
@@ -36,36 +48,33 @@ namespace Modules.StateControl
 
         public StateController()
         {
-            stateTable = new Dictionary<T, StateNode<T>>();
+			nodeTable = new Dictionary<T, IStateNode<T>>();
         }
 
+		/// <summary> ノードを登録 </summary>
+		public void Register(T state, IStateNode<T> node)
+		{
+			nodeTable[state] = node;
+		}
+
         /// <summary> ノードを取得 </summary>
-        public StateNode<T> Get(T state)
+        public IStateNode<T> Get(T state)
         {
-            var stateInstance = stateTable.GetValueOrDefault(state);
-
-            if (stateInstance == null)
-            {
-                stateInstance = new StateNode<T>(state);
-
-                stateTable[state] = stateInstance;
-            }
-
-            return stateInstance;
+			return nodeTable.GetValueOrDefault(state);
         }
 
         /// <summary> 登録されたステートをクリア </summary>
         public void Clear()
         {
-            if (changeStateDisposable != null)
+            if (cancellationTokenSource != null)
             {
-                changeStateDisposable.Dispose();
-                changeStateDisposable = null;
+				cancellationTokenSource.Cancel();
+				cancellationTokenSource = null;
             }
 
-            stateTable.Clear();
+			nodeTable.Clear();
 
-            currentState = null;
+			currentNode = null;
         }
 
         /// <summary> ステート変更を要求 </summary>
@@ -81,10 +90,10 @@ namespace Modules.StateControl
             {
                 if (force)
                 {
-                    if (changeStateDisposable != null)
+                    if (cancellationTokenSource != null)
                     {
-                        changeStateDisposable.Dispose();
-                        changeStateDisposable = null;
+						cancellationTokenSource.Cancel();
+						cancellationTokenSource = null;
                     }
                 }
                 else
@@ -92,204 +101,91 @@ namespace Modules.StateControl
                     return;
                 }
             }
+			
+			cancellationTokenSource = new CancellationTokenSource();
 
-            IsExecute = true;
-
-            // ※ changeStateDisposableで実行中判定しようとすると中でyield breakしているだけの場合Subscribeが先に呼ばれてしまう為実行中フラグで管理する.
-
-            changeStateDisposable = Observable.FromCoroutine(() => ChangeState(next, argument))
-                .ObserveOnMainThread()
-                .Subscribe(_ =>
-                   {
-                       changeStateDisposable = null;
-                       IsExecute = false;
-                   })
-                .AddTo(Disposable);
+			ChangeState(next, argument, cancellationTokenSource.Token).Forget();
         }
         
-        private IEnumerator ChangeState<TArgument>(T next, TArgument argument) where TArgument : StateArgument
+        private async UniTask ChangeState<TArgument>(T next, TArgument argument, CancellationToken cancelToken) where TArgument : StateArgument
         {
-            var prev = Current;
+			IsExecute = true;
 
-            var prevState = currentState;
+            var prevNode = currentNode;
 
-            var nextState = stateTable.GetValueOrDefault(next);
+            var nextNode = Get(next);
 
-            if (nextState == null)
+            if (nextNode == null)
             {
                 throw new KeyNotFoundException(string.Format("This state is not registered. Type: {0}", next));
             }
 
+			var changeStateInfo = new ChangeStateInfo()
+			{
+				from = prevNode.State, 
+				to = nextNode.State
+			};
+
             if (onChangeStateStart != null)
             {
-                onChangeStateStart.OnNext(next);
+                onChangeStateStart.OnNext(changeStateInfo);
             }
 
             // 前のステートの終了待ち.
 
-            if (prevState != null)
+            if (prevNode != null)
             {
-                var exitYield = Exit(prevState, nextState.Type).ToYieldInstruction(true);
+				if (prevNode is StateNode<T>)
+				{
+					var node = prevNode as StateNode<T>;
 
-                while (!exitYield.IsDone)
-                {
-                    yield return null;
-                }
+					await node.Leave().AttachExternalCancellation(cancelToken);
+				}
+				else if (prevNode is StateNode<T, TArgument>)
+				{
+					var node = prevNode as StateNode<T, TArgument>;
 
-                if (exitYield.HasError)
-                {
-                    Debug.LogException(exitYield.Error);
-                }
-            }
+					await node.Leave().AttachExternalCancellation(cancelToken);
+				}
+			}
 
             // 現在のステートを更新.
 
-            currentState = nextState;
+            currentNode = nextNode;
 
             // ステートの開始.
 
-            var enterYield = Enter(currentState, argument).ToYieldInstruction(true);
+			if (currentNode is StateNode<T>)
+			{
+				var node = currentNode as StateNode<T>;
 
-            while (!enterYield.IsDone)
-            {
-                yield return null;
-            }
+				await node.Enter().AttachExternalCancellation(cancelToken);
+			}
+			else if (currentNode is StateNode<T, TArgument>)
+			{
+				var node = currentNode as StateNode<T, TArgument>;
 
-            if (enterYield.HasError)
-            {
-                Debug.LogException(enterYield.Error);
-            }
+				await node.Enter(argument).AttachExternalCancellation(cancelToken);
+			}
 
             if (onChangeStateFinish != null)
             {
-                onChangeStateFinish.OnNext(prev);
+                onChangeStateFinish.OnNext(changeStateInfo);
             }
+
+			IsExecute = false;
         }
 
-        /// <summary> 開始処理実行 </summary>
-        private IEnumerator Enter<TArgument>(StateNode<T> state, TArgument argument) where TArgument : StateArgument
+		/// <summary> 遷移開始時のイベント </summary>
+        public IObservable<ChangeStateInfo> OnChangeStateStartAsObservable()
         {
-            int? finishedPriority = null;
-
-            var count = 0;
-
-            var enterFunctions = state.GetEnterFunctions();
-
-            do
-            {
-                count = enterFunctions.Count;
-
-                foreach (var enterFunction in enterFunctions)
-                {
-                    // 既に実行済みのプライオリティ以下の関数は呼び出ししない.
-                    if (finishedPriority.HasValue && enterFunction.Key <= finishedPriority.Value) { continue; }
-
-                    var functions = enterFunction.Value;
-
-                    var observers = new List<IObservable<Unit>>();
-
-                    foreach (var function in functions)
-                    {
-                        var func = function;
-
-                        var observer = Observable.Defer(() => Observable.FromCoroutine(() => func(argument)));
-
-                        observers.Add(observer);
-                    }
-
-                    var enterYield = observers.WhenAll().ToYieldInstruction(true);
-
-                    while (!enterYield.IsDone)
-                    {
-                        yield return null;
-                    }
-
-                    if (enterYield.HasError)
-                    {
-                        Debug.LogException(enterYield.Error);
-                    }
-
-                    finishedPriority = enterFunction.Key;
-
-                    // 要素が増えていたら終了.
-                    if (count != enterFunctions.Count) { break; }
-                }
-
-                enterFunctions = state.GetEnterFunctions();
-            }
-            while (count != enterFunctions.Count);
+            return onChangeStateStart ?? (onChangeStateStart = new Subject<ChangeStateInfo>());
         }
 
-        /// <summary> 終了処理実行 </summary>
-        private IEnumerator Exit(StateNode<T> state, T nextState)
+        /// <summary> 遷移完了時のイベント </summary>
+        public IObservable<ChangeStateInfo> OnChangeStateFinishAsObservable()
         {
-            int? finishedPriority = null;
-
-            var count = 0;
-
-            var exitFunctions = state.GetExitFunctions();
-
-            do
-            {
-                count = exitFunctions.Count;
-
-                foreach (var exitFunction in exitFunctions)
-                {
-                    // 既に実行済みのプライオリティ以下の関数は呼び出ししない.
-                    if (finishedPriority.HasValue && exitFunction.Key <= finishedPriority.Value) { continue; }
-
-                    var functions = exitFunction.Value;
-
-                    var observers = new List<IObservable<Unit>>();
-
-                    foreach (var function in functions)
-                    {
-                        var func = function;
-
-                        var observer = Observable.Defer(() => Observable.FromCoroutine(() => func(nextState)));
-
-                        observers.Add(observer);
-                    }
-
-                    var exitYield = observers.WhenAll().ToYieldInstruction(true);
-
-                    while (!exitYield.IsDone)
-                    {
-                        yield return null;
-                    }
-
-                    if (exitYield.HasError)
-                    {
-                        Debug.LogException(exitYield.Error);
-                    }
-
-                    finishedPriority = exitFunction.Key;
-
-                    // 要素が増えていたら終了.
-                    if (count != exitFunctions.Count) { break; }
-                }
-
-                exitFunctions = state.GetExitFunctions();
-            }
-            while (count != exitFunctions.Count);
-        }
-
-        /// <summary>
-        /// 遷移開始時のイベント.
-        /// </summary>
-        /// <returns> 遷移先のState </returns>
-        public IObservable<T> OnChangeStateStartAsObservable()
-        {
-            return onChangeStateStart ?? (onChangeStateStart = new Subject<T>());
-        }
-
-        /// <summary>
-        /// 遷移完了時のイベント.
-        /// </summary>
-        /// <returns> 遷移元のState </returns>
-        public IObservable<T> OnChangeStateFinishAsObservable()
-        {
-            return onChangeStateFinish ?? (onChangeStateFinish = new Subject<T>());
+            return onChangeStateFinish ?? (onChangeStateFinish = new Subject<ChangeStateInfo>());
         }
     }
 }

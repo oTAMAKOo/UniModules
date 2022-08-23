@@ -1,99 +1,69 @@
-﻿
-using UnityEngine;
+
 using System;
-using System.Collections;
-using System.Collections.Generic;
-using Extensions;
+using Cysharp.Threading.Tasks;
 
 namespace Modules.StateControl
 {
-    public abstract class StateArgument { }
+	public abstract class StateArgument { }
 
-    public sealed class StateNode<T> where T : Enum
-    {
-        //----- params -----
+	public interface IStateNode<T> where T : Enum
+	{
+		T State { get;}
+	}
 
-        //----- field -----
-        
-        private SortedDictionary<int, List<Func<object, IEnumerator>>> enterFunctions = null;
+	public abstract class StateNode<T> : IStateNode<T> where T : Enum
+	{
+		//----- params -----
 
-        private SortedDictionary<int, List<Func<T, IEnumerator>>> exitFunctions = null;
-        
-        //----- property -----
+		//----- field -----
 
-        public T Type { get; private set; }
+		//----- property -----
 
-        //----- method -----
+		public T State { get; private set; }
 
-        public StateNode(T state)
-        {
-            Type = state;
+		//----- method -----
 
-            enterFunctions = new SortedDictionary<int, List<Func<object, IEnumerator>>>();
-            exitFunctions = new SortedDictionary<int, List<Func<T, IEnumerator>>>();
-        }
+		public StateNode(T state)
+		{
+			State = state;
+		}
 
-        /// <summary> 登録済みのイベントをクリア </summary>
-        public void ClearFunctions()
-        {
-            enterFunctions.Clear();
-            exitFunctions.Clear();
-        }
+		public virtual UniTask Enter()
+		{
+			return UniTask.CompletedTask;
+		}
 
-        /// <summary> 開始イベント追加 </summary>
-        public void AddEnterFunction(Func<IEnumerator> function, int priority = 0)
-        {
-            var list = enterFunctions.GetOrAdd(priority, i => new List<Func<object, IEnumerator>>());
+		public virtual UniTask Leave()
+		{
+			return UniTask.CompletedTask;
+		}
+	}
 
-            Func<object, IEnumerator> enterFunction = x =>
-            {
-                return function.Invoke();
-            };
+	public abstract class StateNode<T, TArgument> : IStateNode<T> where T : Enum where TArgument : StateArgument
+	{
+		//----- params -----
 
-            list.Add(enterFunction);
-        }
+		//----- field -----
 
-        /// <summary> 開始イベント追加 </summary>
-        public void AddEnterFunction<TArgument>(Func<TArgument, IEnumerator> function, int priority = 0) where TArgument : StateArgument
-        {
-            var list = enterFunctions.GetOrAdd(priority, i => new List<Func<object, IEnumerator>>());
+		//----- property -----
 
-            Func<object, IEnumerator> enterFunction = x =>
-            {
-                TArgument argument = null;
+		public T State { get; private set; }
 
-                if (x != null)
-                {
-                    argument = x as TArgument;
+		//----- method -----
 
-                    if (argument == null)
-                    {
-                        Debug.LogErrorFormat("Invalid Argument type.\nRequire : {0}\nTArgument : {1}", typeof(TArgument).Name, x.GetType().Name);
-                    }
-                }
+		public StateNode(T state)
+		{
+			State = state;
+		}
 
-                return function.Invoke(argument);
-            };
+		public virtual UniTask Enter(TArgument argument)
+		{
+			return UniTask.CompletedTask;
+		}
 
-            list.Add(enterFunction);
-        }
-
-        /// <summary> 終了イベント追加 </summary>
-        public void AddExitFunction(Func<T, IEnumerator> function, int priority = 0)
-        {
-            var list = exitFunctions.GetOrAdd(priority, i => new List<Func<T, IEnumerator>>());
-
-            list.Add(function);
-        }
-
-        public IReadOnlyDictionary<int, List<Func<object, IEnumerator>>> GetEnterFunctions()
-        {
-            return enterFunctions;
-        }
-
-        public IReadOnlyDictionary<int, List<Func<T, IEnumerator>>> GetExitFunctions()
-        {
-            return exitFunctions;
-        }
-    }
+		public virtual UniTask Leave()
+		{
+			return UniTask.CompletedTask;
+		}
+	}
 }
