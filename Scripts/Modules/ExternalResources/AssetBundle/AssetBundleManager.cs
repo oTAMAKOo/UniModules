@@ -209,12 +209,12 @@ namespace Modules.AssetBundles
 
         #region Download
 
-        private async UniTask ReadyForDownload(CancellationToken cancelToken)
+        private async UniTask ReadyForDownload()
         {
             // wait network disconnect.
             while (Application.internetReachability == NetworkReachability.NotReachable)
             {
-                await UniTask.NextFrame(cancelToken);
+                await UniTask.NextFrame();
             }
         }
 
@@ -229,22 +229,22 @@ namespace Modules.AssetBundles
 
             var manifestAssetInfo = AssetInfoManifest.GetManifestAssetInfo();
             
-            await UpdateAssetBundleInternal(cancelToken, manifestAssetInfo);
+            await UpdateAssetBundleInternal(manifestAssetInfo);
         }
 
         /// <summary>
         /// アセットバンドルを更新.
         /// </summary>
-        public IObservable<Unit> UpdateAssetBundle(AssetInfo assetInfo, IProgress<float> progress = null)
+        public async UniTask UpdateAssetBundle(AssetInfo assetInfo, IProgress<float> progress = null)
         {
-            if (simulateMode) { return Observable.ReturnUnit(); }
+            if (simulateMode) { return; }
 
-            if (localMode) { return Observable.ReturnUnit(); }
+            if (localMode) { return; }
 
-            return ObservableEx.FromUniTask(cancelToken => UpdateAssetBundleInternal(cancelToken, assetInfo, progress));
+            await UpdateAssetBundleInternal(assetInfo, progress);
         }
 
-        private async UniTask UpdateAssetBundleInternal(CancellationToken cancelToken, AssetInfo assetInfo, IProgress<float> progress = null)
+        private async UniTask UpdateAssetBundleInternal(AssetInfo assetInfo, IProgress<float> progress = null)
         {
 			var assetBundleName = assetInfo.AssetBundle.AssetBundleName;
 
@@ -252,7 +252,7 @@ namespace Modules.AssetBundles
             {
                 // ネットワークの接続待ち.
 
-				await ReadyForDownload(cancelToken);
+				await ReadyForDownload();
 
 				// アセットバンドルと依存アセットバンドルをまとめてダウンロード.
 
@@ -290,7 +290,7 @@ namespace Modules.AssetBundles
                     // ダウンロードキューが空くまで待つ.
                     while (maxDownloadCount <= downloadList.Count)
                     {
-                        await UniTask.NextFrame(cancelToken);
+                        await UniTask.NextFrame();
                     }
                     
                     // ダウンロード中でなかったらリストに追加.
@@ -302,11 +302,11 @@ namespace Modules.AssetBundles
                     // ダウンロード実行.
 					try
 					{
-						var downloadYield = downloadTask.Value.ToYieldInstruction(cancelToken);
+						var downloadYield = downloadTask.Value.ToYieldInstruction();
 
 						while (!downloadYield.IsDone)
 						{
-							await UniTask.NextFrame(cancelToken);
+							await UniTask.NextFrame();
 						}
 					}
 					catch (OperationCanceledException) 
