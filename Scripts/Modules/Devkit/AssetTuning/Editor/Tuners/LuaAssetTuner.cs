@@ -60,7 +60,7 @@ namespace Modules.Devkit.AssetTuning
 				// 保存.
 				if (!isUTF8Encoding || requireLineEndReplace)
 				{
-					File.WriteAllText(path, str, new UTF8Encoding(true));
+					File.WriteAllText(path, str, new UTF8Encoding(false));
 				}
 			}
 		}
