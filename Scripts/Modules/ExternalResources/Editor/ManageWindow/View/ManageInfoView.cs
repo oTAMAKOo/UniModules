@@ -39,6 +39,8 @@ namespace Modules.ExternalResource
 
         private bool isShareAsset = false;
 
+		private Rect labelPopupButtonRect = default;
+
         private Subject<Unit> onUpdateManageInfo = null;
         private Subject<Unit> onDeleteManageInfo = null;
 
@@ -112,8 +114,6 @@ namespace Modules.ExternalResource
                 {
                     using (new DisableScope(!IsEdit))
                     {
-                        var layoutWidth = 350f;
-
                         using (new EditorGUILayout.HorizontalScope())
                         {
                             GUILayout.Space(5f);
@@ -238,7 +238,7 @@ namespace Modules.ExternalResource
 
                             var index = selectRuleTable.IndexOf(x => x == ManageInfo.assetBundleNamingRule);
 
-                            index = EditorGUILayout.Popup("Type", index, labels, GUILayout.Width(layoutWidth));
+                            index = EditorGUILayout.Popup("Type", index, labels, GUILayout.Width(280f));
 
                             if (EditorGUI.EndChangeCheck())
                             {
@@ -253,22 +253,41 @@ namespace Modules.ExternalResource
                             switch (ManageInfo.assetBundleNamingRule)
                             {
                                 case AssetBundleNamingRule.Specified:
-                                    assetBundleNameStr = EditorGUILayout.DelayedTextField("Specified", assetBundleNameStr, GUILayout.Width(layoutWidth));
+                                    assetBundleNameStr = EditorGUILayout.DelayedTextField("Specified", assetBundleNameStr, GUILayout.Width(300f));
                                     ManageInfo.assetBundleNameStr = assetBundleNameStr != null ? assetBundleNameStr.ToLower() : string.Empty;
                                     break;
 
                                 case AssetBundleNamingRule.PrefixAndChildAssetName:
-                                    assetBundleNameStr = EditorGUILayout.DelayedTextField("Prefix", assetBundleNameStr, GUILayout.Width(layoutWidth));
+                                    assetBundleNameStr = EditorGUILayout.DelayedTextField("Prefix", assetBundleNameStr, GUILayout.Width(300f));
                                     ManageInfo.assetBundleNameStr = assetBundleNameStr != null ? assetBundleNameStr.ToLower() : string.Empty;
                                     break;
                             }
                         }
 
-                        ManageInfo.tag = EditorGUILayout.DelayedTextField("Tag", ManageInfo.tag, GUILayout.Width(layoutWidth));
+						GUILayout.Space(2f);
+
+						using (new EditorGUILayout.HorizontalScope())
+						{
+							EditorGUILayout.PrefixLabel("Labels");
+
+							GUILayout.Space(2f);
+							
+							if (GUILayout.Button(ManageInfo.GetLabelText(), EditorStyles.textArea, GUILayout.Width(218f)))
+							{
+								var labalPopupView = new LabalPopupView(ManageInfo);
+								
+								PopupWindow.Show(labelPopupButtonRect, labalPopupView);
+							}
+
+							if (Event.current.type == EventType.Repaint)
+							{
+								labelPopupButtonRect = GUILayoutUtility.GetLastRect();
+							}
+						}
 
                         GUILayout.Space(2f);
 
-                        ManageInfo.comment = EditorGUILayout.DelayedTextField("Memo", ManageInfo.comment, GUILayout.Width(layoutWidth), GUILayout.Height(38f));
+                        ManageInfo.comment = EditorGUILayout.DelayedTextField("Memo", ManageInfo.comment, GUILayout.Height(38f));
 
                         EditorLayoutTools.SetLabelWidth(originLabelWidth);
                     }

@@ -1,4 +1,4 @@
-﻿
+
 using UnityEngine;
 using UnityEditor;
 using System;
@@ -112,9 +112,9 @@ namespace Modules.ExternalResource
 
                     EditorGUILayout.TextField("Category", manageInfo.category);
 
-                    if (!string.IsNullOrEmpty(manageInfo.tag))
+                    if (manageInfo.labels.Any())
                     {
-                        EditorGUILayout.TextField("Tag", manageInfo.tag);
+                        EditorGUILayout.TextField("Label", manageInfo.GetLabelText());
                     }
 
                     if (!string.IsNullOrEmpty(manageInfo.comment))

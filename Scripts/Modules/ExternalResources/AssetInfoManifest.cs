@@ -1,4 +1,4 @@
-﻿
+
 using UnityEngine;
 using System;
 using System.Linq;
@@ -20,7 +20,7 @@ namespace Modules.ExternalResource
         [SerializeField]
         private string category = null;
         [SerializeField]
-        private string tag = null;
+        private string[] labels = null;
         [SerializeField]
         private string fileName = null;
         [SerializeField]
@@ -38,8 +38,8 @@ namespace Modules.ExternalResource
         public string ResourcePath { get { return resourcePath; } }
         /// <summary> カテゴリ </summary>
         public string Category { get { return category; } }
-        /// <summary> タグ </summary>
-        public string Tag { get { return tag; } }
+        /// <summary> ラベル </summary>
+        public string[] Labels { get { return labels; } }
         /// <summary> ファイル名 </summary>
         public string FileName { get { return fileName; } }
         /// <summary> ファイルサイズ(byte) </summary>
@@ -59,11 +59,11 @@ namespace Modules.ExternalResource
 
         //----- method -----
 
-        public AssetInfo(string resourcePath, string category, string tag)
+        public AssetInfo(string resourcePath, string category, string[] labels)
         {
             this.resourcePath = PathUtility.ConvertPathSeparator(resourcePath);
             this.category = category;
-            this.tag = tag;
+            this.labels = labels;
 
             SetFileName();
         }
@@ -109,7 +109,7 @@ namespace Modules.ExternalResource
                 }
             }          
         }
-    }
+	}
 
     [Serializable]
     public sealed class AssetBundleInfo

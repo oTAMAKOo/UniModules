@@ -26,8 +26,8 @@ namespace Modules.ExternalResource
         public string guid = null;
         /// <summary> カテゴリ </summary>
         public string category = null;
-        /// <summary> タグ </summary>
-        public string tag = null;
+        /// <summary> ラベル </summary>
+        public string[] labels = new string[0];
         /// <summary> コメント </summary>
         public string comment = null;
 
@@ -37,5 +37,10 @@ namespace Modules.ExternalResource
         public AssetBundleNamingRule assetBundleNamingRule = AssetBundleNamingRule.ChildAssetName;
         /// <summary> 命名文字列 </summary>
         public string assetBundleNameStr = null;
+
+		public string GetLabelText()
+		{
+			return string.Join(", ", labels);
+		}
     }
 }

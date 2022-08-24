@@ -114,7 +114,7 @@ namespace Modules.ExternalResource
 
             var resourcePath = GetAssetLoadPath(assetPath);
 
-            var assetInfo = new AssetInfo(resourcePath, managedInfo.category, managedInfo.tag);
+            var assetInfo = new AssetInfo(resourcePath, managedInfo.category, managedInfo.labels);
 
             var assetBundleName = GetAssetBundleName(assetPath, managedInfo);
 

@@ -1,4 +1,4 @@
-﻿
+
 using UnityEngine;
 using UnityEditor;
 using System;
@@ -56,10 +56,10 @@ namespace Modules.ExternalResource
             {
                 var isHit = false;
 
-                // タグが一致.
-                if (!string.IsNullOrEmpty(assetInfo.Tag))
+                // ラベルが一致.
+                if (assetInfo.Labels.Any())
                 {
-                    isHit |= assetInfo.Tag.IsMatch(keywords);
+                    isHit |= assetInfo.Labels.Any(x => x.IsMatch(keywords));
                 }
 
                 // アセットバンドル名が一致.
@@ -147,6 +147,8 @@ namespace Modules.ExternalResource
 
                     if (open)
                     {
+						var labels = string.Join(", ", assetInfo.Labels);
+
                         using (new ContentsScope())
                         {
                             EditorGUILayout.LabelField("ResourcesPath");
@@ -155,8 +157,8 @@ namespace Modules.ExternalResource
                             EditorGUILayout.LabelField("Category");
                             EditorGUILayout.SelectableLabel(assetInfo.Category, textAreaStyle, GUILayout.Height(18f));
 
-                            EditorGUILayout.LabelField("Tag");
-                            EditorGUILayout.SelectableLabel(assetInfo.Tag, textAreaStyle, GUILayout.Height(18f));
+                            EditorGUILayout.LabelField("Label");
+                            EditorGUILayout.SelectableLabel(labels, textAreaStyle, GUILayout.Height(18f));
 
                             EditorGUILayout.LabelField("FileName");
                             EditorGUILayout.SelectableLabel(assetInfo.FileName, textAreaStyle, GUILayout.Height(18f));
