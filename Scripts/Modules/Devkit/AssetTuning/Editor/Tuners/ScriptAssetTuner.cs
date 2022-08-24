@@ -1,4 +1,4 @@
-﻿
+﻿﻿
 using Extensions;
 using System.IO;
 using System.Text;
@@ -24,9 +24,11 @@ namespace Modules.Devkit.AssetTuning
             return extension == ".cs";
         }
 
-        public override void OnAssetCreate(string path)
-        {
-            if(!File.Exists(path)){ return; }
+		public override void OnAssetImport(string assetPath)
+		{
+			var path = UnityPathUtility.ConvertAssetPathToFullPath(assetPath);
+
+			if(!File.Exists(path)){ return; }
 
             byte[] bytes = null;
 
@@ -41,18 +43,25 @@ namespace Modules.Devkit.AssetTuning
 
             if(encode != null)
             {
-                // "utf-8"以外を処理.
-                if(encode.CodePage == 65001)
-                {
-                    // BOMを確認.
-                    if(bytes[0] == 0xEF && bytes[1] == 0xBB && bytes[2] == 0xBF) { return; }
-                }
+				var str = encode.GetString(bytes);
+
+				// UTF8 + BOM付きか確認.
+				var isUTF8Encoding = encode.CodePage == 65001 && bytes[0] == 0xEF && bytes[1] == 0xBB && bytes[2] == 0xBF;
 
                 // 改行コードの置き換え.
-                var contents = encode.GetString(bytes).Replace("\r\n", "\n");
+                var requireLineEndReplace = str.Contains("\r\n");
+
+				if (requireLineEndReplace)
+				{
+					// 改行コードの置き換え.
+					str = str.Replace("\r\n", "\n");
+				}
 
                 // 保存.
-                File.WriteAllText(path, contents, new UTF8Encoding(true));
+				if (!isUTF8Encoding || requireLineEndReplace)
+				{
+					File.WriteAllText(path, str, new UTF8Encoding(true));
+				}
             }
         }
     }
