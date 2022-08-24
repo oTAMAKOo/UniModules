@@ -1,4 +1,4 @@
-
+﻿
 using System.IO;
 using System.Text;
 using Extensions;
@@ -24,7 +24,7 @@ namespace Modules.Devkit.AssetTuning
 			return extension == ".lua";
 		}
 
-		public override void OnAssetImport(string assetPath)
+		public override void OnPreprocessAsset(string assetPath)
 		{
 			var path = UnityPathUtility.ConvertAssetPathToFullPath(assetPath);
 
@@ -43,18 +43,25 @@ namespace Modules.Devkit.AssetTuning
 
 			if(encode != null)
 			{
-				// "utf-8"以外を処理.
-				if(encode.CodePage == 65001)
-				{
-					// BOMなし確認.
-					if(bytes[0] != 0xEF || bytes[1] != 0xBB || bytes[2] != 0xBF) { return; }
-				}
+				var str = encode.GetString(bytes);
+
+				// UTF8 + BOMなしか確認.
+				var isUTF8Encoding = encode.CodePage == 65001 && bytes[0] != 0xEF || bytes[1] != 0xBB || bytes[2] != 0xBF;
 
 				// 改行コードの置き換え.
-				var contents = encode.GetString(bytes).Replace("\r\n", "\n");
+				var requireLineEndReplace = str.Contains("\r\n");
+
+				if (requireLineEndReplace)
+				{
+					// 改行コードの置き換え.
+					str = str.Replace("\r\n", "\n");
+				}
 
 				// 保存.
-				File.WriteAllText(path, contents, new UTF8Encoding());
+				if (!isUTF8Encoding || requireLineEndReplace)
+				{
+					File.WriteAllText(path, str, new UTF8Encoding(true));
+				}
 			}
 		}
     }

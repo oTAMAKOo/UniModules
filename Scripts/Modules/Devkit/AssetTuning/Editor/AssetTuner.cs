@@ -1,7 +1,4 @@
 ﻿
-using UnityEngine;
-using UnityEditor;
-using System;
 using Extensions;
 
 namespace Modules.Devkit.AssetTuning
@@ -12,15 +9,17 @@ namespace Modules.Devkit.AssetTuning
 
         public abstract bool Validate(string assetPath);
 
-        public virtual void OnBegin() { }
-
-        public virtual void OnFinish() { }
-
         public virtual void OnAssetCreate(string assetPath) { }
 
         public virtual void OnAssetDelete(string assetPath) { }
 
-        public virtual void OnAssetImport(string assetPath) { }
+		public virtual void OnPreprocessAsset(string assetPath) { }
+
+		public virtual void OnBeforePostprocessAsset() { }
+
+        public virtual void OnPostprocessAsset(string assetPath) { }
+
+		public virtual void OnAfterPostprocessAsset() { }
 
         public virtual void OnAssetMove(string assetPath, string from) { }
     }

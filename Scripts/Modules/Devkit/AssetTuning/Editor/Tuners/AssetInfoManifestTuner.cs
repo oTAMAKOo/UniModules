@@ -1,4 +1,4 @@
-
+﻿
 using UnityEditor;
 using System.Linq;
 using Extensions;
@@ -32,8 +32,8 @@ namespace Modules.Devkit.AssetTuning
             return assetManagement != null && assetInfoManifest != null;
         }
 
-        public override void OnBegin()
-        {
+		public override void OnBeforePostprocessAsset()
+		{
             assetManagement = null;
             assetInfoManifest = null;
 
@@ -60,8 +60,8 @@ namespace Modules.Devkit.AssetTuning
             }        
         }
 
-        public override void OnFinish()
-        {
+		public override void OnAfterPostprocessAsset()
+		{
             if (changeAssetInfo && assetInfoManifest != null)
             {
                 Reflection.SetPrivateField(assetInfoManifest, "assetInfos", assetInfos);

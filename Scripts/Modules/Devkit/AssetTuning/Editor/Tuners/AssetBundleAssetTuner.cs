@@ -1,4 +1,4 @@
-
+﻿
 using Modules.ExternalResource;
 using Modules.Devkit.Project;
 
@@ -10,8 +10,8 @@ namespace Modules.Devkit.AssetTuning
 
         public override int Priority { get { return 75; } }
 
-        public override void OnBegin()
-        {
+		public override void OnBeforePostprocessAsset()
+		{
             assetManagement = null;
 
             var projectFolders = ProjectFolders.Instance;
@@ -28,8 +28,8 @@ namespace Modules.Devkit.AssetTuning
             return assetManagement != null;
         }
 
-        public override void OnAssetImport(string assetPath)
-        {
+		public override void OnPostprocessAsset(string assetPath)
+		{
             var externalResourcesPath = GetExternalResourcesPath();
             var shareResourcesPath = GetShareResourcesPath();
 

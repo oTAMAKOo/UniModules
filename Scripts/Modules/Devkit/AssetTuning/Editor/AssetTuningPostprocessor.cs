@@ -1,4 +1,4 @@
-
+﻿
 using UnityEngine;
 using UnityEditor;
 using System;
@@ -21,9 +21,26 @@ namespace Modules.Devkit.AssetTuning
             return 50;
         }
 
-        /// <summary>
-        /// あらゆる種類の任意の数のアセットがインポートが完了したときに呼ばれる処理です。
-        /// </summary>
+		/// <summary> アセットインポート前のコールバック. </summary>
+		private void OnPreprocessAsset()
+		{
+			if (Application.isBatchMode){ return; }
+
+			var assetTuneManager = AssetTuneManager.Instance;
+
+			var assetTuners = assetTuneManager.AssetTuners;
+
+			foreach (var tuner in assetTuners)
+			{
+				var assetPath = assetImporter.assetPath;
+
+				if (!tuner.Validate(assetPath)) { continue; }
+
+				tuner.OnPreprocessAsset(assetPath);
+			}
+		}
+
+        /// <summary> アセットインポート完了後のコールバック. </summary>
         /// <param name="importedAssets"> インポートされたアセットのファイルパス。 </param>
         /// <param name="deletedAssets"> 削除されたアセットのファイルパス。 </param>
         /// <param name="movedAssets"> 移動されたアセットのファイルパス。 </param>
@@ -42,7 +59,7 @@ namespace Modules.Devkit.AssetTuning
                 {
                     foreach (var tuner in assetTuners)
                     {
-                        tuner.OnBegin();
+                        tuner.OnBeforePostprocessAsset();
                     }
 
                     foreach (var tuner in assetTuners)
@@ -56,7 +73,7 @@ namespace Modules.Devkit.AssetTuning
                                 tuner.OnAssetCreate(path);
                             }
 
-                            tuner.OnAssetImport(path);
+                            tuner.OnPostprocessAsset(path);
                         }
 
                         foreach (var path in deletedAssets)
@@ -81,7 +98,7 @@ namespace Modules.Devkit.AssetTuning
 
                     foreach (var tuner in assetTuners)
                     {
-                        tuner.OnFinish();
+                        tuner.OnAfterPostprocessAsset();
                     }
                 }
             }

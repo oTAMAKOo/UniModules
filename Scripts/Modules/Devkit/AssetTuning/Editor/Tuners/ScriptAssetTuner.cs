@@ -24,7 +24,7 @@ namespace Modules.Devkit.AssetTuning
             return extension == ".cs";
         }
 
-		public override void OnAssetImport(string assetPath)
+		public override void OnPreprocessAsset(string assetPath)
 		{
 			var path = UnityPathUtility.ConvertAssetPathToFullPath(assetPath);
 
