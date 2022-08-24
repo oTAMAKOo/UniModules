@@ -4,7 +4,7 @@
 using System;
 using System.Xml.Linq;
 
-namespace VisualStudioToolsUnity
+namespace Modules.Devkit.VisualStudio
 {
     /// <summary>
     /// プロジェクト ファイル (.csproj) 生成のフック処理にデータを提供.

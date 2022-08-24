@@ -4,7 +4,7 @@
 using System.IO;
 using System.Text;
 
-namespace VisualStudioToolsUnity
+namespace Modules.Devkit.VisualStudio
 {
     public class Utf8StringWriter : StringWriter
     {

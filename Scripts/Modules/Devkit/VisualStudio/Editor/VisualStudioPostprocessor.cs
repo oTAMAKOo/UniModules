@@ -1,10 +1,10 @@
-﻿
+
 #if ENABLE_VSTU && UNITY_2018_2_OR_NEWER
 
 using UnityEditor;
 using System;
 
-namespace VisualStudioToolsUnity
+namespace Modules.Devkit.VisualStudio
 {
     public sealed class VisualStudioPostprocessor : AssetPostprocessor
     {

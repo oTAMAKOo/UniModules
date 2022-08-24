@@ -3,7 +3,7 @@
 
 using System.Collections.Generic;
 
-namespace VisualStudioToolsUnity
+namespace Modules.Devkit.VisualStudio
 {
     public static class VisualStudioFileCallback
     {

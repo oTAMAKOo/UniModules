@@ -6,7 +6,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 
-namespace VisualStudioToolsUnity
+namespace Modules.Devkit.VisualStudio
 {
     /// <summary>
     /// VSTU によるプロジェクト ファイル (.csproj) 作成処理をフックする機能を提供.

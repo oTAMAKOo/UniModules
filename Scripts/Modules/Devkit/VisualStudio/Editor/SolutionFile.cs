@@ -3,7 +3,7 @@
 
 using System.Linq;
 
-namespace VisualStudioToolsUnity
+namespace Modules.Devkit.VisualStudio
 {
     /// <summary>
     /// VSTU によるソリューション ファイル (.sln) 作成処理をフックする機能を提供.

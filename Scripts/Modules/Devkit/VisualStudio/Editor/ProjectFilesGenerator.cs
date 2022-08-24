@@ -5,7 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace VisualStudioToolsUnity
+namespace Modules.Devkit.VisualStudio
 {
     /// <summary>
     /// Visual Studio Tools for Unity をラップし、.sln または .csproj ファイル作成処理をフックするための機能を提供.

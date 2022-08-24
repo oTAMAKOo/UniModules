@@ -1,7 +1,7 @@
 ﻿
 #if ENABLE_VSTU
 
-namespace VisualStudioToolsUnity
+namespace Modules.Devkit.VisualStudio
 {
     /// <summary>
     /// ファイル生成のフック処理にデータを提供.

@@ -1,6 +1,6 @@
 ﻿#if ENABLE_VSTU
 
-namespace VisualStudioToolsUnity
+namespace Modules.Devkit.VisualStudio
 {
     /// <summary>
     /// ソリューション ファイル (.sln) 生成のフック処理にデータを提供.
