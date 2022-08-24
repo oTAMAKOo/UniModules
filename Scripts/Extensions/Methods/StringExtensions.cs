@@ -1,4 +1,4 @@
-﻿
+
 using System;
 using System.Linq;
 using System.Text;
@@ -33,7 +33,9 @@ namespace Extensions
         /// <summary> 改行コードを統一 </summary>
         public static string FixLineEnd(this string value, string newLineStr = "\n")
         {
-            if (string.IsNullOrEmpty(value)) { return null; }
+			if (value == null) { return null; }
+
+            if (string.Empty == value) { return string.Empty; }
 
             var regex = new Regex(@"\r|\r\n");
 

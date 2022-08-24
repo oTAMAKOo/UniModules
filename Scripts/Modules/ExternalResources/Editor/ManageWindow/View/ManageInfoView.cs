@@ -22,6 +22,8 @@ namespace Modules.ExternalResource
             Detail,
         }
 
+		private static readonly Color ContentTitleColor = new Color(0.75f, 0.75f, 0.75f);
+
         //----- field -----
 
         private ViewMode viewMode = ViewMode.Contents;
@@ -238,7 +240,7 @@ namespace Modules.ExternalResource
 
                             var index = selectRuleTable.IndexOf(x => x == ManageInfo.assetBundleNamingRule);
 
-                            index = EditorGUILayout.Popup("Type", index, labels, GUILayout.Width(280f));
+                            index = EditorGUILayout.Popup("Rule", index, labels, GUILayout.Width(280f));
 
                             if (EditorGUI.EndChangeCheck())
                             {
@@ -272,7 +274,7 @@ namespace Modules.ExternalResource
 
 							GUILayout.Space(2f);
 							
-							if (GUILayout.Button(ManageInfo.GetLabelText(), EditorStyles.textArea, GUILayout.Width(218f)))
+							if (GUILayout.Button(ManageInfo.GetLabelText(), EditorStyles.textArea, GUILayout.MaxWidth(300f)))
 							{
 								var labalPopupView = new LabalPopupView(ManageInfo);
 								
@@ -287,18 +289,38 @@ namespace Modules.ExternalResource
 
                         GUILayout.Space(2f);
 
-                        ManageInfo.comment = EditorGUILayout.DelayedTextField("Memo", ManageInfo.comment, GUILayout.Height(38f));
+						using (new EditorGUILayout.HorizontalScope())
+						{
+							EditorGUILayout.PrefixLabel("Comment");
+
+							GUILayout.Space(2f);
+
+							var lineCount = ManageInfo.comment.Count(c => c.Equals('\n')) + 1;
+
+							lineCount = Math.Clamp(lineCount, 1, 3);
+
+							var memoLayoutHeight = GUILayout.Height(EditorGUIUtility.singleLineHeight * lineCount);
+
+							EditorGUI.BeginChangeCheck();
+
+	                        var comment = EditorGUILayout.TextArea(ManageInfo.comment, GUILayout.MaxWidth(300f), memoLayoutHeight);
+
+							if (EditorGUI.EndChangeCheck())
+							{
+								ManageInfo.comment = comment.FixLineEnd();
+							}
+						}
 
                         EditorLayoutTools.SetLabelWidth(originLabelWidth);
                     }
 
-                    EditorGUILayout.Separator();
+					GUILayout.Space(4f);
 
-                    switch (viewMode)
+					switch (viewMode)
                     {
                         case ViewMode.Contents:
                             {
-                                EditorLayoutTools.Title("Contents", new Color(0.7f, 0.9f, 0.7f));
+                                EditorLayoutTools.Title("Contents", ContentTitleColor);
 
                                 using (new ContentsScope())
                                 {
@@ -317,7 +339,7 @@ namespace Modules.ExternalResource
                             {
                                 using (new EditorGUILayout.HorizontalScope())
                                 {
-                                    EditorLayoutTools.Title(contentDetailName, new Color(0.3f, 0.3f, 1f));
+                                    EditorLayoutTools.Title(contentDetailName, ContentTitleColor);
 
                                     if (GUILayout.Button(winbtnWinCloseIconContent, GUILayout.Width(20f), GUILayout.Height(18f)))
                                     {
@@ -426,6 +448,9 @@ namespace Modules.ExternalResource
             public bool isAssetBundle = false;
         }
 
+		private static readonly Color AssetBundleLabelColor = new Color(0.2f, 0.9f, 1f);
+		private static readonly Color OtherAssetsLabelColor = new Color(0.9f, 1f, 0.2f);
+
         private static GUIContent tabNextIconContent = null;
 
         private Subject<string> onRequestDetailView = null;
@@ -444,7 +469,7 @@ namespace Modules.ExternalResource
             using (new EditorGUILayout.HorizontalScope())
             {
                 var type = content.isAssetBundle ? "AssetBundle" : "Other Assets";
-                var color = content.isAssetBundle ? new Color(0.3f, 0.3f, 1f) : new Color(0.3f, 1f, 0.3f);
+                var color = content.isAssetBundle ? AssetBundleLabelColor : OtherAssetsLabelColor;
 
                 var originLabelWidth = EditorLayoutTools.SetLabelWidth(75f);
 

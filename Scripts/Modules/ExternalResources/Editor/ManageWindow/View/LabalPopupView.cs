@@ -34,6 +34,8 @@ namespace Modules.ExternalResource
 		{
 			var windowSize = base.GetWindowSize();
 
+			windowSize.x = 185f;
+
 			if (reorderableList != null)
 			{
 				windowSize.y = reorderableList.GetHeight() + 4f;
@@ -55,7 +57,7 @@ namespace Modules.ExternalResource
 					r.position = Vector.SetY(r.position, r.position.y + 2f);
 					r.height = EditorGUIUtility.singleLineHeight;
 	                
-					labeList[index] = EditorGUI.DelayedTextField(r, labeList[index]);
+					labeList[index] = EditorGUI.TextField(r, labeList[index]);
 	            };
 			}
 

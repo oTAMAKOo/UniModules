@@ -243,7 +243,7 @@ namespace Modules.ExternalResource
                         searchText = string.Empty;
                     };
 
-                    EditorLayoutTools.DrawToolbarSearchTextField(searchText, onChangeSearchText, onSearchCancel);
+                    EditorLayoutTools.DrawToolbarSearchTextField(searchText, onChangeSearchText, onSearchCancel, GUILayout.MaxWidth(250f));
               
                 }
             }

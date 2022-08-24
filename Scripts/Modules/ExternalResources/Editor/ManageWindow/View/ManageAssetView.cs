@@ -52,28 +52,28 @@ namespace Modules.ExternalResource
 
         public void DrawGUI()
         {
-            using (new EditorGUILayout.HorizontalScope())
+			// 検索バー.
+
+            Action<string> onChangeSearchText = x =>
             {
-                GUILayout.FlexibleSpace();
+				searchText = x;
+                scrollPosition = Vector2.zero;
+                UpdateSearchedViews();
+            };
 
-                Action<string> onChangeSearchText = x =>
-                {
-                    scrollPosition = Vector2.zero;
-                    UpdateSearchedViews();
-                };
+            Action onSearchCancel = () =>
+            {
+                searchText = string.Empty;
+                scrollPosition = Vector2.zero;
 
-                Action onSearchCancel = () =>
-                {
-                    searchText = string.Empty;
-                    scrollPosition = Vector2.zero;
+                UpdateSearchedViews();
+            };
 
-                    UpdateSearchedViews();
-                };
+            EditorLayoutTools.DrawSearchTextField(searchText, onChangeSearchText, onSearchCancel);
 
-                EditorLayoutTools.DrawSearchTextField(searchText, onChangeSearchText, onSearchCancel, GUILayout.Width(250f));
-            }
+			// 管理中の情報View.
 
-            GUILayout.Space(4f);
+			GUILayout.Space(4f);
 
             if (currentManageInfoViews != null)
             {
