@@ -5,9 +5,9 @@ namespace Modules.ExternalResource
     {
         //----- params -----
 
-        public const string ShareCategoryName = "Share";
+        public const string ShareGroupName = "Share";
 
-        public const string ShareCategoryPrefix = ShareCategoryName + ":";
+        public const string ShareGroupPrefix = ShareGroupName + ":";
 
         //----- field -----
 
@@ -20,14 +20,14 @@ namespace Modules.ExternalResource
 
         private static bool HasSharePrefix(string resourcePath)
         {
-            return resourcePath.StartsWith(ShareCategoryPrefix);
+            return resourcePath.StartsWith(ShareGroupPrefix);
         }
 
         private static string ConvertToShareResourcePath(string resourcePath)
         {
             if (HasSharePrefix(resourcePath))
             {
-                resourcePath = resourcePath.Substring(ShareCategoryPrefix.Length);
+                resourcePath = resourcePath.Substring(ShareGroupPrefix.Length);
             }
 
             return resourcePath;

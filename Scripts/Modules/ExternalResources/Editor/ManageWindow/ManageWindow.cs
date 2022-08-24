@@ -66,10 +66,10 @@ namespace Modules.ExternalResource
                 .Subscribe(_ => Repaint())
                 .AddTo(Disposable);
 
-            headerView.OnChangeSelectCategoryAsObservable()
+            headerView.OnChangeSelectGroupAsObservable()
                 .Subscribe(_ =>
                     {
-                        manageAssetView.SetCategory(headerView.Category);
+                        manageAssetView.SetGroup(headerView.Group);
                     })
                 .AddTo(Disposable);
 
@@ -83,7 +83,7 @@ namespace Modules.ExternalResource
                 .Subscribe(_ => Repaint())
                 .AddTo(Disposable);
 
-            manageAssetView.SetCategory(headerView.Category);
+            manageAssetView.SetGroup(headerView.Group);
         }
 
         void OnDestroy()
@@ -100,16 +100,17 @@ namespace Modules.ExternalResource
         {
             headerView.DrawGUI();
             
-            if (headerView.CategoryNameEdit)
+            if (headerView.IsGroupNameEdit)
             {
                 EditorGUILayout.HelpBox("Can not operate while entering name.", MessageType.Warning);
+
                 return;
             }
             else
             {
-                if (string.IsNullOrEmpty(headerView.Category))
+                if (string.IsNullOrEmpty(headerView.Group))
                 {
-                    EditorGUILayout.HelpBox("Please select category.", MessageType.Info);
+                    EditorGUILayout.HelpBox("require select group.", MessageType.Info);
                 }
                 else
                 {
@@ -135,9 +136,9 @@ namespace Modules.ExternalResource
 
                     var validate = false;
 
-                    if (!string.IsNullOrEmpty(headerView.Category))
+                    if (!string.IsNullOrEmpty(headerView.Group))
                     {
-                        if (headerView.Category == ExternalResources.ShareCategoryName)
+                        if (headerView.Group == ExternalResources.ShareGroupName)
                         {
                             validate = assetManagement.IsShareResourcesTarget(DragAndDrop.objectReferences);
                         }
@@ -166,7 +167,7 @@ namespace Modules.ExternalResource
 
         public void OnDragAndDrop(Object[] assetObjects)
         {
-            if (string.IsNullOrEmpty(headerView.Category)) { return; }
+            if (string.IsNullOrEmpty(headerView.Group)) { return; }
 
             var assetObject = assetObjects.FirstOrDefault();
 
@@ -175,7 +176,7 @@ namespace Modules.ExternalResource
             if (!assetManagement.ValidateManageInfo(assetObject)) { return; }
             
             // 管理情報を追加.
-            assetManagement.AddManageInfo(headerView.Category, assetObject);
+            assetManagement.AddManageInfo(headerView.Group, assetObject);
 
             manageAssetView.BuildManageInfoViews();
 

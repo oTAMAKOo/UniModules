@@ -14,16 +14,16 @@ namespace Modules.ExternalResource
     {
         //----- params -----
 
-        private sealed class AssetCategoryInfo
+        private sealed class AssetGroupInfo
         {
-            public string Category { get; private set; }
+            public string Group { get; private set; }
             public AssetInfo[] AssetInfos { get; private set; }
             public AssetInfo[] SearchedInfos { get; private set; }
             public HashSet<int> OpenedIds { get; private set; }
 
-            public AssetCategoryInfo(string category, AssetInfo[] assetInfos)
+            public AssetGroupInfo(string group, AssetInfo[] assetInfos)
             {
-                Category = category;
+                Group = group;
                 AssetInfos = assetInfos;
 
                 OpenedIds = new HashSet<int>();
@@ -34,7 +34,7 @@ namespace Modules.ExternalResource
                 var isHit = false;
 
                 // カテゴリーが一致.
-                isHit |= Category.IsMatch(keywords);
+                isHit |= Group.IsMatch(keywords);
 
                 // アセット情報が一致.
                 SearchedInfos = AssetInfos.Where(x => IsAssetInfoSearchedHit(x, keywords)).ToArray();
@@ -78,7 +78,7 @@ namespace Modules.ExternalResource
             }
         }
 
-        private sealed class AsstInfoScrollView : EditorGUIFastScrollView<AssetCategoryInfo>
+        private sealed class AsstInfoScrollView : EditorGUIFastScrollView<AssetGroupInfo>
         {
             private HashSet<int> openedIds = null;
             private GUIStyle textAreaStyle = null;
@@ -93,7 +93,7 @@ namespace Modules.ExternalResource
                 get { return Direction.Vertical; }
             }
 
-            protected override void DrawContent(int index, AssetCategoryInfo content)
+            protected override void DrawContent(int index, AssetGroupInfo content)
             {
                 if (textAreaStyle == null)
                 {
@@ -107,7 +107,7 @@ namespace Modules.ExternalResource
 
                 using (new EditorGUILayout.VerticalScope())
                 {
-                    var open = EditorLayoutTools.Header(content.Category, opened);
+                    var open = EditorLayoutTools.Header(content.Group, opened);
 
                     if (open)
                     {
@@ -129,7 +129,7 @@ namespace Modules.ExternalResource
                 }
             }
 
-            private void DrawGroupContent(AssetCategoryInfo assetGroupInfo)
+            private void DrawGroupContent(AssetGroupInfo assetGroupInfo)
             {
                 var assetInfos = assetGroupInfo.SearchedInfos ?? assetGroupInfo.AssetInfos;
 
@@ -154,8 +154,8 @@ namespace Modules.ExternalResource
                             EditorGUILayout.LabelField("ResourcesPath");
                             EditorGUILayout.SelectableLabel(assetInfo.ResourcePath, textAreaStyle, GUILayout.Height(18f));
 
-                            EditorGUILayout.LabelField("Category");
-                            EditorGUILayout.SelectableLabel(assetInfo.Category, textAreaStyle, GUILayout.Height(18f));
+                            EditorGUILayout.LabelField("Group");
+                            EditorGUILayout.SelectableLabel(assetInfo.Group, textAreaStyle, GUILayout.Height(18f));
 
                             EditorGUILayout.LabelField("Label");
                             EditorGUILayout.SelectableLabel(labels, textAreaStyle, GUILayout.Height(18f));
@@ -211,8 +211,8 @@ namespace Modules.ExternalResource
 
         //----- field -----
         
-        private AssetCategoryInfo[] currentInfos = null;
-        private AssetCategoryInfo[] searchedInfos = null;
+        private AssetGroupInfo[] currentInfos = null;
+        private AssetGroupInfo[] searchedInfos = null;
         private AsstInfoScrollView asstInfoScrollView = null;
         private string totalAssetCountText = null;
         private string searchText = null;
@@ -235,9 +235,9 @@ namespace Modules.ExternalResource
             {
                 var assetInfos = Reflection.GetPrivateField<AssetInfoManifest, AssetInfo[]>(instance, "assetInfos");
 
-                currentInfos = assetInfos.GroupBy(x => x.Category)
-                    .Select(x => new AssetCategoryInfo(x.Key, x.ToArray()))
-                    .OrderBy(x => x.Category, new NaturalComparer())
+                currentInfos = assetInfos.GroupBy(x => x.Group)
+                    .Select(x => new AssetGroupInfo(x.Key, x.ToArray()))
+                    .OrderBy(x => x.Group, new NaturalComparer())
                     .ToArray();
 
                 asstInfoScrollView = new AsstInfoScrollView();

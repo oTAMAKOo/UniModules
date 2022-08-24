@@ -23,7 +23,7 @@ namespace Modules.ExternalResource
         private ManageInfoView[] manageInfoViews = null;
         private ManageInfoView[] currentManageInfoViews = null;
 
-        private string category = null;
+        private string group = null;
 
         private string searchText = string.Empty;
 
@@ -91,9 +91,9 @@ namespace Modules.ExternalResource
             }
         }
 
-        public void SetCategory(string category)
+        public void SetGroup(string group)
         {
-            this.category = category;
+            this.group = group;
 
             BuildManageInfoViews();
         }
@@ -113,7 +113,7 @@ namespace Modules.ExternalResource
 
                     foreach (var info in infos)
                     {
-                        var assetDir = info.Category == ExternalResources.ShareCategoryName ? shareResourcesPath : externalResourcesPath;
+                        var assetDir = info.Group == ExternalResources.ShareGroupName ? shareResourcesPath : externalResourcesPath;
                         var assetPath = PathUtility.Combine(assetDir, info.ResourcePath);
 
                         EditorUtility.DisplayProgressBar("Update asset info", info.ResourcePath, (float)i / targetAssetPaths.Length);
@@ -177,7 +177,7 @@ namespace Modules.ExternalResource
 
         public void BuildManageInfoViews()
         {
-            if (string.IsNullOrEmpty(category)) { return; }
+            if (string.IsNullOrEmpty(group)) { return; }
 
             // 更新前の状態を保持.
 
@@ -203,7 +203,7 @@ namespace Modules.ExternalResource
 
             // グループ内の管理情報取得.
 
-            var manageInfos = assetManagement.GetManageInfos(category);
+            var manageInfos = assetManagement.GetManageInfos(group);
 
             var views = new List<ManageInfoView>();
             

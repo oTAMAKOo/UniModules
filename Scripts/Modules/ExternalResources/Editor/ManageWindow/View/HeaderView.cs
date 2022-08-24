@@ -25,17 +25,22 @@ namespace Modules.ExternalResource
 
         private AssetManagement assetManagement = null;
 
-        private List<string> categoryNames = null;
+        private List<string> groupNames = null;
 
-        private string currentCategory = null;
+        private string currentGroup = null;
 
-        private string editCategoryName = string.Empty;
+        private string editGroupName = string.Empty;
 
         private NameEditMode nameEditMode = NameEditMode.None;
 
         private string searchText = string.Empty;
 
-        private Subject<Unit> onChangeSelectCategory = null;
+		private GUIContent iconP4_Updating = null;
+		private GUIContent iconToolbarPlus = null;
+		private GUIContent iconToolbarMinus = null;
+		private GUIContent iconBack = null;
+
+        private Subject<Unit> onChangeSelectGroup = null;
 
         private Subject<Unit> onRequestRepaint = null;
 
@@ -43,9 +48,9 @@ namespace Modules.ExternalResource
 
         //----- property -----
 
-        public string Category { get { return currentCategory; } }
+        public string Group { get { return currentGroup; } }
 
-        public bool CategoryNameEdit { get { return nameEditMode != NameEditMode.None; } }
+        public bool IsGroupNameEdit { get { return nameEditMode != NameEditMode.None; } }
 
         //----- method -----
 
@@ -55,65 +60,90 @@ namespace Modules.ExternalResource
 
             this.assetManagement = assetManagement;
 
-            categoryNames = assetManagement.GetAllCategoryNames().ToList();
+			groupNames = assetManagement.GetAllGroupNames().ToList();
+
+			iconP4_Updating = EditorGUIUtility.IconContent("P4_Updating");
+			iconToolbarPlus = EditorGUIUtility.IconContent("Toolbar Plus");
+			iconToolbarMinus = EditorGUIUtility.IconContent("Toolbar Minus");
+			iconBack = EditorGUIUtility.IconContent("back");
 
             initialized = true;
         }
 
         public void DrawGUI()
         {
-            var selection = categoryNames != null ? categoryNames.IndexOf(x => x == currentCategory) : -1;
+            var selection = groupNames != null ? groupNames.IndexOf(x => x == currentGroup) : -1;
 
             using (new EditorGUILayout.HorizontalScope(EditorStyles.toolbar))
             {
                 if (nameEditMode != NameEditMode.None)
                 {
-                    GUILayout.FlexibleSpace();
+					if (GUILayout.Button(iconBack, EditorStyles.toolbarButton, GUILayout.Width(28f)))
+					{
+						nameEditMode = NameEditMode.None;
 
-                    EditorGUI.BeginChangeCheck();
+						editGroupName = null;
+					}
 
-                    editCategoryName = EditorGUILayout.DelayedTextField(editCategoryName, GUILayout.Width(250f));
+					EditorGUI.BeginChangeCheck();
+
+					editGroupName = EditorGUILayout.DelayedTextField(editGroupName);
 
                     if (EditorGUI.EndChangeCheck())
                     {
-                        if (editCategoryName == ExternalResources.ShareCategoryName)
+						var newGroupName = editGroupName.Trim(' ', '/');
+
+						if (!string.IsNullOrEmpty(editGroupName))
+						{
+	                        if (newGroupName == ExternalResources.ShareGroupName)
+	                        {
+	                            EditorUtility.DisplayDialog("Error", "GroupName is reserved and cannot be used.", "Close");
+	                        }
+							else if(groupNames.Any(x => x == newGroupName))
+							{
+								EditorUtility.DisplayDialog("Warning", "GroupName already exists.", "Close");
+							}
+	                        else
+	                        {
+	                            switch (nameEditMode)
+	                            {
+	                                case NameEditMode.New:
+	                                    {
+											groupNames.Add(newGroupName);
+
+	                                        currentGroup = newGroupName;
+	                                    }
+	                                    break;
+
+	                                case NameEditMode.Rename:
+	                                    {
+											if (currentGroup != newGroupName)
+	                                        {
+												assetManagement.RenameGroup(currentGroup, newGroupName);
+
+												groupNames.AddRange(assetManagement.GetAllGroupNames());
+
+												groupNames = groupNames.Where(x => x != currentGroup).ToList();
+
+												groupNames.Add(newGroupName);
+
+												groupNames = groupNames.Distinct().ToList();
+
+												currentGroup = newGroupName;
+											}
+										}
+	                                    break;
+	                            }
+	                        }
+						}
+
+						nameEditMode = NameEditMode.None;
+
+                        editGroupName = null;
+
+                        if (onChangeSelectGroup != null)
                         {
-                            EditorUtility.DisplayDialog("Error", "This name is reserved and cannot be used..", "Close");
-                        }
-                        else if (!string.IsNullOrEmpty(editCategoryName))
-                        {
-                            switch (nameEditMode)
-                            {
-                                case NameEditMode.New:
-                                    {
-                                        categoryNames.Add(editCategoryName);
-
-                                        currentCategory = editCategoryName;
-                                    }
-                                    break;
-
-                                case NameEditMode.Rename:
-                                    {
-                                        if (currentCategory != editCategoryName)
-                                        {
-                                            assetManagement.RenameCategory(currentCategory, editCategoryName);
-
-                                            currentCategory = editCategoryName;
-
-                                            categoryNames = assetManagement.GetAllCategoryNames().ToList();
-                                        }
-                                    }
-                                    break;
-                            }
-                        }
-
-                        nameEditMode = NameEditMode.None;
-
-                        editCategoryName = null;
-
-                        if (onChangeSelectCategory != null)
-                        {
-                            onChangeSelectCategory.OnNext(Unit.Default);
+							onChangeSelectGroup.OnNext(Unit.Default);
                         }
 
                         if (onRequestRepaint != null)
@@ -121,36 +151,29 @@ namespace Modules.ExternalResource
                             onRequestRepaint.OnNext(Unit.Default);
                         }
                     }
-
-                    if (GUILayout.Button("Cancel", EditorStyles.toolbarButton))
-                    {
-                        nameEditMode = NameEditMode.None;
-
-                        editCategoryName = null;
-                    }
-                }
+				}
                 else
                 {
-                    if (currentCategory != ExternalResources.ShareCategoryName)
+                    if (currentGroup != ExternalResources.ShareGroupName)
                     {
-                        if (GUILayout.Button("Add", EditorStyles.toolbarButton))
+                        if (GUILayout.Button(iconToolbarPlus, EditorStyles.toolbarButton, GUILayout.Width(28f)))
                         {
                             nameEditMode = NameEditMode.New;
                         }
 
-                        if (!string.IsNullOrEmpty(currentCategory))
+                        if (!string.IsNullOrEmpty(currentGroup))
                         {
-                            if (GUILayout.Button("Delete", EditorStyles.toolbarButton))
+                            if (GUILayout.Button(iconToolbarMinus, EditorStyles.toolbarButton, GUILayout.Width(28f)))
                             {
-                                if (EditorUtility.DisplayDialog("Confirm", "Remove selection category.", "Apply", "Cancel"))
+                                if (EditorUtility.DisplayDialog("Confirm", "Remove selection group.", "Apply", "Cancel"))
                                 {
-                                    assetManagement.DeleteCategory(currentCategory);
+                                    assetManagement.DeleteGroup(currentGroup);
 
-                                    categoryNames = assetManagement.GetAllCategoryNames().ToList();
+                                    groupNames = assetManagement.GetAllGroupNames().ToList();
 
-                                    if (onChangeSelectCategory != null)
+                                    if (onChangeSelectGroup != null)
                                     {
-                                        onChangeSelectCategory.OnNext(Unit.Default);
+										onChangeSelectGroup.OnNext(Unit.Default);
                                     }
 
                                     if (onRequestRepaint != null)
@@ -162,11 +185,11 @@ namespace Modules.ExternalResource
                                 }
                             }
 
-                            if (GUILayout.Button("Rename", EditorStyles.toolbarButton))
+                            if (GUILayout.Button(iconP4_Updating, EditorStyles.toolbarButton, GUILayout.Width(28f)))
                             {
                                 nameEditMode = NameEditMode.Rename;
 
-                                editCategoryName = currentCategory;
+                                editGroupName = currentGroup;
 
                                 if (onRequestRepaint != null)
                                 {
@@ -178,9 +201,37 @@ namespace Modules.ExternalResource
                         }
                     }
 
-                    GUILayout.FlexibleSpace();
+					// グループ選択.
 
-                    // 検索.
+                    EditorGUI.BeginChangeCheck();
+
+                    var groupName = groupNames.ElementAtOrDefault(selection);
+
+                    var displayGroupNames = GetDisplayGroupNames();
+
+					displayGroupNames = displayGroupNames.OrderBy(x => x, new NaturalComparer()).ToList();
+
+                    var index = displayGroupNames.IndexOf(x => x == groupName);
+
+                    var displayLabels = displayGroupNames.Select(x => ConvertSlashToUnicodeSlash(x)).ToArray();
+
+                    index = EditorGUILayout.Popup(string.Empty, index, displayLabels, EditorStyles.toolbarDropDown);
+
+                    if (EditorGUI.EndChangeCheck())
+                    {
+                        selection = groupNames.IndexOf(x => x == displayGroupNames[index]);
+
+                        currentGroup = groupNames[selection];
+
+                        if (onChangeSelectGroup != null)
+                        {
+							onChangeSelectGroup.OnNext(Unit.Default);
+                        }
+                    }
+
+					GUILayout.Space(4f);
+
+					// 検索.
 
                     Action<string> onChangeSearchText = x =>
                     {
@@ -192,44 +243,17 @@ namespace Modules.ExternalResource
                         searchText = string.Empty;
                     };
 
-                    EditorLayoutTools.DrawToolbarSearchTextField(searchText, onChangeSearchText, onSearchCancel, GUILayout.Width(200f));
-                    
-                    // カテゴリー選択.
-
-                    EditorGUI.BeginChangeCheck();
-
-                    var categoryName = categoryNames.ElementAtOrDefault(selection);
-
-                    var displayCategoryNames = GetDisplayCategoryNames();
-
-                    displayCategoryNames = displayCategoryNames.OrderBy(x => x, new NaturalComparer()).ToList();
-
-                    var index = displayCategoryNames.IndexOf(x => x == categoryName);
-
-                    var displayLabels = displayCategoryNames.Select(x => ConvertSlashToUnicodeSlash(x)).ToArray();
-
-                    index = EditorGUILayout.Popup(string.Empty, index, displayLabels, EditorStyles.toolbarDropDown, GUILayout.Width(250f));
-
-                    if (EditorGUI.EndChangeCheck())
-                    {
-                        selection = categoryNames.IndexOf(x => x == displayCategoryNames[index]);
-
-                        currentCategory = categoryNames[selection];
-
-                        if (onChangeSelectCategory != null)
-                        {
-                            onChangeSelectCategory.OnNext(Unit.Default);
-                        }
-                    }
+                    EditorLayoutTools.DrawToolbarSearchTextField(searchText, onChangeSearchText, onSearchCancel);
+              
                 }
             }
         }
         
-        private List<string> GetDisplayCategoryNames()
+        private List<string> GetDisplayGroupNames()
         {
             // 検索テキストでフィルタ.
 
-            if (string.IsNullOrEmpty(searchText)) { return categoryNames; }
+            if (string.IsNullOrEmpty(searchText)) { return groupNames; }
             
             var keywords = searchText.Split(new char[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
 
@@ -238,7 +262,7 @@ namespace Modules.ExternalResource
                 keywords[i] = keywords[i].ToLower();
             }
 
-            return categoryNames.Where(x => x.IsMatch(keywords)).ToList();
+            return groupNames.Where(x => x.IsMatch(keywords)).ToList();
         }
 
         private string ConvertSlashToUnicodeSlash(string text)
@@ -246,9 +270,9 @@ namespace Modules.ExternalResource
             return text.Replace('/', '\u2215');
         }
 
-        public IObservable<Unit> OnChangeSelectCategoryAsObservable()
+        public IObservable<Unit> OnChangeSelectGroupAsObservable()
         {
-            return onChangeSelectCategory ?? (onChangeSelectCategory = new Subject<Unit>());
+            return onChangeSelectGroup ?? (onChangeSelectGroup = new Subject<Unit>());
         }
 
         public IObservable<Unit> OnRequestRepaintAsObservable()

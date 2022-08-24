@@ -24,8 +24,8 @@ namespace Modules.ExternalResource
     {
         /// <summary> GUID </summary>
         public string guid = null;
-        /// <summary> カテゴリ </summary>
-        public string category = null;
+        /// <summary> グループ </summary>
+        public string group = null;
         /// <summary> ラベル </summary>
         public string[] labels = new string[0];
         /// <summary> コメント </summary>

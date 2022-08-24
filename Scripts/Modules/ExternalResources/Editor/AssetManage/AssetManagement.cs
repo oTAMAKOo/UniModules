@@ -114,7 +114,7 @@ namespace Modules.ExternalResource
 
             var resourcePath = GetAssetLoadPath(assetPath);
 
-            var assetInfo = new AssetInfo(resourcePath, managedInfo.category, managedInfo.labels);
+            var assetInfo = new AssetInfo(resourcePath, managedInfo.group, managedInfo.labels);
 
             var assetBundleName = GetAssetBundleName(assetPath, managedInfo);
 
@@ -178,12 +178,12 @@ namespace Modules.ExternalResource
             return assetInfos;
         }
 
-        public string[] GetAllCategoryNames()
+        public string[] GetAllGroupNames()
         {
-            return managedInfos.Values.Select(x => x.category)
+            return managedInfos.Values.Select(x => x.group)
                 .Where(x => !string.IsNullOrEmpty(x))
                 .Distinct()
-                .Append(ExternalResources.ShareCategoryName)
+                .Append(ExternalResources.ShareGroupName)
                 .ToArray();
         }
 
@@ -263,7 +263,7 @@ namespace Modules.ExternalResource
 
             if (assetPath.StartsWith(shareResourcesPath))
             {
-                assetLoadPath = ExternalResources.ShareCategoryPrefix + assetLoadPath;
+                assetLoadPath = ExternalResources.ShareGroupPrefix + assetLoadPath;
             }
 
             return assetLoadPath;
@@ -283,12 +283,12 @@ namespace Modules.ExternalResource
 
             if (!manageInfo.isAssetBundle) { return string.Empty; }
 
-            // カテゴリ名設定.
-            var category = manageInfo.category;
+            // グループ名設定.
+            var group = manageInfo.group;
 
-            if (!string.IsNullOrEmpty(category))
+            if (!string.IsNullOrEmpty(group))
             {
-                assetBundleName += category + PathUtility.PathSeparator;
+                assetBundleName += group + PathUtility.PathSeparator;
             }
 
             // 管理アセットの親フォルダパス.
@@ -438,11 +438,11 @@ namespace Modules.ExternalResource
 
         #region ManageInfo
 
-        public ManageInfo[] GetManageInfos(string category)
+        public ManageInfo[] GetManageInfos(string group)
         {
-            if (string.IsNullOrEmpty(category)) { return null; }
+            if (string.IsNullOrEmpty(group)) { return null; }
 
-            return managedInfos.Values.Where(x => x.category == category).ToArray();
+            return managedInfos.Values.Where(x => x.group == group).ToArray();
         }
 
         public void UpdateManageInfo(ManageInfo manageInfo)
@@ -452,7 +452,7 @@ namespace Modules.ExternalResource
             Save();
         }
 
-        public ManageInfo AddManageInfo(string category, Object manageTarget)
+        public ManageInfo AddManageInfo(string group, Object manageTarget)
         {
             if (manageTarget == null) { return null; }
 
@@ -464,7 +464,7 @@ namespace Modules.ExternalResource
             var manageInfo = new ManageInfo()
             {
                 guid = assetGuid,
-                category = category,
+                group = group,
                 isAssetBundle = ignoreType != IgnoreType.IgnoreAssetBundle,
             };
 
@@ -527,7 +527,7 @@ namespace Modules.ExternalResource
 
             if (manageInfo != null && manageInfo.guid == assetGuid)
             {
-                Debug.LogWarningFormat("Already registered.\nCategory : {0}", manageInfo.category);
+                Debug.LogWarningFormat("Already registered.\nGroup : {0}", manageInfo.group);
                 return false;
             }
 
@@ -552,23 +552,11 @@ namespace Modules.ExternalResource
 
         #endregion
 
-        #region Category
+        #region Group
 
-        public void RenameCategory(string from, string to)
+		public void DeleteGroup(string group)
         {
-            var targets = managedInfos.Values.Where(x => x.category == from).ToArray();
-
-            foreach (var target in targets)
-            {
-                target.category = to;
-            }
-
-            Save();
-        }
-
-        public void DeleteCategory(string category)
-        {
-            var targets = managedInfos.Values.Where(x => x.category == category).ToArray();
+            var targets = managedInfos.Values.Where(x => x.group == group).ToArray();
 
             for (var i = 0; i < targets.Length; i++)
             {
@@ -579,6 +567,18 @@ namespace Modules.ExternalResource
 
             Save();
         }
+
+		public void RenameGroup(string from, string to)
+		{
+			var targets = managedInfos.Values.Where(x => x.group == from).ToArray();
+
+			foreach (var target in targets)
+			{
+				target.group = to;
+			}
+
+			Save();
+		}
 
         #endregion
 
@@ -604,14 +604,16 @@ namespace Modules.ExternalResource
             {
                 ignoreManagePaths = manageConfig.IgnoreManage
                     .Select(x => AssetDatabase.GetAssetPath(x))
+					.Where(x => !string.IsNullOrEmpty(x))
                     .OrderByDescending(x => x.Length)
-                    .ToArray();
+					.ToArray();
             }
 
             if (ignoreAssetBundlePaths == null)
             {
                 ignoreAssetBundlePaths = manageConfig.IgnoreAssetBundle
                     .Select(x => AssetDatabase.GetAssetPath(x))
+					.Where(x => !string.IsNullOrEmpty(x))
                     .OrderByDescending(x => x.Length)
                     .ToArray();
             }

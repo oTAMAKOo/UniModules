@@ -37,7 +37,7 @@ namespace Modules.ExternalResource
                 .Where(x => !string.IsNullOrEmpty(AssetDatabase.GUIDToAssetPath(x.guid)))
                 .ToArray();
 
-            manageInfoDictionary = manageInfos.ToDictionary(x => x.guid);
+            manageInfoDictionary = this.manageInfos.ToDictionary(x => x.guid);
 
             UnityEditorUtility.SaveAsset(this);
         }
@@ -47,11 +47,11 @@ namespace Modules.ExternalResource
             return manageInfos;
         }
 
-        public ManageInfo[] GetCategoryInfos(string category)
+        public ManageInfo[] GetGroupInfos(string group)
         {
-            if (string.IsNullOrEmpty(category)){ return GetAllInfos(); }
+            if (string.IsNullOrEmpty(group)){ return GetAllInfos(); }
 
-            return manageInfos.Where(x => x.category == category).ToArray();
+            return manageInfos.Where(x => x.group == group).ToArray();
         }
 
         public ManageInfo GetManageInfo(string assetGuid)

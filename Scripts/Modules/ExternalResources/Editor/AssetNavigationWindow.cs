@@ -29,7 +29,7 @@ namespace Modules.ExternalResource
 
         private Object selectionAssetObject = null;
 
-        private string assetCategory = null;
+        private string assetGroup = null;
         private string assetBundleName = null;
         private string assetLoadPath = null;
 
@@ -115,9 +115,9 @@ namespace Modules.ExternalResource
                 {
                     GUILayout.Space(4f);
 
-                    if (!string.IsNullOrEmpty(assetCategory))
+                    if (!string.IsNullOrEmpty(assetGroup))
                     {
-                        DrawContentGUI("Category", assetCategory);
+                        DrawContentGUI("Group", assetGroup);
                     }
 
                     if (!string.IsNullOrEmpty(assetBundleName))
@@ -223,7 +223,7 @@ namespace Modules.ExternalResource
             var info = infos.FirstOrDefault();
             
             selectionAssetObject = info != null ? assetObject : null;
-            assetCategory = info != null ? info.Category : null;
+            assetGroup = info != null ? info.Group : null;
             assetBundleName = info != null && info.IsAssetBundle ? info.AssetBundle.AssetBundleName : null;
             assetLoadPath = string.IsNullOrEmpty(assetPath) ? string.Empty : assetManagement.GetAssetLoadPath(assetPath);
 

@@ -40,7 +40,7 @@ namespace Modules.ExternalResource
             assetCacheByGuid = new Dictionary<string, Object>();
 
             manageInfoGroup = instance.GetAllInfos()
-                .GroupBy(x => x.category)
+                .GroupBy(x => x.group)
                 .OrderBy(x => x.Key, new NaturalComparer())
                 .ToArray();
 
@@ -110,7 +110,7 @@ namespace Modules.ExternalResource
                 {
                     EditorGUILayout.ObjectField("Asset", asset, typeof(Object), false);
 
-                    EditorGUILayout.TextField("Category", manageInfo.category);
+                    EditorGUILayout.TextField("Group", manageInfo.group);
 
                     if (manageInfo.labels.Any())
                     {

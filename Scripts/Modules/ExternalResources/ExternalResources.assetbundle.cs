@@ -216,9 +216,9 @@ namespace Modules.ExternalResource
 					builder.AppendFormat("AssetBundleName = {0}", assetBundleName).AppendLine();
 					builder.AppendFormat("Hash = {0}", assetInfo.Hash).AppendLine();
 
-                    if (!string.IsNullOrEmpty(assetInfo.Category))
+                    if (!string.IsNullOrEmpty(assetInfo.Group))
                     {
-                        builder.AppendFormat("Category = {0}", assetInfo.Category).AppendLine();
+                        builder.AppendFormat("Group = {0}", assetInfo.Group).AppendLine();
                     }
 
                     if (assetInfo.AssetBundle.Dependencies.Any())
