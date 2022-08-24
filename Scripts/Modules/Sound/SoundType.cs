@@ -1,4 +1,4 @@
-
+﻿
 namespace Modules.Sound
 {
 	public enum SoundType

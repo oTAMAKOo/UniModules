@@ -1,4 +1,4 @@
-
+ï»¿
 using UnityEngine.Build.Pipeline;
 using UnityEditor;
 using UnityEditor.Build.Content;
@@ -53,7 +53,7 @@ namespace Modules.AssetBundles.Editor
 
         //----- method -----
 
-        /// <summary> ‘SƒAƒZƒbƒgƒoƒ“ƒhƒ‹‚ğƒrƒ‹ƒh </summary>
+        /// <summary> å…¨ã‚¢ã‚»ãƒƒãƒˆãƒãƒ³ãƒ‰ãƒ«ã‚’ãƒ“ãƒ«ãƒ‰ </summary>
         public BuildResult Build(string outputPath)
         {
             var buildMap = ContentBuildInterface.GenerateAssetBundleBuilds();
@@ -61,7 +61,7 @@ namespace Modules.AssetBundles.Editor
             return Build(outputPath, buildMap);
         }
         
-        /// <summary> w’è‚³‚ê‚½ƒAƒZƒbƒgƒoƒ“ƒhƒ‹‚ğƒrƒ‹ƒh </summary>
+        /// <summary> æŒ‡å®šã•ã‚ŒãŸã‚¢ã‚»ãƒƒãƒˆãƒãƒ³ãƒ‰ãƒ«ã‚’ãƒ“ãƒ«ãƒ‰ </summary>
         public BuildResult Build(string outputPath, AssetBundleBuild[] buildMap)
         {
             var buildTargetGroup = BuildPipeline.GetBuildTargetGroup(BuildTarget);

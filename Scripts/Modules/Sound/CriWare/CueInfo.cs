@@ -1,4 +1,4 @@
-
+﻿
 #if ENABLE_CRIWARE_ADX
 
 namespace Modules.Sound

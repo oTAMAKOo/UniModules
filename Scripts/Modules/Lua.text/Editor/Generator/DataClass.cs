@@ -1,4 +1,4 @@
-
+﻿
 namespace Modules.Lua.Text
 {
 	public sealed class BookData

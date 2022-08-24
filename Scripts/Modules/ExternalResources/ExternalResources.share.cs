@@ -1,4 +1,4 @@
-
+﻿
 namespace Modules.ExternalResource
 {
     public sealed partial class ExternalResources

@@ -1,4 +1,4 @@
-
+﻿
 #if ENABLE_BUGSNAG
 
 using UnityEngine;

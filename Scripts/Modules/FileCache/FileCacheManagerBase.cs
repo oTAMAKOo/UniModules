@@ -1,4 +1,4 @@
-
+ï»¿
 using UnityEngine;
 using System;
 using System.Linq;
@@ -96,20 +96,20 @@ namespace Modules.FileCache
 
             var data = cacheContents.GetValueOrDefault(source);
 
-            // ƒLƒƒƒbƒVƒ…‚É‘¶İ‚µ‚È‚¢.
+            // ã‚­ãƒ£ãƒƒã‚·ãƒ¥ã«å­˜åœ¨ã—ãªã„.
             if (data == null){ return false; }
 
-            // —LŒøŠúŒÀØ‚ê.
+            // æœ‰åŠ¹æœŸé™åˆ‡ã‚Œ.
             if (!data.Alive()){ return false; }
 
-            // ƒLƒƒƒbƒVƒ…‚æ‚èV‚µ‚¢.
+            // ã‚­ãƒ£ãƒƒã‚·ãƒ¥ã‚ˆã‚Šæ–°ã—ã„.
             if (data.UpdateAt < updateAt){ return false; }
 
             var fileName = GetFileName(source);
 
             var filePath = PathUtility.Combine(FileDirectory, fileName);
 
-            // ƒtƒ@ƒCƒ‹‚ª‘¶İ‚µ‚È‚¢.
+            // ãƒ•ã‚¡ã‚¤ãƒ«ãŒå­˜åœ¨ã—ãªã„.
             if (!File.Exists(filePath)){ return false; }
 
             return true;
@@ -135,7 +135,7 @@ namespace Modules.FileCache
 
         protected void CreateCache(byte[] bytes, string source, long updateAt, long expireAt)
         {
-            // ƒtƒ@ƒCƒ‹o—Í.
+            // ãƒ•ã‚¡ã‚¤ãƒ«å‡ºåŠ›.
 
             var fileName = GetFileName(source);
 
@@ -148,7 +148,7 @@ namespace Modules.FileCache
                 fileStream.Write(bytes, 0, bytes.Length);
             }
 
-            // ƒLƒƒƒbƒVƒ…î•ñXV.
+            // ã‚­ãƒ£ãƒƒã‚·ãƒ¥æƒ…å ±æ›´æ–°.
 
             LoadCacheContents();
 

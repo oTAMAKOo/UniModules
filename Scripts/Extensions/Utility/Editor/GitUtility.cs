@@ -1,4 +1,4 @@
-
+﻿
 namespace Extensions
 {
     public static class GitUtility

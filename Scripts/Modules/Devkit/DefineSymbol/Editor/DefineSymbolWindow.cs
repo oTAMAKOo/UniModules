@@ -1,4 +1,4 @@
-
+ï»¿
 using UnityEngine;
 using UnityEditor;
 using System;
@@ -142,7 +142,7 @@ namespace Modules.Devkit.DefineSymbol
                 description = info.description,
                 };
 
-                // Œ»İ’è‹`‚³‚ê‚Ä‚éê‡.
+                // ç¾åœ¨å®šç¾©ã•ã‚Œã¦ã‚‹å ´åˆ.
                 item.enable = currentSymbols.Contains(info.symbol);
 
                 list.Add(item);

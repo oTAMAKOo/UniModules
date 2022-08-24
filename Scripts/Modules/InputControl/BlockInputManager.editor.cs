@@ -1,4 +1,4 @@
-
+ï»¿
 #if UNITY_EDITOR
 
 using UnityEngine;
@@ -30,7 +30,7 @@ namespace Modules.InputControl
                 trackInputBlock = new Dictionary<ulong, string>();
             }
 
-            // ÀÛ‚ÌŒÄ‚Ño‚µŒ³ŠJns”.
+            // å®Ÿéš›ã®å‘¼ã³å‡ºã—å…ƒé–‹å§‹è¡Œæ•°.
             const int StackTraceStartLine = 4;
             
             var stackTrace = StackTraceUtility.ExtractStackTrace();

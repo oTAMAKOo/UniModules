@@ -1,4 +1,4 @@
-
+﻿
 #if ENABLE_CRIWARE_SOFDEC
 ﻿﻿﻿
 using UnityEngine;

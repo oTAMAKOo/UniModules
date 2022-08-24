@@ -1,4 +1,4 @@
-
+﻿
 namespace Modules.Lua.Command
 {
 	public interface ICommand

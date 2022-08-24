@@ -1,4 +1,4 @@
-﻿
+﻿﻿
 #if UNITY_PURCHASING
 
 using UnityEngine.Purchasing;

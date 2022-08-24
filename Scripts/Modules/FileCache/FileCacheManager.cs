@@ -1,4 +1,4 @@
-
+﻿
 namespace Modules.FileCache
 {
     public sealed class FileCacheManager : FileCacheManagerBase<FileCacheManager>
