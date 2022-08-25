@@ -1,4 +1,4 @@
-﻿
+
 #if ENABLE_VIVOX
 
 using UnityEngine;
@@ -143,7 +143,7 @@ namespace Modules.Vivox
 			Server = server;
 			Token = token;
 
-			Log($"Setup parameter.\nDomain = {domain}\nIssuer = {issuer}\nServer = {server}\nToken = {token}");
+			Log($"Setup parameter\nDomain = {domain}\nIssuer = {issuer}\nServer = {server}\nToken = {token}");
 		}
 
 		public void Release()
@@ -155,6 +155,9 @@ namespace Modules.Vivox
 			client.Uninitialize();
 
 			client = null;
+
+			Log("Client release complete");
+
 		}
 		
 		public AccountId GetAccount(string uniqueId, string displayName)
@@ -656,7 +659,7 @@ namespace Modules.Vivox
 			return onLoggedIn ?? (onLoggedIn = new Subject<ILoginSession>());
 		}
 
-		/// <summary> イベント </summary>
+		/// <summary> ログアウト完了イベント </summary>
 		public IObservable<ILoginSession> OnLoggingOutAsObservable()
 		{
 			return onLoggingOut ?? (onLoggingOut = new Subject<ILoginSession>());
