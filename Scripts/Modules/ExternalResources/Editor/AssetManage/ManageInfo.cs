@@ -29,7 +29,7 @@ namespace Modules.ExternalResource
         /// <summary> ラベル </summary>
         public string[] labels = new string[0];
         /// <summary> コメント </summary>
-        public string comment = null;
+        public string comment = string.Empty;
 
         /// <summary> アセットバンドル対象か </summary>
         public bool isAssetBundle = true;

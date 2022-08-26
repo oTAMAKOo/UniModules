@@ -260,9 +260,12 @@ namespace Extensions.Devkit
                 var d = (string)queue.Dequeue();
 
                 var files = Directory.GetFiles(d);
+
                 foreach (var file in files)
                 {
-                    var assetPath = file.Replace(Application.dataPath, "Assets");
+					var path = PathUtility.ConvertPathSeparator(file);
+
+                    var assetPath = path.Replace(Application.dataPath, "Assets");
 
                     var guid = AssetDatabase.AssetPathToGUID(assetPath);
 
