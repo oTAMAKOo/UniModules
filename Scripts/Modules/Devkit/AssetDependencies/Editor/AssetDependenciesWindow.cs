@@ -56,6 +56,13 @@ namespace Modules.Devkit.AssetDependencies
             Instance.Initialize();
         }
 
+		public static void Open(Object target)
+		{
+			Instance.Initialize();
+
+			Instance.Set(target);
+		}
+
         private void Initialize()
         {
             if (initialized) { return; }

@@ -14,7 +14,7 @@ using Object = UnityEngine.Object;
 
 namespace Modules.Devkit.FindReferences
 {
-    public sealed class FindReferencesInProject : UnityEditor.Editor
+    public static class FindReferencesInProject
     {
         private const string MenuItemLabel = "Assets/Find References In Project";
 
@@ -24,7 +24,8 @@ namespace Modules.Devkit.FindReferences
         public static bool CanExecute()
         {
             var path = AssetDatabase.GetAssetOrScenePath(Selection.activeObject);
-            return (Selection.activeObject != null) && !path.EndsWith(".unity");
+
+            return Selection.activeObject != null && !path.EndsWith(".unity");
         }
 
         [MenuItem(MenuItemLabel, priority = 27)]
