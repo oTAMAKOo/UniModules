@@ -55,7 +55,11 @@ namespace Modules.Crypto
 
         void OnGUI()
         {
-			var streamingAssetPath =  ProjectFolders.Instance.StreamingAssetPath;
+			var projectUnityFolders = ProjectUnityFolders.Instance;
+
+			if (projectUnityFolders == null){ return; }
+
+			var streamingAssetPath =  projectUnityFolders.StreamingAssetPath;
 
 			if (string.IsNullOrEmpty(streamingAssetPath))
 			{

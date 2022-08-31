@@ -71,9 +71,9 @@ namespace Modules.ExternalResource
 
         public void Initialize()
         {
-            var projectFolders = ProjectFolders.Instance;
+            var projectResourceFolders = ProjectResourceFolders.Instance;
 
-            if (projectFolders == null) { return; }
+            if (projectResourceFolders == null) { return; }
 
             var managedAssets = ManagedAssets.Instance;
 
@@ -81,8 +81,8 @@ namespace Modules.ExternalResource
 
             if (initialized) { return; }
 
-            externalResourcesPath = projectFolders.ExternalResourcesPath;
-            shareResourcesPath = projectFolders.ShareResourcesPath;
+            externalResourcesPath = projectResourceFolders.ExternalResourcesPath;
+            shareResourcesPath = projectResourceFolders.ShareResourcesPath;
 
             managedAssets.DeleteInvalidInfo();
 

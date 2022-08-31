@@ -64,53 +64,60 @@ namespace Modules
         [MenuItem(GeneratorsScripts + "All Scripts", priority = 0)]
         public static void GenerateAll()
         {
-            var editorConfig = ProjectFolders.Instance;
+            var projectScriptFolders = ProjectScriptFolders.Instance;
             var sceneImporterConfig = SceneImporterConfig.Instance;
 
+			var constantsScriptPath = projectScriptFolders.ConstantsScriptPath;
+
             // SceneNames.
-            ScenesScriptGenerator.Generate(sceneImporterConfig.ManagedFolders, editorConfig.ConstantsScriptPath);
+            ScenesScriptGenerator.Generate(sceneImporterConfig.ManagedFolders, constantsScriptPath);
 
             // Tags.
-            TagsScriptGenerator.Generate(editorConfig.ConstantsScriptPath);
+            TagsScriptGenerator.Generate(constantsScriptPath);
 
             // Layers.
-            LayersScriptGenerator.Generate(editorConfig.ConstantsScriptPath);
+            LayersScriptGenerator.Generate(constantsScriptPath);
 
             // SortingLayers.
-            SortingLayersScriptGenerator.Generate(editorConfig.ConstantsScriptPath);
+            SortingLayersScriptGenerator.Generate(constantsScriptPath);
         }
 
         [MenuItem(GeneratorsScripts + "  - Scenes.cs", priority = 1)]
         public static void GenerateSceneNames()
         {
-            var editorConfig = ProjectFolders.Instance;
+			var projectScriptFolders = ProjectScriptFolders.Instance;
             var sceneImporterConfig = SceneImporterConfig.Instance;
 
-            ScenesScriptGenerator.Generate(sceneImporterConfig.ManagedFolders, editorConfig.ConstantsScriptPath);
+			var constantsScriptPath = projectScriptFolders.ConstantsScriptPath;
+
+            ScenesScriptGenerator.Generate(sceneImporterConfig.ManagedFolders, constantsScriptPath);
         }
 
         [MenuItem(GeneratorsScripts + "  - Tags.cs", priority = 2)]
         public static void GenerateTags()
         {
-            var editorConfig = ProjectFolders.Instance;
+			var projectScriptFolders = ProjectScriptFolders.Instance;
+			var constantsScriptPath = projectScriptFolders.ConstantsScriptPath;
 
-            TagsScriptGenerator.Generate(editorConfig.ConstantsScriptPath);
+            TagsScriptGenerator.Generate(constantsScriptPath);
         }
 
         [MenuItem(GeneratorsScripts + "  - Layers.cs", priority = 3)]
         public static void GenerateLayers()
         {
-            var editorConfig = ProjectFolders.Instance;
+			var projectScriptFolders = ProjectScriptFolders.Instance;
+			var constantsScriptPath = projectScriptFolders.ConstantsScriptPath;
 
-            LayersScriptGenerator.Generate(editorConfig.ConstantsScriptPath);
+            LayersScriptGenerator.Generate(constantsScriptPath);
         }
 
         [MenuItem(GeneratorsScripts + "  - SortingLayers.cs", priority = 4)]
         public static void GenerateSortingLayers()
         {
-            var editorConfig = ProjectFolders.Instance;
+			var projectScriptFolders = ProjectScriptFolders.Instance;
+			var constantsScriptPath = projectScriptFolders.ConstantsScriptPath;
 
-            SortingLayersScriptGenerator.Generate(editorConfig.ConstantsScriptPath);
+            SortingLayersScriptGenerator.Generate(constantsScriptPath);
         }
 
         [MenuItem(itemName: GeneratorsMenu + "Generate ScenesInBuild", priority = 15)]
@@ -256,17 +263,17 @@ namespace Modules
         [MenuItem(itemName: ResourcesMenu + "Open AssetManageWindow", priority = 12)]
         public static void OpenAssetManageWindow()
         {
-            var projectFolders = ProjectFolders.Instance;
+            var projectResourceFolders = ProjectResourceFolders.Instance;
 
-            ManageWindow.Open(projectFolders.ExternalResourcesPath, projectFolders.ShareResourcesPath);
+            ManageWindow.Open(projectResourceFolders.ExternalResourcesPath, projectResourceFolders.ShareResourcesPath);
         }
 
         [MenuItem(itemName: ResourcesMenu + "Open AssetNavigationWindow", priority = 13)]
         public static void OpenAssetNavigationWindow()
         {
-            var projectFolders = ProjectFolders.Instance;
+			var projectResourceFolders = ProjectResourceFolders.Instance;
 
-            AssetNavigationWindow.Open(projectFolders.ExternalResourcesPath);
+            AssetNavigationWindow.Open(projectResourceFolders.ExternalResourcesPath);
         }
 
         [MenuItem(itemName: ResourcesMenu + "Open AssetBundleDependencyChecker", priority = 14)]

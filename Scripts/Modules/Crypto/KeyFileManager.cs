@@ -128,21 +128,16 @@ namespace Modules.Crypto
 
 			#endif
 
-			if (File.Exists(filePath))
-			{
-				using (var fileStream = File.Open(filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
-				{
-					using (var memoryStream = new MemoryStream())
-					{
-						await fileStream.CopyToAsync(memoryStream);
+			if (!File.Exists(filePath)){ return; }
 
-						bytes = memoryStream.ToArray();
-					}
-				}
-			}
-			else
+			using (var fileStream = File.Open(filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
 			{
-				throw new FileNotFoundException(filePath);
+				using (var memoryStream = new MemoryStream())
+				{
+					await fileStream.CopyToAsync(memoryStream);
+
+					bytes = memoryStream.ToArray();
+				}
 			}
 			
 			if (bytes.Any())

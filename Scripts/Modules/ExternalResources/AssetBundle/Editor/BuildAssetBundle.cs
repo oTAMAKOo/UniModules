@@ -144,11 +144,11 @@ namespace Modules.AssetBundles.Editor
         /// <summary> 情報書き込み後のAssetInfoManifestをビルド </summary>
         public void BuildAssetInfoManifest()
         {
-            var projectFolders = ProjectFolders.Instance;
+            var projectResourceFolders = ProjectResourceFolders.Instance;
 
-            if (projectFolders == null) { return; }
+            if (projectResourceFolders == null) { return; }
 
-            var externalResourcesPath = projectFolders.ExternalResourcesPath;
+            var externalResourcesPath = projectResourceFolders.ExternalResourcesPath;
 
             var assetBundlePath = GetAssetBundleOutputPath();
 

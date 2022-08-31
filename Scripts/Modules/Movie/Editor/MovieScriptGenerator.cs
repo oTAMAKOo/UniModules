@@ -81,7 +81,7 @@ namespace Modules.Movie
 
         public static void Generate(string scriptPath, string rootFolderPath)
         {
-            var projectFolders = ProjectFolders.Instance;
+            var projectUnityFolders = ProjectUnityFolders.Instance;
 
             var infos = LoadUsmInfo(rootFolderPath);
 
@@ -105,7 +105,7 @@ namespace Modules.Movie
                 }
             }
 
-            var editorStreamingAssetsFolderPath = projectFolders.StreamingAssetPath;
+            var editorStreamingAssetsFolderPath = projectUnityFolders.StreamingAssetPath;
 
             var script = ScriptTemplate;
 

@@ -39,25 +39,24 @@ namespace Modules.Devkit.AssetTuning
 
             changeAssetInfo = false;
 
-            var projectFolders = ProjectFolders.Instance;
+            var projectResourceFolders = ProjectResourceFolders.Instance;
             
-            if (projectFolders != null)
+            if (projectResourceFolders == null){ return; }
+            
+            assetManagement = AssetManagement.Instance;
+
+            externalResourcesPath = projectResourceFolders.ExternalResourcesPath;
+
+            assetManagement.Initialize();
+
+            var manifestPath = PathUtility.Combine(externalResourcesPath, AssetInfoManifest.ManifestFileName);
+
+            assetInfoManifest = AssetDatabase.LoadAssetAtPath<AssetInfoManifest>(manifestPath);
+
+            if (assetInfoManifest != null)
             {
-                assetManagement = AssetManagement.Instance;
-
-                externalResourcesPath = projectFolders.ExternalResourcesPath;
-
-                assetManagement.Initialize();
-
-                var manifestPath = PathUtility.Combine(externalResourcesPath, AssetInfoManifest.ManifestFileName);
-
-                assetInfoManifest = AssetDatabase.LoadAssetAtPath<AssetInfoManifest>(manifestPath);
-
-                if (assetInfoManifest != null)
-                {
-                    assetInfos = Reflection.GetPrivateField<AssetInfoManifest, AssetInfo[]>(assetInfoManifest, "assetInfos");
-                }
-            }        
+                assetInfos = Reflection.GetPrivateField<AssetInfoManifest, AssetInfo[]>(assetInfoManifest, "assetInfos");
+            }
         }
 
 		public override void OnAfterPostprocessAsset()

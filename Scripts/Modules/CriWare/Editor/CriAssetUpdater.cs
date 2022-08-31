@@ -40,11 +40,13 @@ namespace Modules.CriWare.Editor
 
         public static void Execute()
         {
-            var projectFolders = ProjectFolders.Instance;
+            var projectUnityFolders = ProjectUnityFolders.Instance;
+			var projectScriptFolders = ProjectScriptFolders.Instance;
+			var projectResourceFolders = ProjectResourceFolders.Instance;
 
-            var scriptPath = projectFolders.ConstantsScriptPath;
-            var streamingAssetPath = projectFolders.StreamingAssetPath;
-            var externalResourcesPath = projectFolders.ExternalResourcesPath;
+            var scriptPath = projectScriptFolders.ConstantsScriptPath;
+            var streamingAssetPath = projectUnityFolders.StreamingAssetPath;
+            var externalResourcesPath = projectResourceFolders.ExternalResourcesPath;
 
             var streamingAssetFolderName = Path.GetFileName(streamingAssetPath);
             var externalResourcesFolderName = Path.GetFileName(externalResourcesPath);

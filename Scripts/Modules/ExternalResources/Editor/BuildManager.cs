@@ -307,11 +307,11 @@ namespace Modules.ExternalResource
 
         public static bool AssetDependenciesValidate(AssetInfoManifest assetInfoManifest)
         {
-            var projectFolders = ProjectFolders.Instance;
+            var projectResourceFolders = ProjectResourceFolders.Instance;
 
             var config = ManageConfig.Instance;
 
-            var externalResourcesPath = projectFolders.ExternalResourcesPath;
+            var externalResourcesPath = projectResourceFolders.ExternalResourcesPath;
 
             var allAssetInfos = assetInfoManifest.GetAssetInfos().ToArray();
 

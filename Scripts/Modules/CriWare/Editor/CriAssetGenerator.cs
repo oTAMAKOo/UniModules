@@ -25,11 +25,11 @@ namespace Modules.CriWare.Editor
         /// </summary>
         public static void Generate(string exportPath, AssetInfoManifest assetInfoManifest)
         {
-            var projectFolders = ProjectFolders.Instance;
+            var projectResourceFolders = ProjectResourceFolders.Instance;
 
-            if (projectFolders == null){ return; }
+            if (projectResourceFolders == null){ return; }
 
-            var externalResourcesPath = projectFolders.ExternalResourcesPath;
+            var externalResourcesPath = projectResourceFolders.ExternalResourcesPath;
 
             Func<AssetInfo, bool> isCriAssetInfo = x =>
             {

@@ -146,10 +146,10 @@ namespace Modules.ExternalResource
 
         private static void ApplyAssetBundleName(AssetManagement assetManagement, AssetInfoManifest manifest)
         {
-            var projectFolders = ProjectFolders.Instance;
+            var projectResourceFolders = ProjectResourceFolders.Instance;
 
-            var externalResourcesPath = projectFolders.ExternalResourcesPath;
-            var shareResourcesPath = projectFolders.ShareResourcesPath;
+            var externalResourcesPath = projectResourceFolders.ExternalResourcesPath;
+            var shareResourcesPath = projectResourceFolders.ShareResourcesPath;
 
             var assetInfos = manifest.GetAssetInfos().ToArray();
 
@@ -182,9 +182,9 @@ namespace Modules.ExternalResource
 
         private static AssetInfoManifest GenerateManifest(AssetManagement assetManagement)
         {
-            var projectFolders = ProjectFolders.Instance;
+            var projectResourceFolders = ProjectResourceFolders.Instance;
 
-            var externalResourcesPath = projectFolders.ExternalResourcesPath;
+            var externalResourcesPath = projectResourceFolders.ExternalResourcesPath;
 
             var allAssetInfos = assetManagement.GetAllAssetInfos().ToArray();
 

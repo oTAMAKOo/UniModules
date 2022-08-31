@@ -14,9 +14,9 @@ namespace Modules.Devkit.AssetTuning
 		{
             assetManagement = null;
 
-            var projectFolders = ProjectFolders.Instance;
+            var projectResourceFolders = ProjectResourceFolders.Instance;
 
-            if (projectFolders != null)
+            if (projectResourceFolders != null)
             {
                 assetManagement = AssetManagement.Instance;
                 assetManagement.Initialize();
@@ -108,16 +108,16 @@ namespace Modules.Devkit.AssetTuning
 
         private string GetExternalResourcesPath()
         {
-            var projectFolders = ProjectFolders.Instance;
+            var projectResourceFolders = ProjectResourceFolders.Instance;
 
-            return projectFolders != null ? projectFolders.ExternalResourcesPath : null;
+            return projectResourceFolders != null ? projectResourceFolders.ExternalResourcesPath : null;
         }
 
         private string GetShareResourcesPath()
         {
-            var projectFolders = ProjectFolders.Instance;
+			var projectResourceFolders = ProjectResourceFolders.Instance;
 
-            return projectFolders != null ? projectFolders.ShareResourcesPath : null;
+            return projectResourceFolders != null ? projectResourceFolders.ShareResourcesPath : null;
         }
     }
 }

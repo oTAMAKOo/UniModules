@@ -168,7 +168,7 @@ namespace Modules.ExternalResource
         {
             Debug.Log("Load AssetInfoManifest.package.");
 
-            var projectFolders = ProjectFolders.Instance;
+            var projectResourceFolders = ProjectResourceFolders.Instance;
 
             assetInfoManifestFilePath = GetAssetInfoManifestFilePath(files);
 
@@ -179,7 +179,7 @@ namespace Modules.ExternalResource
 
 			var manifestAssetInfo = AssetInfoManifest.GetManifestAssetInfo();
 
-            var assetPath = PathUtility.Combine(projectFolders.ExternalResourcesPath, manifestAssetInfo.ResourcePath);
+            var assetPath = PathUtility.Combine(projectResourceFolders.ExternalResourcesPath, manifestAssetInfo.ResourcePath);
 
             var cryptoKey = GetCryptoKey();
 

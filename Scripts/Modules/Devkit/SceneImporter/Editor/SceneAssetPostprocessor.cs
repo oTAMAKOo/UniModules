@@ -36,8 +36,11 @@ namespace Modules.Devkit.SceneImporter
         {
 			if (Application.isBatchMode){ return; }
 
-            var editorConfig = ProjectFolders.Instance;
-            var sceneImporterConfig = SceneImporterConfig.Instance;
+            var projectScriptFolders = ProjectScriptFolders.Instance;
+
+			var constantsScriptPath = projectScriptFolders.ConstantsScriptPath;
+
+			var sceneImporterConfig = SceneImporterConfig.Instance;
 
             if (sceneImporterConfig == null) { return; }
 
@@ -59,7 +62,7 @@ namespace Modules.Devkit.SceneImporter
                 if (scenes.Length != sceneCount)
                 {
                     EditorBuildSettings.scenes = scenes;
-                    ScenesScriptGenerator.Generate(sceneImporterConfig.ManagedFolders, editorConfig.ConstantsScriptPath);
+                    ScenesScriptGenerator.Generate(sceneImporterConfig.ManagedFolders, constantsScriptPath);
                     AssetDatabase.SaveAssets();
 
                     Debug.Log("Update BuildSettings asset.");
@@ -161,7 +164,7 @@ namespace Modules.Devkit.SceneImporter
 
                 if (isChanged)
                 {
-                    ScenesInBuildGenerator.UpdateBuildTargetScenes(sceneImporterConfig, editorConfig.ConstantsScriptPath, buildTargetScenes);
+                    ScenesInBuildGenerator.UpdateBuildTargetScenes(sceneImporterConfig, constantsScriptPath, buildTargetScenes);
                 }
             }
         }

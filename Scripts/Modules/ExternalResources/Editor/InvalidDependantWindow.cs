@@ -132,9 +132,9 @@ namespace Modules.ExternalResource
 
         public static void Open()
         {
-            var projectFolders = ProjectFolders.Instance;
+            var projectResourceFolders = ProjectResourceFolders.Instance;
 
-            var externalResourcesPath = projectFolders.ExternalResourcesPath;
+            var externalResourcesPath = projectResourceFolders.ExternalResourcesPath;
 
             Instance.Initialize(externalResourcesPath);
         }
@@ -146,7 +146,7 @@ namespace Modules.ExternalResource
             scrollView = new DependantInfoScrollView();
             scrollView.Contents = GetAssetInfos();
 
-            titleContent = new GUIContent("ExternalResources InvalidDependant");
+            titleContent = new GUIContent("ExternalResources Invalid Dependent");
 
             ShowUtility();
         }

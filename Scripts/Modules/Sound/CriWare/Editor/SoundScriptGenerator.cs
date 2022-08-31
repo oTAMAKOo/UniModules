@@ -83,7 +83,7 @@ namespace Modules.Sound
 
         public static void Generate(string scriptPath, string assetFolderPath, string rootFolderName)
         {
-            var projectFolders = ProjectFolders.Instance;
+            var projectUnityFolders = ProjectUnityFolders.Instance;
 
             var infos = LoadAcbInfo(assetFolderPath);
 
@@ -114,7 +114,7 @@ namespace Modules.Sound
                 }
             }
 
-            var editorStreamingAssetsFolderPath = projectFolders.StreamingAssetPath;
+            var editorStreamingAssetsFolderPath = projectUnityFolders.StreamingAssetPath;
 
             var script = ScriptTemplate;
 

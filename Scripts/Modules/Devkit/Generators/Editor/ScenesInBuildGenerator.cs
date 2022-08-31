@@ -21,7 +21,7 @@ namespace Modules.Devkit.Generators
 
 	    public static void Generate()
 	    {
-            var editorConfig = ProjectFolders.Instance;
+            var projectScriptFolders = ProjectScriptFolders.Instance;
             var sceneImporterConfig = SceneImporterConfig.Instance;
 
             var managedFolders = sceneImporterConfig.ManagedFolders;
@@ -54,7 +54,7 @@ namespace Modules.Devkit.Generators
 
 	        if (isChanged)
 	        {
-	            UpdateBuildTargetScenes(sceneImporterConfig, editorConfig.ScriptPath, buildTargetScenes);
+	            UpdateBuildTargetScenes(sceneImporterConfig, projectScriptFolders.ScriptPath, buildTargetScenes);
 	        }
 	        else
 	        {
