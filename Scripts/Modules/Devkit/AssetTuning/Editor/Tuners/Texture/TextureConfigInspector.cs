@@ -23,11 +23,9 @@ namespace Modules.Devkit.AssetTuning
                 return string.Empty;
             }
 
-            protected override string DrawContent(int index, string content)
+            protected override string DrawContent(Rect rect, int index, string content)
             {
-                content = EditorGUILayout.DelayedTextField(content);
-
-                return content;
+                return EditorGUI.DelayedTextField(rect, content);
             }
         }
 
@@ -168,13 +166,11 @@ namespace Modules.Devkit.AssetTuning
 
         private void DrawRegisterIgnoreFolderNameGUI(FolderNameRegisterScrollView scrollView, string title)
         {
-            var scrollViewHeight = Mathf.Min(scrollView.Contents.Count * 18f, 150f);
-
             if (EditorLayoutTools.Header(title, string.Format("TextureAssetTunerConfigInspector-{0}", title)))
             {
                 using (new ContentsScope())
                 {
-                    scrollView.DrawGUI(GUILayout.Height(scrollViewHeight));
+                    scrollView.DrawGUI();
                 }
             }
         }

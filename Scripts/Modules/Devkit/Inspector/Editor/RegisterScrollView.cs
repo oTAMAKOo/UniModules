@@ -1,6 +1,7 @@
 ﻿
 using UnityEngine;
 using UnityEditor;
+using UnityEditorInternal;
 using System;
 using System.Linq;
 using System.Collections.Generic;
@@ -17,10 +18,7 @@ namespace Modules.Devkit.Inspector
 
         protected List<T> contents = null;
 
-        private Vector2 scrollPosition = Vector2.zero;
-
-        private GUIContent toolbarPlusIcon = null;
-        private GUIContent toolbarMinusIcon = null;
+		protected ReorderableList reorderableList = null;
 
         private Subject<T[]> onUpdateContents = null;
 
@@ -35,16 +33,76 @@ namespace Modules.Devkit.Inspector
 
         public RegisterScrollView()
         {
-            toolbarPlusIcon = EditorGUIUtility.IconContent("Toolbar Plus");
-            toolbarMinusIcon = EditorGUIUtility.IconContent("Toolbar Minus");
-        }
+			SetupReorderableList();
+		}
+
+		private void SetupReorderableList()
+		{
+			reorderableList = new ReorderableList(new List<T>(), typeof(T));
+
+			// ヘッダーは描画しない.
+			reorderableList.headerHeight = 0;
+			reorderableList.drawHeaderCallback = r => {};
+
+			// 要素描画コールバック.
+			reorderableList.drawElementCallback = (r, index, isActive, isFocused) => 
+			{
+				r.position = Vector.SetY(r.position, r.position.y + 2f);
+				r.height = EditorGUIUtility.singleLineHeight;
+
+				var content = contents.ElementAtOrDefault(index);
+
+				EditorGUI.BeginChangeCheck();
+
+				content = DrawContent(r, index, content);
+
+				if (EditorGUI.EndChangeCheck())
+				{
+					contents[index] = content;
+
+					ValidateContent(content);
+
+					reorderableList.list = contents;
+
+					if (onUpdateContents != null)
+					{
+						onUpdateContents.OnNext(contents.ToArray());
+					}
+				}
+			};
+
+			// 順番入れ替えコールバック.
+			reorderableList.onReorderCallback = list =>
+			{
+				contents = list.list.Cast<T>().ToList();
+
+				if (onUpdateContents != null)
+				{
+					onUpdateContents.OnNext(contents.ToArray());
+				}
+			};
+
+			// 追加コールバック.
+			reorderableList.onAddCallback = list =>
+			{
+				contents.Add(CreateNewContent());
+			};
+
+			// 削除コールバック.
+			reorderableList.onRemoveCallback = list =>
+			{
+				contents.RemoveAt(list.index);
+			};
+		}
 
         public void SetContents(T[] contents)
         {
             this.contents = contents.ToList();
-        }
 
-        public virtual void DrawGUI(params GUILayoutOption[] options)
+			reorderableList.list = this.contents;
+		}
+
+        public virtual void DrawGUI()
         {
             GUILayout.Space(2f);
 
@@ -53,57 +111,13 @@ namespace Modules.Devkit.Inspector
                 DrawHeaderContent();
 
                 GUILayout.FlexibleSpace();
-
-                if (GUILayout.Button(toolbarPlusIcon, EditorStyles.miniButton, GUILayout.Width(24f), GUILayout.Height(15f)))
-                {
-                    contents.Add(CreateNewContent());
-                }
-            }
+			}
 
             GUILayout.Space(2f);
 
-            using (var scrollViewScope = new EditorGUILayout.ScrollViewScope(scrollPosition, options))
-            {
-                for (var index = 0; index < contents.Count; index++)
-                {
-                    var content = Contents.ElementAtOrDefault(index);
+			reorderableList.DoLayoutList();
 
-                    if (content == null){ continue; }
-
-                    using (new EditorGUILayout.HorizontalScope())
-                    {
-                        EditorGUI.BeginChangeCheck();
-
-                        content = DrawContent(index, content);
-
-                        if (EditorGUI.EndChangeCheck())
-                        {
-                            contents[index] = content;
-
-                            ValidateContent(content);
-
-                            if (onUpdateContents != null)
-                            {
-                                onUpdateContents.OnNext(Contents.ToArray());
-                            }
-                        }
-
-                        if (GUILayout.Button(toolbarMinusIcon, EditorStyles.miniButton, GUILayout.Width(24f), GUILayout.Height(15f)))
-                        {
-                            contents.RemoveAt(index);
-                            
-                            if (onUpdateContents != null)
-                            {
-                                onUpdateContents.OnNext(contents.ToArray());
-                            }
-                        }
-                    }
-                }
-
-                scrollPosition = scrollViewScope.scrollPosition;
-            }
-
-            GUILayout.Space(2f);
+			GUILayout.Space(2f);
         }
 
         public IObservable<T[]> OnUpdateContentsAsObservable()
@@ -117,6 +131,6 @@ namespace Modules.Devkit.Inspector
 
         protected abstract T CreateNewContent();
 
-        protected abstract T DrawContent(int index, T content);
+        protected abstract T DrawContent(Rect rect, int index, T content);
     }
 }

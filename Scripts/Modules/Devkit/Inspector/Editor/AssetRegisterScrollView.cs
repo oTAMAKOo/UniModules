@@ -60,21 +60,24 @@ namespace Modules.Devkit.Inspector
 
             OnUpdateContentsAsObservable()
                 .Subscribe(x =>
-                {
-                    if (onUpdateContents != null)
-                    {
-                        var folders = x.Select(y => y.guid).ToArray();
+					{
+						if (onUpdateContents != null)
+						{
+							var folders = x.Select(y => y.guid).ToArray();
 
-                        onUpdateContents.OnNext(folders);
-                    }
-                })
+							onUpdateContents.OnNext(folders);
+						}
+					})
                 .AddTo(Disposable);
 
             RemoveChildrenAssets = false;
         }
 
         // 外部公開しない.
-        private new void SetContents(AssetInfo[] contents) { }
+        private new void SetContents(AssetInfo[] contents)
+		{
+			base.SetContents(contents);
+		}
 
         public void SetContents(string[] guids)
         {
@@ -86,6 +89,7 @@ namespace Modules.Devkit.Inspector
             Func<string, AssetInfo> createAssetInfoFromGuid = guid =>
             {
                 var assetPath = guid != null ? AssetDatabase.GUIDToAssetPath(guid) : string.Empty;
+
                 var asset = string.IsNullOrEmpty(assetPath) ? null : AssetDatabase.LoadAssetAtPath(assetPath, typeof(Object));
 
                 var info = new AssetInfo()
@@ -98,10 +102,12 @@ namespace Modules.Devkit.Inspector
                 return info;
             };
 
-            contents = guids.Select(x => createAssetInfoFromGuid.Invoke(x)).ToList();
+            var assetInfos = guids.Select(x => createAssetInfoFromGuid.Invoke(x)).ToArray();
+
+			SetContents(assetInfos);
         }
 
-        protected override AssetInfo DrawContent(int index, AssetInfo info)
+        protected override AssetInfo DrawContent(Rect rect, int index, AssetInfo info)
         {
             switch (assetViewMode)
             {
@@ -109,7 +115,7 @@ namespace Modules.Devkit.Inspector
                     {
                         EditorGUI.BeginChangeCheck();
 
-                        var asset = EditorGUILayout.ObjectField(info.asset, typeof(Object), false);
+                        var asset = EditorGUI.ObjectField(rect, info.asset, typeof(Object), false);
 
                         if (EditorGUI.EndChangeCheck())
                         {
@@ -127,7 +133,7 @@ namespace Modules.Devkit.Inspector
                     break;
 
                 case AssetViewMode.Path:
-                    GUILayout.Label(info.assetPath, EditorStyles.textArea);
+                    EditorGUI.LabelField(rect, info.assetPath, EditorStyles.textArea);
                     break;
             }
 
@@ -162,20 +168,13 @@ namespace Modules.Devkit.Inspector
             GUILayout.Space(4f);
         }
 
-        public override void DrawGUI(params GUILayoutOption[] option)
+        public override void DrawGUI()
         {
             if (EditorLayoutTools.Header(title, headerKey))
             {
                 using (new ContentsScope())
                 {
-                    var scrollViewHeight = Mathf.Min(Contents.Count * 20f, ScrollAreaHeight);
-
-                    var options = new List<GUILayoutOption>();
-
-                    options.Add(GUILayout.Height(scrollViewHeight));
-                    options.AddRange(option);
-
-                    base.DrawGUI(options.ToArray());
+					base.DrawGUI();
                 }
             }
         }
