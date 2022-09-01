@@ -86,12 +86,22 @@ namespace Modules.Devkit.Inspector
 			reorderableList.onAddCallback = list =>
 			{
 				contents.Add(CreateNewContent());
+
+				if (onUpdateContents != null)
+				{
+					onUpdateContents.OnNext(contents.ToArray());
+				}
 			};
 
 			// 削除コールバック.
 			reorderableList.onRemoveCallback = list =>
 			{
 				contents.RemoveAt(list.index);
+
+				if (onUpdateContents != null)
+				{
+					onUpdateContents.OnNext(contents.ToArray());
+				}
 			};
 		}
 
