@@ -18,7 +18,7 @@ namespace Modules.Devkit.Build
         public string[] defineSymbols = null;
 
 		/// <summary> ビルド番号 </summary>
-		public int buildNumber = 0;
+		public int buildNumber = 1;
 
 		/// <summary> コマンドライン引数適用 </summary>
 		public virtual void ApplyCommandLineArguments()
