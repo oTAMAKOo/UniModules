@@ -1,12 +1,9 @@
-﻿﻿
+﻿
 using UnityEngine;
 using UnityEngine.UI;
-using UniRx;
-using Extensions;
 
 namespace Modules.Devkit.Diagnosis
 {
-    [ExecuteAlways]
     public sealed class FpsStats : MonoBehaviour
     {
         //----- params -----
@@ -17,6 +14,8 @@ namespace Modules.Devkit.Diagnosis
 
         [SerializeField]
         private Text fpsLabel = null;
+		[SerializeField]
+		private string fpsFormat = "{0} fps";
 
         private float oldTime = 0f;
         private int frame = 0;
@@ -69,7 +68,7 @@ namespace Modules.Devkit.Diagnosis
 
         private void SetFrameRate()
         {
-            fpsLabel.text = frameRate.ToString("0.00") + " fps";
+            fpsLabel.text = string.Format(fpsFormat, frameRate.ToString("0.00"));
         }
     }
 }
