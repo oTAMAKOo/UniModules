@@ -1,4 +1,4 @@
-﻿﻿﻿
+﻿﻿
 using UnityEngine;
 using UnityEditor;
 using System;
@@ -137,7 +137,7 @@ namespace Modules.Devkit.Pinning
                             var iconContent = new GUIContent(thumbnail, toolTipText);
                             
                             // アイコンが見切れるのでサイズを補正. 
-                            GUILayout.Label(iconContent, labelStyle, GUILayout.Width(iconSize.x + 3.5f));
+                            GUILayout.Label(iconContent, labelStyle, GUILayout.Width(iconSize.x + 3.5f), GUILayout.Height(iconSize.y));
 
                             EditorGUIUtility.labelWidth = originLabelWidth;
 

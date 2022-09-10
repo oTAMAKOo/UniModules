@@ -10,6 +10,8 @@ using UniRx;
 using Extensions;
 using SRDebugger.Editor;
 using SRDebugger.Internal;
+using SRDebugger.Services;
+using SRF.Service;
 
 namespace Modules.Devkit.Diagnosis.SRDebugger
 {
@@ -39,7 +41,7 @@ namespace Modules.Devkit.Diagnosis.SRDebugger
 
         private static void SyncContents()
         {
-            if (SRDebug.Instance == null){ return; }
+            if (!SRServiceManager.HasService<IDebugService>()){ return; }
 
             targetWindows = Resources.FindObjectsOfTypeAll<SROptionsWindow>();
 
