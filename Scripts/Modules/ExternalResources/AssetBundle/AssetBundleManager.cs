@@ -627,15 +627,31 @@ namespace Modules.AssetBundles
             {
                 UnloadAsset(assetBundleName);
 
-                if (cryptoStream != null)
-                {
-                    await cryptoStream.DisposeAsync();
-                }
+				if (cryptoStream != null)
+				{
+					#if NET_UNITY_4_8
 
-                if (fileStream != null)
-                {
-					await fileStream.DisposeAsync();
-                }
+                    await cryptoStream.DisposeAsync();
+
+					#else
+
+					cryptoStream.Dispose();
+
+					#endif
+				}
+
+				if (fileStream != null)
+				{
+					#if NET_UNITY_4_8
+
+                    await fileStream.DisposeAsync();
+
+					#else
+
+					fileStream.Dispose();
+
+					#endif
+				}
 
                 if (File.Exists(filePath))
                 {
