@@ -186,11 +186,11 @@ namespace Modules.Devkit.AssetTuning
             switch (platform)
             {
                 case BuildTargetGroup.iOS:
-                    format = TextureImporterFormat.ASTC_4x4;
+                    format = TextureImporterFormat.ASTC_6x6;
                     break;
 
                 case BuildTargetGroup.Android:
-                    format = TextureImporterFormat.ASTC_4x4;
+                    format = TextureImporterFormat.ASTC_6x6;
                     break;
                 case BuildTargetGroup.Standalone:
                     {
