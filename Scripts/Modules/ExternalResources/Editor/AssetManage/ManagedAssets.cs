@@ -1,4 +1,4 @@
-﻿
+
 using UnityEngine;
 using UnityEditor;
 using System.Linq;
@@ -17,7 +17,7 @@ namespace Modules.ExternalResource
         //----- field -----
         
         [SerializeField, HideInInspector]
-        private ManageInfo[] manageInfos = null;
+        private ManageInfo[] manageInfos = new ManageInfo[0];
 
         private Dictionary<string, ManageInfo> manageInfoDictionary = null;
 
