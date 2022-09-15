@@ -1,4 +1,4 @@
-﻿
+
 #if ENABLE_CRIWARE_ADX || ENABLE_CRIWARE_SOFDEC
 ﻿﻿﻿
 using UnityEngine;
@@ -8,6 +8,7 @@ using System.Linq;
 using System.Collections.Generic;
 using System.Threading;
 using Cysharp.Threading.Tasks;
+using CriWare;
 using UniRx;
 using Extensions;
 using Modules.ExternalResource;

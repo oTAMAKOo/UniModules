@@ -1,4 +1,4 @@
-﻿
+
 #if ENABLE_CRIWARE_ADX
 
 using UnityEditor;
@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using System.Text.RegularExpressions;
+using CriWare;
 using Extensions;
 using Modules.Devkit.Generators;
 using Modules.CriWare;
@@ -28,6 +29,7 @@ namespace Modules.Sound.Editor
 using UnityEngine;
 using System;
 using System.Collections.Generic;
+using CriWare;
 using Extensions;
 
 namespace Modules.Sound

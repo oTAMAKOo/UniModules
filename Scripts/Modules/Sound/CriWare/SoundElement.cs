@@ -1,8 +1,9 @@
-﻿
+
 #if ENABLE_CRIWARE_ADX
 
 using UnityEngine;
 using System;
+using CriWare;
 using UniRx;
 
 namespace Modules.Sound

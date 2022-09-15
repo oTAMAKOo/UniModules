@@ -1,4 +1,4 @@
-﻿
+
 #if ENABLE_CRIWARE_SOFDEC
 ﻿﻿﻿
 using UnityEngine;
@@ -6,7 +6,8 @@ using UnityEngine.UI;
 using System.IO;
 using System.Collections.Generic;
 using UniRx;
-using CriMana;
+using CriWare;
+using CriWare.CriMana;
 using Extensions;
 using Modules.CriWare;
 
