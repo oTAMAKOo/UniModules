@@ -217,7 +217,7 @@ namespace Modules.Devkit.FindReferences
 
             public FindReferenceContext(string[] scenes, string[] prefabs, string[] materials, string[] animations, string[] assets, Action<int, int> reportProgress)
             {
-                var total = scenes.Length + prefabs.Length + materials.Length + assets.Length;
+                var total = scenes.Length + prefabs.Length + materials.Length + animations.Length + assets.Length;
 
                 reportProgress(0, total);
 
