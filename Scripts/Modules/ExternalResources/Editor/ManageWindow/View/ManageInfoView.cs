@@ -297,7 +297,7 @@ namespace Modules.ExternalResource
 
 							var lineCount = ManageInfo.comment.Count(c => c.Equals('\n')) + 1;
 
-							lineCount = Math.Clamp(lineCount, 1, 3);
+							lineCount = Mathf.Clamp(lineCount, 1, 3);
 
 							var memoLayoutHeight = GUILayout.Height(EditorGUIUtility.singleLineHeight * lineCount);
 
