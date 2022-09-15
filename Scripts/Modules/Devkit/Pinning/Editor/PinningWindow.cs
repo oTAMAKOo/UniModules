@@ -27,6 +27,9 @@ namespace Modules.Devkit.Pinning
         [SerializeField]
         protected List<PinnedItem> pinning = null;
 
+		private GUIStyle labelStyle = null;
+		private GUIStyle iconStyle = null;
+
         private Vector2 scrollPosition = Vector2.zero;
 
         private PinnedItem commentInputTarget = null;
@@ -69,6 +72,8 @@ namespace Modules.Devkit.Pinning
         {
             if (pinning == null){ return; }
 
+			InitializeStyle();
+
             var e = Event.current;
 
             UpdatePinnedObject();
@@ -106,11 +111,7 @@ namespace Modules.Devkit.Pinning
 
                 var requestSave = false;
 
-                var labelStyle = new GUIStyle(GUI.skin.label);
-
-                labelStyle.alignment = TextAnchor.MiddleLeft;
-
-                EditorGUIUtility.SetIconSize(iconSize);
+				EditorGUIUtility.SetIconSize(iconSize);
 
                 for (var i = 0; i < pinning.Count; i++)
                 {
@@ -137,17 +138,22 @@ namespace Modules.Devkit.Pinning
                             var iconContent = new GUIContent(thumbnail, toolTipText);
                             
                             // アイコンが見切れるのでサイズを補正. 
-                            GUILayout.Label(iconContent, labelStyle, GUILayout.Width(iconSize.x + 3.5f), GUILayout.Height(iconSize.y));
+                            GUILayout.Label(iconContent, iconStyle, GUILayout.Width(iconSize.x + 2.5f), GUILayout.Height(iconSize.y));
 
                             EditorGUIUtility.labelWidth = originLabelWidth;
 
                             //------ label ------
 
-                            var labelText = GetLabelName(item.target);
+							using (new EditorGUILayout.VerticalScope())
+							{
+								GUILayout.Space(-0.5f);
 
-                            var labelContent = new GUIContent(labelText, toolTipText);
+	                            var labelText = GetLabelName(item.target);
 
-                            GUILayout.Label(labelContent, labelStyle, GUILayout.Height(18f));
+	                            var labelContent = new GUIContent(labelText, toolTipText);
+
+	                            GUILayout.Label(labelContent, labelStyle, GUILayout.Height(18f));
+							}
 
                             //------ comment ------
 
@@ -230,6 +236,25 @@ namespace Modules.Devkit.Pinning
                 }
             }
         }
+
+		private void InitializeStyle()
+		{
+			if (labelStyle == null)
+			{
+				labelStyle = new GUIStyle(GUI.skin.label)
+				{
+					alignment = TextAnchor.MiddleLeft,
+				};
+			}
+
+			if (iconStyle == null)
+			{
+				iconStyle = new GUIStyle(GUI.skin.label)
+				{
+					alignment = TextAnchor.MiddleCenter,
+				};
+			}
+		}
 
         private void MouseLeftButton(Rect rect, Event e, PinnedItem item)
         {
