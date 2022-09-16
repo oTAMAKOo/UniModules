@@ -4,9 +4,6 @@
 using UnityEngine;
 using UnityEditor;
 using System;
-using System.Linq;
-using System.Collections.Generic;
-using UniRx;
 using Extensions;
 using Extensions.Devkit;
 
@@ -19,6 +16,8 @@ namespace Modules.CriWare.Editor
 
         //----- field -----
 
+		private Action onAfterDrawCallback = null;
+
         //----- property -----
 
         //----- method -----
@@ -27,7 +26,9 @@ namespace Modules.CriWare.Editor
         {
             var instance = target as CriAssetConfig;
 
-            serializedObject.Update();
+			onAfterDrawCallback = null;
+
+			serializedObject.Update();
 
             #if ENABLE_CRIWARE_ADX
 
@@ -40,6 +41,11 @@ namespace Modules.CriWare.Editor
             DrawMovieAssetConfigGUI(instance);
 
             #endif
+
+			if (onAfterDrawCallback != null)
+			{
+				onAfterDrawCallback.Invoke();
+			}
         }
 
         //---------------------------------------
@@ -57,14 +63,9 @@ namespace Modules.CriWare.Editor
             {
                 using (new ContentsScope())
                 {
-                    var change = DrawAssetImportInfoGUI(instance.SoundImportInfo);
+                    DrawAssetImportInfoGUI(instance, instance.SoundImportInfo);
 
-                    if (change)
-                    {
-                        UnityEditorUtility.RegisterUndo(instance);
-                    }
-
-                    // Style.
+					// Style.
                     var pathTextStyle = GUI.skin.GetStyle("TextArea");
                     pathTextStyle.alignment = TextAnchor.MiddleLeft;
 
@@ -76,15 +77,21 @@ namespace Modules.CriWare.Editor
 
                         if (GUILayout.Button("Edit", EditorStyles.miniButton, GUILayout.Width(50f)))
                         {
-                            UnityEditorUtility.RegisterUndo(instance);
+                            onAfterDrawCallback = () =>
+							{
+								var acfAssetSource = EditorUtility.OpenFilePanel("Select ACF", "", "");
 
-                            var acfAssetSource = EditorUtility.OpenFilePanel("Select ACF", "", "");
+                                if (!string.IsNullOrEmpty(acfAssetSource))
+                                {
+                                    UnityEditorUtility.RegisterUndo(instance);
 
-                            var assetFolderUri = new Uri(Application.dataPath);
-                            var targetUri = new Uri(acfAssetSource);
-                            acfAssetSourcePathProperty.stringValue = assetFolderUri.MakeRelativeUri(targetUri).ToString();
+								    var assetFolderUri = new Uri(Application.dataPath);
+								    var targetUri = new Uri(acfAssetSource);
+								    acfAssetSourcePathProperty.stringValue = assetFolderUri.MakeRelativeUri(targetUri).ToString();
 
-                            serializedObject.ApplyModifiedProperties();
+								    serializedObject.ApplyModifiedProperties();
+                                }
+							};
                         }
                     }
 
@@ -96,15 +103,21 @@ namespace Modules.CriWare.Editor
 
                         if (GUILayout.Button("Edit", EditorStyles.miniButton, GUILayout.Width(50f)))
                         {
-                            UnityEditorUtility.RegisterUndo(instance);
+							onAfterDrawCallback = () =>
+							{
+	                            var acfAssetDirectory = EditorUtility.OpenFolderPanel("Select CriSetting Folder", "", "");
 
-                            var acfAssetDirectory = EditorUtility.OpenFolderPanel("Select CriSetting Folder", "", "");
+                                if (!string.IsNullOrEmpty(acfAssetDirectory))
+                                {
+                                    UnityEditorUtility.RegisterUndo(instance);
 
-                            var assetFolderUri = new Uri(Application.dataPath);
-                            var targetUri = new Uri(acfAssetDirectory);
-                            acfAssetExportPathProperty.stringValue = assetFolderUri.MakeRelativeUri(targetUri).ToString();
+	                                var assetFolderUri = new Uri(Application.dataPath);
+	                                var targetUri = new Uri(acfAssetDirectory);
+	                                acfAssetExportPathProperty.stringValue = assetFolderUri.MakeRelativeUri(targetUri).ToString();
 
-                            serializedObject.ApplyModifiedProperties();
+	                                serializedObject.ApplyModifiedProperties();
+                                }
+							};
                         }
                     }
                 }
@@ -128,13 +141,8 @@ namespace Modules.CriWare.Editor
             {
                 using (new ContentsScope())
                 {
-                    var change = DrawAssetImportInfoGUI(instance.MovieImportInfo);
-
-                    if (change)
-                    {
-                        UnityEditorUtility.RegisterUndo(instance);
-                    }
-                }
+                    DrawAssetImportInfoGUI(instance, instance.MovieImportInfo);
+				}
             }
 
             GUILayout.Space(4f);
@@ -142,11 +150,8 @@ namespace Modules.CriWare.Editor
 
         #endif
 
-
-        public static bool DrawAssetImportInfoGUI(CriAssetConfig.AssetImportInfo assetImportInfo)
+        public void DrawAssetImportInfoGUI(CriAssetConfig instance, CriAssetConfig.AssetImportInfo assetImportInfo)
         {
-            var change = false;
-
             // Style.
             var pathTextStyle = GUI.skin.GetStyle("TextArea");
             pathTextStyle.alignment = TextAnchor.MiddleLeft;
@@ -159,8 +164,9 @@ namespace Modules.CriWare.Editor
 
             if (EditorGUI.EndChangeCheck())
             {
+				UnityEditorUtility.RegisterUndo(instance);
+
                 Reflection.SetPrivateField(assetImportInfo, "folderName", folderName);
-                change = true;
             }
 
             GUILayout.Label("ImportFrom");
@@ -171,23 +177,24 @@ namespace Modules.CriWare.Editor
 
                 if (GUILayout.Button("Edit", EditorStyles.miniButton, GUILayout.Width(50f)))
                 {
-                    var sourceFolder = EditorUtility.OpenFolderPanel("Select import folder", "", "");
+					onAfterDrawCallback = () =>
+					{
+	                    var sourceFolder = EditorUtility.OpenFolderPanel("Select import folder", "", "");
 
-                    if (!string.IsNullOrEmpty(sourceFolder))
-                    {
-                        var assetFolderUri = new Uri(Application.dataPath);
-                        var targetUri = new Uri(sourceFolder);
-                        var importPath = assetFolderUri.MakeRelativeUri(targetUri).ToString();
+	                    if (!string.IsNullOrEmpty(sourceFolder))
+	                    {
+							UnityEditorUtility.RegisterUndo(instance);
 
-                        Reflection.SetPrivateField(assetImportInfo, "importPath", importPath);
+	                        var assetFolderUri = new Uri(Application.dataPath);
+	                        var targetUri = new Uri(sourceFolder);
+	                        var importPath = assetFolderUri.MakeRelativeUri(targetUri).ToString();
 
-                        change = true;
-                    }
+	                        Reflection.SetPrivateField(assetImportInfo, "importPath", importPath);
+						}
+					};
                 }
             }
-
-            return change;
-        }
+		}
     }
 }
 
