@@ -73,7 +73,7 @@ namespace Modules.UI.Extension
 
             using (new EditorGUILayout.HorizontalScope())
             {
-                EditorGUILayout.PrefixLabel("Dummy Sprite");
+                EditorGUILayout.PrefixLabel("DummySprite");
 
                 EditorGUI.BeginChangeCheck();
 

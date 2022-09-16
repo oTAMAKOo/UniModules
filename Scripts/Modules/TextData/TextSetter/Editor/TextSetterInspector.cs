@@ -84,7 +84,7 @@ namespace Modules.TextData.Components
 
             DrawDistributionTextSelectGUI(textData);
 
-            DrawDevelopmentTextSelectGUI();
+            DrawDummyTextSelectGUI();
         }
 
         private void DrawSourceSelectGUI(TextData textData)
@@ -208,29 +208,29 @@ namespace Modules.TextData.Components
 
             if (categoryChanged && string.IsNullOrEmpty(currentCategoryGuid))
             {
-                SetDevelopmentText(string.Empty);
+                SetDummyText(string.Empty);
             }
         }
 
-        private void DrawDevelopmentTextSelectGUI()
+        private void DrawDummyTextSelectGUI()
         {
-            var enableDevelopmentText = string.IsNullOrEmpty(currentTextGuid) && string.IsNullOrEmpty(currentCategoryGuid);
+            var enableDummyText = string.IsNullOrEmpty(currentTextGuid) && string.IsNullOrEmpty(currentCategoryGuid);
 
-            if (!enableDevelopmentText) { return; }
+            if (!enableDummyText) { return; }
             
             using (new EditorGUILayout.HorizontalScope())
             {
                 var labelWidth = EditorGUIUtility.labelWidth - 10f;
 
-                EditorGUILayout.LabelField("Development Text", GUILayout.Width(labelWidth));
+                EditorGUILayout.LabelField("DummyText", GUILayout.Width(labelWidth));
 
                 var editText = string.Empty;
 
-                var developmentText = (string)Reflection.InvokePrivateMethod(instance, "GetDevelopmentText");
+                var dummyText = (string)Reflection.InvokePrivateMethod(instance, "GetDummyText");
 
-                if (!string.IsNullOrEmpty(developmentText))
+                if (!string.IsNullOrEmpty(dummyText))
                 {
-                    editText = developmentText.TrimStart(TextSetter.DevelopmentMark);
+                    editText = dummyText.TrimStart(TextSetter.DummyMark);
                 }
 
                 var prevText = editText;
@@ -259,7 +259,7 @@ namespace Modules.TextData.Components
                         editText = editText.FixLineEnd();
                     }
 
-                    SetDevelopmentText(editText);
+                    SetDummyText(editText);
                 }
             }
         }
@@ -278,12 +278,12 @@ namespace Modules.TextData.Components
         {
             Reflection.InvokePrivateMethod(instance, "SetTextGuid", new object[] { textGuid });
 
-            SetDevelopmentText(null);
+            SetDummyText(null);
         }
 
-        private void SetDevelopmentText(string text)
+        private void SetDummyText(string text)
         {
-            Reflection.InvokePrivateMethod(instance, "SetDevelopmentText", new object[] { text });
+            Reflection.InvokePrivateMethod(instance, "SetDummyText", new object[] { text });
         }
 
         private string GetCategoryGuid(TextData textData, string textGuid)

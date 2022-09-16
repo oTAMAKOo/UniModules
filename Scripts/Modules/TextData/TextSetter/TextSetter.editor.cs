@@ -1,6 +1,6 @@
 ﻿
 #if UNITY_EDITOR
-using System;
+
 using UnityEngine;
 using UnityEditor;
 using UnityEngine.UI;
@@ -12,14 +12,14 @@ namespace Modules.TextData.Components
     {
         //----- params -----
 
-        public const char DevelopmentMark = '#';
+        public const char DummyMark = '#';
 
         //----- field -----
 
         #pragma warning disable 0414
 
         [SerializeField, HideInInspector]
-        private string developmentText = null;
+        private string dummyText = null;
 
         #pragma warning restore 0414
 
@@ -39,17 +39,17 @@ namespace Modules.TextData.Components
             return aesCryptoKey;
         }
 
-        private string GetDevelopmentText()
+        private string GetDummyText()
         {
             var cryptoKey = GetCryptoKey();
 
-            if (string.IsNullOrEmpty(developmentText)) { return string.Empty; }
+            if (string.IsNullOrEmpty(dummyText)) { return string.Empty; }
 
             var text = string.Empty;
 
             try
             {
-                text = developmentText.Decrypt(cryptoKey);
+                text = dummyText.Decrypt(cryptoKey);
             }
             catch
             {
@@ -57,24 +57,24 @@ namespace Modules.TextData.Components
                 {
                     var hierarchyPath = UnityUtility.GetHierarchyPath(gameObject);
 
-                    Debug.LogErrorFormat("DevelopmentText decrypt failed.\n{0}", hierarchyPath);
+                    Debug.LogErrorFormat("dummyText decrypt failed.\n{0}", hierarchyPath);
 
-                    developmentText = null;
+                    dummyText = null;
                 }
 
                 EditorUtility.SetDirty(this);
             }
 
-            return string.IsNullOrEmpty(text) ? null : string.Format("{0}{1}", DevelopmentMark, text);
+            return string.IsNullOrEmpty(text) ? null : string.Format("{0}{1}", DummyMark, text);
         }
 
-        private void SetDevelopmentText(string text)
+        private void SetDummyText(string text)
         {
             var cryptoKey = GetCryptoKey();
 
             try
             {
-                developmentText = string.IsNullOrEmpty(text) ? string.Empty : text.Encrypt(cryptoKey);
+                dummyText = string.IsNullOrEmpty(text) ? string.Empty : text.Encrypt(cryptoKey);
             }
             catch
             {
@@ -82,24 +82,24 @@ namespace Modules.TextData.Components
                 {
                     var hierarchyPath = UnityUtility.GetHierarchyPath(gameObject);
                     
-                    Debug.LogErrorFormat("DevelopmentText encrypt failed.\n{0}", hierarchyPath);
+                    Debug.LogErrorFormat("dummyText encrypt failed.\n{0}", hierarchyPath);
 
-                    developmentText = null;
+                    dummyText = null;
                 }
             }
 
             ImportText();
         }
 
-        private void ApplyDevelopmentText()
+        private void ApplyDummyText()
         {
             if (Application.isPlaying) { return; }
 
-            if (string.IsNullOrEmpty(developmentText)) { return; }
+            if (string.IsNullOrEmpty(dummyText)) { return; }
 
             if (!string.IsNullOrEmpty(textGuid)) { return; }
 
-            var text = GetDevelopmentText();
+            var text = GetDummyText();
 
             ApplyText(text);
 
@@ -111,13 +111,13 @@ namespace Modules.TextData.Components
             }
         }
 
-        private bool CleanDevelopmentText()
+        private bool CleanDummyText()
         {
             if (Application.isPlaying) { return false; }
 
-            if (string.IsNullOrEmpty(developmentText)) { return false; }
+            if (string.IsNullOrEmpty(dummyText)) { return false; }
 
-            var text = GetDevelopmentText();
+            var text = GetDummyText();
 
             var targetText = GetTargetText();
 

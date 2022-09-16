@@ -1,4 +1,4 @@
-﻿﻿
+﻿
 using UnityEngine;
 using UnityEngine.UI;
 using Extensions;
@@ -15,14 +15,9 @@ namespace Modules.TextData.Components
 
         //----- field -----
 
-	    #pragma warning disable 414
-
-        [SerializeField]
+		[SerializeField]
 	    private ContentType type = ContentType.Embedded;
-
-        #pragma warning restore 414
-
-        [SerializeField]
+		[SerializeField]
         private string textGuid = null;
         [SerializeField]
         private string content = null;
@@ -96,7 +91,7 @@ namespace Modules.TextData.Components
         {
 			#if UNITY_EDITOR
 
-            ApplyDevelopmentText();
+            ApplyDummyText();
 
             #endif
 
@@ -119,47 +114,47 @@ namespace Modules.TextData.Components
         private void ApplyText(string text)
         {
             GetTargetComponent();
+			
+			if (textMeshProComponent != null)
+			{
+				textMeshProComponent.ForceMeshUpdate(true);
+				textMeshProComponent.SetText(text);
+			}
 
             if (textComponent != null)
             {
                 textComponent.text = text;
             }
-
-            if (textMeshProComponent != null)
-            {
-                textMeshProComponent.ForceMeshUpdate(true);
-                textMeshProComponent.SetText(text);
-            }
-        }
+		}
 
 	    private string GetTargetText()
 	    {
 	        GetTargetComponent();
+
+			if (textMeshProComponent != null)
+			{
+				return textMeshProComponent.text;
+			}
 
 	        if (textComponent != null)
 	        {
 	            return textComponent.text;
 	        }
 
-	        if (textMeshProComponent != null)
-	        {
-                return textMeshProComponent.text;
-            }
-
-            return null;
+			return null;
 	    }
 
         private void GetTargetComponent()
 	    {
+			if (textMeshProComponent == null)
+			{
+				textMeshProComponent = UnityUtility.GetComponent<TextMeshProUGUI>(gameObject);
+			}
+
 	        if (textComponent == null)
 	        {
 	            textComponent = UnityUtility.GetComponent<Text>(gameObject);
-	        }
-
-	        if (textMeshProComponent == null)
-	        {
-	            textMeshProComponent = UnityUtility.GetComponent<TextMeshProUGUI>(gameObject);
-	        }
-	    }
+			}
+		}
     }
 }
