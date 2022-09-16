@@ -1,14 +1,10 @@
 ﻿
 using UnityEngine;
 using UnityEditor;
-using System;
+using UnityEditor.U2D;
 using System.Linq;
-using System.Collections.Generic;
-using UniRx;
 using Extensions;
 using Extensions.Devkit;
-using Modules.UI.Extension;
-using UnityEditor.U2D;
 
 namespace Modules.UI.DummyContent
 {
@@ -30,13 +26,13 @@ namespace Modules.UI.DummyContent
 
 		void OnEnable()
         {
-            var instance = target as UIImage;
+            var instance = target as DummySprite;
 
             spriteAsset = null;
 
-            var assetGuid = Reflection.GetPrivateField<UIImage, string>(instance, "assetGuid");
+            var assetGuid = Reflection.GetPrivateField<DummySprite, string>(instance, "assetGuid");
 
-            var spriteId = Reflection.GetPrivateField<UIImage, string>(instance, "spriteId");
+            var spriteId = Reflection.GetPrivateField<DummySprite, string>(instance, "spriteId");
 
             if (!string.IsNullOrEmpty(assetGuid) && !string.IsNullOrEmpty(spriteId))
             {
@@ -52,7 +48,7 @@ namespace Modules.UI.DummyContent
 
             var image = instance.Image;
 
-            if (image.sprite != null && image.sprite.name == UIImage.DummyAssetName)
+            if (image.sprite != null && image.sprite.name == DummySprite.DummyAssetName)
             {
                 dummySprite = image.sprite;
             }
@@ -60,7 +56,7 @@ namespace Modules.UI.DummyContent
 
         public override void OnInspectorGUI()
         {
-            var instance = target as UIImage;
+            var instance = target as DummySprite;
 
             var image = instance.Image;
 
@@ -92,7 +88,7 @@ namespace Modules.UI.DummyContent
 
                     if (spriteAsset == null)
                     {
-                        if (image.sprite != null && image.sprite.name == UIImage.DummyAssetName)
+                        if (image.sprite != null && image.sprite.name == DummySprite.DummyAssetName)
                         {
                             image.sprite = null;
                         }
