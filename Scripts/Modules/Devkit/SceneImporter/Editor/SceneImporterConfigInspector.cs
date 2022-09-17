@@ -1,4 +1,4 @@
-﻿﻿
+﻿
 using UnityEngine;
 using UnityEditor;
 using System;
@@ -26,17 +26,14 @@ namespace Modules.Devkit.SceneImporter
         public override void OnInspectorGUI()
         {
             instance = target as SceneImporterConfig;
-
-            CustomInspector();
-        }
-
-        private void CustomInspector()
-        {
-            var managedFolders = instance.ManagedFolders.ToList();
+			
+			var managedFolders = instance.ManagedFolders.ToList();
 
             var contentHeight = 16f;
 
             EditorLayoutTools.SetLabelWidth(100f);
+
+			Action onAfterDrawCallback = null;
 
             // Style.
             var pathTextStyle = GUI.skin.GetStyle("TextArea");
@@ -54,11 +51,14 @@ namespace Modules.Devkit.SceneImporter
                 {
                     UnityEditorUtility.RegisterUndo(instance);
 
-                    var initialScenePath = EditorUtility.OpenFilePanelWithFilters("Select Initial Scene", "Assets", new string[]{ "SceneFile", "unity" });
+					onAfterDrawCallback = () =>
+					{
+	                    var initialScenePath = EditorUtility.OpenFilePanelWithFilters("Select Initial Scene", "Assets", new string[]{ "SceneFile", "unity" });
 
-                    initialScenePath = initialScenePath.Replace(Application.dataPath, "Assets");
+	                    initialScenePath = initialScenePath.Replace(Application.dataPath, "Assets");
 
-                    Reflection.SetPrivateField(instance, "initialScene", initialScenePath);
+	                    Reflection.SetPrivateField(instance, "initialScene", initialScenePath);
+					};
                 }
             }
 
@@ -101,41 +101,49 @@ namespace Modules.Devkit.SceneImporter
 
                     if (GUILayout.Button("+", EditorStyles.miniButton, GUILayout.Width(40f)))
                     {
-                        var folderPath = EditorUtility.OpenFolderPanel("Select Auto Addition Scene Folder", "Assets", "");
+						onAfterDrawCallback = () =>
+						{
+	                        var folderPath = EditorUtility.OpenFolderPanel("Select Auto Addition Scene Folder", "Assets", "");
 
-                        if (folderPath.Contains(Application.dataPath))
-                        {
-                            folderPath = folderPath.Replace(Application.dataPath, "Assets");
+							if (folderPath.Contains(Application.dataPath))
+							{
+								folderPath = folderPath.Replace(Application.dataPath, "Assets");
 
-                            if (folderPath != "Assets" && !managedFolders.Contains(folderPath))
-                            {
-                                managedFolders.Add(folderPath);
-                                change = true;
-                            }
-                        }
-                    }
-                }
+								if (folderPath != "Assets" && !managedFolders.Contains(folderPath))
+								{
+									managedFolders.Add(folderPath);
+									change = true;
+								}
+							}
+						};
+					}
+				}
+			}
 
-                if (change)
+			if (onAfterDrawCallback != null)
+			{
+				onAfterDrawCallback.Invoke();
+			}
+
+            if (change)
+            {
+                Func<string, int> sortFunc = x =>
                 {
-                    Func<string, int> sortFunc = x =>
-                    {
-                        var path = PathUtility.ConvertPathSeparator(x);
+                    var path = PathUtility.ConvertPathSeparator(x);
 
-                        var separatorCount = path.Split(PathUtility.PathSeparator).Length;
+                    var separatorCount = path.Split(PathUtility.PathSeparator).Length;
 
-                        return separatorCount;
-                    };
+                    return separatorCount;
+                };
 
-                    var folders = managedFolders
-                        .OrderBy(x => sortFunc.Invoke(x))
-                        .ThenBy(x => x.Length)
-                        .ToList();
+                var folders = managedFolders
+                    .OrderBy(x => sortFunc.Invoke(x))
+                    .ThenBy(x => x.Length)
+                    .ToList();
 
-                    Reflection.SetPrivateField(instance, "managedFolders", folders);
-                    UnityEditorUtility.RegisterUndo(instance);
-                }
+                Reflection.SetPrivateField(instance, "managedFolders", folders);
+                UnityEditorUtility.RegisterUndo(instance);
             }
-        }
+		}
     }
 }
