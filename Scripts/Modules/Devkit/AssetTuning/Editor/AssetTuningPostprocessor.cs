@@ -2,6 +2,7 @@
 using UnityEngine;
 using UnityEditor;
 using System;
+using Extensions;
 using Extensions.Devkit;
 
 namespace Modules.Devkit.AssetTuning
@@ -33,6 +34,8 @@ namespace Modules.Devkit.AssetTuning
 			foreach (var tuner in assetTuners)
 			{
 				var assetPath = assetImporter.assetPath;
+
+				if (!assetPath.StartsWith(UnityPathUtility.AssetsFolder)) { continue; }
 
 				if (!tuner.Validate(assetPath)) { continue; }
 
@@ -66,6 +69,8 @@ namespace Modules.Devkit.AssetTuning
                     {
                         foreach (var path in importedAssets)
                         {
+							if (!path.StartsWith(UnityPathUtility.AssetsFolder)) { continue; }
+
                             if (!tuner.Validate(path)) { continue; }
 
                             if (assetTuneManager.IsFirstImport(path))
@@ -78,6 +83,8 @@ namespace Modules.Devkit.AssetTuning
 
                         foreach (var path in deletedAssets)
                         {
+							if (!path.StartsWith(UnityPathUtility.AssetsFolder)) { continue; }
+
                             if (!tuner.Validate(path)) { continue; }
 
                             tuner.OnAssetDelete(path);
@@ -85,6 +92,8 @@ namespace Modules.Devkit.AssetTuning
 
                         for (var i = 0; i < movedAssets.Length; i++)
                         {
+							if (!movedAssets[i].StartsWith(UnityPathUtility.AssetsFolder)) { continue; }
+
                             if (!tuner.Validate(movedAssets[i])) { continue; }
 
                             tuner.OnAssetMove(movedAssets[i], movedFromPath[i]);
@@ -93,6 +102,8 @@ namespace Modules.Devkit.AssetTuning
 
                     foreach (var path in importedAssets)
                     {
+						if (!path.StartsWith(UnityPathUtility.AssetsFolder)) { continue; }
+
                         assetTuneManager.FinishFirstImport(path);
                     }
 
