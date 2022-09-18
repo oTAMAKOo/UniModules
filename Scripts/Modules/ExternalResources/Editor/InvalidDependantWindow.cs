@@ -126,21 +126,28 @@ namespace Modules.ExternalResource
         private string searchText = null;
         private DependantInfoScrollView scrollView = null;
 
+		[NonSerialized]
+		private bool initialized = false;
+
         //----- property -----
 
         //----- method -----
 
         public static void Open()
         {
-            var projectResourceFolders = ProjectResourceFolders.Instance;
+			Instance.Initialize();
 
-            var externalResourcesPath = projectResourceFolders.ExternalResourcesPath;
-
-            Instance.Initialize(externalResourcesPath);
+			Instance.ShowUtility();
         }
 
-        private void Initialize(string externalResourcesPath)
+        private void Initialize()
         {
+			if (initialized){ return; }
+
+			var projectResourceFolders = ProjectResourceFolders.Instance;
+
+			var externalResourcesPath = projectResourceFolders.ExternalResourcesPath;
+
             BuildAssetInfo(externalResourcesPath);
 
             scrollView = new DependantInfoScrollView();
@@ -148,8 +155,8 @@ namespace Modules.ExternalResource
 
             titleContent = new GUIContent("ExternalResources Invalid Dependent");
 
-            ShowUtility();
-        }
+			initialized = true;
+		}
 
         private void BuildAssetInfo(string externalResourcesPath)
         {
@@ -183,6 +190,8 @@ namespace Modules.ExternalResource
 
         void OnGUI()
         {
+			Initialize();
+
             using (new EditorGUILayout.HorizontalScope())
             {
                 GUILayout.FlexibleSpace();
