@@ -90,12 +90,12 @@ namespace Modules.Crypto
 								{
 									var loadPath = keyFileManager.GetLoadPath(keyInfo.KeyType);
 
-									var filePath = PathUtility.Combine(streamingAssetPath, loadPath);
+									var assetPath = PathUtility.Combine(streamingAssetPath, loadPath);
+
+									var filePath = UnityPathUtility.ConvertAssetPathToFullPath(assetPath);
 
 									keyFileManager.Create(filePath, keyInfo.Key, keyInfo.Iv);
-
-									var assetPath = UnityPathUtility.ConvertFullPathToAssetPath(filePath);
-
+									
 									AssetDatabase.ImportAsset(assetPath);
 								}
 							}
