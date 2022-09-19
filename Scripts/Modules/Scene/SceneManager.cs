@@ -296,13 +296,17 @@ namespace Modules.Scene
             }
         }
 
-        /// <summary>
-        /// シーン遷移の引数履歴取得.
-        /// </summary>
+        /// <summary> シーン遷移の引数履歴取得 </summary>
         public ISceneArgument[] GetArgumentHistory()
         {
             return history.ToArray();
         }
+
+		/// <summary> キャッシュが存在するか. </summary>
+		public bool HasCahce(Scenes scene)
+		{
+			return cacheScenes.Any(x => x.Identifier == scene);
+		}
 
         private async UniTask TransitionCore<TArgument>(TArgument argument, LoadSceneMode mode, bool isSceneBack, bool registerHistory, CancellationToken cancelToken) 
 			where TArgument : ISceneArgument
