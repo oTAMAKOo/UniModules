@@ -92,7 +92,7 @@ namespace Modules.Devkit.AssetTuning
         protected virtual void SetTexturePlatformSettings(ref TextureImporterPlatformSettings platformSetting)
         {
             platformSetting.overridden = true;
-            platformSetting.format = TextureImporterFormat.ASTC_4x4;
+            platformSetting.format = TextureImporterFormat.ASTC_6x6;
             platformSetting.maxTextureSize = 1024;
             platformSetting.compressionQuality = 100;
             platformSetting.textureCompression = TextureImporterCompression.Compressed;
