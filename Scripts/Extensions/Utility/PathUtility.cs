@@ -1,4 +1,4 @@
-﻿﻿﻿﻿﻿﻿﻿﻿
+﻿﻿﻿﻿﻿﻿﻿
 using System;
 using System.Linq;
 using System.Collections.Generic;
@@ -77,7 +77,9 @@ namespace Extensions
             var baseUri = new Uri(basePath);
             var targetUri = new Uri(targetPath);
 
-            return baseUri.MakeRelativeUri(targetUri).ToString(); ;
+			var fullPath = baseUri.MakeRelativeUri(targetUri).ToString();
+
+			return ConvertPathSeparator(fullPath);
         }
 
         /// <summary> 相対パスから絶対パスに変換 </summary>
@@ -91,7 +93,7 @@ namespace Extensions
 
             Environment.CurrentDirectory = origin;
 
-            return path;
+            return ConvertPathSeparator(path);
         }
 
         /// <summary> 指定されたパス文字列から拡張子を削除 </summary>

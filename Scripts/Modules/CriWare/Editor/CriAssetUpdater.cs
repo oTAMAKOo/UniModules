@@ -42,26 +42,23 @@ namespace Modules.CriWare.Editor
         {
             var projectUnityFolders = ProjectUnityFolders.Instance;
 			var projectScriptFolders = ProjectScriptFolders.Instance;
-			var projectResourceFolders = ProjectResourceFolders.Instance;
-
+			
             var scriptPath = projectScriptFolders.ConstantsScriptPath;
             var streamingAssetPath = projectUnityFolders.StreamingAssetPath;
-            var externalResourcesPath = projectResourceFolders.ExternalResourcesPath;
-
+            
             var streamingAssetFolderName = Path.GetFileName(streamingAssetPath);
-            var externalResourcesFolderName = Path.GetFileName(externalResourcesPath);
 
             var criAssetConfig = CriAssetConfig.Instance;
 
             #if ENABLE_CRIWARE_ADX
 
-            UpdateSoundAssets(criAssetConfig, scriptPath, streamingAssetFolderName, externalResourcesFolderName);
+            UpdateSoundAssets(criAssetConfig, scriptPath, streamingAssetFolderName);
 
             #endif
 
             #if ENABLE_CRIWARE_SOFDEC
             
-            UpdateMovieAssets(criAssetConfig, scriptPath, streamingAssetFolderName, externalResourcesFolderName);
+            UpdateMovieAssets(criAssetConfig, scriptPath, streamingAssetFolderName);
 
             #endif
 
@@ -73,26 +70,30 @@ namespace Modules.CriWare.Editor
         /// <summary>
         /// サウンドアセットをCriの成果物置き場からUnityの管理下にインポート.
         /// </summary>
-        private static void UpdateSoundAssets(CriAssetConfig config, string scriptPath, string streamingAssetFolderName, string externalResourcesFolderName)
+        private static void UpdateSoundAssets(CriAssetConfig config, string scriptPath, string streamingAssetFolderName)
         {
-            var importPath = config.SoundImportInfo.ImportPath;
-            var folderName = config.SoundImportInfo.FolderName;
+			var folderName = config.SoundFolderName;
 
-            var assetExtensions = new string[] { CriAssetDefinition.AcbExtension, CriAssetDefinition.AwbExtension };
-
-            var assetDirInternal = PathUtility.Combine(new string[] { UnityPathUtility.AssetsFolder, streamingAssetFolderName, folderName });
+			var assetExtensions = new string[] { CriAssetDefinition.AcbExtension, CriAssetDefinition.AwbExtension };
 
             UpdateAcfAsset(config.AcfAssetSourceFullPath, config.AcfAssetExportPath);
 
-            var updateScript = UpdateCriAssets(
-                    importPath, folderName,
-                    streamingAssetFolderName, externalResourcesFolderName,
-                    assetExtensions
-                    );
+			var assetFolderPath = PathUtility.Combine(new string[] { UnityPathUtility.AssetsFolder, streamingAssetFolderName, folderName });
+
+			var assetDir = AssetDatabase.GUIDToAssetPath(config.InternalSound.destFolderGuid);
+
+			if (!assetDir.StartsWith(assetFolderPath))
+			{
+				throw new Exception($"Require start internal asset directory.\nAssetFolderPath:{assetFolderPath}\nDestFolder:{assetDir}\n");
+			}
+
+            var updateScript = UpdateCriAssets(config.InternalSound, assetExtensions);
+
+			UpdateCriAssets(config.ExternalSound, assetExtensions);
 
             if (updateScript)
             {
-                SoundScriptGenerator.Generate(scriptPath, assetDirInternal, folderName);
+				SoundScriptGenerator.Generate(scriptPath, assetFolderPath, folderName);
             }
         }
 
@@ -103,24 +104,28 @@ namespace Modules.CriWare.Editor
         /// <summary>
         /// ムービーアセットをCriの成果物置き場からUnityの管理下にインポート.
         /// </summary>
-        private static void UpdateMovieAssets(CriAssetConfig config, string scriptPath, string internalResourcesFolderName, string externalResourcesFolderName)
+        private static void UpdateMovieAssets(CriAssetConfig config, string scriptPath, string streamingAssetFolderName)
         {
-            var importPath = config.MovieImportInfo.ImportPath;
-            var folderName = config.MovieImportInfo.FolderName;
+			var folderName = config.MovieFolderName;
 
-            var assetExtensions = new string[] { CriAssetDefinition.UsmExtension };
+			var assetExtensions = new string[] { CriAssetDefinition.UsmExtension };
+			
+			var assetFolderPath = PathUtility.Combine(new string[] { UnityPathUtility.AssetsFolder, streamingAssetFolderName, folderName });
 
-            var assetDirInternal = PathUtility.Combine(new string[] { UnityPathUtility.AssetsFolder, internalResourcesFolderName, folderName });
+			var assetDir = AssetDatabase.GUIDToAssetPath(config.InternalMovie.destFolderGuid);
 
-            var updateScript = UpdateCriAssets(
-                    importPath, folderName,
-                    internalResourcesFolderName, externalResourcesFolderName,
-                    assetExtensions
-                    );
+			if (!assetDir.StartsWith(assetFolderPath))
+			{
+				throw new Exception($"Require start internal asset directory.\nAssetFolderPath:{assetFolderPath}\nDestFolder:{assetDir}\n");
+			}
 
-            if (updateScript)
+			var updateScript = UpdateCriAssets(config.InternalMovie, assetExtensions);
+
+			UpdateCriAssets(config.ExternalMovie, assetExtensions);
+
+			if (updateScript)
             {
-                MovieScriptGenerator.Generate(scriptPath, assetDirInternal);
+                MovieScriptGenerator.Generate(scriptPath, assetFolderPath, folderName);
             }
         }
 
@@ -140,35 +145,26 @@ namespace Modules.CriWare.Editor
             }
         }
 
-        private static bool UpdateCriAssets(
-            string criExportDir, string rootFolderName,
-            string streamingAssetFolderName, string externalResourcesFolderName,
-            string[] assetExtensions)
+        private static bool UpdateCriAssets(ImportInfo importInfo, string[] assetExtensions)
         {
-            var criExportDirInternal = PathUtility.Combine(criExportDir, streamingAssetFolderName);
-            var criExportDirExternal = PathUtility.Combine(criExportDir, externalResourcesFolderName);
+			var changed = false;
 
-            // アセット置き場のUnity上でのパス生成.
-            var assetDirInternal = PathUtility.Combine(new string[] { UnityPathUtility.AssetsFolder, streamingAssetFolderName, rootFolderName });
-            var assetDirExternal = PathUtility.Combine(new string[] { UnityPathUtility.AssetsFolder, externalResourcesFolderName, rootFolderName });
+			var projectFolder = UnityPathUtility.GetProjectFolderPath();
 
-            var updateScript = false;
+			var sourceDir = PathUtility.RelativePathToFullPath(projectFolder, importInfo.sourceFolderRelativePath);
 
-            using (new AssetEditingScope())
+			var assetDir = AssetDatabase.GUIDToAssetPath(importInfo.destFolderGuid);
+
+			using (new AssetEditingScope())
             {
-                // InternalResources.
-                updateScript = ImportCriAsset(criExportDirInternal, assetDirInternal, assetExtensions);
-                DeleteCriAsset(criExportDirInternal, assetDirInternal);
+				changed |= ImportCriAsset(sourceDir, assetDir, assetExtensions);
+				changed |= DeleteCriAsset(sourceDir, assetDir);
+			}
 
-                // ExternalResources.
-                ImportCriAsset(criExportDirExternal, assetDirExternal, assetExtensions);
-                DeleteCriAsset(criExportDirExternal, assetDirExternal);
-            }
-
-            return updateScript;
+            return changed;
         }
 
-        private static bool ImportCriAsset(string sourceFolderPath, string assetFolderPath, string[] assetExtensions)
+		private static bool ImportCriAsset(string sourceFolderPath, string assetFolderPath, string[] assetExtensions)
         {
             if (string.IsNullOrEmpty(sourceFolderPath) || string.IsNullOrEmpty(assetFolderPath))
             {
@@ -197,7 +193,7 @@ namespace Modules.CriWare.Editor
                 var copyCount = 0;
 
                 var log = new StringBuilder();
-                log.AppendLine("Copy MovieAssets:");
+                log.AppendLine("ImportCriAssets:");
 
                 for (var i = 0; i < copyTargets.Length; i++)
                 {
@@ -214,25 +210,30 @@ namespace Modules.CriWare.Editor
 
                 if (0 < copyCount)
                 {
-                    Debug.Log(log.ToString());
+					using (new DisableStackTraceScope())
+					{
+						Debug.Log(log.ToString());
+					}
                 }
             }
 
             return true;
         }
 
-        private static void DeleteCriAsset(string sourceFolderPath, string assetFolderPath)
+        private static bool DeleteCriAsset(string sourceFolderPath, string assetFolderPath)
         {
+			var delete = false;
+
             if (string.IsNullOrEmpty(sourceFolderPath) || string.IsNullOrEmpty(assetFolderPath))
             {
                 Debug.LogError("DeleteCriAsset Error.");
-                return;
+                return false;
             }
 
             sourceFolderPath += PathUtility.PathSeparator;
             assetFolderPath = PathUtility.Combine(UnityPathUtility.GetProjectFolderPath(), assetFolderPath) + PathUtility.PathSeparator;
 
-            if (!Directory.Exists(assetFolderPath)) { return; }
+            if (!Directory.Exists(assetFolderPath)) { return false; }
 
             var files = Directory.GetFiles(assetFolderPath, "*", SearchOption.AllDirectories);
 
@@ -250,7 +251,7 @@ namespace Modules.CriWare.Editor
 
                 if (!EditorUtility.DisplayDialog("Delete Confirmation", builder.ToString(), "実行", "中止"))
                 {
-                    return;
+                    return false;
                 }
 
                 for (var i = 0; i < deleteTargets.Length; i++)
@@ -258,9 +259,14 @@ namespace Modules.CriWare.Editor
                     var assetPath = UnityPathUtility.ConvertFullPathToAssetPath(deleteTargets[i].Item1);
 
                     AssetDatabase.DeleteAsset(assetPath);
+
+					delete = true;
                 }
 
-                Debug.LogFormat("Delete CriAssets:\n{0}", builder.ToString());
+				using (new DisableStackTraceScope())
+				{
+					Debug.LogFormat("Delete CriAssets:\n{0}", builder.ToString());
+				}
             }
 
             var deleteDirectorys = DirectoryUtility.DeleteEmpty(assetFolderPath);
@@ -270,8 +276,13 @@ namespace Modules.CriWare.Editor
                 var builder = new StringBuilder();
                 deleteDirectorys.ForEach(x => builder.AppendLine(x));
 
-                Debug.LogFormat("Delete Empty Directory:\n{0}", builder.ToString());
+				using (new DisableStackTraceScope())
+				{
+					Debug.LogFormat("Delete Empty Directory:\n{0}", builder.ToString());
+				}
             }
+
+			return delete;
         }
 
         private static bool FileCopy(string sourcePath, string destPath)

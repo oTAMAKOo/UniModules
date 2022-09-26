@@ -79,7 +79,7 @@ namespace Modules.Movie
 
         //----- method -----
 
-        public static void Generate(string scriptPath, string rootFolderPath)
+        public static void Generate(string scriptPath, string rootFolderPath, string rootFolderName)
         {
             var projectUnityFolders = ProjectUnityFolders.Instance;
 
@@ -95,8 +95,10 @@ namespace Modules.Movie
                 var assetPath = info.Usm.Replace(rootFolderPath + PathUtility.PathSeparator, string.Empty);
                 var enumName = ScriptGenerateUtility.GetCSharpName(PathUtility.GetPathWithoutExtension(assetPath), false);
 
+				var usmPath = PathUtility.Combine(rootFolderName, info.UsmPath);
+
                 enums.Append("\t\t\t").AppendFormat(EnumTemplate, enumName);
-                contents.Append("\t\t\t").AppendFormat(ContentsTemplate, enumName, info.UsmPath);
+                contents.Append("\t\t\t").AppendFormat(ContentsTemplate, enumName, usmPath);
 
                 if (i < infos.Length - 1)
                 {

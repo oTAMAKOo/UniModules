@@ -63,11 +63,22 @@ namespace Modules.CriWare.Editor
             {
                 using (new ContentsScope())
                 {
-                    DrawAssetImportInfoGUI(instance, instance.SoundImportInfo);
-
 					// Style.
                     var pathTextStyle = GUI.skin.GetStyle("TextArea");
                     pathTextStyle.alignment = TextAnchor.MiddleLeft;
+
+					GUILayout.Label("FolderName");
+
+					EditorGUI.BeginChangeCheck();
+
+					var folderName = EditorGUILayout.DelayedTextField(instance.SoundFolderName);
+
+					if (EditorGUI.EndChangeCheck())
+					{
+						UnityEditorUtility.RegisterUndo(instance);
+
+						Reflection.SetPrivateField(instance, "soundFolderName", folderName);
+					}
 
                     GUILayout.Label("AcfAssetSourcePath");
 
@@ -120,7 +131,9 @@ namespace Modules.CriWare.Editor
 							};
                         }
                     }
-                }
+
+					DrawAssetImportInfoGUI(instance, "internalSound", "externalSound");
+				}
             }
 
             GUILayout.Space(4f);
@@ -141,7 +154,20 @@ namespace Modules.CriWare.Editor
             {
                 using (new ContentsScope())
                 {
-                    DrawAssetImportInfoGUI(instance, instance.MovieImportInfo);
+					GUILayout.Label("FolderName");
+
+					EditorGUI.BeginChangeCheck();
+
+					var folderName = EditorGUILayout.DelayedTextField(instance.MovieFolderName);
+
+					if (EditorGUI.EndChangeCheck())
+					{
+						UnityEditorUtility.RegisterUndo(instance);
+
+						Reflection.SetPrivateField(instance, "movieFolderName", folderName);
+					}
+
+                    DrawAssetImportInfoGUI(instance, "internalMovie", "externalMovie");
 				}
             }
 
@@ -150,50 +176,83 @@ namespace Modules.CriWare.Editor
 
         #endif
 
-        public void DrawAssetImportInfoGUI(CriAssetConfig instance, CriAssetConfig.AssetImportInfo assetImportInfo)
+        public void DrawAssetImportInfoGUI(CriAssetConfig instance, string internalFieldName, string externalFieldName)
         {
-            // Style.
-            var pathTextStyle = GUI.skin.GetStyle("TextArea");
-            pathTextStyle.alignment = TextAnchor.MiddleLeft;
+			var internalInfo = Reflection.GetPrivateField<CriAssetConfig, ImportInfo>(instance, internalFieldName);
+			var externalInfo = Reflection.GetPrivateField<CriAssetConfig, ImportInfo>(instance, externalFieldName);
 
-            GUILayout.Label("AssetFolderName");
+			var labels = new string[] { "Internal", "External" };
+			var infos = new ImportInfo[] { internalInfo, externalInfo };
+			var fieldNames = new string[] { internalFieldName, externalFieldName };
 
-            EditorGUI.BeginChangeCheck();
+			for (var i = 0; i < labels.Length; i++)
+			{
+				GUILayout.Label(labels[i]);
 
-            var folderName = EditorGUILayout.DelayedTextField(assetImportInfo.FolderName);
+				var info = infos[i];
+				var fieldName = fieldNames[i];
 
-            if (EditorGUI.EndChangeCheck())
-            {
-				UnityEditorUtility.RegisterUndo(instance);
-
-                Reflection.SetPrivateField(assetImportInfo, "folderName", folderName);
-            }
-
-            GUILayout.Label("ImportFrom");
-
-            using (new EditorGUILayout.HorizontalScope())
-            {
-                EditorGUILayout.SelectableLabel(assetImportInfo.ImportPath, pathTextStyle, GUILayout.Height(16f));
-
-                if (GUILayout.Button("Edit", EditorStyles.miniButton, GUILayout.Width(50f)))
-                {
-					onAfterDrawCallback = () =>
+				using (new ContentsScope())
+	            {
+					using (new EditorGUILayout.HorizontalScope())
 					{
-	                    var sourceFolder = EditorUtility.OpenFolderPanel("Select import folder", "", "");
+						EditorGUI.BeginChangeCheck();
+						
+						var relativePath = info.sourceFolderRelativePath;
 
-	                    if (!string.IsNullOrEmpty(sourceFolder))
-	                    {
-							UnityEditorUtility.RegisterUndo(instance);
+						relativePath = EditorGUILayout.DelayedTextField("Source Folder", relativePath, GUILayout.Height(16f), GUILayout.ExpandWidth(true));
 
-	                        var assetFolderUri = new Uri(Application.dataPath);
-	                        var targetUri = new Uri(sourceFolder);
-	                        var importPath = assetFolderUri.MakeRelativeUri(targetUri).ToString();
-
-	                        Reflection.SetPrivateField(assetImportInfo, "importPath", importPath);
+						if (EditorGUI.EndChangeCheck())
+						{
+							info.sourceFolderRelativePath = relativePath;
 						}
-					};
-                }
-            }
+
+						if (GUILayout.Button("select", EditorStyles.miniButton, GUILayout.Width(50f)))
+						{
+							// このタイミングでEditorUtility.OpenFolderPanelを呼ぶとGUIレイアウトエラーが発生するので後で実行する.
+
+							onAfterDrawCallback = () => 
+							{
+								var selectDirectory = EditorUtility.OpenFolderPanel("Select Directory", "", "");
+
+								if (!string.IsNullOrEmpty(selectDirectory))
+								{
+									UnityEditorUtility.RegisterUndo(instance);
+
+									var assetFolderUri = new Uri(Application.dataPath);
+									var targetUri = new Uri(selectDirectory);
+
+									relativePath = assetFolderUri.MakeRelativeUri(targetUri).ToString();
+
+									info.sourceFolderRelativePath = relativePath;
+									
+									Reflection.SetPrivateField(instance, fieldName, info);
+								}
+							};
+						}
+					}
+
+	                GUILayout.Space(2f);
+
+	                EditorGUI.BeginChangeCheck();
+
+					var folderAsset = UnityEditorUtility.FindMainAsset(info.destFolderGuid);
+	                
+					var destFolder = EditorGUILayout.ObjectField("Dest Folder", folderAsset, typeof(UnityEngine.Object),  false, GUILayout.Height(16f), GUILayout.ExpandWidth(true));
+	                
+					if (EditorGUI.EndChangeCheck())
+					{
+						if (UnityEditorUtility.IsFolder(destFolder))
+						{
+							var destFolderGuid = destFolder != null ? UnityEditorUtility.GetAssetGUID(destFolder) : null;
+
+							info.destFolderGuid = destFolderGuid;
+
+							Reflection.SetPrivateField(instance, fieldName, info);
+						}
+					}
+				}
+			}
 		}
     }
 }
