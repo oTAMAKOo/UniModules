@@ -243,11 +243,11 @@ namespace Extensions
             {
                 if (!Application.isPlaying || immediate)
                 {
-                    UnityEngine.Object.DestroyImmediate(component);
+                    UnityEngine.Object.DestroyImmediate(component.gameObject);
                 }
                 else
                 {
-                    UnityEngine.Object.Destroy(component);
+                    UnityEngine.Object.Destroy(component.gameObject);
                 }
             }
         }
