@@ -1,6 +1,9 @@
 ﻿
 using UnityEngine;
+using UnityEditor;
 using System.Collections.Generic;
+using System.Linq;
+using Extensions;
 using Modules.Devkit.ScriptableObjects;
 
 namespace Modules.Devkit.SceneImporter
@@ -14,13 +17,29 @@ namespace Modules.Devkit.SceneImporter
         //----- field -----
 
         [SerializeField]
-        private string initialScene = null;
+        private Object initialScene = null;
         [SerializeField]
-        private List<string> managedFolders = new List<string>();
+        private Object[] managedFolders = new Object[0];
 
         //----- property -----
 
-        public string InitialScene { get { return initialScene; } }
-        public string[] ManagedFolders { get { return managedFolders.ToArray(); } }
-    }
+		public string GetInitialScenePath()
+		{
+			if (initialScene == null){ return null; }
+
+			var assetPath = AssetDatabase.GetAssetPath(initialScene);
+
+			return PathUtility.ConvertPathSeparator(assetPath);
+		}
+		
+		public string[] GetManagedFolderPaths()
+		{
+			var assetPaths = managedFolders.Where(x => x != null)
+				.Select(x => AssetDatabase.GetAssetPath(x))
+				.Select(x => PathUtility.ConvertPathSeparator(x))
+				.ToArray();
+
+			return assetPaths;
+		}
+	}
 }

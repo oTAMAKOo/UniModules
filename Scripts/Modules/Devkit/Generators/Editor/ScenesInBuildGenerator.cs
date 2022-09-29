@@ -24,7 +24,7 @@ namespace Modules.Devkit.Generators
             var projectScriptFolders = ProjectScriptFolders.Instance;
             var sceneImporterConfig = SceneImporterConfig.Instance;
 
-            var managedFolders = sceneImporterConfig.ManagedFolders;
+            var managedFolderPaths = sceneImporterConfig.GetManagedFolderPaths();
 
 	        var assetsFolderPath = Application.dataPath.Substring(0, Application.dataPath.Length - "Assets".Length);
 
@@ -34,7 +34,7 @@ namespace Modules.Devkit.Generators
 
 	        var isChanged = EditorBuildSettings.scenes.Length != buildTargetScenes.Count;
 
-            foreach (var folder in managedFolders)
+            foreach (var folder in managedFolderPaths)
 	        {
 	            var folderPath = assetsFolderPath + folder;
 
@@ -64,16 +64,16 @@ namespace Modules.Devkit.Generators
 
         public static void UpdateBuildTargetScenes(SceneImporterConfig sceneImporterConfig, string scriptPath, Dictionary<string, EditorBuildSettingsScene> buildTargetScenes)
         {
-            var initialScene = sceneImporterConfig.InitialScene;
-            var managedFolders = sceneImporterConfig.ManagedFolders;
+            var initialScenePath = sceneImporterConfig.GetInitialScenePath();
+            var managedFolderPaths = sceneImporterConfig.GetManagedFolderPaths();
 
             var nonInitialScenes = buildTargetScenes.Values
-                    .Where(x => x.path != initialScene)
-                    .OrderBy(x => !sceneImporterConfig.ManagedFolders.Any(y => x.path.Contains(y)))
+                    .Where(x => x.path != initialScenePath)
+                    .OrderBy(x => !managedFolderPaths.Any(y => x.path.Contains(y)))
                     .ThenBy(x => x.path).ToList();
 
-            EditorBuildSettings.scenes = new EditorBuildSettingsScene[] { new EditorBuildSettingsScene(initialScene, true) }.Concat(nonInitialScenes).ToArray();
-            ScenesScriptGenerator.Generate(managedFolders, scriptPath);
+            EditorBuildSettings.scenes = new EditorBuildSettingsScene[] { new EditorBuildSettingsScene(initialScenePath, true) }.Concat(nonInitialScenes).ToArray();
+            ScenesScriptGenerator.Generate(managedFolderPaths, scriptPath);
             AssetDatabase.SaveAssets();
 
             EditorUtility.DisplayDialog("SceneAssetPostprocessor", "EditorBuildSettingsの更新、SceneNamesの再出力を行いました", "確認");

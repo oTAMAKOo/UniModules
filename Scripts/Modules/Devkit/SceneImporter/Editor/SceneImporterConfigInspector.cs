@@ -3,8 +3,11 @@ using UnityEngine;
 using UnityEditor;
 using System;
 using System.Linq;
+using UniRx;
 using Extensions.Devkit;
 using Extensions;
+using Modules.Devkit.Inspector;
+using Object = UnityEngine.Object;
 
 namespace Modules.Devkit.SceneImporter
 {
@@ -15,7 +18,9 @@ namespace Modules.Devkit.SceneImporter
 
         //----- field -----
 
-        private Vector2 scrollPosition = Vector2.zero;
+		private FolderRegisterScrollView sceneFolderView = null;
+
+		private LifetimeDisposable lifetimeDisposable = null;
 
         private SceneImporterConfig instance = null;
 
@@ -23,127 +28,64 @@ namespace Modules.Devkit.SceneImporter
 
         //----- method -----
 
+		void OnEnable()
+		{
+			instance = target as SceneImporterConfig;
+
+			lifetimeDisposable = new LifetimeDisposable();
+
+			sceneFolderView = new FolderRegisterScrollView("Scene Folders", nameof(SceneImporterConfigInspector) + "-ManagedFolders");
+
+			sceneFolderView.RemoveChildrenFolder = true;
+
+			sceneFolderView.OnUpdateContentsAsObservable()
+				.Subscribe(x => SaveCompressFolders(x.Select(y => y.asset).ToArray()))
+				.AddTo(lifetimeDisposable.Disposable);
+
+			var managedFolders = Reflection.GetPrivateField<SceneImporterConfig, Object[]>(instance, "managedFolders");
+
+			var managedFolderGuids = managedFolders
+				.Select(x => UnityEditorUtility.GetAssetGUID(x))
+				.ToArray();
+
+			sceneFolderView.SetContents(managedFolderGuids);
+		}
+
         public override void OnInspectorGUI()
         {
             instance = target as SceneImporterConfig;
 			
-			var managedFolders = instance.ManagedFolders.ToList();
-
             var contentHeight = 16f;
 
-            EditorLayoutTools.SetLabelWidth(100f);
-
-			Action onAfterDrawCallback = null;
-
-            // Style.
-            var pathTextStyle = GUI.skin.GetStyle("TextArea");
-            pathTextStyle.alignment = TextAnchor.MiddleLeft;
-
-            EditorGUILayout.Separator();
+			EditorGUILayout.Separator();
 
             // InitialScene.
-            using (new EditorGUILayout.HorizontalScope())
-            {
-                GUILayout.Label("Initial Scene", GUILayout.Width(80f), GUILayout.Height(contentHeight));
-                GUILayout.Label(instance.InitialScene, pathTextStyle, GUILayout.Height(contentHeight));
 
-                if (GUILayout.Button("Select", GUILayout.Width(60f), GUILayout.Height(contentHeight)))
-                {
-                    UnityEditorUtility.RegisterUndo(instance);
+			var initialScene = Reflection.GetPrivateField<SceneImporterConfig, Object>(instance, "initialScene");
 
-					onAfterDrawCallback = () =>
-					{
-	                    var initialScenePath = EditorUtility.OpenFilePanelWithFilters("Select Initial Scene", "Assets", new string[]{ "SceneFile", "unity" });
+			EditorGUI.BeginChangeCheck();
 
-	                    initialScenePath = initialScenePath.Replace(Application.dataPath, "Assets");
+			initialScene = EditorGUILayout.ObjectField("Initial Scene", initialScene, typeof(SceneAsset), false, GUILayout.Height(contentHeight));
 
-	                    Reflection.SetPrivateField(instance, "initialScene", initialScenePath);
-					};
-                }
-            }
+			if (EditorGUI.EndChangeCheck())
+			{
+				UnityEditorUtility.RegisterUndo(instance);
+
+				Reflection.SetPrivateField<SceneImporterConfig, Object>(instance, "initialScene", initialScene);
+			}
 
             EditorGUILayout.Separator();
 
             // AutoAdditionFolders.
-            EditorLayoutTools.Title("Managed Folders");
 
-            var change = false;
+			sceneFolderView.DrawGUI();
+		}
 
-            using (new ContentsScope())
-            {
-                var scrollViewHeight = System.Math.Min(contentHeight * managedFolders.Count + 5f, 300f);
+		private void SaveCompressFolders(Object[] folders)
+		{
+			UnityEditorUtility.RegisterUndo(instance);
 
-                using (var scrollViewScope = new EditorGUILayout.ScrollViewScope(scrollPosition, GUILayout.Height(scrollViewHeight)))
-                {
-                    for (var i = 0; i < managedFolders.Count; ++i)
-                    {
-                        var folder = managedFolders[i];
-
-                        using (new EditorGUILayout.HorizontalScope())
-                        {
-                            var label = string.IsNullOrEmpty(folder) ? folder : folder + "/";
-                            GUILayout.Label(label, pathTextStyle, GUILayout.Height(contentHeight));
-
-                            if (GUILayout.Button("-", EditorStyles.miniButton, GUILayout.Width(24f), GUILayout.Height(contentHeight)))
-                            {
-                                managedFolders.RemoveAt(i);
-                                change = true;
-                            }
-                        }
-                    }
-
-                    scrollPosition = scrollViewScope.scrollPosition;
-                }
-                
-                using (new EditorGUILayout.HorizontalScope())
-                {
-                    GUILayout.FlexibleSpace();
-
-                    if (GUILayout.Button("+", EditorStyles.miniButton, GUILayout.Width(40f)))
-                    {
-						onAfterDrawCallback = () =>
-						{
-	                        var folderPath = EditorUtility.OpenFolderPanel("Select Auto Addition Scene Folder", "Assets", "");
-
-							if (folderPath.Contains(Application.dataPath))
-							{
-								folderPath = folderPath.Replace(Application.dataPath, "Assets");
-
-								if (folderPath != "Assets" && !managedFolders.Contains(folderPath))
-								{
-									managedFolders.Add(folderPath);
-									change = true;
-								}
-							}
-						};
-					}
-				}
-			}
-
-			if (onAfterDrawCallback != null)
-			{
-				onAfterDrawCallback.Invoke();
-			}
-
-            if (change)
-            {
-                Func<string, int> sortFunc = x =>
-                {
-                    var path = PathUtility.ConvertPathSeparator(x);
-
-                    var separatorCount = path.Split(PathUtility.PathSeparator).Length;
-
-                    return separatorCount;
-                };
-
-                var folders = managedFolders
-                    .OrderBy(x => sortFunc.Invoke(x))
-                    .ThenBy(x => x.Length)
-                    .ToList();
-
-                Reflection.SetPrivateField(instance, "managedFolders", folders);
-                UnityEditorUtility.RegisterUndo(instance);
-            }
+			Reflection.SetPrivateField(instance, "managedFolders", folders);
 		}
     }
 }

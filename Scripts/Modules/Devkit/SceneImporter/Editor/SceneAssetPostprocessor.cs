@@ -62,7 +62,11 @@ namespace Modules.Devkit.SceneImporter
                 if (scenes.Length != sceneCount)
                 {
                     EditorBuildSettings.scenes = scenes;
-                    ScenesScriptGenerator.Generate(sceneImporterConfig.ManagedFolders, constantsScriptPath);
+
+					var managedFolderPaths = sceneImporterConfig.GetManagedFolderPaths();
+
+                    ScenesScriptGenerator.Generate(managedFolderPaths, constantsScriptPath);
+
                     AssetDatabase.SaveAssets();
 
                     Debug.Log("Update BuildSettings asset.");
@@ -75,7 +79,7 @@ namespace Modules.Devkit.SceneImporter
             {   
                 var isChanged = false;
 
-                var autoAdditionFolders = sceneImporterConfig.ManagedFolders;
+				var managedFolderPaths = sceneImporterConfig.GetManagedFolderPaths();
                 var buildTargetScenes = EditorBuildSettings.scenes.ToDictionary(x => x.path);
 
                 //--------------------------------------------------------------------
@@ -87,7 +91,7 @@ namespace Modules.Devkit.SceneImporter
 					if (!buildTargetScenes.ContainsKey(movedAssets[i])) { continue; }
 
                     // ビルド対象フォルダ内の移動は除外処理しない.
-                    if (autoAdditionFolders.Any(y => movedAssets[i].StartsWith(y))){ continue; }
+                    if (managedFolderPaths.Any(y => movedAssets[i].StartsWith(y))){ continue; }
 
                     // ビルドターゲットに入っているシーンが移動した場合ビルド対象から外す.
                     buildTargetScenes.Remove(movedAssets[i]);
@@ -102,7 +106,7 @@ namespace Modules.Devkit.SceneImporter
                 // .unity かつ、自動追加対象フォルダ以下のファイルパスを取得.
                 var movedInScenes = movedAssets
                     .Where(x => Path.GetExtension(x) == sceneFileExtension)
-                    .Where(x => autoAdditionFolders.Any(y => x.StartsWith(y)));
+                    .Where(x => managedFolderPaths.Any(y => x.StartsWith(y)));
 
                 foreach (var movedInScene in movedInScenes)
                 {
@@ -151,7 +155,7 @@ namespace Modules.Devkit.SceneImporter
                 // .unity かつ、自動追加対象フォルダ以下のファイルパスを取得.
                 var addScenes = importedAssets
                     .Where(x => Path.GetExtension(x) == sceneFileExtension)
-                    .Where(x => autoAdditionFolders.Any(y => x.StartsWith(y)));
+                    .Where(x => managedFolderPaths.Any(y => x.StartsWith(y)));
 
                 foreach (var addScene in addScenes)
                 {

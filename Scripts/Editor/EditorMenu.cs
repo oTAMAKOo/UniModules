@@ -70,7 +70,8 @@ namespace Modules
 			var constantsScriptPath = projectScriptFolders.ConstantsScriptPath;
 
             // SceneNames.
-            ScenesScriptGenerator.Generate(sceneImporterConfig.ManagedFolders, constantsScriptPath);
+			var managedFolderPaths = sceneImporterConfig.GetManagedFolderPaths();
+            ScenesScriptGenerator.Generate(managedFolderPaths, constantsScriptPath);
 
             // Tags.
             TagsScriptGenerator.Generate(constantsScriptPath);
@@ -89,8 +90,9 @@ namespace Modules
             var sceneImporterConfig = SceneImporterConfig.Instance;
 
 			var constantsScriptPath = projectScriptFolders.ConstantsScriptPath;
+			var managedFolderPaths = sceneImporterConfig.GetManagedFolderPaths();
 
-            ScenesScriptGenerator.Generate(sceneImporterConfig.ManagedFolders, constantsScriptPath);
+            ScenesScriptGenerator.Generate(managedFolderPaths, constantsScriptPath);
         }
 
         [MenuItem(GeneratorsScripts + "  - Tags.cs", priority = 2)]
