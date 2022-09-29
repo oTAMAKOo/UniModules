@@ -37,6 +37,7 @@ namespace Modules.Devkit.SceneImporter
 			var assetPaths = managedFolders.Where(x => x != null)
 				.Select(x => AssetDatabase.GetAssetPath(x))
 				.Select(x => PathUtility.ConvertPathSeparator(x))
+				.Select(x => x.EndsWith(PathUtility.PathSeparator) ? x : x + PathUtility.PathSeparator)
 				.ToArray();
 
 			return assetPaths;
