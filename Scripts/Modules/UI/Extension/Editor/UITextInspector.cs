@@ -28,40 +28,43 @@ namespace Modules.UI.Extension
             var selection = Reflection.GetPrivateField<UIText, IntNullable>(instance, "selection");
             var colorInfos = Reflection.GetPrivateProperty<UIText, UIText.TextColor[]>(instance, "ColorInfos");
 
-            var infos = new UIText.TextColor[] { new UIText.TextColor() }.Concat(colorInfos).ToArray();
-            var select = selection.HasValue ? infos.IndexOf(x => x.Type == selection.Value) : 0;
-
-            var current = infos[select];
-
-            using (new EditorGUILayout.HorizontalScope())
+			if (colorInfos != null && colorInfos.Any())
             {
-                var labels = infos.Select(x => x.LabelName).ToArray();
+				var infos = new UIText.TextColor[] { new UIText.TextColor() }.Concat(colorInfos).ToArray();
+				var select = selection.HasValue ? infos.IndexOf(x => x.Type == selection.Value) : 0;
 
-                EditorGUI.BeginChangeCheck();
+				var current = infos[select];
 
-                select = EditorGUILayout.Popup("Text Color", select, labels);
+				using (new EditorGUILayout.HorizontalScope())
+				{
+					var labels = infos.Select(x => x.LabelName).ToArray();
 
-                if (EditorGUI.EndChangeCheck())
-                {
-                    UnityEditorUtility.RegisterUndo(instance);
+					EditorGUI.BeginChangeCheck();
 
-                    current = infos[select];
-                    instance.SetColor(current.Type);
-                }
-            }
+					select = EditorGUILayout.Popup("Text Color", select, labels);
 
-            if (current != null)
-            {
-                if (current.ShadowColor.HasValue)
-                {
-                    EditorGUILayout.HelpBox("Shadow color exists", MessageType.Info);
-                }
+					if (EditorGUI.EndChangeCheck())
+					{
+						UnityEditorUtility.RegisterUndo(instance);
 
-                if (current.OutlineColor.HasValue)
-                {
-                    EditorGUILayout.HelpBox("Outline color exists", MessageType.Info);
-                }
-            }
-        }
+						current = infos[select];
+						instance.SetColor(current.Type);
+					}
+				}
+
+				if (current != null)
+				{
+					if (current.ShadowColor.HasValue)
+					{
+						EditorGUILayout.HelpBox("Shadow color exists", MessageType.Info);
+					}
+
+					if (current.OutlineColor.HasValue)
+					{
+						EditorGUILayout.HelpBox("Outline color exists", MessageType.Info);
+					}
+				}
+			}
+		}
     }
 }
