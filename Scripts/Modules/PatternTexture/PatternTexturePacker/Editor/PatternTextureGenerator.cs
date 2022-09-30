@@ -133,7 +133,7 @@ namespace Modules.PatternTexture
             return changed;
         }
 
-        // テクスチャを読み込み.
+		// テクスチャを読み込み.
         private PatternTargetData[] ReadTextureBlock(int blockSize, Texture2D[] textures)
         {
             var list = new List<PatternTargetData>();
@@ -175,15 +175,14 @@ namespace Modules.PatternTexture
             // パディングの分も含める.
             var totalBlockSize = blockSize + padding;
 
+			var lineBlock = Math.Ceiling(Math.Sqrt(totalBlockCount));
+
             while (true)
             {
                 textureSize *= 2;
-
-                // 一列に入るブロック数.
-                var count = (float)Math.Floor((float)(textureSize - padding) / totalBlockSize);
-
-                if (totalBlockCount < count * count) { break; }
-            }
+				
+				if(lineBlock * totalBlockSize < textureSize - padding * 2){ break; }
+			}
 
             return textureSize;
         }
@@ -242,7 +241,15 @@ namespace Modules.PatternTexture
                             transY += blockSize + padding;
                         }
 
-                        texture.SetPixels32(transX, transY, item.width, item.height, item.colors);
+						try
+						{
+							texture.SetPixels32(transX, transY, item.width, item.height, item.colors);
+						}
+						catch
+						{
+							EditorUtility.ClearProgressBar();
+							throw;
+						}
 
                         AddCompletionPixels(texture, transX, transY, item.width, item.height);
 
