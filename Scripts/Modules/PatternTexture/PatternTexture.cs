@@ -1,5 +1,6 @@
 ﻿
 using UnityEngine;
+using System;
 using System.Linq;
 using System.Collections.Generic;
 using Extensions;
@@ -10,9 +11,7 @@ namespace Modules.PatternTexture
 	{
         //----- params -----
 
-        private const string PixelHashFormat = "{0}-{1}";
-
-        //----- field -----
+		//----- field -----
 
         [SerializeField, ReadOnly]
 		private int blockSize = 32;
@@ -35,7 +34,7 @@ namespace Modules.PatternTexture
         private Texture2D texture = null;
 
         // テクスチャ名とブロック位置からピクセルハッシュを取得する為のディクショナリ.
-        private Dictionary<string, Dictionary<string, ushort?>> pixelIdDictionary = null;
+        private Dictionary<string, Dictionary<Tuple<int, int>, ushort?>> pixelIdDictionary = null;
 
         // 同じピクセル情報のブロックは存在しないはずなのでディクショナリで高速アクセスできる.
         private Dictionary<ushort, PatternBlockData> blockByPixelId= null;
@@ -56,17 +55,17 @@ namespace Modules.PatternTexture
         {
             if(pixelIdDictionary == null)
             {
-                pixelIdDictionary = new Dictionary<string, Dictionary<string, ushort?>>();
+                pixelIdDictionary = new Dictionary<string, Dictionary<Tuple<int, int>, ushort?>>();
 
                 foreach (var data in sourceData)
                 {
-                    var blockDictionary = new Dictionary<string, ushort?>();
+                    var blockDictionary = new Dictionary<Tuple<int, int>, ushort?>();
 
                     for (var y = 0; y < data.YBlock; y++)
                     {
                         for (var x = 0; x < data.XBlock; x++)
                         {
-                            var key = string.Format(PixelHashFormat, x, y);
+                            var key = Tuple.Create(x, y);
                             var id = data.BlockIds[y * data.XBlock + x];
 
                             blockDictionary.Add(key, id);
@@ -118,7 +117,7 @@ namespace Modules.PatternTexture
 
             if(texturePixelIds == null) { return null; }
 
-            var key = string.Format(PixelHashFormat, bx, by);
+            var key = Tuple.Create(bx, by);
 
             var pixelId = texturePixelIds.GetValueOrDefault(key, null);
             
