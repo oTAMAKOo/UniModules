@@ -281,10 +281,6 @@ namespace Modules.UI
 
 					await UniTask.WhenAll(tasks).AttachExternalCancellation(cancelSource.Token);
 				}
-				catch (OperationCanceledException)
-				{
-					/* Canceled */
-				}
 				catch (Exception e)
 				{
 					Debug.LogException(e);
@@ -331,10 +327,6 @@ namespace Modules.UI
 
 				await UniTask.WhenAll(tasks).AttachExternalCancellation(cancelSource.Token);
 			}
-			catch (OperationCanceledException)
-			{
-				/* Canceled */
-			}
 			catch (Exception e)
 			{
 				Debug.LogException(e);
@@ -380,10 +372,6 @@ namespace Modules.UI
 			try
 			{
 				await item.Initialize().AttachExternalCancellation(cancelSource.Token);
-			}
-			catch (OperationCanceledException)
-			{
-				/* Canceled */
 			}
 			catch (Exception e)
 			{

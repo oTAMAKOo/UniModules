@@ -250,7 +250,7 @@ namespace Modules.Scene
         /// <summary>
         /// シーン遷移を中止.
         /// </summary>
-        private void TransitionCancel()
+        public void TransitionCancel()
         {
             if (transitionDisposable != null)
             {
@@ -360,7 +360,7 @@ namespace Modules.Scene
 			}
 			catch (OperationCanceledException) 
 			{
-				/* Canceled */
+				return;
 			}
 			catch (Exception e)
 			{
@@ -386,7 +386,7 @@ namespace Modules.Scene
 				}
 				catch (OperationCanceledException) 
 				{
-					/* Canceled */
+					return;
 				}
 				catch (Exception e)
 				{
@@ -444,7 +444,7 @@ namespace Modules.Scene
 					}
 					catch (OperationCanceledException) 
 					{
-						/* Canceled */
+						return;
 					}
 					catch (Exception e)
 					{
@@ -482,7 +482,7 @@ namespace Modules.Scene
 				}
 				catch (OperationCanceledException) 
 				{
-					/* Canceled */
+					return;
 				}
 				catch (Exception e)
 				{
@@ -552,7 +552,7 @@ namespace Modules.Scene
 				}
 				catch (OperationCanceledException) 
 				{
-					/* Canceled */
+					return;
 				}
 				catch (Exception e)
 				{
@@ -579,7 +579,7 @@ namespace Modules.Scene
 				}
 				catch (OperationCanceledException) 
 				{
-					/* Canceled */
+					return;
 				}
 				catch (Exception e)
 				{
@@ -597,7 +597,7 @@ namespace Modules.Scene
 			}
 			catch (OperationCanceledException) 
 			{
-				/* Canceled */
+				return;
 			}
 			catch (Exception e)
 			{
@@ -612,7 +612,7 @@ namespace Modules.Scene
 			}
 			catch (OperationCanceledException) 
 			{
-				/* Canceled */
+				return;
 			}
 			catch (Exception e)
 			{
@@ -633,7 +633,7 @@ namespace Modules.Scene
 			}
 			catch (OperationCanceledException) 
 			{
-				/* Canceled */
+				return;
 			}
 			catch (Exception e)
 			{
@@ -730,7 +730,7 @@ namespace Modules.Scene
 			}
 			catch (OperationCanceledException) 
 			{
-				/* Canceled */
+				return null;
 			}
 			catch (Exception e)
 			{
@@ -853,7 +853,7 @@ namespace Modules.Scene
                 }
 				catch (OperationCanceledException) 
 				{
-					/* Canceled */
+					return null;
 				}
 				finally
 				{
@@ -898,7 +898,7 @@ namespace Modules.Scene
 							}
 							catch (OperationCanceledException) 
 							{
-								/* Canceled */
+								return null;
 							}
 							catch (Exception e)
 							{
@@ -919,7 +919,7 @@ namespace Modules.Scene
 					}
 					catch (OperationCanceledException) 
 					{
-						/* Canceled */
+						return null;
 					}
 					catch (Exception e)
 					{
@@ -1053,7 +1053,7 @@ namespace Modules.Scene
 					}
 					catch (OperationCanceledException) 
 					{
-						/* Canceled */
+						return;
 					}
 					catch (Exception e)
 					{
@@ -1069,10 +1069,15 @@ namespace Modules.Scene
                 SceneManager.sceneUnloaded += sceneUnloaded;
 
                 op = SceneManager.UnloadSceneAsync(scene.Value);
+
+				while (!op.isDone)
+				{
+					await UniTask.NextFrame(cancelToken);
+				}
             }
 			catch (OperationCanceledException) 
 			{
-				/* Canceled */
+				return;
 			}
             catch (Exception e)
             {
@@ -1088,12 +1093,7 @@ namespace Modules.Scene
                 return;
             }
 
-            while (!op.isDone)
-            {
-                await UniTask.NextFrame(cancelToken);
-            }
-
-            SceneManager.sceneUnloaded -= sceneUnloaded;
+			SceneManager.sceneUnloaded -= sceneUnloaded;
 
             if (onUnloadSceneComplete != null)
             {
@@ -1183,7 +1183,7 @@ namespace Modules.Scene
 			}
 			catch (OperationCanceledException) 
 			{
-				/* Canceled */
+				return;
 			}
 			catch (Exception e)
 			{

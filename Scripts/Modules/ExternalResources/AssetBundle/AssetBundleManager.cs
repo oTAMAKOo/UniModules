@@ -309,10 +309,6 @@ namespace Modules.AssetBundles
 							await UniTask.NextFrame();
 						}
 					}
-					catch (OperationCanceledException) 
-					{
-						/* Canceled */
-					}
 					catch (Exception e)
 					{
 						Debug.LogErrorFormat("Exception : {0}\n{1}\n", downloadTask.Key, e);
@@ -461,10 +457,6 @@ namespace Modules.AssetBundles
 				{
 					result = await SimulateLoadAsset<T>(assetPath).AttachExternalCancellation(cancelToken);
 				}
-				catch (OperationCanceledException)
-				{
-					/* Canceled */
-				}
 				catch (Exception e)
 				{
 					Debug.LogException(e);
@@ -571,10 +563,6 @@ namespace Modules.AssetBundles
 							UnloadAsset(assetBundleName);
 						}
 					}
-				}
-				catch (OperationCanceledException)
-				{
-					/* Canceled */
 				}
 				catch (Exception e)
 				{

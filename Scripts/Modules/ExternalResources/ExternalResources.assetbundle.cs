@@ -75,10 +75,6 @@ namespace Modules.ExternalResource
 				{
 					await loadAssetHandler.OnLoadRequest(assetInfo).AttachExternalCancellation(cancelSource.Token);
 				}
-				catch (OperationCanceledException) 
-				{
-					/* Canceled */
-				}
 				catch (Exception e)
 				{
 					OnError(e);
@@ -101,10 +97,6 @@ namespace Modules.ExternalResource
 					try
 					{
 						await UpdateAsset(resourcePath).AttachExternalCancellation(cancelSource.Token);
-					}
-					catch (OperationCanceledException) 
-					{
-						/* Canceled */
 					}
 					catch (Exception e)
 					{
@@ -160,10 +152,6 @@ namespace Modules.ExternalResource
 				}
 
 			}
-			catch (OperationCanceledException) 
-			{
-				/* Canceled */
-			}
 			catch (Exception e)
 			{
 				OnError(e);
@@ -178,10 +166,6 @@ namespace Modules.ExternalResource
 				try
 				{
 					await loadAssetHandler.OnLoadFinish(assetInfo).AttachExternalCancellation(cancelSource.Token);
-				}
-				catch (OperationCanceledException) 
-				{
-					/* Canceled */
 				}
 				catch (Exception e)
 				{
