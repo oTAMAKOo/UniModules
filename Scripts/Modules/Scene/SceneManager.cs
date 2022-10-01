@@ -25,22 +25,22 @@ namespace Modules.Scene
 
         //----- field -----
 
-        private CancellationTokenSource transitionCancelSource = null;
+		protected CancellationTokenSource transitionCancelSource = null;
 
-        private Dictionary<Scenes, SceneInstance> loadedScenes = null;
-        private FixedQueue<SceneInstance> cacheScenes = null;
+		protected Dictionary<Scenes, SceneInstance> loadedScenes = null;
+		protected FixedQueue<SceneInstance> cacheScenes = null;
 
-        private Dictionary<Scenes, IObservable<SceneInstance>> loadingScenes = null;
-        private Dictionary<Scenes, IObservable<Unit>> unloadingScenes = null;
+		protected Dictionary<Scenes, IObservable<SceneInstance>> loadingScenes = null;
+		protected Dictionary<Scenes, IObservable<Unit>> unloadingScenes = null;
 
-        private SceneInstance currentScene = null;
-        private ISceneArgument currentSceneArgument = null;
+		protected SceneInstance currentScene = null;
+		protected ISceneArgument currentSceneArgument = null;
 
-        private List<SceneInstance> appendSceneInstances = null;
+		protected List<SceneInstance> appendSceneInstances = null;
 
-        private List<ISceneArgument> history = null;
+		protected List<ISceneArgument> history = null;
 
-        private LifetimeDisposable preLoadDisposable = null;
+		protected LifetimeDisposable preLoadDisposable = null;
 
         private Subject<ISceneArgument> onPrepare = null;
         private Subject<ISceneArgument> onPrepareComplete = null;
