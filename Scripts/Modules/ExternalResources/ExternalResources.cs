@@ -1,4 +1,4 @@
-﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿
+﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿
 using UnityEngine;
 using System;
 using System.IO;
@@ -249,10 +249,6 @@ namespace Modules.ExternalResource
 
 				SetAssetInfoManifest(manifest);
 			}
-			catch (OperationCanceledException)
-			{
-				/* Canceled */
-			}
 			catch (Exception e)
 			{
 				Debug.LogException(e);
@@ -282,10 +278,6 @@ namespace Modules.ExternalResource
             {
 	            await DeleteDisUsedCache();
             }
-			catch (OperationCanceledException)
-			{
-				/* Canceled */
-			}
 			catch (Exception e)
             {
 	            Debug.LogException(e);
@@ -325,10 +317,6 @@ namespace Modules.ExternalResource
 
 					await updateAssetHandler.OnUpdateRequest(assetInfo).AttachExternalCancellation(cancelSource.Token);
 				}
-				catch (OperationCanceledException)
-				{
-					/* Canceled */
-				}
 				catch (Exception e)
 				{
 					OnError(e);
@@ -349,10 +337,6 @@ namespace Modules.ExternalResource
 					try
 					{
 						await UpdateCriAsset(cancelSource.Token, assetInfo, progress);
-					}
-					catch (OperationCanceledException) 
-					{
-						/* Canceled */
 					}
 					catch (Exception e)
 					{
@@ -382,10 +366,6 @@ namespace Modules.ExternalResource
 
 						await assetBundleManager.UpdateAssetBundle(assetInfo, progress).AttachExternalCancellation(cancelSource.Token);
 					}
-					catch (OperationCanceledException)
-					{
-						/* Canceled */
-					}
 					catch (Exception e)
 					{
 						Debug.LogException(e);
@@ -406,10 +386,6 @@ namespace Modules.ExternalResource
 					var updateAssetHandler = instance.updateAssetHandler;
 
 					await updateAssetHandler.OnUpdateFinish(assetInfo).AttachExternalCancellation(cancelSource.Token);
-				}
-				catch (OperationCanceledException)
-				{
-					/* Canceled */
 				}
 				catch (Exception e)
 				{

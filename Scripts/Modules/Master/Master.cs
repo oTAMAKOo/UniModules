@@ -212,10 +212,6 @@ namespace Modules.Master
 
 				success = true;
 			}
-			catch (OperationCanceledException)
-			{
-				/* Canceled */
-			}
 			catch (Exception e)
 			{
 				Debug.LogErrorFormat("Load master failed.\n\nClass : {0}\nFile : {1}\n\nException : \n{2}", typeof(TMaster).FullName, filePath, e);
@@ -325,10 +321,6 @@ namespace Modules.Master
 				{
 					result = true;
 				}
-			}
-			catch (OperationCanceledException)
-			{
-				/* Canceled */
 			}
 			catch (Exception e)
 			{

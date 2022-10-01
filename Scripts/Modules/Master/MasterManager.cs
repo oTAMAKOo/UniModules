@@ -217,10 +217,6 @@ namespace Modules.Master
 
 					result = true;
 				}
-				catch (OperationCanceledException)
-				{
-					/* Canceled */
-				}
 				catch (Exception e)
 				{
 					Debug.LogException(e);
