@@ -25,7 +25,7 @@ namespace Modules.Scene
 
         //----- field -----
 
-        private IDisposable transitionDisposable = null;
+        private CancellationTokenSource transitionCancelSource = null;
 
         private Dictionary<Scenes, SceneInstance> loadedScenes = null;
         private FixedQueue<SceneInstance> cacheScenes = null;
@@ -66,8 +66,11 @@ namespace Modules.Scene
         /// <summary> 現在のシーン情報 </summary>
         public SceneInstance Current { get { return currentScene; } }
 
-        /// <summary> 遷移中か </summary>
-        public bool IsTransition { get { return transitionDisposable != null; } }
+		/// <summary> 追加読み込みシーン情報 </summary>
+		public IReadOnlyList<SceneInstance> AppendSceneInstances { get { return appendSceneInstances; } }
+
+		/// <summary> 遷移中か </summary>
+        public bool IsTransition { get; private set; }
 
         /// <summary> 遷移先のシーン </summary>
         public Scenes? TransitionTarget { get; private set; }
@@ -84,6 +87,8 @@ namespace Modules.Scene
 
         protected override void OnCreate()
         {
+			transitionCancelSource = new CancellationTokenSource();
+
             loadedScenes = new Dictionary<Scenes, SceneInstance>();
             cacheScenes = new FixedQueue<SceneInstance>(CacheSize);
 
@@ -213,10 +218,12 @@ namespace Modules.Scene
             // 遷移中は遷移不可.
             if (IsTransition) { return; }
 
+			IsTransition = true;
+
             // ※ 呼び出し元でAddTo(this)されるとシーン遷移中にdisposableされてしまうのでIObservableで公開しない.
-            transitionDisposable = ObservableEx.FromUniTask(cancelToken => TransitionCore(sceneArgument, LoadSceneMode.Additive, false, registerHistory, cancelToken))
-                .Subscribe(_ => transitionDisposable = null)
-                .AddTo(Disposable);
+            ObservableEx.FromUniTask(cancelToken => TransitionCore(sceneArgument, LoadSceneMode.Additive, false, registerHistory, cancelToken))
+                .Subscribe(_ => IsTransition = false)
+                .AddTo(transitionCancelSource.Token);
         }
 
         /// <summary> 強制シーン遷移. </summary>
@@ -229,10 +236,12 @@ namespace Modules.Scene
 				onForceTransition.OnNext(sceneArgument);
 			}
 
+			IsTransition = true;
+
             // ※ 呼び出し元でAddTo(this)されるとシーン遷移中にdisposableされてしまうのでIObservableで公開しない.
-            transitionDisposable = ObservableEx.FromUniTask(cancelToken => TransitionCore(sceneArgument, LoadSceneMode.Single, false, registerHistory, cancelToken))
-                .Subscribe(_ => transitionDisposable = null)
-                .AddTo(Disposable);
+            ObservableEx.FromUniTask(cancelToken => TransitionCore(sceneArgument, LoadSceneMode.Single, false, registerHistory, cancelToken))
+                .Subscribe(_ => IsTransition = false)
+                .AddTo(transitionCancelSource.Token);
         }
 
         /// <summary> シーン再読み込み. </summary>
@@ -241,10 +250,12 @@ namespace Modules.Scene
             // 遷移中は遷移不可.
             if (IsTransition) { return; }
 
+			IsTransition = true;
+
             // ※ 呼び出し元でAddTo(this)されるとシーン遷移中にdisposableされてしまうのでIObservableで公開しない.
-            transitionDisposable = ObservableEx.FromUniTask(cancelToken => TransitionCore(currentSceneArgument, LoadSceneMode.Additive, false, false, cancelToken))
-                .Subscribe(_ => transitionDisposable = null)
-                .AddTo(Disposable);
+            ObservableEx.FromUniTask(cancelToken => TransitionCore(currentSceneArgument, LoadSceneMode.Additive, false, false, cancelToken))
+                .Subscribe(_ => IsTransition = false)
+                .AddTo(transitionCancelSource.Token);
         }
 
         /// <summary>
@@ -252,13 +263,12 @@ namespace Modules.Scene
         /// </summary>
         private void TransitionCancel()
         {
-            if (transitionDisposable != null)
+            if (transitionCancelSource != null && !transitionCancelSource.IsCancellationRequested)
             {
-                transitionDisposable.Dispose();
-                transitionDisposable = null;
+				transitionCancelSource.Cancel();
             }
 
-            TransitionTarget = null;
+			transitionCancelSource = new CancellationTokenSource();
         }
 
         /// <summary>
@@ -283,9 +293,11 @@ namespace Modules.Scene
 
             if (argument != null)
             {
-                transitionDisposable = ObservableEx.FromUniTask(cancelToken => TransitionCore(argument, LoadSceneMode.Additive, true, false, cancelToken))
-                    .Subscribe(_ => transitionDisposable = null)
-                    .AddTo(Disposable);
+				IsTransition = true;
+
+                ObservableEx.FromUniTask(cancelToken => TransitionCore(argument, LoadSceneMode.Additive, true, false, cancelToken))
+                    .Subscribe(_ => IsTransition = false)
+                    .AddTo(transitionCancelSource.Token);
             }
         }
 
