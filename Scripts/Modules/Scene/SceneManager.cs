@@ -59,6 +59,8 @@ namespace Modules.Scene
         private Subject<SceneInstance> onUnloadSceneComplete = null;
         private Subject<Unit> onUnloadError = null;
 
+		private Subject<ISceneArgument> onForceTransition = null;
+
         //----- property -----
 
         /// <summary> 現在のシーン情報 </summary>
@@ -190,6 +192,13 @@ namespace Modules.Scene
             {
                 onEnterComplete.OnNext(sceneArgument);
             }
+
+			// PreLoad.
+
+			if (sceneArgument.PreLoadScenes != null && sceneArgument.PreLoadScenes.Any())
+			{
+				RequestPreLoad(sceneArgument.PreLoadScenes);
+			}
         }
 
         /// <summary> 初期シーン登録時のイベント </summary>
@@ -214,6 +223,11 @@ namespace Modules.Scene
         public void ForceTransition<TArgument>(TArgument sceneArgument, bool registerHistory = false) where TArgument : ISceneArgument
         {
             TransitionCancel();
+
+			if (onForceTransition != null)
+			{
+				onForceTransition.OnNext(sceneArgument);
+			}
 
             // ※ 呼び出し元でAddTo(this)されるとシーン遷移中にdisposableされてしまうのでIObservableで公開しない.
             transitionDisposable = ObservableEx.FromUniTask(cancelToken => TransitionCore(sceneArgument, LoadSceneMode.Single, false, registerHistory, cancelToken))
@@ -1276,6 +1290,13 @@ namespace Modules.Scene
 
             GC.Collect();
         }
+
+		//====== Force Transition ======
+
+		public IObservable<ISceneArgument> OnForceTransitionAsObservable()
+		{
+			return onForceTransition ?? (onForceTransition = new Subject<ISceneArgument>());
+		}
 
         //====== Prepare Scene ======
 
