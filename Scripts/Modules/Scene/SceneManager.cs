@@ -250,7 +250,7 @@ namespace Modules.Scene
         /// <summary>
         /// シーン遷移を中止.
         /// </summary>
-        public void TransitionCancel()
+        private void TransitionCancel()
         {
             if (transitionDisposable != null)
             {
