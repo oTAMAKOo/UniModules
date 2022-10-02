@@ -22,12 +22,20 @@ namespace Modules.Lua
 			try
 			{
 				DelegateBridge.Gen_Flag = true;
+				
+				#if !XLUA_GENERAL
 
 				Generator.ClearAll();
 
 				Generator.GenAll();
 
 				UnityConsole.Info("Generate lua bridge csharp code.");
+
+				#else
+
+				throw new InvalidOperationException("Require un define XLUA_GENERAL.");
+
+				#endif
 			}
 			catch (Exception e)
 			{
