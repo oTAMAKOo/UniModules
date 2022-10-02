@@ -26,6 +26,9 @@ namespace Modules.Scene
 		/// <summary> 引数を設定 </summary>
 		void SetArgument(ISceneArgument argument);
 
+		/// <summary> 引数を取得 </summary>
+		ISceneArgument GetArgument();
+
 		/// <summary> 初期化 </summary>
 		UniTask Initialize();
 
@@ -49,6 +52,9 @@ namespace Modules.Scene
 
 		/// <summary> 引数を設定 </summary>
 		public abstract void SetArgument(ISceneArgument argument);
+
+		/// <summary> 引数を取得 </summary>
+		public abstract ISceneArgument GetArgument();
 
 		/// <summary> 初期化 </summary>
 		public virtual UniTask Initialize() { return UniTask.CompletedTask; }

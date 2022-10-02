@@ -18,12 +18,15 @@ namespace Modules.Scene
         //----- field -----
 
         private UnityEngine.SceneManagement.Scene? scene = null;
-        private bool enable = true;
-        private GameObject[] activeRoots = null;
+
+		private GameObject[] activeRoots = null;
 
         //----- property -----
 
         public Scenes? Identifier { get; private set; }
+
+		public bool IsEnable { get; private set; }
+
         public ISceneBase Instance { get; private set; }
 
         //----- method -----
@@ -34,6 +37,7 @@ namespace Modules.Scene
             
             Identifier = identifier;
             Instance = instance;
+			IsEnable = true;
 
             var rootObjects = scene.Value.GetRootGameObjects();
 
@@ -47,7 +51,7 @@ namespace Modules.Scene
         {
             if (!scene.HasValue) { return false; }
 
-            if (enable) { return true; }
+            if (IsEnable) { return true; }
 
             if (activeRoots == null) { return true; }
 
@@ -71,7 +75,7 @@ namespace Modules.Scene
                 UnityUtility.SetActive(rootObject, true);
             }
 
-            enable = true;
+			IsEnable = true;
 
             return true;
         }
@@ -80,7 +84,7 @@ namespace Modules.Scene
         {
             if (!scene.HasValue) { return false; }
 
-            if (!enable) { return true; }
+            if (!IsEnable) { return true; }
 
             if (!scene.Value.isLoaded || !scene.Value.IsValid()) { return false; }
 
@@ -100,7 +104,7 @@ namespace Modules.Scene
                 UnityUtility.SetActive(rootObject, false);
             }
 
-            enable = false;
+			IsEnable = false;
 
             return true;
         }

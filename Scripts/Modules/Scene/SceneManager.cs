@@ -66,7 +66,10 @@ namespace Modules.Scene
         /// <summary> 現在のシーン情報 </summary>
         public SceneInstance Current { get { return currentScene; } }
 
-		/// <summary> 追加読み込みシーン情報 </summary>
+		/// <summary> 読み込み済みシーン情報 </summary>
+		public IReadOnlyList<SceneInstance> LoadedScenesInstances { get { return loadedScenes.Values.ToArray(); } }
+
+		/// <summary> 追加読み込み済みシーン情報 </summary>
 		public IReadOnlyList<SceneInstance> AppendSceneInstances { get { return appendSceneInstances; } }
 
 		/// <summary> 遷移中か </summary>
@@ -691,114 +694,7 @@ namespace Modules.Scene
             RequestPreLoad(argument.PreLoadScenes);
         }
 
-        #region Scene Additive
-
-        /// <summary>
-        /// シーンを追加で読み込み.
-        /// <para> Prepare, Enter, Leaveは自動で呼び出されないので自分で制御する </para>
-        /// </summary>
-        public IObservable<SceneInstance> Append<TArgument>(TArgument sceneArgument, bool activeOnLoad = true) where TArgument : ISceneArgument
-        {
-            return ObservableEx.FromUniTask(cancelToken => AppendCore(sceneArgument.Identifier, activeOnLoad, cancelToken))
-                .Do(x =>
-                {
-                    // シーンルート引数設定.
-                    if (x != null && x.Instance != null)
-                    {
-                        x.Instance.SetArgument(sceneArgument);
-                    }
-                });
-        }
-
-        /// <summary>
-        /// シーンを追加で読み込み.
-        /// <para> Prepare, Enter, Leaveは自動で呼び出されないので自分で制御する </para>
-        /// </summary>
-        public IObservable<SceneInstance> Append(Scenes identifier, bool activeOnLoad = true)
-        {
-            return ObservableEx.FromUniTask(cancelToken => AppendCore(identifier, activeOnLoad, cancelToken));
-        }
-
-        private async UniTask<SceneInstance> AppendCore(Scenes? identifier, bool activeOnLoad, CancellationToken cancelToken)
-        {
-            if (!identifier.HasValue) { return null; }
-
-            SceneInstance sceneInstance = null;
-
-            var diagnostics = new TimeDiagnostics();
-
-            diagnostics.Begin(TimeDiagnostics.Measure.Append);
-
-			try
-			{
-				var loadYield = LoadScene(identifier.Value, LoadSceneMode.Additive).ToYieldInstruction(cancelToken);
-
-				while (!loadYield.IsDone)
-				{
-					await UniTask.NextFrame(cancelToken);
-				}
-
-				sceneInstance = loadYield.Result;
-			}
-			catch (OperationCanceledException) 
-			{
-				return null;
-			}
-			catch (Exception e)
-			{
-				OnLoadError(e, identifier);
-			}
-
-			if (sceneInstance != null)
-            {
-                appendSceneInstances.Add(sceneInstance);
-
-                diagnostics.Finish(TimeDiagnostics.Measure.Append);
-
-                var additiveTime = diagnostics.GetTime(TimeDiagnostics.Measure.Append);
-
-                var message = string.Format("{0} ({1:F2}ms)(Additive)", identifier.Value, additiveTime);
-
-                UnityConsole.Event(ConsoleEventName, ConsoleEventColor, message);
-
-                if (activeOnLoad)
-                {
-                    sceneInstance.Enable();
-                }
-            }
-
-			return sceneInstance;
-		}
-
-        /// <summary> 加算シーンをアンロード </summary>
-        public void UnloadAppendScene(ISceneBase scene, bool deactivateSceneObjects = true)
-        {
-            var sceneInstance = appendSceneInstances.FirstOrDefault(x => x.Instance == scene);
-
-            if (sceneInstance == null) { return; }
-
-            UnloadAppendScene(sceneInstance, deactivateSceneObjects);
-        }
-
-        /// <summary> 加算シーンをアンロード </summary>
-        public void UnloadAppendScene(SceneInstance sceneInstance, bool deactivateSceneObjects = true)
-        {
-            if (!appendSceneInstances.Contains(sceneInstance)){ return; }
-
-            if (deactivateSceneObjects)
-            {
-                sceneInstance.Disable();
-            }
-
-            appendSceneInstances.Remove(sceneInstance);
-
-            // AddTo(this)されると途中でdisposableされてしまうのでIObservableで公開しない.
-            UnloadScene(sceneInstance).Subscribe().AddTo(Disposable);
-        }
-
-        #endregion
-
-        #region Scene Load
+		#region Scene Load
         
         private IObservable<SceneInstance> LoadScene(Scenes identifier, LoadSceneMode mode)
         {
