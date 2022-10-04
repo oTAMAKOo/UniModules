@@ -333,9 +333,12 @@ namespace Modules.Animation
 
             isPause = false;
             pausedSpeed = null;
-
+            
             // TimeScaleの影響を受けるか.
-            Animator.updateMode = ignoreTimeScale ? AnimatorUpdateMode.UnscaledTime : AnimatorUpdateMode.Normal;
+            if (ignoreTimeScale && Animator.updateMode == AnimatorUpdateMode.Normal)
+            {
+                Animator.updateMode = AnimatorUpdateMode.UnscaledTime;
+            }
 
             if (UnityUtility.IsActiveInHierarchy(gameObject))
             {
