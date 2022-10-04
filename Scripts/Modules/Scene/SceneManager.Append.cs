@@ -243,6 +243,14 @@ namespace Modules.Scene
 				.AddTo(transitionCancelSource.Token);
         }
 
+		/// <summary> 加算シーンアンロード遷移 </summary>
+		public void UnloadTransition(Scenes transitionScene, GameObject gameObject)
+		{
+			var sceneInstance = AppendSceneInstances.FirstOrDefault(x => x.GetScene() == gameObject.scene);
+
+			UnloadTransition(transitionScene, sceneInstance);
+		}
+
         private async UniTask UnloadTransitionCore(Scenes transitionScene, SceneInstance sceneInstance, CancellationToken cancelToken)
         {
             if (sceneInstance == null){ return; }
