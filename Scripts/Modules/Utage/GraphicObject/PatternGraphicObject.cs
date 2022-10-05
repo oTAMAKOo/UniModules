@@ -73,7 +73,7 @@ namespace Modules.UtageExtension
             patternImage.PatternName = pattern;
         }
 
-        protected bool TryCreateCrossFadeImage(string patternName, float time, AdvGraphicInfo graphic)
+        private bool TryCreateCrossFadeImage(string patternName, float time, AdvGraphicInfo graphic)
         {
             if (LastResource == null) return false;
 
@@ -113,8 +113,8 @@ namespace Modules.UtageExtension
 
             return patternImage.PatternTexture == patternTexture
                 && patternImage.rectTransform.pivot == graphic.Pivot
-                && patternImage.Current.width == data.width
-                && patternImage.Current.height == data.height;
+                && patternImage.Current.Width == data.Width
+                && patternImage.Current.Height == data.Height;
         }
 
         internal override bool CheckFailedCrossFade(AdvGraphicInfo graphic)

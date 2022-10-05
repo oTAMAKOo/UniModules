@@ -2,11 +2,11 @@
 #if ENABLE_UTAGE
 
 using UnityEngine;
-using UniRx;
+using Utage;
+using Cysharp.Threading.Tasks;
 using Extensions;
 using Modules.Animation;
 using Modules.Particle;
-using Utage;
 
 namespace Modules.UtageExtension
 {
@@ -81,7 +81,7 @@ namespace Modules.UtageExtension
 
                 if (enable)
                 {
-                    animationController.Play(animationName).Subscribe().AddTo(this);
+                    animationController.Play(animationName).Forget();
                 }
             }
             else
@@ -100,7 +100,7 @@ namespace Modules.UtageExtension
             prevAlpha = color.MulColor.a;
         }
 
-        protected void SetSortingOrder(int sortingOrder, string sortingLayerName)
+        private void SetSortingOrder(int sortingOrder, string sortingLayerName)
         {
             var particleControllers = currentObject.GetComponentsInChildren<ParticlePlayer>(true);
 

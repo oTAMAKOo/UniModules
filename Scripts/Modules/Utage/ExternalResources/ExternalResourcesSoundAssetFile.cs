@@ -1,16 +1,13 @@
 ﻿
 #if ENABLE_CRIWARE_ADX && ENABLE_UTAGE
 
-using UnityEngine;
 using System;
 using System.Collections;
-using System.Linq;
-using System.Collections.Generic;
+using Cysharp.Threading.Tasks;
 using UniRx;
 using Utage;
-using Extensions;
 using Modules.ExternalResource;
-using Modules.SoundManagement;
+using Modules.Sound;
 
 namespace Modules.UtageExtension
 {
@@ -61,7 +58,9 @@ namespace Modules.UtageExtension
                 yield break;
             }
 
-            var updateYield = ExternalResources.UpdateAsset(resourcesPath).ToYieldInstruction(false);
+            var updateYield = ExternalResources.UpdateAsset(resourcesPath)
+				.ToObservable()
+				.ToYieldInstruction();
 
             yield return updateYield;
 
@@ -73,7 +72,9 @@ namespace Modules.UtageExtension
 
             if (Priority != AssetFileLoadPriority.DownloadOnly)
             {
-                var cueYield = ExternalResources.GetCueInfo(resourcesPath, soundName).ToYieldInstruction();
+                var cueYield = ExternalResources.GetCueInfo(resourcesPath, soundName)
+					.ToObservable()
+					.ToYieldInstruction();
 
                 while (!cueYield.IsDone)
                 {

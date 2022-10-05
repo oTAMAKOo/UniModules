@@ -2,11 +2,6 @@
 #if ENABLE_UTAGE
 
 using UnityEngine;
-using System;
-using System.Linq;
-using System.Collections.Generic;
-using UniRx;
-using Extensions;
 using Utage;
 
 namespace Modules.UtageExtension
@@ -19,7 +14,7 @@ namespace Modules.UtageExtension
 
         private AdvCharacterInfo characterInfo = null;
         private string layerName = null;
-        protected float fadeTime = 0f;
+		private float fadeTime = 0f;
 
         //----- property -----
 
@@ -59,7 +54,7 @@ namespace Modules.UtageExtension
                 engine.GraphicManager.SpriteManager.DrawCharacter(
                     layerName
                     , characterInfo.Label
-                    , new AdvGraphicOperaitonArg(this, this.characterInfo.Graphic.Main, fadeTime));
+                    , new AdvGraphicOperationArg(this, this.characterInfo.Graphic.Main, fadeTime));
             }
 
             // 基本以外のコマンド引数の適用.

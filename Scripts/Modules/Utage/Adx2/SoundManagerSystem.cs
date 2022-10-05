@@ -2,16 +2,12 @@
 #if ENABLE_CRIWARE_ADX && ENABLE_UTAGE
 
 using UnityEngine;
-using System;
 using System.IO;
-using System.Linq;
 using System.Collections.Generic;
-using UniRx;
 using Utage;
-using Extensions;
-using Modules.SoundManagement;
+using Modules.Sound;
 
-using SoundType = Modules.SoundManagement.SoundType;
+using SoundType = Modules.Sound.SoundType;
 
 namespace Modules.UtageExtension
 {
@@ -46,34 +42,23 @@ namespace Modules.UtageExtension
             return null;
         }
 
-        public float GetGroupVolume(string groupName)
-        {
-            return 1f;
-        }
+        public float GetGroupVolume(string groupName) { return 1f; }
 
-        public float GetMasterVolume(string groupName)
-        {
-            return 1f;
-        }
+		public void SetGroupVolume(string groupName, float volume, float fadeTime) { }
 
-        public float GetSamplesVolume(string groupName, string label)
-        {
-            return 1f;
-        }
+		public void StopAllLoop(float fadeTime) { }
 
-        public bool IsMultiPlay(string groupName)
-        {
-            return false;
-        }
+		public float GetMasterVolume(string groupName) { return 1f; }
 
-        public bool IsPlaying(string groupName, string label)
-        {
-            return false;
-        }
+        public float GetSamplesVolume(string groupName, string label) { return 1f; }
+
+        public bool IsMultiPlay(string groupName) { return false; }
+
+        public bool IsPlaying(string groupName, string label) { return false; }
 
         public void Play(string groupName, string label, SoundData soundData, float fadeInTime, float fadeOutTime)
         {
-            var soundManagement = SoundManagement.SoundManagement.Instance;
+            var soundManagement = SoundManagement.Instance;
 
             if(soundData.Clip != null) { return; }
 
@@ -101,50 +86,23 @@ namespace Modules.UtageExtension
             }
         }
 
-        public void SetGroupVolume(string groupName, float volume)
-        {
+        public void SetGroupVolume(string groupName, float volume) { }
 
-        }
+        public void SetMasterVolume(string groupName, float volume) { }
 
-        public void SetMasterVolume(string groupName, float volume)
-        {
+        public void SetMultiPlay(string groupName, bool multiPlay) { }
 
-        }
+        public void Stop(string groupName, string label, float fadeTime) { }
 
-        public void SetMultiPlay(string groupName, bool multiPlay)
-        {
+        public void StopAll(float fadeTime) { }
 
-        }
+        public void StopGroup(string groupName, float fadeTime) { }
 
-        public void Stop(string groupName, string label, float fadeTime)
-        {
+        public void StopGroupIgnoreLoop(string groupName, float fadeTime) { }
 
-        }
+        public void WriteSaveData(BinaryWriter writer) { }
 
-        public void StopAll(float fadeTime)
-        {
-
-        }
-
-        public void StopGroup(string groupName, float fadeTime)
-        {
-
-        }
-
-        public void StopGroupIgnoreLoop(string groupName, float fadeTime)
-        {
-
-        }
-
-        public void WriteSaveData(BinaryWriter writer)
-        {
-            
-        }
-
-        public void ReadSaveDataBuffer(BinaryReader reader)
-        {
-            
-        }
+        public void ReadSaveDataBuffer(BinaryReader reader) { }
     }
 }
 

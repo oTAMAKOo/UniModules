@@ -1,12 +1,9 @@
 ﻿
 #if ENABLE_UTAGE
 
-using UnityEngine;
 using System;
-using System.IO;
 using System.Collections;
-using System.Linq;
-using System.Collections.Generic;
+using Cysharp.Threading.Tasks;
 using UniRx;
 using Utage;
 using Extensions;
@@ -51,7 +48,9 @@ namespace Modules.UtageExtension
                 yield break;
             }
 
-            var updateYield = ExternalResources.UpdateAsset(resourcesPath).ToYieldInstruction(false);
+            var updateYield = ExternalResources.UpdateAsset(resourcesPath)
+				.ToObservable()
+				.ToYieldInstruction(false);
 
             yield return updateYield;
 
@@ -63,7 +62,9 @@ namespace Modules.UtageExtension
             
             if (Priority != AssetFileLoadPriority.DownloadOnly)
             {
-                var loadYield = ExternalResources.LoadAsset<T>(resourcesPath, false).ToYieldInstruction(false);
+                var loadYield = ExternalResources.LoadAsset<T>(resourcesPath, false)
+					.ToObservable()
+					.ToYieldInstruction(false);
 
                 yield return loadYield;
 
