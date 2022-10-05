@@ -204,6 +204,8 @@ namespace Modules.TouchEffect
 
         private void HandleTouch(TouchPhase touchPhase, int touchFingerId, Vector3 touchPosition)
         {
+			if (renderCamera == null){ return; }
+
             if (touchFingerId == 0)
             {
                 switch (touchPhase)
