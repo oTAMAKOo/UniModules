@@ -209,7 +209,11 @@ namespace Modules.TouchEffect
 				renderCamera = UnityUtility.FindCameraForLayer(TargetLayerMask).FirstOrDefault();
 			}
 
-			if (renderCamera == null){ return; }
+			if (renderCamera == null)
+			{
+				Debug.LogWarning("Touch effect camera not found.");
+				return;
+			}
 
             if (touchFingerId == 0)
             {
