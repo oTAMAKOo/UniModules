@@ -21,6 +21,9 @@ namespace Modules.PatternTexture
         // ブロックのピクセルID.
         public ushort blockId = 0;
 
+		// 全ピクセルが透明.
+		public bool isAllTransparent = false;
+
         [NonSerialized]
         private byte[] decompressedAlphaMap = null;
 

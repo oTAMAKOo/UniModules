@@ -1,4 +1,4 @@
-﻿
+﻿﻿
 using System;
 using System.Collections;
 using UnityEngine;
@@ -212,35 +212,48 @@ namespace Modules.PatternTexture
 
                     if (block == null) { continue; }
 
-                    var vertexSizeX = rect.width * ((float)block.w / sourceTexture.Width);
+					var vertexSizeX = rect.width * ((float)block.w / sourceTexture.Width);
 
-                    vertexSizeY = rect.height * ((float)block.h / sourceTexture.Height);
+					vertexSizeY = rect.height * ((float)block.h / sourceTexture.Height);
 
-                    // 左上
-                    var lt = UIVertex.simpleVert;
-                    lt.position = new Vector3(pos.x, pos.y, 0);
-                    lt.uv0 = new Vector2(block.x / textureWidth, block.y / textureHeight);
-                    lt.color = color;
+					// 全ピクセルが透過なら描画しない.
+					if (!block.isAllTransparent)
+                    {
+						// 左上
+	                    var lt = UIVertex.simpleVert;
+	                    lt.position = new Vector3(pos.x, pos.y, 0);
+	                    lt.uv0 = new Vector2(block.x / textureWidth, block.y / textureHeight);
+	                    lt.color = color;
 
-                    // 右上
-                    var rt = UIVertex.simpleVert;
-                    rt.position = new Vector3(pos.x + vertexSizeX, pos.y, 0);
-                    rt.uv0 = new Vector2((block.x + block.w) / textureWidth, block.y / textureHeight);
-                    rt.color = color;
+	                    // 右上
+	                    var rt = UIVertex.simpleVert;
+	                    rt.position = new Vector3(pos.x + vertexSizeX, pos.y, 0);
+	                    rt.uv0 = new Vector2((block.x + block.w) / textureWidth, block.y / textureHeight);
+	                    rt.color = color;
 
-                    // 右下
-                    var rb = UIVertex.simpleVert;
-                    rb.position = new Vector3(pos.x + vertexSizeX, pos.y + vertexSizeY, 0);
-                    rb.uv0 = new Vector2((block.x + block.w) / textureWidth, (block.y + block.h) / textureHeight);
-                    rb.color = color;
+	                    // 右下
+	                    var rb = UIVertex.simpleVert;
+	                    rb.position = new Vector3(pos.x + vertexSizeX, pos.y + vertexSizeY, 0);
+	                    rb.uv0 = new Vector2((block.x + block.w) / textureWidth, (block.y + block.h) / textureHeight);
+	                    rb.color = color;
 
-                    // 左下
-                    var lb = UIVertex.simpleVert;
-                    lb.position = new Vector3(pos.x, pos.y + vertexSizeY, 0);
-                    lb.uv0 = new Vector2(block.x / textureWidth, (block.y + block.h) / textureHeight);
-                    lb.color = color;
+	                    // 左下
+	                    var lb = UIVertex.simpleVert;
+	                    lb.position = new Vector3(pos.x, pos.y + vertexSizeY, 0);
+	                    lb.uv0 = new Vector2(block.x / textureWidth, (block.y + block.h) / textureHeight);
+	                    lb.color = color;
 
-                    vh.AddUIVertexQuad(new UIVertex[] { lb, rb, rt, lt });
+	                    vh.AddUIVertexQuad(new UIVertex[] { lb, rb, rt, lt });
+
+						// ブロック情報更新.
+						var blockInfo = new BlockInfo()
+						{
+							Rect = new Rect(lt.position, new Vector2(vertexSizeX, vertexSizeY)),
+							BlockData = block,
+						};
+
+						blockInfos.Add(blockInfo);
+					}
 
                     // クロスフェード.
                     if (CrossFade && !string.IsNullOrEmpty(crossFadeTextureName))
@@ -249,16 +262,7 @@ namespace Modules.PatternTexture
                     }
 
                     pos.x += vertexSizeX;
-
-                    // ブロック情報更新.
-                    var blockInfo = new BlockInfo()
-                    {
-                        Rect = new Rect(lt.position, new Vector2(vertexSizeX, vertexSizeY)),
-                        BlockData = block,
-                    };
-
-                    blockInfos.Add(blockInfo);
-                }
+				}
 
                 pos.x = rect.x;
                 pos.y += vertexSizeY;
@@ -363,6 +367,9 @@ namespace Modules.PatternTexture
 
             // 同じピクセル情報なら描画しない.
             if (block.blockId == crossFadeBlock.blockId) { return; }
+
+			// 全ピクセルが透過なら描画しない.
+			if (block.isAllTransparent){ return; }
 
             // 左上
             var lt = UIVertex.simpleVert;

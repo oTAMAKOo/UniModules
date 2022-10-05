@@ -270,6 +270,7 @@ namespace Modules.PatternTexture
                             h = item.height,
                             alphaMap = compressedAlphaMap,
                             blockId = item.blockId,
+							isAllTransparent = item.isAllTransparent,
                         };
 
                         blockDataDictionary.Add(item.blockId, blockData);
