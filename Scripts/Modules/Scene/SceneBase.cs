@@ -41,8 +41,8 @@ namespace Modules.Scene
 		/// <summary> 終了 </summary>
 		UniTask Leave();
 
-		/// <summary> 再読み込み  </summary>
-		void Reload();
+		/// <summary> 遷移  </summary>
+		UniTask OnTransition();
 	}
 
 	public abstract class SceneBase : MonoBehaviour, ISceneBase
@@ -68,7 +68,7 @@ namespace Modules.Scene
 		/// <summary> 離脱時処理 </summary>
 		public virtual UniTask Leave(){ return UniTask.CompletedTask; }
 
-		/// <summary> 再読み込み時処理 </summary>
-		public virtual void Reload(){ }
+		/// <summary> 遷移時処理 </summary>
+		public virtual UniTask OnTransition(){ return UniTask.CompletedTask; }
 	}
 }

@@ -41,7 +41,7 @@ namespace Modules.Scene
 		protected List<ISceneArgument> history = null;
 
 		protected LifetimeDisposable preLoadDisposable = null;
-
+		
         private Subject<ISceneArgument> onPrepare = null;
         private Subject<ISceneArgument> onPrepareComplete = null;
 
@@ -644,6 +644,8 @@ namespace Modules.Scene
 
 			try
 			{
+				await currentScene.Instance.OnTransition().AttachExternalCancellation(cancelToken);
+
 				await TransitionFinish(currentSceneArgument).AttachExternalCancellation(cancelToken);
 			}
 			catch (OperationCanceledException) 

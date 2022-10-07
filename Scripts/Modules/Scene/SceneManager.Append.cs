@@ -298,6 +298,8 @@ namespace Modules.Scene
 
 				scene.Enable();
 
+				await scene.Instance.OnTransition().AttachExternalCancellation(cancelToken);
+
                 await TransitionFinish<ISceneArgument>(null).AttachExternalCancellation(cancelToken);
 
 				//====== Report ======
