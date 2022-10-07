@@ -302,6 +302,8 @@ namespace Modules.Scene
 
                 await TransitionFinish<ISceneArgument>(null).AttachExternalCancellation(cancelToken);
 
+				scene.Instance.Enter();
+
 				//====== Report ======
 
 				diagnostics.Finish(TimeDiagnostics.Measure.Total);
