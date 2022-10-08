@@ -480,7 +480,15 @@ namespace Modules.Scene
                         loadedScenes.Remove(unloadScene.Identifier.Value);
                     }
                 }
-            }
+            } 
+			else
+			{
+				// LoadSceneMode.Singleの場合読み込み済みシーンが全て消える.
+
+				loadedScenes.Clear();
+				appendSceneInstances.Clear();
+				cacheScenes.Clear();
+			}
 
             //====== Load Next Scene ======
 
