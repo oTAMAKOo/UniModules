@@ -1,11 +1,7 @@
 ﻿
 using UnityEngine;
-using UnityEngine.SceneManagement;
-using System;
 using System.Linq;
-using System.Collections.Generic;
 using Constants;
-using UniRx;
 using Extensions;
 
 namespace Modules.Scene

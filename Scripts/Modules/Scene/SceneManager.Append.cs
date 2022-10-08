@@ -142,12 +142,22 @@ namespace Modules.Scene
 
         private async UniTask AppendTransitionCore<TArgument>(TArgument sceneArgument, CancellationToken cancelToken) where TArgument :ISceneArgument
         {
-			var diagnostics = new TimeDiagnostics();
-
-			diagnostics.Begin(TimeDiagnostics.Measure.Total);
-
 			try
 			{
+				// ロード済みシーンからの遷移制御.
+
+				var handleTransition = await HandleTransitionFromLoadedScenes();
+
+				if (!handleTransition){ return; }
+
+				// 遷移開始.
+
+				var diagnostics = new TimeDiagnostics();
+
+				diagnostics.Begin(TimeDiagnostics.Measure.Total);
+
+				TransitionTarget = sceneArgument.Identifier;
+
 				await TransitionStart(sceneArgument).AttachExternalCancellation(cancelToken);
 
 				// 遷移先以外のシーンを非アクティブ化.
@@ -255,12 +265,20 @@ namespace Modules.Scene
         {
             if (sceneInstance == null){ return; }
 
-			var diagnostics = new TimeDiagnostics();
-
-			diagnostics.Begin(TimeDiagnostics.Measure.Total);
-
-            try
+			try
             {
+				// ロード済みシーンからの遷移制御.
+
+				var handleTransition = await HandleTransitionFromLoadedScenes();
+
+				if (!handleTransition){ return; }
+
+				// 遷移開始.
+
+				var diagnostics = new TimeDiagnostics();
+
+				diagnostics.Begin(TimeDiagnostics.Measure.Total);
+
 				await TransitionStart<ISceneArgument>(null).AttachExternalCancellation(cancelToken);
 
 				//====== Scene Leave ======

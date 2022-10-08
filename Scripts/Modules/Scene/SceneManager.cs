@@ -342,12 +342,21 @@ namespace Modules.Scene
         {
             if (!argument.Identifier.HasValue) { return; }
 
+			// ロード済みシーンからの遷移制御.
+
+			var handleTransition = await HandleTransitionFromLoadedScenes();
+
+			if (!handleTransition){ return; }
+
             // プリロード停止.
+
             if (preLoadDisposable != null)
             {
                 preLoadDisposable.Dispose();
                 preLoadDisposable = null;
             }
+
+			// 遷移開始.
 
             TransitionTarget = argument.Identifier;
 
@@ -695,6 +704,32 @@ namespace Modules.Scene
 
             RequestPreLoad(argument.PreLoadScenes);
         }
+
+		private async UniTask<bool> HandleTransitionFromLoadedScenes()
+		{
+			var enableScenes = loadedScenes.Values.Where(x => x.IsEnable);
+
+			foreach (var sceneInstance in enableScenes)
+			{
+				var transitionHandler = sceneInstance.Instance as ITransitionHandler;
+
+				if (transitionHandler == null){ continue; }
+
+				// シーンから遷移が許可されたか.
+				var result = await transitionHandler.HandleTransition();
+			
+				if (!result)
+				{
+					var message = $"Transition cancel request from : {sceneInstance.Identifier}"; 
+
+					UnityConsole.Event(ConsoleEventName, ConsoleEventColor, message);
+
+					return false;
+				}
+			}
+
+			return true;
+		}
 
 		#region Scene Load
         
