@@ -525,14 +525,14 @@ namespace Modules.Scene
 
             if (!scene.HasValue)
             {
-                Debug.LogErrorFormat("[ {0} ] : Scene情報の取得に失敗しました.", identifier);
+                Debug.LogErrorFormat("[ {0} ] : Failed to get Scene information.", identifier);
 
 				return;
             }
 
             if (sceneInfo.Instance == null)
             {
-                Debug.LogErrorFormat("[ {0} ] : SceneBase継承クラスが存在しません.", scene.Value.path);
+                Debug.LogErrorFormat("[ {0} ] : SceneBase class does not exist.", scene.Value.path);
 
 				return;
             }
