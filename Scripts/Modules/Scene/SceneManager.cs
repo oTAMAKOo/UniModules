@@ -1190,6 +1190,12 @@ namespace Modules.Scene
             return loadedScenes.ContainsKey(identifier);
         }
 
+		/// <summary> シーンを取得 </summary>
+		public SceneInstance GetSceneInstance(Scenes identifier)
+		{
+			return loadedScenes.GetValueOrDefault(identifier);
+		}
+
         private ISceneBase FindSceneObject(UnityEngine.SceneManagement.Scene scene)
         {
             ISceneBase sceneBase = null;
