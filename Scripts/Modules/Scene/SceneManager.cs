@@ -224,7 +224,7 @@ namespace Modules.Scene
 			IsTransition = true;
 
             // ※ 呼び出し元でAddTo(this)されるとシーン遷移中にdisposableされてしまうのでIObservableで公開しない.
-            ObservableEx.FromUniTask(cancelToken => TransitionCore(sceneArgument, LoadSceneMode.Additive, false, registerHistory, cancelToken))
+            ObservableEx.FromUniTask(cancelToken => TransitionCore(sceneArgument, LoadSceneMode.Additive, false, registerHistory, false, cancelToken))
                 .Subscribe(_ => IsTransition = false)
                 .AddTo(transitionCancelSource.Token);
         }
@@ -242,7 +242,7 @@ namespace Modules.Scene
 			IsTransition = true;
 
             // ※ 呼び出し元でAddTo(this)されるとシーン遷移中にdisposableされてしまうのでIObservableで公開しない.
-            ObservableEx.FromUniTask(cancelToken => TransitionCore(sceneArgument, LoadSceneMode.Single, false, registerHistory, cancelToken))
+            ObservableEx.FromUniTask(cancelToken => TransitionCore(sceneArgument, LoadSceneMode.Single, false, registerHistory, true, cancelToken))
                 .Subscribe(_ => IsTransition = false)
                 .AddTo(transitionCancelSource.Token);
         }
@@ -256,7 +256,7 @@ namespace Modules.Scene
 			IsTransition = true;
 
             // ※ 呼び出し元でAddTo(this)されるとシーン遷移中にdisposableされてしまうのでIObservableで公開しない.
-            ObservableEx.FromUniTask(cancelToken => TransitionCore(currentSceneArgument, LoadSceneMode.Additive, false, false, cancelToken))
+            ObservableEx.FromUniTask(cancelToken => TransitionCore(currentSceneArgument, LoadSceneMode.Additive, false, false, false, cancelToken))
                 .Subscribe(_ => IsTransition = false)
                 .AddTo(transitionCancelSource.Token);
         }
@@ -298,7 +298,7 @@ namespace Modules.Scene
             {
 				IsTransition = true;
 
-                ObservableEx.FromUniTask(cancelToken => TransitionCore(argument, LoadSceneMode.Additive, true, false, cancelToken))
+                ObservableEx.FromUniTask(cancelToken => TransitionCore(argument, LoadSceneMode.Additive, true, false, false, cancelToken))
                     .Subscribe(_ => IsTransition = false)
                     .AddTo(transitionCancelSource.Token);
             }
@@ -337,25 +337,28 @@ namespace Modules.Scene
 			return cacheScenes.Any(x => x.Identifier == scene);
 		}
 
-        private async UniTask TransitionCore<TArgument>(TArgument argument, LoadSceneMode mode, bool isSceneBack, bool registerHistory, CancellationToken cancelToken) 
+        private async UniTask TransitionCore<TArgument>(TArgument argument, LoadSceneMode mode, bool isSceneBack, bool registerHistory, bool force, CancellationToken cancelToken) 
 			where TArgument : ISceneArgument
         {
             if (!argument.Identifier.HasValue) { return; }
 
-			// ロード済みシーンからの遷移制御.
+			if (!force)
+			{
+				// ロード済みシーンからの遷移制御.
 
-			var handleTransition = await HandleTransitionFromLoadedScenes();
+				var handleTransition = await HandleTransitionFromLoadedScenes();
 
-			if (!handleTransition){ return; }
+				if (!handleTransition) { return; }
+			}
 
-            // プリロード停止.
+			// プリロード停止.
 
-            if (preLoadDisposable != null)
+			if (preLoadDisposable != null)
             {
                 preLoadDisposable.Dispose();
                 preLoadDisposable = null;
             }
-
+			
 			// 遷移開始.
 
             TransitionTarget = argument.Identifier;
