@@ -1199,7 +1199,7 @@ namespace Modules.Scene
 			return loadedScenes.GetValueOrDefault(identifier);
 		}
 
-        private ISceneBase FindSceneObject(UnityEngine.SceneManagement.Scene scene)
+		private ISceneBase FindSceneObject(UnityEngine.SceneManagement.Scene scene)
         {
             ISceneBase sceneBase = null;
 
