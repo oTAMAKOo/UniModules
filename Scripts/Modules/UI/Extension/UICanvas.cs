@@ -79,7 +79,7 @@ namespace Modules.UI.Extension
             var layerMask = 1 << canvas.gameObject.layer;
 
             // 最初に一致したカメラを適用.
-            canvasCamera = UnityUtility.FindCameraForLayer(layerMask).FirstOrDefault();
+            canvasCamera = UnityUtility.FindCameraForLayer(layerMask).FirstOrDefault(x => x.GetComponent<IgnoreModifyCamera>() == null);
 
             if (canvasCamera != null)
             {
