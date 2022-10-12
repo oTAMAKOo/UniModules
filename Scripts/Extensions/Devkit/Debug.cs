@@ -204,6 +204,18 @@ public static class Debug
         UnityEngine.Debug.Assert(condition, message);
     }
 
+    public static void Assert(bool condition, string message, Object context)
+    {
+        if (condition)
+        {
+            DebugLog.ReceiveAssert(message);
+        }
+
+        if (!enable) { return; }
+
+        UnityEngine.Debug.Assert(condition, message, context);
+    }
+
     // Exception.
 
     public static void LogException(System.Exception exception)
