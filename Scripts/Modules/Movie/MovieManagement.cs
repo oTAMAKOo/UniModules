@@ -89,12 +89,18 @@ namespace Modules.Movie
                 throw new FileNotFoundException(moviePath);
             }
 
-            var movieController = UnityUtility.GetOrAddComponent<CriManaMovieControllerForUI>(targetGraphic.gameObject);
+            var movieController = UnityUtility.GetOrAddComponent<CriMovieForUI>(targetGraphic.gameObject);
 
             movieController.target = targetGraphic;
             movieController.enabled = true;
+			movieController.playOnStart = false;
 
             UnityUtility.SetActive(movieController.gameObject, true);
+
+			if (!movieController.Initialized)
+			{
+				movieController.ManualInitialize();
+			}
 
 			var moviePlayer = movieController.player;
 
