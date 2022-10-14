@@ -1,4 +1,4 @@
-
+﻿
 #if ENABLE_CRIWARE_SOFDEC
 ﻿﻿﻿
 using UnityEngine;
@@ -96,7 +96,7 @@ namespace Modules.Movie
 
             UnityUtility.SetActive(movieController.gameObject, true);
 
-            var moviePlayer = movieController.player;
+			var moviePlayer = movieController.player;
 
             moviePlayer.SetFile(null, moviePath);
 

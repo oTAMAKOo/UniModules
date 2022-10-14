@@ -134,6 +134,8 @@ namespace Modules.Movie
             {
                 var assetPath = AssetDatabase.GetAssetPath(usmAsset);
 
+				assetPath = assetPath.Replace(path + PathUtility.PathSeparator, string.Empty);
+
                 result.Add(new ManaInfo(assetPath));
             }
 
