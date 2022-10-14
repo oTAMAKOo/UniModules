@@ -27,6 +27,17 @@ namespace Modules.UI.DummyContent
 			ImportText();
 		}
 
+		#if UNITY_EDITOR
+        
+		void OnEnable()
+		{
+			if (Application.isPlaying){ return; }
+
+			ImportText();
+		}
+
+		#endif
+
 		private void ImportText()
 		{
 			ApplyText(null);
