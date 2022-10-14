@@ -10,11 +10,15 @@ namespace Extensions
 
         public static bool IsEmpty<T>(this IEnumerable<T> source)
         {
+			if (source == null){ return true; }
+
             return !source.Any();
         }
 
         public static string[] ToStrings(this object[] objectArray)
         {
+			if (objectArray == null){ return new string[0]; }
+
             return Array.ConvertAll<object, string>(objectArray, o => o.ToString());
         }
 
