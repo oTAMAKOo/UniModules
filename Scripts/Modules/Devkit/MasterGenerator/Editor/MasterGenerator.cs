@@ -74,7 +74,7 @@ namespace Modules.Master
             {
 	            var masterManager = MasterManager.Instance;
 
-                var fileHashDictionary = new SortedDictionary<string, string>(new NaturalComparer());
+                var fileInfoDictionary = new SortedDictionary<string, (string, long)>(new NaturalComparer());
 
                 var tasks = new List<UniTask>();
 
@@ -114,11 +114,13 @@ namespace Modules.Master
 
                             var versionHash = await GenerateMasterFile(filePath, master,  cryptoKey, lz4Compression);
 
-                            // バージョンハッシュ.
+							var file = new FileInfo(filePath);
 
-                            lock (fileHashDictionary)
+							// バージョンハッシュ.
+
+                            lock (fileInfoDictionary)
                             {
-                                fileHashDictionary.Add(fileName, versionHash);
+								fileInfoDictionary.Add(fileName, (versionHash, file.Length));
                             }
 
                             sw.Stop();
@@ -150,7 +152,7 @@ namespace Modules.Master
                 await UniTask.WhenAll(tasks);
 
                 // バージョンファイル作成.
-				GenerateMasterVersionFile(exportDirectory, fileHashDictionary);
+				GenerateMasterVersionFile(exportDirectory, fileInfoDictionary);
 
                 UnityConsole.Info("Generate master complete.\n\n{0}", logBuilder.ToString());
             }
@@ -288,7 +290,7 @@ namespace Modules.Master
 
         #region Version
 
-		private static void GenerateMasterVersionFile(string filePath, IDictionary<string, string> versionHashDictionary)
+		private static void GenerateMasterVersionFile(string filePath, IDictionary<string, (string hash, long fileSize)> versionHashDictionary)
         {
             var builder = new StringBuilder();
 
@@ -303,7 +305,7 @@ namespace Modules.Master
 
 			foreach (var item in versionHashDictionary)
             {
-                builder.AppendFormat("{0},{1}", item.Key, item.Value).AppendLine();
+                builder.AppendFormat("{0},{1},{2}", item.Key, item.Value.hash, item.Value.fileSize).AppendLine();
             }
             
             var versionText = builder.ToString();
