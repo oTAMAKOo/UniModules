@@ -314,6 +314,11 @@ namespace Modules.Scene
 
 				var scene = loadedScenes.GetValueOrDefault(transitionScene);
 
+				if (scene == null)
+				{
+					Debug.LogError($"UnloadTransition target scene not found.\n{transitionScene}");
+				}
+
 				scene.Enable();
 
 				await scene.Instance.OnTransition().AttachExternalCancellation(cancelToken);
