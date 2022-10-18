@@ -295,7 +295,7 @@ namespace Extensions
         /// 指定したインデックス位置にある要素を返します.
         /// インデックスが範囲外の場合は既定値を返します.
         /// </summary>
-        public static T ElementAtOrDefault<T>(this IEnumerable<T> source, int index, T defaultValue)
+        public static T ElementAtOrDefault<T>(this IEnumerable<T> source, int index, T defaultValue = default)
         {
             var array = source.ToArray();
 
