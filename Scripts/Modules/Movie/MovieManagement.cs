@@ -62,40 +62,24 @@ namespace Modules.Movie
             initialized = true;
         }
 
-        #region InternalResources
+		/// <summary>
+		/// ExternalResources内や、直接指定での動画再生用のインスタンスを生成.
+		/// ※ 頭出しなどを行う時はこの関数で生成したPlayerを使って頭出しを実装する.
+		/// </summary>
+		public MovieElement CreateElement(string moviePath, Graphic targetGraphic, Player.ShaderDispatchCallback shaderOverrideCallBack = null)
+		{
+			if (!File.Exists(moviePath))
+			{
+				throw new FileNotFoundException(moviePath);
+			}
 
-        /// <summary>
-        /// InternalResources内の動画再生.
-        /// </summary>
-        public MovieElement Play(Movies.Mana type, Graphic targetGraphic, Player.ShaderDispatchCallback shaderOverrideCallBack = null)
-        {
-            var info = Movies.GetManaInfo(type);
+			var movieController = UnityUtility.GetOrAddComponent<CriMovieForUI>(targetGraphic.gameObject);
 
-            return info != null ? Play(info, targetGraphic, shaderOverrideCallBack) : null;
-        }
-
-        #endregion
-
-        #region ExternalResources
-
-        /// <summary>
-        /// ExternalResources内や、直接指定での動画再生用のインスタンスを生成.
-        /// ※ 頭出しなどを行う時はこの関数で生成したPlayerを使って頭出しを実装する.
-        /// </summary>
-        public MovieElement CreateElement(string moviePath, Graphic targetGraphic, Player.ShaderDispatchCallback shaderOverrideCallBack = null)
-        {
-            if (!File.Exists(moviePath))
-            {
-                throw new FileNotFoundException(moviePath);
-            }
-
-            var movieController = UnityUtility.GetOrAddComponent<CriMovieForUI>(targetGraphic.gameObject);
-
-            movieController.target = targetGraphic;
-            movieController.enabled = true;
+			movieController.target = targetGraphic;
+			movieController.enabled = true;
 			movieController.playOnStart = false;
 
-            UnityUtility.SetActive(movieController.gameObject, true);
+			UnityUtility.SetActive(movieController.gameObject, true);
 
 			if (!movieController.Initialized)
 			{
@@ -104,21 +88,66 @@ namespace Modules.Movie
 
 			var moviePlayer = movieController.player;
 
-            moviePlayer.SetFile(null, moviePath);
+			moviePlayer.SetFile(null, moviePath);
 
-            if (shaderOverrideCallBack != null)
-            {
-                moviePlayer.SetShaderDispatchCallback(shaderOverrideCallBack);
-            }
+			if (shaderOverrideCallBack != null)
+			{
+				moviePlayer.SetShaderDispatchCallback(shaderOverrideCallBack);
+			}
 
-            var movieElement = new MovieElement(moviePlayer, movieController, moviePath);
+			var movieElement = new MovieElement(moviePlayer, movieController, moviePath);
 
-            movieElements.Add(movieElement);
+			movieElements.Add(movieElement);
 
-            return movieElement;
+			return movieElement;
+		}
+
+		#region Prepare
+
+		/// <summary> 動画再生準備. </summary>
+		public MovieElement Prepare(Movies.Mana type, Graphic targetGraphic, Player.ShaderDispatchCallback shaderOverrideCallBack = null)
+		{
+			var info = Movies.GetManaInfo(type);
+
+			return info != null ? Prepare(info, targetGraphic, shaderOverrideCallBack) : null;
+		}
+
+		/// <summary> 動画再生準備. </summary>
+		public MovieElement Prepare(ManaInfo movieInfo, Graphic targetGraphic, Player.ShaderDispatchCallback shaderOverrideCallBack = null)
+		{
+			if (movieInfo == null){ return null; }
+
+			var moviePath = Path.ChangeExtension(movieInfo.UsmPath, CriAssetDefinition.UsmExtension);
+
+			return Prepare(moviePath, targetGraphic, shaderOverrideCallBack);
+		}
+
+		/// <summary> 動画再生準備. </summary>
+		public MovieElement Prepare(string moviePath, Graphic targetGraphic, Player.ShaderDispatchCallback shaderOverrideCallBack = null)
+		{
+			var element = CreateElement(moviePath, targetGraphic, shaderOverrideCallBack);
+
+			if (element != null)
+			{
+				element.Player.Prepare();
+			}
+
+			return element;
+		}
+
+		#endregion
+
+        #region Play
+
+        /// <summary> 動画再生. </summary>
+        public MovieElement Play(Movies.Mana type, Graphic targetGraphic, Player.ShaderDispatchCallback shaderOverrideCallBack = null)
+        {
+            var info = Movies.GetManaInfo(type);
+
+            return info != null ? Play(info, targetGraphic, shaderOverrideCallBack) : null;
         }
-        
-        /// <summary> ExternalResources内や、直接指定での動画再生. </summary>
+
+		/// <summary> 動画再生. </summary>
         public MovieElement Play(ManaInfo movieInfo, Graphic targetGraphic, Player.ShaderDispatchCallback shaderOverrideCallBack = null)
         {
             if (movieInfo == null){ return null; }
@@ -128,7 +157,7 @@ namespace Modules.Movie
             return Play(moviePath, targetGraphic, shaderOverrideCallBack);
         }
 
-        /// <summary> 直接指定での動画再生. </summary>
+        /// <summary> 動画再生. </summary>
         public MovieElement Play(string moviePath, Graphic targetGraphic, Player.ShaderDispatchCallback shaderOverrideCallBack = null)
         {
             var element = CreateElement(moviePath, targetGraphic, shaderOverrideCallBack);
@@ -141,7 +170,7 @@ namespace Modules.Movie
             return element;
         }
 
-        #endregion
+		#endregion
 
         public void Stop(MovieElement element)
         {

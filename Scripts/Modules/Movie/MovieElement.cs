@@ -1,4 +1,4 @@
-
+﻿
 #if ENABLE_CRIWARE_SOFDEC
 
 using System;
@@ -30,6 +30,9 @@ namespace Modules.Movie
         /// <summary> 動画状態. </summary>
         public Player.Status? Status { get; private set; }
 
+        /// <summary> 終了済みか. </summary>
+        public bool IsFinished { get; private set; }
+
         /// <summary>
         /// 再生時間(秒).
         /// 再生準備中などで情報が取得できない時は-1.
@@ -51,6 +54,7 @@ namespace Modules.Movie
             MoviePath = moviePath;
             Player = moviePlayer;
             Status = moviePlayer.status;
+			IsFinished = false;
         }
 
         public void Update()
@@ -69,6 +73,8 @@ namespace Modules.Movie
                 UnityUtility.SetActive(movieController.gameObject, false);
 
                 UnityUtility.DeleteComponent(movieController);
+
+                IsFinished = true;
 
                 if (onFinish != null)
                 {
