@@ -187,16 +187,26 @@ namespace Modules.ExternalResource
                 .ToArray();
         }
 
-        public string[] GetManageAssetPaths(ManageInfo manageInfo)
-        {
-            var assetPath = AssetDatabase.GUIDToAssetPath(manageInfo.guid);
+		public string[] GetManageAssetPaths(ManageInfo manageInfo)
+		{
+			var assetPath = AssetDatabase.GUIDToAssetPath(manageInfo.guid);
 
-            if (!AssetDatabase.IsValidFolder(assetPath)){ return new string[] { assetPath }; }
+			if (!AssetDatabase.IsValidFolder(assetPath)){ return new string[] { assetPath }; }
 
-            var assetPaths = UnityEditorUtility.GetAllAssetPathInFolder(assetPath);
+			var assetPaths = UnityEditorUtility.GetAllAssetPathInFolder(assetPath);
 
-            return assetPaths.Where(x => !IsIgnoreManageAsset(x)).ToArray();
-        }
+			var ignoreAssetPaths = managedInfos.Values
+				.Select(x => AssetDatabase.GUIDToAssetPath(x.guid))
+				.Select(x => PathUtility.ConvertPathSeparator(x))
+				.Where(x => x != assetPath && x.StartsWith(assetPath))
+				.ToArray();
+
+			var manageAssetPaths = assetPaths.Where(x => !IsIgnoreManageAsset(x))
+				.Where(x => ignoreAssetPaths.All(y => !x.StartsWith(y)))
+				.ToArray();
+
+			return manageAssetPaths;
+		}
 
         public bool SetAssetBundleName(string assetPath, string assetBundleName, bool force = false)
         {

@@ -188,12 +188,14 @@ namespace Modules.ExternalResource
 
         public AssetInfoManifest(AssetInfo[] assetInfos)
         {
-            this.assetInfos = assetInfos;
+            this.assetInfos = assetInfos.DistinctBy(x => x.ResourcePath).ToArray();
         }
 
         public void AddAssetInfo(AssetInfo assetInfo)
         {
-            assetInfos = assetInfos.Append(assetInfo).ToArray();
+            assetInfos = assetInfos.Append(assetInfo)
+                .DistinctBy(x => x.ResourcePath)
+                .ToArray();
         }
 
         public static AssetInfo GetManifestAssetInfo()
@@ -237,6 +239,8 @@ namespace Modules.ExternalResource
         
         public void BuildCache(bool forceUpdate = false)
         {
+            assetInfos = assetInfos.DistinctBy(x => x.ResourcePath).ToArray();
+
             if (assetInfoByGroup == null || forceUpdate)
             {
                 assetInfoByGroup = assetInfos.ToLookup(x => x.Group);
