@@ -442,7 +442,9 @@ namespace Modules.ExternalResource
         {
             if (string.IsNullOrEmpty(group)) { return null; }
 
-            return managedInfos.Values.Where(x => x.group == group).ToArray();
+            return managedInfos.Values.Where(x => x.group == group)
+				.OrderBy(x => AssetDatabase.GUIDToAssetPath(x.guid), new NaturalComparer())
+				.ToArray();
         }
 
         public void UpdateManageInfo(ManageInfo manageInfo)
