@@ -40,6 +40,11 @@ namespace Modules.UI
 
 			fadeAlpha = getAlpha.Invoke();
 		}
+
+		public void SetIgnoreTimeScale(bool ignoreTimeScale)
+		{
+			this.ignoreTimeScale = ignoreTimeScale;
+		}
 		
 		public async UniTask FadeOut()
 		{
