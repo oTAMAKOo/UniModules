@@ -140,6 +140,18 @@ namespace Modules.Scene
 				.AddTo(transitionCancelSource.Token);
         }
 
+		/// <summary> 強制加算シーン遷移 </summary>
+		public void ForceAppendTransition<TArgument>(TArgument sceneArgument) where TArgument :ISceneArgument
+		{
+			TransitionCancel();
+
+			IsTransition = true;
+			
+			ObservableEx.FromUniTask(cancelToken => AppendTransitionCore(sceneArgument, cancelToken))
+				.Subscribe(_ => IsTransition = false)
+				.AddTo(transitionCancelSource.Token);
+		}
+
         private async UniTask AppendTransitionCore<TArgument>(TArgument sceneArgument, CancellationToken cancelToken) where TArgument :ISceneArgument
         {
 			try
@@ -259,6 +271,18 @@ namespace Modules.Scene
 			var sceneInstance = AppendSceneInstances.FirstOrDefault(x => x.GetScene() == gameObject.scene);
 
 			UnloadTransition(transitionScene, sceneInstance);
+		}
+
+		/// <summary> 強制加算シーンアンロード遷移 </summary>
+		public void ForceUnloadTransition(Scenes transitionScene, SceneInstance unloadSceneInstance)
+		{
+			TransitionCancel();
+
+			IsTransition = true;
+
+			ObservableEx.FromUniTask(cancelToken => UnloadTransitionCore(transitionScene, unloadSceneInstance, cancelToken))
+				.Subscribe(_ => IsTransition = false)
+				.AddTo(transitionCancelSource.Token);
 		}
 
         private async UniTask UnloadTransitionCore(Scenes transitionScene, SceneInstance sceneInstance, CancellationToken cancelToken)

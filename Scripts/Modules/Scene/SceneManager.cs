@@ -264,7 +264,7 @@ namespace Modules.Scene
         /// <summary>
         /// シーン遷移を中止.
         /// </summary>
-        private void TransitionCancel()
+        public void TransitionCancel()
         {
             if (transitionCancelSource != null && !transitionCancelSource.IsCancellationRequested)
             {
