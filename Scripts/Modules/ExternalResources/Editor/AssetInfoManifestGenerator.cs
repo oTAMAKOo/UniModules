@@ -70,6 +70,15 @@ namespace Modules.ExternalResource
             {
                 if (assetBundleNames.Contains(assetBundleName)) { continue; }
 
+				// AssetBundleNameをNoneに設定.
+				var assetPaths = AssetDatabase.GetAssetPathsFromAssetBundle(assetBundleName);
+
+				foreach (var assetPath in assetPaths)
+				{
+					assetManagement.SetAssetBundleName(assetPath, string.Empty);
+				}
+
+				// AssetBundleNameを削除.
                 AssetDatabase.RemoveAssetBundleName(assetBundleName, true);
             }
         }
