@@ -154,7 +154,7 @@ namespace Extensions
         /// <summary> Assetsからの相対パスから絶対パスに変換  </summary>
         public static string RelativePathToFullPath(string path)
         {
-            var u1 = new Uri(Application.dataPath);
+            var u1 = new Uri(DataPath);
             var u2 = new Uri(u1, path);
 
             return PathUtility.ConvertPathSeparator(u2.LocalPath);
@@ -163,7 +163,7 @@ namespace Extensions
         /// <summary> Assetsからの相対パスを生成 </summary>
         public static string MakeRelativePath(string path)
         {
-            var assetFolderUri = new Uri(Application.dataPath);
+            var assetFolderUri = new Uri(DataPath);
             var targetUri = new Uri(path);
 
             return assetFolderUri.MakeRelativeUri(targetUri).ToString();
@@ -177,9 +177,9 @@ namespace Extensions
                 return assetPath.Substring((AssetsFolder + PathUtility.PathSeparator).Length);
             }
 
-            if (assetPath.StartsWith(Application.dataPath))
+            if (assetPath.StartsWith(DataPath))
             {
-                return assetPath.Substring(Application.dataPath.Length);
+                return assetPath.Substring(DataPath.Length);
             }
 
             return null;
@@ -195,14 +195,14 @@ namespace Extensions
 
             path = PathUtility.ConvertPathSeparator(path);
 
-            if (path.Contains(Application.dataPath))
+            if (path.Contains(DataPath))
             {
                 if (path.LastOrDefault() == PathUtility.PathSeparator)
                 {
                     path = path.Remove(path.Length - 1);
                 }
 
-                return PathUtility.Combine(AssetsFolder, path.Replace(Application.dataPath, string.Empty));
+                return PathUtility.Combine(AssetsFolder, path.Replace(DataPath, string.Empty));
             }
 
             return null;
