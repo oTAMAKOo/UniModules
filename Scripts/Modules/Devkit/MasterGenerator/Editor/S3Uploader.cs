@@ -6,7 +6,6 @@ using System.Linq;
 using System.Collections.Generic;
 using System.Text;
 using System.Threading.Tasks;
-using Amazon;
 using Amazon.S3;
 using Amazon.S3.Model;
 using Amazon.S3.Transfer;
@@ -16,7 +15,7 @@ using Modules.Amazon.S3;
 
 namespace Modules.Master.Editor
 {
-    public abstract class S3Uploader
+    public abstract class S3Uploader : S3UploaderBase
     {
         //----- params -----
 
@@ -38,8 +37,6 @@ namespace Modules.Master.Editor
 
         //----- field -----
 
-        private S3Client s3Client = null;
-
         private string folderPath = null;
         private string bucketFolder = null;
 
@@ -47,15 +44,12 @@ namespace Modules.Master.Editor
         
         //----- property -----
 
-		/// <summary> アップロードファイルのアクセス権 </summary>
-		protected virtual S3CannedACL UploadFileCannedACL { get { return S3CannedACL.PublicRead; } }
-
         //----- method -----
 
         public async UniTask<bool> Execute(string folderPath, string bucketFolder)
         {
             this.folderPath = folderPath;
-            this.bucketFolder = bucketFolder;
+            this.bucketFolder = BucketFolderOverride(bucketFolder);
 
             // ファイルパス : オブジェクトパスのディクショナリ作成.
             files = Directory.GetFiles(folderPath)
@@ -64,7 +58,7 @@ namespace Modules.Master.Editor
 
             using (new DisableStackTraceScope())
             {
-                s3Client = CreateS3Client();
+                CreateS3Client();
 
                 try
                 {
@@ -97,29 +91,6 @@ namespace Modules.Master.Editor
             }
 
             return true;
-        }
-
-        private S3Client CreateS3Client()
-        {
-			S3Client s3Client = null;
-
-			var bucketName = GetBucketName();
-			var bucketRegion = GetBucketRegion();
-
-			if (this is IBasicCredentials)
-			{
-				s3Client = new S3Client(bucketName, bucketRegion, this as IBasicCredentials);
-			}
-			else if (this is ICognitoCredentials)
-			{
-				s3Client = new S3Client(bucketName, bucketRegion, this as ICognitoCredentials);
-			}
-			else
-			{
-				throw new Exception("Credentials not found.");
-			}
-
-			return s3Client;
         }
 
         /// <summary> アップロードするファイルデータ構築. </summary>
@@ -263,9 +234,5 @@ namespace Modules.Master.Editor
                 action.Invoke(i + 1, num, chunk[i].ToArray());
             }
         }
-
-		public abstract string GetBucketName();
-
-        public abstract RegionEndpoint GetBucketRegion();
     }
 }

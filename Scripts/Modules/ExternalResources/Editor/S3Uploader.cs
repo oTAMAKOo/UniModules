@@ -5,7 +5,6 @@ using System.IO;
 using System.Linq;
 using System.Collections.Generic;
 using System.Text;
-using Amazon;
 using Amazon.S3;
 using Amazon.S3.Model;
 using Amazon.S3.Transfer;
@@ -17,7 +16,7 @@ using Modules.Devkit.Project;
 
 namespace Modules.ExternalResource
 {
-    public abstract class S3Uploader
+    public abstract class S3Uploader : S3UploaderBase
     {
         //----- params -----
 
@@ -43,8 +42,6 @@ namespace Modules.ExternalResource
 
         //----- field -----
 
-        private S3Client s3Client = null;
-
         private string folderPath = null;
         private string bucketFolder = null;
 
@@ -54,9 +51,6 @@ namespace Modules.ExternalResource
         private string assetInfoManifestFilePath = null;
 
         //----- property -----
-
-		/// <summary> アップロードファイルのアクセス権 </summary>
-		protected virtual S3CannedACL UploadFileCannedACL { get { return S3CannedACL.PublicRead; } }
 
         //----- method -----
 
@@ -95,7 +89,9 @@ namespace Modules.ExternalResource
                         throw new InvalidDataException("VersionHash is empty.");
                     }
 
-                    this.bucketFolder = PathUtility.Combine(bucketFolder, versionHash);
+					var folder = PathUtility.Combine(bucketFolder, versionHash);
+
+                    this.bucketFolder = BucketFolderOverride(folder);
 
                     //------- アップロードファイル情報作成 -------
 
@@ -103,7 +99,7 @@ namespace Modules.ExternalResource
 
                     //------- S3クライアント作成 -------
 
-                    s3Client = CreateS3Client();
+                    CreateS3Client();
 
                     //------- S3のファイル一覧取得 -------
 
@@ -130,29 +126,6 @@ namespace Modules.ExternalResource
             }
 
             return versionHash;
-        }
-
-        private S3Client CreateS3Client()
-        {
-			S3Client s3Client = null;
-
-            var bucketName = GetBucketName();
-            var bucketRegion = GetBucketRegion();
-
-			if (this is IBasicCredentials)
-			{
-				s3Client = new S3Client(bucketName, bucketRegion, this as IBasicCredentials);
-			}
-			else if (this is ICognitoCredentials)
-			{
-				s3Client = new S3Client(bucketName, bucketRegion, this as ICognitoCredentials);
-			}
-			else
-			{
-				throw new Exception("Credentials not found.");
-			}
-
-			return s3Client;
         }
 
 		private string GetAssetInfoManifestFilePath(string[] files)
@@ -490,10 +463,6 @@ namespace Modules.ExternalResource
                 }
             }
         }
-
-		public abstract string GetBucketName();
-
-        public abstract RegionEndpoint GetBucketRegion();
 
 		public abstract AesCryptoStreamKey GetCryptoKey();
     }
