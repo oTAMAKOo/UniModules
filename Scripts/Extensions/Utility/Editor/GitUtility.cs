@@ -1,4 +1,6 @@
 ﻿
+using Cysharp.Threading.Tasks;
+
 namespace Extensions
 {
     public static class GitUtility
@@ -47,5 +49,20 @@ namespace Extensions
 			// 改行コードを削除.
 			return result.Output.Replace("\r", "").Replace("\n", "");
 		}
+
+		/// <summary> 指定のブランチをチェックアウト </summary>
+        public static async UniTask<bool> Checkout(string workingDirectory, string branchName)
+        {
+            var processExecute = new ProcessExecute("git", $"checkout {branchName}")
+            {
+                WorkingDirectory = workingDirectory,
+            };
+
+            await processExecute.StartAsync();
+
+            var currentBranchName = GetBranchName(workingDirectory);
+
+            return currentBranchName == branchName;
+        }
 	}
 }
