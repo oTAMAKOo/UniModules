@@ -23,7 +23,7 @@ namespace Modules.Animation
         [SerializeField]
         private EndActionType endActionType = EndActionType.None;
         [SerializeField]
-        private bool ignoreTimeScale = false;
+        private bool ignoreTimeScale = true;
 
         private int layer = -1;
 
