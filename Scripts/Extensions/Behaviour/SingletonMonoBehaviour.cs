@@ -29,6 +29,11 @@ namespace Extensions
 			}
 		}
 
+		public static bool HasInstance
+		{
+			get { return !UnityUtility.IsNull(instance); }
+		}
+
 		//----- method -----
 
 		protected virtual void Awake()
