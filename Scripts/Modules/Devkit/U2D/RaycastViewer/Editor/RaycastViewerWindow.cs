@@ -45,12 +45,7 @@ namespace Modules.Devkit.U2D
 
             raycastResults = new RaycastResult[0];
 
-            if (infoIconContent == null)
-            {
-                infoIconContent = EditorGUIUtility.IconContent("console.infoicon.sml");
-            }
-
-            Observable.EveryUpdate().Where(_ => Input.GetMouseButtonDown(0))
+			Observable.EveryUpdate().Where(_ => Input.GetMouseButtonDown(0))
                 .Subscribe(_ => UpdateRaycastObjects())
                 .AddTo(Disposable);
 
@@ -65,6 +60,11 @@ namespace Modules.Devkit.U2D
             {
                 Initialize();
             }
+
+			if (infoIconContent == null)
+			{
+				infoIconContent = EditorGUIUtility.IconContent("console.infoicon.sml");
+			}
 
             // 削除されたオブジェクトを除外.
             raycastResults = raycastResults.Where(x => !UnityUtility.IsNull(x.gameObject)).ToArray();
