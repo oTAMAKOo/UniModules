@@ -115,6 +115,8 @@ namespace Extensions
         /// <summary> 複数のインスタンスを高速生成 </summary>
         public static IEnumerable<GameObject> Instantiate(GameObject parent, GameObject original, int count, bool instantiateInWorldSpace = false)
         {
+			if (original == null){ return new GameObject[0]; }
+
             var list = new List<GameObject>();
 
             var instanceName = string.Empty;
