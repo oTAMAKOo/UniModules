@@ -106,6 +106,11 @@ namespace Modules.Master
 
                             var master = await LoadMasterData(recordDataLoader, masterType, containerType, recordType);
 
+							if (master == null)
+							{
+								throw new Exception($"Failed load master : {masterFileName}");
+							}
+
                             // MessagePackファイル作成.
 
                             var filePath = GetGenerateMasterFilePath(exportDirectory, masterFileName, cryptoKey);
