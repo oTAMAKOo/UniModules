@@ -111,8 +111,17 @@ namespace Modules.MessagePack
 
             if (string.IsNullOrEmpty(command))
             {
-	            command = "mpc";
-			}
+	            command = GetMpcCommand();
+
+				#if UNITY_EDITOR_OSX
+
+				if (command.EndsWith("dotnet"))
+				{
+					argument = "mpc " + argument;
+				}
+
+				#endif
+            }
 
             var processExecute = new ProcessExecute(command, argument)
             {
@@ -122,6 +131,54 @@ namespace Modules.MessagePack
             return processExecute;
         }
 
+		private static string GetMpcCommand()
+		{
+			var result = "mpc";
+
+			#if UNITY_EDITOR_WIN
+
+			// 環境変数.
+			var variable = Environment.GetEnvironmentVariable("Path", EnvironmentVariableTarget.Process);
+
+			if (variable != null)
+			{
+				foreach (var item in variable.Split(';'))
+				{
+					var path = PathUtility.Combine(item, "mpc.exe");
+
+					if (!File.Exists(path)){ continue; }
+
+					result = path;
+
+					break;
+				}
+			}
+			
+			#endif
+
+			#if UNITY_EDITOR_OSX
+
+			var mpcPathCandidate = new string[]
+			{
+				"$HOME/.dotnet/tools/",
+				"/usr/local/bin/",
+			};
+
+			foreach (var item in mpcPathCandidate)
+			{
+				var path = PathUtility.Combine(item, "dotnet");
+
+				if (!File.Exists(path)){ continue; }
+
+				result = path;
+
+				break;
+			}
+
+			#endif
+
+			return result;
+		}
 
 		private static void ImportGeneratedCsFile(string csFilePath, string csFileHash)
         {
