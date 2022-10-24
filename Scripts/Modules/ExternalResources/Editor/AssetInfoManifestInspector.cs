@@ -57,7 +57,7 @@ namespace Modules.ExternalResource
                 var isHit = false;
 
                 // ラベルが一致.
-                if (assetInfo.Labels.Any())
+                if (assetInfo.Labels != null && assetInfo.Labels.Any())
                 {
                     isHit |= assetInfo.Labels.Any(x => x.IsMatch(keywords));
                 }

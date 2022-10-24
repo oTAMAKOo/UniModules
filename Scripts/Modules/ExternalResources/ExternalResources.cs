@@ -1,4 +1,4 @@
-﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿
+﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿
 using UnityEngine;
 using System;
 using System.IO;
@@ -227,62 +227,63 @@ namespace Modules.ExternalResource
             return assetInfosByResourcePath.GetValueOrDefault(resourcePath);
         }
 
-        /// <summary>
-        /// マニフェストファイルを更新.
-        /// </summary>
-        public async UniTask UpdateManifest()
-        {
-	        var sw = System.Diagnostics.Stopwatch.StartNew();
+		/// <summary> マニフェストファイルを更新. </summary>
+		public async UniTask<bool> UpdateManifest()
+		{
+			var sw = System.Diagnostics.Stopwatch.StartNew();
 
-            // アセット管理情報読み込み.
+			// アセット管理情報読み込み.
 
-            var manifestAssetInfo = AssetInfoManifest.GetManifestAssetInfo();
+			var manifestAssetInfo = AssetInfoManifest.GetManifestAssetInfo();
 
-            var assetPath = PathUtility.Combine(resourceDirectory, manifestAssetInfo.ResourcePath);
+			var assetPath = PathUtility.Combine(resourceDirectory, manifestAssetInfo.ResourcePath);
 
-            // AssetInfoManifestは常に最新に保たなくてはいけない為必ずダウンロードする.
+			// AssetInfoManifestは常に最新に保たなくてはいけない為必ずダウンロードする.
+
+			await assetBundleManager.UpdateAssetInfoManifest(cancelSource.Token);
+
+			var manifest = await assetBundleManager.LoadAsset<AssetInfoManifest>(manifestAssetInfo, assetPath);
+
+			if (manifest == null)
+			{
+				throw new FileNotFoundException("Failed update AssetInfoManifest.");
+			}
+
+			SetAssetInfoManifest(manifest);
+
+			sw.Stop();
+
+			if (LogEnable && UnityConsole.Enable)
+			{
+				var message = $"UpdateManifest: ({sw.Elapsed.TotalMilliseconds:F2}ms)";
+
+				UnityConsole.Event(ConsoleEventName, ConsoleEventColor, message);
+			}
+
+			// アセット管理情報を登録.
+
+			assetBundleManager.SetManifest(assetInfoManifest);
+
+			#if ENABLE_CRIWARE_ADX || ENABLE_CRIWARE_SOFDEC
+
+			criAssetManager.SetManifest(assetInfoManifest);
+
+			#endif
+
+			// 不要になったファイル削除.
 			try
 			{
-				await assetBundleManager.UpdateAssetInfoManifest(cancelSource.Token);
-
-				var manifest = await assetBundleManager.LoadAsset<AssetInfoManifest>(manifestAssetInfo, assetPath);
-
-				SetAssetInfoManifest(manifest);
+				await DeleteDisUsedCache();
 			}
 			catch (Exception e)
 			{
 				Debug.LogException(e);
+
+				return false;
 			}
 
-			sw.Stop();
-
-            if (LogEnable && UnityConsole.Enable)
-            {
-                var message = $"UpdateManifest: ({sw.Elapsed.TotalMilliseconds:F2}ms)";
-
-                UnityConsole.Event(ConsoleEventName, ConsoleEventColor, message);
-            }
-
-            // アセット管理情報を登録.
-
-            assetBundleManager.SetManifest(assetInfoManifest);
-
-            #if ENABLE_CRIWARE_ADX || ENABLE_CRIWARE_SOFDEC
-
-            criAssetManager.SetManifest(assetInfoManifest);
-
-            #endif
-
-            // 不要になったファイル削除.
-            try
-            {
-	            await DeleteDisUsedCache();
-            }
-			catch (Exception e)
-            {
-	            Debug.LogException(e);
-            }
-        }
+			return true;
+		}
 
         /// <summary>
         /// アセットを更新.

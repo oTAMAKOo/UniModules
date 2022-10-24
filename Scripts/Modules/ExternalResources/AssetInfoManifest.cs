@@ -20,7 +20,7 @@ namespace Modules.ExternalResource
         [SerializeField]
         private string group = null;
         [SerializeField]
-        private string[] labels = null;
+        private string[] labels = new string[0];
         [SerializeField]
         private string fileName = null;
         [SerializeField]
