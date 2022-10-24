@@ -61,7 +61,7 @@ namespace Modules.Devkit.U2D
                 Initialize();
             }
 
-			if (infoIconContent == null)
+			if (infoIconContent == null || infoIconContent.image == null)
 			{
 				infoIconContent = EditorGUIUtility.IconContent("console.infoicon.sml");
 			}
