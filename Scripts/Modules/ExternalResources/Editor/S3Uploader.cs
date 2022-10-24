@@ -347,8 +347,7 @@ namespace Modules.ExternalResource
             if (uploadTargets.Any())
             {
                 var isBatchMode = Application.isBatchMode;
-
-                var count = 0;
+				
                 var logBuilder = new StringBuilder();
 
                 using (new DisableStackTraceScope(LogType.Log))
@@ -359,62 +358,61 @@ namespace Modules.ExternalResource
 
                     const long PartSize = 5 * 1024 * 1024; // 5MB単位.
 
-                    var tasks = new List<UniTask>();
-
-                    foreach (var uploadTarget in uploadTargets)
+					var chunkedUploadTargets = uploadTargets.Chunk(50);
+					
+                    foreach (var items in chunkedUploadTargets)
                     {
-                        var task = UniTask.RunOnThreadPool(async () =>
-                        {
-                            var fileTransferUtilityRequest = new TransferUtilityUploadRequest
-                            {
-                                FilePath = uploadTarget.FilePath,
-                                StorageClass = S3StorageClass.StandardInfrequentAccess,
-                                PartSize = PartSize,
-                                Key = uploadTarget.ObjectPath,
-                                CannedACL = UploadFileCannedACL,
-                            };
+						var tasks = new List<UniTask>();
 
-                            if (!string.IsNullOrEmpty(uploadTarget.Hash))
-                            {
-                                fileTransferUtilityRequest.Metadata.Add(MetaDataHashKey, uploadTarget.Hash);
-                            }
+						logBuilder.Clear();
 
-                            await s3Client.Upload(fileTransferUtilityRequest);
-                            
-                            if (isBatchMode)
-                            {
-                                Debug.LogFormat(uploadTarget.FilePath);
-                            }
-                            else
-                            {
-                                lock (logBuilder)
-                                {
-                                    logBuilder.AppendLine(uploadTarget.FilePath);
+						foreach (var item in items)
+						{
+							var uploadTarget = item;
 
-                                    count++;
+	                        var task = UniTask.RunOnThreadPool(async () =>
+	                        {
+	                            var fileTransferUtilityRequest = new TransferUtilityUploadRequest
+	                            {
+	                                FilePath = uploadTarget.FilePath,
+	                                StorageClass = S3StorageClass.StandardInfrequentAccess,
+	                                PartSize = PartSize,
+	                                Key = uploadTarget.ObjectPath,
+	                                CannedACL = UploadFileCannedACL,
+	                            };
 
-                                    if (100 < count)
-                                    {
-                                        Debug.Log(logBuilder.ToString());
-     
-                                        logBuilder.Clear();
-                                        count = 0;
-                                    }
-                                }
-                            }
-                        });
+	                            if (!string.IsNullOrEmpty(uploadTarget.Hash))
+	                            {
+	                                fileTransferUtilityRequest.Metadata.Add(MetaDataHashKey, uploadTarget.Hash);
+	                            }
 
-                        tasks.Add(task);
+	                            await s3Client.Upload(fileTransferUtilityRequest);
+	                            
+	                            if (isBatchMode)
+	                            {
+	                                Debug.LogFormat(uploadTarget.FilePath);
+	                            }
+	                            else
+	                            {
+	                                lock (logBuilder)
+	                                {
+	                                    logBuilder.AppendLine(uploadTarget.FilePath);
+									}
+	                            }
+	                        });
+
+	                        tasks.Add(task);
+						}
+
+						await UniTask.WhenAll(tasks.ToArray());
+
+						if (!isBatchMode)
+						{
+							Debug.Log(logBuilder.ToString());
+						}
                     }
-                    
-                    await UniTask.WhenAll(tasks.ToArray());
-                }
-
-                if (!isBatchMode && count != 0)
-                {
-                    Debug.Log(logBuilder.ToString());
-                }
-            }
+				}
+			}
         }
 
         /// <summary> 削除対象のファイルをS3から削除 </summary>

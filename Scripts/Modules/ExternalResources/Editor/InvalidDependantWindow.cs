@@ -175,10 +175,7 @@ namespace Modules.ExternalResource
 
                 dependencies = dependencies.Where(x => x != assetPath).ToArray();
 
-                var invalidDependants = dependencies
-                    .Where(x => !x.StartsWith(externalResourcesPath))
-                    .Where(x => !IgnoreExtensions.Contains(Path.GetExtension(x)))
-                    .ToArray();
+				var invalidDependants = BuildManager.ValidateDependencies(dependencies);
 
                 if (invalidDependants.IsEmpty()) { continue; }
 

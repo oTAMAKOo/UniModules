@@ -138,19 +138,26 @@ namespace Modules.ExternalResource
 
                     //------ AssetBundleをビルド ------
 
-                    BuildResult buildResult = null;
+					BuildResult buildResult = null;
 
-                    using (new BuildLogScope(logBuilder, processTime, "BuildAllAssetBundles"))
-                    {
-                        buildResult = buildAssetBundle.BuildAllAssetBundles();
-                    }
+					var assetInfoManifestAssetPath = AssetDatabase.GetAssetPath(assetInfoManifest);
 
-                    if (!buildResult.IsSuccess)
-                    {
-                        Debug.LogErrorFormat("Build ExternalResource failed.\n{0}", buildResult.ExitCode);
+					using (new BuildLogScope(logBuilder, processTime, "BuildAllAssetBundles"))
+					{
+						buildResult = buildAssetBundle.BuildAllAssetBundles();
+					}
 
-                        return null;
-                    }
+					if (!buildResult.IsSuccess)
+					{
+						Debug.LogErrorFormat("Build ExternalResource failed.\n{0}", buildResult.ExitCode);
+
+						return null;
+					}
+
+					if (UnityUtility.IsNull(assetInfoManifest))
+					{
+						assetInfoManifest = AssetDatabase.LoadAssetAtPath<AssetInfoManifest>(assetInfoManifestAssetPath);
+					}
 
                     //------ 未登録のアセットバンドル情報追加 ------
 
@@ -305,40 +312,52 @@ namespace Modules.ExternalResource
             return PathUtility.Combine(paths) + PathUtility.PathSeparator;
         }
 
-        public static bool AssetDependenciesValidate(AssetInfoManifest assetInfoManifest)
+        public static string[] ValidateDependencies(string[] dependencies)
         {
-            var projectResourceFolders = ProjectResourceFolders.Instance;
+            var invalidDependants = new List<string>();
 
             var config = ManageConfig.Instance;
 
+            var projectResourceFolders = ProjectResourceFolders.Instance;
+
             var externalResourcesPath = projectResourceFolders.ExternalResourcesPath;
 
-            var allAssetInfos = assetInfoManifest.GetAssetInfos().ToArray();
-
             var ignoreValidatePaths = config.IgnoreValidateTarget
-                  .Where(x => x != null)
-                  .Select(x => AssetDatabase.GetAssetPath(x))
-                  .ToArray();
+                .Where(x => x != null)
+                .Select(x => AssetDatabase.GetAssetPath(x))
+                .ToArray();
 
-            Func<string, bool> checkInvalid = path =>
+            foreach (var path in dependencies)
             {
                 // 除外対象拡張子はチェック対象外.
 
                 var extension = Path.GetExtension(path);
 
-                if (IgnoreDependentCheckExtensions.Any(y => y == extension)) { return false; }
+                if (IgnoreDependentCheckExtensions.Any(y => y == extension)) { continue; }
 
                 // 除外対象.
 
-                if (ignoreValidatePaths.Any(x => path.StartsWith(x))) { return false; }
+                if (ignoreValidatePaths.Any(x => path.StartsWith(x))) { continue; }
 
                 // 外部アセット対象ではない.
 
-                if (!path.StartsWith(externalResourcesPath)) { return true; }
+                if (!path.StartsWith(externalResourcesPath))
+                {
+                    invalidDependants.Add(path);
+                }
+            }
 
-                return false;
-            };
+            return invalidDependants.ToArray();
+        }
 
+        public static bool AssetDependenciesValidate(AssetInfoManifest assetInfoManifest)
+        {
+            var projectResourceFolders = ProjectResourceFolders.Instance;
+            
+            var externalResourcesPath = projectResourceFolders.ExternalResourcesPath;
+
+            var allAssetInfos = assetInfoManifest.GetAssetInfos().ToArray();
+            
             using (new DisableStackTraceScope())
             {
                 foreach (var assetInfo in allAssetInfos)
@@ -347,7 +366,7 @@ namespace Modules.ExternalResource
 
                     var dependencies = AssetDatabase.GetDependencies(assetPath);
 
-                    var invalidDependencies = dependencies.Where(x => checkInvalid(x)).ToArray();
+                    var invalidDependencies = ValidateDependencies(dependencies);
 
                     if (invalidDependencies.Any())
                     {

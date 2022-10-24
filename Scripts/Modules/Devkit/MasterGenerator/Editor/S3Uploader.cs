@@ -148,47 +148,57 @@ namespace Modules.Master.Editor
                 // ファイルをアップロード.
 
                 const long PartSize = 5 * 1024 * 1024; // 5MB単位.
+                
+                var isBatchMode = Application.isBatchMode;
 
-                var tasks = new List<UniTask>();
+                var chunkedFileInfos = fileInfos.Chunk(50);
 
-                foreach (var fileInfo in fileInfos)
+                var logBuilder = new StringBuilder();
+
+                foreach (var items in chunkedFileInfos)
                 {
-                    var task = UniTask.RunOnThreadPool(async () =>
+                    var tasks = new List<UniTask>();
+
+                    foreach (var item in items)
                     {
-                        var fileTransferUtilityRequest = new TransferUtilityUploadRequest
+                        var info = item;
+
+                        var task = UniTask.RunOnThreadPool(async () =>
                         {
-                            FilePath = fileInfo.FilePath,
-                            StorageClass = S3StorageClass.StandardInfrequentAccess,
-                            PartSize = PartSize,
-                            Key = fileInfo.ObjectPath,
-                            CannedACL = UploadFileCannedACL,
-                        };
+                            var fileTransferUtilityRequest = new TransferUtilityUploadRequest
+                            {
+                                FilePath = info.FilePath,
+                                StorageClass = S3StorageClass.StandardInfrequentAccess,
+                                PartSize = PartSize,
+                                Key = info.ObjectPath,
+                                CannedACL = UploadFileCannedACL,
+                            };
 
-                        await s3Client.Upload(fileTransferUtilityRequest);
-                    });
+                            await s3Client.Upload(fileTransferUtilityRequest);
 
-                    tasks.Add(task);
+                            if (isBatchMode)
+                            {
+                                Debug.LogFormat(info.ObjectPath);
+                            }
+                            else
+                            {
+                                lock (logBuilder)
+                                {
+                                    logBuilder.AppendLine(info.ObjectPath);
+                                }
+                            }
+                        });
+
+                        tasks.Add(task);
+                    }
+
+                    await UniTask.WhenAll(tasks.ToArray());
+
+                    if (!isBatchMode)
+                    {
+                        Debug.Log(logBuilder.ToString());
+                    }
                 }
-
-                await UniTask.WhenAll(tasks.ToArray());
-            }
-
-            // ログ.
-
-            if (fileInfos.Any())
-            {
-                var uploadObjectPaths = fileInfos.Select(x => x.ObjectPath).ToArray();
-
-                Action<int, int, string[]> logOutput = (index, num, targets) =>
-                {
-                    var builder = new StringBuilder();
-
-                    targets.ForEach(x => builder.AppendLine(x));
-
-                    Debug.LogFormat("Uploaded S3 objects. [{0}/{1}]\n{2}", index, num, builder.ToString());
-                };
-
-                ChunkAction(uploadObjectPaths, logOutput);
             }
         }
 

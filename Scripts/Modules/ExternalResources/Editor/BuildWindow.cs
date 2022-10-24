@@ -84,18 +84,18 @@ namespace Modules.ExternalResource
                 {
                     var build = true;
 
-                    #if ENABLE_CRIWARE_ADX || ENABLE_CRIWARE_SOFDEC
-
-                    // CRIの最新アセットに更新.
-                    CriAssetUpdater.Execute();
-
-                    #endif
-
-                    try
+					try
                     {
                         EditorApplication.LockReloadAssemblies();
 
-                        // アセット情報ファイルを生成.
+						#if ENABLE_CRIWARE_ADX || ENABLE_CRIWARE_SOFDEC
+
+						// CRIの最新アセットに更新.
+						CriAssetUpdater.Execute();
+
+						#endif
+
+						// アセット情報ファイルを生成.
                         var assetInfoManifest = AssetInfoManifestGenerator.Generate();
 
                         // 依存関係の検証.
@@ -103,15 +103,15 @@ namespace Modules.ExternalResource
 
                         if (!validate)
                         {
-                            var message = "There is an incorrect reference.\nDo you want to cancel the build?";
-                            
-                            if (!EditorUtility.DisplayDialog("Invalid Dependencies", message, "build", "cancel"))
-                            {
-                                build = false;
+							var message = "invalid dependencies assets";
 
-                                // ExternalResourceフォルダ以外の参照が含まれる場合は依存関係を表示.
-                                InvalidDependantWindow.Open();
-                            }
+							if (!EditorUtility.DisplayDialog("Warning", message, "force build", "show detail"))
+							{
+								build = false;
+
+								// ExternalResourceフォルダ以外の参照が含まれる場合は依存関係を表示.
+								InvalidDependantWindow.Open();
+							}
                         }
 
                         // ビルド.

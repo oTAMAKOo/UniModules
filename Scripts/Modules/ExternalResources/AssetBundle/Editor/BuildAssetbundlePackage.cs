@@ -98,7 +98,6 @@ namespace Modules.AssetBundles.Editor
 
             using (new DisableStackTraceScope(LogType.Log))
             {
-                var count = 0;
                 var logBuilder = new StringBuilder();
 
                 var chunkedAssetInfos = assetInfos.Chunk(25);
@@ -106,6 +105,8 @@ namespace Modules.AssetBundles.Editor
                 foreach (var infos in chunkedAssetInfos)
                 {
                     var tasks = new List<UniTask>();
+
+                    logBuilder.Clear();
 
                     foreach (var info in infos)
                     {
@@ -130,16 +131,6 @@ namespace Modules.AssetBundles.Editor
                                 lock (logBuilder)
                                 {
                                     logBuilder.AppendLine(assetBundleName);
-
-                                    count++;
-
-                                    if (25 < count)
-                                    {
-                                        Debug.Log(logBuilder.ToString());
-         
-                                        logBuilder.Clear();
-                                        count = 0;
-                                    }
                                 }
                             }
                         });
@@ -148,11 +139,11 @@ namespace Modules.AssetBundles.Editor
                     }
 
                     await UniTask.WhenAll(tasks);
-                }
 
-                if (!isBatchMode && count != 0)
-                {
-                    Debug.Log(logBuilder.ToString());
+                    if (!isBatchMode)
+                    {
+                        Debug.Log(logBuilder.ToString());
+                    }
                 }
             }
         }
@@ -237,7 +228,7 @@ namespace Modules.AssetBundles.Editor
 
             // ファイルコピー.
 
-            using (var sourceStream = File.Open(packageFilePath, FileMode.Open))
+            using (var sourceStream = File.Open(packageFilePath, FileMode.Open, FileAccess.ReadWrite, FileShare.ReadWrite))
             {
                 using (var destinationStream = File.Create(packageExportPath))
                 {
