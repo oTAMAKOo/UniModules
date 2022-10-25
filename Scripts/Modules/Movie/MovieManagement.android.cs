@@ -27,11 +27,11 @@ namespace Modules.Movie
 		{
 			var appVersion = Application.version;
 
-			var temporaryVersionKey = GetType().FullName + $"-temporaryVersion-{movieInfo.UsmPath}";
+			var temporaryVersionKey = GetType().FullName + $"{movieInfo.UsmPath}-version";
 
 			var requireUpdate = SecurePrefs.GetString(temporaryVersionKey) != appVersion;
 			
-			var embeddedFilePath = PathUtility.Combine(UnityPathUtility.StreamingAssetsPath, movieInfo.UsmPath) + CriAssetDefinition.UsmExtension;
+			var embeddedFilePath = Path.ChangeExtension(movieInfo.UsmPath, CriAssetDefinition.UsmExtension);
 
 			var temporaryFilePath = AndroidUtility.ConvertStreamingAssetsLoadPath(UnityPathUtility.StreamingAssetsPath);
 			

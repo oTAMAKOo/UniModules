@@ -579,6 +579,8 @@ namespace Modules.AssetBundles
             var assetBundleInfo = assetInfo.AssetBundle;
             var assetBundleName = assetBundleInfo.AssetBundleName;
 
+			await UniTask.SwitchToMainThread();
+
 			#if UNITY_ANDROID && !UNITY_EDITOR
 
             if (localMode && filePath.StartsWith(UnityPathUtility.StreamingAssetsPath))
@@ -613,6 +615,8 @@ namespace Modules.AssetBundles
             // 読み込めなかった時はファイルを削除して次回読み込み時にダウンロードし直す.
             if (assetBundle == null)
             {
+				await UniTask.SwitchToMainThread();
+
                 UnloadAsset(assetBundleName);
 
 				if (cryptoStream != null)

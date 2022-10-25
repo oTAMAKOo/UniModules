@@ -42,7 +42,7 @@ namespace Extensions
 
 				if (webRequest.HasError())
 				{
-					Debug.LogError("File load error : " + webRequest.error);
+					Debug.LogError($"File load error : {filePath}\n\n{webRequest.error}");
 				}
 				else
 				{

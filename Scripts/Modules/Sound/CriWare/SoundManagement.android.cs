@@ -55,15 +55,15 @@ namespace Modules.Sound
 
 				foreach (var info in infos)
 				{
-					var filePath = PathUtility.Combine(UnityPathUtility.StreamingAssetsPath, info.Item1);
+					var filePath = info.Item1;
 
 					// Acbファイル.
-					AddCopyTask(filePath + CriAssetDefinition.AcbExtension, tasks);
+					AddCopyTask(Path.ChangeExtension(filePath, CriAssetDefinition.AcbExtension), tasks);
 
 					// Awbファイル.
 					if (info.Item2)
 					{
-						AddCopyTask(filePath + CriAssetDefinition.AwbExtension, tasks);
+						AddCopyTask(Path.ChangeExtension(filePath, CriAssetDefinition.AwbExtension), tasks);
 					}
 				}
 
