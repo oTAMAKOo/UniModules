@@ -230,9 +230,6 @@ namespace Modules.Devkit.Build
 
             directory = PathUtility.Combine(new string[] { directory, platformName, exportFolderName });
 
-            // 既存の成果物を破棄.
-            FileUtil.DeleteFileOrDirectory(directory);
-
             // 出力先作成.
             if (!Directory.Exists(directory))
             {
