@@ -35,18 +35,17 @@ namespace Modules.Devkit.FindReferences
 
             if(!AssetDatabase.IsMainAsset(targetAsset)) { return; }
 
-            var result = Execute(targetAsset);
-			
 			var title = "Find Dependencies In Project";
 			var message = "Search for references in your project?";
 			var ok_message = "start";
 			var cancel_message = "cancel";
 
-			if (EditorUtility.DisplayDialog(title, message, ok_message, cancel_message))
-			{
-				FindReferencesResultWindow.Open(targetAsset, result);
-			}
-        }
+			if (!EditorUtility.DisplayDialog(title, message, ok_message, cancel_message)){ return; }
+
+			var result = Execute(targetAsset);
+			
+			FindReferencesResultWindow.Open(targetAsset, result);
+		}
 
         public static AssetReferenceInfo Execute(UnityEngine.Object targetObject)
         {
