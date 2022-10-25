@@ -1,4 +1,4 @@
-
+﻿
 #if ENABLE_CRIWARE_ADX
 
 using UnityEngine;
@@ -21,7 +21,7 @@ namespace Modules.Sound
         public bool cancelIfPlaying = false;
     }
 
-    public sealed class SoundManagement : SoundManagementBase<SoundManagement, SoundParam, SoundElement>
+    public sealed partial class SoundManagement : SoundManagementBase<SoundManagement, SoundParam, SoundElement>
     {
         //----- params -----
 

@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using UniRx;
 using CriWare;
 using CriWare.CriMana;
+using Cysharp.Threading.Tasks;
 using Extensions;
 using Modules.CriWare;
 
@@ -19,7 +20,7 @@ namespace Modules.Movie
         ExternalResources,
     }
 
-    public sealed class MovieManagement : Singleton<MovieManagement>
+    public sealed partial class MovieManagement : Singleton<MovieManagement>
     {
         //----- params -----
 
@@ -105,11 +106,19 @@ namespace Modules.Movie
 		#region Prepare
 
 		/// <summary> 動画再生準備. </summary>
-		public MovieElement Prepare(Movies.Mana type, Graphic targetGraphic, Player.ShaderDispatchCallback shaderOverrideCallBack = null)
+		public async UniTask<MovieElement> Prepare(Movies.Mana type, Graphic targetGraphic, Player.ShaderDispatchCallback shaderOverrideCallBack = null)
 		{
-			var info = Movies.GetManaInfo(type);
+			var movieInfo = Movies.GetManaInfo(type);
 
-			return info != null ? Prepare(info, targetGraphic, shaderOverrideCallBack) : null;
+			if (movieInfo == null){ return null; }
+
+			#if UNITY_ANDROID
+
+			movieInfo = await PrepareInternalFile(movieInfo);
+
+			#endif
+
+			return movieInfo != null ? Prepare(movieInfo, targetGraphic, shaderOverrideCallBack) : null;
 		}
 
 		/// <summary> 動画再生準備. </summary>

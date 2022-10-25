@@ -163,7 +163,11 @@ namespace Modules.ExternalResource
 
             filePath = PathUtility.GetPathWithoutExtension(filePath) + CriAssetDefinition.AcbExtension;
 
-            var cueInfo = File.Exists(filePath) ? new CueInfo(filePath, resourcePath, cue) : null;
+			var awbFilePath = PathUtility.GetPathWithoutExtension(filePath) + CriAssetDefinition.AcbExtension;
+
+			var hasAwb = File.Exists(awbFilePath);
+
+            var cueInfo = File.Exists(filePath) ? new CueInfo(filePath, resourcePath, cue, hasAwb) : null;
 
             if (onLoadAsset != null)
             {

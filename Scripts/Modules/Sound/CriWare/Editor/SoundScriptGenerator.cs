@@ -1,4 +1,4 @@
-
+﻿
 #if ENABLE_CRIWARE_ADX
 
 using UnityEditor;
@@ -26,10 +26,9 @@ namespace Modules.Sound.Editor
 
 #if ENABLE_CRIWARE_ADX
 
-using UnityEngine;
 using System;
+using System.Linq;
 using System.Collections.Generic;
-using CriWare;
 using Extensions;
 
 namespace Modules.Sound
@@ -41,10 +40,18 @@ namespace Modules.Sound
 @ENUMS
         }
 
-        private static Dictionary<Cue, Tuple<string, string, string>> internalSounds = new Dictionary<Cue, Tuple<string, string, string>>()
+        private static Dictionary<Cue, Tuple<string, string, bool, string>> internalSounds = new Dictionary<Cue, Tuple<string, string, bool, string>>()
         {
 @CONTENTS
         };
+
+		public static Tuple<string, bool>[] GetInternalFileInfo()
+		{
+			return internalSounds.Values
+				.Select(x => Tuple.Create(x.Item1, x.Item3))
+				.DistinctBy(x => x.Item1)
+				.ToArray();
+		}
 
         public static CueInfo GetCueInfo(Cue cue)
         {
@@ -75,7 +82,7 @@ namespace Modules.Sound
 ";
         private const string EnumTemplate = @"{0},";
         private const string SummaryTemplate = @"/// <summary> {0} </summary>";
-        private const string ContentsTemplate = @"{{ Cue.{0}, Tuple.Create(""{1}"", ""{2}"", ""{3}"") }},";
+        private const string ContentsTemplate = @"{{ Cue.{0}, Tuple.Create(""{1}"", ""{2}"", {3}, ""{4}"") }},";
 
         //----- field -----
 
@@ -106,8 +113,8 @@ namespace Modules.Sound
 
                 var cueSheetPath = PathUtility.Combine(rootFolderName, info.CueSheet);
 
-                enums.Append("\t\t\t").AppendFormat(EnumTemplate, enumName);
-                contents.Append("\t\t\t").AppendFormat(ContentsTemplate, enumName, cueSheetPath, info.Cue, info.Summary);
+				enums.Append("\t\t\t").AppendFormat(EnumTemplate, enumName);
+                contents.Append("\t\t\t").AppendFormat(ContentsTemplate, enumName, cueSheetPath, info.Cue, info.HasAwb.ToString().ToLower(), info.Summary);
 
                 if (i < infos.Length - 1)
                 {
@@ -152,13 +159,16 @@ namespace Modules.Sound
                 {
                     var cueInfos = acb.GetCueInfoList().ToArray();
 
+					var awbFilePath = UnityPathUtility.ConvertAssetPathToFullPath(Path.ChangeExtension(assetPath, CriAssetDefinition.AwbExtension));
+					var hasAwb = File.Exists(awbFilePath);
+
                     foreach (var cueInfo in cueInfos)
                     {
                         var acbPath = assetPath.Replace(path + PathUtility.PathSeparator, string.Empty);
 
                         acbPath = PathUtility.GetPathWithoutExtension(acbPath);
 
-                        result.Add(new CueInfo(string.Empty, acbPath, cueInfo.name, cueInfo.userData));
+						result.Add(new CueInfo(string.Empty, acbPath, cueInfo.name, hasAwb, cueInfo.userData));
                     }
 
                     acb.Dispose();
