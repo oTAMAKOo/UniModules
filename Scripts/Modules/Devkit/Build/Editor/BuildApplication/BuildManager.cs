@@ -28,13 +28,7 @@ namespace Modules.Devkit.Build
                 get { return ProjectPrefs.GetString(typeof(Prefs).FullName + "-builderClassTypeName", null); }
                 set { ProjectPrefs.SetString(typeof(Prefs).FullName + "-builderClassTypeName", value); }
             }
-
-            public static string exportDir
-            {
-                get { return ProjectPrefs.GetString(typeof(Prefs).FullName + "-exportDir", null); }
-                set { ProjectPrefs.SetString(typeof(Prefs).FullName + "-exportDir", value); }
-            }
-        }
+		}
 
         //----- field -----
 
@@ -217,18 +211,13 @@ namespace Modules.Devkit.Build
 
         private static string PrepareExportDirectory(IApplicationBuilder applicationBuilder, bool batchMode)
         {
-            // 出力先.
-            var directory = string.Empty;
-
-            directory = GetExportDirectory(applicationBuilder, batchMode);
+			var directory = applicationBuilder.GetExportDirectory(batchMode);
 
             if (string.IsNullOrEmpty(directory)) { return null; }
 
             var platformName = PlatformUtility.GetPlatformName();
 
-            var exportFolderName = applicationBuilder.GetExportFolderName();
-
-            directory = PathUtility.Combine(new string[] { directory, platformName, exportFolderName });
+			directory = PathUtility.Combine(directory, platformName);
 
             // 出力先作成.
             if (!Directory.Exists(directory))
@@ -239,36 +228,7 @@ namespace Modules.Devkit.Build
             return directory;
         }
 
-        private static string GetExportDirectory(IApplicationBuilder applicationBuilder, bool batchMode)
-        {
-            var exportDir = string.Empty;
-
-            // dataPathはAssetsフォルダ.
-            var directory = Path.GetDirectoryName(Application.dataPath);
-
-            if (!batchMode)
-            {
-                exportDir = string.IsNullOrEmpty(Prefs.exportDir) ? directory : Prefs.exportDir;
-
-                var dir = Path.GetDirectoryName(exportDir);
-                var name = Path.GetFileName(exportDir);
-
-                directory = EditorUtility.SaveFolderPanel("Select OutputPath", dir, name);
-
-                if (!string.IsNullOrEmpty(directory))
-                {
-                    Prefs.exportDir = directory;
-                }
-                else
-                {
-                    return null;
-                }
-            }
-            
-            return PathUtility.Combine(directory, "Build");
-        }
-
-        private static string GetBuildTargetExtension(BuildTarget target)
+		private static string GetBuildTargetExtension(BuildTarget target)
         {
             var extension = string.Empty;
 
