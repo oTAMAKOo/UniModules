@@ -1,6 +1,7 @@
 ﻿
 #if UNITY_ANDROID
 
+using UnityEngine;
 using System.Collections.Generic;
 using System.IO;
 using Cysharp.Threading.Tasks;
@@ -23,11 +24,13 @@ namespace Modules.Sound
 		/// StreamingAssetsにある内蔵ファイルをTemporaryCachePathへ複製.
 		/// 引数のversionが同じ間は複製を実行しない.
 		/// </summary>
-		public async UniTask PrepareInternalFiles(string version)
+		public async UniTask PrepareInternalFiles()
 		{
+			var appVersion = Application.version;
+
 			var temporaryVersionKey = GetType().FullName + "-temporaryVersion";
 
-			var requireUpdate = SecurePrefs.GetString(temporaryVersionKey) != version;
+			var requireUpdate = SecurePrefs.GetString(temporaryVersionKey) != appVersion;
 
 			var internalFileInfos = Sounds.GetInternalFileInfo();
 			
@@ -67,7 +70,7 @@ namespace Modules.Sound
 				await UniTask.WhenAll(tasks);
 			}
 
-			SecurePrefs.SetString(temporaryVersionKey, version);
+			SecurePrefs.SetString(temporaryVersionKey, appVersion);
 		}
     }
 }
