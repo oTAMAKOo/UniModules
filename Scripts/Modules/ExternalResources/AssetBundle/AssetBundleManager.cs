@@ -709,6 +709,8 @@ namespace Modules.AssetBundles
                 UnloadDependencies(target, unloadAllLoadedObjects, force);
                 UnloadAssetBundleInternal(target, unloadAllLoadedObjects, force);
             }
+
+			dependencies.Remove(assetBundleName);
         }
 
         private void UnloadAssetBundleInternal(string assetBundleName, bool unloadAllLoadedObjects, bool force = false)
