@@ -56,9 +56,6 @@ namespace Modules.AssetBundles
         // 読み込み済みアセットバンドル.
         private Dictionary<string, LoadedAssetBundle> loadedAssetBundles = null;
 
-        // ダウンロードエラー一覧.
-        private Dictionary<string, string> downloadingErrors = null;
-
         // アセット情報(アセットバンドル).
         private Dictionary<string, AssetInfo[]> assetInfosByAssetBundleName = null;
 
@@ -102,7 +99,6 @@ namespace Modules.AssetBundles
             downloadQueueing = new Dictionary<string, IObservable<string>>();
             loadQueueing = new Dictionary<string, IObservable<Tuple<SeekableAssetBundle, string>>>();
             loadedAssetBundles = new Dictionary<string, LoadedAssetBundle>();
-            downloadingErrors = new Dictionary<string, string>();
             assetInfosByAssetBundleName = new Dictionary<string, AssetInfo[]>();
             dependencies = new Dictionary<string, string[]>();
 
@@ -372,18 +368,16 @@ namespace Modules.AssetBundles
             // 既に登録済みの場合はそこから取得.
             var dependent = dependencies.GetValueOrDefault(assetBundleName);
 
-            if (dependent != null)
+            if (dependent == null)
             {
-                return dependent;
-            }
+                // 依存アセット一覧を再帰で取得.
+                dependent = GetDependenciesInternal(assetBundleName);
 
-            // 依存アセット一覧を再帰で取得.
-            dependent = GetDependenciesInternal(assetBundleName);
-
-            // 登録.
-            if (dependent.Any())
-            {
-                dependencies.Add(assetBundleName, dependent);
+                // 登録.
+                if (dependent.Any())
+                {
+                    dependencies.Add(assetBundleName, dependent);
+                }
             }
 
             return dependent;
@@ -579,7 +573,7 @@ namespace Modules.AssetBundles
             var assetBundleInfo = assetInfo.AssetBundle;
             var assetBundleName = assetBundleInfo.AssetBundleName;
 
-			await UniTask.SwitchToMainThread();
+            await UniTask.SwitchToMainThread();
 
 			#if UNITY_ANDROID && !UNITY_EDITOR
 
@@ -615,7 +609,7 @@ namespace Modules.AssetBundles
             // 読み込めなかった時はファイルを削除して次回読み込み時にダウンロードし直す.
             if (assetBundle == null)
             {
-				await UniTask.SwitchToMainThread();
+                await UniTask.SwitchToMainThread();
 
                 UnloadAsset(assetBundleName);
 
@@ -713,7 +707,7 @@ namespace Modules.AssetBundles
 
         private void UnloadAssetBundleInternal(string assetBundleName, bool unloadAllLoadedObjects, bool force = false)
         {
-            var info = GetLoadedInfo(assetBundleName);
+            var info = loadedAssetBundles.GetValueOrDefault(assetBundleName);
 
             if (info == null) { return; }
 
@@ -770,44 +764,6 @@ namespace Modules.AssetBundles
                 .Where(x => Path.GetExtension(x) == PackageExtension)
                 .Where(x => !managedFiles.Contains(x))
                 .ToArray();
-        }
-
-        /// <summary>
-        /// 読み込み済みのアセット情報を取得.
-        /// </summary>
-        /// <param name="assetBundleName"></param>
-        /// <returns></returns>
-        private LoadedAssetBundle GetLoadedInfo(string assetBundleName)
-        {
-            var info = loadedAssetBundles.GetValueOrDefault(assetBundleName);
-
-            if (info == null) { return null; }
-
-            // 依存関係のアセットがない場合.
-            var dependent = dependencies.GetValueOrDefault(assetBundleName);
-
-            if (dependent == null) { return info; }
-
-            // 依存関係のアセットが読み込み済みでない場合は失敗扱い.
-            foreach (var item in dependent)
-            {
-                var error = downloadingErrors.GetValueOrDefault(assetBundleName);
-
-                if (error != null)
-                {
-                    Debug.LogErrorFormat("[Download Error] {0} dependent from {1}\n{2}", item, assetBundleName, error);
-                    return info;
-                }
-
-                var dependentBundle = loadedAssetBundles.GetValueOrDefault(item);
-
-                if (dependentBundle == null)
-                {
-                    return null;
-                }
-            }
-
-            return info;
         }
 
         private void OnTimeout(AssetInfo assetInfo, Exception exception)
