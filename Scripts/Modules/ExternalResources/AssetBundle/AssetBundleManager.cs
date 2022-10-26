@@ -29,6 +29,20 @@ namespace Modules.AssetBundles
         // リトライするまでの時間(秒).
         private readonly TimeSpan RetryDelaySeconds = TimeSpan.FromSeconds(2f);
 
+		// 読み込み済みアセットバンドル.
+		private sealed class LoadedAssetBundle
+		{
+			public AssetBundle assetBundle = null;
+
+			public int referencedCount = 0;
+
+			public LoadedAssetBundle(AssetBundle assetBundle)
+			{
+				this.assetBundle = assetBundle;
+				this.referencedCount = 0;
+			}
+		}
+
         //----- field -----
 
         // 同時ダウンロード数.
@@ -51,7 +65,7 @@ namespace Modules.AssetBundles
         private Dictionary<string, IObservable<string>> downloadQueueing = null;
 
         // 読み込み待ちアセットバンドル.
-        private Dictionary<string, IObservable<Tuple<SeekableAssetBundle, string>>> loadQueueing = null;
+        private Dictionary<string, IObservable<Tuple<AssetBundle, string>>> loadQueueing = null;
 
         // 読み込み済みアセットバンドル.
         private Dictionary<string, LoadedAssetBundle> loadedAssetBundles = null;
@@ -72,7 +86,7 @@ namespace Modules.AssetBundles
         private Subject<AssetInfo> onTimeOut = null;
         private Subject<Exception> onError = null;
 
-        private AesCryptoStreamKey cryptoKey = null;
+        private AesCryptoKey cryptoKey = null;
 
         private bool isInitialized = false;
 
@@ -97,7 +111,7 @@ namespace Modules.AssetBundles
 
             downloadList = new HashSet<string>();
             downloadQueueing = new Dictionary<string, IObservable<string>>();
-            loadQueueing = new Dictionary<string, IObservable<Tuple<SeekableAssetBundle, string>>>();
+            loadQueueing = new Dictionary<string, IObservable<Tuple<AssetBundle, string>>>();
             loadedAssetBundles = new Dictionary<string, LoadedAssetBundle>();
             assetInfosByAssetBundleName = new Dictionary<string, AssetInfo[]>();
             dependencies = new Dictionary<string, string[]>();
@@ -129,7 +143,7 @@ namespace Modules.AssetBundles
         /// <param name="iv">暗号化IV(16文字)</param>
         public void SetCryptoKey(string key, string iv)
         {
-            cryptoKey = new AesCryptoStreamKey(key, iv);
+            cryptoKey = new AesCryptoKey(key, iv);
         }
 
 		/// <summary> URLを設定. </summary>
@@ -461,7 +475,7 @@ namespace Modules.AssetBundles
             #endif
 
             {
-                IObservable<SeekableAssetBundle> loader = null;
+                IObservable<AssetBundle> loader = null;
 
                 // アセットバンドル名は小文字なので小文字に変換.
                 var assetBundleName = assetInfo.AssetBundle.AssetBundleName.ToLower();
@@ -479,7 +493,7 @@ namespace Modules.AssetBundles
 
                                 if (cached != null)
                                 {
-                                    return Observable.Return(Tuple.Create((SeekableAssetBundle)cached, x));
+                                    return Observable.Return(Tuple.Create(cached.assetBundle, x));
                                 }
 
                                 var loadTask = loadQueueing.GetValueOrDefault(x);
@@ -522,7 +536,7 @@ namespace Modules.AssetBundles
                 {
                     loadedAssetBundle.referencedCount++;
 
-                    loader = Observable.Defer(() => Observable.Return(loadedAssetBundle));
+                    loader = Observable.Defer(() => Observable.Return(loadedAssetBundle.assetBundle));
                 }
 
 				try
@@ -534,11 +548,11 @@ namespace Modules.AssetBundles
 						await UniTask.NextFrame(cancelToken);
 					}
 
-					var seekableAssetBundle = loadYield.Result;
+					var assetBundle = loadYield.Result;
 
-					if (seekableAssetBundle != null)
+					if (assetBundle != null)
 					{
-						var assetBundleRequest = seekableAssetBundle.assetBundle.LoadAssetAsync(assetPath, typeof(T));
+						var assetBundleRequest = assetBundle.LoadAssetAsync(assetPath, typeof(T));
 
 						while (!assetBundleRequest.isDone)
 						{
@@ -567,8 +581,10 @@ namespace Modules.AssetBundles
 			return result;
         }
 
-        private async UniTask<SeekableAssetBundle> LoadAssetBundle(CancellationToken cancelToken, AssetInfo assetInfo)
+        private async UniTask<AssetBundle> LoadAssetBundle(CancellationToken cancelToken, AssetInfo assetInfo)
         {
+			AssetBundle assetBundle = null;
+
             var filePath = GetFilePath(assetInfo);
             var assetBundleInfo = assetInfo.AssetBundle;
             var assetBundleName = assetBundleInfo.AssetBundleName;
@@ -592,19 +608,46 @@ namespace Modules.AssetBundles
 			}
 
 			#endif
-            
-            var fileStream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read);
-            
-            var cryptoStream = new SeekableCryptoStream(fileStream, cryptoKey);
-            
-            var bundleLoadRequest = AssetBundle.LoadFromStreamAsync(cryptoStream);
-            
-            while (!bundleLoadRequest.isDone)
-            {
-                await UniTask.NextFrame(cancelToken);
-            }
 
-            var assetBundle = bundleLoadRequest.assetBundle;
+			Func<byte[]> loadFile = () =>
+            {
+                var bytes = new byte[0];
+
+                try
+                {
+                    using (var fileStream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+                    {
+                        bytes = new byte[fileStream.Length];
+
+                        fileStream.Read(bytes, 0, bytes.Length);
+                    }
+
+                    // 復号化.
+                    bytes = bytes.Decrypt(cryptoKey);
+                }
+                catch (Exception e)
+                {
+                    Debug.LogException(e);
+                    throw;
+                }
+
+                return bytes;
+            };
+
+            // ファイルの読み込みと復号化をスレッドプールで実行.
+            var bytes = await Observable.Start(() => loadFile()).ObserveOnMainThread().ToUniTask(cancellationToken: cancelToken);
+			
+			if (bytes != null)
+			{
+				var bundleLoadRequest = AssetBundle.LoadFromMemoryAsync(bytes);
+
+				while (!bundleLoadRequest.isDone)
+				{
+					await UniTask.NextFrame(cancelToken);
+				}
+
+				assetBundle = bundleLoadRequest.assetBundle;
+			}
 
             // 読み込めなかった時はファイルを削除して次回読み込み時にダウンロードし直す.
             if (assetBundle == null)
@@ -613,33 +656,7 @@ namespace Modules.AssetBundles
 
                 UnloadAsset(assetBundleName);
 
-				if (cryptoStream != null)
-				{
-					#if NET_UNITY_4_8
-
-                    await cryptoStream.DisposeAsync();
-
-					#else
-
-					cryptoStream.Dispose();
-
-					#endif
-				}
-
-				if (fileStream != null)
-				{
-					#if NET_UNITY_4_8
-
-                    await fileStream.DisposeAsync();
-
-					#else
-
-					fileStream.Dispose();
-
-					#endif
-				}
-
-                if (File.Exists(filePath))
+				if (File.Exists(filePath))
                 {
                     File.Delete(filePath);
                 }
@@ -654,10 +671,8 @@ namespace Modules.AssetBundles
 				
 				throw new Exception(builder.ToString());
             }
-
-			var seekableAssetBundle = new SeekableAssetBundle(assetBundle, fileStream, cryptoStream);
-
-			return seekableAssetBundle;
+			
+			return assetBundle;
 		}
 
         #endregion
@@ -726,9 +741,7 @@ namespace Modules.AssetBundles
                     info.assetBundle.Unload(unloadAllLoadedObjects);
                     info.assetBundle = null;
                 }
-
-                info.Dispose();
-
+				
                 loadedAssetBundles.Remove(assetBundleName);
             }
         }

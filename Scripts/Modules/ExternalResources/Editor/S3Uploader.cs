@@ -156,31 +156,31 @@ namespace Modules.ExternalResource
 
             var cryptoKey = GetCryptoKey();
 
+			var bytes = new byte[0];
+
             using (var fileStream = new FileStream(assetInfoManifestFilePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
             {
-                using (var aesStream = new SeekableCryptoStream(fileStream, cryptoKey))
-                {
-                    var bundleLoadRequest = AssetBundle.LoadFromStreamAsync(aesStream);
+				bytes = new byte[fileStream.Length];
 
-                    while (!bundleLoadRequest.isDone)
-                    {
-                        await UniTask.Delay(25);
-                    }
+				fileStream.Read(bytes, 0, bytes.Length);
+			}
 
-                    var assetBundle = bundleLoadRequest.assetBundle;
-                    
-                    var loadAssetAsync = assetBundle.LoadAssetAsync(assetPath, typeof(AssetInfoManifest));
+			bytes = bytes.Decrypt(cryptoKey);
 
-                    while (!loadAssetAsync.isDone)
-                    {
-                        await UniTask.Delay(25);
-                    }
+			var bundleLoadRequest = AssetBundle.LoadFromMemoryAsync(bytes);
 
-                    assetInfoManifest = loadAssetAsync.asset as AssetInfoManifest;
+			while (!bundleLoadRequest.isDone)
+			{
+				await UniTask.Delay(25);
+			}
 
-                    assetBundle.Unload(false);
-                }
-            }
+			var assetBundle = bundleLoadRequest.assetBundle;
+
+			var loadAssetAsync = assetBundle.LoadAssetAsync(assetPath, typeof(AssetInfoManifest));
+
+			assetInfoManifest = loadAssetAsync.asset as AssetInfoManifest;
+
+			assetBundle.Unload(false);
         }
         
         /// <summary> アップロードするファイルデータ構築. </summary>
@@ -462,6 +462,6 @@ namespace Modules.ExternalResource
             }
         }
 
-		public abstract AesCryptoStreamKey GetCryptoKey();
+		public abstract AesCryptoKey GetCryptoKey();
     }
 }

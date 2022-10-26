@@ -85,7 +85,7 @@ namespace Modules.AssetBundles.Editor
         {
             var assetInfo = AssetInfoManifest.GetManifestAssetInfo();
 
-            var cryptoKey = new AesCryptoStreamKey(aesKey, aesIv);
+            var cryptoKey = new AesCryptoKey(aesKey, aesIv);
 
             await ExecuteBuildTask(exportPath, assetBundlePath, assetInfo, true, cryptoKey);
 		}
@@ -94,7 +94,7 @@ namespace Modules.AssetBundles.Editor
         {
             var isBatchMode = Application.isBatchMode;
 
-            var cryptoKey = new AesCryptoStreamKey(aesKey, aesIv);
+            var cryptoKey = new AesCryptoKey(aesKey, aesIv);
 
             using (new DisableStackTraceScope(LogType.Log))
             {
@@ -148,7 +148,7 @@ namespace Modules.AssetBundles.Editor
             }
         }
 
-        private static async UniTask ExecuteBuildTask(string exportPath, string assetBundlePath, AssetInfo assetInfo, bool createPackage, AesCryptoStreamKey cryptoKey)
+        private static async UniTask ExecuteBuildTask(string exportPath, string assetBundlePath, AssetInfo assetInfo, bool createPackage, AesCryptoKey cryptoKey)
         {
 			try
 			{
@@ -179,7 +179,7 @@ namespace Modules.AssetBundles.Editor
         }
 
         /// <summary> パッケージファイル化(暗号化). </summary>
-        private static async UniTask CreatePackage(string assetBundleFilePath, string packageFilePath, AesCryptoStreamKey cryptoKey)
+        private static async UniTask CreatePackage(string assetBundleFilePath, string packageFilePath, AesCryptoKey cryptoKey)
         {
             // アセットバンドル読み込み.
 
@@ -189,17 +189,18 @@ namespace Modules.AssetBundles.Editor
             {
                 data = new byte[fileStream.Length];
 
-                await fileStream.ReadAsync(data, 0, data.Length);
+                await fileStream.ReadAsync(data, 0, data.Length); 
             }
 
-            // 暗号化・書き込み.
+            // 暗号化.
+			
+			data = data.Encrypt(cryptoKey);
+
+			// 書き込み.
 
             using (var fileStream = new FileStream(packageFilePath, FileMode.Create, FileAccess.Write, FileShare.ReadWrite))
             {
-                using (var aesStream = new SeekableCryptoStream(fileStream, cryptoKey))
-                {
-                    aesStream.Write(data, 0, data.Length);
-                }
+				await fileStream.WriteAsync(data, 0, data.Length);
             }
         }
 
