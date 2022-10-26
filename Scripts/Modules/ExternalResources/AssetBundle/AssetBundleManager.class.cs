@@ -67,7 +67,7 @@ namespace Modules.AssetBundles
 
             public LoadedAssetBundle(SeekableAssetBundle seekableAssetBundle) : base(seekableAssetBundle)
             {
-                this.referencedCount = 1;
+                this.referencedCount = 0;
             }
         }
     }

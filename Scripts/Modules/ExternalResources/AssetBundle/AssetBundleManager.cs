@@ -697,10 +697,16 @@ namespace Modules.AssetBundles
             var targets = dependencies.GetValueOrDefault(assetBundleName);
 
             if (targets == null) { return; }
-
+            
             foreach (var target in targets)
             {
-                UnloadDependencies(target, unloadAllLoadedObjects, force);
+                if (!loadedAssetBundles.ContainsKey(target)){ continue; }
+
+                if (assetBundleName != target)
+                {
+                    UnloadDependencies(target, unloadAllLoadedObjects, force);
+                }
+
                 UnloadAssetBundleInternal(target, unloadAllLoadedObjects, force);
             }
         }
