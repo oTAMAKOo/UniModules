@@ -65,7 +65,7 @@ namespace Modules.Sound
 
             #else
 
-            fileDirectory = Application.streamingAssetsPath;
+            fileDirectory = UnityPathUtility.StreamingAssetsPath;
 
             #endif
 
