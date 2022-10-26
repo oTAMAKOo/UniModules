@@ -589,8 +589,6 @@ namespace Modules.AssetBundles
             var assetBundleInfo = assetInfo.AssetBundle;
             var assetBundleName = assetBundleInfo.AssetBundleName;
 
-            await UniTask.SwitchToMainThread();
-
 			#if UNITY_ANDROID && !UNITY_EDITOR
 
             if (localMode && filePath.StartsWith(UnityPathUtility.StreamingAssetsPath))
@@ -635,26 +633,34 @@ namespace Modules.AssetBundles
             };
 
             // ファイルの読み込みと復号化をスレッドプールで実行.
-            var bytes = await Observable.Start(() => loadFile()).ObserveOnMainThread().ToUniTask(cancellationToken: cancelToken);
-			
-			if (bytes != null)
+			var loadYield = Observable.Start(() => loadFile()).ObserveOnMainThread().ToYieldInstruction(false);
+
+			while (!loadYield.IsDone)
 			{
-				var bundleLoadRequest = AssetBundle.LoadFromMemoryAsync(bytes);
-
-				while (!bundleLoadRequest.isDone)
-				{
-					await UniTask.NextFrame(cancelToken);
-				}
-
-				assetBundle = bundleLoadRequest.assetBundle;
+				await UniTask.NextFrame(cancelToken);
 			}
 
-            // 読み込めなかった時はファイルを削除して次回読み込み時にダウンロードし直す.
+			if (loadYield.HasResult)
+			{
+				var bytes = loadYield.Result;
+
+				if (bytes != null)
+				{
+					var bundleLoadRequest = AssetBundle.LoadFromMemoryAsync(bytes);
+
+					while (!bundleLoadRequest.isDone)
+					{
+						await UniTask.NextFrame(cancelToken);
+					}
+
+					assetBundle = bundleLoadRequest.assetBundle;
+				}
+			}
+
+			// 読み込めなかった時はファイルを削除して次回読み込み時にダウンロードし直す.
             if (assetBundle == null)
             {
-                await UniTask.SwitchToMainThread();
-
-                UnloadAsset(assetBundleName);
+				UnloadAsset(assetBundleName);
 
 				if (File.Exists(filePath))
                 {
