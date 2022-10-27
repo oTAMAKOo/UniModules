@@ -9,6 +9,7 @@ using System.Text;
 using Cysharp.Threading.Tasks;
 using Extensions;
 using Extensions.Devkit;
+using Modules.AssetBundles;
 using Modules.AssetBundles.Editor;
 using Modules.Devkit.Console;
 using Modules.Devkit.Project;
@@ -58,7 +59,9 @@ namespace Modules.ExternalResource
 
         //----- field -----
 
-        public static IBuildAssetBundlePipeline BundlePipeline { get; } = new BuildAssetBundlePipeline();
+        public static IBuildAssetBundlePipeline BundlePipeline { get; set; } = new BuildAssetBundlePipeline();
+
+		public static IAssetBundleFileHandler AssetBundleFileHandler { get; set; } = new DefaultAssetBundleFileHandler();
 
         //----- property -----
 
@@ -85,6 +88,7 @@ namespace Modules.ExternalResource
             assetManagement.Initialize();
 
             var buildAssetBundle = new BuildAssetBundle(BundlePipeline);
+			var buildAssetBundlePackage = new BuildAssetBundlePackage(AssetBundleFileHandler);
 
             EditorApplication.LockReloadAssemblies();
 
@@ -94,16 +98,7 @@ namespace Modules.ExternalResource
 
                 var logBuilder = new StringBuilder();
 
-                var manageConfig = ManageConfig.Instance;
-
-                var cryptoKey = manageConfig.CryptoKey;
-                var cryptoIv = manageConfig.CryptoIv;
-
-                var assetBundlePath = buildAssetBundle.GetAssetBundleOutputPath();
-
-                // 暗号化鍵情報の変更チェック.
-
-                var cryptoChanged = BuildAssetBundlePackage.CheckCryptoFile(assetBundlePath, cryptoKey, cryptoIv);
+				var assetBundlePath = buildAssetBundle.GetAssetBundleOutputPath();
 
                 using (new DisableStackTraceScope())
                 {
@@ -175,14 +170,7 @@ namespace Modules.ExternalResource
 
                     //------ AssetBundleファイルをパッケージ化 ------
 
-                    // 暗号化鍵情報の書き込み.
-
-                    using (new BuildLogScope(logBuilder, processTime, "CreateCryptoFile"))
-                    {
-                        BuildAssetBundlePackage.CreateCryptoFile(assetBundlePath, cryptoKey, cryptoIv);
-                    }
-
-                    // 更新対象のアセット情報取得.
+					// 更新対象のアセット情報取得.
 
                     var assetInfos = new AssetInfo[0];
                     var updatedAssetInfos = new AssetInfo[0];
@@ -190,24 +178,16 @@ namespace Modules.ExternalResource
                     using (new BuildLogScope(logBuilder, processTime, "GetUpdateTargetAssetInfo"))
                     {
                         assetInfos = buildAssetBundle.GetAllTargetAssetInfo(assetInfoManifest);
-
-                        // 暗号化キーが変わっていたら全て更新対象.
-                        if (cryptoChanged)
-                        {
-                            updatedAssetInfos = assetInfos;
-                        }
+						
                         // 差分がある対象だけ抽出.
-                        else
-                        {
-                            updatedAssetInfos = buildAssetBundle.GetUpdateTargetAssetInfo(assetInfoManifest, cachedFileLastWriteTimeTable);
-                        }
+						updatedAssetInfos = buildAssetBundle.GetUpdateTargetAssetInfo(assetInfoManifest, cachedFileLastWriteTimeTable);
                     }
 
                     // パッケージファイル作成.
 
                     using (new BuildLogScope(logBuilder, processTime, "BuildPackage"))
                     {
-                        await BuildAssetBundlePackage.BuildAllAssetBundlePackage(exportPath, assetBundlePath, assetInfos, updatedAssetInfos, cryptoKey, cryptoIv);
+                        await buildAssetBundlePackage.BuildAllAssetBundlePackage(exportPath, assetBundlePath, assetInfos, updatedAssetInfos);
                     }
 
                     //------ ビルド成果物の情報をAssetInfoManifestに書き込み ------
@@ -248,7 +228,7 @@ namespace Modules.ExternalResource
 
                     using (new BuildLogScope(logBuilder, processTime, "BuildPackage AssetInfoManifest"))
                     {
-                        await BuildAssetBundlePackage.BuildAssetInfoManifestPackage(exportPath, assetBundlePath, cryptoKey, cryptoIv);
+                        await buildAssetBundlePackage.BuildAssetInfoManifestPackage(exportPath, assetBundlePath);
                     }
                 }
 

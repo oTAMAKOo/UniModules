@@ -82,13 +82,14 @@ namespace Modules.AssetBundles
         // ローカルモードか.
         private bool localMode = false;
 
+		// ファイルハンドラ.
+		private IAssetBundleFileHandler fileHandler = null;
+
         // イベント通知.
         private Subject<AssetInfo> onTimeOut = null;
         private Subject<Exception> onError = null;
 
-        private AesCryptoKey cryptoKey = null;
-
-        private bool isInitialized = false;
+		private bool isInitialized = false;
 
         //----- property -----
 
@@ -96,13 +97,13 @@ namespace Modules.AssetBundles
 
         private AssetBundleManager() { }
 
-        /// <summary>
-        /// 初期設定をします。
-        /// Initializeで設定した値はstatic変数として保存されます。
-        /// </summary>
-        /// <param name="maxDownloadCount">同時ダウンロード数</param>
-        /// <param name="simulateMode">AssetDataBaseからアセットを取得(EditorOnly)</param>
-        public void Initialize(uint maxDownloadCount, bool simulateMode = false)
+		/// <summary>
+		/// 初期設定をします。
+		/// Initializeで設定した値はstatic変数として保存されます。
+		/// </summary>
+		/// <param name="maxDownloadCount">同時ダウンロード数</param>
+		/// <param name="simulateMode">AssetDataBaseからアセットを取得(EditorOnly)</param>
+		public void Initialize(uint maxDownloadCount, bool simulateMode = false)
         {
             if (isInitialized) { return; }
 
@@ -135,16 +136,11 @@ namespace Modules.AssetBundles
             installPath = installDirectory;
         }
 
-        /// <summary>
-        /// 暗号化キー設定.
-        /// Key,IVがModules.ExternalResource.ManageConfigのAssetのCryptKeyと一致している必要があります.
-        /// </summary>
-        /// <param name="key">暗号化Key(32文字)</param>
-        /// <param name="iv">暗号化IV(16文字)</param>
-        public void SetCryptoKey(string key, string iv)
-        {
-            cryptoKey = new AesCryptoKey(key, iv);
-        }
+		/// <summary> ファイルハンドラ設定. </summary>
+		public void SetFileHandler(IAssetBundleFileHandler fileHandler)
+		{
+			this.fileHandler = fileHandler;
+		}
 
 		/// <summary> URLを設定. </summary>
         /// <param name="remoteUrl">アセットバンドルのディレクトリURLを指定</param>
@@ -607,64 +603,45 @@ namespace Modules.AssetBundles
 
 			#endif
 
-			Func<byte[]> loadFile = () =>
+            await UniTask.SwitchToThreadPool();
+
+            var bytes = new byte[0];
+
+			// 読み込み.
+            using (var fileStream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
             {
-                var bytes = new byte[0];
+                bytes = new byte[fileStream.Length];
 
-                try
+                await fileStream.ReadAsync(bytes, 0, bytes.Length, cancelToken);
+            }
+
+			// 復元.
+			bytes = fileHandler.Decode(bytes);
+
+            await UniTask.SwitchToMainThread();
+
+			if (bytes != null)
+            {
+                var bundleLoadRequest = AssetBundle.LoadFromMemoryAsync(bytes);
+
+                while (!bundleLoadRequest.isDone)
                 {
-                    using (var fileStream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
-                    {
-                        bytes = new byte[fileStream.Length];
-
-                        fileStream.Read(bytes, 0, bytes.Length);
-                    }
-
-                    // 復号化.
-                    bytes = bytes.Decrypt(cryptoKey);
-                }
-                catch (Exception e)
-                {
-                    Debug.LogException(e);
-                    throw;
+                    await UniTask.NextFrame(cancelToken);
                 }
 
-                return bytes;
-            };
-
-            // ファイルの読み込みと復号化をスレッドプールで実行.
-			var loadYield = Observable.Start(() => loadFile()).ObserveOnMainThread().ToYieldInstruction(false);
-
-			while (!loadYield.IsDone)
-			{
-				await UniTask.NextFrame(cancelToken);
+				assetBundle = bundleLoadRequest.assetBundle;
 			}
 
-			if (loadYield.HasResult)
-			{
-				var bytes = loadYield.Result;
-
-				if (bytes != null)
-				{
-					var bundleLoadRequest = AssetBundle.LoadFromMemoryAsync(bytes);
-
-					while (!bundleLoadRequest.isDone)
-					{
-						await UniTask.NextFrame(cancelToken);
-					}
-
-					assetBundle = bundleLoadRequest.assetBundle;
-				}
-			}
-
-			// 読み込めなかった時はファイルを削除して次回読み込み時にダウンロードし直す.
+			// 読み込めなかった時はバージョンファイルを削除し次回読み込み時に再ダウンロード.
             if (assetBundle == null)
             {
 				UnloadAsset(assetBundleName);
 
-				if (File.Exists(filePath))
+				var versionFilePath = Path.ChangeExtension(filePath, AssetInfoManifest.VersionFileExtension);
+
+                if (File.Exists(versionFilePath))
                 {
-                    File.Delete(filePath);
+                    File.Delete(versionFilePath);
                 }
 
                 var builder = new StringBuilder();
@@ -789,7 +766,7 @@ namespace Modules.AssetBundles
                 .Where(x => Path.GetExtension(x) == PackageExtension)
                 .Where(x => !managedFiles.Contains(x))
                 .ToArray();
-        }
+		}
 
         private void OnTimeout(AssetInfo assetInfo, Exception exception)
         {

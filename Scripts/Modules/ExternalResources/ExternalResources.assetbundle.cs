@@ -35,6 +35,12 @@ namespace Modules.ExternalResource
             assetBundleManager.OnErrorAsObservable().Subscribe(x => OnError(x)).AddTo(Disposable);
         }
 
+		/// <summary> ファイルハンドラ設定. </summary>
+		public void SetAssetBundleFileHandler(IAssetBundleFileHandler fileHandler)
+		{
+			assetBundleManager.SetFileHandler(fileHandler);
+		}
+
         /// <summary> AssetBundleを読み込み (非同期) </summary>
         public static async UniTask<T> LoadAsset<T>(string resourcePath, bool autoUnload = true) where T : UnityEngine.Object
         {

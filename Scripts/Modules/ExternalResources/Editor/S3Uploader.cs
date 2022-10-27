@@ -52,6 +52,8 @@ namespace Modules.ExternalResource
 
         //----- property -----
 
+		public abstract IAssetBundleFileHandler FileHandler { get; }
+
         //----- method -----
 
         public async UniTask<string> Execute(string folderPath, string bucketFolder)
@@ -154,8 +156,6 @@ namespace Modules.ExternalResource
 
             var assetPath = PathUtility.Combine(projectResourceFolders.ExternalResourcesPath, manifestAssetInfo.ResourcePath);
 
-            var cryptoKey = GetCryptoKey();
-
 			var bytes = new byte[0];
 
             using (var fileStream = new FileStream(assetInfoManifestFilePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
@@ -165,7 +165,7 @@ namespace Modules.ExternalResource
 				fileStream.Read(bytes, 0, bytes.Length);
 			}
 
-			bytes = bytes.Decrypt(cryptoKey);
+			bytes = FileHandler.Decode(bytes);
 
 			var bundleLoadRequest = AssetBundle.LoadFromMemoryAsync(bytes);
 
@@ -461,7 +461,5 @@ namespace Modules.ExternalResource
                 }
             }
         }
-
-		public abstract AesCryptoKey GetCryptoKey();
-    }
+	}
 }
