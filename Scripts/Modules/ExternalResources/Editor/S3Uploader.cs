@@ -20,27 +20,15 @@ namespace Modules.ExternalResource
     {
         //----- params -----
 
-        protected const string MetaDataHashKey = "x-amz-meta-hash";
-
-        /// <summary> ローカルにあるファイル情報 </summary>
+		/// <summary> ローカルにあるファイル情報 </summary>
         protected sealed class FileInfo
         {
             public string FilePath { get; set; }
 
             public string ObjectPath { get; set; }
+		}
 
-            public string Hash { get; set; }
-        }
-
-        /// <summary> S3にアップロード済みのファイル情報 </summary>
-        protected sealed class S3FileInfo
-        {
-            public string ObjectPath { get; set; }
-
-            public string Hash { get; set; }
-        }
-
-        //----- field -----
+		//----- field -----
 
         private string folderPath = null;
         private string bucketFolder = null;
@@ -107,17 +95,13 @@ namespace Modules.ExternalResource
 
                     var s3Objects = await GetUploadedObjects();
 
-                    //------- S3ファイル情報作成 -------
+					//------- アップロード先のフォルダ内ファイル削除 -------
 
-                    var s3FileInfos = await BuildUploadedObjectInfos(s3Objects);
+                    await DeleteDeletedPackageFromS3(s3Objects);
 
-                    //------- 削除対象のファイルをS3から削除 -------
+                    //------- ファイルをS3にアップロード -------
 
-                    await DeleteDeletedPackageFromS3(fileInfos, s3FileInfos);
-
-                    //------- 新規・更新対象のファイルをS3にアップロード -------
-
-                    await UploadPackagesToS3(fileInfos, s3FileInfos);
+                    await UploadPackagesToS3(fileInfos);
                 }
                 catch (Exception e)
                 {
@@ -211,25 +195,14 @@ namespace Modules.ExternalResource
             {
                 var fileName = Path.GetFileNameWithoutExtension(file);
 
-                var hash = string.Empty;
+				var path = file.SafeSubstring(folderPathLength);
 
-                if (assetInfoManifestFileName == fileName)
-                {
-                    hash = FileUtility.GetHash(file);
-                }
-                else
-                {
-                    hash = fileHashTable.GetValueOrDefault(fileName);
-                }
-
-                var path = file.SafeSubstring(folderPathLength);
                 var objectPath = PathUtility.Combine(bucketFolder, path);
 
                 var fileInfo = new FileInfo()
                 {
                     FilePath = file,
                     ObjectPath = objectPath,
-                    Hash = hash,
                 };
 
                 fileInfos.Add(fileInfo);
@@ -254,93 +227,13 @@ namespace Modules.ExternalResource
 
             return s3Objects;
         }
-
-        /// <summary> アップロード済みのファイルデータ構築. </summary>
-        private async UniTask<S3FileInfo[]> BuildUploadedObjectInfos(S3Object[] s3Objects)
+		
+		/// <summary> ファイルをS3にアップロード </summary>
+        private async UniTask UploadPackagesToS3(FileInfo[] fileInfos)
         {
-            Debug.Log("Build uploaded objects info.");
+			// 重複除外・順番をランダム化.
 
-            var s3FileInfos = new List<S3FileInfo>();
-
-            // ハッシュデータ取得.
-            var hashTable = await GetUploadedObjectHashTable(s3Client, s3Objects);
-
-            // データ情報構築.
-
-            foreach (var s3Object in s3Objects)
-            {
-                var element = hashTable.FirstOrDefault(x => x.Key == s3Object.Key);
-                
-                var s3FileInfo = new S3FileInfo()
-                {
-                    ObjectPath = s3Object.Key,
-                    Hash = element.Value,
-                };
-
-                s3FileInfos.Add(s3FileInfo);
-            }
-
-            return s3FileInfos.ToArray();
-        }
-
-        /// <summary> アップロード済みのファイルのハッシュデータ取得. </summary>
-        private async UniTask<Dictionary<string, string>> GetUploadedObjectHashTable(S3Client s3Client, S3Object[] s3Objects)
-        {
-            var hashTable = new Dictionary<string, string>();
-
-            var tasks = new List<UniTask>();
-
-            foreach (var s3Object in s3Objects)
-            {
-                var task = UniTask.RunOnThreadPool(async () =>
-                {
-                    var metaDataResponse = await s3Client.GetObjectMetaData(s3Object.Key);
-
-                    var fileHash = metaDataResponse.Metadata[MetaDataHashKey];
-
-                    lock (hashTable)
-                    {
-                        hashTable[s3Object.Key] = fileHash;
-                    }
-                });
-
-                tasks.Add(task);
-            }
-
-            await UniTask.WhenAll(tasks.ToArray());
-
-            return hashTable;
-        }
-
-        /// <summary> ファイルをS3にアップロード </summary>
-        private async UniTask UploadPackagesToS3(FileInfo[] fileInfos, S3FileInfo[] s3FileInfos)
-        {
-            var assetInfoManifestFilePath = GetAssetInfoManifestFilePath(files);
-
-            var uploadTargets = new List<FileInfo>();
-
-            // S3に存在しない / ファイルハッシュが違うファイルが対象.
-
-            foreach (var fileInfo in fileInfos)
-            {
-                if (fileInfo.ObjectPath == assetInfoManifestFilePath){ continue; }
-
-                var s3FileInfo = s3FileInfos.FirstOrDefault(x => x.ObjectPath == fileInfo.ObjectPath);
-
-                if (s3FileInfo != null)
-                {
-                    if (fileInfo.Hash == s3FileInfo.Hash) { continue; }
-                }
-
-                uploadTargets.Add(fileInfo);
-            }
-
-            // 重複除外・パス順にソート.
-
-            uploadTargets = uploadTargets
-                .Distinct()
-                .OrderBy(x => x.ObjectPath, new NaturalComparer())
-                .ToList();
+            var uploadTargets = fileInfos.Distinct().Shuffle().ToList();
 
             // アップロード.
 
@@ -381,12 +274,7 @@ namespace Modules.ExternalResource
 	                                CannedACL = UploadFileCannedACL,
 	                            };
 
-	                            if (!string.IsNullOrEmpty(uploadTarget.Hash))
-	                            {
-	                                fileTransferUtilityRequest.Metadata.Add(MetaDataHashKey, uploadTarget.Hash);
-	                            }
-
-	                            await s3Client.Upload(fileTransferUtilityRequest);
+								await s3Client.Upload(fileTransferUtilityRequest);
 	                            
 	                            if (isBatchMode)
 	                            {
@@ -416,25 +304,11 @@ namespace Modules.ExternalResource
         }
 
         /// <summary> 削除対象のファイルをS3から削除 </summary>
-        private async UniTask DeleteDeletedPackageFromS3(FileInfo[] fileInfos,  S3FileInfo[] s3FileInfos)
+        private async UniTask DeleteDeletedPackageFromS3(S3Object[] s3Objects)
         {
-            var deleteTargets = new List<S3FileInfo>();
+			// 削除.
 
-            foreach (var s3FileInfo in s3FileInfos)
-            {
-                var fileInfo = fileInfos.FirstOrDefault(x => x.ObjectPath == s3FileInfo.ObjectPath);
-
-                if (fileInfo != null)
-                {
-                    if (fileInfo.Hash == s3FileInfo.Hash){ continue; }
-                }
-
-                deleteTargets.Add(s3FileInfo);
-            }
-
-            // 削除.
-
-            var deleteObjectPaths = deleteTargets.Select(x => x.ObjectPath).ToArray();
+            var deleteObjectPaths = s3Objects.Select(x => x.Key).ToArray();
 
             if (deleteObjectPaths.Any())
             {
@@ -447,7 +321,7 @@ namespace Modules.ExternalResource
 
             if (deleteObjectPaths.Any())
             {
-                var chunk = deleteTargets.Chunk(100).ToArray();
+                var chunk = deleteObjectPaths.Chunk(100).ToArray();
 
                 var num = chunk.Length;
 
@@ -455,7 +329,7 @@ namespace Modules.ExternalResource
                 {
                     var builder = new StringBuilder();
 
-                    chunk[i].ForEach(x => builder.AppendLine(x.ObjectPath));
+                    chunk[i].ForEach(x => builder.AppendLine(x));
 
                     Debug.LogFormat("Delete S3 objects. [{0}/{1}]\n{2}", i + 1, num, builder.ToString());
                 }
