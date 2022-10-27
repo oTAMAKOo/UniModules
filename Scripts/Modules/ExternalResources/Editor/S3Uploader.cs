@@ -288,28 +288,46 @@ namespace Modules.ExternalResource
         {
             var hashTable = new Dictionary<string, string>();
 
-            var tasks = new List<UniTask>();
+			var builder = new StringBuilder();
 
-            foreach (var s3Object in s3Objects)
-            {
-                var task = UniTask.RunOnThreadPool(async () =>
-                {
-                    var metaDataResponse = await s3Client.GetObjectMetaData(s3Object.Key);
+			var chunk = s3Objects.Chunk(25).ToArray();
 
-                    var fileHash = metaDataResponse.Metadata[MetaDataHashKey];
+			for (var i = 0; i < chunk.Length; i++)
+			{
+				var items = chunk[i];
 
-                    lock (hashTable)
-                    {
-                        hashTable[s3Object.Key] = fileHash;
-                    }
-                });
+				var tasks = new List<UniTask>();
 
-                tasks.Add(task);
-            }
+				builder.Clear();
 
-            await UniTask.WhenAll(tasks.ToArray());
+				foreach (var s3Object in items)
+				{
+		            var task = UniTask.RunOnThreadPool(async () =>
+		            {
+		                var metaDataResponse = await s3Client.GetObjectMetaData(s3Object.Key);
 
-            return hashTable;
+		                var fileHash = metaDataResponse.Metadata[MetaDataHashKey];
+
+		                lock (hashTable)
+		                {
+		                    hashTable[s3Object.Key] = fileHash;
+		                }
+
+						lock (builder)
+						{
+							builder.AppendLine(s3Object.Key);
+						}
+					});
+
+		            tasks.Add(task);
+		        }
+
+		        await UniTask.WhenAll(tasks.ToArray());
+
+				Debug.Log($"GetUploadedObjectHash [{i}/{chunk.Length}]\n{builder}");
+			}
+
+			return hashTable;
         }
 
         /// <summary> ファイルをS3にアップロード </summary>
