@@ -11,6 +11,7 @@ using Cysharp.Threading.Tasks;
 using UniRx;
 using Extensions;
 using Modules.ExternalResource;
+using Modules.Net.WebRequest;
 
 namespace Modules.AssetBundles
 {
@@ -349,7 +350,6 @@ namespace Modules.AssetBundles
 
         private async UniTask FileDownload(CancellationToken cancelToken, string url, string path, IProgress<float> progress = null)
         {
-            var webRequest = new UnityWebRequest(url);
             var buffer = new byte[256 * 1024];
 
             var directory = Path.GetDirectoryName(path);
@@ -358,11 +358,25 @@ namespace Modules.AssetBundles
             {
                 Directory.CreateDirectory(directory);
             }
+            
+            var webRequest = new UnityWebRequest(url)
+            {
+                timeout = (int)TimeoutLimit.TotalSeconds,
+                downloadHandler = new AssetBundleDownloadHandler(path, buffer),
+            };
 
-            webRequest.downloadHandler = new AssetBundleDownloadHandler(path, buffer);
+            var downloadTask = webRequest.SendWebRequest();
 
-            await webRequest.SendWebRequest().ToUniTask(progress, cancellationToken: cancelToken);
-		}
+            while (!downloadTask.isDone)
+            {
+                await UniTask.NextFrame(cancelToken);
+            }
+
+            if (webRequest.HasError())
+            {
+                Debug.LogError($"File download error : {url}\n\n{webRequest.error}");
+            }
+        }
 
         #endregion
 
@@ -620,17 +634,26 @@ namespace Modules.AssetBundles
 
             await UniTask.SwitchToMainThread();
 
-			if (bytes != null)
+            var loadedAssetBundle = loadedAssetBundles.GetValueOrDefault(assetBundleName);
+
+            if (loadedAssetBundle != null)
             {
-                var bundleLoadRequest = AssetBundle.LoadFromMemoryAsync(bytes);
-
-                while (!bundleLoadRequest.isDone)
+                assetBundle = loadedAssetBundle.assetBundle;
+            }
+            else
+            {
+			    if (bytes != null)
                 {
-                    await UniTask.NextFrame(cancelToken);
-                }
+                    var bundleLoadRequest = AssetBundle.LoadFromMemoryAsync(bytes);
 
-				assetBundle = bundleLoadRequest.assetBundle;
-			}
+                    while (!bundleLoadRequest.isDone)
+                    {
+                        await UniTask.NextFrame(cancelToken);
+                    }
+
+				    assetBundle = bundleLoadRequest.assetBundle;
+			    }
+            }
 
 			// 読み込めなかった時はバージョンファイルを削除し次回読み込み時に再ダウンロード.
             if (assetBundle == null)
@@ -646,10 +669,9 @@ namespace Modules.AssetBundles
 
                 var builder = new StringBuilder();
 
-                builder.Append("Failed to load AssetBundle!").AppendLine();
+                builder.Append($"AssetBundle load error : {assetBundleName}").AppendLine();
                 builder.AppendLine();
                 builder.AppendFormat("File : {0}", filePath).AppendLine();
-                builder.AppendFormat("AssetBundleName : {0}", assetBundleName).AppendLine();
                 builder.AppendFormat("CRC : {0}", assetBundleInfo.CRC).AppendLine();
 				
 				throw new Exception(builder.ToString());
