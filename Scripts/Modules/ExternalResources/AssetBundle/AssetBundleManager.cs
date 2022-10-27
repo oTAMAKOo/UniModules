@@ -1,4 +1,4 @@
-﻿
+﻿﻿
 using UnityEngine;
 using UnityEngine.Networking;
 using System;
@@ -66,7 +66,7 @@ namespace Modules.AssetBundles
         private Dictionary<string, IObservable<string>> downloadQueueing = null;
 
         // 読み込み待ちアセットバンドル.
-        private Dictionary<string, IObservable<Tuple<AssetBundle, string>>> loadQueueing = null;
+        private Dictionary<string, IObservable<AssetBundle>> loadQueueing = null;
 
         // 読み込み済みアセットバンドル.
         private Dictionary<string, LoadedAssetBundle> loadedAssetBundles = null;
@@ -113,7 +113,7 @@ namespace Modules.AssetBundles
 
             downloadList = new HashSet<string>();
             downloadQueueing = new Dictionary<string, IObservable<string>>();
-            loadQueueing = new Dictionary<string, IObservable<Tuple<AssetBundle, string>>>();
+            loadQueueing = new Dictionary<string, IObservable<AssetBundle>>();
             loadedAssetBundles = new Dictionary<string, LoadedAssetBundle>();
             assetInfosByAssetBundleName = new Dictionary<string, AssetInfo[]>();
             dependencies = new Dictionary<string, string[]>();
@@ -404,7 +404,7 @@ namespace Modules.AssetBundles
                 }
             }
 
-            return dependent;
+            return dependent.Where(x => x != assetBundleName).ToArray();
         }
 
         /// <summary>
@@ -462,7 +462,7 @@ namespace Modules.AssetBundles
 
             return ObservableEx.FromUniTask(cancelToken => LoadAssetInternal<T>(cancelToken, assetInfo, assetPath, autoUnLoad));
         }
-
+        
         private async UniTask<T> LoadAssetInternal<T>(CancellationToken cancelToken, AssetInfo assetInfo, string assetPath, bool autoUnLoad) where T : UnityEngine.Object
         {
             T result = null;
@@ -496,51 +496,9 @@ namespace Modules.AssetBundles
                 {
                     var allBundles = new string[] { assetBundleName }.Concat(GetDependencies(assetBundleName)).ToArray();
 
-                    var loadAllBundles = allBundles
-                        .Select(x =>
-                            {
-                                var cached = loadedAssetBundles.GetValueOrDefault(x);
+                    var loadAllBundles = allBundles.Select(x => Observable.Defer(() => GetLoadTask(x))).ToArray();
 
-                                if (cached != null)
-                                {
-                                    return Observable.Return(Tuple.Create(cached.assetBundle, x));
-                                }
-
-                                var loadTask = loadQueueing.GetValueOrDefault(x);
-
-                                if (loadTask != null)
-                                {   
-                                    return loadTask;
-                                }
-
-                                var info = assetInfosByAssetBundleName.GetValueOrDefault(x).FirstOrDefault();
-
-                                loadQueueing[x] = ObservableEx.FromUniTask(_cancelToken => LoadAssetBundle(_cancelToken, info))
-                                    .Timeout(TimeoutLimit)
-                                    .OnErrorRetry((TimeoutException ex) => OnTimeout(info, ex), RetryCount, RetryDelaySeconds)
-                                    .DoOnError(error => OnError(error))
-                                    .Select(ab => Tuple.Create(ab, x))
-                                    .Share();
-
-                                return loadQueueing[x];
-                            })
-                        .ToArray();
-
-                    loader = Observable.Defer(() => Observable.WhenAll(loadAllBundles)
-                        .Select(tuples =>
-                        {
-                            foreach (var tuple in tuples)
-                            {
-                                loadedAssetBundles[tuple.Item2] = new LoadedAssetBundle(tuple.Item1);
-
-                                if (loadQueueing.ContainsKey(tuple.Item2))
-                                {
-                                    loadQueueing.Remove(tuple.Item2);
-                                }
-                            }
-
-                            return tuples[0].Item1;
-                        }));
+                    loader = Observable.Defer(() => Observable.WhenAll(loadAllBundles).Select(x => x.FirstOrDefault()));
                 }
                 else
                 {
@@ -571,7 +529,7 @@ namespace Modules.AssetBundles
 
 						result = assetBundleRequest.asset as T;
 
-						if (result == null)
+                        if (result == null)
 						{
 							Debug.LogErrorFormat("[AssetBundle Load Error]\nAssetBundleName = {0}\nAssetPath = {1}\n", assetBundleName, assetPath);
 						}
@@ -589,6 +547,39 @@ namespace Modules.AssetBundles
 			}
 
 			return result;
+        }
+
+        private IObservable<AssetBundle> GetLoadTask(string assetBundleName)
+        {
+            // 既に読み込み済み.
+
+            var cached = loadedAssetBundles.GetValueOrDefault(assetBundleName);
+
+            if (cached != null)
+            {
+                return Observable.Return(cached.assetBundle);
+            }
+
+            // 読み込み中なので共有.
+
+            var loadTask = loadQueueing.GetValueOrDefault(assetBundleName);
+
+            if (loadTask != null)
+            {   
+                return loadTask;
+            }
+
+            // 新規で読み込み.
+
+            var info = assetInfosByAssetBundleName.GetValueOrDefault(assetBundleName).FirstOrDefault();
+
+            loadQueueing[assetBundleName] = ObservableEx.FromUniTask(_cancelToken => LoadAssetBundle(_cancelToken, info))
+                .Timeout(TimeoutLimit)
+                .OnErrorRetry((TimeoutException ex) => OnTimeout(info, ex), RetryCount, RetryDelaySeconds)
+                .DoOnError(error => OnError(error))
+                .Share();
+
+            return loadQueueing[assetBundleName];
         }
 
         private async UniTask<AssetBundle> LoadAssetBundle(CancellationToken cancelToken, AssetInfo assetInfo)
@@ -617,23 +608,6 @@ namespace Modules.AssetBundles
 
 			#endif
 
-            await UniTask.SwitchToThreadPool();
-
-            var bytes = new byte[0];
-
-			// 読み込み.
-            using (var fileStream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
-            {
-                bytes = new byte[fileStream.Length];
-
-                await fileStream.ReadAsync(bytes, 0, bytes.Length, cancelToken);
-            }
-
-			// 復元.
-			bytes = fileHandler.Decode(bytes);
-
-            await UniTask.SwitchToMainThread();
-
             var loadedAssetBundle = loadedAssetBundles.GetValueOrDefault(assetBundleName);
 
             if (loadedAssetBundle != null)
@@ -642,8 +616,29 @@ namespace Modules.AssetBundles
             }
             else
             {
+                // ファイル読み込み.
+
+                await UniTask.SwitchToThreadPool();
+
+                var bytes = new byte[0];
+
+                using (var fileStream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+                {
+                    bytes = new byte[fileStream.Length];
+
+                    await fileStream.ReadAsync(bytes, 0, bytes.Length, cancelToken);
+                }
+
+                // 復元.
+
+			    bytes = fileHandler.Decode(bytes);
+
+                await UniTask.SwitchToMainThread();
+
 			    if (bytes != null)
                 {
+                    // AssetBundle読み込み.
+
                     var bundleLoadRequest = AssetBundle.LoadFromMemoryAsync(bytes);
 
                     while (!bundleLoadRequest.isDone)
@@ -652,7 +647,7 @@ namespace Modules.AssetBundles
                     }
 
 				    assetBundle = bundleLoadRequest.assetBundle;
-			    }
+                }
             }
 
 			// 読み込めなかった時はバージョンファイルを削除し次回読み込み時に再ダウンロード.
@@ -676,7 +671,14 @@ namespace Modules.AssetBundles
 				
 				throw new Exception(builder.ToString());
             }
-			
+
+            loadedAssetBundles[assetBundleName] = new LoadedAssetBundle(assetBundle);
+
+            if (loadQueueing.ContainsKey(assetBundleName))
+            {
+                loadQueueing.Remove(assetBundleName);
+            }
+
 			return assetBundle;
 		}
 
