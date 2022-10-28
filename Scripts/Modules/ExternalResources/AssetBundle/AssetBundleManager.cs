@@ -1,4 +1,4 @@
-﻿﻿
+﻿﻿﻿
 using UnityEngine;
 using UnityEngine.Networking;
 using System;
@@ -30,19 +30,11 @@ namespace Modules.AssetBundles
         // リトライするまでの時間(秒).
         private readonly TimeSpan RetryDelaySeconds = TimeSpan.FromSeconds(2f);
 
-		// 読み込み済みアセットバンドル.
-		private sealed class LoadedAssetBundle
-		{
-			public AssetBundle assetBundle = null;
-
-			public int referencedCount = 0;
-
-			public LoadedAssetBundle(AssetBundle assetBundle)
-			{
-				this.assetBundle = assetBundle;
-				this.referencedCount = 0;
-			}
-		}
+        private sealed class DownloadBuffer
+        {
+            public bool use = false;
+            public byte[] buffer = new byte[256 * 1024];
+        }
 
         //----- field -----
 
@@ -69,13 +61,16 @@ namespace Modules.AssetBundles
         private Dictionary<string, IObservable<AssetBundle>> loadQueueing = null;
 
         // 読み込み済みアセットバンドル.
-        private Dictionary<string, LoadedAssetBundle> loadedAssetBundles = null;
+        private Dictionary<string, AssetBundle> loadedAssetBundles = null;
+
+        // 読み込み済みアセットバンドル参照カウント.
+        private Dictionary<string, int> assetBundleRefCount = null;
 
         // アセット情報(アセットバンドル).
         private Dictionary<string, AssetInfo[]> assetInfosByAssetBundleName = null;
 
         // 依存関係.
-        private Dictionary<string, string[]> dependencies = null;
+        private Dictionary<string, string[]> dependenciesTable = null;
 
 		// シュミュレートモードか.
         private bool simulateMode = false;
@@ -85,6 +80,9 @@ namespace Modules.AssetBundles
 
 		// ファイルハンドラ.
 		private IAssetBundleFileHandler fileHandler = null;
+
+        // ダウンロードバッファ.
+        private List<DownloadBuffer> downloadBuffers = null;
 
         // イベント通知.
         private Subject<AssetInfo> onTimeOut = null;
@@ -114,9 +112,11 @@ namespace Modules.AssetBundles
             downloadList = new HashSet<string>();
             downloadQueueing = new Dictionary<string, IObservable<string>>();
             loadQueueing = new Dictionary<string, IObservable<AssetBundle>>();
-            loadedAssetBundles = new Dictionary<string, LoadedAssetBundle>();
+            loadedAssetBundles = new Dictionary<string, AssetBundle>();
+            assetBundleRefCount = new Dictionary<string, int>();
             assetInfosByAssetBundleName = new Dictionary<string, AssetInfo[]>();
-            dependencies = new Dictionary<string, string[]>();
+            dependenciesTable = new Dictionary<string, string[]>();
+            downloadBuffers = new List<DownloadBuffer>();
 
             BuildAssetInfoTable();
 
@@ -169,6 +169,8 @@ namespace Modules.AssetBundles
             var manifestAssetInfo = AssetInfoManifest.GetManifestAssetInfo();
             
             assetInfosByAssetBundleName[manifestAssetInfo.AssetBundle.AssetBundleName] = new AssetInfo[] { manifestAssetInfo };
+
+            assetBundleRefCount = assetInfosByAssetBundleName.ToDictionary(x => x.Key, _ => 0);
         }
 
         public void SetManifest(AssetInfoManifest manifest)
@@ -176,13 +178,14 @@ namespace Modules.AssetBundles
             this.manifest = manifest;
 
             BuildAssetInfoTable();
+            BuildDependenciesTable();
         }
 
         /// <summary> 展開中のアセットバンドル名一覧取得 </summary>
         public Tuple<string, int>[] GetLoadedAssetBundleNames()
         {
             return loadedAssetBundles != null ?
-                loadedAssetBundles.Select(x => Tuple.Create(x.Key, x.Value.referencedCount)).ToArray() : 
+                loadedAssetBundles.Select(x => Tuple.Create(x.Key, assetBundleRefCount.GetValueOrDefault(x.Key))).ToArray() : 
                 new Tuple<string, int>[0];
         }
 
@@ -263,7 +266,7 @@ namespace Modules.AssetBundles
 
 				// アセットバンドルと依存アセットバンドルをまとめてダウンロード.
 
-                var allBundles = new string[] { assetBundleName }.Concat(GetDependencies(assetBundleName)).ToArray();
+                var allBundles = new string[] { assetBundleName }.Concat(GetAllDependencies(assetBundleName)).ToArray();
 
                 var loadAllBundles = new Dictionary<string, IObservable<string>>();
 
@@ -338,81 +341,150 @@ namespace Modules.AssetBundles
 
         private IObservable<Unit> DownloadAssetBundle(AssetInfo assetInfo, IProgress<float> progress = null)
         {
-			var downloadUrl = BuildDownloadUrl(assetInfo);
+            var downloadUrl = BuildDownloadUrl(assetInfo);
 
             var filePath = GetFilePath(assetInfo);
 			
-            return ObservableEx.FromUniTask(_cancelToken => FileDownload(_cancelToken, downloadUrl, filePath, progress))
+            return ObservableEx.FromUniTask(cancelToken => FileDownload(downloadUrl, filePath, progress, cancelToken))
                     .Timeout(TimeoutLimit)
                     .OnErrorRetry((TimeoutException ex) => OnTimeout(assetInfo, ex), RetryCount, RetryDelaySeconds)
                     .DoOnError(x => OnError(x));
 		}
 
-        private async UniTask FileDownload(CancellationToken cancelToken, string url, string path, IProgress<float> progress = null)
+        private void UpdateDownloadBuffer()
         {
-            var buffer = new byte[256 * 1024];
+            var requireCount = Math.Min(maxDownloadCount, downloadQueueing.Count);
 
+            // 余っているバッファ削除.
+            if (requireCount < downloadBuffers.Count)
+            {
+                var deleteCount = downloadBuffers.Count - requireCount;
+
+                var unuseBuffers = downloadBuffers.Where(x => !x.use).ToArray();
+
+                for (var i = 0; i < unuseBuffers.Length; i++)
+                {
+                    if (deleteCount <= i){ break; }
+
+                    downloadBuffers.Remove(unuseBuffers[i]);
+                }
+            }
+            // 足りないバッファ追加.
+            else if(downloadBuffers.Count < requireCount)
+            {
+                var addCount = requireCount - downloadBuffers.Count;
+
+                for (var i = 0; i < addCount; i++)
+                {
+                    downloadBuffers.Add(new DownloadBuffer());
+                }
+            }
+        }
+
+        private async UniTask FileDownload(string url, string path, IProgress<float> progress, CancellationToken cancelToken)
+        {
             var directory = Path.GetDirectoryName(path);
 
             if (!Directory.Exists(directory))
             {
                 Directory.CreateDirectory(directory);
             }
+
+            DownloadBuffer downloadBuffer = null;
             
-            var webRequest = new UnityWebRequest(url)
+            try
             {
-                timeout = (int)TimeoutLimit.TotalSeconds,
-                downloadHandler = new AssetBundleDownloadHandler(path, buffer),
-            };
+                while (true)
+                {
+                    UpdateDownloadBuffer();
 
-            var downloadTask = webRequest.SendWebRequest();
+                    downloadBuffer = downloadBuffers.FirstOrDefault(x => !x.use);
 
-            while (!downloadTask.isDone)
+                    if (downloadBuffer != null){ break; }
+
+                    await UniTask.NextFrame(cancelToken);
+                }
+
+                downloadBuffer.use = true;
+
+                var webRequest = new UnityWebRequest(url)
+                {
+                    timeout = (int)TimeoutLimit.TotalSeconds,
+                    downloadHandler = new AssetBundleDownloadHandler(path, downloadBuffer.buffer),
+                };
+
+                var downloadTask = webRequest.SendWebRequest();
+
+                while (!downloadTask.isDone)
+                {
+                    await UniTask.NextFrame(cancelToken);
+                }
+
+                if (webRequest.HasError())
+                {
+                    Debug.LogError($"File download error : {url}\n\n{webRequest.error}");
+                }
+            }
+            catch (Exception e)
             {
-                await UniTask.NextFrame(cancelToken);
+                if (downloadBuffer != null)
+                {
+                    downloadBuffer.use = false;
+                }
+
+                throw;
             }
 
-            if (webRequest.HasError())
+            if (downloadBuffer != null)
             {
-                Debug.LogError($"File download error : {url}\n\n{webRequest.error}");
+                downloadBuffer.use = false;
             }
         }
 
         #endregion
 
         #region Dependencies
-
-        public void SetDependencies(Dictionary<string, string[]> dependencies)
+        
+        /// <summary> アセットバンドル依存関係設定 </summary>
+        private void BuildDependenciesTable()
         {
-            this.dependencies = dependencies;
+            if (manifest == null) { return; }
+
+            dependenciesTable = manifest.GetAssetInfos()
+                .Where(x => x.IsAssetBundle)
+                .Select(x => x.AssetBundle)
+                .Where(x => x.Dependencies != null && x.Dependencies.Any())
+                .GroupBy(x => x.AssetBundleName)
+                .Select(x => x.FirstOrDefault())
+                .ToDictionary(x => x.AssetBundleName, x => x.Dependencies.Where(y => y != x.AssetBundleName).ToArray());
         }
 
-        private string[] GetDependencies(string assetBundleName)
+        private string[] GetAllDependencies(string assetBundleName)
         {
             // 既に登録済みの場合はそこから取得.
-            var dependent = dependencies.GetValueOrDefault(assetBundleName);
+            var dependents = dependenciesTable.GetValueOrDefault(assetBundleName);
 
-            if (dependent == null)
+            if (dependents == null)
             {
                 // 依存アセット一覧を再帰で取得.
-                dependent = GetDependenciesInternal(assetBundleName);
+                dependents = GetAllDependenciesInternal(assetBundleName);
 
                 // 登録.
-                if (dependent.Any())
+                if (dependents.Any())
                 {
-                    dependencies.Add(assetBundleName, dependent);
+                    dependenciesTable.Add(assetBundleName, dependents);
                 }
             }
 
-            return dependent.Where(x => x != assetBundleName).ToArray();
+            return dependents.ToArray();
         }
 
         /// <summary>
         /// 依存関係にあるアセット一覧取得.
         /// </summary>
-        private string[] GetDependenciesInternal(string fileName, List<string> dependents = null)
+        private string[] GetAllDependenciesInternal(string fileName, List<string> dependents = null)
         {
-            var targets = dependencies.GetValueOrDefault(fileName, new string[0]);
+            var targets = dependenciesTable.GetValueOrDefault(fileName, new string[0]);
 
             if (targets.Length == 0) { return new string[0]; }
 
@@ -429,7 +501,7 @@ namespace Modules.AssetBundles
                 dependents.Add(targets[i]);
 
                 // 依存先の依存先を取得.
-                var internalDependents = GetDependenciesInternal(targets[i], dependents);
+                var internalDependents = GetAllDependenciesInternal(targets[i], dependents);
 
                 foreach (var internalDependent in internalDependents)
                 {
@@ -441,7 +513,29 @@ namespace Modules.AssetBundles
                 }
             }
 
-            return dependents.ToArray();
+            return dependents.Distinct().ToArray();
+        }
+
+        private int IncrementReferenceCount(string assetBundleName)
+        {
+            var referenceCount = assetBundleRefCount.GetValueOrDefault(assetBundleName);
+
+            referenceCount++;
+
+            assetBundleRefCount[assetBundleName] = referenceCount;
+
+            return referenceCount;
+        }
+
+        private int DecrementReferenceCount(string assetBundleName)
+        {
+            var referenceCount = assetBundleRefCount.GetValueOrDefault(assetBundleName);
+
+            referenceCount = Math.Max(0, referenceCount - 1);
+
+            assetBundleRefCount[assetBundleName] = referenceCount;
+
+            return referenceCount;
         }
 
         #endregion
@@ -494,17 +588,27 @@ namespace Modules.AssetBundles
 
                 if (loadedAssetBundle == null)
                 {
-                    var allBundles = new string[] { assetBundleName }.Concat(GetDependencies(assetBundleName)).ToArray();
+                    var dependencies = GetAllDependencies(assetBundleName);
 
-                    var loadAllBundles = allBundles.Select(x => Observable.Defer(() => GetLoadTask(x))).ToArray();
+                    for (var i = 0; i < dependencies.Length; i++)
+                    {
+                        IncrementReferenceCount(dependencies[i]);    
+                    }
+                    
+                    loader = Observable.Defer(() =>
+                    {
+                        var loadDependenciesTasks = dependencies
+                            .Select(x => Observable.Defer(() => GetLoadTask(x)))
+                            .ToArray();
 
-                    loader = Observable.Defer(() => Observable.WhenAll(loadAllBundles).Select(x => x.FirstOrDefault()));
+                        return Observable.WhenAll(loadDependenciesTasks).SelectMany(_ => GetLoadTask(assetBundleName));
+                    });
                 }
                 else
                 {
-                    loadedAssetBundle.referencedCount++;
+                    IncrementReferenceCount(assetBundleName);
 
-                    loader = Observable.Defer(() => Observable.Return(loadedAssetBundle.assetBundle));
+                    loader = Observable.Defer(() => Observable.Return(loadedAssetBundle));
                 }
 
 				try
@@ -553,11 +657,11 @@ namespace Modules.AssetBundles
         {
             // 既に読み込み済み.
 
-            var cached = loadedAssetBundles.GetValueOrDefault(assetBundleName);
+            var loadedAssetBundle = loadedAssetBundles.GetValueOrDefault(assetBundleName);
 
-            if (cached != null)
+            if (loadedAssetBundle != null)
             {
-                return Observable.Return(cached.assetBundle);
+                return Observable.Return(loadedAssetBundle);
             }
 
             // 読み込み中なので共有.
@@ -612,7 +716,7 @@ namespace Modules.AssetBundles
 
             if (loadedAssetBundle != null)
             {
-                assetBundle = loadedAssetBundle.assetBundle;
+                assetBundle = loadedAssetBundle;
             }
             else
             {
@@ -650,11 +754,20 @@ namespace Modules.AssetBundles
                 }
             }
 
-			// 読み込めなかった時はバージョンファイルを削除し次回読み込み時に再ダウンロード.
-            if (assetBundle == null)
+            if (loadQueueing.ContainsKey(assetBundleName))
             {
-				UnloadAsset(assetBundleName);
+                loadQueueing.Remove(assetBundleName);
+            }
 
+            if (assetBundle != null)
+            {
+                loadedAssetBundles.Add(assetBundleName, assetBundle);
+            }
+            else
+            {
+                UnloadAsset(assetBundleName);
+
+                // バージョンファイルを削除し次回読み込み時に再ダウンロード.
 				var versionFilePath = Path.ChangeExtension(filePath, AssetInfoManifest.VersionFileExtension);
 
                 if (File.Exists(versionFilePath))
@@ -672,34 +785,31 @@ namespace Modules.AssetBundles
 				throw new Exception(builder.ToString());
             }
 
-            loadedAssetBundles[assetBundleName] = new LoadedAssetBundle(assetBundle);
-
-            if (loadQueueing.ContainsKey(assetBundleName))
-            {
-                loadQueueing.Remove(assetBundleName);
-            }
-
-			return assetBundle;
+            return assetBundle;
 		}
 
         #endregion
 
         #region Unload
 
-        /// <summary>
-        /// 名前で指定したアセットバンドルをメモリから破棄.
-        /// </summary>
+        /// <summary> 名前で指定したアセットバンドルをメモリから破棄. </summary>
         public void UnloadAsset(string assetBundleName, bool unloadAllLoadedObjects = false, bool force = false)
         {
             if (simulateMode) { return; }
 
-            UnloadDependencies(assetBundleName, unloadAllLoadedObjects, force);
+            if(!force && loadQueueing.ContainsKey(assetBundleName)){ return; }
+
+            var dependencies = GetAllDependencies(assetBundleName);
+            
+            foreach (var target in dependencies)
+            {
+                UnloadAssetBundleInternal(target, unloadAllLoadedObjects, force);
+            }
+
             UnloadAssetBundleInternal(assetBundleName, unloadAllLoadedObjects, force);
         }
 
-        /// <summary>
-        /// 全てのアセットバンドルをメモリから破棄.
-        /// </summary>
+        /// <summary> 全てのアセットバンドルをメモリから破棄. </summary>
         public void UnloadAllAsset(bool unloadAllLoadedObjects = false)
         {
             if (simulateMode) { return; }
@@ -714,42 +824,27 @@ namespace Modules.AssetBundles
             loadedAssetBundles.Clear();
         }
 
-        private void UnloadDependencies(string assetBundleName, bool unloadAllLoadedObjects, bool force = false)
-        {
-            var targets = dependencies.GetValueOrDefault(assetBundleName);
-
-            if (targets == null) { return; }
-            
-            foreach (var target in targets)
-            {
-                if (!loadedAssetBundles.ContainsKey(target)){ continue; }
-
-                if (assetBundleName != target)
-                {
-                    UnloadDependencies(target, unloadAllLoadedObjects, force);
-                }
-
-                UnloadAssetBundleInternal(target, unloadAllLoadedObjects, force);
-            }
-        }
-
         private void UnloadAssetBundleInternal(string assetBundleName, bool unloadAllLoadedObjects, bool force = false)
         {
-            var info = loadedAssetBundles.GetValueOrDefault(assetBundleName);
+            if (!force && loadQueueing.ContainsKey(assetBundleName)){ return; }
 
-            if (info == null) { return; }
+            var loadedAssetBundle = loadedAssetBundles.GetValueOrDefault(assetBundleName);
 
-            info.referencedCount--;
-
-            if (force || info.referencedCount <= 0)
+            if (loadedAssetBundle == null)
             {
-                if (info.assetBundle != null)
-                {
-                    info.assetBundle.Unload(unloadAllLoadedObjects);
-                    info.assetBundle = null;
-                }
-				
+                assetBundleRefCount[assetBundleName] = 0;
+                return;
+            }
+
+            var referenceCount = DecrementReferenceCount(assetBundleName);
+
+            if (force || referenceCount <= 0)
+            {
                 loadedAssetBundles.Remove(assetBundleName);
+
+                assetBundleRefCount[assetBundleName] = 0;
+
+                loadedAssetBundle.Unload(unloadAllLoadedObjects);
             }
         }
 

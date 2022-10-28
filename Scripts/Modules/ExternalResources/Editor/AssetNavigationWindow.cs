@@ -184,32 +184,37 @@ namespace Modules.ExternalResource
             {
                 case EventType.DragUpdated:
                 case EventType.DragPerform:
-
-                    var validate = assetManagement.IsExternalResourcesTarget(DragAndDrop.objectReferences);
-
-                    DragAndDrop.visualMode = validate ? DragAndDropVisualMode.Copy : DragAndDropVisualMode.Rejected;
-
-                    if (e.type == EventType.DragPerform)
                     {
-                        DragAndDrop.AcceptDrag();
-                        DragAndDrop.activeControlID = 0;
+                        var objectReferences = DragAndDrop.objectReferences;
 
-                        if (validate)
+                        var validate = false;
+                        
+                        validate |= assetManagement.IsExternalResourcesTarget(objectReferences);
+                        validate |= assetManagement.IsShareResourcesTarget(objectReferences);
+
+                        DragAndDrop.visualMode = validate ? DragAndDropVisualMode.Copy : DragAndDropVisualMode.Rejected;
+
+                        if (e.type == EventType.DragPerform)
                         {
-                            var assetObject = DragAndDrop.objectReferences.FirstOrDefault();
+                            DragAndDrop.AcceptDrag();
+                            DragAndDrop.activeControlID = 0;
 
-                            if (assetObject != null)
+                            if (validate)
                             {
-                                var enable = UpdateViewInfo(assetObject);
+                                var assetObject = objectReferences.FirstOrDefault();
 
-                                if (!enable)
+                                if (assetObject != null)
                                 {
-                                    Debug.LogError("Not target of ExternalResource.");
+                                    var enable = UpdateViewInfo(assetObject);
+
+                                    if (!enable)
+                                    {
+                                        Debug.LogError("Not target of ExternalResource.");
+                                    }
                                 }
                             }
                         }
                     }
-
                     break;
             }
         }

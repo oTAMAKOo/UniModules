@@ -1,4 +1,4 @@
-﻿﻿﻿﻿﻿﻿﻿﻿﻿
+﻿﻿﻿﻿﻿﻿
 using UnityEngine;
 using System;
 using System.IO;
@@ -133,7 +133,7 @@ namespace Modules.ExternalResource
         /// <summary> 保存先ディレクトリ設定. </summary>
         public void SetInstallDirectory(string directory)
         {
-            InstallDirectory = PathUtility.Combine(directory, "ExternalResources");
+            InstallDirectory = PathUtility.Combine(directory, "Contents");
 
             #if UNITY_IOS
 
@@ -196,8 +196,6 @@ namespace Modules.ExternalResource
                 .GroupBy(x => x.AssetBundleName)
                 .Select(x => x.FirstOrDefault())
                 .ToDictionary(x => x.AssetBundleName, x => x.Dependencies);
-
-            assetBundleManager.SetDependencies(dependencies);
         }
 
          /// <summary>
