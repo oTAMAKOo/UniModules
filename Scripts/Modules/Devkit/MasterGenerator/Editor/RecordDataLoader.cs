@@ -53,7 +53,16 @@ namespace Modules.Master
 		{
 			var masterManager = MasterManager.Instance;
 
-			var masterFileName = masterManager.GetMasterFileName(masterType, false);
+            var config = MasterConfig.Instance;
+
+            if (!string.IsNullOrEmpty(config.CryptoKey) && !string.IsNullOrEmpty(config.CryptoIv))
+            {
+                var cryptoKey = new AesCryptoKey(config.CryptoKey, config.CryptoIv);
+
+                masterManager.SetCryptoKey(cryptoKey);
+            }
+
+            var masterFileName = masterManager.GetMasterFileName(masterType);
 
 			var masterName = Path.GetFileNameWithoutExtension(masterFileName);
 

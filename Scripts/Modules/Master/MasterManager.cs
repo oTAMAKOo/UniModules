@@ -394,7 +394,7 @@ namespace Modules.Master
             return GetMasterFileName(typeof(T));
         }
 
-        public string GetMasterFileName(Type type, bool encrypt = true)
+        public string GetMasterFileName(Type type)
         {
             if (!typeof(IMaster).IsAssignableFrom(type))
             {
@@ -423,7 +423,7 @@ namespace Modules.Master
 
             // 暗号化オブジェクトが設定されていたら暗号化.
 
-            if (encrypt && CryptoKey != null)
+            if (CryptoKey != null)
             {
                 fileName = fileName.Encrypt(CryptoKey, true);
             }

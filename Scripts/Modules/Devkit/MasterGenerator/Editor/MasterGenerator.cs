@@ -74,6 +74,8 @@ namespace Modules.Master
             {
 	            var masterManager = MasterManager.Instance;
 
+                masterManager.SetCryptoKey(cryptoKey);
+
                 var fileInfoDictionary = new SortedDictionary<string, (string, long)>(new NaturalComparer());
 
                 var tasks = new List<UniTask>();
@@ -88,7 +90,7 @@ namespace Modules.Master
 
 							// ファイル名.
 
-							var masterFileName = masterManager.GetMasterFileName(masterType, false);
+							var masterFileName = masterManager.GetMasterFileName(masterType);
 
                             // マスターコンテナ型.
 
@@ -106,10 +108,10 @@ namespace Modules.Master
 
                             var master = await LoadMasterData(recordDataLoader, masterType, containerType, recordType);
 
-							if (master == null)
-							{
-								throw new Exception($"Failed load master : {masterFileName}");
-							}
+                            if (master == null)
+                            {
+                                throw new Exception($"Failed load master : {masterFileName}");
+                            }
 
                             // MessagePackファイル作成.
 
