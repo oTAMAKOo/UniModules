@@ -153,11 +153,11 @@ namespace Modules.Master.Editor
 
                 var chunkedFileInfos = fileInfos.Chunk(50);
 
-                var logBuilder = new StringBuilder();
-
                 foreach (var items in chunkedFileInfos)
                 {
                     var tasks = new List<UniTask>();
+
+                    var logBuilder = new StringBuilder();
 
                     foreach (var item in items)
                     {

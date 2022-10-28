@@ -78,85 +78,76 @@ namespace Modules.Master
 
                 var fileInfoDictionary = new SortedDictionary<string, (string, long)>(new NaturalComparer());
 
-                var tasks = new List<UniTask>();
-
                 foreach (var masterType in masterTypes)
                 {
-                    var task = UniTask.RunOnThreadPool(async () =>
+                    // ファイル名.
+
+                    var masterFileName = masterManager.GetMasterFileName(masterType);
+
+                    // マスターコンテナ型.
+
+                    var containerTypeName = string.Format("{0}+{1}", masterType.FullName, ContainerClassName);
+
+                    var containerType = masterType.Assembly.GetType(containerTypeName);
+
+                    // マスターレコード型.
+
+                    var recordTypeName = string.Format("{0}+{1}", masterType.FullName, RecordClassName);
+
+                    var recordType = masterType.Assembly.GetType(recordTypeName);
+
+                    try
                     {
-                        try
+                        var sw = System.Diagnostics.Stopwatch.StartNew();
+
+                        // マスター読み込み.
+
+                        var master = await LoadMasterData(recordDataLoader, masterType, containerType, recordType);
+
+                        if (master == null)
                         {
-                            var sw = System.Diagnostics.Stopwatch.StartNew();
-
-							// ファイル名.
-
-							var masterFileName = masterManager.GetMasterFileName(masterType);
-
-                            // マスターコンテナ型.
-
-                            var containerTypeName = string.Format("{0}+{1}", masterType.FullName, ContainerClassName);
-
-                            var containerType = masterType.Assembly.GetType(containerTypeName);
-
-                            // マスターレコード型.
-
-                            var recordTypeName = string.Format("{0}+{1}", masterType.FullName, RecordClassName);
-
-                            var recordType = masterType.Assembly.GetType(recordTypeName);
-
-                            // マスター読み込み.
-
-                            var master = await LoadMasterData(recordDataLoader, masterType, containerType, recordType);
-
-                            if (master == null)
-                            {
-                                throw new Exception($"Failed load master : {masterFileName}");
-                            }
-
-                            // MessagePackファイル作成.
-
-                            var filePath = GetGenerateMasterFilePath(exportDirectory, masterFileName, cryptoKey);
-
-                            var fileName = Path.GetFileNameWithoutExtension(filePath);
-
-                            var versionHash = await GenerateMasterFile(filePath, master,  cryptoKey, lz4Compression);
-
-							var file = new FileInfo(filePath);
-
-							// バージョンハッシュ.
-
-                            lock (fileInfoDictionary)
-                            {
-								fileInfoDictionary.Add(fileName, (versionHash, file.Length));
-                            }
-
-                            sw.Stop();
-
-                            lock (logBuilder)
-                            {
-                                logBuilder.AppendFormat("{0} ({1:F2}ms)", masterType.FullName, sw.Elapsed.TotalMilliseconds).AppendLine();
-                                logBuilder.AppendFormat("[ {0} ]", versionHash).AppendLine();
-                                logBuilder.AppendLine();
-                            }
+                            throw new Exception($"Failed load master : {masterFileName}");
                         }
-                        catch (Exception e)
+
+                        // MessagePackファイル作成.
+
+                        var filePath = PathUtility.Combine(exportDirectory, masterFileName);
+
+                        var fileName = Path.GetFileNameWithoutExtension(filePath);
+
+                        var versionHash = await GenerateMasterFile(filePath, master,  cryptoKey, lz4Compression);
+
+						var file = new FileInfo(filePath);
+
+						// バージョンハッシュ.
+
+                        lock (fileInfoDictionary)
                         {
-                            lock (logBuilder)
-                            {
-                                logBuilder.AppendLine();
-                                logBuilder.AppendFormat("Error: {0}", masterType.FullName).AppendLine();
-                                logBuilder.Append(e.Message).AppendLine();
-                                logBuilder.AppendLine();
-                            }
-
-                            throw;
+							fileInfoDictionary.Add(fileName, (versionHash, file.Length));
                         }
-                    });
 
-                    tasks.Add(task);
+                        sw.Stop();
+
+                        lock (logBuilder)
+                        {
+                            logBuilder.AppendFormat("{0} ({1:F2}ms)", masterType.FullName, sw.Elapsed.TotalMilliseconds).AppendLine();
+                            logBuilder.AppendFormat("[ {0} ]", versionHash).AppendLine();
+                            logBuilder.AppendLine();
+                        }
+                    }
+                    catch (Exception e)
+                    {
+                        lock (logBuilder)
+                        {
+                            logBuilder.AppendLine();
+                            logBuilder.AppendFormat("Error: {0}", masterType.FullName).AppendLine();
+                            logBuilder.Append(e.Message).AppendLine();
+                            logBuilder.AppendLine();
+                        }
+
+                        throw;
+                    }
                 }
-
-                await UniTask.WhenAll(tasks);
 
                 // バージョンファイル作成.
 				GenerateMasterVersionFile(exportDirectory, fileInfoDictionary);
@@ -236,18 +227,6 @@ namespace Modules.Master
 
         #region Generate File
 
-        private static string GetGenerateMasterFilePath(string exportPath, string masterFileName, AesCryptoKey fileNameCryptoKey)
-        {
-            if (fileNameCryptoKey != null)
-            {
-                masterFileName = masterFileName.Encrypt(fileNameCryptoKey, true);
-            }
-
-            var filePath = PathUtility.Combine(exportPath, masterFileName);
-
-            return filePath;
-        }
-
         private static async UniTask<string> GenerateMasterFile(string filePath, object master, AesCryptoKey dataCryptoKey, bool lz4Compression)
         {
             var options = StandardResolverAllowPrivate.Options.WithResolver(UnityContractResolver.Instance);
@@ -301,9 +280,16 @@ namespace Modules.Master
         {
             var builder = new StringBuilder();
 
-			var rootHash =  string.Join(null, versionHashDictionary.Values).GetHash();
+			var rootHash =  string.Empty;
 
-			if (string.IsNullOrEmpty(rootHash))
+            foreach (var item in versionHashDictionary.Values)
+            {
+                rootHash += item.hash;
+            }
+
+            rootHash = rootHash.GetHash();
+
+            if (string.IsNullOrEmpty(rootHash))
 			{
 				throw new InvalidDataException();
 			}

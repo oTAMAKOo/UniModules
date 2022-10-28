@@ -81,24 +81,14 @@ namespace Modules.Master
 
         public void Register(IMaster master)
         {
-            var type = master.GetType();
-
-            var fileName = GetMasterFileName(type);
-
-            if (masterFileNames.ContainsKey(type))
-            {
-                var message = string.Format("File name has already been registered.\n\nClass : {0}\nFile : {1}", type.FullName, fileName);
-
-                throw new Exception(message);
-            }
-            
             masters.Add(master);
-            masterFileNames.Add(type, fileName);
         }
 
         public async UniTask<bool> LoadMaster(Dictionary<IMaster, string> versionTable, IProgress<float> progress = null)
         {
             Reference.Clear();
+
+            BuildFileNameTable();
 
             #if UNITY_EDITOR
 
@@ -429,6 +419,25 @@ namespace Modules.Master
             }
 
             return fileName;
+        }
+
+        private void BuildFileNameTable()
+        {
+            foreach (var master in masters)
+            {
+                var type = master.GetType();
+
+                var fileName = GetMasterFileName(type);
+
+                if (masterFileNames.ContainsKey(type))
+                {
+                    var message = string.Format("File name has already been registered.\n\nClass : {0}\nFile : {1}", type.FullName, fileName);
+
+                    throw new Exception(message);
+                }
+
+                masterFileNames.Add(type, fileName);
+            }
         }
 
         public static string DeleteMasterSuffix(string fileName)
