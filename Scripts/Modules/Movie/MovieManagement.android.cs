@@ -33,7 +33,7 @@ namespace Modules.Movie
 			
 			var embeddedFilePath = Path.ChangeExtension(movieInfo.UsmPath, CriAssetDefinition.UsmExtension);
 
-			var temporaryFilePath = AndroidUtility.ConvertStreamingAssetsLoadPath(UnityPathUtility.StreamingAssetsPath);
+			var temporaryFilePath = AndroidUtility.ConvertStreamingAssetsLoadPath(embeddedFilePath);
 			
 			// バージョンが変わったか or ファイルが存在しない場合は更新.
 			if (requireUpdate || !File.Exists(temporaryFilePath))
