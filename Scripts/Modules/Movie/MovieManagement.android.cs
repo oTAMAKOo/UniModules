@@ -1,5 +1,4 @@
-﻿
-#if UNITY_ANDROID
+﻿#if UNITY_ANDROID
 
 using UnityEngine;
 using System.IO;
@@ -10,14 +9,14 @@ using Modules.CriWare;
 namespace Modules.Movie
 {
 	public sealed partial class MovieManagement
-    {
-        //----- params -----
+	{
+		//----- params -----
 
 		//----- field -----
 
-        //----- property -----
+		//----- property -----
 
-        //----- method -----
+		//----- method -----
 
 		/// <summary>
 		/// StreamingAssetsにある内蔵ファイルをTemporaryCachePathへ複製.
@@ -27,7 +26,7 @@ namespace Modules.Movie
 		{
 			var appVersion = Application.version;
 
-			var temporaryVersionKey = GetType().FullName + $"{movieInfo.UsmPath}-version";
+			var temporaryVersionKey = GetType().FullName + $"-temporaryVersion-{movieInfo.UsmPath}";
 
 			var requireUpdate = SecurePrefs.GetString(temporaryVersionKey) != appVersion;
 			
@@ -38,14 +37,17 @@ namespace Modules.Movie
 			// バージョンが変わったか or ファイルが存在しない場合は更新.
 			if (requireUpdate || !File.Exists(temporaryFilePath))
 			{
-				await AndroidUtility.CopyStreamingToTemporary(embeddedFilePath);
+				var result = await AndroidUtility.CopyStreamingToTemporary(embeddedFilePath);
 
-				SecurePrefs.SetString(temporaryVersionKey, appVersion);
+				if (result)
+				{
+					SecurePrefs.SetString(temporaryVersionKey, appVersion);
+				}
 			}
 
-			return new ManaInfo(embeddedFilePath);
+			return new ManaInfo(temporaryFilePath);
 		}
-    }
+	}
 }
 
 #endif
