@@ -1,4 +1,4 @@
-﻿﻿﻿
+﻿﻿
 using UnityEngine;
 using UnityEngine.Networking;
 using System;
@@ -439,6 +439,8 @@ namespace Modules.AssetBundles
             {
                 downloadBuffer.use = false;
             }
+
+			UpdateDownloadBuffer();
         }
 
         #endregion
