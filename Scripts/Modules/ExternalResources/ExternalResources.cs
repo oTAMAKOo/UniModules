@@ -1,4 +1,4 @@
-﻿﻿﻿﻿﻿﻿
+﻿﻿﻿﻿﻿
 using UnityEngine;
 using System;
 using System.IO;
@@ -187,16 +187,7 @@ namespace Modules.ExternalResource
             assetInfosByResourcePath = allAssetInfos
                 .Where(x => !string.IsNullOrEmpty(x.ResourcePath))
                 .ToDictionary(x => x.ResourcePath);
-
-            // アセットバンドル依存関係.
-            var dependencies = allAssetInfos
-                .Where(x => x.IsAssetBundle)
-                .Select(x => x.AssetBundle)
-                .Where(x => x.Dependencies != null && x.Dependencies.Any())
-                .GroupBy(x => x.AssetBundleName)
-                .Select(x => x.FirstOrDefault())
-                .ToDictionary(x => x.AssetBundleName, x => x.Dependencies);
-        }
+		}
 
          /// <summary>
         /// アセット管理情報を取得.
