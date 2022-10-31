@@ -98,7 +98,7 @@ namespace Modules.ExternalResource
 
                 var logBuilder = new StringBuilder();
 
-				var assetBundlePath = buildAssetBundle.GetAssetBundleOutputPath();
+				var assetBundlePath = BuildAssetBundle.GetAssetBundleOutputPath();
 
                 using (new DisableStackTraceScope())
                 {
