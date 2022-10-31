@@ -202,7 +202,7 @@ namespace Modules.AssetBundles.Editor
                     File.Delete(file);
                 }
 
-                var packageFilePath = Path.ChangeExtension(file, AssetBundleManager.PackageExtension);
+                var packageFilePath = file + AssetBundleManager.PackageExtension;
 
                 if (File.Exists(packageFilePath))
                 {

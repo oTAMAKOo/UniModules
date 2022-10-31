@@ -104,7 +104,7 @@ namespace Modules.AssetBundles.Editor
 				}
 
 				// 作成するパッケージファイルのパス.
-				var packageFilePath = Path.ChangeExtension(assetBundleFilePath, AssetBundleManager.PackageExtension);
+				var packageFilePath = assetBundleFilePath + AssetBundleManager.PackageExtension;
 
 				// パッケージを作成.
 				if (!File.Exists(packageFilePath) || createPackage)
@@ -151,12 +151,12 @@ namespace Modules.AssetBundles.Editor
         private async UniTask ExportPackage(string exportPath, string assetBundleFilePath, AssetInfo assetInfo)
         {
             // パッケージファイルパス.
-            var packageFilePath = Path.ChangeExtension(assetBundleFilePath, AssetBundleManager.PackageExtension);
+            var packageFilePath = assetBundleFilePath + AssetBundleManager.PackageExtension;
 
             if (!File.Exists(packageFilePath)){ return; }
 
             // パッケージファイル名.
-            var packageFileName = Path.ChangeExtension(assetInfo.FileName, AssetBundleManager.PackageExtension);
+            var packageFileName = assetInfo.FileName + AssetBundleManager.PackageExtension;
 
             // ファイルの出力先.
             var packageExportPath = PathUtility.Combine(exportPath, packageFileName);

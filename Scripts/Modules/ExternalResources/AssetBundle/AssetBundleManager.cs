@@ -193,9 +193,7 @@ namespace Modules.AssetBundles
         {
             var platformName = PlatformUtility.GetPlatformTypeName();
 
-            var url = PathUtility.Combine(new string[] { remoteUrl, platformName, versionHash, assetInfo.FileName });
-
-            var downloadUrl = string.Format("{0}{1}", url, PackageExtension);
+            var downloadUrl = PathUtility.Combine(new string[] { remoteUrl, platformName, versionHash, assetInfo.FileName }) + PackageExtension;
 
             if (!assetInfo.Hash.IsNullOrEmpty())
             {

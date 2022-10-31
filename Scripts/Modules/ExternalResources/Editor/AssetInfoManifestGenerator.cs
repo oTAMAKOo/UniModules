@@ -118,7 +118,7 @@ namespace Modules.ExternalResource
 
                 // ファイルハッシュ・ファイルサイズ設定.
 
-                var packageFilePath = Path.ChangeExtension(filePath, AssetBundleManager.PackageExtension);
+                var packageFilePath = filePath + AssetBundleManager.PackageExtension;
 
 				if (!File.Exists(packageFilePath))
 				{
