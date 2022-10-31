@@ -30,24 +30,7 @@ namespace Modules.AssetBundles.Editor
             this.bundlePipeline = bundlePipeline;
         }
 
-        public string GetAssetBundleOutputPath()
-        {
-            var projectPath = UnityPathUtility.GetProjectFolderPath();
-            var folderName = PlatformUtility.GetPlatformTypeName();
-
-            var paths = new string[] { projectPath, UnityPathUtility.LibraryFolder, AssetBundleCacheFolder, folderName };
-
-            var assetBundlePath = PathUtility.Combine(paths);
-
-            if (!Directory.Exists(assetBundlePath))
-            {
-                Directory.CreateDirectory(assetBundlePath);
-            }
-
-            return assetBundlePath;
-        }
-
-        /// <summary> 全てのアセットバンドルをビルド </summary>
+		/// <summary> 全てのアセットバンドルをビルド </summary>
         public BuildResult BuildAllAssetBundles()
         {
             var assetBundlePath = GetAssetBundleOutputPath();
@@ -304,5 +287,22 @@ namespace Modules.AssetBundles.Editor
 
             return list.ToArray();
         }
+
+		public static string GetAssetBundleOutputPath()
+		{
+			var projectPath = UnityPathUtility.GetProjectFolderPath();
+			var folderName = PlatformUtility.GetPlatformTypeName();
+
+			var paths = new string[] { projectPath, UnityPathUtility.LibraryFolder, AssetBundleCacheFolder, folderName };
+
+			var assetBundlePath = PathUtility.Combine(paths);
+
+			if (!Directory.Exists(assetBundlePath))
+			{
+				Directory.CreateDirectory(assetBundlePath);
+			}
+
+			return assetBundlePath;
+		}
     }
 }
