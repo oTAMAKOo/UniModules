@@ -26,6 +26,8 @@ namespace Modules.ExternalResource
 
         private Vector2 scrollPosition = Vector2.zero;
 
+        private Dictionary<string, bool> displayContents = null;
+
         [NonSerialized]
         private bool initialized = false;
 
@@ -44,6 +46,8 @@ namespace Modules.ExternalResource
                 .OrderBy(x => x.Key, new NaturalComparer())
                 .ToArray();
 
+            displayContents = manageInfoGroup.ToDictionary(x => x.Key, x => false);
+
             initialized = true;
         }
 
@@ -59,21 +63,24 @@ namespace Modules.ExternalResource
             {
                 foreach (var group in manageInfoGroup)
                 {
-                    EditorLayoutTools.Title(group.Key, new Color(0.2f, 0f, 1f, 1f));
+                    displayContents[group.Key] = EditorLayoutTools.Header(group.Key, displayContents[group.Key], new Color(0.2f, 0f, 1f, 1f));
 
-                    using (new EditorGUILayout.HorizontalScope())
+                    if (displayContents[group.Key])
                     {
-                        GUILayout.Space(8f);
-
-                        using (new EditorGUILayout.VerticalScope())
+                        using (new EditorGUILayout.HorizontalScope())
                         {
-                            foreach (var manageInfo in group)
-                            {
-                                DrawManageInfoGUI(manageInfo);
-                            }  
-                        }
+                            GUILayout.Space(8f);
 
-                        GUILayout.Space(8f);
+                            using (new EditorGUILayout.VerticalScope())
+                            {
+                                foreach (var manageInfo in group)
+                                {
+                                    DrawManageInfoGUI(manageInfo);
+                                }  
+                            }
+
+                            GUILayout.Space(8f);
+                        }
                     }
                 }
                 
