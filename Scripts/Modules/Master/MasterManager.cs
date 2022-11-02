@@ -423,6 +423,8 @@ namespace Modules.Master
 
         private void BuildFileNameTable()
         {
+			masterFileNames = new Dictionary<Type, string>();
+
             foreach (var master in masters)
             {
                 var type = master.GetType();
