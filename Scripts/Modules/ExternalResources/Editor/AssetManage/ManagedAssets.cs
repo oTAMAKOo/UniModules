@@ -25,12 +25,7 @@ namespace Modules.ExternalResource
 
         //----- method -----
 
-        protected override void OnLoadInstance()
-        {
-            DeleteInvalidInfo();
-        }
-
-        public void SetManageInfos(ManageInfo[] manageInfos)
+		public void SetManageInfos(ManageInfo[] manageInfos)
         {
             this.manageInfos = manageInfos
                 .Where(x => x != null)
