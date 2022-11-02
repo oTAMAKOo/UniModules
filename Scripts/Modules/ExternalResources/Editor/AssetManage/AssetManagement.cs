@@ -84,9 +84,7 @@ namespace Modules.ExternalResource
             externalResourcesPath = projectResourceFolders.ExternalResourcesPath;
             shareResourcesPath = projectResourceFolders.ShareResourcesPath;
 
-            managedAssets.DeleteInvalidInfo();
-
-            managedInfos = managedAssets.GetAllInfos().ToDictionary(x => x.guid);
+			managedInfos = managedAssets.GetAllInfos().ToDictionary(x => x.guid);
 
             ManageConfig.OnReloadAsObservable()
                 .Subscribe(_ =>
