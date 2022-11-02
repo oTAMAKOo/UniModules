@@ -95,10 +95,18 @@ namespace Modules.ExternalResource
             }
 
             if (list.Count != manageInfos.Length)
-            {
-                manageInfos = list.ToArray();
+            { 
+				var title = "ExternalResource ManagedAssets";
+				var message = "Contain invalid manage info.\nDo you want to run cleanup?";
 
-                UnityEditorUtility.SaveAsset(this);
+				var result = EditorUtility.DisplayDialog(title, message, "execute", "cancel");
+
+				if (result)
+				{
+	                manageInfos = list.ToArray();
+
+	                UnityEditorUtility.SaveAsset(this);
+				}
             }
         }
     }
