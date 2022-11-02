@@ -66,7 +66,7 @@ namespace Modules.ExternalResource
 
         public void DeleteInvalidInfo()
         {
-            var list = new List<ManageInfo>();
+            var removeList = new List<ManageInfo>();
 
             for (var i = 0; i < manageInfos.Length; i++)
             {
@@ -74,27 +74,22 @@ namespace Modules.ExternalResource
 
                 if (manageInfo == null){ continue; }
 
-                if (string.IsNullOrEmpty(manageInfo.guid)) { continue; }
+                if (string.IsNullOrEmpty(manageInfo.guid))
+				{
+					removeList.Add(manageInfo);
+					continue;
+				}
+				
+				var assetPath = AssetDatabase.GUIDToAssetPath(manageInfo.guid);
 
-                var assetPath = AssetDatabase.GUIDToAssetPath(manageInfo.guid);
+				if (string.IsNullOrEmpty(assetPath))
+				{
+					removeList.Add(manageInfo);
+					continue;
+				}
+			}
 
-                var path = UnityPathUtility.ConvertAssetPathToFullPath(assetPath);
-
-                var isFolder = AssetDatabase.IsValidFolder(assetPath);
-
-                if (isFolder)
-                {
-                    if (!Directory.Exists(path)) { continue; }
-                }
-                else
-                {
-                    if (!File.Exists(path)) { continue; }
-                }
-
-                list.Add(manageInfo);
-            }
-
-            if (list.Count != manageInfos.Length)
+            if (removeList.Any())
             { 
 				var title = "ExternalResource ManagedAssets";
 				var message = "Contain invalid manage info.\nDo you want to run cleanup?";
@@ -103,7 +98,7 @@ namespace Modules.ExternalResource
 
 				if (result)
 				{
-	                manageInfos = list.ToArray();
+	                manageInfos = manageInfos.Where(x => !removeList.Contains(x)).ToArray();
 
 	                UnityEditorUtility.SaveAsset(this);
 				}

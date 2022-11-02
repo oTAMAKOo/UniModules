@@ -34,6 +34,10 @@ namespace Modules.ExternalResource
                 EditorUtility.DisplayDialog("Error", "Can not open while compiling.", "Close");
                 return;
             }
+
+			var managedAssets = ManagedAssets.Instance;
+
+			managedAssets.DeleteInvalidInfo();
             
             Instance.minSize = WindowSize;
             Instance.titleContent = new GUIContent("ExternalResource Manage Asset");
