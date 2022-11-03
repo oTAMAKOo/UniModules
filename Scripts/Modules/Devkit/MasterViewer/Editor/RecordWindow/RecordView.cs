@@ -256,7 +256,7 @@ namespace Modules.Devkit.MasterViewer
                     {
                         foreach (var item in (IEnumerable)value)
                         {
-                            builder.AppendFormat("{0},", item);
+							builder.AppendFormat("{0},", item.GetType().IsClass ? item.ToJson() : item);
                         }
                     }
 
