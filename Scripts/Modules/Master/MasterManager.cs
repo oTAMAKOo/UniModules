@@ -19,6 +19,8 @@ namespace Modules.Master
     {
         //----- params -----
 
+        public const string FolderName = "Master";
+
         private const string MasterFileExtension = ".master";
 
         private const string MasterSuffix = "Master";
@@ -361,7 +363,7 @@ namespace Modules.Master
 
         public void SetInstallDirectory(string installDirectory)
         {
-            InstallDirectory = PathUtility.Combine(installDirectory, "Master");
+            InstallDirectory = PathUtility.Combine(installDirectory, FolderName);
 
             #if UNITY_IOS
 
@@ -423,7 +425,7 @@ namespace Modules.Master
 
         private void BuildFileNameTable()
         {
-			masterFileNames = new Dictionary<Type, string>();
+            masterFileNames = new Dictionary<Type, string>();
 
             foreach (var master in masters)
             {

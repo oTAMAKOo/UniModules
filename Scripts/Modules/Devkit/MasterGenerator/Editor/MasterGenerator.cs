@@ -28,9 +28,7 @@ namespace Modules.Master
 
         private const string RecordClassName = "Record";
 
-        private const string ExportFolderName = "Masters";
-
-        public const string VersionFileName = "version.txt";
+		public const string VersionFileName = "version.txt";
 
         //----- field -----
 
@@ -175,7 +173,7 @@ namespace Modules.Master
             if (string.IsNullOrEmpty(exportDirectory)){ return null; }
 
             // 「Master」フォルダ追加.
-            exportDirectory = PathUtility.Combine(exportDirectory, ExportFolderName);
+            exportDirectory = PathUtility.Combine(exportDirectory, MasterManager.FolderName);
 
             return exportDirectory;
         }
