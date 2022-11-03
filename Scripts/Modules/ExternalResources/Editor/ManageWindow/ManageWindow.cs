@@ -35,17 +35,15 @@ namespace Modules.ExternalResource
                 return;
             }
 
-			var managedAssets = ManagedAssets.Instance;
-
-			managedAssets.DeleteInvalidInfo();
-            
-            Instance.minSize = WindowSize;
+			Instance.minSize = WindowSize;
             Instance.titleContent = new GUIContent("ExternalResource Manage Asset");
 
             Instance.Initialize(externalResourcesPath, shareResourcesPath);
 
             Instance.ShowUtility();
-        }
+
+			Instance.CheckInvalidManageInfo();
+		}
 
         private void Initialize(string externalResourcesPath, string shareResourcesPath)
         {
@@ -128,6 +126,24 @@ namespace Modules.ExternalResource
 
             UpdateDragAndDrop();
         }
+
+		private void CheckInvalidManageInfo()
+		{
+			var managedAssets = ManagedAssets.Instance;
+
+			var hasInvalid = managedAssets.GetAllInfos()
+				.Any(x => string.IsNullOrEmpty(x.guid) || AssetDatabase.GUIDToAssetPath((string)x.guid) == string.Empty);
+
+			if (hasInvalid)
+			{
+				var title = "ExternalResource ManagedAssets";
+				var message = "Contain invalid manage info.";
+
+				EditorUtility.DisplayDialog(title, message, "close");
+
+				Selection.activeObject = managedAssets;
+			}
+		}
 
         private void UpdateDragAndDrop()
         {

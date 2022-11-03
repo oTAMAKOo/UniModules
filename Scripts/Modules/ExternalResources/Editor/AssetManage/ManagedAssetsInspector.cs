@@ -63,7 +63,11 @@ namespace Modules.ExternalResource
             {
                 foreach (var group in manageInfoGroup)
                 {
-                    displayContents[group.Key] = EditorLayoutTools.Header(group.Key, displayContents[group.Key], new Color(0.2f, 0f, 1f, 1f));
+					var hasInvalid = group.Any(x => string.IsNullOrEmpty(x.guid) || AssetDatabase.GUIDToAssetPath(x.guid) == string.Empty);
+
+					var color = hasInvalid ? new Color(1.0f, 0.2f, 0.2f, 1f): new Color(0.2f, 0f, 1f, 1f);
+
+                    displayContents[group.Key] = EditorLayoutTools.Header(group.Key, displayContents[group.Key], color);
 
                     if (displayContents[group.Key])
                     {
