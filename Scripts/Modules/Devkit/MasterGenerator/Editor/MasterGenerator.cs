@@ -30,30 +30,37 @@ namespace Modules.Master
 
 		public const string VersionFileName = "version.txt";
 
+		private sealed class ResultInfo
+		{
+			public string fileName = null;
+			public string hash = null;
+			public double time = 0f;
+		}
+
         //----- field -----
 
         //----- property -----
 
         //----- method -----
 
-        public static async UniTask<bool> Generate(Type[] masterTypes, IRecordDataLoader recordDataLoader)
-        {
+		public static async UniTask<bool> Generate(Type[] masterTypes, IRecordDataLoader recordDataLoader)
+		{
 			var config = MasterConfig.Instance;
 
-            var lz4Compression = config.Lz4Compression;
+			var lz4Compression = config.Lz4Compression;
 
-            var sourceDirectory = config.SourceDirectory;
+			var sourceDirectory = config.SourceDirectory;
 
-            if (string.IsNullOrEmpty(sourceDirectory)) { return false; }
+			if (string.IsNullOrEmpty(sourceDirectory)) { return false; }
 
-            var exportDirectory = GetExportDirectory();
+			var exportDirectory = GetExportDirectory();
 
-            if (string.IsNullOrEmpty(exportDirectory)){ return false; }
+			if (string.IsNullOrEmpty(exportDirectory)){ return false; }
 
-            if (Directory.Exists(exportDirectory))
-            {
-                DirectoryUtility.Clean(exportDirectory);
-            }
+			if (Directory.Exists(exportDirectory))
+			{
+				DirectoryUtility.Clean(exportDirectory);
+			}
 
             // 暗号化キー.
 
@@ -66,9 +73,7 @@ namespace Modules.Master
 
             // 実行.
 
-            var logBuilder = new StringBuilder();
-
-            try
+			try
             {
 	            var masterManager = MasterManager.Instance;
 
@@ -76,27 +81,29 @@ namespace Modules.Master
 
                 var fileInfoDictionary = new SortedDictionary<string, (string, long)>(new NaturalComparer());
 
+				var resultInfos = new List<ResultInfo>();
+
                 foreach (var masterType in masterTypes)
                 {
-                    // ファイル名.
-
-                    var masterFileName = masterManager.GetMasterFileName(masterType);
-
-                    // マスターコンテナ型.
-
-                    var containerTypeName = string.Format("{0}+{1}", masterType.FullName, ContainerClassName);
-
-                    var containerType = masterType.Assembly.GetType(containerTypeName);
-
-                    // マスターレコード型.
-
-                    var recordTypeName = string.Format("{0}+{1}", masterType.FullName, RecordClassName);
-
-                    var recordType = masterType.Assembly.GetType(recordTypeName);
-
                     try
                     {
                         var sw = System.Diagnostics.Stopwatch.StartNew();
+
+                        // ファイル名.
+
+                        var masterFileName = masterManager.GetMasterFileName(masterType);
+
+                        // マスターコンテナ型.
+
+                        var containerTypeName = string.Format("{0}+{1}", masterType.FullName, ContainerClassName);
+
+                        var containerType = masterType.Assembly.GetType(containerTypeName);
+
+                        // マスターレコード型.
+
+                        var recordTypeName = string.Format("{0}+{1}", masterType.FullName, RecordClassName);
+
+                        var recordType = masterType.Assembly.GetType(recordTypeName);
 
                         // マスター読み込み.
 
@@ -115,46 +122,63 @@ namespace Modules.Master
 
                         var versionHash = await GenerateMasterFile(filePath, master,  cryptoKey, lz4Compression);
 
-						var file = new FileInfo(filePath);
+                        var file = new FileInfo(filePath);
 
-						// バージョンハッシュ.
-
-                        lock (fileInfoDictionary)
-                        {
-							fileInfoDictionary.Add(fileName, (versionHash, file.Length));
-                        }
+                        // バージョンハッシュ.
+                        fileInfoDictionary.Add(fileName, (versionHash, file.Length));
 
                         sw.Stop();
 
-                        lock (logBuilder)
-                        {
-                            logBuilder.AppendFormat("{0} ({1:F2}ms)", masterType.FullName, sw.Elapsed.TotalMilliseconds).AppendLine();
-                            logBuilder.AppendFormat("[ {0} ]", versionHash).AppendLine();
-                            logBuilder.AppendLine();
-                        }
+						var resultInfo = new ResultInfo()
+						{
+							fileName = masterType.FullName,
+							time = sw.Elapsed.TotalMilliseconds,
+							hash = versionHash,
+						};
+
+						resultInfos.Add(resultInfo);
                     }
                     catch (Exception e)
                     {
-                        lock (logBuilder)
-                        {
-                            logBuilder.AppendLine();
-                            logBuilder.AppendFormat("Error: {0}", masterType.FullName).AppendLine();
-                            logBuilder.Append(e.Message).AppendLine();
-                            logBuilder.AppendLine();
-                        }
-
-                        throw;
+                        throw new Exception($"{masterType.FullName}\n\n{e.Message}");
                     }
                 }
 
                 // バージョンファイル作成.
 				GenerateMasterVersionFile(exportDirectory, fileInfoDictionary);
 
-                UnityConsole.Info("Generate master complete.\n\n{0}", logBuilder.ToString());
-            }
+				// ログ.
+
+				var logBuilder = new StringBuilder();
+
+				var chunkedResultInfos = resultInfos.Chunk(50).ToArray();
+
+				var chunkNum = chunkedResultInfos.Length;
+
+				for (var i = 0; i < chunkedResultInfos.Length; i++)
+				{
+					var items = chunkedResultInfos[i];
+
+					logBuilder.Clear();
+
+					logBuilder.AppendLine($"Generate master complete. [{i}/{chunkNum}]");
+
+					foreach (var item in items)
+					{
+						logBuilder.AppendFormat("{0} ({1:F2}ms)", item.fileName, item.time).AppendLine();
+						logBuilder.AppendFormat("[ {0} ]", item.hash).AppendLine();
+						logBuilder.AppendLine();
+					}
+
+					UnityConsole.Info(logBuilder.ToString());
+				}
+			}
             catch (Exception e)
             {
-                UnityConsole.Info("Generate master failed. \n\n{0}", logBuilder.ToString());
+				var eventName = UnityConsole.InfoEvent.ConsoleEventName;
+				var color = UnityConsole.InfoEvent.ConsoleEventColor;
+
+                UnityConsole.Event(eventName, color, $"Generate master failed. \n\n{e.Message}", LogType.Error);
 
                 Debug.LogException(e);
 
@@ -225,7 +249,7 @@ namespace Modules.Master
 
         #region Generate File
 
-        private static async UniTask<string> GenerateMasterFile(string filePath, object master, AesCryptoKey dataCryptoKey, bool lz4Compression)
+		private static async UniTask<string> GenerateMasterFile(string filePath, object master, AesCryptoKey dataCryptoKey, bool lz4Compression)
         {
             var options = StandardResolverAllowPrivate.Options.WithResolver(UnityContractResolver.Instance);
 
