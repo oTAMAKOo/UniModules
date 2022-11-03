@@ -1,4 +1,4 @@
-﻿﻿
+﻿
 using UnityEngine;
 using UnityEditor;
 using System;
@@ -241,15 +241,18 @@ namespace Modules.Devkit.Pinning
 		{
 			if (labelStyle == null)
 			{
-				labelStyle = new GUIStyle(GUI.skin.label)
+				labelStyle = new GUIStyle(EditorStyles.label)
 				{
 					alignment = TextAnchor.MiddleLeft,
 				};
+
+				labelStyle.normal.textColor = EditorLayoutTools.DefaultContentColor;
+				labelStyle.focused.textColor = EditorLayoutTools.DefaultContentColor;
 			}
 
 			if (iconStyle == null)
 			{
-				iconStyle = new GUIStyle(GUI.skin.label)
+				iconStyle = new GUIStyle(EditorStyles.label)
 				{
 					alignment = TextAnchor.MiddleCenter,
 				};
