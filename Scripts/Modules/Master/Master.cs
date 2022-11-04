@@ -152,9 +152,11 @@ namespace Modules.Master
 
         public bool CheckVersion(string masterVersion)
         {
-            #if UNITY_EDITOR
+			#if UNITY_EDITOR
 
-            if (!MasterManager.Prefs.checkVersion) { return true; }
+			var masterManager = MasterManager.Instance;
+
+			if (!masterManager.EnableVersionCheck) { return true; }
 
             #endif
 
