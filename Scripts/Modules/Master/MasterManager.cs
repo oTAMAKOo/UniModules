@@ -278,21 +278,8 @@ namespace Modules.Master
                 .Select(x => x.Item1);
         }
 
-        private async UniTask<bool> MasterLoad(IMaster master, Action<bool, double> onLoadFinish)
-        {
-			var result = false;
-
-            Action<Exception> onErrorRetry = exception =>
-            {
-                var masterType = master.GetType();
-                var masterName = masterType.Name;
-
-                using (new DisableStackTraceScope())
-                {
-                    Debug.LogErrorFormat("{0} load retry.\n\n{1}", masterName, exception);
-                }
-            };
-
+		private async UniTask<bool> MasterLoad(IMaster master, Action<bool, double> onLoadFinish)
+		{
 			var loadResult = await master.Load(CryptoKey, true);
 
 			if (onLoadFinish != null)
@@ -300,9 +287,7 @@ namespace Modules.Master
 				onLoadFinish(loadResult.Item1, loadResult.Item2);
 			}
 
-			result = loadResult.Item1;
-
-			return result;
+			return loadResult.Item1;
 		}
 
         public void ClearMasterVersion()
