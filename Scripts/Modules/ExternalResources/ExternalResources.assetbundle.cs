@@ -300,5 +300,11 @@ namespace Modules.ExternalResource
                 onUnloadAsset.OnNext(resourcePath);
             }
         }
+
+		/// <summary> アセットバンドル読み込み時イベント </summary>
+		public IObservable<AssetInfo> OnLoadAssetBundleAsObservable()
+		{
+			return assetBundleManager.OnLoadAsObservable();
+		}
     }
 }

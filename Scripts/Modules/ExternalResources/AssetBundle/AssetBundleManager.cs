@@ -1,4 +1,4 @@
-﻿﻿
+﻿
 using UnityEngine;
 using UnityEngine.Networking;
 using System;
@@ -85,6 +85,7 @@ namespace Modules.AssetBundles
         private List<DownloadBuffer> downloadBuffers = null;
 
         // イベント通知.
+		private Subject<AssetInfo> onLoad = null;
         private Subject<AssetInfo> onTimeOut = null;
         private Subject<Exception> onError = null;
 
@@ -762,6 +763,11 @@ namespace Modules.AssetBundles
             if (assetBundle != null)
             {
                 loadedAssetBundles.Add(assetBundleName, assetBundle);
+
+				if (onLoad != null)
+				{
+					onLoad.OnNext(assetInfo);
+				}
             }
             else
             {
@@ -916,18 +922,19 @@ namespace Modules.AssetBundles
             }
         }
 
-        /// <summary>
-        /// タイムアウト時のイベント.
-        /// </summary>
-        /// <returns></returns>
+		/// <summary> 読み込み時イベント. </summary>
+		public IObservable<AssetInfo> OnLoadAsObservable()
+		{
+			return onLoad ?? (onLoad = new Subject<AssetInfo>());
+		}
+
+		/// <summary> タイムアウト時イベント. </summary>
         public IObservable<AssetInfo> OnTimeOutAsObservable()
         {
             return onTimeOut ?? (onTimeOut = new Subject<AssetInfo>());
         }
 
-        /// <summary>
-        /// エラー時のイベント.
-        /// </summary>
+        /// <summary> エラー時イベント. </summary>
         public IObservable<Exception> OnErrorAsObservable()
         {
             return onError ?? (onError = new Subject<Exception>());
