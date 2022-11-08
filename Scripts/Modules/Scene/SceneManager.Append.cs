@@ -1,4 +1,4 @@
-﻿
+
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using System;
@@ -250,6 +250,10 @@ namespace Modules.Scene
 			{
 				Debug.LogException(e);
 			}
+			finally
+            {
+				TransitionTarget = null;
+            }
         }
 
 		/// <summary> 加算シーンアンロード遷移 </summary>
@@ -343,6 +347,8 @@ namespace Modules.Scene
 					Debug.LogError($"UnloadTransition target scene not found.\n{transitionScene}");
 				}
 
+                TransitionTarget = scene.Identifier;
+
 				scene.Enable();
 
 				await scene.Instance.OnTransition().AttachExternalCancellation(cancelToken);
@@ -365,6 +371,10 @@ namespace Modules.Scene
             catch (Exception e)
             {
                 Debug.LogException(e);
+            }
+            finally
+            {
+                TransitionTarget = null;
             }
 		}
 	}
