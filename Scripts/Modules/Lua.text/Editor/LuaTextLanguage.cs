@@ -1,4 +1,6 @@
 ﻿
+#if ENABLE_XLUA
+
 using System;
 using System.Linq;
 using Extensions;
@@ -52,3 +54,5 @@ namespace Modules.Lua.Text
 		}
 	}
 }
+
+#endif

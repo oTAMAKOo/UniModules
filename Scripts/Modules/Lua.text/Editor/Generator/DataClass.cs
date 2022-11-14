@@ -1,4 +1,6 @@
 ﻿
+#if ENABLE_XLUA
+
 namespace Modules.Lua.Text
 {
 	public sealed class BookData
@@ -36,3 +38,5 @@ namespace Modules.Lua.Text
 		public string[] texts = null;
     }
 }
+
+#endif

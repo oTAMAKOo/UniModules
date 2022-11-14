@@ -1,4 +1,6 @@
 ﻿
+#if ENABLE_XLUA
+
 namespace Modules.Lua.Command
 {
 	public interface ICommand
@@ -8,3 +10,5 @@ namespace Modules.Lua.Command
 		string Callback { get; }
 	}
 }
+
+#endif

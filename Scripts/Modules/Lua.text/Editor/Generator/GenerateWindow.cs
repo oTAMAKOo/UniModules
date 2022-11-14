@@ -1,8 +1,10 @@
-﻿
+
+#if ENABLE_XLUA
+
+using System.Linq;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEditor;
-using System.Linq;
 using Cysharp.Threading.Tasks;
 using Extensions;
 using Extensions.Devkit;
@@ -188,3 +190,5 @@ namespace Modules.Lua.Text
 		}
 	}
 }
+
+#endif

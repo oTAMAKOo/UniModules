@@ -1,6 +1,6 @@
 ﻿
-using UnityEngine;
-using Extensions;
+#if ENABLE_XLUA
+
 using XLua;
 
 namespace Modules.Lua
@@ -40,3 +40,5 @@ namespace Modules.Lua
 		#endregion
 	}
 }
+
+#endif

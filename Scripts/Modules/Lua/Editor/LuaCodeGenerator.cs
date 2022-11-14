@@ -1,4 +1,6 @@
 ﻿
+#if ENABLE_XLUA
+
 using UnityEngine;
 using System;
 using XLua;
@@ -46,3 +48,5 @@ namespace Modules.Lua
 		}
     }
 }
+
+#endif

@@ -1,8 +1,9 @@
 ﻿
+#if ENABLE_XLUA
+
 using UnityEngine;
 using System;
 using System.Collections.Generic;
-using Extensions.Serialize;
 
 namespace Modules.Lua.Text
 {
@@ -72,3 +73,5 @@ namespace Modules.Lua.Text
 		}
     }
 }
+
+#endif

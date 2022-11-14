@@ -1,4 +1,6 @@
 ﻿
+#if ENABLE_XLUA
+
 using UnityEngine;
 using System;
 using System.Linq;
@@ -388,3 +390,5 @@ namespace Modules.Lua.Command
 		protected abstract IEnumerable<Type> GetCommandTypes();
 	}
 }
+
+#endif

@@ -1,4 +1,6 @@
 ﻿
+#if ENABLE_XLUA
+
 using System;
 using UnityEditor;
 using System.IO;
@@ -192,3 +194,5 @@ namespace Modules.Lua.Text
 		}
 	}
 }
+
+#endif

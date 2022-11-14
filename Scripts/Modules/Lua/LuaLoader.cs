@@ -1,4 +1,6 @@
 ﻿
+#if ENABLE_XLUA
+
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -114,3 +116,5 @@ namespace Modules.Lua
 		protected abstract UniTask<LuaAsset> LoadAsync(string filePath);
 	}
 }
+
+#endif

@@ -1,4 +1,6 @@
 ﻿
+#if ENABLE_XLUA
+
 using System.IO;
 using System.Text;
 using Newtonsoft.Json;
@@ -86,3 +88,5 @@ namespace Modules.Lua.Text
         }
     }
 }
+
+#endif

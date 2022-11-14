@@ -1,8 +1,8 @@
 ﻿
+#if ENABLE_XLUA
+
 using UnityEngine;
 using System;
-using System.Collections;
-using System.Collections.Generic;
 using System.Linq;
 
 namespace Modules.Lua
@@ -42,3 +42,5 @@ namespace Modules.Lua
         }
     }
 }
+
+#endif

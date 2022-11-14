@@ -1,4 +1,6 @@
 ﻿
+#if ENABLE_XLUA
+
 using UnityEngine;
 using UnityEditor;
 using UnityEditor.Callbacks;
@@ -237,3 +239,5 @@ namespace Modules.Lua.Text
 		}
     }
 }
+
+#endif

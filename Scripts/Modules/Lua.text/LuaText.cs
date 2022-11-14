@@ -1,4 +1,6 @@
 ﻿
+#if ENABLE_XLUA
+
 using System.Collections.Generic;
 using System.Text;
 using Extensions;
@@ -67,3 +69,5 @@ namespace Modules.Lua.Text
 		}
     }
 }
+
+#endif
