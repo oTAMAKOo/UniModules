@@ -398,23 +398,12 @@ namespace Modules.Animation
 		/// <param name="clip"> 差し替えるクリップ </param>
 		public void ChangeClip(string overrideClipName, AnimationClip clip)
 		{
-			var layerInfo = new AnimatorStateInfo[Animator.layerCount];
-
-			for (var i = 0; i < Animator.layerCount; i++) 
-			{
-				layerInfo [i] = Animator.GetCurrentAnimatorStateInfo(i);
-			}
-
+			Stop();
+			
 			// AnimationClipを差し替えて、強制的にアップデート (ステートがリセットされる).
 			animatorController[overrideClipName] = clip;
 
-			Animator.Update (0.0f);
-
-			// ステートを戻す
-			for (var i = 0; i < Animator.layerCount; i++) 
-			{
-				Animator.Play(layerInfo[i].fullPathHash, i, layerInfo [i].normalizedTime);
-			}
+			Animator.Update(0.0f);
 		}
 
 		/// <summary>
