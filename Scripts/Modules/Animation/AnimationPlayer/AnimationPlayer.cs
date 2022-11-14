@@ -27,6 +27,8 @@ namespace Modules.Animation
 
         private int layer = -1;
 
+		private AnimatorOverrideController animatorController = null;
+
         // 現在の状態.
         private State currentState = State.Stop;
 
@@ -122,7 +124,11 @@ namespace Modules.Animation
 
             if (isInitialized) { return; }
 
-            var animatorController = animator.runtimeAnimatorController;
+			animatorController = new AnimatorOverrideController();
+
+			animatorController.runtimeAnimatorController = Animator.runtimeAnimatorController;
+
+			animator.runtimeAnimatorController = animatorController;
 
             Animator = animator;
             Clips = animatorController != null ? animator.runtimeAnimatorController.animationClips : new AnimationClip[0];
@@ -386,8 +392,32 @@ namespace Modules.Animation
                 onEndAnimation.OnNext(this);
             }
         }
+		
+		/// <summary> AnimationClipを差し替え. </summary>
+		/// <param name="overrideClipName"> 差し替え対象クリップ名 </param>
+		/// <param name="clip"> 差し替えるクリップ </param>
+		public void ChangeClip(string overrideClipName, AnimationClip clip)
+		{
+			var layerInfo = new AnimatorStateInfo[Animator.layerCount];
 
-        /// <summary>
+			for (var i = 0; i < Animator.layerCount; i++) 
+			{
+				layerInfo [i] = Animator.GetCurrentAnimatorStateInfo(i);
+			}
+
+			// AnimationClipを差し替えて、強制的にアップデート (ステートがリセットされる).
+			animatorController[overrideClipName] = clip;
+
+			Animator.Update (0.0f);
+
+			// ステートを戻す
+			for (var i = 0; i < Animator.layerCount; i++) 
+			{
+				Animator.Play(layerInfo[i].fullPathHash, i, layerInfo [i].normalizedTime);
+			}
+		}
+
+		/// <summary>
         /// 配下のAnimatorに対してパラメータをセット.
         /// </summary>
         /// <param name="parameters"></param>
