@@ -1,6 +1,7 @@
-﻿
+﻿﻿
 using UnityEngine;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using Cysharp.Threading.Tasks;
@@ -111,9 +112,12 @@ namespace Modules.Devkit.Diagnosis.SendReport
             }
         }
 
-        public void CaptureScreenShot()
+        // ※ UniTaskだとWaitForEndOfFrameのタイミングが正しく取得できないのでコルーチンで制御する.
+        public IEnumerator CaptureScreenShot()
         {
-			var tex = new Texture2D(Screen.width, Screen.height, TextureFormat.RGB24, false);
+            yield return new WaitForEndOfFrame();
+
+            var tex = new Texture2D(Screen.width, Screen.height, TextureFormat.RGB24, false);
 
             tex.ReadPixels(new Rect(0, 0, Screen.width, Screen.height), 0, 0);
             tex.Apply();

@@ -218,7 +218,7 @@ namespace Modules.Devkit.Diagnosis.SRDebugger
 
 			await UniTask.NextFrame();
 
-            sendReportManager.CaptureScreenShot();
+            await sendReportManager.CaptureScreenShot().ToObservable();
 
 			srDebug.ShowDebugPanel(false);
 
