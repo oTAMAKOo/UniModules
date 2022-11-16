@@ -80,7 +80,7 @@ namespace Modules.Devkit.Diagnosis.SRDebugger
                 .AddTo(this);
 
             sendReportButton.OnClickAsObservable()
-                .Subscribe(async _ =>
+                .Subscribe(_ =>
                     {
                         if (cancelSource != null)
                         {
@@ -88,7 +88,7 @@ namespace Modules.Devkit.Diagnosis.SRDebugger
                         }
                         else
                         {
-							await SendReport();
+							SendReport().Forget();
                         }
                     })
                 .AddTo(this);
@@ -140,8 +140,6 @@ namespace Modules.Devkit.Diagnosis.SRDebugger
 				cancelSource = new CancellationTokenSource();
 
 				await sendReportManager.Send(ReportTitle, notifier).AttachExternalCancellation(cancelSource.Token);
-
-				cancelSource = null;
 			}
 			catch (OperationCanceledException)
 			{
@@ -150,6 +148,11 @@ namespace Modules.Devkit.Diagnosis.SRDebugger
 			catch (Exception e)
 			{
 				Debug.LogException(e);
+			}
+			finally
+			{
+				cancelSource.Dispose();
+				cancelSource = null;
 			}
 		}
 
