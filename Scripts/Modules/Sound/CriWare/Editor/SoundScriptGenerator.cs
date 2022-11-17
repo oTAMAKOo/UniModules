@@ -45,11 +45,11 @@ namespace Modules.Sound
 @CONTENTS
         };
 
-		public static Tuple<string, bool>[] GetInternalFileInfo()
+		public static CueInfo[] GetInternalFileInfo()
 		{
-			return internalSounds.Values
-				.Select(x => Tuple.Create(x.Item1, x.Item3))
-				.DistinctBy(x => x.Item1)
+			return internalSounds
+				.Select(x => GetCueInfo(x.Key))
+				.DistinctBy(x => x.CueSheet)
 				.ToArray();
 		}
 
