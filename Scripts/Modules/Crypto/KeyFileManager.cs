@@ -162,7 +162,7 @@ namespace Modules.Crypto
 				var key = encryptKey.Decrypt(aesKey);
 				var iv = encryptIv.Decrypt(aesKey);
 			
-				keyCache.Add(keyType, new KeyData(key, iv));
+				keyCache[keyType] = new KeyData(key, iv);
 			}
 		}
 
