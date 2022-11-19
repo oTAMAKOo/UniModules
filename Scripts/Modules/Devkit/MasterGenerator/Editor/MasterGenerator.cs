@@ -161,7 +161,7 @@ namespace Modules.Master
 
 					logBuilder.Clear();
 
-					logBuilder.AppendLine($"Generate master complete. [{i}/{chunkNum}]");
+					logBuilder.AppendLine($"Generate master complete. [{i + 1}/{chunkNum}]");
 
 					foreach (var item in items)
 					{

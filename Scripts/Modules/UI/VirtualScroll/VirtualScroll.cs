@@ -167,10 +167,10 @@ namespace Modules.UI
 			}
 		}
 
-		public virtual void SetContents(T[] contents)
-        {
-            Contents = contents;
-        }
+		public virtual void SetContents(IEnumerable<T> contents)
+		{
+			Contents = contents != null ? contents.ToArray() : new T[0];
+		}
 
         public async UniTask UpdateContents(bool keepScrollPosition = false)
         {
