@@ -32,7 +32,7 @@ namespace Modules.UI
         {
             First,
             Center,
-            Last,
+            Last, 
         }
     }
 
@@ -82,7 +82,7 @@ namespace Modules.UI
         private Subject<IVirtualScrollItem> onCreateItem = null;
         private Subject<IVirtualScrollItem> onUpdateItem = null;
 
-		private Status initialize = Status.None;
+		private Status status = Status.None;
 
         //----- property -----
 
@@ -133,7 +133,7 @@ namespace Modules.UI
 
         protected virtual void Initialize()
         {
-            if (initialize != Status.None) { return; }
+            if (status != Status.None) { return; }
 			
 			updateItemDisposables = new Dictionary<VirtualScrollItem<T>, IDisposable>();
 
@@ -146,7 +146,7 @@ namespace Modules.UI
 
             ScrollPosition = 0f;
 
-            initialize = Status.Initialize;
+			status = Status.Initialize;
         }
 
         protected override void OnEnable()
@@ -174,7 +174,7 @@ namespace Modules.UI
 
         public async UniTask UpdateContents(bool keepScrollPosition = false)
         {
-			if (initialize == Status.None)
+			if (status == Status.None)
 			{
 				Initialize();
 			}
@@ -355,6 +355,8 @@ namespace Modules.UI
             {
                 onUpdateContents.OnNext(Unit.Default);
             }
+
+			status = Status.Done;
         }
 
         private async UniTask InitializeItem(VirtualScrollItem<T> item)
@@ -643,7 +645,7 @@ namespace Modules.UI
 
         private void UpdateScroll()
         {
-            if (initialize != Status.Done) { return; }
+            if (status != Status.Done) { return; }
 
             var scrollPosition = GetCurrentPosition();
 
