@@ -1,4 +1,7 @@
-﻿using Cysharp.Threading.Tasks;
+﻿
+#if ENABLE_XLUA
+
+using Cysharp.Threading.Tasks;
 using DG.Tweening;
 using Extensions;
 using Modules.Tweening;
@@ -41,3 +44,5 @@ namespace Modules.Scenario
 		}
 	}
 }
+
+#endif

@@ -1,4 +1,6 @@
 ﻿
+#if ENABLE_XLUA
+
 using System.Reflection;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -89,3 +91,5 @@ namespace TMPro
         }
     }
 }
+
+#endif

@@ -1,4 +1,6 @@
 ﻿
+#if ENABLE_XLUA
+
 using UnityEngine;
 using System;
 using System.Text;
@@ -124,3 +126,5 @@ namespace Modules.Scenario.Command
 		}
 	}
 }
+
+#endif

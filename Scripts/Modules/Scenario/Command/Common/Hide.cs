@@ -1,4 +1,6 @@
 ﻿
+#if ENABLE_XLUA
+
 using UnityEngine;
 using Extensions;
 using XLua;
@@ -28,3 +30,5 @@ namespace Modules.Scenario.Command
 		}
 	}
 }
+
+#endif

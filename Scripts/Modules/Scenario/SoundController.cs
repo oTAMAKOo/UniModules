@@ -1,5 +1,5 @@
 ﻿
-#if ENABLE_CRIWARE_ADX
+#if ENABLE_CRIWARE_ADX && ENABLE_XLUA
 
 using System.Collections.Generic;
 using UniRx;

@@ -1,4 +1,6 @@
 ﻿
+#if ENABLE_XLUA
+
 using System.Collections.Generic;
 using Cysharp.Threading.Tasks;
 using Extensions;
@@ -63,3 +65,5 @@ namespace Modules.Scenario
 		}
 	}
 }
+
+#endif

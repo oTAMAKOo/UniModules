@@ -1,4 +1,6 @@
 ﻿
+#if ENABLE_XLUA
+
 using UnityEngine;
 using System.Collections.Generic;
 using System.Linq;
@@ -101,3 +103,5 @@ namespace Modules.Scenario
 		}
 	}
 }
+
+#endif

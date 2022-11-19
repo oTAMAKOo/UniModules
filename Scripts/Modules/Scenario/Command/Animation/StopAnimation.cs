@@ -1,4 +1,6 @@
 ﻿
+#if ENABLE_XLUA
+
 using Modules.Animation;
 using XLua;
 
@@ -30,3 +32,5 @@ namespace Modules.Scenario.Command
 		}
 	}
 }
+
+#endif

@@ -1,4 +1,6 @@
 ﻿
+#if ENABLE_XLUA
+
 using UnityEngine;
 using System;
 using Cysharp.Threading.Tasks;
@@ -137,3 +139,5 @@ namespace Modules.Scenario
 		protected abstract AesCryptoKey GetCryptoKey();
     }
 }
+
+#endif

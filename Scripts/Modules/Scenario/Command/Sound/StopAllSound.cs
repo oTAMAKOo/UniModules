@@ -1,5 +1,5 @@
 ﻿
-#if ENABLE_CRIWARE_ADX
+#if ENABLE_CRIWARE_ADX && ENABLE_XLUA
 
 using Modules.Sound;
 using XLua;

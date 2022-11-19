@@ -1,7 +1,7 @@
 ﻿
+#if ENABLE_XLUA
+
 using UnityEngine;
-using System;
-using Cysharp.Threading.Tasks;
 using XLua;
 using Extensions;
 
@@ -36,3 +36,5 @@ namespace Modules.Scenario.Command
 		}
 	}
 }
+
+#endif

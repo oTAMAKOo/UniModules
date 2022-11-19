@@ -1,4 +1,6 @@
 ﻿
+#if ENABLE_XLUA
+
 using UnityEngine;
 using Extensions;
 using Modules.Lua.Command;
@@ -46,3 +48,5 @@ namespace Modules.Scenario
 		}
 	}
 }
+
+#endif

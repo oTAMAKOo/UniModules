@@ -1,13 +1,13 @@
 ﻿
+#if ENABLE_XLUA
+
+using UnityEngine;
 using System;
-using System.IO;
-using Constants;
 using XLua;
 using Cysharp.Threading.Tasks;
 using Extensions;
 using Modules.Lua.Text;
 using Modules.ExternalResource;
-using UnityEngine;
 
 namespace Modules.Scenario.Command
 {
@@ -48,3 +48,5 @@ namespace Modules.Scenario.Command
 		}
 	}
 }
+
+#endif

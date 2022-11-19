@@ -1,4 +1,6 @@
 ﻿
+#if ENABLE_XLUA
+
 using XLua;
 
 namespace Modules.Scenario.Command
@@ -27,3 +29,5 @@ namespace Modules.Scenario.Command
 		}
 	}
 }
+
+#endif
