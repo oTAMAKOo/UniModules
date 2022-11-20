@@ -46,7 +46,7 @@ namespace Modules.UI
         }
 
         // ※ 基底クラスのSetContentsを隠蔽する.
-        private new void SetContents(GridElement[] contents)
+        private new void SetContents(IEnumerable<GridElement> contents)
         {
             base.SetContents(contents);
         }

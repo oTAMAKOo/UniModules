@@ -105,6 +105,8 @@ namespace Modules.Movie
 
 		#region Prepare
 
+		#pragma warning disable CS1998
+
 		/// <summary> 動画再生準備. </summary>
 		public async UniTask<MovieElement> Prepare(Movies.Mana type, Graphic targetGraphic, Player.ShaderDispatchCallback shaderOverrideCallBack = null)
 		{
@@ -120,6 +122,8 @@ namespace Modules.Movie
 
 			return movieInfo != null ? Prepare(movieInfo, targetGraphic, shaderOverrideCallBack) : null;
 		}
+
+		#pragma warning restore CS1998
 
 		/// <summary> 動画再生準備. </summary>
 		public MovieElement Prepare(ManaInfo movieInfo, Graphic targetGraphic, Player.ShaderDispatchCallback shaderOverrideCallBack = null)

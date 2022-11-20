@@ -424,7 +424,7 @@ namespace Modules.AssetBundles
                     Debug.LogError($"File download error : {url}\n\n{webRequest.error}");
                 }
             }
-            catch (Exception e)
+            catch
             {
                 if (downloadBuffer != null)
                 {
