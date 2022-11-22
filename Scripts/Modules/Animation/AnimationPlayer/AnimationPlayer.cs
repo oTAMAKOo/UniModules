@@ -27,9 +27,7 @@ namespace Modules.Animation
 
         private int layer = -1;
 
-		private AnimatorOverrideController animatorController = null;
-
-        // 現在の状態.
+		// 現在の状態.
         private State currentState = State.Stop;
 
         // ステート遷移待ちフラグ.
@@ -125,15 +123,13 @@ namespace Modules.Animation
             if (isInitialized) { return; }
 
 			Animator = animator;
+			Clips = new AnimationClip[0];
+			DefaultSpeed = Animator.speed;
 
-			animatorController = new AnimatorOverrideController();
-
-			animatorController.runtimeAnimatorController = Animator.runtimeAnimatorController;
-
-			animator.runtimeAnimatorController = animatorController;
-			
-            Clips = animatorController != null ? animator.runtimeAnimatorController.animationClips : new AnimationClip[0];
-            DefaultSpeed = Animator.speed;
+			if (animator.runtimeAnimatorController != null)
+			{
+				Clips = animator.runtimeAnimatorController.animationClips;
+			}
 
             if (stopOnAwake)
             {
@@ -393,19 +389,6 @@ namespace Modules.Animation
                 onEndAnimation.OnNext(this);
             }
         }
-		
-		/// <summary> AnimationClipを差し替え. </summary>
-		/// <param name="overrideClipName"> 差し替え対象クリップ名 </param>
-		/// <param name="clip"> 差し替えるクリップ </param>
-		public void ChangeClip(string overrideClipName, AnimationClip clip)
-		{
-			Stop();
-			
-			// AnimationClipを差し替えて、強制的にアップデート (ステートがリセットされる).
-			animatorController[overrideClipName] = clip;
-
-			Animator.Update(0.0f);
-		}
 
 		/// <summary>
         /// 配下のAnimatorに対してパラメータをセット.
