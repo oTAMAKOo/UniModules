@@ -124,13 +124,14 @@ namespace Modules.Animation
 
             if (isInitialized) { return; }
 
+			Animator = animator;
+
 			animatorController = new AnimatorOverrideController();
 
 			animatorController.runtimeAnimatorController = Animator.runtimeAnimatorController;
 
 			animator.runtimeAnimatorController = animatorController;
-
-            Animator = animator;
+			
             Clips = animatorController != null ? animator.runtimeAnimatorController.animationClips : new AnimationClip[0];
             DefaultSpeed = Animator.speed;
 
