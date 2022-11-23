@@ -1,4 +1,4 @@
-﻿
+
 using UnityEngine;
 using UnityEditor;
 using System;
@@ -140,65 +140,64 @@ namespace Modules.Net.WebRequest
         {
             var info = contents.FirstOrDefault(x => x.Id == selectionId);
 
+            if (info == null){ return; }
+
             using (new ContentsScope())
             {
                 using (new EditorGUILayout.VerticalScope())
                 {
-                    if (info != null)
+                    var tabData = new Tuple<string, string>[]
                     {
-                        var tabData = new Tuple<string, string>[]
+                        Tuple.Create("Result", info.Result),
+                        Tuple.Create("Exception", info.Exception.ToString()),
+                        Tuple.Create("StackTrace", info.StackTrace),
+                        Tuple.Create("Header", info.Headers),
+                        Tuple.Create("UriParam", info.UriParams),
+                        Tuple.Create("Body", info.Body),
+                    };
+
+                    var tabs = new List<string>();
+
+                    foreach (var data in tabData)
+                    {
+                        if (data.Item2.IsNullOrEmpty()){ continue; }
+
+                        tabs.Add(data.Item1);
+                    }
+
+                    var tabToggles = tabs.Where(x => !x.IsNullOrEmpty()).ToArray();
+
+                    using (new EditorGUILayout.HorizontalScope(EditorStyles.toolbar))
+                    {
+                        EditorGUI.BeginChangeCheck();
+
+                        detailTabIndex = GUILayout.Toolbar(detailTabIndex, tabToggles, new GUIStyle(EditorStyles.toolbarButton), GUI.ToolbarButtonSize.FitToContents);
+
+                        if (EditorGUI.EndChangeCheck())
                         {
-                            Tuple.Create("Result", info.Result),
-                            Tuple.Create("Exception", info.Exception.ToString()),
-                            Tuple.Create("StackTrace", info.StackTrace),
-                            Tuple.Create("Header", info.Headers),
-                            Tuple.Create("UriParam", info.UriParams),
-                            Tuple.Create("Body", info.Body),
+                            EditorGUI.FocusTextInControl(string.Empty);
+                        }
+                    }
+
+                    var tabName = tabToggles.ElementAtOrDefault(detailTabIndex);
+
+                    var selectionTab = tabData.FirstOrDefault(x => x.Item1 == tabName);
+                    
+                    using (var scrollView = new EditorGUILayout.ScrollViewScope(detailScrollPosition))
+                    {
+                        var vector = detailStyle.CalcSize(new GUIContent(selectionTab.Item2));
+
+                        var layoutOption = new GUILayoutOption[]
+                        {
+                            GUILayout.ExpandHeight(true),
+                            GUILayout.ExpandWidth(true),
+                            GUILayout.MinWidth(vector.x),
+                            GUILayout.MinHeight(vector.y)
                         };
 
-                        var tabs = new List<string>();
+                        EditorGUILayout.SelectableLabel(selectionTab.Item2, detailStyle, layoutOption);
 
-                        foreach (var data in tabData)
-                        {
-                            if (data.Item2.IsNullOrEmpty()){ continue; }
-
-                            tabs.Add(data.Item1);
-                        }
-
-                        var tabToggles = tabs.Where(x => !x.IsNullOrEmpty()).ToArray();
-
-                        using (new EditorGUILayout.HorizontalScope(EditorStyles.toolbar))
-                        {
-                            EditorGUI.BeginChangeCheck();
-
-                            detailTabIndex = GUILayout.Toolbar(detailTabIndex, tabToggles, new GUIStyle(EditorStyles.toolbarButton), GUI.ToolbarButtonSize.FitToContents);
-
-                            if (EditorGUI.EndChangeCheck())
-                            {
-                                EditorGUI.FocusTextInControl(string.Empty);
-                            }
-                        }
-
-                        var tabName = tabToggles.ElementAtOrDefault(detailTabIndex);
-
-                        var selectionTab = tabData.FirstOrDefault(x => x.Item1 == tabName);
-                        
-                        using (var scrollView = new EditorGUILayout.ScrollViewScope(detailScrollPosition))
-                        {
-                            var vector = detailStyle.CalcSize(new GUIContent(selectionTab.Item2));
-
-                            var layoutOption = new GUILayoutOption[]
-                            {
-                                GUILayout.ExpandHeight(true),
-                                GUILayout.ExpandWidth(true),
-                                GUILayout.MinWidth(vector.x),
-                                GUILayout.MinHeight(vector.y)
-                            };
-
-                            EditorGUILayout.SelectableLabel(selectionTab.Item2, detailStyle, layoutOption);
-
-                            detailScrollPosition = scrollView.scrollPosition;
-                        }
+                        detailScrollPosition = scrollView.scrollPosition;
                     }
                 }
             }
