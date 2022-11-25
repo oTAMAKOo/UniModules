@@ -110,9 +110,10 @@ namespace Modules.ExternalResource
 
             if (managedInfo == null) { return null; }
 
+			var guid = AssetDatabase.AssetPathToGUID(assetPath);
             var resourcePath = GetAssetLoadPath(assetPath);
 
-            var assetInfo = new AssetInfo(resourcePath, managedInfo.group, managedInfo.labels);
+            var assetInfo = new AssetInfo(guid, resourcePath, managedInfo.group, managedInfo.labels);
 
             var assetBundleName = GetAssetBundleName(assetPath, managedInfo);
 

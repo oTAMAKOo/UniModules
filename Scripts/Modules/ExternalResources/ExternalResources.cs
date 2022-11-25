@@ -1,4 +1,4 @@
-﻿﻿﻿﻿﻿
+﻿﻿﻿﻿
 using UnityEngine;
 using System;
 using System.IO;
@@ -26,6 +26,9 @@ namespace Modules.ExternalResource
 
         // アセット管理情報.
         private AssetInfoManifest assetInfoManifest = null;
+
+		// アセットGUIDパスをキーとしたアセット情報.
+		private Dictionary<string, AssetInfo> assetInfosByAssetGuid = null;
 
         // アセットロードパスをキーとしたアセット情報.
         private Dictionary<string, AssetInfo> assetInfosByResourcePath = null;
@@ -178,10 +181,15 @@ namespace Modules.ExternalResource
 
             var allAssetInfos = manifest.GetAssetInfos().ToArray();
 
-            // アセット情報 (Key: アセットバンドル名).
+			// アセット情報 (Key: アセットバンドル名).
             assetInfosByAssetBundleName = allAssetInfos
                 .Where(x => x.IsAssetBundle)
                 .ToLookup(x => x.AssetBundle.AssetBundleName);
+
+			// アセット情報 (Key: アセットGUID).
+			assetInfosByAssetGuid = allAssetInfos
+				.Where(x => !string.IsNullOrEmpty(x.Guid))
+				.ToDictionary(x => x.Guid);
 
             // アセット情報 (Key: リソースパス).
             assetInfosByResourcePath = allAssetInfos
@@ -199,11 +207,17 @@ namespace Modules.ExternalResource
             return assetInfoManifest.GetAssetInfos(groupName);
         }
 
-        /// <summary> アセット情報取得 </summary>
+		/// <summary> アセット情報取得 </summary>
         public AssetInfo GetAssetInfo(string resourcePath)
         {
             return assetInfosByResourcePath.GetValueOrDefault(resourcePath);
         }
+
+		/// <summary> アセット情報取得 </summary>
+		public AssetInfo GetAssetInfoByGuid(string guid)
+		{
+			return assetInfosByAssetGuid.GetValueOrDefault(guid);
+		}
 
 		/// <summary> マニフェストファイルを更新. </summary>
 		public async UniTask<bool> UpdateManifest()

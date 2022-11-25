@@ -68,6 +68,9 @@ namespace Modules.ExternalResource
                     isHit |= assetInfo.AssetBundle.AssetBundleName.IsMatch(keywords);
                 }
 
+				// 管理下のアセットGUIDが一致.
+				isHit |= assetInfo.Guid.IsMatch(keywords);
+
                 // 管理下のアセットのパスが一致.
                 isHit |= assetInfo.ResourcePath.IsMatch(keywords);
 
@@ -151,6 +154,9 @@ namespace Modules.ExternalResource
 
                         using (new ContentsScope())
                         {
+							EditorGUILayout.LabelField("GUID");
+							EditorGUILayout.SelectableLabel(assetInfo.Guid, textAreaStyle, GUILayout.Height(18f));
+
                             EditorGUILayout.LabelField("ResourcesPath");
                             EditorGUILayout.SelectableLabel(assetInfo.ResourcePath, textAreaStyle, GUILayout.Height(18f));
 

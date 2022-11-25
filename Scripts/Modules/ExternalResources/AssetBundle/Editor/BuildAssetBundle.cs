@@ -63,7 +63,7 @@ namespace Modules.AssetBundles.Editor
                 
                 var fileName = Path.GetFileName(bundleInfo.Value.FileName);
 
-                var assetInfo = new AssetInfo(fileName, "(undefined)", null);
+                var assetInfo = new AssetInfo(string.Empty, fileName, "(undefined)", null);
 
                 var assetBundleInfo = new AssetBundleInfo(assetBundleName);
 

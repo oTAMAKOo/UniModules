@@ -15,6 +15,8 @@ namespace Modules.ExternalResource
 
         //----- field -----
 
+		[SerializeField]
+		private string guid = null;
         [SerializeField]
         private string resourcePath = null;
         [SerializeField]
@@ -34,6 +36,8 @@ namespace Modules.ExternalResource
 
         //----- property -----
 
+		/// <summary> GUID </summary>
+		public string Guid { get { return guid; } }
         /// <summary> 読み込みパス </summary>
         public string ResourcePath { get { return resourcePath; } }
         /// <summary> グループ </summary>
@@ -59,8 +63,9 @@ namespace Modules.ExternalResource
 
         //----- method -----
 
-        public AssetInfo(string resourcePath, string group, string[] labels)
+        public AssetInfo(string guid, string resourcePath, string group, string[] labels)
         {
+			this.guid = guid;
             this.resourcePath = PathUtility.ConvertPathSeparator(resourcePath);
             this.group = group;
             this.labels = labels;
@@ -200,7 +205,7 @@ namespace Modules.ExternalResource
 
         public static AssetInfo GetManifestAssetInfo()
         {
-            var manifestAssetInfo = new AssetInfo(ManifestFileName, null, null);
+            var manifestAssetInfo = new AssetInfo(string.Empty, ManifestFileName, null, null);
 
             var assetBundleInfo = new AssetBundleInfo(AssetBundleName);
 
