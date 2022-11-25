@@ -198,7 +198,7 @@ namespace Modules.Scene
 					// Prepare通知.
 					if (onPrepare != null)
 					{
-						onPrepare.OnNext(currentSceneArgument);
+						onPrepare.OnNext(sceneInstance);
 					}
 
 					await sceneInstance.Instance.Prepare().AttachExternalCancellation(cancelToken);
@@ -206,7 +206,7 @@ namespace Modules.Scene
 					// Prepare終了通知.
 					if (onPrepareComplete != null)
 					{
-						onPrepareComplete.OnNext(currentSceneArgument);
+						onPrepareComplete.OnNext(sceneInstance);
 					}
 				}
 
@@ -219,7 +219,7 @@ namespace Modules.Scene
 					// Enter通知.
 					if (onEnter != null)
 					{
-						onEnter.OnNext(currentSceneArgument);
+						onEnter.OnNext(sceneInstance);
 					}
 
 					sceneInstance.Instance.Enter();
@@ -227,7 +227,7 @@ namespace Modules.Scene
 					// Enter終了通知.
 					if (onEnterComplete != null)
 					{
-						onEnterComplete.OnNext(currentSceneArgument);
+						onEnterComplete.OnNext(sceneInstance);
 					}
 				}
 
@@ -318,7 +318,7 @@ namespace Modules.Scene
 				// Leave通知.
 				if (onLeave != null)
 				{
-					onLeave.OnNext(prevSceneArgument);
+					onLeave.OnNext(sceneInstance);
 				}
 				
                 await sceneInstance.Instance.Leave().AttachExternalCancellation(cancelToken);
@@ -329,7 +329,7 @@ namespace Modules.Scene
 				// Leave終了通知.
 				if (onLeaveComplete != null)
 				{
-					onLeaveComplete.OnNext(prevSceneArgument);
+					onLeaveComplete.OnNext(sceneInstance);
 				}
 
 				diagnostics.Finish(TimeDiagnostics.Measure.Leave);

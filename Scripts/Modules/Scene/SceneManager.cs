@@ -42,14 +42,14 @@ namespace Modules.Scene
 
 		protected LifetimeDisposable preLoadDisposable = null;
 		
-        private Subject<ISceneArgument> onPrepare = null;
-        private Subject<ISceneArgument> onPrepareComplete = null;
+        private Subject<SceneInstance> onPrepare = null;
+        private Subject<SceneInstance> onPrepareComplete = null;
 
-        private Subject<ISceneArgument> onEnter = null;
-        private Subject<ISceneArgument> onEnterComplete = null;
+        private Subject<SceneInstance> onEnter = null;
+        private Subject<SceneInstance> onEnterComplete = null;
 
-        private Subject<ISceneArgument> onLeave = null;
-        private Subject<ISceneArgument> onLeaveComplete = null;
+        private Subject<SceneInstance> onLeave = null;
+        private Subject<SceneInstance> onLeaveComplete = null;
 
         private Subject<SceneInstance> onLoadScene = null;
         private Subject<SceneInstance> onLoadSceneComplete = null;
@@ -177,28 +177,28 @@ namespace Modules.Scene
 
             if (onPrepare != null)
             {
-                onPrepare.OnNext(sceneArgument);
+                onPrepare.OnNext(currentScene);
             }
 
 			await currentScene.Instance.Prepare(false);
 
             if (onPrepareComplete != null)
             {
-                onPrepareComplete.OnNext(sceneArgument);
+                onPrepareComplete.OnNext(currentScene);
             }
 
 			// Enter.
 
 			if (onEnter != null)
             {
-                onEnter.OnNext(sceneArgument);
+                onEnter.OnNext(currentScene);
             }
 
             currentScene.Instance.Enter(false);
 
             if (onEnterComplete != null)
             {
-                onEnterComplete.OnNext(sceneArgument);
+                onEnterComplete.OnNext(currentScene);
             }
 
 			// PreLoad.
@@ -403,7 +403,7 @@ namespace Modules.Scene
                 // Leave通知.
                 if (onLeave != null)
                 {
-                    onLeave.OnNext(prevSceneArgument);
+                    onLeave.OnNext(prev);
                 }
 
                 // 現在のシーンの終了処理を実行.
@@ -426,7 +426,7 @@ namespace Modules.Scene
                 // Leave終了通知.
                 if (onLeaveComplete != null)
                 {
-                    onLeaveComplete.OnNext(prevSceneArgument);
+                    onLeaveComplete.OnNext(prev);
                 }
 
                 prev.Disable();
@@ -575,7 +575,7 @@ namespace Modules.Scene
             // Prepare通知.
             if (onPrepare != null)
             {
-                onPrepare.OnNext(currentSceneArgument);
+                onPrepare.OnNext(currentScene);
             }
 
             // 次のシーンの準備処理実行.
@@ -598,7 +598,7 @@ namespace Modules.Scene
             // Prepare終了通知.
             if (onPrepareComplete != null)
             {
-                onPrepareComplete.OnNext(currentSceneArgument);
+                onPrepareComplete.OnNext(currentScene);
             }
 
             diagnostics.Finish(TimeDiagnostics.Measure.Prepare);
@@ -682,7 +682,7 @@ namespace Modules.Scene
             // Enter通知.
             if (onEnter != null)
             {
-                onEnter.OnNext(currentSceneArgument);
+                onEnter.OnNext(currentScene);
             }
 
             // 次のシーンの開始処理実行.
@@ -694,7 +694,7 @@ namespace Modules.Scene
             // Enter終了通知.
             if (onEnterComplete != null)
             {
-                onEnterComplete.OnNext(currentSceneArgument);
+                onEnterComplete.OnNext(currentScene);
             }
 
             //====== Report ======
@@ -1262,38 +1262,38 @@ namespace Modules.Scene
 
         //====== Prepare Scene ======
 
-        public IObservable<ISceneArgument> OnPrepareAsObservable()
+        public IObservable<SceneInstance> OnPrepareAsObservable()
         {
-            return onPrepare ?? (onPrepare = new Subject<ISceneArgument>());
+            return onPrepare ?? (onPrepare = new Subject<SceneInstance>());
         }
 
-        public IObservable<ISceneArgument> OnPrepareCompleteAsObservable()
+        public IObservable<SceneInstance> OnPrepareCompleteAsObservable()
         {
-            return onPrepareComplete ?? (onPrepareComplete = new Subject<ISceneArgument>());
+            return onPrepareComplete ?? (onPrepareComplete = new Subject<SceneInstance>());
         }
 
         //====== Enter Scene ======
 
-        public IObservable<ISceneArgument> OnEnterAsObservable()
+        public IObservable<SceneInstance> OnEnterAsObservable()
         {
-            return onEnter ?? (onEnter = new Subject<ISceneArgument>());
+            return onEnter ?? (onEnter = new Subject<SceneInstance>());
         }
 
-        public IObservable<ISceneArgument> OnEnterCompleteAsObservable()
+        public IObservable<SceneInstance> OnEnterCompleteAsObservable()
         {
-            return onEnterComplete ?? (onEnterComplete = new Subject<ISceneArgument>());
+            return onEnterComplete ?? (onEnterComplete = new Subject<SceneInstance>());
         }
 
         //====== Leave Scene ======
 
-        public IObservable<ISceneArgument> OnLeaveAsObservable()
+        public IObservable<SceneInstance> OnLeaveAsObservable()
         {
-            return onLeave ?? (onLeave = new Subject<ISceneArgument>());
+            return onLeave ?? (onLeave = new Subject<SceneInstance>());
         }
 
-        public IObservable<ISceneArgument> OnLeaveCompleteAsObservable()
+        public IObservable<SceneInstance> OnLeaveCompleteAsObservable()
         {
-            return onLeaveComplete ?? (onLeaveComplete = new Subject<ISceneArgument>());
+            return onLeaveComplete ?? (onLeaveComplete = new Subject<SceneInstance>());
         }
 
         protected abstract UniTask TransitionStart<TArgument>(TArgument sceneArgument) where TArgument : ISceneArgument;
