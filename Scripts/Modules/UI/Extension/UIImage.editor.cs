@@ -90,7 +90,7 @@ namespace Modules.UI.Extension
             DeleteCreatedAsset();
 
             var texture = spriteAsset.texture;
-            var rect = spriteAsset.rect;
+            var rect = new Rect(0, 0, Mathf.Floor(spriteAsset.rect.width * 100f) / 100f, Mathf.Floor(spriteAsset.rect.height * 100f) / 100f);
             var pivot = spriteAsset.pivot;
             var pixelsPerUnit = spriteAsset.pixelsPerUnit;
             var border = spriteAsset.border;
