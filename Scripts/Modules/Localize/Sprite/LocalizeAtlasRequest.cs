@@ -8,7 +8,9 @@ using Modules.Scene;
 
 namespace Modules.Localize
 {
-	public sealed class LocalizeAtlasRequest : MonoBehaviour, ISceneEvent
+	[DisallowMultipleComponent]
+	[RequireComponent(typeof(SceneBase))]
+	public sealed class LocalizeAtlasRequest : MonoBehaviour
     {
         //----- params -----
 
@@ -80,6 +82,27 @@ namespace Modules.Localize
 			}
 		}
 
+		private static LocalizeAtlasRequest FindInstance(UnityEngine.SceneManagement.Scene scene)
+		{
+			var rootObjects = scene.GetRootGameObjects();
+
+			foreach (var rootObject in rootObjects)
+			{
+				var sceneBase = UnityUtility.GetComponent<SceneBase>(rootObject);
+
+				if (sceneBase == null){ continue; }
+
+				var atlasRequest = UnityUtility.GetComponent<LocalizeAtlasRequest>(sceneBase);
+
+				if (atlasRequest != null)
+				{
+					return atlasRequest;
+				}
+			}
+
+			return null;
+		}
+
 		public static async UniTask ForceRequest()
 		{
 			var sceneCount = SceneManager.sceneCount;
@@ -90,18 +113,13 @@ namespace Modules.Localize
 			{
 				var scene = SceneManager.GetSceneAt(i);
 
-				var rootObjects = scene.GetRootGameObjects();
+				var atlasRequest = FindInstance(scene);
 
-				foreach (var rootObject in rootObjects)
+				if (atlasRequest != null)
 				{
-					var targets = UnityUtility.FindObjectsOfInterface<LocalizeAtlasRequest>(rootObject);
+					var task = UniTask.Defer(() => atlasRequest.RequestAtlas());
 
-					foreach (var target in targets)
-					{
-						var task = UniTask.Defer(() => target.RequestAtlas());
-
-						tasks.Add(task);
-					}
+					tasks.Add(task);
 				}
 			}
 

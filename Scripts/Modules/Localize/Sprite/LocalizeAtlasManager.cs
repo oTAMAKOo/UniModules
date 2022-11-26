@@ -1,6 +1,8 @@
 ﻿
 using UnityEngine;
 using UnityEngine.U2D;
+using UnityEngine.SceneManagement;
+using UnityEngine.Events;
 using System;
 using System.Linq;
 using System.Collections.Generic;
@@ -42,7 +44,7 @@ namespace Modules.Localize
 			this.cryptoKey = cryptoKey;
 			
 			atlasCacheByAtlasFolder = new Dictionary<string, AtlasCache>();
-
+			
 			SetAtlasLoader(atlasLoader);
 			SetLocalizeSpriteObject(localizeSpriteObject);
 		}

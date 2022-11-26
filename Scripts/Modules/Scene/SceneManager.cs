@@ -149,15 +149,15 @@ namespace Modules.Scene
 			
 			history.Add(sceneArgument);
 
-			// ISceneEvent.
+			// ISceneEvent発行.
 
 			var tasks = new List<UniTask>();
 
-			var rootObjects = scene.GetRootGameObjects();
+			var sceneBase = currentScene.Instance as SceneBase;
 
-			foreach (var rootObject in rootObjects)
+			if (sceneBase != null)
 			{
-				var targets = UnityUtility.FindObjectsOfInterface<ISceneEvent>(rootObject);
+				var targets = UnityUtility.GetInterfaces<ISceneEvent>(sceneBase.gameObject);
 
 				foreach (var target in targets)
 				{
@@ -841,27 +841,25 @@ namespace Modules.Scene
                         onLoadSceneComplete.OnNext(sceneInstance);
                     }
 
-                    // ISceneEvent発行.
-                    foreach (var rootObject in rootObjects)
-                    {
-                        var targets = UnityUtility.FindObjectsOfInterface<ISceneEvent>(rootObject);
+					// ISceneEvent発行.
 
-                        foreach (var target in targets)
-                        {
-							try
-							{
-								await target.OnLoadScene().AttachExternalCancellation(cancelToken);
-							}
-							catch (OperationCanceledException) 
-							{
-								return null;
-							}
-							catch (Exception e)
-							{
-								Debug.LogException(e);
-							}
+					var tasks = new List<UniTask>();
+
+					var sceneBase = currentScene.Instance as SceneBase;
+
+					if (sceneBase != null)
+					{
+						var targets = UnityUtility.GetInterfaces<ISceneEvent>(sceneBase.gameObject);
+
+						foreach (var target in targets)
+						{
+							var task = UniTask.Defer(() => target.OnLoadScene());
+
+							tasks.Add(task);
 						}
-                    }
+					}
+
+					await UniTask.WhenAll(tasks);
                 }
 
                 SetEnabledForCapturedComponents(true);
@@ -995,30 +993,29 @@ namespace Modules.Scene
                 }
             };
 
-            var rootObjects = scene.Value.GetRootGameObjects();
+			// ISceneEvent発行.
 
-            foreach (var rootObject in rootObjects)
-            {
-                var targets = UnityUtility.FindObjectsOfInterface<ISceneEvent>(rootObject);
+			var tasks = new List<UniTask>();
 
-                foreach (var target in targets)
-                {
-					try
-					{
-						await target.OnUnloadScene().AttachExternalCancellation(cancelToken);
-					}
-					catch (OperationCanceledException) 
-					{
-						return;
-					}
-					catch (Exception e)
-					{
-						Debug.LogException(e);
-					}
-                }
-            }
+			var sceneBase = sceneInstance.Instance as SceneBase;
 
-            AsyncOperation op = null;
+			if (sceneBase != null)
+			{
+				var targets = UnityUtility.GetInterfaces<ISceneEvent>(sceneBase.gameObject);
+
+				foreach (var target in targets)
+				{
+					var task = UniTask.Defer(() => target.OnUnloadScene());
+
+					tasks.Add(task);
+				}
+			}
+
+			await UniTask.WhenAll(tasks);
+
+			// Scene Unload.
+
+			AsyncOperation op = null;
 
             try
             {

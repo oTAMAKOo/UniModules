@@ -313,8 +313,6 @@ namespace Modules.Scene
 
 				diagnostics.Begin(TimeDiagnostics.Measure.Leave);
 
-				var prevSceneArgument = sceneInstance.Instance.GetArgument();
-
 				// Leave通知.
 				if (onLeave != null)
 				{
