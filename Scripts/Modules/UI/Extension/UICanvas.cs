@@ -126,7 +126,7 @@ namespace Modules.UI.Extension
 
             canvasScaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
             canvasScaler.referenceResolution = ReferenceResolution;
-            canvasScaler.screenMatchMode = CanvasScaler.ScreenMatchMode.MatchWidthOrHeight;
+            canvasScaler.screenMatchMode = CanvasScaler.ScreenMatchMode.Expand;
 
 			// デフォルトは横持ち設定.
             canvasScaler.matchWidthOrHeight = currentAspectRatio < referenceAspectRatio ? 0 : 1;
