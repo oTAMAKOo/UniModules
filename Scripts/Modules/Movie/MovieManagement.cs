@@ -17,7 +17,7 @@ namespace Modules.Movie
     public enum MovieAssetType
     {
         InternalResources,
-        ExternalResources,
+        ExternalAsset,
     }
 
     public sealed partial class MovieManagement : Singleton<MovieManagement>
@@ -64,7 +64,7 @@ namespace Modules.Movie
         }
 
 		/// <summary>
-		/// ExternalResources内や、直接指定での動画再生用のインスタンスを生成.
+		/// ExternalAsset内や、直接指定での動画再生用のインスタンスを生成.
 		/// ※ 頭出しなどを行う時はこの関数で生成したPlayerを使って頭出しを実装する.
 		/// </summary>
 		public MovieElement CreateElement(string moviePath, Graphic targetGraphic, Player.ShaderDispatchCallback shaderOverrideCallBack = null)

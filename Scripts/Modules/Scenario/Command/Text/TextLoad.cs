@@ -7,7 +7,7 @@ using XLua;
 using Cysharp.Threading.Tasks;
 using Extensions;
 using Modules.Lua.Text;
-using Modules.ExternalResource;
+using Modules.ExternalAssets;
 
 namespace Modules.Scenario.Command
 {
@@ -35,7 +35,7 @@ namespace Modules.Scenario.Command
 				assetPath = EditAssetPathCallback.Invoke(assetPath);
 			}
 
-			var asset = await ExternalResources.LoadAsset<LuaTextAsset>(assetPath);
+			var asset = await ExternalAsset.LoadAsset<LuaTextAsset>(assetPath);
 			
 			if (asset != null)
 			{

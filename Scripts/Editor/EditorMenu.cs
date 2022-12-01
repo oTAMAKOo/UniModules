@@ -13,7 +13,7 @@ using Modules.TextData.Editor;
 using Modules.Lua;
 using Modules.MessagePack;
 using Modules.Master;
-using Modules.ExternalResource;
+using Modules.ExternalAssets;
 using Modules.Net.WebRequest;
 using Modules.BehaviorControl;
 using Modules.InputControl;
@@ -235,27 +235,27 @@ namespace Modules
 
         #region Resource
 
-        protected const string ResourcesMenu = MenuRoot + "ExternalResources/";
+        protected const string ResourcesMenu = MenuRoot + "ExternalAsset/";
 
         //------ AssetDataBaseから読込 ------
 
         [MenuItem(itemName: ResourcesMenu + "Simulate Mode", priority = 500)]
-        public static void ToggleSimulateExternalResources()
+        public static void ToggleSimulateExternalAsset()
         {
-            ExternalResources.Prefs.isSimulate = !ExternalResources.Prefs.isSimulate;
+            ExternalAsset.Prefs.isSimulate = !ExternalAsset.Prefs.isSimulate;
         }
 
         [MenuItem(itemName: ResourcesMenu + "Simulate Mode", isValidateFunction: true)]
-        public static bool ToggleSimulateExternalResourcesValidate()
+        public static bool ToggleSimulateExternalAssetValidate()
         {
-            Menu.SetChecked(ResourcesMenu + "Simulate Mode", ExternalResources.Prefs.isSimulate);
+            Menu.SetChecked(ResourcesMenu + "Simulate Mode", ExternalAsset.Prefs.isSimulate);
             return true;
         }
 
         //------ 外部アセット群作成 ------
 
         [MenuItem(itemName: ResourcesMenu + "Build", priority = 1)]
-        public static void ExternalResourceBuild()
+        public static void ExternalAssetBuild()
         {
             BuildWindow.Open();
         }
@@ -267,7 +267,7 @@ namespace Modules
         {
             var projectResourceFolders = ProjectResourceFolders.Instance;
 
-            ManageWindow.Open(projectResourceFolders.ExternalResourcesPath, projectResourceFolders.ShareResourcesPath);
+            ManageWindow.Open(projectResourceFolders.ExternalAssetPath, projectResourceFolders.ShareResourcesPath);
         }
 
         [MenuItem(itemName: ResourcesMenu + "Open AssetNavigationWindow", priority = 13)]
@@ -275,7 +275,7 @@ namespace Modules
         {
 			var projectResourceFolders = ProjectResourceFolders.Instance;
 
-            AssetNavigationWindow.Open(projectResourceFolders.ExternalResourcesPath);
+            AssetNavigationWindow.Open(projectResourceFolders.ExternalAssetPath);
         }
 
         [MenuItem(itemName: ResourcesMenu + "Open AssetBundleDependencyChecker", priority = 14)]

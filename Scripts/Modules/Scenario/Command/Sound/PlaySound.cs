@@ -3,7 +3,7 @@
 
 using UnityEngine;
 using Cysharp.Threading.Tasks;
-using Modules.ExternalResource;
+using Modules.ExternalAssets;
 using Modules.Sound;
 
 namespace Modules.Scenario.Command
@@ -20,7 +20,7 @@ namespace Modules.Scenario.Command
 
 		protected async UniTask<SoundElement> Play(SoundType soundType, string resourcePath, string cue)
 		{
-			var cueInfo = await ExternalResources.GetCueInfo(resourcePath, cue);
+			var cueInfo = await ExternalAsset.GetCueInfo(resourcePath, cue);
 
 			if (cueInfo == null)
 			{

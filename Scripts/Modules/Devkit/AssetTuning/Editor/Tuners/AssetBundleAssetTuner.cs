@@ -1,5 +1,5 @@
 ﻿
-using Modules.ExternalResource;
+using Modules.ExternalAssets;
 using Modules.Devkit.Project;
 
 namespace Modules.Devkit.AssetTuning
@@ -30,12 +30,12 @@ namespace Modules.Devkit.AssetTuning
 
 		public override void OnPostprocessAsset(string assetPath)
 		{
-            var externalResourcesPath = GetExternalResourcesPath();
+            var externalAssetPath = GetExternalAssetPath();
             var shareResourcesPath = GetShareResourcesPath();
 
             var targetPaths = new string[]
             {
-                externalResourcesPath,
+                externalAssetPath,
                 shareResourcesPath,
             };
 
@@ -49,19 +49,19 @@ namespace Modules.Devkit.AssetTuning
 
                 foreach (var info in infos)
                 {
-                    ApplyAssetBundleName(externalResourcesPath, shareResourcesPath, info);
+                    ApplyAssetBundleName(externalAssetPath, shareResourcesPath, info);
                 }
             }
         }
 
         public override void OnAssetMove(string assetPath, string from)
         {
-            var externalResourcesPath = GetExternalResourcesPath();
+            var externalAssetPath = GetExternalAssetPath();
             var shareResourcesPath = GetShareResourcesPath();
 
             var targetPaths = new string[]
             {
-                externalResourcesPath,
+                externalAssetPath,
                 shareResourcesPath,
             };
 
@@ -87,13 +87,13 @@ namespace Modules.Devkit.AssetTuning
 
                     foreach (var info in infos)
                     {
-                        ApplyAssetBundleName(externalResourcesPath, shareResourcesPath, info);
+                        ApplyAssetBundleName(externalAssetPath, shareResourcesPath, info);
                     }
                 }
             }
         }
 
-        private void ApplyAssetBundleName(string externalResourcesPath, string shareResourcesPath, AssetInfo assetInfo)
+        private void ApplyAssetBundleName(string externalAssetPath, string shareResourcesPath, AssetInfo assetInfo)
         {
             if (assetInfo == null){ return; }
 
@@ -101,16 +101,16 @@ namespace Modules.Devkit.AssetTuning
 
             if (assetInfo.AssetBundle == null){ return; }
             
-            var assetPath = ExternalResources.GetAssetPathFromAssetInfo(externalResourcesPath, shareResourcesPath, assetInfo);
+            var assetPath = ExternalAsset.GetAssetPathFromAssetInfo(externalAssetPath, shareResourcesPath, assetInfo);
 
             assetManagement.SetAssetBundleName(assetPath, assetInfo.AssetBundle.AssetBundleName);
         }
 
-        private string GetExternalResourcesPath()
+        private string GetExternalAssetPath()
         {
             var projectResourceFolders = ProjectResourceFolders.Instance;
 
-            return projectResourceFolders != null ? projectResourceFolders.ExternalResourcesPath : null;
+            return projectResourceFolders != null ? projectResourceFolders.ExternalAssetPath : null;
         }
 
         private string GetShareResourcesPath()

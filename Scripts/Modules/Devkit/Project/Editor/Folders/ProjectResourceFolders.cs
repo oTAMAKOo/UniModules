@@ -15,7 +15,7 @@ namespace Modules.Devkit.Project
 		[SerializeField]
         private Object internalResourcesFolder = null;
         [SerializeField]
-        private Object externalResourcesFolder = null;
+        private Object externalAssetFolder = null;
         [SerializeField]
         private Object shareResourcesFolder = null;
 
@@ -23,7 +23,7 @@ namespace Modules.Devkit.Project
 
 		public string InternalResourcesPath { get { return AssetDatabase.GetAssetPath(internalResourcesFolder); } }
         public string ShareResourcesPath { get { return AssetDatabase.GetAssetPath(shareResourcesFolder); } }
-        public string ExternalResourcesPath { get { return AssetDatabase.GetAssetPath(externalResourcesFolder); } }
+        public string ExternalAssetPath { get { return AssetDatabase.GetAssetPath(externalAssetFolder); } }
 
         //----- method -----
     }

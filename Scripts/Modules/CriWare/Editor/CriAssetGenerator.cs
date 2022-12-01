@@ -6,7 +6,7 @@ using System.IO;
 using System.Linq;
 using Extensions;
 using Modules.Devkit.Project;
-using Modules.ExternalResource;
+using Modules.ExternalAssets;
 
 namespace Modules.CriWare.Editor
 {
@@ -29,7 +29,7 @@ namespace Modules.CriWare.Editor
 
             if (projectResourceFolders == null){ return; }
 
-            var externalResourcesPath = projectResourceFolders.ExternalResourcesPath;
+            var externalAssetPath = projectResourceFolders.ExternalAssetPath;
 
             Func<AssetInfo, bool> isCriAssetInfo = x =>
             {
@@ -44,7 +44,7 @@ namespace Modules.CriWare.Editor
 
             foreach (var assetInfo in assetInfos)
             {
-                var source = PathUtility.Combine(new string[] { UnityPathUtility.GetProjectFolderPath(), externalResourcesPath, assetInfo.ResourcePath });
+                var source = PathUtility.Combine(new string[] { UnityPathUtility.GetProjectFolderPath(), externalAssetPath, assetInfo.ResourcePath });
                 var dest = PathUtility.Combine(new string[] { exportPath, assetInfo.FileName });
 
                 var directory = Path.GetDirectoryName(dest);

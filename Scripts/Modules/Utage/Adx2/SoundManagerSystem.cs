@@ -62,7 +62,7 @@ namespace Modules.UtageExtension
 
             if(soundData.Clip != null) { return; }
 
-            var soundAssetFile = soundData.File as ExternalResourcesSoundAssetFile;
+            var soundAssetFile = soundData.File as ExternalAssetSoundAssetFile;
 
             if(soundAssetFile == null) { return; }
             

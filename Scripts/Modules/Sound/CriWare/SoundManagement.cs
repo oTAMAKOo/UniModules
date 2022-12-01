@@ -121,7 +121,7 @@ namespace Modules.Sound
         }
 
         /// <summary>
-        ///  ExternalResources内のサウンドを再生.
+        ///  ExternalAsset内のサウンドを再生.
         /// </summary>
         public SoundElement Play(SoundType type, CueInfo info)
         {

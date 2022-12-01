@@ -43,13 +43,13 @@ namespace Modules.UtageExtension
 
             if(asset == null)
             {
-                asset = GetExternalResourcesAssetFile(mangager, fileInfo, settingData);
+                asset = GetExternalAssetAssetFile(mangager, fileInfo, settingData);
             }
         }
 
         protected abstract AssetFileBase GetInternalResourcesAssetFile(AssetFileManager mangager, AssetFileInfo fileInfo, IAssetFileSettingData settingData);
 
-        protected abstract AssetFileBase GetExternalResourcesAssetFile(AssetFileManager mangager, AssetFileInfo fileInfo, IAssetFileSettingData settingData);
+        protected abstract AssetFileBase GetExternalAssetAssetFile(AssetFileManager mangager, AssetFileInfo fileInfo, IAssetFileSettingData settingData);
     }
 }
 

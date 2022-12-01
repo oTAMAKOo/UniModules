@@ -2,7 +2,7 @@
 #if ENABLE_XLUA
 
 using Cysharp.Threading.Tasks;
-using Modules.ExternalResource;
+using Modules.ExternalAssets;
 using XLua;
 
 namespace Modules.Scenario.Command
@@ -34,7 +34,7 @@ namespace Modules.Scenario.Command
 
 		protected virtual async UniTask LoadAsset(string assetPath)
 		{
-			var asset = await ExternalResources.LoadAsset<T>(assetPath);
+			var asset = await ExternalAsset.LoadAsset<T>(assetPath);
 
 			if (asset != null)
 			{

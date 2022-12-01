@@ -4,7 +4,7 @@ using System.Linq;
 using Extensions;
 using Extensions.Devkit;
 using Modules.Devkit.Project;
-using Modules.ExternalResource;
+using Modules.ExternalAssets;
 
 namespace Modules.Devkit.AssetTuning
 {
@@ -17,7 +17,7 @@ namespace Modules.Devkit.AssetTuning
         private AssetManagement assetManagement = null;
         private AssetInfoManifest assetInfoManifest = null;
 
-        private string externalResourcesPath = null;
+        private string externalAssetPath = null;
         private AssetInfo[] assetInfos = null;
         private bool changeAssetInfo = false;
 
@@ -45,11 +45,11 @@ namespace Modules.Devkit.AssetTuning
             
             assetManagement = AssetManagement.Instance;
 
-            externalResourcesPath = projectResourceFolders.ExternalResourcesPath;
+            externalAssetPath = projectResourceFolders.ExternalAssetPath;
 
             assetManagement.Initialize();
 
-            var manifestPath = PathUtility.Combine(externalResourcesPath, AssetInfoManifest.ManifestFileName);
+            var manifestPath = PathUtility.Combine(externalAssetPath, AssetInfoManifest.ManifestFileName);
 
             assetInfoManifest = AssetDatabase.LoadAssetAtPath<AssetInfoManifest>(manifestPath);
 
@@ -70,7 +70,7 @@ namespace Modules.Devkit.AssetTuning
 
         public override void OnAssetCreate(string path)
         {
-            if (!IsExternalResources(path)) { return; }
+            if (!IsExternalAsset(path)) { return; }
 
             if (ContainsAssetInfo(path)) { return; }
 
@@ -79,7 +79,7 @@ namespace Modules.Devkit.AssetTuning
 
         public override void OnAssetDelete(string path)
         {
-            if (!IsExternalResources(path)) { return; }
+            if (!IsExternalAsset(path)) { return; }
 
             if (!ContainsAssetInfo(path)) { return; }
 
@@ -88,12 +88,12 @@ namespace Modules.Devkit.AssetTuning
 
         public override void OnAssetMove(string path, string from)
         {
-            if (IsExternalResources(from) && ContainsAssetInfo(from))
+            if (IsExternalAsset(from) && ContainsAssetInfo(from))
             {
                 DeleteAssetInfo(from);
             }
 
-            if (IsExternalResources(path) && !ContainsAssetInfo(path))
+            if (IsExternalAsset(path) && !ContainsAssetInfo(path))
             {
                 AddAssetInfo(path);
             }
@@ -101,12 +101,12 @@ namespace Modules.Devkit.AssetTuning
 
         private string ConvertAssetPathToResourcePath(string assetPath)
         {
-            return assetPath.Replace(externalResourcesPath, string.Empty).TrimStart(PathUtility.PathSeparator);
+            return assetPath.Replace(externalAssetPath, string.Empty).TrimStart(PathUtility.PathSeparator);
         }
 
-        private bool IsExternalResources(string path)
+        private bool IsExternalAsset(string path)
         {
-            return path.StartsWith(externalResourcesPath);
+            return path.StartsWith(externalAssetPath);
         }
 
         private bool ContainsAssetInfo(string path)

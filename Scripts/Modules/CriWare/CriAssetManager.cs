@@ -1,4 +1,4 @@
-
+﻿
 #if ENABLE_CRIWARE_ADX || ENABLE_CRIWARE_SOFDEC
 ﻿﻿﻿
 using UnityEngine;
@@ -11,7 +11,7 @@ using Cysharp.Threading.Tasks;
 using CriWare;
 using UniRx;
 using Extensions;
-using Modules.ExternalResource;
+using Modules.ExternalAssets;
 
 namespace Modules.CriWare
 {
