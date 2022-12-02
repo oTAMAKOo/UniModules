@@ -1,4 +1,4 @@
-
+﻿
 #if ENABLE_CRIWARE_ADX
 
 using UnityEngine;
@@ -23,6 +23,8 @@ namespace Modules.Sound
         public CueInfo CueInfo { get; private set; }
         public SoundSheet SoundSheet { get; private set; }
         public float? FinishTime { get; private set; }
+
+        public bool IsPaused { get { return playback.IsPaused(); } }
 
         public bool IsPlaying { get { return !FinishTime.HasValue; } }
 
@@ -56,6 +58,27 @@ namespace Modules.Sound
                     onFinish.OnNext(Unit.Default);
                 }
             }
+        }
+
+        public void Stop(bool ignoresReleaseTime = false)
+        {
+            var soundManagement = SoundManagement.Instance;
+
+            soundManagement.Stop(this, ignoresReleaseTime);
+        }
+
+        public void Pause()
+        {
+            var soundManagement = SoundManagement.Instance;
+
+            soundManagement.Pause(this);
+        }
+
+        public void Resume(CriAtomEx.ResumeMode resumeMode = CriAtomEx.ResumeMode.AllPlayback)
+        {
+            var soundManagement = SoundManagement.Instance;
+
+            soundManagement.Resume(this, resumeMode);
         }
 
         public IObservable<Unit> OnFinishAsObservable()
