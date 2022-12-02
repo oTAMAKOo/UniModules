@@ -16,7 +16,7 @@ namespace Modules.Movie
 {
     public enum MovieAssetType
     {
-        InternalResources,
+        InternalAsset,
         ExternalAsset,
     }
 

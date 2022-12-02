@@ -33,7 +33,7 @@ using Extensions;
 
 namespace Modules.Sound
 {
-    public static class Sounds
+    public static partial class Sounds
 	{
         public enum Cue
         {

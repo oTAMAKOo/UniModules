@@ -30,7 +30,7 @@ using Extensions;
 
 namespace Modules.Movie
 {
-    public static class Movies
+    public static partial class Movies
 	{
         public enum Mana
         {
