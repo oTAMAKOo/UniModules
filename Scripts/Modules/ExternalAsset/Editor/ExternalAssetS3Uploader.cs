@@ -1,4 +1,6 @@
-﻿
+
+#if ENABLE_AMAZON_WEB_SERVICE
+
 using UnityEngine;
 using Cysharp.Threading.Tasks;
 using Extensions;
@@ -47,3 +49,5 @@ namespace Modules.ExternalAssets
         }
     }
 }
+
+#endif

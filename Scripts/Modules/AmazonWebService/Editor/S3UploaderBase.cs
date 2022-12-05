@@ -1,4 +1,6 @@
 ﻿
+#if ENABLE_AMAZON_WEB_SERVICE
+
 using System;
 using Extensions;
 using Amazon;
@@ -50,3 +52,5 @@ namespace Modules.Amazon.S3
         public abstract RegionEndpoint GetBucketRegion();
     }
 }
+
+#endif

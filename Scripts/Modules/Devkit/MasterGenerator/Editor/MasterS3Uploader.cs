@@ -1,4 +1,6 @@
 ﻿
+#if ENABLE_AMAZON_WEB_SERVICE
+
 using UnityEngine;
 using System.IO;
 using System.Text;
@@ -78,3 +80,5 @@ namespace Modules.Master
         }
 	}
 }
+
+#endif

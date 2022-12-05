@@ -1,4 +1,6 @@
 ﻿
+#if ENABLE_AMAZON_WEB_SERVICE
+
 using UnityEngine;
 using System;
 using System.IO;
@@ -481,3 +483,5 @@ namespace Modules.ExternalAssets
         }
 	}
 }
+
+#endif

@@ -1,4 +1,6 @@
 ﻿
+#if ENABLE_AMAZON_WEB_SERVICE
+
 using UnityEngine;
 using System;
 using System.IO;
@@ -246,3 +248,5 @@ namespace Modules.Master.Editor
         }
     }
 }
+
+#endif
