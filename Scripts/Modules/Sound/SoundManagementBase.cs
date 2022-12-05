@@ -93,6 +93,15 @@ namespace Modules.Sound
 			}
 		}
 
+		/// <summary> 再生設定を更新 </summary>
+		public void UpdateSoundParam(SoundType type)
+		{
+			if (onUpdateParam != null)
+			{
+				onUpdateParam.OnNext(type);
+			}
+		}
+
 		/// <summary> 再生設定を取得 </summary>
 		public TSoundParam GetSoundParam(SoundType type)
 		{
