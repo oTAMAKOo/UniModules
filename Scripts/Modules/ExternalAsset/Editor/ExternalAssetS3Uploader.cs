@@ -1,4 +1,4 @@
-
+﻿
 #if ENABLE_AMAZON_WEB_SERVICE
 
 using UnityEngine;
