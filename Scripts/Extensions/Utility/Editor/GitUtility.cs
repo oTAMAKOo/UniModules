@@ -7,17 +7,10 @@ namespace Extensions
         public static string GetBranchName(string workingDirectory, bool trimAsterisk = true)
         {
             if (string.IsNullOrEmpty(workingDirectory)){ return null; }
+            
+            var result = ExecuteGitProcess(workingDirectory, "branch --contains");
 
-            var processExecute = new ProcessExecute("git", "branch --contains")
-            {
-                WorkingDirectory = workingDirectory,
-            };
-
-            var result = processExecute.Start();
-
-            if (result == null){ return string.Empty; }
-
-            if (string.IsNullOrEmpty(result.Output)){ return null; }
+            if (IsInvalidResult(result)){ return null; }
 
             // 改行コードを削除.
             var branchName = result.Output.Replace("\r", "").Replace("\n", "");
@@ -35,14 +28,9 @@ namespace Extensions
 		{
 			if (string.IsNullOrEmpty(workingDirectory)){ return null; }
 
-			var processExecute = new ProcessExecute("git", "log --pretty=%H -n 1")
-			{
-				WorkingDirectory = workingDirectory,
-			};
+            var result = ExecuteGitProcess(workingDirectory, "log --pretty=%H -n 1");
 
-			var result = processExecute.Start();
-
-			if (string.IsNullOrEmpty(result.Output)){ return null; }
+			if (IsInvalidResult(result)){ return null; }
 
 			// 改行コードを削除.
 			return result.Output.Replace("\r", "").Replace("\n", "");
@@ -51,16 +39,54 @@ namespace Extensions
         /// <summary> 指定のブランチをチェックアウト </summary>
         public static bool Checkout(string workingDirectory, string branchName)
         {
-            var processExecute = new ProcessExecute("git", $"checkout {branchName}")
+            var result = ExecuteGitProcess(workingDirectory, $"checkout {branchName}");
+
+            if (IsInvalidResult(result)){ return false; }
+            
+            return true;
+        }
+
+        /// <summary> 現在のブランチを最新にする </summary>
+        public static bool Pull(string workingDirectory)
+        {
+            var result = ExecuteGitProcess(workingDirectory, "pull");
+
+            if (IsInvalidResult(result)){ return false; }
+            
+            return true;
+        }
+
+        /// <summary> ワークスペースを破棄する </summary>
+        public static bool Clean(string workingDirectory)
+        {
+            ProcessExecute.Result result = null;
+
+            result = ExecuteGitProcess(workingDirectory, "checkout -f");
+
+            if (IsInvalidResult(result)){ return false; }
+
+            result = ExecuteGitProcess(workingDirectory, "clean -fd");
+
+            if (IsInvalidResult(result)){ return false; }
+            
+            return true;
+        }
+
+        private static ProcessExecute.Result ExecuteGitProcess(string workingDirectory, string command)
+        {
+            var processExecute = new ProcessExecute("git", command)
             {
                 WorkingDirectory = workingDirectory,
             };
-
-            var result = processExecute.Start();
-
-            if (string.IsNullOrEmpty(result.Output)){ return false; }
             
-            return !result.Output.StartsWith("error");
+            return processExecute.Start();
         }
-	}
+
+        private static bool IsInvalidResult(ProcessExecute.Result result)
+        {
+            return result == null || 
+                   string.IsNullOrEmpty(result.Output) || 
+                   result.Output.StartsWith("error");
+        }
+    }
 }
