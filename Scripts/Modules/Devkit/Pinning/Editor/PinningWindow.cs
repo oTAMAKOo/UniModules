@@ -53,6 +53,9 @@ namespace Modules.Devkit.Pinning
 
         void OnEnable()
         {
+			labelStyle = null;
+			iconStyle = null;
+
             Load();
         }
 
