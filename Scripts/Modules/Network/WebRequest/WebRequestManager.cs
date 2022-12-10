@@ -76,54 +76,54 @@ namespace Modules.Net.WebRequest
         /// <summary> リソースの取得. </summary>
         protected async Task<TResult> Get<TResult>(TWebRequest webRequest, IProgress<float> progress = null) where TResult : class
         {
-            var requestTask = new Func<Task<TResult>>(async () => await webRequest.Get<TResult>(progress));
+            var taskFunc = webRequest.Get<TResult>(progress);
 
-            var request = await Request(webRequest, requestTask);
+            var result = await Request(webRequest, taskFunc);
 
-            return request.Result;
+            return result;
         }
 
         /// <summary> リソースの作成、追加. </summary>
         protected async Task<TResult> Post<TResult, TContent>(TWebRequest webRequest, TContent content, IProgress<float> progress = null) where TResult : class
         {
-            var requestTask = new Func<Task<TResult>>(async () => await webRequest.Post<TResult, TContent>(content, progress));
+            var taskFunc = webRequest.Post<TResult, TContent>(content, progress);
 
-            var request = await Request(webRequest, requestTask);
+            var result = await Request(webRequest, taskFunc);
 
-            return request.Result;
+            return result;
         }
 
         /// <summary> リソースの更新、作成. </summary>
         protected async Task<TResult> Put<TResult, TContent>(TWebRequest webRequest, TContent content, IProgress<float> progress = null) where TResult : class
         {
-            var requestTask = new Func<Task<TResult>>(async () => await webRequest.Put<TResult, TContent>(content, progress));
+            var taskFunc = webRequest.Put<TResult, TContent>(content, progress);
 
-            var request = await Request(webRequest, requestTask);
+            var result = await Request(webRequest, taskFunc);
 
-            return request.Result;
+            return result;
         }
 
         /// <summary> リソースの部分更新. </summary>
         protected async Task<TResult> Patch<TResult, TContent>(TWebRequest webRequest, TContent content, IProgress<float> progress = null) where TResult : class
         {
-            var requestTask = new Func<Task<TResult>>(async () => await webRequest.Patch<TResult, TContent>(content, progress));
+            var taskFunc = webRequest.Patch<TResult, TContent>(content, progress);
 
-            var request = await Request(webRequest, requestTask);
+            var result = await Request(webRequest, taskFunc);
 
-            return request.Result;
+            return result;
         }
 
         /// <summary> リソースの削除. </summary>
         protected async Task<TResult> Delete<TResult>(TWebRequest webRequest, IProgress<float> progress = null) where TResult : class
         {
-            var requestTask = new Func<Task<TResult>>(async () => await webRequest.Delete<TResult>(progress));
+            var taskFunc = webRequest.Delete<TResult>(progress);
 
-            var request = await Request(webRequest, requestTask);
+            var result = await Request(webRequest, taskFunc);
 
-            return request.Result;
+            return result;
         }
 
-        private async Task<TResult> Request<TResult>(TWebRequest webRequest, Func<TResult> requestTask) where TResult : class
+        private async Task<TResult> Request<TResult>(TWebRequest webRequest, Func<CancellationToken, Task<TResult>> taskFunc) where TResult : class
         {
             // 通信待ちキュー.
             await WaitQueueingRequest(webRequest);
@@ -156,7 +156,7 @@ namespace Modules.Net.WebRequest
                     OnStart(webRequest);
                 }
 
-                result = await Task.Run(requestTask, cancellationTokenSource.Token);
+                result = await taskFunc.Invoke(cancellationTokenSource.Token);
 
                 //------ 通信成功 ------
 

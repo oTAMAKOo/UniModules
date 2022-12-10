@@ -97,7 +97,7 @@ namespace Modules.Net.WebRequest
                 { Column.Api,         new ColumnInfo("API", 200, false) },
                 { Column.StatusCode,  new ColumnInfo("StatusCode", 75) },
                 { Column.RetryCount,  new ColumnInfo("RetryCount", 80) },
-                { Column.ElapsedTime, new ColumnInfo("Elapsed", 80) },
+                { Column.ElapsedTime, new ColumnInfo("Time", 80) },
                 { Column.StartTime,   new ColumnInfo("StartTime", 100) },
                 { Column.FinishTime,  new ColumnInfo("FinishTime", 100) },
             };
@@ -314,7 +314,7 @@ namespace Modules.Net.WebRequest
                         break;
 
                     case Column.ElapsedTime:
-                        EditorGUI.LabelField(rect, info.ElapsedTime.HasValue ? info.ElapsedTime.ToString() : "---", labelStyle);
+                        EditorGUI.LabelField(rect, info.ElapsedTime.HasValue ? info.ElapsedTime.Value.ToString("F2") : "---", labelStyle);
                         break;
 
                     case Column.RetryCount:

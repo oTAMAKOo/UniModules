@@ -1,6 +1,7 @@
 ﻿
 using System;
 using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Modules.Net.WebRequest
@@ -55,15 +56,15 @@ namespace Modules.Net.WebRequest
 
         void Initialize(string hostUrl, bool compress, DataFormat format = DataFormat.MessagePack);
 
-        Task<TResult> Get<TResult>(IProgress<float> progress = null) where TResult : class;
+        Func<CancellationToken, Task<TResult>> Get<TResult>(IProgress<float> progress = null) where TResult : class;
 
-        Task<TResult> Post<TResult, TContent>(TContent content, IProgress<float> progress = null) where TResult : class;
-
-        Task<TResult> Put<TResult, TContent>(TContent content, IProgress<float> progress = null) where TResult : class;
-
-        Task<TResult> Patch<TResult, TContent>(TContent content, IProgress<float> progress = null) where TResult : class;
-
-        Task<TResult> Delete<TResult>(IProgress<float> progress = null) where TResult : class;
+		Func<CancellationToken, Task<TResult>> Post<TResult, TContent>(TContent content, IProgress<float> progress = null) where TResult : class;
+		
+		Func<CancellationToken, Task<TResult>> Put<TResult, TContent>(TContent content, IProgress<float> progress = null) where TResult : class;
+		
+		Func<CancellationToken, Task<TResult>> Patch<TResult, TContent>(TContent content, IProgress<float> progress = null) where TResult : class;
+		
+		Func<CancellationToken, Task<TResult>> Delete<TResult>(IProgress<float> progress = null) where TResult : class;
 
         void Cancel(bool throwException = false);
 

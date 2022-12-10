@@ -4,7 +4,9 @@ using System;
 using System.Linq;
 using System.Collections.Generic;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
+using Cysharp.Threading.Tasks;
 using UniRx;
 using Newtonsoft.Json;
 using Extensions;
@@ -112,36 +114,36 @@ namespace Modules.Net.WebRequest
             Url = request.url;
         }
 
-        public async Task<TResult> Get<TResult>(IProgress<float> progress = null) where TResult : class
+        public Func<CancellationToken, Task<TResult>> Get<TResult>(IProgress<float> progress = null) where TResult : class
         {
             CreateWebRequest(UnityWebRequest.kHttpVerbGET);
 
             request.downloadHandler = CreateDownloadHandler();
 
-            return await SendRequest<TResult>(progress);
+            return async token => await SendRequest<TResult>(progress, token);
         }
 
-        public async Task<TResult> Post<TResult, TContent>(TContent content, IProgress<float> progress = null) where TResult : class
+        public Func<CancellationToken, Task<TResult>> Post<TResult, TContent>(TContent content, IProgress<float> progress = null) where TResult : class
         {
             CreateWebRequest(UnityWebRequest.kHttpVerbPOST);
 
             request.uploadHandler = CreateUploadHandler(content);
             request.downloadHandler = CreateDownloadHandler();
 
-            return await SendRequest<TResult>(progress);
+            return async token => await SendRequest<TResult>(progress, token);
         }
 
-        public async Task<TResult> Put<TResult, TContent>(TContent content, IProgress<float> progress = null) where TResult : class
+        public Func<CancellationToken, Task<TResult>> Put<TResult, TContent>(TContent content, IProgress<float> progress = null) where TResult : class
         {
             CreateWebRequest(UnityWebRequest.kHttpVerbPUT);
 
             request.uploadHandler = CreateUploadHandler(content);
             request.downloadHandler = CreateDownloadHandler();
 
-            return await SendRequest<TResult>(progress);
+            return async token => await SendRequest<TResult>(progress, token);
         }
 
-        public async Task<TResult> Patch<TResult, TContent>(TContent content, IProgress<float> progress = null) where TResult : class
+        public Func<CancellationToken, Task<TResult>> Patch<TResult, TContent>(TContent content, IProgress<float> progress = null) where TResult : class
         {
             const string kHttpVerbPatch = "PATCH";
 
@@ -150,16 +152,16 @@ namespace Modules.Net.WebRequest
             request.uploadHandler = CreateUploadHandler(content);
             request.downloadHandler = CreateDownloadHandler();
 
-            return await SendRequest<TResult>(progress);
+            return async token => await SendRequest<TResult>(progress, token);
         }
 
-        public async Task<TResult> Delete<TResult>(IProgress<float> progress = null) where TResult : class
+        public Func<CancellationToken, Task<TResult>> Delete<TResult>(IProgress<float> progress = null) where TResult : class
         {
             CreateWebRequest(UnityWebRequest.kHttpVerbDELETE);
 
             request.downloadHandler = CreateDownloadHandler();
 
-            return await SendRequest<TResult>(progress);
+            return async token => await SendRequest<TResult>(progress, token);
         }
 
         public void Cancel(bool throwException = false)
@@ -174,7 +176,7 @@ namespace Modules.Net.WebRequest
             }
         }
 
-        private async Task<TResult> SendRequest<TResult>(IProgress<float> progress) where TResult : class
+        private async Task<TResult> SendRequest<TResult>(IProgress<float> progress, CancellationToken token) where TResult : class
         {
             TResult result = null;
 
@@ -182,7 +184,7 @@ namespace Modules.Net.WebRequest
 
             try
             {
-                var bytes = await request.Send(progress);
+                var bytes = await request.Send(progress).ToUniTask(cancellationToken: token);
 
                 if (bytes != null )
                 {
