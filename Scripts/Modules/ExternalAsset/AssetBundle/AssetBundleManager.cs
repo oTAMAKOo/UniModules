@@ -721,11 +721,7 @@ namespace Modules.AssetBundles
             }
             else
             {
-                // ファイル読み込み.
-
-                await UniTask.SwitchToThreadPool();
-
-                var bytes = new byte[0];
+				var bytes = new byte[0];
 
                 using (var fileStream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
                 {
@@ -738,9 +734,7 @@ namespace Modules.AssetBundles
 
 			    bytes = fileHandler.Decode(bytes);
 
-                await UniTask.SwitchToMainThread();
-
-			    if (bytes != null)
+				if (bytes != null)
                 {
                     // AssetBundle読み込み.
 
