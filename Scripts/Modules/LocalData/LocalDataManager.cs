@@ -35,6 +35,8 @@ namespace Modules.LocalData
 
         //----- property -----
 
+        public string BaseDirectory { get; private set; }
+
         public string FileDirectory { get; private set; }
 
         //----- method -----
@@ -46,7 +48,9 @@ namespace Modules.LocalData
 
             var fileDir = UnityPathUtility.GetPrivateDataPath();
 
-            FileDirectory = fileDir + "/LocalData/";
+            BaseDirectory = fileDir + "/LocalData/";
+
+            SetFileDirectory(BaseDirectory);
         }
 
         public void SetFileDirectory(string directory)
