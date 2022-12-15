@@ -21,8 +21,8 @@ namespace Modules.AssetBundles
 
         public const string PackageExtension = ".package";
 
-		// 非同期で読み込むファイルサイズ (0.5MB).
-		private const float AsyncLoadFileSize = 1024.0f * 1024.0f * 0.5f;
+		// 非同期で読み込むファイルサイズ (0.2MB).
+		private const float AsyncLoadFileSize = 1024.0f * 1024.0f * 0.2f;
 
         // タイムアウトまでの時間.
         private readonly TimeSpan TimeoutLimit = TimeSpan.FromSeconds(60f);
