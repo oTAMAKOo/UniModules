@@ -21,10 +21,13 @@ namespace Modules.AssetBundles
 
         public const string PackageExtension = ".package";
 
-		// 非同期で読み込むファイルサイズ (0.2MB).
-		private const float AsyncLoadFileSize = 1024.0f * 1024.0f * 0.2f;
+		// 非同期で読み込むファイルサイズ (0.1MB).
+		private const float AsyncLoadFileSize = 1024.0f * 1024.0f * 0.1f;
 
-        // タイムアウトまでの時間.
+		// 同時に同期読み込みできる最大ファイル数.
+		private const int MaxSyncLoadCount = 5;
+
+		// タイムアウトまでの時間.
         private readonly TimeSpan TimeoutLimit = TimeSpan.FromSeconds(60f);
 
         // リトライする回数.
@@ -43,6 +46,12 @@ namespace Modules.AssetBundles
 
         // 同時ダウンロード数.
         private uint maxDownloadCount = 0;
+
+		// 同期読み込み数.
+		private uint syncLoadCount = 0;
+
+		// 同期読み込みフレームカウント.
+		private int syncLoadFrameCount = 0;
 
         // アセット管理.
         private AssetInfoManifest manifest = null;
@@ -727,7 +736,26 @@ namespace Modules.AssetBundles
 					}
 					else
 					{
+						// 同じフレームに同期読み込みできる最大数を超えた場合次のフレームまで待機.
+
+						if (syncLoadFrameCount == Time.frameCount)
+						{
+							if (MaxSyncLoadCount < syncLoadCount)
+							{
+								syncLoadCount = 0;
+
+								await UniTask.NextFrame(cancelToken);
+							}
+						}
+						else
+						{
+							syncLoadFrameCount = Time.frameCount;
+							syncLoadCount = 0;
+						}
+
 						fileStream.Read(bytes, 0, bytes.Length);
+
+						syncLoadCount++;
 					}
                 }
 				
