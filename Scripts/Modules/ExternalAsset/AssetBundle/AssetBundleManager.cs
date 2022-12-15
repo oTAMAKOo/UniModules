@@ -21,6 +21,9 @@ namespace Modules.AssetBundles
 
         public const string PackageExtension = ".package";
 
+		// 非同期で読み込むファイルサイズ (0.5MB).
+		private const float AsyncLoadFileSize = 1024.0f * 1024.0f * 0.5f;
+
         // タイムアウトまでの時間.
         private readonly TimeSpan TimeoutLimit = TimeSpan.FromSeconds(60f);
 
@@ -230,7 +233,7 @@ namespace Modules.AssetBundles
         /// <summary>
         /// アセット情報ファイルを更新.
         /// </summary>
-        public async UniTask UpdateAssetInfoManifest(CancellationToken cancelToken)
+        public async UniTask UpdateAssetInfoManifest(CancellationToken cancelToken = default)
         {
             if (simulateMode) { return; }
 
@@ -238,22 +241,22 @@ namespace Modules.AssetBundles
 
             var manifestAssetInfo = AssetInfoManifest.GetManifestAssetInfo();
             
-            await UpdateAssetBundleInternal(manifestAssetInfo);
+            await UpdateAssetBundleInternal(manifestAssetInfo, null, cancelToken);
         }
 
         /// <summary>
         /// アセットバンドルを更新.
         /// </summary>
-        public async UniTask UpdateAssetBundle(AssetInfo assetInfo, IProgress<float> progress = null)
+        public async UniTask UpdateAssetBundle(AssetInfo assetInfo, IProgress<float> progress = null, CancellationToken cancelToken = default)
         {
             if (simulateMode) { return; }
 
             if (localMode) { return; }
 
-            await UpdateAssetBundleInternal(assetInfo, progress);
+            await UpdateAssetBundleInternal(assetInfo, progress, cancelToken);
         }
 
-        private async UniTask UpdateAssetBundleInternal(AssetInfo assetInfo, IProgress<float> progress = null)
+        private async UniTask UpdateAssetBundleInternal(AssetInfo assetInfo, IProgress<float> progress, CancellationToken cancelToken)
         {
 			var assetBundleName = assetInfo.AssetBundle.AssetBundleName;
 
@@ -299,7 +302,7 @@ namespace Modules.AssetBundles
                     // ダウンロードキューが空くまで待つ.
                     while (maxDownloadCount <= downloadList.Count)
                     {
-                        await UniTask.NextFrame();
+                        await UniTask.NextFrame(cancelToken);
                     }
                     
                     // ダウンロード中でなかったらリストに追加.
@@ -311,12 +314,7 @@ namespace Modules.AssetBundles
                     // ダウンロード実行.
 					try
 					{
-						var downloadYield = downloadTask.Value.ToYieldInstruction();
-
-						while (!downloadYield.IsDone)
-						{
-							await UniTask.NextFrame();
-						}
+						await downloadTask.Value.ToUniTask(cancellationToken:cancelToken);
 					}
 					catch (Exception e)
 					{
@@ -546,19 +544,20 @@ namespace Modules.AssetBundles
         /// <summary>
         /// 名前で指定したアセットを取得.
         /// </summary>
-        public IObservable<T> LoadAsset<T>(AssetInfo assetInfo, string assetPath, bool autoUnLoad = true) where T : UnityEngine.Object
+        public async UniTask<T> LoadAsset<T>(AssetInfo assetInfo, string assetPath, bool autoUnLoad = true, CancellationToken cancelToken = default) where T : UnityEngine.Object
         {
             // コンポーネントを取得する場合はGameObjectから取得.
             if (typeof(T).IsSubclassOf(typeof(Component)))
             {
-                return ObservableEx.FromUniTask(cancelToken => LoadAssetInternal<GameObject>(cancelToken, assetInfo, assetPath, autoUnLoad))
-                    .Select(x => x != null ? x.GetComponent<T>() : null);                   
+				var go = await LoadAssetInternal<GameObject>(assetInfo, assetPath, autoUnLoad, cancelToken);
+
+                return go != null ? go.GetComponent<T>() : null;                   
             }
 
-            return ObservableEx.FromUniTask(cancelToken => LoadAssetInternal<T>(cancelToken, assetInfo, assetPath, autoUnLoad));
+            return await LoadAssetInternal<T>(assetInfo, assetPath, autoUnLoad, cancelToken);
         }
         
-        private async UniTask<T> LoadAssetInternal<T>(CancellationToken cancelToken, AssetInfo assetInfo, string assetPath, bool autoUnLoad) where T : UnityEngine.Object
+        private async UniTask<T> LoadAssetInternal<T>(AssetInfo assetInfo, string assetPath, bool autoUnLoad, CancellationToken cancelToken) where T : UnityEngine.Object
         {
             T result = null;
 
@@ -580,7 +579,7 @@ namespace Modules.AssetBundles
             #endif
 
             {
-                IObservable<AssetBundle> loader = null;
+                UniTask<AssetBundle> task = default;
 
                 // アセットバンドル名は小文字なので小文字に変換.
                 var assetBundleName = assetInfo.AssetBundle.AssetBundleName.ToLower();
@@ -596,32 +595,27 @@ namespace Modules.AssetBundles
                         IncrementReferenceCount(dependencies[i]);    
                     }
                     
-                    loader = Observable.Defer(() =>
+                    task = UniTask.Create(async () =>
                     {
-                        var loadDependenciesTasks = dependencies
-                            .Select(x => Observable.Defer(() => GetLoadTask(x)))
-                            .ToArray();
+						var loadDependenciesTasks = dependencies
+							.Select(x => GetLoadTask(x).ToUniTask(cancellationToken: cancelToken))
+							.ToArray();
 
-                        return Observable.WhenAll(loadDependenciesTasks).SelectMany(_ => GetLoadTask(assetBundleName));
+						await UniTask.WhenAll(loadDependenciesTasks);
+
+						return await GetLoadTask(assetBundleName).ToUniTask(cancellationToken: cancelToken);
                     });
                 }
                 else
                 {
                     IncrementReferenceCount(assetBundleName);
 
-                    loader = Observable.Defer(() => Observable.Return(loadedAssetBundle));
+					task = UniTask.FromResult(loadedAssetBundle);
                 }
 
 				try
 				{
-					var loadYield = loader.ToYieldInstruction(cancelToken);
-
-					while (!loadYield.IsDone)
-					{
-						await UniTask.NextFrame(cancelToken);
-					}
-
-					var assetBundle = loadYield.Result;
+					var assetBundle = await task;
 
 					if (assetBundle != null)
 					{
@@ -721,21 +715,28 @@ namespace Modules.AssetBundles
             }
             else
             {
-				var bytes = new byte[0];
+				byte[] bytes = null;
 
-                using (var fileStream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+				using (var fileStream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
                 {
                     bytes = new byte[fileStream.Length];
 
-                    await fileStream.ReadAsync(bytes, 0, bytes.Length, cancelToken);
+					if (AsyncLoadFileSize < bytes.Length)
+					{
+						await fileStream.ReadAsync(bytes, 0, bytes.Length, cancelToken);
+					}
+					else
+					{
+						fileStream.Read(bytes, 0, bytes.Length);
+					}
                 }
-
-                // 復元.
-
-			    bytes = fileHandler.Decode(bytes);
-
+				
 				if (bytes != null)
                 {
+					// 復元.
+
+					bytes = fileHandler.Decode(bytes);
+
                     // AssetBundle読み込み.
 
                     var bundleLoadRequest = AssetBundle.LoadFromMemoryAsync(bytes);

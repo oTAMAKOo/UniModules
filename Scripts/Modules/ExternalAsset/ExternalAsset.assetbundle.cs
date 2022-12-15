@@ -148,7 +148,7 @@ namespace Modules.ExternalAssets
 			{
 				sw = System.Diagnostics.Stopwatch.StartNew();
 
-				result = await assetBundleManager.LoadAsset<T>(assetInfo, assetPath, autoUnload).ToUniTask(cancellationToken: cancelSource.Token);
+				result = await assetBundleManager.LoadAsset<T>(assetInfo, assetPath, autoUnload, cancelSource.Token);
 
 				// 読み込み中リストから外す.
 
