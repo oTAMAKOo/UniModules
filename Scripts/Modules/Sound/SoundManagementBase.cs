@@ -20,8 +20,8 @@ namespace Modules.Sound
     {
         //----- params -----
 
-		protected static readonly string ConsoleEventName = "Sound";
-		protected static readonly Color ConsoleEventColor = new Color(0.85f, 0.45f, 0.85f);
+		public static readonly string ConsoleEventName = "Sound";
+		public static readonly Color ConsoleEventColor = new Color(0.85f, 0.45f, 0.85f);
 
 		//----- field -----
 
