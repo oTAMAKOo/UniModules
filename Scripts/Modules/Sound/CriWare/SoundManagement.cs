@@ -1,14 +1,14 @@
-﻿
+
 #if ENABLE_CRIWARE_ADX
 
 using UnityEngine;
 using System;
 using System.IO;
 using System.Linq;
-using System.Collections;
 using System.Collections.Generic;
 using System.Text;
 using CriWare;
+using Cysharp.Threading.Tasks;
 using UniRx;
 using Extensions;
 using Modules.Devkit.Console;
@@ -151,12 +151,14 @@ namespace Modules.Sound
             // 音量設定.
             SetVolume(element, soundParam.volume);
 
-            Observable.FromCoroutine(() => PlaySoundElement(element)).Subscribe().AddTo(Disposable);
+			PlaySoundElement(element).Forget();
 
             if (onPlay != null)
             {
                 onPlay.OnNext(element);
             }
+
+			UnityConsole.Event(ConsoleEventName, ConsoleEventColor, $"Play:\nCueSheet = {element.CueInfo.CueSheet}\nCue = {element.CueInfo.Cue}");
 
             return element;
         }
@@ -175,6 +177,8 @@ namespace Modules.Sound
             {
                 onPause.OnNext(element);
             }
+
+			UnityConsole.Event(ConsoleEventName, ConsoleEventColor, $"Pause:\nCueSheet = {element.CueInfo.CueSheet}\nCue = {element.CueInfo.Cue}");
         }
 
         /// <summary> 全サウンド中断 </summary>
@@ -193,6 +197,8 @@ namespace Modules.Sound
                     onPause.OnNext(element);
                 }
             }
+
+			UnityConsole.Event(ConsoleEventName, ConsoleEventColor, "All sound pause.");
         }
 
         /// <summary> サウンド復帰 </summary>
@@ -209,6 +215,8 @@ namespace Modules.Sound
             {
                 onResume.OnNext(element);
             }
+
+			UnityConsole.Event(ConsoleEventName, ConsoleEventColor, $"Resume:\nCueSheet = {element.CueInfo.CueSheet}\nCue = {element.CueInfo.Cue}");
         }
 
         /// <summary> 全サウンド復帰 </summary>
@@ -227,6 +235,8 @@ namespace Modules.Sound
                     onResume.OnNext(element);
                 }
             }
+
+			UnityConsole.Event(ConsoleEventName, ConsoleEventColor, "All sound resume.");
         }
 
         /// <summary> サウンド停止 </summary>
@@ -243,6 +253,8 @@ namespace Modules.Sound
             {
                 onStop.OnNext(element);
             }
+
+			UnityConsole.Event(ConsoleEventName, ConsoleEventColor, $"Stop:\nCueSheet = {element.CueInfo.CueSheet}\nCue = {element.CueInfo.Cue}");
         }
 
         /// <summary> 全サウンドを停止 </summary>
@@ -264,6 +276,8 @@ namespace Modules.Sound
             }
 
             soundElements.Clear();
+
+			UnityConsole.Event(ConsoleEventName, ConsoleEventColor, "All sound stopped.");
         }
 
         /// <summary> 個別に音量変更. </summary>
@@ -398,14 +412,14 @@ namespace Modules.Sound
             return element;
         }
 
-        private IEnumerator PlaySoundElement(SoundElement element)
+        private async UniTask PlaySoundElement(SoundElement element)
         {
             var playback = element.GetPlayback();
 
             // 再生準備完了待ち.
             while (playback.GetStatus() != CriAtomExPlayback.Status.Playing)
             {
-                yield return null;
+                await UniTask.NextFrame();
             }
 
             // ポーズを解除.
