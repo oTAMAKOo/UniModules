@@ -1,4 +1,4 @@
-﻿
+
 using UnityEngine;
 using UnityEngine.Networking;
 using System;
@@ -24,8 +24,11 @@ namespace Modules.AssetBundles
 		// 非同期で読み込むファイルサイズ (0.1MB).
 		private const float AsyncLoadFileSize = 1024.0f * 1024.0f * 0.1f;
 
-		// 同時に同期読み込みできる最大ファイル数.
-		private const int MaxSyncLoadCount = 5;
+		// 1フレームで同時に同期読み込みする最大ファイルサイズ (1MB).
+		private const float FrameSyncLoadFileSize = 1024.0f * 1024.0f * 1f;
+
+		// 1フレームで同期読み込みする最大ファイル数.
+		private const int FrameSyncLoadFileNum = 25;
 
 		// タイムアウトまでの時間.
         private readonly TimeSpan TimeoutLimit = TimeSpan.FromSeconds(60f);
@@ -47,8 +50,11 @@ namespace Modules.AssetBundles
         // 同時ダウンロード数.
         private uint maxDownloadCount = 0;
 
-		// 同期読み込み数.
-		private uint syncLoadCount = 0;
+		// 同期読み込みファイルサイズ.
+		private float syncLoadFileSize = 0f;
+
+		// 同期読み込みファイル数.
+		private float syncLoadFileCount = 0f;
 
 		// 同期読み込みフレームカウント.
 		private int syncLoadFrameCount = 0;
@@ -736,13 +742,14 @@ namespace Modules.AssetBundles
 					}
 					else
 					{
-						// 同じフレームに同期読み込みできる最大数を超えた場合次のフレームまで待機.
+						// 同じフレームに同期読み込みできる最大数/最大ファイルサイズを超えた場合次のフレームまで待機.
 
 						if (syncLoadFrameCount == Time.frameCount)
 						{
-							if (MaxSyncLoadCount < syncLoadCount)
+							if (FrameSyncLoadFileSize < syncLoadFileSize || FrameSyncLoadFileNum < syncLoadFileCount)
 							{
-								syncLoadCount = 0;
+								syncLoadFileSize = 0;
+								syncLoadFileCount = 0;
 
 								await UniTask.NextFrame(cancelToken);
 							}
@@ -750,12 +757,14 @@ namespace Modules.AssetBundles
 						else
 						{
 							syncLoadFrameCount = Time.frameCount;
-							syncLoadCount = 0;
+							syncLoadFileSize = 0;
+							syncLoadFileCount = 0;
 						}
 
 						fileStream.Read(bytes, 0, bytes.Length);
 
-						syncLoadCount++;
+						syncLoadFileSize += bytes.Length;
+						syncLoadFileCount++;
 					}
                 }
 				
