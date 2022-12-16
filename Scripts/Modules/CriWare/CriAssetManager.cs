@@ -1,4 +1,4 @@
-﻿
+
 #if ENABLE_CRIWARE_ADX || ENABLE_CRIWARE_SOFDEC
 ﻿﻿﻿
 using UnityEngine;
@@ -162,14 +162,17 @@ namespace Modules.CriWare
 
             //------ CriInstaller初期化 ------
 
-            var moduleConfig = CriFsWebInstaller.defaultModuleConfig;
+			if(!CriFsWebInstaller.isInitialized)
+			{
+				var moduleConfig = CriFsWebInstaller.defaultModuleConfig;
 
-            // 同時インストール数.
-            moduleConfig.numInstallers = numInstallers;
-            // タイムアウト時間.
-            moduleConfig.inactiveTimeoutSec = (uint)TimeoutLimit.TotalSeconds;
-
-            CriFsWebInstaller.InitializeModule(moduleConfig);
+				// 同時インストール数.
+				moduleConfig.numInstallers = numInstallers;
+				// タイムアウト時間.
+				moduleConfig.inactiveTimeoutSec = (uint)TimeoutLimit.TotalSeconds;
+            
+				CriFsWebInstaller.InitializeModule(moduleConfig);
+			}
 
             Observable.EveryUpdate()
                 .Subscribe(_ => CriFsWebInstaller.ExecuteMain())
