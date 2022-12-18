@@ -115,26 +115,30 @@ namespace Modules.Devkit.AssetTuning
 
         protected virtual void SetCompressionSettings(TextureImporter textureImporter, bool firstImport)
         {
-            var config = TextureConfig.Instance;
+            var textureConfig = TextureConfig.Instance;
 
-            if (config == null) { return; }
+            if (textureConfig == null) { return; }
 
-            if (!IsFolderItem(textureImporter.assetPath, config.CompressFolders, config.IgnoreCompressFolders))
+            if (!IsFolderItem(textureImporter.assetPath, textureConfig.CompressFolders, textureConfig.IgnoreCompressFolders))
             {
                 return;
             }
+
+			var compressSetting = GetCompressSetting(textureImporter.assetPath);
 
             for (var i = 0; i < Platforms.Length; i++)
             {
                 var platform = Platforms[i];
 
-                Func<TextureImporterPlatformSettings, TextureImporterPlatformSettings> update = settings =>
+				Func<TextureImporterPlatformSettings, TextureImporterPlatformSettings> update = settings =>
                 {
-                    SetPlatformCompressionSettings(ref settings, firstImport);
+					var compressInfo = compressSetting.GetCompressInfo(platform);
 
-                    settings.format = GetPlatformCompressionType(textureImporter, platform);
+					settings.format = GetPlatformCompressionType(textureImporter, platform);
 
-                    return settings;
+                    SetPlatformCompressionSettings(firstImport, compressInfo, ref settings);
+
+					return settings;
                 };
 
                 textureImporter.SetPlatformTextureSetting(platform, update);
@@ -165,51 +169,67 @@ namespace Modules.Devkit.AssetTuning
             return isTarget;
         }
 
-        protected virtual void SetPlatformCompressionSettings(ref TextureImporterPlatformSettings platformSetting, bool firstImport)
-        {
-            platformSetting.overridden = true;
-            platformSetting.androidETC2FallbackOverride = AndroidETC2FallbackOverride.UseBuildSettings;
+		protected virtual TextureImporterFormat GetPlatformCompressionType(TextureImporter textureImporter, BuildTargetGroup platform)
+		{
+			var format = TextureImporterFormat.RGBA32;
 
-            if (firstImport)
-            {
-                platformSetting.compressionQuality = 50;
-                platformSetting.textureCompression = TextureImporterCompression.Compressed;
-            }
-        }
+			var hasAlpha = textureImporter.DoesSourceTextureHaveAlpha();
 
-        protected virtual TextureImporterFormat GetPlatformCompressionType(TextureImporter textureImporter, BuildTargetGroup platform)
-        {
-            var format = TextureImporterFormat.RGBA32;
+			switch (platform)
+			{
+				case BuildTargetGroup.iOS:
+					format = TextureImporterFormat.ASTC_6x6;
+					break;
 
-            var hasAlpha = textureImporter.DoesSourceTextureHaveAlpha();
+				case BuildTargetGroup.Android:
+					format = TextureImporterFormat.ASTC_6x6;
+					break;
+				case BuildTargetGroup.Standalone:
+					{
+						if (textureImporter.textureType == TextureImporterType.NormalMap)
+						{
+							format = TextureImporterFormat.DXT5;
+						}
+						else
+						{
+							format = hasAlpha ? TextureImporterFormat.DXT5 : TextureImporterFormat.DXT1;
+						}
+					}
+					break;
+			}
 
-            switch (platform)
-            {
-                case BuildTargetGroup.iOS:
-                    format = TextureImporterFormat.ASTC_6x6;
-                    break;
+			return format;
+		}
 
-                case BuildTargetGroup.Android:
-                    format = TextureImporterFormat.ASTC_6x6;
-                    break;
-                case BuildTargetGroup.Standalone:
-                    {
-                        if (textureImporter.textureType == TextureImporterType.NormalMap)
-                        {
-                            format = TextureImporterFormat.DXT5;
-                        }
-                        else
-                        {
-                            format = hasAlpha ? TextureImporterFormat.DXT5 : TextureImporterFormat.DXT1;
-                        }
-                    }
-                    break;
-            }
+		protected virtual void SetPlatformCompressionSettings(bool firstImport, CompressInfo compressInfo, ref TextureImporterPlatformSettings platformSetting)
+		{
+			if (firstImport)
+			{
+				platformSetting.overridden = true;
+				platformSetting.compressionQuality = 50;
+				platformSetting.textureCompression = TextureImporterCompression.Compressed;
+				platformSetting.androidETC2FallbackOverride = AndroidETC2FallbackOverride.UseBuildSettings;
+			}
 
-            return format;
-        }
+			if (compressInfo != null)
+			{
+				platformSetting.overridden = compressInfo.isOverride;
+				platformSetting.compressionQuality = compressInfo.compressionQuality;
+				platformSetting.format = compressInfo.format;
+				platformSetting.maxTextureSize = compressInfo.maxSize;
+			}
+		}
 
-        public static bool IsFolderItem(string assetPath, Object[] folders, string[] ignoreFolders)
+		public static CompressSetting GetCompressSetting(string assetPath)
+		{
+			var textureCompressConfig = TextureCompressConfig.Instance;
+
+			if (textureCompressConfig == null){ return null; }
+
+			return textureCompressConfig.GetCompressSetting(assetPath);
+		}
+
+		public static bool IsFolderItem(string assetPath, Object[] folders, string[] ignoreFolders)
         {
             assetPath = PathUtility.ConvertPathSeparator(assetPath);
 
