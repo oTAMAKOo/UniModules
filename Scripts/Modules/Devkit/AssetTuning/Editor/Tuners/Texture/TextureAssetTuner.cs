@@ -134,9 +134,14 @@ namespace Modules.Devkit.AssetTuning
                 {
 					var compressInfo = compressSetting.GetCompressInfo(platform);
 
+					// デフォルトの圧縮設定を設定.
 					settings.format = GetPlatformCompressionType(textureImporter, platform);
 
+					// 設定情報から圧縮設定を設定.
                     SetPlatformCompressionSettings(firstImport, compressInfo, ref settings);
+
+					// テクスチャ内容に応じて設定を上書き.
+					settings.format = OverrideCompressionFormat(textureImporter, platform, settings.format);
 
 					return settings;
                 };
@@ -172,9 +177,7 @@ namespace Modules.Devkit.AssetTuning
 		protected virtual TextureImporterFormat GetPlatformCompressionType(TextureImporter textureImporter, BuildTargetGroup platform)
 		{
 			var format = TextureImporterFormat.RGBA32;
-
-			var hasAlpha = textureImporter.DoesSourceTextureHaveAlpha();
-
+			
 			switch (platform)
 			{
 				case BuildTargetGroup.iOS:
@@ -185,16 +188,7 @@ namespace Modules.Devkit.AssetTuning
 					format = TextureImporterFormat.ASTC_6x6;
 					break;
 				case BuildTargetGroup.Standalone:
-					{
-						if (textureImporter.textureType == TextureImporterType.NormalMap)
-						{
-							format = TextureImporterFormat.DXT5;
-						}
-						else
-						{
-							format = hasAlpha ? TextureImporterFormat.DXT5 : TextureImporterFormat.DXT1;
-						}
-					}
+					format = TextureImporterFormat.DXT5;
 					break;
 			}
 
@@ -218,6 +212,36 @@ namespace Modules.Devkit.AssetTuning
 				platformSetting.format = compressInfo.format;
 				platformSetting.maxTextureSize = compressInfo.maxSize;
 			}
+		}
+
+		protected virtual TextureImporterFormat OverrideCompressionFormat(TextureImporter textureImporter, BuildTargetGroup platform, TextureImporterFormat format)
+		{
+			switch (platform)
+			{
+				case BuildTargetGroup.Standalone:
+					{
+						if (textureImporter.textureType == TextureImporterType.NormalMap)
+						{
+							format = TextureImporterFormat.DXT5;
+						}
+						else
+						{
+							if (format == TextureImporterFormat.DXT5)
+							{
+								var hasAlpha = textureImporter.DoesSourceTextureHaveAlpha();
+
+								// アルファ値なしの場合はDXT1に変更.
+								if (!hasAlpha)
+								{
+									format = TextureImporterFormat.DXT1;
+								}
+							}
+						}
+					}
+					break;
+			}
+
+			return format;
 		}
 
 		public static CompressSetting GetCompressSetting(string assetPath)
