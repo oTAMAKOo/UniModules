@@ -158,7 +158,7 @@ namespace Modules.Sound
                 onPlay.OnNext(element);
             }
 
-			UnityConsole.Event(ConsoleEventName, ConsoleEventColor, $"Play:\nCueSheet = {element.CueInfo.CueSheet}\nCue = {element.CueInfo.Cue}");
+			UnityConsole.Event(ConsoleEventName, ConsoleEventColor, $"Play : {element.CueInfo.Cue} ({element.CueInfo.CueSheet})");
 
             return element;
         }
@@ -178,7 +178,7 @@ namespace Modules.Sound
                 onPause.OnNext(element);
             }
 
-			UnityConsole.Event(ConsoleEventName, ConsoleEventColor, $"Pause:\nCueSheet = {element.CueInfo.CueSheet}\nCue = {element.CueInfo.Cue}");
+			UnityConsole.Event(ConsoleEventName, ConsoleEventColor, $"Pause : {element.CueInfo.Cue} ({element.CueInfo.CueSheet})");
         }
 
         /// <summary> 全サウンド中断 </summary>
@@ -216,7 +216,7 @@ namespace Modules.Sound
                 onResume.OnNext(element);
             }
 
-			UnityConsole.Event(ConsoleEventName, ConsoleEventColor, $"Resume:\nCueSheet = {element.CueInfo.CueSheet}\nCue = {element.CueInfo.Cue}");
+			UnityConsole.Event(ConsoleEventName, ConsoleEventColor, $"Resume : {element.CueInfo.Cue} ({element.CueInfo.CueSheet})");
         }
 
         /// <summary> 全サウンド復帰 </summary>
@@ -254,7 +254,7 @@ namespace Modules.Sound
                 onStop.OnNext(element);
             }
 
-			UnityConsole.Event(ConsoleEventName, ConsoleEventColor, $"Stop:\nCueSheet = {element.CueInfo.CueSheet}\nCue = {element.CueInfo.Cue}");
+			UnityConsole.Event(ConsoleEventName, ConsoleEventColor, $"Stop : {element.CueInfo.Cue} ({element.CueInfo.CueSheet})");
         }
 
         /// <summary> 全サウンドを停止 </summary>
