@@ -154,6 +154,8 @@ namespace Modules.Devkit.Diagnosis.SRDebugger
 				cancelSource.Dispose();
 				cancelSource = null;
 			}
+
+			UpdateView();
 		}
 
         private void UpdatePostProgress(float progress)
