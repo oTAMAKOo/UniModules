@@ -39,7 +39,9 @@ namespace Modules.UI.DummyContent
         {
             if (Application.isPlaying) { return; }
 
-            if (Image.sprite != null && Image.sprite.name != DummyAssetName) { return; }
+			if (BuildPipeline.isBuildingPlayer) { return; }
+
+			if (Image.sprite != null && Image.sprite.name != DummyAssetName) { return; }
 
             if (string.IsNullOrEmpty(assetGuid)) { return; }
 
