@@ -100,12 +100,20 @@ namespace Modules.Sound
         }
 
         /// <summary>
-        /// InternalResources内のサウンドを再生.
+        /// InternalAsset内のサウンドを再生.
         /// </summary>
         public SoundElement Play(SoundType type, Sounds.Cue cue)
         {
             var soundParam = GetSoundParam(type);
             var info = Sounds.GetCueInfo(cue);
+
+			#if !UNITY_EDITOR && UNITY_ANDROID
+
+            var assetPath = AndroidUtility.ConvertStreamingAssetsLoadPath(info.FilePath);
+
+            info = new CueInfo(assetPath, info.CueSheet, info.Cue, info.HasAwb, info.Summary);
+
+			#endif
 
             if (soundParam != null && soundParam.cancelIfPlaying)
             {
