@@ -22,11 +22,6 @@ namespace Modules.UI.DummyContent
 
 		//----- method -----
 
-		void Awake()
-		{
-			ImportText();
-		}
-
 		#if UNITY_EDITOR
         
 		void OnEnable()
