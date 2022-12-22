@@ -79,7 +79,20 @@ namespace Modules.Devkit.Build
             PbxProj.AddFrameworkToProject(TargetGuid, name, weak);
         }
 
-        protected void SetPlist(string plistPath, string key, string value)
+        protected void SetPlistString(string plistPath, string key, string value)
+        {
+            // Plistの設定のための初期化.
+            var plist = new PlistDocument();
+
+            plist.ReadFromFile(plistPath);
+
+            plist.root.SetString(key, value);
+
+            // 設定を反映.
+            plist.WriteToFile(plistPath);
+        }
+
+        protected void SetPlistArray(string plistPath, string key, string value)
         {
             // Plistの設定のための初期化.
             var plist = new PlistDocument();
