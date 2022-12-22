@@ -506,14 +506,7 @@ namespace Modules.Scene
             {
 				try
 				{
-					var loadYield = LoadScene(identifier, mode).ToYieldInstruction(cancelToken);
-
-					while (!loadYield.IsDone)
-					{
-						await UniTask.NextFrame(cancelToken);
-					}
-
-					sceneInfo = loadYield.Result;
+					sceneInfo = await LoadScene(identifier, mode).ToUniTask(cancellationToken: cancelToken);
 				}
 				catch (OperationCanceledException) 
 				{
@@ -565,6 +558,8 @@ namespace Modules.Scene
 
             // シーン読み込み後にAwake、Startが終わるのを待つ為1フレーム後に処理を再開.
             await UniTask.NextFrame(cancelToken);
+
+			if (cancelToken.IsCancellationRequested){ return; }
 
             diagnostics.Finish(TimeDiagnostics.Measure.Load);
 
@@ -804,6 +799,8 @@ namespace Modules.Scene
 
 					while (!op.isDone)
 					{
+						if (cancelToken.IsCancellationRequested){ break; }
+
 						await UniTask.NextFrame(cancelToken);
 					}
                 }
@@ -834,7 +831,9 @@ namespace Modules.Scene
                     loadedScenes.Add(identifier, sceneInstance);
 
                     // 1フレーム待つ.
-					await UniTask.NextFrame(cancelToken); 
+					await UniTask.NextFrame(cancelToken);
+
+					if (cancelToken.IsCancellationRequested){ return null; }
 
                     if (onLoadSceneComplete != null)
                     {
@@ -1025,6 +1024,8 @@ namespace Modules.Scene
 
 				while (!op.isDone)
 				{
+					if (cancelToken.IsCancellationRequested){ break; }
+
 					await UniTask.NextFrame(cancelToken);
 				}
             }
@@ -1127,12 +1128,7 @@ namespace Modules.Scene
 
 			try
 			{
-				var loadYield = LoadScene(targetScene, LoadSceneMode.Additive).ToYieldInstruction(cancelToken);
-
-				while (!loadYield.IsDone)
-				{
-					await UniTask.NextFrame(cancelToken);
-				}
+				await LoadScene(targetScene, LoadSceneMode.Additive).ToUniTask(cancellationToken: cancelToken);
 			}
 			catch (OperationCanceledException) 
 			{

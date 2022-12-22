@@ -1,4 +1,4 @@
-﻿
+
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using System;
@@ -62,14 +62,7 @@ namespace Modules.Scene
 
 			try
 			{
-				var loadYield = LoadScene(identifier.Value, LoadSceneMode.Additive).ToYieldInstruction(cancelToken);
-
-				while (!loadYield.IsDone)
-				{
-					await UniTask.NextFrame(cancelToken);
-				}
-
-				sceneInstance = loadYield.Result;
+				sceneInstance = await LoadScene(identifier.Value, LoadSceneMode.Additive).ToUniTask(cancellationToken: cancelToken);
 			}
 			catch (OperationCanceledException) 
 			{

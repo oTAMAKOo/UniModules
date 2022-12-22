@@ -1,4 +1,4 @@
-
+﻿
 #if ENABLE_CRIWARE_ADX || ENABLE_CRIWARE_SOFDEC
 ﻿﻿﻿
 using UnityEngine;
@@ -60,8 +60,12 @@ namespace Modules.CriWare
                 // 同時インストール数待ち.
                 while (numInstallers <= installCount)
                 {
+					if (cancelToken.IsCancellationRequested){ return; }
+
                     await UniTask.NextFrame(cancelToken);
-                }
+				}
+
+				if (cancelToken.IsCancellationRequested){ return; }
 
                 installCount++;
 
@@ -80,10 +84,9 @@ namespace Modules.CriWare
                             progress.Report((float)statusInfo.receivedSize / statusInfo.contentsSize);
                         }
 
-                        if (statusInfo.status != CriFsWebInstaller.Status.Busy)
-                        {
-                            break;
-                        }
+                        if (statusInfo.status != CriFsWebInstaller.Status.Busy) { break; }
+
+						if (cancelToken.IsCancellationRequested){ break; }
 
                         await UniTask.NextFrame(cancelToken);
                     }
