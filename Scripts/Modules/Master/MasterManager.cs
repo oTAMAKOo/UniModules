@@ -115,6 +115,56 @@ namespace Modules.Master
 				var amount = 1f / versionTable.Count;
                 var progressAmount = 0f;
 
+                // ローカル関数.
+
+                void OnUpdateFinish(Type masterType, string masterName, string masterFileName, string localVersion, string masterVersion, bool state, double time)
+                {
+                    if (state)
+                    {
+                        var localVersionText = string.IsNullOrEmpty(localVersion) ? "---" : localVersion;
+                        var message = string.Format("{0} ({1:F1}ms) : {2} >> {3}", masterName, time, localVersionText, masterVersion);
+
+                        updateLog.AppendLine(message);
+                    }
+                    else
+                    {
+                        Debug.LogErrorFormat("Update master failed.\nClass : {0}\nFile : {1}\n", masterType.FullName, masterFileName);
+                    }
+
+                    result &= state;
+                    progressAmount += amount;
+
+                    if (progress != null)
+                    {
+                        progress.Report(progressAmount);
+                    }
+
+                    if (onUpdateMaster != null)
+                    {
+                        onUpdateMaster.OnNext(Unit.Default);
+                    }
+                };
+
+                void OnLoadFinish(Type masterType, string masterName, string masterFileName, bool state, double time)
+                {
+                    if (state)
+                    {
+                        loadLog.AppendFormat("{0} ({1:F1}ms)", masterName, time).AppendLine();
+                    }
+                    else
+                    {
+                        Debug.LogErrorFormat("Load master failed.\nClass : {0}\nFile : {1}\n", masterType.FullName, masterFileName);
+                    }
+
+                    result &= state;
+                    progressAmount += amount;
+
+                    if (progress != null)
+                    {
+                        progress.Report(progressAmount);
+                    }
+                };
+
                 // 並行で処理.
                 var tasks = new List<UniTask>();
 
@@ -128,60 +178,19 @@ namespace Modules.Master
 
                     var masterFileName = masterFileNames.GetValueOrDefault(masterType);
 
-                    var localVersion = master.LoadVersion();
+                    var localVersion = await master.LoadVersion();
 
-                    Action<bool, double> onUpdateFinish = (state, time) =>
-                    {
-                        if (state)
-                        {
-                            var localVersionText = string.IsNullOrEmpty(localVersion) ? "---" : localVersion;
-                            var message = string.Format("{0} ({1:F1}ms) : {2} >> {3}", masterName, time, localVersionText, masterVersion);
+                    Action<bool, double> onLoadFinishCallback = (state, time) => OnLoadFinish(masterType, masterName, masterFileName, state, time);
 
-                            updateLog.AppendLine(message);
-                        }
-                        else
-                        {
-                            Debug.LogErrorFormat("Update master failed.\nClass : {0}\nFile : {1}\n", masterType.FullName, masterFileName);
-                        }
+                    Action<bool, double> onUpdateFinishCallback = (state, time) => OnUpdateFinish(masterType, masterName, masterFileName, localVersion, masterVersion, state, time);
 
-                        result &= state;
-                        progressAmount += amount;
+                    var versionCheck = await master.CheckVersion(masterVersion, localVersion);
 
-                        if (progress != null)
-                        {
-                            progress.Report(progressAmount);
-                        }
-
-                        if (onUpdateMaster != null)
-                        {
-                            onUpdateMaster.OnNext(Unit.Default);
-                        }
-                    };
-
-                    Action<bool, double> onLoadFinish = (state, time) =>
-                    {
-                        if (state)
-                        {
-                            loadLog.AppendFormat("{0} ({1:F1}ms)", masterName, time).AppendLine();
-                        }
-                        else
-                        {
-                            Debug.LogErrorFormat("Load master failed.\nClass : {0}\nFile : {1}\n", masterType.FullName, masterFileName);
-                        }
-
-                        result &= state;
-                        progressAmount += amount;
-
-                        if (progress != null)
-                        {
-                            progress.Report(progressAmount);
-                        }
-                    };
-
-                    if (master.CheckVersion(masterVersion))
+                    if (versionCheck)
                     {
                         // 読み込み.
-						var task = UniTask.Defer(() => MasterLoad(master, onLoadFinish));
+                        
+						var task = UniTask.Defer(async () => { return await MasterLoad(master, onLoadFinishCallback); });
 
                         tasks.Add(task);
                     }
@@ -190,11 +199,11 @@ namespace Modules.Master
                         // ダウンロード + 読み込み.
 						var task = UniTask.Defer(async () =>
 						{
-							var success = await MasterUpdate(master, masterVersion, onUpdateFinish).ToUniTask();
+							var success = await MasterUpdate(master, masterVersion, onUpdateFinishCallback).ToUniTask();
 
 							if (success)
 							{
-								await MasterLoad(master, onLoadFinish);
+								await MasterLoad(master, onLoadFinishCallback);
 							}
 						});
 
@@ -278,8 +287,8 @@ namespace Modules.Master
                 .Select(x => x.Item1);
         }
 
-		private async UniTask<bool> MasterLoad(IMaster master, Action<bool, double> onLoadFinish)
-		{
+        private async UniTask<bool> MasterLoad(IMaster master, Action<bool, double> onLoadFinish)
+        {
 			var loadResult = await master.Load(CryptoKey, true);
 
 			if (onLoadFinish != null)
@@ -300,37 +309,74 @@ namespace Modules.Master
         }
 
         /// <summary> 更新が必要なマスターの数 </summary>
-        public int RequireUpdateMasterCount(Dictionary<IMaster, string> versionTable)
+        public async UniTask<int> RequireUpdateMasterCount(Dictionary<IMaster, string> versionTable)
         {
             var requireCount = 0;
 
-            foreach (var item in versionTable)
-            {
-                var master = item.Key;
-                var masterVersion = item.Value;
+            var tasks = new List<UniTask>();
 
-                if (!master.CheckVersion(masterVersion))
+            var chunk = masters.Chunk(50);
+
+            foreach (var items in chunk)
+            {
+                tasks.Clear();
+
+                foreach (var item in items)
                 {
-                    requireCount++;
+                    var master = item;
+                    var masterVersion = versionTable.GetValueOrDefault(master);
+
+                    var task = UniTask.RunOnThreadPool(async () =>
+                    {
+                        var versionCheck = await master.CheckVersion(masterVersion);
+
+                        if (!versionCheck)
+                        {
+                            requireCount++;
+                        }
+                    });
+
+                    tasks.Add(task);
                 }
+
+                await UniTask.WhenAll(tasks);
             }
 
             return requireCount;
         }
 
         /// <summary> 更新が必要なマスターのファイルサイズ </summary>
-        public ulong RequireUpdateMasterFileSize(Dictionary<IMaster, string> versionTable, Dictionary<IMaster, ulong> fileSizeTable)
+        public async UniTask<ulong> RequireUpdateMasterFileSize(Dictionary<IMaster, string> versionTable, Dictionary<IMaster, ulong> fileSizeTable)
         {
             ulong totalFileSize = 0;
 
-            foreach (var master in masters)
-            {
-                var masterVersion = versionTable.GetValueOrDefault(master);
+            var tasks = new List<UniTask>();
+            
+            var chunk = masters.Chunk(50);
 
-                if (!master.CheckVersion(masterVersion))
+            foreach (var items in chunk)
+            {
+                tasks.Clear();
+
+                foreach (var item in items)
                 {
-                    totalFileSize += fileSizeTable.GetValueOrDefault(master);
+                    var master = item;
+                    var masterVersion = versionTable.GetValueOrDefault(master);
+
+                    var task = UniTask.RunOnThreadPool(async () =>
+                    {
+                        var versionCheck = await master.CheckVersion(masterVersion);
+
+                        if (!versionCheck)
+                        {
+                            totalFileSize += fileSizeTable.GetValueOrDefault(master);
+                        }
+                    });
+
+                    tasks.Add(task);
                 }
+
+                await UniTask.WhenAll(tasks);
             }
 
             return totalFileSize;

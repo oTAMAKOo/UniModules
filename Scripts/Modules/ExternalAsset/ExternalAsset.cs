@@ -1,4 +1,4 @@
-﻿﻿﻿
+﻿
 using UnityEngine;
 using System;
 using System.IO;
@@ -146,15 +146,7 @@ namespace Modules.ExternalAssets
             }
 
             #endif
-
-            assetBundleManager.SetInstallDirectory(InstallDirectory);
-
-            #if ENABLE_CRIWARE_ADX || ENABLE_CRIWARE_SOFDEC
-
-            criAssetManager.SetInstallDirectory(InstallDirectory);
-
-            #endif
-        }
+		}
 
         /// <summary> URLを設定. </summary>
         public void SetUrl(string remoteUrl, string versionHash)
@@ -169,32 +161,59 @@ namespace Modules.ExternalAssets
         }
 
 		// アセット管理マニュフェスト情報を更新.
-        private void SetAssetInfoManifest(AssetInfoManifest manifest)
-        {
-            assetInfoManifest = manifest;
+		private async UniTask SetAssetInfoManifest(AssetInfoManifest manifest)
+		{
+			assetInfoManifest = manifest;
 
-            if(manifest == null)
-            {
-                Debug.LogError("AssetInfoManifest not found.");
-                return;
-            }
+			if(manifest == null)
+			{
+				Debug.LogError("AssetInfoManifest not found.");
+				return;
+			}
 
-            var allAssetInfos = manifest.GetAssetInfos().ToArray();
+			assetInfosByAssetBundleName = new Dictionary<string, List<AssetInfo>>();
+			assetInfosByAssetGuid = new Dictionary<string, AssetInfo>();
+			assetInfosByResourcePath = new Dictionary<string, AssetInfo>();
 
-			// アセット情報 (Key: アセットバンドル名).
-            assetInfosByAssetBundleName = allAssetInfos
-                .Where(x => x.IsAssetBundle)
-                .ToLookup(x => x.AssetBundle.AssetBundleName);
+			var assetInfos = manifest.GetAssetInfos();
 
-			// アセット情報 (Key: アセットGUID).
-			assetInfosByAssetGuid = allAssetInfos
-				.Where(x => !string.IsNullOrEmpty(x.Guid))
-				.ToDictionary(x => x.Guid);
+			var count = 0;
 
-            // アセット情報 (Key: リソースパス).
-            assetInfosByResourcePath = allAssetInfos
-                .Where(x => !string.IsNullOrEmpty(x.ResourcePath))
-                .ToDictionary(x => x.ResourcePath);
+			foreach (var assetInfo in assetInfos)
+			{
+				// アセット情報 (Key: アセットバンドル名).
+				if (assetInfo.IsAssetBundle)
+				{
+					var assetBundleName = assetInfo.AssetBundle.AssetBundleName;
+
+					var list = assetInfosByAssetBundleName.GetValueOrDefault(assetBundleName);
+
+					if (list == null)
+					{
+						list = new List<AssetInfo>();
+						assetInfosByAssetBundleName[assetBundleName] = list;
+					}
+
+					list.Add(assetInfo);
+				}
+
+				// アセット情報 (Key: アセットGUID).
+				if (!string.IsNullOrEmpty(assetInfo.Guid))
+				{
+					assetInfosByAssetGuid[assetInfo.Guid] = assetInfo;
+				}
+                
+				// アセット情報 (Key: リソースパス).
+				if (!string.IsNullOrEmpty(assetInfo.ResourcePath))
+				{
+					assetInfosByResourcePath[assetInfo.ResourcePath] = assetInfo;
+				}
+
+				if(++count % 1000 == 0)
+				{
+					await UniTask.NextFrame();
+				}
+			}
 		}
 
          /// <summary>
@@ -232,16 +251,16 @@ namespace Modules.ExternalAssets
 
 			// AssetInfoManifestは常に最新に保たなくてはいけない為必ずダウンロードする.
 
-			await assetBundleManager.UpdateAssetInfoManifest(cancelSource.Token);
+			await assetBundleManager.UpdateAssetInfoManifest(InstallDirectory, cancelSource.Token);
 
-			var manifest = await assetBundleManager.LoadAsset<AssetInfoManifest>(manifestAssetInfo, assetPath);
+			var manifest = await assetBundleManager.LoadAsset<AssetInfoManifest>(InstallDirectory, manifestAssetInfo, assetPath);
 
 			if (manifest == null)
 			{
 				throw new FileNotFoundException("Failed update AssetInfoManifest.");
 			}
 
-			SetAssetInfoManifest(manifest);
+			await SetAssetInfoManifest(manifest);
 
 			sw.Stop();
 
@@ -254,7 +273,7 @@ namespace Modules.ExternalAssets
 
 			// アセット管理情報を登録.
 
-			assetBundleManager.SetManifest(assetInfoManifest);
+			await assetBundleManager.SetManifest(assetInfoManifest);
 
 			#if ENABLE_CRIWARE_ADX || ENABLE_CRIWARE_SOFDEC
 
@@ -265,7 +284,7 @@ namespace Modules.ExternalAssets
 			// 不要になったファイル削除.
 			try
 			{
-				await DeleteDisUsedCache();
+				await DeleteUnUsedCache();
 			}
 			catch (Exception e)
 			{
@@ -316,11 +335,9 @@ namespace Modules.ExternalAssets
 					return;
 				}
 			}
-
-            // ローカルモードなら更新しない.
-
-            if (!instance.LocalMode)
-            {
+			
+			if (!LocalMode && !simulateMode)
+			{
                 #if ENABLE_CRIWARE_FILESYSTEM
 
                 var extension = Path.GetExtension(resourcePath);
@@ -357,7 +374,7 @@ namespace Modules.ExternalAssets
 					{
 						var assetBundleManager = instance.assetBundleManager;
 
-						await assetBundleManager.UpdateAssetBundle(assetInfo, progress).AttachExternalCancellation(cancelSource.Token);
+						await assetBundleManager.UpdateAssetBundle(InstallDirectory, assetInfo, progress).AttachExternalCancellation(cancelSource.Token);
 					}
 					catch (Exception e)
 					{

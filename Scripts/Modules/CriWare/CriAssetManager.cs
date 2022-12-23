@@ -29,31 +29,31 @@ namespace Modules.CriWare
             public CriFsWebInstaller Installer { get; private set; }
             public IObservable<CriAssetInstall> Task { get; private set; }
 
-            public CriAssetInstall(AssetInfo assetInfo, IProgress<float> progress = null)
+            public CriAssetInstall(string installPath, AssetInfo assetInfo, IProgress<float> progress = null)
             {
                 AssetInfo = assetInfo;
 
                 var downloadUrl = Instance.BuildDownloadUrl(assetInfo);
-                var installPath = Instance.GetFilePath(assetInfo);
+                var filePath = Instance.GetFilePath(installPath, assetInfo);
 
-                var directory = Path.GetDirectoryName(installPath);
+                var directory = Path.GetDirectoryName(filePath);
 
                 if (!Directory.Exists(directory))
                 {
                     Directory.CreateDirectory(directory);
                 }
 
-                if (File.Exists(installPath))
+                if (File.Exists(filePath))
                 {
-                    File.Delete(installPath);
+                    File.Delete(filePath);
                 }
 
-                Task = ObservableEx.FromUniTask(cancelToken => Install(cancelToken, downloadUrl, installPath, progress))
+                Task = ObservableEx.FromUniTask(cancelToken => Install(cancelToken, downloadUrl, filePath, progress))
                     .Select(_ => this)
                     .Share();
             }
 
-            private async UniTask Install(CancellationToken cancelToken, string downloadUrl, string installPath, IProgress<float> progress = null)
+            private async UniTask Install(CancellationToken cancelToken, string downloadUrl, string filePath, IProgress<float> progress = null)
             {
                 var numInstallers = Instance.numInstallers;
 
@@ -71,7 +71,7 @@ namespace Modules.CriWare
 
                 using (Installer = new CriFsWebInstaller())
                 {
-                    Installer.Copy(downloadUrl, installPath);
+                    Installer.Copy(downloadUrl, filePath);
 
                     CriFsWebInstaller.StatusInfo statusInfo;
 
@@ -117,10 +117,7 @@ namespace Modules.CriWare
         // アセット管理.
         private AssetInfoManifest manifest = null;
 
-        // インストール先.
-        private string installPath = null;
-
-        // ダウンロード元URL.
+		// ダウンロード元URL.
         private string remoteUrl = null;
         private string versionHash = null;
 
@@ -206,21 +203,13 @@ namespace Modules.CriWare
             }
         }
 
-        /// <summary> ローカルモード設定.
-        /// <see cref="installPath"/>のファイルからアセットを取得
-        /// </summary>
+		/// <summary> ローカルモード設定. </summary>
         public void SetLocalMode(bool localMode)
         {
             this.localMode = localMode;
         }
 
-        /// <summary> 保存先ディレクトリ設定. </summary>
-        public void SetInstallDirectory(string installDirectory)
-        {
-            installPath = installDirectory;
-        }
-
-        /// <summary> URLを設定. </summary>
+		/// <summary> URLを設定. </summary>
         public void SetUrl(string remoteUrl, string versionHash)
         {
             this.remoteUrl = remoteUrl;
@@ -237,7 +226,7 @@ namespace Modules.CriWare
         /// <summary>
         /// 指定されたアセットを更新.
         /// </summary>
-        public async UniTask UpdateCriAsset(AssetInfo assetInfo, CancellationToken cancelToken, IProgress<float> progress = null)
+        public async UniTask UpdateCriAsset(string installPath, AssetInfo assetInfo, CancellationToken cancelToken, IProgress<float> progress = null)
         {
             if (simulateMode) { return; }
 
@@ -262,7 +251,7 @@ namespace Modules.CriWare
                 //------- Acb ------- 
 
                 //インストールの進行度はAwbがない場合に渡す.
-                install = GetCriAssetInstall(assetInfo, awbAssetInfo == null ? progress : null);
+                install = GetCriAssetInstall(installPath, assetInfo, awbAssetInfo == null ? progress : null);
 
                 installList.Add(install);
 
@@ -270,7 +259,7 @@ namespace Modules.CriWare
 
                 if (awbAssetInfo != null)
                 {
-                    install = GetCriAssetInstall(awbAssetInfo, progress);
+                    install = GetCriAssetInstall(installPath, awbAssetInfo, progress);
 
                     installList.Add(install);
                 }
@@ -279,7 +268,7 @@ namespace Modules.CriWare
             {
                 //------- Usm -------
 
-                install = GetCriAssetInstall(assetInfo, progress);
+                install = GetCriAssetInstall(installPath, assetInfo, progress);
 
                 installList.Add(install);
             }
@@ -300,13 +289,13 @@ namespace Modules.CriWare
                 .ToUniTask(cancellationToken: cancelToken);
         }
 
-        private CriAssetInstall GetCriAssetInstall(AssetInfo assetInfo, IProgress<float> progress)
+        private CriAssetInstall GetCriAssetInstall(string installPath, AssetInfo assetInfo, IProgress<float> progress)
         {
             var install = installQueueing.GetValueOrDefault(assetInfo.ResourcePath);
 
             if (install != null) { return install; }
 
-            install = new CriAssetInstall(assetInfo, progress);
+            install = new CriAssetInstall(installPath, assetInfo, progress);
 
             installQueueing[assetInfo.ResourcePath] = install;
 
@@ -334,41 +323,7 @@ namespace Modules.CriWare
 
         #endif
 
-        /// <summary>
-        /// マニフェストファイルに存在しないキャッシュファイルパス取得.
-        /// </summary>
-        public string[] GetDisUsedFilePaths()
-        {
-            if (simulateMode) { return null; }
-
-            if (manifest == null) { return null; }
-
-            var installDir = GetFilePath(null);
-
-            if (string.IsNullOrEmpty(installDir)) { return null; }
-
-            if (!Directory.Exists(installDir)) { return null; }
-
-            var directory = Path.GetDirectoryName(installDir);
-
-            if (!Directory.Exists(directory)){ return null; }
-            
-            var cacheFiles = Directory.GetFiles(installDir, "*", SearchOption.AllDirectories)
-                .Where(x => IsCriAsset(x))
-                .Select(x => PathUtility.ConvertPathSeparator(x))
-                .ToArray();
-
-            var managedFiles = manifest.GetAssetInfos()
-                .Select(x => GetFilePath(x))
-                .Distinct()
-                .ToHashSet();
-
-            return cacheFiles
-                .Where(x => !managedFiles.Contains(x))
-                .ToArray();
-        }
-
-        public string BuildDownloadUrl(AssetInfo assetInfo)
+		public string BuildDownloadUrl(AssetInfo assetInfo)
         {
             var platformName = PlatformUtility.GetPlatformTypeName();
 
@@ -384,16 +339,11 @@ namespace Modules.CriWare
             return CriAssetDefinition.AssetAllExtensions.Any(y => y == extension);
         }
 
-        public string GetFilePath(AssetInfo assetInfo)
+        public string GetFilePath(string installPath, AssetInfo assetInfo)
         {
-            var path = installPath;
-
-            if (assetInfo != null)
-            {
-                path = PathUtility.Combine(installPath, assetInfo.FileName);
-            }
-
-            return PathUtility.ConvertPathSeparator(path);
+			if (assetInfo == null){ return null; }
+            
+            return PathUtility.Combine(installPath, assetInfo.FileName);
         }
 
         private void OnTimeout(AssetInfo assetInfo, Exception exception)

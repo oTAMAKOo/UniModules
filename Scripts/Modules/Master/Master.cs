@@ -12,8 +12,8 @@ namespace Modules.Master
 {
     public interface IMaster
     {
-        string LoadVersion();
-        bool CheckVersion(string masterVersion);
+        UniTask<string> LoadVersion();
+        UniTask<bool> CheckVersion(string masterVersion, string localVersion = null);
         void ClearVersion();
 
         UniTask<Tuple<bool, double>> Update(string masterVersion);
@@ -38,6 +38,12 @@ namespace Modules.Master
         
         private Dictionary<TKey, TMasterRecord> records = new Dictionary<TKey, TMasterRecord>();
 
+        #if UNITY_EDITOR
+
+        private bool enableVersionCheck = false;
+
+        #endif
+
         private static TMaster instance = null;
 
         //----- property -----
@@ -60,6 +66,17 @@ namespace Modules.Master
         }
 
         //----- method -----
+
+        public Master()
+        {
+            #if UNITY_EDITOR
+
+            var masterManager = MasterManager.Instance;
+
+            enableVersionCheck = masterManager.EnableVersionCheck;
+
+            #endif
+        }
 
         public void SetRecords(TMasterRecord[] masterRecords)
         {
@@ -99,7 +116,7 @@ namespace Modules.Master
             return PathUtility.Combine(installDirectory, fileName);
         }
 
-        public string LoadVersion()
+        public async UniTask<string> LoadVersion()
         {
             var filePath = GetFilePath();
 
@@ -111,7 +128,14 @@ namespace Modules.Master
             {
                 if (File.Exists(versionFilePath))
                 {
-                    var bytes = File.ReadAllBytes(versionFilePath);
+                    byte[] bytes = null;
+
+                    using (var fs = new FileStream(versionFilePath, FileMode.Open, FileAccess.Read, FileShare.Read))
+                    {
+                        bytes = new byte[fs.Length];
+      
+                        await fs.ReadAsync(bytes, 0, (int)fs.Length);
+                    }
 
                     version = Encoding.UTF8.GetString(bytes);
                 }
@@ -150,19 +174,20 @@ namespace Modules.Master
             }
         }
 
-        public bool CheckVersion(string masterVersion)
+        public async UniTask<bool> CheckVersion(string masterVersion, string localVersion = null)
         {
-			#if UNITY_EDITOR
+            #if UNITY_EDITOR
 
-			var masterManager = MasterManager.Instance;
-
-			if (!masterManager.EnableVersionCheck) { return true; }
+            if (!enableVersionCheck) { return true; }
 
             #endif
 
             var result = true;
 
-            var version = LoadVersion();
+            if (string.IsNullOrEmpty(localVersion))
+            {
+                localVersion = await LoadVersion();
+            }
 
             var filePath = GetFilePath();
 
@@ -170,7 +195,7 @@ namespace Modules.Master
             result &= File.Exists(filePath);
 
             // ローカル保存されているバージョンと一致するか.
-            result &= version == masterVersion;
+            result &= localVersion == masterVersion;
 
             return result;
         }

@@ -43,21 +43,85 @@ namespace Modules.ExternalAssets
 			}
         }
 
-        /// <summary> 不要になったキャッシュ削除. </summary>
-        public async UniTask DeleteDisUsedCache()
-        {
-            var targetFilePaths = new List<string>();
+		/// <summary> 不要になったキャッシュ削除. </summary>
+		public async UniTask DeleteUnUsedCache()
+		{
+			if (simulateMode) { return; }
 
-            targetFilePaths.AddRange(assetBundleManager.GetDisUsedFilePaths() ?? new string[0]);
+			if (assetInfoManifest == null) { return; }
 
-            #if ENABLE_CRIWARE_ADX || ENABLE_CRIWARE_SOFDEC
+			if (string.IsNullOrEmpty(InstallDirectory)) { return; }
+			
+			if (!Directory.Exists(InstallDirectory)) { return; }
 
-            targetFilePaths.AddRange(criAssetManager.GetDisUsedFilePaths() ?? new string[0]);
+			var count = 0;
 
-            #endif
+			var assetInfos = assetInfoManifest.GetAssetInfos()
+			.DistinctBy(x => x.FileName)
+			.ToList();
 
-            await DeleteCacheFiles(InstallDirectory, targetFilePaths.ToArray());
-        }
+			assetInfos.Add(AssetInfoManifest.GetManifestAssetInfo());
+
+			// アセット管理情報構築.
+
+			var manageFilePaths = new HashSet<string>();
+
+			foreach (var assetInfo in assetInfos)
+			{
+				var filePath = string.Empty;
+
+				var extension = Path.GetExtension(assetInfo.ResourcePath);
+				
+				if (assetInfo.IsAssetBundle)
+				{
+					filePath = assetBundleManager.GetFilePath(InstallDirectory, assetInfo);
+				}
+
+				#if ENABLE_CRIWARE_ADX || ENABLE_CRIWARE_SOFDEC
+
+				else if(IsCriAsset(extension))
+				{
+					filePath = criAssetManager.GetFilePath(InstallDirectory, assetInfo);
+				}
+
+				#endif
+
+				else
+				{
+					filePath = PathUtility.Combine(InstallDirectory, assetInfo.FileName);
+				}
+
+				manageFilePaths.Add(filePath);
+
+				if (++count % 1000 == 0)
+				{
+					await UniTask.NextFrame();
+				}
+			}
+
+			// 削除対象抽出.
+
+			var deleteFiles = new List<string>();
+
+			var files = Directory.EnumerateFiles(InstallDirectory, "*", SearchOption.TopDirectoryOnly);
+
+			foreach (var file in files)
+			{
+				var filePath = PathUtility.ConvertPathSeparator(file);
+
+				if (!manageFilePaths.Contains(filePath))
+				{
+					deleteFiles.Add(filePath);
+				}
+
+				if (++count % 1000 == 0)
+				{
+					await UniTask.NextFrame();
+				}
+			}
+			
+			await DeleteCacheFiles(InstallDirectory, deleteFiles.ToArray());
+		}
 
         /// <summary> 指定されたキャッシュ削除. </summary>
         public async UniTask DeleteCache(AssetInfo[] assetInfos)
@@ -70,7 +134,7 @@ namespace Modules.ExternalAssets
 
                 if (assetInfo.IsAssetBundle)
                 {
-                    filePath = assetBundleManager.GetFilePath(assetInfo);
+                    filePath = assetBundleManager.GetFilePath(InstallDirectory, assetInfo);
                 }
                 else
                 {
@@ -78,7 +142,7 @@ namespace Modules.ExternalAssets
                     
                     if (criAssetManager.IsCriAsset(assetInfo.ResourcePath))
                     {
-                        filePath = criAssetManager.GetFilePath(assetInfo);
+                        filePath = criAssetManager.GetFilePath(InstallDirectory, assetInfo);
                     }
 
                     #endif
@@ -90,13 +154,14 @@ namespace Modules.ExternalAssets
                 }
             }
 
-            await DeleteCacheFiles(InstallDirectory, targetFilePaths.ToArray());
+			if (targetFilePaths.Any())
+			{
+	            await DeleteCacheFiles(InstallDirectory, targetFilePaths);
+			}
         }
 
-        private async UniTask DeleteCacheFiles(string installDir, string[] filePaths)
+		private async UniTask DeleteCacheFiles(string installDir, IEnumerable<string> filePaths)
         {
-            if (filePaths.IsEmpty()) { return; }
-
             var builder = new StringBuilder();
 
             // ファイル削除.
@@ -143,13 +208,7 @@ namespace Modules.ExternalAssets
                 await UniTask.NextFrame();
             }
 
-            // 空ディレクトリ削除.
-
-            var deleteDirectorys = DirectoryUtility.DeleteEmpty(installDir);
-
-            deleteDirectorys.ForEach(x => builder.AppendLine(x));
-
-            // ログ.
+			// ログ.
 
             sw.Stop();
 

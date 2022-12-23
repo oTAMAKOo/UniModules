@@ -55,19 +55,15 @@ namespace Modules.ExternalAssets
         private async UniTask<bool> UpdateCriAsset(CancellationToken cancelToken, AssetInfo assetInfo, IProgress<float> progress = null)
         {
 			var result = true;
-
-            var resourcePath = assetInfo.ResourcePath;
-
-            var filePath = ConvertCriFilePath(resourcePath);
-
+			
             // ローカルバージョンが最新の場合は更新しない.
-            if (!CheckAssetVersion(resourcePath, filePath))
+            if (!CheckAssetVersion(assetInfo))
             {
 				try
 				{
 					var criAssetManager = instance.criAssetManager;
 
-					await criAssetManager.UpdateCriAsset(assetInfo, cancelToken, progress);
+					await criAssetManager.UpdateCriAsset(InstallDirectory, assetInfo, cancelToken, progress);
 				}
 				catch
 				{
@@ -78,29 +74,7 @@ namespace Modules.ExternalAssets
 			return result;
         }
 
-        #if ENABLE_CRIWARE_ADX || ENABLE_CRIWARE_SOFDEC
-
-        private string ConvertCriFilePath(string resourcePath)
-        {
-            if (string.IsNullOrEmpty(resourcePath)){ return null; }
-
-            var assetInfo = GetAssetInfo(resourcePath);
-
-            if (assetInfo == null)
-            {
-                Debug.LogErrorFormat("AssetInfo not found.\n{0}", resourcePath);
-
-                return null;
-            }
-
-            return simulateMode ?
-                PathUtility.Combine(new string[] { UnityPathUtility.GetProjectFolderPath(), externalAssetDirectory, resourcePath }) :
-                criAssetManager.GetFilePath(assetInfo);
-        }
-
-        #endif
-
-        #region Sound
+		#region Sound
 
         #if ENABLE_CRIWARE_ADX
         
@@ -111,16 +85,17 @@ namespace Modules.ExternalAssets
 
         private async UniTask<CueInfo> GetCueInfoInternal(string resourcePath, string cue)
         {
-            if (string.IsNullOrEmpty(resourcePath))
+			if (string.IsNullOrEmpty(resourcePath))
             {
                 throw new ArgumentException("resourcePath empty.");
             }
 
-            var filePath = ConvertCriFilePath(resourcePath);
+			var assetInfo = GetAssetInfo(resourcePath);
+			var filePath = criAssetManager.GetFilePath(InstallDirectory, assetInfo);
 
             if (!LocalMode && !simulateMode)
             {
-                if (!CheckAssetVersion(resourcePath, filePath))
+                if (!CheckAssetVersion(assetInfo))
                 {
                     var assetPath = PathUtility.Combine(externalAssetDirectory, resourcePath);
 
@@ -139,9 +114,7 @@ namespace Modules.ExternalAssets
 
                     if (LogEnable && UnityConsole.Enable)
                     {
-                        var assetInfo = GetAssetInfo(resourcePath);
-
-                        if (assetInfo != null)
+						if (assetInfo != null)
                         {
                             var builder = new StringBuilder();
 
@@ -197,11 +170,12 @@ namespace Modules.ExternalAssets
                 throw new ArgumentException("resourcePath empty.");
             }
 
-			var filePath = ConvertCriFilePath(resourcePath);
+			var assetInfo = GetAssetInfo(resourcePath);
+			var filePath = criAssetManager.GetFilePath(InstallDirectory, assetInfo);
 
             if (!LocalMode && !simulateMode)
             {
-                if (!CheckAssetVersion(resourcePath, filePath))
+                if (!CheckAssetVersion(assetInfo))
                 {
                     var assetPath = PathUtility.Combine(externalAssetDirectory, resourcePath);
 
@@ -220,8 +194,6 @@ namespace Modules.ExternalAssets
 
                     if (LogEnable && UnityConsole.Enable)
                     {
-                        var assetInfo = GetAssetInfo(resourcePath);
-
                         if (assetInfo != null)
                         {
                             var builder = new StringBuilder();

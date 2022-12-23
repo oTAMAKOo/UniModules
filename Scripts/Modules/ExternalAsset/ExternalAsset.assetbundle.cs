@@ -1,6 +1,7 @@
 ﻿
 using UnityEngine;
 using System;
+using System.Collections.Generic;
 using System.Text;
 using System.IO;
 using System.Linq;
@@ -21,7 +22,7 @@ namespace Modules.ExternalAssets
         private AssetBundleManager assetBundleManager = null;
 
         // アセットバンドル名でグループ化したアセット情報.
-        private ILookup<string, AssetInfo> assetInfosByAssetBundleName = null;
+        private Dictionary<string, List<AssetInfo>> assetInfosByAssetBundleName = null;
 
         //----- property -----
 
@@ -89,7 +90,7 @@ namespace Modules.ExternalAssets
 				}
 			}
 
-            // 読み込み.
+            // 更新.
 
             var assetPath = GetAssetPathFromAssetInfo(externalAssetDirectory, shareAssetDirectory, assetInfo);
 
@@ -148,7 +149,7 @@ namespace Modules.ExternalAssets
 			{
 				sw = System.Diagnostics.Stopwatch.StartNew();
 
-				result = await assetBundleManager.LoadAsset<T>(assetInfo, assetPath, autoUnload, cancelSource.Token);
+				result = await assetBundleManager.LoadAsset<T>(InstallDirectory, assetInfo, assetPath, autoUnload, cancelSource.Token);
 
 				// 読み込み中リストから外す.
 

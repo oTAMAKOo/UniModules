@@ -62,10 +62,7 @@ namespace Modules.AssetBundles
         // アセット管理.
         private AssetInfoManifest manifest = null;
 
-        // ダウンロード先パス.
-        private string installPath = null;
-
-        // ダウンロード元URL.
+		// ダウンロード元URL.
         private string remoteUrl = null;
         private string versionHash = null;
 
@@ -73,7 +70,7 @@ namespace Modules.AssetBundles
         private HashSet<string> downloadList = null;
 
         // ダウンロード待ちアセットバンドル.
-        private Dictionary<string, IObservable<string>> downloadQueueing = null;
+        private Dictionary<string, IObservable<Unit>> downloadQueueing = null;
 
         // 読み込み待ちアセットバンドル.
         private Dictionary<string, IObservable<AssetBundle>> loadQueueing = null;
@@ -85,10 +82,10 @@ namespace Modules.AssetBundles
         private Dictionary<string, int> assetBundleRefCount = null;
 
         // アセット情報(アセットバンドル).
-        private Dictionary<string, AssetInfo[]> assetInfosByAssetBundleName = null;
+        private Dictionary<string, List<AssetInfo>> assetInfosByAssetBundleName = null;
 
         // 依存関係.
-        private Dictionary<string, string[]> dependenciesTable = null;
+		private Dictionary<string, string[]> dependenciesTable = null;
 
 		// シュミュレートモードか.
         private bool simulateMode = false;
@@ -115,10 +112,7 @@ namespace Modules.AssetBundles
 
         private AssetBundleManager() { }
 
-		/// <summary>
-		/// 初期設定をします。
-		/// Initializeで設定した値はstatic変数として保存されます。
-		/// </summary>
+		/// <summary> 初期化 </summary>
 		/// <param name="maxDownloadCount">同時ダウンロード数</param>
 		/// <param name="simulateMode">AssetDataBaseからアセットを取得(EditorOnly)</param>
 		public void Initialize(uint maxDownloadCount, bool simulateMode = false)
@@ -129,31 +123,23 @@ namespace Modules.AssetBundles
             this.simulateMode = UnityUtility.isEditor && simulateMode;
 
             downloadList = new HashSet<string>();
-            downloadQueueing = new Dictionary<string, IObservable<string>>();
+            downloadQueueing = new Dictionary<string, IObservable<Unit>>();
             loadQueueing = new Dictionary<string, IObservable<AssetBundle>>();
             loadedAssetBundles = new Dictionary<string, AssetBundle>();
             assetBundleRefCount = new Dictionary<string, int>();
-            assetInfosByAssetBundleName = new Dictionary<string, AssetInfo[]>();
+            assetInfosByAssetBundleName = new Dictionary<string, List<AssetInfo>>();
             dependenciesTable = new Dictionary<string, string[]>();
             downloadBuffers = new List<DownloadBuffer>();
 
-            BuildAssetInfoTable();
+            AddManifestAssetInfo();
 
             isInitialized = true;
         }
 
-        /// <summary> ローカルモード設定.
-        /// <see cref="installPath"/>のファイルからアセットを取得
-        /// </summary>
+        /// <summary> ローカルモード設定. </summary>
         public void SetLocalMode(bool localMode)
         {
             this.localMode = localMode;
-        }
-
-        /// <summary> 保存先ディレクトリ設定. </summary>
-        public void SetInstallDirectory(string installDirectory)
-        {
-            installPath = installDirectory;
         }
 
 		/// <summary> ファイルハンドラ設定. </summary>
@@ -171,33 +157,74 @@ namespace Modules.AssetBundles
             this.versionHash = versionHash;
         }
 
-        private void BuildAssetInfoTable()
+        public async UniTask SetManifest(AssetInfoManifest manifest)
         {
+            this.manifest = manifest;
+
             assetInfosByAssetBundleName.Clear();
-            
-            if (manifest != null)
+            assetBundleRefCount.Clear();
+            dependenciesTable.Clear();
+
+            if (manifest == null){ return; }
+
+            var assetInfos = manifest.GetAssetInfos();
+
+            var count = 0;
+
+            foreach (var assetInfo in assetInfos)
             {
-                assetInfosByAssetBundleName = manifest.GetAssetInfos()
-                    .Where(x => x.IsAssetBundle)
-                    .GroupBy(x => x.AssetBundle.AssetBundleName)
-                    .ToDictionary(x => x.Key, x => x.ToArray());
+                if (assetInfo.IsAssetBundle)
+                {
+                    var assetBundleInfo = assetInfo.AssetBundle;
+                    var assetBundleName = assetBundleInfo.AssetBundleName;
+                    
+                    //------ 参照関係構築 ------
+
+                    var refs = assetInfosByAssetBundleName.GetValueOrDefault(assetBundleName);
+
+                    if (refs == null)
+                    {
+                        refs = new List<AssetInfo>();
+                        assetInfosByAssetBundleName[assetBundleName] = refs;
+                    }
+
+                    refs.Add(assetInfo);
+
+                    assetBundleRefCount[assetBundleName] = 0;
+
+                    //------ 依存関係構築 ------
+
+                    if(assetBundleInfo.Dependencies != null && assetBundleInfo.Dependencies.Any())
+                    {
+                        var list = dependenciesTable.GetValueOrDefault(assetBundleName);
+
+                        if (list == null)
+                        {
+                            var dependencies = assetBundleInfo.Dependencies.Where(y => y != assetBundleName).ToArray();
+
+                            dependenciesTable[assetBundleName] = dependencies;
+                        }
+                    }
+                }
+
+                if (++count % 1000 == 0)
+                {
+                    await UniTask.NextFrame();
+                }
             }
 
+            AddManifestAssetInfo();
+        }
+
+        private void AddManifestAssetInfo()
+        {
             // ※ アセット管理情報内にAssetInfoManifestの情報は入っていないので明示的に追加する.
 
             var manifestAssetInfo = AssetInfoManifest.GetManifestAssetInfo();
             
-            assetInfosByAssetBundleName[manifestAssetInfo.AssetBundle.AssetBundleName] = new AssetInfo[] { manifestAssetInfo };
+            assetInfosByAssetBundleName[manifestAssetInfo.AssetBundle.AssetBundleName] = new List<AssetInfo> { manifestAssetInfo };
 
-            assetBundleRefCount = assetInfosByAssetBundleName.ToDictionary(x => x.Key, _ => 0);
-        }
-
-        public void SetManifest(AssetInfoManifest manifest)
-        {
-            this.manifest = manifest;
-
-            BuildAssetInfoTable();
-            BuildDependenciesTable();
+            assetBundleRefCount[manifestAssetInfo.AssetBundle.AssetBundleName] = 0;
         }
 
         /// <summary> 展開中のアセットバンドル名一覧取得 </summary>
@@ -222,16 +249,11 @@ namespace Modules.AssetBundles
             return downloadUrl;
         }
 
-        public string GetFilePath(AssetInfo assetInfo)
+        public string GetFilePath(string installPath, AssetInfo assetInfo)
         {
-            var path = installPath;
+            if (assetInfo == null || string.IsNullOrEmpty(assetInfo.FileName)){ return null; }
 
-            if (assetInfo != null && !string.IsNullOrEmpty(assetInfo.FileName))
-            {
-                path = PathUtility.Combine(installPath, assetInfo.FileName) + PackageExtension;
-            }
-
-            return PathUtility.ConvertPathSeparator(path);
+			return PathUtility.Combine(installPath, assetInfo.FileName) + PackageExtension;
         }
 
         #region Download
@@ -248,7 +270,7 @@ namespace Modules.AssetBundles
         /// <summary>
         /// アセット情報ファイルを更新.
         /// </summary>
-        public async UniTask UpdateAssetInfoManifest(CancellationToken cancelToken = default)
+        public async UniTask UpdateAssetInfoManifest(string installPath, CancellationToken cancelToken = default)
         {
             if (simulateMode) { return; }
 
@@ -256,126 +278,135 @@ namespace Modules.AssetBundles
 
             var manifestAssetInfo = AssetInfoManifest.GetManifestAssetInfo();
             
-            await UpdateAssetBundleInternal(manifestAssetInfo, null, cancelToken);
+            await UpdateAssetBundleInternal(installPath, manifestAssetInfo, null, cancelToken);
         }
 
         /// <summary>
         /// アセットバンドルを更新.
         /// </summary>
-        public async UniTask UpdateAssetBundle(AssetInfo assetInfo, IProgress<float> progress = null, CancellationToken cancelToken = default)
+        public async UniTask UpdateAssetBundle(string installPath,AssetInfo assetInfo, IProgress<float> progress = null, CancellationToken cancelToken = default)
         {
             if (simulateMode) { return; }
 
             if (localMode) { return; }
 
-            await UpdateAssetBundleInternal(assetInfo, progress, cancelToken);
+            await UpdateAssetBundleInternal(installPath, assetInfo, progress, cancelToken);
         }
 
-        private async UniTask UpdateAssetBundleInternal(AssetInfo assetInfo, IProgress<float> progress, CancellationToken cancelToken)
+        private async UniTask UpdateAssetBundleInternal(string installPath, AssetInfo assetInfo, IProgress<float> progress, CancellationToken cancelToken)
         {
 			var assetBundleName = assetInfo.AssetBundle.AssetBundleName;
+			
+            // ネットワークの接続待ち.
 
-            if (!loadedAssetBundles.ContainsKey(assetBundleName))
+			await ReadyForDownload();
+
+			// アセットバンドルと依存アセットバンドルをまとめてダウンロード.
+
+			var allBundles = new string[] { assetBundleName }
+				.Concat(GetAllDependencies(assetBundleName))
+				.Distinct()
+				.ToArray();
+
+            var loadAllBundles = new Dictionary<string, IObservable<Unit>>();
+
+            foreach (var target in allBundles)
             {
-                // ネットワークの接続待ち.
+                var loaded = loadedAssetBundles.GetValueOrDefault(target);
 
-				await ReadyForDownload();
-
-				// アセットバンドルと依存アセットバンドルをまとめてダウンロード.
-
-				var allBundles = new string[] { assetBundleName }
-					.Concat(GetAllDependencies(assetBundleName))
-					.Distinct()
-					.ToArray();
-
-                var loadAllBundles = new Dictionary<string, IObservable<string>>();
-
-                foreach (var target in allBundles)
+                if (loaded != null)
                 {
-                    var cached = loadedAssetBundles.GetValueOrDefault(target);
-
-                    if (cached != null)
-                    {
-                        UnloadAsset(target, true);
-                    }
-
-                    var downloadTask = downloadQueueing.GetValueOrDefault(target);
-
-                    if (downloadTask == null)
-                    {
-						var info = assetInfosByAssetBundleName.GetValueOrDefault(target).FirstOrDefault();
-                        
-						if (info != null)
-						{
-							downloadQueueing[target] = DownloadAssetBundle(info, progress)
-								.Select(_ => target)
-								.Share();
-
-							downloadTask = downloadQueueing[target];
-						}
-						else
-						{
-							OnError(new FileNotFoundException($"Asset info not found. {target}"));
-						}
-                    }
-					
-					if (downloadTask != null)
-					{
-						loadAllBundles[target] = downloadTask;
-					}
+                    UnloadAsset(target, true);
                 }
 
-                foreach (var downloadTask in loadAllBundles)
+                var downloadTask = downloadQueueing.GetValueOrDefault(target);
+
+                if (downloadTask == null)
                 {
-                    // ダウンロードキューが空くまで待つ.
-                    while (maxDownloadCount <= downloadList.Count)
-                    {
-						if (cancelToken.IsCancellationRequested){ break; }
-
-                        await UniTask.NextFrame(cancelToken);
-                    }
-
-					if (cancelToken.IsCancellationRequested){ return; }
+					var info = assetInfosByAssetBundleName.GetValueOrDefault(target).FirstOrDefault();
                     
-                    // ダウンロード中でなかったらリストに追加.
-                    if (!downloadList.Contains(downloadTask.Key))
-                    {
-                        downloadList.Add(downloadTask.Key);
-                    }
-
-					// ダウンロード実行.
-					try
+					if (info != null)
 					{
-						if (downloadTask.Value != null)
+						downloadQueueing[target] = DownloadAssetBundle(installPath, info, progress).Share();
+
+						downloadTask = downloadQueueing[target];
+					}
+					else
+					{
+						OnError(new FileNotFoundException($"Asset info not found. {target}"));
+					}
+                }
+				
+				if (downloadTask != null)
+				{
+					loadAllBundles[target] = downloadTask;
+				}
+            }
+
+            foreach (var downloadTask in loadAllBundles)
+            {
+                // ダウンロードキューが空くまで待つ.
+                while (maxDownloadCount <= downloadList.Count)
+                {
+					if (cancelToken.IsCancellationRequested){ break; }
+
+                    await UniTask.NextFrame(cancelToken);
+                }
+
+				if (cancelToken.IsCancellationRequested){ return; }
+                
+                // ダウンロード中でなかったらリストに追加.
+                if (!downloadList.Contains(downloadTask.Key))
+                {
+                    downloadList.Add(downloadTask.Key);
+                }
+
+				// ダウンロード実行.
+				try
+				{
+					if (downloadTask.Value != null)
+					{
+						var downloadYield = downloadTask.Value.ToYieldInstruction(false);
+
+						while (!downloadYield.IsDone)
 						{
-							await downloadTask.Value.ToUniTask(cancellationToken:cancelToken);
+							if (cancelToken.IsCancellationRequested){ break; }
+
+							await UniTask.NextFrame(cancelToken);
+						}
+
+						if (downloadYield.HasError)
+						{
+							OnError(downloadYield.Error);
 						}
 					}
-					catch (Exception e)
-					{
-						Debug.LogErrorFormat("Download task error : {0}\n{1}\n", downloadTask.Key, e);
-					}
+				}
+				catch (Exception e)
+				{
+					Debug.LogErrorFormat("Download task error : {0}\n{1}\n", downloadTask.Key, e);
+				}
 
-                    // ダウンロード中リストから除外.
-                    if (downloadList.Contains(downloadTask.Key))
-                    {
-                        downloadList.Remove(downloadTask.Key);
-                    }
+                // ダウンロード中リストから除外.
+                if (downloadList.Contains(downloadTask.Key))
+                {
+                    downloadList.Remove(downloadTask.Key);
+                }
 
-                    // ダウンロード待ちリストから除外.
-                    if (downloadQueueing.ContainsKey(downloadTask.Key))
-                    {
-                        downloadQueueing.Remove(downloadTask.Key);
-                    }
+                // ダウンロード待ちリストから除外.
+                if (downloadQueueing.ContainsKey(downloadTask.Key))
+                {
+                    downloadQueueing.Remove(downloadTask.Key);
                 }
             }
         }
 
-        private IObservable<Unit> DownloadAssetBundle(AssetInfo assetInfo, IProgress<float> progress = null)
+        private IObservable<Unit> DownloadAssetBundle(string installPath,AssetInfo assetInfo, IProgress<float> progress = null)
         {
             var downloadUrl = BuildDownloadUrl(assetInfo);
 
-            var filePath = GetFilePath(assetInfo);
+            var filePath = GetFilePath(installPath, assetInfo);
+
+			if (string.IsNullOrEmpty(filePath)){ return Observable.ReturnUnit(); }
 			
             return ObservableEx.FromUniTask(cancelToken => FileDownload(downloadUrl, filePath, progress, cancelToken))
                     .Timeout(TimeoutLimit)
@@ -480,20 +511,6 @@ namespace Modules.AssetBundles
         #endregion
 
         #region Dependencies
-        
-        /// <summary> アセットバンドル依存関係設定 </summary>
-        private void BuildDependenciesTable()
-        {
-            if (manifest == null) { return; }
-
-            dependenciesTable = manifest.GetAssetInfos()
-                .Where(x => x.IsAssetBundle)
-                .Select(x => x.AssetBundle)
-                .Where(x => x.Dependencies != null && x.Dependencies.Any())
-                .GroupBy(x => x.AssetBundleName)
-                .Select(x => x.FirstOrDefault())
-                .ToDictionary(x => x.AssetBundleName, x => x.Dependencies.Where(y => y != x.AssetBundleName).ToArray());
-        }
 
         private string[] GetAllDependencies(string assetBundleName)
         {
@@ -581,20 +598,22 @@ namespace Modules.AssetBundles
         /// <summary>
         /// 名前で指定したアセットを取得.
         /// </summary>
-        public async UniTask<T> LoadAsset<T>(AssetInfo assetInfo, string assetPath, bool autoUnLoad = true, CancellationToken cancelToken = default) where T : UnityEngine.Object
+        public async UniTask<T> LoadAsset<T>(string installPath, AssetInfo assetInfo, string assetPath, bool autoUnLoad = true, CancellationToken cancelToken = default) 
+			where T : UnityEngine.Object
         {
             // コンポーネントを取得する場合はGameObjectから取得.
             if (typeof(T).IsSubclassOf(typeof(Component)))
             {
-				var go = await LoadAssetInternal<GameObject>(assetInfo, assetPath, autoUnLoad, cancelToken);
+				var go = await LoadAssetInternal<GameObject>(installPath, assetInfo, assetPath, autoUnLoad, cancelToken);
 
                 return go != null ? go.GetComponent<T>() : null;                   
             }
 
-            return await LoadAssetInternal<T>(assetInfo, assetPath, autoUnLoad, cancelToken);
+            return await LoadAssetInternal<T>(installPath, assetInfo, assetPath, autoUnLoad, cancelToken);
         }
         
-        private async UniTask<T> LoadAssetInternal<T>(AssetInfo assetInfo, string assetPath, bool autoUnLoad, CancellationToken cancelToken) where T : UnityEngine.Object
+        private async UniTask<T> LoadAssetInternal<T>(string installPath, AssetInfo assetInfo, string assetPath, bool autoUnLoad, CancellationToken cancelToken)
+			where T : UnityEngine.Object
         {
             T result = null;
 
@@ -635,12 +654,12 @@ namespace Modules.AssetBundles
                     task = UniTask.Create(async () =>
                     {
 						var loadDependenciesTasks = dependencies
-							.Select(x => GetLoadTask(x).ToUniTask(cancellationToken: cancelToken))
+							.Select(x => GetLoadTask(installPath, x).ToUniTask(cancellationToken: cancelToken))
 							.ToArray();
 
 						await UniTask.WhenAll(loadDependenciesTasks);
 
-						return await GetLoadTask(assetBundleName).ToUniTask(cancellationToken: cancelToken);
+						return await GetLoadTask(installPath, assetBundleName).ToUniTask(cancellationToken: cancelToken);
                     });
                 }
                 else
@@ -687,7 +706,7 @@ namespace Modules.AssetBundles
 			return result;
         }
 
-        private IObservable<AssetBundle> GetLoadTask(string assetBundleName)
+        private IObservable<AssetBundle> GetLoadTask(string installPath, string assetBundleName)
         {
             // 既に読み込み済み.
 
@@ -711,7 +730,7 @@ namespace Modules.AssetBundles
 
             var info = assetInfosByAssetBundleName.GetValueOrDefault(assetBundleName).FirstOrDefault();
 
-            loadQueueing[assetBundleName] = ObservableEx.FromUniTask(_cancelToken => LoadAssetBundle(_cancelToken, info))
+            loadQueueing[assetBundleName] = ObservableEx.FromUniTask(_cancelToken => LoadAssetBundle(installPath, _cancelToken, info))
                 .Timeout(TimeoutLimit)
                 .OnErrorRetry((TimeoutException ex) => OnTimeout(info, ex), RetryCount, RetryDelaySeconds)
                 .DoOnError(error => OnError(error))
@@ -720,11 +739,14 @@ namespace Modules.AssetBundles
             return loadQueueing[assetBundleName];
         }
 
-        private async UniTask<AssetBundle> LoadAssetBundle(CancellationToken cancelToken, AssetInfo assetInfo)
+        private async UniTask<AssetBundle> LoadAssetBundle(string installPath, CancellationToken cancelToken, AssetInfo assetInfo)
         {
 			AssetBundle assetBundle = null;
 
-            var filePath = GetFilePath(assetInfo);
+            var filePath = GetFilePath(installPath, assetInfo);
+
+            if (string.IsNullOrEmpty(filePath)){ return null; }
+
             var assetBundleInfo = assetInfo.AssetBundle;
             var assetBundleName = assetBundleInfo.AssetBundleName;
 
@@ -915,43 +937,6 @@ namespace Modules.AssetBundles
         }
 
         #endregion
-
-        /// <summary>
-        /// マニフェストファイルに存在しないキャッシュファイルを破棄.
-        /// </summary>
-        public string[] GetDisUsedFilePaths()
-        {
-            if (simulateMode) { return null; }
-
-            if (manifest == null) { return null; }
-
-            var installDir = GetFilePath(null);
-
-            if (string.IsNullOrEmpty(installDir)) { return null; }
-
-            if (!Directory.Exists(installDir)) { return null; }
-
-            var directory = Path.GetDirectoryName(installDir);
-
-            if (!Directory.Exists(directory)) { return null; }
-            
-            var cacheFiles = Directory.GetFiles(installDir, "*", SearchOption.AllDirectories);
-
-            var allAssetInfos = manifest.GetAssetInfos().ToList();
-
-            allAssetInfos.Add(AssetInfoManifest.GetManifestAssetInfo());
-
-            var managedFiles = allAssetInfos
-                .Select(x => GetFilePath(x))
-                .Distinct()
-                .ToHashSet();
-
-            return cacheFiles
-                .Select(x => PathUtility.ConvertPathSeparator(x))
-                .Where(x => Path.GetExtension(x) == PackageExtension)
-                .Where(x => !managedFiles.Contains(x))
-                .ToArray();
-		}
 
         private void OnTimeout(AssetInfo assetInfo, Exception exception)
         {
