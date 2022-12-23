@@ -15,11 +15,11 @@ namespace Modules.Movie
 
         //----- field -----
         
-        private CriManaMovieControllerForUI movieController = null;
-        
         private Subject<Unit> onFinish = null;
 
         //----- property -----
+
+        public CriManaMovieControllerForUI MovieController { get; private set; }
 
         /// <summary> 動画ファイルパス. </summary>
         public string MoviePath { get; private set; }
@@ -49,8 +49,7 @@ namespace Modules.Movie
 
         public MovieElement(Player moviePlayer, CriManaMovieControllerForUI movieController, string moviePath)
         {
-            this.movieController = movieController;
-
+            MovieController = movieController;
             MoviePath = moviePath;
             Player = moviePlayer;
             Status = moviePlayer.status;
@@ -59,7 +58,7 @@ namespace Modules.Movie
 
         public void Update()
         {
-            if (UnityUtility.IsNull(movieController)) { return; }
+            if (UnityUtility.IsNull(MovieController)) { return; }
 
             var prevStatus = Status;
 
@@ -70,9 +69,9 @@ namespace Modules.Movie
 
             if (prevStatus != Status && Status == Player.Status.PlayEnd)
             {
-                UnityUtility.SetActive(movieController.gameObject, false);
+                UnityUtility.SetActive(MovieController.gameObject, false);
 
-                UnityUtility.DeleteComponent(movieController);
+                UnityUtility.DeleteComponent(MovieController);
 
                 IsFinished = true;
 
