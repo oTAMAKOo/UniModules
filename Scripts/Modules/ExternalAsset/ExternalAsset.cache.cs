@@ -28,7 +28,7 @@ namespace Modules.ExternalAssets
 
             UnloadAllAssetBundles(false);
 
-            ClearVersion();
+            await ClearVersion();
 
 			if (Directory.Exists(InstallDirectory))
 			{

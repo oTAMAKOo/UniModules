@@ -16,8 +16,8 @@ using Modules.CriWare;
 
 namespace Modules.ExternalAssets
 {
-    public sealed partial class ExternalAsset
-    {
+	public sealed partial class ExternalAsset
+	{
         //----- params -----
 
         //----- field -----
@@ -106,22 +106,22 @@ namespace Modules.ExternalAssets
 
 			var list = new List<AssetInfo>();
 
-			var count = 0;
+            var count = 0;
 
 			foreach (var assetInfo in assetInfos)
 			{
-				if (IsRequireUpdate(assetInfo))
-				{
-					list.Add(assetInfo);
-				}
+                if (IsRequireUpdate(assetInfo))
+                {
+                    list.Add(assetInfo);
+                }
 
-				if (++count % 250 == 0)
-				{
-					await UniTask.NextFrame();
-				}
+                if (++count % 500 == 0)
+                {
+                    await UniTask.NextFrame();
+                }
 			}
 
-			return list;
+            return list;
 		}
 
 		/// <summary> 更新が必要か. </summary>
@@ -180,6 +180,8 @@ namespace Modules.ExternalAssets
 				var bytes = Encoding.UTF8.GetBytes(assetInfo.Hash);
 
 				File.WriteAllBytes(versionFilePath, bytes);
+
+                versions[assetInfo.FileName] = assetInfo.Hash;
 			}
 			catch (Exception exception)
 			{
@@ -218,10 +220,7 @@ namespace Modules.ExternalAssets
 
 					if (!string.IsNullOrEmpty(fileName))
 					{
-						lock (versions)
-						{
-							versions[fileName] = hash;
-						}
+                        versions[fileName] = hash;
 					}
 				}
 				catch (Exception exception)
@@ -241,7 +240,7 @@ namespace Modules.ExternalAssets
 			}
 		}
 
-		private void ClearVersion()
+		private async UniTask ClearVersion()
 		{
 			if (simulateMode){ return; }
 
@@ -251,6 +250,8 @@ namespace Modules.ExternalAssets
 			}
 
 			var versionFilePaths = GetAllVersionFilePaths();
+
+            var count = 0;
 
 			foreach (var versionFilePath in versionFilePaths)
 			{
@@ -270,6 +271,11 @@ namespace Modules.ExternalAssets
 				{
 					Debug.LogException(ex);
 				}
+
+                if (++count % 100 == 0)
+                {
+                    await UniTask.NextFrame();
+                }
 			}
 		}
 

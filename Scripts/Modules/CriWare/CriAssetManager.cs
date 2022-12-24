@@ -23,8 +23,6 @@ namespace Modules.CriWare
 
         private sealed class CriAssetInstall
         {
-            private static int installCount = 0;
-
             public AssetInfo AssetInfo { get; private set; }
             public CriFsWebInstaller Installer { get; private set; }
             public IObservable<CriAssetInstall> Task { get; private set; }
@@ -48,18 +46,20 @@ namespace Modules.CriWare
                     File.Delete(filePath);
                 }
 
-                Task = ObservableEx.FromUniTask(cancelToken => Install(cancelToken, downloadUrl, filePath, progress))
+                Task = ObservableEx.FromUniTask(cancelToken => Install(downloadUrl, filePath, progress, cancelToken))
                     .Select(_ => this)
                     .Share();
             }
 
-            private async UniTask Install(CancellationToken cancelToken, string downloadUrl, string filePath, IProgress<float> progress = null)
+            private async UniTask Install(string downloadUrl, string filePath, IProgress<float> progress, CancellationToken cancelToken)
             {
-                var numInstallers = Instance.numInstallers;
+                var installers = Instance.installers;
 
                 // 同時インストール数待ち.
-                while (numInstallers <= installCount)
+                while (true)
                 {
+                    if (installers.Any()){ break; }
+
 					if (cancelToken.IsCancellationRequested){ return; }
 
                     await UniTask.NextFrame(cancelToken);
@@ -67,37 +67,32 @@ namespace Modules.CriWare
 
 				if (cancelToken.IsCancellationRequested){ return; }
 
-                installCount++;
+                Installer = installers.Dequeue();
 
-                using (Installer = new CriFsWebInstaller())
+                Installer.Copy(downloadUrl, filePath);
+
+                CriFsWebInstaller.StatusInfo statusInfo;
+
+                while (true)
                 {
-                    Installer.Copy(downloadUrl, filePath);
+                    statusInfo = Installer.GetStatusInfo();
 
-                    CriFsWebInstaller.StatusInfo statusInfo;
-
-                    while (true)
+                    if (progress != null)
                     {
-                        statusInfo = Installer.GetStatusInfo();
-
-                        if (progress != null)
-                        {
-                            progress.Report((float)statusInfo.receivedSize / statusInfo.contentsSize);
-                        }
-
-                        if (statusInfo.status != CriFsWebInstaller.Status.Busy) { break; }
-
-						if (cancelToken.IsCancellationRequested){ break; }
-
-                        await UniTask.NextFrame(cancelToken);
+                        progress.Report((float)statusInfo.receivedSize / statusInfo.contentsSize);
                     }
 
-                    if (statusInfo.error != CriFsWebInstaller.Error.None)
-                    {
-                        throw new Exception(string.Format("[Download Error] {0}\n{1}", AssetInfo.ResourcePath, statusInfo.error));
-                    }
+                    if (statusInfo.status != CriFsWebInstaller.Status.Busy) { break; }
+
+                    if (cancelToken.IsCancellationRequested){ break; }
+
+                    await UniTask.NextFrame(cancelToken);
                 }
 
-                installCount--;
+                if (statusInfo.error != CriFsWebInstaller.Error.None)
+                {
+                    throw new Exception(string.Format("[Download Error] {0}\n{1}", AssetInfo.ResourcePath, statusInfo.error));
+                }
             }
         }
 
@@ -121,6 +116,9 @@ namespace Modules.CriWare
         private string remoteUrl = null;
         private string versionHash = null;
 
+        // インストーラー.
+        private Queue<CriFsWebInstaller> installers = null;
+        
         // シュミュレートモードか.
         private bool simulateMode = false;
 
@@ -174,6 +172,13 @@ namespace Modules.CriWare
 				CriFsWebInstaller.InitializeModule(moduleConfig);
 			}
 
+            installers = new Queue<CriFsWebInstaller>();
+
+            for (var i = 0; i < numInstallers; i++)
+            {
+                installers.Enqueue(new CriFsWebInstaller());
+            }
+
             Observable.EveryUpdate()
                 .Subscribe(_ => CriFsWebInstaller.ExecuteMain())
                 .AddTo(Disposable);
@@ -189,6 +194,14 @@ namespace Modules.CriWare
             {
                 #if ENABLE_CRIWARE_FILESYSTEM
 
+                foreach (var installer in installers)
+                {
+                    installer.Stop();
+                    installer.Dispose();
+                }
+
+                installers.Clear();
+
                 foreach (var item in installQueueing.Values)
                 {
                     item.Installer.Stop();
@@ -203,7 +216,7 @@ namespace Modules.CriWare
             }
         }
 
-		/// <summary> ローカルモード設定. </summary>
+        /// <summary> ローカルモード設定. </summary>
         public void SetLocalMode(bool localMode)
         {
             this.localMode = localMode;
@@ -315,7 +328,8 @@ namespace Modules.CriWare
             if (item != null)
             {
                 item.Installer.Stop();
-                item.Installer.Dispose();
+
+                installers.Enqueue(item.Installer);
 
                 installQueueing.Remove(resourcePath);
             }
