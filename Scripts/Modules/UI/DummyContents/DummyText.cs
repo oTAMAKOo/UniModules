@@ -22,28 +22,6 @@ namespace Modules.UI.DummyContent
 
 		//----- method -----
 
-		#if UNITY_EDITOR
-        
-		void OnEnable()
-		{
-			if (Application.isPlaying){ return; }
-
-			ImportText();
-		}
-
-		#endif
-
-		private void ImportText()
-		{
-			ApplyText(null);
-
-			#if UNITY_EDITOR
-
-			ApplyDummyText();
-
-			#endif
-		}
-
 		private void ApplyText(string text)
 		{
 			GetTargetComponent();

@@ -29,7 +29,17 @@ namespace Modules.UI.DummyContent
 
         //----- method -----
 
-        private AesCryptoKey GetCryptoKey()
+		void OnEnable()
+		{
+			ApplyDummyText();
+		}
+
+		void OnDestroy()
+		{
+			CleanDummyText();
+		}
+
+		private AesCryptoKey GetCryptoKey()
         {
             if (aesCryptoKey == null)
             {
@@ -88,12 +98,14 @@ namespace Modules.UI.DummyContent
                 }
             }
 
-            ImportText();
+			ApplyDummyText();
         }
 
         private void ApplyDummyText()
         {
-            if (Application.isPlaying) { return; }
+			if (Application.isPlaying) { return; }
+
+			if (BuildPipeline.isBuildingPlayer) { return; }
 
             if (string.IsNullOrEmpty(dummyText)) { return; }
 
@@ -112,6 +124,8 @@ namespace Modules.UI.DummyContent
         private bool CleanDummyText()
         {
             if (Application.isPlaying) { return false; }
+
+			if (BuildPipeline.isBuildingPlayer) { return false; }
 
             if (string.IsNullOrEmpty(dummyText)) { return false; }
 

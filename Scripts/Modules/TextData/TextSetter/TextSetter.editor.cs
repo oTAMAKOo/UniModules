@@ -25,11 +25,16 @@ namespace Modules.TextData.Components
 
         private static AesCryptoKey aesCryptoKey = null;
 
-        //----- property -----
+		//----- property -----
 
-        //----- method -----
+		//----- method -----
 
-        private AesCryptoKey GetCryptoKey()
+		void OnDestroy()
+		{ 
+			CleanDummyText();
+		}
+
+		private AesCryptoKey GetCryptoKey()
         {
             if (aesCryptoKey == null)
             {
@@ -95,6 +100,8 @@ namespace Modules.TextData.Components
         {
             if (Application.isPlaying) { return; }
 
+			if (BuildPipeline.isBuildingPlayer) { return; }
+
             if (string.IsNullOrEmpty(dummyText)) { return; }
 
             if (!string.IsNullOrEmpty(textGuid)) { return; }
@@ -114,6 +121,8 @@ namespace Modules.TextData.Components
         private bool CleanDummyText()
         {
             if (Application.isPlaying) { return false; }
+
+			if (BuildPipeline.isBuildingPlayer) { return false; }
 
             if (string.IsNullOrEmpty(dummyText)) { return false; }
 
