@@ -207,7 +207,7 @@ namespace Modules.AssetBundles
                     }
                 }
 
-                if (++count % 1000 == 0)
+                if (++count % 500 == 0)
                 {
                     await UniTask.NextFrame();
                 }

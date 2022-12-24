@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using Cysharp.Threading.Tasks;
 using UniRx;
 using MessagePack;
@@ -308,78 +309,49 @@ namespace Modules.Master
             UnityConsole.Event(ConsoleEventName, ConsoleEventColor, "Clear MasterVersion");
         }
 
-        /// <summary> 更新が必要なマスターの数 </summary>
-        public async UniTask<int> RequireUpdateMasterCount(Dictionary<IMaster, string> versionTable)
+
+        /// <summary> 更新が必要なマスター </summary>
+        public async UniTask<IMaster[]> RequireUpdateMasters(Dictionary<IMaster, string> versionTable)
         {
-            var requireCount = 0;
-
-            var tasks = new List<UniTask>();
-
-            var chunk = masters.Chunk(50);
-
-            foreach (var items in chunk)
-            {
-                tasks.Clear();
-
-                foreach (var item in items)
-                {
-                    var master = item;
-                    var masterVersion = versionTable.GetValueOrDefault(master);
-
-                    var task = UniTask.RunOnThreadPool(async () =>
-                    {
-                        var versionCheck = await master.CheckVersion(masterVersion);
-
-                        if (!versionCheck)
-                        {
-                            requireCount++;
-                        }
-                    });
-
-                    tasks.Add(task);
-                }
-
-                await UniTask.WhenAll(tasks);
-            }
-
-            return requireCount;
-        }
-
-        /// <summary> 更新が必要なマスターのファイルサイズ </summary>
-        public async UniTask<ulong> RequireUpdateMasterFileSize(Dictionary<IMaster, string> versionTable, Dictionary<IMaster, ulong> fileSizeTable)
-        {
-            ulong totalFileSize = 0;
-
-            var tasks = new List<UniTask>();
+            var list = new List<IMaster>();
             
+            async UniTask CheckRequireUpdate(IEnumerable<IMaster> masters)
+            {
+                foreach (var master in masters)
+                {
+                    var masterVersion = versionTable.GetValueOrDefault(master);
+
+                    var versionCheck = await master.CheckVersion(masterVersion);
+
+                    if (!versionCheck)
+                    {
+						lock (list)
+						{
+							list.Add(master);
+						}
+                    }
+                }
+            }
+
+            var tasks = new List<UniTask>();
+
             var chunk = masters.Chunk(50);
 
             foreach (var items in chunk)
             {
-                tasks.Clear();
+                var masters = items;
 
-                foreach (var item in items)
+                var task = UniTask.RunOnThreadPool(async () =>
                 {
-                    var master = item;
-                    var masterVersion = versionTable.GetValueOrDefault(master);
+                    await CheckRequireUpdate(masters);
+                });
 
-                    var task = UniTask.RunOnThreadPool(async () =>
-                    {
-                        var versionCheck = await master.CheckVersion(masterVersion);
-
-                        if (!versionCheck)
-                        {
-                            totalFileSize += fileSizeTable.GetValueOrDefault(master);
-                        }
-                    });
-
-                    tasks.Add(task);
-                }
-
-                await UniTask.WhenAll(tasks);
+                tasks.Add(task);
             }
 
-            return totalFileSize;
+            await UniTask.WhenAll(tasks);
+
+            return list.ToArray();
         }
 
         public void Clear()

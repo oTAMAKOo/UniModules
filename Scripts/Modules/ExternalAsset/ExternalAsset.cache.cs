@@ -11,8 +11,8 @@ using Modules.Devkit.Console;
 
 namespace Modules.ExternalAssets
 {
-    public sealed partial class ExternalAsset
-    {
+	public sealed partial class ExternalAsset
+	{
         //----- params -----
 
         //----- field -----
@@ -32,7 +32,7 @@ namespace Modules.ExternalAssets
 
 			if (Directory.Exists(InstallDirectory))
 			{
-	            var cacheFiles = Directory.GetFiles(InstallDirectory, "*", SearchOption.AllDirectories)
+	            var cacheFiles = Directory.GetFiles(InstallDirectory, "*", SearchOption.TopDirectoryOnly)
 	                .Select(x => PathUtility.ConvertPathSeparator(x))
 	                .ToArray();
 
@@ -54,24 +54,20 @@ namespace Modules.ExternalAssets
 			
 			if (!Directory.Exists(InstallDirectory)) { return; }
 
-			var count = 0;
+            var assetInfos = assetInfoManifest.GetAssetInfos()
+                .Append(AssetInfoManifest.GetManifestAssetInfo())
+				.DistinctBy(x => x.FileName);
 
-			var assetInfos = assetInfoManifest.GetAssetInfos()
-			.DistinctBy(x => x.FileName)
-			.ToList();
-
-			assetInfos.Add(AssetInfoManifest.GetManifestAssetInfo());
-
-			// アセット管理情報構築.
+            // アセット管理情報構築.
 
 			var manageFilePaths = new HashSet<string>();
+
+            var count = 0;
 
 			foreach (var assetInfo in assetInfos)
 			{
 				var filePath = string.Empty;
 
-				var extension = Path.GetExtension(assetInfo.ResourcePath);
-				
 				if (assetInfo.IsAssetBundle)
 				{
 					filePath = assetBundleManager.GetFilePath(InstallDirectory, assetInfo);
@@ -79,7 +75,7 @@ namespace Modules.ExternalAssets
 
 				#if ENABLE_CRIWARE_ADX || ENABLE_CRIWARE_SOFDEC
 
-				else if(IsCriAsset(extension))
+				else if (criAssetManager.IsCriAsset(assetInfo.ResourcePath))
 				{
 					filePath = criAssetManager.GetFilePath(InstallDirectory, assetInfo);
 				}
@@ -93,7 +89,7 @@ namespace Modules.ExternalAssets
 
 				manageFilePaths.Add(filePath);
 
-				if (++count % 1000 == 0)
+				if (++count % 500 == 0)
 				{
 					await UniTask.NextFrame();
 				}
@@ -105,8 +101,15 @@ namespace Modules.ExternalAssets
 
 			var files = Directory.EnumerateFiles(InstallDirectory, "*", SearchOption.TopDirectoryOnly);
 
-			foreach (var file in files)
+            foreach (var file in files)
 			{
+                var extension = Path.GetExtension(file);
+
+                // バージョンファイルは削除対象外.
+                if (extension == AssetInfoManifest.VersionFileExtension){ continue; }
+
+                // InstallDirectory直下の管理情報に含まれていないファイルは削除対象.
+
 				var filePath = PathUtility.ConvertPathSeparator(file);
 
 				if (!manageFilePaths.Contains(filePath))
@@ -114,10 +117,10 @@ namespace Modules.ExternalAssets
 					deleteFiles.Add(filePath);
 				}
 
-				if (++count % 1000 == 0)
-				{
-					await UniTask.NextFrame();
-				}
+                if (++count % 500 == 0)
+                {
+                    await UniTask.NextFrame();
+                }
 			}
 			
 			await DeleteCacheFiles(InstallDirectory, deleteFiles.ToArray());
@@ -128,6 +131,8 @@ namespace Modules.ExternalAssets
         {
             var targetFilePaths = new List<string>();
 
+            var count = 0;
+
             foreach (var assetInfo in assetInfos)
             {
                 var filePath = string.Empty;
@@ -136,21 +141,29 @@ namespace Modules.ExternalAssets
                 {
                     filePath = assetBundleManager.GetFilePath(InstallDirectory, assetInfo);
                 }
+
+                #if ENABLE_CRIWARE_ADX || ENABLE_CRIWARE_SOFDEC
+
+                else if (criAssetManager.IsCriAsset(assetInfo.ResourcePath))
+                {
+                    filePath = criAssetManager.GetFilePath(InstallDirectory, assetInfo);
+                }
+
+                #endif
+
                 else
                 {
-                    #if ENABLE_CRIWARE_ADX || ENABLE_CRIWARE_SOFDEC
-                    
-                    if (criAssetManager.IsCriAsset(assetInfo.ResourcePath))
-                    {
-                        filePath = criAssetManager.GetFilePath(InstallDirectory, assetInfo);
-                    }
-
-                    #endif
+                    filePath = PathUtility.Combine(InstallDirectory, assetInfo.FileName);
                 }
 
                 if (!string.IsNullOrEmpty(filePath))
                 {
                     targetFilePaths.Add(filePath);
+                }
+
+                if (++count % 500 == 0)
+                {
+                    await UniTask.NextFrame();
                 }
             }
 
@@ -166,7 +179,7 @@ namespace Modules.ExternalAssets
 
             // ファイル削除.
 
-            Action<string> deleteFile = filePath =>
+            void DeleteFile(string filePath)
             {
                 try
                 {
@@ -192,7 +205,7 @@ namespace Modules.ExternalAssets
                 {
                     Debug.LogException(e);
                 }
-            };
+            }
 
             var sw = System.Diagnostics.Stopwatch.StartNew();
 
@@ -202,13 +215,13 @@ namespace Modules.ExternalAssets
             {
                 foreach (var path in paths)
                 {
-                    deleteFile.Invoke(path);
+                    DeleteFile(path);
                 }
                 
                 await UniTask.NextFrame();
             }
 
-			// ログ.
+            // ログ.
 
             sw.Stop();
 

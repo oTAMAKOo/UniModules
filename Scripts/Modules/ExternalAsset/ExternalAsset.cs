@@ -19,10 +19,7 @@ namespace Modules.ExternalAssets
         public static readonly string ConsoleEventName = "ExternalAsset";
         public static readonly Color ConsoleEventColor = new Color(0.8f, 1f, 0.1f);
 
-        // 最大同時ダウンロード数.
-        private readonly uint MaxDownloadCount = 4;
-
-        //----- field -----
+		//----- field -----
 
         // アセット管理情報.
         private AssetInfoManifest assetInfoManifest = null;
@@ -75,6 +72,9 @@ namespace Modules.ExternalAssets
 
         /// <summary> ログ出力が有効. </summary>
         public bool LogEnable { get; set; }
+
+		/// <summary> 最大同時ダウンロード数.  </summary>
+		public uint MaxDownloadCount { get; set; } = 10;
 
         //----- method -----
 
@@ -262,15 +262,6 @@ namespace Modules.ExternalAssets
 
 			await SetAssetInfoManifest(manifest);
 
-			sw.Stop();
-
-			if (LogEnable && UnityConsole.Enable)
-			{
-				var message = $"UpdateManifest: ({sw.Elapsed.TotalMilliseconds:F2}ms)";
-
-				UnityConsole.Event(ConsoleEventName, ConsoleEventColor, message);
-			}
-
 			// アセット管理情報を登録.
 
 			await assetBundleManager.SetManifest(assetInfoManifest);
@@ -280,6 +271,15 @@ namespace Modules.ExternalAssets
 			criAssetManager.SetManifest(assetInfoManifest);
 
 			#endif
+
+			sw.Stop();
+
+			if (LogEnable && UnityConsole.Enable)
+			{
+				var message = $"UpdateManifest: ({sw.Elapsed.TotalMilliseconds:F2}ms)";
+
+				UnityConsole.Event(ConsoleEventName, ConsoleEventColor, message);
+			}
 
 			// 不要になったファイル削除.
 			try

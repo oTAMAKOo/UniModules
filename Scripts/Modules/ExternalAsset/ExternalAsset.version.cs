@@ -106,52 +106,62 @@ namespace Modules.ExternalAssets
 
 			var list = new List<AssetInfo>();
 
-            var count = 0;
+            void CheckRequireUpdate(IEnumerable<AssetInfo> infos)
+            {
+                foreach (var info in infos)
+                {
+                    if (IsRequireUpdate(info))
+                    {
+                        lock (list)
+                        {
+                            list.Add(info);
+                        }
+                    }
+                }
+            }
 
-			foreach (var assetInfo in assetInfos)
+            var tasks = new List<UniTask>();
+
+            var chunck = assetInfos.Chunk(250);
+
+			foreach (var items in chunck)
 			{
-                if (IsRequireUpdate(assetInfo))
-                {
-                    list.Add(assetInfo);
-                }
+				var infos = items;
 
-                if (++count % 500 == 0)
+                var task = UniTask.RunOnThreadPool(() =>
                 {
-                    await UniTask.NextFrame();
-                }
+                    CheckRequireUpdate(infos);
+                });
+
+                tasks.Add(task);
 			}
+
+            await UniTask.WhenAll(tasks);
 
             return list;
 		}
 
 		/// <summary> 更新が必要か. </summary>
 		public bool IsRequireUpdate(AssetInfo assetInfo)
-        {
-            if (simulateMode){ return false; }
+		{
+			if (simulateMode){ return false; }
 
-            // バージョン情報が存在しないので更新.
-            if (versions.IsEmpty()) { return true; }
+			// バージョン情報が存在しないので更新.
+			if (versions.IsEmpty()) { return true; }
 
-            var requireUpdate = true;
+			var requireUpdate = true;
 
-            #if ENABLE_CRIWARE_FILESYSTEM
+			if (assetInfo.IsAssetBundle)
+			{
+				requireUpdate = !CheckAssetBundleVersion(assetInfo);
+			}
+			else
+			{
+				requireUpdate = !CheckAssetVersion(assetInfo);
+			}            
 
-            var extension = Path.GetExtension(assetInfo.ResourcePath);
-
-            if (CriAssetDefinition.AssetAllExtensions.Any(x => x == extension))
-            {
-                requireUpdate = !CheckAssetVersion(assetInfo);
-            }
-            else
-
-            #endif
-
-            {
-                requireUpdate = !CheckAssetBundleVersion(assetInfo);
-            }            
-
-            return requireUpdate;
-        }
+			return requireUpdate;
+		}
 
 		private void UpdateVersion(string resourcePath)
 		{
@@ -198,46 +208,64 @@ namespace Modules.ExternalAssets
 		{
 			if (simulateMode){ return; }
 
-			var count = 0;
-
-			versions = new Dictionary<string, string>();
+            versions = new Dictionary<string, string>();
 
 			var versionFilePaths = GetAllVersionFilePaths();
 
 			var versionFileExtensionLength = AssetInfoManifest.VersionFileExtension.Length;
-            
-			foreach (var versionFilePath in versionFilePaths)
-			{
-				try
-				{
-					var bytes = File.ReadAllBytes(versionFilePath);
 
-					var hash = Encoding.UTF8.GetString(bytes);
+            var tasks = new List<UniTask>();
 
-					var versionFileName = Path.GetFileName(versionFilePath);
+            // 複数のバージョンファイルを読み込むローカル関数.
+            void LoadVersionFiles(string[] paths)
+            {
+                foreach (var path in paths)
+                {
+                    try
+                    {
+                        var bytes = File.ReadAllBytes(path);
 
-					var fileName = versionFileName.SafeSubstring(0, versionFileName.Length - versionFileExtensionLength);
+                        var hash = Encoding.UTF8.GetString(bytes);
 
-					if (!string.IsNullOrEmpty(fileName))
-					{
-                        versions[fileName] = hash;
-					}
-				}
-				catch (Exception exception)
-				{
-					Debug.LogException(exception);
+                        var versionFileName = Path.GetFileName(path);
 
-					if (File.Exists(versionFilePath))
-					{
-						File.Delete(versionFilePath);
-					}
-				}
+                        var fileName = versionFileName.SafeSubstring(0, versionFileName.Length - versionFileExtensionLength);
 
-				if (++count % 250 == 0)
-				{
-					await UniTask.NextFrame();
-				}
-			}
+                        if (!string.IsNullOrEmpty(fileName))
+                        {
+                            lock (versions)
+                            {
+                                versions[fileName] = hash;
+                            }
+                        }
+                    }
+                    catch (Exception exception)
+                    {
+                        Debug.LogException(exception);
+
+                        if (File.Exists(path))
+                        {
+                            File.Delete(path);
+                        }
+                    }
+                }
+            }
+
+			var chunck = versionFilePaths.Chunk(250);
+
+            foreach (var items in chunck)
+            {
+                var paths = items.ToArray();
+
+                var task = UniTask.RunOnThreadPool(() =>
+                {
+                    LoadVersionFiles(paths);
+                });
+
+                tasks.Add(task);
+            }
+
+            await UniTask.WhenAll(tasks);
 		}
 
 		private async UniTask ClearVersion()
