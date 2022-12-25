@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Text;
 using System.IO;
 using System.Linq;
+using System.Threading;
 using Cysharp.Threading.Tasks;
 using UniRx;
 using Modules.Devkit.Console;
@@ -40,6 +41,16 @@ namespace Modules.ExternalAssets
 		public void SetAssetBundleFileHandler(IAssetBundleFileHandler fileHandler)
 		{
 			assetBundleManager.SetFileHandler(fileHandler);
+		}
+
+		private async UniTask UpdateAssetBundle(CancellationToken cancelToken, AssetInfo assetInfo, IProgress<float> progress = null)
+		{
+			// ローカルバージョンが最新の場合は更新しない.
+			if (CheckAssetBundleVersion(assetInfo)) { return; }
+
+			var assetBundleManager = instance.assetBundleManager;
+
+			await assetBundleManager.UpdateAssetBundle(InstallDirectory, assetInfo, progress, cancelToken);
 		}
 
         /// <summary> AssetBundleを読み込み (非同期) </summary>

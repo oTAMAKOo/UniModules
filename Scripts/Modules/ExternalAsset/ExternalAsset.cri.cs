@@ -3,8 +3,6 @@
 
 using UnityEngine;
 using System;
-using System.Collections;
-using System.Linq;
 using System.IO;
 using System.Text;
 using System.Threading;
@@ -47,32 +45,15 @@ namespace Modules.ExternalAssets
             criAssetManager.OnErrorAsObservable().Subscribe(x => OnError(x)).AddTo(Disposable);
         }
 
-        private bool IsCriAsset(string extension)
+		private async UniTask UpdateCriAsset(CancellationToken cancelToken, AssetInfo assetInfo, IProgress<float> progress = null)
         {
-            return CriAssetDefinition.AssetAllExtensions.Any(x => x == extension);
-        }
-
-        private async UniTask<bool> UpdateCriAsset(CancellationToken cancelToken, AssetInfo assetInfo, IProgress<float> progress = null)
-        {
-			var result = true;
-			
             // ローカルバージョンが最新の場合は更新しない.
-            if (!CheckAssetVersion(assetInfo))
-            {
-				try
-				{
-					var criAssetManager = instance.criAssetManager;
+            if (CheckAssetVersion(assetInfo)){ return; }
 
-					await criAssetManager.UpdateCriAsset(InstallDirectory, assetInfo, cancelToken, progress);
-				}
-				catch
-				{
-					result = false;
-				}
-			}
+			var criAssetManager = instance.criAssetManager;
 
-			return result;
-        }
+			await criAssetManager.UpdateCriAsset(InstallDirectory, assetInfo, cancelToken, progress);
+		}
 
 		#region Sound
 

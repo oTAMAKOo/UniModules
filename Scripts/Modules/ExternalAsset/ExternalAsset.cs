@@ -47,7 +47,7 @@ namespace Modules.ExternalAssets
         private IUpdateAssetHandler updateAssetHandler = null;
         private ILoadAssetHandler loadAssetHandler = null;
 
-        // イベント通知.
+		// イベント通知.
         private Subject<AssetInfo> onTimeOut = null;
         private Subject<Exception> onError = null;
 
@@ -90,11 +90,9 @@ namespace Modules.ExternalAssets
             this.externalAssetDirectory = externalAssetDirectory;
             this.shareAssetDirectory = shareAssetDirectory;
 
-            // 中断用.
+			// 中断用.
 			cancelSource = new CancellationTokenSource();
 
-            //----- AssetBundleManager初期化 -----
-                        
             #if UNITY_EDITOR
 
             simulateMode = Prefs.isSimulate;
@@ -105,7 +103,11 @@ namespace Modules.ExternalAssets
 
             InitializeAssetBundle();
 
-            // CRI初期化.
+			// FileAsset初期化.
+
+			InitializeFileAsset();
+
+			// CRI初期化.
 
             #if ENABLE_CRIWARE_ADX || ENABLE_CRIWARE_SOFDEC
 
@@ -113,7 +115,7 @@ namespace Modules.ExternalAssets
             
             #endif
 
-            // 保存先設定.
+			// 保存先設定.
             SetInstallDirectory(Application.persistentDataPath);
 
             initialized = true;
@@ -125,13 +127,14 @@ namespace Modules.ExternalAssets
             LocalMode = localMode;
 
             assetBundleManager.SetLocalMode(localMode);
+			fileAssetManager.SetLocalMode(localMode);
 
             #if ENABLE_CRIWARE_ADX || ENABLE_CRIWARE_SOFDEC
 
             criAssetManager.SetLocalMode(localMode);
 
             #endif
-        }
+		}
 
         /// <summary> 保存先ディレクトリ設定. </summary>
         public void SetInstallDirectory(string directory)
@@ -152,13 +155,15 @@ namespace Modules.ExternalAssets
         public void SetUrl(string remoteUrl, string versionHash)
         {
             assetBundleManager.SetUrl(remoteUrl, versionHash);
+			
+			fileAssetManager.SetUrl(remoteUrl, versionHash);
 
-            #if ENABLE_CRIWARE_ADX || ENABLE_CRIWARE_SOFDEC
+			#if ENABLE_CRIWARE_ADX || ENABLE_CRIWARE_SOFDEC
 
             criAssetManager.SetUrl(remoteUrl, versionHash);
 
             #endif
-        }
+		}
 
 		// アセット管理マニュフェスト情報を更新.
 		private async UniTask SetAssetInfoManifest(AssetInfoManifest manifest)
@@ -338,54 +343,36 @@ namespace Modules.ExternalAssets
 			
 			if (!LocalMode && !simulateMode)
 			{
-                #if ENABLE_CRIWARE_FILESYSTEM
+				try
+				{
+					if (assetInfo.IsAssetBundle)
+					{
+						await UpdateAssetBundle(cancelSource.Token, assetInfo, progress);
+					}
 
-                var extension = Path.GetExtension(resourcePath);
-                
-                if (IsCriAsset(extension))
-                {
-					try
+					#if ENABLE_CRIWARE_FILESYSTEM
+
+					else if (criAssetManager.IsCriAsset(assetInfo.ResourcePath))
 					{
 						await UpdateCriAsset(cancelSource.Token, assetInfo, progress);
 					}
-					catch (Exception e)
+
+					#endif
+
+					else
 					{
-						Debug.LogException(e);
-						return;
+						await UpdateFileAsset(cancelSource.Token, assetInfo, progress);
 					}
+					
+					// バージョン更新.
+					UpdateVersion(resourcePath);
 				}
-                else
-                
-                #endif
-
-                {
-                    // ローカルバージョンが最新の場合は更新しない.
-                    if (CheckAssetBundleVersion(assetInfo))
-                    {
-                        if(progress != null)
-                        {
-                            progress.Report(1f);
-                        }
-
-                        return;
-                    }
-
-					try
-					{
-						var assetBundleManager = instance.assetBundleManager;
-
-						await assetBundleManager.UpdateAssetBundle(InstallDirectory, assetInfo, progress).AttachExternalCancellation(cancelSource.Token);
-					}
-					catch (Exception e)
-					{
-						Debug.LogException(e);
-						return;
-					}
+				catch (Exception e)
+				{
+					Debug.LogException(e);
+					return;
 				}
-
-                // バージョン更新.
-                UpdateVersion(resourcePath);
-            }
+			}
 
             // 外部処理.
 
