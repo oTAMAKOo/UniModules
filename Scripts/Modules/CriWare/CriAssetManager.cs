@@ -54,20 +54,31 @@ namespace Modules.CriWare
             private async UniTask Install(string downloadUrl, string filePath, IProgress<float> progress, CancellationToken cancelToken)
             {
                 var installers = Instance.installers;
+                var installing = Instance.installing;
+                var numInstallers = Instance.numInstallers;
 
                 // 同時インストール数待ち.
                 while (true)
                 {
-                    if (installers.Any()){ break; }
+					// 未使用のインストーラを取得.
+					Installer = installers.FirstOrDefault(x => installing.All(y => y.Installer != x));
+
+					if (Installer != null){ break; }
+
+					// 最大インストーラ数以下でインストーラが足りない時は生成.
+					if (installers.Count < numInstallers)
+					{
+						installers.Add(new CriFsWebInstaller());
+					}
 
 					if (cancelToken.IsCancellationRequested){ return; }
 
-                    await UniTask.NextFrame(cancelToken);
+					await UniTask.NextFrame(cancelToken);
 				}
 
 				if (cancelToken.IsCancellationRequested){ return; }
 
-                Installer = installers.Dequeue();
+                installing.Add(this);
 
                 Installer.Copy(downloadUrl, filePath);
 
@@ -93,6 +104,8 @@ namespace Modules.CriWare
                 {
                     throw new Exception(string.Format("[Download Error] {0}\n{1}", AssetInfo.ResourcePath, statusInfo.error));
                 }
+
+                installing.Remove(this);
             }
         }
 
@@ -116,9 +129,6 @@ namespace Modules.CriWare
         private string remoteUrl = null;
         private string versionHash = null;
 
-        // インストーラー.
-        private Queue<CriFsWebInstaller> installers = null;
-        
         // シュミュレートモードか.
         private bool simulateMode = false;
 
@@ -126,6 +136,12 @@ namespace Modules.CriWare
         private bool localMode = false;
 
 		#if ENABLE_CRIWARE_FILESYSTEM
+
+        // インストーラー.
+        private List<CriFsWebInstaller> installers = null;
+
+        // ダウンロード中.
+        private List<CriAssetInstall> installing = null;
 
         // ダウンロード待ち.
         private Dictionary<string, CriAssetInstall> installQueueing = null;
@@ -156,6 +172,7 @@ namespace Modules.CriWare
 
             #if ENABLE_CRIWARE_FILESYSTEM
 
+            installing = new List<CriAssetInstall>();
             installQueueing = new Dictionary<string, CriAssetInstall>();
 
             //------ CriInstaller初期化 ------
@@ -172,12 +189,7 @@ namespace Modules.CriWare
 				CriFsWebInstaller.InitializeModule(moduleConfig);
 			}
 
-            installers = new Queue<CriFsWebInstaller>();
-
-            for (var i = 0; i < numInstallers; i++)
-            {
-                installers.Enqueue(new CriFsWebInstaller());
-            }
+            installers = new List<CriFsWebInstaller>();
 
             Observable.EveryUpdate()
                 .Subscribe(_ => CriFsWebInstaller.ExecuteMain())
@@ -204,8 +216,11 @@ namespace Modules.CriWare
 
                 foreach (var item in installQueueing.Values)
                 {
-                    item.Installer.Stop();
-                    item.Installer.Dispose();
+                    if (item.Installer != null)
+                    {
+                        item.Installer.Stop();
+                        item.Installer.Dispose();
+                    }
                 }
 
                 installQueueing.Clear();
@@ -329,9 +344,18 @@ namespace Modules.CriWare
             {
                 item.Installer.Stop();
 
-                installers.Enqueue(item.Installer);
-
                 installQueueing.Remove(resourcePath);
+            }
+
+            // インストーラ解放.
+            if (installQueueing.IsEmpty())
+            {
+                foreach (var installer in installers)
+                {
+                    installer.Dispose();
+                }
+
+                installers.Clear();
             }
         }
 
