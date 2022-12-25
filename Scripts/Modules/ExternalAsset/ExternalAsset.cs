@@ -74,7 +74,7 @@ namespace Modules.ExternalAssets
         public bool LogEnable { get; set; }
 
 		/// <summary> 最大同時ダウンロード数.  </summary>
-		public uint MaxDownloadCount { get; set; } = 10;
+		public uint MaxDownloadCount { get; set; } = 5;
 
         //----- method -----
 
