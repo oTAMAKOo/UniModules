@@ -350,7 +350,7 @@ namespace Modules.ExternalAssets
             
             var externalAssetPath = projectResourceFolders.ExternalAssetPath;
 
-            var allAssetInfos = assetInfoManifest.GetAssetInfos().ToArray();
+            var allAssetInfos = assetInfoManifest.GetAssetInfos();
             
             using (new DisableStackTraceScope())
             {

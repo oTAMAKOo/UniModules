@@ -76,7 +76,7 @@ namespace Modules.AssetBundles.Editor
         /// <summary> アセットバンドルの参照情報を書き込み </summary>
         public void SetDependencies(AssetInfoManifest assetInfoManifest, BuildResult buildResult)
         {
-            var assetInfos = assetInfoManifest.GetAssetInfos().Where(x => x.IsAssetBundle).ToArray();
+            var assetInfos = assetInfoManifest.GetAssetInfos().Where(x => x.IsAssetBundle);
 
             foreach (var assetInfo in assetInfos)
             {
@@ -99,9 +99,7 @@ namespace Modules.AssetBundles.Editor
         public void SetAssetInfoHash(AssetInfoManifest assetInfoManifest)
         {
             // 文字数が大きくなりすぎないように300ファイル分毎に分割.
-            var chunkInfos = assetInfoManifest.GetAssetInfos()
-                .Chunk(300)
-                .ToArray();
+            var chunkInfos = assetInfoManifest.GetAssetInfos().Chunk(300);
 
             var versionHashBuilder = new StringBuilder();
 

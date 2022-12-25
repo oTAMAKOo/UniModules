@@ -194,7 +194,7 @@ namespace Modules.ExternalAssets
 
             var folderPathLength = folderPath.Length;
 
-            var allAssetInfos = assetInfoManifest.GetAssetInfos().ToArray();
+            var allAssetInfos = assetInfoManifest.GetAssetInfos();
 
             var fileHashTable = new Dictionary<string, string>();
 

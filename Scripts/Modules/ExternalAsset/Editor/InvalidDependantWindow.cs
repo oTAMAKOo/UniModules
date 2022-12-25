@@ -163,7 +163,7 @@ namespace Modules.ExternalAssets
             var manifestPath = PathUtility.Combine(externalAssetPath, AssetInfoManifest.ManifestFileName);
             var assetInfoManifest = AssetDatabase.LoadAssetAtPath<AssetInfoManifest>(manifestPath);
 
-            var allAssetInfos = assetInfoManifest.GetAssetInfos().ToArray();
+            var allAssetInfos = assetInfoManifest.GetAssetInfos();
 
             var list = new List<AssetInfo>();
 
