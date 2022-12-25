@@ -468,7 +468,7 @@ namespace Modules.ExternalAssets
 
             using (new EditorGUILayout.HorizontalScope())
             {
-                var type = content.isAssetBundle ? "AssetBundle" : "Other Assets";
+                var type = content.isAssetBundle ? "AssetBundle" : "FileAsset";
                 var color = content.isAssetBundle ? AssetBundleLabelColor : OtherAssetsLabelColor;
 
                 var originLabelWidth = EditorLayoutTools.SetLabelWidth(75f);
