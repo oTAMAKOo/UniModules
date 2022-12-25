@@ -161,16 +161,7 @@ namespace Modules.AssetBundles.Editor
             // ファイルの出力先.
             var packageExportPath = PathUtility.Combine(exportPath, packageFileName);
 
-            // ディレクトリ作成.
-
-            var directory = Path.GetDirectoryName(packageExportPath);
-
-            if (!Directory.Exists(directory))
-            {
-                Directory.CreateDirectory(directory);
-            }
-
-            // ファイルコピー.
+			// ファイルコピー.
 
             using (var sourceStream = File.Open(packageFilePath, FileMode.Open, FileAccess.ReadWrite, FileShare.ReadWrite))
             {

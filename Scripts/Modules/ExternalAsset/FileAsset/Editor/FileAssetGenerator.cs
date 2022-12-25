@@ -1,16 +1,16 @@
 ﻿
-#if ENABLE_CRIWARE_ADX || ENABLE_CRIWARE_SOFDEC
-﻿﻿
-using System;
-using System.IO;
 using System.Linq;
+using System.IO;
 using Extensions;
 using Modules.Devkit.Project;
-using Modules.ExternalAssets;
 
-namespace Modules.CriWare.Editor
+#if ENABLE_CRIWARE_ADX || ENABLE_CRIWARE_SOFDEC
+using Modules.CriWare;
+#endif
+
+namespace Modules.ExternalAssets
 {
-	public sealed class CriAssetGenerator
+    public sealed class FileAssetGenerator
     {
         //----- params -----
 
@@ -20,9 +20,7 @@ namespace Modules.CriWare.Editor
 
         //----- method -----
 
-        /// <summary>
-        /// CriAssetをアセットバンドルの出力先にコピー.
-        /// </summary>
+		/// <summary> FileAssetをアセットバンドルの出力先にコピー. </summary>
         public static void Generate(string exportPath, AssetInfoManifest assetInfoManifest)
         {
             var projectResourceFolders = ProjectResourceFolders.Instance;
@@ -31,18 +29,24 @@ namespace Modules.CriWare.Editor
 
             var externalAssetPath = projectResourceFolders.ExternalAssetPath;
 
-			bool IsCriAssetInfo(AssetInfo assetInfo)
+			bool IsFileAssetInfo(AssetInfo assetInfo)
             {
                 if (string.IsNullOrEmpty(assetInfo.FileName)) { return false; }
 
 				if (assetInfo.IsAssetBundle){ return false; }
 
-                var extension = Path.GetExtension(assetInfo.ResourcePath);
+				#if ENABLE_CRIWARE_ADX || ENABLE_CRIWARE_SOFDEC
+				
+				var extension = Path.GetExtension(assetInfo.ResourcePath);
 
-                return CriAssetDefinition.AssetAllExtensions.Contains(extension);
+				if (CriAssetDefinition.AssetAllExtensions.Contains(extension)){ return false; }
+
+				#endif
+
+                return true;
             };
 
-            var assetInfos = assetInfoManifest.GetAssetInfos().Where(x => IsCriAssetInfo(x));
+            var assetInfos = assetInfoManifest.GetAssetInfos().Where(x => IsFileAssetInfo(x));
 
             foreach (var assetInfo in assetInfos)
             {
@@ -54,5 +58,3 @@ namespace Modules.CriWare.Editor
         }
     }
 }
-
-#endif

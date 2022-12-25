@@ -76,10 +76,17 @@ namespace Modules.ExternalAssets
         {
             if (string.IsNullOrEmpty(exportPath)) { return null; }
 
-            if (Directory.Exists(exportPath))
+			// 既に存在する場合は削除.
+			if (Directory.Exists(exportPath))
             {
                 Directory.Delete(exportPath, true);
             }
+
+			// ディレクトリ作成.
+			if (!Directory.Exists(exportPath))
+			{
+				Directory.CreateDirectory(exportPath);
+			}
 
             var versionHash = string.Empty;
 
@@ -130,6 +137,13 @@ namespace Modules.ExternalAssets
                     }
 
                     #endif
+
+					//------ ファイルアセットを生成 ------
+
+					using (new BuildLogScope(logBuilder, processTime, "GenerateFileAsset"))
+					{
+						FileAssetGenerator.Generate(exportPath, assetInfoManifest);
+					}
 
                     //------ AssetBundleをビルド ------
 
