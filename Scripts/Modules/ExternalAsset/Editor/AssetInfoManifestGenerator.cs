@@ -1,4 +1,4 @@
-﻿
+
 using UnityEditor;
 using System.Collections.Generic;
 using System.IO;
@@ -194,6 +194,8 @@ namespace Modules.ExternalAssets
             var projectResourceFolders = ProjectResourceFolders.Instance;
 
             var externalAssetPath = projectResourceFolders.ExternalAssetPath;
+
+			if (string.IsNullOrEmpty(externalAssetPath)){ return null; }
 
             var allAssetInfos = assetManagement.GetAllAssetInfos().ToArray();
 

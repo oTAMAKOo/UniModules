@@ -1,6 +1,9 @@
 ﻿
+using System;
+using System.IO;
 using Modules.ExternalAssets;
 using Modules.Devkit.Project;
+using UnityEngine;
 
 namespace Modules.Devkit.AssetTuning
 {
@@ -30,29 +33,36 @@ namespace Modules.Devkit.AssetTuning
 
 		public override void OnPostprocessAsset(string assetPath)
 		{
-            var externalAssetPath = GetExternalAssetPath();
-            var shareResourcesPath = GetShareResourcesPath();
+			try
+			{
+				var externalAssetPath = GetExternalAssetPath();
+				var shareResourcesPath = GetShareResourcesPath();
 
-            var targetPaths = new string[]
-            {
-                externalAssetPath,
-                shareResourcesPath,
-            };
+				var targetPaths = new string[]
+				{
+					externalAssetPath,
+					shareResourcesPath,
+				};
 
-            foreach (var targetPath in targetPaths)
-            {
-                if (string.IsNullOrEmpty(targetPath)) { continue; }
+				foreach (var targetPath in targetPaths)
+				{
+					if (string.IsNullOrEmpty(targetPath)) { continue; }
 
-                if (!assetPath.StartsWith(targetPath)) { continue; }
+					if (!assetPath.StartsWith(targetPath)) { continue; }
 
-                var infos = assetManagement.GetAssetInfos(assetPath);
+					var infos = assetManagement.GetAssetInfos(assetPath);
 
-                foreach (var info in infos)
-                {
-                    ApplyAssetBundleName(externalAssetPath, shareResourcesPath, info);
-                }
-            }
-        }
+					foreach (var info in infos)
+					{
+						ApplyAssetBundleName(externalAssetPath, shareResourcesPath, info);
+					}
+				}
+			}
+			catch (Exception e)
+			{
+				Debug.LogException(e);
+			}
+		}
 
         public override void OnAssetMove(string assetPath, string from)
         {
@@ -95,6 +105,8 @@ namespace Modules.Devkit.AssetTuning
 
         private void ApplyAssetBundleName(string externalAssetPath, string shareResourcesPath, AssetInfo assetInfo)
         {
+			if (string.IsNullOrEmpty(externalAssetPath) || string.IsNullOrEmpty(shareResourcesPath)){ return; }
+
             if (assetInfo == null){ return; }
 
             if (!assetInfo.IsAssetBundle){ return; }
@@ -110,14 +122,24 @@ namespace Modules.Devkit.AssetTuning
         {
             var projectResourceFolders = ProjectResourceFolders.Instance;
 
-            return projectResourceFolders != null ? projectResourceFolders.ExternalAssetPath : null;
+			if (projectResourceFolders == null || string.IsNullOrEmpty(projectResourceFolders.ExternalAssetPath))
+			{
+				throw new InvalidDataException("Missing data ExternalAssetPath");
+			}
+
+            return projectResourceFolders.ExternalAssetPath;
         }
 
         private string GetShareResourcesPath()
         {
 			var projectResourceFolders = ProjectResourceFolders.Instance;
 
-            return projectResourceFolders != null ? projectResourceFolders.ShareResourcesPath : null;
+			if (projectResourceFolders == null || string.IsNullOrEmpty(projectResourceFolders.ShareResourcesPath))
+			{
+				throw new FileNotFoundException("Missing data ShareResourcesPath");
+			}
+
+            return projectResourceFolders.ShareResourcesPath;
         }
     }
 }
