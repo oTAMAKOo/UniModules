@@ -51,35 +51,51 @@ namespace Modules.CriWare
                     .Share();
             }
 
-            private async UniTask Install(string downloadUrl, string filePath, IProgress<float> progress, CancellationToken cancelToken)
+            private CriFsWebInstaller GetInstaller()
             {
                 var installers = Instance.installers;
-                var installing = Instance.installing;
                 var numInstallers = Instance.numInstallers;
 
+                CriFsWebInstaller installer = null;
+
+                // 未使用のインストーラを取得.
+                installer = installers.FirstOrDefault(x =>
+                {
+                    var statusInfo = x.GetStatusInfo();
+
+                    return statusInfo.status != CriFsWebInstaller.Status.Busy;
+                });
+
+                if (installer != null){ return installer; }
+
+                // 最大インストーラ数以下でインストーラが足りない時は生成.
+                if (installers.Count < numInstallers)
+                {
+                    installer = new CriFsWebInstaller();
+
+                    installers.Add(installer);
+                }
+
+                return installer;
+            }
+
+            private async UniTask Install(string downloadUrl, string filePath, IProgress<float> progress, CancellationToken cancelToken)
+            {
                 // 同時インストール数待ち.
                 while (true)
                 {
-					// 未使用のインストーラを取得.
-					Installer = installers.FirstOrDefault(x => installing.All(y => y.Installer != x));
+                    // 未使用のインストーラを取得.
+                    Installer = GetInstaller();
 
-					if (Installer != null){ break; }
+                    if (Installer != null){ break; }
 
-					// 最大インストーラ数以下でインストーラが足りない時は生成.
-					if (installers.Count < numInstallers)
-					{
-						installers.Add(new CriFsWebInstaller());
-					}
+                    if (cancelToken.IsCancellationRequested){ return; }
 
-					if (cancelToken.IsCancellationRequested){ return; }
-
-					await UniTask.NextFrame(cancelToken);
+                    await UniTask.NextFrame(cancelToken);
 				}
 
 				if (cancelToken.IsCancellationRequested){ return; }
-
-                installing.Add(this);
-
+                
                 Installer.Copy(downloadUrl, filePath);
 
                 CriFsWebInstaller.StatusInfo statusInfo;
@@ -104,8 +120,6 @@ namespace Modules.CriWare
                 {
                     throw new Exception(string.Format("[Download Error] {0}\n{1}", AssetInfo.ResourcePath, statusInfo.error));
                 }
-
-                installing.Remove(this);
             }
         }
 
@@ -140,9 +154,6 @@ namespace Modules.CriWare
         // インストーラー.
         private List<CriFsWebInstaller> installers = null;
 
-        // ダウンロード中.
-        private List<CriAssetInstall> installing = null;
-
         // ダウンロード待ち.
         private Dictionary<string, CriAssetInstall> installQueueing = null;
 
@@ -172,7 +183,6 @@ namespace Modules.CriWare
 
             #if ENABLE_CRIWARE_FILESYSTEM
 
-            installing = new List<CriAssetInstall>();
             installQueueing = new Dictionary<string, CriAssetInstall>();
 
             //------ CriInstaller初期化 ------
@@ -342,8 +352,6 @@ namespace Modules.CriWare
 
             if (item != null)
             {
-                item.Installer.Stop();
-
                 installQueueing.Remove(resourcePath);
             }
 
@@ -352,6 +360,7 @@ namespace Modules.CriWare
             {
                 foreach (var installer in installers)
                 {
+                    installer.Stop();
                     installer.Dispose();
                 }
 
