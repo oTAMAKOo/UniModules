@@ -607,6 +607,8 @@ namespace Modules.ExternalAssets
         /// <summary> 除外対象のパスか検証 </summary>
         public IgnoreType? GetIgnoreType(string assetPath)
         {
+			if (string.IsNullOrEmpty(assetPath)){ return null; }
+
             var manageConfig = ManageConfig.Instance;
 
             if (manageConfig == null){ return null; }
