@@ -189,7 +189,7 @@ namespace Modules.Master
 
                     #if UNITY_EDITOR
                     
-                    versionCheck &= EnableVersionCheck;
+                    versionCheck = !EnableVersionCheck || versionCheck;
 
                     #endif
 
@@ -336,7 +336,7 @@ namespace Modules.Master
 
                     #if UNITY_EDITOR
                     
-                    versionCheck &= enableVersionCheck;
+                    versionCheck = !enableVersionCheck || versionCheck;
 
                     #endif
 
