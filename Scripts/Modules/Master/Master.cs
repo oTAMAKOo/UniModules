@@ -38,13 +38,7 @@ namespace Modules.Master
         
         private Dictionary<TKey, TMasterRecord> records = new Dictionary<TKey, TMasterRecord>();
 
-        #if UNITY_EDITOR
-
-        private bool enableVersionCheck = false;
-
-        #endif
-
-        private static TMaster instance = null;
+		private static TMaster instance = null;
 
         //----- property -----
 
@@ -325,7 +319,7 @@ namespace Modules.Master
             // ダウンロード.
 			try
 			{
-				await DownloadMaster();
+				await DownloadMaster(masterVersion);
 
 				if (File.Exists(filePath))
 				{
@@ -379,6 +373,6 @@ namespace Modules.Master
 
         protected abstract TKey GetRecordKey(TMasterRecord masterRecord);
 
-        protected abstract UniTask DownloadMaster();
+        protected abstract UniTask DownloadMaster(string version);
     }
 }

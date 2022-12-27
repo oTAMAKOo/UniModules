@@ -74,14 +74,16 @@ namespace Modules.Net.WebDownload
             ServerUrl = serverUrl;
         }
 
-        protected TDownloadRequest SetupDownloadRequest(string url, string downloadDirectory)
-        {
-            var downloadRequest = new TDownloadRequest();
+		protected TDownloadRequest SetupDownloadRequest(string url, string filePath)
+		{
+			var downloadRequest = new TDownloadRequest();
 
-            downloadRequest.Initialize(PathUtility.Combine(ServerUrl, url), downloadDirectory);
+			var downloadUrl = PathUtility.Combine(ServerUrl, url);
 
-            return downloadRequest;
-        }
+			downloadRequest.Initialize(downloadUrl, filePath);
+
+			return downloadRequest;
+		}
 
         /// <summary>
         /// 指定されたURLからPostでデータを取得.

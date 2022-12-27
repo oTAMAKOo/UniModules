@@ -102,9 +102,11 @@ namespace Modules.ExternalAssets
 
 			try
 			{
+				var filePath = PathUtility.Combine(installPath, assetInfo.FileName);
+
 				downloadQueueing[url] = assetInfo;
 
-				await downloader.Download(url, installPath, progress).ToUniTask(cancellationToken: cancelToken);
+				await downloader.Download(url, filePath, progress).ToUniTask(cancellationToken: cancelToken);
 			}
 			finally
 			{

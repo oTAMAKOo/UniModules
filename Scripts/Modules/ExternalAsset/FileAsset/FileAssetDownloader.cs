@@ -22,19 +22,19 @@ namespace Modules.ExternalAssets
 
         //----- method -----
 
-		public IObservable<Unit> Download(string url, string downloadDirectory = null, IProgress<float> progress = null)
-        {
-			if (string.IsNullOrEmpty(downloadDirectory)){ return Observable.ReturnUnit(); }
+		public IObservable<Unit> Download(string url, string filePath, IProgress<float> progress = null)
+		{
+			var directory = Directory.GetParent(filePath);
 
-			if (!Directory.Exists(downloadDirectory))
-            {
-                Directory.CreateDirectory(downloadDirectory);
-            }
+			if (!directory.Exists)
+			{
+				directory.Create();
+			}
 
-			var downloadRequest = SetupDownloadRequest(url, downloadDirectory);
+			var downloadRequest = SetupDownloadRequest(url, filePath);
             
-            return Download(downloadRequest, progress);
-        }
+			return Download(downloadRequest, progress);
+		}
 
 		protected override void OnComplete(DownloadRequest downloadRequest, double totalMilliseconds) { }
 
