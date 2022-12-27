@@ -6,21 +6,13 @@ using UnityEngine.UI;
 using System.IO;
 using System.Collections.Generic;
 using UniRx;
-using CriWare;
 using CriWare.CriMana;
-using Cysharp.Threading.Tasks;
 using Extensions;
 using Modules.CriWare;
 
 namespace Modules.Movie
 {
-    public enum MovieAssetType
-    {
-        InternalAsset,
-        ExternalAsset,
-    }
-
-    public sealed partial class MovieManagement : Singleton<MovieManagement>
+    public sealed class MovieManagement : Singleton<MovieManagement>
     {
         //----- params -----
 
@@ -64,16 +56,11 @@ namespace Modules.Movie
         }
 
 		/// <summary>
-		/// ExternalAsset内や、直接指定での動画再生用のインスタンスを生成.
+		/// ExternalResources内や、直接指定での動画再生用のインスタンスを生成.
 		/// ※ 頭出しなどを行う時はこの関数で生成したPlayerを使って頭出しを実装する.
 		/// </summary>
-		public MovieElement CreateElement(string moviePath, Graphic targetGraphic, Player.ShaderDispatchCallback shaderOverrideCallBack = null)
+		private MovieElement CreateElement(string moviePath, Graphic targetGraphic, Player.ShaderDispatchCallback shaderOverrideCallBack = null)
 		{
-			if (!File.Exists(moviePath))
-			{
-				throw new FileNotFoundException(moviePath);
-			}
-
 			var movieController = UnityUtility.GetOrAddComponent<CriMovieForUI>(targetGraphic.gameObject);
 
 			movieController.target = targetGraphic;
@@ -105,25 +92,15 @@ namespace Modules.Movie
 
 		#region Prepare
 
-		#pragma warning disable CS1998
-
 		/// <summary> 動画再生準備. </summary>
-		public async UniTask<MovieElement> Prepare(Movies.Mana type, Graphic targetGraphic, Player.ShaderDispatchCallback shaderOverrideCallBack = null)
+		public MovieElement Prepare(Movies.Mana type, Graphic targetGraphic, Player.ShaderDispatchCallback shaderOverrideCallBack = null)
 		{
 			var movieInfo = Movies.GetManaInfo(type);
 
 			if (movieInfo == null){ return null; }
 
-			#if UNITY_ANDROID
-
-			movieInfo = await PrepareInternalFile(movieInfo);
-
-			#endif
-
 			return movieInfo != null ? Prepare(movieInfo, targetGraphic, shaderOverrideCallBack) : null;
 		}
-
-		#pragma warning restore CS1998
 
 		/// <summary> 動画再生準備. </summary>
 		public MovieElement Prepare(ManaInfo movieInfo, Graphic targetGraphic, Player.ShaderDispatchCallback shaderOverrideCallBack = null)

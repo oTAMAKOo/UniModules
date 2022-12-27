@@ -6,12 +6,10 @@ using System;
 using System.IO;
 using System.Linq;
 using System.Collections.Generic;
-using System.Text;
 using CriWare;
 using Cysharp.Threading.Tasks;
 using UniRx;
 using Extensions;
-using Modules.Devkit.Console;
 
 namespace Modules.Sound
 {
@@ -21,7 +19,7 @@ namespace Modules.Sound
         public bool cancelIfPlaying = false;
     }
 
-    public sealed partial class SoundManagement : SoundManagementBase<SoundManagement, SoundParam, SoundElement>
+    public sealed class SoundManagement : SoundManagementBase<SoundManagement, SoundParam, SoundElement>
     {
         //----- params -----
 
@@ -100,20 +98,20 @@ namespace Modules.Sound
         }
 
         /// <summary>
-        /// InternalAsset内のサウンドを再生.
+        /// InternalResources内のサウンドを再生.
         /// </summary>
         public SoundElement Play(SoundType type, Sounds.Cue cue)
         {
             var soundParam = GetSoundParam(type);
             var info = Sounds.GetCueInfo(cue);
 
-			#if !UNITY_EDITOR && UNITY_ANDROID
+            #if !UNITY_EDITOR && UNITY_ANDROID
 
             var assetPath = AndroidUtility.ConvertStreamingAssetsLoadPath(info.FilePath);
 
             info = new CueInfo(assetPath, info.CueSheet, info.Cue, info.HasAwb, info.Summary);
 
-			#endif
+            #endif
 
             if (soundParam != null && soundParam.cancelIfPlaying)
             {
@@ -129,7 +127,7 @@ namespace Modules.Sound
         }
 
         /// <summary>
-        ///  ExternalAsset内のサウンドを再生.
+        ///  ExternalResources内のサウンドを再生.
         /// </summary>
         public SoundElement Play(SoundType type, CueInfo info)
         {
@@ -166,8 +164,6 @@ namespace Modules.Sound
                 onPlay.OnNext(element);
             }
 
-			UnityConsole.Event(ConsoleEventName, ConsoleEventColor, $"Play : {element.CueInfo.Cue} ({element.CueInfo.CueSheet})");
-
             return element;
         }
 
@@ -185,8 +181,6 @@ namespace Modules.Sound
             {
                 onPause.OnNext(element);
             }
-
-			UnityConsole.Event(ConsoleEventName, ConsoleEventColor, $"Pause : {element.CueInfo.Cue} ({element.CueInfo.CueSheet})");
         }
 
         /// <summary> 全サウンド中断 </summary>
@@ -205,8 +199,6 @@ namespace Modules.Sound
                     onPause.OnNext(element);
                 }
             }
-
-			UnityConsole.Event(ConsoleEventName, ConsoleEventColor, "All sound pause.");
         }
 
         /// <summary> サウンド復帰 </summary>
@@ -223,8 +215,6 @@ namespace Modules.Sound
             {
                 onResume.OnNext(element);
             }
-
-			UnityConsole.Event(ConsoleEventName, ConsoleEventColor, $"Resume : {element.CueInfo.Cue} ({element.CueInfo.CueSheet})");
         }
 
         /// <summary> 全サウンド復帰 </summary>
@@ -243,8 +233,6 @@ namespace Modules.Sound
                     onResume.OnNext(element);
                 }
             }
-
-			UnityConsole.Event(ConsoleEventName, ConsoleEventColor, "All sound resume.");
         }
 
         /// <summary> サウンド停止 </summary>
@@ -261,8 +249,6 @@ namespace Modules.Sound
             {
                 onStop.OnNext(element);
             }
-
-			UnityConsole.Event(ConsoleEventName, ConsoleEventColor, $"Stop : {element.CueInfo.Cue} ({element.CueInfo.CueSheet})");
         }
 
         /// <summary> 全サウンドを停止 </summary>
@@ -284,8 +270,6 @@ namespace Modules.Sound
             }
 
             soundElements.Clear();
-
-			UnityConsole.Event(ConsoleEventName, ConsoleEventColor, "All sound stopped.");
         }
 
         /// <summary> 個別に音量変更. </summary>
@@ -369,25 +353,6 @@ namespace Modules.Sound
                 soundSheet = new SoundSheet(assetPath, cueSheet.acb);
 
                 managedSoundSheets.Add(soundSheet.AssetPath, soundSheet);
-
-
-                if (LogEnable && UnityConsole.Enable)
-                {
-                    var builder = new StringBuilder();
-
-                    builder.AppendFormat("Load : {0} : {1}", cueInfo.Cue, cueInfo.CueId).AppendLine();
-                    builder.AppendLine();
-                    builder.AppendFormat("Cue : {0}", cueInfo.Cue).AppendLine();
-                    builder.AppendFormat("CueId : {0}", cueInfo.CueId).AppendLine();
-                    builder.AppendFormat("FileName : {0}", Path.GetFileName(acbPath)).AppendLine();
-
-                    if (!string.IsNullOrEmpty(cueInfo.Summary))
-                    {
-                        builder.AppendFormat("Summary: {0}", cueInfo.Summary).AppendLine();
-                    }
-
-                    UnityConsole.Event(ConsoleEventName, ConsoleEventColor, builder.ToString());
-                }
             }
 
             return soundSheet;

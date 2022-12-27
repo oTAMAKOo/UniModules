@@ -13,7 +13,10 @@ namespace Modules.Master
     public interface IMaster
     {
         UniTask<string> LoadVersion();
-        UniTask<bool> CheckVersion(string masterVersion, string localVersion = null);
+        
+        bool CheckVersion(string masterVersion, string localVersion);
+        UniTask<bool> CheckVersion(string masterVersion);
+        
         void ClearVersion();
 
         UniTask<Tuple<bool, double>> Update(string masterVersion);
@@ -38,7 +41,7 @@ namespace Modules.Master
         
         private Dictionary<TKey, TMasterRecord> records = new Dictionary<TKey, TMasterRecord>();
 
-		private static TMaster instance = null;
+        private static TMaster instance = null;
 
         //----- property -----
 
@@ -157,14 +160,9 @@ namespace Modules.Master
             }
         }
 
-        public async UniTask<bool> CheckVersion(string masterVersion, string localVersion = null)
+        public bool CheckVersion(string masterVersion, string localVersion)
         {
             var result = true;
-
-            if (string.IsNullOrEmpty(localVersion))
-            {
-                localVersion = await LoadVersion();
-            }
 
             var filePath = GetFilePath();
 
@@ -175,6 +173,14 @@ namespace Modules.Master
             result &= localVersion == masterVersion;
 
             return result;
+        }
+
+        public async UniTask<bool> CheckVersion(string masterVersion)
+        {
+            
+            var localVersion = await LoadVersion();
+
+            return CheckVersion(masterVersion, localVersion);
         }
 
         public void ClearVersion()
@@ -209,10 +215,10 @@ namespace Modules.Master
             // 読み込み準備.
             await PrepareLoad(filePath);
 
-			// 読み込みをスレッドプールで実行.
+			// 読み込み.
 			try
 			{
-				time = await UniTask.RunOnThreadPool(() => LoadMasterFile(filePath, cryptoKey));
+				time = LoadMasterFile(filePath, cryptoKey);
 
 				success = true;
 			}
@@ -249,7 +255,7 @@ namespace Modules.Master
             {
                 bytes = Decrypt(bytes, cryptoKey);
             }
-
+            
             // デシリアライズ.
             var records = Deserialize(bytes, masterManager.GetSerializerOptions());
 

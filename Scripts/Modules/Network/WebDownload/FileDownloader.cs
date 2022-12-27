@@ -233,7 +233,7 @@ namespace Modules.Net.WebDownload
                 }
 
                 // 通信中のリクエストが存在しない & キューの先頭が自身の場合待ち終了.
-                if (downloading.Count < MaxMultiDownloadNum && downloadQueueing.Peek() == downloadRequest)
+                if (downloading.Count <= MaxMultiDownloadNum && downloadQueueing.Peek() == downloadRequest)
                 {
                     downloadQueueing.Dequeue();
                     break;

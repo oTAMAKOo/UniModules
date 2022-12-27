@@ -1,4 +1,4 @@
-﻿
+﻿﻿
 using UnityEngine;
 using System;
 using System.Collections.Generic;
@@ -84,153 +84,117 @@ namespace Modules.Master
         public void Register(IMaster master)
         {
             masters.Add(master);
+
+            var type = master.GetType();
+
+            var fileName = GetMasterFileName(type);
+
+            if (masterFileNames.ContainsKey(type))
+            {
+                var message = string.Format("File name has already been registered.\n\nClass : {0}\nFile : {1}", type.FullName, fileName);
+
+                throw new Exception(message);
+            }
+
+            masterFileNames.Add(type, fileName);
         }
 
-        public async UniTask<bool> LoadMaster(Dictionary<IMaster, string> versionTable, IProgress<float> progress = null)
+        public async UniTask<bool> UpdateMaster(Dictionary<IMaster, string> updateMasters, IProgress<float> progress = null)
         {
-            Reference.Clear();
+            var result = true;
 
-            BuildFileNameTable();
+            var tasks = new List<UniTask>();
+
+            var updateLog = new StringBuilder();
+
+            Reference.Clear();
 
             #if UNITY_EDITOR
 
             if (!EnableVersionCheck)
             {
                 UnityConsole.Event(ConsoleEventName, ConsoleEventColor, "Use CachedMasterFile.");
+
+                return true;
             }
 
             #endif
 
-            var result = false;
-            
-            var updateLog = new StringBuilder();
-            var loadLog = new StringBuilder();
+            var amount = 1f / updateMasters.Count;
+            var progressAmount = 0f;
+
+            void OnUpdateFinish(Type masterType, string masterName, string masterFileName, bool state, double time)
+            {
+                if (state)
+                {
+                    var message = string.Format("{0} ({1:F1}ms)", masterName, time);
+
+                    lock (updateLog)
+                    {
+                        updateLog.AppendLine(message);
+                    }
+                }
+                else
+                {
+                    Debug.LogErrorFormat("Update master failed.\nClass : {0}\nFile : {1}\n", masterType.FullName, masterFileName);
+                }
+
+                result &= state;
+                progressAmount += amount;
+
+                if (progress != null)
+                {
+                    progress.Report(progressAmount);
+                }
+
+                if (onUpdateMaster != null)
+                {
+                    onUpdateMaster.OnNext(Unit.Default);
+                }
+            }
 
             var stopwatch = System.Diagnostics.Stopwatch.StartNew();
 
-            if (versionTable != null)
+            if (progress != null) { progress.Report(0f); }
+
+            foreach (var element in updateMasters)
             {
-                if (progress != null) { progress.Report(0f); }
+                var master = element.Key;
+                var masterType = master.GetType();
+                var masterName = masterType.Name;
+                var masterVersion = element.Value;
+                var masterFileName = masterFileNames.GetValueOrDefault(masterType);
 
-				var amount = 1f / versionTable.Count;
-                var progressAmount = 0f;
-
-                // ローカル関数.
-
-                void OnUpdateFinish(Type masterType, string masterName, string masterFileName, string localVersion, string masterVersion, bool state, double time)
+                Action<bool, double> onUpdateFinishCallback = (state, time) =>
                 {
-                    if (state)
-                    {
-                        var localVersionText = string.IsNullOrEmpty(localVersion) ? "---" : localVersion;
-                        var message = string.Format("{0} ({1:F1}ms) : {2} >> {3}", masterName, time, localVersionText, masterVersion);
-
-                        updateLog.AppendLine(message);
-                    }
-                    else
-                    {
-                        Debug.LogErrorFormat("Update master failed.\nClass : {0}\nFile : {1}\n", masterType.FullName, masterFileName);
-                    }
-
-                    result &= state;
-                    progressAmount += amount;
-
-                    if (progress != null)
-                    {
-                        progress.Report(progressAmount);
-                    }
-
-                    if (onUpdateMaster != null)
-                    {
-                        onUpdateMaster.OnNext(Unit.Default);
-                    }
+                    OnUpdateFinish(masterType, masterName, masterFileName, state, time);
                 };
 
-                void OnLoadFinish(Type masterType, string masterName, string masterFileName, bool state, double time)
+                var task = UniTask.Defer(async () =>
+				{
+					var success = await MasterUpdate(master, masterVersion, onUpdateFinishCallback).ToUniTask();
+
+                    if (!success)
+                    {
+                        throw new Exception($"Failed master update. {masterName}");
+                    }
+                });
+
+				tasks.Add(task);
+            }
+
+            // 実行.
+			try
+			{
+                if (tasks.Any())
                 {
-                    if (state)
-                    {
-                        loadLog.AppendFormat("{0} ({1:F1}ms)", masterName, time).AppendLine();
-                    }
-                    else
-                    {
-                        Debug.LogErrorFormat("Load master failed.\nClass : {0}\nFile : {1}\n", masterType.FullName, masterFileName);
-                    }
-
-                    result &= state;
-                    progressAmount += amount;
-
-                    if (progress != null)
-                    {
-                        progress.Report(progressAmount);
-                    }
-                };
-
-                // 並行で処理.
-                var tasks = new List<UniTask>();
-
-                foreach (var element in versionTable)
-                {
-                    var master = element.Key;
-                    var masterVersion = element.Value;
-
-                    var masterType = master.GetType();
-                    var masterName = masterType.Name;
-
-                    var masterFileName = masterFileNames.GetValueOrDefault(masterType);
-
-                    var localVersion = await master.LoadVersion();
-
-                    Action<bool, double> onLoadFinishCallback = (state, time) => OnLoadFinish(masterType, masterName, masterFileName, state, time);
-
-                    Action<bool, double> onUpdateFinishCallback = (state, time) => OnUpdateFinish(masterType, masterName, masterFileName, localVersion, masterVersion, state, time);
-
-                    var versionCheck = await master.CheckVersion(masterVersion, localVersion);
-
-                    #if UNITY_EDITOR
-                    
-                    versionCheck = !EnableVersionCheck || versionCheck;
-
-                    #endif
-
-                    if (versionCheck)
-                    {
-                        // 読み込み.
-                        
-						var task = UniTask.Defer(async () => { return await MasterLoad(master, onLoadFinishCallback); });
-
-                        tasks.Add(task);
-                    }
-                    else
-                    {
-                        // ダウンロード + 読み込み.
-						var task = UniTask.Defer(async () =>
-						{
-							var success = await MasterUpdate(master, masterVersion, onUpdateFinishCallback).ToUniTask();
-
-							if (success)
-							{
-								await MasterLoad(master, onLoadFinishCallback);
-							}
-						});
-
-						tasks.Add(task);
-                    }
+    				await UniTask.WhenAll(tasks);
                 }
-
-                // 実行.
-				try
-				{
-					await UniTask.WhenAll(tasks);
-
-					result = true;
-				}
-				catch (Exception e)
-				{
-					Debug.LogException(e);
-				}
-
-				if (progress != null) { progress.Report(1f); }
 			}
+			catch (Exception e)
+			{
+				Debug.LogException(e);
+            }
 
             stopwatch.Stop();
 
@@ -238,19 +202,91 @@ namespace Modules.Master
             {
                 var logBuilder = new StringBuilder();
 
-                logBuilder.AppendLine(string.Format("Master : ({0:F1}ms)", stopwatch.Elapsed.TotalMilliseconds));
-                logBuilder.AppendLine();
+                logBuilder.AppendLine(string.Format("Master Update : ({0:F1}ms)", stopwatch.Elapsed.TotalMilliseconds));
 
                 if (0 < updateLog.Length)
-                {
-                    logBuilder.AppendLine("---------- Download ----------");
+                {   
                     logBuilder.AppendLine();
                     logBuilder.AppendLine(updateLog.ToString());
                 }
 
+                UnityConsole.Event(ConsoleEventName, ConsoleEventColor, logBuilder.ToString());
+
+                if (progress != null) { progress.Report(1f); }
+            }
+            else
+            {
+                if (onError != null)
+                {
+                    onError.OnNext(Unit.Default);
+                }
+            }
+
+            return result;
+        }
+
+        public async UniTask<bool> LoadMaster()
+        {
+            var result = true;
+
+            var tasks = new List<UniTask>();
+
+            Reference.Clear();
+            
+            var loadLog = new StringBuilder();
+
+            void OnLoadFinish(Type masterType, string masterName, string masterFileName, bool state, double time)
+            {
+                if (state)
+                {
+                    lock (loadLog)
+                    {
+                        loadLog.AppendFormat("{0} ({1:F1}ms)", masterName, time).AppendLine();
+                    }
+                }
+                else
+                {
+                    Debug.LogErrorFormat("Load master failed.\nClass : {0}\nFile : {1}\n", masterType.FullName, masterFileName);
+                }
+
+                result &= state;
+            }
+
+            var stopwatch = System.Diagnostics.Stopwatch.StartNew();
+
+			try
+			{
+                foreach (var master in masters)
+                {
+                    var masterType = master.GetType();
+                    var masterName = masterType.Name;
+
+                    var masterFileName = masterFileNames.GetValueOrDefault(masterType);
+                
+                    Action<bool, double> onLoadFinishCallback = (state, time) => OnLoadFinish(masterType, masterName, masterFileName, state, time);
+
+                    var task = UniTask.RunOnThreadPool(async () => { return await MasterLoad(master, onLoadFinishCallback); });
+
+                    tasks.Add(task);
+                }
+
+				await UniTask.WhenAll(tasks);
+            }
+			catch (Exception e)
+			{
+				Debug.LogException(e);
+            }
+            
+            stopwatch.Stop();
+
+            if (result)
+            {
+                var logBuilder = new StringBuilder();
+
+                logBuilder.AppendLine(string.Format("Master Load : ({0:F1}ms)", stopwatch.Elapsed.TotalMilliseconds));
+
                 if (0 < loadLog.Length)
                 {
-                    logBuilder.AppendLine("------------ Load ------------");
                     logBuilder.AppendLine();
                     logBuilder.AppendLine(loadLog.ToString());
                 }
@@ -440,27 +476,6 @@ namespace Modules.Master
             }
 
             return fileName;
-        }
-
-        private void BuildFileNameTable()
-        {
-            masterFileNames = new Dictionary<Type, string>();
-
-            foreach (var master in masters)
-            {
-                var type = master.GetType();
-
-                var fileName = GetMasterFileName(type);
-
-                if (masterFileNames.ContainsKey(type))
-                {
-                    var message = string.Format("File name has already been registered.\n\nClass : {0}\nFile : {1}", type.FullName, fileName);
-
-                    throw new Exception(message);
-                }
-
-                masterFileNames.Add(type, fileName);
-            }
         }
 
         public static string DeleteMasterSuffix(string fileName)

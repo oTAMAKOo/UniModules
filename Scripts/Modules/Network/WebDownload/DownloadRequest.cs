@@ -42,17 +42,17 @@ namespace Modules.Net.WebDownload
 
 		public IObservable<Unit> Download(IProgress<float> progress)
 		{
-			request = new UnityWebRequest(Url)
-			{
-			timeout = TimeOutSeconds,
-			downloadHandler = new FileDownloadHandler(FilePath, buffer),
-			};
+            request = new UnityWebRequest(Url)
+            {
+                timeout = TimeOutSeconds,
+                downloadHandler = new FileDownloadHandler(FilePath, buffer),
+            };
 
-			Action onFinally = () =>
-								{
-									request.Dispose();
-									request = null;
-								};
+            Action onFinally = () =>
+            {
+                request.Dispose();
+                request = null;
+            };
 
 			return request.Send(progress).Finally(onFinally).AsUnitObservable();
 		}
