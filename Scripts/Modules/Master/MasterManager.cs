@@ -187,6 +187,12 @@ namespace Modules.Master
 
                     var versionCheck = await master.CheckVersion(masterVersion, localVersion);
 
+                    #if UNITY_EDITOR
+                    
+                    versionCheck &= EnableVersionCheck;
+
+                    #endif
+
                     if (versionCheck)
                     {
                         // 読み込み.
@@ -309,11 +315,16 @@ namespace Modules.Master
             UnityConsole.Event(ConsoleEventName, ConsoleEventColor, "Clear MasterVersion");
         }
 
-
         /// <summary> 更新が必要なマスター </summary>
         public async UniTask<IMaster[]> RequireUpdateMasters(Dictionary<IMaster, string> versionTable)
         {
             var list = new List<IMaster>();
+
+            #if UNITY_EDITOR
+                    
+            var enableVersionCheck = EnableVersionCheck;
+
+            #endif
             
             async UniTask CheckRequireUpdate(IEnumerable<IMaster> masters)
             {
@@ -322,6 +333,12 @@ namespace Modules.Master
                     var masterVersion = versionTable.GetValueOrDefault(master);
 
                     var versionCheck = await master.CheckVersion(masterVersion);
+
+                    #if UNITY_EDITOR
+                    
+                    versionCheck &= enableVersionCheck;
+
+                    #endif
 
                     if (!versionCheck)
                     {

@@ -67,17 +67,6 @@ namespace Modules.Master
 
         //----- method -----
 
-        public Master()
-        {
-            #if UNITY_EDITOR
-
-            var masterManager = MasterManager.Instance;
-
-            enableVersionCheck = masterManager.EnableVersionCheck;
-
-            #endif
-        }
-
         public void SetRecords(TMasterRecord[] masterRecords)
         {
             records.Clear();
@@ -176,12 +165,6 @@ namespace Modules.Master
 
         public async UniTask<bool> CheckVersion(string masterVersion, string localVersion = null)
         {
-            #if UNITY_EDITOR
-
-            if (!enableVersionCheck) { return true; }
-
-            #endif
-
             var result = true;
 
             if (string.IsNullOrEmpty(localVersion))
