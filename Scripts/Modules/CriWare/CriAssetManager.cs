@@ -66,14 +66,20 @@ namespace Modules.CriWare
                     return statusInfo.status != CriFsWebInstaller.Status.Busy;
                 });
 
-                if (installer != null){ return installer; }
-
-                // 最大インストーラ数以下でインストーラが足りない時は生成.
-                if (installers.Count < numInstallers)
+                if (installer == null)
                 {
-                    installer = new CriFsWebInstaller();
+                    // 最大インストーラ数以下でインストーラが足りない時は生成.
+                    if (installers.Count < numInstallers)
+                    {
+                        installer = new CriFsWebInstaller();
 
-                    installers.Add(installer);
+                        installers.Add(installer);
+                    }
+                }
+
+                if (installer != null)
+                {
+                    installer.Stop();
                 }
 
                 return installer;
@@ -352,7 +358,10 @@ namespace Modules.CriWare
 
             if (item != null)
             {
-				item.Installer.Stop();
+				if (item.Installer != null)
+				{
+					item.Installer.Stop();
+				}
 
                 installQueueing.Remove(resourcePath);
             }
