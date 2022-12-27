@@ -352,6 +352,8 @@ namespace Modules.CriWare
 
             if (item != null)
             {
+				item.Installer.Stop();
+
                 installQueueing.Remove(resourcePath);
             }
 
