@@ -96,8 +96,6 @@ namespace Extensions
 				}
 			}
 
-            Debug.Log($"from : {filePath}\nto : {copyPath}");
-
             copyBuffer.use = false;
 
             copyQueueing.Remove(filePath);

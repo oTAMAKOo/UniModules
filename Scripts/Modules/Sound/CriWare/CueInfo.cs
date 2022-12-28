@@ -1,13 +1,12 @@
-﻿using Extensions;
-
+﻿
 #if ENABLE_CRIWARE_ADX
+
+using Extensions;
 
 namespace Modules.Sound
 {
 	public sealed class CueInfo
 	{
-		private static string streamingAssetsPath = null;
-
 		public int CueId { get; private set; }
 		public string CueSheet { get; private set; }
 		public string Cue { get; private set; }
@@ -17,16 +16,6 @@ namespace Modules.Sound
 
 		public CueInfo(string filePath, string cueSheetPath, string cue, bool hasAwb)
 		{
-			if (string.IsNullOrEmpty(streamingAssetsPath))
-			{
-				streamingAssetsPath = UnityPathUtility.StreamingAssetsPath + PathUtility.PathSeparator;
-			}
-
-			if (filePath.StartsWith(streamingAssetsPath))
-			{
-				filePath = filePath.SafeSubstring(streamingAssetsPath.Length);
-			}
-
 			FilePath = filePath;
 			CueSheet = cueSheetPath;
 			Cue = cue;

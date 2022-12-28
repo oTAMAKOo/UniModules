@@ -97,21 +97,11 @@ namespace Modules.Sound
             return soundElements;
         }
 
-        /// <summary>
-        /// InternalResources内のサウンドを再生.
-        /// </summary>
+        /// <summary> 内蔵アセットサウンドを再生. </summary>
         public SoundElement Play(SoundType type, Sounds.Cue cue)
         {
             var soundParam = GetSoundParam(type);
             var info = Sounds.GetCueInfo(cue);
-
-            #if !UNITY_EDITOR && UNITY_ANDROID
-
-            var assetPath = AndroidUtility.ConvertStreamingAssetsLoadPath(info.FilePath);
-
-            info = new CueInfo(assetPath, info.CueSheet, info.Cue, info.HasAwb, info.Summary);
-
-            #endif
 
             if (soundParam != null && soundParam.cancelIfPlaying)
             {
@@ -126,9 +116,7 @@ namespace Modules.Sound
             return info != null ? Play(type, info) : null;
         }
 
-        /// <summary>
-        ///  ExternalResources内のサウンドを再生.
-        /// </summary>
+        /// <summary>  外部アセットのサウンドを再生. </summary>
         public SoundElement Play(SoundType type, CueInfo info)
         {
             if (info == null) { return null; }

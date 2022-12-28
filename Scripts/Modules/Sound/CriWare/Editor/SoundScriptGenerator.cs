@@ -29,6 +29,7 @@ namespace Modules.Sound.Editor
 using System;
 using System.Linq;
 using System.Collections.Generic;
+using CriWare;
 using Extensions;
 
 namespace Modules.Sound
@@ -65,7 +66,7 @@ namespace Modules.Sound
 
             #else
 
-            fileDirectory = UnityPathUtility.StreamingAssetsPath;
+            fileDirectory = Common.streamingAssetsPath;
 
             #endif
 

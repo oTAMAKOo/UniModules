@@ -26,6 +26,7 @@ namespace Modules.Movie.Editor
 
 using UnityEngine;
 using System.Collections.Generic;
+using CriWare;
 using Extensions;
 
 namespace Modules.Movie
@@ -54,7 +55,7 @@ namespace Modules.Movie
 
             #else
 
-            fileDirectory = UnityPathUtility.StreamingAssetsPath;
+            fileDirectory = Common.streamingAssetsPath;
 
             #endif
 

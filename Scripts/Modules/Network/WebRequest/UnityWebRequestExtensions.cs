@@ -1,4 +1,4 @@
-﻿﻿
+﻿
 using UnityEngine.Networking;
 using System;
 using System.Linq;
@@ -69,8 +69,8 @@ namespace Modules.Net.WebRequest
                         }
                     }
 
-                    var isError = request.result == UnityWebRequest.Result.ConnectionError;
-                    var isSuccess = SuccessStatus.Contains((HttpStatusCode)request.responseCode);
+                    var isError = request.HasError();
+                    var isSuccess = request.IsSuccess();
 
                     if (!isError && isSuccess && !error)
                     {
@@ -83,6 +83,11 @@ namespace Modules.Net.WebRequest
                     }
                 }
             }
+        }
+        
+        public static bool IsSuccess(this UnityWebRequest unityWebRequest)
+        {
+            return SuccessStatus.Contains((HttpStatusCode)unityWebRequest.responseCode);
         }
 
         public static bool HasError(this UnityWebRequest unityWebRequest)

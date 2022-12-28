@@ -56,7 +56,7 @@ namespace Modules.Movie
         }
 
 		/// <summary>
-		/// ExternalResources内や、直接指定での動画再生用のインスタンスを生成.
+		/// 画再生用のインスタンスを生成.
 		/// ※ 頭出しなどを行う時はこの関数で生成したPlayerを使って頭出しを実装する.
 		/// </summary>
 		private MovieElement CreateElement(string moviePath, Graphic targetGraphic, Player.ShaderDispatchCallback shaderOverrideCallBack = null)

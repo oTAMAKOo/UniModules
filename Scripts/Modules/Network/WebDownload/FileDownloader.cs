@@ -1,8 +1,8 @@
 ﻿
 using System;
 using System.Linq;
-using System.Collections;
 using System.Collections.Generic;
+using Cysharp.Threading.Tasks;
 using UniRx;
 using Extensions;
 
@@ -74,19 +74,19 @@ namespace Modules.Net.WebDownload
             ServerUrl = serverUrl;
         }
 
-		protected TDownloadRequest SetupDownloadRequest(string url, string filePath)
-		{
-			var downloadRequest = new TDownloadRequest();
+        protected TDownloadRequest SetupDownloadRequest(string url, string filePath)
+        {
+            var downloadRequest = new TDownloadRequest();
 
-			var downloadUrl = PathUtility.Combine(ServerUrl, url);
+            var downloadUrl = PathUtility.Combine(ServerUrl, url);
 
-			downloadRequest.Initialize(downloadUrl, filePath);
+            downloadRequest.Initialize(downloadUrl, filePath);
 
-			return downloadRequest;
-		}
+            return downloadRequest;
+        }
 
         /// <summary>
-        /// 指定されたURLからPostでデータを取得.
+        /// 指定されたURLからGetでデータを取得.
         /// </summary>
         protected IObservable<Unit> Download(TDownloadRequest downloadRequest, IProgress<float> progress = null)
         {
@@ -96,7 +96,10 @@ namespace Modules.Net.WebDownload
                 return downloading[downloadRequest.Url].Task;
             }
 
-            var observable = Observable.FromMicroCoroutine(() => SnedRequestInternal(downloadRequest, progress)).Share();
+            var observable = SnedRequestInternal(downloadRequest, progress)
+                .ToObservable()
+                .AsUnitObservable()
+                .Share();
 
             downloading.Add(downloadRequest.Url, new DownloadInfo(downloadRequest, observable));
 
@@ -104,21 +107,11 @@ namespace Modules.Net.WebDownload
         }
 
         /// <summary> リクエスト制御 </summary>
-        private IEnumerator SnedRequestInternal(TDownloadRequest downloadRequest, IProgress<float> progress)
+        private async UniTask SnedRequestInternal(TDownloadRequest downloadRequest, IProgress<float> progress)
         {
-            //----------------------------------------------------------------------------------
-            // ※ 呼び出し頻度が高いのでFromMicroCoroutineで呼び出される.
-            //    戻り値を返す時はyield return null以外使わない.
-            //----------------------------------------------------------------------------------
-
             // 通信待ちキュー.
-            var waitQueueingYield = Observable.FromMicroCoroutine(() => WaitQueueingRequest(downloadRequest)).ToYieldInstruction(false);
+            await WaitQueueingRequest(downloadRequest);
 
-            while (!waitQueueingYield.IsDone)
-            {
-                yield return null;
-            }
-            
             var sw = System.Diagnostics.Stopwatch.StartNew();
 
             var retryCount = 0;
@@ -126,20 +119,18 @@ namespace Modules.Net.WebDownload
             // リクエスト実行.
             while (true)
             {
-                var requestYield = downloadRequest.Download(progress).ToYieldInstruction(false);
+                Exception exception = null;
 
-                while (!requestYield.IsDone)
+                try
                 {
-                    yield return null;
+                    await downloadRequest.Download(progress);
+
+                    break;
                 }
-
-                //------ 通信成功 ------
-
-                if (requestYield.HasResult && !requestYield.HasError){ break; }
-
-                //------ 通信キャンセル ------
-
-                if (requestYield.IsCanceled) { break; }
+                catch (Exception e)
+                {
+                    exception = e;
+                }
 
                 //------ リトライ回数オーバー ------
 
@@ -152,37 +143,24 @@ namespace Modules.Net.WebDownload
                 //------ 通信失敗 ------
 
                 // エラーハンドリングを待つ.
-                var waitErrorHandlingYield = OnError(downloadRequest, requestYield.Error).ToYieldInstruction(false);
 
-                while (!waitErrorHandlingYield.IsDone)
+                var requestErrorHandle = await OnError(downloadRequest, exception);
+
+                switch (requestErrorHandle)
                 {
-                    yield return null;
+                    case RequestErrorHandle.Retry:
+                        retryCount++;
+                        break;
                 }
 
-                if (waitErrorHandlingYield.HasResult)
+                // キャンセル時は通信終了.
+                if (requestErrorHandle == RequestErrorHandle.Cancel)
                 {
-                    switch (waitErrorHandlingYield.Result)
-                    {
-                        case RequestErrorHandle.Retry:
-                            retryCount++;
-                            break;
-                    }
-
-                    // キャンセル時は通信終了.
-                    if (waitErrorHandlingYield.Result == RequestErrorHandle.Cancel)
-                    {
-                        break;
-                    }
+                    break;
                 }
 
                 // リトライディレイ.
-                var retryDelayYield = Observable.Timer(TimeSpan.FromSeconds(RetryDelaySeconds)).ToYieldInstruction();
-
-                while (!retryDelayYield.IsDone)
-                {
-                    yield return null;
-                }
-
+                await UniTask.Delay(TimeSpan.FromSeconds(RetryDelaySeconds));
             }
 
             sw.Stop();
@@ -218,7 +196,7 @@ namespace Modules.Net.WebDownload
         /// <summary>
         /// 通信処理が同時に実行されないようにキューイング.
         /// </summary>
-        private IEnumerator WaitQueueingRequest(TDownloadRequest downloadRequest)
+        private async UniTask WaitQueueingRequest(TDownloadRequest downloadRequest)
         {
             // キューに追加.
             downloadQueueing.Enqueue(downloadRequest);
@@ -239,7 +217,7 @@ namespace Modules.Net.WebDownload
                     break;
                 }
 
-                yield return null;
+                await UniTask.NextFrame();
             }
         }
 

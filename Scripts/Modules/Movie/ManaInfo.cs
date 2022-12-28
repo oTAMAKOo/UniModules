@@ -7,13 +7,13 @@ namespace Modules.Movie
 {
     public sealed class ManaInfo
     {
-        public string Usm { get; private set; }
+		public string Usm { get; private set; }
         public string UsmPath { get; private set; }
 
-        public ManaInfo(string path)
+        public ManaInfo(string filePath)
         {
-            this.Usm = path;
-            this.UsmPath = PathUtility.GetPathWithoutExtension(path);
+			this.Usm = filePath;
+            this.UsmPath = PathUtility.GetPathWithoutExtension(filePath);
         }
     }
 }
