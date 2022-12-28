@@ -1,10 +1,11 @@
-﻿
+﻿﻿
 using UnityEngine;
 using UnityEngine.Networking;
 using System;
 using System.Linq;
 using System.Collections.Generic;
 using System.IO;
+using System.Runtime.Serialization;
 using System.Text;
 using System.Threading;
 using Cysharp.Threading.Tasks;
@@ -18,6 +19,16 @@ namespace Modules.AssetBundles
     public sealed partial class AssetBundleManager : Singleton<AssetBundleManager>
     {
         //----- params -----
+
+        [Serializable]
+        private sealed class DownloadFailedException : Exception
+        {
+            public DownloadFailedException() : base() { }
+            public DownloadFailedException(string message) : base(message) { }
+            public DownloadFailedException(string message, System.Exception inner) : base(message, inner) { }
+
+            public DownloadFailedException(SerializationInfo info,StreamingContext context) { }
+        }
 
         public const string PackageExtension = ".package";
 
@@ -108,7 +119,7 @@ namespace Modules.AssetBundles
 		public void Initialize(bool simulateMode = false)
         {
             if (isInitialized) { return; }
-			
+            
             this.simulateMode = UnityUtility.isEditor && simulateMode;
 
             downloadList = new HashSet<string>();
@@ -124,10 +135,11 @@ namespace Modules.AssetBundles
             isInitialized = true;
         }
 
-		public void SetMaxDownloadCount(uint maxDownloadCount)
-		{
-			this.maxDownloadCount = maxDownloadCount;
-		}
+        /// <summary> 同時ダウンロード数設定. </summary>
+        public void SetMaxDownloadCount(uint maxDownloadCount)
+        {
+            this.maxDownloadCount = maxDownloadCount;
+        }
 
         /// <summary> ローカルモード設定. </summary>
         public void SetLocalMode(bool localMode)
@@ -388,6 +400,7 @@ namespace Modules.AssetBundles
             return ObservableEx.FromUniTask(cancelToken => FileDownload(downloadUrl, filePath, progress, cancelToken))
                     .Timeout(TimeoutLimit)
                     .OnErrorRetry((TimeoutException ex) => OnTimeout(assetInfo, ex), RetryCount, RetryDelaySeconds)
+                    .OnErrorRetry((DownloadFailedException ex) => {}, RetryCount, RetryDelaySeconds)
                     .DoOnError(x => OnError(x));
 		}
 
@@ -418,7 +431,7 @@ namespace Modules.AssetBundles
 
                 if (webRequest.HasError() || webRequest.responseCode != (int)System.Net.HttpStatusCode.OK)
                 {
-                    throw new Exception($"File download error : [{webRequest.responseCode}]{url}\n\n{webRequest.error}");
+                    throw new DownloadFailedException($"File download error : ResponseCode : {webRequest.responseCode}) {url}\n\n{webRequest.error}");
                 }
             }
         }
