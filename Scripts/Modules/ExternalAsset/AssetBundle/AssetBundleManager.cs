@@ -104,13 +104,11 @@ namespace Modules.AssetBundles
         private AssetBundleManager() { }
 
 		/// <summary> 初期化 </summary>
-		/// <param name="maxDownloadCount">同時ダウンロード数</param>
 		/// <param name="simulateMode">AssetDataBaseからアセットを取得(EditorOnly)</param>
-		public void Initialize(uint maxDownloadCount, bool simulateMode = false)
+		public void Initialize(bool simulateMode = false)
         {
             if (isInitialized) { return; }
-
-            this.maxDownloadCount = maxDownloadCount;
+			
             this.simulateMode = UnityUtility.isEditor && simulateMode;
 
             downloadList = new HashSet<string>();
@@ -125,6 +123,11 @@ namespace Modules.AssetBundles
 
             isInitialized = true;
         }
+
+		public void SetMaxDownloadCount(uint maxDownloadCount)
+		{
+			this.maxDownloadCount = maxDownloadCount;
+		}
 
         /// <summary> ローカルモード設定. </summary>
         public void SetLocalMode(bool localMode)
@@ -302,38 +305,35 @@ namespace Modules.AssetBundles
 
             foreach (var target in allBundles)
             {
-                var loaded = loadedAssetBundles.GetValueOrDefault(target);
-
-                if (loaded != null)
+                // ロード済みの場合はアンロード.
+                if (loadedAssetBundles.ContainsKey(target))
                 {
                     UnloadAsset(target, true);
                 }
 
-                var downloadTask = downloadQueueing.GetValueOrDefault(target);
+                // ダウンロード中ならスキップ.
+                if (downloadList.Contains(target)){ continue; }
 
-                if (downloadTask == null)
-                {
-					var info = assetInfosByAssetBundleName.GetValueOrDefault(target).FirstOrDefault();
+                // 既にダウンロードキューに入っている場合はスキップ.
+                if (downloadQueueing.ContainsKey(target)){ continue; }
+                
+                var info = assetInfosByAssetBundleName.GetValueOrDefault(target).FirstOrDefault();
                     
-					if (info != null)
-					{
-						downloadQueueing[target] = DownloadAssetBundle(installPath, info, progress).Share();
+                if (info != null)
+                {
+                    var task = DownloadAssetBundle(installPath, info, progress).Share();
 
-						downloadTask = downloadQueueing[target];
-					}
-					else
-					{
-						OnError(new FileNotFoundException($"Asset info not found. {target}"));
-					}
+                    downloadQueueing[target] = task;
+
+                    loadAllBundles[target] = task;
                 }
-				
-				if (downloadTask != null)
-				{
-					loadAllBundles[target] = downloadTask;
-				}
+                else
+                {
+                    OnError(new FileNotFoundException($"Asset info not found. {target}"));
+                }
             }
 
-            foreach (var downloadTask in loadAllBundles)
+            foreach (var item in loadAllBundles)
             {
                 // ダウンロードキューが空くまで待つ.
                 while (maxDownloadCount <= downloadList.Count)
@@ -346,46 +346,33 @@ namespace Modules.AssetBundles
 				if (cancelToken.IsCancellationRequested){ return; }
                 
                 // ダウンロード中でなかったらリストに追加.
-                if (!downloadList.Contains(downloadTask.Key))
+                if (!downloadList.Contains(item.Key))
                 {
-                    downloadList.Add(downloadTask.Key);
+                    downloadList.Add(item.Key);
                 }
 
 				// ダウンロード実行.
 				try
 				{
-					if (downloadTask.Value != null)
-					{
-						var downloadYield = downloadTask.Value.ToYieldInstruction(false);
-
-						while (!downloadYield.IsDone)
-						{
-							if (cancelToken.IsCancellationRequested){ break; }
-
-							await UniTask.NextFrame(cancelToken);
-						}
-
-						if (downloadYield.HasError)
-						{
-							OnError(downloadYield.Error);
-						}
-					}
-				}
+                    await item.Value;
+                }
 				catch (Exception e)
 				{
-					Debug.LogErrorFormat("Download task error : {0}\n{1}\n", downloadTask.Key, e);
+                    Debug.LogErrorFormat("Download task error : {0}\n{1}\n", item.Key, e);
+
+                    OnError(e);
 				}
 
                 // ダウンロード中リストから除外.
-                if (downloadList.Contains(downloadTask.Key))
+                if (downloadList.Contains(item.Key))
                 {
-                    downloadList.Remove(downloadTask.Key);
+                    downloadList.Remove(item.Key);
                 }
 
                 // ダウンロード待ちリストから除外.
-                if (downloadQueueing.ContainsKey(downloadTask.Key))
+                if (downloadQueueing.ContainsKey(item.Key))
                 {
-                    downloadQueueing.Remove(downloadTask.Key);
+                    downloadQueueing.Remove(item.Key);
                 }
             }
         }
@@ -406,13 +393,6 @@ namespace Modules.AssetBundles
 
         private async UniTask FileDownload(string url, string path, IProgress<float> progress, CancellationToken cancelToken)
         {
-            var directory = Path.GetDirectoryName(path);
-
-            if (!Directory.Exists(directory))
-            {
-                Directory.CreateDirectory(directory);
-            }
-
             using (var webRequest = UnityWebRequest.Get(url))
             {
                 var downloadHandler = new DownloadHandlerFile(path);

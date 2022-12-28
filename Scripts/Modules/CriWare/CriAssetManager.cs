@@ -180,12 +180,11 @@ namespace Modules.CriWare
 
         private CriAssetManager() { }
 
-        public void Initialize(uint numInstallers, bool simulateMode = false)
+        public void Initialize(bool simulateMode = false)
         {
             if (isInitialized) { return; }
 			
             this.simulateMode = UnityUtility.isEditor && simulateMode;
-            this.numInstallers = numInstallers;
 
             #if ENABLE_CRIWARE_FILESYSTEM
 
@@ -216,36 +215,41 @@ namespace Modules.CriWare
             isInitialized = true;
         }
 
-        protected override void OnRelease()
+		protected override void OnRelease()
         {
-            if (isInitialized)
-            {
-                #if ENABLE_CRIWARE_FILESYSTEM
+            if (!isInitialized){ return; }
+            
+			#if ENABLE_CRIWARE_FILESYSTEM
 
-                foreach (var installer in installers)
-                {
-                    installer.Stop();
-                    installer.Dispose();
-                }
+			foreach (var installer in installers)
+			{
+				installer.Stop();
+				installer.Dispose();
+			}
 
-                installers.Clear();
+			installers.Clear();
 
-                foreach (var item in installQueueing.Values)
-                {
-                    if (item.Installer != null)
-                    {
-                        item.Installer.Stop();
-                        item.Installer.Dispose();
-                    }
-                }
+			foreach (var item in installQueueing.Values)
+			{
+				if (item.Installer != null)
+				{
+					item.Installer.Stop();
+					item.Installer.Dispose();
+				}
+			}
 
-                installQueueing.Clear();
+			installQueueing.Clear();
 
-                CriFsWebInstaller.FinalizeModule();
+			CriFsWebInstaller.FinalizeModule();
 
-                #endif
-            }
+			#endif
         }
+
+		/// <summary> 同時ダウンロード数設定. </summary>
+		public void SetNumInstallers(uint numInstallers)
+		{
+			this.numInstallers = numInstallers;
+		}
 
         /// <summary> ローカルモード設定. </summary>
         public void SetLocalMode(bool localMode)

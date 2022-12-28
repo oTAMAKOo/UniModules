@@ -73,10 +73,7 @@ namespace Modules.ExternalAssets
         /// <summary> ログ出力が有効. </summary>
         public bool LogEnable { get; set; }
 
-		/// <summary> 最大同時ダウンロード数.  </summary>
-		public uint MaxDownloadCount { get; set; } = 24;
-
-        //----- method -----
+		//----- method -----
 
         private ExternalAsset()
         {
@@ -121,7 +118,7 @@ namespace Modules.ExternalAssets
             initialized = true;
         }
 
-        /// <summary> ローカルモード設定. </summary>
+		/// <summary> ローカルモード設定. </summary>
         public void SetLocalMode(bool localMode)
         {
             LocalMode = localMode;

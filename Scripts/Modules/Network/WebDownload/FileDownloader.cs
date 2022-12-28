@@ -12,6 +12,8 @@ namespace Modules.Net.WebDownload
     {
         //----- params -----
 
+		private const uint DefaultMaxDownloadCount = 5;
+
         protected enum RequestErrorHandle
         {
             Retry,
@@ -43,7 +45,7 @@ namespace Modules.Net.WebDownload
         public string ServerUrl { get; private set; }
 
         /// <summary> 同時ダウンロード数. </summary>
-        public int MaxMultiDownloadNum { get; private set; }
+        public uint MaxDownloadCount { get; private set; }
 
         /// <summary> リトライ回数. </summary>
         public int RetryCount { get; private set; }
@@ -53,21 +55,27 @@ namespace Modules.Net.WebDownload
 
         //----- method -----
 
-        public void Initialize(int multiDownloadNum = 5, int retryCount = 3, float retryDelaySeconds = 2)
+        public void Initialize(int retryCount = 3, float retryDelaySeconds = 2)
         {
             if (initialized) { return; }
 
             downloading = new Dictionary<string, DownloadInfo>();
             downloadQueueing = new Queue<TDownloadRequest>();
 
-            MaxMultiDownloadNum = multiDownloadNum;
             RetryCount = retryCount;
             RetryDelaySeconds = retryDelaySeconds;
+
+			SetMaxDownloadCount(DefaultMaxDownloadCount);
 
             OnInitialize();
 
             initialized = true;
         }
+
+		public void SetMaxDownloadCount(uint maxDownloadCount)
+		{
+			MaxDownloadCount = maxDownloadCount;
+		}
 
         public void SetServerUrl(string serverUrl)
         {
@@ -211,7 +219,7 @@ namespace Modules.Net.WebDownload
                 }
 
                 // 通信中のリクエストが存在しない & キューの先頭が自身の場合待ち終了.
-                if (downloading.Count <= MaxMultiDownloadNum && downloadQueueing.Peek() == downloadRequest)
+                if (downloading.Count <= MaxDownloadCount && downloadQueueing.Peek() == downloadRequest)
                 {
                     downloadQueueing.Dequeue();
                     break;

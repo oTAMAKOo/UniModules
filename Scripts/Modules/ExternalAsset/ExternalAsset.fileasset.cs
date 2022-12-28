@@ -14,6 +14,9 @@ namespace Modules.ExternalAssets
 	{
         //----- params -----
 
+		/// <summary> 最大同時ダウンロード数. </summary>
+		private const uint FileAssetDefaultInstallerCount = 16;
+
         //----- field -----
 		
 		private FileAssetManager fileAssetManager = null;
@@ -27,7 +30,8 @@ namespace Modules.ExternalAssets
 			// FileAssetManager初期化.
 
 			fileAssetManager = FileAssetManager.CreateInstance();
-			fileAssetManager.Initialize(MaxDownloadCount, simulateMode);
+			fileAssetManager.Initialize(simulateMode);
+			fileAssetManager.SetMaxDownloadCount(FileAssetDefaultInstallerCount);
 			fileAssetManager.OnTimeOutAsObservable().Subscribe(x => OnTimeout(x)).AddTo(Disposable);
 			fileAssetManager.OnErrorAsObservable().Subscribe(x => OnError(x)).AddTo(Disposable);
 		}
@@ -38,6 +42,11 @@ namespace Modules.ExternalAssets
 			if (CheckAssetVersion(assetInfo)){ return; }
 			
 			await fileAssetManager.UpdateFileAsset(InstallDirectory, assetInfo, cancelToken, progress);
+		}
+
+		public void SetFileAssetInstallerCount(uint installerCount)
+		{
+			fileAssetManager.SetMaxDownloadCount(installerCount);
 		}
     }
 }

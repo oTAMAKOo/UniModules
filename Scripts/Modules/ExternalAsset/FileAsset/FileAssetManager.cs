@@ -44,7 +44,7 @@ namespace Modules.ExternalAssets
 
 		private FileAssetManager() { }
 
-		public void Initialize(uint numInstallers, bool simulateMode = false)
+		public void Initialize(bool simulateMode = false)
 		{
 			if (isInitialized) { return; }
 
@@ -54,7 +54,7 @@ namespace Modules.ExternalAssets
 
 			downloader = new FileAssetDownloader();
 
-			downloader.Initialize((int)numInstallers);
+			downloader.Initialize();
 
 			downloader.OnTimeoutAsObservable()
 				.Subscribe(x => OnTimeout(x))
@@ -65,6 +65,11 @@ namespace Modules.ExternalAssets
 				.AddTo(Disposable);
 
 			isInitialized = true;
+		}
+
+		public void SetMaxDownloadCount(uint maxDownloadCount)
+		{
+			downloader.SetMaxDownloadCount(maxDownloadCount);
 		}
 
 		/// <summary> ローカルモード設定. </summary>

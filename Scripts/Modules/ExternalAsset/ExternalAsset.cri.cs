@@ -26,6 +26,9 @@ namespace Modules.ExternalAssets
     {
         //----- params -----
 
+		/// <summary> CRIデフォルトインストーラ数.  </summary>
+		private const uint CriDefaultInstallerCount = 8;
+
         //----- field -----
 
         // CriWare管理.
@@ -40,10 +43,16 @@ namespace Modules.ExternalAssets
             // CriAssetManager初期化.
 
             criAssetManager = CriAssetManager.CreateInstance();
-            criAssetManager.Initialize(MaxDownloadCount, simulateMode);
+            criAssetManager.Initialize(simulateMode);
+			criAssetManager.SetNumInstallers(CriDefaultInstallerCount);
             criAssetManager.OnTimeOutAsObservable().Subscribe(x => OnTimeout(x)).AddTo(Disposable);
             criAssetManager.OnErrorAsObservable().Subscribe(x => OnError(x)).AddTo(Disposable);
         }
+
+		public void SetCriInstallerCount(uint installerCount)
+		{
+			criAssetManager.SetNumInstallers(installerCount);
+		}
 
 		private async UniTask UpdateCriAsset(CancellationToken cancelToken, AssetInfo assetInfo, IProgress<float> progress = null)
         {

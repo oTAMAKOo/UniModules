@@ -17,6 +17,9 @@ namespace Modules.ExternalAssets
     {
         //----- params -----
 
+		/// <summary> 最大同時ダウンロード数. </summary>
+		private const uint AssetBundleDefaultInstallerCount = 24;
+
         //----- field -----
 
         // アセットバンドル管理.
@@ -32,7 +35,8 @@ namespace Modules.ExternalAssets
         private void InitializeAssetBundle()
         {
             assetBundleManager = AssetBundleManager.CreateInstance();
-            assetBundleManager.Initialize(MaxDownloadCount, simulateMode);
+            assetBundleManager.Initialize(simulateMode);
+			assetBundleManager.SetMaxDownloadCount(AssetBundleDefaultInstallerCount);
             assetBundleManager.OnTimeOutAsObservable().Subscribe(x => OnTimeout(x)).AddTo(Disposable);
             assetBundleManager.OnErrorAsObservable().Subscribe(x => OnError(x)).AddTo(Disposable);
         }
@@ -41,6 +45,11 @@ namespace Modules.ExternalAssets
 		public void SetAssetBundleFileHandler(IAssetBundleFileHandler fileHandler)
 		{
 			assetBundleManager.SetFileHandler(fileHandler);
+		}
+
+		public void SetAssetBundleInstallerCount(uint installerCount)
+		{
+			assetBundleManager.SetMaxDownloadCount(installerCount);
 		}
 
 		private async UniTask UpdateAssetBundle(CancellationToken cancelToken, AssetInfo assetInfo, IProgress<float> progress = null)
