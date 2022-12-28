@@ -1,4 +1,4 @@
-﻿
+﻿﻿
 #if ENABLE_CRIWARE_ADX || ENABLE_CRIWARE_SOFDEC
 ﻿﻿﻿
 using UnityEngine;
@@ -166,7 +166,7 @@ namespace Modules.CriWare
         #endif
 
         // 同時インストール数.
-        private uint numInstallers = 0;
+        private uint numInstallers = 5;
 
         // イベント通知.
         private Subject<AssetInfo> onTimeOut = null;
@@ -189,22 +189,11 @@ namespace Modules.CriWare
             #if ENABLE_CRIWARE_FILESYSTEM
 
             installQueueing = new Dictionary<string, CriAssetInstall>();
+            installers = new List<CriFsWebInstaller>();
 
             //------ CriInstaller初期化 ------
 
-			if(!CriFsWebInstaller.isInitialized)
-			{
-				var moduleConfig = CriFsWebInstaller.defaultModuleConfig;
-
-				// 同時インストール数.
-				moduleConfig.numInstallers = numInstallers;
-				// タイムアウト時間.
-				moduleConfig.inactiveTimeoutSec = (uint)TimeoutLimit.TotalSeconds;
-            
-				CriFsWebInstaller.InitializeModule(moduleConfig);
-			}
-
-            installers = new List<CriFsWebInstaller>();
+            UpdateFsWebInstallerSetting();
 
             Observable.EveryUpdate()
                 .Subscribe(_ => CriFsWebInstaller.ExecuteMain())
@@ -215,41 +204,74 @@ namespace Modules.CriWare
             isInitialized = true;
         }
 
-		protected override void OnRelease()
+        protected override void OnRelease()
         {
             if (!isInitialized){ return; }
-            
-			#if ENABLE_CRIWARE_FILESYSTEM
 
-			foreach (var installer in installers)
-			{
-				installer.Stop();
-				installer.Dispose();
-			}
-
-			installers.Clear();
-
-			foreach (var item in installQueueing.Values)
-			{
-				if (item.Installer != null)
-				{
-					item.Installer.Stop();
-					item.Installer.Dispose();
-				}
-			}
-
-			installQueueing.Clear();
-
-			CriFsWebInstaller.FinalizeModule();
-
-			#endif
+            ReleaseInstaller();
         }
 
-		/// <summary> 同時ダウンロード数設定. </summary>
-		public void SetNumInstallers(uint numInstallers)
-		{
-			this.numInstallers = numInstallers;
-		}
+        private void ReleaseInstaller()
+        {
+            #if ENABLE_CRIWARE_FILESYSTEM
+
+            if (installers != null)
+            {
+                foreach (var installer in installers)
+                {
+                    installer.Stop();
+                    installer.Dispose();
+                }
+
+                installers.Clear();
+            }
+
+            if (installQueueing != null)
+            {
+                foreach (var item in installQueueing.Values)
+                {
+                    if (item.Installer != null)
+                    {
+                        item.Installer.Stop();
+                        item.Installer.Dispose();
+                    }
+                }
+
+                installQueueing.Clear();
+            }
+
+            if(CriFsWebInstaller.isInitialized)
+            {
+                CriFsWebInstaller.FinalizeModule();
+            }
+
+            #endif
+        }
+
+        private void UpdateFsWebInstallerSetting()
+        {
+            if(CriFsWebInstaller.isInitialized)
+            {
+                ReleaseInstaller();
+            }
+
+            var moduleConfig = CriFsWebInstaller.defaultModuleConfig;
+
+            // 同時インストール数.
+            moduleConfig.numInstallers = numInstallers;
+            // タイムアウト時間.
+            moduleConfig.inactiveTimeoutSec = (uint)TimeoutLimit.TotalSeconds;
+            
+            CriFsWebInstaller.InitializeModule(moduleConfig);
+        }
+
+        /// <summary> 同時ダウンロード数設定. </summary>
+        public void SetNumInstallers(uint numInstallers)
+        {
+            this.numInstallers = numInstallers;
+
+            UpdateFsWebInstallerSetting();
+        }
 
         /// <summary> ローカルモード設定. </summary>
         public void SetLocalMode(bool localMode)
@@ -362,10 +384,10 @@ namespace Modules.CriWare
 
             if (item != null)
             {
-				if (item.Installer != null)
-				{
-					item.Installer.Stop();
-				}
+                if (item.Installer != null)
+                {
+                    item.Installer.Stop();
+                }
 
                 installQueueing.Remove(resourcePath);
             }
