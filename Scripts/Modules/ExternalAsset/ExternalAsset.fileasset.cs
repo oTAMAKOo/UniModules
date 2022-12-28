@@ -15,7 +15,7 @@ namespace Modules.ExternalAssets
         //----- params -----
 
 		/// <summary> 最大同時ダウンロード数. </summary>
-		private const uint FileAssetDefaultInstallerCount = 8;
+		private const uint FileAssetDefaultInstallerCount = 4;
 
         //----- field -----
 		
