@@ -55,6 +55,28 @@ namespace Modules.ExternalAssets
 			await criAssetManager.UpdateCriAsset(InstallDirectory, assetInfo, cancelToken, progress);
 		}
 
+        #if ENABLE_CRIWARE_ADX || ENABLE_CRIWARE_SOFDEC
+
+        private string ConvertCriFilePath(string resourcePath)
+        {
+            if (string.IsNullOrEmpty(resourcePath)){ return null; }
+
+            var assetInfo = GetAssetInfo(resourcePath);
+
+            if (assetInfo == null)
+            {
+                Debug.LogErrorFormat("AssetInfo not found.\n{0}", resourcePath);
+
+                return null;
+            }
+
+            return simulateMode ?
+                   PathUtility.Combine(new string[] { UnityPathUtility.GetProjectFolderPath(), externalAssetDirectory, resourcePath }) :
+                   criAssetManager.GetFilePath(InstallDirectory, assetInfo);
+        }
+
+        #endif
+
 		#region Sound
 
         #if ENABLE_CRIWARE_ADX
@@ -72,7 +94,8 @@ namespace Modules.ExternalAssets
             }
 
 			var assetInfo = GetAssetInfo(resourcePath);
-			var filePath = criAssetManager.GetFilePath(InstallDirectory, assetInfo);
+
+            var filePath = ConvertCriFilePath(resourcePath);
 
             if (!LocalMode && !simulateMode)
             {
@@ -141,7 +164,7 @@ namespace Modules.ExternalAssets
 
         public static async UniTask<ManaInfo> GetMovieInfo(string resourcePath)
         {
-            return await Instance.GetMovieInfoInternal( resourcePath);
+            return await Instance.GetMovieInfoInternal(resourcePath);
         }
 
         private async UniTask<ManaInfo> GetMovieInfoInternal(string resourcePath)
@@ -152,7 +175,8 @@ namespace Modules.ExternalAssets
             }
 
 			var assetInfo = GetAssetInfo(resourcePath);
-			var filePath = criAssetManager.GetFilePath(InstallDirectory, assetInfo);
+			
+            var filePath = ConvertCriFilePath(resourcePath);
 
             if (!LocalMode && !simulateMode)
             {
