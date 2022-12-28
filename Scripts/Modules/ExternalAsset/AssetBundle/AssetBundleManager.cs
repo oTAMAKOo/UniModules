@@ -39,12 +39,6 @@ namespace Modules.AssetBundles
         // リトライするまでの時間(秒).
         private readonly TimeSpan RetryDelaySeconds = TimeSpan.FromSeconds(2f);
 
-        private sealed class DownloadBuffer
-        {
-            public bool use = false;
-            public byte[] buffer = new byte[256 * 1024];
-        }
-
         //----- field -----
 
         // 同時ダウンロード数.
@@ -96,9 +90,6 @@ namespace Modules.AssetBundles
 		// ファイルハンドラ.
 		private IAssetBundleFileHandler fileHandler = null;
 
-        // ダウンロードバッファ.
-        private List<DownloadBuffer> downloadBuffers = null;
-
         // イベント通知.
 		private Subject<AssetInfo> onLoad = null;
         private Subject<AssetInfo> onTimeOut = null;
@@ -129,7 +120,6 @@ namespace Modules.AssetBundles
             assetBundleRefCount = new Dictionary<string, int>();
             assetInfosByAssetBundleName = new Dictionary<string, List<AssetInfo>>();
             dependenciesTable = new Dictionary<string, string[]>();
-            downloadBuffers = new List<DownloadBuffer>();
 
             AddManifestAssetInfo();
 
@@ -414,36 +404,6 @@ namespace Modules.AssetBundles
                     .DoOnError(x => OnError(x));
 		}
 
-        private void UpdateDownloadBuffer()
-        {
-            var requireCount = Math.Min(maxDownloadCount, downloadQueueing.Count);
-
-            // 余っているバッファ削除.
-            if (requireCount < downloadBuffers.Count)
-            {
-                var deleteCount = downloadBuffers.Count - requireCount;
-
-                var unuseBuffers = downloadBuffers.Where(x => !x.use).ToArray();
-
-                for (var i = 0; i < unuseBuffers.Length; i++)
-                {
-                    if (deleteCount <= i){ break; }
-
-                    downloadBuffers.Remove(unuseBuffers[i]);
-                }
-            }
-            // 足りないバッファ追加.
-            else if(downloadBuffers.Count < requireCount)
-            {
-                var addCount = requireCount - downloadBuffers.Count;
-
-                for (var i = 0; i < addCount; i++)
-                {
-                    downloadBuffers.Add(new DownloadBuffer());
-                }
-            }
-        }
-
         private async UniTask FileDownload(string url, string path, IProgress<float> progress, CancellationToken cancelToken)
         {
             var directory = Path.GetDirectoryName(path);
@@ -453,59 +413,34 @@ namespace Modules.AssetBundles
                 Directory.CreateDirectory(directory);
             }
 
-            DownloadBuffer downloadBuffer = null;
-            
-            try
+            using (var webRequest = UnityWebRequest.Get(url))
             {
-                while (true)
-                {
-					if (cancelToken.IsCancellationRequested){ return; }
+                var downloadHandler = new DownloadHandlerFile(path);
 
-                    UpdateDownloadBuffer();
+                downloadHandler.removeFileOnAbort = true;
 
-                    downloadBuffer = downloadBuffers.FirstOrDefault(x => !x.use);
-
-                    if (downloadBuffer != null){ break; }
-
-                    await UniTask.NextFrame(cancelToken);
-                }
-
-                downloadBuffer.use = true;
-
-                var webRequest = new UnityWebRequest(url)
-                {
-                    timeout = (int)TimeoutLimit.TotalSeconds,
-                    downloadHandler = new AssetBundleDownloadHandler(path, downloadBuffer.buffer),
-                };
+                webRequest.downloadHandler = downloadHandler;
+                webRequest.timeout = (int)TimeoutLimit.TotalSeconds;
 
                 var downloadTask = webRequest.SendWebRequest();
 
                 while (!downloadTask.isDone)
                 {
-					if (cancelToken.IsCancellationRequested){ break; }
+                    if (cancelToken.IsCancellationRequested){ break; }
 
                     await UniTask.NextFrame(cancelToken);
 
-					if (progress != null)
-					{
-						progress.Report(downloadTask.progress);
-					}
+                    if (progress != null)
+                    {
+                        progress.Report(downloadTask.progress);
+                    }
                 }
 
-				if (webRequest.HasError() || webRequest.responseCode != (int)System.Net.HttpStatusCode.OK)
-				{
-					throw new Exception($"File download error : [{webRequest.responseCode}]{url}\n\n{webRequest.error}");
-				}
+                if (webRequest.HasError() || webRequest.responseCode != (int)System.Net.HttpStatusCode.OK)
+                {
+                    throw new Exception($"File download error : [{webRequest.responseCode}]{url}\n\n{webRequest.error}");
+                }
             }
-			finally
-			{
-				if (downloadBuffer != null)
-				{
-					downloadBuffer.use = false;
-				}
-
-				UpdateDownloadBuffer();
-			}
         }
 
         #endregion
