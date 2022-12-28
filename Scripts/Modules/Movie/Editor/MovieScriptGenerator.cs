@@ -24,7 +24,6 @@ namespace Modules.Movie.Editor
 
 #if ENABLE_CRIWARE_SOFDEC
 
-using UnityEngine;
 using System.Collections.Generic;
 using CriWare;
 using Extensions;
