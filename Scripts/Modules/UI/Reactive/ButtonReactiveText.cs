@@ -1,4 +1,4 @@
-﻿﻿
+﻿
 using UnityEngine;
 using System;
 using System.Linq;
@@ -62,27 +62,7 @@ namespace Modules.UI.Reactive
             {
                 Apply(target.Button.interactable);
             }
-
-            // UITextが色指定を行っている場合は現在の色をその色に変更.
-            var selectionColor = uiText.SelectionColor;
-
-            if (selectionColor != null)
-            {
-                enableColor = selectionColor.Color;
-
-                if (selectionColor.ShadowColor.HasValue)
-                {
-                    enableShadowColor = selectionColor.ShadowColor.Value;
-                }
-
-                if (selectionColor.OutlineColor.HasValue)
-                {
-                    enableOutlineColor = selectionColor.OutlineColor.Value;
-                }
-
-                uiText.SetColor(null);
-            }
-        }
+		}
 
         private void Apply(bool interactive)
         {

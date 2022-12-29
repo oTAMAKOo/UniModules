@@ -1,14 +1,14 @@
-﻿﻿﻿﻿
+﻿
 using UnityEngine;
-using UnityEngine.UI;
 using System;
 using UniRx;
+using TMPro;
 
 namespace Modules.UI.Extension
 {
     [ExecuteAlways]
-    [RequireComponent(typeof(Dropdown))]
-    public abstract class UIDropdown : UIComponent<Dropdown>
+    [RequireComponent(typeof(TMP_Dropdown))]
+    public abstract class UIDropdown : UIComponent<TMP_Dropdown>
     {
         //----- params -----
 
@@ -20,7 +20,7 @@ namespace Modules.UI.Extension
 
         //----- property -----
 
-        public Dropdown Dropdown { get { return component; } }
+        public TMP_Dropdown Dropdown { get { return component; } }
 
         //----- method -----
 

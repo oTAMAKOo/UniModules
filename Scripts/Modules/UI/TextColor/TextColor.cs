@@ -1,11 +1,8 @@
 ﻿
 using UnityEngine;
 using UnityEngine.UI;
-using System;
 using System.Linq;
-using System.Collections.Generic;
 using Extensions;
-using Modules.UI.TextEffect;
 using TMPro;
 
 namespace Modules.UI.TextColor

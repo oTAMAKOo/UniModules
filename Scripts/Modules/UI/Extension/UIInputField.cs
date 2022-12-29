@@ -1,17 +1,12 @@
-﻿﻿﻿﻿
+﻿﻿
 using UnityEngine;
-using UnityEngine.UI;
-using System;
-using System.Linq;
-using System.Collections.Generic;
-using UniRx;
-using Extensions;
+using TMPro;
 
 namespace Modules.UI.Extension
 {
     [ExecuteAlways]
-    [RequireComponent(typeof(InputField))]
-    public abstract class UIInputField : UIComponent<InputField>
+    [RequireComponent(typeof(TMP_InputField))]
+    public abstract class UIInputField : UIComponent<TMP_InputField>
     {
         //----- params -----
 
@@ -19,7 +14,7 @@ namespace Modules.UI.Extension
 
         //----- property -----
 
-        public InputField InputField { get { return component; } }
+        public TMP_InputField InputField { get { return component; } }
 
         //----- method -----
     }

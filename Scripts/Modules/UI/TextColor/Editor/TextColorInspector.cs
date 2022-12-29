@@ -1,14 +1,12 @@
 ﻿
 using UnityEngine;
+using UnityEngine.UI;
 using UnityEditor;
 using System;
 using System.Linq;
 using System.Collections.Generic;
-using UniRx;
 using Extensions;
 using Extensions.Devkit;
-using Modules.UI.TextEffect;
-using UnityEngine.UI;
 
 namespace Modules.UI.TextColor
 {
