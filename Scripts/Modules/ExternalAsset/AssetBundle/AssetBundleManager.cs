@@ -71,6 +71,9 @@ namespace Modules.AssetBundles
         private string remoteUrl = null;
         private string versionHash = null;
 
+        // URL作成用.
+        private StringBuilder urlBuilder = null;
+
         // ダウンロード中アセットバンドル.
         private HashSet<string> downloadList = null;
 
@@ -122,6 +125,7 @@ namespace Modules.AssetBundles
             
             this.simulateMode = UnityUtility.isEditor && simulateMode;
 
+            urlBuilder = new StringBuilder();
             downloadList = new HashSet<string>();
             downloadQueueing = new Dictionary<string, IObservable<Unit>>();
             loadQueueing = new Dictionary<string, IObservable<AssetBundle>>();
@@ -242,23 +246,29 @@ namespace Modules.AssetBundles
 
         private string BuildDownloadUrl(AssetInfo assetInfo)
         {
+            urlBuilder.Clear();
+
             var platformName = PlatformUtility.GetPlatformTypeName();
 
-            var downloadUrl = PathUtility.Combine(new string[] { remoteUrl, platformName, versionHash, assetInfo.FileName }) + PackageExtension;
+            var downloadUrl = PathUtility.Combine(new string[] { remoteUrl, platformName, versionHash, assetInfo.FileName });
+
+            urlBuilder.Append(downloadUrl).Append(PackageExtension);
 
             if (!assetInfo.Hash.IsNullOrEmpty())
             {
-                downloadUrl = string.Format("{0}?v={1}", downloadUrl, assetInfo.Hash);
+                urlBuilder.AppendFormat("?v={0}", assetInfo.Hash);
             }
 
-            return downloadUrl;
+            return urlBuilder.ToString();
         }
 
         public string GetFilePath(string installPath, AssetInfo assetInfo)
         {
             if (assetInfo == null || string.IsNullOrEmpty(assetInfo.FileName)){ return null; }
 
-			return PathUtility.Combine(installPath, assetInfo.FileName) + PackageExtension;
+            var path = PathUtility.Combine(installPath, assetInfo.FileName);
+
+			return Path.ChangeExtension(path, PackageExtension);
         }
 
         #region Download
@@ -310,8 +320,7 @@ namespace Modules.AssetBundles
 
 			var allBundles = new string[] { assetBundleName }
 				.Concat(GetAllDependencies(assetBundleName))
-				.Distinct()
-				.ToArray();
+				.Distinct();
 
             var loadAllBundles = new Dictionary<string, IObservable<Unit>>();
 
