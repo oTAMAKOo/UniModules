@@ -1,4 +1,4 @@
-
+﻿
 using UnityEditor;
 using System.Collections.Generic;
 using System.IO;
@@ -197,7 +197,7 @@ namespace Modules.ExternalAssets
 
 			if (string.IsNullOrEmpty(externalAssetPath)){ return null; }
 
-            var allAssetInfos = assetManagement.GetAllAssetInfos().ToArray();
+            var allAssetInfos = assetManagement.GetAllAssetInfos().Shuffle().ToArray();
 
             // アセット情報を更新.
             var manifestPath = GetManifestPath(externalAssetPath);
