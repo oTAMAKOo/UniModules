@@ -1,4 +1,4 @@
-﻿﻿
+﻿
 #if ENABLE_CRIWARE_ADX || ENABLE_CRIWARE_SOFDEC
 ﻿﻿﻿
 using UnityEngine;
@@ -293,69 +293,18 @@ namespace Modules.CriWare
 
         #if ENABLE_CRIWARE_FILESYSTEM
 
-        /// <summary>
-        /// 指定されたアセットを更新.
-        /// </summary>
+        /// <summary> CRIアセットを更新. </summary>
         public async UniTask UpdateCriAsset(string installPath, AssetInfo assetInfo, CancellationToken cancelToken, IProgress<float> progress = null)
         {
-            if (simulateMode) { return; }
+            if (simulateMode || localMode) { return; }
+			
+			var install = GetCriAssetInstall(installPath, assetInfo, progress);
 
-            if (localMode) { return; }
-
-            var resourcePath = assetInfo.ResourcePath;
-            var extension = Path.GetExtension(assetInfo.ResourcePath);
-
-            if (extension == CriAssetDefinition.AwbExtension) { return; }
-
-            var installList = new List<CriAssetInstall>();
-
-            CriAssetInstall install = null;
-
-            if (extension == CriAssetDefinition.AcbExtension)
-            {
-                // Awbの拡張子でマニフェストを検索して存在したら一緒にダウンロード.
-                var awbAssetPath = Path.ChangeExtension(resourcePath, CriAssetDefinition.AwbExtension);
-
-                var awbAssetInfo = manifest.GetAssetInfo(awbAssetPath);
-
-                //------- Acb ------- 
-
-                //インストールの進行度はAwbがない場合に渡す.
-                install = GetCriAssetInstall(installPath, assetInfo, awbAssetInfo == null ? progress : null);
-
-                installList.Add(install);
-
-                //------- Awb -------
-
-                if (awbAssetInfo != null)
-                {
-                    install = GetCriAssetInstall(installPath, awbAssetInfo, progress);
-
-                    installList.Add(install);
-                }
-            }
-            else if (extension == CriAssetDefinition.UsmExtension)
-            {
-                //------- Usm -------
-
-                install = GetCriAssetInstall(installPath, assetInfo, progress);
-
-                installList.Add(install);
-            }
-
-            if (installList.IsEmpty())
-            {
-                Debug.LogErrorFormat("UpdateCriAsset Error.\n{0}", assetInfo.ResourcePath);
-                return;
-            }
-
-            await installList
-                .Select(x => x.Task)
-                .WhenAll()
-                .Timeout(TimeoutLimit)
+			await install.Task
+				.Timeout(TimeoutLimit)
                 .OnErrorRetry((TimeoutException ex) => OnTimeout(assetInfo, ex), RetryCount, RetryDelaySeconds)
                 .DoOnError(ex => OnError(ex))
-                .Finally(() => installList.ForEach(item => RemoveInternalQueue(item)))
+                .Finally(() => RemoveInternalQueue(install))
                 .ToUniTask(cancellationToken: cancelToken);
         }
 
