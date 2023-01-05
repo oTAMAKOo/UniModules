@@ -1,4 +1,6 @@
-﻿﻿
+﻿
+#if UNITY_IOS && UNITY_EDITOR
+
 using UnityEngine;
 using UnityEditor;
 using UnityEditor.iOS.Xcode;
@@ -43,7 +45,7 @@ namespace Modules.Devkit.Build
 
                 #if UNITY_2020_2_OR_NEWER
 
-                TargetGuid= PbxProj.GetUnityMainTargetGuid();
+                TargetGuid = PbxProj.GetUnityMainTargetGuid();
             
                 #else
             
@@ -51,15 +53,17 @@ namespace Modules.Devkit.Build
             
                 #endif
 
+				EditPbxProj();
+
+				File.WriteAllText(projectPath, PbxProj.WriteToString());
+
                 CapabilityManager = new ProjectCapabilityManager(projectPath, EntitlementFileName, null, TargetGuid);
 
-                EditPbxProj();
+				EditCapability();
 
-                CapabilityManager.WriteToFile(); 
+                CapabilityManager.WriteToFile();
 
-                File.WriteAllText(projectPath, PbxProj.WriteToString());
-
-                PbxProj = null;
+				PbxProj = null;
                 CapabilityManager = null;
                 TargetGuid = null;
             } 
@@ -108,5 +112,9 @@ namespace Modules.Devkit.Build
         }
 
         protected abstract void EditPbxProj();
+
+		protected abstract void EditCapability();
     }
 }
+
+#endif
