@@ -177,7 +177,6 @@ namespace Modules.Master
 
         public async UniTask<bool> CheckVersion(string masterVersion)
         {
-            
             var localVersion = await LoadVersion();
 
             return CheckVersion(masterVersion, localVersion);
