@@ -1,22 +1,18 @@
 ﻿
 using System;
 using System.Runtime.Serialization;
-using UnityEngine;
 
 namespace Modules.ExternalAssets
 {
 	[Serializable]
-    public sealed class AssetInfoNotFoundException : Exception
-    {
-		public string ResourcePath { get; private set; }
-        
-		public AssetInfoNotFoundException(string resourcePath) : base()
-		{
-			ResourcePath = resourcePath;
+	public sealed class AssetInfoNotFoundException : Exception
+	{
+		public AssetInfoNotFoundException() : base() { }
 
-			Debug.LogError($"AssetInfo not found.\n{resourcePath}");
-		}
+		public AssetInfoNotFoundException(string message) : base(message) { }
+
+		public AssetInfoNotFoundException(string message, Exception innerException) : base(message, innerException) { }
 
 		private AssetInfoNotFoundException(SerializationInfo info, StreamingContext context) : base(info, context) { }
-    }
+	}
 }
