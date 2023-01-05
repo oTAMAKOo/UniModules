@@ -314,7 +314,7 @@ namespace Modules.ExternalAssets
 
             if (assetInfo == null)
             {
-                var exception = new Exception(string.Format("AssetManageInfo not found.\n{0}", resourcePath));
+                var exception = new AssetInfoNotFoundException(resourcePath);
 
                 OnError(exception);
 

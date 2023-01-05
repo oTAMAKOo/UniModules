@@ -173,7 +173,10 @@ namespace Modules.ExternalAssets
 
 			if (assetInfo == null)
 			{
-				Debug.LogWarningFormat("AssetInfo not found.\n{0}", resourcePath);
+				var exception = new AssetInfoNotFoundException(resourcePath);
+
+				OnError(exception);
+
 				return;
 			}
 

@@ -87,7 +87,7 @@ namespace Modules.ExternalAssets
 
             if (assetInfo == null)
             {
-                var exception = new Exception(string.Format("AssetInfo not found.\n{0}", resourcePath));
+                var exception = new AssetInfoNotFoundException(resourcePath);
 
                 OnError(exception);
 
@@ -306,12 +306,17 @@ namespace Modules.ExternalAssets
 
             if (assetInfo == null)
             {
-                Debug.LogErrorFormat("AssetInfo not found.\n{0}", resourcePath);
+				var exception = new AssetInfoNotFoundException(resourcePath);
+
+				OnError(exception);
+
+				return;
             }
 
             if (!assetInfo.IsAssetBundle)
             {
                 Debug.LogErrorFormat("This file is not an assetBundle.\n{0}", resourcePath);
+				return;
             }
 
             assetBundleManager.UnloadAsset(assetInfo.AssetBundle.AssetBundleName);
