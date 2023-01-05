@@ -17,7 +17,8 @@ namespace Modules.MessagePack
         private string scriptName = null;
         [SerializeField]
         private bool useMapMode = true;
-        [SerializeField]
+
+		[SerializeField]
         [Tooltip("(option) Generated resolver class namespace.")]
         private string resolverNameSpace = "MessagePack";
         [SerializeField]
@@ -26,6 +27,10 @@ namespace Modules.MessagePack
         [SerializeField]
         [Tooltip("(option) Split with ','.")]
         private string conditionalCompilerSymbols = null;
+
+		[SerializeField]
+		[Tooltip("(fix) Force add missing global namespace")]
+		private string[] forceAddGlobalSymbols = null;
         
         #pragma warning disable 0414
 
@@ -59,7 +64,10 @@ namespace Modules.MessagePack
         /// <summary> 条件付きコンパイラシンボル. </summary>
         public string ConditionalCompilerSymbols { get { return conditionalCompilerSymbols; } }
 
-        /// <summary> コードジェネレータまでのパス(相対パス). </summary>
+		/// <summary> 追加参照namespace. </summary>
+		public string[] ForceAddGlobalSymbols { get { return forceAddGlobalSymbols; } }
+
+		/// <summary> コードジェネレータまでのパス(相対パス). </summary>
         public string MpcRelativePath
         {
             get

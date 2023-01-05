@@ -3,6 +3,7 @@ using UnityEngine;
 using UnityEditor;
 using System;
 using System.IO;
+using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
 using Cysharp.Threading.Tasks;
@@ -182,28 +183,40 @@ namespace Modules.MessagePack
 
 		private static void ImportGeneratedCsFile(string csFilePath, string csFileHash)
         {
+			var messagePackConfig = MessagePackConfig.Instance;
+
             var assetPath = UnityPathUtility.ConvertFullPathToAssetPath(csFilePath);
             
-            // global::UnityEngineが定義されない問題対応.
-            
-            var builder = new StringBuilder();
+            // 名前空間定義 global::xxxxxxが定義されない問題対応.
 
-            var encode = new UTF8Encoding(true);
+			var forceAddGlobalSymbols = messagePackConfig.ForceAddGlobalSymbols;
 
-            using (var sr = new StreamReader(csFilePath, encode))
-            {
-                var code = sr.ReadToEnd();
+			if (forceAddGlobalSymbols != null && forceAddGlobalSymbols.Any())
+			{
+	            var builder = new StringBuilder();
 
-                builder.AppendLine("// Fix : Missing global::UnityEngine error.");
-                builder.AppendLine("using UnityEngine;");
-                builder.AppendLine();
-                builder.Append(code);
-            }
+	            var encode = new UTF8Encoding(true);
 
-            using (var sw = new StreamWriter(csFilePath, false, encode))
-            {
-                sw.Write(builder.ToString());
-            }
+	            using (var sr = new StreamReader(csFilePath, encode))
+	            {
+	                var code = sr.ReadToEnd();
+
+					builder.AppendLine("// ForceAddGlobalSymbols by MessagePackCodeGenerator.cs.");
+
+					foreach (var forceAddGlobalSymbol in forceAddGlobalSymbols)
+					{
+						builder.AppendLine(forceAddGlobalSymbol);
+					}
+
+	                builder.AppendLine();
+	                builder.Append(code);
+	            }
+
+	            using (var sw = new StreamWriter(csFilePath, false, encode))
+	            {
+	                sw.Write(builder.ToString());
+	            }
+			}
 
             // 差分があったらインポート.
 

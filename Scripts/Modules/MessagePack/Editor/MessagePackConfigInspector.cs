@@ -69,10 +69,11 @@ namespace Modules.MessagePack
             var scriptExportAssetDir = serializedObject.FindProperty("scriptExportAssetDir");
             var scriptName = serializedObject.FindProperty("scriptName");
             var useMapMode = serializedObject.FindProperty("useMapMode");
-            var resolverNameSpace = serializedObject.FindProperty("resolverNameSpace");
+			var resolverNameSpace = serializedObject.FindProperty("resolverNameSpace");
             var resolverName = serializedObject.FindProperty("resolverName");
             var conditionalCompilerSymbols = serializedObject.FindProperty("conditionalCompilerSymbols");
-            var winMpcRelativePath = serializedObject.FindProperty("winMpcRelativePath");
+			var forceAddGlobalSymbols = serializedObject.FindProperty("forceAddGlobalSymbols");
+			var winMpcRelativePath = serializedObject.FindProperty("winMpcRelativePath");
             var osxMpcRelativePath = serializedObject.FindProperty("osxMpcRelativePath");
 
             if (isLoading) { return; }
@@ -120,7 +121,7 @@ csproj directory : global.json
 
             EditorLayoutTools.ContentTitle("MessagePack Script Export");
 
-            using (new ContentsScope())
+			using (new ContentsScope())
             {
                 using (new EditorGUILayout.HorizontalScope())
                 {
@@ -138,13 +139,20 @@ csproj directory : global.json
                     }
                 }
 
-                EditorGUI.BeginChangeCheck();
+				GUILayout.Label("Export FileName");
 
-                GUILayout.Label("Export FileName");
+				EditorGUI.BeginChangeCheck();
 
                 scriptName.stringValue = EditorGUILayout.DelayedTextField(scriptName.stringValue);
 
                 useMapMode.boolValue = EditorGUILayout.Toggle("MapMode", useMapMode.boolValue);
+
+				if (EditorGUI.EndChangeCheck())
+				{
+					UnityEditorUtility.RegisterUndo(instance);
+
+					serializedObject.ApplyModifiedProperties();
+				}
             }
 
             GUILayout.Space(4f);
@@ -152,6 +160,8 @@ csproj directory : global.json
             //------ オプション設定 ------
 
             EditorLayoutTools.ContentTitle("CodeGenerator Options");
+
+			EditorGUI.BeginChangeCheck();
 
             using (new ContentsScope())
             {
@@ -168,14 +178,39 @@ csproj directory : global.json
                 conditionalCompilerSymbols.stringValue = EditorGUILayout.DelayedTextField(conditionalCompilerSymbols.stringValue);
             }
 
-            GUILayout.Space(4f);
-
-            if (EditorGUI.EndChangeCheck())
+			if (EditorGUI.EndChangeCheck())
             {
                 UnityEditorUtility.RegisterUndo(instance);
 
                 serializedObject.ApplyModifiedProperties();
             }
+
+			GUILayout.Space(4f);
+
+			//------ ForceAddGlobalSymbols ------
+
+			EditorLayoutTools.ContentTitle("Mpc generated cs file edit");
+
+			using (new ContentsScope())
+			{
+				EditorGUILayout.HelpBox("Fix : Missing global::xxxxx namespace error.", MessageType.Info);
+
+				EditorGUI.BeginChangeCheck();
+
+				using (new EditorGUI.IndentLevelScope(1))
+				{
+					EditorGUILayout.PropertyField(forceAddGlobalSymbols);
+				}
+
+				if (EditorGUI.EndChangeCheck())
+				{
+					UnityEditorUtility.RegisterUndo(instance);
+
+					serializedObject.ApplyModifiedProperties();
+				}
+			}
+
+			GUILayout.Space(4f);
             
             //------ CustomCodeGenerator ------
 
