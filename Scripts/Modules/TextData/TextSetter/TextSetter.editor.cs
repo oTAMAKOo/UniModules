@@ -134,11 +134,26 @@ namespace Modules.TextData.Components
             {
                 ApplyText(string.Empty);
 
+				SetDirty();
+
                 return true;
             }
 
             return false;
         }
+
+		private void SetDirty()
+		{
+			if (textMeshProComponent != null)
+			{
+				EditorUtility.SetDirty(textMeshProComponent);
+			}
+
+			if (textComponent != null)
+			{
+				EditorUtility.SetDirty(textComponent);
+			}
+		}
     }
 }
 
