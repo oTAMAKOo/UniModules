@@ -106,6 +106,15 @@ namespace Modules.ExternalAssets
 
 			var assetInfo = GetAssetInfo(resourcePath);
 
+			if (assetInfo == null)
+			{
+				var exception = new AssetInfoNotFoundException(resourcePath);
+
+				OnError(exception);
+
+				return null;
+			}
+
             var filePath = ConvertCriFilePath(resourcePath);
 
             if (!LocalMode && !simulateMode)
@@ -186,6 +195,15 @@ namespace Modules.ExternalAssets
             }
 
 			var assetInfo = GetAssetInfo(resourcePath);
+
+			if (assetInfo == null)
+			{
+				var exception = new AssetInfoNotFoundException(resourcePath);
+
+				OnError(exception);
+
+				return null;
+			}
 			
             var filePath = ConvertCriFilePath(resourcePath);
 
