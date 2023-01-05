@@ -5,7 +5,6 @@ using System.Linq;
 using UniRx;
 using Extensions;
 using Modules.Devkit.EventHook;
-using Modules.TextData.Editor;
 
 #if UNITY_2021_2_OR_NEWER
 using UnityEditor.SceneManagement;
@@ -39,9 +38,7 @@ namespace Modules.Devkit.CleanComponent
 
             if (!CheckExecute(gameObjects)) { return; }
 
-            TextDataLoader.Reload();
-
-            foreach (var gameObject in gameObjects)
+			foreach (var gameObject in gameObjects)
             {
                 ModifyComponent(gameObject);
             }
