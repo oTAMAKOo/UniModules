@@ -20,7 +20,7 @@ namespace Modules.Devkit.Diagnosis.LogTracker
     {
         //----- params -----
 
-        private const int DefaultReportLogNum = 30;
+        private const int DefaultReportLogNum = 50;
 
         //----- field -----
 
