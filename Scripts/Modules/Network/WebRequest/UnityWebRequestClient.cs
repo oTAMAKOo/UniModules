@@ -234,7 +234,7 @@ namespace Modules.Net.WebRequest
                     {
                         if (value != null && value.Any())
                         {
-                            var options = StandardResolverAllowPrivate.Options.WithResolver(UnityContractResolver.Instance);
+                            var options = StandardResolverAllowPrivate.Options.WithResolver(UnityCustomResolver.Instance);
 
                             if (Compress)
                             {
@@ -335,7 +335,7 @@ namespace Modules.Net.WebRequest
 
                 case DataFormat.MessagePack:
                     {
-                        var options = StandardResolverAllowPrivate.Options.WithResolver(UnityContractResolver.Instance);
+                        var options = StandardResolverAllowPrivate.Options.WithResolver(UnityCustomResolver.Instance);
 
                         if (Compress)
                         {
@@ -416,7 +416,7 @@ namespace Modules.Net.WebRequest
 
                 case DataFormat.MessagePack:
                     {
-                        var options = StandardResolverAllowPrivate.Options.WithResolver(UnityContractResolver.Instance);
+                        var options = StandardResolverAllowPrivate.Options.WithResolver(UnityCustomResolver.Instance);
 
                         if (Compress)
                         {

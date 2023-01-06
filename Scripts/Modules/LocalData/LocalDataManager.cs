@@ -98,7 +98,7 @@ namespace Modules.LocalData
 
                     var options = StandardResolverAllowPrivate.Options
                         .WithCompression(MessagePackCompression.Lz4BlockArray)
-                        .WithResolver(UnityContractResolver.Instance);
+                        .WithResolver(UnityCustomResolver.Instance);
 
                     data = MessagePackSerializer.Deserialize<T>(bytes, options);
                 }
@@ -133,7 +133,7 @@ namespace Modules.LocalData
             {
                 var options = StandardResolverAllowPrivate.Options
                     .WithCompression(MessagePackCompression.Lz4BlockArray)
-                    .WithResolver(UnityContractResolver.Instance);
+                    .WithResolver(UnityCustomResolver.Instance);
 
                 var bytes = MessagePackSerializer.Serialize(data, options);
                 

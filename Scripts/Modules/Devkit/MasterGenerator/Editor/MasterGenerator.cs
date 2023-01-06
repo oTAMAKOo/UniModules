@@ -251,7 +251,7 @@ namespace Modules.Master
 
 		private static async UniTask<string> GenerateMasterFile(string filePath, object master, AesCryptoKey dataCryptoKey, bool lz4Compression)
         {
-            var options = StandardResolverAllowPrivate.Options.WithResolver(UnityContractResolver.Instance);
+            var options = StandardResolverAllowPrivate.Options.WithResolver(UnityCustomResolver.Instance);
 
             if (lz4Compression)
             {

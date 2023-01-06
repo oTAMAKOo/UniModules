@@ -73,7 +73,7 @@ namespace Modules.Net.WebRequest
 
                     case DataFormat.MessagePack:
                         {
-                            var options = StandardResolverAllowPrivate.Options.WithResolver(UnityContractResolver.Instance);
+                            var options = StandardResolverAllowPrivate.Options.WithResolver(UnityCustomResolver.Instance);
 
                             if (Compress)
                             {

@@ -1,5 +1,4 @@
-﻿﻿
-using System;
+﻿
 using MessagePack;
 using MessagePack.Formatters;
 using MessagePack.Resolvers;
@@ -10,11 +9,11 @@ namespace Modules.MessagePack
     /// <summary>
     /// Editor時はDynamicResolver、実行時はGeneratedResolverの振る舞いをするResolver.
     /// </summary>
-    public sealed class UnityContractResolver : IFormatterResolver
+    public sealed class UnityCustomResolver : IFormatterResolver
     {
-        public static IFormatterResolver Instance = new UnityContractResolver();
+        public static IFormatterResolver Instance = new UnityCustomResolver();
 
-        UnityContractResolver() { }
+		UnityCustomResolver() { }
 
         public IMessagePackFormatter<T> GetFormatter<T>()
         {
@@ -51,33 +50,24 @@ namespace Modules.MessagePack
             }
         }
 
-        #if !UNITY_EDITOR
-
         private static IFormatterResolver[] Resolvers()
         {
             return new IFormatterResolver[]
             {
                 GeneratedResolver.Instance,
-
-                // DateTime.
+				
                 DateTimeResolver.Instance,
-
-                // Builtin.
-                BuiltinResolver.Instance,
 
                 #if !NETSTANDARD1_4
 
-                // Vector2, Vector3, Quaternion, Color, Bounds, Rect.
                 UnityResolver.Instance,
 
                 #endif
 
                 // Primitive.
-                PrimitiveObjectResolver.Instance,
+                StandardResolver.Instance,
             };
         }
-
-        #endif
 
         //=============================================================================
         // ※ Dynamic***系は実機(iOS/Android)で使えないのでEditor時のみ使用する.
@@ -87,33 +77,15 @@ namespace Modules.MessagePack
         {
             return new IFormatterResolver[]
             {
-                // DateTime.
                 DateTimeResolver.Instance,
-
-                // Builtin.
-                BuiltinResolver.Instance,
 
                 #if !NETSTANDARD1_4
 
-                // Vector2, Vector3, Quaternion, Color, Bounds, Rect.
                 UnityResolver.Instance,
 
                 #endif
-
-                // Enum.
-                DynamicEnumResolver.Instance,
-
-                // Array, Tuple, Collection.
-                DynamicGenericResolver.Instance,
-
-                // Union(Interface).
-                DynamicUnionResolver.Instance,
                 
-                // Object (Map Mode).
-                DynamicContractlessObjectResolver.Instance,
-                
-                // Primitive.
-                PrimitiveObjectResolver.Instance,
+                ContractlessStandardResolver.Instance,
             };
         }
     }
