@@ -217,7 +217,7 @@ namespace Modules.Master
 			// 読み込み.
 			try
 			{
-				time = LoadMasterFile(filePath, cryptoKey);
+				time = await LoadMasterFile(filePath, cryptoKey);
 
 				success = true;
 			}
@@ -240,21 +240,21 @@ namespace Modules.Master
 			return Tuple.Create(success, time);
         }
 
-        private double LoadMasterFile(string filePath, AesCryptoKey cryptoKey)
+        private async UniTask<double> LoadMasterFile(string filePath, AesCryptoKey cryptoKey)
         {
             var masterManager = MasterManager.Instance;
 
             var sw = System.Diagnostics.Stopwatch.StartNew();
 
             // ファイル読み込み.
-            var bytes = FileLoad(filePath);
-
+            var bytes = await FileLoad(filePath);
+            
             // 復号化.
             if (cryptoKey != null)
             {
                 bytes = Decrypt(bytes, cryptoKey);
             }
-            
+
             // デシリアライズ.
             var records = Deserialize(bytes, masterManager.GetSerializerOptions());
 
@@ -266,7 +266,7 @@ namespace Modules.Master
             return sw.Elapsed.TotalMilliseconds;
         }
 
-        protected virtual byte[] FileLoad(string filePath)
+        protected virtual async UniTask<byte[]> FileLoad(string filePath)
         {
             if (!File.Exists(filePath))
             {
@@ -279,7 +279,7 @@ namespace Modules.Master
             {
                 using (var memoryStream = new MemoryStream())
                 {
-                    fileStream.CopyTo(memoryStream);
+                    await fileStream.CopyToAsync(memoryStream);
 
                     bytes = memoryStream.ToArray();
                 }
@@ -297,7 +297,14 @@ namespace Modules.Master
         {
             if (bytes.Length == 0){ return new byte[0]; }
 
-            return bytes.Decrypt(cryptoKey);
+            byte[] result;
+
+            lock (cryptoKey)
+            {
+                result = bytes.Decrypt(cryptoKey);
+            }
+
+            return result;
         }
 
         protected virtual TMasterRecord[] Deserialize(byte[] bytes, MessagePackSerializerOptions options)
