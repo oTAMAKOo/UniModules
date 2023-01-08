@@ -1,4 +1,4 @@
-﻿﻿
+﻿
 using UnityEngine;
 using System;
 using System.Collections.Generic;
@@ -493,7 +493,7 @@ namespace Modules.Master
         {
             if (serializerOptions != null) { return serializerOptions; }
 
-            var options = StandardResolverAllowPrivate.Options.WithResolver(UnityContractResolver.Instance);
+            var options = StandardResolverAllowPrivate.Options.WithResolver(UnityCustomResolver.Instance);
 
             if (Lz4Compression)
             {
