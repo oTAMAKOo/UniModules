@@ -63,8 +63,7 @@ namespace Modules.MessagePack
                 UnityResolver.Instance,
 
                 #endif
-
-                // Primitive.
+				
                 StandardResolver.Instance,
             };
         }
