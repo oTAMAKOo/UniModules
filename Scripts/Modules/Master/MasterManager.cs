@@ -256,28 +256,21 @@ namespace Modules.Master
 
 			try
 			{
-				var chunck = masters.Chunk(16);
-
-				foreach (var items in chunck)
+				foreach (var master in masters)
 				{
-					tasks.Clear();
+					var masterType = master.GetType();
+					var masterName = masterType.Name;
 
-					foreach (var master in items)
-					{
-						var masterType = master.GetType();
-						var masterName = masterType.Name;
-
-						var masterFileName = masterFileNames.GetValueOrDefault(masterType);
+					var masterFileName = masterFileNames.GetValueOrDefault(masterType);
                 
-						Action<bool, double> onLoadFinishCallback = (state, time) => OnLoadFinish(masterType, masterName, masterFileName, state, time);
+					Action<bool, double> onLoadFinishCallback = (state, time) => OnLoadFinish(masterType, masterName, masterFileName, state, time);
 
-						var task = UniTask.Defer(async () => { return await MasterLoad(master, onLoadFinishCallback); });
+					var task = UniTask.Defer(async () => { return await MasterLoad(master, onLoadFinishCallback); });
 
-						tasks.Add(task);
-					}
-
-					await UniTask.WhenAll(tasks);
+					tasks.Add(task);
 				}
+
+				await UniTask.WhenAll(tasks);
 			}
 			catch (Exception e)
 			{

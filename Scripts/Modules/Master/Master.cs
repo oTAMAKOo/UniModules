@@ -240,31 +240,39 @@ namespace Modules.Master
 			return Tuple.Create(success, time);
         }
 
-        private async UniTask<double> LoadMasterFile(string filePath, AesCryptoKey cryptoKey)
-        {
-            var masterManager = MasterManager.Instance;
+		private async UniTask<double> LoadMasterFile(string filePath, AesCryptoKey cryptoKey)
+		{
+			var masterManager = MasterManager.Instance;
 
-            var sw = System.Diagnostics.Stopwatch.StartNew();
+			var sw = System.Diagnostics.Stopwatch.StartNew();
 
-            // ファイル読み込み.
-            var bytes = await FileLoad(filePath);
+			await UniTask.SwitchToThreadPool();
             
-            // 復号化.
-            if (cryptoKey != null)
-            {
-                bytes = Decrypt(bytes, cryptoKey);
-            }
+			// ファイル読み込み.
+			var bytes = await FileLoad(filePath);
+            
+			await UniTask.SwitchToMainThread();
 
-            // デシリアライズ.
-            var records = Deserialize(bytes, masterManager.GetSerializerOptions());
+			// 復号化.
+			if (cryptoKey != null)
+			{
+				bytes = Decrypt(bytes, cryptoKey);
+			}
 
-            // レコード登録.
-            SetRecords(records);
+			await UniTask.SwitchToThreadPool();
 
-            sw.Stop();
+			// デシリアライズ.
+			var records = Deserialize(bytes, masterManager.GetSerializerOptions());
 
-            return sw.Elapsed.TotalMilliseconds;
-        }
+			// レコード登録.
+			SetRecords(records);
+
+			await UniTask.SwitchToMainThread();
+
+			sw.Stop();
+
+			return sw.Elapsed.TotalMilliseconds;
+		}
 
         protected virtual async UniTask<byte[]> FileLoad(string filePath)
         {
