@@ -76,17 +76,27 @@ namespace Modules.MessagePack
         {
             return new IFormatterResolver[]
             {
-                ContractlessStandardResolver.Instance,
-
                 DateTimeResolver.Instance,
+
+                BuiltinResolver.Instance,
 
                 #if !NETSTANDARD1_4
 
                 UnityResolver.Instance,
 
                 #endif
+				
+                AttributeFormatterResolver.Instance,
 
-                StandardResolver.Instance,
+                DynamicEnumResolver.Instance,
+
+                DynamicGenericResolver.Instance,
+
+                DynamicUnionResolver.Instance,
+                    
+                DynamicContractlessObjectResolver.Instance,
+
+                PrimitiveObjectResolver.Instance,
             };
         }
     }
