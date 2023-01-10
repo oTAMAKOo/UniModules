@@ -63,7 +63,7 @@ namespace Modules.MessagePack
                 UnityResolver.Instance,
 
                 #endif
-				
+                
                 StandardResolver.Instance,
             };
         }
@@ -76,6 +76,8 @@ namespace Modules.MessagePack
         {
             return new IFormatterResolver[]
             {
+                ContractlessStandardResolver.Instance,
+
                 DateTimeResolver.Instance,
 
                 #if !NETSTANDARD1_4
@@ -83,8 +85,8 @@ namespace Modules.MessagePack
                 UnityResolver.Instance,
 
                 #endif
-                
-                ContractlessStandardResolver.Instance,
+
+                StandardResolver.Instance,
             };
         }
     }
