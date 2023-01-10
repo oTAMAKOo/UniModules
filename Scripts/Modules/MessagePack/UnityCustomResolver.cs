@@ -74,29 +74,31 @@ namespace Modules.MessagePack
         //=============================================================================
         private static IFormatterResolver[] EditorResolvers()
         {
-            return new IFormatterResolver[]
+			return new IFormatterResolver[]
             {
-                DateTimeResolver.Instance,
+				DateTimeResolver.Instance,
 
-                BuiltinResolver.Instance,
+				BuiltinResolver.Instance,
 
-                #if !NETSTANDARD1_4
+				#if !NETSTANDARD1_4
 
-                UnityResolver.Instance,
+				UnityResolver.Instance,
 
-                #endif
-				
-                AttributeFormatterResolver.Instance,
+				#endif
 
-                DynamicEnumResolver.Instance,
+				AttributeFormatterResolver.Instance,
 
-                DynamicGenericResolver.Instance,
+				DynamicEnumResolver.Instance,
 
-                DynamicUnionResolver.Instance,
-                    
-                DynamicContractlessObjectResolver.Instance,
+				DynamicGenericResolver.Instance,
 
-                PrimitiveObjectResolver.Instance,
+				DynamicUnionResolver.Instance,
+			
+				DynamicObjectResolver.Instance,
+
+				DynamicContractlessObjectResolver.Instance,
+
+				PrimitiveObjectResolver.Instance,
             };
         }
     }
