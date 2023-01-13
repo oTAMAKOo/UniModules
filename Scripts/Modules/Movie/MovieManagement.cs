@@ -7,6 +7,7 @@ using System.IO;
 using System.Collections.Generic;
 using UniRx;
 using CriWare.CriMana;
+using Cysharp.Threading.Tasks;
 using Extensions;
 using Modules.CriWare;
 
@@ -63,11 +64,11 @@ namespace Modules.Movie
 		{
 			var movieController = UnityUtility.GetOrAddComponent<CriMovieForUI>(targetGraphic.gameObject);
 
+            UnityUtility.SetActive(movieController, true);
+
 			movieController.target = targetGraphic;
 			movieController.enabled = true;
 			movieController.playOnStart = false;
-
-			UnityUtility.SetActive(movieController.gameObject, true);
 
 			if (!movieController.Initialized)
 			{
@@ -117,50 +118,81 @@ namespace Modules.Movie
 		{
 			var element = CreateElement(moviePath, targetGraphic, shaderOverrideCallBack);
 
-			if (element != null)
-			{
-				element.Player.Prepare();
-			}
+			PrepareElement(element).Forget();
 
 			return element;
+		}
+
+		private async UniTask PrepareElement(MovieElement element)
+		{
+			if (element == null){ return; }
+
+			if (element.Player == null){ return; }
+
+			while (element.Player.status == Player.Status.StopProcessing)
+			{
+				if (!UnityUtility.IsActiveInHierarchy(element.MovieController))
+				{
+					element.MovieController.PlayerManualUpdate();
+				}
+
+				await UniTask.NextFrame();
+			}
+
+			if (element.Player.status != Player.Status.Stop && element.Player.status != Player.Status.PlayEnd)
+			{
+				Debug.LogWarning($"Movie prepare failed.\nCurrent status is {element.Player.status}.");
+			}
+
+			element.Player.Prepare();
 		}
 
 		#endregion
 
         #region Play
 
-        /// <summary> 動画再生. </summary>
-        public MovieElement Play(Movies.Mana type, Graphic targetGraphic, Player.ShaderDispatchCallback shaderOverrideCallBack = null)
+        public MovieElement Play(Movies.Mana type, Graphic targetGraphic, bool loop = false, Player.ShaderDispatchCallback shaderOverrideCallBack = null)
         {
             var info = Movies.GetManaInfo(type);
 
-            return info != null ? Play(info, targetGraphic, shaderOverrideCallBack) : null;
+            return info != null ? Play(info, targetGraphic, loop, shaderOverrideCallBack) : null;
         }
 
-		/// <summary> 動画再生. </summary>
-        public MovieElement Play(ManaInfo movieInfo, Graphic targetGraphic, Player.ShaderDispatchCallback shaderOverrideCallBack = null)
+        public MovieElement Play(ManaInfo movieInfo, Graphic targetGraphic, bool loop = false, Player.ShaderDispatchCallback shaderOverrideCallBack = null)
         {
             if (movieInfo == null){ return null; }
 
             var moviePath = Path.ChangeExtension(movieInfo.UsmPath, CriAssetDefinition.UsmExtension);
 
-            return Play(moviePath, targetGraphic, shaderOverrideCallBack);
+            return Play(moviePath, targetGraphic, loop, shaderOverrideCallBack);
         }
 
-        /// <summary> 動画再生. </summary>
-        public MovieElement Play(string moviePath, Graphic targetGraphic, Player.ShaderDispatchCallback shaderOverrideCallBack = null)
+        public MovieElement Play(string moviePath, Graphic targetGraphic, bool loop = false, Player.ShaderDispatchCallback shaderOverrideCallBack = null)
         {
             var element = CreateElement(moviePath, targetGraphic, shaderOverrideCallBack);
 
-            if (element != null)
-            {
-                element.Player.Start();
-            }
+			Play(element, loop);
 
             return element;
         }
+		
+		public void Play(MovieElement element, bool loop = false)
+		{
+			if (element == null || element.Player == null) { return; }
+
+            element.Player.Loop(loop);
+
+			element.Player.Start();
+		}
 
 		#endregion
+
+		public void Pause(MovieElement element, bool pause)
+		{
+			if (element == null || element.Player == null) { return; }
+
+			element.Player.Pause(pause);
+		}
 
         public void Stop(MovieElement element)
         {
@@ -179,15 +211,18 @@ namespace Modules.Movie
 
                 movieElement.Update();
 
-                if(movieElement.Status.HasValue && movieElement.Status.Value == Player.Status.PlayEnd)
-                {
-                    releaseElements.Add(movieElement);                    
-                }
+				if (!movieElement.IsLoop)
+				{
+	                if(movieElement.Status.HasValue && movieElement.Status.Value == Player.Status.PlayEnd)
+	                {
+	                    releaseElements.Add(movieElement);
+	                }
+				}
             }
 
             for (var i = 0; i < releaseElements.Count; i++)
             {
-                var releaseElement = releaseElements[i];                
+                var releaseElement = releaseElements[i];
 
                 if (releaseElement.Player != null)
                 {

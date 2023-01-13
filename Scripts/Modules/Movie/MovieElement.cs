@@ -30,8 +30,14 @@ namespace Modules.Movie
         /// <summary> 動画状態. </summary>
         public Player.Status? Status { get; private set; }
 
-        /// <summary> 終了済みか. </summary>
+		/// <summary> 再生準備が完了しているか. </summary>
+		public bool IsReady { get { return Status == Player.Status.Ready; } }
+
+		/// <summary> 終了済みか. </summary>
         public bool IsFinished { get; private set; }
+
+		/// <summary> ループ再生. </summary>
+		public bool IsLoop { get; private set; }
 
         /// <summary>
         /// 再生時間(秒).
@@ -45,7 +51,7 @@ namespace Modules.Movie
         /// </summary>
         public float TotalTime { get; private set; }
 
-        //----- method -----
+		//----- method -----
 
         public MovieElement(Player moviePlayer, CriManaMovieControllerForUI movieController, string moviePath)
         {
@@ -54,6 +60,27 @@ namespace Modules.Movie
             Player = moviePlayer;
             Status = moviePlayer.status;
 			IsFinished = false;
+        }
+
+		public void Play(bool loop = false)
+		{
+			var movieManagement = MovieManagement.Instance;
+
+			movieManagement.Play(this, loop);
+		}
+
+		public void Pause(bool pause)
+		{
+            var movieManagement = MovieManagement.Instance;
+
+            movieManagement.Pause(this, pause);
+		}
+
+		public void Stop()
+		{
+            var movieManagement = MovieManagement.Instance;
+
+            movieManagement.Stop(this);
         }
 
         public void Update()
@@ -67,20 +94,27 @@ namespace Modules.Movie
             PlayTime = GetPlayTime();
             TotalTime = GetTotalTime();
 
-            if (prevStatus != Status && Status == Player.Status.PlayEnd)
-            {
-                UnityUtility.SetActive(MovieController.gameObject, false);
+			if (prevStatus != Status && Status == Player.Status.PlayEnd)
+			{
+				if (IsLoop)
+				{
+					Player.Start();
+				}
+				else
+				{
+					UnityUtility.SetActive(MovieController.gameObject, false);
 
-                UnityUtility.DeleteComponent(MovieController);
+					UnityUtility.DeleteComponent(MovieController);
 
-                IsFinished = true;
+					IsFinished = true;
 
-                if (onFinish != null)
-                {
-                    onFinish.OnNext(Unit.Default);
-                }
-            }
-        }
+					if (onFinish != null)
+					{
+						onFinish.OnNext(Unit.Default);
+					}
+				}
+			}
+		}
 
         private float GetPlayTime()
         {
