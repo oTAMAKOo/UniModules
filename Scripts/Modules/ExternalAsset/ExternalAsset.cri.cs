@@ -27,7 +27,7 @@ namespace Modules.ExternalAssets
         //----- params -----
 
 		/// <summary> CRIデフォルトインストーラ数.  </summary>
-		private const uint CriDefaultInstallerCount = 8;
+		private const uint CriDefaultInstallerCount = 4;
 
         //----- field -----
 
