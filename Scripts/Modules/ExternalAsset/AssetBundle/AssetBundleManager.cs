@@ -1,4 +1,4 @@
-﻿﻿
+﻿
 using UnityEngine;
 using UnityEngine.Networking;
 using System;
@@ -13,6 +13,7 @@ using UniRx;
 using Extensions;
 using Modules.ExternalAssets;
 using Modules.Net.WebRequest;
+using Modules.Performance;
 
 namespace Modules.AssetBundles
 {
@@ -31,6 +32,9 @@ namespace Modules.AssetBundles
         }
 
         public const string PackageExtension = ".package";
+
+        // 同時ダウンロード処理実行数.
+        private const int MaxDownloadQueueingCount = 25;
 
 		// 非同期で読み込むファイルサイズ (0.1MB).
 		private const float AsyncLoadFileSize = 1024.0f * 1024.0f * 0.1f;
@@ -55,14 +59,10 @@ namespace Modules.AssetBundles
         // 同時ダウンロード数.
         private uint maxDownloadCount = 0;
 
-		// 同期読み込みファイルサイズ.
-		private float syncLoadFileSize = 0f;
+        // フレーム処理数制限.
 
-		// 同期読み込みファイル数.
-		private float syncLoadFileCount = 0f;
-
-		// 同期読み込みフレームカウント.
-		private int syncLoadFrameCount = 0;
+        private FunctionFrameLimiter syncLoadFileCountLimiter = null;
+        private FunctionFrameLimiter syncLoadFileSizeLimiter = null;
 
         // アセット管理.
         private AssetInfoManifest manifest = null;
@@ -73,6 +73,9 @@ namespace Modules.AssetBundles
 
         // URL作成用.
         private StringBuilder urlBuilder = null;
+
+        // ダウンロードキュー数.
+        private uint downloadQueueingCount = 0;
 
         // ダウンロード中アセットバンドル.
         private HashSet<string> downloadList = null;
@@ -133,6 +136,9 @@ namespace Modules.AssetBundles
             assetBundleRefCount = new Dictionary<string, int>();
             assetInfosByAssetBundleName = new Dictionary<string, List<AssetInfo>>();
             dependenciesTable = new Dictionary<string, string[]>();
+
+            syncLoadFileCountLimiter = new FunctionFrameLimiter(FrameSyncLoadFileNum);
+            syncLoadFileSizeLimiter = new FunctionFrameLimiter((ulong)FrameSyncLoadFileSize);
 
             AddManifestAssetInfo();
 
@@ -310,17 +316,42 @@ namespace Modules.AssetBundles
 
         private async UniTask UpdateAssetBundleInternal(string installPath, AssetInfo assetInfo, IProgress<float> progress, CancellationToken cancelToken)
         {
-			var assetBundleName = assetInfo.AssetBundle.AssetBundleName;
-			
             // ネットワークの接続待ち.
 
 			await ReadyForDownload();
 
+            // ダウンロードキューが空くまで待つ.
+            while (true)
+            {
+                if (downloadQueueingCount <= MaxDownloadQueueingCount){ break; }
+
+                if (cancelToken.IsCancellationRequested){ break; }
+
+                await UniTask.NextFrame(cancelToken);
+            }
+
+            if (cancelToken.IsCancellationRequested){ return; }
+
+            downloadQueueingCount++;
+
 			// アセットバンドルと依存アセットバンドルをまとめてダウンロード.
 
-			var allBundles = new string[] { assetBundleName }
-				.Concat(GetAllDependencies(assetBundleName))
-				.Distinct();
+            var assetBundleName = assetInfo.AssetBundle.AssetBundleName;
+            
+            var allBundles = new HashSet<string>();
+
+            allBundles.Add(assetBundleName);
+
+            var allDependencies = GetAllDependencies(assetBundleName);
+
+            foreach (var item in allDependencies)
+            {
+                if (allBundles.Contains(item)){ continue; }
+
+                allBundles.Add(item);
+            }
+
+            // ダウンロード.
 
             var loadAllBundles = new Dictionary<string, IObservable<Unit>>();
 
@@ -357,45 +388,50 @@ namespace Modules.AssetBundles
             foreach (var item in loadAllBundles)
             {
                 // ダウンロードキューが空くまで待つ.
-                while (maxDownloadCount <= downloadList.Count)
+                while (true)
                 {
+                    if (downloadList.Count <= maxDownloadCount){ break; }
+
 					if (cancelToken.IsCancellationRequested){ break; }
 
                     await UniTask.NextFrame(cancelToken);
                 }
 
-				if (cancelToken.IsCancellationRequested){ return; }
-                
-                // ダウンロード中でなかったらリストに追加.
-                if (!downloadList.Contains(item.Key))
+				if (!cancelToken.IsCancellationRequested)
                 {
-                    downloadList.Add(item.Key);
-                }
+                    // ダウンロード中でなかったらリストに追加.
+                    if (!downloadList.Contains(item.Key))
+                    {
+                        downloadList.Add(item.Key);
+                    }
 
-				// ダウンロード実行.
-				try
-				{
-                    await item.Value;
-                }
-				catch (Exception e)
-				{
-                    Debug.LogErrorFormat("Download task error : {0}\n{1}\n", item.Key, e);
+				    // ダウンロード実行.
+				    try
+				    {
+                        await item.Value;
+                    }
+				    catch (Exception e)
+				    {
+                        Debug.LogErrorFormat("Download task error : {0}\n{1}\n", item.Key, e);
 
-                    OnError(e);
-				}
+                        OnError(e);
+				    }
 
-                // ダウンロード中リストから除外.
-                if (downloadList.Contains(item.Key))
-                {
-                    downloadList.Remove(item.Key);
-                }
+                    // ダウンロード中リストから除外.
+                    if (downloadList.Contains(item.Key))
+                    {
+                        downloadList.Remove(item.Key);
+                    }
 
-                // ダウンロード待ちリストから除外.
-                if (downloadQueueing.ContainsKey(item.Key))
-                {
-                    downloadQueueing.Remove(item.Key);
+                    // ダウンロード待ちリストから除外.
+                    if (downloadQueueing.ContainsKey(item.Key))
+                    {
+                        downloadQueueing.Remove(item.Key);
+                    }
                 }
             }
+
+            downloadQueueingCount--;
         }
 
         private IObservable<Unit> DownloadAssetBundle(string installPath,AssetInfo assetInfo, IProgress<float> progress = null)
@@ -727,30 +763,15 @@ namespace Modules.AssetBundles
 					{
 						// 同じフレームに同期読み込みできる最大数/最大ファイルサイズを超えた場合次のフレームまで待機.
 
-						if (syncLoadFrameCount == Time.frameCount)
-						{
-							if (FrameSyncLoadFileSize < syncLoadFileSize || FrameSyncLoadFileNum < syncLoadFileCount)
-							{
-								syncLoadFileSize = 0;
-								syncLoadFileCount = 0;
+                        await syncLoadFileCountLimiter.Wait(cancelToken: cancelToken);
 
-								if (cancelToken.IsCancellationRequested){ return null; }
+                        await syncLoadFileSizeLimiter.Wait((ulong)bytes.Length, cancelToken: cancelToken);
 
-								await UniTask.NextFrame(cancelToken);
-							}
-						}
-						else
-						{
-							syncLoadFrameCount = Time.frameCount;
-							syncLoadFileSize = 0;
-							syncLoadFileCount = 0;
-						}
+                        if (cancelToken.IsCancellationRequested){ return null; }
 
-						fileStream.Read(bytes, 0, bytes.Length);
-
-						syncLoadFileSize += bytes.Length;
-						syncLoadFileCount++;
-					}
+                        // 同期処理で読み込む.
+                        fileStream.Read(bytes, 0, bytes.Length);
+                    }
                 }
 				
 				if (bytes != null)

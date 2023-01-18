@@ -9,6 +9,7 @@ using Cysharp.Threading.Tasks;
 using UniRx;
 using Extensions;
 using Modules.Devkit.Console;
+using Modules.Performance;
 
 namespace Modules.ExternalAssets
 {
@@ -18,6 +19,9 @@ namespace Modules.ExternalAssets
 
         public static readonly string ConsoleEventName = "ExternalAsset";
         public static readonly Color ConsoleEventColor = new Color(0.8f, 1f, 0.1f);
+
+        /// <summary> 1フレームで処理する<see cref="UpdateAsset"/>の最大呼び出し回数 </summary>
+        private const int MaxUpdateAssetFrameCallLimit = 50;
 
 		//----- field -----
 
@@ -38,6 +42,9 @@ namespace Modules.ExternalAssets
 
         /// <summary> 読み込み中アセット群. </summary>
         private HashSet<AssetInfo> loadingAssets = new HashSet<AssetInfo>();
+
+        // 1フレーム処理数制限.
+        private FunctionFrameLimiter updateAssetCallLimiter = null;
 
         // 中断用.
         private CancellationTokenSource cancelSource = null;
@@ -73,7 +80,7 @@ namespace Modules.ExternalAssets
         /// <summary> ログ出力が有効. </summary>
         public bool LogEnable { get; set; }
 
-		//----- method -----
+        //----- method -----
 
         private ExternalAsset()
         {
@@ -87,22 +94,28 @@ namespace Modules.ExternalAssets
             this.externalAssetDirectory = externalAssetDirectory;
             this.shareAssetDirectory = shareAssetDirectory;
 
-			// 中断用.
-			cancelSource = new CancellationTokenSource();
-
             #if UNITY_EDITOR
 
             simulateMode = Prefs.isSimulate;
 
             #endif
 
+            // 中断用.
+            cancelSource = new CancellationTokenSource();
+
+            // 処理数制限.
+            updateAssetCallLimiter = new FunctionFrameLimiter(MaxUpdateAssetFrameCallLimit);
+
+            // バージョンチェック初期化.
+            InitializeVersionCheck();
+
             // AssetBundleManager初期化.
 
             InitializeAssetBundle();
 
-			// FileAsset初期化.
+            // FileAsset初期化.
 
-			InitializeFileAsset();
+            InitializeFileAsset();
 
 			// CRI初期化.
 
@@ -118,7 +131,7 @@ namespace Modules.ExternalAssets
             initialized = true;
         }
 
-		/// <summary> ローカルモード設定. </summary>
+        /// <summary> ローカルモード設定. </summary>
         public void SetLocalMode(bool localMode)
         {
             LocalMode = localMode;
@@ -298,9 +311,7 @@ namespace Modules.ExternalAssets
 			return true;
 		}
 
-        /// <summary>
-        /// アセットを更新.
-        /// </summary>
+        /// <summary> アセットを更新. </summary>
         public static async UniTask UpdateAsset(string resourcePath, IProgress<float> progress = null)
         {
             await instance.UpdateAssetInternal(resourcePath, progress);
@@ -309,6 +320,11 @@ namespace Modules.ExternalAssets
         private async UniTask UpdateAssetInternal(string resourcePath, IProgress<float> progress = null)
         {
             if (string.IsNullOrEmpty(resourcePath)) { return; }
+
+            // 1フレームで更新制御する数を制限.
+            await updateAssetCallLimiter.Wait();
+            
+            // アセット情報.
 
             var assetInfo = GetAssetInfo(resourcePath);
 
@@ -362,7 +378,7 @@ namespace Modules.ExternalAssets
 					}
 					
 					// バージョン更新.
-					UpdateVersion(resourcePath);
+					await UpdateVersion(resourcePath);
 				}
 				catch (Exception e)
 				{

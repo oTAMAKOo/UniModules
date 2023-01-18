@@ -55,7 +55,10 @@ namespace Modules.ExternalAssets
 		private async UniTask UpdateAssetBundle(CancellationToken cancelToken, AssetInfo assetInfo, IProgress<float> progress = null)
 		{
 			// ローカルバージョンが最新の場合は更新しない.
-			if (CheckAssetBundleVersion(assetInfo)) { return; }
+
+			var requireUpdate = await IsRequireUpdate(assetInfo);
+
+			if (!requireUpdate) { return; }
 
 			var assetBundleManager = instance.assetBundleManager;
 
@@ -116,8 +119,10 @@ namespace Modules.ExternalAssets
 
             if (!LocalMode && !simulateMode)
             {
-                // ローカルバージョンが古い場合はダウンロード.
-                if (!CheckAssetBundleVersion(assetInfo))
+				var requireUpdate = await IsRequireUpdate(assetInfo);
+
+				// ローカルバージョンが古い場合はダウンロード.
+                if (requireUpdate)
                 {
 					sw = System.Diagnostics.Stopwatch.StartNew();
 

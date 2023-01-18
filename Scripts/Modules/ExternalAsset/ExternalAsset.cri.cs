@@ -27,7 +27,7 @@ namespace Modules.ExternalAssets
         //----- params -----
 
 		/// <summary> CRIデフォルトインストーラ数.  </summary>
-		private const uint CriDefaultInstallerCount = 4;
+		private const uint CriDefaultInstallerCount = 8;
 
         //----- field -----
 
@@ -57,7 +57,10 @@ namespace Modules.ExternalAssets
 		private async UniTask UpdateCriAsset(CancellationToken cancelToken, AssetInfo assetInfo, IProgress<float> progress = null)
         {
             // ローカルバージョンが最新の場合は更新しない.
-            if (CheckAssetVersion(assetInfo)){ return; }
+
+			var requireUpdate = await IsRequireUpdate(assetInfo);
+
+			if (!requireUpdate) { return; }
 
 			var criAssetManager = instance.criAssetManager;
 
@@ -119,7 +122,9 @@ namespace Modules.ExternalAssets
 
             if (!LocalMode && !simulateMode)
             {
-                if (!CheckAssetVersion(assetInfo))
+				var requireUpdate = await IsRequireUpdate(assetInfo);
+
+                if (requireUpdate)
                 {
                     var assetPath = PathUtility.Combine(externalAssetDirectory, resourcePath);
 
@@ -209,7 +214,9 @@ namespace Modules.ExternalAssets
 
             if (!LocalMode && !simulateMode)
             {
-                if (!CheckAssetVersion(assetInfo))
+				var requireUpdate = await IsRequireUpdate(assetInfo);
+
+                if (requireUpdate)
                 {
                     var assetPath = PathUtility.Combine(externalAssetDirectory, resourcePath);
 

@@ -12,6 +12,7 @@ using MessagePack.Resolvers;
 using Extensions;
 using Modules.Devkit.Console;
 using Modules.MessagePack;
+using Modules.Performance;
 
 namespace Modules.Master
 {
@@ -39,7 +40,7 @@ namespace Modules.Master
 
         private bool lz4Compression = true;
 
-        private Subject<Unit> onUpdateMaster = null;
+		private Subject<Unit> onUpdateMaster = null;
         private Subject<Unit> onError = null;
         private Subject<Unit> onLoadFinish = null;
 
@@ -83,20 +84,16 @@ namespace Modules.Master
 
         public void Register(IMaster master)
         {
-            masters.Add(master);
-
             var type = master.GetType();
 
-            var fileName = GetMasterFileName(type);
-
-            if (masterFileNames.ContainsKey(type))
+            if (!typeof(IMaster).IsAssignableFrom(type))
             {
-                var message = string.Format("File name has already been registered.\n\nClass : {0}\nFile : {1}", type.FullName, fileName);
-
-                throw new Exception(message);
+                throw new Exception(string.Format("Type error require IMaster interface. : {0}", type.FullName));
             }
 
-            masterFileNames.Add(type, fileName);
+            if (masters.Contains(master)){ return; }
+
+            masters.Add(master);
         }
 
         public async UniTask<bool> UpdateMaster(Dictionary<IMaster, string> updateMasters, IProgress<float> progress = null)
@@ -157,43 +154,44 @@ namespace Modules.Master
 
             if (progress != null) { progress.Report(0f); }
 
-            foreach (var element in updateMasters)
+			var frameCallLimiter = new FunctionFrameLimiter(50);
+
+            if (updateMasters.Any())
             {
-                var master = element.Key;
-                var masterType = master.GetType();
-                var masterName = masterType.Name;
-                var masterVersion = element.Value;
-                var masterFileName = masterFileNames.GetValueOrDefault(masterType);
-
-                Action<bool, double> onUpdateFinishCallback = (state, time) =>
+                // 実行.
+                try
                 {
-                    OnUpdateFinish(masterType, masterName, masterFileName, state, time);
-                };
+                    foreach (var element in updateMasters)
+	                {
+	                    var master = element.Key;
+	                    var masterType = master.GetType();
+	                    var masterName = masterType.Name;
+	                    var masterVersion = element.Value;
+	                    var masterFileName = masterFileNames.GetValueOrDefault(masterType);
+					    
+	                    var task = UniTask.Defer(async () =>
+					    {
+	                        var result = await master.Update(masterVersion, frameCallLimiter);
 
-                var task = UniTask.Defer(async () =>
-				{
-					var success = await MasterUpdate(master, masterVersion, onUpdateFinishCallback).ToUniTask();
+						    OnUpdateFinish(masterType, masterName, masterFileName, result.Item1, result.Item2);
 
-                    if (!success)
-                    {
-                        throw new Exception($"Failed master update. {masterName}");
-                    }
-                });
+	                        var success =  result.Item1;
+	                        
+	                        if (!success)
+	                        {
+	                            throw new Exception($"Failed master update. {masterName}");
+	                        }
+	                    });
 
-				tasks.Add(task);
-            }
+					    tasks.Add(task);
+	                }
 
-            // 実行.
-			try
-			{
-                if (tasks.Any())
-                {
-    				await UniTask.WhenAll(tasks);
+                    await UniTask.WhenAll(tasks);
                 }
-			}
-			catch (Exception e)
-			{
-				Debug.LogException(e);
+                catch (Exception e)
+                {
+                    Debug.LogException(e);
+                }
             }
 
             stopwatch.Stop();
@@ -254,27 +252,37 @@ namespace Modules.Master
 
             var stopwatch = System.Diagnostics.Stopwatch.StartNew();
 
-			try
-			{
-				foreach (var master in masters)
-				{
-					var masterType = master.GetType();
-					var masterName = masterType.Name;
+            try
+            {
+                foreach (var master in masters)
+			    {
+				    var masterType = master.GetType();
+				    var masterName = masterType.Name;
 
-					var masterFileName = masterFileNames.GetValueOrDefault(masterType);
-                
-					Action<bool, double> onLoadFinishCallback = (state, time) => OnLoadFinish(masterType, masterName, masterFileName, state, time);
+				    var masterFileName = masterFileNames.GetValueOrDefault(masterType);
+				    
+				    var task = UniTask.Defer(async () =>
+				    {
+                        try
+                        {
+                            var loadResult = await master.Load(CryptoKey, true);
 
-					var task = UniTask.Defer(async () => { return await MasterLoad(master, onLoadFinishCallback); });
+                            OnLoadFinish(masterType, masterName, masterFileName, loadResult.Item1, loadResult.Item2);
+                        }
+                        finally
+                        {
+                            await UniTask.SwitchToMainThread();
+                        }
+                    });
 
-					tasks.Add(task);
-				}
+				    tasks.Add(task);
+			    }
 
-				await UniTask.WhenAll(tasks);
-			}
-			catch (Exception e)
-			{
-				Debug.LogException(e);
+                await UniTask.WhenAll(tasks);
+            }
+            catch (Exception e)
+            {
+                Debug.LogException(e);
             }
             
             stopwatch.Stop();
@@ -309,39 +317,7 @@ namespace Modules.Master
             return result;
         }
 
-        private IObservable<bool> MasterUpdate(IMaster master, string masterVersion, Action<bool, double> onUpdateFinish)
-        {
-            Action<Exception> onErrorRetry = exception =>
-            {
-                var masterType = master.GetType();
-                var masterName = masterType.Name;
-
-                using (new DisableStackTraceScope())
-                {
-                    Debug.LogErrorFormat("{0} update retry.\n\n{1}", masterName, exception);
-                }
-            };
-
-            return master.Update(masterVersion)
-				.ToObservable()
-                .OnErrorRetry((Exception ex)  => onErrorRetry.Invoke(ex), 3, TimeSpan.FromSeconds(5))
-                .Do(x => onUpdateFinish(x.Item1, x.Item2))
-                .Select(x => x.Item1);
-        }
-
-        private async UniTask<bool> MasterLoad(IMaster master, Action<bool, double> onLoadFinish)
-        {
-			var loadResult = await master.Load(CryptoKey, true);
-
-			if (onLoadFinish != null)
-			{
-				onLoadFinish(loadResult.Item1, loadResult.Item2);
-			}
-
-			return loadResult.Item1;
-		}
-
-        public void ClearMasterVersion()
+		public void ClearMasterVersion()
         {
             masters.ForEach(x => x.ClearVersion());
             
@@ -360,48 +336,38 @@ namespace Modules.Master
             var enableVersionCheck = EnableVersionCheck;
 
             #endif
-            
-            async UniTask CheckRequireUpdate(IEnumerable<IMaster> masters)
-            {
-                foreach (var master in masters)
-                {
-                    var masterVersion = versionTable.GetValueOrDefault(master);
 
-                    var versionCheck = await master.CheckVersion(masterVersion);
+			var tasks = new List<UniTask>();
 
-                    #if UNITY_EDITOR
-                    
-                    versionCheck = !enableVersionCheck || versionCheck;
+	        foreach (var item in masters)
+	        {
+                var master = item;
 
-                    #endif
+	            var task = UniTask.RunOnThreadPool(() =>
+	            {
+	                var masterVersion = versionTable.GetValueOrDefault(master);
 
-                    if (!versionCheck)
-                    {
-						lock (list)
-						{
-							list.Add(master);
-						}
-                    }
-                }
-            }
+	                var versionCheck = master.CheckVersion(masterVersion);
 
-            var tasks = new List<UniTask>();
+	                #if UNITY_EDITOR
+	                    
+	                versionCheck = !enableVersionCheck || versionCheck;
 
-            var chunk = masters.Chunk(50);
+	                #endif
 
-            foreach (var items in chunk)
-            {
-                var masters = items;
+	                if (!versionCheck)
+	                {
+	                    lock (list)
+	                    {
+	                        list.Add(master);
+	                    }
+	                }
+	            });
 
-                var task = UniTask.RunOnThreadPool(async () =>
-                {
-                    await CheckRequireUpdate(masters);
-                });
+	            tasks.Add(task);
+	        }
 
-                tasks.Add(task);
-            }
-
-            await UniTask.WhenAll(tasks);
+	        await UniTask.WhenAll(tasks);
 
             return list.ToArray();
         }
@@ -443,9 +409,9 @@ namespace Modules.Master
 
         public string GetMasterFileName(Type type)
         {
-            if (!typeof(IMaster).IsAssignableFrom(type))
+            if (masterFileNames.ContainsKey(type))
             {
-                throw new Exception(string.Format("Type error require IMaster interface. : {0}", type.FullName));
+                return masterFileNames[type];
             }
 
             var fileName = string.Empty;
@@ -474,6 +440,10 @@ namespace Modules.Master
             {
                 fileName = fileName.Encrypt(CryptoKey, true);
             }
+
+            // 登録.
+
+            masterFileNames[type] = fileName;
 
             return fileName;
         }

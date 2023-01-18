@@ -15,7 +15,7 @@ namespace Modules.ExternalAssets
         //----- params -----
 
 		/// <summary> 最大同時ダウンロード数. </summary>
-		private const uint FileAssetDefaultInstallerCount = 4;
+		private const uint FileAssetDefaultInstallerCount = 8;
 
         //----- field -----
 		
@@ -39,7 +39,10 @@ namespace Modules.ExternalAssets
 		private async UniTask UpdateFileAsset(CancellationToken cancelToken, AssetInfo assetInfo, IProgress<float> progress = null)
 		{
 			// ローカルバージョンが最新の場合は更新しない.
-			if (CheckAssetVersion(assetInfo)){ return; }
+			
+			var requireUpdate = await IsRequireUpdate(assetInfo);
+
+			if (!requireUpdate) { return; }
 			
 			await fileAssetManager.UpdateFileAsset(InstallDirectory, assetInfo, cancelToken, progress);
 		}

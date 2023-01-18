@@ -7,21 +7,22 @@ using System.Text;
 using Cysharp.Threading.Tasks;
 using Extensions;
 using MessagePack;
+using Modules.Performance;
 
 namespace Modules.Master
 {
     public interface IMaster
     {
-        UniTask<string> LoadVersion();
+		string LoadVersion();
         
         bool CheckVersion(string masterVersion, string localVersion);
-        UniTask<bool> CheckVersion(string masterVersion);
+        bool CheckVersion(string masterVersion);
         
         void ClearVersion();
 
-        UniTask<Tuple<bool, double>> Update(string masterVersion);
+        UniTask<Tuple<bool, double>> Update(string masterVersion, FunctionFrameLimiter frameCallLimiter);
 		UniTask<Tuple<bool, double>> Load(AesCryptoKey cryptoKey, bool cleanOnError);
-    }
+	}
 
     public abstract class MasterContainer<TMasterRecord>
     {
@@ -41,7 +42,7 @@ namespace Modules.Master
         
         private Dictionary<TKey, TMasterRecord> records = new Dictionary<TKey, TMasterRecord>();
 
-        private static TMaster instance = null;
+		private static TMaster instance = null;
 
         //----- property -----
 
@@ -62,9 +63,9 @@ namespace Modules.Master
             }
         }
 
-        //----- method -----
+		//----- method -----
 
-        public void SetRecords(TMasterRecord[] masterRecords)
+		public void SetRecords(TMasterRecord[] masterRecords)
         {
             records.Clear();
 
@@ -102,7 +103,7 @@ namespace Modules.Master
             return PathUtility.Combine(installDirectory, fileName);
         }
 
-        public async UniTask<string> LoadVersion()
+        public string LoadVersion()
         {
             var filePath = GetFilePath();
 
@@ -114,14 +115,7 @@ namespace Modules.Master
             {
                 if (File.Exists(versionFilePath))
                 {
-                    byte[] bytes = null;
-
-                    using (var fs = new FileStream(versionFilePath, FileMode.Open, FileAccess.Read, FileShare.Read))
-                    {
-                        bytes = new byte[fs.Length];
-      
-                        await fs.ReadAsync(bytes, 0, (int)fs.Length);
-                    }
+                    var bytes = File.ReadAllBytes(versionFilePath);
 
                     version = Encoding.UTF8.GetString(bytes);
                 }
@@ -139,18 +133,25 @@ namespace Modules.Master
             return version;
         }
 
-        private void UpdateVersion(string newVersion)
+        private async UniTask UpdateVersion(string newVersion)
         {
-            var filePath = GetFilePath();
+            // バージョン更新.
 
-            var versionFilePath = Path.ChangeExtension(filePath, VersionFileExtension);
+			var versionFilePath = string.Empty;
 
-            try
+			try
             {
-                var bytes = Encoding.UTF8.GetBytes(newVersion);
+				var filePath = GetFilePath();
 
-                File.WriteAllBytes(versionFilePath, bytes);
-            }
+				versionFilePath = Path.ChangeExtension(filePath, VersionFileExtension);
+
+				var bytes = Encoding.UTF8.GetBytes(newVersion);
+                
+				using (var fs = new FileStream(versionFilePath, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.ReadWrite, 64, true))
+				{
+					await fs.WriteAsync(bytes, 0, bytes.Length);
+				}
+			}
             catch
             {
                 if (File.Exists(versionFilePath))
@@ -175,9 +176,9 @@ namespace Modules.Master
             return result;
         }
 
-        public async UniTask<bool> CheckVersion(string masterVersion)
+        public bool CheckVersion(string masterVersion)
         {
-            var localVersion = await LoadVersion();
+            var localVersion = LoadVersion();
 
             return CheckVersion(masterVersion, localVersion);
         }
@@ -203,28 +204,49 @@ namespace Modules.Master
 
         public async UniTask<Tuple<bool, double>> Load(AesCryptoKey cryptoKey, bool cleanOnError)
         {
-            Refresh();
+            var filePath = string.Empty;
 
-			var success = false;
+            var success = false;
 
             double time = 0;
 
-            var filePath = GetFilePath();
 
-            // 読み込み準備.
-            await PrepareLoad(filePath);
-
-			// 読み込み.
 			try
 			{
-				time = await LoadMasterFile(filePath, cryptoKey);
+                var sw = System.Diagnostics.Stopwatch.StartNew();
 
-				success = true;
+                await UniTask.SwitchToThreadPool();
+
+                filePath = GetFilePath();
+
+                Refresh();
+
+                await UniTask.SwitchToMainThread();
+
+                // 読み込み準備.
+                await PrepareLoad(filePath);
+
+                await UniTask.SwitchToThreadPool();
+
+                // 読み込み.
+                LoadMasterFile(filePath, cryptoKey);
+
+                await UniTask.SwitchToMainThread();
+
+                sw.Stop();
+
+                time = sw.Elapsed.TotalMilliseconds;
+
+                success = true;
 			}
 			catch (Exception e)
 			{
 				Debug.LogErrorFormat("Load master failed.\n\nClass : {0}\nFile : {1}\n\nException : \n{2}", typeof(TMaster).FullName, filePath, e);
 			}
+            finally
+            {
+                await UniTask.SwitchToMainThread();
+            }
 
 			if (!success)
             {
@@ -240,58 +262,48 @@ namespace Modules.Master
 			return Tuple.Create(success, time);
         }
 
-		private async UniTask<double> LoadMasterFile(string filePath, AesCryptoKey cryptoKey)
+		private void LoadMasterFile(string filePath, AesCryptoKey cryptoKey)
 		{
 			var masterManager = MasterManager.Instance;
 
-			var sw = System.Diagnostics.Stopwatch.StartNew();
+            var serializerOptions = masterManager.GetSerializerOptions();
+                
+            // ファイル読み込み.
+            var bytes = FileLoad(filePath);
 
-			await UniTask.SwitchToThreadPool();
-            
-			// ファイル読み込み.
-			var bytes = await FileLoad(filePath);
-            
-			await UniTask.SwitchToMainThread();
+            // 復号化.
+            if (cryptoKey != null)
+            {
+                // AesCryptoKeyはスレッドセーフではないので専用キーを作成.
+                var threadCryptoKey = new AesCryptoKey(cryptoKey.Key, cryptoKey.Iv);
 
-			// 復号化.
-			if (cryptoKey != null)
-			{
-				bytes = Decrypt(bytes, cryptoKey);
-			}
+                bytes = Decrypt(bytes, threadCryptoKey);
+            }
 
-			await UniTask.SwitchToThreadPool();
+            // MessagePackの不具合対応.
+            // ※ コード生成をDeserialize時に実行すると処理が返ってこないのでここで生成.
 
-			// デシリアライズ.
-			var records = Deserialize(bytes, masterManager.GetSerializerOptions());
+            #if UNITY_EDITOR
 
-			// レコード登録.
-			SetRecords(records);
+            serializerOptions.Resolver.GetFormatter<TMaster>();
 
-			await UniTask.SwitchToMainThread();
+            #endif
 
-			sw.Stop();
+            // デシリアライズ.
+            var records = Deserialize(bytes, serializerOptions);
 
-			return sw.Elapsed.TotalMilliseconds;
-		}
+            // レコード登録.
+            SetRecords(records);
+        }
 
-        protected virtual async UniTask<byte[]> FileLoad(string filePath)
+        protected virtual byte[] FileLoad(string filePath)
         {
             if (!File.Exists(filePath))
             {
                 throw new FileNotFoundException(filePath);
             }
 
-            byte[] bytes = null;
-
-            using (var fileStream = File.Open(filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
-            {
-                using (var memoryStream = new MemoryStream())
-                {
-                    await fileStream.CopyToAsync(memoryStream);
-
-                    bytes = memoryStream.ToArray();
-                }
-            }
+            var bytes = File.ReadAllBytes(filePath);
 
             if (bytes == null)
             {
@@ -322,50 +334,61 @@ namespace Modules.Master
             return container != null ? container.records : new TMasterRecord[0];
         }
         
-        public async UniTask<Tuple<bool, double>> Update(string masterVersion)
-        {
+		public async UniTask<Tuple<bool, double>> Update(string masterVersion, FunctionFrameLimiter frameCallLimiter)
+		{
 			var result = false;
 
-            var sw = System.Diagnostics.Stopwatch.StartNew();
+			var sw = System.Diagnostics.Stopwatch.StartNew();
 
             var filePath = GetFilePath();
 
-            // 既存のファイル削除.
-            if (File.Exists(filePath))
-            {
-                File.Delete(filePath);
-            }
-
-            // ダウンロード.
-			try
+			// 既存のファイル削除.
+			if (File.Exists(filePath))
 			{
-				await DownloadMaster(masterVersion);
+				File.Delete(filePath);
+			}
+
+			// ダウンロード.
+
+            try
+			{
+                await UniTask.SwitchToMainThread();
+
+                await frameCallLimiter.Wait();
+
+                await DownloadMaster(masterVersion);
 
 				if (File.Exists(filePath))
 				{
 					result = true;
 				}
+
+                // ファイルが閉じるまで待つ.
+                while(FileUtility.IsFileLocked(filePath))
+                {
+                    await UniTask.NextFrame();
+                }
+
+                await UniTask.SwitchToThreadPool();
+
+                // バージョン情報を更新.
+                var version = result ? masterVersion : string.Empty;
+            
+                await UpdateVersion(version);
 			}
 			catch (Exception e)
 			{
 				Debug.LogException(e);
 			}
-
-			// ファイルが閉じるまで待つ.
-            while(FileUtility.IsFileLocked(filePath))
+            finally
             {
-                await UniTask.NextFrame();
+                await UniTask.SwitchToMainThread();
             }
 
-            // バージョン情報を更新.
-            var version = result ? masterVersion : string.Empty;
-            
-            UpdateVersion(version);
-
             sw.Stop();
-			
-			return Tuple.Create(result, sw.Elapsed.TotalMilliseconds);
-        }
+
+            return Tuple.Create(result, sw.Elapsed.TotalMilliseconds);
+		}
 
         public IEnumerable<TMasterRecord> GetAllRecords()
         {
