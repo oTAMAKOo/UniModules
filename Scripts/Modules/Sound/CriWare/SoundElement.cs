@@ -48,6 +48,8 @@ namespace Modules.Sound
         {
             if (FinishTime.HasValue) { return; }
 
+			if (!CriAtomPlugin.isInitialized) { return; }
+
             // 終了時間を記録.
             if (playback.GetStatus() == CriAtomExPlayback.Status.Removed)
             {

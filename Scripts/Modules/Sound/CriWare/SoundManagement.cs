@@ -381,7 +381,9 @@ namespace Modules.Sound
             while (playback.GetStatus() != CriAtomExPlayback.Status.Playing)
             {
                 await UniTask.NextFrame();
-            }
+
+				if (!CriAtomPlugin.isInitialized){ return; }
+			}
 
             // ポーズを解除.
             playback.Resume(CriAtomEx.ResumeMode.PreparedPlayback);
