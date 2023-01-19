@@ -65,10 +65,7 @@ namespace Modules.Resolution
 
 			#if UNITY_EDITOR
 
-			var drivenProperties = DrivenTransformProperties.AnchoredPosition |
-									DrivenTransformProperties.SizeDelta |
-									DrivenTransformProperties.AnchorMin | 
-									DrivenTransformProperties.AnchorMax;
+			var drivenProperties = DrivenTransformProperties.All;
 
 			drivenRectTransformTracker.Clear();
 			drivenRectTransformTracker.Add(this, rt,drivenProperties);
@@ -98,10 +95,6 @@ namespace Modules.Resolution
 			rt.sizeDelta = Vector2.zero;
 			rt.anchorMin = normalizedMin;
 			rt.anchorMax = normalizedMax;
-			
-			//LayoutRebuilder.ForceRebuildLayoutImmediate(rt);
-
-			//Canvas.ForceUpdateCanvases();
 		}
 	}
 }

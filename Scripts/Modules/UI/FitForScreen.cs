@@ -2,6 +2,7 @@
 using UnityEngine;
 using Unity.Linq;
 using System.Linq;
+using Extensions;
 
 namespace Modules.UI
 {
@@ -17,6 +18,12 @@ namespace Modules.UI
 
 		private RectTransform rectTransform = null;
 
+		#if UNITY_EDITOR
+
+		private DrivenRectTransformTracker drivenRectTransformTracker = new DrivenRectTransformTracker();
+
+		#endif
+
 		//----- property -----
 
         //----- method -----
@@ -29,19 +36,37 @@ namespace Modules.UI
 
 			rectTransform = transform as RectTransform;
 
-			UpdateTransform();
+			Apply();
 		}
+
+		#if UNITY_EDITOR
+
+		void OnDisable()
+		{
+			drivenRectTransformTracker.Clear();
+		}
+
+		#endif
 
 		void Update()
 		{
-			UpdateTransform();
+			Apply();
 		}
 
-		private void UpdateTransform()
+		public void Apply()
 		{
 			if (rectTransform == null){ return; }
 
 			if (canvasRectTransform == null){ return; }
+
+			#if UNITY_EDITOR
+
+			var drivenProperties = DrivenTransformProperties.All;
+
+			drivenRectTransformTracker.Clear();
+			drivenRectTransformTracker.Add(this, rectTransform,drivenProperties);
+
+			#endif
 
 			var parent = rectTransform.parent;
 
@@ -57,12 +82,14 @@ namespace Modules.UI
 			localScale.y *= canvasRectTransform.localScale.y;
 			localScale.z *= canvasRectTransform.localScale.z;
 
-			rectTransform.localPosition = Vector3.zero;
+			rectTransform.position = Vector3.zero;
+			rectTransform.localPosition = Vector.SetZ(rectTransform.localPosition, 0f);
 			rectTransform.localRotation = Quaternion.identity;
 			rectTransform.localScale = localScale;
-
+			
+			rectTransform.sizeDelta = Vector2.zero;
 			rectTransform.pivot = new Vector2 (0.5f, 0.5f);
-			rectTransform.sizeDelta = canvasRectTransform.sizeDelta;
+			rectTransform.SetSize(canvasRectTransform.sizeDelta);
 		}
 	}
 }
