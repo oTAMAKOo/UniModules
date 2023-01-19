@@ -1,5 +1,6 @@
-﻿﻿
+﻿
 using UnityEngine;
+using UnityEngine.Networking;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -8,12 +9,35 @@ using Cysharp.Threading.Tasks;
 using UniRx;
 using Extensions;
 using Modules.Devkit.Diagnosis.LogTracker;
+using Modules.Net.WebRequest;
 
 namespace Modules.Devkit.Diagnosis.SendReport
 {
+    public sealed class SendReportResult
+    {
+        public long ResponseCode { get; private set; }
+			
+        public string Text { get; private set; }
+			
+        public byte[] Bytes { get; private set; }
+			
+        public string Error { get; private set; }
+
+        public bool HasError { get; private set; }
+
+        public SendReportResult(UnityWebRequest request)
+        {
+            ResponseCode = request.responseCode;
+            Text = request.downloadHandler.text;
+            Bytes = request.downloadHandler.data;
+            Error = request.error;
+            HasError = request.HasError();
+        }
+    }
+
 	public interface ISendReportUploader
 	{
-		UniTask<string> Upload(string reportTitle, Dictionary<string, string> reportContents, IProgress<float> progress);
+		UniTask<SendReportResult> Upload(string reportTitle, Dictionary<string, string> reportContents, IProgress<float> progress);
 	}
 
     public interface ISendReportBuilder
@@ -43,7 +67,7 @@ namespace Modules.Devkit.Diagnosis.SendReport
         public byte[] screenShotData = null;
         
         private Subject<Unit> onRequestReport = null;
-        private Subject<string> onReportComplete = null;
+        private Subject<SendReportResult> onReportComplete = null;
 
         private bool initialized = false;
 
@@ -88,11 +112,16 @@ namespace Modules.Devkit.Diagnosis.SendReport
 
             // 送信.
 
-			var completeMessage = string.Empty;
+            SendReportResult result = null;
 
 			try
 			{
-				completeMessage = await uploader.Upload(reportTitle, reportContents, progressNotifier);
+				result = await uploader.Upload(reportTitle, reportContents, progressNotifier);
+
+                if (result.HasError)
+                {
+                    Debug.LogErrorFormat("[{0}]{1}", result.ResponseCode, result.Error);
+                }
 
 				reportContents.Clear();
 			}
@@ -102,13 +131,13 @@ namespace Modules.Devkit.Diagnosis.SendReport
 			}
 			catch (Exception e)
 			{
-				completeMessage = e.Message;
+                Debug.LogException(e);
 			}
 
 			// 終了イベント.
             if (onReportComplete != null)
             {
-                onReportComplete.OnNext(completeMessage);
+                onReportComplete.OnNext(result);
             }
         }
 
@@ -178,9 +207,9 @@ namespace Modules.Devkit.Diagnosis.SendReport
             return onRequestReport ?? (onRequestReport = new Subject<Unit>());
         }
 
-        public IObservable<string> OnReportCompleteAsObservable()
+        public IObservable<SendReportResult> OnReportCompleteAsObservable()
         {
-            return onReportComplete ?? (onReportComplete = new Subject<string>());
+            return onReportComplete ?? (onReportComplete = new Subject<SendReportResult>());
         }
     }
 }

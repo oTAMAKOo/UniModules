@@ -155,7 +155,7 @@ namespace Modules.Devkit.Diagnosis.SRDebugger
 				cancelSource = null;
 			}
 
-			UpdateView();
+            UpdateView();
 		}
 
         private void UpdatePostProgress(float progress)
@@ -179,7 +179,7 @@ namespace Modules.Devkit.Diagnosis.SRDebugger
             }
         }
         
-        private void OnReportComplete(string errorMessage)
+        private void OnReportComplete(SendReportResult result)
         {
             progressBar.value = 0;
 
@@ -189,7 +189,7 @@ namespace Modules.Devkit.Diagnosis.SRDebugger
 
             using (new DisableStackTraceScope())
             {
-                if (string.IsNullOrEmpty(errorMessage))
+                if (result != null)
                 {
                     OnRequestRefreshInputText();
                     
@@ -197,7 +197,7 @@ namespace Modules.Devkit.Diagnosis.SRDebugger
                 }
                 else
                 {
-                    Debug.LogErrorFormat("Error sending bug report." + "\n\n" + errorMessage);
+                    Debug.LogError("Error sending bug report.");
                 }
             }
 

@@ -4,7 +4,6 @@ using System;
 using System.Collections.Generic;
 using Cysharp.Threading.Tasks;
 using Extensions;
-using Modules.Net.WebRequest;
 
 namespace Modules.Devkit.Diagnosis.SendReport
 {
@@ -17,6 +16,27 @@ namespace Modules.Devkit.Diagnosis.SendReport
 			Form,
 			Json,
 		}
+
+		public sealed class Result
+        {
+            public long ResponseCode { get; private set; }
+			
+            public string Text { get; private set; }
+			
+            public byte[] Bytes { get; private set; }
+			
+            public string Error { get; private set; }
+
+			public bool HasError { get; private set; }
+
+            public Result(UnityWebRequest request)
+            {
+                ResponseCode = request.responseCode;
+                Text = request.downloadHandler.text;
+                Bytes = request.downloadHandler.data;
+                Error = request.error;
+            }
+        }
 
 		//----- field -----
 
@@ -34,7 +54,7 @@ namespace Modules.Devkit.Diagnosis.SendReport
 			this.format = format;
 		}
 
-		public async UniTask<string> Upload(string reportTitle, Dictionary<string, string> reportContents, IProgress<float> progress)
+		public async UniTask<SendReportResult> Upload(string reportTitle, Dictionary<string, string> reportContents, IProgress<float> progress)
 		{
 			if (string.IsNullOrEmpty(reportUrl))
 			{
@@ -58,17 +78,10 @@ namespace Modules.Devkit.Diagnosis.SendReport
 			
 			await webRequest.SendWebRequest().ToUniTask(progress);
 
-			var errorMessage = string.Empty;
-
-			if (webRequest.HasError())
-			{
-				errorMessage = string.Format("[{0}]{1}", webRequest.responseCode, webRequest.error);
-			}
-
-			return errorMessage;
+            return new SendReportResult(webRequest);
 		}
 
-		private List<IMultipartFormSection> CreateReportFormSections(Dictionary<string, string> reportContents)
+        private List<IMultipartFormSection> CreateReportFormSections(Dictionary<string, string> reportContents)
 		{
 			var reportForm = new List<IMultipartFormSection>();
 
