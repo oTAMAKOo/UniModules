@@ -46,7 +46,7 @@ namespace Modules.UI
 			this.ignoreTimeScale = ignoreTimeScale;
 		}
 		
-		public async UniTask FadeOut()
+		public async UniTask FadeIn()
 		{
 			if (onChangeActive != null)
 			{
@@ -71,7 +71,7 @@ namespace Modules.UI
 			SetFadeAlpha(fadeAlpha);
 		}
 
-		public async UniTask FadeIn()
+		public async UniTask FadeOut()
 		{
 			if (onChangeActive != null)
 			{
