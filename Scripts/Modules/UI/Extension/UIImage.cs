@@ -35,6 +35,13 @@ namespace Modules.UI.Extension
             set { component.sprite = value; }
         }
 
+		public Color color
+		{
+			get { return Image.color; }
+
+			set { Image.color = value; }
+		}
+
 		public float alpha
 		{
 			get { return Image.color.a; }
