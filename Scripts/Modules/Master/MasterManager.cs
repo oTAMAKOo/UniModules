@@ -409,6 +409,8 @@ namespace Modules.Master
 
         public string GetMasterFileName(Type type)
         {
+			if (type == null){ return null; }
+
             if (masterFileNames.ContainsKey(type))
             {
                 return masterFileNames[type];
@@ -438,14 +440,23 @@ namespace Modules.Master
 
             if (CryptoKey != null)
             {
-                fileName = fileName.Encrypt(CryptoKey, true);
+				lock (CryptoKey)
+				{
+					fileName = fileName.Encrypt(CryptoKey, true);
+				}
             }
 
             // 登録.
 
-            masterFileNames[type] = fileName;
+			lock (masterFileNames)
+			{
+				if (!masterFileNames.ContainsKey(type))
+				{
+					masterFileNames.Add(type, fileName);
+				}
+			}
 
-            return fileName;
+			return fileName;
         }
 
         public static string DeleteMasterSuffix(string fileName)
