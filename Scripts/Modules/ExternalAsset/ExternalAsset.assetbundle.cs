@@ -35,7 +35,7 @@ namespace Modules.ExternalAssets
         private void InitializeAssetBundle()
         {
             assetBundleManager = AssetBundleManager.CreateInstance();
-            assetBundleManager.Initialize(simulateMode);
+            assetBundleManager.Initialize(SimulateMode);
 			assetBundleManager.SetMaxDownloadCount(AssetBundleDefaultInstallerCount);
             assetBundleManager.OnTimeOutAsObservable().Subscribe(x => OnTimeout(x)).AddTo(Disposable);
             assetBundleManager.OnErrorAsObservable().Subscribe(x => OnError(x)).AddTo(Disposable);
@@ -117,7 +117,7 @@ namespace Modules.ExternalAssets
 
             var assetPath = GetAssetPathFromAssetInfo(externalAssetDirectory, shareAssetDirectory, assetInfo);
 
-            if (!LocalMode && !simulateMode)
+            if (!LocalMode && !SimulateMode)
             {
 				var requireUpdate = await IsRequireUpdate(assetInfo);
 

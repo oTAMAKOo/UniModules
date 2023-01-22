@@ -1,4 +1,4 @@
-﻿﻿
+﻿
 using UnityEngine;
 using System;
 using System.IO;
@@ -40,7 +40,7 @@ namespace Modules.ExternalAssets
 
             // ※ シュミレート時はpackageファイルをダウンロードしていないので常にファイルが存在しない.
 
-            if (!simulateMode)
+            if (!SimulateMode)
             {
                 // ファイルがない.
                 if (!File.Exists(filePath)) { return false; }
@@ -92,7 +92,7 @@ namespace Modules.ExternalAssets
 		/// <summary> 更新が必要なアセット情報を取得. </summary>
 		public async UniTask<IEnumerable<AssetInfo>> GetRequireUpdateAssetInfos(string groupName = null)
 		{
-			if (simulateMode){ return new AssetInfo[0]; }
+			if (SimulateMode){ return new AssetInfo[0]; }
 
             var list = new List<AssetInfo>();
 
@@ -156,7 +156,7 @@ namespace Modules.ExternalAssets
         /// <summary> 更新が必要か. </summary>
 		public async UniTask<bool> IsRequireUpdate(AssetInfo assetInfo, bool farameCallLimit = true)
         {
-            if (simulateMode){ return false; }
+            if (SimulateMode){ return false; }
 
             // バージョン情報が存在しないので更新.
             if (versions.IsEmpty()) { return true; }
@@ -185,7 +185,7 @@ namespace Modules.ExternalAssets
 
         private async UniTask UpdateVersion(string resourcePath)
 		{
-			if (simulateMode){ return; }
+			if (SimulateMode){ return; }
 
 			// ※ 古いバージョン情報を破棄して最新のバージョン情報を追加.
                 
@@ -232,7 +232,7 @@ namespace Modules.ExternalAssets
 
         private async UniTask LoadVersion()
 		{
-			if (simulateMode){ return; }
+			if (SimulateMode){ return; }
             
             versions = new Dictionary<string, string>();
 
@@ -306,7 +306,7 @@ namespace Modules.ExternalAssets
 
 		private async UniTask ClearVersion()
 		{
-			if (simulateMode){ return; }
+			if (SimulateMode){ return; }
 
 			if (versions != null)
 			{

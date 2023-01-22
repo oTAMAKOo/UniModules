@@ -30,7 +30,7 @@ namespace Modules.ExternalAssets
 			// FileAssetManager初期化.
 
 			fileAssetManager = FileAssetManager.CreateInstance();
-			fileAssetManager.Initialize(simulateMode);
+			fileAssetManager.Initialize(SimulateMode);
 			fileAssetManager.SetMaxDownloadCount(FileAssetDefaultInstallerCount);
 			fileAssetManager.OnTimeOutAsObservable().Subscribe(x => OnTimeout(x)).AddTo(Disposable);
 			fileAssetManager.OnErrorAsObservable().Subscribe(x => OnError(x)).AddTo(Disposable);

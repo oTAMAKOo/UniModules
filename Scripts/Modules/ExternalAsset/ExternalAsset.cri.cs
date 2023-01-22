@@ -43,7 +43,7 @@ namespace Modules.ExternalAssets
             // CriAssetManager初期化.
 
             criAssetManager = CriAssetManager.CreateInstance();
-            criAssetManager.Initialize(simulateMode);
+            criAssetManager.Initialize(SimulateMode);
 			criAssetManager.SetNumInstallers(CriDefaultInstallerCount);
             criAssetManager.OnTimeOutAsObservable().Subscribe(x => OnTimeout(x)).AddTo(Disposable);
             criAssetManager.OnErrorAsObservable().Subscribe(x => OnError(x)).AddTo(Disposable);
@@ -84,7 +84,7 @@ namespace Modules.ExternalAssets
 				return null;
             }
 
-            return simulateMode ?
+            return SimulateMode ?
                    PathUtility.Combine(new string[] { UnityPathUtility.GetProjectFolderPath(), externalAssetDirectory, resourcePath }) :
                    criAssetManager.GetFilePath(InstallDirectory, assetInfo);
         }
@@ -120,7 +120,7 @@ namespace Modules.ExternalAssets
 
             var filePath = ConvertCriFilePath(resourcePath);
 
-            if (!LocalMode && !simulateMode)
+            if (!LocalMode && !SimulateMode)
             {
 				var requireUpdate = await IsRequireUpdate(assetInfo);
 
@@ -212,7 +212,7 @@ namespace Modules.ExternalAssets
 			
             var filePath = ConvertCriFilePath(resourcePath);
 
-            if (!LocalMode && !simulateMode)
+            if (!LocalMode && !SimulateMode)
             {
 				var requireUpdate = await IsRequireUpdate(assetInfo);
 

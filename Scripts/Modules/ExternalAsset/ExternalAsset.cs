@@ -34,9 +34,6 @@ namespace Modules.ExternalAssets
         // アセットロードパスをキーとしたアセット情報.
         private Dictionary<string, AssetInfo> assetInfosByResourcePath = null;
 
-        /// <summary> シュミレーションモード (Editorのみ有効). </summary>
-        private bool simulateMode = false;
-
         /// <summary> 外部アセットディレクトリ. </summary>
         public string externalAssetDirectory = null;
 
@@ -71,8 +68,11 @@ namespace Modules.ExternalAssets
             get { return Instance != null && Instance.initialized; }
         }
 
-        /// <summary> ローカルモード. </summary>
-        public bool LocalMode { get; private set; }
+		/// <summary> シュミレーションモード (Editorのみ有効). </summary>
+		public bool SimulateMode { get; private set; }
+
+		/// <summary> ローカルモード. </summary>
+		public bool LocalMode { get; private set; }
 
         /// <summary> ダウンロード先. </summary>
         public string InstallDirectory { get; private set; }
@@ -96,7 +96,7 @@ namespace Modules.ExternalAssets
 
             #if UNITY_EDITOR
 
-            simulateMode = Prefs.isSimulate;
+			SimulateMode = Prefs.isSimulate;
 
             #endif
 
@@ -354,7 +354,7 @@ namespace Modules.ExternalAssets
 				}
 			}
 			
-			if (!LocalMode && !simulateMode)
+			if (!LocalMode && !SimulateMode)
 			{
 				try
 				{
@@ -423,6 +423,32 @@ namespace Modules.ExternalAssets
 				cancelSource = new CancellationTokenSource();
             }
         }
+
+		public string GetFilePath(AssetInfo assetInfo)
+		{
+			var filePath = string.Empty;
+
+			if (assetInfo.IsAssetBundle)
+			{
+				filePath = assetBundleManager.GetFilePath(InstallDirectory, assetInfo);
+			}
+
+			#if ENABLE_CRIWARE_ADX || ENABLE_CRIWARE_SOFDEC
+
+			else if (criAssetManager.IsCriAsset(assetInfo.ResourcePath))
+			{
+				filePath = criAssetManager.GetFilePath(InstallDirectory, assetInfo);
+			}
+
+			#endif
+
+			else
+			{
+				filePath = PathUtility.Combine(InstallDirectory, assetInfo.FileName);
+			}
+
+			return filePath;
+		}
 
         public static string GetAssetPathFromAssetInfo(string externalAssetPath, string shareResourcesPath, AssetInfo assetInfo)
         {

@@ -46,7 +46,7 @@ namespace Modules.ExternalAssets
 		/// <summary> 不要になったキャッシュ削除. </summary>
 		public async UniTask DeleteUnUsedCache()
 		{
-			if (simulateMode) { return; }
+			if (SimulateMode) { return; }
 
 			if (assetInfoManifest == null) { return; }
 
@@ -66,26 +66,7 @@ namespace Modules.ExternalAssets
 
 			foreach (var assetInfo in assetInfos)
 			{
-				var filePath = string.Empty;
-
-				if (assetInfo.IsAssetBundle)
-				{
-					filePath = assetBundleManager.GetFilePath(InstallDirectory, assetInfo);
-				}
-
-				#if ENABLE_CRIWARE_ADX || ENABLE_CRIWARE_SOFDEC
-
-				else if (criAssetManager.IsCriAsset(assetInfo.ResourcePath))
-				{
-					filePath = criAssetManager.GetFilePath(InstallDirectory, assetInfo);
-				}
-
-				#endif
-
-				else
-				{
-					filePath = PathUtility.Combine(InstallDirectory, assetInfo.FileName);
-				}
+				var filePath = GetFilePath(assetInfo);
 
 				manageFilePaths.Add(filePath);
 
@@ -135,28 +116,9 @@ namespace Modules.ExternalAssets
 
             foreach (var assetInfo in assetInfos)
             {
-                var filePath = string.Empty;
+				var filePath = GetFilePath(assetInfo);
 
-                if (assetInfo.IsAssetBundle)
-                {
-                    filePath = assetBundleManager.GetFilePath(InstallDirectory, assetInfo);
-                }
-
-                #if ENABLE_CRIWARE_ADX || ENABLE_CRIWARE_SOFDEC
-
-                else if (criAssetManager.IsCriAsset(assetInfo.ResourcePath))
-                {
-                    filePath = criAssetManager.GetFilePath(InstallDirectory, assetInfo);
-                }
-
-                #endif
-
-                else
-                {
-                    filePath = PathUtility.Combine(InstallDirectory, assetInfo.FileName);
-                }
-
-                if (!string.IsNullOrEmpty(filePath))
+				if (!string.IsNullOrEmpty(filePath))
                 {
                     targetFilePaths.Add(filePath);
                 }
