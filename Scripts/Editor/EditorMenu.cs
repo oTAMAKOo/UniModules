@@ -33,6 +33,7 @@ using Modules.Devkit.SceneLaunch;
 using Modules.Devkit.Hierarchy;
 using Modules.Devkit.Console;
 using Modules.Devkit.DefineSymbol;
+using Modules.Devkit.ExternalAssets;
 using Modules.Devkit.SerializeAssets;
 using Modules.Devkit.TextureViewer;
 using Modules.Devkit.U2D;
@@ -283,6 +284,12 @@ namespace Modules
         {
             FindDependencyAssetsWindow.Open();
         }
+
+		[MenuItem(itemName: ResourcesMenu + "Open ExternalAssetLoadRecorder", priority = 15)]
+		public static void OpenExternalAssetLoadRecorder()
+		{
+			ExternalAssetLoadRecorder.Open();
+		}
 
         //------ 全アセットバンドル名を再設定 ------
 
