@@ -21,9 +21,13 @@ namespace Modules.Localize
 
 		private Image image = null;
 
+		private Subject<Unit> onChangeAtlas = null;
+
+		#if UNITY_EDITOR
+
 		private string requireLoadAtlas = null;
 
-		private Subject<Unit> onChangeAtlas = null;
+		#endif
 
 		//----- property -----
 
@@ -44,8 +48,8 @@ namespace Modules.Localize
 			var localizeAtlasManager = LocalizeAtlasManager.Instance;
 
 			localizeAtlasManager.OnLoadAtlasAsObservable()
-			.Subscribe(_ => OnAtlasChanged())
-			.AddTo(this);
+				.Subscribe(_ => OnAtlasChanged())
+				.AddTo(this);
 		}
 
 		void OnEnable()
