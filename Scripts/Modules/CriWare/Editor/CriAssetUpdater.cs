@@ -131,23 +131,24 @@ namespace Modules.CriWare.Editor
 
         #endif
 
-        private static void UpdateAcfAsset(string acfAssetSourceFullPath, string acfAssetExportPath)
-        {
-            if (!string.IsNullOrEmpty(acfAssetSourceFullPath))
-            {
-                var fileName = Path.GetFileName(acfAssetSourceFullPath);
-                var exportPath = PathUtility.Combine(acfAssetExportPath, fileName);
+		private static void UpdateAcfAsset(string acfAssetSourceFullPath, string acfAssetExportPath)
+		{
+			if (string.IsNullOrEmpty(acfAssetSourceFullPath)){ return; }
 
-                if (FileCopy(acfAssetSourceFullPath, exportPath))
-                {
-                    Debug.LogFormat("Copy AcfAsset: \n{0}", exportPath);
-                }
-            }
-        }
+			var fileName = Path.GetFileName(acfAssetSourceFullPath);
+			var exportPath = PathUtility.Combine(acfAssetExportPath, fileName);
 
-        private static bool UpdateCriAssets(ImportInfo importInfo, string[] assetExtensions)
-        {
+			if (FileCopy(acfAssetSourceFullPath, exportPath))
+			{
+				Debug.LogFormat("Copy AcfAsset: \n{0}", exportPath);
+			}
+		}
+
+		private static bool UpdateCriAssets(ImportInfo importInfo, string[] assetExtensions)
+		{
 			var changed = false;
+            
+			if (string.IsNullOrEmpty(importInfo.sourceFolderRelativePath)){ return false; }
 
 			var projectFolder = UnityPathUtility.GetProjectFolderPath();
 
@@ -156,13 +157,13 @@ namespace Modules.CriWare.Editor
 			var assetDir = AssetDatabase.GUIDToAssetPath(importInfo.destFolderGuid);
 
 			using (new AssetEditingScope())
-            {
+			{
 				changed |= ImportCriAsset(sourceDir, assetDir, assetExtensions);
 				changed |= DeleteCriAsset(sourceDir, assetDir);
 			}
 
-            return changed;
-        }
+			return changed;
+		}
 
 		private static bool ImportCriAsset(string sourceFolderPath, string assetFolderPath, string[] assetExtensions)
         {
@@ -287,6 +288,8 @@ namespace Modules.CriWare.Editor
 
         private static bool FileCopy(string sourcePath, string destPath)
         {
+			if (string.IsNullOrEmpty(sourcePath)){ return false; }
+
             // 更新されてない物はコピーしない.
             if (File.Exists(destPath) && File.GetLastWriteTime(sourcePath) == File.GetLastWriteTime(destPath))
             {

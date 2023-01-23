@@ -60,10 +60,22 @@ namespace Modules.CriWare.Editor
 
         #if ENABLE_CRIWARE_ADX
 
-		public string AcfAssetSourceFullPath { get { return UnityPathUtility.RelativePathToFullPath(acfAssetSourceFullPath); } }
+		public string AcfAssetSourceFullPath
+		{
+			get 
+			{   
+				return string.IsNullOrEmpty(acfAssetSourceFullPath) ? string.Empty : UnityPathUtility.RelativePathToFullPath(acfAssetSourceFullPath); 
+			}
+		}
 
-		public string AcfAssetExportPath { get { return UnityPathUtility.RelativePathToFullPath(acfAssetExportPath); } } 
-		
+		public string AcfAssetExportPath
+		{
+			get
+			{
+				return string.IsNullOrEmpty(acfAssetExportPath) ? string.Empty : UnityPathUtility.RelativePathToFullPath(acfAssetExportPath);
+			}
+		}
+
 		public string SoundFolderName { get { return soundFolderName; } }
 		
 		public ImportInfo InternalSound { get { return internalSound; } }
