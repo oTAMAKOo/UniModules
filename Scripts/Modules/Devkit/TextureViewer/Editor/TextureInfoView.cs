@@ -79,7 +79,7 @@ namespace Modules.Devkit.TextureViewer
         {
             var columns = Enum.GetValues(typeof(TextureColumn)).Cast<TextureColumn>().ToArray();
 
-            var column = columns.ElementAt(columnIndex);
+            var column = columns.ElementAtOrDefault(columnIndex, TextureColumn.TextureName);
 
             IOrderedEnumerable<TextureInfo> orderedInfos = null;
 

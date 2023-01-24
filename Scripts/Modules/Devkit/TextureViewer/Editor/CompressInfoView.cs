@@ -78,7 +78,7 @@ namespace Modules.Devkit.TextureViewer
         {
             var columns = Enum.GetValues(typeof(CompressColumn)).Cast<CompressColumn>().ToArray();
 
-            var column = columns.ElementAt(columnIndex);
+            var column = columns.ElementAtOrDefault(columnIndex, CompressColumn.TextureName);
 
             IOrderedEnumerable<TextureInfo> orderedInfos = null;
 
