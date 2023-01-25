@@ -383,7 +383,7 @@ namespace Modules.Scene
 
 			try
 			{
-				await TransitionStart(currentSceneArgument).AttachExternalCancellation(cancelToken);
+				await TransitionStart(currentSceneArgument, isSceneBack).AttachExternalCancellation(cancelToken);
 			}
 			catch (OperationCanceledException) 
 			{
@@ -661,7 +661,7 @@ namespace Modules.Scene
 			{
 				await currentScene.Instance.OnTransition().AttachExternalCancellation(cancelToken);
 
-				await TransitionFinish(currentSceneArgument).AttachExternalCancellation(cancelToken);
+				await TransitionFinish(currentSceneArgument, isSceneBack).AttachExternalCancellation(cancelToken);
 			}
 			catch (OperationCanceledException) 
 			{
@@ -1289,8 +1289,8 @@ namespace Modules.Scene
             return onLeaveComplete ?? (onLeaveComplete = new Subject<SceneInstance>());
         }
 
-        protected abstract UniTask TransitionStart<TArgument>(TArgument sceneArgument) where TArgument : ISceneArgument;
+        protected abstract UniTask TransitionStart<TArgument>(TArgument sceneArgument, bool isSceneBack) where TArgument : ISceneArgument;
 
-        protected abstract UniTask TransitionFinish<TArgument>(TArgument sceneArgument) where TArgument : ISceneArgument;
+        protected abstract UniTask TransitionFinish<TArgument>(TArgument sceneArgument, bool isSceneBack) where TArgument : ISceneArgument;
     }
 }

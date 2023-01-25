@@ -163,7 +163,7 @@ namespace Modules.Scene
 
 				TransitionTarget = sceneArgument.Identifier;
 
-				await TransitionStart(sceneArgument).AttachExternalCancellation(cancelToken);
+				await TransitionStart(sceneArgument, false).AttachExternalCancellation(cancelToken);
 
 				// 遷移先以外のシーンを非アクティブ化.
 
@@ -203,7 +203,7 @@ namespace Modules.Scene
 					}
 				}
 
-				await TransitionFinish(sceneArgument).AttachExternalCancellation(cancelToken);
+				await TransitionFinish(sceneArgument, false).AttachExternalCancellation(cancelToken);
 
 				if (sceneInstance != null)
 				{
@@ -300,7 +300,7 @@ namespace Modules.Scene
 
 				diagnostics.Begin(TimeDiagnostics.Measure.Total);
 
-				await TransitionStart<ISceneArgument>(null).AttachExternalCancellation(cancelToken);
+				await TransitionStart<ISceneArgument>(null, false).AttachExternalCancellation(cancelToken);
 
 				//====== Scene Leave ======
 
@@ -344,7 +344,7 @@ namespace Modules.Scene
 
 				await scene.Instance.OnTransition().AttachExternalCancellation(cancelToken);
 
-                await TransitionFinish<ISceneArgument>(null).AttachExternalCancellation(cancelToken);
+                await TransitionFinish<ISceneArgument>(null, false).AttachExternalCancellation(cancelToken);
 
 				scene.Instance.Enter();
 
