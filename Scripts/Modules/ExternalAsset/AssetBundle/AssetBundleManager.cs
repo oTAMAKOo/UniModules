@@ -613,6 +613,8 @@ namespace Modules.AssetBundles
                 // アセットバンドル名は小文字なので小文字に変換.
                 var assetBundleName = assetInfo.AssetBundle.AssetBundleName.ToLower();
 
+				IncrementReferenceCount(assetBundleName);
+
                 var loadedAssetBundle = loadedAssetBundles.GetValueOrDefault(assetBundleName);
 
                 if (loadedAssetBundle == null)
@@ -637,8 +639,6 @@ namespace Modules.AssetBundles
                 }
                 else
                 {
-                    IncrementReferenceCount(assetBundleName);
-
 					task = UniTask.FromResult(loadedAssetBundle);
                 }
 
