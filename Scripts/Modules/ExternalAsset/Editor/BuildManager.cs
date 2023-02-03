@@ -293,7 +293,7 @@ namespace Modules.ExternalAssets
 
         public static string GetExportPath()
         {
-            var config = ManageConfig.Instance;
+            var config = ExternalAssetConfig.Instance;
             
             var exportDirectory = config.ExportDirectory;
 
@@ -310,7 +310,7 @@ namespace Modules.ExternalAssets
         {
             var invalidDependants = new List<string>();
 
-            var config = ManageConfig.Instance;
+            var config = ExternalAssetConfig.Instance;
 
             var projectResourceFolders = ProjectResourceFolders.Instance;
 

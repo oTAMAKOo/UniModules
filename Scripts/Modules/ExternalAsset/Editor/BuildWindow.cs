@@ -137,7 +137,7 @@ namespace Modules.ExternalAssets
                             {
                                 Debug.LogError("The export path is not set.");
 
-                                var config = ManageConfig.Instance;
+                                var config = ExternalAssetConfig.Instance;
 
                                 if (config != null)
                                 {

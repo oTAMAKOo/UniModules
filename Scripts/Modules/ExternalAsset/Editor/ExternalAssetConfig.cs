@@ -11,7 +11,7 @@ using Object = UnityEngine.Object;
 
 namespace Modules.ExternalAssets
 {
-    public sealed class ManageConfig : ReloadableScriptableObject<ManageConfig>
+    public sealed class ExternalAssetConfig : ReloadableScriptableObject<ExternalAssetConfig>
     {
         //----- params -----
 

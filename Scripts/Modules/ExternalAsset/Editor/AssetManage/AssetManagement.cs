@@ -86,7 +86,7 @@ namespace Modules.ExternalAssets
 
 			managedInfos = managedAssets.GetAllInfos().ToDictionary(x => x.guid);
 
-            ManageConfig.OnReloadAsObservable()
+            ExternalAssetConfig.OnReloadAsObservable()
                 .Subscribe(_ =>
                    {
                        ignoreManagePaths = null;
@@ -609,7 +609,7 @@ namespace Modules.ExternalAssets
         {
 			if (string.IsNullOrEmpty(assetPath)){ return null; }
 
-            var manageConfig = ManageConfig.Instance;
+            var manageConfig = ExternalAssetConfig.Instance;
 
             if (manageConfig == null){ return null; }
 
