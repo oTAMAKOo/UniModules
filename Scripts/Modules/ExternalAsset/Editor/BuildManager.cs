@@ -67,12 +67,7 @@ namespace Modules.ExternalAssets
 
         //----- method -----
 
-        public static bool BuildConfirm()
-        {
-            return EditorUtility.DisplayDialog("Confirmation", "外部アセットを生成します.", "実行", "中止");
-        }
-
-        public static async UniTask<string> Build(string exportPath, AssetInfoManifest assetInfoManifest, bool openExportFolder = true)
+		public static async UniTask<string> Build(string exportPath, AssetInfoManifest assetInfoManifest, bool openExportFolder = true)
         {
             if (string.IsNullOrEmpty(exportPath)) { return null; }
 

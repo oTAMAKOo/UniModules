@@ -253,12 +253,12 @@ namespace Modules
             return true;
         }
 
-        //------ 外部アセット群作成 ------
+        //------ 外部アセット情報生成 ------
 
-        [MenuItem(itemName: ResourcesMenu + "Build", priority = 1)]
-        public static void ExternalAssetBuild()
+        [MenuItem(itemName: ResourcesMenu + "Generate AssetInfoManifest", priority = 1)]
+        public static void OpenGenerateAssetInfoManifestWindow()
         {
-            BuildWindow.Open();
+			GenerateAssetInfoManifestWindow.Open();
         }
 
         //------ 外部アセット管理ウィンドウ ------
@@ -303,7 +303,15 @@ namespace Modules
             assetManagement.ApplyAllAssetBundleName(true);
         }
 
-        #endregion
+		//------ 外部アセットビルド ------
+
+		[MenuItem(itemName: ResourcesMenu + "Build ExternalAssets", priority = 36)]
+		public static void BuildExecuteExternalAssets()
+		{
+			BuildExternalAssets.Execute();
+		}
+
+		#endregion
 
         //===============================================================
         //  CriWare.
