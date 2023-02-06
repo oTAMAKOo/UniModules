@@ -39,13 +39,7 @@ namespace Extensions
 		/// <summary> 指定のブランチをチェックアウト </summary>
 		public static bool Checkout(string workingDirectory, string branchName, bool force = true)
 		{
-			ProcessExecute.Result result;
-
-			result = ExecuteGitProcess(workingDirectory, "fetch");
-
-			if (IsInvalidResult(result)){ return false; }
-
-			result = ExecuteGitProcess(workingDirectory, $"checkout {branchName}" + (force ? " -f" : string.Empty));
+			var result = ExecuteGitProcess(workingDirectory, $"checkout {branchName}" + (force ? " -f" : string.Empty));
 
 			if (IsInvalidResult(result)){ return false; }
             
