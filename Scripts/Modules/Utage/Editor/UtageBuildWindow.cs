@@ -1,4 +1,4 @@
-﻿﻿
+﻿
 #if ENABLE_UTAGE
 
 using UnityEngine;
@@ -52,8 +52,7 @@ namespace Modules.UtageExtension
         //----- property -----
 
         //----- method -----
-
-        [MenuItem(itemName: "Utage/Open Window", priority = 2)]
+		
         public static void Open()
         {
             Instance.Initialize();
