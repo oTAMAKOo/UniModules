@@ -36,15 +36,21 @@ namespace Extensions
 			return result.Output.Replace("\r", "").Replace("\n", "");
 		}
 
-        /// <summary> 指定のブランチをチェックアウト </summary>
-        public static bool Checkout(string workingDirectory, string branchName)
-        {
-            var result = ExecuteGitProcess(workingDirectory, $"checkout {branchName}");
+		/// <summary> 指定のブランチをチェックアウト </summary>
+		public static bool Checkout(string workingDirectory, string branchName, bool force = true)
+		{
+			ProcessExecute.Result result;
 
-            if (IsInvalidResult(result)){ return false; }
+			result = ExecuteGitProcess(workingDirectory, "fetch");
+
+			if (IsInvalidResult(result)){ return false; }
+
+			result = ExecuteGitProcess(workingDirectory, $"checkout {branchName}" + (force ? " -f" : string.Empty));
+
+			if (IsInvalidResult(result)){ return false; }
             
-            return true;
-        }
+			return true;
+		}
 
         /// <summary> 現在のブランチを最新にする </summary>
         public static bool Pull(string workingDirectory)
