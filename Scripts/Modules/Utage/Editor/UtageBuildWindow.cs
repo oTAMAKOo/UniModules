@@ -307,11 +307,14 @@ namespace Modules.UtageExtension
                     Directory.CreateDirectory(toDirectory);
                 }
 
-                File.Copy(from, to, true);
+                if (UnityEditorUtility.IsExists(toAssetPath))
+                {
+                    AssetDatabase.DeleteAsset(toAssetPath);
+                }
 
-                AssetDatabase.ImportAsset(toAssetPath);
+                AssetDatabase.MoveAsset(fromAssetPath, toAssetPath);
 
-                AssetDatabase.DeleteAsset(fromAssetPath);
+                AssetDatabase.Refresh();
             }
 
             using (new AssetEditingScope())
