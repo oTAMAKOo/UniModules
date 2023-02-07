@@ -39,27 +39,23 @@ namespace Extensions
 		}
 
         /// <summary> 指定のブランチをチェックアウト </summary>
-        public static bool Checkout(string workingDirectory, string branchName, bool force = true)
+        public static void Checkout(string workingDirectory, string branchName, bool force = true)
         {
             var result = ExecuteGitProcess(workingDirectory, $"checkout {branchName}" + (force ? " -f" : string.Empty));
 
             CheckResult(result);
-            
-            return true;
         }
 
         /// <summary> 現在のブランチを最新にする </summary>
-        public static bool Pull(string workingDirectory)
+        public static void Pull(string workingDirectory)
         {
             var result = ExecuteGitProcess(workingDirectory, "pull");
 
             CheckResult(result);
-            
-            return true;
         }
 
         /// <summary> ワークスペースを破棄する </summary>
-        public static bool Clean(string workingDirectory)
+        public static void Clean(string workingDirectory)
         {
             ProcessExecute.Result result = null;
 
@@ -70,8 +66,6 @@ namespace Extensions
             result = ExecuteGitProcess(workingDirectory, "clean -fd");
 
             CheckResult(result);
-            
-            return true;
         }
 
         private static ProcessExecute.Result ExecuteGitProcess(string workingDirectory, string command)
