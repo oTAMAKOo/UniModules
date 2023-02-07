@@ -1,4 +1,6 @@
 ﻿
+using System;
+
 namespace Extensions
 {
     public static class GitUtility
@@ -10,7 +12,7 @@ namespace Extensions
             
             var result = ExecuteGitProcess(workingDirectory, "branch --contains");
 
-            if (IsInvalidResult(result)){ return null; }
+            CheckResult(result);
 
             // 改行コードを削除.
             var branchName = result.Output.Replace("\r", "").Replace("\n", "");
@@ -30,28 +32,28 @@ namespace Extensions
 
             var result = ExecuteGitProcess(workingDirectory, "log --pretty=%H -n 1");
 
-			if (IsInvalidResult(result)){ return null; }
+            CheckResult(result);
 
 			// 改行コードを削除.
 			return result.Output.Replace("\r", "").Replace("\n", "");
 		}
 
-		/// <summary> 指定のブランチをチェックアウト </summary>
-		public static bool Checkout(string workingDirectory, string branchName, bool force = true)
-		{
-			var result = ExecuteGitProcess(workingDirectory, $"checkout {branchName}" + (force ? " -f" : string.Empty));
+        /// <summary> 指定のブランチをチェックアウト </summary>
+        public static bool Checkout(string workingDirectory, string branchName, bool force = true)
+        {
+            var result = ExecuteGitProcess(workingDirectory, $"checkout {branchName}" + (force ? " -f" : string.Empty));
 
-			if (IsInvalidResult(result)){ return false; }
+            CheckResult(result);
             
-			return true;
-		}
+            return true;
+        }
 
         /// <summary> 現在のブランチを最新にする </summary>
         public static bool Pull(string workingDirectory)
         {
             var result = ExecuteGitProcess(workingDirectory, "pull");
 
-            if (IsInvalidResult(result)){ return false; }
+            CheckResult(result);
             
             return true;
         }
@@ -63,11 +65,11 @@ namespace Extensions
 
             result = ExecuteGitProcess(workingDirectory, "checkout -f");
 
-            if (IsInvalidResult(result)){ return false; }
+            CheckResult(result);
 
             result = ExecuteGitProcess(workingDirectory, "clean -fd");
 
-            if (IsInvalidResult(result)){ return false; }
+            CheckResult(result);
             
             return true;
         }
@@ -82,11 +84,22 @@ namespace Extensions
             return processExecute.Start();
         }
 
-        private static bool IsInvalidResult(ProcessExecute.Result result)
+        private static void CheckResult(ProcessExecute.Result result)
         {
-            return result == null || 
-                   string.IsNullOrEmpty(result.Output) || 
-                   result.Output.StartsWith("error");
+            if (result == null)
+            {
+                throw new Exception("result is null.");
+            }
+
+            if (string.IsNullOrEmpty(result.Output))
+            {
+                throw new Exception("result.Output is empty.");
+            }
+
+            if (result.Output.StartsWith("error"))
+            {
+                throw new Exception(result.Output);
+            }
         }
     }
 }
