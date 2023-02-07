@@ -14,6 +14,11 @@ namespace Extensions
 
             CheckResult(result);
 
+            if (string.IsNullOrEmpty(result.Output))
+            {
+                throw new Exception("result.Output is empty.");
+            }
+
             // 改行コードを削除.
             var branchName = result.Output.Replace("\r", "").Replace("\n", "");
 
@@ -34,6 +39,11 @@ namespace Extensions
 
             CheckResult(result);
 
+            if (string.IsNullOrEmpty(result.Output))
+            {
+                throw new Exception("result.Output is empty.");
+            }
+
 			// 改行コードを削除.
 			return result.Output.Replace("\r", "").Replace("\n", "");
 		}
@@ -44,6 +54,15 @@ namespace Extensions
             var result = ExecuteGitProcess(workingDirectory, $"checkout {branchName}" + (force ? " -f" : string.Empty));
 
             CheckResult(result);
+
+            var currentBranch = GetBranchName(workingDirectory);
+
+            CheckResult(result);
+
+            if (!currentBranch.Contains(branchName))
+            {
+                throw new Exception($"checkout failed :\nCurrent: {currentBranch}\nTarget: {branchName}");
+            }
         }
 
         /// <summary> 現在のブランチを最新にする </summary>
@@ -83,11 +102,6 @@ namespace Extensions
             if (result == null)
             {
                 throw new Exception("result is null.");
-            }
-
-            if (string.IsNullOrEmpty(result.Output))
-            {
-                throw new Exception("result.Output is empty.");
             }
 
             if (result.Output.StartsWith("error"))
