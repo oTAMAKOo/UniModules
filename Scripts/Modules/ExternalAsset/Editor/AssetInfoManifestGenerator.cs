@@ -3,7 +3,6 @@ using UnityEditor;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Threading.Tasks;
 using Cysharp.Threading.Tasks;
 using Extensions;
 using Extensions.Devkit;
@@ -11,12 +10,6 @@ using Modules.Devkit.Generators;
 using Modules.Devkit.Project;
 using Modules.AssetBundles;
 using Modules.AssetBundles.Editor;
-
-#if ENABLE_CRIWARE_ADX || ENABLE_CRIWARE_SOFDEC
-
-using Modules.CriWare;
-
-#endif
 
 namespace Modules.ExternalAssets
 {
@@ -153,7 +146,48 @@ namespace Modules.ExternalAssets
             EditorUtility.ClearProgressBar();
         }
 
-        private static void ApplyAssetBundleName(AssetManagement assetManagement, AssetInfoManifest manifest)
+		public static async UniTask SetFileAssetFileInfo(string exportPath, AssetInfoManifest assetInfoManifest)
+        {
+            var assetInfos = Reflection.GetPrivateField<AssetInfoManifest, AssetInfo[]>(assetInfoManifest, "assetInfos");
+            
+            var tasks = new List<UniTask>();
+
+            for (var i = 0; i < assetInfos.Length; i++)
+            {
+                var assetInfo = assetInfos[i];
+
+                if (assetInfo.IsAssetBundle) { continue; }
+				
+                var filePath = PathUtility.Combine(new string[] { exportPath, assetInfo.FileName });
+
+				if (!File.Exists(filePath)) { continue; }
+
+                var task = UniTask.RunOnThreadPool(() =>
+                {
+					var fileInfo = new FileInfo(filePath);
+
+                    var size = fileInfo.Exists ? fileInfo.Length : -1;
+                    var crc = FileUtility.GetCRC(filePath);
+                    var hash = FileUtility.GetHash(filePath);
+
+                    assetInfo.SetFileInfo(size, crc, hash);
+                });
+                
+                tasks.Add(task);
+            }
+
+            await UniTask.WhenAll(tasks);
+
+            Reflection.SetPrivateField(assetInfoManifest, "assetInfos", assetInfos);
+
+            UnityEditorUtility.SaveAsset(assetInfoManifest);
+
+            assetInfoManifest.BuildCache(true);
+
+            EditorUtility.ClearProgressBar();
+        }
+
+		private static void ApplyAssetBundleName(AssetManagement assetManagement, AssetInfoManifest manifest)
         {
             var projectResourceFolders = ProjectResourceFolders.Instance;
 
@@ -216,57 +250,7 @@ namespace Modules.ExternalAssets
             return manifest;
         }
 
-        #if ENABLE_CRIWARE_ADX || ENABLE_CRIWARE_SOFDEC
-
-        public static async UniTask SetCriAssetFileInfo(string exportPath, AssetInfoManifest assetInfoManifest)
-        {
-            var assetInfos = Reflection.GetPrivateField<AssetInfoManifest, AssetInfo[]>(assetInfoManifest, "assetInfos");
-            
-            var tasks = new List<UniTask>();
-
-            for (var i = 0; i < assetInfos.Length; i++)
-            {
-                var assetInfo = assetInfos[i];
-
-                if (assetInfo.IsAssetBundle) { continue; }
-
-                var extension = Path.GetExtension(assetInfo.FileName);
-
-                if (CriAssetDefinition.AssetAllExtensions.Any(x => x == extension))
-                {
-                    var filePath = PathUtility.Combine(new string[] { exportPath, assetInfo.FileName });
-
-					if (!File.Exists(filePath)) { continue; }
-
-                    var task = UniTask.RunOnThreadPool(() =>
-                    {
-						var fileInfo = new FileInfo(filePath);
-
-                        var size = fileInfo.Exists ? fileInfo.Length : -1;
-                        var crc = FileUtility.GetCRC(filePath);
-                        var hash = FileUtility.GetHash(filePath);
-
-                        assetInfo.SetFileInfo(size, crc, hash);
-                    });
-                    
-                    tasks.Add(task);
-                }
-            }
-
-            await UniTask.WhenAll(tasks);
-
-            Reflection.SetPrivateField(assetInfoManifest, "assetInfos", assetInfos);
-
-            UnityEditorUtility.SaveAsset(assetInfoManifest);
-
-            assetInfoManifest.BuildCache(true);
-
-            EditorUtility.ClearProgressBar();
-        }
-
-        #endif
-
-        private static string GetManifestPath(string externalAssetPath)
+		private static string GetManifestPath(string externalAssetPath)
         {
             return PathUtility.Combine(externalAssetPath, AssetInfoManifest.ManifestFileName);
         }

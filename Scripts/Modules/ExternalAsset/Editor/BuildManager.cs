@@ -205,11 +205,7 @@ namespace Modules.ExternalAssets
                     {
                         await AssetInfoManifestGenerator.SetAssetBundleFileInfo(assetBundlePath, assetInfoManifest, buildResult);
 
-                        #if ENABLE_CRIWARE_ADX || ENABLE_CRIWARE_SOFDEC
-
-                        await AssetInfoManifestGenerator.SetCriAssetFileInfo(exportPath, assetInfoManifest);
-
-                        #endif
+						await AssetInfoManifestGenerator.SetFileAssetFileInfo(assetBundlePath, assetInfoManifest);
                     }
 
                     //------ アセットバンドルの参照情報をAssetInfoManifestに書き込み ------
