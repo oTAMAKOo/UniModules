@@ -205,7 +205,7 @@ namespace Modules.ExternalAssets
                     {
                         await AssetInfoManifestGenerator.SetAssetBundleFileInfo(assetBundlePath, assetInfoManifest, buildResult);
 
-						await AssetInfoManifestGenerator.SetFileAssetFileInfo(assetBundlePath, assetInfoManifest);
+						await AssetInfoManifestGenerator.SetFileAssetFileInfo(exportPath, assetInfoManifest);
                     }
 
                     //------ アセットバンドルの参照情報をAssetInfoManifestに書き込み ------
