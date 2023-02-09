@@ -25,6 +25,8 @@ namespace Modules.UI
 
         //----- property -----
 
+		public float Alpha { get { return fadeAlpha; } }
+
         //----- method -----
 
 		public FadeGraphic(float duration, Func<float> getAlpha, bool ignoreTimeScale = false)
