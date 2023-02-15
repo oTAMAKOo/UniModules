@@ -20,6 +20,9 @@ namespace Modules.Scene
 
 	public interface ISceneBase
 	{
+		/// <summary> 起動シーンフラグ設定 </summary>
+		void SetBootSceneFlag(bool boot);
+
 		/// <summary> 引数型を取得 </summary>
 		Type GetArgumentType();
 
@@ -47,6 +50,15 @@ namespace Modules.Scene
 
 	public abstract class SceneBase : MonoBehaviour, ISceneBase
 	{
+		/// <summary> 起動シーンか </summary>
+		public bool IsBootScene { get; private set; } = false;
+
+		/// <summary> 起動シーンフラグ設定 </summary>
+		public void SetBootSceneFlag(bool boot)
+		{
+			IsBootScene = boot;
+		}
+
 		/// <summary> 引数型を取得 </summary>
 		public abstract Type GetArgumentType();
 

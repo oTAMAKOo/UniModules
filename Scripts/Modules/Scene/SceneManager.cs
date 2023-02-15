@@ -149,11 +149,18 @@ namespace Modules.Scene
 			
 			history.Add(sceneArgument);
 
+			// 起動シーンフラグ設定.
+
+			var sceneBase = currentScene.Instance as SceneBase;
+
+			if (sceneBase != null)
+			{
+				sceneBase.SetBootSceneFlag(true);
+			}
+
 			// ISceneEvent発行.
 
 			var tasks = new List<UniTask>();
-
-			var sceneBase = currentScene.Instance as SceneBase;
 
 			if (sceneBase != null)
 			{
