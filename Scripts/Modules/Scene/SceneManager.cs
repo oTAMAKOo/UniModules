@@ -155,7 +155,7 @@ namespace Modules.Scene
 
 			if (sceneBase != null)
 			{
-				sceneBase.SetBootFlag(true);
+				sceneBase.SetLaunchScene();
 			}
 
 			// ISceneEvent発行.
