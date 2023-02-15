@@ -288,6 +288,8 @@ namespace Modules.Scene
 
 			try
             {
+                var scene = loadedScenes.GetValueOrDefault(transitionScene);
+
 				// ロード済みシーンからの遷移制御.
 
 				var handleTransition = await HandleTransitionFromLoadedScenes();
@@ -300,7 +302,14 @@ namespace Modules.Scene
 
 				diagnostics.Begin(TimeDiagnostics.Measure.Total);
 
-				await TransitionStart<ISceneArgument>(null, false).AttachExternalCancellation(cancelToken);
+                ISceneArgument argument = null;
+
+				if (scene != null && scene.Instance != null)
+                {
+    				argument = scene.Instance.GetArgument();
+				}
+
+				await TransitionStart<ISceneArgument>(argument, false).AttachExternalCancellation(cancelToken);
 
 				//====== Scene Leave ======
 
@@ -331,9 +340,7 @@ namespace Modules.Scene
 
 				//====== Scene Active ======
 
-				var scene = loadedScenes.GetValueOrDefault(transitionScene);
-
-				if (scene == null)
+                if (scene == null)
 				{
 					Debug.LogError($"UnloadTransition target scene not found.\n{transitionScene}");
 				}
