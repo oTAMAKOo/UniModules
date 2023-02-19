@@ -29,7 +29,7 @@ namespace Modules.ExternalAssets
         {
             if (initialized) { return; }
 
-            titleContent = new GUIContent("Generate AssetInfoManifest");
+            titleContent = new GUIContent("AssetInfoManifest");
 
             minSize = WindowSize;
             maxSize = WindowSize;
