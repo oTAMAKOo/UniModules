@@ -155,7 +155,11 @@ namespace Modules.UtageExtension
 
             AssetFileManager.IsEditorErrorCheck = true;
                 
+            AdvScenarioDataBuilderWindow.ProjectData = project;
+                
             Import(project);
+
+            AdvScenarioDataBuilderWindow.ProjectData = null;
 
             AssetFileManager.IsEditorErrorCheck = originIsEditorErrorCheck;
 
