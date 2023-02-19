@@ -89,6 +89,8 @@ namespace Modules.Sound
 
         public IReadOnlyList<SoundElement> GetAllSounds(bool playing = true)
         {
+			if (soundElements == null){ return new SoundElement[0]; }
+
             if (playing)
             {
                 return soundElements.Where(x => x.IsPlaying).ToArray();
