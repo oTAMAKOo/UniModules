@@ -139,15 +139,21 @@ namespace Modules.Scene
                 return;
             }
 
+			// 初期化.
+
 			var argumentType = currentScene.Instance.GetArgumentType();
 
 			var sceneArgument = Activator.CreateInstance(argumentType) as ISceneArgument;
 
 			currentScene.Instance.SetArgument(sceneArgument);
 
-            await OnRegisterCurrentScene(currentScene);
+			await OnRegisterCurrentScene(currentScene);
 			
 			history.Add(sceneArgument);
+
+			// シーン登録.
+
+			loadedScenes.Add(sceneArgument.Identifier.Value, currentScene);
 
 			// 起動シーンフラグ設定.
 
