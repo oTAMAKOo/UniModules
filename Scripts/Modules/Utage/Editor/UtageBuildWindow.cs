@@ -318,6 +318,10 @@ namespace Modules.UtageExtension
 
                 AssetDatabase.MoveAsset(fromAssetPath, toAssetPath);
 
+                var asset = AssetDatabase.LoadMainAssetAtPath(toAssetPath);
+
+                UnityEditorUtility.SaveAsset(asset);
+
                 AssetDatabase.Refresh();
             }
 
