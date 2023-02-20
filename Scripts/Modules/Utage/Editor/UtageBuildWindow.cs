@@ -315,14 +315,15 @@ namespace Modules.UtageExtension
                 {
                     AssetDatabase.DeleteAsset(toAssetPath);
                 }
+                
+                var asset = AssetDatabase.LoadMainAssetAtPath(fromAssetPath);
+
+                if (asset != null)
+                {
+                    UnityEditorUtility.SaveAsset(asset);
+                }
 
                 AssetDatabase.MoveAsset(fromAssetPath, toAssetPath);
-
-                var asset = AssetDatabase.LoadMainAssetAtPath(toAssetPath);
-
-                UnityEditorUtility.SaveAsset(asset);
-
-                AssetDatabase.Refresh();
             }
 
             using (new AssetEditingScope())
