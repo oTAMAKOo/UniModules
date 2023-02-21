@@ -315,35 +315,34 @@ namespace Modules.UtageExtension
                 {
                     AssetDatabase.DeleteAsset(toAssetPath);
                 }
-                
-                var asset = AssetDatabase.LoadMainAssetAtPath(fromAssetPath);
+
+                AssetDatabase.MoveAsset(fromAssetPath, toAssetPath);
+
+                var asset = AssetDatabase.LoadMainAssetAtPath(toAssetPath);
 
                 if (asset != null)
                 {
                     UnityEditorUtility.SaveAsset(asset);
                 }
-
-                AssetDatabase.MoveAsset(fromAssetPath, toAssetPath);
             }
 
-            using (new AssetEditingScope())
+            // .chapter.asset
             {
-                // .chapter.asset
-                {
-                    var chapterFilePath = content.bookFilePath.Replace(AdvExcelImporter.BookAssetExt, AdvExcelImporter.ChapterAssetExt);
+                var chapterFilePath = content.bookFilePath.Replace(AdvExcelImporter.BookAssetExt, AdvExcelImporter.ChapterAssetExt);
 
-                    var chapterFileName = Path.GetFileName(chapterFilePath);
-                
-                    MoveAsset(chapterFileName);
-                }
-
-                // .book.asset
-                {
-                    var chapterFileName = Path.GetFileName(content.bookFilePath);
-                
-                    MoveAsset(chapterFileName);
-                }
+                var chapterFileName = Path.GetFileName(chapterFilePath);
+            
+                MoveAsset(chapterFileName);
             }
+
+            // .book.asset
+            {
+                var chapterFileName = Path.GetFileName(content.bookFilePath);
+            
+                MoveAsset(chapterFileName);
+            }
+
+            AssetDatabase.Refresh(ImportAssetOptions.ForceUpdate);
         }
 
         // Copy From: AdvScenarioDataBuilderWindow.cs
