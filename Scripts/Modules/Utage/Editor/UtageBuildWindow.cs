@@ -309,6 +309,9 @@ namespace Modules.UtageExtension
                 if (!Directory.Exists(toDirectory))
                 {
                     Directory.CreateDirectory(toDirectory);
+
+                    // ここでRefreshしないとMoveAssetでフォルダを認識できない.
+                    AssetDatabase.Refresh(ImportAssetOptions.ForceUpdate);
                 }
 
                 if (UnityEditorUtility.IsExists(toAssetPath))
