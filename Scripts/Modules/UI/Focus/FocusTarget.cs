@@ -1,6 +1,8 @@
 ﻿
 using UnityEngine;
 using UnityEngine.UI;
+using Cysharp.Threading.Tasks;
+using UniRx;
 using Extensions;
 
 namespace Modules.UI.Focus
@@ -11,6 +13,9 @@ namespace Modules.UI.Focus
         //----- params -----
 
         //----- field -----
+
+		[SerializeField, HideInInspector]
+		private string focusId = null;
 
 		private Canvas canvasSelf = null;
 
@@ -29,6 +34,20 @@ namespace Modules.UI.Focus
 		public bool IsFocus { get; private set; }
 
 		//----- method -----
+
+		void Awake()
+		{
+			var focusManager = FocusManager.Instance;
+
+			focusManager.OnUpdateFocusAsObservable()
+				.Subscribe(_ => UpdateFocus())
+				.AddTo(this);
+		}
+		
+		void OnEnable()
+		{
+			UpdateFocus();
+		}
 
         private void Setup()
         {
@@ -89,5 +108,26 @@ namespace Modules.UI.Focus
 				canvasSelf.sortingOrder = originSortingOrder;
             }
         }
+
+		private void UpdateFocus()
+		{
+			var focusManager = FocusManager.Instance;
+
+			if (string.IsNullOrEmpty(focusId)){ return; }
+
+			var isTarget = focusManager.Contains(focusId);
+
+			if (isTarget)
+			{
+				if (focusManager.FocusCanvas != null)
+				{
+					Focus(focusManager.FocusCanvas);
+				}
+			}
+			else
+			{
+				Release();
+			}
+		}
     }
 }
