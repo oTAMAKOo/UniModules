@@ -22,6 +22,8 @@ namespace Modules.UI.Focus
 
 		public Canvas FocusCanvas { get; private set; }
 
+		public bool HasFocus { get { return targets.Any(); } }
+
 		//----- method -----
 
 		private FocusManager()
@@ -40,7 +42,7 @@ namespace Modules.UI.Focus
 		{
 			if (targets.Contains(focusId)){ return; }
 			
-			targets.Remove(focusId);
+			targets.Add(focusId);
 
 			UpdateFocus();
 		}
@@ -69,7 +71,10 @@ namespace Modules.UI.Focus
 
 		private void UpdateFocus()
 		{
-
+			if (onUpdateFocus != null)
+			{
+				onUpdateFocus.OnNext(Unit.Default);
+			}
 		}
 
 		public IObservable<Unit> OnUpdateFocusAsObservable()
