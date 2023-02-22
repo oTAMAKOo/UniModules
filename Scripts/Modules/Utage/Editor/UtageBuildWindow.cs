@@ -265,12 +265,12 @@ namespace Modules.UtageExtension
                 {
                     excelFilePath = excelPath,
                     bookFilePath = bookFilePath,
-                    excelLastWriteTime = file.LastWriteTime,
+                    excelLastWriteTime = file.LastWriteTimeUtc,
                 };
 
                 if (File.Exists(info.bookFilePath))
                 {
-                    info.bookFileLastWriteTime = File.GetLastWriteTime(info.bookFilePath);
+                    info.bookFileLastWriteTime = File.GetLastWriteTimeUtc(info.bookFilePath);
                 }
 
                 list.Add(info);
