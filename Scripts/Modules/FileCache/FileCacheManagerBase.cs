@@ -102,8 +102,8 @@ namespace Modules.FileCache
             // 有効期限切れ.
             if (!data.Alive()){ return false; }
 
-            // キャッシュより新しい.
-            if (data.UpdateAt < updateAt){ return false; }
+			// キャッシュと更新日時が異なる.
+			if (data.UpdateAt != updateAt){ return false; }
 
             var fileName = GetFileName(source);
 
