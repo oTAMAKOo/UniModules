@@ -720,6 +720,11 @@ namespace Modules.AssetBundles
 
             if (string.IsNullOrEmpty(filePath)){ return null; }
 
+			if (!File.Exists(filePath))
+			{
+				throw new FileNotFoundException(filePath);
+			}
+
             var assetBundleInfo = assetInfo.AssetBundle;
             var assetBundleName = assetBundleInfo.AssetBundleName;
 
