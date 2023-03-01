@@ -59,8 +59,6 @@ namespace Modules.Scene
         private Subject<SceneInstance> onUnloadSceneComplete = null;
         private Subject<Unit> onUnloadError = null;
 
-		private Subject<ISceneArgument> onForceTransition = null;
-
         //----- property -----
 
         /// <summary> 現在のシーン情報 </summary>
@@ -229,7 +227,7 @@ namespace Modules.Scene
 		}
 
         /// <summary> シーン遷移. </summary>
-        public void Transition<TArgument>(TArgument sceneArgument, bool registerHistory = false) where TArgument : ISceneArgument
+        public void Transition<TArgument>(TArgument sceneArgument, bool registerHistory = false, LoadSceneMode mode = LoadSceneMode.Additive) where TArgument : ISceneArgument
         {
             // 遷移中は遷移不可.
             if (IsTransition) { return; }
@@ -237,30 +235,12 @@ namespace Modules.Scene
 			IsTransition = true;
 
             // ※ 呼び出し元でAddTo(this)されるとシーン遷移中にdisposableされてしまうのでIObservableで公開しない.
-            ObservableEx.FromUniTask(cancelToken => TransitionCore(sceneArgument, LoadSceneMode.Additive, false, registerHistory, false, cancelToken))
+            ObservableEx.FromUniTask(cancelToken => TransitionCore(sceneArgument, mode, false, registerHistory, cancelToken))
                 .Subscribe(_ => IsTransition = false)
                 .AddTo(transitionCancelSource.Token);
         }
 
-        /// <summary> 強制シーン遷移. </summary>
-        public void ForceTransition<TArgument>(TArgument sceneArgument, bool registerHistory = false) where TArgument : ISceneArgument
-        {
-            TransitionCancel();
-
-			if (onForceTransition != null)
-			{
-				onForceTransition.OnNext(sceneArgument);
-			}
-
-			IsTransition = true;
-
-            // ※ 呼び出し元でAddTo(this)されるとシーン遷移中にdisposableされてしまうのでIObservableで公開しない.
-            ObservableEx.FromUniTask(cancelToken => TransitionCore(sceneArgument, LoadSceneMode.Single, false, registerHistory, true, cancelToken))
-                .Subscribe(_ => IsTransition = false)
-                .AddTo(transitionCancelSource.Token);
-        }
-
-        /// <summary> シーン再読み込み. </summary>
+		/// <summary> シーン再読み込み. </summary>
         public void Reload()
         {
             // 遷移中は遷移不可.
@@ -269,7 +249,7 @@ namespace Modules.Scene
 			IsTransition = true;
 
             // ※ 呼び出し元でAddTo(this)されるとシーン遷移中にdisposableされてしまうのでIObservableで公開しない.
-            ObservableEx.FromUniTask(cancelToken => TransitionCore(currentSceneArgument, LoadSceneMode.Additive, false, false, false, cancelToken))
+            ObservableEx.FromUniTask(cancelToken => TransitionCore(currentSceneArgument, LoadSceneMode.Additive, false, false, cancelToken))
                 .Subscribe(_ => IsTransition = false)
                 .AddTo(transitionCancelSource.Token);
         }
@@ -285,6 +265,8 @@ namespace Modules.Scene
             }
 
 			transitionCancelSource = new CancellationTokenSource();
+
+			IsTransition = false;
         }
 
         /// <summary>
@@ -311,7 +293,7 @@ namespace Modules.Scene
             {
 				IsTransition = true;
 
-                ObservableEx.FromUniTask(cancelToken => TransitionCore(argument, LoadSceneMode.Additive, true, false, false, cancelToken))
+                ObservableEx.FromUniTask(cancelToken => TransitionCore(argument, LoadSceneMode.Additive, true, false, cancelToken))
                     .Subscribe(_ => IsTransition = false)
                     .AddTo(transitionCancelSource.Token);
             }
@@ -350,12 +332,12 @@ namespace Modules.Scene
 			return cacheScenes.Any(x => x.Identifier == scene);
 		}
 
-        private async UniTask TransitionCore<TArgument>(TArgument argument, LoadSceneMode mode, bool isSceneBack, bool registerHistory, bool force, CancellationToken cancelToken) 
+        private async UniTask TransitionCore<TArgument>(TArgument argument, LoadSceneMode mode, bool isSceneBack, bool registerHistory, CancellationToken cancelToken) 
 			where TArgument : ISceneArgument
         {
             if (!argument.Identifier.HasValue) { return; }
 
-			if (!force)
+			if (mode == LoadSceneMode.Additive)
 			{
 				// ロード済みシーンからの遷移制御.
 
@@ -1259,14 +1241,7 @@ namespace Modules.Scene
             GC.Collect();
         }
 
-		//====== Force Transition ======
-
-		public IObservable<ISceneArgument> OnForceTransitionAsObservable()
-		{
-			return onForceTransition ?? (onForceTransition = new Subject<ISceneArgument>());
-		}
-
-        //====== Prepare Scene ======
+		//====== Prepare Scene ======
 
         public IObservable<SceneInstance> OnPrepareAsObservable()
         {
