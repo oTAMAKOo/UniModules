@@ -88,6 +88,8 @@ namespace Modules.Resolution
 			lastSafeArea = safeArea;
 			lastResolution = resolution;
 
+			transform.Reset();
+
 			var normalizedMin = new Vector2(safeArea.xMin / resolution.x, safeArea.yMin / resolution.y);
 			var normalizedMax = new Vector2(safeArea.xMax / resolution.x, safeArea.yMax / resolution.y);
 
