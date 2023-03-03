@@ -209,6 +209,7 @@ namespace Modules.Devkit.AssetTuning
 			{
 				platformSetting.overridden = compressInfo.isOverride;
 				platformSetting.compressionQuality = compressInfo.compressionQuality;
+				platformSetting.resizeAlgorithm = compressInfo.resizeAlgorithm;
 				platformSetting.format = compressInfo.format;
 				platformSetting.maxTextureSize = compressInfo.maxSize;
 			}
