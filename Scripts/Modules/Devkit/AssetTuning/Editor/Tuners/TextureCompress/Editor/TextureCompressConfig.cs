@@ -44,6 +44,9 @@ namespace Modules.Devkit.AssetTuning
 		[SerializeField]
 		public CompressInfo standaloneSetting = new CompressInfo();
 
+		[SerializeField]
+		public string ignoreFolders = string.Empty;
+
 		public CompressInfo GetCompressInfo(BuildTargetGroup buildTargetGroup)
 		{
 			switch (buildTargetGroup)
@@ -96,7 +99,10 @@ namespace Modules.Devkit.AssetTuning
 
 			assetPath = PathUtility.ConvertPathSeparator(assetPath);
 
-			var setting = cache.Where(x => assetPath.StartsWith(x.Key)).FindMax(x => x.Key.Length);
+			var setting = cache
+				.Where(x => assetPath.StartsWith(x.Key))
+				.Where(x => !IsIgnoreTarget(assetPath, x.Value))
+				.FindMax(x => x.Key.Length);
 
 			return setting.IsDefault() ? null : setting.Value;
 		}
@@ -115,6 +121,18 @@ namespace Modules.Devkit.AssetTuning
 
 				cache[folderPath] = item;
 			}
+		}
+
+		private bool IsIgnoreTarget(string assetPath, CompressSetting setting)
+		{
+			var ignoreFolders = setting.ignoreFolders.Split(',').Select(x => x.Trim());
+
+			foreach (var ignoreFolder in ignoreFolders)
+			{
+				if (assetPath.Contains(ignoreFolder)){ return true; }
+			}
+
+			return false;
 		}
     }
 }

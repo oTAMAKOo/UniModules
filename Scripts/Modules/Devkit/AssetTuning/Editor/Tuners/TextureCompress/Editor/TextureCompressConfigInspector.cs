@@ -298,6 +298,15 @@ namespace Modules.Devkit.AssetTuning
 					DrawCompressSettingGUI(item.Key, item.Value);
 				}
 			}
+
+			GUILayout.Space(4f);
+
+			EditorLayoutTools.ContentTitle("Option");
+
+			using (new ContentsScope())
+			{
+				info.ignoreFolders = EditorGUILayout.DelayedTextField("Ignore Targets", info.ignoreFolders);
+			}
 		}
 
 		private void DrawCompressSettingGUI(BuildTargetGroup targetGroup, CompressInfo info)
