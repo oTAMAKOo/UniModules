@@ -18,6 +18,12 @@ namespace Modules.Devkit.AssetTuning
     {
         //----- params -----
 
+		private enum DisplayMode
+		{
+			Asset,
+			Path,
+		}
+
 		//----- field -----
 
 		private TextureCompressConfig instance = null;
@@ -29,6 +35,8 @@ namespace Modules.Devkit.AssetTuning
 		private List<CompressSetting> contents = null;
 
 		private int tabSelection = 0;
+
+		private DisplayMode displayMode = DisplayMode.Asset;
 		
 		private bool initialized = false;
 
@@ -125,6 +133,8 @@ namespace Modules.Devkit.AssetTuning
 			{
 				using (new EditorGUILayout.HorizontalScope())
 				{
+					displayMode = (DisplayMode)EditorGUILayout.EnumPopup(displayMode);
+
 					GUILayout.FlexibleSpace();
 
 					if (GUILayout.Button("Default setting", EditorStyles.miniButton, GUILayout.Width(125f)))
@@ -150,44 +160,61 @@ namespace Modules.Devkit.AssetTuning
 
 			var folderGuid = info.folderGuid;
 
-			var folderAsset = UnityEditorUtility.FindMainAsset(folderGuid);
-			
-			rect.width = totalWidth - (buttonWidth + padding);
-
-			folderAsset = EditorGUI.ObjectField(rect, folderAsset, typeof(Object), false);
-				
-			if (EditorGUI.EndChangeCheck())
+			switch (displayMode)
 			{
-				if (folderAsset != null)
-				{
-					var isFolder = UnityEditorUtility.IsFolder(folderAsset);
-
-					if (isFolder)
+				case DisplayMode.Asset:
 					{
-						var newfolderGuid = UnityEditorUtility.GetAssetGUID(folderAsset);
+						var folderAsset = UnityEditorUtility.FindMainAsset(folderGuid);
+				
+						rect.width = totalWidth - (buttonWidth + padding);
 
-						// フォルダ登録.
-						if (contents.All(x => x.folderGuid != newfolderGuid))
+						folderAsset = EditorGUI.ObjectField(rect, folderAsset, typeof(Object), false);
+					
+						if (EditorGUI.EndChangeCheck())
 						{
-							contents[index].folderGuid = newfolderGuid;
-						}
-						// 既に登録済み.
-						else
-						{
-							EditorUtility.DisplayDialog("Error", "This folder is already registered.", "close");
+							if (folderAsset != null)
+							{
+								var isFolder = UnityEditorUtility.IsFolder(folderAsset);
+
+								if (isFolder)
+								{
+									var newfolderGuid = UnityEditorUtility.GetAssetGUID(folderAsset);
+
+									// フォルダ登録.
+									if (contents.All(x => x.folderGuid != newfolderGuid))
+									{
+										contents[index].folderGuid = newfolderGuid;
+									}
+									// 既に登録済み.
+									else
+									{
+										EditorUtility.DisplayDialog("Error", "This folder is already registered.", "close");
+									}
+								}
+								// フォルダではない.
+								else
+								{
+									EditorUtility.DisplayDialog("Error", "This asset is not a folder.", "close");
+								}
+							}
+							// 設定が対象が外れた場合は初期化.
+							else
+							{
+								info.folderGuid = string.Empty;
+							}
 						}
 					}
-					// フォルダではない.
-					else
+					break;
+
+				case DisplayMode.Path:
 					{
-						EditorUtility.DisplayDialog("Error", "This asset is not a folder.", "close");
+						var assetPath = AssetDatabase.GUIDToAssetPath(folderGuid);
+
+						rect.width = totalWidth - (buttonWidth + padding);
+
+						EditorGUI.SelectableLabel(rect, assetPath, EditorStyles.textArea);
 					}
-				}
-				// 設定が対象が外れた場合は初期化.
-				else
-				{
-					info.folderGuid = string.Empty;
-				}
+					break;
 			}
 
 			using (new DisableScope(string.IsNullOrEmpty(info.folderGuid)))
@@ -206,7 +233,6 @@ namespace Modules.Devkit.AssetTuning
 
 		private void DrawFolderCompressInfoGUI(CompressSetting info, Action onClose)
 		{
-		
 			using (new EditorGUILayout.HorizontalScope())
 			{
 				if (!string.IsNullOrEmpty(info.folderGuid))
