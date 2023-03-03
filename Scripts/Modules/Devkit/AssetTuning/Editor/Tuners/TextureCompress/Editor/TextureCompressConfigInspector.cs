@@ -127,15 +127,33 @@ namespace Modules.Devkit.AssetTuning
 
 			if (editTarget != null)
 			{
-				DrawFolderCompressInfoGUI(editTarget, () => editTarget = null);
+				Action onClose = () =>
+				{
+					editTarget = null;
+
+					SaveContents();
+				};
+
+				DrawFolderCompressInfoGUI(editTarget, onClose);
 			}
 			else
 			{
 				using (new EditorGUILayout.HorizontalScope())
 				{
-					displayMode = (DisplayMode)EditorGUILayout.EnumPopup(displayMode);
+					displayMode = (DisplayMode)EditorGUILayout.EnumPopup(displayMode, GUILayout.Width(80f));
 
 					GUILayout.FlexibleSpace();
+
+					if (GUILayout.Button("Sort by AssetPath", EditorStyles.miniButton, GUILayout.Width(125f)))
+					{
+						contents = contents
+							.OrderBy(x =>AssetDatabase.GUIDToAssetPath(x.folderGuid), new NaturalComparer())
+							.ToList();
+
+						SaveContents();
+					}
+
+					GUILayout.Space(5f);
 
 					if (GUILayout.Button("Default setting", EditorStyles.miniButton, GUILayout.Width(125f)))
 					{
