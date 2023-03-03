@@ -284,13 +284,17 @@ namespace Modules.Devkit.AssetTuning
 
 				GUILayout.Space(2f);
 
-				// format.
+				// ResizeAlgorithm.
+
+				info.resizeAlgorithm = (TextureResizeAlgorithm)EditorGUILayout.EnumPopup("ResizeAlgorithm", info.resizeAlgorithm);
+
+				// Format.
 
 				info.format = (TextureImporterFormat)EditorGUILayout.EnumPopup("Format", info.format);
 
 				GUILayout.Space(2f);
 				
-				// compressionQuality.
+				// CompressionQuality.
 
 				var qualityTable = new int[]{ 0, 50, 100 };
 

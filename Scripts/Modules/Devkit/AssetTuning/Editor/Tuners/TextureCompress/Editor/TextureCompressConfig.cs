@@ -20,6 +20,9 @@ namespace Modules.Devkit.AssetTuning
 		public int maxSize = 1024;
 
 		[SerializeField]
+		public TextureResizeAlgorithm resizeAlgorithm = TextureResizeAlgorithm.Mitchell;
+
+		[SerializeField]
 		public TextureImporterFormat format = TextureImporterFormat.Automatic;
 
 		[SerializeField]
