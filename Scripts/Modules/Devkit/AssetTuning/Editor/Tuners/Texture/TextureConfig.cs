@@ -58,6 +58,13 @@ namespace Modules.Devkit.AssetTuning.TextureAsset
 		{
 			var newData = DefaultData.DeepCopy();
 
+			//------ Optionデータは引き継がない ------
+
+			newData.ignoreFolders = new string[0];
+			newData.ignoreFolderNames = new string[0];
+
+			//----------------------------------------
+
 			return newData;
 		}
 
