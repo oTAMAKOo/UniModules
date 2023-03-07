@@ -1,213 +1,381 @@
 ﻿
 using UnityEngine;
 using UnityEditor;
+using UnityEditorInternal;
+using System;
 using System.Linq;
-using UniRx;
+using System.Collections.Generic;
 using Extensions;
 using Extensions.Devkit;
-using Modules.Devkit.Inspector;
 
 using Object = UnityEngine.Object;
 
-namespace Modules.Devkit.AssetTuning
+namespace Modules.Devkit.AssetTuning.TextureAsset
 {
-    [CustomEditor(typeof(TextureConfig))]
-    public sealed class TextureConfigInspector : UnityEditor.Editor
+	[CustomEditor(typeof(TextureConfig))]
+    public sealed class TextureConfigInspector : Editor
     {
         //----- params -----
 
-        private sealed class FolderNameRegisterScrollView : RegisterScrollView<string>
-        {
-            protected override string CreateNewContent()
-            {
-                return string.Empty;
-            }
+		private enum DisplayMode
+		{
+			Asset,
+			Path,
+		}
 
-            protected override string DrawContent(Rect rect, int index, string content)
-            {
-                return EditorGUI.DelayedTextField(rect, content);
-            }
-        }
+		private static readonly Dictionary<TextureImporterType, Type> InspectorDrawerTypeTable = new()
+		{
+			{ TextureImporterType.Default, typeof(TextureDefaultInspectorDrawer) },
+			{ TextureImporterType.Sprite, typeof(TextureSpriteInspectorDrawer) },
+			{ TextureImporterType.NormalMap, typeof(TextureNormalMapInspectorDrawer) },
+			{ TextureImporterType.GUI, typeof(TextureGUIInspectorDrawer) },
+			{ TextureImporterType.Cursor, typeof(TextureCursorInspectorDrawer) },
+			{ TextureImporterType.Cookie, typeof(TextureCookieInspectorDrawer) },
+			{ TextureImporterType.Lightmap, typeof(TextureLightMapInspectorDrawer) },
+			{ TextureImporterType.DirectionalLightmap, typeof(TextureDirectionalLightmapInspectorDrawer) },
+			{ TextureImporterType.Shadowmask, typeof(TextureShadowmaskInspectorDrawer) },
+			{ TextureImporterType.SingleChannel, typeof(TextureSingleChannelInspectorDrawer) },
+		};
 
-        //----- field -----
+		//----- field -----
 
-        private FolderRegisterScrollView compressFolderView = null;
-        private FolderNameRegisterScrollView ignoreCompressFolderNameScrollView = null;
+		private TextureConfig instance = null;
 
-        private FolderRegisterScrollView spriteFolderView = null;
-        private FolderNameRegisterScrollView spriteFolderNameScrollView = null;
-        private FolderNameRegisterScrollView ignoreSpriteFolderNameScrollView = null;
+		private TextureData editTarget = null;
 
-        private LifetimeDisposable lifetimeDisposable = null;
+		private ReorderableList reorderableList = null;
 
-        private TextureConfig instance = null;
+		private List<TextureData> contents = null;
 
-        private bool changeSettingOnImport = false;
+		private DisplayMode displayMode = DisplayMode.Asset;
+		
+		private TextureDataInspectorDrawer textureDataInspectorDrawer = null;
+
+		[NonSerialized]
+		private bool initialized = false;
 
         //----- property -----
 
         //----- method -----
 
-        void OnEnable()
-        {
-            instance = target as TextureConfig;
+		private void Initialize()
+		{
+			if (initialized){ return; }
 
-            lifetimeDisposable = new LifetimeDisposable();
+			editTarget = null;
+			
+			SetupReorderableList();
 
-            //------ Compress Folder ------
+			LoadContents();
 
-            compressFolderView = new FolderRegisterScrollView("Compress Folder", "TextureAssetTunerConfigInspector-CompressFolder");
+			initialized = true;
+		}
 
-            compressFolderView.RemoveChildrenFolder = true;
+		void OnDisable()
+		{
+			SaveContents();
+		}
 
-            compressFolderView.OnUpdateContentsAsObservable()
-                .Subscribe(x => SaveCompressFolders(x.Select(y => y.asset).ToArray()))
-                .AddTo(lifetimeDisposable.Disposable);
+		private void SetupReorderableList()
+		{
+			if (reorderableList != null){ return; }
 
-            var compressFolderGuids = instance.CompressFolders
-                .Select(x => UnityEditorUtility.GetAssetGUID(x))
-                .ToArray();
+			reorderableList = new ReorderableList(new List<TextureData>(), typeof(TextureData));
 
-            compressFolderView.SetContents(compressFolderGuids);
+			// ヘッダー描画コールバック.
+			reorderableList.drawHeaderCallback = r =>
+			{
+				EditorGUI.LabelField(r, "Target Folders");
+			};
 
-            //------ Sprite Folder ------
+			// 要素描画コールバック.
+			reorderableList.drawElementCallback = (r, index, isActive, isFocused) => 
+			{
+				r.position = Vector.SetY(r.position, r.position.y + 2f);
+				r.height = EditorGUIUtility.singleLineHeight;
 
-            spriteFolderView = new FolderRegisterScrollView("Sprite Folder", "TextureAssetTunerConfigInspector-SpriteFolder");
+				var content = contents.ElementAtOrDefault(index);
 
-            spriteFolderView.RemoveChildrenFolder = true;
+				EditorGUI.BeginChangeCheck();
 
-            spriteFolderView.OnUpdateContentsAsObservable()
-                .Subscribe(x => SaveSpriteFolders(x.Select(y => y.asset).ToArray()))
-                .AddTo(lifetimeDisposable.Disposable);
+				content = DrawContent(r, index, content);
 
-            var spriteFolderGuids = instance.SpriteFolders
-                .Select(x => UnityEditorUtility.GetAssetGUID(x))
-                .ToArray();
+				if (EditorGUI.EndChangeCheck())
+				{
+					contents[index] = content;
 
-            spriteFolderView.SetContents(spriteFolderGuids);
+					reorderableList.list = contents;
+				}
+			};
 
-            //------ Ignore Compress FolderName ------
+			// 順番入れ替えコールバック.
+			reorderableList.onReorderCallback = x =>
+			{
+				contents = x.list.Cast<TextureData>().ToList();
+				
+				UpdateContents();
+			};
 
-            ignoreCompressFolderNameScrollView = new FolderNameRegisterScrollView();
+			// 追加コールバック.
+			reorderableList.onAddCallback = list =>
+			{
+				contents.Add(CreateNewContent());
 
-            ignoreCompressFolderNameScrollView.OnUpdateContentsAsObservable()
-                .Subscribe(x => SaveIgnoreCompressFolders(x))
-                .AddTo(lifetimeDisposable.Disposable);
+				UpdateContents();
+			};
 
-            ignoreCompressFolderNameScrollView.SetContents(instance.IgnoreCompressFolders);
+			// 削除コールバック.
+			reorderableList.onRemoveCallback = list =>
+			{
+				contents.RemoveAt(list.index);
 
-            //------ Sprite Folder Name ------
+				UpdateContents();
+			};
+		}
 
-            spriteFolderNameScrollView = new FolderNameRegisterScrollView();
+		public override void OnInspectorGUI()
+		{
+			instance = target as TextureConfig;
 
-            spriteFolderNameScrollView.OnUpdateContentsAsObservable()
-                .Subscribe(x => SaveSpriteFolderNames(x))
-                .AddTo(lifetimeDisposable.Disposable);
+			Initialize();
 
-            spriteFolderNameScrollView.SetContents(instance.SpriteFolderNames);
+			GUILayout.Space(4f);
 
-            //------ Ignore Sprite FolderName ------
+			if (editTarget != null)
+			{
+				DrawTextureDataGUI(editTarget);
+			}
+			else
+			{
+				using (new EditorGUILayout.HorizontalScope())
+				{
+					displayMode = (DisplayMode)EditorGUILayout.EnumPopup(displayMode, GUILayout.Width(80f));
 
-            ignoreSpriteFolderNameScrollView = new FolderNameRegisterScrollView();
+					GUILayout.Space(5f);
 
-            ignoreSpriteFolderNameScrollView.OnUpdateContentsAsObservable()
-                .Subscribe(x => SaveIgnoreSpriteFolders(x))
-                .AddTo(lifetimeDisposable.Disposable);
+					if (GUILayout.Button("Sort by AssetPath", EditorStyles.miniButton, GUILayout.Width(125f)))
+					{
+						contents = contents
+							.OrderBy(x =>AssetDatabase.GUIDToAssetPath(x.folderGuid), new NaturalComparer())
+							.ToList();
 
-            ignoreSpriteFolderNameScrollView.SetContents(instance.IgnoreSpriteFolders);
+						SaveContents();
+					}
 
-            //------ Options ------
+					GUILayout.FlexibleSpace();
 
-            changeSettingOnImport = TextureConfig.Prefs.changeSettingOnImport;
-        }
+					if (GUILayout.Button("Default setting", EditorStyles.miniButton, GUILayout.Width(125f)))
+					{
+						editTarget = instance.DefaultData;
+					}
+				}
 
-        public override void OnInspectorGUI()
-        {
-            instance = target as TextureConfig;
+				EditorGUILayout.Separator();
 
-            compressFolderView.DrawGUI();
+				reorderableList.DoLayoutList();
 
-            GUILayout.Space(2f);
+				EditorGUILayout.Separator();
 
-            DrawRegisterIgnoreFolderNameGUI(ignoreCompressFolderNameScrollView, "Ignore Compress Folders");
+				EditorLayoutTools.ContentTitle("Option (Unsafe)");
 
-            GUILayout.Space(2f);
+				using (new ContentsScope())
+				{
+					TextureConfig.Prefs.forceModifyOnImport = EditorGUILayout.Toggle("Force modify on import", TextureConfig.Prefs.forceModifyOnImport);
+				}
+			}
+		}
 
-            spriteFolderView.DrawGUI();
+		private TextureData DrawContent(Rect rect, int index, TextureData info)
+		{
+			var totalWidth = rect.width;
 
-            GUILayout.Space(2f);
+			var buttonWidth = 80f;
+			var padding = 5f;
 
-            DrawRegisterIgnoreFolderNameGUI(spriteFolderNameScrollView, "Sprite FolderName");
+			EditorGUI.BeginChangeCheck();
 
-            GUILayout.Space(2f);
+			var folderGuid = info.folderGuid;
 
-            DrawRegisterIgnoreFolderNameGUI(ignoreSpriteFolderNameScrollView, "Ignore Sprite Folders");
+			switch (displayMode)
+			{
+				case DisplayMode.Asset:
+					{
+						var folderAsset = UnityEditorUtility.FindMainAsset(folderGuid);
+				
+						rect.width = totalWidth - (buttonWidth + padding);
 
-            GUILayout.Space(2f);
+						folderAsset = EditorGUI.ObjectField(rect, folderAsset, typeof(Object), false);
+					
+						if (EditorGUI.EndChangeCheck())
+						{
+							if (folderAsset != null)
+							{
+								var isFolder = UnityEditorUtility.IsFolder(folderAsset);
 
-            EditorLayoutTools.Title("Options");
+								if (isFolder)
+								{
+									var newfolderGuid = UnityEditorUtility.GetAssetGUID(folderAsset);
 
-            using (new ContentsScope())
-            {
-                EditorGUI.BeginChangeCheck();
+									// フォルダ登録.
+									if (contents.All(x => x.folderGuid != newfolderGuid))
+									{
+										contents[index].folderGuid = newfolderGuid;
+									}
+									// 既に登録済み.
+									else
+									{
+										EditorUtility.DisplayDialog("Error", "This folder is already registered.", "close");
+									}
+								}
+								// フォルダではない.
+								else
+								{
+									EditorUtility.DisplayDialog("Error", "This asset is not a folder.", "close");
+								}
+							}
+							// 設定が対象が外れた場合は初期化.
+							else
+							{
+								info.folderGuid = string.Empty;
+							}
+						}
+					}
+					break;
 
-                changeSettingOnImport = EditorGUILayout.Toggle("Change setting on import", changeSettingOnImport);
+				case DisplayMode.Path:
+					{
+						var assetPath = AssetDatabase.GUIDToAssetPath(folderGuid);
 
-                if (EditorGUI.EndChangeCheck())
-                {
-                    TextureConfig.Prefs.changeSettingOnImport = changeSettingOnImport;
-                }
+						rect.width = totalWidth - (buttonWidth + padding);
 
-                GUILayout.Space(3f);
+						EditorGUI.TextField(rect, assetPath);
+					}
+					break;
+			}
 
-                EditorGUILayout.HelpBox("When this flag is enabled, the settings will be changed at the time of import..", MessageType.Info);
-            }
-        }
+			using (new DisableScope(string.IsNullOrEmpty(info.folderGuid)))
+			{
+				var buttonRect = new Rect(totalWidth - buttonWidth * 0.5f + padding, rect.y, buttonWidth, rect.height);
 
-        private void DrawRegisterIgnoreFolderNameGUI(FolderNameRegisterScrollView scrollView, string title)
-        {
-            if (EditorLayoutTools.Header(title, string.Format("TextureAssetTunerConfigInspector-{0}", title)))
-            {
-                using (new ContentsScope())
-                {
-                    scrollView.DrawGUI();
-                }
-            }
-        }
+				if (GUI.Button(buttonRect, "edit", EditorStyles.miniButton))
+				{
+					textureDataInspectorDrawer = null;
+					editTarget = info;
+				}
+			}
 
-        private void SaveCompressFolders(Object[] folders)
-        {
-            UnityEditorUtility.RegisterUndo(instance);
+			return info;
+		}
 
-            Reflection.SetPrivateField(instance, "compressFolders", folders);
-        }
+		private void SetTextureContent(TextureData data)
+		{
+			textureDataInspectorDrawer = null;
 
-        private void SaveIgnoreCompressFolders(string[] folders)
-        {
-            UnityEditorUtility.RegisterUndo(instance);
+			var inspectorDrawerType = InspectorDrawerTypeTable.GetValueOrDefault(data.textureType);
 
-            Reflection.SetPrivateField(instance, "ignoreCompressFolders", folders);
-        }
+			if (inspectorDrawerType != null)
+			{
+				textureDataInspectorDrawer = Activator.CreateInstance(inspectorDrawerType, data) as TextureDataInspectorDrawer;
+			}
+		}
 
-        private void SaveSpriteFolders(Object[] folders)
-        {
-            UnityEditorUtility.RegisterUndo(instance);
+		private void DrawTextureDataGUI(TextureData data)
+		{
+			if (textureDataInspectorDrawer == null)
+			{
+				SetTextureContent(data);
+			}
+			
+			using (new EditorGUILayout.HorizontalScope())
+			{
+				if (!string.IsNullOrEmpty(data.folderGuid))
+				{
+					using (new DisableScope(true))
+					{
+						var folderAsset = UnityEditorUtility.FindMainAsset(data.folderGuid);
 
-            Reflection.SetPrivateField(instance, "spriteFolders", folders);
-        }
+						EditorGUILayout.ObjectField(folderAsset, typeof(Object), false);
+					}
+				}
+				else
+				{
+					GUILayout.FlexibleSpace();
+				}
 
-        private void SaveSpriteFolderNames(string[] folderNames)
-        {
-            UnityEditorUtility.RegisterUndo(instance);
+				if (GUILayout.Button("exit", EditorStyles.miniButton, GUILayout.Width(80f)))
+				{
+					textureDataInspectorDrawer = null;
+					
+					editTarget = null;
 
-            Reflection.SetPrivateField(instance, "spriteFolderNames", folderNames);
-        }
+					SaveContents();
+				}
+			}
 
-        private void SaveIgnoreSpriteFolders(string[] folders)
-        {
-            UnityEditorUtility.RegisterUndo(instance);
+			EditorGUILayout.Separator();
 
-            Reflection.SetPrivateField(instance, "ignoreSpriteFolders", folders);
-        }
-    }
+			using (new ContentsScope())
+			{
+				EditorGUI.BeginChangeCheck();
+
+				data.textureType = (TextureImporterType)EditorGUILayout.EnumPopup("Texture Type", data.textureType);
+
+				if (EditorGUI.EndChangeCheck())
+				{
+					SetTextureContent(data);
+				}
+			}
+
+			GUILayout.Space(2f);
+
+			if (textureDataInspectorDrawer != null)
+			{
+				textureDataInspectorDrawer.DrawInspectorGUI();
+			}
+			else
+			{
+				EditorGUILayout.HelpBox($"Texture type {data.textureType} is not support.", MessageType.Warning);
+			}
+		}
+
+		private TextureData CreateNewContent()
+		{
+			return instance.CreateNewData();
+		}
+
+		private void UpdateContents()
+		{
+			reorderableList.list = contents;
+		}
+
+		private void LoadContents()
+		{
+			var customData = Reflection.GetPrivateField<TextureConfig, TextureData[]>(instance, "customData");
+
+			if (customData == null)
+			{
+				customData = new TextureData[0];
+			}
+
+			contents = customData.ToList();
+
+			UpdateContents();
+		}
+
+		private void SaveContents()
+		{
+			var customData = contents
+				.Where(x => !string.IsNullOrEmpty(x.folderGuid))
+				.Where(x =>
+					{
+						var assetPath = AssetDatabase.GUIDToAssetPath(x.folderGuid);
+						return AssetDatabase.IsValidFolder(assetPath);
+					})
+				.ToArray();
+
+			Reflection.SetPrivateField(instance, "customData", customData);
+
+			UnityEditorUtility.SaveAsset(instance);
+		}
+	}
 }

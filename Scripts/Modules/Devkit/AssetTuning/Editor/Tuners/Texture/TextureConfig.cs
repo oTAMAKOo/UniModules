@@ -1,75 +1,94 @@
 ﻿
 using UnityEngine;
-using Modules.Devkit.Prefs;
+using UnityEditor;
+using System.Collections.Generic;
+using System.Linq;
+using Extensions;
 using Modules.Devkit.ScriptableObjects;
+using Modules.Devkit.Prefs;
 
-using Object = UnityEngine.Object;
-
-namespace Modules.Devkit.AssetTuning
+namespace Modules.Devkit.AssetTuning.TextureAsset
 {
-    public sealed class TextureConfig : ReloadableScriptableObject<TextureConfig>
-    {
+	public enum PlatformType
+	{
+		Default,
+		Standalone,
+		iOS,
+		Android,
+	}
+
+	public sealed class TextureConfig : ReloadableScriptableObject<TextureConfig>
+	{
         //----- params -----
 
-        public static class Prefs
-        {
-            public static bool changeSettingOnImport
-            {
-                get { return ProjectPrefs.GetBool(typeof(Prefs).FullName + "-changeSettingOnImport", false); }
-                set { ProjectPrefs.SetBool(typeof(Prefs).FullName + "-changeSettingOnImport", value); }
-            }
-        }
+		public static class Prefs
+		{
+			public static bool forceModifyOnImport
+			{
+				get { return ProjectPrefs.GetBool(typeof(Prefs).FullName + "-forceModifyOnImport", false); }
+				set { ProjectPrefs.SetBool(typeof(Prefs).FullName + "-forceModifyOnImport", value); }
+			}
+		}
 
-        //----- field -----
+		//----- field -----
 
-        // compress
+		[SerializeField]
+		private TextureData defaultData = null;
+		[SerializeField]
+		private TextureData[] customData = null;
 
-        [SerializeField]
-        private Object[] compressFolders = null;
-        [SerializeField]
-        private string[] ignoreCompressFolders = null;
+		// フォルダパスをキーにしたキャッシュ.
+		private Dictionary<string, TextureData> cache = null;
 
-        // sprite
-
-        [SerializeField]
-        private Object[] spriteFolders = null;
-        [SerializeField]
-        private string[] spriteFolderNames = null;
-        [SerializeField]
-        private string[] ignoreSpriteFolders = null;
-        
         //----- property -----
 
-        /// <summary> 圧縮設定を適用するフォルダ. </summary>
-        public Object[] CompressFolders
-        {
-            get { return compressFolders ?? (compressFolders = new Object[0]); }
-        }
-
-        /// <summary> 圧縮設定の適用から除外するフォルダ名. </summary>
-        public string[] IgnoreCompressFolders
-        {
-            get { return ignoreCompressFolders ?? (ignoreCompressFolders = new string[0]); }
-        }
-
-        /// <summary> TextureTypeをSpriteに設定するフォルダ. </summary>
-        public Object[] SpriteFolders
-        {
-            get { return spriteFolders ?? (spriteFolders = new Object[0]); }
-        }
-
-        /// <summary> TextureTypeをSpriteに設定するフォルダ名. </summary>
-        public string[] SpriteFolderNames
-        {
-            get { return spriteFolderNames ?? (spriteFolderNames = new string[0]); }
-        }
-
-        /// <summary> TextureTypeをSpriteに設定適用から除外するフォルダ名. </summary>
-        public string[] IgnoreSpriteFolders
-        {
-            get { return ignoreSpriteFolders ?? (ignoreSpriteFolders = new string[0]); }
-        }
+		public TextureData DefaultData
+		{
+			get { return defaultData ?? (defaultData = new TextureData()); }
+		}
 
         //----- method -----
-    }
+
+		protected override void OnLoadInstance()
+		{
+			BuildCache();
+		}
+
+		public TextureData CreateNewData()
+		{
+			var newData = DefaultData.DeepCopy();
+
+			return newData;
+		}
+
+		public TextureData GetData(string assetPath)
+		{
+			BuildCache();
+
+			assetPath = PathUtility.ConvertPathSeparator(assetPath);
+
+			var data = cache
+				.Where(x => assetPath.StartsWith(x.Key))
+				.Where(x => !x.Value.IsIgnoreTarget(assetPath))
+				.FindMax(x => x.Key.Length);
+
+			return data.IsDefault() ? null : data.Value;
+		}
+
+		private void BuildCache()
+		{
+			if (cache != null) { return; }
+
+			cache = new Dictionary<string, TextureData>();
+
+			foreach (var item in customData)
+			{
+				var folderPath = AssetDatabase.GUIDToAssetPath(item.folderGuid);
+
+				folderPath = PathUtility.ConvertPathSeparator(folderPath);
+
+				cache[folderPath] = item;
+			}
+		}
+	}
 }
