@@ -89,6 +89,8 @@ namespace Modules.Devkit.AssetTuning.TextureAsset
 			DrawPlatformSettingGUI();
 
 			DrawOptionSettingGUI();
+
+			DrawForceModifyGUI();
 		}
 
 		private void DrawPlatformSettingGUI()
@@ -202,6 +204,55 @@ namespace Modules.Devkit.AssetTuning.TextureAsset
 						ignoreFolderNameView.DrawGUI();
 					}
 				}
+			}
+		}
+
+		private void DrawForceModifyGUI()
+		{
+			EditorLayoutTools.ContentTitle("Force Apply (Unsafe)");
+
+			using (new ContentsScope())
+			{
+				using (new EditorGUILayout.HorizontalScope())
+				{
+					EditorGUILayout.PrefixLabel("Force overwrite settings");
+
+					GUILayout.FlexibleSpace();
+
+					if (GUILayout.Button("apply", GUILayout.Width(85f)))
+					{
+						var message = "テクスチャ設定を強制的に上書きします\n既存の設定が上書きされる可能性があります";
+						var result = EditorUtility.DisplayDialog("Warning", message, "apply", "cancel");
+					
+						if (result)
+						{
+							ForceModifyTextureSettings();
+						}
+					}
+
+					GUILayout.Space(5f);
+				}
+			}
+		}
+
+		private void ForceModifyTextureSettings()
+		{
+			var originForceModifyOnImport = TextureConfig.Prefs.forceModifyOnImport;
+
+			try
+			{
+				var assetPath = AssetDatabase.GUIDToAssetPath(textureData.folderGuid);
+
+				if (!string.IsNullOrEmpty(assetPath))
+				{
+					TextureConfig.Prefs.forceModifyOnImport = true;
+
+					AssetDatabase.ImportAsset(assetPath, ImportAssetOptions.ImportRecursive);
+				}
+			}
+			finally
+			{
+				TextureConfig.Prefs.forceModifyOnImport = originForceModifyOnImport;
 			}
 		}
 
