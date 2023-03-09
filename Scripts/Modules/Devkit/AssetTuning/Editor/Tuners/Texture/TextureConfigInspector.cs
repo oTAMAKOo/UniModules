@@ -281,14 +281,6 @@ namespace Modules.Devkit.AssetTuning.TextureAsset
 
 		private void DrawTextureDataGUI(TextureData data)
 		{
-			if (string.IsNullOrEmpty(data.folderGuid))
-			{
-				textureDataInspectorDrawer = null;
-				editTarget = null;
-
-				return;
-			}
-
 			if (textureDataInspectorDrawer == null)
 			{
 				SetTextureContent(data);
@@ -296,11 +288,18 @@ namespace Modules.Devkit.AssetTuning.TextureAsset
 			
 			using (new EditorGUILayout.HorizontalScope())
 			{
-				using (new DisableScope(true))
+				if (string.IsNullOrEmpty(data.folderGuid))
 				{
-					var folderAsset = UnityEditorUtility.FindMainAsset(data.folderGuid);
+					GUILayout.FlexibleSpace();
+				}
+				else
+				{
+					using (new DisableScope(true))
+					{
+						var folderAsset = UnityEditorUtility.FindMainAsset(data.folderGuid);
 
-					EditorGUILayout.ObjectField(folderAsset, typeof(Object), false);
+						EditorGUILayout.ObjectField(folderAsset, typeof(Object), false);
+					}
 				}
 
 				GUILayout.Space(5f);

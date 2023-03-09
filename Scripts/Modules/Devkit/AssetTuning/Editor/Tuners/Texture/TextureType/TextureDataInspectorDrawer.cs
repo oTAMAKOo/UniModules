@@ -77,6 +77,8 @@ namespace Modules.Devkit.AssetTuning.TextureAsset
 
 		public void DrawInspectorGUI()
 		{
+			var textureConfig = TextureConfig.Instance;
+
 			var textureTypeName = textureData.textureType.ToString();
 
 			EditorLayoutTools.ContentTitle($"Texture ({textureTypeName})");
@@ -89,8 +91,11 @@ namespace Modules.Devkit.AssetTuning.TextureAsset
 			DrawPlatformSettingGUI();
 
 			DrawOptionSettingGUI();
-
-			DrawForceModifyGUI();
+			
+			if (textureConfig.DefaultData != textureData)
+			{
+				DrawForceModifyGUI();
+			}
 		}
 
 		private void DrawPlatformSettingGUI()
