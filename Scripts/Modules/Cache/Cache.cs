@@ -16,7 +16,7 @@ namespace Modules.Cache
         private sealed class Reference
         {
             public int referenceCount = 0;
-            public Cache<T> cacheInstance = null;
+            public Cache<T> cacheInstance = new Cache<T>();
         }
 
         //----- field -----
