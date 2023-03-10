@@ -106,23 +106,15 @@ namespace Modules.Cache
             GC.SuppressFinalize(this);
         }
 
-        private Reference CreateNewReference(string referenceName)
-        {
-            Reference reference = null;
+		private Reference CreateNewReference(string referenceName)
+		{
+			lock (cacheReference)
+			{
+				cacheReference[referenceName] = new Reference();
+			}
 
-            lock (cacheReference)
-            {
-                reference = new Reference()
-                {
-                    referenceCount = 0,
-                    cacheInstance = this,
-                };
-
-                cacheReference[referenceName] = reference;
-            }
-
-            return reference;
-        }
+			return cacheReference[referenceName];
+		}
 
         public void Add(string key, T asset)
         {
