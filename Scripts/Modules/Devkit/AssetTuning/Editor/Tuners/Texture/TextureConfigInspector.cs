@@ -23,7 +23,7 @@ namespace Modules.Devkit.AssetTuning.TextureAsset
 			Path,
 		}
 
-		private static readonly Dictionary<TextureImporterType, Type> InspectorDrawerTypeTable = new()
+		private static readonly Dictionary<TextureImporterType, Type> InspectorDrawerTypeTable = new Dictionary<TextureImporterType, Type>()
 		{
 			{ TextureImporterType.Default, typeof(TextureDefaultInspectorDrawer) },
 			{ TextureImporterType.Sprite, typeof(TextureSpriteInspectorDrawer) },
