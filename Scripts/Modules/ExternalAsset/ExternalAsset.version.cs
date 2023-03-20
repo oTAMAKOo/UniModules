@@ -27,6 +27,7 @@ namespace Modules.ExternalAssets
 
         private void InitializeVersionCheck()
         {
+			versions = new Dictionary<string, string>();
             requireUpdateCallFrameLimiter = new FunctionFrameLimiter(50);
         }
 
@@ -97,7 +98,7 @@ namespace Modules.ExternalAssets
             var list = new List<AssetInfo>();
 
             // バージョン情報読み込み.
-            if (versions == null)
+            if (versions.IsEmpty())
             {
                 await LoadVersion();
             }
