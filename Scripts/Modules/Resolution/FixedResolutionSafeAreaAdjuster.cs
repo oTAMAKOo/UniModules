@@ -31,7 +31,7 @@ namespace Modules.Resolution
 
         //----- method -----
 
-        void Update()
+        void LateUpdate()
         {
             Apply();
         }
