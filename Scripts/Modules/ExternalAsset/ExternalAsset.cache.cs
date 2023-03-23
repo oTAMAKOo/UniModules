@@ -24,6 +24,8 @@ namespace Modules.ExternalAssets
         /// <summary> 全キャッシュ削除. </summary>
         public async UniTask DeleteAllCache()
         {
+			if (LocalMode) { return; }
+
             ReleaseManagedAssets();
 
             UnloadAllAssetBundles(false);
@@ -47,6 +49,8 @@ namespace Modules.ExternalAssets
 		public async UniTask DeleteUnUsedCache()
 		{
 			if (SimulateMode) { return; }
+
+			if (LocalMode) { return; }
 
 			if (assetInfoManifest == null) { return; }
 
@@ -110,6 +114,8 @@ namespace Modules.ExternalAssets
         /// <summary> 指定されたキャッシュ削除. </summary>
         public async UniTask DeleteCache(AssetInfo[] assetInfos)
         {
+			if (LocalMode) { return; }
+
             var targetFilePaths = new List<string>();
 
             var count = 0;
@@ -137,6 +143,8 @@ namespace Modules.ExternalAssets
 
 		private async UniTask DeleteCacheFiles(string installDir, IEnumerable<string> filePaths)
         {
+			if (LocalMode) { return; }
+
             var builder = new StringBuilder();
 
             // ファイル削除.
