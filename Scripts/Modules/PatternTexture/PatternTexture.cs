@@ -1,4 +1,4 @@
-﻿
+
 using UnityEngine;
 using System;
 using System.Linq;
@@ -18,6 +18,9 @@ namespace Modules.PatternTexture
 
 		[SerializeField, ReadOnly]
 		private int padding = 2;
+
+		[SerializeField, ReadOnly]
+		private int filterPixels = 2;
 
         [SerializeField, ReadOnly]
         private bool hasAlphaMap = false;
@@ -44,6 +47,8 @@ namespace Modules.PatternTexture
         public int BlockSize { get { return blockSize; } }
 
         public int Padding { get { return padding; } }
+
+		public int FilterPixels { get { return filterPixels; } }
 
         public bool HasAlphaMap { get { return hasAlphaMap; } }
         
@@ -82,14 +87,15 @@ namespace Modules.PatternTexture
             }
         }
 
-        public void Set(Texture2D texture, int blockSize, int padding, PatternData[] sourceData, PatternBlockData[] blockData, bool alphaMap)
+        public void Set(Texture2D texture, int blockSize, int padding, int filterPixels, PatternData[] sourceData, PatternBlockData[] blockData, bool hasAlphaMap)
         {
             this.texture = texture;
             this.blockSize = blockSize;
             this.padding = padding;
+			this.filterPixels = filterPixels;
             this.sourceData = sourceData;
             this.blockData = blockData;
-            this.hasAlphaMap = alphaMap;
+            this.hasAlphaMap = hasAlphaMap;
 
             pixelIdDictionary = null;
             blockByPixelId = null;

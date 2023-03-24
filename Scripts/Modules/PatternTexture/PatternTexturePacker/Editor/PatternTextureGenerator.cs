@@ -1,4 +1,4 @@
-﻿
+
 using UnityEngine;
 using UnityEditor;
 using System;
@@ -50,7 +50,7 @@ namespace Modules.PatternTexture
 
         //----- method -----
 
-        public PatternTextureData Generate(string exportPath, int blockSize, int padding, Texture2D[] sourceTextures, bool hasAlphaMap)
+        public PatternTextureData Generate(string exportPath, int blockSize, int padding, int filterPixels, Texture2D[] sourceTextures, bool hasAlphaMap)
         {
             var patternTextureData = new PatternTextureData();
 
@@ -75,7 +75,7 @@ namespace Modules.PatternTexture
             var patternTargetDatas = ReadTextureBlock(blockSize, sourceTextures);
 
             // 補間用ピクセル分のパディングを追加.
-            padding += 2;
+            padding += filterPixels * 2;
 
             // 透明ピクセル、同じピクセル情報のブロックは対象外.
             var totalBlockCount = patternTargetDatas
@@ -94,7 +94,7 @@ namespace Modules.PatternTexture
 
             patternTextureData.PatternData = BuildPatternData(patternTargetDatas);
 
-            patternTextureData.PatternBlocks = BitBlockTransfer(texture, blockSize, padding, patternTargetDatas, hasAlphaMap);
+            patternTextureData.PatternBlocks = BitBlockTransfer(texture, blockSize, padding, filterPixels, patternTargetDatas, hasAlphaMap);
 
             File.WriteAllBytes(texturePath, texture.EncodeToPNG());
 
@@ -214,7 +214,7 @@ namespace Modules.PatternTexture
         }
 
         // 抽出した差分データを書き出し.
-        private PatternBlockData[] BitBlockTransfer(Texture2D texture, int blockSize, int padding, PatternTargetData[] patternTargetDatas, bool hasAlphaMap)
+        private PatternBlockData[] BitBlockTransfer(Texture2D texture, int blockSize, int padding, int filterPixels, PatternTargetData[] patternTargetDatas, bool hasAlphaMap)
         {
             var blockDataDictionary = new Dictionary<int, PatternBlockData>();
 
@@ -251,7 +251,7 @@ namespace Modules.PatternTexture
 							throw;
 						}
 
-                        AddCompletionPixels(texture, transX, transY, item.width, item.height);
+						InsertPixelsForFilterMode(texture, transX, transY, item.width, item.height, filterPixels);
 
                         // アルファ値情報生成.
                         var alphaMap = !hasAlphaMap || item.isAllTransparent ? 
@@ -289,37 +289,68 @@ namespace Modules.PatternTexture
         }
 
         // 補完時に周りのピクセル情報を巻き込まないように外周にピクセルを追加.
-        private void AddCompletionPixels(Texture2D texture, int x, int y, int width, int height)
+        private void InsertPixelsForFilterMode(Texture2D texture, int x, int y, int width, int height, int filterPixels)
         {
-            var pixel = Color.clear;
+			// 実装用の表示テスト用.
+			var addPixelDebug = false;
+
+			// カラー取得関数.
+			Color GetAddPixelColor(int _x, int _y)
+			{
+				var color = texture.GetPixel(_x, _y);
+
+				if (addPixelDebug) { color.a *= 0.25f; }
+
+				return color;
+			}
 
             // Top / Bottom.
             for (var px = x - 1; px < x + width + 1; px++)
             {
                 // Top.
-                pixel = texture.GetPixel(px, y);
-                //texture.SetPixel(px, y, Color.magenta);
-                texture.SetPixel(px, y - 1, pixel);
+				{
+	                var pixel = GetAddPixelColor(px, y);
+
+					for (var i = 1; i < filterPixels + 1; i++)
+					{
+						texture.SetPixel(px, y - i, pixel);
+					}
+				}
 
                 // Bottom.
-                pixel = texture.GetPixel(px, y + height - 1);
-                //texture.SetPixel(px, y + height - 1, Color.magenta);
-                texture.SetPixel(px, y + height, pixel);
-            }
+				{
+					var pixel = GetAddPixelColor(px, y + height - 1);
+					
+					for (var i = 0; i < filterPixels; i++)
+					{
+		                texture.SetPixel(px, y + height + i, pixel);
+					}
+				}
+			}
 
             // Left / Right.
             for (var py = y - 1; py < y + height + 1; py++)
             {
                 // Left.
-                pixel = texture.GetPixel(x, py);
-                //texture.SetPixel(x, py, Color.magenta);
-                texture.SetPixel(x - 1, py, pixel);
+				{
+					var pixel = GetAddPixelColor(x, py);
+
+					for (var i = 1; i < filterPixels + 1; i++)
+					{
+		                texture.SetPixel(x - i, py, pixel);
+					}
+				}
 
                 // Right.
-                pixel = texture.GetPixel(x + width - 1, py);
-                //texture.SetPixel(x + width - 1, py, Color.magenta);
-                texture.SetPixel(x + width, py, pixel);
-            }
+				{
+					var pixel = GetAddPixelColor(x + width - 1, py);
+
+					for (var i = 0; i < filterPixels; i++)
+					{
+						texture.SetPixel(x + width + i, py, pixel);
+					}
+				}
+			}
         }
 
         private TextureBlock GetTextureBlock(Texture2D texture, int x, int y, int blockSize, Color32[] pixels)
