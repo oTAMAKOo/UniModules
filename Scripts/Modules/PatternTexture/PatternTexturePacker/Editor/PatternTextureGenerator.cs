@@ -60,6 +60,15 @@ namespace Modules.PatternTexture
 				blockId = 0;
 				blockIdbyHashCode = new Dictionary<string, ushort?>();
 
+				// 補間用ピクセル分のパディングを追加.
+				padding += filterPixels * 2;
+
+				// テクスチャ情報読み込み.
+
+				var directory = Path.GetDirectoryName(exportPath);
+				var textureName = Path.ChangeExtension(Path.GetFileName(exportPath), ".png");
+				var texturePath = PathUtility.Combine(directory, textureName);
+
 				using (new AssetEditingScope())
 				{
 					var changed = false;
@@ -77,29 +86,16 @@ namespace Modules.PatternTexture
 
 				var patternTargetDatas = ReadTextureBlock(blockSize, sourceTextures);
 
-				// 補間用ピクセル分のパディングを追加.
-				padding += filterPixels * 2;
+				// 書き込み用テクスチャ作成.
+				var texture = CreateTexture(sizeType, blockSize, padding, patternTargetDatas);
 
-				// 透明ピクセル、同じピクセル情報のブロックは対象外.
-				var totalBlockCount = patternTargetDatas
-					.SelectMany(x => x.blocks)
-					.Select(x => x.blockId)
-					.Distinct()
-					.Count();
-
-				var directory = Path.GetDirectoryName(exportPath);
-				var textureName = Path.ChangeExtension(Path.GetFileName(exportPath), ".png");
-				var texturePath = PathUtility.Combine(directory, textureName);
-
-				var textureSize = CalcRequireTextureSize(sizeType, blockSize, padding, totalBlockCount);
-
-				var texture = TextureUtility.CreateEmptyTexture(textureSize.x, textureSize.y);
-
+				// パターン情報構築.
 				patternTextureData.PatternData = BuildPatternData(patternTargetDatas);
 
+				// テクスチャにピクセル情報を書き込み.
 				patternTextureData.PatternBlocks = BitBlockTransfer(texture, blockSize, padding, filterPixels, patternTargetDatas, hasAlphaMap);
-				
-				EditorUtility.ClearProgressBar();
+
+				// ファイルに書き込み.
 
 				File.WriteAllBytes(texturePath, texture.EncodeToPNG());
 
@@ -187,8 +183,30 @@ namespace Modules.PatternTexture
                 list.Add(new PatternTargetData() { texture = texture, bx = bx, by = by, blocks = blockList.ToArray() });
             }
 
+			EditorUtility.ClearProgressBar();
+
             return list.ToArray();
         }
+
+		private Texture2D CreateTexture(PatternTexture.TextureSizeType sizeType, int blockSize, int padding, PatternTargetData[] patternTargetDatas)
+		{
+			EditorUtility.DisplayProgressBar("CreateTexture", "Creating empty texture", 0f);
+
+			// 透明ピクセル、同じピクセル情報のブロックは対象外.
+			var totalBlockCount = patternTargetDatas
+				.SelectMany(x => x.blocks)
+				.Select(x => x.blockId)
+				.Distinct()
+				.Count();
+
+			var textureSize = CalcRequireTextureSize(sizeType, blockSize, padding, totalBlockCount);
+
+			var texture = TextureUtility.CreateEmptyTexture(textureSize.x, textureSize.y);
+
+			EditorUtility.ClearProgressBar();
+			
+			return texture;
+		}
 
         // 2のべき乗で全ブロックを格納できるテクスチャサイズを計算.
         private Vector2Int CalcRequireTextureSize(PatternTexture.TextureSizeType sizeType, int blockSize, int padding, int totalBlockCount)
@@ -203,6 +221,8 @@ namespace Modules.PatternTexture
 
 			// テクスチャサイズ.
 
+			var requireWidth = padding + lineBlock * totalBlockSize;
+
 			switch (sizeType)
 			{
 				case PatternTexture.TextureSizeType.PowerOf2:
@@ -211,18 +231,19 @@ namespace Modules.PatternTexture
 
 						while (true)
 						{
-							if(lineBlock * totalBlockSize < size_x - padding * 2){ break; }
+							if(requireWidth < size_x){ break; }
 
 							size_x *= 2;
 						}
 
 						var size_y = 2;
-						var line_x = Math.Ceiling((float)size_x / totalBlockSize);
-						var line_y = Math.Ceiling(totalBlockCount / line_x);
+
+						var xLineBlock = (size_x - padding) / totalBlockSize;
+						var requireHight = padding + (totalBlockCount / xLineBlock + 1) * totalBlockSize;
 
 						while (true)
 						{
-							if(line_y * totalBlockSize < size_y - padding * 2){ break; }
+							if(requireHight < size_y){ break; }
 
 							size_y *= 2;
 						}
@@ -237,18 +258,19 @@ namespace Modules.PatternTexture
 
 						while (true)
 						{
-							if(lineBlock * totalBlockSize < size_x - padding * 2){ break; }
+							if(requireWidth < size_x){ break; }
 
 							size_x += 4;
 						}
 
 						var size_y = 4;
-						var line_x = Math.Ceiling((float)size_x / totalBlockSize);
-						var line_y = Math.Ceiling(totalBlockCount / line_x);
+
+						var xLineBlock = (size_x - padding) / totalBlockSize;
+						var requireHight = padding + (totalBlockCount / xLineBlock + 1) * totalBlockSize;
 
 						while (true)
 						{
-							if(line_y * totalBlockSize < size_y - padding * 2){ break; }
+							if(requireHight < size_y){ break; }
 
 							size_y += 4;
 						}
@@ -263,7 +285,7 @@ namespace Modules.PatternTexture
 
 						while (true)
 						{
-							if(lineBlock * totalBlockSize < size - padding * 2){ break; }
+							if(requireWidth < size){ break; }
 
 							size *= 2;
 						}
@@ -278,7 +300,7 @@ namespace Modules.PatternTexture
 
 						while (true)
 						{
-							if(lineBlock * totalBlockSize < size - padding * 2){ break; }
+							if(requireWidth < size){ break; }
 
 							size += 4;
 						}
@@ -341,51 +363,51 @@ namespace Modules.PatternTexture
 
                 foreach (var item in patternTargetDatas[i].blocks)
                 {
-                    if (!blockDataDictionary.ContainsKey(item.blockId))
+                    if (blockDataDictionary.ContainsKey(item.blockId)){ continue; }
+
+                    if (texture.width < transX + item.width + padding)
                     {
-                        if (texture.width < transX + item.width + padding)
-                        {
-                            transX = x_start;
-                            transY += blockSize + padding;
-                        }
-
-						try
-						{
-							texture.SetPixels32(transX, transY, item.width, item.height, item.colors);
-						}
-						catch
-						{
-							EditorUtility.ClearProgressBar();
-							throw;
-						}
-
-						InsertPixelsForFilterMode(texture, transX, transY, item.width, item.height, filterPixels);
-
-                        // アルファ値情報生成.
-                        var alphaMap = !hasAlphaMap || item.isAllTransparent ? 
-                            new byte[0] : 
-                            BuildAlphaMap(item.width, item.height, item.colors);
-
-                        // 圧縮.
-                        var compressedAlphaMap = alphaMap.Compress(); 
-
-                        // ブロック情報を追加.
-                        var blockData = new PatternBlockData()
-                        {
-                            x = transX,
-                            y = transY,
-                            w = item.width,
-                            h = item.height,
-                            alphaMap = compressedAlphaMap,
-                            blockId = item.blockId,
-							isAllTransparent = item.isAllTransparent,
-                        };
-
-                        blockDataDictionary.Add(item.blockId, blockData);
-
-                        // 次の位置.
-                        transX += item.width + padding;
+                        transX = x_start;
+                        transY += blockSize + padding;
                     }
+
+					try
+					{
+						texture.SetPixels32(transX, transY, item.width, item.height, item.colors);
+					}
+					catch
+					{
+						EditorUtility.ClearProgressBar();
+						throw;
+					}
+
+					// 外周に追加のピクセルを追加.
+					InsertPixelsForFilterMode(texture, transX, transY, item.width, item.height, filterPixels);
+
+                    // アルファ値情報生成.
+                    var alphaMap = !hasAlphaMap || item.isAllTransparent ? 
+                        new byte[0] : 
+                        BuildAlphaMap(item.width, item.height, item.colors);
+
+                    // 圧縮.
+                    var compressedAlphaMap = alphaMap.Compress(); 
+
+                    // ブロック情報を追加.
+                    var blockData = new PatternBlockData()
+                    {
+                        x = transX,
+                        y = transY,
+                        w = item.width,
+                        h = item.height,
+                        alphaMap = compressedAlphaMap,
+                        blockId = item.blockId,
+						isAllTransparent = item.isAllTransparent,
+                    };
+
+                    blockDataDictionary.Add(item.blockId, blockData);
+
+                    // 次の位置.
+                    transX += item.width + padding;
                 }
             }
 
