@@ -198,7 +198,7 @@ namespace Modules.PatternTexture
             // パディングの分も含める.
             var totalBlockSize = blockSize + padding;
 
-			// 1辺に格納するブロック数.
+			// 1辺に格納予定のブロック数.
 			var lineBlock = Math.Ceiling(Math.Sqrt(totalBlockCount));
 
 			// テクスチャサイズ.
@@ -211,19 +211,20 @@ namespace Modules.PatternTexture
 
 						while (true)
 						{
-							size_x *= 2;
-				
 							if(lineBlock * totalBlockSize < size_x - padding * 2){ break; }
+
+							size_x *= 2;
 						}
 
 						var size_y = 2;
-						var line_y = totalBlockCount / lineBlock;
+						var line_x = Math.Ceiling((float)size_x / totalBlockSize);
+						var line_y = Math.Ceiling(totalBlockCount / line_x);
 
 						while (true)
 						{
-							size_y *= 2;
-				
 							if(line_y * totalBlockSize < size_y - padding * 2){ break; }
+
+							size_y *= 2;
 						}
 
 						textureSize = new Vector2Int(size_x, size_y);
@@ -236,19 +237,20 @@ namespace Modules.PatternTexture
 
 						while (true)
 						{
-							size_x += 4;
-				
 							if(lineBlock * totalBlockSize < size_x - padding * 2){ break; }
+
+							size_x += 4;
 						}
 
 						var size_y = 4;
-						var line_y = totalBlockCount / lineBlock;
+						var line_x = Math.Ceiling((float)size_x / totalBlockSize);
+						var line_y = Math.Ceiling(totalBlockCount / line_x);
 
 						while (true)
 						{
-							size_y += 4;
-				
 							if(line_y * totalBlockSize < size_y - padding * 2){ break; }
+
+							size_y += 4;
 						}
 
 						textureSize = new Vector2Int(size_x, size_y);
@@ -261,9 +263,9 @@ namespace Modules.PatternTexture
 
 						while (true)
 						{
-							size *= 2;
-				
 							if(lineBlock * totalBlockSize < size - padding * 2){ break; }
+
+							size *= 2;
 						}
 
 						textureSize = new Vector2Int(size, size);
@@ -276,9 +278,9 @@ namespace Modules.PatternTexture
 
 						while (true)
 						{
-							size += 4;
-					
 							if(lineBlock * totalBlockSize < size - padding * 2){ break; }
+
+							size += 4;
 						}
 
 						textureSize = new Vector2Int(size, size);
