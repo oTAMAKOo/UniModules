@@ -35,7 +35,7 @@ namespace Modules.PatternTexture
 
         private const int MB = 1024 * 1024;
 
-        private enum TextureStatus
+		private enum TextureStatus
         {
             None = 0,
 
@@ -63,6 +63,7 @@ namespace Modules.PatternTexture
         private int blockSize = DefaultBlockSize;
         private int padding = DefaultPadding;
 		private int filterPixels = DefaultFilterPixels;
+		private PatternTexture.TextureSizeType sizeType = PatternTexture.TextureSizeType.SquarePowerOf2;
         private bool hasAlphaMap = false;
         private FilterMode filterMode = FilterMode.Bilinear;
         private string selectionTextureName = null;
@@ -144,6 +145,7 @@ namespace Modules.PatternTexture
                     blockSize = selectPatternTexture.BlockSize;
                     padding = selectPatternTexture.Padding;
 					filterPixels = selectPatternTexture.FilterPixels;
+					sizeType = selectPatternTexture.SizeType;
 
                     Selection.objects = new UnityEngine.Object[0];
 
@@ -154,6 +156,7 @@ namespace Modules.PatternTexture
                     blockSize = DefaultBlockSize;
                     padding = DefaultPadding;
 					filterPixels = DefaultFilterPixels;
+					sizeType = PatternTexture.TextureSizeType.MultipleOf4;
 				}
 
                 deleteNames.Clear();
@@ -253,41 +256,50 @@ namespace Modules.PatternTexture
 
         private void DrawSettingsGUI()
         {
-            var labelWidth = 80f;
+            var labelWidth = 120f;
+			var contentWidth = 140f;
 
             EditorLayoutTools.Title("Settings", EditorLayoutTools.BackgroundColor, EditorLayoutTools.LabelColor);
+
+			GUILayout.Space(3f);
 
             using (new EditorGUILayout.HorizontalScope())
             {
                 var labels = BlockSizes.Select(x => x.ToString()).ToArray();
 
                 GUILayout.Label("BlockSize", GUILayout.Width(labelWidth));
-                blockSize = EditorGUILayout.IntPopup(blockSize, labels, BlockSizes, GUILayout.Width(75f));
+                blockSize = EditorGUILayout.IntPopup(blockSize, labels, BlockSizes, GUILayout.Width(contentWidth));
             }
 
             using (new EditorGUILayout.HorizontalScope())
             {
                 GUILayout.Label("Padding", GUILayout.Width(labelWidth));
-                padding = Mathf.Clamp(EditorGUILayout.IntField(padding, GUILayout.Width(75f)), 1, 5);
+                padding = Mathf.Clamp(EditorGUILayout.IntField(padding, GUILayout.Width(contentWidth)), 1, 5);
             }
 
 			using (new EditorGUILayout.HorizontalScope())
 			{
 				GUILayout.Label("FilterPixels", GUILayout.Width(labelWidth));
-				filterPixels = Mathf.Clamp(EditorGUILayout.IntField(filterPixels, GUILayout.Width(75f)), 1, 8);
+				filterPixels = Mathf.Clamp(EditorGUILayout.IntField(filterPixels, GUILayout.Width(contentWidth)), 1, 8);
 			}
 
 			using (new EditorGUILayout.HorizontalScope())
             {
                 GUILayout.Label("AlphaMap", GUILayout.Width(labelWidth));
-                hasAlphaMap = EditorGUILayout.Toggle(hasAlphaMap, GUILayout.Width(75f));
+                hasAlphaMap = EditorGUILayout.Toggle(hasAlphaMap, GUILayout.Width(contentWidth));
             }
 
             using (new EditorGUILayout.HorizontalScope())
             {
                 GUILayout.Label("FilterMode", GUILayout.Width(labelWidth));
-                filterMode = (FilterMode)EditorGUILayout.EnumPopup(filterMode, GUILayout.Width(75f));
+                filterMode = (FilterMode)EditorGUILayout.EnumPopup(filterMode, GUILayout.Width(contentWidth));
             }
+
+			using (new EditorGUILayout.HorizontalScope())
+			{
+				GUILayout.Label("TextureSizeType", GUILayout.Width(labelWidth));
+				sizeType = (PatternTexture.TextureSizeType)EditorGUILayout.EnumPopup(sizeType, GUILayout.Width(contentWidth));
+			}
         }
 
         private void DrawCreateGUI(Texture2D[] selectionTextures)
@@ -589,9 +601,9 @@ namespace Modules.PatternTexture
             {
                 patternTexture = ScriptableObjectGenerator.Generate<PatternTexture>(exportPath);
 
-                var patternData = generator.Generate(exportPath, blockSize, padding, filterPixels, textures, hasAlphaMap);
+                var data = generator.Generate(exportPath, blockSize, padding, filterPixels, sizeType, textures, hasAlphaMap);
 
-                patternTexture.Set(patternData.Texture, blockSize, padding, filterPixels, patternData.PatternData, patternData.PatternBlocks, hasAlphaMap);
+                patternTexture.Set(data.Texture, sizeType, blockSize, padding, filterPixels, data.PatternData, data.PatternBlocks, hasAlphaMap);
                 patternTexture.Texture.filterMode = filterMode;
 
                 UnityEditorUtility.SaveAsset(patternTexture);

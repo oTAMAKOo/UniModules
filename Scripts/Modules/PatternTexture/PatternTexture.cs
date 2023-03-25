@@ -11,7 +11,22 @@ namespace Modules.PatternTexture
 	{
         //----- params -----
 
+		public enum TextureSizeType
+		{
+			/// <summary> 2のべき乗 </summary>
+			PowerOf2,
+			/// <summary> 4の倍数 </summary>
+			MultipleOf4,
+			/// <summary> 2のべき乗(正方形) </summary>
+			SquarePowerOf2,
+			/// <summary> 4の倍数(正方形) </summary>
+			SquareMultipleOf4,
+		}
+
 		//----- field -----
+
+		[SerializeField, ReadOnly]
+		private TextureSizeType sizeType = TextureSizeType.MultipleOf4;
 
         [SerializeField, ReadOnly]
 		private int blockSize = 32;
@@ -43,6 +58,8 @@ namespace Modules.PatternTexture
         private Dictionary<ushort, PatternBlockData> blockByPixelId= null;
 
         //----- property -----
+
+		public TextureSizeType SizeType { get { return sizeType; } }
 
         public int BlockSize { get { return blockSize; } }
 
@@ -87,9 +104,11 @@ namespace Modules.PatternTexture
             }
         }
 
-        public void Set(Texture2D texture, int blockSize, int padding, int filterPixels, PatternData[] sourceData, PatternBlockData[] blockData, bool hasAlphaMap)
+        public void Set(Texture2D texture, TextureSizeType sizeType, int blockSize, int padding, int filterPixels, 
+						PatternData[] sourceData, PatternBlockData[] blockData, bool hasAlphaMap)
         {
             this.texture = texture;
+			this.sizeType = sizeType;
             this.blockSize = blockSize;
             this.padding = padding;
 			this.filterPixels = filterPixels;

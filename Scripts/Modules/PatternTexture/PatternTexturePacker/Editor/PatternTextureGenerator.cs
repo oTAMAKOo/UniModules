@@ -11,7 +11,7 @@ using Extensions.Devkit;
 
 namespace Modules.PatternTexture
 {
-    public sealed class PatternTextureData
+	public sealed class PatternTextureData
     {
         public PatternData[] PatternData { get; set; }
         public PatternBlockData[] PatternBlocks { get; set; }
@@ -50,59 +50,69 @@ namespace Modules.PatternTexture
 
         //----- method -----
 
-        public PatternTextureData Generate(string exportPath, int blockSize, int padding, int filterPixels, Texture2D[] sourceTextures, bool hasAlphaMap)
+        public PatternTextureData Generate(string exportPath, int blockSize, int padding, int filterPixels, 
+											PatternTexture.TextureSizeType sizeType,Texture2D[] sourceTextures, bool hasAlphaMap)
         {
             var patternTextureData = new PatternTextureData();
+			
+			try
+			{
+				blockId = 0;
+				blockIdbyHashCode = new Dictionary<string, ushort?>();
 
-            blockId = 0;
-            blockIdbyHashCode = new Dictionary<string, ushort?>();
+				using (new AssetEditingScope())
+				{
+					var changed = false;
 
-            using (new AssetEditingScope())
-            {
-                var changed = false;
+					foreach (var sourceTexture in sourceTextures)
+					{
+						changed |= SetTextureEditable(sourceTexture);
+					}
 
-                foreach (var sourceTexture in sourceTextures)
-                {
-                    changed |= SetTextureEditable(sourceTexture);
-                }
+					if (changed)
+					{
+						AssetDatabase.Refresh();
+					}
+				}
 
-                if (changed)
-                {
-                    AssetDatabase.Refresh();
-                }
-            }
+				var patternTargetDatas = ReadTextureBlock(blockSize, sourceTextures);
 
-            var patternTargetDatas = ReadTextureBlock(blockSize, sourceTextures);
+				// 補間用ピクセル分のパディングを追加.
+				padding += filterPixels * 2;
 
-            // 補間用ピクセル分のパディングを追加.
-            padding += filterPixels * 2;
+				// 透明ピクセル、同じピクセル情報のブロックは対象外.
+				var totalBlockCount = patternTargetDatas
+					.SelectMany(x => x.blocks)
+					.Select(x => x.blockId)
+					.Distinct()
+					.Count();
 
-            // 透明ピクセル、同じピクセル情報のブロックは対象外.
-            var totalBlockCount = patternTargetDatas
-                .SelectMany(x => x.blocks)
-                .Select(x => x.blockId)
-                .Distinct()
-                .Count();
+				var directory = Path.GetDirectoryName(exportPath);
+				var textureName = Path.ChangeExtension(Path.GetFileName(exportPath), ".png");
+				var texturePath = PathUtility.Combine(directory, textureName);
 
-            var directory = Path.GetDirectoryName(exportPath);
-            var textureName = Path.ChangeExtension(Path.GetFileName(exportPath), ".png");
-            var texturePath = PathUtility.Combine(directory, textureName);
+				var textureSize = CalcRequireTextureSize(sizeType, blockSize, padding, totalBlockCount);
 
-            var textureSize = CalcRequireTextureSize(blockSize, padding, totalBlockCount);
+				var texture = TextureUtility.CreateEmptyTexture(textureSize.x, textureSize.y);
 
-            var texture = TextureUtility.CreateEmptyTexture(textureSize, textureSize);
+				patternTextureData.PatternData = BuildPatternData(patternTargetDatas);
 
-            patternTextureData.PatternData = BuildPatternData(patternTargetDatas);
+				patternTextureData.PatternBlocks = BitBlockTransfer(texture, blockSize, padding, filterPixels, patternTargetDatas, hasAlphaMap);
+				
+				EditorUtility.ClearProgressBar();
 
-            patternTextureData.PatternBlocks = BitBlockTransfer(texture, blockSize, padding, filterPixels, patternTargetDatas, hasAlphaMap);
+				File.WriteAllBytes(texturePath, texture.EncodeToPNG());
 
-            File.WriteAllBytes(texturePath, texture.EncodeToPNG());
+				AssetDatabase.ImportAsset(texturePath);
 
-            AssetDatabase.ImportAsset(texturePath);
+				patternTextureData.Texture = AssetDatabase.LoadAssetAtPath<Texture2D>(texturePath);
+			}
+			finally
+			{
+				EditorUtility.ClearProgressBar();
+			}
 
-            patternTextureData.Texture = AssetDatabase.LoadAssetAtPath<Texture2D>(texturePath);
-
-            return patternTextureData;
+			return patternTextureData;
         }
 
         private bool SetTextureEditable(Texture texture)
@@ -138,8 +148,12 @@ namespace Modules.PatternTexture
         {
             var list = new List<PatternTargetData>();
 
-            foreach (var texture in textures)
-            {
+			for (var i = 0; i < textures.Length; i++)
+			{
+				var texture = textures[i];
+
+				var assetPath = AssetDatabase.GetAssetPath(texture);
+
                 var blockList = new List<TextureBlock>();
 
                 var bx = texture.width / blockSize;
@@ -151,13 +165,22 @@ namespace Modules.PatternTexture
                 bx += texture.width % blockSize != 0 ? 1 : 0;
                 by += texture.height % blockSize != 0 ? 1 : 0;
 
+				var count = 0;
+				var totalCount = bx * by;
+
+				var title = $"ReadTextureBlock ({i+1}/{textures.Length+1})";
+
                 for (var y = 0; y < by; y++)
                 {
                     for (var x = 0; x < bx; x++)
                     {
+						EditorUtility.DisplayProgressBar(title, assetPath, (float)count / totalCount);
+
                         var block = GetTextureBlock(texture, x, y, blockSize, pixels);
 
                         blockList.Add(block);
+
+						count++;
                     }
                 }
 
@@ -168,20 +191,99 @@ namespace Modules.PatternTexture
         }
 
         // 2のべき乗で全ブロックを格納できるテクスチャサイズを計算.
-        private int CalcRequireTextureSize(int blockSize, int padding, int totalBlockCount)
+        private Vector2Int CalcRequireTextureSize(PatternTexture.TextureSizeType sizeType, int blockSize, int padding, int totalBlockCount)
         {
-            var textureSize = 2;
+            var textureSize = new Vector2Int(2, 2);
 
             // パディングの分も含める.
             var totalBlockSize = blockSize + padding;
 
+			// 1辺に格納するブロック数.
 			var lineBlock = Math.Ceiling(Math.Sqrt(totalBlockCount));
 
-            while (true)
-            {
-                textureSize *= 2;
+			// テクスチャサイズ.
+
+			switch (sizeType)
+			{
+				case PatternTexture.TextureSizeType.PowerOf2:
+					{
+						var size_x = 2;
+
+						while (true)
+						{
+							size_x *= 2;
 				
-				if(lineBlock * totalBlockSize < textureSize - padding * 2){ break; }
+							if(lineBlock * totalBlockSize < size_x - padding * 2){ break; }
+						}
+
+						var size_y = 2;
+						var line_y = totalBlockCount / lineBlock;
+
+						while (true)
+						{
+							size_y *= 2;
+				
+							if(line_y * totalBlockSize < size_y - padding * 2){ break; }
+						}
+
+						textureSize = new Vector2Int(size_x, size_y);
+					}
+					break;
+
+				case PatternTexture.TextureSizeType.MultipleOf4:
+					{
+						var size_x = 4;
+
+						while (true)
+						{
+							size_x += 4;
+				
+							if(lineBlock * totalBlockSize < size_x - padding * 2){ break; }
+						}
+
+						var size_y = 4;
+						var line_y = totalBlockCount / lineBlock;
+
+						while (true)
+						{
+							size_y += 4;
+				
+							if(line_y * totalBlockSize < size_y - padding * 2){ break; }
+						}
+
+						textureSize = new Vector2Int(size_x, size_y);
+					}
+					break;
+
+				case PatternTexture.TextureSizeType.SquarePowerOf2:
+					{
+						var size = 2;
+
+						while (true)
+						{
+							size *= 2;
+				
+							if(lineBlock * totalBlockSize < size - padding * 2){ break; }
+						}
+
+						textureSize = new Vector2Int(size, size);
+					}
+					break;
+
+				case PatternTexture.TextureSizeType.SquareMultipleOf4:
+					{
+						var size = 4;
+
+						while (true)
+						{
+							size += 4;
+					
+							if(lineBlock * totalBlockSize < size - padding * 2){ break; }
+						}
+
+						textureSize = new Vector2Int(size, size);
+					}
+					break;
 			}
 
             return textureSize;
@@ -192,12 +294,16 @@ namespace Modules.PatternTexture
         {
             var result = new List<PatternData>();
 
-            foreach (var targetData in targetDatas)
-            {
+			for (var i = 0; i < targetDatas.Length; i++)
+			{
+				var targetData = targetDatas[i];
+
                 var texture = targetData.texture;
                 var assetPath = AssetDatabase.GetAssetPath(texture);
                 var fullPath = UnityPathUtility.ConvertAssetPathToFullPath(assetPath);
-                
+             
+				EditorUtility.DisplayProgressBar("BuildPatternData", assetPath, (float)i / targetDatas.Length);
+
                 var textureName = Path.GetFileNameWithoutExtension(assetPath);
                 var assetGuid = AssetDatabase.AssetPathToGUID(assetPath);
                 var lastUpdate = File.GetLastWriteTime(fullPath).ToUnixTime();
