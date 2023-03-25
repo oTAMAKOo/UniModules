@@ -27,11 +27,11 @@ namespace Modules.PatternTexture
 
         private readonly Vector2 WindowSize = new Vector2(400f, 350f);
 
-        private readonly int[] BlockSizes = new int[] { 16, 32, 64, 128 };
+        private readonly int[] BlockSizes = new int[] { 16, 32, 64, 128, 256 };
 
-        private const int DefaultBlockSize = 32;
+        private const int DefaultBlockSize = 64;
         private const int DefaultPadding = 1;
-		private const int DefaultFilterPixels = 2;
+		private const int DefaultFilterPixels = 3;
 
         private const int MB = 1024 * 1024;
 
@@ -274,7 +274,7 @@ namespace Modules.PatternTexture
 			using (new EditorGUILayout.HorizontalScope())
 			{
 				GUILayout.Label("FilterPixels", GUILayout.Width(labelWidth));
-				filterPixels = Mathf.Clamp(EditorGUILayout.IntField(filterPixels, GUILayout.Width(75f)), 1, 5);
+				filterPixels = Mathf.Clamp(EditorGUILayout.IntField(filterPixels, GUILayout.Width(75f)), 1, 8);
 			}
 
 			using (new EditorGUILayout.HorizontalScope())
