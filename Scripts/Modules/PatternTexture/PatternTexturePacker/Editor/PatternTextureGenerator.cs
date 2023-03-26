@@ -60,9 +60,6 @@ namespace Modules.PatternTexture
 				blockId = 0;
 				blockIdbyHashCode = new Dictionary<string, ushort?>();
 
-				// 補間用ピクセル分のパディングを追加.
-				padding += filterPixels * 2;
-
 				// テクスチャ情報読み込み.
 
 				var directory = Path.GetDirectoryName(exportPath);
@@ -87,7 +84,7 @@ namespace Modules.PatternTexture
 				var patternTargetDatas = ReadTextureBlock(blockSize, sourceTextures);
 
 				// 書き込み用テクスチャ作成.
-				var texture = CreateTexture(sizeType, blockSize, padding, patternTargetDatas);
+				var texture = CreateTexture(sizeType, blockSize, padding, filterPixels, patternTargetDatas);
 
 				// パターン情報構築.
 				patternTextureData.PatternData = BuildPatternData(patternTargetDatas);
@@ -188,7 +185,7 @@ namespace Modules.PatternTexture
             return list.ToArray();
         }
 
-		private Texture2D CreateTexture(PatternTexture.TextureSizeType sizeType, int blockSize, int padding, PatternTargetData[] patternTargetDatas)
+		private Texture2D CreateTexture(PatternTexture.TextureSizeType sizeType, int blockSize, int padding, int filterPixels, PatternTargetData[] patternTargetDatas)
 		{
 			EditorUtility.DisplayProgressBar("CreateTexture", "Creating empty texture", 0f);
 
@@ -199,7 +196,7 @@ namespace Modules.PatternTexture
 				.Distinct()
 				.Count();
 
-			var textureSize = CalcRequireTextureSize(sizeType, blockSize, padding, totalBlockCount);
+			var textureSize = CalcRequireTextureSize(sizeType, blockSize, padding, filterPixels, totalBlockCount);
 
 			var texture = TextureUtility.CreateEmptyTexture(textureSize.x, textureSize.y);
 
@@ -207,21 +204,21 @@ namespace Modules.PatternTexture
 			
 			return texture;
 		}
-
-        // 2のべき乗で全ブロックを格納できるテクスチャサイズを計算.
-        private Vector2Int CalcRequireTextureSize(PatternTexture.TextureSizeType sizeType, int blockSize, int padding, int totalBlockCount)
+		
+		/// <summary> テクスチャサイズを計算 </summary>
+        private Vector2Int CalcRequireTextureSize(PatternTexture.TextureSizeType sizeType, int blockSize, int padding, int filterPixels, int totalBlockCount)
         {
             var textureSize = new Vector2Int(2, 2);
 
-            // パディングの分も含める.
-            var totalBlockSize = blockSize + padding;
+			// ブロックで使用するサイズ.
+            var totalBlockSize = blockSize + filterPixels * 2 + padding;
 
 			// 1辺に格納予定のブロック数.
-			var lineBlock = Math.Ceiling(Math.Sqrt(totalBlockCount));
+			var lineBlock = Math.Ceiling(Math.Sqrt(totalBlockCount)) + 1;
 
 			// テクスチャサイズ.
 
-			var requireWidth = padding + lineBlock * totalBlockSize;
+			var requireWidth = padding * 2 + lineBlock * totalBlockSize;
 
 			switch (sizeType)
 			{
@@ -238,8 +235,8 @@ namespace Modules.PatternTexture
 
 						var size_y = 2;
 
-						var xLineBlock = (size_x - padding) / totalBlockSize;
-						var requireHight = padding + (totalBlockCount / xLineBlock + 1) * totalBlockSize;
+						var xLineBlock = (size_x - padding * 2) / totalBlockSize;
+						var requireHight = padding * 2 + (totalBlockCount / xLineBlock + 1) * totalBlockSize;
 
 						while (true)
 						{
@@ -265,8 +262,8 @@ namespace Modules.PatternTexture
 
 						var size_y = 4;
 
-						var xLineBlock = (size_x - padding) / totalBlockSize;
-						var requireHight = padding + (totalBlockCount / xLineBlock + 1) * totalBlockSize;
+						var xLineBlock = (size_x - padding * 2) / totalBlockSize;
+						var requireHight = padding * 2 + (totalBlockCount / xLineBlock + 2) * totalBlockSize;
 
 						while (true)
 						{
@@ -348,28 +345,36 @@ namespace Modules.PatternTexture
         {
             var blockDataDictionary = new Dictionary<int, PatternBlockData>();
 
-            var x_start = padding;
-            var y_start = padding;
+			var totalBlockSize = blockSize + filterPixels * 2;
+
+            var x_start = padding + filterPixels;
+            var y_start = padding + filterPixels;
 
             var transX = x_start;
             var transY = y_start;
 
-            for (var i = 0; i < patternTargetDatas.Length; i++)
+			var xCount = 0;
+			var yCount = 0;
+
+			for (var i = 0; i < patternTargetDatas.Length; i++)
             {
                 var fileName = Path.GetFileName(AssetDatabase.GetAssetPath(patternTargetDatas[i].texture));
                 var message = string.Format("Writing texture {0} ...", fileName);
 
                 EditorUtility.DisplayProgressBar("Please wait...", message, (float)i / patternTargetDatas.Length);
 
-                foreach (var item in patternTargetDatas[i].blocks)
+				foreach (var item in patternTargetDatas[i].blocks)
                 {
                     if (blockDataDictionary.ContainsKey(item.blockId)){ continue; }
 
-                    if (texture.width < transX + item.width + padding)
+                    if (texture.width <= transX + totalBlockSize + padding)
                     {
-                        transX = x_start;
-                        transY += blockSize + padding;
-                    }
+						transX = x_start;
+                        transY += padding + totalBlockSize;
+
+						xCount = 0;
+						yCount++;
+					}
 
 					try
 					{
@@ -378,6 +383,16 @@ namespace Modules.PatternTexture
 					catch
 					{
 						EditorUtility.ClearProgressBar();
+
+						using (new DisableStackTraceScope())
+						{
+							var logTexture = $"texture: {texture.width}x{texture.height}";
+							var logTrans = $"trans: x = {transX} y = {transY} width = {item.width} height = {item.height}";
+							var logCount = $"count: x = {xCount} y = {yCount}";
+
+							Debug.LogError($"SetPixel Error:\n{logTexture}\n{logTrans}\n{logCount}");
+						}
+
 						throw;
 					}
 
@@ -407,8 +422,10 @@ namespace Modules.PatternTexture
                     blockDataDictionary.Add(item.blockId, blockData);
 
                     // 次の位置.
-                    transX += item.width + padding;
-                }
+                    transX += padding + totalBlockSize;
+
+					xCount++;
+				}
             }
 
             EditorUtility.ClearProgressBar();
@@ -423,19 +440,22 @@ namespace Modules.PatternTexture
         {
 			// 実装用の表示テスト用.
 			var addPixelDebug = false;
-
-			// カラー取得関数.
+			
+			// ピクセル色取得関数.
 			Color GetAddPixelColor(int _x, int _y)
 			{
 				var color = texture.GetPixel(_x, _y);
 
-				if (addPixelDebug) { color.a *= 0.25f; }
+				if (addPixelDebug)
+				{
+					color *= Color.magenta;
+				}
 
 				return color;
 			}
 
-            // Top / Bottom.
-            for (var px = x - 1; px < x + width + 1; px++)
+			// Top / Bottom.
+            for (var px = x; px < x + width; px++)
             {
                 // Top.
 				{
@@ -459,7 +479,7 @@ namespace Modules.PatternTexture
 			}
 
             // Left / Right.
-            for (var py = y - 1; py < y + height + 1; py++)
+            for (var py = y; py < y + height; py++)
             {
                 // Left.
 				{
@@ -481,7 +501,59 @@ namespace Modules.PatternTexture
 					}
 				}
 			}
-        }
+
+			// TopLeft.
+			{
+				for (var px = x - 1; x - filterPixels <= px; px--)
+				{
+					for (var py = y + height; py < y + height + filterPixels; py++)
+					{
+						var pixel = GetAddPixelColor(px + 1, py - 1);
+						
+						texture.SetPixel(px, py, pixel);
+					}
+				}
+			}
+
+			// TopRight.
+			{
+				for (var px = x + width; px < x + width + filterPixels; px++)
+				{
+					for (var py = y + height; py < y + height + filterPixels; py++)
+					{
+						var pixel = GetAddPixelColor(px - 1, py - 1);
+
+						texture.SetPixel(px, py, pixel);
+					}
+				}
+			}
+			
+			// BottomLeft.
+			{
+				for (var px = x - 1; x - filterPixels <= px; px--)
+				{
+					for (var py = y - 1; y - filterPixels <= py; py--)
+					{
+						var pixel = GetAddPixelColor(px + 1, py + 1);
+
+						texture.SetPixel(px, py, pixel);
+					}
+				}
+			}
+
+			// BottomRight.
+			{
+				for (var px = x + width; px < x + width + filterPixels; px++)
+				{
+					for (var py = y - 1; y - filterPixels <= py; py--)
+					{
+						var pixel = GetAddPixelColor(px - 1, py + 1);
+
+						texture.SetPixel(px, py, pixel);
+					}
+				}
+			}
+		}
 
         private TextureBlock GetTextureBlock(Texture2D texture, int x, int y, int blockSize, Color32[] pixels)
         {

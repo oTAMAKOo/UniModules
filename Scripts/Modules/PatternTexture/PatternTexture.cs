@@ -63,8 +63,6 @@ namespace Modules.PatternTexture
 
         public int BlockSize { get { return blockSize; } }
 
-        public int Padding { get { return padding; } }
-
 		public int FilterPixels { get { return filterPixels; } }
 
         public bool HasAlphaMap { get { return hasAlphaMap; } }
@@ -104,13 +102,12 @@ namespace Modules.PatternTexture
             }
         }
 
-        public void Set(Texture2D texture, TextureSizeType sizeType, int blockSize, int padding, int filterPixels, 
+        public void Set(Texture2D texture, TextureSizeType sizeType, int blockSize, int filterPixels, 
 						PatternData[] sourceData, PatternBlockData[] blockData, bool hasAlphaMap)
         {
             this.texture = texture;
 			this.sizeType = sizeType;
             this.blockSize = blockSize;
-            this.padding = padding;
 			this.filterPixels = filterPixels;
             this.sourceData = sourceData;
             this.blockData = blockData;

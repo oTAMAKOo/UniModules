@@ -30,8 +30,9 @@ namespace Modules.PatternTexture
         private readonly int[] BlockSizes = new int[] { 16, 32, 64, 128, 256 };
 
         private const int DefaultBlockSize = 64;
-        private const int DefaultPadding = 1;
 		private const int DefaultFilterPixels = 3;
+
+		private const int BlockPadding = 1;
 
         private const int MB = 1024 * 1024;
 
@@ -61,7 +62,6 @@ namespace Modules.PatternTexture
         private PatternTextureGenerator generator = null;
 
         private int blockSize = DefaultBlockSize;
-        private int padding = DefaultPadding;
 		private int filterPixels = DefaultFilterPixels;
 		private PatternTexture.TextureSizeType sizeType = PatternTexture.TextureSizeType.SquarePowerOf2;
         private bool hasAlphaMap = false;
@@ -78,6 +78,7 @@ namespace Modules.PatternTexture
         private float atlasFileSize = 0f;
         private float infoFileSize = 0f;
 
+		[NonSerialized]
         private bool initialized = false;
 
         public static PatternTexturePacker instance = null;
@@ -102,7 +103,12 @@ namespace Modules.PatternTexture
             titleContent = new GUIContent("PatternTexturePacker");
             minSize = WindowSize;
 
+			textureInfos = new TextureInfo[0];
+			deleteNames = new List<string>();
+
             generator = new PatternTextureGenerator();
+
+			UpdateSelectPatternTextureInfo();
 
             initialized = true;
         }
@@ -128,8 +134,10 @@ namespace Modules.PatternTexture
             instance.BuildTextureInfos(selectionTextures);
         }
 
-        void OnGUI()
+		void OnGUI()
         {
+			Initialize();
+
             var selectionTextures = Selection.objects != null ? Selection.objects.OfType<Texture2D>().ToArray() : null;
 
             GUILayout.Space(2f);
@@ -140,26 +148,7 @@ namespace Modules.PatternTexture
 
             if (EditorGUI.EndChangeCheck())
             {
-                if(selectPatternTexture != null)
-                {
-                    blockSize = selectPatternTexture.BlockSize;
-                    padding = selectPatternTexture.Padding;
-					filterPixels = selectPatternTexture.FilterPixels;
-					sizeType = selectPatternTexture.SizeType;
-
-                    Selection.objects = new UnityEngine.Object[0];
-
-                    BuildTextureInfos(null);
-                }
-                else
-                {
-                    blockSize = DefaultBlockSize;
-                    padding = DefaultPadding;
-					filterPixels = DefaultFilterPixels;
-					sizeType = PatternTexture.TextureSizeType.MultipleOf4;
-				}
-
-                deleteNames.Clear();
+				UpdateSelectPatternTextureInfo();
             }
 
             GUILayout.Space(5f);
@@ -269,12 +258,6 @@ namespace Modules.PatternTexture
 
                 GUILayout.Label("BlockSize", GUILayout.Width(labelWidth));
                 blockSize = EditorGUILayout.IntPopup(blockSize, labels, BlockSizes, GUILayout.Width(contentWidth));
-            }
-
-            using (new EditorGUILayout.HorizontalScope())
-            {
-                GUILayout.Label("Padding", GUILayout.Width(labelWidth));
-                padding = Mathf.Clamp(EditorGUILayout.IntField(padding, GUILayout.Width(contentWidth)), 1, 5);
             }
 
 			using (new EditorGUILayout.HorizontalScope())
@@ -494,6 +477,28 @@ namespace Modules.PatternTexture
             GUILayout.Space(5f);
         }
 
+		private void UpdateSelectPatternTextureInfo()
+		{
+			if(selectPatternTexture != null)
+			{
+				blockSize = selectPatternTexture.BlockSize;
+				filterPixels = selectPatternTexture.FilterPixels;
+				sizeType = selectPatternTexture.SizeType;
+
+				Selection.objects = new UnityEngine.Object[0];
+
+				BuildTextureInfos(null);
+			}
+			else
+			{
+				blockSize = DefaultBlockSize;
+				filterPixels = DefaultFilterPixels;
+				sizeType = PatternTexture.TextureSizeType.MultipleOf4;
+			}
+
+			deleteNames.Clear();
+		}
+
         private void CalcPerformance(PatternTexture patternTexture)
         {
             calcPerformance = false;
@@ -601,9 +606,9 @@ namespace Modules.PatternTexture
             {
                 patternTexture = ScriptableObjectGenerator.Generate<PatternTexture>(exportPath);
 
-                var data = generator.Generate(exportPath, blockSize, padding, filterPixels, sizeType, textures, hasAlphaMap);
+                var data = generator.Generate(exportPath, blockSize, BlockPadding, filterPixels, sizeType, textures, hasAlphaMap);
 
-                patternTexture.Set(data.Texture, sizeType, blockSize, padding, filterPixels, data.PatternData, data.PatternBlocks, hasAlphaMap);
+                patternTexture.Set(data.Texture, sizeType, blockSize, filterPixels, data.PatternData, data.PatternBlocks, hasAlphaMap);
                 patternTexture.Texture.filterMode = filterMode;
 
                 UnityEditorUtility.SaveAsset(patternTexture);
