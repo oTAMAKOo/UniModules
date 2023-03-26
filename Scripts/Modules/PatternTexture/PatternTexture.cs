@@ -115,6 +115,7 @@ namespace Modules.PatternTexture
 
             pixelIdDictionary = null;
             blockByPixelId = null;
+			blockCount = null;
         }
 
         public IReadOnlyList<PatternData> GetAllPatternData()
