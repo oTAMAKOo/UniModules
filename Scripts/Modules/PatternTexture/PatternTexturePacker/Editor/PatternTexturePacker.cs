@@ -252,7 +252,9 @@ namespace Modules.PatternTexture
                 }
             }
 
-            textureInfos = textureInfoByGuid.Values.ToArray();
+            textureInfos = textureInfoByGuid.Values
+				.OrderBy(x => AssetDatabase.GetAssetPath(x.texture), new NaturalComparer())
+				.ToArray();
 
 			Repaint();
         }

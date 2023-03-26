@@ -341,7 +341,7 @@ namespace Modules.PatternTexture
                 result.Add(item);
             }
 
-            return result.OrderBy(x => x.TextureName, new NaturalComparer()).ToArray();
+            return result.OrderBy(x => AssetDatabase.GUIDToAssetPath(x.Guid), new NaturalComparer()).ToArray();
         }
 
         // 抽出した差分データを書き出し.
