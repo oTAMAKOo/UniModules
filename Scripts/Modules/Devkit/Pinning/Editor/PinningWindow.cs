@@ -1,4 +1,4 @@
-﻿
+
 using UnityEngine;
 using UnityEditor;
 using System;
@@ -198,8 +198,7 @@ namespace Modules.Devkit.Pinning
 
                                 case 1:
                                     MouseRightButton(rect, e, item);
-
-                                    break;
+									break;
                             }
                         }
                     }

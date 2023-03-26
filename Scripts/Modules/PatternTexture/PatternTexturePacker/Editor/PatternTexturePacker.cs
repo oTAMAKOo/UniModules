@@ -71,12 +71,8 @@ namespace Modules.PatternTexture
         private List<string> deleteNames = new List<string>();
         private Vector2 scrollPosition = Vector2.zero;
 
-        private bool calcPerformance = false;
-        private float totalMemSize = 0f;
-        private float totalAtlasMemSize = 0f;
-        private float totalFileSize = 0f;
-        private float atlasFileSize = 0f;
-        private float infoFileSize = 0f;
+		private GUIContent deleteMarkIconContent = null;
+		private GUIContent deleteIconContent = null;
 
 		[NonSerialized]
         private bool initialized = false;
@@ -106,6 +102,9 @@ namespace Modules.PatternTexture
 			textureInfos = new TextureInfo[0];
 			deleteNames = new List<string>();
 
+			deleteMarkIconContent = null;
+			deleteIconContent = null;
+
             generator = new PatternTextureGenerator();
 
 			UpdateSelectPatternTextureInfo();
@@ -134,9 +133,24 @@ namespace Modules.PatternTexture
             instance.BuildTextureInfos(selectionTextures);
         }
 
+		private void LoadIconContent()
+		{
+			if (deleteMarkIconContent == null)
+			{
+				deleteMarkIconContent = EditorGUIUtility.IconContent("d_AS Badge Delete");
+			}
+
+			if (deleteIconContent == null)
+			{
+				deleteIconContent = EditorGUIUtility.IconContent("Toolbar Minus@2x");
+			}
+		}
+
 		void OnGUI()
         {
 			Initialize();
+
+			LoadIconContent();
 
             var selectionTextures = Selection.objects != null ? Selection.objects.OfType<Texture2D>().ToArray() : null;
 
@@ -164,6 +178,8 @@ namespace Modules.PatternTexture
             else
             {
                 DrawUpdateGUI(selectPatternTexture);
+				DrawPatternTextureInfo(selectPatternTexture);
+				DrawButtons(selectPatternTexture);
             }
         }
 
@@ -238,9 +254,7 @@ namespace Modules.PatternTexture
 
             textureInfos = textureInfoByGuid.Values.ToArray();
 
-            CalcPerformance(selectPatternTexture);
-
-            Repaint();
+			Repaint();
         }
 
         private void DrawSettingsGUI()
@@ -313,29 +327,37 @@ namespace Modules.PatternTexture
 
         private void DrawUpdateGUI(PatternTexture patternTexture)
         {
-            var labelStyle = new GUIStyle(EditorStyles.label);
+			var e = Event.current;
 
-            var defaultColor = labelStyle.normal.textColor;
-            var defaultBackgroundColor = GUI.backgroundColor;
+			var defaultBackgroundColor = GUI.backgroundColor;
 
-            var delete = false;
+			var textureNameLabelStyle = new GUIStyle(EditorStyles.label)
+			{
+				alignment = TextAnchor.MiddleLeft,
+				fontStyle = FontStyle.Bold,
+			};
 
-            if (textureInfos.Any())
+			var textureStatusLabelStyle = new GUIStyle(EditorStyles.label)
+			{
+				alignment = TextAnchor.MiddleCenter,
+				fontStyle = FontStyle.Bold,
+				fontSize = 10,
+			};
+
+            var defaultColor = textureStatusLabelStyle.normal.textColor;
+
+			if (textureInfos.Any())
             {
-                EditorLayoutTools.Title("Sprites", EditorLayoutTools.BackgroundColor, EditorLayoutTools.LabelColor);
+				EditorLayoutTools.Title("Sprites", EditorLayoutTools.BackgroundColor, EditorLayoutTools.LabelColor);
 
-                EditorGUILayout.Separator();
+				GUILayout.Space(2f);
 
                 using (new EditorGUILayout.VerticalScope())
                 {
                     using (var scrollViewScope = new EditorGUILayout.ScrollViewScope(scrollPosition))
                     {
-                        int index = 0;
-
                         for (var i = 0; i < textureInfos.Length; i++)
                         {
-                            ++index;
-
                             GUILayout.Space(-1f);
 
                             var textureName = textureInfos[i].texture != null ? textureInfos[i].texture.name : null;
@@ -343,139 +365,174 @@ namespace Modules.PatternTexture
                             var highlight = selectionTextureName == textureName;
 
                             GUI.backgroundColor = highlight ? Color.white : new Color(0.8f, 0.8f, 0.8f);
-
-                            using (new EditorGUILayout.HorizontalScope(EditorStyles.textArea, GUILayout.MinHeight(20f)))
+							
+                            using (new EditorGUILayout.HorizontalScope(EditorStyles.textArea, GUILayout.MinHeight(18f)))
                             {
-                                GUI.backgroundColor = Color.white;
-                                GUILayout.Label(index.ToString(), GUILayout.Width(24f));
+								GUI.backgroundColor = Color.white;
 
-                                if (GUILayout.Button(textureName, EditorStyles.label, GUILayout.Height(20f)))
-                                {
-                                    selectionTextureName = textureName;
-                                }
+                                GUILayout.Space(4f);
 
-                                switch (textureInfos[i].status)
+								GUILayout.Label(textureName, textureNameLabelStyle, GUILayout.Height(18f));
+
+								GUILayout.FlexibleSpace();
+
+								var status = textureInfos[i].status;
+
+								switch (status)
                                 {
                                     case TextureStatus.Add:
-                                        labelStyle.normal.textColor = Color.green;
-                                        GUILayout.Label("Add", labelStyle, GUILayout.Width(27f));
+										textureStatusLabelStyle.normal.textColor = Color.green;
+                                        GUILayout.Label("Add", textureStatusLabelStyle, GUILayout.Width(27f), GUILayout.Height(18f));
                                         break;  
                                         
                                     case TextureStatus.Update:
-                                        labelStyle.normal.textColor = Color.cyan;
-                                        GUILayout.Label("Update", labelStyle, GUILayout.Width(45f));
+										textureStatusLabelStyle.normal.textColor = Color.cyan;
+                                        GUILayout.Label("Update", textureStatusLabelStyle, GUILayout.Width(45f), GUILayout.Height(18f));
                                         break; 
                                     case TextureStatus.Missing:
-                                        labelStyle.normal.textColor = Color.yellow;
-                                        GUILayout.Label("Missing", labelStyle, GUILayout.Width(45f));
+										textureStatusLabelStyle.normal.textColor = Color.yellow;
+                                        GUILayout.Label("Missing", textureStatusLabelStyle, GUILayout.Width(45f), GUILayout.Height(18f));
                                         break;
                                 }
 
-                                labelStyle.normal.textColor = defaultColor;
+								textureStatusLabelStyle.normal.textColor = defaultColor;
 
-                                if (deleteNames.Contains(textureName))
-                                {
-                                    GUI.backgroundColor = Color.red;
+								if (status == TextureStatus.Exist || status == TextureStatus.Missing)
+								{
+	                                if (deleteNames.Contains(textureName))
+	                                {
+										GUILayout.Label(deleteMarkIconContent);
 
-                                    if (GUILayout.Button("Delete", GUILayout.Width(60f)))
-                                    {
-                                        delete = true;
-                                    }
-
-                                    GUI.backgroundColor = Color.green;
-
-                                    if (GUILayout.Button("X", GUILayout.Width(22f)))
-                                    {
-                                        deleteNames.Remove(textureName);
-                                    }
-                                }
-                                else
-                                {
-                                    if (GUILayout.Button("X", GUILayout.Width(22f)))
-                                    {
-                                        if (!deleteNames.Contains(textureName))
-                                        {
-                                            deleteNames.Add(textureName);
-                                        }
-                                    }
-                                }
+										using (new BackgroundColorScope(Color.green))
+										{
+											if (GUILayout.Button(deleteIconContent, EditorStyles.miniButton, GUILayout.Width(22f)))
+											{
+												deleteNames.Remove(textureName);
+											}
+										}
+									}
+	                                else
+	                                {
+	                                    if (GUILayout.Button(deleteIconContent, EditorStyles.miniButton, GUILayout.Width(22f)))
+	                                    {
+	                                        if (!deleteNames.Contains(textureName))
+	                                        {
+	                                            deleteNames.Add(textureName);
+	                                        }
+	                                    }
+	                                }
+								}
+								else
+								{
+									if (deleteNames.Contains(textureName))
+									{
+										deleteNames.Remove(textureName);
+									}
+								}
 
                                 GUILayout.Space(5f);
-                            }
+							}
+							
+							if (e.type == EventType.MouseUp)
+							{
+								var rect = GUILayoutUtility.GetLastRect();
+
+								if (rect.Contains(e.mousePosition))
+								{
+									switch (e.button)
+									{
+										case 0:
+											{
+												selectionTextureName = textureName;
+												if (textureInfos[i].texture != null)
+												{
+													EditorGUIUtility.PingObject(textureInfos[i].texture);
+												}
+												e.Use();
+											}
+											break;
+									}
+								}
+							}
                         }
 
                         scrollPosition = scrollViewScope.scrollPosition;
                     }
                 }
             }
-            
-            if(calcPerformance)
-            {
-                GUILayout.Space(5f);
 
-                EditorLayoutTools.Title("Result", EditorLayoutTools.BackgroundColor, EditorLayoutTools.LabelColor);
+			GUI.backgroundColor = defaultBackgroundColor;
 
-                using (new EditorGUILayout.HorizontalScope())
-                {
-                    GUILayout.Label("MemorySize", GUILayout.Width(75f));
+			GUILayout.Space(2f);
+		}
 
-                    var memSize = infoFileSize + totalAtlasMemSize;
+		private void DrawPatternTextureInfo(PatternTexture patternTexture)
+		{
+			if (patternTexture == null){ return; }
 
-                    labelStyle.normal.textColor = totalMemSize < memSize ? Color.red : defaultColor;
-                    GUILayout.Label(string.Format("{0:F1} MB >>> {1:F1} MB : {2:F1}% ", totalMemSize, memSize, 100.0f * memSize / totalMemSize), labelStyle);
-                    labelStyle.normal.textColor = defaultColor;
-                }
+			EditorLayoutTools.Title("Info", EditorLayoutTools.BackgroundColor, EditorLayoutTools.LabelColor);
 
-                using (new EditorGUILayout.HorizontalScope())
-                {
-                    GUILayout.Label("FileSize", GUILayout.Width(75f));
+			GUILayout.Space(2f);
 
-                    var fileSize = infoFileSize + atlasFileSize;
+			if (patternTexture.Texture != null)
+			{
+				using (new EditorGUILayout.HorizontalScope())
+				{
+					GUILayout.Label("Size :", GUILayout.Width(85f));
+					GUILayout.Label($"{patternTexture.Texture.width}x{patternTexture.Texture.height}");
+				}
+			}
 
-                    labelStyle.normal.textColor = totalFileSize < atlasFileSize ? Color.red : defaultColor;
-                    GUILayout.Label(string.Format("{0:F1} MB >>> {1:F1} MB : {2:F1}% ", totalFileSize, fileSize, 100.0f * fileSize / totalFileSize), labelStyle);
-                    labelStyle.normal.textColor = defaultColor;
-                }
-            }
+			using (new EditorGUILayout.HorizontalScope())
+			{
+				GUILayout.Label("Textures :", GUILayout.Width(85f));
+				GUILayout.Label($"{patternTexture.GetAllPatternData().Count}");
+			}
 
-            GUILayout.Space(15f);
+			using (new EditorGUILayout.HorizontalScope())
+			{
+				GUILayout.Label("Block Num :", GUILayout.Width(85f));
+				GUILayout.Label($"{patternTexture.GetBlockCount()}");
+			}
 
-            using (new EditorGUILayout.HorizontalScope())
-            {
-                GUI.backgroundColor = Color.cyan;
+			EditorGUILayout.Separator();
+		}
 
-                GUILayout.FlexibleSpace();
+		private void DrawButtons(PatternTexture patternTexture)
+		{
+			var defaultBackgroundColor = GUI.backgroundColor;
 
-                if (GUILayout.Button("Generate", GUILayout.Width(150f)))
-                {
-                    GeneratePatternTexture(patternTexture);
-                }
+			using (new EditorGUILayout.HorizontalScope())
+			{
+				GUI.backgroundColor = Color.cyan;
 
-                GUI.backgroundColor = defaultBackgroundColor;
+				GUILayout.FlexibleSpace();
 
-                GUILayout.Space(25f);
+				if (GUILayout.Button("Generate", GUILayout.Width(150f)))
+				{
+					GeneratePatternTexture(patternTexture);
+				}
 
-                if (GUILayout.Button("View Textures", GUILayout.Width(150f)))
-                {
-                    Action<string> onSelection = x =>
-                    {
-                        selectionTextureName = x;
-                        Repaint();
-                    };
+				GUI.backgroundColor = defaultBackgroundColor;
 
-                    PatternSpriteSelector.Show(patternTexture, selectionTextureName, onSelection, null);
-                }
+				GUILayout.Space(25f);
 
-                GUILayout.FlexibleSpace();
-            }
+				if (GUILayout.Button("View Textures", GUILayout.Width(150f)))
+				{
+					Action<string> onSelection = x =>
+					{
+						selectionTextureName = x;
+						Repaint();
+					};
 
-            if(delete)
-            {
-                GeneratePatternTexture(patternTexture);
-            }
+					PatternSpriteSelector.Show(patternTexture, selectionTextureName, onSelection, null);
+				}
 
-            GUILayout.Space(5f);
-        }
+				GUILayout.FlexibleSpace();
+			}
+
+			EditorGUILayout.Separator();
+		}
 
 		private void UpdateSelectPatternTextureInfo()
 		{
@@ -499,68 +556,7 @@ namespace Modules.PatternTexture
 			deleteNames.Clear();
 		}
 
-        private void CalcPerformance(PatternTexture patternTexture)
-        {
-            calcPerformance = false;
-
-            if (patternTexture != null)
-            {
-                var assetPath = AssetDatabase.GetAssetPath(patternTexture);
-                var fullPath = UnityPathUtility.ConvertAssetPathToFullPath(assetPath);
-
-                var fileInfo = new FileInfo(fullPath);
-
-                infoFileSize = (float)fileInfo.Length / MB;
-            }
-            else
-            {
-                return;
-            }
-
-            var textures = patternTexture.GetAllPatternData()
-                .Select(x => AssetDatabase.GUIDToAssetPath(x.Guid))
-                .Select(x => AssetDatabase.LoadMainAssetAtPath(x) as Texture2D)
-                .Where(x => x != null)
-                .ToArray();
-
-            // 消費メモリサイズを計測.
-            totalMemSize = 0;
-            textures.ForEach(x =>
-                {
-                    var mem = Mathf.NextPowerOfTwo(x.width) * Mathf.NextPowerOfTwo(x.height);
-                    mem *= !x.alphaIsTransparency ? 3 : 4;
-                    totalMemSize += mem;
-                });
-            totalMemSize /= MB;
-
-            if (patternTexture.Texture != null)
-            {
-                var mem = Mathf.NextPowerOfTwo(patternTexture.Texture.width) * Mathf.NextPowerOfTwo(patternTexture.Texture.height);
-                mem *= !patternTexture.Texture.alphaIsTransparency ? 3 : 4;
-                totalAtlasMemSize = (float)mem / MB;
-            }
-
-            // ファイルサイズ.
-            totalFileSize = 0f;
-            textures.Select(x => AssetDatabase.GetAssetPath(x))
-                .Select(x => UnityPathUtility.ConvertAssetPathToFullPath(x))
-                .Select(x => new FileInfo(x))
-                .ForEach(x => totalFileSize += (float)x.Length / MB);
-
-            if (patternTexture.Texture != null)
-            {
-                var assetPath = AssetDatabase.GetAssetPath(patternTexture.Texture);
-                var fullPath = UnityPathUtility.ConvertAssetPathToFullPath(assetPath);
-
-                var fileInfo = new FileInfo(fullPath);
-
-                atlasFileSize = (float)fileInfo.Length / MB;
-            }
-
-            calcPerformance = true;
-        }
-
-        private void GeneratePatternTexture(PatternTexture patternTexture)
+		private void GeneratePatternTexture(PatternTexture patternTexture)
         {
             if (textureInfos == null)
             {

@@ -218,7 +218,7 @@ namespace Modules.PatternTexture
 
 			// テクスチャサイズ.
 
-			var requireWidth = padding * 2 + lineBlock * totalBlockSize;
+			var requireWidth = padding + lineBlock * totalBlockSize;
 
 			switch (sizeType)
 			{
@@ -235,8 +235,10 @@ namespace Modules.PatternTexture
 
 						var size_y = 2;
 
-						var xLineBlock = (size_x - padding * 2) / totalBlockSize;
-						var requireHight = padding * 2 + (totalBlockCount / xLineBlock + 1) * totalBlockSize;
+						var xLineBlock = (size_x - padding) / totalBlockSize;
+						var yLineBlock = Math.Ceiling((float)totalBlockCount / xLineBlock);
+
+						var requireHight = padding + yLineBlock * totalBlockSize;
 
 						while (true)
 						{
@@ -262,8 +264,10 @@ namespace Modules.PatternTexture
 
 						var size_y = 4;
 
-						var xLineBlock = (size_x - padding * 2) / totalBlockSize;
-						var requireHight = padding * 2 + (totalBlockCount / xLineBlock + 2) * totalBlockSize;
+						var xLineBlock = (size_x - padding) / totalBlockSize;
+						var yLineBlock = Math.Ceiling((float)totalBlockCount / xLineBlock);
+
+						var requireHight = padding + yLineBlock * totalBlockSize;
 
 						while (true)
 						{
@@ -367,7 +371,8 @@ namespace Modules.PatternTexture
                 {
                     if (blockDataDictionary.ContainsKey(item.blockId)){ continue; }
 
-                    if (texture.width <= transX + totalBlockSize + padding)
+					// x_startに最初に足している分を引く.
+                    if (texture.width < transX + totalBlockSize - filterPixels)
                     {
 						transX = x_start;
                         transY += padding + totalBlockSize;

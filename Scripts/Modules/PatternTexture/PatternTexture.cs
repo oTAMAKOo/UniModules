@@ -32,9 +32,6 @@ namespace Modules.PatternTexture
 		private int blockSize = 32;
 
 		[SerializeField, ReadOnly]
-		private int padding = 2;
-
-		[SerializeField, ReadOnly]
 		private int filterPixels = 2;
 
         [SerializeField, ReadOnly]
@@ -56,6 +53,9 @@ namespace Modules.PatternTexture
 
         // 同じピクセル情報のブロックは存在しないはずなのでディクショナリで高速アクセスできる.
         private Dictionary<ushort, PatternBlockData> blockByPixelId= null;
+
+		// ブロック数.
+		private int? blockCount = null;
 
         //----- property -----
 
@@ -145,5 +145,17 @@ namespace Modules.PatternTexture
             
             return pixelId.HasValue ? blockByPixelId.GetValueOrDefault(pixelId.Value) : null;
         }
+
+		public int GetBlockCount()
+		{
+			Build();
+
+			if (!blockCount.HasValue)
+			{
+				blockCount = blockByPixelId.Count;
+			}
+
+			return blockCount.Value;
+		}
     }
 }
