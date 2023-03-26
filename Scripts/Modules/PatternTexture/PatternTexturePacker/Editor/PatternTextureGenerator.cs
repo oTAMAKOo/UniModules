@@ -161,7 +161,7 @@ namespace Modules.PatternTexture
 				var count = 0;
 				var totalCount = bx * by;
 
-				var title = $"ReadTextureBlock ({i+1}/{textures.Length+1})";
+				var title = $"ReadTextureBlock ({i+1}/{textures.Length})";
 
                 for (var y = 0; y < by; y++)
                 {
