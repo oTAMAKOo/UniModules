@@ -1,6 +1,9 @@
-﻿
+
 using UnityEngine;
 using UnityEngine.UI;
+using System.Collections;
+using UniRx;
+using Unity.Linq;
 using Modules.UI.Layout;
 
 namespace Extensions
@@ -105,7 +108,7 @@ namespace Extensions
 
         public static Vector2 CalcSize(this RectTransform self)
         {
-            Rect rect = new Rect();
+            var rect = new Rect();
 
             var current = self as Transform;
 
@@ -134,11 +137,7 @@ namespace Extensions
             return Vector2.zero;
         }
 
-        /// <summary>
-        /// ワールド座標上でのRectを取得.
-        /// </summary>
-        /// <param name="trans"></param>
-        /// <returns></returns>
+        /// <summary> ワールド座標上でのRectを取得. </summary>
         public static Rect GetWorldRect(this RectTransform self)
         {
 			self.GetWorldCorners(tempCorners);
@@ -149,9 +148,7 @@ namespace Extensions
             return new Rect(tl, new Vector2(br.x - tl.x, br.y - tl.y));
         }
 
-        /// <summary>
-        /// 子階層を含むレイアウトのRectを取得.
-        /// </summary>
+        /// <summary> 子階層を含むレイアウトのRectを取得. </summary>
         public static Bounds CalculateRelativeWorldRect(this RectTransform self)
         {
             var gameObjects = UnityUtility.GetChildrenAndSelf(self.gameObject);
@@ -247,5 +244,40 @@ namespace Extensions
 
             return bounds;
         }
+
+		/// <summary> 子階層を含むレイアウトグループを強制更新 </summary>
+		public static void ForceRebuildLayoutGroup(this RectTransform self)
+		{
+			var gameObject = self.gameObject;
+
+			if (gameObject == null){ return; }
+
+			IEnumerator LayoutUpdateCore()
+			{
+				yield return new WaitForEndOfFrame();
+
+				if (self == null){ yield break; }
+
+				if (gameObject == null){ yield break; }
+                
+				var layoutGroups = gameObject.DescendantsAndSelf().OfComponent<LayoutGroup>();
+
+				foreach (var layoutGroup in layoutGroups)
+				{
+					layoutGroup.SetLayoutHorizontal();
+					layoutGroup.SetLayoutVertical();
+
+					layoutGroup.CalculateLayoutInputHorizontal();
+					layoutGroup.CalculateLayoutInputVertical();
+
+					LayoutRebuilder.MarkLayoutForRebuild(layoutGroup.transform as RectTransform);
+				}
+			}
+
+			Observable.FromCoroutine(() => LayoutUpdateCore())
+				.TakeUntilDisable(gameObject)
+				.Subscribe()
+				.AddTo(gameObject);
+		}
     }
 }
