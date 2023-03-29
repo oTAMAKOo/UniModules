@@ -20,6 +20,10 @@ namespace Modules.Devkit.Diagnosis
 
 		//----- property -----
 
+		public FpsStats FpsStats { get { return fpsStats; } }
+
+		public SRDiagnosis SRDiagnosis { get { return srDiagnosis; } }
+
 		//----- method -----
 
 		public void Initialize(bool displayFps = true, bool srDiagnosisEnable = true)
