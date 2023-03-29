@@ -1076,7 +1076,7 @@ namespace Modules.Scene
 
 					await UniTask.DelayFrame(5, cancellationToken: preLoadCancelSource.Token);
 				}
-				catch (OperationCanceledException )
+				catch (OperationCanceledException)
 				{
 					// Canceled.
 				}
