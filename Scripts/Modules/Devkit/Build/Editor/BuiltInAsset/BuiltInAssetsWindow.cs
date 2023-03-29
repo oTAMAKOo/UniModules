@@ -35,8 +35,6 @@ namespace Modules.Devkit.Build
 
 		private AssetViewMode assetViewMode = AssetViewMode.Asset;
 
-        private bool loading = false;
-
 		[NonSerialized]
         private bool isInitialized = false;
 
