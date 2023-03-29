@@ -1,4 +1,4 @@
-﻿
+
 using UnityEngine;
 using UnityEditor;
 using System;
@@ -8,38 +8,36 @@ using System.IO;
 using Extensions;
 using Extensions.Devkit;
 
-using Object = UnityEngine.Object;
-
 namespace Modules.Devkit.Build
 {
+	public enum AssetViewMode
+	{
+		Asset,
+		Path
+	}
+
     public sealed class BuiltInAssetsWindow : SingletonEditorWindow<BuiltInAssetsWindow>
     {
         //----- params -----
 
         private readonly Vector2 WindowSize = new Vector2(530f, 450f);
 
-        private enum AssetViewMode
-        {
-            Asset,
-            Path
-        }
-
-        //----- field -----
-
-        private Vector2 scrollPosition = Vector2.zero;
+		//----- field -----
+		
         private string searchText = null;
-        private BuiltInAssets.BuiltInAssetInfo[] builtInAssetInfo = null;
-        private Dictionary<string, Object> assetObjectByAssetPath = null;
 
-        private string[] builtInAssetTargetPaths = null;
-        private string[] ignoreBuiltInAssetTargetPaths = null;
-        private string[] ignoreBuiltInFolderNames = null;
-        private string[] ignoreValidationPaths = null;
-        private string[] ignoreValidationExtensions = null;
-        private float warningAssetSize = 0f;
+		private BuiltInAssets.BuiltInAssetInfo[] builtInAssetInfo = null;
 
-        private AssetViewMode assetViewMode = AssetViewMode.Asset;
+		private BuiltInAssetScrollView builtInAssetScrollView = null;
 
+		private string[] ignoreValidationPaths = null;
+		private string[] ignoreValidationExtensions = null;
+
+		private AssetViewMode assetViewMode = AssetViewMode.Asset;
+
+        private bool loading = false;
+
+		[NonSerialized]
         private bool isInitialized = false;
 
         //----- property -----
@@ -72,72 +70,36 @@ namespace Modules.Devkit.Build
             minSize = WindowSize;
 
             builtInAssetInfo = new BuiltInAssets.BuiltInAssetInfo[0];
-            builtInAssetTargetPaths = builtInAssetConfig.BuiltInAssetTargets.Select(x => AssetDatabase.GetAssetPath(x)).ToArray();
-            ignoreBuiltInAssetTargetPaths = builtInAssetConfig.IgnoreBuiltInAssetTargets.Select(x => AssetDatabase.GetAssetPath(x)).ToArray();
-            ignoreBuiltInFolderNames = builtInAssetConfig.IgnoreBuiltInFolderNames;
-            ignoreValidationPaths = builtInAssetConfig.IgnoreValidationAssets.Select(x => AssetDatabase.GetAssetPath(x)).ToArray();
-            ignoreValidationExtensions = builtInAssetConfig.IgnoreValidationExtensions;
-            warningAssetSize = builtInAssetConfig.WarningAssetSize;
+
+			builtInAssetScrollView = new BuiltInAssetScrollView();
+			builtInAssetScrollView.Setup();
+			builtInAssetScrollView.SetAssetViewMode(assetViewMode);
+
+			ignoreValidationPaths = builtInAssetConfig.IgnoreValidationAssets.Select(x => AssetDatabase.GetAssetPath(x)).ToArray();
+			ignoreValidationExtensions = builtInAssetConfig.IgnoreValidationExtensions;
+
+            ShowUtility();
 
             CollectBuiltInAssets(logFilePath);
 
-			ShowUtility();
-
-			isInitialized = true;
+            isInitialized = true;
         }
 
         private void CollectBuiltInAssets(string logFilePath)
         {
             var builtInAssets = BuiltInAssets.CollectBuiltInAssets(logFilePath);
 
-            LoadBuiltInAssets(builtInAssets);
+			// 対象外除外.
+			builtInAssetInfo = builtInAssets
+				// 除外対象に指定されたAssetの子階層の場合.
+				.Where(x => ignoreValidationPaths.All(y => !x.assetPath.StartsWith(y)))
+				// 除外対象の拡張子のファイルの場合.
+				.Where(x => ignoreValidationExtensions.All(y => y != Path.GetExtension(x.assetPath)))
+				.ToArray();
 
-            Repaint();
-		}
-
-        private void LoadBuiltInAssets(BuiltInAssets.BuiltInAssetInfo[] assetInfos)
-        {
-            const int FrameLoadCount = 100;
-
-            // 対象外除外.
-            builtInAssetInfo = assetInfos
-                // 除外対象に指定されたAssetの子階層の場合.
-                .Where(x => ignoreValidationPaths.All(y => !x.assetPath.StartsWith(y)))
-                // 除外対象の拡張子のファイルの場合.
-                .Where(x => ignoreValidationExtensions.All(y => y != Path.GetExtension(x.assetPath)))
-                .ToArray();
-
-            if (builtInAssetInfo != null)
-            {
-                var count = 0;
-                var progressTitle = "progress";
-                var progressMessage = "Loading assets";
-
-                assetObjectByAssetPath = new Dictionary<string, Object>();
-
-                EditorUtility.DisplayProgressBar(progressTitle, progressMessage, 0f);
-
-                for (var i = 0; i < builtInAssetInfo.Length; i++)
-                {
-                    var info = builtInAssetInfo[i];
-
-                    var asset = AssetDatabase.LoadMainAssetAtPath(info.assetPath);
-
-                    if (!assetObjectByAssetPath.ContainsKey(info.assetPath))
-                    {
-                        assetObjectByAssetPath.Add(info.assetPath, asset);
-                    }
-
-                    if (FrameLoadCount <= count++)
-                    {
-                        EditorUtility.DisplayProgressBar(progressTitle, progressMessage, (float)i / builtInAssetInfo.Length);
-                    }
-                }
-
-                EditorUtility.ClearProgressBar();
-            }
+			builtInAssetScrollView.Contents = builtInAssetInfo;
         }
-
+		
         void OnGUI()
         {
             GUILayout.Space(5f);
@@ -154,92 +116,42 @@ namespace Modules.Devkit.Build
                     {
                         GUILayout.FlexibleSpace();
 
+						EditorGUI.BeginChangeCheck();
+
                         assetViewMode = (AssetViewMode)EditorGUILayout.EnumPopup(assetViewMode, GUILayout.Width(60f));
+
+						if (EditorGUI.EndChangeCheck())
+						{
+							builtInAssetScrollView.SetAssetViewMode(assetViewMode);
+						}
 
                         GUILayout.Space(5f);
 
-                        string before = searchText;
-                        string after = EditorGUILayout.TextField(string.Empty, before, "SearchTextField", GUILayout.Width(200f));
+                        var before = searchText;
+						var after = EditorGUILayout.TextField(string.Empty, before, "SearchTextField", GUILayout.Width(200f));
 
                         if (before != after)
                         {
                             searchText = after;
-                            scrollPosition = Vector2.zero;
+							builtInAssetScrollView.Contents = GetMatchOfList();
+							builtInAssetScrollView.ScrollPosition = Vector2.zero;
                         }
 
                         if (GUILayout.Button(string.Empty, "SearchCancelButton", GUILayout.Width(18f)))
                         {
                             searchText = string.Empty;
                             GUIUtility.keyboardControl = 0;
-                            scrollPosition = Vector2.zero;
+
+							builtInAssetScrollView.Contents = GetMatchOfList();
+							builtInAssetScrollView.ScrollPosition = Vector2.zero;
                         }
                     }
 
                     GUILayout.Space(5f);
 
-                    var list = GetMatchOfList();
-
-                    if (list.Any())
+                    if (builtInAssetScrollView.Contents.Any())
                     {
-                        using (var scrollViewScope = new EditorGUILayout.ScrollViewScope(scrollPosition))
-                        {
-                            foreach (var item in list)
-                            {
-                                using (new EditorGUILayout.HorizontalScope())
-                                {
-                                    var asset = assetObjectByAssetPath.GetValueOrDefault(item.assetPath);
-
-                                    if (asset != null)
-                                    {
-                                        EditorGUILayout.LabelField(item.GetSizeText(), GUILayout.Width(70f));
-
-                                        EditorGUILayout.LabelField(string.Format("{0}%", item.ratio), GUILayout.Width(50f));
-
-                                        switch (assetViewMode)
-                                        {
-                                            case AssetViewMode.Asset:
-                                                EditorGUILayout.ObjectField(asset, typeof(Object), false, GUILayout.MinWidth(250f));
-                                                break;
-
-                                            case AssetViewMode.Path:
-                                                EditorGUILayout.DelayedTextField(item.assetPath, GUILayout.MinWidth(250f));
-                                                break;
-                                        }
-
-                                        var isInvalidAsset =
-                                            !builtInAssetTargetPaths.Any(x => item.assetPath.StartsWith(x)) ||          // 指定ディレクトリ以外のディレクトリに存在.
-                                            ignoreBuiltInAssetTargetPaths.Any(x => item.assetPath.StartsWith(x)) ||     // 含まれてはいけないディレクトリに存在.
-                                            ignoreBuiltInFolderNames.Any(x => item.assetPath.Split('/').Contains(x));   // 含まれていけないフォルダ名が含まれているか.
-
-                                        var titleStyle = new EditorLayoutTools.TitleGUIStyle();
-
-                                        // 指定されたAsset置き場にない or 同梱しないAsset置き場のAssetが混入.
-                                        if (isInvalidAsset)
-                                        {
-                                            titleStyle.backgroundColor = Color.red;
-                                            titleStyle.labelColor = Color.gray;
-                                            titleStyle.width = 85f;
-
-                                            EditorLayoutTools.Title("InvalidAsset", titleStyle);
-                                        }
-
-                                        // ファイルサイズが指定された値を超えている.
-                                        if (warningAssetSize <= item.size)
-                                        {
-                                            titleStyle.backgroundColor = Color.yellow;
-                                            titleStyle.labelColor = Color.gray;
-                                            titleStyle.width = 80f;
-
-                                            EditorLayoutTools.Title("LargeAsset", titleStyle);
-                                        }
-
-                                        GUILayout.Space(5f);
-                                    }
-                                }
-                            }
-
-                            scrollPosition = scrollViewScope.scrollPosition;
-                        }
+						builtInAssetScrollView.Draw();
                     }
                     else
                     {
