@@ -809,6 +809,8 @@ namespace Modules.Scene
 						await UniTask.NextFrame(cancelToken);
 					}
 
+					if (cancelToken.IsCancellationRequested){ return null; }
+
 					// コンポーネントを退避.
 					SuspendCapturedComponents();
 
@@ -820,6 +822,8 @@ namespace Modules.Scene
 
 						await UniTask.NextFrame(cancelToken);
 					}
+
+					if (cancelToken.IsCancellationRequested){ return null; }
                 }
 				catch (OperationCanceledException) 
 				{
@@ -950,7 +954,7 @@ namespace Modules.Scene
 
             if (observable == null)
             {
-                observable = Observable.Defer(() => ObservableEx.FromUniTask(cancelToken => UnloadSceneCore(sceneInstance, cancelToken))
+                observable = Observable.Defer(() => ObservableEx.FromUniTask(_ => UnloadSceneCore(sceneInstance))
                     .Do(_ => unloadingScenes.Remove(identifier)))
                     .Share();
 
@@ -960,7 +964,7 @@ namespace Modules.Scene
             return observable;
         }
 
-        private async UniTask UnloadSceneCore(SceneInstance sceneInstance, CancellationToken cancelToken)
+        private async UniTask UnloadSceneCore(SceneInstance sceneInstance)
         {
             var scene = sceneInstance.GetScene();
 
@@ -1028,9 +1032,7 @@ namespace Modules.Scene
 
 				while (!op.isDone)
 				{
-					if (cancelToken.IsCancellationRequested){ break; }
-
-					await UniTask.NextFrame(cancelToken);
+					await UniTask.NextFrame();
 				}
             }
 			catch (OperationCanceledException) 
