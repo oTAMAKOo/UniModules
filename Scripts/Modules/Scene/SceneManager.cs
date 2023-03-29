@@ -735,8 +735,9 @@ namespace Modules.Scene
 
             if (observable == null)
             {
-                observable = Observable.Defer(() => ObservableEx.FromUniTask(_ => LoadSceneCore(identifier, mode))
-                    .Do(_ => loadingScenes.Remove(identifier)))
+                observable = LoadSceneCore(identifier, mode)
+					.ToObservable()
+                    .Do(_ => loadingScenes.Remove(identifier))
                     .Share();
 
                 loadingScenes.Add(identifier, observable);
@@ -928,8 +929,10 @@ namespace Modules.Scene
 
             if (observable == null)
             {
-                observable = Observable.Defer(() => ObservableEx.FromUniTask(_ => UnloadSceneCore(sceneInstance))
-                    .Do(_ => unloadingScenes.Remove(identifier)))
+                observable = UnloadSceneCore(sceneInstance)
+					.ToObservable()
+					.AsUnitObservable()
+                    .Do(_ => unloadingScenes.Remove(identifier))
                     .Share();
 
                 unloadingScenes.Add(identifier, observable);
