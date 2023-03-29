@@ -27,9 +27,13 @@ namespace Modules.Scene
 
         protected sealed class DuplicatedSettings
         {
-			public static DuplicatedSettings Default = new DuplicatedSettings();
+            /// <summary>
+            /// RequireSuspend : false
+            /// DuplicateAction: DestroyGameObject
+            /// </summary>
+            public static readonly DuplicatedSettings Default = new DuplicatedSettings();
 
-			/// <summary>
+            /// <summary>
             /// シーン読み込み時に一時的に無効化するかどうかを設定する.
             /// 一時的にでも2つ以上存在すると問題がある場合はtrueに設定する.
             /// </summary>
@@ -38,18 +42,27 @@ namespace Modules.Scene
             /// <summary> 重複した場合の無効化方法を指定する. </summary>
             public DuplicatedAction DuplicateAction { get; set; }
 
-			public DuplicatedSettings()
-			{
-				RequireSuspend = false;
-				DuplicateAction = DuplicatedAction.DestroyGameObject;
-			}
-		}
+            public DuplicatedSettings()
+            {
+                RequireSuspend = false;
+                DuplicateAction = DuplicatedAction.DestroyGameObject;
+            }
+        }
+
+        private sealed class CapturedObject
+        {
+            public Behaviour behaviour = null;
+            
+            public bool enable = false;
+        }
 
         //----- field -----
 
         private GameObject uniqueComponentsRoot = null;
 
-        private readonly Dictionary<Type, Behaviour> capturedComponents = new Dictionary<Type, Behaviour>();
+        private Dictionary<Type, Behaviour> capturedComponents = null;
+
+        private Dictionary<Behaviour, bool> suspendOriginStatus = null;
 
         //----- property -----
 
@@ -167,16 +180,36 @@ namespace Modules.Scene
             }
         }
 
-        private void SetEnabledForCapturedComponents(bool enabled)
+        private void SuspendCapturedComponents()
         {
+            if (suspendOriginStatus.Any()){ return; }
+            
             foreach (var settings in UniqueComponents.Where(x => x.Value.RequireSuspend))
             {
                 var component = capturedComponents.GetValueOrDefault(settings.Key);
 
                 if (component == null) { continue; }
 
-                component.enabled = enabled;
+                suspendOriginStatus[component] = component.enabled;
+
+                component.enabled = false;
             }
+        }
+
+        private void ResumeCapturedComponents()
+        {
+            if (suspendOriginStatus.IsEmpty()){ return; }
+            
+            foreach (var settings in UniqueComponents.Where(x => x.Value.RequireSuspend))
+            {
+                var component = capturedComponents.GetValueOrDefault(settings.Key);
+
+                if (component == null) { continue; }
+
+                component.enabled = suspendOriginStatus.GetValueOrDefault(component, true);
+            }
+
+            suspendOriginStatus.Clear();
         }
     }
 }

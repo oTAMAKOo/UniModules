@@ -1,4 +1,4 @@
-﻿
+
 using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.SceneManagement;
@@ -100,6 +100,9 @@ namespace Modules.Scene
 
             history = new List<ISceneArgument>();
             waitHandlerIds = new HashSet<int>();
+
+			capturedComponents = new Dictionary<Type, Behaviour>();
+			suspendOriginStatus = new Dictionary<Behaviour, bool>();
 
             // キャッシュ許容数を超えたらアンロード.
             cacheScenes.OnExtrudedAsObservable()
@@ -777,8 +780,8 @@ namespace Modules.Scene
 					// UniqueComponentsを回収.
 					CollectUniqueComponents(rootObjects);
 
-					// 回収済みコンポーネント有効化.
-					SetEnabledForCapturedComponents(true);
+					// 退避したコンポーネント復元.
+					ResumeCapturedComponents();
 
                     // 初期状態は非アクティブ.
                     sceneInstance.Disable();
@@ -806,8 +809,8 @@ namespace Modules.Scene
 						await UniTask.NextFrame(cancelToken);
 					}
 
-					// 回収済みコンポーネント無効化.
-					SetEnabledForCapturedComponents(false);
+					// コンポーネントを退避.
+					SuspendCapturedComponents();
 
 					op.allowSceneActivation = true;
 
