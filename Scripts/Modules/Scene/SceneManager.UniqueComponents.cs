@@ -49,20 +49,15 @@ namespace Modules.Scene
             }
         }
 
-        private sealed class CapturedObject
-        {
-            public Behaviour behaviour = null;
-            
-            public bool enable = false;
-        }
-
-        //----- field -----
+		//----- field -----
 
         private GameObject uniqueComponentsRoot = null;
 
         private Dictionary<Type, Behaviour> capturedComponents = null;
 
         private Dictionary<Behaviour, bool> suspendOriginStatus = null;
+
+		private int suspendCount = 0;
 
         //----- property -----
 
@@ -182,6 +177,8 @@ namespace Modules.Scene
 
         private void SuspendCapturedComponents()
         {
+			suspendCount++;
+
             if (suspendOriginStatus.Any()){ return; }
             
             foreach (var settings in UniqueComponents.Where(x => x.Value.RequireSuspend))
@@ -198,6 +195,12 @@ namespace Modules.Scene
 
         private void ResumeCapturedComponents()
         {
+			suspendCount--;
+
+			if (0 < suspendCount){ return; }
+
+			suspendCount = 0;
+
             if (suspendOriginStatus.IsEmpty()){ return; }
             
             foreach (var settings in UniqueComponents.Where(x => x.Value.RequireSuspend))

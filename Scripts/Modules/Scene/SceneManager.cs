@@ -26,6 +26,7 @@ namespace Modules.Scene
         //----- field -----
 
 		protected CancellationTokenSource transitionCancelSource = null;
+		protected CancellationTokenSource preLoadCancelSource = null;
 
 		protected Dictionary<Scenes, SceneInstance> loadedScenes = null;
 		protected FixedQueue<SceneInstance> cacheScenes = null;
@@ -217,7 +218,7 @@ namespace Modules.Scene
 
 			if (sceneArgument.PreLoadScenes != null && sceneArgument.PreLoadScenes.Any())
 			{
-				RequestPreLoad(sceneArgument.PreLoadScenes);
+				PreLoadScene(sceneArgument.PreLoadScenes).Forget();
 			}
         }
 
@@ -345,6 +346,13 @@ namespace Modules.Scene
 				var handleTransition = await HandleTransitionFromLoadedScenes();
 
 				if (!handleTransition) { return; }
+			}
+
+			// 事前ロードキャンセル.
+			if (preLoadCancelSource != null)
+			{
+				preLoadCancelSource.Cancel();
+				preLoadCancelSource = null;
 			}
 
 			// 遷移開始.
@@ -690,7 +698,7 @@ namespace Modules.Scene
 
 			//====== PreLoad ======
 
-			RequestPreLoad(argument.PreLoadScenes);
+			PreLoadScene(argument.PreLoadScenes).Forget();
 		}
 
 		private async UniTask<bool> HandleTransitionFromLoadedScenes()
@@ -1046,47 +1054,44 @@ namespace Modules.Scene
 
         #region Scene Preload
 
-        /// <summary> 事前読み込み要求. </summary>
-        public void RequestPreLoad(Scenes[] targetScenes)
+		/// <summary> 事前読み込み. </summary>
+		private async UniTask PreLoadScene(Scenes[] targetScenes)
         {
-			PreLoadScene(targetScenes).Subscribe().AddTo(Disposable);
-        }
+			preLoadCancelSource = new CancellationTokenSource();
 
-        private IObservable<Unit> PreLoadScene(Scenes[] targetScenes)
-        {
-            if (targetScenes.IsEmpty()) { return Observable.ReturnUnit(); }
+            if (targetScenes.IsEmpty()) { return; }
 
             var builder = new StringBuilder();
-
-            var observers = new List<IObservable<Unit>>();
+			
+			var sw = System.Diagnostics.Stopwatch.StartNew();
 
             foreach (var scene in targetScenes)
             {
                 // キャッシュ済みのシーンがある場合はプリロードしない.
                 if (cacheScenes.Any(x => x.Identifier == scene)) { continue; }
 
-                var observer = Observable.Defer(() => ObservableEx.FromUniTask(_ => PreLoadCore(scene, builder)));
+				try
+				{
+					await PreLoadCore(scene, builder);
 
-                observers.Add(observer);
-            }
+					await UniTask.DelayFrame(5, cancellationToken: preLoadCancelSource.Token);
+				}
+				catch (OperationCanceledException )
+				{
+					// Canceled.
+				}
 
-            if (observers.IsEmpty()) { return Observable.ReturnUnit(); }
+				if (preLoadCancelSource.IsCancellationRequested){ return; }
+			}
 
-            var sw = System.Diagnostics.Stopwatch.StartNew();
+			sw.Stop();
 
-            return observers.WhenAll()
-                .Do(_ =>
-                    {
-                        sw.Stop();
+			var time = sw.Elapsed.TotalMilliseconds;
+			var detail = builder.ToString();
 
-                        var time = sw.Elapsed.TotalMilliseconds;
-                        var detail = builder.ToString();
+			var message = string.Format("PreLoad Complete ({0:F2}ms)\n\n{1}", time, detail);
 
-                        var message = string.Format("PreLoad Complete ({0:F2}ms)\n\n{1}", time, detail);
-
-                        UnityConsole.Event(ConsoleEventName, ConsoleEventColor, message);
-                    })
-                .AsUnitObservable();
+			UnityConsole.Event(ConsoleEventName, ConsoleEventColor, message);
         }
 
         private async UniTask PreLoadCore(Scenes targetScene, StringBuilder builder)
