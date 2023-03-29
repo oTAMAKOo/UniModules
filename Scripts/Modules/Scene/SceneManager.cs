@@ -40,9 +40,7 @@ namespace Modules.Scene
 
 		protected List<ISceneArgument> history = null;
 
-		protected LifetimeDisposable preLoadDisposable = null;
-		
-        private Subject<SceneInstance> onPrepare = null;
+		private Subject<SceneInstance> onPrepare = null;
         private Subject<SceneInstance> onPrepareComplete = null;
 
         private Subject<SceneInstance> onEnter = null;
@@ -349,14 +347,6 @@ namespace Modules.Scene
 				if (!handleTransition) { return; }
 			}
 
-			// プリロード停止.
-
-			if (preLoadDisposable != null)
-            {
-                preLoadDisposable.Dispose();
-                preLoadDisposable = null;
-            }
-			
 			// 遷移開始.
 
             TransitionTarget = argument.Identifier;
@@ -409,7 +399,7 @@ namespace Modules.Scene
 				{
 					await prev.Instance.Leave().AttachExternalCancellation(cancelToken);
 				}
-				catch (OperationCanceledException) 
+				catch (OperationCanceledException)
 				{
 					return;
 				}
@@ -436,7 +426,7 @@ namespace Modules.Scene
 
             if (mode == LoadSceneMode.Additive)
             {
-                Func<SceneInstance, bool> isUnloadTarget = sceneInstance =>
+                bool IsUnloadTarget(SceneInstance sceneInstance)
                 {
                     // SceneBaseクラスが存在しない.
                     if (UnityUtility.IsNull(sceneInstance.Instance)) { return true; }
@@ -459,17 +449,13 @@ namespace Modules.Scene
                 };
 
                 // 不要なシーンをアンロード.
-                var unloadScenes = loadedScenes.Values.Where(x => isUnloadTarget(x)).ToArray();
+                var unloadScenes = loadedScenes.Values.Where(x => IsUnloadTarget(x)).ToArray();
 
                 foreach (var unloadScene in unloadScenes)
                 {
 					try
 					{
-						await UnloadScene(unloadScene).ToUniTask(cancellationToken: cancelToken);
-					}
-					catch (OperationCanceledException) 
-					{
-						return;
+						_ = await UnloadScene(unloadScene);
 					}
 					catch (Exception e)
 					{
@@ -504,11 +490,7 @@ namespace Modules.Scene
             {
 				try
 				{
-					sceneInfo = await LoadScene(identifier, mode).ToUniTask(cancellationToken: cancelToken);
-				}
-				catch (OperationCanceledException) 
-				{
-					return;
+					sceneInfo = await LoadScene(identifier, mode);
 				}
 				catch (Exception e)
 				{
@@ -538,6 +520,8 @@ namespace Modules.Scene
 
 				return;
             }
+
+			if (cancelToken.IsCancellationRequested){ return; }
 
             SetSceneActive(scene);
 
@@ -743,7 +727,7 @@ namespace Modules.Scene
 
             if (observable == null)
             {
-                observable = Observable.Defer(() => ObservableEx.FromUniTask(cancelToken => LoadSceneCore(identifier, mode, cancelToken))
+                observable = Observable.Defer(() => ObservableEx.FromUniTask(_ => LoadSceneCore(identifier, mode))
                     .Do(_ => loadingScenes.Remove(identifier)))
                     .Share();
 
@@ -753,7 +737,7 @@ namespace Modules.Scene
             return observable;
         }
 
-        private async UniTask<SceneInstance> LoadSceneCore(Scenes identifier, LoadSceneMode mode, CancellationToken cancelToken)
+        private async UniTask<SceneInstance> LoadSceneCore(Scenes identifier, LoadSceneMode mode)
         {
             var sceneInstance = loadedScenes.GetValueOrDefault(identifier);
 
@@ -804,13 +788,9 @@ namespace Modules.Scene
 
 					while (op.progress < 0.9f)
 					{
-						if (cancelToken.IsCancellationRequested){ break; }
-
-						await UniTask.NextFrame(cancelToken);
+						await UniTask.NextFrame();
 					}
-
-					if (cancelToken.IsCancellationRequested){ return null; }
-
+					
 					// コンポーネントを退避.
 					SuspendCapturedComponents();
 
@@ -818,16 +798,8 @@ namespace Modules.Scene
 
 					while (!op.isDone)
 					{
-						if (cancelToken.IsCancellationRequested){ break; }
-
-						await UniTask.NextFrame(cancelToken);
+						await UniTask.NextFrame();
 					}
-
-					if (cancelToken.IsCancellationRequested){ return null; }
-                }
-				catch (OperationCanceledException) 
-				{
-					return null;
 				}
 				finally
 				{
@@ -841,9 +813,7 @@ namespace Modules.Scene
 					loadedScenes.Add(identifier, sceneInstance);
 
                     // 1フレーム待つ.
-					await UniTask.NextFrame(cancelToken);
-
-					if (cancelToken.IsCancellationRequested){ return null; }
+					await UniTask.NextFrame();
 
                     if (onLoadSceneComplete != null)
                     {
@@ -876,11 +846,7 @@ namespace Modules.Scene
                 {
 					try
 					{
-						await sceneInstance.Instance.Initialize().AttachExternalCancellation(cancelToken);
-					}
-					catch (OperationCanceledException) 
-					{
-						return null;
+						await sceneInstance.Instance.Initialize();
 					}
 					catch (Exception e)
 					{
@@ -1083,12 +1049,7 @@ namespace Modules.Scene
         /// <summary> 事前読み込み要求. </summary>
         public void RequestPreLoad(Scenes[] targetScenes)
         {
-            if (preLoadDisposable == null)
-            {
-                preLoadDisposable = new LifetimeDisposable();
-            }
-
-            PreLoadScene(targetScenes).Subscribe().AddTo(preLoadDisposable.Disposable);
+			PreLoadScene(targetScenes).Subscribe().AddTo(Disposable);
         }
 
         private IObservable<Unit> PreLoadScene(Scenes[] targetScenes)
@@ -1104,7 +1065,7 @@ namespace Modules.Scene
                 // キャッシュ済みのシーンがある場合はプリロードしない.
                 if (cacheScenes.Any(x => x.Identifier == scene)) { continue; }
 
-                var observer = Observable.Defer(() => ObservableEx.FromUniTask(cancelToken => PreLoadCore(scene, builder, cancelToken)));
+                var observer = Observable.Defer(() => ObservableEx.FromUniTask(_ => PreLoadCore(scene, builder)));
 
                 observers.Add(observer);
             }
@@ -1128,17 +1089,13 @@ namespace Modules.Scene
                 .AsUnitObservable();
         }
 
-        private async UniTask PreLoadCore(Scenes targetScene, StringBuilder builder, CancellationToken cancelToken)
+        private async UniTask PreLoadCore(Scenes targetScene, StringBuilder builder)
         {
             var sw = System.Diagnostics.Stopwatch.StartNew();
 
 			try
 			{
-				await LoadScene(targetScene, LoadSceneMode.Additive).ToUniTask(cancellationToken: cancelToken);
-			}
-			catch (OperationCanceledException) 
-			{
-				return;
+				await LoadScene(targetScene, LoadSceneMode.Additive).ToUniTask();
 			}
 			catch (Exception e)
 			{
