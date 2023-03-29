@@ -1,4 +1,4 @@
-﻿
+
 #if ENABLE_CRIWARE_ADX
 
 using UnityEngine;
@@ -117,11 +117,6 @@ namespace Modules.CriWare
                                 }
                             }
 
-                            if (!string.IsNullOrEmpty(cueInfo.Summary))
-                            {
-                                EditorGUILayout.LabelField(cueInfo.Summary, EditorStyles.textArea, GUILayout.Height(18f));
-                            }
-
                             GUILayout.Space(3f);
                         }
 
@@ -153,7 +148,7 @@ namespace Modules.CriWare
                 {
                     var path = PathUtility.GetPathWithoutExtension(assetPath);
 
-                    var cueInfo = new CueInfo(string.Empty, path, item.name, hasAwb, item.userData);
+                    var cueInfo = new CueInfo(string.Empty, path, item.name, hasAwb);
 
                     cueInfos.Add(cueInfo);
                 }

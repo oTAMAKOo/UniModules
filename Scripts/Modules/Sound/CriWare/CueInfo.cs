@@ -1,8 +1,6 @@
 ﻿
 #if ENABLE_CRIWARE_ADX
 
-using Extensions;
-
 namespace Modules.Sound
 {
 	public sealed class CueInfo
@@ -11,7 +9,6 @@ namespace Modules.Sound
 		public string CueSheet { get; private set; }
 		public string Cue { get; private set; }
 		public string FilePath { get; private set; }
-		public string Summary { get; private set; }
 		public bool HasAwb { get; private set; }
 
 		public CueInfo(string filePath, string cueSheetPath, string cue, bool hasAwb)
@@ -22,11 +19,6 @@ namespace Modules.Sound
 			HasAwb = hasAwb;
 
 			CueId = string.Format("{0}-{1}", FilePath, Cue).GetHashCode();
-		}
-
-		public CueInfo(string filePath, string cueSheetPath, string cue, bool hasAwb, string summary) : this(filePath, cueSheetPath, cue, hasAwb)
-		{
-			Summary = summary;
 		}
 	}
 }
