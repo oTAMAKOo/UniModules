@@ -1,4 +1,4 @@
-﻿
+
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using Unity.Linq;
@@ -27,21 +27,28 @@ namespace Modules.Scene
 
         protected sealed class DuplicatedSettings
         {
-            /// <summary>
+			public static DuplicatedSettings Default = new DuplicatedSettings();
+
+			/// <summary>
             /// シーン読み込み時に一時的に無効化するかどうかを設定する.
-            /// 一時的にでも2つ以上存在するとよくない場合はtrueに設定する.
+            /// 一時的にでも2つ以上存在すると問題がある場合はtrueに設定する.
             /// </summary>
             public bool RequireSuspend { get; set; }
 
-            /// <summary>
-            /// 重複した場合の無効化方法を指定する.
-            /// </summary>
+            /// <summary> 重複した場合の無効化方法を指定する. </summary>
             public DuplicatedAction DuplicateAction { get; set; }
-        }
+
+			public DuplicatedSettings()
+			{
+				RequireSuspend = false;
+				DuplicateAction = DuplicatedAction.DestroyGameObject;
+			}
+		}
 
         //----- field -----
 
         private GameObject uniqueComponentsRoot = null;
+
         private readonly Dictionary<Type, Behaviour> capturedComponents = new Dictionary<Type, Behaviour>();
 
         //----- property -----

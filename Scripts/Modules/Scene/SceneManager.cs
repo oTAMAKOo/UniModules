@@ -760,37 +760,56 @@ namespace Modules.Scene
 
 				UnityAction<UnityEngine.SceneManagement.Scene, LoadSceneMode> sceneLoaded = (s, m) =>
                 {
-                    if (s.IsValid())
+                    if (!s.IsValid()){ return; }
+                    
+                    sceneInstance = new SceneInstance(identifier, FindSceneObject(s), s);
+
+                    switch (m)
                     {
-                        sceneInstance = new SceneInstance(identifier, FindSceneObject(s), s);
-
-                        switch (m)
-                        {
-                            case LoadSceneMode.Single:
-								loadedScenes.Clear();
-								cacheScenes.Clear();
-                                break;
-                        }
-
-                        // 初期状態は非アクティブ.
-                        sceneInstance.Disable();
-
-                        if (onLoadScene != null)
-                        {
-							onLoadScene.OnNext(sceneInstance);
-                        }
+                        case LoadSceneMode.Single:
+							loadedScenes.Clear();
+							cacheScenes.Clear();
+                            break;
                     }
-                };
 
-                SetEnabledForCapturedComponents(false);
+					var rootObjects = s.GetRootGameObjects();
 
-                SceneManager.sceneLoaded += sceneLoaded;
+					// UniqueComponentsを回収.
+					CollectUniqueComponents(rootObjects);
+
+					// 回収済みコンポーネント有効化.
+					SetEnabledForCapturedComponents(true);
+
+                    // 初期状態は非アクティブ.
+                    sceneInstance.Disable();
+
+                    if (onLoadScene != null)
+                    {
+						onLoadScene.OnNext(sceneInstance);
+                    }
+				};
+
+				SceneManager.sceneLoaded += sceneLoaded;
 
                 AsyncOperation op = null;
 
                 try
                 {
-                    op = SceneManager.LoadSceneAsync(scenePath, mode);
+					op = SceneManager.LoadSceneAsync(scenePath, mode);
+
+					op.allowSceneActivation = false;
+
+					while (op.progress < 0.9f)
+					{
+						if (cancelToken.IsCancellationRequested){ break; }
+
+						await UniTask.NextFrame(cancelToken);
+					}
+
+					// 回収済みコンポーネント無効化.
+					SetEnabledForCapturedComponents(false);
+
+					op.allowSceneActivation = true;
 
 					while (!op.isDone)
 					{
@@ -812,18 +831,7 @@ namespace Modules.Scene
 
                 if (scene.HasValue)
                 {
-                    var rootObjects = scene.Value.GetRootGameObjects();
-
-                    // 回収するオブジェクトが非アクティブ化されているのを一時的に戻す.
-                    sceneInstance.Enable();
-
-                    // UniqueComponentsを回収.
-                    CollectUniqueComponents(rootObjects);
-
-                    // 回収後オブジェクトの状態を非アクティブ化.
-                    sceneInstance.Disable();
-
-                    loadedScenes.Add(identifier, sceneInstance);
+					loadedScenes.Add(identifier, sceneInstance);
 
                     // 1フレーム待つ.
 					await UniTask.NextFrame(cancelToken);
@@ -856,9 +864,7 @@ namespace Modules.Scene
 					await UniTask.WhenAll(tasks);
                 }
 
-                SetEnabledForCapturedComponents(true);
-
-                // シーンの初期化処理.
+				// シーンの初期化処理.
                 if (sceneInstance.Instance != null)
                 {
 					try
