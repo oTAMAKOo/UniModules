@@ -653,7 +653,11 @@ namespace Modules.Scene
             // シーン遷移完了.
             TransitionTarget = null;
 
-            // シーン遷移終了.
+			//====== PreLoad ======
+
+			RequestPreLoad(argument.PreLoadScenes);
+
+			//====== TransitionFinish ======
 
 			try
 			{
@@ -703,11 +707,7 @@ namespace Modules.Scene
             var message = string.Format("{0} → {1} ({2:F2}ms)\n\n{3}", prevScene, nextScene, total, detail);
 
             UnityConsole.Event(ConsoleEventName, ConsoleEventColor, message);
-
-            //====== PreLoad ======
-
-            RequestPreLoad(argument.PreLoadScenes);
-        }
+		}
 
 		private async UniTask<bool> HandleTransitionFromLoadedScenes()
 		{
