@@ -57,39 +57,43 @@ namespace Modules.UI
 		{
 			if (rectTransform == null){ return; }
 
-			if (canvasRectTransform == null){ return; }
+            #if UNITY_EDITOR
 
-			#if UNITY_EDITOR
+            var drivenProperties = DrivenTransformProperties.All;
 
-			var drivenProperties = DrivenTransformProperties.All;
+            drivenRectTransformTracker.Clear();
+            drivenRectTransformTracker.Add(this, rectTransform,drivenProperties);
 
-			drivenRectTransformTracker.Clear();
-			drivenRectTransformTracker.Add(this, rectTransform,drivenProperties);
+            #endif
 
-			#endif
+            rectTransform.Reset();
+            rectTransform.FillRect();
 
-			var parent = rectTransform.parent;
+            rectTransform.pivot = new Vector2 (0.5f, 0.5f);
 
-			var lossyScale = parent.lossyScale;
+			if (canvasRectTransform != null)
+            {
+                var parent = rectTransform.parent;
 
-			var localScale = new Vector3(
-				lossyScale.x != 0f ? 1f / lossyScale.x : 1f,
-				lossyScale.y != 0f ? 1f / lossyScale.y : 1f,
-				lossyScale.z != 0f ? 1f / lossyScale.z : 1f
-			);
+			    var lossyScale = parent.lossyScale;
 
-			localScale.x *= canvasRectTransform.localScale.x;
-			localScale.y *= canvasRectTransform.localScale.y;
-			localScale.z *= canvasRectTransform.localScale.z;
+			    var localScale = new Vector3(
+				    lossyScale.x != 0f ? 1f / lossyScale.x : 1f,
+				    lossyScale.y != 0f ? 1f / lossyScale.y : 1f,
+				    lossyScale.z != 0f ? 1f / lossyScale.z : 1f
+			    );
 
-			rectTransform.position = Vector3.zero;
-			rectTransform.localPosition = Vector.SetZ(rectTransform.localPosition, 0f);
-			rectTransform.localRotation = Quaternion.identity;
-			rectTransform.localScale = localScale;
-			
-			rectTransform.sizeDelta = Vector2.zero;
-			rectTransform.pivot = new Vector2 (0.5f, 0.5f);
-			rectTransform.SetSize(canvasRectTransform.sizeDelta);
+			    localScale.x *= canvasRectTransform.localScale.x;
+			    localScale.y *= canvasRectTransform.localScale.y;
+			    localScale.z *= canvasRectTransform.localScale.z;
+
+			    rectTransform.position = Vector3.zero;
+			    rectTransform.localPosition = Vector.SetZ(rectTransform.localPosition, 0f);
+			    rectTransform.localRotation = Quaternion.identity;
+			    rectTransform.localScale = localScale;
+                rectTransform.sizeDelta = Vector2.zero;
+                rectTransform.SetSize(canvasRectTransform.sizeDelta);
+            }
 		}
 	}
 }
