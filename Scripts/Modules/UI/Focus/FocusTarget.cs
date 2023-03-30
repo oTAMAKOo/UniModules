@@ -81,8 +81,7 @@ namespace Modules.UI.Focus
             originOverrideSorting = canvasSelf.overrideSorting;
             originSortingOrder = canvasSelf.sortingOrder;
 
-			canvasSelf.overrideSorting = true;
-			canvasSelf.sortingOrder = canvas.sortingOrder + 1;
+            ApplyCanvasSelf(true, canvas.sortingOrder + 1).Forget();
 		}
 
         public void Release()
@@ -104,8 +103,7 @@ namespace Modules.UI.Focus
             }
             else
             {
-				canvasSelf.overrideSorting = originOverrideSorting;
-				canvasSelf.sortingOrder = originSortingOrder;
+                ApplyCanvasSelf(originOverrideSorting, originSortingOrder).Forget();
             }
         }
 
@@ -129,5 +127,16 @@ namespace Modules.UI.Focus
 				Release();
 			}
 		}
+
+        private async UniTask ApplyCanvasSelf(bool overrideSorting, int sortingOrder)
+        {
+            while (!UnityUtility.IsActiveInHierarchy(gameObject))
+            {
+                await UniTask.NextFrame();
+            }
+
+            canvasSelf.overrideSorting = overrideSorting;
+            canvasSelf.sortingOrder = sortingOrder;
+        }
     }
 }
