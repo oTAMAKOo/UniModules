@@ -1,4 +1,4 @@
-﻿
+
 #if ENABLE_CRIWARE_ADX || ENABLE_CRIWARE_SOFDEC
 ﻿﻿﻿
 using UnityEngine;
@@ -381,22 +381,26 @@ namespace Modules.CriWare
 
         private void OnTimeout(AssetInfo assetInfo, Exception exception)
         {
-            Debug.LogErrorFormat("[Download Timeout] \n{0}", exception);
-
-            if (onTimeOut != null)
+			if (onTimeOut != null)
             {
                 onTimeOut.OnNext(assetInfo);
             }
+			else
+			{
+				Debug.LogErrorFormat("[Download Timeout] \n{0}", exception);
+			}
         }
 
         private void OnError(Exception exception)
         {
-            Debug.LogErrorFormat("[Download Error] \n{0}", exception);
-
-            if (onError != null)
+			if (onError != null)
             {
                 onError.OnNext(exception);
             }
+			else
+			{
+				Debug.LogErrorFormat("[Download Error] \n{0}", exception);
+			}
         }
 
         /// <summary>

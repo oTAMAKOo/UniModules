@@ -1,4 +1,4 @@
-﻿
+
 using UnityEngine;
 using System;
 using System.IO;
@@ -486,22 +486,26 @@ namespace Modules.ExternalAssets
 
         private void OnTimeout(AssetInfo assetInfo)
         {
-            Debug.LogErrorFormat("Timeout {0}", assetInfo.ResourcePath);
-
-            if (onTimeOut != null)
+			if (onTimeOut != null)
             {
                 onTimeOut.OnNext(assetInfo);
             }
+			else
+			{
+				Debug.LogErrorFormat("Timeout {0}", assetInfo.ResourcePath);
+			}
         }
 
         private void OnError(Exception exception)
         {
-            Debug.LogException(exception);
-
-            if (onError != null)
+			if (onError != null)
             {
                 onError.OnNext(exception);
             }
+			else
+			{
+				Debug.LogException(exception);
+			}
         }
 
         /// <summary> タイムアウト時イベント. </summary>

@@ -1,4 +1,4 @@
-﻿
+
 
 using UnityEngine;
 using UnityEngine.Networking;
@@ -141,16 +141,18 @@ namespace Modules.Net.WebDownload
             }
             else
             {
-                var message = string.Format("WebRequest TimeoutError\n{0}\n{1}\n", currentRequest.url, ex.Message);
-
-                UnityConsole.Event(ConsoleEventName, ConsoleEventColor, message);
-
-                Cancel();
+				Cancel();
 
                 if (onTimeout != null)
                 {
                     onError.OnNext(Unit.Default);
                 }
+				else
+				{
+					var message = string.Format("WebRequest TimeoutError\n{0}\n{1}\n", currentRequest.url, ex.Message);
+
+					UnityConsole.Event(ConsoleEventName, ConsoleEventColor, message);
+				}
             }
         }
 
@@ -160,33 +162,39 @@ namespace Modules.Net.WebDownload
 
             if (type == typeof(TimeoutException))
             {
-                Debug.LogErrorFormat("WebRequest Timeout \n\n[URL]\n{0}\n\n[Exception]\n{1}\n", currentRequest.url, ex.StackTrace);
-
-                if (onTimeout != null)
+				if (onTimeout != null)
                 {
                     onTimeout.OnNext(Unit.Default);
                 }
+				else
+				{
+					Debug.LogErrorFormat("WebRequest Timeout \n\n[URL]\n{0}\n\n[Exception]\n{1}\n", currentRequest.url, ex.StackTrace);
+				}
             }
             else if (type == typeof(UnityWebRequestErrorException) && ex is UnityWebRequestErrorException)
             {
-                var exception = (UnityWebRequestErrorException)ex;
-                var errorMessage = exception.RawErrorMessage;
-
-                Debug.LogErrorFormat("WebRequest Error : {0}\n\n[URL]\n{1}\n\n[Exception]\n{2}\n", errorMessage, currentRequest.url, ex.StackTrace);
-
-                if (onError != null)
+				if (onError != null)
                 {
                     onError.OnNext(Unit.Default);
                 }
+				else
+				{
+					var exception = (UnityWebRequestErrorException)ex;
+					var errorMessage = exception.RawErrorMessage;
+
+					Debug.LogErrorFormat("WebRequest Error : {0}\n\n[URL]\n{1}\n\n[Exception]\n{2}\n", errorMessage, currentRequest.url, ex.StackTrace);
+				}
             }
             else
             {
-                Debug.LogErrorFormat("WebRequest UnknownError : {0}\n\n[URL]\n{1}\n\n[Exception]\n{2}\n", ex.Message, currentRequest.url, ex.StackTrace);
-
-                if (onError != null)
+				if (onError != null)
                 {
                     onError.OnNext(Unit.Default);
                 }
+				else
+				{
+					Debug.LogErrorFormat("WebRequest UnknownError : {0}\n\n[URL]\n{1}\n\n[Exception]\n{2}\n", ex.Message, currentRequest.url, ex.StackTrace);
+				}
             }
         }
 
