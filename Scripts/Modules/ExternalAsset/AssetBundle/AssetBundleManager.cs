@@ -485,73 +485,71 @@ namespace Modules.AssetBundles
 
         #region Dependencies
 
-        private string[] GetAllDependencies(string assetBundleName)
-        {
-            // 既に登録済みの場合はそこから取得.
-            var dependents = dependenciesTable.GetValueOrDefault(assetBundleName);
+		/// <summary> 依存関係にあるアセット一覧取得. </summary>
+		private string[] GetAllDependencies(string assetBundleName)
+		{
+			// 既に登録済みの場合はそこから取得.
+			var dependents = dependenciesTable.GetValueOrDefault(assetBundleName);
 
-            if (dependents == null)
-            {
-                // 依存アセット一覧を再帰で取得.
-                dependents = GetAllDependenciesInternal(assetBundleName);
+			if (dependents == null)
+			{
+				// 依存アセット一覧を再帰で取得.
+				dependents = GetAllDependenciesInternal(assetBundleName).ToArray();
 
-                // 登録.
-                if (dependents.Any())
-                {
-                    dependenciesTable.Add(assetBundleName, dependents);
-                }
-            }
+				// 登録.
+				if (dependents.Any())
+				{
+					dependenciesTable.Add(assetBundleName, dependents);
+				}
+			}
 
-            return dependents.ToArray();
-        }
+			return dependents;
+		}
 
-        /// <summary>
-        /// 依存関係にあるアセット一覧取得.
-        /// </summary>
-        private string[] GetAllDependenciesInternal(string fileName, List<string> dependents = null)
-        {
-            var targets = dependenciesTable.GetValueOrDefault(fileName, new string[0]);
+		private IEnumerable<string> GetAllDependenciesInternal(string fileName, List<string> dependents = null)
+		{
+			var targets = dependenciesTable.GetValueOrDefault(fileName, new string[0]);
 
-            if (targets.Length == 0) { return new string[0]; }
+			if (targets.IsEmpty()) { return new string[0]; }
 
-            if (dependents == null)
-            {
-                dependents = new List<string>();
-            }
+			if (dependents == null)
+			{
+				dependents = new List<string>();
+			}
 
-            for (var i = 0; i < targets.Length; i++)
-            {
-                // 既に列挙済みの場合は処理しない.
-                if (dependents.Contains(targets[i])) { continue; }
+			foreach (var target in targets)
+			{
+				// 既に列挙済みの場合は処理しない.
+				if (dependents.Contains(target)) { continue; }
 
-                dependents.Add(targets[i]);
+				dependents.Add(target);
 
-                // 依存先の依存先を取得.
-                var internalDependents = GetAllDependenciesInternal(targets[i], dependents);
+				// 依存先の依存先を取得.
+				var internalDependents = GetAllDependenciesInternal(target, dependents);
 
-                foreach (var internalDependent in internalDependents)
-                {
-                    // 既に列挙済みの場合は追加しない.
-                    if (!dependents.Contains(internalDependent))
-                    {
-                        dependents.Add(internalDependent);
-                    }
-                }
-            }
+				foreach (var internalDependent in internalDependents)
+				{
+					// 既に列挙済みの場合は追加しない.
+					if (!dependents.Contains(internalDependent))
+					{
+						dependents.Add(internalDependent);
+					}
+				}
+			}
 
-            return dependents.Distinct().ToArray();
-        }
+			return dependents.Distinct();
+		}
 
-        private int IncrementReferenceCount(string assetBundleName)
-        {
-            var referenceCount = assetBundleRefCount.GetValueOrDefault(assetBundleName);
+		private int IncrementReferenceCount(string assetBundleName)
+		{
+			var referenceCount = assetBundleRefCount.GetValueOrDefault(assetBundleName);
 
-            referenceCount++;
+			referenceCount++;
 
-            assetBundleRefCount[assetBundleName] = referenceCount;
+			assetBundleRefCount[assetBundleName] = referenceCount;
 
-            return referenceCount;
-        }
+			return referenceCount;
+		}
 
         private int DecrementReferenceCount(string assetBundleName)
         {
