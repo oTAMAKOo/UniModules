@@ -1,4 +1,4 @@
-﻿
+
 using UnityEngine;
 using UnityEngine.Networking;
 using System;
@@ -584,8 +584,8 @@ namespace Modules.AssetBundles
 
             return await LoadAssetInternal<T>(installPath, assetInfo, assetPath, autoUnLoad, cancelToken);
         }
-        
-        private async UniTask<T> LoadAssetInternal<T>(string installPath, AssetInfo assetInfo, string assetPath, bool autoUnLoad, CancellationToken cancelToken)
+		
+		private async UniTask<T> LoadAssetInternal<T>(string installPath, AssetInfo assetInfo, string assetPath, bool autoUnLoad, CancellationToken cancelToken)
 			where T : UnityEngine.Object
         {
             T result = null;
@@ -608,44 +608,25 @@ namespace Modules.AssetBundles
             #endif
 
             {
-                UniTask<AssetBundle> task = default;
-
-                // アセットバンドル名は小文字なので小文字に変換.
-                var assetBundleName = assetInfo.AssetBundle.AssetBundleName.ToLower();
-
-				IncrementReferenceCount(assetBundleName);
-
-                var loadedAssetBundle = loadedAssetBundles.GetValueOrDefault(assetBundleName);
-
-                if (loadedAssetBundle == null)
-                {
-                    var dependencies = GetAllDependencies(assetBundleName);
-
-                    for (var i = 0; i < dependencies.Length; i++)
-                    {
-                        IncrementReferenceCount(dependencies[i]);    
-                    }
-                    
-                    task = UniTask.Create(async () =>
-                    {
-						var loadDependenciesTasks = dependencies
-							.Select(x => GetLoadTask(installPath, x).ToUniTask(cancellationToken: cancelToken))
-							.ToArray();
-
-						await UniTask.WhenAll(loadDependenciesTasks);
-
-						return await GetLoadTask(installPath, assetBundleName).ToUniTask(cancellationToken: cancelToken);
-                    });
-                }
-                else
-                {
-					task = UniTask.FromResult(loadedAssetBundle);
-                }
-
-				try
+                try
 				{
-					var assetBundle = await task;
+                    // アセットバンドル名は小文字なので小文字に変換.
+                    var assetBundleName = assetInfo.AssetBundle.AssetBundleName.ToLower();
 
+                    // 参照カウントを追加.
+
+                    var allDependencies = GetAllDependencies(assetBundleName);
+
+                    foreach (var item in allDependencies)
+                    {
+                        IncrementReferenceCount(item);
+                    }
+
+                    IncrementReferenceCount(assetBundleName);
+
+                    // アセットバンドル読み込み.
+                    var assetBundle = await LoadAssetBundleWithDependencies(installPath, assetBundleName, null, cancelToken);
+                    
 					if (assetBundle != null)
 					{
 						var assetBundleRequest = assetBundle.LoadAssetAsync(assetPath, typeof(T));
@@ -679,7 +660,50 @@ namespace Modules.AssetBundles
 			return result;
         }
 
-        private IObservable<AssetBundle> GetLoadTask(string installPath, string assetBundleName)
+        private async UniTask<AssetBundle> LoadAssetBundleWithDependencies(string installPath, string assetBundleName, List<string> internalLoading, CancellationToken cancelToken)
+        {
+            // 既に読み込み済み.
+
+            var loadedAssetBundle = loadedAssetBundles.GetValueOrDefault(assetBundleName);
+
+            if(loadedAssetBundle != null) { return loadedAssetBundle; }
+
+            // 参照アセットバンドルを再帰読み込み.
+
+            var dependencies = dependenciesTable.GetValueOrDefault(assetBundleName);
+
+            if (dependencies != null)
+            {
+                var dependenciesTasks = new List<UniTask<AssetBundle>>();
+
+                // 相互参照で無限ループに陥るので既に読み込み処理を行った対象を除外.
+                if (internalLoading == null)
+                {
+                    internalLoading = new List<string>();
+                }
+
+                foreach (var item in dependencies)
+                {
+                    if (internalLoading.Contains(item)) { continue; }
+
+                    internalLoading.Add(item);
+
+                    var task = LoadAssetBundleWithDependencies(installPath, item, internalLoading, cancelToken);
+
+                    dependenciesTasks.Add(task);
+                }
+
+                await UniTask.WhenAll(dependenciesTasks);
+            }
+
+            // アセットバンドルを読み込み.
+
+            var assetBundle = await GetLoadTask(installPath, assetBundleName).ToUniTask(cancellationToken: cancelToken);
+
+            return assetBundle;
+        }
+
+        private IObservable<AssetBundle> GetLoadTask(string installPath,string assetBundleName)
         {
             // 既に読み込み済み.
 
@@ -712,7 +736,7 @@ namespace Modules.AssetBundles
             return loadQueueing[assetBundleName];
         }
 
-        private async UniTask<AssetBundle> LoadAssetBundle(string installPath, CancellationToken cancelToken, AssetInfo assetInfo)
+		private async UniTask<AssetBundle> LoadAssetBundle(string installPath, CancellationToken cancelToken, AssetInfo assetInfo)
         {
 			AssetBundle assetBundle = null;
 
@@ -903,15 +927,14 @@ namespace Modules.AssetBundles
 
         private void OnTimeout(AssetInfo assetInfo, Exception exception)
         {
-            using (new DisableStackTraceScope())
-            {
-                Debug.LogErrorFormat("[Timeout] {0}", exception);
-            }
-
-            if (onTimeOut != null)
+			if (onTimeOut != null)
             {
                 onTimeOut.OnNext(assetInfo);
             }
+			else
+			{
+				Debug.LogErrorFormat("[Timeout] {0}", exception);
+			}
         }
 
         private void OnError(Exception exception)
@@ -919,15 +942,14 @@ namespace Modules.AssetBundles
 			// キャンセルはエラー扱いしない.
 			if (exception is OperationCanceledException){ return; }
 
-            using (new DisableStackTraceScope())
-            {
-                Debug.LogErrorFormat("[Error] {0}", exception);
-            }
-
-            if (onError != null)
+			if (onError != null)
             {
                 onError.OnNext(exception);
             }
+			else
+			{
+				Debug.LogErrorFormat("[Error] {0}", exception);
+			}
         }
 
 		/// <summary> 読み込み時イベント. </summary>
