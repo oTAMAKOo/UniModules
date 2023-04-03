@@ -590,20 +590,23 @@ namespace Modules.Scene
 
             //====== Unload PrevScene ======
 
-            // キャッシュ対象でない場合はアンロード.
-            if (prevSceneArgument == null || !prevSceneArgument.Cache)
-            {
-				try
-				{
-					await UnloadScene(prev).ToUniTask(cancellationToken: cancelToken);
-				}
-				catch (OperationCanceledException) 
-				{
-					return;
-				}
-				catch (Exception e)
-				{
-					Debug.LogException(e);
+			// キャッシュ対象でない場合はアンロード.
+			if (prev != currentScene)
+			{
+				if (prevSceneArgument == null || !prevSceneArgument.Cache)
+	            {
+					try
+					{
+						await UnloadScene(prev).ToUniTask(cancellationToken: cancelToken);
+					}
+					catch (OperationCanceledException) 
+					{
+						return;
+					}
+					catch (Exception e)
+					{
+						Debug.LogException(e);
+					}
 				}
 			}
 
