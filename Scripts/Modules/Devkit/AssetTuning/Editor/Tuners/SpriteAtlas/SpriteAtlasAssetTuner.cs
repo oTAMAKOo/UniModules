@@ -93,7 +93,7 @@ namespace Modules.Devkit.AssetTuning
         {
             platformSetting.overridden = true;
             platformSetting.format = TextureImporterFormat.ASTC_6x6;
-            platformSetting.maxTextureSize = 1024;
+            platformSetting.maxTextureSize = 2048;
             platformSetting.compressionQuality = 100;
             platformSetting.textureCompression = TextureImporterCompression.Compressed;
         }
