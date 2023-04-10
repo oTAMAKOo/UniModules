@@ -96,7 +96,7 @@ namespace Modules.AssetBundles
         private Dictionary<string, List<AssetInfo>> assetInfosByAssetBundleName = null;
 
         // 依存関係.
-		private Dictionary<string, string[]> dependenciesTable = null;
+		private AssetBundleDependencies assetBundleDependencies = null;
 
 		// シュミュレートモードか.
         private bool simulateMode = false;
@@ -135,7 +135,7 @@ namespace Modules.AssetBundles
             loadedAssetBundles = new Dictionary<string, AssetBundle>();
             assetBundleRefCount = new Dictionary<string, int>();
             assetInfosByAssetBundleName = new Dictionary<string, List<AssetInfo>>();
-            dependenciesTable = new Dictionary<string, string[]>();
+			assetBundleDependencies = new AssetBundleDependencies();
 
             syncLoadFileCountLimiter = new FunctionFrameLimiter(FrameSyncLoadFileNum);
             syncLoadFileSizeLimiter = new FunctionFrameLimiter((ulong)FrameSyncLoadFileSize);
@@ -178,7 +178,7 @@ namespace Modules.AssetBundles
 
             assetInfosByAssetBundleName.Clear();
             assetBundleRefCount.Clear();
-            dependenciesTable.Clear();
+            assetBundleDependencies.Clear();
 
             if (manifest == null){ return; }
 
@@ -209,18 +209,8 @@ namespace Modules.AssetBundles
 
                     //------ 依存関係構築 ------
 
-                    if(assetBundleInfo.Dependencies != null && assetBundleInfo.Dependencies.Any())
-                    {
-                        var list = dependenciesTable.GetValueOrDefault(assetBundleName);
-
-                        if (list == null)
-                        {
-                            var dependencies = assetBundleInfo.Dependencies.Where(y => y != assetBundleName).ToArray();
-
-                            dependenciesTable[assetBundleName] = dependencies;
-                        }
-                    }
-                }
+					assetBundleDependencies.SetDependencies(assetBundleName, assetBundleInfo.Dependencies);
+				}
 
                 if (++count % 500 == 0)
                 {
@@ -342,7 +332,7 @@ namespace Modules.AssetBundles
 
             allBundles.Add(assetBundleName);
 
-            var allDependencies = GetAllDependencies(assetBundleName);
+            var allDependencies = assetBundleDependencies.GetAllDependencies(assetBundleName);
 
             foreach (var item in allDependencies)
             {
@@ -485,61 +475,6 @@ namespace Modules.AssetBundles
 
         #region Dependencies
 
-		/// <summary> 依存関係にあるアセット一覧取得. </summary>
-		private string[] GetAllDependencies(string assetBundleName)
-		{
-			// 既に登録済みの場合はそこから取得.
-			var dependents = dependenciesTable.GetValueOrDefault(assetBundleName);
-
-			if (dependents == null)
-			{
-				// 依存アセット一覧を再帰で取得.
-				dependents = GetAllDependenciesInternal(assetBundleName).ToArray();
-
-				// 登録.
-				if (dependents.Any())
-				{
-					dependenciesTable.Add(assetBundleName, dependents);
-				}
-			}
-
-			return dependents;
-		}
-
-		private IEnumerable<string> GetAllDependenciesInternal(string fileName, List<string> dependents = null)
-		{
-			var targets = dependenciesTable.GetValueOrDefault(fileName, new string[0]);
-
-			if (targets.IsEmpty()) { return new string[0]; }
-
-			if (dependents == null)
-			{
-				dependents = new List<string>();
-			}
-
-			foreach (var target in targets)
-			{
-				// 既に列挙済みの場合は処理しない.
-				if (dependents.Contains(target)) { continue; }
-
-				dependents.Add(target);
-
-				// 依存先の依存先を取得.
-				var internalDependents = GetAllDependenciesInternal(target, dependents);
-
-				foreach (var internalDependent in internalDependents)
-				{
-					// 既に列挙済みの場合は追加しない.
-					if (!dependents.Contains(internalDependent))
-					{
-						dependents.Add(internalDependent);
-					}
-				}
-			}
-
-			return dependents.Distinct();
-		}
-
 		private int IncrementReferenceCount(string assetBundleName)
 		{
 			var referenceCount = assetBundleRefCount.GetValueOrDefault(assetBundleName);
@@ -613,7 +548,7 @@ namespace Modules.AssetBundles
 
                     // 参照カウントを追加.
 
-                    var allDependencies = GetAllDependencies(assetBundleName);
+                    var allDependencies = assetBundleDependencies.GetAllDependencies(assetBundleName);
 
                     foreach (var item in allDependencies)
                     {
@@ -668,7 +603,7 @@ namespace Modules.AssetBundles
 
             // 参照アセットバンドルを再帰読み込み.
 
-            var dependencies = dependenciesTable.GetValueOrDefault(assetBundleName);
+            var dependencies = assetBundleDependencies.GetDependencies(assetBundleName);
 
             if (dependencies != null)
             {
@@ -872,7 +807,7 @@ namespace Modules.AssetBundles
 
             if(!force && loadQueueing.ContainsKey(assetBundleName)){ return; }
 
-            var dependencies = GetAllDependencies(assetBundleName);
+            var dependencies = assetBundleDependencies.GetAllDependencies(assetBundleName);
             
             foreach (var target in dependencies)
             {

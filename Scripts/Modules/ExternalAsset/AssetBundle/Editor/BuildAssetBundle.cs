@@ -1,4 +1,4 @@
-﻿
+
 using UnityEditor;
 using System;
 using System.Collections.Generic;
@@ -6,8 +6,11 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using Extensions;
+using Extensions.Devkit;
 using Modules.Devkit.Project;
 using Modules.ExternalAssets;
+
+using DirectoryUtility = Extensions.DirectoryUtility;
 
 namespace Modules.AssetBundles.Editor
 {
@@ -71,7 +74,9 @@ namespace Modules.AssetBundles.Editor
                 
                 assetInfoManifest.AddAssetInfo(assetInfo);
             }
-        }
+
+			UnityEditorUtility.SaveAsset(assetInfoManifest);
+		}
 
         /// <summary> アセットバンドルの参照情報を書き込み </summary>
         public void SetDependencies(AssetInfoManifest assetInfoManifest, BuildResult buildResult)
@@ -93,7 +98,9 @@ namespace Modules.AssetBundles.Editor
 
                 assetInfo.AssetBundle.SetDependencies(detail.Value.Dependencies);
             }
-        }
+
+			UnityEditorUtility.SaveAsset(assetInfoManifest);
+		}
 
         /// <summary> アセットのルートハッシュ情報を書き込み </summary>
         public void SetAssetInfoHash(AssetInfoManifest assetInfoManifest)
@@ -120,7 +127,9 @@ namespace Modules.AssetBundles.Editor
             var versionHash = versionHashBuilder.ToString().GetHash();
 
             Reflection.SetPrivateField(assetInfoManifest, "versionHash", versionHash);
-        }
+
+			UnityEditorUtility.SaveAsset(assetInfoManifest);
+		}
 
         /// <summary> 情報書き込み後のAssetInfoManifestをビルド </summary>
         public void BuildAssetInfoManifest()

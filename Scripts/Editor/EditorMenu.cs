@@ -1,4 +1,4 @@
-﻿
+
 using UnityEngine;
 using UnityEditor;
 using System.IO;
@@ -20,6 +20,7 @@ using Modules.InputControl;
 using Modules.Devkit.AssetBundles;
 using Modules.Devkit.AssetDependencies;
 using Modules.Devkit.AssemblyCompilation;
+using Modules.Devkit.AssetBundleViewer;
 using Modules.Devkit.Generators;
 using Modules.Devkit.Pinning;
 using Modules.Devkit.Build;
@@ -285,15 +286,21 @@ namespace Modules
             FindDependencyAssetsWindow.Open();
         }
 
-		[MenuItem(itemName: ResourcesMenu + "Open ExternalAssetLoadRecorder", priority = 15)]
+		[MenuItem(itemName: ResourcesMenu + "Open AssetBundleViewer", priority = 15)]
+		public static void OpenAssetBundleViewer()
+		{
+			AssetBundleViewerWindow.Open();
+		}
+
+		[MenuItem(itemName: ResourcesMenu + "Open ExternalAssetLoadRecorder", priority = 16)]
 		public static void OpenExternalAssetLoadRecorder()
 		{
 			ExternalAssetLoadRecorder.Open();
 		}
 
-        //------ 全アセットバンドル名を再設定 ------
+		//------ 全アセットバンドル名を再設定 ------
 
-        [MenuItem(itemName: ResourcesMenu + "Apply AssetBundleNames", priority = 35)]
+		[MenuItem(itemName: ResourcesMenu + "Apply AssetBundleNames", priority = 35)]
         public static void ApplyAssetBundleNames()
         {
             var assetManagement = AssetManagement.Instance;
