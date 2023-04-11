@@ -1,4 +1,4 @@
-﻿﻿
+﻿
 using UnityEngine;
 using UnityEngine.UI;
 using System;
@@ -7,189 +7,194 @@ using Extensions.Serialize;
 
 namespace Modules.UI.Layout
 {
-    [ExecuteAlways]
-    [RequireComponent(typeof(RectTransform))]
-    public sealed class PreferredSizeCopy : LayoutElement, ILayoutSelfController
-    {
-        //----- params -----
+	[ExecuteAlways]
+	[RequireComponent(typeof(RectTransform))]
+	public sealed class PreferredSizeCopy : LayoutElement, ILayoutSelfController
+	{
+		//----- params -----
 
-        [Serializable]
-        public sealed class LayoutInfo
-        {
-            [SerializeField]
-            private bool enable = false;
-            [SerializeField]
-            private float padding = 0f;
-            [SerializeField]
-            private FloatNullable min = new FloatNullable(null);
-            [SerializeField]
-            private FloatNullable max = new FloatNullable(null);
-            [SerializeField]
-            private FloatNullable flexible = new FloatNullable(null);
+		[Serializable]
+		public sealed class LayoutInfo
+		{
+			[SerializeField]
+			private bool enable = false;
+			[SerializeField]
+			private float padding = 0f;
+			[SerializeField]
+			private FloatNullable min = new FloatNullable(null);
+			[SerializeField]
+			private FloatNullable max = new FloatNullable(null);
+			[SerializeField]
+			private FloatNullable flexible = new FloatNullable(null);
 
-            public bool Enable
-            {
-                get { return enable; }
-                set { enable = value; }
-            }
+			public bool Enable
+			{
+				get { return enable; }
+				set { enable = value; }
+			}
 
-            public float Padding
-            {
-                get { return padding; }
-                set { padding = value; }
-            }
+			public float Padding
+			{
+				get { return padding; }
+				set { padding = value; }
+			}
 
-            public FloatNullable Min
-            {
-                get { return min; }
-                set { min = value; }
-            }
+			public FloatNullable Min
+			{
+				get { return min; }
+				set { min = value; }
+			}
 
-            public FloatNullable Max
-            {
-                get { return max; }
-                set { max = value; }
-            }
+			public FloatNullable Max
+			{
+				get { return max; }
+				set { max = value; }
+			}
 
-            public FloatNullable Flexible
-            {
-                get { return flexible; }
-                set { flexible = value; }
-            }
-        }
+			public FloatNullable Flexible
+			{
+				get { return flexible; }
+				set { flexible = value; }
+			}
+		}
 
-        //----- field -----
+		//----- field -----
 
-        [SerializeField]
-        private RectTransform copySource = null;
+		[SerializeField]
+		private RectTransform copySource = null;
 
-        [SerializeField]
-        private LayoutInfo horizontal = new LayoutInfo();
-        [SerializeField]
-        private LayoutInfo vertical = new LayoutInfo();
+		[SerializeField]
+		private LayoutInfo horizontal = new LayoutInfo();
+		[SerializeField]
+		private LayoutInfo vertical = new LayoutInfo();
 
-        private Vector2? prevPreferredSize = null;
+		private Vector2? prevPreferredSize = null;
 
-        //----- property -----
+		//----- property -----
 
-        public override float preferredWidth
-        {
-            get
-            {
-                if (copySource == null || !IsActive() || !horizontal.Enable)
-                {
-                    return -1f;
-                }
+		public override float preferredWidth
+		{
+			get
+			{
+				if (copySource == null || !IsActive() || !horizontal.Enable)
+				{
+					return -1f;
+				}
 
-                var width = LayoutUtility.GetPreferredWidth(copySource);
+				var width = LayoutUtility.GetPreferredWidth(copySource);
 
-                if (horizontal.Min.HasValue)
-                {
-                    width = width < horizontal.Min.Value ? horizontal.Min.Value : width;
-                }
+				if (horizontal.Min.HasValue)
+				{
+					width = width < horizontal.Min.Value ? horizontal.Min.Value : width;
+				}
 
-                if (horizontal.Max.HasValue)
-                {
-                    width = width > horizontal.Max.Value ? horizontal.Max.Value : width;
-                }
+				if (horizontal.Max.HasValue)
+				{
+					width = width > horizontal.Max.Value ? horizontal.Max.Value : width;
+				}
 
-                return width + horizontal.Padding;
-            }
-        }
+				return width + horizontal.Padding;
+			}
+		}
 
-        public float? horizontalMin
-        {
-            get { return horizontal.Min; }
-            set { horizontal.Min = value; }
-        }
+		public float? horizontalMin
+		{
+			get { return horizontal.Min; }
+			set { horizontal.Min = value; }
+		}
 
-        public float? horizontalMax
-        {
-            get { return horizontal.Max; }
-            set { horizontal.Max = value; }
-        }
+		public float? horizontalMax
+		{
+			get { return horizontal.Max; }
+			set { horizontal.Max = value; }
+		}
 
-        public override float preferredHeight
-        {
-            get
-            {
-                if (copySource == null || !IsActive() || !vertical.Enable)
-                {
-                    return -1f;
-                }
+		public override float preferredHeight
+		{
+			get
+			{
+				if (copySource == null || !IsActive() || !vertical.Enable)
+				{
+					return -1f;
+				}
 
-                var height = LayoutUtility.GetPreferredHeight(copySource);
+				var height = LayoutUtility.GetPreferredHeight(copySource);
 
-                if (vertical.Min.HasValue)
-                {
-                    height = height < vertical.Min.Value ? vertical.Min.Value : height;
-                }
+				if (vertical.Min.HasValue)
+				{
+					height = height < vertical.Min.Value ? vertical.Min.Value : height;
+				}
 
-                if (vertical.Max.HasValue)
-                {
-                    height = height > vertical.Max.Value ? vertical.Max.Value : height;
-                }
+				if (vertical.Max.HasValue)
+				{
+					height = height > vertical.Max.Value ? vertical.Max.Value : height;
+				}
 
-                return height + vertical.Padding;
-            }
-        }
+				return height + vertical.Padding;
+			}
+		}
 
-        public float? verticalMin
-        {
-            get { return vertical.Min; }
-            set { vertical.Min = value; }
-        }
+		public float? verticalMin
+		{
+			get { return vertical.Min; }
+			set { vertical.Min = value; }
+		}
 
-        public float? verticalMax
-        {
-            get { return vertical.Max; }
-            set { vertical.Max = value; }
-        }
+		public float? verticalMax
+		{
+			get { return vertical.Max; }
+			set { vertical.Max = value; }
+		}
 
-        public override float flexibleWidth
-        {
-            get
-            {
-                return horizontal.Flexible.GetValueOrDefault(-1);
-            }
+		public override float flexibleWidth
+		{
+			get
+			{
+				return horizontal.Flexible.GetValueOrDefault(-1);
+			}
 
-            set
-            {
-                horizontal.Flexible = value;
-                SetDirty();
-            }
-        }
+			set
+			{
+				horizontal.Flexible = value;
+				SetDirty();
+			}
+		}
 
-        public override float flexibleHeight
-        {
-            get
-            {
-                return vertical.Flexible.GetValueOrDefault(-1);
-            }
+		public override float flexibleHeight
+		{
+			get
+			{
+				return vertical.Flexible.GetValueOrDefault(-1);
+			}
 
-            set
-            {
-                vertical.Flexible = value;
-                SetDirty();
-            }
-        }
+			set
+			{
+				vertical.Flexible = value;
+				SetDirty();
+			}
+		}
 
-        public override int layoutPriority
-        {
-            get { return 2; }
-        }
+		public override int layoutPriority
+		{
+			get { return 2; }
+		}
 
-        //----- method -----
+		//----- method -----
 
 		protected override void OnEnable()
 		{
 			base.OnEnable();
 
+			if (copySource != null)
+			{
+				LayoutRebuilder.ForceRebuildLayoutImmediate(copySource);
+			}
+
 			UpdatePreferredSize();
 		}
 
 		void LateUpdate()
-        {
+		{
 			UpdatePreferredSize();
 		}
 
@@ -206,36 +211,40 @@ namespace Modules.UI.Layout
 					SetDirty();
 				}
 			}
+			else
+			{
+				SetDirty();
+			}
 
 			prevPreferredSize = preferredSize;
 		}
 
-        public void UpdateLayoutImmediate()
-        {
-            SetLayoutHorizontal();
-            SetLayoutVertical();
-        }
+		public void UpdateLayoutImmediate()
+		{
+			SetLayoutHorizontal();
+			SetLayoutVertical();
+		}
 
-        public void SetLayoutHorizontal()
-        {
-            if (copySource == null) { return; }
+		public void SetLayoutHorizontal()
+		{
+			if (copySource == null) { return; }
 
-            if (!horizontal.Enable) { return; }
+			if (!horizontal.Enable) { return; }
 
-            var rectTransform = transform as RectTransform;
-            
-            rectTransform.sizeDelta = Vector.SetX(rectTransform.sizeDelta, preferredWidth);
-        }
+			var rectTransform = transform as RectTransform;
 
-        public void SetLayoutVertical()
-        {
-            if (copySource == null) { return; }
+			rectTransform.sizeDelta = Vector.SetX(rectTransform.sizeDelta, preferredWidth);
+		}
 
-            if (!vertical.Enable) { return; }
+		public void SetLayoutVertical()
+		{
+			if (copySource == null) { return; }
 
-            var rectTransform = transform as RectTransform;
+			if (!vertical.Enable) { return; }
 
-            rectTransform.sizeDelta = Vector.SetY(rectTransform.sizeDelta, preferredHeight);
-        }
-    }
+			var rectTransform = transform as RectTransform;
+
+			rectTransform.sizeDelta = Vector.SetY(rectTransform.sizeDelta, preferredHeight);
+		}
+	}
 }
