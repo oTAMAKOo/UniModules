@@ -84,14 +84,7 @@ namespace Modules.Devkit.Diagnosis
 			#endif
 
 			UnityUtility.SetActive(srDiagnosis, srDiagnosisEnable);
-
-			var rootObjectRt = rootObject.transform as RectTransform;
-
-			if (rootObjectRt != null)
-			{
-				rootObjectRt.ForceRebuildLayoutGroup();
-			}
-		}
+        }
 
 		public void SetTouchBlock(GameObject touchBlock)
 		{
