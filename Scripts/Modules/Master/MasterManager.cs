@@ -1,4 +1,4 @@
-﻿
+
 using UnityEngine;
 using System;
 using System.Collections.Generic;
@@ -88,7 +88,7 @@ namespace Modules.Master
 
             if (!typeof(IMaster).IsAssignableFrom(type))
             {
-                throw new Exception(string.Format("Type error require IMaster interface. : {0}", type.FullName));
+                throw new Exception($"Type error require IMaster interface. : {type.FullName}");
             }
 
             if (masters.Contains(master)){ return; }
@@ -124,7 +124,7 @@ namespace Modules.Master
             {
                 if (state)
                 {
-                    var message = string.Format("{0} ({1:F1}ms)", masterName, time);
+                    var message = $"{masterName} ({time:F1}ms)";
 
                     lock (updateLog)
                     {
@@ -171,11 +171,11 @@ namespace Modules.Master
 					    
 	                    var task = UniTask.Defer(async () =>
 					    {
-	                        var result = await master.Update(masterVersion, frameCallLimiter);
+	                        var updateResult = await master.Update(masterVersion, frameCallLimiter);
 
-						    OnUpdateFinish(masterType, masterName, masterFileName, result.Item1, result.Item2);
+						    OnUpdateFinish(masterType, masterName, masterFileName, updateResult.Item1, updateResult.Item2);
 
-	                        var success =  result.Item1;
+	                        var success = updateResult.Item1;
 	                        
 	                        if (!success)
 	                        {
@@ -200,7 +200,7 @@ namespace Modules.Master
             {
                 var logBuilder = new StringBuilder();
 
-                logBuilder.AppendLine(string.Format("Master Update : ({0:F1}ms)", stopwatch.Elapsed.TotalMilliseconds));
+                logBuilder.AppendLine($"Master Update : ({stopwatch.Elapsed.TotalMilliseconds:F1}ms)");
 
                 if (0 < updateLog.Length)
                 {   
@@ -226,9 +226,7 @@ namespace Modules.Master
         public async UniTask<bool> LoadMaster()
         {
             var result = true;
-
-            var tasks = new List<UniTask>();
-
+			
             Reference.Clear();
             
             var loadLog = new StringBuilder();
@@ -252,46 +250,53 @@ namespace Modules.Master
 
             var stopwatch = System.Diagnostics.Stopwatch.StartNew();
 
-            try
-            {
-                foreach (var master in masters)
-			    {
-				    var masterType = master.GetType();
-				    var masterName = masterType.Name;
+			try
+			{
+				var chunk = masters.Chunk(50);
 
-				    var masterFileName = masterFileNames.GetValueOrDefault(masterType);
-				    
-				    var task = UniTask.Defer(async () =>
-				    {
-                        try
-                        {
-                            var loadResult = await master.Load(CryptoKey, true);
+				foreach (var items in chunk)
+				{
+					var tasks = new List<UniTask>();
 
-                            OnLoadFinish(masterType, masterName, masterFileName, loadResult.Item1, loadResult.Item2);
-                        }
-                        finally
-                        {
-                            await UniTask.SwitchToMainThread();
-                        }
-                    });
+					foreach (var item in items)
+					{
+						var masterType = item.GetType();
+						var masterName = masterType.Name;
 
-				    tasks.Add(task);
-			    }
+						var masterFileName = masterFileNames.GetValueOrDefault(masterType);
 
-                await UniTask.WhenAll(tasks);
-            }
-            catch (Exception e)
-            {
-                Debug.LogException(e);
-            }
-            
-            stopwatch.Stop();
+						var task = UniTask.Defer(async () =>
+						{
+							try
+							{
+								var loadResult = await item.Load(CryptoKey, true);
+
+								OnLoadFinish(masterType, masterName, masterFileName, loadResult.Item1, loadResult.Item2);
+							}
+							finally
+							{
+								await UniTask.SwitchToMainThread();
+							}
+						});
+
+						tasks.Add(task);
+					}
+
+					await UniTask.WhenAll(tasks);
+				}
+			}
+			catch (Exception e)
+			{
+				Debug.LogException(e);
+			}
+
+			stopwatch.Stop();
 
             if (result)
             {
                 var logBuilder = new StringBuilder();
 
-                logBuilder.AppendLine(string.Format("Master Load : ({0:F1}ms)", stopwatch.Elapsed.TotalMilliseconds));
+                logBuilder.AppendLine($"Master Load : ({stopwatch.Elapsed.TotalMilliseconds:F1}ms)");
 
                 if (0 < loadLog.Length)
                 {
