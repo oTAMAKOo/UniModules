@@ -1,4 +1,4 @@
-﻿
+
 using UnityEngine;
 using UnityEngine.Profiling;
 using Extensions;
@@ -15,17 +15,11 @@ namespace Modules.Devkit.Diagnosis
 		//----- field -----
 
 		[SerializeField]
-		private TextMeshProUGUI totalAllocatedText = null;
+		private TextMeshProUGUI monoMemoryText = null;
 		[SerializeField]
-		private TextMeshProUGUI totalReservedText = null;
+		private TextMeshProUGUI heapMemoryText = null;
 		[SerializeField]
-		private TextMeshProUGUI unusedReservedText = null;
-		[SerializeField]
-		private TextMeshProUGUI monoHeapSizeText = null;
-		[SerializeField]
-		private TextMeshProUGUI monoUsedSizeText = null;
-		[SerializeField]
-		private TextMeshProUGUI allocatedMemoryForGraphicsDriverText = null;
+		private TextMeshProUGUI graphicsMemoryText = null;
 
 		private float oldTime = 0f;
 
@@ -76,17 +70,34 @@ namespace Modules.Devkit.Diagnosis
 
 		private void SetMemoryStats()
 		{
-			void SetMemoryStatsText(TextMeshProUGUI target, string label, long byteSize)
-			{
-				target.text = $"{label} : { ByteDataUtility.GetBytesReadable(byteSize) }";
-			}
+			// GC(Mono) 最大使用量 / 現在使用量.
 
-			SetMemoryStatsText(totalAllocatedText, "TotalAllocated", Profiler.GetTotalUnusedReservedMemoryLong());
-			SetMemoryStatsText(totalReservedText, "TotalReserved", Profiler.GetTotalReservedMemoryLong());
-			SetMemoryStatsText(unusedReservedText, "TotalUnusedReserved", Profiler.GetTotalUnusedReservedMemoryLong());
-			SetMemoryStatsText(monoHeapSizeText, "MonoHeapSize", Profiler.GetMonoHeapSizeLong());
-			SetMemoryStatsText(monoUsedSizeText, "MonoUsedSize", Profiler.GetMonoUsedSizeLong());
-			SetMemoryStatsText(allocatedMemoryForGraphicsDriverText, "AllocatedForGraphicsDriver", Profiler.GetAllocatedMemoryForGraphicsDriver());
+			var monoUsedSize = Profiler.GetMonoUsedSizeLong();
+			var monoHeapSize = Profiler.GetMonoHeapSizeLong();
+
+			monoMemoryText.text = $"Heap / Used : { ByteDataUtility.GetBytesReadable(monoUsedSize) } / { ByteDataUtility.GetBytesReadable(monoHeapSize) }";
+
+			// ヒープメモリ / 予約済みだが未割り当てのヒープメモリ.
+
+			var totalAllocated = Profiler.GetTotalAllocatedMemoryLong();
+			var totalReserved = Profiler.GetTotalReservedMemoryLong();
+
+			heapMemoryText.text = $"Alloc / Reserved : { ByteDataUtility.GetBytesReadable(totalAllocated) } / { ByteDataUtility.GetBytesReadable(totalReserved) }";
+
+			// グラフィックで使用されているメモリ　※ Editor / Development Build.
+
+			if (Application.isEditor || Debug.isDebugBuild)
+			{
+				var graphicsMemory = Profiler.GetAllocatedMemoryForGraphicsDriver();
+
+				heapMemoryText.text = $"Graphics : { ByteDataUtility.GetBytesReadable(graphicsMemory) }";
+
+				UnityUtility.SetActive(graphicsMemoryText, true);
+			}
+			else
+			{
+				UnityUtility.SetActive(graphicsMemoryText, false);
+			}
 		}
 	}
 }
