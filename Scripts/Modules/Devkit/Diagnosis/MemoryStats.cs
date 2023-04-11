@@ -90,7 +90,7 @@ namespace Modules.Devkit.Diagnosis
 			{
 				var graphicsMemory = Profiler.GetAllocatedMemoryForGraphicsDriver();
 
-				heapMemoryText.text = $"Graphics : { ByteDataUtility.GetBytesReadable(graphicsMemory) }";
+				graphicsMemoryText.text = $"Graphics : { ByteDataUtility.GetBytesReadable(graphicsMemory) }";
 
 				UnityUtility.SetActive(graphicsMemoryText, true);
 			}
