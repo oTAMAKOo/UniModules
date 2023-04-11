@@ -49,21 +49,33 @@ namespace Modules.Devkit.FindReferences
 
         public static AssetReferenceInfo Execute(UnityEngine.Object targetObject)
         {
+			const string ProgressBarTitle = "Find References In Project";
+
 			try
-            {
+			{
 				var cache = new FindReferencesInProjectCache();
 
-				cache.Load();
+				if (cache.HasCache())
+				{
+					var message = "Load cache data";
+
+					EditorUtility.DisplayProgressBar(ProgressBarTitle, message, 0);
+
+					cache.Load();
+
+					EditorUtility.DisplayProgressBar(ProgressBarTitle, message, 1);
+
+					EditorUtility.ClearProgressBar();
+				}
 
 				var assetPath = Application.dataPath;
 
 				void ReportProgress(int current, int total)
 				{
-					var title = "Find References In Project";
 					var info = $"Loading Dependencies ({current}/{total})";
 					var progress = current / (float)total;
 
-					EditorUtility.DisplayProgressBar(title, info, progress);
+					EditorUtility.DisplayProgressBar(ProgressBarTitle, info, progress);
 				}
 
 				var scenes = FindAllFiles(assetPath, "*.unity");

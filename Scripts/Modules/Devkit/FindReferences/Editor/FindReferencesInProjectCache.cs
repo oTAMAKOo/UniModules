@@ -54,11 +54,18 @@ namespace Modules.Devkit.FindReferences
 			cache = new Dictionary<string, CacheData>();
 		}
 
-		public void Load()
+		public bool HasCache()
 		{
 			var filePath = GetCacheFilePath();
 
-			if (!File.Exists(filePath)){ return; }
+			return File.Exists(filePath);
+		}
+
+		public void Load()
+		{
+			if (!HasCache()) { return; }
+
+			var filePath = GetCacheFilePath();
 
 			using (var fileStream = new FileStream(filePath, FileMode.Open, FileAccess.Read))
 			{
