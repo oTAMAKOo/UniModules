@@ -1,4 +1,4 @@
-﻿
+
 using UnityEditor;
 using UnityEngine;
 using System;
@@ -53,22 +53,22 @@ namespace Modules.Devkit.FindReferences
             {
                 var assetPath = Application.dataPath;
 
-                Action<int, int> reportProgress = (current, total) =>
-                {
-                    var title = "Find References In Project";
-                    var info = string.Format("Loading Dependencies ({0}/{1})", current, total);
-                    var progress = current / (float)total;
+				void ReportProgress(int current, int total)
+				{
+					var title = "Find References In Project";
+					var info = $"Loading Dependencies ({current}/{total})";
+					var progress = current / (float)total;
 
-                    EditorUtility.DisplayProgressBar(title, info, progress);
-                };
+					EditorUtility.DisplayProgressBar(title, info, progress);
+				}
 
-                var scenes = FindAllFiles(assetPath, "*.unity");
+				var scenes = FindAllFiles(assetPath, "*.unity");
                 var prefabs = FindAllFiles(assetPath, "*.prefab");
                 var materials = FindAllFiles(assetPath, "*.mat");
                 var animations = FindAllFiles(assetPath, "*.anim");
                 var assets = FindAllFiles(assetPath, "*.asset");
 
-                var ctx = new FindReferenceContext(scenes, prefabs, materials, animations, assets, reportProgress);
+                var ctx = new FindReferenceContext(scenes, prefabs, materials, animations, assets, ReportProgress);
 
                 return FindReferencesCore(ctx, targetObject);
             }
@@ -95,34 +95,38 @@ namespace Modules.Devkit.FindReferences
         {
             try
             {
-                var assetPath = Application.dataPath;
-                var projectPath = Directory.GetParent(assetPath).ToString();
-                
-                TargetAssetInfo targetAssetInfo = null;
+				var dataPath = Application.dataPath;
+				var projectPath = Directory.GetParent(dataPath).FullName;
 
-                var targetObjectPath = AssetDatabase.GetAssetPath(targetObject);
-                var targetObjectFullPath = Path.Combine(projectPath, targetObjectPath);
+				projectPath = PathUtility.ConvertPathSeparator(projectPath);
 
-                targetAssetInfo = new TargetAssetInfo(targetObject, targetObjectFullPath.Substring(projectPath.Length + 1), targetObjectFullPath);
+				TargetAssetInfo targetAssetInfo = null;
 
-                var assets = new List<AssetDependencyInfo>();
+				var targetObjectPath = AssetDatabase.GetAssetPath(targetObject);
+				var targetObjectFullPath = Path.Combine(projectPath, targetObjectPath);
 
-                assets.AddRange(ctx.Scenes);
-                assets.AddRange(ctx.Prefabs);
-                assets.AddRange(ctx.Materials);
-                assets.AddRange(ctx.Animations);
-                assets.AddRange(ctx.Assets);
-                
-                foreach (var asset in assets)
-                {
-                    if (targetAssetInfo.IsReferencedFrom(asset))
-                    {
-                        targetAssetInfo.AssetReferenceInfo.Dependencies.Add(asset.FullPath.Substring(projectPath.Length + 1));
-                    }
-                }
+				targetAssetInfo = new TargetAssetInfo(targetObject, targetObjectFullPath.Substring(projectPath.Length + 1), targetObjectFullPath);
 
-                return targetAssetInfo.AssetReferenceInfo;
-            }
+				var assets = new List<AssetDependencyInfo>();
+
+				assets.AddRange(ctx.Scenes);
+				assets.AddRange(ctx.Prefabs);
+				assets.AddRange(ctx.Materials);
+				assets.AddRange(ctx.Animations);
+				assets.AddRange(ctx.Assets);
+
+				foreach (var asset in assets)
+				{
+					if (targetAssetInfo.IsReferencedFrom(asset))
+					{
+						var assetPath = asset.FullPath.Substring(projectPath.Length + 1);
+
+						targetAssetInfo.AssetReferenceInfo.Dependencies.Add(assetPath);
+					}
+				}
+
+				return targetAssetInfo.AssetReferenceInfo;
+			}
             finally
             {
                 EditorUtility.ClearProgressBar();
