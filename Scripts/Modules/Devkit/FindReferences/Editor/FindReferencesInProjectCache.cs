@@ -45,6 +45,8 @@ namespace Modules.Devkit.FindReferences
 
 		private Dictionary<string, CacheData> cache = null;
 
+		private bool requireCacheFileUpdate = false;
+
 		//----- property -----
 
 		//----- method -----
@@ -84,6 +86,8 @@ namespace Modules.Devkit.FindReferences
 
 		public void Save()
 		{
+			if (!requireCacheFileUpdate){ return; }
+
 			var container = new CacheContainer()
 			{
 				contents = cache.Values.ToArray()
@@ -117,6 +121,8 @@ namespace Modules.Devkit.FindReferences
 
 				cache[info.FullPath] = new CacheData(info.FullPath, dependencies, lastUpdate);
 			}
+
+			requireCacheFileUpdate = true;
 		}
 
 		public AssetDependencyInfo GetCache(string path, DateTime lastUpdate)
