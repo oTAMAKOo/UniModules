@@ -49,9 +49,13 @@ namespace Modules.Devkit.FindReferences
 
         public static AssetReferenceInfo Execute(UnityEngine.Object targetObject)
         {
-            try
+			try
             {
-                var assetPath = Application.dataPath;
+				var cache = new FindReferencesInProjectCache();
+
+				cache.Load();
+
+				var assetPath = Application.dataPath;
 
 				void ReportProgress(int current, int total)
 				{
@@ -68,10 +72,12 @@ namespace Modules.Devkit.FindReferences
                 var animations = FindAllFiles(assetPath, "*.anim");
                 var assets = FindAllFiles(assetPath, "*.asset");
 
-                var ctx = new FindReferenceContext(scenes, prefabs, materials, animations, assets, ReportProgress);
+                var ctx = new FindReferenceContext(scenes, prefabs, materials, animations, assets, cache, ReportProgress);
 
-                return FindReferencesCore(ctx, targetObject);
-            }
+				cache.Save();
+
+				return FindReferencesCore(ctx, targetObject);
+			}
             catch(Exception ex)
             {
                 Debug.LogException(ex);
@@ -81,7 +87,7 @@ namespace Modules.Devkit.FindReferences
                 EditorUtility.ClearProgressBar();
             }
 
-            return null;
+			return null;
         }
 
         private static string[] FindAllFiles(string assetPath, string searchPattern)
@@ -199,26 +205,7 @@ namespace Modules.Devkit.FindReferences
             }
         }
 
-        /// <summary>
-        /// 参照を持っているアセット(依存を持つ側)の情報.
-        /// </summary>
-        private sealed class AssetDependencyInfo
-        {
-            public string FullPath { get; private set; }
-
-            /// <summary>
-            /// 参照しているコンポーネントのGUIDとfileIDのセット.
-            /// </summary>
-            public Dictionary<string, HashSet<string>> FileIdsByGuid { get; private set; }
-
-            public AssetDependencyInfo(string fullPath, Dictionary<string, HashSet<string>> fileIdsByguid)
-            {
-                this.FullPath = fullPath;
-                this.FileIdsByGuid = fileIdsByguid;
-            }
-        }
-
-        private sealed class FindReferenceContext
+		private sealed class FindReferenceContext
         {
             public AssetDependencyInfo[] Scenes { get; private set; }
             public AssetDependencyInfo[] Prefabs { get; private set; }
@@ -226,7 +213,8 @@ namespace Modules.Devkit.FindReferences
             public AssetDependencyInfo[] Animations { get; private set; }
             public AssetDependencyInfo[] Assets { get; private set; }
 
-            public FindReferenceContext(string[] scenes, string[] prefabs, string[] materials, string[] animations, string[] assets, Action<int, int> reportProgress)
+            public FindReferenceContext(string[] scenes, string[] prefabs, string[] materials, string[] animations, string[] assets, 
+										FindReferencesInProjectCache cache, Action<int, int> reportProgress)
             {
                 var total = scenes.Length + prefabs.Length + materials.Length + animations.Length + assets.Length;
 
@@ -237,11 +225,11 @@ namespace Modules.Devkit.FindReferences
 
                 var events = new WaitHandle[]
                 {
-                    StartResolveReferencesWorker(scenes, (metadata) => Scenes = metadata, progress),
-                    StartResolveReferencesWorker(prefabs, (metadata) => Prefabs = metadata, progress),
-                    StartResolveReferencesWorker(materials, (metadata) => Materials = metadata, progress),
-                    StartResolveReferencesWorker(animations, (metadata) => Animations = metadata, progress),
-                    StartResolveReferencesWorker(assets, (metadata) => Assets = metadata, progress),
+                    StartResolveReferencesWorker(scenes, (metadata) => Scenes = metadata, cache, progress),
+                    StartResolveReferencesWorker(prefabs, (metadata) => Prefabs = metadata, cache, progress),
+                    StartResolveReferencesWorker(materials, (metadata) => Materials = metadata, cache, progress),
+                    StartResolveReferencesWorker(animations, (metadata) => Animations = metadata, cache, progress),
+                    StartResolveReferencesWorker(assets, (metadata) => Assets = metadata, cache, progress),
                 };
 
                 while (!WaitHandle.WaitAll(events, 100))
@@ -257,7 +245,7 @@ namespace Modules.Devkit.FindReferences
                 public int Count;
             }
 
-            private ManualResetEvent StartResolveReferencesWorker(string[] paths, Action<AssetDependencyInfo[]> setter, Progress progress)
+            private ManualResetEvent StartResolveReferencesWorker(string[] paths, Action<AssetDependencyInfo[]> setter, FindReferencesInProjectCache cache, Progress progress)
             {
                 var queue = new Queue<string>(paths);
                 var dependencyInfoList = new List<AssetDependencyInfo>();
@@ -281,7 +269,18 @@ namespace Modules.Devkit.FindReferences
 
                             if (path == null) { break; }
 
-                            var metadata = new AssetDependencyInfo(path, GetReferencingGuid(path));
+							var lastUpdate = File.GetLastWriteTimeUtc(path);
+
+							var metadata = cache.GetCache(path, lastUpdate);
+
+							if (metadata == null)
+							{
+								var referencingGuid = GetReferencingGuid(path);
+
+								metadata = new AssetDependencyInfo(path, referencingGuid);
+
+								cache.Update(metadata, lastUpdate);
+							}
 
                             dependencyInfoListLocal.Add(metadata);
 

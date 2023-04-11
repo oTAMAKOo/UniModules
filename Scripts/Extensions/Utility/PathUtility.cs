@@ -1,4 +1,4 @@
-﻿﻿﻿﻿﻿﻿﻿
+﻿﻿﻿﻿﻿﻿
 using System;
 using System.Linq;
 using System.Collections.Generic;
@@ -34,14 +34,8 @@ namespace Extensions
             return FilePathType.NotFound;
         }
 
-        /// <summary> 2つの文字列を"/"で連結して、1つのパスに結合 </summary>
-        public static string Combine(string path1, string path2)
-        {
-            return Combine(new string[] { path1, path2 });
-        }
-
-        /// <summary> 複数の文字列を"\"で連結して、1つのパスに結合 </summary>
-        public static string Combine(string[] paths)
+		/// <summary> 複数の文字列を"\"で連結して、1つのパスに結合 </summary>
+        public static string Combine(params string[] paths)
         {
             if (paths.IsEmpty()) { return string.Empty; }
 
