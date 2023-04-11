@@ -1,4 +1,4 @@
-﻿﻿﻿
+﻿﻿
 using UnityEngine;
 using UnityEngine.UI;
 using System;
@@ -181,21 +181,34 @@ namespace Modules.UI.Layout
 
         //----- method -----
 
-        void Update()
+		protected override void OnEnable()
+		{
+			base.OnEnable();
+
+			UpdatePreferredSize();
+		}
+
+		void LateUpdate()
         {
-            var preferredSize = copySource.GetPreferredSize();
+			UpdatePreferredSize();
+		}
 
-            if (prevPreferredSize.HasValue)
-            {
-                if(prevPreferredSize.Value != preferredSize)
-                {
-                    SetDirty();
-                }
-            }
+		private void UpdatePreferredSize()
+		{
+			if (copySource == null) { return; }
 
-            prevPreferredSize = preferredSize;
-        }
+			var preferredSize = copySource.GetPreferredSize();
 
+			if (prevPreferredSize.HasValue)
+			{
+				if (prevPreferredSize.Value != preferredSize)
+				{
+					SetDirty();
+				}
+			}
+
+			prevPreferredSize = preferredSize;
+		}
 
         public void UpdateLayoutImmediate()
         {
