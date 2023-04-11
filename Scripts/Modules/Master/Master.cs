@@ -1,4 +1,4 @@
-﻿
+
 using UnityEngine;
 using System;
 using System.IO;
@@ -209,7 +209,6 @@ namespace Modules.Master
             var success = false;
 
             double time = 0;
-
 
 			try
 			{
