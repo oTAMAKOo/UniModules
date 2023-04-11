@@ -55,18 +55,7 @@ namespace Modules.Devkit.FindReferences
 			{
 				var cache = new FindReferencesInProjectCache();
 
-				if (cache.HasCache())
-				{
-					var message = "Load cache data";
-
-					EditorUtility.DisplayProgressBar(ProgressBarTitle, message, 0);
-
-					cache.Load();
-
-					EditorUtility.DisplayProgressBar(ProgressBarTitle, message, 1);
-
-					EditorUtility.ClearProgressBar();
-				}
+				cache.Load();
 
 				var assetPath = Application.dataPath;
 
