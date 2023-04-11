@@ -295,10 +295,10 @@ namespace Modules.Devkit.AssetBundleViewer
                         value = info.GetDependenciesCount().ToString();
 						break;
                     case Column.FileSize:
-                        value = info.FileSize != 0 ? FileUtility.GetBytesReadable(info.FileSize) : "---";
+                        value = info.FileSize != 0 ? ByteDataUtility.GetBytesReadable(info.FileSize) : "---";
 						break; 
                     case Column.LoadFileSize:
-                        value = info.LoadFileSize != 0 ? FileUtility.GetBytesReadable(info.LoadFileSize) : "---";
+                        value = info.LoadFileSize != 0 ? ByteDataUtility.GetBytesReadable(info.LoadFileSize) : "---";
 						break;
                     default:
 						throw new ArgumentOutOfRangeException(nameof(columnIndex), columnIndex, null);

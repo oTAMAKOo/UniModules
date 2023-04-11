@@ -9,18 +9,35 @@ namespace Modules.Devkit.Diagnosis
 	{
 		//----- params -----
 
+		public sealed class Prefs
+		{
+			public static bool displayMemoryStats
+			{
+				get { return SecurePrefs.GetBool(typeof(Prefs).FullName + "-displayMemoryStats", false); }
+				set { SecurePrefs.SetBool(typeof(Prefs).FullName + "-displayMemoryStats", value); }
+			}
+		}
+
 		//----- field -----
 
 		[SerializeField]
 		private GameObject touchBlock = null;
 		[SerializeField]
+		private GameObject rootObject = null;
+		[SerializeField]
 		private FpsStats fpsStats = null;
+		[SerializeField]
+		private MemoryStats memoryStats = null;
 		[SerializeField]
 		private SRDiagnosis srDiagnosis = null;
 
 		//----- property -----
 
+		public GameObject RootObject { get { return rootObject; } }
+
 		public FpsStats FpsStats { get { return fpsStats; } }
+
+		public MemoryStats MemoryStats { get { return memoryStats; } }
 
 		public SRDiagnosis SRDiagnosis { get { return srDiagnosis; } }
 
@@ -34,12 +51,15 @@ namespace Modules.Devkit.Diagnosis
 
 			// FPS.
 
-			if (displayFps)
-			{
-				fpsStats.Initialize();
-			}
+			fpsStats.Initialize();
 
 			UnityUtility.SetActive(fpsStats, displayFps);
+
+			// Memory.
+
+			memoryStats.Initialize();
+
+			UnityUtility.SetActive(memoryStats, Prefs.displayMemoryStats);
 
 			// SRDebugger.
 
@@ -64,6 +84,13 @@ namespace Modules.Devkit.Diagnosis
 			srDiagnosis.SetTouchBlock(touchBlock);
 
 			#endif
+		}
+
+		public void DisplayMemoryStats(bool status)
+		{
+			Prefs.displayMemoryStats = status;
+
+			UnityUtility.SetActive(memoryStats, status);
 		}
 	}
 }

@@ -144,8 +144,8 @@ namespace Modules.Devkit.AssetBundleViewer
                 DrawInfoContent("Group", target.Group);
                 DrawInfoContent("Labels", target.GetLabelsText());
                 DrawInfoContent("FileName", target.FileName);
-                DrawInfoContent("FileSize", FileUtility.GetBytesReadable(target.FileSize));
-                DrawInfoContent("LoadFileSize", FileUtility.GetBytesReadable(target.LoadFileSize));
+                DrawInfoContent("FileSize", ByteDataUtility.GetBytesReadable(target.FileSize));
+                DrawInfoContent("LoadFileSize", ByteDataUtility.GetBytesReadable(target.LoadFileSize));
             }
         }
 

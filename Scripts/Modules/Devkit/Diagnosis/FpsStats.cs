@@ -1,6 +1,6 @@
 ﻿
 using UnityEngine;
-using UnityEngine.UI;
+using TMPro;
 
 namespace Modules.Devkit.Diagnosis
 {
@@ -8,12 +8,12 @@ namespace Modules.Devkit.Diagnosis
     {
         //----- params -----
 
-        public const float INTERVAL = 0.5f;
+        public const float UpdateInterval = 0.5f;
 
         //----- field -----
 
         [SerializeField]
-        private Text fpsLabel = null;
+        private TextMeshProUGUI fpsLabel = null;
 		[SerializeField]
 		private string fpsFormat = "{0} fps";
 
@@ -39,32 +39,35 @@ namespace Modules.Devkit.Diagnosis
 
         public void Initialize()
         {
-            if (!initialized && IsEnable())
-            {
-                initialized = true;
-                oldTime = Time.realtimeSinceStartup;
+			if (initialized) { return; }
 
-                SetFrameRate();
-            }
-        }
+			if (!IsEnable()) { return; }
+
+			oldTime = Time.realtimeSinceStartup;
+
+			SetFrameRate();
+
+			initialized = true;
+		}
 
         void Update()
         {
-            if (initialized && IsEnable())
-            {
-                frame++;
-                float time = Time.realtimeSinceStartup - oldTime;
+			if (!initialized) { return; }
 
-                if (time >= INTERVAL)
-                {
-                    frameRate = frame / time;
-                    oldTime = Time.realtimeSinceStartup;
-                    frame = 0;
+			if (!IsEnable()) { return; }
 
-                    SetFrameRate();
-                }
-            }
-        }
+			frame++;
+			var time = Time.realtimeSinceStartup - oldTime;
+
+			if (time >= UpdateInterval)
+			{
+				frameRate = frame / time;
+				oldTime = Time.realtimeSinceStartup;
+				frame = 0;
+
+				SetFrameRate();
+			}
+		}
 
         private void SetFrameRate()
         {
