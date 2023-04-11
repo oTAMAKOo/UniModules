@@ -5,7 +5,7 @@ using Modules.Devkit.Diagnosis.SRDebugger;
 
 namespace Modules.Devkit.Diagnosis
 {
-	public sealed class Diagnosis : MonoBehaviour
+	public sealed class Diagnosis : SingletonMonoBehaviour<Diagnosis>
 	{
 		//----- params -----
 
@@ -41,6 +41,17 @@ namespace Modules.Devkit.Diagnosis
 
 		public SRDiagnosis SRDiagnosis { get { return srDiagnosis; } }
 
+		public bool DisplayMemoryStats
+		{
+			get { return Prefs.displayMemoryStats; }
+
+			set
+			{
+				Prefs.displayMemoryStats = value;
+				UnityUtility.SetActive(memoryStats, value);
+			}
+		}
+
 		//----- method -----
 
 		public void Initialize(bool displayFps = true, bool srDiagnosisEnable = true)
@@ -73,6 +84,13 @@ namespace Modules.Devkit.Diagnosis
 			#endif
 
 			UnityUtility.SetActive(srDiagnosis, srDiagnosisEnable);
+
+			var rootObjectRt = rootObject.transform as RectTransform;
+
+			if (rootObjectRt != null)
+			{
+				rootObjectRt.ForceRebuildLayoutGroup();
+			}
 		}
 
 		public void SetTouchBlock(GameObject touchBlock)
@@ -84,13 +102,6 @@ namespace Modules.Devkit.Diagnosis
 			srDiagnosis.SetTouchBlock(touchBlock);
 
 			#endif
-		}
-
-		public void DisplayMemoryStats(bool status)
-		{
-			Prefs.displayMemoryStats = status;
-
-			UnityUtility.SetActive(memoryStats, status);
 		}
 	}
 }
