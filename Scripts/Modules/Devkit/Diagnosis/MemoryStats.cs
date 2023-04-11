@@ -44,7 +44,7 @@ namespace Modules.Devkit.Diagnosis
 			if (initialized) { return; }
 
 			if (!IsEnable()) { return; }
-			
+
 			oldTime = Time.realtimeSinceStartup;
 
 			SetMemoryStats();
@@ -70,21 +70,22 @@ namespace Modules.Devkit.Diagnosis
 
 		private void SetMemoryStats()
 		{
-			// GC(Mono) 最大使用量 / 現在使用量.
+			// Mono Heap : Scriptからnewしたものなど.
 
 			var monoUsedSize = Profiler.GetMonoUsedSizeLong();
 			var monoHeapSize = Profiler.GetMonoHeapSizeLong();
 
-			monoMemoryText.text = $"Heap / Used : { ByteDataUtility.GetBytesReadable(monoUsedSize) } / { ByteDataUtility.GetBytesReadable(monoHeapSize) }";
+			monoMemoryText.text = $"Mono Heap : { ByteDataUtility.GetBytesReadable(monoUsedSize) } / { ByteDataUtility.GetBytesReadable(monoHeapSize) }";
 
-			// ヒープメモリ / 予約済みだが未割り当てのヒープメモリ.
+			// Unity Memory : リソースなど.
 
 			var totalAllocated = Profiler.GetTotalAllocatedMemoryLong();
 			var totalReserved = Profiler.GetTotalReservedMemoryLong();
 
-			heapMemoryText.text = $"Alloc / Reserved : { ByteDataUtility.GetBytesReadable(totalAllocated) } / { ByteDataUtility.GetBytesReadable(totalReserved) }";
+			heapMemoryText.text = $"Unity Memory : { ByteDataUtility.GetBytesReadable(totalAllocated) } / { ByteDataUtility.GetBytesReadable(totalReserved) }";
 
-			// グラフィックで使用されているメモリ　※ Editor / Development Build.
+			// Graphic Driver : グラフィックス.
+			// ※ Editor / Development Buildのみ動作.
 
 			if (Application.isEditor || Debug.isDebugBuild)
 			{
