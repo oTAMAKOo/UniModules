@@ -3,6 +3,7 @@ using System;
 using System.IO;
 using System.Linq;
 using System.Collections.Generic;
+using Cysharp.Threading.Tasks;
 using MessagePack;
 using MessagePack.Resolvers;
 using Extensions;
@@ -63,7 +64,7 @@ namespace Modules.Devkit.FindReferences
 			return File.Exists(filePath);
 		}
 
-		public void Load()
+		public async UniTask Load()
 		{
 			if (!HasCache()) { return; }
 
@@ -71,20 +72,16 @@ namespace Modules.Devkit.FindReferences
 
 			using (var fileStream = new FileStream(filePath, FileMode.Open, FileAccess.Read))
 			{
-				var bytes = new byte[fileStream.Length];
-
-				fileStream.Read(bytes, 0, bytes.Length);
-
 				var options = StandardResolverAllowPrivate.Options
 					.WithResolver(UnityCustomResolver.Instance);
 
-				var container = MessagePackSerializer.Deserialize<CacheContainer>(bytes, options);
+				var container = await MessagePackSerializer.DeserializeAsync<CacheContainer>(fileStream, options);
 
 				cache = container.contents.ToDictionary(x => x.FullPath);
 			}
 		}
 
-		public void Save()
+		public async UniTask Save()
 		{
 			if (!requireCacheFileUpdate){ return; }
 
@@ -102,7 +99,7 @@ namespace Modules.Devkit.FindReferences
 
 				var bytes = MessagePackSerializer.Serialize(container, options);
 
-				fileStream.Write(bytes, 0, bytes.Length);
+				await fileStream.WriteAsync(bytes, 0, bytes.Length);
 			}
 		}
 
