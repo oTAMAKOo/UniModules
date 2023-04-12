@@ -18,7 +18,7 @@ namespace Modules.Devkit.FindReferences
 
 		private const string ProgressBarTitle = "Find References In Project";
 
-		private static readonly Dictionary<string, string> SearchPatterns = new()
+		private static readonly Dictionary<string, string> SearchPatterns = new Dictionary<string, string>()
 		{
 			{ "scene", "*.unity" },
 			{ "prefab", "*.prefab" },
