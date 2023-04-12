@@ -128,7 +128,7 @@ namespace Modules.Devkit.FindReferences
 
 			if (cacheData == null){ return null; }
 
-			// キャッシュと日時が同じ出ない場合は更新された扱い.
+			// キャッシュと日時が異なる場合は更新された扱い.
 
 			if (cacheData.LastUpdate != lastUpdate){ return null; }
 
