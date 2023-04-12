@@ -25,7 +25,6 @@ namespace Modules.Devkit.FindReferences
 			{ "material", "*.mat" },
 			{ "animation", "*.anim" },
 			{ "timeline", "*.playable" },
-			{ "model", "*.fbx" },
 			{ "asset", "*.asset" },
 		};
 
