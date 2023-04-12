@@ -128,9 +128,9 @@ namespace Modules.Devkit.FindReferences
 
 			if (cacheData == null){ return null; }
 
-			// キャッシュされたデータより新しい.
+			// キャッシュと日時が同じ出ない場合は更新された扱い.
 
-			if (cacheData.LastUpdate < lastUpdate){ return null; }
+			if (cacheData.LastUpdate != lastUpdate){ return null; }
 
 			// キャッシュからデータ作成.
 
