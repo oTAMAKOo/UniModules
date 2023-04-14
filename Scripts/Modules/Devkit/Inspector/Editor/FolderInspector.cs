@@ -3,6 +3,7 @@ using UnityEngine;
 using UnityEditor;
 using System.IO;
 using Extensions;
+using Extensions.Devkit;
 using Modules.Devkit.Project;
 
 namespace Modules.Devkit.Inspector
@@ -15,11 +16,11 @@ namespace Modules.Devkit.Inspector
 
         private string folderAssetPath = null;
         
-        private int lineCount = 0;
+		private bool edit = false;
 
         private string description = null;
 
-        private static AesCryptoKey cryptoKey = null;
+		private static AesCryptoKey cryptoKey = null;
 
         //----- property -----
 
@@ -36,34 +37,44 @@ namespace Modules.Devkit.Inspector
 
         public override void DrawInspectorGUI(UnityEngine.Object target)
         {
-            EditorGUILayout.Separator();
+            EditorGUILayout.Space(1f);
 
-            using (new EditorGUILayout.HorizontalScope(EditorStyles.toolbar, GUILayout.Height(20f)))
+            using (new EditorGUILayout.HorizontalScope(EditorStyles.toolbar))
             {
-                if (GUILayout.Button("Open", EditorStyles.miniButton, GUILayout.Width(80f)))
-                {
-                    EditorUtility.RevealInFinder(folderAssetPath);
-                }
-
-                if (GUILayout.Button("Copy Path", EditorStyles.miniButton, GUILayout.Width(80f)))
-                {
-                    EditorGUIUtility.systemCopyBuffer = folderAssetPath;
-                }
-
                 GUILayout.FlexibleSpace();
+
+				if (GUILayout.Button(edit ? "Save" : "Edit", EditorStyles.toolbarButton, GUILayout.Width(60f)))
+				{
+					if (edit)
+					{
+						SaveDescription();
+					}
+
+					edit = !edit;
+				}
             }
 
-            EditorGUILayout.Space(2f);
+            var size = EditorStyles.textArea.CalcSize(new GUIContent(description));
 
-            var height = lineCount < 4 ? 80f : 0f;
-            
-            EditorGUI.BeginChangeCheck();
+            var height = size.y < 80f ? 80f : size.y;
 
-            description = EditorGUILayout.TextArea(description, EditorStyles.textArea, GUILayout.Height(height));
-
-            if(EditorGUI.EndChangeCheck())
+            if (edit)
             {
-                UpdateLineCount();
+                using (new BackgroundColorScope(edit ? Color.gray : GUI.backgroundColor))
+                {
+                    EditorGUI.BeginChangeCheck();
+			
+                    var value = EditorGUILayout.TextArea(description, GUILayout.Height(height));
+
+                    if(EditorGUI.EndChangeCheck())
+                    {
+                        description = value;
+                    }
+                }
+            }
+            else
+            {
+                EditorGUILayout.SelectableLabel(description, EditorStyles.textArea, GUILayout.Height(height));
             }
         }
 
@@ -80,50 +91,38 @@ namespace Modules.Devkit.Inspector
 
             description = assetImporter.userData.Decrypt(cryptoKey);
 
-            UpdateLineCount();
-
             RepaintInspector();
         }
 
-        public override void OnDisable(UnityEngine.Object target)
-        {
+        private void SaveDescription()
+		{
 			var assetImporter = AssetImporter.GetAtPath(folderAssetPath);
 
-            if (assetImporter == null){ return; }
+			if (assetImporter == null){ return; }
+			
+			var metaFilePath = Path.ChangeExtension(assetImporter.assetPath, ".meta");
 
-            var metaFilePath = Path.ChangeExtension(assetImporter.assetPath, ".meta");
+			if (!File.Exists(metaFilePath)){ return; }
 
-            if (!File.Exists(metaFilePath)){ return; }
+			if (cryptoKey == null)
+			{
+				cryptoKey = ProjectCryptoKey.Instance.GetCryptoKey();
+			}
 
-            if (assetImporter != null)
-            {
-                if (cryptoKey == null)
-                {
-					cryptoKey = ProjectCryptoKey.Instance.GetCryptoKey();
-                }
+			var cryptoText = description.Encrypt(cryptoKey);
 
-                var cryptoText = description.Encrypt(cryptoKey);
+			if (cryptoText == null)
+			{
+				cryptoText = string.Empty;
+			}
 
-				if (cryptoText == null)
-                {
-					cryptoText = string.Empty;
-                }
+			if (assetImporter.userData != cryptoText)
+			{
+				assetImporter.userData = cryptoText;
 
-                if (assetImporter.userData != cryptoText)
-                {
-                    assetImporter.userData = cryptoText;
-
-                    assetImporter.SaveAndReimport();
-                }
-            }
-        }
-
-        public override void OnDestroy(UnityEngine.Object target) { }
-
-        private void UpdateLineCount()
-        {
-            lineCount = string.IsNullOrEmpty(description) ? 0 : description.Split('\n').Length;
-        }
+				assetImporter.SaveAndReimport();
+			}
+		}
 
         private static void RepaintInspector()
         {
