@@ -1,4 +1,4 @@
-﻿
+
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using System;
@@ -174,6 +174,8 @@ namespace Modules.Scene
 					scene.Disable();
 				}
 
+                if (cancelToken.IsCancellationRequested){ return; }
+
 				//====== Append Scene ======
 
 				diagnostics.Begin(TimeDiagnostics.Measure.Load);
@@ -181,6 +183,8 @@ namespace Modules.Scene
 				var sceneInstance = await Append(sceneArgument).ToUniTask(cancellationToken:cancelToken);
 
 				diagnostics.Finish(TimeDiagnostics.Measure.Load);
+
+                if (cancelToken.IsCancellationRequested){ return; }
 
 				//====== Scene Prepare ======
 
@@ -203,7 +207,11 @@ namespace Modules.Scene
 					}
 				}
 
+                if (cancelToken.IsCancellationRequested){ return; }
+
 				await TransitionFinish(sceneArgument, false).AttachExternalCancellation(cancelToken);
+
+                if (cancelToken.IsCancellationRequested){ return; }
 
 				if (sceneInstance != null)
 				{
@@ -235,10 +243,10 @@ namespace Modules.Scene
 
 				UnityConsole.Event(ConsoleEventName, ConsoleEventColor, message);
 			}
-			catch (OperationCanceledException) 
-			{
-				return;
-			}
+            catch (OperationCanceledException)
+            {
+                /* Canceled */
+            }
 			catch (Exception e)
 			{
 				Debug.LogException(e);
@@ -296,6 +304,8 @@ namespace Modules.Scene
 
 				if (!handleTransition){ return; }
 
+                if (cancelToken.IsCancellationRequested){ return; }
+
 				// 遷移開始.
 
 				var diagnostics = new TimeDiagnostics();
@@ -311,6 +321,8 @@ namespace Modules.Scene
 
 				await TransitionStart<ISceneArgument>(argument, false).AttachExternalCancellation(cancelToken);
 
+				if (cancelToken.IsCancellationRequested){ return; }
+
 				//====== Scene Leave ======
 
 				diagnostics.Begin(TimeDiagnostics.Measure.Leave);
@@ -323,7 +335,7 @@ namespace Modules.Scene
 				
                 await sceneInstance.Instance.Leave().AttachExternalCancellation(cancelToken);
 
-				// PlayerPrefsを保存.
+                // PlayerPrefsを保存.
 				PlayerPrefs.Save();
 
 				// Leave終了通知.
@@ -338,6 +350,8 @@ namespace Modules.Scene
                 
                 UnloadAppendScene(sceneInstance);
 
+                if (cancelToken.IsCancellationRequested){ return; }
+
 				//====== Scene Active ======
 
                 if (scene == null)
@@ -351,7 +365,11 @@ namespace Modules.Scene
 
 				await scene.Instance.OnTransition().AttachExternalCancellation(cancelToken);
 
+                if (cancelToken.IsCancellationRequested){ return; }
+
                 await TransitionFinish<ISceneArgument>(null, false).AttachExternalCancellation(cancelToken);
+
+                if (cancelToken.IsCancellationRequested){ return; }
 
 				scene.Instance.Enter();
 
@@ -365,6 +383,10 @@ namespace Modules.Scene
 				var message = string.Format("Unload Transition: {0} ({1:F2}ms)\n\n{2}", sceneInstance.Identifier, total, detail);
 
 				UnityConsole.Event(ConsoleEventName, ConsoleEventColor, message);
+            }
+			catch (OperationCanceledException)
+            {
+				/* Canceled */
             }
             catch (Exception e)
             {
