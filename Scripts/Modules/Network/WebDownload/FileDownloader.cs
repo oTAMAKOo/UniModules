@@ -1,14 +1,15 @@
-﻿
+
 using System;
 using System.Linq;
 using System.Collections.Generic;
+using System.Threading;
 using Cysharp.Threading.Tasks;
 using UniRx;
 using Extensions;
 
 namespace Modules.Net.WebDownload
 {
-    public abstract class FileDownloader<TDownloadRequest> : LifetimeDisposable where TDownloadRequest : DownloadRequest, new()
+    public abstract class FileDownLoader<TDownloadRequest> : LifetimeDisposable where TDownloadRequest : DownloadRequest, new()
     {
         //----- params -----
 
@@ -35,9 +36,9 @@ namespace Modules.Net.WebDownload
         //----- field -----
 
         private Dictionary<string, DownloadInfo> downloading = null;
-        private Queue<TDownloadRequest> downloadQueueing = null;
+        private List<TDownloadRequest> downloadQueue = null;
 
-        private bool initialized = false;
+		private bool initialized = false;
 
         //----- property -----
 
@@ -60,9 +61,9 @@ namespace Modules.Net.WebDownload
             if (initialized) { return; }
 
             downloading = new Dictionary<string, DownloadInfo>();
-            downloadQueueing = new Queue<TDownloadRequest>();
+			downloadQueue = new List<TDownloadRequest>();
 
-            RetryCount = retryCount;
+			RetryCount = retryCount;
             RetryDelaySeconds = retryDelaySeconds;
 
 			SetMaxDownloadCount(DefaultMaxDownloadCount);
@@ -96,93 +97,144 @@ namespace Modules.Net.WebDownload
         /// <summary>
         /// 指定されたURLからGetでデータを取得.
         /// </summary>
-        protected IObservable<Unit> Download(TDownloadRequest downloadRequest, IProgress<float> progress = null)
+        protected async UniTask Download(TDownloadRequest downloadRequest, IProgress<float> progress = null, CancellationToken cancelToken = default)
         {
-            // 既にダウンロードキューに入っている場合は既存のObservableを返す.
-            if (downloading.ContainsKey(downloadRequest.Url))
-            {
-                return downloading[downloadRequest.Url].Task;
-            }
+			try
+			{
+				IObservable<Unit> observable = null;
 
-            var observable = SnedRequestInternal(downloadRequest, progress)
-                .ToObservable()
-                .AsUnitObservable()
-                .Share();
+				// 既にダウンロードキューに入っている場合は既存のObservableを返す.
+				if (downloading.ContainsKey(downloadRequest.Url))
+				{
+					observable = downloading[downloadRequest.Url].Task;
+				}
+				else
+				{
+					observable = ObservableEx.FromUniTask(token => SendRequestInternal(downloadRequest, progress, token)).Share();
 
-            downloading.Add(downloadRequest.Url, new DownloadInfo(downloadRequest, observable));
+					downloading.Add(downloadRequest.Url, new DownloadInfo(downloadRequest, observable));
+				}
 
-            return observable;
-        }
+				await observable.ToUniTask(cancellationToken: cancelToken);
+			}
+			catch (OperationCanceledException)
+			{
+				/* Canceled */
+			}
+		}
 
-        /// <summary> リクエスト制御 </summary>
-        private async UniTask SnedRequestInternal(TDownloadRequest downloadRequest, IProgress<float> progress)
+		/// <summary> 通信処理が同時に実行されないようにキューイング. </summary>
+		private async UniTask WaitQueueingRequest(TDownloadRequest downloadRequest, CancellationToken cancelToken)
+		{
+			try
+			{
+				// キューに追加.
+				downloadQueue.Add(downloadRequest);
+
+				while (true)
+				{
+					// キューが空になっていた場合はキャンセル扱い.
+					if (downloadQueue.IsEmpty())
+					{
+						downloadRequest.Cancel();
+						break;
+					}
+
+					// 通信中のリクエストが存在しない & キューの先頭が自身の場合待ち終了.
+					if (downloading.Count <= MaxDownloadCount && downloadQueue.IndexOf(downloadRequest) == 0)
+					{
+						downloadQueue.Remove(downloadRequest);
+						break;
+					}
+
+					await UniTask.NextFrame(cancelToken);
+				}
+			}
+			catch (OperationCanceledException)
+			{
+				/* Canceled */
+			}
+			finally
+			{
+				downloadQueue.Remove(downloadRequest);
+			}
+		}
+
+		/// <summary> リクエスト制御 </summary>
+		private async UniTask SendRequestInternal(TDownloadRequest downloadRequest, IProgress<float> progress, CancellationToken cancelToken)
         {
-            // 通信待ちキュー.
-            await WaitQueueingRequest(downloadRequest);
+			var success = false;
 
-            var sw = System.Diagnostics.Stopwatch.StartNew();
+			try
+			{
+				// ダウンロード待ちキュー.
+				await WaitQueueingRequest(downloadRequest, cancelToken);
 
-            var retryCount = 0;
+				var sw = System.Diagnostics.Stopwatch.StartNew();
 
-            // リクエスト実行.
-            while (true)
-            {
-                Exception exception = null;
+				var retryCount = 0;
 
-                try
-                {
-                    await downloadRequest.Download(progress);
+				// リクエスト実行.
+				while (true)
+				{
+					Exception exception = null;
 
-                    break;
-                }
-                catch (Exception e)
-                {
-                    exception = e;
-                }
+					try
+					{
+						await downloadRequest.Download(progress, cancelToken);
 
-                //------ リトライ回数オーバー ------
+						success = true;
 
-                if (RetryCount <= retryCount)
-                {
-                    OnRetryLimit(downloadRequest);
-                    break;
-                }
+						break;
+					}
+					catch (Exception e)
+					{
+						exception = e;
+					}
 
-                //------ 通信失敗 ------
+					//------ リトライ回数オーバー ------
 
-                // エラーハンドリングを待つ.
+					if (RetryCount <= retryCount)
+					{
+						OnRetryLimit(downloadRequest);
+						break;
+					}
 
-                var requestErrorHandle = await OnError(downloadRequest, exception);
+					//------ 通信失敗 ------
 
-                switch (requestErrorHandle)
-                {
-                    case RequestErrorHandle.Retry:
-                        retryCount++;
-                        break;
-                }
+					// エラーハンドリングを待つ.
 
-                // キャンセル時は通信終了.
-                if (requestErrorHandle == RequestErrorHandle.Cancel)
-                {
-                    break;
-                }
+					var requestErrorHandle = await OnError(downloadRequest, exception, cancelToken);
 
-                // リトライディレイ.
-                await UniTask.Delay(TimeSpan.FromSeconds(RetryDelaySeconds));
-            }
+					// リトライ.
+					if (requestErrorHandle == RequestErrorHandle.Retry) { retryCount++; }
 
-            sw.Stop();
+					// キャンセル時は通信終了.
+					if (requestErrorHandle == RequestErrorHandle.Cancel) { break; }
 
-            // 正常終了.
-            OnComplete(downloadRequest, sw.Elapsed.TotalMilliseconds);
+					// リトライディレイ.
+					await UniTask.Delay(TimeSpan.FromSeconds(RetryDelaySeconds), cancellationToken: cancelToken);
+				}
 
-            // 通信完了.
-            downloading.Remove(downloadRequest.Url);
-        }
+				sw.Stop();
 
-        /// <summary>
-        /// ダウンロード中の全リクエストを強制中止.
-        /// </summary>
+				// 正常終了.
+				if (success)
+				{
+					OnComplete(downloadRequest, sw.Elapsed.TotalMilliseconds);
+				}
+			}
+			catch (OperationCanceledException)
+			{
+				/* Canceled */
+			}
+			finally
+			{
+				downloading.Remove(downloadRequest.Url);
+			}
+		}
+
+        /// <summary> ダウンロード中の全リクエストを強制中止. </summary>
         protected void ForceCancelAll()
         {
             if (downloading.Any())
@@ -195,48 +247,20 @@ namespace Modules.Net.WebDownload
                 downloading.Clear();
             }
 
-            if (downloadQueueing.Any())
+            if (downloadQueue.Any())
             {
-                downloadQueueing.Clear();
+				downloadQueue.Clear();
             }
         }
 
-        /// <summary>
-        /// 通信処理が同時に実行されないようにキューイング.
-        /// </summary>
-        private async UniTask WaitQueueingRequest(TDownloadRequest downloadRequest)
-        {
-            // キューに追加.
-            downloadQueueing.Enqueue(downloadRequest);
-
-            while (true)
-            {
-                // キューが空になっていた場合はキャンセル扱い.
-                if (downloadQueueing.IsEmpty())
-                {
-                    downloadRequest.Cancel(true);
-                    break;
-                }
-
-                // 通信中のリクエストが存在しない & キューの先頭が自身の場合待ち終了.
-                if (downloading.Count <= MaxDownloadCount && downloadQueueing.Peek() == downloadRequest)
-                {
-                    downloadQueueing.Dequeue();
-                    break;
-                }
-
-                await UniTask.NextFrame();
-            }
-        }
-
-        /// <summary> 初期化処理. </summary>
+		/// <summary> 初期化処理. </summary>
         protected virtual void OnInitialize() { }
 
         /// <summary> 成功時イベント. </summary>
         protected abstract void OnComplete(TDownloadRequest downloadRequest, double totalMilliseconds);
         
         /// <summary> 通信エラー時イベント. </summary>
-        protected abstract IObservable<RequestErrorHandle> OnError(TDownloadRequest downloadRequest, Exception ex);
+        protected abstract UniTask<RequestErrorHandle> OnError(TDownloadRequest downloadRequest, Exception ex, CancellationToken cancelToken = default);
 
         /// <summary> リトライ回数を超えた時のイベント. </summary>
         protected abstract void OnRetryLimit(TDownloadRequest downloadRequest);

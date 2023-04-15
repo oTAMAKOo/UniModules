@@ -1,4 +1,4 @@
-﻿
+
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.EventSystems;
@@ -279,7 +279,7 @@ namespace Modules.UI
 						tasks[i] = UniTask.Defer(() => InitializeItem(item));
 					}
 
-					await UniTask.WhenAll(tasks).AttachExternalCancellation(cancelSource.Token);
+					await UniTask.WhenAll(tasks);
 				}
 				catch (Exception e)
 				{
@@ -322,10 +322,10 @@ namespace Modules.UI
 														new Vector2(0, basePosition - offset) :
 														new Vector2(basePosition + offset, 0);
 
-					tasks[i] = UniTask.Defer(() => UpdateItem(cancelSource.Token, item, index));
+					tasks[i] = UniTask.Defer(() => UpdateItem(item, index));
 				}
 
-				await UniTask.WhenAll(tasks).AttachExternalCancellation(cancelSource.Token);
+				await UniTask.WhenAll(tasks);
 			}
 			catch (Exception e)
 			{
@@ -349,7 +349,7 @@ namespace Modules.UI
 
             //-----  更新イベント -----
 
-            await OnUpdateContents().AttachExternalCancellation(cancelSource.Token);
+            await OnUpdateContents();
 
             if (onUpdateContents != null)
             {
@@ -361,27 +361,28 @@ namespace Modules.UI
 
         private async UniTask InitializeItem(VirtualScrollItem<T> item)
         {
-            UnityUtility.SetActive(item, true);
-
-            await OnCreateItem(item).AttachExternalCancellation(cancelSource.Token);
-
-            if (onCreateItem != null)
-            {
-                onCreateItem.OnNext(item);
-            }
-
-            // 初期化.
 			try
 			{
-				await item.Initialize().AttachExternalCancellation(cancelSource.Token);
+				UnityUtility.SetActive(item, true);
+
+				await OnCreateItem(item);
+
+				if (onCreateItem != null)
+				{
+					onCreateItem.OnNext(item);
+				}
+
+				await item.Initialize();
 			}
 			catch (Exception e)
 			{
 				Debug.LogException(e);
 			}
-
-			UnityUtility.SetActive(item, false);
-        }
+			finally
+			{
+				UnityUtility.SetActive(item, false);
+			}
+		}
 
 		/// <summary> 実行中の処理を中断 </summary>
 		public void Cancel()
@@ -481,9 +482,18 @@ namespace Modules.UI
 
             if (centerToTween != null)
 			{
-	            await centerToTween.Play().ToUniTask().AttachExternalCancellation(cancelSource.Token);
+				try
+				{
+					await centerToTween.Play().ToUniTask(cancellationToken: cancelSource.Token);
 
-				OnMoveEnd();
+					OnMoveEnd();
+				}
+				catch (OperationCanceledException)
+				{
+					/* Canceled */
+
+					centerToTween.Kill();
+				}
 			}
         }
 
@@ -710,7 +720,7 @@ namespace Modules.UI
 					updateItemDisposables.Remove(firstItem);
                 }
 				
-				updateItemDisposable = ObservableEx.FromUniTask(cancelToken => UpdateItem(cancelToken, firstItem, lastItem.Index + 1))
+				updateItemDisposable = ObservableEx.FromUniTask(_ => UpdateItem(firstItem, lastItem.Index + 1))
 					.Subscribe(_ => updateItemDisposables.Remove(firstItem))
 					.AddTo(this);
 
@@ -757,7 +767,7 @@ namespace Modules.UI
                     updateItemDisposables.Remove(lastItem);
                 }
 
-                updateItemDisposable = ObservableEx.FromUniTask(cancelToken => UpdateItem(cancelToken, lastItem, firstItem.Index - 1))
+                updateItemDisposable = ObservableEx.FromUniTask(_ => UpdateItem(lastItem, firstItem.Index - 1))
                     .Subscribe(_ => updateItemDisposables.Remove(lastItem))
                     .AddTo(this);
 
@@ -828,7 +838,7 @@ namespace Modules.UI
             return result;
         }
 
-        private async UniTask UpdateItem(CancellationToken cancelToken, VirtualScrollItem<T> item, int index)
+        private async UniTask UpdateItem(VirtualScrollItem<T> item, int index)
         {
 			if (scrollType == ScrollType.Loop)
             {
@@ -847,7 +857,7 @@ namespace Modules.UI
 
 			if (item.Content != null)
 			{
-				await item.UpdateContents(item.Content).AttachExternalCancellation(cancelToken);
+				await item.UpdateContents(item.Content);
 			}
 
             UnityUtility.SetActive(item, item.Content != null);
@@ -858,7 +868,7 @@ namespace Modules.UI
 
             #endif
 
-            await OnUpdateItem(item).AttachExternalCancellation(cancelToken);
+            await OnUpdateItem(item);
 
 			if (onUpdateItem != null)
             {

@@ -1,4 +1,4 @@
-﻿
+
 #if UNITY_ANDROID
 
 using System;
@@ -7,6 +7,7 @@ using UnityEngine;
 using UnityEngine.Networking;
 using System.IO;
 using System.Linq;
+using System.Threading;
 using Cysharp.Threading.Tasks;
 using Modules.Net.WebDownload;
 using Modules.Net.WebRequest;
@@ -42,8 +43,10 @@ namespace Extensions
         }
 
 		// ※ AndroidではstreamingAssetsPathがWebRequestからしかアクセスできないのでtemporaryCachePathにファイルを複製する.
-		public static async UniTask<bool> CopyStreamingToTemporary(string filePath)
+		public static async UniTask<bool> CopyStreamingToTemporary(string filePath, CancellationToken cancelToken = default)
 		{
+			CopyBuffer copyBuffer = null;
+
 			filePath = PathUtility.ConvertPathSeparator(filePath);
 
 			if (!filePath.StartsWith(UnityPathUtility.StreamingAssetsPath))
@@ -53,54 +56,61 @@ namespace Extensions
 				return false;
 			}
 
-			if (copyQueueing.Contains(filePath)){ return true; }
+			if (copyQueueing.Contains(filePath)) { return true; }
 
-            copyQueueing.Add(filePath);
-
-            CopyBuffer copyBuffer = null;
-
-            while (true)
-            {
-                UpdateCopyBuffer();
-
-                copyBuffer = copyBuffers.FirstOrDefault(x => !x.use);
-
-                if (copyBuffer != null){ break; }
-
-                await UniTask.NextFrame();
-            }
-
-            var copyPath = ConvertStreamingAssetsLoadPath(filePath);
-
-            var directory = Directory.GetParent(copyPath);
-
-            if (!directory.Exists)
-            {
-                directory.Create();
-            }
-
-            using (var webRequest = UnityWebRequest.Get(filePath))
+			try
 			{
-				webRequest.downloadHandler = new FileDownloadHandler(copyPath, copyBuffer.buffer);
+				copyQueueing.Add(filePath);
 
-				var operation = webRequest.SendWebRequest();
-
-				while (!operation.isDone)
+				while (true)
 				{
-					await UniTask.NextFrame();
+					UpdateCopyBuffer();
+
+					copyBuffer = copyBuffers.FirstOrDefault(x => !x.use);
+
+					if (copyBuffer != null) { break; }
+
+					await UniTask.NextFrame(cancelToken);
 				}
 
-				if (webRequest.HasError())
+				var copyPath = ConvertStreamingAssetsLoadPath(filePath);
+
+				var directory = Directory.GetParent(copyPath);
+
+				if (!directory.Exists)
 				{
-					Debug.LogError($"File copy error : \nfrom :{filePath}\nto : {copyPath}\n\n{webRequest.error}");
+					directory.Create();
+				}
+
+				using (var webRequest = UnityWebRequest.Get(filePath))
+				{
+					webRequest.downloadHandler = new FileDownloadHandler(copyPath, copyBuffer.buffer);
+
+					var operation = webRequest.SendWebRequest();
+
+					while (!operation.isDone)
+					{
+						await UniTask.NextFrame(cancelToken);
+					}
+
+					if (webRequest.HasError())
+					{
+						Debug.LogError($"File copy error : \nfrom :{filePath}\nto : {copyPath}\n\n{webRequest.error}");
+					}
 				}
 			}
+			catch (OperationCanceledException)
+			{
+				/* Canceled */
+			}
+			finally
+			{
+				copyBuffer.use = false;
 
-            copyBuffer.use = false;
+				copyQueueing.Remove(filePath);
 
-            copyQueueing.Remove(filePath);
-
-            UpdateCopyBuffer();
+				UpdateCopyBuffer();
+			}
 
 			return true;
 		}

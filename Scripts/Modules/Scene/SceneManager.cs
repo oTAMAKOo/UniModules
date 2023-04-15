@@ -379,16 +379,14 @@ namespace Modules.Scene
 
 			try
 			{
-				await TransitionStart(currentSceneArgument, isSceneBack).AttachExternalCancellation(cancelToken);
-			}
-			catch (OperationCanceledException) 
-			{
-				return;
+				await TransitionStart(currentSceneArgument, isSceneBack);
 			}
 			catch (Exception e)
 			{
 				Debug.LogException(e);
 			}
+
+			if (cancelToken.IsCancellationRequested){ return; }
 
             if (prev != null)
             {
@@ -405,19 +403,17 @@ namespace Modules.Scene
                 // 現在のシーンの終了処理を実行.
 				try
 				{
-					await prev.Instance.Leave().AttachExternalCancellation(cancelToken);
-				}
-				catch (OperationCanceledException)
-				{
-					return;
+					await prev.Instance.Leave();
 				}
 				catch (Exception e)
 				{
 					Debug.LogException(e);
 				}
 
+				if (cancelToken.IsCancellationRequested) { return; }
+
 				// PlayerPrefsを保存.
-                PlayerPrefs.Save();
+				PlayerPrefs.Save();
 
                 // Leave終了通知.
                 if (onLeaveComplete != null)
@@ -568,7 +564,7 @@ namespace Modules.Scene
             {
 				try
 				{
-					await currentScene.Instance.Prepare(isSceneBack).AttachExternalCancellation(cancelToken);
+					await currentScene.Instance.Prepare(isSceneBack);
 				}
 				catch (OperationCanceledException) 
 				{
@@ -578,10 +574,12 @@ namespace Modules.Scene
 				{
 					Debug.LogException(e);
 				}
+
+				if (cancelToken.IsCancellationRequested) { return; }
 			}
 
-            // Prepare終了通知.
-            if (onPrepareComplete != null)
+			// Prepare終了通知.
+			if (onPrepareComplete != null)
             {
                 onPrepareComplete.OnNext(currentScene);
             }
@@ -616,34 +614,30 @@ namespace Modules.Scene
 
 			try
 			{
-				await CleanUp().AttachExternalCancellation(cancelToken);
-			}
-			catch (OperationCanceledException) 
-			{
-				return;
+				await CleanUp();
 			}
 			catch (Exception e)
 			{
 				Debug.LogException(e);
 			}
+
+			if (cancelToken.IsCancellationRequested) { return; }
 
 			// 外部処理待機.
 
 			try
 			{
-				await TransitionWait().AttachExternalCancellation(cancelToken);
-			}
-			catch (OperationCanceledException) 
-			{
-				return;
+				await TransitionWait();
 			}
 			catch (Exception e)
 			{
 				Debug.LogException(e);
 			}
 
+			if (cancelToken.IsCancellationRequested) { return; }
+
 			// シーンを有効化.
-            sceneInfo.Enable();
+			sceneInfo.Enable();
 
             // シーン遷移完了.
             TransitionTarget = null;
@@ -652,23 +646,21 @@ namespace Modules.Scene
 
 			try
 			{
-				await currentScene.Instance.OnTransition().AttachExternalCancellation(cancelToken);
+				await currentScene.Instance.OnTransition();
 
-				await TransitionFinish(currentSceneArgument, isSceneBack).AttachExternalCancellation(cancelToken);
-			}
-			catch (OperationCanceledException) 
-			{
-				return;
+				await TransitionFinish(currentSceneArgument, isSceneBack);
 			}
 			catch (Exception e)
 			{
 				Debug.LogException(e);
 			}
 
+			if (cancelToken.IsCancellationRequested) { return; }
+
 			//====== Scene Enter ======
 
-            // Enter通知.
-            if (onEnter != null)
+			// Enter通知.
+			if (onEnter != null)
             {
                 onEnter.OnNext(currentScene);
             }

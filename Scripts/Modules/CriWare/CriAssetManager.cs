@@ -15,121 +15,11 @@ using Modules.ExternalAssets;
 
 namespace Modules.CriWare
 {
-    public sealed class CriAssetManager : Singleton<CriAssetManager>
+    public sealed partial class CriAssetManager : Singleton<CriAssetManager>
     {
         //----- params -----
 
-        #if ENABLE_CRIWARE_FILESYSTEM
-
-        private sealed class CriAssetInstall
-        {
-            public AssetInfo AssetInfo { get; private set; }
-            public CriFsWebInstaller Installer { get; private set; }
-            public IObservable<CriAssetInstall> Task { get; private set; }
-
-            public CriAssetInstall(string installPath, AssetInfo assetInfo, IProgress<float> progress = null)
-            {
-                AssetInfo = assetInfo;
-
-                var downloadUrl = Instance.BuildDownloadUrl(assetInfo);
-                var filePath = Instance.GetFilePath(installPath, assetInfo);
-
-                var directory = Path.GetDirectoryName(filePath);
-
-                if (!Directory.Exists(directory))
-                {
-                    Directory.CreateDirectory(directory);
-                }
-
-                if (File.Exists(filePath))
-                {
-                    File.Delete(filePath);
-                }
-
-                Task = ObservableEx.FromUniTask(cancelToken => Install(downloadUrl, filePath, progress, cancelToken))
-                    .Select(_ => this)
-                    .Share();
-            }
-
-            private CriFsWebInstaller GetInstaller()
-            {
-                var installers = Instance.installers;
-                var numInstallers = Instance.numInstallers;
-
-                CriFsWebInstaller installer = null;
-
-                // 未使用のインストーラを取得.
-                installer = installers.FirstOrDefault(x =>
-                {
-                    var statusInfo = x.GetStatusInfo();
-
-                    return statusInfo.status != CriFsWebInstaller.Status.Busy;
-                });
-
-                if (installer == null)
-                {
-                    // 最大インストーラ数以下でインストーラが足りない時は生成.
-                    if (installers.Count < numInstallers)
-                    {
-                        installer = new CriFsWebInstaller();
-
-                        installers.Add(installer);
-                    }
-                }
-
-                if (installer != null)
-                {
-                    installer.Stop();
-                }
-
-                return installer;
-            }
-
-            private async UniTask Install(string downloadUrl, string filePath, IProgress<float> progress, CancellationToken cancelToken)
-            {
-                // 同時インストール数待ち.
-                while (true)
-                {
-                    // 未使用のインストーラを取得.
-                    Installer = GetInstaller();
-
-                    if (Installer != null){ break; }
-
-                    if (cancelToken.IsCancellationRequested){ return; }
-
-                    await UniTask.NextFrame(cancelToken);
-				}
-
-				if (cancelToken.IsCancellationRequested){ return; }
-                
-                Installer.Copy(downloadUrl, filePath);
-
-                CriFsWebInstaller.StatusInfo statusInfo;
-
-                while (true)
-                {
-                    statusInfo = Installer.GetStatusInfo();
-
-                    if (progress != null)
-                    {
-                        progress.Report((float)statusInfo.receivedSize / statusInfo.contentsSize);
-                    }
-
-                    if (statusInfo.status != CriFsWebInstaller.Status.Busy) { break; }
-
-                    if (cancelToken.IsCancellationRequested){ break; }
-
-                    await UniTask.NextFrame(cancelToken);
-                }
-
-                if (statusInfo.error != CriFsWebInstaller.Error.None)
-                {
-                    throw new Exception(string.Format("[Download Error] {0}\n{1}", AssetInfo.ResourcePath, statusInfo.error));
-                }
-            }
-        }
-
-        // タイムアウトまでの時間.
+		// タイムアウトまでの時間.
         private readonly TimeSpan TimeoutLimit = TimeSpan.FromSeconds(180f);
 
         // リトライする回数.
@@ -137,8 +27,6 @@ namespace Modules.CriWare
 
         // リトライするまでの時間(秒).
         private readonly TimeSpan RetryDelaySeconds = TimeSpan.FromSeconds(2f);
-
-        #endif
 
         //----- field -----
 
@@ -294,7 +182,7 @@ namespace Modules.CriWare
         #if ENABLE_CRIWARE_FILESYSTEM
 
         /// <summary> CRIアセットを更新. </summary>
-        public async UniTask UpdateCriAsset(string installPath, AssetInfo assetInfo, CancellationToken cancelToken, IProgress<float> progress = null)
+        public async UniTask UpdateCriAsset(string installPath, AssetInfo assetInfo, IProgress<float> progress = null, CancellationToken cancelToken = default)
         {
             if (simulateMode || localMode) { return; }
 			

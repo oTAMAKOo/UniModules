@@ -1,4 +1,4 @@
-﻿
+
 using UnityEngine.Networking;
 using System;
 using System.Threading;
@@ -16,9 +16,7 @@ namespace Modules.Net.WebDownload
 
         protected UnityWebRequest request = null;
 
-        protected CancellationTokenSource cancellationTokenSource = null;
-
-        //----- property -----
+		//----- property -----
 
         /// <summary> リクエストURL. </summary>
         public string Url { get; private set; }
@@ -35,15 +33,14 @@ namespace Modules.Net.WebDownload
         {
             Url = url;
             FilePath = filePath;
+		}
 
-            cancellationTokenSource = new CancellationTokenSource();
-        }
-
-        public async UniTask Download(IProgress<float> progress)
+        public async UniTask Download(IProgress<float> progress, CancellationToken cancelToken = default)
         {
-            var handler = new DownloadHandlerFile(FilePath);
-
-            handler.removeFileOnAbort = true;
+			var handler = new DownloadHandlerFile(FilePath)
+			{
+				removeFileOnAbort = true,
+			};
 
             request = new UnityWebRequest(Url)
             {
@@ -63,43 +60,38 @@ namespace Modules.Net.WebDownload
                         progress.Report(operation.progress);
                     }
 
-                    if (cancellationTokenSource.IsCancellationRequested)
-                    {
-                        return;
-                    }
+                    await UniTask.NextFrame(cancellationToken: cancelToken);
 
-                    await UniTask.NextFrame(cancellationToken: cancellationTokenSource.Token);
-                }
-                
-                var isError = request.HasError();
-                var isSuccess = request.IsSuccess();
+					if (cancelToken.IsCancellationRequested) { break; }
+				}
 
-                if (!isSuccess || isError)
-                {
-                    throw new UnityWebRequestErrorException(request);
-                }
+				if (request != null)
+				{
+					if (!request.IsSuccess() || request.HasError())
+					{
+						throw new UnityWebRequestErrorException(request);
+					}
+				}
             }
-            finally
+			catch (OperationCanceledException)
+			{
+				/* Canceled */
+			}
+			finally
             {
-                request.Dispose();
-                request = null;
+				if (request != null)
+				{
+					request.Dispose();
+					request = null;
+				}
             }
         }
 
-        public void Cancel(bool throwException = false)
+        public void Cancel()
         {
             if (request == null) { return; }
 
-            if (cancellationTokenSource != null)
-            {
-                if(!cancellationTokenSource.IsCancellationRequested)
-                {
-                    cancellationTokenSource.Cancel();
-                    cancellationTokenSource = null;
-                }
-            }
-
-            try
+			try
             {
                 request.Abort();
             }
@@ -108,11 +100,6 @@ namespace Modules.Net.WebDownload
                 request.Dispose();
                 request = null;
             }
-
-            if (throwException)
-            {
-                throw new UnityWebRequestErrorException(request);
-            }
-        }
+		}
     }
 }

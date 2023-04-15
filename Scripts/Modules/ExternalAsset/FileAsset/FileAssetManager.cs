@@ -1,4 +1,4 @@
-﻿
+
 using UnityEngine;
 using System;
 using System.Linq;
@@ -27,7 +27,7 @@ namespace Modules.ExternalAssets
 		private bool localMode = false;
 
 		// ダウンローダー.
-		private FileAssetDownloader downloader = null;
+		private FileAssetDownLoader downLoader = null;
 
 		// ダウンロードキュー.
 		private Dictionary<string, AssetInfo> downloadQueueing = null;
@@ -52,15 +52,15 @@ namespace Modules.ExternalAssets
 
 			downloadQueueing = new Dictionary<string, AssetInfo>();
 
-			downloader = new FileAssetDownloader();
+			downLoader = new FileAssetDownLoader();
 
-			downloader.Initialize();
+			downLoader.Initialize();
 
-			downloader.OnTimeoutAsObservable()
+			downLoader.OnTimeoutAsObservable()
 				.Subscribe(x => OnTimeout(x))
 				.AddTo(Disposable);
 
-			downloader.OnErrorAsObservable()
+			downLoader.OnErrorAsObservable()
 				.Subscribe(x => OnError(x))
 				.AddTo(Disposable);
 
@@ -69,7 +69,7 @@ namespace Modules.ExternalAssets
 
 		public void SetMaxDownloadCount(uint maxDownloadCount)
 		{
-			downloader.SetMaxDownloadCount(maxDownloadCount);
+			downLoader.SetMaxDownloadCount(maxDownloadCount);
 		}
 
 		/// <summary> ローカルモード設定. </summary>
@@ -89,12 +89,12 @@ namespace Modules.ExternalAssets
 		{
 			var platformName = PlatformUtility.GetPlatformTypeName();
 
-			var url = PathUtility.Combine(new string[] { remoteUrl, platformName, versionHash, assetInfo.FileName });
+			var url = PathUtility.Combine(remoteUrl, platformName, versionHash, assetInfo.FileName);
 
-			return string.Format("{0}?v={1}", url, assetInfo.Hash);
+			return $"{url}?v={assetInfo.Hash}";
 		}
 
-		public async UniTask UpdateFileAsset(string installPath, AssetInfo assetInfo, CancellationToken cancelToken, IProgress<float> progress = null)
+		public async UniTask UpdateFileAsset(string installPath, AssetInfo assetInfo, IProgress<float> progress = null, CancellationToken cancelToken = default)
 		{
 			if (simulateMode) { return; }
 
@@ -111,7 +111,11 @@ namespace Modules.ExternalAssets
 
 				downloadQueueing[url] = assetInfo;
 
-				await downloader.Download(url, filePath, progress).ToUniTask(cancellationToken: cancelToken);
+				await downLoader.Download(url, filePath, progress, cancelToken);
+			}
+			catch (OperationCanceledException)
+			{
+				/* Canceled */
 			}
 			finally
 			{

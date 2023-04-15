@@ -1,5 +1,6 @@
 ﻿
 using System;
+using System.Threading;
 using Cysharp.Threading.Tasks;
 
 namespace Modules.StateControl
@@ -28,12 +29,12 @@ namespace Modules.StateControl
 			State = state;
 		}
 
-		public virtual UniTask Enter()
+		public virtual UniTask Enter(CancellationToken cancelToken = default)
 		{
 			return UniTask.CompletedTask;
 		}
 
-		public virtual UniTask Leave()
+		public virtual UniTask Leave(CancellationToken cancelToken = default)
 		{
 			return UniTask.CompletedTask;
 		}
@@ -56,12 +57,12 @@ namespace Modules.StateControl
 			State = state;
 		}
 
-		public virtual UniTask Enter(TArgument argument)
+		public virtual UniTask Enter(TArgument argument, CancellationToken cancelToken = default)
 		{
 			return UniTask.CompletedTask;
 		}
 
-		public virtual UniTask Leave()
+		public virtual UniTask Leave(CancellationToken cancelToken = default)
 		{
 			return UniTask.CompletedTask;
 		}

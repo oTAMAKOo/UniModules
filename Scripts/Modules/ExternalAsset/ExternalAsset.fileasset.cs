@@ -1,4 +1,4 @@
-﻿
+
 using UnityEngine;
 using System;
 using System.Linq;
@@ -36,7 +36,7 @@ namespace Modules.ExternalAssets
 			fileAssetManager.OnErrorAsObservable().Subscribe(x => OnError(x)).AddTo(Disposable);
 		}
 
-		private async UniTask UpdateFileAsset(CancellationToken cancelToken, AssetInfo assetInfo, IProgress<float> progress = null)
+		private async UniTask UpdateFileAsset(AssetInfo assetInfo, IProgress<float> progress = null, CancellationToken cancelToken = default)
 		{
 			// ローカルバージョンが最新の場合は更新しない.
 			
@@ -44,7 +44,7 @@ namespace Modules.ExternalAssets
 
 			if (!requireUpdate) { return; }
 			
-			await fileAssetManager.UpdateFileAsset(InstallDirectory, assetInfo, cancelToken, progress);
+			await fileAssetManager.UpdateFileAsset(InstallDirectory, assetInfo, progress, cancelToken);
 		}
 
 		public void SetFileAssetInstallerCount(uint installerCount)

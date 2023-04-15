@@ -1,4 +1,4 @@
-﻿
+
 using System;
 using UnityEngine;
 using System.Threading;
@@ -38,38 +38,36 @@ namespace Modules.Performance
 			}
 		}
 
-		public async UniTask Wait(ulong increment = 1, CancellationToken? cancelToken = null)
+		public async UniTask Wait(ulong increment = 1, CancellationToken cancelToken = default)
 		{
-			while (true)
+			try
 			{
-				if (frameCount == unityFrameCount)
+				while (true)
 				{
-					if (max <= current)
+					if (frameCount == unityFrameCount)
 					{
-						if (cancelToken.HasValue)
+						if (max <= current)
 						{
-							await UniTask.NextFrame(cancelToken.Value);
-
-							if (cancelToken.Value.IsCancellationRequested){ return; }
+							await UniTask.NextFrame(cancelToken);
 						}
 						else
 						{
-							await UniTask.NextFrame();
+							break;
 						}
 					}
 					else
 					{
-						break;
+						frameCount = unityFrameCount;
+						current = 0;
 					}
 				}
-				else
-				{
-					frameCount = unityFrameCount;
-					current = 0;
-				}
-			}
 
-			current += increment;
+				current += increment;
+			}
+			catch (OperationCanceledException)
+			{
+				/* Canceled */
+			}
 		}
 	}
 }

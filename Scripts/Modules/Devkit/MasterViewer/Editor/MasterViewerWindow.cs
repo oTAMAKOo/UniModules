@@ -1,4 +1,4 @@
-﻿
+
 using UnityEngine;
 using UnityEditor;
 using System;
@@ -77,19 +77,19 @@ namespace Modules.Devkit.MasterViewer
 
             using (new EditorGUILayout.HorizontalScope(EditorStyles.toolbar, GUILayout.Height(15f)))
             {
-                Action<string> onChangeSearchText = x =>
-                {
-                    searchText = x;
-                    displayContents = GetDisplayMasters();
-                };
+				void OnChangeSearchText(string x)
+				{
+					searchText = x;
+					displayContents = GetDisplayMasters();
+				}
 
-                Action onSearchCancel = () =>
-                {
-                    searchText = string.Empty;
-                    displayContents = GetDisplayMasters();
-                };
+				void OnSearchCancel()
+				{
+					searchText = string.Empty;
+					displayContents = GetDisplayMasters();
+				}
 
-                EditorLayoutTools.DrawToolbarSearchTextField(searchText, onChangeSearchText, onSearchCancel, GUILayout.MinWidth(150f));
+				EditorLayoutTools.DrawToolbarSearchTextField(searchText, OnChangeSearchText, OnSearchCancel, GUILayout.MinWidth(150f));
 
                 GUILayout.FlexibleSpace();
 
@@ -167,57 +167,64 @@ namespace Modules.Devkit.MasterViewer
             var loadFinishCount = 0;
             var totalMasterCount = allMasters.Length;
 
-            Action onLoadFinish = () =>
-            {
-                loadFinishCount++;
+			void OnLoadFinish()
+			{
+				loadFinishCount++;
 
-                if (isComplete) { return; }
+				if (isComplete) { return; }
 
-                EditorUtility.DisplayProgressBar("progress", "Loading all masters", (float)loadFinishCount / totalMasterCount);
-            };
+				EditorUtility.DisplayProgressBar("progress", "Loading all masters", (float)loadFinishCount / totalMasterCount);
+			}
 
-            Action onLoadComplete = () =>
-            {
-                masterControllers = new List<MasterController>();
+			void OnLoadComplete()
+			{
+				masterControllers = new List<MasterController>();
 
-                foreach (var master in allMasters)
-                {
-                    var masterController = new MasterController();
-
-                    masterController.Initialize(master);
-
-                    masterControllers.Add(masterController);
-                }
-
-                displayContents = GetDisplayMasters();
-
-                Repaint();
-
-                isComplete = true;
-            };
-
-            var tasks = new List<UniTask>();
-
-            foreach (var master in allMasters)
-            {
-                var observable = UniTask.Defer(async () =>
+				foreach (var master in allMasters)
 				{
-					var loadResult = await master.Load(cryptoKey, false);
+					var masterController = new MasterController();
+					masterController.Initialize(master);
+					masterControllers.Add(masterController);
+				}
 
-					if (loadResult != null && loadResult.Item1)
+				displayContents = GetDisplayMasters();
+
+				isComplete = true;
+
+				Repaint();
+			}
+
+			try
+			{
+				var tasks = new List<UniTask>();
+
+				foreach (var master in allMasters)
+				{
+					var observable = UniTask.Defer(async () =>
 					{
-						onLoadFinish();
-					}
-				});
+						var loadResult = await master.Load(cryptoKey, false);
 
-				tasks.Add(observable);
-            }
+						if (loadResult != null && loadResult.Item1)
+						{
+							OnLoadFinish();
+						}
+					});
 
-			await UniTask.WhenAll(tasks);
+					tasks.Add(observable);
+				}
 
-			onLoadComplete();
+				await UniTask.WhenAll(tasks);
 
-			EditorUtility.ClearProgressBar();
+				OnLoadComplete();
+			}
+			catch (OperationCanceledException)
+			{
+				/* Canceled */
+			}
+			finally
+			{
+				EditorUtility.ClearProgressBar();
+			}
 		}
 
         private MasterController[] GetDisplayMasters()

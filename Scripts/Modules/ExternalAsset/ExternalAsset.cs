@@ -312,17 +312,17 @@ namespace Modules.ExternalAssets
 		}
 
         /// <summary> アセットを更新. </summary>
-        public static async UniTask UpdateAsset(string resourcePath, IProgress<float> progress = null)
+        public static async UniTask UpdateAsset(string resourcePath, IProgress<float> progress = null, CancellationToken cancelToken = default)
         {
-            await instance.UpdateAssetInternal(resourcePath, progress);
+            await instance.UpdateAssetInternal(resourcePath, progress, cancelToken);
         }
 
-        private async UniTask UpdateAssetInternal(string resourcePath, IProgress<float> progress = null)
+        private async UniTask UpdateAssetInternal(string resourcePath, IProgress<float> progress, CancellationToken cancelToken)
         {
             if (string.IsNullOrEmpty(resourcePath)) { return; }
 
             // 1フレームで更新制御する数を制限.
-            await updateAssetCallLimiter.Wait();
+            await updateAssetCallLimiter.Wait(cancelToken: cancelToken);
             
             // アセット情報.
 
@@ -345,13 +345,19 @@ namespace Modules.ExternalAssets
 				{
 					var updateAssetHandler = instance.updateAssetHandler;
 
-					await updateAssetHandler.OnUpdateRequest(assetInfo).AttachExternalCancellation(cancelSource.Token);
+					await updateAssetHandler.OnUpdateRequest(assetInfo, cancelToken);
+				}
+				catch (OperationCanceledException)
+				{
+					/* Canceled */
 				}
 				catch (Exception e)
 				{
 					OnError(e);
 					return;
 				}
+
+				if (cancelToken.IsCancellationRequested){ return; }
 			}
 			
 			if (!LocalMode && !SimulateMode)
@@ -360,31 +366,37 @@ namespace Modules.ExternalAssets
 				{
 					if (assetInfo.IsAssetBundle)
 					{
-						await UpdateAssetBundle(cancelSource.Token, assetInfo, progress);
+						await UpdateAssetBundle(assetInfo, progress, cancelSource.Token);
 					}
 
 					#if ENABLE_CRIWARE_FILESYSTEM
 
 					else if (criAssetManager.IsCriAsset(assetInfo.ResourcePath))
 					{
-						await UpdateCriAsset(cancelSource.Token, assetInfo, progress);
+						await UpdateCriAsset(assetInfo, progress, cancelSource.Token);
 					}
 
 					#endif
 
 					else
 					{
-						await UpdateFileAsset(cancelSource.Token, assetInfo, progress);
+						await UpdateFileAsset(assetInfo, progress, cancelSource.Token);
 					}
 					
 					// バージョン更新.
 					await UpdateVersion(resourcePath);
+				}
+				catch (OperationCanceledException)
+				{
+					/* Canceled */
 				}
 				catch (Exception e)
 				{
 					Debug.LogException(e);
 					return;
 				}
+
+				if (cancelToken.IsCancellationRequested) { return; }
 			}
 
             // 外部処理.
@@ -395,7 +407,11 @@ namespace Modules.ExternalAssets
 				{
 					var updateAssetHandler = instance.updateAssetHandler;
 
-					await updateAssetHandler.OnUpdateFinish(assetInfo).AttachExternalCancellation(cancelSource.Token);
+					await updateAssetHandler.OnUpdateFinish(assetInfo, cancelSource.Token);
+				}
+				catch (OperationCanceledException)
+				{
+					/* Canceled */
 				}
 				catch (Exception e)
 				{
@@ -403,11 +419,13 @@ namespace Modules.ExternalAssets
 
 					return;
 				}
+
+				if (cancelSource.IsCancellationRequested) { return; }
 			}
 
-            // イベント発行.
+			// イベント発行.
 
-            if (onUpdateAsset != null)
+			if (onUpdateAsset != null)
             {
                 onUpdateAsset.OnNext(resourcePath);
             }

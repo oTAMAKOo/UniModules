@@ -4,6 +4,7 @@ using System;
 using System.IO;
 using System.Collections.Generic;
 using System.Text;
+using System.Threading;
 using Cysharp.Threading.Tasks;
 using Extensions;
 using MessagePack;
@@ -20,8 +21,8 @@ namespace Modules.Master
         
         void ClearVersion();
 
-        UniTask<Tuple<bool, double>> Update(string masterVersion, FunctionFrameLimiter frameCallLimiter);
-		UniTask<Tuple<bool, double>> Load(AesCryptoKey cryptoKey, bool cleanOnError);
+        UniTask<Tuple<bool, double>> Update(string masterVersion, FunctionFrameLimiter frameCallLimiter, CancellationToken cancelToken = default);
+		UniTask<Tuple<bool, double>> Load(AesCryptoKey cryptoKey, bool cleanOnError, CancellationToken cancelToken = default);
 	}
 
     public abstract class MasterContainer<TMasterRecord>
@@ -85,7 +86,7 @@ namespace Modules.Master
             {
                 var typeName = typeof(TMaster).FullName;
 
-                var message = string.Format("Master record error!\nRecords same key already exists.\n\n Master : {0}\nKey : {1}\n", typeName, key);
+                var message = $"Master record error!\nRecords same key already exists.\n\n Master : {typeName}\nKey : {key}\n";
 
                 throw new Exception(message);
             }
@@ -152,7 +153,7 @@ namespace Modules.Master
 					await fs.WriteAsync(bytes, 0, bytes.Length);
 				}
 			}
-            catch
+			catch
             {
                 if (File.Exists(versionFilePath))
                 {
@@ -202,7 +203,7 @@ namespace Modules.Master
             records.Clear();
         }
 
-        public async UniTask<Tuple<bool, double>> Load(AesCryptoKey cryptoKey, bool cleanOnError)
+        public async UniTask<Tuple<bool, double>> Load(AesCryptoKey cryptoKey, bool cleanOnError, CancellationToken cancelToken = default)
         {
             var filePath = string.Empty;
 
@@ -223,7 +224,7 @@ namespace Modules.Master
                 await UniTask.SwitchToMainThread();
 
                 // 読み込み準備.
-                await PrepareLoad(filePath);
+                await PrepareLoad(filePath, cancelToken);
 
                 await UniTask.SwitchToThreadPool();
 
@@ -237,6 +238,10 @@ namespace Modules.Master
                 time = sw.Elapsed.TotalMilliseconds;
 
                 success = true;
+			}
+			catch (OperationCanceledException)
+			{
+				/* Canceled */
 			}
 			catch (Exception e)
 			{
@@ -333,7 +338,7 @@ namespace Modules.Master
             return container != null ? container.records : new TMasterRecord[0];
         }
         
-		public async UniTask<Tuple<bool, double>> Update(string masterVersion, FunctionFrameLimiter frameCallLimiter)
+		public async UniTask<Tuple<bool, double>> Update(string masterVersion, FunctionFrameLimiter frameCallLimiter, CancellationToken cancelToken = default)
 		{
 			var result = false;
 
@@ -353,9 +358,9 @@ namespace Modules.Master
 			{
                 await UniTask.SwitchToMainThread();
 
-                await frameCallLimiter.Wait();
+                await frameCallLimiter.Wait(cancelToken: cancelToken);
 
-                await DownloadMaster(masterVersion);
+                await Download(masterVersion, cancelToken);
 
 				if (File.Exists(filePath))
 				{
@@ -365,8 +370,8 @@ namespace Modules.Master
                 // ファイルが閉じるまで待つ.
                 while(FileUtility.IsFileLocked(filePath))
                 {
-                    await UniTask.NextFrame();
-                }
+                    await UniTask.NextFrame(cancelToken);
+				}
 
                 await UniTask.SwitchToThreadPool();
 
@@ -374,6 +379,10 @@ namespace Modules.Master
                 var version = result ? masterVersion : string.Empty;
             
                 await UpdateVersion(version);
+			}
+			catch (OperationCanceledException)
+			{
+				/* Canceled */
 			}
 			catch (Exception e)
 			{
@@ -399,7 +408,7 @@ namespace Modules.Master
             return records.GetValueOrDefault(key);
         }
 
-        protected virtual UniTask PrepareLoad(string installPath)
+        protected virtual UniTask PrepareLoad(string installPath, CancellationToken cancelToken)
         {
             return UniTask.CompletedTask;
         }
@@ -415,6 +424,6 @@ namespace Modules.Master
 
         protected abstract TKey GetRecordKey(TMasterRecord masterRecord);
 
-        protected abstract UniTask DownloadMaster(string version);
+        protected abstract UniTask Download(string version, CancellationToken cancelToken);
     }
 }

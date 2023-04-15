@@ -1,4 +1,4 @@
-﻿
+
 using System;
 using System.Collections.Generic;
 using System.Threading;
@@ -104,10 +104,10 @@ namespace Modules.StateControl
 			
 			cancellationTokenSource = new CancellationTokenSource();
 
-			ChangeState(next, argument, cancellationTokenSource.Token).Forget();
+			ChangeState(next, argument).Forget();
         }
         
-        private async UniTask ChangeState<TArgument>(T next, TArgument argument, CancellationToken cancelToken) where TArgument : StateArgument
+        private async UniTask ChangeState<TArgument>(T next, TArgument argument) where TArgument : StateArgument
         {
 			IsExecute = true;
 
@@ -117,7 +117,7 @@ namespace Modules.StateControl
 
             if (nextNode == null)
             {
-                throw new KeyNotFoundException(string.Format("This state is not registered. Type: {0}", next));
+                throw new KeyNotFoundException($"This state is not registered. Type: {next}");
             }
 
 			var changeStateInfo = new ChangeStateInfo()
@@ -139,13 +139,13 @@ namespace Modules.StateControl
 				{
 					var node = prevNode as StateNode<T>;
 
-					await node.Leave().AttachExternalCancellation(cancelToken);
+					await node.Leave(cancellationTokenSource.Token);
 				}
 				else if (prevNode is StateNode<T, TArgument>)
 				{
 					var node = prevNode as StateNode<T, TArgument>;
 
-					await node.Leave().AttachExternalCancellation(cancelToken);
+					await node.Leave(cancellationTokenSource.Token);
 				}
 			}
 
@@ -159,13 +159,13 @@ namespace Modules.StateControl
 			{
 				var node = currentNode as StateNode<T>;
 
-				await node.Enter().AttachExternalCancellation(cancelToken);
+				await node.Enter(cancellationTokenSource.Token);
 			}
 			else if (currentNode is StateNode<T, TArgument>)
 			{
 				var node = currentNode as StateNode<T, TArgument>;
 
-				await node.Enter(argument).AttachExternalCancellation(cancelToken);
+				await node.Enter(argument);
 			}
 
             if (onChangeStateFinish != null)

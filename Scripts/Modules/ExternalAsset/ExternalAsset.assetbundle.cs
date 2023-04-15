@@ -1,4 +1,4 @@
-﻿
+
 using UnityEngine;
 using System;
 using System.Collections.Generic;
@@ -52,7 +52,7 @@ namespace Modules.ExternalAssets
 			assetBundleManager.SetMaxDownloadCount(installerCount);
 		}
 
-		private async UniTask UpdateAssetBundle(CancellationToken cancelToken, AssetInfo assetInfo, IProgress<float> progress = null)
+		private async UniTask UpdateAssetBundle(AssetInfo assetInfo, IProgress<float> progress = null, CancellationToken cancelToken = default)
 		{
 			// ローカルバージョンが最新の場合は更新しない.
 
@@ -103,7 +103,11 @@ namespace Modules.ExternalAssets
             {
 				try
 				{
-					await loadAssetHandler.OnLoadRequest(assetInfo).AttachExternalCancellation(cancelSource.Token);
+					await loadAssetHandler.OnLoadRequest(assetInfo, cancelSource.Token);
+				}
+				catch (OperationCanceledException)
+				{
+					/* Canceled */
 				}
 				catch (Exception e)
 				{
@@ -112,6 +116,8 @@ namespace Modules.ExternalAssets
 					return null;
 				}
 			}
+
+			if (cancelSource.IsCancellationRequested){ return null; }
 
             // 更新.
 
@@ -128,7 +134,7 @@ namespace Modules.ExternalAssets
 
 					try
 					{
-						await UpdateAsset(resourcePath).AttachExternalCancellation(cancelSource.Token);
+						await UpdateAsset(resourcePath, cancelToken: cancelSource.Token);
 					}
 					catch (Exception e)
 					{
@@ -197,7 +203,11 @@ namespace Modules.ExternalAssets
             {
 				try
 				{
-					await loadAssetHandler.OnLoadFinish(assetInfo).AttachExternalCancellation(cancelSource.Token);
+					await loadAssetHandler.OnLoadFinish(assetInfo, cancelSource.Token);
+				}
+				catch (OperationCanceledException)
+				{
+					/* Canceled */
 				}
 				catch (Exception e)
 				{
@@ -205,6 +215,8 @@ namespace Modules.ExternalAssets
 
 					return null;
 				}
+
+				if (cancelSource.IsCancellationRequested){ return null; }
 			}
 
             // 時間計測終了.

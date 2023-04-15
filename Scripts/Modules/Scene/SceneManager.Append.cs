@@ -163,7 +163,9 @@ namespace Modules.Scene
 
 				TransitionTarget = sceneArgument.Identifier;
 
-				await TransitionStart(sceneArgument, false).AttachExternalCancellation(cancelToken);
+				await TransitionStart(sceneArgument, false);
+
+				if (cancelToken.IsCancellationRequested) { return; }
 
 				// 遷移先以外のシーンを非アクティブ化.
 
@@ -198,7 +200,7 @@ namespace Modules.Scene
 						onPrepare.OnNext(sceneInstance);
 					}
 
-					await sceneInstance.Instance.Prepare().AttachExternalCancellation(cancelToken);
+					await sceneInstance.Instance.Prepare();
 
 					// Prepare終了通知.
 					if (onPrepareComplete != null)
@@ -209,7 +211,7 @@ namespace Modules.Scene
 
                 if (cancelToken.IsCancellationRequested){ return; }
 
-				await TransitionFinish(sceneArgument, false).AttachExternalCancellation(cancelToken);
+				await TransitionFinish(sceneArgument, false);
 
                 if (cancelToken.IsCancellationRequested){ return; }
 
@@ -319,7 +321,7 @@ namespace Modules.Scene
     				argument = scene.Instance.GetArgument();
 				}
 
-				await TransitionStart<ISceneArgument>(argument, false).AttachExternalCancellation(cancelToken);
+				await TransitionStart(argument, false);
 
 				if (cancelToken.IsCancellationRequested){ return; }
 
@@ -333,7 +335,7 @@ namespace Modules.Scene
 					onLeave.OnNext(sceneInstance);
 				}
 				
-                await sceneInstance.Instance.Leave().AttachExternalCancellation(cancelToken);
+                await sceneInstance.Instance.Leave();
 
                 // PlayerPrefsを保存.
 				PlayerPrefs.Save();
@@ -363,11 +365,11 @@ namespace Modules.Scene
 
 				scene.Enable();
 
-				await scene.Instance.OnTransition().AttachExternalCancellation(cancelToken);
+				await scene.Instance.OnTransition();
 
                 if (cancelToken.IsCancellationRequested){ return; }
 
-                await TransitionFinish<ISceneArgument>(null, false).AttachExternalCancellation(cancelToken);
+                await TransitionFinish<ISceneArgument>(null, false);
 
                 if (cancelToken.IsCancellationRequested){ return; }
 
@@ -380,7 +382,7 @@ namespace Modules.Scene
 				var total = diagnostics.GetTime(TimeDiagnostics.Measure.Total);
 				var detail = diagnostics.BuildDetailText();
 
-				var message = string.Format("Unload Transition: {0} ({1:F2}ms)\n\n{2}", sceneInstance.Identifier, total, detail);
+				var message = $"Unload Transition: {sceneInstance.Identifier} ({total:F2}ms)\n\n{detail}";
 
 				UnityConsole.Event(ConsoleEventName, ConsoleEventColor, message);
             }

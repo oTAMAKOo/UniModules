@@ -2,6 +2,7 @@
 using UnityEngine.Networking;
 using System;
 using System.Collections.Generic;
+using System.Threading;
 using Cysharp.Threading.Tasks;
 using Extensions;
 
@@ -54,8 +55,10 @@ namespace Modules.Devkit.Diagnosis.SendReport
 			this.format = format;
 		}
 
-		public async UniTask<SendReportResult> Upload(string reportTitle, Dictionary<string, string> reportContents, IProgress<float> progress)
+		public async UniTask<SendReportResult> Upload(string reportTitle, Dictionary<string, string> reportContents, IProgress<float> progress, CancellationToken cancelToken)
 		{
+			SendReportResult result = null;
+
 			if (string.IsNullOrEmpty(reportUrl))
 			{
 				throw new Exception("report url is empty.");
@@ -75,10 +78,21 @@ namespace Modules.Devkit.Diagnosis.SendReport
 			}
 
 			webRequest.timeout = 30;
-			
-			await webRequest.SendWebRequest().ToUniTask(progress);
 
-            return new SendReportResult(webRequest);
+			try
+			{
+				await webRequest.SendWebRequest().ToUniTask(progress, cancellationToken: cancelToken);
+
+				result = new SendReportResult(webRequest);
+			}
+			catch (OperationCanceledException)
+			{
+				/* Canceled */
+
+				webRequest.Abort();
+			}
+
+			return result;
 		}
 
         private List<IMultipartFormSection> CreateReportFormSections(Dictionary<string, string> reportContents)

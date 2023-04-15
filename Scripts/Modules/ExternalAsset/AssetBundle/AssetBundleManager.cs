@@ -5,7 +5,6 @@ using System;
 using System.Linq;
 using System.Collections.Generic;
 using System.IO;
-using System.Runtime.Serialization;
 using System.Text;
 using System.Threading;
 using Cysharp.Threading.Tasks;
@@ -21,17 +20,7 @@ namespace Modules.AssetBundles
     {
         //----- params -----
 
-        [Serializable]
-        private sealed class DownloadFailedException : Exception
-        {
-            public DownloadFailedException() : base() { }
-            public DownloadFailedException(string message) : base(message) { }
-            public DownloadFailedException(string message, System.Exception inner) : base(message, inner) { }
-
-            public DownloadFailedException(SerializationInfo info,StreamingContext context) { }
-        }
-
-        public const string PackageExtension = ".package";
+		public const string PackageExtension = ".package";
 
         // 同時ダウンロード処理実行数.
         private const int MaxDownloadQueueingCount = 25;
@@ -63,9 +52,6 @@ namespace Modules.AssetBundles
 
         private FunctionFrameLimiter syncLoadFileCountLimiter = null;
         private FunctionFrameLimiter syncLoadFileSizeLimiter = null;
-
-        // アセット管理.
-        private AssetInfoManifest manifest = null;
 
 		// ダウンロード元URL.
         private string remoteUrl = null;
@@ -174,8 +160,6 @@ namespace Modules.AssetBundles
 
         public async UniTask SetManifest(AssetInfoManifest manifest)
         {
-            this.manifest = manifest;
-
             assetInfosByAssetBundleName.Clear();
             assetBundleRefCount.Clear();
             assetBundleDependencies.Clear();
@@ -269,23 +253,12 @@ namespace Modules.AssetBundles
 
         #region Download
 
-        private async UniTask ReadyForDownload()
-        {
-            // wait network disconnect.
-            while (Application.internetReachability == NetworkReachability.NotReachable)
-            {
-                await UniTask.NextFrame();
-            }
-        }
-
-        /// <summary>
+		/// <summary>
         /// アセット情報ファイルを更新.
         /// </summary>
         public async UniTask UpdateAssetInfoManifest(string installPath, CancellationToken cancelToken = default)
         {
-            if (simulateMode) { return; }
-
-            if (localMode) { return; }
+            if (simulateMode || localMode) { return; }
 
             var manifestAssetInfo = AssetInfoManifest.GetManifestAssetInfo();
             
@@ -297,32 +270,47 @@ namespace Modules.AssetBundles
         /// </summary>
         public async UniTask UpdateAssetBundle(string installPath,AssetInfo assetInfo, IProgress<float> progress = null, CancellationToken cancelToken = default)
         {
-            if (simulateMode) { return; }
-
-            if (localMode) { return; }
+            if (simulateMode || localMode) { return; }
 
             await UpdateAssetBundleInternal(installPath, assetInfo, progress, cancelToken);
         }
 
-        private async UniTask UpdateAssetBundleInternal(string installPath, AssetInfo assetInfo, IProgress<float> progress, CancellationToken cancelToken)
+		private async UniTask ReadyForDownload(CancellationToken cancelToken)
+		{
+			// wait network disconnect.
+			while (Application.internetReachability == NetworkReachability.NotReachable)
+			{
+				await UniTask.NextFrame(cancelToken);
+			}
+		}
+
+		private async UniTask UpdateAssetBundleInternal(string installPath, AssetInfo assetInfo, IProgress<float> progress, CancellationToken cancelToken)
         {
-            // ネットワークの接続待ち.
+			// 開始待ち.
 
-			await ReadyForDownload();
+			try
+			{
+				// ネットワークの接続待ち.
+				await ReadyForDownload(cancelToken);
 
-            // ダウンロードキューが空くまで待つ.
-            while (true)
-            {
-                if (downloadQueueingCount <= MaxDownloadQueueingCount){ break; }
+				// ダウンロードキューが空くまで待つ.
+				while (true)
+				{
+					if (downloadQueueingCount <= MaxDownloadQueueingCount) { break; }
 
-                if (cancelToken.IsCancellationRequested){ break; }
+					await UniTask.NextFrame(cancelToken);
+				}
+			}
+			catch (OperationCanceledException)
+			{
+				/* Canceled */
+			}
 
-                await UniTask.NextFrame(cancelToken);
-            }
+			if (cancelToken.IsCancellationRequested) { return; }
 
-            if (cancelToken.IsCancellationRequested){ return; }
+			// 開始.
 
-            downloadQueueingCount++;
+			downloadQueueingCount++;
 
 			// アセットバンドルと依存アセットバンドルをまとめてダウンロード.
 
@@ -371,55 +359,60 @@ namespace Modules.AssetBundles
                 }
                 else
                 {
-                    OnError(new FileNotFoundException($"Asset info not found. {target}"));
+                    OnError(new AssetInfoNotFoundException($"Asset info not found. {target}"));
                 }
             }
 
             foreach (var item in loadAllBundles)
             {
-                // ダウンロードキューが空くまで待つ.
-                while (true)
-                {
-                    if (downloadList.Count <= maxDownloadCount){ break; }
+				try
+				{
+					// ダウンロードキューが空くまで待つ.
+					while (true)
+					{
+						if (downloadList.Count <= maxDownloadCount) { break; }
 
-					if (cancelToken.IsCancellationRequested){ break; }
+						if (cancelToken.IsCancellationRequested) { break; }
 
-                    await UniTask.NextFrame(cancelToken);
-                }
+						await UniTask.NextFrame(cancelToken);
+					}
 
-				if (!cancelToken.IsCancellationRequested)
-                {
-                    // ダウンロード中でなかったらリストに追加.
-                    if (!downloadList.Contains(item.Key))
-                    {
-                        downloadList.Add(item.Key);
-                    }
+					if (cancelToken.IsCancellationRequested) { break; }
 
-				    // ダウンロード実行.
-				    try
-				    {
-                        await item.Value;
-                    }
-				    catch (Exception e)
-				    {
-                        Debug.LogErrorFormat("Download task error : {0}\n{1}\n", item.Key, e);
+					// ダウンロード中でなかったらリストに追加.
+					if (!downloadList.Contains(item.Key))
+					{
+						downloadList.Add(item.Key);
+					}
 
-                        OnError(e);
-				    }
+					// ダウンロード実行.
+					await item.Value.ToUniTask(cancellationToken: cancelToken);
+				}
+				catch (OperationCanceledException)
+				{
+					/* Canceled */
+				}
+				catch (Exception e)
+				{
+					Debug.LogErrorFormat("Download task error : {0}\n{1}\n", item.Key, e);
 
-                    // ダウンロード中リストから除外.
-                    if (downloadList.Contains(item.Key))
-                    {
-                        downloadList.Remove(item.Key);
-                    }
+					OnError(e);
+				}
+				finally
+				{
+					// ダウンロード中リストから除外.
+					if (downloadList.Contains(item.Key))
+					{
+						downloadList.Remove(item.Key);
+					}
 
-                    // ダウンロード待ちリストから除外.
-                    if (downloadQueueing.ContainsKey(item.Key))
-                    {
-                        downloadQueueing.Remove(item.Key);
-                    }
-                }
-            }
+					// ダウンロード待ちリストから除外.
+					if (downloadQueueing.ContainsKey(item.Key))
+					{
+						downloadQueueing.Remove(item.Key);
+					}
+				}
+			}
 
             downloadQueueingCount--;
         }
@@ -435,7 +428,7 @@ namespace Modules.AssetBundles
             return ObservableEx.FromUniTask(cancelToken => FileDownload(downloadUrl, filePath, progress, cancelToken))
                     .Timeout(TimeoutLimit)
                     .OnErrorRetry((TimeoutException ex) => OnTimeout(assetInfo, ex), RetryCount, RetryDelaySeconds)
-                    .OnErrorRetry((DownloadFailedException ex) => {}, RetryCount, RetryDelaySeconds)
+                    .OnErrorRetry((Exception _) => {}, RetryCount, RetryDelaySeconds)
                     .DoOnError(x => OnError(x));
 		}
 
@@ -466,7 +459,7 @@ namespace Modules.AssetBundles
 
                 if (webRequest.HasError() || webRequest.responseCode != (int)System.Net.HttpStatusCode.OK)
                 {
-                    throw new DownloadFailedException($"File download error : ResponseCode : {webRequest.responseCode}) {url}\n\n{webRequest.error}");
+                    throw new Exception($"File download error : ResponseCode : {webRequest.responseCode}) {url}\n\n{webRequest.error}");
                 }
             }
         }
@@ -529,7 +522,11 @@ namespace Modules.AssetBundles
             {
 				try
 				{
-					result = await SimulateLoadAsset<T>(assetPath).AttachExternalCancellation(cancelToken);
+					result = await SimulateLoadAsset<T>(assetPath, cancelToken);
+				}
+				catch (OperationCanceledException)
+				{
+					/* Canceled */
 				}
 				catch (Exception e)
 				{
@@ -691,7 +688,7 @@ namespace Modules.AssetBundles
             {
 				try
 				{
-					await AndroidUtility.CopyStreamingToTemporary(filePath).AttachExternalCancellation(cancelToken);
+					await AndroidUtility.CopyStreamingToTemporary(filePath, cancelToken);
 
 					filePath = AndroidUtility.ConvertStreamingAssetsLoadPath(filePath);
 				}
@@ -702,6 +699,8 @@ namespace Modules.AssetBundles
 			}
 
 			#endif
+
+			if (cancelToken.IsCancellationRequested){ return null; }
 
             var loadedAssetBundle = loadedAssetBundles.GetValueOrDefault(assetBundleName);
 
@@ -753,7 +752,9 @@ namespace Modules.AssetBundles
                         await UniTask.NextFrame(cancelToken);
                     }
 
-				    assetBundle = bundleLoadRequest.assetBundle;
+					if (cancelToken.IsCancellationRequested) { return null; }
+
+					assetBundle = bundleLoadRequest.assetBundle;
                 }
             }
 

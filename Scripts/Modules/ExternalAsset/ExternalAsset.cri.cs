@@ -1,4 +1,4 @@
-﻿
+
 #if ENABLE_CRIWARE_ADX || ENABLE_CRIWARE_SOFDEC
 
 using UnityEngine;
@@ -54,7 +54,7 @@ namespace Modules.ExternalAssets
 			criAssetManager.SetNumInstallers(installerCount);
 		}
 
-		private async UniTask UpdateCriAsset(CancellationToken cancelToken, AssetInfo assetInfo, IProgress<float> progress = null)
+		private async UniTask UpdateCriAsset(AssetInfo assetInfo, IProgress<float> progress = null, CancellationToken cancelToken = default)
         {
             // ローカルバージョンが最新の場合は更新しない.
 
@@ -64,7 +64,7 @@ namespace Modules.ExternalAssets
 
 			var criAssetManager = instance.criAssetManager;
 
-			await criAssetManager.UpdateCriAsset(InstallDirectory, assetInfo, cancelToken, progress);
+			await criAssetManager.UpdateCriAsset(InstallDirectory, assetInfo, progress, cancelToken);
 		}
 
         #if ENABLE_CRIWARE_ADX || ENABLE_CRIWARE_SOFDEC
@@ -132,12 +132,18 @@ namespace Modules.ExternalAssets
 
 					try
 					{
-						await UpdateAsset(resourcePath).AttachExternalCancellation(cancelSource.Token);
+						await UpdateAsset(resourcePath, cancelToken: cancelSource.Token);
+					}
+					catch (OperationCanceledException)
+					{
+						/* Canceled */
 					}
 					catch (Exception e)
 					{
 						Debug.LogException(e);
 					}
+
+					if (cancelSource.IsCancellationRequested){ return null; }
 
 					sw.Stop();
 
@@ -224,12 +230,18 @@ namespace Modules.ExternalAssets
 
 					try
 					{
-						await UpdateAsset(resourcePath).AttachExternalCancellation(cancelSource.Token);
+						await UpdateAsset(resourcePath, cancelToken: cancelSource.Token);
+					}
+					catch (OperationCanceledException)
+					{
+						/* Canceled */
 					}
 					catch (Exception e)
 					{
 						Debug.LogException(e);
 					}
+
+					if (cancelSource.IsCancellationRequested){ return null; }
 
 					sw.Stop();
 

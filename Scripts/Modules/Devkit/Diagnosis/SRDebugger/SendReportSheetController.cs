@@ -1,4 +1,4 @@
-﻿
+
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.EventSystems;
@@ -139,7 +139,7 @@ namespace Modules.Devkit.Diagnosis.SRDebugger
 			{
 				cancelSource = new CancellationTokenSource();
 
-				await sendReportManager.Send(ReportTitle, notifier).AttachExternalCancellation(cancelSource.Token);
+				await sendReportManager.Send(ReportTitle, notifier, cancelSource.Token);
 			}
 			catch (OperationCanceledException)
 			{
@@ -160,7 +160,7 @@ namespace Modules.Devkit.Diagnosis.SRDebugger
 
         private void UpdatePostProgress(float progress)
         {
-            progressBarText.text = string.Format("{0}%", progress * 100f);
+            progressBarText.text = $"{progress * 100f}%";
             progressBar.value = progress;
         }
 

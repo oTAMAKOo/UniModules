@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using Cysharp.Threading.Tasks;
 using UniRx;
 using MessagePack;
@@ -41,12 +42,12 @@ namespace Modules.Master
         private bool lz4Compression = true;
 
 		private Subject<Unit> onUpdateMaster = null;
-        private Subject<Unit> onError = null;
         private Subject<Unit> onLoadFinish = null;
+		private Subject<Exception> onError = null;
 
-        //----- property -----
+		//----- property -----
 
-        public IReadOnlyCollection<IMaster> Masters
+		public IReadOnlyCollection<IMaster> Masters
         {
             get { return masters; }
         }
@@ -96,7 +97,7 @@ namespace Modules.Master
             masters.Add(master);
         }
 
-        public async UniTask<bool> UpdateMaster(Dictionary<IMaster, string> updateMasters, IProgress<float> progress = null)
+        public async UniTask<bool> UpdateMaster(Dictionary<IMaster, string> updateMasters, IProgress<float> progress = null, CancellationToken cancelToken = default)
         {
             var result = true;
 
@@ -150,7 +151,9 @@ namespace Modules.Master
                 }
             }
 
-            var stopwatch = System.Diagnostics.Stopwatch.StartNew();
+			Exception exception = null;
+
+			var stopwatch = System.Diagnostics.Stopwatch.StartNew();
 
             if (progress != null) { progress.Report(0f); }
 
@@ -158,40 +161,40 @@ namespace Modules.Master
 
             if (updateMasters.Any())
             {
-                // 実行.
-                try
-                {
-                    foreach (var element in updateMasters)
-	                {
-	                    var master = element.Key;
-	                    var masterType = master.GetType();
-	                    var masterName = masterType.Name;
-	                    var masterVersion = element.Value;
-	                    var masterFileName = masterFileNames.GetValueOrDefault(masterType);
-					    
-	                    var task = UniTask.Defer(async () =>
-					    {
-	                        var updateResult = await master.Update(masterVersion, frameCallLimiter);
+				// 実行.
+				try
+				{
+					foreach (var element in updateMasters)
+					{
+						var master = element.Key;
+						var masterType = master.GetType();
+						var masterName = masterType.Name;
+						var masterVersion = element.Value;
+						var masterFileName = masterFileNames.GetValueOrDefault(masterType);
 
-						    OnUpdateFinish(masterType, masterName, masterFileName, updateResult.Item1, updateResult.Item2);
+						var task = UniTask.Defer(async () =>
+						{
+							var updateResult = await master.Update(masterVersion, frameCallLimiter, cancelToken);
 
-	                        var success = updateResult.Item1;
-	                        
-	                        if (!success)
-	                        {
-	                            throw new Exception($"Failed master update. {masterName}");
-	                        }
-	                    });
+							OnUpdateFinish(masterType, masterName, masterFileName, updateResult.Item1, updateResult.Item2);
 
-					    tasks.Add(task);
-	                }
+							var success = updateResult.Item1;
 
-                    await UniTask.WhenAll(tasks);
-                }
-                catch (Exception e)
-                {
-                    Debug.LogException(e);
-                }
+							if (!success)
+							{
+								throw new Exception($"Failed master update. {masterName}");
+							}
+						});
+
+						tasks.Add(task);
+					}
+
+					await UniTask.WhenAll(tasks);
+				}
+				catch (Exception e)
+				{
+					exception = e;
+				}
             }
 
             stopwatch.Stop();
@@ -216,19 +219,25 @@ namespace Modules.Master
             {
                 if (onError != null)
                 {
-                    onError.OnNext(Unit.Default);
+                    onError.OnNext(exception);
                 }
+				else
+				{
+					Debug.LogException(exception);
+				}
             }
 
             return result;
         }
 
-        public async UniTask<bool> LoadMaster()
+        public async UniTask<bool> LoadMaster(CancellationToken cancelToken = default)
         {
-            var result = true;
+			Reference.Clear();
+
+			Exception exception = null;
+
+			var result = true;
 			
-            Reference.Clear();
-            
             var loadLog = new StringBuilder();
 
             void OnLoadFinish(Type masterType, string masterName, string masterFileName, bool state, double time)
@@ -265,7 +274,7 @@ namespace Modules.Master
 					{
 						try
 						{
-							var loadResult = await item.Load(CryptoKey, true);
+							var loadResult = await item.Load(CryptoKey, true, cancelToken);
 
 							OnLoadFinish(masterType, masterName, masterFileName, loadResult.Item1, loadResult.Item2);
 						}
@@ -282,7 +291,7 @@ namespace Modules.Master
 			}
 			catch (Exception e)
 			{
-				Debug.LogException(e);
+				exception = e;
 			}
 
 			stopwatch.Stop();
@@ -310,8 +319,12 @@ namespace Modules.Master
             {
                 if (onError != null)
                 {
-                    onError.OnNext(Unit.Default);
+                    onError.OnNext(exception);
                 }
+				else
+				{
+					Debug.LogException(exception);
+				}
             }
 
             return result;
@@ -496,9 +509,9 @@ namespace Modules.Master
             return onUpdateMaster ?? (onUpdateMaster = new Subject<Unit>());
         }
 
-        public IObservable<Unit> OnErrorAsObservable()
+        public IObservable<Exception> OnErrorAsObservable()
         {
-            return onError ?? (onError = new Subject<Unit>());
+            return onError ?? (onError = new Subject<Exception>());
         }
     }
 }

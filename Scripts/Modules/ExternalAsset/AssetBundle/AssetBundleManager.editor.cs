@@ -3,13 +3,14 @@
 
 using UnityEngine;
 using UnityEditor;
+using System.Threading;
 using Cysharp.Threading.Tasks;
 
 namespace Modules.AssetBundles
 {
     public sealed partial class AssetBundleManager
     {
-        private async UniTask<T> SimulateLoadAsset<T>(string assetPath) where T : UnityEngine.Object
+        private async UniTask<T> SimulateLoadAsset<T>(string assetPath, CancellationToken cancelToken) where T : UnityEngine.Object
         {
             var asset = AssetDatabase.LoadAssetAtPath<T>(assetPath);
 
@@ -20,7 +21,7 @@ namespace Modules.AssetBundles
                 return default(T);
             }
 
-			await UniTask.NextFrame();
+			await UniTask.NextFrame(cancelToken);
 
             return asset;
         }

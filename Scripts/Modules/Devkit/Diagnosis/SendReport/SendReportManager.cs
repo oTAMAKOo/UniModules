@@ -1,10 +1,11 @@
-﻿
+
 using UnityEngine;
 using UnityEngine.Networking;
 using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using Cysharp.Threading.Tasks;
 using UniRx;
 using Extensions;
@@ -37,7 +38,7 @@ namespace Modules.Devkit.Diagnosis.SendReport
 
 	public interface ISendReportUploader
 	{
-		UniTask<SendReportResult> Upload(string reportTitle, Dictionary<string, string> reportContents, IProgress<float> progress);
+		UniTask<SendReportResult> Upload(string reportTitle, Dictionary<string, string> reportContents, IProgress<float> progress, CancellationToken cancelToken);
 	}
 
     public interface ISendReportBuilder
@@ -99,7 +100,7 @@ namespace Modules.Devkit.Diagnosis.SendReport
             this.sendReportBuilder = sendReportBuilder;
         }
 
-        public async UniTask Send(string reportTitle, IProgress<float> progressNotifier = null)
+        public async UniTask Send(string reportTitle, IProgress<float> progressNotifier = null, CancellationToken cancelToken = default)
         {
 			// 送信内容構築.
             BuildPostContent();
@@ -116,12 +117,12 @@ namespace Modules.Devkit.Diagnosis.SendReport
 
 			try
 			{
-				result = await uploader.Upload(reportTitle, reportContents, progressNotifier);
+				result = await uploader.Upload(reportTitle, reportContents, progressNotifier, cancelToken);
 
-                if (result.HasError)
-                {
-                    Debug.LogErrorFormat("[{0}]{1}", result.ResponseCode, result.Error);
-                }
+				if (result != null && result.HasError)
+				{
+					Debug.LogErrorFormat("[{0}]{1}", result.ResponseCode, result.Error);
+				}
 
 				reportContents.Clear();
 			}
