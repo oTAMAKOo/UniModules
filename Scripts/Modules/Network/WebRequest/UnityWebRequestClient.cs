@@ -1,4 +1,4 @@
-﻿
+
 using UnityEngine.Networking;
 using System;
 using System.Linq;
@@ -7,7 +7,6 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Cysharp.Threading.Tasks;
-using UniRx;
 using Newtonsoft.Json;
 using Extensions;
 using MessagePack;
@@ -193,7 +192,11 @@ namespace Modules.Net.WebRequest
 
                 IsConnecting = false;
             }
-            catch (Exception e)
+			catch (OperationCanceledException)
+			{
+				request.Abort();
+			}
+			catch (Exception e)
             {
                 Error = e;
             }

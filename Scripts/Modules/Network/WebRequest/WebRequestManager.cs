@@ -1,4 +1,4 @@
-﻿
+
 using System;
 using System.Linq;
 using System.Collections.Generic;
@@ -253,7 +253,8 @@ namespace Modules.Net.WebRequest
         {
             if (cancellationTokenSource != null)
             {
-                cancellationTokenSource.Dispose();
+				cancellationTokenSource.Cancel();
+				cancellationTokenSource = null;
             }
 
             if (current != null)
