@@ -41,7 +41,7 @@ namespace Modules.Sound
 @ENUMS
         }
 
-        private static Dictionary<Cue, Tuple<string, string, bool>> internalSounds = new Dictionary<Cue, Tuple<string, string, bool>>()
+        private static Dictionary<Cue, Tuple<string, string>> internalSounds = new Dictionary<Cue, Tuple<string, string>>()
         {
 @CONTENTS
         };
@@ -74,7 +74,7 @@ namespace Modules.Sound
 
             var filePath = PathUtility.Combine(fileDirectory, info.Item1);
 
-            return new CueInfo(filePath, info.Item1, info.Item2, info.Item3);
+            return new CueInfo(filePath, info.Item1, info.Item2);
         }
     }
 }
@@ -83,7 +83,7 @@ namespace Modules.Sound
 ";
         private const string EnumTemplate = @"{0},";
         private const string SummaryTemplate = @"/// <summary> {0} </summary>";
-        private const string ContentsTemplate = @"{{ Cue.{0}, Tuple.Create(""{1}"", ""{2}"", {3}) }},";
+        private const string ContentsTemplate = @"{{ Cue.{0}, Tuple.Create(""{1}"", ""{2}"") }},";
 
         //----- field -----
 
@@ -110,7 +110,7 @@ namespace Modules.Sound
                 var cueSheetPath = PathUtility.Combine(rootFolderName, info.CueSheet);
 
 				enums.Append("\t\t\t").AppendFormat(EnumTemplate, enumName);
-                contents.Append("\t\t\t").AppendFormat(ContentsTemplate, enumName, cueSheetPath, info.Cue, info.HasAwb.ToString().ToLower());
+                contents.Append("\t\t\t").AppendFormat(ContentsTemplate, enumName, cueSheetPath, info.Cue);
 
                 if (i < infos.Length - 1)
                 {
@@ -155,16 +155,13 @@ namespace Modules.Sound
                 {
                     var cueInfos = acb.GetCueInfoList().ToArray();
 
-					var awbFilePath = UnityPathUtility.ConvertAssetPathToFullPath(Path.ChangeExtension(assetPath, CriAssetDefinition.AwbExtension));
-					var hasAwb = File.Exists(awbFilePath);
-
-                    foreach (var cueInfo in cueInfos)
+					foreach (var cueInfo in cueInfos)
                     {
                         var acbPath = assetPath.Replace(path + PathUtility.PathSeparator, string.Empty);
 
                         acbPath = PathUtility.GetPathWithoutExtension(acbPath);
 
-						result.Add(new CueInfo(string.Empty, acbPath, cueInfo.name, hasAwb));
+						result.Add(new CueInfo(string.Empty, acbPath, cueInfo.name));
                     }
 
                     acb.Dispose();

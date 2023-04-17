@@ -171,11 +171,7 @@ namespace Modules.ExternalAssets
 
             filePath = PathUtility.GetPathWithoutExtension(filePath) + CriAssetDefinition.AcbExtension;
 
-			var awbFilePath = PathUtility.GetPathWithoutExtension(filePath) + CriAssetDefinition.AcbExtension;
-
-			var hasAwb = File.Exists(awbFilePath);
-
-            var cueInfo = File.Exists(filePath) ? new CueInfo(filePath, resourcePath, cue, hasAwb) : null;
+            var cueInfo = new CueInfo(filePath, resourcePath, cue);
 
             if (onLoadAsset != null)
             {
@@ -269,29 +265,20 @@ namespace Modules.ExternalAssets
 
             filePath = PathUtility.GetPathWithoutExtension(filePath) + CriAssetDefinition.UsmExtension;
 
-			ManaInfo movieInfo = null;
+			var movieInfo = new ManaInfo(filePath);
 
-            if (File.Exists(filePath))
-            {
-                movieInfo = new ManaInfo(filePath);
-				
-                if (onLoadAsset != null)
-                {
-                    onLoadAsset.OnNext(resourcePath);
-                }
-            }
-            else
-            {
-                Debug.LogErrorFormat("File not found.\n{0}", filePath);
+			if (onLoadAsset != null)
+			{
+				onLoadAsset.OnNext(resourcePath);
 			}
 
-            return movieInfo;
+			return movieInfo;
         }
 
         #endif
 
         #endregion
-    }
+	}
 }
 
 #endif

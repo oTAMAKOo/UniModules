@@ -674,12 +674,7 @@ namespace Modules.AssetBundles
 
             if (string.IsNullOrEmpty(filePath)){ return null; }
 
-			if (!File.Exists(filePath))
-			{
-				throw new FileNotFoundException(filePath);
-			}
-
-            var assetBundleInfo = assetInfo.AssetBundle;
+			var assetBundleInfo = assetInfo.AssetBundle;
             var assetBundleName = assetBundleInfo.AssetBundleName;
 
 			#if UNITY_ANDROID && !UNITY_EDITOR
@@ -702,7 +697,12 @@ namespace Modules.AssetBundles
 
 			if (cancelToken.IsCancellationRequested){ return null; }
 
-            var loadedAssetBundle = loadedAssetBundles.GetValueOrDefault(assetBundleName);
+			if (!File.Exists(filePath))
+			{
+				throw new FileNotFoundException(filePath);
+			}
+
+			var loadedAssetBundle = loadedAssetBundles.GetValueOrDefault(assetBundleName);
 
             if (loadedAssetBundle != null)
             {

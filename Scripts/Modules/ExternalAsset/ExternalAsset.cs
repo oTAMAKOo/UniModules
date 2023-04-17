@@ -151,6 +151,11 @@ namespace Modules.ExternalAssets
         {
             InstallDirectory = PathUtility.Combine(directory, "Contents");
 
+			if (InstallDirectory.StartsWith(UnityPathUtility.StreamingAssetsPath))
+            {
+	            InstallDirectory = PathUtility.Combine(InstallDirectory, PlatformUtility.GetPlatformName());
+            }
+
             #if UNITY_IOS
 
             if (InstallDirectory.StartsWith(Application.persistentDataPath))

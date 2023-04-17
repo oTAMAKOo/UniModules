@@ -139,16 +139,13 @@ namespace Modules.CriWare
 
             if (acb != null)
             {
-				var awbFilePath = Path.ChangeExtension(fullPath, CriAssetDefinition.AwbExtension);
-				var hasAwb = File.Exists(awbFilePath);
-
-                var list = acb.GetCueInfoList();
+				var list = acb.GetCueInfoList();
 
                 foreach (var item in list)
                 {
                     var path = PathUtility.GetPathWithoutExtension(assetPath);
 
-                    var cueInfo = new CueInfo(string.Empty, path, item.name, hasAwb);
+                    var cueInfo = new CueInfo(string.Empty, path, item.name);
 
                     cueInfos.Add(cueInfo);
                 }
