@@ -69,5 +69,10 @@ namespace Modules.Performance
 				/* Canceled */
 			}
 		}
+
+		public void Reset()
+		{
+			current = 0;
+		}
 	}
 }

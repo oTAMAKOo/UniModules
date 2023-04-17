@@ -97,12 +97,6 @@ namespace Modules.ExternalAssets
 
             var list = new List<AssetInfo>();
 
-            // バージョン情報読み込み.
-            if (versions.IsEmpty())
-            {
-                await LoadVersion();
-            }
-            
 			// 最新のバージョン情報.
 
             var assetInfos = assetInfoManifest.GetAssetInfos(groupName);
@@ -111,40 +105,37 @@ namespace Modules.ExternalAssets
             if (versions.Any())
             {
                 var tasks = new List<UniTask>();
+				
+				var frameLimiter = new FunctionFrameLimiter(1000);
 
-                var chunck = assetInfos.Chunk(250);
+				foreach (var assetInfo in assetInfos)
+				{
+					await frameLimiter.Wait();
 
-                foreach (var items in chunck)
-                {
-                    tasks.Clear();
+					var info = assetInfo;
 
-                    foreach (var assetInfo in items)
-				    {
-                        var info = assetInfo;
+					var task = UniTask.Defer(async () =>
+					{
+						try
+						{
+							var requireUpdate = await UniTask.RunOnThreadPool(() => IsRequireUpdate(info, false));
 
-                        var task = UniTask.Defer(async () =>
-                        {
-                            try
-                            {
-                                var requireUpdate = await UniTask.RunOnThreadPool(() => IsRequireUpdate(info, false));
+							if (requireUpdate)
+							{
+								list.Add(info);
+							}
+						}
+						finally
+						{
+							await UniTask.SwitchToMainThread();
+						}
+					});
 
-                                if (requireUpdate)
-                                {
-                                    list.Add(info);
-                                }
-                            }
-                            finally
-                            {
-                                await UniTask.SwitchToMainThread();
-                            }
-                        });
+					tasks.Add(task);
+				}
 
-                        tasks.Add(task);
-                    }
-
-                    await UniTask.WhenAll(tasks);
-                }
-            }
+				await UniTask.WhenAll(tasks);
+			}
             // バージョン情報が存在しないので全更新.
             else
             {
@@ -195,6 +186,11 @@ namespace Modules.ExternalAssets
 			try
 			{
 				assetInfo = GetAssetInfo(resourcePath);
+
+				if (assetInfo == null)
+				{
+					throw new AssetInfoNotFoundException(resourcePath);
+				}
 			}
 			catch (AssetInfoNotFoundException e)
 			{
@@ -243,36 +239,33 @@ namespace Modules.ExternalAssets
             
             var versionFilePaths = await GetAllVersionFilePaths();
 
-            var tasks = new List<UniTask>();
+			var frameLimiter = new FunctionFrameLimiter(1000);
 
-            var chunck = versionFilePaths.Chunk(250);
+			var tasks = new List<UniTask>();
+			
+			foreach (var versionFilePath in versionFilePaths)
+			{
+				await frameLimiter.Wait();
 
-            foreach (var items in chunck)
-            {
-                tasks.Clear();
+				var path = versionFilePath;
 
-                foreach (var versionFilePath in items)
-                {
-                    var path = versionFilePath;
+				var task = UniTask.Defer(async () =>
+				{
+					try
+					{
+						await UniTask.RunOnThreadPool(() => LoadVersionFile(path, versionFileExtensionLength));
+					}
+					finally
+					{
+						await UniTask.SwitchToMainThread();
+					}
+				});
 
-                    var task = UniTask.Defer(async () =>
-				    {
-                        try
-                        {
-                            await UniTask.RunOnThreadPool(() => LoadVersionFile(path, versionFileExtensionLength));
-                        }
-                        finally
-                        {
-                            await UniTask.SwitchToMainThread();
-                        }
-                    });
+				tasks.Add(task);
+			}
 
-                    tasks.Add(task);
-                }
-
-                await UniTask.WhenAll(tasks);
-            }
-        }
+			await UniTask.WhenAll(tasks);
+		}
         
         private void LoadVersionFile(string path, int versionFileExtensionLength)
         {
@@ -372,7 +365,7 @@ namespace Modules.ExternalAssets
 
 			if (!Directory.Exists(InstallDirectory)){ return new string[0]; }
 
-            var frameLimiter = new FunctionFrameLimiter(250);
+            var frameLimiter = new FunctionFrameLimiter(1000);
 
             var list = new List<string>();
 

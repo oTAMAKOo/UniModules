@@ -80,6 +80,11 @@ namespace Modules.ExternalAssets
 			{
 				var assetInfo = GetAssetInfo(resourcePath);
 
+				if (assetInfo == null)
+				{
+					throw new AssetInfoNotFoundException(resourcePath);
+				}
+
 				criFilePath = SimulateMode ? 
 							PathUtility.Combine(UnityPathUtility.GetProjectFolderPath(), externalAssetDirectory, resourcePath) : 
 							GetFilePath(assetInfo);
@@ -109,14 +114,21 @@ namespace Modules.ExternalAssets
         {
 			if (string.IsNullOrEmpty(resourcePath))
             {
-                throw new ArgumentException("resourcePath empty.");
-            }
+				Debug.LogError("resourcePath empty.");
+
+				return null;
+			}
 
 			AssetInfo assetInfo = null;
 
 			try
 			{
 				assetInfo = GetAssetInfo(resourcePath);
+
+				if (assetInfo == null)
+				{
+					throw new AssetInfoNotFoundException(resourcePath);
+				}
 			}
 			catch (AssetInfoNotFoundException e)
 			{
@@ -205,14 +217,21 @@ namespace Modules.ExternalAssets
         {
             if (string.IsNullOrEmpty(resourcePath))
             {
-                throw new ArgumentException("resourcePath empty.");
-            }
+				Debug.LogError("resourcePath empty.");
+
+				return null;
+			}
 
 			AssetInfo assetInfo = null;
 
 			try
 			{
 				assetInfo = GetAssetInfo(resourcePath);
+
+				if (assetInfo == null)
+				{
+					throw new AssetInfoNotFoundException(resourcePath);
+				}
 			}
 			catch (AssetInfoNotFoundException e)
 			{

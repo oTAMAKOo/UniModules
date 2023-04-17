@@ -1,4 +1,4 @@
-﻿
+
 using UnityEngine;
 using System;
 using System.Linq;
@@ -8,6 +8,7 @@ using System.Text;
 using Cysharp.Threading.Tasks;
 using Extensions;
 using Modules.Devkit.Console;
+using Modules.Performance;
 
 namespace Modules.ExternalAssets
 {
@@ -66,29 +67,30 @@ namespace Modules.ExternalAssets
 
 			var manageFilePaths = new HashSet<string>();
 
-            var count = 0;
+			var frameLimiter = new FunctionFrameLimiter(1000);
 
 			foreach (var assetInfo in assetInfos)
 			{
+				await frameLimiter.Wait();
+
 				var filePath = GetFilePath(assetInfo);
 
 				manageFilePaths.Add(filePath);
-
-				if (++count % 500 == 0)
-				{
-					await UniTask.NextFrame();
-				}
 			}
 
 			// 削除対象抽出.
 
 			var deleteFiles = new List<string>();
 
+			frameLimiter.Reset();
+
 			var files = Directory.EnumerateFiles(InstallDirectory, "*", SearchOption.TopDirectoryOnly);
 
             foreach (var file in files)
 			{
-                var extension = Path.GetExtension(file);
+				await frameLimiter.Wait();
+
+				var extension = Path.GetExtension(file);
 
                 // バージョンファイルは削除対象外.
                 if (extension == AssetInfoManifest.VersionFileExtension){ continue; }
@@ -101,11 +103,6 @@ namespace Modules.ExternalAssets
 				{
 					deleteFiles.Add(filePath);
 				}
-
-                if (++count % 500 == 0)
-                {
-                    await UniTask.NextFrame();
-                }
 			}
 			
 			await DeleteCacheFiles(InstallDirectory, deleteFiles.ToArray());
@@ -118,22 +115,19 @@ namespace Modules.ExternalAssets
 
             var targetFilePaths = new List<string>();
 
-            var count = 0;
+			var frameLimiter = new FunctionFrameLimiter(1000);
 
-            foreach (var assetInfo in assetInfos)
+			foreach (var assetInfo in assetInfos)
             {
+				await frameLimiter.Wait();
+
 				var filePath = GetFilePath(assetInfo);
 
 				if (!string.IsNullOrEmpty(filePath))
                 {
                     targetFilePaths.Add(filePath);
                 }
-
-                if (++count % 500 == 0)
-                {
-                    await UniTask.NextFrame();
-                }
-            }
+			}
 
 			if (targetFilePaths.Any())
 			{
@@ -179,21 +173,18 @@ namespace Modules.ExternalAssets
 
             var sw = System.Diagnostics.Stopwatch.StartNew();
 
-            var chunk = filePaths.Chunk(25);
+			var frameLimiter = new FunctionFrameLimiter(50);
 
-            foreach (var paths in chunk)
-            {
-                foreach (var path in paths)
-                {
-                    DeleteFile(path);
-                }
-                
-                await UniTask.NextFrame();
-            }
+			foreach (var path in filePaths)
+			{
+				await frameLimiter.Wait();
 
-            // ログ.
+				DeleteFile(path);
+			}
 
-            sw.Stop();
+			// ログ.
+
+			sw.Stop();
 
             var log = builder.ToString();
 

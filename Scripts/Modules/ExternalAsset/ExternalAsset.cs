@@ -197,10 +197,12 @@ namespace Modules.ExternalAssets
 
 			var assetInfos = manifest.GetAssetInfos();
 
-			var count = 0;
+			var frameLimiter = new FunctionFrameLimiter(1000);
 
 			foreach (var assetInfo in assetInfos)
 			{
+				await frameLimiter.Wait();
+
 				// アセット情報 (Key: アセットバンドル名).
 				if (assetInfo.IsAssetBundle)
 				{
@@ -228,19 +230,10 @@ namespace Modules.ExternalAssets
 				{
 					assetInfosByResourcePath[assetInfo.ResourcePath] = assetInfo;
 				}
-
-				if(++count % 1000 == 0)
-				{
-					await UniTask.NextFrame();
-				}
 			}
 		}
 
-         /// <summary>
-        /// アセット管理情報を取得.
-        /// </summary>
-        /// <param name="groupName"></param>
-        /// <returns></returns>
+        /// <summary> アセット情報を取得. </summary>
         public IEnumerable<AssetInfo> GetGroupAssetInfos(string groupName = null)
         {
             return assetInfoManifest.GetAssetInfos(groupName);
@@ -249,31 +242,61 @@ namespace Modules.ExternalAssets
 		/// <summary> アセット情報取得 </summary>
         public AssetInfo GetAssetInfo(string resourcePath)
         {
-            var assetInfo = assetInfosByResourcePath.GetValueOrDefault(resourcePath);
-
-			if (assetInfo == null)
-			{
-				throw new AssetInfoNotFoundException(resourcePath);
-			}
-
-			return assetInfo;
+			return assetInfosByResourcePath.GetValueOrDefault(resourcePath);
 		}
 
 		/// <summary> アセット情報取得 </summary>
 		public AssetInfo GetAssetInfoByGuid(string guid)
 		{
-			var assetInfo = assetInfosByAssetGuid.GetValueOrDefault(guid);
+			return assetInfosByAssetGuid.GetValueOrDefault(guid);
+		}
 
-			if (assetInfo == null)
-			{
-				throw new AssetInfoNotFoundException(guid);
-			}
+		/// <summary> アセット情報が存在するか </summary>
+		public bool ExistAssetInfo(string resourcePath)
+		{
+			return assetInfosByResourcePath.ContainsKey(resourcePath);
+		}
 
-			return assetInfo;
+		/// <summary> アセット情報が存在するか </summary>
+		public bool ExistAssetInfoByGuid(string guid)
+		{
+			return assetInfosByAssetGuid.ContainsKey(guid);
 		}
 
 		/// <summary> マニフェストファイルを更新. </summary>
 		public async UniTask<bool> UpdateManifest()
+		{ 
+			try
+			{
+				var tasks = new List<UniTask>();
+
+				// バージョン情報読み込み.
+				var loadVersionTask = LoadVersion();
+
+				tasks.Add(loadVersionTask);
+
+				// マニフェストファイルダウンロード.
+				var downloadManifestTask = DownloadManifest();
+
+				tasks.Add(downloadManifestTask);
+
+				await UniTask.WhenAll(tasks);
+
+				// 不要になったファイル削除.
+				await DeleteUnUsedCache();
+			}
+			catch (Exception e)
+			{
+				Debug.LogException(e);
+
+				return false;
+			}
+
+			return true;
+		}
+
+		/// <summary> マニフェストファイルダウンロード. </summary>
+		private async UniTask DownloadManifest()
 		{
 			var sw = System.Diagnostics.Stopwatch.StartNew();
 
@@ -314,20 +337,6 @@ namespace Modules.ExternalAssets
 
 				UnityConsole.Event(ConsoleEventName, ConsoleEventColor, message);
 			}
-
-			// 不要になったファイル削除.
-			try
-			{
-				await DeleteUnUsedCache();
-			}
-			catch (Exception e)
-			{
-				Debug.LogException(e);
-
-				return false;
-			}
-
-			return true;
 		}
 
         /// <summary> アセットを更新. </summary>
@@ -350,6 +359,11 @@ namespace Modules.ExternalAssets
 			try
 			{
 				assetInfo = GetAssetInfo(resourcePath);
+
+				if (assetInfo == null)
+				{
+					throw new AssetInfoNotFoundException(resourcePath);
+				}
 			}
 			catch (AssetInfoNotFoundException e)
 			{

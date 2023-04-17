@@ -91,6 +91,11 @@ namespace Modules.ExternalAssets
 			try
 			{
 				assetInfo = GetAssetInfo(resourcePath);
+
+				if (assetInfo == null)
+				{
+					throw new AssetInfoNotFoundException(resourcePath);
+				}
 			}
 			catch (AssetInfoNotFoundException e)
 			{
@@ -326,6 +331,11 @@ namespace Modules.ExternalAssets
 			try
 			{
 				assetInfo = GetAssetInfo(resourcePath);
+
+				if (assetInfo == null)
+				{
+					throw new AssetInfoNotFoundException(resourcePath);
+				}
 			}
 			catch (AssetInfoNotFoundException e)
 			{

@@ -22,7 +22,7 @@ namespace Modules.Master
         void ClearVersion();
 
         UniTask<Tuple<bool, double>> Update(string masterVersion, FunctionFrameLimiter frameCallLimiter, CancellationToken cancelToken = default);
-		UniTask<Tuple<bool, double>> Load(AesCryptoKey cryptoKey, bool cleanOnError, CancellationToken cancelToken = default);
+		UniTask<Tuple<bool, double, double>> Load(AesCryptoKey cryptoKey, bool cleanOnError, CancellationToken cancelToken = default);
 	}
 
     public abstract class MasterContainer<TMasterRecord>
@@ -203,37 +203,28 @@ namespace Modules.Master
             records.Clear();
         }
 
-        public async UniTask<Tuple<bool, double>> Load(AesCryptoKey cryptoKey, bool cleanOnError, CancellationToken cancelToken = default)
+        public async UniTask<Tuple<bool, double, double>> Load(AesCryptoKey cryptoKey, bool cleanOnError, CancellationToken cancelToken = default)
         {
             var filePath = string.Empty;
 
             var success = false;
 
-            double time = 0;
+            var prepareTime = 0D;
+			var loadTime = 0D;
 
 			try
 			{
-                var sw = System.Diagnostics.Stopwatch.StartNew();
-				
-                filePath = GetFilePath();
+				filePath = GetFilePath();
 
-                Refresh();
+				Refresh();
 
-                // 読み込み準備.
-                await PrepareLoad(filePath, cancelToken);
+				// 読み込み準備.
+				prepareTime = await PrepareLoadMasterFile(filePath, cancelToken);
 
-                await UniTask.SwitchToThreadPool();
+				// 読み込み.
+				loadTime = await UniTask.RunOnThreadPool(() => LoadMasterFile(filePath, cryptoKey), cancellationToken: cancelToken);
 
-                // 読み込み.
-                LoadMasterFile(filePath, cryptoKey);
-
-                await UniTask.SwitchToMainThread();
-
-                sw.Stop();
-
-                time = sw.Elapsed.TotalMilliseconds;
-
-                success = true;
+				success = true;
 			}
 			catch (OperationCanceledException)
 			{
@@ -259,11 +250,26 @@ namespace Modules.Master
                 OnError();
             }
 			
-			return Tuple.Create(success, time);
+			return Tuple.Create(success, prepareTime, loadTime);
         }
 
-		private void LoadMasterFile(string filePath, AesCryptoKey cryptoKey)
+		private async UniTask<double> PrepareLoadMasterFile(string filePath, CancellationToken cancelToken)
 		{
+			var sw = System.Diagnostics.Stopwatch.StartNew();
+
+			await PrepareLoad(filePath, cancelToken);
+
+			sw.Stop();
+
+			var time = sw.Elapsed.TotalMilliseconds;
+
+			return time;
+		}
+
+		private double LoadMasterFile(string filePath, AesCryptoKey cryptoKey)
+		{
+			var sw = System.Diagnostics.Stopwatch.StartNew();
+
 			var masterManager = MasterManager.Instance;
 
             var serializerOptions = masterManager.GetSerializerOptions();
@@ -294,7 +300,13 @@ namespace Modules.Master
 
             // レコード登録.
             SetRecords(records);
-        }
+
+			sw.Stop();
+
+			var time = sw.Elapsed.TotalMilliseconds;
+
+			return time;
+		}
 
         protected virtual byte[] FileLoad(string filePath)
         {

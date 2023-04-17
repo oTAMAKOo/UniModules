@@ -240,14 +240,14 @@ namespace Modules.Master
 			
             var loadLog = new StringBuilder();
 
-            void OnLoadFinish(Type masterType, string masterName, string masterFileName, bool state, double time)
+            void OnLoadFinish(Type masterType, string masterName, string masterFileName, bool state, double prepareTime, double loadTime)
             {
                 if (state)
                 {
                     lock (loadLog)
                     {
-                        loadLog.AppendFormat("{0} ({1:F1}ms)", masterName, time).AppendLine();
-                    }
+						loadLog.AppendFormat("{0} (prepare : {1:F1}ms, load : {2:F1}ms)", masterName, prepareTime, loadTime).AppendLine();
+					}
                 }
                 else
                 {
@@ -276,7 +276,7 @@ namespace Modules.Master
 						{
 							var loadResult = await item.Load(CryptoKey, true, cancelToken);
 
-							OnLoadFinish(masterType, masterName, masterFileName, loadResult.Item1, loadResult.Item2);
+							OnLoadFinish(masterType, masterName, masterFileName, loadResult.Item1, loadResult.Item2, loadResult.Item3);
 						}
 						finally
 						{
@@ -300,17 +300,36 @@ namespace Modules.Master
             {
                 var logBuilder = new StringBuilder();
 
-                logBuilder.AppendLine($"Master Load : ({stopwatch.Elapsed.TotalMilliseconds:F1}ms)");
+				var logText = loadLog.ToString().FixLineEnd();
 
-                if (0 < loadLog.Length)
-                {
-                    logBuilder.AppendLine();
-                    logBuilder.AppendLine(loadLog.ToString());
-                }
+				var chunk = logText.Split('\n').Chunk(50).ToArray();
 
-                UnityConsole.Event(ConsoleEventName, ConsoleEventColor, logBuilder.ToString());
+				var length = chunk.Length;
 
-                if(onLoadFinish != null)
+				logBuilder.Append($"Master Load : ({stopwatch.Elapsed.TotalMilliseconds:F1}ms) ");
+
+				for (var i = 0; i < length; i++)
+				{
+					var items = chunk[i];
+
+					if (1 < chunk.Length)
+					{
+						logBuilder.Append($"[{i + 1}/{length}]");
+
+						logBuilder.AppendLine();
+					}
+
+					foreach (var item in items)
+					{
+						logBuilder.AppendLine(item);
+					}
+
+					UnityConsole.Event(ConsoleEventName, ConsoleEventColor, logBuilder.ToString());
+
+					logBuilder.Clear();
+				}
+
+				if (onLoadFinish != null)
                 {
                     onLoadFinish.OnNext(Unit.Default);
                 }
