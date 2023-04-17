@@ -75,7 +75,10 @@ namespace Modules.Net.WebDownload
             }
 			catch (OperationCanceledException)
 			{
-				/* Canceled */
+				if (request != null)
+				{
+					request.Abort();
+				}
 			}
 			finally
             {
