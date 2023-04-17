@@ -86,13 +86,15 @@ namespace Modules.ExternalAssets
 				return null;
             }
 
-            var assetInfo = GetAssetInfo(resourcePath);
+            AssetInfo assetInfo = null;
 
-            if (assetInfo == null)
-            {
-                var exception = new AssetInfoNotFoundException(resourcePath);
-
-                OnError(exception);
+			try
+			{
+				assetInfo = GetAssetInfo(resourcePath);
+			}
+			catch (AssetInfoNotFoundException e)
+			{
+				OnError(e);
 
 				return null;
 			}
@@ -319,18 +321,20 @@ namespace Modules.ExternalAssets
                 Debug.LogError("AssetInfoManifest is null.");
             }
 
-            var assetInfo = GetAssetInfo(resourcePath);
+			AssetInfo assetInfo = null;
 
-            if (assetInfo == null)
-            {
-				var exception = new AssetInfoNotFoundException(resourcePath);
-
-				OnError(exception);
+			try
+			{
+				assetInfo = GetAssetInfo(resourcePath);
+			}
+			catch (AssetInfoNotFoundException e)
+			{
+				OnError(e);
 
 				return;
-            }
+			}
 
-            if (!assetInfo.IsAssetBundle)
+			if (!assetInfo.IsAssetBundle)
             {
                 Debug.LogErrorFormat("This file is not an assetBundle.\n{0}", resourcePath);
 				return;

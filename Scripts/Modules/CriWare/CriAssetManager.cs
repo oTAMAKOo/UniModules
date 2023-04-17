@@ -263,8 +263,18 @@ namespace Modules.CriWare
         public string GetFilePath(string installPath, AssetInfo assetInfo)
         {
 			if (assetInfo == null){ return null; }
-            
-            return PathUtility.Combine(installPath, assetInfo.FileName);
+
+			var streamingAssetsPath = UnityPathUtility.StreamingAssetsPath;
+
+			installPath = PathUtility.ConvertPathSeparator(installPath);
+
+			// CRIはフルパスでない場合、StreamingAssetsからのパスを参照する.
+			if (installPath.StartsWith(streamingAssetsPath))
+			{
+				installPath = installPath.Replace(streamingAssetsPath, string.Empty).TrimStart(PathUtility.PathSeparator);
+			}
+
+			return PathUtility.Combine(installPath, assetInfo.FileName);
         }
 
         private void OnTimeout(AssetInfo assetInfo, Exception exception)

@@ -359,7 +359,7 @@ namespace Modules.AssetBundles
                 }
                 else
                 {
-                    OnError(new AssetInfoNotFoundException($"Asset info not found. {target}"));
+                    OnError(new AssetInfoNotFoundException(target));
                 }
             }
 

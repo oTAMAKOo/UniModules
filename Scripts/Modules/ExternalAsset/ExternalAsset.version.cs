@@ -1,4 +1,4 @@
-﻿
+
 using UnityEngine;
 using System;
 using System.IO;
@@ -189,17 +189,19 @@ namespace Modules.ExternalAssets
 			if (SimulateMode){ return; }
 
 			// ※ 古いバージョン情報を破棄して最新のバージョン情報を追加.
-                
-			var assetInfo = GetAssetInfo(resourcePath);
 
-            if (assetInfo == null)
-            {
-                var exception = new AssetInfoNotFoundException(resourcePath);
+			AssetInfo assetInfo = null;
 
-                OnError(exception);
+			try
+			{
+				assetInfo = GetAssetInfo(resourcePath);
+			}
+			catch (AssetInfoNotFoundException e)
+			{
+				OnError(e);
 
-                return;
-            }
+				return;
+			}
 
 			// ※ バージョン文字列だけのデータなので暗号化は行わない.
 

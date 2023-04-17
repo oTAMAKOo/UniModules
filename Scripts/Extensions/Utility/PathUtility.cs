@@ -1,7 +1,5 @@
-﻿﻿﻿﻿﻿﻿
+﻿﻿﻿﻿﻿
 using System;
-using System.Linq;
-using System.Collections.Generic;
 using System.IO;
 using System.Text;
 
@@ -11,15 +9,17 @@ namespace Extensions
     {
         public const char PathSeparator = '/';
 
-        public enum FilePathType
+		public enum FilePathType
         {
             NotFound,   // 不明.
             File,       // ファイル.
             Directory,  // フォルダ.
         }
 
-        /// <summary> パス区切り文字を変換 </summary>
-        public static string ConvertPathSeparator(string path)
+		private static readonly StringBuilder builder = new StringBuilder();
+
+		/// <summary> パス区切り文字を変換 </summary>
+		public static string ConvertPathSeparator(string path)
         {
             return string.IsNullOrEmpty(path) ? null : path.Replace('\\', PathSeparator);
         }
@@ -39,31 +39,38 @@ namespace Extensions
         {
             if (paths.IsEmpty()) { return string.Empty; }
 
-            var builder = new StringBuilder();
+			var str = string.Empty;
 
-            for (var i = 0; i < paths.Length; i++)
-            {
-                if (string.IsNullOrEmpty(paths[i])) { continue; }
+			lock (builder)
+			{
+				builder.Clear();
 
-                var path = ConvertPathSeparator(paths[i]);
+				for (var i = 0; i < paths.Length; i++)
+				{
+					if (string.IsNullOrEmpty(paths[i])) { continue; }
 
-                if (builder.Length != 0)
-                {
-                    // 先頭の"\"を削除.
-                    path = path.TrimStart(PathSeparator);
+					var path = ConvertPathSeparator(paths[i]);
 
-                    // 末尾に\を追加.
-                    builder.Append(PathSeparator);
-                }
+					if (builder.Length != 0)
+					{
+						// 先頭の"\"を削除.
+						path = path.TrimStart(PathSeparator);
 
-                // 末尾の"\"を削除.
-                path = path.TrimEnd(PathSeparator);
+						// 末尾に\を追加.
+						builder.Append(PathSeparator);
+					}
 
-                builder.Append(path);
-            }
+					// 末尾の"\"を削除.
+					path = path.TrimEnd(PathSeparator);
 
-            return builder.ToString();
-        }
+					builder.Append(path);
+				}
+
+				str = builder.ToString();
+			}
+
+			return str;
+		}
 
         /// <summary> 絶対パスから相対パスに変換 </summary>
         public static string FullPathToRelativePath(string basePath, string targetPath)

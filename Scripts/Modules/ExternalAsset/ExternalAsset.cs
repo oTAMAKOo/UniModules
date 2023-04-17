@@ -249,13 +249,27 @@ namespace Modules.ExternalAssets
 		/// <summary> アセット情報取得 </summary>
         public AssetInfo GetAssetInfo(string resourcePath)
         {
-            return assetInfosByResourcePath.GetValueOrDefault(resourcePath);
-        }
+            var assetInfo = assetInfosByResourcePath.GetValueOrDefault(resourcePath);
+
+			if (assetInfo == null)
+			{
+				throw new AssetInfoNotFoundException(resourcePath);
+			}
+
+			return assetInfo;
+		}
 
 		/// <summary> アセット情報取得 </summary>
 		public AssetInfo GetAssetInfoByGuid(string guid)
 		{
-			return assetInfosByAssetGuid.GetValueOrDefault(guid);
+			var assetInfo = assetInfosByAssetGuid.GetValueOrDefault(guid);
+
+			if (assetInfo == null)
+			{
+				throw new AssetInfoNotFoundException(guid);
+			}
+
+			return assetInfo;
 		}
 
 		/// <summary> マニフェストファイルを更新. </summary>
@@ -328,23 +342,25 @@ namespace Modules.ExternalAssets
 
             // 1フレームで更新制御する数を制限.
             await updateAssetCallLimiter.Wait(cancelToken: cancelToken);
-            
-            // アセット情報.
 
-            var assetInfo = GetAssetInfo(resourcePath);
+			// アセット情報.
 
-            if (assetInfo == null)
-            {
-                var exception = new AssetInfoNotFoundException(resourcePath);
+			AssetInfo assetInfo = null;
 
-                OnError(exception);
+			try
+			{
+				assetInfo = GetAssetInfo(resourcePath);
+			}
+			catch (AssetInfoNotFoundException e)
+			{
+				OnError(e);
 
-                return;
-            }
+				return;
+			}
 
-            // 外部処理.
+			// 外部処理.
 
-            if (instance.updateAssetHandler != null)
+			if (instance.updateAssetHandler != null)
             {
 				try
 				{

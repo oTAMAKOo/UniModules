@@ -6,6 +6,7 @@ using System;
 using System.IO;
 using System.Text;
 using System.Threading;
+using CriWare;
 using Cysharp.Threading.Tasks;
 using UniRx;
 using Extensions;
@@ -72,22 +73,26 @@ namespace Modules.ExternalAssets
         private string ConvertCriFilePath(string resourcePath)
         {
             if (string.IsNullOrEmpty(resourcePath)){ return null; }
+			
+			var criFilePath = string.Empty;
 
-            var assetInfo = GetAssetInfo(resourcePath);
+			try
+			{
+				var assetInfo = GetAssetInfo(resourcePath);
 
-            if (assetInfo == null)
-            {
-				var exception = new AssetInfoNotFoundException(resourcePath);
-
-				OnError(exception);
+				criFilePath = SimulateMode ? 
+							PathUtility.Combine(UnityPathUtility.GetProjectFolderPath(), externalAssetDirectory, resourcePath) : 
+							GetFilePath(assetInfo);
+			}
+			catch (AssetInfoNotFoundException e)
+			{
+				OnError(e);
 
 				return null;
-            }
+			}
 
-            return SimulateMode ?
-                   PathUtility.Combine(new string[] { UnityPathUtility.GetProjectFolderPath(), externalAssetDirectory, resourcePath }) :
-                   criAssetManager.GetFilePath(InstallDirectory, assetInfo);
-        }
+			return criFilePath;
+		}
 
         #endif
 
@@ -107,18 +112,20 @@ namespace Modules.ExternalAssets
                 throw new ArgumentException("resourcePath empty.");
             }
 
-			var assetInfo = GetAssetInfo(resourcePath);
+			AssetInfo assetInfo = null;
 
-			if (assetInfo == null)
+			try
 			{
-				var exception = new AssetInfoNotFoundException(resourcePath);
-
-				OnError(exception);
+				assetInfo = GetAssetInfo(resourcePath);
+			}
+			catch (AssetInfoNotFoundException e)
+			{
+				OnError(e);
 
 				return null;
 			}
 
-            var filePath = ConvertCriFilePath(resourcePath);
+			var filePath = ConvertCriFilePath(resourcePath);
 
             if (!LocalMode && !SimulateMode)
             {
@@ -201,18 +208,20 @@ namespace Modules.ExternalAssets
                 throw new ArgumentException("resourcePath empty.");
             }
 
-			var assetInfo = GetAssetInfo(resourcePath);
+			AssetInfo assetInfo = null;
 
-			if (assetInfo == null)
+			try
 			{
-				var exception = new AssetInfoNotFoundException(resourcePath);
-
-				OnError(exception);
+				assetInfo = GetAssetInfo(resourcePath);
+			}
+			catch (AssetInfoNotFoundException e)
+			{
+				OnError(e);
 
 				return null;
 			}
-			
-            var filePath = ConvertCriFilePath(resourcePath);
+
+			var filePath = ConvertCriFilePath(resourcePath);
 
             if (!LocalMode && !SimulateMode)
             {

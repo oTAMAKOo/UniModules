@@ -1,8 +1,11 @@
-﻿
+
 namespace Modules.Sound
 {
 	public enum SoundType
 	{
+		/// <summary>Master</summary>
+		Master,
+
 		/// <summary>BGM</summary>
 		Bgm,
 
