@@ -214,14 +214,10 @@ namespace Modules.Master
 			try
 			{
                 var sw = System.Diagnostics.Stopwatch.StartNew();
-
-                await UniTask.SwitchToThreadPool();
-
+				
                 filePath = GetFilePath();
 
                 Refresh();
-
-                await UniTask.SwitchToMainThread();
 
                 // 読み込み準備.
                 await PrepareLoad(filePath, cancelToken);
