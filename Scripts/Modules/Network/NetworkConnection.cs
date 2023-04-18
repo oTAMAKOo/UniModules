@@ -21,15 +21,15 @@ namespace Modules.Net
 
 		//----- method -----
 
-		public static async UniTask WaitNetworkReachable(CancellationToken cancelToken)
+		public static async UniTask WaitNetworkReachable(CancellationToken cancelToken = default)
 		{
-			var timeoutController = new TimeoutController();
+			var timeoutCancelTokenSource = new CancellationTokenSource();
 
-			var timeOutCancelToken = timeoutController.Timeout(TimeSpan.FromSeconds(TimeOutSeconds));
+			timeoutCancelTokenSource.CancelAfterSlim(TimeSpan.FromSeconds(TimeOutSeconds));
 
-			var cancelTokenSource = CancellationTokenSource.CreateLinkedTokenSource(timeOutCancelToken, cancelToken);
+			var linkedCancelTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancelToken, timeoutCancelTokenSource.Token);
 
-			await WaitNetworkReachableInternal(cancelTokenSource.Token);
+			await WaitNetworkReachableInternal(linkedCancelTokenSource.Token);
 		}
 
 		private static async UniTask WaitNetworkReachableInternal(CancellationToken cancelToken)
