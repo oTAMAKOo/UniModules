@@ -1,6 +1,7 @@
 
 #if ENABLE_CRIWARE_FILESYSTEM
 
+using UnityEngine;
 using System;
 using System.Threading;
 using System.IO;
@@ -20,7 +21,7 @@ namespace Modules.CriWare
 			//----- params -----
 
 			//----- field -----
-			
+
 			//----- property -----
 
 			public AssetInfo AssetInfo { get; private set; }
@@ -89,11 +90,20 @@ namespace Modules.CriWare
 				return installer;
 			}
 
+			private async UniTask ReadyForDownload(CancellationToken cancelToken)
+			{
+				while (Application.internetReachability == NetworkReachability.NotReachable)
+				{
+					await UniTask.NextFrame(cancelToken);
+				}
+			}
+
 			private async UniTask Install(string downloadUrl, string filePath, IProgress<float> progress, CancellationToken cancelToken)
 			{
 				try
 				{
-					// 同時インストール数待ち.
+					// 同時インストール待ち.
+
 					while (true)
 					{
 						// 未使用のインストーラを取得.
@@ -104,7 +114,15 @@ namespace Modules.CriWare
 						await UniTask.NextFrame(cancelToken);
 					}
 
+					// ネットワーク接続待ち.
+
+					await ReadyForDownload(cancelToken);
+
+					// ダウンロード.
+
 					Installer.Copy(downloadUrl, filePath);
+
+					// ダウンロード待ち.
 
 					CriFsWebInstaller.StatusInfo statusInfo;
 
@@ -128,10 +146,6 @@ namespace Modules.CriWare
 					}
 				}
 				catch (OperationCanceledException)
-				{
-					/* Canceled */
-				}
-				finally
 				{
 					Installer.Stop();
 				}

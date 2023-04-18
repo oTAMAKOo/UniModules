@@ -67,7 +67,7 @@ namespace Modules.ExternalAssets
 
 			var manageFilePaths = new HashSet<string>();
 
-			var frameLimiter = new FunctionFrameLimiter(1000);
+			var frameLimiter = new FunctionFrameLimiter(500);
 
 			foreach (var assetInfo in assetInfos)
 			{
@@ -95,7 +95,15 @@ namespace Modules.ExternalAssets
                 // バージョンファイルは削除対象外.
                 if (extension == AssetInfoManifest.VersionFileExtension){ continue; }
 
-                // InstallDirectory直下の管理情報に含まれていないファイルは削除対象.
+				// FileMagicProの一時ファイルは削除対象外.
+
+				#if ENABLE_CRIWARE_FILESYSTEM
+
+				if(criAssetManager.IsCriInstallTempFile(file)) { continue; }
+
+				#endif
+
+				// InstallDirectory直下の管理情報に含まれていないファイルは削除対象.
 
 				var filePath = PathUtility.ConvertPathSeparator(file);
 
@@ -173,7 +181,7 @@ namespace Modules.ExternalAssets
 
             var sw = System.Diagnostics.Stopwatch.StartNew();
 
-			var frameLimiter = new FunctionFrameLimiter(50);
+			var frameLimiter = new FunctionFrameLimiter(25);
 
 			foreach (var path in filePaths)
 			{

@@ -1,4 +1,5 @@
 
+using UnityEngine;
 using System;
 using System.Linq;
 using System.Collections.Generic;
@@ -160,6 +161,14 @@ namespace Modules.Net.WebDownload
 			}
 		}
 
+		private async UniTask ReadyForDownload(CancellationToken cancelToken)
+		{
+			while (Application.internetReachability == NetworkReachability.NotReachable)
+			{
+				await UniTask.NextFrame(cancelToken);
+			}
+		}
+
 		/// <summary> リクエスト制御 </summary>
 		private async UniTask SendRequestInternal(TDownloadRequest downloadRequest, IProgress<float> progress, CancellationToken cancelToken)
         {
@@ -169,6 +178,9 @@ namespace Modules.Net.WebDownload
 			{
 				// ダウンロード待ちキュー.
 				await WaitQueueingRequest(downloadRequest, cancelToken);
+
+				// ネットワーク接続待ち.
+				await ReadyForDownload(cancelToken);
 
 				var sw = System.Diagnostics.Stopwatch.StartNew();
 

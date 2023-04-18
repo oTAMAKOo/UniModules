@@ -250,7 +250,7 @@ namespace Modules.CriWare
 
             var url = PathUtility.Combine(new string[] { remoteUrl, platformName, versionHash, assetInfo.FileName });
 
-            return string.Format("{0}?v={1}", url, assetInfo.Hash);
+            return $"{url}?v={assetInfo.Hash}";
         }
 
         public bool IsCriAsset(string filePath)
@@ -260,7 +260,12 @@ namespace Modules.CriWare
             return CriAssetDefinition.AssetAllExtensions.Any(y => y == extension);
         }
 
-        public string GetFilePath(string installPath, AssetInfo assetInfo)
+		public bool IsCriInstallTempFile(string filePath)
+		{
+			return CriAssetDefinition.InstallTempFileAllExtensions.Any(x => filePath.EndsWith(x));
+		}
+
+		public string GetFilePath(string installPath, AssetInfo assetInfo)
         {
 			if (assetInfo == null){ return null; }
 

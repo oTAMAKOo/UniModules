@@ -290,9 +290,6 @@ namespace Modules.AssetBundles
 
 			try
 			{
-				// ネットワークの接続待ち.
-				await ReadyForDownload(cancelToken);
-
 				// ダウンロードキューが空くまで待つ.
 				while (true)
 				{
@@ -300,6 +297,9 @@ namespace Modules.AssetBundles
 
 					await UniTask.NextFrame(cancelToken);
 				}
+
+				// ネットワークの接続待ち.
+				await ReadyForDownload(cancelToken);
 			}
 			catch (OperationCanceledException)
 			{
@@ -367,26 +367,28 @@ namespace Modules.AssetBundles
             {
 				try
 				{
-					// ダウンロードキューが空くまで待つ.
-					while (true)
+					if (!cancelToken.IsCancellationRequested)
 					{
-						if (downloadList.Count <= maxDownloadCount) { break; }
+						// ダウンロードキューが空くまで待つ.
+						while (true)
+						{
+							if (downloadList.Count <= maxDownloadCount) { break; }
 
-						if (cancelToken.IsCancellationRequested) { break; }
+							await UniTask.NextFrame(cancelToken);
+						}
 
-						await UniTask.NextFrame(cancelToken);
+						// ネットワークの接続待ち.
+						await ReadyForDownload(cancelToken);
+
+						// ダウンロード中でなかったらリストに追加.
+						if (!downloadList.Contains(item.Key))
+						{
+							downloadList.Add(item.Key);
+						}
+
+						// ダウンロード実行.
+						await item.Value.ToUniTask(cancellationToken: cancelToken);
 					}
-
-					if (cancelToken.IsCancellationRequested) { break; }
-
-					// ダウンロード中でなかったらリストに追加.
-					if (!downloadList.Contains(item.Key))
-					{
-						downloadList.Add(item.Key);
-					}
-
-					// ダウンロード実行.
-					await item.Value.ToUniTask(cancellationToken: cancelToken);
 				}
 				catch (OperationCanceledException)
 				{
