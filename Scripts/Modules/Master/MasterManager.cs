@@ -302,7 +302,7 @@ namespace Modules.Master
 
 				var logText = loadLog.ToString().FixLineEnd();
 
-				var chunk = logText.Split('\n').Chunk(50).ToArray();
+				var chunk = logText.Split('\n').Chunk(35).ToArray();
 
 				var length = chunk.Length;
 
