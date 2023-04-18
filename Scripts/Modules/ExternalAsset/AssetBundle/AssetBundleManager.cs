@@ -10,8 +10,9 @@ using System.Threading;
 using Cysharp.Threading.Tasks;
 using UniRx;
 using Extensions;
-using Modules.ExternalAssets;
+using Modules.Net;
 using Modules.Net.WebRequest;
+using Modules.ExternalAssets;
 using Modules.Performance;
 
 namespace Modules.AssetBundles
@@ -275,15 +276,6 @@ namespace Modules.AssetBundles
             await UpdateAssetBundleInternal(installPath, assetInfo, progress, cancelToken);
         }
 
-		private async UniTask ReadyForDownload(CancellationToken cancelToken)
-		{
-			// wait network disconnect.
-			while (Application.internetReachability == NetworkReachability.NotReachable)
-			{
-				await UniTask.NextFrame(cancelToken);
-			}
-		}
-
 		private async UniTask UpdateAssetBundleInternal(string installPath, AssetInfo assetInfo, IProgress<float> progress, CancellationToken cancelToken)
         {
 			// 開始待ち.
@@ -299,7 +291,7 @@ namespace Modules.AssetBundles
 				}
 
 				// ネットワークの接続待ち.
-				await ReadyForDownload(cancelToken);
+				await NetworkConnection.WaitNetworkReachable(cancelToken);
 			}
 			catch (OperationCanceledException)
 			{
@@ -378,7 +370,7 @@ namespace Modules.AssetBundles
 						}
 
 						// ネットワークの接続待ち.
-						await ReadyForDownload(cancelToken);
+						await NetworkConnection.WaitNetworkReachable(cancelToken);
 
 						// ダウンロード中でなかったらリストに追加.
 						if (!downloadList.Contains(item.Key))

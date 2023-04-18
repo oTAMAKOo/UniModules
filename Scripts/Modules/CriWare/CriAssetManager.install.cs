@@ -10,6 +10,7 @@ using CriWare;
 using Cysharp.Threading.Tasks;
 using UniRx;
 using Extensions;
+using Modules.Net;
 using Modules.ExternalAssets;
 
 namespace Modules.CriWare
@@ -90,14 +91,6 @@ namespace Modules.CriWare
 				return installer;
 			}
 
-			private async UniTask ReadyForDownload(CancellationToken cancelToken)
-			{
-				while (Application.internetReachability == NetworkReachability.NotReachable)
-				{
-					await UniTask.NextFrame(cancelToken);
-				}
-			}
-
 			private async UniTask Install(string downloadUrl, string filePath, IProgress<float> progress, CancellationToken cancelToken)
 			{
 				try
@@ -116,7 +109,7 @@ namespace Modules.CriWare
 
 					// ネットワーク接続待ち.
 
-					await ReadyForDownload(cancelToken);
+					await NetworkConnection.WaitNetworkReachable(cancelToken);
 
 					// ダウンロード.
 

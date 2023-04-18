@@ -161,14 +161,6 @@ namespace Modules.Net.WebDownload
 			}
 		}
 
-		private async UniTask ReadyForDownload(CancellationToken cancelToken)
-		{
-			while (Application.internetReachability == NetworkReachability.NotReachable)
-			{
-				await UniTask.NextFrame(cancelToken);
-			}
-		}
-
 		/// <summary> リクエスト制御 </summary>
 		private async UniTask SendRequestInternal(TDownloadRequest downloadRequest, IProgress<float> progress, CancellationToken cancelToken)
         {
@@ -180,7 +172,7 @@ namespace Modules.Net.WebDownload
 				await WaitQueueingRequest(downloadRequest, cancelToken);
 
 				// ネットワーク接続待ち.
-				await ReadyForDownload(cancelToken);
+				await NetworkConnection.WaitNetworkReachable(cancelToken);
 
 				var sw = System.Diagnostics.Stopwatch.StartNew();
 
