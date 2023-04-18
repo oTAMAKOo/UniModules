@@ -201,19 +201,16 @@ namespace Modules.Master
 
             if (result)
             {
-                var logBuilder = new StringBuilder();
+				var title = $"Master Update : ({stopwatch.Elapsed.TotalMilliseconds:F1}ms) ";
 
-                logBuilder.AppendLine($"Master Update : ({stopwatch.Elapsed.TotalMilliseconds:F1}ms)");
+				void OutputCallback(string x)
+				{
+					UnityConsole.Event(ConsoleEventName, ConsoleEventColor, x);
+				}
 
-                if (0 < updateLog.Length)
-                {   
-                    logBuilder.AppendLine();
-                    logBuilder.AppendLine(updateLog.ToString());
-                }
+				LogUtility.ChunkLog(updateLog.ToString(), title, OutputCallback);
 
-                UnityConsole.Event(ConsoleEventName, ConsoleEventColor, logBuilder.ToString());
-
-                if (progress != null) { progress.Report(1f); }
+				if (progress != null) { progress.Report(1f); }
             }
             else
             {
@@ -298,36 +295,14 @@ namespace Modules.Master
 
             if (result)
             {
-                var logBuilder = new StringBuilder();
+				var title = $"Master Load : ({stopwatch.Elapsed.TotalMilliseconds:F1}ms) ";
 
-				var logText = loadLog.ToString().FixLineEnd();
-
-				var chunk = logText.Split('\n').Chunk(35).ToArray();
-
-				var length = chunk.Length;
-
-				logBuilder.Append($"Master Load : ({stopwatch.Elapsed.TotalMilliseconds:F1}ms) ");
-
-				for (var i = 0; i < length; i++)
+				void OutputCallback(string x)
 				{
-					var items = chunk[i];
-
-					if (1 < chunk.Length)
-					{
-						logBuilder.Append($"[{i + 1}/{length}]");
-
-						logBuilder.AppendLine();
-					}
-
-					foreach (var item in items)
-					{
-						logBuilder.AppendLine(item);
-					}
-
-					UnityConsole.Event(ConsoleEventName, ConsoleEventColor, logBuilder.ToString());
-
-					logBuilder.Clear();
+					UnityConsole.Event(ConsoleEventName, ConsoleEventColor, x);
 				}
+
+				LogUtility.ChunkLog(loadLog.ToString(), title, OutputCallback);
 
 				if (onLoadFinish != null)
                 {
