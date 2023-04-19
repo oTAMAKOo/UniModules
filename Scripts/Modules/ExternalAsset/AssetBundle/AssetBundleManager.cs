@@ -261,6 +261,8 @@ namespace Modules.AssetBundles
         {
             if (simulateMode || localMode) { return; }
 
+			if (cancelToken.IsCancellationRequested){ return; }
+
             var manifestAssetInfo = AssetInfoManifest.GetManifestAssetInfo();
             
             await UpdateAssetBundleInternal(installPath, manifestAssetInfo, null, cancelToken);
@@ -273,7 +275,9 @@ namespace Modules.AssetBundles
         {
             if (simulateMode || localMode) { return; }
 
-            await UpdateAssetBundleInternal(installPath, assetInfo, progress, cancelToken);
+			if (cancelToken.IsCancellationRequested) { return; }
+
+			await UpdateAssetBundleInternal(installPath, assetInfo, progress, cancelToken);
         }
 
 		private async UniTask UpdateAssetBundleInternal(string installPath, AssetInfo assetInfo, IProgress<float> progress, CancellationToken cancelToken)

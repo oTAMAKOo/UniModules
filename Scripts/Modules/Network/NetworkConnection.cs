@@ -36,7 +36,7 @@ namespace Modules.Net
 			{
 				await WaitNetworkReachableInternal(linkedCancelTokenSource.Token);
 			}
-			catch (OperationCanceledException)
+			catch (Exception)
 			{
 				if (timeoutCancelTokenSource.IsCancellationRequested)
 				{

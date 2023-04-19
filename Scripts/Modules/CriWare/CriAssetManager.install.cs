@@ -111,6 +111,12 @@ namespace Modules.CriWare
 
 					await NetworkConnection.WaitNetworkReachable(cancelToken);
 
+					if (cancelToken.IsCancellationRequested)
+					{
+						Installer.Stop();
+						return;
+					}
+
 					// ダウンロード.
 
 					Installer.Copy(downloadUrl, filePath);
