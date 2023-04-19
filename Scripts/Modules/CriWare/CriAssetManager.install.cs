@@ -144,7 +144,7 @@ namespace Modules.CriWare
 						throw new Exception($"[Download Error] {AssetInfo.ResourcePath}\n{statusInfo.error}");
 					}
 				}
-				catch (Exception)
+				finally
 				{
 					Installer.Stop();
 				}

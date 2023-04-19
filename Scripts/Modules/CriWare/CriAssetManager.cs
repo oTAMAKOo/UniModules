@@ -260,11 +260,6 @@ namespace Modules.CriWare
             return CriAssetDefinition.AssetAllExtensions.Any(y => y == extension);
         }
 
-		public bool IsCriInstallTempFile(string filePath)
-		{
-			return CriAssetDefinition.InstallTempFileAllExtensions.Any(x => filePath.EndsWith(x));
-		}
-
 		public string GetFilePath(string installPath, AssetInfo assetInfo)
         {
 			if (assetInfo == null){ return null; }
