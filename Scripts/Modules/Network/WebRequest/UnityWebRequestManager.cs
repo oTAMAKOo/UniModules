@@ -1,6 +1,10 @@
-﻿
+
 using UnityEngine;
 using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
+using Cysharp.Threading.Tasks;
+using UniRx;
 using Extensions;
 using MessagePack;
 using MessagePack.Resolvers;
@@ -31,14 +35,23 @@ namespace Modules.Net.WebRequest
         {
             base.Initialize(hostUrl, compress, format, retryCount, retryDelaySeconds);
 
-            #if UNITY_EDITOR
+			NetworkConnection.OnNotReachableAsObservable()
+				.Subscribe()
+				.AddTo(Disposable);
 
-            ApiTracker.Instance.SetServerUrl(hostUrl);
+			#if UNITY_EDITOR
+
+			ApiTracker.Instance.SetServerUrl(hostUrl);
 
             #endif
         }
 
-        protected override void OnStart(TWebRequest webRequest)
+		protected override async Task WaitNetworkReachable(CancellationToken cancelToken)
+		{
+			await NetworkConnection.WaitNetworkReachable(cancelToken);
+		}
+
+		protected override void OnStart(TWebRequest webRequest)
         {
             #if UNITY_EDITOR
 

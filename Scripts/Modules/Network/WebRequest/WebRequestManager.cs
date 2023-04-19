@@ -30,7 +30,7 @@ namespace Modules.Net.WebRequest
 
         //----- field -----
 
-        private TWebRequest current = null;
+        private List<TWebRequest> requestList = null;
 
         private Queue<TWebRequest> requestQueue = null;
         
@@ -125,105 +125,116 @@ namespace Modules.Net.WebRequest
 
         private async Task<TResult> Request<TResult>(TWebRequest webRequest, Func<CancellationToken, Task<TResult>> taskFunc, bool parallel) where TResult : class
         {
-			// 通信待ち.
-			if (!parallel)
-			{
-				await WaitQueueingRequest(webRequest);
-			}
-
-            // キャンセルチェック.
-            if (webRequest.IsCanceled){ return null; }
-
-			// キャンセルソース生成.
+			TResult result = null;
 
 			if (cancellationTokenSource == null || cancellationTokenSource.IsCancellationRequested)
 			{
 				cancellationTokenSource = new CancellationTokenSource();
 			}
 
-            // 通信中.
+			try
+			{
+				// 実行待ち.
 
-			current = webRequest;
-																				
-            var sw = System.Diagnostics.Stopwatch.StartNew();
+				if (!parallel)
+				{
+					await WaitQueueingRequest(webRequest, cancellationTokenSource.Token);
+				}
 
-            var retryCount = 0;
+				// ネットワーク接続待ち.
 
-            TResult result = null;
+				await WaitNetworkReachable(cancellationTokenSource.Token);
+				
+				if (webRequest.IsCanceled) { return null; }
 
-            // リクエスト実行.
-            while (true)
-            {
-                if (retryCount == 0)
-                {
-                    OnStart(webRequest);
-                }
+				// 通信中.
 
-                result = await taskFunc.Invoke(cancellationTokenSource.Token);
+				requestList.Add(webRequest);
 
-                //------ 通信成功 ------
+				var sw = System.Diagnostics.Stopwatch.StartNew();
 
-                if (result != null) { break; }
-                
-                //------ 通信キャンセル ------
+				var retryCount = 0;
 
-                if (webRequest.IsCanceled) { break; }
+				// リクエスト実行.
+				while (true)
+				{
+					if (retryCount == 0)
+					{
+						OnStart(webRequest);
+					}
 
-                //------ エラー ------
+					result = await taskFunc.Invoke(cancellationTokenSource.Token);
 
-                if (webRequest.Error != null)
-                {
-                    OnError(webRequest);
-                }
+					//------ 通信成功 ------
 
-                //------ リトライ回数オーバー ------
+					if (result != null) { break; }
 
-                if (RetryCount <= retryCount)
-                {
-                    OnRetryLimit(webRequest);
-                    break;
-                }
+					//------ 通信キャンセル ------
 
-                //------ 通信失敗 ------
+					if (webRequest.IsCanceled) { break; }
 
-                // エラーハンドリングを待つ.
-                var errorHandle = await WaitErrorHandling(webRequest);
+					//------ エラー ------
 
-                switch (errorHandle)
-                {
-                    case RequestErrorHandle.Retry:
-                        retryCount++;
-                        break;
-                }
+					if (webRequest.Error != null)
+					{
+						OnError(webRequest);
+					}
 
-                // キャンセル時は通信終了.
-                if (errorHandle == RequestErrorHandle.Cancel)
-                {
-                    break;
-                }
+					//------ リトライ回数オーバー ------
 
-                if (!cancellationTokenSource.IsCancellationRequested)
-                {
-                    //------ リトライ ------
+					if (RetryCount <= retryCount)
+					{
+						OnRetryLimit(webRequest);
+						break;
+					}
 
-                    // リトライディレイ.
-                    await Task.Delay(TimeSpan.FromSeconds(RetryDelaySeconds), cancellationTokenSource.Token);
+					//------ 通信失敗 ------
 
-                    OnRetry(webRequest);
-                }
-            }
+					// エラーハンドリングを待つ.
+					var errorHandle = await WaitErrorHandling(webRequest);
 
-            if (result != null)
-            {
-                // 正常終了.
-                sw.Stop();
+					switch (errorHandle)
+					{
+						case RequestErrorHandle.Retry:
+							retryCount++;
+							break;
+					}
 
-                OnComplete(webRequest, result, sw.Elapsed.TotalMilliseconds);
-            }
+					// キャンセル時は通信終了.
+					if (errorHandle == RequestErrorHandle.Cancel)
+					{
+						break;
+					}
 
-            // 通信完了.
-            current = null;
+					if (!cancellationTokenSource.IsCancellationRequested)
+					{
+						//------ リトライ ------
 
+						// リトライディレイ.
+						await Task.Delay(TimeSpan.FromSeconds(RetryDelaySeconds), cancellationTokenSource.Token);
+
+						OnRetry(webRequest);
+					}
+				}
+
+				if (result != null)
+				{
+					// 正常終了.
+					sw.Stop();
+
+					OnComplete(webRequest, result, sw.Elapsed.TotalMilliseconds);
+				}
+
+			}
+			catch (OperationCanceledException)
+			{
+				/* Canceled */
+			}
+			finally
+			{
+				requestList.Remove(webRequest);
+			}
+			
             return result;
         }
 
@@ -249,10 +260,8 @@ namespace Modules.Net.WebRequest
             return webRequest;
         }
 
-        /// <summary>
-        /// 通信中の全リクエストを強制中止.
-        /// </summary>
-        protected void ForceCancelAll()
+        /// <summary> 通信中の全リクエストを中止. </summary>
+        public void CancelAll()
         {
             if (cancellationTokenSource != null)
             {
@@ -260,13 +269,16 @@ namespace Modules.Net.WebRequest
 				cancellationTokenSource = null;
             }
 
-            if (current != null)
-            {
-                current.Cancel();
-                current = null;
-            }
+			foreach (var request in requestList)
+			{
+				if (request == null){ continue; }
 
-            if (requestQueue.Any())
+				request.Cancel();
+			}
+
+			requestList.Clear();
+
+			if (requestQueue.Any())
             {
                 requestQueue.Clear();
             }
@@ -274,17 +286,15 @@ namespace Modules.Net.WebRequest
             OnCancel();
         }
 
-        /// <summary>
-        /// 通信処理が同時に実行されないようにキューイング.
-        /// </summary>
-        private async Task WaitQueueingRequest(TWebRequest webRequest)
+        /// <summary> 通信が同時に実行されないようにキューイング. </summary>
+        private async Task WaitQueueingRequest(TWebRequest webRequest, CancellationToken cancelToken)
         {
             // キューに追加.
             requestQueue.Enqueue(webRequest);
 
             while (true)
             {
-                // キューが空になっていた場合はキャンセル扱い.
+				// キューが空になっていた場合はキャンセル扱い.
                 if (requestQueue.IsEmpty())
                 {
                     webRequest.Cancel(true);
@@ -292,18 +302,23 @@ namespace Modules.Net.WebRequest
                 }
 
                 // 通信中のリクエストが存在しない & キューの先頭が自身の場合待ち終了.
-                if (current == null && requestQueue.Peek() == webRequest)
+                if (requestList.IsEmpty() && requestQueue.Peek() == webRequest)
                 {
                     requestQueue.Dequeue();
                     break;
                 }
 
-                await Task.Delay(1);
+				if (webRequest.IsCanceled) { break; }
+
+				await Task.Delay(1, cancelToken);
             }
         }
 
-        /// <summary> 開始時イベント. </summary>
-        protected virtual void OnStart(TWebRequest webRequest) { }
+		/// <summary> ネットワーク接続待ち </summary>
+		protected virtual Task WaitNetworkReachable(CancellationToken cancelToken) { return Task.CompletedTask; }
+
+		/// <summary> 開始時イベント. </summary>
+		protected virtual void OnStart(TWebRequest webRequest) { }
 
         /// <summary> 成功時イベント. </summary>
         protected virtual void OnComplete<TResult>(TWebRequest webRequest, TResult result, double totalMilliseconds) { }

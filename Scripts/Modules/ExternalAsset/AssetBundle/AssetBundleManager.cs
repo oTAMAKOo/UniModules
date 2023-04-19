@@ -295,10 +295,8 @@ namespace Modules.AssetBundles
 			}
 			catch (OperationCanceledException)
 			{
-				/* Canceled */
+				return;
 			}
-
-			if (cancelToken.IsCancellationRequested) { return; }
 
 			// 開始.
 

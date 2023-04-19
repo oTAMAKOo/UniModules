@@ -3,6 +3,7 @@ using UnityEngine;
 using System;
 using System.Threading;
 using Cysharp.Threading.Tasks;
+using UniRx;
 using Extensions;
 
 namespace Modules.Net
@@ -14,6 +15,8 @@ namespace Modules.Net
 		private const float DefaultTimeOutSeconds = 15f;
 
 		//----- field -----
+
+		private static Subject<Unit> onNotReachable = null;
 
 		//----- property -----
 
@@ -29,7 +32,20 @@ namespace Modules.Net
 
 			var linkedCancelTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancelToken, timeoutCancelTokenSource.Token);
 
-			await WaitNetworkReachableInternal(linkedCancelTokenSource.Token);
+			try
+			{
+				await WaitNetworkReachableInternal(linkedCancelTokenSource.Token);
+			}
+			catch (OperationCanceledException)
+			{
+				if (timeoutCancelTokenSource.IsCancellationRequested)
+				{
+					if (onNotReachable != null)
+					{
+						onNotReachable.OnNext(Unit.Default);
+					}
+				}
+			}
 		}
 
 		private static async UniTask WaitNetworkReachableInternal(CancellationToken cancelToken)
@@ -38,6 +54,11 @@ namespace Modules.Net
 			{
 				await UniTask.NextFrame(cancelToken);
 			}
+		}
+
+		public static IObservable<Unit> OnNotReachableAsObservable()
+		{
+			return onNotReachable ?? (onNotReachable = new Subject<Unit>());
 		}
 	}
 }

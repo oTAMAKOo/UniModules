@@ -81,7 +81,7 @@ namespace Modules.Scene
 
                 var additiveTime = diagnostics.GetTime(TimeDiagnostics.Measure.Append);
 
-                var message = string.Format("{0} ({1:F2}ms)(Additive)", identifier.Value, additiveTime);
+                var message = $"{identifier.Value} ({additiveTime:F2}ms)(Additive)";
 
                 UnityConsole.Event(ConsoleEventName, ConsoleEventColor, message);
 
@@ -398,6 +398,14 @@ namespace Modules.Scene
             {
                 TransitionTarget = null;
             }
+		}
+
+		/// <summary> 加算シーンインスタンスを検索. </summary>
+		public SceneInstance FindAppendSceneInstance(GameObject target)
+		{
+			if (UnityUtility.IsNull(target)){ return null; }
+
+			return AppendSceneInstances.FirstOrDefault(x => x.GetScene() == target.scene);
 		}
 	}
 }
