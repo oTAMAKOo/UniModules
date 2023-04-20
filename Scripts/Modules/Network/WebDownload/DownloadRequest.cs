@@ -60,9 +60,7 @@ namespace Modules.Net.WebDownload
                         progress.Report(operation.progress);
                     }
 
-                    await UniTask.NextFrame(cancellationToken: cancelToken);
-
-					if (cancelToken.IsCancellationRequested) { break; }
+                    await UniTask.NextFrame(cancelToken);
 				}
 
 				if (request != null)

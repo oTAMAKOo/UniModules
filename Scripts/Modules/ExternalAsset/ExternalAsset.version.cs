@@ -7,161 +7,133 @@ using System.Collections.Generic;
 using System.Text;
 using Cysharp.Threading.Tasks;
 using Extensions;
-using Modules.Performance;
+using UniRx;
+using Modules.Devkit.Console;
 
 namespace Modules.ExternalAssets
 {
     public sealed partial class ExternalAsset
     {
-        //----- params -----
+		//----- params -----
+
+		private const string VersionFileName = "version";
+
+		private const char VersionSeparator = '|';
 
         //----- field -----
 
+		// バージョン情報.
         private Dictionary<string, string> versions = null;
 
-        private FunctionFrameLimiter requireUpdateCallFrameLimiter = null;
+		// バージョンファイル難読化ハンドラー.
+		private IVersionFileHandler versionFileHandler = null;
 
-        //----- property -----
+		// バージョン更新中.
+		private bool versionSaveRunning = false;
 
-        //----- method -----
+		// バージョン更新処理.
+		private IDisposable updateVersionDisposable = null;
 
-        private void InitializeVersionCheck()
+		// ファイル一覧の一時キャッシュ.
+		private HashSet<string> filePathTemporaryCache = null;
+
+		//----- property -----
+
+		//----- method -----
+
+		private void InitializeVersionCheck()
         {
 			versions = new Dictionary<string, string>();
-            requireUpdateCallFrameLimiter = new FunctionFrameLimiter(50);
-        }
 
-        /// <summary>
-        /// アセットバンドルのバージョンが最新か確認.
-        /// (同梱された別アセットが更新された場合でもtrueを返す)
-        /// </summary>
-        private bool CheckAssetBundleVersion(AssetInfo assetInfo)
-        {
-            var filePath = assetBundleManager.GetFilePath(InstallDirectory, assetInfo);
+			versionFileHandler = new DefaultVersionFileHandler();
 
-            // ※ シュミレート時はpackageファイルをダウンロードしていないので常にファイルが存在しない.
+			versionSaveRunning = false;
 
-            if (!SimulateMode)
-            {
-                // ファイルがない.
-                if (!File.Exists(filePath)) { return false; }
-            }
+			filePathTemporaryCache = null;
+		}
 
-            // バージョン情報が存在しない.
-            if (versions.IsEmpty()) { return false; }
-
-            var infos = assetInfosByAssetBundleName.GetValueOrDefault(assetInfo.AssetBundle.AssetBundleName);
-
-            if (infos == null) { return false; }
-
-            foreach (var info in infos)
-            {
-                var hash = versions.GetValueOrDefault(info.FileName);
-
-                // ローカルにバージョンが存在しない.
-                if (string.IsNullOrEmpty(hash)) { return false; }
-
-                // アセットバンドル内のアセットが更新されている.
-                if (hash != info.Hash) { return false; }
-            }
-
-            return true;
-        }
-
-        /// <summary> アセットバンドル以外のアセットの更新が必要か確認. </summary>
-        private bool CheckAssetVersion(AssetInfo assetInfo)
-        {
-			// バージョン情報が存在しない.
-            if (versions.IsEmpty()) { return false; }
-
-			// アセット管理情報内に存在しないので最新扱い.
-            if (assetInfo == null) { return true; }
-
-			// ファイルがない.
-
-			var filePath = PathUtility.Combine(InstallDirectory, assetInfo.FileName);
-
-			if (!File.Exists(filePath)) { return false; }
-
-            // バージョン不一致.
-
-            var hash = versions.GetValueOrDefault(assetInfo.FileName);
-            
-            return hash == assetInfo.Hash;
-        }
+		public void SetVersionFileHandler(IVersionFileHandler versionFileHandler)
+		{
+			this.versionFileHandler = versionFileHandler;
+		}
 
 		/// <summary> 更新が必要なアセット情報を取得. </summary>
 		public async UniTask<IEnumerable<AssetInfo>> GetRequireUpdateAssetInfos(string groupName = null)
 		{
-			if (SimulateMode){ return new AssetInfo[0]; }
+			if (SimulateMode) { return new AssetInfo[0]; }
 
-            var list = new List<AssetInfo>();
+			IEnumerable<AssetInfo> result = null;
 
-			// 最新のバージョン情報.
+			try
+			{
+				await UniTask.SwitchToThreadPool();
 
-            var assetInfos = assetInfoManifest.GetAssetInfos(groupName);
+				var assetInfos = assetInfoManifest.GetAssetInfos(groupName).DistinctBy(x => x.FileName);
 
-            // ローカルのバージョンとの差分更新.
-            if (versions.Any())
-            {
-                var tasks = new List<UniTask>();
-				
-				var frameLimiter = new FunctionFrameLimiter(1000);
+				// バージョン情報が存在しないので全更新.
 
-				foreach (var assetInfo in assetInfos)
+				if (versions.IsEmpty()) { return assetInfos; }
+
+				// ローカルのバージョンとの差分更新.
+
+				var filePaths = await GetInstallDirectoryFilePaths();
+
+				filePathTemporaryCache = filePaths.ToHashSet();
+
+				var tasks = new List<UniTask<IEnumerable<AssetInfo>>>();
+
+				var chunck = assetInfos.Chunk(500);
+
+				foreach (var items in chunck)
 				{
-					await frameLimiter.Wait();
-
-					var info = assetInfo;
-
-					var task = UniTask.Defer(async () =>
-					{
-						try
-						{
-							var requireUpdate = await UniTask.RunOnThreadPool(() => IsRequireUpdate(info, false));
-
-							if (requireUpdate)
-							{
-								list.Add(info);
-							}
-						}
-						finally
-						{
-							await UniTask.SwitchToMainThread();
-						}
-					});
+					var task = FilterRequireUpdateAssetInfo(items);
 
 					tasks.Add(task);
 				}
 
-				await UniTask.WhenAll(tasks);
-			}
-            // バージョン情報が存在しないので全更新.
-            else
-            {
-                list = assetInfos.ToList();
-            }
+				var filterResults = await UniTask.WhenAll(tasks);
 
-            return list;
+				result = filterResults.SelectMany(x => x);
+
+				filePathTemporaryCache = null;
+			}
+			finally
+			{
+				await UniTask.SwitchToMainThread();
+			}
+
+			return result;
 		}
 
-        /// <summary> 更新が必要か. </summary>
-		public async UniTask<bool> IsRequireUpdate(AssetInfo assetInfo, bool farameCallLimit = true)
+		private async UniTask<IEnumerable<AssetInfo>> FilterRequireUpdateAssetInfo(IEnumerable<AssetInfo> infos)
+		{
+			var result = new AssetInfo[0];
+
+			try
+			{
+				await UniTask.SwitchToThreadPool();
+
+				result = infos.Where(x => IsRequireUpdate(x)).ToArray();
+			}
+			finally
+			{
+				await UniTask.SwitchToMainThread();
+			}
+
+			return result;
+		}
+
+		/// <summary> 更新が必要か. </summary>
+		public bool IsRequireUpdate(AssetInfo assetInfo)
         {
             if (SimulateMode){ return false; }
 
-            // バージョン情報が存在しないので更新.
-            if (versions.IsEmpty()) { return true; }
-
-            // フレーム処理数制御.
-            if (farameCallLimit)
-            {
-                await requireUpdateCallFrameLimiter.Wait();
-            }
+			// バージョン情報が存在しないので更新.
+			if (versions.IsEmpty()) { return true; }
 
 			// バージョンチェック.
 
-            var requireUpdate = true;
+			var requireUpdate = true;
 
             if (assetInfo.IsAssetBundle)
             {
@@ -175,7 +147,80 @@ namespace Modules.ExternalAssets
             return requireUpdate;
         }
 
-        private async UniTask UpdateVersion(string resourcePath)
+		/// <summary>
+		/// アセットバンドルのバージョンが最新か確認.
+		/// (同梱された別アセットが更新された場合でもtrueを返す)
+		/// </summary>
+		private bool CheckAssetBundleVersion(AssetInfo assetInfo)
+		{
+			var filePath = assetBundleManager.GetFilePath(InstallDirectory, assetInfo);
+
+			// ※ シュミレート時はpackageファイルをダウンロードしていないので常にファイルが存在しない.
+
+			if (!SimulateMode)
+			{
+				// ファイルの存在確認.
+				if (filePathTemporaryCache != null)
+				{
+					if (!filePathTemporaryCache.Contains(filePath)){ return false; }
+				}
+				else
+				{
+					if (!File.Exists(filePath)) { return false; }
+				}
+			}
+
+			// バージョン情報が存在しない.
+			if (versions.IsEmpty()) { return false; }
+
+			var infos = assetInfosByAssetBundleName.GetValueOrDefault(assetInfo.AssetBundle.AssetBundleName);
+
+			if (infos == null) { return false; }
+
+			var info = infos.FirstOrDefault();
+
+			if (info == null) { return false; }
+
+			var hash = versions.GetValueOrDefault(info.FileName);
+
+			if (string.IsNullOrEmpty(hash)) { return false; }
+
+			if (hash != info.Hash) { return false; }
+
+			return true;
+		}
+
+		/// <summary> アセットバンドル以外のアセットの更新が必要か確認. </summary>
+		private bool CheckAssetVersion(AssetInfo assetInfo)
+		{
+			// バージョン情報が存在しない.
+			if (versions.IsEmpty()) { return false; }
+
+			// アセット管理情報内に存在しないので最新扱い.
+			if (assetInfo == null) { return true; }
+
+			// ファイルがない.
+
+			var filePath = PathUtility.Combine(InstallDirectory, assetInfo.FileName);
+
+			// ファイルの存在確認.
+			if (filePathTemporaryCache != null)
+			{
+				if (!filePathTemporaryCache.Contains(filePath)) { return false; }
+			}
+			else
+			{
+				if (!File.Exists(filePath)) { return false; }
+			}
+
+			// バージョン不一致.
+
+			var hash = versions.GetValueOrDefault(assetInfo.FileName);
+
+			return hash == assetInfo.Hash;
+		}
+
+		private void UpdateVersion(string resourcePath)
 		{
 			if (SimulateMode){ return; }
 
@@ -199,188 +244,195 @@ namespace Modules.ExternalAssets
 				return;
 			}
 
-			// ※ バージョン文字列だけのデータなので暗号化は行わない.
-
 			if (string.IsNullOrEmpty(assetInfo.Hash)){ return; }
 
-			var filePath = PathUtility.Combine(InstallDirectory, assetInfo.FileName);
+			versions[assetInfo.FileName] = assetInfo.Hash;
 
-			var versionFilePath = filePath + AssetInfoManifest.VersionFileExtension;
-
-            try
+			if (updateVersionDisposable == null)
 			{
-				var bytes = Encoding.UTF8.GetBytes(assetInfo.Hash);
-                
-                using (var fs = new FileStream(versionFilePath, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.ReadWrite, 64, true))
-                {
-                    await fs.WriteAsync(bytes, 0, bytes.Length);
-                }
-
-                versions[assetInfo.FileName] = assetInfo.Hash;
+				updateVersionDisposable = Observable.Timer(TimeSpan.FromSeconds(1f))
+					.SelectMany(_ => SaveVersion().ToObservable())
+					.Subscribe()
+					.AddTo(Disposable);
 			}
-			catch (Exception exception)
-			{
-				Debug.LogException(exception);
+		}
 
+		public async UniTask SaveVersion()
+		{
+			if (SimulateMode) { return; }
+
+			if (versionSaveRunning){ return; }
+				
+			var versionFilePath = PathUtility.Combine(InstallDirectory, VersionFileName);
+
+			try
+			{
+				versionSaveRunning = true;
+
+				await UniTask.SwitchToThreadPool();
+
+				var builder = new StringBuilder();
+				
+				foreach (var version in versions)
+				{
+					builder.Append(version.Key);
+					builder.Append(VersionSeparator);
+					builder.Append(version.Value);
+					builder.AppendLine();
+				}
+
+				var text = builder.ToString();
+
+				while (true)
+				{
+					if (!FileUtility.IsFileLocked(versionFilePath)){ break; }
+
+					await UniTask.NextFrame();
+				}
+
+				var bytes = Encoding.UTF8.GetBytes(text);
+
+				if (versionFileHandler != null)
+				{
+					bytes = await versionFileHandler.Encode(bytes);
+				}
+
+				#if UNITY_2021_1_OR_NEWER
+
+				await File.WriteAllBytesAsync(versionFilePath, bytes);
+
+				#else
+
+				File.WriteAllBytes(versionFilePath, bytes);
+
+				#endif
+			}
+			catch (Exception e)
+			{
+				Debug.LogException(e);
+
+				if (!string.IsNullOrEmpty(versionFilePath) && File.Exists(versionFilePath))
+				{
+					File.Delete(versionFilePath);
+				}
+			}
+			finally
+			{
+				await UniTask.SwitchToMainThread();
+
+				if (updateVersionDisposable != null)
+				{
+					updateVersionDisposable.Dispose();
+					updateVersionDisposable = null;
+				}
+
+				versionSaveRunning = false;
+			}
+		}
+
+		private async UniTask LoadVersion()
+		{
+			if (SimulateMode) { return; }
+
+			var logText = string.Empty;
+
+			var versionFilePath = PathUtility.Combine(InstallDirectory, VersionFileName);
+
+			try
+			{
+				await UniTask.SwitchToThreadPool();
+
+				var sw = System.Diagnostics.Stopwatch.StartNew();
+
+				versions.Clear();
+
+				if (File.Exists(versionFilePath))
+				{
+					#if UNITY_2021_1_OR_NEWER
+
+					var bytes = await File.ReadAllBytesAsync(versionFilePath);
+
+					#else
+
+					var bytes = File.ReadAllBytes(versionFilePath);
+
+					#endif
+
+					if (versionFileHandler != null)
+					{
+						bytes = await versionFileHandler.Decode(bytes);
+					}
+
+					var text = Encoding.UTF8.GetString(bytes);
+
+					using (var sr = new StringReader(text))
+					{
+						while (-1 < sr.Peek())
+						{
+							var line = await sr.ReadLineAsync();
+
+							var parts = line.Split(VersionSeparator);
+
+							var fileName = parts.ElementAtOrDefault(0);
+							var version = parts.ElementAtOrDefault(1);
+
+							if (!string.IsNullOrEmpty(fileName) && !string.IsNullOrEmpty(version))
+							{
+								versions[fileName] = version;
+							}
+						}
+					}
+
+					sw.Stop();
+
+					logText = $"LoadVersion: ({sw.Elapsed.TotalMilliseconds:F2}ms)";
+				}
+			}
+			catch
+			{
 				if (File.Exists(versionFilePath))
 				{
 					File.Delete(versionFilePath);
 				}
 			}
-        }
-
-        private async UniTask LoadVersion()
-		{
-			if (SimulateMode){ return; }
-            
-            versions = new Dictionary<string, string>();
-
-            var versionFileExtensionLength = AssetInfoManifest.VersionFileExtension.Length;
-            
-            var versionFilePaths = await GetAllVersionFilePaths();
-
-			var frameLimiter = new FunctionFrameLimiter(1000);
-
-			var tasks = new List<UniTask>();
-			
-			foreach (var versionFilePath in versionFilePaths)
+			finally
 			{
-				await frameLimiter.Wait();
-
-				var path = versionFilePath;
-
-				var task = UniTask.Defer(async () =>
-				{
-					try
-					{
-						await UniTask.RunOnThreadPool(() => LoadVersionFile(path, versionFileExtensionLength));
-					}
-					finally
-					{
-						await UniTask.SwitchToMainThread();
-					}
-				});
-
-				tasks.Add(task);
+				await UniTask.SwitchToMainThread();
 			}
 
-			await UniTask.WhenAll(tasks);
+			if (!string.IsNullOrEmpty(logText) && LogEnable && UnityConsole.Enable)
+			{
+				UnityConsole.Event(ConsoleEventName, ConsoleEventColor, logText);
+			}
 		}
-        
-        private void LoadVersionFile(string path, int versionFileExtensionLength)
-        {
-            try
-            {
-                if (!File.Exists(path)){ return; }
 
-                var bytes = File.ReadAllBytes(path);
-
-                var hash = Encoding.UTF8.GetString(bytes);
-
-                var versionFileName = Path.GetFileName(path);
-
-                var fileName = versionFileName.SafeSubstring(0, versionFileName.Length - versionFileExtensionLength);
-
-                if (!string.IsNullOrEmpty(fileName))
-                {
-                    lock (versions)
-                    {
-                        versions[fileName] = hash;
-                    }
-                }
-            }
-            catch (Exception exception)
-            {
-                Debug.LogException(exception);
-
-                if (File.Exists(path))
-                {
-                    File.Delete(path);
-                }
-            }
-        }
-
-		private async UniTask ClearVersion()
+		private void ClearVersion()
 		{
 			if (SimulateMode){ return; }
 
-			if (versions != null)
-			{
-				versions.Clear();
-			}
+			versions.Clear();
 
-            var frameLimiter = new FunctionFrameLimiter(100);
-
-            var versionFilePaths = await GetAllVersionFilePaths();
-
-            var tasks = new List<UniTask>();
-                
-            foreach (var versionFilePath in versionFilePaths)
+			try
             {
-                await frameLimiter.Wait();
-                
-                var path = versionFilePath;
+				var versionFilePath = PathUtility.Combine(InstallDirectory, VersionFileName);
 
-                var task = UniTask.Defer(async () =>
+				if (File.Exists(versionFilePath))
 				{
-                    try
-                    {
-                        await UniTask.RunOnThreadPool(() =>DeleteVersionFile(path));
-                    }
-                    finally
-                    {
-                        await UniTask.SwitchToMainThread();
-                    }
-                });
+					var cFileInfo = new FileInfo(versionFilePath);
 
-                tasks.Add(task);
-            }
+					// 読み取り専用属性がある場合は、読み取り専用属性を解除.
+					if ((cFileInfo.Attributes & FileAttributes.ReadOnly) == FileAttributes.ReadOnly)
+					{
+						cFileInfo.Attributes = FileAttributes.Normal;
+					}
 
-            await UniTask.WhenAll(tasks);
-        }
-
-        private void DeleteVersionFile(string versionFilePath)
-        {
-            try
-            {
-                var cFileInfo = new FileInfo(versionFilePath);
-
-                // 読み取り専用属性がある場合は、読み取り専用属性を解除.
-                if ((cFileInfo.Attributes & FileAttributes.ReadOnly) == FileAttributes.ReadOnly)
-                {
-                    cFileInfo.Attributes = FileAttributes.Normal;
-                }
-
-                File.Delete(versionFilePath);
-            }
-            catch (Exception ex)
+					File.Delete(versionFilePath);
+				}
+			}
+			catch (Exception ex)
             {
                 Debug.LogException(ex);
             }
         }
-
-		private async UniTask<IEnumerable<string>> GetAllVersionFilePaths()
-		{
-            const string searchPattern = "*" + AssetInfoManifest.VersionFileExtension;
-
-			if (!Directory.Exists(InstallDirectory)){ return new string[0]; }
-
-            var frameLimiter = new FunctionFrameLimiter(1000);
-
-            var list = new List<string>();
-
-            var directoryInfo = new DirectoryInfo(InstallDirectory);
-
-            var files = directoryInfo.EnumerateFiles(searchPattern, SearchOption.AllDirectories);
-
-            foreach (var file in files)
-            {
-                await frameLimiter.Wait();
-
-                list.Add(file.FullName);
-            }
-
-			return list;
-		}
-    }
+	}
 }

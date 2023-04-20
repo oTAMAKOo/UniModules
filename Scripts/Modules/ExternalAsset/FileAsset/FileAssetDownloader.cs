@@ -26,23 +26,16 @@ namespace Modules.ExternalAssets
 
 		public async UniTask Download(string url, string filePath, IProgress<float> progress = null, CancellationToken cancelToken = default)
 		{
-			try
+			var directory = Directory.GetParent(filePath);
+
+			if (!directory.Exists)
 			{
-				var directory = Directory.GetParent(filePath);
-
-				if (!directory.Exists)
-				{
-					directory.Create();
-				}
-
-				var downloadRequest = SetupDownloadRequest(url, filePath);
-
-				await Download(downloadRequest, progress, cancelToken);
+				directory.Create();
 			}
-			catch (OperationCanceledException)
-			{
-				/* Canceled */
-			}
+
+			var downloadRequest = SetupDownloadRequest(url, filePath);
+
+			await Download(downloadRequest, progress, cancelToken);
 		}
 
 		protected override void OnComplete(DownloadRequest downloadRequest, double totalMilliseconds) { }

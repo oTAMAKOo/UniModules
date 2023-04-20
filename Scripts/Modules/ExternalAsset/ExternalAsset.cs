@@ -2,8 +2,8 @@
 using UnityEngine;
 using System;
 using System.IO;
-using System.Linq;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using Cysharp.Threading.Tasks;
 using UniRx;
@@ -19,9 +19,6 @@ namespace Modules.ExternalAssets
 
         public static readonly string ConsoleEventName = "ExternalAsset";
         public static readonly Color ConsoleEventColor = new Color(0.8f, 1f, 0.1f);
-
-        /// <summary> 1フレームで処理する<see cref="UpdateAsset"/>の最大呼び出し回数 </summary>
-        private const int MaxUpdateAssetFrameCallLimit = 50;
 
 		//----- field -----
 
@@ -40,15 +37,15 @@ namespace Modules.ExternalAssets
         /// <summary> 読み込み中アセット群. </summary>
         private HashSet<AssetInfo> loadingAssets = new HashSet<AssetInfo>();
 
-        // 1フレーム処理数制限.
-        private FunctionFrameLimiter updateAssetCallLimiter = null;
-
-        // 中断用.
+		// 中断用.
         private CancellationTokenSource cancelSource = null;
 
-        // 外部制御ハンドラ.
+		// 1フレーム実行数制限.
+		private FunctionFrameLimiter updateAssetCallLimiter = null;
 
-        private IUpdateAssetHandler updateAssetHandler = null;
+		// 外部制御ハンドラ.
+
+		private IUpdateAssetHandler updateAssetHandler = null;
         private ILoadAssetHandler loadAssetHandler = null;
 
 		// イベント通知.
@@ -103,11 +100,11 @@ namespace Modules.ExternalAssets
             // 中断用.
             cancelSource = new CancellationTokenSource();
 
-            // 処理数制限.
-            updateAssetCallLimiter = new FunctionFrameLimiter(MaxUpdateAssetFrameCallLimit);
+			// 制限.
+			updateAssetCallLimiter = new FunctionFrameLimiter(150);
 
-            // バージョンチェック初期化.
-            InitializeVersionCheck();
+			// バージョンチェック初期化.
+			InitializeVersionCheck();
 
             // AssetBundleManager初期化.
 
@@ -185,7 +182,7 @@ namespace Modules.ExternalAssets
 		{
 			assetInfoManifest = manifest;
 
-			if(manifest == null)
+			if (assetInfoManifest == null)
 			{
 				Debug.LogError("AssetInfoManifest not found.");
 				return;
@@ -195,46 +192,53 @@ namespace Modules.ExternalAssets
 			assetInfosByAssetGuid = new Dictionary<string, AssetInfo>();
 			assetInfosByResourcePath = new Dictionary<string, AssetInfo>();
 
-			var assetInfos = manifest.GetAssetInfos();
-
-			var frameLimiter = new FunctionFrameLimiter(1000);
-
-			foreach (var assetInfo in assetInfos)
+			try
 			{
-				await frameLimiter.Wait();
+				await UniTask.SwitchToThreadPool();
 
-				// アセット情報 (Key: アセットバンドル名).
-				if (assetInfo.IsAssetBundle)
+				assetInfoManifest.BuildCache(true);
+
+				var assetInfos = assetInfoManifest.GetAssetInfos();
+
+				foreach (var item in assetInfos)
 				{
-					var assetBundleName = assetInfo.AssetBundle.AssetBundleName;
-
-					var list = assetInfosByAssetBundleName.GetValueOrDefault(assetBundleName);
-
-					if (list == null)
+					// アセット情報 (Key: アセットバンドル名).
+					if (item.IsAssetBundle)
 					{
-						list = new List<AssetInfo>();
-						assetInfosByAssetBundleName[assetBundleName] = list;
+						var assetBundleName = item.AssetBundle.AssetBundleName;
+
+						var list = assetInfosByAssetBundleName.GetValueOrDefault(assetBundleName);
+
+						if (list == null)
+						{
+							list = new List<AssetInfo>();
+							assetInfosByAssetBundleName[assetBundleName] = list;
+						}
+
+						list.Add(item);
 					}
 
-					list.Add(assetInfo);
-				}
+					// アセット情報 (Key: アセットGUID).
+					if (!string.IsNullOrEmpty(item.Guid))
+					{
+						assetInfosByAssetGuid[item.Guid] = item;
+					}
 
-				// アセット情報 (Key: アセットGUID).
-				if (!string.IsNullOrEmpty(assetInfo.Guid))
-				{
-					assetInfosByAssetGuid[assetInfo.Guid] = assetInfo;
+					// アセット情報 (Key: リソースパス).
+					if (!string.IsNullOrEmpty(item.ResourcePath))
+					{
+						assetInfosByResourcePath[item.ResourcePath] = item;
+					}
 				}
-                
-				// アセット情報 (Key: リソースパス).
-				if (!string.IsNullOrEmpty(assetInfo.ResourcePath))
-				{
-					assetInfosByResourcePath[assetInfo.ResourcePath] = assetInfo;
-				}
+			}
+			finally
+			{
+				await UniTask.SwitchToMainThread();
 			}
 		}
 
-        /// <summary> アセット情報を取得. </summary>
-        public IEnumerable<AssetInfo> GetGroupAssetInfos(string groupName = null)
+		/// <summary> アセット情報を取得. </summary>
+		public IEnumerable<AssetInfo> GetGroupAssetInfos(string groupName = null)
         {
             return assetInfoManifest.GetAssetInfos(groupName);
         }
@@ -264,8 +268,12 @@ namespace Modules.ExternalAssets
 		}
 
 		/// <summary> マニフェストファイルを更新. </summary>
-		public async UniTask<bool> UpdateManifest()
-		{ 
+		public async UniTask<bool> UpdateManifest(CancellationToken cancelToken = default)
+		{
+			var linkedCancelTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancelToken, cancelSource.Token);
+
+			var linkedCancelToken = linkedCancelTokenSource.Token;
+
 			try
 			{
 				var tasks = new List<UniTask>();
@@ -276,14 +284,14 @@ namespace Modules.ExternalAssets
 				tasks.Add(loadVersionTask);
 
 				// マニフェストファイルダウンロード.
-				var downloadManifestTask = DownloadManifest();
+				var downloadManifestTask = DownloadManifest(linkedCancelToken);
 
 				tasks.Add(downloadManifestTask);
 
 				await UniTask.WhenAll(tasks);
 
 				// 不要になったファイル削除.
-				await DeleteUnUsedCache();
+				DeleteUnUsedCache().Forget();
 			}
 			catch (Exception e)
 			{
@@ -296,188 +304,163 @@ namespace Modules.ExternalAssets
 		}
 
 		/// <summary> マニフェストファイルダウンロード. </summary>
-		private async UniTask DownloadManifest()
+		private async UniTask DownloadManifest(CancellationToken cancelToken)
 		{
-			var sw = System.Diagnostics.Stopwatch.StartNew();
-
-			// アセット管理情報読み込み.
-
-			var manifestAssetInfo = AssetInfoManifest.GetManifestAssetInfo();
-
-			var assetPath = PathUtility.Combine(externalAssetDirectory, manifestAssetInfo.ResourcePath);
-
-			// AssetInfoManifestは常に最新に保たなくてはいけない為必ずダウンロードする.
-
-			await assetBundleManager.UpdateAssetInfoManifest(InstallDirectory, cancelSource.Token);
-
-			var manifest = await assetBundleManager.LoadAsset<AssetInfoManifest>(InstallDirectory, manifestAssetInfo, assetPath);
-
-			if (manifest == null)
+			try
 			{
-				throw new FileNotFoundException("Failed update AssetInfoManifest.");
+				var sw = System.Diagnostics.Stopwatch.StartNew();
+
+				// アセット管理情報読み込み.
+
+				var manifestAssetInfo = AssetInfoManifest.GetManifestAssetInfo();
+
+				var assetPath = PathUtility.Combine(externalAssetDirectory, manifestAssetInfo.ResourcePath);
+
+				// AssetInfoManifestは常に最新に保たなくてはいけない為必ずダウンロードする.
+
+				await assetBundleManager.UpdateAssetInfoManifest(InstallDirectory, cancelToken);
+
+				var manifest = await assetBundleManager.LoadAsset<AssetInfoManifest>(InstallDirectory, manifestAssetInfo, assetPath, cancelToken: cancelToken);
+
+				if (manifest == null)
+				{
+					throw new FileNotFoundException("Failed update AssetInfoManifest.");
+				}
+
+				await SetAssetInfoManifest(manifest);
+
+				// アセット管理情報を登録.
+
+				await assetBundleManager.SetManifest(assetInfoManifest);
+
+				#if ENABLE_CRIWARE_ADX || ENABLE_CRIWARE_SOFDEC
+
+				criAssetManager.SetManifest(assetInfoManifest);
+
+				#endif
+
+				sw.Stop();
+
+				if (LogEnable && UnityConsole.Enable)
+				{
+					var message = $"UpdateManifest: ({sw.Elapsed.TotalMilliseconds:F2}ms)";
+
+					UnityConsole.Event(ConsoleEventName, ConsoleEventColor, message);
+				}
 			}
-
-			await SetAssetInfoManifest(manifest);
-
-			// アセット管理情報を登録.
-
-			await assetBundleManager.SetManifest(assetInfoManifest);
-
-			#if ENABLE_CRIWARE_ADX || ENABLE_CRIWARE_SOFDEC
-
-			criAssetManager.SetManifest(assetInfoManifest);
-
-			#endif
-
-			sw.Stop();
-
-			if (LogEnable && UnityConsole.Enable)
+			catch (OperationCanceledException)
 			{
-				var message = $"UpdateManifest: ({sw.Elapsed.TotalMilliseconds:F2}ms)";
-
-				UnityConsole.Event(ConsoleEventName, ConsoleEventColor, message);
+				/* Canceled */
 			}
 		}
 
         /// <summary> アセットを更新. </summary>
         public static async UniTask UpdateAsset(string resourcePath, IProgress<float> progress = null, CancellationToken cancelToken = default)
         {
-			if (cancelToken.IsCancellationRequested) { return; }
-
 			await instance.UpdateAssetInternal(resourcePath, progress, cancelToken);
         }
 
         private async UniTask UpdateAssetInternal(string resourcePath, IProgress<float> progress, CancellationToken cancelToken)
         {
-            if (string.IsNullOrEmpty(resourcePath)) { return; }
-
-            // 1フレームで更新制御する数を制限.
-            await updateAssetCallLimiter.Wait(cancelToken: cancelToken);
-
-			// アセット情報.
-
-			AssetInfo assetInfo = null;
-
 			try
 			{
-				assetInfo = GetAssetInfo(resourcePath);
+				if (string.IsNullOrEmpty(resourcePath)) { return; }
+
+				// 呼び出し制限.
+
+				await updateAssetCallLimiter.Wait(cancelToken: CancellationToken.None);
+
+				// キャンセル発行.
+
+				var linkedCancelTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancelToken, cancelSource.Token);
+
+				var linkedCancelToken = linkedCancelTokenSource.Token;
+
+				if (linkedCancelToken.IsCancellationRequested){ return; }
+
+				// アセット情報.
+
+				var assetInfo = GetAssetInfo(resourcePath);
 
 				if (assetInfo == null)
 				{
 					throw new AssetInfoNotFoundException(resourcePath);
 				}
-			}
-			catch (AssetInfoNotFoundException e)
-			{
-				OnError(e);
 
-				return;
-			}
+				// 外部処理.
 
-			// 外部処理.
-
-			if (instance.updateAssetHandler != null)
-            {
-				try
+				if (instance.updateAssetHandler != null)
 				{
 					var updateAssetHandler = instance.updateAssetHandler;
 
-					await updateAssetHandler.OnUpdateRequest(assetInfo, cancelToken);
-				}
-				catch (OperationCanceledException)
-				{
-					/* Canceled */
-				}
-				catch (Exception e)
-				{
-					OnError(e);
-					return;
+					await updateAssetHandler.OnUpdateRequest(assetInfo, linkedCancelToken);
 				}
 
-				if (cancelToken.IsCancellationRequested){ return; }
-			}
-			
-			if (!LocalMode && !SimulateMode)
-			{
-				try
+				// 更新.
+
+				if (!LocalMode && !SimulateMode)
 				{
 					if (assetInfo.IsAssetBundle)
 					{
-						await UpdateAssetBundle(assetInfo, progress, cancelSource.Token);
+						await UpdateAssetBundle(assetInfo, progress, linkedCancelToken);
 					}
 
 					#if ENABLE_CRIWARE_FILESYSTEM
 
 					else if (criAssetManager.IsCriAsset(assetInfo.ResourcePath))
 					{
-						await UpdateCriAsset(assetInfo, progress, cancelSource.Token);
+						await UpdateCriAsset(assetInfo, progress, linkedCancelToken);
 					}
 
 					#endif
 
 					else
 					{
-						await UpdateFileAsset(assetInfo, progress, cancelSource.Token);
+						await UpdateFileAsset(assetInfo, progress, linkedCancelToken);
 					}
-					
+
+					if (linkedCancelToken.IsCancellationRequested) { return; }
+
 					// バージョン更新.
-					await UpdateVersion(resourcePath);
-				}
-				catch (OperationCanceledException)
-				{
-					/* Canceled */
-				}
-				catch (Exception e)
-				{
-					Debug.LogException(e);
-					return;
+					UpdateVersion(resourcePath);
 				}
 
-				if (cancelToken.IsCancellationRequested) { return; }
-			}
+				// 外部処理.
 
-            // 外部処理.
-
-            if (instance.updateAssetHandler != null)
-            {
-				try
+				if (instance.updateAssetHandler != null)
 				{
 					var updateAssetHandler = instance.updateAssetHandler;
 
-					await updateAssetHandler.OnUpdateFinish(assetInfo, cancelSource.Token);
-				}
-				catch (OperationCanceledException)
-				{
-					/* Canceled */
-				}
-				catch (Exception e)
-				{
-					OnError(e);
-
-					return;
+					await updateAssetHandler.OnUpdateFinish(assetInfo, linkedCancelToken);
 				}
 
-				if (cancelSource.IsCancellationRequested) { return; }
+				// イベント発行.
+
+				if (onUpdateAsset != null)
+				{
+					onUpdateAsset.OnNext(resourcePath);
+				}
 			}
+			catch (OperationCanceledException)
+			{
+				/* Canceled */
+			}
+			catch (Exception e)
+			{
+				OnError(e);
+			}
+		}
 
-			// イベント発行.
-
-			if (onUpdateAsset != null)
-            {
-                onUpdateAsset.OnNext(resourcePath);
-            }
-        }
-
-        public void CancelAll()
-        {
-            if (cancelSource != null)
-            {
+		public void CancelAll()
+		{
+			if (cancelSource != null)
+			{
 				cancelSource.Cancel();
 
-                // キャンセルしたので再生成.
+				// キャンセルしたので再生成.
 				cancelSource = new CancellationTokenSource();
-            }
-        }
+			}
+		}
 
 		public string GetFilePath(AssetInfo assetInfo)
 		{
@@ -525,9 +508,35 @@ namespace Modules.ExternalAssets
             return assetPath;
         }
 
-        #region Extend Handler
+		private async UniTask<IEnumerable<string>> GetInstallDirectoryFilePaths()
+		{
+			if (!Directory.Exists(InstallDirectory)) { return new string[0]; }
 
-        public void SetUpdateAssetHandler(IUpdateAssetHandler handler)
+			var frameLimiter = new FunctionFrameLimiter(250);
+
+			var list = new List<string>();
+
+			var directoryInfo = new DirectoryInfo(InstallDirectory);
+
+			var files = directoryInfo.EnumerateFiles("*", SearchOption.TopDirectoryOnly);
+
+			foreach (var file in files)
+			{
+				await frameLimiter.Wait();
+
+				if (file.Name == VersionFileName) { continue; }
+
+				var filePath = PathUtility.ConvertPathSeparator(file.FullName);
+
+				list.Add(filePath);
+			}
+
+			return list;
+		}
+
+		#region Extend Handler
+
+		public void SetUpdateAssetHandler(IUpdateAssetHandler handler)
         {
             this.updateAssetHandler = handler;
         }

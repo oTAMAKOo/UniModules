@@ -1,12 +1,11 @@
 
-using UnityEngine;
 using System;
-using System.Linq;
 using System.Collections.Generic;
 using System.Threading;
 using Cysharp.Threading.Tasks;
 using UniRx;
 using Extensions;
+using UnityEngine;
 
 namespace Modules.ExternalAssets
 {
@@ -113,10 +112,6 @@ namespace Modules.ExternalAssets
 
 				await downLoader.Download(url, filePath, progress, cancelToken);
 			}
-			catch (OperationCanceledException)
-			{
-				/* Canceled */
-			}
 			finally
 			{
 				downloadQueueing.Remove(url);
@@ -131,6 +126,8 @@ namespace Modules.ExternalAssets
 
 			if (onTimeOut != null)
 			{
+				Debug.LogErrorFormat("[Download Timeout] \n{0}", url);
+
 				onTimeOut.OnNext(assetInfo);
 			}
 		}
@@ -139,6 +136,8 @@ namespace Modules.ExternalAssets
 		{
 			if (onError != null)
 			{
+				Debug.LogErrorFormat("[Download Error] \n{0}", ex);
+
 				onError.OnNext(ex);
 			}
 		}

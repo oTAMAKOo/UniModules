@@ -66,7 +66,9 @@ namespace Extensions
         /// <returns>ロックされているかどうか</returns>
         public static bool IsFileLocked(string path)
         {
-            FileStream stream = null;
+			if (!File.Exists(path)) { return false; }
+
+			FileStream stream = null;
 
             try
             {

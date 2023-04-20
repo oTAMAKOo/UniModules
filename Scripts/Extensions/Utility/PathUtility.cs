@@ -1,4 +1,4 @@
-﻿﻿﻿﻿﻿
+﻿﻿﻿﻿
 using System;
 using System.IO;
 using System.Text;
@@ -15,9 +15,7 @@ namespace Extensions
             File,       // ファイル.
             Directory,  // フォルダ.
         }
-
-		private static readonly StringBuilder builder = new StringBuilder();
-
+		
 		/// <summary> パス区切り文字を変換 </summary>
 		public static string ConvertPathSeparator(string path)
         {
@@ -38,38 +36,31 @@ namespace Extensions
         public static string Combine(params string[] paths)
         {
             if (paths.IsEmpty()) { return string.Empty; }
-
-			var str = string.Empty;
-
-			lock (builder)
+			
+			var builder = new StringBuilder();
+			
+			for (var i = 0; i < paths.Length; i++)
 			{
-				builder.Clear();
+				if (string.IsNullOrEmpty(paths[i])) { continue; }
 
-				for (var i = 0; i < paths.Length; i++)
+				var path = ConvertPathSeparator(paths[i]);
+
+				if (builder.Length != 0)
 				{
-					if (string.IsNullOrEmpty(paths[i])) { continue; }
+					// 先頭の"\"を削除.
+					path = path.TrimStart(PathSeparator);
 
-					var path = ConvertPathSeparator(paths[i]);
-
-					if (builder.Length != 0)
-					{
-						// 先頭の"\"を削除.
-						path = path.TrimStart(PathSeparator);
-
-						// 末尾に\を追加.
-						builder.Append(PathSeparator);
-					}
-
-					// 末尾の"\"を削除.
-					path = path.TrimEnd(PathSeparator);
-
-					builder.Append(path);
+					// 末尾に\を追加.
+					builder.Append(PathSeparator);
 				}
 
-				str = builder.ToString();
+				// 末尾の"\"を削除.
+				path = path.TrimEnd(PathSeparator);
+
+				builder.Append(path);
 			}
 
-			return str;
+			return builder.ToString();
 		}
 
         /// <summary> 絶対パスから相対パスに変換 </summary>

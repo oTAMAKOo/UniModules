@@ -1,4 +1,4 @@
-﻿
+
 using UnityEngine;
 using System;
 using System.Linq;
@@ -137,7 +137,7 @@ namespace Modules.AssetBundles.Editor
 
             // 難読化.
 			
-			data = assetBundleFileHandler.Encode(data);
+			data = await assetBundleFileHandler.Encode(data);
 
 			// 書き込み.
 

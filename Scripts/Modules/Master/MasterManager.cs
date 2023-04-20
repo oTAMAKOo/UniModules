@@ -40,6 +40,8 @@ namespace Modules.Master
         private MessagePackSerializerOptions serializerOptions = null;
 
         private bool lz4Compression = true;
+		
+		private CancellationTokenSource cancelSource = null;
 
 		private Subject<Unit> onUpdateMaster = null;
         private Subject<Unit> onLoadFinish = null;
@@ -79,8 +81,10 @@ namespace Modules.Master
             masters = new List<IMaster>();
             masterFileNames = new Dictionary<Type, string>();
 
-            // 保存先設定.
-            SetInstallDirectory(Application.persistentDataPath);
+			cancelSource = new CancellationTokenSource();
+
+			// 保存先設定.
+			SetInstallDirectory(Application.persistentDataPath);
         }
 
         public void Register(IMaster master)
@@ -101,7 +105,11 @@ namespace Modules.Master
         {
             var result = true;
 
-            var tasks = new List<UniTask>();
+			var linkedCancelTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancelToken, cancelSource.Token);
+
+			var linkedCancelToken = linkedCancelTokenSource.Token;
+
+			var tasks = new List<UniTask>();
 
             var updateLog = new StringBuilder();
 
@@ -174,7 +182,9 @@ namespace Modules.Master
 
 						var task = UniTask.Defer(async () =>
 						{
-							var updateResult = await master.Update(masterVersion, frameCallLimiter, cancelToken);
+							var updateResult = await master.Update(masterVersion, frameCallLimiter, linkedCancelToken);
+
+							if (linkedCancelToken.IsCancellationRequested){ return; }
 
 							OnUpdateFinish(masterType, masterName, masterFileName, updateResult.Item1, updateResult.Item2);
 
@@ -190,6 +200,10 @@ namespace Modules.Master
 					}
 
 					await UniTask.WhenAll(tasks);
+				}
+				catch (OperationCanceledException)
+				{
+					/* Canceled */
 				}
 				catch (Exception e)
 				{
@@ -234,8 +248,12 @@ namespace Modules.Master
 			Exception exception = null;
 
 			var result = true;
-			
-            var loadLog = new StringBuilder();
+
+			var linkedCancelTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancelToken, cancelSource.Token);
+
+			var linkedCancelToken = linkedCancelTokenSource.Token;
+
+			var loadLog = new StringBuilder();
 
             void OnLoadFinish(Type masterType, string masterName, string masterFileName, bool state, double prepareTime, double loadTime)
             {
@@ -269,16 +287,11 @@ namespace Modules.Master
 
 					var task = UniTask.Defer(async () =>
 					{
-						try
-						{
-							var loadResult = await item.Load(CryptoKey, true, cancelToken);
+						var loadResult = await item.Load(CryptoKey, true, linkedCancelToken);
 
-							OnLoadFinish(masterType, masterName, masterFileName, loadResult.Item1, loadResult.Item2, loadResult.Item3);
-						}
-						finally
-						{
-							await UniTask.SwitchToMainThread();
-						}
+						if (linkedCancelToken.IsCancellationRequested) { return; }
+
+						OnLoadFinish(masterType, masterName, masterFileName, loadResult.Item1, loadResult.Item2, loadResult.Item3);
 					});
 
 					tasks.Add(task);
@@ -324,6 +337,17 @@ namespace Modules.Master
             return result;
         }
 
+		public void CancelAll()
+		{
+			if (cancelSource != null)
+			{
+				cancelSource.Cancel();
+
+				// キャンセルしたので再生成.
+				cancelSource = new CancellationTokenSource();
+			}
+		}
+
 		public void ClearMasterVersion()
         {
             masters.ForEach(x => x.ClearVersion());
@@ -346,37 +370,44 @@ namespace Modules.Master
 
 			var tasks = new List<UniTask>();
 
-	        foreach (var item in masters)
-	        {
-                var master = item;
+			try
+			{
+				foreach (var item in masters)
+		        {
+	                var master = item;
 
-	            var task = UniTask.RunOnThreadPool(() =>
-	            {
-	                var masterVersion = versionTable.GetValueOrDefault(master);
+		            var task = UniTask.RunOnThreadPool(() =>
+		            {
+		                var masterVersion = versionTable.GetValueOrDefault(master);
 
-	                var versionCheck = master.CheckVersion(masterVersion);
+		                var versionCheck = master.CheckVersion(masterVersion);
 
-	                #if UNITY_EDITOR
-	                    
-	                versionCheck = !enableVersionCheck || versionCheck;
+		                #if UNITY_EDITOR
+		                    
+		                versionCheck = !enableVersionCheck || versionCheck;
 
-	                #endif
+		                #endif
 
-	                if (!versionCheck)
-	                {
-	                    lock (list)
-	                    {
-	                        list.Add(master);
-	                    }
-	                }
-	            });
+		                if (!versionCheck)
+		                {
+		                    lock (list)
+		                    {
+		                        list.Add(master);
+		                    }
+		                }
+		            });
 
-	            tasks.Add(task);
-	        }
+		            tasks.Add(task);
+		        }
 
-	        await UniTask.WhenAll(tasks);
+		        await UniTask.WhenAll(tasks);
+			}
+			finally
+			{
+				await UniTask.SwitchToMainThread();
+			}
 
-            return list.ToArray();
+			return list.ToArray();
         }
 
         public void Clear()

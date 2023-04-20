@@ -366,17 +366,19 @@ namespace Modules.Master
 			{
 				await frameCallLimiter.Wait(cancelToken: cancelToken);
 
-				await Download(masterVersion, cancelToken);
+				result = await Download(masterVersion, cancelToken);
 
 				if (File.Exists(filePath))
 				{
-					result = true;
+					// ファイルが閉じるまで待つ.
+					while (FileUtility.IsFileLocked(filePath))
+					{
+						await UniTask.NextFrame(cancelToken);
+					}
 				}
-
-				// ファイルが閉じるまで待つ.
-				while (FileUtility.IsFileLocked(filePath))
+				else
 				{
-					await UniTask.NextFrame(cancelToken);
+					result = false;
 				}
 
 				// バージョン情報を更新.
@@ -391,10 +393,6 @@ namespace Modules.Master
 			catch (Exception e)
 			{
 				Debug.LogException(e);
-			}
-			finally
-			{
-				await UniTask.SwitchToMainThread();
 			}
 
 			sw.Stop();
@@ -428,6 +426,6 @@ namespace Modules.Master
 
 		protected abstract TKey GetRecordKey(TMasterRecord masterRecord);
 
-		protected abstract UniTask Download(string version, CancellationToken cancelToken);
+		protected abstract UniTask<bool> Download(string version, CancellationToken cancelToken);
 	}
 }

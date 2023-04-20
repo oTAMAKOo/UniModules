@@ -61,7 +61,7 @@ namespace Modules.ExternalAssets
 
 			// ローカルバージョンが最新の場合は更新しない.
 
-			var requireUpdate = await IsRequireUpdate(assetInfo);
+			var requireUpdate = IsRequireUpdate(assetInfo);
 
 			if (!requireUpdate) { return; }
 
@@ -143,7 +143,7 @@ namespace Modules.ExternalAssets
 
             if (!LocalMode && !SimulateMode)
             {
-				var requireUpdate = await IsRequireUpdate(assetInfo);
+				var requireUpdate = IsRequireUpdate(assetInfo);
 
                 if (requireUpdate)
                 {
@@ -246,7 +246,7 @@ namespace Modules.ExternalAssets
 
             if (!LocalMode && !SimulateMode)
             {
-				var requireUpdate = await IsRequireUpdate(assetInfo);
+				var requireUpdate = IsRequireUpdate(assetInfo);
 
                 if (requireUpdate)
                 {

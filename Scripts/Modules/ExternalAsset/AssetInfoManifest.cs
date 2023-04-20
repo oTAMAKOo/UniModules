@@ -1,4 +1,4 @@
-﻿
+
 using UnityEngine;
 using System;
 using System.Linq;
@@ -165,9 +165,7 @@ namespace Modules.ExternalAssets
 
         public const string ManifestFileName = "AssetInfoManifest.asset";
 
-        public const string VersionFileExtension = ".version";
-
-        //----- field -----
+		//----- field -----
 
         [SerializeField, ReadOnly]
         private string versionHash = null;
@@ -176,6 +174,8 @@ namespace Modules.ExternalAssets
 
         private ILookup<string, AssetInfo> assetInfoByGroup = null;
         private Dictionary<string, AssetInfo> assetInfoByResourcesPath = null;
+
+		private bool hasCache = false;
 
         //----- property -----
 
@@ -244,19 +244,15 @@ namespace Modules.ExternalAssets
         
         public void BuildCache(bool forceUpdate = false)
         {
-            assetInfos = assetInfos.DistinctBy(x => x.ResourcePath).ToArray();
+			if (!forceUpdate && hasCache) { return; }
 
-            if (assetInfoByGroup == null || forceUpdate)
-            {
-                assetInfoByGroup = assetInfos.ToLookup(x => x.Group);
-            }
+			assetInfoByGroup = assetInfos.ToLookup(x => x.Group);
 
-            if (assetInfoByResourcesPath == null || forceUpdate)
-            {
-                assetInfoByResourcesPath = assetInfos
-                    .Where(x => !string.IsNullOrEmpty(x.ResourcePath))
-                    .ToDictionary(x => x.ResourcePath);
-            }
-        }
+			assetInfoByResourcesPath = assetInfos
+				.Where(x => !string.IsNullOrEmpty(x.ResourcePath))
+				.ToDictionary(x => x.ResourcePath);
+
+			hasCache = true;
+		}
     }
 }

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -19,21 +19,21 @@ namespace Extensions
         {
 			if (objectArray == null){ return new string[0]; }
 
-            return Array.ConvertAll<object, string>(objectArray, o => o.ToString());
+            return Array.ConvertAll(objectArray, o => o.ToString());
         }
 
         public static IEnumerable<TSource> DistinctBy<TSource, TKey>(this IEnumerable<TSource> source, Func<TSource, TKey> keySelector)
         {
-            HashSet<TKey> knownKeys = new HashSet<TKey>();
+			var knownKeys = new HashSet<TKey>();
 
-            foreach (TSource element in source)
-            {
-                if (knownKeys.Add(keySelector(element)))
-                {
-                    yield return element;
-                }
-            }
-        }
+			foreach (var element in source)
+			{
+				if (knownKeys.Add(keySelector(element)))
+				{
+					yield return element;
+				}
+			}
+		}
 
         public static IEnumerable<T> Concat<T>(IEnumerable<IEnumerable<T>> source)
         {
@@ -263,7 +263,7 @@ namespace Extensions
         {
             if (source == null)
             {
-                throw new ArgumentNullException("source");
+                throw new ArgumentNullException(nameof(source));
             }
 
             var array = source.ToArray();
@@ -275,12 +275,12 @@ namespace Extensions
         {
             if (firstIndex < 0 || firstIndex >= array.Count)
             {
-                throw new ArgumentOutOfRangeException("firstIndex");
+                throw new ArgumentOutOfRangeException(nameof(firstIndex));
             }
 
             if (secondIndex < 0 || secondIndex >= array.Count)
             {
-                throw new ArgumentOutOfRangeException("secondIndex");
+                throw new ArgumentOutOfRangeException(nameof(secondIndex));
             }
 
             var tmp = array[firstIndex];
@@ -345,23 +345,27 @@ namespace Extensions
             return list;
         }
 
-        /// <summary>
-        /// 指定された個数ずつの要素に分割.
-        /// </summary>
-        public static IEnumerable<IEnumerable<T>> Chunk<T>(this IEnumerable<T> source, int chunkSize)
-        {
-            if (chunkSize <= 0)
-            {
-                throw new ArgumentException("Chunk size must be greater than 0.", nameof(chunkSize));
-            }
+		/// <summary> 指定された個数ずつの要素に分割. </summary>
+		public static IEnumerable<IEnumerable<T>> Chunk<T>(this IEnumerable<T> source, int chunkSize)
+		{
+			if (chunkSize <= 0)
+			{
+				throw new ArgumentException("Chunk size must be greater than 0.", nameof(chunkSize));
+			}
 
-            return source.Select((v, i) => new { v, i })
-                .GroupBy(x => x.i / chunkSize)
-                .Select(g => g.Select(x => x.v));
-        }
+			var items = source.ToArray();
+			var length = items.Length;
 
-        /// <summary> 昇順・降順指定ソート. </summary>
-        public static IOrderedEnumerable<T> Order<T, TKey>(this IEnumerable<T> source, bool ascending, Func<T, TKey> keySelector, IComparer<TKey> comparer = null)
+			var loopCount = length / chunkSize + (length % chunkSize > 0 ? 1 : 0);
+
+			foreach (var i in Enumerable.Range(0, loopCount))
+			{
+				yield return items.Skip(chunkSize * i).Take(chunkSize);
+			}
+		}
+
+		/// <summary> 昇順・降順指定ソート. </summary>
+		public static IOrderedEnumerable<T> Order<T, TKey>(this IEnumerable<T> source, bool ascending, Func<T, TKey> keySelector, IComparer<TKey> comparer = null)
         {
             return ascending ? source.OrderBy(keySelector, comparer) : source.OrderByDescending(keySelector, comparer);
         }

@@ -1,4 +1,4 @@
-﻿
+
 #if ENABLE_AMAZON_WEB_SERVICE
 
 using UnityEngine;
@@ -167,7 +167,7 @@ namespace Modules.ExternalAssets
 				fileStream.Read(bytes, 0, bytes.Length);
 			}
 
-			bytes = FileHandler.Decode(bytes);
+			bytes = await FileHandler.Decode(bytes);
 
 			var bundleLoadRequest = AssetBundle.LoadFromMemoryAsync(bytes);
 

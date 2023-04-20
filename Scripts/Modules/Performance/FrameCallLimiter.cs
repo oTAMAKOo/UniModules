@@ -40,34 +40,27 @@ namespace Modules.Performance
 
 		public async UniTask Wait(ulong increment = 1, CancellationToken cancelToken = default)
 		{
-			try
+			while (true)
 			{
-				while (true)
+				if (frameCount == unityFrameCount)
 				{
-					if (frameCount == unityFrameCount)
+					if (max <= current)
 					{
-						if (max <= current)
-						{
-							await UniTask.NextFrame(cancelToken);
-						}
-						else
-						{
-							break;
-						}
+						await UniTask.NextFrame(cancelToken);
 					}
 					else
 					{
-						frameCount = unityFrameCount;
-						current = 0;
+						break;
 					}
 				}
+				else
+				{
+					frameCount = unityFrameCount;
+					current = 0;
+				}
+			}
 
-				current += increment;
-			}
-			catch (OperationCanceledException)
-			{
-				/* Canceled */
-			}
+			current += increment;
 		}
 
 		public void Reset()

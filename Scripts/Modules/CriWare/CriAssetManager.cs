@@ -281,24 +281,20 @@ namespace Modules.CriWare
         {
 			if (onTimeOut != null)
             {
-                onTimeOut.OnNext(assetInfo);
-            }
-			else
-			{
 				Debug.LogErrorFormat("[Download Timeout] \n{0}", exception);
-			}
+
+				onTimeOut.OnNext(assetInfo);
+            }
         }
 
         private void OnError(Exception exception)
         {
 			if (onError != null)
             {
-                onError.OnNext(exception);
-            }
-			else
-			{
 				Debug.LogErrorFormat("[Download Error] \n{0}", exception);
-			}
+
+				onError.OnNext(exception);
+            }
         }
 
         /// <summary>

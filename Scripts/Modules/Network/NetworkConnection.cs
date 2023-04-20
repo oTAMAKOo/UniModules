@@ -36,15 +36,19 @@ namespace Modules.Net
 			{
 				await WaitNetworkReachableInternal(linkedCancelTokenSource.Token);
 			}
-			catch (Exception)
+			catch (OperationCanceledException ex)
 			{
-				if (timeoutCancelTokenSource.IsCancellationRequested)
+				if (cancelToken.IsCancellationRequested)
 				{
-					if (onNotReachable != null)
-					{
-						onNotReachable.OnNext(Unit.Default);
-					}
+					throw new OperationCanceledException(ex.Message, ex, cancelToken);
 				}
+
+				if (onNotReachable != null)
+				{
+					onNotReachable.OnNext(Unit.Default);
+				}
+
+				throw new NetworkReachabilityException();
 			}
 		}
 

@@ -1,7 +1,6 @@
 
 #if ENABLE_CRIWARE_FILESYSTEM
 
-using UnityEngine;
 using System;
 using System.Threading;
 using System.IO;
@@ -99,54 +98,60 @@ namespace Modules.CriWare
 
 					while (true)
 					{
+						if (cancelToken.IsCancellationRequested){ return; }
+
 						// 未使用のインストーラを取得.
 						Installer = GetInstaller();
 
 						if (Installer != null) { break; }
 
-						await UniTask.NextFrame(cancelToken);
+						await UniTask.NextFrame(CancellationToken.None);
 					}
 
 					// ネットワーク接続待ち.
 
 					await NetworkConnection.WaitNetworkReachable(cancelToken);
 
-					if (cancelToken.IsCancellationRequested)
-					{
-						Installer.Stop();
-						return;
-					}
-
 					// ダウンロード.
 
-					Installer.Copy(downloadUrl, filePath);
-
-					// ダウンロード待ち.
-
-					CriFsWebInstaller.StatusInfo statusInfo;
-
-					while (true)
+					if (Installer != null)
 					{
-						statusInfo = Installer.GetStatusInfo();
+						Installer.Copy(downloadUrl, filePath);
 
-						if (progress != null)
+						// ダウンロード待ち.
+
+						CriFsWebInstaller.StatusInfo statusInfo;
+
+						while (true)
 						{
-							progress.Report((float)statusInfo.receivedSize / statusInfo.contentsSize);
+							statusInfo = Installer.GetStatusInfo();
+
+							if (progress != null)
+							{
+								progress.Report((float)statusInfo.receivedSize / statusInfo.contentsSize);
+							}
+
+							if (statusInfo.status != CriFsWebInstaller.Status.Busy) { break; }
+
+							await UniTask.NextFrame(cancelToken);
 						}
 
-						if (statusInfo.status != CriFsWebInstaller.Status.Busy) { break; }
-
-						await UniTask.NextFrame(cancelToken);
+						if (statusInfo.error != CriFsWebInstaller.Error.None)
+						{
+							throw new Exception($"[Download Error] {AssetInfo.ResourcePath}\n{statusInfo.error}");
+						}
 					}
-
-					if (statusInfo.error != CriFsWebInstaller.Error.None)
-					{
-						throw new Exception($"[Download Error] {AssetInfo.ResourcePath}\n{statusInfo.error}");
-					}
+				}
+				catch (OperationCanceledException)
+				{
+					/* Canceled */
 				}
 				finally
 				{
-					Installer.Stop();
+					if (Installer != null)
+					{
+						Installer.Stop();
+					}
 				}
 			}
 		}
