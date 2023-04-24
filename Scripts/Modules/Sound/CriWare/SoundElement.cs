@@ -1,4 +1,4 @@
-﻿
+
 #if ENABLE_CRIWARE_ADX
 
 using UnityEngine;
@@ -15,14 +15,20 @@ namespace Modules.Sound
         //----- field -----
 
         private CriAtomExPlayback playback;
-        private Subject<Unit> onFinish = null;
+		
+		private Subject<CriAtomExSequencer.CriAtomExSequenceEventInfo> onSoundEvent = null;
+
+		private Subject<Unit> onFinish = null;
 
         //----- property -----
 
-        public SoundType Type { get; private set; }
-        public CueInfo CueInfo { get; private set; }
-        public SoundSheet SoundSheet { get; private set; }
-        public float? FinishTime { get; private set; }
+		public SoundType Type { get; private set; }
+
+		public CueInfo CueInfo { get; private set; }
+        
+		public SoundSheet SoundSheet { get; private set; }
+        
+		public float? FinishTime { get; private set; }
 
         public bool IsPaused { get { return playback.IsPaused(); } }
 
@@ -83,11 +89,25 @@ namespace Modules.Sound
             soundManagement.Resume(this, resumeMode);
         }
 
+		public void InvokeSoundEvent(CriAtomExSequencer.CriAtomExSequenceEventInfo eventInfo)
+		{
+			if (onSoundEvent != null)
+			{
+				onSoundEvent.OnNext(eventInfo);
+			}
+		}
+
         public IObservable<Unit> OnFinishAsObservable()
         {
             return onFinish ?? (onFinish = new Subject<Unit>());
         }
-    }
+
+		/// <summary> サウンドに埋め込まれたイベント通知 </summary>
+		public IObservable<CriAtomExSequencer.CriAtomExSequenceEventInfo> OnSoundEventAsObservable()
+		{
+			return onSoundEvent ?? (onSoundEvent = new Subject<CriAtomExSequencer.CriAtomExSequenceEventInfo>());
+		}
+	}
 }
 
 #endif

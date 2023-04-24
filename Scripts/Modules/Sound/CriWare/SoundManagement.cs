@@ -1,4 +1,4 @@
-﻿
+
 #if ENABLE_CRIWARE_ADX
 
 using UnityEngine;
@@ -30,9 +30,6 @@ namespace Modules.Sound
         private CriAtomExPlayer player = null;
 
         private Dictionary<string, SoundSheet> managedSoundSheets = null;
-		
-        // サウンドイベント.
-        private Subject<CriAtomExSequencer.CriAtomExSequenceEventInfo> onSoundEvent = null;
 
 		private bool initialized = false;
 
@@ -62,17 +59,9 @@ namespace Modules.Sound
             // デフォルトのサウンド設定を適用.
             ApplySoundParam();
 
-            // サウンドイベントを受信.
+			// サウンドイベントを受信.
 
-            CriAtomExSequencer.EventCallback soundEventCallback = (ref CriAtomExSequencer.CriAtomExSequenceEventInfo info) =>
-            {
-                if (onSoundEvent != null)
-                {
-                    onSoundEvent.OnNext(info);
-                }
-            };
-
-            CriAtomExSequencer.OnCallback += soundEventCallback;
+			CriAtomExSequencer.OnCallback += ReceiveSoundEvent;
 
 			// 一定周期で未使用状態になったAcbの解放を行う.
             Observable.Interval(TimeSpan.FromSeconds(5f))
@@ -484,12 +473,20 @@ namespace Modules.Sound
 			}
         }
 
-		/// <summary> サウンドに埋め込まれたイベント通知 </summary>
-        public IObservable<CriAtomExSequencer.CriAtomExSequenceEventInfo> OnSoundEventAsObservable()
-        {
-            return onSoundEvent ?? (onSoundEvent = new Subject<CriAtomExSequencer.CriAtomExSequenceEventInfo>());
-        }
-    }
+		private void ReceiveSoundEvent(ref CriAtomExSequencer.CriAtomExSequenceEventInfo eventInfo)
+		{
+			foreach (var soundElement in soundElements)
+			{
+				if (!soundElement.IsPlaying){ continue; }
+
+				var playback = soundElement.GetPlayback();
+
+				if (playback.id != eventInfo.playbackId){ continue; }
+
+				soundElement.InvokeSoundEvent(eventInfo);
+			}
+		}
+	}
 }
 
 #endif
