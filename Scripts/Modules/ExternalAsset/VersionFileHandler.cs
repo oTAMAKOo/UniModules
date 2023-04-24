@@ -1,6 +1,5 @@
 ﻿
 using Cysharp.Threading.Tasks;
-using Modules.Performance;
 
 namespace Modules.ExternalAssets
 {
@@ -13,30 +12,28 @@ namespace Modules.ExternalAssets
 
 	public sealed class DefaultVersionFileHandler : IVersionFileHandler
 	{
-		private FunctionFrameLimiter frameLimiter = null;
-
-		public DefaultVersionFileHandler()
-		{
-			frameLimiter = new FunctionFrameLimiter(10000);
-		}
+		private int count = 0;
 
 		public async UniTask<byte[]> Encode(byte[] bytes)
 		{
-			for (var i = 0; i < bytes.Length; i++)
-			{
-				await frameLimiter.Wait();
-
-				bytes[i] = (byte)~bytes[i];
-			}
-
-			return bytes;
+			return await Convert(bytes);
 		}
 
 		public async UniTask<byte[]> Decode(byte[] bytes)
 		{
+			return await Convert(bytes);
+		}
+
+		private async UniTask<byte[]> Convert(byte[] bytes)
+		{
 			for (var i = 0; i < bytes.Length; i++)
 			{
-				await frameLimiter.Wait();
+				if (5000000 < count++)
+				{
+					count = 0;
+
+					await UniTask.NextFrame();
+				}
 
 				bytes[i] = (byte)~bytes[i];
 			}
