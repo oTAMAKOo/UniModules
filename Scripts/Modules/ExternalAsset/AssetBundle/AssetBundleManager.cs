@@ -784,10 +784,13 @@ namespace Modules.AssetBundles
 			{
 				UnloadAsset(assetBundleName);
 
-				// ファイルを削除し次回読み込み時に再ダウンロード.
-				if (File.Exists(filePath))
+				if (!localMode && !filePath.StartsWith(UnityPathUtility.StreamingAssetsPath))
 				{
-					File.Delete(filePath);
+					// ファイルを削除し次回読み込み時に再ダウンロード.
+					if (File.Exists(filePath))
+					{
+						File.Delete(filePath);
+					}
 				}
 
 				var builder = new StringBuilder();
