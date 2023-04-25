@@ -11,6 +11,12 @@ namespace Modules.Devkit.Diagnosis
 
 		public sealed class Prefs
 		{
+			public static bool displayFpsStats
+			{
+				get { return SecurePrefs.GetBool(typeof(Prefs).FullName + "-displayFpsStats", true); }
+				set { SecurePrefs.SetBool(typeof(Prefs).FullName + "-displayFpsStats", value); }
+			}
+
 			public static bool displayMemoryStats
 			{
 				get { return SecurePrefs.GetBool(typeof(Prefs).FullName + "-displayMemoryStats", false); }
@@ -43,6 +49,21 @@ namespace Modules.Devkit.Diagnosis
 
 		public SRDiagnosis SRDiagnosis { get { return srDiagnosis; } }
 
+		public bool DisplayFpsStats
+		{
+			get { return Prefs.displayFpsStats; }
+
+			set
+			{
+				Prefs.displayFpsStats = value;
+
+				foreach (var item in hideFpsContents)
+				{
+					UnityUtility.SetActive(item, value);
+				}
+			}
+		}
+
 		public bool DisplayMemoryStats
 		{
 			get { return Prefs.displayMemoryStats; }
@@ -56,31 +77,23 @@ namespace Modules.Devkit.Diagnosis
 
 		//----- method -----
 
-		public void Initialize(bool displayFps = true, bool srDiagnosisEnable = true)
+		public void Initialize(bool srDiagnosisEnable = true)
 		{
 			SetTouchBlock(touchBlock);
 
-			UnityUtility.SetActive(gameObject, displayFps || srDiagnosisEnable);
+			UnityUtility.SetActive(gameObject, srDiagnosisEnable);
 
 			// FPS.
 
 			fpsStats.Initialize();
 
-			if (!displayFps)
-			{
-				foreach (var item in hideFpsContents)
-				{
-					UnityUtility.SetActive(item, false);
-				}
-			}
-
-			UnityUtility.SetActive(fpsStats, displayFps || srDiagnosisEnable);
+			DisplayFpsStats = Prefs.displayFpsStats;
 
 			// Memory.
 
 			memoryStats.Initialize();
 
-			UnityUtility.SetActive(memoryStats, Prefs.displayMemoryStats);
+			DisplayMemoryStats = Prefs.displayMemoryStats;
 
 			// SRDebugger.
 
