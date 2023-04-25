@@ -12,24 +12,34 @@ namespace Modules.AssetBundles
 
     public sealed class DefaultAssetBundleFileHandler : IAssetBundleFileHandler
     {
-		public UniTask<byte[]> Encode(byte[] bytes)
+		public async UniTask<byte[]> Encode(byte[] bytes)
 		{
-			return Convert(bytes);
+			return await Convert(bytes);
 		}
 
-		public UniTask<byte[]> Decode(byte[] bytes)
+		public async UniTask<byte[]> Decode(byte[] bytes)
 		{
-			return Convert(bytes);
+			return await Convert(bytes);
 		}
 
-		private UniTask<byte[]> Convert(byte[] bytes)
+		private async UniTask<byte[]> Convert(byte[] bytes)
 		{
-			for (var i = 0; i < bytes.Length; i++)
+			try
 			{
-				bytes[i] = (byte)~bytes[i];
+				await UniTask.RunOnThreadPool(() =>
+				{
+					for (var i = 0; i < bytes.Length; i++)
+					{
+						bytes[i] = (byte)~bytes[i];
+					}
+				});
+			}
+			finally
+			{
+				await UniTask.SwitchToMainThread();
 			}
 
-			return UniTask.FromResult(bytes);
+			return bytes;
 		}
 	}
 }

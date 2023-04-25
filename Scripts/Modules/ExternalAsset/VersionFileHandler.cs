@@ -12,8 +12,6 @@ namespace Modules.ExternalAssets
 
 	public sealed class DefaultVersionFileHandler : IVersionFileHandler
 	{
-		private int count = 0;
-
 		public async UniTask<byte[]> Encode(byte[] bytes)
 		{
 			return await Convert(bytes);
@@ -26,16 +24,19 @@ namespace Modules.ExternalAssets
 
 		private async UniTask<byte[]> Convert(byte[] bytes)
 		{
-			for (var i = 0; i < bytes.Length; i++)
+			try
 			{
-				if (5000000 < count++)
+				await UniTask.RunOnThreadPool(() =>
 				{
-					count = 0;
-
-					await UniTask.NextFrame();
-				}
-
-				bytes[i] = (byte)~bytes[i];
+					for (var i = 0; i < bytes.Length; i++)
+					{
+						bytes[i] = (byte)~bytes[i];
+					}
+				});
+			}
+			finally
+			{
+				await UniTask.SwitchToMainThread();
 			}
 
 			return bytes;
