@@ -30,6 +30,8 @@ namespace Modules.Devkit.Diagnosis
 		private MemoryStats memoryStats = null;
 		[SerializeField]
 		private SRDiagnosis srDiagnosis = null;
+		[SerializeField]
+		private GameObject[] hideFpsContents = null;
 
 		//----- property -----
 
@@ -64,7 +66,15 @@ namespace Modules.Devkit.Diagnosis
 
 			fpsStats.Initialize();
 
-			UnityUtility.SetActive(fpsStats, displayFps);
+			if (!displayFps)
+			{
+				foreach (var item in hideFpsContents)
+				{
+					UnityUtility.SetActive(item, false);
+				}
+			}
+
+			UnityUtility.SetActive(fpsStats, displayFps || srDiagnosisEnable);
 
 			// Memory.
 
