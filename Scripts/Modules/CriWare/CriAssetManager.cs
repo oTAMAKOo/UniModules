@@ -22,12 +22,6 @@ namespace Modules.CriWare
 		// タイムアウトまでの時間.
         private readonly TimeSpan TimeoutLimit = TimeSpan.FromSeconds(180f);
 
-        // リトライする回数.
-        private readonly int RetryCount = 3;
-
-        // リトライするまでの時間(秒).
-        private readonly TimeSpan RetryDelaySeconds = TimeSpan.FromSeconds(2f);
-
         //----- field -----
 
         // アセット管理.
@@ -96,10 +90,10 @@ namespace Modules.CriWare
         {
             if (!isInitialized){ return; }
 
-            ReleaseInstaller();
+			Release();
         }
 
-        private void ReleaseInstaller()
+        private void Release()
         {
             #if ENABLE_CRIWARE_FILESYSTEM
 
@@ -140,7 +134,7 @@ namespace Modules.CriWare
         {
             if(CriFsWebInstaller.isInitialized)
             {
-                ReleaseInstaller();
+				Release();
             }
 
             var moduleConfig = CriFsWebInstaller.defaultModuleConfig;
@@ -189,8 +183,6 @@ namespace Modules.CriWare
 			var install = GetCriAssetInstall(installPath, assetInfo, progress);
 
 			await install.Task
-				.Timeout(TimeoutLimit)
-                .OnErrorRetry((TimeoutException ex) => OnTimeout(assetInfo, ex), RetryCount, RetryDelaySeconds)
                 .DoOnError(ex => OnError(ex))
                 .Finally(() => RemoveInternalQueue(install))
                 .ToUniTask(cancellationToken: cancelToken);
@@ -204,42 +196,64 @@ namespace Modules.CriWare
 
             install = new CriAssetInstall(installPath, assetInfo, progress);
 
-            installQueueing[assetInfo.ResourcePath] = install;
+			installQueueing[assetInfo.ResourcePath] = install;
 
-            return install;
+			return install;
         }
 
-        private void RemoveInternalQueue(CriAssetInstall install)
+		private void RemoveInternalQueue(CriAssetInstall install)
+		{
+			if (install == null) { return; }
+
+			if (install.AssetInfo == null) { return; }
+
+			var resourcePath = install.AssetInfo.ResourcePath;
+
+			var item = installQueueing.GetValueOrDefault(resourcePath);
+
+			if (item != null)
+			{
+				if (item.Installer != null)
+				{
+					item.Installer.Stop();
+				}
+
+				installQueueing.Remove(resourcePath);
+			}
+
+			// インストーラ解放.
+			if (installQueueing.IsEmpty())
+			{
+				var releaseInstallers = installers.ToArray();
+
+				foreach (var releaseInstaller in releaseInstallers)
+				{
+					ReleaseInstaller(releaseInstaller).Forget();
+				}
+			}
+		}
+
+		private async UniTask ReleaseInstaller(CriFsWebInstaller installer)
         {
-            if (install == null) { return; }
+            if (installer == null){ return; }
 
-            if (install.AssetInfo == null) { return; }
+            installer.Stop();
 
-            var resourcePath = install.AssetInfo.ResourcePath;
-
-            var item = installQueueing.GetValueOrDefault(resourcePath);
-
-            if (item != null)
+            while (true)
             {
-                if (item.Installer != null)
+                var statusInfo = installer.GetStatusInfo();
+
+                if (statusInfo.status != CriFsWebInstaller.Status.Busy)
                 {
-                    item.Installer.Stop();
+                    break;
                 }
 
-                installQueueing.Remove(resourcePath);
+                await UniTask.NextFrame();
             }
 
-            // インストーラ解放.
-            if (installQueueing.IsEmpty())
-            {
-                foreach (var installer in installers)
-                {
-                    installer.Stop();
-                    installer.Dispose();
-                }
+			installers.Remove(installer);
 
-                installers.Clear();
-            }
+			installer.Dispose();
         }
 
         #endif
