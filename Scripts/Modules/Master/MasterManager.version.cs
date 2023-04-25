@@ -52,19 +52,21 @@ namespace Modules.Master
 
 		private bool CheckVersion(IMaster master, string masterVersion)
 		{
-			var result = true;
+			// ローカル保存されているバージョンと一致するか.
 
 			var fileName = GetMasterFileName(master.GetType());
 
-			var filePath = GetFilePath(master);
+			var localVersion = versions.GetValueOrDefault(fileName);
+
+			if (localVersion != masterVersion) { return false; }
 
 			// ファイルがなかったらバージョン不一致.
-			result &= File.Exists(filePath);
 
-			// ローカル保存されているバージョンと一致するか.
-			result &= versions[fileName] == masterVersion;
+			var filePath = GetFilePath(master);
 
-			return result;
+			if(!File.Exists(filePath)){ return false; }
+
+			return true;
 		}
 
 		private void UpdateVersion(IMaster master, string masterVersion)
@@ -153,7 +155,7 @@ namespace Modules.Master
 			}
 		}
 
-		private async UniTask LoadVersion()
+		public async UniTask LoadVersion()
 		{
 			var logText = string.Empty;
 

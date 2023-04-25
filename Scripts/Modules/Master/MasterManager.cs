@@ -284,8 +284,6 @@ namespace Modules.Master
 
 			try
 			{
-				await LoadVersion();
-
 				var tasks = new List<UniTask>();
 
 				foreach (var item in masters)
