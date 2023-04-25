@@ -27,7 +27,7 @@ namespace Extensions
 
 			var length = chunk.Length;
 
-			logBuilder.Append(title);
+			logBuilder.Append(title).AppendLine();
 
 			for (var i = 0; i < length; i++)
 			{
