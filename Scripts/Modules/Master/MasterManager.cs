@@ -83,6 +83,8 @@ namespace Modules.Master
 
 			cancelSource = new CancellationTokenSource();
 
+			InitializeVersion();
+
 			// 保存先設定.
 			SetInstallDirectory(Application.persistentDataPath);
         }
@@ -190,7 +192,11 @@ namespace Modules.Master
 
 							var success = updateResult.Item1;
 
-							if (!success)
+							if (success)
+							{
+								UpdateVersion(master, masterVersion);
+							}
+							else
 							{
 								throw new Exception($"Failed master update. {masterName}");
 							}
@@ -200,6 +206,8 @@ namespace Modules.Master
 					}
 
 					await UniTask.WhenAll(tasks);
+
+					await SaveVersion();
 				}
 				catch (OperationCanceledException)
 				{
@@ -276,6 +284,8 @@ namespace Modules.Master
 
 			try
 			{
+				await LoadVersion();
+
 				var tasks = new List<UniTask>();
 
 				foreach (var item in masters)
@@ -350,7 +360,7 @@ namespace Modules.Master
 
 		public void ClearMasterVersion()
         {
-            masters.ForEach(x => x.ClearVersion());
+			DeleteVersionFile();
             
             Reference.Clear();
 
@@ -380,7 +390,7 @@ namespace Modules.Master
 		            {
 		                var masterVersion = versionTable.GetValueOrDefault(master);
 
-		                var versionCheck = master.CheckVersion(masterVersion);
+		                var versionCheck = CheckVersion(master, masterVersion);
 
 		                #if UNITY_EDITOR
 		                    
@@ -440,7 +450,14 @@ namespace Modules.Master
             CryptoKey = cryptoKey;
         }
 
-        public string GetMasterFileName<T>() where T : IMaster
+		public string GetFilePath(IMaster master)
+		{
+			var fileName = GetMasterFileName(master.GetType());
+
+			return PathUtility.Combine(InstallDirectory, fileName);
+		}
+
+		public string GetMasterFileName<T>() where T : IMaster
         {
             return GetMasterFileName(typeof(T));
         }
@@ -508,7 +525,7 @@ namespace Modules.Master
             return fileName;
         }
 
-        public MessagePackSerializerOptions GetSerializerOptions()
+		public MessagePackSerializerOptions GetSerializerOptions()
         {
             if (serializerOptions != null) { return serializerOptions; }
 

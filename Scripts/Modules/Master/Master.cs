@@ -14,13 +14,6 @@ namespace Modules.Master
 {
 	public interface IMaster
 	{
-		string LoadVersion();
-
-		bool CheckVersion(string masterVersion, string localVersion);
-		bool CheckVersion(string masterVersion);
-
-		void ClearVersion();
-
 		UniTask<Tuple<bool, double>> Update(string masterVersion, FunctionFrameLimiter frameCallLimiter, CancellationToken cancelToken = default);
 		UniTask<Tuple<bool, double, double>> Load(AesCryptoKey cryptoKey, bool cleanOnError, CancellationToken cancelToken = default);
 	}
@@ -36,8 +29,6 @@ namespace Modules.Master
 		where TMasterContainer : MasterContainer<TMasterRecord>, new()
 	{
 		//----- params -----
-
-		private const string VersionFileExtension = ".version";
 
 		//----- field -----
 
@@ -94,117 +85,10 @@ namespace Modules.Master
 			records.Add(key, masterRecord);
 		}
 
-		private string GetFilePath()
+		public async UniTask<Tuple<bool, double, double>> Load(AesCryptoKey cryptoKey, bool cleanOnError, CancellationToken cancelToken = default)
 		{
 			var masterManager = MasterManager.Instance;
 
-			var installDirectory = masterManager.InstallDirectory;
-			var fileName = masterManager.GetMasterFileName<TMaster>();
-
-			return PathUtility.Combine(installDirectory, fileName);
-		}
-
-		public string LoadVersion()
-		{
-			var filePath = GetFilePath();
-
-			var versionFilePath = Path.ChangeExtension(filePath, VersionFileExtension);
-
-			var version = string.Empty;
-
-			try
-			{
-				if (File.Exists(versionFilePath))
-				{
-					var bytes = File.ReadAllBytes(versionFilePath);
-
-					version = Encoding.UTF8.GetString(bytes);
-				}
-			}
-			catch
-			{
-				version = null;
-
-				if (File.Exists(versionFilePath))
-				{
-					File.Delete(versionFilePath);
-				}
-			}
-
-			return version;
-		}
-
-		private async UniTask UpdateVersion(string newVersion, CancellationToken cancelToken)
-		{
-			// バージョン更新.
-
-			var versionFilePath = string.Empty;
-
-			try
-			{
-				var filePath = GetFilePath();
-
-				versionFilePath = Path.ChangeExtension(filePath, VersionFileExtension);
-
-				var bytes = Encoding.UTF8.GetBytes(newVersion);
-
-				using (var fs = new FileStream(versionFilePath, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.ReadWrite, 64, true))
-				{
-					await fs.WriteAsync(bytes, 0, bytes.Length, cancelToken);
-				}
-			}
-			catch
-			{
-				if (File.Exists(versionFilePath))
-				{
-					File.Delete(versionFilePath);
-				}
-			}
-		}
-
-		public bool CheckVersion(string masterVersion, string localVersion)
-		{
-			var result = true;
-
-			var filePath = GetFilePath();
-
-			// ファイルがなかったらバージョン不一致.
-			result &= File.Exists(filePath);
-
-			// ローカル保存されているバージョンと一致するか.
-			result &= localVersion == masterVersion;
-
-			return result;
-		}
-
-		public bool CheckVersion(string masterVersion)
-		{
-			var localVersion = LoadVersion();
-
-			return CheckVersion(masterVersion, localVersion);
-		}
-
-		public void ClearVersion()
-		{
-			var filePath = GetFilePath();
-
-			if (File.Exists(filePath))
-			{
-				File.Delete(filePath);
-			}
-
-			var versionFilePath = Path.ChangeExtension(filePath, VersionFileExtension);
-
-			if (File.Exists(versionFilePath))
-			{
-				File.Delete(versionFilePath);
-			}
-
-			records.Clear();
-		}
-
-		public async UniTask<Tuple<bool, double, double>> Load(AesCryptoKey cryptoKey, bool cleanOnError, CancellationToken cancelToken = default)
-		{
 			var filePath = string.Empty;
 
 			var success = false;
@@ -214,7 +98,7 @@ namespace Modules.Master
 
 			try
 			{
-				filePath = GetFilePath();
+				filePath = masterManager.GetFilePath(this);
 
 				Refresh();
 
@@ -243,8 +127,13 @@ namespace Modules.Master
 			{
 				if (cleanOnError)
 				{
+					if (File.Exists(filePath))
+					{
+						File.Delete(filePath);
+					}
+
 					// 強制更新させる為バージョン情報を削除.
-					ClearVersion();
+					await masterManager.ClearVersion(this);
 				}
 
 				OnError();
@@ -288,12 +177,12 @@ namespace Modules.Master
 
 			// MessagePackの不具合対応.
 			// ※ コード生成をDeserialize時に実行すると処理が返ってこないのでここで生成.
-
-#if UNITY_EDITOR
+			
+			#if UNITY_EDITOR
 
 			serializerOptions.Resolver.GetFormatter<TMaster>();
 
-#endif
+			#endif
 
 			// デシリアライズ.
 			var records = Deserialize(bytes, serializerOptions);
@@ -348,23 +237,22 @@ namespace Modules.Master
 
 		public async UniTask<Tuple<bool, double>> Update(string masterVersion, FunctionFrameLimiter frameCallLimiter, CancellationToken cancelToken = default)
 		{
+			var masterManager = MasterManager.Instance;
+
 			var result = false;
 
 			var sw = System.Diagnostics.Stopwatch.StartNew();
 
-			var filePath = GetFilePath();
-
-			// 既存のファイル削除.
-			if (File.Exists(filePath))
-			{
-				File.Delete(filePath);
-			}
-
-			// ダウンロード.
+			var filePath = masterManager.GetFilePath(this);
 
 			try
 			{
 				await frameCallLimiter.Wait(cancelToken: cancelToken);
+
+				if (File.Exists(filePath))
+				{
+					File.Delete(filePath);
+				}
 
 				result = await Download(masterVersion, cancelToken);
 
@@ -380,11 +268,6 @@ namespace Modules.Master
 				{
 					result = false;
 				}
-
-				// バージョン情報を更新.
-				var version = result ? masterVersion : string.Empty;
-
-				await UpdateVersion(version, cancelToken);
 			}
 			catch (OperationCanceledException)
 			{
