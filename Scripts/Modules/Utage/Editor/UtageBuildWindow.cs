@@ -1,4 +1,4 @@
-﻿
+
 #if ENABLE_UTAGE
 
 using UnityEngine;
@@ -40,8 +40,7 @@ namespace Modules.UtageExtension
 
         //----- field -----
 
-        private string excelFolderAssetPath = null;
-        private string exportFolderAssetPath = null;
+        private string targetFolderAssetPath = null;
 
         private AdvScenarioDataProject projectTemplate = null;
         private AdvImportScenarios importScenarioTemplate = null;
@@ -52,7 +51,7 @@ namespace Modules.UtageExtension
         //----- property -----
 
         //----- method -----
-		
+        
         public static void Open()
         {
             Instance.Initialize();
@@ -73,8 +72,7 @@ namespace Modules.UtageExtension
 
             var config = UtageBuildConfig.Instance;
 
-            excelFolderAssetPath = config.ExcelFolderAssetPath;
-            exportFolderAssetPath = config.ExportFolderAssetPath;
+			targetFolderAssetPath = config.TargetFolderAssetPath;
 
             projectTemplate = config.ScenarioProjectTemplate;
             importScenarioTemplate = config.ImportScenarioTemplate;
@@ -154,7 +152,7 @@ namespace Modules.UtageExtension
             var originIsEditorErrorCheck = AssetFileManager.IsEditorErrorCheck;
 
             AssetFileManager.IsEditorErrorCheck = true;
-                
+
             AdvScenarioDataBuilderWindow.ProjectData = project;
                 
             Import(project);
@@ -162,9 +160,7 @@ namespace Modules.UtageExtension
             AdvScenarioDataBuilderWindow.ProjectData = null;
 
             AssetFileManager.IsEditorErrorCheck = originIsEditorErrorCheck;
-
-            MoveScenarioAsset(content);
-        }
+		}
 
         private AdvScenarioDataProject GetScenarioDataProject(UtageContent content)
         {
@@ -247,19 +243,17 @@ namespace Modules.UtageExtension
         {
             var list = new List<UtageContent>();
 
-            var excelFolderFullPath = UnityPathUtility.ConvertAssetPathToFullPath(excelFolderAssetPath) + PathUtility.PathSeparator;
-            var exportFolderFullPath = UnityPathUtility.ConvertAssetPathToFullPath(exportFolderAssetPath) + PathUtility.PathSeparator;
-
-            var directoryInfo = new DirectoryInfo(excelFolderFullPath);
+            var targetFolderFullPath = UnityPathUtility.ConvertAssetPathToFullPath(targetFolderAssetPath) + PathUtility.PathSeparator;
+            
+            var directoryInfo = new DirectoryInfo(targetFolderFullPath);
 
             var files = directoryInfo.EnumerateFiles("*" + ExcelExtension, SearchOption.AllDirectories);
 
             foreach (var file in files)
             {
                 var excelPath = PathUtility.ConvertPathSeparator(file.FullName);
-                var exportPath = excelPath.Replace(excelFolderFullPath, exportFolderFullPath);
 
-                var bookFilePath = Path.ChangeExtension(exportPath, AdvExcelImporter.BookAssetExt);
+                var bookFilePath = Path.ChangeExtension(excelPath, AdvExcelImporter.BookAssetExt);
 
                 var info = new UtageContent()
                 {
@@ -291,64 +285,7 @@ namespace Modules.UtageExtension
             return content.bookFileLastWriteTime < content.excelLastWriteTime;
         }
 
-        private void MoveScenarioAsset(UtageContent content)
-        {
-            var fromDirectory = Path.GetDirectoryName(content.excelFilePath);
-            var toDirectory = Path.GetDirectoryName(content.bookFilePath);
-
-            void MoveAsset(string fileName)
-            {
-                var from = PathUtility.Combine(fromDirectory, fileName);
-                var to = PathUtility.Combine(toDirectory, fileName);
-                
-                var fromAssetPath = UnityPathUtility.ConvertFullPathToAssetPath(from);
-                var toAssetPath = UnityPathUtility.ConvertFullPathToAssetPath(to);
-
-                if (!File.Exists(from)){ return; }
-
-                if (!Directory.Exists(toDirectory))
-                {
-                    Directory.CreateDirectory(toDirectory);
-
-                    // ここでRefreshしないとMoveAssetでフォルダを認識できない.
-                    AssetDatabase.Refresh(ImportAssetOptions.ForceUpdate);
-                }
-
-                if (UnityEditorUtility.IsExists(toAssetPath))
-                {
-                    AssetDatabase.DeleteAsset(toAssetPath);
-                }
-
-                AssetDatabase.MoveAsset(fromAssetPath, toAssetPath);
-
-                var asset = AssetDatabase.LoadMainAssetAtPath(toAssetPath);
-
-                if (asset != null)
-                {
-                    UnityEditorUtility.SaveAsset(asset);
-                }
-            }
-
-            // .chapter.asset
-            {
-                var chapterFilePath = content.bookFilePath.Replace(AdvExcelImporter.BookAssetExt, AdvExcelImporter.ChapterAssetExt);
-
-                var chapterFileName = Path.GetFileName(chapterFilePath);
-            
-                MoveAsset(chapterFileName);
-            }
-
-            // .book.asset
-            {
-                var chapterFileName = Path.GetFileName(content.bookFilePath);
-            
-                MoveAsset(chapterFileName);
-            }
-
-            AssetDatabase.Refresh(ImportAssetOptions.ForceUpdate);
-        }
-
-        // Copy From: AdvScenarioDataBuilderWindow.cs
+		// Copy From: AdvScenarioDataBuilderWindow.cs
         private static void Import(AdvScenarioDataProject projectData)
         {
             if (projectData == null) { return; }

@@ -16,9 +16,7 @@ namespace Modules.UtageExtension
         //----- field -----
 
         [SerializeField]
-        private Object excelFolder = null;
-        [SerializeField]
-        private Object exportFolder = null;
+        private Object targetFolder = null;
         [SerializeField]
         private AdvScenarioDataProject scenarioProjectTemplate = null;
         [SerializeField]
@@ -26,17 +24,12 @@ namespace Modules.UtageExtension
 
         //----- property -----
 
-        public string ExcelFolderAssetPath
+        public string TargetFolderAssetPath
         {
-            get { return excelFolder != null ? PathUtility.ConvertPathSeparator(AssetDatabase.GetAssetPath(excelFolder)) : null; }
+            get { return targetFolder != null ? PathUtility.ConvertPathSeparator(AssetDatabase.GetAssetPath(targetFolder)) : null; }
         }
 
-        public string ExportFolderAssetPath
-        {
-            get { return exportFolder != null ? PathUtility.ConvertPathSeparator(AssetDatabase.GetAssetPath(exportFolder)) : null; }
-        }
-
-        public AdvScenarioDataProject ScenarioProjectTemplate
+		public AdvScenarioDataProject ScenarioProjectTemplate
         {
             get { return scenarioProjectTemplate; }
         }

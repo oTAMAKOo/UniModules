@@ -27,16 +27,20 @@ namespace Extensions
 
 			var length = chunk.Length;
 
-			logBuilder.Append(title).AppendLine();
+			logBuilder.Append(title);
+
+			if (length < 2)
+			{
+				logBuilder.AppendLine();
+			}
 
 			for (var i = 0; i < length; i++)
 			{
 				var items = chunk[i];
 
-				if (1 < chunk.Length)
+				if (1 < length)
 				{
 					logBuilder.Append($"[{i + 1}/{length}]");
-
 					logBuilder.AppendLine();
 				}
 
