@@ -217,6 +217,10 @@ namespace Modules.Devkit.MasterViewer
 
 					await UniTask.WhenAll(tasks);
 				}
+				else
+				{
+					Debug.LogWarning("MasterViewer use on-memory master.");
+				}
 
 				SetupContents();
 			}
