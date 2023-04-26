@@ -1,6 +1,6 @@
 
 #if ENABLE_CRIWARE_ADX || ENABLE_CRIWARE_SOFDEC
-﻿﻿﻿
+
 using UnityEngine;
 using System;
 using System.IO;
@@ -19,10 +19,16 @@ namespace Modules.CriWare
     {
         //----- params -----
 
+		// デフォルトインストーラ数.
+		private const int DefaultInstallerNum = 8;
+
 		// タイムアウトまでの時間.
         private readonly TimeSpan TimeoutLimit = TimeSpan.FromSeconds(180f);
 
-        //----- field -----
+		// インストーラ解放までの再利用待機時間.
+        private readonly TimeSpan UnUseInstallerReleaseDelay = TimeSpan.FromSeconds(30f);
+
+		//----- field -----
 
         // アセット管理.
         private AssetInfoManifest manifest = null;
@@ -48,7 +54,7 @@ namespace Modules.CriWare
         #endif
 
         // 同時インストール数.
-        private uint numInstallers = 5;
+        private uint numInstallers = DefaultInstallerNum;
 
         // イベント通知.
         private Subject<AssetInfo> onTimeOut = null;
@@ -180,7 +186,7 @@ namespace Modules.CriWare
         {
             if (simulateMode || localMode) { return; }
 			
-			var install = GetCriAssetInstall(installPath, assetInfo, progress);
+			var install = GetCriAssetInstall(installPath, assetInfo, progress, cancelToken);
 
 			await install.Task
                 .DoOnError(ex => OnError(ex))
@@ -188,15 +194,15 @@ namespace Modules.CriWare
                 .ToUniTask(cancellationToken: cancelToken);
         }
 
-        private CriAssetInstall GetCriAssetInstall(string installPath, AssetInfo assetInfo, IProgress<float> progress)
+        private CriAssetInstall GetCriAssetInstall(string installPath, AssetInfo assetInfo, IProgress<float> progress, CancellationToken cancelToken)
         {
             var install = installQueueing.GetValueOrDefault(assetInfo.ResourcePath);
 
             if (install != null) { return install; }
 
-            install = new CriAssetInstall(installPath, assetInfo, progress);
+            install = new CriAssetInstall(installPath, assetInfo, progress, cancelToken);
 
-			installQueueing[assetInfo.ResourcePath] = install;
+            installQueueing[assetInfo.ResourcePath] = install;
 
 			return install;
         }
@@ -224,36 +230,42 @@ namespace Modules.CriWare
 			// インストーラ解放.
 			if (installQueueing.IsEmpty())
 			{
-				var releaseInstallers = installers.ToArray();
+                var releaseInstallers = installers.ToArray();
 
 				foreach (var releaseInstaller in releaseInstallers)
 				{
-					ReleaseInstaller(releaseInstaller).Forget();
+					ReleaseUnUseInstaller(releaseInstaller).Forget();
 				}
 			}
-		}
+        }
 
-		private async UniTask ReleaseInstaller(CriFsWebInstaller installer)
+		private async UniTask ReleaseUnUseInstaller(CriFsWebInstaller installer)
         {
             if (installer == null){ return; }
 
             installer.Stop();
 
-            while (true)
-            {
-                var statusInfo = installer.GetStatusInfo();
+            // 解放時間.
+            var releaseTime = DateTime.UtcNow + UnUseInstallerReleaseDelay;
 
-                if (statusInfo.status != CriFsWebInstaller.Status.Busy)
-                {
-                    break;
-                }
+			// 解放まで一定時間待つ.
+			while (DateTime.UtcNow < releaseTime)
+			{
+				var statusInfo = installer.GetStatusInfo();
 
+				// 再利用されていたら解放キャンセル.
+				if (statusInfo.status == CriFsWebInstaller.Status.Busy){ return; }
+				
                 await UniTask.NextFrame();
-            }
+			}
 
-			installers.Remove(installer);
+			// 解放.
+			if (installers.Contains(installer))
+			{
+				installers.Remove(installer);
 
-			installer.Dispose();
+				installer.Dispose();
+			}
         }
 
         #endif

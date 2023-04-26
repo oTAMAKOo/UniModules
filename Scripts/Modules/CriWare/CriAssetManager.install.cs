@@ -32,7 +32,7 @@ namespace Modules.CriWare
 
 			//----- method -----
 
-			public CriAssetInstall(string installPath, AssetInfo assetInfo, IProgress<float> progress = null)
+			public CriAssetInstall(string installPath, AssetInfo assetInfo, IProgress<float> progress, CancellationToken cancelToken)
 			{
 				AssetInfo = assetInfo;
 
@@ -51,7 +51,8 @@ namespace Modules.CriWare
 					File.Delete(filePath);
 				}
 
-				Task = ObservableEx.FromUniTask(cancelToken => Install(downloadUrl, filePath, progress, cancelToken))
+				Task = Install(downloadUrl, filePath, progress, cancelToken)
+					.ToObservable()
 					.Select(_ => this)
 					.Share();
 			}
