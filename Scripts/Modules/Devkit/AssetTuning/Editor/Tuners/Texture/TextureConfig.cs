@@ -1,4 +1,4 @@
-﻿
+
 using UnityEngine;
 using UnityEditor;
 using System.Collections.Generic;
@@ -51,7 +51,7 @@ namespace Modules.Devkit.AssetTuning.TextureAsset
 
 		protected override void OnLoadInstance()
 		{
-			BuildCache();
+			BuildCache(true);
 		}
 
 		public TextureData CreateNewData()
@@ -82,9 +82,9 @@ namespace Modules.Devkit.AssetTuning.TextureAsset
 			return data.IsDefault() ? null : data.Value;
 		}
 
-		private void BuildCache()
+		private void BuildCache(bool forceReBuild = false)
 		{
-			if (cache != null) { return; }
+			if (!forceReBuild && cache != null) { return; }
 
 			cache = new Dictionary<string, TextureData>();
 
