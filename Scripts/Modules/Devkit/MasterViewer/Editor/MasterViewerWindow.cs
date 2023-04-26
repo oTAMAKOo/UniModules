@@ -176,7 +176,7 @@ namespace Modules.Devkit.MasterViewer
 				EditorUtility.DisplayProgressBar("progress", "Loading all masters", (float)loadFinishCount / totalMasterCount);
 			}
 
-			void OnLoadComplete()
+			void SetupContents()
 			{
 				masterControllers = new List<MasterController>();
 
@@ -196,26 +196,29 @@ namespace Modules.Devkit.MasterViewer
 
 			try
 			{
-				var tasks = new List<UniTask>();
-
-				foreach (var master in allMasters)
+                if(!Application.isPlaying)
 				{
-					var observable = UniTask.Defer(async () =>
+					var tasks = new List<UniTask>();
+
+					foreach (var master in allMasters)
 					{
-						var loadResult = await master.Load(cryptoKey, false);
-
-						if (loadResult != null && loadResult.Item1)
+						var observable = UniTask.Defer(async () =>
 						{
-							OnLoadFinish();
-						}
-					});
+							var loadResult = await master.Load(cryptoKey, false);
 
-					tasks.Add(observable);
+							if (loadResult != null && loadResult.Item1)
+							{
+								OnLoadFinish();
+							}
+						});
+
+						tasks.Add(observable);
+					}
+
+					await UniTask.WhenAll(tasks);
 				}
 
-				await UniTask.WhenAll(tasks);
-
-				OnLoadComplete();
+				SetupContents();
 			}
 			catch (OperationCanceledException)
 			{
