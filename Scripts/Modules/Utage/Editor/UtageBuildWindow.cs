@@ -159,9 +159,11 @@ namespace Modules.UtageExtension
                 
             Import(project);
 
-            AdvScenarioDataBuilderWindow.ProjectData = null;
+			AdvScenarioDataBuilderWindow.ProjectData = null;
 
             AssetFileManager.IsEditorErrorCheck = originIsEditorErrorCheck;
+
+			SaveScenarioAssets(content);
 		}
 
         private AdvScenarioDataProject GetScenarioDataProject(UtageContent content)
@@ -187,6 +189,13 @@ namespace Modules.UtageExtension
             }
             
             var projectAsset = AssetDatabase.LoadMainAssetAtPath(projectAssetPath) as AdvScenarioDataProject;
+
+            if (projectAsset != null)
+			{
+				Reflection.SetPrivateField(projectAsset, "autoImportType", AdvScenarioDataProject.AutoImportType.None);
+
+	            UnityEditorUtility.SaveAsset(projectAsset);
+			}
 
             return projectAsset;
         }
@@ -286,55 +295,33 @@ namespace Modules.UtageExtension
             // Excelファイルの方が更新日が新しい.
             return content.bookFileLastWriteTime < content.excelLastWriteTime;
         }
-
-		// Copy From: AdvScenarioDataBuilderWindow.cs
-        private static void Import(AdvScenarioDataProject projectData)
+        
+        private void Import(AdvScenarioDataProject projectData)
         {
             if (projectData == null) { return; }
 
-            var importer = new AdvExcelImporter();
+			var importer = new AdvExcelImporter();
 
-            importer.ImportAll(projectData);
-
-            if (projectData.IsAutoConvertOnImport)
-            {
-                Convert(projectData);
-            }
+			importer.ImportAll(projectData);
         }
-        
-        // Copy From: AdvScenarioDataBuilderWindow.cs
-        private static void Convert(AdvScenarioDataProject projectData)
-        {
-            if (projectData == null)
-            {
-                Debug.LogWarning("Scenario Data Excel project is no found");
-                return;
-            }
 
-            if (string.IsNullOrEmpty(projectData.ConvertPath))
-            {
-                Debug.LogWarning("Convert Path is not defined");
-                return;
-            }
-            
-            var converter = new AdvExcelCsvConverter();
+        private void SaveScenarioAssets(UtageContent content)
+		{
+            var directory = Path.GetDirectoryName(content.excelFilePath);
 
-            foreach( var item in projectData.ChapterDataList )
-            {
-                if (!converter.Convert(projectData.ConvertPath, item.ExcelPathList, item.chapterName, projectData.ConvertVersion))
-                {
-                    Debug.LogWarning("Convert is failed");
-                    return;
-                }
-            }
+            var files = Directory.EnumerateFiles(directory, "*" + AdvExcelImporter.ScenarioAssetExt);
 
-            if (projectData.IsAutoUpdateVersionAfterConvert)
-            {
-                projectData.ConvertVersion++;
+			foreach (var file in files)
+			{
+				var assetPath = UnityPathUtility.ConvertFullPathToAssetPath(file);
 
-                EditorUtility.SetDirty(projectData);
-            }
-        }
+                var guid = AssetDatabase.GUIDFromAssetPath(assetPath);
+
+				AssetDatabase.SaveAssetIfDirty(guid);
+			}
+
+			AssetDatabase.Refresh();
+		}
     }
 }
 
