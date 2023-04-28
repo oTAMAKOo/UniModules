@@ -128,26 +128,23 @@ namespace Modules.ExternalAssets
         {
             if (SimulateMode){ return false; }
 
+			// バージョン情報が存在しないので更新.
+			if (versions.IsEmpty()) { return true; }
+
+			// バージョンチェック.
+
 			var requireUpdate = true;
 
-			lock (versions)
-			{
-				// バージョン情報が存在しないので更新.
-				if (versions.IsEmpty()) { return true; }
+            if (assetInfo.IsAssetBundle)
+            {
+                requireUpdate = !CheckAssetBundleVersion(assetInfo);
+            }
+            else
+            {
+                requireUpdate = !CheckAssetVersion(assetInfo);
+            }
 
-				// バージョンチェック.
-
-				if (assetInfo.IsAssetBundle)
-				{
-					requireUpdate = !CheckAssetBundleVersion(assetInfo);
-				}
-				else
-				{
-					requireUpdate = !CheckAssetVersion(assetInfo);
-				}
-			}
-
-			return requireUpdate;
+            return requireUpdate;
         }
 
 		/// <summary>
@@ -275,16 +272,13 @@ namespace Modules.ExternalAssets
 				await UniTask.SwitchToThreadPool();
 
 				var builder = new StringBuilder();
-
-				lock (versions)
+				
+				foreach (var version in versions)
 				{
-					foreach (var version in versions)
-					{
-						builder.Append(version.Key);
-						builder.Append(VersionSeparator);
-						builder.Append(version.Value);
-						builder.AppendLine();
-					}
+					builder.Append(version.Key);
+					builder.Append(VersionSeparator);
+					builder.Append(version.Value);
+					builder.AppendLine();
 				}
 
 				var text = builder.ToString();
