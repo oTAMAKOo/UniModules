@@ -123,6 +123,8 @@ namespace Modules.UtageExtension
                     EditorUtility.DisplayProgressBar("progress", excelAssetPath, (float)i / targets.Length);
 
                     Export(target);
+
+					File.SetLastWriteTimeUtc(target.bookFilePath, DateTime.UtcNow);
                 }
 
                 EditorUtility.ClearProgressBar();
