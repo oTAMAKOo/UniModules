@@ -273,12 +273,15 @@ namespace Modules.ExternalAssets
 
 				var builder = new StringBuilder();
 				
-				foreach (var version in versions)
+				lock (versions)
 				{
-					builder.Append(version.Key);
-					builder.Append(VersionSeparator);
-					builder.Append(version.Value);
-					builder.AppendLine();
+					foreach (var version in versions)
+					{
+						builder.Append(version.Key);
+						builder.Append(VersionSeparator);
+						builder.Append(version.Value);
+						builder.AppendLine();
+					}
 				}
 
 				var text = builder.ToString();
