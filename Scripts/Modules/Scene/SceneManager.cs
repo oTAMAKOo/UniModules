@@ -352,7 +352,6 @@ namespace Modules.Scene
 			if (preLoadCancelSource != null)
 			{
 				preLoadCancelSource.Cancel();
-				preLoadCancelSource = null;
 			}
 
 			// 遷移開始.
@@ -1055,6 +1054,12 @@ namespace Modules.Scene
 		/// <summary> 事前読み込み. </summary>
 		private async UniTask PreLoadScene(Scenes[] targetScenes)
         {
+			if (preLoadCancelSource != null && !preLoadCancelSource.IsCancellationRequested)
+			{
+				preLoadCancelSource.Cancel();
+				preLoadCancelSource.Dispose();
+			}
+
 			preLoadCancelSource = new CancellationTokenSource();
 
             if (targetScenes.IsEmpty()) { return; }
@@ -1072,7 +1077,7 @@ namespace Modules.Scene
 				{
 					await PreLoadCore(scene, builder);
 
-					await UniTask.DelayFrame(5, cancellationToken: preLoadCancelSource.Token);
+					await UniTask.NextFrame(preLoadCancelSource.Token);
 				}
 				catch (OperationCanceledException)
 				{
