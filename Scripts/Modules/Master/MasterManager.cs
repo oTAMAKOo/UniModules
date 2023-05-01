@@ -284,7 +284,7 @@ namespace Modules.Master
 
 			try
 			{
-				var chunk = masters.Chunk(25);
+				var chunk = masters.Chunk(50);
 
 				foreach (var items in chunk)
 				{
