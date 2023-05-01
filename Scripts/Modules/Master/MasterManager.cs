@@ -284,28 +284,33 @@ namespace Modules.Master
 
 			try
 			{
-				var tasks = new List<UniTask>();
+				var chunk = masters.Chunk(25);
 
-				foreach (var item in masters)
+				foreach (var items in chunk)
 				{
-					var masterType = item.GetType();
-					var masterName = masterType.Name;
+					var tasks = new List<UniTask>();
 
-					var masterFileName = masterFileNames.GetValueOrDefault(masterType);
-
-					var task = UniTask.Defer(async () =>
+					foreach (var item in items)
 					{
-						var loadResult = await item.Load(CryptoKey, true, linkedCancelToken);
+						var masterType = item.GetType();
+						var masterName = masterType.Name;
 
-						if (linkedCancelToken.IsCancellationRequested) { return; }
+						var masterFileName = masterFileNames.GetValueOrDefault(masterType);
 
-						OnLoadFinish(masterType, masterName, masterFileName, loadResult.Item1, loadResult.Item2, loadResult.Item3);
-					});
+						var task = UniTask.Defer(async () =>
+						{
+							var loadResult = await item.Load(CryptoKey, true, linkedCancelToken);
 
-					tasks.Add(task);
+							if (linkedCancelToken.IsCancellationRequested) { return; }
+
+							OnLoadFinish(masterType, masterName, masterFileName, loadResult.Item1, loadResult.Item2, loadResult.Item3);
+						});
+
+						tasks.Add(task);
+					}
+
+					await UniTask.WhenAll(tasks);
 				}
-
-				await UniTask.WhenAll(tasks);
 			}
 			catch (Exception e)
 			{
