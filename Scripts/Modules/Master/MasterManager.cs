@@ -284,33 +284,33 @@ namespace Modules.Master
 
 			try
 			{
-				var chunk = masters.Chunk(50);
+				//-------------------------------------------------------------
+				// Editorの場合、動的コード生成が実行される為負荷が高くなる.
+				// 実機では事前コード生成の為負荷はそこまで高くならない.
+				//-------------------------------------------------------------
 
-				foreach (var items in chunk)
+				var tasks = new List<UniTask>();
+
+				foreach (var item in masters)
 				{
-					var tasks = new List<UniTask>();
+					var masterType = item.GetType();
+					var masterName = masterType.Name;
 
-					foreach (var item in items)
+					var masterFileName = masterFileNames.GetValueOrDefault(masterType);
+
+					var task = UniTask.Defer(async () =>
 					{
-						var masterType = item.GetType();
-						var masterName = masterType.Name;
+						var loadResult = await item.Load(CryptoKey, true, linkedCancelToken);
 
-						var masterFileName = masterFileNames.GetValueOrDefault(masterType);
+						if (linkedCancelToken.IsCancellationRequested) { return; }
 
-						var task = UniTask.Defer(async () =>
-						{
-							var loadResult = await item.Load(CryptoKey, true, linkedCancelToken);
+						OnLoadFinish(masterType, masterName, masterFileName, loadResult.Item1, loadResult.Item2, loadResult.Item3);
+					});
 
-							if (linkedCancelToken.IsCancellationRequested) { return; }
-
-							OnLoadFinish(masterType, masterName, masterFileName, loadResult.Item1, loadResult.Item2, loadResult.Item3);
-						});
-
-						tasks.Add(task);
-					}
-
-					await UniTask.WhenAll(tasks);
+					tasks.Add(task);
 				}
+
+				await UniTask.WhenAll(tasks);
 			}
 			catch (Exception e)
 			{
