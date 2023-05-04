@@ -14,7 +14,7 @@ using DirectoryUtility = Extensions.DirectoryUtility;
 
 namespace Modules.AssetBundles.Editor
 {
-    public sealed class BuildAssetBundle
+	public sealed class BuildAssetBundle
     {
         //----- params -----
         
@@ -66,7 +66,7 @@ namespace Modules.AssetBundles.Editor
                 
                 var fileName = Path.GetFileName(bundleInfo.Value.FileName);
 
-                var assetInfo = new AssetInfo(string.Empty, fileName, "(undefined)", null);
+                var assetInfo = new AssetInfo(string.Empty, fileName, AssetInfoManifest.UndefinedAssetGroup, null);
 
                 var assetBundleInfo = new AssetBundleInfo(assetBundleName);
 

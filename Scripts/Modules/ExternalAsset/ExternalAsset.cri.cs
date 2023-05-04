@@ -6,7 +6,6 @@ using System;
 using System.IO;
 using System.Text;
 using System.Threading;
-using CriWare;
 using Cysharp.Threading.Tasks;
 using UniRx;
 using Extensions;
@@ -198,6 +197,20 @@ namespace Modules.ExternalAssets
             {
                 onLoadAsset.OnNext(resourcePath);
             }
+
+			// Awbがある場合はそれもロードした扱い.
+
+			var awbResourcePath = Path.ChangeExtension(resourcePath, CriAssetDefinition.AwbExtension);
+
+			var awbAssetInfo = GetAssetInfo(awbResourcePath);
+
+			if (awbAssetInfo != null)
+			{
+				if (onLoadAsset != null)
+				{
+					onLoadAsset.OnNext(awbResourcePath);
+				}
+			}
             
             return cueInfo;
         }

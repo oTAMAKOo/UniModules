@@ -1,14 +1,19 @@
-﻿
+
 using UnityEngine;
 using UnityEditor;
 using System;
 using System.IO;
 using System.Collections.Generic;
+using System.Linq;
+using System.Text;
 using Cysharp.Threading.Tasks;
 using UniRx;
 using Extensions;
 using Extensions.Devkit;
+using Modules.AssetBundles;
+using Modules.Devkit.Console;
 using Modules.ExternalAssets;
+using Modules.Devkit.Project;
 
 namespace Modules.Devkit.ExternalAssets
 {
@@ -33,7 +38,7 @@ namespace Modules.Devkit.ExternalAssets
 			}
 		}
 
-        //----- field -----
+		//----- field -----
 
 		private List<ContentInfo> loadedAssetInfos = null;
 
@@ -47,6 +52,8 @@ namespace Modules.Devkit.ExternalAssets
 		private bool initialized = false;
 
         //----- property -----
+
+		public bool IsRecording { get; private set; }
 
         //----- method -----
 		
@@ -73,17 +80,31 @@ namespace Modules.Devkit.ExternalAssets
 				.Subscribe(x => OnLoadAsset(x))
 				.AddTo(Disposable);
 
-			Observable.EveryEndOfFrame()
+			ExternalAssetLoadRecorderBridge.OnRequestStatusChangeAsObservable()
+				.Subscribe(x => IsRecording = x)
+				.AddTo(Disposable);
+
+			Observable.EveryLateUpdate()
 				.Subscribe(_ => Repaint())
 				.AddTo(Disposable);
+
+			EditorApplication.playModeStateChanged += x =>
+			{
+				if (x == PlayModeStateChange.EnteredPlayMode)
+				{
+					IsRecording = false;
+					loadedAssetInfos.Clear();
+				}
+			};
+
+			IsRecording = false;
 
 			initialized = true;
 		}
 
 		void OnGUI()
 		{
-			Initialize();
-
+			// 初期化されるまでは処理しない.
 			if(!IsExternalAssetSetup())
 			{
 				EditorGUILayout.HelpBox("ExternalAsset not initialized.", MessageType.Error);
@@ -91,29 +112,51 @@ namespace Modules.Devkit.ExternalAssets
 				return;
 			}
 
-			if (IsExternalAssetSimulateMode())
-			{
-				EditorGUILayout.HelpBox("Cannot used in SimulateMode.", MessageType.Error);
-				return;
-			}
+			// 初期化済みでない場合初期化.
+			Initialize();
 
 			// Toolbar.
 
             using (new EditorGUILayout.HorizontalScope(EditorStyles.toolbar, GUILayout.Height(15f)))
             {
-                Action<string> onChangeSearchText = x =>
-                {
-                    searchText = x;
-                };
+				void OnChangeSearchText(string x)
+				{
+					searchText = x;
+				}
 
-                Action onSearchCancel = () =>
-                {
-                    searchText = string.Empty;
-                };
+				void OnSearchCancel()
+				{
+					searchText = string.Empty;
+				}
 
-                EditorLayoutTools.DrawToolbarSearchTextField(searchText, onChangeSearchText, onSearchCancel, GUILayout.MinWidth(150f));
+				using (new DisableScope(IsRecording))
+				{
+					if (GUILayout.Button("Start", EditorStyles.toolbarButton))
+					{
+						IsRecording = true;
+					}
+				}
 
-                GUILayout.FlexibleSpace();
+				using (new DisableScope(!IsRecording))
+				{
+					if (GUILayout.Button("Stop", EditorStyles.toolbarButton))
+					{
+						IsRecording = false;
+					}
+				}
+
+				GUILayout.FlexibleSpace();
+
+				EditorLayoutTools.DrawToolbarSearchTextField(searchText, OnChangeSearchText, OnSearchCancel, GUILayout.MinWidth(150f));
+
+				EditorGUILayout.Separator();
+
+				if (GUILayout.Button("Clear", EditorStyles.toolbarButton))
+				{
+					loadedAssetInfos.Clear();
+				}
+
+				EditorGUILayout.Separator();
 
 				if (GUILayout.Button("Export", EditorStyles.toolbarButton))
 				{
@@ -187,13 +230,55 @@ namespace Modules.Devkit.ExternalAssets
 			}
 		}
 
+		// アセット管理情報読み込み.
+		private async UniTask<AssetInfoManifest> LoadAssetInfoManifest(string directory)
+		{
+			if (!IsExternalAssetSetup()){ return null; }
+
+			var assetBundleManager = AssetBundleManager.Instance;
+
+			if (assetBundleManager == null){ return null; }
+
+			var projectResourceFolders = ProjectResourceFolders.Instance;
+
+			if (projectResourceFolders == null){ return null; }
+
+			var externalResourcesPath = projectResourceFolders.ExternalAssetPath;
+
+			var manifestAssetInfo = AssetInfoManifest.GetManifestAssetInfo();
+			
+			var loadPath = PathUtility.Combine(externalResourcesPath, manifestAssetInfo.ResourcePath);
+
+			var deleteOnLoadError = assetBundleManager.DeleteOnLoadError;
+			var isSimulateMode = assetBundleManager.IsSimulateMode;
+
+			// シミュレーションモードを無効化.
+			assetBundleManager.SetSimulateMode(false);
+
+			// ロードエラー時の削除を無効化.
+			assetBundleManager.DeleteOnLoadError = false;
+
+			// 実ファイルを読み込む.
+			var manifest = await assetBundleManager.LoadAsset<AssetInfoManifest>(directory, manifestAssetInfo, loadPath);
+
+			// 元の状態に戻す.
+			assetBundleManager.SetSimulateMode(isSimulateMode);
+			assetBundleManager.DeleteOnLoadError = deleteOnLoadError;
+
+			return manifest;
+		}
+
 		private void OnLoadAsset(string resourcePath)
 		{
+			if (!IsRecording){ return; }
+
 			var externalAsset = ExternalAsset.Instance;
 
 			var assetInfo = externalAsset.GetAssetInfo(resourcePath);
 
 			if (assetInfo == null){ return; }
+
+			if (loadedAssetInfos.Any(x => x.AssetInfo.ResourcePath == resourcePath)){ return; }
 
 			var contentInfo = new ContentInfo(assetInfo);
 
@@ -203,11 +288,6 @@ namespace Modules.Devkit.ExternalAssets
 		private bool IsExternalAssetSetup()
 		{
 			return ExternalAsset.Instance != null && ExternalAsset.Initialized;
-		}
-
-		private bool IsExternalAssetSimulateMode()
-		{
-			return ExternalAsset.Instance.SimulateMode;
 		}
 
 		private IEnumerable<ContentInfo> GetDisplayContents()
@@ -246,41 +326,120 @@ namespace Modules.Devkit.ExternalAssets
 
 		private async UniTask Export()
 		{
+			var persistentDataPath = UnityPathUtility.PersistentDataPath;
+
+			var sourceFolder = EditorUtility.OpenFolderPanel("Select source folder", persistentDataPath, null);
+
+			if (string.IsNullOrEmpty(sourceFolder)){ return; }
+
+			var exportFolder = EditorUtility.OpenFolderPanel("Select export folder", null, null);
+
+			if (string.IsNullOrEmpty(exportFolder)){ return; }
+
+			GUI.UnfocusWindow();
+
+			// ※ 参照情報が必要な為、転送元のAssetInfoManifestはビルド成果物の状態でなければいけない.
+			var assetInfoManifest = await LoadAssetInfoManifest(sourceFolder);
+			
+			if (assetInfoManifest == null)
+			{
+				Debug.LogError("AssetInfoManifest load failed.");
+
+				return;
+			}
+
+			assetInfoManifest.BuildCache(true);
+
+			var hashSet = new HashSet<string>();
+
+			var manifestAssetInfo = AssetInfoManifest.GetManifestAssetInfo();
+
+			AddFilePath(hashSet, sourceFolder, manifestAssetInfo);
+
+			var assetInfosByAssetBundleName = assetInfoManifest.GetAssetInfos()
+				.Where(x => x.IsAssetBundle)
+				.GroupBy(x => x.AssetBundle.AssetBundleName)
+				.ToDictionary(x => x.Key, x => x.FirstOrDefault());
+
+			for (var i = 0; i < loadedAssetInfos.Count; i++)
+			{
+				var contentInfo = loadedAssetInfos[i];
+
+				// シミュレーションモードの情報から本データの情報を取得.
+				var resourcePath = contentInfo.AssetInfo.ResourcePath;
+
+				if (manifestAssetInfo.ResourcePath == resourcePath){ continue; }
+
+				var assetInfo = assetInfoManifest.GetAssetInfo(resourcePath);
+
+				if (assetInfo == null)
+				{
+					Debug.LogError($"AssetInfo not found.\nResourcePath : {resourcePath}");
+
+					continue;
+				}
+				
+				AddFilePath(hashSet, sourceFolder, assetInfo);
+                
+				if (assetInfo.IsAssetBundle)
+				{
+					var dependencies = assetInfo.AssetBundle.Dependencies;
+
+					foreach (var item in dependencies)
+					{
+						var dependantAssetInfo = assetInfosByAssetBundleName[item];
+
+						if (dependantAssetInfo == null)
+						{
+							Debug.LogError($"Dependant AssetInfo not found.\nResourcePath : {item}");
+
+							continue;
+						}
+
+						AddFilePath(hashSet, sourceFolder, dependantAssetInfo);
+					}
+				}
+			}
+
+			var logBuilder = new StringBuilder();
+
+			var array = hashSet.ToArray();
+
+			for (var i = 0; i < array.Length; i++)
+			{
+				var item = array[i];
+			
+				var fileName = Path.GetFileName(item);
+
+				EditorUtility.DisplayProgressBar("Export file", fileName, (float)i / array.Length);
+
+				var from = PathUtility.Combine(sourceFolder, fileName);
+				var to = PathUtility.Combine(exportFolder, fileName);
+
+				if(!File.Exists(from)){ continue; }
+
+				File.Copy(from, to, true);
+
+				logBuilder.AppendLine(to);
+			}
+
+			EditorUtility.ClearProgressBar();
+
+			var logs = logBuilder.ToString();
+
+			LogUtility.ChunkLog(logs, "Export complete", x => UnityConsole.Info(x));
+		}
+
+		private void AddFilePath(HashSet<string> hashSet, string directory, AssetInfo assetInfo)
+		{
 			var externalAsset = ExternalAsset.Instance;
 
-			var folderPath = EditorUtility.OpenFolderPanel("Select export folder", null, null);
+			var filePath = externalAsset.GetFilePath(directory, assetInfo);
 
-			if (string.IsNullOrEmpty(folderPath)){ return; }
-
-			var list = new HashSet<string>();
-
-			foreach (var contentInfo in loadedAssetInfos)
+			if (!hashSet.Contains(filePath))
 			{
-				var filePath = externalAsset.GetFilePath(contentInfo.AssetInfo);
-
-				if (list.Contains(filePath)){ continue; }
-
-				list.Add(filePath);
+				hashSet.Add(filePath);
 			}
-
-			var chunck = list.Chunk(25);
-
-			foreach (var items in chunck)
-			{
-				foreach (var item in items)
-				{
-					var fileName = Path.GetFileName(item);
-
-					var from = PathUtility.ConvertPathSeparator(item);
-					var to = PathUtility.Combine(folderPath, fileName);
-
-					File.Copy(from, to, true);
-				}
-
-				await UniTask.NextFrame();
-			}
-
-			Debug.Log($"Export complete.");
 		}
     }
 }

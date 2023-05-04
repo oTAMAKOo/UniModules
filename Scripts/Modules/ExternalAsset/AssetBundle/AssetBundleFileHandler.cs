@@ -26,13 +26,12 @@ namespace Modules.AssetBundles
 		{
 			try
 			{
-				await UniTask.RunOnThreadPool(() =>
+				await UniTask.SwitchToThreadPool();
+				
+				for (var i = 0; i < bytes.Length; i++)
 				{
-					for (var i = 0; i < bytes.Length; i++)
-					{
-						bytes[i] = (byte)~bytes[i];
-					}
-				});
+					bytes[i] = (byte)~bytes[i];
+				}
 			}
 			finally
 			{

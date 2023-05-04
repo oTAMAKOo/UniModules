@@ -196,9 +196,11 @@ namespace Modules.ExternalAssets
 			{
 				await UniTask.SwitchToThreadPool();
 
+				var manifestAssetInfo = AssetInfoManifest.GetManifestAssetInfo();
+
 				assetInfoManifest.BuildCache(true);
 
-				var assetInfos = assetInfoManifest.GetAssetInfos();
+				var assetInfos = assetInfoManifest.GetAssetInfos().Append(manifestAssetInfo);
 
 				foreach (var item in assetInfos)
 				{
@@ -328,6 +330,23 @@ namespace Modules.ExternalAssets
 				}
 
 				await SetAssetInfoManifest(manifest);
+
+				// アセット情報登録後にコールバックは呼び出す.
+
+				if (onUpdateAsset != null)
+				{
+					onUpdateAsset.OnNext(manifestAssetInfo.ResourcePath);
+				}
+
+				if (onLoadAsset != null)
+				{
+					onLoadAsset.OnNext(manifestAssetInfo.ResourcePath);
+				}
+
+				if (onUnloadAsset != null)
+				{
+					onUnloadAsset.OnNext(manifestAssetInfo.ResourcePath);
+				}
 
 				// アセット管理情報を登録.
 
@@ -464,25 +483,30 @@ namespace Modules.ExternalAssets
 
 		public string GetFilePath(AssetInfo assetInfo)
 		{
+			return GetFilePath(InstallDirectory, assetInfo);
+		}
+
+		public string GetFilePath(string directory, AssetInfo assetInfo)
+		{
 			var filePath = string.Empty;
 
 			if (assetInfo.IsAssetBundle)
 			{
-				filePath = assetBundleManager.GetFilePath(InstallDirectory, assetInfo);
+				filePath = assetBundleManager.GetFilePath(directory, assetInfo);
 			}
 
 			#if ENABLE_CRIWARE_ADX || ENABLE_CRIWARE_SOFDEC
 
 			else if (criAssetManager.IsCriAsset(assetInfo.ResourcePath))
 			{
-				filePath = criAssetManager.GetFilePath(InstallDirectory, assetInfo);
+				filePath = criAssetManager.GetFilePath(directory, assetInfo);
 			}
 
 			#endif
 
 			else
 			{
-				filePath = PathUtility.Combine(InstallDirectory, assetInfo.FileName);
+				filePath = PathUtility.Combine(directory, assetInfo.FileName);
 			}
 
 			return filePath;

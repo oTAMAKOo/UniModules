@@ -1,10 +1,9 @@
-﻿
+
 using UnityEngine.Build.Pipeline;
 using UnityEditor;
 using UnityEditor.Build.Content;
 using UnityEditor.Build.Pipeline;
 using UnityEditor.Build.Pipeline.Interfaces;
-using System.Collections.Generic;
 
 using BuildCompression = UnityEngine.BuildCompression;
 
@@ -12,7 +11,7 @@ namespace Modules.AssetBundles.Editor
 {
     public interface IBuildAssetBundlePipeline
     {
-        BuildTarget BuildTarget { get; }
+		BuildTarget BuildTarget { get; }
 
         BuildResult Build(string outputPath);
 
@@ -44,7 +43,7 @@ namespace Modules.AssetBundles.Editor
     public sealed class BuildAssetBundlePipeline : IBuildAssetBundlePipeline
     {
         //----- params -----
-
+		
         //----- field -----
 
         //----- property -----

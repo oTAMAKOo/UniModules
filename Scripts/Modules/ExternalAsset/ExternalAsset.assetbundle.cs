@@ -359,8 +359,11 @@ namespace Modules.ExternalAssets
         }
 
 		/// <summary> アセットバンドル読み込み時イベント </summary>
-		public IObservable<AssetInfo> OnLoadAssetBundleAsObservable()
+		/// <returns> 該当アセットバンドルのFilePath </returns>
+		public IObservable<string> OnLoadAssetBundleAsObservable()
 		{
+			if (assetBundleManager == null){ return Observable.Empty<string>(); }
+
 			return assetBundleManager.OnLoadAsObservable();
 		}
     }

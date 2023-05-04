@@ -246,7 +246,10 @@ namespace Modules.ExternalAssets
 
 			if (string.IsNullOrEmpty(assetInfo.Hash)){ return; }
 
-			versions[assetInfo.FileName] = assetInfo.Hash;
+			lock (versions)
+			{
+				versions[assetInfo.FileName] = assetInfo.Hash;
+			}
 
 			if (updateVersionDisposable == null)
 			{

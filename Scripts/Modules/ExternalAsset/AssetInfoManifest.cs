@@ -165,6 +165,8 @@ namespace Modules.ExternalAssets
 
         public const string ManifestFileName = "AssetInfoManifest.asset";
 
+		public const string UndefinedAssetGroup = "(undefined)";
+
 		//----- field -----
 
         [SerializeField, ReadOnly]

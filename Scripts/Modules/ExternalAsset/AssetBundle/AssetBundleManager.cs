@@ -82,23 +82,26 @@ namespace Modules.AssetBundles
 		// 依存関係.
 		private AssetBundleDependencies assetBundleDependencies = null;
 
-		// シュミュレートモードか.
-		private bool simulateMode = false;
-
-		// ローカルモードか.
-		private bool localMode = false;
-
 		// ファイルハンドラ.
 		private IAssetBundleFileHandler fileHandler = null;
 
 		// イベント通知.
-		private Subject<AssetInfo> onLoad = null;
+		private Subject<string> onLoad = null;
 		private Subject<AssetInfo> onTimeOut = null;
 		private Subject<Exception> onError = null;
 
 		private bool isInitialized = false;
 
 		//----- property -----
+
+		// シュミュレートモードか.
+		public bool IsSimulateMode { get; private set; } = false;
+
+		// ローカルモードか.
+		public bool IsLocalMode { get; private set; } = false;
+
+		// 読み込み失敗時にファイルを削除するか.
+		public bool DeleteOnLoadError { get; set; } = true;
 
 		//----- method -----
 
@@ -109,8 +112,6 @@ namespace Modules.AssetBundles
 		public void Initialize(bool simulateMode = false)
 		{
 			if (isInitialized) { return; }
-
-			this.simulateMode = UnityUtility.isEditor && simulateMode;
 
 			urlBuilder = new StringBuilder();
 			downloadList = new HashSet<string>();
@@ -124,6 +125,9 @@ namespace Modules.AssetBundles
 			syncLoadFileCountLimiter = new FunctionFrameLimiter(FrameSyncLoadFileNum);
 			syncLoadFileSizeLimiter = new FunctionFrameLimiter((ulong)FrameSyncLoadFileSize);
 
+			SetSimulateMode(simulateMode);
+			SetLocalMode(false);
+
 			AddManifestAssetInfo();
 
 			isInitialized = true;
@@ -135,10 +139,16 @@ namespace Modules.AssetBundles
 			this.maxDownloadCount = maxDownloadCount;
 		}
 
+		/// <summary> シミュレーションモード設定. </summary>
+		public void SetSimulateMode(bool simulateMode)
+		{
+			IsSimulateMode = UnityUtility.isEditor && simulateMode;
+		}
+
 		/// <summary> ローカルモード設定. </summary>
 		public void SetLocalMode(bool localMode)
 		{
-			this.localMode = localMode;
+			IsLocalMode= localMode;
 		}
 
 		/// <summary> ファイルハンドラ設定. </summary>
@@ -283,7 +293,7 @@ namespace Modules.AssetBundles
 		/// </summary>
 		public async UniTask UpdateAssetInfoManifest(string installPath, CancellationToken cancelToken = default)
 		{
-			if (simulateMode || localMode) { return; }
+			if (IsSimulateMode || IsLocalMode) { return; }
 
 			if (cancelToken.IsCancellationRequested) { return; }
 
@@ -297,7 +307,7 @@ namespace Modules.AssetBundles
 		/// </summary>
 		public async UniTask UpdateAssetBundle(string installPath, AssetInfo assetInfo, IProgress<float> progress = null, CancellationToken cancelToken = default)
 		{
-			if (simulateMode || localMode) { return; }
+			if (IsSimulateMode || IsLocalMode) { return; }
 
 			await UpdateAssetBundleInternal(installPath, assetInfo, progress, cancelToken);
 		}
@@ -525,11 +535,11 @@ namespace Modules.AssetBundles
 
 			#if UNITY_EDITOR
 
-			if (simulateMode)
+			if (IsSimulateMode)
 			{
 				try
 				{
-					result = await SimulateLoadAsset<T>(assetPath, cancelToken);
+					result = await SimulateLoadAsset<T>(installPath, assetPath, cancelToken);
 				}
 				catch (OperationCanceledException)
 				{
@@ -707,7 +717,9 @@ namespace Modules.AssetBundles
 
 			if (!File.Exists(filePath))
 			{
-				throw new FileNotFoundException(filePath);
+				var message = $"\nResourcePath: {assetInfo.ResourcePath}\nFilePath:\n{filePath}\n";
+
+				throw new FileNotFoundException(message);
 			}
 
 			var loadedAssetBundle = loadedAssetBundles.GetValueOrDefault(assetBundleName);
@@ -777,7 +789,7 @@ namespace Modules.AssetBundles
 
 				if (onLoad != null)
 				{
-					onLoad.OnNext(assetInfo);
+					onLoad.OnNext(filePath);
 				}
 			}
 			else
@@ -785,9 +797,12 @@ namespace Modules.AssetBundles
 				UnloadAsset(assetBundleName);
 
 				// ファイルを削除し次回読み込み時に再ダウンロード.
-				if (File.Exists(filePath))
+				if (!filePath.StartsWith(UnityPathUtility.GetProjectFolderPath()) && DeleteOnLoadError)
 				{
-					File.Delete(filePath);
+					if (File.Exists(filePath))
+					{
+						File.Delete(filePath);
+					}
 				}
 
 				var builder = new StringBuilder();
@@ -810,7 +825,7 @@ namespace Modules.AssetBundles
 		/// <summary> 名前で指定したアセットバンドルをメモリから破棄. </summary>
 		public void UnloadAsset(string assetBundleName, bool unloadAllLoadedObjects = false, bool force = false)
 		{
-			if (simulateMode) { return; }
+			if (IsSimulateMode) { return; }
 
 			if (!force && loadQueueing.ContainsKey(assetBundleName)) { return; }
 
@@ -827,7 +842,7 @@ namespace Modules.AssetBundles
 		/// <summary> 全てのアセットバンドルをメモリから破棄. </summary>
 		public void UnloadAllAsset(bool unloadAllLoadedObjects = false)
 		{
-			if (simulateMode) { return; }
+			if (IsSimulateMode) { return; }
 
 			var assetBundleNames = loadedAssetBundles.Keys.ToArray();
 
@@ -889,9 +904,9 @@ namespace Modules.AssetBundles
 		}
 
 		/// <summary> 読み込み時イベント. </summary>
-		public IObservable<AssetInfo> OnLoadAsObservable()
+		public IObservable<string> OnLoadAsObservable()
 		{
-			return onLoad ?? (onLoad = new Subject<AssetInfo>());
+			return onLoad ?? (onLoad = new Subject<string>());
 		}
 
 		/// <summary> タイムアウト時イベント. </summary>
