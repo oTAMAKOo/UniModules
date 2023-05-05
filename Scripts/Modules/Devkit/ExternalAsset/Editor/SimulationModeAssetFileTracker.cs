@@ -77,6 +77,9 @@ namespace Modules.Devkit.ExternalAssets
 
 			loadedAssetInfos = new List<ContentInfo>();
 
+			recordOffIconContent = EditorGUIUtility.IconContent("Record Off");
+			recordOnIconContent = EditorGUIUtility.IconContent("Record On");
+
 			var externalAsset = ExternalAsset.Instance;
 
 			externalAsset.OnLoadAssetAsObservable()
@@ -105,19 +108,6 @@ namespace Modules.Devkit.ExternalAssets
 			initialized = true;
 		}
 
-		private void InitializeStyle()
-		{
-			if (recordOffIconContent == null)
-			{
-				recordOffIconContent = EditorGUIUtility.IconContent("Record Off");
-			}
-
-			if (recordOnIconContent == null)
-			{
-				recordOnIconContent = EditorGUIUtility.IconContent("Record On");
-			}
-		}
-
 		void OnGUI()
 		{
 			// 初期化されるまでは処理しない.
@@ -138,8 +128,6 @@ namespace Modules.Devkit.ExternalAssets
 
 			// 初期化済みでない場合初期化.
 			Initialize();
-
-			InitializeStyle();
 
 			// Toolbar.
 
