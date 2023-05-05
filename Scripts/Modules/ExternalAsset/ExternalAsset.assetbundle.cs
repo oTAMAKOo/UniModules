@@ -8,6 +8,7 @@ using System.Linq;
 using System.Threading;
 using Cysharp.Threading.Tasks;
 using UniRx;
+using Extensions;
 using Modules.Devkit.Console;
 using Modules.AssetBundles;
 
@@ -37,9 +38,11 @@ namespace Modules.ExternalAssets
             assetBundleManager = AssetBundleManager.CreateInstance();
             assetBundleManager.Initialize(SimulateMode);
 			assetBundleManager.SetMaxDownloadCount(AssetBundleDefaultInstallerCount);
+
+			assetBundleManager.OnLoadAsObservable().Subscribe(x => OnLoadAssetBundle(x)).AddTo(Disposable);
             assetBundleManager.OnTimeOutAsObservable().Subscribe(x => OnTimeout(x)).AddTo(Disposable);
             assetBundleManager.OnErrorAsObservable().Subscribe(x => OnError(x)).AddTo(Disposable);
-        }
+		}
 
 		/// <summary> ファイルハンドラ設定. </summary>
 		public void SetAssetBundleFileHandler(IAssetBundleFileHandler fileHandler)
@@ -233,7 +236,7 @@ namespace Modules.ExternalAssets
             // 読み込み中だった場合はログを表示しない.
             if (result != null && !isLoading)
             {
-                if (LogEnable && UnityConsole.Enable)
+				if (LogEnable && UnityConsole.Enable)
                 {
                     var builder = new StringBuilder();
 
@@ -279,8 +282,31 @@ namespace Modules.ExternalAssets
 			return result;
         }
 
-        /// <summary> AssetBundleを解放 </summary>
-        public static void UnloadAssetBundle(string resourcePath)
+		private void OnLoadAssetBundle(string assetBundleName)
+		{
+			if (InstallDirectory.StartsWith(UnityPathUtility.StreamingAssetsPath))
+			{
+				if (assetInfosByAssetBundleName != null)
+				{
+					var assetInfos = assetInfosByAssetBundleName.GetValueOrDefault(assetBundleName);
+
+					if (assetInfos != null)
+					{
+						var assetInfo = assetInfos.FirstOrDefault();
+
+						if (assetInfo != null)
+						{
+							var resourcePath = assetInfo.ResourcePath;
+
+							DeleteVersion(resourcePath).Forget();
+						}
+					}
+				}
+			}
+		}
+
+		/// <summary> AssetBundleを解放 </summary>
+		public static void UnloadAssetBundle(string resourcePath)
         {
             Instance.UnloadAssetInternal(resourcePath);
         }

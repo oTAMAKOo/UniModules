@@ -260,6 +260,36 @@ namespace Modules.ExternalAssets
 			}
 		}
 
+		private async UniTask DeleteVersion(string resourcePath)
+		{
+			if (SimulateMode){ return; }
+
+			AssetInfo assetInfo = null;
+
+			try
+			{
+				assetInfo = GetAssetInfo(resourcePath);
+
+				if (assetInfo == null)
+				{
+					throw new AssetInfoNotFoundException(resourcePath);
+				}
+			}
+			catch (AssetInfoNotFoundException e)
+			{
+				OnError(e);
+
+				return;
+			}
+
+			lock (versions)
+			{
+				versions.Remove(assetInfo.FileName);
+			}
+
+			await SaveVersion();
+		}
+
 		public async UniTask SaveVersion()
 		{
 			if (SimulateMode) { return; }
@@ -416,7 +446,10 @@ namespace Modules.ExternalAssets
 		{
 			if (SimulateMode){ return; }
 
-			versions.Clear();
+			lock (versions)
+			{
+				versions.Clear();
+			}
 
 			try
             {

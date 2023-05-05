@@ -797,7 +797,7 @@ namespace Modules.AssetBundles
 				UnloadAsset(assetBundleName);
 
 				// ファイルを削除し次回読み込み時に再ダウンロード.
-				if (!filePath.StartsWith(UnityPathUtility.GetProjectFolderPath()) && DeleteOnLoadError)
+				if (!filePath.StartsWith(UnityPathUtility.StreamingAssetsPath) && DeleteOnLoadError)
 				{
 					if (File.Exists(filePath))
 					{
