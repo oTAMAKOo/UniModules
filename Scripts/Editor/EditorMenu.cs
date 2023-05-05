@@ -292,10 +292,10 @@ namespace Modules
 			AssetBundleViewerWindow.Open();
 		}
 
-		[MenuItem(itemName: ResourcesMenu + "Open ExternalAssetLoadRecorder", priority = 16)]
-		public static void OpenExternalAssetLoadRecorder()
+		[MenuItem(itemName: ResourcesMenu + "Open SimulationModeAssetFileTracker", priority = 16)]
+		public static void OpenSimulationModeAssetFileTracker()
 		{
-			ExternalAssetLoadRecorder.Open();
+			SimulationModeAssetFileTracker.Open();
 		}
 
 		//------ 全アセットバンドル名を再設定 ------

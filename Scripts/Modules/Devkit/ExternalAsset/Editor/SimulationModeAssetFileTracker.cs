@@ -17,7 +17,7 @@ using Modules.Devkit.Project;
 
 namespace Modules.Devkit.ExternalAssets
 {
-    public sealed class ExternalAssetLoadRecorder : SingletonEditorWindow<ExternalAssetLoadRecorder>
+    public sealed class SimulationModeAssetFileTracker : SingletonEditorWindow<SimulationModeAssetFileTracker>
     {
         //----- params -----
 
@@ -48,6 +48,9 @@ namespace Modules.Devkit.ExternalAssets
 
 		private Vector2 scrollPosition = Vector2.zero;
 
+		private GUIContent recordOnIconContent = null;
+		private GUIContent recordOffIconContent = null;
+
 		[NonSerialized]
 		private bool initialized = false;
 
@@ -68,7 +71,7 @@ namespace Modules.Devkit.ExternalAssets
 		{
 			if (initialized){ return; }
 
-			titleContent = new GUIContent("ExternalAssetLoadRecorder");
+			titleContent = new GUIContent("SimulationModeAssetFileTracker");
 
 			minSize = WindowSize;
 
@@ -80,11 +83,11 @@ namespace Modules.Devkit.ExternalAssets
 				.Subscribe(x => OnLoadAsset(x))
 				.AddTo(Disposable);
 
-			ExternalAssetLoadRecorderBridge.OnRequestStatusChangeAsObservable()
+			SimulationModeAssetFileTrackerBridge.OnRequestStatusChangeAsObservable()
 				.Subscribe(x => IsRecording = x)
 				.AddTo(Disposable);
 
-			Observable.EveryLateUpdate()
+			Observable.EveryEndOfFrame()
 				.Subscribe(_ => Repaint())
 				.AddTo(Disposable);
 
@@ -102,18 +105,41 @@ namespace Modules.Devkit.ExternalAssets
 			initialized = true;
 		}
 
+		private void InitializeStyle()
+		{
+			if (recordOffIconContent == null)
+			{
+				recordOffIconContent = EditorGUIUtility.IconContent("Record Off");
+			}
+
+			if (recordOnIconContent == null)
+			{
+				recordOnIconContent = EditorGUIUtility.IconContent("Record On");
+			}
+		}
+
 		void OnGUI()
 		{
 			// 初期化されるまでは処理しない.
 			if(!IsExternalAssetSetup())
 			{
-				EditorGUILayout.HelpBox("ExternalAsset not initialized.", MessageType.Error);
+				EditorGUILayout.HelpBox("ExternalAsset not initialized.", MessageType.Warning);
+
+				return;
+			}
+
+			// シミュレーションモード以外では動作させない.
+			if(!IsExternalAssetSimulateMode())
+			{
+				EditorGUILayout.HelpBox("Require simulation mode.", MessageType.Error);
 
 				return;
 			}
 
 			// 初期化済みでない場合初期化.
 			Initialize();
+
+			InitializeStyle();
 
 			// Toolbar.
 
@@ -129,20 +155,16 @@ namespace Modules.Devkit.ExternalAssets
 					searchText = string.Empty;
 				}
 
-				using (new DisableScope(IsRecording))
+				var recordIconContent = IsRecording ? recordOffIconContent : recordOnIconContent;
+
+				if (GUILayout.Button(recordIconContent, EditorStyles.toolbarButton, GUILayout.Width(32f)))
 				{
-					if (GUILayout.Button("Start", EditorStyles.toolbarButton))
-					{
-						IsRecording = true;
-					}
+					IsRecording = !IsRecording;
 				}
 
-				using (new DisableScope(!IsRecording))
+				if (GUILayout.Button("Clear", EditorStyles.toolbarButton, GUILayout.Width(45f)))
 				{
-					if (GUILayout.Button("Stop", EditorStyles.toolbarButton))
-					{
-						IsRecording = false;
-					}
+					loadedAssetInfos.Clear();
 				}
 
 				GUILayout.FlexibleSpace();
@@ -151,20 +173,11 @@ namespace Modules.Devkit.ExternalAssets
 
 				EditorGUILayout.Separator();
 
-				if (GUILayout.Button("Clear", EditorStyles.toolbarButton))
-				{
-					loadedAssetInfos.Clear();
-				}
-
-				EditorGUILayout.Separator();
-
-				if (GUILayout.Button("Export", EditorStyles.toolbarButton))
+				if (GUILayout.Button("Export", EditorStyles.toolbarButton, GUILayout.Width(60f)))
 				{
 					Export().Forget();
 				}
-
-				GUILayout.Space(5f);
-            }
+			}
 
             // ScrollView.
 
@@ -288,6 +301,11 @@ namespace Modules.Devkit.ExternalAssets
 		private bool IsExternalAssetSetup()
 		{
 			return ExternalAsset.Instance != null && ExternalAsset.Initialized;
+		}
+
+		private bool IsExternalAssetSimulateMode()
+		{
+			return ExternalAsset.Instance.SimulateMode;
 		}
 
 		private IEnumerable<ContentInfo> GetDisplayContents()

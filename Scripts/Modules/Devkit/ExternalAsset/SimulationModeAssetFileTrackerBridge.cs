@@ -4,7 +4,7 @@ using UniRx;
 
 namespace Modules.Devkit.ExternalAssets
 {
-    public static class ExternalAssetLoadRecorderBridge
+    public static class SimulationModeAssetFileTrackerBridge
     {
 		//----- params -----
 
