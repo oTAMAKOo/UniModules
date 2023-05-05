@@ -91,6 +91,8 @@ namespace Modules.Master
 		{
 			if (versionSaveRunning) { return; }
 
+			if (InstallDirectory.StartsWith(UnityPathUtility.StreamingAssetsPath)){ return; }
+
 			var versionFilePath = PathUtility.Combine(InstallDirectory, VersionFileName);
 
 			try
