@@ -223,7 +223,7 @@ namespace Modules.Master
 
             if (result)
             {
-				var title = $"Master Update : ({stopwatch.Elapsed.TotalMilliseconds:F1}ms) ";
+				var title = $"Master Update : ({stopwatch.Elapsed.TotalMilliseconds:F1}ms)";
 
 				void OutputCallback(string x)
 				{
@@ -328,7 +328,7 @@ namespace Modules.Master
 
             if (result)
             {
-				var title = $"Master Load : ({stopwatch.Elapsed.TotalMilliseconds:F1}ms) ";
+				var title = $"Master Load : ({stopwatch.Elapsed.TotalMilliseconds:F1}ms)";
 
 				void OutputCallback(string x)
 				{

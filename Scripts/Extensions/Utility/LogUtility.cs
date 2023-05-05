@@ -40,7 +40,7 @@ namespace Extensions
 
 				if (1 < length)
 				{
-					logBuilder.Append($"[{i + 1}/{length}]");
+					logBuilder.Append($" [{i + 1}/{length}]");
 					logBuilder.AppendLine();
 				}
 
