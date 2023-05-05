@@ -407,6 +407,15 @@ namespace Modules.Devkit.ExternalAssets
 				}
 			}
 
+			var projectFolderPath = UnityPathUtility.GetProjectFolderPath();
+
+			if (exportFolder.StartsWith(projectFolderPath))
+			{
+				var folderAssetPath = UnityPathUtility.ConvertFullPathToAssetPath(exportFolder);
+				
+				AssetDatabase.ImportAsset(folderAssetPath, ImportAssetOptions.ImportRecursive);
+			}
+
 			var logBuilder = new StringBuilder();
 
 			var array = hashSet.ToArray();

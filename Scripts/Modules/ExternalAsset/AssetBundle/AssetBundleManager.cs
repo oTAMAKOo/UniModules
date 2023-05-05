@@ -697,7 +697,7 @@ namespace Modules.AssetBundles
 
 			#if UNITY_ANDROID && !UNITY_EDITOR
 
-            if (localMode && filePath.StartsWith(UnityPathUtility.StreamingAssetsPath))
+            if (IsLocalMode && filePath.StartsWith(UnityPathUtility.StreamingAssetsPath))
             {
 				try
 				{
