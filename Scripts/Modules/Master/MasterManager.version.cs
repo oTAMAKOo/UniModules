@@ -73,7 +73,10 @@ namespace Modules.Master
 		{
 			var fileName = GetMasterFileName(master.GetType());
 
-			versions[fileName] = masterVersion;
+			lock (versions)
+			{
+				versions[fileName] = masterVersion;
+			}
 
 			if (updateVersionDisposable == null)
 			{
@@ -97,13 +100,16 @@ namespace Modules.Master
 				await UniTask.SwitchToThreadPool();
 
 				var builder = new StringBuilder();
-
-				foreach (var version in versions)
+				
+				lock (versions)
 				{
-					builder.Append(version.Key);
-					builder.Append(VersionSeparator);
-					builder.Append(version.Value);
-					builder.AppendLine();
+					foreach (var version in versions)
+					{
+						builder.Append(version.Key);
+						builder.Append(VersionSeparator);
+						builder.Append(version.Value);
+						builder.AppendLine();
+					}
 				}
 
 				var text = builder.ToString();
@@ -233,9 +239,12 @@ namespace Modules.Master
 		{
 			var fileName = GetMasterFileName(master.GetType());
 
-			if (versions.ContainsKey(fileName))
+			lock (versions)
 			{
-				versions.Remove(fileName);
+				if (versions.ContainsKey(fileName))
+				{
+					versions.Remove(fileName);
+				}
 			}
 
 			await SaveVersion();

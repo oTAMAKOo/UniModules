@@ -263,10 +263,18 @@ namespace Modules.Master
 
 			var loadLog = new StringBuilder();
 
-            void OnLoadFinish(Type masterType, string masterName, string masterFileName, bool state, double prepareTime, double loadTime)
+            async UniTask OnLoadFinish(IMaster master, string masterFileName, bool state, double prepareTime, double loadTime)
             {
+				var masterType = master.GetType();
+				var masterName = masterType.Name;
+
                 if (state)
                 {
+					if (InstallDirectory.StartsWith(UnityPathUtility.StreamingAssetsPath))
+					{
+						await ClearVersion(master);
+					}
+
                     lock (loadLog)
                     {
 						loadLog.AppendFormat("{0} (prepare : {1:F1}ms, load : {2:F1}ms)", masterName, prepareTime, loadTime).AppendLine();
@@ -294,7 +302,6 @@ namespace Modules.Master
 				foreach (var item in masters)
 				{
 					var masterType = item.GetType();
-					var masterName = masterType.Name;
 
 					var masterFileName = masterFileNames.GetValueOrDefault(masterType);
 
@@ -304,7 +311,7 @@ namespace Modules.Master
 
 						if (linkedCancelToken.IsCancellationRequested) { return; }
 
-						OnLoadFinish(masterType, masterName, masterFileName, loadResult.Item1, loadResult.Item2, loadResult.Item3);
+						await OnLoadFinish(item, masterFileName, loadResult.Item1, loadResult.Item2, loadResult.Item3);
 					});
 
 					tasks.Add(task);
