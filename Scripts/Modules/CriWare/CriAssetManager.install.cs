@@ -20,9 +20,6 @@ namespace Modules.CriWare
 		{
 			//----- params -----
 
-			// ダウンロード完了後にファイルがない場合のリトライ回数.
-			private const int FileMissingMaxRetryCount = 5;
-
 			//----- field -----
 
 			//----- property -----
@@ -63,26 +60,45 @@ namespace Modules.CriWare
 			private CriFsWebInstaller GetInstaller()
 			{
 				var installers = Instance.installers;
-				var numInstallers = Instance.numInstallers;
+				var installQueueing = Instance.installQueueing;
+
+				// 未使用のインストーラを取得.
 
 				CriFsWebInstaller installer = null;
 
-				// 未使用のインストーラを取得.
-				installer = installers.FirstOrDefault(x =>
+				lock (installQueueing)
 				{
-					var statusInfo = x.GetStatusInfo();
+					// 使用中のインストーラ.
 
-					return statusInfo.status != CriFsWebInstaller.Status.Busy;
-				});
+					var installersInUse = installQueueing
+						.Where(x => x.Value != null)
+						.Select(x => x.Value.Installer)
+						.ToArray();
 
-				if (installer == null)
-				{
-					// 最大インストーラ数以下でインストーラが足りない時は生成.
-					if (installers.Count < numInstallers)
+					lock (installers)
 					{
-						installer = new CriFsWebInstaller();
+						installer = installers
+							.Where(x => installersInUse.All(y => y != x))
+							.FirstOrDefault(x =>
+								{
+									var statusInfo = x.GetStatusInfo();
 
-						installers.Add(installer);
+									return statusInfo.status != CriFsWebInstaller.Status.Busy;
+								});
+
+						// 最大インストーラ数以下でインストーラが足りない時は生成.
+
+						if (installer == null)
+						{
+							var numInstallers = Instance.numInstallers;
+
+							if (installers.Count < numInstallers)
+							{
+								installer = new CriFsWebInstaller();
+
+								installers.Add(installer);
+							}
+						}
 					}
 				}
 
@@ -98,69 +114,54 @@ namespace Modules.CriWare
 			{
 				try
 				{
-					var retryCount = 0;
+					// 同時インストール待ち.
 
 					while (true)
 					{
-						// 同時インストール待ち.
+						if (cancelToken.IsCancellationRequested){ return; }
+
+						// 未使用のインストーラを取得.
+						Installer = GetInstaller();
+
+						if (Installer != null) { break; }
+
+						await UniTask.NextFrame(CancellationToken.None);
+					}
+
+					// ネットワーク接続待ち.
+
+					await NetworkConnection.WaitNetworkReachable(cancelToken);
+
+					// ダウンロード.
+
+					if (Installer != null)
+					{
+						Installer.Copy(downloadUrl, filePath);
+
+						// ダウンロード待ち.
+
+						CriFsWebInstaller.StatusInfo statusInfo;
 
 						while (true)
 						{
-							if (cancelToken.IsCancellationRequested){ return; }
+							statusInfo = Installer.GetStatusInfo();
 
-							// 未使用のインストーラを取得.
-							Installer = GetInstaller();
-
-							if (Installer != null) { break; }
-
-							await UniTask.NextFrame(CancellationToken.None);
-						}
-
-						// ネットワーク接続待ち.
-
-						await NetworkConnection.WaitNetworkReachable(cancelToken);
-
-						// ダウンロード.
-
-						if (Installer != null)
-						{
-							Installer.Copy(downloadUrl, filePath);
-
-							// ダウンロード待ち.
-
-							CriFsWebInstaller.StatusInfo statusInfo;
-
-							while (true)
+							if (progress != null)
 							{
-								statusInfo = Installer.GetStatusInfo();
-
-								if (progress != null)
-								{
-									progress.Report((float)statusInfo.receivedSize / statusInfo.contentsSize);
-								}
-
-								if (statusInfo.status != CriFsWebInstaller.Status.Busy) { break; }
-
-								await UniTask.NextFrame(cancelToken);
+								progress.Report((float)statusInfo.receivedSize / statusInfo.contentsSize);
 							}
 
-							Installer.Stop();
+							if (statusInfo.status != CriFsWebInstaller.Status.Busy) { break; }
 
-							if (statusInfo.error != CriFsWebInstaller.Error.None)
-							{
-								throw new Exception($"[Download Error] {AssetInfo.ResourcePath}\n{statusInfo.error}");
-							}
+							await UniTask.NextFrame(cancelToken);
 						}
 
-						if (File.Exists(filePath)){ break; }
+						Installer.Stop();
 
-						// ファイルが存在しない時はリトライ.
-						if (FileMissingMaxRetryCount <= retryCount)
+						if (statusInfo.error != CriFsWebInstaller.Error.None)
 						{
-							throw new FileNotFoundException($"[Download Error] {AssetInfo.ResourcePath}");
+							throw new Exception($"[Download Error] {AssetInfo.ResourcePath}\n{statusInfo.error}");
 						}
-
-						retryCount++;
 					}
 				}
 				catch (OperationCanceledException)
