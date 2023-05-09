@@ -1,4 +1,4 @@
-﻿
+
 using UnityEngine;
 using UnityEngine.UI;
 using Unity.Linq;
@@ -129,7 +129,7 @@ namespace Modules.Resolution
 
             var right = resolution.x - baseOffsetX;
 
-            if (scaledSafeArea.xMax< right)
+            if (scaledSafeArea.xMax < right)
             {
                 right = scaledSafeArea.xMax;
             }
