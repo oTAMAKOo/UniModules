@@ -163,6 +163,11 @@ namespace Modules.CriWare
 							throw new Exception($"[Download Error] {AssetInfo.ResourcePath}\n{statusInfo.error}");
 						}
 					}
+
+					if(!File.Exists(filePath))
+					{
+						throw new FileNotFoundException($"URL: {downloadUrl}\nFile: {filePath}\n");
+					}
 				}
 				catch (OperationCanceledException)
 				{
