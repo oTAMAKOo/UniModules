@@ -476,7 +476,7 @@ namespace Modules.AssetBundles
 
 				if (webRequest.HasError() || webRequest.responseCode != (int)System.Net.HttpStatusCode.OK)
 				{
-					throw new Exception($"File download error : ResponseCode : {webRequest.responseCode}) {url}\n\n{webRequest.error}");
+					throw new Exception($"File download error\nURL:{url}\nResponseCode:{webRequest.responseCode}\n\n{webRequest.error}\n");
 				}
 			}
 		}
@@ -484,6 +484,17 @@ namespace Modules.AssetBundles
 		#endregion
 
 		#region Dependencies
+
+		public string[] GetAllDependencies(string assetBundleName)
+		{
+			if (assetBundleDependencies == null){ return null; }
+
+			return assetBundleDependencies.GetAllDependencies(assetBundleName);
+		}
+
+		#endregion
+
+		#region ReferenceCount
 
 		private int IncrementReferenceCount(string assetBundleName)
 		{
@@ -879,6 +890,12 @@ namespace Modules.AssetBundles
 		}
 
 		#endregion
+
+		public void ClearDownloadQueue()
+		{
+			downloadList.Clear();
+			downloadQueueing.Clear();
+		}
 
 		private void OnTimeout(AssetInfo assetInfo, Exception exception)
 		{

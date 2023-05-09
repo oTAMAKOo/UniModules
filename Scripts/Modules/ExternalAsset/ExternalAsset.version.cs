@@ -169,23 +169,14 @@ namespace Modules.ExternalAssets
 					if (!File.Exists(filePath)) { return false; }
 				}
 			}
-
-			// バージョン情報が存在しない.
+			
 			if (versions.IsEmpty()) { return false; }
 
-			var infos = assetInfosByAssetBundleName.GetValueOrDefault(assetInfo.AssetBundle.AssetBundleName);
-
-			if (infos == null) { return false; }
-
-			var info = infos.FirstOrDefault();
-
-			if (info == null) { return false; }
-
-			var hash = versions.GetValueOrDefault(info.FileName);
+			var hash = versions.GetValueOrDefault(assetInfo.FileName);
 
 			if (string.IsNullOrEmpty(hash)) { return false; }
 
-			if (hash != info.Hash) { return false; }
+			if (hash != assetInfo.Hash) { return false; }
 
 			return true;
 		}

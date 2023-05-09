@@ -472,13 +472,24 @@ namespace Modules.ExternalAssets
 
 		public void CancelAll()
 		{
+			// キャンセルトークン再生成.
+
 			if (cancelSource != null)
 			{
 				cancelSource.Cancel();
-
-				// キャンセルしたので再生成.
 				cancelSource = new CancellationTokenSource();
 			}
+
+			// 登録済みのダウンロードキューをクリア.
+
+			assetBundleManager.ClearDownloadQueue();
+			fileAssetManager.ClearDownloadQueue();
+			
+			#if ENABLE_CRIWARE_ADX || ENABLE_CRIWARE_SOFDEC
+
+			criAssetManager.ClearInstallQueue();
+
+			#endif
 		}
 
 		public string GetFilePath(AssetInfo assetInfo)

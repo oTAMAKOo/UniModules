@@ -117,6 +117,11 @@ namespace Modules.ExternalAssets
 				downloadQueueing.Remove(url);
 			}
 		}
+		
+		public void ClearDownloadQueue()
+		{
+			downloadQueueing.Clear();
+		}
 
 		private void OnTimeout(string url)
 		{

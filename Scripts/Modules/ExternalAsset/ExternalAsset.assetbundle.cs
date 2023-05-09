@@ -135,16 +135,48 @@ namespace Modules.ExternalAssets
 
             if (!LocalMode && !SimulateMode)
             {
-				var requireUpdate = IsRequireUpdate(assetInfo);
+				var requireUpdateInfos = new List<AssetInfo>();
+				
+				if(!CheckAssetBundleVersion(assetInfo))
+				{
+					requireUpdateInfos.Add(assetInfo);
+				}
 
-				// ローカルバージョンが古い場合はダウンロード.
-                if (requireUpdate)
+				var allDependencies = assetBundleManager.GetAllDependencies(assetInfo.AssetBundle.AssetBundleName);
+
+				foreach (var item in allDependencies)
+				{
+					var infos = assetInfosByAssetBundleName.GetValueOrDefault(item);
+
+					if (infos.IsEmpty()){ continue; }
+
+					var info = infos.FirstOrDefault();
+
+					if (info == null){ continue; }
+					
+					if(!CheckAssetBundleVersion(info))
+					{
+						requireUpdateInfos.Add(info);
+					}
+				}
+
+				// ファイルが存在しない/古い場合はダウンロード.
+                if (requireUpdateInfos.Any())
                 {
 					sw = System.Diagnostics.Stopwatch.StartNew();
 
 					try
 					{
-						await UpdateAsset(resourcePath, cancelToken: cancelSource.Token);
+						var tasks = new List<UniTask>();
+
+						foreach (var item in requireUpdateInfos)
+						{
+							var task = UpdateAsset(item.ResourcePath, cancelToken: cancelSource.Token);
+
+							tasks.Add(task);
+						}
+
+						await UniTask.WhenAll(tasks);
 					}
 					catch (Exception e)
 					{

@@ -103,6 +103,8 @@ namespace Modules.CriWare
         {
             #if ENABLE_CRIWARE_FILESYSTEM
 
+			ClearInstallQueue();
+
             if (installers != null)
             {
                 foreach (var installer in installers)
@@ -114,21 +116,7 @@ namespace Modules.CriWare
                 installers.Clear();
             }
 
-            if (installQueueing != null)
-            {
-                foreach (var item in installQueueing.Values)
-                {
-                    if (item.Installer != null)
-                    {
-                        item.Installer.Stop();
-                        item.Installer.Dispose();
-                    }
-                }
-
-                installQueueing.Clear();
-            }
-
-            if(CriFsWebInstaller.isInitialized)
+			if(CriFsWebInstaller.isInitialized)
             {
                 CriFsWebInstaller.FinalizeModule();
             }
@@ -302,6 +290,20 @@ namespace Modules.CriWare
 
 			return PathUtility.Combine(installPath, assetInfo.FileName);
         }
+
+		public void ClearInstallQueue()
+		{
+			foreach (var item in installQueueing.Values)
+			{
+				if (item.Installer != null)
+				{
+					item.Installer.Stop();
+					item.Installer.Dispose();
+				}
+			}
+
+			installQueueing.Clear();
+		}
 
         private void OnTimeout(AssetInfo assetInfo, Exception exception)
         {
