@@ -13,18 +13,12 @@ namespace Modules.InputControl.Components
         //----- field -----
 
 		private EventSystem target = null;
-
-		private bool blocking = false;
-
-		private bool? origin = null;
-
+		
         //----- property -----
 
 		protected override InputBlockType BlockType { get { return InputBlockType.EventSystem; } }
 
-		public bool IsBlocking { get { return blocking; } }
-
-        //----- method -----
+		//----- method -----
 
 		protected override void UpdateInputBlock(bool isBlock)
 		{
@@ -33,31 +27,10 @@ namespace Modules.InputControl.Components
 				target = UnityUtility.GetComponent<EventSystem>(gameObject);
 			}
 
-			if (target != null)
-			{
-				if (isBlock)
-				{
-					if (!blocking)
-					{
-						origin = target.enabled;
-					}
-
-					target.enabled = false;
-
-					blocking = true;
-				}
-				else
-				{
-					if (origin.HasValue)
-					{
-						target.enabled = origin.Value;
-					}
-
-					origin = null;
-
-					blocking = false;
-				}
-			}
-		}
+            if (target != null)
+            {
+				target.enabled = isBlock;
+            }
+        }
     }
 }
