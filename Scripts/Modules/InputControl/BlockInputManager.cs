@@ -1,7 +1,9 @@
-﻿
+
+using UnityEngine;
 using System;
 using System.Linq;
 using System.Collections.Generic;
+using System.Text;
 using UniRx;
 using Extensions;
 using Modules.Devkit.LogHandler;
@@ -25,7 +27,9 @@ namespace Modules.InputControl
         private HashSet<ulong> blockingIds = new HashSet<ulong>();
         private Subject<bool> onUpdateStatus = null;
 
-        //----- property -----
+		private Dictionary<ulong, string> trackInputBlock = null;
+
+		//----- property -----
 
 		/// <summary> 入力制限タイプ </summary>
 		public InputBlockType BlockType { get; private set; }
@@ -38,6 +42,8 @@ namespace Modules.InputControl
         protected override void OnCreate()
         {
 			BlockType = InputBlockType.EventSystem;
+
+			trackInputBlock = new Dictionary<ulong, string>();
 
             // Exception発生時に強制解除.
             ApplicationLogHandler.Instance.OnReceivedExceptionAsObservable()
@@ -58,11 +64,7 @@ namespace Modules.InputControl
 
             blockingIds.Add(blockingId);
 
-            #if UNITY_EDITOR
-
-            AddTracker(blockingId);
-
-            #endif
+			AddTracker(blockingId);
 
             if (isBlocking != IsBlocking && onUpdateStatus != null)
             {
@@ -78,11 +80,7 @@ namespace Modules.InputControl
 
             blockingIds.Remove(blockingId);
 
-            #if UNITY_EDITOR
-
-            RemoveTracker(blockingId);
-
-            #endif
+			RemoveTracker(blockingId);
 
             if (isBlocked != IsBlocking && onUpdateStatus != null)
             {
@@ -97,12 +95,8 @@ namespace Modules.InputControl
             var isBlocked = IsBlocking;
 
             blockingIds.Clear();
-            
-            #if UNITY_EDITOR
 
-            ClearTracker();
-
-            #endif
+			ClearTracker();
 
             if (isBlocked != IsBlocking && onUpdateStatus != null)
             {
@@ -110,7 +104,64 @@ namespace Modules.InputControl
             }
         }
 
-        public IObservable<bool> OnUpdateStatusAsObservable()
+		#region Tracking
+
+		private void AddTracker(ulong blockingId)
+        {
+			if (!Debug.isDebugBuild) { return; }
+
+			// 実際の呼び出し元開始行数.
+            const int StackTraceStartLine = 4;
+            
+            var stackTrace = StackTraceUtility.ExtractStackTrace();
+
+            stackTrace = stackTrace.FixLineEnd();
+
+            var lines = stackTrace.Split('\n').ToList();
+
+            var builder = new StringBuilder();
+
+            for (var i = 0; i < lines.Count; i++)
+            {
+                if (i < StackTraceStartLine){ continue; }
+
+                builder.AppendLine(lines[i]);
+            }
+
+            stackTrace = builder.ToString().FixLineEnd().Trim();
+
+            trackInputBlock[blockingId] = stackTrace;
+        }
+
+        private void RemoveTracker(ulong blockingId)
+        {
+			if (!Debug.isDebugBuild) { return; }
+
+            if (trackInputBlock == null){ return; }
+
+            if (trackInputBlock.ContainsKey(blockingId))
+            {
+                trackInputBlock.Remove(blockingId);
+            }
+        }
+
+        private void ClearTracker()
+        {
+			if (!Debug.isDebugBuild) { return; }
+
+            if (trackInputBlock == null){ return; }
+
+            trackInputBlock.Clear();
+        }
+
+        public IReadOnlyDictionary<ulong, string> GetTrackContents()
+        {
+            return trackInputBlock;
+        }
+
+		#endregion
+
+		public IObservable<bool> OnUpdateStatusAsObservable()
         {
             return onUpdateStatus ?? (onUpdateStatus = new Subject<bool>());
         }
