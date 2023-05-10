@@ -293,13 +293,11 @@ namespace Modules.CriWare
 
 		public void ClearInstallQueue()
 		{
-			foreach (var item in installQueueing.Values)
+			var items = installQueueing.Values.ToArray();
+
+			foreach (var item in items)
 			{
-				if (item.Installer != null)
-				{
-					item.Installer.Stop();
-					item.Installer.Dispose();
-				}
+				RemoveInternalQueue(item);
 			}
 
 			installQueueing.Clear();
