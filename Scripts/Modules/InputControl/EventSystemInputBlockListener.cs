@@ -29,7 +29,7 @@ namespace Modules.InputControl.Components
 
             if (target != null)
             {
-				target.enabled = isBlock;
+				target.enabled = !isBlock;
             }
         }
     }
