@@ -14,11 +14,15 @@ namespace Modules.InputControl.Components
 
 		private EventSystem target = null;
 
-		private bool? prevState = null;
+		private bool blocking = false;
+
+		private bool? origin = null;
 
         //----- property -----
 
 		protected override InputBlockType BlockType { get { return InputBlockType.EventSystem; } }
+
+		public bool IsBlocking { get { return blocking; } }
 
         //----- method -----
 
@@ -31,12 +35,28 @@ namespace Modules.InputControl.Components
 
 			if (target != null)
 			{
-				if (!prevState.HasValue)
+				if (isBlock)
 				{
-					prevState = target.enabled;
-				}
+					if (!blocking)
+					{
+						origin = target.enabled;
+					}
 
-				target.enabled = !isBlock && prevState.Value;
+					target.enabled = false;
+
+					blocking = true;
+				}
+				else
+				{
+					if (origin.HasValue)
+					{
+						target.enabled = origin.Value;
+					}
+
+					origin = null;
+
+					blocking = false;
+				}
 			}
 		}
     }
