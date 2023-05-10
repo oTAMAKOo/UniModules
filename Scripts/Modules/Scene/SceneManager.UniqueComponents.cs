@@ -209,7 +209,10 @@ namespace Modules.Scene
 
                 if (component == null) { continue; }
 
-                component.enabled = suspendOriginStatus.GetValueOrDefault(component, true);
+				// サスペンド中に書き換えられている場合は復元しない.
+				if (component.enabled){ continue; }
+
+				component.enabled = suspendOriginStatus.GetValueOrDefault(component, true);
             }
 
             suspendOriginStatus.Clear();
