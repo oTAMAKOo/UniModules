@@ -16,7 +16,7 @@ namespace Modules.InputControl
 		Button,
 	}
 
-    public sealed partial class BlockInputManager : Singleton<BlockInputManager>
+    public sealed class BlockInputManager : Singleton<BlockInputManager>
 	{
         //----- params -----
 
