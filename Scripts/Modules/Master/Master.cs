@@ -3,7 +3,6 @@ using UnityEngine;
 using System;
 using System.IO;
 using System.Collections.Generic;
-using System.Text;
 using System.Threading;
 using Cysharp.Threading.Tasks;
 using Extensions;
@@ -14,6 +13,8 @@ namespace Modules.Master
 {
 	public interface IMaster
 	{
+		void Delete();
+
 		UniTask<Tuple<bool, double>> Update(string masterVersion, FunctionFrameLimiter frameCallLimiter, CancellationToken cancelToken = default);
 		UniTask<Tuple<bool, double, double>> Load(AesCryptoKey cryptoKey, bool cleanOnError, CancellationToken cancelToken = default);
 	}
@@ -44,11 +45,7 @@ namespace Modules.Master
 			{
 				if (instance == null)
 				{
-					var masterManager = MasterManager.Instance;
-
-					instance = new TMaster();
-
-					masterManager.Register(instance);
+					Debug.LogError($"{typeof(TMaster).FullName} not created.");
 				}
 
 				return instance;
@@ -56,6 +53,33 @@ namespace Modules.Master
 		}
 
 		//----- method -----
+
+		public static IMaster Create()
+		{
+			if (instance != null)
+			{
+				instance.Delete();
+			}
+
+			var masterManager = MasterManager.Instance;
+
+			instance = new TMaster();
+
+			masterManager.Register(instance);
+
+			return instance;
+		}
+
+		public void Delete()
+		{
+			if (instance == null){ return; }
+
+			var masterManager = MasterManager.Instance;
+			
+			masterManager.Remove(instance);
+
+			instance = null;
+		}
 
 		public void SetRecords(TMasterRecord[] masterRecords)
 		{

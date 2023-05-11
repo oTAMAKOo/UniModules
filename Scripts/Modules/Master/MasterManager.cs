@@ -103,6 +103,13 @@ namespace Modules.Master
             masters.Add(master);
         }
 
+		public void Remove(IMaster master)
+		{
+			if (!masters.Contains(master)){ return; }
+
+			masters.Remove(master);
+		}
+
         public async UniTask<bool> UpdateMaster(Dictionary<IMaster, string> updateMasters, IProgress<float> progress = null, CancellationToken cancelToken = default)
         {
             var result = true;
@@ -430,10 +437,21 @@ namespace Modules.Master
 			return list.ToArray();
         }
 
-        public void Clear()
-        {
-            masters.Clear();
-        }
+		public void Clear()
+		{
+			if (masters == null){ return; }
+
+			Reference.Clear();
+
+			var items = masters.ToArray();
+
+			foreach (var item in items)
+			{
+				item.Delete();
+			}
+
+			masters.Clear();
+		}
 
         public void SetDownloadUrl(string downloadUrl)
         {
