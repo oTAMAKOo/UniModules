@@ -48,7 +48,10 @@ namespace Modules.CriWare
         // インストーラー.
         private List<CriFsWebInstaller> installers = null;
 
-        // ダウンロード待ち.
+		// 解放待ちインストーラー.
+		private List<CriFsWebInstaller> releaseQueueing = null;
+
+		// ダウンロード待ち.
         private Dictionary<string, CriAssetInstall> installQueueing = null;
 
         #endif
@@ -76,8 +79,9 @@ namespace Modules.CriWare
 
             #if ENABLE_CRIWARE_FILESYSTEM
 
-            installQueueing = new Dictionary<string, CriAssetInstall>();
-            installers = new List<CriFsWebInstaller>();
+			installers = new List<CriFsWebInstaller>();
+			releaseQueueing = new List<CriFsWebInstaller>();
+			installQueueing = new Dictionary<string, CriAssetInstall>();
 
             //------ CriInstaller初期化 ------
 
@@ -101,10 +105,10 @@ namespace Modules.CriWare
 
         private void Release()
         {
+			installQueueing.Clear();
+
             #if ENABLE_CRIWARE_FILESYSTEM
-
-			ClearInstallQueue();
-
+			
             if (installers != null)
             {
                 foreach (var installer in installers)
@@ -207,7 +211,7 @@ namespace Modules.CriWare
 
 			if (item != null)
 			{
-				if (item.Installer != null)
+				if (item.Installer != null && !releaseQueueing.Contains(item.Installer))
 				{
 					item.Installer.Stop();
 				}
@@ -231,29 +235,47 @@ namespace Modules.CriWare
         {
             if (installer == null){ return; }
 
-            installer.Stop();
+			if (!installers.Contains(installer)){ return; }
 
-            // 解放時間.
-            var releaseTime = DateTime.UtcNow + UnUseInstallerReleaseDelay;
+			if (releaseQueueing.Contains(installer)){ return; }
+
+			releaseQueueing.Add(installer);
+
+			// 解放時間.
+			var releaseTime = DateTime.UtcNow + UnUseInstallerReleaseDelay;
 
 			// 解放まで一定時間待つ.
+
+			var release = true;
+
 			while (DateTime.UtcNow < releaseTime)
 			{
-				var statusInfo = installer.GetStatusInfo();
-
 				// 再利用されていたら解放キャンセル.
-				if (statusInfo.status == CriFsWebInstaller.Status.Busy){ return; }
+				if (installQueueing.Any(x => x.Value.Installer == installer))
+				{
+					release = false;
+					break;
+				}
 				
                 await UniTask.NextFrame();
 			}
 
 			// 解放.
-			if (installers.Contains(installer))
-			{
-				installers.Remove(installer);
 
-				installer.Dispose();
+			if (release)
+			{
+				lock (installers)
+				{
+					if (installers.Contains(installer))
+					{
+						installers.Remove(installer);
+
+						installer.Dispose();
+					}
+				}
 			}
+
+			releaseQueueing.Remove(installer);
         }
 
         #endif

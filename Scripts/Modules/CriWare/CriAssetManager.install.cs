@@ -68,47 +68,42 @@ namespace Modules.CriWare
 			{
 				var installers = Instance.installers;
 				var installQueueing = Instance.installQueueing;
+				
+				// 使用中のインストーラ.
+
+				CriFsWebInstaller[] installersInUse = null;
+
+				lock (installQueueing)
+				{
+					installersInUse = installQueueing
+						.Where(x => x.Value != null)
+						.Select(x => x.Value.Installer)
+						.ToArray();
+				}
 
 				// 未使用のインストーラを取得.
 
 				CriFsWebInstaller installer = null;
 
-				lock (installQueueing)
+				lock (installers)
 				{
-					// 使用中のインストーラ.
+					installer = installers.FirstOrDefault(x => installersInUse.All(y => y != x));
 
-					var installersInUse = installQueueing
-						.Where(x => x.Value != null)
-						.Select(x => x.Value.Installer)
-						.ToArray();
-
-					lock (installers)
+					if (installer == null)
 					{
-						installer = installers
-							.Where(x => installersInUse.All(y => y != x))
-							.FirstOrDefault(x =>
-								{
-									var statusInfo = x.GetStatusInfo();
-
-									return statusInfo.status != CriFsWebInstaller.Status.Busy;
-								});
+						var numInstallers = Instance.numInstallers;
 
 						// 最大インストーラ数以下でインストーラが足りない時は生成.
 
-						if (installer == null)
+						if (installers.Count < numInstallers)
 						{
-							var numInstallers = Instance.numInstallers;
+							installer = new CriFsWebInstaller();
 
-							if (installers.Count < numInstallers)
-							{
-								installer = new CriFsWebInstaller();
-
-								installers.Add(installer);
-							}
+							installers.Add(installer);
 						}
 					}
 				}
-
+				
 				if (installer != null)
 				{
 					installer.Stop();
