@@ -780,12 +780,20 @@ namespace Modules.AssetBundles
 					{
 						if (cancelToken.IsCancellationRequested) { break; }
 
-						await UniTask.NextFrame(cancelToken);
+						await UniTask.NextFrame(CancellationToken.None);
 					}
 
-					if (cancelToken.IsCancellationRequested) { return null; }
-
 					assetBundle = bundleLoadRequest.assetBundle;
+
+					if (cancelToken.IsCancellationRequested)
+					{
+						if (assetBundle != null)
+						{
+							assetBundle.Unload(false);
+						}
+						
+						return null;
+					}
 				}
 			}
 
