@@ -164,8 +164,6 @@ namespace Modules.CriWare
 							
 							if (statusInfo.error != CriFsWebInstaller.Error.None)
 							{
-								Debug.LogError($"CriFsWebInstaller.Error = {statusInfo.error} : {AssetInfo.ResourcePath}");
-
 								if (File.Exists(filePath))
 								{
 									File.Delete(filePath);
@@ -181,7 +179,7 @@ namespace Modules.CriWare
 
 								if (statusInfo.error != CriFsWebInstaller.Error.None)
 								{
-									message += $"Error: {statusInfo.error}";
+									message += $"CriFsWebInstaller.Error: {statusInfo.error}";
 								}
 
 								throw new FileNotFoundException(message);
