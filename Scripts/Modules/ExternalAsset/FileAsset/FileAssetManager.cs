@@ -1,6 +1,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Threading;
 using Cysharp.Threading.Tasks;
 using UniRx;
@@ -107,6 +108,11 @@ namespace Modules.ExternalAssets
 			try
 			{
 				var filePath = PathUtility.Combine(installPath, assetInfo.FileName);
+
+				if (File.Exists(filePath))
+				{
+					File.Delete(filePath);
+				}
 
 				downloadQueueing[url] = assetInfo;
 

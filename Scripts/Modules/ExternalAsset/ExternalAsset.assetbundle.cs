@@ -330,7 +330,9 @@ namespace Modules.ExternalAssets
 						{
 							var resourcePath = assetInfo.ResourcePath;
 
-							DeleteVersion(resourcePath).Forget();
+							RemoveVersion(resourcePath);
+							
+							SaveVersion().Forget();
 						}
 					}
 				}

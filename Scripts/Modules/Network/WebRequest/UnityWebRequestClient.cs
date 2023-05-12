@@ -183,7 +183,7 @@ namespace Modules.Net.WebRequest
 
             try
             {
-                var bytes = await request.Send(progress).ToUniTask(cancellationToken: token);
+                var bytes = await request.Send(progress, token);
 
                 if (bytes != null )
                 {

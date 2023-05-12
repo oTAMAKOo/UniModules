@@ -251,7 +251,7 @@ namespace Modules.ExternalAssets
 			}
 		}
 
-		private async UniTask DeleteVersion(string resourcePath)
+		private void RemoveVersion(string resourcePath)
 		{
 			if (SimulateMode){ return; }
 
@@ -277,8 +277,6 @@ namespace Modules.ExternalAssets
 			{
 				versions.Remove(assetInfo.FileName);
 			}
-
-			await SaveVersion();
 		}
 
 		public async UniTask SaveVersion()

@@ -442,6 +442,11 @@ namespace Modules.AssetBundles
 
 			if (string.IsNullOrEmpty(filePath)) { return Observable.ReturnUnit(); }
 
+			if (File.Exists(filePath))
+			{
+				File.Delete(filePath);
+			}
+
 			return ObservableEx.FromUniTask(cancelToken => FileDownload(downloadUrl, filePath, progress, cancelToken))
 					.Timeout(TimeoutLimit)
 					.OnErrorRetry((TimeoutException ex) => OnTimeout(assetInfo, ex), RetryCount, RetryDelaySeconds)
@@ -466,7 +471,7 @@ namespace Modules.AssetBundles
 				{
 					if (cancelToken.IsCancellationRequested) { break; }
 
-					await UniTask.NextFrame(cancelToken);
+					await UniTask.NextFrame(CancellationToken.None);
 
 					if (progress != null)
 					{
@@ -474,7 +479,11 @@ namespace Modules.AssetBundles
 					}
 				}
 
-				if (webRequest.HasError() || webRequest.responseCode != (int)System.Net.HttpStatusCode.OK)
+				if (cancelToken.IsCancellationRequested)
+				{
+					webRequest.Abort();
+				}
+				else if (webRequest.HasError() || webRequest.responseCode != (int)System.Net.HttpStatusCode.OK)
 				{
 					throw new Exception($"File download error\nURL:{url}\nResponseCode:{webRequest.responseCode}\n\n{webRequest.error}\n");
 				}

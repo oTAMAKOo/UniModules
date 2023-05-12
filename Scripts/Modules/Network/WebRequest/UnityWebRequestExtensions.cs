@@ -2,10 +2,9 @@
 using UnityEngine.Networking;
 using System;
 using System.Linq;
-using System.Collections;
 using System.Net;
 using System.Threading;
-using UniRx;
+using Cysharp.Threading.Tasks;
 
 namespace Modules.Net.WebRequest
 {
@@ -22,67 +21,50 @@ namespace Modules.Net.WebRequest
             HttpStatusCode.PartialContent
         };
 
-        public static IObservable<byte[]> Send(this UnityWebRequest request, IProgress<float> progress = null)
+        public static async UniTask<byte[]> Send(this UnityWebRequest request, IProgress<float> progress = null, CancellationToken cancelToken = default)
         {
-            return Observable.FromMicroCoroutine<byte[]>((observer, cancellation) => Send(observer, cancellation, request, progress));
-        }
+			var bytes = new byte[0];
 
-        private static IEnumerator Send(IObserver<byte[]> observer, CancellationToken cancel, UnityWebRequest request, IProgress<float> progress)
-        {
-            using (request)
+			if (cancelToken.IsCancellationRequested){ return null; }
+
+			using (request)
             {
-                var error = false;
+				var operation = request.SendWebRequest();
 
-                var operation = request.SendWebRequest();
+				while (!operation.isDone)
+				{
+					if (cancelToken.IsCancellationRequested){ break; }
 
-                while (!operation.isDone && !cancel.IsCancellationRequested)
-                {
-                    try
-                    {
-                        if (progress != null)
-                        {
-                            progress.Report(operation.progress);
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        error = true;
-                        observer.OnError(ex);
-                        break;
-                    }
+					if (progress != null)
+					{
+						progress.Report(operation.progress);
+					}
 
-                    yield return null;
-                }
+					await UniTask.NextFrame(CancellationToken.None);
+				}
 
-                if (!cancel.IsCancellationRequested && !error)
-                {
-                    if (progress != null)
-                    {
-                        try
-                        {
-                            progress.Report(request.downloadProgress);
-                        }
-                        catch (Exception ex)
-                        {
-                            observer.OnError(ex);
-                            error = true;
-                        }
-                    }
+				if (!cancelToken.IsCancellationRequested)
+				{
+					if (progress != null)
+					{
+						progress.Report(request.downloadProgress);
+					}
 
-                    var isError = request.HasError();
-                    var isSuccess = request.IsSuccess();
+					var isError = request.HasError();
+					var isSuccess = request.IsSuccess();
 
-                    if (!isError && isSuccess && !error)
-                    {
-                        observer.OnNext(request.downloadHandler != null ? request.downloadHandler.data : null);
-                        observer.OnCompleted();
-                    }
-                    else
-                    {
-                        observer.OnError(new UnityWebRequestErrorException(request));
-                    }
-                }
-            }
+					if (isSuccess && !isError)
+					{
+						bytes = request.downloadHandler != null ? request.downloadHandler.data : null;
+					}
+				}
+				else
+				{
+					request.Abort();
+				}
+			}
+
+			return bytes;
         }
         
         public static bool IsSuccess(this UnityWebRequest unityWebRequest)

@@ -419,6 +419,11 @@ namespace Modules.ExternalAssets
 
 				if (!LocalMode && !SimulateMode)
 				{
+					// バージョン情報削除.
+					RemoveVersion(resourcePath);
+
+					// ファイル更新.
+
 					if (assetInfo.IsAssetBundle)
 					{
 						await UpdateAssetBundle(assetInfo, progress, linkedCancelToken);
