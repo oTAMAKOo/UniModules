@@ -150,6 +150,8 @@ namespace Modules.CriWare
 
 							while (true)
 							{
+								if (cancelToken.IsCancellationRequested) { return; }
+
 								statusInfo = Installer.GetStatusInfo();
 
 								if (progress != null)
