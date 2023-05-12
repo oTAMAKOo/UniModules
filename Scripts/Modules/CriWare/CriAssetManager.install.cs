@@ -68,6 +68,10 @@ namespace Modules.CriWare
 			{
 				var installers = Instance.installers;
 				var installQueueing = Instance.installQueueing;
+
+				// 解放中止.
+
+				Instance.CancelReleaseInstallers();
 				
 				// 使用中のインストーラ.
 
@@ -87,7 +91,7 @@ namespace Modules.CriWare
 
 				lock (installers)
 				{
-					installer = installers.FirstOrDefault(x => installersInUse.All(y => y != x));
+					installer = installers.FirstOrDefault(x => installersInUse.All(y => x != y));
 
 					if (installer == null)
 					{

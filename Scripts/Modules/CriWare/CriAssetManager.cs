@@ -48,9 +48,6 @@ namespace Modules.CriWare
         // インストーラー.
         private List<CriFsWebInstaller> installers = null;
 
-		// 解放待ちインストーラー.
-		private List<CriFsWebInstaller> releaseQueueing = null;
-
 		// ダウンロード待ち.
         private Dictionary<string, CriAssetInstall> installQueueing = null;
 
@@ -58,6 +55,9 @@ namespace Modules.CriWare
 
         // 同時インストール数.
         private uint numInstallers = DefaultInstallerNum;
+
+		// 解放キャンセル発行用.
+		private IDisposable releaseInstallerDisposable = null;
 
         // イベント通知.
         private Subject<AssetInfo> onTimeOut = null;
@@ -80,18 +80,24 @@ namespace Modules.CriWare
             #if ENABLE_CRIWARE_FILESYSTEM
 
 			installers = new List<CriFsWebInstaller>();
-			releaseQueueing = new List<CriFsWebInstaller>();
 			installQueueing = new Dictionary<string, CriAssetInstall>();
 
             //------ CriInstaller初期化 ------
 
             UpdateFsWebInstallerSetting();
 
+			void UpdateCriFsWebInstaller()
+			{
+				if (installers.IsEmpty()){ return; }
+
+				CriFsWebInstaller.ExecuteMain();
+			}
+
             Observable.EveryUpdate()
-                .Subscribe(_ => CriFsWebInstaller.ExecuteMain())
+                .Subscribe(_ =>UpdateCriFsWebInstaller())
                 .AddTo(Disposable);
 
-            #endif
+			#endif
 
             isInitialized = true;
         }
@@ -108,6 +114,8 @@ namespace Modules.CriWare
 			installQueueing.Clear();
 
             #if ENABLE_CRIWARE_FILESYSTEM
+
+			CancelReleaseInstallers();
 			
             if (installers != null)
             {
@@ -211,7 +219,7 @@ namespace Modules.CriWare
 
 			if (item != null)
 			{
-				if (item.Installer != null && !releaseQueueing.Contains(item.Installer))
+				if (item.Installer != null)
 				{
 					item.Installer.Stop();
 				}
@@ -222,61 +230,36 @@ namespace Modules.CriWare
 			// インストーラ解放.
 			if (installQueueing.IsEmpty())
 			{
-                var releaseInstallers = installers.ToArray();
-
-				foreach (var releaseInstaller in releaseInstallers)
-				{
-					ReleaseUnUseInstaller(releaseInstaller).Forget();
-				}
+				CancelReleaseInstallers();
+				ReleaseInstallers();
 			}
         }
 
-		private async UniTask ReleaseUnUseInstaller(CriFsWebInstaller installer)
+		private void ReleaseInstallers()
         {
-            if (installer == null){ return; }
+			if (installers.IsEmpty()){ return; }
 
-			if (!installers.Contains(installer)){ return; }
-
-			if (releaseQueueing.Contains(installer)){ return; }
-
-			releaseQueueing.Add(installer);
-
-			// 解放時間.
-			var releaseTime = DateTime.UtcNow + UnUseInstallerReleaseDelay;
-
-			// 解放まで一定時間待つ.
-
-			var release = true;
-
-			while (DateTime.UtcNow < releaseTime)
-			{
-				// 再利用されていたら解放キャンセル.
-				if (installQueueing.Any(x => x.Value.Installer == installer))
-				{
-					release = false;
-					break;
-				}
-				
-                await UniTask.NextFrame();
-			}
-
-			// 解放.
-
-			if (release)
-			{
-				lock (installers)
-				{
-					if (installers.Contains(installer))
+			releaseInstallerDisposable = Observable.Timer(UnUseInstallerReleaseDelay)
+				.Subscribe(_ =>
 					{
-						installers.Remove(installer);
+						foreach (var installer in installers)
+						{
+							installer.Dispose();
+						}
 
-						installer.Dispose();
-					}
-				}
+						installers.Clear();
+					})
+				.AddTo(Disposable);
+		}
+
+		private void CancelReleaseInstallers()
+		{
+			if (releaseInstallerDisposable != null)
+			{
+				releaseInstallerDisposable.Dispose();
+				releaseInstallerDisposable = null;
 			}
-
-			releaseQueueing.Remove(installer);
-        }
+		}
 
         #endif
 

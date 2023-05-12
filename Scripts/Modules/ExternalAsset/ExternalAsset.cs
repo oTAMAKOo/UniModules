@@ -482,8 +482,11 @@ namespace Modules.ExternalAssets
 			if (cancelSource != null)
 			{
 				cancelSource.Cancel();
-				cancelSource = new CancellationTokenSource();
+				cancelSource.Dispose();
+				cancelSource = null;
 			}
+
+			cancelSource = new CancellationTokenSource();
 
 			// 登録済みのダウンロードキューをクリア.
 
