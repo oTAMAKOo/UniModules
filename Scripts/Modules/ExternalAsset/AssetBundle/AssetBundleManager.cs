@@ -474,15 +474,15 @@ namespace Modules.AssetBundles
 							progress.Report(downloadTask.progress);
 						}
 					}
+				}
 
-					if (cancelToken.IsCancellationRequested)
-					{
-						webRequest.Abort();
-					}
-					else if (webRequest.HasError() || webRequest.responseCode != (int)System.Net.HttpStatusCode.OK)
-					{
-						throw new Exception($"File download error\nURL:{url}\nResponseCode:{webRequest.responseCode}\n\n{webRequest.error}\n");
-					}
+				if (cancelToken.IsCancellationRequested)
+				{
+					webRequest.Abort();
+				}
+				else if (webRequest.HasError() || webRequest.responseCode != (int)System.Net.HttpStatusCode.OK)
+				{
+					throw new Exception($"File download error\nURL:{url}\nResponseCode:{webRequest.responseCode}\n\n{webRequest.error}\n");
 				}
 			}
 		}
