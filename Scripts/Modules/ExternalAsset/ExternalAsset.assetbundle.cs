@@ -185,24 +185,37 @@ namespace Modules.ExternalAssets
 						return null;
 					}
 
+					foreach (var item in requireUpdateInfos)
+					{
+						UpdateVersion(item.ResourcePath);
+					}
+
+					await SaveVersion();
+
 					sw.Stop();
 
-                    if (LogEnable && UnityConsole.Enable)
+					if (LogEnable && UnityConsole.Enable)
                     {
                         var builder = new StringBuilder();
 
-                        var assetBundleName = assetInfo.AssetBundle.AssetBundleName;
+						builder.AppendFormat("Update: {0} ({1:F2}ms)", Path.GetFileName(assetPath), sw.Elapsed.TotalMilliseconds).AppendLine();
+						builder.AppendLine();
+						
+						foreach (var info in requireUpdateInfos)
+						{
+							var assetBundleName = assetInfo.AssetBundle.AssetBundleName;
 
-                        builder.AppendFormat("Update: {0} ({1:F2}ms)", Path.GetFileName(assetPath), sw.Elapsed.TotalMilliseconds).AppendLine();
-                        builder.AppendLine();
-                        builder.AppendFormat("LoadPath = {0}", assetPath).AppendLine();
-                        builder.AppendFormat("FileName = {0}", assetInfo.FileName).AppendLine();
-                        builder.AppendFormat("AssetBundleName = {0}", assetBundleName).AppendLine();
+							builder.AppendFormat("ResourcePath = {0}", info.ResourcePath).AppendLine();
+							builder.AppendFormat("FileName = {0}", info.FileName).AppendLine();
+							builder.AppendFormat("AssetBundleName = {0}", assetBundleName).AppendLine();
 
-                        if (!string.IsNullOrEmpty(assetInfo.Hash))
-                        {
-                            builder.AppendFormat("Hash = {0}", assetInfo.Hash).AppendLine();
-                        }
+							if (!string.IsNullOrEmpty(assetInfo.Hash))
+							{
+								builder.AppendFormat("Hash = {0}", assetInfo.Hash).AppendLine();
+							}
+
+							builder.AppendLine();
+						}
 
                         UnityConsole.Event(ConsoleEventName, ConsoleEventColor, builder.ToString());
                     }
@@ -224,19 +237,20 @@ namespace Modules.ExternalAssets
 
 				result = await assetBundleManager.LoadAsset<T>(InstallDirectory, assetInfo, assetPath, autoUnload, cancelSource.Token);
 
-				// 読み込み中リストから外す.
-
-				if (loadingAssets.Contains(assetInfo))
-				{
-					loadingAssets.Remove(assetInfo);
-				}
-
 			}
 			catch (Exception e)
 			{
 				OnError(e);
 
 				return null;
+			}
+			finally
+			{
+				// 読み込み中リストから外す.
+				if (loadingAssets.Contains(assetInfo))
+				{
+					loadingAssets.Remove(assetInfo);
+				}
 			}
 
 			// 外部処理.

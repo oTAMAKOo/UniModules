@@ -475,7 +475,7 @@ namespace Modules.ExternalAssets
 			}
 		}
 
-		public void CancelAll()
+		public void ClearDownloadQueue()
 		{
 			// キャンセルトークン再生成.
 
@@ -498,6 +498,8 @@ namespace Modules.ExternalAssets
 			criAssetManager.ClearInstallQueue();
 
 			#endif
+
+			SaveVersion().Forget();
 		}
 
 		public string GetFilePath(AssetInfo assetInfo)

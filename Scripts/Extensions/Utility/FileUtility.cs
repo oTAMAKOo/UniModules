@@ -1,4 +1,5 @@
-
+﻿
+using System;
 using System.IO;
 using System.Security.Cryptography;
 using System.Text;
@@ -59,34 +60,45 @@ namespace Extensions
             return hashedText.ToString();
         }
 
-        /// <summary>
-        /// 指定されたファイルがロックされているかどうか.
-        /// </summary>
-        /// <param name="path">検証したいファイルへのフルパス</param>
-        /// <returns>ロックされているかどうか</returns>
-        public static bool IsFileLocked(string path)
-        {
-			if (!File.Exists(path)) { return false; }
-
+		/// <summary> 指定されたファイルがロックされているかどうか. </summary>
+		/// <param name="filePath">検証したいファイルへのフルパス</param>
+		/// <returns>ロックされているかどうか</returns>
+		public static bool IsFileLocked(string filePath)
+		{
 			FileStream stream = null;
 
-            try
-            {
-                stream = new FileStream(path, FileMode.Open, FileAccess.ReadWrite, FileShare.None);
-            }
-            catch
-            {
-                return true;
-            }
-            finally
-            {
-                if (stream != null)
-                {
-                    stream.Close();
-                }
-            }
+			try
+			{
+				stream = new FileStream(filePath, FileMode.Open, FileAccess.ReadWrite, FileShare.ReadWrite);
+			}
+			catch (DirectoryNotFoundException)
+			{
+				return false;
+			}
+			catch (FileNotFoundException)
+			{
+				return false;
+			}
+			catch (IOException)
+			{
+				if (File.Exists(filePath))
+				{
+					return true;
+				}
+			}
+			catch (Exception)
+			{
+				return false;
+			}
+			finally
+			{
+				if (stream != null)
+				{
+					stream.Close();
+				}
+			}
 
-            return false;
-        }
+			return false;
+		}
 	}
 }
