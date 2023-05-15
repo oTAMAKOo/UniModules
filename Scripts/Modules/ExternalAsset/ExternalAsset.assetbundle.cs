@@ -179,11 +179,6 @@ namespace Modules.ExternalAssets
 						return null;
 					}
 
-					foreach (var item in requireUpdateInfos)
-					{
-						UpdateVersion(item.ResourcePath);
-					}
-
 					await SaveVersion();
 
 					sw.Stop();
