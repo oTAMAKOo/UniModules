@@ -24,7 +24,7 @@ namespace Modules.AssetBundles
 		public const string PackageExtension = ".package";
 
 		// 同時ダウンロード処理実行数.
-		private const int MaxDownloadQueueingCount = 25;
+		private const int MaxDownloadQueueingCount = 20;
 
 		// 非同期で読み込むファイルサイズ (0.1MB).
 		private const float AsyncLoadFileSize = 1024.0f * 1024.0f * 0.1f;
@@ -33,7 +33,7 @@ namespace Modules.AssetBundles
 		private const float FrameSyncLoadFileSize = 1024.0f * 1024.0f * 1f;
 
 		// 1フレームで同期読み込みする最大ファイル数.
-		private const int FrameSyncLoadFileNum = 25;
+		private const int FrameSyncLoadFileNum = 20;
 
 		// タイムアウトまでの時間.
 		private readonly TimeSpan TimeoutLimit = TimeSpan.FromSeconds(60f);
@@ -452,6 +452,8 @@ namespace Modules.AssetBundles
 
 		private async UniTask FileDownload(string url, string filePath, IProgress<float> progress, CancellationToken cancelToken)
 		{
+			var canceled = false;
+
 			using (var webRequest = UnityWebRequest.Get(url))
 			{
 				using (var downloadHandler = new DownloadHandlerFile(filePath))
@@ -465,7 +467,11 @@ namespace Modules.AssetBundles
 
 					while (!downloadTask.isDone)
 					{
-						if (cancelToken.IsCancellationRequested) { break; }
+						if (cancelToken.IsCancellationRequested && !canceled)
+						{
+							webRequest.Abort();
+							canceled = true;
+						}
 
 						await UniTask.NextFrame(CancellationToken.None);
 
@@ -693,13 +699,7 @@ namespace Modules.AssetBundles
 
 			var task = ObservableEx.FromUniTask(cancelToken => LoadAssetBundle(installPath, info, cancelToken))
 				.DoOnError(error => OnError(error))
-				.Finally(() =>
-					{
-						if (loadQueueing.ContainsKey(assetBundleName))
-						{
-							loadQueueing.Remove(assetBundleName);
-						}
-					})
+				.Finally(() => loadQueueing.Remove(assetBundleName))
 				.Share();
 
 			loadQueueing.Add(assetBundleName, task);
