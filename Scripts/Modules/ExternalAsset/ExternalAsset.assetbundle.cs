@@ -57,12 +57,6 @@ namespace Modules.ExternalAssets
 
 		private async UniTask UpdateAssetBundle(AssetInfo assetInfo, IProgress<float> progress = null, CancellationToken cancelToken = default)
 		{
-			// ローカルバージョンが最新の場合は更新しない.
-
-			var requireUpdate = IsRequireUpdate(assetInfo);
-
-			if (!requireUpdate) { return; }
-
 			var assetBundleManager = instance.assetBundleManager;
 
 			await assetBundleManager.UpdateAssetBundle(InstallDirectory, assetInfo, progress, cancelToken);

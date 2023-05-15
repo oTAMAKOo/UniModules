@@ -385,6 +385,21 @@ namespace Modules.ExternalAssets
 			{
 				if (string.IsNullOrEmpty(resourcePath)) { return; }
 
+				// アセット情報.
+
+				var assetInfo = GetAssetInfo(resourcePath);
+
+				if (assetInfo == null)
+				{
+					throw new AssetInfoNotFoundException(resourcePath);
+				}
+
+				// ローカルバージョンが最新の場合は更新しない.
+
+				var requireUpdate = IsRequireUpdate(assetInfo);
+
+				if (!requireUpdate) { return; }
+
 				// 呼び出し制限.
 
 				await updateAssetCallLimiter.Wait(cancelToken: CancellationToken.None);
@@ -396,15 +411,6 @@ namespace Modules.ExternalAssets
 				var linkedCancelToken = linkedCancelTokenSource.Token;
 
 				if (linkedCancelToken.IsCancellationRequested){ return; }
-
-				// アセット情報.
-
-				var assetInfo = GetAssetInfo(resourcePath);
-
-				if (assetInfo == null)
-				{
-					throw new AssetInfoNotFoundException(resourcePath);
-				}
 
 				// 外部処理.
 

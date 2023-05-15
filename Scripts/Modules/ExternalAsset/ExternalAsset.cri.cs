@@ -58,12 +58,6 @@ namespace Modules.ExternalAssets
 		{
 			if (cancelToken.IsCancellationRequested) { return; }
 
-			// ローカルバージョンが最新の場合は更新しない.
-
-			var requireUpdate = IsRequireUpdate(assetInfo);
-
-			if (!requireUpdate) { return; }
-
 			var criAssetManager = instance.criAssetManager;
 
 			await criAssetManager.UpdateCriAsset(InstallDirectory, assetInfo, progress, cancelToken);

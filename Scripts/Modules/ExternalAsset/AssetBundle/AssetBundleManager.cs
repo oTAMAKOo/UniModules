@@ -474,15 +474,15 @@ namespace Modules.AssetBundles
 							progress.Report(downloadTask.progress);
 						}
 					}
-				}
 
-				if (cancelToken.IsCancellationRequested)
-				{
-					webRequest.Abort();
-				}
-				else if (webRequest.HasError() || webRequest.responseCode != (int)System.Net.HttpStatusCode.OK)
-				{
-					throw new Exception($"File download error\nURL:{url}\nResponseCode:{webRequest.responseCode}\n\n{webRequest.error}\n");
+					if (cancelToken.IsCancellationRequested)
+					{
+						webRequest.Abort();
+					}
+					else if (webRequest.HasError() || webRequest.responseCode != (int)System.Net.HttpStatusCode.OK)
+					{
+						throw new Exception($"File download error\nURL:{url}\nResponseCode:{webRequest.responseCode}\n\n{webRequest.error}\n");
+					}
 				}
 			}
 		}
@@ -691,19 +691,23 @@ namespace Modules.AssetBundles
 
 			var info = assetInfosByAssetBundleName.GetValueOrDefault(assetBundleName).FirstOrDefault();
 
-			var task = ObservableEx.FromUniTask(_cancelToken => LoadAssetBundle(installPath, _cancelToken, info))
-				.Timeout(TimeoutLimit)
-				.OnErrorRetry((TimeoutException ex) => OnTimeout(info, ex), RetryCount, RetryDelaySeconds)
+			var task = ObservableEx.FromUniTask(cancelToken => LoadAssetBundle(installPath, info, cancelToken))
 				.DoOnError(error => OnError(error))
-				.Finally(() => loadQueueing.Remove(assetBundleName))
+				.Finally(() =>
+					{
+						if (loadQueueing.ContainsKey(assetBundleName))
+						{
+							loadQueueing.Remove(assetBundleName);
+						}
+					})
 				.Share();
 
 			loadQueueing.Add(assetBundleName, task);
 
-			return loadQueueing[assetBundleName];
+			return task;
 		}
 
-		private async UniTask<AssetBundle> LoadAssetBundle(string installPath, CancellationToken cancelToken, AssetInfo assetInfo)
+		private async UniTask<AssetBundle> LoadAssetBundle(string installPath, AssetInfo assetInfo, CancellationToken cancelToken)
 		{
 			AssetBundle assetBundle = null;
 
@@ -742,13 +746,6 @@ namespace Modules.AssetBundles
 			}
 			else
 			{
-				while (FileUtility.IsFileLocked(filePath))
-				{
-					if (cancelToken.IsCancellationRequested){ return null; }
-
-					await UniTask.NextFrame(CancellationToken.None);
-				}
-
 				if (!File.Exists(filePath))
 				{
 					var message = $"\nResourcePath: {assetInfo.ResourcePath}\nFilePath:\n{filePath}\n";
@@ -756,9 +753,16 @@ namespace Modules.AssetBundles
 					throw new FileNotFoundException(message);
 				}
 
+				while (FileUtility.IsFileLocked(filePath))
+				{
+					if (cancelToken.IsCancellationRequested){ return null; }
+
+					await UniTask.NextFrame(CancellationToken.None);
+				}
+
 				byte[] bytes = null;
 
-				using (var fileStream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+				using (var fileStream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read, 4096, true))
 				{
 					bytes = new byte[fileStream.Length];
 

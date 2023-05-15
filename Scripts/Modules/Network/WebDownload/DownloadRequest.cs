@@ -37,40 +37,40 @@ namespace Modules.Net.WebDownload
 
         public async UniTask Download(IProgress<float> progress, CancellationToken cancelToken = default)
         {
-			var handler = new DownloadHandlerFile(FilePath)
-			{
-				removeFileOnAbort = true,
-			};
-
-            request = new UnityWebRequest(Url)
-            {
-                method = UnityWebRequest.kHttpVerbGET,
-                timeout = TimeOutSeconds,
-                downloadHandler = handler,
-            };
-
             try
             {
-                var operation = request.SendWebRequest();
-
-                while (!operation.isDone)
-                {
-                    if (progress != null)
-                    {
-                        progress.Report(operation.progress);
-                    }
-
-                    await UniTask.NextFrame(cancelToken);
-				}
-
-				if (request != null)
+				using (var handler = new DownloadHandlerFile(FilePath))
 				{
-					if (!request.IsSuccess() || request.HasError())
+					handler.removeFileOnAbort = true;
+
+					request = new UnityWebRequest(Url)
 					{
-						throw new UnityWebRequestErrorException(request);
+						method = UnityWebRequest.kHttpVerbGET,
+						timeout = TimeOutSeconds,
+						downloadHandler = handler,
+					};
+
+					var operation = request.SendWebRequest();
+
+					while (!operation.isDone)
+					{
+						if (progress != null)
+						{
+							progress.Report(operation.progress);
+						}
+
+						await UniTask.NextFrame(cancelToken);
+					}
+
+					if (request != null)
+					{
+						if (!request.IsSuccess() || request.HasError())
+						{
+							throw new UnityWebRequestErrorException(request);
+						}
 					}
 				}
-            }
+			}
 			catch (OperationCanceledException)
 			{
 				if (request != null)
@@ -90,17 +90,10 @@ namespace Modules.Net.WebDownload
 
         public void Cancel()
         {
-            if (request == null) { return; }
-
-			try
-            {
-                request.Abort();
-            }
-            finally
-            {
-                request.Dispose();
-                request = null;
-            }
+			if (request != null)
+			{
+				request.Abort();
+			}
 		}
     }
 }

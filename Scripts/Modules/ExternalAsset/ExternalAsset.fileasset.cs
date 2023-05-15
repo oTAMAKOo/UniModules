@@ -40,12 +40,6 @@ namespace Modules.ExternalAssets
 		{
 			if (cancelToken.IsCancellationRequested) { return; }
 
-			// ローカルバージョンが最新の場合は更新しない.
-
-			var requireUpdate = IsRequireUpdate(assetInfo);
-
-			if (!requireUpdate) { return; }
-			
 			await fileAssetManager.UpdateFileAsset(InstallDirectory, assetInfo, progress, cancelToken);
 		}
 

@@ -25,7 +25,7 @@ namespace Modules.CriWare
 			private const int FileMissingMaxRetryCount = 3;
 
 			// リトライ開始までのディレイ.
-			private const int RetryDelaySeconds = 3;
+			private const int RetryDelaySeconds = 10;
 
 			//----- field -----
 
@@ -58,7 +58,7 @@ namespace Modules.CriWare
 					File.Delete(filePath);
 				}
 
-				Task = Install(downloadUrl, filePath, progress, cancelToken)
+				Task = UniTask.Defer(() => Install(downloadUrl, filePath, progress, cancelToken))
 					.ToObservable()
 					.Select(_ => this)
 					.Share();
@@ -165,7 +165,7 @@ namespace Modules.CriWare
 
 								if (statusInfo.status != CriFsWebInstaller.Status.Busy) { break; }
 
-								await UniTask.NextFrame(cancelToken);
+								await UniTask.NextFrame(CancellationToken.None);
 							}
 							
 							if (statusInfo.error != CriFsWebInstaller.Error.None)
