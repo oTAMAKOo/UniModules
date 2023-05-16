@@ -1,4 +1,4 @@
-﻿
+
 
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -10,10 +10,10 @@ namespace Extensions
 {
     public static class UnityUtility
     {
-		public static bool isEditor
-		{
-			get { return Application.installMode == ApplicationInstallMode.Editor; }
-		}
+        public static bool isEditor
+        {
+            get { return Application.installMode == ApplicationInstallMode.Editor; }
+        }
 
         #region Object Instantiate
 
@@ -115,7 +115,7 @@ namespace Extensions
         /// <summary> 複数のインスタンスを高速生成 </summary>
         public static IEnumerable<GameObject> Instantiate(GameObject parent, GameObject original, int count, bool instantiateInWorldSpace = false)
         {
-			if (original == null){ return new GameObject[0]; }
+            if (original == null){ return new GameObject[0]; }
 
             var list = new List<GameObject>();
 
@@ -459,9 +459,10 @@ namespace Extensions
         }
 
         /// <summary>
-        /// カメラ取得.
-        /// ※ layerMaskは <code>1 &lt;&lt; (int)layer</code>された状態の物を受け取る.
+        /// <para>カメラ取得.</para>
+        /// <para>※ 検索負荷が高いので呼び出し頻度に注意してください.</para>
         /// </summary>
+        /// <param name="layerMask">1 &lt;&lt; (int)layer された状態の物を受け取る</param>
         public static Camera[] FindCameraForLayer(int layerMask)
         {
             return FindObjectsOfType<Camera>().Where(x => (x.cullingMask & layerMask) != 0).ToArray();
@@ -474,8 +475,9 @@ namespace Extensions
         }
 
         /// <summary>
-        /// Hierarchyから特定の種類のオブジェクト一覧取得.
-        /// ※ DontDestroyOnLoad内の非アクティブなオブジェクトは取得不可.
+        /// <para>Hierarchyから特定の種類のオブジェクト一覧取得.</para>
+        /// <para>※ DontDestroyOnLoad内の非アクティブなオブジェクトは取得不可.</para>
+        /// <para>※ 検索負荷が高いので呼び出し頻度に注意してください.</para>
         /// </summary>
         public static IEnumerable<T> FindObjectsOfType<T>() where T : Component
         {
@@ -511,13 +513,19 @@ namespace Extensions
             return targets;
         }
 
-        /// <summary> Hierarchyから特定の種類のオブジェクト取得 </summary>
+        /// <summary>
+        /// <para>Hierarchyから特定の種類のオブジェクト取得.</para>
+        /// <para>※ 検索負荷が高いので呼び出し頻度に注意してください.</para>
+        ///</summary>
         public static T FindObjectOfType<T>(GameObject rootObject) where T : Component
         {
             return FindObjectsOfType<T>(rootObject).FirstOrDefault();
         }
 
-        /// <summary> Hierarchyから特定の種類のオブジェクト一覧取得 </summary>
+        /// <summary>
+        /// <para>Hierarchyから特定の種類のオブジェクト一覧取得.</para>
+        /// <para>※ 検索負荷が高いので呼び出し頻度に注意してください.</para>
+        ///</summary>
         public static IEnumerable<T> FindObjectsOfType<T>(GameObject rootObject) where T : Component
         {
             if (rootObject == null) { return new T[0]; }
@@ -538,26 +546,29 @@ namespace Extensions
 
             return list;
         }
-
+        
         /// <summary>
-        /// Hierarchyから指定されたインターフェイスを実装したコンポーネントを持つオブジェクト取得.
-        /// </summary>
+        /// <para>Hierarchyから指定されたインターフェイスを実装したコンポーネントを持つオブジェクト取得.</para>
+        /// <para>※ 検索負荷が高いので呼び出し頻度に注意してください.</para>
+        ///</summary>
         public static T FindObjectOfInterface<T>() where T : class
         {
             return FindObjectsOfInterface<T>().FirstOrDefault();
         }
 
         /// <summary>
-        /// Hierarchyから指定されたインターフェイスを実装したコンポーネントを持つオブジェクト取得.
-        /// </summary>
+        /// <para>Hierarchyから指定されたインターフェイスを実装したコンポーネントを持つオブジェクト取得.</para>
+        /// <para>※ 検索負荷が高いので呼び出し頻度に注意してください.</para>
+        ///</summary>
         public static T FindObjectOfInterface<T>(GameObject rootObject) where T : class
         {
             return FindObjectsOfInterface<T>(rootObject).FirstOrDefault();
         }
 
         /// <summary>
-        /// Hierarchyから指定されたインターフェイスを実装したコンポーネントを持つオブジェクト一覧取得.
-        /// </summary>
+        /// <para>Hierarchyから指定されたインターフェイスを実装したコンポーネントを持つオブジェクト一覧取得.</para>
+        /// <para>※ 検索負荷が高いので呼び出し頻度に注意してください.</para>
+        ///</summary>
         public static IEnumerable<T> FindObjectsOfInterface<T>() where T : class
         {
             var components = FindObjectsOfType<Component>();
@@ -566,8 +577,9 @@ namespace Extensions
         }
 
         /// <summary>
-        /// Hierarchyから指定されたインターフェイスを実装したコンポーネントを持つオブジェクト一覧取得.
-        /// </summary>
+        /// <para>Hierarchyから指定されたインターフェイスを実装したコンポーネントを持つオブジェクト一覧取得.</para>
+        /// <para>※ 検索負荷が高いので呼び出し頻度に注意してください.</para>
+        ///</summary>
         public static IEnumerable<T> FindObjectsOfInterface<T>(GameObject rootObject) where T : class
         {
             var components = FindObjectsOfType<Component>(rootObject);
