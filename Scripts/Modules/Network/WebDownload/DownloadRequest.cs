@@ -16,7 +16,7 @@ namespace Modules.Net.WebDownload
 
         protected UnityWebRequest request = null;
 
-		//----- property -----
+        //----- property -----
 
         /// <summary> リクエストURL. </summary>
         public string Url { get; private set; }
@@ -33,67 +33,67 @@ namespace Modules.Net.WebDownload
         {
             Url = url;
             FilePath = filePath;
-		}
+        }
 
         public async UniTask Download(IProgress<float> progress, CancellationToken cancelToken = default)
         {
             try
             {
-				using (var handler = new DownloadHandlerFile(FilePath))
-				{
-					handler.removeFileOnAbort = true;
+                var downloadHandlerFile = new DownloadHandlerFile(FilePath)
+                {
+                    removeFileOnAbort = true,
+                };
 
-					request = new UnityWebRequest(Url)
-					{
-						method = UnityWebRequest.kHttpVerbGET,
-						timeout = TimeOutSeconds,
-						downloadHandler = handler,
-					};
+                request = new UnityWebRequest(Url)
+                {
+                    method = UnityWebRequest.kHttpVerbGET,
+                    timeout = TimeOutSeconds,
+                    downloadHandler = downloadHandlerFile,
+                };
 
-					var operation = request.SendWebRequest();
+                var operation = request.SendWebRequest();
 
-					while (!operation.isDone)
-					{
-						if (progress != null)
-						{
-							progress.Report(operation.progress);
-						}
+                while (!operation.isDone)
+                {
+                    if (progress != null)
+                    {
+                        progress.Report(operation.progress);
+                    }
 
-						await UniTask.NextFrame(cancelToken);
-					}
+                    await UniTask.NextFrame(cancelToken);
+                }
 
-					if (request != null)
-					{
-						if (!request.IsSuccess() || request.HasError())
-						{
-							throw new UnityWebRequestErrorException(request);
-						}
-					}
-				}
-			}
-			catch (OperationCanceledException)
-			{
-				if (request != null)
-				{
-					request.Abort();
-				}
-			}
-			finally
+                if (request != null)
+                {
+                    if (!request.IsSuccess() || request.HasError())
+                    {
+                        throw new UnityWebRequestErrorException(request);
+                    }
+                }
+            }
+            catch (OperationCanceledException)
             {
-				if (request != null)
-				{
-					request.Dispose();
-					request = null;
-				}
+                if (request != null)
+                {
+                    request.Abort();
+                }
+            }
+            finally
+            {
+                if (request != null)
+                {
+                    request.Dispose();
+                    request = null;
+                }
             }
         }
 
         public void Cancel()
         {
-			if (request != null)
-			{
-				request.Abort();
-			}
-		}
+            if (request != null)
+            {
+                request.Abort();
+            }
+        }
     }
 }

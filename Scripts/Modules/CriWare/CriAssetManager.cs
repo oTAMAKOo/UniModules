@@ -19,21 +19,21 @@ namespace Modules.CriWare
     {
         //----- params -----
 
-		// デフォルトインストーラ数.
-		private const int DefaultInstallerNum = 8;
+        // デフォルトインストーラ数.
+        private const int DefaultInstallerNum = 8;
 
-		// タイムアウトまでの時間.
+        // タイムアウトまでの時間.
         private readonly TimeSpan TimeoutLimit = TimeSpan.FromSeconds(180f);
 
-		// インストーラ解放までの再利用待機時間.
+        // インストーラ解放までの再利用待機時間.
         private readonly TimeSpan UnUseInstallerReleaseDelay = TimeSpan.FromSeconds(30f);
 
-		//----- field -----
+        //----- field -----
 
         // アセット管理.
         private AssetInfoManifest manifest = null;
 
-		// ダウンロード元URL.
+        // ダウンロード元URL.
         private string remoteUrl = null;
         private string versionHash = null;
 
@@ -43,12 +43,12 @@ namespace Modules.CriWare
         // ローカルモードか.
         private bool localMode = false;
 
-		#if ENABLE_CRIWARE_FILESYSTEM
+        #if ENABLE_CRIWARE_FILESYSTEM
 
         // インストーラー.
         private List<CriFsWebInstaller> installers = null;
 
-		// ダウンロード待ち.
+        // ダウンロード待ち.
         private Dictionary<string, CriAssetInstall> installQueueing = null;
 
         #endif
@@ -56,8 +56,8 @@ namespace Modules.CriWare
         // 同時インストール数.
         private uint numInstallers = DefaultInstallerNum;
 
-		// 解放キャンセル発行用.
-		private IDisposable releaseInstallerDisposable = null;
+        // 解放キャンセル発行用.
+        private IDisposable releaseInstallerDisposable = null;
 
         // イベント通知.
         private Subject<AssetInfo> onTimeOut = null;
@@ -74,30 +74,30 @@ namespace Modules.CriWare
         public void Initialize(bool simulateMode = false)
         {
             if (isInitialized) { return; }
-			
+            
             this.simulateMode = UnityUtility.isEditor && simulateMode;
 
             #if ENABLE_CRIWARE_FILESYSTEM
 
-			installers = new List<CriFsWebInstaller>();
-			installQueueing = new Dictionary<string, CriAssetInstall>();
+            installers = new List<CriFsWebInstaller>();
+            installQueueing = new Dictionary<string, CriAssetInstall>();
 
             //------ CriInstaller初期化 ------
 
             UpdateFsWebInstallerSetting();
 
-			void UpdateCriFsWebInstaller()
-			{
-				if (installers.IsEmpty()){ return; }
+            void UpdateCriFsWebInstaller()
+            {
+                if (installers.IsEmpty()){ return; }
 
-				CriFsWebInstaller.ExecuteMain();
-			}
+                CriFsWebInstaller.ExecuteMain();
+            }
 
             Observable.EveryUpdate()
                 .Subscribe(_ =>UpdateCriFsWebInstaller())
                 .AddTo(Disposable);
 
-			#endif
+            #endif
 
             isInitialized = true;
         }
@@ -106,17 +106,17 @@ namespace Modules.CriWare
         {
             if (!isInitialized){ return; }
 
-			Release();
+            Release();
         }
 
         private void Release()
         {
-			installQueueing.Clear();
+            installQueueing.Clear();
 
             #if ENABLE_CRIWARE_FILESYSTEM
 
-			CancelReleaseInstallers();
-			
+            CancelReleaseInstallers();
+            
             if (installers != null)
             {
                 foreach (var installer in installers)
@@ -128,7 +128,7 @@ namespace Modules.CriWare
                 installers.Clear();
             }
 
-			if(CriFsWebInstaller.isInitialized)
+            if(CriFsWebInstaller.isInitialized)
             {
                 CriFsWebInstaller.FinalizeModule();
             }
@@ -140,7 +140,7 @@ namespace Modules.CriWare
         {
             if(CriFsWebInstaller.isInitialized)
             {
-				Release();
+                Release();
             }
 
             var moduleConfig = CriFsWebInstaller.defaultModuleConfig;
@@ -167,7 +167,7 @@ namespace Modules.CriWare
             this.localMode = localMode;
         }
 
-		/// <summary> URLを設定. </summary>
+        /// <summary> URLを設定. </summary>
         public void SetUrl(string remoteUrl, string versionHash)
         {
             this.remoteUrl = remoteUrl;
@@ -185,10 +185,10 @@ namespace Modules.CriWare
         public async UniTask UpdateCriAsset(string installPath, AssetInfo assetInfo, IProgress<float> progress = null, CancellationToken cancelToken = default)
         {
             if (simulateMode || localMode) { return; }
-			
-			var install = GetCriAssetInstall(installPath, assetInfo, progress, cancelToken);
+            
+            var install = GetCriAssetInstall(installPath, assetInfo, progress, cancelToken);
 
-			await install.Task
+            await install.Task
                 .DoOnError(ex => OnError(ex))
                 .Finally(() => RemoveInternalQueue(install))
                 .ToUniTask(cancellationToken: cancelToken);
@@ -204,66 +204,66 @@ namespace Modules.CriWare
 
             installQueueing[assetInfo.ResourcePath] = install;
 
-			return install;
+            return install;
         }
 
-		private void RemoveInternalQueue(CriAssetInstall install)
-		{
-			if (install == null) { return; }
-
-			if (install.AssetInfo == null) { return; }
-
-			var resourcePath = install.AssetInfo.ResourcePath;
-
-			var item = installQueueing.GetValueOrDefault(resourcePath);
-
-			if (item != null)
-			{
-				if (item.Installer != null)
-				{
-					item.Installer.Stop();
-				}
-
-				installQueueing.Remove(resourcePath);
-			}
-
-			// インストーラ解放.
-			if (installQueueing.IsEmpty())
-			{
-				CancelReleaseInstallers();
-				ReleaseInstallers();
-			}
-        }
-
-		private void ReleaseInstallers()
+        private void RemoveInternalQueue(CriAssetInstall install)
         {
-			if (installers.IsEmpty()){ return; }
+            if (install == null) { return; }
 
-			releaseInstallerDisposable = Observable.Timer(UnUseInstallerReleaseDelay)
-				.Subscribe(_ =>
-					{
-						foreach (var installer in installers)
-						{
-							installer.Dispose();
-						}
+            if (install.AssetInfo == null) { return; }
 
-						installers.Clear();
-					})
-				.AddTo(Disposable);
-		}
+            var resourcePath = install.AssetInfo.ResourcePath;
 
-		private void CancelReleaseInstallers()
-		{
-			if (releaseInstallerDisposable != null)
-			{
-				releaseInstallerDisposable.Dispose();
-				releaseInstallerDisposable = null;
-			}
-		}
+            var item = installQueueing.GetValueOrDefault(resourcePath);
+
+            if (item != null)
+            {
+                if (item.Installer != null)
+                {
+                    item.Installer.Stop();
+                }
+
+                installQueueing.Remove(resourcePath);
+            }
+
+            // インストーラ解放.
+            if (installQueueing.IsEmpty())
+            {
+                CancelReleaseInstallers();
+                ReleaseInstallers();
+            }
+        }
+
+        private void ReleaseInstallers()
+        {
+            if (installers.IsEmpty()){ return; }
+
+            releaseInstallerDisposable = Observable.Timer(UnUseInstallerReleaseDelay)
+                .Subscribe(_ =>
+                    {
+                        foreach (var installer in installers)
+                        {
+                            installer.Dispose();
+                        }
+
+                        installers.Clear();
+                    })
+                .AddTo(Disposable);
+        }
+
+        private void CancelReleaseInstallers()
+        {
+            if (releaseInstallerDisposable != null)
+            {
+                releaseInstallerDisposable.Dispose();
+                releaseInstallerDisposable = null;
+            }
+        }
 
         #endif
 
-		public string BuildDownloadUrl(AssetInfo assetInfo)
+        public string BuildDownloadUrl(AssetInfo assetInfo)
         {
             var platformName = PlatformUtility.GetPlatformTypeName();
 
@@ -279,52 +279,66 @@ namespace Modules.CriWare
             return CriAssetDefinition.AssetAllExtensions.Any(y => y == extension);
         }
 
-		public string GetFilePath(string installPath, AssetInfo assetInfo)
+        public string GetFilePath(string installPath, AssetInfo assetInfo)
         {
-			if (assetInfo == null){ return null; }
+            if (assetInfo == null){ return null; }
 
-			var streamingAssetsPath = UnityPathUtility.StreamingAssetsPath;
+            var streamingAssetsPath = UnityPathUtility.StreamingAssetsPath;
 
-			installPath = PathUtility.ConvertPathSeparator(installPath);
+            installPath = PathUtility.ConvertPathSeparator(installPath);
 
-			// CRIはフルパスでない場合、StreamingAssetsからのパスを参照する.
-			if (installPath.StartsWith(streamingAssetsPath))
-			{
-				installPath = installPath.Replace(streamingAssetsPath, string.Empty).TrimStart(PathUtility.PathSeparator);
-			}
+            // CRIはフルパスでない場合、StreamingAssetsからのパスを参照する.
+            if (installPath.StartsWith(streamingAssetsPath))
+            {
+                installPath = installPath.Replace(streamingAssetsPath, string.Empty).TrimStart(PathUtility.PathSeparator);
+            }
 
-			return PathUtility.Combine(installPath, assetInfo.FileName);
+            return PathUtility.Combine(installPath, assetInfo.FileName);
         }
 
-		public void ClearInstallQueue()
-		{
-			var items = installQueueing.Values.ToArray();
+        public async UniTask WaitQueueingInstall(AssetInfo assetInfo, CancellationToken cancelToken)
+        {
+            var resourcePath = assetInfo.ResourcePath;
 
-			foreach (var item in items)
-			{
-				RemoveInternalQueue(item);
-			}
+            while (true)
+            {
+                if (!installQueueing.ContainsKey(resourcePath)) { break; }
 
-			installQueueing.Clear();
-		}
+                if (cancelToken.IsCancellationRequested) { break; }
+
+                await UniTask.NextFrame(CancellationToken.None);
+            }
+        }
+
+        public void ClearInstallQueue()
+        {
+            var items = installQueueing.Values.ToArray();
+
+            foreach (var item in items)
+            {
+                RemoveInternalQueue(item);
+            }
+
+            installQueueing.Clear();
+        }
 
         private void OnTimeout(AssetInfo assetInfo, Exception exception)
         {
-			if (onTimeOut != null)
+            if (onTimeOut != null)
             {
-				Debug.LogErrorFormat("[Download Timeout] \n{0}", exception);
+                Debug.LogErrorFormat("[Download Timeout] \n{0}", exception);
 
-				onTimeOut.OnNext(assetInfo);
+                onTimeOut.OnNext(assetInfo);
             }
         }
 
         private void OnError(Exception exception)
         {
-			if (onError != null)
+            if (onError != null)
             {
-				Debug.LogErrorFormat("[Download Error] \n{0}", exception);
+                Debug.LogErrorFormat("[Download Error] \n{0}", exception);
 
-				onError.OnNext(exception);
+                onError.OnNext(exception);
             }
         }
 

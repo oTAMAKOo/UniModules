@@ -18,8 +18,8 @@ namespace Modules.ExternalAssets
     {
         //----- params -----
 
-		/// <summary> 最大同時ダウンロード数. </summary>
-		private const uint AssetBundleDefaultInstallerCount = 8;
+        /// <summary> 最大同時ダウンロード数. </summary>
+        private const uint AssetBundleDefaultInstallerCount = 8;
 
         //----- field -----
 
@@ -37,30 +37,53 @@ namespace Modules.ExternalAssets
         {
             assetBundleManager = AssetBundleManager.CreateInstance();
             assetBundleManager.Initialize(SimulateMode);
-			assetBundleManager.SetMaxDownloadCount(AssetBundleDefaultInstallerCount);
+            assetBundleManager.SetMaxDownloadCount(AssetBundleDefaultInstallerCount);
 
-			assetBundleManager.OnLoadAsObservable().Subscribe(x => OnLoadAssetBundle(x)).AddTo(Disposable);
+            assetBundleManager.OnLoadAsObservable().Subscribe(x => OnLoadAssetBundle(x)).AddTo(Disposable);
             assetBundleManager.OnTimeOutAsObservable().Subscribe(x => OnTimeout(x)).AddTo(Disposable);
             assetBundleManager.OnErrorAsObservable().Subscribe(x => OnError(x)).AddTo(Disposable);
-		}
+        }
 
-		/// <summary> ファイルハンドラ設定. </summary>
-		public void SetAssetBundleFileHandler(IAssetBundleFileHandler fileHandler)
-		{
-			assetBundleManager.SetFileHandler(fileHandler);
-		}
+        /// <summary> ファイルハンドラ設定. </summary>
+        public void SetAssetBundleFileHandler(IAssetBundleFileHandler fileHandler)
+        {
+            assetBundleManager.SetFileHandler(fileHandler);
+        }
 
-		public void SetAssetBundleInstallerCount(uint installerCount)
-		{
-			assetBundleManager.SetMaxDownloadCount(installerCount);
-		}
+        public void SetAssetBundleInstallerCount(uint installerCount)
+        {
+            assetBundleManager.SetMaxDownloadCount(installerCount);
+        }
 
-		private async UniTask UpdateAssetBundle(AssetInfo assetInfo, IProgress<float> progress = null, CancellationToken cancelToken = default)
-		{
-			var assetBundleManager = instance.assetBundleManager;
+        private async UniTask UpdateAssetBundle(AssetInfo assetInfo, IProgress<float> progress = null, CancellationToken cancelToken = default)
+        {
+            var assetBundleManager = instance.assetBundleManager;
 
-			await assetBundleManager.UpdateAssetBundle(InstallDirectory, assetInfo, progress, cancelToken);
-		}
+            if (assetInfo == null) { return; }
+
+            if (assetInfo.AssetBundle == null) { return; }
+
+            var assetBundleNames = assetBundleManager.GetAllDependenciesAndSelf(assetInfo.AssetBundle.AssetBundleName);
+
+            var tasks = new List<UniTask>();
+
+            foreach (var assetBundleName in assetBundleNames)
+            {
+                var infos = assetInfosByAssetBundleName.GetValueOrDefault(assetBundleName);
+
+                if (infos.IsEmpty()){ continue; }
+
+                var item = infos.First();
+
+                if (!IsRequireUpdate(item)){ continue; }
+
+                var task = assetBundleManager.UpdateAssetBundle(InstallDirectory, assetInfo, false, progress, cancelToken);
+                
+                tasks.Add(task);
+            }
+
+            await UniTask.WhenAll(tasks);
+        }
 
         /// <summary> AssetBundleを読み込み (非同期) </summary>
         public static async UniTask<T> LoadAsset<T>(string resourcePath, bool autoUnload = true) where T : UnityEngine.Object
@@ -79,49 +102,49 @@ namespace Modules.ExternalAssets
                 var exception = new Exception("AssetInfoManifest is null.");
 
                 OnError(exception);
-				
-				return null;
+                
+                return null;
             }
 
             AssetInfo assetInfo = null;
 
-			try
-			{
-				assetInfo = GetAssetInfo(resourcePath);
+            try
+            {
+                assetInfo = GetAssetInfo(resourcePath);
 
-				if (assetInfo == null)
-				{
-					throw new AssetInfoNotFoundException(resourcePath);
-				}
-			}
-			catch (AssetInfoNotFoundException e)
-			{
-				OnError(e);
+                if (assetInfo == null)
+                {
+                    throw new AssetInfoNotFoundException(resourcePath);
+                }
+            }
+            catch (AssetInfoNotFoundException e)
+            {
+                OnError(e);
 
-				return null;
-			}
+                return null;
+            }
 
             // 外部処理.
 
             if (loadAssetHandler != null)
             {
-				try
-				{
-					await loadAssetHandler.OnLoadRequest(assetInfo, cancelSource.Token);
-				}
-				catch (OperationCanceledException)
-				{
-					/* Canceled */
-				}
-				catch (Exception e)
-				{
-					OnError(e);
+                try
+                {
+                    await loadAssetHandler.OnLoadRequest(assetInfo, cancelSource.Token);
+                }
+                catch (OperationCanceledException)
+                {
+                    /* Canceled */
+                }
+                catch (Exception e)
+                {
+                    OnError(e);
 
-					return null;
-				}
-			}
+                    return null;
+                }
+            }
 
-			if (cancelSource.IsCancellationRequested){ return null; }
+            if (cancelSource.IsCancellationRequested){ return null; }
 
             // 更新.
 
@@ -129,82 +152,116 @@ namespace Modules.ExternalAssets
 
             if (!LocalMode && !SimulateMode)
             {
-				var requireUpdateInfos = new List<AssetInfo>();
-				
-				if(!CheckAssetBundleVersion(assetInfo))
-				{
-					requireUpdateInfos.Add(assetInfo);
-				}
+                // 依存アセットバンドル一覧.
+                var allDependencies = assetBundleManager.GetAllDependencies(assetInfo.AssetBundle.AssetBundleName);
 
-				var allDependencies = assetBundleManager.GetAllDependencies(assetInfo.AssetBundle.AssetBundleName);
+                // 自身を含めたアセットバンドル一覧.
+                var allAssetBundles = allDependencies.Append(assetInfo.AssetBundle.AssetBundleName)
+                    .Distinct()
+                    .ToArray();
 
-				foreach (var item in allDependencies)
-				{
-					var infos = assetInfosByAssetBundleName.GetValueOrDefault(item);
+                // 更新中の場合待機.
 
-					if (infos.IsEmpty()){ continue; }
+                try
+                {
+                    var tasks = new List<UniTask>();
 
-					var info = infos.FirstOrDefault();
+                    foreach (var item in allAssetBundles)
+                    {
+                        if (!assetBundleManager.IsDownloadQueueing(item)){ continue; }
 
-					if (info == null){ continue; }
-					
-					if(!CheckAssetBundleVersion(info))
-					{
-						requireUpdateInfos.Add(info);
-					}
-				}
+                        var task = assetBundleManager.WaitQueueingDownload(item, cancelSource.Token);
 
-				// ファイルが存在しない/古い場合はダウンロード.
+                        tasks.Add(task);
+                    }
+
+                    await UniTask.WhenAll(tasks);
+                }
+                catch (OperationCanceledException)
+                {
+                    /* Canceled */
+                }
+
+                if (cancelSource.IsCancellationRequested){ return null; }
+
+                // 更新が必要な対象を取得.
+
+                var requireUpdateInfos = new List<AssetInfo>();
+                
+                if(!CheckAssetBundleVersion(assetInfo))
+                {
+                    requireUpdateInfos.Add(assetInfo);
+                }
+
+                foreach (var item in allAssetBundles)
+                {
+                    var infos = assetInfosByAssetBundleName.GetValueOrDefault(item);
+
+                    if (infos.IsEmpty()){ continue; }
+
+                    var info = infos.FirstOrDefault();
+
+                    if (info == null){ continue; }
+
+                    if (requireUpdateInfos.Any(x => x.ResourcePath == info.ResourcePath)){ continue; }
+                    
+                    if(!CheckAssetBundleVersion(info))
+                    {
+                        requireUpdateInfos.Add(info);
+                    }
+                }
+
+                // ファイルが存在しない/古い場合はダウンロード.
                 if (requireUpdateInfos.Any())
                 {
-					sw = System.Diagnostics.Stopwatch.StartNew();
+                    sw = System.Diagnostics.Stopwatch.StartNew();
 
-					try
-					{
-						var tasks = new List<UniTask>();
+                    try
+                    {
+                        var tasks = new List<UniTask>();
 
-						foreach (var item in requireUpdateInfos)
-						{
-							var task = UpdateAsset(item.ResourcePath, cancelToken: cancelSource.Token);
+                        foreach (var item in requireUpdateInfos)
+                        {
+                            var task = UpdateAsset(item.ResourcePath, cancelToken: cancelSource.Token);
 
-							tasks.Add(task);
-						}
+                            tasks.Add(task);
+                        }
 
-						await UniTask.WhenAll(tasks);
-					}
-					catch (Exception e)
-					{
-						OnError(e);
+                        await UniTask.WhenAll(tasks);
+                    }
+                    catch (Exception e)
+                    {
+                        OnError(e);
 
-						return null;
-					}
+                        return null;
+                    }
 
-					await SaveVersion();
+                    await SaveVersion();
 
-					sw.Stop();
+                    sw.Stop();
 
-					if (LogEnable && UnityConsole.Enable)
+                    if (LogEnable && UnityConsole.Enable)
                     {
                         var builder = new StringBuilder();
 
-						builder.AppendFormat("Update: {0} ({1:F2}ms)", Path.GetFileName(assetPath), sw.Elapsed.TotalMilliseconds).AppendLine();
-						builder.AppendLine();
-						
-						foreach (var info in requireUpdateInfos)
-						{
-							var assetBundleName = assetInfo.AssetBundle.AssetBundleName;
+                        builder.AppendFormat("Update: {0} ({1:F2}ms)", Path.GetFileName(assetPath), sw.Elapsed.TotalMilliseconds).AppendLine();
+                        builder.AppendLine();
+                        
+                        foreach (var info in requireUpdateInfos)
+                        {
+                            var assetBundleName = assetInfo.AssetBundle.AssetBundleName;
 
-							builder.AppendFormat("ResourcePath = {0}", info.ResourcePath).AppendLine();
-							builder.AppendFormat("FileName = {0}", info.FileName).AppendLine();
-							builder.AppendFormat("AssetBundleName = {0}", assetBundleName).AppendLine();
+                            builder.AppendFormat("ResourcePath = {0}", info.ResourcePath).AppendLine();
+                            builder.AppendFormat("FileName = {0}", info.FileName).AppendLine();
+                            builder.AppendFormat("AssetBundleName = {0}", assetBundleName).AppendLine();
 
-							if (!string.IsNullOrEmpty(assetInfo.Hash))
-							{
-								builder.AppendFormat("Hash = {0}", assetInfo.Hash).AppendLine();
-							}
+                            if (!string.IsNullOrEmpty(assetInfo.Hash))
+                            {
+                                builder.AppendFormat("Hash = {0}", assetInfo.Hash).AppendLine();
+                            }
 
-							builder.AppendLine();
-						}
+                            builder.AppendLine();
+                        }
 
                         UnityConsole.Event(ConsoleEventName, ConsoleEventColor, builder.ToString());
                     }
@@ -218,51 +275,51 @@ namespace Modules.ExternalAssets
                 loadingAssets.Add(assetInfo);
             }
 
-			// 読み込み実行 (読み込み中の場合は読み込み待ちのObservableが返る).
+            // 読み込み実行 (読み込み中の場合は読み込み待ちのObservableが返る).
 
-			try
-			{
-				sw = System.Diagnostics.Stopwatch.StartNew();
+            try
+            {
+                sw = System.Diagnostics.Stopwatch.StartNew();
 
-				result = await assetBundleManager.LoadAsset<T>(InstallDirectory, assetInfo, assetPath, autoUnload, cancelSource.Token);
+                result = await assetBundleManager.LoadAsset<T>(InstallDirectory, assetInfo, assetPath, autoUnload, cancelSource.Token);
 
-			}
-			catch (Exception e)
-			{
-				OnError(e);
+            }
+            catch (Exception e)
+            {
+                OnError(e);
 
-				return null;
-			}
-			finally
-			{
-				// 読み込み中リストから外す.
-				if (loadingAssets.Contains(assetInfo))
-				{
-					loadingAssets.Remove(assetInfo);
-				}
-			}
+                return null;
+            }
+            finally
+            {
+                // 読み込み中リストから外す.
+                if (loadingAssets.Contains(assetInfo))
+                {
+                    loadingAssets.Remove(assetInfo);
+                }
+            }
 
-			// 外部処理.
+            // 外部処理.
 
             if (result != null && loadAssetHandler != null)
             {
-				try
-				{
-					await loadAssetHandler.OnLoadFinish(assetInfo, cancelSource.Token);
-				}
-				catch (OperationCanceledException)
-				{
-					/* Canceled */
-				}
-				catch (Exception e)
-				{
-					OnError(e);
+                try
+                {
+                    await loadAssetHandler.OnLoadFinish(assetInfo, cancelSource.Token);
+                }
+                catch (OperationCanceledException)
+                {
+                    /* Canceled */
+                }
+                catch (Exception e)
+                {
+                    OnError(e);
 
-					return null;
-				}
+                    return null;
+                }
 
-				if (cancelSource.IsCancellationRequested){ return null; }
-			}
+                if (cancelSource.IsCancellationRequested){ return null; }
+            }
 
             // 時間計測終了.
 
@@ -271,23 +328,23 @@ namespace Modules.ExternalAssets
             // 読み込み中だった場合はログを表示しない.
             if (result != null && !isLoading)
             {
-				if (LogEnable && UnityConsole.Enable)
+                if (LogEnable && UnityConsole.Enable)
                 {
                     var builder = new StringBuilder();
 
                     var assetBundleName = assetInfo.AssetBundle.AssetBundleName;
 
-					builder.AppendFormat("Load: {0} ({1:F2}ms)", Path.GetFileName(assetPath), sw.Elapsed.TotalMilliseconds).AppendLine();
-					builder.AppendLine();
+                    builder.AppendFormat("Load: {0} ({1:F2}ms)", Path.GetFileName(assetPath), sw.Elapsed.TotalMilliseconds).AppendLine();
+                    builder.AppendLine();
 
-					if (LocalMode)
-					{
-						builder.AppendLine("<color=#DC143C><b>[LocalMode]</b></color>");
-					}
+                    if (LocalMode)
+                    {
+                        builder.AppendLine("<color=#DC143C><b>[LocalMode]</b></color>");
+                    }
 
-					builder.AppendFormat("LoadPath = {0}", assetPath).AppendLine();
-					builder.AppendFormat("AssetBundleName = {0}", assetBundleName).AppendLine();
-					builder.AppendFormat("Hash = {0}", assetInfo.Hash).AppendLine();
+                    builder.AppendFormat("LoadPath = {0}", assetPath).AppendLine();
+                    builder.AppendFormat("AssetBundleName = {0}", assetBundleName).AppendLine();
+                    builder.AppendFormat("Hash = {0}", assetInfo.Hash).AppendLine();
 
                     if (!string.IsNullOrEmpty(assetInfo.Group))
                     {
@@ -314,36 +371,36 @@ namespace Modules.ExternalAssets
                 }
             }
 
-			return result;
+            return result;
         }
 
-		private void OnLoadAssetBundle(string assetBundleName)
-		{
-			if (InstallDirectory.StartsWith(UnityPathUtility.StreamingAssetsPath))
-			{
-				if (assetInfosByAssetBundleName != null)
-				{
-					var assetInfos = assetInfosByAssetBundleName.GetValueOrDefault(assetBundleName);
+        private void OnLoadAssetBundle(string assetBundleName)
+        {
+            if (InstallDirectory.StartsWith(UnityPathUtility.StreamingAssetsPath))
+            {
+                if (assetInfosByAssetBundleName != null)
+                {
+                    var assetInfos = assetInfosByAssetBundleName.GetValueOrDefault(assetBundleName);
 
-					if (assetInfos != null)
-					{
-						var assetInfo = assetInfos.FirstOrDefault();
+                    if (assetInfos != null)
+                    {
+                        var assetInfo = assetInfos.FirstOrDefault();
 
-						if (assetInfo != null)
-						{
-							var resourcePath = assetInfo.ResourcePath;
+                        if (assetInfo != null)
+                        {
+                            var resourcePath = assetInfo.ResourcePath;
 
-							RemoveVersion(resourcePath);
-							
-							SaveVersion().Forget();
-						}
-					}
-				}
-			}
-		}
+                            RemoveVersion(resourcePath);
+                            
+                            SaveVersion().Forget();
+                        }
+                    }
+                }
+            }
+        }
 
-		/// <summary> AssetBundleを解放 </summary>
-		public static void UnloadAssetBundle(string resourcePath)
+        /// <summary> AssetBundleを解放 </summary>
+        public static void UnloadAssetBundle(string resourcePath)
         {
             Instance.UnloadAssetInternal(resourcePath);
         }
@@ -389,28 +446,28 @@ namespace Modules.ExternalAssets
                 Debug.LogError("AssetInfoManifest is null.");
             }
 
-			AssetInfo assetInfo = null;
+            AssetInfo assetInfo = null;
 
-			try
-			{
-				assetInfo = GetAssetInfo(resourcePath);
+            try
+            {
+                assetInfo = GetAssetInfo(resourcePath);
 
-				if (assetInfo == null)
-				{
-					throw new AssetInfoNotFoundException(resourcePath);
-				}
-			}
-			catch (AssetInfoNotFoundException e)
-			{
-				OnError(e);
+                if (assetInfo == null)
+                {
+                    throw new AssetInfoNotFoundException(resourcePath);
+                }
+            }
+            catch (AssetInfoNotFoundException e)
+            {
+                OnError(e);
 
-				return;
-			}
+                return;
+            }
 
-			if (!assetInfo.IsAssetBundle)
+            if (!assetInfo.IsAssetBundle)
             {
                 Debug.LogErrorFormat("This file is not an assetBundle.\n{0}", resourcePath);
-				return;
+                return;
             }
 
             assetBundleManager.UnloadAsset(assetInfo.AssetBundle.AssetBundleName);
@@ -421,13 +478,13 @@ namespace Modules.ExternalAssets
             }
         }
 
-		/// <summary> アセットバンドル読み込み時イベント </summary>
-		/// <returns> 該当アセットバンドルのFilePath </returns>
-		public IObservable<string> OnLoadAssetBundleAsObservable()
-		{
-			if (assetBundleManager == null){ return Observable.Empty<string>(); }
+        /// <summary> アセットバンドル読み込み時イベント </summary>
+        /// <returns> 該当アセットバンドルのFilePath </returns>
+        public IObservable<string> OnLoadAssetBundleAsObservable()
+        {
+            if (assetBundleManager == null){ return Observable.Empty<string>(); }
 
-			return assetBundleManager.OnLoadAsObservable();
-		}
+            return assetBundleManager.OnLoadAsObservable();
+        }
     }
 }

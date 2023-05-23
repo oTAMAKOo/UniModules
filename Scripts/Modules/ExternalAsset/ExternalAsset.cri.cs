@@ -26,8 +26,8 @@ namespace Modules.ExternalAssets
     {
         //----- params -----
 
-		/// <summary> CRIデフォルトインストーラ数.  </summary>
-		private const uint CriDefaultInstallerCount = 8;
+        /// <summary> CRIデフォルトインストーラ数.  </summary>
+        private const uint CriDefaultInstallerCount = 8;
 
         //----- field -----
 
@@ -44,59 +44,59 @@ namespace Modules.ExternalAssets
 
             criAssetManager = CriAssetManager.CreateInstance();
             criAssetManager.Initialize(SimulateMode);
-			criAssetManager.SetNumInstallers(CriDefaultInstallerCount);
+            criAssetManager.SetNumInstallers(CriDefaultInstallerCount);
             criAssetManager.OnTimeOutAsObservable().Subscribe(x => OnTimeout(x)).AddTo(Disposable);
             criAssetManager.OnErrorAsObservable().Subscribe(x => OnError(x)).AddTo(Disposable);
         }
 
-		public void SetCriInstallerCount(uint installerCount)
-		{
-			criAssetManager.SetNumInstallers(installerCount);
-		}
+        public void SetCriInstallerCount(uint installerCount)
+        {
+            criAssetManager.SetNumInstallers(installerCount);
+        }
 
-		private async UniTask UpdateCriAsset(AssetInfo assetInfo, IProgress<float> progress = null, CancellationToken cancelToken = default)
-		{
-			if (cancelToken.IsCancellationRequested) { return; }
+        private async UniTask UpdateCriAsset(AssetInfo assetInfo, IProgress<float> progress = null, CancellationToken cancelToken = default)
+        {
+            if (cancelToken.IsCancellationRequested) { return; }
 
-			var criAssetManager = instance.criAssetManager;
+            var criAssetManager = instance.criAssetManager;
 
-			await criAssetManager.UpdateCriAsset(InstallDirectory, assetInfo, progress, cancelToken);
-		}
+            await criAssetManager.UpdateCriAsset(InstallDirectory, assetInfo, progress, cancelToken);
+        }
 
         #if ENABLE_CRIWARE_ADX || ENABLE_CRIWARE_SOFDEC
 
         private string ConvertCriFilePath(string resourcePath)
         {
             if (string.IsNullOrEmpty(resourcePath)){ return null; }
-			
-			var criFilePath = string.Empty;
+            
+            var criFilePath = string.Empty;
 
-			try
-			{
-				var assetInfo = GetAssetInfo(resourcePath);
+            try
+            {
+                var assetInfo = GetAssetInfo(resourcePath);
 
-				if (assetInfo == null)
-				{
-					throw new AssetInfoNotFoundException(resourcePath);
-				}
+                if (assetInfo == null)
+                {
+                    throw new AssetInfoNotFoundException(resourcePath);
+                }
 
-				criFilePath = SimulateMode ? 
-							PathUtility.Combine(UnityPathUtility.GetProjectFolderPath(), externalAssetDirectory, resourcePath) : 
-							GetFilePath(assetInfo);
-			}
-			catch (AssetInfoNotFoundException e)
-			{
-				OnError(e);
+                criFilePath = SimulateMode ? 
+                            PathUtility.Combine(UnityPathUtility.GetProjectFolderPath(), externalAssetDirectory, resourcePath) : 
+                            GetFilePath(assetInfo);
+            }
+            catch (AssetInfoNotFoundException e)
+            {
+                OnError(e);
 
-				return null;
-			}
+                return null;
+            }
 
-			return criFilePath;
-		}
+            return criFilePath;
+        }
 
         #endif
 
-		#region Sound
+        #region Sound
 
         #if ENABLE_CRIWARE_ADX
         
@@ -107,36 +107,53 @@ namespace Modules.ExternalAssets
 
         private async UniTask<CueInfo> GetCueInfoInternal(string resourcePath, string cue)
         {
-			if (string.IsNullOrEmpty(resourcePath))
+            if (string.IsNullOrEmpty(resourcePath))
             {
-				Debug.LogError("resourcePath empty.");
+                Debug.LogError("resourcePath empty.");
 
-				return null;
-			}
+                return null;
+            }
 
-			AssetInfo assetInfo = null;
+            AssetInfo assetInfo = null;
 
-			try
-			{
-				assetInfo = GetAssetInfo(resourcePath);
+            try
+            {
+                assetInfo = GetAssetInfo(resourcePath);
 
-				if (assetInfo == null)
-				{
-					throw new AssetInfoNotFoundException(resourcePath);
-				}
-			}
-			catch (AssetInfoNotFoundException e)
-			{
-				OnError(e);
+                if (assetInfo == null)
+                {
+                    throw new AssetInfoNotFoundException(resourcePath);
+                }
+            }
+            catch (AssetInfoNotFoundException e)
+            {
+                OnError(e);
 
-				return null;
-			}
+                return null;
+            }
 
-			var filePath = ConvertCriFilePath(resourcePath);
+            var filePath = ConvertCriFilePath(resourcePath);
 
             if (!LocalMode && !SimulateMode)
             {
-				var requireUpdate = IsRequireUpdate(assetInfo);
+                // インストール実行中の場合は待つ.
+
+                try
+                {
+                    await criAssetManager.WaitQueueingInstall(assetInfo, cancelSource.Token);
+                }
+                catch (OperationCanceledException)
+                {
+                    /* Canceled */
+                }
+
+                if (cancelSource.IsCancellationRequested){ return null; }
+
+                // 更新が必要か確認.
+
+                var requireUpdate = IsRequireUpdate(assetInfo);
+
+                // 更新.
 
                 if (requireUpdate)
                 {
@@ -144,26 +161,26 @@ namespace Modules.ExternalAssets
 
                     var sw = System.Diagnostics.Stopwatch.StartNew();
 
-					try
-					{
-						await UpdateAsset(resourcePath, cancelToken: cancelSource.Token);
-					}
-					catch (OperationCanceledException)
-					{
-						/* Canceled */
-					}
-					catch (Exception e)
-					{
-						Debug.LogException(e);
-					}
+                    try
+                    {
+                        await UpdateAsset(resourcePath, cancelToken: cancelSource.Token);
+                    }
+                    catch (OperationCanceledException)
+                    {
+                        /* Canceled */
+                    }
+                    catch (Exception e)
+                    {
+                        Debug.LogException(e);
+                    }
 
-					if (cancelSource.IsCancellationRequested){ return null; }
+                    if (cancelSource.IsCancellationRequested){ return null; }
 
-					sw.Stop();
+                    sw.Stop();
 
                     if (LogEnable && UnityConsole.Enable)
                     {
-						if (assetInfo != null)
+                        if (assetInfo != null)
                         {
                             var builder = new StringBuilder();
 
@@ -192,19 +209,19 @@ namespace Modules.ExternalAssets
                 onLoadAsset.OnNext(resourcePath);
             }
 
-			// Awbがある場合はそれもロードした扱い.
+            // Awbがある場合はそれもロードした扱い.
 
-			var awbResourcePath = Path.ChangeExtension(resourcePath, CriAssetDefinition.AwbExtension);
+            var awbResourcePath = Path.ChangeExtension(resourcePath, CriAssetDefinition.AwbExtension);
 
-			var awbAssetInfo = GetAssetInfo(awbResourcePath);
+            var awbAssetInfo = GetAssetInfo(awbResourcePath);
 
-			if (awbAssetInfo != null)
-			{
-				if (onLoadAsset != null)
-				{
-					onLoadAsset.OnNext(awbResourcePath);
-				}
-			}
+            if (awbAssetInfo != null)
+            {
+                if (onLoadAsset != null)
+                {
+                    onLoadAsset.OnNext(awbResourcePath);
+                }
+            }
             
             return cueInfo;
         }
@@ -226,34 +243,51 @@ namespace Modules.ExternalAssets
         {
             if (string.IsNullOrEmpty(resourcePath))
             {
-				Debug.LogError("resourcePath empty.");
+                Debug.LogError("resourcePath empty.");
 
-				return null;
-			}
+                return null;
+            }
 
-			AssetInfo assetInfo = null;
+            AssetInfo assetInfo = null;
 
-			try
-			{
-				assetInfo = GetAssetInfo(resourcePath);
+            try
+            {
+                assetInfo = GetAssetInfo(resourcePath);
 
-				if (assetInfo == null)
-				{
-					throw new AssetInfoNotFoundException(resourcePath);
-				}
-			}
-			catch (AssetInfoNotFoundException e)
-			{
-				OnError(e);
+                if (assetInfo == null)
+                {
+                    throw new AssetInfoNotFoundException(resourcePath);
+                }
+            }
+            catch (AssetInfoNotFoundException e)
+            {
+                OnError(e);
 
-				return null;
-			}
+                return null;
+            }
 
-			var filePath = ConvertCriFilePath(resourcePath);
+            var filePath = ConvertCriFilePath(resourcePath);
 
             if (!LocalMode && !SimulateMode)
             {
-				var requireUpdate = IsRequireUpdate(assetInfo);
+                // インストール実行中の場合は待つ.
+
+                try
+                {
+                    await criAssetManager.WaitQueueingInstall(assetInfo, cancelSource.Token);
+                }
+                catch (OperationCanceledException)
+                {
+                    /* Canceled */
+                }
+
+                if (cancelSource.IsCancellationRequested){ return null; }
+
+                // 更新が必要か確認.
+
+                var requireUpdate = IsRequireUpdate(assetInfo);
+
+                // 更新.
 
                 if (requireUpdate)
                 {
@@ -261,22 +295,22 @@ namespace Modules.ExternalAssets
 
                     var sw = System.Diagnostics.Stopwatch.StartNew();
 
-					try
-					{
-						await UpdateAsset(resourcePath, cancelToken: cancelSource.Token);
-					}
-					catch (OperationCanceledException)
-					{
-						/* Canceled */
-					}
-					catch (Exception e)
-					{
-						Debug.LogException(e);
-					}
+                    try
+                    {
+                        await UpdateAsset(resourcePath, cancelToken: cancelSource.Token);
+                    }
+                    catch (OperationCanceledException)
+                    {
+                        /* Canceled */
+                    }
+                    catch (Exception e)
+                    {
+                        Debug.LogException(e);
+                    }
 
-					if (cancelSource.IsCancellationRequested){ return null; }
+                    if (cancelSource.IsCancellationRequested){ return null; }
 
-					sw.Stop();
+                    sw.Stop();
 
                     if (LogEnable && UnityConsole.Enable)
                     {
@@ -302,20 +336,20 @@ namespace Modules.ExternalAssets
 
             filePath = PathUtility.GetPathWithoutExtension(filePath) + CriAssetDefinition.UsmExtension;
 
-			var movieInfo = new ManaInfo(filePath);
+            var movieInfo = new ManaInfo(filePath);
 
-			if (onLoadAsset != null)
-			{
-				onLoadAsset.OnNext(resourcePath);
-			}
+            if (onLoadAsset != null)
+            {
+                onLoadAsset.OnNext(resourcePath);
+            }
 
-			return movieInfo;
+            return movieInfo;
         }
 
         #endif
 
         #endregion
-	}
+    }
 }
 
 #endif
