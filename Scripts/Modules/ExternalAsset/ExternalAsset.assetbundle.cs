@@ -55,7 +55,7 @@ namespace Modules.ExternalAssets
             assetBundleManager.SetMaxDownloadCount(installerCount);
         }
 
-        private async UniTask UpdateAssetBundle(AssetInfo assetInfo, IProgress<float> progress = null, CancellationToken cancelToken = default)
+        private async UniTask UpdateAssetBundle(AssetInfo assetInfo, IProgress<DownloadProgressInfo> progress = null, CancellationToken cancelToken = default)
         {
             var assetBundleManager = instance.assetBundleManager;
 
@@ -152,13 +152,8 @@ namespace Modules.ExternalAssets
 
             if (!LocalMode && !SimulateMode)
             {
-                // 依存アセットバンドル一覧.
-                var allDependencies = assetBundleManager.GetAllDependencies(assetInfo.AssetBundle.AssetBundleName);
-
                 // 自身を含めたアセットバンドル一覧.
-                var allAssetBundles = allDependencies.Append(assetInfo.AssetBundle.AssetBundleName)
-                    .Distinct()
-                    .ToArray();
+                var allAssetBundles = assetBundleManager.GetAllDependenciesAndSelf(assetInfo.AssetBundle.AssetBundleName);
 
                 // 更新中の場合待機.
 

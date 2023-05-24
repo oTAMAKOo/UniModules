@@ -10,42 +10,42 @@ using Extensions;
 
 namespace Modules.ExternalAssets
 {
-	public sealed partial class ExternalAsset
-	{
+    public sealed partial class ExternalAsset
+    {
         //----- params -----
 
-		/// <summary> 最大同時ダウンロード数. </summary>
-		private const uint FileAssetDefaultInstallerCount = 8;
+        /// <summary> 最大同時ダウンロード数. </summary>
+        private const uint FileAssetDefaultInstallerCount = 8;
 
         //----- field -----
-		
-		private FileAssetManager fileAssetManager = null;
+        
+        private FileAssetManager fileAssetManager = null;
 
         //----- property -----
 
         //----- method -----
 
-		private void InitializeFileAsset()
-		{
-			// FileAssetManager初期化.
+        private void InitializeFileAsset()
+        {
+            // FileAssetManager初期化.
 
-			fileAssetManager = FileAssetManager.CreateInstance();
-			fileAssetManager.Initialize(SimulateMode);
-			fileAssetManager.SetMaxDownloadCount(FileAssetDefaultInstallerCount);
-			fileAssetManager.OnTimeOutAsObservable().Subscribe(x => OnTimeout(x)).AddTo(Disposable);
-			fileAssetManager.OnErrorAsObservable().Subscribe(x => OnError(x)).AddTo(Disposable);
-		}
+            fileAssetManager = FileAssetManager.CreateInstance();
+            fileAssetManager.Initialize(SimulateMode);
+            fileAssetManager.SetMaxDownloadCount(FileAssetDefaultInstallerCount);
+            fileAssetManager.OnTimeOutAsObservable().Subscribe(x => OnTimeout(x)).AddTo(Disposable);
+            fileAssetManager.OnErrorAsObservable().Subscribe(x => OnError(x)).AddTo(Disposable);
+        }
 
-		private async UniTask UpdateFileAsset(AssetInfo assetInfo, IProgress<float> progress = null, CancellationToken cancelToken = default)
-		{
-			if (cancelToken.IsCancellationRequested) { return; }
+        private async UniTask UpdateFileAsset(AssetInfo assetInfo, IProgress<DownloadProgressInfo> progress = null, CancellationToken cancelToken = default)
+        {
+            if (cancelToken.IsCancellationRequested) { return; }
 
-			await fileAssetManager.UpdateFileAsset(InstallDirectory, assetInfo, progress, cancelToken);
-		}
+            await fileAssetManager.UpdateFileAsset(InstallDirectory, assetInfo, progress, cancelToken);
+        }
 
-		public void SetFileAssetInstallerCount(uint installerCount)
-		{
-			fileAssetManager.SetMaxDownloadCount(installerCount);
-		}
+        public void SetFileAssetInstallerCount(uint installerCount)
+        {
+            fileAssetManager.SetMaxDownloadCount(installerCount);
+        }
     }
 }

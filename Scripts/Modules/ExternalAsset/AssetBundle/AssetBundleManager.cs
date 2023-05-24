@@ -305,14 +305,16 @@ namespace Modules.AssetBundles
         /// <summary>
         /// アセットバンドルを更新.
         /// </summary>
-        public async UniTask UpdateAssetBundle(string installPath, AssetInfo assetInfo, bool updateDependencies, IProgress<float> progress = null, CancellationToken cancelToken = default)
+        public async UniTask UpdateAssetBundle(string installPath, AssetInfo assetInfo, bool updateDependencies, 
+                                               IProgress<DownloadProgressInfo> progress = null, CancellationToken cancelToken = default)
         {
             if (IsSimulateMode || IsLocalMode) { return; }
 
             await UpdateAssetBundleInternal(installPath, assetInfo, updateDependencies, progress, cancelToken);
         }
 
-        private async UniTask UpdateAssetBundleInternal(string installPath, AssetInfo assetInfo, bool updateDependencies, IProgress<float> progress, CancellationToken cancelToken)
+        private async UniTask UpdateAssetBundleInternal(string installPath, AssetInfo assetInfo, bool updateDependencies, 
+                                                        IProgress<DownloadProgressInfo> progress, CancellationToken cancelToken)
         {
             try
             {
@@ -435,15 +437,10 @@ namespace Modules.AssetBundles
             }
         }
 
-        private IObservable<Unit> DownloadAssetBundle(string installPath, AssetInfo assetInfo, IProgress<float> progress, CancellationToken cancelToken)
+        private IObservable<Unit> DownloadAssetBundle(string installPath, AssetInfo assetInfo, 
+                                                      IProgress<DownloadProgressInfo> progress, CancellationToken cancelToken)
         {
-            var downloadUrl = BuildDownloadUrl(assetInfo);
-
-            var filePath = GetFilePath(installPath, assetInfo);
-
-            if (string.IsNullOrEmpty(filePath)) { return null; }
-            
-            return FileDownload(downloadUrl, filePath, progress, cancelToken)
+            return FileDownload(installPath, assetInfo, progress, cancelToken)
                     .ToObservable()
                     .Timeout(TimeoutLimit)
                     .OnErrorRetry((TimeoutException ex) => OnTimeout(assetInfo, ex), RetryCount, RetryDelaySeconds)
@@ -453,14 +450,22 @@ namespace Modules.AssetBundles
                     .Share();
         }
 
-        private async UniTask FileDownload(string url, string filePath, IProgress<float> progress, CancellationToken cancelToken)
+        private async UniTask FileDownload(string installPath, AssetInfo assetInfo, IProgress<DownloadProgressInfo> progress, CancellationToken cancelToken)
         {
+            var filePath = GetFilePath(installPath, assetInfo);
+
+            if (string.IsNullOrEmpty(filePath)) { return; }
+
+            // ファイルロックされている間は待機.
+
             while (FileUtility.IsFileLocked(filePath))
             {
                 if (cancelToken.IsCancellationRequested) { return; }
 
                 await UniTask.DelayFrame(5, cancellationToken: CancellationToken.None);
             }
+            
+            // ダウンロード.
 
             var canceled = false;
 
@@ -468,6 +473,15 @@ namespace Modules.AssetBundles
             {
                 removeFileOnAbort = true,
             };
+
+            DownloadProgressInfo progressInfo = null;
+
+            if (progress != null)
+            {
+                progressInfo = new DownloadProgressInfo(assetInfo);
+            }
+
+            var url = BuildDownloadUrl(assetInfo);
 
             using (var webRequest = UnityWebRequest.Get(url))
             {
@@ -488,7 +502,9 @@ namespace Modules.AssetBundles
 
                     if (progress != null)
                     {
-                        progress.Report(downloadTask.progress);
+                        progressInfo.SetProgress(downloadTask.progress);
+
+                        progress.Report(progressInfo);
                     }
                 }
 
@@ -825,6 +841,15 @@ namespace Modules.AssetBundles
 
                 if (bytes != null)
                 {
+                    // 読み込み失敗.
+
+                    if (bytes.Length == 0)
+                    {
+                        var message = $"\nResourcePath: {assetInfo.ResourcePath}\nFilePath:\n{filePath}\n";
+
+                        throw new FileLoadException(message);
+                    }
+
                     // 復元.
 
                     bytes = await fileHandler.Decode(bytes);

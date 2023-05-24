@@ -182,7 +182,7 @@ namespace Modules.CriWare
         #if ENABLE_CRIWARE_FILESYSTEM
 
         /// <summary> CRIアセットを更新. </summary>
-        public async UniTask UpdateCriAsset(string installPath, AssetInfo assetInfo, IProgress<float> progress = null, CancellationToken cancelToken = default)
+        public async UniTask UpdateCriAsset(string installPath, AssetInfo assetInfo, IProgress<DownloadProgressInfo> progress = null, CancellationToken cancelToken = default)
         {
             if (simulateMode || localMode) { return; }
             
@@ -194,7 +194,7 @@ namespace Modules.CriWare
                 .ToUniTask(cancellationToken: cancelToken);
         }
 
-        private CriAssetInstall GetCriAssetInstall(string installPath, AssetInfo assetInfo, IProgress<float> progress, CancellationToken cancelToken)
+        private CriAssetInstall GetCriAssetInstall(string installPath, AssetInfo assetInfo, IProgress<DownloadProgressInfo> progress, CancellationToken cancelToken)
         {
             var install = installQueueing.GetValueOrDefault(assetInfo.ResourcePath);
 

@@ -15,93 +15,116 @@ namespace Modules.ExternalAssets
     {
         //----- params -----
 
-		//----- field -----
+        //----- field -----
 
-		private Subject<Exception> onError = null;
-		private Subject<string> onTimeout = null;
+        private Subject<Exception> onError = null;
+        private Subject<string> onTimeout = null;
 
-		//----- property -----
+        //----- property -----
 
         //----- method -----
 
-		public async UniTask Download(string url, string filePath, IProgress<float> progress = null, CancellationToken cancelToken = default)
-		{
-			var directory = Directory.GetParent(filePath);
+        public async UniTask Download(string installPath, AssetInfo assetInfo, string url, IProgress<DownloadProgressInfo> progress = null, CancellationToken cancelToken = default)
+        {
+            var filePath = PathUtility.Combine(installPath, assetInfo.FileName);
 
-			if (!directory.Exists)
-			{
-				directory.Create();
-			}
+            if (File.Exists(filePath))
+            {
+                File.Delete(filePath);
+            }
 
-			var downloadRequest = SetupDownloadRequest(url, filePath);
+            var directory = Directory.GetParent(filePath);
 
-			await Download(downloadRequest, progress, cancelToken);
-		}
+            if (!directory.Exists)
+            {
+                directory.Create();
+            }
 
-		protected override void OnComplete(DownloadRequest downloadRequest, double totalMilliseconds) { }
+            IProgress<float> progressReceiver = null;
+
+            if (progress != null)
+            {
+                var progressInfo = new DownloadProgressInfo(assetInfo);
+
+                void OnProgressUpdate(float value)
+                {
+                    progressInfo.SetProgress(value);
+
+                    progress.Report(progressInfo);
+                }
+
+                progressReceiver = new Progress<float>(OnProgressUpdate);
+            }
+
+            var downloadRequest = SetupDownloadRequest(url, filePath);
+
+            await Download(downloadRequest, progressReceiver, cancelToken);
+        }
+
+        protected override void OnComplete(DownloadRequest downloadRequest, double totalMilliseconds) { }
 
         protected override UniTask<RequestErrorHandle> OnError(DownloadRequest downloadRequest, Exception ex, CancellationToken cancelToken = default)
         {
             var type = ex.GetType();
 
-			if (type == typeof(TimeoutException))
-			{
-				if (onTimeout != null)
-				{
-					onTimeout.OnNext(downloadRequest.Url);
-				}
-				else
-				{
-					Debug.LogErrorFormat("DownloadRequest Timeout \n\n[URL]\n{0}\n\n[Exception]\n{1}\n", downloadRequest.Url, ex.StackTrace);
-				}
-			}
-			else if (type == typeof(UnityWebRequestErrorException) && ex is UnityWebRequestErrorException)
-			{
-				if (onError != null)
-				{
-					onError.OnNext(ex);
-				}
-				else
-				{
-					var exception = (UnityWebRequestErrorException)ex;
-					var errorMessage = exception.RawErrorMessage;
+            if (type == typeof(TimeoutException))
+            {
+                if (onTimeout != null)
+                {
+                    onTimeout.OnNext(downloadRequest.Url);
+                }
+                else
+                {
+                    Debug.LogErrorFormat("DownloadRequest Timeout \n\n[URL]\n{0}\n\n[Exception]\n{1}\n", downloadRequest.Url, ex.StackTrace);
+                }
+            }
+            else if (type == typeof(UnityWebRequestErrorException) && ex is UnityWebRequestErrorException)
+            {
+                if (onError != null)
+                {
+                    onError.OnNext(ex);
+                }
+                else
+                {
+                    var exception = (UnityWebRequestErrorException)ex;
+                    var errorMessage = exception.RawErrorMessage;
 
-					Debug.LogErrorFormat("DownloadRequest Error : {0}\n\n[URL]\n{1}\n\n[Exception]\n{2}\n", errorMessage, downloadRequest.Url, ex.StackTrace);
-				}
-			}
-			else
-			{
-				if (onError != null)
-				{
-					onError.OnNext(ex);
-				}
-				else
-				{
-					Debug.LogErrorFormat("DownloadRequest UnknownError : {0}\n\n[URL]\n{1}\n\n[Exception]\n{2}\n", ex.Message, downloadRequest.Url, ex.StackTrace);
-				}
-			}
+                    Debug.LogErrorFormat("DownloadRequest Error : {0}\n\n[URL]\n{1}\n\n[Exception]\n{2}\n", errorMessage, downloadRequest.Url, ex.StackTrace);
+                }
+            }
+            else
+            {
+                if (onError != null)
+                {
+                    onError.OnNext(ex);
+                }
+                else
+                {
+                    Debug.LogErrorFormat("DownloadRequest UnknownError : {0}\n\n[URL]\n{1}\n\n[Exception]\n{2}\n", ex.Message, downloadRequest.Url, ex.StackTrace);
+                }
+            }
 
             return UniTask.FromResult(RequestErrorHandle.Retry);
         }
 
         protected override void OnRetryLimit(DownloadRequest downloadRequest)
         {
-			var ex = new Exception($"DownloadRequest RetryLimit : [URL]\n{downloadRequest.Url}");
+            var ex = new Exception($"DownloadRequest RetryLimit : [URL]\n{downloadRequest.Url}");
 
-			if (onError != null)
-			{
-				onError.OnNext(ex);
-			}
+            if (onError != null)
+            {
+                onError.OnNext(ex);
+            }
         }
 
-		public IObservable<Exception> OnErrorAsObservable()
-		{
-			return onError ?? (onError = new Subject<Exception>());
-		}
+        public IObservable<Exception> OnErrorAsObservable()
+        {
+            return onError ?? (onError = new Subject<Exception>());
+        }
 
-		public IObservable<string> OnTimeoutAsObservable()
-		{
-			return onTimeout ?? (onTimeout = new Subject<string>());
-		}
-	}
+        public IObservable<string> OnTimeoutAsObservable()
+        {
+            return onTimeout ?? (onTimeout = new Subject<string>());
+        }
+    }
 }

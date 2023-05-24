@@ -377,12 +377,12 @@ namespace Modules.ExternalAssets
         }
 
         /// <summary> アセットを更新. </summary>
-        public static async UniTask UpdateAsset(string resourcePath, IProgress<float> progress = null, CancellationToken cancelToken = default)
+        public static async UniTask UpdateAsset(string resourcePath, IProgress<DownloadProgressInfo> progress = null, CancellationToken cancelToken = default)
         {
             await instance.UpdateAssetInternal(resourcePath, progress, cancelToken);
         }
 
-        private async UniTask UpdateAssetInternal(string resourcePath, IProgress<float> progress, CancellationToken cancelToken)
+        private async UniTask UpdateAssetInternal(string resourcePath, IProgress<DownloadProgressInfo> progress, CancellationToken cancelToken)
         {
             try
             {

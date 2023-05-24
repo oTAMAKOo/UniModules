@@ -54,7 +54,7 @@ namespace Modules.ExternalAssets
             criAssetManager.SetNumInstallers(installerCount);
         }
 
-        private async UniTask UpdateCriAsset(AssetInfo assetInfo, IProgress<float> progress = null, CancellationToken cancelToken = default)
+        private async UniTask UpdateCriAsset(AssetInfo assetInfo, IProgress<DownloadProgressInfo> progress = null, CancellationToken cancelToken = default)
         {
             if (cancelToken.IsCancellationRequested) { return; }
 

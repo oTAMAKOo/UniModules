@@ -16,153 +16,146 @@ namespace Modules.ExternalAssets
 
         //----- field -----
 
-		// ダウンロード元URL.
-		private string remoteUrl = null;
-		private string versionHash = null;
+        // ダウンロード元URL.
+        private string remoteUrl = null;
+        private string versionHash = null;
 
-		// シュミュレートモードか.
-		private bool simulateMode = false;
+        // シュミュレートモードか.
+        private bool simulateMode = false;
 
-		// ローカルモードか.
-		private bool localMode = false;
+        // ローカルモードか.
+        private bool localMode = false;
 
-		// ダウンローダー.
-		private FileAssetDownLoader downLoader = null;
+        // ダウンローダー.
+        private FileAssetDownLoader downLoader = null;
 
-		// ダウンロードキュー.
-		private Dictionary<string, AssetInfo> downloadQueueing = null;
+        // ダウンロードキュー.
+        private Dictionary<string, AssetInfo> downloadQueueing = null;
 
-		// イベント通知.
-		private Subject<AssetInfo> onTimeOut = null;
-		private Subject<Exception> onError = null;
+        // イベント通知.
+        private Subject<AssetInfo> onTimeOut = null;
+        private Subject<Exception> onError = null;
 
-		private bool isInitialized = false;
+        private bool isInitialized = false;
 
         //----- property -----
 
         //----- method -----
 
-		private FileAssetManager() { }
+        private FileAssetManager() { }
 
-		public void Initialize(bool simulateMode = false)
-		{
-			if (isInitialized) { return; }
+        public void Initialize(bool simulateMode = false)
+        {
+            if (isInitialized) { return; }
 
-			this.simulateMode = UnityUtility.isEditor && simulateMode;
+            this.simulateMode = UnityUtility.isEditor && simulateMode;
 
-			downloadQueueing = new Dictionary<string, AssetInfo>();
+            downloadQueueing = new Dictionary<string, AssetInfo>();
 
-			downLoader = new FileAssetDownLoader();
+            downLoader = new FileAssetDownLoader();
 
-			downLoader.Initialize();
+            downLoader.Initialize();
 
-			downLoader.OnTimeoutAsObservable()
-				.Subscribe(x => OnTimeout(x))
-				.AddTo(Disposable);
+            downLoader.OnTimeoutAsObservable()
+                .Subscribe(x => OnTimeout(x))
+                .AddTo(Disposable);
 
-			downLoader.OnErrorAsObservable()
-				.Subscribe(x => OnError(x))
-				.AddTo(Disposable);
+            downLoader.OnErrorAsObservable()
+                .Subscribe(x => OnError(x))
+                .AddTo(Disposable);
 
-			isInitialized = true;
-		}
+            isInitialized = true;
+        }
 
-		public void SetMaxDownloadCount(uint maxDownloadCount)
-		{
-			downLoader.SetMaxDownloadCount(maxDownloadCount);
-		}
+        public void SetMaxDownloadCount(uint maxDownloadCount)
+        {
+            downLoader.SetMaxDownloadCount(maxDownloadCount);
+        }
 
-		/// <summary> ローカルモード設定. </summary>
-		public void SetLocalMode(bool localMode)
-		{
-			this.localMode = localMode;
-		}
+        /// <summary> ローカルモード設定. </summary>
+        public void SetLocalMode(bool localMode)
+        {
+            this.localMode = localMode;
+        }
 
-		/// <summary> URLを設定. </summary>
-		public void SetUrl(string remoteUrl, string versionHash)
-		{
-			this.remoteUrl = remoteUrl;
-			this.versionHash = versionHash;
-		}
+        /// <summary> URLを設定. </summary>
+        public void SetUrl(string remoteUrl, string versionHash)
+        {
+            this.remoteUrl = remoteUrl;
+            this.versionHash = versionHash;
+        }
 
-		private string BuildDownloadUrl(AssetInfo assetInfo)
-		{
-			var platformName = PlatformUtility.GetPlatformTypeName();
+        private string BuildDownloadUrl(AssetInfo assetInfo)
+        {
+            var platformName = PlatformUtility.GetPlatformTypeName();
 
-			var url = PathUtility.Combine(remoteUrl, platformName, versionHash, assetInfo.FileName);
+            var url = PathUtility.Combine(remoteUrl, platformName, versionHash, assetInfo.FileName);
 
-			return $"{url}?v={assetInfo.Hash}";
-		}
+            return $"{url}?v={assetInfo.Hash}";
+        }
 
-		public async UniTask UpdateFileAsset(string installPath, AssetInfo assetInfo, IProgress<float> progress = null, CancellationToken cancelToken = default)
-		{
-			if (simulateMode) { return; }
+        public async UniTask UpdateFileAsset(string installPath, AssetInfo assetInfo, IProgress<DownloadProgressInfo> progress = null, CancellationToken cancelToken = default)
+        {
+            if (simulateMode) { return; }
 
-			if (localMode) { return; }
+            if (localMode) { return; }
 
-			var url = BuildDownloadUrl(assetInfo);
+            var url = BuildDownloadUrl(assetInfo);
 
-			// 既にダウンロード中.
-			if (downloadQueueing.ContainsKey(url)){ return; }
+            // 既にダウンロード中.
+            if (downloadQueueing.ContainsKey(url)){ return; }
 
-			try
-			{
-				var filePath = PathUtility.Combine(installPath, assetInfo.FileName);
+            try
+            {
+                downloadQueueing[url] = assetInfo;
 
-				if (File.Exists(filePath))
-				{
-					File.Delete(filePath);
-				}
+                await downLoader.Download(installPath, assetInfo, url, progress, cancelToken);
+            }
+            finally
+            {
+                downloadQueueing.Remove(url);
+            }
+        }
+        
+        public void ClearDownloadQueue()
+        {
+            downloadQueueing.Clear();
+        }
 
-				downloadQueueing[url] = assetInfo;
+        private void OnTimeout(string url)
+        {
+            var assetInfo = downloadQueueing.GetValueOrDefault(url);
 
-				await downLoader.Download(url, filePath, progress, cancelToken);
-			}
-			finally
-			{
-				downloadQueueing.Remove(url);
-			}
-		}
-		
-		public void ClearDownloadQueue()
-		{
-			downloadQueueing.Clear();
-		}
+            if (assetInfo == null) { return; }
 
-		private void OnTimeout(string url)
-		{
-			var assetInfo = downloadQueueing.GetValueOrDefault(url);
+            if (onTimeOut != null)
+            {
+                Debug.LogErrorFormat("[Download Timeout] \n{0}", url);
 
-			if (assetInfo == null) { return; }
+                onTimeOut.OnNext(assetInfo);
+            }
+        }
 
-			if (onTimeOut != null)
-			{
-				Debug.LogErrorFormat("[Download Timeout] \n{0}", url);
+        private void OnError(Exception ex)
+        {
+            if (onError != null)
+            {
+                Debug.LogErrorFormat("[Download Error] \n{0}", ex);
 
-				onTimeOut.OnNext(assetInfo);
-			}
-		}
+                onError.OnNext(ex);
+            }
+        }
 
-		private void OnError(Exception ex)
-		{
-			if (onError != null)
-			{
-				Debug.LogErrorFormat("[Download Error] \n{0}", ex);
+        /// <summary> タイムアウト時のイベント. </summary>
+        public IObservable<AssetInfo> OnTimeOutAsObservable()
+        {
+            return onTimeOut ?? (onTimeOut = new Subject<AssetInfo>());
+        }
 
-				onError.OnNext(ex);
-			}
-		}
-
-		/// <summary> タイムアウト時のイベント. </summary>
-		public IObservable<AssetInfo> OnTimeOutAsObservable()
-		{
-			return onTimeOut ?? (onTimeOut = new Subject<AssetInfo>());
-		}
-
-		/// <summary> エラー時のイベント. </summary>
-		public IObservable<Exception> OnErrorAsObservable()
-		{
-			return onError ?? (onError = new Subject<Exception>());
-		}
+        /// <summary> エラー時のイベント. </summary>
+        public IObservable<Exception> OnErrorAsObservable()
+        {
+            return onError ?? (onError = new Subject<Exception>());
+        }
     }
 }

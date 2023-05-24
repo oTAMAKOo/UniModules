@@ -15,204 +15,214 @@ using Modules.ExternalAssets;
 
 namespace Modules.CriWare
 {
-	public sealed partial class CriAssetManager
-	{
-		public sealed class CriAssetInstall
-		{
-			//----- params -----
+    public sealed partial class CriAssetManager
+    {
+        public sealed class CriAssetInstall
+        {
+            //----- params -----
 
-			// ダウンロード完了後にファイルがない場合のリトライ回数.
-			private const int FileMissingMaxRetryCount = 3;
+            // ダウンロード完了後にファイルがない場合のリトライ回数.
+            private const int FileMissingMaxRetryCount = 3;
 
-			// リトライ開始までのディレイ.
-			private const int RetryDelaySeconds = 10;
+            // リトライ開始までのディレイ.
+            private const int RetryDelaySeconds = 10;
 
-			//----- field -----
+            //----- field -----
 
-			//----- property -----
+            //----- property -----
 
-			public AssetInfo AssetInfo { get; private set; }
+            public AssetInfo AssetInfo { get; private set; }
 
-			public CriFsWebInstaller Installer { get; private set; }
+            public CriFsWebInstaller Installer { get; private set; }
 
-			public IObservable<CriAssetInstall> Task { get; private set; }
+            public IObservable<CriAssetInstall> Task { get; private set; }
 
-			//----- method -----
+            //----- method -----
 
-			public CriAssetInstall(string installPath, AssetInfo assetInfo, IProgress<float> progress, CancellationToken cancelToken)
-			{
-				AssetInfo = assetInfo;
+            public CriAssetInstall(string installPath, AssetInfo assetInfo, IProgress<DownloadProgressInfo> progress, CancellationToken cancelToken)
+            {
+                AssetInfo = assetInfo;
 
-				var downloadUrl = Instance.BuildDownloadUrl(assetInfo);
-				var filePath = Instance.GetFilePath(installPath, assetInfo);
+                var filePath = Instance.GetFilePath(installPath, assetInfo);
 
-				var directory = Path.GetDirectoryName(filePath);
+                var directory = Path.GetDirectoryName(filePath);
 
-				if (!Directory.Exists(directory))
-				{
-					Directory.CreateDirectory(directory);
-				}
+                if (!Directory.Exists(directory))
+                {
+                    Directory.CreateDirectory(directory);
+                }
 
-				if (File.Exists(filePath))
-				{
-					File.Delete(filePath);
-				}
+                if (File.Exists(filePath))
+                {
+                    File.Delete(filePath);
+                }
 
-				Task = UniTask.Defer(() => Install(downloadUrl, filePath, progress, cancelToken))
-					.ToObservable()
-					.Select(_ => this)
-					.Share();
-			}
+                Task = UniTask.Defer(() => Install(assetInfo, filePath, progress, cancelToken))
+                    .ToObservable()
+                    .Select(_ => this)
+                    .Share();
+            }
 
-			private CriFsWebInstaller GetInstaller()
-			{
-				var installers = Instance.installers;
-				var installQueueing = Instance.installQueueing;
+            private CriFsWebInstaller GetInstaller()
+            {
+                var installers = Instance.installers;
+                var installQueueing = Instance.installQueueing;
 
-				// 解放中止.
+                // 解放中止.
 
-				Instance.CancelReleaseInstallers();
-				
-				// 使用中のインストーラ.
+                Instance.CancelReleaseInstallers();
+                
+                // 使用中のインストーラ.
 
-				CriFsWebInstaller[] installersInUse = null;
+                CriFsWebInstaller[] installersInUse = null;
 
-				lock (installQueueing)
-				{
-					installersInUse = installQueueing
-						.Where(x => x.Value != null)
-						.Select(x => x.Value.Installer)
-						.ToArray();
-				}
+                lock (installQueueing)
+                {
+                    installersInUse = installQueueing
+                        .Where(x => x.Value != null)
+                        .Select(x => x.Value.Installer)
+                        .ToArray();
+                }
 
-				// 未使用のインストーラを取得.
+                // 未使用のインストーラを取得.
 
-				CriFsWebInstaller installer = null;
+                CriFsWebInstaller installer = null;
 
-				lock (installers)
-				{
-					installer = installers.FirstOrDefault(x => installersInUse.All(y => x != y));
+                lock (installers)
+                {
+                    installer = installers.FirstOrDefault(x => installersInUse.All(y => x != y));
 
-					if (installer == null)
-					{
-						var numInstallers = Instance.numInstallers;
+                    if (installer == null)
+                    {
+                        var numInstallers = Instance.numInstallers;
 
-						// 最大インストーラ数以下でインストーラが足りない時は生成.
+                        // 最大インストーラ数以下でインストーラが足りない時は生成.
 
-						if (installers.Count < numInstallers)
-						{
-							installer = new CriFsWebInstaller();
+                        if (installers.Count < numInstallers)
+                        {
+                            installer = new CriFsWebInstaller();
 
-							installers.Add(installer);
-						}
-					}
-				}
-				
-				if (installer != null)
-				{
-					installer.Stop();
-				}
+                            installers.Add(installer);
+                        }
+                    }
+                }
+                
+                if (installer != null)
+                {
+                    installer.Stop();
+                }
 
-				return installer;
-			}
+                return installer;
+            }
 
-			private async UniTask Install(string downloadUrl, string filePath, IProgress<float> progress, CancellationToken cancelToken)
-			{
-				try
-				{
-					var retryCount = 0;
+            private async UniTask Install(AssetInfo assetInfo, string filePath, IProgress<DownloadProgressInfo> progress, CancellationToken cancelToken)
+            {
+                try
+                {
+                    var retryCount = 0;
 
-					while (true)
-					{
-						// 同時インストール待ち.
+                    var url = Instance.BuildDownloadUrl(assetInfo);
 
-						while (true)
-						{
-							if (cancelToken.IsCancellationRequested) { return; }
+                    DownloadProgressInfo progressInfo = null;
 
-							// 未使用のインストーラを取得.
-							Installer = GetInstaller();
+                    if (progress != null)
+                    {
+                        progressInfo = new DownloadProgressInfo(assetInfo);
+                    }
 
-							if (Installer != null) { break; }
+                    while (true)
+                    {
+                        // 同時インストール待ち.
 
-							await UniTask.NextFrame(CancellationToken.None);
-						}
+                        while (true)
+                        {
+                            if (cancelToken.IsCancellationRequested) { return; }
 
-						// ネットワーク接続待ち.
+                            // 未使用のインストーラを取得.
+                            Installer = GetInstaller();
 
-						await NetworkConnection.WaitNetworkReachable(cancelToken);
+                            if (Installer != null) { break; }
 
-						// ダウンロード.
+                            await UniTask.NextFrame(CancellationToken.None);
+                        }
 
-						if (Installer != null)
-						{
-							Installer.Copy(downloadUrl, filePath);
+                        // ネットワーク接続待ち.
 
-							// ダウンロード待ち.
+                        await NetworkConnection.WaitNetworkReachable(cancelToken);
 
-							CriFsWebInstaller.StatusInfo statusInfo;
+                        // ダウンロード.
 
-							while (true)
-							{
-								if (cancelToken.IsCancellationRequested) { return; }
+                        if (Installer != null)
+                        {
+                            Installer.Copy(url, filePath);
 
-								statusInfo = Installer.GetStatusInfo();
+                            // ダウンロード待ち.
 
-								if (progress != null)
-								{
-									progress.Report((float)statusInfo.receivedSize / statusInfo.contentsSize);
-								}
+                            CriFsWebInstaller.StatusInfo statusInfo;
 
-								if (statusInfo.status != CriFsWebInstaller.Status.Busy) { break; }
+                            while (true)
+                            {
+                                if (cancelToken.IsCancellationRequested) { return; }
 
-								await UniTask.NextFrame(CancellationToken.None);
-							}
-							
-							if (statusInfo.error != CriFsWebInstaller.Error.None)
-							{
-								if (File.Exists(filePath))
-								{
-									File.Delete(filePath);
-								}
-							}
+                                statusInfo = Installer.GetStatusInfo();
 
-							if (File.Exists(filePath)){ break; }
+                                if (progress != null)
+                                {
+                                    progressInfo.SetProgress((float)statusInfo.receivedSize / statusInfo.contentsSize);
 
-							// ファイルが存在しない時はリトライ.
-							if (FileMissingMaxRetryCount <= retryCount)
-							{
-								var message = $"URL: {downloadUrl}\nFile: {filePath}\n";
+                                    progress.Report(progressInfo);
+                                }
 
-								if (statusInfo.error != CriFsWebInstaller.Error.None)
-								{
-									message += $"CriFsWebInstaller.Error: {statusInfo.error}";
-								}
+                                if (statusInfo.status != CriFsWebInstaller.Status.Busy) { break; }
 
-								throw new FileNotFoundException(message);
-							}
+                                await UniTask.NextFrame(CancellationToken.None);
+                            }
+                            
+                            if (statusInfo.error != CriFsWebInstaller.Error.None)
+                            {
+                                if (File.Exists(filePath))
+                                {
+                                    File.Delete(filePath);
+                                }
+                            }
 
-							Installer.Stop();
+                            if (File.Exists(filePath)){ break; }
 
-							retryCount++;
+                            // ファイルが存在しない時はリトライ.
+                            if (FileMissingMaxRetryCount <= retryCount)
+                            {
+                                var message = $"URL: {url}\nFile: {filePath}\n";
 
-							await UniTask.Delay(TimeSpan.FromSeconds(RetryDelaySeconds), cancellationToken: cancelToken);
-						}
-					}
-				}
-				catch (OperationCanceledException)
-				{
-					/* Canceled */
-				}
-				finally
-				{
-					if (Installer != null)
-					{
-						Installer.Stop();
-					}
-				}
-			}
-		}
-	}
+                                if (statusInfo.error != CriFsWebInstaller.Error.None)
+                                {
+                                    message += $"CriFsWebInstaller.Error: {statusInfo.error}";
+                                }
+
+                                throw new FileNotFoundException(message);
+                            }
+
+                            Installer.Stop();
+
+                            retryCount++;
+
+                            await UniTask.Delay(TimeSpan.FromSeconds(RetryDelaySeconds), cancellationToken: cancelToken);
+                        }
+                    }
+                }
+                catch (OperationCanceledException)
+                {
+                    /* Canceled */
+                }
+                finally
+                {
+                    if (Installer != null)
+                    {
+                        Installer.Stop();
+                    }
+                }
+            }
+        }
+    }
 }
 
 #endif
