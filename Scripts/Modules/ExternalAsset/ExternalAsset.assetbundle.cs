@@ -63,26 +63,66 @@ namespace Modules.ExternalAssets
 
             if (assetInfo.AssetBundle == null) { return; }
 
-            var assetBundleNames = assetBundleManager.GetAllDependenciesAndSelf(assetInfo.AssetBundle.AssetBundleName);
+            var assetBundleName = assetInfo.AssetBundle.AssetBundleName;
 
             var tasks = new List<UniTask>();
+            
+            var dependencies = assetBundleManager.GetAllDependencies(assetBundleName);
 
-            foreach (var assetBundleName in assetBundleNames)
+            // 依存アセット.
+
+            foreach (var item in dependencies)
             {
-                var infos = assetInfosByAssetBundleName.GetValueOrDefault(assetBundleName);
+                var infos = assetInfosByAssetBundleName.GetValueOrDefault(item);
 
-                if (infos.IsEmpty()){ continue; }
+                if (infos.IsEmpty()) { continue; }
 
-                var item = infos.First();
+                var info = infos.First();
 
-                if (!IsRequireUpdate(item)){ continue; }
+                if (updateQueueing.Contains(info.ResourcePath)) { continue; }
 
-                var task = assetBundleManager.UpdateAssetBundle(InstallDirectory, assetInfo, false, progress, cancelToken);
+                if (!IsRequireUpdate(info)) { continue; }
+
+                var task = UniTask.Defer(() => UpdateAsset(info.ResourcePath, progress, cancelToken));
                 
                 tasks.Add(task);
             }
 
+            // 本体.
+            {
+                var task = UniTask.Defer(() => assetBundleManager.UpdateAssetBundle(InstallDirectory, assetInfo, progress, cancelToken));
+
+                tasks.Add(task);
+            }
+
             await UniTask.WhenAll(tasks);
+        }
+
+        private string[] AddQueueAssetBundleDependencies(AssetInfo assetInfo)
+        {
+            var assetBundleManager = instance.assetBundleManager;
+
+            if (assetInfo == null) { return null; }
+
+            if (assetInfo.AssetBundle == null) { return null; }
+
+            var assetBundleName = assetInfo.AssetBundle.AssetBundleName;
+
+            var updateDependencies = new HashSet<string>();
+
+            var dependencies = assetBundleManager.GetAllDependencies(assetBundleName);
+
+            foreach (var item in dependencies)
+            {
+                var infos = assetInfosByAssetBundleName.GetValueOrDefault(item);
+
+                foreach (var info in infos)
+                {
+                    updateDependencies.Add(info.ResourcePath);
+                }
+            }
+
+            return updateDependencies.ToArray();
         }
 
         /// <summary> AssetBundleを読み込み (非同期) </summary>
@@ -260,6 +300,8 @@ namespace Modules.ExternalAssets
 
                         UnityConsole.Event(ConsoleEventName, ConsoleEventColor, builder.ToString());
                     }
+
+                    await UniTask.NextFrame();
                 }
             }
 
@@ -274,6 +316,8 @@ namespace Modules.ExternalAssets
 
             try
             {
+                if (cancelSource.IsCancellationRequested){ return null; }
+
                 sw = System.Diagnostics.Stopwatch.StartNew();
 
                 result = await assetBundleManager.LoadAsset<T>(InstallDirectory, assetInfo, assetPath, autoUnload, cancelSource.Token);

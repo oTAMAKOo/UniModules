@@ -63,7 +63,7 @@ namespace Modules.AssetBundles
             return dependents;
         }
 
-        private IEnumerable<string> GetAllDependenciesInternal(string fileName, List<string> dependents = null)
+        private IEnumerable<string> GetAllDependenciesInternal(string fileName, HashSet<string> dependents = null)
         {
             var targets = dependenciesTable.GetValueOrDefault(fileName, new string[0]);
 
@@ -71,7 +71,7 @@ namespace Modules.AssetBundles
 
             if (dependents == null)
             {
-                dependents = new List<string>();
+                dependents = new HashSet<string>();
             }
 
             foreach (var target in targets)
@@ -87,14 +87,11 @@ namespace Modules.AssetBundles
                 foreach (var internalDependent in internalDependents)
                 {
                     // 既に列挙済みの場合は追加しない.
-                    if (!dependents.Contains(internalDependent))
-                    {
-                        dependents.Add(internalDependent);
-                    }
+                    dependents.Add(internalDependent);
                 }
             }
 
-            return dependents.Distinct();
+            return dependents;
         }
 
         public void Clear()

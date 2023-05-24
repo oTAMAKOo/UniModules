@@ -37,7 +37,7 @@ namespace Modules.ExternalAssets
         /// <summary> 読み込み中アセット群. </summary>
         private HashSet<AssetInfo> loadingAssets = new HashSet<AssetInfo>();
 
-        /// <summary> 更新中アセット </summary>
+        /// <summary> 更新中アセット群. </summary>
         private HashSet<string> updateQueueing = new HashSet<string>();
 
         // 中断用.
@@ -384,6 +384,8 @@ namespace Modules.ExternalAssets
 
         private async UniTask UpdateAssetInternal(string resourcePath, IProgress<DownloadProgressInfo> progress, CancellationToken cancelToken)
         {
+            string[] updateAssetBundleDependencies = null;
+
             try
             {
                 if (string.IsNullOrEmpty(resourcePath)) { return; }
@@ -396,6 +398,18 @@ namespace Modules.ExternalAssets
                 {
                     throw new AssetInfoNotFoundException(resourcePath);
                 }
+
+                // 更新中.
+
+                if (assetInfo.IsAssetBundle && !updateQueueing.Contains(resourcePath))
+                {
+                    updateAssetBundleDependencies = AddQueueAssetBundleDependencies(assetInfo);
+                }
+
+                updateQueueing.Add(resourcePath);
+
+                // 呼び出し制限.
+                await updateAssetCallLimiter.Wait(cancelToken: CancellationToken.None);
 
                 // ローカルバージョンが最新の場合は更新しない.
 
@@ -412,17 +426,6 @@ namespace Modules.ExternalAssets
                         RemoveVersion(resourcePath);
                     }
                 }
-
-                // 更新中.
-
-                if (!updateQueueing.Contains(resourcePath))
-                {
-                    updateQueueing.Add(resourcePath);
-                }
-
-                // 呼び出し制限.
-
-                await updateAssetCallLimiter.Wait(cancelToken: CancellationToken.None);
 
                 // キャンセル発行.
 
@@ -487,13 +490,6 @@ namespace Modules.ExternalAssets
                 {
                     onUpdateAsset.OnNext(resourcePath);
                 }
-                
-                // 更新完了.
-
-                if (updateQueueing.Contains(resourcePath))
-                {
-                    updateQueueing.Remove(resourcePath);
-                }
             }
             catch (OperationCanceledException)
             {
@@ -502,6 +498,18 @@ namespace Modules.ExternalAssets
             catch (Exception e)
             {
                 OnError(e);
+            }
+            finally
+            {
+                if (updateAssetBundleDependencies != null)
+                {
+                    foreach (var item in updateAssetBundleDependencies)
+                    {
+                        updateQueueing.Remove(item);
+                    }
+                }
+
+                updateQueueing.Remove(resourcePath);
             }
         }
 

@@ -23,9 +23,6 @@ namespace Modules.AssetBundles
 
         public const string PackageExtension = ".package";
 
-        // 同時ダウンロード処理実行数.
-        private const int MaxDownloadQueueingCount = 20;
-
         // 非同期で読み込むファイルサイズ (0.1MB).
         private const float AsyncLoadFileSize = 1024.0f * 1024.0f * 0.1f;
 
@@ -50,7 +47,7 @@ namespace Modules.AssetBundles
         private uint maxDownloadCount = 0;
 
         // フレーム処理数制限.
-
+        
         private FunctionFrameLimiter syncLoadFileCountLimiter = null;
         private FunctionFrameLimiter syncLoadFileSizeLimiter = null;
 
@@ -62,10 +59,10 @@ namespace Modules.AssetBundles
         private StringBuilder urlBuilder = null;
 
         // ダウンロード中アセットバンドル.
-        private HashSet<string> downloadList = null;
+        private HashSet<string> downloadRunning = null;
 
-        // ダウンロード待ちアセットバンドル.
-        private Dictionary<string, IObservable<Unit>> downloadQueueing = null;
+        // ダウンロードタスク.
+        private Dictionary<string, IObservable<Unit>> downloadTasks = null;
 
         // 読み込み待ちアセットバンドル.
         private Dictionary<string, IObservable<AssetBundle>> loadQueueing = null;
@@ -114,14 +111,14 @@ namespace Modules.AssetBundles
             if (isInitialized) { return; }
 
             urlBuilder = new StringBuilder();
-            downloadList = new HashSet<string>();
-            downloadQueueing = new Dictionary<string, IObservable<Unit>>();
+            downloadRunning = new HashSet<string>();
+            downloadTasks = new Dictionary<string, IObservable<Unit>>();
             loadQueueing = new Dictionary<string, IObservable<AssetBundle>>();
             loadedAssetBundles = new Dictionary<string, AssetBundle>();
             assetBundleRefCount = new Dictionary<string, int>();
             assetInfosByAssetBundleName = new Dictionary<string, List<AssetInfo>>();
             assetBundleDependencies = new AssetBundleDependencies();
-
+            
             syncLoadFileCountLimiter = new FunctionFrameLimiter(FrameSyncLoadFileNum);
             syncLoadFileSizeLimiter = new FunctionFrameLimiter((ulong)FrameSyncLoadFileSize);
 
@@ -299,131 +296,88 @@ namespace Modules.AssetBundles
 
             var manifestAssetInfo = AssetInfoManifest.GetManifestAssetInfo();
 
-            await UpdateAssetBundleInternal(installPath, manifestAssetInfo, false, null, cancelToken);
+            await UpdateAssetBundleInternal(installPath, manifestAssetInfo, null, cancelToken);
         }
 
         /// <summary>
         /// アセットバンドルを更新.
         /// </summary>
-        public async UniTask UpdateAssetBundle(string installPath, AssetInfo assetInfo, bool updateDependencies, 
-                                               IProgress<DownloadProgressInfo> progress = null, CancellationToken cancelToken = default)
+        public async UniTask UpdateAssetBundle(string installPath, AssetInfo assetInfo, IProgress<DownloadProgressInfo> progress = null, CancellationToken cancelToken = default)
         {
             if (IsSimulateMode || IsLocalMode) { return; }
 
-            await UpdateAssetBundleInternal(installPath, assetInfo, updateDependencies, progress, cancelToken);
+            await UpdateAssetBundleInternal(installPath, assetInfo, progress, cancelToken);
         }
 
-        private async UniTask UpdateAssetBundleInternal(string installPath, AssetInfo assetInfo, bool updateDependencies, 
-                                                        IProgress<DownloadProgressInfo> progress, CancellationToken cancelToken)
+        private async UniTask UpdateAssetBundleInternal(string installPath, AssetInfo assetInfo, IProgress<DownloadProgressInfo> progress, CancellationToken cancelToken)
         {
+            var assetBundleName = assetInfo.AssetBundle.AssetBundleName;
+
             try
             {
-                // ダウンロードキューが空くまで待つ.
+                IObservable<Unit> task = null;
+
+                // ロード済みの場合はアンロード.
+                if (loadedAssetBundles.ContainsKey(assetBundleName))
+                {
+                    UnloadAsset(assetBundleName, true);
+                }
+
+                // ダウンロード予約済みならスキップ.
+                if (downloadRunning.Contains(assetBundleName)) { return; }
+
+                // 既にダウンロードタスクに入っている場合はスキップ.
+                if (downloadTasks.ContainsKey(assetBundleName)) { return; }
+
+                var info = assetInfosByAssetBundleName.GetValueOrDefault(assetBundleName).FirstOrDefault();
+
+                if (info != null)
+                {
+                    task = DownloadAssetBundle(installPath, info, progress, cancelToken);
+
+                    if (task != null)
+                    {
+                        downloadTasks[assetBundleName] = task;
+                    }
+                }
+                else
+                {
+                    throw new AssetInfoNotFoundException(assetBundleName);
+                }
+                
+                // ダウンロード順番待ち.
+
                 while (true)
                 {
-                    if (cancelToken.IsCancellationRequested) { return; }
+                    if (cancelToken.IsCancellationRequested) { break; }
 
-                    if (downloadList.Count <= MaxDownloadQueueingCount) { break; }
+                    if (downloadRunning.Count <= maxDownloadCount) { break; }
 
                     await UniTask.NextFrame(CancellationToken.None);
                 }
 
-                // ネットワークの接続待ち.
-                await NetworkConnection.WaitNetworkReachable(cancelToken);
+                if (cancelToken.IsCancellationRequested) { return; }
 
-                // アセットバンドルと依存アセットバンドルをまとめてダウンロード.
-
-                var assetBundleName = assetInfo.AssetBundle.AssetBundleName;
-
-                var assetBundles = new HashSet<string>();
-
-                if (updateDependencies)
+                try
                 {
-                    assetBundles = GetAllDependenciesAndSelf(assetBundleName).ToHashSet();
+                    // ネットワークの接続待ち.
+                    await NetworkConnection.WaitNetworkReachable(cancelToken);
+
+                    // ダウンロード中リストに追加.
+                    downloadRunning.Add(assetBundleName);
+
+                    // ダウンロード実行.
+                    await task;
                 }
-                else
+                finally
                 {
-                    assetBundles.Add(assetBundleName);
-                }
+                    // ダウンロード中リストから削除.
+                    downloadRunning.Remove(assetBundleName);
 
-                // ダウンロード.
-
-                var loadAllBundles = new Dictionary<string, IObservable<Unit>>();
-
-                foreach (var target in assetBundles)
-                {
-                    // ロード済みの場合はアンロード.
-                    if (loadedAssetBundles.ContainsKey(target))
+                    // ダウンロードタスク削除.
+                    if (downloadTasks.ContainsKey(assetBundleName))
                     {
-                        UnloadAsset(target, true);
-                    }
-
-                    // ダウンロード中ならスキップ.
-                    if (downloadList.Contains(target)) { continue; }
-
-                    // 既にダウンロードキューに入っている場合はスキップ.
-                    if (downloadQueueing.ContainsKey(target)) { continue; }
-
-                    var info = assetInfosByAssetBundleName.GetValueOrDefault(target).FirstOrDefault();
-
-                    if (info != null)
-                    {
-                        var task = DownloadAssetBundle(installPath, info, progress, cancelToken);
-
-                        if (task != null)
-                        {
-                            downloadQueueing[target] = task;
-
-                            loadAllBundles[target] = task;
-                        }
-                    }
-                    else
-                    {
-                        throw new AssetInfoNotFoundException(target);
-                    }
-                }
-
-                foreach (var item in loadAllBundles)
-                {
-                    // ダウンロードキューが空くまで待つ.
-                    while (true)
-                    {
-                        if (cancelToken.IsCancellationRequested) { break; }
-
-                        if (downloadList.Count <= maxDownloadCount) { break; }
-
-                        await UniTask.NextFrame(CancellationToken.None);
-                    }
-
-                    if (cancelToken.IsCancellationRequested) { break; }
-
-                    try
-                    {
-                        // ネットワークの接続待ち.
-                        await NetworkConnection.WaitNetworkReachable(cancelToken);
-
-                        // ダウンロード中でなかったらリストに追加.
-                        if (!downloadList.Contains(item.Key))
-                        {
-                            downloadList.Add(item.Key);
-                        }
-
-                        // ダウンロード実行.
-                        await item.Value;
-                    }
-                    finally
-                    {
-                        // ダウンロード中リストから除外.
-                        if (downloadList.Contains(item.Key))
-                        {
-                            downloadList.Remove(item.Key);
-                        }
-
-                        // ダウンロード待ちリストから除外.
-                        if (downloadQueueing.ContainsKey(item.Key))
-                        {
-                            downloadQueueing.Remove(item.Key);
-                        }
+                        downloadTasks.Remove(assetBundleName);
                     }
                 }
             }
@@ -437,8 +391,7 @@ namespace Modules.AssetBundles
             }
         }
 
-        private IObservable<Unit> DownloadAssetBundle(string installPath, AssetInfo assetInfo, 
-                                                      IProgress<DownloadProgressInfo> progress, CancellationToken cancelToken)
+        private IObservable<Unit> DownloadAssetBundle(string installPath, AssetInfo assetInfo, IProgress<DownloadProgressInfo> progress, CancellationToken cancelToken)
         {
             return FileDownload(installPath, assetInfo, progress, cancelToken)
                     .ToObservable()
@@ -507,12 +460,8 @@ namespace Modules.AssetBundles
                         progress.Report(progressInfo);
                     }
                 }
-
-                if (cancelToken.IsCancellationRequested)
-                {
-                    webRequest.Abort();
-                }
-                else if (webRequest.HasError() || webRequest.responseCode != (int)System.Net.HttpStatusCode.OK)
+                
+                if (webRequest.HasError() || webRequest.responseCode != (int)System.Net.HttpStatusCode.OK)
                 {
                     throw new Exception($"File download error\nURL:{url}\nResponseCode:{webRequest.responseCode}\n\n{webRequest.error}\n");
                 }
@@ -522,7 +471,7 @@ namespace Modules.AssetBundles
         /// <summary> ダウンロード実行中か </summary>
         public bool IsDownloadQueueing(string assetBundleName)
         {
-            return downloadList.Contains(assetBundleName) || downloadQueueing.ContainsKey(assetBundleName);
+            return downloadRunning.Contains(assetBundleName) || downloadTasks.ContainsKey(assetBundleName);
         }
 
         /// <summary> 実行中のダウンロード完了まで待機 </summary>
@@ -530,7 +479,7 @@ namespace Modules.AssetBundles
         {
             while (true)
             {
-                if (!downloadList.Contains(assetBundleName) && !downloadQueueing.ContainsKey(assetBundleName)) { break; }
+                if (!IsDownloadQueueing(assetBundleName)) { break; }
 
                 if (cancelToken.IsCancellationRequested) { break; }
 
@@ -979,8 +928,8 @@ namespace Modules.AssetBundles
 
         public void ClearDownloadQueue()
         {
-            downloadList.Clear();
-            downloadQueueing.Clear();
+            downloadRunning.Clear();
+            downloadTasks.Clear();
         }
 
         private void OnTimeout(AssetInfo assetInfo, Exception exception)
