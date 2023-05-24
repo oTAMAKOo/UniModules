@@ -752,6 +752,7 @@ namespace Modules.AssetBundles
             var info = assetInfosByAssetBundleName.GetValueOrDefault(assetBundleName).FirstOrDefault();
 
             var task = ObservableEx.FromUniTask(cancelToken => LoadAssetBundle(installPath, info, cancelToken))
+                .OnErrorRetry((FileLoadException ex) => {}, RetryCount, RetryDelaySeconds)
                 .DoOnError(error => OnError(error))
                 .Finally(() => loadQueueing.Remove(assetBundleName))
                 .Share();
