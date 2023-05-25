@@ -33,7 +33,8 @@ namespace Modules.AssetBundles
         private const int FrameSyncLoadFileNum = 20;
 
         // タイムアウトまでの時間.
-        private readonly TimeSpan TimeoutLimit = TimeSpan.FromSeconds(60f);
+        private readonly TimeSpan DownloadTimeout = TimeSpan.FromSeconds(60f);
+        private readonly TimeSpan LoadTimeout = TimeSpan.FromSeconds(10f);
 
         // リトライする回数.
         private readonly int RetryCount = 3;
@@ -395,7 +396,7 @@ namespace Modules.AssetBundles
         {
             return FileDownload(installPath, assetInfo, progress, cancelToken)
                     .ToObservable()
-                    .Timeout(TimeoutLimit)
+                    .Timeout(DownloadTimeout)
                     .OnErrorRetry((TimeoutException ex) => OnTimeout(assetInfo, ex), RetryCount, RetryDelaySeconds)
                     .OnErrorRetry((Exception _) => { }, RetryCount, RetryDelaySeconds)
                     .DoOnError(x => OnError(x))
@@ -439,7 +440,7 @@ namespace Modules.AssetBundles
             using (var webRequest = UnityWebRequest.Get(url))
             {
                 webRequest.downloadHandler = downloadHandlerFile;
-                webRequest.timeout = (int)TimeoutLimit.TotalSeconds;
+                webRequest.timeout = (int)DownloadTimeout.TotalSeconds;
 
                 var downloadTask = webRequest.SendWebRequest();
 
@@ -460,7 +461,7 @@ namespace Modules.AssetBundles
                         progress.Report(progressInfo);
                     }
                 }
-                
+
                 if (webRequest.HasError() || webRequest.responseCode != (int)System.Net.HttpStatusCode.OK)
                 {
                     throw new Exception($"File download error\nURL:{url}\nResponseCode:{webRequest.responseCode}\n\n{webRequest.error}\n");
@@ -701,6 +702,8 @@ namespace Modules.AssetBundles
             var info = assetInfosByAssetBundleName.GetValueOrDefault(assetBundleName).FirstOrDefault();
 
             var task = ObservableEx.FromUniTask(cancelToken => LoadAssetBundle(installPath, info, cancelToken))
+                .Timeout(LoadTimeout)
+                .OnErrorRetry((TimeoutException ex) => {}, RetryCount, RetryDelaySeconds)
                 .OnErrorRetry((FileLoadException ex) => {}, RetryCount, RetryDelaySeconds)
                 .DoOnError(error => OnError(error))
                 .Finally(() => loadQueueing.Remove(assetBundleName))
