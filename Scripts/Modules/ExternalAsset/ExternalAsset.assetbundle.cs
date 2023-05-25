@@ -82,6 +82,8 @@ namespace Modules.ExternalAssets
                 if (updateQueueing.Contains(info.ResourcePath)) { continue; }
 
                 if (!IsRequireUpdate(info)) { continue; }
+                
+                assetBundleManager.RequestDownload(assetBundleName);
 
                 var task = UniTask.Defer(() => UpdateAsset(info.ResourcePath, progress, cancelToken));
                 
@@ -90,6 +92,8 @@ namespace Modules.ExternalAssets
 
             // 本体.
             {
+                assetBundleManager.RequestDownload(assetBundleName);
+
                 var task = UniTask.Defer(() => assetBundleManager.UpdateAssetBundle(InstallDirectory, assetInfo, progress, cancelToken));
 
                 tasks.Add(task);
@@ -98,7 +102,7 @@ namespace Modules.ExternalAssets
             await UniTask.WhenAll(tasks);
         }
 
-        private string[] AddQueueAssetBundleDependencies(AssetInfo assetInfo)
+        private string[] FindUpdateAssetBundleDependencies(AssetInfo assetInfo)
         {
             var assetBundleManager = instance.assetBundleManager;
 
@@ -246,18 +250,23 @@ namespace Modules.ExternalAssets
                     }
                 }
 
-                // ファイルが存在しない/古い場合はダウンロード.
+                // ファイルが存在しない / 古い場合はダウンロード.
+
                 if (requireUpdateInfos.Any())
                 {
                     sw = System.Diagnostics.Stopwatch.StartNew();
-
+                    
                     try
                     {
                         var tasks = new List<UniTask>();
 
-                        foreach (var item in requireUpdateInfos)
+                        foreach (var info in requireUpdateInfos)
                         {
-                            var task = UpdateAsset(item.ResourcePath, cancelToken: cancelSource.Token);
+                            var assetBundleName = assetInfo.AssetBundle.AssetBundleName;
+
+                            assetBundleManager.RequestDownload(assetBundleName);
+
+                            var task = UniTask.Defer(() => UpdateAsset(info.ResourcePath, cancelToken: cancelSource.Token));
 
                             tasks.Add(task);
                         }

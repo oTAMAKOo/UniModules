@@ -403,7 +403,12 @@ namespace Modules.ExternalAssets
 
                 if (assetInfo.IsAssetBundle && !updateQueueing.Contains(resourcePath))
                 {
-                    updateAssetBundleDependencies = AddQueueAssetBundleDependencies(assetInfo);
+                    updateAssetBundleDependencies = FindUpdateAssetBundleDependencies(assetInfo);
+
+                    foreach (var item in updateAssetBundleDependencies)
+                    {
+                        updateQueueing.Add(item);
+                    }
                 }
 
                 updateQueueing.Add(resourcePath);

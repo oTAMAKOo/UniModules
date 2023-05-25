@@ -1,6 +1,7 @@
 
 using UnityEngine.Networking;
 using System;
+using System.IO;
 using System.Threading;
 using Cysharp.Threading.Tasks;
 using Extensions;
@@ -8,13 +9,17 @@ using Modules.Net.WebRequest;
 
 namespace Modules.Net.WebDownload
 {
-    public class DownloadRequest
+    public class DownloadRequest : IDisposable
     {
         //----- params -----
 
+        private const int DefaultTimeOutSeconds = 30;
+
         //----- field -----
 
-        protected UnityWebRequest request = null;
+        protected UnityWebRequest webRequest = null;
+
+        protected bool canceled = false;
 
         //----- property -----
 
@@ -25,9 +30,37 @@ namespace Modules.Net.WebDownload
         public string FilePath { get; private set; }
 
         /// <summary> タイムアウト時間(秒). </summary>
-        public virtual int TimeOutSeconds { get { return 30; } }
+        public int TimeOutSeconds { get; set; } = DefaultTimeOutSeconds;
+
+        public bool IsDisposed { get; private set; }
 
         //----- method -----
+
+        public DownloadRequest()
+        {
+            IsDisposed = false;
+        }
+
+        ~DownloadRequest()
+        {
+            Dispose();
+        }
+
+        public void Dispose()
+        {
+            if (IsDisposed){ return; }
+
+            IsDisposed = true;
+
+            if (webRequest != null)
+            {
+                webRequest.Dispose();
+            }
+
+            OnDispose();
+
+            GC.SuppressFinalize(this);
+        }
 
         public virtual void Initialize(string url, string filePath)
         {
@@ -35,65 +68,72 @@ namespace Modules.Net.WebDownload
             FilePath = filePath;
         }
 
-        public async UniTask Download(IProgress<float> progress, CancellationToken cancelToken = default)
+        public async UniTask Download(IProgress<float> progress = null, CancellationToken cancelToken = default)
         {
+            canceled = false;
+
+            var abort = false;
+
+            webRequest = UnityWebRequest.Get(Url);
+            
+            var downloadHandlerFile = new DownloadHandlerFile(FilePath)
+            {
+                removeFileOnAbort = true,
+            };
+
+            webRequest.timeout = TimeOutSeconds;
+            webRequest.downloadHandler = downloadHandlerFile;
+
             try
             {
-                var downloadHandlerFile = new DownloadHandlerFile(FilePath)
-                {
-                    removeFileOnAbort = true,
-                };
-
-                request = new UnityWebRequest(Url)
-                {
-                    method = UnityWebRequest.kHttpVerbGET,
-                    timeout = TimeOutSeconds,
-                    downloadHandler = downloadHandlerFile,
-                };
-
-                var operation = request.SendWebRequest();
+                var operation = webRequest.SendWebRequest();
 
                 while (!operation.isDone)
                 {
+                    if (!abort && (canceled || cancelToken.IsCancellationRequested))
+                    {
+                        webRequest.Abort();
+                        abort = true;
+                    }
+
                     if (progress != null)
                     {
                         progress.Report(operation.progress);
                     }
 
-                    await UniTask.NextFrame(cancelToken);
+                    await UniTask.NextFrame(CancellationToken.None);
                 }
 
-                if (request != null)
+                if (webRequest != null)
                 {
-                    if (!request.IsSuccess() || request.HasError())
+                    if (!webRequest.IsSuccess() || webRequest.HasError())
                     {
-                        throw new UnityWebRequestErrorException(request);
+                        throw new UnityWebRequestErrorException(webRequest);
                     }
-                }
-            }
-            catch (OperationCanceledException)
-            {
-                if (request != null)
-                {
-                    request.Abort();
                 }
             }
             finally
             {
-                if (request != null)
+                if (downloadHandlerFile != null)
                 {
-                    request.Dispose();
-                    request = null;
+                    downloadHandlerFile.Dispose();
+                }
+
+                if (abort)
+                {
+                    if (File.Exists(FilePath))
+                    {
+                        File.Delete(FilePath);
+                    }
                 }
             }
         }
 
         public void Cancel()
         {
-            if (request != null)
-            {
-                request.Abort();
-            }
+            canceled = true;
         }
+
+        protected virtual void OnDispose(){ }
     }
 }
