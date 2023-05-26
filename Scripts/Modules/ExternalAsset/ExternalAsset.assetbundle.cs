@@ -59,6 +59,8 @@ namespace Modules.ExternalAssets
         {
             var assetBundleManager = instance.assetBundleManager;
 
+            if (cancelToken.IsCancellationRequested){ return; }
+
             if (assetInfo == null) { return; }
 
             if (assetInfo.AssetBundle == null) { return; }

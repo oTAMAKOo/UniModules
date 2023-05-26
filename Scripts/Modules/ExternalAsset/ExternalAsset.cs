@@ -449,6 +449,8 @@ namespace Modules.ExternalAssets
                     await updateAssetHandler.OnUpdateRequest(assetInfo, linkedCancelToken);
                 }
 
+                if (linkedCancelToken.IsCancellationRequested){ return; }
+
                 // 更新.
 
                 if (!LocalMode && !SimulateMode)
@@ -488,6 +490,8 @@ namespace Modules.ExternalAssets
 
                     await updateAssetHandler.OnUpdateFinish(assetInfo, linkedCancelToken);
                 }
+
+                if (linkedCancelToken.IsCancellationRequested){ return; }
 
                 // イベント発行.
 
