@@ -1,4 +1,4 @@
-﻿
+
 using UnityEngine;
 using System;
 
@@ -16,7 +16,7 @@ namespace Modules.PatternTexture
         [SerializeField]
         private string guid = null;
         [SerializeField]
-        private long lastUpdate = 0;
+        private ulong lastUpdate = 0;
         [SerializeField]
         private int width = 0;
         [SerializeField]
@@ -37,7 +37,7 @@ namespace Modules.PatternTexture
         public string Guid { get { return guid; } }
 
         /// <summary> テクスチャ最終更新日 </summary>
-        public long LastUpdate { get { return lastUpdate; } }
+        public ulong LastUpdate { get { return lastUpdate; } }
 
         /// <summary> テクスチャ幅 </summary>
         public int Width { get { return width; } }
@@ -56,7 +56,7 @@ namespace Modules.PatternTexture
 
         //----- method -----
 
-        public PatternData(string textureName, string guid, long lastUpdate, int width, int height, int xblock, int yblock, ushort[] blockIds)
+        public PatternData(string textureName, string guid, ulong lastUpdate, int width, int height, int xblock, int yblock, ushort[] blockIds)
         {
             this.textureName = textureName;
             this.guid = guid;

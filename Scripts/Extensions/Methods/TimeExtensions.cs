@@ -1,4 +1,4 @@
-﻿
+
 using System;
 
 namespace Extensions
@@ -25,9 +25,9 @@ namespace Extensions
         }
 
         /// <summary> 現在時刻からUnixTime (Milliseconds)を計算. </summary>
-        public static long ToUnixTime(this DateTime dateTime)
+        public static ulong ToUnixTime(this DateTime dateTime)
         {
-            return (long)dateTime.ToUniversalTime().Subtract(UNIX_EPOCH).TotalMilliseconds;
+            return (ulong)dateTime.ToUniversalTime().Subtract(UNIX_EPOCH).TotalMilliseconds;
         }
 
         /// <summary> UNIX時間からDateTimeに変換. </summary>

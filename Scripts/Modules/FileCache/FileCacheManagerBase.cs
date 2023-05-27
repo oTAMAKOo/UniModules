@@ -1,4 +1,4 @@
-﻿
+
 using UnityEngine;
 using System;
 using System.Linq;
@@ -15,11 +15,11 @@ namespace Modules.FileCache
     {
         public string Source { get; private set; }
 
-        public long UpdateAt { get; private set; }
+        public ulong UpdateAt { get; private set; }
 
-        public long ExpireAt { get; private set; }
+        public ulong ExpireAt { get; private set; }
 
-        public CacheFileData(string source, long updateAt, long expireAt)
+        public CacheFileData(string source, ulong updateAt, ulong expireAt)
         {
             this.Source = source;
             this.UpdateAt = updateAt;
@@ -88,7 +88,7 @@ namespace Modules.FileCache
             FileDirectory = directory;
         }
 
-        public bool HasCache(string source, long updateAt)
+        public bool HasCache(string source, ulong updateAt)
         {
             if (string.IsNullOrEmpty(source)){ return false; }
 
@@ -102,8 +102,8 @@ namespace Modules.FileCache
             // 有効期限切れ.
             if (!data.Alive()){ return false; }
 
-			// キャッシュと更新日時が異なる.
-			if (data.UpdateAt != updateAt){ return false; }
+            // キャッシュと更新日時が異なる.
+            if (data.UpdateAt != updateAt){ return false; }
 
             var fileName = GetFileName(source);
 
@@ -133,7 +133,7 @@ namespace Modules.FileCache
             }
         }
 
-        protected void CreateCache(byte[] bytes, string source, long updateAt, long expireAt)
+        protected void CreateCache(byte[] bytes, string source, ulong updateAt, ulong expireAt)
         {
             // ファイル出力.
 

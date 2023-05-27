@@ -1,4 +1,4 @@
-﻿
+
 using System;
 using System.Linq;
 using System.Collections.Generic;
@@ -18,7 +18,7 @@ namespace Modules.TimeUtil
         {
             public string Name { get; set; }
 
-            public long UnixTime { get; set; }
+            public ulong UnixTime { get; set; }
         }
 
         //----- field -----
@@ -27,9 +27,9 @@ namespace Modules.TimeUtil
 
         private static Dictionary<string, Timer> timers = null;
 
-        private static Func<long> getCurrentTimeFunction = null;
+        private static Func<ulong> getCurrentTimeFunction = null;
 
-        private static long currentTime = 0;
+        private static ulong currentTime = 0;
 
         private static Subject<Timer> onTime = null;
 
@@ -39,7 +39,7 @@ namespace Modules.TimeUtil
 
         //----- method -----
         
-        public static void Initialize(Func<long> getCurrentTimeFunction)
+        public static void Initialize(Func<ulong> getCurrentTimeFunction)
         {
             if (initialized) { return; }
 
@@ -63,7 +63,7 @@ namespace Modules.TimeUtil
             Set(name, dateTime.ToUnixTime());
         }
 
-        public static void Set(string name, long unixTime)
+        public static void Set(string name, ulong unixTime)
         {
             var timer = timers.GetValueOrDefault(name);
 

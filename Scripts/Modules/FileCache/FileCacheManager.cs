@@ -3,7 +3,7 @@ namespace Modules.FileCache
 {
     public sealed class FileCacheManager : FileCacheManagerBase<FileCacheManager>
     {
-        public void Save(byte[] bytes, string source, long updateAt, long expireAt)
+        public void Save(byte[] bytes, string source, ulong updateAt, ulong expireAt)
         {
             CreateCache(bytes, source, updateAt, expireAt);
         }

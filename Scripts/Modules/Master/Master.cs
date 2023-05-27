@@ -11,328 +11,349 @@ using Modules.Performance;
 
 namespace Modules.Master
 {
-	public interface IMaster
-	{
-		void Delete();
+    public interface IMaster
+    {
+        void Delete();
 
-		UniTask<Tuple<bool, double>> Update(string masterVersion, FunctionFrameLimiter frameCallLimiter, CancellationToken cancelToken = default);
-		UniTask<Tuple<bool, double, double>> Load(AesCryptoKey cryptoKey, bool cleanOnError, CancellationToken cancelToken = default);
-	}
+        UniTask<Tuple<bool, double>> Update(string masterVersion, FunctionFrameLimiter frameCallLimiter, CancellationToken cancelToken = default);
+        UniTask<Tuple<bool, double, double>> Load(AesCryptoKey cryptoKey, bool cleanOnError, CancellationToken cancelToken = default);
+    }
 
-	public abstract class MasterContainer<TMasterRecord>
-	{
-		public TMasterRecord[] records = null;
-	}
+    public abstract class MasterContainer<TMasterRecord>
+    {
+        public TMasterRecord[] records = null;
+    }
 
-	public abstract class Master<TKey, TMaster, TMasterContainer, TMasterRecord> : IMaster
-		where TKey : IComparable
-		where TMaster : Master<TKey, TMaster, TMasterContainer, TMasterRecord>, new()
-		where TMasterContainer : MasterContainer<TMasterRecord>, new()
-	{
-		//----- params -----
+    public abstract class Master<TKey, TMaster, TMasterContainer, TMasterRecord> : IMaster
+        where TKey : IComparable
+        where TMaster : Master<TKey, TMaster, TMasterContainer, TMasterRecord>, new()
+        where TMasterContainer : MasterContainer<TMasterRecord>, new()
+    {
+        //----- params -----
 
-		//----- field -----
+        //----- field -----
 
-		private Dictionary<TKey, TMasterRecord> records = new Dictionary<TKey, TMasterRecord>();
+        private Dictionary<TKey, TMasterRecord> records = new Dictionary<TKey, TMasterRecord>();
 
-		private static TMaster instance = null;
+        private static TMaster instance = null;
 
-		//----- property -----
+        //----- property -----
 
-		public static TMaster Instance
-		{
-			get
-			{
-				if (instance == null)
-				{
-					Debug.LogError($"{typeof(TMaster).FullName} not created.");
-				}
+        public static TMaster Instance
+        {
+            get
+            {
+                if (instance == null)
+                {
+                    Debug.LogError($"{typeof(TMaster).FullName} not created.");
+                }
 
-				return instance;
-			}
-		}
+                return instance;
+            }
+        }
 
-		//----- method -----
+        //----- method -----
 
-		public static IMaster Create()
-		{
-			if (instance != null)
-			{
-				instance.Delete();
-			}
+        public static IMaster Create()
+        {
+            if (instance != null)
+            {
+                instance.Delete();
+            }
 
-			var masterManager = MasterManager.Instance;
+            var masterManager = MasterManager.Instance;
 
-			instance = new TMaster();
+            instance = new TMaster();
 
-			masterManager.Register(instance);
+            masterManager.Register(instance);
 
-			return instance;
-		}
+            return instance;
+        }
 
-		public void Delete()
-		{
-			if (instance == null){ return; }
+        public void Delete()
+        {
+            if (instance == null){ return; }
 
-			var masterManager = MasterManager.Instance;
-			
-			masterManager.Remove(instance);
+            var masterManager = MasterManager.Instance;
+            
+            masterManager.Remove(instance);
 
-			instance = null;
-		}
+            instance = null;
+        }
 
-		public void SetRecords(TMasterRecord[] masterRecords)
-		{
-			records.Clear();
+        public void SetRecords(TMasterRecord[] masterRecords)
+        {
+            records.Clear();
 
-			foreach (var masterRecord in masterRecords)
-			{
-				SetRecord(masterRecord);
-			}
-		}
+            foreach (var masterRecord in masterRecords)
+            {
+                SetRecord(masterRecord);
+            }
+        }
 
-		private void SetRecord(TMasterRecord masterRecord)
-		{
-			if (masterRecord == null) { return; }
+        private void SetRecord(TMasterRecord masterRecord)
+        {
+            if (masterRecord == null) { return; }
 
-			var key = GetRecordKey(masterRecord);
+            var key = GetRecordKey(masterRecord);
 
-			if (records.ContainsKey(key))
-			{
-				var typeName = typeof(TMaster).FullName;
+            if (records.ContainsKey(key))
+            {
+                var typeName = typeof(TMaster).FullName;
 
-				var message = $"Master record error!\nRecords same key already exists.\n\n Master : {typeName}\nKey : {key}\n";
+                var message = $"Master record error!\nRecords same key already exists.\n\n Master : {typeName}\nKey : {key}\n";
 
-				throw new Exception(message);
-			}
+                throw new Exception(message);
+            }
 
-			records.Add(key, masterRecord);
-		}
+            records.Add(key, masterRecord);
+        }
 
-		public async UniTask<Tuple<bool, double, double>> Load(AesCryptoKey cryptoKey, bool cleanOnError, CancellationToken cancelToken = default)
-		{
-			var masterManager = MasterManager.Instance;
+        public async UniTask<Tuple<bool, double, double>> Load(AesCryptoKey cryptoKey, bool cleanOnError, CancellationToken cancelToken = default)
+        {
+            var masterManager = MasterManager.Instance;
 
-			var filePath = string.Empty;
+            var filePath = string.Empty;
 
-			var success = false;
+            var success = false;
 
-			var prepareTime = 0D;
-			var loadTime = 0D;
+            var prepareTime = 0D;
+            var loadTime = 0D;
 
-			try
-			{
-				filePath = masterManager.GetFilePath(this);
+            try
+            {
+                filePath = masterManager.GetFilePath(this);
 
-				Refresh();
+                Refresh();
 
-				// 読み込み準備.
-				prepareTime = await PrepareLoadMasterFile(filePath, cancelToken);
+                // 読み込み準備.
+                prepareTime = await PrepareLoadMasterFile(filePath, cancelToken);
 
-				// 読み込み.
-				loadTime = await UniTask.RunOnThreadPool(() => LoadMasterFile(filePath, cryptoKey), cancellationToken: cancelToken);
+                // 読み込み.
+                loadTime = await LoadMasterFile(filePath, cryptoKey);
 
-				success = true;
-			}
-			catch (OperationCanceledException)
-			{
-				/* Canceled */
-			}
-			catch (Exception e)
-			{
-				Debug.LogErrorFormat("Load master failed.\n\nClass : {0}\nFile : {1}\n\nException : \n{2}", typeof(TMaster).FullName, filePath, e);
-			}
-			finally
-			{
-				await UniTask.SwitchToMainThread();
-			}
+                success = true;
+            }
+            catch (OperationCanceledException)
+            {
+                /* Canceled */
+            }
+            catch (Exception e)
+            {
+                Debug.LogErrorFormat("Load master failed.\n\nClass : {0}\nFile : {1}\n\nException : \n{2}", typeof(TMaster).FullName, filePath, e);
+            }
 
-			if (!success)
-			{
-				if (cleanOnError)
-				{
-					if (File.Exists(filePath))
-					{
-						File.Delete(filePath);
-					}
+            if (!success)
+            {
+                if (cleanOnError)
+                {
+                    if (File.Exists(filePath))
+                    {
+                        File.Delete(filePath);
+                    }
 
-					// 強制更新させる為バージョン情報を削除.
-					await masterManager.ClearVersion(this);
-				}
+                    // 強制更新させる為バージョン情報を削除.
+                    await masterManager.ClearVersion(this);
+                }
 
-				OnError();
-			}
+                OnError();
+            }
 
-			return Tuple.Create(success, prepareTime, loadTime);
-		}
+            return Tuple.Create(success, prepareTime, loadTime);
+        }
 
-		private async UniTask<double> PrepareLoadMasterFile(string filePath, CancellationToken cancelToken)
-		{
-			var sw = System.Diagnostics.Stopwatch.StartNew();
+        private async UniTask<double> PrepareLoadMasterFile(string filePath, CancellationToken cancelToken)
+        {
+            var sw = System.Diagnostics.Stopwatch.StartNew();
 
-			await PrepareLoad(filePath, cancelToken);
+            await PrepareLoad(filePath, cancelToken);
 
-			sw.Stop();
+            sw.Stop();
 
-			var time = sw.Elapsed.TotalMilliseconds;
+            var time = sw.Elapsed.TotalMilliseconds;
 
-			return time;
-		}
+            return time;
+        }
 
-		private double LoadMasterFile(string filePath, AesCryptoKey cryptoKey)
-		{
-			var sw = System.Diagnostics.Stopwatch.StartNew();
+        private async UniTask<double> LoadMasterFile(string filePath, AesCryptoKey cryptoKey)
+        {
+            var sw = System.Diagnostics.Stopwatch.StartNew();
 
-			var masterManager = MasterManager.Instance;
+            try
+            {
+                await UniTask.SwitchToThreadPool();
 
-			var serializerOptions = masterManager.GetSerializerOptions();
+                var masterManager = MasterManager.Instance;
 
-			// ファイル読み込み.
-			var bytes = FileLoad(filePath);
+                var serializerOptions = masterManager.GetSerializerOptions();
 
-			// 復号化.
-			if (cryptoKey != null)
-			{
-				// AesCryptoKeyはスレッドセーフではないので専用キーを作成.
-				var threadCryptoKey = new AesCryptoKey(cryptoKey.Key, cryptoKey.Iv);
+                // ファイル読み込み.
+                var bytes = await FileLoad(filePath);
 
-				bytes = Decrypt(bytes, threadCryptoKey);
-			}
+                // 復号化.
+                if (cryptoKey != null)
+                {
+                    // AesCryptoKeyはスレッドセーフではないので専用キーを作成.
+                    var threadCryptoKey = new AesCryptoKey(cryptoKey.Key, cryptoKey.Iv);
 
-			// MessagePackの不具合対応.
-			// ※ コード生成をDeserialize時に実行すると処理が返ってこないのでここで生成.
-			
-			#if UNITY_EDITOR
+                    bytes = Decrypt(bytes, threadCryptoKey);
+                }
 
-			serializerOptions.Resolver.GetFormatter<TMaster>();
+                // MessagePackの不具合対応.
+                // ※ コード生成をDeserialize時に実行すると処理が返ってこないのでここで生成.
+            
+                #if UNITY_EDITOR
 
-			#endif
+                serializerOptions.Resolver.GetFormatter<TMaster>();
 
-			// デシリアライズ.
-			var records = Deserialize(bytes, serializerOptions);
+                #endif
 
-			// レコード登録.
-			SetRecords(records);
+                // デシリアライズ.
 
-			sw.Stop();
+                var records = await Deserialize(bytes, serializerOptions);
 
-			var time = sw.Elapsed.TotalMilliseconds;
+                // レコード登録.
+                SetRecords(records);
+            }
+            finally
+            {
+                await UniTask.SwitchToMainThread();
+            }
 
-			return time;
-		}
+            sw.Stop();
 
-		protected virtual byte[] FileLoad(string filePath)
-		{
-			if (!File.Exists(filePath))
-			{
-				throw new FileNotFoundException(filePath);
-			}
+            return sw.Elapsed.TotalMilliseconds;
+        }
 
-			var bytes = File.ReadAllBytes(filePath);
+        protected virtual async UniTask<byte[]> FileLoad(string filePath)
+        {
+            if (!File.Exists(filePath))
+            {
+                throw new FileNotFoundException(filePath);
+            }
 
-			if (bytes == null)
-			{
-				throw new FileLoadException();
-			}
+            #if UNITY_2021_1_OR_NEWER
 
-			return bytes;
-		}
+            var bytes = await File.ReadAllBytesAsync(filePath);
 
-		protected virtual byte[] Decrypt(byte[] bytes, AesCryptoKey cryptoKey)
-		{
-			if (bytes.Length == 0) { return new byte[0]; }
+            #else
 
-			byte[] result;
+            var bytes = File.ReadAllBytes(filePath);
 
-			lock (cryptoKey)
-			{
-				result = bytes.Decrypt(cryptoKey);
-			}
+            #endif
 
-			return result;
-		}
+            if (bytes == null)
+            {
+                throw new FileLoadException();
+            }
 
-		protected virtual TMasterRecord[] Deserialize(byte[] bytes, MessagePackSerializerOptions options)
-		{
-			var container = MessagePackSerializer.Deserialize<TMasterContainer>(bytes, options);
+            return bytes;
+        }
 
-			return container != null ? container.records : new TMasterRecord[0];
-		}
+        protected virtual byte[] Decrypt(byte[] bytes, AesCryptoKey cryptoKey)
+        {
+            if (bytes.Length == 0) { return new byte[0]; }
 
-		public async UniTask<Tuple<bool, double>> Update(string masterVersion, FunctionFrameLimiter frameCallLimiter, CancellationToken cancelToken = default)
-		{
-			var masterManager = MasterManager.Instance;
+            byte[] result;
 
-			var result = false;
+            lock (cryptoKey)
+            {
+                result = bytes.Decrypt(cryptoKey);
+            }
 
-			var sw = System.Diagnostics.Stopwatch.StartNew();
+            return result;
+        }
 
-			var filePath = masterManager.GetFilePath(this);
+        protected virtual async UniTask<TMasterRecord[]> Deserialize(byte[] bytes, MessagePackSerializerOptions options)
+        {
+            var records = new TMasterRecord[0];
 
-			try
-			{
-				await frameCallLimiter.Wait(cancelToken: cancelToken);
+            using (var ms = new MemoryStream(bytes))
+            {
+                var container = await MessagePackSerializer.DeserializeAsync<TMasterContainer>(ms, options);
 
-				if (File.Exists(filePath))
-				{
-					File.Delete(filePath);
-				}
+                if (container != null)
+                {
+                    records = container.records;
+                }
+            }
 
-				result = await Download(masterVersion, cancelToken);
+            return records;
+        }
 
-				if (File.Exists(filePath))
-				{
-					// ファイルが閉じるまで待つ.
-					while (FileUtility.IsFileLocked(filePath))
-					{
-						await UniTask.NextFrame(cancelToken);
-					}
-				}
-				else
-				{
-					result = false;
-				}
-			}
-			catch (OperationCanceledException)
-			{
-				/* Canceled */
-			}
-			catch (Exception e)
-			{
-				Debug.LogException(e);
-			}
+        public async UniTask<Tuple<bool, double>> Update(string masterVersion, FunctionFrameLimiter frameCallLimiter, CancellationToken cancelToken = default)
+        {
+            var masterManager = MasterManager.Instance;
 
-			sw.Stop();
+            var result = false;
 
-			return Tuple.Create(result, sw.Elapsed.TotalMilliseconds);
-		}
+            var sw = System.Diagnostics.Stopwatch.StartNew();
 
-		public IEnumerable<TMasterRecord> GetAllRecords()
-		{
-			return records.Values;
-		}
+            var filePath = masterManager.GetFilePath(this);
 
-		public TMasterRecord GetRecord(TKey key)
-		{
-			return records.GetValueOrDefault(key);
-		}
+            try
+            {
+                await frameCallLimiter.Wait(cancelToken: cancelToken);
 
-		protected virtual UniTask PrepareLoad(string installPath, CancellationToken cancelToken)
-		{
-			return UniTask.CompletedTask;
-		}
+                if (File.Exists(filePath))
+                {
+                    File.Delete(filePath);
+                }
 
-		protected virtual void OnError()
-		{
-			// キャッシュデータなどをクリア.
-			Refresh();
-		}
+                result = await Download(masterVersion, cancelToken);
 
-		/// <summary> 内部で保持しているデータをクリア. </summary>
-		protected virtual void Refresh() { }
+                // ファイルが閉じるまで待つ.
+                while (FileUtility.IsFileLocked(filePath))
+                {
+                    await UniTask.DelayFrame(5, cancellationToken: cancelToken);
+                }
 
-		protected abstract TKey GetRecordKey(TMasterRecord masterRecord);
+                // ファイルがなかったら失敗.
+                if (!File.Exists(filePath))
+                {
+                    result = false;
+                }
+            }
+            catch (OperationCanceledException)
+            {
+                /* Canceled */
+            }
+            catch (Exception e)
+            {
+                Debug.LogException(e);
+            }
 
-		protected abstract UniTask<bool> Download(string version, CancellationToken cancelToken);
-	}
+            sw.Stop();
+
+            return Tuple.Create(result, sw.Elapsed.TotalMilliseconds);
+        }
+
+        public IEnumerable<TMasterRecord> GetAllRecords()
+        {
+            return records.Values;
+        }
+
+        public TMasterRecord GetRecord(TKey key)
+        {
+            return records.GetValueOrDefault(key);
+        }
+
+        protected virtual UniTask PrepareLoad(string installPath, CancellationToken cancelToken)
+        {
+            return UniTask.CompletedTask;
+        }
+
+        protected virtual void OnError()
+        {
+            // キャッシュデータなどをクリア.
+            Refresh();
+        }
+
+        /// <summary> 内部で保持しているデータをクリア. </summary>
+        protected virtual void Refresh() { }
+
+        protected abstract TKey GetRecordKey(TMasterRecord masterRecord);
+
+        protected abstract UniTask<bool> Download(string version, CancellationToken cancelToken);
+    }
 }

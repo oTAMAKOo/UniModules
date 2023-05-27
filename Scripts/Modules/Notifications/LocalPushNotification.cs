@@ -1,4 +1,4 @@
-﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿
+﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿
 using UnityEngine;
 using System;
 using System.Collections.Generic;
@@ -17,7 +17,7 @@ namespace Modules.Notifications
             public int Identifier { get; private set; }
 
             // 必須項目.
-            public long UnixTime { get; private set; }
+            public ulong UnixTime { get; private set; }
             public string Title { get; private set; }
             public string Message { get; private set; }
 
@@ -27,11 +27,11 @@ namespace Modules.Notifications
             public string SmallIconResource { get; set; }
             public Color32? Color { get; set; }
 
-            public Info(long unixTime, string title, string message)
+            public Info(ulong unixTime, string title, string message)
             {
-				Identifier = Prefs.identifier++;
+                Identifier = Prefs.identifier++;
 
-				UnixTime = unixTime;
+                UnixTime = unixTime;
                 Title = title;
                 Message = message;
 
@@ -42,20 +42,20 @@ namespace Modules.Notifications
             }
         }
 
-		private sealed partial class Prefs
-		{
-			public static int identifier
-			{
-				get { return SecurePrefs.GetInt(typeof(Prefs).FullName + "-identifier", 1); }
-				set { SecurePrefs.SetInt(typeof(Prefs).FullName + "-identifier", value); }
-			}
-		}
+        private sealed partial class Prefs
+        {
+            public static int identifier
+            {
+                get { return SecurePrefs.GetInt(typeof(Prefs).FullName + "-identifier", 1); }
+                set { SecurePrefs.SetInt(typeof(Prefs).FullName + "-identifier", value); }
+            }
+        }
 
         //----- field -----
 
         private bool enable = false;
 
-		private Dictionary<long, Info> notifications = null;
+        private Dictionary<long, Info> notifications = null;
 
         private Subject<Unit> onNotificationRegister = null;
 
@@ -69,19 +69,19 @@ namespace Modules.Notifications
 
             set
             {
-				var prev = enable;
+                var prev = enable;
 
-				enable = value;
+                enable = value;
 
-				// 過去に登録した通知を削除.
-				if (prev != value)
-				{
-					Clear();
-				}
+                // 過去に登録した通知を削除.
+                if (prev != value)
+                {
+                    Clear();
+                }
             }
         }
 
-        public abstract long CurrentTime { get; }
+        public abstract ulong CurrentTime { get; }
 
         //----- method -----
 
@@ -173,8 +173,8 @@ namespace Modules.Notifications
 
         private void OnSuspend()
         {
-			SecurePrefs.Save();
-			Schedule();
+            SecurePrefs.Save();
+            Schedule();
         }
 
         private void OnResume()

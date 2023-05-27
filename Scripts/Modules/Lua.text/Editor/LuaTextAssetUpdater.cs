@@ -1,4 +1,4 @@
-﻿
+
 #if ENABLE_XLUA
 
 using UnityEngine;
@@ -21,48 +21,48 @@ namespace Modules.Lua.Text
     {
         //----- params -----
 
-		private const int CheckInterval = 3;
+        private const int CheckInterval = 3;
 
-		public static class Prefs
-		{
-			public static bool autoUpdate
-			{
-				get { return ProjectPrefs.GetBool(typeof(Prefs).FullName + "-autoUpdate", false); }
-				set { ProjectPrefs.SetBool(typeof(Prefs).FullName + "-autoUpdate", value); }
-			}
-		}
+        public static class Prefs
+        {
+            public static bool autoUpdate
+            {
+                get { return ProjectPrefs.GetBool(typeof(Prefs).FullName + "-autoUpdate", false); }
+                set { ProjectPrefs.SetBool(typeof(Prefs).FullName + "-autoUpdate", value); }
+            }
+        }
 
-		//----- field -----
+        //----- field -----
 
-		private static List<BookData> updateTargets = null;
+        private static List<BookData> updateTargets = null;
 
-		private static bool isUpdating = false;
+        private static bool isUpdating = false;
 
-		private static DateTime? nextCheckTime = null;
+        private static DateTime? nextCheckTime = null;
 
-		private static Enum prevLanguage = default;
+        private static Enum prevLanguage = default;
 
-		private static Dictionary<string, long> excelLastUpdateAt = null;
+        private static Dictionary<string, ulong> excelLastUpdateAt = null;
 
-		private static Dictionary<string, string> sourceFolderPathCache = null;
-		private static Dictionary<string, string> destFolderPathCache = null;
-		private static Dictionary<string, string> assetPathCache = null;
+        private static Dictionary<string, string> sourceFolderPathCache = null;
+        private static Dictionary<string, string> destFolderPathCache = null;
+        private static Dictionary<string, string> assetPathCache = null;
 
         //----- property -----
 
         //----- method -----
 
-		static LuaTextAssetUpdater()
-		{
-			updateTargets = new List<BookData>();
-			excelLastUpdateAt = new Dictionary<string, long>();
+        static LuaTextAssetUpdater()
+        {
+            updateTargets = new List<BookData>();
+            excelLastUpdateAt = new Dictionary<string, ulong>();
 
-			sourceFolderPathCache = new Dictionary<string, string>();
-			destFolderPathCache = new Dictionary<string, string>();
-			assetPathCache = new Dictionary<string, string>();
-		}
+            sourceFolderPathCache = new Dictionary<string, string>();
+            destFolderPathCache = new Dictionary<string, string>();
+            assetPathCache = new Dictionary<string, string>();
+        }
 
-		[DidReloadScripts]
+        [DidReloadScripts]
         private static void DidReloadScripts()
         {
             EditorApplication.update += AutoUpdateLuaTextAssetCallback;
@@ -70,173 +70,173 @@ namespace Modules.Lua.Text
 
         private static void AutoUpdateLuaTextAssetCallback()
         {
-			if (Application.isPlaying) { return; }
-			
-			if (EditorApplication.isCompiling) { return; }
+            if (Application.isPlaying) { return; }
+            
+            if (EditorApplication.isCompiling) { return; }
 
-			if (EditorApplication.isUpdating){ return; }
-			
-			if (!Prefs.autoUpdate){ return; }
+            if (EditorApplication.isUpdating){ return; }
+            
+            if (!Prefs.autoUpdate){ return; }
 
-			if (isUpdating){ return; }
+            if (isUpdating){ return; }
 
-			if (nextCheckTime.HasValue)
+            if (nextCheckTime.HasValue)
             {
                 if (DateTime.Now < nextCheckTime) { return; }
             }
-			
-			UpdateLuaText().Forget();
-		}
+            
+            UpdateLuaText().Forget();
+        }
 
-		private static async UniTask UpdateLuaText()
+        private static async UniTask UpdateLuaText()
         {
-			var config = LuaTextConfig.Instance;
+            var config = LuaTextConfig.Instance;
 
-			if (config == null){ return; }
+            if (config == null){ return; }
 
-			var language = LuaTextLanguage.Instance.Current;
+            var language = LuaTextLanguage.Instance.Current;
 
-			if (language == null){ return; }
+            if (language == null){ return; }
 
-			if (prevLanguage != language.Language)
-			{
-				sourceFolderPathCache.Clear();
-				destFolderPathCache.Clear();
-				assetPathCache.Clear();
+            if (prevLanguage != language.Language)
+            {
+                sourceFolderPathCache.Clear();
+                destFolderPathCache.Clear();
+                assetPathCache.Clear();
 
-				prevLanguage = language.Language;
-			}
+                prevLanguage = language.Language;
+            }
 
-			isUpdating = true;
+            isUpdating = true;
 
-			//----- Export -----
+            //----- Export -----
 
-			foreach (var info in config.TransferInfos)
-			{
-				var sourceFolder = sourceFolderPathCache.GetOrAdd(info.sourceFolderRelativePath, x => UnityPathUtility.RelativePathToFullPath(x));
-				
-				var excelPaths = LuaTextExcel.FindExcelFile(sourceFolder);
+            foreach (var info in config.TransferInfos)
+            {
+                var sourceFolder = sourceFolderPathCache.GetOrAdd(info.sourceFolderRelativePath, x => UnityPathUtility.RelativePathToFullPath(x));
+                
+                var excelPaths = LuaTextExcel.FindExcelFile(sourceFolder);
 
-				var targetExcels = excelPaths.Where(x => IsExcelUpdated(x)).ToArray();
+                var targetExcels = excelPaths.Where(x => IsExcelUpdated(x)).ToArray();
 
-				if (targetExcels.Any())
-				{
-					await LuaTextExcel.Export(sourceFolder, targetExcels, false);
-				}
-			}
-			
-			//----- Build BookData -----
+                if (targetExcels.Any())
+                {
+                    await LuaTextExcel.Export(sourceFolder, targetExcels, false);
+                }
+            }
+            
+            //----- Build BookData -----
 
-			updateTargets.Clear();
-			
-			foreach (var info in config.TransferInfos)
-			{
-				var sourceFolder = sourceFolderPathCache.GetOrAdd(info.sourceFolderRelativePath, x => UnityPathUtility.RelativePathToFullPath(x));
-				
-				var excelPaths = LuaTextExcel.FindExcelFile(sourceFolder);
+            updateTargets.Clear();
+            
+            foreach (var info in config.TransferInfos)
+            {
+                var sourceFolder = sourceFolderPathCache.GetOrAdd(info.sourceFolderRelativePath, x => UnityPathUtility.RelativePathToFullPath(x));
+                
+                var excelPaths = LuaTextExcel.FindExcelFile(sourceFolder);
 
-				var bookDatas = await DataLoader.GetBookData(excelPaths);
-				
-				foreach (var excelPath in excelPaths)
-				{
-					var sourcePath = PathUtility.GetPathWithoutExtension(excelPath);
+                var bookDatas = await DataLoader.GetBookData(excelPaths);
+                
+                foreach (var excelPath in excelPaths)
+                {
+                    var sourcePath = PathUtility.GetPathWithoutExtension(excelPath);
 
-					var bookData = bookDatas.FirstOrDefault(x => x.SourcePath == sourcePath);
+                    var bookData = bookDatas.FirstOrDefault(x => x.SourcePath == sourcePath);
 
-					// Excelは存在するがシートデータがないケース.
-					if (bookData == null){ continue; }
+                    // Excelは存在するがシートデータがないケース.
+                    if (bookData == null){ continue; }
 
-					var requireUpdate = LuaTextAssetGenerator.IsRequireUpdate(bookData);
+                    var requireUpdate = LuaTextAssetGenerator.IsRequireUpdate(bookData);
 
-					if (requireUpdate)
-					{
-						updateTargets.Add(bookData);
-					}
-				}
-			}
+                    if (requireUpdate)
+                    {
+                        updateTargets.Add(bookData);
+                    }
+                }
+            }
 
-			//----- Update LuaText -----
-			
-			if (updateTargets.Any())
-			{
-				var log = new StringBuilder();
+            //----- Update LuaText -----
+            
+            if (updateTargets.Any())
+            {
+                var log = new StringBuilder();
 
-				var tasks = new List<UniTask>();
+                var tasks = new List<UniTask>();
 
-				log.AppendLine("LuaText auto updated.").AppendLine();
-				
-				foreach (var bookData in updateTargets)
-				{
-					var data = bookData;
+                log.AppendLine("LuaText auto updated.").AppendLine();
+                
+                foreach (var bookData in updateTargets)
+                {
+                    var data = bookData;
 
-					var task = UniTask.Create(async () =>
-					{
-						var sheetDatas = await DataLoader.LoadSheetData(data);
+                    var task = UniTask.Create(async () =>
+                    {
+                        var sheetDatas = await DataLoader.LoadSheetData(data);
 
-						LuaTextAssetGenerator.Generate(data, sheetDatas);
+                        LuaTextAssetGenerator.Generate(data, sheetDatas);
 
-						var assetPath = LuaText.GetAssetFileName(data.DestPath, language.Identifier);
+                        var assetPath = LuaText.GetAssetFileName(data.DestPath, language.Identifier);
 
-						lock (log)
-						{
-							log.AppendLine(assetPath);
-						}
+                        lock (log)
+                        {
+                            log.AppendLine(assetPath);
+                        }
 
-					});
+                    });
 
-					tasks.Add(task);
-				}
+                    tasks.Add(task);
+                }
 
-				using (new AssetEditingScope())
-				{
-					await UniTask.WhenAll(tasks);
-				}
-				
-				UnityConsole.Info(log.ToString());
-			}
+                using (new AssetEditingScope())
+                {
+                    await UniTask.WhenAll(tasks);
+                }
+                
+                UnityConsole.Info(log.ToString());
+            }
 
-			isUpdating = false;
-			
-			nextCheckTime = DateTime.Now.AddSeconds(CheckInterval);
-		}
+            isUpdating = false;
+            
+            nextCheckTime = DateTime.Now.AddSeconds(CheckInterval);
+        }
 
-		private static bool IsExcelUpdated(string excelPath)
-		{
-			if (!File.Exists(excelPath)){ return false; }
+        private static bool IsExcelUpdated(string excelPath)
+        {
+            if (!File.Exists(excelPath)){ return false; }
 
-			var fileInfo = new FileInfo(excelPath);
+            var fileInfo = new FileInfo(excelPath);
 
-			var hasValue = excelLastUpdateAt.ContainsKey(excelPath);
+            var hasValue = excelLastUpdateAt.ContainsKey(excelPath);
 
-			var lastUpdateAt = excelLastUpdateAt.GetValueOrDefault(excelPath);
-			var lastWriteTime = fileInfo.LastWriteTime.ToUnixTime();
+            var lastUpdateAt = excelLastUpdateAt.GetValueOrDefault(excelPath);
+            var lastWriteTime = fileInfo.LastWriteTime.ToUnixTime();
 
-			excelLastUpdateAt[excelPath] = lastWriteTime;
+            excelLastUpdateAt[excelPath] = lastWriteTime;
 
-			return hasValue && lastUpdateAt < lastWriteTime;
-		}
+            return hasValue && lastUpdateAt < lastWriteTime;
+        }
 
-		private static string GetAssetPathFromExcelPath(string excelPath, string sourceFolder, string destFolder, LanguageInfo language)
-		{
-			var assetPath = string.Empty;
+        private static string GetAssetPathFromExcelPath(string excelPath, string sourceFolder, string destFolder, LanguageInfo language)
+        {
+            var assetPath = string.Empty;
 
-			if (assetPathCache.ContainsKey(excelPath))
-			{
-				assetPath = assetPathCache[excelPath];
-			}
-			else
-			{
-				var temp = excelPath.Replace(sourceFolder, destFolder);
+            if (assetPathCache.ContainsKey(excelPath))
+            {
+                assetPath = assetPathCache[excelPath];
+            }
+            else
+            {
+                var temp = excelPath.Replace(sourceFolder, destFolder);
 
-				temp = PathUtility.GetPathWithoutExtension(temp);
+                temp = PathUtility.GetPathWithoutExtension(temp);
 
-				assetPath = LuaText.GetAssetFileName(temp, language.Identifier);
+                assetPath = LuaText.GetAssetFileName(temp, language.Identifier);
 
-				assetPathCache[excelPath] = assetPath;
-			}
+                assetPathCache[excelPath] = assetPath;
+            }
 
-			return assetPath;
-		}
+            return assetPath;
+        }
     }
 }
 
