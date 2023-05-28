@@ -1,6 +1,5 @@
 
 using UnityEngine;
-using UnityEngine.Networking;
 using System;
 using System.Linq;
 using System.Collections.Generic;
@@ -60,9 +59,6 @@ namespace Modules.AssetBundles
         // URL作成用.
         private StringBuilder urlBuilder = null;
 
-        // ダウンロード予約中アセットバンドル.
-        private HashSet<string> downloadRequested = null;
-
         // ダウンロード中アセットバンドル.
         private HashSet<string> downloadRunning = null;
 
@@ -116,7 +112,6 @@ namespace Modules.AssetBundles
             if (isInitialized) { return; }
 
             urlBuilder = new StringBuilder();
-            downloadRequested = new HashSet<string>();
             downloadRunning = new HashSet<string>();
             downloadTasks = new Dictionary<string, IObservable<Unit>>();
             loadQueueing = new Dictionary<string, IObservable<AssetBundle>>();
@@ -324,7 +319,6 @@ namespace Modules.AssetBundles
                     .OnErrorRetry((TimeoutException ex) => OnTimeout(assetInfo, ex), RetryCount, RetryDelaySeconds)
                     .OnErrorRetry((Exception _) => { }, RetryCount, RetryDelaySeconds)
                     .DoOnError(x => OnError(x))
-                    .Finally(() => downloadRequested.Remove(assetBundleName))
                     .AsUnitObservable()
                     .Share();
 
@@ -402,15 +396,6 @@ namespace Modules.AssetBundles
 
             if (string.IsNullOrEmpty(filePath)) { return; }
 
-            // ファイルロックされている間は待機.
-
-            while (FileUtility.IsFileLocked(filePath))
-            {
-                if (cancelToken.IsCancellationRequested) { return; }
-
-                await UniTask.DelayFrame(5, cancellationToken: CancellationToken.None);
-            }
-
             // ダウンロード.
 
             IProgress<float> progressReceiver = null;
@@ -447,31 +432,6 @@ namespace Modules.AssetBundles
                 {
                     throw new Exception($"File download error\nURL:{url}\nResponseCode:{e.Request.responseCode}\n\n{e.Request.error}\n");
                 }
-            }
-        }
-
-        /// <summary> ダウンロード予約に登録 </summary>
-        public void RequestDownload(string assetBundleName)
-        {
-            downloadRequested.Add(assetBundleName);
-        }
-
-        /// <summary> ダウンロード実行中か </summary>
-        public bool IsDownloadQueueing(string assetBundleName)
-        {
-            return downloadRequested.Contains(assetBundleName);
-        }
-
-        /// <summary> 実行中のダウンロード完了まで待機 </summary>
-        public async UniTask WaitQueueingDownload(string assetBundleName, CancellationToken cancelToken)
-        {
-            while (true)
-            {
-                if (!IsDownloadQueueing(assetBundleName)) { break; }
-
-                if (cancelToken.IsCancellationRequested) { break; }
-
-                await UniTask.NextFrame(CancellationToken.None);
             }
         }
 
@@ -747,15 +707,6 @@ namespace Modules.AssetBundles
                     throw new FileNotFoundException(message);
                 }
 
-                while (FileUtility.IsFileLocked(filePath))
-                {
-                    if (cancelToken.IsCancellationRequested){ return null; }
-
-                    await UniTask.DelayFrame(5, cancellationToken: CancellationToken.None);
-                }
-
-                if (cancelToken.IsCancellationRequested){ return null; }
-
                 byte[] bytes = null;
 
                 using (var fileStream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read, 4096, true))
@@ -920,7 +871,6 @@ namespace Modules.AssetBundles
 
         public void ClearDownloadQueue()
         {
-            downloadRequested.Clear();
             downloadRunning.Clear();
             downloadTasks.Clear();
         }

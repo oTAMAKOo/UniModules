@@ -39,7 +39,6 @@ namespace Modules.ExternalAssets
             assetBundleManager.Initialize(SimulateMode);
             assetBundleManager.SetMaxDownloadCount(AssetBundleDefaultInstallerCount);
 
-            assetBundleManager.OnLoadAsObservable().Subscribe(x => OnLoadAssetBundle(x)).AddTo(Disposable);
             assetBundleManager.OnTimeOutAsObservable().Subscribe(x => OnTimeout(x)).AddTo(Disposable);
             assetBundleManager.OnErrorAsObservable().Subscribe(x => OnError(x)).AddTo(Disposable);
         }
@@ -72,7 +71,6 @@ namespace Modules.ExternalAssets
             var dependencies = assetBundleManager.GetAllDependencies(assetBundleName);
 
             // 依存アセット.
-
             foreach (var item in dependencies)
             {
                 var infos = assetInfosByAssetBundleName.GetValueOrDefault(item);
@@ -85,8 +83,6 @@ namespace Modules.ExternalAssets
 
                 if (!IsRequireUpdate(info)) { continue; }
                 
-                assetBundleManager.RequestDownload(assetBundleName);
-
                 var task = UniTask.Defer(() => UpdateAsset(info.ResourcePath, progress, cancelToken));
                 
                 tasks.Add(task);
@@ -94,17 +90,16 @@ namespace Modules.ExternalAssets
 
             // 本体.
             {
-                assetBundleManager.RequestDownload(assetBundleName);
-
                 var task = UniTask.Defer(() => assetBundleManager.UpdateAssetBundle(InstallDirectory, assetInfo, progress, cancelToken));
 
                 tasks.Add(task);
             }
 
+            // 実行.
             await UniTask.WhenAll(tasks);
         }
 
-        private string[] FindUpdateAssetBundleDependencies(AssetInfo assetInfo)
+        private string[] GetUpdateAssetBundleDependenciesResourcePaths(AssetInfo assetInfo)
         {
             var assetBundleManager = instance.assetBundleManager;
 
@@ -170,6 +165,29 @@ namespace Modules.ExternalAssets
                 return null;
             }
 
+            // 自身を含めたアセットバンドル一覧.
+
+            var allAssetBundles = assetBundleManager.GetAllDependenciesAndSelf(assetInfo.AssetBundle.AssetBundleName);
+
+            var dependenciesAndSelfAssetInfos = new List<AssetInfo>();
+
+            foreach (var item in allAssetBundles)
+            {
+                var infos = assetInfosByAssetBundleName.GetValueOrDefault(item);
+
+                if (infos.IsEmpty()){ continue; }
+
+                var info = infos.FirstOrDefault();
+
+                if (info == null){ continue; }
+
+                dependenciesAndSelfAssetInfos.Add(info);
+            }
+
+            // StreamingAssetsから読み込む場合はバージョン情報を削除.
+
+            await RemoveVersionStreamingAssetsAssetBundle(dependenciesAndSelfAssetInfos);
+
             // 外部処理.
 
             if (loadAssetHandler != null)
@@ -198,55 +216,28 @@ namespace Modules.ExternalAssets
 
             if (!LocalMode && !SimulateMode)
             {
-                // 自身を含めたアセットバンドル一覧.
-                var allAssetBundles = assetBundleManager.GetAllDependenciesAndSelf(assetInfo.AssetBundle.AssetBundleName);
-
                 // 更新中の場合待機.
 
-                try
+                while (true)
                 {
-                    var tasks = new List<UniTask>();
+                    if (cancelSource.IsCancellationRequested){ return null; }
 
-                    foreach (var item in allAssetBundles)
-                    {
-                        if (!assetBundleManager.IsDownloadQueueing(item)){ continue; }
+                    var wait = dependenciesAndSelfAssetInfos.Any(x => updateQueueing.Contains(x.ResourcePath));
+                    
+                    if (!wait){ break; }
 
-                        var task = assetBundleManager.WaitQueueingDownload(item, cancelSource.Token);
-
-                        tasks.Add(task);
-                    }
-
-                    await UniTask.WhenAll(tasks);
+                    await UniTask.NextFrame(CancellationToken.None);
                 }
-                catch (OperationCanceledException)
-                {
-                    /* Canceled */
-                }
-
-                if (cancelSource.IsCancellationRequested){ return null; }
 
                 // 更新が必要な対象を取得.
 
                 var requireUpdateInfos = new List<AssetInfo>();
-                
-                if(!CheckAssetBundleVersion(assetInfo))
+
+                foreach (var info in dependenciesAndSelfAssetInfos)
                 {
-                    requireUpdateInfos.Add(assetInfo);
-                }
-
-                foreach (var item in allAssetBundles)
-                {
-                    var infos = assetInfosByAssetBundleName.GetValueOrDefault(item);
-
-                    if (infos.IsEmpty()){ continue; }
-
-                    var info = infos.FirstOrDefault();
-
-                    if (info == null){ continue; }
-
-                    if (requireUpdateInfos.Any(x => x.ResourcePath == info.ResourcePath)){ continue; }
+                    if (requireUpdateInfos.Any(x => x.FileName == info.FileName)){ continue; }
                     
-                    if(!CheckAssetBundleVersion(info))
+                    if (!CheckAssetBundleVersion(info))
                     {
                         requireUpdateInfos.Add(info);
                     }
@@ -264,10 +255,6 @@ namespace Modules.ExternalAssets
 
                         foreach (var info in requireUpdateInfos)
                         {
-                            var assetBundleName = assetInfo.AssetBundle.AssetBundleName;
-
-                            assetBundleManager.RequestDownload(assetBundleName);
-
                             var task = UniTask.Defer(() => UpdateAsset(info.ResourcePath, cancelToken: cancelSource.Token));
 
                             tasks.Add(task);
@@ -282,7 +269,7 @@ namespace Modules.ExternalAssets
                         return null;
                     }
 
-                    await SaveVersion();
+                    RequestSaveVersion();
 
                     sw.Stop();
 
@@ -424,28 +411,27 @@ namespace Modules.ExternalAssets
             return result;
         }
 
-        private void OnLoadAssetBundle(string assetBundleName)
+        private async UniTask RemoveVersionStreamingAssetsAssetBundle(IEnumerable<AssetInfo> assetInfos)
         {
-            if (InstallDirectory.StartsWith(UnityPathUtility.StreamingAssetsPath))
+            if (!InstallDirectory.StartsWith(UnityPathUtility.StreamingAssetsPath)){ return; }
+
+            if (assetInfosByAssetBundleName == null){ return; }
+
+            var remove = false;
+
+            foreach (var assetInfo in assetInfos)
             {
-                if (assetInfosByAssetBundleName != null)
+                if (assetInfo.IsAssetBundle)
                 {
-                    var assetInfos = assetInfosByAssetBundleName.GetValueOrDefault(assetBundleName);
+                    RemoveVersion(assetInfo.ResourcePath);
 
-                    if (assetInfos != null)
-                    {
-                        var assetInfo = assetInfos.FirstOrDefault();
-
-                        if (assetInfo != null)
-                        {
-                            var resourcePath = assetInfo.ResourcePath;
-
-                            RemoveVersion(resourcePath);
-                            
-                            SaveVersion().Forget();
-                        }
-                    }
+                    remove = true;
                 }
+            }
+
+            if (remove)
+            {
+                await SaveVersion();
             }
         }
 

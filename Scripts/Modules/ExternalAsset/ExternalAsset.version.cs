@@ -28,11 +28,17 @@ namespace Modules.ExternalAssets
         // バージョンファイル難読化ハンドラー.
         private IVersionFileHandler versionFileHandler = null;
 
-        // バージョン更新中.
-        private bool versionSaveRunning = false;
+        // バージョン情報定期保存処理.
+        private IDisposable saveVersionDisposable = null;
 
-        // バージョン更新処理.
-        private IDisposable updateVersionDisposable = null;
+        // バージョン情報保存処理が実行中.
+        private bool saveVersionRunning = false;
+
+        // バージョン情報要求ID.
+        private string requestSaveVersionIdentifier = null;
+
+        // バージョン情報保存ID.
+        private string saveVersionIdentifier = null;
 
         // ファイル一覧の一時キャッシュ.
         private HashSet<string> filePathTemporaryCache = null;
@@ -47,7 +53,7 @@ namespace Modules.ExternalAssets
 
             versionFileHandler = new DefaultVersionFileHandler();
 
-            versionSaveRunning = false;
+            saveVersionRunning = false;
 
             filePathTemporaryCache = null;
         }
@@ -242,13 +248,7 @@ namespace Modules.ExternalAssets
                 versions[assetInfo.FileName] = assetInfo.Hash;
             }
 
-            if (updateVersionDisposable == null)
-            {
-                updateVersionDisposable = Observable.Timer(TimeSpan.FromSeconds(1f))
-                    .SelectMany(_ => SaveVersion().ToObservable())
-                    .Subscribe()
-                    .AddTo(Disposable);
-            }
+            RequestSaveVersion();
         }
 
         private void RemoveVersion(string resourcePath)
@@ -277,43 +277,72 @@ namespace Modules.ExternalAssets
             {
                 versions.Remove(assetInfo.FileName);
             }
+
+            RequestSaveVersion();
+        }
+
+        public void RequestSaveVersion()
+        {
+            if (SimulateMode) { return; }
+
+            requestSaveVersionIdentifier = Guid.NewGuid().ToString();
+
+            if (saveVersionDisposable == null)
+            {
+                saveVersionDisposable = Observable.Interval(TimeSpan.FromSeconds(1))
+                    .Take(TimeSpan.FromSeconds(10))
+                    .Finally(() => saveVersionDisposable = null)
+                    .Subscribe(_ =>
+                        {
+                            if (saveVersionIdentifier != requestSaveVersionIdentifier)
+                            {
+                                saveVersionIdentifier = requestSaveVersionIdentifier;
+
+                                SaveVersion().Forget();
+                            }
+                        })
+                    .AddTo(Disposable);
+            }
         }
 
         public async UniTask SaveVersion()
         {
-            if (SimulateMode) { return; }
+            // 実行中は待機.
+            while (saveVersionRunning)
+            {
+                await UniTask.NextFrame();
+            }
 
-            if (versionSaveRunning){ return; }
-                
+            saveVersionRunning = true;
+
             var versionFilePath = PathUtility.Combine(InstallDirectory, VersionFileName);
+
+            // バージョン情報の複製を作成.
+
+            Dictionary<string, string> saveVersions = null;
+
+            lock (versions)
+            {
+                saveVersions = new Dictionary<string, string>(versions);
+            }
 
             try
             {
-                versionSaveRunning = true;
-
                 await UniTask.SwitchToThreadPool();
+                
+                // 保存データ構築.
 
                 var builder = new StringBuilder();
-                
-                lock (versions)
+
+                foreach (var version in saveVersions)
                 {
-                    foreach (var version in versions)
-                    {
-                        builder.Append(version.Key);
-                        builder.Append(VersionSeparator);
-                        builder.Append(version.Value);
-                        builder.AppendLine();
-                    }
+                    builder.Append(version.Key);
+                    builder.Append(VersionSeparator);
+                    builder.Append(version.Value);
+                    builder.AppendLine();
                 }
 
                 var text = builder.ToString();
-
-                while (true)
-                {
-                    if (!FileUtility.IsFileLocked(versionFilePath)){ break; }
-
-                    await UniTask.NextFrame();
-                }
 
                 var bytes = Encoding.UTF8.GetBytes(text);
 
@@ -322,15 +351,12 @@ namespace Modules.ExternalAssets
                     bytes = await versionFileHandler.Encode(bytes);
                 }
 
-                #if UNITY_2021_1_OR_NEWER
+                // ファイル書き込み.
 
-                await File.WriteAllBytesAsync(versionFilePath, bytes);
-
-                #else
-
-                File.WriteAllBytes(versionFilePath, bytes);
-
-                #endif
+                using (var fs = new FileStream(versionFilePath, FileMode.Create, FileAccess.Write, FileShare.Read, 4096, true))
+                {
+                    await fs.WriteAsync(bytes, 0, bytes.Length);
+                }
             }
             catch (Exception e)
             {
@@ -345,19 +371,24 @@ namespace Modules.ExternalAssets
             {
                 await UniTask.SwitchToMainThread();
 
-                if (updateVersionDisposable != null)
-                {
-                    updateVersionDisposable.Dispose();
-                    updateVersionDisposable = null;
-                }
-
-                versionSaveRunning = false;
+                saveVersionRunning = false;
             }
         }
 
         private async UniTask LoadVersion()
         {
             if (SimulateMode) { return; }
+
+            if (saveVersionDisposable != null)
+            {
+                saveVersionDisposable.Dispose();
+                saveVersionDisposable = null;
+            }
+
+            while (saveVersionRunning)
+            {
+                await UniTask.NextFrame();
+            }
 
             var logText = string.Empty;
 
@@ -373,15 +404,14 @@ namespace Modules.ExternalAssets
 
                 if (File.Exists(versionFilePath))
                 {
-                    #if UNITY_2021_1_OR_NEWER
+                    byte[] bytes = null;
 
-                    var bytes = await File.ReadAllBytesAsync(versionFilePath);
+                    using (var fs = new FileStream(versionFilePath, FileMode.Open, FileAccess.Read, FileShare.Read, 4096, true))
+                    {
+                        bytes = new byte[fs.Length];
 
-                    #else
-
-                    var bytes = File.ReadAllBytes(versionFilePath);
-
-                    #endif
+                        await fs.ReadAsync(bytes, 0, bytes.Length);
+                    }
 
                     if (versionFileHandler != null)
                     {

@@ -384,7 +384,7 @@ namespace Modules.ExternalAssets
 
         private async UniTask UpdateAssetInternal(string resourcePath, IProgress<DownloadProgressInfo> progress, CancellationToken cancelToken)
         {
-            string[] updateAssetBundleDependencies = null;
+            string[] dependenciesResourcePaths = null;
 
             try
             {
@@ -399,22 +399,41 @@ namespace Modules.ExternalAssets
                     throw new AssetInfoNotFoundException(resourcePath);
                 }
 
+                // キャンセル発行.
+
+                var linkedCancelTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancelToken, cancelSource.Token);
+
+                var linkedCancelToken = linkedCancelTokenSource.Token;
+
+                if (linkedCancelToken.IsCancellationRequested){ return; }
+
+                // 既に更新実行中なので待機.
+
+                while (updateQueueing.Contains(resourcePath))
+                {
+                    if (linkedCancelToken.IsCancellationRequested) { return; }
+
+                    await UniTask.NextFrame(CancellationToken.None);
+                }
+
+                // 呼び出し制限.
+                await updateAssetCallLimiter.Wait(cancelToken: CancellationToken.None);
+
+                if (linkedCancelToken.IsCancellationRequested){ return; }
+
                 // 更新中.
 
-                if (assetInfo.IsAssetBundle && !updateQueueing.Contains(resourcePath))
+                if (assetInfo.IsAssetBundle)
                 {
-                    updateAssetBundleDependencies = FindUpdateAssetBundleDependencies(assetInfo);
+                    dependenciesResourcePaths = GetUpdateAssetBundleDependenciesResourcePaths(assetInfo);
 
-                    foreach (var item in updateAssetBundleDependencies)
+                    foreach (var item in dependenciesResourcePaths)
                     {
                         updateQueueing.Add(item);
                     }
                 }
 
                 updateQueueing.Add(resourcePath);
-
-                // 呼び出し制限.
-                await updateAssetCallLimiter.Wait(cancelToken: CancellationToken.None);
 
                 // ローカルバージョンが最新の場合は更新しない.
 
@@ -426,19 +445,8 @@ namespace Modules.ExternalAssets
 
                 if (!LocalMode && !SimulateMode)
                 {
-                    if (!updateQueueing.Contains(resourcePath))
-                    {
-                        RemoveVersion(resourcePath);
-                    }
+                    RemoveVersion(resourcePath);
                 }
-
-                // キャンセル発行.
-
-                var linkedCancelTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancelToken, cancelSource.Token);
-
-                var linkedCancelToken = linkedCancelTokenSource.Token;
-
-                if (linkedCancelToken.IsCancellationRequested){ return; }
 
                 // 外部処理.
 
@@ -510,9 +518,9 @@ namespace Modules.ExternalAssets
             }
             finally
             {
-                if (updateAssetBundleDependencies != null)
+                if (dependenciesResourcePaths != null)
                 {
-                    foreach (var item in updateAssetBundleDependencies)
+                    foreach (var item in dependenciesResourcePaths)
                     {
                         updateQueueing.Remove(item);
                     }
@@ -545,8 +553,6 @@ namespace Modules.ExternalAssets
             criAssetManager.ClearInstallQueue();
 
             #endif
-
-            SaveVersion().Forget();
         }
 
         public string GetFilePath(AssetInfo assetInfo)

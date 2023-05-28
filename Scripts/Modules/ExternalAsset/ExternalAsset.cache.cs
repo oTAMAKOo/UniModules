@@ -95,20 +95,11 @@ namespace Modules.ExternalAssets
 
                 var manageFilePaths = new HashSet<string>();
 
+                foreach (var item in assetInfos)
                 {
-                    var chunk = assetInfos.Chunk(250);
+                    var filePath = GetFilePath(item);
 
-                    foreach (var items in chunk)
-                    {
-                        foreach (var item in items)
-                        {
-                            var filePath = GetFilePath(item);
-
-                            manageFilePaths.Add(filePath);
-                        }
-
-                        await UniTask.NextFrame();
-                    }
+                    manageFilePaths.Add(filePath);
                 }
 
                 // 管理対象に存在しないファイル削除.
@@ -152,22 +143,15 @@ namespace Modules.ExternalAssets
                 {
                     await LoadVersion();
                 }
-
-                var chunk = assetInfos.Chunk(250);
-
-                foreach (var items in chunk)
+                
+                foreach (var item in assetInfos)
                 {
-                    foreach (var item in items)
+                    var filePath = GetFilePath(item);
+
+                    if (!string.IsNullOrEmpty(filePath))
                     {
-                        var filePath = GetFilePath(item);
-
-                        if (!string.IsNullOrEmpty(filePath))
-                        {
-                            targetFilePaths.Add(filePath);
-                        }
+                        targetFilePaths.Add(filePath);
                     }
-
-                    await UniTask.NextFrame();
                 }
             }
             finally
@@ -196,29 +180,22 @@ namespace Modules.ExternalAssets
             try
             {
                 await UniTask.SwitchToThreadPool();
-
-                var chunk = filePaths.Chunk(25);
-
-                foreach (var items in chunk)
+                
+                foreach (var item in filePaths)
                 {
-                    foreach (var item in items)
-                    {
-                        var fileName = Path.GetFileName(item);
+                    var fileName = Path.GetFileName(item);
 
-                        versions.Remove(fileName);
+                    versions.Remove(fileName);
 
-                        if (!File.Exists(item)) { continue; }
+                    if (!File.Exists(item)) { continue; }
 
-                        File.SetAttributes(item, FileAttributes.Normal);
+                    File.SetAttributes(item, FileAttributes.Normal);
 
-                        File.Delete(item);
+                    File.Delete(item);
 
-                        var path = item.Substring(trimLength).TrimStart(PathUtility.PathSeparator);
+                    var path = item.Substring(trimLength).TrimStart(PathUtility.PathSeparator);
 
-                        builder.AppendLine(path);
-                    }
-
-                    await UniTask.NextFrame();
+                    builder.AppendLine(path);
                 }
             }
             catch (Exception e)

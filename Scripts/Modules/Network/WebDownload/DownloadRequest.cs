@@ -17,8 +17,6 @@ namespace Modules.Net.WebDownload
 
         //----- field -----
 
-        protected UnityWebRequest webRequest = null;
-
         protected bool canceled = false;
 
         //----- property -----
@@ -52,11 +50,6 @@ namespace Modules.Net.WebDownload
 
             IsDisposed = true;
 
-            if (webRequest != null)
-            {
-                webRequest.Dispose();
-            }
-
             OnDispose();
 
             GC.SuppressFinalize(this);
@@ -68,57 +61,61 @@ namespace Modules.Net.WebDownload
             FilePath = filePath;
         }
 
-        public async UniTask Download(IProgress<float> progress = null, CancellationToken cancelToken = default)
+        public virtual async UniTask Download(IProgress<float> progress = null, CancellationToken cancelToken = default)
         {
             canceled = false;
 
             var abort = false;
 
-            webRequest = UnityWebRequest.Get(Url);
-            
-            var downloadHandlerFile = new DownloadHandlerFile(FilePath)
-            {
-                removeFileOnAbort = true,
-            };
-
-            webRequest.timeout = TimeOutSeconds;
-            webRequest.downloadHandler = downloadHandlerFile;
-
             try
             {
-                var operation = webRequest.SendWebRequest();
-
-                while (!operation.isDone)
+                using (var webRequest = UnityWebRequest.Get(Url))
                 {
-                    if (!abort && (canceled || cancelToken.IsCancellationRequested))
-                    {
-                        webRequest.Abort();
-                        abort = true;
-                    }
+                    webRequest.timeout = TimeOutSeconds;
 
-                    if (progress != null)
+                    using (var downloadHandlerFile = new DownloadHandlerFile(FilePath))
                     {
-                        progress.Report(operation.progress);
-                    }
+                        downloadHandlerFile.removeFileOnAbort = true;
 
-                    await UniTask.NextFrame(CancellationToken.None);
+                        webRequest.downloadHandler = downloadHandlerFile;
+
+                        var operation = webRequest.SendWebRequest();
+
+                        while (!operation.isDone)
+                        {
+                            if (!abort && (canceled || cancelToken.IsCancellationRequested))
+                            {
+                                webRequest.Abort();
+                                abort = true;
+                            }
+
+                            if (progress != null)
+                            {
+                                progress.Report(operation.progress);
+                            }
+
+                            await UniTask.NextFrame(CancellationToken.None);
+                        }
+
+                        if (webRequest != null)
+                        {
+                            if (!webRequest.IsSuccess() || webRequest.HasError())
+                            {
+                                throw new UnityWebRequestErrorException(webRequest);
+                            }
+                        }
+                    }
                 }
-
-                if (webRequest != null)
+            }
+            catch
+            {
+                if (File.Exists(FilePath))
                 {
-                    if (!webRequest.IsSuccess() || webRequest.HasError())
-                    {
-                        throw new UnityWebRequestErrorException(webRequest);
-                    }
+                    File.Delete(FilePath);
                 }
             }
             finally
             {
-                if (downloadHandlerFile != null)
-                {
-                    downloadHandlerFile.Dispose();
-                }
-
                 if (abort)
                 {
                     if (File.Exists(FilePath))
@@ -134,6 +131,6 @@ namespace Modules.Net.WebDownload
             canceled = true;
         }
 
-        protected virtual void OnDispose(){ }
+        protected virtual void OnDispose() { }
     }
 }
