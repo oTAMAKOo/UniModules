@@ -12,271 +12,258 @@ using Modules.Devkit.Console;
 
 namespace Modules.Master
 {
-	public sealed partial class MasterManager
-	{
-		//----- params -----
+    public sealed partial class MasterManager
+    {
+        //----- params -----
 
-		private const string VersionFileName = "version";
+        private const string VersionFileName = "version";
 
-		private const char VersionSeparator = '|';
+        private const char VersionSeparator = '|';
 
-		//----- field -----
+        //----- field -----
 
-		// バージョン情報.
-		private Dictionary<string, string> versions = null;
+        // バージョン情報.
+        private Dictionary<string, string> versions = null;
 
-		// バージョンファイル難読化ハンドラー.
-		private IVersionFileHandler versionFileHandler = null;
+        // バージョンファイル難読化ハンドラー.
+        private IVersionFileHandler versionFileHandler = null;
 
-		// バージョン更新処理.
-		private IDisposable updateVersionDisposable = null;
+        // バージョン更新処理.
+        private IDisposable updateVersionDisposable = null;
 
-		// バージョン更新中.
-		private bool versionSaveRunning = false;
+        // バージョン更新中.
+        private bool versionSaveRunning = false;
 
-		//----- property -----
+        //----- property -----
 
-		//----- method -----
-		
-		private void InitializeVersion()
-		{
-			versions = new Dictionary<string, string>();
+        //----- method -----
+        
+        private void InitializeVersion()
+        {
+            versions = new Dictionary<string, string>();
 
-			versionFileHandler = new DefaultVersionFileHandler();
-		}
+            versionFileHandler = new DefaultVersionFileHandler();
+        }
 
-		public void SetVersionFileHandler(IVersionFileHandler versionFileHandler)
-		{
-			this.versionFileHandler = versionFileHandler;
-		}
+        public void SetVersionFileHandler(IVersionFileHandler versionFileHandler)
+        {
+            this.versionFileHandler = versionFileHandler;
+        }
 
-		private bool CheckVersion(IMaster master, string masterVersion)
-		{
-			// ローカル保存されているバージョンと一致するか.
+        private bool CheckVersion(IMaster master, string masterVersion)
+        {
+            // ローカル保存されているバージョンと一致するか.
 
-			var fileName = GetMasterFileName(master.GetType());
+            var fileName = GetMasterFileName(master.GetType());
 
-			var localVersion = versions.GetValueOrDefault(fileName);
+            var localVersion = versions.GetValueOrDefault(fileName);
 
-			if (localVersion != masterVersion) { return false; }
+            if (localVersion != masterVersion) { return false; }
 
-			// ファイルがなかったらバージョン不一致.
+            // ファイルがなかったらバージョン不一致.
 
-			var filePath = GetFilePath(master);
+            var filePath = GetFilePath(master);
 
-			if(!File.Exists(filePath)){ return false; }
+            if(!File.Exists(filePath)){ return false; }
 
-			return true;
-		}
+            return true;
+        }
 
-		private void UpdateVersion(IMaster master, string masterVersion)
-		{
-			var fileName = GetMasterFileName(master.GetType());
+        private void UpdateVersion(IMaster master, string masterVersion)
+        {
+            var fileName = GetMasterFileName(master.GetType());
 
-			lock (versions)
-			{
-				versions[fileName] = masterVersion;
-			}
+            lock (versions)
+            {
+                versions[fileName] = masterVersion;
+            }
 
-			if (updateVersionDisposable == null)
-			{
-				updateVersionDisposable = Observable.Timer(TimeSpan.FromSeconds(1f))
-					.SelectMany(_ => SaveVersion().ToObservable())
-					.Subscribe()
-					.AddTo(Disposable);
-			}
-		}
+            if (updateVersionDisposable == null)
+            {
+                updateVersionDisposable = Observable.Timer(TimeSpan.FromSeconds(1f))
+                    .SelectMany(_ => SaveVersion().ToObservable())
+                    .Subscribe()
+                    .AddTo(Disposable);
+            }
+        }
 
-		public async UniTask SaveVersion()
-		{
-			if (versionSaveRunning) { return; }
+        public async UniTask SaveVersion()
+        {
+            if (versionSaveRunning) { return; }
 
-			if (InstallDirectory.StartsWith(UnityPathUtility.StreamingAssetsPath)){ return; }
+            if (InstallDirectory.StartsWith(UnityPathUtility.StreamingAssetsPath)){ return; }
 
-			var versionFilePath = PathUtility.Combine(InstallDirectory, VersionFileName);
+            var versionFilePath = PathUtility.Combine(InstallDirectory, VersionFileName);
 
-			try
-			{
-				versionSaveRunning = true;
+            try
+            {
+                versionSaveRunning = true;
 
-				await UniTask.SwitchToThreadPool();
+                await UniTask.SwitchToThreadPool();
 
-				var builder = new StringBuilder();
-				
-				lock (versions)
-				{
-					foreach (var version in versions)
-					{
-						builder.Append(version.Key);
-						builder.Append(VersionSeparator);
-						builder.Append(version.Value);
-						builder.AppendLine();
-					}
-				}
-
-				var text = builder.ToString();
-
-				while (true)
-				{
-					if (!FileUtility.IsFileLocked(versionFilePath)) { break; }
-
-					await UniTask.NextFrame();
-				}
-
-				var bytes = Encoding.UTF8.GetBytes(text);
-
-				if (versionFileHandler != null)
-				{
-					bytes = await versionFileHandler.Encode(bytes);
-				}
-
-				#if UNITY_2021_1_OR_NEWER
-
-				await File.WriteAllBytesAsync(versionFilePath, bytes);
-
-				#else
-
-				File.WriteAllBytes(versionFilePath, bytes);
-
-				#endif
-			}
-			catch (Exception e)
-			{
-				Debug.LogException(e);
-
-				if (!string.IsNullOrEmpty(versionFilePath) && File.Exists(versionFilePath))
-				{
-					File.Delete(versionFilePath);
-				}
-			}
-			finally
-			{
-				await UniTask.SwitchToMainThread();
-
-				if (updateVersionDisposable != null)
-				{
-					updateVersionDisposable.Dispose();
-					updateVersionDisposable = null;
-				}
-
-				versionSaveRunning = false;
-			}
-		}
-
-		public async UniTask LoadVersion()
-		{
-			var logText = string.Empty;
-
-			var versionFilePath = PathUtility.Combine(InstallDirectory, VersionFileName);
-
-			try
-			{
-				await UniTask.SwitchToThreadPool();
-
-				var sw = System.Diagnostics.Stopwatch.StartNew();
-
-				versions.Clear();
-
-				if (File.Exists(versionFilePath))
-				{
-					#if UNITY_2021_1_OR_NEWER
-
-					var bytes = await File.ReadAllBytesAsync(versionFilePath);
-
-					#else
-
-					var bytes = File.ReadAllBytes(versionFilePath);
-
-					#endif
-
-					if (versionFileHandler != null)
-					{
-						bytes = await versionFileHandler.Decode(bytes);
-					}
-
-					var text = Encoding.UTF8.GetString(bytes);
-
-					using (var sr = new StringReader(text))
-					{
-						while (-1 < sr.Peek())
-						{
-							var line = await sr.ReadLineAsync();
-
-							var parts = line.Split(VersionSeparator);
-
-							var fileName = parts.ElementAtOrDefault(0);
-							var version = parts.ElementAtOrDefault(1);
-
-							if (!string.IsNullOrEmpty(fileName) && !string.IsNullOrEmpty(version))
-							{
-								versions[fileName] = version;
-							}
-						}
-					}
-
-					sw.Stop();
-
-					logText = $"LoadVersion: ({sw.Elapsed.TotalMilliseconds:F2}ms)";
-				}
-			}
-			catch
-			{
-				if (File.Exists(versionFilePath))
-				{
-					File.Delete(versionFilePath);
-				}
-			}
-			finally
-			{
-				await UniTask.SwitchToMainThread();
-			}
-
-			if (!string.IsNullOrEmpty(logText))
-			{
-				UnityConsole.Event(ConsoleEventName, ConsoleEventColor, logText);
-			}
-		}
-
-		public async UniTask ClearVersion(IMaster master)
-		{
-			var fileName = GetMasterFileName(master.GetType());
-
-			lock (versions)
-			{
-				if (versions.ContainsKey(fileName))
-				{
-					versions.Remove(fileName);
-				}
-			}
-
-			await SaveVersion();
-		}
-
-		private void DeleteVersionFile()
-		{
-			versions.Clear();
-
-			try
-			{
-				var versionFilePath = PathUtility.Combine(InstallDirectory, VersionFileName);
-
-				if (File.Exists(versionFilePath))
-				{
-					var cFileInfo = new FileInfo(versionFilePath);
-
-					// 読み取り専用属性がある場合は、読み取り専用属性を解除.
-					if ((cFileInfo.Attributes & FileAttributes.ReadOnly) == FileAttributes.ReadOnly)
-					{
-						cFileInfo.Attributes = FileAttributes.Normal;
-					}
-
-					File.Delete(versionFilePath);
-				}
-			}
-			catch (Exception ex)
-			{
-				Debug.LogException(ex);
-			}
-		}
-	}
+                var builder = new StringBuilder();
+                
+                lock (versions)
+                {
+                    foreach (var version in versions)
+                    {
+                        builder.Append(version.Key);
+                        builder.Append(VersionSeparator);
+                        builder.Append(version.Value);
+                        builder.AppendLine();
+                    }
+                }
+
+                var text = builder.ToString();
+
+                var bytes = Encoding.UTF8.GetBytes(text);
+
+                if (versionFileHandler != null)
+                {
+                    bytes = await versionFileHandler.Encode(bytes);
+                }
+
+                using (var fs = new FileStream(versionFilePath, FileMode.Create, FileAccess.Write, FileShare.ReadWrite, 4096, true))
+                {
+                    await fs.WriteAsync(bytes, 0, (int)fs.Length);
+                }
+            }
+            catch (Exception e)
+            {
+                Debug.LogException(e);
+
+                if (!string.IsNullOrEmpty(versionFilePath) && File.Exists(versionFilePath))
+                {
+                    File.Delete(versionFilePath);
+                }
+            }
+            finally
+            {
+                await UniTask.SwitchToMainThread();
+
+                if (updateVersionDisposable != null)
+                {
+                    updateVersionDisposable.Dispose();
+                    updateVersionDisposable = null;
+                }
+
+                versionSaveRunning = false;
+            }
+        }
+
+        public async UniTask LoadVersion()
+        {
+            var logText = string.Empty;
+
+            var versionFilePath = PathUtility.Combine(InstallDirectory, VersionFileName);
+
+            try
+            {
+                await UniTask.SwitchToThreadPool();
+
+                var sw = System.Diagnostics.Stopwatch.StartNew();
+
+                versions.Clear();
+
+                if (File.Exists(versionFilePath))
+                {
+                    byte[] bytes = null;
+
+                    using (var fs = new FileStream(versionFilePath, FileMode.Open, FileAccess.Read, FileShare.Read, 4096, true))
+                    {
+                        bytes = new byte[fs.Length];
+
+                        await fs.ReadAsync(bytes, 0, (int)fs.Length);
+                    }
+
+                    if (versionFileHandler != null)
+                    {
+                        bytes = await versionFileHandler.Decode(bytes);
+                    }
+
+                    var text = Encoding.UTF8.GetString(bytes);
+
+                    using (var sr = new StringReader(text))
+                    {
+                        while (-1 < sr.Peek())
+                        {
+                            var line = await sr.ReadLineAsync();
+
+                            var parts = line.Split(VersionSeparator);
+
+                            var fileName = parts.ElementAtOrDefault(0);
+                            var version = parts.ElementAtOrDefault(1);
+
+                            if (!string.IsNullOrEmpty(fileName) && !string.IsNullOrEmpty(version))
+                            {
+                                versions[fileName] = version;
+                            }
+                        }
+                    }
+
+                    sw.Stop();
+
+                    logText = $"LoadVersion: ({sw.Elapsed.TotalMilliseconds:F2}ms)";
+                }
+            }
+            catch
+            {
+                if (File.Exists(versionFilePath))
+                {
+                    File.Delete(versionFilePath);
+                }
+            }
+            finally
+            {
+                await UniTask.SwitchToMainThread();
+            }
+
+            if (!string.IsNullOrEmpty(logText))
+            {
+                UnityConsole.Event(ConsoleEventName, ConsoleEventColor, logText);
+            }
+        }
+
+        public async UniTask ClearVersion(IMaster master)
+        {
+            var fileName = GetMasterFileName(master.GetType());
+
+            lock (versions)
+            {
+                if (versions.ContainsKey(fileName))
+                {
+                    versions.Remove(fileName);
+                }
+            }
+
+            await SaveVersion();
+        }
+
+        private void DeleteVersionFile()
+        {
+            versions.Clear();
+
+            try
+            {
+                var versionFilePath = PathUtility.Combine(InstallDirectory, VersionFileName);
+
+                if (File.Exists(versionFilePath))
+                {
+                    var cFileInfo = new FileInfo(versionFilePath);
+
+                    // 読み取り専用属性がある場合は、読み取り専用属性を解除.
+                    if ((cFileInfo.Attributes & FileAttributes.ReadOnly) == FileAttributes.ReadOnly)
+                    {
+                        cFileInfo.Attributes = FileAttributes.Normal;
+                    }
+
+                    File.Delete(versionFilePath);
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.LogException(ex);
+            }
+        }
+    }
 }

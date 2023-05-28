@@ -177,11 +177,13 @@ namespace Modules.Master
 
         private async UniTask<double> LoadMasterFile(string filePath, AesCryptoKey cryptoKey)
         {
-            var sw = System.Diagnostics.Stopwatch.StartNew();
-
+            var time = 0d;
+            
             try
             {
                 await UniTask.SwitchToThreadPool();
+
+                var sw = System.Diagnostics.Stopwatch.StartNew();
 
                 var masterManager = MasterManager.Instance;
 
@@ -214,15 +216,17 @@ namespace Modules.Master
 
                 // レコード登録.
                 SetRecords(records);
+
+                sw.Stop();
+
+                time = sw.Elapsed.TotalMilliseconds;
             }
             finally
             {
                 await UniTask.SwitchToMainThread();
             }
 
-            sw.Stop();
-
-            return sw.Elapsed.TotalMilliseconds;
+            return time;
         }
 
         protected virtual async UniTask<byte[]> FileLoad(string filePath)
@@ -232,17 +236,16 @@ namespace Modules.Master
                 throw new FileNotFoundException(filePath);
             }
 
-            #if UNITY_2021_1_OR_NEWER
+            var bytes = new byte[0];
 
-            var bytes = await File.ReadAllBytesAsync(filePath);
+            using (var fs = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read, 4096, true))
+            {
+                bytes = new byte[fs.Length];
 
-            #else
+                await fs.ReadAsync(bytes, 0, (int)fs.Length);
+            }
 
-            var bytes = File.ReadAllBytes(filePath);
-
-            #endif
-
-            if (bytes == null)
+            if (bytes.IsEmpty())
             {
                 throw new FileLoadException();
             }
@@ -301,12 +304,6 @@ namespace Modules.Master
                 }
 
                 result = await Download(masterVersion, cancelToken);
-
-                // ファイルが閉じるまで待つ.
-                while (FileUtility.IsFileLocked(filePath))
-                {
-                    await UniTask.DelayFrame(5, cancellationToken: cancelToken);
-                }
 
                 // ファイルがなかったら失敗.
                 if (!File.Exists(filePath))
