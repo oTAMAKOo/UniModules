@@ -307,6 +307,17 @@ namespace Modules.ExternalAssets
 
         public async UniTask SaveVersion()
         {
+            if (string.IsNullOrEmpty(InstallDirectory)){ return; }
+
+            // StreamingAssetsのフォルダには書き込めない.
+            if (InstallDirectory.StartsWith(UnityPathUtility.StreamingAssetsPath)){ return; }
+
+            // ディレクトリ作成.
+            if (!Directory.Exists(InstallDirectory))
+            {
+                Directory.CreateDirectory(InstallDirectory);
+            }
+
             // 実行中は待機.
             while (saveVersionRunning)
             {

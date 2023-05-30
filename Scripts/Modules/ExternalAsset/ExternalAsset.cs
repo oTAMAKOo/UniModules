@@ -416,11 +416,6 @@ namespace Modules.ExternalAssets
                     await UniTask.NextFrame(CancellationToken.None);
                 }
 
-                // 呼び出し制限.
-                await updateAssetCallLimiter.Wait(cancelToken: CancellationToken.None);
-
-                if (linkedCancelToken.IsCancellationRequested){ return; }
-
                 // 更新中.
 
                 if (assetInfo.IsAssetBundle)
@@ -434,6 +429,11 @@ namespace Modules.ExternalAssets
                 }
 
                 updateQueueing.Add(resourcePath);
+
+                // 呼び出し制限.
+                await updateAssetCallLimiter.Wait(cancelToken: CancellationToken.None);
+
+                if (linkedCancelToken.IsCancellationRequested){ return; }
 
                 // ローカルバージョンが最新の場合は更新しない.
 
