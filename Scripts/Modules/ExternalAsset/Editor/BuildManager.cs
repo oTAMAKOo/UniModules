@@ -61,27 +61,27 @@ namespace Modules.ExternalAssets
 
         public static IBuildAssetBundlePipeline BundlePipeline { get; set; } = new BuildAssetBundlePipeline();
 
-		public static IAssetBundleFileHandler AssetBundleFileHandler { get; set; } = new DefaultAssetBundleFileHandler();
+        public static IAssetBundleFileHandler AssetBundleFileHandler { get; set; } = new DefaultAssetBundleFileHandler();
 
         //----- property -----
 
         //----- method -----
 
-		public static async UniTask<string> Build(string exportPath, AssetInfoManifest assetInfoManifest, bool openExportFolder = true)
+        public static async UniTask<string> Build(string exportPath, AssetInfoManifest assetInfoManifest, bool openExportFolder = true)
         {
             if (string.IsNullOrEmpty(exportPath)) { return null; }
 
-			// 既に存在する場合は削除.
-			if (Directory.Exists(exportPath))
+            // 既に存在する場合は削除.
+            if (Directory.Exists(exportPath))
             {
                 Directory.Delete(exportPath, true);
             }
 
-			// ディレクトリ作成.
-			if (!Directory.Exists(exportPath))
-			{
-				Directory.CreateDirectory(exportPath);
-			}
+            // ディレクトリ作成.
+            if (!Directory.Exists(exportPath))
+            {
+                Directory.CreateDirectory(exportPath);
+            }
 
             var versionHash = string.Empty;
 
@@ -90,7 +90,7 @@ namespace Modules.ExternalAssets
             assetManagement.Initialize();
 
             var buildAssetBundle = new BuildAssetBundle(BundlePipeline);
-			var buildAssetBundlePackage = new BuildAssetBundlePackage(AssetBundleFileHandler);
+            var buildAssetBundlePackage = new BuildAssetBundlePackage(AssetBundleFileHandler);
 
             EditorApplication.LockReloadAssemblies();
 
@@ -100,7 +100,7 @@ namespace Modules.ExternalAssets
 
                 var logBuilder = new StringBuilder();
 
-				var assetBundlePath = BuildAssetBundle.GetAssetBundleOutputPath();
+                var assetBundlePath = BuildAssetBundle.GetAssetBundleOutputPath();
 
                 using (new DisableStackTraceScope())
                 {
@@ -133,35 +133,35 @@ namespace Modules.ExternalAssets
 
                     #endif
 
-					//------ ファイルアセットを生成 ------
+                    //------ ファイルアセットを生成 ------
 
-					using (new BuildLogScope(logBuilder, processTime, "GenerateFileAsset"))
-					{
-						FileAssetGenerator.Generate(exportPath, assetInfoManifest);
-					}
+                    using (new BuildLogScope(logBuilder, processTime, "GenerateFileAsset"))
+                    {
+                        FileAssetGenerator.Generate(exportPath, assetInfoManifest);
+                    }
 
                     //------ AssetBundleをビルド ------
 
-					BuildResult buildResult = null;
+                    BuildResult buildResult = null;
 
-					var assetInfoManifestAssetPath = AssetDatabase.GetAssetPath(assetInfoManifest);
+                    var assetInfoManifestAssetPath = AssetDatabase.GetAssetPath(assetInfoManifest);
 
-					using (new BuildLogScope(logBuilder, processTime, "BuildAllAssetBundles"))
-					{
-						buildResult = buildAssetBundle.BuildAllAssetBundles();
-					}
+                    using (new BuildLogScope(logBuilder, processTime, "BuildAllAssetBundles"))
+                    {
+                        buildResult = buildAssetBundle.BuildAllAssetBundles();
+                    }
 
-					if (!buildResult.IsSuccess)
-					{
-						Debug.LogErrorFormat("Build ExternalAsset failed.\n{0}", buildResult.ExitCode);
+                    if (!buildResult.IsSuccess)
+                    {
+                        Debug.LogErrorFormat("Build ExternalAsset failed.\n{0}", buildResult.ExitCode);
 
-						return null;
-					}
+                        return null;
+                    }
 
-					if (UnityUtility.IsNull(assetInfoManifest))
-					{
-						assetInfoManifest = AssetDatabase.LoadAssetAtPath<AssetInfoManifest>(assetInfoManifestAssetPath);
-					}
+                    if (UnityUtility.IsNull(assetInfoManifest))
+                    {
+                        assetInfoManifest = AssetDatabase.LoadAssetAtPath<AssetInfoManifest>(assetInfoManifestAssetPath);
+                    }
 
                     //------ 未登録のアセットバンドル情報追加 ------
 
@@ -179,7 +179,7 @@ namespace Modules.ExternalAssets
 
                     //------ AssetBundleファイルをパッケージ化 ------
 
-					// 更新対象のアセット情報取得.
+                    // 更新対象のアセット情報取得.
 
                     var assetInfos = new AssetInfo[0];
                     var updatedAssetInfos = new AssetInfo[0];
@@ -187,9 +187,9 @@ namespace Modules.ExternalAssets
                     using (new BuildLogScope(logBuilder, processTime, "GetUpdateTargetAssetInfo"))
                     {
                         assetInfos = buildAssetBundle.GetAllTargetAssetInfo(assetInfoManifest);
-						
+                        
                         // 差分がある対象だけ抽出.
-						updatedAssetInfos = buildAssetBundle.GetUpdateTargetAssetInfo(assetInfoManifest, cachedFileLastWriteTimeTable);
+                        updatedAssetInfos = buildAssetBundle.GetUpdateTargetAssetInfo(assetInfoManifest, cachedFileLastWriteTimeTable);
                     }
 
                     // パッケージファイル作成.
@@ -205,7 +205,7 @@ namespace Modules.ExternalAssets
                     {
                         await AssetInfoManifestGenerator.SetAssetBundleFileInfo(assetBundlePath, assetInfoManifest, buildResult);
 
-						await AssetInfoManifestGenerator.SetFileAssetFileInfo(exportPath, assetInfoManifest);
+                        await AssetInfoManifestGenerator.SetFileAssetFileInfo(exportPath, assetInfoManifest);
                     }
 
                     //------ アセットバンドルの参照情報をAssetInfoManifestに書き込み ------

@@ -1,7 +1,6 @@
 ﻿
 #if ENABLE_CRIWARE_ADX || ENABLE_CRIWARE_SOFDEC
-﻿﻿
-using System;
+
 using System.IO;
 using System.Linq;
 using Extensions;
@@ -10,7 +9,7 @@ using Modules.ExternalAssets;
 
 namespace Modules.CriWare.Editor
 {
-	public sealed class CriAssetGenerator
+    public sealed class CriAssetGenerator
     {
         //----- params -----
 
@@ -20,9 +19,7 @@ namespace Modules.CriWare.Editor
 
         //----- method -----
 
-        /// <summary>
-        /// CriAssetをアセットバンドルの出力先にコピー.
-        /// </summary>
+        /// <summary> CriAssetをアセットバンドルの出力先にコピー. </summary>
         public static void Generate(string exportPath, AssetInfoManifest assetInfoManifest)
         {
             var projectResourceFolders = ProjectResourceFolders.Instance;
@@ -31,25 +28,46 @@ namespace Modules.CriWare.Editor
 
             var externalAssetPath = projectResourceFolders.ExternalAssetPath;
 
-			bool IsCriAssetInfo(AssetInfo assetInfo)
+            bool IsCriAssetInfo(AssetInfo assetInfo)
             {
                 if (string.IsNullOrEmpty(assetInfo.FileName)) { return false; }
 
-				if (assetInfo.IsAssetBundle){ return false; }
+                if (assetInfo.IsAssetBundle){ return false; }
 
                 var extension = Path.GetExtension(assetInfo.ResourcePath);
 
                 return CriAssetDefinition.AssetAllExtensions.Contains(extension);
-            };
+            }
 
             var assetInfos = assetInfoManifest.GetAssetInfos().Where(x => IsCriAssetInfo(x));
 
             foreach (var assetInfo in assetInfos)
             {
-                var source = PathUtility.Combine(new string[] { UnityPathUtility.GetProjectFolderPath(), externalAssetPath, assetInfo.ResourcePath });
-                var dest = PathUtility.Combine(new string[] { exportPath, assetInfo.FileName });
+                var source = PathUtility.Combine(UnityPathUtility.GetProjectFolderPath(), externalAssetPath, assetInfo.ResourcePath);
+                var dest = PathUtility.Combine(exportPath, assetInfo.FileName);
 
-				File.Copy(source, dest, true);
+                File.Copy(source, dest, true);
+            }
+        }
+
+        /// <summary> 出力先のCriAssetを全削除. </summary>
+        public static void Clean(string exportPath)
+        {
+            bool IsCriFile(string path)
+            {
+                var extension = Path.GetExtension(path);
+
+                return CriAssetDefinition.AssetAllExtensions.Contains(extension);
+            }
+
+            var files = Directory.EnumerateFiles(exportPath, "*.*", SearchOption.AllDirectories)
+                .Where(x => IsCriFile(x))
+                .Select(x => PathUtility.ConvertPathSeparator(x))
+                .ToArray();
+
+            foreach (var file in files)
+            {
+                File.Delete(file);
             }
         }
     }
