@@ -1,4 +1,4 @@
-﻿﻿
+﻿
 using System;
 using UnityEngine;
 using Newtonsoft.Json;
@@ -15,7 +15,7 @@ namespace Modules.Devkit.Prefs
 #if UNITY_EDITOR
 
     public static class ProjectPrefs
-	{
+    {
         //----- params -----
 
         //----- field -----
