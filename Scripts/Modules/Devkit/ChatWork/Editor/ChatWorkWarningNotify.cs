@@ -21,7 +21,7 @@ namespace Modules.Devkit.ChatWork
 
         //----- method -----
 
-		[DidReloadScripts]
+        [DidReloadScripts]
         public static void OnDidReloadScripts()
         {
             Instance.OnAssemblyReload();
@@ -34,9 +34,11 @@ namespace Modules.Devkit.ChatWork
             var builder = new StringBuilder();
 
             var branch = GitUtility.GetBranchName(Application.dataPath);
+            var buildTarget = EditorUserBuildSettings.activeBuildTarget;
 
-            builder.AppendFormat("(lightbulb) Warning Notify ({0} : {1}) (lightbulb)", EditorUserBuildSettings.activeBuildTarget, branch).AppendLine();
-            builder.AppendLine();
+            builder.AppendLine("[info]");
+            builder.AppendLine($"[title]Warning : {buildTarget}[/title]");
+            builder.AppendLine("[code]");
 
             foreach (var item in results)
             {
@@ -58,6 +60,9 @@ namespace Modules.Devkit.ChatWork
                     }
                 }
             }
+
+            builder.AppendLine("[/code]");
+            builder.AppendLine("[/info]");
 
             using (new DisableStackTraceScope())
             {
