@@ -1,4 +1,4 @@
-﻿
+
 using System;
 using UnityEngine;
 using UnityEditor;
@@ -28,7 +28,7 @@ namespace Modules.Devkit.Build
                 get { return ProjectPrefs.GetString(typeof(Prefs).FullName + "-builderClassTypeName", null); }
                 set { ProjectPrefs.SetString(typeof(Prefs).FullName + "-builderClassTypeName", value); }
             }
-		}
+        }
 
         //----- field -----
 
@@ -75,10 +75,10 @@ namespace Modules.Devkit.Build
                 defineSymbols = string.Join(";", applicationBuilder.DefineSymbols);
             }
 
-			using (new DisableStackTraceScope())
-			{
-				Debug.Log($"Set DefineSymbols : {defineSymbols}");
-			}
+            using (new DisableStackTraceScope())
+            {
+                Debug.Log($"Set DefineSymbols : {defineSymbols}");
+            }
 
             if (defineSymbols != currentDefineSymbols)
             {
@@ -129,41 +129,41 @@ namespace Modules.Devkit.Build
 
                         if (beforeBuildSuccess)
                         {
-	                        // ビルド実行.
+                            // ビルド実行.
 
-	                        EditorUserBuildSettings.development = applicationBuilder.Development;
+                            EditorUserBuildSettings.development = applicationBuilder.Development;
 
-	                        var option = EditorUserBuildSettings.development
-		                        ? BuildOptions.Development
-		                        : BuildOptions.None;
+                            var option = EditorUserBuildSettings.development
+                                ? BuildOptions.Development
+                                : BuildOptions.None;
 
-	                        option |= applicationBuilder.BuildOptions;
+                            option |= applicationBuilder.BuildOptions;
 
-	                        var buildReport = BuildPipeline.BuildPlayer(scenePaths, path, buildTarget, option);
+                            var buildReport = BuildPipeline.BuildPlayer(scenePaths, path, buildTarget, option);
 
-	                        success = buildReport.summary.result == BuildResult.Succeeded;
+                            success = buildReport.summary.result == BuildResult.Succeeded;
 
-	                        // ビルド結果処理.
-	                        if (success)
-	                        {
-		                        await applicationBuilder.OnBuildSuccess(buildReport);
-	                        }
-	                        else
-	                        {
-		                        await applicationBuilder.OnBuildError(buildReport);
-	                        }
+                            // ビルド結果処理.
+                            if (success)
+                            {
+                                await applicationBuilder.OnBuildSuccess(buildReport);
+                            }
+                            else
+                            {
+                                await applicationBuilder.OnBuildError(buildReport);
+                            }
 
-	                        // ビルド後処理.
-	                        await applicationBuilder.OnAfterBuild(success);
+                            // ビルド後処理.
+                            await applicationBuilder.OnAfterBuild(success);
 
-	                        // 出力先フォルダを開く.
-	                        if (success && !batchMode)
-	                        {
-		                        if (EditorUtility.DisplayDialog("Build", "Build finish.", "Open Folder", "Close"))
-		                        {
-			                        var _ = System.Diagnostics.Process.Start(directory);
-		                        }
-	                        }
+                            // 出力先フォルダを開く.
+                            if (success && !batchMode)
+                            {
+                                if (EditorUtility.DisplayDialog("Build", "Build finish.", "Open Folder", "Close"))
+                                {
+                                    var _ = System.Diagnostics.Process.Start(directory);
+                                }
+                            }
                         }
                     }
                 }
@@ -211,16 +211,20 @@ namespace Modules.Devkit.Build
 
         private static string PrepareExportDirectory(IApplicationBuilder applicationBuilder, bool batchMode)
         {
-			var directory = applicationBuilder.GetExportDirectory(batchMode);
+            var directory = applicationBuilder.GetExportDirectory(batchMode);
 
             if (string.IsNullOrEmpty(directory)) { return null; }
 
             var platformName = PlatformUtility.GetPlatformName();
 
-			directory = PathUtility.Combine(directory, platformName);
+            directory = PathUtility.Combine(directory, platformName);
 
             // 出力先作成.
-            if (!Directory.Exists(directory))
+            if (Directory.Exists(directory))
+            {
+                DirectoryUtility.Clean(directory);
+            }
+            else
             {
                 Directory.CreateDirectory(directory);
             }
@@ -228,7 +232,7 @@ namespace Modules.Devkit.Build
             return directory;
         }
 
-		private static string GetBuildTargetExtension(BuildTarget target)
+        private static string GetBuildTargetExtension(BuildTarget target)
         {
             var extension = string.Empty;
 
@@ -251,12 +255,12 @@ namespace Modules.Devkit.Build
                     extension = ".app";
                     break;
 
-				default:
-				    extension = string.Empty; // 拡張子を定義しない場合はフォルダに出力.
-					break;
+                default:
+                    extension = string.Empty; // 拡張子を定義しない場合はフォルダに出力.
+                    break;
             }
 
             return extension;
         }
-	}
+    }
 }
