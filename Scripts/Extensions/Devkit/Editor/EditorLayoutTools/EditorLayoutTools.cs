@@ -22,9 +22,9 @@ namespace Extensions.Devkit
 
         //----- field -----
 
-		private static GUIStyle dragtabStyle = null;
-		private static GUIStyle columnHeaderStyle = null;
-		private static GUIStyle foldoutStyle = null;
+        private static GUIStyle dragtabStyle = null;
+        private static GUIStyle columnHeaderStyle = null;
+        private static GUIStyle foldoutStyle = null;
 
         //----- property -----
 
@@ -95,7 +95,7 @@ namespace Extensions.Devkit
                     GUILayout.Space(10f);
                 }
             }
-		}
+        }
 
         public static bool ColorButton(string text, bool enabled, Color color, params GUILayoutOption[] options)
         {
@@ -146,7 +146,7 @@ namespace Extensions.Devkit
         public static bool Header(string text, bool state, Color? color = null)
         {
             var c = color ?? DefaultHeaderColor;
-			
+            
             var backgroundColor = state ? c : new Color(c.r - 0.2f, c.g - 0.2f, c.b - 0.2f);
 
             text = "<b><size=11>" + text + "</size></b>";
@@ -160,10 +160,10 @@ namespace Extensions.Devkit
                 text = "\u25BA " + text;
             }
 
-			if (dragtabStyle == null)
-			{
-				dragtabStyle = new GUIStyle("dragtab first");
-			}
+            if (dragtabStyle == null)
+            {
+                dragtabStyle = new GUIStyle("dragtab first");
+            }
 
             using (new BackgroundColorScope(backgroundColor))
             {
@@ -193,17 +193,17 @@ namespace Extensions.Devkit
 
         public static void ColumnHeader(Tuple<string, GUILayoutOptions>[] contents)
         {
-			if (columnHeaderStyle == null)
-			{
-				columnHeaderStyle = new GUIStyle("ShurikenModuleTitle")
-	            {
-	                font = new GUIStyle(EditorStyles.label).font,
-	                border = new RectOffset(2, 2, 2, 2),
-	                fixedHeight = 17,
-	                contentOffset = new Vector2(0f, -2f),
-	                alignment = TextAnchor.MiddleCenter,
-	            };
-			}
+            if (columnHeaderStyle == null)
+            {
+                columnHeaderStyle = new GUIStyle("ShurikenModuleTitle")
+                {
+                    font = new GUIStyle(EditorStyles.label).font,
+                    border = new RectOffset(2, 2, 2, 2),
+                    fixedHeight = 17,
+                    contentOffset = new Vector2(0f, -2f),
+                    alignment = TextAnchor.MiddleCenter,
+                };
+            }
 
             using (new EditorGUILayout.HorizontalScope())
             {
@@ -246,51 +246,51 @@ namespace Extensions.Devkit
             GUILayout.Space(-2f);
         }
 
-		public static bool Foldout(string text, bool display)
-		{
-			if (foldoutStyle == null)
-			{
-				foldoutStyle = new GUIStyle("ShurikenModuleTitle")
-				{
-					font = new GUIStyle(EditorStyles.label).font,
-					border = new RectOffset(2, 2, 2, 2),
-					fixedHeight = 20f,
-					contentOffset = new Vector2(20f, -2f),
-				};
+        public static bool Foldout(string text, bool display)
+        {
+            if (foldoutStyle == null)
+            {
+                foldoutStyle = new GUIStyle("ShurikenModuleTitle")
+                {
+                    font = new GUIStyle(EditorStyles.label).font,
+                    border = new RectOffset(2, 2, 2, 2),
+                    fixedHeight = 20f,
+                    contentOffset = new Vector2(20f, -2f),
+                };
 
-				foldoutStyle.normal.textColor = LabelColor;
-			}
+                foldoutStyle.normal.textColor = LabelColor;
+            }
 
-			var rect = GUILayoutUtility.GetRect(16f, 17f, foldoutStyle);
+            var rect = GUILayoutUtility.GetRect(16f, 17f, foldoutStyle);
 
-			var c = DefaultHeaderColor;
-			
-			var backgroundColor = display ? c : new Color(c.r - 0.2f, c.g - 0.2f, c.b - 0.2f);
+            var c = DefaultHeaderColor;
+            
+            var backgroundColor = display ? c : new Color(c.r - 0.2f, c.g - 0.2f, c.b - 0.2f);
 
-			using (new BackgroundColorScope(backgroundColor))
-			{
-				text = "<b><size=11>" + text + "</size></b>";
+            using (new BackgroundColorScope(backgroundColor))
+            {
+                text = "<b><size=11>" + text + "</size></b>";
 
-				GUI.Box(rect, text, foldoutStyle);
-			}
+                GUI.Box(rect, text, foldoutStyle);
+            }
 
-			var e = Event.current;
+            var e = Event.current;
 
-			var toggleRect = new Rect(rect.x + 4f, rect.y + 2f, 13f, 13f);
-			
-			if (e.type == EventType.Repaint) 
-			{
-				EditorStyles.foldout.Draw(toggleRect, false, false, display, false);
-			}
+            var toggleRect = new Rect(rect.x + 4f, rect.y + 2f, 13f, 13f);
+            
+            if (e.type == EventType.Repaint) 
+            {
+                EditorStyles.foldout.Draw(toggleRect, false, false, display, false);
+            }
 
-			if (e.type == EventType.MouseDown && rect.Contains(e.mousePosition)) 
-			{
-				display = !display;
-				e.Use();
-			}
+            if (e.type == EventType.MouseDown && rect.Contains(e.mousePosition)) 
+            {
+                display = !display;
+                e.Use();
+            }
 
-			return display;
-		}
+            return display;
+        }
 
         public static void Outline(Rect rect, Color color)
         {
