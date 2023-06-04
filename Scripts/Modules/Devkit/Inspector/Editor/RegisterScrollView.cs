@@ -1,4 +1,4 @@
-﻿
+
 using UnityEngine;
 using UnityEditor;
 using UnityEditorInternal;
@@ -18,7 +18,7 @@ namespace Modules.Devkit.Inspector
 
         protected List<T> contents = null;
 
-		protected ReorderableList reorderableList = null;
+        protected ReorderableList reorderableList = null;
 
         private Subject<T[]> onUpdateContents = null;
 
@@ -33,84 +33,84 @@ namespace Modules.Devkit.Inspector
 
         public RegisterScrollView()
         {
-			SetupReorderableList();
-		}
+            SetupReorderableList();
+        }
 
-		private void SetupReorderableList()
-		{
-			reorderableList = new ReorderableList(new List<T>(), typeof(T));
+        private void SetupReorderableList()
+        {
+            reorderableList = new ReorderableList(new List<T>(), typeof(T));
 
-			// ヘッダーは描画しない.
-			reorderableList.headerHeight = 0;
-			reorderableList.drawHeaderCallback = r => {};
+            // ヘッダーは描画しない.
+            reorderableList.headerHeight = 0;
+            reorderableList.drawHeaderCallback = r => {};
 
-			// 要素描画コールバック.
-			reorderableList.drawElementCallback = (r, index, isActive, isFocused) => 
-			{
-				r.position = Vector.SetY(r.position, r.position.y + 2f);
-				r.height = EditorGUIUtility.singleLineHeight;
+            // 要素描画コールバック.
+            reorderableList.drawElementCallback = (r, index, isActive, isFocused) => 
+            {
+                r.position = Vector.SetY(r.position, r.position.y + 2f);
+                r.height = EditorGUIUtility.singleLineHeight;
 
-				var content = contents.ElementAtOrDefault(index);
+                var content = contents.ElementAtOrDefault(index);
 
-				EditorGUI.BeginChangeCheck();
+                EditorGUI.BeginChangeCheck();
 
-				content = DrawContent(r, index, content);
+                content = DrawContent(r, index, content);
 
-				if (EditorGUI.EndChangeCheck())
-				{
-					contents[index] = content;
+                if (EditorGUI.EndChangeCheck())
+                {
+                    contents[index] = content;
 
-					ValidateContent(content);
+                    ValidateContent(content);
 
-					reorderableList.list = contents;
+                    reorderableList.list = contents;
 
-					if (onUpdateContents != null)
-					{
-						onUpdateContents.OnNext(contents.ToArray());
-					}
-				}
-			};
+                    if (onUpdateContents != null)
+                    {
+                        onUpdateContents.OnNext(contents.ToArray());
+                    }
+                }
+            };
 
-			// 順番入れ替えコールバック.
-			reorderableList.onReorderCallback = list =>
-			{
-				contents = list.list.Cast<T>().ToList();
+            // 順番入れ替えコールバック.
+            reorderableList.onReorderCallback = list =>
+            {
+                contents = list.list.Cast<T>().ToList();
 
-				if (onUpdateContents != null)
-				{
-					onUpdateContents.OnNext(contents.ToArray());
-				}
-			};
+                if (onUpdateContents != null)
+                {
+                    onUpdateContents.OnNext(contents.ToArray());
+                }
+            };
 
-			// 追加コールバック.
-			reorderableList.onAddCallback = list =>
-			{
-				contents.Add(CreateNewContent());
+            // 追加コールバック.
+            reorderableList.onAddCallback = list =>
+            {
+                contents.Add(CreateNewContent());
 
-				if (onUpdateContents != null)
-				{
-					onUpdateContents.OnNext(contents.ToArray());
-				}
-			};
+                if (onUpdateContents != null)
+                {
+                    onUpdateContents.OnNext(contents.ToArray());
+                }
+            };
 
-			// 削除コールバック.
-			reorderableList.onRemoveCallback = list =>
-			{
-				contents.RemoveAt(list.index);
+            // 削除コールバック.
+            reorderableList.onRemoveCallback = list =>
+            {
+                contents.RemoveAt(list.index);
 
-				if (onUpdateContents != null)
-				{
-					onUpdateContents.OnNext(contents.ToArray());
-				}
-			};
-		}
+                if (onUpdateContents != null)
+                {
+                    onUpdateContents.OnNext(contents.ToArray());
+                }
+            };
+        }
 
         public void SetContents(T[] contents)
         {
             this.contents = contents.ToList();
 
-			reorderableList.list = this.contents;
-		}
+            reorderableList.list = this.contents;
+        }
 
         public virtual void DrawGUI()
         {
@@ -121,13 +121,13 @@ namespace Modules.Devkit.Inspector
                 DrawHeaderContent();
 
                 GUILayout.FlexibleSpace();
-			}
+            }
 
             GUILayout.Space(2f);
 
-			reorderableList.DoLayoutList();
+            reorderableList.DoLayoutList();
 
-			GUILayout.Space(2f);
+            GUILayout.Space(2f);
         }
 
         public IObservable<T[]> OnUpdateContentsAsObservable()

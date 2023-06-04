@@ -1,4 +1,4 @@
-﻿
+
 using UnityEngine;
 using UnityEditor;
 using System.Linq;
@@ -7,7 +7,7 @@ using Modules.Devkit.AssetTuning.TextureAsset;
 
 namespace Modules.Devkit.AssetTuning
 {
-	public class TextureAssetTuner : AssetTuner
+    public class TextureAssetTuner : AssetTuner
     {
         //----- params -----
 
@@ -62,91 +62,91 @@ namespace Modules.Devkit.AssetTuning
             {
                 if (TextureConfig.Prefs.forceModifyOnImport)
                 {
-					ModifyTextureSettings(textureImporter);
-				}
+                    ModifyTextureSettings(textureImporter);
+                }
             }
         }
 
-		protected virtual void OnFirstImport(TextureImporter textureImporter)
+        protected virtual void OnFirstImport(TextureImporter textureImporter)
         {
             if (textureImporter == null) { return; }
 
-			var config = TextureConfig.Instance;
+            var config = TextureConfig.Instance;
 
-			if (config == null){ return; }
+            if (config == null){ return; }
 
-			var assetPath = textureImporter.assetPath;
+            var assetPath = textureImporter.assetPath;
 
-			var textureData = config.DefaultData;
+            var textureData = config.DefaultData;
 
-			if(!textureData.IsIgnoreTarget(assetPath))
-			{
-				TextureImporterModify.Modify(textureImporter, textureData, Platforms);
-			}
+            if(!textureData.IsIgnoreTarget(assetPath))
+            {
+                TextureImporterModify.Modify(textureImporter, textureData, Platforms);
+            }
 
-			ModifyTextureSettings(textureImporter);
-		}
+            ModifyTextureSettings(textureImporter);
+        }
 
-		private void ModifyTextureSettings(TextureImporter textureImporter)
-		{
-			var config = TextureConfig.Instance;
+        private void ModifyTextureSettings(TextureImporter textureImporter)
+        {
+            var config = TextureConfig.Instance;
 
-			if (config == null){ return; }
+            if (config == null){ return; }
 
-			var assetPath = textureImporter.assetPath;
+            var assetPath = textureImporter.assetPath;
 
-			var textureData = config.GetData(assetPath);
+            var textureData = config.GetData(assetPath);
 
-			TextureImporterModify.Modify(textureImporter, textureData, Platforms);
+            TextureImporterModify.Modify(textureImporter, textureData, Platforms);
 
-			OverrideCompressionFormat(textureImporter);
-		}
+            OverrideCompressionFormat(textureImporter);
+        }
 
-		private void OverrideCompressionFormat(TextureImporter textureImporter)
-		{
-			foreach (var platform in Platforms)
-			{
-				var textureSettings = textureImporter.GetPlatformTextureSettings(platform.ToString());
+        private void OverrideCompressionFormat(TextureImporter textureImporter)
+        {
+            foreach (var platform in Platforms)
+            {
+                var textureSettings = textureImporter.GetPlatformTextureSettings(platform.ToString());
 
-				var format = GetOverrideCompressionFormat(textureImporter, platform, textureSettings.format);
+                var format = GetOverrideCompressionFormat(textureImporter, platform, textureSettings.format);
 
-				if (format != textureSettings.format)
-				{
-					textureSettings.format = format;
+                if (format != textureSettings.format)
+                {
+                    textureSettings.format = format;
 
-					textureImporter.SetPlatformTextureSettings(textureSettings);
-				}
-			}
-		}
+                    textureImporter.SetPlatformTextureSettings(textureSettings);
+                }
+            }
+        }
 
-		protected virtual TextureImporterFormat GetOverrideCompressionFormat(TextureImporter textureImporter, BuildTargetGroup platform, TextureImporterFormat format)
-		{
-			switch (platform)
-			{
-				case BuildTargetGroup.Standalone:
-					{
-						if (textureImporter.textureType == TextureImporterType.NormalMap)
-						{
-							format = TextureImporterFormat.DXT5;
-						}
-						else
-						{
-							if (format == TextureImporterFormat.DXT5)
-							{
-								var hasAlpha = textureImporter.DoesSourceTextureHaveAlpha();
+        protected virtual TextureImporterFormat GetOverrideCompressionFormat(TextureImporter textureImporter, BuildTargetGroup platform, TextureImporterFormat format)
+        {
+            switch (platform)
+            {
+                case BuildTargetGroup.Standalone:
+                    {
+                        if (textureImporter.textureType == TextureImporterType.NormalMap)
+                        {
+                            format = TextureImporterFormat.DXT5;
+                        }
+                        else
+                        {
+                            if (format == TextureImporterFormat.DXT5)
+                            {
+                                var hasAlpha = textureImporter.DoesSourceTextureHaveAlpha();
 
-								// アルファ値なしの場合はDXT1に変更.
-								if (!hasAlpha)
-								{
-									format = TextureImporterFormat.DXT1;
-								}
-							}
-						}
-					}
-					break;
-			}
+                                // アルファ値なしの場合はDXT1に変更.
+                                if (!hasAlpha)
+                                {
+                                    format = TextureImporterFormat.DXT1;
+                                }
+                            }
+                        }
+                    }
+                    break;
+            }
 
-			return format;
-		}
-	}
+            return format;
+        }
+    }
 }

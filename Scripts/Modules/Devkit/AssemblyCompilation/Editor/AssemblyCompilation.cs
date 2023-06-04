@@ -11,6 +11,20 @@ using Modules.Devkit.Prefs;
 
 namespace Modules.Devkit.AssemblyCompilation
 {
+    public sealed class CompileResult
+    {
+        /// <summary> アセンブリ名. </summary>
+        public string Assembly { get; private set; }
+        /// <summary> エラー. </summary>
+        public CompilerMessage[] Messages { get; private set; }
+
+        public CompileResult(string assembly, CompilerMessage[] messages)
+        {
+            Assembly = assembly;
+            Messages = messages;
+        }
+    }
+
     public abstract class AssemblyCompilation<TInstance> : Singleton<TInstance> where TInstance : AssemblyCompilation<TInstance>
     {
         //----- params -----
@@ -27,20 +41,6 @@ namespace Modules.Devkit.AssemblyCompilation
             {
                 get { return ProjectPrefs.GetString(typeof(Prefs).FullName + "-Result", string.Empty); }
                 set { ProjectPrefs.SetString(typeof(Prefs).FullName + "-Result", value); }
-            }
-        }
-
-        public sealed class CompileResult
-        {
-            /// <summary> アセンブリ名. </summary>
-            public string Assembly { get; private set; }
-            /// <summary> エラー. </summary>
-            public CompilerMessage[] Messages { get; private set; }
-
-            public CompileResult(string assembly, CompilerMessage[] messages)
-            {
-                Assembly = assembly;
-                Messages = messages;
             }
         }
 

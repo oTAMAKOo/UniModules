@@ -1,4 +1,4 @@
-﻿
+
 using UnityEngine;
 using UnityEditor;
 using UnityEditor.Compilation;
@@ -19,11 +19,11 @@ namespace Extensions.Devkit
 
         public const string MetaFileExtension = ".meta";
 
-		/// <summary> 編集履歴に登録. </summary>
-		public static void RegisterUndo<T>(T target) where T : Object
-		{
-			RegisterUndo(typeof(T).FullName + " Undo", target);
-		}
+        /// <summary> 編集履歴に登録. </summary>
+        public static void RegisterUndo<T>(T target) where T : Object
+        {
+            RegisterUndo(typeof(T).FullName + " Undo", target);
+        }
 
         /// <summary> 編集履歴に登録. </summary>
         public static void RegisterUndo(string name, params Object[] objects)
@@ -111,15 +111,15 @@ namespace Extensions.Devkit
         /// <summary> コンパイル実行. </summary>
         public static void RequestScriptCompilation()
         {
-			#if UNITY_2021_2_OR_NEWER
+            #if UNITY_2021_2_OR_NEWER
 
-			CompilationPipeline.RequestScriptCompilation(RequestScriptCompilationOptions.CleanBuildCache);
+            CompilationPipeline.RequestScriptCompilation(RequestScriptCompilationOptions.CleanBuildCache);
 
             #elif UNITY_2019_3_OR_NEWER
 
             CompilationPipeline.RequestScriptCompilation();
 
-			#endif
+            #endif
         }
 
         #region Prefab
@@ -140,13 +140,13 @@ namespace Extensions.Devkit
 
         #region Asset
 
-		/// <summary> アセットが存在するか </summary>
-		public static bool IsExists(string assetPath)
-		{
-			var path = UnityPathUtility.ConvertAssetPathToFullPath(assetPath);
+        /// <summary> アセットが存在するか </summary>
+        public static bool IsExists(string assetPath)
+        {
+            var path = UnityPathUtility.ConvertAssetPathToFullPath(assetPath);
 
-			return File.Exists(path);
-		}
+            return File.Exists(path);
+        }
 
         public static Object SelectAsset(string assetPath)
         {
@@ -263,7 +263,7 @@ namespace Extensions.Devkit
 
                 foreach (var file in files)
                 {
-					var path = PathUtility.ConvertPathSeparator(file);
+                    var path = PathUtility.ConvertPathSeparator(file);
 
                     var assetPath = path.Replace(Application.dataPath, "Assets");
 

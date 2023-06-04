@@ -9,93 +9,93 @@ using Modules.Devkit.Prefs;
 
 namespace Modules.Devkit.AssetTuning.TextureAsset
 {
-	public enum PlatformType
-	{
-		Default,
-		Standalone,
-		iOS,
-		Android,
-	}
+    public enum PlatformType
+    {
+        Default,
+        Standalone,
+        iOS,
+        Android,
+    }
 
-	public sealed class TextureConfig : ReloadableScriptableObject<TextureConfig>
-	{
+    public sealed class TextureConfig : ReloadableScriptableObject<TextureConfig>
+    {
         //----- params -----
 
-		public static class Prefs
-		{
-			public static bool forceModifyOnImport
-			{
-				get { return ProjectPrefs.GetBool(typeof(Prefs).FullName + "-forceModifyOnImport", false); }
-				set { ProjectPrefs.SetBool(typeof(Prefs).FullName + "-forceModifyOnImport", value); }
-			}
-		}
+        public static class Prefs
+        {
+            public static bool forceModifyOnImport
+            {
+                get { return ProjectPrefs.GetBool(typeof(Prefs).FullName + "-forceModifyOnImport", false); }
+                set { ProjectPrefs.SetBool(typeof(Prefs).FullName + "-forceModifyOnImport", value); }
+            }
+        }
 
-		//----- field -----
+        //----- field -----
 
-		[SerializeField]
-		private TextureData defaultData = null;
-		[SerializeField]
-		private TextureData[] customData = null;
+        [SerializeField]
+        private TextureData defaultData = null;
+        [SerializeField]
+        private TextureData[] customData = null;
 
-		// フォルダパスをキーにしたキャッシュ.
-		private Dictionary<string, TextureData> cache = null;
+        // フォルダパスをキーにしたキャッシュ.
+        private Dictionary<string, TextureData> cache = null;
 
         //----- property -----
 
-		public TextureData DefaultData
-		{
-			get { return defaultData ?? (defaultData = new TextureData()); }
-		}
+        public TextureData DefaultData
+        {
+            get { return defaultData ?? (defaultData = new TextureData()); }
+        }
 
         //----- method -----
 
-		protected override void OnLoadInstance()
-		{
-			BuildCache(true);
-		}
+        protected override void OnLoadInstance()
+        {
+            BuildCache(true);
+        }
 
-		public TextureData CreateNewData()
-		{
-			var newData = DefaultData.DeepCopy();
+        public TextureData CreateNewData()
+        {
+            var newData = DefaultData.DeepCopy();
 
-			//------ Optionデータは引き継がない ------
+            //------ Optionデータは引き継がない ------
 
-			newData.ignoreFolders = new string[0];
-			newData.ignoreFolderNames = new string[0];
+            newData.ignoreFolders = new string[0];
+            newData.ignoreFolderNames = new string[0];
 
-			//----------------------------------------
+            //----------------------------------------
 
-			return newData;
-		}
+            return newData;
+        }
 
-		public TextureData GetData(string assetPath)
-		{
-			BuildCache();
+        public TextureData GetData(string assetPath)
+        {
+            BuildCache();
 
-			assetPath = PathUtility.ConvertPathSeparator(assetPath);
+            assetPath = PathUtility.ConvertPathSeparator(assetPath);
 
-			var data = cache
-				.Where(x => assetPath.StartsWith(x.Key))
-				.Where(x => !x.Value.IsIgnoreTarget(assetPath))
-				.FindMax(x => x.Key.Length);
+            var data = cache
+                .Where(x => assetPath.StartsWith(x.Key))
+                .Where(x => !x.Value.IsIgnoreTarget(assetPath))
+                .FindMax(x => x.Key.Length);
 
-			return data.IsDefault() ? null : data.Value;
-		}
+            return data.IsDefault() ? null : data.Value;
+        }
 
-		private void BuildCache(bool forceReBuild = false)
-		{
-			if (!forceReBuild && cache != null) { return; }
+        private void BuildCache(bool forceReBuild = false)
+        {
+            if (!forceReBuild && cache != null) { return; }
 
-			cache = new Dictionary<string, TextureData>();
+            cache = new Dictionary<string, TextureData>();
 
-			foreach (var item in customData)
-			{
-				var folderPath = AssetDatabase.GUIDToAssetPath(item.folderGuid);
+            foreach (var item in customData)
+            {
+                var folderPath = AssetDatabase.GUIDToAssetPath(item.folderGuid);
 
-				folderPath = PathUtility.ConvertPathSeparator(folderPath);
+                folderPath = PathUtility.ConvertPathSeparator(folderPath);
 
-				cache[folderPath] = item;
-			}
-		}
-	}
+                cache[folderPath] = item;
+            }
+        }
+    }
 }

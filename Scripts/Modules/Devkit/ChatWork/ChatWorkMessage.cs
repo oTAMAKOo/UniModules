@@ -1,5 +1,6 @@
-﻿
+
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Net.Http;
 using System.Text;
@@ -13,7 +14,7 @@ namespace Modules.Devkit.ChatWork
 
         //----- field -----
 
-		private static HttpClient httpClient = null;
+        private static HttpClient httpClient = null;
 
         private string apiToken = null;
 
@@ -28,15 +29,15 @@ namespace Modules.Devkit.ChatWork
             this.apiToken = apiToken;
             this.roomId = roomId;
 
-			if (httpClient == null)
-			{
-				httpClient = new HttpClient()
-				{
-					Timeout = TimeSpan.FromSeconds(30),
-				};
+            if (httpClient == null)
+            {
+                httpClient = new HttpClient()
+                {
+                    Timeout = TimeSpan.FromSeconds(30),
+                };
 
-				httpClient.DefaultRequestHeaders.Add("X-ChatWorkToken", apiToken);
-			}
+                httpClient.DefaultRequestHeaders.Add("x-chatworktoken", apiToken);
+            }
         }
 
         public async Task<string> SendMessage(string message, bool selfUnRead = false)
@@ -46,24 +47,31 @@ namespace Modules.Devkit.ChatWork
                 Method = HttpMethod.Post,
                 Headers =
                 {
-                    { "Accept", "application/json" },
-                    { "X-ChatWorkToken", apiToken },
+                    { "accept", "application/json" },
                 },
             };
 
-            var requestUrl = GetRequestUrl() + "messages";
-
             // 送信情報作成.
 
-            requestUrl += $"?body={Uri.EscapeDataString(message)}&self_unread={(selfUnRead ? 1 : 0)}";
+            var content = new FormUrlEncodedContent(new Dictionary<string, string>
+            {
+                { "self_unread", $"{(selfUnRead ? 1 : 0)}" },
+                { "body", message },
+            });
+
+            requestMessage.Content = content;
+
+            // URL.
+
+            var requestUrl = GetRequestUrl() + "messages";
 
             requestMessage.RequestUri = new Uri(requestUrl);
-            
+
             // 送信.
 
             var result = await SendAsync(requestMessage);
 
-			return result;
+            return result;
         }
 
         public async Task<string> SendFile(string filePath, string message = null, string displayName = null)
@@ -77,74 +85,74 @@ namespace Modules.Devkit.ChatWork
 
             var result = string.Empty;
 
-			using (var multipart = new MultipartFormDataContent("---boundary---"))
-			{
-				// ファイル.
+            using (var multipart = new MultipartFormDataContent("---boundary---"))
+            {
+                // ファイル.
 
-				var fileContent = new StreamContent(File.OpenRead(filePath));
+                var fileContent = new StreamContent(File.OpenRead(filePath));
 
-				fileContent.Headers.Add("Content-Disposition", $@"form-data; name=""file""; filename=""{displayName}""");
+                fileContent.Headers.Add("Content-Disposition", $@"form-data; name=""file""; filename=""{displayName}""");
 
-				multipart.Add(fileContent);
+                multipart.Add(fileContent);
 
-				// メッセージ.
+                // メッセージ.
 
-				if (!string.IsNullOrEmpty(message))
-				{
-					var messageContent = new StreamContent(new MemoryStream(Encoding.UTF8.GetBytes(message)));
+                if (!string.IsNullOrEmpty(message))
+                {
+                    var messageContent = new StreamContent(new MemoryStream(Encoding.UTF8.GetBytes(message)));
 
-					messageContent.Headers.Add("Content-Disposition", $@"form-data; name=""message""");
+                    messageContent.Headers.Add("Content-Disposition", $@"form-data; name=""message""");
 
-					multipart.Add(messageContent);
-				}
+                    multipart.Add(messageContent);
+                }
 
-				// 送信.
+                // 送信.
 
-				var requestUrl = GetRequestUrl() + "files";
+                var requestUrl = GetRequestUrl() + "files";
 
-				result = await PostAsync(requestUrl, multipart);
-			}
+                result = await PostAsync(requestUrl, multipart);
+            }
 
             return result;
         }
 
-		private async Task<string> SendAsync(HttpRequestMessage requestMessage)
-		{
-			var result = string.Empty;
+        private async Task<string> SendAsync(HttpRequestMessage requestMessage)
+        {
+            var result = string.Empty;
 
-			using (var response = await httpClient.SendAsync(requestMessage))
-			{
-				if (response.IsSuccessStatusCode)
-				{
-					result = await response.Content.ReadAsStringAsync();
-				}
-				else
-				{
-					throw new Exception(response.ToString());
-				}
-			}
+            using (var response = await httpClient.SendAsync(requestMessage))
+            {
+                if (response.IsSuccessStatusCode)
+                {
+                    result = await response.Content.ReadAsStringAsync();
+                }
+                else
+                {
+                    throw new Exception(response.ToString());
+                }
+            }
 
-			return result;
-		}
+            return result;
+        }
 
-		private async Task<string> PostAsync(string requestUrl, MultipartFormDataContent multipart)
-		{
-			var result = string.Empty;
+        private async Task<string> PostAsync(string requestUrl, MultipartFormDataContent multipart)
+        {
+            var result = string.Empty;
 
-			using (var response = await httpClient.PostAsync(requestUrl, multipart))
-			{
-				if (response.IsSuccessStatusCode)
-				{
-					result = await response.Content.ReadAsStringAsync();
-				}
-				else
-				{
-					throw new Exception(response.ToString());
-				}
-			}
+            using (var response = await httpClient.PostAsync(requestUrl, multipart))
+            {
+                if (response.IsSuccessStatusCode)
+                {
+                    result = await response.Content.ReadAsStringAsync();
+                }
+                else
+                {
+                    throw new Exception(response.ToString());
+                }
+            }
 
-			return result;
-		}
+            return result;
+        }
 
         private string GetRequestUrl()
         {

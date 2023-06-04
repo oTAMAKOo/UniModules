@@ -1,17 +1,18 @@
 ﻿
 using UnityEngine;
 using UnityEditor;
-using UnityEditor.Callbacks;
 using UnityEditor.Compilation;
+using UnityEditor.Callbacks;
 using System.Linq;
 using System.Text;
 using Cysharp.Threading.Tasks;
 using Extensions;
 using Modules.Devkit.AssemblyCompilation;
+using Modules.Devkit.ChatWork;
 
-namespace Modules.Devkit.ChatWork
+namespace Modules.Devkit.ValidateAsset.UnityWarning
 {
-    public sealed class ChatWorkWarningNotify : AssemblyCompilation<ChatWorkWarningNotify>
+    public sealed class UnityWarningChatWorkNotify : AssemblyCompilation<UnityWarningChatWorkNotify>
     {
         //----- params -----
 
@@ -27,6 +28,11 @@ namespace Modules.Devkit.ChatWork
             Instance.OnAssemblyReload();
         }
 
+        public void SendNotifyMessage()
+        {
+            RequestCompile();
+        }
+
         protected override void OnCompileFinished(CompileResult[] results)
         {
             var hasWarning = false;
@@ -36,9 +42,8 @@ namespace Modules.Devkit.ChatWork
             var branch = GitUtility.GetBranchName(Application.dataPath);
             var buildTarget = EditorUserBuildSettings.activeBuildTarget;
 
-            builder.AppendLine("[info]");
-            builder.AppendLine($"[title]Warning : {buildTarget}[/title]");
-            builder.AppendLine("[code]");
+            builder.Append("[info]");
+            builder.Append($"[title]Warning {buildTarget} ({branch})[/title]");
 
             foreach (var item in results)
             {
@@ -48,52 +53,48 @@ namespace Modules.Devkit.ChatWork
                 {
                     hasWarning = true;
 
-                    builder.AppendFormat("Assembly : {0}", item.Assembly).AppendLine();
-                    builder.AppendLine();
+                    builder.Append(item.Assembly);
+                    builder.Append("[code]");
 
                     foreach (var content in contents)
                     {
-                        var message = content.message.Replace("): warning ", ")\n");
+                        var warningText = content.message.Replace("): warning ", ")\n");
 
-                        builder.AppendFormat("{0}", message).AppendLine();
+                        builder.AppendFormat("{0}", warningText).AppendLine();
                         builder.AppendLine();
                     }
+
+                    builder.Append("[/code]");
                 }
             }
 
-            builder.AppendLine("[/code]");
-            builder.AppendLine("[/info]");
+            builder.Append("[/info]");
 
-            using (new DisableStackTraceScope())
-            {
-                Debug.Log("CompileFinished.");
-            }
+            var message = hasWarning ? builder.ToString() : string.Empty;
 
-            if (hasWarning)
-            {
-                PostMessage(builder.ToString()).Forget();
-            }
-            else
-            {
-                Exit(0).Forget();
-            }
+            PostMessage(message).Forget();
         }
 
         private async UniTask PostMessage(string message)
         {
             var exitCode = 0;
 
-            var config = ChatWorkNotifyConfig.Instance;
-
-            if (config != null)
+            if (!string.IsNullOrEmpty(message))
             {
-                var chatWorkMessage = new ChatWorkMessage(config.ApiToken, config.RoomId);
+                var config = UnityWarningChatWorkNotifyConfig.Instance;
 
-                await chatWorkMessage.SendMessage(message);
-            }
-            else
-            {
-                exitCode = 1;
+                if (config != null)
+                {
+                    var setting = config.LoadSettingJson();
+
+                    var chatWorkMessage = new ChatWorkMessage(setting.ApiToken, setting.RoomId);
+
+                    await chatWorkMessage.SendMessage(message);
+                }
+                else
+                {
+                    exitCode = 1;
+                }
             }
 
             Exit(exitCode).Forget();
