@@ -56,10 +56,7 @@ namespace Modules.Master
 
         public static IMaster Create()
         {
-            if (instance != null)
-            {
-                instance.Delete();
-            }
+            if (instance != null){ return instance; }
 
             var masterManager = MasterManager.Instance;
 
