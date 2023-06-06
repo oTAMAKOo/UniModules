@@ -43,9 +43,9 @@ namespace Modules.Master
         {
             get
             {
-                if (instance == null)
+                if (!IsExist())
                 {
-                    Debug.LogError($"{typeof(TMaster).FullName} not created.");
+                    throw new InvalidOperationException($"{typeof(TMaster).FullName} not created.");
                 }
 
                 return instance;
@@ -76,6 +76,11 @@ namespace Modules.Master
             masterManager.Remove(instance);
 
             instance = null;
+        }
+
+        public static bool IsExist()
+        {
+            return instance != null;
         }
 
         public void SetRecords(TMasterRecord[] masterRecords)
