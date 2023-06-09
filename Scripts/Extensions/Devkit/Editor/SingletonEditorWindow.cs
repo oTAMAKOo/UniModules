@@ -12,8 +12,8 @@ namespace Extensions.Devkit
 
         //----- field -----
 
-		[NonSerialized]
-		private static T instance = null;
+        [NonSerialized]
+        private static T instance = null;
 
         private Subject<Unit> onDestroy = null;
 

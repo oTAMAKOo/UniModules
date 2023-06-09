@@ -12,27 +12,27 @@ using Modules.Devkit.Project;
 namespace Modules.Crypto
 {
     public abstract class KeyFileWindow<TInstance, TKeyType> : SingletonEditorWindow<TInstance> 
-		where TInstance : KeyFileWindow<TInstance, TKeyType>
-		where TKeyType : Enum
+        where TInstance : KeyFileWindow<TInstance, TKeyType>
+        where TKeyType : Enum
     {
         //----- params -----
 
         private static readonly Vector2 WindowSize = new Vector2(580f, 500f);
 
-		private sealed class KeyInfo
-		{
-			public TKeyType KeyType { get; set; } 
-			public string FileName { get; set; } 
-			public string Key { get; set; } 
-			public string Iv { get; set; } 
-		}
+        private sealed class KeyInfo
+        {
+            public TKeyType KeyType { get; set; } 
+            public string FileName { get; set; } 
+            public string Key { get; set; } 
+            public string Iv { get; set; } 
+        }
 
-		//----- field -----
+        //----- field -----
 
-		private List<KeyInfo> keyInfos = null;
+        private List<KeyInfo> keyInfos = null;
 
-		private Vector2 scrollPosition = Vector2.zero;
-		
+        private Vector2 scrollPosition = Vector2.zero;
+        
         private IKeyFileManager<TKeyType> keyFileManager = null;
 
         //----- property -----
@@ -42,142 +42,142 @@ namespace Modules.Crypto
         public static async UniTask Open(IKeyFileManager<TKeyType> keyFileManager)
         {
             Instance.minSize = WindowSize;
-			Instance.maxSize = WindowSize;
+            Instance.maxSize = WindowSize;
 
             Instance.titleContent = new GUIContent("Generate KeyFile");
 
             Instance.keyFileManager = keyFileManager;
 
-			await Instance.LoadKeyInfo();
+            await Instance.LoadKeyInfo();
 
-			Instance.ShowUtility();
+            Instance.ShowUtility();
         }
 
         void OnGUI()
         {
-			var projectUnityFolders = ProjectUnityFolders.Instance;
+            var projectUnityFolders = ProjectUnityFolders.Instance;
 
-			if (projectUnityFolders == null){ return; }
+            if (projectUnityFolders == null){ return; }
 
-			var streamingAssetPath =  projectUnityFolders.StreamingAssetPath;
+            var streamingAssetPath =  projectUnityFolders.StreamingAssetPath;
 
-			if (string.IsNullOrEmpty(streamingAssetPath))
-			{
-				EditorGUILayout.HelpBox("StreamingAssets folder is not registered in ProjectFolders.", MessageType.Error);
+            if (string.IsNullOrEmpty(streamingAssetPath))
+            {
+                EditorGUILayout.HelpBox("StreamingAssets folder is not registered in ProjectFolders.", MessageType.Error);
 
-				return;
-			}
+                return;
+            }
 
-			EditorGUILayout.Separator();
+            EditorGUILayout.Separator();
 
-			EditorGUILayout.SelectableLabel("KeyFile Path : " + streamingAssetPath, GUILayout.Height(EditorGUIUtility.singleLineHeight));
+            EditorGUILayout.SelectableLabel("KeyFile Path : " + streamingAssetPath, GUILayout.Height(EditorGUIUtility.singleLineHeight));
 
-			using (var scrollViewScope = new EditorGUILayout.ScrollViewScope(scrollPosition))
-			{
-				foreach (var keyInfo in keyInfos)
-				{
-					using (new ContentsScope())
-					{
-						using (new EditorGUILayout.HorizontalScope())
-						{
-							EditorGUILayout.SelectableLabel("KeyType : " + keyInfo.KeyType, GUILayout.Height(EditorGUIUtility.singleLineHeight));
+            using (var scrollViewScope = new EditorGUILayout.ScrollViewScope(scrollPosition))
+            {
+                foreach (var keyInfo in keyInfos)
+                {
+                    using (new ContentsScope())
+                    {
+                        using (new EditorGUILayout.HorizontalScope())
+                        {
+                            EditorGUILayout.SelectableLabel("KeyType : " + keyInfo.KeyType, GUILayout.Height(EditorGUIUtility.singleLineHeight));
 
-							GUILayout.FlexibleSpace();
+                            GUILayout.FlexibleSpace();
 
-							using (new DisableScope(keyInfo.Key.IsNullOrEmpty() || keyInfo.Iv.IsNullOrEmpty()))
-							{
-								if (GUILayout.Button("Generate", EditorStyles.miniButton, GUILayout.Width(80f)))
-								{
-									var loadPath = keyFileManager.GetLoadPath(keyInfo.KeyType);
+                            using (new DisableScope(keyInfo.Key.IsNullOrEmpty() || keyInfo.Iv.IsNullOrEmpty()))
+                            {
+                                if (GUILayout.Button("Generate", EditorStyles.miniButton, GUILayout.Width(80f)))
+                                {
+                                    var loadPath = keyFileManager.GetLoadPath(keyInfo.KeyType);
 
-									var assetPath = PathUtility.Combine(streamingAssetPath, loadPath);
+                                    var assetPath = PathUtility.Combine(streamingAssetPath, loadPath);
 
-									var filePath = UnityPathUtility.ConvertAssetPathToFullPath(assetPath);
+                                    var filePath = UnityPathUtility.ConvertAssetPathToFullPath(assetPath);
 
-									keyFileManager.Create(filePath, keyInfo.Key, keyInfo.Iv);
-									
-									AssetDatabase.ImportAsset(assetPath);
-								}
-							}
-						}
+                                    keyFileManager.Create(filePath, keyInfo.Key, keyInfo.Iv);
+                                    
+                                    AssetDatabase.ImportAsset(assetPath);
+                                }
+                            }
+                        }
 
-						EditorGUILayout.SelectableLabel("FileName : " + keyInfo.FileName, GUILayout.Height(EditorGUIUtility.singleLineHeight));
+                        EditorGUILayout.SelectableLabel("FileName : " + keyInfo.FileName, GUILayout.Height(EditorGUIUtility.singleLineHeight));
 
-						using (new LabelWidthScope(50f))
-						{
-							var key = EditorGUILayout.TextField("Key", keyInfo.Key);
+                        using (new LabelWidthScope(50f))
+                        {
+                            var key = EditorGUILayout.TextField("Key", keyInfo.Key);
 
-							if (EditorGUI.EndChangeCheck())
-							{
-								if (!key.IsNullOrEmpty())
-								{
-									if (key.Length == 32)
-									{
-										keyInfo.Key = key;
-									}
-									else
-									{
-										Debug.LogError("Key must be 32 characters");
-									}
-								}
-							}
+                            if (EditorGUI.EndChangeCheck())
+                            {
+                                if (!key.IsNullOrEmpty())
+                                {
+                                    if (key.Length == 32)
+                                    {
+                                        keyInfo.Key = key;
+                                    }
+                                    else
+                                    {
+                                        Debug.LogError("Key must be 32 characters");
+                                    }
+                                }
+                            }
 
-							GUILayout.Space(2f);
-	                
-							EditorGUI.BeginChangeCheck();
+                            GUILayout.Space(2f);
+                    
+                            EditorGUI.BeginChangeCheck();
 
-							var iv = EditorGUILayout.TextField("Iv", keyInfo.Iv);
+                            var iv = EditorGUILayout.TextField("Iv", keyInfo.Iv);
 
-							if (EditorGUI.EndChangeCheck())
-							{
-								if (!iv.IsNullOrEmpty())
-								{
-									if (iv.Length == 16)
-									{
-										keyInfo.Iv = iv;
-									}
-									else
-									{
-										Debug.LogError("Iv must be 16 characters");
-									}
-								}
-							}
-						}
-					}
-				}
+                            if (EditorGUI.EndChangeCheck())
+                            {
+                                if (!iv.IsNullOrEmpty())
+                                {
+                                    if (iv.Length == 16)
+                                    {
+                                        keyInfo.Iv = iv;
+                                    }
+                                    else
+                                    {
+                                        Debug.LogError("Iv must be 16 characters");
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
 
-				scrollPosition = scrollViewScope.scrollPosition;
-			}
-		}
+                scrollPosition = scrollViewScope.scrollPosition;
+            }
+        }
 
-		private async UniTask LoadKeyInfo()
-		{
-			keyInfos = new List<KeyInfo>();
+        private async UniTask LoadKeyInfo()
+        {
+            keyInfos = new List<KeyInfo>();
 
-			await keyFileManager.Load();
+            await keyFileManager.Load();
 
-			var enumNames = Enum.GetNames(typeof(TKeyType));
+            var enumNames = Enum.GetNames(typeof(TKeyType));
 
-			foreach (var enumName in enumNames)
-			{
-				var enumValue = EnumExtensions.FindByName(enumName , default(TKeyType));
-				
-				var loadPath = keyFileManager.GetLoadPath(enumValue);
+            foreach (var enumName in enumNames)
+            {
+                var enumValue = EnumExtensions.FindByName(enumName , default(TKeyType));
+                
+                var loadPath = keyFileManager.GetLoadPath(enumValue);
 
-				var fileName = Path.GetFileName(loadPath);
-				
-				var keyData = keyFileManager.Get(enumValue);
+                var fileName = Path.GetFileName(loadPath);
+                
+                var keyData = keyFileManager.Get(enumValue);
 
-				var keyInfo = new KeyInfo()
-				{
-					KeyType = enumValue,
-					FileName = fileName,
-					Key = keyData != null ? keyData.Key : null,
-					Iv = keyData != null ? keyData.Iv : null,
-				};
+                var keyInfo = new KeyInfo()
+                {
+                    KeyType = enumValue,
+                    FileName = fileName,
+                    Key = keyData != null ? keyData.Key : null,
+                    Iv = keyData != null ? keyData.Iv : null,
+                };
 
-				keyInfos.Add(keyInfo);
-			}
-		}
-	}
+                keyInfos.Add(keyInfo);
+            }
+        }
+    }
 }

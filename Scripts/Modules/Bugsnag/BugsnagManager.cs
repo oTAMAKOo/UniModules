@@ -1,4 +1,4 @@
-﻿
+
 #if ENABLE_BUGSNAG
 
 using UnityEngine;
@@ -6,7 +6,9 @@ using System;
 using System.Linq;
 using System.Collections.Generic;
 using BugsnagUnity;
+using Cysharp.Threading.Tasks;
 using Extensions;
+using MessagePack;
 
 namespace Modules.Bugsnag
 {
@@ -19,12 +21,31 @@ namespace Modules.Bugsnag
         [Label("user")]
         User,
     }
+
+    [MessagePackObject(true)]
+    public sealed class BugsnagApiKeyData
+    {
+        public string apiKey = null;
+    }
+
+    public interface IBugsnagManager<TKeyType> where TKeyType : Enum
+    {
+        string GetApiKeyFileName(TKeyType keyType);
+
+        string GetFileDirectory(TKeyType keyType);
+
+        UniTask<AesCryptoKey> GetCryptoKey();
+    }
     
-    public abstract class BugsnagManager<TInstance> : Singleton<TInstance> where TInstance : BugsnagManager<TInstance>
+    public abstract class BugsnagManager<TInstance, TBugsnagType> : Singleton<TInstance> , IBugsnagManager<TBugsnagType>
+        where TInstance : BugsnagManager<TInstance, TBugsnagType>
+        where TBugsnagType : Enum
     {
         //----- params -----
 
         //----- field -----
+
+        private TBugsnagType bugsnagType = default;
 
         private string apiKey = null;
 
@@ -40,22 +61,23 @@ namespace Modules.Bugsnag
 
         //----- method -----
 
-        protected override void OnCreate()
+        public async UniTask Initialize(TBugsnagType bugsnagType)
         {
-            apiKey = GetApiKey();
+            if (!IsEnable) { return; }
 
-            if (IsEnable)
-            {
-                var config = SetupConfiguration();
+            this.bugsnagType = bugsnagType;
 
-                config.ApiKey = apiKey;
+            apiKey = await LoadApiKey();
 
-                BugsnagUnity.Bugsnag.Start(config);
+            var config = SetupConfiguration();
 
-                BugsnagUnity.Bugsnag.AddOnError(e => OnErrorCallback(e));
+            config.ApiKey = apiKey;
 
-                OnAfterStart();
-            }
+            BugsnagUnity.Bugsnag.Start(config);
+
+            BugsnagUnity.Bugsnag.AddOnError(e => OnErrorCallback(e));
+
+            OnAfterStart();
         }
 
         public void AddGlobalMetadata(Section section, string key, object value)
@@ -117,17 +139,41 @@ namespace Modules.Bugsnag
             return BugsnagSettingsObject.LoadConfiguration();
         }
 
-        protected virtual void OnAfterStart()
-        {
-
-        }
+        protected virtual void OnAfterStart() { }
 
         protected virtual bool OnErrorCallback(IEvent e)
         {
             return true;
         }
 
-        protected abstract string GetApiKey();
+        public async UniTask<string> LoadApiKey()
+        {
+            var directory = GetFileDirectory(bugsnagType);
+            var fileName = GetApiKeyFileName(bugsnagType);
+
+            var assetPath = PathUtility.Combine(directory, fileName);
+            var filePath = UnityPathUtility.ConvertAssetPathToFullPath(assetPath);
+
+            var cryptoKey = await GetCryptoKey();
+
+            var data = await MessagePackFileUtility.Read<BugsnagApiKeyData>(filePath, cryptoKey);
+            
+            return data != null ? data.apiKey : string.Empty; 
+        }
+        
+        public string GetApiKeyFileName(TBugsnagType bugsnagType)
+        {
+            var typeName = typeof(TBugsnagType).FullName;
+            var enumName = Enum.GetName(typeof(TBugsnagType), bugsnagType);
+
+            var fileName = $"{typeName}_{enumName}";
+
+            return fileName.GetHash();
+        }
+
+        public abstract UniTask<AesCryptoKey> GetCryptoKey();
+
+        public abstract string GetFileDirectory(TBugsnagType bugsnagType);
     }
 
     public static class IEventExtensions
