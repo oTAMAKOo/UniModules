@@ -62,7 +62,7 @@ namespace Modules.UtageExtension
             
             if (Priority != AssetFileLoadPriority.DownloadOnly)
             {
-                var loadYield = ExternalAsset.LoadAsset<T>(resourcesPath, false)
+                var loadYield = ExternalAsset.LoadAsset<T>(resourcesPath)
 					.ToObservable()
 					.ToYieldInstruction(false);
 
