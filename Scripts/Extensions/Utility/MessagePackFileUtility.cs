@@ -12,6 +12,13 @@ namespace Extensions
     {
         public static async UniTask Write<T>(string filePath, T target, AesCryptoKey cryptoKey = null) where T : class
         {
+            var directory = Path.GetDirectoryName(filePath);
+
+            if (!Directory.Exists(directory))
+            {
+                Directory.CreateDirectory(directory);
+            }
+
             using (var fileStream = new FileStream(filePath, FileMode.Create, FileAccess.Write))
             {
                 var options = StandardResolverAllowPrivate.Options

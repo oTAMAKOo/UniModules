@@ -63,6 +63,8 @@ namespace Modules.Bugsnag
 
         void OnGUI()
         {
+            EditorGUILayout.Separator();
+
             using (var scrollViewScope = new EditorGUILayout.ScrollViewScope(scrollPosition))
             {
                 foreach (var keyInfo in keyInfos)
@@ -117,17 +119,18 @@ namespace Modules.Bugsnag
 
                 var filePath = PathUtility.Combine(fileDirectory, fileName);
 
-                if (!File.Exists(filePath)){ continue; }
+                BugsnagApiKeyData keyData = null;
 
-                var keyData = await MessagePackFileUtility.Read<BugsnagApiKeyData>(filePath, cryptoKey);
-
-                if (keyData == null) { continue; }
+                if (File.Exists(filePath))
+                {
+                    keyData = await MessagePackFileUtility.Read<BugsnagApiKeyData>(filePath, cryptoKey);
+                }
 
                 var keyInfo = new KeyInfo()
                 {
                     BugsnagType = enumValue,
                     FileName = fileName,
-                    ApiKey = keyData.apiKey,
+                    ApiKey = keyData != null ? keyData.apiKey : string.Empty,
                 };
 
                 keyInfos.Add(keyInfo);
@@ -140,13 +143,13 @@ namespace Modules.Bugsnag
 
             var directory = bugsnagManager.GetFileDirectory(keyType);
 
-            var assetPath = PathUtility.Combine(directory, fileName);
-
-            var filePath = UnityPathUtility.ConvertAssetPathToFullPath(assetPath);
+            var filePath = PathUtility.Combine(directory, fileName);
+            
+            var assetPath = UnityPathUtility.ConvertFullPathToAssetPath(filePath);
 
             var data = new BugsnagApiKeyData()
             {
-                apiKey = apiKey,
+            apiKey = apiKey,
             };
 
             await MessagePackFileUtility.Write(filePath, data, cryptoKey);
