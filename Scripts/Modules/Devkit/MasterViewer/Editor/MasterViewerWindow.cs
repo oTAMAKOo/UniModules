@@ -77,19 +77,19 @@ namespace Modules.Devkit.MasterViewer
 
             using (new EditorGUILayout.HorizontalScope(EditorStyles.toolbar, GUILayout.Height(15f)))
             {
-				void OnChangeSearchText(string x)
-				{
-					searchText = x;
-					displayContents = GetDisplayMasters();
-				}
+                void OnChangeSearchText(string x)
+                {
+                    searchText = x;
+                    displayContents = GetDisplayMasters();
+                }
 
-				void OnSearchCancel()
-				{
-					searchText = string.Empty;
-					displayContents = GetDisplayMasters();
-				}
+                void OnSearchCancel()
+                {
+                    searchText = string.Empty;
+                    displayContents = GetDisplayMasters();
+                }
 
-				EditorLayoutTools.DrawToolbarSearchTextField(searchText, OnChangeSearchText, OnSearchCancel, GUILayout.MinWidth(150f));
+                EditorLayoutTools.DrawToolbarSearchTextField(searchText, OnChangeSearchText, OnSearchCancel, GUILayout.MinWidth(150f));
 
                 GUILayout.FlexibleSpace();
 
@@ -167,72 +167,72 @@ namespace Modules.Devkit.MasterViewer
             var loadFinishCount = 0;
             var totalMasterCount = allMasters.Length;
 
-			void OnLoadFinish()
-			{
-				loadFinishCount++;
+            void OnLoadFinish()
+            {
+                loadFinishCount++;
 
-				if (isComplete) { return; }
+                if (isComplete) { return; }
 
-				EditorUtility.DisplayProgressBar("progress", "Loading all masters", (float)loadFinishCount / totalMasterCount);
-			}
+                EditorUtility.DisplayProgressBar("progress", "Loading all masters", (float)loadFinishCount / totalMasterCount);
+            }
 
-			void SetupContents()
-			{
-				masterControllers = new List<MasterController>();
+            void SetupContents()
+            {
+                masterControllers = new List<MasterController>();
 
-				foreach (var master in allMasters)
-				{
-					var masterController = new MasterController();
-					masterController.Initialize(master);
-					masterControllers.Add(masterController);
-				}
+                foreach (var master in allMasters)
+                {
+                    var masterController = new MasterController();
+                    masterController.Initialize(master);
+                    masterControllers.Add(masterController);
+                }
 
-				displayContents = GetDisplayMasters();
+                displayContents = GetDisplayMasters();
 
-				isComplete = true;
+                isComplete = true;
 
-				Repaint();
-			}
+                Repaint();
+            }
 
-			try
-			{
+            try
+            {
                 if(!Application.isPlaying)
-				{
-					var tasks = new List<UniTask>();
+                {
+                    var tasks = new List<UniTask>();
 
-					foreach (var master in allMasters)
-					{
-						var observable = UniTask.Defer(async () =>
-						{
-							var loadResult = await master.Load(cryptoKey, false);
+                    foreach (var master in allMasters)
+                    {
+                        var observable = UniTask.Defer(async () =>
+                        {
+                            var loadResult = await master.Load(cryptoKey, false, true);
 
-							if (loadResult != null && loadResult.Item1)
-							{
-								OnLoadFinish();
-							}
-						});
+                            if (loadResult != null && loadResult.Item1)
+                            {
+                                OnLoadFinish();
+                            }
+                        });
 
-						tasks.Add(observable);
-					}
+                        tasks.Add(observable);
+                    }
 
-					await UniTask.WhenAll(tasks);
-				}
-				else
-				{
-					Debug.LogWarning("MasterViewer use on-memory master.");
-				}
+                    await UniTask.WhenAll(tasks);
+                }
+                else
+                {
+                    Debug.LogWarning("MasterViewer use on-memory master.");
+                }
 
-				SetupContents();
-			}
-			catch (OperationCanceledException)
-			{
-				/* Canceled */
-			}
-			finally
-			{
-				EditorUtility.ClearProgressBar();
-			}
-		}
+                SetupContents();
+            }
+            catch (OperationCanceledException)
+            {
+                /* Canceled */
+            }
+            finally
+            {
+                EditorUtility.ClearProgressBar();
+            }
+        }
 
         private MasterController[] GetDisplayMasters()
         {

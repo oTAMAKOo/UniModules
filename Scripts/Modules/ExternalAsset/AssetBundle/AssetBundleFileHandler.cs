@@ -24,19 +24,13 @@ namespace Modules.AssetBundles
 
         private async UniTask<byte[]> Convert(byte[] bytes)
         {
-            try
+            await UniTask.RunOnThreadPool(() =>
             {
-                await UniTask.SwitchToThreadPool();
-                
                 for (var i = 0; i < bytes.Length; i++)
                 {
                     bytes[i] = (byte)~bytes[i];
                 }
-            }
-            finally
-            {
-                await UniTask.SwitchToMainThread();
-            }
+            });
 
             return bytes;
         }

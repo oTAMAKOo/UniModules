@@ -1,13 +1,13 @@
-﻿﻿﻿
+﻿﻿
 #if UNITY_EDITOR
 
 using Modules.Devkit.Prefs;
 
 namespace Modules.ExternalAssets
 {
-	public sealed partial class ExternalAsset
-	{
-        public static class Prefs
+    public sealed partial class ExternalAsset
+    {
+        public static partial class Prefs
         {
             public static bool isSimulate
             {

@@ -195,10 +195,8 @@ namespace Modules.ExternalAssets
             assetInfosByAssetGuid = new Dictionary<string, AssetInfo>();
             assetInfosByResourcePath = new Dictionary<string, AssetInfo>();
 
-            try
+            await UniTask.RunOnThreadPool(() =>
             {
-                await UniTask.SwitchToThreadPool();
-
                 var manifestAssetInfo = AssetInfoManifest.GetManifestAssetInfo();
 
                 assetInfoManifest.BuildCache(true);
@@ -235,11 +233,7 @@ namespace Modules.ExternalAssets
                         assetInfosByResourcePath[item.ResourcePath] = item;
                     }
                 }
-            }
-            finally
-            {
-                await UniTask.SwitchToMainThread();
-            }
+            });
         }
 
         /// <summary> アセット情報を取得. </summary>
@@ -284,6 +278,7 @@ namespace Modules.ExternalAssets
                 var tasks = new List<UniTask>();
 
                 // バージョン情報読み込み.
+
                 var loadVersionTask = LoadVersion();
 
                 tasks.Add(loadVersionTask);
@@ -604,32 +599,6 @@ namespace Modules.ExternalAssets
             }
 
             return assetPath;
-        }
-
-        private async UniTask<IEnumerable<string>> GetInstallDirectoryFilePaths()
-        {
-            if (!Directory.Exists(InstallDirectory)) { return new string[0]; }
-
-            var frameLimiter = new FunctionFrameLimiter(250);
-
-            var list = new List<string>();
-
-            var directoryInfo = new DirectoryInfo(InstallDirectory);
-
-            var files = directoryInfo.EnumerateFiles("*", SearchOption.TopDirectoryOnly);
-
-            foreach (var file in files)
-            {
-                await frameLimiter.Wait();
-
-                if (file.Name == VersionFileName) { continue; }
-
-                var filePath = PathUtility.ConvertPathSeparator(file.FullName);
-
-                list.Add(filePath);
-            }
-
-            return list;
         }
 
         #region Extend Handler

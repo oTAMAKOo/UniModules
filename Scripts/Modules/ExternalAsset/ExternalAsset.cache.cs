@@ -15,11 +15,40 @@ namespace Modules.ExternalAssets
     {
         //----- params -----
 
+        public static partial class Prefs
+        {
+            public static DateTime deleteUnUsedCacheTime
+            {
+                get { return SecurePrefs.GetDateTime(typeof(Prefs).FullName + "-deleteUnUsedCacheTime", null); }
+                set { SecurePrefs.SetDateTime(typeof(Prefs).FullName + "-deleteUnUsedCacheTime", value); }
+            }
+        }
+
         //----- field -----
 
         //----- property -----
 
         //----- method -----
+
+        private async UniTask<string[]> GetInstallDirectoryFilePaths(bool configureAwait)
+        {
+            var files = new string[0];
+
+            if (!Directory.Exists(InstallDirectory)) { return files; }
+
+            var directoryInfo = new DirectoryInfo(InstallDirectory);
+
+            await UniTask.RunOnThreadPool(() =>
+            {
+                files = directoryInfo.EnumerateFiles("*", SearchOption.TopDirectoryOnly)
+                    .AsParallel()
+                    .Where(x => x.Name != VersionFileName)
+                    .Select(x => PathUtility.ConvertPathSeparator(x.FullName))
+                    .ToArray(); 
+            }, configureAwait);
+
+            return files;
+        }
 
         /// <summary> 全キャッシュ削除. </summary>
         public async UniTask DeleteAllCache()
@@ -34,14 +63,14 @@ namespace Modules.ExternalAssets
 
             if (Directory.Exists(InstallDirectory))
             {
-                var cacheFiles = await GetInstallDirectoryFilePaths();
+                var cacheFiles = await GetInstallDirectoryFilePaths(true);
 
                 await DeleteCacheFiles(cacheFiles);
             }
         }
 
         /// <summary> 不要になったキャッシュ削除. </summary>
-        public async UniTask DeleteUnUsedCache()
+        private async UniTask DeleteUnUsedCache()
         {
             if (SimulateMode) { return; }
 
@@ -53,14 +82,17 @@ namespace Modules.ExternalAssets
 
             if (!Directory.Exists(InstallDirectory)) { return; }
 
+            var now = DateTime.Now;
+
+            if (now < Prefs.deleteUnUsedCacheTime) { return; }
+
             async UniTask<IEnumerable<string>> UnUsedCacheFilesDelete(HashSet<string> manageFilePaths, IEnumerable<string> targets)
             {
-                try
+                var hashset = new HashSet<string>();
+
+                // スレッド内で呼び出すのでメインスレッドに戻さない.
+                await UniTask.RunOnThreadPool(() =>
                 {
-                    await UniTask.SwitchToThreadPool();
-
-                    var hashset = new HashSet<string>();
-
                     foreach (var target in targets)
                     {
                         // InstallDirectory直下の管理情報に含まれていないファイルは削除対象.
@@ -69,25 +101,21 @@ namespace Modules.ExternalAssets
                             hashset.Add(target);
                         }
                     }
+                }, false);
 
-                    return hashset;
-                }
-                finally
-                {
-                    await UniTask.SwitchToMainThread();
-                }
+                return hashset;
             }
 
-            try
+            if (versions.IsEmpty())
             {
-                await UniTask.SwitchToThreadPool();
+                await LoadVersion();
+            }
 
-                if (versions.IsEmpty())
-                {
-                    await LoadVersion();
-                }
+            var deleteFiles = new string[0];
 
-                var installDirectoryFilePaths = await GetInstallDirectoryFilePaths();
+            await UniTask.RunOnThreadPool(async () =>
+            {
+                var installDirectoryFilePaths = await GetInstallDirectoryFilePaths(false);
 
                 var assetInfos = assetInfoManifest.GetAssetInfos().Append(AssetInfoManifest.GetManifestAssetInfo());
 
@@ -117,15 +145,16 @@ namespace Modules.ExternalAssets
 
                     var results = await UniTask.WhenAll(tasks);
 
-                    var deleteFiles = results.SelectMany(x => x);
-
-                    await DeleteCacheFiles(deleteFiles);
+                    deleteFiles = results.SelectMany(x => x).ToArray();
                 }
-            }
-            finally
+            });
+
+            if (deleteFiles.Any())
             {
-                await UniTask.SwitchToMainThread();
+                await DeleteCacheFiles(deleteFiles);
             }
+
+            Prefs.deleteUnUsedCacheTime = now.AddDays(1);
         }
 
         /// <summary> 指定されたキャッシュ削除. </summary>
@@ -135,15 +164,13 @@ namespace Modules.ExternalAssets
 
             var targetFilePaths = new List<string>();
 
-            try
+            if (versions.IsEmpty())
             {
-                await UniTask.SwitchToThreadPool();
+                await LoadVersion();
+            }
 
-                if (versions.IsEmpty())
-                {
-                    await LoadVersion();
-                }
-                
+            await UniTask.RunOnThreadPool(() =>
+            {
                 foreach (var item in assetInfos)
                 {
                     var filePath = GetFilePath(item);
@@ -153,11 +180,7 @@ namespace Modules.ExternalAssets
                         targetFilePaths.Add(filePath);
                     }
                 }
-            }
-            finally
-            {
-                await UniTask.SwitchToMainThread();
-            }
+            });
 
             if (targetFilePaths.Any())
             {
@@ -179,32 +202,29 @@ namespace Modules.ExternalAssets
 
             try
             {
-                await UniTask.SwitchToThreadPool();
-                
-                foreach (var item in filePaths)
+                await UniTask.RunOnThreadPool(() =>
                 {
-                    var fileName = Path.GetFileName(item);
+                    foreach (var item in filePaths)
+                    {
+                        var fileName = Path.GetFileName(item);
 
-                    versions.Remove(fileName);
+                        versions.Remove(fileName);
 
-                    if (!File.Exists(item)) { continue; }
+                        if (!File.Exists(item)) { continue; }
 
-                    File.SetAttributes(item, FileAttributes.Normal);
+                        File.SetAttributes(item, FileAttributes.Normal);
 
-                    File.Delete(item);
+                        File.Delete(item);
 
-                    var path = item.Substring(trimLength).TrimStart(PathUtility.PathSeparator);
+                        var path = item.Substring(trimLength).TrimStart(PathUtility.PathSeparator);
 
-                    builder.AppendLine(path);
-                }
+                        builder.AppendLine(path);
+                    }
+                });
             }
             catch (Exception e)
             {
                 Debug.LogException(e);
-            }
-            finally
-            {
-                await UniTask.SwitchToMainThread();
             }
 
             // バージョン情報更新.

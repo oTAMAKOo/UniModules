@@ -186,54 +186,40 @@ namespace Modules.AssetBundles
 
         private async UniTask BuildAssetBundleReferences(AssetInfo[] assetBundleAssetInfos)
         {
-            try
+            await UniTask.RunOnThreadPool(() =>
             {
-                await UniTask.RunOnThreadPool(() =>
+                foreach (var assetInfo in assetBundleAssetInfos)
                 {
-                    foreach (var assetInfo in assetBundleAssetInfos)
+                    var assetBundleInfo = assetInfo.AssetBundle;
+                    var assetBundleName = assetBundleInfo.AssetBundleName;
+
+                    var refs = assetInfosByAssetBundleName.GetValueOrDefault(assetBundleName);
+
+                    if (refs == null)
                     {
-                        var assetBundleInfo = assetInfo.AssetBundle;
-                        var assetBundleName = assetBundleInfo.AssetBundleName;
-
-                        var refs = assetInfosByAssetBundleName.GetValueOrDefault(assetBundleName);
-
-                        if (refs == null)
-                        {
-                            refs = new List<AssetInfo>();
-                            assetInfosByAssetBundleName[assetBundleName] = refs;
-                        }
-
-                        refs.Add(assetInfo);
-
-                        assetBundleRefCount[assetBundleName] = 0;
+                        refs = new List<AssetInfo>();
+                        assetInfosByAssetBundleName[assetBundleName] = refs;
                     }
-                });
-            }
-            finally
-            {
-                await UniTask.SwitchToMainThread();
-            }
+
+                    refs.Add(assetInfo);
+
+                    assetBundleRefCount[assetBundleName] = 0;
+                }
+            });
         }
 
         private async UniTask BuildAssetBundleDependencies(AssetInfo[] assetBundleAssetInfos)
         {
-            try
+            await UniTask.RunOnThreadPool(() =>
             {
-                await UniTask.RunOnThreadPool(() =>
+                foreach (var assetInfo in assetBundleAssetInfos)
                 {
-                    foreach (var assetInfo in assetBundleAssetInfos)
-                    {
-                        var assetBundleInfo = assetInfo.AssetBundle;
-                        var assetBundleName = assetBundleInfo.AssetBundleName;
+                    var assetBundleInfo = assetInfo.AssetBundle;
+                    var assetBundleName = assetBundleInfo.AssetBundleName;
 
-                        assetBundleDependencies.SetDependencies(assetBundleName, assetBundleInfo.Dependencies);
-                    }
-                });
-            }
-            finally
-            {
-                await UniTask.SwitchToMainThread();
-            }
+                    assetBundleDependencies.SetDependencies(assetBundleName, assetBundleInfo.Dependencies);
+                }
+            });
         }
 
         private void AddManifestAssetInfo()
