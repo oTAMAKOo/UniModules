@@ -113,9 +113,9 @@ namespace Modules.Bugsnag
             {
                 var enumValue = EnumExtensions.FindByName(enumName , default(TBugsnagType));
 
-                var fileName = enumName.GetHash();
-
                 var fileDirectory = bugsnagManager.GetFileDirectory(enumValue);
+
+                var fileName = bugsnagManager.GetApiKeyFileName(enumValue);
 
                 var filePath = PathUtility.Combine(fileDirectory, fileName);
 

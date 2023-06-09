@@ -151,8 +151,7 @@ namespace Modules.Bugsnag
             var directory = GetFileDirectory(bugsnagType);
             var fileName = GetApiKeyFileName(bugsnagType);
 
-            var assetPath = PathUtility.Combine(directory, fileName);
-            var filePath = UnityPathUtility.ConvertAssetPathToFullPath(assetPath);
+            var filePath = PathUtility.Combine(directory, fileName);
 
             var cryptoKey = await GetCryptoKey();
 
