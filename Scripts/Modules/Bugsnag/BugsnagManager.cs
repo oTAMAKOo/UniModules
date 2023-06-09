@@ -63,11 +63,11 @@ namespace Modules.Bugsnag
 
         public async UniTask Initialize(TBugsnagType bugsnagType)
         {
-            if (!IsEnable) { return; }
-
             this.bugsnagType = bugsnagType;
 
             apiKey = await LoadApiKey();
+
+            if (!IsEnable) { return; }
 
             var config = SetupConfiguration();
 
