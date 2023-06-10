@@ -9,8 +9,8 @@ namespace Extensions
 
         //----- field -----
 
-		[NonSerialized]
-		protected static T instance = null;
+        [NonSerialized]
+        protected static T instance = null;
 
         //----- property -----
 

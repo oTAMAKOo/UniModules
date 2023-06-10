@@ -1,4 +1,4 @@
-﻿﻿﻿
+﻿﻿
 using UnityEngine;
 using System;
 using System.Linq;
@@ -8,8 +8,8 @@ using UniRx;
 
 namespace Extensions.Devkit
 {
-	public static class DirectoryUtility
-	{
+    public static class DirectoryUtility
+    {
         /// <summary>
         /// フォルダを再帰的に処理して含まれるファイルのパスをmetaファイルを除いて返します.
         /// </summary>

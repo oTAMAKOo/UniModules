@@ -7,85 +7,85 @@ namespace Modules.Devkit.AssetTuning.TextureAsset
 {
     public sealed class TextureSpriteInspectorDrawer : TextureDataInspectorDrawer
     {
-		private bool foldoutAdvanced = false;
+        private bool foldoutAdvanced = false;
 
-		public TextureSpriteInspectorDrawer(TextureData textureData) : base(textureData) { }
-		
-		public override void DrawTextureSettingGUI()
-		{
-			GUILayout.Space(2f);
+        public TextureSpriteInspectorDrawer(TextureData textureData) : base(textureData) { }
+        
+        public override void DrawTextureSettingGUI()
+        {
+            GUILayout.Space(2f);
 
-			SpriteMode();
+            SpriteMode();
 
-			using (new EditorGUI.IndentLevelScope(1))
-			{
-				PixelsPerUnit();
+            using (new EditorGUI.IndentLevelScope(1))
+            {
+                PixelsPerUnit();
 
-				MeshType();
+                MeshType();
 
-				ExtrudeEdges();
+                ExtrudeEdges();
 
-				SpritePivot();
+                SpritePivot();
 
-				GeneratePhysicsShape();
-			}
-			
-			GUILayout.Space(2f);
+                GeneratePhysicsShape();
+            }
+            
+            GUILayout.Space(2f);
 
-			using (new EditorGUI.IndentLevelScope(1))
-			{
-				foldoutAdvanced = EditorGUILayout.Foldout(foldoutAdvanced, "Advanced");
-			
-				if (foldoutAdvanced)
-				{
-					sRGBTexture();
+            using (new EditorGUI.IndentLevelScope(1))
+            {
+                foldoutAdvanced = EditorGUILayout.Foldout(foldoutAdvanced, "Advanced");
+            
+                if (foldoutAdvanced)
+                {
+                    sRGBTexture();
 
-					AlphaSource();
+                    AlphaSource();
 
-					AlphaIsTransparency();
+                    AlphaIsTransparency();
 
-					IgnorePngGamma();
+                    IgnorePngGamma();
 
-					IsReadable();
+                    IsReadable();
 
-					GenerateMipMaps();
+                    GenerateMipMaps();
 
-					if (textureData.mipmapEnabled)
-					{
-						using (new EditorGUI.IndentLevelScope(1))
-						{
-							BorderMipMaps();
+                    if (textureData.mipmapEnabled)
+                    {
+                        using (new EditorGUI.IndentLevelScope(1))
+                        {
+                            BorderMipMaps();
 
-							MipMapFiltering();
+                            MipMapFiltering();
 
-							MipMapsPreserveCoverage();
-							
-							if (textureData.mipMapsPreserveCoverage)
-							{
-								using (new EditorGUI.IndentLevelScope(1))
-								{
-									AlphaCutOffValue();
-								}
-							}
-						
-							FadeOutMipMaps();
+                            MipMapsPreserveCoverage();
+                            
+                            if (textureData.mipMapsPreserveCoverage)
+                            {
+                                using (new EditorGUI.IndentLevelScope(1))
+                                {
+                                    AlphaCutOffValue();
+                                }
+                            }
+                        
+                            FadeOutMipMaps();
 
-							FadeRange();
-						}
-					}
-				}
-			}
+                            FadeRange();
+                        }
+                    }
+                }
+            }
 
-			GUILayout.Space(2f);
-			
-			WrapMode();
+            GUILayout.Space(2f);
+            
+            WrapMode();
 
-			FilterMode();
+            FilterMode();
 
-			using (new DisableScope(true))
-			{
-				AnisoLavel();
-			}
-		}
-	}
+            using (new DisableScope(true))
+            {
+                AnisoLavel();
+            }
+        }
+    }
 }

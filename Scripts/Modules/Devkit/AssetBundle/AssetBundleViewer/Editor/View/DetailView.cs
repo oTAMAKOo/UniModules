@@ -13,78 +13,78 @@ using Object = UnityEngine.Object;
 
 namespace Modules.Devkit.AssetBundleViewer
 {
-	public sealed class DetailView : LifetimeDisposable
-	{
-		//----- params -----
+    public sealed class DetailView : LifetimeDisposable
+    {
+        //----- params -----
 
-		private enum AssetDisplayType
-		{
-			Path,
-			Asset,
-		}
+        private enum AssetDisplayType
+        {
+            Path,
+            Asset,
+        }
 
-		//----- field -----
+        //----- field -----
 
-		private InfoTreeView infoTreeView = null;
+        private InfoTreeView infoTreeView = null;
 
-		private AssetBundleInfo target = null;
+        private AssetBundleInfo target = null;
 
-		private Dictionary<string, AssetBundleInfo> assetBundleInfos = null;
+        private Dictionary<string, AssetBundleInfo> assetBundleInfos = null;
 
-		private AssetBundleDependencies assetBundleDependencies = null;
+        private AssetBundleDependencies assetBundleDependencies = null;
 
-		private Vector2 scrollPosition = Vector2.zero;
+        private Vector2 scrollPosition = Vector2.zero;
 
-		private Dictionary<string, string> assetPathCache = null;
-		private Dictionary<string, Object> loadedAssetCache = null;
+        private Dictionary<string, string> assetPathCache = null;
+        private Dictionary<string, Object> loadedAssetCache = null;
 
-		private Stack<AssetBundleInfo> history = null;
+        private Stack<AssetBundleInfo> history = null;
 
         private AssetDisplayType assetDisplayType = AssetDisplayType.Asset;
 
-		private Subject<Unit> onRequestClose = null;
+        private Subject<Unit> onRequestClose = null;
 
-		[NonSerialized]
-		private bool initialized = false;
+        [NonSerialized]
+        private bool initialized = false;
 
-		//----- property -----
+        //----- property -----
 
-		//----- method -----
+        //----- method -----
 
-		public void Initialize(Dictionary<string, AssetBundleInfo> assetBundleInfos, AssetBundleDependencies assetBundleDependencies)
-		{
-			if (initialized) { return; }
+        public void Initialize(Dictionary<string, AssetBundleInfo> assetBundleInfos, AssetBundleDependencies assetBundleDependencies)
+        {
+            if (initialized) { return; }
 
-			this.assetBundleInfos = assetBundleInfos;
-			this.assetBundleDependencies = assetBundleDependencies;
+            this.assetBundleInfos = assetBundleInfos;
+            this.assetBundleDependencies = assetBundleDependencies;
 
-			assetPathCache = new Dictionary<string, string>();
-			loadedAssetCache = new Dictionary<string, Object>();
+            assetPathCache = new Dictionary<string, string>();
+            loadedAssetCache = new Dictionary<string, Object>();
 
             history = new Stack<AssetBundleInfo>();
 
-			//------ InfoTreeView ------
+            //------ InfoTreeView ------
 
-			infoTreeView = new InfoTreeView();
+            infoTreeView = new InfoTreeView();
 
-			infoTreeView.Initialize();
+            infoTreeView.Initialize();
 
             infoTreeView.OnContentClickAsObservable()
                 .Subscribe(x => SetContent(x))
                 .AddTo(Disposable);
 
-			initialized = true;
-		}
+            initialized = true;
+        }
 
         public void DrawGUI()
-		{
-			if (target == null){ return; }
+        {
+            if (target == null){ return; }
 
             DrawToolBar();
-			DrawInfo();
-			DrawContainsAssets();
-			DrawDependencies();
-		}
+            DrawInfo();
+            DrawContainsAssets();
+            DrawDependencies();
+        }
 
         private void DrawToolBar()
         {
@@ -201,33 +201,33 @@ namespace Modules.Devkit.AssetBundleViewer
             }
         }
 
-		public void SetContent(AssetBundleInfo target)
-		{
-			this.target = target;
+        public void SetContent(AssetBundleInfo target)
+        {
+            this.target = target;
 
             scrollPosition = Vector2.zero;
 
-			var dependencies = new List<AssetBundleInfo>();
+            var dependencies = new List<AssetBundleInfo>();
 
-			var allDependencies = assetBundleDependencies.GetAllDependencies(target.AssetBundleName);
+            var allDependencies = assetBundleDependencies.GetAllDependencies(target.AssetBundleName);
 
-			foreach (var item in allDependencies)
-			{
-				var content = assetBundleInfos.GetValueOrDefault(item);
+            foreach (var item in allDependencies)
+            {
+                var content = assetBundleInfos.GetValueOrDefault(item);
 
-				if (content == null) { continue; }
+                if (content == null) { continue; }
 
-				dependencies.Add(content);
-			}
+                dependencies.Add(content);
+            }
 
-			infoTreeView.SetContents(dependencies.ToArray());
+            infoTreeView.SetContents(dependencies.ToArray());
 
             history.Push(target);
         }
         
         public IObservable<Unit> OnRequestCloseAsObservable()
         {
-			return onRequestClose ?? (onRequestClose = new Subject<Unit>());
+            return onRequestClose ?? (onRequestClose = new Subject<Unit>());
         }
-	}
+    }
 }

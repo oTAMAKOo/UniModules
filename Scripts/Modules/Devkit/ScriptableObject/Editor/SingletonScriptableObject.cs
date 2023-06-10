@@ -14,7 +14,7 @@ namespace Modules.Devkit.ScriptableObjects
 
         //----- field -----
 
-		[NonSerialized]
+        [NonSerialized]
         protected static T instance = null;
 
         //----- property -----

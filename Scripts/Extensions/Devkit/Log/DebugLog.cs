@@ -1,4 +1,4 @@
-﻿﻿
+﻿
 using System;
 using UniRx;
 
@@ -24,7 +24,7 @@ namespace Modules.Devkit.Log
 
         //----- method -----
 
-		public static void ReceiveLog(string message)
+        public static void ReceiveLog(string message)
         {
             if (onLogReceived != null)
             {

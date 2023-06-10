@@ -7,8 +7,8 @@ using Extensions;
 
 namespace Modules.CriWare.Editor
 {
-	public static class CriForceInitializer
-	{
+    public static class CriForceInitializer
+    {
         public static void Initialize()
         {
             var initializerCreate = false;
@@ -34,7 +34,7 @@ namespace Modules.CriWare.Editor
                 UnityUtility.SafeDelete(initializer.gameObject);
             }
         }
-	}
+    }
 }
 
 #endif

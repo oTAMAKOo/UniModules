@@ -16,7 +16,7 @@ namespace Extensions.Devkit
 
         public static void BeginContents()
         {
-			GUILayout.Space(-2f);
+            GUILayout.Space(-2f);
 
             EditorGUILayout.BeginHorizontal(GUI.skin.box);
 

@@ -1,4 +1,4 @@
-﻿
+
 using UnityEngine;
 using System;
 using System.IO;
@@ -27,40 +27,40 @@ namespace Extensions
 
         private static string privateDataPath = null;
 
-		//----- property -----
+        //----- property -----
 
-		public static string DataPath { get; private set; }
-		public static string PersistentDataPath { get; private set; }
-		public static string StreamingAssetsPath { get; private set; }
-		public static string TemporaryCachePath { get; private set; }
+        public static string DataPath { get; private set; }
+        public static string PersistentDataPath { get; private set; }
+        public static string StreamingAssetsPath { get; private set; }
+        public static string TemporaryCachePath { get; private set; }
 
         //----- method -----
 
-		#if UNITY_EDITOR
+        #if UNITY_EDITOR
 
-		[InitializeOnLoadMethod]
-		private static void InitializeOnLoadMethod()
-		{
-			DataPath = PathUtility.ConvertPathSeparator(Application.dataPath);
-			PersistentDataPath = PathUtility.ConvertPathSeparator(Application.persistentDataPath);
-			StreamingAssetsPath = PathUtility.ConvertPathSeparator(Application.streamingAssetsPath);
-			TemporaryCachePath = PathUtility.ConvertPathSeparator(Application.temporaryCachePath);
-		}
+        [InitializeOnLoadMethod]
+        private static void InitializeOnLoadMethod()
+        {
+            DataPath = PathUtility.ConvertPathSeparator(Application.dataPath);
+            PersistentDataPath = PathUtility.ConvertPathSeparator(Application.persistentDataPath);
+            StreamingAssetsPath = PathUtility.ConvertPathSeparator(Application.streamingAssetsPath);
+            TemporaryCachePath = PathUtility.ConvertPathSeparator(Application.temporaryCachePath);
+        }
 
-		#else
+        #else
 
-		[RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterAssembliesLoaded)]
-		private static void RuntimeInitializeOnLoadMethod()
-		{
-			DataPath = PathUtility.ConvertPathSeparator(Application.dataPath);
-			PersistentDataPath = PathUtility.ConvertPathSeparator(Application.persistentDataPath);
-			StreamingAssetsPath = PathUtility.ConvertPathSeparator(Application.streamingAssetsPath);
-			TemporaryCachePath = PathUtility.ConvertPathSeparator(Application.temporaryCachePath);
-		}
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterAssembliesLoaded)]
+        private static void RuntimeInitializeOnLoadMethod()
+        {
+            DataPath = PathUtility.ConvertPathSeparator(Application.dataPath);
+            PersistentDataPath = PathUtility.ConvertPathSeparator(Application.persistentDataPath);
+            StreamingAssetsPath = PathUtility.ConvertPathSeparator(Application.streamingAssetsPath);
+            TemporaryCachePath = PathUtility.ConvertPathSeparator(Application.temporaryCachePath);
+        }
 
-		#endif
+        #endif
 
-		/// <summary> プロジェクト名取得 </summary>
+        /// <summary> プロジェクト名取得 </summary>
         public static string GetProjectName()
         {
             var s = Application.dataPath.Split(PathUtility.PathSeparator);

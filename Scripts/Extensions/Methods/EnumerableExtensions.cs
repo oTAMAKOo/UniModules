@@ -10,30 +10,30 @@ namespace Extensions
 
         public static bool IsEmpty<T>(this IEnumerable<T> source)
         {
-			if (source == null){ return true; }
+            if (source == null){ return true; }
 
             return !source.Any();
         }
 
         public static string[] ToStrings(this object[] objectArray)
         {
-			if (objectArray == null){ return new string[0]; }
+            if (objectArray == null){ return new string[0]; }
 
             return Array.ConvertAll(objectArray, o => o.ToString());
         }
 
         public static IEnumerable<TSource> DistinctBy<TSource, TKey>(this IEnumerable<TSource> source, Func<TSource, TKey> keySelector)
         {
-			var knownKeys = new HashSet<TKey>();
+            var knownKeys = new HashSet<TKey>();
 
-			foreach (var element in source)
-			{
-				if (knownKeys.Add(keySelector(element)))
-				{
-					yield return element;
-				}
-			}
-		}
+            foreach (var element in source)
+            {
+                if (knownKeys.Add(keySelector(element)))
+                {
+                    yield return element;
+                }
+            }
+        }
 
         public static IEnumerable<T> Concat<T>(IEnumerable<IEnumerable<T>> source)
         {
@@ -51,7 +51,7 @@ namespace Extensions
             return Concat(source.AsEnumerable());
         }
 
-		#if !UNITY_2021_2_OR_NEWER
+        #if !UNITY_2021_2_OR_NEWER
 
         public static HashSet<T> ToHashSet<T>(this IEnumerable<T> source)
         {
@@ -63,7 +63,7 @@ namespace Extensions
             return new HashSet<T>(source, comparer);
         }
 
-		#endif
+        #endif
 
         /// <summary>
         /// 重み付き抽選を実行し抽選されたインデックスを取得.
@@ -345,27 +345,27 @@ namespace Extensions
             return list;
         }
 
-		/// <summary> 指定された個数ずつの要素に分割. </summary>
-		public static IEnumerable<IEnumerable<T>> Chunk<T>(this IEnumerable<T> source, int chunkSize)
-		{
-			if (chunkSize <= 0)
-			{
-				throw new ArgumentException("Chunk size must be greater than 0.", nameof(chunkSize));
-			}
+        /// <summary> 指定された個数ずつの要素に分割. </summary>
+        public static IEnumerable<IEnumerable<T>> Chunk<T>(this IEnumerable<T> source, int chunkSize)
+        {
+            if (chunkSize <= 0)
+            {
+                throw new ArgumentException("Chunk size must be greater than 0.", nameof(chunkSize));
+            }
 
-			var items = source.ToArray();
-			var length = items.Length;
+            var items = source.ToArray();
+            var length = items.Length;
 
-			var loopCount = length / chunkSize + (length % chunkSize > 0 ? 1 : 0);
+            var loopCount = length / chunkSize + (length % chunkSize > 0 ? 1 : 0);
 
-			foreach (var i in Enumerable.Range(0, loopCount))
-			{
-				yield return items.Skip(chunkSize * i).Take(chunkSize);
-			}
-		}
+            foreach (var i in Enumerable.Range(0, loopCount))
+            {
+                yield return items.Skip(chunkSize * i).Take(chunkSize);
+            }
+        }
 
-		/// <summary> 昇順・降順指定ソート. </summary>
-		public static IOrderedEnumerable<T> Order<T, TKey>(this IEnumerable<T> source, bool ascending, Func<T, TKey> keySelector, IComparer<TKey> comparer = null)
+        /// <summary> 昇順・降順指定ソート. </summary>
+        public static IOrderedEnumerable<T> Order<T, TKey>(this IEnumerable<T> source, bool ascending, Func<T, TKey> keySelector, IComparer<TKey> comparer = null)
         {
             return ascending ? source.OrderBy(keySelector, comparer) : source.OrderByDescending(keySelector, comparer);
         }

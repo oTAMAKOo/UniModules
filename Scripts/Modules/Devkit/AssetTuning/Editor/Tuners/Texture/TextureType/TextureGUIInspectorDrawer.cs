@@ -7,68 +7,68 @@ namespace Modules.Devkit.AssetTuning.TextureAsset
 {
     public sealed class TextureGUIInspectorDrawer :  TextureDataInspectorDrawer
     {
-		private bool foldoutAdvanced = false;
+        private bool foldoutAdvanced = false;
 
-		public TextureGUIInspectorDrawer(TextureData textureData) : base(textureData){}
-		
-		public override void DrawTextureSettingGUI()
-		{	
-			GUILayout.Space(2f);
+        public TextureGUIInspectorDrawer(TextureData textureData) : base(textureData){}
+        
+        public override void DrawTextureSettingGUI()
+        {	
+            GUILayout.Space(2f);
 
-			using (new EditorGUI.IndentLevelScope(1))
-			{
-				foldoutAdvanced = EditorGUILayout.Foldout(foldoutAdvanced, "Advanced");
-			
-				if (foldoutAdvanced)
-				{
-					AlphaSource();
+            using (new EditorGUI.IndentLevelScope(1))
+            {
+                foldoutAdvanced = EditorGUILayout.Foldout(foldoutAdvanced, "Advanced");
+            
+                if (foldoutAdvanced)
+                {
+                    AlphaSource();
 
-					AlphaIsTransparency();
+                    AlphaIsTransparency();
 
-					IgnorePngGamma();
+                    IgnorePngGamma();
 
-					NpotScale();
+                    NpotScale();
 
-					IsReadable();
+                    IsReadable();
 
-					GenerateMipMaps();
+                    GenerateMipMaps();
 
-					if (textureData.mipmapEnabled)
-					{
-						using (new EditorGUI.IndentLevelScope(1))
-						{
-							BorderMipMaps();
+                    if (textureData.mipmapEnabled)
+                    {
+                        using (new EditorGUI.IndentLevelScope(1))
+                        {
+                            BorderMipMaps();
 
-							MipMapFiltering();
+                            MipMapFiltering();
 
-							MipMapsPreserveCoverage();
-							
-							if (textureData.mipMapsPreserveCoverage)
-							{
-								using (new EditorGUI.IndentLevelScope(1))
-								{
-									AlphaCutOffValue();
-								}
-							}
-						
-							FadeOutMipMaps();
+                            MipMapsPreserveCoverage();
+                            
+                            if (textureData.mipMapsPreserveCoverage)
+                            {
+                                using (new EditorGUI.IndentLevelScope(1))
+                                {
+                                    AlphaCutOffValue();
+                                }
+                            }
+                        
+                            FadeOutMipMaps();
 
-							FadeRange();
-						}
-					}
-				}
-			}
+                            FadeRange();
+                        }
+                    }
+                }
+            }
 
-			GUILayout.Space(2f);
-			
-			WrapMode();
+            GUILayout.Space(2f);
+            
+            WrapMode();
 
-			FilterMode();
+            FilterMode();
 
-			using (new DisableScope(true))
-			{
-				AnisoLavel();
-			}
-		}
+            using (new DisableScope(true))
+            {
+                AnisoLavel();
+            }
+        }
     }
 }

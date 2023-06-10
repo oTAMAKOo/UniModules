@@ -1,4 +1,4 @@
-﻿
+
 #if ENABLE_CRIWARE_SOFDEC
 ﻿﻿﻿
 using UnityEngine;
@@ -56,98 +56,98 @@ namespace Modules.Movie
             initialized = true;
         }
 
-		/// <summary>
-		/// 画再生用のインスタンスを生成.
-		/// ※ 頭出しなどを行う時はこの関数で生成したPlayerを使って頭出しを実装する.
-		/// </summary>
-		private MovieElement CreateElement(string moviePath, Graphic targetGraphic, Player.ShaderDispatchCallback shaderOverrideCallBack = null)
-		{
-			var movieController = UnityUtility.GetOrAddComponent<CriMovieForUI>(targetGraphic.gameObject);
+        /// <summary>
+        /// 画再生用のインスタンスを生成.
+        /// ※ 頭出しなどを行う時はこの関数で生成したPlayerを使って頭出しを実装する.
+        /// </summary>
+        private MovieElement CreateElement(string moviePath, Graphic targetGraphic, Player.ShaderDispatchCallback shaderOverrideCallBack = null)
+        {
+            var movieController = UnityUtility.GetOrAddComponent<CriMovieForUI>(targetGraphic.gameObject);
 
             UnityUtility.SetActive(movieController, true);
 
-			movieController.target = targetGraphic;
-			movieController.enabled = true;
-			movieController.playOnStart = false;
+            movieController.target = targetGraphic;
+            movieController.enabled = true;
+            movieController.playOnStart = false;
 
-			if (!movieController.Initialized)
-			{
-				movieController.ManualInitialize();
-			}
+            if (!movieController.Initialized)
+            {
+                movieController.ManualInitialize();
+            }
 
-			var moviePlayer = movieController.player;
+            var moviePlayer = movieController.player;
 
-			moviePlayer.SetFile(null, moviePath);
+            moviePlayer.SetFile(null, moviePath);
 
-			if (shaderOverrideCallBack != null)
-			{
-				moviePlayer.SetShaderDispatchCallback(shaderOverrideCallBack);
-			}
+            if (shaderOverrideCallBack != null)
+            {
+                moviePlayer.SetShaderDispatchCallback(shaderOverrideCallBack);
+            }
 
-			var movieElement = new MovieElement(moviePlayer, movieController, moviePath);
+            var movieElement = new MovieElement(moviePlayer, movieController, moviePath);
 
-			movieElements.Add(movieElement);
+            movieElements.Add(movieElement);
 
-			return movieElement;
-		}
+            return movieElement;
+        }
 
-		#region Prepare
+        #region Prepare
 
-		/// <summary> 動画再生準備. </summary>
-		public MovieElement Prepare(Movies.Mana type, Graphic targetGraphic, Player.ShaderDispatchCallback shaderOverrideCallBack = null)
-		{
-			var movieInfo = Movies.GetManaInfo(type);
+        /// <summary> 動画再生準備. </summary>
+        public MovieElement Prepare(Movies.Mana type, Graphic targetGraphic, Player.ShaderDispatchCallback shaderOverrideCallBack = null)
+        {
+            var movieInfo = Movies.GetManaInfo(type);
 
-			if (movieInfo == null){ return null; }
+            if (movieInfo == null){ return null; }
 
-			return movieInfo != null ? Prepare(movieInfo, targetGraphic, shaderOverrideCallBack) : null;
-		}
+            return movieInfo != null ? Prepare(movieInfo, targetGraphic, shaderOverrideCallBack) : null;
+        }
 
-		/// <summary> 動画再生準備. </summary>
-		public MovieElement Prepare(ManaInfo movieInfo, Graphic targetGraphic, Player.ShaderDispatchCallback shaderOverrideCallBack = null)
-		{
-			if (movieInfo == null){ return null; }
+        /// <summary> 動画再生準備. </summary>
+        public MovieElement Prepare(ManaInfo movieInfo, Graphic targetGraphic, Player.ShaderDispatchCallback shaderOverrideCallBack = null)
+        {
+            if (movieInfo == null){ return null; }
 
-			var moviePath = Path.ChangeExtension(movieInfo.UsmPath, CriAssetDefinition.UsmExtension);
+            var moviePath = Path.ChangeExtension(movieInfo.UsmPath, CriAssetDefinition.UsmExtension);
 
-			return Prepare(moviePath, targetGraphic, shaderOverrideCallBack);
-		}
+            return Prepare(moviePath, targetGraphic, shaderOverrideCallBack);
+        }
 
-		/// <summary> 動画再生準備. </summary>
-		public MovieElement Prepare(string moviePath, Graphic targetGraphic, Player.ShaderDispatchCallback shaderOverrideCallBack = null)
-		{
-			var element = CreateElement(moviePath, targetGraphic, shaderOverrideCallBack);
+        /// <summary> 動画再生準備. </summary>
+        public MovieElement Prepare(string moviePath, Graphic targetGraphic, Player.ShaderDispatchCallback shaderOverrideCallBack = null)
+        {
+            var element = CreateElement(moviePath, targetGraphic, shaderOverrideCallBack);
 
-			PrepareElement(element).Forget();
+            PrepareElement(element).Forget();
 
-			return element;
-		}
+            return element;
+        }
 
-		private async UniTask PrepareElement(MovieElement element)
-		{
-			if (element == null){ return; }
+        private async UniTask PrepareElement(MovieElement element)
+        {
+            if (element == null){ return; }
 
-			if (element.Player == null){ return; }
+            if (element.Player == null){ return; }
 
-			while (element.Player.status == Player.Status.StopProcessing)
-			{
-				if (!UnityUtility.IsActiveInHierarchy(element.MovieController))
-				{
-					element.MovieController.PlayerManualUpdate();
-				}
+            while (element.Player.status == Player.Status.StopProcessing)
+            {
+                if (!UnityUtility.IsActiveInHierarchy(element.MovieController))
+                {
+                    element.MovieController.PlayerManualUpdate();
+                }
 
-				await UniTask.NextFrame();
-			}
+                await UniTask.NextFrame();
+            }
 
-			if (element.Player.status != Player.Status.Stop && element.Player.status != Player.Status.PlayEnd)
-			{
-				Debug.LogWarning($"Movie prepare failed.\nCurrent status is {element.Player.status}.");
-			}
+            if (element.Player.status != Player.Status.Stop && element.Player.status != Player.Status.PlayEnd)
+            {
+                Debug.LogWarning($"Movie prepare failed.\nCurrent status is {element.Player.status}.");
+            }
 
-			element.Player.Prepare();
-		}
+            element.Player.Prepare();
+        }
 
-		#endregion
+        #endregion
 
         #region Play
 
@@ -171,28 +171,28 @@ namespace Modules.Movie
         {
             var element = CreateElement(moviePath, targetGraphic, shaderOverrideCallBack);
 
-			Play(element, loop);
+            Play(element, loop);
 
             return element;
         }
-		
-		public void Play(MovieElement element, bool loop = false)
-		{
-			if (element == null || element.Player == null) { return; }
+        
+        public void Play(MovieElement element, bool loop = false)
+        {
+            if (element == null || element.Player == null) { return; }
 
             element.Player.Loop(loop);
 
-			element.Player.Start();
-		}
+            element.Player.Start();
+        }
 
-		#endregion
+        #endregion
 
-		public void Pause(MovieElement element, bool pause)
-		{
-			if (element == null || element.Player == null) { return; }
+        public void Pause(MovieElement element, bool pause)
+        {
+            if (element == null || element.Player == null) { return; }
 
-			element.Player.Pause(pause);
-		}
+            element.Player.Pause(pause);
+        }
 
         public void Stop(MovieElement element)
         {
@@ -211,13 +211,13 @@ namespace Modules.Movie
 
                 movieElement.Update();
 
-				if (!movieElement.IsLoop)
-				{
-	                if(movieElement.Status.HasValue && movieElement.Status.Value == Player.Status.PlayEnd)
-	                {
-	                    releaseElements.Add(movieElement);
-	                }
-				}
+                if (!movieElement.IsLoop)
+                {
+                    if(movieElement.Status.HasValue && movieElement.Status.Value == Player.Status.PlayEnd)
+                    {
+                        releaseElements.Add(movieElement);
+                    }
+                }
             }
 
             for (var i = 0; i < releaseElements.Count; i++)

@@ -7,52 +7,52 @@ namespace Extensions
 {
     public static class LogUtility
     {
-		//----- params -----
+        //----- params -----
 
-		//----- field -----
+        //----- field -----
 
-		//----- property -----
+        //----- property -----
 
-		//----- method -----
+        //----- method -----
 
-		public static void ChunkLog(string logs, string title, Action<string> outputCallback, int maxLine = 35)
-		{
-			if (outputCallback == null) { return; }
+        public static void ChunkLog(string logs, string title, Action<string> outputCallback, int maxLine = 35)
+        {
+            if (outputCallback == null) { return; }
 
-			var logBuilder = new StringBuilder();
+            var logBuilder = new StringBuilder();
 
-			var logText = logs.FixLineEnd();
+            var logText = logs.FixLineEnd();
 
-			var chunk = logText.Split('\n').Chunk(maxLine).ToArray();
+            var chunk = logText.Split('\n').Chunk(maxLine).ToArray();
 
-			var length = chunk.Length;
+            var length = chunk.Length;
 
-			logBuilder.Append(title);
+            logBuilder.Append(title);
 
-			if (length < 2)
-			{
-				logBuilder.AppendLine();
-			}
+            if (length < 2)
+            {
+                logBuilder.AppendLine();
+            }
 
-			for (var i = 0; i < length; i++)
-			{
-				var items = chunk[i];
+            for (var i = 0; i < length; i++)
+            {
+                var items = chunk[i];
 
-				if (1 < length)
-				{
-					logBuilder.Append($" [{i + 1}/{length}]");
-					logBuilder.AppendLine();
-				}
+                if (1 < length)
+                {
+                    logBuilder.Append($" [{i + 1}/{length}]");
+                    logBuilder.AppendLine();
+                }
 
-				foreach (var item in items)
-				{
-					logBuilder.AppendLine(item);
-				}
+                foreach (var item in items)
+                {
+                    logBuilder.AppendLine(item);
+                }
 
-				outputCallback.Invoke(logBuilder.ToString());
+                outputCallback.Invoke(logBuilder.ToString());
 
-				logBuilder.Clear();
-			}
-		}
-	}
+                logBuilder.Clear();
+            }
+        }
+    }
 }

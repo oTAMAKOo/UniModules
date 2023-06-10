@@ -1,4 +1,4 @@
-﻿﻿﻿﻿﻿﻿
+﻿﻿﻿﻿﻿
 using UnityEngine;
 using System;
 using Cysharp.Threading.Tasks;
@@ -48,18 +48,18 @@ namespace Modules.Window
 
             UnityUtility.SetActive(gameObject, true);
 
-			await OnOpen();
+            await OnOpen();
 
-			if (inputBlock != null)
-			{
-				inputBlock.Dispose();
-				inputBlock = null;
-			}
+            if (inputBlock != null)
+            {
+                inputBlock.Dispose();
+                inputBlock = null;
+            }
 
-			if (onOpen != null)
-			{
-				onOpen.OnNext(Unit.Default);
-			}
+            if (onOpen != null)
+            {
+                onOpen.OnNext(Unit.Default);
+            }
         }
 
         public async UniTask Close(bool blockInput = true)
@@ -72,18 +72,18 @@ namespace Modules.Window
 
             if (inputBlock != null)
             {
-	            inputBlock.Dispose();
-	            inputBlock = null;
+                inputBlock.Dispose();
+                inputBlock = null;
             }
 
             if (onClose != null)
             {
-	            onClose.OnNext(Unit.Default);
+                onClose.OnNext(Unit.Default);
             }
                         
             if (deleteOnClose)
             {
-	            UnityUtility.SafeDelete(gameObject);
+                UnityUtility.SafeDelete(gameObject);
             }
         }
 

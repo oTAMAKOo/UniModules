@@ -32,9 +32,9 @@ namespace Extensions
 
         public static void SetPivotAndAnchors(this RectTransform self, Vector2 aVec)
         {
-			self.pivot = aVec;
-			self.anchorMin = aVec;
-			self.anchorMax = aVec;
+            self.pivot = aVec;
+            self.anchorMin = aVec;
+            self.anchorMax = aVec;
         }
 
         public static Vector2 GetSize(this RectTransform self)
@@ -57,20 +57,20 @@ namespace Extensions
         /// </summary>
         public static void FillRect(this RectTransform self)
         {
-			self.anchorMin = new Vector2(0f, 0f);
-			self.anchorMax = new Vector2(1f, 1f);
-			self.offsetMin = new Vector2(0f, 0f);
-			self.offsetMax = new Vector2(0f, 0f);
+            self.anchorMin = new Vector2(0f, 0f);
+            self.anchorMax = new Vector2(1f, 1f);
+            self.offsetMin = new Vector2(0f, 0f);
+            self.offsetMax = new Vector2(0f, 0f);
         }
 
         public static void SetPositionOfPivot(this RectTransform self, Vector2 newPos)
         {
-			self.localPosition = new Vector3(newPos.x, newPos.y, self.localPosition.z);
+            self.localPosition = new Vector3(newPos.x, newPos.y, self.localPosition.z);
         }
 
         public static void SetLeftBottomPosition(this RectTransform self, Vector2 newPos)
         {
-			self.localPosition = new Vector3(newPos.x + (self.pivot.x * self.rect.width), newPos.y + (self.pivot.y * self.rect.height), self.localPosition.z);
+            self.localPosition = new Vector3(newPos.x + (self.pivot.x * self.rect.width), newPos.y + (self.pivot.y * self.rect.height), self.localPosition.z);
         }
 
         public static void SetLeftTopPosition(this RectTransform self, Vector2 newPos)
@@ -140,7 +140,7 @@ namespace Extensions
         /// <summary> ワールド座標上でのRectを取得. </summary>
         public static Rect GetWorldRect(this RectTransform self)
         {
-			self.GetWorldCorners(tempCorners);
+            self.GetWorldCorners(tempCorners);
 
             var tl = tempCorners[0];
             var br = tempCorners[2];
@@ -189,21 +189,21 @@ namespace Extensions
         /// <summary> 対象のRectTransformを内包しているか </summary>
         public static bool Contains(this RectTransform self, RectTransform target)
         {
-			var targetBounds = GetBounds(target);
+            var targetBounds = GetBounds(target);
 
             return self.Contains(targetBounds);
         }
 
         /// <summary> 対象のBoundsを内包しているか </summary>
-		public static bool Contains(this RectTransform self, Bounds bounds)
-		{
-			var selfBounds = GetBounds(self);
+        public static bool Contains(this RectTransform self, Bounds bounds)
+        {
+            var selfBounds = GetBounds(self);
 
-			return selfBounds.Contains(new Vector3(bounds.min.x, bounds.min.y, 0f)) &&
-					selfBounds.Contains(new Vector3(bounds.max.x, bounds.max.y, 0f)) &&
-					selfBounds.Contains(new Vector3(bounds.min.x, bounds.max.y, 0f)) &&
-					selfBounds.Contains(new Vector3(bounds.max.x, bounds.min.y, 0f));
-		}
+            return selfBounds.Contains(new Vector3(bounds.min.x, bounds.min.y, 0f)) &&
+                    selfBounds.Contains(new Vector3(bounds.max.x, bounds.max.y, 0f)) &&
+                    selfBounds.Contains(new Vector3(bounds.min.x, bounds.max.y, 0f)) &&
+                    selfBounds.Contains(new Vector3(bounds.max.x, bounds.min.y, 0f));
+        }
 
         /// <summary> 対象のRectTransformに接触しているか </summary>
         public static bool IsHit(this RectTransform self, RectTransform target)
@@ -245,39 +245,39 @@ namespace Extensions
             return bounds;
         }
 
-		/// <summary> 子階層を含むレイアウトグループを強制更新 </summary>
-		public static void ForceRebuildLayoutGroup(this RectTransform self)
-		{
-			var gameObject = self.gameObject;
+        /// <summary> 子階層を含むレイアウトグループを強制更新 </summary>
+        public static void ForceRebuildLayoutGroup(this RectTransform self)
+        {
+            var gameObject = self.gameObject;
 
-			if (gameObject == null){ return; }
+            if (gameObject == null){ return; }
 
-			IEnumerator LayoutUpdateCore()
-			{
-				yield return new WaitForEndOfFrame();
+            IEnumerator LayoutUpdateCore()
+            {
+                yield return new WaitForEndOfFrame();
 
-				if (self == null){ yield break; }
+                if (self == null){ yield break; }
 
-				if (gameObject == null){ yield break; }
+                if (gameObject == null){ yield break; }
                 
-				var layoutGroups = gameObject.DescendantsAndSelf().OfComponent<LayoutGroup>();
+                var layoutGroups = gameObject.DescendantsAndSelf().OfComponent<LayoutGroup>();
 
-				foreach (var layoutGroup in layoutGroups)
-				{
-					layoutGroup.SetLayoutHorizontal();
-					layoutGroup.SetLayoutVertical();
+                foreach (var layoutGroup in layoutGroups)
+                {
+                    layoutGroup.SetLayoutHorizontal();
+                    layoutGroup.SetLayoutVertical();
 
-					layoutGroup.CalculateLayoutInputHorizontal();
-					layoutGroup.CalculateLayoutInputVertical();
+                    layoutGroup.CalculateLayoutInputHorizontal();
+                    layoutGroup.CalculateLayoutInputVertical();
 
-					LayoutRebuilder.MarkLayoutForRebuild(layoutGroup.transform as RectTransform);
-				}
-			}
+                    LayoutRebuilder.MarkLayoutForRebuild(layoutGroup.transform as RectTransform);
+                }
+            }
 
-			Observable.FromCoroutine(() => LayoutUpdateCore())
-				.TakeUntilDisable(gameObject)
-				.Subscribe()
-				.AddTo(gameObject);
-		}
+            Observable.FromCoroutine(() => LayoutUpdateCore())
+                .TakeUntilDisable(gameObject)
+                .Subscribe()
+                .AddTo(gameObject);
+        }
     }
 }

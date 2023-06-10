@@ -1,4 +1,4 @@
-﻿﻿﻿
+﻿﻿
 using UnityEngine;
 using System;
 using System.Collections;
@@ -48,8 +48,8 @@ namespace Extensions
 
         /// <summary>
         /// UV座標をテクスチャ座標に変換.
-	    /// Convert from bottom-left based UV coordinates to top-left based pixel coordinates.
-	    /// </summary>
+        /// Convert from bottom-left based UV coordinates to top-left based pixel coordinates.
+        /// </summary>
         public static Rect ConvertToPixels(Rect rect, int width, int height, bool round)
         {
             Rect final = rect;

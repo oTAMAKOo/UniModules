@@ -1,4 +1,4 @@
-﻿
+
 using UnityEngine;
 using UnityEditor;
 using UnityEditor.SceneManagement;
@@ -53,7 +53,7 @@ namespace Modules.Devkit.EventHook
             // 実行中は追加しない.
             if (Application.isPlaying) { return; }
 
-			if (prefabModeObjects == null){ return; }
+            if (prefabModeObjects == null){ return; }
 
             var currentPrefabStage = PrefabStageUtility.GetCurrentPrefabStage();
 

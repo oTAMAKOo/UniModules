@@ -1,4 +1,4 @@
-﻿
+
 using UnityEngine;
 using UnityEditor;
 using System;
@@ -22,7 +22,7 @@ namespace Extensions
             return warning;
         }
 
-		/// <summary> テクスチャサイズ取得 </summary>
+        /// <summary> テクスチャサイズ取得 </summary>
         public static Vector2 GetPreImportTextureSize(this TextureImporter importer)
         {
             // ※ TextureImporter.GetWidthAndHeightは非公開メソッドなので無理矢理呼び出し.     

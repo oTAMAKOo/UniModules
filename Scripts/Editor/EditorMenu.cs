@@ -69,10 +69,10 @@ namespace Modules
             var projectScriptFolders = ProjectScriptFolders.Instance;
             var sceneImporterConfig = SceneImporterConfig.Instance;
 
-			var constantsScriptPath = projectScriptFolders.ConstantsScriptPath;
+            var constantsScriptPath = projectScriptFolders.ConstantsScriptPath;
 
             // SceneNames.
-			var managedFolderPaths = sceneImporterConfig.GetManagedFolderPaths();
+            var managedFolderPaths = sceneImporterConfig.GetManagedFolderPaths();
             ScenesScriptGenerator.Generate(managedFolderPaths, constantsScriptPath);
 
             // Tags.
@@ -88,11 +88,11 @@ namespace Modules
         [MenuItem(GeneratorsScripts + "  - Scenes.cs", priority = 1)]
         public static void GenerateSceneNames()
         {
-			var projectScriptFolders = ProjectScriptFolders.Instance;
+            var projectScriptFolders = ProjectScriptFolders.Instance;
             var sceneImporterConfig = SceneImporterConfig.Instance;
 
-			var constantsScriptPath = projectScriptFolders.ConstantsScriptPath;
-			var managedFolderPaths = sceneImporterConfig.GetManagedFolderPaths();
+            var constantsScriptPath = projectScriptFolders.ConstantsScriptPath;
+            var managedFolderPaths = sceneImporterConfig.GetManagedFolderPaths();
 
             ScenesScriptGenerator.Generate(managedFolderPaths, constantsScriptPath);
         }
@@ -100,8 +100,8 @@ namespace Modules
         [MenuItem(GeneratorsScripts + "  - Tags.cs", priority = 2)]
         public static void GenerateTags()
         {
-			var projectScriptFolders = ProjectScriptFolders.Instance;
-			var constantsScriptPath = projectScriptFolders.ConstantsScriptPath;
+            var projectScriptFolders = ProjectScriptFolders.Instance;
+            var constantsScriptPath = projectScriptFolders.ConstantsScriptPath;
 
             TagsScriptGenerator.Generate(constantsScriptPath);
         }
@@ -109,8 +109,8 @@ namespace Modules
         [MenuItem(GeneratorsScripts + "  - Layers.cs", priority = 3)]
         public static void GenerateLayers()
         {
-			var projectScriptFolders = ProjectScriptFolders.Instance;
-			var constantsScriptPath = projectScriptFolders.ConstantsScriptPath;
+            var projectScriptFolders = ProjectScriptFolders.Instance;
+            var constantsScriptPath = projectScriptFolders.ConstantsScriptPath;
 
             LayersScriptGenerator.Generate(constantsScriptPath);
         }
@@ -118,8 +118,8 @@ namespace Modules
         [MenuItem(GeneratorsScripts + "  - SortingLayers.cs", priority = 4)]
         public static void GenerateSortingLayers()
         {
-			var projectScriptFolders = ProjectScriptFolders.Instance;
-			var constantsScriptPath = projectScriptFolders.ConstantsScriptPath;
+            var projectScriptFolders = ProjectScriptFolders.Instance;
+            var constantsScriptPath = projectScriptFolders.ConstantsScriptPath;
 
             SortingLayersScriptGenerator.Generate(constantsScriptPath);
         }
@@ -169,7 +169,7 @@ namespace Modules
 
         #endregion
 
-		//===============================================================
+        //===============================================================
         //  TextData.
         //===============================================================
 
@@ -200,36 +200,36 @@ namespace Modules
 
         #endregion
 
-		//===============================================================
-		//  LuaText.
-		//===============================================================
+        //===============================================================
+        //  LuaText.
+        //===============================================================
 
-		#region LuaText
+        #region LuaText
 
-		protected const string LuaTextMenu = MenuRoot + "LuaText/";
+        protected const string LuaTextMenu = MenuRoot + "LuaText/";
 
-		[MenuItem(itemName: LuaTextMenu + "Open Generate Window", priority = 0)]
-		public static void OpenLuaTextWindow()
-		{
-			Lua.Text.GenerateWindow.Open();
-		}
+        [MenuItem(itemName: LuaTextMenu + "Open Generate Window", priority = 0)]
+        public static void OpenLuaTextWindow()
+        {
+            Lua.Text.GenerateWindow.Open();
+        }
 
-		//------ Excel保存時に自動更新 ------
+        //------ Excel保存時に自動更新 ------
 
-		[MenuItem(itemName: LuaTextMenu + "Updated when save Excel", priority = 1)]
-		public static void ToggleUpdateOnSaveLuaTextExcel()
-		{
-			Lua.Text.LuaTextAssetUpdater.Prefs.autoUpdate = !Lua.Text.LuaTextAssetUpdater.Prefs.autoUpdate;
-		}
+        [MenuItem(itemName: LuaTextMenu + "Updated when save Excel", priority = 1)]
+        public static void ToggleUpdateOnSaveLuaTextExcel()
+        {
+            Lua.Text.LuaTextAssetUpdater.Prefs.autoUpdate = !Lua.Text.LuaTextAssetUpdater.Prefs.autoUpdate;
+        }
 
-		[MenuItem(itemName: LuaTextMenu + "Updated when save Excel", isValidateFunction: true)]
-		public static bool ToggleUpdateOnSaveLuaTextExcelValidate()
-		{
-			Menu.SetChecked(LuaTextMenu + "Updated when save Excel", Lua.Text.LuaTextAssetUpdater.Prefs.autoUpdate);
-			return true;
-		}
+        [MenuItem(itemName: LuaTextMenu + "Updated when save Excel", isValidateFunction: true)]
+        public static bool ToggleUpdateOnSaveLuaTextExcelValidate()
+        {
+            Menu.SetChecked(LuaTextMenu + "Updated when save Excel", Lua.Text.LuaTextAssetUpdater.Prefs.autoUpdate);
+            return true;
+        }
 
-		#endregion
+        #endregion
 
         //===============================================================
         //  Resource.
@@ -259,7 +259,7 @@ namespace Modules
         [MenuItem(itemName: ResourcesMenu + "Generate AssetInfoManifest", priority = 1)]
         public static void OpenGenerateAssetInfoManifestWindow()
         {
-			GenerateAssetInfoManifestWindow.Open();
+            GenerateAssetInfoManifestWindow.Open();
         }
 
         //------ 外部アセット管理ウィンドウ ------
@@ -275,7 +275,7 @@ namespace Modules
         [MenuItem(itemName: ResourcesMenu + "Open AssetNavigationWindow", priority = 13)]
         public static void OpenAssetNavigationWindow()
         {
-			var projectResourceFolders = ProjectResourceFolders.Instance;
+            var projectResourceFolders = ProjectResourceFolders.Instance;
 
             AssetNavigationWindow.Open(projectResourceFolders.ExternalAssetPath);
         }
@@ -286,21 +286,21 @@ namespace Modules
             FindDependencyAssetsWindow.Open();
         }
 
-		[MenuItem(itemName: ResourcesMenu + "Open AssetBundleViewer", priority = 15)]
-		public static void OpenAssetBundleViewer()
-		{
-			AssetBundleViewerWindow.Open();
-		}
+        [MenuItem(itemName: ResourcesMenu + "Open AssetBundleViewer", priority = 15)]
+        public static void OpenAssetBundleViewer()
+        {
+            AssetBundleViewerWindow.Open();
+        }
 
-		[MenuItem(itemName: ResourcesMenu + "Open SimulationModeAssetFileTracker", priority = 16)]
-		public static void OpenSimulationModeAssetFileTracker()
-		{
-			SimulationModeAssetFileTracker.Open();
-		}
+        [MenuItem(itemName: ResourcesMenu + "Open SimulationModeAssetFileTracker", priority = 16)]
+        public static void OpenSimulationModeAssetFileTracker()
+        {
+            SimulationModeAssetFileTracker.Open();
+        }
 
-		//------ 全アセットバンドル名を再設定 ------
+        //------ 全アセットバンドル名を再設定 ------
 
-		[MenuItem(itemName: ResourcesMenu + "Apply AssetBundleNames", priority = 35)]
+        [MenuItem(itemName: ResourcesMenu + "Apply AssetBundleNames", priority = 35)]
         public static void ApplyAssetBundleNames()
         {
             var assetManagement = AssetManagement.Instance;
@@ -310,15 +310,15 @@ namespace Modules
             assetManagement.ApplyAllAssetBundleName(true);
         }
 
-		//------ 外部アセットビルド ------
+        //------ 外部アセットビルド ------
 
-		[MenuItem(itemName: ResourcesMenu + "Build ExternalAssets", priority = 36)]
-		public static void BuildExecuteExternalAssets()
-		{
-			BuildExternalAssets.Execute();
-		}
+        [MenuItem(itemName: ResourcesMenu + "Build ExternalAssets", priority = 36)]
+        public static void BuildExecuteExternalAssets()
+        {
+            BuildExternalAssets.Execute();
+        }
 
-		#endregion
+        #endregion
 
         //===============================================================
         //  CriWare.

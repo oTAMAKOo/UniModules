@@ -39,9 +39,9 @@ namespace Modules.UI.Extension
         {
             if (Application.isPlaying) { return; }
 
-			if (BuildPipeline.isBuildingPlayer) { return; }
+            if (BuildPipeline.isBuildingPlayer) { return; }
 
-			if (Image.sprite != null && Image.sprite.name != DummyAssetName) { return; }
+            if (Image.sprite != null && Image.sprite.name != DummyAssetName) { return; }
 
             if (string.IsNullOrEmpty(assetGuid)) { return; }
 

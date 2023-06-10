@@ -1,4 +1,4 @@
-﻿
+
 using System;
 using System.IO;
 using System.Security.Cryptography;
@@ -184,20 +184,20 @@ namespace Extensions
             aesManaged.IV = Encoding.UTF8.GetBytes(iv);
         }
 
-		public AesCryptoKey(byte[] key, byte[] iv) : this(key, iv, CreateDefaultAesManaged()) { }
+        public AesCryptoKey(byte[] key, byte[] iv) : this(key, iv, CreateDefaultAesManaged()) { }
 
-		public AesCryptoKey(byte[] key, byte[] iv, AesManaged aesManaged)
-		{
-			if (key == null || iv == null)
-			{
-				throw new ArgumentException("Require key and iv string.");
-			}
+        public AesCryptoKey(byte[] key, byte[] iv, AesManaged aesManaged)
+        {
+            if (key == null || iv == null)
+            {
+                throw new ArgumentException("Require key and iv string.");
+            }
 
-			this.aesManaged = aesManaged;
+            this.aesManaged = aesManaged;
 
-			aesManaged.Key = key;
-			aesManaged.IV = iv;
-		}
+            aesManaged.Key = key;
+            aesManaged.IV = iv;
+        }
 
         private ICryptoTransform CreateEncryptor()
         {

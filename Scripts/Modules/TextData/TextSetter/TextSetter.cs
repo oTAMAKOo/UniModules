@@ -1,4 +1,4 @@
-﻿
+
 using UnityEngine;
 using UnityEngine.UI;
 using Extensions;
@@ -10,21 +10,21 @@ namespace Modules.TextData.Components
     [ExecuteAlways]
     [DisallowMultipleComponent]
     public sealed partial class TextSetter : MonoBehaviour
-	{
+    {
         //----- params -----
 
         //----- field -----
 
-		[SerializeField]
-	    private ContentType type = ContentType.Embedded;
-		[SerializeField]
+        [SerializeField]
+        private ContentType type = ContentType.Embedded;
+        [SerializeField]
         private string textGuid = null;
         [SerializeField]
         private string content = null;
 
         private Text textComponent = null;
 
-	    private TextMeshProUGUI textMeshProComponent = null;
+        private TextMeshProUGUI textMeshProComponent = null;
 
         //----- property -----
 
@@ -49,16 +49,16 @@ namespace Modules.TextData.Components
             }
         }
 
-		#if UNITY_EDITOR
+        #if UNITY_EDITOR
         
-		void OnEnable()
-		{
-			if (Application.isPlaying){ return; }
+        void OnEnable()
+        {
+            if (Application.isPlaying){ return; }
 
-			ImportText();
-		}
+            ImportText();
+        }
 
-		#endif
+        #endif
 
         public void Format(params object[] args)
         {
@@ -100,7 +100,7 @@ namespace Modules.TextData.Components
 
         private void ImportText()
         {
-			#if UNITY_EDITOR
+            #if UNITY_EDITOR
 
             ApplyDummyText();
 
@@ -125,47 +125,47 @@ namespace Modules.TextData.Components
         private void ApplyText(string text)
         {
             GetTargetComponent();
-			
-			if (textMeshProComponent != null)
-			{
-				textMeshProComponent.ForceMeshUpdate(true);
-				textMeshProComponent.SetText(text);
-			}
+            
+            if (textMeshProComponent != null)
+            {
+                textMeshProComponent.ForceMeshUpdate(true);
+                textMeshProComponent.SetText(text);
+            }
 
             if (textComponent != null)
             {
                 textComponent.text = text;
             }
-		}
+        }
 
-	    private string GetTargetText()
-	    {
-	        GetTargetComponent();
+        private string GetTargetText()
+        {
+            GetTargetComponent();
 
-			if (textMeshProComponent != null)
-			{
-				return textMeshProComponent.text;
-			}
+            if (textMeshProComponent != null)
+            {
+                return textMeshProComponent.text;
+            }
 
-	        if (textComponent != null)
-	        {
-	            return textComponent.text;
-	        }
+            if (textComponent != null)
+            {
+                return textComponent.text;
+            }
 
-			return null;
-	    }
+            return null;
+        }
 
         private void GetTargetComponent()
-	    {
-			if (textMeshProComponent == null)
-			{
-				textMeshProComponent = UnityUtility.GetComponent<TextMeshProUGUI>(gameObject);
-			}
+        {
+            if (textMeshProComponent == null)
+            {
+                textMeshProComponent = UnityUtility.GetComponent<TextMeshProUGUI>(gameObject);
+            }
 
-	        if (textComponent == null)
-	        {
-	            textComponent = UnityUtility.GetComponent<Text>(gameObject);
-			}
-		}
+            if (textComponent == null)
+            {
+                textComponent = UnityUtility.GetComponent<Text>(gameObject);
+            }
+        }
     }
 }

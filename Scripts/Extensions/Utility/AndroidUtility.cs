@@ -18,7 +18,7 @@ namespace Extensions
     {
         //----- params -----
 
-		private const int MaxCopyCount = 5;
+        private const int MaxCopyCount = 5;
 
         private sealed class CopyBuffer
         {
@@ -28,11 +28,11 @@ namespace Extensions
 
         //----- field -----
 
-		private static List<string> copyQueueing = null;
+        private static List<string> copyQueueing = null;
         
         private static List<CopyBuffer> copyBuffers = null;
 
-		//----- property -----
+        //----- property -----
 
         //----- method -----
 
@@ -42,92 +42,92 @@ namespace Extensions
             copyBuffers = new List<CopyBuffer>();
         }
 
-		// ※ AndroidではstreamingAssetsPathがWebRequestからしかアクセスできないのでtemporaryCachePathにファイルを複製する.
-		public static async UniTask<bool> CopyStreamingToTemporary(string filePath, CancellationToken cancelToken = default)
-		{
-			CopyBuffer copyBuffer = null;
+        // ※ AndroidではstreamingAssetsPathがWebRequestからしかアクセスできないのでtemporaryCachePathにファイルを複製する.
+        public static async UniTask<bool> CopyStreamingToTemporary(string filePath, CancellationToken cancelToken = default)
+        {
+            CopyBuffer copyBuffer = null;
 
-			filePath = PathUtility.ConvertPathSeparator(filePath);
+            filePath = PathUtility.ConvertPathSeparator(filePath);
 
-			if (!filePath.StartsWith(UnityPathUtility.StreamingAssetsPath))
-			{
-				Debug.LogErrorFormat("Not streamingAssetsPath file.\n{0}", filePath);
+            if (!filePath.StartsWith(UnityPathUtility.StreamingAssetsPath))
+            {
+                Debug.LogErrorFormat("Not streamingAssetsPath file.\n{0}", filePath);
 
-				return false;
-			}
+                return false;
+            }
 
-			if (copyQueueing.Contains(filePath)) { return true; }
+            if (copyQueueing.Contains(filePath)) { return true; }
 
-			try
-			{
-				copyQueueing.Add(filePath);
+            try
+            {
+                copyQueueing.Add(filePath);
 
-				while (true)
-				{
-					UpdateCopyBuffer();
+                while (true)
+                {
+                    UpdateCopyBuffer();
 
-					copyBuffer = copyBuffers.FirstOrDefault(x => !x.use);
+                    copyBuffer = copyBuffers.FirstOrDefault(x => !x.use);
 
-					if (copyBuffer != null) { break; }
+                    if (copyBuffer != null) { break; }
 
-					await UniTask.NextFrame(cancelToken);
-				}
+                    await UniTask.NextFrame(cancelToken);
+                }
 
-				var copyPath = ConvertStreamingAssetsLoadPath(filePath);
+                var copyPath = ConvertStreamingAssetsLoadPath(filePath);
 
-				var directory = Directory.GetParent(copyPath);
+                var directory = Directory.GetParent(copyPath);
 
-				if (!directory.Exists)
-				{
-					directory.Create();
-				}
+                if (!directory.Exists)
+                {
+                    directory.Create();
+                }
 
-				using (var webRequest = UnityWebRequest.Get(filePath))
-				{
-					webRequest.downloadHandler = new FileDownloadHandler(copyPath, copyBuffer.buffer);
+                using (var webRequest = UnityWebRequest.Get(filePath))
+                {
+                    webRequest.downloadHandler = new FileDownloadHandler(copyPath, copyBuffer.buffer);
 
-					var operation = webRequest.SendWebRequest();
+                    var operation = webRequest.SendWebRequest();
 
-					while (!operation.isDone)
-					{
-						await UniTask.NextFrame(cancelToken);
-					}
+                    while (!operation.isDone)
+                    {
+                        await UniTask.NextFrame(cancelToken);
+                    }
 
-					if (webRequest.HasError())
-					{
-						Debug.LogError($"File copy error : \nfrom :{filePath}\nto : {copyPath}\n\n{webRequest.error}");
-					}
-				}
-			}
-			catch (OperationCanceledException)
-			{
-				/* Canceled */
-			}
-			finally
-			{
-				copyBuffer.use = false;
+                    if (webRequest.HasError())
+                    {
+                        Debug.LogError($"File copy error : \nfrom :{filePath}\nto : {copyPath}\n\n{webRequest.error}");
+                    }
+                }
+            }
+            catch (OperationCanceledException)
+            {
+                /* Canceled */
+            }
+            finally
+            {
+                copyBuffer.use = false;
 
-				copyQueueing.Remove(filePath);
+                copyQueueing.Remove(filePath);
 
-				UpdateCopyBuffer();
-			}
+                UpdateCopyBuffer();
+            }
 
-			return true;
-		}
+            return true;
+        }
 
-		public static string ConvertStreamingAssetsLoadPath(string filePath)
-		{
-			filePath = PathUtility.ConvertPathSeparator(filePath);
+        public static string ConvertStreamingAssetsLoadPath(string filePath)
+        {
+            filePath = PathUtility.ConvertPathSeparator(filePath);
 
-			if (filePath.StartsWith(UnityPathUtility.StreamingAssetsPath))
-			{
-				var paths = new string[] { UnityPathUtility.TemporaryCachePath, "Embedded", filePath.Replace(UnityPathUtility.StreamingAssetsPath, string.Empty) };
+            if (filePath.StartsWith(UnityPathUtility.StreamingAssetsPath))
+            {
+                var paths = new string[] { UnityPathUtility.TemporaryCachePath, "Embedded", filePath.Replace(UnityPathUtility.StreamingAssetsPath, string.Empty) };
 
-				filePath = PathUtility.Combine(paths);
-			}
+                filePath = PathUtility.Combine(paths);
+            }
 
-			return filePath;
-		}
+            return filePath;
+        }
 
         private static void UpdateCopyBuffer()
         {
@@ -158,7 +158,7 @@ namespace Extensions
                 }
             }
         }
-	}
+    }
 }
 
 #endif

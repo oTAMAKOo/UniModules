@@ -23,9 +23,9 @@ namespace Extensions
 
         public bool EndOfStream { get; private set; }
 
-		public long Position { get; private set; }
+        public long Position { get; private set; }
 
-		public long Length { get { return fileStream != null ? fileStream.Length : 0; } }
+        public long Length { get { return fileStream != null ? fileStream.Length : 0; } }
 
         //----- method -----
 
@@ -36,7 +36,7 @@ namespace Extensions
 
             if (fileStream != null)
             {
-				Position = fileStream.Seek(0, SeekOrigin.End);
+                Position = fileStream.Seek(0, SeekOrigin.End);
                 EndOfStream = false;
                 data = string.Empty;
             }
@@ -60,11 +60,11 @@ namespace Extensions
 
                 if (Position >= BufferSize)
                 {
-					Position = fileStream.Seek(-1 * BufferSize, SeekOrigin.Current);
+                    Position = fileStream.Seek(-1 * BufferSize, SeekOrigin.Current);
                 }
                 else
                 {
-					Position = fileStream.Seek(-1 * Position, SeekOrigin.Current);
+                    Position = fileStream.Seek(-1 * Position, SeekOrigin.Current);
 
                     size = (int)(oldPosition - Position);
                     bytes = new byte[size];
@@ -129,7 +129,7 @@ namespace Extensions
 
             data = string.Empty;
 
-			Position = -1;
+            Position = -1;
         }
     }
 }
