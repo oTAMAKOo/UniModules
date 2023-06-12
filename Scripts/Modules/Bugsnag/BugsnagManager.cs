@@ -157,6 +157,11 @@ namespace Modules.Bugsnag
 
             var data = await MessagePackFileUtility.Read<BugsnagApiKeyData>(filePath, cryptoKey);
             
+            if (data == null)
+            {
+                Debug.LogError($"ApiKey load failed.\n{filePath}");
+            }
+
             return data != null ? data.apiKey : string.Empty; 
         }
         
