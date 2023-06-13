@@ -48,7 +48,7 @@ namespace Extensions
 
                 await AndroidUtility.CopyStreamingToTemporary(filePath);
 
-                filePath = filePath.Replace(UnityPathUtility.StreamingAssetsPath, UnityPathUtility.TemporaryCachePath);
+                filePath = AndroidUtility.ConvertStreamingAssetsLoadPath(filePath);
 
                 #endif
             }
