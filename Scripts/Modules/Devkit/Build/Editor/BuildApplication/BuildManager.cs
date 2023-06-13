@@ -37,13 +37,24 @@ namespace Modules.Devkit.Build
         //----- method -----
 
         [DidReloadScripts]
-        private static async void DidReloadScripts()
+        private static void OnDidReloadScripts()
+        {
+            if(EditorApplication.isCompiling || EditorApplication.isUpdating)
+            {
+                EditorApplication.delayCall += OnDidReloadScripts;
+                return;
+            }
+ 
+            EditorApplication.delayCall += OnAfterDidReloadScripts;
+        }
+
+        private static void OnAfterDidReloadScripts()
         {
             if (!Prefs.buildRequest){ return; }
 
             var applicationBuilder = CreateSavedBuilderInstance();
 
-            await Build(applicationBuilder);
+            Build(applicationBuilder).Forget();
         }
 
         public static async UniTask Build(IApplicationBuilder applicationBuilder)
@@ -77,7 +88,7 @@ namespace Modules.Devkit.Build
 
             using (new DisableStackTraceScope())
             {
-                Debug.Log($"Set DefineSymbols : {defineSymbols}");
+                Debug.Log($"DefineSymbols : {defineSymbols}");
             }
 
             if (defineSymbols != currentDefineSymbols)

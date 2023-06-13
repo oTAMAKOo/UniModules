@@ -25,6 +25,17 @@ namespace Modules.Devkit.ValidateAsset.UnityWarning
         [DidReloadScripts]
         public static void OnDidReloadScripts()
         {
+            if(EditorApplication.isCompiling || EditorApplication.isUpdating)
+            {
+                EditorApplication.delayCall += OnDidReloadScripts;
+                return;
+            }
+
+            EditorApplication.delayCall += OnAfterDidReloadScripts;
+        }
+
+        private static void OnAfterDidReloadScripts()
+        {
             Instance.OnAssemblyReload();
         }
 

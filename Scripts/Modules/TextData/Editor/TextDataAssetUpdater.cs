@@ -24,17 +24,17 @@ namespace Modules.TextData.Editor
                 set { ProjectPrefs.SetBool(typeof(Prefs).FullName + "-autoUpdate", value); }
             }
 
-			public static DateTime embeddedLastUpdate
-			{
-				get { return ProjectPrefs.Get(typeof(Prefs).FullName + "-embeddedLastUpdate", DateTime.MinValue); }
-				set { ProjectPrefs.Set(typeof(Prefs).FullName + "-embeddedLastUpdate", value); }
-			}
+            public static DateTime embeddedLastUpdate
+            {
+                get { return ProjectPrefs.Get(typeof(Prefs).FullName + "-embeddedLastUpdate", DateTime.MinValue); }
+                set { ProjectPrefs.Set(typeof(Prefs).FullName + "-embeddedLastUpdate", value); }
+            }
 
-			public static DateTime distributionLastUpdate
-			{
-				get { return ProjectPrefs.Get(typeof(Prefs).FullName + "-distributionLastUpdate", DateTime.MinValue); }
-				set { ProjectPrefs.Set(typeof(Prefs).FullName + "-distributionLastUpdate", value); }
-			}
+            public static DateTime distributionLastUpdate
+            {
+                get { return ProjectPrefs.Get(typeof(Prefs).FullName + "-distributionLastUpdate", DateTime.MinValue); }
+                set { ProjectPrefs.Set(typeof(Prefs).FullName + "-distributionLastUpdate", value); }
+            }
         }
 
         private const int CheckInterval = 1;
@@ -52,14 +52,25 @@ namespace Modules.TextData.Editor
         //----- method -----
 
         [DidReloadScripts]
-        private static void DidReloadScripts()
+        private static void OnDidReloadScripts()
+        {
+            if(EditorApplication.isCompiling || EditorApplication.isUpdating)
+            {
+                EditorApplication.delayCall += OnDidReloadScripts;
+                return;
+            }
+
+            EditorApplication.delayCall += OnAfterDidReloadScripts;
+        }
+
+        private static void OnAfterDidReloadScripts()
         {
             EditorApplication.update += AutoUpdateTextDataAssetCallback;
         }
 
         private static async void AutoUpdateTextDataAssetCallback()
         {
-			if (Application.isPlaying) { return; }
+            if (Application.isPlaying) { return; }
 
             if (!Prefs.autoUpdate){ return; }
 
@@ -108,10 +119,10 @@ namespace Modules.TextData.Editor
             if (!File.Exists(excelPath)){ return; }
 
             var lastWriteTime = File.GetLastWriteTime(excelPath);
-			
+            
             if (lastWriteTime <= lastUpdate){ return; }
 
-			var languageManager = LanguageManager.Instance;
+            var languageManager = LanguageManager.Instance;
 
             var languageInfo = languageManager.Current;
 
@@ -119,7 +130,7 @@ namespace Modules.TextData.Editor
 
             TextDataGenerator.Generate(textDataAsset.ContentType, languageInfo);
 
-			onUpdate.Invoke(lastWriteTime);
+            onUpdate.Invoke(lastWriteTime);
 
             UnityConsole.Info("TextData auto updated.");
         }

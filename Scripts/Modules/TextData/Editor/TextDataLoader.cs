@@ -1,4 +1,4 @@
-﻿
+
 using UnityEngine;
 using UnityEditor;
 using UnityEditor.Callbacks;
@@ -27,17 +27,26 @@ namespace Modules.TextData.Editor
         }
 
         [DidReloadScripts]
-        private static void DidReloadScripts()
+        private static void OnDidReloadScripts()
+        {
+            if(EditorApplication.isCompiling || EditorApplication.isUpdating)
+            {
+                EditorApplication.delayCall += OnDidReloadScripts;
+                return;
+            }
+ 
+            EditorApplication.delayCall += OnAfterDidReloadScripts;
+        }
+
+        private static void OnAfterDidReloadScripts()
         {
             SetupCryptoKey();
 
-			var frameCount = 0;
+            var frameCount = 0;
 
-            EditorApplication.CallbackFunction reloadTextData = null;
-
-            reloadTextData = () =>
+            void ReloadTextDataCallback()
             {
-				if (Application.isPlaying) { return; }
+                if (Application.isPlaying) { return; }
 
                 if (frameCount < 30)
                 {
@@ -47,10 +56,10 @@ namespace Modules.TextData.Editor
 
                 Reload();
 
-                EditorApplication.update -= reloadTextData;
-            };
+                EditorApplication.update -= ReloadTextDataCallback;
+            }
 
-            EditorApplication.update += reloadTextData;
+            EditorApplication.update += ReloadTextDataCallback;
         }
 
         public static void SetupCryptoKey()
@@ -118,9 +127,9 @@ namespace Modules.TextData.Editor
 
             var textData = TextData.Instance;
 
-			var config = TextDataConfig.Instance;
+            var config = TextDataConfig.Instance;
 
-			var languageManager = LanguageManager.Instance;
+            var languageManager = LanguageManager.Instance;
 
             var languageInfo = languageManager.Current;
 
