@@ -84,16 +84,12 @@ namespace Modules.Devkit.Build
             {
                 PlayerSettings.SetScriptingDefineSymbolsForGroup(buildTargetGroup, defineSymbols);
 
-                // 現在のビルドターゲットのDefineSymbolを変更するとコンパイルが実行される為コンパイル後に再度ビルドを実行する.
-                if (!batchMode && EditorUserBuildSettings.activeBuildTarget == buildTarget)
-                {
-                    return;
-                }
+                return;
             }
 
             //------ プラットフォーム切り替え ------
 
-            if (!batchMode && EditorUserBuildSettings.activeBuildTarget != buildTarget)
+            if (EditorUserBuildSettings.activeBuildTarget != buildTarget)
             {
                 EditorUserBuildSettings.SwitchActiveBuildTarget(buildTargetGroup, buildTarget);
 
