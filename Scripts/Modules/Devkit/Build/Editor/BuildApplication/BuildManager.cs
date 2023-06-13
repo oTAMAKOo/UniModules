@@ -3,6 +3,7 @@ using System;
 using UnityEngine;
 using UnityEditor;
 using UnityEditor.Callbacks;
+using UnityEditor.Compilation;
 using UnityEditor.Build.Reporting;
 using System.IO;
 using Cysharp.Threading.Tasks;
@@ -75,6 +76,16 @@ namespace Modules.Devkit.Build
             // ビルドクラスの型を保存.
             Prefs.builderClassTypeName = applicationBuilder.GetType().FullName;
 
+            //------ プラットフォーム切り替え ------
+
+            if (EditorUserBuildSettings.selectedBuildTargetGroup != buildTargetGroup ||
+                EditorUserBuildSettings.activeBuildTarget != buildTarget)
+            {
+                EditorUserBuildSettings.SwitchActiveBuildTarget(buildTargetGroup, buildTarget);
+
+                return;
+            }
+
             //------ DefineSymbol設定 ------
 
             var defineSymbols = string.Empty;
@@ -95,23 +106,15 @@ namespace Modules.Devkit.Build
             {
                 PlayerSettings.SetScriptingDefineSymbolsForGroup(buildTargetGroup, defineSymbols);
 
-                return;
-            }
-
-            //------ プラットフォーム切り替え ------
-
-            if (EditorUserBuildSettings.activeBuildTarget != buildTarget)
-            {
-                EditorUserBuildSettings.SwitchActiveBuildTarget(buildTargetGroup, buildTarget);
+                CompilationPipeline.RequestScriptCompilation();
 
                 return;
             }
 
-            // アセンブリリロードを停止.
+            //------ ビルド実行 ------
+
             using (new LockReloadAssembliesScope())
             {
-                //------ ビルド実行 ------
-
                 var success = false;
 
                 Prefs.buildRequest = false;
