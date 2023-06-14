@@ -440,37 +440,42 @@ namespace Modules.Master
 
             #endif
 
-            var tasks = new List<UniTask>();
-
-            foreach (var item in masters)
+            await UniTask.RunOnThreadPool(async () =>
             {
-                var master = item;
+                var tasks = new List<UniTask>();
 
-                var task = UniTask.RunOnThreadPool(() =>
+                foreach (var item in masters)
                 {
-                    var masterVersion = versionTable.GetValueOrDefault(master);
+                    var master = item;
 
-                    var versionCheck = CheckVersion(master, masterVersion);
-
-                    #if UNITY_EDITOR
-                            
-                    versionCheck = !enableVersionCheck || versionCheck;
-
-                    #endif
-
-                    if (!versionCheck)
+                    var task = UniTask.RunOnThreadPool(() =>
                     {
-                        lock (list)
+                        var masterVersion = versionTable.GetValueOrDefault(master);
+
+                        var versionCheck = CheckVersion(master, masterVersion);
+
+                        #if UNITY_EDITOR
+                                
+                        versionCheck = !enableVersionCheck || versionCheck;
+
+                        #endif
+
+                        if (!versionCheck)
                         {
-                            list.Add(master);
+                            lock (list)
+                            {
+                                list.Add(master);
+                            }
                         }
-                    }
-                });
 
-                tasks.Add(task);
-            }
+                    }, false);
 
-            await UniTask.WhenAll(tasks);
+                    tasks.Add(task);
+                }
+
+                await UniTask.WhenAll(tasks);
+
+            });
 
             return list.ToArray();
         }

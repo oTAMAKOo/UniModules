@@ -64,15 +64,17 @@ namespace Modules.ExternalAssets
         }
 
         /// <summary> 更新が必要なアセット情報を取得. </summary>
-        public async UniTask<IEnumerable<AssetInfo>> GetRequireUpdateAssetInfos(string groupName = null)
+        public async UniTask<AssetInfo[]> GetRequireUpdateAssetInfos(string groupName = null)
         {
             if (SimulateMode) { return new AssetInfo[0]; }
 
-            IEnumerable<AssetInfo> result = null;
+            AssetInfo[] result = null;
 
             await UniTask.RunOnThreadPool(async () =>
             {
-                var assetInfos = assetInfoManifest.GetAssetInfos(groupName).DistinctBy(x => x.FileName);
+                var assetInfos = assetInfoManifest.GetAssetInfos(groupName)
+                    .DistinctBy(x => x.FileName)
+                    .ToArray();
 
                 // バージョン情報が存在しないので全更新.
 
@@ -94,20 +96,20 @@ namespace Modules.ExternalAssets
                     filePathTemporaryCache.Add(file);
                 }
 
-                var tasks = new List<UniTask<IEnumerable<AssetInfo>>>();
+                var tasks = new List<UniTask<AssetInfo[]>>();
 
                 var chunck = assetInfos.Chunk(500);
 
                 foreach (var items in chunck)
                 {
-                    var task = UniTask.RunOnThreadPool(() => items.Where(x => IsRequireUpdate(x)), false);
+                    var task = UniTask.RunOnThreadPool(() => items.Where(x => IsRequireUpdate(x)).ToArray(), false);
 
                     tasks.Add(task);
                 }
 
                 var filterResults = await UniTask.WhenAll(tasks);
 
-                result = filterResults.SelectMany(x => x);
+                result = filterResults.SelectMany(x => x).ToArray();
 
                 filePathTemporaryCache = null;
             });
