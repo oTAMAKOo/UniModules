@@ -1,4 +1,4 @@
-﻿
+
 using UnityEditor;
 using System.Collections.Generic;
 using System.IO;
@@ -63,15 +63,15 @@ namespace Modules.ExternalAssets
             {
                 if (assetBundleNames.Contains(assetBundleName)) { continue; }
 
-				// AssetBundleNameをNoneに設定.
-				var assetPaths = AssetDatabase.GetAssetPathsFromAssetBundle(assetBundleName);
+                // AssetBundleNameをNoneに設定.
+                var assetPaths = AssetDatabase.GetAssetPathsFromAssetBundle(assetBundleName);
 
-				foreach (var assetPath in assetPaths)
-				{
-					assetManagement.SetAssetBundleName(assetPath, string.Empty);
-				}
+                foreach (var assetPath in assetPaths)
+                {
+                    assetManagement.SetAssetBundleName(assetPath, string.Empty);
+                }
 
-				// AssetBundleNameを削除.
+                // AssetBundleNameを削除.
                 AssetDatabase.RemoveAssetBundleName(assetBundleName, true);
             }
         }
@@ -113,14 +113,14 @@ namespace Modules.ExternalAssets
 
                 var packageFilePath = filePath + AssetBundleManager.PackageExtension;
 
-				if (!File.Exists(packageFilePath))
-				{
-					throw new InvalidDataException("Package file not found. : " + packageFilePath);
-				}
+                if (!File.Exists(packageFilePath))
+                {
+                    throw new InvalidDataException("Package file not found. : " + packageFilePath);
+                }
 
                 var task = UniTask.RunOnThreadPool(() =>
                 {
-					var fileInfo = new FileInfo(packageFilePath);
+                    var fileInfo = new FileInfo(packageFilePath);
 
                     var size = fileInfo.Exists ? fileInfo.Length : -1;
                     var crc = FileUtility.GetCRC(packageFilePath);
@@ -146,7 +146,7 @@ namespace Modules.ExternalAssets
             EditorUtility.ClearProgressBar();
         }
 
-		public static async UniTask SetFileAssetFileInfo(string exportPath, AssetInfoManifest assetInfoManifest)
+        public static async UniTask SetFileAssetFileInfo(string exportPath, AssetInfoManifest assetInfoManifest)
         {
             var assetInfos = Reflection.GetPrivateField<AssetInfoManifest, AssetInfo[]>(assetInfoManifest, "assetInfos");
             
@@ -157,14 +157,14 @@ namespace Modules.ExternalAssets
                 var assetInfo = assetInfos[i];
 
                 if (assetInfo.IsAssetBundle) { continue; }
-				
+                
                 var filePath = PathUtility.Combine(new string[] { exportPath, assetInfo.FileName });
 
-				if (!File.Exists(filePath)) { continue; }
+                if (!File.Exists(filePath)) { continue; }
 
                 var task = UniTask.RunOnThreadPool(() =>
                 {
-					var fileInfo = new FileInfo(filePath);
+                    var fileInfo = new FileInfo(filePath);
 
                     var size = fileInfo.Exists ? fileInfo.Length : -1;
                     var crc = FileUtility.GetCRC(filePath);
@@ -187,7 +187,7 @@ namespace Modules.ExternalAssets
             EditorUtility.ClearProgressBar();
         }
 
-		private static void ApplyAssetBundleName(AssetManagement assetManagement, AssetInfoManifest manifest)
+        private static void ApplyAssetBundleName(AssetManagement assetManagement, AssetInfoManifest manifest)
         {
             var projectResourceFolders = ProjectResourceFolders.Instance;
 
@@ -229,7 +229,7 @@ namespace Modules.ExternalAssets
 
             var externalAssetPath = projectResourceFolders.ExternalAssetPath;
 
-			if (string.IsNullOrEmpty(externalAssetPath)){ return null; }
+            if (string.IsNullOrEmpty(externalAssetPath)){ return null; }
 
             var allAssetInfos = assetManagement.GetAllAssetInfos().Shuffle().ToArray();
 
@@ -250,7 +250,7 @@ namespace Modules.ExternalAssets
             return manifest;
         }
 
-		private static string GetManifestPath(string externalAssetPath)
+        private static string GetManifestPath(string externalAssetPath)
         {
             return PathUtility.Combine(externalAssetPath, AssetInfoManifest.ManifestFileName);
         }

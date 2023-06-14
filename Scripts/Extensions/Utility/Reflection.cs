@@ -1,4 +1,4 @@
-﻿﻿
+﻿
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -12,6 +12,8 @@ namespace Extensions
         /// <summary> Public属性の変数の値を取得 </summary>
         public static TResult GetPublicField<T, TResult>(T instance, string fieldName, BindingFlags? bindingFlags = null)
         {
+            if (instance == null) { throw new ArgumentException("Instance is null."); }
+
             var flags = BindingFlags.GetField | BindingFlags.Public | BindingFlags.Instance;
 
             if (bindingFlags.HasValue)
@@ -27,6 +29,8 @@ namespace Extensions
         /// <summary> Private属性の変数の値を取得 </summary>
         public static TResult GetPrivateField<T, TResult>(T instance, string fieldName, BindingFlags? bindingFlags = null)
         {
+            if (instance == null) { throw new ArgumentException("Instance is null."); }
+
             var flags = BindingFlags.GetField | BindingFlags.NonPublic | BindingFlags.Instance;
 
             if (bindingFlags.HasValue)
@@ -42,6 +46,8 @@ namespace Extensions
         /// <summary> Public属性の変数に値を設定 </summary>
         public static void SetPublicField<T, TValue>(T instance, string fieldName, TValue value, BindingFlags? bindingFlags = null)
         {
+            if (instance == null) { throw new ArgumentException("Instance is null."); }
+
             var flags = BindingFlags.GetField | BindingFlags.SetField | BindingFlags.Public | BindingFlags.Instance;
 
             if (bindingFlags.HasValue)
@@ -57,6 +63,8 @@ namespace Extensions
         /// <summary> Private属性の変数に値を設定 </summary>
         public static void SetPrivateField<T, TValue>(T instance, string fieldName, TValue value, BindingFlags? bindingFlags = null)
         {
+            if (instance == null) { throw new ArgumentException("Instance is null."); }
+
             var flags = BindingFlags.GetField | BindingFlags.SetField | BindingFlags.NonPublic | BindingFlags.Instance;
 
             if (bindingFlags.HasValue)
@@ -72,6 +80,8 @@ namespace Extensions
         /// <summary> Private属性のプロパティの値を取得 </summary>
         public static TResult GetPrivateProperty<T, TResult>(T instance, string propertyName, object[] index = null, BindingFlags? bindingFlags = null)
         {
+            if (instance == null) { throw new ArgumentException("Instance is null."); }
+
             var flags = BindingFlags.GetProperty | BindingFlags.NonPublic | BindingFlags.Instance;
 
             if (bindingFlags.HasValue)
@@ -87,6 +97,8 @@ namespace Extensions
         /// <summary> Public属性のプロパティの値を取得 </summary>
         public static TResult GetPublicProperty<T, TResult>(T instance, string propertyName, object[] index = null, BindingFlags? bindingFlags = null)
         {
+            if (instance == null) { throw new ArgumentException("Instance is null."); }
+
             var flags = BindingFlags.GetProperty | BindingFlags.Public | BindingFlags.Instance;
 
             if (bindingFlags.HasValue)
@@ -102,6 +114,8 @@ namespace Extensions
         /// <summary> Private属性のプロパティに値を設定 </summary>
         public static void SetPrivateProperty<T, TValue>(T instance, string propertyName, TValue value, object[] index = null, BindingFlags? bindingFlags = null)
         {
+            if (instance == null) { throw new ArgumentException("Instance is null."); }
+
             var flags = BindingFlags.GetProperty | BindingFlags.SetField | BindingFlags.NonPublic | BindingFlags.Instance;
 
             if (bindingFlags.HasValue)
@@ -124,6 +138,8 @@ namespace Extensions
         /// <summary> Public属性のプロパティに値を設定 </summary>
         public static void SetPublicProperty<T, TValue>(T instance, string propertyName, TValue value, object[] index = null)
         {
+            if (instance == null) { throw new ArgumentException("Instance is null."); }
+
             var flags = BindingFlags.Public | BindingFlags.Instance;
 
             var propertyInfo = GetPropertyInfo(typeof(T), propertyName, flags);
@@ -141,6 +157,8 @@ namespace Extensions
         /// <summary> Private属性の関数を実行 </summary>
         public static object InvokePrivateMethod<T>(T instance, string methodName, object[] parameters = null, BindingFlags? bindingFlags = null)
         {
+            if (instance == null) { throw new ArgumentException("Instance is null."); }
+
             var flags = BindingFlags.NonPublic | BindingFlags.Instance;
 
             if (bindingFlags.HasValue)
@@ -156,6 +174,8 @@ namespace Extensions
         /// <summary> Public属性の関数を実行 </summary>
         public static object InvokePublicMethod<T>(T instance, string methodName, object[] parameters = null, BindingFlags? bindingFlags = null)
         {
+            if (instance == null) { throw new ArgumentException("Instance is null."); }
+
             var flags = BindingFlags.Public | BindingFlags.Instance;
 
             if (bindingFlags.HasValue)
@@ -180,7 +200,7 @@ namespace Extensions
                 return GetFieldInfo(type.BaseType, fieldName, bindingFlags);
             }
 
-            return null;
+            throw new ArgumentException($"Field not found.\nType: {type.FullName}\nFieldName: {fieldName}");
         }
 
         /// <summary> プロパティ情報を取得 </summary>
@@ -195,7 +215,7 @@ namespace Extensions
                 return GetPropertyInfo(type.BaseType, propertyName, bindingFlags);
             }
 
-            return null;
+            throw new ArgumentException($"Property not found.\nType: {type.FullName}\nPropertyName: {propertyName}");
         }
 
         /// <summary> 関数情報を取得 </summary>
@@ -210,7 +230,7 @@ namespace Extensions
                 return GetMethodInfo(type.BaseType, methodName, bindingFlags);
             }
 
-            return null;
+            throw new ArgumentException($"Method not found.\nType: {type.FullName}\nMethodName: {methodName}");
         }
 
         /// <summary> ジェネリック型配列の要素型取得 </summary>

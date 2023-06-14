@@ -81,8 +81,7 @@ namespace Modules.Master
             if (updateVersionDisposable == null)
             {
                 updateVersionDisposable = Observable.Timer(TimeSpan.FromSeconds(1f))
-                    .SelectMany(_ => SaveVersion().ToObservable())
-                    .Subscribe()
+                    .Subscribe(_ => SaveVersion().Forget())
                     .AddTo(Disposable);
             }
         }
@@ -99,34 +98,35 @@ namespace Modules.Master
             {
                 versionSaveRunning = true;
 
-                await UniTask.SwitchToThreadPool();
-
-                var builder = new StringBuilder();
+                await UniTask.RunOnThreadPool(async () =>
+                {
+                    var builder = new StringBuilder();
                 
-                lock (versions)
-                {
-                    foreach (var version in versions)
+                    lock (versions)
                     {
-                        builder.Append(version.Key);
-                        builder.Append(VersionSeparator);
-                        builder.Append(version.Value);
-                        builder.AppendLine();
+                        foreach (var version in versions)
+                        {
+                            builder.Append(version.Key);
+                            builder.Append(VersionSeparator);
+                            builder.Append(version.Value);
+                            builder.AppendLine();
+                        }
                     }
-                }
 
-                var text = builder.ToString();
+                    var text = builder.ToString();
 
-                var bytes = Encoding.UTF8.GetBytes(text);
+                    var bytes = Encoding.UTF8.GetBytes(text);
 
-                if (versionFileHandler != null)
-                {
-                    bytes = await versionFileHandler.Encode(bytes);
-                }
+                    if (versionFileHandler != null)
+                    {
+                        bytes = versionFileHandler.Encode(bytes);
+                    }
 
-                using (var fs = new FileStream(versionFilePath, FileMode.Create, FileAccess.Write, FileShare.ReadWrite, 4096, true))
-                {
-                    await fs.WriteAsync(bytes, 0, (int)fs.Length);
-                }
+                    using (var fs = new FileStream(versionFilePath, FileMode.Create, FileAccess.Write, FileShare.ReadWrite, 4096, true))
+                    {
+                        await fs.WriteAsync(bytes, 0, (int)bytes.Length).ConfigureAwait(false);
+                    }
+                });
             }
             catch (Exception e)
             {
@@ -139,8 +139,6 @@ namespace Modules.Master
             }
             finally
             {
-                await UniTask.SwitchToMainThread();
-
                 if (updateVersionDisposable != null)
                 {
                     updateVersionDisposable.Dispose();
@@ -157,54 +155,64 @@ namespace Modules.Master
 
             var versionFilePath = PathUtility.Combine(InstallDirectory, VersionFileName);
 
+            #if UNITY_EDITOR
+
+            if (!EnableVersionCheck)
+            {
+                UnityConsole.Event(ConsoleEventName, ConsoleEventColor, $"<color=#{Color.red.ColorToHex()}><b>Use CachedMasterFile.</b></color>");
+            }
+
+            #endif
+
             try
             {
-                await UniTask.SwitchToThreadPool();
-
-                var sw = System.Diagnostics.Stopwatch.StartNew();
-
-                versions.Clear();
-
-                if (File.Exists(versionFilePath))
+                await UniTask.RunOnThreadPool(async () =>
                 {
-                    byte[] bytes = null;
+                    var sw = System.Diagnostics.Stopwatch.StartNew();
 
-                    using (var fs = new FileStream(versionFilePath, FileMode.Open, FileAccess.Read, FileShare.Read, 4096, true))
+                    versions.Clear();
+
+                    if (File.Exists(versionFilePath))
                     {
-                        bytes = new byte[fs.Length];
+                        byte[] bytes = null;
 
-                        await fs.ReadAsync(bytes, 0, (int)fs.Length);
-                    }
-
-                    if (versionFileHandler != null)
-                    {
-                        bytes = await versionFileHandler.Decode(bytes);
-                    }
-
-                    var text = Encoding.UTF8.GetString(bytes);
-
-                    using (var sr = new StringReader(text))
-                    {
-                        while (-1 < sr.Peek())
+                        using (var fs = new FileStream(versionFilePath, FileMode.Open, FileAccess.Read, FileShare.Read, 4096, true))
                         {
-                            var line = await sr.ReadLineAsync();
+                            bytes = new byte[fs.Length];
 
-                            var parts = line.Split(VersionSeparator);
+                            await fs.ReadAsync(bytes, 0, (int)fs.Length).ConfigureAwait(false);
+                        }
 
-                            var fileName = parts.ElementAtOrDefault(0);
-                            var version = parts.ElementAtOrDefault(1);
+                        if (versionFileHandler != null)
+                        {
+                            bytes = versionFileHandler.Decode(bytes);
+                        }
 
-                            if (!string.IsNullOrEmpty(fileName) && !string.IsNullOrEmpty(version))
+                        var text = Encoding.UTF8.GetString(bytes);
+
+                        using (var sr = new StringReader(text))
+                        {
+                            while (-1 < sr.Peek())
                             {
-                                versions[fileName] = version;
+                                var line = await sr.ReadLineAsync().ConfigureAwait(false);
+
+                                var parts = line.Split(VersionSeparator);
+
+                                var fileName = parts.ElementAtOrDefault(0);
+                                var version = parts.ElementAtOrDefault(1);
+
+                                if (!string.IsNullOrEmpty(fileName) && !string.IsNullOrEmpty(version))
+                                {
+                                    versions[fileName] = version;
+                                }
                             }
                         }
+
+                        sw.Stop();
+
+                        logText = $"LoadVersion: ({sw.Elapsed.TotalMilliseconds:F2}ms)";
                     }
-
-                    sw.Stop();
-
-                    logText = $"LoadVersion: ({sw.Elapsed.TotalMilliseconds:F2}ms)";
-                }
+                });
             }
             catch
             {
@@ -212,10 +220,6 @@ namespace Modules.Master
                 {
                     File.Delete(versionFilePath);
                 }
-            }
-            finally
-            {
-                await UniTask.SwitchToMainThread();
             }
 
             if (!string.IsNullOrEmpty(logText))

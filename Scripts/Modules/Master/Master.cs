@@ -16,7 +16,10 @@ namespace Modules.Master
         void Delete();
 
         UniTask<Tuple<bool, double>> Update(string masterVersion, FunctionFrameLimiter frameCallLimiter, CancellationToken cancelToken = default);
-        UniTask<Tuple<bool, double, double>> Load(AesCryptoKey cryptoKey, bool cleanOnError, CancellationToken cancelToken = default);
+
+        UniTask<Tuple<bool, double>> Prepare(CancellationToken cancelToken = default);
+
+        UniTask<Tuple<bool, double>> Load(AesCryptoKey cryptoKey, bool cleanOnError, bool configureAwait, CancellationToken cancelToken = default);
     }
 
     public abstract class MasterContainer<TMasterRecord>
@@ -83,7 +86,7 @@ namespace Modules.Master
             return instance != null;
         }
 
-        public void SetRecords(TMasterRecord[] masterRecords)
+        public void SetRecords(IEnumerable<TMasterRecord> masterRecords)
         {
             records.Clear();
 
@@ -111,7 +114,7 @@ namespace Modules.Master
             records.Add(key, masterRecord);
         }
 
-        public async UniTask<Tuple<bool, double, double>> Load(AesCryptoKey cryptoKey, bool cleanOnError, CancellationToken cancelToken = default)
+        public async UniTask<Tuple<bool, double>> Prepare(CancellationToken cancelToken = default)
         {
             var masterManager = MasterManager.Instance;
 
@@ -119,22 +122,65 @@ namespace Modules.Master
 
             var success = false;
 
-            var prepareTime = 0D;
-            var loadTime = 0D;
+            var time = 0D;
 
             try
             {
                 filePath = masterManager.GetFilePath(this);
 
-                Refresh();
+                var sw = System.Diagnostics.Stopwatch.StartNew();
 
-                // 読み込み準備.
-                prepareTime = await PrepareLoadMasterFile(filePath, cancelToken);
+                await PrepareLoad(filePath, cancelToken);
 
-                // 読み込み.
-                loadTime = await LoadMasterFile(filePath, cryptoKey);
+                sw.Stop();
+
+                time = sw.Elapsed.TotalMilliseconds;
 
                 success = true;
+            }
+            catch (OperationCanceledException)
+            {
+                /* Canceled */
+            }
+            catch (Exception e)
+            {
+                Debug.LogErrorFormat("Prepare master failed.\n\nClass : {0}\nFile : {1}\n\nException : \n{2}", typeof(TMaster).FullName, filePath, e);
+            }
+
+            if (!success)
+            {
+                // 強制更新させる為バージョン情報を削除.
+                await masterManager.ClearVersion(this);
+
+                OnError();
+            }
+
+            return Tuple.Create(success, time);
+        }
+
+        public async UniTask<Tuple<bool, double>> Load(AesCryptoKey cryptoKey, bool cleanOnError, bool configureAwait, CancellationToken cancelToken = default)
+        {
+            var masterManager = MasterManager.Instance;
+
+            var filePath = string.Empty;
+
+            var success = false;
+
+            var time = 0D;
+
+            try
+            {
+                await UniTask.RunOnThreadPool(async () =>
+                {
+                    filePath = masterManager.GetFilePath(this);
+
+                    Refresh();
+
+                    time = await LoadMasterFile(filePath, cryptoKey);
+
+                    success = true;
+
+                }, configureAwait, cancelToken);
             }
             catch (OperationCanceledException)
             {
@@ -161,73 +207,51 @@ namespace Modules.Master
                 OnError();
             }
 
-            return Tuple.Create(success, prepareTime, loadTime);
-        }
-
-        private async UniTask<double> PrepareLoadMasterFile(string filePath, CancellationToken cancelToken)
-        {
-            var sw = System.Diagnostics.Stopwatch.StartNew();
-
-            await PrepareLoad(filePath, cancelToken);
-
-            sw.Stop();
-
-            var time = sw.Elapsed.TotalMilliseconds;
-
-            return time;
+            return Tuple.Create(success, time);
         }
 
         private async UniTask<double> LoadMasterFile(string filePath, AesCryptoKey cryptoKey)
         {
-            var time = 0d;
-            
-            try
+            var sw = System.Diagnostics.Stopwatch.StartNew();
+
+            // ファイル読み込み.
+            var bytes = await FileLoad(filePath);
+
+            // 復号化.
+            if (cryptoKey != null)
             {
-                await UniTask.SwitchToThreadPool();
+                // AesCryptoKeyはスレッドセーフではないので専用キーを作成.
+                var threadCryptoKey = new AesCryptoKey(cryptoKey.Key, cryptoKey.Iv);
 
-                var sw = System.Diagnostics.Stopwatch.StartNew();
-
-                var masterManager = MasterManager.Instance;
-
-                var serializerOptions = masterManager.GetSerializerOptions();
-
-                // ファイル読み込み.
-                var bytes = await FileLoad(filePath);
-
-                // 復号化.
-                if (cryptoKey != null)
-                {
-                    // AesCryptoKeyはスレッドセーフではないので専用キーを作成.
-                    var threadCryptoKey = new AesCryptoKey(cryptoKey.Key, cryptoKey.Iv);
-
-                    bytes = Decrypt(bytes, threadCryptoKey);
-                }
-
-                // MessagePackの不具合対応.
-                // ※ コード生成をDeserialize時に実行すると処理が返ってこないのでここで生成.
-            
-                #if UNITY_EDITOR
-
-                serializerOptions.Resolver.GetFormatter<TMaster>();
-
-                #endif
-
-                // デシリアライズ.
-
-                var records = await Deserialize(bytes, serializerOptions);
-
-                // レコード登録.
-                SetRecords(records);
-
-                sw.Stop();
-
-                time = sw.Elapsed.TotalMilliseconds;
-            }
-            finally
-            {
-                await UniTask.SwitchToMainThread();
+                bytes = Decrypt(bytes, threadCryptoKey);
             }
 
+            // MessagePackのSerializerOptions.
+
+            var masterManager = MasterManager.Instance;
+
+            var serializerOptions = masterManager.GetSerializerOptions();
+
+            // MessagePackの不具合対応.
+            // ※ コード生成をDeserialize時に実行すると処理が返ってこないのでここで生成.
+        
+            #if UNITY_EDITOR
+
+            serializerOptions.Resolver.GetFormatter<TMaster>();
+
+            #endif
+
+            // デシリアライズ.
+
+            var records = Deserialize(bytes, serializerOptions);
+
+            // レコード登録.
+            SetRecords(records);
+
+            sw.Stop();
+
+            var time = sw.Elapsed.TotalMilliseconds;
+            
             return time;
         }
 
@@ -244,7 +268,7 @@ namespace Modules.Master
             {
                 bytes = new byte[fs.Length];
 
-                await fs.ReadAsync(bytes, 0, (int)fs.Length);
+                await fs.ReadAsync(bytes, 0, (int)fs.Length).ConfigureAwait(false);
             }
 
             if (bytes.IsEmpty())
@@ -269,21 +293,16 @@ namespace Modules.Master
             return result;
         }
 
-        protected virtual async UniTask<TMasterRecord[]> Deserialize(byte[] bytes, MessagePackSerializerOptions options)
+        protected virtual TMasterRecord[] Deserialize(byte[] bytes, MessagePackSerializerOptions options)
         {
-            var records = new TMasterRecord[0];
+            var container = MessagePackSerializer.Deserialize<TMasterContainer>(bytes, options);
 
-            using (var ms = new MemoryStream(bytes))
+            if (container != null)
             {
-                var container = await MessagePackSerializer.DeserializeAsync<TMasterContainer>(ms, options);
-
-                if (container != null)
-                {
-                    records = container.records;
-                }
+                return container.records;
             }
 
-            return records;
+            return null;
         }
 
         public async UniTask<Tuple<bool, double>> Update(string masterVersion, FunctionFrameLimiter frameCallLimiter, CancellationToken cancelToken = default)

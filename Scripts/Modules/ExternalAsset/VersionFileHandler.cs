@@ -1,45 +1,33 @@
 ﻿
-using Cysharp.Threading.Tasks;
-
 namespace Modules.ExternalAssets
 {
-	public interface IVersionFileHandler
-	{
-		UniTask<byte[]> Encode(byte[] bytes);
+    public interface IVersionFileHandler
+    {
+        byte[] Encode(byte[] bytes);
 
-		UniTask<byte[]> Decode(byte[] bytes);
-	}
+        byte[] Decode(byte[] bytes);
+    }
 
-	public sealed class DefaultVersionFileHandler : IVersionFileHandler
-	{
-		public async UniTask<byte[]> Encode(byte[] bytes)
-		{
-			return await Convert(bytes);
-		}
+    public sealed class DefaultVersionFileHandler : IVersionFileHandler
+    {
+        public byte[] Encode(byte[] bytes)
+        {
+            return Convert(bytes);
+        }
 
-		public async UniTask<byte[]> Decode(byte[] bytes)
-		{
-			return await Convert(bytes);
-		}
+        public byte[] Decode(byte[] bytes)
+        {
+            return Convert(bytes);
+        }
 
-		private async UniTask<byte[]> Convert(byte[] bytes)
-		{
-			try
-			{
-				await UniTask.RunOnThreadPool(() =>
-				{
-					for (var i = 0; i < bytes.Length; i++)
-					{
-						bytes[i] = (byte)~bytes[i];
-					}
-				});
-			}
-			finally
-			{
-				await UniTask.SwitchToMainThread();
-			}
+        private byte[] Convert(byte[] bytes)
+        {
+            for (var i = 0; i < bytes.Length; i++)
+            {
+                bytes[i] = (byte)~bytes[i];
+            }
 
-			return bytes;
-		}
-	}
+            return bytes;
+        }
+    }
 }

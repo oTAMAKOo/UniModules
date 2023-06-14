@@ -17,23 +17,23 @@ namespace Modules.AssetBundles.Editor
 
         //----- field -----
 
-		private IAssetBundleFileHandler assetBundleFileHandler = null;
+        private IAssetBundleFileHandler assetBundleFileHandler = null;
 
         //----- property -----
 
         //----- method -----
 
-		public BuildAssetBundlePackage(IAssetBundleFileHandler assetBundleFileHandler)
-		{
-			this.assetBundleFileHandler = assetBundleFileHandler;
-		}
+        public BuildAssetBundlePackage(IAssetBundleFileHandler assetBundleFileHandler)
+        {
+            this.assetBundleFileHandler = assetBundleFileHandler;
+        }
 
-		public async UniTask BuildAssetInfoManifestPackage(string exportPath, string assetBundlePath)
+        public async UniTask BuildAssetInfoManifestPackage(string exportPath, string assetBundlePath)
         {
             var assetInfo = AssetInfoManifest.GetManifestAssetInfo();
 
             await ExecuteBuildTask(exportPath, assetBundlePath, assetInfo, true);
-		}
+        }
 
         public async UniTask BuildAllAssetBundlePackage(string exportPath, string assetBundlePath, AssetInfo[] assetInfos, AssetInfo[] updatedAssetInfos)
         {
@@ -60,7 +60,7 @@ namespace Modules.AssetBundles.Editor
                         var createPackage = updatedAssetInfos.Contains(assetInfo);
 
                         var assetBundleName = assetInfo.AssetBundle.AssetBundleName;
-						
+                        
                         var task = UniTask.RunOnThreadPool(async () =>
                         {
                             await ExecuteBuildTask(exportPath, assetBundlePath, assetInfo, createPackage);
@@ -78,7 +78,7 @@ namespace Modules.AssetBundles.Editor
                             }
                         });
 
-						tasks.Add(task);
+                        tasks.Add(task);
                     }
 
                     await UniTask.WhenAll(tasks);
@@ -93,32 +93,32 @@ namespace Modules.AssetBundles.Editor
 
         private async UniTask ExecuteBuildTask(string exportPath, string assetBundlePath, AssetInfo assetInfo, bool createPackage)
         {
-			try
-			{
-				// アセットバンドルファイルパス.
-				var assetBundleFilePath = PathUtility.Combine(assetBundlePath, assetInfo.AssetBundle.AssetBundleName);
+            try
+            {
+                // アセットバンドルファイルパス.
+                var assetBundleFilePath = PathUtility.Combine(assetBundlePath, assetInfo.AssetBundle.AssetBundleName);
 
-				if (!File.Exists(assetBundleFilePath))
-				{
-					throw new FileNotFoundException(assetBundleFilePath);
-				}
+                if (!File.Exists(assetBundleFilePath))
+                {
+                    throw new FileNotFoundException(assetBundleFilePath);
+                }
 
-				// 作成するパッケージファイルのパス.
-				var packageFilePath = assetBundleFilePath + AssetBundleManager.PackageExtension;
+                // 作成するパッケージファイルのパス.
+                var packageFilePath = assetBundleFilePath + AssetBundleManager.PackageExtension;
 
-				// パッケージを作成.
-				if (!File.Exists(packageFilePath) || createPackage)
-				{
-					await CreatePackage(assetBundleFilePath, packageFilePath);
-				}
+                // パッケージを作成.
+                if (!File.Exists(packageFilePath) || createPackage)
+                {
+                    await CreatePackage(assetBundleFilePath, packageFilePath);
+                }
 
-				// 出力先にパッケージファイルをコピー.
-				await ExportPackage(exportPath, assetBundleFilePath, assetInfo);
-			}
-			catch (Exception exception)
-			{
-				Debug.LogException(exception);
-			}
+                // 出力先にパッケージファイルをコピー.
+                await ExportPackage(exportPath, assetBundleFilePath, assetInfo);
+            }
+            catch (Exception exception)
+            {
+                Debug.LogException(exception);
+            }
         }
 
         /// <summary> パッケージファイル化(難読化). </summary>
@@ -136,14 +136,14 @@ namespace Modules.AssetBundles.Editor
             }
 
             // 難読化.
-			
-			data = await assetBundleFileHandler.Encode(data);
+            
+            data = await assetBundleFileHandler.Encode(data);
 
-			// 書き込み.
+            // 書き込み.
 
             using (var fileStream = new FileStream(packageFilePath, FileMode.Create, FileAccess.Write, FileShare.ReadWrite))
             {
-				await fileStream.WriteAsync(data, 0, data.Length);
+                await fileStream.WriteAsync(data, 0, data.Length);
             }
         }
 
@@ -161,7 +161,7 @@ namespace Modules.AssetBundles.Editor
             // ファイルの出力先.
             var packageExportPath = PathUtility.Combine(exportPath, packageFileName);
 
-			// ファイルコピー.
+            // ファイルコピー.
 
             using (var sourceStream = File.Open(packageFilePath, FileMode.Open, FileAccess.ReadWrite, FileShare.ReadWrite))
             {

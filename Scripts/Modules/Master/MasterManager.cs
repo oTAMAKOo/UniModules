@@ -40,16 +40,16 @@ namespace Modules.Master
         private MessagePackSerializerOptions serializerOptions = null;
 
         private bool lz4Compression = true;
-		
-		private CancellationTokenSource cancelSource = null;
+        
+        private CancellationTokenSource cancelSource = null;
 
-		private Subject<Unit> onUpdateMaster = null;
+        private Subject<Unit> onUpdateMaster = null;
         private Subject<Unit> onLoadFinish = null;
-		private Subject<Exception> onError = null;
+        private Subject<Exception> onError = null;
 
-		//----- property -----
+        //----- property -----
 
-		public IReadOnlyCollection<IMaster> Masters
+        public IReadOnlyCollection<IMaster> Masters
         {
             get { return masters; }
         }
@@ -81,12 +81,12 @@ namespace Modules.Master
             masters = new List<IMaster>();
             masterFileNames = new Dictionary<Type, string>();
 
-			cancelSource = new CancellationTokenSource();
+            cancelSource = new CancellationTokenSource();
 
-			InitializeVersion();
+            InitializeVersion();
 
-			// 保存先設定.
-			SetInstallDirectory(Application.persistentDataPath);
+            // 保存先設定.
+            SetInstallDirectory(Application.persistentDataPath);
         }
 
         public void Register(IMaster master)
@@ -103,22 +103,22 @@ namespace Modules.Master
             masters.Add(master);
         }
 
-		public void Remove(IMaster master)
-		{
-			if (!masters.Contains(master)){ return; }
+        public void Remove(IMaster master)
+        {
+            if (!masters.Contains(master)){ return; }
 
-			masters.Remove(master);
-		}
+            masters.Remove(master);
+        }
 
         public async UniTask<bool> UpdateMaster(Dictionary<IMaster, string> updateMasters, IProgress<float> progress = null, CancellationToken cancelToken = default)
         {
             var result = true;
 
-			var linkedCancelTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancelToken, cancelSource.Token);
+            var linkedCancelTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancelToken, cancelSource.Token);
 
-			var linkedCancelToken = linkedCancelTokenSource.Token;
+            var linkedCancelToken = linkedCancelTokenSource.Token;
 
-			var tasks = new List<UniTask>();
+            var tasks = new List<UniTask>();
 
             var updateLog = new StringBuilder();
 
@@ -126,22 +126,32 @@ namespace Modules.Master
 
             #if UNITY_EDITOR
 
-            if (!EnableVersionCheck)
-            {
-                UnityConsole.Event(ConsoleEventName, ConsoleEventColor, "Use CachedMasterFile.");
-
-                return true;
-            }
+            if (!EnableVersionCheck) { return true; }
 
             #endif
 
             var amount = 1f / updateMasters.Count;
             var progressAmount = 0f;
 
-            void OnUpdateFinish(Type masterType, string masterName, string masterFileName, bool state, double time)
+            var frameCallLimiter = new FunctionFrameLimiter(50);
+
+            async UniTask MasterUpdate(IMaster master, string masterVersion)
             {
-                if (state)
+                var masterType = master.GetType();
+                var masterName = masterType.Name;
+                var masterFileName = masterFileNames.GetValueOrDefault(masterType);
+
+                var updateResult = await master.Update(masterVersion, frameCallLimiter, linkedCancelToken);
+
+                if (linkedCancelToken.IsCancellationRequested){ return; }
+
+                var success = updateResult.Item1;
+                var time = updateResult.Item2;
+
+                if (success)
                 {
+                    UpdateVersion(master, masterVersion);
+
                     var message = $"{masterName} ({time:F1}ms)";
 
                     lock (updateLog)
@@ -151,10 +161,10 @@ namespace Modules.Master
                 }
                 else
                 {
-                    Debug.LogErrorFormat("Update master failed.\nClass : {0}\nFile : {1}\n", masterType.FullName, masterFileName);
+                    throw new Exception($"Update master failed.\nClass : {masterType.FullName}\nFile : {masterFileName}");
                 }
 
-                result &= state;
+                result &= success;
                 progressAmount += amount;
 
                 if (progress != null)
@@ -168,78 +178,59 @@ namespace Modules.Master
                 }
             }
 
-			Exception exception = null;
+            Exception exception = null;
 
-			var stopwatch = System.Diagnostics.Stopwatch.StartNew();
+            var stopwatch = System.Diagnostics.Stopwatch.StartNew();
 
             if (progress != null) { progress.Report(0f); }
 
-			var frameCallLimiter = new FunctionFrameLimiter(50);
-
             if (updateMasters.Any())
             {
-				// 実行.
-				try
-				{
-					foreach (var element in updateMasters)
-					{
-						var master = element.Key;
-						var masterType = master.GetType();
-						var masterName = masterType.Name;
-						var masterVersion = element.Value;
-						var masterFileName = masterFileNames.GetValueOrDefault(masterType);
+                // 実行.
+                try
+                {
+                    var chunk = updateMasters.Chunk(25);
 
-						var task = UniTask.Defer(async () =>
-						{
-							var updateResult = await master.Update(masterVersion, frameCallLimiter, linkedCancelToken);
+                    foreach (var items in chunk)
+                    {
+                        foreach (var item in items)
+                        {
+                            var task = MasterUpdate(item.Key, item.Value);
 
-							if (linkedCancelToken.IsCancellationRequested){ return; }
+                            tasks.Add(task);
+                        }
 
-							OnUpdateFinish(masterType, masterName, masterFileName, updateResult.Item1, updateResult.Item2);
+                        await UniTask.NextFrame(CancellationToken.None);
+                    }
 
-							var success = updateResult.Item1;
+                    await UniTask.WhenAll(tasks);
 
-							if (success)
-							{
-								UpdateVersion(master, masterVersion);
-							}
-							else
-							{
-								throw new Exception($"Failed master update. {masterName}");
-							}
-						});
-
-						tasks.Add(task);
-					}
-
-					await UniTask.WhenAll(tasks);
-
-					await SaveVersion();
-				}
-				catch (OperationCanceledException)
-				{
-					/* Canceled */
-				}
-				catch (Exception e)
-				{
-					exception = e;
-				}
+                    await SaveVersion();
+                }
+                catch (OperationCanceledException)
+                {
+                    /* Canceled */
+                }
+                catch (Exception e)
+                {
+                    exception = e;
+                }
             }
 
             stopwatch.Stop();
 
             if (result)
             {
-				var title = $"Master Update : ({stopwatch.Elapsed.TotalMilliseconds:F1}ms)";
+                var title = $"Master Update : ({stopwatch.Elapsed.TotalMilliseconds:F1}ms)";
 
-				void OutputCallback(string x)
-				{
-					UnityConsole.Event(ConsoleEventName, ConsoleEventColor, x);
-				}
+                void OutputCallback(string x)
+                {
+                    UnityConsole.Event(ConsoleEventName, ConsoleEventColor, x);
+                }
 
-				LogUtility.ChunkLog(updateLog.ToString(), title, OutputCallback);
+                LogUtility.ChunkLog(updateLog.ToString(), title, OutputCallback);
 
-				if (progress != null) { progress.Report(1f); }
+                if (progress != null) { progress.Report(1f); }
             }
             else
             {
@@ -247,10 +238,10 @@ namespace Modules.Master
                 {
                     onError.OnNext(exception);
                 }
-				else
-				{
-					Debug.LogException(exception);
-				}
+                else
+                {
+                    Debug.LogException(exception);
+                }
             }
 
             return result;
@@ -258,93 +249,142 @@ namespace Modules.Master
 
         public async UniTask<bool> LoadMaster(CancellationToken cancelToken = default)
         {
-			Reference.Clear();
+            Reference.Clear();
 
-			Exception exception = null;
+            Exception exception = null;
 
-			var result = true;
+            var result = true;
 
-			var linkedCancelTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancelToken, cancelSource.Token);
+            var linkedCancelTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancelToken, cancelSource.Token);
 
-			var linkedCancelToken = linkedCancelTokenSource.Token;
+            var linkedCancelToken = linkedCancelTokenSource.Token;
 
-			var loadLog = new StringBuilder();
-
-            async UniTask OnLoadFinish(IMaster master, string masterFileName, bool state, double prepareTime, double loadTime)
-            {
-				var masterType = master.GetType();
-				var masterName = masterType.Name;
-
-                if (state)
-                {
-					if (InstallDirectory.StartsWith(UnityPathUtility.StreamingAssetsPath))
-					{
-						await ClearVersion(master);
-					}
-
-                    lock (loadLog)
-                    {
-						loadLog.AppendFormat("{0} (prepare : {1:F1}ms, load : {2:F1}ms)", masterName, prepareTime, loadTime).AppendLine();
-					}
-                }
-                else
-                {
-                    Debug.LogErrorFormat("Load master failed.\nClass : {0}\nFile : {1}\n", masterType.FullName, masterFileName);
-                }
-
-                result &= state;
-            }
+            var prepareTimes = new Dictionary<IMaster, double>();
+            var loadTimes = new Dictionary<IMaster, double>();
 
             var stopwatch = System.Diagnostics.Stopwatch.StartNew();
 
-			try
-			{
-				//-------------------------------------------------------------
-				// Editorの場合、動的コード生成が実行される為負荷が高くなる.
-				// 実機では事前コード生成の為負荷はそこまで高くならない.
-				//-------------------------------------------------------------
+            try
+            {
+                //-------------------------------------------------------------
+                // Editorの場合、動的コード生成が実行される為負荷が高くなる.
+                // 実機では事前コード生成の為負荷はそこまで高くならない.
+                //-------------------------------------------------------------
 
-				var tasks = new List<UniTask>();
+                //------ Prepare ------
 
-				foreach (var item in masters)
-				{
-					var masterType = item.GetType();
+                if (result)
+                {
+                    var tasks = new List<UniTask>();
 
-					var masterFileName = masterFileNames.GetValueOrDefault(masterType);
+                    foreach (var item in masters)
+                    {
+                        var master = item;
 
-					var task = UniTask.Defer(async () =>
-					{
-						var loadResult = await item.Load(CryptoKey, true, linkedCancelToken);
+                        var task = UniTask.Defer(async () =>
+                        { 
+                            var prepareResult = await master.Prepare(linkedCancelToken);
 
-						if (linkedCancelToken.IsCancellationRequested) { return; }
+                            result &= prepareResult.Item1;
 
-						await OnLoadFinish(item, masterFileName, loadResult.Item1, loadResult.Item2, loadResult.Item3);
-					});
+                            if (prepareResult.Item1)
+                            {
+                                prepareTimes.Add(master, prepareResult.Item2);
 
-					tasks.Add(task);
-				}
+                                if (InstallDirectory.StartsWith(UnityPathUtility.StreamingAssetsPath))
+                                {
+                                    await ClearVersion(master);
+                                }
+                            }
+                            else
+                            {
+                                var masterType = master.GetType();
+                                var masterFileName = masterFileNames.GetValueOrDefault(masterType);
 
-				await UniTask.WhenAll(tasks);
-			}
-			catch (Exception e)
-			{
-				exception = e;
-			}
+                                Debug.LogErrorFormat("Prepare master failed.\nClass : {0}\nFile : {1}\n", masterType.FullName, masterFileName);
+                            }
+                        });
 
-			stopwatch.Stop();
+                        tasks.Add(task);
+                    }
+
+                    await UniTask.WhenAll(tasks);
+                }
+
+                //------ Load ------
+
+                if (result)
+                {
+                    await UniTask.RunOnThreadPool(async () =>
+                    {
+                        var tasks = new List<UniTask>();
+
+                        foreach (var item in masters)
+                        {
+                            var master = item;
+
+                            var task = UniTask.Defer(async () =>
+                            {
+                                var loadResult = await master.Load(CryptoKey, true, false, linkedCancelToken);
+
+                                result &= loadResult.Item1;
+
+                                if (loadResult.Item1)
+                                {
+                                    lock (loadTimes)
+                                    {
+                                        loadTimes.Add(master, loadResult.Item2);
+                                    }
+                                }
+                                else
+                                {
+                                    var masterType = master.GetType();
+                                    var masterFileName = masterFileNames.GetValueOrDefault(masterType);
+
+                                    Debug.LogErrorFormat("Load master failed.\nClass : {0}\nFile : {1}\n", masterType.FullName, masterFileName);
+                                }
+                            });
+
+                            tasks.Add(task);
+                        }
+
+                        await UniTask.WhenAll(tasks);
+
+                    }, cancellationToken: linkedCancelToken);
+                }
+            }
+            catch (Exception e)
+            {
+                exception = e;
+            }
+
+            stopwatch.Stop();
 
             if (result)
             {
-				var title = $"Master Load : ({stopwatch.Elapsed.TotalMilliseconds:F1}ms)";
+                var logBuilder = new StringBuilder();
 
-				void OutputCallback(string x)
-				{
-					UnityConsole.Event(ConsoleEventName, ConsoleEventColor, x);
-				}
+                foreach (var master in masters)
+                {
+                    var masterType = master.GetType();
+                    var masterName = masterType.Name;
 
-				LogUtility.ChunkLog(loadLog.ToString(), title, OutputCallback);
+                    var prepareTime = prepareTimes.GetValueOrDefault(master);
+                    var loadTime = loadTimes.GetValueOrDefault(master);
 
-				if (onLoadFinish != null)
+                    logBuilder.AppendLine($"{masterName} (prepare : {prepareTime:F1}ms, load : {loadTime:F1}ms)");
+                }
+
+                var title = $"Master Load : ({stopwatch.Elapsed.TotalMilliseconds:F1}ms)";
+
+                void OutputCallback(string x)
+                {
+                    UnityConsole.Event(ConsoleEventName, ConsoleEventColor, x);
+                }
+
+                LogUtility.ChunkLog(logBuilder.ToString(), title, OutputCallback);
+
+                if (onLoadFinish != null)
                 {
                     onLoadFinish.OnNext(Unit.Default);
                 }
@@ -355,29 +395,29 @@ namespace Modules.Master
                 {
                     onError.OnNext(exception);
                 }
-				else
-				{
-					Debug.LogException(exception);
-				}
+                else
+                {
+                    Debug.LogException(exception);
+                }
             }
 
             return result;
         }
 
-		public void CancelAll()
-		{
-			if (cancelSource != null)
-			{
-				cancelSource.Cancel();
-
-				// キャンセルしたので再生成.
-				cancelSource = new CancellationTokenSource();
-			}
-		}
-
-		public void ClearMasterVersion()
+        public void CancelAll()
         {
-			DeleteVersionFile();
+            if (cancelSource != null)
+            {
+                cancelSource.Cancel();
+
+                // キャンセルしたので再生成.
+                cancelSource = new CancellationTokenSource();
+            }
+        }
+
+        public void ClearMasterVersion()
+        {
+            DeleteVersionFile();
             
             Reference.Clear();
 
@@ -395,63 +435,61 @@ namespace Modules.Master
 
             #endif
 
-			var tasks = new List<UniTask>();
+            await UniTask.RunOnThreadPool(async () =>
+            {
+                var tasks = new List<UniTask>();
 
-			try
-			{
-				foreach (var item in masters)
-		        {
-	                var master = item;
+                foreach (var item in masters)
+                {
+                    var master = item;
 
-		            var task = UniTask.RunOnThreadPool(() =>
-		            {
-		                var masterVersion = versionTable.GetValueOrDefault(master);
+                    var task = UniTask.RunOnThreadPool(() =>
+                    {
+                        var masterVersion = versionTable.GetValueOrDefault(master);
 
-		                var versionCheck = CheckVersion(master, masterVersion);
+                        var versionCheck = CheckVersion(master, masterVersion);
 
-		                #if UNITY_EDITOR
-		                    
-		                versionCheck = !enableVersionCheck || versionCheck;
+                        #if UNITY_EDITOR
+                                
+                        versionCheck = !enableVersionCheck || versionCheck;
 
-		                #endif
+                        #endif
 
-		                if (!versionCheck)
-		                {
-		                    lock (list)
-		                    {
-		                        list.Add(master);
-		                    }
-		                }
-		            });
+                        if (!versionCheck)
+                        {
+                            lock (list)
+                            {
+                                list.Add(master);
+                            }
+                        }
 
-		            tasks.Add(task);
-		        }
+                    }, false);
 
-		        await UniTask.WhenAll(tasks);
-			}
-			finally
-			{
-				await UniTask.SwitchToMainThread();
-			}
+                    tasks.Add(task);
+                }
 
-			return list.ToArray();
+                await UniTask.WhenAll(tasks);
+
+            });
+
+            return list.ToArray();
         }
 
-		public void Clear()
-		{
-			if (masters == null){ return; }
+        public void Clear()
+        {
+            if (masters == null){ return; }
 
-			Reference.Clear();
+            Reference.Clear();
 
-			var items = masters.ToArray();
+            var items = masters.ToArray();
 
-			foreach (var item in items)
-			{
-				item.Delete();
-			}
+            foreach (var item in items)
+            {
+                item.Delete();
+            }
 
-			masters.Clear();
-		}
+            masters.Clear();
+        }
 
         public void SetDownloadUrl(string downloadUrl)
         {
@@ -478,21 +516,21 @@ namespace Modules.Master
             CryptoKey = cryptoKey;
         }
 
-		public string GetFilePath(IMaster master)
-		{
-			var fileName = GetMasterFileName(master.GetType());
+        public string GetFilePath(IMaster master)
+        {
+            var fileName = GetMasterFileName(master.GetType());
 
-			return PathUtility.Combine(InstallDirectory, fileName);
-		}
+            return PathUtility.Combine(InstallDirectory, fileName);
+        }
 
-		public string GetMasterFileName<T>() where T : IMaster
+        public string GetMasterFileName<T>() where T : IMaster
         {
             return GetMasterFileName(typeof(T));
         }
 
         public string GetMasterFileName(Type type)
         {
-			if (type == null){ return null; }
+            if (type == null){ return null; }
 
             if (masterFileNames.ContainsKey(type))
             {
@@ -523,23 +561,23 @@ namespace Modules.Master
 
             if (CryptoKey != null)
             {
-				lock (CryptoKey)
-				{
-					fileName = fileName.Encrypt(CryptoKey, true);
-				}
+                lock (CryptoKey)
+                {
+                    fileName = fileName.Encrypt(CryptoKey, true);
+                }
             }
 
             // 登録.
 
-			lock (masterFileNames)
-			{
-				if (!masterFileNames.ContainsKey(type))
-				{
-					masterFileNames.Add(type, fileName);
-				}
-			}
+            lock (masterFileNames)
+            {
+                if (!masterFileNames.ContainsKey(type))
+                {
+                    masterFileNames.Add(type, fileName);
+                }
+            }
 
-			return fileName;
+            return fileName;
         }
 
         public static string DeleteMasterSuffix(string fileName)
@@ -553,7 +591,7 @@ namespace Modules.Master
             return fileName;
         }
 
-		public MessagePackSerializerOptions GetSerializerOptions()
+        public MessagePackSerializerOptions GetSerializerOptions()
         {
             if (serializerOptions != null) { return serializerOptions; }
 
