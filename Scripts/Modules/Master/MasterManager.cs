@@ -126,12 +126,7 @@ namespace Modules.Master
 
             #if UNITY_EDITOR
 
-            if (!EnableVersionCheck)
-            {
-                UnityConsole.Event(ConsoleEventName, ConsoleEventColor, "Use CachedMasterFile.");
-
-                return true;
-            }
+            if (!EnableVersionCheck) { return true; }
 
             #endif
 

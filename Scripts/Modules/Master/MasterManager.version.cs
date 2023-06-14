@@ -155,6 +155,15 @@ namespace Modules.Master
 
             var versionFilePath = PathUtility.Combine(InstallDirectory, VersionFileName);
 
+            #if UNITY_EDITOR
+
+            if (!EnableVersionCheck)
+            {
+                UnityConsole.Event(ConsoleEventName, ConsoleEventColor, $"<color=#{Color.red.ColorToHex()}><b>Use CachedMasterFile.</b></color>");
+            }
+
+            #endif
+
             try
             {
                 await UniTask.RunOnThreadPool(async () =>
