@@ -254,6 +254,7 @@ namespace Modules.Master
             Exception exception = null;
 
             var result = true;
+            var resultLockObject = new System.Object();
 
             var linkedCancelTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancelToken, cancelSource.Token);
 
@@ -261,6 +262,7 @@ namespace Modules.Master
 
             var prepareTimes = new Dictionary<IMaster, double>();
             var loadTimes = new Dictionary<IMaster, double>();
+            var setupTimes = new Dictionary<IMaster, double>();
 
             var stopwatch = System.Diagnostics.Stopwatch.StartNew();
 
@@ -285,7 +287,10 @@ namespace Modules.Master
                         { 
                             var prepareResult = await master.Prepare(linkedCancelToken);
 
-                            result &= prepareResult.Item1;
+                            lock (resultLockObject)
+                            {
+                                result &= prepareResult.Item1;
+                            }
 
                             if (prepareResult.Item1)
                             {
@@ -311,7 +316,7 @@ namespace Modules.Master
                     await UniTask.WhenAll(tasks);
                 }
 
-                //------ Load ------
+                //------ Setup ------
 
                 if (result)
                 {
@@ -327,7 +332,10 @@ namespace Modules.Master
                             {
                                 var loadResult = await master.Load(CryptoKey, true, false, linkedCancelToken);
 
-                                result &= loadResult.Item1;
+                                lock (resultLockObject)
+                                {
+                                    result &= loadResult.Item1;
+                                }
 
                                 if (loadResult.Item1)
                                 {
@@ -342,6 +350,41 @@ namespace Modules.Master
                                     var masterFileName = masterFileNames.GetValueOrDefault(masterType);
 
                                     Debug.LogErrorFormat("Load master failed.\nClass : {0}\nFile : {1}\n", masterType.FullName, masterFileName);
+                                }
+                            });
+
+                            tasks.Add(task);
+                        }
+
+                        await UniTask.WhenAll(tasks);
+
+                    }, cancellationToken: linkedCancelToken);
+                }
+
+                //------ Setup ------
+
+                if (result)
+                {
+                    await UniTask.RunOnThreadPool(async () =>
+                    {
+                        var tasks = new List<UniTask>();
+
+                        foreach (var item in masters)
+                        {
+                            var master = item;
+
+                            var task = UniTask.Defer(async () =>
+                            {
+                                var setupResult = await master.Setup(linkedCancelToken);
+
+                                lock (resultLockObject)
+                                {
+                                    result &= setupResult.Item1;
+                                }
+
+                                lock (setupTimes)
+                                {
+                                    setupTimes.Add(master, setupResult.Item2);
                                 }
                             });
 
@@ -371,8 +414,30 @@ namespace Modules.Master
 
                     var prepareTime = prepareTimes.GetValueOrDefault(master);
                     var loadTime = loadTimes.GetValueOrDefault(master);
+                    var setupTime = setupTimes.GetValueOrDefault(master);
 
-                    logBuilder.AppendLine($"{masterName} (prepare : {prepareTime:F1}ms, load : {loadTime:F1}ms)");
+                    var table = new Tuple<double, string>[]
+                    {
+                        Tuple.Create(prepareTime, $"prepare : {prepareTime:F1}ms"),
+                        Tuple.Create(prepareTime, $"load : {loadTime:F1}ms"),
+                        Tuple.Create(prepareTime, $"setup : {setupTime:F1}ms"),
+                    };
+
+                    logBuilder.Append($"{masterName} (");
+
+                    for (var i = 0; i < table.Length; i++)
+                    {
+                        if (0 < i)
+                        {
+                            logBuilder.Append(", ");
+                        }
+
+                        logBuilder.Append(table[i].Item2);
+                    }
+
+                    logBuilder.Append(")");
+
+                    logBuilder.AppendLine();
                 }
 
                 var title = $"Master Load : ({stopwatch.Elapsed.TotalMilliseconds:F1}ms)";
