@@ -385,6 +385,9 @@ namespace Modules.Master
             return UniTask.CompletedTask;
         }
 
+        /// <summary> キャッシュ作成などの初期化処理. </summary>
+        protected virtual void OnSetup() { }
+
         protected virtual void OnError()
         {
             // キャッシュデータなどをクリア.
@@ -393,9 +396,6 @@ namespace Modules.Master
 
         /// <summary> 内部で保持しているデータをクリア. </summary>
         protected virtual void Refresh() { }
-
-        /// <summary> 内部で保持しているデータをクリア. </summary>
-        protected virtual void OnSetup() { }
 
         protected abstract TKey GetRecordKey(TMasterRecord masterRecord);
 
