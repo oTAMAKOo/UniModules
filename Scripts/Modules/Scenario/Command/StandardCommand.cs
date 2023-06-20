@@ -5,67 +5,70 @@ using System;
 
 namespace Modules.Scenario.Command
 {
-	public static class StandardCommand
-	{
-		public static readonly Type[] CommandTypes = new Type[]
-		{
-			typeof(AssetRequest),
-			typeof(AssetLoadInQueue),
+    public static class StandardCommand
+    {
+        public static readonly Type[] CommandTypes = new Type[]
+        {
+            typeof(AssetRequest),
+            typeof(AssetLoadInQueue),
 
-			typeof(TextLoad),
-			typeof(GetText),
+            typeof(TaskRun),
+            typeof(RemoveTask),
 
-			typeof(Wait),
-			typeof(Show),
-			typeof(Hide),
+            typeof(TextLoad),
+            typeof(GetText),
 
-			typeof(CreateObject),
-			typeof(DeleteObject),
-			typeof(DeleteAllObject),
-			typeof(GetObject),
-			typeof(SetPriority),
+            typeof(Wait),
+            typeof(Show),
+            typeof(Hide),
 
-			typeof(Move),
-			typeof(MoveX),
-			typeof(MoveY),
-			typeof(MoveZ),
-			typeof(LocalMove),
-			typeof(LocalMoveX),
-			typeof(LocalMoveY),
-			typeof(LocalMoveZ),
-			typeof(Rotate),
-			typeof(RotateX),
-			typeof(RotateY),
-			typeof(RotateZ),
-			typeof(Scale),
-			typeof(ScaleX),
-			typeof(ScaleY),
-			typeof(ScaleZ),
-			typeof(Shake),
+            typeof(CreateObject),
+            typeof(DeleteObject),
+            typeof(DeleteAllObject),
+            typeof(GetObject),
+            typeof(SetPriority),
 
-			typeof(PlayAnimation),
-			typeof(StopAnimation),
+            typeof(Move),
+            typeof(MoveX),
+            typeof(MoveY),
+            typeof(MoveZ),
+            typeof(LocalMove),
+            typeof(LocalMoveX),
+            typeof(LocalMoveY),
+            typeof(LocalMoveZ),
+            typeof(Rotate),
+            typeof(RotateX),
+            typeof(RotateY),
+            typeof(RotateZ),
+            typeof(Scale),
+            typeof(ScaleX),
+            typeof(ScaleY),
+            typeof(ScaleZ),
+            typeof(Shake),
 
-			typeof(PlayParticle),
-			typeof(StopParticle),
+            typeof(PlayAnimation),
+            typeof(StopAnimation),
 
-			typeof(FadeIn),
-			typeof(FadeOut),
-			typeof(FadeColor),
+            typeof(PlayParticle),
+            typeof(StopParticle),
 
-			#if ENABLE_CRIWARE_ADX
+            typeof(FadeIn),
+            typeof(FadeOut),
+            typeof(FadeColor),
 
-			typeof(PlayBgm),
-			typeof(PlaySe),
-			typeof(PlayVoice),
-			typeof(PlayJingle),
-			typeof(PlayAmbience),
-			typeof(PauseSound),
-			typeof(StopSound),
-			typeof(StopAllSound),
+            #if ENABLE_CRIWARE_ADX
 
-			#endif
-		};
+            typeof(PlayBgm),
+            typeof(PlaySe),
+            typeof(PlayVoice),
+            typeof(PlayJingle),
+            typeof(PlayAmbience),
+            typeof(PauseSound),
+            typeof(StopSound),
+            typeof(StopAllSound),
+
+            #endif
+        };
     }
 }
 

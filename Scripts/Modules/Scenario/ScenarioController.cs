@@ -1,8 +1,9 @@
-﻿
+
 #if ENABLE_XLUA
 
 using UnityEngine;
 using System;
+using System.Threading;
 using Cysharp.Threading.Tasks;
 using Extensions;
 using Modules.Devkit.Console;
@@ -19,124 +20,146 @@ namespace Modules.Scenario
 
         //----- field -----
 
-		//----- property -----
+        private CancellationTokenSource cancelSource = null;
 
-		public string LuaPath { get; private set; }
+        //----- property -----
 
-		public LuaReference LuaReference { get; private set; }
+        public string LuaPath { get; private set; }
 
-		public LuaController LuaController { get; private set; }
+        public LuaReference LuaReference { get; private set; }
 
-		public LuaLoader LuaLoader { get; private set; }
+        public LuaController LuaController { get; private set; }
 
-		public LuaText LuaText { get; private set; }
+        public LuaLoader LuaLoader { get; private set; }
 
-		public CommandLoader CommandLoader { get; private set; }
+        public LuaText LuaText { get; private set; }
 
-		public TimeScale TimeScale { get; private set; }
+        public CommandLoader CommandLoader { get; private set; }
 
-		public ManagedObjects ManagedObjects { get; private set; }
+        public TimeScale TimeScale { get; private set; }
 
-		public AssetController AssetController { get; private set; }
+        public ManagedObjects ManagedObjects { get; private set; }
 
-		#if ENABLE_CRIWARE_ADX
+        public AssetController AssetController { get; private set; }
 
-		public SoundController SoundController { get; private set; }
+        public TaskController TaskController { get; private set; }
 
-		#endif
+        #if ENABLE_CRIWARE_ADX
+
+        public SoundController SoundController { get; private set; }
+
+        #endif
 
         //----- method -----
 
-		public void Setup(string luaPath, LuaReference luaReference)
-		{
-			var aesCryptoKey = GetCryptoKey();
+        public void Setup(string luaPath, LuaReference luaReference)
+        {
+            cancelSource = new CancellationTokenSource();
 
-			LuaPath = luaPath;
-			LuaReference = luaReference;
-			LuaText = new LuaText(aesCryptoKey);
+            var aesCryptoKey = GetCryptoKey();
 
-			TimeScale = new TimeScale();
-			
-			ManagedObjects = new ManagedObjects();
+            LuaPath = luaPath;
+            LuaReference = luaReference;
+            LuaText = new LuaText(aesCryptoKey);
 
-			AssetController = new AssetController();
+            TimeScale = new TimeScale();
+            
+            ManagedObjects = new ManagedObjects();
 
-			#if ENABLE_CRIWARE_ADX
+            AssetController = new AssetController();
+            TaskController = new TaskController();
 
-			SoundController = new SoundController();
+            #if ENABLE_CRIWARE_ADX
 
-			#endif
+            SoundController = new SoundController();
 
-			LuaController = new LuaController();
+            #endif
 
-			LuaLoader = CreateLuaLoader();
-			
-			LuaController.Setup(LuaLoader, LuaReference);
+            LuaController = new LuaController();
 
-			CommandLoader = CreateCommandLoader();
+            LuaLoader = CreateLuaLoader();
+            
+            LuaController.Setup(LuaLoader, LuaReference);
 
-			CommandLoader.Setup(LuaController);
+            CommandLoader = CreateCommandLoader();
 
-			foreach (var command in CommandLoader.Commands.Values)
-			{
-				var scenarioCommand = command as ScenarioCommand;
+            CommandLoader.Setup(LuaController);
 
-				if (scenarioCommand == null){ continue; }
+            foreach (var command in CommandLoader.Commands.Values)
+            {
+                var scenarioCommand = command as ScenarioCommand;
 
-				scenarioCommand.Setup(this);
-			}
-		}
+                if (scenarioCommand == null){ continue; }
 
-		/// <summary> 準備処理実行. </summary>
-		public async UniTask Prepare(string luaFunction)
-		{
-			LuaController.Request(LuaPath);
+                scenarioCommand.Setup(this);
+            }
+        }
 
-			await LuaController.Prepare();
+        /// <summary> 準備処理実行. </summary>
+        public async UniTask Prepare(string luaFunction)
+        {
+            LuaController.Request(LuaPath);
 
-			var callFunction = LuaController.FixLuaFunctionCallName(luaFunction);
+            await LuaController.Prepare();
 
-			LuaController.LuaEnv.DoString(callFunction);
-		}
+            var callFunction = LuaController.FixLuaFunctionCallName(luaFunction);
 
-		/// <summary> メイン処理実行. </summary>
-		public async UniTask Execute(string luaFunction)
-		{
-			try
-			{
-				UnityConsole.Info($"Scenario Execute:\nLua = {LuaPath}\nFunction = {luaFunction}");
+            LuaController.LuaEnv.DoString(callFunction);
+        }
 
-				await LuaController.Execute(luaFunction);
+        /// <summary> メイン処理実行. </summary>
+        public async UniTask Execute(string luaFunction, CancellationToken cancelToken = default)
+        {
+            var linkedCancelTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancelToken, cancelSource.Token);
 
-				UnityConsole.Info($"Scenario Finish:\nLua = {LuaPath}\nFunction = {luaFunction}");
-			}
-			catch (Exception e)
-			{
-				Debug.LogException(e);
-			}
-		}
+            var linkedCancelToken = linkedCancelTokenSource.Token;
 
-		/// <summary> 必要アセット一覧取得. </summary>
-		public string[] GetRequestAssets()
-		{
-			return AssetController.GetAllRequestAssets();
-		}
+            try
+            {
+                UnityConsole.Info($"Scenario Execute:\nLua = {LuaPath}\nFunction = {luaFunction}");
 
-		public T GetValue<T>(string key)
-		{
-			return LuaController.LuaEnv.Global.Get<T>(key);
-		}
+                await LuaController.Execute(luaFunction, linkedCancelToken);
 
-		public void SetValue<T>(string key, T value)
-		{
-			LuaController.LuaEnv.Global.Set(key, value);
-		}
+                UnityConsole.Info($"Scenario Finish:\nLua = {LuaPath}\nFunction = {luaFunction}");
+            }
+            catch (Exception e)
+            {
+                Debug.LogException(e);
+            }
+        }
 
-		protected abstract LuaLoader CreateLuaLoader();
+        /// <summary> 必要アセット一覧取得. </summary>
+        public string[] GetRequestAssets()
+        {
+            return AssetController.GetAllRequestAssets();
+        }
 
-		protected abstract CommandLoader CreateCommandLoader();
+        public T GetValue<T>(string key)
+        {
+            return LuaController.LuaEnv.Global.Get<T>(key);
+        }
 
-		protected abstract AesCryptoKey GetCryptoKey();
+        public void SetValue<T>(string key, T value)
+        {
+            LuaController.LuaEnv.Global.Set(key, value);
+        }
+
+        public void Cancel()
+        {
+            if (cancelSource != null)
+            {
+                cancelSource.Cancel();
+                cancelSource.Dispose();
+            }
+
+            cancelSource = new CancellationTokenSource();
+        }
+
+        protected abstract LuaLoader CreateLuaLoader();
+
+        protected abstract CommandLoader CreateCommandLoader();
+
+        protected abstract AesCryptoKey GetCryptoKey();
     }
 }
 

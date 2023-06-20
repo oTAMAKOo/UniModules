@@ -13,57 +13,57 @@ namespace Modules.Scenario
 
         //----- field -----
 
-		private List<string> assetRequest = null;
+        private List<string> assetRequest = null;
 
-		private List<UniTask> loadQueue = null;
+        private List<UniTask> loadQueue = null;
 
-		private Dictionary<string, object> loadedAssets = null;
+        private Dictionary<string, object> loadedAssets = null;
 
         //----- property -----
 
-		//----- method -----
+        //----- method -----
 
-		public AssetController()
-		{
-			assetRequest = new List<string>();
-			loadQueue = new List<UniTask>();
-			loadedAssets = new Dictionary<string, object>();
-		}
+        public AssetController()
+        {
+            assetRequest = new List<string>();
+            loadQueue = new List<UniTask>();
+            loadedAssets = new Dictionary<string, object>();
+        }
 
-		public void AddRequest(string target)
-		{
-			assetRequest.Add(target);
-		}
+        public void AddRequest(string target)
+        {
+            assetRequest.Add(target);
+        }
 
-		public void AddLoadTask(UniTask task)
-		{
-			loadQueue.Add(task);
-		}
+        public void AddLoadTask(UniTask task)
+        {
+            loadQueue.Add(task);
+        }
 
-		public async UniTask RunLoadTasks()
-		{
-			if (loadQueue.IsEmpty()){ return; }
+        public async UniTask RunLoadTasks()
+        {
+            if (loadQueue.IsEmpty()){ return; }
 
-			await UniTask.WhenAll(loadQueue);
+            await UniTask.WhenAll(loadQueue);
 
-			loadQueue.Clear();
-		}
+            loadQueue.Clear();
+        }
 
-		public void SetLoadedAsset<T>(string key, T asset)
-		{
-			loadedAssets[key] = asset;
-		}
+        public void SetLoadedAsset<T>(string key, T asset)
+        {
+            loadedAssets[key] = asset;
+        }
 
-		public T GetLoadedAsset<T>(string key) where T : class
-		{
-			return loadedAssets.GetValueOrDefault(key) as T;
-		}
+        public T GetLoadedAsset<T>(string key) where T : class
+        {
+            return loadedAssets.GetValueOrDefault(key) as T;
+        }
 
-		public string[] GetAllRequestAssets()
-		{
-			return assetRequest.ToArray();
-		}
-	}
+        public string[] GetAllRequestAssets()
+        {
+            return assetRequest.ToArray();
+        }
+    }
 }
 
 #endif

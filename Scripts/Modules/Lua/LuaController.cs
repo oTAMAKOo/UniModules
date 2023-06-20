@@ -1,9 +1,10 @@
-﻿
+
 #if ENABLE_XLUA
 
 using UnityEngine;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using Cysharp.Threading.Tasks;
 using UniRx;
 using XLua;
@@ -11,223 +12,225 @@ using Extensions;
 
 namespace Modules.Lua
 {
-	[LuaCallCSharp]
+    [LuaCallCSharp]
     public sealed class LuaController : LifetimeDisposable
-	{
+    {
         //----- params -----
 
         //----- field -----
 
-		private LuaEnv luaEnv = null;
+        private LuaEnv luaEnv = null;
 
-		private LuaReference luaReference = null;
+        private LuaReference luaReference = null;
 
-		private LuaLoader luaLoader = null;
+        private LuaLoader luaLoader = null;
 
-		private string functionName = null;
+        private string functionName = null;
 
-		//----- property -----
+        //----- property -----
 
-		public LuaEnv LuaEnv { get { return luaEnv; } }
+        public LuaEnv LuaEnv { get { return luaEnv; } }
 
-		public LuaReference LuaReference { get { return luaReference; } }
+        public LuaReference LuaReference { get { return luaReference; } }
 
-		public bool IsExecute { get; private set; }
+        public bool IsExecute { get; private set; }
 
-		//----- method -----
+        //----- method -----
 
-		public LuaController()
-		{
-			Observable.EveryUpdate()
-				.Subscribe(_ => LuaUpdate())
-				.AddTo(Disposable);
-		}
+        public LuaController()
+        {
+            Observable.EveryUpdate()
+                .Subscribe(_ => LuaUpdate())
+                .AddTo(Disposable);
+        }
 
-		public void Setup(LuaLoader loader, LuaReference reference)
-		{
-			luaLoader = loader;
-			luaReference = reference;
+        public void Setup(LuaLoader loader, LuaReference reference)
+        {
+            luaLoader = loader;
+            luaReference = reference;
 
-			luaEnv = new LuaEnv();
+            luaEnv = new LuaEnv();
 
-			luaEnv.AddLoader(GetLuaBytes);
+            luaEnv.AddLoader(GetLuaBytes);
 
-			luaLoader.Initialize(this);
+            luaLoader.Initialize(this);
 
-			var autoLoadTargets = reference.Infos.Where(x => x.autoload).ToArray();
+            var autoLoadTargets = reference.Infos.Where(x => x.autoload).ToArray();
 
-			foreach (var target in autoLoadTargets)
-			{
-				if (string.IsNullOrEmpty(target.path)){ continue; }
+            foreach (var target in autoLoadTargets)
+            {
+                if (string.IsNullOrEmpty(target.path)){ continue; }
 
-				Require(target.path);
-			}
+                Require(target.path);
+            }
 
-			IsExecute = false;
-		}
+            IsExecute = false;
+        }
 
-		public void Require(string luaPath)
-		{
-			luaEnv.Require(luaPath);
-		}
+        public void Require(string luaPath)
+        {
+            luaEnv.Require(luaPath);
+        }
 
-		public void Request(string luaPath)
-		{
-			luaEnv.Request(luaPath);
-		}
+        public void Request(string luaPath)
+        {
+            luaEnv.Request(luaPath);
+        }
 
-		private byte[] GetLuaBytes(ref string luaPath)
-		{
-			string lua = null;
+        private byte[] GetLuaBytes(ref string luaPath)
+        {
+            string lua = null;
 
-			if (luaPath == "_main_")
-			{
-				const string format = @"
-					__main = {}
+            if (luaPath == "_main_")
+            {
+                const string format = @"
+                    __main = {}
 
-					local _mainFunc = async(function()
+                    local _mainFunc = async(function()
 
-						await(#LUA_FUNCTION#)
+                        await(#LUA_FUNCTION#)
 
-						_luaController:OnFinish()
+                        _luaController:OnFinish()
 
-					end)
+                    end)
 
-					__main.callback = _mainFunc
-				";
+                    __main.callback = _mainFunc
+                ";
 
-				var callFunction = FixLuaFunctionCallName(functionName);
+                var callFunction = FixLuaFunctionCallName(functionName);
 
-				lua = format.Replace("#LUA_FUNCTION#", callFunction);
-			}
+                lua = format.Replace("#LUA_FUNCTION#", callFunction);
+            }
 
-			if (luaPath == "_log_")
-			{
-				lua = @"
-					log = function(...)
-						_luaController:LuaLog(debug.traceback(), ...)
-					end
+            if (luaPath == "_log_")
+            {
+                lua = @"
+                    log = function(...)
+                        _luaController:LuaLog(debug.traceback(), ...)
+                    end
 
-					logf = function(format, ...)
-						_luaController:LuaLogFormat(debug.traceback(), format, ...)
-					end
-				";
-			}
+                    logf = function(format, ...)
+                        _luaController:LuaLogFormat(debug.traceback(), format, ...)
+                    end
+                ";
+            }
 
-			return lua != null ? Encoding.UTF8.GetBytes(lua) : null;
-		}
+            return lua != null ? Encoding.UTF8.GetBytes(lua) : null;
+        }
 
-		public async UniTask Prepare()
-		{
-			// ※ 一瞬遅れて読み込まれるケースの為少し遅延して判定.
-			while (luaLoader.IsLoading)
-			{
-				await UniTask.WaitWhile(() => luaLoader.IsLoading);
+        public async UniTask Prepare()
+        {
+            // ※ 一瞬遅れて読み込まれるケースの為少し遅延して判定.
+            while (luaLoader.IsLoading)
+            {
+                await UniTask.WaitWhile(() => luaLoader.IsLoading);
 
-				await UniTask.DelayFrame(3);
-			}
-		}
+                await UniTask.DelayFrame(3);
+            }
+        }
 
-		public async UniTask Execute(string functionName)
-		{
-			this.functionName = functionName;
+        public async UniTask Execute(string functionName, CancellationToken cancellToken)
+        {
+            this.functionName = functionName;
 
-			try
-			{
-				IsExecute = true;
+            try
+            {
+                IsExecute = true;
 
-				Require("framework.AsyncTask");
+                Require("framework.AsyncTask");
 
-				Require("_main_");
-				Require("_log_");
+                Require("_main_");
+                Require("_log_");
 
-				luaEnv.Global.Set("_luaController", this);
+                luaEnv.Global.Set("_luaController", this);
 
-				luaEnv.DoString("__main.callback()");
+                luaEnv.DoString("__main.callback()");
 
-				while (IsExecute)
-				{
-					await UniTask.NextFrame();
-				}
-			}
-			catch (System.Exception ex)
-			{
-				Debug.LogError($"xLua exception : {ex.Message}\n {ex.StackTrace}");
-			}
-			finally
-			{
-				Exit();
-			}
-		}
+                while (IsExecute)
+                {
+                    if (cancellToken.IsCancellationRequested){ break; }
 
-		public void Exit()
-		{
-			if (luaEnv != null)
-			{
-				luaEnv.Dispose();
-				luaEnv = null;
-			}
+                    await UniTask.NextFrame(CancellationToken.None);
+                }
+            }
+            catch (System.Exception ex)
+            {
+                Debug.LogError($"xLua exception : {ex.Message}\n {ex.StackTrace}");
+            }
+            finally
+            {
+                Exit();
+            }
+        }
 
-			IsExecute = false;
+        public void Exit()
+        {
+            if (luaEnv != null)
+            {
+                luaEnv.Dispose();
+                luaEnv = null;
+            }
 
-			Debug.LogWarning("Exit");
-		}
+            IsExecute = false;
 
-		public void OnFinish()
-		{
-			IsExecute = false;
+            Debug.LogWarning("Exit");
+        }
 
-			Debug.LogWarning("OnFinish");
-		}
+        public void OnFinish()
+        {
+            IsExecute = false;
 
-		private void LuaUpdate()
-		{
-			if (!IsExecute){ return; }
+            Debug.LogWarning("OnFinish");
+        }
 
-			if (luaEnv == null){ return; }
+        private void LuaUpdate()
+        {
+            if (!IsExecute){ return; }
 
-			luaEnv.Tick();
-		}
+            if (luaEnv == null){ return; }
 
-		/// <summary> LuaCallback </summary>
-		public void LuaLog(string stackTrace, params object[] args)
-		{
-			using (new DisableStackTraceScope())
-			{
-				var text = string.Join(", ", args);
+            luaEnv.Tick();
+        }
 
-				Debug.Log($"LUA: {text}\n\n{stackTrace}");
-			}
-		}
+        /// <summary> LuaCallback </summary>
+        public void LuaLog(string stackTrace, params object[] args)
+        {
+            using (new DisableStackTraceScope())
+            {
+                var text = string.Join(", ", args);
 
-		/// <summary> LuaCallback </summary>
-		public void LuaLogFormat(string stackTrace, string format, params object[] args)
-		{
-			using (new DisableStackTraceScope())
-			{
-				var text = string.Format(format, args);
+                Debug.Log($"LUA: {text}\n\n{stackTrace}");
+            }
+        }
 
-				Debug.LogFormat($"LUA: {text}\n\n{stackTrace}");
-			}
-		}
+        /// <summary> LuaCallback </summary>
+        public void LuaLogFormat(string stackTrace, string format, params object[] args)
+        {
+            using (new DisableStackTraceScope())
+            {
+                var text = string.Format(format, args);
 
-		public string FixLuaFunctionCallName(string luaFunction)
-		{
-			var callName = luaFunction.Replace(" ", string.Empty);
-			
-			return callName.EndsWith("()") ? callName : callName + "()";
-		}
+                Debug.LogFormat($"LUA: {text}\n\n{stackTrace}");
+            }
+        }
 
-		public T GetValue<T>(string key)
-		{
-			return luaEnv.Global.Get<T>(key);
-		}
+        public string FixLuaFunctionCallName(string luaFunction)
+        {
+            var callName = luaFunction.Replace(" ", string.Empty);
+            
+            return callName.EndsWith("()") ? callName : callName + "()";
+        }
 
-		public void SetValue<T>(string key, T value)
-		{
-			luaEnv.Global.Set(key, value);
-		}
-	}
+        public T GetValue<T>(string key)
+        {
+            return luaEnv.Global.Get<T>(key);
+        }
+
+        public void SetValue<T>(string key, T value)
+        {
+            luaEnv.Global.Set(key, value);
+        }
+    }
 }
 
 #endif
