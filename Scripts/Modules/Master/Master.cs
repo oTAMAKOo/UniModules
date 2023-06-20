@@ -348,7 +348,7 @@ namespace Modules.Master
             return Tuple.Create(result, sw.Elapsed.TotalMilliseconds);
         }
 
-        public Tuple<bool, double> Setup(CancellationToken cancelToken = default)
+        public Tuple<bool, double> Setup()
         {
             var result = false;
 
@@ -356,7 +356,7 @@ namespace Modules.Master
 
             try
             {
-                OnSetup(cancelToken);
+                OnSetup();
 
                 result = true;
             }
@@ -395,7 +395,7 @@ namespace Modules.Master
         protected virtual void Refresh() { }
 
         /// <summary> 内部で保持しているデータをクリア. </summary>
-        protected virtual void OnSetup(CancellationToken cancelToken) { }
+        protected virtual void OnSetup() { }
 
         protected abstract TKey GetRecordKey(TMasterRecord masterRecord);
 
