@@ -373,9 +373,9 @@ namespace Modules.Master
                         {
                             var master = item;
 
-                            var task = UniTask.Defer(async () =>
+                            var task = UniTask.RunOnThreadPool(() =>
                             {
-                                var setupResult = await master.Setup(linkedCancelToken);
+                                var setupResult = master.Setup();
 
                                 lock (resultLockObject)
                                 {
@@ -386,7 +386,8 @@ namespace Modules.Master
                                 {
                                     setupTimes.Add(master, setupResult.Item2);
                                 }
-                            });
+                                
+                            }, false, cancellationToken: linkedCancelToken);
 
                             tasks.Add(task);
                         }

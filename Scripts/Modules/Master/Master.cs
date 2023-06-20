@@ -21,7 +21,7 @@ namespace Modules.Master
 
         UniTask<Tuple<bool, double>> Load(AesCryptoKey cryptoKey, bool cleanOnError, bool configureAwait, CancellationToken cancelToken = default);
 
-        UniTask<Tuple<bool, double>> Setup(CancellationToken cancelToken = default);
+        Tuple<bool, double> Setup();
     }
 
     public abstract class MasterContainer<TMasterRecord>
@@ -348,7 +348,7 @@ namespace Modules.Master
             return Tuple.Create(result, sw.Elapsed.TotalMilliseconds);
         }
 
-        public async UniTask<Tuple<bool, double>> Setup(CancellationToken cancelToken = default)
+        public Tuple<bool, double> Setup(CancellationToken cancelToken = default)
         {
             var result = false;
 
@@ -356,13 +356,9 @@ namespace Modules.Master
 
             try
             {
-                await OnSetup(cancelToken);
+                OnSetup(cancelToken);
 
                 result = true;
-            }
-            catch (OperationCanceledException)
-            {
-                /* Canceled */
             }
             catch (Exception e)
             {
@@ -399,7 +395,7 @@ namespace Modules.Master
         protected virtual void Refresh() { }
 
         /// <summary> 内部で保持しているデータをクリア. </summary>
-        protected virtual UniTask OnSetup(CancellationToken cancelToken) { return UniTask.CompletedTask; }
+        protected virtual void OnSetup(CancellationToken cancelToken) { }
 
         protected abstract TKey GetRecordKey(TMasterRecord masterRecord);
 
