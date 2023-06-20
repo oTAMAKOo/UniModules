@@ -387,7 +387,7 @@ namespace Modules.Master
                                     setupTimes.Add(master, setupResult.Item2);
                                 }
                                 
-                            }, false, cancellationToken: linkedCancelToken);
+                            }, false, linkedCancelToken);
 
                             tasks.Add(task);
                         }
