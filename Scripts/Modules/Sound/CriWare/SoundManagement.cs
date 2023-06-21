@@ -25,13 +25,15 @@ namespace Modules.Sound
 
         private const float DefaultReleaseTime = 30f;
 
-		//----- field -----
+        //----- field -----
 
         private CriAtomExPlayer player = null;
 
         private Dictionary<string, SoundSheet> managedSoundSheets = null;
 
-		private bool initialized = false;
+        private Dictionary<Tuple<string, string>, int> cueInfoHashs = null;
+
+        private bool initialized = false;
 
         //----- property -----
 
@@ -44,41 +46,42 @@ namespace Modules.Sound
         private SoundManagement()
         {
             ReleaseTime = DefaultReleaseTime;
+
+            managedSoundSheets = new Dictionary<string, SoundSheet>();
+            cueInfoHashs = new Dictionary<Tuple<string, string>, int>();
         }
 
         public void Initialize(SoundParam defaultSoundParam)
         {
             if (initialized) { return; }
 
-			player = new CriAtomExPlayer();
+            player = new CriAtomExPlayer();
 
             OnInitialize(defaultSoundParam);
-
-            managedSoundSheets = new Dictionary<string, SoundSheet>();
 
             // デフォルトのサウンド設定を適用.
             ApplySoundParam();
 
-			// サウンドイベントを受信.
+            // サウンドイベントを受信.
 
-			CriAtomExSequencer.OnCallback += ReceiveSoundEvent;
+            CriAtomExSequencer.OnCallback += ReceiveSoundEvent;
 
-			// 一定周期で未使用状態になったAcbの解放を行う.
+            // 一定周期で未使用状態になったAcbの解放を行う.
             Observable.Interval(TimeSpan.FromSeconds(5f))
                 .Subscribe(_ => ReleaseSoundSheet())
                 .AddTo(Disposable);
 
-			// パラメータ更新通知.
-			OnUpdateParamAsObservable()
-				.Subscribe(x => ApplySoundParam(x))
-				.AddTo(Disposable);
+            // パラメータ更新通知.
+            OnUpdateParamAsObservable()
+                .Subscribe(x => ApplySoundParam(x))
+                .AddTo(Disposable);
 
             initialized = true;
         }
 
         public IReadOnlyList<SoundElement> GetAllSounds(bool playing = true)
         {
-			if (soundElements == null){ return new SoundElement[0]; }
+            if (soundElements == null){ return new SoundElement[0]; }
 
             if (playing)
             {
@@ -136,7 +139,7 @@ namespace Modules.Sound
             // 音量設定.
             SetVolume(element, soundParam.volume);
 
-			PlaySoundElement(element).Forget();
+            PlaySoundElement(element).Forget();
 
             if (onPlay != null)
             {
@@ -294,10 +297,10 @@ namespace Modules.Sound
         {
             var param = type != null ? GetSoundParam(type.Value) : defaultSoundParam;
 
-			if (param != null)
-			{
-	            player.SetVolume(param.volume);
-			}
+            if (param != null)
+            {
+                player.SetVolume(param.volume);
+            }
         }
 
         private SoundSheet GetSoundSheet(CueInfo cueInfo)
@@ -373,18 +376,18 @@ namespace Modules.Sound
             {
                 await UniTask.NextFrame();
 
-				if (!CriAtomPlugin.isInitialized){ return; }
-			}
+                if (!CriAtomPlugin.isInitialized){ return; }
+            }
 
             // ポーズを解除.
             playback.Resume(CriAtomEx.ResumeMode.PreparedPlayback);
         }
 
-		private void ReleaseSoundSheet()
+        private void ReleaseSoundSheet()
         {
             for (var i = 0; i < soundElements.Count; ++i)
             {
-				var soundElement = soundElements[i];
+                var soundElement = soundElements[i];
 
                 if (!soundElement.FinishTime.HasValue)
                 {
@@ -396,10 +399,10 @@ namespace Modules.Sound
                 {
                     soundElements.RemoveAt(i);
 
-					if (onRelease != null)
-					{
-						onRelease.OnNext(soundElement);
-					}
+                    if (onRelease != null)
+                    {
+                        onRelease.OnNext(soundElement);
+                    }
                 }
             }
 
@@ -448,10 +451,10 @@ namespace Modules.Sound
             {
                 soundElements.Remove(item);
 
-				if (onRelease != null)
-				{
-					onRelease.OnNext(item);
-				}
+                if (onRelease != null)
+                {
+                    onRelease.OnNext(item);
+                }
             }
 
             // 管理下の情報.
@@ -470,23 +473,43 @@ namespace Modules.Sound
                 CriAtom.RemoveCueSheet(item.Value.AssetPath);
 
                 managedSoundSheets.Remove(item.Key);
-			}
+            }
         }
 
-		private void ReceiveSoundEvent(ref CriAtomExSequencer.CriAtomExSequenceEventInfo eventInfo)
-		{
-			foreach (var soundElement in soundElements)
-			{
-				if (!soundElement.IsPlaying){ continue; }
+        public int GetCueId(string filePath, string cue)
+        {
+            var id = 0;
 
-				var playback = soundElement.GetPlayback();
+            var key = Tuple.Create(filePath, cue);
 
-				if (playback.id != eventInfo.playbackId){ continue; }
+            if (!cueInfoHashs.ContainsKey(key))
+            {
+                id = cueInfoHashs.GetValueOrDefault(key);
+            }
+            else
+            {
+                id = $"{filePath}-{cue}".GetHashCode();
 
-				soundElement.InvokeSoundEvent(eventInfo);
-			}
-		}
-	}
+                cueInfoHashs.Add(key, id);
+            }
+
+            return id;
+        }
+
+        private void ReceiveSoundEvent(ref CriAtomExSequencer.CriAtomExSequenceEventInfo eventInfo)
+        {
+            foreach (var soundElement in soundElements)
+            {
+                if (!soundElement.IsPlaying){ continue; }
+
+                var playback = soundElement.GetPlayback();
+
+                if (playback.id != eventInfo.playbackId){ continue; }
+
+                soundElement.InvokeSoundEvent(eventInfo);
+            }
+        }
+    }
 }
 
 #endif

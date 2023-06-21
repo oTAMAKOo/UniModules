@@ -12,7 +12,6 @@ using Extensions;
 using Modules.Devkit.Generators;
 using Modules.CriWare;
 using Modules.CriWare.Editor;
-using Modules.Devkit.Project;
 
 namespace Modules.Sound.Editor
 {
@@ -35,7 +34,9 @@ using Extensions;
 namespace Modules.Sound
 {
     public static partial class Sounds
-	{
+    {
+        private static Dictionary<Cue, CueInfo> cache = new Dictionary<Cue,CueInfo>();
+
         public enum Cue
         {
 @ENUMS
@@ -46,35 +47,42 @@ namespace Modules.Sound
 @CONTENTS
         };
 
-		public static CueInfo[] GetInternalFileInfo()
-		{
-			return internalSounds
-				.Select(x => GetCueInfo(x.Key))
-				.DistinctBy(x => x.CueSheet)
-				.ToArray();
-		}
+        public static CueInfo[] GetInternalFileInfo()
+        {
+            return internalSounds
+                .Select(x => GetCueInfo(x.Key))
+                .DistinctBy(x => x.CueSheet)
+                .ToArray();
+        }
 
         public static CueInfo GetCueInfo(Cue cue)
         {
-            var fileDirectory = string.Empty;
+            var cueInfo = cache.GetValueOrDefault(cue);
 
-            #if UNITY_EDITOR
+            if (cueInfo == null)
+            {
+                var fileDirectory = string.Empty;
 
-            var editorStreamingAssetsFolderPath = @EDITOR_STREAMING_ASSETS_FOLDER_PATH;
+                #if UNITY_EDITOR
 
-            fileDirectory = UnityPathUtility.ConvertAssetPathToFullPath(editorStreamingAssetsFolderPath);
+                fileDirectory = UnityPathUtility.StreamingAssetsPath;
 
-            #else
+                #else
 
-            fileDirectory = Common.streamingAssetsPath;
+                fileDirectory = Common.streamingAssetsPath;
 
-            #endif
+                #endif
 
-            var info = internalSounds.GetValueOrDefault(cue);
+                var info = internalSounds.GetValueOrDefault(cue);
 
-            var filePath = PathUtility.Combine(fileDirectory, info.Item1);
+                var filePath = PathUtility.Combine(fileDirectory, info.Item1);
 
-            return new CueInfo(filePath, info.Item1, info.Item2);
+                cueInfo = new CueInfo(filePath, info.Item1, info.Item2);
+
+                cache.Add(cue, cueInfo);
+            }
+
+            return cueInfo;
         }
     }
 }
@@ -82,7 +90,6 @@ namespace Modules.Sound
 #endif
 ";
         private const string EnumTemplate = @"{0},";
-        private const string SummaryTemplate = @"/// <summary> {0} </summary>";
         private const string ContentsTemplate = @"{{ Cue.{0}, Tuple.Create(""{1}"", ""{2}"") }},";
 
         //----- field -----
@@ -93,8 +100,6 @@ namespace Modules.Sound
 
         public static void Generate(string scriptPath, string assetFolderPath, string rootFolderName)
         {
-            var projectUnityFolders = ProjectUnityFolders.Instance;
-
             var infos = LoadAcbInfo(assetFolderPath);
 
             var enums = new StringBuilder();
@@ -109,7 +114,7 @@ namespace Modules.Sound
 
                 var cueSheetPath = PathUtility.Combine(rootFolderName, info.CueSheet);
 
-				enums.Append("\t\t\t").AppendFormat(EnumTemplate, enumName);
+                enums.Append("\t\t\t").AppendFormat(EnumTemplate, enumName);
                 contents.Append("\t\t\t").AppendFormat(ContentsTemplate, enumName, cueSheetPath, info.Cue);
 
                 if (i < infos.Length - 1)
@@ -119,13 +124,10 @@ namespace Modules.Sound
                 }
             }
 
-            var editorStreamingAssetsFolderPath = projectUnityFolders.StreamingAssetPath;
-
             var script = ScriptTemplate;
 
             script = Regex.Replace(script, "@ENUMS", enums.ToString());
             script = Regex.Replace(script, "@CONTENTS", contents.ToString());
-            script = Regex.Replace(script, "@EDITOR_STREAMING_ASSETS_FOLDER_PATH", @"""" + editorStreamingAssetsFolderPath + @"""");
 
             ScriptGenerateUtility.GenerateScript(scriptPath, @"Sounds.cs", script);
         }
@@ -155,13 +157,13 @@ namespace Modules.Sound
                 {
                     var cueInfos = acb.GetCueInfoList().ToArray();
 
-					foreach (var cueInfo in cueInfos)
+                    foreach (var cueInfo in cueInfos)
                     {
                         var acbPath = assetPath.Replace(path + PathUtility.PathSeparator, string.Empty);
 
                         acbPath = PathUtility.GetPathWithoutExtension(acbPath);
 
-						result.Add(new CueInfo(string.Empty, acbPath, cueInfo.name));
+                        result.Add(new CueInfo(string.Empty, acbPath, cueInfo.name));
                     }
 
                     acb.Dispose();

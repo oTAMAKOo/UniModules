@@ -316,7 +316,7 @@ namespace Modules.Master
                     await UniTask.WhenAll(tasks);
                 }
 
-                //------ Setup ------
+                //------ Load ------
 
                 if (result)
                 {
@@ -376,15 +376,25 @@ namespace Modules.Master
                             var task = UniTask.RunOnThreadPool(() =>
                             {
                                 var setupResult = master.Setup();
-
-                                lock (resultLockObject)
+                                
+                                if (setupResult.Item1)
                                 {
-                                    result &= setupResult.Item1;
+                                    lock (resultLockObject)
+                                    {
+                                        result &= setupResult.Item1;
+                                    }
+
+                                    lock (setupTimes)
+                                    {
+                                        setupTimes.Add(master, setupResult.Item2);
+                                    }
                                 }
-
-                                lock (setupTimes)
+                                else
                                 {
-                                    setupTimes.Add(master, setupResult.Item2);
+                                    var masterType = master.GetType();
+                                    var masterFileName = masterFileNames.GetValueOrDefault(masterType);
+
+                                    Debug.LogErrorFormat("Setup master failed.\nClass : {0}\nFile : {1}\n", masterType.FullName, masterFileName);
                                 }
                                 
                             }, false, linkedCancelToken);
