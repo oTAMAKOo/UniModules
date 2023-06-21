@@ -31,8 +31,6 @@ namespace Modules.Sound
 
         private Dictionary<string, SoundSheet> managedSoundSheets = null;
 
-        private Dictionary<Tuple<string, string>, int> cueInfoHashs = null;
-
         private bool initialized = false;
 
         //----- property -----
@@ -48,7 +46,6 @@ namespace Modules.Sound
             ReleaseTime = DefaultReleaseTime;
 
             managedSoundSheets = new Dictionary<string, SoundSheet>();
-            cueInfoHashs = new Dictionary<Tuple<string, string>, int>();
         }
 
         public void Initialize(SoundParam defaultSoundParam)
@@ -474,26 +471,6 @@ namespace Modules.Sound
 
                 managedSoundSheets.Remove(item.Key);
             }
-        }
-
-        public int GetCueId(string filePath, string cue)
-        {
-            var id = 0;
-
-            var key = Tuple.Create(filePath, cue);
-
-            if (!cueInfoHashs.ContainsKey(key))
-            {
-                id = cueInfoHashs.GetValueOrDefault(key);
-            }
-            else
-            {
-                id = $"{filePath}-{cue}".GetHashCode();
-
-                cueInfoHashs.Add(key, id);
-            }
-
-            return id;
         }
 
         private void ReceiveSoundEvent(ref CriAtomExSequencer.CriAtomExSequenceEventInfo eventInfo)
