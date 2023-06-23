@@ -10,21 +10,15 @@ using TMPro;
 using Extensions;
 using Modules.Devkit.Prefs;
 
-#if ENABLE_SOFT_MASK
-
-using SoftMasking;
-
-#endif
-
 namespace Modules.Devkit.Hierarchy
 {
     public sealed class ComponentIconDrawer : ItemContentDrawer
     {
         //----- params -----
 
-        private const float MissingIconSize = 16f;
-
         private const float ComponentIconSize = 13f;
+
+        private const int UpdateInterval = 1000;
 
         public static readonly Type[] DefaultDrawIconTypes = new Type[]
         {
@@ -56,14 +50,6 @@ namespace Modules.Devkit.Hierarchy
             typeof(HorizontalLayoutGroup),
             typeof(VerticalLayoutGroup),
             typeof(GridLayoutGroup),
-
-            //----- SoftMask -----
-
-            #if ENABLE_SOFT_MASK
-
-            typeof(SoftMask),
-
-            #endif
         };
 
         private const string TextMeshProPackageAssetPath = "Packages/com.unity.textmeshpro/Editor Resources/Gizmos/";
@@ -88,27 +74,37 @@ namespace Modules.Devkit.Hierarchy
 
         private Dictionary<Type, GUIContent> iconGUIContentDictionary = null;
 
+        private Dictionary<GameObject, Component[]> componentCacheDictionary = null;
+
+        private Dictionary<Type, GUIContent> componentIconCahceDictionary = null;
+
+        private int frameCount = 0;
+
         //----- property -----
 
         public override int Priority { get { return 50; } }
 
-        public override bool Enable { get { return Prefs.enable && !Application.isPlaying; } }
+        public override bool Enable { get { return Prefs.enable; } }
 
         //----- method -----
 
         public override void Initialize()
         {
             iconGUIContentDictionary = new Dictionary<Type, GUIContent>();
+            componentCacheDictionary = new Dictionary<GameObject, Component[]>();
+            componentIconCahceDictionary = new Dictionary<Type, GUIContent>();
 
             SetDisplayIconTypes(DefaultDrawIconTypes);
             RegisterTextMeshProTypes();
+
+            EditorApplication.update += OnEditorUpdate;
         }
 
         public override Rect Draw(GameObject targetObject, Rect rect)
         {
             rect.center = Vector.SetX(rect.center, rect.center.x - 2f);
 
-            var components = UnityUtility.GetComponents<Component>(targetObject).ToArray();
+            var components = GetTargetComponents(targetObject);
 
             var originIconSize = EditorGUIUtility.GetIconSize();
 
@@ -122,17 +118,15 @@ namespace Modules.Devkit.Hierarchy
                     {
                         if (component == null) { continue; }
 
-                        var type = component.GetType();
+                        var icon = GetComponentIcon(component);
 
-                        var item = iconGUIContentDictionary.FirstOrDefault(x => type == x.Key || type.IsSubclassOf(x.Key));
-
-                        if (item.IsDefault()) { continue; }
+                        if (icon == null){ continue; }
 
                         var drawRect = rect;
 
                         drawRect.center = Vector.SetY(rect.center, rect.center.y + 1f);
 
-                        EditorGUI.LabelField(drawRect, item.Value);
+                        EditorGUI.LabelField(drawRect, icon);
 
                         rect.center = Vector.SetX(rect.center, rect.center.x - iconOffsetX);
                     }
@@ -198,6 +192,62 @@ namespace Modules.Devkit.Hierarchy
                 var texture = AssetDatabase.LoadAssetAtPath(iconAssetPath, typeof(Texture2D)) as Texture2D;
 
                 AddCustomDisplayType(item.Key, texture);
+            }
+        }
+
+        private Component[] GetTargetComponents(GameObject target)
+        {
+            Component[] components;
+         
+            if (componentCacheDictionary.ContainsKey(target))
+            {
+                components = componentCacheDictionary[target];
+            }
+            else
+            {
+                components = UnityUtility.GetComponents<Component>(target).ToArray();
+
+                componentCacheDictionary.Add(target, components);
+            }
+
+            return components;
+        }
+
+        private GUIContent GetComponentIcon(Component component)
+        {
+            GUIContent icon = null;
+
+            var type = component.GetType();
+
+            if (componentIconCahceDictionary.ContainsKey(type))
+            {
+                icon = componentIconCahceDictionary[type];
+            }
+            else
+            {
+                var item = iconGUIContentDictionary.FirstOrDefault(x => type == x.Key || type.IsSubclassOf(x.Key));
+
+                if (!item.IsDefault())
+                {
+                    icon = item.Value;
+                }
+
+                componentIconCahceDictionary.Add(type, icon);
+            }
+
+            return icon;
+         }
+
+        private void OnEditorUpdate()
+        {
+            frameCount++;
+
+            if (UpdateInterval < frameCount)
+            {
+                componentCacheDictionary.Clear();
+                componentIconCahceDictionary.Clear();
+
+                frameCount = 0;
             }
         }
     }
