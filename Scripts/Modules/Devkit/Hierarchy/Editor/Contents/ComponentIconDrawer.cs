@@ -92,7 +92,7 @@ namespace Modules.Devkit.Hierarchy
 
         public override int Priority { get { return 50; } }
 
-        public override bool Enable { get { return Prefs.enable; } }
+        public override bool Enable { get { return Prefs.enable && !Application.isPlaying; } }
 
         //----- method -----
 
