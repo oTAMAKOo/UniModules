@@ -89,7 +89,7 @@ namespace Modules.Sound
         }
 
         /// <summary> 内蔵アセットサウンドを再生. </summary>
-        public async UniTask<SoundElement> Play(SoundType type, Sounds.Cue cue)
+        public SoundElement Play(SoundType type, Sounds.Cue cue)
         {
             var soundParam = GetSoundParam(type);
             var info = Sounds.GetCueInfo(cue);
@@ -104,11 +104,11 @@ namespace Modules.Sound
                 }
             }
 
-            return info != null ? await Play(type, info) : null;
+            return info != null ? Play(type, info) : null;
         }
 
         /// <summary>  外部アセットのサウンドを再生. </summary>
-        public async UniTask<SoundElement> Play(SoundType type, CueInfo info)
+        public SoundElement Play(SoundType type, CueInfo info)
         {
             if (info == null) { return null; }
 
@@ -126,7 +126,7 @@ namespace Modules.Sound
                 }
             }
 
-            element = await GetSoundElement(info, type);
+            element = GetSoundElement(info, type);
 
             if (element == null) { return null; }
 
@@ -337,7 +337,7 @@ namespace Modules.Sound
             return soundSheet;
         }
 
-        private async UniTask<SoundElement> GetSoundElement(CueInfo info, SoundType type)
+        private SoundElement GetSoundElement(CueInfo info, SoundType type)
         {
             // シート取得.
             var soundSheet = GetSoundSheet(info);
@@ -355,12 +355,6 @@ namespace Modules.Sound
 
             // 再生失敗ならRemovedが返る.
             if (playback.GetStatus() == CriAtomExPlayback.Status.Removed) { return null; }
-
-            // 再生準備が整うまで待機.
-            while (playback.GetStatus() != CriAtomExPlayback.Status.Playing) 
-            {
-                await UniTask.NextFrame();
-            }
 
             // デフォルトに戻す.
             ApplySoundParam();
