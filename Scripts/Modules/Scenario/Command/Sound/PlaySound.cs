@@ -29,7 +29,7 @@ namespace Modules.Scenario.Command
 				return null;
 			}
 
-			var soundElement = await SoundManagement.Instance.Play(soundType, cueInfo);
+			var soundElement = SoundManagement.Instance.Play(soundType, cueInfo);
 			
 			scenarioController.SoundController.Add(soundElement);
 
