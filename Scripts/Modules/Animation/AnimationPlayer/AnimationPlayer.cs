@@ -1,4 +1,4 @@
-﻿
+
 using UnityEngine;
 using System;
 using System.Linq;
@@ -27,7 +27,7 @@ namespace Modules.Animation
 
         private int layer = -1;
 
-		// 現在の状態.
+        // 現在の状態.
         private State currentState = State.Stop;
 
         // ステート遷移待ちフラグ.
@@ -122,14 +122,14 @@ namespace Modules.Animation
 
             if (isInitialized) { return; }
 
-			Animator = animator;
-			Clips = new AnimationClip[0];
-			DefaultSpeed = Animator.speed;
+            Animator = animator;
+            Clips = new AnimationClip[0];
+            DefaultSpeed = Animator.speed;
 
-			if (animator.runtimeAnimatorController != null)
-			{
-				Clips = animator.runtimeAnimatorController.animationClips;
-			}
+            if (animator.runtimeAnimatorController != null)
+            {
+                Clips = animator.runtimeAnimatorController.animationClips;
+            }
 
             if (stopOnAwake)
             {
@@ -173,26 +173,26 @@ namespace Modules.Animation
 
             if (!Animator.HasState(GetCurrentLayerIndex(), hash))
             {
-				CurrentAnimationName = null;
+                CurrentAnimationName = null;
 
-				Debug.LogErrorFormat("Animation State Not found. {0}", animationName);
+                Debug.LogErrorFormat("Animation State Not found. {0}", animationName);
 
-				return;
+                return;
             }
 
-			PlayAnimator(hash, layer, normalizedTime);
+            PlayAnimator(hash, layer, normalizedTime);
 
-			// 指定アニメーションへ遷移待ち.
-			if (immediate)
-			{
-				if (!IsCurrentState(CurrentAnimationName, GetCurrentLayerIndex()))
-				{
-					WaitTransitionStateImmediate();
-				}
-			}
+            // 指定アニメーションへ遷移待ち.
+            if (immediate)
+            {
+                if (!IsCurrentState(CurrentAnimationName, GetCurrentLayerIndex()))
+                {
+                    WaitTransitionStateImmediate();
+                }
+            }
 
-			await PlayInternal(hash, layer, normalizedTime, immediate);
-		}
+            await PlayInternal(hash, layer, normalizedTime, immediate);
+        }
 
         private void PlayAnimator(int hash, int layer, float normalizedTime)
         {
@@ -219,7 +219,7 @@ namespace Modules.Animation
         {
             while (true)
             {
-                if (!UnityUtility.IsActiveInHierarchy(gameObject)) { break; }
+                if (!Animator.IsAvailable()) { break; }
 
                 // 指定アニメーションへ遷移待ち.
                 if (!IsCurrentState(CurrentAnimationName, GetCurrentLayerIndex()))
@@ -243,7 +243,7 @@ namespace Modules.Animation
                 // ループ再生の場合は再度再生を行う.
                 PlayAnimator(hash, layer, normalizedTime);
 
-				await UniTask.NextFrame();
+                await UniTask.NextFrame();
             }
 
             EndAction();
@@ -263,7 +263,7 @@ namespace Modules.Animation
 
                 if (IsCurrentState(CurrentAnimationName, GetCurrentLayerIndex())) { break; }
 
-				await UniTask.NextFrame();
+                await UniTask.NextFrame();
             }
         }
 
@@ -300,8 +300,8 @@ namespace Modules.Animation
                     // 終了監視.
                     if (!IsAlive()) { break; }
                 }
-				
-				await UniTask.NextFrame();
+                
+                await UniTask.NextFrame();
             }
         }
 
@@ -390,21 +390,52 @@ namespace Modules.Animation
             }
         }
 
-		/// <summary>
+        public void SetTrigger<T>(string name)
+        {
+            if (!Animator.IsAvailable()){ return; }
+
+            Animator.SetTrigger(name);
+        }
+
+        public void SetParameter<T>(string name, T value)
+        {
+            if (!Animator.IsAvailable()){ return; }
+
+            var type = typeof(T);
+
+            if (type == typeof(bool))
+            {
+                Animator.SetBool(name, Convert.ToBoolean(value));
+            }
+            else if(type == typeof(int))
+            {
+                Animator.SetInteger(name, Convert.ToInt32(value));
+            }
+            else if(type == typeof(float))
+            {
+                Animator.SetFloat(name, Convert.ToSingle(value));
+            }
+            else
+            {
+                throw new ArgumentException($"{type} is not defined.");
+            }
+        }
+
+        /// <summary>
         /// 配下のAnimatorに対してパラメータをセット.
         /// </summary>
         /// <param name="parameters"></param>
         public void SetParameters(params StateMachineParameter[] parameters)
         {
-			Func<Animator, Unit> func = animator =>
-			{
-				foreach (var parameter in parameters)
-				{
-					parameter.SetParameter(animator);
-				}
+            Unit func(Animator animator)
+            {
+                foreach (var parameter in parameters)
+                {
+                    parameter.SetParameter(animator);
+                }
 
-				return Unit.Default;
-			};
+                return Unit.Default;
+            }
 
             DoLazyFunc(func).Forget();
         }
@@ -413,9 +444,9 @@ namespace Modules.Animation
         /// 指定した型の<see cref="StateMachineBehaviour"/>をすべて取得.
         /// <see cref="Animator"/>の初期化が完了するまで取得出来ないため、非同期で取得.
         /// </summary>
-		public async UniTask<T[]> GetStateMachineBehavioursAsync<T>() where T : StateMachineBehaviour
+        public async UniTask<T[]> GetStateMachineBehavioursAsync<T>() where T : StateMachineBehaviour
         {
-			return await DoLazyFunc(x => x.GetBehaviours<T>());
+            return await DoLazyFunc(x => x.GetBehaviours<T>());
         }
 
         private void SetPauseState(bool pause)
@@ -445,7 +476,7 @@ namespace Modules.Animation
 
         private bool IsAlive()
         {
-            if (!UnityUtility.IsActiveInHierarchy(gameObject)) { return false; }
+            if (!Animator.IsAvailable()) { return false; }
 
             var layerIndex = GetCurrentLayerIndex();
 
@@ -493,7 +524,7 @@ namespace Modules.Animation
             }
 
             // 初期化済でない場合は初期化完了を待つ.
-			await UniTask.WaitUntil(() => Animator.isInitialized);
+            await UniTask.WaitUntil(() => Animator.isInitialized);
 
             return func(Animator);
         }
