@@ -23,6 +23,8 @@ namespace Modules.Movie
 
         private List<MovieElement> movieElements = new List<MovieElement>();
 
+        private float audioVolume = 1f;
+
         private bool initialized = false;
 
         //----- property -----
@@ -78,6 +80,7 @@ namespace Modules.Movie
             var moviePlayer = movieController.player;
 
             moviePlayer.SetFile(null, moviePath);
+            moviePlayer.SetVolume(audioVolume);
 
             if (shaderOverrideCallBack != null)
             {
@@ -192,6 +195,18 @@ namespace Modules.Movie
             if (element == null || element.Player == null) { return; }
 
             element.Player.Pause(pause);
+        }
+
+        public void SetAudioVolume(float volume)
+        {
+            audioVolume = volume;
+
+            foreach (var movieElement in movieElements)
+            {
+                if (movieElement == null || movieElement.Player == null){ continue; }
+
+                movieElement.Player.SetVolume(audioVolume);
+            }
         }
 
         public void Stop(MovieElement element)
