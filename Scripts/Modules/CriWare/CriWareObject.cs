@@ -1,4 +1,4 @@
-﻿
+
 using UnityEngine;
 using CriWare;
 using Extensions;
@@ -12,7 +12,7 @@ namespace Modules.CriWare
     }
 
     public sealed class CriWareObject : SingletonMonoBehaviour<CriWareObject>
-	{
+    {
         //----- params -----
 
         private const string CriWareManageObjectName = "CRIWARE";
@@ -27,7 +27,7 @@ namespace Modules.CriWare
         #if ENABLE_CRIWARE_ADX || ENABLE_CRIWARE_SOFDEC
 
         public CriWareInitializer Initializer { get; private set; }
-        public CriWareErrorHandler ErrorHandler { get; private set; }
+        public CriWareCustomErrorHandler ErrorHandler { get; private set; }
 
         #endif
 
@@ -105,17 +105,11 @@ namespace Modules.CriWare
                 Initializer.Initialize();
             }
 
-            if(ErrorHandler == null)
+            if (ErrorHandler == null)
             {
-                var errorHandlerObject = UnityUtility.CreateEmptyGameObject(gameObject, "ErrorHandler");
+                ErrorHandler = UnityUtility.CreateGameObject<CriWareCustomErrorHandler>(gameObject, "ErrorHandler");
 
-                UnityUtility.SetActive(errorHandlerObject, false);
-
-                // Awakeが実行されないように非アクティブでAddComponent.
-                ErrorHandler = errorHandlerObject.AddComponent<CriWareErrorHandler>();
-                ErrorHandler.dontDestroyOnLoad = false;
-
-                UnityUtility.SetActive(errorHandlerObject, true);
+                ErrorHandler.Initialize();
             }
 
             #if ENABLE_CRIWARE_FILESYSTEM
@@ -133,17 +127,17 @@ namespace Modules.CriWare
 
             if (!string.IsNullOrEmpty(criAtom.acfFile))
             {
-				var streamingAssetsPath = string.Empty; 
+                var streamingAssetsPath = string.Empty; 
 
-				#if UNITY_EDITOR
+                #if UNITY_EDITOR
 
-				streamingAssetsPath = UnityPathUtility.StreamingAssetsPath;
+                streamingAssetsPath = UnityPathUtility.StreamingAssetsPath;
 
-				#else
+                #else
 
-				streamingAssetsPath = Common.streamingAssetsPath;
+                streamingAssetsPath = Common.streamingAssetsPath;
 
-				#endif
+                #endif
 
                 var acfPath = PathUtility.Combine(streamingAssetsPath, criAtom.acfFile);
 
