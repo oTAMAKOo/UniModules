@@ -1,4 +1,5 @@
 ﻿
+using System;
 using UnityEngine;
 using System.Collections.Generic;
 using CriWare;
@@ -18,6 +19,7 @@ namespace Modules.CriWare
 
         private Dictionary<LogType, bool> logOutput = null;
 
+        [NonSerialized]
         private bool initialized = false;
 
         //----- property -----
@@ -32,17 +34,21 @@ namespace Modules.CriWare
 
             isDebugBuild = Debug.isDebugBuild;
 
-            CriErrorNotifier.OnCallbackThreadUnsafe += OnCallback;
-
-            gameObject.OnDestroyAsObservable()
-                .Subscribe(_ => CriErrorNotifier.OnCallbackThreadUnsafe -= OnCallback)
-                .AddTo(this);
-
             SetLogOutput(LogType.Log, isDebugBuild);
             SetLogOutput(LogType.Warning, isDebugBuild);
             SetLogOutput(LogType.Error, isDebugBuild);
 
             initialized = true;
+        }
+
+        void OnEnable()
+        {
+            CriErrorNotifier.OnCallbackThreadUnsafe += OnCallback;
+        }
+
+        void OnDisable()
+        {
+            CriErrorNotifier.OnCallbackThreadUnsafe -= OnCallback;
         }
 
         private void OnCallback(string message)
