@@ -1,10 +1,8 @@
 ﻿
-using System;
 using UnityEngine;
+using System;
 using System.Collections.Generic;
 using CriWare;
-using UniRx;
-using UniRx.Triggers;
 using Extensions;
 
 namespace Modules.CriWare
