@@ -369,11 +369,24 @@ namespace Modules.Sound
             var playback = element.GetPlayback();
 
             // 再生準備完了待ち.
-            while (playback.GetStatus() != CriAtomExPlayback.Status.Playing)
+            while (true)
             {
-                await UniTask.NextFrame();
-
                 if (!CriAtomPlugin.isInitialized){ return; }
+
+                var status = playback.GetStatus();
+
+                if (status == CriAtomExPlayback.Status.Playing){ break; }
+
+                if (status == CriAtomExPlayback.Status.Removed)
+                {
+                    Debug.LogWarning($"Sound play canceled. {element.CueInfo.Cue}");
+                    
+                    Stop(element);
+                    
+                    return;
+                }
+
+                await UniTask.NextFrame();
             }
 
             // ポーズを解除.
