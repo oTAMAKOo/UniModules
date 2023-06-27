@@ -26,6 +26,8 @@ namespace Modules.ObjectPool
 
         //----- property -----
 
+        public GameObject Instance { get { return instance; } }
+
         public int Count { get { return cachedObjects.Count; } }
 
         //----- method -----
