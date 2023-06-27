@@ -28,6 +28,8 @@ namespace Modules.ObjectPool
 
         public GameObject Instance { get { return instance; } }
 
+        public IEnumerable<T> Objects { get { return cachedObjects; } }
+
         public int Count { get { return cachedObjects.Count; } }
 
         //----- method -----
@@ -36,8 +38,8 @@ namespace Modules.ObjectPool
         {
             this.prefab = prefab;
 
-            instance = new GameObject(string.Format("[Pooled]: {0}", poolName));
-            instance.transform.SetParent(poolParent.transform);
+            instance = new GameObject($"[Pooled]: {poolName}");
+            instance.transform.SetParent(poolParent.transform, false);
 
             instance.OnDestroyAsObservable()
                 .Subscribe(_ =>
