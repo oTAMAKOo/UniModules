@@ -31,6 +31,8 @@ namespace Modules.Sound
 
         private Dictionary<string, SoundSheet> managedSoundSheets = null;
 
+        private HashSet<Tuple<string, string>> currentFramePlayedSounds = null;
+
         private bool initialized = false;
 
         //----- property -----
@@ -46,6 +48,7 @@ namespace Modules.Sound
             ReleaseTime = DefaultReleaseTime;
 
             managedSoundSheets = new Dictionary<string, SoundSheet>();
+            currentFramePlayedSounds = new HashSet<Tuple<string, string>>();
         }
 
         public void Initialize(SoundParam defaultSoundParam)
@@ -68,6 +71,11 @@ namespace Modules.Sound
                 .Subscribe(_ => ReleaseSoundSheet())
                 .AddTo(Disposable);
 
+            // 毎フレームの最後に再生済みリストをクリア.
+            Observable.EveryEndOfFrame()
+                .Subscribe(_ => currentFramePlayedSounds.Clear())
+                .AddTo(Disposable);
+
             // パラメータ更新通知.
             OnUpdateParamAsObservable()
                 .Subscribe(x => ApplySoundParam(x))
@@ -87,7 +95,7 @@ namespace Modules.Sound
 
             return soundElements;
         }
-
+        
         /// <summary> 内蔵アセットサウンドを再生. </summary>
         public SoundElement Play(SoundType type, Sounds.Cue cue)
         {
@@ -106,11 +114,18 @@ namespace Modules.Sound
 
             return info != null ? Play(type, info) : null;
         }
-
-        /// <summary>  外部アセットのサウンドを再生. </summary>
+        
+        /// <summary> 外部アセットのサウンドを再生. </summary>
         public SoundElement Play(SoundType type, CueInfo info)
         {
             if (info == null) { return null; }
+
+            var soundPlayKey = Tuple.Create(info.CueSheet, info.Cue);
+
+            if (currentFramePlayedSounds.Contains(soundPlayKey))
+            {
+                return null;
+            }
 
             var soundParam = GetSoundParam(type);
 
@@ -137,6 +152,8 @@ namespace Modules.Sound
             SetVolume(element, soundParam.volume);
 
             PlaySoundElement(element).Forget();
+
+            currentFramePlayedSounds.Add(soundPlayKey); 
 
             if (onPlay != null)
             {
