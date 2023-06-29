@@ -35,5 +35,11 @@ namespace Extensions
         {
             return UNIX_EPOCH.AddMilliseconds(unixTime);
         }
+
+        /// <summary> UNIX時間からDateTimeに変換. </summary>
+        public static DateTime UnixTimeToDateTime(this ulong unixTime)
+        {
+            return UNIX_EPOCH.AddMilliseconds(unixTime);
+        }
     }
 }
