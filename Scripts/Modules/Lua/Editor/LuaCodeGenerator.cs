@@ -25,7 +25,7 @@ namespace Modules.Lua
 			{
 				DelegateBridge.Gen_Flag = true;
 				
-				#if !XLUA_GENERAL
+				#if XLUA_GENERAL
 
 				Generator.ClearAll();
 
