@@ -3,9 +3,16 @@ using System;
 
 namespace Extensions
 {
+    public enum UnixTimeConvert
+    {
+        Milliseconds,
+        Seconds,
+        Minutes,
+    }
+
     public static class TimeExtensions
     {
-        private static readonly DateTime UNIX_EPOCH = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+        public static readonly DateTime UNIX_EPOCH = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
 
         public static TimeSpan To(this DateTimeOffset from, DateTimeOffset to)
         {
@@ -24,22 +31,54 @@ namespace Extensions
             return timeSpan < amount;
         }
 
-        /// <summary> 現在時刻からUnixTime (Milliseconds)を計算. </summary>
-        public static ulong ToUnixTime(this DateTime dateTime)
+        /// <summary> DateTimeからUnixTimeに変換. </summary>
+        public static ulong ToUnixTime(this DateTime dateTime, UnixTimeConvert type = UnixTimeConvert.Milliseconds)
         {
-            return (ulong)dateTime.ToUniversalTime().Subtract(UNIX_EPOCH).TotalMilliseconds;
+            ulong unixTime = 0;
+
+            var timeSpan = dateTime.ToUniversalTime().Subtract(UNIX_EPOCH);
+
+            switch (type)
+            {
+                case UnixTimeConvert.Milliseconds:
+                    unixTime = (ulong)timeSpan.TotalMilliseconds;
+                    break;
+                case UnixTimeConvert.Seconds:
+                    unixTime = (ulong)timeSpan.TotalSeconds;
+                    break;
+                case UnixTimeConvert.Minutes:
+                    unixTime = (ulong)timeSpan.TotalMinutes;
+                    break;
+            }
+
+            return unixTime;
         }
 
         /// <summary> UNIX時間からDateTimeに変換. </summary>
-        public static DateTime UnixTimeToDateTime(this long unixTime)
+        public static DateTime UnixTimeToDateTime(this long unixTime, UnixTimeConvert type = UnixTimeConvert.Milliseconds)
         {
-            return UNIX_EPOCH.AddMilliseconds(unixTime);
+            return UnixTimeToDateTime((ulong)unixTime, type);
         }
 
         /// <summary> UNIX時間からDateTimeに変換. </summary>
-        public static DateTime UnixTimeToDateTime(this ulong unixTime)
+        public static DateTime UnixTimeToDateTime(this ulong unixTime, UnixTimeConvert type = UnixTimeConvert.Milliseconds)
         {
-            return UNIX_EPOCH.AddMilliseconds(unixTime);
+            var dateTime = DateTime.MinValue;
+
+            switch (type)
+            {
+                case UnixTimeConvert.Milliseconds:
+                    dateTime = UNIX_EPOCH.AddMilliseconds(unixTime);
+                    break;
+                case UnixTimeConvert.Seconds:
+                    dateTime = UNIX_EPOCH.AddSeconds(unixTime);
+                    break;
+                case UnixTimeConvert.Minutes:
+                    dateTime = UNIX_EPOCH.AddMinutes(unixTime);
+                    break;
+            }
+
+            return dateTime;
         }
     }
 }
