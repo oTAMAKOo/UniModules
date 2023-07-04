@@ -1,4 +1,4 @@
-﻿
+
 using UnityEngine;
 using UnityEditor;
 using System.Linq;
@@ -84,7 +84,7 @@ namespace Modules.ExternalAssets
             externalAssetPath = projectResourceFolders.ExternalAssetPath;
             shareResourcesPath = projectResourceFolders.ShareResourcesPath;
 
-			managedInfos = managedAssets.GetAllInfos().ToDictionary(x => x.guid);
+            managedInfos = managedAssets.GetAllInfos().ToDictionary(x => x.guid);
 
             ExternalAssetConfig.OnReloadAsObservable()
                 .Subscribe(_ =>
@@ -110,7 +110,7 @@ namespace Modules.ExternalAssets
 
             if (managedInfo == null) { return null; }
 
-			var guid = AssetDatabase.AssetPathToGUID(assetPath);
+            var guid = AssetDatabase.AssetPathToGUID(assetPath);
             var resourcePath = GetAssetLoadPath(assetPath);
 
             var assetInfo = new AssetInfo(guid, resourcePath, managedInfo.group, managedInfo.labels);
@@ -186,26 +186,26 @@ namespace Modules.ExternalAssets
                 .ToArray();
         }
 
-		public string[] GetManageAssetPaths(ManageInfo manageInfo)
-		{
-			var assetPath = AssetDatabase.GUIDToAssetPath(manageInfo.guid);
+        public string[] GetManageAssetPaths(ManageInfo manageInfo)
+        {
+            var assetPath = AssetDatabase.GUIDToAssetPath(manageInfo.guid);
 
-			if (!AssetDatabase.IsValidFolder(assetPath)){ return new string[] { assetPath }; }
+            if (!AssetDatabase.IsValidFolder(assetPath)){ return new string[] { assetPath }; }
 
-			var assetPaths = UnityEditorUtility.GetAllAssetPathInFolder(assetPath);
+            var assetPaths = UnityEditorUtility.GetAllAssetPathInFolder(assetPath);
 
-			var ignoreAssetPaths = managedInfos.Values
-				.Select(x => AssetDatabase.GUIDToAssetPath(x.guid))
-				.Select(x => PathUtility.ConvertPathSeparator(x))
-				.Where(x => x != assetPath && x.StartsWith(assetPath))
-				.ToArray();
+            var ignoreAssetPaths = managedInfos.Values
+                .Select(x => AssetDatabase.GUIDToAssetPath(x.guid))
+                .Select(x => PathUtility.ConvertPathSeparator(x))
+                .Where(x => x != assetPath && x.StartsWith(assetPath))
+                .ToArray();
 
-			var manageAssetPaths = assetPaths.Where(x => !IsIgnoreManageAsset(x))
-				.Where(x => ignoreAssetPaths.All(y => !x.StartsWith(y)))
-				.ToArray();
+            var manageAssetPaths = assetPaths.Where(x => !IsIgnoreManageAsset(x))
+                .Where(x => ignoreAssetPaths.All(y => !x.StartsWith(y)))
+                .ToArray();
 
-			return manageAssetPaths;
-		}
+            return manageAssetPaths;
+        }
 
         public bool SetAssetBundleName(string assetPath, string assetBundleName, bool force = false)
         {
@@ -353,7 +353,7 @@ namespace Modules.ExternalAssets
                     }
                     break;
 
-				case AssetBundleNamingRule.AssetFilePath:
+                case AssetBundleNamingRule.AssetFilePath:
                     {
                         var resourcePath = assetPath.Substring((resourcesDir + folder).Length);
 
@@ -452,8 +452,8 @@ namespace Modules.ExternalAssets
             if (string.IsNullOrEmpty(group)) { return null; }
 
             return managedInfos.Values.Where(x => x.group == group)
-				.OrderBy(x => AssetDatabase.GUIDToAssetPath(x.guid), new NaturalComparer())
-				.ToArray();
+                .OrderBy(x => AssetDatabase.GUIDToAssetPath(x.guid), new NaturalComparer())
+                .ToArray();
         }
 
         public void UpdateManageInfo(ManageInfo manageInfo)
@@ -565,7 +565,7 @@ namespace Modules.ExternalAssets
 
         #region Group
 
-		public void DeleteGroup(string group)
+        public void DeleteGroup(string group)
         {
             var targets = managedInfos.Values.Where(x => x.group == group).ToArray();
 
@@ -579,17 +579,17 @@ namespace Modules.ExternalAssets
             Save();
         }
 
-		public void RenameGroup(string from, string to)
-		{
-			var targets = managedInfos.Values.Where(x => x.group == from).ToArray();
+        public void RenameGroup(string from, string to)
+        {
+            var targets = managedInfos.Values.Where(x => x.group == from).ToArray();
 
-			foreach (var target in targets)
-			{
-				target.group = to;
-			}
+            foreach (var target in targets)
+            {
+                target.group = to;
+            }
 
-			Save();
-		}
+            Save();
+        }
 
         #endregion
 
@@ -607,7 +607,7 @@ namespace Modules.ExternalAssets
         /// <summary> 除外対象のパスか検証 </summary>
         public IgnoreType? GetIgnoreType(string assetPath)
         {
-			if (string.IsNullOrEmpty(assetPath)){ return null; }
+            if (string.IsNullOrEmpty(assetPath)){ return null; }
 
             var manageConfig = ExternalAssetConfig.Instance;
 
@@ -617,21 +617,23 @@ namespace Modules.ExternalAssets
             {
                 ignoreManagePaths = manageConfig.IgnoreManage
                     .Select(x => AssetDatabase.GetAssetPath(x))
-					.Where(x => !string.IsNullOrEmpty(x))
+                    .Where(x => !string.IsNullOrEmpty(x))
                     .OrderByDescending(x => x.Length)
-					.ToArray();
+                    .ToArray();
             }
 
             if (ignoreAssetBundlePaths == null)
             {
                 ignoreAssetBundlePaths = manageConfig.IgnoreAssetBundle
                     .Select(x => AssetDatabase.GetAssetPath(x))
-					.Where(x => !string.IsNullOrEmpty(x))
+                    .Where(x => !string.IsNullOrEmpty(x))
                     .OrderByDescending(x => x.Length)
                     .ToArray();
             }
 
             assetPath = PathUtility.ConvertPathSeparator(assetPath);
+
+            if (string.IsNullOrEmpty(assetPath)){ return null; }
 
             foreach (var item in ignoreManagePaths)
             {
