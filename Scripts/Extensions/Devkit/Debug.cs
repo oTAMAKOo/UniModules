@@ -276,6 +276,43 @@ public static class Debug
     }
 
     #endregion
+
+    #region DrawRay
+
+    public static void DrawRay(Vector3 start, Vector3 dir, Color color, float duration)
+    {
+        if (!enable) { return; }
+
+        UnityEngine.Debug.DrawRay(start, dir, color, duration);
+    }
+
+    public static void DrawRay(Vector3 start, Vector3 dir, Color color)
+    {
+        if (!enable) { return; }
+
+        UnityEngine.Debug.DrawRay(start, dir, color);
+    }
+
+    public static void DrawRay(Vector3 start, Vector3 dir)
+    {
+        if (!enable) { return; }
+
+        UnityEngine.Debug.DrawRay(start, dir);
+    }
+
+    public static void DrawRay(
+        Vector3 start,
+        Vector3 dir,
+        [UnityEngine.Internal.DefaultValue("Color.white")] Color color,
+        [UnityEngine.Internal.DefaultValue("0.0f")] float duration,
+        [UnityEngine.Internal.DefaultValue("true")] bool depthTest)
+    {
+        if (!enable) { return; }
+
+        UnityEngine.Debug.DrawRay(start, dir, color, duration, depthTest);
+    }
+
+    #endregion
 }
 
 #endif
