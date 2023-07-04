@@ -1,4 +1,4 @@
-﻿
+
 #if ENABLE_CRIWARE_SOFDEC
 
 using System;
@@ -10,7 +10,7 @@ using Extensions;
 namespace Modules.Movie
 {
     public sealed class MovieElement
-	{
+    {
         //----- params -----
 
         //----- field -----
@@ -19,7 +19,7 @@ namespace Modules.Movie
 
         //----- property -----
 
-        public CriManaMovieControllerForUI MovieController { get; private set; }
+        public CriManaMovieMaterialBase CriManaMovieMaterial { get; private set; }
 
         /// <summary> 動画ファイルパス. </summary>
         public string MoviePath { get; private set; }
@@ -30,14 +30,14 @@ namespace Modules.Movie
         /// <summary> 動画状態. </summary>
         public Player.Status? Status { get; private set; }
 
-		/// <summary> 再生準備が完了しているか. </summary>
-		public bool IsReady { get { return Status == Player.Status.Ready; } }
+        /// <summary> 再生準備が完了しているか. </summary>
+        public bool IsReady { get { return Status == Player.Status.Ready; } }
 
-		/// <summary> 終了済みか. </summary>
+        /// <summary> 終了済みか. </summary>
         public bool IsFinished { get; private set; }
 
-		/// <summary> ループ再生. </summary>
-		public bool IsLoop { get; private set; }
+        /// <summary> ループ再生. </summary>
+        public bool IsLoop { get; private set; }
 
         /// <summary>
         /// 再生時間(秒).
@@ -51,33 +51,33 @@ namespace Modules.Movie
         /// </summary>
         public float TotalTime { get; private set; }
 
-		//----- method -----
+        //----- method -----
 
-        public MovieElement(Player moviePlayer, CriManaMovieControllerForUI movieController, string moviePath)
+        public MovieElement(Player moviePlayer, CriManaMovieMaterialBase criManaMovieMaterial, string moviePath)
         {
-            MovieController = movieController;
+            CriManaMovieMaterial = criManaMovieMaterial;
             MoviePath = moviePath;
             Player = moviePlayer;
             Status = moviePlayer.status;
-			IsFinished = false;
+            IsFinished = false;
         }
 
-		public void Play(bool loop = false)
-		{
-			var movieManagement = MovieManagement.Instance;
+        public void Play(bool loop = false)
+        {
+            var movieManagement = MovieManagement.Instance;
 
-			movieManagement.Play(this, loop);
-		}
+            movieManagement.Play(this, loop);
+        }
 
-		public void Pause(bool pause)
-		{
+        public void Pause(bool pause)
+        {
             var movieManagement = MovieManagement.Instance;
 
             movieManagement.Pause(this, pause);
-		}
+        }
 
-		public void Stop()
-		{
+        public void Stop()
+        {
             var movieManagement = MovieManagement.Instance;
 
             movieManagement.Stop(this);
@@ -85,7 +85,7 @@ namespace Modules.Movie
 
         public void Update()
         {
-            if (UnityUtility.IsNull(MovieController)) { return; }
+            if (UnityUtility.IsNull(CriManaMovieMaterial)) { return; }
 
             var prevStatus = Status;
 
@@ -94,27 +94,27 @@ namespace Modules.Movie
             PlayTime = GetPlayTime();
             TotalTime = GetTotalTime();
 
-			if (prevStatus != Status && Status == Player.Status.PlayEnd)
-			{
-				if (IsLoop)
-				{
-					Player.Start();
-				}
-				else
-				{
-					UnityUtility.SetActive(MovieController.gameObject, false);
+            if (prevStatus != Status && Status == Player.Status.PlayEnd)
+            {
+                if (IsLoop)
+                {
+                    Player.Start();
+                }
+                else
+                {
+                    UnityUtility.SetActive(CriManaMovieMaterial.gameObject, false);
 
-					UnityUtility.DeleteComponent(MovieController);
+                    UnityUtility.DeleteComponent(CriManaMovieMaterial);
 
-					IsFinished = true;
+                    IsFinished = true;
 
-					if (onFinish != null)
-					{
-						onFinish.OnNext(Unit.Default);
-					}
-				}
-			}
-		}
+                    if (onFinish != null)
+                    {
+                        onFinish.OnNext(Unit.Default);
+                    }
+                }
+            }
+        }
 
         private float GetPlayTime()
         {
