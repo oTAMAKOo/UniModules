@@ -59,37 +59,14 @@ namespace Modules.Movie
             initialized = true;
         }
 
-        /// <summary>
-        /// 画再生用のインスタンスを生成.
-        /// ※ 頭出しなどを行う時はこの関数で生成したPlayerを使って頭出しを実装する.
-        /// </summary>
-        private MovieElement CreateElement<TMovieMaterial>(string moviePath, Graphic targetGraphic, Player.ShaderDispatchCallback shaderOverrideCallBack = null) 
-            where TMovieMaterial : CriManaMovieMaterialBase
+        private MovieElement CreateMovieElement(CriManaMovieMaterialBase movieController, string moviePath)
         {
-            var movieController = UnityUtility.GetOrAddComponent<TMovieMaterial>(targetGraphic.gameObject);
+            var moviePlayer = movieController.player;
 
             UnityUtility.SetActive(movieController, true);
 
-            if (movieController is CriMovieForUI criMovieForUI)
-            {
-                criMovieForUI.target = targetGraphic;
-                criMovieForUI.enabled = true;
-
-                if (!criMovieForUI.Initialized)
-                {
-                    criMovieForUI.ManualInitialize();
-                }
-            }
-
-            var moviePlayer = movieController.player;
-
             moviePlayer.SetFile(null, moviePath);
             moviePlayer.SetVolume(audioVolume);
-
-            if (shaderOverrideCallBack != null)
-            {
-                moviePlayer.SetShaderDispatchCallback(shaderOverrideCallBack);
-            }
 
             var movieElement = new MovieElement(moviePlayer, movieController, moviePath);
 
@@ -98,53 +75,56 @@ namespace Modules.Movie
             return movieElement;
         }
 
+        private void SetShaderDispatchCallback(MovieElement movieElement, Player.ShaderDispatchCallback shaderOverrideCallBack)
+        {
+            if (shaderOverrideCallBack == null){ return; }
+            
+            movieElement.Player.SetShaderDispatchCallback(shaderOverrideCallBack);
+        }
+
+        private void SetupCriMovieForUI(CriMovieForUI criMovieForUI)
+        {
+            criMovieForUI.enabled = true;
+
+            if (!criMovieForUI.Initialized)
+            {
+                criMovieForUI.ManualInitialize();
+            }
+        }
+
         #region Prepare
 
         /// <summary> 動画再生準備. </summary>
-        public MovieElement Prepare(Movies.Mana type, Graphic targetGraphic, Player.ShaderDispatchCallback shaderOverrideCallBack = null)
-        {
-            return Prepare<CriMovieForUI>(type, targetGraphic, shaderOverrideCallBack);
-        }
-
-        /// <summary> 動画再生準備. </summary>
-        public MovieElement Prepare<TMovieMaterial>(Movies.Mana type, Graphic targetGraphic, Player.ShaderDispatchCallback shaderOverrideCallBack = null) 
-            where TMovieMaterial : CriManaMovieMaterialBase
+        public MovieElement Prepare(Movies.Mana type, CriManaMovieMaterialBase movieController, Player.ShaderDispatchCallback shaderOverrideCallBack = null) 
         {
             var movieInfo = Movies.GetManaInfo(type);
 
             if (movieInfo == null){ return null; }
 
-            return movieInfo != null ? Prepare<TMovieMaterial>(movieInfo, targetGraphic, shaderOverrideCallBack) : null;
+            return movieInfo != null ? Prepare(movieInfo, movieController, shaderOverrideCallBack) : null;
         }
 
         /// <summary> 動画再生準備. </summary>
-        public MovieElement Prepare(ManaInfo movieInfo, Graphic targetGraphic, Player.ShaderDispatchCallback shaderOverrideCallBack = null)
-        {
-            return Prepare<CriMovieForUI>(movieInfo, targetGraphic, shaderOverrideCallBack);
-        }
-
-        /// <summary> 動画再生準備. </summary>
-        public MovieElement Prepare<TMovieMaterial>(ManaInfo movieInfo, Graphic targetGraphic, Player.ShaderDispatchCallback shaderOverrideCallBack = null)
-            where TMovieMaterial : CriManaMovieMaterialBase
+        public MovieElement Prepare(ManaInfo movieInfo, CriManaMovieMaterialBase movieController, Player.ShaderDispatchCallback shaderOverrideCallBack = null)
         {
             if (movieInfo == null){ return null; }
 
             var moviePath = Path.ChangeExtension(movieInfo.UsmPath, CriAssetDefinition.UsmExtension);
 
-            return Prepare<TMovieMaterial>(moviePath, targetGraphic, shaderOverrideCallBack);
+            return Prepare(moviePath, movieController, shaderOverrideCallBack);
         }
 
         /// <summary> 動画再生準備. </summary>
-        public MovieElement Prepare(string moviePath, Graphic targetGraphic, Player.ShaderDispatchCallback shaderOverrideCallBack = null)
+        public MovieElement Prepare(string moviePath, CriManaMovieMaterialBase movieController, Player.ShaderDispatchCallback shaderOverrideCallBack = null)
         {
-            return Prepare<CriMovieForUI>(moviePath, targetGraphic, shaderOverrideCallBack);
-        }
+            var element = CreateMovieElement(movieController, moviePath);
 
-        /// <summary> 動画再生準備. </summary>
-        public MovieElement Prepare<TMovieMaterial>(string moviePath, Graphic targetGraphic, Player.ShaderDispatchCallback shaderOverrideCallBack = null)
-            where TMovieMaterial : CriManaMovieMaterialBase
-        {
-            var element = CreateElement<TMovieMaterial>(moviePath, targetGraphic, shaderOverrideCallBack);
+            if (movieController is CriMovieForUI movieForUI)
+            {
+                SetupCriMovieForUI(movieForUI);
+            }
+
+            SetShaderDispatchCallback(element, shaderOverrideCallBack);
 
             PrepareElement(element).Forget();
 
@@ -179,47 +159,32 @@ namespace Modules.Movie
 
         #region Play
 
-        public MovieElement Play(Movies.Mana type, Graphic targetGraphic, bool loop = false, Player.ShaderDispatchCallback shaderOverrideCallBack = null)
-        {
-            return Play<CriMovieForUI>(type, targetGraphic, loop, shaderOverrideCallBack);
-        }
-
-        public MovieElement Play<TMovieMaterial>(Movies.Mana type, Graphic targetGraphic, bool loop = false, Player.ShaderDispatchCallback shaderOverrideCallBack = null)
-            where TMovieMaterial : CriManaMovieMaterialBase
+        public MovieElement Play(Movies.Mana type, CriManaMovieMaterialBase movieController, bool loop = false, Player.ShaderDispatchCallback shaderOverrideCallBack = null)
         {
             var info = Movies.GetManaInfo(type);
 
-            return info != null ? Play<TMovieMaterial>(info, targetGraphic, loop, shaderOverrideCallBack) : null;
+            return info != null ? Play(info, movieController, loop, shaderOverrideCallBack) : null;
         }
 
-        public MovieElement Play(ManaInfo movieInfo, Graphic targetGraphic, bool loop = false, Player.ShaderDispatchCallback shaderOverrideCallBack = null)
-        {
-            return Play<CriMovieForUI>(movieInfo, targetGraphic, loop, shaderOverrideCallBack);
-        }
-
-        public MovieElement Play<TMovieMaterial>(ManaInfo movieInfo, Graphic targetGraphic, bool loop = false, Player.ShaderDispatchCallback shaderOverrideCallBack = null)
-            where TMovieMaterial : CriManaMovieMaterialBase
+        public MovieElement Play(ManaInfo movieInfo, CriManaMovieMaterialBase movieController, bool loop = false, Player.ShaderDispatchCallback shaderOverrideCallBack = null)
         {
             if (movieInfo == null){ return null; }
 
             var moviePath = Path.ChangeExtension(movieInfo.UsmPath, CriAssetDefinition.UsmExtension);
 
-            return Play<TMovieMaterial>(moviePath, targetGraphic, loop, shaderOverrideCallBack);
+            return Play(moviePath, movieController, loop, shaderOverrideCallBack);
         }
 
-        public MovieElement Play(string moviePath, Graphic targetGraphic, bool loop = false, Player.ShaderDispatchCallback shaderOverrideCallBack = null)
+        public MovieElement Play(string moviePath, CriManaMovieMaterialBase movieController, bool loop = false, Player.ShaderDispatchCallback shaderOverrideCallBack = null)
         {
-            var element = CreateElement<CriMovieForUI>(moviePath, targetGraphic, shaderOverrideCallBack);
+            var element = CreateMovieElement(movieController, moviePath);
 
-            Play(element, loop);
+            if (movieController is CriMovieForUI movieForUI)
+            {
+                SetupCriMovieForUI(movieForUI);
+            }
 
-            return element;
-        }
-
-        public MovieElement Play<TMovieMaterial>(string moviePath, Graphic targetGraphic, bool loop = false, Player.ShaderDispatchCallback shaderOverrideCallBack = null)
-            where TMovieMaterial : CriManaMovieMaterialBase
-        {
-            var element = CreateElement<TMovieMaterial>(moviePath, targetGraphic, shaderOverrideCallBack);
+            SetShaderDispatchCallback(element, shaderOverrideCallBack);
 
             Play(element, loop);
 

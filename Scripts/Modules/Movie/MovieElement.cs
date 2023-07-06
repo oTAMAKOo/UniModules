@@ -133,7 +133,7 @@ namespace Modules.Movie
             
             return movieInfo.totalFrames * 1000.0f / movieInfo.framerateN;
         }
-        
+
         public IObservable<Unit> OnFinishAsObservable()
         {
             return onFinish ?? (onFinish = new Subject<Unit>());
