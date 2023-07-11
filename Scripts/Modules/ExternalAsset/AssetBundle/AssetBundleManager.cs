@@ -301,8 +301,6 @@ namespace Modules.AssetBundles
             {
                 task = UniTask.Defer(() => DownloadAssetBundle(installPath, assetInfo, progress, cancelToken))
                     .ToObservable()
-                    .Timeout(DownloadTimeout)
-                    .OnErrorRetry((TimeoutException ex) => OnTimeout(assetInfo, ex), RetryCount, RetryDelaySeconds)
                     .OnErrorRetry((Exception _) => { }, RetryCount, RetryDelaySeconds)
                     .DoOnError(x => OnError(x))
                     .AsUnitObservable()
@@ -328,6 +326,7 @@ namespace Modules.AssetBundles
                 }
 
                 // ロード済みの場合はアンロード.
+
                 if (loadedAssetBundles.ContainsKey(assetBundleName))
                 {
                     UnloadAsset(assetBundleName, true);
@@ -347,21 +346,23 @@ namespace Modules.AssetBundles
                 if (cancelToken.IsCancellationRequested) { return; }
 
                 // ネットワークの接続待ち.
+
                 await NetworkConnection.WaitNetworkReachable(cancelToken);
 
-                // ダウンロード中リストに追加.
-                downloadRunning.Add(assetBundleName);
+                if (cancelToken.IsCancellationRequested) { return; }
 
                 // ダウンロード実行.
-                await FileDownload(installPath, assetInfo, progress, cancelToken);
+
+                downloadRunning.Add(assetBundleName);
+
+                await FileDownload(installPath, assetInfo, progress, cancelToken)
+                    .ToObservable()
+                    .Timeout(DownloadTimeout)
+                    .OnErrorRetry((TimeoutException ex) => OnTimeout(assetInfo, ex), RetryCount, RetryDelaySeconds);
             }
             catch (OperationCanceledException)
             {
                 /* Canceled */
-            }
-            catch (Exception e)
-            {
-                OnError(e);
             }
             finally
             {
