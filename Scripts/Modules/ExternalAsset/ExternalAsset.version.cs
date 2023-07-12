@@ -68,6 +68,8 @@ namespace Modules.ExternalAssets
         {
             if (SimulateMode) { return new AssetInfo[0]; }
 
+            if (assetInfoManifest == null) { return new AssetInfo[0]; }
+
             AssetInfo[] result = null;
 
             await UniTask.RunOnThreadPool(async () =>

@@ -37,7 +37,7 @@ namespace Modules.AssetBundles
         private readonly TimeSpan LoadTimeout = TimeSpan.FromSeconds(10f);
 
         // リトライする回数.
-        private readonly int RetryCount = 3;
+        private readonly int RetryCount = 5;
 
         // リトライするまでの時間(秒).
         private readonly TimeSpan RetryDelaySeconds = TimeSpan.FromSeconds(2f);
