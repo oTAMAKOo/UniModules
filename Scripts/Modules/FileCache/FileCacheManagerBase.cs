@@ -133,8 +133,6 @@ namespace Modules.FileCache
 
                 File.Delete(filePath);
             }
-
-            DirectoryUtility.DeleteEmpty(FileDirectory);
         }
 
         protected void CreateCache(byte[] bytes, string source, ulong updateAt, ulong expireAt)
