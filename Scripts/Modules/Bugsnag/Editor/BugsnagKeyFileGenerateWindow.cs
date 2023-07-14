@@ -1,4 +1,6 @@
 ﻿
+#if ENABLE_BUGSNAG
+
 using UnityEngine;
 using UnityEditor;
 using System;
@@ -163,3 +165,5 @@ namespace Modules.Bugsnag
         }
     }
 }
+
+#endif

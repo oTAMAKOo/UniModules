@@ -19,12 +19,16 @@ namespace Modules.CriWare
 
         //----- field -----
 
+        #if ENABLE_CRIWARE_ADX || ENABLE_CRIWARE_ADX_LE || ENABLE_CRIWARE_SOFDEC
+
         [SerializeField]
         private Prefab initializerPrefab = null;
 
+        #endif
+
         //----- property -----
 
-        #if ENABLE_CRIWARE_ADX || ENABLE_CRIWARE_SOFDEC
+        #if ENABLE_CRIWARE_ADX || ENABLE_CRIWARE_ADX_LE || ENABLE_CRIWARE_SOFDEC
 
         public CriWareInitializer Initializer { get; private set; }
         public CriWareCustomErrorHandler ErrorHandler { get; private set; }
@@ -49,7 +53,7 @@ namespace Modules.CriWare
 
             #endif
 
-            #if ENABLE_CRIWARE_ADX || ENABLE_CRIWARE_SOFDEC
+            #if ENABLE_CRIWARE_ADX || ENABLE_CRIWARE_ADX_LE || ENABLE_CRIWARE_SOFDEC
 
             // CRIの管理GameObject名にリネーム.
             gameObject.transform.name = CriWareManageObjectName;
