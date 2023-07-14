@@ -141,6 +141,13 @@ namespace Modules.FileCache
 
             var filePath = PathUtility.Combine(FileDirectory, fileName);
 
+            var directory = Path.GetDirectoryName(filePath);
+
+            if (!Directory.Exists(directory))
+            {
+                Directory.CreateDirectory(directory);
+            }
+
             bytes = bytes.Encrypt(cryptoKey);
 
             using (var fileStream = new FileStream(filePath, FileMode.Create, FileAccess.Write))
