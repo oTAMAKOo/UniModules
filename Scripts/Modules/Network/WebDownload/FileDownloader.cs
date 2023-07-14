@@ -35,8 +35,9 @@ namespace Modules.Net.WebDownload
 
         //----- field -----
 
+        private Dictionary<string, DownloadInfo> downloadItems = null;
+
         private List<TDownloadRequest> downloading = null;
-        private  Dictionary<string, DownloadInfo> downloadQueue = null;
 
         private bool initialized = false;
 
@@ -60,8 +61,8 @@ namespace Modules.Net.WebDownload
         {
             if (initialized) { return; }
 
+            downloadItems = new Dictionary<string, DownloadInfo>();
             downloading = new List<TDownloadRequest>();
-            downloadQueue = new Dictionary<string, DownloadInfo>();
 
             RetryCount = retryCount;
             RetryDelaySeconds = retryDelaySeconds;
@@ -110,9 +111,9 @@ namespace Modules.Net.WebDownload
                 var url = downloadRequest.Url;
 
                 // 既にダウンロードキューに入っている場合は既存のObservableを返す.
-                if (downloadQueue.ContainsKey(url))
+                if (downloadItems.ContainsKey(url))
                 {
-                    observable = downloadQueue[url].Task;
+                    observable = downloadItems[url].Task;
                 }
                 else
                 {
@@ -120,7 +121,7 @@ namespace Modules.Net.WebDownload
 
                     var downloadInfo = new DownloadInfo(downloadRequest, observable);
 
-                    downloadQueue.Add(url, downloadInfo);
+                    downloadItems.Add(url, downloadInfo);
                 }
 
                 result = await observable.ToUniTask(cancellationToken: cancelToken);
@@ -143,7 +144,7 @@ namespace Modules.Net.WebDownload
                 if (cancelToken.IsCancellationRequested) { break; }
 
                 // キューが空になっていた場合はキャンセル扱い.
-                if (downloadQueue.IsEmpty())
+                if (downloadItems.IsEmpty())
                 {
                     if (downloadRequest != null)
                     {
@@ -152,16 +153,21 @@ namespace Modules.Net.WebDownload
                     break;
                 }
 
-                // 通信中のリクエストが存在しない & キューの先頭が自身の場合待ち終了.
-                if (downloading.Count <= MaxDownloadCount && downloadQueue.IndexOf(x => x.Key == url) == 0)
+                // 最大同時ダウンロード数以下.
+                if (downloading.Count <= MaxDownloadCount)
                 {
-                    break;
+                    // ダウンロード待ちの先頭を取得.
+                    var first = downloadItems.FirstOrDefault(x => downloading.All(y => x.Key != y.Url));
+                    
+                    // キューの先頭が自身の場合待ち終了.
+                    if (!first.IsDefault() && first.Key == url)
+                    {
+                        break;
+                    }
                 }
 
                 await UniTask.NextFrame(CancellationToken.None);
             }
-
-            downloadQueue.Remove(url);
         }
 
         /// <summary> リクエスト制御 </summary>
@@ -171,8 +177,6 @@ namespace Modules.Net.WebDownload
 
             try
             {
-                var downloadInfo = downloadQueue.GetValueOrDefault(downloadRequest.Url);
-
                 // ダウンロード待ちキュー.
                 await WaitQueueingRequest(downloadRequest, cancelToken);
 
@@ -180,7 +184,6 @@ namespace Modules.Net.WebDownload
                 await NetworkConnection.WaitNetworkReachable(cancelToken);
 
                 // ダウンロード中.
-
                 downloading.Add(downloadRequest);
 
                 var sw = System.Diagnostics.Stopwatch.StartNew();
@@ -246,6 +249,8 @@ namespace Modules.Net.WebDownload
             finally
             {
                 downloading.Remove(downloadRequest);
+
+                downloadItems.Remove(downloadRequest.Url);
             }
 
             return result;
@@ -266,10 +271,7 @@ namespace Modules.Net.WebDownload
                 downloading.Clear();
             }
 
-            if (downloadQueue.Any())
-            {
-                downloadQueue.Clear();
-            }
+            downloadItems.Clear();
         }
 
         /// <summary> 初期化処理. </summary>
