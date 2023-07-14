@@ -1,4 +1,4 @@
-﻿
+
 using UnityEngine;
 using UnityEditor;
 using System;
@@ -18,13 +18,6 @@ namespace Modules.ExternalAssets
         //----- field -----
         [SerializeField]
         private string exportDirectory = null;
-
-        [Header("Crypto")]
-
-        [SerializeField, Tooltip("32文字")]
-        private string cryptoKey = null;
-        [SerializeField, Tooltip("16文字")]
-        private string cryptoIv = null;
 
         [Header("Ignore AssetManagement")]
 
@@ -51,11 +44,6 @@ namespace Modules.ExternalAssets
                 return string.IsNullOrEmpty(exportDirectory) ? null : UnityPathUtility.RelativePathToFullPath(exportDirectory);
             }
         }
-
-        /// <summary> 暗号化Key(32文字) </summary>
-        public string CryptoKey { get { return cryptoKey; } }
-        /// <summary> 暗号化Iv (16文字)</summary>
-        public string CryptoIv { get { return cryptoIv; } }
 
         /// <summary> 除外対象(管理しない) </summary>
         public Object[] IgnoreManage { get { return ignoreManage; } }
