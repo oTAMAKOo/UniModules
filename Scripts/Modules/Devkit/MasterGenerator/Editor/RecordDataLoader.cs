@@ -1,4 +1,4 @@
-﻿
+
 using UnityEngine;
 using System;
 using System.Collections.Generic;
@@ -9,49 +9,49 @@ using Extensions;
 
 namespace Modules.Master
 {
-	public sealed class RecordDataLoader : IRecordDataLoader
-	{
-		//----- params -----
+    public sealed class RecordDataLoader : IRecordDataLoader
+    {
+        //----- params -----
 
-		private const string IndexFileExtension = ".index";
+        private const string IndexFileExtension = ".index";
 
-		private const string RecordFileExtension = ".record";
+        private const string RecordFileExtension = ".record";
 
-		private const string RecordFolderName = "Records";
+        private const string RecordFolderName = "Records";
 
-		//----- field -----
+        //----- field -----
 
-		private SerializationFileUtility.Format format = SerializationFileUtility.Format.Yaml;
+        private SerializationFileUtility.Format format = SerializationFileUtility.Format.Yaml;
 
-		private Dictionary<string, string> indexFileTable = null;
+        private Dictionary<string, string> indexFileTable = null;
 
-		//----- property -----
+        //----- property -----
 
-		//----- method -----
+        //----- method -----
 
-		public RecordDataLoader(SerializationFileUtility.Format format)
-		{
-			this.format = format;
+        public RecordDataLoader(SerializationFileUtility.Format format)
+        {
+            this.format = format;
 
-			var config = MasterConfig.Instance;
+            var config = MasterConfig.Instance;
 
-			var sourceDirectory = config.SourceDirectory;
+            var sourceDirectory = config.SourceDirectory;
 
-			var indexFiles = Directory.GetFiles(sourceDirectory, "*" + IndexFileExtension, SearchOption.AllDirectories);
-				
-			indexFileTable = indexFiles.ToDictionary(
-				x =>
-					{
-						var fileName = Path.GetFileNameWithoutExtension(x);
+            var indexFiles = Directory.GetFiles(sourceDirectory, "*" + IndexFileExtension, SearchOption.AllDirectories);
+                
+            indexFileTable = indexFiles.ToDictionary(
+                x =>
+                    {
+                        var fileName = Path.GetFileNameWithoutExtension(x);
 
-						return MasterManager.DeleteMasterSuffix(fileName).ToLower();
-					},
-				PathUtility.ConvertPathSeparator);
-		}
+                        return MasterManager.DeleteMasterSuffix(fileName).ToLower();
+                    },
+                PathUtility.ConvertPathSeparator);
+        }
 
-		public async UniTask<object[]> GetAllRecords(Type masterType, Type recordType)
-		{
-			var masterManager = MasterManager.Instance;
+        public async UniTask<object[]> GetAllRecords(Type masterType, Type recordType)
+        {
+            var masterManager = MasterManager.Instance;
 
             var config = MasterConfig.Instance;
 
@@ -62,58 +62,58 @@ namespace Modules.Master
                 masterManager.SetCryptoKey(cryptoKey);
             }
 
-            var masterFileName = masterManager.GetMasterFileName(masterType);
+            var masterName = masterType.Name;
 
-			var masterName = Path.GetFileNameWithoutExtension(masterFileName);
+            var indexFileName = MasterManager.DeleteMasterSuffix(masterName).ToLower();
 
-			var indexFilePath = indexFileTable.GetValueOrDefault(masterName.ToLower());
+            var indexFilePath = indexFileTable.GetValueOrDefault(indexFileName);
 
-			if (string.IsNullOrEmpty(indexFilePath))
-			{
-				Debug.LogErrorFormat("Master index file not found.\n MasterFileName : {0}", masterName);
+            if (string.IsNullOrEmpty(indexFilePath))
+            {
+                Debug.LogErrorFormat("Master index file not found.\n MasterFileName : {0}", masterName);
 
-				return null;
-			}
+                return null;
+            }
 
-			var masterDataDirectory = Directory.GetParent(indexFilePath);
+            var masterDataDirectory = Directory.GetParent(indexFilePath);
 
-			var recordFileDirectory = PathUtility.Combine(masterDataDirectory.FullName, RecordFolderName);
+            var recordFileDirectory = PathUtility.Combine(masterDataDirectory.FullName, RecordFolderName);
 
-			if (!Directory.Exists(recordFileDirectory)) { return null; }
+            if (!Directory.Exists(recordFileDirectory)) { return null; }
 
-			var recordFiles = Directory.GetFiles(recordFileDirectory, "*" + RecordFileExtension, SearchOption.TopDirectoryOnly);
+            var recordFiles = Directory.GetFiles(recordFileDirectory, "*" + RecordFileExtension, SearchOption.TopDirectoryOnly);
 
-			// 読み込み.
+            // 読み込み.
 
-			var records = new SortedDictionary<string, object>(new NaturalComparer());
+            var records = new SortedDictionary<string, object>(new NaturalComparer());
 
-			var tasks = new List<UniTask>();
+            var tasks = new List<UniTask>();
 
-			foreach (var recordFile in recordFiles)
-			{
-				var filePath = recordFile;
+            foreach (var recordFile in recordFiles)
+            {
+                var filePath = recordFile;
 
-				var task = UniTask.RunOnThreadPool(() =>
-				{
-					var fileName = Path.GetFileNameWithoutExtension(filePath);
+                var task = UniTask.RunOnThreadPool(() =>
+                {
+                    var fileName = Path.GetFileNameWithoutExtension(filePath);
 
-					var record = SerializationFileUtility.LoadFile(filePath, recordType, format);
+                    var record = SerializationFileUtility.LoadFile(filePath, recordType, format);
 
-					if (record != null)
-					{
-						lock (records)
-						{
-							records.Add(fileName, record);
-						}
-					}
-				});
+                    if (record != null)
+                    {
+                        lock (records)
+                        {
+                            records.Add(fileName, record);
+                        }
+                    }
+                });
 
-				tasks.Add(task);
-			}
+                tasks.Add(task);
+            }
 
-			await UniTask.WhenAll(tasks);
+            await UniTask.WhenAll(tasks);
 
-			return records.Values.ToArray();
-		}
-	}
+            return records.Values.ToArray();
+        }
+    }
 }
