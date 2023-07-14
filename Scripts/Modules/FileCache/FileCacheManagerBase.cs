@@ -139,18 +139,13 @@ namespace Modules.FileCache
 
         protected void CreateCache(byte[] bytes, string source, ulong updateAt, ulong expireAt)
         {
+            if (bytes.IsEmpty()){ return; }
+
             // ファイル出力.
 
             var fileName = GetFileName(source);
 
             var filePath = PathUtility.Combine(FileDirectory, fileName);
-
-            var directory = Path.GetDirectoryName(filePath);
-
-            if (!Directory.Exists(directory))
-            {
-                Directory.CreateDirectory(directory);
-            }
 
             bytes = bytes.Encrypt(cryptoKey);
 
