@@ -59,7 +59,9 @@ namespace Modules.FileCache
 
         protected override void OnCreate()
         {
-            FileDirectory = GetCacheDirectory();
+            var directory = GetCacheDirectory();
+
+            SetFileDirectory(directory);
         }
 
         public string GetCacheDirectory()
@@ -131,6 +133,8 @@ namespace Modules.FileCache
 
                 File.Delete(filePath);
             }
+
+            DirectoryUtility.DeleteEmpty(FileDirectory);
         }
 
         protected void CreateCache(byte[] bytes, string source, ulong updateAt, ulong expireAt)
