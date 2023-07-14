@@ -1,4 +1,6 @@
 ﻿
+#if  ENABLE_CRIWARE_SOFDEC
+
 using UnityEngine;
 using CriWare;
 
@@ -36,3 +38,5 @@ namespace Modules.Movie
         }
     }
 }
+
+#endif

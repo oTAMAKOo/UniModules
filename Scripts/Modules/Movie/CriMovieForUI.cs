@@ -1,4 +1,6 @@
 ﻿
+#if  ENABLE_CRIWARE_SOFDEC
+
 using CriWare;
 
 namespace Modules.Movie
@@ -36,3 +38,5 @@ namespace Modules.Movie
 		}
 	}
 }
+
+#endif
