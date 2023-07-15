@@ -119,7 +119,8 @@ namespace Modules.AssetBundles
             assetBundleRefCount = new Dictionary<string, int>();
             assetInfosByAssetBundleName = new Dictionary<string, List<AssetInfo>>();
             assetBundleDependencies = new AssetBundleDependencies();
-            
+            fileHandler = new DefaultAssetBundleFileHandler();
+
             syncLoadFileCountLimiter = new FunctionFrameLimiter(FrameSyncLoadFileNum);
             syncLoadFileSizeLimiter = new FunctionFrameLimiter((ulong)FrameSyncLoadFileSize);
 
