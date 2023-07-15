@@ -20,6 +20,8 @@ namespace Modules.ExternalAssets
         public static readonly string ConsoleEventName = "ExternalAsset";
         public static readonly Color ConsoleEventColor = new Color(0.8f, 1f, 0.1f);
 
+        public static readonly string ContentsFolderName = "Contents";
+
         //----- field -----
 
         // アセット管理情報.
@@ -149,7 +151,7 @@ namespace Modules.ExternalAssets
         /// <summary> 保存先ディレクトリ設定. </summary>
         public void SetInstallDirectory(string directory)
         {
-            InstallDirectory = PathUtility.Combine(directory, "Contents");
+            InstallDirectory = PathUtility.Combine(directory, ContentsFolderName);
 
             if (InstallDirectory.StartsWith(UnityPathUtility.StreamingAssetsPath))
             {

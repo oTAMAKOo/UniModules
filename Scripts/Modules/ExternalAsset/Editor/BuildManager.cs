@@ -1,4 +1,4 @@
-﻿
+
 using UnityEngine;
 using UnityEditor;
 using System;
@@ -25,8 +25,6 @@ namespace Modules.ExternalAssets
     public static class BuildManager
     {
         //----- params -----
-
-        private const string ExportFolderName = "ExternalAsset";
 
         public const string RootHashFileName = "RootHash.txt";
 
@@ -292,7 +290,7 @@ namespace Modules.ExternalAssets
             
             var platformFolderName = PlatformUtility.GetPlatformTypeName();
 
-            var paths = new string[]{ exportDirectory, ExportFolderName, platformFolderName };
+            var paths = new string[]{ exportDirectory, ExternalAsset.ContentsFolderName, platformFolderName };
 
             return PathUtility.Combine(paths) + PathUtility.PathSeparator;
         }
