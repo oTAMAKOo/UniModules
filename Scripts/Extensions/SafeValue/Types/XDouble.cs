@@ -14,7 +14,7 @@ namespace Extensions
         {
             bytes = new byte[0];
 
-            SetVal(value, ref bytes);
+            UpdateValue(value, ref bytes);
         }
 
         public double Value
@@ -29,10 +29,15 @@ namespace Extensions
                 }
             }
 
-            set { SetVal(value, ref bytes); }
+            set { UpdateValue(value, ref bytes); }
         }
 
-        public static void SetVal(double value, ref byte[] bytes)
+        public void SetValue(double value)
+        {
+            UpdateValue(value, ref bytes);
+        }
+
+        private static void UpdateValue(double value, ref byte[] bytes)
         {
             if (bytes == null || bytes.Length == 0)
             {

@@ -17,7 +17,7 @@ namespace Extensions
             bytes = new byte[0];
             buffer = new byte[0];
 
-            SetValue(value, ref bytes);
+            UpdateValue(value, ref bytes);
         }
 
         public string Value
@@ -33,11 +33,16 @@ namespace Extensions
 
             set
             {
-                SetValue(value, ref bytes);
+                UpdateValue(value, ref bytes);
             }
         }
 
-        public static void SetValue(string value, ref byte[] bytes)
+        public void SetValue(string value)
+        {
+            UpdateValue(value, ref bytes);
+        }
+
+        private static void UpdateValue(string value, ref byte[] bytes)
         {
             var size = UTF8Encoding.GetByteCount(value);
 
