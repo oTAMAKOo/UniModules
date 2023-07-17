@@ -12,15 +12,15 @@ namespace Modules.Devkit.Inspector
     {
         //----- params -----
 
-		//----- field -----
+        //----- field -----
 
         private string folderAssetPath = null;
         
-		private bool edit = false;
+        private bool edit = false;
 
         private string description = null;
 
-		private static AesCryptoKey cryptoKey = null;
+        private static AesCryptoKey cryptoKey = null;
 
         //----- property -----
 
@@ -43,15 +43,15 @@ namespace Modules.Devkit.Inspector
             {
                 GUILayout.FlexibleSpace();
 
-				if (GUILayout.Button(edit ? "Save" : "Edit", EditorStyles.toolbarButton, GUILayout.Width(60f)))
-				{
-					if (edit)
-					{
-						SaveDescription();
-					}
+                if (GUILayout.Button(edit ? "Save" : "Edit", EditorStyles.toolbarButton, GUILayout.Width(60f)))
+                {
+                    if (edit)
+                    {
+                        SaveDescription();
+                    }
 
-					edit = !edit;
-				}
+                    edit = !edit;
+                }
             }
 
             var size = EditorStyles.textArea.CalcSize(new GUIContent(description));
@@ -63,7 +63,7 @@ namespace Modules.Devkit.Inspector
                 using (new BackgroundColorScope(edit ? Color.gray : GUI.backgroundColor))
                 {
                     EditorGUI.BeginChangeCheck();
-			
+            
                     var value = EditorGUILayout.TextArea(description, GUILayout.Height(height));
 
                     if(EditorGUI.EndChangeCheck())
@@ -95,34 +95,38 @@ namespace Modules.Devkit.Inspector
         }
 
         private void SaveDescription()
-		{
-			var assetImporter = AssetImporter.GetAtPath(folderAssetPath);
+        {
+            var assetImporter = AssetImporter.GetAtPath(folderAssetPath);
 
-			if (assetImporter == null){ return; }
-			
-			var metaFilePath = Path.ChangeExtension(assetImporter.assetPath, ".meta");
+            if (assetImporter == null){ return; }
 
-			if (!File.Exists(metaFilePath)){ return; }
+            var selectObject = Selection.activeObject;
+            
+            var metaFilePath = Path.ChangeExtension(assetImporter.assetPath, ".meta");
 
-			if (cryptoKey == null)
-			{
-				cryptoKey = ProjectCryptoKey.Instance.GetCryptoKey();
-			}
+            if (!File.Exists(metaFilePath)){ return; }
 
-			var cryptoText = description.Encrypt(cryptoKey);
+            if (cryptoKey == null)
+            {
+                cryptoKey = ProjectCryptoKey.Instance.GetCryptoKey();
+            }
 
-			if (cryptoText == null)
-			{
-				cryptoText = string.Empty;
-			}
+            var cryptoText = description.Encrypt(cryptoKey);
 
-			if (assetImporter.userData != cryptoText)
-			{
-				assetImporter.userData = cryptoText;
+            if (cryptoText == null)
+            {
+                cryptoText = string.Empty;
+            }
 
-				assetImporter.SaveAndReimport();
-			}
-		}
+            if (assetImporter.userData != cryptoText)
+            {
+                assetImporter.userData = cryptoText;
+
+                assetImporter.SaveAndReimport();
+            }
+
+            Selection.activeObject = selectObject;
+        }
 
         private static void RepaintInspector()
         {
