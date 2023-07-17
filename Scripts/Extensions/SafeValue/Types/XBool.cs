@@ -32,11 +32,6 @@ namespace Extensions
             set { UpdateValue(value, ref bytes); }
         }
 
-        public void SetValue(bool value)
-        {
-            UpdateValue(value, ref bytes);
-        }
-
         private static void UpdateValue(bool value, ref byte[] bytes)
         {
             if (bytes == null || bytes.Length == 0)

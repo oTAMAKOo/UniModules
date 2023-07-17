@@ -37,11 +37,6 @@ namespace Extensions
             }
         }
 
-        public void SetValue(string value)
-        {
-            UpdateValue(value, ref bytes);
-        }
-
         private static void UpdateValue(string value, ref byte[] bytes)
         {
             var size = UTF8Encoding.GetByteCount(value);

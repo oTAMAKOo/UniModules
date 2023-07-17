@@ -32,11 +32,6 @@ namespace Extensions
             set { UpdateValue(value, ref bytes); }
         }
 
-        public void SetValue(ulong value)
-        {
-            UpdateValue(value, ref bytes);
-        }
-
         private static void UpdateValue(ulong value, ref byte[] bytes)
         {
             if (bytes == null || bytes.Length == 0)
