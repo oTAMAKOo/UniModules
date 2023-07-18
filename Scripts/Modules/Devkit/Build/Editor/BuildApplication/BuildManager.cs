@@ -18,10 +18,10 @@ namespace Modules.Devkit.Build
 
         private static class Prefs
         {
-            public static bool buildRequest
+            public static bool requestReload
             {
-                get { return ProjectPrefs.GetBool(typeof(Prefs).FullName + "-buildRequest", false); }
-                set { ProjectPrefs.SetBool(typeof(Prefs).FullName + "-buildRequest", value); }
+                get { return ProjectPrefs.GetBool(typeof(Prefs).FullName + "-requestReload", false); }
+                set { ProjectPrefs.SetBool(typeof(Prefs).FullName + "-requestReload", value); }
             }
 
             public static string builderClassTypeName
@@ -37,6 +37,15 @@ namespace Modules.Devkit.Build
 
         //----- method -----
 
+        [InitializeOnLoadMethod]
+        private static void OnInitializeOnLoadMethod()
+        {
+            // 起動時のみ実行する.
+            if (1 < EditorApplication.timeSinceStartup) { return; }
+
+            Prefs.requestReload = false;
+        }
+
         [DidReloadScripts]
         private static void OnDidReloadScripts()
         {
@@ -51,7 +60,9 @@ namespace Modules.Devkit.Build
 
         private static void OnAfterDidReloadScripts()
         {
-            if (!Prefs.buildRequest){ return; }
+            if (!Prefs.requestReload){ return; }
+
+            Prefs.requestReload = false;
 
             var applicationBuilder = CreateSavedBuilderInstance();
 
@@ -60,13 +71,9 @@ namespace Modules.Devkit.Build
 
         public static async UniTask Build(IApplicationBuilder applicationBuilder)
         {
-            if (applicationBuilder == null)
-            {
-                Prefs.buildRequest = false;
-                return;
-            }
+            Prefs.requestReload = false;
 
-            Prefs.buildRequest = true;
+            if (applicationBuilder == null) { return; }
 
             var batchMode = Application.isBatchMode;
 
@@ -81,6 +88,8 @@ namespace Modules.Devkit.Build
             if (EditorUserBuildSettings.selectedBuildTargetGroup != buildTargetGroup ||
                 EditorUserBuildSettings.activeBuildTarget != buildTarget)
             {
+                Prefs.requestReload = true;
+
                 EditorUserBuildSettings.SwitchActiveBuildTarget(buildTargetGroup, buildTarget);
 
                 return;
@@ -92,18 +101,25 @@ namespace Modules.Devkit.Build
 
             var currentDefineSymbols = PlayerSettings.GetScriptingDefineSymbolsForGroup(buildTargetGroup);
 
+            using (new DisableStackTraceScope())
+            {
+                Debug.Log($"Current DefineSymbols : {currentDefineSymbols}");
+            }
+
             if (applicationBuilder.DefineSymbols != null)
             {
                 defineSymbols = string.Join(";", applicationBuilder.DefineSymbols);
             }
 
-            using (new DisableStackTraceScope())
-            {
-                Debug.Log($"DefineSymbols : {defineSymbols}");
-            }
-
             if (defineSymbols != currentDefineSymbols)
             {
+                Prefs.requestReload = true;
+
+                using (new DisableStackTraceScope())
+                {
+                    Debug.Log($"Set DefineSymbols : {defineSymbols}");
+                }
+
                 PlayerSettings.SetScriptingDefineSymbolsForGroup(buildTargetGroup, defineSymbols);
 
                 CompilationPipeline.RequestScriptCompilation();
@@ -116,8 +132,6 @@ namespace Modules.Devkit.Build
             using (new LockReloadAssembliesScope())
             {
                 var success = false;
-
-                Prefs.buildRequest = false;
 
                 using (new DisableStackTraceScope(LogType.Log))
                 {

@@ -1,4 +1,4 @@
-﻿
+
 using UnityEngine;
 using UnityEditor;
 using UnityEditor.Build.Reporting;
@@ -26,7 +26,7 @@ namespace Modules.Devkit.Build
         /// <summary> 成果物ファイル名取得. </summary>
         string GetApplicationName();
 
-		/// <summary> ビルドに含めるシーンパス取得. </summary>
+        /// <summary> ビルドに含めるシーンパス取得. </summary>
         string[] GetAllScenePaths();
 
         /// <summary> ビルド前処理. </summary>
@@ -41,8 +41,8 @@ namespace Modules.Devkit.Build
         /// <summary> ビルドエラー時処理. </summary>
         UniTask OnBuildError(BuildReport buildReport);
 
-		/// <summary> 出力先ディレクトリ取得 </summary>
-		string GetExportDirectory(bool batchMode);
+        /// <summary> 出力先ディレクトリ取得 </summary>
+        string GetExportDirectory(bool batchMode);
     }
 
     public abstract class ApplicationBuilder<TBuildParameter> : IApplicationBuilder where TBuildParameter : BuildParameter, new()
@@ -101,6 +101,8 @@ namespace Modules.Devkit.Build
         {
             LoadParameter();
 
+            Prefs.savedParameter = null;
+
             Debug.Log(parameter.ToJson());
         }
 
@@ -126,7 +128,7 @@ namespace Modules.Devkit.Build
             return UnityPathUtility.GetProjectName();
         }
 
-		/// <summary> ビルド前処理. </summary>
+        /// <summary> ビルド前処理. </summary>
         public virtual UniTask<bool> OnBeforeBuild()
         {
             return UniTask.FromResult(false);
@@ -154,12 +156,12 @@ namespace Modules.Devkit.Build
             return UniTask.CompletedTask;
         }
 
-		/// <summary> 出力先ディレクトリ取得. </summary>
-		public virtual string GetExportDirectory(bool batchMode)
-		{
-			var directory = UnityPathUtility.GetProjectFolderPath();
+        /// <summary> 出力先ディレクトリ取得. </summary>
+        public virtual string GetExportDirectory(bool batchMode)
+        {
+            var directory = UnityPathUtility.GetProjectFolderPath();
 
-			return PathUtility.Combine(directory, "Build");
-		}
+            return PathUtility.Combine(directory, "Build");
+        }
     }
 }
