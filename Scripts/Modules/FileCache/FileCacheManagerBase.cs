@@ -1,5 +1,4 @@
 
-using UnityEngine;
 using System;
 using System.Linq;
 using System.Collections.Generic;
@@ -53,24 +52,13 @@ namespace Modules.FileCache
 
         //----- property -----
 
-        public string FileDirectory { get; private set; }
+        public string CacheDirectory { get; private set; }
 
         //----- method -----
 
         protected override void OnCreate()
         {
-            var directory = GetCacheDirectory();
-
-            SetFileDirectory(directory);
-        }
-
-        public string GetCacheDirectory()
-        {
-            var className = typeof(TInstance).FullName;
-
-            var hash = className.GetHash();
-
-            return PathUtility.Combine(Application.temporaryCachePath, hash) + PathUtility.PathSeparator;
+            SetBaseDirectory(UnityPathUtility.TemporaryCachePath);
         }
 
         public void SetCryptoKey(AesCryptoKey cryptoKey)
@@ -78,16 +66,20 @@ namespace Modules.FileCache
             this.cryptoKey = cryptoKey;
         }
 
-        public void SetFileDirectory(string directory)
+        public void SetBaseDirectory(string directory)
         {
             if (string.IsNullOrEmpty(directory)) { return; }
 
-            if (!Directory.Exists(directory))
-            {
-                Directory.CreateDirectory(directory);
-            }
+            var className = typeof(TInstance).FullName;
 
-            FileDirectory = directory;
+            var hash = className.GetHash();
+
+            CacheDirectory = PathUtility.Combine(directory, hash) + PathUtility.PathSeparator;
+
+            if (!Directory.Exists(CacheDirectory))
+            {
+                Directory.CreateDirectory(CacheDirectory);
+            }
         }
 
         public bool HasCache(string source, ulong updateAt)
@@ -109,7 +101,7 @@ namespace Modules.FileCache
 
             var fileName = GetFileName(source);
 
-            var filePath = PathUtility.Combine(FileDirectory, fileName);
+            var filePath = PathUtility.Combine(CacheDirectory, fileName);
 
             // ファイルが存在しない.
             if (!File.Exists(filePath)){ return false; }
@@ -125,7 +117,7 @@ namespace Modules.FileCache
             {
                 var fileName = GetFileName(fileData.Source);
 
-                var filePath = PathUtility.Combine(FileDirectory, fileName);
+                var filePath = PathUtility.Combine(CacheDirectory, fileName);
 
                 if (!File.Exists(filePath)){ continue; }
 
@@ -143,7 +135,12 @@ namespace Modules.FileCache
 
             var fileName = GetFileName(source);
 
-            var filePath = PathUtility.Combine(FileDirectory, fileName);
+            if (!Directory.Exists(CacheDirectory))
+            {
+                Directory.CreateDirectory(CacheDirectory);
+            }
+
+            var filePath = PathUtility.Combine(CacheDirectory, fileName);
 
             bytes = bytes.Encrypt(cryptoKey);
 
@@ -170,7 +167,7 @@ namespace Modules.FileCache
         {
             var fileName = GetFileName(source);
 
-            var filePath = PathUtility.Combine(FileDirectory, fileName);
+            var filePath = PathUtility.Combine(CacheDirectory, fileName);
 
             if (!File.Exists(filePath)){ return null; }
             
