@@ -193,19 +193,12 @@ namespace Modules.FileCache
         {
             var cacheData = LocalDataManager.Get<CacheData>();
 
-            if (cacheData != null)
+            if (cacheData.files == null)
             {
-                if (cacheData.files == null)
-                {
-                    cacheData.files = new CacheFileData[0];
-                }
+                cacheData.files = new CacheFileData[0];
+            }
 
-                cacheContents = cacheData.files.ToDictionary(x => x.Source);
-            }
-            else
-            {
-                cacheContents = new Dictionary<string, CacheFileData>();
-            }
+            cacheContents = cacheData.files.ToDictionary(x => x.Source);
         }
 
         private string GetFileName(string source)
