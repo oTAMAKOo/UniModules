@@ -9,6 +9,7 @@ using Modules.LocalData;
 
 namespace Modules.FileCache
 {
+    [Serializable]
     [MessagePackObject(true)]
     public sealed class CacheFileData
     {
@@ -18,6 +19,9 @@ namespace Modules.FileCache
 
         public ulong ExpireAt { get; private set; }
 
+        public CacheFileData(){}
+
+        [SerializationConstructor]
         public CacheFileData(string source, ulong updateAt, ulong expireAt)
         {
             this.Source = source;
@@ -187,16 +191,21 @@ namespace Modules.FileCache
 
         private void LoadCacheContents()
         {
-            if (cacheContents != null){ return; }
-            
             var cacheData = LocalDataManager.Get<CacheData>();
 
-            if (cacheData.files == null)
+            if (cacheData != null)
             {
-                cacheData.files = new CacheFileData[0];
-            }
+                if (cacheData.files == null)
+                {
+                    cacheData.files = new CacheFileData[0];
+                }
 
-            cacheContents = cacheData.files.ToDictionary(x => x.Source);
+                cacheContents = cacheData.files.ToDictionary(x => x.Source);
+            }
+            else
+            {
+                cacheContents = new Dictionary<string, CacheFileData>();
+            }
         }
 
         private string GetFileName(string source)
