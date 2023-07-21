@@ -1,4 +1,4 @@
-﻿
+
 using System;
 
 namespace Modules.LocalData
@@ -14,11 +14,14 @@ namespace Modules.LocalData
 
         public string FileName { get; private set; }
 
+        public bool Encrypt { get; private set; }
+
         //----- method -----
 
-        public FileNameAttribute(string fileName)
+        public FileNameAttribute(string fileName, bool encrypt = true)
         {
             this.FileName = fileName;
+            this.Encrypt = encrypt;
         }
     }
 }

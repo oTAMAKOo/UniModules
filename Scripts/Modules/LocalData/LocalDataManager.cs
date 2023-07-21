@@ -1,5 +1,4 @@
-﻿
-using UnityEngine;
+
 using System;
 using System.IO;
 using System.Linq;
@@ -164,11 +163,13 @@ namespace Modules.LocalData
 
             if (fileNameAttribute != null)
             {
-                fileName = fileNameAttribute.FileName.Encrypt(cryptoKey).GetHash();
+                fileName = fileNameAttribute.Encrypt ? 
+                           fileNameAttribute.FileName.Encrypt(cryptoKey).GetHash() : 
+                           fileNameAttribute.FileName;
             }
             else
             {
-                throw new Exception(string.Format("FileNameAttribute is not set for this class.\n{0}", type.FullName));
+                throw new Exception($"FileNameAttribute is not set for this class.\n{type.FullName}");
             }
 
             filePath = PathUtility.Combine(FileDirectory, fileName);
