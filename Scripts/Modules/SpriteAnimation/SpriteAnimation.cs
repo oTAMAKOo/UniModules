@@ -6,9 +6,9 @@ using UniRx;
 using Extensions;
 using Modules.Cache;
 
-namespace Modules.U2D
+namespace Modules.SpriteAnimation
 {
-    public sealed class SpriteAnimation : MonoBehaviour
+    public class SpriteAnimation : MonoBehaviour
     {
         //----- params -----
 
@@ -32,6 +32,8 @@ namespace Modules.U2D
         private SpriteAtlasCache spriteCache = null;
 
         private Subject<Sprite> onUpdateAnimation = null;
+
+        private Subject<Unit> onLastFrame = null;
 
         //----- property -----
 
@@ -71,6 +73,11 @@ namespace Modules.U2D
                 {
                     currentIndex = 0;
 
+                    if (onLastFrame != null)
+                    {
+                        onLastFrame.OnNext(Unit.Default);
+                    }
+
                     if (Loop == false)
                     {
                         Stop();
@@ -96,7 +103,7 @@ namespace Modules.U2D
 
             CurrentAnimation = animationName;
 
-            LoadSprites(CurrentAnimation);
+            LoadSprites();
 
             currentIndex = startIndex.HasValue ? startIndex.Value : 0;
 
@@ -108,11 +115,11 @@ namespace Modules.U2D
             CurrentState = State.Stop;
         }
 
-        private void LoadSprites(string animationName)
+        private void LoadSprites()
         {
             if (spriteAtlas == null) { return; }
 
-            var referenceName = string.Format("SpriteAnimation.{0}", spriteAtlas.GetInstanceID());
+            var referenceName = $"SpriteAnimation.{spriteAtlas.GetInstanceID()}";
 
             spriteCache = new SpriteAtlasCache(spriteAtlas, referenceName);
 
@@ -147,12 +154,17 @@ namespace Modules.U2D
 
         private string GetSpriteName(int index)
         {
-            return string.Format("{0}_{1}", AnimationName, index);
+            return $"{AnimationName}_{index}";
         }
 
         public IObservable<Sprite> OnUpdateAnimationAsObservable()
         {
             return onUpdateAnimation ?? (onUpdateAnimation = new Subject<Sprite>());
+        }
+
+        public IObservable<Unit> OnLastFrameAsObservable()
+        {
+            return onLastFrame ?? (onLastFrame = new Subject<Unit>());
         }
     }
 }
