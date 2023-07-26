@@ -32,7 +32,7 @@ namespace Extensions
         }
 
         /// <summary> DateTimeからUnixTimeに変換. </summary>
-        public static ulong ToUnixTime(this DateTime dateTime, UnixTimeConvert type = UnixTimeConvert.Milliseconds)
+        public static ulong ToUnixTime(this DateTime dateTime, UnixTimeConvert type = UnixTimeConvert.Seconds)
         {
             ulong unixTime = 0;
 
@@ -55,13 +55,13 @@ namespace Extensions
         }
 
         /// <summary> UNIX時間からDateTimeに変換. </summary>
-        public static DateTime UnixTimeToDateTime(this long unixTime, UnixTimeConvert type = UnixTimeConvert.Milliseconds)
+        public static DateTime UnixTimeToDateTime(this long unixTime, UnixTimeConvert type = UnixTimeConvert.Seconds)
         {
             return UnixTimeToDateTime((ulong)unixTime, type);
         }
 
         /// <summary> UNIX時間からDateTimeに変換. </summary>
-        public static DateTime UnixTimeToDateTime(this ulong unixTime, UnixTimeConvert type = UnixTimeConvert.Milliseconds)
+        public static DateTime UnixTimeToDateTime(this ulong unixTime, UnixTimeConvert type = UnixTimeConvert.Seconds)
         {
             var dateTime = DateTime.MinValue;
 
