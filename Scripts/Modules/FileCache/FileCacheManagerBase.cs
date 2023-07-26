@@ -19,8 +19,6 @@ namespace Modules.FileCache
 
         public ulong ExpireAt { get; private set; }
 
-        public CacheFileData(){}
-
         [SerializationConstructor]
         public CacheFileData(string source, ulong updateAt, ulong expireAt)
         {
@@ -41,7 +39,15 @@ namespace Modules.FileCache
     [MessagePackObject(true)]
     public sealed class CacheData : ILocalData
     {
-        public CacheFileData[] files = null;
+        public CacheFileData[] files = new CacheFileData[0];
+
+        public CacheData() {}
+
+        [SerializationConstructor]
+        public CacheData(CacheFileData[] files)
+        {
+            this.files = files;
+        }
     }
 
     public abstract class FileCacheManagerBase<TInstance> : Singleton<TInstance> where TInstance : FileCacheManagerBase<TInstance>
@@ -51,8 +57,6 @@ namespace Modules.FileCache
         //----- field -----
 
         private AesCryptoKey cryptoKey = null;
-
-        private Dictionary<string, CacheFileData> cacheContents = null;
 
         //----- property -----
 
@@ -90,9 +94,9 @@ namespace Modules.FileCache
         {
             if (string.IsNullOrEmpty(source)){ return false; }
 
-            LoadCacheContents();
+            var cacheData = LocalDataManager.Get<CacheData>();
 
-            var data = cacheContents.GetValueOrDefault(source);
+            var data = cacheData.files.FirstOrDefault(x => x.Source == source);
 
             // キャッシュに存在しない.
             if (data == null){ return false; }
@@ -115,9 +119,9 @@ namespace Modules.FileCache
 
         public void CleanExpiredFiles()
         {
-            LoadCacheContents();
+            var cacheData = LocalDataManager.Get<CacheData>();
             
-            foreach (var fileData in cacheContents.Values)
+            foreach (var fileData in cacheData.files)
             {
                 var fileName = GetFileName(fileData.Source);
 
@@ -155,16 +159,18 @@ namespace Modules.FileCache
 
             // キャッシュ情報更新.
 
-            LoadCacheContents();
+            var cacheData = LocalDataManager.Get<CacheData>();
 
-            cacheContents[source] = new CacheFileData(source, updateAt, expireAt);
-
-            var cacheData = new CacheData()
+            if (cacheData != null)
             {
-                files = cacheContents.Values.ToArray(),
-            };
+                var directory = cacheData.files.ToDictionary(x => x.Source);
 
-            cacheData.Save();
+                directory[source] = new CacheFileData(source, updateAt, expireAt);
+
+                cacheData.files = directory.Values.ToArray();
+
+                cacheData.Save();
+            }
         }
 
         protected byte[] LoadCache(string source)
@@ -187,18 +193,6 @@ namespace Modules.FileCache
             bytes = bytes.Decrypt(cryptoKey);
 
             return bytes;
-        }
-
-        private void LoadCacheContents()
-        {
-            var cacheData = LocalDataManager.Get<CacheData>();
-
-            if (cacheData.files == null)
-            {
-                cacheData.files = new CacheFileData[0];
-            }
-
-            cacheContents = cacheData.files.ToDictionary(x => x.Source);
         }
 
         private string GetFileName(string source)
