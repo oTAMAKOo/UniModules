@@ -1,9 +1,8 @@
-﻿
+
 using UnityEngine;
 using UnityEditor;
 using System;
 using Extensions;
-using Extensions.Devkit;
 
 namespace Modules.Devkit.AssetTuning
 {
@@ -22,26 +21,26 @@ namespace Modules.Devkit.AssetTuning
             return 50;
         }
 
-		/// <summary> アセットインポート前のコールバック. </summary>
-		private void OnPreprocessAsset()
-		{
-			if (Application.isBatchMode){ return; }
+        /// <summary> アセットインポート前のコールバック. </summary>
+        private void OnPreprocessAsset()
+        {
+            if (Application.isBatchMode){ return; }
 
-			var assetTuneManager = AssetTuneManager.Instance;
+            var assetTuneManager = AssetTuneManager.Instance;
 
-			var assetTuners = assetTuneManager.AssetTuners;
+            var assetTuners = assetTuneManager.AssetTuners;
 
-			foreach (var tuner in assetTuners)
-			{
-				var assetPath = assetImporter.assetPath;
+            foreach (var tuner in assetTuners)
+            {
+                var assetPath = assetImporter.assetPath;
 
-				if (!assetPath.StartsWith(UnityPathUtility.AssetsFolder)) { continue; }
+                if (!assetPath.StartsWith(UnityPathUtility.AssetsFolder)) { continue; }
 
-				if (!tuner.Validate(assetPath)) { continue; }
+                if (!tuner.Validate(assetPath)) { continue; }
 
-				tuner.OnPreprocessAsset(assetPath);
-			}
-		}
+                tuner.OnPreprocessAsset(assetPath);
+            }
+        }
 
         /// <summary> アセットインポート完了後のコールバック. </summary>
         /// <param name="importedAssets"> インポートされたアセットのファイルパス。 </param>
@@ -50,7 +49,7 @@ namespace Modules.Devkit.AssetTuning
         /// <param name="movedFromPath"> 移動されたアセットの移動前のファイルパス。 </param>
         static void OnPostprocessAllAssets(string[] importedAssets, string[] deletedAssets, string[] movedAssets, string[] movedFromPath)
         {
-			if (Application.isBatchMode){ return; }
+            if (Application.isBatchMode){ return; }
 
             var assetTuneManager = AssetTuneManager.Instance;
 
@@ -58,59 +57,56 @@ namespace Modules.Devkit.AssetTuning
 
             try
             {
-                using (new AssetEditingScope())
+                foreach (var tuner in assetTuners)
                 {
-                    foreach (var tuner in assetTuners)
-                    {
-                        tuner.OnBeforePostprocessAsset();
-                    }
+                    tuner.OnBeforePostprocessAsset();
+                }
 
-                    foreach (var tuner in assetTuners)
-                    {
-                        foreach (var path in importedAssets)
-                        {
-							if (!path.StartsWith(UnityPathUtility.AssetsFolder)) { continue; }
-
-                            if (!tuner.Validate(path)) { continue; }
-
-                            if (assetTuneManager.IsFirstImport(path))
-                            {
-                                tuner.OnAssetCreate(path);
-                            }
-
-                            tuner.OnPostprocessAsset(path);
-                        }
-
-                        foreach (var path in deletedAssets)
-                        {
-							if (!path.StartsWith(UnityPathUtility.AssetsFolder)) { continue; }
-
-                            if (!tuner.Validate(path)) { continue; }
-
-                            tuner.OnAssetDelete(path);
-                        }
-
-                        for (var i = 0; i < movedAssets.Length; i++)
-                        {
-							if (!movedAssets[i].StartsWith(UnityPathUtility.AssetsFolder)) { continue; }
-
-                            if (!tuner.Validate(movedAssets[i])) { continue; }
-
-                            tuner.OnAssetMove(movedAssets[i], movedFromPath[i]);
-                        }
-                    }
-
+                foreach (var tuner in assetTuners)
+                {
                     foreach (var path in importedAssets)
                     {
-						if (!path.StartsWith(UnityPathUtility.AssetsFolder)) { continue; }
+                        if (!path.StartsWith(UnityPathUtility.AssetsFolder)) { continue; }
 
-                        assetTuneManager.FinishFirstImport(path);
+                        if (!tuner.Validate(path)) { continue; }
+
+                        if (assetTuneManager.IsFirstImport(path))
+                        {
+                            tuner.OnAssetCreate(path);
+                        }
+
+                        tuner.OnPostprocessAsset(path);
                     }
 
-                    foreach (var tuner in assetTuners)
+                    foreach (var path in deletedAssets)
                     {
-                        tuner.OnAfterPostprocessAsset();
+                        if (!path.StartsWith(UnityPathUtility.AssetsFolder)) { continue; }
+
+                        if (!tuner.Validate(path)) { continue; }
+
+                        tuner.OnAssetDelete(path);
                     }
+
+                    for (var i = 0; i < movedAssets.Length; i++)
+                    {
+                        if (!movedAssets[i].StartsWith(UnityPathUtility.AssetsFolder)) { continue; }
+
+                        if (!tuner.Validate(movedAssets[i])) { continue; }
+
+                        tuner.OnAssetMove(movedAssets[i], movedFromPath[i]);
+                    }
+                }
+
+                foreach (var path in importedAssets)
+                {
+                    if (!path.StartsWith(UnityPathUtility.AssetsFolder)) { continue; }
+
+                    assetTuneManager.FinishFirstImport(path);
+                }
+
+                foreach (var tuner in assetTuners)
+                {
+                    tuner.OnAfterPostprocessAsset();
                 }
             }
             catch (Exception ex)
