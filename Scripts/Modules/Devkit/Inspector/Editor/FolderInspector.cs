@@ -99,8 +99,6 @@ namespace Modules.Devkit.Inspector
             var assetImporter = AssetImporter.GetAtPath(folderAssetPath);
 
             if (assetImporter == null){ return; }
-
-            var selectObject = Selection.activeObject;
             
             var metaFilePath = Path.ChangeExtension(assetImporter.assetPath, ".meta");
 
@@ -124,8 +122,6 @@ namespace Modules.Devkit.Inspector
 
                 assetImporter.SaveAndReimport();
             }
-
-            Selection.activeObject = selectObject;
         }
 
         private static void RepaintInspector()
