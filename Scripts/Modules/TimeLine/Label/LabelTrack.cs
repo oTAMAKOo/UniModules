@@ -1,4 +1,6 @@
 ﻿
+#if ENABLE_UNITY_TIMELINE
+
 using UnityEngine;
 using UnityEngine.Timeline;
 using UnityEngine.Playables;
@@ -22,3 +24,5 @@ namespace Modules.TimeLine.Component
         //----- method -----
     }
 }
+
+#endif

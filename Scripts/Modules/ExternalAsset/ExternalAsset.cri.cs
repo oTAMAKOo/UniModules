@@ -54,6 +54,8 @@ namespace Modules.ExternalAssets
             criAssetManager.SetNumInstallers(installerCount);
         }
 
+        #if ENABLE_CRIWARE_FILESYSTEM
+
         private async UniTask UpdateCriAsset(AssetInfo assetInfo, IProgress<DownloadProgressInfo> progress = null, CancellationToken cancelToken = default)
         {
             if (cancelToken.IsCancellationRequested) { return; }
@@ -63,7 +65,9 @@ namespace Modules.ExternalAssets
             await criAssetManager.UpdateCriAsset(InstallDirectory, assetInfo, progress, cancelToken);
         }
 
-        #if ENABLE_CRIWARE_ADX || ENABLE_CRIWARE_SOFDEC
+        #endif
+
+        #if ENABLE_CRIWARE_ADX || ENABLE_CRIWARE_ADX_LE || ENABLE_CRIWARE_SOFDEC
 
         private string ConvertCriFilePath(string resourcePath)
         {
@@ -133,6 +137,8 @@ namespace Modules.ExternalAssets
             }
 
             var filePath = ConvertCriFilePath(resourcePath);
+            
+            #if ENABLE_CRIWARE_FILESYSTEM
 
             if (!LocalMode && !SimulateMode)
             {
@@ -199,6 +205,12 @@ namespace Modules.ExternalAssets
                     }
                 }
             }
+
+            #else
+
+            await UniTask.NextFrame();
+            
+            #endif
 
             filePath = PathUtility.GetPathWithoutExtension(filePath) + CriAssetDefinition.AcbExtension;
 

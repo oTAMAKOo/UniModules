@@ -545,7 +545,7 @@ namespace Modules.ExternalAssets
             assetBundleManager.ClearDownloadQueue();
             fileAssetManager.ClearDownloadQueue();
             
-            #if ENABLE_CRIWARE_ADX || ENABLE_CRIWARE_ADX_LE || ENABLE_CRIWARE_SOFDEC
+            #if ENABLE_CRIWARE_FILESYSTEM
 
             criAssetManager.ClearInstallQueue();
 

@@ -1,4 +1,6 @@
-﻿
+
+#if ENABLE_UNITY_TIMELINE
+
 using UnityEngine;
 using System;
 using System.Collections;
@@ -249,3 +251,5 @@ namespace Modules.TimeLine
         }
     }
 }
+
+#endif

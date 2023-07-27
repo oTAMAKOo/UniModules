@@ -1,4 +1,6 @@
-﻿
+
+#if ENABLE_UNITY_TIMELINE
+
 using UnityEngine;
 using UnityEngine.Playables;
 using UnityEngine.Timeline;
@@ -41,3 +43,5 @@ namespace Modules.TimeLine.Component
         }
     }
 }
+
+#endif

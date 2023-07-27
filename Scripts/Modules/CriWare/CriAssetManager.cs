@@ -51,13 +51,13 @@ namespace Modules.CriWare
         // ダウンロード待ち.
         private Dictionary<string, CriAssetInstall> installQueueing = null;
 
+        // 解放キャンセル発行用.
+        private IDisposable releaseInstallerDisposable = null;
+
         #endif
 
         // 同時インストール数.
         private uint numInstallers = DefaultInstallerNum;
-
-        // 解放キャンセル発行用.
-        private IDisposable releaseInstallerDisposable = null;
 
         // イベント通知.
         private Subject<AssetInfo> onTimeOut = null;
@@ -111,9 +111,9 @@ namespace Modules.CriWare
 
         private void Release()
         {
-            installQueueing.Clear();
-
             #if ENABLE_CRIWARE_FILESYSTEM
+
+            installQueueing.Clear();
 
             CancelReleaseInstallers();
             
@@ -138,6 +138,8 @@ namespace Modules.CriWare
 
         private void UpdateFsWebInstallerSetting()
         {
+            #if ENABLE_CRIWARE_FILESYSTEM
+
             if(CriFsWebInstaller.isInitialized)
             {
                 Release();
@@ -151,6 +153,8 @@ namespace Modules.CriWare
             moduleConfig.inactiveTimeoutSec = (uint)TimeoutLimit.TotalSeconds;
             
             CriFsWebInstaller.InitializeModule(moduleConfig);
+
+            #endif
         }
 
         /// <summary> 同時ダウンロード数設定. </summary>
@@ -296,6 +300,8 @@ namespace Modules.CriWare
             return PathUtility.Combine(installPath, assetInfo.FileName);
         }
 
+        #if ENABLE_CRIWARE_FILESYSTEM
+
         public async UniTask WaitQueueingInstall(AssetInfo assetInfo, CancellationToken cancelToken)
         {
             var resourcePath = assetInfo.ResourcePath;
@@ -321,6 +327,8 @@ namespace Modules.CriWare
 
             installQueueing.Clear();
         }
+
+        #endif
 
         private void OnTimeout(AssetInfo assetInfo, Exception exception)
         {

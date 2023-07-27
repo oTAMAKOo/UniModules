@@ -1,4 +1,6 @@
 ﻿
+#if ENABLE_UNITY_TIMELINE
+
 using UnityEngine;
 using UnityEngine.Playables;
 using UnityEngine.Timeline;
@@ -10,12 +12,14 @@ namespace Modules.TimeLine.Component
     [TrackClipType(typeof(LoopClip))]
     public sealed class LoopTrack : TrackAsset
     {
-		//----- params -----
+        //----- params -----
 
-		//----- field -----
+        //----- field -----
 
-		//----- property -----
+        //----- property -----
 
-		//----- method -----
-	}
+        //----- method -----
+    }
 }
+
+#endif
