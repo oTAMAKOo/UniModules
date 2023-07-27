@@ -101,7 +101,7 @@ namespace Modules.Sound
         }
         
         /// <summary> 内蔵アセットサウンドを再生. </summary>
-        public SoundElement Play(SoundType type, Sounds.Cue cue, float? volume = null)
+        public SoundElement Play(SoundType type, Sounds.Cue cue, float volume = 1f)
         {
             var soundParam = GetSoundParam(type);
             var info = Sounds.GetCueInfo(cue);
@@ -120,7 +120,7 @@ namespace Modules.Sound
         }
         
         /// <summary> 外部アセットのサウンドを再生. </summary>
-        public SoundElement Play(SoundType type, CueInfo info, float? volume = null)
+        public SoundElement Play(SoundType type, CueInfo info, float volume = 1f)
         {
             if (info == null) { return null; }
 
@@ -276,17 +276,12 @@ namespace Modules.Sound
         }
 
         /// <summary> 個別に音量変更. </summary>
-        public void SetVolume(SoundElement element, float? volume)
+        public void SetVolume(SoundElement element, float volume)
         {
             var soundParam = GetSoundParam(element.Type);
 
-            var soundVolume = soundParam.volume;
+            var soundVolume = soundParam.volume * Mathf.Clamp01(volume);
 
-            if (volume.HasValue)
-            {
-                soundVolume *= Mathf.Clamp01(volume.Value);
-            }
-            
             player.SetVolume(soundVolume);
             player.Update(element.GetPlayback());
 
@@ -381,7 +376,7 @@ namespace Modules.Sound
             return soundSheet;
         }
 
-        private SoundElement GetSoundElement(CueInfo info, SoundType type, float? volume)
+        private SoundElement GetSoundElement(CueInfo info, SoundType type, float volume)
         {
             // シート取得.
             var soundSheet = GetSoundSheet(info);

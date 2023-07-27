@@ -28,7 +28,7 @@ namespace Modules.Sound
         
         public SoundSheet SoundSheet { get; private set; }
 
-        public float? Volume { get; private set; }
+        public float Volume { get; private set; }
 
         public float? FinishTime { get; private set; }
 
@@ -38,13 +38,14 @@ namespace Modules.Sound
 
         //----- method -----
 
-        public SoundElement(SoundType type, SoundSheet soundSheet, CueInfo cueInfo, CriAtomExPlayback playback, float? volume)
+        public SoundElement(SoundType type, SoundSheet soundSheet, CueInfo cueInfo, CriAtomExPlayback playback, float volume)
         {
             this.playback = playback;
 
-            this.Type = type;
-            this.SoundSheet = soundSheet;
-            this.CueInfo = cueInfo;
+            Type = type;
+            SoundSheet = soundSheet;
+            CueInfo = cueInfo;
+            Volume = volume;
         }
 
         public CriAtomExPlayback GetPlayback()
@@ -99,7 +100,7 @@ namespace Modules.Sound
             }
         }
 
-        public void SetVolume(float? volume)
+        public void SetVolume(float volume)
         {
             var soundManagement = SoundManagement.Instance;
 
