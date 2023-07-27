@@ -1,5 +1,5 @@
 ﻿
-#if ENABLE_CRIWARE_ADX
+#if ENABLE_CRIWARE_ADX || ENABLE_CRIWARE_ADX_LE
 
 using System.IO;
 using CriWare;

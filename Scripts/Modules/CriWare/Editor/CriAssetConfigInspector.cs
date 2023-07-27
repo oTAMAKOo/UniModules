@@ -1,5 +1,5 @@
-﻿
-#if ENABLE_CRIWARE_ADX || ENABLE_CRIWARE_SOFDEC
+
+#if ENABLE_CRIWARE_ADX || ENABLE_CRIWARE_ADX_LE || ENABLE_CRIWARE_SOFDEC
 
 using UnityEngine;
 using UnityEditor;
@@ -16,7 +16,7 @@ namespace Modules.CriWare.Editor
 
         //----- field -----
 
-		private Action onAfterDrawCallback = null;
+        private Action onAfterDrawCallback = null;
 
         //----- property -----
 
@@ -26,11 +26,11 @@ namespace Modules.CriWare.Editor
         {
             var instance = target as CriAssetConfig;
 
-			onAfterDrawCallback = null;
+            onAfterDrawCallback = null;
 
-			serializedObject.Update();
+            serializedObject.Update();
 
-            #if ENABLE_CRIWARE_ADX
+            #if ENABLE_CRIWARE_ADX || ENABLE_CRIWARE_ADX_LE
 
             DrawSoundAssetConfigGUI(instance);
             
@@ -42,17 +42,17 @@ namespace Modules.CriWare.Editor
 
             #endif
 
-			if (onAfterDrawCallback != null)
-			{
-				onAfterDrawCallback.Invoke();
-			}
+            if (onAfterDrawCallback != null)
+            {
+                onAfterDrawCallback.Invoke();
+            }
         }
 
         //---------------------------------------
         // Sound.
         //---------------------------------------
 
-        #if ENABLE_CRIWARE_ADX
+        #if ENABLE_CRIWARE_ADX || ENABLE_CRIWARE_ADX_LE
 
         private void DrawSoundAssetConfigGUI(CriAssetConfig instance)
         {
@@ -63,22 +63,22 @@ namespace Modules.CriWare.Editor
             {
                 using (new ContentsScope())
                 {
-					// Style.
+                    // Style.
                     var pathTextStyle = GUI.skin.GetStyle("TextArea");
                     pathTextStyle.alignment = TextAnchor.MiddleLeft;
 
-					GUILayout.Label("FolderName");
+                    GUILayout.Label("FolderName");
 
-					EditorGUI.BeginChangeCheck();
+                    EditorGUI.BeginChangeCheck();
 
-					var folderName = EditorGUILayout.DelayedTextField(instance.SoundFolderName);
+                    var folderName = EditorGUILayout.DelayedTextField(instance.SoundFolderName);
 
-					if (EditorGUI.EndChangeCheck())
-					{
-						UnityEditorUtility.RegisterUndo(instance);
+                    if (EditorGUI.EndChangeCheck())
+                    {
+                        UnityEditorUtility.RegisterUndo(instance);
 
-						Reflection.SetPrivateField(instance, "soundFolderName", folderName);
-					}
+                        Reflection.SetPrivateField(instance, "soundFolderName", folderName);
+                    }
 
                     GUILayout.Label("AcfAssetSourcePath");
 
@@ -89,20 +89,20 @@ namespace Modules.CriWare.Editor
                         if (GUILayout.Button("Edit", EditorStyles.miniButton, GUILayout.Width(50f)))
                         {
                             onAfterDrawCallback = () =>
-							{
-								var acfAssetSource = EditorUtility.OpenFilePanel("Select ACF", "", "");
+                            {
+                                var acfAssetSource = EditorUtility.OpenFilePanel("Select ACF", "", "");
 
                                 if (!string.IsNullOrEmpty(acfAssetSource))
                                 {
                                     UnityEditorUtility.RegisterUndo(instance);
 
-								    var assetFolderUri = new Uri(Application.dataPath);
-								    var targetUri = new Uri(acfAssetSource);
-								    acfAssetSourcePathProperty.stringValue = assetFolderUri.MakeRelativeUri(targetUri).ToString();
+                                    var assetFolderUri = new Uri(Application.dataPath);
+                                    var targetUri = new Uri(acfAssetSource);
+                                    acfAssetSourcePathProperty.stringValue = assetFolderUri.MakeRelativeUri(targetUri).ToString();
 
-								    serializedObject.ApplyModifiedProperties();
+                                    serializedObject.ApplyModifiedProperties();
                                 }
-							};
+                            };
                         }
                     }
 
@@ -114,26 +114,26 @@ namespace Modules.CriWare.Editor
 
                         if (GUILayout.Button("Edit", EditorStyles.miniButton, GUILayout.Width(50f)))
                         {
-							onAfterDrawCallback = () =>
-							{
-	                            var acfAssetDirectory = EditorUtility.OpenFolderPanel("Select CriSetting Folder", "", "");
+                            onAfterDrawCallback = () =>
+                            {
+                                var acfAssetDirectory = EditorUtility.OpenFolderPanel("Select CriSetting Folder", "", "");
 
                                 if (!string.IsNullOrEmpty(acfAssetDirectory))
                                 {
                                     UnityEditorUtility.RegisterUndo(instance);
 
-	                                var assetFolderUri = new Uri(Application.dataPath);
-	                                var targetUri = new Uri(acfAssetDirectory);
-	                                acfAssetExportPathProperty.stringValue = assetFolderUri.MakeRelativeUri(targetUri).ToString();
+                                    var assetFolderUri = new Uri(Application.dataPath);
+                                    var targetUri = new Uri(acfAssetDirectory);
+                                    acfAssetExportPathProperty.stringValue = assetFolderUri.MakeRelativeUri(targetUri).ToString();
 
-	                                serializedObject.ApplyModifiedProperties();
+                                    serializedObject.ApplyModifiedProperties();
                                 }
-							};
+                            };
                         }
                     }
 
-					DrawAssetImportInfoGUI(instance, "internalSound", "externalSound");
-				}
+                    DrawAssetImportInfoGUI(instance, "internalSound", "externalSound");
+                }
             }
 
             GUILayout.Space(4f);
@@ -154,21 +154,21 @@ namespace Modules.CriWare.Editor
             {
                 using (new ContentsScope())
                 {
-					GUILayout.Label("FolderName");
+                    GUILayout.Label("FolderName");
 
-					EditorGUI.BeginChangeCheck();
+                    EditorGUI.BeginChangeCheck();
 
-					var folderName = EditorGUILayout.DelayedTextField(instance.MovieFolderName);
+                    var folderName = EditorGUILayout.DelayedTextField(instance.MovieFolderName);
 
-					if (EditorGUI.EndChangeCheck())
-					{
-						UnityEditorUtility.RegisterUndo(instance);
+                    if (EditorGUI.EndChangeCheck())
+                    {
+                        UnityEditorUtility.RegisterUndo(instance);
 
-						Reflection.SetPrivateField(instance, "movieFolderName", folderName);
-					}
+                        Reflection.SetPrivateField(instance, "movieFolderName", folderName);
+                    }
 
                     DrawAssetImportInfoGUI(instance, "internalMovie", "externalMovie");
-				}
+                }
             }
 
             GUILayout.Space(4f);
@@ -178,82 +178,82 @@ namespace Modules.CriWare.Editor
 
         public void DrawAssetImportInfoGUI(CriAssetConfig instance, string internalFieldName, string externalFieldName)
         {
-			var internalInfo = Reflection.GetPrivateField<CriAssetConfig, ImportInfo>(instance, internalFieldName);
-			var externalInfo = Reflection.GetPrivateField<CriAssetConfig, ImportInfo>(instance, externalFieldName);
+            var internalInfo = Reflection.GetPrivateField<CriAssetConfig, ImportInfo>(instance, internalFieldName);
+            var externalInfo = Reflection.GetPrivateField<CriAssetConfig, ImportInfo>(instance, externalFieldName);
 
-			var labels = new string[] { "Internal", "External" };
-			var infos = new ImportInfo[] { internalInfo, externalInfo };
-			var fieldNames = new string[] { internalFieldName, externalFieldName };
+            var labels = new string[] { "Internal", "External" };
+            var infos = new ImportInfo[] { internalInfo, externalInfo };
+            var fieldNames = new string[] { internalFieldName, externalFieldName };
 
-			for (var i = 0; i < labels.Length; i++)
-			{
-				GUILayout.Label(labels[i]);
+            for (var i = 0; i < labels.Length; i++)
+            {
+                GUILayout.Label(labels[i]);
 
-				var info = infos[i];
-				var fieldName = fieldNames[i];
+                var info = infos[i];
+                var fieldName = fieldNames[i];
 
-				using (new ContentsScope())
-	            {
-					using (new EditorGUILayout.HorizontalScope())
-					{
-						EditorGUI.BeginChangeCheck();
-						
-						var relativePath = info.sourceFolderRelativePath;
+                using (new ContentsScope())
+                {
+                    using (new EditorGUILayout.HorizontalScope())
+                    {
+                        EditorGUI.BeginChangeCheck();
+                        
+                        var relativePath = info.sourceFolderRelativePath;
 
-						relativePath = EditorGUILayout.DelayedTextField("Source Folder", relativePath, GUILayout.Height(16f), GUILayout.ExpandWidth(true));
+                        relativePath = EditorGUILayout.DelayedTextField("Source Folder", relativePath, GUILayout.Height(16f), GUILayout.ExpandWidth(true));
 
-						if (EditorGUI.EndChangeCheck())
-						{
-							info.sourceFolderRelativePath = relativePath;
-						}
+                        if (EditorGUI.EndChangeCheck())
+                        {
+                            info.sourceFolderRelativePath = relativePath;
+                        }
 
-						if (GUILayout.Button("select", EditorStyles.miniButton, GUILayout.Width(50f)))
-						{
-							// このタイミングでEditorUtility.OpenFolderPanelを呼ぶとGUIレイアウトエラーが発生するので後で実行する.
+                        if (GUILayout.Button("select", EditorStyles.miniButton, GUILayout.Width(50f)))
+                        {
+                            // このタイミングでEditorUtility.OpenFolderPanelを呼ぶとGUIレイアウトエラーが発生するので後で実行する.
 
-							onAfterDrawCallback = () => 
-							{
-								var selectDirectory = EditorUtility.OpenFolderPanel("Select Directory", "", "");
+                            onAfterDrawCallback = () => 
+                            {
+                                var selectDirectory = EditorUtility.OpenFolderPanel("Select Directory", "", "");
 
-								if (!string.IsNullOrEmpty(selectDirectory))
-								{
-									UnityEditorUtility.RegisterUndo(instance);
+                                if (!string.IsNullOrEmpty(selectDirectory))
+                                {
+                                    UnityEditorUtility.RegisterUndo(instance);
 
-									var assetFolderUri = new Uri(Application.dataPath);
-									var targetUri = new Uri(selectDirectory);
+                                    var assetFolderUri = new Uri(Application.dataPath);
+                                    var targetUri = new Uri(selectDirectory);
 
-									relativePath = assetFolderUri.MakeRelativeUri(targetUri).ToString();
+                                    relativePath = assetFolderUri.MakeRelativeUri(targetUri).ToString();
 
-									info.sourceFolderRelativePath = relativePath;
-									
-									Reflection.SetPrivateField(instance, fieldName, info);
-								}
-							};
-						}
-					}
+                                    info.sourceFolderRelativePath = relativePath;
+                                    
+                                    Reflection.SetPrivateField(instance, fieldName, info);
+                                }
+                            };
+                        }
+                    }
 
-	                GUILayout.Space(2f);
+                    GUILayout.Space(2f);
 
-	                EditorGUI.BeginChangeCheck();
+                    EditorGUI.BeginChangeCheck();
 
-					var folderAsset = UnityEditorUtility.FindMainAsset(info.destFolderGuid);
-	                
-					var destFolder = EditorGUILayout.ObjectField("Dest Folder", folderAsset, typeof(UnityEngine.Object),  false, GUILayout.Height(16f), GUILayout.ExpandWidth(true));
-	                
-					if (EditorGUI.EndChangeCheck())
-					{
-						if (UnityEditorUtility.IsFolder(destFolder))
-						{
-							var destFolderGuid = destFolder != null ? UnityEditorUtility.GetAssetGUID(destFolder) : null;
+                    var folderAsset = UnityEditorUtility.FindMainAsset(info.destFolderGuid);
+                    
+                    var destFolder = EditorGUILayout.ObjectField("Dest Folder", folderAsset, typeof(UnityEngine.Object),  false, GUILayout.Height(16f), GUILayout.ExpandWidth(true));
+                    
+                    if (EditorGUI.EndChangeCheck())
+                    {
+                        if (UnityEditorUtility.IsFolder(destFolder))
+                        {
+                            var destFolderGuid = destFolder != null ? UnityEditorUtility.GetAssetGUID(destFolder) : null;
 
-							info.destFolderGuid = destFolderGuid;
+                            info.destFolderGuid = destFolderGuid;
 
-							Reflection.SetPrivateField(instance, fieldName, info);
-						}
-					}
-				}
-			}
-		}
+                            Reflection.SetPrivateField(instance, fieldName, info);
+                        }
+                    }
+                }
+            }
+        }
     }
 }
 

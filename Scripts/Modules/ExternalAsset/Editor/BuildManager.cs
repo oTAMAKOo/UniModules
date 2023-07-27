@@ -14,7 +14,7 @@ using Modules.AssetBundles.Editor;
 using Modules.Devkit.Console;
 using Modules.Devkit.Project;
 
-#if ENABLE_CRIWARE_ADX || ENABLE_CRIWARE_SOFDEC
+#if ENABLE_CRIWARE_ADX || ENABLE_CRIWARE_ADX_LE || ENABLE_CRIWARE_SOFDEC
 
 using Modules.CriWare.Editor;
 
@@ -122,7 +122,7 @@ namespace Modules.ExternalAssets
 
                     //------ CRIアセットを生成 ------
 
-                    #if ENABLE_CRIWARE_ADX || ENABLE_CRIWARE_SOFDEC
+                    #if ENABLE_CRIWARE_ADX || ENABLE_CRIWARE_ADX_LE || ENABLE_CRIWARE_SOFDEC
 
                     using (new BuildLogScope(logBuilder, processTime, "GenerateCriAsset"))
                     {

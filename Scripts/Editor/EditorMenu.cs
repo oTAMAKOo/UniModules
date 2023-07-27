@@ -39,7 +39,7 @@ using Modules.Devkit.SerializeAssets;
 using Modules.Devkit.TextureViewer;
 using Modules.Devkit.U2D;
 
-#if ENABLE_CRIWARE_ADX || ENABLE_CRIWARE_SOFDEC
+#if ENABLE_CRIWARE_ADX || ENABLE_CRIWARE_ADX_LE || ENABLE_CRIWARE_SOFDEC
 
 using Modules.CriWare.Editor;
 
@@ -326,7 +326,7 @@ namespace Modules
 
         #region CriWare
 
-        #if ENABLE_CRIWARE_ADX || ENABLE_CRIWARE_SOFDEC
+        #if ENABLE_CRIWARE_ADX || ENABLE_CRIWARE_ADX_LE || ENABLE_CRIWARE_SOFDEC
 
         protected const string CriWareMenu = MenuRoot + "CriWare/";
 

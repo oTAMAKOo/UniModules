@@ -1,5 +1,5 @@
 
-#if ENABLE_CRIWARE_ADX
+#if ENABLE_CRIWARE_ADX || ENABLE_CRIWARE_ADX_LE
 
 using UnityEngine;
 using System;
@@ -78,7 +78,11 @@ namespace Modules.Sound
 
             // パラメータ更新通知.
             OnUpdateParamAsObservable()
-                .Subscribe(x => ApplySoundParam(x))
+                .Subscribe(x =>
+                    {
+                        ApplyVolume(x);
+                        ApplySoundParam(x);
+                    })
                 .AddTo(Disposable);
 
             initialized = true;
@@ -97,7 +101,7 @@ namespace Modules.Sound
         }
         
         /// <summary> 内蔵アセットサウンドを再生. </summary>
-        public SoundElement Play(SoundType type, Sounds.Cue cue)
+        public SoundElement Play(SoundType type, Sounds.Cue cue, float? volume = null)
         {
             var soundParam = GetSoundParam(type);
             var info = Sounds.GetCueInfo(cue);
@@ -112,11 +116,11 @@ namespace Modules.Sound
                 }
             }
 
-            return info != null ? Play(type, info) : null;
+            return info != null ? Play(type, info, volume) : null;
         }
         
         /// <summary> 外部アセットのサウンドを再生. </summary>
-        public SoundElement Play(SoundType type, CueInfo info)
+        public SoundElement Play(SoundType type, CueInfo info, float? volume = null)
         {
             if (info == null) { return null; }
 
@@ -141,7 +145,7 @@ namespace Modules.Sound
                 }
             }
 
-            element = GetSoundElement(info, type);
+            element = GetSoundElement(info, type, volume);
 
             if (element == null) { return null; }
 
@@ -149,7 +153,10 @@ namespace Modules.Sound
             soundElements.Add(element);
 
             // 音量設定.
-            SetVolume(element, soundParam.volume);
+
+            SetVolume(element, volume);
+
+            // 再生.
 
             PlaySoundElement(element).Forget();
 
@@ -269,9 +276,18 @@ namespace Modules.Sound
         }
 
         /// <summary> 個別に音量変更. </summary>
-        public void SetVolume(SoundElement element, float value)
+        public void SetVolume(SoundElement element, float? volume)
         {
-            player.SetVolume(value);
+            var soundParam = GetSoundParam(element.Type);
+
+            var soundVolume = soundParam.volume;
+
+            if (volume.HasValue)
+            {
+                soundVolume *= Mathf.Clamp01(volume.Value);
+            }
+            
+            player.SetVolume(soundVolume);
             player.Update(element.GetPlayback());
 
             // デフォルトに戻す.
@@ -304,6 +320,17 @@ namespace Modules.Sound
 
             // デフォルトに戻す.
             ApplySoundParam();
+        }
+
+        /// <summary> 再生中のサウンドに音量を反映. </summary>
+        private void ApplyVolume(SoundType? type = null)
+        {
+            var targets = soundElements.Where(x => x.Type == type).ToArray();
+
+            foreach (var target in targets)
+            {
+                SetVolume(target, target.Volume);
+            }
         }
 
         /// <summary> CriAtomPlayerに再生設定を適用. </summary>
@@ -354,7 +381,7 @@ namespace Modules.Sound
             return soundSheet;
         }
 
-        private SoundElement GetSoundElement(CueInfo info, SoundType type)
+        private SoundElement GetSoundElement(CueInfo info, SoundType type, float? volume)
         {
             // シート取得.
             var soundSheet = GetSoundSheet(info);
@@ -376,7 +403,7 @@ namespace Modules.Sound
             // デフォルトに戻す.
             ApplySoundParam();
 
-            var element = new SoundElement(type, soundSheet, info, playback);
+            var element = new SoundElement(type, soundSheet, info, playback, volume);
 
             return element;
         }

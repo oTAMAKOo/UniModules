@@ -1,5 +1,5 @@
 
-#if ENABLE_CRIWARE_ADX || ENABLE_CRIWARE_SOFDEC
+#if ENABLE_CRIWARE_ADX || ENABLE_CRIWARE_ADX_LE || ENABLE_CRIWARE_SOFDEC
 
 using UnityEngine;
 using System;
@@ -12,7 +12,7 @@ using Extensions;
 using Modules.CriWare;
 using Modules.Devkit.Console;
 
-#if ENABLE_CRIWARE_ADX
+#if ENABLE_CRIWARE_ADX || ENABLE_CRIWARE_ADX_LE
 using Modules.Sound;
 #endif
 
@@ -98,7 +98,7 @@ namespace Modules.ExternalAssets
 
         #region Sound
 
-        #if ENABLE_CRIWARE_ADX
+        #if ENABLE_CRIWARE_ADX || ENABLE_CRIWARE_ADX_LE
         
         public static async UniTask<CueInfo> GetCueInfo(string resourcePath, string cue)
         {

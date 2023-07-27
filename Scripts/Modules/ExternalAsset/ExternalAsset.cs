@@ -121,7 +121,7 @@ namespace Modules.ExternalAssets
 
             // CRI初期化.
 
-            #if ENABLE_CRIWARE_ADX || ENABLE_CRIWARE_SOFDEC
+            #if ENABLE_CRIWARE_ADX || ENABLE_CRIWARE_ADX_LE || ENABLE_CRIWARE_SOFDEC
 
             InitializeCri();
             
@@ -141,7 +141,7 @@ namespace Modules.ExternalAssets
             assetBundleManager.SetLocalMode(localMode);
             fileAssetManager.SetLocalMode(localMode);
 
-            #if ENABLE_CRIWARE_ADX || ENABLE_CRIWARE_SOFDEC
+            #if ENABLE_CRIWARE_ADX || ENABLE_CRIWARE_ADX_LE || ENABLE_CRIWARE_SOFDEC
 
             criAssetManager.SetLocalMode(localMode);
 
@@ -175,7 +175,7 @@ namespace Modules.ExternalAssets
             
             fileAssetManager.SetUrl(remoteUrl, versionHash);
 
-            #if ENABLE_CRIWARE_ADX || ENABLE_CRIWARE_SOFDEC
+            #if ENABLE_CRIWARE_ADX || ENABLE_CRIWARE_ADX_LE || ENABLE_CRIWARE_SOFDEC
 
             criAssetManager.SetUrl(remoteUrl, versionHash);
 
@@ -352,7 +352,7 @@ namespace Modules.ExternalAssets
 
                 await assetBundleManager.SetManifest(assetInfoManifest);
 
-                #if ENABLE_CRIWARE_ADX || ENABLE_CRIWARE_SOFDEC
+                #if ENABLE_CRIWARE_ADX || ENABLE_CRIWARE_ADX_LE || ENABLE_CRIWARE_SOFDEC
 
                 criAssetManager.SetManifest(assetInfoManifest);
 
@@ -545,7 +545,7 @@ namespace Modules.ExternalAssets
             assetBundleManager.ClearDownloadQueue();
             fileAssetManager.ClearDownloadQueue();
             
-            #if ENABLE_CRIWARE_ADX || ENABLE_CRIWARE_SOFDEC
+            #if ENABLE_CRIWARE_ADX || ENABLE_CRIWARE_ADX_LE || ENABLE_CRIWARE_SOFDEC
 
             criAssetManager.ClearInstallQueue();
 
@@ -566,7 +566,7 @@ namespace Modules.ExternalAssets
                 filePath = assetBundleManager.GetFilePath(directory, assetInfo);
             }
 
-            #if ENABLE_CRIWARE_ADX || ENABLE_CRIWARE_SOFDEC
+            #if ENABLE_CRIWARE_ADX || ENABLE_CRIWARE_ADX_LE || ENABLE_CRIWARE_SOFDEC
 
             else if (criAssetManager.IsCriAsset(assetInfo.ResourcePath))
             {

@@ -1,10 +1,10 @@
-﻿
+
 using System.Linq;
 using System.IO;
 using Extensions;
 using Modules.Devkit.Project;
 
-#if ENABLE_CRIWARE_ADX || ENABLE_CRIWARE_SOFDEC
+#if ENABLE_CRIWARE_ADX || ENABLE_CRIWARE_ADX_LE || ENABLE_CRIWARE_SOFDEC
 using Modules.CriWare;
 #endif
 
@@ -35,7 +35,7 @@ namespace Modules.ExternalAssets
 
 				if (assetInfo.IsAssetBundle){ return false; }
 
-				#if ENABLE_CRIWARE_ADX || ENABLE_CRIWARE_SOFDEC
+				#if ENABLE_CRIWARE_ADX || ENABLE_CRIWARE_ADX_LE || ENABLE_CRIWARE_SOFDEC
 				
 				var extension = Path.GetExtension(assetInfo.ResourcePath);
 

@@ -44,7 +44,7 @@ namespace Modules.Scenario
 
         public TaskController TaskController { get; private set; }
 
-        #if ENABLE_CRIWARE_ADX
+        #if ENABLE_CRIWARE_ADX || ENABLE_CRIWARE_ADX_LE
 
         public SoundController SoundController { get; private set; }
 
@@ -69,7 +69,7 @@ namespace Modules.Scenario
             AssetController = new AssetController();
             TaskController = new TaskController();
 
-            #if ENABLE_CRIWARE_ADX
+            #if ENABLE_CRIWARE_ADX || ENABLE_CRIWARE_ADX_LE
 
             SoundController = new SoundController();
 

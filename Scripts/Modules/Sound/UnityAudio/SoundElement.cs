@@ -1,5 +1,5 @@
 ﻿
-#if !ENABLE_CRIWARE_ADX
+#if !ENABLE_CRIWARE_ADX && !ENABLE_CRIWARE_ADX_LE
 
 using UnityEngine;
 using System;
@@ -12,75 +12,75 @@ namespace Modules.Sound
     {
         //----- params -----
 
-		public const string EmptyName = "empty";
+        public const string EmptyName = "empty";
 
         //----- field -----
 
-		private Subject<Unit> onFinish = null;
-		
-		private static uint nextNumber = 0;
+        private Subject<Unit> onFinish = null;
+        
+        private static uint nextNumber = 0;
 
         //----- property -----
 
-		public uint Number { get; private set; }
+        public uint Number { get; private set; }
 
-		public SoundType Type { get; private set; }
+        public SoundType Type { get; private set; }
 
-		public AudioSource Source { get; private set; }
+        public AudioSource Source { get; private set; }
 
-		public AudioClip Clip { get; private set; }
+        public AudioClip Clip { get; private set; }
 
-		public bool IsPlaying { get; private set; }
+        public bool IsPlaying { get; private set; }
 
-		public bool IsPause { get; private set; }
+        public bool IsPause { get; private set; }
 
-		public float? FinishTime { get; private set; }
+        public float? FinishTime { get; private set; }
 
-		public float Volume
-		{
-			get { return Source.volume; }
-			set { Source.volume = value; }
-		}
+        public float Volume
+        {
+            get { return Source.volume; }
+            set { Source.volume = value; }
+        }
 
         //----- method -----
 
-		public SoundElement(SoundType type, AudioSource source, AudioClip clip)
+        public SoundElement(SoundType type, AudioSource source, AudioClip clip)
         {
-			Number = nextNumber++;
+            Number = nextNumber++;
 
             Type = type;
-			Source = source;
-			Clip = clip;
-			
-			Source.transform.name = $"[{type}] {clip.name}";
-			Source.transform.Reset();
-			Source.clip = Clip;
+            Source = source;
+            Clip = clip;
+            
+            Source.transform.name = $"[{type}] {clip.name}";
+            Source.transform.Reset();
+            Source.clip = Clip;
         }
 
         public void Update()
         {
             if (FinishTime.HasValue) { return; }
 
-			IsPlaying = Source.isPlaying;
+            IsPlaying = Source.isPlaying;
 
-			IsPause = !Source.isPlaying && Source.time != 0;
-			
-			if (!IsPlaying && !IsPause)
-			{
-				FinishTime = Time.realtimeSinceStartup;
+            IsPause = !Source.isPlaying && Source.time != 0;
+            
+            if (!IsPlaying && !IsPause)
+            {
+                FinishTime = Time.realtimeSinceStartup;
 
-				IsPlaying = false;
+                IsPlaying = false;
 
-				Source.clip = null;
-				Source.transform.name = EmptyName;
-				Source.transform.Reset();
+                Source.clip = null;
+                Source.transform.name = EmptyName;
+                Source.transform.Reset();
 
-				if (onFinish != null)
-				{
-					onFinish.OnNext(Unit.Default);
-				}
-			}
-		}
+                if (onFinish != null)
+                {
+                    onFinish.OnNext(Unit.Default);
+                }
+            }
+        }
 
         public IObservable<Unit> OnFinishAsObservable()
         {

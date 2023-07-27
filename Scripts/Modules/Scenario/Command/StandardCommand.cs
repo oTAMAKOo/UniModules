@@ -56,7 +56,7 @@ namespace Modules.Scenario.Command
             typeof(FadeOut),
             typeof(FadeColor),
 
-            #if ENABLE_CRIWARE_ADX
+            #if ENABLE_CRIWARE_ADX || ENABLE_CRIWARE_ADX_LE
 
             typeof(PlayBgm),
             typeof(PlaySe),

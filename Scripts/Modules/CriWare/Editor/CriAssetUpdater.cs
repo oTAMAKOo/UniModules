@@ -1,5 +1,5 @@
-﻿
-#if ENABLE_CRIWARE_ADX || ENABLE_CRIWARE_SOFDEC
+
+#if ENABLE_CRIWARE_ADX || ENABLE_CRIWARE_ADX_LE || ENABLE_CRIWARE_SOFDEC
 
 using UnityEngine;
 using UnityEditor;
@@ -12,7 +12,7 @@ using Extensions.Devkit;
 using Modules.Devkit.Console;
 using Modules.Devkit.Project;
 
-#if ENABLE_CRIWARE_ADX
+#if ENABLE_CRIWARE_ADX || ENABLE_CRIWARE_ADX_LE
 
 using Modules.Sound.Editor;
 
@@ -50,7 +50,7 @@ namespace Modules.CriWare.Editor
 
             var criAssetConfig = CriAssetConfig.Instance;
 
-            #if ENABLE_CRIWARE_ADX
+            #if ENABLE_CRIWARE_ADX || ENABLE_CRIWARE_ADX_LE
 
             UpdateSoundAssets(criAssetConfig, scriptPath, streamingAssetFolderName);
 
@@ -65,7 +65,7 @@ namespace Modules.CriWare.Editor
             UnityConsole.Event(CriWareConsoleEvent.Name, CriWareConsoleEvent.Color, "UpdateCriAssets Complete.");
         }
 
-        #if ENABLE_CRIWARE_ADX
+        #if ENABLE_CRIWARE_ADX || ENABLE_CRIWARE_ADX_LE
 
         /// <summary>
         /// サウンドアセットをCriの成果物置き場からUnityの管理下にインポート.

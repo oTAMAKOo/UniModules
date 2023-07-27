@@ -1,10 +1,10 @@
-﻿
+
 using UnityEngine;
 using UnityEditor;
 using System;
 using Cysharp.Threading.Tasks;
 
-#if ENABLE_CRIWARE_ADX || ENABLE_CRIWARE_SOFDEC
+#if ENABLE_CRIWARE_ADX || ENABLE_CRIWARE_ADX_LE || ENABLE_CRIWARE_SOFDEC
 
 using Modules.CriWare.Editor;
 
@@ -22,26 +22,26 @@ namespace Modules.ExternalAssets
 
         //----- method -----
 
-		public static void Execute()
-		{
-			var result = EditorUtility.DisplayDialog("Confirmation", "外部アセットを生成します.", "実行", "中止");
+        public static void Execute()
+        {
+            var result = EditorUtility.DisplayDialog("Confirmation", "外部アセットを生成します.", "実行", "中止");
 
-			if (!result){ return; }
+            if (!result){ return; }
 
             var build = true;
 
-			try
+            try
             {
                 EditorApplication.LockReloadAssemblies();
 
-				#if ENABLE_CRIWARE_ADX || ENABLE_CRIWARE_SOFDEC
+                #if ENABLE_CRIWARE_ADX || ENABLE_CRIWARE_ADX_LE || ENABLE_CRIWARE_SOFDEC
 
-				// CRIの最新アセットに更新.
-				CriAssetUpdater.Execute();
+                // CRIの最新アセットに更新.
+                CriAssetUpdater.Execute();
 
-				#endif
+                #endif
 
-				// アセット情報ファイルを生成.
+                // アセット情報ファイルを生成.
                 var assetInfoManifest = AssetInfoManifestGenerator.Generate();
 
                 // 依存関係の検証.
@@ -49,15 +49,15 @@ namespace Modules.ExternalAssets
 
                 if (!validate)
                 {
-					var message = "invalid dependencies assets";
+                    var message = "invalid dependencies assets";
 
-					if (!EditorUtility.DisplayDialog("Warning", message, "force build", "show detail"))
-					{
-						build = false;
+                    if (!EditorUtility.DisplayDialog("Warning", message, "force build", "show detail"))
+                    {
+                        build = false;
 
-						// ExternalAssetフォルダ以外の参照が含まれる場合は依存関係を表示.
-						InvalidDependantWindow.Open();
-					}
+                        // ExternalAssetフォルダ以外の参照が含まれる場合は依存関係を表示.
+                        InvalidDependantWindow.Open();
+                    }
                 }
 
                 // ビルド.
@@ -67,10 +67,10 @@ namespace Modules.ExternalAssets
 
                     if (!string.IsNullOrEmpty(exportPath))
                     {
-						Action<Exception> onError = e =>
-						{
-							Debug.LogException(e);
-						};
+                        Action<Exception> onError = e =>
+                        {
+                            Debug.LogException(e);
+                        };
 
                         BuildManager.Build(exportPath, assetInfoManifest).Forget(onError);
                     }
@@ -91,6 +91,6 @@ namespace Modules.ExternalAssets
             {
                 EditorApplication.UnlockReloadAssemblies();
             }
-		}
-	}
+        }
+    }
 }
