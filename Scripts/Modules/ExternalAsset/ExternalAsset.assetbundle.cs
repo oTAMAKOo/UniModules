@@ -21,6 +21,35 @@ namespace Modules.ExternalAssets
         /// <summary> 最大同時ダウンロード数. </summary>
         private const uint AssetBundleDefaultInstallerCount = 8;
 
+        /// <summary> ローカルモード用バージョンチェック </summary>
+        public sealed class AssetBundleLocalModeVersionHandler : ILocalModeVersionHandler
+        {
+            private ExternalAsset externalAsset = null;
+
+            public AssetBundleLocalModeVersionHandler(ExternalAsset externalAsset)
+            {
+                this.externalAsset = externalAsset;
+            }
+
+            public bool IsRequireUpdate(AssetInfo assetInfo)
+            {
+                if (!assetInfo.IsAssetBundle){ return false; }
+
+                if (assetInfo.AssetBundle.AssetBundleName == AssetInfoManifest.AssetBundleName){ return true; }
+
+                return externalAsset.IsRequireUpdate(assetInfo);
+            }
+
+            public void OnUpdateLocalFile(AssetInfo assetInfo)
+            {
+                if (!assetInfo.IsAssetBundle){ return; }
+
+                if (assetInfo.AssetBundle.AssetBundleName == AssetInfoManifest.AssetBundleName){ return; }
+
+                externalAsset.UpdateVersion(assetInfo.ResourcePath);
+            }
+        }
+
         //----- field -----
 
         // アセットバンドル管理.
@@ -38,6 +67,7 @@ namespace Modules.ExternalAssets
             assetBundleManager = AssetBundleManager.CreateInstance();
             assetBundleManager.Initialize(SimulateMode);
             assetBundleManager.SetMaxDownloadCount(AssetBundleDefaultInstallerCount);
+            assetBundleManager.SetLocalModeVersionHandler(new AssetBundleLocalModeVersionHandler(this));
 
             assetBundleManager.OnTimeOutAsObservable().Subscribe(x => OnTimeout(x)).AddTo(Disposable);
             assetBundleManager.OnErrorAsObservable().Subscribe(x => OnError(x)).AddTo(Disposable);
@@ -183,10 +213,6 @@ namespace Modules.ExternalAssets
 
                 dependenciesAndSelfAssetInfos.Add(info);
             }
-
-            // StreamingAssetsから読み込む場合はバージョン情報を削除.
-
-            await RemoveVersionStreamingAssetsAssetBundle(dependenciesAndSelfAssetInfos);
 
             // 外部処理.
 
@@ -409,30 +435,6 @@ namespace Modules.ExternalAssets
             }
 
             return result;
-        }
-
-        private async UniTask RemoveVersionStreamingAssetsAssetBundle(IEnumerable<AssetInfo> assetInfos)
-        {
-            if (!InstallDirectory.StartsWith(UnityPathUtility.StreamingAssetsPath)){ return; }
-
-            if (assetInfosByAssetBundleName == null){ return; }
-
-            var remove = false;
-
-            foreach (var assetInfo in assetInfos)
-            {
-                if (assetInfo.IsAssetBundle)
-                {
-                    RemoveVersion(assetInfo.ResourcePath);
-
-                    remove = true;
-                }
-            }
-
-            if (remove)
-            {
-                await SaveVersion();
-            }
         }
 
         /// <summary> AssetBundleを解放 </summary>

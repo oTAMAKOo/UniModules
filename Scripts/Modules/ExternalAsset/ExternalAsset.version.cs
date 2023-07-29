@@ -151,6 +151,15 @@ namespace Modules.ExternalAssets
         {
             var filePath = assetBundleManager.GetFilePath(InstallDirectory, assetInfo);
 
+            #if UNITY_ANDROID
+
+            if (LocalMode && filePath.StartsWith(UnityPathUtility.StreamingAssetsPath))
+            {
+                filePath = AndroidUtility.ConvertStreamingAssetsLoadPath(filePath);
+            }
+
+            #endif
+
             // ※ シュミレート時はpackageファイルをダウンロードしていないので常にファイルが存在しない.
 
             if (!SimulateMode)
@@ -186,9 +195,16 @@ namespace Modules.ExternalAssets
             // アセット管理情報内に存在しないので最新扱い.
             if (assetInfo == null) { return true; }
 
-            // ファイルがない.
-
             var filePath = PathUtility.Combine(InstallDirectory, assetInfo.FileName);
+
+            #if UNITY_ANDROID
+
+            if (LocalMode && filePath.StartsWith(UnityPathUtility.StreamingAssetsPath))
+            {
+                filePath = AndroidUtility.ConvertStreamingAssetsLoadPath(filePath);
+            }
+
+            #endif
 
             // ファイルの存在確認.
             if (filePathTemporaryCache != null)
@@ -280,7 +296,7 @@ namespace Modules.ExternalAssets
             if (saveVersionDisposable == null)
             {
                 saveVersionDisposable = Observable.Interval(TimeSpan.FromSeconds(1))
-                    .Take(TimeSpan.FromSeconds(10))
+                    .Take(TimeSpan.FromSeconds(5))
                     .Finally(() => saveVersionDisposable = null)
                     .Subscribe(_ =>
                         {
@@ -299,8 +315,16 @@ namespace Modules.ExternalAssets
         {
             if (string.IsNullOrEmpty(InstallDirectory)){ return; }
 
-            // StreamingAssetsのフォルダには書き込めない.
-            if (InstallDirectory.StartsWith(UnityPathUtility.StreamingAssetsPath)){ return; }
+            var versionFilePath = PathUtility.Combine(InstallDirectory, VersionFileName);
+
+            #if UNITY_ANDROID
+
+            if (LocalMode && versionFilePath.StartsWith(UnityPathUtility.StreamingAssetsPath))
+            {
+                versionFilePath = AndroidUtility.ConvertStreamingAssetsLoadPath(versionFilePath);
+            }
+
+            #endif
 
             // ディレクトリ作成.
             if (!Directory.Exists(InstallDirectory))
@@ -315,8 +339,6 @@ namespace Modules.ExternalAssets
             }
 
             saveVersionRunning = true;
-
-            var versionFilePath = PathUtility.Combine(InstallDirectory, VersionFileName);
 
             // バージョン情報の複製を作成.
 
@@ -393,6 +415,15 @@ namespace Modules.ExternalAssets
             var logText = string.Empty;
 
             var versionFilePath = PathUtility.Combine(InstallDirectory, VersionFileName);
+
+            #if UNITY_ANDROID
+
+            if (LocalMode && versionFilePath.StartsWith(UnityPathUtility.StreamingAssetsPath))
+            {
+                versionFilePath = AndroidUtility.ConvertStreamingAssetsLoadPath(versionFilePath);
+            }
+
+            #endif
 
             try
             {

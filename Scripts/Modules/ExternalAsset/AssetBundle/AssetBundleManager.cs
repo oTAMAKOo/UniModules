@@ -17,6 +17,13 @@ using Modules.Performance;
 
 namespace Modules.AssetBundles
 {
+    public interface ILocalModeVersionHandler
+    {
+        bool IsRequireUpdate(AssetInfo assetInfo);
+
+        void OnUpdateLocalFile(AssetInfo assetInfo);
+    }
+
     public sealed partial class AssetBundleManager : Singleton<AssetBundleManager>
     {
         //----- params -----
@@ -82,6 +89,9 @@ namespace Modules.AssetBundles
 
         // ファイルハンドラ.
         private IAssetBundleFileHandler fileHandler = null;
+
+        // ローカルモードバージョンハンドラ.
+        private ILocalModeVersionHandler localModeVersionHandler = null;
 
         // イベント通知.
         private Subject<string> onLoad = null;
@@ -154,6 +164,12 @@ namespace Modules.AssetBundles
         public void SetFileHandler(IAssetBundleFileHandler fileHandler)
         {
             this.fileHandler = fileHandler;
+        }
+
+        /// <summary> ローカルモード用バージョンハンドラ設定. </summary>
+        public void SetLocalModeVersionHandler(ILocalModeVersionHandler localModeVersionHandler)
+        {
+            this.localModeVersionHandler = localModeVersionHandler;
         }
 
         /// <summary> URLを設定. </summary>
@@ -660,19 +676,24 @@ namespace Modules.AssetBundles
             var assetBundleInfo = assetInfo.AssetBundle;
             var assetBundleName = assetBundleInfo.AssetBundleName;
 
-            #if UNITY_ANDROID && !UNITY_EDITOR
+            #if UNITY_ANDROID
 
             if (IsLocalMode && filePath.StartsWith(UnityPathUtility.StreamingAssetsPath))
             {
-                try
+                if (localModeVersionHandler.IsRequireUpdate(assetInfo))
                 {
-                    await AndroidUtility.CopyStreamingToTemporary(filePath, cancelToken);
+                    try
+                    {
+                        await AndroidUtility.CopyStreamingToTemporary(filePath, cancelToken);
 
-                    filePath = AndroidUtility.ConvertStreamingAssetsLoadPath(filePath);
-                }
-                catch (OperationCanceledException)
-                {
-                    /* Canceled */
+                        filePath = AndroidUtility.ConvertStreamingAssetsLoadPath(filePath);
+
+                        localModeVersionHandler.OnUpdateLocalFile(assetInfo);
+                    }
+                    catch (OperationCanceledException)
+                    {
+                        /* Canceled */
+                    }
                 }
             }
 

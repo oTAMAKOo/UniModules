@@ -15,8 +15,8 @@ namespace Modules.ExternalAssets
 
         //----- field -----
 
-		[SerializeField]
-		private string guid = null;
+        [SerializeField]
+        private string guid = null;
         [SerializeField]
         private string resourcePath = null;
         [SerializeField]
@@ -36,8 +36,8 @@ namespace Modules.ExternalAssets
 
         //----- property -----
 
-		/// <summary> GUID </summary>
-		public string Guid { get { return guid; } }
+        /// <summary> GUID </summary>
+        public string Guid { get { return guid; } }
         /// <summary> 読み込みパス </summary>
         public string ResourcePath { get { return resourcePath; } }
         /// <summary> グループ </summary>
@@ -65,7 +65,7 @@ namespace Modules.ExternalAssets
 
         public AssetInfo(string guid, string resourcePath, string group, string[] labels)
         {
-			this.guid = guid;
+            this.guid = guid;
             this.resourcePath = PathUtility.ConvertPathSeparator(resourcePath);
             this.group = group;
             this.labels = labels;
@@ -114,7 +114,7 @@ namespace Modules.ExternalAssets
                 }
             }          
         }
-	}
+    }
 
     [Serializable]
     public sealed class AssetBundleInfo
@@ -165,9 +165,9 @@ namespace Modules.ExternalAssets
 
         public const string ManifestFileName = "AssetInfoManifest.asset";
 
-		public const string UndefinedAssetGroup = "(undefined)";
+        public const string UndefinedAssetGroup = "(undefined)";
 
-		//----- field -----
+        //----- field -----
 
         [SerializeField, ReadOnly]
         private string versionHash = null;
@@ -177,7 +177,7 @@ namespace Modules.ExternalAssets
         private ILookup<string, AssetInfo> assetInfoByGroup = null;
         private Dictionary<string, AssetInfo> assetInfoByResourcesPath = null;
 
-		private bool hasCache = false;
+        private bool hasCache = false;
 
         //----- property -----
 
@@ -246,15 +246,15 @@ namespace Modules.ExternalAssets
         
         public void BuildCache(bool forceUpdate = false)
         {
-			if (!forceUpdate && hasCache) { return; }
+            if (!forceUpdate && hasCache) { return; }
 
-			assetInfoByGroup = assetInfos.ToLookup(x => x.Group);
+            assetInfoByGroup = assetInfos.ToLookup(x => x.Group);
 
-			assetInfoByResourcesPath = assetInfos
-				.Where(x => !string.IsNullOrEmpty(x.ResourcePath))
-				.ToDictionary(x => x.ResourcePath);
+            assetInfoByResourcesPath = assetInfos
+                .Where(x => !string.IsNullOrEmpty(x.ResourcePath))
+                .ToDictionary(x => x.ResourcePath);
 
-			hasCache = true;
-		}
+            hasCache = true;
+        }
     }
 }
