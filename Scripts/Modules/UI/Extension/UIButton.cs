@@ -1,4 +1,4 @@
-﻿
+
 using UnityEngine;
 using UnityEngine.UI;
 using System;
@@ -15,6 +15,8 @@ namespace Modules.UI.Extension
 
         //----- field -----
 
+        private bool initialize = false;
+
         //----- property -----
 
         public Button Button { get { return component; } }
@@ -22,6 +24,20 @@ namespace Modules.UI.Extension
         //----- method -----
 
         void OnEnable()
+        {
+            Initialize();
+        }
+
+        public void Initialize()
+        {
+            if (initialize){ return; }
+
+            OnInitialize();
+
+            initialize = true;
+        }
+
+        protected virtual void OnInitialize()
         {
             // Tabでフォーカスを移動するのを防ぐ.
             var navigation = Button.navigation;
