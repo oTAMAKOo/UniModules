@@ -64,11 +64,6 @@ namespace Modules.FileCache
 
         //----- method -----
 
-        protected override void OnCreate()
-        {
-            SetBaseDirectory(UnityPathUtility.TemporaryCachePath);
-        }
-
         public void SetCryptoKey(AesCryptoKey cryptoKey)
         {
             this.cryptoKey = cryptoKey;
@@ -119,6 +114,10 @@ namespace Modules.FileCache
 
         public void CleanExpiredFiles()
         {
+            if (string.IsNullOrEmpty(CacheDirectory)){ return; }
+
+            if (!Directory.Exists(CacheDirectory)){ return; }
+
             var cacheData = LocalDataManager.Get<CacheData>();
             
             foreach (var fileData in cacheData.files)
@@ -139,14 +138,14 @@ namespace Modules.FileCache
         {
             if (bytes.IsEmpty()){ return; }
 
-            // ファイル出力.
-
-            var fileName = GetFileName(source);
+            if (string.IsNullOrEmpty(CacheDirectory)){ return; }
 
             if (!Directory.Exists(CacheDirectory))
             {
                 Directory.CreateDirectory(CacheDirectory);
             }
+
+            var fileName = GetFileName(source);
 
             var filePath = PathUtility.Combine(CacheDirectory, fileName);
 
@@ -175,6 +174,8 @@ namespace Modules.FileCache
 
         protected byte[] LoadCache(string source)
         {
+            if (string.IsNullOrEmpty(CacheDirectory)){ return null; }
+
             var fileName = GetFileName(source);
 
             var filePath = PathUtility.Combine(CacheDirectory, fileName);
