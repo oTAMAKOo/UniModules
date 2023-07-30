@@ -97,6 +97,8 @@ namespace Modules.UI.Particle
 
             raycastTarget = false;
 
+            material = null;
+
             var particleSystem = GetParticleSystem();
             var mainModule = GetMainModule();
 
