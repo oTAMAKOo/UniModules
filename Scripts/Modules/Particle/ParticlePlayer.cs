@@ -1,4 +1,4 @@
-﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿
+﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿
 using UnityEngine;
 using Unity.Linq;
 using System;
@@ -301,11 +301,11 @@ namespace Modules.Particle
 
         public async UniTask Play(bool restart = true)
         {
-			await PlayAsObservable(restart).ToUniTask();
-		}
+            await PlayAsObservable(restart).ToUniTask();
+        }
 
-		private IObservable<Unit> PlayAsObservable(bool restart = true)
-		{
+        private IObservable<Unit> PlayAsObservable(bool restart = true)
+        {
             if (!initialized)
             {
                 Initialize();

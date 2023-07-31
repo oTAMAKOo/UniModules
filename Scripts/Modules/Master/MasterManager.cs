@@ -86,7 +86,7 @@ namespace Modules.Master
             InitializeVersion();
 
             // 保存先設定.
-            SetInstallDirectory(Application.persistentDataPath);
+            SetInstallDirectory(UnityPathUtility.PersistentDataPath);
         }
 
         public void Register(IMaster master)

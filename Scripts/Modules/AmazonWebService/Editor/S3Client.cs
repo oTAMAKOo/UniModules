@@ -16,19 +16,19 @@ using Extensions;
 
 namespace Modules.Amazon.S3
 {
-	public interface IBasicCredentials
-	{
-		string GetAccessKey();
+    public interface IBasicCredentials
+    {
+        string GetAccessKey();
         
-		string GetSecretKey();
-	}
+        string GetSecretKey();
+    }
 
-	public interface ICognitoCredentials
-	{
-		string GetIdentityPoolId();
+    public interface ICognitoCredentials
+    {
+        string GetIdentityPoolId();
         
-		RegionEndpoint GetCredentialsRegion();
-	}
+        RegionEndpoint GetCredentialsRegion();
+    }
 
     public sealed class S3Client
     {
@@ -40,40 +40,40 @@ namespace Modules.Amazon.S3
 
         //----- property -----
 
-		public string BucketName { get; private set; }
+        public string BucketName { get; private set; }
 
         //----- method -----
 
         public S3Client(string bucketName, RegionEndpoint bucketRegion, IBasicCredentials basicCredentials)
         {
-			var accessKey = basicCredentials.GetAccessKey();
-			var secretKey = basicCredentials.GetSecretKey();
+            var accessKey = basicCredentials.GetAccessKey();
+            var secretKey = basicCredentials.GetSecretKey();
 
-			var credentials = new BasicAWSCredentials(accessKey, secretKey); 
-			
-			CreateS3Client(bucketName, bucketRegion, credentials);
-		}
+            var credentials = new BasicAWSCredentials(accessKey, secretKey); 
+            
+            CreateS3Client(bucketName, bucketRegion, credentials);
+        }
 
-		public S3Client(string bucketName, RegionEndpoint bucketRegion, ICognitoCredentials cognitoCredentials)
-		{
-			var identityPoolId = cognitoCredentials.GetIdentityPoolId();
-			var credentialsRegion = cognitoCredentials.GetCredentialsRegion();
+        public S3Client(string bucketName, RegionEndpoint bucketRegion, ICognitoCredentials cognitoCredentials)
+        {
+            var identityPoolId = cognitoCredentials.GetIdentityPoolId();
+            var credentialsRegion = cognitoCredentials.GetCredentialsRegion();
 
-			var credentialsRegionSystemName = RegionEndpoint.GetBySystemName(credentialsRegion.SystemName);
+            var credentialsRegionSystemName = RegionEndpoint.GetBySystemName(credentialsRegion.SystemName);
 
-			var credentials = new CognitoAWSCredentials(identityPoolId, credentialsRegionSystemName);
+            var credentials = new CognitoAWSCredentials(identityPoolId, credentialsRegionSystemName);
 
-			CreateS3Client(bucketName, bucketRegion, credentials);
-		}
+            CreateS3Client(bucketName, bucketRegion, credentials);
+        }
 
-		private void CreateS3Client(string bucketName, RegionEndpoint bucketRegion, AWSCredentials credentials)
-		{
-			this.BucketName = bucketName;
+        private void CreateS3Client(string bucketName, RegionEndpoint bucketRegion, AWSCredentials credentials)
+        {
+            this.BucketName = bucketName;
 
-			var bucketRegionEndpoint = RegionEndpoint.GetBySystemName(bucketRegion.SystemName);
-			
-			client = new AmazonS3Client(credentials, bucketRegionEndpoint);
-		}
+            var bucketRegionEndpoint = RegionEndpoint.GetBySystemName(bucketRegion.SystemName);
+            
+            client = new AmazonS3Client(credentials, bucketRegionEndpoint);
+        }
 
         #region Get
 

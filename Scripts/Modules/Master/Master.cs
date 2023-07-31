@@ -266,6 +266,8 @@ namespace Modules.Master
 
             var bytes = new byte[0];
 
+            await UniTask.WaitWhile(() => FileUtility.IsFileLocked(filePath));
+
             using (var fs = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read, 4096, true))
             {
                 bytes = new byte[fs.Length];

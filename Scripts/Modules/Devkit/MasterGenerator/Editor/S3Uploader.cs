@@ -1,4 +1,4 @@
-﻿
+
 #if ENABLE_AMAZON_WEB_SERVICE
 
 using UnityEngine;
@@ -86,7 +86,7 @@ namespace Modules.Master.Editor
                 }
                 catch (Exception e)
                 {
-					Debug.LogErrorFormat("S3 upload process error. \n{0}", e);
+                    Debug.LogErrorFormat("S3 upload process error. \n{0}", e);
 
                     return false;
                 }
