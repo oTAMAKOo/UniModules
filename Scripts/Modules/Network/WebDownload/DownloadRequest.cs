@@ -69,7 +69,9 @@ namespace Modules.Net.WebDownload
 
             try
             {
-                using (var webRequest = UnityWebRequest.Get(Url))
+                var url = $"{ Url }?{ DateTime.Now.ToUnixTime(UnixTimeConvert.Milliseconds) }";
+
+                using (var webRequest = UnityWebRequest.Get(url))
                 {
                     webRequest.timeout = TimeOutSeconds;
 
