@@ -73,16 +73,16 @@ namespace Modules.UI
 
         private List<VirtualScrollItem<T>> itemList = null;
 
-		private CancellationTokenSource cancelSource = null;
-		private Dictionary<VirtualScrollItem<T>, IDisposable> updateItemDisposables = null;
+        private CancellationTokenSource cancelSource = null;
+        private Dictionary<VirtualScrollItem<T>, IDisposable> updateItemDisposables = null;
 
-		private GraphicCast hitBox = null;
+        private GraphicCast hitBox = null;
 
         private Subject<Unit> onUpdateContents = null;
         private Subject<IVirtualScrollItem> onCreateItem = null;
         private Subject<IVirtualScrollItem> onUpdateItem = null;
 
-		private Status status = Status.None;
+        private Status status = Status.None;
 
         //----- property -----
 
@@ -134,8 +134,8 @@ namespace Modules.UI
         protected virtual void Initialize()
         {
             if (status != Status.None) { return; }
-			
-			updateItemDisposables = new Dictionary<VirtualScrollItem<T>, IDisposable>();
+            
+            updateItemDisposables = new Dictionary<VirtualScrollItem<T>, IDisposable>();
 
             scrollRectTransform = UnityUtility.GetComponent<RectTransform>(scrollRect.gameObject);
 
@@ -146,7 +146,7 @@ namespace Modules.UI
 
             ScrollPosition = 0f;
 
-			status = Status.Initialize;
+            status = Status.Initialize;
         }
 
         protected override void OnEnable()
@@ -159,29 +159,29 @@ namespace Modules.UI
                 .AddTo(this);
         }
 
-		protected override void OnDestroy()
-		{
-			if (cancelSource != null)
-			{
-				cancelSource.Cancel();
-			}
-		}
+        protected override void OnDestroy()
+        {
+            if (cancelSource != null)
+            {
+                cancelSource.Cancel();
+            }
+        }
 
-		public virtual void SetContents(IEnumerable<T> contents)
-		{
-			Contents = contents != null ? contents.ToArray() : new T[0];
-		}
+        public virtual void SetContents(IEnumerable<T> contents)
+        {
+            Contents = contents != null ? contents.ToArray() : new T[0];
+        }
 
         public async UniTask UpdateContents(bool keepScrollPosition = false)
         {
-			if (status == Status.None)
-			{
-				Initialize();
-			}
-			
-			Cancel();
+            if (status == Status.None)
+            {
+                Initialize();
+            }
+            
+            Cancel();
 
-			//----- Contentのサイズ設定 -----
+            //----- Contentのサイズ設定 -----
 
             var scrollPosition = ScrollPosition;
 
@@ -192,7 +192,7 @@ namespace Modules.UI
                 itemSize = direction == Direction.Vertical ? rt.rect.height : rt.rect.width;
             }
 
-			scrollRect.content.anchorMin = direction == Direction.Vertical ? new Vector2(0f, 0.5f) : new Vector2(0.5f, 0f);
+            scrollRect.content.anchorMin = direction == Direction.Vertical ? new Vector2(0f, 0.5f) : new Vector2(0.5f, 0f);
             scrollRect.content.anchorMax = direction == Direction.Vertical ? new Vector2(1f, 0.5f) : new Vector2(0.5f, 1f);
             scrollRect.content.pivot = new Vector2(0.5f, 0.5f);
 
@@ -268,24 +268,24 @@ namespace Modules.UI
                 addItems.ForEach(x => UnityUtility.SetActive(x, false));
 
                 // 生成したインスタンス初期化.
-				try
-				{
-					var tasks = new UniTask[addItems.Length];
+                try
+                {
+                    var tasks = new UniTask[addItems.Length];
 
-					for (var i = 0; i < addItems.Length; i++)
-					{
-						var item = addItems[i];
+                    for (var i = 0; i < addItems.Length; i++)
+                    {
+                        var item = addItems[i];
 
-						tasks[i] = UniTask.Defer(() => InitializeItem(item));
-					}
+                        tasks[i] = UniTask.Defer(() => InitializeItem(item));
+                    }
 
-					await UniTask.WhenAll(tasks);
-				}
-				catch (Exception e)
-				{
-					Debug.LogException(e);
-				}
-			}
+                    await UniTask.WhenAll(tasks);
+                }
+                catch (Exception e)
+                {
+                    Debug.LogException(e);
+                }
+            }
 
             // 要素数が少ない時はスクロールを無効化.
             scrollRect.enabled = ScrollEnable();
@@ -297,40 +297,40 @@ namespace Modules.UI
                 UnityUtility.SetActive(scrollbar.gameObject, ScrollEnable());
             }
 
-			//----- リストアイテム更新 -----
+            //----- リストアイテム更新 -----
 
-			try
-			{
-				var tasks = new UniTask[itemList.Count];
+            try
+            {
+                var tasks = new UniTask[itemList.Count];
 
-				// 配置初期位置(中央揃え想定なのでItemSize * 0.5f分ずらす).
-				var basePosition = direction == Direction.Vertical ?
-									scrollRect.content.rect.height * 0.5f - itemSize * 0.5f - edgeSpacing :
-									-scrollRect.content.rect.width * 0.5f + itemSize * 0.5f + edgeSpacing;
+                // 配置初期位置(中央揃え想定なのでItemSize * 0.5f分ずらす).
+                var basePosition = direction == Direction.Vertical ?
+                                    scrollRect.content.rect.height * 0.5f - itemSize * 0.5f - edgeSpacing :
+                                    -scrollRect.content.rect.width * 0.5f + itemSize * 0.5f + edgeSpacing;
 
-				// 位置、情報を更新.
-				for (var i = 0; i < itemList.Count; i++)
-				{
-					var index = i;
-					var item = itemList[i];
+                // 位置、情報を更新.
+                for (var i = 0; i < itemList.Count; i++)
+                {
+                    var index = i;
+                    var item = itemList[i];
 
-					var offset = itemSize * i;
+                    var offset = itemSize * i;
 
-					offset += 0 < i ? itemSpacing * i : 0;
+                    offset += 0 < i ? itemSpacing * i : 0;
 
-					item.RectTransform.anchoredPosition = direction == Direction.Vertical ?
-														new Vector2(0, basePosition - offset) :
-														new Vector2(basePosition + offset, 0);
+                    item.RectTransform.anchoredPosition = direction == Direction.Vertical ?
+                                                        new Vector2(0, basePosition - offset) :
+                                                        new Vector2(basePosition + offset, 0);
 
-					tasks[i] = UniTask.Defer(() => UpdateItem(item, index));
-				}
+                    tasks[i] = UniTask.Defer(() => UpdateItem(item, index));
+                }
 
-				await UniTask.WhenAll(tasks);
-			}
-			catch (Exception e)
-			{
-				Debug.LogException(e);
-			}
+                await UniTask.WhenAll(tasks);
+            }
+            catch (Exception e)
+            {
+                Debug.LogException(e);
+            }
 
             //----- スクロール位置設定 -----
 
@@ -356,54 +356,54 @@ namespace Modules.UI
                 onUpdateContents.OnNext(Unit.Default);
             }
 
-			status = Status.Done;
+            status = Status.Done;
         }
 
         private async UniTask InitializeItem(VirtualScrollItem<T> item)
         {
-			try
-			{
-				UnityUtility.SetActive(item, true);
+            try
+            {
+                UnityUtility.SetActive(item, true);
 
-				await OnCreateItem(item);
+                await OnCreateItem(item);
 
-				if (onCreateItem != null)
-				{
-					onCreateItem.OnNext(item);
-				}
+                if (onCreateItem != null)
+                {
+                    onCreateItem.OnNext(item);
+                }
 
-				await item.Initialize();
-			}
-			catch (Exception e)
-			{
-				Debug.LogException(e);
-			}
-			finally
-			{
-				UnityUtility.SetActive(item, false);
-			}
-		}
+                await item.Initialize();
+            }
+            catch (Exception e)
+            {
+                Debug.LogException(e);
+            }
+            finally
+            {
+                UnityUtility.SetActive(item, false);
+            }
+        }
 
-		/// <summary> 実行中の処理を中断 </summary>
-		public void Cancel()
-		{
-			if (cancelSource != null)
-			{
-				cancelSource.Cancel();
-			}
+        /// <summary> 実行中の処理を中断 </summary>
+        public void Cancel()
+        {
+            if (cancelSource != null)
+            {
+                cancelSource.Cancel();
+            }
 
-			cancelSource = new CancellationTokenSource();
+            cancelSource = new CancellationTokenSource();
 
-			if (updateItemDisposables != null)
-			{
-				foreach (var item in updateItemDisposables.Values)
-				{
-					item.Dispose();
-				}
+            if (updateItemDisposables != null)
+            {
+                foreach (var item in updateItemDisposables.Values)
+                {
+                    item.Dispose();
+                }
 
-				updateItemDisposables.Clear();
-			}
-		}
+                updateItemDisposables.Clear();
+            }
+        }
 
         private void SetupHitBox()
         {
@@ -467,7 +467,7 @@ namespace Modules.UI
                             targetPosition.y,
                             duration)
                         .SetEase(ease)
-						.SetLink(gameObject);
+                        .SetLink(gameObject);
                     break;
 
                 case Direction.Horizontal:
@@ -476,28 +476,28 @@ namespace Modules.UI
                             targetPosition.x,
                             duration)
                         .SetEase(ease)
-						.SetLink(gameObject);
+                        .SetLink(gameObject);
                     break;
             }
 
             if (centerToTween != null)
-			{
-				try
-				{
-					await centerToTween.Play().ToUniTask(cancellationToken: cancelSource.Token);
+            {
+                try
+                {
+                    await centerToTween.Play().ToUniTask(cancellationToken: cancelSource.Token);
 
-					OnMoveEnd();
-				}
-				catch (OperationCanceledException)
-				{
-					/* Canceled */
+                    OnMoveEnd();
+                }
+                catch (OperationCanceledException)
+                {
+                    /* Canceled */
 
-					centerToTween.Kill();
-				}
-			}
+                    centerToTween.Kill();
+                }
+            }
         }
 
-		private Vector2 GetScrollToPosition(int index, ScrollTo to)
+        private Vector2 GetScrollToPosition(int index, ScrollTo to)
         {
             var scrollToPosition = GetItemScrollToPosition(index);
 
@@ -716,15 +716,15 @@ namespace Modules.UI
 
                 if (updateItemDisposable != null)
                 {
-					updateItemDisposable.Dispose();
-					updateItemDisposables.Remove(firstItem);
+                    updateItemDisposable.Dispose();
+                    updateItemDisposables.Remove(firstItem);
                 }
-				
-				updateItemDisposable = ObservableEx.FromUniTask(_ => UpdateItem(firstItem, lastItem.Index + 1))
-					.Subscribe(_ => updateItemDisposables.Remove(firstItem))
-					.AddTo(this);
+                
+                updateItemDisposable = ObservableEx.FromUniTask(_ => UpdateItem(firstItem, lastItem.Index + 1))
+                    .Subscribe(_ => updateItemDisposables.Remove(firstItem))
+                    .AddTo(this);
 
-				updateItemDisposables.Add(firstItem, updateItemDisposable);
+                updateItemDisposables.Add(firstItem, updateItemDisposable);
 
                 UpdateSibling();
 
@@ -840,25 +840,25 @@ namespace Modules.UI
 
         private async UniTask UpdateItem(VirtualScrollItem<T> item, int index)
         {
-			if (scrollType == ScrollType.Loop)
+            if (scrollType == ScrollType.Loop)
             {
-				if (index < 0)
-				{
-					index = Contents.Count - 1;
-				}
+                if (index < 0)
+                {
+                    index = Contents.Count - 1;
+                }
 
-				if (Contents.Count <= index)
-				{
-					index = 0;
-				}
+                if (Contents.Count <= index)
+                {
+                    index = 0;
+                }
             }
 
-			item.SetContent(index, Contents);
+            item.SetContent(index, Contents);
 
-			if (item.Content != null)
-			{
-				await item.UpdateContents(item.Content);
-			}
+            if (item.Content != null)
+            {
+                await item.UpdateContents(item.Content);
+            }
 
             UnityUtility.SetActive(item, item.Content != null);
 
@@ -870,7 +870,7 @@ namespace Modules.UI
 
             await OnUpdateItem(item);
 
-			if (onUpdateItem != null)
+            if (onUpdateItem != null)
             {
                 onUpdateItem.OnNext(item);
             }

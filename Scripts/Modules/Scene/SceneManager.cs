@@ -25,23 +25,23 @@ namespace Modules.Scene
 
         //----- field -----
 
-		protected CancellationTokenSource transitionCancelSource = null;
-		protected CancellationTokenSource preLoadCancelSource = null;
+        protected CancellationTokenSource transitionCancelSource = null;
+        protected CancellationTokenSource preLoadCancelSource = null;
 
-		protected Dictionary<Scenes, SceneInstance> loadedScenes = null;
-		protected FixedQueue<SceneInstance> cacheScenes = null;
+        protected Dictionary<Scenes, SceneInstance> loadedScenes = null;
+        protected FixedQueue<SceneInstance> cacheScenes = null;
 
-		protected Dictionary<Scenes, IObservable<SceneInstance>> loadingScenes = null;
-		protected Dictionary<Scenes, IObservable<Unit>> unloadingScenes = null;
+        protected Dictionary<Scenes, IObservable<SceneInstance>> loadingScenes = null;
+        protected Dictionary<Scenes, IObservable<Unit>> unloadingScenes = null;
 
-		protected SceneInstance currentScene = null;
-		protected ISceneArgument currentSceneArgument = null;
+        protected SceneInstance currentScene = null;
+        protected ISceneArgument currentSceneArgument = null;
 
-		protected List<SceneInstance> appendSceneInstances = null;
+        protected List<SceneInstance> appendSceneInstances = null;
 
-		protected List<ISceneArgument> history = null;
+        protected List<ISceneArgument> history = null;
 
-		private Subject<SceneInstance> onPrepare = null;
+        private Subject<SceneInstance> onPrepare = null;
         private Subject<SceneInstance> onPrepareComplete = null;
 
         private Subject<SceneInstance> onEnter = null;
@@ -63,13 +63,13 @@ namespace Modules.Scene
         /// <summary> 現在のシーン情報 </summary>
         public SceneInstance Current { get { return currentScene; } }
 
-		/// <summary> 読み込み済みシーン情報 </summary>
-		public IReadOnlyList<SceneInstance> LoadedScenesInstances { get { return loadedScenes.Values.ToArray(); } }
+        /// <summary> 読み込み済みシーン情報 </summary>
+        public IReadOnlyList<SceneInstance> LoadedScenesInstances { get { return loadedScenes.Values.ToArray(); } }
 
-		/// <summary> 追加読み込み済みシーン情報 </summary>
-		public IReadOnlyList<SceneInstance> AppendSceneInstances { get { return appendSceneInstances; } }
+        /// <summary> 追加読み込み済みシーン情報 </summary>
+        public IReadOnlyList<SceneInstance> AppendSceneInstances { get { return appendSceneInstances; } }
 
-		/// <summary> 遷移中か </summary>
+        /// <summary> 遷移中か </summary>
         public bool IsTransition { get; private set; }
 
         /// <summary> 遷移先のシーン </summary>
@@ -87,7 +87,7 @@ namespace Modules.Scene
 
         protected override void OnCreate()
         {
-			transitionCancelSource = new CancellationTokenSource();
+            transitionCancelSource = new CancellationTokenSource();
 
             loadedScenes = new Dictionary<Scenes, SceneInstance>();
             cacheScenes = new FixedQueue<SceneInstance>(CacheSize);
@@ -100,8 +100,8 @@ namespace Modules.Scene
             history = new List<ISceneArgument>();
             waitHandlerIds = new HashSet<int>();
 
-			capturedComponents = new Dictionary<Type, Behaviour>();
-			suspendOriginStatus = new Dictionary<Behaviour, bool>();
+            capturedComponents = new Dictionary<Type, Behaviour>();
+            suspendOriginStatus = new Dictionary<Behaviour, bool>();
 
             // キャッシュ許容数を超えたらアンロード.
             cacheScenes.OnExtrudedAsObservable()
@@ -111,13 +111,13 @@ namespace Modules.Scene
 
         public async UniTask RegisterBootScene()
         {
-			if (currentScene != null) { return; }
+            if (currentScene != null) { return; }
 
             var scene = SceneManager.GetSceneAt(0);
 
             while (!scene.isLoaded)
             {
-				await UniTask.DelayFrame(1);
+                await UniTask.DelayFrame(1);
             }
 
             var definition = ScenePaths.FirstOrDefault(x => x.Value == scene.path);
@@ -139,70 +139,70 @@ namespace Modules.Scene
                 return;
             }
 
-			// 初期化.
+            // 初期化.
 
-			var argumentType = currentScene.Instance.GetArgumentType();
+            var argumentType = currentScene.Instance.GetArgumentType();
 
-			var sceneArgument = Activator.CreateInstance(argumentType) as ISceneArgument;
+            var sceneArgument = Activator.CreateInstance(argumentType) as ISceneArgument;
 
-			currentScene.Instance.SetArgument(sceneArgument);
+            currentScene.Instance.SetArgument(sceneArgument);
 
-			await OnRegisterCurrentScene(currentScene);
-			
-			history.Add(sceneArgument);
+            await OnRegisterCurrentScene(currentScene);
+            
+            history.Add(sceneArgument);
 
-			// シーン登録.
+            // シーン登録.
 
-			loadedScenes.Add(sceneArgument.Identifier.Value, currentScene);
+            loadedScenes.Add(sceneArgument.Identifier.Value, currentScene);
 
-			// 起動シーンフラグ設定.
+            // 起動シーンフラグ設定.
 
-			var sceneBase = currentScene.Instance as SceneBase;
+            var sceneBase = currentScene.Instance as SceneBase;
 
-			if (sceneBase != null)
-			{
-				sceneBase.SetLaunchScene();
-			}
+            if (sceneBase != null)
+            {
+                sceneBase.SetLaunchScene();
+            }
 
-			// ISceneEvent発行.
+            // ISceneEvent発行.
 
-			var tasks = new List<UniTask>();
+            var tasks = new List<UniTask>();
 
-			if (sceneBase != null)
-			{
-				var targets = UnityUtility.GetInterfaces<ISceneEvent>(sceneBase.gameObject);
+            if (sceneBase != null)
+            {
+                var targets = UnityUtility.GetInterfaces<ISceneEvent>(sceneBase.gameObject);
 
-				foreach (var target in targets)
-				{
-					var task = UniTask.Defer(() => target.OnLoadScene());
+                foreach (var target in targets)
+                {
+                    var task = UniTask.Defer(() => target.OnLoadScene());
 
-					tasks.Add(task);
-				}
-			}
+                    tasks.Add(task);
+                }
+            }
 
-			await UniTask.WhenAll(tasks);
+            await UniTask.WhenAll(tasks);
 
-			// Initialize.
+            // Initialize.
         
             await currentScene.Instance.Initialize();
 
-			// Prepare.
+            // Prepare.
 
             if (onPrepare != null)
             {
                 onPrepare.OnNext(currentScene);
             }
 
-			await currentScene.Instance.Prepare(false);
+            await currentScene.Instance.Prepare(false);
 
             if (onPrepareComplete != null)
             {
                 onPrepareComplete.OnNext(currentScene);
             }
 
-			// Enter.
+            // Enter.
 
-			if (onEnter != null)
+            if (onEnter != null)
             {
                 onEnter.OnNext(currentScene);
             }
@@ -214,19 +214,19 @@ namespace Modules.Scene
                 onEnterComplete.OnNext(currentScene);
             }
 
-			// PreLoad.
+            // PreLoad.
 
-			if (sceneArgument.PreLoadScenes != null && sceneArgument.PreLoadScenes.Any())
-			{
-				PreLoadScene(sceneArgument.PreLoadScenes).Forget();
-			}
+            if (sceneArgument.PreLoadScenes != null && sceneArgument.PreLoadScenes.Any())
+            {
+                PreLoadScene(sceneArgument.PreLoadScenes).Forget();
+            }
         }
 
         /// <summary> 初期シーン登録時のイベント </summary>
         protected virtual UniTask OnRegisterCurrentScene(SceneInstance currentInfo)
-		{
-			return UniTask.CompletedTask;
-		}
+        {
+            return UniTask.CompletedTask;
+        }
 
         /// <summary> シーン遷移. </summary>
         public void Transition<TArgument>(TArgument sceneArgument, bool registerHistory = false, LoadSceneMode mode = LoadSceneMode.Additive) where TArgument : ISceneArgument
@@ -234,7 +234,7 @@ namespace Modules.Scene
             // 遷移中は遷移不可.
             if (IsTransition) { return; }
 
-			IsTransition = true;
+            IsTransition = true;
 
             // ※ 呼び出し元でAddTo(this)されるとシーン遷移中にdisposableされてしまうのでIObservableで公開しない.
             ObservableEx.FromUniTask(cancelToken => TransitionCore(sceneArgument, mode, false, registerHistory, cancelToken))
@@ -242,13 +242,13 @@ namespace Modules.Scene
                 .AddTo(transitionCancelSource.Token);
         }
 
-		/// <summary> シーン再読み込み. </summary>
+        /// <summary> シーン再読み込み. </summary>
         public void Reload()
         {
             // 遷移中は遷移不可.
             if (IsTransition) { return; }
 
-			IsTransition = true;
+            IsTransition = true;
 
             // ※ 呼び出し元でAddTo(this)されるとシーン遷移中にdisposableされてしまうのでIObservableで公開しない.
             ObservableEx.FromUniTask(cancelToken => TransitionCore(currentSceneArgument, LoadSceneMode.Additive, false, false, cancelToken))
@@ -263,12 +263,12 @@ namespace Modules.Scene
         {
             if (transitionCancelSource != null && !transitionCancelSource.IsCancellationRequested)
             {
-				transitionCancelSource.Cancel();
+                transitionCancelSource.Cancel();
             }
 
-			transitionCancelSource = new CancellationTokenSource();
+            transitionCancelSource = new CancellationTokenSource();
 
-			IsTransition = false;
+            IsTransition = false;
         }
 
         /// <summary>
@@ -293,7 +293,7 @@ namespace Modules.Scene
 
             if (argument != null)
             {
-				IsTransition = true;
+                IsTransition = true;
 
                 ObservableEx.FromUniTask(cancelToken => TransitionCore(argument, LoadSceneMode.Additive, true, false, cancelToken))
                     .Subscribe(_ => IsTransition = false)
@@ -328,33 +328,33 @@ namespace Modules.Scene
             return history.ToArray();
         }
 
-		/// <summary> キャッシュが存在するか. </summary>
-		public bool HasCahce(Scenes scene)
-		{
-			return cacheScenes.Any(x => x.Identifier == scene);
-		}
+        /// <summary> キャッシュが存在するか. </summary>
+        public bool HasCahce(Scenes scene)
+        {
+            return cacheScenes.Any(x => x.Identifier == scene);
+        }
 
         private async UniTask TransitionCore<TArgument>(TArgument argument, LoadSceneMode mode, bool isSceneBack, bool registerHistory, CancellationToken cancelToken) 
-			where TArgument : ISceneArgument
+            where TArgument : ISceneArgument
         {
             if (!argument.Identifier.HasValue) { return; }
 
-			if (mode == LoadSceneMode.Additive)
-			{
-				// ロード済みシーンからの遷移制御.
+            if (mode == LoadSceneMode.Additive)
+            {
+                // ロード済みシーンからの遷移制御.
 
-				var handleTransition = await HandleTransitionFromLoadedScenes();
+                var handleTransition = await HandleTransitionFromLoadedScenes();
 
-				if (!handleTransition) { return; }
-			}
+                if (!handleTransition) { return; }
+            }
 
-			// 事前ロードキャンセル.
-			if (preLoadCancelSource != null)
-			{
-				preLoadCancelSource.Cancel();
-			}
+            // 事前ロードキャンセル.
+            if (preLoadCancelSource != null)
+            {
+                preLoadCancelSource.Cancel();
+            }
 
-			// 遷移開始.
+            // 遷移開始.
 
             TransitionTarget = argument.Identifier;
 
@@ -376,16 +376,16 @@ namespace Modules.Scene
 
             diagnostics.Begin(TimeDiagnostics.Measure.Total);
 
-			try
-			{
-				await TransitionStart(currentSceneArgument, isSceneBack);
-			}
-			catch (Exception e)
-			{
-				Debug.LogException(e);
-			}
+            try
+            {
+                await TransitionStart(currentSceneArgument, isSceneBack);
+            }
+            catch (Exception e)
+            {
+                Debug.LogException(e);
+            }
 
-			if (cancelToken.IsCancellationRequested){ return; }
+            if (cancelToken.IsCancellationRequested){ return; }
 
             if (prev != null)
             {
@@ -400,19 +400,19 @@ namespace Modules.Scene
                 }
 
                 // 現在のシーンの終了処理を実行.
-				try
-				{
-					await prev.Instance.Leave();
-				}
-				catch (Exception e)
-				{
-					Debug.LogException(e);
-				}
+                try
+                {
+                    await prev.Instance.Leave();
+                }
+                catch (Exception e)
+                {
+                    Debug.LogException(e);
+                }
 
-				if (cancelToken.IsCancellationRequested) { return; }
+                if (cancelToken.IsCancellationRequested) { return; }
 
-				// PlayerPrefsを保存.
-				PlayerPrefs.Save();
+                // PlayerPrefsを保存.
+                PlayerPrefs.Save();
 
                 // Leave終了通知.
                 if (onLeaveComplete != null)
@@ -456,29 +456,29 @@ namespace Modules.Scene
 
                 foreach (var unloadScene in unloadScenes)
                 {
-					try
-					{
-						_ = await UnloadScene(unloadScene);
-					}
-					catch (Exception e)
-					{
-						Debug.LogException(e);
-					}
+                    try
+                    {
+                        _ = await UnloadScene(unloadScene);
+                    }
+                    catch (Exception e)
+                    {
+                        Debug.LogException(e);
+                    }
 
-					if (unloadScene.Identifier.HasValue)
+                    if (unloadScene.Identifier.HasValue)
                     {
                         loadedScenes.Remove(unloadScene.Identifier.Value);
                     }
                 }
             } 
-			else
-			{
-				// LoadSceneMode.Singleの場合読み込み済みシーンが全て消える.
+            else
+            {
+                // LoadSceneMode.Singleの場合読み込み済みシーンが全て消える.
 
-				loadedScenes.Clear();
-				appendSceneInstances.Clear();
-				cacheScenes.Clear();
-			}
+                loadedScenes.Clear();
+                appendSceneInstances.Clear();
+                cacheScenes.Clear();
+            }
 
             //====== Load Next Scene ======
 
@@ -491,18 +491,18 @@ namespace Modules.Scene
 
             if (sceneInfo == null)
             {
-				try
-				{
-					sceneInfo = await LoadScene(identifier, mode);
-				}
-				catch (Exception e)
-				{
-					OnLoadError(e, identifier);
-				}
+                try
+                {
+                    sceneInfo = await LoadScene(identifier, mode);
+                }
+                catch (Exception e)
+                {
+                    OnLoadError(e, identifier);
+                }
 
-				if (sceneInfo == null) { return; }
+                if (sceneInfo == null) { return; }
 
-				if (argument.Cache)
+                if (argument.Cache)
                 {
                     cacheScenes.Enqueue(sceneInfo);
                 }
@@ -514,17 +514,17 @@ namespace Modules.Scene
             {
                 Debug.LogErrorFormat("[ {0} ] : Failed to get Scene information.", identifier);
 
-				return;
+                return;
             }
 
             if (sceneInfo.Instance == null)
             {
                 Debug.LogErrorFormat("[ {0} ] : SceneBase class does not exist.", scene.Value.path);
 
-				return;
+                return;
             }
 
-			if (cancelToken.IsCancellationRequested){ return; }
+            if (cancelToken.IsCancellationRequested){ return; }
 
             SetSceneActive(scene);
 
@@ -544,7 +544,7 @@ namespace Modules.Scene
             // シーン読み込み後にAwake、Startが終わるのを待つ為1フレーム後に処理を再開.
             await UniTask.NextFrame(cancelToken);
 
-			if (cancelToken.IsCancellationRequested){ return; }
+            if (cancelToken.IsCancellationRequested){ return; }
 
             diagnostics.Finish(TimeDiagnostics.Measure.Load);
 
@@ -561,24 +561,24 @@ namespace Modules.Scene
             // 次のシーンの準備処理実行.
             if (currentScene.Instance != null)
             {
-				try
-				{
-					await currentScene.Instance.Prepare(isSceneBack);
-				}
-				catch (OperationCanceledException) 
-				{
-					return;
-				}
-				catch (Exception e)
-				{
-					Debug.LogException(e);
-				}
+                try
+                {
+                    await currentScene.Instance.Prepare(isSceneBack);
+                }
+                catch (OperationCanceledException) 
+                {
+                    return;
+                }
+                catch (Exception e)
+                {
+                    Debug.LogException(e);
+                }
 
-				if (cancelToken.IsCancellationRequested) { return; }
-			}
+                if (cancelToken.IsCancellationRequested) { return; }
+            }
 
-			// Prepare終了通知.
-			if (onPrepareComplete != null)
+            // Prepare終了通知.
+            if (onPrepareComplete != null)
             {
                 onPrepareComplete.OnNext(currentScene);
             }
@@ -587,79 +587,79 @@ namespace Modules.Scene
 
             //====== Unload PrevScene ======
 
-			// キャッシュ対象でない場合はアンロード.
-			if (prev != currentScene)
-			{
-				if (prevSceneArgument == null || !prevSceneArgument.Cache)
-	            {
-					try
-					{
-						await UnloadScene(prev).ToUniTask(cancellationToken: cancelToken);
-					}
-					catch (OperationCanceledException) 
-					{
-						return;
-					}
-					catch (Exception e)
-					{
-						Debug.LogException(e);
-					}
-				}
-			}
+            // キャッシュ対象でない場合はアンロード.
+            if (prev != currentScene)
+            {
+                if (prevSceneArgument == null || !prevSceneArgument.Cache)
+                {
+                    try
+                    {
+                        await UnloadScene(prev).ToUniTask(cancellationToken: cancelToken);
+                    }
+                    catch (OperationCanceledException) 
+                    {
+                        return;
+                    }
+                    catch (Exception e)
+                    {
+                        Debug.LogException(e);
+                    }
+                }
+            }
 
             //====== Scene Wait ======
 
             // メモリ解放.
 
-			try
-			{
-				await CleanUp();
-			}
-			catch (Exception e)
-			{
-				Debug.LogException(e);
-			}
+            try
+            {
+                await CleanUp();
+            }
+            catch (Exception e)
+            {
+                Debug.LogException(e);
+            }
 
-			if (cancelToken.IsCancellationRequested) { return; }
+            if (cancelToken.IsCancellationRequested) { return; }
 
-			// 外部処理待機.
+            // 外部処理待機.
 
-			try
-			{
-				await TransitionWait();
-			}
-			catch (Exception e)
-			{
-				Debug.LogException(e);
-			}
+            try
+            {
+                await TransitionWait();
+            }
+            catch (Exception e)
+            {
+                Debug.LogException(e);
+            }
 
-			if (cancelToken.IsCancellationRequested) { return; }
+            if (cancelToken.IsCancellationRequested) { return; }
 
-			// シーンを有効化.
-			sceneInfo.Enable();
+            // シーンを有効化.
+            sceneInfo.Enable();
 
             // シーン遷移完了.
             TransitionTarget = null;
 
-			//====== TransitionFinish ======
+            //====== TransitionFinish ======
 
-			try
-			{
-				await currentScene.Instance.OnTransition();
+            try
+            {
+                await currentScene.Instance.OnTransition();
 
-				await TransitionFinish(currentSceneArgument, isSceneBack);
-			}
-			catch (Exception e)
-			{
-				Debug.LogException(e);
-			}
+                await TransitionFinish(currentSceneArgument, isSceneBack);
+            }
+            catch (Exception e)
+            {
+                Debug.LogException(e);
+            }
 
-			if (cancelToken.IsCancellationRequested) { return; }
+            if (cancelToken.IsCancellationRequested) { return; }
 
-			//====== Scene Enter ======
+            //====== Scene Enter ======
 
-			// Enter通知.
-			if (onEnter != null)
+            // Enter通知.
+            if (onEnter != null)
             {
                 onEnter.OnNext(currentScene);
             }
@@ -690,38 +690,38 @@ namespace Modules.Scene
 
             UnityConsole.Event(ConsoleEventName, ConsoleEventColor, message);
 
-			//====== PreLoad ======
+            //====== PreLoad ======
 
-			PreLoadScene(argument.PreLoadScenes).Forget();
-		}
+            PreLoadScene(argument.PreLoadScenes).Forget();
+        }
 
-		private async UniTask<bool> HandleTransitionFromLoadedScenes()
-		{
-			var enableScenes = loadedScenes.Values.Where(x => x.IsEnable);
+        private async UniTask<bool> HandleTransitionFromLoadedScenes()
+        {
+            var enableScenes = loadedScenes.Values.Where(x => x.IsEnable);
 
-			foreach (var sceneInstance in enableScenes)
-			{
-				var transitionHandler = sceneInstance.Instance as ITransitionHandler;
+            foreach (var sceneInstance in enableScenes)
+            {
+                var transitionHandler = sceneInstance.Instance as ITransitionHandler;
 
-				if (transitionHandler == null){ continue; }
+                if (transitionHandler == null){ continue; }
 
-				// シーンから遷移が許可されたか.
-				var result = await transitionHandler.HandleTransition();
-			
-				if (!result)
-				{
-					var message = $"Transition cancel request from : {sceneInstance.Identifier}"; 
+                // シーンから遷移が許可されたか.
+                var result = await transitionHandler.HandleTransition();
+            
+                if (!result)
+                {
+                    var message = $"Transition cancel request from : {sceneInstance.Identifier}"; 
 
-					UnityConsole.Event(ConsoleEventName, ConsoleEventColor, message);
+                    UnityConsole.Event(ConsoleEventName, ConsoleEventColor, message);
 
-					return false;
-				}
-			}
+                    return false;
+                }
+            }
 
-			return true;
-		}
+            return true;
+        }
 
-		#region Scene Load
+        #region Scene Load
         
         private IObservable<SceneInstance> LoadScene(Scenes identifier, LoadSceneMode mode)
         {
@@ -730,7 +730,7 @@ namespace Modules.Scene
             if (observable == null)
             {
                 observable = LoadSceneCore(identifier, mode)
-					.ToObservable()
+                    .ToObservable()
                     .Do(_ => loadingScenes.Remove(identifier))
                     .Share();
 
@@ -748,7 +748,7 @@ namespace Modules.Scene
             {
                 var scenePath = ScenePaths.GetValueOrDefault(identifier);
 
-				UnityAction<UnityEngine.SceneManagement.Scene, LoadSceneMode> sceneLoaded = (s, m) =>
+                UnityAction<UnityEngine.SceneManagement.Scene, LoadSceneMode> sceneLoaded = (s, m) =>
                 {
                     if (!s.IsValid()){ return; }
                     
@@ -757,105 +757,105 @@ namespace Modules.Scene
                     switch (m)
                     {
                         case LoadSceneMode.Single:
-							loadedScenes.Clear();
-							cacheScenes.Clear();
+                            loadedScenes.Clear();
+                            cacheScenes.Clear();
                             break;
                     }
 
-					var rootObjects = s.GetRootGameObjects();
+                    var rootObjects = s.GetRootGameObjects();
 
-					// UniqueComponentsを回収.
-					CollectUniqueComponents(rootObjects);
+                    // UniqueComponentsを回収.
+                    CollectUniqueComponents(rootObjects);
 
-					// 退避したコンポーネント復元.
-					ResumeCapturedComponents();
+                    // 退避したコンポーネント復元.
+                    ResumeCapturedComponents();
 
                     // 初期状態は非アクティブ.
                     sceneInstance.Disable();
 
                     if (onLoadScene != null)
                     {
-						onLoadScene.OnNext(sceneInstance);
+                        onLoadScene.OnNext(sceneInstance);
                     }
-				};
+                };
 
-				SceneManager.sceneLoaded += sceneLoaded;
+                SceneManager.sceneLoaded += sceneLoaded;
 
                 AsyncOperation op = null;
 
                 try
                 {
-					op = SceneManager.LoadSceneAsync(scenePath, mode);
+                    op = SceneManager.LoadSceneAsync(scenePath, mode);
 
-					op.allowSceneActivation = false;
+                    op.allowSceneActivation = false;
 
-					while (op.progress < 0.9f)
-					{
-						await UniTask.NextFrame();
-					}
-					
-					// コンポーネントを退避.
-					SuspendCapturedComponents();
+                    while (op.progress < 0.9f)
+                    {
+                        await UniTask.NextFrame();
+                    }
+                    
+                    // コンポーネントを退避.
+                    SuspendCapturedComponents();
 
-					op.allowSceneActivation = true;
+                    op.allowSceneActivation = true;
 
-					while (!op.isDone)
-					{
-						await UniTask.NextFrame();
-					}
-				}
-				finally
-				{
-					SceneManager.sceneLoaded -= sceneLoaded;
-				}
+                    while (!op.isDone)
+                    {
+                        await UniTask.NextFrame();
+                    }
+                }
+                finally
+                {
+                    SceneManager.sceneLoaded -= sceneLoaded;
+                }
 
                 var scene = sceneInstance.GetScene();
 
                 if (scene.HasValue)
                 {
-					loadedScenes.Add(identifier, sceneInstance);
+                    loadedScenes.Add(identifier, sceneInstance);
 
                     // 1フレーム待つ.
-					await UniTask.NextFrame();
+                    await UniTask.NextFrame();
 
                     if (onLoadSceneComplete != null)
                     {
                         onLoadSceneComplete.OnNext(sceneInstance);
                     }
 
-					// ISceneEvent発行.
+                    // ISceneEvent発行.
 
-					var tasks = new List<UniTask>();
+                    var tasks = new List<UniTask>();
 
-					var sceneBase = currentScene.Instance as SceneBase;
+                    var sceneBase = currentScene.Instance as SceneBase;
 
-					if (sceneBase != null)
-					{
-						var targets = UnityUtility.GetInterfaces<ISceneEvent>(sceneBase.gameObject);
+                    if (sceneBase != null)
+                    {
+                        var targets = UnityUtility.GetInterfaces<ISceneEvent>(sceneBase.gameObject);
 
-						foreach (var target in targets)
-						{
-							var task = UniTask.Defer(() => target.OnLoadScene());
+                        foreach (var target in targets)
+                        {
+                            var task = UniTask.Defer(() => target.OnLoadScene());
 
-							tasks.Add(task);
-						}
-					}
+                            tasks.Add(task);
+                        }
+                    }
 
-					await UniTask.WhenAll(tasks);
+                    await UniTask.WhenAll(tasks);
                 }
 
-				// シーンの初期化処理.
+                // シーンの初期化処理.
                 if (sceneInstance.Instance != null)
                 {
-					try
-					{
-						await sceneInstance.Instance.Initialize();
-					}
-					catch (Exception e)
-					{
-						Debug.LogException(e);
-					}
-				}
+                    try
+                    {
+                        await sceneInstance.Instance.Initialize();
+                    }
+                    catch (Exception e)
+                    {
+                        Debug.LogException(e);
+                    }
+                }
             }
             else
             {
@@ -924,8 +924,8 @@ namespace Modules.Scene
             if (observable == null)
             {
                 observable = UnloadSceneCore(sceneInstance)
-					.ToObservable()
-					.AsUnitObservable()
+                    .ToObservable()
+                    .AsUnitObservable()
                     .Do(_ => unloadingScenes.Remove(identifier))
                     .Share();
 
@@ -945,7 +945,7 @@ namespace Modules.Scene
 
             if (SceneManager.sceneCount <= 1){ return; }
 
-			UnityAction<UnityEngine.SceneManagement.Scene> sceneUnloaded = s =>
+            UnityAction<UnityEngine.SceneManagement.Scene> sceneUnloaded = s =>
             {
                 if (s.IsValid())
                 {
@@ -955,45 +955,45 @@ namespace Modules.Scene
 
                         if (loadedScenes.ContainsKey(identifier))
                         {
-							loadedScenes.Remove(identifier);
+                            loadedScenes.Remove(identifier);
                         }
                     }
 
                     if (cacheScenes.Contains(sceneInstance))
                     {
-						cacheScenes.Remove(sceneInstance);
+                        cacheScenes.Remove(sceneInstance);
                     }
 
                     if (onUnloadScene != null)
                     {
-						onUnloadScene.OnNext(sceneInstance);
+                        onUnloadScene.OnNext(sceneInstance);
                     }
                 }
             };
 
-			// ISceneEvent発行.
+            // ISceneEvent発行.
 
-			var tasks = new List<UniTask>();
+            var tasks = new List<UniTask>();
 
-			var sceneBase = sceneInstance.Instance as SceneBase;
+            var sceneBase = sceneInstance.Instance as SceneBase;
 
-			if (sceneBase != null)
-			{
-				var targets = UnityUtility.GetInterfaces<ISceneEvent>(sceneBase.gameObject);
+            if (sceneBase != null)
+            {
+                var targets = UnityUtility.GetInterfaces<ISceneEvent>(sceneBase.gameObject);
 
-				foreach (var target in targets)
-				{
-					var task = UniTask.Defer(() => target.OnUnloadScene());
+                foreach (var target in targets)
+                {
+                    var task = UniTask.Defer(() => target.OnUnloadScene());
 
-					tasks.Add(task);
-				}
-			}
+                    tasks.Add(task);
+                }
+            }
 
-			await UniTask.WhenAll(tasks);
+            await UniTask.WhenAll(tasks);
 
-			// Scene Unload.
+            // Scene Unload.
 
-			AsyncOperation op = null;
+            AsyncOperation op = null;
 
             try
             {
@@ -1001,15 +1001,15 @@ namespace Modules.Scene
 
                 op = SceneManager.UnloadSceneAsync(scene.Value);
 
-				while (!op.isDone)
-				{
-					await UniTask.NextFrame();
-				}
+                while (!op.isDone)
+                {
+                    await UniTask.NextFrame();
+                }
             }
-			catch (OperationCanceledException) 
-			{
-				return;
-			}
+            catch (OperationCanceledException) 
+            {
+                return;
+            }
             catch (Exception e)
             {
                 SceneManager.sceneUnloaded -= sceneUnloaded;
@@ -1024,7 +1024,7 @@ namespace Modules.Scene
                 return;
             }
 
-			SceneManager.sceneUnloaded -= sceneUnloaded;
+            SceneManager.sceneUnloaded -= sceneUnloaded;
 
             if (onUnloadSceneComplete != null)
             {
@@ -1051,70 +1051,70 @@ namespace Modules.Scene
 
         #region Scene Preload
 
-		/// <summary> 事前読み込み. </summary>
-		private async UniTask PreLoadScene(Scenes[] targetScenes)
+        /// <summary> 事前読み込み. </summary>
+        private async UniTask PreLoadScene(Scenes[] targetScenes)
         {
-			if (preLoadCancelSource != null && !preLoadCancelSource.IsCancellationRequested)
-			{
-				preLoadCancelSource.Cancel();
-				preLoadCancelSource.Dispose();
-			}
+            if (preLoadCancelSource != null && !preLoadCancelSource.IsCancellationRequested)
+            {
+                preLoadCancelSource.Cancel();
+                preLoadCancelSource.Dispose();
+            }
 
-			preLoadCancelSource = new CancellationTokenSource();
+            preLoadCancelSource = new CancellationTokenSource();
 
             if (targetScenes.IsEmpty()) { return; }
 
             var builder = new StringBuilder();
-			
-			var sw = System.Diagnostics.Stopwatch.StartNew();
+            
+            var sw = System.Diagnostics.Stopwatch.StartNew();
 
             foreach (var scene in targetScenes)
             {
                 // キャッシュ済みのシーンがある場合はプリロードしない.
                 if (cacheScenes.Any(x => x.Identifier == scene)) { continue; }
 
-				try
-				{
-					await PreLoadCore(scene, builder);
+                try
+                {
+                    await PreLoadCore(scene, builder);
 
-					await UniTask.NextFrame(preLoadCancelSource.Token);
-				}
-				catch (OperationCanceledException)
-				{
-					// Canceled.
-				}
+                    await UniTask.NextFrame(preLoadCancelSource.Token);
+                }
+                catch (OperationCanceledException)
+                {
+                    // Canceled.
+                }
 
-				if (preLoadCancelSource.IsCancellationRequested){ return; }
-			}
+                if (preLoadCancelSource.IsCancellationRequested){ return; }
+            }
 
-			sw.Stop();
+            sw.Stop();
 
-			var time = sw.Elapsed.TotalMilliseconds;
-			var detail = builder.ToString();
+            var time = sw.Elapsed.TotalMilliseconds;
+            var detail = builder.ToString();
 
-			var message = string.Format("PreLoad Complete ({0:F2}ms)\n\n{1}", time, detail);
+            var message = string.Format("PreLoad Complete ({0:F2}ms)\n\n{1}", time, detail);
 
-			UnityConsole.Event(ConsoleEventName, ConsoleEventColor, message);
+            UnityConsole.Event(ConsoleEventName, ConsoleEventColor, message);
         }
 
         private async UniTask PreLoadCore(Scenes targetScene, StringBuilder builder)
         {
             var sw = System.Diagnostics.Stopwatch.StartNew();
 
-			try
-			{
-				await LoadScene(targetScene, LoadSceneMode.Additive).ToUniTask();
-			}
-			catch (Exception e)
-			{
-				OnLoadError(e, targetScene);
-			}
+            try
+            {
+                await LoadScene(targetScene, LoadSceneMode.Additive).ToUniTask();
+            }
+            catch (Exception e)
+            {
+                OnLoadError(e, targetScene);
+            }
 
-			sw.Stop();
+            sw.Stop();
 
-			var time = sw.Elapsed.TotalMilliseconds;
+            var time = sw.Elapsed.TotalMilliseconds;
 
-			builder.AppendLine(string.Format("{0} ({1:F2}ms)", targetScene, time));
+            builder.AppendLine(string.Format("{0} ({1:F2}ms)", targetScene, time));
         }
 
         #endregion
@@ -1157,13 +1157,13 @@ namespace Modules.Scene
             return loadedScenes.ContainsKey(identifier);
         }
 
-		/// <summary> シーンを取得 </summary>
-		public SceneInstance GetSceneInstance(Scenes identifier)
-		{
-			return loadedScenes.GetValueOrDefault(identifier);
-		}
+        /// <summary> シーンを取得 </summary>
+        public SceneInstance GetSceneInstance(Scenes identifier)
+        {
+            return loadedScenes.GetValueOrDefault(identifier);
+        }
 
-		private ISceneBase FindSceneObject(UnityEngine.SceneManagement.Scene scene)
+        private ISceneBase FindSceneObject(UnityEngine.SceneManagement.Scene scene)
         {
             ISceneBase sceneBase = null;
 
@@ -1217,7 +1217,7 @@ namespace Modules.Scene
             GC.Collect();
         }
 
-		//====== Prepare Scene ======
+        //====== Prepare Scene ======
 
         public IObservable<SceneInstance> OnPrepareAsObservable()
         {
