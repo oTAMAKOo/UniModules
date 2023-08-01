@@ -1,4 +1,4 @@
-﻿
+
 using System;
 using System.IO;
 using System.Linq;
@@ -81,7 +81,7 @@ namespace Modules.LocalData
         {
             var type = typeof(T);
 
-            var filePath = Instance.GetLocalDataFilePath<T>();
+            var filePath = Instance.GetFilePath<T>();
 
             var data = default(T);
 
@@ -126,7 +126,7 @@ namespace Modules.LocalData
 
         public static void Save<T>(T data) where T : class, ILocalData, new()
         {
-            var filePath = Instance.GetLocalDataFilePath<T>();
+            var filePath = Instance.GetFilePath<T>();
 
             using (var fileStream = new FileStream(filePath, FileMode.Create, FileAccess.Write))
             {
@@ -142,7 +142,7 @@ namespace Modules.LocalData
             }
         }
 
-        private string GetLocalDataFilePath<T>() where T : class, ILocalData, new()
+        public string GetFilePath<T>() where T : class, ILocalData, new()
         {
             var filePath = filePathCache.GetValueOrDefault(typeof(T));
 
@@ -188,7 +188,7 @@ namespace Modules.LocalData
         {
             var type = typeof(T);
 
-            var filePath = Instance.GetLocalDataFilePath<T>();
+            var filePath = Instance.GetFilePath<T>();
             var dataCache = Instance.dataCache;
 
             if (File.Exists(filePath))
