@@ -69,7 +69,9 @@ namespace Modules.Net.WebDownload
 
             try
             {
-                var url = $"{ Url }?{ DateTime.Now.ToUnixTime(UnixTimeConvert.Milliseconds) }";
+                var timestamp = $"t={ DateTime.Now.ToUnixTime(UnixTimeConvert.Milliseconds) }";
+
+                var url = Url.Contains("?") ? $"{ Url }&{ timestamp }" : $"{ Url }?{ timestamp }";
 
                 using (var webRequest = UnityWebRequest.Get(url))
                 {
