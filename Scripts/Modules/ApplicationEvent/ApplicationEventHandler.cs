@@ -1,4 +1,4 @@
-﻿﻿﻿
+﻿﻿
 using UnityEngine;
 using System;
 using System.Linq;
@@ -71,7 +71,7 @@ namespace Modules.ApplicationEvent
             return onSuspend ?? (onSuspend = new Subject<Unit>());
         }
         
-        /// <summary> レジューム時のイベント </summary>
+        /// <summary> レジューム時のイベント (サスペンドしてからの秒数を返す) </summary>
         public static IObservable<double> OnResumeAsObservable()
         {
             return onResume ?? (onResume = new Subject<double>());
