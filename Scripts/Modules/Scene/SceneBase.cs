@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 using System;
 using Cysharp.Threading.Tasks;
 using Constants;
@@ -27,7 +27,7 @@ namespace Modules.Scene
 		Type GetArgumentType();
 
 		/// <summary> 引数を設定 </summary>
-		void SetArgument(ISceneArgument argument);
+		UniTask SetArgument(ISceneArgument argument);
 
 		/// <summary> 引数を取得 </summary>
 		ISceneArgument GetArgument();

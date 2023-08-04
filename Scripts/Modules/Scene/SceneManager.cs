@@ -145,7 +145,7 @@ namespace Modules.Scene
 
             var sceneArgument = Activator.CreateInstance(argumentType) as ISceneArgument;
 
-            currentScene.Instance.SetArgument(sceneArgument);
+            await currentScene.Instance.SetArgument(sceneArgument);
 
             await OnRegisterCurrentScene(currentScene);
             
@@ -529,7 +529,7 @@ namespace Modules.Scene
             SetSceneActive(scene);
 
             // 前のシーンからの引数を設定.
-            sceneInfo.Instance.SetArgument(argument);
+            await sceneInfo.Instance.SetArgument(argument);
 
             // 現在のシーンとして登録.
             currentScene = sceneInfo;

@@ -14,7 +14,7 @@ using Modules.Scene.Diagnostics;
 
 namespace Modules.Scene
 {
-	public abstract partial class SceneManager<T>
+    public abstract partial class SceneManager<T>
     {
         //----- params -----
 
@@ -24,21 +24,22 @@ namespace Modules.Scene
 
         //----- method -----
 
-		/// <summary>
+        /// <summary>
         /// シーンを追加で読み込み.
         /// <para> Prepare, Enter, Leaveは自動で呼び出されないので自分で制御する </para>
         /// </summary>
         public IObservable<SceneInstance> Append<TArgument>(TArgument sceneArgument, bool activeOnLoad = true) where TArgument : ISceneArgument
         {
-            return ObservableEx.FromUniTask(cancelToken => AppendCore(sceneArgument.Identifier, activeOnLoad, cancelToken))
-                .Do(x =>
-                {
-                    // シーンルート引数設定.
-                    if (x != null && x.Instance != null)
-                    {
-                        x.Instance.SetArgument(sceneArgument);
-                    }
-                });
+            async UniTask SetArgumentCallback(SceneInstance sceneInstance)
+            {
+                if (sceneInstance == null){ return; }
+
+                if (sceneInstance.Instance == null){ return; }
+
+                await sceneInstance.Instance.SetArgument(sceneArgument);
+            }
+
+            return ObservableEx.FromUniTask(cancelToken => AppendCore(sceneArgument.Identifier, activeOnLoad, SetArgumentCallback, cancelToken));
         }
 
         /// <summary>
@@ -47,10 +48,11 @@ namespace Modules.Scene
         /// </summary>
         public IObservable<SceneInstance> Append(Scenes identifier, bool activeOnLoad = true)
         {
-            return ObservableEx.FromUniTask(cancelToken => AppendCore(identifier, activeOnLoad, cancelToken));
+            return ObservableEx.FromUniTask(cancelToken => AppendCore(identifier, activeOnLoad, null, cancelToken));
         }
 
-        private async UniTask<SceneInstance> AppendCore(Scenes? identifier, bool activeOnLoad, CancellationToken cancelToken)
+        private async UniTask<SceneInstance> AppendCore(Scenes? identifier, bool activeOnLoad, 
+                                                        Func<SceneInstance, UniTask> setArgumentCallback, CancellationToken cancelToken)
         {
             if (!identifier.HasValue) { return null; }
 
@@ -60,22 +62,27 @@ namespace Modules.Scene
 
             diagnostics.Begin(TimeDiagnostics.Measure.Append);
 
-			try
-			{
-				sceneInstance = await LoadScene(identifier.Value, LoadSceneMode.Additive).ToUniTask(cancellationToken: cancelToken);
-			}
-			catch (OperationCanceledException) 
-			{
-				return null;
-			}
-			catch (Exception e)
-			{
-				OnLoadError(e, identifier);
-			}
+            try
+            {
+                sceneInstance = await LoadScene(identifier.Value, LoadSceneMode.Additive).ToUniTask(cancellationToken: cancelToken);
+            }
+            catch (OperationCanceledException) 
+            {
+                return null;
+            }
+            catch (Exception e)
+            {
+                OnLoadError(e, identifier);
+            }
 
-			if (sceneInstance != null)
+            if (sceneInstance != null)
             {
                 appendSceneInstances.Add(sceneInstance);
+
+                if (setArgumentCallback != null)
+                {
+                    await setArgumentCallback.Invoke(sceneInstance);
+                }
 
                 diagnostics.Finish(TimeDiagnostics.Measure.Append);
 
@@ -91,8 +98,8 @@ namespace Modules.Scene
                 }
             }
 
-			return sceneInstance;
-		}
+            return sceneInstance;
+        }
 
         /// <summary> 加算シーンをアンロード </summary>
         public void UnloadAppendScene(ISceneBase scene, bool deactivateSceneObjects = true)
@@ -120,275 +127,134 @@ namespace Modules.Scene
             UnloadScene(sceneInstance).Subscribe().AddTo(Disposable);
         }
 
-		/// <summary> 加算シーン遷移 </summary>
-		public void AppendTransition<TArgument>(TArgument sceneArgument) where TArgument :ISceneArgument
+        /// <summary> 加算シーン遷移 </summary>
+        public void AppendTransition<TArgument>(TArgument sceneArgument) where TArgument :ISceneArgument
         {
-			// 遷移中は遷移不可.
-			if (IsTransition) { return; }
+            // 遷移中は遷移不可.
+            if (IsTransition) { return; }
 
-			IsTransition = true;
-			
-			ObservableEx.FromUniTask(cancelToken => AppendTransitionCore(sceneArgument, cancelToken))
-				.Subscribe(_ => IsTransition = false)
-				.AddTo(transitionCancelSource.Token);
+            IsTransition = true;
+            
+            ObservableEx.FromUniTask(cancelToken => AppendTransitionCore(sceneArgument, cancelToken))
+                .Subscribe(_ => IsTransition = false)
+                .AddTo(transitionCancelSource.Token);
         }
 
-		/// <summary> 強制加算シーン遷移 </summary>
-		public void ForceAppendTransition<TArgument>(TArgument sceneArgument) where TArgument :ISceneArgument
-		{
-			TransitionCancel();
+        /// <summary> 強制加算シーン遷移 </summary>
+        public void ForceAppendTransition<TArgument>(TArgument sceneArgument) where TArgument :ISceneArgument
+        {
+            TransitionCancel();
 
-			IsTransition = true;
-			
-			ObservableEx.FromUniTask(cancelToken => AppendTransitionCore(sceneArgument, cancelToken))
-				.Subscribe(_ => IsTransition = false)
-				.AddTo(transitionCancelSource.Token);
-		}
+            IsTransition = true;
+            
+            ObservableEx.FromUniTask(cancelToken => AppendTransitionCore(sceneArgument, cancelToken))
+                .Subscribe(_ => IsTransition = false)
+                .AddTo(transitionCancelSource.Token);
+        }
 
         private async UniTask AppendTransitionCore<TArgument>(TArgument sceneArgument, CancellationToken cancelToken) where TArgument :ISceneArgument
         {
-			try
-			{
-				// ロード済みシーンからの遷移制御.
+            try
+            {
+                // ロード済みシーンからの遷移制御.
 
-				var handleTransition = await HandleTransitionFromLoadedScenes();
+                var handleTransition = await HandleTransitionFromLoadedScenes();
 
-				if (!handleTransition){ return; }
+                if (!handleTransition){ return; }
 
-				// 遷移開始.
+                // 遷移開始.
 
-				var diagnostics = new TimeDiagnostics();
+                var diagnostics = new TimeDiagnostics();
 
-				diagnostics.Begin(TimeDiagnostics.Measure.Total);
+                diagnostics.Begin(TimeDiagnostics.Measure.Total);
 
-				TransitionTarget = sceneArgument.Identifier;
+                TransitionTarget = sceneArgument.Identifier;
 
-				await TransitionStart(sceneArgument, false);
+                await TransitionStart(sceneArgument, false);
 
-				if (cancelToken.IsCancellationRequested) { return; }
+                if (cancelToken.IsCancellationRequested) { return; }
 
-				// 遷移先以外のシーンを非アクティブ化.
+                // 遷移先以外のシーンを非アクティブ化.
 
-				var enableScenes = loadedScenes.Values.Where(x => x.IsEnable).ToArray();
+                var enableScenes = loadedScenes.Values.Where(x => x.IsEnable).ToArray();
 
-				foreach (var scene in enableScenes)
-				{
-					scene.Disable();
-				}
-
-                if (cancelToken.IsCancellationRequested){ return; }
-
-				//====== Append Scene ======
-
-				diagnostics.Begin(TimeDiagnostics.Measure.Load);
-
-				var sceneInstance = await Append(sceneArgument).ToUniTask(cancellationToken:cancelToken);
-
-				diagnostics.Finish(TimeDiagnostics.Measure.Load);
+                foreach (var scene in enableScenes)
+                {
+                    scene.Disable();
+                }
 
                 if (cancelToken.IsCancellationRequested){ return; }
 
-				//====== Scene Prepare ======
+                //====== Append Scene ======
 
-				diagnostics.Begin(TimeDiagnostics.Measure.Prepare);
+                diagnostics.Begin(TimeDiagnostics.Measure.Load);
 
-				if (sceneInstance != null)
-				{
-					// Prepare通知.
-					if (onPrepare != null)
-					{
-						onPrepare.OnNext(sceneInstance);
-					}
+                var sceneInstance = await Append(sceneArgument).ToUniTask(cancellationToken:cancelToken);
 
-					await sceneInstance.Instance.Prepare();
-
-					// Prepare終了通知.
-					if (onPrepareComplete != null)
-					{
-						onPrepareComplete.OnNext(sceneInstance);
-					}
-				}
+                diagnostics.Finish(TimeDiagnostics.Measure.Load);
 
                 if (cancelToken.IsCancellationRequested){ return; }
 
-				await TransitionFinish(sceneArgument, false);
+                //====== Scene Prepare ======
+
+                diagnostics.Begin(TimeDiagnostics.Measure.Prepare);
+
+                if (sceneInstance != null)
+                {
+                    // Prepare通知.
+                    if (onPrepare != null)
+                    {
+                        onPrepare.OnNext(sceneInstance);
+                    }
+
+                    await sceneInstance.Instance.Prepare();
+
+                    // Prepare終了通知.
+                    if (onPrepareComplete != null)
+                    {
+                        onPrepareComplete.OnNext(sceneInstance);
+                    }
+                }
 
                 if (cancelToken.IsCancellationRequested){ return; }
 
-				if (sceneInstance != null)
-				{
-					//====== Scene Enter ======
+                await TransitionFinish(sceneArgument, false);
 
-					// Enter通知.
-					if (onEnter != null)
-					{
-						onEnter.OnNext(sceneInstance);
-					}
+                if (cancelToken.IsCancellationRequested){ return; }
 
-					sceneInstance.Instance.Enter();
+                if (sceneInstance != null)
+                {
+                    //====== Scene Enter ======
 
-					// Enter終了通知.
-					if (onEnterComplete != null)
-					{
-						onEnterComplete.OnNext(sceneInstance);
-					}
-				}
+                    // Enter通知.
+                    if (onEnter != null)
+                    {
+                        onEnter.OnNext(sceneInstance);
+                    }
 
-				//====== Report ======
+                    sceneInstance.Instance.Enter();
 
-				diagnostics.Finish(TimeDiagnostics.Measure.Total);
+                    // Enter終了通知.
+                    if (onEnterComplete != null)
+                    {
+                        onEnterComplete.OnNext(sceneInstance);
+                    }
+                }
 
-				var total = diagnostics.GetTime(TimeDiagnostics.Measure.Total);
-				var detail = diagnostics.BuildDetailText();
+                //====== Report ======
 
-				var message = string.Format("Append Transition: {0} ({1:F2}ms)\n\n{2}", sceneArgument.Identifier, total, detail);
+                diagnostics.Finish(TimeDiagnostics.Measure.Total);
 
-				UnityConsole.Event(ConsoleEventName, ConsoleEventColor, message);
-			}
+                var total = diagnostics.GetTime(TimeDiagnostics.Measure.Total);
+                var detail = diagnostics.BuildDetailText();
+
+                var message = string.Format("Append Transition: {0} ({1:F2}ms)\n\n{2}", sceneArgument.Identifier, total, detail);
+
+                UnityConsole.Event(ConsoleEventName, ConsoleEventColor, message);
+            }
             catch (OperationCanceledException)
             {
                 /* Canceled */
-            }
-			catch (Exception e)
-			{
-				Debug.LogException(e);
-			}
-			finally
-            {
-				TransitionTarget = null;
-            }
-        }
-
-		/// <summary> 加算シーンアンロード遷移 </summary>
-        public void UnloadTransition(Scenes transitionScene, SceneInstance unloadSceneInstance)
-        {
-			// 遷移中は遷移不可.
-			if (IsTransition) { return; }
-
-			IsTransition = true;
-			
-			ObservableEx.FromUniTask(cancelToken => UnloadTransitionCore(transitionScene, unloadSceneInstance, cancelToken))
-				.Subscribe(_ => IsTransition = false)
-				.AddTo(transitionCancelSource.Token);
-        }
-
-		/// <summary> 加算シーンアンロード遷移 </summary>
-		public void UnloadTransition(Scenes transitionScene, GameObject gameObject)
-		{
-			var sceneInstance = AppendSceneInstances.FirstOrDefault(x => x.GetScene() == gameObject.scene);
-
-			UnloadTransition(transitionScene, sceneInstance);
-		}
-
-		/// <summary> 強制加算シーンアンロード遷移 </summary>
-		public void ForceUnloadTransition(Scenes transitionScene, SceneInstance unloadSceneInstance)
-		{
-			TransitionCancel();
-
-			IsTransition = true;
-
-			ObservableEx.FromUniTask(cancelToken => UnloadTransitionCore(transitionScene, unloadSceneInstance, cancelToken))
-				.Subscribe(_ => IsTransition = false)
-				.AddTo(transitionCancelSource.Token);
-		}
-
-        private async UniTask UnloadTransitionCore(Scenes transitionScene, SceneInstance sceneInstance, CancellationToken cancelToken)
-        {
-            if (sceneInstance == null){ return; }
-
-			try
-            {
-                var scene = loadedScenes.GetValueOrDefault(transitionScene);
-
-				// ロード済みシーンからの遷移制御.
-
-				var handleTransition = await HandleTransitionFromLoadedScenes();
-
-				if (!handleTransition){ return; }
-
-                if (cancelToken.IsCancellationRequested){ return; }
-
-				// 遷移開始.
-
-				var diagnostics = new TimeDiagnostics();
-
-				diagnostics.Begin(TimeDiagnostics.Measure.Total);
-
-                ISceneArgument argument = null;
-
-				if (scene != null && scene.Instance != null)
-                {
-    				argument = scene.Instance.GetArgument();
-				}
-
-				await TransitionStart(argument, false);
-
-				if (cancelToken.IsCancellationRequested){ return; }
-
-				//====== Scene Leave ======
-
-				diagnostics.Begin(TimeDiagnostics.Measure.Leave);
-
-				// Leave通知.
-				if (onLeave != null)
-				{
-					onLeave.OnNext(sceneInstance);
-				}
-				
-                await sceneInstance.Instance.Leave();
-
-                // PlayerPrefsを保存.
-				PlayerPrefs.Save();
-
-				// Leave終了通知.
-				if (onLeaveComplete != null)
-				{
-					onLeaveComplete.OnNext(sceneInstance);
-				}
-
-				diagnostics.Finish(TimeDiagnostics.Measure.Leave);
-
-                sceneInstance.Disable();
-                
-                UnloadAppendScene(sceneInstance);
-
-                if (cancelToken.IsCancellationRequested){ return; }
-
-				//====== Scene Active ======
-
-                if (scene == null)
-				{
-					Debug.LogError($"UnloadTransition target scene not found.\n{transitionScene}");
-				}
-
-                TransitionTarget = scene.Identifier;
-
-				scene.Enable();
-
-				await scene.Instance.OnTransition();
-
-                if (cancelToken.IsCancellationRequested){ return; }
-
-                await TransitionFinish<ISceneArgument>(null, false);
-
-                if (cancelToken.IsCancellationRequested){ return; }
-
-				scene.Instance.Enter();
-
-				//====== Report ======
-
-				diagnostics.Finish(TimeDiagnostics.Measure.Total);
-
-				var total = diagnostics.GetTime(TimeDiagnostics.Measure.Total);
-				var detail = diagnostics.BuildDetailText();
-
-				var message = $"Unload Transition: {sceneInstance.Identifier} ({total:F2}ms)\n\n{detail}";
-
-				UnityConsole.Event(ConsoleEventName, ConsoleEventColor, message);
-            }
-			catch (OperationCanceledException)
-            {
-				/* Canceled */
             }
             catch (Exception e)
             {
@@ -398,14 +264,155 @@ namespace Modules.Scene
             {
                 TransitionTarget = null;
             }
-		}
+        }
 
-		/// <summary> 加算シーンインスタンスを検索. </summary>
-		public SceneInstance FindAppendSceneInstance(GameObject target)
-		{
-			if (UnityUtility.IsNull(target)){ return null; }
+        /// <summary> 加算シーンアンロード遷移 </summary>
+        public void UnloadTransition(Scenes transitionScene, SceneInstance unloadSceneInstance)
+        {
+            // 遷移中は遷移不可.
+            if (IsTransition) { return; }
 
-			return AppendSceneInstances.FirstOrDefault(x => x.GetScene() == target.scene);
-		}
-	}
+            IsTransition = true;
+            
+            ObservableEx.FromUniTask(cancelToken => UnloadTransitionCore(transitionScene, unloadSceneInstance, cancelToken))
+                .Subscribe(_ => IsTransition = false)
+                .AddTo(transitionCancelSource.Token);
+        }
+
+        /// <summary> 加算シーンアンロード遷移 </summary>
+        public void UnloadTransition(Scenes transitionScene, GameObject gameObject)
+        {
+            var sceneInstance = AppendSceneInstances.FirstOrDefault(x => x.GetScene() == gameObject.scene);
+
+            UnloadTransition(transitionScene, sceneInstance);
+        }
+
+        /// <summary> 強制加算シーンアンロード遷移 </summary>
+        public void ForceUnloadTransition(Scenes transitionScene, SceneInstance unloadSceneInstance)
+        {
+            TransitionCancel();
+
+            IsTransition = true;
+
+            ObservableEx.FromUniTask(cancelToken => UnloadTransitionCore(transitionScene, unloadSceneInstance, cancelToken))
+                .Subscribe(_ => IsTransition = false)
+                .AddTo(transitionCancelSource.Token);
+        }
+
+        private async UniTask UnloadTransitionCore(Scenes transitionScene, SceneInstance sceneInstance, CancellationToken cancelToken)
+        {
+            if (sceneInstance == null){ return; }
+
+            try
+            {
+                var scene = loadedScenes.GetValueOrDefault(transitionScene);
+
+                // ロード済みシーンからの遷移制御.
+
+                var handleTransition = await HandleTransitionFromLoadedScenes();
+
+                if (!handleTransition){ return; }
+
+                if (cancelToken.IsCancellationRequested){ return; }
+
+                // 遷移開始.
+
+                var diagnostics = new TimeDiagnostics();
+
+                diagnostics.Begin(TimeDiagnostics.Measure.Total);
+
+                ISceneArgument argument = null;
+
+                if (scene != null && scene.Instance != null)
+                {
+                    argument = scene.Instance.GetArgument();
+                }
+
+                await TransitionStart(argument, false);
+
+                if (cancelToken.IsCancellationRequested){ return; }
+
+                //====== Scene Leave ======
+
+                diagnostics.Begin(TimeDiagnostics.Measure.Leave);
+
+                // Leave通知.
+                if (onLeave != null)
+                {
+                    onLeave.OnNext(sceneInstance);
+                }
+                
+                await sceneInstance.Instance.Leave();
+
+                // PlayerPrefsを保存.
+                PlayerPrefs.Save();
+
+                // Leave終了通知.
+                if (onLeaveComplete != null)
+                {
+                    onLeaveComplete.OnNext(sceneInstance);
+                }
+
+                diagnostics.Finish(TimeDiagnostics.Measure.Leave);
+
+                sceneInstance.Disable();
+                
+                UnloadAppendScene(sceneInstance);
+
+                if (cancelToken.IsCancellationRequested){ return; }
+
+                //====== Scene Active ======
+
+                if (scene == null)
+                {
+                    Debug.LogError($"UnloadTransition target scene not found.\n{transitionScene}");
+                }
+
+                TransitionTarget = scene.Identifier;
+
+                scene.Enable();
+
+                await scene.Instance.OnTransition();
+
+                if (cancelToken.IsCancellationRequested){ return; }
+
+                await TransitionFinish<ISceneArgument>(null, false);
+
+                if (cancelToken.IsCancellationRequested){ return; }
+
+                scene.Instance.Enter();
+
+                //====== Report ======
+
+                diagnostics.Finish(TimeDiagnostics.Measure.Total);
+
+                var total = diagnostics.GetTime(TimeDiagnostics.Measure.Total);
+                var detail = diagnostics.BuildDetailText();
+
+                var message = $"Unload Transition: {sceneInstance.Identifier} ({total:F2}ms)\n\n{detail}";
+
+                UnityConsole.Event(ConsoleEventName, ConsoleEventColor, message);
+            }
+            catch (OperationCanceledException)
+            {
+                /* Canceled */
+            }
+            catch (Exception e)
+            {
+                Debug.LogException(e);
+            }
+            finally
+            {
+                TransitionTarget = null;
+            }
+        }
+
+        /// <summary> 加算シーンインスタンスを検索. </summary>
+        public SceneInstance FindAppendSceneInstance(GameObject target)
+        {
+            if (UnityUtility.IsNull(target)){ return null; }
+
+            return AppendSceneInstances.FirstOrDefault(x => x.GetScene() == target.scene);
+        }
+    }
 }
