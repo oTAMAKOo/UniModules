@@ -1,6 +1,7 @@
-﻿
+
 using UnityEngine;
 using Extensions;
+using Modules.Devkit.Prefs;
 using Modules.Devkit.ScriptableObjects;
 
 namespace Modules.MessagePack
@@ -8,6 +9,15 @@ namespace Modules.MessagePack
     public sealed class MessagePackConfig : ReloadableScriptableObject<MessagePackConfig>
     {
         //----- params -----
+
+        public static class Prefs
+        {
+            public static string mpcRelativePath
+            {
+                get { return ProjectPrefs.GetString(typeof(Prefs).FullName + "-mpcRelativePath", null); }
+                set { ProjectPrefs.SetString(typeof(Prefs).FullName + "-mpcRelativePath", value); }
+            }
+        } 
 
         //----- field -----
 
@@ -18,7 +28,7 @@ namespace Modules.MessagePack
         [SerializeField]
         private bool useMapMode = true;
 
-		[SerializeField]
+        [SerializeField]
         [Tooltip("(option) Generated resolver class namespace.")]
         private string resolverNameSpace = "MessagePack";
         [SerializeField]
@@ -28,18 +38,9 @@ namespace Modules.MessagePack
         [Tooltip("(option) Split with ','.")]
         private string conditionalCompilerSymbols = null;
 
-		[SerializeField]
-		[Tooltip("(fix) Force add missing global namespace")]
-		private string[] forceAddGlobalSymbols = null;
-        
-        #pragma warning disable 0414
-
         [SerializeField]
-        private string winMpcRelativePath = null;
-        [SerializeField]
-        private string osxMpcRelativePath = null;
-
-        #pragma warning restore 0414
+        [Tooltip("(fix) Force add missing global namespace")]
+        private string[] forceAddGlobalSymbols = null;
 
         //----- property -----
 
@@ -64,29 +65,17 @@ namespace Modules.MessagePack
         /// <summary> 条件付きコンパイラシンボル. </summary>
         public string ConditionalCompilerSymbols { get { return conditionalCompilerSymbols; } }
 
-		/// <summary> 追加参照namespace. </summary>
-		public string[] ForceAddGlobalSymbols { get { return forceAddGlobalSymbols; } }
+        /// <summary> 追加参照namespace. </summary>
+        public string[] ForceAddGlobalSymbols { get { return forceAddGlobalSymbols; } }
 
-		/// <summary> コードジェネレータまでのパス(相対パス). </summary>
-        public string MpcRelativePath
+        /// <summary> コードジェネレータまでのパス. </summary>
+        public string MpcPath
         {
             get
             {
-                var relativePath = string.Empty;
+                var mpcRelativePath = Prefs.mpcRelativePath;
 
-                #if UNITY_EDITOR_WIN
-
-                relativePath = winMpcRelativePath;
-
-                #endif
-
-                #if UNITY_EDITOR_OSX
-
-                relativePath = osxMpcRelativePath;
-
-                #endif
-                
-                return string.IsNullOrEmpty(relativePath) ? null : UnityPathUtility.RelativePathToFullPath(relativePath);
+                return string.IsNullOrEmpty(mpcRelativePath) ? null : UnityPathUtility.RelativePathToFullPath(mpcRelativePath);
             }
         }
 

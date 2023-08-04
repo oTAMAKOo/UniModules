@@ -1,4 +1,4 @@
-﻿
+
 using UnityEngine;
 using UnityEditor;
 using System;
@@ -107,24 +107,16 @@ namespace Modules.MessagePack
         {
             var messagePackConfig = MessagePackConfig.Instance;
 
-            var command = messagePackConfig.MpcRelativePath;
-            var argument = generateInfo.MpcArgument;
+            var mpcPath = messagePackConfig.MpcPath;
 
-            if (string.IsNullOrEmpty(command))
+            if (string.IsNullOrEmpty(mpcPath) || !File.Exists(mpcPath))
             {
-	            command = GetMpcCommand();
-
-				#if UNITY_EDITOR_OSX
-
-				if (command.EndsWith("dotnet"))
-				{
-					argument = "mpc " + argument;
-				}
-
-				#endif
+                throw new FileNotFoundException("mpc not found.");
             }
 
-            var processExecute = new ProcessExecute(command, argument)
+            var argument = $"{mpcPath} {generateInfo.MpcArgument}";
+
+            var processExecute = new ProcessExecute("dotnet", argument)
             {
                 Encoding = Encoding.GetEncoding("Shift_JIS"),
             };
@@ -132,91 +124,42 @@ namespace Modules.MessagePack
             return processExecute;
         }
 
-		private static string GetMpcCommand()
-		{
-			var result = "mpc";
-
-			#if UNITY_EDITOR_WIN
-
-			// 環境変数.
-			var variable = Environment.GetEnvironmentVariable("Path", EnvironmentVariableTarget.Process);
-
-			if (variable != null)
-			{
-				foreach (var item in variable.Split(';'))
-				{
-					var path = PathUtility.Combine(item, "mpc.exe");
-
-					if (!File.Exists(path)){ continue; }
-
-					result = path;
-
-					break;
-				}
-			}
-			
-			#endif
-
-			#if UNITY_EDITOR_OSX
-
-			var mpcPathCandidate = new string[]
-			{
-				"$HOME/.dotnet/tools/",
-				"/usr/local/bin/",
-			};
-
-			foreach (var item in mpcPathCandidate)
-			{
-				var path = PathUtility.Combine(item, "dotnet");
-
-				if (!File.Exists(path)){ continue; }
-
-				result = path;
-
-				break;
-			}
-
-			#endif
-
-			return result;
-		}
-
-		private static void ImportGeneratedCsFile(string csFilePath, string csFileHash)
+        private static void ImportGeneratedCsFile(string csFilePath, string csFileHash)
         {
-			var messagePackConfig = MessagePackConfig.Instance;
+            var messagePackConfig = MessagePackConfig.Instance;
 
             var assetPath = UnityPathUtility.ConvertFullPathToAssetPath(csFilePath);
             
             // 名前空間定義 global::xxxxxxが定義されない問題対応.
 
-			var forceAddGlobalSymbols = messagePackConfig.ForceAddGlobalSymbols;
+            var forceAddGlobalSymbols = messagePackConfig.ForceAddGlobalSymbols;
 
-			if (forceAddGlobalSymbols != null && forceAddGlobalSymbols.Any())
-			{
-	            var builder = new StringBuilder();
+            if (forceAddGlobalSymbols != null && forceAddGlobalSymbols.Any())
+            {
+                var builder = new StringBuilder();
 
-	            var encode = new UTF8Encoding(true);
+                var encode = new UTF8Encoding(true);
 
-	            using (var sr = new StreamReader(csFilePath, encode))
-	            {
-	                var code = sr.ReadToEnd();
+                using (var sr = new StreamReader(csFilePath, encode))
+                {
+                    var code = sr.ReadToEnd();
 
-					builder.AppendLine("// ForceAddGlobalSymbols by MessagePackCodeGenerator.cs.");
+                    builder.AppendLine("// ForceAddGlobalSymbols by MessagePackCodeGenerator.cs.");
 
-					foreach (var forceAddGlobalSymbol in forceAddGlobalSymbols)
-					{
-						builder.AppendLine(forceAddGlobalSymbol);
-					}
+                    foreach (var forceAddGlobalSymbol in forceAddGlobalSymbols)
+                    {
+                        builder.AppendLine(forceAddGlobalSymbol);
+                    }
 
-	                builder.AppendLine();
-	                builder.Append(code);
-	            }
+                    builder.AppendLine();
+                    builder.Append(code);
+                }
 
-	            using (var sw = new StreamWriter(csFilePath, false, encode))
-	            {
-	                sw.Write(builder.ToString());
-	            }
-			}
+                using (var sw = new StreamWriter(csFilePath, false, encode))
+                {
+                    sw.Write(builder.ToString());
+                }
+            }
 
             // 差分があったらインポート.
 
