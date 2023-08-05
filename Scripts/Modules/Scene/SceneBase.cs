@@ -63,7 +63,7 @@ namespace Modules.Scene
 		public abstract Type GetArgumentType();
 
 		/// <summary> 引数を設定 </summary>
-		public abstract void SetArgument(ISceneArgument argument);
+		public abstract UniTask SetArgument(ISceneArgument argument);
 
 		/// <summary> 引数を取得 </summary>
 		public abstract ISceneArgument GetArgument();
