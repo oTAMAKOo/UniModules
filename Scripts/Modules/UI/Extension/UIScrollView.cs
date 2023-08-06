@@ -1,4 +1,4 @@
-﻿﻿﻿﻿
+﻿﻿﻿
 using UnityEngine;
 using UnityEngine.UI;
 using System;
@@ -23,6 +23,18 @@ namespace Modules.UI.Extension
         //----- property -----
 
         public ScrollRect ScrollRect { get { return component; } }
+
+        public GameObject ContentRoot
+        {
+            get
+            {
+                if (component == null){ return null; }
+
+                if (component.content == null){ return null; }
+
+                return component.content.gameObject;
+            }
+        }
 
         //----- method -----
 

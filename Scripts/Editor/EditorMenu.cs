@@ -10,7 +10,6 @@ using Extensions;
 // Modules.
 using Modules.PatternTexture;
 using Modules.TextData.Editor;
-using Modules.Lua;
 using Modules.MessagePack;
 using Modules.Master;
 using Modules.ExternalAssets;
@@ -42,6 +41,12 @@ using Modules.Devkit.U2D;
 #if ENABLE_CRIWARE_ADX || ENABLE_CRIWARE_ADX_LE || ENABLE_CRIWARE_SOFDEC
 
 using Modules.CriWare.Editor;
+
+#endif
+
+#if ENABLE_XLUA
+
+using Modules.Lua;
 
 #endif
 
@@ -204,6 +209,8 @@ namespace Modules
         //  LuaText.
         //===============================================================
 
+        #if ENABLE_XLUA
+
         #region LuaText
 
         protected const string LuaTextMenu = MenuRoot + "LuaText/";
@@ -230,6 +237,8 @@ namespace Modules
         }
 
         #endregion
+
+        #endif
 
         //===============================================================
         //  Resource.

@@ -1,4 +1,4 @@
-﻿
+
 using UnityEngine;
 using System;
 using System.Collections.Generic;
@@ -15,10 +15,10 @@ using Modules.MessagePack;
 
 namespace Modules.Master
 {
-	public interface IRecordDataLoader
-	{
-		UniTask<object[]> GetAllRecords(Type masterType, Type recordType);
-	}
+    public interface IRecordDataLoader
+    {
+        UniTask<object[]> GetAllRecords(Type masterType, Type recordType);
+    }
 
     public static class MasterGenerator
     {
@@ -28,14 +28,14 @@ namespace Modules.Master
 
         private const string RecordClassName = "Record";
 
-		public const string VersionFileName = "version.txt";
+        public const string VersionFileName = "version.txt";
 
-		private sealed class ResultInfo
-		{
-			public string fileName = null;
-			public string hash = null;
-			public double time = 0f;
-		}
+        private sealed class ResultInfo
+        {
+            public string fileName = null;
+            public string hash = null;
+            public double time = 0f;
+        }
 
         //----- field -----
 
@@ -43,24 +43,24 @@ namespace Modules.Master
 
         //----- method -----
 
-		public static async UniTask<bool> Generate(Type[] masterTypes, IRecordDataLoader recordDataLoader)
-		{
-			var config = MasterConfig.Instance;
+        public static async UniTask<bool> Generate(Type[] masterTypes, IRecordDataLoader recordDataLoader)
+        {
+            var config = MasterConfig.Instance;
 
-			var lz4Compression = config.Lz4Compression;
+            var lz4Compression = config.Lz4Compression;
 
-			var sourceDirectory = config.SourceDirectory;
+            var sourceDirectory = config.SourceDirectory;
 
-			if (string.IsNullOrEmpty(sourceDirectory)) { return false; }
+            if (string.IsNullOrEmpty(sourceDirectory)) { return false; }
 
-			var exportDirectory = GetExportDirectory();
+            var exportDirectory = GetExportDirectory();
 
-			if (string.IsNullOrEmpty(exportDirectory)){ return false; }
+            if (string.IsNullOrEmpty(exportDirectory)){ return false; }
 
-			if (Directory.Exists(exportDirectory))
-			{
-				DirectoryUtility.Clean(exportDirectory);
-			}
+            if (Directory.Exists(exportDirectory))
+            {
+                DirectoryUtility.Clean(exportDirectory);
+            }
 
             // 暗号化キー.
 
@@ -73,15 +73,15 @@ namespace Modules.Master
 
             // 実行.
 
-			try
+            try
             {
-	            var masterManager = MasterManager.Instance;
+                var masterManager = MasterManager.Instance;
 
                 masterManager.SetCryptoKey(cryptoKey);
 
                 var fileInfoDictionary = new SortedDictionary<string, (string, long)>(new NaturalComparer());
 
-				var resultInfos = new List<ResultInfo>();
+                var resultInfos = new List<ResultInfo>();
 
                 foreach (var masterType in masterTypes)
                 {
@@ -129,14 +129,14 @@ namespace Modules.Master
 
                         sw.Stop();
 
-						var resultInfo = new ResultInfo()
-						{
-							fileName = masterType.FullName,
-							time = sw.Elapsed.TotalMilliseconds,
-							hash = versionHash,
-						};
+                        var resultInfo = new ResultInfo()
+                        {
+                            fileName = masterType.FullName,
+                            time = sw.Elapsed.TotalMilliseconds,
+                            hash = versionHash,
+                        };
 
-						resultInfos.Add(resultInfo);
+                        resultInfos.Add(resultInfo);
                     }
                     catch (Exception e)
                     {
@@ -145,38 +145,38 @@ namespace Modules.Master
                 }
 
                 // バージョンファイル作成.
-				GenerateMasterVersionFile(exportDirectory, fileInfoDictionary);
+                GenerateMasterVersionFile(exportDirectory, fileInfoDictionary);
 
-				// ログ.
+                // ログ.
 
-				var logBuilder = new StringBuilder();
+                var logBuilder = new StringBuilder();
 
-				var chunkedResultInfos = resultInfos.Chunk(50).ToArray();
+                var chunkedResultInfos = resultInfos.Chunk(50).ToArray();
 
-				var chunkNum = chunkedResultInfos.Length;
+                var chunkNum = chunkedResultInfos.Length;
 
-				for (var i = 0; i < chunkedResultInfos.Length; i++)
-				{
-					var items = chunkedResultInfos[i];
+                for (var i = 0; i < chunkedResultInfos.Length; i++)
+                {
+                    var items = chunkedResultInfos[i];
 
-					logBuilder.Clear();
+                    logBuilder.Clear();
 
-					logBuilder.AppendLine($"Generate master complete. [{i + 1}/{chunkNum}]");
+                    logBuilder.AppendLine($"Generate master complete. [{i + 1}/{chunkNum}]");
 
-					foreach (var item in items)
-					{
-						logBuilder.AppendFormat("{0} ({1:F2}ms)", item.fileName, item.time).AppendLine();
-						logBuilder.AppendFormat("[ {0} ]", item.hash).AppendLine();
-						logBuilder.AppendLine();
-					}
+                    foreach (var item in items)
+                    {
+                        logBuilder.AppendFormat("{0} ({1:F2}ms)", item.fileName, item.time).AppendLine();
+                        logBuilder.AppendFormat("[ {0} ]", item.hash).AppendLine();
+                        logBuilder.AppendLine();
+                    }
 
-					UnityConsole.Info(logBuilder.ToString());
-				}
-			}
+                    UnityConsole.Info(logBuilder.ToString());
+                }
+            }
             catch (Exception e)
             {
-				var eventName = UnityConsole.InfoEvent.ConsoleEventName;
-				var color = UnityConsole.InfoEvent.ConsoleEventColor;
+                var eventName = UnityConsole.InfoEvent.ConsoleEventName;
+                var color = UnityConsole.InfoEvent.ConsoleEventColor;
 
                 UnityConsole.Event(eventName, color, $"Generate master failed. \n\n{e.Message}", LogType.Error);
 
@@ -206,7 +206,7 @@ namespace Modules.Master
 
         private static async UniTask<object> LoadMasterData(IRecordDataLoader recordDataLoader, Type masterType, Type containerType, Type recordType)
         {
-	        // Load records.
+            // Load records.
 
             var records = await recordDataLoader.GetAllRecords(masterType, recordType);
 
@@ -249,7 +249,7 @@ namespace Modules.Master
 
         #region Generate File
 
-		private static async UniTask<string> GenerateMasterFile(string filePath, object master, AesCryptoKey dataCryptoKey, bool lz4Compression)
+        private static async UniTask<string> GenerateMasterFile(string filePath, object master, AesCryptoKey dataCryptoKey, bool lz4Compression)
         {
             var options = StandardResolverAllowPrivate.Options.WithResolver(UnityCustomResolver.Instance);
 
@@ -298,11 +298,11 @@ namespace Modules.Master
 
         #region Version
 
-		private static void GenerateMasterVersionFile(string filePath, IDictionary<string, (string hash, long fileSize)> versionHashDictionary)
+        private static void GenerateMasterVersionFile(string filePath, IDictionary<string, (string hash, long fileSize)> versionHashDictionary)
         {
             var builder = new StringBuilder();
 
-			var rootHash =  string.Empty;
+            var rootHash =  string.Empty;
 
             foreach (var item in versionHashDictionary.Values)
             {
@@ -312,13 +312,13 @@ namespace Modules.Master
             rootHash = rootHash.GetHash();
 
             if (string.IsNullOrEmpty(rootHash))
-			{
-				throw new InvalidDataException();
-			}
+            {
+                throw new InvalidDataException();
+            }
 
-			builder.AppendLine(rootHash);
+            builder.AppendLine(rootHash);
 
-			foreach (var item in versionHashDictionary)
+            foreach (var item in versionHashDictionary)
             {
                 builder.AppendFormat("{0},{1},{2}", item.Key, item.Value.hash, item.Value.fileSize).AppendLine();
             }

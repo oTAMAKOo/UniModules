@@ -12,115 +12,115 @@ namespace Modules.UI
 
         //----- field -----
 
-		private Func<float> getAlpha = null;
+        private Func<float> getAlpha = null;
 
-		private bool ignoreTimeScale = false;
+        private bool ignoreTimeScale = false;
 
-		private float duration = 0f;
+        private float duration = 0f;
 
-		private float fadeAlpha = 0f;
+        private float fadeAlpha = 0f;
 
-		private Subject<float> onChangeAlpha = null;
-		private Subject<bool> onChangeActive = null;
+        private Subject<float> onChangeAlpha = null;
+        private Subject<bool> onChangeActive = null;
 
         //----- property -----
 
-		public float Alpha { get { return fadeAlpha; } }
+        public float Alpha { get { return fadeAlpha; } }
 
         //----- method -----
 
-		public FadeGraphic(float duration, Func<float> getAlpha, bool ignoreTimeScale = false)
-		{
-			this.duration = duration;
-			this.getAlpha = getAlpha;
-			this.ignoreTimeScale = ignoreTimeScale;
+        public FadeGraphic(float duration, Func<float> getAlpha, bool ignoreTimeScale = false)
+        {
+            this.duration = duration;
+            this.getAlpha = getAlpha;
+            this.ignoreTimeScale = ignoreTimeScale;
 
-			if (getAlpha == null)
-			{
-				throw new ArgumentException("Callback getAlpha is null");
-			}
+            if (getAlpha == null)
+            {
+                throw new ArgumentException("Callback getAlpha is null");
+            }
 
-			fadeAlpha = getAlpha.Invoke();
-		}
+            fadeAlpha = getAlpha.Invoke();
+        }
 
-		public void SetIgnoreTimeScale(bool ignoreTimeScale)
-		{
-			this.ignoreTimeScale = ignoreTimeScale;
-		}
-		
-		public async UniTask FadeIn()
-		{
-			if (onChangeActive != null)
-			{
-				onChangeActive.OnNext(true);
-			}
+        public void SetIgnoreTimeScale(bool ignoreTimeScale)
+        {
+            this.ignoreTimeScale = ignoreTimeScale;
+        }
+        
+        public async UniTask FadeIn()
+        {
+            if (onChangeActive != null)
+            {
+                onChangeActive.OnNext(true);
+            }
 
-			fadeAlpha = getAlpha.Invoke();
+            fadeAlpha = getAlpha.Invoke();
 
-			while (fadeAlpha < 1f)
-			{
-				var deltaTime = ignoreTimeScale ? Time.unscaledDeltaTime : Time.deltaTime;
+            while (fadeAlpha < 1f)
+            {
+                var deltaTime = ignoreTimeScale ? Time.unscaledDeltaTime : Time.deltaTime;
 
-				fadeAlpha += deltaTime / duration;
+                fadeAlpha += deltaTime / duration;
 
-				SetFadeAlpha(fadeAlpha);
+                SetFadeAlpha(fadeAlpha);
 
-				await UniTask.NextFrame();
-			}
+                await UniTask.NextFrame();
+            }
 
-			fadeAlpha = 1f;
+            fadeAlpha = 1f;
 
-			SetFadeAlpha(fadeAlpha);
-		}
+            SetFadeAlpha(fadeAlpha);
+        }
 
-		public async UniTask FadeOut()
-		{
-			if (onChangeActive != null)
-			{
-				onChangeActive.OnNext(true);
-			}
+        public async UniTask FadeOut()
+        {
+            if (onChangeActive != null)
+            {
+                onChangeActive.OnNext(true);
+            }
 
-			fadeAlpha = getAlpha.Invoke();
+            fadeAlpha = getAlpha.Invoke();
 
-			while (0 < fadeAlpha)
-			{
-				var deltaTime = ignoreTimeScale ? Time.unscaledDeltaTime : Time.deltaTime;
+            while (0 < fadeAlpha)
+            {
+                var deltaTime = ignoreTimeScale ? Time.unscaledDeltaTime : Time.deltaTime;
 
-				fadeAlpha -= deltaTime / duration;
+                fadeAlpha -= deltaTime / duration;
                
-				SetFadeAlpha(fadeAlpha);
+                SetFadeAlpha(fadeAlpha);
 
-				await UniTask.NextFrame();
-			}
+                await UniTask.NextFrame();
+            }
 
-			fadeAlpha = 0f;
+            fadeAlpha = 0f;
 
-			SetFadeAlpha(fadeAlpha);
-		}
+            SetFadeAlpha(fadeAlpha);
+        }
 
-		private void SetFadeAlpha(float value)
-		{
-			fadeAlpha = Mathf.Clamp(value, 0f, 1f);
+        private void SetFadeAlpha(float value)
+        {
+            fadeAlpha = Mathf.Clamp(value, 0f, 1f);
 
-			if (onChangeAlpha != null)
-			{
-				onChangeAlpha.OnNext(fadeAlpha);
-			}
+            if (onChangeAlpha != null)
+            {
+                onChangeAlpha.OnNext(fadeAlpha);
+            }
 
-			if (onChangeActive != null)
-			{
-				onChangeActive.OnNext(0f < fadeAlpha);
-			}
-		}
+            if (onChangeActive != null)
+            {
+                onChangeActive.OnNext(0f < fadeAlpha);
+            }
+        }
 
-		public IObservable<float> OnChangeAlphaAsObservable()
-		{
-			return onChangeAlpha ?? (onChangeAlpha = new Subject<float>());
-		}
-		
-		public IObservable<bool> OnChangeActiveAsObservable()
-		{
-			return onChangeActive ?? (onChangeActive = new Subject<bool>());
-		}
+        public IObservable<float> OnChangeAlphaAsObservable()
+        {
+            return onChangeAlpha ?? (onChangeAlpha = new Subject<float>());
+        }
+        
+        public IObservable<bool> OnChangeActiveAsObservable()
+        {
+            return onChangeActive ?? (onChangeActive = new Subject<bool>());
+        }
     }
 }
