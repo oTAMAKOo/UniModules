@@ -3,6 +3,7 @@ using System;
 using System.IO;
 using System.Linq;
 using System.Collections.Generic;
+using UniRx;
 using Extensions;
 using MessagePack;
 using MessagePack.Resolvers;
@@ -31,6 +32,10 @@ namespace Modules.LocalData
         private Dictionary<Type, string> filePathCache = null;
 
         private Dictionary<Type, ILocalData> dataCache = null;
+
+        private Subject<ILocalData> onLoad = null;
+
+        private Subject<ILocalData> onSave = null;
 
         //----- property -----
 
@@ -101,6 +106,11 @@ namespace Modules.LocalData
 
                     data = MessagePackSerializer.Deserialize<T>(bytes, options);
                 }
+
+                if (Instance.onLoad != null)
+                {
+                    Instance.onLoad.OnNext(data);
+                }
             }
             else
             {
@@ -139,6 +149,11 @@ namespace Modules.LocalData
                 bytes = bytes.Encrypt(Instance.cryptoKey);
 
                 fileStream.Write(bytes, 0, bytes.Length);
+            }
+
+            if (Instance.onSave != null)
+            {
+                Instance.onSave.OnNext(data);
             }
         }
 
@@ -213,6 +228,16 @@ namespace Modules.LocalData
             {
                 dataCache.Clear();
             }
+        }
+
+        public IObservable<ILocalData> OnLoadAsObservable()
+        {
+            return onLoad ?? (onLoad = new Subject<ILocalData>());
+        }
+
+        public IObservable<ILocalData> OnSaveAsObservable()
+        {
+            return onSave ?? (onSave = new Subject<ILocalData>());
         }
     }
 }
