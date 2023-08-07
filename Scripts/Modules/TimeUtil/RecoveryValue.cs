@@ -1,5 +1,6 @@
-﻿
+
 using System;
+using Extensions;
 
 namespace Modules.TimeUtil
 {
@@ -13,10 +14,10 @@ namespace Modules.TimeUtil
         //----- field -----
 
         // 現在の値.
-        private double current = 0;
+        private XDouble current = new XDouble(0);
 
-        // 次に回復するまでの時間.
-        private double nextRecoveryTime = 0;
+        // 次に回復する時間.
+        private DateTime nextRecoveryTime = default;
 
         //----- property -----
 
@@ -25,15 +26,7 @@ namespace Modules.TimeUtil
         {
             get { return current; }
 
-            private set
-            {
-                current = value;
-
-                if (Max <= current)
-                {
-                    current = Max;
-                }
-            }
+            private set { current.Value = value; }
         }
 
         /// <summary> 回復するのに必要な時間[秒] </summary>
@@ -82,11 +75,25 @@ namespace Modules.TimeUtil
         }
 
         /// <summary> 次に回復する時間までの残り時間. </summary>
-        public TimeSpan GetNextRecoveryTime()
+        public TimeSpan GetNextRecoveryTime(DateTime currentTime)
         {
             if (Max <= Current) { return TimeSpan.Zero; }
 
-            return TimeSpan.FromSeconds(nextRecoveryTime);
+            if (nextRecoveryTime <= currentTime) { return TimeSpan.Zero; }
+
+            return nextRecoveryTime - currentTime;
+        }
+
+        /// <summary> 全回復する時間までの残り時間. </summary>
+        public TimeSpan GetFullRecoveryTime(DateTime currentTime)
+        {
+            if (Max <= Current) { return TimeSpan.Zero; }
+
+            if (!FullRecoveryTime.HasValue) { return TimeSpan.Zero; }
+
+            if (FullRecoveryTime.Value <= currentTime) { return TimeSpan.Zero; }
+
+            return FullRecoveryTime.Value - currentTime;
         }
 
         /// <summary> 全体に対しての現在の割合(0～1). </summary>
@@ -99,41 +106,48 @@ namespace Modules.TimeUtil
             return Current / Max;
         }
 
+        /// <summary> 値更新 </summary>
+        public void SetValue(double value, DateTime currentTime)
+        {
+            Current = value;
+
+            var recoveryTime = (Max - Current) / RecoveryAmount * RecoveryInterval;
+
+            FullRecoveryTime = currentTime.AddSeconds(recoveryTime);
+
+            LastRecoveryTime = LastRecoveryTime.HasValue ? LastRecoveryTime.Value : currentTime;
+        }
+
         /// <summary> 更新. </summary>
         public void UpdateTime(DateTime currentTime)
         {
-            if (Max <= Current)
+            // 経過時間分のスタミナを回復させる
+
+            if (Current < Max && LastRecoveryTime.HasValue)
             {
-                Current = Max;
-                return;
-            }
+                var diff = currentTime - LastRecoveryTime.Value;
 
-            if (!LastRecoveryTime.HasValue)
-            {
-                Current = Max;
-                return;
-            }
+                var totalSeconds = diff.TotalSeconds;
 
-            var diff = currentTime - LastRecoveryTime.Value;
-
-            var totalSeconds = diff.TotalSeconds;
-
-            while (totalSeconds > RecoveryInterval)
-            {
-                if (Max <= Current)
+                while (totalSeconds > RecoveryInterval)
                 {
-                    Current = Max;
-                    break;
+                    if (Max <= Current)
+                    {
+                        Current = Max;
+                        break;
+                    }
+
+                    totalSeconds -= RecoveryInterval;
+
+                    LastRecoveryTime = LastRecoveryTime.Value.AddSeconds(RecoveryInterval);
+
+                    Current += RecoveryAmount;
                 }
-
-                totalSeconds -= RecoveryInterval;
-
-                LastRecoveryTime = LastRecoveryTime.Value.Add(TimeSpan.FromSeconds(RecoveryInterval));
-
-                Current += RecoveryAmount;           
             }
-
-            nextRecoveryTime = RecoveryInterval - totalSeconds;
+            else
+            {
+                LastRecoveryTime = currentTime;
+            }
         }
     }
 }
