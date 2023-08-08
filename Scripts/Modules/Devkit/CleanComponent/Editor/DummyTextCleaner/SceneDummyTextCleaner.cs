@@ -1,6 +1,7 @@
 ﻿
 using UnityEditor;
 using UnityEditor.SceneManagement;
+using System.IO;
 using Cysharp.Threading.Tasks;
 using UniRx;
 using Extensions;
@@ -18,52 +19,75 @@ namespace Modules.Devkit.CleanComponent
 
         //----- method -----
 
-		[InitializeOnLoadMethod]
-		private static void InitializeOnLoadMethod()
-		{
-			CurrentSceneSaveHook.OnSaveSceneAsObservable()
-				.Subscribe(x =>
-					{
-						Clean(x);
-						ReApply(x).Forget();
-					});
-		}
+        [InitializeOnLoadMethod]
+        private static void InitializeOnLoadMethod()
+        {
+            void OnSaveScene(string sceneAssetPath)
+            {
+                Clean(sceneAssetPath);
+                        
+                ReApply(sceneAssetPath).Forget();
+            }
 
-		public static void Clean()
-		{
-			var activeScene = EditorSceneManager.GetActiveScene();
+            CurrentSceneSaveHook.OnSaveSceneAsObservable().Subscribe(x =>OnSaveScene(x));
+        }
 
-			Clean(activeScene.path);
-		}
+        public static void Clean()
+        {
+            var activeScene = EditorSceneManager.GetActiveScene();
 
-		private static void Clean(string sceneAssetPath)
-		{
-			var activeScene = EditorSceneManager.GetActiveScene();
+            Clean(activeScene.path);
+        }
 
-			if (activeScene.path != sceneAssetPath) { return; }
+        private static void Clean(string sceneAssetPath)
+        {
+            var activeScene = EditorSceneManager.GetActiveScene();
 
-			var rootGameObjects = activeScene.GetRootGameObjects();
+            if (activeScene.path != sceneAssetPath) { return; }
 
-			foreach (var rootGameObject in rootGameObjects)
-			{
-				DummyTextCleaner.ModifyComponents(rootGameObject);
-			}
-		}
+            var rootGameObjects = activeScene.GetRootGameObjects();
 
-		private static async UniTask ReApply(string sceneAssetPath)
-		{
-			await UniTask.NextFrame();
+            foreach (var rootGameObject in rootGameObjects)
+            {
+                DummyTextCleaner.ModifyComponents(rootGameObject);
+            }
+        }
 
-			var activeScene = EditorSceneManager.GetActiveScene();
+        private static async UniTask ReApply(string sceneAssetPath)
+        {
+            var filePath = UnityPathUtility.ConvertAssetPathToFullPath(sceneAssetPath);
 
-			if (activeScene.path != sceneAssetPath) { return; }
+            ulong? prevLastWriteTime = null;
 
-			var rootGameObjects = activeScene.GetRootGameObjects();
+            while (true)
+            {
+                var fileInfo = new FileInfo(filePath);
 
-			foreach (var rootGameObject in rootGameObjects)
-			{
-				DummyTextCleaner.ReApply(rootGameObject);
-			}
-		}
+                var lastWriteTime = fileInfo.LastWriteTimeUtc.ToUnixTime();
+
+                if (prevLastWriteTime.HasValue)
+                {
+                    if (prevLastWriteTime != lastWriteTime){ break; }
+                }
+
+                prevLastWriteTime = lastWriteTime;
+
+                await UniTask.NextFrame();
+            }
+
+            EditorApplication.delayCall += () =>
+            {
+                var activeScene = EditorSceneManager.GetActiveScene();
+
+                if (activeScene.path != sceneAssetPath) { return; }
+
+                var rootGameObjects = activeScene.GetRootGameObjects();
+
+                foreach (var rootGameObject in rootGameObjects)
+                {
+                    DummyTextCleaner.ReApply(rootGameObject);
+                }
+            };
+        }
     }
 }

@@ -25,16 +25,16 @@ namespace Modules.TextData.Components
 
         private static AesCryptoKey aesCryptoKey = null;
 
-		//----- property -----
+        //----- property -----
 
-		//----- method -----
+        //----- method -----
 
-		void OnDestroy()
-		{ 
-			CleanDummyText();
-		}
+        void OnDestroy()
+        { 
+            CleanDummyText();
+        }
 
-		private AesCryptoKey GetCryptoKey()
+        private AesCryptoKey GetCryptoKey()
         {
             if (aesCryptoKey == null)
             {
@@ -100,7 +100,7 @@ namespace Modules.TextData.Components
         {
             if (Application.isPlaying) { return; }
 
-			if (BuildPipeline.isBuildingPlayer) { return; }
+            if (BuildPipeline.isBuildingPlayer) { return; }
 
             if (string.IsNullOrEmpty(dummyText)) { return; }
 
@@ -122,7 +122,7 @@ namespace Modules.TextData.Components
         {
             if (Application.isPlaying) { return false; }
 
-			if (BuildPipeline.isBuildingPlayer) { return false; }
+            if (BuildPipeline.isBuildingPlayer) { return false; }
 
             if (string.IsNullOrEmpty(dummyText)) { return false; }
 
@@ -134,7 +134,7 @@ namespace Modules.TextData.Components
             {
                 ApplyText(string.Empty);
 
-				SetDirty();
+                SetDirty();
 
                 return true;
             }
@@ -142,18 +142,18 @@ namespace Modules.TextData.Components
             return false;
         }
 
-		private void SetDirty()
-		{
-			if (textMeshProComponent != null)
-			{
-				EditorUtility.SetDirty(textMeshProComponent);
-			}
+        private void SetDirty()
+        {
+            if (textMeshProComponent != null)
+            {
+                EditorUtility.SetDirty(textMeshProComponent);
+            }
 
-			if (textComponent != null)
-			{
-				EditorUtility.SetDirty(textComponent);
-			}
-		}
+            if (textComponent != null)
+            {
+                EditorUtility.SetDirty(textComponent);
+            }
+        }
     }
 }
 
