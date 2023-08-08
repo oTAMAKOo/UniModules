@@ -118,7 +118,7 @@ namespace Modules.MessagePack
 
             var processExecute = new ProcessExecute("dotnet", argument)
             {
-                Encoding = Encoding.GetEncoding("Shift_JIS"),
+                Encoding = Encoding.UTF8,
             };
 
             return processExecute;
