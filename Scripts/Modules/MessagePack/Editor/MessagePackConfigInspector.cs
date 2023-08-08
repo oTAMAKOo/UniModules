@@ -66,6 +66,7 @@ namespace Modules.MessagePack
 
             serializedObject.Update();
 
+            var mpcRelativePath = serializedObject.FindProperty("mpcRelativePath");
             var scriptExportAssetDir = serializedObject.FindProperty("scriptExportAssetDir");
             var scriptName = serializedObject.FindProperty("scriptName");
             var useMapMode = serializedObject.FindProperty("useMapMode");
@@ -102,7 +103,6 @@ namespace Modules.MessagePack
                 guideMessage += @"
 Require add path from terminal command :
 where dotnet
-where mpc
 where MsBuild
 
 Require fix dotnet version : 
@@ -216,11 +216,9 @@ csproj directory : global.json
 
             using (new ContentsScope())
             {
-                var mpcRelativePath = MessagePackConfig.Prefs.mpcRelativePath;
-
                 using (new EditorGUILayout.HorizontalScope())
                 {
-                    GUILayout.Label(mpcRelativePath, pathTextStyle);
+                    GUILayout.Label(mpcRelativePath.stringValue, pathTextStyle);
 
                     if (GUILayout.Button("Edit", GUILayout.Width(45f)))
                     {
@@ -228,18 +226,22 @@ csproj directory : global.json
 
                         EditorApplication.delayCall += () =>
                         {
-                            var path = EditorUtility.OpenFilePanel("Select MessagePack compiler", Application.dataPath, "*");
+                            var path = EditorUtility.OpenFilePanel("Select MessagePack compiler", Application.dataPath, string.Empty);
 
                             if (!string.IsNullOrEmpty(path))
                             {
-                                MessagePackConfig.Prefs.mpcRelativePath = UnityPathUtility.MakeRelativePath(path);
+                                mpcRelativePath.stringValue = UnityPathUtility.MakeRelativePath(path);
+
+                                serializedObject.ApplyModifiedProperties();
                             }
                         };
                     }
 
                     if (GUILayout.Button("Clear", GUILayout.Width(45f)))
                     {
-                        MessagePackConfig.Prefs.mpcRelativePath = string.Empty;
+                        mpcRelativePath.stringValue = string.Empty;
+
+                        serializedObject.ApplyModifiedProperties();
                     }
                 }
             }

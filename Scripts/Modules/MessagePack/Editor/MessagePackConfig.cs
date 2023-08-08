@@ -10,17 +10,10 @@ namespace Modules.MessagePack
     {
         //----- params -----
 
-        public static class Prefs
-        {
-            public static string mpcRelativePath
-            {
-                get { return ProjectPrefs.GetString(typeof(Prefs).FullName + "-mpcRelativePath", null); }
-                set { ProjectPrefs.SetString(typeof(Prefs).FullName + "-mpcRelativePath", value); }
-            }
-        } 
-
         //----- field -----
 
+        [SerializeField]
+        private string mpcRelativePath = null;
         [SerializeField]
         private string scriptExportAssetDir = null;
         [SerializeField]
@@ -73,9 +66,9 @@ namespace Modules.MessagePack
         {
             get
             {
-                var mpcRelativePath = Prefs.mpcRelativePath;
+                if (string.IsNullOrEmpty(mpcRelativePath)){ return null; }
 
-                return string.IsNullOrEmpty(mpcRelativePath) ? null : UnityPathUtility.RelativePathToFullPath(mpcRelativePath);
+                return UnityPathUtility.RelativePathToFullPath(mpcRelativePath);
             }
         }
 
