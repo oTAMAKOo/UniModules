@@ -10,14 +10,15 @@ namespace Modules.MessagePack
     public sealed class MessagePackCodeGenerateInfo
     {
         //----- params -----
-
-        private const string CSProjExtension = ".csproj";
-
+        
         //----- field -----
 
         //----- property -----
 
+        public string CodeGenerateTarget { get; private set; }
+
         public string CsFilePath { get; private set; }
+
         public string MpcArgument { get; private set; }
 
         //----- method -----
@@ -28,16 +29,11 @@ namespace Modules.MessagePack
 
             SyncSolution();
 
-            var csprojPath = FindAssemblyCSharp();
-
-            if (!File.Exists(csprojPath))
-            {
-                throw new FileNotFoundException(string.Format("csproj file not found.\n{0}", csprojPath));
-            }
+            CodeGenerateTarget = messagePackConfig.CodeGenerateTarget;
 
             CsFilePath = GetScriptGeneratePath(messagePackConfig);
 
-            MpcArgument = CreateMpcArgument(messagePackConfig, csprojPath, CsFilePath);
+            MpcArgument = CreateMpcArgument(messagePackConfig, CodeGenerateTarget, CsFilePath);
         }
 
         private static void SyncSolution()
@@ -49,40 +45,18 @@ namespace Modules.MessagePack
             syncSolution.Invoke(null, null);
         }
 
-        private static string FindAssemblyCSharp()
-        {
-            var csprojPath = string.Empty;
-
-            var projectFolder = UnityPathUtility.GetProjectFolderPath();
-
-            var csprojNames = new string[] { "Assembly-CSharp", UnityPathUtility.GetProjectName() };
-
-            foreach (var csprojName in csprojNames)
-            {
-                var path = PathUtility.Combine(projectFolder, string.Format("{0}{1}", csprojName, CSProjExtension));
-
-                if (File.Exists(path))
-                {
-                    csprojPath = path;
-                    break;
-                }
-            }
-
-            return csprojPath;
-        }
-
         private static string GetScriptGeneratePath(MessagePackConfig messagePackConfig)
         {
             return PathUtility.Combine(messagePackConfig.ScriptExportDir, messagePackConfig.ExportScriptName);
         }
 
-        private static string CreateMpcArgument(MessagePackConfig messagePackConfig, string csprojPath, string generatePath)
+        private static string CreateMpcArgument(MessagePackConfig messagePackConfig, string input, string output)
         {
             var processArgument = new StringBuilder();
 
-            processArgument.AppendFormat(" --input \"{0}\"", ReplacePathSeparator(csprojPath));
+            processArgument.AppendFormat(" --input \"{0}\"", ReplacePathSeparator(input));
 
-            processArgument.AppendFormat(" --output \"{0}\"", ReplacePathSeparator(generatePath));
+            processArgument.AppendFormat(" --output \"{0}\"", ReplacePathSeparator(output));
 
             if (messagePackConfig.UseMapMode)
             {

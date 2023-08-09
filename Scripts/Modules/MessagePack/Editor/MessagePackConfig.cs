@@ -15,6 +15,8 @@ namespace Modules.MessagePack
         [SerializeField]
         private string mpcRelativePath = null;
         [SerializeField]
+        private string codeGenerateTarget = null;
+        [SerializeField]
         private string scriptExportAssetDir = null;
         [SerializeField]
         private string scriptName = null;
@@ -36,6 +38,23 @@ namespace Modules.MessagePack
         private string[] forceAddGlobalSymbols = null;
 
         //----- property -----
+
+        /// <summary> コードジェネレータまでのパス. </summary>
+        public string MpcPath
+        {
+            get
+            {
+                if (string.IsNullOrEmpty(mpcRelativePath)){ return null; }
+
+                return UnityPathUtility.RelativePathToFullPath(mpcRelativePath);
+            }
+        }
+
+        /// <summary> コード生成ターゲット. </summary>
+        public string CodeGenerateTarget
+        {
+            get { return UnityPathUtility.RelativePathToFullPath(codeGenerateTarget); }
+        }
 
         /// <summary> スクリプト出力先. </summary>
         public string ScriptExportDir
@@ -60,17 +79,6 @@ namespace Modules.MessagePack
 
         /// <summary> 追加参照namespace. </summary>
         public string[] ForceAddGlobalSymbols { get { return forceAddGlobalSymbols; } }
-
-        /// <summary> コードジェネレータまでのパス. </summary>
-        public string MpcPath
-        {
-            get
-            {
-                if (string.IsNullOrEmpty(mpcRelativePath)){ return null; }
-
-                return UnityPathUtility.RelativePathToFullPath(mpcRelativePath);
-            }
-        }
 
         //----- method -----
     }

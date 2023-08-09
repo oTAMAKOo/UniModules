@@ -66,10 +66,11 @@ namespace Modules.MessagePack
 
             serializedObject.Update();
 
-            var mpcRelativePath = serializedObject.FindProperty("mpcRelativePath");
+            var codeGenerateTarget = serializedObject.FindProperty("codeGenerateTarget");
             var scriptExportAssetDir = serializedObject.FindProperty("scriptExportAssetDir");
             var scriptName = serializedObject.FindProperty("scriptName");
             var useMapMode = serializedObject.FindProperty("useMapMode");
+            var mpcRelativePath = serializedObject.FindProperty("mpcRelativePath");
             var resolverNameSpace = serializedObject.FindProperty("resolverNameSpace");
             var resolverName = serializedObject.FindProperty("resolverName");
             var conditionalCompilerSymbols = serializedObject.FindProperty("conditionalCompilerSymbols");
@@ -115,12 +116,73 @@ csproj directory : global.json
                 EditorGUILayout.HelpBox(guideMessage, MessageType.Info);
             }
 
-            //------ 基本設定 ------
+            //------ CustomCodeGenerator ------
 
-            EditorLayoutTools.ContentTitle("MessagePack Script Export");
+            EditorLayoutTools.ContentTitle("CodeGenerator");
 
             using (new ContentsScope())
             {
+                using (new EditorGUILayout.HorizontalScope())
+                {
+                    GUILayout.Label(mpcRelativePath.stringValue, pathTextStyle);
+
+                    if (GUILayout.Button("Edit", GUILayout.Width(45f)))
+                    {
+                        UnityEditorUtility.RegisterUndo(instance);
+
+                        EditorApplication.delayCall += () =>
+                        {
+                            var path = EditorUtility.OpenFilePanel("Select MessagePack compiler", Application.dataPath, string.Empty);
+
+                            if (!string.IsNullOrEmpty(path))
+                            {
+                                mpcRelativePath.stringValue = UnityPathUtility.MakeRelativePath(path);
+
+                                serializedObject.ApplyModifiedProperties();
+                            }
+                        };
+                    }
+
+                    if (GUILayout.Button("Clear", GUILayout.Width(45f)))
+                    {
+                        mpcRelativePath.stringValue = string.Empty;
+
+                        serializedObject.ApplyModifiedProperties();
+                    }
+                }
+            }
+
+            GUILayout.Space(4f);
+
+            //------ 基本設定 ------
+
+            EditorLayoutTools.ContentTitle("CodeGenerator Settings");
+
+            using (new ContentsScope())
+            {
+                GUILayout.Label("Code Generate Target");
+
+                using (new EditorGUILayout.HorizontalScope())
+                {
+                    GUILayout.Label(codeGenerateTarget.stringValue, pathTextStyle);
+
+                    if (GUILayout.Button("Edit", GUILayout.Width(45f)))
+                    {
+                        UnityEditorUtility.RegisterUndo(instance);
+
+                        EditorApplication.delayCall += () =>
+                        {
+                            var path = EditorUtility.OpenFilePanel("Select code generate target", Application.dataPath, string.Empty);
+
+                            codeGenerateTarget.stringValue = UnityPathUtility.MakeRelativePath(path);
+
+                            serializedObject.ApplyModifiedProperties();
+                        };
+                    }
+                }
+
+                GUILayout.Label("Export Folder");
+
                 using (new EditorGUILayout.HorizontalScope())
                 {
                     GUILayout.Label(scriptExportAssetDir.stringValue, pathTextStyle);
@@ -129,11 +191,14 @@ csproj directory : global.json
                     {
                         UnityEditorUtility.RegisterUndo(instance);
 
-                        var path = EditorUtility.OpenFolderPanel("Select Export Folder", Application.dataPath, string.Empty);
+                        EditorApplication.delayCall += () =>
+                        {
+                            var path = EditorUtility.OpenFolderPanel("Select export folder", Application.dataPath, string.Empty);
 
-                        scriptExportAssetDir.stringValue = UnityPathUtility.MakeRelativePath(path);
+                            scriptExportAssetDir.stringValue = UnityPathUtility.MakeRelativePath(path);
 
-                        serializedObject.ApplyModifiedProperties();
+                            serializedObject.ApplyModifiedProperties();
+                        };
                     }
                 }
 
@@ -142,6 +207,8 @@ csproj directory : global.json
                 EditorGUI.BeginChangeCheck();
 
                 scriptName.stringValue = EditorGUILayout.DelayedTextField(scriptName.stringValue);
+
+                GUILayout.Space(2f);
 
                 useMapMode.boolValue = EditorGUILayout.Toggle("MapMode", useMapMode.boolValue);
 
@@ -205,44 +272,6 @@ csproj directory : global.json
                     UnityEditorUtility.RegisterUndo(instance);
 
                     serializedObject.ApplyModifiedProperties();
-                }
-            }
-
-            GUILayout.Space(4f);
-            
-            //------ CustomCodeGenerator ------
-
-            EditorLayoutTools.ContentTitle("CodeGenerator");
-
-            using (new ContentsScope())
-            {
-                using (new EditorGUILayout.HorizontalScope())
-                {
-                    GUILayout.Label(mpcRelativePath.stringValue, pathTextStyle);
-
-                    if (GUILayout.Button("Edit", GUILayout.Width(45f)))
-                    {
-                        UnityEditorUtility.RegisterUndo(instance);
-
-                        EditorApplication.delayCall += () =>
-                        {
-                            var path = EditorUtility.OpenFilePanel("Select MessagePack compiler", Application.dataPath, string.Empty);
-
-                            if (!string.IsNullOrEmpty(path))
-                            {
-                                mpcRelativePath.stringValue = UnityPathUtility.MakeRelativePath(path);
-
-                                serializedObject.ApplyModifiedProperties();
-                            }
-                        };
-                    }
-
-                    if (GUILayout.Button("Clear", GUILayout.Width(45f)))
-                    {
-                        mpcRelativePath.stringValue = string.Empty;
-
-                        serializedObject.ApplyModifiedProperties();
-                    }
                 }
             }
 
