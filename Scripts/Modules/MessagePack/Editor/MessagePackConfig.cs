@@ -22,6 +22,8 @@ namespace Modules.MessagePack
         private string scriptName = null;
         [SerializeField]
         private bool useMapMode = true;
+        [SerializeField]
+        private string processCommand = null;
 
         [SerializeField]
         [Tooltip("(option) Generated resolver class namespace.")]
@@ -67,6 +69,9 @@ namespace Modules.MessagePack
 
         /// <summary> マップモード. </summary>
         public bool UseMapMode { get { return useMapMode; } }
+
+        /// <summary> コード生成時のコマンド. </summary>
+        public string ProcessCommand { get { return processCommand; } }
 
         /// <summary> 生成されるResolverクラス名前空間名. </summary>
         public string ResolverNameSpace { get { return resolverNameSpace; } }

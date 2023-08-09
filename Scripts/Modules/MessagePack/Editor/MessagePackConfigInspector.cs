@@ -70,6 +70,7 @@ namespace Modules.MessagePack
             var scriptExportAssetDir = serializedObject.FindProperty("scriptExportAssetDir");
             var scriptName = serializedObject.FindProperty("scriptName");
             var useMapMode = serializedObject.FindProperty("useMapMode");
+            var processCommand = serializedObject.FindProperty("processCommand");
             var mpcRelativePath = serializedObject.FindProperty("mpcRelativePath");
             var resolverNameSpace = serializedObject.FindProperty("resolverNameSpace");
             var resolverName = serializedObject.FindProperty("resolverName");
@@ -202,11 +203,17 @@ csproj directory : global.json
                     }
                 }
 
-                GUILayout.Label("Export FileName");
-
                 EditorGUI.BeginChangeCheck();
 
+                GUILayout.Label("Export FileName");
+
                 scriptName.stringValue = EditorGUILayout.DelayedTextField(scriptName.stringValue);
+
+                GUILayout.Space(2f);
+
+                GUILayout.Label("ProcessCommand");
+
+                processCommand.stringValue = EditorGUILayout.DelayedTextField(processCommand.stringValue);
 
                 GUILayout.Space(2f);
 

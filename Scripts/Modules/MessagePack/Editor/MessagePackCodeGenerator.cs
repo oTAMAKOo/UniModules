@@ -114,9 +114,26 @@ namespace Modules.MessagePack
                 throw new FileNotFoundException("mpc not found.");
             }
 
-            var argument = $"{mpcPath} {generateInfo.MpcArgument}";
+            var command = string.Empty;
+            var argument = string.Empty;
+            
+            if (string.IsNullOrEmpty(messagePackConfig.ProcessCommand))
+            {
+                command = mpcPath;
+                argument = generateInfo.MpcArgument;
+            }
+            else
+            {
+                command = messagePackConfig.ProcessCommand;
+                argument = $"{mpcPath} {generateInfo.MpcArgument}";
+            }
 
-            var processExecute = new ProcessExecute("dotnet", argument)
+            if (string.IsNullOrEmpty(command) || string.IsNullOrEmpty(argument))
+            {
+                throw new InvalidOperationException("command or argument is null.");
+            }
+
+            var processExecute = new ProcessExecute(command, argument)
             {
                 Encoding = Encoding.UTF8,
             };
