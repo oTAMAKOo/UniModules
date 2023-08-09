@@ -109,11 +109,6 @@ namespace Modules.MessagePack
 
             var mpcPath = messagePackConfig.MpcPath;
 
-            if (string.IsNullOrEmpty(mpcPath) || !File.Exists(mpcPath))
-            {
-                throw new FileNotFoundException("mpc not found.");
-            }
-
             var command = string.Empty;
             var argument = string.Empty;
             
@@ -125,7 +120,7 @@ namespace Modules.MessagePack
             else
             {
                 command = messagePackConfig.ProcessCommand;
-                argument = $"{mpcPath} {generateInfo.MpcArgument}";
+                argument = $" {mpcPath}{generateInfo.MpcArgument}";
             }
 
             if (string.IsNullOrEmpty(command) || string.IsNullOrEmpty(argument))

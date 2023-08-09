@@ -165,7 +165,16 @@ csproj directory : global.json
 
                 using (new EditorGUILayout.HorizontalScope())
                 {
-                    GUILayout.Label(codeGenerateTarget.stringValue, pathTextStyle);
+                    EditorGUI.BeginChangeCheck();
+
+                    codeGenerateTarget.stringValue = EditorGUILayout.DelayedTextField(codeGenerateTarget.stringValue, pathTextStyle);
+
+                    if (EditorGUI.EndChangeCheck())
+                    {
+                        UnityEditorUtility.RegisterUndo(instance);
+
+                        serializedObject.ApplyModifiedProperties();
+                    }
 
                     if (GUILayout.Button("Edit", GUILayout.Width(45f)))
                     {
@@ -186,7 +195,16 @@ csproj directory : global.json
 
                 using (new EditorGUILayout.HorizontalScope())
                 {
-                    GUILayout.Label(scriptExportAssetDir.stringValue, pathTextStyle);
+                    EditorGUI.BeginChangeCheck();
+
+                    scriptExportAssetDir.stringValue = EditorGUILayout.DelayedTextField(scriptExportAssetDir.stringValue, pathTextStyle);
+
+                    if (EditorGUI.EndChangeCheck())
+                    {
+                        UnityEditorUtility.RegisterUndo(instance);
+
+                        serializedObject.ApplyModifiedProperties();
+                    }
 
                     if (GUILayout.Button("Edit", GUILayout.Width(45f)))
                     {
