@@ -1,4 +1,4 @@
-﻿#if ENABLE_VSTU
+#if ENABLE_VSTU
 
 using System;
 using System.IO;
@@ -90,7 +90,7 @@ namespace Modules.Devkit.VisualStudio
 
         /// <summary>
         /// VisualStudio用のAnalyzerを参照に追加. 
-		/// ※ analyzerIdにはNuGetのIDを指定.
+        /// ※ analyzerIdにはNuGetのIDを指定.
         /// </summary>
         public static void IncludeAnalyzer(ProjectFileGenerationArgs args, string analyzerId)
         {

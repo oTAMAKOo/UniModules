@@ -1,4 +1,4 @@
-﻿
+
 #if ENABLE_VSTU
 
 using System.Linq;
@@ -33,7 +33,7 @@ namespace Modules.Devkit.VisualStudio
             {
                 handler(args);
 
-				if (args.Handled || args.Cancel) { break; }
+                if (args.Handled || args.Cancel) { break; }
             }
 
             return args.Cancel ? content : args.Content;

@@ -1,4 +1,4 @@
-﻿
+
 #if ENABLE_VSTU
 
 using System;
@@ -12,7 +12,7 @@ namespace Modules.Devkit.VisualStudio
     {
         /// <summary>
         /// ソリューション ファイル (.sln) が既に存在する場合は、
-		/// 既存のソリューション ファイルをそのまま使用するためのフック処理を実行.
+        /// 既存のソリューション ファイルをそのまま使用するためのフック処理を実行.
         /// </summary>
         public static void AbortIfExists(SolutionFileGenerationArgs args)
         {
