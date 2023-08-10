@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Diagnostics;
 using Extensions;
+using Modules.Devkit.Prefs;
 using Modules.TextData.Components;
 
 using Debug = UnityEngine.Debug;
@@ -19,6 +20,15 @@ namespace Modules.TextData.Editor
         {
             Import,
             Export,
+        }
+
+        public static class Prefs
+        {
+            public static bool outputCommand
+            {
+                get { return ProjectPrefs.GetBool(typeof(Prefs).FullName + "-outputCommand", false); }
+                set { ProjectPrefs.SetBool(typeof(Prefs).FullName + "-outputCommand", value); }
+            }
         }
 
         //----- field -----
@@ -139,9 +149,12 @@ namespace Modules.TextData.Editor
                 Hide = !displayConsole,
             };
 
-            using (new DisableStackTraceScope())
+            if (Prefs.outputCommand)
             {
-                Debug.Log($"{config.ConverterPath} {processArguments}");
+                using (new DisableStackTraceScope())
+                {
+                    Debug.Log($"{config.ConverterPath} {processArguments}");
+                }
             }
 
             var result = await processExecute.StartAsync();

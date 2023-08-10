@@ -190,7 +190,22 @@ namespace Modules
 
         //------ Excel保存時に自動更新 ------
 
-        [MenuItem(itemName: TextDataMenu + "Updated when save Excel", priority = 1)]
+        [MenuItem(itemName: TextDataMenu + "Output Converter ProcessCommand", priority = 2)]
+        public static void ToggleOutputConverterProcessCommand()
+        {
+            TextDataExcel.Prefs.outputCommand = !TextDataExcel.Prefs.outputCommand;
+        }
+
+        [MenuItem(itemName: TextDataMenu + "Output Converter ProcessCommand", isValidateFunction: true)]
+        public static bool ToggleOutputConverterProcessCommandValidate()
+        {
+            Menu.SetChecked(TextDataMenu + "Output Converter ProcessCommand", TextDataExcel.Prefs.outputCommand);
+            return true;
+        }
+
+        //------ Excel保存時に自動更新 ------
+
+        [MenuItem(itemName: TextDataMenu + "Updated when save Excel", priority = 20)]
         public static void ToggleUpdateOnSaveTextDataExcel()
         {
             TextDataAssetUpdater.Prefs.autoUpdate = !TextDataAssetUpdater.Prefs.autoUpdate;
