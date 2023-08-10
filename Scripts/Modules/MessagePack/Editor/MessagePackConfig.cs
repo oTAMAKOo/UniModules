@@ -1,5 +1,6 @@
 
 using UnityEngine;
+using System;
 using Extensions;
 using Modules.Devkit.Prefs;
 using Modules.Devkit.ScriptableObjects;
@@ -10,10 +11,35 @@ namespace Modules.MessagePack
     {
         //----- params -----
 
+        public sealed class Prefs
+        {
+            public static MpcSetting PrivateSetting
+            {
+                get { return ProjectPrefs.Get<MpcSetting>(typeof(Prefs).FullName + "-Result", null); }
+                set { ProjectPrefs.Set<MpcSetting>(typeof(Prefs).FullName + "-Result", value); }
+            }
+        }
+
+        [Serializable]
+        public sealed class MpcSetting
+        {
+            [SerializeField]
+            public string processCommand = null;
+            [SerializeField]
+            public string mpcRelativePath = null;
+        }
+
         //----- field -----
 
+        #pragma warning disable CS0414
+
         [SerializeField]
-        private string mpcRelativePath = null;
+        private MpcSetting winMpcSetting = null;
+        [SerializeField]
+        private MpcSetting osxMpcSetting = null;
+
+        #pragma warning restore CS0414
+
         [SerializeField]
         private string codeGenerateTarget = null;
         [SerializeField]
@@ -22,8 +48,6 @@ namespace Modules.MessagePack
         private string scriptName = null;
         [SerializeField]
         private bool useMapMode = true;
-        [SerializeField]
-        private string processCommand = null;
 
         [SerializeField]
         [Tooltip("(option) Generated resolver class namespace.")]
@@ -41,11 +65,58 @@ namespace Modules.MessagePack
 
         //----- property -----
 
+        /// <summary> コード生成時のコマンド. </summary>
+        public string ProcessCommand
+        {
+            get
+            {
+                var processCommand = string.Empty;
+
+                #if UNITY_EDITOR_WIN
+
+                processCommand = winMpcSetting.processCommand;
+
+                #endif
+
+                #if UNITY_EDITOR_OSX
+
+                processCommand = osxMpcSetting.processCommand;
+
+                #endif
+
+                if (Prefs.PrivateSetting != null)
+                {
+                    processCommand = Prefs.PrivateSetting.processCommand;
+                }
+
+                return processCommand;
+            }
+        }
+
         /// <summary> コードジェネレータまでのパス. </summary>
         public string MpcPath
         {
             get
             {
+                var mpcRelativePath = string.Empty;
+
+                #if UNITY_EDITOR_WIN
+
+                mpcRelativePath = winMpcSetting.mpcRelativePath;
+
+                #endif
+
+                #if UNITY_EDITOR_OSX
+
+                mpcRelativePath = osxMpcSetting.mpcRelativePath;
+
+                #endif
+
+                if (Prefs.PrivateSetting != null)
+                {
+                    mpcRelativePath = Prefs.PrivateSetting.mpcRelativePath;
+                }
+
                 if (string.IsNullOrEmpty(mpcRelativePath)){ return null; }
 
                 return UnityPathUtility.RelativePathToFullPath(mpcRelativePath);
@@ -69,9 +140,6 @@ namespace Modules.MessagePack
 
         /// <summary> マップモード. </summary>
         public bool UseMapMode { get { return useMapMode; } }
-
-        /// <summary> コード生成時のコマンド. </summary>
-        public string ProcessCommand { get { return processCommand; } }
 
         /// <summary> 生成されるResolverクラス名前空間名. </summary>
         public string ResolverNameSpace { get { return resolverNameSpace; } }

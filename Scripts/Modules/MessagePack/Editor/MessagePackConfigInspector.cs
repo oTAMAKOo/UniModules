@@ -66,12 +66,13 @@ namespace Modules.MessagePack
 
             serializedObject.Update();
 
+            var winMpcSetting = Reflection.GetPrivateField<MessagePackConfig, MessagePackConfig.MpcSetting>(instance, "winMpcSetting");
+            var osxMpcSetting = Reflection.GetPrivateField<MessagePackConfig, MessagePackConfig.MpcSetting>(instance, "osxMpcSetting");
+
             var codeGenerateTarget = serializedObject.FindProperty("codeGenerateTarget");
             var scriptExportAssetDir = serializedObject.FindProperty("scriptExportAssetDir");
             var scriptName = serializedObject.FindProperty("scriptName");
             var useMapMode = serializedObject.FindProperty("useMapMode");
-            var processCommand = serializedObject.FindProperty("processCommand");
-            var mpcRelativePath = serializedObject.FindProperty("mpcRelativePath");
             var resolverNameSpace = serializedObject.FindProperty("resolverNameSpace");
             var resolverName = serializedObject.FindProperty("resolverName");
             var conditionalCompilerSymbols = serializedObject.FindProperty("conditionalCompilerSymbols");
@@ -119,36 +120,53 @@ csproj directory : global.json
 
             //------ CustomCodeGenerator ------
 
-            EditorLayoutTools.ContentTitle("CodeGenerator");
+            EditorLayoutTools.ContentTitle("CodeGenerator Settings");
 
             using (new ContentsScope())
             {
-                using (new EditorGUILayout.HorizontalScope())
+                var privateSetting = MessagePackConfig.Prefs.PrivateSetting;
+
+                using (new DisableScope(privateSetting != null))
                 {
-                    GUILayout.Label(mpcRelativePath.stringValue, pathTextStyle);
-
-                    if (GUILayout.Button("Edit", GUILayout.Width(45f)))
                     {
-                        UnityEditorUtility.RegisterUndo(instance);
+                        var changed = DrawMpcSettingGUI("win", winMpcSetting);
 
-                        EditorApplication.delayCall += () =>
+                        if (changed)
                         {
-                            var path = EditorUtility.OpenFilePanel("Select MessagePack compiler", Application.dataPath, string.Empty);
-
-                            if (!string.IsNullOrEmpty(path))
-                            {
-                                mpcRelativePath.stringValue = UnityPathUtility.MakeRelativePath(path);
-
-                                serializedObject.ApplyModifiedProperties();
-                            }
-                        };
+                            Reflection.SetPrivateField(instance, "winMpcSetting", winMpcSetting);
+                            UnityEditorUtility.SaveAsset(instance);
+                        }
                     }
 
-                    if (GUILayout.Button("Clear", GUILayout.Width(45f)))
                     {
-                        mpcRelativePath.stringValue = string.Empty;
+                        var changed = DrawMpcSettingGUI("osx", osxMpcSetting);
 
-                        serializedObject.ApplyModifiedProperties();
+                        if (changed)
+                        {
+                            Reflection.SetPrivateField(instance, "osxMpcSetting", osxMpcSetting);
+                            UnityEditorUtility.SaveAsset(instance);
+                        }
+                    }
+                }
+
+                {
+                    EditorGUI.BeginChangeCheck();
+
+                    var toggle = EditorGUILayout.Toggle("Use private setting", privateSetting != null);
+
+                    if (EditorGUI.EndChangeCheck())
+                    {
+                        MessagePackConfig.Prefs.PrivateSetting = toggle ? new MessagePackConfig.MpcSetting() : null;
+                    }
+
+                    if (privateSetting != null)
+                    {
+                        var changed = DrawMpcSettingGUI("private", privateSetting);
+
+                        if (changed)
+                        {
+                            MessagePackConfig.Prefs.PrivateSetting = privateSetting;
+                        }
                     }
                 }
             }
@@ -229,12 +247,6 @@ csproj directory : global.json
 
                 GUILayout.Space(2f);
 
-                GUILayout.Label("ProcessCommand");
-
-                processCommand.stringValue = EditorGUILayout.DelayedTextField(processCommand.stringValue);
-
-                GUILayout.Space(2f);
-
                 useMapMode.boolValue = EditorGUILayout.Toggle("MapMode", useMapMode.boolValue);
 
                 if (EditorGUI.EndChangeCheck())
@@ -301,6 +313,62 @@ csproj directory : global.json
             }
 
             GUILayout.Space(4f);
+        }
+
+        private bool DrawMpcSettingGUI(string title, MessagePackConfig.MpcSetting setting)
+        {
+            var changed = false;
+
+            EditorLayoutTools.ContentTitle(title);
+
+            EditorGUI.BeginChangeCheck();
+
+            using (new ContentsScope())
+            {
+                GUILayout.Label("ProcessCommand");
+
+                setting.processCommand = EditorGUILayout.DelayedTextField(setting.processCommand);
+
+                GUILayout.Space(2f);
+
+                GUILayout.Label("MessagePack Compiler");
+
+                using (new EditorGUILayout.HorizontalScope())
+                {
+                    GUILayout.Label(setting.mpcRelativePath, pathTextStyle);
+
+                    if (GUILayout.Button("Edit", GUILayout.Width(45f)))
+                    {
+                        UnityEditorUtility.RegisterUndo(instance);
+
+                        EditorApplication.delayCall += () =>
+                        {
+                            var path = EditorUtility.OpenFilePanel("Select MessagePack compiler", Application.dataPath, string.Empty);
+
+                            if (!string.IsNullOrEmpty(path))
+                            {
+                                setting.mpcRelativePath = UnityPathUtility.MakeRelativePath(path);
+                                
+                                changed = true;
+                            }
+                        };
+                    }
+
+                    if (GUILayout.Button("Clear", GUILayout.Width(45f)))
+                    {
+                        setting.mpcRelativePath = string.Empty;
+
+                        changed = true;
+                    }
+                }
+            }
+
+            if (EditorGUI.EndChangeCheck())
+            {
+
+            }
+
+            return changed;
         }
 
         private async UniTask FindDotnet()
