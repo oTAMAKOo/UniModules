@@ -380,6 +380,8 @@ namespace Modules.Devkit.AssetTuning.TextureAsset
             Reflection.SetPrivateField(instance, "customData", customData);
 
             UnityEditorUtility.SaveAsset(instance);
+
+            instance.BuildCache(true);
         }
     }
 }

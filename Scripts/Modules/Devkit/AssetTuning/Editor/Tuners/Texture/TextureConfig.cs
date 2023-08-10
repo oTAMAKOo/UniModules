@@ -82,7 +82,7 @@ namespace Modules.Devkit.AssetTuning.TextureAsset
             return data.IsDefault() ? null : data.Value;
         }
 
-        private void BuildCache(bool forceReBuild = false)
+        public void BuildCache(bool forceReBuild = false)
         {
             if (!forceReBuild && cache != null) { return; }
 
