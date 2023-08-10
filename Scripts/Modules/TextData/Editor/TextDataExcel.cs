@@ -1,4 +1,4 @@
-﻿
+
 using System;
 using System.IO;
 using System.Text;
@@ -129,13 +129,20 @@ namespace Modules.TextData.Editor
                     break;
             }
 
-            var processExecute = new ProcessExecute(config.ConverterPath, arguments.ToString())
+            var processArguments = arguments.ToString();
+
+            var processExecute = new ProcessExecute(config.ConverterPath, processArguments)
             {
                 Encoding = Encoding.GetEncoding("Shift_JIS"),
                 WorkingDirectory = setting.GetTextDataWorkspacePath(),
                 UseShellExecute = displayConsole,
                 Hide = !displayConsole,
             };
+
+            using (new DisableStackTraceScope())
+            {
+                Debug.Log($"{config.ConverterPath} {processArguments}");
+            }
 
             var result = await processExecute.StartAsync();
 
