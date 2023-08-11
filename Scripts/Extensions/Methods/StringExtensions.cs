@@ -93,20 +93,18 @@ namespace Extensions
         // SHA256ハッシュ生成.
         private static string CalcSHA256(string value, Encoding enc)
         {
-            var byteValues = enc.GetBytes(value);
+            #if NET6_0_OR_GREATER
 
-            var crypt256 = new SHA256CryptoServiceProvider();
+            var hashAlgorithm = SHA256.Create();
 
-            var hash256Value = crypt256.ComputeHash(byteValues);
-            
-            var hashedText = new StringBuilder();
+            #else
 
-            for (var i = 0; i < hash256Value.Length; i++)
-            {
-                hashedText.AppendFormat("{0:x2}", hash256Value[i]);
-            }
+            var hashAlgorithm = new SHA256CryptoServiceProvider();
 
-            return hashedText.ToString();
+            #endif
+
+            return string.Join("", hashAlgorithm.ComputeHash(enc.GetBytes(value)).Select(x => $"{x:x2}"));
+
         }
 
         /// <summary> 指定された文字列をCRC32でハッシュ化 </summary>
