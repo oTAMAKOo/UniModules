@@ -29,7 +29,7 @@ namespace Modules.TextData.Components
 
         //----- method -----
 
-        void OnDestroy()
+        void OnDisable()
         { 
             CleanDummyText();
         }
