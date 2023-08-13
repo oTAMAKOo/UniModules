@@ -185,11 +185,6 @@ namespace Modules.UI.Layout
 		{
 			base.OnEnable();
 
-			if (copySource != null)
-			{
-				LayoutRebuilder.ForceRebuildLayoutImmediate(copySource);
-			}
-
 			UpdatePreferredSize();
 		}
 
@@ -213,7 +208,7 @@ namespace Modules.UI.Layout
 			}
 			else
 			{
-				SetDirty();
+                SetDirty();
 			}
 
 			prevPreferredSize = preferredSize;
@@ -221,6 +216,11 @@ namespace Modules.UI.Layout
 
 		public void UpdateLayoutImmediate()
 		{
+            if (copySource != null)
+            {
+                LayoutRebuilder.ForceRebuildLayoutImmediate(copySource);
+            }
+
 			SetLayoutHorizontal();
 			SetLayoutVertical();
 		}

@@ -264,6 +264,8 @@ namespace Extensions
 
                 foreach (var layoutGroup in layoutGroups)
                 {
+                    if (UnityUtility.IsNull(layoutGroup)){ continue; }
+
                     layoutGroup.SetLayoutHorizontal();
                     layoutGroup.SetLayoutVertical();
 
