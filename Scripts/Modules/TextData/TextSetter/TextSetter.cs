@@ -44,6 +44,7 @@ namespace Modules.TextData.Components
             {
                 // テキスト更新通知を受け取ったら再度テキストを適用.
                 TextData.Instance.OnUpdateContentsAsObservable()
+                    .TakeWhile(_ => !UnityUtility.IsNull(this))
                     .Subscribe(_ => ImportText())
                     .AddTo(this);
             }
