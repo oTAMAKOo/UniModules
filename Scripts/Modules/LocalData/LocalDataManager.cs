@@ -1,4 +1,5 @@
 ﻿
+using UnityEngine;
 using System;
 using System.IO;
 using System.Linq;
@@ -7,6 +8,7 @@ using UniRx;
 using Extensions;
 using MessagePack;
 using MessagePack.Resolvers;
+using Modules.Devkit.Console;
 using Modules.MessagePack;
 
 namespace Modules.LocalData
@@ -24,6 +26,9 @@ namespace Modules.LocalData
     public sealed class LocalDataManager : Singleton<LocalDataManager>
     {
         //----- params -----
+
+        public static readonly string ConsoleEventName = "LocalData";
+        public static readonly Color ConsoleEventColor = new Color(0.85f, 0.55f, 0.1f);
 
         //----- field -----
 
@@ -86,6 +91,7 @@ namespace Modules.LocalData
         {
             var type = typeof(T);
 
+            var className = typeof(T).FullName;
             var filePath = Instance.GetFilePath<T>();
 
             var data = new T();
@@ -116,8 +122,10 @@ namespace Modules.LocalData
                 }
                 catch (Exception ex)
                 {
-                    throw new Exception($"LocalData load failed.\nClass:{typeof(T).FullName}\nFilePath:{filePath}", ex);
+                    throw new Exception($"LocalData load failed.\nClass:{className}\nFilePath:{filePath}", ex);
                 }
+
+                UnityConsole.Event(ConsoleEventName, ConsoleEventColor, $"Load : {className}\nFilePath:{filePath}");
 
                 if (Instance.onLoad != null)
                 {
@@ -144,6 +152,7 @@ namespace Modules.LocalData
 
         public static void Save<T>(T data) where T : class, ILocalData, new()
         {
+            var className = typeof(T).FullName;
             var filePath = Instance.GetFilePath<T>();
 
             try
@@ -163,8 +172,10 @@ namespace Modules.LocalData
             }
             catch (Exception ex)
             {
-                throw new Exception($"LocalData save failed.\nClass:{typeof(T).FullName}\nFilePath:{filePath}", ex);
+                throw new Exception($"LocalData save failed.\nClass:{className}\nFilePath:{filePath}", ex);
             }
+
+            UnityConsole.Event(ConsoleEventName, ConsoleEventColor, $"Save : {className}\nFilePath:{filePath}");
 
             if (Instance.onSave != null)
             {

@@ -1001,7 +1001,7 @@ namespace Modules.Scene
 
                 op = SceneManager.UnloadSceneAsync(scene.Value);
 
-                while (!op.isDone)
+                while (op != null && !op.isDone)
                 {
                     await UniTask.NextFrame();
                 }
