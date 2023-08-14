@@ -94,22 +94,29 @@ namespace Modules.LocalData
             {
                 byte[] bytes = null;
 
-                using (var fileStream = new FileStream(filePath, FileMode.Open, FileAccess.Read))
+                try
                 {
-                    bytes = new byte[fileStream.Length];
+                    using (var fileStream = new FileStream(filePath, FileMode.Open, FileAccess.Read))
+                    {
+                        bytes = new byte[fileStream.Length];
 
-                    fileStream.Read(bytes, 0, bytes.Length);
+                        fileStream.Read(bytes, 0, bytes.Length);
+                    }
+
+                    if (!bytes.IsEmpty())
+                    {
+                        bytes = bytes.Decrypt(Instance.cryptoKey);
+
+                        var options = StandardResolverAllowPrivate.Options
+                            .WithCompression(MessagePackCompression.Lz4BlockArray)
+                            .WithResolver(UnityCustomResolver.Instance);
+
+                        data = MessagePackSerializer.Deserialize<T>(bytes, options);
+                    }
                 }
-
-                if (!bytes.IsEmpty())
+                catch (Exception ex)
                 {
-                    bytes = bytes.Decrypt(Instance.cryptoKey);
-
-                    var options = StandardResolverAllowPrivate.Options
-                        .WithCompression(MessagePackCompression.Lz4BlockArray)
-                        .WithResolver(UnityCustomResolver.Instance);
-
-                    data = MessagePackSerializer.Deserialize<T>(bytes, options);
+                    throw new Exception($"LocalData load failed.\nClass:{typeof(T).FullName}\nFilePath:{filePath}", ex);
                 }
 
                 if (Instance.onLoad != null)
@@ -139,17 +146,24 @@ namespace Modules.LocalData
         {
             var filePath = Instance.GetFilePath<T>();
 
-            var options = StandardResolverAllowPrivate.Options
-                .WithCompression(MessagePackCompression.Lz4BlockArray)
-                .WithResolver(UnityCustomResolver.Instance);
-
-            var bytes = MessagePackSerializer.Serialize(data, options);
-
-            bytes = bytes.Encrypt(Instance.cryptoKey);
-
-            using (var fileStream = new FileStream(filePath, FileMode.Create, FileAccess.Write))
+            try
             {
-                fileStream.Write(bytes, 0, bytes.Length);
+                var options = StandardResolverAllowPrivate.Options
+                    .WithCompression(MessagePackCompression.Lz4BlockArray)
+                    .WithResolver(UnityCustomResolver.Instance);
+
+                var bytes = MessagePackSerializer.Serialize(data, options);
+
+                bytes = bytes.Encrypt(Instance.cryptoKey);
+
+                using (var fileStream = new FileStream(filePath, FileMode.Create, FileAccess.Write))
+                {
+                    fileStream.Write(bytes, 0, bytes.Length);
+                }
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"LocalData save failed.\nClass:{typeof(T).FullName}\nFilePath:{filePath}", ex);
             }
 
             if (Instance.onSave != null)
