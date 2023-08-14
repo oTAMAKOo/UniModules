@@ -19,11 +19,16 @@ namespace Extensions
 
             using (var memoryStream = new MemoryStream())
             {
-                lock (aesCryptoKey.Encryptor)
+                lock (aesCryptoKey)
                 {
-                    using (var cryptoStream = new CryptoStream(memoryStream, aesCryptoKey.Encryptor, CryptoStreamMode.Write))
+                    lock (aesCryptoKey.Encryptor)
                     {
-                        cryptoStream.Write(value, 0, value.Length);
+                        using (var cryptoStream = new CryptoStream(memoryStream, aesCryptoKey.Encryptor, CryptoStreamMode.Write))
+                        {
+                            cryptoStream.Write(value, 0, value.Length);
+
+                            cryptoStream.FlushFinalBlock();
+                        }
                     }
                 }
 
@@ -44,11 +49,16 @@ namespace Extensions
             
             using (var memoryStream = new MemoryStream())
             {
-                lock (aesCryptoKey.Decryptor)
+                lock (aesCryptoKey)
                 {
-                    using (var cryptoStream = new CryptoStream(memoryStream, aesCryptoKey.Decryptor, CryptoStreamMode.Write))
+                    lock (aesCryptoKey.Decryptor)
                     {
-                        cryptoStream.Write(value, 0, value.Length);
+                        using (var cryptoStream = new CryptoStream(memoryStream, aesCryptoKey.Decryptor, CryptoStreamMode.Write))
+                        {
+                            cryptoStream.Write(value, 0, value.Length);
+
+                            cryptoStream.FlushFinalBlock();
+                        }
                     }
                 }
 

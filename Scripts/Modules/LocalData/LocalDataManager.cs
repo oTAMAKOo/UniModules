@@ -88,16 +88,21 @@ namespace Modules.LocalData
 
             var filePath = Instance.GetFilePath<T>();
 
-            var data = default(T);
+            var data = new T();
 
             if (File.Exists(filePath))
             {
+                byte[] bytes = null;
+
                 using (var fileStream = new FileStream(filePath, FileMode.Open, FileAccess.Read))
                 {
-                    var bytes = new byte[fileStream.Length];
+                    bytes = new byte[fileStream.Length];
 
                     fileStream.Read(bytes, 0, bytes.Length);
+                }
 
+                if (!bytes.IsEmpty())
+                {
                     bytes = bytes.Decrypt(Instance.cryptoKey);
 
                     var options = StandardResolverAllowPrivate.Options
@@ -111,10 +116,6 @@ namespace Modules.LocalData
                 {
                     Instance.onLoad.OnNext(data);
                 }
-            }
-            else
-            {
-                data = new T();
             }
 
             Instance.dataCache[type] = data;
@@ -138,16 +139,16 @@ namespace Modules.LocalData
         {
             var filePath = Instance.GetFilePath<T>();
 
+            var options = StandardResolverAllowPrivate.Options
+                .WithCompression(MessagePackCompression.Lz4BlockArray)
+                .WithResolver(UnityCustomResolver.Instance);
+
+            var bytes = MessagePackSerializer.Serialize(data, options);
+
+            bytes = bytes.Encrypt(Instance.cryptoKey);
+
             using (var fileStream = new FileStream(filePath, FileMode.Create, FileAccess.Write))
             {
-                var options = StandardResolverAllowPrivate.Options
-                    .WithCompression(MessagePackCompression.Lz4BlockArray)
-                    .WithResolver(UnityCustomResolver.Instance);
-
-                var bytes = MessagePackSerializer.Serialize(data, options);
-                
-                bytes = bytes.Encrypt(Instance.cryptoKey);
-
                 fileStream.Write(bytes, 0, bytes.Length);
             }
 
