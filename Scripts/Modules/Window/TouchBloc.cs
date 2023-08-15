@@ -2,7 +2,8 @@
 using UnityEngine;
 using UnityEngine.UI;
 using System;
-using System.Collections;
+using System.Threading;
+using Cysharp.Threading.Tasks;
 using UniRx;
 using Extensions;
 
@@ -72,43 +73,47 @@ namespace Modules.Window
             SetAlpha(0f);
         }
 
-        public IObservable<Unit> FadeIn()
-        {
-            return Observable.FromMicroCoroutine(() => FadeInAsync());
-        }
-
-        public IObservable<Unit> FadeOut()
-        {
-            return Observable.FromMicroCoroutine(() => FadeOutAsync());
-        }
-
-        private IEnumerator FadeOutAsync()
+        public async UniTask FadeOut(CancellationToken cancelToken = default)
         {
             UnityUtility.SetActive(canvasGroup.gameObject, true);
 
-            while (0 < fadeAlpha)
+            try
             {
-                fadeAlpha -= fadeAmount;
+                while (0 < fadeAlpha)
+                {
+                    fadeAlpha -= fadeAmount;
 
-                SetAlpha(fadeAlpha);
+                    SetAlpha(fadeAlpha);
 
-                yield return null;
+                    await UniTask.NextFrame(cancelToken);
+                }
+            }
+            catch (OperationCanceledException)
+            {
+                return;
             }
             
             SetAlpha(0f);
         }
 
-        private IEnumerator FadeInAsync()
+        public async UniTask FadeIn(CancellationToken cancelToken = default)
         {
             UnityUtility.SetActive(canvasGroup.gameObject, true);
 
-            while (fadeAlpha < 1)
+            try
             {
-                fadeAlpha += fadeAmount;
+                while (fadeAlpha < 1)
+                {
+                    fadeAlpha += fadeAmount;
 
-                SetAlpha(fadeAlpha);
+                    SetAlpha(fadeAlpha);
 
-                yield return null;
+                    await UniTask.NextFrame(cancelToken);
+                }
+            }
+            catch (OperationCanceledException)
+            {
+                return;
             }
             
             SetAlpha(1f);

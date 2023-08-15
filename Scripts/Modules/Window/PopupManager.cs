@@ -1,8 +1,9 @@
-﻿
+
 using UnityEngine;
 using System;
 using System.Linq;
 using System.Collections.Generic;
+using System.Threading;
 using Cysharp.Threading.Tasks;
 using UniRx;
 using Extensions;
@@ -29,7 +30,7 @@ namespace Modules.Window
         protected PopupParent parentGlobal = null;
 
         protected TouchBloc touchBloc = null;
-        protected IDisposable touchBlocDisposable = null;
+        protected CancellationTokenSource cancelTokenSource = null;
 
         // 登録されているポップアップ.
         protected List<Window> scenePopups = new List<Window>();
@@ -256,31 +257,31 @@ namespace Modules.Window
             UnityUtility.SetLayer(parent, touchBloc.gameObject, true);
 
             // 一つでも登録されたら表示.
-            if (!touchBloc.Active && (scenePopups.Any() || globalPopups.Any()))
+            if (scenePopups.Any() || globalPopups.Any())
             {
-                if (touchBlocDisposable != null)
+                if (cancelTokenSource != null)
                 {
-                    touchBlocDisposable.Dispose();
-                    touchBlocDisposable = null;
+                    cancelTokenSource.Cancel();
                 }
 
                 UnityUtility.SetActive(touchBloc, true);
 
-                touchBlocDisposable = touchBloc.FadeIn().Subscribe().AddTo(this);
+                cancelTokenSource = new CancellationTokenSource();
+
+                touchBloc.FadeIn(cancelTokenSource.Token).Forget();
             }
 
             // 空になったら非表示.
-            if (touchBloc.Active && (scenePopups.IsEmpty() && globalPopups.IsEmpty()))
+            if (scenePopups.IsEmpty() && globalPopups.IsEmpty())
             {
-                if (touchBlocDisposable != null)
+                if (cancelTokenSource != null)
                 {
-                    touchBlocDisposable.Dispose();
-                    touchBlocDisposable = null;
+                    cancelTokenSource.Cancel();
                 }
 
-                touchBlocDisposable = touchBloc.FadeOut()
-                    .Subscribe(_ => UnityUtility.SetActive(touchBloc, false))
-                    .AddTo(this);
+                cancelTokenSource = new CancellationTokenSource();
+
+                touchBloc.FadeOut(cancelTokenSource.Token).Forget();
             }
         }
 
@@ -298,10 +299,10 @@ namespace Modules.Window
 
             if (globalPopups.IsEmpty())
             {
-                if (touchBlocDisposable != null)
+                if (cancelTokenSource != null)
                 {
-                    touchBlocDisposable.Dispose();
-                    touchBlocDisposable = null;
+                    cancelTokenSource.Cancel();
+                    cancelTokenSource = null;
                 }
 
                 touchBloc.Hide();
