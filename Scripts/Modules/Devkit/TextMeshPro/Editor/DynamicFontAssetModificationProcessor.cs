@@ -1,7 +1,9 @@
 ﻿
 using UnityEditor;
 using System.IO;
+using Cysharp.Threading.Tasks;
 using TMPro;
+using Extensions;
 using Extensions.Devkit;
 
 namespace Modules.Devkit.TextMeshPro
@@ -26,11 +28,24 @@ namespace Modules.Devkit.TextMeshPro
 				
 					if (fontAsset.atlasPopulationMode != AtlasPopulationMode.Dynamic){ continue; }
 					
+                    DelayCleanTMPFontAsset(fontAsset).Forget();
+
 					fontAsset.ClearFontAssetData(true);
 				}
 			}
 
 			return paths;
 		}
+
+        private static async UniTask DelayCleanTMPFontAsset(TMP_FontAsset fontAsset)
+        {
+            if (fontAsset.glyphTable.IsEmpty()){ return; }
+
+            await UniTask.DelayFrame(5);
+
+            fontAsset.ClearFontAssetData(true);
+
+            AssetDatabase.SaveAssetIfDirty(fontAsset);
+        }
 	}
 } 
