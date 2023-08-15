@@ -31,6 +31,7 @@ namespace Modules.Devkit.Pinning
 		private GUIStyle iconStyle = null;
 
         private Vector2 scrollPosition = Vector2.zero;
+        private Vector2 lastClickPosition = Vector2.zero;
 
         private PinnedItem commentInputTarget = null;
 
@@ -190,14 +191,16 @@ namespace Modules.Devkit.Pinning
 
                         if (rect.Contains(e.mousePosition))
                         {
+                            var doubleClick = IsDoubleClick(e);
+
                             switch (e.button)
                             {
                                 case 0:
-                                    MouseLeftButton(rect, e, item);
+                                    MouseLeftButton(rect, e, item, doubleClick);
                                     break;
 
                                 case 1:
-                                    MouseRightButton(rect, e, item);
+                                    MouseRightButton(rect, e, item, doubleClick);
 									break;
                             }
                         }
@@ -239,6 +242,24 @@ namespace Modules.Devkit.Pinning
             }
         }
 
+        private bool IsDoubleClick(Event e)
+        {
+            var wasclick = e.type == EventType.MouseDown;
+            var wasused = e.type == EventType.Used;
+
+            if (wasclick && !wasused) 
+            {
+                if ((lastClickPosition - e.mousePosition).sqrMagnitude <= 5 * 5 && e.clickCount > 1)
+                {
+                    return true;
+                }
+                             
+                lastClickPosition = e.mousePosition;
+            }
+
+            return false;
+        }
+
 		private void InitializeStyle()
 		{
 			if (labelStyle == null)
@@ -261,11 +282,11 @@ namespace Modules.Devkit.Pinning
 			}
 		}
 
-        private void MouseLeftButton(Rect rect, Event e, PinnedItem item)
+        private void MouseLeftButton(Rect rect, Event e, PinnedItem item, bool doubleClick)
         {
             if (e.type == EventType.MouseDown)
             {
-                OnMouseLeftDown(item.target, e.clickCount);
+                OnMouseLeftDown(item.target, doubleClick);
             }
 
             if (e.type == EventType.DragPerform || e.type == EventType.DragUpdated)
@@ -300,27 +321,26 @@ namespace Modules.Devkit.Pinning
             }
         }
 
-        private void MouseRightButton(Rect rect, Event e, PinnedItem item)
+        private void MouseRightButton(Rect rect, Event e, PinnedItem item, bool doubleClick)
         {
             if (e.type == EventType.MouseDown)
             {
                 var menu = new GenericMenu();
 
-                GenericMenu.MenuFunction onMenuCommentCommand = () =>
+                void OnMenuCommentCommand()
                 {
                     commentInputTarget = item;
-                };
+                }
 
-                menu.AddItem(new GUIContent("Comment"), false, onMenuCommentCommand);
+                menu.AddItem(new GUIContent("Comment"), false, OnMenuCommentCommand);
 
-                GenericMenu.MenuFunction onMenuRemoveCommand = () =>
+                void OnMenuRemoveCommand()
                 {
                     pinning.Remove(item);
-
                     Save();
-                };
+                }
 
-                menu.AddItem(new GUIContent("Remove"), false, onMenuRemoveCommand);
+                menu.AddItem(new GUIContent("Remove"), false, OnMenuRemoveCommand);
 
                 menu.ShowAsContext();
 
@@ -391,6 +411,6 @@ namespace Modules.Devkit.Pinning
 
         protected abstract bool ValidatePinned(Object[] items);
 
-        protected abstract void OnMouseLeftDown(Object item, int clickCount);
+        protected abstract void OnMouseLeftDown(Object item, bool doubleClick);
     }
 }

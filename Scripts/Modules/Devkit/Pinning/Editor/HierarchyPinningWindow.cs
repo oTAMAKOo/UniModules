@@ -1,4 +1,4 @@
-﻿﻿﻿
+﻿﻿
 using UnityEngine;
 using UnityEditor;
 using UnityEngine.SceneManagement;
@@ -181,9 +181,10 @@ namespace Modules.Devkit.Pinning
             base.UpdatePinnedObject();
         }
 
-        protected override void OnMouseLeftDown(Object item, int clickCount)
+        protected override void OnMouseLeftDown(Object item, bool doubleClick)
         {
             Selection.activeObject = item;
+
             EditorGUIUtility.PingObject(item);
         }
     }
