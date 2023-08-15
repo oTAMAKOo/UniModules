@@ -110,9 +110,9 @@ namespace Extensions
         // 単項演算子
         //--------------------------------------------------------
 
-        public static XInt operator ++(XInt v1) { return new XInt(v1.Value++); }
+        public static XInt operator ++(XInt v1) { return new XInt(v1.Value + 1); }
 
-        public static XInt operator --(XInt v1) { return new XInt(v1.Value--); }
+        public static XInt operator --(XInt v1) { return new XInt(v1.Value - 1); }
 
         public static bool operator true(XInt v1) { return v1.Value != 0; }
 

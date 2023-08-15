@@ -110,9 +110,9 @@ namespace Extensions
         // 単項演算子
         //--------------------------------------------------------
 
-        public static XShort operator ++(XShort v1) { return new XShort(v1.Value++); }
+        public static XShort operator ++(XShort v1) { return new XShort((short)(v1.Value + 1)); }
 
-        public static XShort operator --(XShort v1) { return new XShort(v1.Value--); }
+        public static XShort operator --(XShort v1) { return new XShort((short)(v1.Value - 1)); }
 
         public static bool operator true(XShort v1) { return v1.Value != 0; }
 

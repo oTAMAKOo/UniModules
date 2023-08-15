@@ -110,9 +110,9 @@ namespace Extensions
         // 単項演算子
         //--------------------------------------------------------
 
-        public static XULong operator ++(XULong v1) { return new XULong(v1.Value++); }
+        public static XULong operator ++(XULong v1) { return new XULong(v1.Value + 1); }
 
-        public static XULong operator --(XULong v1) { return new XULong(v1.Value--); }
+        public static XULong operator --(XULong v1) { return new XULong(v1.Value - 1); }
 
         public static bool operator true(XULong v1) { return v1.Value != 0; }
 

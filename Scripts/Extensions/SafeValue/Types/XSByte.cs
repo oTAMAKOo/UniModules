@@ -110,9 +110,9 @@ namespace Extensions
         // 単項演算子
         //--------------------------------------------------------
 
-        public static XSByte operator ++(XSByte v1) { return new XSByte(v1.Value++); }
+        public static XSByte operator ++(XSByte v1) { return new XSByte((sbyte)(v1.Value + 1)); }
 
-        public static XSByte operator --(XSByte v1) { return new XSByte(v1.Value--); }
+        public static XSByte operator --(XSByte v1) { return new XSByte((sbyte)(v1.Value - 1)); }
 
         public static bool operator true(XSByte v1) { return v1.Value != 0; }
 

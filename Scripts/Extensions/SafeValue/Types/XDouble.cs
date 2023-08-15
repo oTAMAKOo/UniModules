@@ -110,9 +110,9 @@ namespace Extensions
         // 単項演算子
         //--------------------------------------------------------
 
-        public static XDouble operator ++(XDouble v1) { return new XDouble(v1.Value++); }
+        public static XDouble operator ++(XDouble v1) { return new XDouble(v1.Value + 1); }
 
-        public static XDouble operator --(XDouble v1) { return new XDouble(v1.Value--); }
+        public static XDouble operator --(XDouble v1) { return new XDouble(v1.Value - 1); }
 
         public static bool operator true(XDouble v1) { return v1.Value != 0; }
 

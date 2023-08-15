@@ -110,9 +110,9 @@ namespace Extensions
         // 単項演算子
         //--------------------------------------------------------
 
-        public static XFloat operator ++(XFloat v1) { return new XFloat(v1.Value++); }
+        public static XFloat operator ++(XFloat v1) { return new XFloat(v1.Value + 1); }
 
-        public static XFloat operator --(XFloat v1) { return new XFloat(v1.Value--); }
+        public static XFloat operator --(XFloat v1) { return new XFloat(v1.Value - 1); }
 
         public static bool operator true(XFloat v1) { return v1.Value != 0; }
 

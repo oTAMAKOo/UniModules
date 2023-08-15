@@ -111,9 +111,9 @@ namespace Extensions
         // 単項演算子
         //--------------------------------------------------------
 
-        public static XChar operator ++(XChar v1) { return new XChar(v1.Value++); }
+        public static XChar operator ++(XChar v1) { return new XChar((char)(v1.Value + 1)); }
 
-        public static XChar operator --(XChar v1) { return new XChar(v1.Value--); }
+        public static XChar operator --(XChar v1) { return new XChar((char)(v1.Value - 1)); }
 
         public static bool operator true(XChar v1) { return v1.Value != 0; }
 
