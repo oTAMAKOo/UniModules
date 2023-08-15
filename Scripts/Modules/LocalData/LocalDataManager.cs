@@ -1,4 +1,4 @@
-﻿
+
 using UnityEngine;
 using System;
 using System.IO;
@@ -6,10 +6,7 @@ using System.Linq;
 using System.Collections.Generic;
 using UniRx;
 using Extensions;
-using MessagePack;
-using MessagePack.Resolvers;
 using Modules.Devkit.Console;
-using Modules.MessagePack;
 
 namespace Modules.LocalData
 {
@@ -44,8 +41,10 @@ namespace Modules.LocalData
 
         //----- property -----
 
-        public string BaseDirectory { get; private set; }
+        /// <summary> デフォルトのファイルディレクトリ </summary>
+        public string DefaultFileDirectory { get; private set; }
 
+        /// <summary> ファイルディレクトリ </summary>
         public string FileDirectory { get; private set; }
 
         //----- method -----
@@ -57,9 +56,9 @@ namespace Modules.LocalData
 
             var fileDir = UnityPathUtility.GetPrivateDataPath();
 
-            BaseDirectory = fileDir + "/LocalData/";
+            DefaultFileDirectory = fileDir + "/LocalData/";
 
-            SetFileDirectory(BaseDirectory);
+            SetFileDirectory(DefaultFileDirectory);
         }
 
         public void SetFileDirectory(string directory)
@@ -87,55 +86,6 @@ namespace Modules.LocalData
             }
         }
 
-        public static void Load<T>() where T : class, ILocalData, new()
-        {
-            var type = typeof(T);
-
-            var className = typeof(T).FullName;
-            var filePath = Instance.GetFilePath<T>();
-
-            var data = new T();
-
-            if (File.Exists(filePath))
-            {
-                byte[] bytes = null;
-
-                try
-                {
-                    using (var fileStream = new FileStream(filePath, FileMode.Open, FileAccess.Read))
-                    {
-                        bytes = new byte[fileStream.Length];
-
-                        fileStream.Read(bytes, 0, bytes.Length);
-                    }
-
-                    if (!bytes.IsEmpty())
-                    {
-                        bytes = bytes.Decrypt(Instance.cryptoKey);
-
-                        var options = StandardResolverAllowPrivate.Options
-                            .WithCompression(MessagePackCompression.Lz4BlockArray)
-                            .WithResolver(UnityCustomResolver.Instance);
-
-                        data = MessagePackSerializer.Deserialize<T>(bytes, options);
-                    }
-                }
-                catch (Exception ex)
-                {
-                    throw new Exception($"LocalData load failed.\nClass:{className}\nFilePath:{filePath}", ex);
-                }
-
-                UnityConsole.Event(ConsoleEventName, ConsoleEventColor, $"Load : {className}\nFilePath:{filePath}");
-
-                if (Instance.onLoad != null)
-                {
-                    Instance.onLoad.OnNext(data);
-                }
-            }
-
-            Instance.dataCache[type] = data;
-        }
-
         public static T Get<T>() where T : class, ILocalData, new()
         {
             var type = typeof(T);
@@ -150,6 +100,39 @@ namespace Modules.LocalData
             return dataCache.GetValueOrDefault(typeof(T)) as T;
         }
 
+        public static void Load<T>() where T : class, ILocalData, new()
+        {
+            var type = typeof(T);
+
+            var className = typeof(T).FullName;
+            var filePath = Instance.GetFilePath<T>();
+
+            T data = null;
+
+            try
+            {
+                data = MessagePackFileUtility.Read<T>(filePath, Instance.cryptoKey);
+
+                if (data == null)
+                {
+                    data = new T();
+                }
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"LocalData load failed.\nClass:{className}\nFilePath:{filePath}", ex);
+            }
+
+            UnityConsole.Event(ConsoleEventName, ConsoleEventColor, $"Load : {className}\nFilePath:{filePath}");
+
+            if (Instance.onLoad != null)
+            {
+                Instance.onLoad.OnNext(data);
+            }
+
+            Instance.dataCache[type] = data;
+        }
+
         public static void Save<T>(T data) where T : class, ILocalData, new()
         {
             var className = typeof(T).FullName;
@@ -157,18 +140,7 @@ namespace Modules.LocalData
 
             try
             {
-                var options = StandardResolverAllowPrivate.Options
-                    .WithCompression(MessagePackCompression.Lz4BlockArray)
-                    .WithResolver(UnityCustomResolver.Instance);
-
-                var bytes = MessagePackSerializer.Serialize(data, options);
-
-                bytes = bytes.Encrypt(Instance.cryptoKey);
-
-                using (var fileStream = new FileStream(filePath, FileMode.Create, FileAccess.Write))
-                {
-                    fileStream.Write(bytes, 0, bytes.Length);
-                }
+                MessagePackFileUtility.Write(filePath, data, Instance.cryptoKey);
             }
             catch (Exception ex)
             {
