@@ -1,14 +1,13 @@
 ﻿
 using UnityEditor;
 using System.IO;
-using Cysharp.Threading.Tasks;
 using TMPro;
 using Extensions;
 using Extensions.Devkit;
 
 namespace Modules.Devkit.TextMeshPro
 {
-	public class DynamicFontAssetModificationProcessor : UnityEditor.AssetModificationProcessor
+	public sealed class DynamicFontAssetModificationProcessor : UnityEditor.AssetModificationProcessor
 	{
 		private const string FontAssetExtension = ".asset";
 
@@ -28,24 +27,23 @@ namespace Modules.Devkit.TextMeshPro
 				
 					if (fontAsset.atlasPopulationMode != AtlasPopulationMode.Dynamic){ continue; }
 					
-                    DelayCleanTMPFontAsset(fontAsset).Forget();
-
-					fontAsset.ClearFontAssetData(true);
+                    DelayCleanTMPFontAsset(fontAsset);
 				}
 			}
 
 			return paths;
 		}
 
-        private static async UniTask DelayCleanTMPFontAsset(TMP_FontAsset fontAsset)
+        private static void DelayCleanTMPFontAsset(TMP_FontAsset fontAsset)
         {
             if (fontAsset.glyphTable.IsEmpty()){ return; }
 
-            await UniTask.DelayFrame(5);
+            EditorApplication.delayCall += () =>
+            {
+                fontAsset.ClearFontAssetData(true);
 
-            fontAsset.ClearFontAssetData(true);
-
-            AssetDatabase.SaveAssetIfDirty(fontAsset);
+                AssetDatabase.SaveAssetIfDirty(fontAsset);
+            };
         }
 	}
 } 
