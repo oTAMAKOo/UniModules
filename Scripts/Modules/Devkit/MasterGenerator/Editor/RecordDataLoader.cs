@@ -79,7 +79,7 @@ namespace Modules.Master
 
             var recordFileDirectory = PathUtility.Combine(masterDataDirectory.FullName, RecordFolderName);
 
-            if (!Directory.Exists(recordFileDirectory)) { return null; }
+            if (!Directory.Exists(recordFileDirectory)) { return new object[0]; }
 
             var recordFiles = Directory.GetFiles(recordFileDirectory, "*" + RecordFileExtension, SearchOption.TopDirectoryOnly);
 
