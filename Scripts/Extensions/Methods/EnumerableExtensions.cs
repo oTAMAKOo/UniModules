@@ -156,7 +156,7 @@ namespace Extensions
                 random = EnumerableExtensions.random;
             }
 
-            if (source == null) throw new ArgumentNullException("source");
+            if (source == null) throw new ArgumentNullException(nameof(source));
 
             var array = source.ToArray();
 
@@ -180,7 +180,7 @@ namespace Extensions
                 random = EnumerableExtensions.random;
             }
 
-            if (source == null) throw new ArgumentNullException("source");
+            if (source == null) throw new ArgumentNullException(nameof(source));
 
             return ShuffleCore(source, random);
         }
