@@ -134,6 +134,8 @@ namespace Modules.TimeUtil
                     if (Max <= Current)
                     {
                         Current = Max;
+                        LastRecoveryTime = null;
+                        FullRecoveryTime = null;
                         break;
                     }
 
