@@ -525,11 +525,11 @@ namespace Extensions
 
             foreach (var item in objects)
             {
-                var components = GetComponents<T>(item).ToArray();
+                var component = GetComponents<T>(item).FirstOrDefault();
 
-                if (components.Any())
+                if (component != null)
                 {
-                    return components.First();
+                    return component;
                 }
             }
 
