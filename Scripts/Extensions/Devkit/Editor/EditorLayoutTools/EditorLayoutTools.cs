@@ -28,11 +28,19 @@ namespace Extensions.Devkit
 
         //----- property -----
 
+        public static float SingleReturnHeight
+        {
+            get
+            {
+                return EditorGUIUtility.singleLineHeight;
+            }
+        }
+
         //----- method -----
 
         public static void Title(string text, params GUILayoutOption[] options)
         {
-            Title(text, new TitleGUIStyle());
+            Title(text, new TitleGUIStyle(), options);
         }
 
         public static void Title(string text, Color backgroundColor, params GUILayoutOption[] options)
@@ -42,7 +50,7 @@ namespace Extensions.Devkit
                 backgroundColor = backgroundColor,
             };
 
-            Title(text, titleStyle);
+            Title(text, titleStyle, options);
         }
 
         public static void Title(string text, Color backgroundColor, Color labelColor, params GUILayoutOption[] options)
@@ -53,7 +61,7 @@ namespace Extensions.Devkit
                 labelColor = labelColor,
             };
 
-            Title(text, titleStyle);
+            Title(text, titleStyle, options);
         }
 
         public static void Title(string text, TitleGUIStyle style, params GUILayoutOption[] options)

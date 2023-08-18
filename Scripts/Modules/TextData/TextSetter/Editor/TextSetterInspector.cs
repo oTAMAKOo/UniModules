@@ -1,4 +1,4 @@
-﻿
+
 using UnityEngine;
 using UnityEditor;
 using System;
@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using Extensions;
 using Extensions.Devkit;
 using Modules.TextData.Editor;
+using NUnit.Framework.Interfaces;
 
 namespace Modules.TextData.Components
 {
@@ -28,8 +29,6 @@ namespace Modules.TextData.Components
         //----- property -----
 
         public TextSetter Instance { get { return instance; } }
-
-        public string SelectionCategoryGuid { get { return currentCategoryGuid; } }
 
         public static TextSetterInspector Current { get; private set; }
 
@@ -76,11 +75,13 @@ namespace Modules.TextData.Components
 
             var textData = TextData.Instance;
             
-            UpdateCurrentInfo(textData);
+            UpdateCurrentInfo();
 
             DrawSourceSelectGUI(textData);
 
             DrawEmbeddedTextSelectGUI(textData);
+
+            GUILayout.Space(2f);
 
             DrawDistributionTextSelectGUI(textData);
 
@@ -142,7 +143,7 @@ namespace Modules.TextData.Components
 
             if (contentType != ContentType.Embedded){ return; }
             
-            DrawTextSelectGUI(textData, contentType);
+            DrawTextSelectGUI();
         }
 
         private void DrawDistributionTextSelectGUI(TextData textData)
@@ -151,64 +152,50 @@ namespace Modules.TextData.Components
 
             if (contentType != ContentType.Distribution){ return; }
             
-            DrawTextSelectGUI(textData, contentType);
+            DrawTextSelectGUI();
         }
 
-        private void DrawTextSelectGUI(TextData textData, ContentType contentType)
+        private void DrawTextSelectGUI()
         {
-            var categoryChanged = false;
+            var textData = TextData.Instance;
+
+            if (textData == null){ return; }
 
             using (new EditorGUILayout.HorizontalScope())
             {
-                var categories = textData.Categories.Where(x => x.ContentType == contentType).ToArray();
+                var label = string.Empty;
 
-                // Noneが入るので1ずれる.
-                var categoryIndex = categories.IndexOf(x => x.Guid == SelectionCategoryGuid) + 1;
+                var category = textData.Categories.FirstOrDefault(x => x.Guid == currentCategoryGuid);
+                var enumName = textData.GetEnumName(currentTextGuid);
 
-                var categoryLabels = categories.Select(x => x.DisplayName).ToArray();
-
-                var labels = new List<string> { "None" };
-
-                labels.AddRange(categoryLabels);
-
-                EditorGUI.BeginChangeCheck();
-
-                categoryIndex = EditorGUILayout.Popup("TextData", categoryIndex, labels.ToArray());
-
-                if (EditorGUI.EndChangeCheck())
+                if (category != null && !string.IsNullOrEmpty(enumName))
                 {
-                    UnityEditorUtility.RegisterUndo(instance);
-                    
-                    var newCategory = 1 <= categoryIndex ? categories[categoryIndex - 1] : null;
-
-                    var newCategoryGuid = newCategory != null ? newCategory.Guid : string.Empty;
-
-                    if (currentCategoryGuid != newCategoryGuid)
-                    {
-                        SetTextGuid(null);
-
-                        UpdateCurrentInfo(textData);
-
-                        currentCategoryGuid = newCategoryGuid;
-
-                        categoryChanged = true;
-                    }
+                    label = $"{category.DisplayName} : {enumName}";
                 }
 
-                using (new DisableScope(categoryIndex == 0 || TextData.Instance.Texts == null))
+                EditorGUILayout.PrefixLabel("Text");
+
+                EditorGUILayout.SelectableLabel(label, EditorStyles.textField, GUILayout.Height(EditorLayoutTools.SingleReturnHeight));
+
+                using (new DisableScope(TextData.Instance.Texts == null))
                 {
                     GUILayout.Space(2f);
 
-                    if (GUILayout.Button("select", EditorStyles.miniButton, GUILayout.Width(75f)))
+                    if (GUILayout.Button("select", EditorStyles.miniButton, GUILayout.Width(50f)))
                     {
                         TextDataSelector.Open();
                     }
                 }
-            }
 
-            if (categoryChanged && string.IsNullOrEmpty(currentCategoryGuid))
-            {
-                SetDummyText(string.Empty);
+                using (new DisableScope(string.IsNullOrEmpty(currentTextGuid)))
+                {
+                    GUILayout.Space(2f);
+
+                    if (GUILayout.Button("clear", EditorStyles.miniButton, GUILayout.Width(50f)))
+                    {
+                        SetTextGuid(null);
+                    }
+                }
             }
         }
 
@@ -220,9 +207,7 @@ namespace Modules.TextData.Components
             
             using (new EditorGUILayout.HorizontalScope())
             {
-                var labelWidth = EditorGUIUtility.labelWidth - 10f;
-
-                EditorGUILayout.LabelField("DummyText", GUILayout.Width(labelWidth));
+                EditorGUILayout.PrefixLabel("DummyText");
 
                 var editText = string.Empty;
 
@@ -264,8 +249,24 @@ namespace Modules.TextData.Components
             }
         }
 
-        private void UpdateCurrentInfo(TextData textData)
+        public void SetTextGuid(string textGuid)
         {
+            Reflection.InvokePrivateMethod(instance, "SetTextGuid", new object[] { textGuid });
+
+            SetDummyText(null);
+
+            UpdateCurrentInfo();
+        }
+
+        public void SetDummyText(string text)
+        {
+            Reflection.InvokePrivateMethod(instance, "SetDummyText", new object[] { text });
+        }
+
+        private void UpdateCurrentInfo()
+        {
+            var textData = TextData.Instance;
+
             // TextGuidが変化していたらカテゴリGuidを更新.
             if (currentTextGuid == instance.TextGuid) { return; }
 
@@ -274,23 +275,19 @@ namespace Modules.TextData.Components
             currentCategoryGuid = GetCategoryGuid(textData, instance.TextGuid);
         }
 
-        private void SetTextGuid(string textGuid)
+        private void OnUndoRedo()
         {
-            Reflection.InvokePrivateMethod(instance, "SetTextGuid", new object[] { textGuid });
-
-            SetDummyText(null);
+            if (instance != null)
+            {
+                Reflection.InvokePrivateMethod(instance, "ImportText");
+            }
         }
 
-        private void SetDummyText(string text)
-        {
-            Reflection.InvokePrivateMethod(instance, "SetDummyText", new object[] { text });
-        }
-
-        private string GetCategoryGuid(TextData textData, string textGuid)
+        public static string GetCategoryGuid(TextData textData, string textGuid)
         {
             if (string.IsNullOrEmpty(textGuid)) { return null; }
 
-            var contents = textData.Texts  as Dictionary<string, TextInfo>;
+            var contents = textData.Texts as Dictionary<string, TextInfo>;
 
             if (contents == null) { return null; }
 
@@ -299,14 +296,6 @@ namespace Modules.TextData.Components
             if (content == null) { return null; }
 
             return content.categoryGuid;
-        }
-
-        private void OnUndoRedo()
-        {
-            if (instance != null)
-            {
-                Reflection.InvokePrivateMethod(instance, "ImportText");
-            }
         }
     }
 }

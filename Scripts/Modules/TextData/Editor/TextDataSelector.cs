@@ -1,4 +1,4 @@
-﻿
+
 using UnityEngine;
 using UnityEditor;
 using System;
@@ -8,6 +8,7 @@ using UniRx;
 using Extensions;
 using Extensions.Devkit;
 using Modules.Devkit.AssemblyCompilation;
+using NUnit.Framework.Interfaces;
 
 namespace Modules.TextData.Components
 {
@@ -60,6 +61,8 @@ namespace Modules.TextData.Components
             instance = DisplayWizard<TextDataSelector>(WindowTitle);
 
             instance.Initialize();
+            instance.SetupSelectionCategory();
+            instance.BuildSelectionInfos();
         }
 
         private void Initialize()
@@ -79,8 +82,6 @@ namespace Modules.TextData.Components
                 .AddTo(lifetimeDisposable.Disposable);
 
             scrollView.Contents = GetMatchOfList();
-
-            BuildSelectionInfos();
         }
 
         void OnDestroy()
@@ -106,63 +107,76 @@ namespace Modules.TextData.Components
 
             if (setter == null) { return; }
 
-            var selectionCategoryGuid = setterInspector.SelectionCategoryGuid;
+            var textData = TextData.Instance;
 
-            if (string.IsNullOrEmpty(selectionCategoryGuid))
+            if (textData != null)
             {
-                Close();
-                return;
-            }
-
-            if(categoryGuid != selectionCategoryGuid)
-            {
-                BuildSelectionInfos();
-            }
-
-            if (selectionCache.Any())
-            {
-                EditorGUILayout.Separator();
-
                 // Toolbar.
 
-                using (new EditorGUILayout.HorizontalScope(EditorStyles.toolbar, GUILayout.Height(15f)))
+                using (new EditorGUILayout.HorizontalScope(EditorStyles.toolbar))
                 {
-                    // クリア.
+                    var categories = textData.Categories.Where(x => x.ContentType == setter.ContentType).ToArray();
 
-                    if (GUILayout.Button("Clear", EditorStyles.toolbarButton))
+                    // Noneが入るので1ずれる.
+                    var categoryIndex = categories.IndexOf(x => x.Guid == categoryGuid) + 1;
+
+                    var categoryLabels = categories.Select(x => x.DisplayName).ToArray();
+
+                    var labels = new List<string> { "None" };
+
+                    labels.AddRange(categoryLabels);
+
+                    EditorGUI.BeginChangeCheck();
+
+                    categoryIndex = EditorGUILayout.Popup(categoryIndex, labels.ToArray());
+
+                    if (EditorGUI.EndChangeCheck())
                     {
-                        Reflection.InvokePrivateMethod(setter, "SetTextGuid", new object[] { null });
+                        UnityEditorUtility.RegisterUndo(instance);
+                    
+                        var newCategory = 1 <= categoryIndex ? categories[categoryIndex - 1] : null;
+
+                        var newCategoryGuid = newCategory != null ? newCategory.Guid : string.Empty;
+
+                        if (categoryGuid != newCategoryGuid)
+                        {
+                            setterInspector.SetTextGuid(null);
+                            setterInspector.SetDummyText(null);
+
+                            categoryGuid = newCategoryGuid;
+
+                            BuildSelectionInfos();
+                        }
                     }
 
                     GUILayout.FlexibleSpace();
 
+                    // クリア.
+
+                    if (GUILayout.Button("Clear", EditorStyles.toolbarButton))
+                    {
+                        setterInspector.SetTextGuid(null);
+                    }
+
+                    GUILayout.Space(4f);
+
                     // 検索.
 
-                    Action<string> onChangeSearchText = x =>
+                    void OnChangeSearchText(string x)
                     {
                         searchText = x;
-
                         scrollView.Contents = GetMatchOfList();
+                        EditorApplication.delayCall += () => { Repaint(); };
+                    }
 
-                        EditorApplication.delayCall += () =>
-                        {
-                            Repaint();
-                        };
-                    };
-
-                    Action onSearchCancel = () =>
+                    void OnSearchCancel()
                     {
                         searchText = string.Empty;
-
                         scrollView.Contents = GetMatchOfList();
+                        EditorApplication.delayCall += () => { Repaint(); };
+                    }
 
-                        EditorApplication.delayCall += () =>
-                        {
-                            Repaint();
-                        };
-                    };
-
-                    EditorLayoutTools.DrawToolbarSearchTextField(searchText, onChangeSearchText, onSearchCancel, GUILayout.Width(250f));
+                    EditorLayoutTools.DrawToolbarSearchTextField(searchText, OnChangeSearchText, OnSearchCancel, GUILayout.Width(250f));
                 }
 
                 EditorGUILayout.Separator();
@@ -177,14 +191,21 @@ namespace Modules.TextData.Components
             }
         }
 
+        private void SetupSelectionCategory()
+        {
+            var textData = TextData.Instance;
+
+            var setter = TextSetterInspector.Current.Instance;
+
+            categoryGuid = TextSetterInspector.GetCategoryGuid(textData, setter.TextGuid);
+        }
+
         private void BuildSelectionInfos()
         {
             var textData = TextData.Instance;
 
             var setter = TextSetterInspector.Current.Instance;
             var setterInspector = TextSetterInspector.Current;
-
-            categoryGuid = TextSetterInspector.Current.SelectionCategoryGuid;
 
             var categoryTexts = GetCategoryTextGuids(textData, categoryGuid);
 
@@ -293,19 +314,19 @@ namespace Modules.TextData.Components
 
                         using (new EditorGUILayout.VerticalScope())
                         {
-                            var buttonHeight = 18f;
+                            var buttonHeight = 16f;
 
                             GUILayout.Space((size.y - buttonHeight) * 0.5f);
 
                             using (new BackgroundColorScope(originBackgroundColor))
                             {
-                                if (GUILayout.Button("Select", GUILayout.Width(75f), GUILayout.Height(buttonHeight)))
+                                if (GUILayout.Button("select", EditorStyles.miniButton, GUILayout.Width(60f)))
                                 {
                                     UnityEditorUtility.RegisterUndo(Setter);
                                     
                                     if (!string.IsNullOrEmpty(content.TextGuid))
                                     {
-                                        Reflection.InvokePrivateMethod(Setter, "SetTextGuid", new object[] { content.TextGuid });
+                                        SetterInspector.SetTextGuid(content.TextGuid);
 
                                         SetterInspector.Repaint();
 

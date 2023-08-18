@@ -100,6 +100,8 @@ namespace Modules.TextData
         {
             if (enumNames == null) { return null; }
 
+            if (textGuid == null){ return null; }
+
             var enumName = enumNames.GetValueOrDefault(textGuid);
 
             if (!string.IsNullOrEmpty(enumName) && cryptoKey != null)
