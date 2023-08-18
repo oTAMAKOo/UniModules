@@ -487,28 +487,28 @@ namespace Modules.Scene
             // 次のシーンを読み込み.
             var identifier = argument.Identifier.Value;
 
-            var sceneInfo = loadedScenes.GetValueOrDefault(identifier);
+            var sceneInstance = loadedScenes.GetValueOrDefault(identifier);
 
-            if (sceneInfo == null)
+            if (sceneInstance == null)
             {
                 try
                 {
-                    sceneInfo = await LoadScene(identifier, mode);
+                    sceneInstance = await LoadScene(identifier, mode);
                 }
                 catch (Exception e)
                 {
                     OnLoadError(e, identifier);
                 }
 
-                if (sceneInfo == null) { return; }
+                if (sceneInstance == null) { return; }
 
                 if (argument.Cache)
                 {
-                    cacheScenes.Enqueue(sceneInfo);
+                    cacheScenes.Enqueue(sceneInstance);
                 }
             }
 
-            var scene = sceneInfo.GetScene();
+            var scene = sceneInstance.GetScene();
 
             if (!scene.HasValue)
             {
@@ -517,7 +517,7 @@ namespace Modules.Scene
                 return;
             }
 
-            if (sceneInfo.Instance == null)
+            if (sceneInstance.Instance == null)
             {
                 Debug.LogErrorFormat("[ {0} ] : SceneBase class does not exist.", scene.Value.path);
 
@@ -529,10 +529,10 @@ namespace Modules.Scene
             SetSceneActive(scene);
 
             // 前のシーンからの引数を設定.
-            await sceneInfo.Instance.SetArgument(argument);
+            await sceneInstance.Instance.SetArgument(argument);
 
             // 現在のシーンとして登録.
-            currentScene = sceneInfo;
+            currentScene = sceneInstance;
 
             // 次のシーンを履歴に登録.
             // シーン引数を保存する為遷移時に引数と一緒に履歴登録する為、履歴の最後尾は現在のシーンになる.
@@ -636,10 +636,13 @@ namespace Modules.Scene
             if (cancelToken.IsCancellationRequested) { return; }
 
             // シーンを有効化.
-            sceneInfo.Enable();
+            sceneInstance.Enable();
 
             // シーン遷移完了.
             TransitionTarget = null;
+
+            // レイアウト更新待ち.
+            await UniTask.NextFrame(cancellationToken:CancellationToken.None);
 
             //====== TransitionFinish ======
 
