@@ -519,7 +519,21 @@ namespace Extensions
         ///</summary>
         public static T FindObjectOfType<T>(GameObject rootObject) where T : Component
         {
-            return FindObjectsOfType<T>(rootObject).FirstOrDefault();
+            if (rootObject == null) { return null; }
+            
+            var objects = GetChildrenAndSelf(rootObject);
+
+            foreach (var item in objects)
+            {
+                var components = GetComponents<T>(item).ToArray();
+
+                if (components.Any())
+                {
+                    return components.First();
+                }
+            }
+
+            return null;
         }
 
         /// <summary>
