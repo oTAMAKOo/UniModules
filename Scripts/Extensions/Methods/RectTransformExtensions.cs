@@ -248,9 +248,7 @@ namespace Extensions
         /// <summary> 子階層を含むレイアウトグループを強制更新 </summary>
         public static void ForceRebuildLayoutGroup(this RectTransform self)
         {
-            var gameObject = self.gameObject;
-
-            if (gameObject == null){ return; }
+            if (UnityUtility.IsNull(self) || UnityUtility.IsNull(self.gameObject)){ return; }
 
             IEnumerator LayoutUpdateCore()
             {
@@ -258,13 +256,15 @@ namespace Extensions
 
                 if (self == null){ yield break; }
 
-                if (gameObject == null){ yield break; }
-                
-                var layoutGroups = gameObject.DescendantsAndSelf().OfComponent<LayoutGroup>();
+                if (UnityUtility.IsNull(self.gameObject)){ yield break; }
+
+                var layoutGroups = self.gameObject.DescendantsAndSelf().OfComponent<LayoutGroup>();
 
                 foreach (var layoutGroup in layoutGroups)
                 {
-                    if (UnityUtility.IsNull(layoutGroup)){ continue; }
+                    var rt = layoutGroup.transform as RectTransform;
+
+                    if (UnityUtility.IsNull(self) || UnityUtility.IsNull(self.gameObject)){ continue; }
 
                     layoutGroup.SetLayoutHorizontal();
                     layoutGroup.SetLayoutVertical();
@@ -272,14 +272,14 @@ namespace Extensions
                     layoutGroup.CalculateLayoutInputHorizontal();
                     layoutGroup.CalculateLayoutInputVertical();
 
-                    LayoutRebuilder.MarkLayoutForRebuild(layoutGroup.transform as RectTransform);
+                    LayoutRebuilder.MarkLayoutForRebuild(rt);
                 }
             }
 
             Observable.FromCoroutine(() => LayoutUpdateCore())
-                .TakeUntilDisable(gameObject)
+                .TakeUntilDisable(self)
                 .Subscribe()
-                .AddTo(gameObject);
+                .AddTo(self);
         }
     }
 }
