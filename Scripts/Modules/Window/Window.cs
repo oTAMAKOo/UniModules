@@ -1,4 +1,4 @@
-﻿﻿﻿﻿﻿
+﻿﻿﻿﻿
 using UnityEngine;
 using System;
 using Cysharp.Threading.Tasks;
@@ -42,6 +42,8 @@ namespace Modules.Window
 
         public async UniTask Open(bool blockInput = true)
         {
+            await UniTask.NextFrame();
+
             var inputBlock = blockInput ? new BlockInput() : null;
 
             await Prepare();
