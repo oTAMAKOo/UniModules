@@ -12,7 +12,7 @@ namespace Modules.InputControl
 {
 	public enum InputBlockType
 	{
-		EventSystem,
+		Screen,
 		Button,
 	}
 
@@ -41,7 +41,7 @@ namespace Modules.InputControl
         
         protected override void OnCreate()
         {
-			BlockType = InputBlockType.EventSystem;
+			BlockType = InputBlockType.Screen;
 
 			trackInputBlock = new Dictionary<ulong, string>();
 
