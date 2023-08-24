@@ -26,10 +26,7 @@ namespace Modules.InputControl
                     .Subscribe(x => UpdateInputBlock(x))
                     .AddTo(this);
 
-                if (blockInputManager.IsBlocking)
-                {
-                    UpdateInputBlock(blockInputManager.IsBlocking);
-                }
+                UpdateInputBlock(blockInputManager.IsBlocking);
             }
         }
 
