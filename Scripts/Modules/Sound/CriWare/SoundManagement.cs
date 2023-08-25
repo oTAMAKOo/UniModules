@@ -418,8 +418,6 @@ namespace Modules.Sound
 
                 if (status == CriAtomExPlayback.Status.Removed)
                 {
-                    Debug.LogWarning($"Sound play canceled. {element.CueInfo.Cue}");
-                    
                     Stop(element);
                     
                     return;
