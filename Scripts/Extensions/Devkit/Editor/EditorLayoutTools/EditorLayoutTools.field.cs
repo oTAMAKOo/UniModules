@@ -1,4 +1,4 @@
-﻿
+
 using UnityEngine;
 using UnityEditor;
 using System;
@@ -222,7 +222,7 @@ namespace Extensions.Devkit
             {
                 EditorGUI.BeginChangeCheck();
 
-                var seachTextFieldStyleName = isToolbar ? "ToolbarSeachTextField" : "SearchTextField";
+                var seachTextFieldStyleName = isToolbar ? EditorStyles.toolbarSearchField : "SearchTextField";
 
                 if (isDelayed)
                 {
@@ -241,7 +241,7 @@ namespace Extensions.Devkit
                     }
                 }
 
-                var seachCancelButtonStyleName = isToolbar ? "ToolbarSeachCancelButton" : "SearchCancelButton";
+                var seachCancelButtonStyleName = isToolbar ? "ToolbarSearchCancelButton" : "SearchCancelButton";
 
                 if (GUILayout.Button(string.Empty, seachCancelButtonStyleName, GUILayout.Width(18f)))
                 {
