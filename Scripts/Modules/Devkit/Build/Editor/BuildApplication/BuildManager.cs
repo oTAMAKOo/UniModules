@@ -155,7 +155,7 @@ namespace Modules.Devkit.Build
                         {
                             // ビルド実行.
 
-                            EditorUserBuildSettings.development = applicationBuilder.Development;
+                            EditorUserBuildSettings.development = !applicationBuilder.ReleaseBuild;
 
                             var option = EditorUserBuildSettings.development
                                 ? BuildOptions.Development

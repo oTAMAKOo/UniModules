@@ -1,6 +1,8 @@
 
 using UnityEditor;
 using System;
+using System.Collections.Generic;
+using Extensions;
 
 namespace Modules.Devkit.Build
 {
@@ -15,28 +17,19 @@ namespace Modules.Devkit.Build
         public bool development = false;
 
         /// <summary> Defineシンボル. </summary>
-        public string[] defineSymbols = null;
+        public List<string> defineSymbols = null;
 
         /// <summary> ビルド番号 </summary>
         public int buildNumber = 1;
 
+        /// <summary> ブランチ名 </summary>
+        public string branchName = null;
+
         /// <summary> コマンドライン引数適用 </summary>
         public virtual void ApplyCommandLineArguments()
         {
-            var args = System.Environment.GetCommandLineArgs();
-            
-            for(var i = 0; i < args.Length; i++)
-            {
-                switch(args[i])
-                {
-                    case "-BuildNumber":
-                        {
-                            buildNumber = int.Parse(args[i+1]);
-                            i++;
-                        }
-                        break;
-                }
-            }
+            buildNumber = CommandLineUtility.Get<int>("-BuildNumber");
+            branchName = CommandLineUtility.Get<string>("-BranchName");
         }
     }
 }
