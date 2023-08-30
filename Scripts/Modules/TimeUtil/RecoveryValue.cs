@@ -66,7 +66,7 @@ namespace Modules.TimeUtil
                 var recoveryTimeSpan = FullRecoveryTime.Value - LastRecoveryTime.Value;
 
                 // 回復に掛かる時間から現在値を算出.
-                Current = Max - recoveryTimeSpan.TotalSeconds / RecoveryInterval * RecoveryAmount;
+                Current = Math.Min(Max, Max - recoveryTimeSpan.TotalSeconds / RecoveryInterval * RecoveryAmount);
             }
             else
             {
@@ -143,7 +143,7 @@ namespace Modules.TimeUtil
 
                     LastRecoveryTime = LastRecoveryTime.Value.AddSeconds(RecoveryInterval);
 
-                    Current += RecoveryAmount;
+                    Current = Math.Min(Max, Current + RecoveryAmount);
                 }
             }
             else
