@@ -92,7 +92,7 @@ namespace Modules.Window
             // 新規登録された場合.
             if (globalPopups.All(x => x != popupWindow))
             {
-                UnityUtility.SetLayer(gameObject, popupWindow.gameObject, true);
+                UnityUtility.SetLayer(parentGlobal.Parent, popupWindow.gameObject, true);
                 UnityUtility.SetParent(popupWindow.gameObject, parentGlobal.Parent);
 
                 popupWindow.OnCloseAsObservable()
@@ -121,7 +121,7 @@ namespace Modules.Window
             // 新規登録された場合.
             if (scenePopups.All(x => x != popupWindow))
             {
-                UnityUtility.SetLayer(gameObject, popupWindow.gameObject, true);
+                UnityUtility.SetLayer(parentInScene.Parent, popupWindow.gameObject, true);
                 UnityUtility.SetParent(popupWindow.gameObject, parentInScene.Parent);
 
                 popupWindow.OnCloseAsObservable()
