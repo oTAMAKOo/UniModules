@@ -23,9 +23,17 @@ namespace Modules.Devkit.Diagnosis
 
 		private float oldTime = 0f;
 
-		private bool initialized = false;
+        private bool? isEnable = null;
 
-		//----- property -----
+        private bool initialized = false;
+
+        //----- property -----
+
+        public bool IsEnable
+        {
+            get { return isEnable.HasValue ? isEnable.Value : UnityEngine.Debug.isDebugBuild; }
+            set { isEnable = value; }
+        }
 
 		//----- method -----
 
@@ -34,16 +42,11 @@ namespace Modules.Devkit.Diagnosis
 			Initialize();
 		}
 
-		private bool IsEnable()
-		{
-			return UnityEngine.Debug.isDebugBuild;
-		}
-
 		public void Initialize()
 		{
 			if (initialized) { return; }
 
-			if (!IsEnable()) { return; }
+			if (!IsEnable) { return; }
 
 			oldTime = Time.realtimeSinceStartup;
 
@@ -56,7 +59,7 @@ namespace Modules.Devkit.Diagnosis
 		{
 			if (!initialized) { return; }
 
-			if (!IsEnable()) { return; }
+			if (!IsEnable) { return; }
 
 			var time = Time.realtimeSinceStartup - oldTime;
 
