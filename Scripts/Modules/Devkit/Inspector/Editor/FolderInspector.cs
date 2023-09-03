@@ -20,6 +20,8 @@ namespace Modules.Devkit.Inspector
 
         private string description = null;
 
+        private static GUIStyle memoTextStyle = null;
+
         private static AesCryptoKey cryptoKey = null;
 
         //----- property -----
@@ -37,6 +39,14 @@ namespace Modules.Devkit.Inspector
 
         public override void DrawInspectorGUI(UnityEngine.Object target)
         {
+            if (memoTextStyle == null)
+            {
+                memoTextStyle = new GUIStyle(EditorStyles.textArea)
+                {
+                    alignment = TextAnchor.UpperLeft,
+                };
+            }
+
             EditorGUILayout.Space(1f);
 
             using (new EditorGUILayout.HorizontalScope(EditorStyles.toolbar))
@@ -64,7 +74,7 @@ namespace Modules.Devkit.Inspector
                 {
                     EditorGUI.BeginChangeCheck();
             
-                    var value = EditorGUILayout.TextArea(description, GUILayout.Height(height));
+                    var value = EditorGUILayout.TextArea(description, memoTextStyle, GUILayout.Height(height));
 
                     if(EditorGUI.EndChangeCheck())
                     {
