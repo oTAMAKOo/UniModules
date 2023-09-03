@@ -102,6 +102,8 @@ namespace Modules.TextData.Components
 
             if (BuildPipeline.isBuildingPlayer) { return; }
 
+            if (!UnityUtility.IsActiveInHierarchy(gameObject)) { return; }
+
             if (string.IsNullOrEmpty(dummyText)) { return; }
 
             if (!string.IsNullOrEmpty(textGuid)) { return; }

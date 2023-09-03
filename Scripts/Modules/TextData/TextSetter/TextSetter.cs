@@ -101,8 +101,6 @@ namespace Modules.TextData.Components
 
         private void ImportText()
         {
-            if (!UnityUtility.IsActiveInHierarchy(gameObject)) { return; }
-
             #if UNITY_EDITOR
 
             ApplyDummyText();
