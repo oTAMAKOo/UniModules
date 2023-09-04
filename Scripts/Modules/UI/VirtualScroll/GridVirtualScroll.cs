@@ -1,4 +1,4 @@
-﻿
+
 using UnityEngine;
 using System.Linq;
 using System.Collections.Generic;
@@ -38,7 +38,7 @@ namespace Modules.UI
             lineElementCount = count;
         }
 
-        public void SetContents(T[] contents)
+        public void SetContents(IEnumerable<T> contents)
         {
             var elements = BuildElements(contents);
 
@@ -52,7 +52,7 @@ namespace Modules.UI
         }
 
         // データを入れる順番を変更したい時はこの関数をoverrideする.
-        protected virtual GridElement[] BuildElements(T[] contents)
+        protected virtual GridElement[] BuildElements(IEnumerable<T> contents)
         {
             var gridElements = new List<GridElement>();
 
@@ -61,7 +61,9 @@ namespace Modules.UI
             var startIndex = 0;
             var contentsIndex = 0;
 
-            for (var i = 0; i < contents.Length; i++)
+            var items = contents.ToArray();
+
+            for (var i = 0; i < items.Length; i++)
             {
                 if (GridLineElementCount <= elements.Count)
                 {
@@ -73,7 +75,7 @@ namespace Modules.UI
                     elements.Clear();
                 }
 
-                var content = contents.ElementAtOrDefault(contentsIndex);
+                var content = items.ElementAtOrDefault(contentsIndex);
 
                 if (content == null) { break; }
 
