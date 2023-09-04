@@ -131,7 +131,7 @@ namespace Modules.UI
 
         //----- method -----
 
-        protected virtual void Initialize()
+        protected virtual void InitializeVirtualScroll()
         {
             if (status != Status.None) { return; }
             
@@ -176,7 +176,7 @@ namespace Modules.UI
         {
             if (status == Status.None)
             {
-                Initialize();
+                InitializeVirtualScroll();
             }
             
             Cancel();
