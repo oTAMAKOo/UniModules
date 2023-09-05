@@ -1,4 +1,4 @@
-﻿
+
 using System.Text;
 using System.Text.RegularExpressions;
 using Extensions;
@@ -95,6 +95,8 @@ namespace Modules.TextData
 
         private const string GetMethodTemplate = @"public static string Get(TextData.{0} textType){{ return GetTextInternal(textType); }}";
 
+        private const string FormatMethodTemplate = @"public static string Format(TextData.{0} textType, params object[] args){{ return string.Format(Get(textType), args); }}";
+
         //----- field -----
 
         //----- property -----
@@ -104,7 +106,7 @@ namespace Modules.TextData
         public static void Generate(SheetData[] sheets, string scriptFolderPath)
         {
             var categorys = new StringBuilder();
-            var getMethods = new StringBuilder();
+            var methods = new StringBuilder();
 
             for (var i = 0; i < sheets.Length; i++)
             {
@@ -112,21 +114,23 @@ namespace Modules.TextData
 
                 categorys.Append("\t\t\t\t").AppendFormat(CategoryDefinitionTemplate, sheet.sheetName, sheet.guid);
 
-                getMethods.Append("\t\t").AppendFormat(GetMethodTemplate, sheet.sheetName);
+                methods.Append("\t\t").AppendFormat(GetMethodTemplate, sheet.sheetName).AppendLine();
+
+                methods.Append("\t\t").AppendFormat(FormatMethodTemplate, sheet.sheetName);
 
                 // 最終行は改行しない.
                 if (i < sheets.Length - 1)
                 {
                     categorys.AppendLine();
 
-                    getMethods.AppendLine().AppendLine();
+                    methods.AppendLine().AppendLine();
                 }
             }
 
             var script = TextDataScriptTemplate;
 
             script = Regex.Replace(script, "#CATEGORY_DEFINITION_ITEMS#", categorys.ToString());
-            script = Regex.Replace(script, "#GETTEXT_METHODS#", getMethods.ToString());
+            script = Regex.Replace(script, "#GETTEXT_METHODS#", methods.ToString());
 
             script = script.FixLineEnd();
             
