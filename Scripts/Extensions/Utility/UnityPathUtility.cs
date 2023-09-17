@@ -41,10 +41,7 @@ namespace Extensions
         [InitializeOnLoadMethod]
         private static void InitializeOnLoadMethod()
         {
-            DataPath = PathUtility.ConvertPathSeparator(Application.dataPath);
-            PersistentDataPath = PathUtility.ConvertPathSeparator(Application.persistentDataPath);
-            StreamingAssetsPath = PathUtility.ConvertPathSeparator(Application.streamingAssetsPath);
-            TemporaryCachePath = PathUtility.ConvertPathSeparator(Application.temporaryCachePath);
+            Setup();
         }
 
         #else
@@ -52,13 +49,18 @@ namespace Extensions
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterAssembliesLoaded)]
         private static void RuntimeInitializeOnLoadMethod()
         {
+            Setup();
+        }
+
+        #endif
+
+        public static void Setup()
+        {
             DataPath = PathUtility.ConvertPathSeparator(Application.dataPath);
             PersistentDataPath = PathUtility.ConvertPathSeparator(Application.persistentDataPath);
             StreamingAssetsPath = PathUtility.ConvertPathSeparator(Application.streamingAssetsPath);
             TemporaryCachePath = PathUtility.ConvertPathSeparator(Application.temporaryCachePath);
         }
-
-        #endif
 
         /// <summary> プロジェクト名取得 </summary>
         public static string GetProjectName()

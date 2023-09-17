@@ -104,7 +104,6 @@ namespace Extensions
             #endif
 
             return string.Join("", hashAlgorithm.ComputeHash(enc.GetBytes(value)).Select(x => $"{x:x2}"));
-
         }
 
         /// <summary> 指定された文字列をCRC32でハッシュ化 </summary>
