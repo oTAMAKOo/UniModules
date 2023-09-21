@@ -10,12 +10,6 @@ using Modules.Devkit.LogHandler;
 
 namespace Modules.InputControl
 {
-	public enum InputBlockType
-	{
-		Screen,
-		Button,
-	}
-
     public sealed class BlockInputManager : Singleton<BlockInputManager>
 	{
         //----- params -----
@@ -31,9 +25,6 @@ namespace Modules.InputControl
 
 		//----- property -----
 
-		/// <summary> 入力制限タイプ </summary>
-		public InputBlockType BlockType { get; private set; }
-
 		/// <summary> 入力制限中か </summary>
         public bool IsBlocking { get { return blockingIds.Any(); } }
 
@@ -41,8 +32,6 @@ namespace Modules.InputControl
         
         protected override void OnCreate()
         {
-			BlockType = InputBlockType.Screen;
-
 			trackInputBlock = new Dictionary<ulong, string>();
 
             // Exception発生時に強制解除.

@@ -1,18 +1,21 @@
 ﻿
 using UnityEngine;
 using UniRx;
+using Extensions;
 
 namespace Modules.InputControl
 {
-    public abstract class InputBlockListener : MonoBehaviour
+    public sealed class InputBlockListener : MonoBehaviour
     {
         //----- params -----
         
         //----- field -----
+
+        private bool blocking = false;
         
         //----- property -----
 
-        protected abstract InputBlockType BlockType { get; }
+        public bool IsBlocking { get { return blocking; } }
 
         //----- method -----
 
@@ -20,16 +23,18 @@ namespace Modules.InputControl
         {
             var blockInputManager = BlockInputManager.Instance;
 
-            if (blockInputManager.BlockType == BlockType)
-            {
-                blockInputManager.OnUpdateStatusAsObservable()
-                    .Subscribe(x => UpdateInputBlock(x))
-                    .AddTo(this);
+            blockInputManager.OnUpdateStatusAsObservable()
+                .Subscribe(x => UpdateInputBlock(x))
+                .AddTo(this);
 
-                UpdateInputBlock(blockInputManager.IsBlocking);
-            }
+            UpdateInputBlock(blockInputManager.IsBlocking);
         }
 
-        protected abstract void UpdateInputBlock(bool isBlock);
+        private void UpdateInputBlock(bool isBlock)
+        {
+            blocking = isBlock;
+
+            UnityUtility.SetActive(gameObject, blocking);
+        }
     }
 }
