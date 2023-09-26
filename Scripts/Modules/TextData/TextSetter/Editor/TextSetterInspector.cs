@@ -175,7 +175,7 @@ namespace Modules.TextData.Components
 
                 EditorGUILayout.PrefixLabel("Text");
 
-                EditorGUILayout.SelectableLabel(label, EditorStyles.textField, GUILayout.Height(EditorLayoutTools.SingleReturnHeight));
+                EditorGUILayout.SelectableLabel(label, EditorStyles.textField, GUILayout.Height(EditorLayoutTools.SingleLineHeight));
 
                 using (new DisableScope(TextData.Instance.Texts == null))
                 {

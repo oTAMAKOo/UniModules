@@ -1,4 +1,4 @@
-﻿
+
 using UnityEngine;
 using UnityEditor;
 using System;
@@ -28,7 +28,7 @@ namespace Extensions.Devkit
 
         //----- property -----
 
-        public static float SingleReturnHeight
+        public static float SingleLineHeight
         {
             get
             {
