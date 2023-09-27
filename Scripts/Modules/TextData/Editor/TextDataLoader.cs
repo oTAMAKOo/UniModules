@@ -137,7 +137,7 @@ namespace Modules.TextData.Editor
 
             var identifier = languageInfo.Identifier;
 
-            var assetFolderName = textData.GetAssetFolderName();
+            var assetFolderLocalPath = textData.AssetFolderLocalPath;
 
             var assetFileName = TextData.GetAssetFileName(identifier);
 
@@ -145,7 +145,7 @@ namespace Modules.TextData.Editor
             {
                 case ContentType.Embedded:
                     {
-                        var resourcesPath = PathUtility.Combine(assetFolderName, assetFileName);
+                        var resourcesPath = PathUtility.Combine(assetFolderLocalPath, assetFileName);
 
                         var path = PathUtility.GetPathWithoutExtension(resourcesPath);
 
@@ -159,7 +159,7 @@ namespace Modules.TextData.Editor
                         {
                             var aseetFolderPath = config.Distribution.AseetFolderPath;
 
-                            var assetPath = PathUtility.Combine(new string[] { aseetFolderPath, assetFolderName, assetFileName });
+                            var assetPath = PathUtility.Combine(new string[] { aseetFolderPath, assetFolderLocalPath, assetFileName });
                     
                             textDataAsset = AssetDatabase.LoadMainAssetAtPath(assetPath) as TextDataAsset;
                         }

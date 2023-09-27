@@ -1,4 +1,4 @@
-﻿
+
 using UnityEngine;
 using UnityEditor;
 using System.IO;
@@ -68,11 +68,11 @@ namespace Modules.TextData.Editor
                     break;
             }
 
-            var assetFolderName = textData.GetAssetFolderName();
+            var assetFolderLocalPath = textData.AssetFolderLocalPath;
 
             var assetFileName = TextData.GetAssetFileName(info.Identifier);
 
-            var assetPath = PathUtility.Combine(new string[] { assetFolderPath, assetFolderName, assetFileName });
+            var assetPath = PathUtility.Combine(new string[] { assetFolderPath, assetFolderLocalPath, assetFileName });
 
             var generateInfo = new GenerateInfo
             {

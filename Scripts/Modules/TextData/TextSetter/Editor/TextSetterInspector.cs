@@ -161,37 +161,46 @@ namespace Modules.TextData.Components
 
             if (textData == null){ return; }
 
+            var label = string.Empty;
+
+            var category = textData.Categories.FirstOrDefault(x => x.Guid == currentCategoryGuid);
+            var enumName = textData.GetEnumName(currentTextGuid);
+
+            if (category != null && !string.IsNullOrEmpty(enumName))
+            {
+                label = $"{category.DisplayName} : {enumName}";
+            }
+
             using (new EditorGUILayout.HorizontalScope())
             {
-                var label = string.Empty;
-
-                var category = textData.Categories.FirstOrDefault(x => x.Guid == currentCategoryGuid);
-                var enumName = textData.GetEnumName(currentTextGuid);
-
-                if (category != null && !string.IsNullOrEmpty(enumName))
+                if (string.IsNullOrEmpty(label))
                 {
-                    label = $"{category.DisplayName} : {enumName}";
+                    EditorGUILayout.PrefixLabel("Text");
                 }
-
-                EditorGUILayout.PrefixLabel("Text");
-
-                EditorGUILayout.SelectableLabel(label, EditorStyles.textField, GUILayout.Height(EditorLayoutTools.SingleLineHeight));
+                else
+                {
+                    EditorGUILayout.SelectableLabel(label, EditorStyles.textField, GUILayout.Height(EditorLayoutTools.SingleLineHeight));
+                }
 
                 using (new DisableScope(TextData.Instance.Texts == null))
                 {
                     GUILayout.Space(2f);
 
-                    if (GUILayout.Button("select", EditorStyles.miniButton, GUILayout.Width(50f)))
+                    var layoutOptions = string.IsNullOrEmpty(currentTextGuid) ? 
+                                        new GUILayoutOption[0] : 
+                                        new GUILayoutOption[]{ GUILayout.Width(60f) };
+
+                    if (GUILayout.Button("select", EditorStyles.miniButton, layoutOptions))
                     {
                         TextDataSelector.Open();
                     }
                 }
 
-                using (new DisableScope(string.IsNullOrEmpty(currentTextGuid)))
+                if (!string.IsNullOrEmpty(currentTextGuid))
                 {
                     GUILayout.Space(2f);
 
-                    if (GUILayout.Button("clear", EditorStyles.miniButton, GUILayout.Width(50f)))
+                    if (GUILayout.Button("clear", EditorStyles.miniButton, GUILayout.Width(60f)))
                     {
                         SetTextGuid(null);
                     }

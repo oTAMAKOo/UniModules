@@ -1,4 +1,4 @@
-﻿
+
 using System;
 using System.Collections.Generic;
 using Extensions;
@@ -35,6 +35,9 @@ namespace Modules.TextData.Components
 
         public IReadOnlyDictionary<string, TextInfo> Texts { get { return texts; } }
 
+        /// <summary> アセットファイルフォルダパス </summary>
+        public string AssetFolderLocalPath { get; set; } = "TextData";
+
         //----- method -----
 
         protected override void OnCreate()
@@ -70,8 +73,6 @@ namespace Modules.TextData.Components
 
             cryptoKey = new AesCryptoKey(key, iv);
         }
-
-        public virtual string GetAssetFolderName() { return string.Empty; }
 
         public virtual string FindTextGuid(Enum textType) { return null; }
 
