@@ -189,7 +189,7 @@ namespace Modules.Net.WebRequest
                     fontStyle = FontStyle.Bold,
                 };
 
-                statusLabelStyle.normal.textColor = Color.white;
+                apiNameLabelStyle.normal.textColor = Color.white;
             }
 
             if (requestStatusStyle == null)
