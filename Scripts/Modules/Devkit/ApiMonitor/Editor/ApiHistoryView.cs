@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Extensions;
 using UniRx;
+using Extensions.Devkit;
 
 namespace Modules.Net.WebRequest
 {
@@ -177,7 +178,7 @@ namespace Modules.Net.WebRequest
                     fixedHeight = 16,
                 };
 
-                statusLabelStyle.normal.textColor = Color.white;
+                statusLabelStyle.normal.textColor = EditorLayoutTools.DefaultContentColor;
             }
 
             if (apiNameLabelStyle == null)
@@ -189,7 +190,7 @@ namespace Modules.Net.WebRequest
                     fontStyle = FontStyle.Bold,
                 };
 
-                apiNameLabelStyle.normal.textColor = Color.white;
+                apiNameLabelStyle.normal.textColor = EditorLayoutTools.DefaultContentColor;
             }
 
             if (requestStatusStyle == null)
@@ -201,7 +202,7 @@ namespace Modules.Net.WebRequest
                     fixedHeight = 43 * 0.25f,
                 };
 
-                requestStatusStyle.normal.textColor = Color.clear;
+                requestStatusStyle.normal.textColor = EditorLayoutTools.DefaultContentColor;
             }
         }
 

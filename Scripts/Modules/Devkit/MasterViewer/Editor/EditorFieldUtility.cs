@@ -163,29 +163,5 @@ namespace Modules.Devkit.MasterViewer
 
             return result;
         }
-
-        public static int GetTextFieldLineCount(string text)
-        {
-            if (string.IsNullOrEmpty(text)) { return 1; }
-
-            text = text.FixLineEnd();
-
-            var lineCount = text.Count(c => c == '\n') + 1;
-
-            return lineCount;
-        }
-
-        public static float GetTextFieldHight(string text)
-        {
-            var singleLineHeight = EditorGUIUtility.singleLineHeight;
-
-            var lineCount = GetTextFieldLineCount(text);
-
-            if (lineCount <= 1){ return singleLineHeight; }
-            
-            var hight = singleLineHeight * Math.Min(3, lineCount);
-
-            return singleLineHeight < hight ? hight : singleLineHeight;
-        }
     }
 }
