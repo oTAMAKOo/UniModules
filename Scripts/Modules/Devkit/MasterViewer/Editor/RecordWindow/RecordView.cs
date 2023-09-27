@@ -1,4 +1,4 @@
-﻿
+
 using UnityEngine;
 using UnityEditor;
 using UnityEditor.IMGUI.Controls;
@@ -170,7 +170,7 @@ namespace Modules.Devkit.MasterViewer
                 {
                     var value = masterController.GetValue(item.Record, valueName) as string;
 
-                    var hight = EditorRecordFieldUtility.GetTextFieldHight(value);
+                    var hight = EditorLayoutTools.GetTextFieldHight(value);
 
                     if (customRowHeight < hight)
                     {
@@ -289,7 +289,7 @@ namespace Modules.Devkit.MasterViewer
                 {
                     if (valueType == typeof(string))
                     {
-                        rect.height = EditorRecordFieldUtility.GetTextFieldHight(value as string);
+                        rect.height = EditorLayoutTools.GetTextFieldHight(value as string);
                     }
 
                     EditorGUI.BeginChangeCheck();

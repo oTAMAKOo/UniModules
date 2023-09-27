@@ -192,7 +192,7 @@ namespace Modules.TextData.Components
 
                     if (GUILayout.Button("select", EditorStyles.miniButton, layoutOptions))
                     {
-                        TextDataSelector.Open();
+                        SelectorWindow.Open();
                     }
                 }
 
