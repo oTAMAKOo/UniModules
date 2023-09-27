@@ -22,7 +22,7 @@ namespace Modules.TextData.Components
             Select,
         }
 
-        private const float RowHight = 21f;
+        private const float RowHight = 22f;
 
         private sealed class ColumnInfo
         {

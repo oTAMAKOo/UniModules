@@ -70,17 +70,24 @@ namespace Extensions.Devkit
             return lineCount;
         }
 
-        public static float GetTextFieldHight(string text)
+        public static float GetTextFieldHight(string text, int? maxLine = null)
         {
-            var singleLineHeight = EditorLayoutTools.SingleLineHeight;
-
             var lineCount = GetTextFieldLineCount(text);
 
-            if (lineCount <= 1){ return singleLineHeight; }
-            
-            var hight = singleLineHeight * Math.Min(3, lineCount);
+            if (lineCount <= 1){ return SingleLineHeight; }
 
-            return singleLineHeight < hight ? hight : singleLineHeight;
+            var hight = 0f;
+
+            if (maxLine.HasValue)
+            {
+                hight = SingleLineHeight * Math.Min(maxLine.Value, lineCount);
+            }
+            else
+            {
+                hight = SingleLineHeight * lineCount;
+            }
+
+            return SingleLineHeight < hight ? hight : SingleLineHeight;
         }
 
         //===========================================

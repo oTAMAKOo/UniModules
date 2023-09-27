@@ -170,7 +170,7 @@ namespace Modules.Devkit.MasterViewer
                 {
                     var value = masterController.GetValue(item.Record, valueName) as string;
 
-                    var hight = EditorLayoutTools.GetTextFieldHight(value);
+                    var hight = EditorLayoutTools.GetTextFieldHight(value, 3);
 
                     if (customRowHeight < hight)
                     {
@@ -289,7 +289,7 @@ namespace Modules.Devkit.MasterViewer
                 {
                     if (valueType == typeof(string))
                     {
-                        rect.height = EditorLayoutTools.GetTextFieldHight(value as string);
+                        rect.height = EditorLayoutTools.GetTextFieldHight(value as string, 3);
                     }
 
                     EditorGUI.BeginChangeCheck();
