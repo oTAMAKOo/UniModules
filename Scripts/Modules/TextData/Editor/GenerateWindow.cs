@@ -1,4 +1,4 @@
-﻿
+
 using UnityEngine;
 using UnityEditor;
 using System;
@@ -54,7 +54,10 @@ namespace Modules.TextData.Editor
 				EditorGUILayout.Separator();
 
 	            // タイプ選択.
-	            DrawTextDataTypeGUI();
+                if (config.Distribution.Enable)
+                {
+    	            DrawTextDataTypeGUI();
+                }
 
 	            // 生成.
 	            DrawGenerateGUI();
