@@ -1,7 +1,7 @@
-﻿﻿﻿
+﻿﻿
 using UnityEngine;
 
-namespace Modules.StateMachine
+namespace Modules.Animation
 {
     public abstract class StateMachineParameter
     {

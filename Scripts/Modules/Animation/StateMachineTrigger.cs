@@ -1,14 +1,9 @@
-﻿﻿﻿﻿
+﻿﻿﻿
 using UnityEngine;
 using Unity.Linq;
-using System;
 using System.Linq;
-using System.Collections.Generic;
-using UniRx;
-using Extensions;
-using Modules.Animation;
 
-namespace Modules.StateMachine
+namespace Modules.Animation
 {
     public interface IStateMachineEventHandler
     {
