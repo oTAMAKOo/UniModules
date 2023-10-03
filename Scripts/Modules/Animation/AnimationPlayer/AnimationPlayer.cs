@@ -5,7 +5,6 @@ using System.Linq;
 using Cysharp.Threading.Tasks;
 using UniRx;
 using Extensions;
-using Modules.StateMachine;
 
 namespace Modules.Animation
 {
