@@ -28,7 +28,9 @@ namespace Extensions
 
             foreach (var element in source)
             {
-                if (knownKeys.Add(keySelector(element)))
+                var key = keySelector(element);
+
+                if (knownKeys.Add(key))
                 {
                     yield return element;
                 }
