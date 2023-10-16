@@ -1,4 +1,4 @@
-﻿﻿﻿﻿
+﻿﻿﻿
 using UnityEngine;
 using System;
 using Cysharp.Threading.Tasks;
@@ -97,6 +97,8 @@ namespace Modules.Window
 
                 await UniTask.NextFrame();
             }
+
+            await UniTask.NextFrame();
         }
 
         public IObservable<Unit> OnOpenAsObservable()
