@@ -1,4 +1,4 @@
-﻿
+
 using UnityEditor;
 using System.Linq;
 using System.Collections.Generic;
@@ -101,7 +101,7 @@ namespace Modules.TextData
 
                 script = script.FixLineEnd();
 
-                var fileName = string.Format(@"{0}.cs", sheet.sheetName);
+                var fileName = GetSctiptFileName(sheet);
 
                 if (ScriptGenerateUtility.GenerateScript(scriptFolderPath, fileName, script))
                 {
@@ -136,6 +136,11 @@ namespace Modules.TextData
                     }
                 }
             }
+        }
+
+        public static string GetSctiptFileName(SheetData sheet)
+        {
+            return $"{sheet.sheetName}.cs";
         }
     }
 }

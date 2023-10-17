@@ -130,10 +130,6 @@ namespace Modules.TextData.Editor
                     {
                         EditorApplication.LockReloadAssemblies();
 
-                        DirectoryUtility.Clean(generateInfo.scriptFolderPath);
-
-                        AssetDatabase.ImportAsset(generateInfo.scriptFolderPath, ImportAssetOptions.ForceUpdate);
-
                         EditorUtility.DisplayProgressBar(progressTitle, "Generate script.", 0.25f);
 
                         CategoryScriptGenerator.Generate(sheets, generateInfo.scriptFolderPath);
