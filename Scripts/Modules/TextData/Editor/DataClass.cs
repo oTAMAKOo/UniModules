@@ -1,13 +1,16 @@
 ﻿
 namespace Modules.TextData.Editor
 {
+    public sealed class IndexData
+    {
+        public string[] sheetNames { get; set; } = null;
+    }
+
     public sealed class SheetData
     {
         public string sheetName { get; set; } = null;
     
         public string displayName { get; set; } = null;
-
-        public int index { get; set; } = 0;
 
         public string guid { get; set; } = null;
 

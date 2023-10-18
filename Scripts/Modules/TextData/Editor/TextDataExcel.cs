@@ -105,7 +105,7 @@ namespace Modules.TextData.Editor
             
             var result = await ExecuteProcess(setting, Mode.Export, displayConsole);
 
-            if (result.Item1 != 0)
+            if (result.Item1 != 0 && !string.IsNullOrEmpty(result.Item2))
             {
                 Debug.LogError(result.Item2);
             }

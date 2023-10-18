@@ -10,13 +10,13 @@ using Extensions.Devkit;
 using Modules.Devkit.Generators;
 using Modules.TextData.Components;
 
-using DirectoryUtility = Extensions.DirectoryUtility;
-
 namespace Modules.TextData.Editor
 {
     public static class TextDataGenerator
     {
         //----- params -----
+
+        private const string IndexFileExtension = ".index";
 
         private sealed class GenerateInfo
         {
@@ -95,17 +95,21 @@ namespace Modules.TextData.Editor
 
             EditorUtility.DisplayProgressBar(progressTitle, "Load contents.", 0f);
 
+            var indexData = LoadIndexData(config.FileFormat, generateInfo.contentsFolderPath);
+
             var sheetDatas = LoadSheetData(config.FileFormat, generateInfo.contentsFolderPath);
 
 			EditorUtility.ClearProgressBar();
 
             if (sheetDatas == null) { return; }
 
+            var displayNames = indexData != null ? indexData.sheetNames : new string[0];
+
             var cryptoKey = new AesCryptoKey(config.CryptoKey, config.CryptoIv);
 
             var generateScript = !string.IsNullOrEmpty(generateInfo.scriptFolderPath);
 
-			var hash = CreateSheetsHash(sheetDatas);
+			var hash = CreateSheetsHash(displayNames, sheetDatas);
 
 			var textDataAsset = LoadAsset(generateInfo.assetPath);
 
@@ -116,7 +120,12 @@ namespace Modules.TextData.Editor
             {
 				using (new AssetEditingScope())
                 {
-					var sheets = sheetDatas.Keys.OrderBy(x => x.index).ToArray();
+					var sheets = sheetDatas.Keys.ToArray();
+
+                    if (displayNames.Any())
+                    {
+                        sheets = sheetDatas.Keys.OrderBy(x => displayNames.IndexOf(y => y == x.displayName)).ToArray();
+                    }
 
 					// Asset.
 
@@ -159,11 +168,16 @@ namespace Modules.TextData.Editor
 			EditorUtility.ClearProgressBar();
         }
 
-		private static string CreateSheetsHash(Dictionary<SheetData, string> sheetDatas)
+		private static string CreateSheetsHash(string[] displayNames, Dictionary<SheetData, string> sheetDatas)
 		{
 			var builder = new StringBuilder();
 
-			var items = sheetDatas.OrderBy(x => x.Key.index).ToArray();
+			var items = sheetDatas.ToArray();
+
+            if (displayNames.Any())
+            {
+                items = sheetDatas.OrderBy(x => displayNames.IndexOf(y => y == x.Key.displayName)).ToArray();
+            }
 
 			foreach (var item in items)
 			{
@@ -172,6 +186,24 @@ namespace Modules.TextData.Editor
 
 			return builder.ToString().GetHash();
 		}
+
+        private static IndexData LoadIndexData(FileLoader.Format fileFormat, string recordDirectory)
+        {
+            if (!Directory.Exists(recordDirectory))
+            {
+                Debug.LogErrorFormat("Directory {0} not found.", recordDirectory);
+                return null;
+            }
+
+            var indexFile = Directory.EnumerateFiles(recordDirectory, "*.*", SearchOption.TopDirectoryOnly)
+                .Where(x => Path.GetExtension(x) == IndexFileExtension)
+                .Select(x => PathUtility.ConvertPathSeparator(x))
+                .FirstOrDefault();
+
+            var indexData = FileLoader.LoadFile<IndexData>(indexFile, fileFormat);
+
+            return indexData;
+        }
 
         private static Dictionary<SheetData, string> LoadSheetData(FileLoader.Format fileFormat, string recordDirectory)
         {
