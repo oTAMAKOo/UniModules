@@ -1,7 +1,9 @@
-﻿
+
 using System;
 using System.IO;
 using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace Extensions
 {
@@ -11,7 +13,6 @@ namespace Extensions
         /// 指定されたフォルダ以下の空フォルダを削除.
         /// ※ 渡すパス次第で危険な挙動になるので実行する前に渡すパスを確認する事.
         /// </summary>
-        /// <param name="targetDir"></param>
         public static string[] DeleteEmpty(string targetDir)
         {
             var list = new List<string>();
@@ -26,10 +27,7 @@ namespace Extensions
             return list.ToArray();
         }
 
-        /// <summary>
-        /// 空フォルダを削除(指定されたディレクトリを含む).
-        /// </summary>
-        /// <param name="targetDir"></param>
+        /// <summary> 空フォルダを削除 (指定されたディレクトリを含む) </summary>
         private static string[] DeleteEmptyInternal(string targetDir)
         {
             var list = new List<string>();
@@ -59,9 +57,7 @@ namespace Extensions
             return list.ToArray();
         }
 
-        /// <summary>
-        /// ディレクトリコピー.
-        /// </summary>
+        /// <summary> ディレクトリコピー </summary>
         public static string[] Clone(string sourcePath, string copyPath, Func<string, bool> check = null, bool attributes = false, bool overwrite = true)
         {
             var result = new List<string>();
@@ -115,9 +111,7 @@ namespace Extensions
             return result.ToArray();
         }
 
-        /// <summary>
-        /// 指定されたディレクトリ内のファイル / フォルダを削除.
-        /// </summary>
+        /// <summary> 指定されたディレクトリ内のファイル / フォルダを削除. </summary>
         public static void Clean(string path)
         {
             if (string.IsNullOrEmpty(path)) { return; }
@@ -150,6 +144,44 @@ namespace Extensions
             {
                 Directory.Delete(directory, true);
             }
+        }
+
+        /// <summary> 指定されたディレクトリ内のファイル一覧を取得 </summary>
+        public static async Task<IEnumerable<string>> GetAllFilesAsync(string path)
+        {
+            if (!Directory.Exists(path))
+            {
+                throw new DirectoryNotFoundException(path);
+            }
+
+            var directories = Enumerable.Empty<string>();
+
+            try
+            {
+                directories = Directory.EnumerateDirectories(path).ToArray();
+
+                // 同階層にフォルダが存在しなければ同階層のファイルを取得するタスクを返す.
+                if (!directories.Any())
+                {
+                    return await Task.FromResult(Directory.EnumerateFiles(path)).ConfigureAwait(false);
+                }
+
+                // 再帰的にフォルダを探し続ける.
+                var filePaths = await Task.WhenAll(directories.Select(async x => await GetAllFilesAsync(x))).ConfigureAwait(false);
+
+                directories = filePaths.SelectMany(x => x);
+            }
+            catch
+            {
+                return directories;
+            }
+
+            //タスクを作成する
+            var tcs = new TaskCompletionSource<IEnumerable<string>>();
+
+            tcs.SetResult(Directory.EnumerateFiles(path).Concat(directories));
+            
+            return await tcs.Task.ConfigureAwait(false);
         }
     }
 }

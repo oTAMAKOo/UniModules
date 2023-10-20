@@ -1,6 +1,7 @@
 ﻿
 using UnityEditor;
 using System.Linq;
+using Cysharp.Threading.Tasks;
 using Extensions;
 using Extensions.Devkit;
 using Modules.Devkit.Project;
@@ -74,7 +75,7 @@ namespace Modules.Devkit.AssetTuning
 
             if (ContainsAssetInfo(path)) { return; }
 
-            AddAssetInfo(path);
+            AddAssetInfo(path).Forget();
         }
 
         public override void OnAssetDelete(string path)
@@ -95,7 +96,7 @@ namespace Modules.Devkit.AssetTuning
 
             if (IsExternalAsset(path) && !ContainsAssetInfo(path))
             {
-                AddAssetInfo(path);
+                AddAssetInfo(path).Forget();
             }
         }
 
@@ -116,9 +117,9 @@ namespace Modules.Devkit.AssetTuning
             return assetInfos.Any(x => x.ResourcePath == resourcePath);
         }
 
-        private void AddAssetInfo(string path)
+        private async UniTask AddAssetInfo(string path)
         {
-            var infos = assetManagement.GetAssetInfos(path);
+            var infos = await assetManagement.GetAssetInfos(path);
 
             foreach (var info in infos)
             {

@@ -178,9 +178,7 @@ namespace Modules.ExternalAssets
 
                     if (Prefs.requestGenerate)
                     {
-                        AssetInfoManifestGenerator.Generate();
-
-                        UnityConsole.Info("Auto update AssetInfoManifest");
+                        await AssetInfoManifestGenerator.Generate();
 
                         Prefs.requestGenerate = false;
                     }

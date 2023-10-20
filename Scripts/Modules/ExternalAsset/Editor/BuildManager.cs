@@ -108,7 +108,7 @@ namespace Modules.ExternalAssets
 
                     using (new BuildLogScope(logBuilder, processTime, "ApplyAllAssetBundleName"))
                     {
-                        assetManagement.ApplyAllAssetBundleName();
+                        await assetManagement.ApplyAllAssetBundleName();
                     }
 
                     //------ キャッシュ済みアセットバンドルの最終更新日時取得 ------

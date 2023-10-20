@@ -1,7 +1,8 @@
-﻿
+
 using UnityEngine;
 using UnityEditor;
 using System.Linq;
+using Cysharp.Threading.Tasks;
 using UniRx;
 using Extensions.Devkit;
 using Modules.Devkit.AssemblyCompilation;
@@ -92,7 +93,7 @@ namespace Modules.ExternalAssets
         {
             if (AssetManagement.Prefs.manifestUpdateRequest)
             {
-                AssetInfoManifestGenerator.Generate();
+                AssetInfoManifestGenerator.Generate().Forget();
             }
 
             Disposable.Dispose();
@@ -177,7 +178,7 @@ namespace Modules.ExternalAssets
 
                         if (validate)
                         {
-                            OnDragAndDrop(DragAndDrop.objectReferences);
+                            OnDragAndDrop(DragAndDrop.objectReferences).Forget();
                         }
                     }
 
@@ -185,7 +186,7 @@ namespace Modules.ExternalAssets
             }
         }
 
-        public void OnDragAndDrop(Object[] assetObjects)
+        public async UniTask OnDragAndDrop(Object[] assetObjects)
         {
             if (string.IsNullOrEmpty(headerView.Group)) { return; }
 
@@ -198,7 +199,7 @@ namespace Modules.ExternalAssets
             // 管理情報を追加.
             assetManagement.AddManageInfo(headerView.Group, assetObject);
 
-            manageAssetView.BuildManageInfoViews();
+            await manageAssetView.BuildManageInfoViews();
 
             Repaint();
         }

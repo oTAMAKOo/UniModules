@@ -1,9 +1,10 @@
-﻿
+
 using UnityEngine;
 using UnityEditor;
 using System;
 using System.Linq;
 using System.Collections.Generic;
+using Cysharp.Threading.Tasks;
 using UniRx;
 using Extensions;
 using Extensions.Devkit;
@@ -60,7 +61,7 @@ namespace Modules.ExternalAssets
 
         //----- method -----
 
-        public ManageInfoView(AssetManagement assetManagement, ManageInfo manageInfo, string externalAssetPath, string shareResourcesPath, IgnoreType? ignoreType, bool open, bool edit)
+        public ManageInfoView(ManageInfo manageInfo, string externalAssetPath, string shareResourcesPath, IgnoreType? ignoreType, bool open, bool edit)
         {
             this.ignoreType = ignoreType;
 
@@ -97,8 +98,6 @@ namespace Modules.ExternalAssets
                 .AddTo(Disposable);
 
             contentAssetsScrollView = new ContentAssetsScrollView(externalAssetPath, shareResourcesPath);
-            
-            BuildContentsInfo(assetManagement); 
         }
 
         public void Draw()
@@ -364,13 +363,13 @@ namespace Modules.ExternalAssets
             }
         }
 
-        private void BuildContentsInfo(AssetManagement assetManagement)
+        public async UniTask BuildContentsInfo(AssetManagement assetManagement)
         {
             assetContents = new Dictionary<string, AssetInfo[]>();
 
             var contents = new List<ContentsScrollView.Content>();
 
-            var manageAssetPaths = assetManagement.GetManageAssetPaths(ManageInfo);
+            var manageAssetPaths = await assetManagement.GetManageAssetPaths(ManageInfo);
 
             ManagedAssetInfos = manageAssetPaths.Select(x => assetManagement.GetAssetInfo(x, ManageInfo)).ToArray();
 

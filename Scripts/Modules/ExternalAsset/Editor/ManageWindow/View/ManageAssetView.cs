@@ -1,9 +1,10 @@
-﻿
+
 using UnityEngine;
 using UnityEditor;
 using System;
 using System.Linq;
 using System.Collections.Generic;
+using Cysharp.Threading.Tasks;
 using UniRx;
 using Extensions;
 using Extensions.Devkit;
@@ -45,7 +46,7 @@ namespace Modules.ExternalAssets
             this.externalAssetPath = externalAssetPath;
             this.shareResourcesPath = shareResourcesPath;
 
-            BuildManageInfoViews();
+            BuildManageInfoViews().Forget();
 
             initialized = true;
         }
@@ -54,22 +55,21 @@ namespace Modules.ExternalAssets
         {
 			// 検索バー.
 
-            Action<string> onChangeSearchText = x =>
+            void OnChangeSearchText(string x)
             {
-				searchText = x;
+                searchText = x;
                 scrollPosition = Vector2.zero;
                 UpdateSearchedViews();
-            };
+            }
 
-            Action onSearchCancel = () =>
+            void OnSearchCancel()
             {
                 searchText = string.Empty;
                 scrollPosition = Vector2.zero;
-
                 UpdateSearchedViews();
-            };
+            }
 
-            EditorLayoutTools.DrawSearchTextField(searchText, onChangeSearchText, onSearchCancel);
+            EditorLayoutTools.DrawSearchTextField(searchText, OnChangeSearchText, OnSearchCancel);
 
 			// 管理中の情報View.
 
@@ -95,10 +95,10 @@ namespace Modules.ExternalAssets
         {
             this.group = group;
 
-            BuildManageInfoViews();
+            BuildManageInfoViews().Forget();
         }
 
-        private void UpdateAssetInfo(string[] targetAssetPaths)
+        private async UniTask UpdateAssetInfo(string[] targetAssetPaths)
         {
             var refresh = false;
 
@@ -109,7 +109,7 @@ namespace Modules.ExternalAssets
                     var targetAssetPath = targetAssetPaths[i];
 
                     // アセット情報収集.
-                    var infos = assetManagement.GetAssetInfos(targetAssetPath);
+                    var infos = await assetManagement.GetAssetInfos(targetAssetPath);
 
                     foreach (var info in infos)
                     {
@@ -137,45 +137,47 @@ namespace Modules.ExternalAssets
             }
         }
 
-        private ManageInfoView CreateManageInfoView(ManageInfo manageInfo, bool opened, bool edited)
+        private async UniTask<ManageInfoView> CreateManageInfoView(ManageInfo manageInfo, bool opened, bool edited)
         {
             var manageAssetPath = AssetDatabase.GUIDToAssetPath(manageInfo.guid);
             var ignoreType = assetManagement.GetIgnoreType(manageAssetPath);
             
-            var view = new ManageInfoView(assetManagement, manageInfo, externalAssetPath, shareResourcesPath, ignoreType, opened, edited);
+            var view = new ManageInfoView(manageInfo, externalAssetPath, shareResourcesPath, ignoreType, opened, edited);
+
+            await view.BuildContentsInfo(assetManagement); 
 
             view.OnUpdateManageInfoAsObservable()
                 .DelayFrame(1)
-                .Subscribe(_ =>
+                .Subscribe(async _ =>
                     {
                         assetManagement.UpdateManageInfo(view.ManageInfo);
 
-                        var updateAssetPaths = assetManagement.GetManageAssetPaths(view.ManageInfo);
+                        var updateAssetPaths = await assetManagement.GetManageAssetPaths(view.ManageInfo);
 
-                        UpdateAssetInfo(updateAssetPaths);
+                        await UpdateAssetInfo(updateAssetPaths);
 
-                        BuildManageInfoViews();
+                        await BuildManageInfoViews();
                     })
                 .AddTo(Disposable);
 
             view.OnDeleteManageInfoAsObservable()
                 .DelayFrame(1)
-                .Subscribe(_ =>
+                .Subscribe(async _ =>
                     {
-                        var updateAssetPaths = assetManagement.GetManageAssetPaths(view.ManageInfo);
+                        var updateAssetPaths = await assetManagement.GetManageAssetPaths(view.ManageInfo);
 
                         assetManagement.DeleteManageInfo(view.ManageInfo);
 
-                        UpdateAssetInfo(updateAssetPaths);
+                        await UpdateAssetInfo(updateAssetPaths);
 
-                        BuildManageInfoViews();
+                        await BuildManageInfoViews();
                     })
                 .AddTo(Disposable);
 
             return view;
         }
 
-        public void BuildManageInfoViews()
+        public async UniTask BuildManageInfoViews()
         {
             if (string.IsNullOrEmpty(group)) { return; }
 
@@ -215,7 +217,7 @@ namespace Modules.ExternalAssets
                 var open = opened.Any(x => x == guid);
                 var edit = edited.Any(x => x == guid);
 
-                var view = CreateManageInfoView(manageInfo, open, edit);
+                var view = await CreateManageInfoView(manageInfo, open, edit);
 
                 views.Add(view);
             }

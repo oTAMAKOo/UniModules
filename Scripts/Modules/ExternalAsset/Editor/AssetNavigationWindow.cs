@@ -2,6 +2,7 @@
 using UnityEngine;
 using UnityEditor;
 using System.Linq;
+using Cysharp.Threading.Tasks;
 using UniRx;
 using Extensions.Devkit;
 using Modules.Devkit.Prefs;
@@ -55,15 +56,15 @@ namespace Modules.ExternalAssets
             if (initialized) { return; }
             
             ExternalAssetConfig.OnReloadAsObservable()
-                .Subscribe(_ => Setup())
+                .Subscribe(_ => Setup().Forget())
                 .AddTo(Disposable);
 
-            Setup();
+            Setup().Forget();
 
 			initialized = true;
         }
 
-		private void Setup()
+		private async UniTask Setup()
 		{
             assetManagement = AssetManagement.Instance;
 			assetManagement.Initialize();
@@ -73,7 +74,7 @@ namespace Modules.ExternalAssets
 				var assetPath = AssetDatabase.GUIDToAssetPath(Prefs.selectionAssetGUID);
 				selectionAssetObject = AssetDatabase.LoadMainAssetAtPath(assetPath);
 
-				UpdateViewInfo(selectionAssetObject);
+				await UpdateViewInfo(selectionAssetObject);
 			}
 
             clipboardIcon = EditorGUIUtility.IconContent("Clipboard");
@@ -85,7 +86,7 @@ namespace Modules.ExternalAssets
 
 		void OnEnable()
         {
-            Setup();
+            Setup().Forget();
         }
 
         void OnDestroy()
@@ -97,7 +98,7 @@ namespace Modules.ExternalAssets
         {
             if (!initialized)
             {
-                Setup();
+                Setup().Forget();
             }
         }
 
@@ -135,7 +136,7 @@ namespace Modules.ExternalAssets
 
             EditorGUILayout.Separator();
 
-            UpdateDragAndDrop();
+            UpdateDragAndDrop().Forget();
         }
 
         private void DrawContentGUI(string label, string content)
@@ -176,7 +177,7 @@ namespace Modules.ExternalAssets
             GUILayout.Space(2f);
         }
 
-        private void UpdateDragAndDrop()
+        private async UniTask UpdateDragAndDrop()
         {
             var e = Event.current;
 
@@ -205,7 +206,7 @@ namespace Modules.ExternalAssets
 
                                 if (assetObject != null)
                                 {
-                                    var enable = UpdateViewInfo(assetObject);
+                                    var enable = await UpdateViewInfo(assetObject);
 
                                     if (!enable)
                                     {
@@ -219,11 +220,11 @@ namespace Modules.ExternalAssets
             }
         }
 
-        private bool UpdateViewInfo(Object assetObject)
+        private async UniTask<bool> UpdateViewInfo(Object assetObject)
         {
             var assetPath = AssetDatabase.GetAssetPath(assetObject);
 
-            var infos = assetManagement.GetAssetInfos(assetPath);
+            var infos = await assetManagement.GetAssetInfos(assetPath);
 
             var info = infos.FirstOrDefault();
             

@@ -4,10 +4,10 @@ using UnityEditor;
 using UnityEditor.Compilation;
 using UnityEditor.SceneManagement;
 using System.Linq;
-using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
+using System.Threading.Tasks;
 
 using Object = UnityEngine.Object;
 
@@ -218,7 +218,7 @@ namespace Extensions.Devkit
         }
 
         /// <summary> フォルダ内の全AssetPathを取得 </summary>
-        public static string[] GetAllAssetPathInFolder(string folderPath)
+        public static async Task<string[]> GetAllAssetPathInFolder(string folderPath)
         {
             if (folderPath.StartsWith(AssetsFolderName))
             {
@@ -227,39 +227,12 @@ namespace Extensions.Devkit
 
             var dir = PathUtility.Combine(UnityPathUtility.DataPath, folderPath);
 
-            if (!Directory.Exists(dir))
-            {
-                throw new DirectoryNotFoundException(dir);
-            }
+            var assetPaths = await DirectoryUtility.GetAllFilesAsync(dir);
 
-            var assetPaths = DirectoryUtility.ExpnadFiles(dir)
+            return assetPaths
                 .Select(x => PathUtility.ConvertPathSeparator(x))
                 .Select(x => x.Replace(UnityPathUtility.DataPath, UnityPathUtility.AssetsFolder))
                 .ToArray();
-
-            return assetPaths;
-        }
-
-        /// <summary> フォルダ内の全Assetを取得 </summary>
-        public static T[] LoadAssetsInFolder<T>(string folderPath) where T : UnityEngine.Object
-        {
-            var assetPathInFolder = GetAllAssetPathInFolder(folderPath);
-
-            if (assetPathInFolder == null){ return null; }
-
-            var assets = new List<T>();
-
-            foreach (var assetPath in assetPathInFolder)
-            {
-                var asset = AssetDatabase.LoadAssetAtPath<T>(assetPath);
-
-                if (asset != null)
-                {
-                    assets.Add(asset);
-                }
-            }
-
-            return assets.ToArray();
         }
 
         /// <summary> 型でアセットを検索 </summary>

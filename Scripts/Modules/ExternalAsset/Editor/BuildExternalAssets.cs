@@ -22,7 +22,7 @@ namespace Modules.ExternalAssets
 
         //----- method -----
 
-        public static void Execute()
+        public static async UniTask Execute()
         {
             var result = EditorUtility.DisplayDialog("Confirmation", "外部アセットを生成します.", "実行", "中止");
 
@@ -42,7 +42,7 @@ namespace Modules.ExternalAssets
                 #endif
 
                 // アセット情報ファイルを生成.
-                var assetInfoManifest = AssetInfoManifestGenerator.Generate();
+                var assetInfoManifest = await AssetInfoManifestGenerator.Generate();
 
                 // 依存関係の検証.
                 var validate = BuildManager.AssetDependenciesValidate(assetInfoManifest);
@@ -67,12 +67,12 @@ namespace Modules.ExternalAssets
 
                     if (!string.IsNullOrEmpty(exportPath))
                     {
-                        Action<Exception> onError = e =>
+                        void OnError(Exception e)
                         {
                             Debug.LogException(e);
-                        };
+                        }
 
-                        BuildManager.Build(exportPath, assetInfoManifest).Forget(onError);
+                        BuildManager.Build(exportPath, assetInfoManifest).Forget(OnError);
                     }
                     else
                     {

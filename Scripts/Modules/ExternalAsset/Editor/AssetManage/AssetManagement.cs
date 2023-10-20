@@ -4,6 +4,7 @@ using UnityEditor;
 using System.Linq;
 using System.Collections.Generic;
 using System.IO;
+using Cysharp.Threading.Tasks;
 using UniRx;
 using Extensions;
 using Extensions.Devkit;
@@ -48,11 +49,11 @@ namespace Modules.ExternalAssets
 
         private Dictionary<string, ManageInfo> managedInfos = null;
 
+        private Dictionary<string, string> manageInfoAssetPathByGuid = null;
+
         private string[] ignoreManagePaths = null;
 
         private string[] ignoreAssetBundlePaths = null;
-
-        private Dictionary<ManageInfo, string> manageInfoAssetPath = null;
 
         private bool initialized = false;
 
@@ -67,7 +68,7 @@ namespace Modules.ExternalAssets
 
             if (Prefs.manifestUpdateRequest)
             {
-                AssetInfoManifestGenerator.Generate();
+                AssetInfoManifestGenerator.Generate().Forget();
             }
         }
 
@@ -88,6 +89,14 @@ namespace Modules.ExternalAssets
 
             managedInfos = managedAssets.GetAllInfos().ToDictionary(x => x.guid);
 
+            manageInfoAssetPathByGuid = managedAssets.GetAllInfos()
+                .ToDictionary(x => x.guid, x =>
+                {
+                    var assetPath = AssetDatabase.GUIDToAssetPath(x.guid);
+
+                    return PathUtility.ConvertPathSeparator(assetPath);
+                });
+
             ExternalAssetConfig.OnReloadAsObservable()
                 .Subscribe(_ =>
                    {
@@ -95,14 +104,6 @@ namespace Modules.ExternalAssets
                        ignoreAssetBundlePaths = null;
                    })
                 .AddTo(Disposable);
-
-            manageInfoAssetPath = managedInfos.Values
-                .ToDictionary(x => x, x =>
-                {
-                    var assetPath = AssetDatabase.GUIDToAssetPath(x.guid);
-
-                    return PathUtility.ConvertPathSeparator(assetPath);
-                });
 
             initialized = true;
         }
@@ -137,7 +138,7 @@ namespace Modules.ExternalAssets
             return assetInfo;
         }
 
-        public IEnumerable<AssetInfo> GetAssetInfos(string assetPath)
+        public async UniTask<IEnumerable<AssetInfo>> GetAssetInfos(string assetPath)
         {
             var assetInfos = new List<AssetInfo>();
 
@@ -145,7 +146,7 @@ namespace Modules.ExternalAssets
 
             if (PathUtility.IsFolder(assetPath))
             {
-                assetPaths = UnityEditorUtility.GetAllAssetPathInFolder(assetPath);
+                assetPaths = await UnityEditorUtility.GetAllAssetPathInFolder(assetPath);
             }
             else
             {
@@ -165,13 +166,13 @@ namespace Modules.ExternalAssets
             return assetInfos;
         }
 
-        public IEnumerable<AssetInfo> GetAllAssetInfos()
+        public async UniTask<AssetInfo[]> GetAllAssetInfos()
         {
             var assetInfos = new List<AssetInfo>();
 
             foreach (var manageInfo in managedInfos.Values)
             {
-                var assetPaths = GetManageAssetPaths(manageInfo);
+                var assetPaths = await GetManageAssetPaths(manageInfo);
 
                 foreach (var assetPath in assetPaths)
                 {
@@ -184,7 +185,7 @@ namespace Modules.ExternalAssets
                 }
             }
 
-            return assetInfos;
+            return assetInfos.ToArray();
         }
 
         public string[] GetAllGroupNames()
@@ -196,17 +197,17 @@ namespace Modules.ExternalAssets
                 .ToArray();
         }
 
-        public string[] GetManageAssetPaths(ManageInfo manageInfo)
+        public async UniTask<string[]> GetManageAssetPaths(ManageInfo manageInfo)
         {
-            var assetPath = manageInfoAssetPath.GetValueOrDefault(manageInfo);
+            var manageAssetPath = manageInfoAssetPathByGuid.GetValueOrDefault(manageInfo.guid);
 
-            if (!PathUtility.IsFolder(assetPath)){ return new string[] { assetPath }; }
+            if (!PathUtility.IsFolder(manageAssetPath)){ return new string[] { manageAssetPath }; }
 
-            var assetPaths = UnityEditorUtility.GetAllAssetPathInFolder(assetPath);
+            var assetPaths = await UnityEditorUtility.GetAllAssetPathInFolder(manageAssetPath);
 
             var ignoreAssetPaths = managedInfos.Values
-                .Select(x => manageInfoAssetPath.GetValueOrDefault(x))
-                .Where(x => x != assetPath && x.StartsWith(assetPath))
+                .Select(x => manageInfoAssetPathByGuid.GetValueOrDefault(x.guid))
+                .Where(x => x != manageAssetPath && x.StartsWith(manageAssetPath))
                 .ToArray();
 
             var manageAssetPaths = assetPaths.Where(x => !IsIgnoreManageAsset(x))
@@ -310,7 +311,7 @@ namespace Modules.ExternalAssets
             }
 
             // 管理アセットの親フォルダパス.
-            var managePath = manageInfoAssetPath.GetValueOrDefault(manageInfo);
+            var managePath = manageInfoAssetPathByGuid.GetValueOrDefault(manageInfo.guid);
 
             var parentDir = PathUtility.ConvertPathSeparator(Path.GetDirectoryName(managePath) + PathUtility.PathSeparator);
 
@@ -421,11 +422,11 @@ namespace Modules.ExternalAssets
             return false;
         }
         
-        public void ApplyAllAssetBundleName(bool force = false)
+        public async UniTask ApplyAllAssetBundleName(bool force = false)
         {
             AssetDatabase.Refresh(ImportAssetOptions.ForceUpdate);
 
-            var allAssetInfos = GetAllAssetInfos().ToArray();
+            var allAssetInfos = await GetAllAssetInfos();
 
             using (new AssetEditingScope())
             {

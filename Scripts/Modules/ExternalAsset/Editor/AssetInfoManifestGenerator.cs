@@ -10,6 +10,7 @@ using Modules.Devkit.Generators;
 using Modules.Devkit.Project;
 using Modules.AssetBundles;
 using Modules.AssetBundles.Editor;
+using Modules.Devkit.Console;
 
 namespace Modules.ExternalAssets
 {
@@ -23,7 +24,7 @@ namespace Modules.ExternalAssets
 
         //----- method -----
 
-        public static AssetInfoManifest Generate()
+        public static async UniTask<AssetInfoManifest> Generate()
         {
             AssetInfoManifest manifest = null;
 
@@ -31,7 +32,7 @@ namespace Modules.ExternalAssets
 
             assetManagement.Initialize();
 
-            var allAssetInfos = assetManagement.GetAllAssetInfos().ToArray();
+            var allAssetInfos = await assetManagement.GetAllAssetInfos();
 
             using (new AssetEditingScope())
             {
@@ -46,6 +47,8 @@ namespace Modules.ExternalAssets
             AssetDatabase.Refresh();
 
             AssetManagement.Prefs.manifestUpdateRequest = false;
+
+            UnityConsole.Info("Generate AssetInfoManifest");
 
             return manifest;
         }
@@ -223,7 +226,17 @@ namespace Modules.ExternalAssets
 
             // アセット情報を更新.
             var manifestPath = GetManifestPath(externalAssetPath);
-            var manifest = ScriptableObjectGenerator.Generate<AssetInfoManifest>(manifestPath);
+
+            var manifest = AssetDatabase.LoadAssetAtPath<AssetInfoManifest>(manifestPath);
+
+            if (manifest == null)
+            {
+                manifest = ScriptableObjectGenerator.Generate<AssetInfoManifest>(manifestPath);
+            }
+            else
+            {
+                manifest.Clear();
+            }
 
             Reflection.SetPrivateField(manifest, "assetInfos", allAssetInfos);
 

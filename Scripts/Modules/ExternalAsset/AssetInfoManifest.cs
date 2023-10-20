@@ -256,5 +256,16 @@ namespace Modules.ExternalAssets
 
             hasCache = true;
         }
+
+        public void Clear()
+        {
+            versionHash = null;
+            assetInfos = null;
+
+            assetInfoByGroup = null;
+            assetInfoByResourcesPath = null;
+
+            hasCache = false;
+        }
     }
 }

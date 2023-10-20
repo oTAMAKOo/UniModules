@@ -1,4 +1,4 @@
-﻿
+
 using System;
 using System.IO;
 using Modules.ExternalAssets;
@@ -31,7 +31,7 @@ namespace Modules.Devkit.AssetTuning
             return assetManagement != null;
         }
 
-		public override void OnPostprocessAsset(string assetPath)
+		public override async void OnPostprocessAsset(string assetPath)
 		{
 			try
 			{
@@ -50,7 +50,7 @@ namespace Modules.Devkit.AssetTuning
 
 					if (!assetPath.StartsWith(targetPath)) { continue; }
 
-					var infos = assetManagement.GetAssetInfos(assetPath);
+					var infos = await assetManagement.GetAssetInfos(assetPath);
 
 					foreach (var info in infos)
 					{
@@ -64,7 +64,7 @@ namespace Modules.Devkit.AssetTuning
 			}
 		}
 
-        public override void OnAssetMove(string assetPath, string from)
+        public override async void OnAssetMove(string assetPath, string from)
         {
             var externalAssetPath = GetExternalAssetPath();
             var shareResourcesPath = GetShareResourcesPath();
@@ -93,7 +93,7 @@ namespace Modules.Devkit.AssetTuning
 
                 if (assetPath.StartsWith(targetPath))
                 {
-                    var infos = assetManagement.GetAssetInfos(assetPath);
+                    var infos = await assetManagement.GetAssetInfos(assetPath);
 
                     foreach (var info in infos)
                     {

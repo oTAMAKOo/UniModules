@@ -1,4 +1,5 @@
-﻿
+
+using Cysharp.Threading.Tasks;
 using UnityEngine;
 using UnityEditor;
 using Extensions.Devkit;
@@ -54,7 +55,7 @@ namespace Modules.ExternalAssets
             if (GUILayout.Button("Generate"))
             {
                 // アセット情報ファイルを生成.
-                AssetInfoManifestGenerator.Generate();
+                AssetInfoManifestGenerator.Generate().Forget();
             }
 		}
 

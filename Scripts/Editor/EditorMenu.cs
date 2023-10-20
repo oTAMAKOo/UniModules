@@ -331,7 +331,7 @@ namespace Modules
 
             assetManagement.Initialize();
 
-            assetManagement.ApplyAllAssetBundleName(true);
+            assetManagement.ApplyAllAssetBundleName(true).Forget();
         }
 
         //------ 外部アセットビルド ------
@@ -339,7 +339,7 @@ namespace Modules
         [MenuItem(itemName: ResourcesMenu + "Build ExternalAssets", priority = 36)]
         public static void BuildExecuteExternalAssets()
         {
-            BuildExternalAssets.Execute();
+            BuildExternalAssets.Execute().Forget();
         }
 
         #endregion
