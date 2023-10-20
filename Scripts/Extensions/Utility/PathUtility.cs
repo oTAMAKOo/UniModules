@@ -1,4 +1,4 @@
-﻿﻿﻿
+﻿﻿
 using System;
 using System.IO;
 using System.Text;
@@ -30,6 +30,18 @@ namespace Extensions
             if (Directory.Exists(path)) { return FilePathType.Directory; }
 
             return FilePathType.NotFound;
+        }
+
+        /// <summary> フォルダかを判別 </summary>
+        public static bool IsFolder(string path)
+        {
+            return GetFilePathType(path) == FilePathType.Directory;
+        }
+
+        /// <summary> ファイルかを判別 </summary>
+        public static bool IsFile(string path)
+        {
+            return GetFilePathType(path) == FilePathType.File;
         }
 
         /// <summary> 複数の文字列を"\"で連結して、1つのパスに結合 </summary>

@@ -60,7 +60,7 @@ namespace Modules.Master
 
                     var selectDirectory = EditorUtility.OpenFolderPanel("Select Directory", "", "");
 
-                    var assetFolderUri = new Uri(Application.dataPath);
+                    var assetFolderUri = new Uri(UnityPathUtility.DataPath);
                     var targetUri = new Uri(selectDirectory);
 
                     sourceDirectory = assetFolderUri.MakeRelativeUri(targetUri).ToString();

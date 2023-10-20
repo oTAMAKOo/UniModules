@@ -2,6 +2,7 @@
 using System;
 using UnityEngine;
 using Newtonsoft.Json;
+using Extensions;
 
 #if UNITY_EDITOR
 
@@ -28,7 +29,7 @@ namespace Modules.Devkit.Prefs
         {
             get
             {
-                return identifier ?? (identifier = string.Format("[{0}]:", Application.dataPath.GetHashCode().ToString()));
+                return identifier ?? (identifier = $"[{Application.dataPath.GetHashCode()}]:");
             }
         }
 

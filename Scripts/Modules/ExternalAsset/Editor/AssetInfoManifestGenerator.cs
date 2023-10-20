@@ -31,11 +31,13 @@ namespace Modules.ExternalAssets
 
             assetManagement.Initialize();
 
+            var allAssetInfos = assetManagement.GetAllAssetInfos().ToArray();
+
             using (new AssetEditingScope())
             {
-                DeleteUndefinedAssetBundleNames(assetManagement);
+                DeleteUndefinedAssetBundleNames(assetManagement, allAssetInfos);
 
-                manifest = GenerateManifest(assetManagement);
+                manifest = GenerateManifest(allAssetInfos);
 
                 ApplyAssetBundleName(assetManagement, manifest);
             }
@@ -49,9 +51,9 @@ namespace Modules.ExternalAssets
         }
 
         /// <summary> 定義されていないアセットバンドル名を削除 </summary>
-        public static void DeleteUndefinedAssetBundleNames(AssetManagement assetManagement)
+        public static void DeleteUndefinedAssetBundleNames(AssetManagement assetManagement, AssetInfo[] allAssetInfos)
         {
-            var assetBundleNames = assetManagement.GetAllAssetInfos()
+            var assetBundleNames = allAssetInfos
                 .Where(x => x.IsAssetBundle && x.AssetBundle != null)
                 .Select(x => x.AssetBundle.AssetBundleName)
                 .Distinct()
@@ -198,40 +200,26 @@ namespace Modules.ExternalAssets
 
             var count = assetInfos.Length;
 
-            using (new AssetEditingScope())
+            for (var i = 0; i < count; i++)
             {
-                for (var i = 0; i < count; i++)
+                var assetInfo = assetInfos[i];
+
+                if (assetInfo.IsAssetBundle)
                 {
-                    var assetInfo = assetInfos[i];
+                    var assetPath = ExternalAsset.GetAssetPathFromAssetInfo(externalAssetPath, shareResourcesPath, assetInfo);
 
-                    var apply = false;
-
-                    if (assetInfo.IsAssetBundle)
-                    {
-                        var assetPath = ExternalAsset.GetAssetPathFromAssetInfo(externalAssetPath, shareResourcesPath, assetInfo);
-
-                        apply = assetManagement.SetAssetBundleName(assetPath, assetInfo.AssetBundle.AssetBundleName);
-                    }
-
-                    if (apply)
-                    {
-                        EditorUtility.DisplayProgressBar("ApplyAssetBundleName", assetInfo.ResourcePath, (float)i / count);
-                    }
+                    assetManagement.SetAssetBundleName(assetPath, assetInfo.AssetBundle.AssetBundleName);
                 }
             }
-
-            EditorUtility.ClearProgressBar();
         }
 
-        private static AssetInfoManifest GenerateManifest(AssetManagement assetManagement)
+        private static AssetInfoManifest GenerateManifest(AssetInfo[] allAssetInfos)
         {
             var projectResourceFolders = ProjectResourceFolders.Instance;
 
             var externalAssetPath = projectResourceFolders.ExternalAssetPath;
 
             if (string.IsNullOrEmpty(externalAssetPath)){ return null; }
-
-            var allAssetInfos = assetManagement.GetAllAssetInfos().Shuffle().ToArray();
 
             // アセット情報を更新.
             var manifestPath = GetManifestPath(externalAssetPath);
@@ -250,7 +238,7 @@ namespace Modules.ExternalAssets
             return manifest;
         }
 
-        private static string GetManifestPath(string externalAssetPath)
+        public static string GetManifestPath(string externalAssetPath)
         {
             return PathUtility.Combine(externalAssetPath, AssetInfoManifest.ManifestFileName);
         }

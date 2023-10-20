@@ -50,7 +50,7 @@ namespace Modules.Devkit.ValidateAsset.UnityWarning
 
             var builder = new StringBuilder();
 
-            var branch = GitUtility.GetBranchName(Application.dataPath);
+            var branch = GitUtility.GetBranchName(UnityPathUtility.DataPath);
             var buildTarget = EditorUserBuildSettings.activeBuildTarget;
 
             builder.Append("[info]");

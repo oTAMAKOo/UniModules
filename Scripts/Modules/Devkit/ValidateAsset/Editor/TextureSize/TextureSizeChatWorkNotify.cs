@@ -24,7 +24,7 @@ namespace Modules.Devkit.ValidateAsset.TextureSize
 
             var hasWarning = false;
 
-            var branch = GitUtility.GetBranchName(Application.dataPath);
+            var branch = GitUtility.GetBranchName(UnityPathUtility.DataPath);
 
             var result = validateTextureSize.Validate();
 

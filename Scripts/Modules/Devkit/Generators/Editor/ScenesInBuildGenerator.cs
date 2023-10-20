@@ -1,4 +1,4 @@
-﻿
+
 using UnityEngine;
 using UnityEditor;
 using System.IO;
@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Modules.Devkit.SceneImporter;
 using Modules.Devkit.Project;
+using Extensions;
 
 namespace Modules.Devkit.Generators
 {
@@ -26,7 +27,7 @@ namespace Modules.Devkit.Generators
 
             var managedFolderPaths = sceneImporterConfig.GetManagedFolderPaths();
 
-	        var assetsFolderPath = Application.dataPath.Substring(0, Application.dataPath.Length - "Assets".Length);
+	        var assetsFolderPath = UnityPathUtility.DataPath.Substring(0, UnityPathUtility.DataPath.Length - "Assets".Length);
 
             var buildTargetScenes = EditorBuildSettings.scenes
                 .Where(x => File.Exists(assetsFolderPath + x.path))

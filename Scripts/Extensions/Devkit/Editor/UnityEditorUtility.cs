@@ -184,22 +184,7 @@ namespace Extensions.Devkit
         {
             var path = AssetDatabase.GetAssetPath(assetObject);
             
-            return IsFolder(path);
-        }
-
-        public static bool IsFolder(string path)
-        {
-            if (File.Exists(path))
-            {
-                return false;
-            }
-
-            if (Directory.Exists(path))
-            {
-                return true;
-            }
-
-            return false;
+            return PathUtility.GetFilePathType(path) == PathUtility.FilePathType.Directory;
         }
 
         /// <summary> フォルダを開く </summary>
@@ -235,55 +220,24 @@ namespace Extensions.Devkit
         /// <summary> フォルダ内の全AssetPathを取得 </summary>
         public static string[] GetAllAssetPathInFolder(string folderPath)
         {
-            var assetPaths = new List<string>();
-
             if (folderPath.StartsWith(AssetsFolderName))
             {
                 folderPath = folderPath.Remove(0, AssetsFolderName.Length);
             }
 
-            var dir = PathUtility.Combine(Application.dataPath, folderPath);
+            var dir = PathUtility.Combine(UnityPathUtility.DataPath, folderPath);
 
             if (!Directory.Exists(dir))
             {
-                Debug.LogFormat("指定されたディレクトリが存在しません.\n{0}", dir);
-
-                return null;
+                throw new DirectoryNotFoundException(dir);
             }
 
-            var queue = new Queue();
+            var assetPaths = DirectoryUtility.ExpnadFiles(dir)
+                .Select(x => PathUtility.ConvertPathSeparator(x))
+                .Select(x => x.Replace(UnityPathUtility.DataPath, UnityPathUtility.AssetsFolder))
+                .ToArray();
 
-            queue.Enqueue(dir);
-
-            while (queue.Count > 0)
-            {
-                var d = (string)queue.Dequeue();
-
-                var files = Directory.GetFiles(d);
-
-                foreach (var file in files)
-                {
-                    var path = PathUtility.ConvertPathSeparator(file);
-
-                    var assetPath = path.Replace(Application.dataPath, "Assets");
-
-                    var guid = AssetDatabase.AssetPathToGUID(assetPath);
-
-                    if (!string.IsNullOrEmpty(guid))
-                    {
-                        assetPaths.Add(assetPath);
-                    }
-                }
-
-                var dirs = Directory.GetDirectories(d);
-
-                foreach (var s in dirs)
-                {
-                    queue.Enqueue(s);
-                }
-            }
-
-            return assetPaths.ToArray();
+            return assetPaths;
         }
 
         /// <summary> フォルダ内の全Assetを取得 </summary>

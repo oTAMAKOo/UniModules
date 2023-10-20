@@ -46,7 +46,7 @@ namespace Modules.Devkit.JsonFile
 
                     if (!string.IsNullOrEmpty(jsonFilePath))
                     {
-                        var assetFolderUri = new Uri(Application.dataPath);
+                        var assetFolderUri = new Uri(UnityPathUtility.DataPath);
                         var targetUri = new Uri(jsonFilePath);
 
                         jsonFileRelativePathProperty.stringValue = assetFolderUri.MakeRelativeUri(targetUri).ToString();

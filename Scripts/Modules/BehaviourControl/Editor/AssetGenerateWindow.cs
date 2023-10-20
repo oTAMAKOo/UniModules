@@ -369,7 +369,7 @@ namespace Modules.BehaviorControl
 
         private string GetRelativeUriFromAssetsFolder(string directory)
         {
-            var sPath1 = new Uri(Application.dataPath);
+            var sPath1 = new Uri(UnityPathUtility.DataPath);
             var sPath2 = new Uri(directory);
 
             return sPath1.MakeRelativeUri(sPath2).ToString();

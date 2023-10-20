@@ -52,6 +52,8 @@ namespace Modules.ExternalAssets
 
         private string[] ignoreAssetBundlePaths = null;
 
+        private Dictionary<ManageInfo, string> manageInfoAssetPath = null;
+
         private bool initialized = false;
 
         //----- property -----
@@ -94,6 +96,14 @@ namespace Modules.ExternalAssets
                    })
                 .AddTo(Disposable);
 
+            manageInfoAssetPath = managedInfos.Values
+                .ToDictionary(x => x, x =>
+                {
+                    var assetPath = AssetDatabase.GUIDToAssetPath(x.guid);
+
+                    return PathUtility.ConvertPathSeparator(assetPath);
+                });
+
             initialized = true;
         }
 
@@ -133,7 +143,7 @@ namespace Modules.ExternalAssets
 
             var assetPaths = new string[0];
 
-            if (AssetDatabase.IsValidFolder(assetPath))
+            if (PathUtility.IsFolder(assetPath))
             {
                 assetPaths = UnityEditorUtility.GetAllAssetPathInFolder(assetPath);
             }
@@ -188,15 +198,14 @@ namespace Modules.ExternalAssets
 
         public string[] GetManageAssetPaths(ManageInfo manageInfo)
         {
-            var assetPath = AssetDatabase.GUIDToAssetPath(manageInfo.guid);
+            var assetPath = manageInfoAssetPath.GetValueOrDefault(manageInfo);
 
-            if (!AssetDatabase.IsValidFolder(assetPath)){ return new string[] { assetPath }; }
+            if (!PathUtility.IsFolder(assetPath)){ return new string[] { assetPath }; }
 
             var assetPaths = UnityEditorUtility.GetAllAssetPathInFolder(assetPath);
 
             var ignoreAssetPaths = managedInfos.Values
-                .Select(x => AssetDatabase.GUIDToAssetPath(x.guid))
-                .Select(x => PathUtility.ConvertPathSeparator(x))
+                .Select(x => manageInfoAssetPath.GetValueOrDefault(x))
                 .Where(x => x != assetPath && x.StartsWith(assetPath))
                 .ToArray();
 
@@ -301,7 +310,7 @@ namespace Modules.ExternalAssets
             }
 
             // 管理アセットの親フォルダパス.
-            var managePath = AssetDatabase.GUIDToAssetPath(manageInfo.guid);
+            var managePath = manageInfoAssetPath.GetValueOrDefault(manageInfo);
 
             var parentDir = PathUtility.ConvertPathSeparator(Path.GetDirectoryName(managePath) + PathUtility.PathSeparator);
 
@@ -331,7 +340,7 @@ namespace Modules.ExternalAssets
                     {
                         assetBundleName += Path.GetFileNameWithoutExtension(managePath) + AssetNameSeparator;
 
-                        if (AssetDatabase.IsValidFolder(managePath))
+                        if (PathUtility.IsFolder(managePath))
                         {
                             folder += Path.GetFileNameWithoutExtension(managePath) + AssetNameSeparator;
                         }

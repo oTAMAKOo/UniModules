@@ -200,7 +200,7 @@ csproj directory : global.json
 
                         EditorApplication.delayCall += () =>
                         {
-                            var path = EditorUtility.OpenFilePanel("Select code generate target", Application.dataPath, string.Empty);
+                            var path = EditorUtility.OpenFilePanel("Select code generate target", UnityPathUtility.DataPath, string.Empty);
 
                             codeGenerateTarget.stringValue = UnityPathUtility.MakeRelativePath(path);
 
@@ -343,7 +343,7 @@ csproj directory : global.json
 
                         EditorApplication.delayCall += () =>
                         {
-                            var path = EditorUtility.OpenFilePanel("Select MessagePack compiler", Application.dataPath, string.Empty);
+                            var path = EditorUtility.OpenFilePanel("Select MessagePack compiler", UnityPathUtility.DataPath, string.Empty);
 
                             if (!string.IsNullOrEmpty(path))
                             {
