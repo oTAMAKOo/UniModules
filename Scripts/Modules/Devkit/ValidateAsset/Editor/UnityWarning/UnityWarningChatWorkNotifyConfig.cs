@@ -5,7 +5,7 @@ using Modules.Devkit.ScriptableObjects;
 
 namespace Modules.Devkit.ValidateAsset.UnityWarning
 {
-    public sealed class UnityWarningChatWorkNotifyConfig : ReloadableScriptableObject<UnityWarningChatWorkNotifyConfig>
+    public sealed class UnityWarningChatWorkNotifyConfig : SingletonScriptableObject<UnityWarningChatWorkNotifyConfig>
     {
         //----- params -----
 

@@ -5,7 +5,7 @@ using Modules.Devkit.ScriptableObjects;
 
 namespace Modules.Devkit.ValidateAsset.TextureSize
 {
-    public sealed class TextureSizeChatWorkNotifyConfig : ReloadableScriptableObject<TextureSizeChatWorkNotifyConfig>
+    public sealed class TextureSizeChatWorkNotifyConfig : SingletonScriptableObject<TextureSizeChatWorkNotifyConfig>
     {
         //----- params -----
 

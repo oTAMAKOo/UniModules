@@ -5,6 +5,7 @@ using System;
 using System.Linq;
 using Extensions;
 using Extensions.Devkit;
+using UniRx;
 
 namespace Modules.Devkit.ScriptableObjects
 {

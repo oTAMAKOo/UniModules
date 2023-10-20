@@ -16,7 +16,7 @@ namespace Modules.CriWare.Editor
         public string destFolderGuid = null;
     }
 
-    public sealed class CriAssetConfig : ReloadableScriptableObject<CriAssetConfig>
+    public sealed class CriAssetConfig : SingletonScriptableObject<CriAssetConfig>
     {
         //----- params -----
 

@@ -4,7 +4,7 @@ using Modules.Devkit.ScriptableObjects;
 
 namespace Modules.Devkit.Spreadsheet
 {
-    public sealed class SpreadsheetConfig : ReloadableScriptableObject<SpreadsheetConfig>
+    public sealed class SpreadsheetConfig : SingletonScriptableObject<SpreadsheetConfig>
     {
         //----- params -----
 

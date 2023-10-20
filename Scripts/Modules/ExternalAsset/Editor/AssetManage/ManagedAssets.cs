@@ -9,7 +9,7 @@ using Modules.Devkit.ScriptableObjects;
 
 namespace Modules.ExternalAssets
 {
-    public sealed class ManagedAssets : ReloadableScriptableObject<ManagedAssets>
+    public sealed class ManagedAssets : SingletonScriptableObject<ManagedAssets>
     {
         //----- params -----
 

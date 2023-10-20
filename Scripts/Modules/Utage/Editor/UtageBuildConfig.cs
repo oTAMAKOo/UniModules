@@ -9,7 +9,7 @@ using Utage;
 
 namespace Modules.UtageExtension
 {
-    public sealed class UtageBuildConfig : ReloadableScriptableObject<UtageBuildConfig>
+    public sealed class UtageBuildConfig : SingletonScriptableObject<UtageBuildConfig>
     {
         //----- params -----
 

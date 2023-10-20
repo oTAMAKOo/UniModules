@@ -26,19 +26,33 @@ namespace Modules.ExternalAssets
 
         public static async UniTask<AssetInfoManifest> Generate()
         {
+            var sw = System.Diagnostics.Stopwatch.StartNew();
+
             AssetInfoManifest manifest = null;
 
             var assetManagement = AssetManagement.Instance;
 
+            var title = "Generate AssetInfoManifest";
+
+            EditorUtility.DisplayProgressBar(title, "Setup Generate", 0.0f);
+
             assetManagement.Initialize();
+
+            EditorUtility.DisplayProgressBar(title, "GetAllAssetInfos", 0.25f);
 
             var allAssetInfos = await assetManagement.GetAllAssetInfos();
 
             using (new AssetEditingScope())
             {
+                EditorUtility.DisplayProgressBar(title, "DeleteUndefinedAssetBundleNames", 0.5f);
+
                 DeleteUndefinedAssetBundleNames(assetManagement, allAssetInfos);
 
+                EditorUtility.DisplayProgressBar(title, "GenerateManifestFile", 0.75f);
+
                 manifest = GenerateManifest(allAssetInfos);
+
+                EditorUtility.DisplayProgressBar(title, "ApplyAssetBundleName", 0.9f);
 
                 ApplyAssetBundleName(assetManagement, manifest);
             }
@@ -48,7 +62,11 @@ namespace Modules.ExternalAssets
 
             AssetManagement.Prefs.manifestUpdateRequest = false;
 
-            UnityConsole.Info("Generate AssetInfoManifest");
+            EditorUtility.ClearProgressBar();
+
+            sw.Stop(); 
+
+            UnityConsole.Info($"Generate AssetInfoManifest ({sw.Elapsed.TotalMilliseconds}ms)");
 
             return manifest;
         }

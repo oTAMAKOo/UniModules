@@ -1,6 +1,7 @@
 
 using UnityEngine;
 using UnityEditor;
+using System;
 using System.Linq;
 using System.Collections.Generic;
 using System.IO;
@@ -97,13 +98,8 @@ namespace Modules.ExternalAssets
                     return PathUtility.ConvertPathSeparator(assetPath);
                 });
 
-            ExternalAssetConfig.OnReloadAsObservable()
-                .Subscribe(_ =>
-                   {
-                       ignoreManagePaths = null;
-                       ignoreAssetBundlePaths = null;
-                   })
-                .AddTo(Disposable);
+            ignoreManagePaths = null;
+            ignoreAssetBundlePaths = null;
 
             initialized = true;
         }
@@ -121,10 +117,9 @@ namespace Modules.ExternalAssets
 
             if (managedInfo == null) { return null; }
 
-            var guid = AssetDatabase.AssetPathToGUID(assetPath);
             var resourcePath = GetAssetLoadPath(assetPath);
 
-            var assetInfo = new AssetInfo(guid, resourcePath, managedInfo.group, managedInfo.labels);
+            var assetInfo = new AssetInfo(resourcePath, managedInfo.group, managedInfo.labels);
 
             var assetBundleName = GetAssetBundleName(assetPath, managedInfo);
 
@@ -168,7 +163,7 @@ namespace Modules.ExternalAssets
 
         public async UniTask<AssetInfo[]> GetAllAssetInfos()
         {
-            var assetInfos = new List<AssetInfo>();
+            var list = new List<Tuple<string, ManageInfo>>();
 
             foreach (var manageInfo in managedInfos.Values)
             {
@@ -176,16 +171,41 @@ namespace Modules.ExternalAssets
 
                 foreach (var assetPath in assetPaths)
                 {
-                    var assetInfo = GetAssetInfo(assetPath, manageInfo);
-
-                    if (assetInfo != null)
-                    {
-                        assetInfos.Add(assetInfo);
-                    }
+                    list.Add(Tuple.Create(assetPath, manageInfo));
                 }
             }
 
-            return assetInfos.ToArray();
+            var chunck = list.Chunk(250);
+
+            var tasks = new List<UniTask<List<AssetInfo>>>();
+
+            foreach (var targets in chunck)
+            {
+                var items = targets.ToArray();
+
+                var task = UniTask.RunOnThreadPool(() =>
+                {
+                    var assetInfos = new List<AssetInfo>();
+
+                    foreach (var item in items)
+                    {
+                        var assetInfo = GetAssetInfo(item.Item1, item.Item2);
+
+                        if (assetInfo != null)
+                        {
+                            assetInfos.Add(assetInfo);
+                        }
+                    }
+
+                    return assetInfos;
+                });
+
+                tasks.Add(task);
+            }
+
+            var result = await UniTask.WhenAll(tasks);
+
+            return result.SelectMany(x => x).ToArray();
         }
 
         public string[] GetAllGroupNames()

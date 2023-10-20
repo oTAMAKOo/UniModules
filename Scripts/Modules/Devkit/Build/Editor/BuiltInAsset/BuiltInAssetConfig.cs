@@ -9,7 +9,7 @@ using Object = UnityEngine.Object;
 
 namespace Modules.Devkit.Build
 {
-    public sealed class BuiltInAssetConfig : ReloadableScriptableObject<BuiltInAssetConfig>
+    public sealed class BuiltInAssetConfig : SingletonScriptableObject<BuiltInAssetConfig>
     {
         //----- params -----
 

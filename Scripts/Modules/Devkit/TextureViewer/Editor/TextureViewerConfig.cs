@@ -8,7 +8,7 @@ using Object = UnityEngine.Object;
 
 namespace Modules.Devkit.TextureViewer
 {
-    public sealed class TextureViewerConfig : ReloadableScriptableObject<TextureViewerConfig>
+    public sealed class TextureViewerConfig : SingletonScriptableObject<TextureViewerConfig>
     {
         //----- params -----
 

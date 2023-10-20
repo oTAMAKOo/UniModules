@@ -9,7 +9,7 @@ using Modules.Devkit.ScriptableObjects;
 
 namespace Modules.Lua.Text
 {
-    public sealed class LuaTextConfig : ReloadableScriptableObject<LuaTextConfig>
+    public sealed class LuaTextConfig : SingletonScriptableObject<LuaTextConfig>
     {
         //----- params -----
 

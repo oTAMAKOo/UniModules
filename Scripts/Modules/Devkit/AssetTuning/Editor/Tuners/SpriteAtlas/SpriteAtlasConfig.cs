@@ -6,7 +6,7 @@ using Object = UnityEngine.Object;
 
 namespace Modules.Devkit.AssetTuning
 {
-    public sealed class SpriteAtlasConfig :  ReloadableScriptableObject<SpriteAtlasConfig>
+    public sealed class SpriteAtlasConfig :  SingletonScriptableObject<SpriteAtlasConfig>
     {
         //----- params -----
 

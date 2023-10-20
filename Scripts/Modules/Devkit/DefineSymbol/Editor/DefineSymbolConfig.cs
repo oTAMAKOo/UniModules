@@ -6,7 +6,7 @@ using Modules.Devkit.ScriptableObjects;
 
 namespace Modules.Devkit.DefineSymbol
 {
-    public sealed class DefineSymbolConfig : ReloadableScriptableObject<DefineSymbolConfig>
+    public sealed class DefineSymbolConfig : SingletonScriptableObject<DefineSymbolConfig>
     {
         //----- params -----
 

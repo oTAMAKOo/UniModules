@@ -54,10 +54,6 @@ namespace Modules.ExternalAssets
         private void Initialize()
         {
             if (initialized) { return; }
-            
-            ExternalAssetConfig.OnReloadAsObservable()
-                .Subscribe(_ => Setup().Forget())
-                .AddTo(Disposable);
 
             Setup().Forget();
 

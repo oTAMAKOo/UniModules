@@ -8,7 +8,7 @@ using Modules.Devkit.ScriptableObjects;
 
 namespace Modules.Devkit.SceneImporter
 {
-    public sealed class SceneImporterConfig : ReloadableScriptableObject<SceneImporterConfig>
+    public sealed class SceneImporterConfig : SingletonScriptableObject<SceneImporterConfig>
     {
         //----- params -----
 

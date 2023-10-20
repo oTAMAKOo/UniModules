@@ -5,7 +5,7 @@ using Modules.Devkit.ScriptableObjects;
 
 namespace Modules.Master
 {
-    public sealed class MasterConfig : ReloadableScriptableObject<MasterConfig>
+    public sealed class MasterConfig : SingletonScriptableObject<MasterConfig>
     {
         //----- params -----
 

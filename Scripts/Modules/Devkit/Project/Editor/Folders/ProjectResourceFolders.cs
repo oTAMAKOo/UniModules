@@ -6,7 +6,7 @@ using Object = UnityEngine.Object;
 
 namespace Modules.Devkit.Project
 {
-    public sealed class ProjectResourceFolders : ReloadableScriptableObject<ProjectResourceFolders>
+    public sealed class ProjectResourceFolders : SingletonScriptableObject<ProjectResourceFolders>
     {
         //----- params -----
 

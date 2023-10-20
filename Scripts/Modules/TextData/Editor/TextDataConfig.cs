@@ -5,7 +5,7 @@ using Modules.Devkit.ScriptableObjects;
 
 namespace Modules.TextData.Editor
 {
-    public sealed partial class TextDataConfig : ReloadableScriptableObject<TextDataConfig>
+    public sealed partial class TextDataConfig : SingletonScriptableObject<TextDataConfig>
     {
         //----- params -----
 

@@ -1,4 +1,4 @@
-﻿
+
 using UnityEngine;
 using UnityEditor;
 using System;
@@ -69,7 +69,7 @@ namespace Modules.ExternalAssets
                 }
 
 				// 管理下のアセットGUIDが一致.
-				isHit |= assetInfo.Guid.IsMatch(keywords);
+				isHit |= assetInfo.GetGuid().IsMatch(keywords);
 
                 // 管理下のアセットのパスが一致.
                 isHit |= assetInfo.ResourcePath.IsMatch(keywords);
@@ -155,7 +155,7 @@ namespace Modules.ExternalAssets
                         using (new ContentsScope())
                         {
 							EditorGUILayout.LabelField("GUID");
-							EditorGUILayout.SelectableLabel(assetInfo.Guid, textAreaStyle, GUILayout.Height(18f));
+							EditorGUILayout.SelectableLabel(assetInfo.GetGuid(), textAreaStyle, GUILayout.Height(18f));
 
                             EditorGUILayout.LabelField("ResourcesPath");
                             EditorGUILayout.SelectableLabel(assetInfo.ResourcePath, textAreaStyle, GUILayout.Height(18f));
@@ -254,7 +254,7 @@ namespace Modules.ExternalAssets
                     alignment = TextAnchor.MiddleLeft,
                 };
 
-                totalAssetCountText = string.Format("Total Asset Count : {0}", assetInfos.Length);
+                totalAssetCountText = $"Total Asset Count : {assetInfos.Length}";
 
                 initialized = true;
             }
@@ -279,33 +279,27 @@ namespace Modules.ExternalAssets
 
             using (new EditorGUILayout.HorizontalScope())
             {
-                Action<string> onChangeSearchText = x =>
+                void OnChangeSearchText(string x)
                 {
                     searchText = x;
-
                     var searchKeywords = BuildSearchKeywords();
-
                     searchedInfos = currentInfos.Where(info => info.IsSearchedHit(searchKeywords)).ToArray();
                     asstInfoScrollView.ScrollPosition = Vector2.zero;
                     asstInfoScrollView.Contents = searchedInfos;
-
                     Repaint();
-                };
+                }
 
-                Action onSearchCancel = () =>
+                void OnSearchCancel()
                 {
                     searchText = string.Empty;
                     searchedInfos = null;
-
                     currentInfos.ForEach(x => x.ResetSearch());
-
                     asstInfoScrollView.ScrollPosition = Vector2.zero;
                     asstInfoScrollView.Contents = currentInfos;
-
                     Repaint();
-                };
+                }
 
-                EditorLayoutTools.DrawSearchTextField(searchText, onChangeSearchText, onSearchCancel);
+                EditorLayoutTools.DrawSearchTextField(searchText, OnChangeSearchText, OnSearchCancel);
             }
 
             GUILayout.Space(3f);

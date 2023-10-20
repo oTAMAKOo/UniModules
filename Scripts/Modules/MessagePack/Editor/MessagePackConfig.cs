@@ -7,7 +7,7 @@ using Modules.Devkit.ScriptableObjects;
 
 namespace Modules.MessagePack
 {
-    public sealed class MessagePackConfig : ReloadableScriptableObject<MessagePackConfig>
+    public sealed class MessagePackConfig : SingletonScriptableObject<MessagePackConfig>
     {
         //----- params -----
 

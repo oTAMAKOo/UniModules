@@ -12,7 +12,7 @@ using Object = UnityEngine.Object;
 
 namespace Modules.BehaviorControl
 {
-    public sealed class BehaviorControlSetting : ReloadableScriptableObject<BehaviorControlSetting>
+    public sealed class BehaviorControlSetting : SingletonScriptableObject<BehaviorControlSetting>
     {
         //----- params -----
 

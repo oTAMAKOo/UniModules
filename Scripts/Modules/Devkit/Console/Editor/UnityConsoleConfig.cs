@@ -7,7 +7,7 @@ using Modules.Devkit.ScriptableObjects;
 
 namespace Modules.Devkit.Console
 {
-    public sealed class UnityConsoleConfig : ReloadableScriptableObject<UnityConsoleConfig>
+    public sealed class UnityConsoleConfig : SingletonScriptableObject<UnityConsoleConfig>
     {
         //----- params -----
 

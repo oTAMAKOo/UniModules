@@ -27,9 +27,6 @@ namespace Modules.ExternalAssets
         // アセット管理情報.
         private AssetInfoManifest assetInfoManifest = null;
 
-        // アセットGUIDパスをキーとしたアセット情報.
-        private Dictionary<string, AssetInfo> assetInfosByAssetGuid = null;
-
         // アセットロードパスをキーとしたアセット情報.
         private Dictionary<string, AssetInfo> assetInfosByResourcePath = null;
 
@@ -194,7 +191,6 @@ namespace Modules.ExternalAssets
             }
 
             assetInfosByAssetBundleName = new Dictionary<string, List<AssetInfo>>();
-            assetInfosByAssetGuid = new Dictionary<string, AssetInfo>();
             assetInfosByResourcePath = new Dictionary<string, AssetInfo>();
 
             await UniTask.RunOnThreadPool(() =>
@@ -223,12 +219,6 @@ namespace Modules.ExternalAssets
                         list.Add(item);
                     }
 
-                    // アセット情報 (Key: アセットGUID).
-                    if (!string.IsNullOrEmpty(item.Guid))
-                    {
-                        assetInfosByAssetGuid[item.Guid] = item;
-                    }
-
                     // アセット情報 (Key: リソースパス).
                     if (!string.IsNullOrEmpty(item.ResourcePath))
                     {
@@ -250,22 +240,10 @@ namespace Modules.ExternalAssets
             return assetInfosByResourcePath.GetValueOrDefault(resourcePath);
         }
 
-        /// <summary> アセット情報取得 </summary>
-        public AssetInfo GetAssetInfoByGuid(string guid)
-        {
-            return assetInfosByAssetGuid.GetValueOrDefault(guid);
-        }
-
         /// <summary> アセット情報が存在するか </summary>
         public bool ExistAssetInfo(string resourcePath)
         {
             return assetInfosByResourcePath.ContainsKey(resourcePath);
-        }
-
-        /// <summary> アセット情報が存在するか </summary>
-        public bool ExistAssetInfoByGuid(string guid)
-        {
-            return assetInfosByAssetGuid.ContainsKey(guid);
         }
 
         /// <summary> マニフェストファイルを更新. </summary>

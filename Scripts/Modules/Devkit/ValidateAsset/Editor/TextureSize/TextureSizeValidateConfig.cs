@@ -19,7 +19,7 @@ namespace Modules.Devkit.ValidateAsset.TextureSize
         public int heigth = 0;
     }
 
-    public sealed class TextureSizeValidateConfig : ReloadableScriptableObject<TextureSizeValidateConfig>
+    public sealed class TextureSizeValidateConfig : SingletonScriptableObject<TextureSizeValidateConfig>
     {
         //----- params -----
 

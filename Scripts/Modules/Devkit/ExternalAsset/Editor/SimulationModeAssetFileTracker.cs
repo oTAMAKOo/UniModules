@@ -218,7 +218,7 @@ namespace Modules.Devkit.ExternalAssets
 						
 							EditorGUILayout.LabelField("FileName", selectionAssetInfo.FileName);
 
-							EditorGUILayout.LabelField("Guid", selectionAssetInfo.Guid);
+							EditorGUILayout.LabelField("Guid", selectionAssetInfo.GetGuid());
 
 							EditorGUILayout.LabelField("CRC", selectionAssetInfo.CRC);
 						

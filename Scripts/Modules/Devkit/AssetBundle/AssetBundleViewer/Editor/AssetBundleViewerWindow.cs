@@ -8,6 +8,7 @@ using UniRx;
 using Extensions;
 using Extensions.Devkit;
 using Modules.AssetBundles;
+using Modules.Devkit.Project;
 using Modules.ExternalAssets;
 
 namespace Modules.Devkit.AssetBundleViewer
@@ -98,6 +99,8 @@ namespace Modules.Devkit.AssetBundleViewer
 
         private bool LoadAssetInfoManifest()
 		{
+            var projectResourceFolders = ProjectResourceFolders.Instance;
+
 			assetInfoManifest = UnityEditorUtility.FindAssetsByType<AssetInfoManifest>("t:AssetInfoManifest").FirstOrDefault();
 
 			if (assetInfoManifest == null)
@@ -122,6 +125,8 @@ namespace Modules.Devkit.AssetBundleViewer
             {
 				var progressTitle = "Build AssetBundle Info";
 
+                var externalAssetPath = projectResourceFolders.ExternalAssetPath;
+
                 var id = 0;
 			    var count = assetInfosByAssetBundleName.Length;
 
@@ -135,7 +140,10 @@ namespace Modules.Devkit.AssetBundleViewer
 
 				    var info = items.FirstOrDefault();
 
-				    var assetGuids = items.Select(x => x.Guid).ToArray();
+				    var assetGuids = items
+                        .Select(x => PathUtility.Combine(externalAssetPath, x.ResourcePath))
+                        .Select(x => AssetDatabase.AssetPathToGUID(x))
+                        .ToArray();
 
 				    var dependencies = info.AssetBundle.Dependencies;
 

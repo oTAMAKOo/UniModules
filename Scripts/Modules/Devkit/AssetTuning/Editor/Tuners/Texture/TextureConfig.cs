@@ -17,7 +17,7 @@ namespace Modules.Devkit.AssetTuning.TextureAsset
         Android,
     }
 
-    public sealed class TextureConfig : ReloadableScriptableObject<TextureConfig>
+    public sealed class TextureConfig : SingletonScriptableObject<TextureConfig>
     {
         //----- params -----
 
