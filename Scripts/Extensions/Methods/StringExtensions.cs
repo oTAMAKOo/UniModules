@@ -81,29 +81,13 @@ namespace Extensions
         /// <summary> 指定された文字列をSHA256でハッシュ化 </summary>
         public static string GetHash(this string value)
         {
-            return CalcSHA256(value, Encoding.UTF8);
+            return HashExtension.CalcSHA256(value, Encoding.UTF8);
         }
 
         /// <summary> 指定された文字列をSHA256でハッシュ化 </summary>
         public static string GetHash(this string value, Encoding enc)
         {
-            return CalcSHA256(value, enc);
-        }
-
-        // SHA256ハッシュ生成.
-        private static string CalcSHA256(string value, Encoding enc)
-        {
-            #if NET6_0_OR_GREATER
-
-            var hashAlgorithm = SHA256.Create();
-
-            #else
-
-            var hashAlgorithm = new SHA256CryptoServiceProvider();
-
-            #endif
-
-            return string.Join("", hashAlgorithm.ComputeHash(enc.GetBytes(value)).Select(x => $"{x:x2}"));
+            return HashExtension.CalcSHA256(value, enc);
         }
 
         /// <summary> 指定された文字列をCRC32でハッシュ化 </summary>

@@ -13,25 +13,14 @@ namespace Extensions
         /// </summary>
         public static string GetHash(string path)
         {
-            byte[] bytes;
+            var hash = string.Empty;
             
-            var crypt256 = new SHA256CryptoServiceProvider();
-
             using (var fs = File.Open(path, FileMode.Open, FileAccess.Read, FileShare.Read))
             {
-                bytes = crypt256.ComputeHash(fs);
-
-                crypt256.Clear();
-            }
-            
-            var hashedText = new StringBuilder();
-
-            foreach (var b in bytes)
-            {
-                hashedText.Append(b.ToString("x2"));
+                hash = HashExtension.CalcSHA256(fs);
             }
 
-            return hashedText.ToString();
+            return hash;
         }
 
         /// <summary>

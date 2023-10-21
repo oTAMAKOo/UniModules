@@ -64,8 +64,6 @@ namespace Modules.ExternalAssets
             this.resourcePath = PathUtility.ConvertPathSeparator(resourcePath);
             this.group = group;
             this.labels = labels;
-
-            SetFileName();
         }
 
         public void SetFileInfo(long fileSize, string fileCRC, string fileHash)
@@ -74,40 +72,15 @@ namespace Modules.ExternalAssets
             this.crc = fileCRC;
             this.hash = fileHash;
         }
+        
+        public void SetFileName(string fileName)
+        {
+            this.fileName = fileName;
+        }
 
         public void SetAssetBundleInfo(AssetBundleInfo assetBundleInfo)
         {
             assetBundle = assetBundleInfo;
-
-            SetFileName();
-        }
-
-        private void SetFileName()
-        {
-            var isManifestFile = false;
-
-            if (!string.IsNullOrEmpty(resourcePath))
-            {
-                isManifestFile = Path.GetFileName(resourcePath) == AssetInfoManifest.ManifestFileName;
-            }
-
-            if (isManifestFile)
-            {
-                fileName = Path.GetFileNameWithoutExtension(AssetInfoManifest.ManifestFileName);
-            }
-            else
-            {
-                if (IsAssetBundle)
-                {
-                    fileName = assetBundle.AssetBundleName.GetHash();
-                }
-                else if(!string.IsNullOrEmpty(resourcePath))
-                {
-                    var extension = Path.GetExtension(resourcePath);
-
-                    fileName = PathUtility.GetPathWithoutExtension(resourcePath).GetHash() + extension;
-                }
-            }          
         }
     }
 
@@ -205,8 +178,10 @@ namespace Modules.ExternalAssets
             var manifestAssetInfo = new AssetInfo(ManifestFileName, null, null);
 
             var assetBundleInfo = new AssetBundleInfo(AssetBundleName);
+            var fileName = Path.GetFileNameWithoutExtension(ManifestFileName);
 
             manifestAssetInfo.SetAssetBundleInfo(assetBundleInfo);
+            manifestAssetInfo.SetFileName(fileName);
 
             return manifestAssetInfo;
         }

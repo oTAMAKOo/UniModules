@@ -47,7 +47,7 @@ namespace Modules.AssetBundles.Editor
         }
 
         /// <summary> 未登録のアセットバンドル情報追加 </summary>
-        public void AddUnregisteredAssetInfos(AssetInfoManifest assetInfoManifest, BuildResult buildResult)
+        public void AddUnregisteredAssetInfos(AssetManagement assetManagement, AssetInfoManifest assetInfoManifest, BuildResult buildResult)
         {
             var assetBundleAssetInfos = assetInfoManifest.GetAssetInfos()
                 .Where(x => x.IsAssetBundle)
@@ -64,13 +64,15 @@ namespace Modules.AssetBundles.Editor
                 // 既に登録済み.
                 if (assetBundleAssetInfos.Any(x => x.Key == assetBundleName)){ continue; }
                 
-                var fileName = Path.GetFileName(bundleInfo.Value.FileName);
+                var resourcePath = Path.GetFileName(bundleInfo.Value.FileName);
 
-                var assetInfo = new AssetInfo(fileName, AssetInfoManifest.UndefinedAssetGroup, null);
+                var assetInfo = new AssetInfo(resourcePath, AssetInfoManifest.UndefinedAssetGroup, null);
 
                 var assetBundleInfo = new AssetBundleInfo(assetBundleName);
 
                 assetInfo.SetAssetBundleInfo(assetBundleInfo);
+
+                assetManagement.SetCryptoFileName(assetInfo);
                 
                 assetInfoManifest.AddAssetInfo(assetInfo);
             }

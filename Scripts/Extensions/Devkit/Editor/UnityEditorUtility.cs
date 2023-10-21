@@ -230,6 +230,7 @@ namespace Extensions.Devkit
             var assetPaths = await DirectoryUtility.GetAllFilesAsync(dir);
 
             return assetPaths
+                .Where(x => Path.GetExtension(x) != ".meta")
                 .Select(x => PathUtility.ConvertPathSeparator(x))
                 .Select(x => x.Replace(UnityPathUtility.DataPath, UnityPathUtility.AssetsFolder))
                 .ToArray();

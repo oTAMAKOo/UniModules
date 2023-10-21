@@ -165,7 +165,7 @@ namespace Modules.ExternalAssets
 
                     using (new BuildLogScope(logBuilder, processTime, "AddUnregisteredAssetInfos"))
                     {
-                        buildAssetBundle.AddUnregisteredAssetInfos(assetInfoManifest, buildResult);
+                        buildAssetBundle.AddUnregisteredAssetInfos(assetManagement, assetInfoManifest, buildResult);
                     }
 
                     //------ 不要になった古いAssetBundle削除 ------

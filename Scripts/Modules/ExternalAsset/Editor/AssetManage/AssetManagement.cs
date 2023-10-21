@@ -52,6 +52,8 @@ namespace Modules.ExternalAssets
 
         private Dictionary<string, string> manageInfoAssetPathByGuid = null;
 
+        private Dictionary<string, string> cryptoFileNameCache = null;
+
         private string[] ignoreManagePaths = null;
 
         private string[] ignoreAssetBundlePaths = null;
@@ -98,6 +100,8 @@ namespace Modules.ExternalAssets
                     return PathUtility.ConvertPathSeparator(assetPath);
                 });
 
+            cryptoFileNameCache = new Dictionary<string, string>();
+
             ignoreManagePaths = null;
             ignoreAssetBundlePaths = null;
 
@@ -128,6 +132,8 @@ namespace Modules.ExternalAssets
                 var assetBundleInfo = new AssetBundleInfo(assetBundleName);
 
                 assetInfo.SetAssetBundleInfo(assetBundleInfo);
+                
+                SetCryptoFileName(assetInfo);
             }
 
             return assetInfo;
@@ -235,6 +241,49 @@ namespace Modules.ExternalAssets
                 .ToArray();
 
             return manageAssetPaths;
+        }
+
+        public void SetCryptoFileName(AssetInfo assetInfo)
+        {
+            var fileName = string.Empty;
+            var extension = string.Empty;
+
+            if (assetInfo.IsAssetBundle)
+            {
+                fileName = assetInfo.AssetBundle.AssetBundleName;
+            }
+            else if(!string.IsNullOrEmpty(assetInfo.ResourcePath))
+            {
+                extension = Path.GetExtension(assetInfo.ResourcePath);
+
+                fileName = PathUtility.GetPathWithoutExtension(assetInfo.ResourcePath);
+            }
+
+            if (string.IsNullOrEmpty(fileName)) { return; }
+
+            var cryptoFileName = string.Empty;
+
+            lock (cryptoFileNameCache)
+            {
+                cryptoFileName = cryptoFileNameCache.GetValueOrDefault(fileName);
+
+                if (string.IsNullOrEmpty(cryptoFileName))
+                {
+                    cryptoFileName = fileName.GetHash();
+
+                    lock (cryptoFileNameCache)
+                    {
+                        cryptoFileNameCache.Add(fileName, cryptoFileName);
+                    }
+                }
+            }
+
+            if (!string.IsNullOrEmpty(extension))
+            {
+                cryptoFileName += extension;
+            }
+
+            assetInfo.SetFileName(cryptoFileName);
         }
 
         public bool SetAssetBundleName(string assetPath, string assetBundleName, bool force = false)
