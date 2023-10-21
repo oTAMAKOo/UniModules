@@ -66,7 +66,7 @@ namespace Modules.ExternalAssets
 
             sw.Stop(); 
 
-            UnityConsole.Info($"Generate AssetInfoManifest ({sw.Elapsed.TotalMilliseconds}ms)");
+            UnityConsole.Info($"Generate AssetInfoManifest ({sw.Elapsed.TotalMilliseconds:F2}ms)");
 
             return manifest;
         }
