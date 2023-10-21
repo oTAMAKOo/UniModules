@@ -5,11 +5,10 @@ using System;
 using System.Linq;
 using Extensions;
 using Extensions.Devkit;
-using UniRx;
 
 namespace Modules.Devkit.ScriptableObjects
 {
-    public abstract class SingletonScriptableObject<T> : UnityEngine.ScriptableObject where T : SingletonScriptableObject<T>
+    public abstract class SingletonScriptableObject<T> : ReloadableScriptableObject where T : SingletonScriptableObject<T>
     {
         //----- params -----
 
@@ -49,23 +48,32 @@ namespace Modules.Devkit.ScriptableObjects
                     Debug.LogWarningFormat("Can not create multiple instance.\nSingleton class : {0}", typeof(T).FullName);
 
                     var path = AssetDatabase.GetAssetPath(this);
+
                     AssetDatabase.DeleteAsset(path);
                 };
             }
         }
 
-        public static void Reload()
+        public override void Reload()
         {
             instance = LoadInstance();
+
+            OnReload();
         }
 
         protected static T LoadInstance()
         {
-            var targetAsset = UnityEditorUtility.FindAssetsByType<T>(string.Format("t:{0}", typeof(T).FullName)).FirstOrDefault();
+            var reloadableScriptableObjectManager = ReloadableScriptableObjectManager.Instance;
+
+            var targetAsset = UnityEditorUtility.FindAssetsByType<T>($"t:{typeof(T).FullName}").FirstOrDefault();
 
             if (targetAsset == null)
             {
                 Debug.LogErrorFormat("Not found a matching instance.\nclass : {0}", typeof(T).FullName);
+            }
+            else
+            {
+                reloadableScriptableObjectManager.Register(targetAsset);
             }
 
             return targetAsset;

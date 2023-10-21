@@ -76,14 +76,14 @@ namespace Modules.ExternalAssets
         {
             var change = false;
 
-            Func<Object, bool> IsMissing = asset =>
+            bool IsMissing(Object asset)
             {
                 if (asset == null) { return true; }
 
                 var assetPath = AssetDatabase.GetAssetPath(asset);
 
                 return string.IsNullOrEmpty(assetPath);
-            };
+            }
 
             //====== ignoreManage ======
 
