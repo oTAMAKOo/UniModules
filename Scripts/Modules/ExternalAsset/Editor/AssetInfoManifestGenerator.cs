@@ -258,9 +258,15 @@ namespace Modules.ExternalAssets
 
             Reflection.SetPrivateField(manifest, "assetInfos", allAssetInfos);
 
-            UnityEditorUtility.SaveAsset(manifest);
+            // 既に存在する場合は保存.
+
+            if (AssetDatabase.IsMainAsset(manifest))
+            {
+                UnityEditorUtility.SaveAsset(manifest);
+            }
 
             // アセットバンドル名設定.
+
             var importer = AssetImporter.GetAtPath(AssetDatabase.GetAssetPath(manifest));
 
             importer.assetBundleName = AssetInfoManifest.AssetBundleName;

@@ -714,6 +714,17 @@ namespace Modules.ExternalAssets
 
             if (string.IsNullOrEmpty(assetPath)){ return null; }
 
+            // AssetInfoManifestは除外アセット扱い.
+
+            var manifestPath = AssetInfoManifestGenerator.GetManifestPath(externalAssetPath);
+
+            if (manifestPath == assetPath)
+            {
+                return IgnoreType.IgnoreManage;
+            }
+
+            // 除外アセット.
+
             foreach (var item in ignoreManagePaths)
             {
                 if (assetPath.StartsWith(item))
@@ -721,6 +732,8 @@ namespace Modules.ExternalAssets
                     return IgnoreType.IgnoreManage;
                 }
             }
+
+            // アセットバンドル対象外.
 
             foreach (var item in ignoreAssetBundlePaths)
             {
@@ -730,6 +743,8 @@ namespace Modules.ExternalAssets
                 }
             }
 
+            // 除外フォルダ.
+
             foreach (var item in manageConfig.IgnoreFolder)
             {
                 if (assetPath.Split('/').Contains(item))
@@ -737,6 +752,8 @@ namespace Modules.ExternalAssets
                     return IgnoreType.IgnoreFolder;
                 }
             }
+
+            // 除外拡張子.
 
             foreach (var item in manageConfig.IgnoreExtension)
             {
