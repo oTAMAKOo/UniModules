@@ -74,7 +74,8 @@ namespace Modules.UI
         private List<VirtualScrollItem<T>> itemList = null;
 
         private CancellationTokenSource cancelSource = null;
-        private Dictionary<VirtualScrollItem<T>, IDisposable> updateItemDisposables = null;
+
+        private Dictionary<VirtualScrollItem<T>, CancellationTokenSource> updateItemCancellationTokens = null;
 
         private GraphicCast hitBox = null;
 
@@ -135,7 +136,7 @@ namespace Modules.UI
         {
             if (status != Status.None) { return; }
             
-            updateItemDisposables = new Dictionary<VirtualScrollItem<T>, IDisposable>();
+            updateItemCancellationTokens = new Dictionary<VirtualScrollItem<T>, CancellationTokenSource>();
 
             scrollRectTransform = UnityUtility.GetComponent<RectTransform>(scrollRect.gameObject);
 
@@ -180,6 +181,8 @@ namespace Modules.UI
             }
             
             Cancel();
+
+            var cancelToken = cancelSource.Token;
 
             //----- Contentのサイズ設定 -----
 
@@ -276,7 +279,7 @@ namespace Modules.UI
                     {
                         var item = addItems[i];
 
-                        tasks[i] = UniTask.Defer(() => InitializeItem(item));
+                        tasks[i] = UniTask.Defer(() => InitializeItem(item, cancelToken));
                     }
 
                     await UniTask.WhenAll(tasks);
@@ -349,7 +352,7 @@ namespace Modules.UI
 
             //-----  更新イベント -----
 
-            await OnUpdateContents();
+            await OnUpdateContents(cancelToken);
 
             if (onUpdateContents != null)
             {
@@ -359,7 +362,7 @@ namespace Modules.UI
             status = Status.Done;
         }
 
-        private async UniTask InitializeItem(VirtualScrollItem<T> item)
+        private async UniTask InitializeItem(VirtualScrollItem<T> item, CancellationToken cancelToken)
         {
             try
             {
@@ -372,7 +375,11 @@ namespace Modules.UI
                     onCreateItem.OnNext(item);
                 }
 
-                await item.Initialize();
+                await item.Initialize(cancelToken);
+            }
+            catch (OperationCanceledException)
+            {
+                // Canceled.
             }
             catch (Exception e)
             {
@@ -390,19 +397,12 @@ namespace Modules.UI
             if (cancelSource != null)
             {
                 cancelSource.Cancel();
+                cancelSource.Dispose();
             }
 
             cancelSource = new CancellationTokenSource();
 
-            if (updateItemDisposables != null)
-            {
-                foreach (var item in updateItemDisposables.Values)
-                {
-                    item.Dispose();
-                }
-
-                updateItemDisposables.Clear();
-            }
+            updateItemCancellationTokens.Clear();
         }
 
         private void SetupHitBox()
@@ -712,20 +712,8 @@ namespace Modules.UI
                     new Vector3(0f, lastItem.RectTransform.localPosition.y - offset, 0f) :
                     new Vector3(lastItem.RectTransform.localPosition.x + offset, 0f, 0f);
 
-                var updateItemDisposable = updateItemDisposables.GetValueOrDefault(firstItem);
-
-                if (updateItemDisposable != null)
-                {
-                    updateItemDisposable.Dispose();
-                    updateItemDisposables.Remove(firstItem);
-                }
+                UpdateItem(firstItem, lastItem.Index + 1).Forget(gameObject);
                 
-                updateItemDisposable = ObservableEx.FromUniTask(_ => UpdateItem(firstItem, lastItem.Index + 1))
-                    .Subscribe(_ => updateItemDisposables.Remove(firstItem))
-                    .AddTo(this);
-
-                updateItemDisposables.Add(firstItem, updateItemDisposable);
-
                 UpdateSibling();
 
                 return false;
@@ -759,19 +747,7 @@ namespace Modules.UI
                     new Vector3(0f, firstItem.RectTransform.localPosition.y + offset, 0f) :
                     new Vector3(firstItem.RectTransform.localPosition.x - offset, 0f, 0f);
 
-                var updateItemDisposable = updateItemDisposables.GetValueOrDefault(lastItem);
-
-                if (updateItemDisposable != null)
-                {
-                    updateItemDisposable.Dispose();
-                    updateItemDisposables.Remove(lastItem);
-                }
-
-                updateItemDisposable = ObservableEx.FromUniTask(_ => UpdateItem(lastItem, firstItem.Index - 1))
-                    .Subscribe(_ => updateItemDisposables.Remove(lastItem))
-                    .AddTo(this);
-
-                updateItemDisposables.Add(lastItem, updateItemDisposable);
+                UpdateItem(lastItem, firstItem.Index - 1).Forget(gameObject);
 
                 UpdateSibling();
 
@@ -853,26 +829,58 @@ namespace Modules.UI
                 }
             }
 
-            item.SetContent(index, Contents);
+            var updateItemCancelTokenSource = updateItemCancellationTokens.GetValueOrDefault(item);
 
-            if (item.Content != null)
+            if (updateItemCancelTokenSource != null)
             {
-                await item.UpdateContents(item.Content);
+                updateItemCancelTokenSource.Cancel();
+                updateItemCancelTokenSource.Dispose();
+
+                updateItemCancellationTokens.Remove(item);
             }
 
-            UnityUtility.SetActive(item, item.Content != null);
+            updateItemCancelTokenSource = new CancellationTokenSource();
 
-            #if UNITY_EDITOR
+            updateItemCancellationTokens.Add(item, updateItemCancelTokenSource);
 
-            item.transform.name = index.ToString();
+            var linkedCancelTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancelSource.Token, updateItemCancelTokenSource.Token);
 
-            #endif
+            var cancelToken = linkedCancelTokenSource.Token;
 
-            await OnUpdateItem(item);
-
-            if (onUpdateItem != null)
+            try
             {
-                onUpdateItem.OnNext(item);
+                item.SetContent(index, Contents);
+
+                if (item.Content != null)
+                {
+                    await item.UpdateContents(item.Content, cancelToken);
+                }
+
+                UnityUtility.SetActive(item, item.Content != null);
+
+                #if UNITY_EDITOR
+
+                item.transform.name = index.ToString();
+
+                #endif
+
+                await OnUpdateItem(item, cancelToken);
+
+                if (onUpdateItem != null)
+                {
+                    onUpdateItem.OnNext(item);
+                }
+            }
+            catch (OperationCanceledException)
+            {
+                // Canceled.
+            }
+            finally
+            {
+                if (updateItemCancellationTokens.ContainsKey(item))
+                {
+                    updateItemCancellationTokens.Remove(item);
+                }
             }
         }
 
@@ -909,9 +917,15 @@ namespace Modules.UI
         protected virtual UniTask OnCreateItem(IVirtualScrollItem item) { return UniTask.CompletedTask; }
 
         /// <summary> リストアイテム更新時イベント </summary>
-        protected virtual UniTask OnUpdateItem(IVirtualScrollItem item) { return UniTask.CompletedTask; }
+        protected virtual UniTask OnUpdateItem(IVirtualScrollItem item, CancellationToken cancelToken)
+        {
+            return UniTask.CompletedTask;
+        }
 
         /// <summary> リスト内容更新完了イベント </summary>
-        protected virtual UniTask OnUpdateContents() { return UniTask.CompletedTask; }
+        protected virtual UniTask OnUpdateContents(CancellationToken cancelToken)
+        {
+            return UniTask.CompletedTask;
+        }
     }
 }

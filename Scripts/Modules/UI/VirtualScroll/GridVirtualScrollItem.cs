@@ -1,4 +1,4 @@
-﻿
+
 using UnityEngine;
 using UnityEngine.UI;
 using System;
@@ -6,6 +6,7 @@ using System.Linq;
 using System.Collections.Generic;
 using Cysharp.Threading.Tasks;
 using Extensions;
+using System.Threading;
 
 namespace Modules.UI
 {
@@ -29,7 +30,7 @@ namespace Modules.UI
 
         //----- method -----
 
-        public override UniTask Initialize()
+        public override UniTask Initialize(CancellationToken cancelToken)
         {
             elements = new List<TComponent>();
 
@@ -47,7 +48,7 @@ namespace Modules.UI
             return UniTask.CompletedTask;
         }
         
-		public override async UniTask UpdateContents(GridVirtualScroll<T>.GridElement info)
+		public override async UniTask UpdateContents(GridVirtualScroll<T>.GridElement info, CancellationToken cancelToken)
         {
             if (elements == null) { return; }
 
@@ -90,7 +91,7 @@ namespace Modules.UI
                 {
                     activeElements.Add(element);
 
-                    var updateContentsTask = UniTask.Defer(() => UpdateContents(elementIndex, elementInfo, element));
+                    var updateContentsTask = UniTask.Defer(() => UpdateContents(elementIndex, elementInfo, element, cancelToken));
 
                     updateContentsTasks.Add(updateContentsTask);
                 }
@@ -118,6 +119,6 @@ namespace Modules.UI
         protected virtual void OnCreateElement(TComponent element) { }
         
         /// <summary> 要素更新処理 </summary>
-        protected abstract UniTask UpdateContents(int index, T content, TComponent element);
+        protected abstract UniTask UpdateContents(int index, T content, TComponent element, CancellationToken cancelToken);
     }
 }

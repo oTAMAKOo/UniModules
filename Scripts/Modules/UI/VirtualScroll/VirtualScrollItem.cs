@@ -1,5 +1,7 @@
-﻿using UnityEngine;
+
+using UnityEngine;
 using System.Collections.Generic;
+using System.Threading;
 using Cysharp.Threading.Tasks;
 using Extensions;
 
@@ -38,9 +40,12 @@ namespace Modules.UI
             Content = contents != null ? contents.ElementAtOrDefault(index, null) : null;
         }
 
-		/// <summary> 初期化. </summary>
-        public virtual UniTask Initialize() { return UniTask.CompletedTask; }
+        /// <summary> 初期化. </summary>
+        public virtual UniTask Initialize(CancellationToken cancelToken)
+        {
+            return UniTask.CompletedTask;
+        }
 
-        public abstract UniTask UpdateContents(T content);
+        public abstract UniTask UpdateContents(T content, CancellationToken cancelToken);
     }
 }
