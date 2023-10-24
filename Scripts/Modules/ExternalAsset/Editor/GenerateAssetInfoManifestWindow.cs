@@ -10,7 +10,7 @@ namespace Modules.ExternalAssets
     {
         //----- params -----
 
-        private readonly Vector2 WindowSize = new Vector2(200f, 35f);
+        private readonly Vector2 WindowSize = new Vector2(200f, 90f);
 
         //----- field -----
 
@@ -33,7 +33,6 @@ namespace Modules.ExternalAssets
             titleContent = new GUIContent("AssetInfoManifest");
 
             minSize = WindowSize;
-            maxSize = WindowSize;
 
             initialized = true;
         }
@@ -49,6 +48,8 @@ namespace Modules.ExternalAssets
         void OnGUI()
         {
             if (!initialized) { return; }
+
+            var autoUpdater = AssetInfoManifestAutoUpdater.Instance;
 			
 			EditorGUILayout.Separator();
 
@@ -57,7 +58,18 @@ namespace Modules.ExternalAssets
                 // アセット情報ファイルを生成.
                 AssetInfoManifestGenerator.Generate().Forget();
             }
-		}
+
+            if (autoUpdater != null)
+            {
+                EditorGUILayout.Separator();
+
+                EditorLayoutTools.ContentTitle("Settings");
+
+                EditorGUILayout.Separator();
+
+                autoUpdater.Enable = EditorGUILayout.Toggle("Auto Generate", autoUpdater.Enable);
+            }
+        }
 
         private void Reload()
         {
