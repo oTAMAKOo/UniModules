@@ -17,7 +17,7 @@ namespace Modules.ExternalAssets
     {
         //----- params -----
 
-        private const int UpdaterIntervalSeconds = 3;
+        private const float UpdaterIntervalSeconds = 0.5f;
 
         public static class Prefs
         {
@@ -139,6 +139,12 @@ namespace Modules.ExternalAssets
 
         private void FileSystemUpdated(object sender, FileSystemEventArgs e)
         {
+            var extension = Path.GetExtension(e.FullPath);
+
+            if (extension == ".meta"){ return; }
+
+            if (PathUtility.IsFolder(e.FullPath)) { return; }
+
             var path = PathUtility.ConvertPathSeparator(e.FullPath);
 
             if (path.StartsWith(manifestPath)){ return; }
