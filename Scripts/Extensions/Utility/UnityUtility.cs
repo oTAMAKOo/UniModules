@@ -10,7 +10,7 @@ namespace Extensions
 {
     public static class UnityUtility
     {
-        public static bool isEditor
+        public static bool IsEditor
         {
             get { return Application.installMode == ApplicationInstallMode.Editor; }
         }

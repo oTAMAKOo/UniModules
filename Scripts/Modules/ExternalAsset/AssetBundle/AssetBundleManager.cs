@@ -151,7 +151,7 @@ namespace Modules.AssetBundles
         /// <summary> シミュレーションモード設定. </summary>
         public void SetSimulateMode(bool simulateMode)
         {
-            IsSimulateMode = UnityUtility.isEditor && simulateMode;
+            IsSimulateMode = UnityUtility.IsEditor && simulateMode;
         }
 
         /// <summary> ローカルモード設定. </summary>

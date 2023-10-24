@@ -48,7 +48,7 @@ namespace Modules.ExternalAssets
         {
             if (isInitialized) { return; }
 
-            this.simulateMode = UnityUtility.isEditor && simulateMode;
+            this.simulateMode = UnityUtility.IsEditor && simulateMode;
 
             downloadQueueing = new Dictionary<string, AssetInfo>();
 

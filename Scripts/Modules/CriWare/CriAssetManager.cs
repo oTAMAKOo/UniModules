@@ -75,7 +75,7 @@ namespace Modules.CriWare
         {
             if (isInitialized) { return; }
             
-            this.simulateMode = UnityUtility.isEditor && simulateMode;
+            this.simulateMode = UnityUtility.IsEditor && simulateMode;
 
             #if ENABLE_CRIWARE_FILESYSTEM
 

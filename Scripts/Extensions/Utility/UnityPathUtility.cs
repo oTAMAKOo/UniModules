@@ -110,7 +110,7 @@ namespace Extensions
         {
             var streamingAssetsPath = string.Empty;
 
-            if (UnityUtility.isEditor)
+            if (UnityUtility.IsEditor)
             {
                 // Use the build output folder directly.
                 streamingAssetsPath = "file://" + Environment.CurrentDirectory.Replace("\\", PathUtility.PathSeparator.ToString());
