@@ -78,13 +78,15 @@ namespace Modules.CriWare.Editor
 
             UpdateAcfAsset(config.AcfAssetSourceFullPath, config.AcfAssetExportPath);
 
-			var assetFolderPath = PathUtility.Combine(new string[] { UnityPathUtility.AssetsFolder, streamingAssetFolderName, folderName });
+            var streamingAssetPath = PathUtility.Combine(UnityPathUtility.AssetsFolder, streamingAssetFolderName);
 
-			var assetDir = AssetDatabase.GUIDToAssetPath(config.InternalSound.destFolderGuid);
+			var assetFolderPath = PathUtility.Combine(streamingAssetPath, folderName);
 
-			if (!assetDir.StartsWith(assetFolderPath))
+			var destFolderPath = AssetDatabase.GUIDToAssetPath(config.InternalSound.destFolderGuid);
+
+			if (!destFolderPath.StartsWith(streamingAssetPath))
 			{
-				throw new Exception($"Require start internal asset directory.\nAssetFolderPath:{assetFolderPath}\nDestFolder:{assetDir}\n");
+				throw new Exception($"Require start StreamingAssets directory.\nAssetFolderPath:{assetFolderPath}");
 			}
 
             var updateScript = UpdateCriAssets(config.InternalSound, assetExtensions);
@@ -109,15 +111,17 @@ namespace Modules.CriWare.Editor
 			var folderName = config.MovieFolderName;
 
 			var assetExtensions = new string[] { CriAssetDefinition.UsmExtension };
-			
-			var assetFolderPath = PathUtility.Combine(new string[] { UnityPathUtility.AssetsFolder, streamingAssetFolderName, folderName });
+            
+            var streamingAssetPath = PathUtility.Combine(UnityPathUtility.AssetsFolder, streamingAssetFolderName);
 
-			var assetDir = AssetDatabase.GUIDToAssetPath(config.InternalMovie.destFolderGuid);
+            var assetFolderPath = PathUtility.Combine(streamingAssetPath, folderName);
 
-			if (!assetDir.StartsWith(assetFolderPath))
-			{
-				throw new Exception($"Require start internal asset directory.\nAssetFolderPath:{assetFolderPath}\nDestFolder:{assetDir}\n");
-			}
+            var destFolderPath = AssetDatabase.GUIDToAssetPath(config.InternalMovie.destFolderGuid);
+
+            if (!destFolderPath.StartsWith(streamingAssetPath))
+            {
+                throw new Exception($"Require start StreamingAssets directory.\nAssetFolderPath:{assetFolderPath}");
+            }
 
 			var updateScript = UpdateCriAssets(config.InternalMovie, assetExtensions);
 

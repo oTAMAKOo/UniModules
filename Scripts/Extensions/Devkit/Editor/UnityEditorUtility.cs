@@ -233,6 +233,7 @@ namespace Extensions.Devkit
                 .Where(x => Path.GetExtension(x) != ".meta")
                 .Select(x => PathUtility.ConvertPathSeparator(x))
                 .Select(x => x.Replace(UnityPathUtility.DataPath, UnityPathUtility.AssetsFolder))
+                .Where(x => !string.IsNullOrEmpty(x))
                 .ToArray();
         }
 
