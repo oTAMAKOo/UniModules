@@ -402,6 +402,11 @@ namespace Modules.UI
 
             cancelSource = new CancellationTokenSource();
 
+            foreach (var updateItemCancellationToken in updateItemCancellationTokens.Values)
+            {
+                updateItemCancellationToken.Cancel();
+            }
+
             updateItemCancellationTokens.Clear();
         }
 
@@ -843,9 +848,7 @@ namespace Modules.UI
 
             updateItemCancellationTokens.Add(item, updateItemCancelTokenSource);
 
-            var linkedCancelTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancelSource.Token, updateItemCancelTokenSource.Token);
-
-            var cancelToken = linkedCancelTokenSource.Token;
+            var cancelToken = updateItemCancelTokenSource.Token;
 
             try
             {
