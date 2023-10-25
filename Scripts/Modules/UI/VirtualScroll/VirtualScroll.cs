@@ -445,8 +445,6 @@ namespace Modules.UI
 
             scrollRect.content.anchoredPosition = anchoredPosition;
 
-            UpdateScroll();
-
             OnMoveEnd();
         }
 
