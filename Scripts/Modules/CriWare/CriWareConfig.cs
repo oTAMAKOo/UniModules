@@ -1,7 +1,8 @@
 ﻿
 #if ENABLE_CRIWARE_ADX || ENABLE_CRIWARE_ADX_LE || ENABLE_CRIWARE_SOFDEC
-using Cysharp.Threading.Tasks;
+
 using UnityEngine;
+using Cysharp.Threading.Tasks;
 using Extensions;
 
 namespace Modules.CriWare

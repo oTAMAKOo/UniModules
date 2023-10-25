@@ -1,8 +1,8 @@
 ﻿
 #if ENABLE_CRIWARE_ADX || ENABLE_CRIWARE_ADX_LE || ENABLE_CRIWARE_SOFDEC
 
-using System;
 using UnityEditor;
+using System;
 using Cysharp.Threading.Tasks;
 using Extensions;
 using Extensions.Devkit;
@@ -38,7 +38,7 @@ namespace Modules.CriWare
 
         private async UniTask Initialize()
         {
-            if (initializeState == InitializeState.None) { return; }
+            if (initializeState != InitializeState.None) { return; }
 
             initializeState = InitializeState.Running;
 
@@ -47,6 +47,11 @@ namespace Modules.CriWare
             criwareKey = await instance.GetCriWareKey();
 
             initializeState = InitializeState.Done;
+        }
+
+        void OnEnable()
+        {
+            initializeState = InitializeState.None;
         }
 
         public override void OnInspectorGUI()
@@ -71,6 +76,8 @@ namespace Modules.CriWare
                 var encryptKey = criwareKey.Encrypt(cryptoKey);
 
                 Reflection.SetPrivateField(instance, "key", encryptKey);
+
+                UnityEditorUtility.SaveAsset(instance);
             }
         }
     }
