@@ -387,40 +387,57 @@ namespace Modules.Scene
 
             if (cancelToken.IsCancellationRequested){ return; }
 
-            if (prev != null)
-            {
-                //====== Scene Leave ======
 
+            //====== Scene Leave ======
+
+            // Leave呼び出し対象.
+
+            var leaveScenes = new HashSet<SceneInstance> { prev };
+
+            // Singleの場合はAppend済みのシーンも対象.
+            if (mode == LoadSceneMode.Single)
+            {
+                foreach (var appendSceneInstance in appendSceneInstances)
+                {
+                    leaveScenes.Add(appendSceneInstance);
+                }
+            }
+
+            if (leaveScenes.Any())
+            {
                 diagnostics.Begin(TimeDiagnostics.Measure.Leave);
 
-                // Leave通知.
-                if (onLeave != null)
+                foreach (var leaveScene in leaveScenes)
                 {
-                    onLeave.OnNext(prev);
+                    // Leave通知.
+                    if (onLeave != null)
+                    {
+                        onLeave.OnNext(leaveScene);
+                    }
+
+                    // 現在のシーンの終了処理を実行.
+                    try
+                    {
+                        await leaveScene.Instance.Leave();
+                    }
+                    catch (Exception e)
+                    {
+                        Debug.LogException(e);
+                    }
+
+                    if (cancelToken.IsCancellationRequested) { return; }
+
+                    // PlayerPrefsを保存.
+                    PlayerPrefs.Save();
+
+                    // Leave終了通知.
+                    if (onLeaveComplete != null)
+                    {
+                        onLeaveComplete.OnNext(leaveScene);
+                    }
+
+                    leaveScene.Disable();
                 }
-
-                // 現在のシーンの終了処理を実行.
-                try
-                {
-                    await prev.Instance.Leave();
-                }
-                catch (Exception e)
-                {
-                    Debug.LogException(e);
-                }
-
-                if (cancelToken.IsCancellationRequested) { return; }
-
-                // PlayerPrefsを保存.
-                PlayerPrefs.Save();
-
-                // Leave終了通知.
-                if (onLeaveComplete != null)
-                {
-                    onLeaveComplete.OnNext(prev);
-                }
-
-                prev.Disable();
 
                 diagnostics.Finish(TimeDiagnostics.Measure.Leave);
             }
