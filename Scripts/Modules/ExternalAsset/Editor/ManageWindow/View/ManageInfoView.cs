@@ -371,7 +371,10 @@ namespace Modules.ExternalAssets
 
             var manageAssetPaths = await assetManagement.GetManageAssetPaths(ManageInfo);
 
-            ManagedAssetInfos = manageAssetPaths.Select(x => assetManagement.GetAssetInfo(x, ManageInfo)).ToArray();
+            ManagedAssetInfos = manageAssetPaths
+                .Select(x => assetManagement.GetAssetInfo(x, ManageInfo))
+                .Where(x => x != null)
+                .ToArray();
 
             var assetBundleTargets = ManagedAssetInfos
                 .Where(x => x.IsAssetBundle)

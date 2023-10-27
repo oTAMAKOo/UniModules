@@ -71,7 +71,10 @@ namespace Modules.ExternalAssets
 
             if (Prefs.manifestUpdateRequest)
             {
-                AssetInfoManifestGenerator.Generate().Forget();
+                EditorApplication.delayCall += () =>
+                {
+                    AssetInfoManifestGenerator.Generate().Forget();
+                };
             }
         }
 
@@ -110,6 +113,8 @@ namespace Modules.ExternalAssets
 
         public AssetInfo GetAssetInfo(string assetPath, ManageInfo managedInfo = null)
         {
+            if (string.IsNullOrEmpty(assetPath)) { return null; }
+
             assetPath = PathUtility.ConvertPathSeparator(assetPath);
 
             if (IsIgnoreManageAsset(assetPath)){ return null; }
@@ -132,9 +137,9 @@ namespace Modules.ExternalAssets
                 var assetBundleInfo = new AssetBundleInfo(assetBundleName);
 
                 assetInfo.SetAssetBundleInfo(assetBundleInfo);
-                
-                SetCryptoFileName(assetInfo);
             }
+
+            SetCryptoFileName(assetInfo);
 
             return assetInfo;
         }
@@ -362,6 +367,8 @@ namespace Modules.ExternalAssets
             //-------------------------------------------------------------------------------------
             // ※ nullを返すと再インポート時に無限ループになるので未設定の場合はstring.Emptyを返す.
             //-------------------------------------------------------------------------------------
+
+            if (string.IsNullOrEmpty(assetPath)) { return string.Empty; }
 
             var assetBundleName = string.Empty;
 

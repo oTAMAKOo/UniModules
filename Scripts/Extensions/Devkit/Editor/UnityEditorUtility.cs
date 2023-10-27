@@ -220,6 +220,8 @@ namespace Extensions.Devkit
         /// <summary> フォルダ内の全AssetPathを取得 </summary>
         public static async Task<string[]> GetAllAssetPathInFolder(string folderPath)
         {
+            if (string.IsNullOrEmpty(folderPath)) { return new string[0]; }
+
             if (folderPath.StartsWith(AssetsFolderName))
             {
                 folderPath = folderPath.Remove(0, AssetsFolderName.Length);
