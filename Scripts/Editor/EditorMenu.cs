@@ -10,6 +10,7 @@ using Extensions;
 // Modules.
 using Modules.PatternTexture;
 using Modules.TextData.Editor;
+using Modules.TextData.Components;
 using Modules.MessagePack;
 using Modules.Master;
 using Modules.ExternalAssets;
@@ -183,9 +184,15 @@ namespace Modules
         protected const string TextDataMenu = MenuRoot + "TextData/";
 
         [MenuItem(itemName: TextDataMenu + "Open Generate Window", priority = 0)]
-        public static void OpenBuiltInTextDataWindow()
+        public static void OpenTextDataGenerateWindow()
         {
             GenerateWindow.Open();
+        }
+
+        [MenuItem(itemName: TextDataMenu + "Open Selector Window", priority = 1)]
+        public static void OpenTextDataSelectorWindow()
+        {
+            SelectorWindow.Open();
         }
 
         //------ Excel保存時に自動更新 ------

@@ -137,24 +137,26 @@ namespace Modules.TextData.Components
         {
             var setterInspector = TextSetterInspector.Current;
 
-            if(setterInspector == null)
-            {
-                EditorGUILayout.HelpBox("Need Select TextDataSetter GameObject.", MessageType.Info);
-                return;
-            }
-
             toolbarView.DrawGUI();
 
             recordView.DrawGUI();
+
+            if(setterInspector == null)
+            {
+                EditorGUILayout.HelpBox("Not select TextDataSetter GameObject.", MessageType.Warning);
+            }
         }
 
         private void SetupSelectionCategory()
         {
             var textData = TextData.Instance;
 
-            var setter = TextSetterInspector.Current.Instance;
+            var setterInspector = TextSetterInspector.Current;
 
-            toolbarView.CategoryGuid = TextSetterInspector.GetCategoryGuid(textData, setter.TextGuid);
+            if (setterInspector != null && setterInspector.Instance != null)
+            {
+                toolbarView.CategoryGuid = TextSetterInspector.GetCategoryGuid(textData, setterInspector.Instance.TextGuid);
+            }
         }
 
         private void BuildSelectionInfos(string categoryGuid)

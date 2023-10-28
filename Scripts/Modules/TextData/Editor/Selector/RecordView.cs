@@ -240,9 +240,12 @@ namespace Modules.TextData.Components
 
         protected override void RowGUI(RowGUIArgs args)
         {
-            var setter = TextSetterInspector.Current.Instance;
+            TextSetter setter = null;
 
-            if (setter == null) { return; }
+            if (TextSetterInspector.Current != null)
+            {
+                setter =  TextSetterInspector.Current.Instance;
+            }
 
             InitializeStyle();
 
@@ -261,7 +264,7 @@ namespace Modules.TextData.Components
 
                 labelStyle.alignment = TextAnchor.MiddleLeft;
 
-                var highlight = setter.TextGuid == record.TextGuid;
+                var highlight = setter != null && setter.TextGuid == record.TextGuid;
 
                 using (new BackgroundColorScope(highlight ? new Color(0.7f, 0.9f, 0.95f) : new Color(0.95f, 0.95f, 0.95f)))
                 {
@@ -285,7 +288,7 @@ namespace Modules.TextData.Components
 
                                 rect.position += new Vector2(4f, 0f);
 
-                                EditorGUI.LabelField(rect, record.Name, enumNameLabelStyle);
+                                EditorGUI.SelectableLabel(rect, record.Name, enumNameLabelStyle);
                             }
                             break;
 
@@ -293,30 +296,33 @@ namespace Modules.TextData.Components
                             {
                                 rect.height -= 2f;
 
-                                EditorGUI.LabelField(rect, record.Text, contentTextStyle);
+                                EditorGUI.SelectableLabel(rect, record.Text, contentTextStyle);
                             }
                             break;
 
                         case Column.Select:
                             {
+                                var setterInspector = TextSetterInspector.Current;
+
                                 CenterRectUsingSingleLineHeight(ref rect);
 
                                 rect.width -= 2f;
                                 rect.height -= 2f;
                                 rect.position += new Vector2(0f, -1f);
 
-                                if (GUI.Button(rect, "select", EditorStyles.miniButton))
+                                using (new DisableScope(setterInspector == null))
                                 {
-                                    UnityEditorUtility.RegisterUndo(setter);
-                                    
-                                    if (!string.IsNullOrEmpty(record.TextGuid))
+                                    if (GUI.Button(rect, "select", EditorStyles.miniButton))
                                     {
-                                        var setterInspector = TextSetterInspector.Current;
-
-                                        if (setterInspector != null)
+                                        UnityEditorUtility.RegisterUndo(setter);
+                                    
+                                        if (!string.IsNullOrEmpty(record.TextGuid))
                                         {
-                                            setterInspector.SetTextGuid(record.TextGuid);
-                                            setterInspector.Repaint();
+                                            if (setterInspector != null)
+                                            {
+                                                setterInspector.SetTextGuid(record.TextGuid);
+                                                setterInspector.Repaint();
+                                            }
                                         }
                                     }
                                 }

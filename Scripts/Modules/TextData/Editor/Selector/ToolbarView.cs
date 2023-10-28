@@ -18,6 +18,8 @@ namespace Modules.TextData.Components
         
         private TextSetterInspector setterInspector = null;
 
+        private ContentType contentType = default;
+
         private Subject<string> onCategoryChanged = null;
 
         private Subject<Unit> onUpdateSearchText = null;
@@ -46,23 +48,40 @@ namespace Modules.TextData.Components
         {
             setterInspector = TextSetterInspector.Current;
 
-            if(setterInspector == null)
-            {
-                EditorGUILayout.HelpBox("Need Select TextDataSetter GameObject.", MessageType.Info);
-                return;
-            }
-
-            var setter = TextSetterInspector.Current.Instance;
-
-            if (setter == null) { return; }
-
             using (new EditorGUILayout.HorizontalScope(EditorStyles.toolbar, GUILayout.Height(15f)))
             {
                 GUILayout.Space(10f);
 
+                if (setterInspector != null && setterInspector.Instance != null)
+                {
+                    contentType = setterInspector.Instance.ContentType;
+                }
+                else
+                {
+                    DrawSelectCategoryGUI();
+                }
+
                 DrawCategorySelectGUI();
 
                 DrawSearchTextGUI();
+            }
+        }
+
+        private void DrawSelectCategoryGUI()
+        {
+            var enumValues = Enum.GetValues(typeof(ContentType)).Cast<ContentType>().ToArray();
+
+            var index = enumValues.IndexOf(x => x == contentType);
+
+            var tabItems = enumValues.Select(x => x.ToString()).ToArray();
+                        
+            EditorGUI.BeginChangeCheck();
+
+            index = GUILayout.Toolbar(index, tabItems, "MiniButton", GUI.ToolbarButtonSize.Fixed, GUILayout.MinWidth(200f));
+
+            if (EditorGUI.EndChangeCheck())
+            {
+                contentType = enumValues.ElementAtOrDefault(index);
             }
         }
 
@@ -72,12 +91,8 @@ namespace Modules.TextData.Components
 
             if (textData == null) { return; }
 
-            var setter = TextSetterInspector.Current.Instance;
-
-            if (setter == null) { return; }
-
-            var categories = textData.Categories.Where(x => x.ContentType == setter.ContentType).ToArray();
-
+            var categories = textData.Categories.Where(x => x.ContentType == contentType).ToArray();
+            
             // Noneが入るので1ずれる.
             var categoryIndex = categories.IndexOf(x => x.Guid == CategoryGuid) + 1;
 
@@ -93,16 +108,22 @@ namespace Modules.TextData.Components
 
             if (EditorGUI.EndChangeCheck())
             {
-                UnityEditorUtility.RegisterUndo(setter);
-                    
+                if (setterInspector != null)
+                {
+                    UnityEditorUtility.RegisterUndo(setterInspector.Instance);
+                }
+
                 var newCategory = 1 <= categoryIndex ? categories[categoryIndex - 1] : null;
 
                 var newCategoryGuid = newCategory != null ? newCategory.Guid : string.Empty;
 
                 if (CategoryGuid != newCategoryGuid)
                 {
-                    setterInspector.SetTextGuid(null);
-                    setterInspector.SetDummyText(null);
+                    if (setterInspector != null)
+                    {
+                        setterInspector.SetTextGuid(null);
+                        setterInspector.SetDummyText(null);
+                    }
 
                     CategoryGuid = newCategoryGuid;
 
