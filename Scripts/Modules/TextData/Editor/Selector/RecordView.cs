@@ -17,6 +17,7 @@ namespace Modules.TextData.Components
 
         private enum Column
         {
+            Guid,
             EnumName,
             Text,
             Select,
@@ -52,6 +53,7 @@ namespace Modules.TextData.Components
 
         //----- field -----
 
+        private GUIStyle guidLabelStyle = null;
         private GUIStyle enumNameLabelStyle = null;
         private GUIStyle contentTextStyle = null;
 
@@ -87,6 +89,17 @@ namespace Modules.TextData.Components
 
         private void InitializeStyle()
         {
+            if (guidLabelStyle == null)
+            {
+                guidLabelStyle = new GUIStyle(GUI.skin.label)
+                {
+                    alignment = TextAnchor.MiddleLeft,
+                };
+
+                guidLabelStyle.fontSize = (int)(guidLabelStyle.fontSize * 0.8f);
+                guidLabelStyle.normal.textColor = EditorLayoutTools.DefaultContentColor;
+            }
+
             if (enumNameLabelStyle == null)
             {
                 enumNameLabelStyle = new GUIStyle(GUI.skin.label)
@@ -144,9 +157,10 @@ namespace Modules.TextData.Components
 
             var columnTable = new Dictionary<Column, ColumnInfo>()
             {
-                { Column.EnumName,    new ColumnInfo("Enum", 180, false) },
-                { Column.Text,        new ColumnInfo("Text", 400, false) },
-                { Column.Select,      new ColumnInfo(string.Empty, 85) },
+                { Column.Guid,     new ColumnInfo("Guid", 150, false) },
+                { Column.EnumName, new ColumnInfo("Enum", 180, false) },
+                { Column.Text,     new ColumnInfo("Text", 400, false) },
+                { Column.Select,   new ColumnInfo(string.Empty, 85) },
             };
 
             foreach (var item in columnTable)
@@ -255,6 +269,16 @@ namespace Modules.TextData.Components
 
                     switch (column)
                     {
+                        case Column.Guid:
+                            {
+                                CenterRectUsingSingleLineHeight(ref rect);
+
+                                rect.position += new Vector2(4f, 0f);
+
+                                EditorGUI.SelectableLabel(rect, record.TextGuid, guidLabelStyle);
+                            }
+                            break;
+
                         case Column.EnumName:
                             {
                                 CenterRectUsingSingleLineHeight(ref rect);
@@ -294,11 +318,6 @@ namespace Modules.TextData.Components
                                             setterInspector.SetTextGuid(record.TextGuid);
                                             setterInspector.Repaint();
                                         }
-
-                                        //if (onSelect != null)
-                                        //{
-                                        //    onSelect.OnNext(Unit.Default);
-                                        //}
                                     }
                                 }
                             }
