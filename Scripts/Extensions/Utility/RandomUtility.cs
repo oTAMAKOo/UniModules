@@ -1,4 +1,4 @@
-﻿
+
 using System;﻿
 using System.Collections.Generic;
 using System.Linq;
@@ -64,15 +64,9 @@ namespace Extensions
         }
 
         /// <summary> 0-max%を入力してヒットしたかを判定.</summary>
-        public static bool IsPercentageHit(int percentage, int max)
+        public static bool IsPercentageHit(int percentage, int max = 100)
         {
             return percentage != 0 && RandomInRange(1, max) <= percentage;
-        }
-
-        /// <summary> 0-max%を入力してヒットしたかを判定.</summary>
-        public static bool IsPercentageHit(float percentage, float max)
-        {
-            return percentage != 0f && RandomInRange(1f, max) <= percentage;
         }
 
         //-----------------------------------------------
@@ -87,6 +81,12 @@ namespace Extensions
         public static float RandomInRange(float min, float max)
         {
             return (float)Range(min, max);
+        }
+
+        /// <summary> 0-max%を入力してヒットしたかを判定.</summary>
+        public static bool IsPercentageHit(float percentage, float max = 100f)
+        {
+            return percentage != 0f && RandomInRange(1f, max) <= percentage;
         }
 
         //-----------------------------------------------

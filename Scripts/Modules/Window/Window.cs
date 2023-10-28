@@ -1,4 +1,4 @@
-﻿﻿﻿
+﻿﻿
 using UnityEngine;
 using System;
 using Cysharp.Threading.Tasks;
@@ -24,6 +24,8 @@ namespace Modules.Window
 
         //----- property -----
 
+        public bool Opened { get; private set; }
+
         /// <summary> ウィンドウが閉じた時に自動でインスタンスを破棄するか </summary>
         public bool DeleteOnClose
         {
@@ -43,6 +45,8 @@ namespace Modules.Window
         public async UniTask Open(bool blockInput = true)
         {
             var inputBlock = blockInput ? new BlockInput() : null;
+
+            Opened = true;
 
             await Prepare();
 
@@ -85,6 +89,8 @@ namespace Modules.Window
             {
                 UnityUtility.SafeDelete(gameObject);
             }
+
+            Opened = false;
         }
 
         public async UniTask Wait()
