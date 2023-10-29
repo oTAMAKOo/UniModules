@@ -47,7 +47,17 @@ namespace Modules.ExternalAssets
         public bool Enable
         {
             get { return Prefs.enable; }
-            set { Prefs.enable = value; }
+            set
+            {
+                Prefs.enable = value;
+
+                StopAutoUpdater();
+
+                if (value)
+                {
+                    StartAutoUpdater();
+                }
+            }
         }
 
         //----- method -----
@@ -70,22 +80,6 @@ namespace Modules.ExternalAssets
             var projectResourceFolders = ProjectResourceFolders.Instance;
 
             if (projectResourceFolders == null) { return; }
-
-            void OnEnableChanged()
-            {
-                if (Enable)
-                {
-                    StartAutoUpdater();
-                }
-                else
-                {
-                    StopAutoUpdater();
-                }
-            }
-
-            this.ObserveEveryValueChanged(x => x.Enable)
-                .Subscribe(_ => OnEnableChanged())
-                .AddTo(Disposable);
 
             var externalAssetPath = projectResourceFolders.ExternalAssetPath;
 
@@ -131,6 +125,7 @@ namespace Modules.ExternalAssets
             if (watcher != null)
             {
                 watcher.EnableRaisingEvents = false;
+                watcher.Dispose();
                 watcher = null;
             }
 
@@ -192,6 +187,8 @@ namespace Modules.ExternalAssets
 
                 await UniTask.Delay(TimeSpan.FromSeconds(UpdaterIntervalSeconds));
             }
+
+            StopAutoUpdater();
         }
     }
 }
