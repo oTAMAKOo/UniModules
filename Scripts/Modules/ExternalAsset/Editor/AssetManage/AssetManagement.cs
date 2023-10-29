@@ -238,6 +238,7 @@ namespace Modules.ExternalAssets
 
             var ignoreAssetPaths = managedInfos.Values
                 .Select(x => manageInfoAssetPathByGuid.GetValueOrDefault(x.guid))
+                .Where(x => !string.IsNullOrEmpty(x))
                 .Where(x => x != manageAssetPath && x.StartsWith(manageAssetPath))
                 .ToArray();
 
