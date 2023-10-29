@@ -29,6 +29,17 @@ namespace Extensions
 
         //----- property -----
 
+        public static bool Initialized
+        {
+            get
+            {
+                return !DataPath.IsNullOrEmpty() && 
+                       !PersistentDataPath.IsNullOrEmpty() && 
+                       !StreamingAssetsPath.IsNullOrEmpty() && 
+                       !TemporaryCachePath.IsNullOrEmpty();
+            }
+        }
+
         public static string DataPath { get; private set; }
         public static string PersistentDataPath { get; private set; }
         public static string StreamingAssetsPath { get; private set; }
@@ -41,7 +52,7 @@ namespace Extensions
         [InitializeOnLoadMethod]
         private static void InitializeOnLoadMethod()
         {
-            Setup();
+            Initialize();
         }
 
         #else
@@ -49,13 +60,15 @@ namespace Extensions
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterAssembliesLoaded)]
         private static void RuntimeInitializeOnLoadMethod()
         {
-            Setup();
+            Initialize();
         }
 
         #endif
 
-        public static void Setup()
+        public static void Initialize()
         {
+            if (Initialized){ return; }
+
             DataPath = PathUtility.ConvertPathSeparator(Application.dataPath);
             PersistentDataPath = PathUtility.ConvertPathSeparator(Application.persistentDataPath);
             StreamingAssetsPath = PathUtility.ConvertPathSeparator(Application.streamingAssetsPath);

@@ -92,6 +92,8 @@ namespace Modules.Crypto
 
         public async UniTask Load()
         {
+            await UniTask.WaitWhile(() => !UnityPathUtility.Initialized);
+
             keyCache = new Dictionary<TKeyType, KeyData>();
 
             var keyTypes = Enum.GetValues(typeof(TKeyType)).Cast<TKeyType>();
@@ -110,6 +112,8 @@ namespace Modules.Crypto
         
         public async UniTask LoadKeyFile(TKeyType keyType)
         {
+            await UniTask.WaitWhile(() => !UnityPathUtility.Initialized);
+
             byte[] bytes = null;
 
             var loadPath = GetLoadPath(keyType);
