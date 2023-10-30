@@ -12,12 +12,17 @@ namespace Modules.TextData.Components
 {
     public sealed class TextSelectData
     {
+        public string TextIdentifier { get; private set; }
+
         public string TextGuid { get; private set; }
+        
         public string Name { get; private set; }
+        
         public string Text { get; private set; }
 
-        public TextSelectData(string name, string textGuid, string text)
+        public TextSelectData(string textGuid, string textIdentifier, string name, string text)
         {
+            TextIdentifier = textIdentifier;
             TextGuid = textGuid;
             Name = name;
             Text = text;
@@ -169,9 +174,13 @@ namespace Modules.TextData.Components
 
             foreach (var categoryText in categoryTexts)
             {
-                var text = textData.FindText(categoryText.Value);
+                var enumName = categoryText.Key;
 
-                var info = new TextSelectData(categoryText.Key, categoryText.Value, text);
+                var textGuid = categoryText.Value;
+                
+                var textInfo = textData.FindTextInfo(textGuid);
+
+                var info = new TextSelectData(textGuid, textInfo.textIdentifier, enumName, textInfo.text);
 
                 list.Add(info);
             }

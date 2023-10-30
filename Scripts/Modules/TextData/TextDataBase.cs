@@ -15,9 +15,14 @@ namespace Modules.TextData.Components
 
     public sealed class TextInfo
     {
+        public string textIdentifier = null;
+
         public string categoryGuid = null;
+
         public string textGuid = null;
+        
         public string text = null;
+        
         public bool encrypt = false;
     }
 
@@ -30,6 +35,8 @@ namespace Modules.TextData.Components
         protected AesCryptoKey cryptoKey = null;
 
         protected Dictionary<string, TextInfo> texts = null;
+
+        protected Dictionary<string, string> textGuidByTextIdentifier = null;
 
         //----- property -----
 
@@ -49,13 +56,22 @@ namespace Modules.TextData.Components
 
         public virtual string FindText(string textGuid)
         {
-            if (string.IsNullOrEmpty(textGuid)) { return string.Empty; }
+            var info = FindTextInfo(textGuid);
+
+            if (info == null) { return null; }
+
+            return info.text;
+        }
+
+        public TextInfo FindTextInfo(string textGuid)
+        {
+            if (string.IsNullOrEmpty(textGuid)) { return null; }
 
             textGuid = textGuid.Trim();
 
             var info = texts.GetValueOrDefault(textGuid);
 
-            if (info == null) { return string.Empty; }
+            if (info == null) { return null; }
 
             // 復号化していない状態の場合は復号化.
             if (info.encrypt)
@@ -64,7 +80,18 @@ namespace Modules.TextData.Components
                 info.encrypt = false;
             }
 
-            return info.text;
+            return info;
+        }
+
+        public string FindTextByIdentifier(string textIdentifier)
+        {
+            if (textGuidByTextIdentifier == null) { return null; }
+
+            var textGuid = textGuidByTextIdentifier.GetValueOrDefault(textIdentifier);
+
+            if (textGuid == null) { return null; }
+
+            return FindText(textGuid);
         }
 
         public void SetCryptoKey(string key, string iv)
@@ -72,6 +99,16 @@ namespace Modules.TextData.Components
             if (string.IsNullOrEmpty(key) || string.IsNullOrEmpty(iv)){ return; }
 
             cryptoKey = new AesCryptoKey(key, iv);
+        }
+
+        protected void BuildContents()
+        {
+            textGuidByTextIdentifier = new Dictionary<string, string>();
+
+            foreach (var info in texts.Values)
+            {
+                textGuidByTextIdentifier[info.textIdentifier] = info.textGuid;
+            }
         }
 
         public virtual string FindTextGuid(Enum textType) { return null; }

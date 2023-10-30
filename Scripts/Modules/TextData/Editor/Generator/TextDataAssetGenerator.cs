@@ -25,7 +25,7 @@ namespace Modules.TextData.Editor
             for (var i = 0; i < sheets.Length; i++)
             {
                 var sheetGuid = sheets[i].guid;
-                var sheetName = sheets[i].sheetName.Encrypt(aesCryptoKey);
+                var sheetName = sheets[i].sheetName;
                 var sheetDisplayName = sheets[i].displayName.Encrypt(aesCryptoKey);
                 var records = sheets[i].records;
 
@@ -39,7 +39,7 @@ namespace Modules.TextData.Editor
 
                     var text = record.texts.ElementAtOrDefault(textIndex);
 
-                    var enumName = record.enumName.Encrypt(aesCryptoKey);
+                    var enumName = record.enumName;
                     
                     var cryptText = string.IsNullOrEmpty(text) ? string.Empty : text.Encrypt(aesCryptoKey);
 

@@ -71,15 +71,10 @@ namespace Modules.TextData
             foreach (var categoriesContent in asset.Contents)
             {
                 var contentType = asset.ContentType;
+
                 var categoryGuid = categoriesContent.Guid;
-
-                var categoryName = string.Empty;
-
-                if (!string.IsNullOrEmpty(categoriesContent.Name) && cryptoKey != null)
-                {
-                    categoryName = categoriesContent.Name.Decrypt(cryptoKey);
-                }
-
+                
+                var categoryName = categoriesContent.Name;
                 var categoryDisplayName = string.Empty;
 
                 if (!string.IsNullOrEmpty(categoriesContent.DisplayName) && cryptoKey != null)
@@ -104,12 +99,7 @@ namespace Modules.TextData
 
             var enumName = enumNames.GetValueOrDefault(textGuid);
 
-            if (!string.IsNullOrEmpty(enumName) && cryptoKey != null)
-            {
-                return enumName.Decrypt(cryptoKey);
-            }
-
-            return null;
+            return enumName;
         }
     }
 }

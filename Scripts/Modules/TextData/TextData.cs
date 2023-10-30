@@ -1,6 +1,8 @@
-﻿
+
 using UnityEngine;
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using Extensions;
 using Modules.TextData.Components;
@@ -55,6 +57,7 @@ namespace Modules.TextData
                 {
                     var content = new TextInfo()
                     {
+                        textIdentifier = $"{categoriesContent.Name}-{textContent.EnumName}",
                         categoryGuid = categoriesContent.Guid,
                         textGuid = textContent.Guid,
                         text = textContent.Text,
@@ -71,6 +74,8 @@ namespace Modules.TextData
 
             #endif
 
+            BuildContents();
+
             if (onUpdateContents != null)
             {
                 onUpdateContents.OnNext(Unit.Default);
@@ -79,7 +84,15 @@ namespace Modules.TextData
 
         public void Clear()
         {
-            texts.Clear();
+            if (textGuidByTextIdentifier != null)
+            {
+                textGuidByTextIdentifier.Clear();
+            }
+
+            if (texts != null)
+            {
+                texts.Clear();
+            }
         }
 
         public static string GetAssetFileName(string identifier)
