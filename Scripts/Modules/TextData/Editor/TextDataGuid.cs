@@ -23,16 +23,16 @@ namespace Modules.TextData.Editor
 
         public static string Get(string identifier)
         {
-            if (string.IsNullOrEmpty(identifier)) { return null; }
+            var guid = string.Empty;
 
             if (!guidCache.ContainsKey(identifier))
             {
-                var guid = identifier.GetHash();
+                guid = identifier.GetHash();
 
                 guidCache.Add(identifier, guid);
             }
 
-            return guidCache[identifier];
+            return guid;
         }
     }
 }
