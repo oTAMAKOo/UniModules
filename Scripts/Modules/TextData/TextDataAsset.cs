@@ -3,7 +3,6 @@ using UnityEngine;
 using System;
 using System.Collections.Generic;
 using Extensions;
-using Extensions.Serialize;
 
 namespace Modules.TextData.Components
 {
@@ -13,11 +12,15 @@ namespace Modules.TextData.Components
         public sealed class TextContent
         {
             [SerializeField, ReadOnly]
+            private string identifier = null;
+            [SerializeField, ReadOnly]
             private string guid = null;
             [SerializeField, ReadOnly]
             private string enumName = null;
             [SerializeField, ReadOnly]
             private string text = null;
+
+            public string Identifier { get { return identifier; } }
 
             public string Guid { get { return guid; } }
 
@@ -25,8 +28,9 @@ namespace Modules.TextData.Components
 
             public string Text { get { return text; } }
 
-            public TextContent(string guid, string enumName, string text)
+            public TextContent(string identifier, string guid, string enumName, string text)
             {
+                this.identifier = identifier;
                 this.guid = guid;
                 this.enumName = enumName;
                 this.text = text;

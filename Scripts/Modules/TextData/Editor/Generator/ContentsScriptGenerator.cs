@@ -75,11 +75,12 @@ namespace Modules.TextData
                     var text = record.texts.ElementAtOrDefault(textIndex);
 
                     var summary = string.Format(SummaryTemplate, string.IsNullOrEmpty(text) ? string.Empty : text.Replace("\r\n", "").Replace("\n", ""));
+                    var guid = TextDataGuid.Get(record.identifier);
 
                     enums.Append("\t\t\t").AppendLine(summary);
                     enums.Append("\t\t\t").AppendFormat(EnumElementTemplate, record.enumName);
 
-                    elements.Append("\t\t\t").AppendFormat(TableElementTemplate, sheet.sheetName, record.enumName, record.guid);
+                    elements.Append("\t\t\t").AppendFormat(TableElementTemplate, sheet.sheetName, record.enumName, guid);
 
                     // 最終行は改行しない.
                     if (i < sheetRecords.Length - 1)

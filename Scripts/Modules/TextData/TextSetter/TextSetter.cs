@@ -85,7 +85,7 @@ namespace Modules.TextData.Components
             {
                 guid = guid.Trim();
 
-                var text = textData.FindText(guid);
+                var text = textData.FindTextByTextGuid(guid);
 
                 if (!string.IsNullOrEmpty(text))
                 {
@@ -118,7 +118,7 @@ namespace Modules.TextData.Components
 
             if (string.IsNullOrEmpty(textGuid)) { return; }
 
-            content = textData.FindText(textGuid);
+            content = textData.FindTextByTextGuid(textGuid);
 
             ApplyText(content);
         }

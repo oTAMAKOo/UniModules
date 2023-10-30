@@ -12,18 +12,16 @@ namespace Modules.TextData.Editor
     
         public string displayName { get; set; } = null;
 
-        public string guid { get; set; } = null;
-
         public RecordData[] records { get; set; } = new RecordData[0];
     }
 
     public sealed class RecordData
     {
+        public string identifier { get; set; } = null;
+
         public string enumName { get; set; } = null;
 
         public string description { get; set; } = null;
-
-        public string guid { get; set; } = null;
 
         public string[] texts { get; set; } = null;
     }

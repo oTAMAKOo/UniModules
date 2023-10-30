@@ -1,4 +1,4 @@
-
+﻿
 using UnityEngine;
 using UnityEditor;
 using System;
@@ -105,8 +105,7 @@ namespace Modules.TextData.Components
 
             var categories = textData.Categories.Where(x => x.ContentType == contentType).ToArray();
             
-            // Noneが入るので1ずれる.
-            var categoryIndex = categories.IndexOf(x => x.Guid == CategoryGuid) + 1;
+            var categoryIndex = string.IsNullOrEmpty(CategoryGuid) ? 0 : categories.IndexOf(x => x.Guid == CategoryGuid) + 1;
 
             var categoryLabels = categories.Select(x => x.DisplayName).ToArray();
 

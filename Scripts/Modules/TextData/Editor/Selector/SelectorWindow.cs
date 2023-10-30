@@ -12,15 +12,20 @@ namespace Modules.TextData.Components
 {
     public sealed class TextSelectData
     {
-        public string TextGuid { get; private set; }
-        public string Name { get; private set; }
-        public string Text { get; private set; }
+        public string Identifier { get; private set; }
 
-        public TextSelectData(string name, string textGuid, string text)
+        public string Name { get; private set; }
+
+        public string Text { get; private set; }
+        
+        public string TextGuid { get; private set; }
+
+        public TextSelectData(string identifier, string name, string text, string guid)
         {
-            TextGuid = textGuid;
+            Identifier = identifier;
             Name = name;
             Text = text;
+            TextGuid = guid;
         }
     }
 
@@ -169,11 +174,11 @@ namespace Modules.TextData.Components
 
             foreach (var categoryText in categoryTexts)
             {
-                var text = textData.FindText(categoryText.Value);
+                var textInfo = textData.FindTextInfoByTextGuid(categoryText.Value);
 
-                var info = new TextSelectData(categoryText.Key, categoryText.Value, text);
+                var data = new TextSelectData(textInfo.identifier, categoryText.Key, textInfo.text, textInfo.textGuid);
 
-                list.Add(info);
+                list.Add(data);
             }
             
             selectionCache = list.ToArray();
@@ -189,7 +194,8 @@ namespace Modules.TextData.Components
 
             var list = new List<TextSelectData>();
 
-            string[] keywords = searchText.Split(new char[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+            var keywords = searchText.Split(new char[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+
             for (int i = 0; i < keywords.Length; ++i) keywords[i] = keywords[i].ToLower();
 
             foreach (var item in selectionCache)
