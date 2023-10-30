@@ -1,4 +1,4 @@
-
+﻿
 using System.Text;
 using System.Text.RegularExpressions;
 using Extensions;
@@ -73,11 +73,9 @@ namespace Modules.TextData
             {
                 var sheet = sheets[i];
 
-                var sheetGuid = TextDataGuid.Get(sheet.sheetName);
-
                 enums.Append("\t\t").AppendFormat(EnumContentsTemplate, sheet.sheetName);
 
-                contents.Append("\t\t\t").AppendFormat(TableElementTemplate, sheet.sheetName, sheetGuid);
+                contents.Append("\t\t\t").AppendFormat(TableElementTemplate, sheet.sheetName, sheet.guid);
 
                 // 最終行は改行しない.
                 if (i < sheets.Length - 1)

@@ -1,4 +1,4 @@
-
+﻿
 using UnityEngine;
 using System;
 using System.Text;
@@ -15,6 +15,8 @@ namespace Modules.TextData
         private const string AssetFileName = "TextData";
 
         //----- field -----
+        
+        private Subject<Unit> onUpdateContents = null;
 
         //----- property -----
         
@@ -53,7 +55,6 @@ namespace Modules.TextData
                 {
                     var content = new TextInfo()
                     {
-                        identifier = textContent.Identifier,
                         categoryGuid = categoriesContent.Guid,
                         textGuid = textContent.Guid,
                         text = textContent.Text,
@@ -95,6 +96,12 @@ namespace Modules.TextData
             fileNameBuilder.Append(".asset");
             
             return fileNameBuilder.ToString();
+        }
+
+        /// <summary> テキスト更新イベント. </summary>
+        public IObservable<Unit> OnUpdateContentsAsObservable()
+        {
+            return onUpdateContents ?? (onUpdateContents = new Subject<Unit>());
         }
     }
 }

@@ -24,9 +24,12 @@ namespace Modules.TextData.Editor
 
             for (var i = 0; i < sheets.Length; i++)
             {
+                var sheetGuid = sheets[i].guid;
+                var sheetName = sheets[i].sheetName.Encrypt(aesCryptoKey);
+                var sheetDisplayName = sheets[i].displayName.Encrypt(aesCryptoKey);
                 var records = sheets[i].records;
 
-                if (string.IsNullOrEmpty(sheets[i].sheetName)){ continue; }
+                if (string.IsNullOrEmpty(sheetName)){ continue; }
 
                 var textContents = new List<TextDataAsset.TextContent>();
 
@@ -34,26 +37,18 @@ namespace Modules.TextData.Editor
                 {
                     var record = records[j];
 
-                    var guid = TextDataGuid.Get(record.identifier);
-
-                    var cryptIdentifier = record.identifier.Encrypt(aesCryptoKey);
+                    var text = record.texts.ElementAtOrDefault(textIndex);
 
                     var enumName = record.enumName.Encrypt(aesCryptoKey);
                     
-                    var text = record.texts.ElementAtOrDefault(textIndex);
-
                     var cryptText = string.IsNullOrEmpty(text) ? string.Empty : text.Encrypt(aesCryptoKey);
 
-                    var textContent = new TextDataAsset.TextContent(cryptIdentifier, guid, enumName, cryptText);
+                    var textContent = new TextDataAsset.TextContent(record.guid, enumName, cryptText);
 
                     textContents.Add(textContent);
                 }
 
-                var sheetGuid = TextDataGuid.Get(sheets[i].sheetName);
-                var cryptSheetName = sheets[i].sheetName.Encrypt(aesCryptoKey);
-                var cryptSheetDisplayName = sheets[i].displayName.Encrypt(aesCryptoKey);
-
-                var sheetContent = new TextDataAsset.CategoryContent(sheetGuid, cryptSheetName, cryptSheetDisplayName, textContents.ToArray());
+                var sheetContent = new TextDataAsset.CategoryContent(sheetGuid, sheetName, sheetDisplayName, textContents.ToArray());
 
                 categoryContents.Add(sheetContent);
             }

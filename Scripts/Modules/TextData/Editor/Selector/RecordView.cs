@@ -8,7 +8,6 @@ using System.Collections.Generic;
 using UniRx;
 using Extensions;
 using Extensions.Devkit;
-using Modules.Devkit.Prefs;
 
 namespace Modules.TextData.Components
 {
@@ -16,28 +15,12 @@ namespace Modules.TextData.Components
     {
         //----- params -----
 
-        public static class Prefs
-        {
-            public static bool displayIdentifier
-            {
-                get { return ProjectPrefs.GetBool(typeof(Prefs).FullName + "-displayIdentifier", false); }
-                set { ProjectPrefs.SetBool(typeof(Prefs).FullName + "-displayIdentifier", value); }
-            }
-
-            public static bool displayGuid
-            {
-                get { return ProjectPrefs.GetBool(typeof(Prefs).FullName + "-displayGuid", false); }
-                set { ProjectPrefs.SetBool(typeof(Prefs).FullName + "-displayGuid", value); }
-            }
-        }
-
         private enum Column
         {
-            Select,
+            Guid,
             EnumName,
             Text,
-            Identifier,
-            Guid,
+            Select,
         }
 
         private const float RowHight = 22f;
@@ -50,14 +33,11 @@ namespace Modules.TextData.Components
             
             public bool FixedWidth  { get; private set; }
 
-            public bool AllowToggleVisibility { get; private set; }
-
-            public ColumnInfo(string label, float width, bool fixedWidth = true, bool allowToggleVisibility = false)
+            public ColumnInfo(string label, float width, bool fixedWidth = true)
             {
                 Label = label;
                 Width = width;
                 FixedWidth = fixedWidth;
-                AllowToggleVisibility = allowToggleVisibility;
             }
         }
 
@@ -177,11 +157,10 @@ namespace Modules.TextData.Components
 
             var columnTable = new Dictionary<Column, ColumnInfo>()
             {
-                { Column.Select,     new ColumnInfo(string.Empty, 85) },
-                { Column.EnumName,   new ColumnInfo("Enum", 180, false) },
-                { Column.Text,       new ColumnInfo("Text", 400, false) },
-                { Column.Identifier, new ColumnInfo("Identifier", 150, false, true) }, 
-                { Column.Guid,       new ColumnInfo("Guid", 150, false, true) }, 
+                { Column.Guid,     new ColumnInfo("Guid", 150, false) },
+                { Column.EnumName, new ColumnInfo("Enum", 180, false) },
+                { Column.Text,     new ColumnInfo("Text", 400, false) },
+                { Column.Select,   new ColumnInfo(string.Empty, 85) },
             };
 
             foreach (var item in columnTable)
@@ -293,6 +272,34 @@ namespace Modules.TextData.Components
 
                     switch (column)
                     {
+                        case Column.Guid:
+                            {
+                                CenterRectUsingSingleLineHeight(ref rect);
+
+                                rect.position += new Vector2(4f, 0f);
+
+                                EditorGUI.SelectableLabel(rect, record.TextGuid, guidLabelStyle);
+                            }
+                            break;
+
+                        case Column.EnumName:
+                            {
+                                CenterRectUsingSingleLineHeight(ref rect);
+
+                                rect.position += new Vector2(4f, 0f);
+
+                                EditorGUI.SelectableLabel(rect, record.Name, enumNameLabelStyle);
+                            }
+                            break;
+
+                        case Column.Text:
+                            {
+                                rect.height -= 2f;
+
+                                EditorGUI.SelectableLabel(rect, record.Text, contentTextStyle);
+                            }
+                            break;
+
                         case Column.Select:
                             {
                                 var setterInspector = TextSetterInspector.Current;
@@ -319,44 +326,6 @@ namespace Modules.TextData.Components
                                         }
                                     }
                                 }
-                            }
-                            break;
-
-                        case Column.EnumName:
-                            {
-                                CenterRectUsingSingleLineHeight(ref rect);
-
-                                rect.position += new Vector2(4f, 0f);
-
-                                EditorGUI.SelectableLabel(rect, record.Name, enumNameLabelStyle);
-                            }
-                            break;
-
-                        case Column.Text:
-                            {
-                                rect.height -= 2f;
-
-                                EditorGUI.SelectableLabel(rect, record.Text, contentTextStyle);
-                            }
-                            break;
-
-                        case Column.Identifier:
-                            {
-                                CenterRectUsingSingleLineHeight(ref rect);
-
-                                rect.position += new Vector2(4f, 0f);
-
-                                EditorGUI.SelectableLabel(rect, record.Identifier, enumNameLabelStyle);
-                            }
-                            break;
-
-                        case Column.Guid:
-                            {
-                                CenterRectUsingSingleLineHeight(ref rect);
-
-                                rect.position += new Vector2(4f, 0f);
-
-                                EditorGUI.SelectableLabel(rect, record.TextGuid, guidLabelStyle);
                             }
                             break;
 

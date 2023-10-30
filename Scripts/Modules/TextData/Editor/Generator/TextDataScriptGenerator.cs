@@ -83,7 +83,7 @@ namespace Modules.TextData
 
             if (string.IsNullOrEmpty(textGuid)) { return null; }
 
-            return Instance.FindTextByTextGuid(textGuid);
+            return Instance.FindText(textGuid);
         }
 
 #GETTEXT_METHODS#
@@ -112,9 +112,7 @@ namespace Modules.TextData
             {
                 var sheet = sheets[i];
 
-                var sheetGuid = TextDataGuid.Get(sheet.sheetName);
-
-                categorys.Append("\t\t\t\t").AppendFormat(CategoryDefinitionTemplate, sheet.sheetName, sheetGuid);
+                categorys.Append("\t\t\t\t").AppendFormat(CategoryDefinitionTemplate, sheet.sheetName, sheet.guid);
 
                 methods.Append("\t\t").AppendFormat(GetMethodTemplate, sheet.sheetName).AppendLine();
 
