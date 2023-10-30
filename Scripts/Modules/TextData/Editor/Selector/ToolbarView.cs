@@ -7,6 +7,7 @@ using System.Linq;
 using UniRx;
 using Extensions;
 using Extensions.Devkit;
+using Modules.TextData.Editor;
 
 namespace Modules.TextData.Components
 {
@@ -69,19 +70,30 @@ namespace Modules.TextData.Components
 
         private void DrawSelectCategoryGUI()
         {
-            var enumValues = Enum.GetValues(typeof(ContentType)).Cast<ContentType>().ToArray();
+            var config = TextDataConfig.Instance;
 
-            var index = enumValues.IndexOf(x => x == contentType);
+            var distributionSetting = config.Distribution;
 
-            var tabItems = enumValues.Select(x => x.ToString()).ToArray();
-                        
-            EditorGUI.BeginChangeCheck();
-
-            index = GUILayout.Toolbar(index, tabItems, "MiniButton", GUI.ToolbarButtonSize.Fixed, GUILayout.MinWidth(200f));
-
-            if (EditorGUI.EndChangeCheck())
+            if (distributionSetting.Enable)
             {
-                contentType = enumValues.ElementAtOrDefault(index);
+                var enumValues = Enum.GetValues(typeof(ContentType)).Cast<ContentType>().ToArray();
+
+                var index = enumValues.IndexOf(x => x == contentType);
+
+                var tabItems = enumValues.Select(x => x.ToString()).ToArray();
+                            
+                EditorGUI.BeginChangeCheck();
+
+                index = GUILayout.Toolbar(index, tabItems, "MiniButton", GUI.ToolbarButtonSize.Fixed, GUILayout.MinWidth(200f));
+
+                if (EditorGUI.EndChangeCheck())
+                {
+                    contentType = enumValues.ElementAtOrDefault(index);
+                }
+            }
+            else
+            {
+                contentType = ContentType.Embedded;
             }
         }
 

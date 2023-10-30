@@ -4,12 +4,10 @@ using UnityEngine;
 using UnityEditor;
 using System.IO;
 using Cysharp.Threading.Tasks;
+using UniRx;
 using Extensions;
-using Modules.Devkit.Console;
 using Modules.Devkit.Prefs;
 using Modules.Devkit.Project;
-using UniRx;
-using Amazon.ElasticLoadBalancingV2.Model;
 
 namespace Modules.ExternalAssets
 {
