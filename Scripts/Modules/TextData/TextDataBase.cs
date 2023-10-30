@@ -1,8 +1,6 @@
 
-using UnityEngine;
 using System;
 using System.Collections.Generic;
-using System.IO;
 using Extensions;
 using UniRx;
 
@@ -124,17 +122,6 @@ namespace Modules.TextData.Components
 
             foreach (var info in texts.Values)
             {
-                if (info == null) { continue; }
-
-                if (string.IsNullOrEmpty(info.identifier))
-                {
-                    DecryptTextInfo(info);
-
-                    Debug.LogErrorFormat($"Missing identifier : {info.text}");
-
-                    continue;
-                }
-
                 var key = string.Empty;
 
                 if (info.encrypt)
@@ -146,10 +133,7 @@ namespace Modules.TextData.Components
                     key = info.identifier.Encrypt(cryptoKey);
                 }
 
-                if (!string.IsNullOrEmpty(key))
-                {
-                    textInfoByIdentifier[key] = info;
-                }
+                textInfoByIdentifier[key] = info;
             }
         }
 

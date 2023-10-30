@@ -195,7 +195,6 @@ namespace Modules.TextData.Components
                 column.headerTextAlignment = TextAlignment.Center;
                 column.canSort = false;
                 column.autoResize = false;
-                column.allowToggleVisibility = info.AllowToggleVisibility;
 
                 if (info.FixedWidth)
                 {
