@@ -6,14 +6,24 @@ using System;
 using System.Linq;
 using System.Collections.Generic;
 using UniRx;
-using Extensions;
 using Extensions.Devkit;
+using Extensions;
+using Modules.Devkit.Prefs;
 
 namespace Modules.TextData.Components
 {
     public sealed class RecordView : TreeView
     {
         //----- params -----
+
+        private sealed class Prefs
+        {
+            public static Dictionary<Column, float> columnWidth
+            {
+                get { return ProjectPrefs.Get<Dictionary<Column, float>>(typeof(Prefs).FullName + "-columnWidth", null); }
+                set { ProjectPrefs.Set(typeof(Prefs).FullName + "-columnWidth", value); }
+            }
+        }
 
         private enum Column
         {
@@ -25,20 +35,19 @@ namespace Modules.TextData.Components
 
         private const float RowHight = 22f;
 
+        private const int ColumnWidthCheckInterval = 60;
+
         private sealed class ColumnInfo
         {
             public string Label { get; private set; }
 
-            public float Width { get; private set; }
-            
             public bool FixedWidth  { get; private set; }
 
             public bool AllowToggleVisibility  { get; private set; }
 
-            public ColumnInfo(string label, float width, bool fixedWidth = true, bool allowToggleVisibility = false)
+            public ColumnInfo(string label, bool fixedWidth = true, bool allowToggleVisibility = false)
             {
                 Label = label;
-                Width = width;
                 FixedWidth = fixedWidth;
                 AllowToggleVisibility = allowToggleVisibility;
             }
@@ -62,6 +71,12 @@ namespace Modules.TextData.Components
 
         private TextSelectData[] records = null;
 
+        private int columnWidthCheckFrame = 0;
+
+        private Column[] columnEnums = null;
+
+        private Dictionary<Column, float> columnWidth = null;
+
         private Vector2 scrollPosition = Vector2.zero;
 
         private LifetimeDisposable lifetimeDisposable = null;
@@ -84,6 +99,8 @@ namespace Modules.TextData.Components
             rowHeight = RowHight;
             showAlternatingRowBackgrounds = false;
             showBorder = true;
+
+            columnEnums = Enum.GetValues(typeof(Column)).Cast<Column>().ToArray();
 
             SetHeaderColumns();
 
@@ -154,16 +171,27 @@ namespace Modules.TextData.Components
 
         private void SetHeaderColumns()
         {
-            var columnCount = Enum.GetValues(typeof(Column)).Length;
+            var columns = new MultiColumnHeaderState.Column[columnEnums.Length];
 
-            var columns = new MultiColumnHeaderState.Column[columnCount];
+            columnWidth = Prefs.columnWidth;
+
+            if (columnWidth == null)
+            {
+                columnWidth = new Dictionary<Column, float>()
+                {
+                    { Column.Select,     85 },
+                    { Column.EnumName,   180 },
+                    { Column.Text,       400 },
+                    { Column.Identifier, 200 },
+                };
+            }
 
             var columnTable = new Dictionary<Column, ColumnInfo>()
             {
-                { Column.Select,     new ColumnInfo(string.Empty, 85) },
-                { Column.EnumName,   new ColumnInfo("Enum", 180, false) },
-                { Column.Text,       new ColumnInfo("Text", 400, false) },
-                { Column.Identifier, new ColumnInfo("Identifier", 200, false, true) },
+                { Column.Select,     new ColumnInfo(string.Empty) },
+                { Column.EnumName,   new ColumnInfo("Enum", false) },
+                { Column.Text,       new ColumnInfo("Text", false) },
+                { Column.Identifier, new ColumnInfo("Identifier", false, true) },
             };
 
             foreach (var item in columnTable)
@@ -172,8 +200,10 @@ namespace Modules.TextData.Components
 
                 var info = item.Value;
 
+                var width = columnWidth[item.Key];
+
                 column.headerContent = new GUIContent(info.Label);
-                column.width = info.Width;
+                column.width = width;
                 column.headerTextAlignment = TextAlignment.Center;
                 column.canSort = false;
                 column.autoResize = false;
@@ -181,8 +211,8 @@ namespace Modules.TextData.Components
 
                 if (info.FixedWidth)
                 {
-                    column.minWidth = info.Width;
-                    column.maxWidth = info.Width;
+                    column.minWidth = width;
+                    column.maxWidth = width;
                 }
 
                 columns[(int)item.Key] = column;
@@ -239,6 +269,30 @@ namespace Modules.TextData.Components
 
                     scrollPosition = scrollView.scrollPosition;
                 }
+            }
+
+            if (ColumnWidthCheckInterval <= columnWidthCheckFrame++)
+            {
+                var changed = false;
+
+                for (var i = 0; i < columnEnums.Length; i++)
+                {
+                    var columnEnum = columnEnums[i];
+                    var column = multiColumnHeader.GetColumn(i);
+
+                    if (columnWidth[columnEnum] != column.width)
+                    {
+                        columnWidth[columnEnum] = column.width;
+                        changed = true;
+                    }
+                }
+
+                if (changed)
+                {
+                    Prefs.columnWidth = columnWidth;
+                }
+
+                columnWidthCheckFrame = 0;
             }
         }
 

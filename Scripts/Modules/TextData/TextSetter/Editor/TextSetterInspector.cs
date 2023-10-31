@@ -7,7 +7,6 @@ using System.Collections.Generic;
 using Extensions;
 using Extensions.Devkit;
 using Modules.TextData.Editor;
-using NUnit.Framework.Interfaces;
 
 namespace Modules.TextData.Components
 {
