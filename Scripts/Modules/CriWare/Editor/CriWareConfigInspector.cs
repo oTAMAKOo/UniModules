@@ -47,6 +47,8 @@ namespace Modules.CriWare
             criwareKey = await instance.GetCriWareKey();
 
             initializeState = InitializeState.Done;
+
+            Repaint();
         }
 
         void OnEnable()
