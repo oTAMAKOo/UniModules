@@ -18,7 +18,6 @@ namespace Modules.TextData.Editor
 
 using System;
 using System.Collections.Generic;
-using Extensions;
 
 namespace Modules.TextData
 {
