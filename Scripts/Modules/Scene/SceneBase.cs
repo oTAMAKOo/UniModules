@@ -1,3 +1,4 @@
+
 using UnityEngine;
 using System;
 using Cysharp.Threading.Tasks;
@@ -23,6 +24,9 @@ namespace Modules.Scene
 		/// <summary> 起動シーンフラグ設定 </summary>
 		void SetLaunchScene();
 
+        /// <summary> シーン戻りフラグ設定 </summary>
+        void SetSceneBack(bool isSceneBack);
+
 		/// <summary> 引数型を取得 </summary>
 		Type GetArgumentType();
 
@@ -36,10 +40,10 @@ namespace Modules.Scene
 		UniTask Initialize();
 
 		/// <summary> 準備 (通信、読み込みなど) </summary>
-		UniTask Prepare(bool isSceneBack = false);
+		UniTask Prepare();
 
 		/// <summary> 開始 </summary>
-		void Enter(bool isSceneBack = false);
+		void Enter();
 
 		/// <summary> 終了 </summary>
 		UniTask Leave();
@@ -53,11 +57,20 @@ namespace Modules.Scene
 		/// <summary> このシーンから起動したか </summary>
 		public bool IsLaunchScene { get; private set; } = false;
 
+        /// <summary> シーン戻りで戻ってきたか </summary>
+        public bool IsSceneBack { get; private set; } = false;
+
 		/// <summary> 起動シーンフラグ設定 </summary>
 		public void SetLaunchScene()
 		{
 			IsLaunchScene = true;
 		}
+
+        /// <summary> シーン戻りフラグ設定 </summary>
+        public void SetSceneBack(bool isSceneBack)
+        {
+            IsSceneBack = isSceneBack;
+        }
 
 		/// <summary> 引数型を取得 </summary>
 		public abstract Type GetArgumentType();
@@ -72,10 +85,10 @@ namespace Modules.Scene
 		public virtual UniTask Initialize() { return UniTask.CompletedTask; }
 
 		/// <summary> 準備処理 </summary>
-		public virtual UniTask Prepare(bool isSceneBack) { return UniTask.CompletedTask; }
+		public virtual UniTask Prepare() { return UniTask.CompletedTask; }
 
 		/// <summary> 開始時処理 </summary>
-		public virtual void Enter(bool isSceneBack) { }
+		public virtual void Enter() { }
 
 		/// <summary> 離脱時処理 </summary>
 		public virtual UniTask Leave(){ return UniTask.CompletedTask; }

@@ -193,7 +193,7 @@ namespace Modules.Scene
                 onPrepare.OnNext(currentScene);
             }
 
-            await currentScene.Instance.Prepare(false);
+            await currentScene.Instance.Prepare();
 
             if (onPrepareComplete != null)
             {
@@ -207,7 +207,7 @@ namespace Modules.Scene
                 onEnter.OnNext(currentScene);
             }
 
-            currentScene.Instance.Enter(false);
+            currentScene.Instance.Enter();
 
             if (onEnterComplete != null)
             {
@@ -551,6 +551,12 @@ namespace Modules.Scene
             // 現在のシーンとして登録.
             currentScene = sceneInstance;
 
+            // シーン戻り登録.
+            if (currentScene.Instance != null)
+            {
+                currentScene.Instance.SetSceneBack(isSceneBack);
+            }
+
             // 次のシーンを履歴に登録.
             // シーン引数を保存する為遷移時に引数と一緒に履歴登録する為、履歴の最後尾は現在のシーンになる.
             if (currentScene.Instance != null)
@@ -580,7 +586,7 @@ namespace Modules.Scene
             {
                 try
                 {
-                    await currentScene.Instance.Prepare(isSceneBack);
+                    await currentScene.Instance.Prepare();
                 }
                 catch (OperationCanceledException) 
                 {
@@ -687,7 +693,7 @@ namespace Modules.Scene
             // 次のシーンの開始処理実行.
             if (currentScene.Instance != null)
             {
-                currentScene.Instance.Enter(isSceneBack);
+                currentScene.Instance.Enter();
             }
 
             // Enter終了通知.
