@@ -21,6 +21,8 @@ namespace Modules.TextData.Components
 
         private ContentType contentType = default;
 
+        private Subject<Unit> onContentTypeChanged = null;
+
         private Subject<string> onCategoryChanged = null;
 
         private Subject<Unit> onUpdateSearchText = null;
@@ -88,7 +90,18 @@ namespace Modules.TextData.Components
 
                 if (EditorGUI.EndChangeCheck())
                 {
-                    contentType = enumValues.ElementAtOrDefault(index);
+                    var newContentType = enumValues.ElementAtOrDefault(index);
+
+                    if (newContentType != contentType)
+                    {
+                        CategoryGuid = null;
+                        contentType = newContentType;
+
+                        if (onContentTypeChanged != null)
+                        {
+                            onContentTypeChanged.OnNext(Unit.Default);
+                        }
+                    }
                 }
             }
             else
@@ -172,6 +185,11 @@ namespace Modules.TextData.Components
             };
 
             SearchText = EditorLayoutTools.DrawToolbarSearchTextField(SearchText, OnChangeSearchText, OnSearchCancel, GUILayout.Width(250));
+        }
+
+        public IObservable<Unit> OnContentTypeChangedAsObservable()
+        {
+            return onContentTypeChanged ?? (onContentTypeChanged = new Subject<Unit>());
         }
 
         public IObservable<string> OnCategoryChangedAsObservable()

@@ -32,7 +32,7 @@ namespace Modules.TextData.Editor
 
         //----- method -----
 
-        public static void Generate(ContentType type, LanguageInfo info)
+        public static void Generate(ContentType type, LanguageInfo info, bool force = false)
         {
             var textData = TextData.Instance;
 
@@ -82,10 +82,10 @@ namespace Modules.TextData.Editor
                 textIndex = info.TextIndex,
             };
 
-            GenerateTextData(type, generateInfo);
+            GenerateTextData(type, generateInfo, force);
         }
         
-        private static void GenerateTextData(ContentType contentType, GenerateInfo generateInfo)
+        private static void GenerateTextData(ContentType contentType, GenerateInfo generateInfo, bool force)
         {
             var progressTitle = "Generate TextData";
             
@@ -109,12 +109,15 @@ namespace Modules.TextData.Editor
 
             var generateScript = !string.IsNullOrEmpty(generateInfo.scriptFolderPath);
 
-			var hash = CreateSheetsHash(displayNames, sheetDatas);
+            var textDataAsset = LoadAsset(generateInfo.assetPath);
 
-			var textDataAsset = LoadAsset(generateInfo.assetPath);
+            var hash = CreateSheetsHash(displayNames, sheetDatas);
 
-			// 中身のデータに変化がないので更新しない.
-			if (textDataAsset != null && textDataAsset.Hash == hash) { return; }
+            if (!force)
+            {
+                // 中身のデータに変化がないので更新しない.
+                if (textDataAsset != null && textDataAsset.Hash == hash) { return; }
+            }
 
             try
             {

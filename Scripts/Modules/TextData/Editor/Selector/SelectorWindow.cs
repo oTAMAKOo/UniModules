@@ -90,6 +90,13 @@ namespace Modules.TextData.Components
             recordView = new RecordView();
             recordView.Initialize();
 
+            toolbarView.OnContentTypeChangedAsObservable()
+                .Subscribe(_ =>
+                    {
+                        BuildSelectionInfos(toolbarView.CategoryGuid);
+                    })
+                .AddTo(lifetimeDisposable.Disposable);
+
             toolbarView.OnCategoryChangedAsObservable()
                 .Subscribe(x =>
                     {
@@ -140,6 +147,8 @@ namespace Modules.TextData.Components
 
         void OnGUI()
         {
+            Initialize();
+
             var setterInspector = TextSetterInspector.Current;
 
             toolbarView.DrawGUI();
@@ -198,8 +207,12 @@ namespace Modules.TextData.Components
 
             var list = new List<TextSelectData>();
 
-            string[] keywords = searchText.Split(new char[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
-            for (int i = 0; i < keywords.Length; ++i) keywords[i] = keywords[i].ToLower();
+            var keywords = searchText.Split(new char[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+
+            for (var i = 0; i < keywords.Length; ++i)
+            {
+                keywords[i] = keywords[i].ToLower();
+            }
 
             foreach (var item in selectionCache)
             {
@@ -217,6 +230,8 @@ namespace Modules.TextData.Components
         private IReadOnlyDictionary<string, string> GetCategoryTextGuids(TextData textData, string categoryGuid)
         {
             var categoryTexts = new Dictionary<string, string>();
+
+            if (string.IsNullOrEmpty(categoryGuid)) { return categoryTexts; }
 
             var textInfos = textData.Texts.Values.Where(x => x.categoryGuid == categoryGuid).ToArray();
 

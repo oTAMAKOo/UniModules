@@ -108,7 +108,7 @@ namespace Modules.TextData.Editor
             {
                 if (GUILayout.Button("Generate"))
                 {
-                    TextDataGenerator.Generate(contentType, languageInfo);
+                    TextDataGenerator.Generate(contentType, languageInfo, true);
 
                     UnityConsole.Info("TextData generate finish.");
 
