@@ -70,6 +70,8 @@ namespace Modules.TextData.Editor
 
         private static async void AutoUpdateTextDataAssetCallback()
         {
+            if (!UnityEditorInternal.InternalEditorUtility.isApplicationActive) { return; }
+
             if (Application.isPlaying) { return; }
 
             if (!Prefs.autoUpdate){ return; }

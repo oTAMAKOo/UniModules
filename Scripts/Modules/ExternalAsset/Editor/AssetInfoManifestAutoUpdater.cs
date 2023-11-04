@@ -155,6 +155,9 @@ namespace Modules.ExternalAssets
                 // 既にリクエスト済み.
                 var skip = Prefs.requestGenerate;
 
+                // フォーカスがある.
+                skip |= UnityEditorInternal.InternalEditorUtility.isApplicationActive;
+
                 // 実行中.
                 skip |= EditorApplication.isPlayingOrWillChangePlaymode;
 
