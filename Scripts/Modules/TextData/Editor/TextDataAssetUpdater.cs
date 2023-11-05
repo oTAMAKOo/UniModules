@@ -39,6 +39,8 @@ namespace Modules.TextData.Editor
 
         private const int CheckInterval = 1;
 
+        private const int NoFocusCheckInterval = 5;
+
         //----- field -----
 
         private static TextDataAsset embeddedAsset = null;
@@ -70,8 +72,6 @@ namespace Modules.TextData.Editor
 
         private static async void AutoUpdateTextDataAssetCallback()
         {
-            if (!UnityEditorInternal.InternalEditorUtility.isApplicationActive) { return; }
-
             if (Application.isPlaying) { return; }
 
             if (!Prefs.autoUpdate){ return; }
@@ -83,7 +83,9 @@ namespace Modules.TextData.Editor
                 if (DateTime.Now < nextCheckTime) { return; }
             }
 
-            nextCheckTime = DateTime.Now.AddSeconds(CheckInterval);
+            var hasFocus = UnityEditorInternal.InternalEditorUtility.isApplicationActive;
+
+            nextCheckTime = DateTime.Now.AddSeconds(hasFocus ? CheckInterval : NoFocusCheckInterval);
 
             var config = TextDataConfig.Instance;
 
