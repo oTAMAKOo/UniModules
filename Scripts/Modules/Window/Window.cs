@@ -1,4 +1,4 @@
-﻿﻿
+﻿
 using UnityEngine;
 using System;
 using Cysharp.Threading.Tasks;
@@ -44,6 +44,8 @@ namespace Modules.Window
 
         public async UniTask Open(bool blockInput = true)
         {
+            if (Opened) { return; }
+
             var inputBlock = blockInput ? new BlockInput() : null;
 
             Opened = true;
@@ -68,6 +70,8 @@ namespace Modules.Window
 
         public async UniTask Close(bool blockInput = true)
         {
+            if (!Opened) { return; }
+
             var inputBlock = blockInput ? new BlockInput() : null;
 
             await OnClose();
