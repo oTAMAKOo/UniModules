@@ -1,4 +1,4 @@
-﻿
+
 using UnityEngine;
 using UnityEditor;
 using UnityEditor.Callbacks;
@@ -37,9 +37,7 @@ namespace Modules.TextData.Editor
             }
         }
 
-        private const int CheckInterval = 1;
-
-        private const int NoFocusCheckInterval = 5;
+        private const float CheckInterval = 1f;
 
         //----- field -----
 
@@ -83,9 +81,7 @@ namespace Modules.TextData.Editor
                 if (DateTime.Now < nextCheckTime) { return; }
             }
 
-            var hasFocus = UnityEditorInternal.InternalEditorUtility.isApplicationActive;
-
-            nextCheckTime = DateTime.Now.AddSeconds(hasFocus ? CheckInterval : NoFocusCheckInterval);
+            nextCheckTime = DateTime.Now.AddSeconds(CheckInterval);
 
             var config = TextDataConfig.Instance;
 
