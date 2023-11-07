@@ -101,7 +101,7 @@ namespace Modules.Sound
         }
         
         /// <summary> 内蔵アセットサウンドを再生. </summary>
-        public SoundElement Play(SoundType type, Sounds.Cue cue, float volume = 1f)
+        public SoundElement Play(SoundType type, Sounds.Cue cue, float? volume = null)
         {
             var soundParam = GetSoundParam(type);
             var info = Sounds.GetCueInfo(cue);
@@ -120,7 +120,7 @@ namespace Modules.Sound
         }
         
         /// <summary> 外部アセットのサウンドを再生. </summary>
-        public SoundElement Play(SoundType type, CueInfo info, float volume = 1f)
+        public SoundElement Play(SoundType type, CueInfo info, float? volume = null)
         {
             if (info == null) { return null; }
 
@@ -133,19 +133,31 @@ namespace Modules.Sound
 
             var soundParam = GetSoundParam(type);
 
+            var soundVolume = soundParam.volume;
+
             SoundElement element = null;
 
-            if (soundParam != null && soundParam.cancelIfPlaying)
+            if (soundParam != null)
             {
-                element = FindPlayingElement(type, info);
+                soundVolume = soundParam.volume;
 
-                if (element != null)
+                if (soundParam.cancelIfPlaying)
                 {
-                    return element;
+                    element = FindPlayingElement(type, info);
+
+                    if (element != null)
+                    {
+                        return element;
+                    }
                 }
             }
 
-            element = GetSoundElement(info, type, volume);
+            if (volume.HasValue)
+            {
+                soundVolume = volume.Value;
+            }
+
+            element = GetSoundElement(info, type, soundVolume);
 
             if (element == null) { return null; }
 
@@ -154,7 +166,7 @@ namespace Modules.Sound
 
             // 音量設定.
 
-            SetVolume(element, volume);
+            SetVolume(element, soundVolume);
 
             // 再生.
 
