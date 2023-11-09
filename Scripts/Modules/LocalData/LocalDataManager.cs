@@ -4,6 +4,7 @@ using System;
 using System.IO;
 using System.Linq;
 using System.Collections.Generic;
+using Cysharp.Threading.Tasks;
 using UniRx;
 using Extensions;
 using Modules.Devkit.Console;
@@ -31,6 +32,8 @@ namespace Modules.LocalData
 
         private AesCryptoKey cryptoKey = null;
 
+        private HashSet<ILocalData> saveRequests = null;
+
         private Dictionary<Type, string> filePathCache = null;
 
         private Dictionary<Type, ILocalData> dataCache = null;
@@ -53,6 +56,7 @@ namespace Modules.LocalData
         {
             filePathCache = new Dictionary<Type, string>();
             dataCache = new Dictionary<Type, ILocalData>();
+            saveRequests = new HashSet<ILocalData>();
 
             var fileDir = UnityPathUtility.GetPrivateDataPath();
 
@@ -120,10 +124,8 @@ namespace Modules.LocalData
             }
             catch (Exception ex)
             {
-                throw new Exception($"LocalData load failed.\nClass:{className}\nFilePath:{filePath}", ex);
+                throw new Exception($"LocalData load failed.\nClass:{className}\nFilePath:{filePath}\n\n{ex.Message}", ex);
             }
-
-            UnityConsole.Event(ConsoleEventName, ConsoleEventColor, $"Load : {className}\nFilePath:{filePath}");
 
             if (Instance.onLoad != null)
             {
@@ -131,12 +133,35 @@ namespace Modules.LocalData
             }
 
             Instance.dataCache[type] = data;
+
+            UnityConsole.Event(ConsoleEventName, ConsoleEventColor, $"Load : {className}\nFilePath:{filePath}");
         }
 
         public static void Save<T>(T data) where T : class, ILocalData, new()
         {
-            var className = typeof(T).FullName;
-            var filePath = Instance.GetFilePath<T>();
+            if (data == null) { return; }
+
+            Instance.SaveOnEndOfFrame(data).Forget();
+        }
+
+        private async UniTask SaveOnEndOfFrame<T>(T data) where T : class, ILocalData, new()
+        {
+            if (saveRequests.Contains(data)){ return; }
+
+            saveRequests.Add(data);
+
+            await UniTask.Yield(PlayerLoopTiming.LastPostLateUpdate);
+
+            WriteToFile(data);
+
+            saveRequests.Remove(data);
+        }
+
+        private void WriteToFile<T>(T data) where T : class, ILocalData, new()
+        {
+            var type = data.GetType();
+            var className = type.FullName;
+            var filePath = GetFilePath<T>();
 
             try
             {
@@ -144,20 +169,29 @@ namespace Modules.LocalData
             }
             catch (Exception ex)
             {
-                throw new Exception($"LocalData save failed.\nClass:{className}\nFilePath:{filePath}", ex);
+                throw new Exception($"LocalData save failed.\nClass:{className}\nFilePath:{filePath}\n\n{ex.Message}", ex);
+            }
+
+            if (onSave != null)
+            {
+                onSave.OnNext(data);
             }
 
             UnityConsole.Event(ConsoleEventName, ConsoleEventColor, $"Save : {className}\nFilePath:{filePath}");
-
-            if (Instance.onSave != null)
-            {
-                Instance.onSave.OnNext(data);
-            }
         }
 
         public string GetFilePath<T>() where T : class, ILocalData, new()
         {
-            var filePath = filePathCache.GetValueOrDefault(typeof(T));
+            var type = typeof(T);
+
+            var isLocalData = type.GetInterfaces().Contains(typeof(ILocalData));
+
+            if (!isLocalData)
+            {
+                throw new ArgumentException($"{type.FullName} has not ILocalData interface.");
+            }
+
+            var filePath = filePathCache.GetValueOrDefault(type);
 
             if (!string.IsNullOrEmpty(filePath)){ return filePath; }
             
@@ -167,8 +201,6 @@ namespace Modules.LocalData
             }
 
             var fileName = string.Empty;
-
-            var type = typeof(T);
 
             var fileNameAttribute = type.GetCustomAttributes(typeof(FileNameAttribute), false)
                 .Cast<FileNameAttribute>()
@@ -187,7 +219,7 @@ namespace Modules.LocalData
 
             filePath = PathUtility.Combine(FileDirectory, fileName);
 
-            filePathCache.Add(typeof(T), filePath);
+            filePathCache.Add(type, filePath);
 
             return filePath;
         }
