@@ -232,6 +232,21 @@ namespace Modules.ExternalAssets
         {
             var manageAssetPath = manageInfoAssetPathByGuid.GetValueOrDefault(manageInfo.guid);
 
+            if (string.IsNullOrEmpty(manageAssetPath))
+            {
+                manageAssetPath = AssetDatabase.GUIDToAssetPath(manageInfo.guid);
+
+                if (!string.IsNullOrEmpty(manageAssetPath))
+                {
+                    manageInfoAssetPathByGuid[manageInfo.guid] = manageAssetPath;
+                }
+            }
+
+            if (string.IsNullOrEmpty(manageAssetPath))
+            {
+                throw new InvalidDataException();
+            }
+
             if (!PathUtility.IsFolder(manageAssetPath)){ return new string[] { manageAssetPath }; }
 
             var assetPaths = await UnityEditorUtility.GetAllAssetPathInFolder(manageAssetPath);
