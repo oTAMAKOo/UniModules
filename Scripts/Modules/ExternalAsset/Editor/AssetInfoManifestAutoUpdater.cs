@@ -120,14 +120,11 @@ namespace Modules.ExternalAssets
 
         private void StopAutoUpdater()
         {
-            if (watcher != null)
-            {
-                watcher.EnableRaisingEvents = false;
-                watcher.Dispose();
-                watcher = null;
-            }
+            if (watcher == null){ return; }
 
-            Enable = false;
+            watcher.EnableRaisingEvents = false;
+            watcher.Dispose();
+            watcher = null;
         }
 
         private void FileSystemUpdated(object sender, FileSystemEventArgs e)

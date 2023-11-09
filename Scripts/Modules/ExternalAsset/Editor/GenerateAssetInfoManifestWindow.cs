@@ -67,7 +67,14 @@ namespace Modules.ExternalAssets
 
                 EditorGUILayout.Separator();
 
-                autoUpdater.Enable = EditorGUILayout.Toggle("Auto Generate", autoUpdater.Enable);
+                EditorGUI.BeginChangeCheck();
+
+                var enable = EditorGUILayout.Toggle("Auto Generate", autoUpdater.Enable);
+
+                if (EditorGUI.EndChangeCheck())
+                {
+                    autoUpdater.Enable = enable;
+                }
             }
         }
 
