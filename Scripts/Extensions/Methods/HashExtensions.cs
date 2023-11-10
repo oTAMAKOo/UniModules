@@ -40,20 +40,6 @@ namespace Extensions
             #endif
         }
 
-        public static int StringToInt(string value, Encoding enc)
-        {
-            byte[] bytes = null;
-
-            var byteValues = enc.GetBytes(value);
-
-            lock (hashAlgorithmSHA256)
-            {
-                bytes = hashAlgorithmSHA256.ComputeHash(byteValues);
-            }
-
-            return BitConverter.ToInt32(bytes, 0);
-        }
-
         public static string CalcSHA256(FileStream fileStream)
         {
             byte[] bytes = null;
