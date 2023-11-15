@@ -401,6 +401,9 @@ namespace Modules.Sound
             // 再生パラメータ設定.
             ApplySoundParam(type);
 
+            // 音量を設定.
+            player.SetVolume(volume);
+
             // セットされた音声データの再生準備を開始.
             var playback = player.Prepare();
 
