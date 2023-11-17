@@ -196,7 +196,7 @@ namespace Modules.FileCache
             return bytes;
         }
 
-        private string GetFileName(string source)
+        public string GetFileName(string source)
         {
             return string.IsNullOrEmpty(source) ? null : source.GetHash();
         }
