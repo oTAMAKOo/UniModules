@@ -3,7 +3,13 @@ using System;
 
 namespace Extensions
 {
-    public abstract class Singleton<T> : LifetimeDisposable where T : Singleton<T>
+    public interface ISingleton
+    {
+        void Refresh();
+        void Release();
+    }
+
+    public abstract class Singleton<T> : LifetimeDisposable, ISingleton where T : Singleton<T>
     {
         //----- params -----
 
@@ -22,9 +28,18 @@ namespace Extensions
 
         protected Singleton() { }
 
-        ~Singleton()
+        public void Release()
         {
+            SingletonManager.Remove(instance);
+
             OnRelease();
+
+            instance = null;
+        }
+
+        public void Refresh()
+        {
+            OnRefresh();
         }
 
         public static T CreateInstance()
@@ -35,6 +50,8 @@ namespace Extensions
 
             instance = Activator.CreateInstance(type, true) as T;
 
+            SingletonManager.Register(instance);
+
             instance.OnCreate();
 
             return instance;
@@ -42,11 +59,16 @@ namespace Extensions
 
         public static void ReleaseInstance()
         {
-            instance = null;
+            if (instance != null)
+            {
+                instance.Release();
+            }
         }
 
         protected virtual void OnCreate() { }
 
         protected virtual void OnRelease() { }
+
+        protected virtual void OnRefresh() { }
     }
 }
