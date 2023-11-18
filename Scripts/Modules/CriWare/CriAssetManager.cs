@@ -106,11 +106,6 @@ namespace Modules.CriWare
         {
             if (!isInitialized){ return; }
 
-            Release();
-        }
-
-        private void Release()
-        {
             #if ENABLE_CRIWARE_FILESYSTEM
 
             installQueueing.Clear();
