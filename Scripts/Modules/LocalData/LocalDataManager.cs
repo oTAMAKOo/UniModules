@@ -163,6 +163,11 @@ namespace Modules.LocalData
             var className = type.FullName;
             var filePath = GetFilePath<T>();
 
+            if (onSave != null)
+            {
+                onSave.OnNext(data);
+            }
+
             try
             {
                 MessagePackFileUtility.Write(filePath, data, Instance.cryptoKey);
@@ -170,11 +175,6 @@ namespace Modules.LocalData
             catch (Exception ex)
             {
                 throw new Exception($"LocalData save failed.\nClass:{className}\nFilePath:{filePath}\n\n{ex.Message}", ex);
-            }
-
-            if (onSave != null)
-            {
-                onSave.OnNext(data);
             }
 
             UnityConsole.Event(ConsoleEventName, ConsoleEventColor, $"Save : {className}\nFilePath:{filePath}");
