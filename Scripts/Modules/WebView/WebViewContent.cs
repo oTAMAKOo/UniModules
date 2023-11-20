@@ -22,7 +22,7 @@ namespace Modules.WebView
         protected Subject<Unit> onLoadComplete = null;
         protected Subject<Unit> onLoadTimeout = null;
         protected Subject<string> onLoadError = null;
-        protected Subject<string> onReceivedMessage = null; // TODO: 仮.
+        protected Subject<string> onReceivedMessage = null;
         protected Subject<Unit> onClose = null;
 
         //----- property -----
@@ -59,7 +59,7 @@ namespace Modules.WebView
 
         protected UniTask WaitForLoadFinish(string url)
         {
-            Action<TimeoutException> onTimeout = ex =>
+            void OnTimeout(TimeoutException ex)
             {
                 Debug.LogErrorFormat("[WebView Timeout] {0}\n\n{1}", url, ex);
 
@@ -67,9 +67,9 @@ namespace Modules.WebView
                 {
                     onLoadTimeout.OnNext(Unit.Default);
                 }
-            };
+            }
 
-            Action<Exception> onError = ex =>
+            void OnError(Exception ex)
             {
                 Debug.LogErrorFormat("[WebView Error] {0}\n\n{1}", url, ex);
 
@@ -79,12 +79,12 @@ namespace Modules.WebView
                 {
                     onLoadError.OnNext(ex.Message);
                 }
-            };
+            }
 
             return Observable.EveryUpdate()
                 .Timeout(new TimeSpan(0, 0, 0, TimeOutSeconds))
-                .OnErrorRetry((TimeoutException ex) => onTimeout(ex), RetryCount, new TimeSpan(0, 0, 0, RetryDelaySeconds))
-                .DoOnError(x => onError.Invoke(x))
+                .OnErrorRetry((TimeoutException ex) => OnTimeout(ex), RetryCount, new TimeSpan(0, 0, 0, RetryDelaySeconds))
+                .DoOnError(x => OnError(x))
                 .SkipWhile(_ => Loading)
                 .First()
                 .ToUniTask();
@@ -105,7 +105,6 @@ namespace Modules.WebView
             return onLoadTimeout ?? (onLoadTimeout = new Subject<Unit>());
         }
 
-        // TODO: 仮.
         public IObservable<string> OnReceivedMessageAsObservable()
         {
             return onReceivedMessage ?? (onReceivedMessage = new Subject<string>());

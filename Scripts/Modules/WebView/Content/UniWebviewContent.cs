@@ -1,4 +1,4 @@
-﻿
+
 #if ENABLE_UNIWEBVIEW
 
 using UnityEngine;
@@ -148,7 +148,7 @@ namespace Modules.WebView
 
             if (onReceivedMessage != null)
             {
-                onReceivedMessage.OnNext(mes.Scheme); // TODO: 仮.
+                onReceivedMessage.OnNext(mes.Scheme);
             }
         }
 
