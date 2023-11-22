@@ -2,24 +2,23 @@
 using UnityEngine;
 using System;
 using Cysharp.Threading.Tasks;
-using Constants;
 
 namespace Modules.Scene
 {
 	/// <summary>
 	/// シーンに渡す引数.
 	/// </summary>
-	public interface ISceneArgument
+	public interface ISceneArgument<TScenes> where TScenes : struct, Enum
 	{
 		/// <summary> シーン識別子 </summary>
-		Scenes? Identifier { get; }
+        TScenes? Identifier { get; }
 		/// <summary> 事前読み込みを行うシーン </summary>
-		Scenes[] PreLoadScenes { get; }
+        TScenes[] PreLoadScenes { get; }
 		/// <summary> キャッシュ対象か </summary>
 		bool Cache { get; }
 	}
 
-	public interface ISceneBase
+	public interface ISceneBase<TScenes> where TScenes : struct, Enum
 	{
 		/// <summary> 起動シーンフラグ設定 </summary>
 		void SetLaunchScene();
@@ -31,10 +30,10 @@ namespace Modules.Scene
 		Type GetArgumentType();
 
 		/// <summary> 引数を設定 </summary>
-		UniTask SetArgument(ISceneArgument argument);
+		UniTask SetArgument(ISceneArgument<TScenes> argument);
 
 		/// <summary> 引数を取得 </summary>
-		ISceneArgument GetArgument();
+		ISceneArgument<TScenes> GetArgument();
 
 		/// <summary> 初期化 </summary>
 		UniTask Initialize();
@@ -52,7 +51,7 @@ namespace Modules.Scene
 		UniTask OnTransition();
 	}
 
-	public abstract class SceneBase : MonoBehaviour, ISceneBase
+	public abstract class SceneBase<TScenes> : MonoBehaviour, ISceneBase<TScenes> where TScenes : struct, Enum
 	{
 		/// <summary> このシーンから起動したか </summary>
 		public bool IsLaunchScene { get; private set; } = false;
@@ -76,10 +75,10 @@ namespace Modules.Scene
 		public abstract Type GetArgumentType();
 
 		/// <summary> 引数を設定 </summary>
-		public abstract UniTask SetArgument(ISceneArgument argument);
+		public abstract UniTask SetArgument(ISceneArgument<TScenes> argument);
 
 		/// <summary> 引数を取得 </summary>
-		public abstract ISceneArgument GetArgument();
+		public abstract ISceneArgument<TScenes> GetArgument();
 
 		/// <summary> 初期化 </summary>
 		public virtual UniTask Initialize() { return UniTask.CompletedTask; }

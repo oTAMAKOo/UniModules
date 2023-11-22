@@ -9,7 +9,6 @@ using Modules.Scene;
 namespace Modules.Localize
 {
 	[DisallowMultipleComponent]
-	[RequireComponent(typeof(SceneBase))]
 	public sealed class LocalizeAtlasRequest : MonoBehaviour
     {
         //----- params -----
@@ -88,17 +87,12 @@ namespace Modules.Localize
 
 			foreach (var rootObject in rootObjects)
 			{
-				var sceneBase = UnityUtility.GetComponent<SceneBase>(rootObject);
+				var atlasRequest = UnityUtility.GetComponent<LocalizeAtlasRequest>(rootObject);
 
-				if (sceneBase == null){ continue; }
+				if (atlasRequest == null) { continue; }
 
-				var atlasRequest = UnityUtility.GetComponent<LocalizeAtlasRequest>(sceneBase);
-
-				if (atlasRequest != null)
-				{
-					return atlasRequest;
-				}
-			}
+                return atlasRequest;
+            }
 
 			return null;
 		}

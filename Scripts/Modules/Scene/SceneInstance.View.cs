@@ -1,12 +1,10 @@
 ﻿
 using System.Collections.Generic;
-using Constants;
-using Extensions;
 using Modules.View;
 
 namespace Modules.Scene
 {
-	public abstract partial class SceneManager<T>
+	public abstract partial class SceneManager<TInstance, TScenes>
 	{
         //----- params -----
 
@@ -17,7 +15,7 @@ namespace Modules.Scene
         //----- method -----
 
 		/// <summary> ロード済みの指定したシーンのViewModelを取得. </summary>
-        public TViewModel GetViewModel<TViewModel>(Scenes scene) where TViewModel : ViewModel
+        public TViewModel GetViewModel<TViewModel>(TScenes scene) where TViewModel : ViewModel
         {
 			var sceneInstance = loadedScenes.GetValueOrDefault(scene);
 

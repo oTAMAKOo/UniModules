@@ -10,13 +10,14 @@ using System.Threading;
 using Cysharp.Threading.Tasks;
 using UniRx;
 using Extensions;
-using Constants;
 using Modules.Devkit.Console;
 using Modules.Scene.Diagnostics;
 
 namespace Modules.Scene
 {
-    public abstract partial class SceneManager<T> : Singleton<T> where T : SceneManager<T>
+    public abstract partial class SceneManager<TInstance, TScenes> : Singleton<TInstance>　
+        where TInstance : SceneManager<TInstance, TScenes>
+        where TScenes : struct, Enum
     {
         //----- params -----
 
@@ -28,58 +29,64 @@ namespace Modules.Scene
         protected CancellationTokenSource transitionCancelSource = null;
         protected CancellationTokenSource preLoadCancelSource = null;
 
-        protected Dictionary<Scenes, SceneInstance> loadedScenes = null;
-        protected FixedQueue<SceneInstance> cacheScenes = null;
+        protected Dictionary<TScenes, SceneInstance<TScenes>> loadedScenes = null;
+        protected FixedQueue<SceneInstance<TScenes>> cacheScenes = null;
 
-        protected Dictionary<Scenes, IObservable<SceneInstance>> loadingScenes = null;
-        protected Dictionary<Scenes, IObservable<Unit>> unloadingScenes = null;
+        protected Dictionary<TScenes, IObservable<SceneInstance<TScenes>>> loadingScenes = null;
+        protected Dictionary<TScenes, IObservable<Unit>> unloadingScenes = null;
 
-        protected SceneInstance currentScene = null;
-        protected ISceneArgument currentSceneArgument = null;
+        protected SceneInstance<TScenes> currentScene = null;
+        protected ISceneArgument<TScenes> currentSceneArgument = null;
 
-        protected List<SceneInstance> appendSceneInstances = null;
+        protected List<SceneInstance<TScenes>> appendSceneInstances = null;
 
-        protected List<ISceneArgument> history = null;
+        protected List<ISceneArgument<TScenes>> history = null;
 
-        private Subject<SceneInstance> onPrepare = null;
-        private Subject<SceneInstance> onPrepareComplete = null;
+        private Subject<SceneInstance<TScenes>> onPrepare = null;
+        private Subject<SceneInstance<TScenes>> onPrepareComplete = null;
 
-        private Subject<SceneInstance> onEnter = null;
-        private Subject<SceneInstance> onEnterComplete = null;
+        private Subject<SceneInstance<TScenes>> onEnter = null;
+        private Subject<SceneInstance<TScenes>> onEnterComplete = null;
 
-        private Subject<SceneInstance> onLeave = null;
-        private Subject<SceneInstance> onLeaveComplete = null;
+        private Subject<SceneInstance<TScenes>> onLeave = null;
+        private Subject<SceneInstance<TScenes>> onLeaveComplete = null;
 
-        private Subject<SceneInstance> onLoadScene = null;
-        private Subject<SceneInstance> onLoadSceneComplete = null;
+        private Subject<SceneInstance<TScenes>> onLoadScene = null;
+        private Subject<SceneInstance<TScenes>> onLoadSceneComplete = null;
         private Subject<Unit> onLoadError = null;
 
-        private Subject<SceneInstance> onUnloadScene = null;
-        private Subject<SceneInstance> onUnloadSceneComplete = null;
+        private Subject<SceneInstance<TScenes>> onUnloadScene = null;
+        private Subject<SceneInstance<TScenes>> onUnloadSceneComplete = null;
         private Subject<Unit> onUnloadError = null;
 
         //----- property -----
 
         /// <summary> 現在のシーン情報 </summary>
-        public SceneInstance Current { get { return currentScene; } }
+        public SceneInstance<TScenes> Current { get { return currentScene; } }
 
         /// <summary> 読み込み済みシーン情報 </summary>
-        public IReadOnlyList<SceneInstance> LoadedScenesInstances { get { return loadedScenes.Values.ToArray(); } }
+        public IReadOnlyList<SceneInstance<TScenes>> LoadedScenesInstances
+        {
+            get { return loadedScenes.Values.ToArray(); }
+        }
 
         /// <summary> 追加読み込み済みシーン情報 </summary>
-        public IReadOnlyList<SceneInstance> AppendSceneInstances { get { return appendSceneInstances; } }
+        public IReadOnlyList<SceneInstance<TScenes>> AppendSceneInstances
+        {
+            get { return appendSceneInstances; }
+        }
 
         /// <summary> 遷移中か </summary>
         public bool IsTransition { get; private set; }
 
         /// <summary> 遷移先のシーン </summary>
-        public Scenes? TransitionTarget { get; private set; }
+        public TScenes? TransitionTarget { get; private set; }
 
         /// <summary> キャッシュするシーン数 </summary>
         protected virtual int CacheSize { get { return 3; } }
 
         /// <summary> シーンを読み込む為の定義情報 </summary>
-        protected abstract Dictionary<Scenes, string> ScenePaths { get; }
+        protected abstract Dictionary<TScenes, string> ScenePaths { get; }
 
         //----- method -----
 
@@ -89,15 +96,15 @@ namespace Modules.Scene
         {
             transitionCancelSource = new CancellationTokenSource();
 
-            loadedScenes = new Dictionary<Scenes, SceneInstance>();
-            cacheScenes = new FixedQueue<SceneInstance>(CacheSize);
+            loadedScenes = new Dictionary<TScenes, SceneInstance<TScenes>>();
+            cacheScenes = new FixedQueue<SceneInstance<TScenes>>(CacheSize);
 
-            loadingScenes = new Dictionary<Scenes, IObservable<SceneInstance>>();
-            unloadingScenes = new Dictionary<Scenes, IObservable<Unit>>();
+            loadingScenes = new Dictionary<TScenes, IObservable<SceneInstance<TScenes>>>();
+            unloadingScenes = new Dictionary<TScenes, IObservable<Unit>>();
 
-            appendSceneInstances = new List<SceneInstance>();
+            appendSceneInstances = new List<SceneInstance<TScenes>>();
 
-            history = new List<ISceneArgument>();
+            history = new List<ISceneArgument<TScenes>>();
             waitHandlerIds = new HashSet<int>();
 
             capturedComponents = new Dictionary<Type, Behaviour>();
@@ -121,15 +128,15 @@ namespace Modules.Scene
             }
 
             var definition = ScenePaths.FirstOrDefault(x => x.Value == scene.path);
-            var identifier = definition.Equals(default(KeyValuePair<Scenes, string>)) ? null : (Scenes?)definition.Key;
+            var identifier = definition.Equals(default(KeyValuePair<TScenes, string>)) ? null : (TScenes?)definition.Key;
 
-            var sceneInstance = UnityUtility.FindObjectsOfInterface<ISceneBase>().FirstOrDefault();
+            var sceneInstance = UnityUtility.FindObjectsOfInterface<ISceneBase<TScenes>>().FirstOrDefault();
 
             CollectUniqueComponents(scene.GetRootGameObjects());
 
             if (sceneInstance != null)
             {
-                currentScene = new SceneInstance(identifier, sceneInstance, SceneManager.GetSceneAt(0));
+                currentScene = new SceneInstance<TScenes>(identifier, sceneInstance, SceneManager.GetSceneAt(0));
             }
 
             if (currentScene == null || currentScene.Instance == null)
@@ -143,7 +150,7 @@ namespace Modules.Scene
 
             var argumentType = currentScene.Instance.GetArgumentType();
 
-            var sceneArgument = Activator.CreateInstance(argumentType) as ISceneArgument;
+            var sceneArgument = Activator.CreateInstance(argumentType) as ISceneArgument<TScenes>;
 
             await currentScene.Instance.SetArgument(sceneArgument);
 
@@ -157,7 +164,7 @@ namespace Modules.Scene
 
             // 起動シーンフラグ設定.
 
-            var sceneBase = currentScene.Instance as SceneBase;
+            var sceneBase = currentScene.Instance as SceneBase<TScenes>;
 
             if (sceneBase != null)
             {
@@ -223,13 +230,14 @@ namespace Modules.Scene
         }
 
         /// <summary> 初期シーン登録時のイベント </summary>
-        protected virtual UniTask OnRegisterCurrentScene(SceneInstance currentInfo)
+        protected virtual UniTask OnRegisterCurrentScene(SceneInstance<TScenes> currentInfo)
         {
             return UniTask.CompletedTask;
         }
 
         /// <summary> シーン遷移. </summary>
-        public void Transition<TArgument>(TArgument sceneArgument, bool registerHistory = false, LoadSceneMode mode = LoadSceneMode.Additive) where TArgument : ISceneArgument
+        public void Transition<TArgument>(TArgument sceneArgument, bool registerHistory = false, LoadSceneMode mode = LoadSceneMode.Additive) 
+            where TArgument : ISceneArgument<TScenes>
         {
             // 遷移中は遷移不可.
             if (IsTransition) { return; }
@@ -279,7 +287,7 @@ namespace Modules.Scene
         {
             // ※ 呼び出し元でAddTo(this)されるとシーン遷移中にdisposableされてしまうのでIObservableで公開しない.
 
-            ISceneArgument argument = null;
+            ISceneArgument<TScenes> argument = null;
 
             // 遷移中は遷移不可.
             if (TransitionTarget != null) { return; }
@@ -306,7 +314,7 @@ namespace Modules.Scene
         /// </summary>
         public void ClearTransitionHistory()
         {
-            ISceneArgument currentEntity = null;
+            ISceneArgument<TScenes> currentEntity = null;
 
             // 現在のシーンの情報は残す.
             if (history.Any())
@@ -323,19 +331,19 @@ namespace Modules.Scene
         }
 
         /// <summary> シーン遷移の引数履歴取得 </summary>
-        public ISceneArgument[] GetArgumentHistory()
+        public ISceneArgument<TScenes>[] GetArgumentHistory()
         {
             return history.ToArray();
         }
 
         /// <summary> キャッシュが存在するか. </summary>
-        public bool HasCahce(Scenes scene)
+        public bool HasCache(TScenes scene)
         {
-            return cacheScenes.Any(x => x.Identifier == scene);
+            return cacheScenes.Any(x => x.Identifier.Equals(scene));
         }
 
         private async UniTask TransitionCore<TArgument>(TArgument argument, LoadSceneMode mode, bool isSceneBack, bool registerHistory, CancellationToken cancelToken) 
-            where TArgument : ISceneArgument
+            where TArgument : ISceneArgument<TScenes>
         {
             if (!argument.Identifier.HasValue) { return; }
 
@@ -392,7 +400,7 @@ namespace Modules.Scene
 
             // Leave呼び出し対象.
 
-            var leaveScenes = new HashSet<SceneInstance> { prev };
+            var leaveScenes = new HashSet<SceneInstance<TScenes>> { prev };
 
             // Singleの場合はAppend済みのシーンも対象.
             if (mode == LoadSceneMode.Single)
@@ -446,7 +454,7 @@ namespace Modules.Scene
 
             if (mode == LoadSceneMode.Additive)
             {
-                bool IsUnloadTarget(SceneInstance sceneInstance)
+                bool IsUnloadTarget(SceneInstance<TScenes> sceneInstance)
                 {
                     // SceneBaseクラスが存在しない.
                     if (UnityUtility.IsNull(sceneInstance.Instance)) { return true; }
@@ -457,13 +465,13 @@ namespace Modules.Scene
                     result &= sceneInstance != prev;
 
                     // 遷移先のシーンではない.
-                    result &= sceneInstance.Identifier != TransitionTarget;
+                    result &= !sceneInstance.Identifier.Equals(TransitionTarget);
 
                     // キャッシュ対象でない.
                     result &= cacheScenes.All(x => x != sceneInstance);
 
                     // 次のシーンのPreLoad対象ではない.
-                    result &= currentSceneArgument.PreLoadScenes.All(y => y != sceneInstance.Identifier);
+                    result &= currentSceneArgument.PreLoadScenes.All(y => !y.Equals(sceneInstance.Identifier));
 
                     return result;
                 };
@@ -712,7 +720,7 @@ namespace Modules.Scene
             var total = diagnostics.GetTime(TimeDiagnostics.Measure.Total);
             var detail = diagnostics.BuildDetailText();
 
-            var message = string.Format("{0} → {1} ({2:F2}ms)\n\n{3}", prevScene, nextScene, total, detail);
+            var message = $"{prevScene} → {nextScene} ({total:F2}ms)\n\n{detail}";
 
             UnityConsole.Event(ConsoleEventName, ConsoleEventColor, message);
 
@@ -749,7 +757,7 @@ namespace Modules.Scene
 
         #region Scene Load
         
-        private IObservable<SceneInstance> LoadScene(Scenes identifier, LoadSceneMode mode)
+        private IObservable<SceneInstance<TScenes>> LoadScene(TScenes identifier, LoadSceneMode mode)
         {
             var observable = loadingScenes.GetValueOrDefault(identifier);
 
@@ -766,7 +774,7 @@ namespace Modules.Scene
             return observable;
         }
 
-        private async UniTask<SceneInstance> LoadSceneCore(Scenes identifier, LoadSceneMode mode)
+        private async UniTask<SceneInstance<TScenes>> LoadSceneCore(TScenes identifier, LoadSceneMode mode)
         {
             var sceneInstance = loadedScenes.GetValueOrDefault(identifier);
 
@@ -778,7 +786,7 @@ namespace Modules.Scene
                 {
                     if (!s.IsValid()){ return; }
                     
-                    sceneInstance = new SceneInstance(identifier, FindSceneObject(s), s);
+                    sceneInstance = new SceneInstance<TScenes>(identifier, FindSceneObject(s), s);
 
                     switch (m)
                     {
@@ -853,7 +861,7 @@ namespace Modules.Scene
 
                     var tasks = new List<UniTask>();
 
-                    var sceneBase = currentScene.Instance as SceneBase;
+                    var sceneBase = currentScene.Instance as SceneBase<TScenes>;
 
                     if (sceneBase != null)
                     {
@@ -892,7 +900,7 @@ namespace Modules.Scene
             return sceneInstance;
         }
 
-        private void OnLoadError(Exception exception, Scenes? identifier)
+        private void OnLoadError(Exception exception, TScenes? identifier)
         {
             Debug.LogErrorFormat("Load scene error : {0}", identifier);
 
@@ -904,14 +912,14 @@ namespace Modules.Scene
             }
         }
 
-        public IObservable<SceneInstance> OnLoadSceneAsObservable()
+        public IObservable<SceneInstance<TScenes>> OnLoadSceneAsObservable()
         {
-            return onLoadScene ?? (onLoadScene = new Subject<SceneInstance>());
+            return onLoadScene ?? (onLoadScene = new Subject<SceneInstance<TScenes>>());
         }
 
-        public IObservable<SceneInstance> OnLoadSceneCompleteAsObservable()
+        public IObservable<SceneInstance<TScenes>> OnLoadSceneCompleteAsObservable()
         {
-            return onLoadSceneComplete ?? (onLoadSceneComplete = new Subject<SceneInstance>());
+            return onLoadSceneComplete ?? (onLoadSceneComplete = new Subject<SceneInstance<TScenes>>());
         }
 
         public IObservable<Unit> OnLoadErrorAsObservable()
@@ -924,9 +932,9 @@ namespace Modules.Scene
         #region Scene Unload
 
         /// <summary> シーンを指定してアンロード. </summary>
-        public void UnloadScene(Scenes identifier)
+        public void UnloadScene(TScenes identifier)
         {
-            if ( currentScene.Identifier == identifier)
+            if (currentScene.Identifier.Equals(identifier))
             {
                 throw new ArgumentException("The current scene can not be unloaded");
             }
@@ -937,7 +945,7 @@ namespace Modules.Scene
             UnloadScene(sceneInstance).Subscribe().AddTo(Disposable);
         }
 
-        private IObservable<Unit> UnloadScene(SceneInstance sceneInstance)
+        private IObservable<Unit> UnloadScene(SceneInstance<TScenes> sceneInstance)
         {
             if (sceneInstance == null) { return Observable.ReturnUnit(); }
 
@@ -961,7 +969,7 @@ namespace Modules.Scene
             return observable;
         }
 
-        private async UniTask UnloadSceneCore(SceneInstance sceneInstance)
+        private async UniTask UnloadSceneCore(SceneInstance<TScenes> sceneInstance)
         {
             var scene = sceneInstance.GetScene();
 
@@ -1001,7 +1009,7 @@ namespace Modules.Scene
 
             var tasks = new List<UniTask>();
 
-            var sceneBase = sceneInstance.Instance as SceneBase;
+            var sceneBase = sceneInstance.Instance as SceneBase<TScenes>;
 
             if (sceneBase != null)
             {
@@ -1058,14 +1066,14 @@ namespace Modules.Scene
             }
         }
 
-        public IObservable<SceneInstance> OnUnloadSceneAsObservable()
+        public IObservable<SceneInstance<TScenes>> OnUnloadSceneAsObservable()
         {
-            return onUnloadScene ?? (onUnloadScene = new Subject<SceneInstance>());
+            return onUnloadScene ?? (onUnloadScene = new Subject<SceneInstance<TScenes>>());
         }
 
-        public IObservable<SceneInstance> OnUnloadSceneCompleteAsObservable()
+        public IObservable<SceneInstance<TScenes>> OnUnloadSceneCompleteAsObservable()
         {
-            return onUnloadSceneComplete ?? (onUnloadSceneComplete = new Subject<SceneInstance>());
+            return onUnloadSceneComplete ?? (onUnloadSceneComplete = new Subject<SceneInstance<TScenes>>());
         }
 
         public IObservable<Unit> OnUnloadErrorAsObservable()
@@ -1078,7 +1086,7 @@ namespace Modules.Scene
         #region Scene Preload
 
         /// <summary> 事前読み込み. </summary>
-        private async UniTask PreLoadScene(Scenes[] targetScenes)
+        private async UniTask PreLoadScene(TScenes[] targetScenes)
         {
             if (preLoadCancelSource != null && !preLoadCancelSource.IsCancellationRequested)
             {
@@ -1097,7 +1105,7 @@ namespace Modules.Scene
             foreach (var scene in targetScenes)
             {
                 // キャッシュ済みのシーンがある場合はプリロードしない.
-                if (cacheScenes.Any(x => x.Identifier == scene)) { continue; }
+                if (cacheScenes.Any(x => x.Identifier.Equals(scene))) { continue; }
 
                 try
                 {
@@ -1118,12 +1126,12 @@ namespace Modules.Scene
             var time = sw.Elapsed.TotalMilliseconds;
             var detail = builder.ToString();
 
-            var message = string.Format("PreLoad Complete ({0:F2}ms)\n\n{1}", time, detail);
+            var message = $"PreLoad Complete ({time:F2}ms)\n\n{detail}";
 
             UnityConsole.Event(ConsoleEventName, ConsoleEventColor, message);
         }
 
-        private async UniTask PreLoadCore(Scenes targetScene, StringBuilder builder)
+        private async UniTask PreLoadCore(TScenes targetScene, StringBuilder builder)
         {
             var sw = System.Diagnostics.Stopwatch.StartNew();
 
@@ -1140,7 +1148,7 @@ namespace Modules.Scene
 
             var time = sw.Elapsed.TotalMilliseconds;
 
-            builder.AppendLine(string.Format("{0} ({1:F2}ms)", targetScene, time));
+            builder.AppendLine($"{targetScene} ({time:F2}ms)");
         }
 
         #endregion
@@ -1156,7 +1164,7 @@ namespace Modules.Scene
         }
 
         /// <summary> キャッシュ済みのシーンをアンロード. </summary>
-        private void UnloadCacheScene(SceneInstance sceneInstance)
+        private void UnloadCacheScene(SceneInstance<TScenes> sceneInstance)
         {
             // ※ 現在のシーンは破棄できんないので再度キャッシュキューに登録しなおす.
 
@@ -1178,20 +1186,20 @@ namespace Modules.Scene
         #endregion
 
         /// <summary> シーンが展開済みか </summary>
-        public bool IsSceneLoaded(Scenes identifier)
+        public bool IsSceneLoaded(TScenes identifier)
         {
             return loadedScenes.ContainsKey(identifier);
         }
 
         /// <summary> シーンを取得 </summary>
-        public SceneInstance GetSceneInstance(Scenes identifier)
+        public SceneInstance<TScenes> GetSceneInstance(TScenes identifier)
         {
             return loadedScenes.GetValueOrDefault(identifier);
         }
 
-        private ISceneBase FindSceneObject(UnityEngine.SceneManagement.Scene scene)
+        private ISceneBase<TScenes> FindSceneObject(UnityEngine.SceneManagement.Scene scene)
         {
-            ISceneBase sceneBase = null;
+            ISceneBase<TScenes> sceneBase = null;
 
             if (!scene.isLoaded || !scene.IsValid()) { return null; }
 
@@ -1199,7 +1207,7 @@ namespace Modules.Scene
 
             foreach (var rootObject in rootObjects)
             {
-                sceneBase = UnityUtility.FindObjectOfInterface<ISceneBase>(rootObject);
+                sceneBase = UnityUtility.FindObjectOfInterface<ISceneBase<TScenes>>(rootObject);
 
                 if (sceneBase != null)
                 {
@@ -1245,42 +1253,42 @@ namespace Modules.Scene
 
         //====== Prepare Scene ======
 
-        public IObservable<SceneInstance> OnPrepareAsObservable()
+        public IObservable<SceneInstance<TScenes>> OnPrepareAsObservable()
         {
-            return onPrepare ?? (onPrepare = new Subject<SceneInstance>());
+            return onPrepare ?? (onPrepare = new Subject<SceneInstance<TScenes>>());
         }
 
-        public IObservable<SceneInstance> OnPrepareCompleteAsObservable()
+        public IObservable<SceneInstance<TScenes>> OnPrepareCompleteAsObservable()
         {
-            return onPrepareComplete ?? (onPrepareComplete = new Subject<SceneInstance>());
+            return onPrepareComplete ?? (onPrepareComplete = new Subject<SceneInstance<TScenes>>());
         }
 
         //====== Enter Scene ======
 
-        public IObservable<SceneInstance> OnEnterAsObservable()
+        public IObservable<SceneInstance<TScenes>> OnEnterAsObservable()
         {
-            return onEnter ?? (onEnter = new Subject<SceneInstance>());
+            return onEnter ?? (onEnter = new Subject<SceneInstance<TScenes>>());
         }
 
-        public IObservable<SceneInstance> OnEnterCompleteAsObservable()
+        public IObservable<SceneInstance<TScenes>> OnEnterCompleteAsObservable()
         {
-            return onEnterComplete ?? (onEnterComplete = new Subject<SceneInstance>());
+            return onEnterComplete ?? (onEnterComplete = new Subject<SceneInstance<TScenes>>());
         }
 
         //====== Leave Scene ======
 
-        public IObservable<SceneInstance> OnLeaveAsObservable()
+        public IObservable<SceneInstance<TScenes>> OnLeaveAsObservable()
         {
-            return onLeave ?? (onLeave = new Subject<SceneInstance>());
+            return onLeave ?? (onLeave = new Subject<SceneInstance<TScenes>>());
         }
 
-        public IObservable<SceneInstance> OnLeaveCompleteAsObservable()
+        public IObservable<SceneInstance<TScenes>> OnLeaveCompleteAsObservable()
         {
-            return onLeaveComplete ?? (onLeaveComplete = new Subject<SceneInstance>());
+            return onLeaveComplete ?? (onLeaveComplete = new Subject<SceneInstance<TScenes>>());
         }
 
-        protected abstract UniTask TransitionStart<TArgument>(TArgument sceneArgument, bool isSceneBack) where TArgument : ISceneArgument;
+        protected abstract UniTask TransitionStart<TArgument>(TArgument sceneArgument, bool isSceneBack) where TArgument : ISceneArgument<TScenes>;
 
-        protected abstract UniTask TransitionFinish<TArgument>(TArgument sceneArgument, bool isSceneBack) where TArgument : ISceneArgument;
+        protected abstract UniTask TransitionFinish<TArgument>(TArgument sceneArgument, bool isSceneBack) where TArgument : ISceneArgument<TScenes>;
     }
 }

@@ -11,7 +11,7 @@ using Extensions;
 
 namespace Modules.Scene
 {
-    public abstract partial class SceneManager<T>
+    public abstract partial class SceneManager<TInstance, TScenes>
     {
         //----- params -----
 

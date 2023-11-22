@@ -1,13 +1,13 @@
 ﻿
 using UnityEngine;
+using System;
 using System.Linq;
-using Constants;
 using Extensions;
 
 namespace Modules.Scene
 {
     /// <summary> シーン情報 </summary>
-    public sealed class SceneInstance
+    public sealed class SceneInstance<TScenes> where TScenes : struct, Enum
     {
         //----- params -----
 
@@ -19,15 +19,15 @@ namespace Modules.Scene
 
         //----- property -----
 
-        public Scenes? Identifier { get; private set; }
+        public TScenes? Identifier { get; private set; }
 
 		public bool IsEnable { get; private set; }
 
-        public ISceneBase Instance { get; private set; }
+        public ISceneBase<TScenes> Instance { get; private set; }
 
         //----- method -----
 
-        public SceneInstance(Scenes? identifier, ISceneBase instance, UnityEngine.SceneManagement.Scene? scene)
+        public SceneInstance(TScenes? identifier, ISceneBase<TScenes> instance, UnityEngine.SceneManagement.Scene? scene)
         {
             this.scene = scene;
             

@@ -5,7 +5,6 @@ using System;
 using System.Linq;
 using System.Collections.Generic;
 using System.Threading;
-using Constants;
 using Cysharp.Threading.Tasks;
 using UniRx;
 using Extensions;
@@ -14,7 +13,7 @@ using Modules.Scene.Diagnostics;
 
 namespace Modules.Scene
 {
-    public abstract partial class SceneManager<T>
+    public abstract partial class SceneManager<TInstance, TScenes>
     {
         //----- params -----
 
@@ -28,9 +27,10 @@ namespace Modules.Scene
         /// シーンを追加で読み込み.
         /// <para> Prepare, Enter, Leaveは自動で呼び出されないので自分で制御する </para>
         /// </summary>
-        public IObservable<SceneInstance> Append<TArgument>(TArgument sceneArgument, bool activeOnLoad = true) where TArgument : ISceneArgument
+        public IObservable<SceneInstance<TScenes>> Append<TArgument>(TArgument sceneArgument, bool activeOnLoad = true) 
+            where TArgument : ISceneArgument<TScenes>
         {
-            async UniTask SetArgumentCallback(SceneInstance sceneInstance)
+            async UniTask SetArgumentCallback(SceneInstance<TScenes> sceneInstance)
             {
                 if (sceneInstance == null){ return; }
 
@@ -46,17 +46,17 @@ namespace Modules.Scene
         /// シーンを追加で読み込み.
         /// <para> Prepare, Enter, Leaveは自動で呼び出されないので自分で制御する </para>
         /// </summary>
-        public IObservable<SceneInstance> Append(Scenes identifier, bool activeOnLoad = true)
+        public IObservable<SceneInstance<TScenes>> Append(TScenes identifier, bool activeOnLoad = true)
         {
             return ObservableEx.FromUniTask(cancelToken => AppendCore(identifier, activeOnLoad, null, cancelToken));
         }
 
-        private async UniTask<SceneInstance> AppendCore(Scenes? identifier, bool activeOnLoad, 
-                                                        Func<SceneInstance, UniTask> setArgumentCallback, CancellationToken cancelToken)
+        private async UniTask<SceneInstance<TScenes>> AppendCore(TScenes? identifier, bool activeOnLoad, Func<SceneInstance<TScenes>, 
+            UniTask> setArgumentCallback, CancellationToken cancelToken)
         {
             if (!identifier.HasValue) { return null; }
 
-            SceneInstance sceneInstance = null;
+            SceneInstance<TScenes> sceneInstance = null;
 
             var diagnostics = new TimeDiagnostics();
 
@@ -102,7 +102,7 @@ namespace Modules.Scene
         }
 
         /// <summary> 加算シーンをアンロード </summary>
-        public void UnloadAppendScene(ISceneBase scene, bool deactivateSceneObjects = true)
+        public void UnloadAppendScene(ISceneBase<TScenes> scene, bool deactivateSceneObjects = true)
         {
             var sceneInstance = appendSceneInstances.FirstOrDefault(x => x.Instance == scene);
 
@@ -112,7 +112,7 @@ namespace Modules.Scene
         }
 
         /// <summary> 加算シーンをアンロード </summary>
-        public void UnloadAppendScene(SceneInstance sceneInstance, bool deactivateSceneObjects = true)
+        public void UnloadAppendScene(SceneInstance<TScenes> sceneInstance, bool deactivateSceneObjects = true)
         {
             if (!appendSceneInstances.Contains(sceneInstance)){ return; }
 
@@ -128,7 +128,7 @@ namespace Modules.Scene
         }
 
         /// <summary> 加算シーン遷移 </summary>
-        public void AppendTransition<TArgument>(TArgument sceneArgument) where TArgument :ISceneArgument
+        public void AppendTransition<TArgument>(TArgument sceneArgument) where TArgument : ISceneArgument<TScenes>
         {
             // 遷移中は遷移不可.
             if (IsTransition) { return; }
@@ -141,7 +141,7 @@ namespace Modules.Scene
         }
 
         /// <summary> 強制加算シーン遷移 </summary>
-        public void ForceAppendTransition<TArgument>(TArgument sceneArgument) where TArgument :ISceneArgument
+        public void ForceAppendTransition<TArgument>(TArgument sceneArgument) where TArgument : ISceneArgument<TScenes>
         {
             TransitionCancel();
 
@@ -152,7 +152,7 @@ namespace Modules.Scene
                 .AddTo(transitionCancelSource.Token);
         }
 
-        private async UniTask AppendTransitionCore<TArgument>(TArgument sceneArgument, CancellationToken cancelToken) where TArgument :ISceneArgument
+        private async UniTask AppendTransitionCore<TArgument>(TArgument sceneArgument, CancellationToken cancelToken) where TArgument : ISceneArgument<TScenes>
         {
             try
             {
@@ -267,7 +267,7 @@ namespace Modules.Scene
         }
 
         /// <summary> 加算シーンアンロード遷移 </summary>
-        public void UnloadTransition(Scenes transitionScene, SceneInstance unloadSceneInstance)
+        public void UnloadTransition(TScenes transitionScene, SceneInstance<TScenes> unloadSceneInstance)
         {
             // 遷移中は遷移不可.
             if (IsTransition) { return; }
@@ -280,7 +280,7 @@ namespace Modules.Scene
         }
 
         /// <summary> 加算シーンアンロード遷移 </summary>
-        public void UnloadTransition(Scenes transitionScene, GameObject gameObject)
+        public void UnloadTransition(TScenes transitionScene, GameObject gameObject)
         {
             var sceneInstance = AppendSceneInstances.FirstOrDefault(x => x.GetScene() == gameObject.scene);
 
@@ -288,7 +288,7 @@ namespace Modules.Scene
         }
 
         /// <summary> 強制加算シーンアンロード遷移 </summary>
-        public void ForceUnloadTransition(Scenes transitionScene, SceneInstance unloadSceneInstance)
+        public void ForceUnloadTransition(TScenes transitionScene, SceneInstance<TScenes> unloadSceneInstance)
         {
             TransitionCancel();
 
@@ -299,7 +299,7 @@ namespace Modules.Scene
                 .AddTo(transitionCancelSource.Token);
         }
 
-        private async UniTask UnloadTransitionCore(Scenes transitionScene, SceneInstance sceneInstance, CancellationToken cancelToken)
+        private async UniTask UnloadTransitionCore(TScenes transitionScene, SceneInstance<TScenes> sceneInstance, CancellationToken cancelToken)
         {
             if (sceneInstance == null){ return; }
 
@@ -321,7 +321,7 @@ namespace Modules.Scene
 
                 diagnostics.Begin(TimeDiagnostics.Measure.Total);
 
-                ISceneArgument argument = null;
+                ISceneArgument<TScenes> argument = null;
 
                 if (scene != null && scene.Instance != null)
                 {
@@ -376,7 +376,7 @@ namespace Modules.Scene
 
                 if (cancelToken.IsCancellationRequested){ return; }
 
-                await TransitionFinish<ISceneArgument>(null, false);
+                await TransitionFinish<ISceneArgument<TScenes>>(null, false);
 
                 if (cancelToken.IsCancellationRequested){ return; }
 
@@ -408,7 +408,7 @@ namespace Modules.Scene
         }
 
         /// <summary> 加算シーンインスタンスを検索. </summary>
-        public SceneInstance FindAppendSceneInstance(GameObject target)
+        public SceneInstance<TScenes> FindAppendSceneInstance(GameObject target)
         {
             if (UnityUtility.IsNull(target)){ return null; }
 

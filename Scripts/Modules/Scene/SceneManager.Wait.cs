@@ -46,7 +46,7 @@ namespace Modules.Scene
         }
     }
 
-    public partial class SceneManager<T>
+    public partial class SceneManager<TInstance, TScenes>
     {
         //----- params -----
 
