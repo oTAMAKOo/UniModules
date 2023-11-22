@@ -126,36 +126,29 @@ namespace Modules.Sound
                     audioSourceList[soundType] = list;
                 }
 
-                var currentCount = list.Count;
                 var requireCount = maxSoundLimit.GetValueOrDefault(soundType);
 
                 var root = soundRoot.GetValueOrDefault(soundType);
 
                 // 足りない.
-                if (currentCount < requireCount)
+                while (list.Count < requireCount)
                 {
-                    for (var i = currentCount; i <= requireCount; i++)
-                    {
-                        var audioSource = UnityUtility.CreateGameObject<AudioSource>(root, SoundElement.EmptyName);
+                    var audioSource = UnityUtility.CreateGameObject<AudioSource>(root, SoundElement.EmptyName);
 
-                        audioSource.transform.Reset();
-                        audioSource.playOnAwake = false;
+                    audioSource.transform.Reset();
+                    audioSource.playOnAwake = false;
 
-                        list.Add(audioSource);
-                    }
+                    list.Add(audioSource);
                 }
 
                 // 多い.
-                if(requireCount < currentCount)
+                while (requireCount < list.Count)
                 {
-                    for (var i = requireCount; i <= currentCount; i++)
-                    {
-                        var target = GetUnuseAudioSource(soundType);
+                    var target = GetUnuseAudioSource(soundType);
 
-                        if (target == null){ break; }
+                    if (target == null){ break; }
 
-                        list.Remove(target);
-                    }
+                    list.Remove(target);
                 }
             }
         }
@@ -407,10 +400,33 @@ namespace Modules.Sound
 
         public async UniTask CrossFade(SoundElement inElement, SoundElement outElement, float duration)
         {
-            var fadeInTask = FadeIn(inElement, duration);
-            var fadeOutTask = FadeOut(outElement, duration);
+            inElement.Source.volume = 0;
 
-            await UniTask.WhenAll(fadeInTask, fadeOutTask);
+            if (!inElement.Source.isPlaying)
+            {
+                inElement.Source.Play();
+            }
+
+            var soundParam = GetSoundParam(inElement.Type);
+
+            var targetVolume = soundParam.volume;
+
+            var firstVol = outElement.Source.volume;
+            
+            for (var time = 0f; time < duration; time += Time.deltaTime)
+            {
+                var value = Mathf.Cos(time / duration * 2f);
+
+                inElement.Source.volume  = (1 - value) / 2 * targetVolume;
+                outElement.Source.volume = (1 + value) / 2 * firstVol;
+
+                await UniTask.NextFrame();
+            }
+    
+            inElement.Source.volume = targetVolume;
+            outElement.Source.volume = 0;
+
+            Stop(outElement);
         }
 
         /// <summary> 対象のサウンドが再生中か. </summary>
@@ -431,7 +447,7 @@ namespace Modules.Sound
 
             if (list == null){ return null; }
 
-            return list.FirstOrDefault(x => soundElements.All(y => y.Source != x));
+            return list.FirstOrDefault(x => soundElements.All(y => y.Source != x) && !x.isPlaying);
         }
     }
 }
