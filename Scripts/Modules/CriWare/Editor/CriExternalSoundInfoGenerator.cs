@@ -5,9 +5,14 @@ using System.Collections.Generic;
 using System.Security.Cryptography;
 using System.Text;
 using Cysharp.Threading.Tasks;
-using CriWare;
 using Extensions;
 using Modules.Devkit.Project;
+
+#if ENABLE_CRIWARE_ADX || ENABLE_CRIWARE_ADX_LE || ENABLE_CRIWARE_SOFDEC
+
+using CriWare;
+
+#endif
 
 namespace Modules.CriWare.Editor
 {
@@ -67,15 +72,25 @@ namespace Modules.CriWare.Editor
 
         private static async UniTask Initialize()
         {
+            #if ENABLE_CRIWARE_ADX || ENABLE_CRIWARE_ADX_LE || ENABLE_CRIWARE_SOFDEC
+
             if(CriWareInitializer.IsInitialized()){ return; }
 
             CriForceInitializer.Initialize();
 
             await UniTask.WaitUntil(() => CriWareInitializer.IsInitialized());
+
+            #else
+
+            await UniTask.NextFrame();
+
+            #endif
         }
 
         private static SoundInfo[] Build(string[] acbFiles)
         {
+            #if ENABLE_CRIWARE_ADX || ENABLE_CRIWARE_ADX_LE || ENABLE_CRIWARE_SOFDEC
+
             var projectResourceFolders = ProjectResourceFolders.Instance;
 
             var list = new List<SoundInfo>();
@@ -103,6 +118,12 @@ namespace Modules.CriWare.Editor
             }
 
             return list.OrderBy(x => x.LoadPath).ToArray();
+
+            #else
+
+            return new SoundInfo[0];
+
+            #endif
         }
 
         private static string CreateIdentifier(string loadPath, string cueName)

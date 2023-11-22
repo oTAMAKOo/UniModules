@@ -1,7 +1,12 @@
 
 using UnityEngine;
-using CriWare;
 using Extensions;
+
+#if ENABLE_CRIWARE_ADX || ENABLE_CRIWARE_ADX_LE || ENABLE_CRIWARE_SOFDEC
+
+using CriWare;
+
+#endif
 
 namespace Modules.CriWare
 {
