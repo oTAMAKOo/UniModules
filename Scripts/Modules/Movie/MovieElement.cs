@@ -53,8 +53,10 @@ namespace Modules.Movie
 
         //----- method -----
 
-        public MovieElement(Player moviePlayer, CriManaMovieMaterialBase criManaMovieMaterial, string moviePath)
+        public MovieElement(IMovieManagement movieManagement, Player moviePlayer, CriManaMovieMaterialBase criManaMovieMaterial, string moviePath)
         {
+            this.movieManagement = movieManagement;
+
             CriManaMovieMaterial = criManaMovieMaterial;
             MoviePath = moviePath;
             Player = moviePlayer;

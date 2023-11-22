@@ -14,7 +14,17 @@ using Modules.CriWare;
 
 namespace Modules.Movie
 {
-    public sealed class MovieManagement : Singleton<MovieManagement>
+    public interface IMovieManagement
+    {
+        void Play(MovieElement element, bool loop = false);
+
+        void Pause(MovieElement element, bool pause);
+
+        void Stop(MovieElement element);
+    }
+
+    public abstract class MovieManagement<TInstance, TMovie> : Singleton<TInstance>, IMovieManagement
+        where TInstance : MovieManagement<TInstance, TMovie>
     {
         //----- params -----
 
@@ -68,7 +78,7 @@ namespace Modules.Movie
             moviePlayer.SetFile(null, moviePath);
             moviePlayer.SetVolume(audioVolume);
 
-            var movieElement = new MovieElement(moviePlayer, movieController, moviePath);
+            var movieElement = new MovieElement(this, moviePlayer, movieController, moviePath);
 
             movieElements.Add(movieElement);
 
@@ -159,9 +169,9 @@ namespace Modules.Movie
 
         #region Play
 
-        public MovieElement Play(Movies.Mana type, CriManaMovieMaterialBase movieController, bool loop = false, Player.ShaderDispatchCallback shaderOverrideCallBack = null)
+        public MovieElement Play(TMovie mana, CriManaMovieMaterialBase movieController, bool loop = false, Player.ShaderDispatchCallback shaderOverrideCallBack = null)
         {
-            var info = Movies.GetManaInfo(type);
+            var info = GetManaInfo(mana);
 
             return info != null ? Play(info, movieController, loop, shaderOverrideCallBack) : null;
         }
@@ -274,6 +284,8 @@ namespace Modules.Movie
 
             movieElements.Clear();
         }
+
+        protected abstract ManaInfo GetManaInfo(TMovie mana);
     }
 }
 

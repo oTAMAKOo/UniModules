@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using Cysharp.Threading.Tasks;
+using UniRx;
 using Extensions;
 using Modules.Devkit.Console;
 
@@ -25,6 +26,8 @@ namespace Modules.ExternalAssets
         }
 
         //----- field -----
+
+        private Subject<Unit> onReleaseManagedAssets = null;
 
         //----- property -----
 
@@ -55,7 +58,10 @@ namespace Modules.ExternalAssets
         {
             if (LocalMode) { return; }
 
-            ReleaseManagedAssets();
+            if (onReleaseManagedAssets != null)
+            {
+                onReleaseManagedAssets.OnNext(Unit.Default);
+            }
 
             UnloadAllAssetBundles(false);
 
@@ -243,26 +249,9 @@ namespace Modules.ExternalAssets
             }
         }
 
-        /// <summary> 管理中のファイルを解放. </summary>
-        private void ReleaseManagedAssets()
+        public IObservable<Unit> OnReleaseManagedAssetsAsObservable()
         {
-            #if ENABLE_CRIWARE_ADX
-
-            if (Sound.SoundManagement.Exists)
-            {
-                Sound.SoundManagement.Instance.ReleaseAll();
-            }
-
-            #endif
-
-            #if ENABLE_CRIWARE_SOFDEC
-
-            if (Movie.MovieManagement.Exists)
-            {
-                Movie.MovieManagement.Instance.ReleaseAll();
-            }
-
-            #endif
+            return onReleaseManagedAssets ?? (onReleaseManagedAssets = new Subject<Unit>());
         }
     }
 }

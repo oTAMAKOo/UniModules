@@ -30,8 +30,8 @@ namespace Modules.Sound
         void SetVolume(SoundElement element, float volume);
     }
 
-    public abstract class SoundManagement<TInstance, TSoundEnum> : SoundManagementBase<TInstance, SoundParam, SoundElement>, ISoundManagement
-        where TInstance : SoundManagement<TInstance, TSoundEnum>
+    public abstract class SoundManagement<TInstance, TSound> : SoundManagementBase<TInstance, SoundParam, SoundElement>, ISoundManagement
+        where TInstance : SoundManagement<TInstance, TSound>
     {
         //----- params -----
 
@@ -113,7 +113,7 @@ namespace Modules.Sound
         }
         
         /// <summary> 内蔵アセットサウンドを再生. </summary>
-        public SoundElement Play(SoundType type, TSoundEnum cue, float? volume = null)
+        public SoundElement Play(SoundType type, TSound cue, float? volume = null)
         {
             var soundParam = GetSoundParam(type);
 
@@ -565,7 +565,7 @@ namespace Modules.Sound
             }
         }
 
-        protected abstract CueInfo GetCueInfo(TSoundEnum cue);
+        protected abstract CueInfo GetCueInfo(TSound cue);
     }
 }
 
