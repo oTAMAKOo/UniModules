@@ -14,6 +14,8 @@ namespace Modules.Sound
 
         //----- field -----
 
+        private ISoundManagement soundManagement = null;
+
         private CriAtomExPlayback playback;
         
         private Subject<CriAtomExSequencer.CriAtomExSequenceEventInfo> onSoundEvent = null;
@@ -38,8 +40,9 @@ namespace Modules.Sound
 
         //----- method -----
 
-        public SoundElement(SoundType type, SoundSheet soundSheet, CueInfo cueInfo, CriAtomExPlayback playback, float volume)
+        public SoundElement(ISoundManagement soundManagement, SoundType type, SoundSheet soundSheet, CueInfo cueInfo, CriAtomExPlayback playback, float volume)
         {
+            this.soundManagement = soundManagement;
             this.playback = playback;
 
             Type = type;
@@ -73,22 +76,16 @@ namespace Modules.Sound
 
         public void Stop(bool ignoresReleaseTime = false)
         {
-            var soundManagement = SoundManagement.Instance;
-
             soundManagement.Stop(this, ignoresReleaseTime);
         }
 
         public void Pause()
         {
-            var soundManagement = SoundManagement.Instance;
-
             soundManagement.Pause(this);
         }
 
         public void Resume(CriAtomEx.ResumeMode resumeMode = CriAtomEx.ResumeMode.AllPlayback)
         {
-            var soundManagement = SoundManagement.Instance;
-
             soundManagement.Resume(this, resumeMode);
         }
 
@@ -102,8 +99,6 @@ namespace Modules.Sound
 
         public void SetVolume(float volume)
         {
-            var soundManagement = SoundManagement.Instance;
-
             Volume = volume;
 
             soundManagement.SetVolume(this, Volume);

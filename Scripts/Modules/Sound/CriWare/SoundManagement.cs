@@ -19,7 +19,19 @@ namespace Modules.Sound
         public bool cancelIfPlaying = false;
     }
 
-    public sealed class SoundManagement : SoundManagementBase<SoundManagement, SoundParam, SoundElement>
+    public interface ISoundManagement
+    {
+        void Pause(SoundElement element);
+
+        void Resume(SoundElement element, CriAtomEx.ResumeMode resumeMode = CriAtomEx.ResumeMode.AllPlayback);
+
+        void Stop(SoundElement element, bool ignoresReleaseTime = false);
+
+        void SetVolume(SoundElement element, float volume);
+    }
+
+    public abstract class SoundManagement<TInstance, TSoundEnum> : SoundManagementBase<TInstance, SoundParam, SoundElement>, ISoundManagement
+        where TInstance : SoundManagement<TInstance, TSoundEnum>
     {
         //----- params -----
 
@@ -43,7 +55,7 @@ namespace Modules.Sound
 
         //----- method -----
 
-        private SoundManagement()
+        protected SoundManagement()
         {
             ReleaseTime = DefaultReleaseTime;
 
@@ -101,10 +113,11 @@ namespace Modules.Sound
         }
         
         /// <summary> 内蔵アセットサウンドを再生. </summary>
-        public SoundElement Play(SoundType type, Sounds.Cue cue, float? volume = null)
+        public SoundElement Play(SoundType type, TSoundEnum cue, float? volume = null)
         {
             var soundParam = GetSoundParam(type);
-            var info = Sounds.GetCueInfo(cue);
+
+            var info = GetCueInfo(cue);
 
             if (soundParam != null && soundParam.cancelIfPlaying)
             {
@@ -413,7 +426,7 @@ namespace Modules.Sound
             // デフォルトに戻す.
             ApplySoundParam();
 
-            var element = new SoundElement(type, soundSheet, info, playback, volume);
+            var element = new SoundElement(this, type, soundSheet, info, playback, volume);
 
             return element;
         }
@@ -551,6 +564,8 @@ namespace Modules.Sound
                 soundElement.InvokeSoundEvent(eventInfo);
             }
         }
+
+        protected abstract CueInfo GetCueInfo(TSoundEnum cue);
     }
 }
 
