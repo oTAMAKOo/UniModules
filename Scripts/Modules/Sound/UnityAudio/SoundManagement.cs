@@ -400,31 +400,39 @@ namespace Modules.Sound
 
         public async UniTask CrossFade(SoundElement inElement, SoundElement outElement, float duration)
         {
-            inElement.Source.volume = 0;
-
-            if (!inElement.Source.isPlaying)
+            if (inElement == null)
             {
-                inElement.Source.Play();
+                inElement.Source.volume = 0;
+
+                if (!inElement.Source.isPlaying)
+                {
+                    inElement.Source.Play();
+                }
+
+                var soundParam = GetSoundParam(inElement.Type);
+
+                var targetVolume = soundParam.volume;
+
+                var firstVol = outElement.Source.volume;
+
+                for (var time = 0f; time < duration; time += Time.deltaTime)
+                {
+                    var value = Mathf.Cos(time / duration * 2f);
+
+                    inElement.Source.volume = (1 - value) / 2 * targetVolume;
+                    outElement.Source.volume = (1 + value) / 2 * firstVol;
+
+                    await UniTask.NextFrame();
+                }
+
+                inElement.Source.volume = targetVolume;
+
+                outElement.Source.volume = 0f;
             }
-
-            var soundParam = GetSoundParam(inElement.Type);
-
-            var targetVolume = soundParam.volume;
-
-            var firstVol = outElement.Source.volume;
-            
-            for (var time = 0f; time < duration; time += Time.deltaTime)
+            else
             {
-                var value = Mathf.Cos(time / duration * 2f);
-
-                inElement.Source.volume  = (1 - value) / 2 * targetVolume;
-                outElement.Source.volume = (1 + value) / 2 * firstVol;
-
-                await UniTask.NextFrame();
+                await FadeOut(outElement, duration);
             }
-    
-            inElement.Source.volume = targetVolume;
-            outElement.Source.volume = 0;
 
             Stop(outElement);
         }
