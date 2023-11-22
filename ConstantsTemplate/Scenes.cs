@@ -1,5 +1,5 @@
 ﻿
-#if UNIMODULE_DUMMY
+#if UNIMODULE_CONSTANTS_TEMPLATE
 
 using System.Collections.Generic;
 

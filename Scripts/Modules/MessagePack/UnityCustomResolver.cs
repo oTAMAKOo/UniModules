@@ -1,4 +1,4 @@
-﻿
+
 using MessagePack;
 using MessagePack.Formatters;
 using MessagePack.Resolvers;
@@ -50,6 +50,8 @@ namespace Modules.MessagePack
             }
         }
 
+        #if !UNITY_EDITOR
+
         private static IFormatterResolver[] Resolvers()
         {
             return new IFormatterResolver[]
@@ -67,6 +69,10 @@ namespace Modules.MessagePack
                 StandardResolver.Instance,
             };
         }
+
+        #endif
+
+        #if UNITY_EDITOR
 
         //=============================================================================
         // ※ Dynamic***系は実機(iOS/Android)で使えないのでEditor時のみ使用する.
@@ -101,5 +107,7 @@ namespace Modules.MessagePack
 				PrimitiveObjectResolver.Instance,
             };
         }
+
+        #endif
     }
 }

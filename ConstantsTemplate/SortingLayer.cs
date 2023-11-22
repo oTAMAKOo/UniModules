@@ -1,7 +1,5 @@
 ﻿
-#if UNIMODULE_DUMMY
-
-using System.Collections.Generic;
+#if UNIMODULE_CONSTANTS_TEMPLATE
 
 namespace Constants
 {
