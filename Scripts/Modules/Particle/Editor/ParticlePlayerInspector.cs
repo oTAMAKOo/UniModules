@@ -1,4 +1,4 @@
-﻿﻿﻿﻿
+﻿﻿﻿
 using UnityEngine;
 using UnityEditor;
 using UnityEditorInternal;
@@ -11,8 +11,6 @@ using UniRx;
 using Extensions;
 using Extensions.Devkit;
 using Modules.UI.Particle;
-
-using SortingLayer = Constants.SortingLayer;
 
 namespace Modules.Particle
 {
@@ -245,14 +243,19 @@ namespace Modules.Particle
 
                     EditorGUI.BeginChangeCheck();
 
-                    var sortingLayerState = (SortingLayer)EditorGUILayout.EnumPopup("SortingLayer", instance.SortingLayer);
+                    var allSortingLayers = SortingLayer.layers;
+
+                    var index = allSortingLayers.IndexOf(x => x.value == instance.SortingLayer);
+                    var labels = allSortingLayers.Select(x => x.name).ToArray();
+
+                    index = EditorGUILayout.Popup("SortingLayer", index, labels);
 
                     if (EditorGUI.EndChangeCheck())
                     {
                         UnityEditorUtility.RegisterUndo(instance);
 
                         Reflection.InvokePrivateMethod(instance, "RunCollectContents");
-                        instance.SortingLayer = sortingLayerState;
+                        instance.SortingLayer = allSortingLayers[index].value;
                     }
 
                     EditorLayoutTools.SetLabelWidth(150f);

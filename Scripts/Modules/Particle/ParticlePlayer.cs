@@ -1,4 +1,4 @@
-﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿
+﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿
 using UnityEngine;
 using Unity.Linq;
 using System;
@@ -7,8 +7,6 @@ using System.Linq;
 using Cysharp.Threading.Tasks;
 using UniRx;
 using Extensions;
-
-using SortingLayer = Constants.SortingLayer;
 
 namespace Modules.Particle
 {
@@ -97,7 +95,7 @@ namespace Modules.Particle
         [SerializeField]
         private EndActionType endActionType = EndActionType.None;
         [SerializeField]
-        private SortingLayer sortingLayer = SortingLayer.Default;
+        private int sortingLayer = 0;
         [SerializeField]
         private bool ignoreTimeScale = false;
         [SerializeField]
@@ -165,7 +163,7 @@ namespace Modules.Particle
         
         public float CurrentTime { get { return currentTime; } }
 
-        public SortingLayer SortingLayer
+        public int SortingLayer
         {
             get { return sortingLayer; }
             set
@@ -753,13 +751,13 @@ namespace Modules.Particle
             }
         }
 
-        private void ApplySortingLayer(SortingLayer newValue)
+        private void ApplySortingLayer(int newValue)
         {
             if (particleInfos != null)
             {
                 foreach (var info in particleInfos)
                 {
-                    info.Renderer.sortingLayerID = (int)newValue;
+                    info.Renderer.sortingLayerID = newValue;
                 }
             }
         }

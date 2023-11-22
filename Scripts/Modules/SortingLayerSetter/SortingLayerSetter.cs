@@ -1,4 +1,4 @@
-﻿﻿﻿
+﻿﻿
 using UnityEngine;
 using Unity.Linq;
 using Extensions;
@@ -10,8 +10,8 @@ namespace Modules.SortingLayerSetter
     {
         //----- field -----
 
-        [SerializeField]
-        private Constants.SortingLayer sortingLayer = Constants.SortingLayer.Default;
+        [SerializeField, HideInInspector]
+        private int sortingLayer = 0;
         [SerializeField]
         private int sortingOrder = 0;
         [SerializeField]
@@ -19,7 +19,7 @@ namespace Modules.SortingLayerSetter
 
         //----- property -----
 
-        public Constants.SortingLayer SortingLayer
+        public int SortingLayer
         {
             get { return sortingLayer; }
             set
