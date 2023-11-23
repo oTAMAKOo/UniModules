@@ -396,9 +396,14 @@ namespace Modules.Sound
             await tweener.Play();
         }
 
-        public async UniTask FadeOut(SoundElement element, float duration)
+        public async UniTask FadeOut(SoundElement element, float duration, bool fadeEndStop = true)
         {
             var tweener = DOTween.To(() => element.Volume, x => element.Volume = x, 0f, duration);
+
+            if (fadeEndStop)
+            {
+                tweener = tweener.OnComplete(() => Stop(element));
+            }
 
             await tweener.Play();
         }
