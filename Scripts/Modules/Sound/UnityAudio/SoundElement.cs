@@ -8,7 +8,7 @@ using UniRx;
 
 namespace Modules.Sound
 {
-    public sealed class SoundElement : ISoundElement
+    public class SoundElement : ISoundElement
     {
         //----- params -----
 
@@ -30,13 +30,13 @@ namespace Modules.Sound
 
         public AudioClip Clip { get; private set; }
 
-        public bool IsPlaying { get; private set; }
+        public float? FinishTime { get; protected set; }
 
-        public bool IsPause { get; private set; }
+        public virtual bool IsPlaying { get; protected set; }
 
-        public float? FinishTime { get; private set; }
+        public virtual bool IsPause { get; protected set; }
 
-        public float Volume
+        public virtual float Volume
         {
             get { return Source.volume; }
             set { Source.volume = value; }
@@ -51,13 +51,44 @@ namespace Modules.Sound
             Type = type;
             Source = source;
             Clip = clip;
-            
-            Source.transform.name = $"[{type}] {clip.name}";
-            Source.transform.Reset();
-            Source.clip = Clip;
+
+            if (Source != null)
+            {
+                Source.transform.name = $"[{type}] {clip.name}";
+                Source.transform.Reset();
+                Source.clip = Clip;
+            }
         }
 
-        public void Update()
+        public virtual void Play()
+        {
+            if (Source == null){ return; }
+
+            Source.Play();
+        }
+
+        public virtual void Stop()
+        {
+            if (Source == null){ return; }
+
+            Source.Stop();
+        }
+
+        public virtual void Pause()
+        {
+            if (Source == null){ return; }
+
+            Source.Pause();
+        }
+
+        public virtual void UnPause()
+        {
+            if (Source == null){ return; }
+
+            Source.UnPause();
+        }
+
+        public virtual void Update()
         {
             if (FinishTime.HasValue) { return; }
 

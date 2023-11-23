@@ -231,7 +231,7 @@ namespace Modules.Sound
                 element.Volume = soundParam.volume;
             }
 
-            element.Source.Play();
+            element.Play();
 
             element.Update();
 
@@ -239,7 +239,7 @@ namespace Modules.Sound
                 .Subscribe(_ => soundElements.Remove(element))
                 .AddTo(Disposable);
             
-            soundElements.Add(element);
+            AddSoundElement(element);
 
             framePlayedAudioClips.Add(Tuple.Create(type, clip));
 
@@ -289,7 +289,7 @@ namespace Modules.Sound
 
             if (!element.IsPause){ return; }
 
-            element.Source.UnPause();
+            element.UnPause();
 
             element.Update();
 
@@ -313,7 +313,7 @@ namespace Modules.Sound
         {
             if (element == null){ return; }
             
-            element.Source.Stop();
+            element.Stop();
 
             element.Update();
 
@@ -337,10 +337,15 @@ namespace Modules.Sound
             }
         }
 
+        public void AddSoundElement(SoundElement element)
+        {
+            soundElements.Add(element);
+        }
+
         /// <summary> 個別に音量変更. </summary>
         public void SetVolume(SoundElement element, float value)
         {
-            element.Source.volume = value;
+            element.Volume = value;
         }
 
         public void ReleaseAll(bool force = false)
@@ -386,14 +391,14 @@ namespace Modules.Sound
 
         public async UniTask FadeIn(SoundElement element, float duration)
         {
-            var tweener = DOTween.To(() => element.Source.volume, x => element.Source.volume = x, 1f, duration);
+            var tweener = DOTween.To(() => element.Volume, x => element.Volume = x, 1f, duration);
 
             await tweener.Play();
         }
 
         public async UniTask FadeOut(SoundElement element, float duration)
         {
-            var tweener = DOTween.To(() => element.Source.volume, x => element.Source.volume = x, 0f, duration);
+            var tweener = DOTween.To(() => element.Volume, x => element.Volume = x, 0f, duration);
 
             await tweener.Play();
         }
@@ -402,32 +407,32 @@ namespace Modules.Sound
         {
             if (inElement == null)
             {
-                inElement.Source.volume = 0;
+                inElement.Volume = 0;
 
-                if (!inElement.Source.isPlaying)
+                if (!inElement.IsPlaying)
                 {
-                    inElement.Source.Play();
+                    inElement.Play();
                 }
 
                 var soundParam = GetSoundParam(inElement.Type);
 
                 var targetVolume = soundParam.volume;
 
-                var firstVol = outElement.Source.volume;
+                var firstVol = outElement.Volume;
 
                 for (var time = 0f; time < duration; time += Time.deltaTime)
                 {
                     var value = Mathf.Cos(time / duration * 2f);
 
-                    inElement.Source.volume = (1 - value) / 2 * targetVolume;
-                    outElement.Source.volume = (1 + value) / 2 * firstVol;
+                    inElement.Volume = (1 - value) / 2 * targetVolume;
+                    outElement.Volume = (1 + value) / 2 * firstVol;
 
                     await UniTask.NextFrame();
                 }
 
-                inElement.Source.volume = targetVolume;
+                inElement.Volume = targetVolume;
 
-                outElement.Source.volume = 0f;
+                outElement.Volume = 0f;
             }
             else
             {
