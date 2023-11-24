@@ -14,6 +14,8 @@ namespace Modules.Movie
         //----- params -----
 
         //----- field -----
+
+        private IMovieManagement movieManagement = null;
         
         private Subject<Unit> onFinish = null;
 
@@ -66,22 +68,16 @@ namespace Modules.Movie
 
         public void Play(bool loop = false)
         {
-            var movieManagement = MovieManagement.Instance;
-
             movieManagement.Play(this, loop);
         }
 
         public void Pause(bool pause)
         {
-            var movieManagement = MovieManagement.Instance;
-
             movieManagement.Pause(this, pause);
         }
 
         public void Stop()
         {
-            var movieManagement = MovieManagement.Instance;
-
             movieManagement.Stop(this);
         }
 

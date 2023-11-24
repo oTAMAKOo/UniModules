@@ -105,9 +105,9 @@ namespace Modules.Movie
         #region Prepare
 
         /// <summary> 動画再生準備. </summary>
-        public MovieElement Prepare(Movies.Mana type, CriManaMovieMaterialBase movieController, Player.ShaderDispatchCallback shaderOverrideCallBack = null) 
+        public MovieElement Prepare(TMovie mana, CriManaMovieMaterialBase movieController, Player.ShaderDispatchCallback shaderOverrideCallBack = null) 
         {
-            var movieInfo = Movies.GetManaInfo(type);
+            var movieInfo = GetManaInfo(mana);
 
             if (movieInfo == null){ return null; }
 
