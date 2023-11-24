@@ -19,7 +19,7 @@ namespace Modules.Sound
         public bool cancelIfPlaying = false;
     }
 
-    public sealed class SoundManagement : SoundManagementBase<SoundManagement, SoundParam, SoundElement>
+    public sealed class SoundManagement : SoundManagementCore<SoundManagement, SoundParam, SoundElement>
     {
         //----- params -----
 

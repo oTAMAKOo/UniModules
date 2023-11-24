@@ -23,8 +23,8 @@ namespace Modules.Movie
         void Stop(MovieElement element);
     }
 
-    public abstract class MovieManagement<TInstance, TMovie> : Singleton<TInstance>, IMovieManagement
-        where TInstance : MovieManagement<TInstance, TMovie>
+    public abstract class MovieManagementBase<TInstance, TMovie> : Singleton<TInstance>, IMovieManagement
+        where TInstance : MovieManagementBase<TInstance, TMovie>
     {
         //----- params -----
 

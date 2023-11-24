@@ -30,8 +30,8 @@ namespace Modules.Sound
         void SetVolume(SoundElement element, float volume);
     }
 
-    public abstract class SoundManagement<TInstance, TSound> : SoundManagementBase<TInstance, SoundParam, SoundElement>, ISoundManagement
-        where TInstance : SoundManagement<TInstance, TSound>
+    public abstract class SoundManagementBase<TInstance, TSound> : SoundManagementCore<TInstance, SoundParam, SoundElement>, ISoundManagement
+        where TInstance : SoundManagementBase<TInstance, TSound>
     {
         //----- params -----
 

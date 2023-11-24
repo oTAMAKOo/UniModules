@@ -13,8 +13,8 @@ namespace Modules.Sound
         void Update();
     }
 
-    public abstract class SoundManagementBase<TInstance, TSoundParam, TSoundElement> : Singleton<TInstance> 
-        where TInstance : SoundManagementBase<TInstance, TSoundParam, TSoundElement>
+    public abstract class SoundManagementCore<TInstance, TSoundParam, TSoundElement> : Singleton<TInstance> 
+        where TInstance : SoundManagementCore<TInstance, TSoundParam, TSoundElement>
         where TSoundParam : class, new()
         where TSoundElement : ISoundElement
     {
