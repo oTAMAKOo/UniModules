@@ -1,10 +1,10 @@
-﻿
+
 using System.Collections.Generic;
 using Modules.View;
 
 namespace Modules.Scene
 {
-	public abstract partial class SceneManager<TInstance, TScenes>
+	public abstract partial class SceneManagerBase<TInstance, TScenes>
 	{
         //----- params -----
 

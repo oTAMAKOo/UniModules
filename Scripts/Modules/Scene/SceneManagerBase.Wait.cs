@@ -1,4 +1,4 @@
-﻿
+
 using System;
 using System.Linq;
 using System.Collections.Generic;
@@ -46,7 +46,7 @@ namespace Modules.Scene
         }
     }
 
-    public partial class SceneManager<TInstance, TScenes>
+    public partial class SceneManagerBase<TInstance, TScenes>
     {
         //----- params -----
 

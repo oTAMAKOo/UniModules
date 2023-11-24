@@ -15,8 +15,8 @@ using Modules.Scene.Diagnostics;
 
 namespace Modules.Scene
 {
-    public abstract partial class SceneManager<TInstance, TScenes> : Singleton<TInstance>　
-        where TInstance : SceneManager<TInstance, TScenes>
+    public abstract partial class SceneManagerBase<TInstance, TScenes> : Singleton<TInstance>　
+        where TInstance : SceneManagerBase<TInstance, TScenes>
         where TScenes : struct, Enum
     {
         //----- params -----
@@ -90,7 +90,7 @@ namespace Modules.Scene
 
         //----- method -----
 
-        protected SceneManager() { }
+        protected SceneManagerBase() { }
 
         protected override void OnCreate()
         {
