@@ -42,7 +42,7 @@ namespace Modules.Movie
 
         //----- method -----
 
-        private MovieManagement() { }
+        protected MovieManagementBase() { }
 
         public void Initialize()
         {

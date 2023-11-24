@@ -55,7 +55,7 @@ namespace Modules.Sound
 
         //----- method -----
 
-        protected SoundManagement()
+        protected SoundManagementBase()
         {
             ReleaseTime = DefaultReleaseTime;
 
