@@ -4,6 +4,7 @@ using UnityEditor;
 using System;
 using System.IO;
 using System.Linq;
+using Cysharp.Threading.Tasks;
 using Extensions;
 using Extensions.Devkit;
 using Modules.Devkit.Console;
@@ -159,9 +160,7 @@ namespace Modules.TextData.Editor
             {
                 if (GUILayout.Button("Import"))
                 {
-                    var nowait = TextDataExcel.Import(contentType, true);
-
-                    UnityConsole.Info("TextData import record finish.");
+                    Import().Forget();
                 }
             }
 
@@ -171,13 +170,43 @@ namespace Modules.TextData.Editor
             {
                 if (GUILayout.Button("Export"))
                 {
-                    var nowait = TextDataExcel.Export(contentType, true);
-
-                    UnityConsole.Info("TextData export record finish.");
+                    Export().Forget();
                 }
             }
 
             GUILayout.Space(4f);
+        }
+
+        private async UniTask Import()
+        {
+            try
+            {
+                TextDataExcel.Importing = true;
+
+                await TextDataExcel.Import(contentType, true);
+
+                UnityConsole.Info("TextData import record finish.");
+            }
+            finally
+            {
+                TextDataExcel.Importing = false;
+            }
+        }
+
+        private async UniTask Export()
+        {
+            try
+            {
+                TextDataExcel.Exporting = true;
+
+                await TextDataExcel.Export(contentType, true);
+
+                UnityConsole.Info("TextData export record finish.");
+            }
+            finally
+            {
+                TextDataExcel.Exporting = false;
+            }
         }
 	}
 }

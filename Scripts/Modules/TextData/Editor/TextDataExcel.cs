@@ -35,6 +35,10 @@ namespace Modules.TextData.Editor
 
         //----- property -----
 
+        public static bool Importing { set; get; }
+
+        public static bool Exporting { set; get; }
+
         //----- method -----
 
         public static void Open(TextDataConfig.GenerateAssetSetting setting)

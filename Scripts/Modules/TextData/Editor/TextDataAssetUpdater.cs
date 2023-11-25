@@ -76,6 +76,8 @@ namespace Modules.TextData.Editor
 
             if (EditorApplication.isCompiling) { return; }
 
+            if (TextDataExcel.Importing || TextDataExcel.Exporting) { return; }
+
             if (nextCheckTime.HasValue)
             {
                 if (DateTime.Now < nextCheckTime) { return; }
