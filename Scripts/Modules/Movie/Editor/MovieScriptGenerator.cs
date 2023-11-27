@@ -8,8 +8,8 @@ using System.IO;
 using System.Text;
 using System.Text.RegularExpressions;
 using Extensions;
-using Modules.Devkit.Generators;
 using Modules.CriWare;
+using Modules.Devkit.Generators;
 using Modules.Devkit.Project;
 
 namespace Modules.Movie.Editor
@@ -27,8 +27,9 @@ namespace Modules.Movie.Editor
 using System.Collections.Generic;
 using CriWare;
 using Extensions;
+using Modules.Movie;
 
-namespace Modules.Movie
+namespace @NAMESPACE
 {
     public static partial class Movies
 	{
@@ -79,7 +80,7 @@ namespace Modules.Movie
 
         //----- method -----
 
-        public static void Generate(string scriptPath, string rootFolderPath, string rootFolderName)
+        public static void Generate(string scriptPath, string scriptNamespace, string rootFolderPath, string rootFolderName)
         {
             var projectUnityFolders = ProjectUnityFolders.Instance;
 
@@ -111,6 +112,7 @@ namespace Modules.Movie
 
             var script = ScriptTemplate;
 
+            script = Regex.Replace(script, "@NAMESPACE", scriptNamespace);
             script = Regex.Replace(script, "@ENUMS", enums.ToString());
             script = Regex.Replace(script, "@CONTENTS", contents.ToString());
             script = Regex.Replace(script, "@EDITOR_STREAMING_ASSETS_FOLDER_PATH", @"""" + editorStreamingAssetsFolderPath + @"""");

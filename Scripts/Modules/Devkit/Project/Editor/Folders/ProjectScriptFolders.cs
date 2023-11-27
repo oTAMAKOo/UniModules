@@ -19,13 +19,19 @@ namespace Modules.Devkit.Project
 		private Object scriptConstantsFolder = null;
 		[SerializeField]
 		private Object editorScriptFolder = null;
+        [SerializeField]
+        private string scriptConstantsNamespace = null;
 
 		//----- property -----
 		
 		public string ScriptPath { get { return AssetDatabase.GetAssetPath(scriptFolder); } }
+
 		public string ConstantsScriptPath { get { return AssetDatabase.GetAssetPath(scriptConstantsFolder); } }
-		public string EditorScriptPath { get { return AssetDatabase.GetAssetPath(editorScriptFolder); } }
+
+        public string EditorScriptPath { get { return AssetDatabase.GetAssetPath(editorScriptFolder); } }
         
+        public string ScriptConstantsNamespace { get { return scriptConstantsNamespace; } }
+
 		//----- method -----
 	}
 }

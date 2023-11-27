@@ -1,4 +1,4 @@
-﻿﻿
+﻿
 using UnityEngine;
 using UnityEditor;
 using UnityEditorInternal;
@@ -6,6 +6,7 @@ using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 using Extensions;
+using Modules.Devkit.Project;
 
 namespace Modules.Devkit.Generators
 {
@@ -19,7 +20,7 @@ namespace Modules.Devkit.Generators
 
 using System.Collections.Generic;
 
-namespace Constants
+namespace #NAMESPACE#
 {
     public enum Layer
     {
@@ -50,6 +51,8 @@ namespace Constants
 
         public static void Generate(string scriptPath)
         {
+            var projectScriptFolders = ProjectScriptFolders.Instance;
+
             var enums = new StringBuilder();
 
             var layers = InternalEditorUtility.layers.Select(c => new { var = ScriptGenerateUtility.RemoveInvalidChars(c), val = LayerMask.NameToLayer(c) }).ToArray();
@@ -67,6 +70,7 @@ namespace Constants
 
             var script = ScriptTemplate;
 
+            script = Regex.Replace(script, "#NAMESPACE#", projectScriptFolders.ScriptConstantsNamespace);
             script = Regex.Replace(script, "#ENUMS#", enums.ToString());
 
             script = script.FixLineEnd();

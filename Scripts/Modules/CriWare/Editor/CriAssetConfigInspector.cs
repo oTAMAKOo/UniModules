@@ -30,11 +30,32 @@ namespace Modules.CriWare.Editor
 
             serializedObject.Update();
 
+            // ScriptNamespace.
+
+            EditorGUILayout.Separator();
+
+            EditorGUI.BeginChangeCheck();
+
+            var scriptNamespace = EditorGUILayout.DelayedTextField("ScriptNamespace", instance.ScriptNamespace);
+
+            if (EditorGUI.EndChangeCheck())
+            {
+                UnityEditorUtility.RegisterUndo(instance);
+
+                Reflection.SetPrivateField(instance, "scriptNamespace", scriptNamespace);
+            }
+
+            EditorGUILayout.Separator();
+
+            // Sound.
+
             #if ENABLE_CRIWARE_ADX || ENABLE_CRIWARE_ADX_LE
 
             DrawSoundAssetConfigGUI(instance);
             
             #endif
+
+            // Movie.
 
             #if ENABLE_CRIWARE_SOFDEC
 

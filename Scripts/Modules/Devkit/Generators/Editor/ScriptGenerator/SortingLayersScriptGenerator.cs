@@ -1,10 +1,11 @@
-﻿﻿﻿
+﻿﻿
 using System.Reflection;
 using System.Text;
 using System.Text.RegularExpressions;
 using UnityEditor;
 using UnityEditorInternal;
 using Extensions;
+using Modules.Devkit.Project;
 
 namespace Modules.Devkit.Generators
 {
@@ -16,7 +17,7 @@ namespace Modules.Devkit.Generators
 
 using System.Collections.Generic;
 
-namespace Constants
+namespace #NAMESPACE#
 {
     public enum SortingLayer
     {
@@ -26,6 +27,8 @@ namespace Constants
 ";
         public static void Generate(string scriptPath)
         {
+            var projectScriptFolders = ProjectScriptFolders.Instance;
+
             var internalEditorUtilityType = typeof(InternalEditorUtility);
             var sortingLayerNamesProperty = internalEditorUtilityType.GetProperty("sortingLayerNames", BindingFlags.Static | BindingFlags.NonPublic);
             var sortingLayerNames = (string[])sortingLayerNamesProperty.GetValue(null, new object[0]);
@@ -48,6 +51,8 @@ namespace Constants
 
 
             var script = ScriptTemplate;
+
+            script = Regex.Replace(script, "#NAMESPACE#", projectScriptFolders.ScriptConstantsNamespace);
             script = Regex.Replace(script, "#ENUMS#", enums.ToString());
 
             script = script.FixLineEnd();

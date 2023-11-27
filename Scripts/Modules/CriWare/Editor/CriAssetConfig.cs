@@ -22,6 +22,9 @@ namespace Modules.CriWare.Editor
 
         //----- field -----
 
+        [SerializeField]
+        private string scriptNamespace = null;
+
         //---------------------------------------
         // Sound.
         //---------------------------------------
@@ -57,6 +60,8 @@ namespace Modules.CriWare.Editor
         #endif
 
         //----- property -----
+
+        public string ScriptNamespace { get { return scriptNamespace; } }
 
         #if ENABLE_CRIWARE_ADX || ENABLE_CRIWARE_ADX_LE
 

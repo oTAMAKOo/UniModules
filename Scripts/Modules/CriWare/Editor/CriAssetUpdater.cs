@@ -72,6 +72,7 @@ namespace Modules.CriWare.Editor
         /// </summary>
         private static void UpdateSoundAssets(CriAssetConfig config, string scriptPath, string streamingAssetFolderName)
         {
+            var scriptNamespace = config.ScriptNamespace;
 			var folderName = config.SoundFolderName;
 
 			var assetExtensions = new string[] { CriAssetDefinition.AcbExtension, CriAssetDefinition.AwbExtension };
@@ -95,7 +96,7 @@ namespace Modules.CriWare.Editor
 
             if (updateScript)
             {
-				SoundScriptGenerator.Generate(scriptPath, assetFolderPath, folderName);
+				SoundScriptGenerator.Generate(scriptPath, scriptNamespace, assetFolderPath, folderName);
             }
         }
 
@@ -108,6 +109,7 @@ namespace Modules.CriWare.Editor
         /// </summary>
         private static void UpdateMovieAssets(CriAssetConfig config, string scriptPath, string streamingAssetFolderName)
         {
+            var scriptNamespace = config.ScriptNamespace;
 			var folderName = config.MovieFolderName;
 
 			var assetExtensions = new string[] { CriAssetDefinition.UsmExtension };
@@ -129,7 +131,7 @@ namespace Modules.CriWare.Editor
 
 			if (updateScript)
             {
-                MovieScriptGenerator.Generate(scriptPath, assetFolderPath, folderName);
+                MovieScriptGenerator.Generate(scriptPath, scriptNamespace, assetFolderPath, folderName);
             }
         }
 

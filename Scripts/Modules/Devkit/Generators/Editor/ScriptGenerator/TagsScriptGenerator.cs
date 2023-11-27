@@ -1,8 +1,9 @@
-﻿﻿
+﻿
 using System.Text;
 using System.Text.RegularExpressions;
 using UnityEditorInternal;
 using Extensions;
+using Modules.Devkit.Project;
 
 namespace Modules.Devkit.Generators
 {
@@ -16,7 +17,7 @@ namespace Modules.Devkit.Generators
 
 using System.Collections.Generic;
 
-namespace Constants
+namespace #NAMESPACE#
 {
 	public static class Tags
 	{
@@ -43,6 +44,8 @@ namespace Constants
 
         public static void Generate(string scriptPath)
         {
+            var projectScriptFolders = ProjectScriptFolders.Instance;
+
             var fields = new StringBuilder();
             var all = new StringBuilder();
 
@@ -63,6 +66,7 @@ namespace Constants
 
             var script = ScriptTemplate;
 
+            script = Regex.Replace(script, "#NAMESPACE#", projectScriptFolders.ScriptConstantsNamespace);
             script = Regex.Replace(script, "#FIELDS#", fields.ToString());
             script = Regex.Replace(script, "#ALL#", all.ToString());
 

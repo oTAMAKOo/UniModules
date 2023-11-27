@@ -9,9 +9,9 @@ using System.Text;
 using System.Text.RegularExpressions;
 using CriWare;
 using Extensions;
-using Modules.Devkit.Generators;
 using Modules.CriWare;
 using Modules.CriWare.Editor;
+using Modules.Devkit.Generators;
 
 namespace Modules.Sound.Editor
 {
@@ -30,8 +30,9 @@ using System.Linq;
 using System.Collections.Generic;
 using CriWare;
 using Extensions;
+using Modules.Sound;
 
-namespace Modules.Sound
+namespace @NAMESPACE
 {
     public static partial class Sounds
     {
@@ -98,7 +99,7 @@ namespace Modules.Sound
 
         //----- method -----
 
-        public static void Generate(string scriptPath, string assetFolderPath, string rootFolderName)
+        public static void Generate(string scriptPath, string scriptNamespace, string assetFolderPath, string rootFolderName)
         {
             var infos = LoadAcbInfo(assetFolderPath);
 
@@ -126,6 +127,7 @@ namespace Modules.Sound
 
             var script = ScriptTemplate;
 
+            script = Regex.Replace(script, "@NAMESPACE", scriptNamespace);
             script = Regex.Replace(script, "@ENUMS", enums.ToString());
             script = Regex.Replace(script, "@CONTENTS", contents.ToString());
 
