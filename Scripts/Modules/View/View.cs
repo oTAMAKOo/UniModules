@@ -23,14 +23,14 @@ namespace Modules.View
 
         private static Dictionary<MonoBehaviour, ViewModel> viewModelCache = null;
 
+        static ViewExtensions()
+        {
+            viewModelCache = new Dictionary<MonoBehaviour, ViewModel>();
+        }
+
         public static TViewModel GetViewModel<TViewModel>(this IView<TViewModel> view) where TViewModel : ViewModel, new()
         {
-            if (viewModelCache == null)
-            {
-                viewModelCache = new Dictionary<MonoBehaviour, ViewModel>();
-            }
-
-            CacheRefresh();
+            CleanCache();
 
             var monoBehaviour = view as MonoBehaviour;
 
@@ -40,7 +40,10 @@ namespace Modules.View
 
             if (viewModel != null)
             {
-                if (viewModel is TViewModel) { return (TViewModel)viewModel; }
+                if (viewModel is TViewModel)
+                {
+                    return (TViewModel)viewModel;
+                }
             }
 
             if (viewModel != null && viewModel.IsDisposed)
@@ -69,7 +72,19 @@ namespace Modules.View
             return viewModel as TViewModel;
         }
 
-        private static void CacheRefresh()
+        public static void RefreshViewModel<TViewModel>(this IView<TViewModel> view) where TViewModel : ViewModel, new()
+        {
+            var monoBehaviour = view as MonoBehaviour;
+
+            if (monoBehaviour == null) { return; }
+
+            if (viewModelCache.ContainsKey(monoBehaviour))
+            {
+                viewModelCache.Remove(monoBehaviour);
+            }
+        }
+
+        private static void CleanCache()
         {
             var frameCount = Time.frameCount;
 
