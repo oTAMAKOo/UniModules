@@ -1,49 +1,58 @@
 ﻿
 using UnityEditor;
 using System.IO;
+using System.Collections.Generic;
+using Cysharp.Threading.Tasks;
 using TMPro;
 using Extensions;
 using Extensions.Devkit;
 
 namespace Modules.Devkit.TextMeshPro
 {
-	public sealed class DynamicFontAssetModificationProcessor : UnityEditor.AssetModificationProcessor
-	{
-		private const string FontAssetExtension = ".asset";
+    public sealed class DynamicFontAssetModificationProcessor : UnityEditor.AssetModificationProcessor
+    {
+        private const string FontAssetExtension = ".asset";
 
-		static string[] OnWillSaveAssets(string[] paths)
-		{
-			using (new AssetEditingScope())
-			{
-				foreach (var path in paths)
-				{
-					var extension = Path.GetExtension(path);
+        private static HashSet<TMP_FontAsset> waitForProcess = new HashSet<TMP_FontAsset>();
 
-					if (extension != FontAssetExtension){ continue; }
-
-					var fontAsset = AssetDatabase.LoadAssetAtPath(path, typeof(TMP_FontAsset)) as TMP_FontAsset;
-
-					if (fontAsset == null){ continue; }
-				
-					if (fontAsset.atlasPopulationMode != AtlasPopulationMode.Dynamic){ continue; }
-					
-                    DelayCleanTMPFontAsset(fontAsset);
-				}
-			}
-
-			return paths;
-		}
-
-        private static void DelayCleanTMPFontAsset(TMP_FontAsset fontAsset)
+        static string[] OnWillSaveAssets(string[] paths)
         {
+            foreach (var path in paths)
+            {
+                var extension = Path.GetExtension(path);
+
+                if (extension != FontAssetExtension){ continue; }
+
+                var fontAsset = AssetDatabase.LoadAssetAtPath(path, typeof(TMP_FontAsset)) as TMP_FontAsset;
+
+                if (fontAsset == null){ continue; }
+				
+                if (fontAsset.atlasPopulationMode != AtlasPopulationMode.Dynamic){ continue; }
+					
+                DelayCleanTMPFontAsset(fontAsset).Forget();
+            }
+
+            return paths;
+        }
+
+        private static async UniTask DelayCleanTMPFontAsset(TMP_FontAsset fontAsset)
+        {
+            if (waitForProcess.Contains(fontAsset)){ return; }
+
+            waitForProcess.Add(fontAsset);
+
             if (fontAsset.glyphTable.IsEmpty()){ return; }
 
-            EditorApplication.delayCall += () =>
+            await UniTask.DelayFrame(10);
+
+            using (new AssetEditingScope())
             {
                 fontAsset.ClearFontAssetData(true);
 
                 AssetDatabase.SaveAssetIfDirty(fontAsset);
-            };
+            }
+
+            waitForProcess.Remove(fontAsset);
         }
-	}
+    }
 } 
