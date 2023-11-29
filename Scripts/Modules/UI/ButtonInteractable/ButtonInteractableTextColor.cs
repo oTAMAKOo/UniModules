@@ -7,8 +7,8 @@ using Modules.UI.Extension;
 namespace Modules.UI.Reactive
 {
     [ExecuteAlways]
-    [RequireComponent(typeof(UIImage))]
-    public sealed class ButtonReactiveImage : MonoBehaviour
+    [RequireComponent(typeof(UIText))]
+    public sealed class ButtonInteractableTextColor : MonoBehaviour
     {
         //----- params -----
 
@@ -17,31 +17,31 @@ namespace Modules.UI.Reactive
         [SerializeField]
         private UIButton target = null;
         [SerializeField]
-        private Sprite enableSprite = null;
+        private Color enableColor = Color.white;
         [SerializeField]
-        private Sprite disableSprite = null;
+        private Color disableColor = Color.black;
 
-        private UIImage uiImage = null;
+        private UIText uiText = null;
 
         //----- property -----
 
-        public Sprite EnableSprite
+        public Color EnableColor
         {
-            get { return enableSprite; }
-            set { enableSprite = value; }
+            get { return enableColor; }
+            set { enableColor = value; }
         }
 
-        public Sprite DisableSpriteName
+        public Color DisableColor
         {
-            get { return disableSprite; }
-            set { disableSprite = value; }
+            get { return disableColor; }
+            set { disableColor = value; }
         }
 
         //----- method -----
 
         void Awake()
         {
-            uiImage = UnityUtility.GetComponent<UIImage>(gameObject);
+            uiText = UnityUtility.GetComponent<UIText>(gameObject);
 
             if (target != null && Application.isPlaying)
             {
@@ -59,9 +59,9 @@ namespace Modules.UI.Reactive
 
         private void Apply(bool interactable)
         {
-            var sprite = interactable ? enableSprite : disableSprite;
+            var color = interactable ? enableColor : disableColor;
 
-            uiImage.Image.sprite = sprite;
+            uiText.Text.color = color;
         }
     }
 }
