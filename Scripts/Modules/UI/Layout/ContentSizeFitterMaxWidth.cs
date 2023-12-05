@@ -1,13 +1,16 @@
 ﻿
 using UnityEngine;
 using UnityEngine.UI;
-using System;
+using UnityEngine.EventSystems;
+using System.Linq;
+
+using Object = UnityEngine.Object;
 
 namespace Modules.UI.Layout
 {
     [ExecuteAlways]
     [RequireComponent(typeof(ContentSizeFitter))]
-    public sealed class ContentSizeFitterMaxWidth : LayoutElement
+    public sealed class ContentSizeFitterMaxWidth : UIBehaviour, ILayoutElement
     {
         //----- params -----
 
@@ -16,51 +19,107 @@ namespace Modules.UI.Layout
         [SerializeField]
         private float maxWidth = 0;
 
-        private ContentSizeFitter contentSizeFitter = null;
         private ILayoutElement layoutElement = null;
 
-        [NonSerialized]
-        private bool setup = false;
+        private ContentSizeFitter contentSizeFitter = null;
 
         //----- property -----
 
-        public override float preferredWidth
+        private ILayoutElement LayoutElement
         {
             get
             {
-                Setup();
-
-                return maxWidth < layoutElement.preferredWidth ? maxWidth : preferredWidth;
+                return layoutElement ?? (layoutElement = GetComponents<ILayoutElement>().FirstOrDefault(x => this != (Object)x));
             }
         }
 
         public float MaxWidth { get { return maxWidth; } }
-        
-        //----- method -----
 
-        private void Setup()
+        public float minWidth 
         {
-            if (setup){ return; }
+            get
+            {
+                if (LayoutElement == null) { return 0; }
 
-            contentSizeFitter = GetComponent<ContentSizeFitter>();
-            layoutElement = GetComponent<ILayoutElement>();
-
-            setup = true;
+                return LayoutElement.minWidth;
+            }
         }
+
+        public float flexibleWidth 
+        {
+            get
+            {
+                if (LayoutElement == null) { return 0; }
+
+                return LayoutElement.flexibleWidth;
+            }
+        }
+
+        public float minHeight
+        {
+            get
+            {
+                if (LayoutElement == null) { return 0; }
+
+                return LayoutElement.minHeight;
+            }
+        }
+
+        public float preferredWidth
+        {
+            get
+            {
+                if (LayoutElement == null) { return 0; }
+
+                return maxWidth < LayoutElement.preferredWidth ? maxWidth : LayoutElement.preferredWidth;
+            }
+        }
+
+        public float preferredHeight 
+        {
+            get
+            {
+                if (LayoutElement == null) { return 0; }
+
+                return LayoutElement.preferredHeight;
+            }
+        }
+
+        public float flexibleHeight 
+        {
+            get
+            {
+                if (LayoutElement == null) { return 0; }
+
+                return LayoutElement.flexibleHeight;
+            }
+        }
+
+        public int layoutPriority 
+        {
+            get { return int.MaxValue; }
+        }
+
+        //----- method -----
 
         void Update()
         {
-            Setup();
-
             var rt = transform as RectTransform;
 
             if (rt == null){ return; }
+            
+            if (LayoutElement == null) { return; }
 
-            contentSizeFitter.horizontalFit = layoutElement.preferredWidth > maxWidth ? 
+            if (contentSizeFitter == null)
+            {
+                contentSizeFitter = GetComponent<ContentSizeFitter>();
+            }
+
+            contentSizeFitter.horizontalFit = LayoutElement.preferredWidth > maxWidth ? 
                                               ContentSizeFitter.FitMode.Unconstrained : 
                                               ContentSizeFitter.FitMode.PreferredSize;
            
-            if (layoutElement.preferredWidth > maxWidth)
+            if (LayoutElement.preferredWidth > maxWidth)
             {
                 contentSizeFitter.horizontalFit = ContentSizeFitter.FitMode.Unconstrained;
 
@@ -70,6 +129,20 @@ namespace Modules.UI.Layout
             {
                 contentSizeFitter.horizontalFit = ContentSizeFitter.FitMode.PreferredSize;
             }
+        }
+
+        public void CalculateLayoutInputHorizontal()
+        {
+            if (LayoutElement == null) { return; }
+
+            LayoutElement.CalculateLayoutInputHorizontal();
+        }
+
+        public void CalculateLayoutInputVertical()
+        {
+            if (LayoutElement == null) { return; }
+
+            LayoutElement.CalculateLayoutInputVertical();
         }
     }
 }

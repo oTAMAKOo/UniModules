@@ -11,9 +11,9 @@ namespace Modules.UI.Layout
     {
         public override void OnInspectorGUI()
         {
-            var instance = target as ContentSizeFitterMaxWidth;
+            var instance = target as ContentSizeFitterMaxHeight;
 
-            var maxHeight = Reflection.GetPrivateField<ContentSizeFitterMaxWidth, float>(instance, "maxHeight");
+            var maxHeight = Reflection.GetPrivateField<ContentSizeFitterMaxHeight, float>(instance, "maxHeight");
 
             EditorGUI.BeginChangeCheck();
 
