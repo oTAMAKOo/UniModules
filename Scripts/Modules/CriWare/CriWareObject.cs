@@ -86,12 +86,12 @@ namespace Modules.CriWare
 
                 if (!string.IsNullOrEmpty(cryptoKey))
                 {
-                    // ※ ADX2-LEは自動で暗号化処理が掛かるのでdecrypterConfig自体が存在しない.
+                    // ※ ADX2-LEは自動で暗号化処理が掛かるのでDecrypterConfig自体が存在しない.
 
                     #if !ENABLE_CRIWARE_ADX_LE
 
                     // 認証キー.
-                    Initializer.decrypterConfig.key = cryptoKey;
+                    Initializer.DecrypterConfig.key = cryptoKey;
 
                     #endif
                 }
