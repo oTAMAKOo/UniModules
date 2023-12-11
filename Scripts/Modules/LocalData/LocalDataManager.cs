@@ -137,7 +137,7 @@ namespace Modules.LocalData
             UnityConsole.Event(ConsoleEventName, ConsoleEventColor, $"Load : {className}\nFilePath:{filePath}");
         }
 
-        public static void Save<T>(T data, bool immediate) where T : class, ILocalData, new()
+        public static void Save<T>(T data, bool immediate = false) where T : class, ILocalData, new()
         {
             if (data == null) { return; }
 
