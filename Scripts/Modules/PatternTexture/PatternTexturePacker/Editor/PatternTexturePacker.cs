@@ -545,7 +545,12 @@ namespace Modules.PatternTexture
 				sizeType = selectPatternTexture.SizeType;
                 hasAlphaMap = selectPatternTexture.HasAlphaMap;
 
-				Selection.objects = new UnityEngine.Object[0];
+                if (selectPatternTexture.Texture != null)
+                {
+                    filterMode = selectPatternTexture.Texture.filterMode;
+                }
+
+                Selection.objects = new UnityEngine.Object[0];
 
 				BuildTextureInfos(null);
 			}
@@ -555,6 +560,7 @@ namespace Modules.PatternTexture
 				filterPixels = DefaultFilterPixels;
 				sizeType = PatternTexture.TextureSizeType.MultipleOf4;
                 hasAlphaMap = false;
+                filterMode = FilterMode.Bilinear;
             }
 
 			deleteNames.Clear();
