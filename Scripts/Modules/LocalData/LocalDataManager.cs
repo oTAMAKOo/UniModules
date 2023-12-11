@@ -137,11 +137,18 @@ namespace Modules.LocalData
             UnityConsole.Event(ConsoleEventName, ConsoleEventColor, $"Load : {className}\nFilePath:{filePath}");
         }
 
-        public static void Save<T>(T data) where T : class, ILocalData, new()
+        public static void Save<T>(T data, bool immediate) where T : class, ILocalData, new()
         {
             if (data == null) { return; }
 
-            Instance.SaveOnEndOfFrame(data).Forget();
+            if (immediate)
+            {
+                Instance.WriteToFile(data);
+            }
+            else
+            {
+                Instance.SaveOnEndOfFrame(data).Forget();
+            }
         }
 
         private async UniTask SaveOnEndOfFrame<T>(T data) where T : class, ILocalData, new()
