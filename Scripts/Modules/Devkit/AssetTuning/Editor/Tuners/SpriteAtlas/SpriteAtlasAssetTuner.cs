@@ -13,6 +13,7 @@ namespace Modules.Devkit.AssetTuning
 
         private static readonly BuildTargetGroup[] DefaultTargetPlatforms =
         {
+            BuildTargetGroup.Standalone,
             BuildTargetGroup.Android,
             BuildTargetGroup.iOS,
         };
