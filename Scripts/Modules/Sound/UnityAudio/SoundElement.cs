@@ -5,6 +5,7 @@ using UnityEngine;
 using System;
 using Extensions;
 using UniRx;
+using Constants;
 
 namespace Modules.Sound
 {
@@ -15,6 +16,8 @@ namespace Modules.Sound
         public const string EmptyName = "empty";
 
         //----- field -----
+
+        private float volume = 1f;
 
         private Subject<Unit> onFinish = null;
         
@@ -38,8 +41,13 @@ namespace Modules.Sound
 
         public virtual float Volume
         {
-            get { return Source.volume; }
-            set { Source.volume = value; }
+            get { return volume; }
+            set
+            {
+                volume = value;
+
+                UpdateVolume();
+            }
         }
 
         //----- method -----
@@ -111,6 +119,15 @@ namespace Modules.Sound
                     onFinish.OnNext(Unit.Default);
                 }
             }
+        }
+
+        public void UpdateVolume()
+        {
+            var soundManagement = SoundManagement.Instance;
+
+            var soundParam = soundManagement.GetSoundParam(Type);
+
+            Source.volume = soundManagement.Volume * soundParam.volume *Volume;
         }
 
         public IObservable<Unit> OnFinishAsObservable()

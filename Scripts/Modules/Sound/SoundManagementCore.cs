@@ -25,10 +25,15 @@ namespace Modules.Sound
 
         //----- field -----
 
+        private float masterVolume = 1.0f;
+
         protected List<TSoundElement> soundElements = null;
 
         protected TSoundParam defaultSoundParam = null;
         protected Dictionary<SoundType, TSoundParam> soundParams = null;
+
+        
+        private Subject<float> onUpdateMasterVolume = null;
 
         // サウンド設定更新通知.
         private Subject<SoundType> onUpdateParam = null;
@@ -43,6 +48,21 @@ namespace Modules.Sound
         //----- property -----
 
         public bool LogEnable { get; set; }
+
+        public float Volume
+        {
+            get { return masterVolume; }
+
+            set
+            {
+                masterVolume = Math.Clamp(value, 0f, 1f);
+
+                if (onUpdateMasterVolume != null)
+                {
+                    onUpdateMasterVolume.OnNext(masterVolume);
+                }
+            }
+        }
 
         //----- method -----
 
@@ -108,8 +128,14 @@ namespace Modules.Sound
             return soundParams.GetValueOrDefault(type);
         }
 
+        /// <summary> マスターボリューム変更通知 </summary>
+        public IObservable<float> OnUpdateMasterVolume()
+        {
+            return onUpdateMasterVolume ?? (onUpdateMasterVolume = new Subject<float>());
+        }
+
         /// <summary> サウンド設定更新通知 </summary>
-        protected IObservable<SoundType> OnUpdateParamAsObservable()
+        public IObservable<SoundType> OnUpdateParamAsObservable()
         {
             return onUpdateParam ?? (onUpdateParam = new Subject<SoundType>());
         }

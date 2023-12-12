@@ -72,7 +72,7 @@ namespace Modules.Sound
             OnInitialize(defaultSoundParam);
 
             // デフォルトのサウンド設定を適用.
-            ApplySoundParam();
+            SetDefaultSoundParam();
 
             // サウンドイベントを受信.
 
@@ -305,13 +305,13 @@ namespace Modules.Sound
         {
             var soundParam = GetSoundParam(element.Type);
 
-            var soundVolume = soundParam.volume * Mathf.Clamp01(volume);
+            var soundVolume = Volume * soundParam.volume * Mathf.Clamp01(volume);
 
             player.SetVolume(soundVolume);
             player.Update(element.GetPlayback());
 
             // デフォルトに戻す.
-            ApplySoundParam();
+            SetDefaultSoundParam();
         }
 
         /// <summary> 対象のサウンドが再生中か. </summary>
@@ -339,7 +339,7 @@ namespace Modules.Sound
             player.Update(element.GetPlayback());
 
             // デフォルトに戻す.
-            ApplySoundParam();
+            SetDefaultSoundParam();
         }
 
         /// <summary> 再生中のサウンドに音量を反映. </summary>
@@ -354,14 +354,19 @@ namespace Modules.Sound
         }
 
         /// <summary> CriAtomPlayerに再生設定を適用. </summary>
-        private void ApplySoundParam(SoundType? type = null)
+        private void ApplySoundParam(SoundType type)
         {
-            var param = type != null ? GetSoundParam(type.Value) : defaultSoundParam;
+            var param = GetSoundParam(type);
 
             if (param != null)
             {
                 player.SetVolume(param.volume);
             }
+        }
+
+        private void SetDefaultSoundParam()
+        {
+            player.SetVolume(defaultSoundParam.volume);
         }
 
         private SoundSheet GetSoundSheet(CueInfo cueInfo)
@@ -424,7 +429,7 @@ namespace Modules.Sound
             if (playback.GetStatus() == CriAtomExPlayback.Status.Removed) { return null; }
 
             // デフォルトに戻す.
-            ApplySoundParam();
+            SetDefaultSoundParam();
 
             var element = new SoundElement(this, type, soundSheet, info, playback, volume);
 

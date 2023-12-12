@@ -164,15 +164,17 @@ namespace Modules.Sound
         }
 
         /// <summary> 再生設定を適用 </summary>
-        private void ApplySoundParam(SoundType? type = null)
+        private void ApplySoundParam(SoundType type)
         {
-            var param = type != null ? GetSoundParam(type.Value) : defaultSoundParam;
+            var param = GetSoundParam(type);
 
             if (param != null)
             {
-                foreach (var element in soundElements)
+                var targetSounds = soundElements.Where(x => x.Type == type);
+
+                foreach (var sound in targetSounds)
                 {
-                    SetVolume(element, param.volume);
+                    SetVolume(sound, param.volume);
                 }
             }
         }
@@ -419,9 +421,7 @@ namespace Modules.Sound
                     inElement.Play();
                 }
 
-                var soundParam = GetSoundParam(inElement.Type);
-
-                var targetVolume = soundParam.volume;
+                var targetVolume = 1f;
 
                 var firstVol = outElement.Volume;
 
@@ -436,7 +436,6 @@ namespace Modules.Sound
                 }
 
                 inElement.Volume = targetVolume;
-
                 outElement.Volume = 0f;
             }
             else
