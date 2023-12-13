@@ -1,4 +1,4 @@
-﻿﻿﻿
+﻿﻿
 using UnityEngine;
 using UnityEditorInternal;
 
@@ -8,7 +8,6 @@ namespace Modules.Devkit.CleanComponent
 	{
         public static void Execute()
         {
-            SceneCanvasRendererCleaner.Clean();
             SceneParticleComponentCleaner.Clean();
 
             InternalEditorUtility.RepaintAllViews();

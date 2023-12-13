@@ -482,19 +482,6 @@ namespace Modules
             CleanDirectoryWindow.Open();
         }
 
-        [MenuItem(itemName: CleanerMenu + "Clean CanvasRenderer On", priority = 15)]
-        public static void ToggleCanvasRendererCleanerAutoMode()
-        {
-            CanvasRendererCleaner.Prefs.autoClean = !CanvasRendererCleaner.Prefs.autoClean;
-        }
-
-        [MenuItem(itemName: CleanerMenu + "Clean CanvasRenderer On", validate = true)]
-        public static bool ToggleCanvasRendererCleanerAutoModeValidate()
-        {
-            UnityEditor.Menu.SetChecked(CleanerMenu + "Clean CanvasRenderer On", CanvasRendererCleaner.Prefs.autoClean);
-            return true;
-        }
-
         [MenuItem(itemName: CleanerMenu + "Clean ParticleSystem On", priority = 17)]
         public static void ToggleParticleSystemCleanerAutoMode()
         {

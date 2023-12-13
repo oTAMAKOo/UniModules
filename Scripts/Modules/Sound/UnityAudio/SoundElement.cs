@@ -5,7 +5,6 @@ using UnityEngine;
 using System;
 using Extensions;
 using UniRx;
-using Constants;
 
 namespace Modules.Sound
 {
