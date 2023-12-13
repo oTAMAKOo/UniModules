@@ -123,7 +123,7 @@ namespace Modules.PlayFabCSharp
 
             var serializer = PluginManager.GetPlugin<ISerializerPlugin>(PluginContract.PlayFab_Serializer);
 
-            string bodyString;
+            var bodyString = string.Empty;
 
             if (request == null)
             {
@@ -144,9 +144,7 @@ namespace Modules.PlayFabCSharp
             await new PlayFabUtil.SynchronizationContextRemover();
 
             var serializer = PluginManager.GetPlugin<ISerializerPlugin>(PluginContract.PlayFab_Serializer);
-            string bodyString;
-
-
+            
             HttpResponseMessage httpResponse;
             string httpResponseString;
             IEnumerable<string> requestId;
