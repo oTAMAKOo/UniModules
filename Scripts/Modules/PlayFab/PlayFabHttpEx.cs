@@ -112,11 +112,17 @@ namespace Modules.PlayFabCSharp
             return httpResponseString;
         }
 
+        public static async Task<object> DoPut(string fullUrl, byte[] bytes, Dictionary<string, string> extraHeaders = null)
+        {
+            return await DoPutCore(fullUrl, bytes, extraHeaders);
+        }
+
         public static async Task<object> DoPut(string fullUrl, object request, Dictionary<string, string> extraHeaders = null)
         {
             await new PlayFabUtil.SynchronizationContextRemover();
 
             var serializer = PluginManager.GetPlugin<ISerializerPlugin>(PluginContract.PlayFab_Serializer);
+
             string bodyString;
 
             if (request == null)
@@ -128,11 +134,24 @@ namespace Modules.PlayFabCSharp
                 bodyString = serializer.SerializeObject(request);
             }
 
+            var bytes = Encoding.UTF8.GetBytes(bodyString);
+
+            return await DoPutCore(fullUrl, bytes, extraHeaders);
+        }
+
+        private static async Task<object> DoPutCore(string fullUrl, byte[] bytes, Dictionary<string, string> extraHeaders = null)
+        {
+            await new PlayFabUtil.SynchronizationContextRemover();
+
+            var serializer = PluginManager.GetPlugin<ISerializerPlugin>(PluginContract.PlayFab_Serializer);
+            string bodyString;
+
+
             HttpResponseMessage httpResponse;
             string httpResponseString;
             IEnumerable<string> requestId;
             bool hasReqId = false;
-            using (var postBody = new ByteArrayContent(Encoding.UTF8.GetBytes(bodyString)))
+            using (var postBody = new ByteArrayContent(bytes))
             {
                 postBody.Headers.Add("Content-Type", "application/json");
                 postBody.Headers.Add("X-PlayFabSDK", PlayFabSettings.SdkVersionString);

@@ -104,6 +104,13 @@ namespace Modules.LocalData
             return dataCache.GetValueOrDefault(typeof(T)) as T;
         }
 
+        public static bool FileExist<T>() where T : class, ILocalData, new()
+        {
+            var filePath = Instance.GetFilePath<T>();
+
+            return File.Exists(filePath);
+        }
+
         public static void Load<T>() where T : class, ILocalData, new()
         {
             var type = typeof(T);

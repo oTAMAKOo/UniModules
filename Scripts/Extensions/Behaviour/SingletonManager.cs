@@ -61,5 +61,10 @@ namespace Extensions
                 target.Release();
             }
         }
+
+        public static IEnumerable<ISingleton> GetAllInstance()
+        {
+            return singletons;
+        }
     }
 }
