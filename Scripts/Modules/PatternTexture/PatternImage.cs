@@ -1,4 +1,4 @@
-﻿
+
 using System;
 using System.Collections;
 using UnityEngine;
@@ -31,7 +31,7 @@ namespace Modules.PatternTexture
         [SerializeField]
         private bool crossFade = false;
         [SerializeField]
-        private float crossFadeTime = 0.2f;
+        private float crossFadeTime = 0.5f;
         [SerializeField]
         private string selectionPatternName = null;
 
