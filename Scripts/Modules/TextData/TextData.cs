@@ -95,6 +95,16 @@ namespace Modules.TextData
             }
         }
 
+        public static string Get(string identifier)
+        {
+            return Instance.FindTextByIdentifier(identifier);
+        }
+
+        public static string Format(string identifier, params object[] args)
+        {
+            return string.Format(Instance.FindTextByIdentifier(identifier), args);
+        }
+
         public static string GetAssetFileName(string identifier)
         {
             var fileNameBuilder = new StringBuilder();
