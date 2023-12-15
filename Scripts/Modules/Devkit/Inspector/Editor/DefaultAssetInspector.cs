@@ -4,6 +4,7 @@ using UnityEditor;
 using System;
 using System.Linq;
 using System.Collections.Generic;
+using Extensions;
 
 namespace Modules.Devkit.Inspector
 {
@@ -20,6 +21,15 @@ namespace Modules.Devkit.Inspector
         public virtual void OnDisable(UnityEngine.Object target) { }
 
         public virtual void OnDestroy(UnityEngine.Object target) { }
+
+        protected static void RepaintInspector()
+        {
+            var window = Resources.FindObjectsOfTypeAll<EditorWindow>();
+
+            var inspectorWindow = ArrayUtility.FindAll(window, c => c.GetType().Name == "InspectorWindow").ToArray();
+
+            inspectorWindow.ForEach(x => x.Repaint());
+        }
     }
 
     [CustomEditor(typeof(DefaultAsset))]

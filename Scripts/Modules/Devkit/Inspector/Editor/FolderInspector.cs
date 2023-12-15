@@ -133,14 +133,5 @@ namespace Modules.Devkit.Inspector
                 assetImporter.SaveAndReimport();
             }
         }
-
-        private static void RepaintInspector()
-        {
-            var window = Resources.FindObjectsOfTypeAll<EditorWindow>();
-
-            var inspectorWindow = ArrayUtility.FindAll(window, c => c.GetType().Name == "InspectorWindow").ToArray();
-
-            inspectorWindow.ForEach(x => x.Repaint());
-        }
     }
 }
