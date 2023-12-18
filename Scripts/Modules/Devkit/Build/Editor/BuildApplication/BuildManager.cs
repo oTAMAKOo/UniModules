@@ -163,7 +163,15 @@ namespace Modules.Devkit.Build
 
                             option |= applicationBuilder.BuildOptions;
 
-                            var buildReport = BuildPipeline.BuildPlayer(scenePaths, path, buildTarget, option);
+                            var buildPlayerOptions = new BuildPlayerOptions()
+                            {
+                                target = buildTarget,
+                                scenes = scenePaths,
+                                locationPathName = path,
+                                options = option,
+                            };
+
+                            var buildReport = BuildPipeline.BuildPlayer(buildPlayerOptions);
 
                             success = buildReport.summary.result == BuildResult.Succeeded;
 
