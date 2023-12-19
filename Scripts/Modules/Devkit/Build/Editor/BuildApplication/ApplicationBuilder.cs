@@ -3,8 +3,10 @@ using UnityEngine;
 using UnityEditor;
 using UnityEditor.Build.Reporting;
 using System;
+using System.IO;
 using System.Collections.Generic;
 using System.Linq;
+using Newtonsoft.Json;
 using Cysharp.Threading.Tasks;
 using Extensions;
 using Modules.Devkit.Prefs;
@@ -75,6 +77,8 @@ namespace Modules.Devkit.Build
         public virtual bool ReleaseBuild { get { return parameter.development; } }
 
         public IReadOnlyList<string> DefineSymbols { get { return parameter.defineSymbols; } }
+
+        public virtual string BuildInfoFolderName { get { return "BuildInfo"; } }
 
         //----- method -----
 
@@ -166,6 +170,38 @@ namespace Modules.Devkit.Build
             var directory = UnityPathUtility.GetProjectFolderPath();
 
             return PathUtility.Combine(directory, "Build");
+        }
+
+        public virtual string GetBuildInfoFolderPath()
+        {
+            var folderName = $"{BuildInfoFolderName}/{ PlatformUtility.GetPlatformName() }";
+
+            var projectFolderPath = UnityPathUtility.GetProjectFolderPath();
+
+            var directory = PathUtility.RelativePathToFullPath(projectFolderPath, $"../../{folderName}");
+
+            return directory;
+        }
+
+        protected T LoadBuildInfoJson<T>(string fileName) where T : class
+        {
+            var directory = GetBuildInfoFolderPath();
+
+            var filePath = PathUtility.Combine(directory, fileName);
+
+            if (!File.Exists(filePath))
+            {
+                using (new DisableStackTraceScope())
+                {
+                    Debug.LogWarningFormat("BuildInfo load failed.\n{0}", filePath);
+                }
+
+                return null;
+            }
+
+            var text = File.ReadAllText(filePath);
+
+            return JsonConvert.DeserializeObject<T>(text);
         }
     }
 }
