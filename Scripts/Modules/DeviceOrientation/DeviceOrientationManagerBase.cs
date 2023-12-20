@@ -7,7 +7,8 @@ using Modules.ApplicationEvent;
 
 namespace Modules.DeviceOrientation
 {
-    public abstract class DeviceOrientationManager : Singleton<DeviceOrientationManager>
+    public abstract class DeviceOrientationManagerBase<TInstance> : Singleton<TInstance> 
+        where TInstance : DeviceOrientationManagerBase<TInstance>
     {
         //----- params -----
 
@@ -49,21 +50,21 @@ namespace Modules.DeviceOrientation
             }
         }
 
+        /// <summary> 画面の向きを設定 </summary>
+        public virtual void Apply(ScreenOrientation? orientation = null)
+        {
+            //------ 横持ち時の設定 ------
+
+            Screen.autorotateToPortrait = false;
+            Screen.autorotateToPortraitUpsideDown = false;
+            Screen.autorotateToLandscapeLeft = true;
+            Screen.autorotateToLandscapeRight = true;
+            Screen.orientation = ScreenOrientation.AutoRotation;
+        }
+
         public IObservable<ScreenOrientation> OnOrientationChangedAsObservable()
         {
             return onOrientationChanged ?? (onOrientationChanged = new Subject<ScreenOrientation>());
         }
-
-        /// <summary> 画面の向きを設定 </summary>
-
-        /*------ 横持ち時の設定 ------
-        Screen.autorotateToPortrait = false;
-        Screen.autorotateToPortraitUpsideDown = false;
-        Screen.autorotateToLandscapeLeft = true;
-        Screen.autorotateToLandscapeRight = true;
-        Screen.orientation = ScreenOrientation.AutoRotation;
-        ------------------------------*/
-
-        public abstract void Apply(ScreenOrientation? orientation = null);
     }
 }
