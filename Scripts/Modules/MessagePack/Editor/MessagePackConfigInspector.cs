@@ -365,7 +365,7 @@ csproj directory : global.json
 
             if (EditorGUI.EndChangeCheck())
             {
-
+                changed = true;
             }
 
             return changed;
