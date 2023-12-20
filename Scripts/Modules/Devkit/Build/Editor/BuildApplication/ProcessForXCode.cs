@@ -1,4 +1,4 @@
-﻿
+
 #if UNITY_IOS && UNITY_EDITOR
 
 using UnityEngine;
@@ -85,20 +85,29 @@ namespace Modules.Devkit.Build
 
         protected void SetPlistString(string plistPath, string key, string value)
         {
-            // Plistの設定のための初期化.
             var plist = new PlistDocument();
 
             plist.ReadFromFile(plistPath);
 
             plist.root.SetString(key, value);
 
-            // 設定を反映.
+            plist.WriteToFile(plistPath);
+        }
+
+
+        protected void SetPlistBoolean(string plistPath, string key, bool value)
+        {
+            var plist = new PlistDocument();
+
+            plist.ReadFromFile(plistPath);
+
+            plist.root.SetBoolean(key, value);
+
             plist.WriteToFile(plistPath);
         }
 
         protected void SetPlistArray(string plistPath, string key, string value)
         {
-            // Plistの設定のための初期化.
             var plist = new PlistDocument();
 
             plist.ReadFromFile(plistPath);
@@ -107,7 +116,6 @@ namespace Modules.Devkit.Build
 
             array.AddString(value);
 
-            // 設定を反映.
             plist.WriteToFile(plistPath);
         }
 
