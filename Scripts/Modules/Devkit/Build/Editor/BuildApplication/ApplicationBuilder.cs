@@ -80,6 +80,8 @@ namespace Modules.Devkit.Build
 
         public virtual string BuildInfoFolderName { get { return "BuildInfo"; } }
 
+        public virtual string BuildInfoFolderRelativePath { get { return "../../"; } }
+
         //----- method -----
 
         public void SetBuildParameter(TBuildParameter buildParameter)
@@ -166,14 +168,14 @@ namespace Modules.Devkit.Build
             return PathUtility.Combine(directory, "Build");
         }
 
-        public virtual string GetBuildInfoFolderPath()
+        public string GetBuildInfoFolderPath()
         {
-            var folderName = $"{BuildInfoFolderName}/{ PlatformUtility.GetPlatformName() }";
-
             var projectFolderPath = UnityPathUtility.GetProjectFolderPath();
 
-            var directory = PathUtility.RelativePathToFullPath(projectFolderPath, $"../{folderName}");
+            var folderName = $"{BuildInfoFolderName}/{ PlatformUtility.GetPlatformName() }";
 
+            var directory = PathUtility.RelativePathToFullPath(projectFolderPath, $"{BuildInfoFolderRelativePath}{folderName}");
+            
             return directory;
         }
 
