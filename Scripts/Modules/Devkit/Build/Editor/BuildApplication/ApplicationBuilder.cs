@@ -133,7 +133,10 @@ namespace Modules.Devkit.Build
         /// <summary> 成果物ファイル名取得. </summary>
         public virtual string GetApplicationName()
         {
-            return UnityPathUtility.GetProjectName();
+            var buildTargetGroup = BuildPipeline.GetBuildTargetGroup(BuildTarget);
+            var applicationIdentifier = PlayerSettings.GetApplicationIdentifier(buildTargetGroup);
+
+            return applicationIdentifier;
         }
 
         /// <summary> ビルド前処理. </summary>
