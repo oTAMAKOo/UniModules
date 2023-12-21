@@ -101,6 +101,8 @@ namespace Modules.TextData.Components
 
         private void ImportText()
         {
+            if (Application.isBatchMode){ return; }
+
             #if UNITY_EDITOR
 
             ApplyDummyText();
