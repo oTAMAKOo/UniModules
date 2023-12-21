@@ -130,15 +130,6 @@ namespace Modules.Devkit.Build
             return scenePaths;
         }
 
-        /// <summary> 成果物ファイル名取得. </summary>
-        public virtual string GetApplicationName()
-        {
-            var buildTargetGroup = BuildPipeline.GetBuildTargetGroup(BuildTarget);
-            var applicationIdentifier = PlayerSettings.GetApplicationIdentifier(buildTargetGroup);
-
-            return applicationIdentifier;
-        }
-
         /// <summary> ビルド前処理. </summary>
         public virtual UniTask<bool> OnBeforeBuild()
         {
@@ -206,5 +197,8 @@ namespace Modules.Devkit.Build
 
             return JsonConvert.DeserializeObject<T>(text);
         }
+
+        /// <summary> 成果物ファイル名取得. </summary>
+        public abstract string GetApplicationName();
     }
 }
