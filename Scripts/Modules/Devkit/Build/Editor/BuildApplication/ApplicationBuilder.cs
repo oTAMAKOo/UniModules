@@ -172,7 +172,7 @@ namespace Modules.Devkit.Build
 
             var projectFolderPath = UnityPathUtility.GetProjectFolderPath();
 
-            var directory = PathUtility.RelativePathToFullPath(projectFolderPath, $"../../{folderName}");
+            var directory = PathUtility.RelativePathToFullPath(projectFolderPath, $"../{folderName}");
 
             return directory;
         }
