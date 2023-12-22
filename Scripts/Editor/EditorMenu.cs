@@ -139,7 +139,7 @@ namespace Modules
         [MenuItem(itemName: GeneratorsMenu + "Generate MessagePack", priority = 19)]
         public static void GenerateMessagePackCode()
         {
-            MessagePackCodeGenerator.GenerateAsync().Forget();
+            MessagePackCodeGenerator.Generate();
         }
 
         [MenuItem(itemName: GeneratorsMenu + "Generate ScriptableObject", priority = 100)]

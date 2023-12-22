@@ -6,7 +6,6 @@ using System.IO;
 using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
-using Cysharp.Threading.Tasks;
 using Extensions;
 
 namespace Modules.MessagePack
@@ -47,57 +46,6 @@ namespace Modules.MessagePack
                 {
                     Debug.LogError(codeGenerateResult.Output);
                 }
-            }
-
-            return isSuccess;
-        }
-
-        public static async UniTask<bool> GenerateAsync()
-        {
-            var generateInfo = new MessagePackCodeGenerateInfo();
-
-            var csFilePath = generateInfo.CsFilePath;
-
-            var csFileHash = GetCsFileHash(csFilePath);
-
-            var processExecute = CreateMpcProcess(generateInfo);
-
-            var isSuccess = false;
-
-            try
-            {
-                var result = await processExecute.StartAsync().AsUniTask();
-
-                isSuccess = result.ExitCode == 0;
-
-                OutputGenerateLog(isSuccess, csFilePath, processExecute);
-
-                if (isSuccess)
-                {
-                    ImportGeneratedCsFile(csFilePath, csFileHash);
-                }
-                else
-                {
-                    using (new DisableStackTraceScope())
-                    {
-                        var message = result.Error;
-
-                        if (string.IsNullOrEmpty(message))
-                        {
-                            message = result.Output;
-                        }
-
-                        Debug.LogError(message);
-                    }
-                }
-            }
-            catch (OperationCanceledException)
-            {
-                /* Canceled */
-            }
-            catch (Exception e)
-            {
-                Debug.LogException(e);
             }
 
             return isSuccess;
