@@ -1,4 +1,4 @@
-﻿
+
 using System;
 using UnityEngine;
 using UnityEditor;
@@ -112,6 +112,8 @@ namespace Modules.Devkit.ScriptableObjects
                 // 更新があったら生成.
                 if (reloadTargets.Any() && !skip)
                 {
+                    await UniTask.DelayFrame(5);
+
                     foreach (var reloadTarget in reloadTargets)
                     {
                         reloadTarget.Reload();
