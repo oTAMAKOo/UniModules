@@ -195,9 +195,9 @@ namespace Modules.UI
                 itemSize = direction == Direction.Vertical ? rt.rect.height : rt.rect.width;
             }
 
-            scrollRect.content.anchorMin = direction == Direction.Vertical ? new Vector2(0f, 0.5f) : new Vector2(0.5f, 0f);
-            scrollRect.content.anchorMax = direction == Direction.Vertical ? new Vector2(1f, 0.5f) : new Vector2(0.5f, 1f);
-            scrollRect.content.pivot = new Vector2(0.5f, 0.5f);
+            scrollRect.content.anchorMin = direction == Direction.Vertical ? new Vector2(0f, 1f) : new Vector2(0f, 0f);
+            scrollRect.content.anchorMax = direction == Direction.Vertical ? new Vector2(1f, 1f) : new Vector2(0f, 1f);
+            scrollRect.content.pivot= direction == Direction.Vertical ? new Vector2(0.5f, 1f) : new Vector2(0f, 0.5f);
 
             var delta = scrollRectTransform.rect.size;
 
