@@ -104,6 +104,8 @@ namespace Extensions
         {
             var table = source.ToArray();
 
+            if (table.IsEmpty()) { return defaultValue; }
+
             var weightTable = table.Select(x => selector(x)).ToArray();
 
             var index = weightTable.WeightSample();
