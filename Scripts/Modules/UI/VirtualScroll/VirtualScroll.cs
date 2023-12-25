@@ -34,6 +34,15 @@ namespace Modules.UI
             Center,
             Last, 
         }
+
+        public enum ContentFit
+        {
+            Top,
+            Bottom,
+            Center,
+            Left,
+            Right,
+        }
     }
 
     public abstract class VirtualScroll<T> : UIBehaviour where T : class
@@ -47,6 +56,30 @@ namespace Modules.UI
             Done,
         }
 
+        private static readonly Dictionary<ContentFit, Vector2> AnchorMinTable = new Dictionary<ContentFit, Vector2>()
+        {
+            { ContentFit.Top, new Vector2(0.0f, 1.0f) },
+            { ContentFit.Bottom, new Vector2(0.0f, 0.0f) },
+            { ContentFit.Left, new Vector2(0.0f, 0.0f) },
+            { ContentFit.Right, new Vector2(1.0f, 0.0f) },
+        };
+
+        private static readonly Dictionary<ContentFit, Vector2> AnchorMaxTable = new Dictionary<ContentFit, Vector2>()
+        {
+            { ContentFit.Top, new Vector2(1.0f, 1.0f) },
+            { ContentFit.Bottom, new Vector2(1.0f, 0.0f) },
+            { ContentFit.Left, new Vector2(0.0f, 1.0f) },
+            { ContentFit.Right, new Vector2(1.0f, 1.0f) },
+        };
+
+        private static readonly Dictionary<ContentFit, Vector2> PivotTable = new Dictionary<ContentFit, Vector2>()
+        {
+            { ContentFit.Top, new Vector2(0.5f, 1.0f) },
+            { ContentFit.Bottom, new Vector2(0.5f, 0.0f) },
+            { ContentFit.Left, new Vector2(0.0f, 0.5f) },
+            { ContentFit.Right, new Vector2(1.0f, 0.5f) },
+        };
+
         //----- field -----
 
         [SerializeField]
@@ -57,6 +90,8 @@ namespace Modules.UI
         private GameObject itemPrefab = null;
         [SerializeField]
         private ScrollRect scrollRect = null;
+        [SerializeField]
+        private ContentFit contentFit = ContentFit.Center;
         [SerializeField, Range(2, 10)]
         private int additionalGeneration = 2;
         [SerializeField]
@@ -168,6 +203,60 @@ namespace Modules.UI
             }
         }
 
+        protected override void OnValidate()
+        {
+            base.OnValidate();
+
+            if (direction == Direction.Vertical && (contentFit == ContentFit.Left || contentFit == ContentFit.Right))
+            {
+                contentFit = ContentFit.Center;
+            }
+
+            if (direction == Direction.Horizontal && (contentFit == ContentFit.Top || contentFit == ContentFit.Bottom))
+            {
+                contentFit = ContentFit.Center;
+            }
+        }
+
+        private void SetContentAnchorAndPivot()
+        {
+            if (scrollRect == null){ return; }
+
+            if (scrollRect.content == null){ return; }
+
+            var anchorMin = Vector2.zero;
+            var anchorMax = Vector2.zero;
+            var pivot = Vector2.zero;
+
+            if (contentFit == ContentFit.Center)
+            {
+                switch (direction)
+                {
+                    case Direction.Vertical:
+                        anchorMin = new Vector2(0.0f, 0.5f);
+                        anchorMax = new Vector2(1.0f, 0.5f);
+                        break;
+
+                    case Direction.Horizontal:
+                        anchorMin = new Vector2(0.5f, 0.0f);
+                        anchorMax = new Vector2(0.5f, 1.0f);
+                        break;
+                }
+
+                pivot = new Vector2(0.5f, 0.5f);
+            }
+            else
+            {
+                anchorMin = AnchorMinTable.GetValueOrDefault(contentFit);
+                anchorMax = AnchorMaxTable.GetValueOrDefault(contentFit);
+                pivot = PivotTable.GetValueOrDefault(contentFit);
+            }
+
+            scrollRect.content.anchorMin = anchorMin;
+            scrollRect.content.anchorMax = anchorMax;
+            scrollRect.content.pivot= pivot;
+        }
+
         public virtual void SetContents(IEnumerable<T> contents)
         {
             Contents = contents != null ? contents.ToArray() : new T[0];
@@ -195,9 +284,7 @@ namespace Modules.UI
                 itemSize = direction == Direction.Vertical ? rt.rect.height : rt.rect.width;
             }
 
-            scrollRect.content.anchorMin = direction == Direction.Vertical ? new Vector2(0f, 1f) : new Vector2(0f, 0f);
-            scrollRect.content.anchorMax = direction == Direction.Vertical ? new Vector2(1f, 1f) : new Vector2(0f, 1f);
-            scrollRect.content.pivot= direction == Direction.Vertical ? new Vector2(0.5f, 1f) : new Vector2(0f, 0.5f);
+            SetContentAnchorAndPivot();
 
             var delta = scrollRectTransform.rect.size;
 
