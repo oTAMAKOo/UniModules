@@ -203,21 +203,6 @@ namespace Modules.UI
             }
         }
 
-        protected override void OnValidate()
-        {
-            base.OnValidate();
-
-            if (direction == Direction.Vertical && (contentFit == ContentFit.Left || contentFit == ContentFit.Right))
-            {
-                contentFit = ContentFit.Center;
-            }
-
-            if (direction == Direction.Horizontal && (contentFit == ContentFit.Top || contentFit == ContentFit.Bottom))
-            {
-                contentFit = ContentFit.Center;
-            }
-        }
-
         private void SetContentAnchorAndPivot()
         {
             if (scrollRect == null){ return; }
@@ -1015,5 +1000,24 @@ namespace Modules.UI
         {
             return UniTask.CompletedTask;
         }
+
+        #if UNITY_EDITOR
+
+        protected override void OnValidate()
+        {
+            base.OnValidate();
+
+            if (direction == Direction.Vertical && (contentFit == ContentFit.Left || contentFit == ContentFit.Right))
+            {
+                contentFit = ContentFit.Center;
+            }
+
+            if (direction == Direction.Horizontal && (contentFit == ContentFit.Top || contentFit == ContentFit.Bottom))
+            {
+                contentFit = ContentFit.Center;
+            }
+        }
+
+        #endif
     }
 }
