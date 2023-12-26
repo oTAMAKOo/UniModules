@@ -125,6 +125,11 @@ namespace Modules.ObjectPool
 
                 foreach (var item in items)
                 {
+                    if (onCreate != null)
+                    {
+                        onCreate.OnNext(item);
+                    }
+
                     Release(item);
                 }
             }

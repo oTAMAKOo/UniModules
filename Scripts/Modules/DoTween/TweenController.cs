@@ -2,6 +2,7 @@
 using UnityEngine;
 using System;
 using System.Collections.Generic;
+using System.Threading;
 using Cysharp.Threading.Tasks;
 using DG.Tweening;
 using UniRx;
@@ -41,7 +42,7 @@ namespace Modules.Tweening
 				.AddTo(Disposable);
 		}
 
-		public async UniTask Play(Tweener tweener)
+		public async UniTask Play(Tweener tweener, CancellationToken cancelToken = default)
 		{
 			tweeners.Add(tweener);
 
@@ -51,7 +52,7 @@ namespace Modules.Tweening
 
 				tweener.timeScale = timeScale.Value;
 
-				await tweener.Play().ToUniTask();
+				await tweener.Play().ToUniTask(cancellationToken: cancelToken);
 			}
 			catch (OperationCanceledException)
 			{
