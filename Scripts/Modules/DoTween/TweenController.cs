@@ -76,11 +76,15 @@ namespace Modules.Tweening
 
         public void KillAllTweeners()
         {
-            foreach (var tweener in tweeners)
-            {
-                if (tweener == null){ continue; }
+            if (tweeners == null){ return; }
 
-                tweener.Kill();
+            var targets = tweeners.ToArray();
+
+            foreach (var target in targets)
+            {
+                if (target == null){ continue; }
+
+                target.Kill();
             }
 
             tweeners.Clear();
