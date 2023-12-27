@@ -73,5 +73,17 @@ namespace Modules.Tweening
 				tweener.timeScale = value;
 			}
 		}
+
+        public void KillAllTweeners()
+        {
+            foreach (var tweener in tweeners)
+            {
+                if (tweener == null){ continue; }
+
+                tweener.Kill();
+            }
+
+            tweeners.Clear();
+        }
 	}
 }
