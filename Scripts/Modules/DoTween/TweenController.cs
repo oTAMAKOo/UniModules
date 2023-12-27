@@ -84,6 +84,8 @@ namespace Modules.Tweening
             {
                 if (target == null){ continue; }
 
+                if (!target.IsActive()){ continue; }
+
                 target.Kill();
             }
 
