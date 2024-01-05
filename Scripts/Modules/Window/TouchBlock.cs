@@ -9,7 +9,7 @@ using Extensions;
 
 namespace Modules.Window
 {
-    public sealed class TouchBloc : MonoBehaviour
+    public sealed class TouchBlock : MonoBehaviour
     {
         //----- params -----
 
@@ -18,13 +18,13 @@ namespace Modules.Window
         [SerializeField]
         private CanvasGroup canvasGroup = null;
         [SerializeField]
-        private Button blocTouch = null;
+        private Button blockTouch = null;
         [SerializeField]
         private float fadeAmount = 0.1f;
 
         private float fadeAlpha = 0f;
 
-        private Subject<Unit> onBlocTouch = null;
+        private Subject<Unit> onBlockTouch = null;
 
         private bool initialized = false;
 
@@ -38,17 +38,17 @@ namespace Modules.Window
         {
             if (initialized) { return; }
 
-            if (blocTouch != null)
+            if (blockTouch != null)
             {
                 Action onTouchBloc = () =>
                 {
-                    if (onBlocTouch != null)
+                    if (onBlockTouch != null)
                     {
-                        onBlocTouch.OnNext(Unit.Default);
+                        onBlockTouch.OnNext(Unit.Default);
                     }
                 };
 
-                blocTouch.OnClickAsObservable()
+                blockTouch.OnClickAsObservable()
                     .Subscribe(_ => onTouchBloc.Invoke())
                     .AddTo(this);
             }
@@ -119,9 +119,9 @@ namespace Modules.Window
             SetAlpha(1f);
         }
 
-        public IObservable<Unit> OnBlocTouchAsObservable()
+        public IObservable<Unit> OnBlockTouchAsObservable()
         {
-            return onBlocTouch ?? (onBlocTouch = new Subject<Unit>());
+            return onBlockTouch ?? (onBlockTouch = new Subject<Unit>());
         }
     }
 }

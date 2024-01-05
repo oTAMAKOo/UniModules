@@ -29,14 +29,14 @@ namespace Modules.Window
         protected PopupParent parentInScene = null;
         protected PopupParent parentGlobal = null;
 
-        protected TouchBloc touchBloc = null;
+        protected TouchBlock touchBlock = null;
         protected CancellationTokenSource cancelTokenSource = null;
 
         // 登録されているポップアップ.
         protected List<Window> scenePopups = new List<Window>();
         protected List<Window> globalPopups = new List<Window>();
 
-        private Subject<Unit> onBlocTouch = null;
+        private Subject<Unit> onBlockTouch = null;
 
         //----- property -----
 
@@ -180,18 +180,18 @@ namespace Modules.Window
 
         private void CreateTouchBloc()
         {
-            if (touchBloc != null){ return; }
+            if (touchBlock != null){ return; }
 
-            touchBloc = UnityUtility.Instantiate<TouchBloc>(parentGlobal.Parent, touchBlocPrefab);
+            touchBlock = UnityUtility.Instantiate<TouchBlock>(parentGlobal.Parent, touchBlocPrefab);
 
-            touchBloc.Initialize();
+            touchBlock.Initialize();
 
-            touchBloc.OnBlocTouchAsObservable()
+            touchBlock.OnBlockTouchAsObservable()
                 .Subscribe(_ =>
                    {
-                       if (onBlocTouch != null)
+                       if (onBlockTouch != null)
                        {
-                           onBlocTouch.OnNext(Unit.Default);
+                           onBlockTouch.OnNext(Unit.Default);
                        }
                    })
                 .AddTo(this);
@@ -250,11 +250,11 @@ namespace Modules.Window
                 parent = parentGlobal.Parent;
             }
 
-            UnityUtility.SetParent(touchBloc.gameObject, parent);
+            UnityUtility.SetParent(touchBlock.gameObject, parent);
 
-            touchBloc.transform.SetSiblingIndex(touchBlocIndex);
+            touchBlock.transform.SetSiblingIndex(touchBlocIndex);
 
-            UnityUtility.SetLayer(parent, touchBloc.gameObject, true);
+            UnityUtility.SetLayer(parent, touchBlock.gameObject, true);
 
             // 一つでも登録されたら表示.
             if (scenePopups.Any() || globalPopups.Any())
@@ -264,11 +264,11 @@ namespace Modules.Window
                     cancelTokenSource.Cancel();
                 }
 
-                UnityUtility.SetActive(touchBloc, true);
+                UnityUtility.SetActive(touchBlock, true);
 
                 cancelTokenSource = new CancellationTokenSource();
 
-                touchBloc.FadeIn(cancelTokenSource.Token).Forget();
+                touchBlock.FadeIn(cancelTokenSource.Token).Forget();
             }
 
             // 空になったら非表示.
@@ -281,7 +281,7 @@ namespace Modules.Window
 
                 cancelTokenSource = new CancellationTokenSource();
 
-                touchBloc.FadeOut(cancelTokenSource.Token).Forget();
+                touchBlock.FadeOut(cancelTokenSource.Token).Forget();
             }
         }
 
@@ -294,8 +294,8 @@ namespace Modules.Window
 
             scenePopups.Clear();
 
-            UnityUtility.SetParent(touchBloc.gameObject, parentGlobal.Parent);
-            UnityUtility.SetLayer(parentGlobal.Parent, touchBloc.gameObject, true);
+            UnityUtility.SetParent(touchBlock.gameObject, parentGlobal.Parent);
+            UnityUtility.SetLayer(parentGlobal.Parent, touchBlock.gameObject, true);
 
             if (globalPopups.IsEmpty())
             {
@@ -305,8 +305,8 @@ namespace Modules.Window
                     cancelTokenSource = null;
                 }
 
-                touchBloc.Hide();
-                touchBloc.transform.SetSiblingIndex(0);
+                touchBlock.Hide();
+                touchBlock.transform.SetSiblingIndex(0);
             }
         }
 
@@ -314,20 +314,20 @@ namespace Modules.Window
         {
             if (globalPopups.Any())
             {
-                return globalPopups.FirstOrDefault();
+                return globalPopups.LastOrDefault();
             }
 
             if (scenePopups.Any())
             {
-                return scenePopups.FirstOrDefault();
+                return scenePopups.LastOrDefault();
             }
 
             return null;
         }
 
-        public IObservable<Unit> OnBlocTouchAsObservable()
+        public IObservable<Unit> OnBlockTouchAsObservable()
         {
-            return onBlocTouch ?? (onBlocTouch = new Subject<Unit>());
+            return onBlockTouch ?? (onBlockTouch = new Subject<Unit>());
         }
     }
 }
