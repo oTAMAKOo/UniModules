@@ -173,12 +173,6 @@ namespace Modules.UI.Particle
                     {
                         texture = sprite.texture;
                     }
-                    else
-                    {
-                        var hierarchyPath = UnityUtility.GetHierarchyPath(gameObject);
-
-                        Debug.LogWarning($"TextureSheetAnimation sprite index not found.\n\nindex : {index}\nhierarchy : {hierarchyPath}\n");
-                    }
                 }
             }
 
