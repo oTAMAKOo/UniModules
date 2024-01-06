@@ -1,8 +1,6 @@
-﻿
-using System;
+
 using UnityEngine;
 using UnityEngine.UI;
-using UniRx;
 
 namespace Modules.UI.Extension
 {
@@ -60,8 +58,6 @@ namespace Modules.UI.Extension
 
         void OnEnable()
         {
-            StartEmptySpriteCheck();
-
             #if UNITY_EDITOR
 
             ApplyDummyAsset();
@@ -76,32 +72,6 @@ namespace Modules.UI.Extension
             DeleteCreatedAsset();
 
             #endif
-        }
-
-        private void StartEmptySpriteCheck()
-        {
-            if (!Application.isPlaying) { return; }
-
-            if (Image == null) { return; }
-
-            if (string.IsNullOrEmpty(assetGuid)) { return; }
-
-            // 開発用画像が設定されていた箇所は空画像の時は非表示.
-
-            Action onSpriteChanged = () =>
-            {
-                if (Image != null)
-                {
-                    Image.enabled = sprite != null;
-                }
-            };
-
-            Image.ObserveEveryValueChanged(x => x.sprite)
-                .TakeUntilDisable(this)
-                .Subscribe(_ => onSpriteChanged())
-                .AddTo(this);
-
-            onSpriteChanged.Invoke();
         }
     }
 }
