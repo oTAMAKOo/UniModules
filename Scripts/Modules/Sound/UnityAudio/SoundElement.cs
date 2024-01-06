@@ -120,13 +120,15 @@ namespace Modules.Sound
             }
         }
 
-        public void UpdateVolume()
+        public virtual void UpdateVolume()
         {
+            if (Source == null){ return; }
+
             var soundManagement = SoundManagement.Instance;
 
             var soundParam = soundManagement.GetSoundParam(Type);
 
-            Source.volume = soundManagement.Volume * soundParam.volume *Volume;
+            Source.volume = soundManagement.Volume * soundParam.volume * Volume;
         }
 
         public IObservable<Unit> OnFinishAsObservable()
