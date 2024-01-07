@@ -474,31 +474,12 @@ namespace Modules
 
         #region Cleaner
 
-        protected const string CleanerMenu = UtilityMenu + "Cleaner/";
+        protected const string CleanerMenu = UtilityMenu + "Clean/";
 
         [MenuItem(itemName: CleanerMenu + "Open CleanDirectoryWindow", priority = 0)]
         public static void OpenCleanDirectoryWindow()
         {
             CleanDirectoryWindow.Open();
-        }
-
-        [MenuItem(itemName: CleanerMenu + "Clean ParticleSystem On", priority = 17)]
-        public static void ToggleParticleSystemCleanerAutoMode()
-        {
-            ParticleComponentCleaner.Prefs.autoClean = !ParticleComponentCleaner.Prefs.autoClean;
-        }
-
-        [MenuItem(itemName: CleanerMenu + "Clean ParticleSystem On", validate = true)]
-        public static bool ToggleParticleSystemCleanerAutoModeValidate()
-        {
-            UnityEditor.Menu.SetChecked(CleanerMenu + "Clean ParticleSystem On", ParticleComponentCleaner.Prefs.autoClean);
-            return true;
-        }
-
-        [MenuItem(itemName: CleanerMenu + "Execute Clean Scene", priority = 20)]
-        public static void ExecComponentCleaner()
-        {
-            ComponentCleaner.Execute();
         }
 
         #endregion
