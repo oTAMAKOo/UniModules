@@ -20,6 +20,8 @@ namespace Modules.TextData.Components
         [SerializeField]
         private string textGuid = null;
 
+        private string content = null;
+
         private Text textComponent = null;
 
         private TextMeshProUGUI textMeshProComponent = null;
@@ -30,7 +32,24 @@ namespace Modules.TextData.Components
 
         public string TextGuid { get { return textGuid; } }
 
-        public string Content { get; private set; }
+        public string Content
+        {
+            get
+            {
+                if (string.IsNullOrEmpty(textGuid)) { return null; }
+
+                var textData = TextData.Instance;
+
+                if (textData == null || textData.Texts == null) { return null; }
+
+                if (string.IsNullOrEmpty(content))
+                {
+                    content = textData.FindText(textGuid);
+                }
+
+                return content;
+            }
+        }
 
         //----- method -----
 
@@ -91,9 +110,8 @@ namespace Modules.TextData.Components
                 }
             }
 
-            Content = string.Empty;
+            content = string.Empty;
 
-            ApplyText(Content);
             ApplyTextData();
         }
 
@@ -118,7 +136,7 @@ namespace Modules.TextData.Components
 
             if (string.IsNullOrEmpty(textGuid)) { return; }
 
-            Content = textData.FindText(textGuid);
+            content = string.Empty;
 
             ApplyText(Content);
         }
