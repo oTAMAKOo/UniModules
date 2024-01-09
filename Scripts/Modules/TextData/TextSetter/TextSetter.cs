@@ -19,8 +19,6 @@ namespace Modules.TextData.Components
         private ContentType type = ContentType.Embedded;
         [SerializeField]
         private string textGuid = null;
-        [SerializeField]
-        private string content = null;
 
         private Text textComponent = null;
 
@@ -32,7 +30,7 @@ namespace Modules.TextData.Components
 
         public string TextGuid { get { return textGuid; } }
 
-        public string Content { get { return content; } }
+        public string Content { get; private set; }
 
         //----- method -----
 
@@ -65,9 +63,9 @@ namespace Modules.TextData.Components
         {
             ImportText();
 
-            if (!string.IsNullOrEmpty(content))
+            if (!string.IsNullOrEmpty(Content))
             {
-                ApplyText(string.Format(content, args));
+                ApplyText(string.Format(Content, args));
             }
         }
 
@@ -93,9 +91,9 @@ namespace Modules.TextData.Components
                 }
             }
 
-            content = string.Empty;
+            Content = string.Empty;
 
-            ApplyText(content);
+            ApplyText(Content);
             ApplyTextData();
         }
 
@@ -120,9 +118,9 @@ namespace Modules.TextData.Components
 
             if (string.IsNullOrEmpty(textGuid)) { return; }
 
-            content = textData.FindText(textGuid);
+            Content = textData.FindText(textGuid);
 
-            ApplyText(content);
+            ApplyText(Content);
         }
 
         private void ApplyText(string text)
