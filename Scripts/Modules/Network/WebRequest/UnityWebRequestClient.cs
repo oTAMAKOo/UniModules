@@ -12,10 +12,11 @@ using Extensions;
 using MessagePack;
 using MessagePack.Resolvers;
 using Modules.MessagePack;
+using UniRx;
 
 namespace Modules.Net.WebRequest
 {
-    public abstract class UnityWebRequestClient : IWebRequestClient
+    public abstract class UnityWebRequestClient : IDisposable, IWebRequestClient
     {
         //----- params -----
 
@@ -77,6 +78,8 @@ namespace Modules.Net.WebRequest
         /// <summary> 発生したエラー. </summary>
         public Exception Error { get; private set; }
 
+        public bool IsDisposed { get; private set; }
+
         //----- method -----
 
         public virtual void Initialize(string hostUrl, bool compress, DataFormat format = DataFormat.MessagePack)
@@ -92,6 +95,22 @@ namespace Modules.Net.WebRequest
 
             IsConnecting = false;
             IsCanceled = false;
+        }
+
+        ~UnityWebRequestClient()
+        {
+            Dispose();
+        }
+
+        public void Dispose()
+        {
+            if (IsDisposed){ return; }
+
+            IsDisposed = true;
+
+            request.Dispose();
+
+            GC.SuppressFinalize(this);
         }
 
         public static void SetCryptoKey(AesCryptoKey cryptoKey)

@@ -1,4 +1,4 @@
-﻿
+
 using System.IO;
 using System.Text;
 using Extensions;
@@ -46,7 +46,10 @@ namespace Modules.Devkit.AssetTuning
 				var str = encode.GetString(bytes);
 
 				// UTF8 + BOMなしか確認.
-				var isUTF8Encoding = encode.CodePage == 65001 && bytes[0] != 0xEF || bytes[1] != 0xBB || bytes[2] != 0xBF;
+
+                var utf8Encoding = new UTF8Encoding(true);
+
+				var isUTF8Encoding = encode.CodePage == utf8Encoding.CodePage;
 
 				// 改行コードの置き換え.
 				var requireLineEndReplace = str.Contains("\r\n");
@@ -60,7 +63,7 @@ namespace Modules.Devkit.AssetTuning
 				// 保存.
 				if (!isUTF8Encoding || requireLineEndReplace)
 				{
-					File.WriteAllText(path, str, new UTF8Encoding(false));
+					File.WriteAllText(path, str, utf8Encoding);
 				}
 			}
 		}

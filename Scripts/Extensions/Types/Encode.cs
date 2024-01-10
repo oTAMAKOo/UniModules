@@ -1,23 +1,12 @@
 ﻿
+using System.Text;
+
 namespace Extensions
 {
     public static class Encode
     {
-        /// <summary>
-        /// 文字コードを判別する
-        /// </summary>
-        /// <remarks>
-        /// Jcode.pmのgetcodeメソッドを移植したものです。
-        /// Jcode.pm(http://openlab.ring.gr.jp/Jcode/index-j.html)
-        /// Jcode.pmの著作権情報
-        /// Copyright 1999-2005 Dan Kogai <dankogai@dan.co.jp>
-        /// This library is free software; you can redistribute it and/or modify it
-        ///  under the same terms as Perl itself.
-        /// </remarks>
-        /// <param name="bytes">文字コードを調べるデータ</param>
-        /// <returns>適当と思われるEncodingオブジェクト。
-        /// 判断できなかった時はnull。</returns>
-        public static System.Text.Encoding GetEncode(byte[] bytes)
+        /// <summary> 文字コードを判別 </summary>
+        public static Encoding GetEncode(byte[] bytes)
         {
             const byte bEscape = 0x1B;
             const byte bAt = 0x40;
@@ -32,7 +21,23 @@ namespace Extensions
             int len = bytes.Length;
             byte b1, b2, b3, b4;
 
-            //Encode::is_utf8 は無視
+            // Analyze the BOM
+
+            var bom = new byte[4];
+
+            for (var i = 0; i < len; i++)
+            {
+                if (bom.Length <= i){ break; }
+
+                bom[i] = bytes[i];
+            }
+
+            if (bom[0] == 0x2b && bom[1] == 0x2f && bom[2] == 0x76) return Encoding.UTF7;
+            if (bom[0] == 0xef && bom[1] == 0xbb && bom[2] == 0xbf) return Encoding.UTF8;
+            if (bom[0] == 0xff && bom[1] == 0xfe && bom[2] == 0 && bom[3] == 0) return Encoding.UTF32; //UTF-32LE
+            if (bom[0] == 0xff && bom[1] == 0xfe) return Encoding.Unicode; //UTF-16LE
+            if (bom[0] == 0xfe && bom[1] == 0xff) return Encoding.BigEndianUnicode; //UTF-16BE
+            if (bom[0] == 0 && bom[1] == 0 && bom[2] == 0xfe && bom[3] == 0xff) return new UTF32Encoding(true, true);  //UTF-32BE
 
             bool isBinary = false;
             for (int i = 0; i < len; i++)
