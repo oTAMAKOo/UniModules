@@ -41,8 +41,6 @@ namespace Modules.Devkit.AssetTuning
             
             var encode = Encode.GetEncode(bytes);
 
-            UnityEngine.Debug.Log(encode);
-
             if(encode != null)
             {
                 var utf8Encoding = new UTF8Encoding(true);
