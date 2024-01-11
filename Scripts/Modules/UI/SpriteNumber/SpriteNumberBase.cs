@@ -32,6 +32,8 @@ namespace Modules.UI.SpriteNumber
         //----- field -----
         
         [SerializeField]
+        private Transform numberRoot = null;
+        [SerializeField]
         private RuntimeAnimatorController animationController = null;
         [SerializeField]
         private SpriteData[] spriteData = null;
@@ -92,7 +94,7 @@ namespace Modules.UI.SpriteNumber
 
             if (components.IsEmpty())
             {
-                var component = UnityUtility.CreateGameObject<T>(gameObject, "origin");
+                var component = UnityUtility.CreateGameObject<T>(numberRoot.gameObject, "origin");
 
                 components.Add(component);
             }
@@ -101,7 +103,7 @@ namespace Modules.UI.SpriteNumber
 
             var origin = components.FirstOrDefault();
 
-            var items = UnityUtility.Instantiate<T>(gameObject, origin, addCount);
+            var items = UnityUtility.Instantiate<T>(numberRoot.gameObject, origin, addCount);
 
             items.ForEach(x => components.Add(x));
 
