@@ -135,6 +135,16 @@ namespace Modules.ObjectPool
             }
         }
 
+        public void Clear()
+        {
+            foreach (var cachedObject in cachedObjects)
+            {
+                UnityUtility.DeleteGameObject(cachedObject);
+            }
+
+            cachedObjects.Clear();
+        }
+
         public IObservable<T> OnCreateInstanceAsObservable()
         {
             return onCreate ?? (onCreate = new Subject<T>());
