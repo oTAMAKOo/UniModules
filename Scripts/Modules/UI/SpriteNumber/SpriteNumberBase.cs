@@ -107,7 +107,6 @@ namespace Modules.UI.SpriteNumber
 
             for (var i = 0; i < components.Count; i++)
             {
-                components[i].gameObject.hideFlags = HideFlags.HideAndDontSave;
                 components[i].transform.name = i.ToString();
             }
         }
@@ -149,6 +148,8 @@ namespace Modules.UI.SpriteNumber
 
             if (!forceUpdate && Text == text) { return; }
 
+            ClearText();
+
             this.Text = text;
 
             // すべてのコンポーネントを更新します
@@ -180,16 +181,33 @@ namespace Modules.UI.SpriteNumber
         {
             if (string.IsNullOrEmpty(Text)){ return; }
 
+            if (spriteTable == null){ return; }
+
+            var textLength = Text.Length;
+
             for (var i = 0; i < components.Count; i++)
             {
-                var sprite = spriteTable.GetValueOrDefault(Text[i]);
+                var component = components[i];
 
-                UpdateComponent(components[i], sprite, color);
+                if (i < textLength)
+                {
+                    var charStr = Text.ElementAtOrDefault(i);
+
+                    var sprite = spriteTable.GetValueOrDefault(charStr);
+
+                    UpdateComponent(component, sprite, color);
+                }
+                else
+                {
+                    UnityUtility.SetActive(component, false);
+                }
             }
         }
 
         private void UpdateLayouts()
         {
+            if (components == null){ return; }
+
             var textLenght = Text.Length;
 
             for (var i = 0; i < components.Count; i++)
@@ -222,8 +240,12 @@ namespace Modules.UI.SpriteNumber
         {
             var tasks = new List<UniTask>();
 
+            var textLength = Text.Length;
+
             for (var i = 0; i < components.Count; i++)
             {
+                if (textLength <= i){ break; }
+
                 var index = i;
                 var component = components[i];
 
@@ -250,7 +272,7 @@ namespace Modules.UI.SpriteNumber
 
             if (animation == null)
             {
-                animation = UnityUtility.AddComponent<SpriteNumberAnimation>(component.gameObject);
+                animation = UnityUtility.GetOrAddComponent<SpriteNumberAnimation>(component.gameObject);
 
                 spriteNumberAnimationCache.Add(component, animation);
             }
@@ -259,7 +281,7 @@ namespace Modules.UI.SpriteNumber
 
             if (animator == null)
             {
-                animator = UnityUtility.AddComponent<Animator>(component.gameObject);
+                animator = UnityUtility.GetOrAddComponent<Animator>(component.gameObject);
 
                 animatorCache.Add(component, animator);
             }
@@ -268,14 +290,24 @@ namespace Modules.UI.SpriteNumber
 
             var animationComplete = false;
 
-            animation.Setup(index);
-            animation.OnCompleteAsObservable()
-                .Subscribe(_ => animationComplete = true)
-                .AddTo(this);
+            if (animation != null)
+            {
+                animation.Setup(index);
+                animation.OnCompleteAsObservable()
+                    .Subscribe(_ => animationComplete = true)
+                    .AddTo(this);
+            }
 
-            animator.runtimeAnimatorController = animationController;
-            animator.speed = animationSpeed;
-            animator.enabled = true;
+            if (animator != null)
+            {
+                animator.enabled = false;
+
+                animator.runtimeAnimatorController = animationController;
+                animator.speed = animationSpeed;
+                animator.enabled = true;
+            }
+
+            UnityUtility.SetActive(component, true);
 
             await UniTask.WaitUntil(() => animationComplete);
         }
