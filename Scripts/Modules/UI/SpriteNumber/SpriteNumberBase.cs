@@ -173,6 +173,14 @@ namespace Modules.UI.SpriteNumber
             UpdateSprites();
             UpdateLayouts();
 
+            var rt = transform as RectTransform;
+
+            rt.sizeDelta = Vector2.zero;
+
+            var bounds = RectTransformUtility.CalculateRelativeRectTransformBounds(transform);
+
+            rt.sizeDelta = bounds.size;
+
             if (animationController != null)
             {
                 PlayAnimation().Forget(this);
@@ -270,13 +278,13 @@ namespace Modules.UI.SpriteNumber
 
         private async UniTask NumberAnimation(T component, int index)
         {
-            var animation = spriteNumberAnimationCache.GetValueOrDefault(component);
+            var numberAnimation = spriteNumberAnimationCache.GetValueOrDefault(component);
 
-            if (animation == null)
+            if (numberAnimation == null)
             {
-                animation = UnityUtility.GetOrAddComponent<SpriteNumberAnimation>(component.gameObject);
+                numberAnimation = UnityUtility.GetOrAddComponent<SpriteNumberAnimation>(component.gameObject);
 
-                spriteNumberAnimationCache.Add(component, animation);
+                spriteNumberAnimationCache.Add(component, numberAnimation);
             }
 
             var animator = animatorCache.GetValueOrDefault(component);
@@ -292,10 +300,10 @@ namespace Modules.UI.SpriteNumber
 
             var animationComplete = false;
 
-            if (animation != null)
+            if (numberAnimation != null)
             {
-                animation.Setup(index);
-                animation.OnCompleteAsObservable()
+                numberAnimation.Setup(index);
+                numberAnimation.OnCompleteAsObservable()
                     .Subscribe(_ => animationComplete = true)
                     .AddTo(this);
             }
