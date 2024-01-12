@@ -6,7 +6,6 @@ using System.Collections.Generic;
 using Cysharp.Threading.Tasks;
 using UniRx;
 using Extensions;
-using Extensions.Serialize;
 
 namespace Modules.UI.SpriteNumber
 {
@@ -58,6 +57,7 @@ namespace Modules.UI.SpriteNumber
         private Dictionary<T, SpriteNumberAnimation> spriteNumberAnimationCache = null;
         private Dictionary<T, Animator> animatorCache = null;
 
+        private Subject<Unit> onAnimationStart = null;
         private Subject<Unit> onAnimationFinish = null;
 
         private bool initialized = false;
@@ -172,14 +172,7 @@ namespace Modules.UI.SpriteNumber
 
             UpdateSprites();
             UpdateLayouts();
-
-            var rt = transform as RectTransform;
-
-            rt.sizeDelta = Vector2.zero;
-
-            var bounds = RectTransformUtility.CalculateRelativeRectTransformBounds(transform);
-
-            rt.sizeDelta = bounds.size;
+            UpdateSizeDelta();
 
             if (animationController != null)
             {
@@ -207,10 +200,8 @@ namespace Modules.UI.SpriteNumber
 
                     UpdateComponent(component, sprite, color);
                 }
-                else
-                {
-                    UnityUtility.SetActive(component, false);
-                }
+
+                UnityUtility.SetActive(component, i < textLength);
             }
         }
 
@@ -246,6 +237,17 @@ namespace Modules.UI.SpriteNumber
             }
         }
 
+        private void UpdateSizeDelta()
+        {
+            var rt = transform as RectTransform;
+
+            rt.sizeDelta = Vector2.zero;
+
+            var bounds = RectTransformUtility.CalculateRelativeRectTransformBounds(numberRoot);
+
+            rt.sizeDelta = bounds.size;
+        }
+
         private async UniTask PlayAnimation()
         {
             var tasks = new List<UniTask>();
@@ -262,6 +264,13 @@ namespace Modules.UI.SpriteNumber
                 var task = UniTask.Defer(() => NumberAnimation(component, index));
 
                 tasks.Add(task);
+
+                UnityUtility.SetActive(component, false);
+            }
+
+            if (onAnimationStart != null)
+            {
+                onAnimationStart.OnNext(Unit.Default);
             }
 
             await UniTask.WhenAll(tasks);
@@ -327,6 +336,11 @@ namespace Modules.UI.SpriteNumber
             if (components == null){ return; }
 
             components.ForEach(component => OnApply(component));
+        }
+
+        public IObservable<Unit> OnAnimationStartAsObservable()
+        {
+            return onAnimationStart ?? (onAnimationStart  = new Subject<Unit>());
         }
 
         public IObservable<Unit> OnAnimationFinishAsObservable()
