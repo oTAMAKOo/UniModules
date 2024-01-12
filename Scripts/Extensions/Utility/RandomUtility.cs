@@ -86,7 +86,7 @@ namespace Extensions
         /// <summary> 0-max%を入力してヒットしたかを判定.</summary>
         public static bool IsPercentageHit(float percentage, float max = 100f)
         {
-            return percentage != 0f && RandomInRange(1f, max) <= percentage;
+            return percentage != 0f && RandomInRange(0f, max) <= percentage;
         }
 
         //-----------------------------------------------
