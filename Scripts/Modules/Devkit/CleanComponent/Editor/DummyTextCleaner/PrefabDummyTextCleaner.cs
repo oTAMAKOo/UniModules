@@ -26,7 +26,7 @@ namespace Modules.Devkit.CleanComponent
 
 		private static async UniTask ModifyPrefabContents(string assetPath)
 		{
-			await UniTask.NextFrame();
+			await UniTask.DelayFrame(5);
 
 			var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(assetPath);
 
