@@ -104,11 +104,7 @@ namespace Modules.CriWare
 
                 // ファイルハンドルの使用数を節約する為、ファイルアクセスが行われるタイミングでのみハンドルを利用するよう変更.
                 // ※ 逐次オープンとなるためファイルアクセスの性能は低下する.
-                Initializer.fileSystemConfig.numberOfBinders = 65535;
                 Initializer.fileSystemConfig.minimizeFileDescriptorUsage = true;
-
-                // 同時インストール可能数を設定.
-                Initializer.fileSystemConfig.numberOfInstallers = 65535;
 
                 // 初期化実行.
                 Initializer.Initialize();
