@@ -109,9 +109,9 @@ namespace Extensions
         {
             var buffer = new byte[1024];
 
-            using (var memoryStream = new MemoryStream(bytes))
+            using (var memoryStream = new MemoryStream())
             {
-                using (var gzipStream = new GZipStream(memoryStream, CompressionMode.Decompress))
+                using (var gzipStream = new GZipStream(new MemoryStream(bytes), CompressionMode.Decompress))
                 {
                     while (true)
                     {
@@ -131,9 +131,9 @@ namespace Extensions
         {
             var buffer = new byte[1024];
 
-            using (var memoryStream = new MemoryStream(bytes))
+            using (var memoryStream = new MemoryStream())
             {
-                using (var deflateStream = new DeflateStream(memoryStream, CompressionMode.Decompress))
+                using (var deflateStream = new DeflateStream(new MemoryStream(bytes), CompressionMode.Decompress))
                 {
                     while (true)
                     {
