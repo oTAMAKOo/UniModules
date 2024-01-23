@@ -19,6 +19,7 @@ namespace Modules.Net.WebRequest
         None = 0,
 
         GZip,
+        Deflate,
         MessagePackLZ4,
     }
 

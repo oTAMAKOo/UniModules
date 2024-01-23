@@ -12,6 +12,8 @@ using MessagePack;
 using MessagePack.Resolvers;
 using Modules.MessagePack;
 
+using static Extensions.CompressionExtensions;
+
 namespace Modules.Net.WebRequest
 {
     public abstract class UnityWebRequestClient : IDisposable, IWebRequestClient
@@ -290,7 +292,11 @@ namespace Modules.Net.WebRequest
                             switch (CompressResponseData)
                             {
                                 case DataCompressType.GZip:
-                                    value = value.Decompress();
+                                    value = value.Decompress(CompressionAlgorithm.GZip);
+                                    break;
+
+                                case DataCompressType.Deflate:
+                                    value = value.Decompress(CompressionAlgorithm.Deflate);
                                     break;
 
                                 case DataCompressType.MessagePackLZ4:
@@ -382,10 +388,16 @@ namespace Modules.Net.WebRequest
                         var json = JsonConvert.SerializeObject(content);
 
                         bytes = Encoding.UTF8.GetBytes(json);
-                        
-                        if (CompressRequestData == DataCompressType.GZip)
+
+                        switch (CompressRequestData)
                         {
-                            bytes = bytes.Compress();
+                            case DataCompressType.GZip:
+                                bytes = bytes.Compress(CompressionAlgorithm.GZip);
+                                break;
+
+                            case DataCompressType.Deflate:
+                                bytes = bytes.Compress(CompressionAlgorithm.Deflate);
+                                break;
                         }
                     }
                     break;
@@ -401,9 +413,15 @@ namespace Modules.Net.WebRequest
 
                         bytes = MessagePackSerializer.Serialize(content, options);
 
-                        if (CompressRequestData == DataCompressType.GZip)
+                        switch (CompressRequestData)
                         {
-                            bytes = bytes.Compress();
+                            case DataCompressType.GZip:
+                                bytes = bytes.Compress(CompressionAlgorithm.GZip);
+                                break;
+
+                            case DataCompressType.Deflate:
+                                bytes = bytes.Compress(CompressionAlgorithm.Deflate);
+                                break;
                         }
                     }
                     break;
@@ -467,9 +485,15 @@ namespace Modules.Net.WebRequest
             {
                 case DataFormat.Json:
                     {
-                        if (CompressResponseData == DataCompressType.GZip)
+                        switch (CompressResponseData)
                         {
-                            bytes = bytes.Decompress();
+                            case DataCompressType.GZip:
+                                bytes = bytes.Decompress(CompressionAlgorithm.GZip);
+                                break;
+
+                            case DataCompressType.Deflate:
+                                bytes = bytes.Decompress(CompressionAlgorithm.Deflate);
+                                break;
                         }
 
                         json = Encoding.UTF8.GetString(bytes);
@@ -480,14 +504,19 @@ namespace Modules.Net.WebRequest
                     {
                         var options = StandardResolverAllowPrivate.Options.WithResolver(UnityCustomResolver.Instance);
 
-                        if (CompressResponseData == DataCompressType.MessagePackLZ4)
+                        switch (CompressResponseData)
                         {
-                            options = options.WithCompression(MessagePackCompression.Lz4Block);
-                        }
+                            case DataCompressType.GZip:
+                                bytes = bytes.Decompress(CompressionAlgorithm.GZip);
+                                break;
 
-                        if (CompressResponseData == DataCompressType.GZip)
-                        {
-                            bytes = bytes.Decompress();
+                            case DataCompressType.Deflate:
+                                bytes = bytes.Decompress(CompressionAlgorithm.Deflate);
+                                break;
+
+                            case DataCompressType.MessagePackLZ4:
+                                options = options.WithCompression(MessagePackCompression.Lz4Block);
+                                break;
                         }
 
                         json = MessagePackSerializer.ConvertToJson(bytes, options);
