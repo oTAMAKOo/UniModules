@@ -14,9 +14,17 @@ namespace Modules.Net.WebRequest
         MessagePack,
     }
 
+    public enum DataCompressType
+    {
+        None = 0,
+
+        GZip,
+        MessagePackLZ4,
+    }
+
     public abstract class WebRequestManager<TInstance, TWebRequest> : Singleton<TInstance>
         where TInstance : WebRequestManager<TInstance, TWebRequest> 
-        where TWebRequest : class, IWebRequestClient, new()
+        where TWebRequest : class, IWebRequestClient, IDisposable, new()
     {
         //----- params -----
 
@@ -41,8 +49,11 @@ namespace Modules.Net.WebRequest
         /// <summary> 接続先URL. </summary>
         public string HostUrl { get; private set; }
 
-        /// <summary> 送受信データの圧縮. </summary>
-        public bool Compress { get; private set; }
+        /// <summary> 送信データの圧縮. </summary>
+        public DataCompressType CompressRequestData { get; private set; }
+
+        /// <summary> 受信データの圧縮. </summary>
+        public DataCompressType CompressResponseData { get; private set; }
 
         /// <summary> データ内容フォーマット. </summary>
         public DataFormat Format { get; private set; }
@@ -60,67 +71,97 @@ namespace Modules.Net.WebRequest
 
         protected WebRequestManager()
         {
+            requestList = new List<TWebRequest>();
             requestQueue = new Queue<TWebRequest>();
             Headers = new Dictionary<string, Tuple<bool, string>>();
         }
 
-        public virtual void Initialize(string hostUrl, bool compress = true, DataFormat format = DataFormat.MessagePack, int retryCount = 3, float retryDelaySeconds = 2)
+        public virtual void Initialize(string hostUrl, DataFormat format = DataFormat.MessagePack, int retryCount = 3, float retryDelaySeconds = 2)
         {
             HostUrl = hostUrl;
-            Compress = compress;
             Format = format;
             RetryCount = retryCount;
             RetryDelaySeconds = retryDelaySeconds;
         }
 
+        public void SetFormat(DataFormat format)
+        {
+            Format = format;
+        }
+
+        public void SetRequestDataCompress(DataCompressType compressType)
+        {
+            CompressRequestData = compressType;
+        }
+
+        public void SetResponseDataCompress(DataCompressType compressType)
+        {
+            CompressResponseData = compressType;
+        }
+
         /// <summary> リソースの取得. </summary>
         protected async Task<TResult> Get<TResult>(TWebRequest webRequest, bool parallel = false, IProgress<float> progress = null) where TResult : class
         {
-            var taskFunc = webRequest.Get<TResult>(progress);
+            using (webRequest)
+            {
+                var taskFunc = webRequest.Get<TResult>(progress);
 
-            var result = await Request(webRequest, taskFunc, parallel);
+                var result = await Request(webRequest, taskFunc, parallel);
 
-            return result;
+                return result;
+            }
         }
 
         /// <summary> リソースの作成、追加. </summary>
         protected async Task<TResult> Post<TResult, TContent>(TWebRequest webRequest, TContent content, bool parallel = false, IProgress<float> progress = null) where TResult : class
         {
-            var taskFunc = webRequest.Post<TResult, TContent>(content, progress);
+            using (webRequest)
+            {
+                var taskFunc = webRequest.Post<TResult, TContent>(content, progress);
 
-            var result = await Request(webRequest, taskFunc, parallel);
+                var result = await Request(webRequest, taskFunc, parallel);
 
-            return result;
+                return result;
+            }
         }
 
         /// <summary> リソースの更新、作成. </summary>
         protected async Task<TResult> Put<TResult, TContent>(TWebRequest webRequest, TContent content, bool parallel = false, IProgress<float> progress = null) where TResult : class
         {
-            var taskFunc = webRequest.Put<TResult, TContent>(content, progress);
+            using (webRequest)
+            {
+                var taskFunc = webRequest.Put<TResult, TContent>(content, progress);
 
-            var result = await Request(webRequest, taskFunc, parallel);
+                var result = await Request(webRequest, taskFunc, parallel);
 
-            return result;
+                return result;
+            }
         }
 
         /// <summary> リソースの部分更新. </summary>
         protected async Task<TResult> Patch<TResult, TContent>(TWebRequest webRequest, TContent content, bool parallel = false, IProgress<float> progress = null) where TResult : class
         {
-            var taskFunc = webRequest.Patch<TResult, TContent>(content, progress);
+            using (webRequest)
+            {
+                var taskFunc = webRequest.Patch<TResult, TContent>(content, progress);
 
-            var result = await Request(webRequest, taskFunc, parallel);
+                var result = await Request(webRequest, taskFunc, parallel);
 
-            return result;
+                return result;
+            }
         }
 
         /// <summary> リソースの削除. </summary>
         protected async Task<TResult> Delete<TResult>(TWebRequest webRequest, bool parallel = false, IProgress<float> progress = null) where TResult : class
         {
-            var taskFunc = webRequest.Delete<TResult>(progress);
+            using (webRequest)
+            {
+                var taskFunc = webRequest.Delete<TResult>(progress);
 
-            var result = await Request(webRequest, taskFunc, parallel);
+                var result = await Request(webRequest, taskFunc, parallel);
 
-            return result;
+                return result;
+            }
         }
 
         private async Task<TResult> Request<TResult>(TWebRequest webRequest, Func<CancellationToken, Task<TResult>> taskFunc, bool parallel) where TResult : class
@@ -242,7 +283,10 @@ namespace Modules.Net.WebRequest
         {
             var webRequest = new TWebRequest();
 
-            webRequest.Initialize(PathUtility.Combine(HostUrl, url), Compress, Format);
+            webRequest.Initialize(PathUtility.Combine(HostUrl, url), Format);
+
+            webRequest.SetRequestDataCompress(CompressRequestData);
+            webRequest.SetResponseDataCompress(CompressResponseData);
 
             foreach (var header in Headers)
             {

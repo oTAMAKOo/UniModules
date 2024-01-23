@@ -6,13 +6,11 @@ using System.Collections.Generic;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using Cysharp.Threading.Tasks;
 using Newtonsoft.Json;
 using Extensions;
 using MessagePack;
 using MessagePack.Resolvers;
 using Modules.MessagePack;
-using UniRx;
 
 namespace Modules.Net.WebRequest
 {
@@ -45,11 +43,15 @@ namespace Modules.Net.WebRequest
         /// <summary> ヘッダー情報. </summary>
         public IDictionary<string, Tuple<bool, string>> Headers { get; private set; }
         
+
         /// <summary> URLパラメータ. </summary>
         public IDictionary<string, object> UrlParams { get; private set; }
 
-        /// <summary> 送受信データの圧縮. </summary>
-        public bool Compress { get; private set; }
+        /// <summary> 送信データの圧縮. </summary>
+        public DataCompressType CompressRequestData { get; private set; }
+
+        /// <summary> 受信データの圧縮. </summary>
+        public DataCompressType CompressResponseData { get; private set; }
 
         /// <summary> 通信データフォーマット. </summary>
         public DataFormat Format { get; private set; }
@@ -82,10 +84,9 @@ namespace Modules.Net.WebRequest
 
         //----- method -----
 
-        public virtual void Initialize(string hostUrl, bool compress, DataFormat format = DataFormat.MessagePack)
+        public virtual void Initialize(string hostUrl, DataFormat format = DataFormat.MessagePack)
         {
             HostUrl = hostUrl;
-            Compress = compress;
             Format = format;
 
             Headers = new Dictionary<string, Tuple<bool, string>>();
@@ -108,9 +109,22 @@ namespace Modules.Net.WebRequest
 
             IsDisposed = true;
 
-            request.Dispose();
+            if (request !=null)
+            {
+                request.Dispose();
+            }
 
             GC.SuppressFinalize(this);
+        }
+
+        public void SetRequestDataCompress(DataCompressType compressType)
+        {
+            CompressRequestData = compressType;
+        }
+
+        public void SetResponseDataCompress(DataCompressType compressType)
+        {
+            CompressResponseData = compressType;
         }
 
         public static void SetCryptoKey(AesCryptoKey cryptoKey)
@@ -134,52 +148,67 @@ namespace Modules.Net.WebRequest
 
         public Func<CancellationToken, Task<TResult>> Get<TResult>(IProgress<float> progress = null) where TResult : class
         {
-            CreateWebRequest(UnityWebRequest.kHttpVerbGET);
+            return async token =>
+            {
+                CreateWebRequest(UnityWebRequest.kHttpVerbGET);
 
-            request.downloadHandler = CreateDownloadHandler();
+                request.downloadHandler = CreateDownloadHandler();
 
-            return async token => await SendRequest<TResult>(progress, token);
+                return await SendRequest<TResult>(progress, token);
+            };
         }
 
         public Func<CancellationToken, Task<TResult>> Post<TResult, TContent>(TContent content, IProgress<float> progress = null) where TResult : class
         {
-            CreateWebRequest(UnityWebRequest.kHttpVerbPOST);
+            return async token =>
+            {
+                CreateWebRequest(UnityWebRequest.kHttpVerbPOST);
 
-            request.uploadHandler = CreateUploadHandler(content);
-            request.downloadHandler = CreateDownloadHandler();
+                request.uploadHandler = CreateUploadHandler(content);
+                request.downloadHandler = CreateDownloadHandler();
 
-            return async token => await SendRequest<TResult>(progress, token);
+                return await SendRequest<TResult>(progress, token);
+            };
         }
 
         public Func<CancellationToken, Task<TResult>> Put<TResult, TContent>(TContent content, IProgress<float> progress = null) where TResult : class
         {
-            CreateWebRequest(UnityWebRequest.kHttpVerbPUT);
+            return async token =>
+            {
+                CreateWebRequest(UnityWebRequest.kHttpVerbPUT);
 
-            request.uploadHandler = CreateUploadHandler(content);
-            request.downloadHandler = CreateDownloadHandler();
+                request.uploadHandler = CreateUploadHandler(content);
+                request.downloadHandler = CreateDownloadHandler();
 
-            return async token => await SendRequest<TResult>(progress, token);
+                return await SendRequest<TResult>(progress, token);
+            };
         }
 
         public Func<CancellationToken, Task<TResult>> Patch<TResult, TContent>(TContent content, IProgress<float> progress = null) where TResult : class
         {
             const string kHttpVerbPatch = "PATCH";
 
-            CreateWebRequest(kHttpVerbPatch);
+            return async token =>
+            {
+                CreateWebRequest(kHttpVerbPatch);
 
-            request.uploadHandler = CreateUploadHandler(content);
-            request.downloadHandler = CreateDownloadHandler();
+                request.uploadHandler = CreateUploadHandler(content);
+                request.downloadHandler = CreateDownloadHandler();
 
-            return async token => await SendRequest<TResult>(progress, token);
+                return await SendRequest<TResult>(progress, token);
+            };
         }
 
         public Func<CancellationToken, Task<TResult>> Delete<TResult>(IProgress<float> progress = null) where TResult : class
         {
-            CreateWebRequest(UnityWebRequest.kHttpVerbDELETE);
+            return async token =>
+            {
+                CreateWebRequest(UnityWebRequest.kHttpVerbDELETE);
 
-            request.downloadHandler = CreateDownloadHandler();
+                request.downloadHandler = CreateDownloadHandler();
 
-            return async token => await SendRequest<TResult>(progress, token);
+                return await SendRequest<TResult>(progress, token);
+            };
         }
 
         public void Cancel(bool throwException = false)
@@ -211,11 +240,11 @@ namespace Modules.Net.WebRequest
 
                 IsConnecting = false;
             }
-			catch (OperationCanceledException)
-			{
-				request.Abort();
-			}
-			catch (Exception e)
+            catch (OperationCanceledException)
+            {
+                request.Abort();
+            }
+            catch (Exception e)
             {
                 Error = e;
             }
@@ -238,7 +267,7 @@ namespace Modules.Net.WebRequest
             {
                 case DataFormat.Json:
                     {
-                        if (Compress)
+                        if (CompressResponseData == DataCompressType.GZip)
                         {
                             value = value.Decompress();
                         }
@@ -258,9 +287,15 @@ namespace Modules.Net.WebRequest
                         {
                             var options = StandardResolverAllowPrivate.Options.WithResolver(UnityCustomResolver.Instance);
 
-                            if (Compress)
+                            switch (CompressResponseData)
                             {
-                                options = options.WithCompression(MessagePackCompression.Lz4Block);
+                                case DataCompressType.GZip:
+                                    value = value.Decompress();
+                                    break;
+
+                                case DataCompressType.MessagePackLZ4:
+                                    options = options.WithCompression(MessagePackCompression.Lz4Block);
+                                    break;
                             }
 
                             result = MessagePackSerializer.Deserialize<TResult>(value, options);
@@ -284,7 +319,7 @@ namespace Modules.Net.WebRequest
 
                 queryBuilder.Append(i == 0 ? "?" : "&");
 
-                var query = string.Format("{0}={1}", item.Key, item.Value);
+                var query = $"{item.Key}={item.Value}";
                 
                 if (encryptUriQuery)
                 {
@@ -311,7 +346,7 @@ namespace Modules.Net.WebRequest
             foreach (var header in Headers)
             {
                 var key = header.Key.TrimEnd('\0');
-                var value = header.Value.Item2.TrimEnd('\0');
+                var value = string.IsNullOrEmpty(header.Value.Item2) ? string.Empty : header.Value.Item2.TrimEnd('\0');
 
                 request.SetRequestHeader(key, value);
             }
@@ -348,7 +383,7 @@ namespace Modules.Net.WebRequest
 
                         bytes = Encoding.UTF8.GetBytes(json);
                         
-                        if (Compress)
+                        if (CompressRequestData == DataCompressType.GZip)
                         {
                             bytes = bytes.Compress();
                         }
@@ -359,12 +394,17 @@ namespace Modules.Net.WebRequest
                     {
                         var options = StandardResolverAllowPrivate.Options.WithResolver(UnityCustomResolver.Instance);
 
-                        if (Compress)
+                        if (CompressRequestData == DataCompressType.MessagePackLZ4)
                         {
                             options = options.WithCompression(MessagePackCompression.Lz4Block);
                         }
 
                         bytes = MessagePackSerializer.Serialize(content, options);
+
+                        if (CompressRequestData == DataCompressType.GZip)
+                        {
+                            bytes = bytes.Compress();
+                        }
                     }
                     break;
             }
@@ -427,7 +467,7 @@ namespace Modules.Net.WebRequest
             {
                 case DataFormat.Json:
                     {
-                        if (Compress)
+                        if (CompressResponseData == DataCompressType.GZip)
                         {
                             bytes = bytes.Decompress();
                         }
@@ -440,9 +480,14 @@ namespace Modules.Net.WebRequest
                     {
                         var options = StandardResolverAllowPrivate.Options.WithResolver(UnityCustomResolver.Instance);
 
-                        if (Compress)
+                        if (CompressResponseData == DataCompressType.MessagePackLZ4)
                         {
                             options = options.WithCompression(MessagePackCompression.Lz4Block);
+                        }
+
+                        if (CompressResponseData == DataCompressType.GZip)
+                        {
+                            bytes = bytes.Decompress();
                         }
 
                         json = MessagePackSerializer.ConvertToJson(bytes, options);

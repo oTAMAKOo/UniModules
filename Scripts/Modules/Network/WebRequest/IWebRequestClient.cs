@@ -1,4 +1,4 @@
-﻿
+
 using System;
 using System.Collections.Generic;
 using System.Threading;
@@ -31,8 +31,11 @@ namespace Modules.Net.WebRequest
         /// <summary> URLパラメータ. </summary>
         IDictionary<string, object> UrlParams { get; }
 
-        /// <summary> 送受信データの圧縮. </summary>
-        bool Compress { get; }
+        /// <summary> 送信データの圧縮. </summary>
+        DataCompressType CompressRequestData { get; }
+
+        /// <summary> 受信データの圧縮. </summary>
+        DataCompressType CompressResponseData { get; }
 
         /// <summary> 通信データフォーマット. </summary>
         DataFormat Format { get; }
@@ -54,7 +57,11 @@ namespace Modules.Net.WebRequest
 
         //----- method -----
 
-        void Initialize(string hostUrl, bool compress, DataFormat format = DataFormat.MessagePack);
+        void Initialize(string hostUrl, DataFormat format = DataFormat.MessagePack);
+
+        void SetRequestDataCompress(DataCompressType compressType);
+
+        void SetResponseDataCompress(DataCompressType compressType);
 
         Func<CancellationToken, Task<TResult>> Get<TResult>(IProgress<float> progress = null) where TResult : class;
 

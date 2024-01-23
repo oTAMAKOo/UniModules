@@ -1,4 +1,5 @@
 ﻿
+using UnityEngine;
 using UnityEngine.Networking;
 using System;
 using System.Linq;
@@ -27,41 +28,43 @@ namespace Modules.Net.WebRequest
 
 			if (cancelToken.IsCancellationRequested){ return null; }
 
-			using (request)
-            {
-				var operation = request.SendWebRequest();
+			var operation = request.SendWebRequest();
 
-				while (!operation.isDone)
+			while (!operation.isDone)
+			{
+				if (cancelToken.IsCancellationRequested){ break; }
+
+				if (progress != null)
 				{
-					if (cancelToken.IsCancellationRequested){ break; }
-
-					if (progress != null)
-					{
-						progress.Report(operation.progress);
-					}
-
-					await UniTask.NextFrame(CancellationToken.None);
+					progress.Report(operation.progress);
 				}
 
-				if (!cancelToken.IsCancellationRequested)
-				{
-					if (progress != null)
-					{
-						progress.Report(request.downloadProgress);
-					}
+				await UniTask.NextFrame(CancellationToken.None);
+			}
 
-					var isError = request.HasError();
-					var isSuccess = request.IsSuccess();
-
-					if (isSuccess && !isError)
-					{
-						bytes = request.downloadHandler != null ? request.downloadHandler.data : null;
-					}
-				}
-				else
+			if (!cancelToken.IsCancellationRequested)
+			{
+				if (progress != null)
 				{
-					request.Abort();
+					progress.Report(request.downloadProgress);
 				}
+
+				var isError = request.HasError();
+				var isSuccess = request.IsSuccess();
+
+                if (isError)
+                {
+                    Debug.LogError(request.error);
+                }
+
+				if (isSuccess && !isError)
+				{
+					bytes = request.downloadHandler != null ? request.downloadHandler.data : null;
+				}
+			}
+			else
+			{
+				request.Abort();
 			}
 
 			return bytes;

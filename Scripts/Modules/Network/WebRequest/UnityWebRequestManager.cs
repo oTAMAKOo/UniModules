@@ -1,9 +1,9 @@
 
 using UnityEngine;
+using System;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using Cysharp.Threading.Tasks;
 using UniRx;
 using Extensions;
 using MessagePack;
@@ -15,7 +15,7 @@ namespace Modules.Net.WebRequest
 {
     public abstract class UnityWebRequestManager<TInstance, TWebRequest> : WebRequestManager<TInstance, TWebRequest>
         where TInstance : UnityWebRequestManager<TInstance, TWebRequest> 
-        where TWebRequest : class, IWebRequestClient, new()
+        where TWebRequest : class, IWebRequestClient, IDisposable, new()
     {
         //----- params -----
 
@@ -31,9 +31,9 @@ namespace Modules.Net.WebRequest
 
         //----- method -----
 
-        public override void Initialize(string hostUrl, bool compress = true, DataFormat format = DataFormat.MessagePack, int retryCount = 3, float retryDelaySeconds = 2)
+        public override void Initialize(string hostUrl, DataFormat format = DataFormat.MessagePack, int retryCount = 3, float retryDelaySeconds = 2)
         {
-            base.Initialize(hostUrl, compress, format, retryCount, retryDelaySeconds);
+            base.Initialize(hostUrl, format, retryCount, retryDelaySeconds);
 
 			NetworkConnection.OnNotReachableAsObservable()
 				.Subscribe()
@@ -88,7 +88,7 @@ namespace Modules.Net.WebRequest
                         {
                             var options = StandardResolverAllowPrivate.Options.WithResolver(UnityCustomResolver.Instance);
 
-                            if (Compress)
+                            if (CompressResponseData == DataCompressType.MessagePackLZ4)
                             {
                                 options = options.WithCompression(MessagePackCompression.Lz4Block);
                             }
