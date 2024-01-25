@@ -23,6 +23,27 @@ namespace Modules.Scene
 
         //----- method -----
 
+        private void AppendModuleInitialize()
+        {
+            void OnUnloadSceneComple(SceneInstance<TScenes> sceneInstance)
+            {
+                if (sceneInstance == null){ return; }
+
+                if (appendSceneInstances.Contains(sceneInstance))
+                {
+                    var message = $"[Unload Warning] {sceneInstance.Identifier} is force release.";
+
+                    UnityConsole.Event(ConsoleEventName, ConsoleEventColor, message, LogType.Warning);
+
+                    appendSceneInstances.Remove(sceneInstance);
+                }
+            }
+
+            OnUnloadSceneCompleteAsObservable()
+                .Subscribe(x => OnUnloadSceneComple(x))
+                .AddTo(Disposable);
+        }
+
         /// <summary>
         /// シーンを追加で読み込み.
         /// <para> Prepare, Enter, Leaveは自動で呼び出されないので自分で制御する </para>

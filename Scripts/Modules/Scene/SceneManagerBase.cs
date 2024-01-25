@@ -114,6 +114,8 @@ namespace Modules.Scene
             cacheScenes.OnExtrudedAsObservable()
                 .Subscribe(x => UnloadCacheScene(x))
                 .AddTo(Disposable);
+
+            AppendModuleInitialize();
         }
 
         public async UniTask RegisterBootScene()
@@ -1059,6 +1061,8 @@ namespace Modules.Scene
             }
 
             SceneManager.sceneUnloaded -= sceneUnloaded;
+
+            await CleanUp();
 
             if (onUnloadSceneComplete != null)
             {
