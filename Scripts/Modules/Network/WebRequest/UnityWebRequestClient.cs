@@ -269,9 +269,15 @@ namespace Modules.Net.WebRequest
             {
                 case DataFormat.Json:
                     {
-                        if (CompressResponseData == DataCompressType.GZip)
+                        switch (CompressResponseData)
                         {
-                            value = value.Decompress();
+                            case DataCompressType.GZip:
+                                value = value.Decompress(CompressionAlgorithm.GZip);
+                                break;
+
+                            case DataCompressType.Deflate:
+                                value = value.Decompress(CompressionAlgorithm.Deflate);
+                                break;
                         }
 
                         var json = Encoding.UTF8.GetString(value);
