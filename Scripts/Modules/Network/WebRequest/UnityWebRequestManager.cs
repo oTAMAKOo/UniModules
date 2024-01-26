@@ -31,22 +31,18 @@ namespace Modules.Net.WebRequest
 
         //----- method -----
 
-        public override void Initialize(string hostUrl, DataFormat format = DataFormat.MessagePack, int retryCount = 3, float retryDelaySeconds = 2)
+        public override void SetHostUrl(string hostUrl)
         {
-            base.Initialize(hostUrl, format, retryCount, retryDelaySeconds);
+            base.SetHostUrl(hostUrl);
 
-			NetworkConnection.OnNotReachableAsObservable()
-				.Subscribe()
-				.AddTo(Disposable);
+            #if UNITY_EDITOR
 
-			#if UNITY_EDITOR
-
-			ApiTracker.Instance.SetServerUrl(hostUrl);
+            ApiTracker.Instance.SetServerUrl(hostUrl);
 
             #endif
         }
 
-		protected override async Task WaitNetworkReachable(CancellationToken cancelToken)
+        protected override async Task WaitNetworkReachable(CancellationToken cancelToken)
 		{
 			await NetworkConnection.WaitNetworkReachable(cancelToken);
 		}

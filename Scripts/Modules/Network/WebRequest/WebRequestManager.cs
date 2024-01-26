@@ -57,16 +57,16 @@ namespace Modules.Net.WebRequest
         public DataCompressType CompressResponseData { get; private set; }
 
         /// <summary> データ内容フォーマット. </summary>
-        public DataFormat Format { get; private set; }
+        public DataFormat Format { get; private set; } = DataFormat.MessagePack;
 
         /// <summary> ヘッダー情報 [key, (encrypted, value)]. </summary>
         public IDictionary<string, Tuple<bool, string>> Headers { get; private set; }
 
         /// <summary> リトライ回数. </summary>
-        public int RetryCount { get; private set; }
+        public int RetryCount { get; private set; } = 3;
 
         /// <summary> リトライするまでの時間(秒). </summary>
-        public float RetryDelaySeconds { get; private set; }
+        public float RetryDelaySeconds { get; private set; } = 2;
 
         //----- method -----
 
@@ -77,17 +77,24 @@ namespace Modules.Net.WebRequest
             Headers = new Dictionary<string, Tuple<bool, string>>();
         }
 
-        public virtual void Initialize(string hostUrl, DataFormat format = DataFormat.MessagePack, int retryCount = 3, float retryDelaySeconds = 2)
+        public virtual void SetHostUrl(string hostUrl)
         {
             HostUrl = hostUrl;
-            Format = format;
-            RetryCount = retryCount;
-            RetryDelaySeconds = retryDelaySeconds;
         }
 
-        public void SetFormat(DataFormat format)
+        public virtual void SetFormat(DataFormat format)
         {
             Format = format;
+        }
+
+        public virtual void SetRetryCount(int retryCount)
+        {
+            RetryCount = retryCount;
+        }
+
+        public virtual void SetRetryDelaySeconds(int retryDelaySeconds)
+        {
+            RetryDelaySeconds = retryDelaySeconds;
         }
 
         public void SetRequestDataCompress(DataCompressType compressType)
