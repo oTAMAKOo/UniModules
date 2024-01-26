@@ -9,6 +9,8 @@ namespace Modules.Devkit.AssetTuning
     {
         //----- params -----
 
+        private const char Utf8BOM = '\uFEFF';
+
         //----- field -----
 
         //----- property -----
@@ -60,8 +62,24 @@ namespace Modules.Devkit.AssetTuning
 					str = str.Replace("\r\n", "\n");
 				}
 
+                // BOMが複数ついている.
+
+                var bomCount = 0;
+
+                for (var i = 0; i < str.Length; i++)
+                {
+                    if (str[i] != Utf8BOM){ break; }
+
+                    bomCount++;
+                }
+
+                if (1 < bomCount)
+                {
+                    str = str.Trim(new char[]{Utf8BOM});
+                }
+
 				// 保存.
-				if (!isUTF8Encoding || requireLineEndReplace)
+				if (!isUTF8Encoding || requireLineEndReplace || 1 < bomCount)
 				{
 					File.WriteAllText(path, str, utf8Encoding);
 				}
