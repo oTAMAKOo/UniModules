@@ -1,4 +1,4 @@
-﻿
+
 using UnityEngine;
 using System;
 using System.Collections.Generic;
@@ -97,11 +97,11 @@ namespace Modules.Devkit.Console
             }
         }
 
-        public static void Info(string message)
+        public static void Info(string message, LogType logType = LogType.Log)
         {
             if (!Enable) { return; }
             
-            Event(InfoEvent.ConsoleEventName, InfoEvent.ConsoleEventColor, message);
+            Event(InfoEvent.ConsoleEventName, InfoEvent.ConsoleEventColor, message, logType);
         }
 
         public static void Info(string format, params object[] args)

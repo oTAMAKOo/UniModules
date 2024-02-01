@@ -1,4 +1,4 @@
-﻿
+
 using UnityEngine;
 using UnityEngine.Networking;
 using System;
@@ -54,7 +54,7 @@ namespace Modules.Net.WebRequest
 
                 if (isError)
                 {
-                    Debug.LogError(request.error);
+                    throw new Exception(request.error);
                 }
 
 				if (isSuccess && !isError)
