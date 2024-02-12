@@ -162,10 +162,7 @@ namespace Modules.UI.Particle
                 {
                     var index = textureSheetAnimationCurrentFrame.Value;
 
-                    if (animModule.spriteCount < index)
-                    {
-                        index = animModule.spriteCount;
-                    }
+                    index = Math.Max(0, Math.Min(index, animModule.spriteCount - 1));
 
                     var sprite = animModule.GetSprite(index);
 
