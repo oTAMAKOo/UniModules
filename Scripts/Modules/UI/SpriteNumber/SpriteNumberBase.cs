@@ -60,6 +60,8 @@ namespace Modules.UI.SpriteNumber
         private Subject<Unit> onAnimationStart = null;
         private Subject<Unit> onAnimationFinish = null;
 
+        private bool animationFinished = false;
+
         private bool initialized = false;
 
         //----- property -----
@@ -85,7 +87,15 @@ namespace Modules.UI.SpriteNumber
         }
 
         protected virtual void OnInitialize(){  }
-        
+
+        void OnDisable()
+        {
+            if (!animationFinished && onAnimationFinish != null)
+            {
+                onAnimationFinish.OnNext(Unit.Default);
+            }
+        }
+
         private void BuildContents()
         {
             Initialize();
@@ -250,6 +260,8 @@ namespace Modules.UI.SpriteNumber
 
         private async UniTask PlayAnimation()
         {
+            animationFinished = false;
+
             var tasks = new List<UniTask>();
 
             var textLength = Text.Length;
@@ -278,6 +290,8 @@ namespace Modules.UI.SpriteNumber
             await UniTask.Delay(TimeSpan.FromSeconds(hideDelaySeconds));
 
             ClearText();
+
+            animationFinished = true;
 
             if (onAnimationFinish != null)
             {
