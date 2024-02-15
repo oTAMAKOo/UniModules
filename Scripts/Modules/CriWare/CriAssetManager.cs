@@ -106,6 +106,11 @@ namespace Modules.CriWare
         {
             if (!isInitialized){ return; }
 
+            ReleaseFsWebInstaller();
+        }
+
+        private void ReleaseFsWebInstaller()
+        {
             #if ENABLE_CRIWARE_FILESYSTEM
 
             installQueueing.Clear();
@@ -137,7 +142,7 @@ namespace Modules.CriWare
 
             if(CriFsWebInstaller.isInitialized)
             {
-                Release();
+                ReleaseFsWebInstaller();
             }
 
             var moduleConfig = CriFsWebInstaller.defaultModuleConfig;
