@@ -19,7 +19,11 @@ namespace Modules.UI.Reactive
         [SerializeField]
         private Sprite enableSprite = null;
         [SerializeField]
+        private Color enableColor = Color.white;
+        [SerializeField]
         private Sprite disableSprite = null;
+        [SerializeField]
+        private Color disableColor = Color.white;
 
         private UIImage uiImage = null;
 
@@ -60,8 +64,10 @@ namespace Modules.UI.Reactive
         private void Apply(bool interactable)
         {
             var sprite = interactable ? enableSprite : disableSprite;
+            var color = interactable ? enableColor : disableColor;
 
             uiImage.Image.sprite = sprite;
+            uiImage.color = color;
         }
     }
 }
