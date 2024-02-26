@@ -554,16 +554,23 @@ namespace Modules.AssetBundles
 
                     if (assetBundle != null)
                     {
-                        var assetBundleRequest = assetBundle.LoadAssetAsync(assetPath, typeof(T));
-
-                        while (!assetBundleRequest.isDone)
+                        if (!assetBundle.isStreamedSceneAssetBundle)
                         {
-                            if (cancelToken.IsCancellationRequested) { break; }
+                            var assetBundleRequest = assetBundle.LoadAssetAsync(assetPath, typeof(T));
 
-                            await UniTask.NextFrame(cancelToken);
+                            while (!assetBundleRequest.isDone)
+                            {
+                                if (cancelToken.IsCancellationRequested) { break; }
+
+                                await UniTask.NextFrame(cancelToken);
+                            }
+
+                            result = assetBundleRequest.asset as T;
                         }
-
-                        result = assetBundleRequest.asset as T;
+                        else
+                        {
+                            result = assetBundle as T;
+                        }
 
                         if (result == null)
                         {
