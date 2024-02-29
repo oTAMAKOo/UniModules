@@ -1,5 +1,6 @@
 ﻿
 #if ENABLE_UNIVERSALRENDERPIPELINE
+
 using Extensions;
 using UnityEngine;
 using UnityEngine.Rendering.Universal;
@@ -45,13 +46,18 @@ namespace Modules.Rendering.Universal
 
         void OnEnable()
         {
-            var cameraStackManager = CameraStackManager.Instance;
-
             if (autoStack)
             {
-                cameraStackManager.AddStackCamera(Camera);
-                cameraStackManager.UpdateCurrentCameraStack();
+                AddStack();
             }
+        }
+
+        public void AddStack()
+        {
+            var cameraStackManager = CameraStackManager.Instance;
+
+            cameraStackManager.AddStackCamera(Camera);
+            cameraStackManager.UpdateCurrentCameraStack();
         }
     }
 }
