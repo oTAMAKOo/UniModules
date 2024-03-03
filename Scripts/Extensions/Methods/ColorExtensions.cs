@@ -1,4 +1,4 @@
-﻿
+
 using UnityEngine;
 using System;
 using System.Linq;
@@ -28,6 +28,8 @@ namespace Extensions
 
         public static Color HexToColor(this string hex)
         {
+            if (string.IsNullOrEmpty(hex)){ return Color.clear; }
+
             hex = hex.Replace("0x", "");
             hex = hex.Replace("#", "");
 

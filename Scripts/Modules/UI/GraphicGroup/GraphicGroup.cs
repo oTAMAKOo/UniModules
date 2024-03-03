@@ -1,4 +1,4 @@
-﻿
+
 using UnityEngine;
 using UnityEngine.UI;
 using Unity.Linq;
@@ -8,6 +8,7 @@ using Extensions;
 namespace Modules.UI
 {
     [ExecuteAlways]
+    [RequireComponent(typeof(CanvasRenderer))]
     public sealed class GraphicGroup : Graphic
     {
         //----- params -----
