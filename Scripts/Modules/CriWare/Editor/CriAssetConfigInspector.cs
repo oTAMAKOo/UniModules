@@ -105,7 +105,18 @@ namespace Modules.CriWare.Editor
 
                     using (new EditorGUILayout.HorizontalScope())
                     {
-                        GUILayout.Label(acfAssetSourcePathProperty.stringValue, pathTextStyle);
+                        EditorGUI.BeginChangeCheck();
+
+                        var acfAssetSourcePath = EditorGUILayout.DelayedTextField(acfAssetSourcePathProperty.stringValue, pathTextStyle);
+
+                        if (EditorGUI.EndChangeCheck())
+                        {
+                            UnityEditorUtility.RegisterUndo(instance);
+
+                            acfAssetSourcePathProperty.stringValue = acfAssetSourcePath;
+
+                            serializedObject.ApplyModifiedProperties();
+                        }
 
                         if (GUILayout.Button("Edit", EditorStyles.miniButton, GUILayout.Width(50f)))
                         {
@@ -131,7 +142,18 @@ namespace Modules.CriWare.Editor
 
                     using (new EditorGUILayout.HorizontalScope())
                     {
-                        GUILayout.Label(acfAssetExportPathProperty.stringValue, pathTextStyle);
+                        EditorGUI.BeginChangeCheck();
+
+                        var acfAssetExportPath = EditorGUILayout.DelayedTextField(acfAssetExportPathProperty.stringValue, pathTextStyle);
+
+                        if (EditorGUI.EndChangeCheck())
+                        {
+                            UnityEditorUtility.RegisterUndo(instance);
+
+                            acfAssetExportPathProperty.stringValue = acfAssetExportPath;
+
+                            serializedObject.ApplyModifiedProperties();
+                        }
 
                         if (GUILayout.Button("Edit", EditorStyles.miniButton, GUILayout.Width(50f)))
                         {
