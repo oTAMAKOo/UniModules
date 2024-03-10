@@ -66,11 +66,11 @@ namespace Modules.Devkit.AssetTuning
 
             //------ PlatformSettings ------
 
-            foreach (var platformName in DefaultTargetPlatforms)
+            foreach (var platform in DefaultTargetPlatforms)
             {
-                var platformSetting = spriteAtlas.GetPlatformSettings(platformName.ToString());
+                var platformSetting = spriteAtlas.GetPlatformSettings(platform.ToString());
 
-                SetTexturePlatformSettings(ref platformSetting);
+                SetTexturePlatformSettings(platform, ref platformSetting);
 
                 spriteAtlas.SetPlatformSettings(platformSetting);
             }
@@ -90,13 +90,24 @@ namespace Modules.Devkit.AssetTuning
             textureSettings.filterMode = FilterMode.Bilinear;
         }
 
-        protected virtual void SetTexturePlatformSettings(ref TextureImporterPlatformSettings platformSetting)
+        protected virtual void SetTexturePlatformSettings(BuildTargetGroup platform, ref TextureImporterPlatformSettings platformSetting)
         {
             platformSetting.overridden = true;
-            platformSetting.format = TextureImporterFormat.ASTC_6x6;
             platformSetting.maxTextureSize = 2048;
             platformSetting.compressionQuality = 100;
             platformSetting.textureCompression = TextureImporterCompression.Compressed;
+
+            switch (platform)
+            {
+                case BuildTargetGroup.Standalone:
+                    platformSetting.format = TextureImporterFormat.DXT5;
+                    break;
+
+                case BuildTargetGroup.Android:
+                case BuildTargetGroup.iOS:
+                    platformSetting.format = TextureImporterFormat.ASTC_6x6;
+                    break;
+            }
         }
 
 		private void SetIncludeInBuild(SpriteAtlas spriteAtlas)
