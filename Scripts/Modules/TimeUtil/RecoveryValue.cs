@@ -118,6 +118,14 @@ namespace Modules.TimeUtil
             LastRecoveryTime = LastRecoveryTime.HasValue ? LastRecoveryTime.Value : currentTime;
         }
 
+        /// <summary> 最大値更新 </summary>
+        public void SetMaxValue(double maxValue, DateTime currentTime)
+        {
+            Max = maxValue;
+
+            SetValue(Current, currentTime);
+        }
+
         /// <summary> 更新. </summary>
         public void UpdateTime(DateTime currentTime)
         {
