@@ -41,6 +41,7 @@ using Modules.Devkit.U2D;
 
 #if ENABLE_CRIWARE_ADX || ENABLE_CRIWARE_ADX_LE || ENABLE_CRIWARE_SOFDEC
 
+using Modules.CriWare;
 using Modules.CriWare.Editor;
 
 #endif
@@ -361,7 +362,21 @@ namespace Modules
 
         protected const string CriWareMenu = MenuRoot + "CriWare/";
 
-        [MenuItem(itemName: CriWareMenu + "Open CriAssetUpdateWindow", priority = 0)]
+        [MenuItem(itemName: CriWareMenu + "Audio Mute", priority = 0)]
+        public static void ToggleEditorCriWareMute()
+        {
+            EditorCriWareMute.Prefs.editorAudioMute = !EditorCriWareMute.Prefs.editorAudioMute;
+        }
+
+        [MenuItem(itemName: CriWareMenu + "Audio Mute", validate = true)]
+        public static bool ToggleEditorCriWareMuteValidate()
+        {
+            UnityEditor.Menu.SetChecked(CriWareMenu + "Audio Mute", EditorCriWareMute.Prefs.editorAudioMute);
+
+            return true;
+        }
+
+        [MenuItem(itemName: CriWareMenu + "Open CriAssetUpdateWindow", priority = 1)]
         public static void OpenCriAssetUpdateWindow()
         {
             CriAssetUpdateWindow.Open();
