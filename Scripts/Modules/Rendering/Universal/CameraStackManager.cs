@@ -6,6 +6,8 @@ using UnityEngine.Rendering.Universal;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using UniRx;
+using UniRx.Triggers;
 using Extensions;
 
 namespace Modules.Rendering.Universal
@@ -85,6 +87,14 @@ namespace Modules.Rendering.Universal
             {
                 cameraStackTargets.Add(cameraStackTarget);
             }
+
+            camera.OnDestroyAsObservable()
+                .Subscribe(_ =>
+                    {
+                        RemoveCameraStackTarget(cameraStackTarget);
+                        UpdateCurrentCameraStack();
+                    })
+                .AddTo(Disposable);
         }
 
         public void RemoveStackCamera(Camera camera)
@@ -93,6 +103,11 @@ namespace Modules.Rendering.Universal
 
             var cameraStackTarget = UnityUtility.GetComponent<CameraStackTarget>(camera);
 
+            RemoveCameraStackTarget(cameraStackTarget);
+        }
+
+        private void RemoveCameraStackTarget(CameraStackTarget cameraStackTarget)
+        {
             if (cameraStackTarget == null){ return; }
 
             if (cameraStackTargets.Contains(cameraStackTarget))
