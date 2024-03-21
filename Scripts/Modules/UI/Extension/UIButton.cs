@@ -56,7 +56,7 @@ namespace Modules.UI.Extension
 
         public IObservable<Unit> OnPressAsObservable()
         {
-            return component.OnClickAsObservable();
+            return component.OnPressAsObservable();
         }
 
         public IObservable<float> OnReleaseAsObservable()
