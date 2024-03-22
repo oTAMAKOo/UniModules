@@ -1,4 +1,4 @@
-﻿﻿
+﻿
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.EventSystems;
@@ -33,7 +33,11 @@ namespace Modules.UI.Layout
             }
         }
 
-        public float MaxHeight { get { return maxHeight; } }
+        public float MaxHeight
+        {
+            get { return maxHeight; }
+            set { maxHeight = value; }
+        }
 
         public float minWidth 
         {

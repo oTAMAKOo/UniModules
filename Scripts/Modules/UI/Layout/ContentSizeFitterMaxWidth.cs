@@ -33,7 +33,11 @@ namespace Modules.UI.Layout
             }
         }
 
-        public float MaxWidth { get { return maxWidth; } }
+        public float MaxWidth
+        {
+            get { return maxWidth; }
+            set { maxWidth = value; }
+        }
 
         public float minWidth 
         {
