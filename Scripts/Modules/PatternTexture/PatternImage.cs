@@ -14,7 +14,7 @@ namespace Modules.PatternTexture
     [ExecuteAlways]
     [RequireComponent(typeof(RectTransform))]
     [RequireComponent(typeof(CanvasRenderer))]
-    public sealed class PatternImage : MaskableGraphic, ICanvasRaycastFilter
+    public sealed class PatternImage : MaskableGraphic, ICanvasRaycastFilter, ILayoutElement
     {
         //----- params -----
 
@@ -136,6 +136,40 @@ namespace Modules.PatternTexture
 
             set { SetPatternName(value); }
         }
+
+        public float minWidth { get { return 0; } }
+
+        public float preferredWidth
+        {
+            get
+            {
+                if (sourceTexture == null){ return 0; }
+
+                if (string.IsNullOrEmpty(PatternName)){ return 0; }
+
+                return Current.Width;
+            }
+        }
+
+        public float flexibleWidth { get { return -1; } }
+
+        public float minHeight { get { return 0; } }
+
+        public float preferredHeight
+        {
+            get
+            {
+                if (sourceTexture == null){ return 0; }
+
+                if (string.IsNullOrEmpty(PatternName)){ return 0; }
+
+                return Current.Height;
+            }
+        }
+
+        public float flexibleHeight { get { return -1; } }
+
+        public int layoutPriority { get { return 0; } }
 
         //----- method -----
 
@@ -459,5 +493,9 @@ namespace Modules.PatternTexture
                 selectionPatternName = null;
             }
         }
+
+        public void CalculateLayoutInputHorizontal() { }
+
+        public void CalculateLayoutInputVertical() { }
     }
 }
