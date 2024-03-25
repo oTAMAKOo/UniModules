@@ -1,8 +1,11 @@
 ﻿
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using System;
 using System.Collections.Generic;
 using Cysharp.Threading.Tasks;
+using Extensions;
+using UniRx;
 
 #if UNITY_EDITOR
 
@@ -20,6 +23,8 @@ namespace Modules.ExternalAssets
         //----- params -----
 
         //----- field -----
+
+        private static Subject<UnityEngine.SceneManagement.Scene> onLoadScene = null;
 
         //----- property -----
 
@@ -69,15 +74,34 @@ namespace Modules.ExternalAssets
 
                 foreach (var scenePath in allScenePaths)
                 {
-                    await UnityEngine.SceneManagement.SceneManager.LoadSceneAsync(scenePath, loadSceneMode);
+                    UnityEngine.SceneManagement.SceneManager.sceneLoaded += SceneLoaded;
+
+                    try
+                    {
+                        await UnityEngine.SceneManagement.SceneManager.LoadSceneAsync(scenePath, loadSceneMode);
+                    }
+                    finally
+                    {
+                        UnityEngine.SceneManagement.SceneManager.sceneLoaded -= SceneLoaded;
+                    }
 
                     scenes.Add(scenePath);
                 }
             }
-            
+
             ExternalAsset.UnloadAssetBundle(loadPath);
 
             return scenes.ToArray();
+        }
+
+        private static void SceneLoaded(UnityEngine.SceneManagement.Scene scene, LoadSceneMode mode)
+        {
+            if (!scene.IsValid()){ return; }
+
+            if (onLoadScene != null)
+            {
+                onLoadScene.OnNext(scene);
+            }
         }
 
         public static async UniTask UnLoadScene(string[] scenes)
@@ -94,6 +118,11 @@ namespace Modules.ExternalAssets
 
                 #endif
             }
+        }
+
+        public static IObservable<UnityEngine.SceneManagement.Scene> OnLoadSceneAsObservable()
+        {
+            return onLoadScene ?? (onLoadScene = new Subject<UnityEngine.SceneManagement.Scene>());
         }
     }
 }
