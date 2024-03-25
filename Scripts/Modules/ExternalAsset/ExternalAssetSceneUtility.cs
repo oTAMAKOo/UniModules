@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using Cysharp.Threading.Tasks;
 using Extensions;
 using UniRx;
+using Modules.UniRxExtension;
 
 #if UNITY_EDITOR
 
@@ -22,9 +23,16 @@ namespace Modules.ExternalAssets
     {
         //----- params -----
 
+        public sealed class SceneLoadAsyncHandler : AsyncHandler
+        {
+            public UnityEngine.SceneManagement.Scene scene;
+
+            public LoadSceneMode mode;
+        }
+
         //----- field -----
 
-        private static Subject<UnityEngine.SceneManagement.Scene> onLoadScene = null;
+        private static Subject<SceneLoadAsyncHandler> onLoadScene = null;
 
         //----- property -----
 
@@ -44,9 +52,22 @@ namespace Modules.ExternalAssets
 
                 var sceneAssetPath = AssetDatabase.GetAssetPath(sceneAsset);
                 
-                EditorSceneManager.LoadSceneInPlayMode(sceneAssetPath, new LoadSceneParameters(loadSceneMode));
+                var scene = EditorSceneManager.LoadSceneInPlayMode(sceneAssetPath, new LoadSceneParameters(loadSceneMode));
 
                 scenes = new string[] { sceneAssetPath };
+
+                if (onLoadScene != null)
+                {
+                    var asyncHandler = new SceneLoadAsyncHandler()
+                    {
+                        scene = scene,
+                        mode = loadSceneMode,
+                    };
+
+                    onLoadScene.OnNext(asyncHandler);
+
+                    await asyncHandler.Wait();
+                }
             }
             else
             {
@@ -71,21 +92,63 @@ namespace Modules.ExternalAssets
             if (sceneAssetBundle.isStreamedSceneAssetBundle)
             {
                 var allScenePaths = sceneAssetBundle.GetAllScenePaths();
-
+                
                 foreach (var scenePath in allScenePaths)
                 {
-                    UnityEngine.SceneManagement.SceneManager.sceneLoaded += SceneLoaded;
+                    UnityEngine.SceneManagement.Scene? scene = null;
+
+                    LoadSceneMode mode = default;
+
+                    void sceneLoaded(UnityEngine.SceneManagement.Scene _scene, LoadSceneMode _mode)
+                    {
+                        if (!_scene.IsValid()){ return; }
+
+                        scene = _scene;
+                        mode = _mode;
+                    }
+
+                    UnityEngine.SceneManagement.SceneManager.sceneLoaded += sceneLoaded;
 
                     try
                     {
-                        await UnityEngine.SceneManagement.SceneManager.LoadSceneAsync(scenePath, loadSceneMode);
+                        var op = UnityEngine.SceneManagement.SceneManager.LoadSceneAsync(scenePath, loadSceneMode);
+
+                        op.allowSceneActivation = false;
+
+                        while (op.progress < 0.9f)
+                        {
+                            await UniTask.NextFrame();
+                        }
+
+                        op.allowSceneActivation = true;
+
+                        while (!op.isDone)
+                        {
+                            await UniTask.NextFrame();
+                        }
                     }
                     finally
                     {
-                        UnityEngine.SceneManagement.SceneManager.sceneLoaded -= SceneLoaded;
+                        UnityEngine.SceneManagement.SceneManager.sceneLoaded -= sceneLoaded;
                     }
 
-                    scenes.Add(scenePath);
+                    if (scene.HasValue)
+                    {
+                        scenes.Add(scenePath);
+
+                        if (onLoadScene != null)
+                        {
+                            var asyncHandler = new SceneLoadAsyncHandler()
+                            {
+                                scene = scene.Value,
+                                mode = mode,
+                            };
+
+                            onLoadScene.OnNext(asyncHandler);
+
+                            await asyncHandler.Wait();
+                        }
+                    }
                 }
             }
 
@@ -94,35 +157,17 @@ namespace Modules.ExternalAssets
             return scenes.ToArray();
         }
 
-        private static void SceneLoaded(UnityEngine.SceneManagement.Scene scene, LoadSceneMode mode)
-        {
-            if (!scene.IsValid()){ return; }
-
-            if (onLoadScene != null)
-            {
-                onLoadScene.OnNext(scene);
-            }
-        }
-
         public static async UniTask UnLoadScene(string[] scenes)
         {
             foreach (var scene in scenes)
             {
-                #if UNITY_EDITOR
-
-                await EditorSceneManager.UnloadSceneAsync(scene);
-
-                #else
-
                 await UnityEngine.SceneManagement.SceneManager.UnloadSceneAsync(scene);
-
-                #endif
             }
         }
 
-        public static IObservable<UnityEngine.SceneManagement.Scene> OnLoadSceneAsObservable()
+        public static IObservable<SceneLoadAsyncHandler> OnLoadSceneAsObservable()
         {
-            return onLoadScene ?? (onLoadScene = new Subject<UnityEngine.SceneManagement.Scene>());
+            return onLoadScene ?? (onLoadScene = new Subject<SceneLoadAsyncHandler>());
         }
     }
 }
