@@ -1,14 +1,18 @@
 ﻿
 using UnityEngine;
 using UnityEngine.UI;
+using Unity.Linq;
 using UniRx;
+using System.Linq;
 using Extensions;
 using Modules.Devkit.Diagnosis.LogTracker;
 using Modules.Devkit.LogHandler;
+using Modules.Resolution;
 
 #if ENABLE_SRDEBUGGER
 
-using SRDebugger;
+using SRDebugger.Services.Implementation;
+using SRDebugger.Internal;
 
 #endif
 
@@ -75,7 +79,7 @@ namespace Modules.Devkit.Diagnosis.SRDebugger
 
                 SetTouchBlock(touchBlock);
 
-                VisibilityChangedDelegate onPanelVisibilityChanged = visible =>
+                void OnPanelVisibilityChanged(bool visible)
                 {
                     if (visible)
                     {
@@ -84,11 +88,27 @@ namespace Modules.Devkit.Diagnosis.SRDebugger
                         lastShowLogTime = Time.realtimeSinceStartup;
                     }
 
-                    UnityUtility.SetActive(touchBlock, visible);
-                };
+                    if (visible)
+                    {
+                        var debugPanelService = Service.Panel as DebugPanelServiceImpl;
 
-				srDebug.IsTriggerEnabled = !button.gameObject.activeInHierarchy;
-                srDebug.PanelVisibilityChanged += onPanelVisibilityChanged;
+                        if (debugPanelService != null)
+                        {
+                            var root = debugPanelService.RootObject;
+
+                            if (root != null && root.Canvas != null)
+                            {
+                                var srContent = root.Canvas.gameObject.Children().FirstOrDefault(x => x.name == "SR_Content");
+                                UnityUtility.GetOrAddComponent<SafeAreaAdjuster>(srContent);
+                            }
+                        }
+                    }
+
+                    UnityUtility.SetActive(touchBlock, visible);
+                }
+
+                srDebug.IsTriggerEnabled = !button.gameObject.activeInHierarchy;
+                srDebug.PanelVisibilityChanged += OnPanelVisibilityChanged;
 
                 button.OnClickAsObservable()
                     .Subscribe(_ => srDebug.ShowDebugPanel())
