@@ -85,6 +85,8 @@ namespace Modules.TextData.Components
 
         public string FindTextByIdentifier(string textIdentifier)
         {
+            if (string.IsNullOrEmpty(textIdentifier)) { return null; }
+
             if (textGuidByTextIdentifier == null) { return null; }
 
             var textGuid = textGuidByTextIdentifier.GetValueOrDefault(textIdentifier);
