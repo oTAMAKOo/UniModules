@@ -180,6 +180,7 @@ namespace Modules.PatternTexture
             if (!string.IsNullOrEmpty(selectionPatternName))
             {
                 SetPatternName(selectionPatternName);
+                SetNativeSize();
             }
         }
 
