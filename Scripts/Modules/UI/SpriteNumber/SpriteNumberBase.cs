@@ -68,6 +68,8 @@ namespace Modules.UI.SpriteNumber
 
         public string Text { get; private set; }
 
+        public IReadOnlyCollection<T> Components { get { return components; } }
+
         //----- method -----
 
         private void Initialize()
