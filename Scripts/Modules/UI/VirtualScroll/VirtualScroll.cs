@@ -103,7 +103,7 @@ namespace Modules.UI
 
         private RectTransform scrollRectTransform = null;
         private float itemSize = -1f;
-        private float prevScrollPosition = 0f;
+        private float? prevScrollPosition = null;
         private Tweener centerToTween = null;
 
         private List<VirtualScrollItem<T>> itemList = null;
@@ -408,6 +408,8 @@ namespace Modules.UI
             }
 
             //----- スクロール位置設定 -----
+
+            prevScrollPosition = null;
 
             if (keepScrollPosition)
             {
