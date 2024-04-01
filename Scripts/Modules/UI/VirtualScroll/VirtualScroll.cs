@@ -476,12 +476,15 @@ namespace Modules.UI
 
             cancelSource = new CancellationTokenSource();
 
-            foreach (var updateItemCancellationToken in updateItemCancellationTokens.Values)
+            if (updateItemCancellationTokens != null)
             {
-                updateItemCancellationToken.Cancel();
-            }
+                foreach (var updateItemCancellationToken in updateItemCancellationTokens.Values)
+                {
+                    updateItemCancellationToken.Cancel();
+                }
 
-            updateItemCancellationTokens.Clear();
+                updateItemCancellationTokens.Clear();
+            }
         }
 
         private void SetupHitBox()
