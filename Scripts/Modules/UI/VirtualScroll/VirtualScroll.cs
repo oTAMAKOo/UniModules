@@ -167,7 +167,7 @@ namespace Modules.UI
 
         //----- method -----
 
-        protected virtual void InitializeVirtualScroll()
+        private void InitializeVirtualScroll()
         {
             if (status != Status.None) { return; }
             
@@ -182,8 +182,12 @@ namespace Modules.UI
 
             ScrollPosition = 0f;
 
+            OnInitialize();
+
             status = Status.Initialize;
         }
+
+        protected virtual void OnInitialize() { }
 
         protected override void OnEnable()
         {
