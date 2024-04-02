@@ -1,10 +1,20 @@
-﻿
+
 using UnityEngine;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace Extensions
 {
     public static class Vector2Extensions
     {
+        /// <summary>  Vector2を生成. </summary> 
+        public static Vector2 ToVector2(this IEnumerable<float> src)
+        {
+            var array = src.ToArray();
+
+            return new Vector2(array.ElementAtOrDefault(0), array.ElementAtOrDefault(1));
+        }
+
         /// <summary> ベクトル外積. </summary>
         public static float Cross(this Vector2 lhs, Vector2 rhs)
         {
