@@ -12,7 +12,11 @@ namespace Extensions
         {
             var array = src.ToArray();
 
-            return new Vector3(array.ElementAtOrDefault(0), array.ElementAtOrDefault(1));
+            var x = array.ElementAtOrDefault(0);
+            var y = array.ElementAtOrDefault(1);
+            var z = array.ElementAtOrDefault(2);
+
+            return new Vector3(x, y, z);
         }
 
         /// <summary> 

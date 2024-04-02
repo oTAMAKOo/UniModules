@@ -12,7 +12,10 @@ namespace Extensions
         {
             var array = src.ToArray();
 
-            return new Vector2(array.ElementAtOrDefault(0), array.ElementAtOrDefault(1));
+            var x = array.ElementAtOrDefault(0);
+            var y = array.ElementAtOrDefault(1);
+            
+            return new Vector2(x, y);
         }
 
         /// <summary> ベクトル外積. </summary>
