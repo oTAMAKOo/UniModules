@@ -1,4 +1,4 @@
-﻿﻿﻿
+﻿
 using UnityEngine;
 using UnityEditor;
 using UnityEditorInternal;
@@ -406,6 +406,8 @@ namespace Modules.Particle
 
                     if (updated)
                     {
+                        UnityEditorUtility.RegisterUndo(instance);
+
                         Reflection.SetPrivateField(instance, "eventInfos", eventList.ToArray());
                     }
                 }
