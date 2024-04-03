@@ -2,6 +2,7 @@
 using UnityEngine;
 using UnityEngine.UI;
 using System.Collections;
+using System.Linq;
 using UniRx;
 using Unity.Linq;
 using Modules.UI.Layout;
@@ -258,7 +259,11 @@ namespace Extensions
 
                 if (UnityUtility.IsNull(self.gameObject)){ yield break; }
 
-                var layoutGroups = self.gameObject.DescendantsAndSelf().OfComponent<LayoutGroup>();
+                var layoutGroups = self.gameObject.DescendantsAndSelf()
+                    .Where(x => !UnityUtility.IsNull(x))
+                    .Where(x => UnityUtility.IsActiveInHierarchy(x))
+                    .OfComponent<LayoutGroup>()
+                    .ToArray();
 
                 foreach (var layoutGroup in layoutGroups)
                 {
