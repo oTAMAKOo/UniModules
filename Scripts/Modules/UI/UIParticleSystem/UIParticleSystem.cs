@@ -82,6 +82,8 @@ namespace Modules.UI.Particle
             Setup();
 
             particleMaterial = null;
+
+            UpdateRenderingSource();
         }
 
         protected override void OnDestroy()
