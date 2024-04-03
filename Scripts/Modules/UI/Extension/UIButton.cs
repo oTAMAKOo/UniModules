@@ -21,6 +21,12 @@ namespace Modules.UI.Extension
 
         public Button Button { get { return component; } }
 
+        public bool interactable
+        {
+            get { return component.interactable; }
+            set { component.interactable = value; }
+        }
+
         //----- method -----
 
         void OnEnable()
