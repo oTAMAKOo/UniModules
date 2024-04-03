@@ -21,15 +21,15 @@ namespace Modules.Master
     {
         //----- params -----
 
+        public static readonly string ConsoleEventName = "Master";
+
+        public static readonly Color ConsoleEventColor = new Color(0.45f, 0.45f, 0.85f);
+
         public const string FolderName = "Master";
 
         private const string MasterFileExtension = ".master";
 
         private const string MasterSuffix = "Master";
-
-        private static readonly string ConsoleEventName = "Master";
-
-        private static readonly Color ConsoleEventColor = new Color(0.45f, 0.45f, 0.85f);
 
         //----- field -----
 
