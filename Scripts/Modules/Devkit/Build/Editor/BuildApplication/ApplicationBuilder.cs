@@ -21,8 +21,6 @@ namespace Modules.Devkit.Build
 
         bool Development { get; }
 
-        bool ReleaseBuild { get; }
-
         IReadOnlyList<string> DefineSymbols { get; }
 
         void OnCreateInstance();
@@ -73,8 +71,6 @@ namespace Modules.Devkit.Build
         public BuildOptions BuildOptions { get { return parameter.buildOptions; } }
 
         public virtual bool Development { get { return parameter.development; } }
-
-        public virtual bool ReleaseBuild { get { return parameter.development; } }
 
         public IReadOnlyList<string> DefineSymbols { get { return parameter.defineSymbols; } }
 
