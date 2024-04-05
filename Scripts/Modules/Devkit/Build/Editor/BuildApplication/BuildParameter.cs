@@ -28,8 +28,8 @@ namespace Modules.Devkit.Build
         /// <summary> コマンドライン引数適用 </summary>
         public virtual void ApplyCommandLineArguments()
         {
-            buildNumber = CommandLineUtility.Get<int>("-BuildNumber");
-            branchName = CommandLineUtility.Get<string>("-BranchName");
+            buildNumber = CommandLineUtility.Get<int>("-BuildNumber", 1);
+            branchName = CommandLineUtility.Get<string>("-BranchName", "---");
         }
     }
 }
