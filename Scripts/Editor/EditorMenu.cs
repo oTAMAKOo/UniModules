@@ -497,6 +497,12 @@ namespace Modules
             CleanDirectoryWindow.Open();
         }
 
+        [MenuItem(itemName: CleanerMenu + "Clean ParticleSystem (Selection GameObject)", priority = 1)]
+        public static void CleanParticleSystem()
+        {
+            ParticleSystemCleaner.CleanSelectionTarget();
+        }
+
         #endregion
 
         #endregion
