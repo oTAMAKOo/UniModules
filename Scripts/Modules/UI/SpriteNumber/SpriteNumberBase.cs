@@ -156,15 +156,15 @@ namespace Modules.UI.SpriteNumber
         }
 
         /// <summary> 表示するテキストを設定 </summary>
-        public void Set(string text, bool forceUpdate = false)
+        public void Set(string text)
         {
             Initialize();
-
-            if (!forceUpdate && Text == text) { return; }
 
             ClearText();
 
             this.Text = text;
+
+            animationFinished = true;
 
             // すべてのコンポーネントを更新します
             UpdateComponents();
@@ -262,6 +262,8 @@ namespace Modules.UI.SpriteNumber
 
         private async UniTask PlayAnimation()
         {
+            if (!animationFinished){ return; }
+
             animationFinished = false;
 
             var tasks = new List<UniTask>();
