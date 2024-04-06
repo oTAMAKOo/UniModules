@@ -186,7 +186,7 @@ namespace Modules.Animation
             {
                 if (!IsCurrentState(CurrentAnimationName, GetCurrentLayerIndex()))
                 {
-                    await WaitTransitionState();
+                    WaitTransitionStateImmediate();
                 }
             }
 
@@ -263,6 +263,23 @@ namespace Modules.Animation
                 if (IsCurrentState(CurrentAnimationName, GetCurrentLayerIndex())) { break; }
 
                 await UniTask.NextFrame();
+            }
+        }
+
+        // 指定アニメーションへ遷移待ち.
+        private void WaitTransitionStateImmediate()
+        {
+            while (true)
+            {
+                if (UnityUtility.IsNull(this)) { return; }
+
+                if (UnityUtility.IsNull(gameObject)) { return; }
+
+                if (!UnityUtility.IsActiveInHierarchy(gameObject)) { break; }
+                
+                if (IsCurrentState(CurrentAnimationName, GetCurrentLayerIndex())) { break; }
+
+                Animator.Update(0);
             }
         }
 
