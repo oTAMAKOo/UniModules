@@ -491,9 +491,19 @@ namespace Modules.Master
             }
         }
 
-        public void ClearMasterVersion()
+        /// <summary> キャッシュ削除 </summary>
+        public void ClearMasterCache()
         {
+            if (string.IsNullOrEmpty(InstallDirectory)){ return; }
+
             DeleteVersionFile();
+
+            var isStreamingAssetsPath = InstallDirectory.StartsWith(UnityPathUtility.StreamingAssetsPath);
+
+            if (!isStreamingAssetsPath)
+            {
+                DirectoryUtility.Clean(InstallDirectory);
+            }
             
             Reference.Clear();
 
