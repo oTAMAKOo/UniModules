@@ -9,6 +9,25 @@ namespace Modules.Devkit.SerializeAssets
 {
     public static class ForceReSerializeAssets
     {
+        public static void ExecuteSelectionAssets()
+        {
+            var assetPaths = Selection.objects
+                .Where(x => AssetDatabase.IsMainAsset(x))
+                .Select(x => AssetDatabase.GetAssetPath(x))
+                .ToArray();
+                
+            Execute(assetPaths);
+        }
+
+        public static void ExecuteAllPrefabs()
+        {
+            var prefabs = AssetDatabase.FindAssets("t:prefab")
+                .Select(x => AssetDatabase.GUIDToAssetPath(x))
+                .ToArray();
+                
+            Execute(prefabs);
+        }
+
         public static void Execute(string[] assetPaths, ForceReserializeAssetsOptions options = ForceReserializeAssetsOptions.ReserializeAssetsAndMetadata)
         {
             if (assetPaths == null || assetPaths.IsEmpty()){ return; }

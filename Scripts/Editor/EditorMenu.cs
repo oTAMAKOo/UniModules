@@ -467,22 +467,13 @@ namespace Modules
         [MenuItem(itemName: ForceReSerializeMenu + "SelectionAssets", priority = 0)]
         public static void ForceReSerializeSelectionAssets()
         {
-            var assetPaths = Selection.objects
-                .Where(x => AssetDatabase.IsMainAsset(x))
-                .Select(x => AssetDatabase.GetAssetPath(x))
-                .ToArray();
-
-            ForceReSerializeAssets.Execute(assetPaths);
+            ForceReSerializeAssets.ExecuteSelectionAssets();
         }
 
         [MenuItem(itemName: ForceReSerializeMenu + "All Prefabs", priority = 1)]
         public static void ForceReSerializeAllPrefabs()
         {
-            var prefabs = AssetDatabase.FindAssets("t:prefab")
-                .Select(x => AssetDatabase.GUIDToAssetPath(x))
-                .ToArray();
-            
-            ForceReSerializeAssets.Execute(prefabs);
+            ForceReSerializeAssets.ExecuteAllPrefabs();
         }
 
         #endregion
