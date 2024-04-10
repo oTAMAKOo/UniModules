@@ -395,7 +395,7 @@ namespace Modules.UI.Particle
                 switch (textureSheetAnimation.mode)
                 {
                     case ParticleSystemAnimationMode.Grid:
-                        textureSheetAnimationFrames = textureSheetAnimation.numTilesX * textureSheetAnimation.numTilesY;
+                        textureSheetAnimationFrames = (textureSheetAnimation.numTilesX - 1) * (textureSheetAnimation.numTilesY - 1);
                         break;
 
                     case ParticleSystemAnimationMode.Sprites:
