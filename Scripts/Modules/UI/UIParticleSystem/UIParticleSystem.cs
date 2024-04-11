@@ -353,7 +353,7 @@ namespace Modules.UI.Particle
 
             if (textureSheetAnimation.enabled)
             {
-                var time = 1 - particle.remainingLifetime * textureSheetAnimation.cycleCount / particle.startLifetime;
+                var time = 1 - (particle.remainingLifetime / particle.startLifetime);
 
                 var originSeed = UnityEngine.Random.state;
 
@@ -362,11 +362,11 @@ namespace Modules.UI.Particle
                 switch (textureSheetAnimation.mode)
                 {
                     case ParticleSystemAnimationMode.Grid:
-                        result = GetGridModeUv(index, time);
+                        result = GetGridModeUv(particle, index, time);
                         break;
 
                     case ParticleSystemAnimationMode.Sprites:
-                        result = GetSpriteModeUv(index, time);
+                        result = GetSpriteModeUv(particle, index, time);
                         break;
                 }
 
@@ -422,7 +422,7 @@ namespace Modules.UI.Particle
             return textureSheetAnimationFrameSize;
         }
 
-        private Vector4 GetGridModeUv(int index, float time)
+        private Vector4 GetGridModeUv(ParticleSystem.Particle particle, int index, float time)
         {
             var result = new Vector4(0, 0, 1, 1);
             
@@ -435,6 +435,8 @@ namespace Modules.UI.Particle
 
             var startFrame = GetStartFrame(index);
             var frameProgress = GetOverTimeFrame(index, time);
+
+            frameProgress = ApplyFrameOverTimeToFrameProgress(particle, frameProgress);
 
             switch (textureSheetAnimation.animation)
             {
@@ -472,12 +474,14 @@ namespace Modules.UI.Particle
             return result;
         }
 
-        private Vector4 GetSpriteModeUv(int index, float time)
+        private Vector4 GetSpriteModeUv(ParticleSystem.Particle particle, int index, float time)
         {
             var textureSheetAnimationFrames = GetTextureSheetAnimationFrames();
             
             var startFrame = GetStartFrame(index);
             var frameProgress = GetOverTimeFrame(index, time);
+
+            frameProgress = ApplyFrameOverTimeToFrameProgress(particle, frameProgress);
 
             var frame = Mathf.RoundToInt((startFrame + frameProgress) * textureSheetAnimationFrames);
 
@@ -499,6 +503,24 @@ namespace Modules.UI.Particle
             textureSheetAnimationCurrentFrame = frame;
 
             return result;
+        }
+
+        private float ApplyFrameOverTimeToFrameProgress(ParticleSystem.Particle particle, float frameProgress)
+        {
+            if (textureSheetAnimation.frameOverTime.curveMin != null)
+            {
+                frameProgress = textureSheetAnimation.frameOverTime.curveMin.Evaluate(1 - (particle.remainingLifetime / particle.startLifetime));
+            }
+            else if (textureSheetAnimation.frameOverTime.curve != null)
+            {
+                frameProgress = textureSheetAnimation.frameOverTime.curve.Evaluate(1 - (particle.remainingLifetime / particle.startLifetime));
+            }
+            else if (textureSheetAnimation.frameOverTime.constant > 0)
+            {
+                frameProgress = textureSheetAnimation.frameOverTime.constant - (particle.remainingLifetime / particle.startLifetime);
+            }
+
+            return frameProgress;
         }
 
         private float GetStartFrame(int index)
@@ -535,6 +557,8 @@ namespace Modules.UI.Particle
                     Debug.LogError($"TextureSheetAnimation.StartFrame : {startFrameValue.mode} is not support.");
                     break;
             }
+
+            frame = Mathf.Repeat(frame * textureSheetAnimation.cycleCount, 1);
 
             return frame;
         }
