@@ -19,6 +19,10 @@ namespace Modules.UI.Particle
         //----- field -----
 
         [SerializeField]
+        private bool useLengthScale = false;
+        [SerializeField]
+        private bool use3dRotation = false;
+        [SerializeField]
         private bool useOverrideMaterial = false;
 
         private Material particleMaterial = null;
@@ -69,6 +73,18 @@ namespace Modules.UI.Particle
 
                 useOverrideMaterial = value;
             }
+        }
+
+        public bool UseLengthScale
+        {
+            get { return useLengthScale; }
+            set { useLengthScale = value; }
+        }
+
+        public bool Use3dRotation
+        {
+            get { return use3dRotation; }
+            set { use3dRotation = value; }
         }
 
         //----- method -----
@@ -259,15 +275,9 @@ namespace Modules.UI.Particle
                     transform.InverseTransformPoint(particle.position);
 
                 var rotation = -particle.rotation * Mathf.Deg2Rad;
+
                 var color = particle.GetCurrentColor(particleSystem);
                 var size = particle.GetCurrentSize3D(particleSystem);
-
-                // apply scale.
-
-                if (mainModule.scalingMode == ParticleSystemScalingMode.Shape)
-                {
-                    position /= canvas.scaleFactor;
-                }
 
                 // apply uv.
 
@@ -275,24 +285,53 @@ namespace Modules.UI.Particle
 
                 UIVertex[] quad;
 
-                if (particleSystemRendererCache.renderMode == ParticleSystemRenderMode.Stretch)
+                if (use3dRotation)
                 {
-                    quad = GenerateStretchedMesh(color, size, position, rotation, particleUv, i);
-                }
-                else if (Math.Abs(rotation) < Tolerance)
-                {
-                    quad = GetBillboardNotRotatedQuad(position, size, color, particleUv);
+                    quad = GetBillboard3DRotatedQuad(transform, particle, mainModule, size);
                 }
                 else
                 {
-                    quad = GetBillboardRotatedQuad(position, rotation, size, color, particleUv);
+                    var lengthScale = particleSystemRenderer.lengthScale;
+
+                    if (useLengthScale)
+                    {
+                        var normalizedVelocity = particle.velocity.normalized;
+
+                        rotation = Mathf.Atan2(normalizedVelocity.y, normalizedVelocity.x);
+                    }
+                    else
+                    {
+                        lengthScale = 1f;
+                    }
+                    
+                    if (mainModule.scalingMode == ParticleSystemScalingMode.Shape)
+                    {
+                        position /= canvas.scaleFactor;
+                    }
+
+                    if (particleSystemRendererCache.renderMode == ParticleSystemRenderMode.Stretch)
+                    {
+                        quad = GenerateStretchedMesh(position, size, rotation, i);
+                    }
+                    else if (Math.Abs(rotation) < Tolerance)
+                    {
+                        quad = GetBillboardNotRotatedQuad(position, size, lengthScale);
+                    }
+                    else
+                    {
+                        quad = GetBillboardRotatedQuad(position, rotation, size, lengthScale);
+                    }
                 }
+
+                quad = SetColor(quad, color);
+
+                quad = SetUV(quad, particleUv);
 
                 vh.AddUIVertexQuad(quad);
             }
         }
 
-        private UIVertex[] GenerateStretchedMesh(Color32 meshColor, Vector2 size, Vector2 position, float rotation, Vector4 uv, int particleId)
+        private UIVertex[] GenerateStretchedMesh(Vector2 position, Vector2 size, float rotation, int particleId)
         {
             var velocity = particles[particleId].velocity;
             var scaleFactor = CalculateScale(velocity);
@@ -300,7 +339,7 @@ namespace Modules.UI.Particle
             var width = size.x;
             var height = CalculateHeight(size, velocity);
 
-            var quad = GenerateModel(width, height, scaleFactor, meshColor, uv);
+            var quad = GenerateModel(width, height, scaleFactor);
             var finalAngle = CalculateAngle(velocity, rotation);
 
             quad = ApplyPositionAndRotationTransform(quad, position, finalAngle);
@@ -434,9 +473,12 @@ namespace Modules.UI.Particle
             var frame = 0;
 
             var startFrame = GetStartFrame(index);
+
             var frameProgress = GetOverTimeFrame(index, time);
 
             frameProgress = ApplyFrameOverTimeToFrameProgress(particle, frameProgress);
+
+            frameProgress = Mathf.Repeat(frameProgress * textureSheetAnimation.cycleCount, 1);
 
             switch (textureSheetAnimation.animation)
             {
@@ -479,9 +521,12 @@ namespace Modules.UI.Particle
             var textureSheetAnimationFrames = GetTextureSheetAnimationFrames();
             
             var startFrame = GetStartFrame(index);
+
             var frameProgress = GetOverTimeFrame(index, time);
 
             frameProgress = ApplyFrameOverTimeToFrameProgress(particle, frameProgress);
+
+            frameProgress = Mathf.Repeat(frameProgress * textureSheetAnimation.cycleCount, 1);
 
             var frame = Mathf.RoundToInt((startFrame + frameProgress) * textureSheetAnimationFrames);
 
@@ -558,8 +603,6 @@ namespace Modules.UI.Particle
                     break;
             }
 
-            frame = Mathf.Repeat(frame * textureSheetAnimation.cycleCount, 1);
-
             return frame;
         }
 
@@ -612,36 +655,27 @@ namespace Modules.UI.Particle
 
         private const float HalfPi = Mathf.PI / 2;
 
-        private static UIVertex[] GetBillboardNotRotatedQuad(Vector2 position, Vector2 size, Color32 color, Vector4 uv)
+        private static UIVertex[] GetBillboardNotRotatedQuad(Vector2 position, Vector2 size, float lengthScale)
         {
             var quad = new UIVertex[4];
-            var corner1 = new Vector2(position.x - size.x * 0.5f, position.y - size.y * 0.5f);
-            var corner2 = new Vector2(position.x + size.x * 0.5f, position.y + size.y * 0.5f);
+
+            var corner1 = new Vector2(position.x - size.x * 0.5f, position.y - size.y * 0.5f * lengthScale);
+            var corner2 = new Vector2(position.x + size.x * 0.5f, position.y + size.y * 0.5f * lengthScale);
 
             quad[0].position = new Vector2(corner1.x, corner1.y);
             quad[1].position = new Vector2(corner1.x, corner2.y);
             quad[2].position = new Vector2(corner2.x, corner2.y);
             quad[3].position = new Vector2(corner2.x, corner1.y);
 
-            quad[0].color = color;
-            quad[1].color = color;
-            quad[2].color = color;
-            quad[3].color = color;
-
-            quad[0].uv0 = new Vector2(uv.x, uv.y);
-            quad[1].uv0 = new Vector2(uv.x, uv.w);
-            quad[2].uv0 = new Vector2(uv.z, uv.w);
-            quad[3].uv0 = new Vector2(uv.z, uv.y);
-
             return quad;
         }
 
-        private static UIVertex[] GetBillboardRotatedQuad(Vector2 position, float rotation, Vector2 size, Color32 color, Vector4 uv)
+        private static UIVertex[] GetBillboardRotatedQuad(Vector2 position, float rotation, Vector2 size, float lengthScale)
         {
             var quad = new UIVertex[4];
             var rotation90 = rotation + HalfPi;
 
-            var right = new Vector2(Mathf.Cos(rotation), Mathf.Sin(rotation)) * size.x * 0.5f;
+            var right = new Vector2(Mathf.Cos(rotation), Mathf.Sin(rotation)) * size.x * 0.5f * lengthScale;
             var up = new Vector2(Mathf.Cos(rotation90), Mathf.Sin(rotation90)) * size.y * 0.5f;
 
             quad[0].position = position - right - up;
@@ -649,22 +683,39 @@ namespace Modules.UI.Particle
             quad[2].position = position + right + up;
             quad[3].position = position + right - up;
 
-            quad[0].color = color;
-            quad[1].color = color;
-            quad[2].color = color;
-            quad[3].color = color;
+            return quad;
+        }
 
-            quad[0].uv0 = new Vector2(uv.x, uv.y);
-            quad[1].uv0 = new Vector2(uv.x, uv.w);
-            quad[2].uv0 = new Vector2(uv.z, uv.w);
-            quad[3].uv0 = new Vector2(uv.z, uv.y);
+        private static UIVertex[] GetBillboard3DRotatedQuad(Transform transform, ParticleSystem.Particle particle, ParticleSystem.MainModule mainModule, Vector2 size)
+        {
+            var quad = new UIVertex[4];
+
+            var pos3d = (mainModule.simulationSpace == ParticleSystemSimulationSpace.Local ? 
+                         particle.position : 
+                         transform.InverseTransformPoint(particle.position));
+
+            var verts = new Vector3[4]
+            {
+                new Vector3(-size.x * 0.5f, -size.y * 0.5f, 0f),
+                new Vector3(-size.x * 0.5f,  size.y * 0.5f, 0f),
+                new Vector3( size.x * 0.5f,  size.y * 0.5f, 0f),
+                new Vector3( size.x * 0.5f, -size.y * 0.5f, 0f),
+            };
+
+            var particleRotation = Quaternion.Euler(particle.rotation3D);
+
+            quad[0].position = pos3d + particleRotation * verts[0];
+            quad[1].position = pos3d + particleRotation * verts[1];
+            quad[2].position = pos3d + particleRotation * verts[2];
+            quad[3].position = pos3d + particleRotation * verts[3];
 
             return quad;
         }
 
-        public static UIVertex[] GenerateModel(float width, float height, float scalefactor, Color32 color, Vector4 uv)
+        public static UIVertex[] GenerateModel(float width, float height, float scalefactor)
         {
             var quad = new UIVertex[4];
+
             var halfWidth = width / 2;
             var scaledHeight = -height * scalefactor;
 
@@ -673,11 +724,21 @@ namespace Modules.UI.Particle
             quad[2].position = new Vector2(halfWidth, 0);
             quad[3].position = new Vector2(halfWidth, scaledHeight);
 
+            return quad;
+        }
+
+        private static UIVertex[] SetColor(UIVertex[] quad, Color32 color)
+        {
             quad[0].color = color;
             quad[1].color = color;
             quad[2].color = color;
             quad[3].color = color;
 
+            return quad;
+        }
+
+        private static UIVertex[] SetUV(UIVertex[] quad, Vector4 uv)
+        {
             quad[0].uv0 = new Vector2(uv.z, uv.y);
             quad[1].uv0 = new Vector2(uv.x, uv.y);
             quad[2].uv0 = new Vector2(uv.x, uv.w);
