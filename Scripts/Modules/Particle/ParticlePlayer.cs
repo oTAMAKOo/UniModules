@@ -1,4 +1,4 @@
-﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿
+
 using UnityEngine;
 using Unity.Linq;
 using System;
@@ -636,7 +636,16 @@ namespace Modules.Particle
                 switch (eventInfo.trigger)
                 {
                     case EventInfo.EventTrigger.Time:
-                        eventInvoke = prevTime < eventInfo.time && eventInfo.time <= currentTime;
+                        {
+                            if (prevTime == 0f && eventInfo.time == 0f && currentTime != 0f)
+                            {
+                                eventInvoke = true;
+                            }
+                            else
+                            {
+                                eventInvoke = prevTime < eventInfo.time && eventInfo.time <= currentTime;
+                            }
+                        }
                         break;
 
                     case EventInfo.EventTrigger.Birth:
