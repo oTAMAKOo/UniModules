@@ -100,6 +100,10 @@ namespace Modules.Movie
                 }
                 else
                 {
+                    UnityUtility.SetActive(CriManaMovieMaterial.gameObject, false);
+
+                    UnityUtility.DeleteComponent(CriManaMovieMaterial);
+
                     IsFinished = true;
 
                     if (onFinish != null)
