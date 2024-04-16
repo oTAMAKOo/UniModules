@@ -28,6 +28,18 @@ namespace Modules.Movie
     {
         //----- params -----
 
+        private static readonly HashSet<Player.Status> PrepareManualUpdateStateTable = new HashSet<Player.Status>
+        {
+            /**< ヘッダ解析中 */
+            Player.Status.Dechead,
+            /**< バッファリング開始停止中 */
+            Player.Status.WaitPrep,
+            /**< 再生準備中 */
+            Player.Status.Prep,
+            /**< 停止処理中 */
+            Player.Status.StopProcessing,
+        };
+
         //----- field -----
 
         private Texture2D movieTexture = null;
@@ -147,6 +159,7 @@ namespace Modules.Movie
 
             if (element.Player == null){ return; }
 
+            // 非アクティブ時にUpdate処理を実行.
             while (element.Player.status == Player.Status.StopProcessing)
             {
                 if (!UnityUtility.IsActiveInHierarchy(element.CriManaMovieMaterial))
@@ -162,7 +175,19 @@ namespace Modules.Movie
                 Debug.LogWarning($"Movie prepare failed.\nCurrent status is {element.Player.status}.");
             }
 
+            // 再生準備開始.
             element.Player.Prepare();
+
+            // 非アクティブ時にUpdate処理を実行.
+            while (PrepareManualUpdateStateTable.Contains(element.Player.status))
+            {
+                if (!UnityUtility.IsActiveInHierarchy(element.CriManaMovieMaterial))
+                {
+                    element.CriManaMovieMaterial.PlayerManualUpdate();
+                }
+
+                await UniTask.NextFrame();
+            }
         }
 
         #endregion
