@@ -389,11 +389,18 @@ namespace Modules.Animation
             }
         }
 
-        public void SetTrigger<T>(string name)
+        public void SetTrigger(string name)
         {
             if (!Animator.IsAvailable()){ return; }
 
             Animator.SetTrigger(name);
+        }
+
+        public void SetTrigger(int id)
+        {
+            if (!Animator.IsAvailable()){ return; }
+
+            Animator.SetTrigger(id);
         }
 
         public void SetParameter<T>(string name, T value)
