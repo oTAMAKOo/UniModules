@@ -67,6 +67,8 @@ namespace Modules.UI.Layout
 		private LayoutInfo horizontal = new LayoutInfo();
 		[SerializeField]
 		private LayoutInfo vertical = new LayoutInfo();
+        [SerializeField]
+        private int priority = 2;
 
 		private Vector2? prevPreferredSize = null;
 
@@ -176,7 +178,7 @@ namespace Modules.UI.Layout
 
 		public override int layoutPriority
 		{
-			get { return 2; }
+			get { return priority; }
 		}
 
 		//----- method -----

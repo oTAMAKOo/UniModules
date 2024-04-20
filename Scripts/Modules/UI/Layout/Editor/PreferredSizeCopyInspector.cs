@@ -1,4 +1,4 @@
-﻿﻿﻿﻿﻿﻿
+﻿
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEditor;
@@ -254,6 +254,17 @@ namespace Modules.UI.Layout
             }
 
             EditorGUILayout.Separator();
+
+            EditorGUI.BeginChangeCheck();
+
+            var layoutPriority = EditorGUILayout.IntField("LayoutPriority", instance.layoutPriority);
+
+            if (EditorGUI.EndChangeCheck())
+            {
+                UnityEditorUtility.RegisterUndo(instance);
+                Reflection.SetPrivateField(instance, "priority", layoutPriority);
+                Reflection.InvokePrivateMethod(instance, "SetDirty");
+            }
         }
     }
 }
