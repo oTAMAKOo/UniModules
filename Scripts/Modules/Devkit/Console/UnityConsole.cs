@@ -125,7 +125,7 @@ namespace Modules.Devkit.Console
             
 			var text = string.Empty;
 
-			if (Application.isBatchMode)
+			if (UnityUtility.IsBatchMode)
 			{
 				text = $"[{eventName}] {message}";
 			}

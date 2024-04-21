@@ -1,18 +1,46 @@
 
-
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
+#if UNITY_EDITOR
+
+using UnityEditor;
+
+#endif
+
 namespace Extensions
 {
     public static class UnityUtility
     {
-        public static bool IsEditor
+        public static bool IsBatchMode { get; private set; }
+
+        public static bool IsEditor { get; private set; }
+
+        #if UNITY_EDITOR
+
+        [InitializeOnLoadMethod]
+        private static void InitializeOnLoadMethod()
         {
-            get { return Application.installMode == ApplicationInstallMode.Editor; }
+            Initialize();
+        }
+
+        #else
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterAssembliesLoaded)]
+        private static void RuntimeInitializeOnLoadMethod()
+        {
+            Initialize();
+        }
+
+        #endif
+
+        public static void Initialize()
+        {
+            IsBatchMode = Application.isBatchMode;
+            IsEditor = Application.installMode == ApplicationInstallMode.Editor;
         }
 
         #region Object Instantiate
