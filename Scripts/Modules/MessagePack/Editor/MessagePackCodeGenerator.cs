@@ -69,12 +69,6 @@ namespace Modules.MessagePack
             {
                 command = messagePackConfig.ProcessCommand;
                 argument = $" {mpcPath}{generateInfo.MpcArgument}";
-
-                #if UNITY_EDITOR_OSX
-
-                command = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Personal), command);
-
-                #endif
             }
 
             if (string.IsNullOrEmpty(command) || string.IsNullOrEmpty(argument))
