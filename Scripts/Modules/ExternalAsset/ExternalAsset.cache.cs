@@ -33,21 +33,36 @@ namespace Modules.ExternalAssets
 
         //----- method -----
 
-        private async UniTask<string[]> GetInstallDirectoryFilePaths(bool configureAwait)
+        private async UniTask<IEnumerable<string>> GetInstallDirectoryFilePaths(bool configureAwait)
         {
-            var files = new string[0];
+            var files = new List<string>();
 
-            if (!Directory.Exists(InstallDirectory)) { return files; }
+            if (!Directory.Exists(InstallDirectory)) { return new string[0]; }
 
             var directoryInfo = new DirectoryInfo(InstallDirectory);
 
-            await UniTask.RunOnThreadPool(() =>
+            await UniTask.RunOnThreadPool(async () =>
             {
-                files = directoryInfo.EnumerateFiles("*", SearchOption.TopDirectoryOnly)
-                    .AsParallel()
+                var count = 0;
+
+                var directoryFiles = directoryInfo.EnumerateFiles("*", SearchOption.TopDirectoryOnly)
                     .Where(x => x.Name != VersionFileName)
-                    .Select(x => PathUtility.ConvertPathSeparator(x.FullName))
-                    .ToArray(); 
+                    .Select(x => PathUtility.ConvertPathSeparator(x.FullName));
+
+                foreach (var item in directoryFiles)
+                {
+                    files.Add(item);
+
+                    count++;
+
+                    if (500 <= count)
+                    {
+                        count = 0;
+
+                        await UniTask.NextFrame();
+                    }
+                }
+
             }, configureAwait);
 
             return files;
