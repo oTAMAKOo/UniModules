@@ -2,9 +2,7 @@
 using UnityEngine;
 using UnityEditor;
 using System;
-using System.IO;
 using System.Linq;
-using System.Text;
 using Cysharp.Threading.Tasks;
 using Extensions;
 using Extensions.Devkit;
@@ -382,7 +380,7 @@ csproj directory : global.json
             
             try
             {
-                var dotNetPath = GetDotNetPath();
+                var dotNetPath = MessagePackHelper.GetDotNetPath();
 
                 var commandLineProcess = new ProcessExecute(dotNetPath, "--version");
 
@@ -418,54 +416,6 @@ csproj directory : global.json
             Repaint();
 
             EditorApplication.delayCall += EditorUtility.ClearProgressBar;
-        }
-
-        private static string GetDotNetPath()
-        {
-            var result = "dotnet";
-
-            #if UNITY_EDITOR_WIN
-
-            // 環境変数.
-            var variable = Environment.GetEnvironmentVariable("Path", EnvironmentVariableTarget.Process);
-
-            if (variable != null)
-            {
-                foreach (var item in variable.Split(';'))
-                {
-                    var path = PathUtility.Combine(item, "dotnet.exe");
-
-                    if (!File.Exists(path)){ continue; }
-
-                    result = path;
-
-                    break;
-                }
-            }
-            
-            #endif
-
-            #if UNITY_EDITOR_OSX
-
-            var mpcPathCandidate = new string[]
-            {
-                "/usr/local/bin",
-            };
-
-            foreach (var item in mpcPathCandidate)
-            {
-                var path = PathUtility.Combine(item, "dotnet");
-
-                if (!File.Exists(path)){ continue; }
-
-                result = path;
-
-                break;
-            }
-
-            #endif
-
-            return result;
         }
     }
 }

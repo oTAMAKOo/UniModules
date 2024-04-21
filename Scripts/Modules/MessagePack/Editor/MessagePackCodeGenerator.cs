@@ -44,7 +44,7 @@ namespace Modules.MessagePack
             {
                 using (new DisableStackTraceScope())
                 {
-                    Debug.LogError(codeGenerateResult.Output);
+                    Debug.LogError(codeGenerateResult.ToJson());
                 }
             }
 
@@ -59,6 +59,8 @@ namespace Modules.MessagePack
 
             var command = string.Empty;
             var argument = string.Empty;
+
+            var workingDirectory = string.Empty;
             
             if (string.IsNullOrEmpty(messagePackConfig.ProcessCommand))
             {
@@ -68,7 +70,20 @@ namespace Modules.MessagePack
             else
             {
                 command = messagePackConfig.ProcessCommand;
-                argument = $" {mpcPath}{generateInfo.MpcArgument}";
+                argument = $"{mpcPath}{generateInfo.MpcArgument}";
+
+                #if UNITY_EDITOR_OSX
+
+                if (string.IsNullOrEmpty(mpcPath))
+                {
+                    var dotNetPath = MessagePackHelper.GetDotNetPath();
+
+                    argument = $"mpc {generateInfo.MpcArgument}";
+
+                    command = dotNetPath;
+                }
+
+                #endif
             }
 
             if (string.IsNullOrEmpty(command) || string.IsNullOrEmpty(argument))
@@ -79,6 +94,7 @@ namespace Modules.MessagePack
             var processExecute = new ProcessExecute(command, argument)
             {
                 Encoding = Encoding.UTF8,
+                WorkingDirectory = workingDirectory,
             };
 
             return processExecute;
