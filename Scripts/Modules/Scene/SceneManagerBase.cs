@@ -952,6 +952,13 @@ namespace Modules.Scene
             if (sceneInstance == null) { return Observable.ReturnUnit(); }
 
             if (!sceneInstance.Identifier.HasValue) { return Observable.ReturnUnit(); }
+
+            var scene = sceneInstance.GetScene();
+
+            if (!scene.HasValue){ return Observable.ReturnUnit(); }
+
+            // メインシーンはアンロードできない.
+            if (!scene.Value.isSubScene){ return Observable.ReturnUnit(); }
             
             var identifier = sceneInstance.Identifier.Value;
 

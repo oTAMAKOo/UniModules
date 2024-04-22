@@ -333,9 +333,11 @@ namespace Modules.Sound
         /// <summary> 全サウンドを停止 </summary>
         public void StopAll()
         {
-            foreach (var element in soundElements)
+            var items = soundElements.ToArray();
+
+            foreach (var item in items)
             {
-                Stop(element);
+                Stop(item);
             }
         }
 

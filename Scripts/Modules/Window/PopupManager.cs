@@ -187,7 +187,7 @@ namespace Modules.Window
 
         private void CreateTouchBloc()
         {
-            if (touchBlock != null){ return; }
+            if (!UnityUtility.IsNull(touchBlock)){ return; }
 
             touchBlock = UnityUtility.Instantiate<TouchBlock>(parentGlobal.Parent, touchBlocPrefab);
 
@@ -313,8 +313,11 @@ namespace Modules.Window
 
             scenePopups.Clear();
 
-            UnityUtility.SetParent(touchBlock.gameObject, parentGlobal.Parent);
-            UnityUtility.SetLayer(parentGlobal.Parent, touchBlock.gameObject, true);
+            if (!UnityUtility.IsNull(touchBlock))
+            {
+                UnityUtility.SetParent(touchBlock.gameObject, parentGlobal.Parent);
+                UnityUtility.SetLayer(parentGlobal.Parent, touchBlock.gameObject, true);
+            }
 
             if (globalPopups.IsEmpty())
             {
