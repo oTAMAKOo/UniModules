@@ -56,9 +56,17 @@ namespace Modules.MessagePack
         {
             return new IFormatterResolver[]
             {
+                #if MESSAGEPACK_ANALYZER_CODE
+
+                GeneratedMessagePackResolver.Instance,
+
+                #else
+
                 GeneratedResolver.Instance,
-				
-                DateTimeResolver.Instance,
+
+                #endif
+
+                StandardAotResolver.Instance,
 
                 #if !NETSTANDARD1_4
 
@@ -82,29 +90,33 @@ namespace Modules.MessagePack
         {
 			return new IFormatterResolver[]
             {
-				DateTimeResolver.Instance,
+                #if MESSAGEPACK_ANALYZER_CODE
 
-				BuiltinResolver.Instance,
+                GeneratedMessagePackResolver.Instance,
 
-				#if !NETSTANDARD1_4
+                #endif
 
-				UnityResolver.Instance,
+                BuiltinResolver.Instance,
 
-				#endif
+                #if !NETSTANDARD1_4
 
-				AttributeFormatterResolver.Instance,
+                UnityResolver.Instance,
 
-				DynamicEnumResolver.Instance,
+                #endif
 
-				DynamicGenericResolver.Instance,
+                AttributeFormatterResolver.Instance,
 
-				DynamicUnionResolver.Instance,
-			
-				DynamicObjectResolver.Instance,
+                DynamicEnumResolver.Instance,
 
-				DynamicContractlessObjectResolver.Instance,
+                DynamicGenericResolver.Instance,
 
-				PrimitiveObjectResolver.Instance,
+                DynamicUnionResolver.Instance,
+
+                DynamicObjectResolver.Instance,
+
+                DynamicContractlessObjectResolver.Instance,
+
+                PrimitiveObjectResolver.Instance,
             };
         }
 
