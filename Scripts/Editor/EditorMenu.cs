@@ -137,11 +137,15 @@ namespace Modules
             ScenesInBuildGenerator.Generate();
         }
 
+        #if !MESSAGEPACK_ANALYZER_CODE
+
         [MenuItem(itemName: GeneratorsMenu + "Generate MessagePack", priority = 19)]
         public static void GenerateMessagePackCode()
         {
             MessagePackCodeGenerator.Generate();
         }
+      
+        #endif
 
         [MenuItem(itemName: GeneratorsMenu + "Generate ScriptableObject", priority = 100)]
         public static void GenerateScriptableObject()

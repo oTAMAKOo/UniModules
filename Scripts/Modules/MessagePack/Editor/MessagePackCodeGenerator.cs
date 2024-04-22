@@ -1,4 +1,6 @@
 
+#if !MESSAGEPACK_ANALYZER_CODE
+
 using UnityEngine;
 using UnityEditor;
 using System;
@@ -198,3 +200,5 @@ namespace Modules.MessagePack
         }
     }
 }
+
+#endif
