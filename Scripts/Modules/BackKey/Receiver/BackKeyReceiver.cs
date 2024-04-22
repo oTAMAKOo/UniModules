@@ -10,9 +10,18 @@ namespace Modules.BackKey
 
         //----- field -----
 
+        [SerializeField]
+        private int priority = 0;
+
         private bool initialized = false;
 
         //----- property -----
+
+        public int Priority
+        {
+            get { return priority; }
+            set { priority = value; }
+        }
 
         //----- method -----
 
@@ -20,16 +29,16 @@ namespace Modules.BackKey
         {
             var backKeyManager = BackKeyManager.Instance;
 
-            void OnBackKey()
-            {
-                Initialize();
-                HandleBackKey();
-            }
+            Initialize();
 
-            backKeyManager.OnBackKeyAsObservable()
-                .TakeUntilDisable(this)
-                .Subscribe(_ => OnBackKey())
-                .AddTo(this);
+            backKeyManager.AddReceiver(this);
+        }
+
+        void OnDisable()
+        {
+            var backKeyManager = BackKeyManager.Instance;
+
+            backKeyManager.RemoveReceiver(this);
         }
 
         private void Initialize()
@@ -43,6 +52,6 @@ namespace Modules.BackKey
 
         protected virtual void OnInitialize() { }
 
-        protected abstract void HandleBackKey();
+        public abstract bool HandleBackKey();
     }
 }

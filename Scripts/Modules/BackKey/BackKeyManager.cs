@@ -1,6 +1,8 @@
 ﻿
 using UnityEngine;
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using UniRx;
 using Extensions;
 
@@ -12,7 +14,7 @@ namespace Modules.BackKey
 
         //----- field -----
 
-        private Subject<Unit> onBackKey = null;
+        private List<BackKeyReceiver> receivers = null;
 
         //----- property -----
 
@@ -20,6 +22,8 @@ namespace Modules.BackKey
 
         public void Initialize()
         {
+            receivers = new List<BackKeyReceiver>();
+
             Observable.EveryLateUpdate()
                 .Subscribe(_ => HandleBackKey())
                 .AddTo(Disposable);
@@ -31,18 +35,45 @@ namespace Modules.BackKey
             
             if (Input.GetKeyDown(KeyCode.Escape))
             {
-                if (onBackKey != null)
-                {
-                    onBackKey.OnNext(Unit.Default);
-                }
+                InvokeReceivers();
             }
 
             #endif
         }
 
-        public IObservable<Unit> OnBackKeyAsObservable()
+        private void InvokeReceivers()
         {
-            return onBackKey ?? (onBackKey = new Subject<Unit>());
+            if (receivers.IsEmpty()){ return; }
+
+            foreach (var receiver in receivers)
+            {
+                var result = receiver.HandleBackKey();
+
+                if (result) { break; }
+            }
+        }
+
+        public void AddReceiver(BackKeyReceiver receiver)
+        {
+            if (receivers.Contains(receiver)){ return; }
+
+            receivers.Add(receiver);
+
+            receivers.Sort((x, y) => y.Priority.CompareTo(x.Priority));
+        }
+
+        public void RemoveReceiver(BackKeyReceiver receiver)
+        {
+            if (!receivers.Contains(receiver)){ return; }
+
+            receivers.Remove(receiver);
+
+            receivers.Sort((x, y) => y.Priority.CompareTo(x.Priority));
+        }
+
+        public void ClearReceiver()
+        {
+            receivers.Clear();
         }
     }
 }

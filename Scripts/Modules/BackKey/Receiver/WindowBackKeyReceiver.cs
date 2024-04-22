@@ -20,17 +20,21 @@ namespace Modules.BackKey
         protected override void OnInitialize()
         {
             window = UnityUtility.GetComponent<Modules.Window.Window>(gameObject);
+
+            Priority = 10000;
         }
 
-        protected override void HandleBackKey()
+        public override bool HandleBackKey()
         {
-            if (window == null) { return; }
+            if (window == null) { return false; }
 
             var popupManager = GetPopupManager();
 
-            if (popupManager.Current != window){ return; }
+            if (popupManager.Current != window){ return false; }
 
             window.Close().Forget();
+
+            return true;
         }
 
         public abstract IPopupManager GetPopupManager();
