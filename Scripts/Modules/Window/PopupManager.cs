@@ -11,7 +11,12 @@ using Modules.Scene;
 
 namespace Modules.Window
 {
-    public abstract class PopupManager<TInstance> : SingletonMonoBehaviour<TInstance> where TInstance : PopupManager<TInstance>, new()
+    public interface IPopupManager
+    {
+        public Window Current { get; }
+    }
+
+    public abstract class PopupManager<TInstance> : SingletonMonoBehaviour<TInstance>, IPopupManager where TInstance : PopupManager<TInstance>, new()
     {
         //----- params -----
 
