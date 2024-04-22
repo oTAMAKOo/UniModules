@@ -43,6 +43,19 @@ namespace Extensions
             IsEditor = Application.installMode == ApplicationInstallMode.Editor;
         }
 
+        private static bool IsPlaying()
+        {
+            var isPlaying = true;
+
+            #if UNITY_EDITOR
+
+            isPlaying = Application.isPlaying;
+            
+            #endif
+
+            return isPlaying;
+        }
+
         #region Object Instantiate
 
         private const string PrefabTag = " (Clone)";
@@ -235,7 +248,7 @@ namespace Extensions
 
             SetActive(gameObject, false);
 
-            if (!Application.isPlaying || immediate)
+            if (!IsPlaying() || immediate)
             {
                 UnityEngine.Object.DestroyImmediate(instance);
             }
@@ -249,7 +262,7 @@ namespace Extensions
         {
             if (component != null)
             {
-                if (!Application.isPlaying || immediate)
+                if (!IsPlaying() || immediate)
                 {
                     UnityEngine.Object.DestroyImmediate(component);
                 }
@@ -271,7 +284,7 @@ namespace Extensions
         {
             if (component != null)
             {
-                if (!Application.isPlaying || immediate)
+                if (!IsPlaying() || immediate)
                 {
                     UnityEngine.Object.DestroyImmediate(component.gameObject);
                 }
