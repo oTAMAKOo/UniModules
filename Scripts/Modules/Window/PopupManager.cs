@@ -48,6 +48,8 @@ namespace Modules.Window
 
         public IReadOnlyList<Window> GlobalPopups { get { return globalPopups; } }
 
+        public Window Current { get; private set; }
+
         //----- method -----
 
         protected abstract int ParentInSceneLayer { get; }
@@ -204,6 +206,8 @@ namespace Modules.Window
 
             CreateTouchBloc();
 
+            Current = null;
+
             if (scenePopups.Any())
             {
                 var index = 0;
@@ -221,6 +225,11 @@ namespace Modules.Window
                     }
 
                     popup.transform.SetSiblingIndex(index++);
+                }
+
+                if (lastPopup != null)
+                {
+                    Current = lastPopup;
                 }
             }
 
@@ -241,6 +250,11 @@ namespace Modules.Window
                     }
 
                     popup.transform.SetSiblingIndex(index++);
+                }
+
+                if (lastPopup != null)
+                {
+                    Current = lastPopup;
                 }
             }
 
