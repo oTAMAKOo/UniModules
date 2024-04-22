@@ -1,5 +1,7 @@
-﻿
+
 using System;
+using System.Collections;
+using System.Collections.Specialized;
 using System.Text;
 using System.Diagnostics;
 using System.Threading.Tasks;
@@ -73,8 +75,8 @@ namespace Extensions
                     process.WaitForExit((int)TimeOut.TotalMilliseconds);
 
                     var exitCode = process.ExitCode;
-                    var outputLog = process.StandardOutput.ReadToEnd();
-                    var errorLog = process.StandardError.ReadToEnd();
+                    var outputLog = UseShellExecute ? string.Empty : process.StandardOutput.ReadToEnd();
+                    var errorLog = UseShellExecute ? string.Empty : process.StandardError.ReadToEnd();
 
                     result = new Result(exitCode, outputLog, errorLog);
                 }
@@ -102,25 +104,25 @@ namespace Extensions
 
                     if (!UseShellExecute)
                     {
-                        DataReceivedEventHandler processOutputDataReceived = (sender, e) =>
+                        void ProcessOutputDataReceived(object sender, DataReceivedEventArgs e)
                         {
                             if (!string.IsNullOrEmpty(e.Data))
                             {
                                 outputLogBuilder.AppendLine(e.Data);
                             }
-                        };
+                        }
 
-                        process.OutputDataReceived += processOutputDataReceived;
+                        process.OutputDataReceived += ProcessOutputDataReceived;
 
-                        DataReceivedEventHandler processErrorDataReceived = (sender, e) =>
+                        void ProcessErrorDataReceived(object sender, DataReceivedEventArgs e)
                         {
                             if (!string.IsNullOrEmpty(e.Data))
                             {
                                 errorLogBuilder.AppendLine(e.Data);
                             }
-                        };
+                        }
 
-                        process.ErrorDataReceived += processErrorDataReceived;
+                        process.ErrorDataReceived += ProcessErrorDataReceived;
                     }
 
                     process.EnableRaisingEvents = true;

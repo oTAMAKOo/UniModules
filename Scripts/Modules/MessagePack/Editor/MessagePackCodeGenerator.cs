@@ -74,13 +74,12 @@ namespace Modules.MessagePack
 
                 #if UNITY_EDITOR_OSX
 
-                if (string.IsNullOrEmpty(mpcPath))
+                if (command == "mpc" && string.IsNullOrEmpty(mpcPath))
                 {
                     var dotNetPath = MessagePackHelper.GetDotNetPath();
 
-                    argument = $"mpc {generateInfo.MpcArgument}";
-
                     command = dotNetPath;
+                    argument = $"mpc {generateInfo.MpcArgument}";
                 }
 
                 #endif
