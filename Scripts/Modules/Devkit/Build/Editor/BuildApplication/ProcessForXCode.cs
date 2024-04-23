@@ -41,7 +41,7 @@ namespace Modules.Devkit.Build
 
                 var projectPath = PBXProject.GetPBXProjectPath(path);
                 
-                PbxProj.ReadFromString(File.ReadAllText(projectPath));
+                PbxProj.ReadFromFile(projectPath);
 
                 #if UNITY_2020_2_OR_NEWER
 
@@ -63,13 +63,15 @@ namespace Modules.Devkit.Build
 
                 CapabilityManager.WriteToFile();
 
+                PbxProj.WriteToFile(projectPath);
+
 				PbxProj = null;
                 CapabilityManager = null;
                 TargetGuid = null;
             } 
             catch (Exception e) 
             {
-                Debug.LogException(e);
+                Debug.LogError($"UpdatePbxProj error {e}");
             }
         }
 
