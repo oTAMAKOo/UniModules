@@ -55,8 +55,6 @@ namespace Modules.Devkit.Build
 
 				EditPbxProj();
 
-				File.WriteAllText(projectPath, PbxProj.WriteToString());
-
                 CapabilityManager = new ProjectCapabilityManager(projectPath, EntitlementFileName, null, TargetGuid);
 
 				EditCapability();
