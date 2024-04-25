@@ -1190,7 +1190,7 @@ namespace Modules.Scene
             {
                 if (sceneInstance.Identifier.HasValue)
                 {
-                    loadedScenes.Remove(sceneInstance.Identifier.Value);
+                    cacheScenes.Remove(sceneInstance);
                 }
 
                 UnloadScene(sceneInstance).Subscribe().AddTo(Disposable);
