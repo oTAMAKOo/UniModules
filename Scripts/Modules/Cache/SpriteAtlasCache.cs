@@ -7,7 +7,7 @@ using Extensions;
 
 namespace Modules.Cache
 {
-    public sealed class SpriteAtlasCache : IDisposable
+    public sealed class SpriteAtlasCache : LifetimeDisposable
     {
         //----- params -----
 
@@ -16,8 +16,6 @@ namespace Modules.Cache
         private SpriteAtlas spriteAtlas = null;
 
         private Cache<Sprite> spriteCache = null;
-
-		private bool disposed = false;
 
         //----- property -----
 
@@ -32,20 +30,9 @@ namespace Modules.Cache
             spriteCache = new Cache<Sprite>(referenceName);
         }
 
-		~SpriteAtlasCache()
+		protected override void OnDispose()
 		{
-			Dispose();
-		}
-
-		public void Dispose()
-		{
-			if (disposed) { return; }
-
 			Clear();
-			
-			disposed = true;
-
-			GC.SuppressFinalize(this);
 		}
 
         public Sprite GetSprite(string spriteName)
@@ -81,7 +68,10 @@ namespace Modules.Cache
                 }
 
                 // メインスレッドで破棄.
-                Observable.ReturnUnit().ObserveOnMainThread().Subscribe(_ => DeleteCacheObjects());
+                Observable.ReturnUnit()
+                    .ObserveOnMainThread()
+                    .Subscribe(_ => DeleteCacheObjects())
+                    .AddTo(Disposable);
 			}
 		}
 
