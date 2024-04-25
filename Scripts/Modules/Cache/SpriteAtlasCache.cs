@@ -1,7 +1,8 @@
-﻿
+
 using UnityEngine;
 using UnityEngine.U2D;
 using System;
+using UniRx;
 using Extensions;
 
 namespace Modules.Cache
@@ -69,12 +70,18 @@ namespace Modules.Cache
 		{
 			if (spriteCache != null)
 			{
-				var cahcedSprites = spriteCache.Values;
+                void DeleteCacheObjects()
+                {
+                    var cahcedSprites = spriteCache.Values;
 
-				foreach (var sprite in cahcedSprites)
-				{
-					UnityUtility.SafeDelete(sprite);
-				}
+                    foreach (var sprite in cahcedSprites)
+                    {
+                        UnityUtility.SafeDelete(sprite);
+                    }
+                }
+
+                // メインスレッドで破棄.
+                Observable.ReturnUnit().ObserveOnMainThread().Subscribe(_ => DeleteCacheObjects());
 			}
 		}
 
