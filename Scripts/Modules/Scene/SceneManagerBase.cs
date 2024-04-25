@@ -958,7 +958,17 @@ namespace Modules.Scene
             if (!scene.HasValue){ return Observable.ReturnUnit(); }
 
             // メインシーンはアンロードできない.
-            if (!scene.Value.isSubScene){ return Observable.ReturnUnit(); }
+            
+            var mainScene = SceneManager.GetActiveScene();
+
+            if (mainScene == scene)
+            {
+                Debug.LogWarning($"Main scene {sceneInstance.Identifier} is cannot be unloaded.");
+
+                return Observable.ReturnUnit();
+            }
+
+            // アンロード.
             
             var identifier = sceneInstance.Identifier.Value;
 
