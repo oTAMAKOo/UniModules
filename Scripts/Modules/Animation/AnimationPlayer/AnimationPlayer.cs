@@ -193,7 +193,7 @@ namespace Modules.Animation
             {
                 await PlayInternal(hash, layer, normalizedTime, cancelToken);
             }
-            catch (OperationCanceledException e)
+            catch (OperationCanceledException)
             {
                 /* Canceled */
             }

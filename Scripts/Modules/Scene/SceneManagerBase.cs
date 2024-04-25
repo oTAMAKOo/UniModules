@@ -1115,6 +1115,9 @@ namespace Modules.Scene
 
             foreach (var scene in targetScenes)
             {
+                // ロード済みのシーンがある場合はプリロードしない.
+                if (loadedScenes.Values.Any(x => x.Identifier.Equals(scene))) { continue; }
+
                 // キャッシュ済みのシーンがある場合はプリロードしない.
                 if (cacheScenes.Any(x => x.Identifier.Equals(scene))) { continue; }
 
