@@ -2,6 +2,7 @@
 using UnityEngine;
 using System;
 using System.Linq;
+using System.Threading;
 using Cysharp.Threading.Tasks;
 using UniRx;
 using Extensions;
@@ -147,7 +148,8 @@ namespace Modules.Animation
             Stop();
         }
 
-        public async UniTask Play(string animationName, int layer = -1, float normalizedTime = float.NegativeInfinity, bool immediate = true)
+        public async UniTask Play(string animationName, int layer = -1, float normalizedTime = float.NegativeInfinity, 
+                                  bool immediate = true, CancellationToken cancelToken = default)
         {
             if (string.IsNullOrEmpty(animationName)) { return; }
 
@@ -187,7 +189,14 @@ namespace Modules.Animation
                 }
             }
 
-            await PlayInternal(hash, layer, normalizedTime, immediate);
+            try
+            {
+                await PlayInternal(hash, layer, normalizedTime, cancelToken);
+            }
+            catch (OperationCanceledException e)
+            {
+                /* Canceled */
+            }
         }
 
         private void PlayAnimator(int hash, int layer, float normalizedTime)
@@ -211,17 +220,21 @@ namespace Modules.Animation
             return stateInfo.IsName(animationName);
         }
 
-        private async UniTask PlayInternal(int hash, int layer, float normalizedTime, bool immediate)
+        private async UniTask PlayInternal(int hash, int layer, float normalizedTime, CancellationToken cancelToken)
         {
             while (true)
             {
+                if (cancelToken.IsCancellationRequested){ return; }
+
                 if (!Animator.IsAvailable()) { break; }
 
                 // 指定アニメーションへ遷移待ち.
                 if (!IsCurrentState(CurrentAnimationName, GetCurrentLayerIndex()))
                 {
-                    await WaitTransitionState();
+                    await WaitTransitionState(cancelToken);
                 }
+
+                if (cancelToken.IsCancellationRequested){ return; }
 
                 // アニメーション開始通知.
                 if (onEnterAnimation != null)
@@ -230,7 +243,9 @@ namespace Modules.Animation
                 }
 
                 // アニメーションの終了待ち.
-                await WaitForEndOfAnimation();
+                await WaitForEndOfAnimation(cancelToken);
+
+                if (cancelToken.IsCancellationRequested){ return; }
 
                 if (endActionType != EndActionType.Loop) { break; }
 
@@ -239,14 +254,14 @@ namespace Modules.Animation
                 // ループ再生の場合は再度再生を行う.
                 PlayAnimator(hash, layer, normalizedTime);
 
-                await UniTask.NextFrame();
+                await UniTask.NextFrame(cancelToken);
             }
 
             EndAction();
         }
 
         // 指定アニメーションへ遷移待ち.
-        private async UniTask WaitTransitionState()
+        private async UniTask WaitTransitionState(CancellationToken cancelToken)
         {
             // ステートの遷移待ち.
             while (true)
@@ -259,7 +274,9 @@ namespace Modules.Animation
 
                 if (IsCurrentState(CurrentAnimationName, GetCurrentLayerIndex())) { break; }
 
-                await UniTask.NextFrame();
+                await UniTask.NextFrame(cancelToken);
+
+                if (cancelToken.IsCancellationRequested){ return; }
             }
         }
 
@@ -281,7 +298,7 @@ namespace Modules.Animation
         }
 
         // アニメーションの終了待ち.
-        private async UniTask WaitForEndOfAnimation()
+        private async UniTask WaitForEndOfAnimation(CancellationToken cancelToken)
         {
             if (!isInitialized) { return; }
 
@@ -297,7 +314,9 @@ namespace Modules.Animation
                     if (!IsAlive()) { break; }
                 }
                 
-                await UniTask.NextFrame();
+                await UniTask.NextFrame(cancelToken);
+
+                if (cancelToken.IsCancellationRequested){ return; }
             }
         }
 
