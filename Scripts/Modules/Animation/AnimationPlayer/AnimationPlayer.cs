@@ -11,7 +11,7 @@ namespace Modules.Animation
     [ExecuteAlways]
     [DisallowMultipleComponent]
     [RequireComponent(typeof(Animator))]
-    public sealed class AnimationPlayer : MonoBehaviour, IStateMachineEventHandler
+    public sealed class AnimationPlayer : StateMachineEventReceiver
     {
         //----- params -----
 
@@ -37,9 +37,6 @@ namespace Modules.Animation
 
         // 終了通知.
         private Subject<AnimationPlayer> onEndAnimation = null;
-
-        // StateMachineイベント.
-        private Subject<StateMachineEvent> onStateMachineEvent = null;
 
         // アニメーションイベント.
         private Subject<string> onAnimationEvent = null;
@@ -544,23 +541,6 @@ namespace Modules.Animation
         {
             return onEndAnimation ?? (onEndAnimation = new Subject<AnimationPlayer>());
         }
-
-        #region StateMachine Event
-
-        public void StateMachineEvent(StateMachineEvent stateMachineEvent)
-        {
-            if (onStateMachineEvent != null)
-            {
-                onStateMachineEvent.OnNext(stateMachineEvent);
-            }
-        }
-
-        public IObservable<StateMachineEvent> OnStateMachineEventAsObservable()
-        {
-            return onStateMachineEvent ?? (onStateMachineEvent = new Subject<StateMachineEvent>());
-        }
-
-        #endregion
 
         #region Animation Event
 

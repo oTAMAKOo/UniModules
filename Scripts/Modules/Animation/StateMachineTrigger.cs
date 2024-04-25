@@ -1,4 +1,4 @@
-﻿﻿﻿
+﻿﻿
 using UnityEngine;
 using Unity.Linq;
 using System.Linq;
@@ -29,14 +29,14 @@ namespace Modules.Animation
         {
             if (eventType != StateMachineEventType.EnterState) { return; }
 
-            SendStateEvent<AnimationPlayer>(animator);
+            SendStateEvent<StateMachineEventReceiver>(animator);
         }
 
         public override void OnStateExit(Animator animator, AnimatorStateInfo stateInfo, int layerIndex)
         {
             if (eventType != StateMachineEventType.ExitState) { return; }
 
-            SendStateEvent<AnimationPlayer>(animator);
+            SendStateEvent<StateMachineEventReceiver>(animator);
         }
 
         public void SendStateEvent<T>(Animator animator) where T : Component, IStateMachineEventHandler
