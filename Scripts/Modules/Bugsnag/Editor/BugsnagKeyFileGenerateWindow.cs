@@ -125,7 +125,7 @@ namespace Modules.Bugsnag
 
                 if (File.Exists(filePath))
                 {
-                    keyData = await MessagePackFileUtility.Read<BugsnagApiKeyData>(filePath, cryptoKey);
+                    keyData = await MessagePackFileUtility.ReadAsync<BugsnagApiKeyData>(filePath, cryptoKey);
                 }
 
                 var keyInfo = new KeyInfo()
@@ -154,7 +154,7 @@ namespace Modules.Bugsnag
             apiKey = apiKey,
             };
 
-            await MessagePackFileUtility.Write(filePath, data, cryptoKey);
+            await MessagePackFileUtility.WriteAsync(filePath, data, cryptoKey);
 
             if (File.Exists(filePath))
             {

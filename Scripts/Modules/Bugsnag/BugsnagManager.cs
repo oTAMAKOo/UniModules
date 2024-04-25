@@ -55,7 +55,7 @@ namespace Modules.Bugsnag
         { 
             get
             {
-                return !string.IsNullOrEmpty(apiKey) && !UnityUtility.isEditor;
+                return !string.IsNullOrEmpty(apiKey) && !UnityUtility.IsEditor;
             }
         }
 
@@ -155,7 +155,7 @@ namespace Modules.Bugsnag
 
             var cryptoKey = await GetCryptoKey();
 
-            var data = await MessagePackFileUtility.Read<BugsnagApiKeyData>(filePath, cryptoKey);
+            var data = await MessagePackFileUtility.ReadAsync<BugsnagApiKeyData>(filePath, cryptoKey);
             
             if (data == null)
             {
