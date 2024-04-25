@@ -1,7 +1,7 @@
-
+﻿
 using UnityEngine;
 using UnityEngine.U2D;
-using System;
+using System.Collections.Generic;
 using UniRx;
 using Extensions;
 
@@ -11,11 +11,48 @@ namespace Modules.Cache
     {
         //----- params -----
 
+        private class DeleteCacheObjectController
+        {
+            private bool initialized = false;
+
+            private List<Sprite> targets = null;
+
+            public void Initialize()
+            {
+                if (initialized){ return; }
+
+                targets = new List<Sprite>();
+
+                void DeleteSprites()
+                {
+                    if (targets.IsEmpty()){ return; }
+
+                    foreach (var target in targets)
+                    {
+                        UnityUtility.SafeDelete(target);
+                    }
+
+                    targets.Clear();
+                }
+
+                Observable.EveryEndOfFrame().Subscribe(_ => DeleteSprites());
+
+                initialized = true;
+            }
+
+            public void DeleteRequest(Sprite sprite)
+            {
+                targets.Add(sprite);
+            }
+        }
+
         //----- field -----
 
         private SpriteAtlas spriteAtlas = null;
 
         private Cache<Sprite> spriteCache = null;
+
+        private static DeleteCacheObjectController deleteCacheObjectController = null;
 
         //----- property -----
 
@@ -28,6 +65,13 @@ namespace Modules.Cache
             this.spriteAtlas = spriteAtlas;
 
             spriteCache = new Cache<Sprite>(referenceName);
+
+            if (deleteCacheObjectController == null)
+            {
+                deleteCacheObjectController = new DeleteCacheObjectController();
+
+                deleteCacheObjectController.Initialize();
+            }
         }
 
 		protected override void OnDispose()
@@ -57,21 +101,12 @@ namespace Modules.Cache
 		{
 			if (spriteCache != null)
 			{
-                void DeleteCacheObjects()
+                var cahcedSprites = spriteCache.Values;
+
+                foreach (var sprite in cahcedSprites)
                 {
-                    var cahcedSprites = spriteCache.Values;
-
-                    foreach (var sprite in cahcedSprites)
-                    {
-                        UnityUtility.SafeDelete(sprite);
-                    }
+                    deleteCacheObjectController.DeleteRequest(sprite);
                 }
-
-                // メインスレッドで破棄.
-                Observable.ReturnUnit()
-                    .ObserveOnMainThread()
-                    .Subscribe(_ => DeleteCacheObjects())
-                    .AddTo(Disposable);
 			}
 		}
 
