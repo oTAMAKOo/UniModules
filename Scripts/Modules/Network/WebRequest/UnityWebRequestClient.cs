@@ -65,7 +65,7 @@ namespace Modules.Net.WebRequest
         public DownloadHandler DownloadHandler { get; private set; }
 
         /// <summary> タイムアウト時間(秒). </summary>
-        public virtual int TimeOutSeconds { get { return 3; } }
+        public virtual int TimeOutSeconds { get { return 30; } }
 
         /// <summary> ステータスコード. </summary>
         public string StatusCode
