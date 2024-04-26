@@ -116,6 +116,11 @@ namespace Modules.TimeUtil
             FullRecoveryTime = currentTime.AddSeconds(recoveryTime);
 
             LastRecoveryTime = LastRecoveryTime.HasValue ? LastRecoveryTime.Value : currentTime;
+
+            if (IsMax)
+            {
+                FullRecoveryTime = null;
+            }
         }
 
         /// <summary> 最大値更新 </summary>
