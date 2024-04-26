@@ -1,6 +1,7 @@
-﻿
+
 #if UNITY_IOS && !UNITY_EDITOR
-﻿﻿﻿﻿
+
+using UnityEngine;
 using Unity.Notifications.iOS;
 using Extensions;
 
@@ -21,6 +22,12 @@ namespace Modules.Notifications
 			foreach (var info in notifications.Values)
             {
                 var time = info.UnixTime.UnixTimeToDateTime() - CurrentTime.UnixTimeToDateTime();
+
+                if (time.TotalSeconds <= 0)
+                {
+                    Debug.LogError($"Notification schedule failed.\nid = {info.Identifier}\ntitle = {info.Title}\nmessage = {info.Message}");
+                    continue;
+                }
 
                 var notification = new iOSNotification()
                 {
