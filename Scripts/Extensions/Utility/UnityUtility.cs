@@ -4,6 +4,7 @@ using UnityEngine.SceneManagement;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using UniRx;
 
 #if UNITY_EDITOR
 
@@ -18,6 +19,8 @@ namespace Extensions
         public static bool IsBatchMode { get; private set; }
 
         public static bool IsEditor { get; private set; }
+
+        public static bool IsPlaying { get; private set; }
 
         #if UNITY_EDITOR
 
@@ -41,19 +44,15 @@ namespace Extensions
         {
             IsBatchMode = Application.isBatchMode;
             IsEditor = Application.installMode == ApplicationInstallMode.Editor;
-        }
 
-        private static bool IsPlaying()
-        {
-            var isPlaying = true;
+            void Update()
+            {
+                IsPlaying = Application.isPlaying;
+            }
 
-            #if UNITY_EDITOR
+            Observable.EveryUpdate().Subscribe(_ => Update());
 
-            isPlaying = Application.isPlaying;
-            
-            #endif
-
-            return isPlaying;
+            Update();
         }
 
         #region Object Instantiate
@@ -127,11 +126,11 @@ namespace Extensions
 
                 if (parent == null)
                 {
-                    gameObject = UnityEngine.Object.Instantiate(original);
+                    gameObject = Object.Instantiate(original);
                 }
                 else
                 {
-                    gameObject = UnityEngine.Object.Instantiate(original, parent.transform, instantiateInWorldSpace);
+                    gameObject = Object.Instantiate(original, parent.transform, instantiateInWorldSpace);
                 }
 
                 if (gameObject != null)
@@ -240,7 +239,7 @@ namespace Extensions
         }
          
         /// <summary> オブジェクトの削除 </summary>
-        public static void SafeDelete(UnityEngine.Object instance, bool immediate = false)
+        public static void SafeDelete(Object instance, bool immediate = false)
         {
             if (instance == null) { return; }
             
@@ -248,13 +247,13 @@ namespace Extensions
 
             SetActive(gameObject, false);
 
-            if (!IsPlaying() || immediate)
+            if (!IsPlaying || immediate)
             {
-                UnityEngine.Object.DestroyImmediate(instance);
+                Object.DestroyImmediate(instance);
             }
             else
             {
-                UnityEngine.Object.Destroy(instance);
+                Object.Destroy(instance);
             }
         }
 
@@ -262,13 +261,13 @@ namespace Extensions
         {
             if (component != null)
             {
-                if (!IsPlaying() || immediate)
+                if (!IsPlaying || immediate)
                 {
-                    UnityEngine.Object.DestroyImmediate(component);
+                    Object.DestroyImmediate(component);
                 }
                 else
                 {
-                    UnityEngine.Object.Destroy(component);
+                    Object.Destroy(component);
                 }
             }
         }
@@ -284,13 +283,13 @@ namespace Extensions
         {
             if (component != null)
             {
-                if (!IsPlaying() || immediate)
+                if (!IsPlaying || immediate)
                 {
-                    UnityEngine.Object.DestroyImmediate(component.gameObject);
+                    Object.DestroyImmediate(component.gameObject);
                 }
                 else
                 {
-                    UnityEngine.Object.Destroy(component.gameObject);
+                    Object.Destroy(component.gameObject);
                 }
             }
         }
@@ -299,7 +298,7 @@ namespace Extensions
         {
             var component = GetComponent<T>(instance);
 
-            DeleteGameObject<T>(component, immediate);
+            DeleteGameObject(component, immediate);
         }
 
         /// <summary> 複数オブジェクトの削除 </summary>
@@ -314,7 +313,7 @@ namespace Extensions
         /// <summary> Nullチェック </summary>
         public static bool IsNull(object obj)
         {
-            var unityObj = obj as UnityEngine.Object;
+            var unityObj = obj as Object;
 
             if (!ReferenceEquals(unityObj, null))
             {
@@ -526,8 +525,7 @@ namespace Extensions
 
             // DontDestroyOnLoadを設定したオブジェクトはシーン一覧から回収できない.
             // 非アクティブなオブジェクトは回収できないが標準のFindObjectsOfTypeで抽出.
-            var dontDestroyObjects = UnityEngine.Object.FindObjectsOfType<T>()
-                .Where(x => x.gameObject.scene.name == "DontDestroyOnLoad");
+            var dontDestroyObjects = Object.FindObjectsOfType<T>().Where(x => x.gameObject.scene.name == "DontDestroyOnLoad");
 
             targets.AddRange(dontDestroyObjects);
 
@@ -690,6 +688,23 @@ namespace Extensions
             }
 
             return builder.ToString();
+        }
+
+        #endregion
+
+        #region PrefabMode
+
+        public static bool IsPrefabModeInstance(GameObject target)
+        {
+            if (IsNull(target)) { return false; }
+
+            #if UNITY_EDITOR
+
+            if (IsPlaying && !target.scene.isLoaded) { return true; }
+
+            #endif
+
+            return false;
         }
 
         #endregion
