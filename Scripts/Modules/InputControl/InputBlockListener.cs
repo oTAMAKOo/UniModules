@@ -24,6 +24,7 @@ namespace Modules.InputControl
             var blockInputManager = BlockInputManager.Instance;
 
             blockInputManager.OnUpdateStatusAsObservable()
+                .ObserveOnMainThread()
                 .Subscribe(x => UpdateInputBlock(x))
                 .AddTo(this);
 
