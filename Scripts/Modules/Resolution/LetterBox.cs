@@ -87,8 +87,8 @@ namespace Modules.Resolution
 
 			var letterBoxSize = new Vector2()
             {
-                x = (canvasRectTransform.GetWidth() - canvasScaler.referenceResolution.x) * 0.5f,
-                y = (canvasRectTransform.GetHeight() - canvasScaler.referenceResolution.y) * 0.5f,
+                x = (canvasRectTransform.GetWidth() - canvasScaler.referenceResolution.x) * 0.5f + 1f,
+                y = (canvasRectTransform.GetHeight() - canvasScaler.referenceResolution.y) * 0.5f + 1f,
             };
 
 			if (lastLetterBoxSize == letterBoxSize){ return; }
