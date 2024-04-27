@@ -34,7 +34,18 @@ namespace Modules.UI.Focus
 
 		public bool IsFocus { get; private set; }
 
-        public string FocusId { get { return focusId; } }
+        public string FocusId
+        {
+            get
+            {
+                if (string.IsNullOrEmpty(focusId))
+                {
+                    focusId = Guid.NewGuid().ToString("N");
+                }
+
+                return focusId;
+            }
+        }
 
 		//----- method -----
 
@@ -49,17 +60,8 @@ namespace Modules.UI.Focus
 		
 		void OnEnable()
         {
-            GenerateFocusId();
-
 			UpdateFocus();
 		}
-
-        public void GenerateFocusId()
-        {
-            if (!string.IsNullOrEmpty(focusId)){ return; }
-            
-            focusId = Guid.NewGuid().ToString("N");
-        }
 
         private void Setup()
         {
@@ -123,9 +125,9 @@ namespace Modules.UI.Focus
 		{
 			var focusManager = FocusManager.Instance;
 
-			if (string.IsNullOrEmpty(focusId)){ return; }
+			if (string.IsNullOrEmpty(FocusId)){ return; }
 
-			var isTarget = focusManager.Contains(focusId);
+			var isTarget = focusManager.Contains(FocusId);
 
 			if (isTarget)
 			{
