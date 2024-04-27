@@ -36,13 +36,9 @@ namespace Modules.UI.Focus
 
 			DrawDefaultScriptlessInspector();
 
-			var focusId = Reflection.GetPrivateField<FocusTarget, string>(instance, "focusId");
-
-			if (string.IsNullOrEmpty(focusId))
+			if (string.IsNullOrEmpty(instance.FocusId))
 			{
-				focusId = Guid.NewGuid().ToString("N");
-
-				Reflection.SetPrivateField(instance, "focusId", focusId);
+                instance.GenerateFocusId();
 
 				EditorUtility.SetDirty(instance);
 			}
@@ -56,7 +52,7 @@ namespace Modules.UI.Focus
 
 				GUILayout.FlexibleSpace();
 
-				var size = GUI.skin.label.CalcSize(new GUIContent(focusId));
+				var size = GUI.skin.label.CalcSize(new GUIContent(instance.FocusId));
 
 				var layoutOptions = new GUILayoutOption[]
 				{
@@ -64,11 +60,11 @@ namespace Modules.UI.Focus
 					GUILayout.Height(EditorGUIUtility.singleLineHeight),
 				};
 
-				EditorGUILayout.SelectableLabel(focusId, EditorStyles.textArea, layoutOptions);
+				EditorGUILayout.SelectableLabel(instance.FocusId, EditorStyles.textArea, layoutOptions);
 
 				if (GUILayout.Button(clipboardIcon, GUILayout.Width(35f)))
 				{
-					GUIUtility.systemCopyBuffer = focusId;
+					GUIUtility.systemCopyBuffer = instance.FocusId;
 				}
 			}
 		}

@@ -1,4 +1,5 @@
 ﻿
+using System;
 using UnityEngine;
 using UnityEngine.UI;
 using Cysharp.Threading.Tasks;
@@ -33,6 +34,8 @@ namespace Modules.UI.Focus
 
 		public bool IsFocus { get; private set; }
 
+        public string FocusId { get { return focusId; } }
+
 		//----- method -----
 
 		void Awake()
@@ -45,9 +48,18 @@ namespace Modules.UI.Focus
 		}
 		
 		void OnEnable()
-		{
+        {
+            GenerateFocusId();
+
 			UpdateFocus();
 		}
+
+        public void GenerateFocusId()
+        {
+            if (!string.IsNullOrEmpty(focusId)){ return; }
+            
+            focusId = Guid.NewGuid().ToString("N");
+        }
 
         private void Setup()
         {
