@@ -9,7 +9,7 @@ using Modules.UI.Extension;
 namespace Modules.BackKey
 {
     [RequireComponent(typeof(UIButton))]
-    public class ButtonBackKeyReceiver : BackKeyReceiver
+    public abstract class ButtonBackKeyReceiver : BackKeyReceiver
     {
         //----- params -----
 
