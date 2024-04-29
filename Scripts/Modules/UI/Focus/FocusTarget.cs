@@ -1,10 +1,13 @@
 ﻿
-using System;
 using UnityEngine;
 using UnityEngine.UI;
+using Unity.Linq;
+using System;
 using Cysharp.Threading.Tasks;
 using UniRx;
+using TMPro;
 using Extensions;
+using UnityEngine.UIElements;
 
 namespace Modules.UI.Focus
 {
@@ -140,7 +143,16 @@ namespace Modules.UI.Focus
 			{
 				Release();
 			}
-		}
+
+            var textComponents = gameObject.DescendantsAndSelf().OfComponent<TextMeshProUGUI>();
+
+            foreach (var textComponent in textComponents)
+            {
+                textComponent.SetAllDirty();
+
+                textComponent.ForceMeshUpdate(true);
+            }
+        }
 
         private async UniTask ApplyCanvasSelf(bool overrideSorting, int sortingOrder)
         {
