@@ -7,7 +7,6 @@ using Cysharp.Threading.Tasks;
 using UniRx;
 using TMPro;
 using Extensions;
-using UnityEngine.UIElements;
 
 namespace Modules.UI.Focus
 {
@@ -66,6 +65,14 @@ namespace Modules.UI.Focus
 			UpdateFocus();
 		}
 
+
+        void OnDestroy()
+        {
+            var focusManager = FocusManager.Instance;
+
+            focusManager.Leave(this);
+        }
+
         private void Setup()
         {
 			canvasSelf = UnityUtility.GetComponent<Canvas>(gameObject);
@@ -89,6 +96,8 @@ namespace Modules.UI.Focus
 
         public void Focus(Canvas canvas)
         {
+            var focusManager = FocusManager.Instance;
+
 			if (IsFocus){ return; }
 
             Setup();
@@ -99,10 +108,14 @@ namespace Modules.UI.Focus
             originSortingOrder = canvasSelf.sortingOrder;
 
             ApplyCanvasSelf(true, canvas.sortingOrder + 1).Forget();
+
+            focusManager.Join(this);
 		}
 
         public void Release()
         {
+            var focusManager = FocusManager.Instance;
+
 			if (!IsFocus){ return; }
 
 			IsFocus = false;
@@ -122,6 +135,8 @@ namespace Modules.UI.Focus
             {
                 ApplyCanvasSelf(originOverrideSorting, originSortingOrder).Forget();
             }
+
+            focusManager.Leave(this);
         }
 
 		private void UpdateFocus()
