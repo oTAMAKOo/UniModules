@@ -81,6 +81,8 @@ namespace Extensions
 			{
 				UnityUtility.SafeDelete(instance.gameObject);
 			}
-		}
+
+            instance = null;
+        }
 	}
 }
