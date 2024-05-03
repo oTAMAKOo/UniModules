@@ -52,6 +52,12 @@ namespace Modules.Master
 
         private bool CheckVersion(IMaster master, string masterVersion)
         {
+            // ファイルがなかったらバージョン不一致.
+
+            var filePath = GetFilePath(master);
+
+            if(!File.Exists(filePath)){ return false; }
+
             // ローカル保存されているバージョンと一致するか.
 
             var fileName = GetMasterFileName(master.GetType());
@@ -59,12 +65,6 @@ namespace Modules.Master
             var localVersion = versions.GetValueOrDefault(fileName);
 
             if (localVersion != masterVersion) { return false; }
-
-            // ファイルがなかったらバージョン不一致.
-
-            var filePath = GetFilePath(master);
-
-            if(!File.Exists(filePath)){ return false; }
 
             return true;
         }
