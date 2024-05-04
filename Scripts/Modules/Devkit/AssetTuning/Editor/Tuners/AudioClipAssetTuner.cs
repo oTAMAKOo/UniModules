@@ -2,6 +2,7 @@
 using UnityEngine;
 using UnityEditor;
 using System.IO;
+using System.Linq;
 using Extensions.Devkit;
 
 namespace Modules.Devkit.AssetTuning
@@ -13,6 +14,11 @@ namespace Modules.Devkit.AssetTuning
         protected static readonly string[] DefaultPlatformNames = new string[]
         {
             "Standalone", "iOS", "Android",
+        };
+
+        protected static readonly string[] TargetExtensions = new string[]
+        {
+            ".wav", ".mp3",
         };
 
         //----- field -----
@@ -28,7 +34,9 @@ namespace Modules.Devkit.AssetTuning
 
 		public override bool Validate(string path)
         {
-            if (Path.GetExtension(path) != ".wav") { return false; }
+            var extension = Path.GetExtension(path);
+
+            if (!TargetExtensions.Contains(extension)) { return false; }
 
             var asset = AssetDatabase.LoadMainAssetAtPath(path);
 
