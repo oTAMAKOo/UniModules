@@ -393,16 +393,16 @@ namespace Modules.Sound
             }
         }
 
-        public async UniTask FadeIn(SoundElement element, float duration)
+        public async UniTask FadeIn(SoundElement element, float duration, float volume = 1f)
         {
-            var tweener = DOTween.To(() => element.Volume, x => element.Volume = x, 1f, duration);
+            var tweener = DOTween.To(() => element.Volume, x => element.Volume = x, volume, duration);
 
             await tweener.Play();
         }
 
-        public async UniTask FadeOut(SoundElement element, float duration, bool fadeEndStop = true)
+        public async UniTask FadeOut(SoundElement element, float duration, float volume = 0f, bool fadeEndStop = true)
         {
-            var tweener = DOTween.To(() => element.Volume, x => element.Volume = x, 0f, duration);
+            var tweener = DOTween.To(() => element.Volume, x => element.Volume = x, volume, duration);
 
             if (fadeEndStop)
             {
