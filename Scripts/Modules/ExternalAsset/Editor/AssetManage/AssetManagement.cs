@@ -244,7 +244,9 @@ namespace Modules.ExternalAssets
 
             if (string.IsNullOrEmpty(manageAssetPath))
             {
-                throw new InvalidDataException();
+                Debug.LogError($"Invalid manage info in {manageInfo.group}.");
+
+                return new string[0];
             }
 
             if (!PathUtility.IsFolder(manageAssetPath)){ return new string[] { manageAssetPath }; }
