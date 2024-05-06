@@ -57,6 +57,8 @@ namespace Modules.Master
             }
         }
 
+        protected IReadOnlyDictionary<TKey, TMasterRecord> Records { get { return records; } }
+
         //----- method -----
 
         public static IMaster Create()
