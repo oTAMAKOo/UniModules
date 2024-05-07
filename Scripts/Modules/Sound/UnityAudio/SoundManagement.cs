@@ -346,10 +346,18 @@ namespace Modules.Sound
             soundElements.Add(element);
         }
 
-        /// <summary> 個別に音量変更. </summary>
+        /// <summary> 音量変更. </summary>
         public void SetVolume(SoundElement element, float value)
         {
             element.Volume = value;
+        }
+
+        /// <summary> 音量取得. </summary>
+        public float GetVolume(SoundType soundType)
+        {
+            var soundParam = GetSoundParam(soundType);
+
+            return Volume * soundParam.volume;
         }
 
         public void ReleaseAll(bool force = false)
@@ -423,7 +431,9 @@ namespace Modules.Sound
                     inElement.Play();
                 }
 
-                var targetVolume = 1f;
+                var soundParam = GetSoundParam(inElement.Type);
+
+                var targetVolume = Volume * soundParam.volume;
 
                 var firstVol = outElement.Volume;
 
