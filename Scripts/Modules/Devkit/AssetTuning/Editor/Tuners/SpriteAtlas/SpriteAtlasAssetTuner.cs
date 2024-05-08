@@ -81,6 +81,12 @@ namespace Modules.Devkit.AssetTuning
             packingSettings.padding = 2;
             packingSettings.enableTightPacking = false;
             packingSettings.enableRotation = false;
+
+            #if UNITY_2022_1_OR_NEWER
+
+            packingSettings.enableAlphaDilation = true;
+
+            #endif
         }
 
         protected virtual void SetTextureSettings(ref SpriteAtlasTextureSettings textureSettings)
