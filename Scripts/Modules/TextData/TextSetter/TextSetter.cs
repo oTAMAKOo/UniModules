@@ -1,4 +1,5 @@
 
+using System;
 using UnityEngine;
 using UnityEngine.UI;
 using Extensions;
@@ -119,13 +120,20 @@ namespace Modules.TextData.Components
         {
             if (Application.isBatchMode){ return; }
 
-            #if UNITY_EDITOR
+            try
+            {
+                #if UNITY_EDITOR
 
-            ApplyDummyText();
+                ApplyDummyText();
 
-            #endif
+                #endif
 
-            ApplyTextData();
+                ApplyTextData();
+            }
+            catch (Exception e)
+            {
+                Debug.LogException(e);
+            }
         }
 
         private void ApplyTextData()
