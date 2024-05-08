@@ -73,8 +73,12 @@ namespace Modules.Devkit.Diagnosis.SendReport
 					break;
 
 				case DataFormat.Json:
-					webRequest = UnityWebRequest.Post(reportUrl, CreateReportJson(reportContents));
-					break;
+                    #if UNITY_2022_2_OR_NEWER
+                    webRequest = UnityWebRequest.Post(reportUrl, CreateReportJson(reportContents), "application/json");
+                    #else
+                    webRequest = UnityWebRequest.Post(reportUrl, CreateReportJson(reportContents));
+                    #endif
+                    break;
 			}
 
 			webRequest.timeout = 30;
