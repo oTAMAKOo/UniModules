@@ -90,26 +90,42 @@ namespace Modules.Devkit.UI
 
             if (textureImporter == null) { return false; }
 
-            var changed = false; 
+            var modify = false; 
 
             foreach (var platform in platforms)
             {
                 var textureSettings = textureImporter.GetPlatformTextureSettings(platform.ToString());
 
+                var changed = false;
+
                 if (textureSettings.overridden)
                 {
                     textureSettings.overridden = false;
+                    changed = true;
+                }
+
+                if (textureSettings.format != TextureImporterFormat.Automatic)
+                {
                     textureSettings.format = TextureImporterFormat.Automatic;
+                    changed = true;
+                }
+
+                if (textureSettings.textureCompression != TextureImporterCompression.Uncompressed)
+                {
+                    textureSettings.textureCompression = TextureImporterCompression.Uncompressed;
+                    changed = true;
+                }
+
+                if (changed)
+                {
+                    modify = true;
 
                     textureImporter.SetPlatformTextureSettings(textureSettings);
-
                     textureImporter.SaveAndReimport();
-
-                    changed = true;
                 }
             }
 
-            return changed;
+            return modify;
         }
     }
 }
