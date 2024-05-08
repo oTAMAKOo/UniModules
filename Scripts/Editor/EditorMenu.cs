@@ -37,7 +37,7 @@ using Modules.Devkit.DefineSymbol;
 using Modules.Devkit.ExternalAssets;
 using Modules.Devkit.SerializeAssets;
 using Modules.Devkit.TextureViewer;
-using Modules.Devkit.U2D;
+using Modules.Devkit.FixSpriteAtlas;
 
 #if ENABLE_CRIWARE_ADX || ENABLE_CRIWARE_ADX_LE || ENABLE_CRIWARE_SOFDEC
 
@@ -444,6 +444,12 @@ namespace Modules
         public static void OpenBehaviorControlMonitor()
         {
             BehaviorControlMonitor.Open();
+        }
+
+        [MenuItem(itemName: UtilityMenu + "SpriteAtlas/Fix SpriteAtlas Source", priority = 6)]
+        public static void ExecuteFixSpriteAtlasSource()
+        {
+            FixSpriteAtlasSource.Modify(FixSpriteAtlasSource.DefaultTargetPlatforms);
         }
 
         #region Pining
