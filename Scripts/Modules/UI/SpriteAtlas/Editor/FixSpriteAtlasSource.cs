@@ -90,42 +90,59 @@ namespace Modules.Devkit.UI
 
             if (textureImporter == null) { return false; }
 
-            var modify = false; 
+            var modify = false;
+
+            //------ デフォルト設定 ------
+
+            var defaultPlatformTextureSetting = textureImporter.GetDefaultPlatformTextureSettings();
+
+            modify |= ModifyPlatformTextureSettings(textureImporter, defaultPlatformTextureSetting);
+
+            //------ プラットフォーム設定 ------
 
             foreach (var platform in platforms)
             {
                 var textureSettings = textureImporter.GetPlatformTextureSettings(platform.ToString());
 
-                var changed = false;
+                modify |= ModifyPlatformTextureSettings(textureImporter, textureSettings);
+            }
 
-                if (textureSettings.overridden)
-                {
-                    textureSettings.overridden = false;
-                    changed = true;
-                }
-
-                if (textureSettings.format != TextureImporterFormat.Automatic)
-                {
-                    textureSettings.format = TextureImporterFormat.Automatic;
-                    changed = true;
-                }
-
-                if (textureSettings.textureCompression != TextureImporterCompression.Uncompressed)
-                {
-                    textureSettings.textureCompression = TextureImporterCompression.Uncompressed;
-                    changed = true;
-                }
-
-                if (changed)
-                {
-                    modify = true;
-
-                    textureImporter.SetPlatformTextureSettings(textureSettings);
-                    textureImporter.SaveAndReimport();
-                }
+            if (modify)
+            {
+                textureImporter.SaveAndReimport();
             }
 
             return modify;
+        }
+
+        private static bool ModifyPlatformTextureSettings(TextureImporter textureImporter, TextureImporterPlatformSettings textureSettings)
+        {
+            var changed = false;
+
+            if (textureSettings.overridden)
+            {
+                textureSettings.overridden = false;
+                changed = true;
+            }
+
+            if (textureSettings.format != TextureImporterFormat.Automatic)
+            {
+                textureSettings.format = TextureImporterFormat.Automatic;
+                changed = true;
+            }
+
+            if (textureSettings.textureCompression != TextureImporterCompression.Uncompressed)
+            {
+                textureSettings.textureCompression = TextureImporterCompression.Uncompressed;
+                changed = true;
+            }
+
+            if (changed)
+            {
+                textureImporter.SetPlatformTextureSettings(textureSettings);
+            }
+
+            return changed;
         }
     }
 }
