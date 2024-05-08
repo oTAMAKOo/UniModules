@@ -37,7 +37,8 @@ using Modules.Devkit.DefineSymbol;
 using Modules.Devkit.ExternalAssets;
 using Modules.Devkit.SerializeAssets;
 using Modules.Devkit.TextureViewer;
-using Modules.Devkit.FixSpriteAtlas;
+using Modules.Devkit.UI;
+using Modules.Devkit.U2D;
 
 #if ENABLE_CRIWARE_ADX || ENABLE_CRIWARE_ADX_LE || ENABLE_CRIWARE_SOFDEC
 

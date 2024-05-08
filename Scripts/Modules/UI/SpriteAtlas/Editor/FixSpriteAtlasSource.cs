@@ -7,7 +7,7 @@ using System.Collections.Generic;
 using Extensions.Devkit;
 using Modules.Devkit.Console;
 
-namespace Modules.Devkit.FixSpriteAtlas
+namespace Modules.Devkit.UI
 {
     public static class FixSpriteAtlasSource
     {
