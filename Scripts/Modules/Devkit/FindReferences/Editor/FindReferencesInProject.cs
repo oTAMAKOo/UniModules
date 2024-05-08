@@ -14,9 +14,9 @@ namespace Modules.Devkit.FindReferences
 {
     public static class FindReferencesInProject
     {
-        private const string MenuItemLabel = "Assets/Find References In Project";
+        private const string MenuItemLabel = "Assets/Search Asset References";
 
-        private const string ProgressBarTitle = "Find References In Project";
+        private const string ProgressBarTitle = "Search Asset References";
 
         private static readonly Dictionary<string, string> SearchPatterns = new Dictionary<string, string>()
         {
