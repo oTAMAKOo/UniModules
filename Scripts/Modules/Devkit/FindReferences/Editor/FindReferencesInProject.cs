@@ -36,7 +36,7 @@ namespace Modules.Devkit.FindReferences
             return Selection.activeObject != null && !path.EndsWith(".unity");
         }
 
-        [MenuItem(MenuItemLabel, priority = 27)]
+        [MenuItem(MenuItemLabel, priority = 35)]
         public static void Execute()
         {
             var targetAsset = Selection.activeObject;
