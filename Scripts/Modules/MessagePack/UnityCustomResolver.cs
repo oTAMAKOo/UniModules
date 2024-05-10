@@ -56,8 +56,6 @@ namespace Modules.MessagePack
         {
             return new IFormatterResolver[]
             {
-                StringDateTimeResolver.Instance,
-
                 #if MESSAGEPACK_ANALYZER_CODE
 
                 GeneratedMessagePackResolver.Instance,
@@ -67,6 +65,8 @@ namespace Modules.MessagePack
                 GeneratedResolver.Instance,
 
                 #endif
+
+                StringDateTimeResolver.Instance,
 
                 StandardAotResolver.Instance,
 
@@ -92,13 +92,13 @@ namespace Modules.MessagePack
         {
 			return new IFormatterResolver[]
             {
-                StringDateTimeResolver.Instance,
-
                 #if MESSAGEPACK_ANALYZER_CODE
 
                 GeneratedMessagePackResolver.Instance,
 
                 #endif
+
+                StringDateTimeResolver.Instance,
 
                 BuiltinResolver.Instance,
 
