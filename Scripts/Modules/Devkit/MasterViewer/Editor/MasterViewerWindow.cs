@@ -198,6 +198,8 @@ namespace Modules.Devkit.MasterViewer
             {
                 if(!Application.isPlaying)
                 {
+                    await OnBeforeLoad();
+
                     var tasks = new List<UniTask>();
 
                     foreach (var master in allMasters)
@@ -280,6 +282,8 @@ namespace Modules.Devkit.MasterViewer
         }
 
         protected virtual void OnInitialize() { }
+
+        protected virtual UniTask OnBeforeLoad() { return UniTask.CompletedTask; }
 
         protected abstract AesCryptoKey GetCryptoKey();
 
