@@ -190,12 +190,12 @@ namespace Modules.Devkit.MasterViewer
                 displayContents = GetDisplayMasters();
 
                 isComplete = true;
-
-                Repaint();
             }
 
             try
             {
+                EditorApplication.update += Repaint;
+
                 if(!Application.isPlaying)
                 {
                     await OnBeforeLoad();
@@ -232,6 +232,8 @@ namespace Modules.Devkit.MasterViewer
             }
             finally
             {
+                EditorApplication.update -= Repaint;
+
                 EditorUtility.ClearProgressBar();
             }
         }
