@@ -4,6 +4,8 @@
 using UnityEngine;
 using UnityEditor;
 using UnityEngine.UI;
+using System;
+using Cysharp.Threading.Tasks;
 using Extensions;
 
 namespace Modules.TextData.Components
@@ -29,9 +31,48 @@ namespace Modules.TextData.Components
 
         //----- method -----
 
+        void OnEnable()
+        {
+            EditModeImportText();
+        }
+
         void OnDisable()
         { 
             CleanDummyText();
+        }
+
+        private void EditModeImportText()
+        {
+            if (Application.isPlaying){ return; }
+
+            GetTargetComponent();
+
+            if (textMeshProComponent == null && textComponent == null){ return; }
+
+            var hasText = !dummyText.IsEmpty() || !textGuid.IsEmpty();
+
+            if (!hasText){ return; }
+
+            var exit = false;
+
+            var task = UniTask.Defer(async () =>
+            {
+                while (!exit)
+                {
+                    if (UnityUtility.IsNull(gameObject)) { return; }
+
+                    if (!UnityUtility.IsActiveInHierarchy(gameObject)) { return; }
+
+                    ImportText();
+
+                    exit |= textComponent != null && !string.IsNullOrEmpty(textComponent.text);
+                    exit |= textMeshProComponent != null && !string.IsNullOrEmpty(textMeshProComponent.text);
+
+                    await UniTask.Delay(TimeSpan.FromSeconds(0.5f), DelayType.Realtime);
+                }
+            });
+
+            task.Forget();
         }
 
         private AesCryptoKey GetCryptoKey()

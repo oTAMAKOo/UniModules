@@ -68,17 +68,6 @@ namespace Modules.TextData.Components
             }
         }
 
-        #if UNITY_EDITOR
-        
-        void OnEnable()
-        {
-            if (Application.isPlaying){ return; }
-
-            ImportText();
-        }
-
-        #endif
-
         public void Format(params object[] args)
         {
             ImportText();
