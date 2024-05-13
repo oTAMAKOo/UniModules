@@ -43,6 +43,8 @@ namespace Modules.TextData.Components
 
         private void EditModeImportText()
         {
+            if (Application.isBatchMode){ return; }
+
             if (Application.isPlaying){ return; }
 
             GetTargetComponent();
