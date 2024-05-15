@@ -92,12 +92,6 @@ namespace Modules.MessagePack
         {
 			return new IFormatterResolver[]
             {
-                #if MESSAGEPACK_ANALYZER_CODE
-
-                GeneratedMessagePackResolver.Instance,
-
-                #endif
-
                 StringDateTimeResolver.Instance,
 
                 BuiltinResolver.Instance,
