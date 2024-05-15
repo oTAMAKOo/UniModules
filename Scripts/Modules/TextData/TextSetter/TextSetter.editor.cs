@@ -61,7 +61,14 @@ namespace Modules.TextData.Components
             {
                 while (!exit)
                 {
-                    if (UnityUtility.IsNull(gameObject)) { return; }
+                    try
+                    {
+                        if (UnityUtility.IsNull(gameObject)) { return; }
+                    }
+                    catch (MissingReferenceException)
+                    {
+                        return;
+                    }
 
                     if (!UnityUtility.IsActiveInHierarchy(gameObject)) { return; }
 
