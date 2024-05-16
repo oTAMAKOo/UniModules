@@ -83,14 +83,6 @@ namespace Modules.UI.Extension
                 {
                     UnityEditorUtility.RegisterUndo(instance);
 
-                    var assetGuid = spriteAsset != null ? UnityEditorUtility.GetAssetGUID(spriteAsset.texture) : string.Empty;
-
-                    Reflection.SetPrivateField(instance, "assetGuid", assetGuid);
-
-                    var spriteId = spriteAsset != null ? spriteAsset.GetSpriteID().ToString() : string.Empty;
-
-                    Reflection.SetPrivateField(instance, "spriteId", spriteId);
-
                     if (spriteAsset == null)
                     {
                         if (image.sprite != null && image.sprite.name == UIImage.DummyAssetName)
@@ -100,6 +92,17 @@ namespace Modules.UI.Extension
                     }
                     else
                     {
+                        var assetPath = AssetDatabase.GetAssetPath(spriteAsset);
+
+                        var assetGuid = AssetDatabase.AssetPathToGUID(assetPath);
+
+                        Reflection.SetPrivateField(instance, "assetGuid", assetGuid);
+
+                        var spriteId = spriteAsset.GetSpriteID().ToString();
+
+                        Reflection.SetPrivateField(instance, "spriteId", spriteId);
+
+
                         Reflection.InvokePrivateMethod(instance, "ApplyDummyAsset");
                     }
                 }
