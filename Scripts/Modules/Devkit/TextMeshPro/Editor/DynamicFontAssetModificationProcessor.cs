@@ -1,5 +1,6 @@
-﻿
+
 using UnityEditor;
+using System;
 using System.IO;
 using System.Collections.Generic;
 using Cysharp.Threading.Tasks;
@@ -43,7 +44,9 @@ namespace Modules.Devkit.TextMeshPro
 
             if (fontAsset.glyphTable.IsEmpty()){ return; }
 
-            await UniTask.DelayFrame(10);
+            if (fontAsset.atlasPopulationMode != AtlasPopulationMode.Dynamic){ return; }
+
+            await UniTask.Delay(TimeSpan.FromSeconds(0.5f), DelayType.Realtime);
 
             using (new AssetEditingScope())
             {
