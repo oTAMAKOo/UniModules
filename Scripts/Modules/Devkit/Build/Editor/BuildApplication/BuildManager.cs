@@ -1,11 +1,12 @@
 
-using System;
 using UnityEngine;
 using UnityEditor;
 using UnityEditor.Callbacks;
 using UnityEditor.Compilation;
 using UnityEditor.Build.Reporting;
+using System;
 using System.IO;
+using System.Text;
 using Cysharp.Threading.Tasks;
 using Extensions;
 using Modules.Devkit.Prefs;
@@ -129,6 +130,8 @@ namespace Modules.Devkit.Build
 
             //------ ビルド実行 ------
 
+            var builder = new StringBuilder();
+
             using (new LockReloadAssembliesScope())
             {
                 var success = false;
@@ -144,8 +147,22 @@ namespace Modules.Devkit.Build
                         // 出力先.
                         var path = GetBuildPath(applicationBuilder, directory);
 
+                        Debug.Log($"Export : {path}");
+
                         // ビルドに含めるシーン.
+
                         var scenePaths = applicationBuilder.GetAllScenePaths();
+
+                        builder.Clear();
+
+                        builder.AppendLine("Include Scenes:").AppendLine();
+
+                        foreach (var scenePath in scenePaths)
+                        {
+                            builder.AppendLine(scenePath);
+                        }
+
+                        Debug.Log(builder.ToString());
 
                         // ビルド前処理.
 
