@@ -144,6 +144,16 @@ namespace Modules.Devkit.Build
 
                     if (!string.IsNullOrEmpty(directory))
                     {
+                        // ビルド前処理.
+
+                        var beforeBuildSuccess = await applicationBuilder.OnBeforeBuild();
+
+                        if (!beforeBuildSuccess)
+                        {
+                            Debug.Log("ApplicationBuilder before build process failed.");
+                            return;
+                        }
+
                         // 出力先.
                         var path = GetBuildPath(applicationBuilder, directory);
 
@@ -164,54 +174,47 @@ namespace Modules.Devkit.Build
 
                         Debug.Log(builder.ToString());
 
-                        // ビルド前処理.
+                        // ビルド実行.
 
-                        var beforeBuildSuccess = await applicationBuilder.OnBeforeBuild();
+                        EditorUserBuildSettings.development = applicationBuilder.Development;
 
-                        if (beforeBuildSuccess)
+                        var option = EditorUserBuildSettings.development
+                            ? BuildOptions.Development
+                            : BuildOptions.None;
+
+                        option |= applicationBuilder.BuildOptions;
+
+                        var buildPlayerOptions = new BuildPlayerOptions()
                         {
-                            // ビルド実行.
+                            target = buildTarget,
+                            scenes = scenePaths,
+                            locationPathName = path,
+                            options = option,
+                        };
 
-                            EditorUserBuildSettings.development = applicationBuilder.Development;
+                        var buildReport = BuildPipeline.BuildPlayer(buildPlayerOptions);
 
-                            var option = EditorUserBuildSettings.development
-                                ? BuildOptions.Development
-                                : BuildOptions.None;
+                        success = buildReport.summary.result == BuildResult.Succeeded;
 
-                            option |= applicationBuilder.BuildOptions;
+                        // ビルド結果処理.
+                        if (success)
+                        {
+                            await applicationBuilder.OnBuildSuccess(buildReport);
+                        }
+                        else
+                        {
+                            await applicationBuilder.OnBuildError(buildReport);
+                        }
 
-                            var buildPlayerOptions = new BuildPlayerOptions()
+                        // ビルド後処理.
+                        await applicationBuilder.OnAfterBuild(success);
+
+                        // 出力先フォルダを開く.
+                        if (success && !batchMode)
+                        {
+                            if (EditorUtility.DisplayDialog("Build", "Build finish.", "Open Folder", "Close"))
                             {
-                                target = buildTarget,
-                                scenes = scenePaths,
-                                locationPathName = path,
-                                options = option,
-                            };
-
-                            var buildReport = BuildPipeline.BuildPlayer(buildPlayerOptions);
-
-                            success = buildReport.summary.result == BuildResult.Succeeded;
-
-                            // ビルド結果処理.
-                            if (success)
-                            {
-                                await applicationBuilder.OnBuildSuccess(buildReport);
-                            }
-                            else
-                            {
-                                await applicationBuilder.OnBuildError(buildReport);
-                            }
-
-                            // ビルド後処理.
-                            await applicationBuilder.OnAfterBuild(success);
-
-                            // 出力先フォルダを開く.
-                            if (success && !batchMode)
-                            {
-                                if (EditorUtility.DisplayDialog("Build", "Build finish.", "Open Folder", "Close"))
-                                {
-                                    var _ = System.Diagnostics.Process.Start(directory);
-                                }
+                                var _ = System.Diagnostics.Process.Start(directory);
                             }
                         }
                     }
