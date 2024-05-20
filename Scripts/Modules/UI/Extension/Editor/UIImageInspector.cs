@@ -102,7 +102,6 @@ namespace Modules.UI.Extension
 
                         Reflection.SetPrivateField(instance, "spriteId", spriteId);
 
-
                         Reflection.InvokePrivateMethod(instance, "ApplyDummyAsset");
                     }
                 }
