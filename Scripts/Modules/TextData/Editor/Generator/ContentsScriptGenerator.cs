@@ -73,7 +73,19 @@ namespace Modules.TextData
 
                     var text = record.texts.ElementAtOrDefault(textIndex);
 
-                    var summary = string.Format(SummaryTemplate, string.IsNullOrEmpty(text) ? string.Empty : text.Replace("\r\n", "").Replace("\n", ""));
+                    if (!string.IsNullOrEmpty(text))
+                    {
+                        // 改行を置き換え.
+                        text = text.Replace("\r\n", "").Replace("\n", "");
+                        // タグ文字を置き換え.
+                        text = text.Replace("<", "&lt;").Replace(">", "&gt;");
+                    }
+                    else
+                    {
+                        text = string.Empty;
+                    }
+
+                    var summary = string.Format(SummaryTemplate, text);
 
                     enums.Append("\t\t\t").AppendLine(summary);
                     enums.Append("\t\t\t").AppendFormat(EnumElementTemplate, record.enumName);
