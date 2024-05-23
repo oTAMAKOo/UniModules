@@ -118,7 +118,7 @@ namespace Modules.UI.DummyContent
             {
                 Image.sprite = null;
 
-                UnityUtility.SafeDelete(sprite);
+                UnityUtility.SafeDelete(sprite, true);
             }
         }
     }
