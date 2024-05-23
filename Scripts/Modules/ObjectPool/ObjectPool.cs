@@ -91,10 +91,10 @@ namespace Modules.ObjectPool
                 {
                     onRelease.OnNext(target);
                 }
-                
-                UnityUtility.SetActive(target, false);
-                UnityUtility.SetParent(target.gameObject, instance);
 
+                UnityUtility.SetParent(target.gameObject, instance);
+                UnityUtility.SetActive(target, false);
+                
                 target.transform.Reset();
 
                 cachedObjects.Enqueue(target);
