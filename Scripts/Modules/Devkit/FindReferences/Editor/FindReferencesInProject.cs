@@ -26,6 +26,7 @@ namespace Modules.Devkit.FindReferences
             { "animation", "*.anim" },
             { "timeline", "*.playable" },
             { "asset", "*.asset" },
+            { "spriteatlas", "*.spriteatlas" },
         };
 
         [MenuItem(MenuItemLabel, validate = true)]
