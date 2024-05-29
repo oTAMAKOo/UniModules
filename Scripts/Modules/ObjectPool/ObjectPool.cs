@@ -38,8 +38,9 @@ namespace Modules.ObjectPool
         {
             this.prefab = prefab;
 
-            instance = new GameObject($"[Pooled]: {poolName}");
-            instance.transform.SetParent(poolParent.transform, false);
+            instance = UnityUtility.CreateEmptyGameObject(poolParent, $"[Pooled]: {poolName}");
+
+            UnityUtility.SetActive(instance, false);
 
             instance.OnDestroyAsObservable()
                 .Subscribe(_ =>
@@ -85,20 +86,20 @@ namespace Modules.ObjectPool
         {
             if (target == null || UnityUtility.IsNull(target.gameObject)) { return; }
 
-            if (!cachedObjects.Contains(target))
+            if (UnityUtility.IsNull(instance)) { return; }
+
+            if (cachedObjects.Contains(target)) { return; }
+
+            if (onRelease != null)
             {
-                if (onRelease != null)
-                {
-                    onRelease.OnNext(target);
-                }
-
-                UnityUtility.SetParent(target.gameObject, instance);
-                UnityUtility.SetActive(target, false);
-                
-                target.transform.Reset();
-
-                cachedObjects.Enqueue(target);
+                onRelease.OnNext(target);
             }
+
+            UnityUtility.SetParent(target.gameObject, instance);
+                
+            target.transform.Reset();
+
+            cachedObjects.Enqueue(target);
         }
 
         public void Resize(int count)
