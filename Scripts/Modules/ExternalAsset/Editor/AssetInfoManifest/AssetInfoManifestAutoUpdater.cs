@@ -87,6 +87,9 @@ namespace Modules.ExternalAssets
                 // アセットインポート中.
                 skip |= AssetDatabase.IsAssetImportWorkerProcess();
 
+                // アセットビルド中.
+                skip |= BuildManager.IsBuilding;
+
                 // 生成リクエストがあったら生成.
                 if (!skip && Prefs.requestGenerate)
                 {

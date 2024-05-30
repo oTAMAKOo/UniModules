@@ -63,6 +63,8 @@ namespace Modules.ExternalAssets
 
         //----- property -----
 
+        public static bool IsBuilding { get; private set; }
+
         //----- method -----
 
         public static async UniTask<string> Build(string exportPath, AssetInfoManifest assetInfoManifest, bool openExportFolder = true)
@@ -94,6 +96,8 @@ namespace Modules.ExternalAssets
 
             try
             {
+                IsBuilding = true;
+
                 var stopwatch = System.Diagnostics.Stopwatch.StartNew();
 
                 var logBuilder = new StringBuilder();
@@ -274,6 +278,8 @@ namespace Modules.ExternalAssets
             }
             finally
             {
+                IsBuilding = false;
+
                 EditorApplication.UnlockReloadAssemblies();
             }
 
