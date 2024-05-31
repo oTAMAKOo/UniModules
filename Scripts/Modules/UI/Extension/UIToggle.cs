@@ -1,4 +1,4 @@
-﻿﻿﻿﻿
+﻿
 using UnityEngine;
 using UnityEngine.UI;
 using System;
@@ -30,7 +30,7 @@ namespace Modules.UI.Extension
 
         //----- method -----
 
-        void OnEnable()
+        protected virtual void OnEnable()
         {
             if (!initialized)
             {
