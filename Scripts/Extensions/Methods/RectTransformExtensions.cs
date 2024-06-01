@@ -251,40 +251,27 @@ namespace Extensions
         {
             if (UnityUtility.IsNull(self) || UnityUtility.IsNull(self.gameObject)){ return; }
 
-            IEnumerator LayoutUpdateCore()
+            var layoutGroups = self.gameObject.DescendantsAndSelf()
+                .Where(x => !UnityUtility.IsNull(x))
+                .Where(x => UnityUtility.IsActiveInHierarchy(x))
+                .OfComponent<LayoutGroup>()
+                .OrderBy(x => x.layoutPriority)
+                .ToArray();
+
+            foreach (var layoutGroup in layoutGroups)
             {
-                yield return new WaitForEndOfFrame();
+                var rt = layoutGroup.transform as RectTransform;
 
-                if (self == null){ yield break; }
+                layoutGroup.SetLayoutHorizontal();
+                layoutGroup.SetLayoutVertical();
 
-                if (UnityUtility.IsNull(self.gameObject)){ yield break; }
+                layoutGroup.CalculateLayoutInputHorizontal();
+                layoutGroup.CalculateLayoutInputVertical();
 
-                var layoutGroups = self.gameObject.DescendantsAndSelf()
-                    .Where(x => !UnityUtility.IsNull(x))
-                    .Where(x => UnityUtility.IsActiveInHierarchy(x))
-                    .OfComponent<LayoutGroup>()
-                    .ToArray();
-
-                foreach (var layoutGroup in layoutGroups)
-                {
-                    var rt = layoutGroup.transform as RectTransform;
-
-                    if (UnityUtility.IsNull(self) || UnityUtility.IsNull(self.gameObject)){ continue; }
-
-                    layoutGroup.SetLayoutHorizontal();
-                    layoutGroup.SetLayoutVertical();
-
-                    layoutGroup.CalculateLayoutInputHorizontal();
-                    layoutGroup.CalculateLayoutInputVertical();
-
-                    LayoutRebuilder.MarkLayoutForRebuild(rt);
-                }
+                LayoutRebuilder.MarkLayoutForRebuild(rt);
             }
 
-            Observable.FromCoroutine(() => LayoutUpdateCore())
-                .TakeUntilDisable(self)
-                .Subscribe()
-                .AddTo(self);
+            LayoutRebuilder.ForceRebuildLayoutImmediate(self);
         }
     }
 }

@@ -2,8 +2,10 @@
 using UnityEngine;
 using UnityEngine.UI;
 using System;
+using System.Linq;
 using Extensions;
 using Extensions.Serialize;
+using Unity.Linq;
 
 namespace Modules.UI.Layout
 {
@@ -71,6 +73,12 @@ namespace Modules.UI.Layout
         private int priority = 2;
 
 		private Vector2? prevPreferredSize = null;
+        
+        #if UNITY_EDITOR
+
+        private DrivenRectTransformTracker drivenRectTransformTracker = new DrivenRectTransformTracker();
+
+        #endif
 
 		//----- property -----
 
@@ -187,8 +195,20 @@ namespace Modules.UI.Layout
 		{
 			base.OnEnable();
 
+            UpdateLayoutImmediate();
 			UpdatePreferredSize();
 		}
+
+        #if UNITY_EDITOR
+
+        protected override void OnDisable()
+        {
+            base.OnDisable();
+
+            drivenRectTransformTracker.Clear();
+        }
+
+        #endif
 
 		void LateUpdate()
 		{
@@ -199,29 +219,72 @@ namespace Modules.UI.Layout
 		{
 			if (copySource == null) { return; }
 
+            var rectTransform = transform as RectTransform;
+
+            var changed = false;
+
 			var preferredSize = copySource.GetPreferredSize();
 
 			if (prevPreferredSize.HasValue)
 			{
 				if (prevPreferredSize.Value != preferredSize)
 				{
-					SetDirty();
-				}
+                    changed = true;
+                }
 			}
 			else
 			{
-                SetDirty();
+                changed = true;
 			}
 
 			prevPreferredSize = preferredSize;
+
+            if (changed)
+            {
+                var sizeDelta = rectTransform.sizeDelta;
+
+                if (horizontal.Enable)
+                {
+                    sizeDelta.x = preferredWidth;
+                }
+
+                if (vertical.Enable)
+                {
+                    sizeDelta.y = preferredHeight;
+                }
+
+                rectTransform.sizeDelta = sizeDelta;
+
+                SetDirty();
+            }
+
+            #if UNITY_EDITOR
+
+            var drivenProperties = DrivenTransformProperties.None;
+
+            if (horizontal.Enable)
+            {
+                drivenProperties = drivenProperties.SetFlag(DrivenTransformProperties.SizeDeltaX);
+            }
+
+            if (vertical.Enable)
+            {
+                drivenProperties = drivenProperties.SetFlag(DrivenTransformProperties.SizeDeltaY);
+            }
+
+            drivenRectTransformTracker.Clear();
+            drivenRectTransformTracker.Add(this, rectTransform,drivenProperties);
+
+            #endif
 		}
 
 		public void UpdateLayoutImmediate()
 		{
-            if (copySource != null)
-            {
-                LayoutRebuilder.ForceRebuildLayoutImmediate(copySource);
-            }
+            if (copySource == null) { return; }
+
+            if (!horizontal.Enable && !vertical.Enable) { return; }
+
+            copySource.ForceRebuildLayoutGroup();
 
 			SetLayoutHorizontal();
 			SetLayoutVertical();
