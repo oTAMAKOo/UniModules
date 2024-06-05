@@ -1,4 +1,5 @@
 
+using System.Linq;
 using Extensions;
 using UnityEngine;
 using Modules.Devkit.ScriptableObjects;
@@ -58,7 +59,7 @@ namespace Modules.TextData.Editor
         /// <summary> 外部テキスト有効か </summary>
         public bool EnableExternal
         {
-            get { return externalSetting != null && externalSetting.Enable; }
+            get { return externalSetting != null && externalSetting.Source.Any(); }
         }
 
         public string ConverterPath

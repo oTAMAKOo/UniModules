@@ -76,13 +76,9 @@ namespace Modules.TextData.Editor
         public sealed class ExternalSetting
         {
             [SerializeField]
-            private bool enable = false;
-            [SerializeField]
             private UnityEngine.Object aseetFolder = null;
             [SerializeField]
             private TextDataSource[] source  = null;
-
-            public bool Enable { get { return enable; } }
 
             public string AseetFolderPath
             {
