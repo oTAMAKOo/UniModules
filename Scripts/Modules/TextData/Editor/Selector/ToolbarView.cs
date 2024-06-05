@@ -19,7 +19,7 @@ namespace Modules.TextData.Components
         
         private TextSetterInspector setterInspector = null;
 
-        private ContentType contentType = default;
+        private TextType type = default;
 
         private Subject<Unit> onContentTypeChanged = null;
 
@@ -57,7 +57,7 @@ namespace Modules.TextData.Components
 
                 if (setterInspector != null && setterInspector.Instance != null)
                 {
-                    contentType = setterInspector.Instance.ContentType;
+                    type = setterInspector.Instance.Type;
                 }
                 else
                 {
@@ -74,13 +74,11 @@ namespace Modules.TextData.Components
         {
             var config = TextDataConfig.Instance;
 
-            var distributionSetting = config.Distribution;
-
-            if (distributionSetting.Enable)
+            if (config.EnableExternal)
             {
-                var enumValues = Enum.GetValues(typeof(ContentType)).Cast<ContentType>().ToArray();
+                var enumValues = Enum.GetValues(typeof(TextType)).Cast<TextType>().ToArray();
 
-                var index = enumValues.IndexOf(x => x == contentType);
+                var index = enumValues.IndexOf(x => x == type);
 
                 var tabItems = enumValues.Select(x => x.ToString()).ToArray();
                             
@@ -92,10 +90,10 @@ namespace Modules.TextData.Components
                 {
                     var newContentType = enumValues.ElementAtOrDefault(index);
 
-                    if (newContentType != contentType)
+                    if (newContentType != type)
                     {
                         CategoryGuid = null;
-                        contentType = newContentType;
+                        type = newContentType;
 
                         if (onContentTypeChanged != null)
                         {
@@ -106,7 +104,7 @@ namespace Modules.TextData.Components
             }
             else
             {
-                contentType = ContentType.Embedded;
+                type = TextType.Internal;
             }
         }
 
@@ -116,7 +114,7 @@ namespace Modules.TextData.Components
 
             if (textData == null) { return; }
 
-            var categories = textData.Categories.Where(x => x.ContentType == contentType).ToArray();
+            var categories = textData.Categories.Where(x => x.Type == type).ToArray();
             
             // Noneが入るので1ずれる.
             var categoryIndex = categories.IndexOf(x => x.Guid == CategoryGuid) + 1;

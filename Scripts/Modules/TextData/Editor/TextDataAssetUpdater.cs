@@ -9,6 +9,7 @@ using Extensions;
 using Modules.Devkit.Console;
 using Modules.Devkit.Prefs;
 using Modules.TextData.Components;
+using Modules.ExternalAssets;
 
 namespace Modules.TextData.Editor
 {
@@ -24,16 +25,16 @@ namespace Modules.TextData.Editor
                 set { ProjectPrefs.SetBool(typeof(Prefs).FullName + "-autoUpdate", value); }
             }
 
-            public static DateTime embeddedLastUpdate
+            public static DateTime internalLastUpdate
             {
-                get { return ProjectPrefs.Get(typeof(Prefs).FullName + "-embeddedLastUpdate", DateTime.MinValue); }
-                set { ProjectPrefs.Set(typeof(Prefs).FullName + "-embeddedLastUpdate", value); }
+                get { return ProjectPrefs.Get(typeof(Prefs).FullName + "-internalLastUpdate", DateTime.MinValue); }
+                set { ProjectPrefs.Set(typeof(Prefs).FullName + "-internalLastUpdate", value); }
             }
 
-            public static DateTime distributionLastUpdate
+            public static DateTime externalLastUpdate
             {
-                get { return ProjectPrefs.Get(typeof(Prefs).FullName + "-distributionLastUpdate", DateTime.MinValue); }
-                set { ProjectPrefs.Set(typeof(Prefs).FullName + "-distributionLastUpdate", value); }
+                get { return ProjectPrefs.Get(typeof(Prefs).FullName + "-externalLastUpdate", DateTime.MinValue); }
+                set { ProjectPrefs.Set(typeof(Prefs).FullName + "-externalLastUpdate", value); }
             }
         }
 
@@ -41,9 +42,11 @@ namespace Modules.TextData.Editor
 
         //----- field -----
 
-        private static TextDataAsset embeddedAsset = null;
+        private static bool running = false;
 
-        private static TextDataAsset distributionAsset = null;
+        private static TextDataAsset internalAsset = null;
+
+        private static TextDataAsset externalAsset = null;
 
         private static DateTime? nextCheckTime = null;
 
@@ -87,54 +90,97 @@ namespace Modules.TextData.Editor
 
             var config = TextDataConfig.Instance;
 
-            //------ Embedded ------
+            //------ Internal ------
 
-            if (embeddedAsset == null)
+            if (config.Internal != null)
             {
-                embeddedAsset = TextDataLoader.LoadTextDataAsset(ContentType.Embedded);
-            }
+                if (internalAsset == null)
+                {
+                    internalAsset = TextDataLoader.LoadTextDataAsset(TextType.Internal);
+                }
 
-            if (embeddedAsset != null)
-            {
-                await UpdateTextData(embeddedAsset, config.Embedded, Prefs.embeddedLastUpdate, x => Prefs.embeddedLastUpdate = x);
+                if (internalAsset != null)
+                {
+                    var source = config.Internal.Source;
+
+                    await UpdateTextData(internalAsset, source, Prefs.internalLastUpdate, x => Prefs.internalLastUpdate = x);
+                }
             }
 
             //------ Distribution ------
 
-            if (distributionAsset == null)
+            if (config.EnableExternal)
             {
-                distributionAsset = TextDataLoader.LoadTextDataAsset(ContentType.Distribution);
-            }
+                if (externalAsset == null)
+                {
+                    externalAsset = TextDataLoader.LoadTextDataAsset(TextType.External);
+                }
 
-            if (distributionAsset != null)
-            {
-                await UpdateTextData(distributionAsset, config.Distribution, Prefs.distributionLastUpdate, x => Prefs.distributionLastUpdate = x);
+                if (externalAsset != null)
+                {
+                    var source = config.External.Source;
+
+                    await UpdateTextData(externalAsset, source, Prefs.externalLastUpdate, x => Prefs.externalLastUpdate = x);
+                }
             }
         }
 
-        private static async Task UpdateTextData(TextDataAsset textDataAsset, TextDataConfig.GenerateAssetSetting setting, DateTime lastUpdate, Action<DateTime> onUpdate)
+        private static async Task UpdateTextData(TextDataAsset textDataAsset, TextDataSource[] targets, DateTime lastUpdate, Action<DateTime> onUpdate)
         {
+            if (running) { return; }
+
             if (textDataAsset == null){ return; }
 
-            var excelPath = setting.GetExcelPath();
+            if (targets == null){ return; }
 
-            if (!File.Exists(excelPath)){ return; }
+            running = true;
 
-            var lastWriteTime = File.GetLastWriteTime(excelPath);
+            try
+            {
+                DateTime? updateTime = null;
+
+                foreach (var target in targets)
+                {
+                    var excelPath = target.GetExcelPath();
+
+                    if (!File.Exists(excelPath)){ continue; }
+
+                    var lastWriteTime = File.GetLastWriteTime(excelPath);
             
-            if (lastWriteTime <= lastUpdate){ return; }
+                    if (lastWriteTime <= lastUpdate){ continue; }
 
-            var languageManager = LanguageManager.Instance;
+                    await TextDataExcel.Export(target, false);
 
-            var languageInfo = languageManager.Current;
+                    if (updateTime.HasValue)
+                    {
+                        if (updateTime.Value < lastWriteTime)
+                        {
+                            updateTime = lastWriteTime;
+                        }
+                    }
+                    else
+                    {
+                        updateTime = lastWriteTime;
+                    }
+                }
 
-            await TextDataExcel.Export(textDataAsset.ContentType, false);
+                if (updateTime.HasValue)
+                {
+                    var languageManager = LanguageManager.Instance;
 
-            TextDataGenerator.Generate(textDataAsset.ContentType, languageInfo);
+                    var languageInfo = languageManager.Current;
 
-            onUpdate.Invoke(lastWriteTime);
+                    TextDataGenerator.Generate(textDataAsset.Type, languageInfo);
 
-            UnityConsole.Info("TextData auto updated.");
+                    onUpdate.Invoke(updateTime.Value);
+
+                    UnityConsole.Info("TextData auto updated.");
+                }
+            }
+            finally
+            {
+                running = false;
+            }
         }
     }
 }

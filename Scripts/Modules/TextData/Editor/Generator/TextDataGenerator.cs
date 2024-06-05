@@ -1,4 +1,5 @@
 
+using System;
 using UnityEngine;
 using UnityEditor;
 using System.IO;
@@ -9,6 +10,7 @@ using Extensions;
 using Extensions.Devkit;
 using Modules.Devkit.Generators;
 using Modules.TextData.Components;
+using static Modules.TextData.Editor.TextDataConfig;
 
 namespace Modules.TextData.Editor
 {
@@ -22,8 +24,15 @@ namespace Modules.TextData.Editor
         {
             public string assetPath = null;
             public string scriptFolderPath = null;
-            public string contentsFolderPath = null;
+            public ContentsInfo contentsInfo = null;
             public int textIndex = 0;
+        }
+
+        public sealed class ContentsInfo
+        {
+            public string hash { get; set; } = null;
+
+            public List<SheetData> sheetDatas { get; set; }
         }
 
         //----- field -----
@@ -32,78 +41,166 @@ namespace Modules.TextData.Editor
 
         //----- method -----
 
-        public static void Generate(ContentType type, LanguageInfo info, bool force = false)
+        public static void Generate(TextType type, LanguageInfo info, bool force = false)
         {
             var textData = TextData.Instance;
 
             var config = TextDataConfig.Instance;
 
-            var scriptFolderPath = string.Empty;
+            TextDataSource[] sources = null;
 
-            var contentsFolderPath = string.Empty;
+            var scriptFolderPath = string.Empty;
 
             var assetFolderPath = string.Empty;
 
             switch (type)
             {
-                case ContentType.Embedded:
+                case TextType.Internal:
                     {
-                        var embedded = config.Embedded;
+                        var internalSettings = config.Internal;
 
-                        scriptFolderPath = embedded.ScriptFolderPath;
-                        contentsFolderPath = embedded.GetContentsFolderPath();
-                        assetFolderPath = embedded.AseetFolderPath;
+                        sources = internalSettings.Source;
+                        scriptFolderPath = internalSettings.ScriptFolderPath;
+                        assetFolderPath = internalSettings.AseetFolderPath;
                     }
                     break;
 
-                case ContentType.Distribution:
+                case TextType.External:
                     {
-                        var distribution = config.Distribution;
+                        if (!config.EnableExternal) { return; }
 
-                        if (!distribution.Enable) { return; }
+                        var externalSettings = config.External;
 
-                        contentsFolderPath = distribution.GetContentsFolderPath();
-                        assetFolderPath = distribution.AseetFolderPath;
+                        sources = externalSettings.Source;
+                        assetFolderPath = externalSettings.AseetFolderPath;
                     }
                     break;
             }
 
+            
             var assetFolderLocalPath = textData.AssetFolderLocalPath;
 
             var assetFileName = TextData.GetAssetFileName(info.Identifier);
 
-            var assetPath = PathUtility.Combine(new string[] { assetFolderPath, assetFolderLocalPath, assetFileName });
+            var assetPath = PathUtility.Combine(assetFolderPath, assetFolderLocalPath, assetFileName);
+
+            var contentsInfo = BuildContentsInfo(sources);
+
+            if (contentsInfo == null) { return; }
 
             var generateInfo = new GenerateInfo
             {
                 assetPath = assetPath,
-                contentsFolderPath = contentsFolderPath,
                 scriptFolderPath = scriptFolderPath,
+                contentsInfo = contentsInfo,
                 textIndex = info.TextIndex,
             };
 
             GenerateTextData(type, generateInfo, force);
         }
-        
-        private static void GenerateTextData(ContentType contentType, GenerateInfo generateInfo, bool force)
+
+        private static ContentsInfo BuildContentsInfo(TextDataSource[] sources)
+        {
+            var progressTitle = "Build TextData Contents";
+            
+            var config = TextDataConfig.Instance;
+
+            var contentsInfo = new ContentsInfo();
+
+            try
+            {
+                //----- 読み込み -----
+
+                var sheetDatas = new List<SheetData>();
+
+                foreach (var source in sources)
+                {
+                    EditorUtility.DisplayProgressBar(progressTitle, "Load contents.", 0f);
+
+                    var contentsFolderPath = source.GetContentsFolderPath();
+
+                    var sheets = LoadSheetData(config.FileFormat, contentsFolderPath);
+
+                    if (sheets == null) { continue; }
+
+                    foreach (var item in sheets)
+                    {
+                        var sheetData = sheetDatas.FirstOrDefault(x => x.guid == item.guid);
+
+                        if (sheetData == null)
+                        {
+                            sheetDatas.Add(item);
+                        }
+                        else
+                        {
+                            var hashSource = sheetData.hash + item.hash;
+
+                            sheetData.hash = hashSource.GetHash();
+
+                            sheetData.records.AddRange(item.records);
+                        }
+                    }
+                }
+
+                contentsInfo.sheetDatas = sheetDatas;
+
+                //----- 同じテキストGUIDが存在しないか検証 -----
+
+                var hasError = false;
+
+                var logBuilder = new StringBuilder();
+
+                var allRecords = new List<Tuple<SheetData, RecordData>>();
+
+                foreach (var item in contentsInfo.sheetDatas)
+                {
+                    foreach (var record in item.records)
+                    {
+                        allRecords.Add(Tuple.Create(item, record));
+                    }
+                }
+
+                var groups = allRecords.GroupBy(x => x.Item2.guid).ToArray();
+
+                foreach (var group in groups)
+                {
+                    logBuilder.Clear();
+
+                    var duplication = 1 < group.Count();
+
+                    if (duplication)
+                    {
+                        logBuilder.AppendLine($"Contents Duplication Text Guid : {group.Key}");
+                        logBuilder.AppendLine();
+
+                        foreach (var item in group)
+                        {
+                            logBuilder.AppendLine($"SheetName : {item.Item1.sheetName}, EnumName : {item.Item2.enumName}");
+                        }
+
+                        Debug.LogError(logBuilder.ToString());
+
+                        hasError = true;
+                    }
+                }
+
+                if (hasError) { return null; }
+            }
+            finally
+            {
+                EditorUtility.ClearProgressBar();
+            }
+
+            contentsInfo.hash = CreateSheetsHash(contentsInfo.sheetDatas);
+
+            return contentsInfo;
+        }
+
+        private static void GenerateTextData(TextType type, GenerateInfo generateInfo, bool force)
         {
             var progressTitle = "Generate TextData";
             
             var config = TextDataConfig.Instance;
-
-            // 読み込み.
-
-            EditorUtility.DisplayProgressBar(progressTitle, "Load contents.", 0f);
-
-            var indexData = LoadIndexData(config.FileFormat, generateInfo.contentsFolderPath);
-
-            var sheetDatas = LoadSheetData(config.FileFormat, generateInfo.contentsFolderPath);
-
-			EditorUtility.ClearProgressBar();
-
-            if (sheetDatas == null) { return; }
-
-            var displayNames = indexData != null ? indexData.sheetNames : new string[0];
 
             var cryptoKey = new AesCryptoKey(config.CryptoKey, config.CryptoIv);
 
@@ -111,30 +208,26 @@ namespace Modules.TextData.Editor
 
             var textDataAsset = LoadAsset(generateInfo.assetPath);
 
-            var hash = CreateSheetsHash(displayNames, sheetDatas);
+            var contentsInfo = generateInfo.contentsInfo;
 
             if (!force)
             {
                 // 中身のデータに変化がないので更新しない.
-                if (textDataAsset != null && textDataAsset.Hash == hash) { return; }
+                if (textDataAsset != null && textDataAsset.Hash == contentsInfo.hash) { return; }
             }
 
             try
             {
 				using (new AssetEditingScope())
                 {
-					var sheets = sheetDatas.Keys.ToArray();
-
-                    if (displayNames.Any())
-                    {
-                        sheets = sheetDatas.Keys.OrderBy(x => displayNames.IndexOf(y => y == x.displayName)).ToArray();
-                    }
+                    var hash = contentsInfo.hash;
+					var sheets = contentsInfo.sheetDatas.OrderBy(x => x.guid).ToArray();
 
 					// Asset.
 
 					EditorUtility.DisplayProgressBar(progressTitle, "Generate asset.", 0.5f);
 
-					TextDataAssetGenerator.Build(textDataAsset, contentType, sheets, hash, generateInfo.textIndex, cryptoKey);
+					TextDataAssetGenerator.Build(textDataAsset, type, sheets, hash, generateInfo.textIndex, cryptoKey);
 
                     // Script.
 
@@ -171,44 +264,21 @@ namespace Modules.TextData.Editor
 			EditorUtility.ClearProgressBar();
         }
 
-		private static string CreateSheetsHash(string[] displayNames, Dictionary<SheetData, string> sheetDatas)
+		private static string CreateSheetsHash(IEnumerable<SheetData> sheetDatas)
 		{
 			var builder = new StringBuilder();
 
-			var items = sheetDatas.ToArray();
-
-            if (displayNames.Any())
-            {
-                items = sheetDatas.OrderBy(x => displayNames.IndexOf(y => y == x.Key.displayName)).ToArray();
-            }
+			var items = sheetDatas.OrderBy(x => x.guid);
 
 			foreach (var item in items)
 			{
-				builder.AppendLine(item.Value);
+				builder.AppendLine(item.guid);
 			}
 
 			return builder.ToString().GetHash();
 		}
 
-        private static IndexData LoadIndexData(FileLoader.Format fileFormat, string recordDirectory)
-        {
-            if (!Directory.Exists(recordDirectory))
-            {
-                Debug.LogErrorFormat("Directory {0} not found.", recordDirectory);
-                return null;
-            }
-
-            var indexFile = Directory.EnumerateFiles(recordDirectory, "*.*", SearchOption.TopDirectoryOnly)
-                .Where(x => Path.GetExtension(x) == IndexFileExtension)
-                .Select(x => PathUtility.ConvertPathSeparator(x))
-                .FirstOrDefault();
-
-            var indexData = FileLoader.LoadFile<IndexData>(indexFile, fileFormat);
-
-            return indexData;
-        }
-
-        private static Dictionary<SheetData, string> LoadSheetData(FileLoader.Format fileFormat, string recordDirectory)
+        private static List<SheetData> LoadSheetData(FileLoader.Format fileFormat, string recordDirectory)
         {
             var extension = FileLoader.GetFileExtension(fileFormat);
 
@@ -223,7 +293,7 @@ namespace Modules.TextData.Editor
                 .Select(x => PathUtility.ConvertPathSeparator(x))
                 .ToArray();
 
-            var dictionary = new Dictionary<SheetData, string>();
+            var list = new List<SheetData>();
 
             foreach (var sheetFile in sheetFiles)
             {
@@ -233,11 +303,13 @@ namespace Modules.TextData.Editor
 
                 if (sheetData != null)
                 {
-					dictionary.Add(sheetData, hash);
+                    sheetData.hash = hash;
+
+                    list.Add(sheetData);
                 }
             }
 
-            return dictionary;
+            return list;
         }
 
         private static TextDataAsset LoadAsset(string assetPath)

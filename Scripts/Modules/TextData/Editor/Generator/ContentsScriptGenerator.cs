@@ -63,7 +63,7 @@ namespace Modules.TextData
 
                 var sheetRecords = sheet.records;
 
-                for (var i = 0; i < sheetRecords.Length; ++i)
+                for (var i = 0; i < sheetRecords.Count; ++i)
                 {
                     var record = sheetRecords[i];
 
@@ -93,7 +93,7 @@ namespace Modules.TextData
                     elements.Append("\t\t\t").AppendFormat(TableElementTemplate, sheet.sheetName, record.enumName, record.guid);
 
                     // 最終行は改行しない.
-                    if (i < sheetRecords.Length - 1)
+                    if (i < sheetRecords.Count - 1)
                     {
                         enums.AppendLine();
                         enums.AppendLine();

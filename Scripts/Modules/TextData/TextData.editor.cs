@@ -14,7 +14,7 @@ namespace Modules.TextData
 
         public sealed class Category
         {
-            public ContentType ContentType { get; private set; }
+            public TextType Type { get; private set; }
 
             public string Guid { get; private set; }
 
@@ -22,9 +22,9 @@ namespace Modules.TextData
 
             public string Name { get; private set; }
 
-            public Category(ContentType contentType, string guid, string displayName, string name)
+            public Category(TextType type, string guid, string displayName, string name)
             {
-                ContentType = contentType;
+                Type = type;
                 Guid = guid;
                 DisplayName = displayName;
                 Name = name;
@@ -70,7 +70,7 @@ namespace Modules.TextData
 
             foreach (var categoriesContent in asset.Contents)
             {
-                var contentType = asset.ContentType;
+                var type = asset.Type;
 
                 var categoryGuid = categoriesContent.Guid;
                 
@@ -82,7 +82,7 @@ namespace Modules.TextData
                     categoryDisplayName = categoriesContent.DisplayName.Decrypt(cryptoKey);
                 }
 
-                categories[categoryGuid] = new Category(contentType, categoryGuid, categoryDisplayName, categoryName);
+                categories[categoryGuid] = new Category(type, categoryGuid, categoryDisplayName, categoryName);
 
                 foreach (var textContent in categoriesContent.Texts)
                 {

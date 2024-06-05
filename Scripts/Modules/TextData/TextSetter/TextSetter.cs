@@ -17,7 +17,7 @@ namespace Modules.TextData.Components
         //----- field -----
 
         [SerializeField]
-        private ContentType type = ContentType.Embedded;
+        private TextType type = TextType.Internal;
         [SerializeField]
         private string textGuid = null;
 
@@ -29,7 +29,7 @@ namespace Modules.TextData.Components
 
         //----- property -----
 
-        public ContentType ContentType { get { return type; } }
+        public TextType Type { get { return type; } }
 
         public string TextGuid { get { return textGuid; } }
 

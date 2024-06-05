@@ -89,15 +89,13 @@ namespace Modules.TextData.Components
 
         private void DrawSourceSelectGUI(TextData textData)
         {
-            var contentType = instance.ContentType;
+            var type = instance.Type;
 
             var config = TextDataConfig.Instance;
 
-            var distributionSetting = config.Distribution;
-
             using (new DisableScope(!string.IsNullOrEmpty(currentTextGuid)))
             {
-                if (distributionSetting.Enable)
+                if (config.EnableExternal)
                 {
                     using (new EditorGUILayout.HorizontalScope())
                     {
@@ -105,9 +103,9 @@ namespace Modules.TextData.Components
 
                         GUILayout.FlexibleSpace();
 
-                        var enumValues = Enum.GetValues(typeof(ContentType)).Cast<ContentType>().ToArray();
+                        var enumValues = Enum.GetValues(typeof(TextType)).Cast<TextType>().ToArray();
 
-                        var index = enumValues.IndexOf(x => x == contentType);
+                        var index = enumValues.IndexOf(x => x == type);
 
                         var tabItems = enumValues.Select(x => x.ToString()).ToArray();
                         
@@ -138,18 +136,18 @@ namespace Modules.TextData.Components
 
         private void DrawEmbeddedTextSelectGUI(TextData textData)
         {
-            var contentType = instance.ContentType;
+            var type = instance.Type;
 
-            if (contentType != ContentType.Embedded){ return; }
+            if (type != TextType.Internal){ return; }
             
             DrawTextSelectGUI();
         }
 
         private void DrawDistributionTextSelectGUI(TextData textData)
         {
-            var contentType = instance.ContentType;
+            var type = instance.Type;
 
-            if (contentType != ContentType.Distribution){ return; }
+            if (type != TextType.External){ return; }
             
             DrawTextSelectGUI();
         }

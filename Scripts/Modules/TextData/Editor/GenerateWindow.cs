@@ -20,7 +20,9 @@ namespace Modules.TextData.Editor
 
         //----- field -----
 
-        private ContentType contentType = ContentType.Embedded;
+        private TextType type = TextType.Internal;
+
+        private TextDataSource selection = null;
 
 		private TextDataConfig config = null;
 
@@ -55,16 +57,16 @@ namespace Modules.TextData.Editor
 				EditorGUILayout.Separator();
 
 	            // タイプ選択.
-                if (config.Distribution.Enable)
+                if (config.EnableExternal)
                 {
     	            DrawTextDataTypeGUI();
                 }
 
+                // エクセル制御.
+                DrawExcelControlGUI();
+
 	            // 生成.
 	            DrawGenerateGUI();
-
-	            // エクセル制御.
-	            DrawExcelControlGUI();
 			}
 			else
 			{
@@ -75,9 +77,9 @@ namespace Modules.TextData.Editor
         // タイプGUI描画.
         private void DrawTextDataTypeGUI()
         {
-            var enumValues = Enum.GetValues(typeof(ContentType)).Cast<ContentType>().ToArray();
+            var enumValues = Enum.GetValues(typeof(TextType)).Cast<TextType>().ToArray();
 
-            var index = enumValues.IndexOf(x => x == contentType);
+            var index = enumValues.IndexOf(x => x == type);
 
             var tabItems = enumValues.Select(x => x.ToString()).ToArray();
 
@@ -87,12 +89,14 @@ namespace Modules.TextData.Editor
 
             if (EditorGUI.EndChangeCheck())
             {
-                contentType = enumValues.ElementAtOrDefault(index);
+                type = enumValues.ElementAtOrDefault(index);
+
+                selection = null;
             }
 
             GUILayout.Space(4f);
         }
-
+        
         // 生成制御GUI描画.
         private void DrawGenerateGUI()
         {
@@ -100,16 +104,29 @@ namespace Modules.TextData.Editor
 
             var languageInfo = languageManager.Current;
 
+            TextDataSource[] sources = null;
+
+            switch (type)
+            {
+                case TextType.Internal:
+                    sources = config.Internal.Source;
+                    break;
+
+                case TextType.External:
+                    sources = config.External.Source;
+                    break;
+            }
+
             EditorLayoutTools.Title("Asset");
             
             GUILayout.Space(4f);
-            
+
             // 生成制御.
-            using (new DisableScope(languageInfo == null))
+            using (new DisableScope(languageInfo == null || sources.IsEmpty()))
             {
                 if (GUILayout.Button("Generate"))
                 {
-                    TextDataGenerator.Generate(contentType, languageInfo, true);
+                    TextDataGenerator.Generate(type, languageInfo, true);
 
                     UnityConsole.Info("TextData generate finish.");
 
@@ -123,67 +140,98 @@ namespace Modules.TextData.Editor
         // エクセル制御GUI描画.
         private void DrawExcelControlGUI()
         {
-            TextDataConfig.GenerateAssetSetting setting = null;
-
-            switch (contentType)
-            {
-                case ContentType.Embedded:
-                    setting = config.Embedded;
-                    break;
-
-                case ContentType.Distribution:
-                    setting = config.Distribution;
-                    break;
-            }
-
             EditorLayoutTools.Title("Excel");
-            
-            GUILayout.Space(4f);
 
-            var excelFilePath = setting.GetExcelPath();
+            TextDataSource[] sources = null;
 
-            var excelFileExists = File.Exists(excelFilePath);
-
-            using (new DisableScope(!excelFileExists))
+            switch (type)
             {
-                if (GUILayout.Button("Open"))
+                case TextType.Internal:
+                    sources = config.Internal.Source;
+                    break;
+
+                case TextType.External:
+                    sources = config.External.Source;
+                    break;
+            }
+
+            if (sources.IsEmpty()){ return; }
+
+            if (selection == null)
+            {
+                selection = sources.FirstOrDefault();
+            }
+
+            if (1 < sources.Length)
+            {
+                GUILayout.Space(4f);
+
+                var labels = sources.Select(x => x.DisplayName).ToArray();
+                var selectIndex = selection != null ? sources.IndexOf(x => x.DisplayName == selection.DisplayName) : -1;
+
+                EditorGUI.BeginChangeCheck();
+
+                var index = EditorGUILayout.Popup(selectIndex, labels);
+
+                if (EditorGUI.EndChangeCheck())
                 {
-					TextDataExcel.Open(setting);
+                    selection = sources.ElementAtOrDefault(index);
                 }
+            }
+            else
+            {
+                selection = sources.FirstOrDefault();
             }
 
             GUILayout.Space(4f);
 
-            var isLock = TextDataExcel.IsExcelFileLocked(setting);
-
-            using (new DisableScope(isLock))
+            if (selection != null)
             {
-                if (GUILayout.Button("Import"))
+                var excelFilePath = selection.GetExcelPath();
+
+                var excelFileExists = File.Exists(excelFilePath);
+
+                using (new DisableScope(!excelFileExists))
                 {
-                    Import().Forget();
+                    if (GUILayout.Button("Open"))
+                    {
+                        TextDataExcel.Open(selection);
+                    }
                 }
-            }
 
-            GUILayout.Space(4f);
+                GUILayout.Space(4f);
 
-            using (new DisableScope(!excelFileExists))
-            {
-                if (GUILayout.Button("Export"))
+                var isLock = TextDataExcel.IsExcelFileLocked(selection);
+
+                using (new DisableScope(isLock))
                 {
-                    Export().Forget();
+                    if (GUILayout.Button("Import"))
+                    {
+                        Import(selection).Forget();
+                    }
                 }
-            }
 
-            GUILayout.Space(4f);
+                GUILayout.Space(4f);
+
+                using (new DisableScope(!excelFileExists))
+                {
+                    if (GUILayout.Button("Export"))
+                    {
+                        Export(selection).Forget();
+                    }
+                }
+
+                GUILayout.Space(4f);
+            }
         }
 
-        private async UniTask Import()
+        private async UniTask Import(TextDataSource source)
         {
             try
             {
                 TextDataExcel.Importing = true;
 
-                await TextDataExcel.Import(contentType, true);
+                await TextDataExcel.Import(source, true);
 
                 UnityConsole.Info("TextData import record finish.");
             }
@@ -193,13 +241,13 @@ namespace Modules.TextData.Editor
             }
         }
 
-        private async UniTask Export()
+        private async UniTask Export(TextDataSource source)
         {
             try
             {
                 TextDataExcel.Exporting = true;
 
-                await TextDataExcel.Export(contentType, true);
+                await TextDataExcel.Export(source, true);
 
                 UnityConsole.Info("TextData export record finish.");
             }

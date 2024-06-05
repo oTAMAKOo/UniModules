@@ -18,7 +18,7 @@ namespace Modules.TextData.Editor
 
         //----- method -----
 
-        public static void Build(TextDataAsset asset, ContentType contentType, SheetData[] sheets, string hash, int textIndex, AesCryptoKey aesCryptoKey)
+        public static void Build(TextDataAsset asset, TextType type, SheetData[] sheets, string hash, int textIndex, AesCryptoKey aesCryptoKey)
         {
             var categoryContents = new List<TextDataAsset.CategoryContent>();
 
@@ -33,7 +33,7 @@ namespace Modules.TextData.Editor
 
                 var textContents = new List<TextDataAsset.TextContent>();
 
-                for (var j = 0; j < records.Length; j++)
+                for (var j = 0; j < records.Count; j++)
                 {
                     var record = records[j];
 
@@ -53,7 +53,7 @@ namespace Modules.TextData.Editor
                 categoryContents.Add(sheetContent);
             }
 			
-            asset.SetContents(contentType, hash, categoryContents.ToArray());
+            asset.SetContents(type, hash, categoryContents.ToArray());
 
             EditorUtility.SetDirty(asset);
         }

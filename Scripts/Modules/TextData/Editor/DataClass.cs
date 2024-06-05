@@ -1,11 +1,8 @@
 ﻿
+using System.Collections.Generic;
+
 namespace Modules.TextData.Editor
 {
-    public sealed class IndexData
-    {
-        public string[] sheetNames { get; set; } = null;
-    }
-
     public sealed class SheetData
     {
         public string sheetName { get; set; } = null;
@@ -14,7 +11,9 @@ namespace Modules.TextData.Editor
 
         public string guid { get; set; } = null;
 
-        public RecordData[] records { get; set; } = new RecordData[0];
+        public string hash { get; set; } = null;
+
+        public List<RecordData> records { get; set; } = new List<RecordData>();
     }
 
     public sealed class RecordData

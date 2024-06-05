@@ -91,17 +91,17 @@ namespace Modules.TextData.Editor
             
             // 内包テキスト読み込み.
 
-            var embeddedAsset = LoadTextDataAsset(ContentType.Embedded);
+            var internalAsset = LoadTextDataAsset(TextType.Internal);
 
-            textData.LoadEmbedded(embeddedAsset);
+            textData.LoadEmbedded(internalAsset);
 
             // 配信テキスト読み込み.
 
-            if (config != null && config.Distribution.Enable)
+            if (config.EnableExternal)
             {
-                var distributionAsset = LoadTextDataAsset(ContentType.Distribution);
+                var externalAsset = LoadTextDataAsset(TextType.External);
 
-                textData.AddContents(distributionAsset);
+                textData.AddContents(externalAsset);
             }
 
             // 適用.
@@ -121,7 +121,7 @@ namespace Modules.TextData.Editor
             IsLoaded = true;
         }
 
-        public static TextDataAsset LoadTextDataAsset(ContentType contentType)
+        public static TextDataAsset LoadTextDataAsset(TextType type)
         {
             TextDataAsset textDataAsset = null;
 
@@ -141,9 +141,9 @@ namespace Modules.TextData.Editor
 
             var assetFileName = TextData.GetAssetFileName(identifier);
 
-            switch (contentType)
+            switch (type)
             {
-                case ContentType.Embedded:
+                case TextType.Internal:
                     {
                         var resourcesPath = PathUtility.Combine(assetFolderLocalPath, assetFileName);
 
@@ -153,11 +153,11 @@ namespace Modules.TextData.Editor
                     }
                     break;
 
-                case ContentType.Distribution:
+                case TextType.External:
                     {
-                        if (config != null && config.Distribution.Enable)
+                        if (config.EnableExternal)
                         {
-                            var aseetFolderPath = config.Distribution.AseetFolderPath;
+                            var aseetFolderPath = config.External.AseetFolderPath;
 
                             var assetPath = PathUtility.Combine(new string[] { aseetFolderPath, assetFolderLocalPath, assetFileName });
                     

@@ -1,4 +1,4 @@
-﻿
+
 using Extensions;
 using UnityEngine;
 using Modules.Devkit.ScriptableObjects;
@@ -15,9 +15,9 @@ namespace Modules.TextData.Editor
         private FileLoader.Format fileFormat = FileLoader.Format.Yaml;
         
         [SerializeField]
-        private EmbeddedSetting embedded = null;
+        private InternalSetting internalSetting = null;
         [SerializeField]
-        private DistributionSetting distribution = null;
+        private ExternalSetting externalSetting = null;
 
         [Header("Crypto")]
 
@@ -50,10 +50,16 @@ namespace Modules.TextData.Editor
         /// <summary> 暗号化Iv (16文字)</summary>
         public string CryptoIv { get { return cryptoIv; } }
 
-        /// <summary> 内蔵設定 </summary>
-        public EmbeddedSetting Embedded { get { return embedded; } }
-        /// <summary> 配信設定 </summary>
-        public DistributionSetting Distribution { get { return distribution; } }
+        /// <summary> 内蔵テキスト設定 </summary>
+        public InternalSetting Internal { get { return internalSetting; } }
+        /// <summary> 外部テキスト設定 </summary>
+        public ExternalSetting External { get { return externalSetting; } }
+
+        /// <summary> 外部テキスト有効か </summary>
+        public bool EnableExternal
+        {
+            get { return externalSetting != null && externalSetting.Enable; }
+        }
 
         public string ConverterPath
         {

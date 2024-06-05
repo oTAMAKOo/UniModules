@@ -3,7 +3,6 @@ using UnityEngine;
 using System;
 using System.Collections.Generic;
 using Extensions;
-using Extensions.Serialize;
 
 namespace Modules.TextData.Components
 {
@@ -63,21 +62,21 @@ namespace Modules.TextData.Components
         }
 
         [SerializeField, ReadOnly]
-        private ContentType contentType = ContentType.Embedded;
+        private TextType type = TextType.Internal;
 	    [SerializeField, ReadOnly]
 	    private string hash = null;
         [SerializeField, HideInInspector]
         private CategoryContent[] categories = new CategoryContent[0];
         
-        public ContentType ContentType { get { return contentType; } }
+        public TextType Type { get { return type; } }
 
         public IReadOnlyList<CategoryContent> Contents { get { return categories; } }
 
 	    public string Hash { get { return hash; } }
 
-        public void SetContents(ContentType contentType, string hash, CategoryContent[] categories)
+        public void SetContents(TextType type, string hash, CategoryContent[] categories)
         {
-            this.contentType = contentType;
+            this.type = type;
             this.categories = categories;
             this.hash = hash;
         }

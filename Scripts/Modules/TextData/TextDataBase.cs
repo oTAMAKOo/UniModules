@@ -5,12 +5,12 @@ using Extensions;
 
 namespace Modules.TextData.Components
 {
-    public enum ContentType
+    public enum TextType
     {
         /// <summary> 内蔵 </summary>
-        Embedded,
-        /// <summary> 配信 </summary>
-        Distribution,
+        Internal,
+        /// <summary> 外部 </summary>
+        External,
     }
 
     public sealed class TextInfo

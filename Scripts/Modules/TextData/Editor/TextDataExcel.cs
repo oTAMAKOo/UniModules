@@ -41,9 +41,9 @@ namespace Modules.TextData.Editor
 
         //----- method -----
 
-        public static void Open(TextDataConfig.GenerateAssetSetting setting)
+        public static void Open(TextDataSource source)
         {
-            var path = setting.GetExcelPath();
+            var path = source.GetExcelPath();
 
             if(!File.Exists(path))
             {
@@ -65,24 +65,9 @@ namespace Modules.TextData.Editor
             }
         }
 
-        public static async Task Import(ContentType contentType, bool displayConsole)
+        public static async Task Import(TextDataSource source, bool displayConsole)
         {
-            var config = TextDataConfig.Instance;
-
-            TextDataConfig.GenerateAssetSetting setting = null;
-
-            switch (contentType)
-            {
-                case ContentType.Embedded:
-                    setting = config.Embedded;
-                    break;
-
-                case ContentType.Distribution:
-                    setting = config.Distribution;
-                    break;
-            }
-            
-            var result = await ExecuteProcess(setting, Mode.Import, displayConsole);
+            var result = await ExecuteProcess(source, Mode.Import, displayConsole);
 
             if (result.Item1 != 0)
             {
@@ -90,24 +75,9 @@ namespace Modules.TextData.Editor
             }
         }
 
-        public static async Task Export(ContentType contentType, bool displayConsole)
+        public static async Task Export(TextDataSource source, bool displayConsole)
         {
-            var config = TextDataConfig.Instance;
-
-            TextDataConfig.GenerateAssetSetting setting = null;
-
-            switch (contentType)
-            {
-                case ContentType.Embedded:
-                    setting = config.Embedded;
-                    break;
-
-                case ContentType.Distribution:
-                    setting = config.Distribution;
-                    break;
-            }
-            
-            var result = await ExecuteProcess(setting, Mode.Export, displayConsole);
+            var result = await ExecuteProcess(source, Mode.Export, displayConsole);
 
             if (result.Item1 != 0 && !string.IsNullOrEmpty(result.Item2))
             {
@@ -115,22 +85,22 @@ namespace Modules.TextData.Editor
             }
         }
 
-        public static bool IsExcelFileLocked(TextDataConfig.GenerateAssetSetting setting)
+        public static bool IsExcelFileLocked(TextDataSource source)
         {
-            var editExcelPath = setting.GetExcelPath();
+            var editExcelPath = source.GetExcelPath();
             
             if (!File.Exists(editExcelPath)) { return false; }
 
             return FileUtility.IsFileLocked(editExcelPath) ;
         }
 
-        private static async Task<Tuple<int, string>> ExecuteProcess(TextDataConfig.GenerateAssetSetting setting, Mode mode, bool displayConsole)
+        private static async Task<Tuple<int, string>> ExecuteProcess(TextDataSource source, Mode mode, bool displayConsole)
         {
             var config = TextDataConfig.Instance;
 
             var arguments = new StringBuilder();
 
-            arguments.AppendFormat("--workspace {0} ", setting.GetTextDataWorkspacePath());
+            arguments.AppendFormat("--workspace {0} ", source.GetWorkspacePath());
 
             switch (mode)
             {
@@ -148,7 +118,7 @@ namespace Modules.TextData.Editor
             var processExecute = new ProcessExecute(config.ConverterPath, processArguments)
             {
                 Encoding = Encoding.GetEncoding("Shift_JIS"),
-                WorkingDirectory = setting.GetTextDataWorkspacePath(),
+                WorkingDirectory = source.GetWorkspacePath(),
                 UseShellExecute = displayConsole,
                 Hide = !displayConsole,
             };
