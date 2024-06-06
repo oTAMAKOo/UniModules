@@ -272,7 +272,7 @@ namespace Modules.TextData.Editor
 
 			foreach (var item in items)
 			{
-				builder.AppendLine(item.guid);
+				builder.AppendLine(item.hash);
 			}
 
 			return builder.ToString().GetHash();
