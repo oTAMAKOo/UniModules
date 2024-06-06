@@ -11,6 +11,7 @@ using Extensions.Devkit;
 using Modules.Devkit.Generators;
 using Modules.TextData.Components;
 using static Modules.TextData.Editor.TextDataConfig;
+using UnityEditor.Localization.Plugins.XLIFF.V12;
 
 namespace Modules.TextData.Editor
 {
@@ -31,6 +32,8 @@ namespace Modules.TextData.Editor
         public sealed class ContentsInfo
         {
             public string hash { get; set; } = null;
+
+            public string[] index { get; set; }
 
             public List<SheetData> sheetDatas { get; set; }
         }
@@ -119,9 +122,18 @@ namespace Modules.TextData.Editor
 
                     var contentsFolderPath = source.GetContentsFolderPath();
 
+                    var index = LoadIndexData(config.FileFormat, contentsFolderPath);
+
                     var sheets = LoadSheetData(config.FileFormat, contentsFolderPath);
 
                     if (sheets == null) { continue; }
+
+                    var sheetIndex = sheetDatas.Any() ? sheetDatas.Max(x => x.index) + 1 : 0;
+
+                    foreach (var item in sheets)
+                    {
+                        item.index = sheetIndex + index.sheetNames.IndexOf(x => x == item.displayName);
+                    }
 
                     foreach (var item in sheets)
                     {
@@ -221,7 +233,7 @@ namespace Modules.TextData.Editor
 				using (new AssetEditingScope())
                 {
                     var hash = contentsInfo.hash;
-					var sheets = contentsInfo.sheetDatas.OrderBy(x => x.guid).ToArray();
+					var sheets = contentsInfo.sheetDatas.OrderBy(x => x.index).ToArray();
 
 					// Asset.
 
@@ -277,6 +289,24 @@ namespace Modules.TextData.Editor
 
 			return builder.ToString().GetHash();
 		}
+
+        private static IndexData LoadIndexData(FileLoader.Format fileFormat, string recordDirectory)
+        {
+            if (!Directory.Exists(recordDirectory))
+            {
+                Debug.LogErrorFormat("Directory {0} not found.", recordDirectory);
+                return null;
+            }
+
+            var indexFile = Directory.EnumerateFiles(recordDirectory, "*.*", SearchOption.TopDirectoryOnly)
+                .Where(x => Path.GetExtension(x) == IndexFileExtension)
+                .Select(x => PathUtility.ConvertPathSeparator(x))
+                .FirstOrDefault();
+
+            var indexData = FileLoader.LoadFile<IndexData>(indexFile, fileFormat);
+
+            return indexData;
+        }
 
         private static List<SheetData> LoadSheetData(FileLoader.Format fileFormat, string recordDirectory)
         {

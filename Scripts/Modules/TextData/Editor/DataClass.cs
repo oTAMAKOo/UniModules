@@ -3,8 +3,15 @@ using System.Collections.Generic;
 
 namespace Modules.TextData.Editor
 {
+    public sealed class IndexData
+    {
+        public string[] sheetNames { get; set; } = null;
+    }
+
     public sealed class SheetData
     {
+        public int index { get; set; } = 0;
+
         public string sheetName { get; set; } = null;
     
         public string displayName { get; set; } = null;
