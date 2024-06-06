@@ -115,7 +115,10 @@ namespace Modules.UI.Particle
 
             raycastTarget = false;
 
-            material = null;
+            if (Application.isPlaying)
+            {
+                material = null;
+            }
 
             var particleSystem = GetParticleSystem();
             var mainModule = GetMainModule();
