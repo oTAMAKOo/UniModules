@@ -10,8 +10,6 @@ using Extensions;
 using Extensions.Devkit;
 using Modules.Devkit.Generators;
 using Modules.TextData.Components;
-using static Modules.TextData.Editor.TextDataConfig;
-using UnityEditor.Localization.Plugins.XLIFF.V12;
 
 namespace Modules.TextData.Editor
 {
