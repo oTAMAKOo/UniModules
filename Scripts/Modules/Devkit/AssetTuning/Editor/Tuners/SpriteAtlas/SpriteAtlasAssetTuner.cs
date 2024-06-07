@@ -1,4 +1,4 @@
-
+﻿
 using UnityEngine;
 using UnityEngine.U2D;
 using UnityEditor;
@@ -28,14 +28,14 @@ namespace Modules.Devkit.AssetTuning
 
         public override bool Validate(string path)
         {
-            var spriteAtlas = AssetDatabase.LoadMainAssetAtPath(path) as SpriteAtlas;
+            var spriteAtlasImporter = AssetImporter.GetAtPath(path) as SpriteAtlasImporter;
 
-            return spriteAtlas != null;
+            return spriteAtlasImporter != null;
         }
 
         public override void OnAssetCreate(string path)
         {
-            var spriteAtlas = AssetDatabase.LoadMainAssetAtPath(path) as SpriteAtlas;
+            var spriteAtlas = AssetDatabase.LoadAssetAtPath<SpriteAtlas>(path);
 
             if (spriteAtlas == null) { return; }
 
