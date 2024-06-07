@@ -9,7 +9,6 @@ using Extensions;
 using Modules.Devkit.Console;
 using Modules.Devkit.Prefs;
 using Modules.TextData.Components;
-using Modules.ExternalAssets;
 
 namespace Modules.TextData.Editor
 {

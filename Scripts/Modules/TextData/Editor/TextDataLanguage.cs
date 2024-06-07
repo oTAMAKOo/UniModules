@@ -50,5 +50,10 @@ namespace Modules.TextData.Editor
 		{
 			this.languageInfos = languageInfos;
 		}
+
+        public LanguageInfo GetLanguageInfo(Enum language)
+        {
+            return languageInfos.FirstOrDefault(x => x.Language == language);
+        }
 	}
 }

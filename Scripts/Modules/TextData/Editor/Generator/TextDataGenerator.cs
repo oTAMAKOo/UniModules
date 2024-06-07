@@ -25,6 +25,8 @@ namespace Modules.TextData.Editor
             public string scriptFolderPath = null;
             public ContentsInfo contentsInfo = null;
             public int textIndex = 0;
+            public bool generateScript = true;
+            public bool force = false;
         }
 
         public sealed class ContentsInfo
@@ -42,7 +44,7 @@ namespace Modules.TextData.Editor
 
         //----- method -----
 
-        public static void Generate(TextType type, LanguageInfo info, bool force = false)
+        public static void Generate(TextType type, LanguageInfo info, bool force = false, bool generateScript = true)
         {
             var textData = TextData.Instance;
 
@@ -95,9 +97,11 @@ namespace Modules.TextData.Editor
                 scriptFolderPath = scriptFolderPath,
                 contentsInfo = contentsInfo,
                 textIndex = info.TextIndex,
+                generateScript = generateScript,
+                force = force,
             };
 
-            GenerateTextData(type, generateInfo, force);
+            GenerateTextData(type, generateInfo);
         }
 
         private static ContentsInfo BuildContentsInfo(TextDataSource[] sources)
@@ -206,7 +210,7 @@ namespace Modules.TextData.Editor
             return contentsInfo;
         }
 
-        private static void GenerateTextData(TextType type, GenerateInfo generateInfo, bool force)
+        private static void GenerateTextData(TextType type, GenerateInfo generateInfo)
         {
             var progressTitle = "Generate TextData";
             
@@ -214,13 +218,13 @@ namespace Modules.TextData.Editor
 
             var cryptoKey = new AesCryptoKey(config.CryptoKey, config.CryptoIv);
 
-            var generateScript = !string.IsNullOrEmpty(generateInfo.scriptFolderPath);
+            var generateScript = !string.IsNullOrEmpty(generateInfo.scriptFolderPath) && generateInfo.generateScript;
 
             var textDataAsset = LoadAsset(generateInfo.assetPath);
 
             var contentsInfo = generateInfo.contentsInfo;
 
-            if (!force)
+            if (!generateInfo.force)
             {
                 // 中身のデータに変化がないので更新しない.
                 if (textDataAsset != null && textDataAsset.Hash == contentsInfo.hash) { return; }
