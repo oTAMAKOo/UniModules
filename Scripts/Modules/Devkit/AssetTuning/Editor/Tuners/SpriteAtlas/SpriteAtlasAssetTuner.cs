@@ -46,6 +46,10 @@ namespace Modules.Devkit.AssetTuning
 
         protected virtual void OnFirstImport(SpriteAtlas spriteAtlas)
         {
+            var assetPath = AssetDatabase.GetAssetPath(spriteAtlas);
+
+            var spriteAtlasImporter = AssetImporter.GetAtPath(assetPath) as SpriteAtlasImporter;
+
 			SetIncludeInBuild(spriteAtlas);
 
 			//------- PackingSettings -------
@@ -68,11 +72,11 @@ namespace Modules.Devkit.AssetTuning
 
             foreach (var platform in DefaultTargetPlatforms)
             {
-                var platformSetting = spriteAtlas.GetPlatformSettings(platform.ToString());
+                var platformSetting = spriteAtlasImporter.GetPlatformSettings(platform.ToString());
 
                 SetTexturePlatformSettings(platform, ref platformSetting);
 
-                spriteAtlas.SetPlatformSettings(platformSetting);
+                spriteAtlasImporter.SetPlatformSettings(platformSetting);
             }
         }
 
