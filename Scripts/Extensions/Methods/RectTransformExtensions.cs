@@ -1,9 +1,8 @@
 
 using UnityEngine;
 using UnityEngine.UI;
-using System.Collections;
+using System;
 using System.Linq;
-using UniRx;
 using Unity.Linq;
 using Modules.UI.Layout;
 
@@ -262,13 +261,24 @@ namespace Extensions
             {
                 var rt = layoutGroup.transform as RectTransform;
 
-                layoutGroup.SetLayoutHorizontal();
-                layoutGroup.SetLayoutVertical();
+                try
+                {
+                    if (UnityUtility.IsNull(rt)){ continue; }
 
-                layoutGroup.CalculateLayoutInputHorizontal();
-                layoutGroup.CalculateLayoutInputVertical();
+                    if(layoutGroup.IsDestroyed()){ continue; }
 
-                LayoutRebuilder.MarkLayoutForRebuild(rt);
+                    layoutGroup.SetLayoutHorizontal();
+                    layoutGroup.SetLayoutVertical();
+
+                    layoutGroup.CalculateLayoutInputHorizontal();
+                    layoutGroup.CalculateLayoutInputVertical();
+
+                    LayoutRebuilder.MarkLayoutForRebuild(rt);
+                }
+                catch (Exception e)
+                {
+                    Debug.LogWarning(e.Message);
+                }
             }
 
             LayoutRebuilder.ForceRebuildLayoutImmediate(self);
