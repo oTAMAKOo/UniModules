@@ -24,6 +24,18 @@ namespace Modules.UI.Layout
                 UnityEditorUtility.RegisterUndo(instance);
                 Reflection.SetPrivateField(instance, "maxHeight", maxHeight);
             }
+
+            var priority = Reflection.GetPrivateField<ContentSizeFitterMaxHeight, int>(instance, "priority");
+
+            EditorGUI.BeginChangeCheck();
+
+            priority = EditorGUILayout.DelayedIntField("LayoutPriority", priority);
+
+            if (EditorGUI.EndChangeCheck())
+            {
+                UnityEditorUtility.RegisterUndo(instance);
+                Reflection.SetPrivateField(instance, "priority", priority);
+            }
         }
     }
 }

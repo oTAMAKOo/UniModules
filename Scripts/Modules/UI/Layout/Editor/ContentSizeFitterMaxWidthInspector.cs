@@ -24,6 +24,18 @@ namespace Modules.UI.Layout
                 UnityEditorUtility.RegisterUndo(instance);
                 Reflection.SetPrivateField(instance, "maxWidth", maxWidth);
             }
+
+            var priority = Reflection.GetPrivateField<ContentSizeFitterMaxWidth, int>(instance, "priority");
+
+            EditorGUI.BeginChangeCheck();
+
+            priority = EditorGUILayout.DelayedIntField("LayoutPriority", priority);
+
+            if (EditorGUI.EndChangeCheck())
+            {
+                UnityEditorUtility.RegisterUndo(instance);
+                Reflection.SetPrivateField(instance, "priority", priority);
+            }
         }
     }
 }

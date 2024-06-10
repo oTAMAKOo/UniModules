@@ -18,6 +18,8 @@ namespace Modules.UI.Layout
 
         [SerializeField]
         private float maxHeight = 0;
+        [SerializeField]
+        private int priority = 2;
 
         private ILayoutElement layoutElement = null;
 
@@ -101,7 +103,7 @@ namespace Modules.UI.Layout
 
         public int layoutPriority 
         {
-            get { return int.MaxValue; }
+            get { return priority; }
         }
 
         //----- method -----
