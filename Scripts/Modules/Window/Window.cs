@@ -1,4 +1,4 @@
-﻿
+
 using UnityEngine;
 using System;
 using Cysharp.Threading.Tasks;
@@ -44,6 +44,8 @@ namespace Modules.Window
 
         public async UniTask Open(bool blockInput = true)
         {
+            var cancelToken = this.GetCancellationTokenOnDestroy();
+
             if (Opened) { return; }
 
             var inputBlock = blockInput ? new BlockInput() : null;
@@ -52,9 +54,13 @@ namespace Modules.Window
 
             await Prepare();
 
+            if (cancelToken.IsCancellationRequested){ return; }
+
             UnityUtility.SetActive(gameObject, true);
 
             await OnOpen();
+
+            if (cancelToken.IsCancellationRequested){ return; }
 
             if (inputBlock != null)
             {
@@ -70,11 +76,15 @@ namespace Modules.Window
 
         public async UniTask Close(bool blockInput = true)
         {
+            var cancelToken = this.GetCancellationTokenOnDestroy();
+
             if (!Opened) { return; }
 
             var inputBlock = blockInput ? new BlockInput() : null;
 
             await OnClose();
+
+            if (cancelToken.IsCancellationRequested){ return; }
 
             UnityUtility.SetActive(gameObject, false);
 
