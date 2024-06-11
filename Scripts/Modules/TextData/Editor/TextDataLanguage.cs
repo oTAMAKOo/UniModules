@@ -14,11 +14,14 @@ namespace Modules.TextData.Editor
             
 		public int TextIndex { get; private set; }
 
-		public LanguageInfo(Enum language, string identifier, int textIndex)
+        public bool ScriptGenerate { get; private set; }
+
+		public LanguageInfo(Enum language, string identifier, int textIndex, bool scriptGenerate)
 		{
 			Language = language;
 			Identifier = identifier;
 			TextIndex = textIndex;
+            ScriptGenerate = scriptGenerate;
 		}
 	}
 

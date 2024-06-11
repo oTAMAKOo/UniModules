@@ -44,7 +44,7 @@ namespace Modules.TextData.Editor
 
         //----- method -----
 
-        public static void Generate(TextType type, LanguageInfo info, bool force = false, bool generateScript = true)
+        public static void Generate(TextType type, LanguageInfo info, bool force = false)
         {
             var textData = TextData.Instance;
 
@@ -97,7 +97,7 @@ namespace Modules.TextData.Editor
                 scriptFolderPath = scriptFolderPath,
                 contentsInfo = contentsInfo,
                 textIndex = info.TextIndex,
-                generateScript = generateScript,
+                generateScript = info.ScriptGenerate,
                 force = force,
             };
 
