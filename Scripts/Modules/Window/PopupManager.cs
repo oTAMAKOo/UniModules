@@ -327,8 +327,11 @@ namespace Modules.Window
                     cancelTokenSource = null;
                 }
 
-                touchBlock.Hide();
-                touchBlock.transform.SetSiblingIndex(0);
+                if (!UnityUtility.IsNull(touchBlock))
+                {
+                    touchBlock.Hide();
+                    touchBlock.transform.SetSiblingIndex(0);
+                }
             }
         }
 
