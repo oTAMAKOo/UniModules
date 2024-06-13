@@ -266,10 +266,18 @@ namespace Modules.UI.Layout
             {
                 drivenProperties = drivenProperties.SetFlag(DrivenTransformProperties.SizeDeltaX);
             }
+            else
+            {
+                drivenProperties = drivenProperties.RemoveFlag(DrivenTransformProperties.SizeDeltaX);
+            }
 
             if (vertical.Enable)
             {
                 drivenProperties = drivenProperties.SetFlag(DrivenTransformProperties.SizeDeltaY);
+            }
+            else
+            {
+                drivenProperties = drivenProperties.RemoveFlag(DrivenTransformProperties.SizeDeltaY);
             }
 
             drivenRectTransformTracker.Clear();
