@@ -7,8 +7,8 @@ using System.IO;
 using System.Linq;
 using System.Collections.Generic;
 using CriWare;
-using Cysharp.Threading.Tasks;
 using UniRx;
+using Cysharp.Threading.Tasks;
 using Extensions;
 
 namespace Modules.Sound
@@ -30,7 +30,8 @@ namespace Modules.Sound
         void SetVolume(SoundElement element, float volume);
     }
 
-    public abstract class SoundManagementBase<TInstance, TSound> : SoundManagementCore<TInstance, SoundParam, SoundElement>, ISoundManagement
+    public abstract partial class SoundManagementBase<TInstance, TSound> : 
+        SoundManagementCore<TInstance, SoundParam, SoundElement>, ISoundManagement
         where TInstance : SoundManagementBase<TInstance, TSound>
     {
         //----- params -----
@@ -39,17 +40,20 @@ namespace Modules.Sound
 
         //----- field -----
 
-        private CriAtomExPlayer player = null;
+        private CriAtomExPlayer mainPlayer = null;
 
         private Dictionary<string, SoundSheet> managedSoundSheets = null;
 
         private HashSet<Tuple<string, string>> currentFramePlayedSounds = null;
 
+        private Subject<Unit> onPauseAll = null;
+        private Subject<CriAtomEx.ResumeMode> onResumeAll = null;
+
         private bool initialized = false;
 
         //----- property -----
 
-        public CriAtomExPlayer Player { get { return player; } }
+        public CriAtomExPlayer Player { get { return mainPlayer; } }
 
         public float ReleaseTime { get; set; }
 
@@ -67,12 +71,12 @@ namespace Modules.Sound
         {
             if (initialized) { return; }
 
-            player = new CriAtomExPlayer();
+            mainPlayer = new CriAtomExPlayer();
 
             OnInitialize(defaultSoundParam);
 
             // デフォルトのサウンド設定を適用.
-            SetDefaultSoundParam();
+            SetDefaultSoundParam(mainPlayer);
 
             // サウンドイベントを受信.
 
@@ -93,7 +97,7 @@ namespace Modules.Sound
                 .Subscribe(x =>
                     {
                         ApplyVolume(x);
-                        ApplySoundParam(x);
+                        ApplySoundParam(mainPlayer, x);
                     })
                 .AddTo(Disposable);
 
@@ -115,25 +119,18 @@ namespace Modules.Sound
         /// <summary> 内蔵アセットサウンドを再生. </summary>
         public SoundElement Play(SoundType type, TSound cue, float? volume = null)
         {
-            var soundParam = GetSoundParam(type);
-
             var info = GetCueInfo(cue);
 
-            if (soundParam != null && soundParam.cancelIfPlaying)
-            {
-                var element = FindPlayingElement(type, info);
-
-                if (element != null)
-                {
-                    return element;
-                }
-            }
-
-            return info != null ? Play(type, info, volume) : null;
+            return PlaySoundCore(mainPlayer, type, info, volume);
         }
         
         /// <summary> 外部アセットのサウンドを再生. </summary>
         public SoundElement Play(SoundType type, CueInfo info, float? volume = null)
+        {
+            return PlaySoundCore(mainPlayer, type, info, volume);
+        }
+
+        private SoundElement PlaySoundCore(CriAtomExPlayer player, SoundType type, CueInfo info, float? volume)
         {
             if (info == null) { return null; }
 
@@ -170,7 +167,7 @@ namespace Modules.Sound
                 soundVolume = volume.Value;
             }
 
-            element = GetSoundElement(info, type, soundVolume);
+            element = CreateSoundElement(player, info, type, soundVolume);
 
             if (element == null) { return null; }
 
@@ -193,7 +190,7 @@ namespace Modules.Sound
             }
 
             return element;
-        }
+        } 
 
         /// <summary> サウンド中断 </summary>
         public void Pause(SoundElement element)
@@ -216,7 +213,7 @@ namespace Modules.Sound
         {
             if (soundElements.IsEmpty()) { return; }
 
-            player.Pause();
+            mainPlayer.Pause();
 
             foreach (var element in soundElements)
             {
@@ -226,6 +223,11 @@ namespace Modules.Sound
                 {
                     onPause.OnNext(element);
                 }
+            }
+
+            if (onPauseAll != null)
+            {
+                onPauseAll.OnNext(Unit.Default);
             }
         }
 
@@ -250,7 +252,7 @@ namespace Modules.Sound
         {
             if (soundElements.IsEmpty()) { return; }
 
-            player.Resume(resumeMode);
+            mainPlayer.Resume(resumeMode);
 
             foreach (var element in soundElements)
             {
@@ -260,6 +262,11 @@ namespace Modules.Sound
                 {
                     onResume.OnNext(element);
                 }
+            }
+
+            if (onResumeAll != null)
+            {
+                onResumeAll.OnNext(resumeMode);
             }
         }
 
@@ -303,6 +310,8 @@ namespace Modules.Sound
         /// <summary> 個別に音量変更. </summary>
         public void SetVolume(SoundElement element, float volume)
         {
+            var player = element.GetPlayer();
+
             var soundParam = GetSoundParam(element.Type);
 
             var soundVolume = Volume * soundParam.volume * Mathf.Clamp01(volume);
@@ -311,7 +320,7 @@ namespace Modules.Sound
             player.Update(element.GetPlayback());
 
             // デフォルトに戻す.
-            SetDefaultSoundParam();
+            SetDefaultSoundParam(player);
         }
 
         /// <summary> 対象のサウンドが再生中か. </summary>
@@ -334,12 +343,14 @@ namespace Modules.Sound
         /// <summary> 個別設定を戻す. </summary>
         private void ResetSoundParam(SoundElement element)
         {
-            ApplySoundParam(element.Type);
+            var player = element.GetPlayer();
+
+            ApplySoundParam(player, element.Type);
 
             player.Update(element.GetPlayback());
 
             // デフォルトに戻す.
-            SetDefaultSoundParam();
+            SetDefaultSoundParam(player);
         }
 
         /// <summary> 再生中のサウンドに音量を反映. </summary>
@@ -354,7 +365,7 @@ namespace Modules.Sound
         }
 
         /// <summary> CriAtomPlayerに再生設定を適用. </summary>
-        private void ApplySoundParam(SoundType type)
+        private void ApplySoundParam(CriAtomExPlayer player, SoundType type)
         {
             var param = GetSoundParam(type);
 
@@ -364,7 +375,7 @@ namespace Modules.Sound
             }
         }
 
-        private void SetDefaultSoundParam()
+        private void SetDefaultSoundParam(CriAtomExPlayer player)
         {
             player.SetVolume(defaultSoundParam.volume);
         }
@@ -406,7 +417,7 @@ namespace Modules.Sound
             return soundSheet;
         }
 
-        private SoundElement GetSoundElement(CueInfo info, SoundType type, float volume)
+        private SoundElement CreateSoundElement(CriAtomExPlayer player, CueInfo info, SoundType type, float volume)
         {
             // シート取得.
             var soundSheet = GetSoundSheet(info);
@@ -417,7 +428,7 @@ namespace Modules.Sound
             player.SetCue(soundSheet.Acb, info.Cue);
 
             // 再生パラメータ設定.
-            ApplySoundParam(type);
+            ApplySoundParam(player, type);
 
             // 音量を設定.
             player.SetVolume(volume);
@@ -429,9 +440,9 @@ namespace Modules.Sound
             if (playback.GetStatus() == CriAtomExPlayback.Status.Removed) { return null; }
 
             // デフォルトに戻す.
-            SetDefaultSoundParam();
+            SetDefaultSoundParam(player);
 
-            var element = new SoundElement(this, type, soundSheet, info, playback, volume);
+            var element = new SoundElement(this, type, soundSheet, info, player, playback, volume);
 
             return element;
         }
@@ -570,8 +581,21 @@ namespace Modules.Sound
             }
         }
 
+        /// <summary> 全ポーズイベント </summary>
+        public IObservable<Unit> OnPauseAllAsObservable()
+        {
+            return onPauseAll ?? (onPauseAll = new Subject<Unit>());
+        }
+
+        /// <summary> 全レジュームイベント </summary>
+        public IObservable<CriAtomEx.ResumeMode> OnResumeAllAsObservable()
+        {
+            return onResumeAll ?? (onResumeAll = new Subject<CriAtomEx.ResumeMode>());
+        }
+
         protected abstract CueInfo GetCueInfo(TSound cue);
     }
 }
 
 #endif
+

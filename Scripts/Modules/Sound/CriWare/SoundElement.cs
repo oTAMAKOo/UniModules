@@ -16,7 +16,9 @@ namespace Modules.Sound
 
         private ISoundManagement soundManagement = null;
 
-        private CriAtomExPlayback playback;
+        private CriAtomExPlayer player = null;
+
+        private CriAtomExPlayback playback = default;
         
         private Subject<CriAtomExSequencer.CriAtomExSequenceEventInfo> onSoundEvent = null;
 
@@ -40,15 +42,22 @@ namespace Modules.Sound
 
         //----- method -----
 
-        public SoundElement(ISoundManagement soundManagement, SoundType type, SoundSheet soundSheet, CueInfo cueInfo, CriAtomExPlayback playback, float volume)
+        public SoundElement(ISoundManagement soundManagement, SoundType type, SoundSheet soundSheet, 
+                            CueInfo cueInfo, CriAtomExPlayer player, CriAtomExPlayback playback, float volume)
         {
             this.soundManagement = soundManagement;
+            this.player = player;
             this.playback = playback;
 
             Type = type;
             SoundSheet = soundSheet;
             CueInfo = cueInfo;
             Volume = volume;
+        }
+
+        public CriAtomExPlayer GetPlayer()
+        {
+            return player;
         }
 
         public CriAtomExPlayback GetPlayback()
