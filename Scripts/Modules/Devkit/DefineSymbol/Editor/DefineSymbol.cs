@@ -1,4 +1,4 @@
-﻿
+
 using UnityEditor;
 using System.Linq;
 using System.Collections.Generic;
@@ -101,9 +101,9 @@ namespace Modules.Devkit.DefineSymbol
         {
             var buildTargetGroup = EditorUserBuildSettings.selectedBuildTargetGroup;
 
-            var defineSymbolStr = string.Join(";", defineSymbols);
+            PlayerSettings.SetScriptingDefineSymbolsForGroup(buildTargetGroup, defineSymbols.ToArray());
 
-            PlayerSettings.SetScriptingDefineSymbolsForGroup(buildTargetGroup, defineSymbolStr);
+            AssetDatabase.SaveAssets();
         }
     }
 }
