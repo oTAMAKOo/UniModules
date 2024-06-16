@@ -3,6 +3,7 @@ using UnityEngine;
 using System;
 using System.Linq;
 using System.Collections.Generic;
+using Cysharp.Threading.Tasks;
 using UniRx;
 using UniRx.Triggers;
 using Extensions;
@@ -90,16 +91,23 @@ namespace Modules.ObjectPool
 
             if (cachedObjects.Contains(target)) { return; }
 
-            if (onRelease != null)
+            var task = UniTask.Defer(async () =>
             {
-                onRelease.OnNext(target);
-            }
+                await UniTask.Yield(PlayerLoopTiming.LastPostLateUpdate);
 
-            UnityUtility.SetParent(target.gameObject, instance);
+                if (onRelease != null)
+                {
+                    onRelease.OnNext(target);
+                }
+
+                UnityUtility.SetParent(target.gameObject, instance);
                 
-            target.transform.Reset();
+                target.transform.Reset();
 
-            cachedObjects.Enqueue(target);
+                cachedObjects.Enqueue(target);
+            });
+
+            task.Forget();
         }
 
         public void Resize(int count)
