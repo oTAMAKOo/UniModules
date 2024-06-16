@@ -1,4 +1,4 @@
-﻿
+
 using UnityEngine;
 using System;
 using System.Linq;
@@ -94,6 +94,10 @@ namespace Modules.ObjectPool
             var task = UniTask.Defer(async () =>
             {
                 await UniTask.Yield(PlayerLoopTiming.LastPostLateUpdate);
+
+                if (UnityUtility.IsNull(target)) { return; }
+
+                if (UnityUtility.IsNull(instance)) { return; }
 
                 if (onRelease != null)
                 {
