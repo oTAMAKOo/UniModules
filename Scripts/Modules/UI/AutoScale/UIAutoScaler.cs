@@ -1,4 +1,4 @@
-﻿﻿﻿
+﻿
 using UnityEngine;
 using UnityEngine.EventSystems;
 using Extensions;
@@ -22,6 +22,15 @@ namespace Modules.UI
         //----- property -----
 
         //----- method -----
+
+        protected override void Start()
+        {
+            base.Start();
+
+            if(UnityUtility.IsNull(target)) { return; }
+
+            UpdateScale();
+        }
 
         void Update()
         {
