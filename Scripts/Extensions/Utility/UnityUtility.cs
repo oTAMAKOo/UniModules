@@ -22,6 +22,8 @@ namespace Extensions
 
         public static bool IsPlaying { get; private set; }
 
+        public static float RealtimeSinceStartup { get; private set; }
+
         #if UNITY_EDITOR
 
         [InitializeOnLoadMethod]
@@ -48,6 +50,7 @@ namespace Extensions
             void Update()
             {
                 IsPlaying = Application.isPlaying;
+                RealtimeSinceStartup = Time.realtimeSinceStartup;
             }
 
             Observable.EveryUpdate().Subscribe(_ => Update());
