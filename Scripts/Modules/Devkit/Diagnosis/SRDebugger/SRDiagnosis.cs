@@ -61,7 +61,19 @@ namespace Modules.Devkit.Diagnosis.SRDebugger
 
         public bool IsEnable
         {
-            get { return isEnable.HasValue ? isEnable.Value : UnityEngine.Debug.isDebugBuild; }
+            get
+            {
+                #if FORCE_SRDIAGNOSIS_ENABLE
+
+                return true;
+
+                #else
+
+                return isEnable.HasValue ? isEnable.Value : UnityEngine.Debug.isDebugBuild;
+
+                #endif
+            }
+
             set { isEnable = value; }
         }
 
@@ -98,7 +110,8 @@ namespace Modules.Devkit.Diagnosis.SRDebugger
 
                             if (root != null && root.Canvas != null)
                             {
-                                var srContent = root.Canvas.gameObject.Children().FirstOrDefault(x => x.name == "SR_Content");
+                                var srContent =
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           root.Canvas.gameObject.Children().FirstOrDefault(x => x.name == "SR_Content");
                                 UnityUtility.GetOrAddComponent<SafeAreaAdjuster>(srContent);
                             }
                         }
@@ -190,6 +203,6 @@ namespace Modules.Devkit.Diagnosis.SRDebugger
             }            
         }
 
-        #endif
-    }
+                #endif
+            }
 }
