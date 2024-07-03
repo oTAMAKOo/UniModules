@@ -1,4 +1,5 @@
 
+using UnityEngine;
 using UnityEngine.Networking;
 using System;
 using System.Linq;
@@ -11,6 +12,7 @@ using Extensions;
 using MessagePack;
 using MessagePack.Resolvers;
 using Modules.MessagePack;
+using Modules.Devkit.Console;
 
 using static Extensions.CompressionExtensions;
 
@@ -310,7 +312,18 @@ namespace Modules.Net.WebRequest
                                     break;
                             }
 
-                            result = MessagePackSerializer.Deserialize<TResult>(value, options);
+                            try
+                            {
+                                result = MessagePackSerializer.Deserialize<TResult>(value, options);
+                            }
+                            catch
+                            {
+                                var json = MessagePackSerializer.ConvertToJson(value, options);
+
+                                UnityConsole.Info($"MessagePack Deserialize Failed.\n\n{json}", LogType.Error);
+
+                                throw;
+                            }
                         }
                     }
                     break;
