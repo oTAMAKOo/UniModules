@@ -36,7 +36,7 @@ namespace Modules.Net.WebRequest
         //----- property -----
 
         /// <summary> リクエストタイプ. </summary>
-        public string Method { get { return request.method; } }
+        public Method Method { get; private set; }
 
         /// <summary> URL. </summary>
         public string HostUrl { get; private set; }
@@ -46,10 +46,12 @@ namespace Modules.Net.WebRequest
 
         /// <summary> ヘッダー情報. </summary>
         public IDictionary<string, Tuple<bool, string>> Headers { get; private set; }
-        
 
         /// <summary> URLパラメータ. </summary>
         public IDictionary<string, object> UrlParams { get; private set; }
+
+        /// <summary> 送信データ. </summary>
+        public byte[] RequestData { get; private set; }
 
         /// <summary> 送信データの圧縮. </summary>
         public DataCompressType CompressRequestData { get; private set; }
@@ -59,12 +61,6 @@ namespace Modules.Net.WebRequest
 
         /// <summary> 通信データフォーマット. </summary>
         public DataFormat Format { get; private set; }
-
-        /// <summary> サーバーへ送信するデータを扱うオブジェクト. </summary>
-        public UploadHandler UploadHandler { get; private set; }
-
-        /// <summary> サーバーから受信するデータを扱うオブジェクト. </summary>
-        public DownloadHandler DownloadHandler { get; private set; }
 
         /// <summary> タイムアウト時間(秒). </summary>
         public virtual int TimeOutSeconds { get { return 10; } }
@@ -96,8 +92,6 @@ namespace Modules.Net.WebRequest
             Headers = new Dictionary<string, Tuple<bool, string>>();
             UrlParams = new Dictionary<string, object>();
 
-            DownloadHandler = CreateDownloadHandler();
-
             IsConnecting = false;
             IsCanceled = false;
         }
@@ -119,6 +113,11 @@ namespace Modules.Net.WebRequest
             }
 
             GC.SuppressFinalize(this);
+        }
+
+        public void SetMethod(Method method)
+        {
+            Method = method;
         }
 
         public void SetRequestDataCompress(DataCompressType compressType)
@@ -451,6 +450,8 @@ namespace Modules.Net.WebRequest
                 bytes = bytes.Encrypt(cryptoKey);
             }
 
+            RequestData = bytes;
+
             return new UploadHandlerRaw(bytes);
         }
 
@@ -487,13 +488,13 @@ namespace Modules.Net.WebRequest
 
         public string GetBodyString()
         {
-            if (UploadHandler == null){ return null; }
+            if (request == null) { return null; }
 
-            if (UploadHandler.data == null){ return null; }
+            if (RequestData.IsEmpty()){ return null; }
 
             var json = string.Empty;
 
-            var bytes = UploadHandler.data;
+            var bytes = RequestData;
 
             if (encryptBody)
             {
@@ -504,7 +505,7 @@ namespace Modules.Net.WebRequest
             {
                 case DataFormat.Json:
                     {
-                        switch (CompressResponseData)
+                        switch (CompressRequestData)
                         {
                             case DataCompressType.GZip:
                                 bytes = bytes.Decompress(CompressionAlgorithm.GZip);
@@ -523,7 +524,7 @@ namespace Modules.Net.WebRequest
                     {
                         var options = StandardResolverAllowPrivate.Options.WithResolver(UnityCustomResolver.Instance);
 
-                        switch (CompressResponseData)
+                        switch (CompressRequestData)
                         {
                             case DataCompressType.GZip:
                                 bytes = bytes.Decompress(CompressionAlgorithm.GZip);

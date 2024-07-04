@@ -147,11 +147,11 @@ namespace Modules.Net.WebRequest
 				var tabData = new Tuple<string, string>[]
                 {
                     Tuple.Create("Result", info.Result),
+                    Tuple.Create("Header", info.GetHeaders()),
+                    Tuple.Create("UriParam", info.GetUriParams()),
+                    Tuple.Create("Body", info.GetBody()),
                     Tuple.Create("Exception", info.Exception != null ? info.Exception.ToString() : string.Empty),
                     Tuple.Create("StackTrace", info.StackTrace),
-                    Tuple.Create("Header", info.Headers),
-                    Tuple.Create("UriParam", info.UriParams),
-                    Tuple.Create("Body", info.Body),
                 };
 
 				tabData = tabData.Where(x => !string.IsNullOrEmpty(x.Item2)).ToArray();

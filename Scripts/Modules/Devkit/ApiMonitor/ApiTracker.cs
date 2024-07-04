@@ -49,13 +49,9 @@ namespace Modules.Net.WebRequest
         {
             var url = webRequest.HostUrl.Replace(ServerUrl, string.Empty);
 
-            var info = new ApiInfo(currentTrackerId++)
+            var info = new ApiInfo(currentTrackerId++, webRequest)
             {
                 Url = url,
-                Request = GetRequestType(webRequest),
-                Headers = webRequest.GetHeaderString(),
-                UriParams = webRequest.GetUrlParamsString(),
-                Body = webRequest.GetBodyString(),
                 Status = ApiInfo.RequestStatus.Connection,
                 StackTrace = StackTraceUtility.ExtractStackTrace(),
                 Start = DateTime.Now,
@@ -167,29 +163,6 @@ namespace Modules.Net.WebRequest
             {
                 onUpdateInfo.OnNext(Unit.Default);
             }
-        }
-
-        private ApiInfo.RequestType GetRequestType(IWebRequestClient webRequest)
-        {
-            var requestType = ApiInfo.RequestType.None;
-
-            switch (webRequest.Method)
-            {
-                case "GET":
-                    requestType = ApiInfo.RequestType.Get;
-                    break;
-                case "POST":
-                    requestType = ApiInfo.RequestType.Post;
-                    break;
-                case "PUT":
-                    requestType = ApiInfo.RequestType.Put;
-                    break;
-                case "DELETE":
-                    requestType = ApiInfo.RequestType.Delete;
-                    break;
-            }
-
-            return requestType;
         }
 
         public IObservable<Unit> OnUpdateInfoAsObservable()

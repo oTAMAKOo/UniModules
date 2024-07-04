@@ -17,7 +17,7 @@ namespace Modules.Net.WebRequest
         //----- method -----
 
         /// <summary> リクエストタイプ. </summary>
-        string Method { get; }
+        Method Method { get; }
 
         /// <summary> URL. </summary>
         string HostUrl { get; }
@@ -58,6 +58,8 @@ namespace Modules.Net.WebRequest
         //----- method -----
 
         void Initialize(string hostUrl, DataFormat format = DataFormat.MessagePack);
+
+        void SetMethod(Method method);
 
         void SetRequestDataCompress(DataCompressType compressType);
 

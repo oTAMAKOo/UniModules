@@ -8,6 +8,22 @@ using Extensions;
 
 namespace Modules.Net.WebRequest
 {
+    public enum Method
+    {
+        None,
+
+        [Label("POST")]
+        Post,
+        [Label("PUT")]
+        Put,
+        [Label("PATCH")]
+        Patch,
+        [Label("GET")]
+        Get,
+        [Label("DELETE")]
+        Delete,
+    }
+
     public enum DataFormat
     {
         Json,
@@ -112,6 +128,8 @@ namespace Modules.Net.WebRequest
         {
             using (webRequest)
             {
+                webRequest.SetMethod(Method.Get);
+
                 var taskFunc = webRequest.Get<TResult>(progress);
 
                 var result = await Request(webRequest, taskFunc, parallel);
@@ -125,6 +143,8 @@ namespace Modules.Net.WebRequest
         {
             using (webRequest)
             {
+                webRequest.SetMethod(Method.Post);
+
                 var taskFunc = webRequest.Post<TResult, TContent>(content, progress);
 
                 var result = await Request(webRequest, taskFunc, parallel);
@@ -138,6 +158,8 @@ namespace Modules.Net.WebRequest
         {
             using (webRequest)
             {
+                webRequest.SetMethod(Method.Put);
+
                 var taskFunc = webRequest.Put<TResult, TContent>(content, progress);
 
                 var result = await Request(webRequest, taskFunc, parallel);
@@ -151,6 +173,8 @@ namespace Modules.Net.WebRequest
         {
             using (webRequest)
             {
+                webRequest.SetMethod(Method.Patch);
+
                 var taskFunc = webRequest.Patch<TResult, TContent>(content, progress);
 
                 var result = await Request(webRequest, taskFunc, parallel);
@@ -164,6 +188,8 @@ namespace Modules.Net.WebRequest
         {
             using (webRequest)
             {
+                webRequest.SetMethod(Method.Delete);
+
                 var taskFunc = webRequest.Delete<TResult>(progress);
 
                 var result = await Request(webRequest, taskFunc, parallel);

@@ -1,26 +1,11 @@
 ﻿
 using System;
-using Extensions;
 
 namespace Modules.Net.WebRequest
 {
     public class ApiInfo
     {
         //----- params -----
-
-        public enum RequestType
-        {
-            None,
-
-            [Label("POST")]
-            Post,
-            [Label("PUT")]
-            Put,
-            [Label("GET")]
-            Get,
-            [Label("DELETE")]
-            Delete,
-        }
 
         public enum RequestStatus
         {
@@ -35,9 +20,19 @@ namespace Modules.Net.WebRequest
 
         //----- field -----
 
+        private string headers = null;
+
+        private string uriParams = null;
+
+        private string body = null;
+
         //----- property -----
 
         public int Id { get; private set; }
+
+        public IWebRequestClient WebRequest { get; private set; }
+
+        public Method Method { get { return WebRequest.Method; } }
 
         public DateTime? Start { get; set; }
 
@@ -45,15 +40,7 @@ namespace Modules.Net.WebRequest
 
         public string Url { get; set; }
 
-        public RequestType Request { get; set; }
-
         public RequestStatus Status { get; set; }
-
-        public string Headers { get; set; }
-
-        public string UriParams { get; set; }
-
-        public string Body { get; set; }
 
         public ulong RetryCount { get; set; }
 
@@ -69,9 +56,37 @@ namespace Modules.Net.WebRequest
 
         //----- method -----
 
-        public ApiInfo(int id)
+        public ApiInfo(int id, IWebRequestClient webRequest)
         {
             Id = id;
+            WebRequest = webRequest;
+        }
+
+        public string GetHeaders()
+        {
+            if (!string.IsNullOrEmpty(headers)){ return headers; }
+
+            headers = WebRequest.GetHeaderString();
+
+            return headers;
+        }
+
+        public string GetUriParams()
+        {
+            if (!string.IsNullOrEmpty(uriParams)){ return uriParams; }
+
+            uriParams = WebRequest.GetUrlParamsString();
+
+            return uriParams;
+        }
+
+        public string GetBody()
+        {
+            if (!string.IsNullOrEmpty(body)){ return body; }
+
+            body = WebRequest.GetBodyString();
+
+            return body;
         }
     }
 }

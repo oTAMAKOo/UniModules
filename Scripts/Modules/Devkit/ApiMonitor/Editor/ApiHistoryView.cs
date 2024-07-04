@@ -59,7 +59,7 @@ namespace Modules.Net.WebRequest
 
         private ApiInfo[] contentsInfos = null;
 
-        private Dictionary<ApiInfo.RequestType, Texture2D> statusLabelTexture = null;
+        private Dictionary<Method, Texture2D> statusLabelTexture = null;
         private Dictionary<ApiInfo.RequestStatus, Texture2D> requestStatusTexture = null;
 
         private GUIStyle statusLabelStyle = null;
@@ -99,8 +99,8 @@ namespace Modules.Net.WebRequest
                 { Column.StatusCode,  new ColumnInfo("StatusCode", 75) },
                 { Column.RetryCount,  new ColumnInfo("RetryCount", 80) },
                 { Column.ElapsedTime, new ColumnInfo("Time", 80) },
-                { Column.StartTime,   new ColumnInfo("StartTime", 100) },
-                { Column.FinishTime,  new ColumnInfo("FinishTime", 100) },
+                { Column.StartTime,   new ColumnInfo("StartTime", 135) },
+                { Column.FinishTime,  new ColumnInfo("FinishTime", 135) },
             };
 
             foreach (var item in columnTable)
@@ -135,12 +135,12 @@ namespace Modules.Net.WebRequest
 
         private void LoadTextures()
         {
-            statusLabelTexture = new Dictionary<ApiInfo.RequestType, Texture2D>()
+            statusLabelTexture = new Dictionary<Method, Texture2D>()
             {
-                { ApiInfo.RequestType.Post,   EditorGUIUtility.FindTexture("sv_label_3") },
-                { ApiInfo.RequestType.Put,    EditorGUIUtility.FindTexture("sv_label_5") },
-                { ApiInfo.RequestType.Get,    EditorGUIUtility.FindTexture("sv_label_1") },
-                { ApiInfo.RequestType.Delete, EditorGUIUtility.FindTexture("sv_label_7") },
+                { Method.Post,   EditorGUIUtility.FindTexture("sv_label_3") },
+                { Method.Put,    EditorGUIUtility.FindTexture("sv_label_5") },
+                { Method.Get,    EditorGUIUtility.FindTexture("sv_label_1") },
+                { Method.Delete, EditorGUIUtility.FindTexture("sv_label_7") },
             };
 
             requestStatusTexture = new Dictionary<ApiInfo.RequestStatus, Texture2D>()
@@ -287,18 +287,23 @@ namespace Modules.Net.WebRequest
 
                     case Column.Type:
                         {
-                            var texture = statusLabelTexture.GetValueOrDefault(info.Request);
+                            var method = info.Method;
 
-                            if (texture != null)
+                            if (method != Method.None)
                             {
-                                statusLabelStyle.normal.background = texture;
+                                var texture = statusLabelTexture.GetValueOrDefault(method);
+
+                                if (texture != null)
+                                {
+                                    statusLabelStyle.normal.background = texture;
+                                }
+
+                                var requestName = method.ToLabelName();
+
+                                rect.position += new Vector2(4f, 2f);
+
+                                EditorGUI.LabelField(rect, requestName, statusLabelStyle);
                             }
-
-                            var requestName = info.Request.ToLabelName();
-
-                            rect.position += new Vector2(4f, 2f);
-
-                            EditorGUI.LabelField(rect, requestName, statusLabelStyle);
                         }
                         break;
 

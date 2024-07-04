@@ -68,10 +68,10 @@ namespace Modules.Net.WebRequest
         /// <summary> 成功時イベント. </summary>
         protected override void OnComplete<TResult>(TWebRequest webRequest, TResult result, double totalMilliseconds)
         {
-            if (LogEnable)
-            {
-                var json = string.Empty;
+            var json = string.Empty;
 
+            void SetResultJson()
+            {
                 switch (Format)
                 {
                     case DataFormat.Json:
@@ -93,6 +93,25 @@ namespace Modules.Net.WebRequest
                         }
                         break;
                 }
+            }
+
+            #if UNITY_EDITOR
+
+            if (string.IsNullOrEmpty(json))
+            {
+                SetResultJson();
+            }
+
+            ApiTracker.Instance.OnComplete(webRequest, json, totalMilliseconds);
+
+            #endif
+
+            if (LogEnable)
+            {
+                if (string.IsNullOrEmpty(json))
+                {
+                    SetResultJson();
+                }
 
                 var builder = new StringBuilder();
 
@@ -103,12 +122,6 @@ namespace Modules.Net.WebRequest
                 builder.AppendLine();
 
                 UnityConsole.Event(ConsoleEventName, ConsoleEventColor, builder.ToString());
-
-                #if UNITY_EDITOR
-
-                ApiTracker.Instance.OnComplete(webRequest, json, totalMilliseconds);
-
-                #endif
             }
         }
 
