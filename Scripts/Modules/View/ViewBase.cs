@@ -3,7 +3,7 @@ using UnityEngine;
 
 namespace Modules.View
 {
-    public abstract class ViewBase<TViewModel> : MonoBehaviour, IView<TViewModel> where TViewModel : ViewModel, new()
+    public abstract class ViewBase<TViewModel> : MonoBehaviour, IView<TViewModel> where TViewModel : ViewModel
     {
         //----- params -----
 

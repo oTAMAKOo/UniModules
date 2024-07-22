@@ -13,7 +13,7 @@ namespace Modules.View
         ViewModel GetViewModel();
     }
 
-    public interface IView<TViewModel> where TViewModel : ViewModel, new(){  }
+    public interface IView<TViewModel> where TViewModel : ViewModel{  }
 
     public static class ViewExtensions
     {
@@ -28,7 +28,7 @@ namespace Modules.View
             viewModelCache = new Dictionary<MonoBehaviour, ViewModel>();
         }
 
-        public static TViewModel GetViewModel<TViewModel>(this IView<TViewModel> view) where TViewModel : ViewModel, new()
+        public static TViewModel GetViewModel<TViewModel>(this IView<TViewModel> view) where TViewModel : ViewModel
         {
             CleanCache();
 
@@ -72,7 +72,7 @@ namespace Modules.View
             return viewModel as TViewModel;
         }
 
-        public static void RefreshViewModel<TViewModel>(this IView<TViewModel> view) where TViewModel : ViewModel, new()
+        public static void RefreshViewModel<TViewModel>(this IView<TViewModel> view) where TViewModel : ViewModel
         {
             var monoBehaviour = view as MonoBehaviour;
 
