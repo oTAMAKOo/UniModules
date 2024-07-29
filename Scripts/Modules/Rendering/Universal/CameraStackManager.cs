@@ -83,18 +83,21 @@ namespace Modules.Rendering.Universal
 
             if (cameraStackTarget == null){ return; }
 
-            if (!cameraStackTargets.Contains(cameraStackTarget))
-            {
-                cameraStackTargets.Add(cameraStackTarget);
-            }
+            if (cameraStackTargets.Contains(cameraStackTarget)){ return; }
+            
+            var cameraData = UnityUtility.GetComponent<UniversalAdditionalCameraData>(camera);
+
+            cameraData.renderType = CameraRenderType.Overlay;
 
             camera.OnDestroyAsObservable()
                 .Subscribe(_ =>
-                    {
-                        RemoveCameraStackTarget(cameraStackTarget);
-                        UpdateCurrentCameraStack();
-                    })
+                   {
+                       RemoveCameraStackTarget(cameraStackTarget);
+                       UpdateCurrentCameraStack();
+                   })
                 .AddTo(Disposable);
+
+            cameraStackTargets.Add(cameraStackTarget);
         }
 
         public void RemoveStackCamera(Camera camera)
