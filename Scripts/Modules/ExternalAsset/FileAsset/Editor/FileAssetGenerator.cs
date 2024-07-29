@@ -53,6 +53,8 @@ namespace Modules.ExternalAssets
                 var source = PathUtility.Combine(new string[] { UnityPathUtility.GetProjectFolderPath(), externalAssetPath, assetInfo.ResourcePath });
                 var dest = PathUtility.Combine(new string[] { exportPath, assetInfo.FileName });
 
+                if (!File.Exists(source)){ continue; }
+
 				File.Copy(source, dest, true);
             }
         }
