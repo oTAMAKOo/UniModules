@@ -80,7 +80,6 @@ namespace Modules.TextData.Editor
                     break;
             }
 
-            
             var assetFolderLocalPath = textData.AssetFolderLocalPath;
 
             var assetFileName = TextData.GetAssetFileName(info.Identifier);
