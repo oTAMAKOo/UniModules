@@ -299,7 +299,7 @@ namespace Modules.TextData.Editor
                 return null;
             }
 
-            var indexFile = Directory.EnumerateFiles(recordDirectory, "*.*", SearchOption.TopDirectoryOnly)
+            var indexFile = Directory.EnumerateFiles(recordDirectory, "*.*", SearchOption.AllDirectories)
                 .Where(x => Path.GetExtension(x) == IndexFileExtension)
                 .Select(x => PathUtility.ConvertPathSeparator(x))
                 .FirstOrDefault();
