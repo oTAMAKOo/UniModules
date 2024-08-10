@@ -25,14 +25,14 @@ namespace Modules.Cache
 
                 void DeleteSprites()
                 {
-                    if (targets.IsEmpty()){ return; }
-
-                    foreach (var target in targets)
+                    lock (targets)
                     {
-                        UnityUtility.SafeDelete(target);
-                    }
+                        if (targets.IsEmpty()){ return; }
 
-                    targets.Clear();
+                        targets.ForEach(x => UnityUtility.SafeDelete(x));   
+
+                        targets.Clear();
+                    }
                 }
 
                 Observable.EveryEndOfFrame().Subscribe(_ => DeleteSprites());
@@ -42,7 +42,10 @@ namespace Modules.Cache
 
             public void DeleteRequest(Sprite sprite)
             {
-                targets.Add(sprite);
+                lock (targets)
+                {
+                    targets.Add(sprite);
+                }
             }
         }
 
