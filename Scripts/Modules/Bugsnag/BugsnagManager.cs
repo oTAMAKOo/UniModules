@@ -87,6 +87,8 @@ namespace Modules.Bugsnag
 
         public void AddGlobalMetadata(Enum section, string key, object value)
         {
+            if (!IsEnable) { return; }
+
             var sectionName = section.ToLabelName();
 
             if (string.IsNullOrEmpty(sectionName) || string.IsNullOrEmpty(key) || value == null)
