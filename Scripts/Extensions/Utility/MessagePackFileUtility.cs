@@ -53,7 +53,7 @@ namespace Extensions
 
         public static async UniTask<T> ReadAsync<T>(string filePath, AesCryptoKey cryptoKey = null) where T : class
         {
-            await CopyStreamingToTemporary(filePath);
+            filePath = await CopyStreamingToTemporary(filePath);
 
             if (!File.Exists(filePath)){ return null; }
 
@@ -85,7 +85,7 @@ namespace Extensions
 
         #pragma warning disable CS1998
 
-        private static async UniTask CopyStreamingToTemporary(string filePath)
+        private static async UniTask<string> CopyStreamingToTemporary(string filePath)
         {
             #if UNITY_ANDROID
 
@@ -103,6 +103,8 @@ namespace Extensions
             }
 
             #endif
+
+            return filePath;
         }
 
         #pragma warning restore CS1998
