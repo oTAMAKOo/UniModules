@@ -58,8 +58,17 @@ namespace Modules.MessagePack
 
         public void Serialize(ref MessagePackWriter writer, DateTime value, MessagePackSerializerOptions options)
         {
-            var dateData = value.ToString(DateTimeFormat);
+            var dateData = string.Empty;
 
+            try
+            {
+                dateData = value.ToString(DateTimeFormat);
+            }
+            catch
+            {
+                dateData = value.ToString();
+            }
+            
             writer.Write(dateData);
         }
 
