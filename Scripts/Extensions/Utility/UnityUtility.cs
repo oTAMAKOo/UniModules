@@ -4,7 +4,6 @@ using UnityEngine.SceneManagement;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using Cysharp.Threading.Tasks;
 using UniRx;
 
 #if UNITY_EDITOR
