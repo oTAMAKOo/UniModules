@@ -4,6 +4,7 @@ using UnityEngine.SceneManagement;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using Cysharp.Threading.Tasks;
 using UniRx;
 
 #if UNITY_EDITOR
@@ -30,14 +31,24 @@ namespace Extensions
         private static void InitializeOnLoadMethod()
         {
             Initialize();
+
+            Observable.EveryUpdate().Subscribe(_ => UpdateUnityContents());
         }
 
         #else
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterAssembliesLoaded)]
-        private static void RuntimeInitializeOnLoadMethod()
+        private static void RuntimeInitializeOnAfterAssembliesLoaded()
         {
             Initialize();
+        }
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
+        private static void RuntimeInitializeOnAfterSceneLoad()
+        {
+            MainThreadDispatcher.Initialize();
+
+            Observable.EveryUpdate().Subscribe(_ => UpdateUnityContents());
         }
 
         #endif
@@ -47,15 +58,13 @@ namespace Extensions
             IsBatchMode = Application.isBatchMode;
             IsEditor = Application.installMode == ApplicationInstallMode.Editor;
 
-            void Update()
-            {
-                IsPlaying = Application.isPlaying;
-                RealtimeSinceStartup = Time.realtimeSinceStartup;
-            }
+            UpdateUnityContents();
+        }
 
-            Observable.EveryUpdate().Subscribe(_ => Update());
-
-            Update();
+        private static void UpdateUnityContents()
+        {
+            IsPlaying = Application.isPlaying;
+            RealtimeSinceStartup = Time.realtimeSinceStartup;
         }
 
         #region Object Instantiate
