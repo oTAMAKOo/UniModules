@@ -60,18 +60,30 @@ namespace Modules.TimeUtil
             LastRecoveryTime = lastRecoveryTime;
             FullRecoveryTime = fullRecoveryTime;
 
+            var value = 0d;
+
             if (FullRecoveryTime.HasValue && LastRecoveryTime.HasValue)
             {
                 // 回復に掛かる時間.
                 var recoveryTimeSpan = FullRecoveryTime.Value - LastRecoveryTime.Value;
 
                 // 回復に掛かる時間から現在値を算出.
-                Current = Math.Min(Max, Max - recoveryTimeSpan.TotalSeconds / RecoveryInterval * RecoveryAmount);
+                value = Math.Max(0, Math.Min(Max, Max - recoveryTimeSpan.TotalSeconds / RecoveryInterval * RecoveryAmount));
             }
             else
             {
-                Current = Max;
+                value = Max;
             }
+
+            if (value < 0)
+            {
+                value = Max;
+
+                FullRecoveryTime = null;
+                LastRecoveryTime = null;
+            }
+
+            Current = value;
         }
 
         /// <summary> 次に回復する時間までの残り時間. </summary>
@@ -113,7 +125,7 @@ namespace Modules.TimeUtil
 
             var recoveryTime = (Max - Current) / RecoveryAmount * RecoveryInterval;
 
-            FullRecoveryTime = currentTime.AddSeconds(recoveryTime);
+            FullRecoveryTime = 0 < recoveryTime ? currentTime.AddSeconds(recoveryTime) : currentTime;
 
             LastRecoveryTime = LastRecoveryTime.HasValue ? LastRecoveryTime.Value : currentTime;
 
