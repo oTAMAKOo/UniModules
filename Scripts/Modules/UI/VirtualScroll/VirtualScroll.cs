@@ -126,6 +126,8 @@ namespace Modules.UI
 
         public ScrollRect ScrollRect { get { return scrollRect; } }
 
+        public GameObject ItemPrefab { get { return itemPrefab; } }
+
         public float ScrollPosition
         {
             get
