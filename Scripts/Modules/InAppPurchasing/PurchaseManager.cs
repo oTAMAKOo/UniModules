@@ -1,15 +1,17 @@
-﻿
+
 #if UNITY_PURCHASING
 
 using UnityEngine;
 using UnityEngine.Purchasing;
+using UnityEngine.Purchasing.Extension;
 using System;
 using System.Linq;
 using System.Collections.Generic;
 using System.Text;
+using Cysharp.Threading.Tasks;
+using UniRx;
 using Extensions;
 using Modules.Devkit.Console;
-using UniRx;
 
 namespace Modules.InAppPurchasing
 {
@@ -40,7 +42,8 @@ namespace Modules.InAppPurchasing
         Unknown
     }
 
-    public abstract partial class PurchaseManager : IStoreListener
+    public abstract class PurchaseManager<TInstance> : Singleton<TInstance>, IDetailedStoreListener
+        where TInstance : PurchaseManager<TInstance>
     {
         //----- params -----
 
@@ -141,21 +144,18 @@ namespace Modules.InAppPurchasing
         /// 商品情報更新.
         /// </summary>
         /// <returns></returns>
-        public IObservable<Unit> UpdateProducts()
+        public async UniTask UpdateProducts()
         {
-            return FetchProducts()
-                .Do(x =>
-                    {
-                        if (!IsPurchaseReady)
-                        {
-                            InitializePurchasing(x);
-                        }
-                        else
-                        {
-                            UpdatePurchasing(x);
-                        }
-                    })
-                .AsUnitObservable();
+            var products = await FetchProducts();
+
+            if (!IsPurchaseReady)
+            {
+                InitializePurchasing(products);
+            }
+            else
+            {
+                UpdatePurchasing(products);
+            }
         }
 
         /// <summary>
@@ -203,41 +203,41 @@ namespace Modules.InAppPurchasing
             UnityPurchasing.Initialize(this, builder);
         }
 
-        /// <summary>
-        /// ストア商品リストを更新.
-        /// </summary>
-        /// <param name="productDefinitions"></param>
+        /// <summary> ストア商品リストを更新. </summary>
         private void UpdatePurchasing(ProductDefinition[] productDefinitions)
         {
-            Action successCallback = () =>
+            void OnSuccessCallback()
             {
-                StoreProducts = storeController.products.all
-                    .Where(x => !string.IsNullOrEmpty(x.metadata.localizedTitle))
-                    .Where(x => !string.IsNullOrEmpty(x.metadata.localizedPriceString))
-                    .Where(x => productDefinitions.Any(y => y.id == x.definition.id && y.storeSpecificId == x.definition.storeSpecificId))
-                    .ToArray();
+                OnSuccessUpdatePurchasing(productDefinitions);
+            }
 
-                if (onStoreProductsUpdate != null)
-                {
-                    onStoreProductsUpdate.OnNext(StoreProducts);
-                }
-            };
+            storeController.FetchAdditionalProducts(productDefinitions.ToHashSet(), OnSuccessCallback, OnFailedUpdatePurchasing);
+        }
 
-            Action<InitializationFailureReason> failCallback = reason =>
+        protected virtual void OnSuccessUpdatePurchasing(ProductDefinition[] productDefinitions)
+        {
+            StoreProducts = storeController.products.all
+                .Where(x => !string.IsNullOrEmpty(x.metadata.localizedTitle))
+                .Where(x => !string.IsNullOrEmpty(x.metadata.localizedPriceString))
+                .Where(x => productDefinitions.Any(y => y.id == x.definition.id && y.storeSpecificId == x.definition.storeSpecificId))
+                .ToArray();
+
+            if (onStoreProductsUpdate != null)
             {
-                var message = string.Format("UpdatePurchasing Error.({0})", reason);
+                onStoreProductsUpdate.OnNext(StoreProducts);
+            }
+        }
 
-                UnityConsole.Event(ConsoleEventName, ConsoleEventColor, message, LogType.Error);
-            };
+        protected virtual void OnFailedUpdatePurchasing(InitializationFailureReason reason, string message)
+        {
+            var logMessage = $"UpdatePurchasing Error. ({reason})";
 
-            storeController.FetchAdditionalProducts(productDefinitions.ToHashSet(), successCallback, failCallback);
+            UnityConsole.Event(ConsoleEventName, ConsoleEventColor, logMessage, LogType.Error);
         }
 
         #region Purchase
 
-        /// <summary>
-        /// アイテムの購入.
-        /// </summary>
+        /// <summary> アイテムの購入 </summary>
         protected BuyFailureReason Purchase(string productId, string developerPayload = null)
         {
             var result = PurchaseInternal(productId, developerPayload);
@@ -258,17 +258,20 @@ namespace Modules.InAppPurchasing
             }
             else
             {
-                var message = string.Format("Purchase Error. ({0})", result);
-
-                UnityConsole.Event(ConsoleEventName, ConsoleEventColor, message, LogType.Error);
+                OnPurchaseError(result);
             }
 
             return result;
         }
 
-        /// <summary>
-        /// アイテムの購入.
-        /// </summary>
+        protected virtual void OnPurchaseError(BuyFailureReason reason)
+        {
+            var message = $"Purchase Error. ({reason})";
+
+            UnityConsole.Event(ConsoleEventName, ConsoleEventColor, message, LogType.Error);
+        }
+
+        /// <summary> アイテムの購入 </summary>
         private BuyFailureReason PurchaseInternal(string productId, string developerPayload)
         {
             // コールバックが通知できない場合は何もしない.
@@ -323,9 +326,7 @@ namespace Modules.InAppPurchasing
             }
         }
 
-        /// <summary>
-        /// 購入処理を完了しアイテムを購入完了状態に更新.
-        /// </summary>
+        /// <summary> 購入処理を完了しアイテムを購入完了状態に更新 </summary>
         public void PurchaseFinish(Product product)
         {
             UpdatePendingProduct(product, PurchaseProcessingResult.Complete);
@@ -344,7 +345,7 @@ namespace Modules.InAppPurchasing
 
             if (result != BuyFailureReason.None)
             {
-                var message = string.Format("Restore Error. ({0})", result);
+                var message = $"Restore Error. ({result})";
 
                 UnityConsole.Event(ConsoleEventName, ConsoleEventColor, message);
             }
@@ -546,16 +547,24 @@ namespace Modules.InAppPurchasing
             IsPurchaseReady = true;
         }
 
-        /// <summary>
-        /// IStoreListenerの初期化失敗通知.
-        /// </summary>
+        /// <summary> IStoreListenerの初期化失敗通知. </summary>
         public void OnInitializeFailed(InitializationFailureReason error)
         {
             IsPurchaseReady = false;
             
-            var message = string.Format("InitializeFailed. ({0})", error);
+            var logMessage = $"InitializeFailed. {error}";
 
-            UnityConsole.Event(ConsoleEventName, ConsoleEventColor, message);
+            UnityConsole.Event(ConsoleEventName, ConsoleEventColor, logMessage);
+        }
+
+        /// <summary> IStoreListenerの初期化失敗通知. </summary>
+        public void OnInitializeFailed(InitializationFailureReason error, string message)
+        {
+            IsPurchaseReady = false;
+            
+            var logMessage = $"InitializeFailed. {error}\n\n{message}";
+
+            UnityConsole.Event(ConsoleEventName, ConsoleEventColor, logMessage);
         }
 
         /// <summary>
@@ -619,9 +628,14 @@ namespace Modules.InAppPurchasing
                 onStorePurchaseComplete.OnNext(new PurchaseResult(product, failureReason));
             }
 
-            var message = string.Format("PurchaseFailed. ({0})\n{1}", failureReason, GetProductString(product));
+            var message = $"PurchaseFailed. ({failureReason})\n{GetProductString(product)}";
 
             UnityConsole.Event(ConsoleEventName, ConsoleEventColor, message, LogType.Error);
+        }
+
+        public void OnPurchaseFailed(Product product, PurchaseFailureDescription failureDescription)
+        {
+            OnPurchaseFailed(product, failureDescription.reason);
         }
 
         #endregion
@@ -643,7 +657,7 @@ namespace Modules.InAppPurchasing
         /// 課金アイテムリストを取得.
         /// </summary>
         /// <returns></returns>
-        protected abstract IObservable<ProductDefinition[]> FetchProducts();
+        protected abstract UniTask<ProductDefinition[]> FetchProducts();
     }
 }
 

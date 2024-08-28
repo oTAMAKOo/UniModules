@@ -1,6 +1,7 @@
-﻿﻿
+﻿
 #if UNITY_PURCHASING
 
+using UnityEngine;
 using UnityEngine.Purchasing;
 using System;
 using UniRx;
@@ -48,15 +49,17 @@ namespace Modules.InAppPurchasing
         {
             if (appleExtensions != null)
             {
-                Action<bool> restoreTransactionsCallback = result =>
+                void RestoreTransactionsCallback(bool result, string message)
                 {
+                    Debug.Log($"[ApplePurchasing] OnRestore : {message}");
+
                     if (onRestoreFinish != null)
                     {
                         onRestoreFinish.OnNext(result);
                     }
-                };
+                }
 
-                appleExtensions.RestoreTransactions(restoreTransactionsCallback);
+                appleExtensions.RestoreTransactions(RestoreTransactionsCallback);
             }
         }
 

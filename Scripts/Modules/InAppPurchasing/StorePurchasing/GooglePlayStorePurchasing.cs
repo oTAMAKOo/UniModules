@@ -35,7 +35,7 @@ namespace Modules.InAppPurchasing
 
                 if (googlePlayConfiguration != null)
                 {
-                    Action<Product> onDeferredPurchaseCallback = product =>
+                    void OnDeferredPurchaseCallback(Product product)
                     {
                         OnDeferredPurchase(product);
 
@@ -43,9 +43,9 @@ namespace Modules.InAppPurchasing
                         {
                             onDeferredPurchase.OnNext(product);
                         }
-                    };
+                    }
 
-                    googlePlayConfiguration.SetDeferredPurchaseListener(onDeferredPurchaseCallback);
+                    googlePlayConfiguration.SetDeferredPurchaseListener(OnDeferredPurchaseCallback);
                 }
             }
         }

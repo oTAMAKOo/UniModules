@@ -1,4 +1,4 @@
-﻿
+
 #if UNITY_PURCHASING
 
 using UnityEngine;
@@ -42,7 +42,7 @@ namespace Modules.InAppPurchasing
 
         private static bool ValidateReceipt(string receipt)
         {
-            #if UNITY_PURCHASING_VALIDATE_RECEIPT
+            #if RECEIPT_VALIDATION
 
             #if UNITY_ANDROID || UNITY_IOS || UNITY_STANDALONE_OSX
 
