@@ -1,4 +1,4 @@
-﻿
+
 using UnityEngine;
 using UnityEngine.UI;
 using Unity.Linq;
@@ -77,6 +77,10 @@ namespace Modules.Devkit.Diagnosis.SRDebugger
             set { isEnable = value; }
         }
 
+        public string[] IgnoreWarnings { get; set; }
+
+        public string[] IgnoreErrors { get; set; }
+
         //----- method -----
 
         public void Initialize()
@@ -136,6 +140,9 @@ namespace Modules.Devkit.Diagnosis.SRDebugger
 
                 background.color = defaultColor;
 
+                IgnoreWarnings = new string[0];
+                IgnoreErrors = new string[0];
+
                 initialized = true;
             }
         }
@@ -157,16 +164,22 @@ namespace Modules.Devkit.Diagnosis.SRDebugger
 
             var changeColor = true;
 
-            var ignoreWarnings = new string[]
+            if (logInfo.Type == LogType.Warning)
             {
-                "SpriteAtlasManager.atlasRequested wasn't listened to while",
-            };
-
-            foreach (var ignore in ignoreWarnings)
-            {
-                if (logInfo.Condition.StartsWith(ignore)) { return; }
+                foreach (var ignore in IgnoreWarnings)
+                {
+                    if (logInfo.Condition.StartsWith(ignore)) { return; }
+                }
             }
-            
+
+            if (logInfo.Type == LogType.Error)
+            {
+                foreach (var ignore in IgnoreErrors)
+                {
+                    if (logInfo.Condition.StartsWith(ignore)) { return; }
+                }
+            }
+
             if(currentLogType.HasValue)
             {
                 var priority = LogPriority.IndexOf(x => x == logInfo.Type);
