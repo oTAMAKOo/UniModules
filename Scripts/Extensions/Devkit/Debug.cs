@@ -1,5 +1,5 @@
 ﻿
-#if !UNITY_EDITOR
+#if !UNITY_EDITOR && !ENABLE_DEVKIT
 
 using UnityEngine;
 using Modules.Devkit.Log;

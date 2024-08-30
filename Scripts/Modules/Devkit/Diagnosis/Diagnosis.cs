@@ -83,9 +83,17 @@ namespace Modules.Devkit.Diagnosis
 
 			UnityUtility.SetActive(gameObject, srDiagnosisEnable);
 
-			// FPS.
+            #if !ENABLE_DEVKIT
 
-			fpsStats.Initialize();
+            fpsStats.IsEnable = true;
+            memoryStats.IsEnable = true;
+            srDiagnosis.IsEnable = true;
+
+            #endif
+
+            // FPS.
+
+            fpsStats.Initialize();
 
 			DisplayFpsStats = Prefs.displayFpsStats;
 
