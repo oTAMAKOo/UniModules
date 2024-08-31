@@ -1,4 +1,4 @@
-﻿
+
 using Extensions;
 using UnityEngine;
 using Modules.Devkit.Diagnosis.SRDebugger;
@@ -83,7 +83,7 @@ namespace Modules.Devkit.Diagnosis
 
 			UnityUtility.SetActive(gameObject, srDiagnosisEnable);
 
-            #if !ENABLE_DEVKIT
+            #if ENABLE_DEVKIT
 
             fpsStats.IsEnable = true;
             memoryStats.IsEnable = true;
