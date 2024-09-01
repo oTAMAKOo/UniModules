@@ -33,16 +33,13 @@ namespace Modules.InAppPurchasing
             Product = product;
             Reason = reason;
             Validate = ValidateReceipt(product.receipt);
-
-            if(!Validate)
-            {
-                Debug.LogError("Receipt validate error.");
-            }
         }
 
         private static bool ValidateReceipt(string receipt)
         {
             #if RECEIPT_VALIDATION
+
+            if (string.IsNullOrEmpty(receipt)) { return false; }
 
             #if UNITY_ANDROID || UNITY_IOS || UNITY_STANDALONE_OSX
 
@@ -71,6 +68,7 @@ namespace Modules.InAppPurchasing
             catch (IAPSecurityException)
             {
                 Debug.LogError("[PurchaseManager] Invalid receipt, not unlocking content.");
+
                 return false;
             }
 
