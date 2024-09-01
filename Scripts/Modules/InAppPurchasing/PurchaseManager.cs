@@ -414,7 +414,7 @@ namespace Modules.InAppPurchasing
         /// ストアの商品情報更新通知.
         /// </summary>
         /// <returns></returns>
-        protected IObservable<Product[]> OnStoreProductsUpdateAsObservable()
+        public IObservable<Product[]> OnStoreProductsUpdateAsObservable()
         {
             return onStoreProductsUpdate ?? (onStoreProductsUpdate = new Subject<Product[]>());
         }
@@ -423,7 +423,7 @@ namespace Modules.InAppPurchasing
         /// ストア購入の結果通知.
         /// </summary>
         /// <returns></returns>
-        protected IObservable<PurchaseResult> OnStorePurchaseCompleteAsObservable()
+        public IObservable<PurchaseResult> OnStorePurchaseCompleteAsObservable()
         {
             return onStorePurchaseComplete ?? (onStorePurchaseComplete = new Subject<PurchaseResult>());
         }
@@ -432,7 +432,7 @@ namespace Modules.InAppPurchasing
         /// ストア購入復元を通知.
         /// </summary>
         /// <returns></returns>
-        protected IObservable<Product> OnStorePurchaseRestoreAsObservable()
+        public IObservable<Product> OnStorePurchaseRestoreAsObservable()
         {
             return onStorePurchaseRestore ?? (onStorePurchaseRestore = new Subject<Product>());
         }
