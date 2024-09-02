@@ -85,7 +85,7 @@ namespace Modules.Devkit.Console
         {
             get
             {
-                #if UNITY_EDITOR
+                #if UNITY_EDITOR || ENABLE_DEVKIT
 
 				return true;
 

@@ -1,5 +1,5 @@
 ﻿
-#if !UNITY_EDITOR && !ENABLE_DEVKIT
+#if !UNITY_EDITOR
 
 using UnityEngine;
 using Modules.Devkit.Log;
@@ -13,7 +13,18 @@ public static class Debug
 
     private static bool enable
     {
-        get { return debugBuild || batchMode; }
+        get
+        {
+            #if ENABLE_DEVKIT
+
+            return true;
+
+            #else
+
+            return debugBuild || batchMode;
+
+            #endif
+        }
     }
 
     private static bool debugBuild = false;
