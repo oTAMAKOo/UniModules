@@ -64,19 +64,12 @@ namespace Modules.InAppPurchasing
         // 各ストア用の課金処理オブジェクト.
         protected IStorePurchasing storePurchasing = null;
 
-        protected IAppleExtensions appleExtensions = null;
-
-        protected IGooglePlayStoreExtensions googleExtensions = null;
-
         // 課金リスト更新通知.
         private Subject<Product[]> onStoreProductsUpdate = null;
         // 課金完了通知.
         private Subject<PurchaseResult> onStorePurchaseComplete = null;
         // 課金復元通知.
         private Subject<Product> onStorePurchaseRestore = null;
-
-        // コンビニ決済開始通知.
-        private Subject<Product> onDeferredPurchaseBegin = null;
 
         protected bool initialized = false;
 
@@ -503,18 +496,6 @@ namespace Modules.InAppPurchasing
             storeController = controller;
             storeExtensionProvider = extensions;
 
-            #if UNITY_IOS
-            
-            OnApplePurchaseInitialize(controller, extensions);
-
-            #endif
-
-            #if UNITY_ANDROID
-
-            OnGooglePlayPurchaseInitialize(controller, extensions);
-
-            #endif
-
             // 各ストアの拡張処理.
             if (storePurchasing != null)
             {
@@ -613,11 +594,17 @@ namespace Modules.InAppPurchasing
             }
 
             // コンビニ決済未完了のレシート.
-            if (googleExtensions != null)
+
+            var googlePlayStorePurchasing = storePurchasing as GooglePlayStorePurchasing;
+
+            if (googlePlayStorePurchasing != null)
             {
-                if (googleExtensions.IsPurchasedProductDeferred(product))
+                if (googlePlayStorePurchasing.GooglePlayStoreExtensions != null)
                 {
-                    return PurchaseProcessingResult.Pending;
+                    if (googlePlayStorePurchasing.GooglePlayStoreExtensions.IsPurchasedProductDeferred(product))
+                    {
+                        return PurchaseProcessingResult.Pending;
+                    }
                 }
             }
 
@@ -664,60 +651,6 @@ namespace Modules.InAppPurchasing
         public void OnPurchaseFailed(Product product, PurchaseFailureDescription failureDescription)
         {
             OnPurchaseFailed(product, failureDescription.reason);
-        }
-
-        #endregion
-
-        #region DeferredPurchase
-
-        private void OnDeferredPurchaseBegin(Product product)
-        {
-            var logBuilder = new StringBuilder();
-
-            logBuilder.AppendLine("------- Begin DeferredPurchase -------");
-            logBuilder.AppendLine(GetProductString(product)).AppendLine();
-
-            UnityConsole.Event(ConsoleEventName, ConsoleEventColor, logBuilder.ToString());
-
-            if (onDeferredPurchaseBegin != null)
-            {
-                onDeferredPurchaseBegin.OnNext(product);
-            }
-        }
-
-        public IObservable<Product> OnDeferredPurchaseBeginAsObservable()
-        {
-            return onDeferredPurchaseBegin ?? (onDeferredPurchaseBegin = new Subject<Product>());
-        }
-
-        #endregion
-
-        #region Purchase Apple
-
-        protected virtual void OnApplePurchaseInitialize(IStoreController controller, IExtensionProvider extensions)
-        {
-            appleExtensions = extensions.GetExtension<IAppleExtensions>();
-        }
-
-        #endregion
-
-        #region Purchase GooglePlay
-
-        protected virtual void OnGooglePlayPurchaseInitialize(IStoreController controller, IExtensionProvider extensions)
-        {
-            googleExtensions = extensions.GetExtension<IGooglePlayStoreExtensions>();
-
-            var configurationBuilder = ConfigurationBuilder.Instance(StandardPurchasingModule.Instance());
-
-            if (configurationBuilder != null)
-            {
-                var googlePlayConfiguration = configurationBuilder.Configure<IGooglePlayConfiguration>();
-
-                if (googlePlayConfiguration != null)
-                {
-                    googlePlayConfiguration.SetDeferredPurchaseListener(OnDeferredPurchaseBegin);
-                }
-            }
         }
 
         #endregion

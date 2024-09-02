@@ -21,6 +21,11 @@ namespace Modules.InAppPurchasing
 
         //----- property -----
 
+        public IGooglePlayStoreExtensions GooglePlayStoreExtensions
+        {
+            get { return googleExtensions; }
+        }
+
         //----- method -----
 
         public void Initialize()
