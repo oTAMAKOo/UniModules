@@ -36,7 +36,7 @@ namespace Modules.InAppPurchasing
         NetworkUnavailable,
 
         /// <summary> 購入処理中 </summary>
-        InPurchaseing,
+        InPurchasing,
 
         /// <summary> 不明なエラー </summary>
         Unknown
@@ -93,7 +93,7 @@ namespace Modules.InAppPurchasing
         /// <summary>
         /// 購入中か.
         /// </summary>
-        public bool IsPurchaseing { get; protected set; }
+        public bool IsPurchasing { get; protected set; }
 
         /// <summary>
         /// 各ストア用の課金処理オブジェクト
@@ -110,7 +110,7 @@ namespace Modules.InAppPurchasing
             PendingProducts = new Product[] { };
 
             IsPurchaseReady = false;
-            IsPurchaseing = false;
+            IsPurchasing = false;
 
             SetupStorePurchasing();
 
@@ -281,7 +281,7 @@ namespace Modules.InAppPurchasing
             }
 
             // 購入処理中.
-            if (IsPurchaseing) { return BuyFailureReason.InPurchaseing; }
+            if (IsPurchasing) { return BuyFailureReason.InPurchasing; }
 
             try
             {
@@ -315,7 +315,7 @@ namespace Modules.InAppPurchasing
                     storeController.InitiatePurchase(product);
                 }
 
-                IsPurchaseing = true;
+                IsPurchasing = true;
 
                 return BuyFailureReason.None;
             }
@@ -572,7 +572,7 @@ namespace Modules.InAppPurchasing
         /// </summary>
         public PurchaseProcessingResult ProcessPurchase(PurchaseEventArgs args)
         {
-            IsPurchaseing = false;
+            IsPurchasing = false;
 
             var product = args.purchasedProduct;
 
@@ -636,7 +636,7 @@ namespace Modules.InAppPurchasing
         /// </summary>
         public void OnPurchaseFailed(Product product, PurchaseFailureReason failureReason)
         {
-            IsPurchaseing = false;
+            IsPurchasing = false;
 
             if (onStorePurchaseComplete != null)
             {
