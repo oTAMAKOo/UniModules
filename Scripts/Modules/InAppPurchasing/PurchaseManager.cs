@@ -453,6 +453,13 @@ namespace Modules.InAppPurchasing
                 }
 
                 pendingProducts.Add(product);
+
+                var logBuilder = new StringBuilder();
+
+                logBuilder.AppendLine("------- UpdatePendingProduct [Pending] -------");
+                logBuilder.AppendLine(GetProductString(product)).AppendLine();
+
+                UnityConsole.Event(ConsoleEventName, ConsoleEventColor, logBuilder.ToString());
             }
             else if (result == PurchaseProcessingResult.Complete)
             {
@@ -468,7 +475,7 @@ namespace Modules.InAppPurchasing
 
                 var logBuilder = new StringBuilder();
 
-                logBuilder.AppendLine("------- ConfirmPendingProducts -------");
+                logBuilder.AppendLine("------- UpdatePendingProduct [Complete] -------");
                 logBuilder.AppendLine(GetProductString(product)).AppendLine();
 
                 UnityConsole.Event(ConsoleEventName, ConsoleEventColor, logBuilder.ToString());
