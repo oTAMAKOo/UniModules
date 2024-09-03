@@ -29,8 +29,11 @@ namespace Modules.InAppPurchasing
         /// <summary> 販売されていないアイテムを指定した </summary>
         UnknownItem,
 
-        /// <summary> 課金メッセージを受け取れない </summary>
-        NotReceiveMessage,
+        /// <summary> 課金メッセージを受け取れない(購入) </summary>
+        NoReceivePurchaseMessage,
+
+        /// <summary> 課金メッセージを受け取れない(復元) </summary>
+        NoReceiveRestoreMessage,
 
         /// <summary> 通信不可（課金システムの初期化は完了）</summary>
         NetworkUnavailable,
@@ -277,7 +280,7 @@ namespace Modules.InAppPurchasing
             // コールバックが通知できない場合は何もしない.
             if (onStorePurchaseComplete == null || !onStorePurchaseComplete.HasObservers)
             {
-                return BuyFailureReason.NotReceiveMessage;
+                return BuyFailureReason.NoReceivePurchaseMessage;
             }
 
             // 購入処理中.
@@ -347,7 +350,7 @@ namespace Modules.InAppPurchasing
             {
                 var message = $"Restore Error. ({result})";
 
-                UnityConsole.Event(ConsoleEventName, ConsoleEventColor, message);
+                UnityConsole.Event(ConsoleEventName, ConsoleEventColor, message, LogType.Error);
             }
 
             return result;
@@ -364,7 +367,7 @@ namespace Modules.InAppPurchasing
             // コールバックが通知できない場合は何もしない.
             if (onStorePurchaseRestore == null || !onStorePurchaseRestore.HasObservers)
             {
-                return BuyFailureReason.NotReceiveMessage;
+                return BuyFailureReason.NoReceiveRestoreMessage;
             }
 
             // 通信不可の場合は何もしない.
