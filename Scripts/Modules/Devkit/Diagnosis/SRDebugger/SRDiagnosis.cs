@@ -87,6 +87,9 @@ namespace Modules.Devkit.Diagnosis.SRDebugger
         {
             if (!initialized && IsEnable)
             {
+                IgnoreWarnings = new string[0];
+                IgnoreErrors = new string[0];
+
                 SRDebug.Init();
 
                 var srDebug = SRDebug.Instance;
