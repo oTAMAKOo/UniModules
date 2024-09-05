@@ -1,4 +1,4 @@
-﻿
+
 #if ENABLE_XLUA
 
 using UnityEngine;
@@ -18,7 +18,10 @@ namespace Modules.Scenario.Command
 
 		public override string LuaName { get { return "Show"; } }
 
-		public override string Callback { get { return nameof(LuaCallback); } }
+		public override string Callback 
+        {
+            get { return BuildCallName<Show>(nameof(LuaCallback)); }
+        }
 
 		//----- method -----
 

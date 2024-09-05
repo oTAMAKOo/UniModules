@@ -1,4 +1,4 @@
-﻿
+
 #if ENABLE_XLUA
 
 using XLua;
@@ -16,7 +16,10 @@ namespace Modules.Scenario.Command
 
 		public override string LuaName { get { return "Text"; } }
 
-		public override string Callback { get { return nameof(LuaCallback); } }
+        public override string Callback 
+        {
+            get { return BuildCallName<GetText>(nameof(LuaCallback)); }
+        }
 
 		//----- method -----
 

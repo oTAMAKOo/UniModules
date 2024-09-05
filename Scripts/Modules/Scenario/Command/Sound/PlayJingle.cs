@@ -1,4 +1,4 @@
-﻿
+
 #if (ENABLE_CRIWARE_ADX || ENABLE_CRIWARE_ADX_LE) && ENABLE_XLUA
 
 using Cysharp.Threading.Tasks;
@@ -18,7 +18,10 @@ namespace Modules.Scenario.Command
 
 		public override string LuaName { get { return "PlayJingle"; } }
 
-		public override string Callback { get { return nameof(LuaCallback); } }
+        public override string Callback 
+        {
+            get { return BuildCallName<PlayJingle>(nameof(LuaCallback)); }
+        }
 
 		//----- method -----
 

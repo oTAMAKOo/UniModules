@@ -1,4 +1,4 @@
-﻿
+
 #if ENABLE_XLUA
 
 using UnityEngine.UI;
@@ -23,7 +23,10 @@ namespace Modules.Scenario.Command
 
 		public override string LuaName { get { return "FadeIn"; } }
 
-		public override string Callback { get { return nameof(LuaCallback); } }
+        public override string Callback 
+        {
+            get { return BuildCallName<FadeIn>(nameof(LuaCallback)); }
+        }
 
 		public Graphic TargetGraphic { get; set; }
 

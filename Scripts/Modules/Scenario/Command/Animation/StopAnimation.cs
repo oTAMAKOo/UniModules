@@ -1,4 +1,4 @@
-﻿
+
 #if ENABLE_XLUA
 
 using Modules.Animation;
@@ -17,7 +17,10 @@ namespace Modules.Scenario.Command
 
 		public override string LuaName { get { return "StopAnimation"; } }
 
-		public override string Callback { get { return nameof(LuaCallback); } }
+		public override string Callback 
+        {
+            get { return BuildCallName<StopAnimation>(nameof(LuaCallback)); }
+        }
 
 		//----- method -----
 
