@@ -1,4 +1,4 @@
-
+﻿
 #if ENABLE_XLUA
 
 using UnityEngine;
@@ -20,10 +20,7 @@ namespace Modules.Scenario.Command
 
 		public override string LuaName { get { return "MoveY"; } }
 
-        public override string Callback 
-        {
-            get { return BuildCallName<MoveY>(nameof(LuaCallback)); }
-        }
+		public override string Callback { get { return nameof(LuaCallback); } }
 
 		//----- method -----
 

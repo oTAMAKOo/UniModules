@@ -1,4 +1,4 @@
-
+﻿
 #if ENABLE_XLUA
 
 using UnityEngine;
@@ -17,10 +17,7 @@ namespace Modules.Scenario.Command
 
 		public override string LuaName { get { return "SetPriority"; } }
 
-		public override string Callback 
-        {
-            get { return BuildCallName<SetPriority>(nameof(LuaCallback)); }
-        }
+		public override string Callback { get { return nameof(LuaCallback); } }
 
 		//----- method -----
 

@@ -1,4 +1,4 @@
-
+﻿
 #if ENABLE_XLUA
 
 using Cysharp.Threading.Tasks;
@@ -20,10 +20,7 @@ namespace Modules.Scenario.Command
 
 		public override string LuaName { get { return "Asset.LoadInQueue"; } }
 
-		public override string Callback 
-        {
-            get { return BuildCallName<AssetLoadInQueue>(nameof(LuaCallback)); }
-        }
+		public override string Callback { get { return nameof(LuaCallback); } }
 
 		//----- method -----
 

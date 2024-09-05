@@ -1,4 +1,4 @@
-
+﻿
 #if ENABLE_XLUA
 
 using UnityEngine;
@@ -46,11 +46,6 @@ namespace Modules.Scenario
 			
 			return target as T;
 		}
-
-        protected string BuildCallName<T>(string funcName)
-        {
-            return typeof(T).FullName + $".{funcName}";
-        }
 	}
 }
 

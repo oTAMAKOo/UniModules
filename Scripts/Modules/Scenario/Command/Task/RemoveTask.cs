@@ -1,4 +1,4 @@
-
+﻿
 #if ENABLE_XLUA
 
 using XLua;
@@ -16,10 +16,7 @@ namespace Modules.Scenario.Command
 
         public override string LuaName { get { return "RemoveTask"; } }
 
-        public override string Callback 
-        {
-            get { return BuildCallName<RemoveTask>(nameof(LuaCallback)); }
-        }
+        public override string Callback { get { return nameof(LuaCallback); } }
 
         //----- method -----
 

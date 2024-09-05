@@ -1,4 +1,4 @@
-
+﻿
 #if ENABLE_XLUA
 
 using Modules.Particle;
@@ -17,10 +17,7 @@ namespace Modules.Scenario.Command
 
 		public override string LuaName { get { return "StopParticle"; } }
 
-        public override string Callback 
-        {
-            get { return BuildCallName<StopParticle>(nameof(LuaCallback)); }
-        }
+		public override string Callback { get { return nameof(LuaCallback); } }
 
 		//----- method -----
 

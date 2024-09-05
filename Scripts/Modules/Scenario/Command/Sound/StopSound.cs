@@ -1,4 +1,4 @@
-
+﻿
 #if ENABLE_CRIWARE_ADX || ENABLE_CRIWARE_ADX_LE && ENABLE_XLUA
 
 using Modules.Sound;
@@ -17,10 +17,7 @@ namespace Modules.Scenario.Command
 
 		public override string LuaName { get { return "StopSound"; } }
 
-        public override string Callback 
-        {
-            get { return BuildCallName<StopSound>(nameof(LuaCallback)); }
-        }
+		public override string Callback { get { return nameof(LuaCallback); } }
 
 		//----- method -----
 

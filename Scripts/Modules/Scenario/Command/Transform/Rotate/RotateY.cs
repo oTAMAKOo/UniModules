@@ -1,4 +1,4 @@
-
+﻿
 #if ENABLE_XLUA
 
 using System;
@@ -21,10 +21,7 @@ namespace Modules.Scenario.Command
 
 		public override string LuaName { get { return "RotateY"; } }
 
-        public override string Callback 
-        {
-            get { return BuildCallName<RotateY>(nameof(LuaCallback)); }
-        }
+		public override string Callback { get { return nameof(LuaCallback); } }
 
 		//----- method -----
 
