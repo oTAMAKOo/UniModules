@@ -706,6 +706,8 @@ namespace Modules.ExternalAssets
             managedAssets.SetManageInfos(infos);
 
             Prefs.manifestUpdateRequest = true;
+
+            UnityEditorUtility.SaveAsset(managedAssets);
         }
 
         /// <summary> 除外対象のパスか検証 </summary>
