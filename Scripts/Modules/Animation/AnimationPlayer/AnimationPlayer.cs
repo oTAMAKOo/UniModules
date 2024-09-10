@@ -51,6 +51,9 @@ namespace Modules.Animation
         // Pause前の再生速度.
         private float? pausedSpeed = null;
 
+        // 開始位置.
+        private float startNormalizedTime = float.NegativeInfinity;
+
         [NonSerialized]
         private bool isInitialized = false;
 
@@ -107,6 +110,11 @@ namespace Modules.Animation
             }
         }
 
+        public float StartNormalizedTime
+        {
+            get { return startNormalizedTime; }
+        }
+
         public bool IsInitialized { get { return isInitialized; } }
 
         //----- method -----
@@ -148,8 +156,12 @@ namespace Modules.Animation
             Stop();
         }
 
-        public async UniTask Play(string animationName, int layer = -1, float normalizedTime = float.NegativeInfinity, 
-                                  bool immediate = true, CancellationToken cancelToken = default)
+        public void SetStartNormalizedTime(float normalizedTime)
+        {
+            startNormalizedTime = normalizedTime;
+        }
+
+        public async UniTask Play(string animationName, int layer = -1, bool immediate = true, CancellationToken cancelToken = default)
         {
             if (string.IsNullOrEmpty(animationName)) { return; }
 
@@ -178,7 +190,7 @@ namespace Modules.Animation
                 return;
             }
 
-            PlayAnimator(hash, layer, normalizedTime);
+            PlayAnimator(hash, layer);
 
             // 指定アニメーションへ遷移待ち.
             if (immediate)
@@ -191,7 +203,7 @@ namespace Modules.Animation
 
             try
             {
-                await PlayInternal(hash, layer, normalizedTime, cancelToken);
+                await PlayInternal(hash, layer, cancelToken);
             }
             catch (OperationCanceledException)
             {
@@ -199,7 +211,7 @@ namespace Modules.Animation
             }
         }
 
-        private void PlayAnimator(int hash, int layer, float normalizedTime)
+        private void PlayAnimator(int hash, int layer)
         {
             // リセット.
             Refresh();
@@ -210,7 +222,7 @@ namespace Modules.Animation
             // 再生.
             currentState = State.Play;
             Animator.enabled = true;
-            Animator.Play(hash, layer, normalizedTime);
+            Animator.Play(hash, layer, startNormalizedTime);
         }
 
         private bool IsCurrentState(string animationName, int layer)
@@ -220,7 +232,7 @@ namespace Modules.Animation
             return stateInfo.IsName(animationName);
         }
 
-        private async UniTask PlayInternal(int hash, int layer, float normalizedTime, CancellationToken cancelToken)
+        private async UniTask PlayInternal(int hash, int layer, CancellationToken cancelToken)
         {
             while (true)
             {
@@ -252,7 +264,7 @@ namespace Modules.Animation
                 if (State == State.Stop) { return; }
 
                 // ループ再生の場合は再度再生を行う.
-                PlayAnimator(hash, layer, normalizedTime);
+                PlayAnimator(hash, layer);
 
                 await UniTask.NextFrame(cancelToken);
             }
