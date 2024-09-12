@@ -19,6 +19,9 @@ namespace Modules.ObjectPool
         private GameObject instance = null;
 
         private GameObject prefab = null;
+
+        private HashSet<T> cachingObjects = new HashSet<T>();
+
         private Queue<T> cachedObjects = new Queue<T>();
 
         private Subject<T> onCreate = null;
@@ -89,7 +92,13 @@ namespace Modules.ObjectPool
 
             if (UnityUtility.IsNull(instance)) { return; }
 
+            // キャッシュ済み.
             if (cachedObjects.Contains(target)) { return; }
+
+            // キャッシュへ移動中.
+            if (cachingObjects.Contains(target)){ return; }
+
+            cachingObjects.Add(target);
 
             var task = UniTask.Defer(async () =>
             {
@@ -109,6 +118,8 @@ namespace Modules.ObjectPool
                 target.transform.Reset();
 
                 cachedObjects.Enqueue(target);
+
+                cachingObjects.Remove(target);
             });
 
             task.Forget();
@@ -156,6 +167,7 @@ namespace Modules.ObjectPool
             }
 
             cachedObjects.Clear();
+            cachingObjects.Clear();
         }
 
         public IObservable<T> OnCreateInstanceAsObservable()
