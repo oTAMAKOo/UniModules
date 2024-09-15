@@ -20,8 +20,6 @@ namespace Modules.ObjectPool
 
         private GameObject prefab = null;
 
-        private HashSet<T> cachingObjects = new HashSet<T>();
-
         private Queue<T> cachedObjects = new Queue<T>();
 
         private Subject<T> onCreate = null;
@@ -95,34 +93,20 @@ namespace Modules.ObjectPool
             // キャッシュ済み.
             if (cachedObjects.Contains(target)) { return; }
 
-            // キャッシュへ移動中.
-            if (cachingObjects.Contains(target)){ return; }
+            if (UnityUtility.IsNull(target)) { return; }
 
-            cachingObjects.Add(target);
+            if (UnityUtility.IsNull(instance)) { return; }
 
-            var task = UniTask.Defer(async () =>
-            {
-                await UniTask.Yield(PlayerLoopTiming.LastPostLateUpdate);
-
-                if (UnityUtility.IsNull(target)) { return; }
-
-                if (UnityUtility.IsNull(instance)) { return; }
-
-                if (onRelease != null)
-                {
-                    onRelease.OnNext(target);
-                }
-
-                UnityUtility.SetParent(target.gameObject, instance);
+            UnityUtility.SetParent(target.gameObject, instance);
                 
-                target.transform.Reset();
+            target.transform.Reset();
 
-                cachedObjects.Enqueue(target);
+            cachedObjects.Enqueue(target);
 
-                cachingObjects.Remove(target);
-            });
-
-            task.Forget();
+            if (onRelease != null)
+            {
+                onRelease.OnNext(target);
+            }
         }
 
         public void Resize(int count)
@@ -167,7 +151,6 @@ namespace Modules.ObjectPool
             }
 
             cachedObjects.Clear();
-            cachingObjects.Clear();
         }
 
         public IObservable<T> OnCreateInstanceAsObservable()
