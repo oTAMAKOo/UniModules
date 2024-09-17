@@ -150,7 +150,7 @@ namespace Modules.LocalData
 
             if (immediate)
             {
-                Instance.WriteToFile(data);
+                Instance.WriteToFile(data).Forget();
             }
             else
             {
@@ -166,30 +166,33 @@ namespace Modules.LocalData
 
             await UniTask.Yield(PlayerLoopTiming.LastPostLateUpdate);
 
-            WriteToFile(data);
+            await WriteToFile(data);
 
             saveRequests.Remove(data);
         }
 
-        private void WriteToFile<T>(T data) where T : class, ILocalData, new()
+        private async UniTask WriteToFile<T>(T data) where T : class, ILocalData, new()
         {
-            var type = data.GetType();
-            var className = type.FullName;
-            var filePath = GetFilePath<T>();
-
             if (onSave != null)
             {
                 onSave.OnNext(data);
             }
 
-            try
+            var type = data.GetType();
+            var className = type.FullName;
+            var filePath = GetFilePath<T>();
+
+            await UniTask.RunOnThreadPool(() =>
             {
-                MessagePackFileUtility.Write(filePath, data, Instance.cryptoKey);
-            }
-            catch (Exception ex)
-            {
-                throw new Exception($"LocalData save failed.\nClass:{className}\nFilePath:{filePath}\n\n{ex.Message}", ex);
-            }
+                try
+                {
+                    MessagePackFileUtility.Write(filePath, data, Instance.cryptoKey);
+                }
+                catch (Exception ex)
+                {
+                    throw new Exception($"LocalData save failed.\nClass:{className}\nFilePath:{filePath}\n\n{ex.Message}", ex);
+                }
+            });
 
             UnityConsole.Event(ConsoleEventName, ConsoleEventColor, $"Save : {className}\nFilePath:{filePath}");
         }
