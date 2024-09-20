@@ -171,13 +171,27 @@ namespace Modules.UI.Focus
 
         private async UniTask ApplyCanvasSelf(bool overrideSorting, int sortingOrder)
         {
-            while (!UnityUtility.IsActiveInHierarchy(gameObject))
+            var cancelToken = gameObject.GetCancellationTokenOnDestroy();
+
+            try
             {
-                await UniTask.NextFrame();
+                while (!cancelToken.IsCancellationRequested)
+                {
+                    if (UnityUtility.IsActiveInHierarchy(gameObject)){ break; }
+
+                    await UniTask.NextFrame(cancellationToken: cancelToken);
+                }
+            }
+            catch (OperationCanceledException e)
+            {
+                /* Canceled */
             }
 
-            canvasSelf.overrideSorting = overrideSorting;
-            canvasSelf.sortingOrder = sortingOrder;
+            if (canvasSelf != null)
+            {
+                canvasSelf.overrideSorting = overrideSorting;
+                canvasSelf.sortingOrder = sortingOrder;
+            }
         }
     }
 }
