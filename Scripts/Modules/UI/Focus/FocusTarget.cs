@@ -182,7 +182,7 @@ namespace Modules.UI.Focus
                     await UniTask.NextFrame(cancellationToken: cancelToken);
                 }
             }
-            catch (OperationCanceledException e)
+            catch (OperationCanceledException)
             {
                 /* Canceled */
             }
