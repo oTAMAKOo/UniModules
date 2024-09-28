@@ -181,16 +181,15 @@ namespace Modules.UI.Focus
 
                     await UniTask.NextFrame(cancellationToken: cancelToken);
                 }
+
+                if (UnityUtility.IsNull(canvasSelf)){ return; }
+            
+                canvasSelf.overrideSorting = overrideSorting;
+                canvasSelf.sortingOrder = sortingOrder;
             }
             catch (OperationCanceledException)
             {
                 /* Canceled */
-            }
-
-            if (canvasSelf != null)
-            {
-                canvasSelf.overrideSorting = overrideSorting;
-                canvasSelf.sortingOrder = sortingOrder;
             }
         }
     }
