@@ -175,7 +175,7 @@ namespace Modules.Scene
             }
         }
 
-        private void SuspendCapturedComponents()
+        public void SuspendCapturedComponents()
         {
 			suspendCount++;
 
@@ -193,7 +193,7 @@ namespace Modules.Scene
             }
         }
 
-        private void ResumeCapturedComponents()
+        public void ResumeCapturedComponents()
         {
 			suspendCount--;
 
