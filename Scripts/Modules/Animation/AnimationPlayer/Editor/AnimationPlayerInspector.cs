@@ -1,4 +1,4 @@
-﻿
+
 using UnityEngine;
 using UnityEditor;
 using Extensions;
@@ -31,7 +31,7 @@ namespace Modules.Animation
 
             if (!instance.IsInitialized)
             {
-                Reflection.InvokePrivateMethod(instance, "Initialize");
+                Reflection.InvokePublicMethod(instance, "Initialize");
             }
         }
 
