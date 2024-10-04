@@ -2,6 +2,7 @@
 using UnityEngine;
 using System;
 using System.Linq;
+using System.Collections.Generic;
 using System.Threading;
 using Cysharp.Threading.Tasks;
 using UniRx;
@@ -72,6 +73,13 @@ namespace Modules.Animation
             get { return State != State.Stop; }
         }
 
+        public bool StopOnAwake
+        {
+            get { return stopOnAwake; }
+            
+            set { stopOnAwake = value; }
+        }
+
         public State State
         {
             get
@@ -119,7 +127,7 @@ namespace Modules.Animation
 
         //----- method -----
 
-        private void Initialize()
+        public void Initialize()
         {
             var animator = UnityUtility.GetOrAddComponent<Animator>(gameObject);
 
@@ -455,23 +463,22 @@ namespace Modules.Animation
             }
         }
 
-        /// <summary>
-        /// 配下のAnimatorに対してパラメータをセット.
-        /// </summary>
-        /// <param name="parameters"></param>
-        public void SetParameters(params StateMachineParameter[] parameters)
+        /// <summary> 配下のAnimatorに対してパラメータをセット. </summary>
+        public void SetParameters(IEnumerable<StateMachineParameter> parameters)
         {
-            Unit func(Animator animator)
+            var items = parameters.ToArray();
+
+            Unit Callback(Animator animator)
             {
-                foreach (var parameter in parameters)
+                foreach (var item in items)
                 {
-                    parameter.SetParameter(animator);
+                    item.SetParameter(animator);
                 }
 
                 return Unit.Default;
             }
 
-            DoLazyFunc(func).Forget();
+            DoLazyFunc(Callback).Forget();
         }
 
         /// <summary>
