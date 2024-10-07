@@ -171,6 +171,8 @@ namespace Modules.UI.Focus
 
         private async UniTask ApplyCanvasSelf(bool overrideSorting, int sortingOrder)
         {
+            if (UnityUtility.IsNull(gameObject)){ return; }
+
             var cancelToken = gameObject.GetCancellationTokenOnDestroy();
 
             try
