@@ -114,6 +114,7 @@ namespace Modules.Animation
             set
             {
                 speedRate = value;
+
                 ApplySpeedRate();
             }
         }
@@ -358,11 +359,6 @@ namespace Modules.Animation
             Animator.enabled = false;
         }
 
-        private void ApplySpeedRate()
-        {
-            Animator.speed *= speedRate;
-        }
-
         private void Refresh()
         {
             if (!isInitialized) { return; }
@@ -510,9 +506,26 @@ namespace Modules.Animation
             isPause = pause;
         }
 
-        private void ResetAnimatorSpeed()
+        public void OverridePausedSpeed(float speed)
+        {
+            if (!isPause){ return; }
+
+            if (pausedSpeed.HasValue)
+            {
+                pausedSpeed = speed;
+            }
+        }
+
+        public void ResetAnimatorSpeed()
         {
             Animator.speed = DefaultSpeed;
+        }
+
+        private void ApplySpeedRate()
+        {
+            ResetAnimatorSpeed();
+
+            Animator.speed *= speedRate;
         }
 
         private bool IsAlive()
