@@ -1,6 +1,7 @@
 
 using UnityEngine;
 using System;
+using System.Linq;
 using Cysharp.Threading.Tasks;
 using UniRx;
 using Extensions;
@@ -11,6 +12,20 @@ namespace Modules.Window
     public abstract class Window : MonoBehaviour
     {
         //----- params -----
+
+        public enum WindowStatus
+        {
+            None = 0,
+
+            /// <summary> 準備中 </summary>
+            Prepare,
+            /// <summary> 表示中 </summary>
+            Opened,
+            /// <summary> 閉じる </summary>
+            Close,
+            /// <summary> 閉じた </summary>
+            Closed,
+        }
 
         //----- field -----
 
@@ -24,7 +39,7 @@ namespace Modules.Window
 
         //----- property -----
 
-        public bool Opened { get; private set; }
+        public WindowStatus Status { get; private set; }
 
         /// <summary> ウィンドウが閉じた時に自動でインスタンスを破棄するか </summary>
         public bool DeleteOnClose
@@ -46,11 +61,18 @@ namespace Modules.Window
         {
             var cancelToken = this.GetCancellationTokenOnDestroy();
 
-            if (Opened) { return; }
+            var ignoreOpenStatus = new WindowStatus[]
+            {
+                WindowStatus.Prepare, 
+                WindowStatus.Opened,
+                WindowStatus.Close,
+            };
+
+            if (ignoreOpenStatus.Contains(Status)) { return; }
+
+            Status = WindowStatus.Prepare;
 
             var inputBlock = blockInput ? new BlockInput() : null;
-
-            Opened = true;
 
             await Prepare();
 
@@ -68,6 +90,8 @@ namespace Modules.Window
                 inputBlock = null;
             }
 
+            Status = WindowStatus.Opened;
+
             if (onOpen != null)
             {
                 onOpen.OnNext(Unit.Default);
@@ -78,7 +102,9 @@ namespace Modules.Window
         {
             var cancelToken = this.GetCancellationTokenOnDestroy();
 
-            if (!Opened) { return; }
+            if (Status != WindowStatus.Opened) { return; }
+
+            Status = WindowStatus.Close;
 
             var inputBlock = blockInput ? new BlockInput() : null;
 
@@ -104,7 +130,7 @@ namespace Modules.Window
                 UnityUtility.SafeDelete(gameObject);
             }
 
-            Opened = false;
+            Status = WindowStatus.Closed;
         }
 
         public async UniTask Wait()
