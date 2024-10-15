@@ -184,6 +184,8 @@ namespace Modules.UI.Focus
                     await UniTask.NextFrame(cancellationToken: cancelToken);
                 }
 
+                if (cancelToken.IsCancellationRequested){ return; }
+
                 if (UnityUtility.IsNull(canvasSelf)){ return; }
             
                 canvasSelf.overrideSorting = overrideSorting;
