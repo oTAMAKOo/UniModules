@@ -1,4 +1,4 @@
-﻿
+
 using UnityEngine;
 using UnityEditor;
 using UnityEditor.U2D;
@@ -78,7 +78,13 @@ namespace Modules.UI.DummyContent
                 {
                     UnityEditorUtility.RegisterUndo(instance);
 
-                    var assetGuid = spriteAsset != null ? UnityEditorUtility.GetAssetGUID(spriteAsset.texture) : string.Empty;
+                    var asset = AssetDatabase.IsMainAsset(spriteAsset.texture) ?
+                                (Object)spriteAsset.texture :
+                                (Object)spriteAsset;
+                    
+                    var assetPath = AssetDatabase.GetAssetPath(asset);
+                    
+                    var assetGuid =  AssetDatabase.AssetPathToGUID(assetPath);
 
                     Reflection.SetPrivateField(instance, "assetGuid", assetGuid);
 

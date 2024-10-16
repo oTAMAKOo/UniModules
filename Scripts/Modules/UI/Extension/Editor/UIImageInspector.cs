@@ -1,4 +1,4 @@
-﻿
+
 using System.Linq;
 using UnityEngine;
 using UnityEditor;
@@ -92,9 +92,13 @@ namespace Modules.UI.Extension
                     }
                     else
                     {
-                        var assetPath = AssetDatabase.GetAssetPath(spriteAsset);
-
-                        var assetGuid = AssetDatabase.AssetPathToGUID(assetPath);
+                        var asset = AssetDatabase.IsMainAsset(spriteAsset.texture) ?
+                                    (Object)spriteAsset.texture :
+                                    (Object)spriteAsset;
+                    
+                        var assetPath = AssetDatabase.GetAssetPath(asset);
+                    
+                        var assetGuid =  AssetDatabase.AssetPathToGUID(assetPath);
 
                         Reflection.SetPrivateField(instance, "assetGuid", assetGuid);
 
