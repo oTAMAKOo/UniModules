@@ -83,6 +83,29 @@ namespace Modules.UI.Extension
                 {
                     UnityEditorUtility.RegisterUndo(instance);
 
+                    var assetGuid = string.Empty;
+                    var spriteId = string.Empty;
+
+                    if (spriteAsset != null)
+                    {
+                        var asset = AssetDatabase.IsMainAsset(spriteAsset.texture) ? 
+                                    (Object)spriteAsset.texture : 
+                                    (Object)spriteAsset;
+                       
+                        var assetPath = AssetDatabase.GetAssetPath(asset);
+                    
+                        if (!string.IsNullOrEmpty(assetPath))
+                        {
+                            assetGuid =  AssetDatabase.AssetPathToGUID(assetPath);
+                        }
+
+                        spriteId = spriteAsset.GetSpriteID().ToString();
+                    }
+
+                    Reflection.SetPrivateField(instance, "assetGuid", assetGuid);
+
+                    Reflection.SetPrivateField(instance, "spriteId", spriteId);
+
                     if (spriteAsset == null)
                     {
                         if (image.sprite != null && image.sprite.name == UIImage.DummyAssetName)
@@ -92,20 +115,6 @@ namespace Modules.UI.Extension
                     }
                     else
                     {
-                        var asset = AssetDatabase.IsMainAsset(spriteAsset.texture) ?
-                                    (Object)spriteAsset.texture :
-                                    (Object)spriteAsset;
-                    
-                        var assetPath = AssetDatabase.GetAssetPath(asset);
-                    
-                        var assetGuid =  AssetDatabase.AssetPathToGUID(assetPath);
-
-                        Reflection.SetPrivateField(instance, "assetGuid", assetGuid);
-
-                        var spriteId = spriteAsset.GetSpriteID().ToString();
-
-                        Reflection.SetPrivateField(instance, "spriteId", spriteId);
-
                         Reflection.InvokePrivateMethod(instance, "ApplyDummyAsset");
                     }
                 }

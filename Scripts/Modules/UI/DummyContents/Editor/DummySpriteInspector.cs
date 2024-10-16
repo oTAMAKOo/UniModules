@@ -78,17 +78,26 @@ namespace Modules.UI.DummyContent
                 {
                     UnityEditorUtility.RegisterUndo(instance);
 
-                    var asset = AssetDatabase.IsMainAsset(spriteAsset.texture) ?
-                                (Object)spriteAsset.texture :
-                                (Object)spriteAsset;
+                    var assetGuid = string.Empty;
+                    var spriteId = string.Empty;
+
+                    if (spriteAsset != null)
+                    {
+                        var asset = AssetDatabase.IsMainAsset(spriteAsset.texture) ? 
+                                    (Object)spriteAsset.texture : 
+                                    (Object)spriteAsset;
+                       
+                        var assetPath = AssetDatabase.GetAssetPath(asset);
                     
-                    var assetPath = AssetDatabase.GetAssetPath(asset);
-                    
-                    var assetGuid =  AssetDatabase.AssetPathToGUID(assetPath);
+                        if (!string.IsNullOrEmpty(assetPath))
+                        {
+                            assetGuid =  AssetDatabase.AssetPathToGUID(assetPath);
+                        }
+
+                        spriteId = spriteAsset.GetSpriteID().ToString();
+                    }
 
                     Reflection.SetPrivateField(instance, "assetGuid", assetGuid);
-
-                    var spriteId = spriteAsset != null ? spriteAsset.GetSpriteID().ToString() : string.Empty;
 
                     Reflection.SetPrivateField(instance, "spriteId", spriteId);
 
