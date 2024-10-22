@@ -191,7 +191,7 @@ namespace Modules.UI.Focus
                 canvasSelf.overrideSorting = overrideSorting;
                 canvasSelf.sortingOrder = sortingOrder;
             }
-            catch (OperationCanceledException)
+            catch
             {
                 /* Canceled */
             }
