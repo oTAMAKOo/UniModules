@@ -39,6 +39,8 @@ namespace Modules.Devkit.Console
 
         //----- field -----
 
+        private bool isEnable = false;
+
         public IReadOnlyList<ConsoleInfo> ConsoleInfos { get; private set; }
 
         //----- property -----
@@ -52,11 +54,13 @@ namespace Modules.Devkit.Console
 
         public bool IsEnable()
         {
-            return Prefs.isEnable;
+            return isEnable;
         }
 
         public void SetEnable(bool enable)
         {
+            isEnable = enable;
+
             Prefs.isEnable = enable;
         }
 
@@ -71,6 +75,8 @@ namespace Modules.Devkit.Console
 
         public ConsoleInfo[] Load()
         {
+            isEnable = Prefs.isEnable;
+
             var consoleInfos = new List<ConsoleInfo>();
 
             var configJson = Prefs.config;
