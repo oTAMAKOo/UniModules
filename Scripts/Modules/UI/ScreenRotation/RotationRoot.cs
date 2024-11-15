@@ -1,4 +1,4 @@
-﻿
+
 using UnityEngine;
 using UnityEngine.UI;
 using Extensions.Serialize;
@@ -103,6 +103,8 @@ namespace Modules.UI.ScreenRotation
 		private void Apply()
 		{
 			var rt = transform as RectTransform;
+
+            if (rt == null) { return; }
 
 			SetOriginSize();
 
