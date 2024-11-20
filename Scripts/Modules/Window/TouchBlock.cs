@@ -60,6 +60,8 @@ namespace Modules.Window
 
         public void SetAlpha(float value)
         {
+            if (UnityUtility.IsNull(canvasGroup)){ return; }
+
             fadeAlpha = Mathf.Clamp(value, 0f, 1f);
             canvasGroup.alpha = fadeAlpha;
 
