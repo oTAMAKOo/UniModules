@@ -64,5 +64,15 @@ namespace Extensions.Devkit
 
             return prevWidth;
         }
+
+        public static string ConvertSlashToUnicodeSlash(string text)
+        {
+            return text.Replace('/', '\u2215');
+        }
+        
+        public static string ConvertUnicodeSlashToSlash(string text)
+        {
+            return text.Replace('\u2215', '/');
+        }
     }
 }

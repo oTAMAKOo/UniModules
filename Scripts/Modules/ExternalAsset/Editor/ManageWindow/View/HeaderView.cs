@@ -1,4 +1,4 @@
-﻿
+
 using UnityEngine;
 using UnityEditor;
 using System;
@@ -213,7 +213,7 @@ namespace Modules.ExternalAssets
 
                     var index = displayGroupNames.IndexOf(x => x == groupName);
 
-                    var displayLabels = displayGroupNames.Select(x => ConvertSlashToUnicodeSlash(x)).ToArray();
+                    var displayLabels = displayGroupNames.Select(x => EditorLayoutTools.ConvertSlashToUnicodeSlash(x)).ToArray();
 
                     index = EditorGUILayout.Popup(string.Empty, index, displayLabels, EditorStyles.toolbarDropDown);
 
@@ -263,11 +263,6 @@ namespace Modules.ExternalAssets
             }
 
             return groupNames.Where(x => x.IsMatch(keywords)).ToList();
-        }
-
-        private string ConvertSlashToUnicodeSlash(string text)
-        {
-            return text.Replace('/', '\u2215');
         }
 
         public IObservable<Unit> OnChangeSelectGroupAsObservable()
