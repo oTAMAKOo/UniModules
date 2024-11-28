@@ -84,21 +84,7 @@ namespace Modules.TextData.Components
 
             if (textData == null) { return; }
 
-            if (string.IsNullOrEmpty(guid))
-            {
-                textGuid = null;
-            }
-            else
-            {
-                guid = guid.Trim();
-
-                var text = textData.FindText(guid);
-
-                if (!string.IsNullOrEmpty(text))
-                {
-                    textGuid = guid;
-                }
-            }
+            textGuid = string.IsNullOrEmpty(guid) ? null : guid.Trim();
 
             content = string.Empty;
 
