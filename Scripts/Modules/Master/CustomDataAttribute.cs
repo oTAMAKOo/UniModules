@@ -12,17 +12,16 @@ namespace Modules.Master
 
         //----- property -----
 
-        public string Name { get; private set; }
-
         public int Priority { get; private set; }
 
         //----- method -----
 
-        public CustomDataAttribute(string name, int priority = 0)
+        public CustomDataAttribute(int priority = 0)
         {
-            this.Name = name;
             this.Priority = priority;
         }
+
+        public abstract string GetTag();
 
         public abstract Type GetDataType();
 

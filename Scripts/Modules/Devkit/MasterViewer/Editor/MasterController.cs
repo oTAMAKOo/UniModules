@@ -16,7 +16,7 @@ namespace Modules.Devkit.MasterViewer
     {
         //----- params -----
 
-        private const string CustomDataNameFormat = "[{0}]";
+        private const string CustomDataNameFormat = "[{0}:{1}]";
 
         private sealed class CustomDataInfo
         {
@@ -97,7 +97,9 @@ namespace Modules.Devkit.MasterViewer
 
                 foreach (var attribute in attributes)
                 {
-                    var customDataName = string.Format(CustomDataNameFormat, attribute.Name);
+                    var tag = attribute.GetTag();
+
+                    var customDataName = string.Format(CustomDataNameFormat, tag, property.Name);
 
                     var customDataInfo = new CustomDataInfo()
                     {
