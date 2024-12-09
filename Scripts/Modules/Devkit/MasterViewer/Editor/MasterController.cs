@@ -1,4 +1,4 @@
-﻿﻿
+﻿
 using UnityEngine;
 using UnityEditor;
 using System;
@@ -9,6 +9,7 @@ using System.Collections.Generic;
 using MessagePack;
 using Extensions;
 using Modules.Master;
+using Amazon.Runtime.Internal.Transform;
 
 namespace Modules.Devkit.MasterViewer
 {
@@ -16,11 +17,24 @@ namespace Modules.Devkit.MasterViewer
     {
         //----- params -----
 
+        private const string CustomDataNameFormat = "[{0}]";
+
+        private sealed class CustomDataInfo
+        {
+            public string name = null;
+
+            public PropertyInfo propertyInfo = null;
+
+            public CustomDataAttribute attribute = null;
+        }
+
         //----- field -----
 
         private Dictionary<object, object> changedRecords = null;
 
         private Dictionary<string, PropertyInfo> propertyInfos = null;
+
+        private Dictionary<string, CustomDataInfo> customDataInfos = null;
 
         private bool initialized = false;
 
@@ -59,6 +73,7 @@ namespace Modules.Devkit.MasterViewer
             // レコードのプロパティ情報取得.
 
             propertyInfos = new Dictionary<string, PropertyInfo>();
+            customDataInfos = new Dictionary<string, CustomDataInfo>();
 
             var recordType = Reflection.GetElementTypeOfGenericEnumerable(allRecords);
 
@@ -73,6 +88,27 @@ namespace Modules.Devkit.MasterViewer
                 if (property.CustomAttributes.Any(x => x.AttributeType == typeof(IgnoreMemberAttribute))) { continue; }
 
                 propertyInfos.Add(property.Name, property);
+
+                // CustomDataがついている場合は追加表示登録.
+
+                var attributes = property.GetCustomAttributes(typeof(CustomDataAttribute))
+                    .Select(x => x as CustomDataAttribute)
+                    .OrderBy(x => x.Priority)
+                    .ToArray();
+
+                foreach (var attribute in attributes)
+                {
+                    var customDataName = string.Format(CustomDataNameFormat, attribute.Name);
+
+                    var customDataInfo = new CustomDataInfo()
+                    {
+                        name = customDataName,
+                        propertyInfo = property,
+                        attribute = attribute,
+                    };
+
+                    customDataInfos.Add(customDataName, customDataInfo);
+                }
             }
 
             initialized = true;
@@ -243,15 +279,40 @@ namespace Modules.Devkit.MasterViewer
         /// <summary> 値名取得. </summary>
         public string[] GetValueNames()
         {
-            return propertyInfos.Keys.ToArray();
+            var names = new List<string>();
+
+            foreach (var item in propertyInfos)
+            {
+                names.Add(item.Key);
+
+                var customDataNames = customDataInfos.Values.Where(x => x.propertyInfo == item.Value).ToArray();
+
+                if (customDataNames.IsEmpty()) { continue; }
+
+                names.AddRange(customDataNames.Select(x => x.name));
+            }
+
+            return names.ToArray();
         }
 
         /// <summary> 値の型取得. </summary>
         public Type GetValueType(string valueName)
         {
             var propertyInfo = propertyInfos.GetValueOrDefault(valueName);
-            
-            return propertyInfo.PropertyType;
+
+            if (propertyInfo != null)
+            {
+                return propertyInfo.PropertyType;
+            }
+
+            var customDataInfo = customDataInfos.GetValueOrDefault(valueName);
+
+            if (customDataInfo != null)
+            {
+                return customDataInfo.attribute.GetDataType();
+            }
+
+            return null;
         }
 
         /// <summary> 値の設定. </summary>
@@ -272,7 +333,21 @@ namespace Modules.Devkit.MasterViewer
         {
             var propertyInfo = propertyInfos.GetValueOrDefault(valueName);
 
-            return propertyInfo.GetValue(record);
+            if (propertyInfo != null)
+            {
+                return propertyInfo.GetValue(record);
+            }
+
+            var customDataInfo = customDataInfos.GetValueOrDefault(valueName);
+
+            if (customDataInfo != null)
+            {
+                var value = customDataInfo.propertyInfo.GetValue(record);
+
+                return customDataInfo.attribute.GetCustomData(record, value);
+            }
+
+            return null;
         }
 
         /// <summary> マスター表示名取得. </summary>
@@ -331,5 +406,9 @@ namespace Modules.Devkit.MasterViewer
             return true;
         }
 
+        public bool IsCustomData(string valueName)
+        {
+            return customDataInfos.Values.Any(x => x.name == valueName);
+        }
     }
 }

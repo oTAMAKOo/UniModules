@@ -243,92 +243,100 @@ namespace Modules.Devkit.MasterViewer
             };
 
             var color = masterController.IsChanged(record, valueName) ? EditedColor : Color.white;
+            var isCustomData = masterController.IsCustomData(valueName);
 
             rect.height = EditorGUIUtility.singleLineHeight;
 
-            using (new BackgroundColorScope(color))
+            using (new DisableScope(isCustomData))
             {
-                if (EditorRecordFieldUtility.IsArrayType(valueType))
+                using (new BackgroundColorScope(color))
                 {
-                    var builder = new StringBuilder();
-
-                    if (value != null)
+                    if (EditorRecordFieldUtility.IsArrayType(valueType))
                     {
-                        foreach (var item in (IEnumerable)value)
+                        var builder = new StringBuilder();
+
+                        if (value != null)
                         {
-							builder.AppendFormat("{0},", item.GetType().IsClass ? item.ToJson() : item);
+                            foreach (var item in (IEnumerable)value)
+                            {
+                                builder.AppendFormat("{0},", item.GetType().IsClass ? item.ToJson() : item);
+                            }
                         }
-                    }
 
-                    var text = builder.ToString().TrimEnd(',');
+                        var text = builder.ToString().TrimEnd(',');
 
-                    EditorGUI.LabelField(rect, text, EditorStyles.textField);
+                        EditorGUI.LabelField(rect, text, EditorStyles.textField);
 
-                    if (MasterController.CanEdit || !string.IsNullOrEmpty(text))
-                    {
-                        // メニュー表示と干渉するのでGUILayout.Buttonを使わない.
-                        if (rect.Contains(current.mousePosition) && current.type == EventType.MouseDown && current.button == 0)
+                        if (MasterController.CanEdit || !string.IsNullOrEmpty(text))
                         {
-                            var mouseRect = new Rect(current.mousePosition, Vector2.one);
+                            // メニュー表示と干渉するのでGUILayout.Buttonを使わない.
+                            if (rect.Contains(current.mousePosition) && current.type == EventType.MouseDown &&
+                                current.button == 0)
+                            {
+                                var mouseRect = new Rect(current.mousePosition, Vector2.one);
 
-                            var arrayFieldPopupWindow = new ArrayFieldPopupWindow();
+                                var arrayFieldPopupWindow = new ArrayFieldPopupWindow();
 
-                            arrayFieldPopupWindow.SetContents(valueType, value);
+                                arrayFieldPopupWindow.SetContents(valueType, value);
 
-                            arrayFieldPopupWindow.OnUpdateElementsAsObservable()
-                                .Subscribe(x => onUpdateValue(x))
+                                arrayFieldPopupWindow.OnUpdateElementsAsObservable().Subscribe(x => onUpdateValue(x))
                                 .AddTo(lifetimeDisposable.Disposable);
 
-                            PopupWindow.Show(mouseRect, arrayFieldPopupWindow);
+                                PopupWindow.Show(mouseRect, arrayFieldPopupWindow);
 
-                            current.Use();
+                                current.Use();
+                            }
                         }
                     }
-                }
-                else
-                {
-                    if (valueType == typeof(string))
+                    else
                     {
-                        rect.height = EditorLayoutTools.GetTextFieldHight(value as string, 3);
-                    }
+                        if (valueType == typeof(string))
+                        {
+                            rect.height = EditorLayoutTools.GetTextFieldHight(value as string, 3);
+                        }
 
-                    EditorGUI.BeginChangeCheck();
+                        EditorGUI.BeginChangeCheck();
 
-                    try
-                    {
-                        value = EditorRecordFieldUtility.DrawField(rect, value, valueType);
-                    }
-                    catch (Exception e)
-                    {
-                        Debug.LogErrorFormat("Error: {0}\nValueName = {1}\nValueType = {2}\nValue = {3}\n", e.Message, valueName, valueType, value);
-                    }
+                        try
+                        {
+                            value = EditorRecordFieldUtility.DrawField(rect, value, valueType);
+                        }
+                        catch (Exception e)
+                        {
+                            Debug.LogErrorFormat("Error: {0}\nValueName = {1}\nValueType = {2}\nValue = {3}\n",
+                                                 e.Message, valueName, valueType, value);
+                        }
 
-                    if (EditorGUI.EndChangeCheck() && MasterController.CanEdit)
-                    {
-                        onUpdateValue(value);
+                        if (EditorGUI.EndChangeCheck() && MasterController.CanEdit)
+                        {
+                            onUpdateValue(value);
+                        }
                     }
                 }
             }
 
             // 右クリックでメニュー表示.
-            if (rect.Contains(current.mousePosition) && current.type == EventType.MouseDown && current.button == 1)
+            if (!isCustomData)
             {
-                if (masterController.IsChanged(record, valueName))
+                if (rect.Contains(current.mousePosition) && current.type == EventType.MouseDown && current.button == 1)
                 {
-                    var menu = new GenericMenu();
-
-                    GenericMenu.MenuFunction onResetMenuClick = () =>
+                    if (masterController.IsChanged(record, valueName))
                     {
-                        masterController.ResetValue(record, valueName);
-                    };
+                        var menu = new GenericMenu();
 
-                    menu.AddItem(new GUIContent("Reset"), false, onResetMenuClick);
+                        GenericMenu.MenuFunction onResetMenuClick = () =>
+                        {
+                            masterController.ResetValue(record, valueName);
+                        };
 
-                    menu.ShowAsContext();
+                        menu.AddItem(new GUIContent("Reset"), false, onResetMenuClick);
 
-                    GUI.FocusControl(string.Empty);
+                        menu.ShowAsContext();
 
-                    current.Use();
+                        GUI.FocusControl(string.Empty);
+
+                        current.Use();
+                    }
                 }
             }
         }
