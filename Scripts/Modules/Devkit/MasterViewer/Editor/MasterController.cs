@@ -1,4 +1,4 @@
-﻿
+
 using UnityEngine;
 using UnityEditor;
 using System;
@@ -9,7 +9,6 @@ using System.Collections.Generic;
 using MessagePack;
 using Extensions;
 using Modules.Master;
-using Amazon.Runtime.Internal.Transform;
 
 namespace Modules.Devkit.MasterViewer
 {
