@@ -3,7 +3,7 @@ using System;
 
 namespace Modules.Master
 {
-    [AttributeUsage(AttributeTargets.Property, Inherited = false)]
+    [AttributeUsage(AttributeTargets.Property, AllowMultiple = true)]
     public abstract class CustomDataAttribute : Attribute
     {
         //----- params -----
