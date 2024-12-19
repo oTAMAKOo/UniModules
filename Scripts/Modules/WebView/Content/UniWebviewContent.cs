@@ -148,7 +148,7 @@ namespace Modules.WebView
 
             if (onReceivedMessage != null)
             {
-                onReceivedMessage.OnNext(mes.Scheme);
+                onReceivedMessage.OnNext(mes);
             }
         }
 

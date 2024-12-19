@@ -22,7 +22,7 @@ namespace Modules.WebView
         protected Subject<Unit> onLoadComplete = null;
         protected Subject<Unit> onLoadTimeout = null;
         protected Subject<string> onLoadError = null;
-        protected Subject<string> onReceivedMessage = null;
+        protected Subject<object> onReceivedMessage = null;
         protected Subject<Unit> onClose = null;
 
         //----- property -----
@@ -105,9 +105,9 @@ namespace Modules.WebView
             return onLoadTimeout ?? (onLoadTimeout = new Subject<Unit>());
         }
 
-        public IObservable<string> OnReceivedMessageAsObservable()
+        public IObservable<object> OnReceivedMessageAsObservable()
         {
-            return onReceivedMessage ?? (onReceivedMessage = new Subject<string>());
+            return onReceivedMessage ?? (onReceivedMessage = new Subject<object>());
         }
 
         public IObservable<Unit> OnCloseAsObservable()
