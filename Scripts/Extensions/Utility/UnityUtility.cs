@@ -16,6 +16,8 @@ namespace Extensions
 {
     public static class UnityUtility
     {
+        public static bool IsDebugBuild { get; private set; }
+
         public static bool IsBatchMode { get; private set; }
 
         public static bool IsEditor { get; private set; }
@@ -54,6 +56,7 @@ namespace Extensions
 
         public static void Initialize()
         {
+            IsDebugBuild = Debug.isDebugBuild;
             IsBatchMode = Application.isBatchMode;
             IsEditor = Application.installMode == ApplicationInstallMode.Editor;
 

@@ -97,7 +97,7 @@ namespace Modules.InputControl
 
 		private void AddTracker(ulong blockingId)
         {
-			if (!Debug.isDebugBuild) { return; }
+			if (!UnityUtility.IsDebugBuild) { return; }
 
 			// 実際の呼び出し元開始行数.
             const int StackTraceStartLine = 4;
@@ -124,7 +124,7 @@ namespace Modules.InputControl
 
         private void RemoveTracker(ulong blockingId)
         {
-			if (!Debug.isDebugBuild) { return; }
+			if (!UnityUtility.IsDebugBuild) { return; }
 
             if (trackInputBlock == null){ return; }
 
@@ -136,7 +136,7 @@ namespace Modules.InputControl
 
         private void ClearTracker()
         {
-			if (!Debug.isDebugBuild) { return; }
+			if (!UnityUtility.IsDebugBuild) { return; }
 
             if (trackInputBlock == null){ return; }
 
