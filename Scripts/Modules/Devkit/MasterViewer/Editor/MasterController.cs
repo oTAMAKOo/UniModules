@@ -274,7 +274,19 @@ namespace Modules.Devkit.MasterViewer
         /// <summary> データ保持用レコードインスタンス生成. </summary>
         private object CreateRecordInstance(Type recordType, Dictionary<string, object> arguments)
         {
-            return Activator.CreateInstance(recordType, arguments.Values.ToArray());
+            var constructorArguments = arguments
+                .Where(x => !IsCustomData(x.Key))
+                .Select(y => y.Value)
+                .ToArray();
+
+            var constructor = recordType.GetConstructors().FirstOrDefault(x =>
+            {
+                return x.CustomAttributes.Any(y => y.AttributeType == typeof(SerializationConstructorAttribute));
+            });
+
+            var instance = constructor.Invoke(constructorArguments);
+
+            return instance;
         }
 
         /// <summary> 値名取得. </summary>
@@ -320,12 +332,36 @@ namespace Modules.Devkit.MasterViewer
         public void SetValue(object record, string valueName, object value)
         {
             var propertyInfo = propertyInfos.GetValueOrDefault(valueName);
-            
-            var convert = ConvertValue(ref value, propertyInfo.PropertyType);
 
-            if (convert)
+            if (propertyInfo != null)
             {
-                propertyInfo.SetValue(record, value);
+                var convert = ConvertValue(ref value, propertyInfo.PropertyType);
+
+                if (convert)
+                {
+                    propertyInfo.SetValue(record, value);
+
+                    var attributes = propertyInfo.GetCustomAttributes(typeof(CustomDataAttribute))
+                        .Select(x => x as CustomDataAttribute)
+                        .OrderBy(x => x.Priority)
+                        .ToArray();
+
+                    foreach (var attribute in attributes)
+                    {
+                        var tag = attribute.GetTag();
+
+                        var customDataName = string.Format(CustomDataNameFormat, tag, propertyInfo.Name);
+
+                        var customDataInfo = new CustomDataInfo()
+                        {
+                            name = customDataName,
+                            propertyInfo = propertyInfo,
+                            attribute = attribute,
+                        };
+
+                        customDataInfos[customDataName] = customDataInfo;
+                    }
+                }
             }
         }
 
