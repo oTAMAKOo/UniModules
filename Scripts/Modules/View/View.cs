@@ -72,6 +72,15 @@ namespace Modules.View
             return viewModel as TViewModel;
         }
 
+        public static void RefreshViewModel(this IViewRoot viewRoot)
+        {
+            var viewModel = viewRoot.GetViewModel();
+
+            if (viewModel == null){ return; }
+
+            viewModelCache = viewModelCache.Where(x => x.Value != viewModel).ToDictionary(x => x.Key, x => x.Value);
+        }
+
         public static void RefreshViewModel<TViewModel>(this IView<TViewModel> view) where TViewModel : ViewModel
         {
             var monoBehaviour = view as MonoBehaviour;
