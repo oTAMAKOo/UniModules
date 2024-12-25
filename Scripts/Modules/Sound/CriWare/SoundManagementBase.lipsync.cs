@@ -21,16 +21,12 @@ namespace Modules.Sound
 
         private Dictionary<SoundElement, CriAtomExPlayer> lipSyncPlayers = null;
 
-        private bool lipSyncInitialized = false;
-
         //----- property -----
 
         //----- method -----
 
         private void InitializeLipSync()
         {
-            if (lipSyncInitialized){ return; }
-
             lipSyncPlayers = new Dictionary<SoundElement, CriAtomExPlayer>();
 
             OnReleaseAsObservable()
@@ -44,8 +40,6 @@ namespace Modules.Sound
             OnResumeAllAsObservable()
                 .Subscribe(x => ResumeAllLipSyncPlayer(x))
                 .AddTo(Disposable);
-
-            lipSyncInitialized = true;
         }
 
         /// <summary> 内蔵アセットサウンドを再生. </summary>
@@ -67,8 +61,6 @@ namespace Modules.Sound
         {
             if (info == null){ return null; }
 
-            InitializeLipSync();
-
             var lipSyncPlayer = new CriAtomExPlayer();
 
             var element = PlaySoundCore(lipSyncPlayer, type, info, volume);
@@ -83,12 +75,16 @@ namespace Modules.Sound
                 }
                 else
                 {
-                    lipSyncPlayer.Dispose();
+                    lipSyncPlayer.Dispose(); 
                 }
 
                 element.OnFinishAsObservable()
-                    .Subscribe(x => ReleaseLipSyncElement(element))
+                    .Subscribe(_ => ReleaseLipSyncElement(element))
                     .AddTo(Disposable);
+            }
+            else
+            {
+                lipSyncPlayer.Dispose(); 
             }
 
             return element;
@@ -98,14 +94,13 @@ namespace Modules.Sound
         {
             if (element == null){ return; }
 
-            if (lipSyncPlayers.ContainsKey(element))
-            {
-                var player = element.GetPlayer();
+            if (!lipSyncPlayers.ContainsKey(element)){ return; }
 
-                player.Dispose();
+            var player = element.GetPlayer();
 
-                lipSyncPlayers.Remove(element);
-            }
+            player.Dispose();
+
+            lipSyncPlayers.Remove(element);
         }
 
         private void PauseAllLipSyncPlayer()

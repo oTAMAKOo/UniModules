@@ -8,7 +8,7 @@ using UniRx;
 
 namespace Modules.Sound
 {
-    public sealed class SoundElement : ISoundElement
+    public sealed partial class SoundElement : ISoundElement
     {
         //----- params -----
 

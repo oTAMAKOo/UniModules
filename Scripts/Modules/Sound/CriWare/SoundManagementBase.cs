@@ -101,6 +101,18 @@ namespace Modules.Sound
                     })
                 .AddTo(Disposable);
 
+            #if ENABLE_CRIWARE_POS3D
+
+            Initialize3D();
+
+            #endif
+
+            #if ENABLE_CRIWARE_LIPSYNC
+
+            InitializeLipSync();
+
+            #endif
+
             initialized = true;
         }
 
