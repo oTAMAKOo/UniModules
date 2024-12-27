@@ -68,8 +68,6 @@ namespace Modules.MessagePack
 
                 StringDateTimeResolver.Instance,
 
-                StandardAotResolver.Instance,
-
                 #if !NETSTANDARD1_4
 
                 UnityResolver.Instance,
