@@ -11,7 +11,7 @@ using Modules.MessagePack;
 
 namespace Modules.Devkit.FindReferences
 {
-    public sealed class FindReferencesInProjectCache
+    public sealed partial class FindReferencesInProjectCache
 	{
 		//----- params -----
 
@@ -19,7 +19,7 @@ namespace Modules.Devkit.FindReferences
 
 		[Serializable]
 		[MessagePackObject(true)]
-		public sealed class CacheData
+		public sealed partial class CacheData
 		{
 			public string FullPath { get; private set; }
 
@@ -37,7 +37,7 @@ namespace Modules.Devkit.FindReferences
 		}
 
 		[MessagePackObject(true)]
-		public sealed class CacheContainer
+		public sealed partial class CacheContainer
 		{
 			public CacheData[] contents = null;
 		}

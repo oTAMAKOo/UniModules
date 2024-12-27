@@ -11,7 +11,7 @@ namespace Modules.FileCache
 {
     [Serializable]
     [MessagePackObject(true)]
-    public sealed class CacheFileData
+    public sealed partial class CacheFileData
     {
         public string Source { get; private set; }
 
