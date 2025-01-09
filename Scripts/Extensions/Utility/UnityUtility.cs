@@ -59,6 +59,8 @@ namespace Extensions
             IsDebugBuild = Debug.isDebugBuild;
             IsBatchMode = Application.isBatchMode;
             IsEditor = Application.installMode == ApplicationInstallMode.Editor;
+            IsPlaying = Application.isPlaying;
+            RealtimeSinceStartup = Time.realtimeSinceStartup;
 
             UpdateUnityContents();
         }
