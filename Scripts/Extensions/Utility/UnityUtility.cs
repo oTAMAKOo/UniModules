@@ -541,7 +541,16 @@ namespace Extensions
 
             // DontDestroyOnLoadを設定したオブジェクトはシーン一覧から回収できない.
             // 非アクティブなオブジェクトは回収できないが標準のFindObjectsOfTypeで抽出.
+
+            #if UNITY_6000_0_OR_NEWER
+
+            var dontDestroyObjects = Object.FindObjectsByType<T>(FindObjectsSortMode.None).Where(x => x.gameObject.scene.name == "DontDestroyOnLoad");
+            
+            #else
+
             var dontDestroyObjects = Object.FindObjectsOfType<T>().Where(x => x.gameObject.scene.name == "DontDestroyOnLoad");
+
+            #endif
 
             targets.AddRange(dontDestroyObjects);
 
