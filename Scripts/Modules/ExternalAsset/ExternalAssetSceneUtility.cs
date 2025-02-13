@@ -1,4 +1,4 @@
-﻿
+
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using System;
@@ -161,7 +161,7 @@ namespace Modules.ExternalAssets
         {
             foreach (var scene in scenes)
             {
-                await UnityEngine.SceneManagement.SceneManager.UnloadSceneAsync(scene);
+                await UnityEngine.SceneManagement.SceneManager.UnloadSceneAsync(scene).ToUniTask();
             }
         }
 
