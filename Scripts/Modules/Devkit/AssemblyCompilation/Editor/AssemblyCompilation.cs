@@ -8,6 +8,7 @@ using Newtonsoft.Json;
 using Extensions;
 using Extensions.Devkit;
 using Modules.Devkit.Prefs;
+using UnityEditor.Build;
 
 namespace Modules.Devkit.AssemblyCompilation
 {
@@ -100,12 +101,27 @@ namespace Modules.Devkit.AssemblyCompilation
         {
             var buildTargetGroup = BuildPipeline.GetBuildTargetGroup(buildTarget);
 
+            #if UNITY_6000_0_OR_NEWER
+
+            var namedBuildTarget = NamedBuildTarget.FromBuildTargetGroup(buildTargetGroup);
+
+            var currentDefineSymbols = PlayerSettings.GetScriptingDefineSymbols(namedBuildTarget);
+
+            if (currentDefineSymbols != defineSymbols)
+            {
+                PlayerSettings.SetScriptingDefineSymbols(namedBuildTarget, defineSymbols);
+            }
+
+            #else
+
             var currentDefineSymbols = PlayerSettings.GetScriptingDefineSymbolsForGroup(buildTargetGroup);
 
             if (currentDefineSymbols != defineSymbols)
             {
                 PlayerSettings.SetScriptingDefineSymbolsForGroup(buildTargetGroup, defineSymbols);
             }
+
+            #endif
         }
 
         protected void OnAssemblyReload()

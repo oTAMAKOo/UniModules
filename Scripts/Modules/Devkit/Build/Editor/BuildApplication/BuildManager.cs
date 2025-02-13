@@ -3,6 +3,7 @@ using UnityEngine;
 using UnityEditor;
 using UnityEditor.Callbacks;
 using UnityEditor.Compilation;
+using UnityEditor.Build;
 using UnityEditor.Build.Reporting;
 using System;
 using System.IO;
@@ -100,7 +101,17 @@ namespace Modules.Devkit.Build
 
             var defineSymbols = string.Empty;
 
-            var currentDefineSymbols = PlayerSettings.GetScriptingDefineSymbolsForGroup(buildTargetGroup);
+            var currentDefineSymbols = string.Empty;
+
+            #if UNITY_6000_0_OR_NEWER
+
+            currentDefineSymbols = PlayerSettings.GetScriptingDefineSymbols(NamedBuildTarget.FromBuildTargetGroup(buildTargetGroup));
+
+            #else
+
+            currentDefineSymbols = PlayerSettings.GetScriptingDefineSymbolsForGroup(buildTargetGroup);
+
+            #endif
 
             using (new DisableStackTraceScope())
             {
@@ -121,7 +132,15 @@ namespace Modules.Devkit.Build
                     Debug.Log($"Set DefineSymbols : {defineSymbols}");
                 }
 
+                #if UNITY_6000_0_OR_NEWER
+
+                PlayerSettings.SetScriptingDefineSymbols(NamedBuildTarget.FromBuildTargetGroup(buildTargetGroup), defineSymbols);
+
+                #else
+
                 PlayerSettings.SetScriptingDefineSymbolsForGroup(buildTargetGroup, defineSymbols);
+
+                #endif
 
                 CompilationPipeline.RequestScriptCompilation();
 

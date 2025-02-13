@@ -1,6 +1,7 @@
-﻿
-using UnityEditor;
+
 using UnityEngine;
+using UnityEditor;
+using UnityEditor.Build;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -17,7 +18,15 @@ namespace Modules.Devkit.Build
 
             var iconTexture = LoadIconTextures(iconFolderPath, new string[] { iconFileName });
 
+            #if UNITY_6000_0_OR_NEWER
+
+            PlayerSettings.SetIcons(NamedBuildTarget.Unknown, iconTexture, IconKind.Application);
+
+            #else
+
             PlayerSettings.SetIconsForTargetGroup(BuildTargetGroup.Unknown, iconTexture);
+            
+            #endif
         }
 
         public static void SetiOSPlatformIcons(string iconAssetDirectory)
@@ -93,7 +102,17 @@ namespace Modules.Devkit.Build
         {
             var iconNames = new List<string>();
 
-            var icons = PlayerSettings.GetPlatformIcons(platform, kind);
+            var icons = new PlatformIcon[0];
+            
+            #if UNITY_6000_0_OR_NEWER
+
+            icons = PlayerSettings.GetPlatformIcons(NamedBuildTarget.FromBuildTargetGroup(platform), kind);
+
+            #else
+
+            icons = PlayerSettings.GetPlatformIcons(platform, kind);
+
+            #endif
 
             var iconSizes = icons.Select(x => Tuple.Create(x.width, x.height)).ToArray();
 
@@ -116,7 +135,15 @@ namespace Modules.Devkit.Build
                 }
             }
 
+            #if UNITY_6000_0_OR_NEWER
+
+            PlayerSettings.SetPlatformIcons(NamedBuildTarget.FromBuildTargetGroup(platform), kind, icons);
+
+            #else
+
             PlayerSettings.SetPlatformIcons(platform, kind, icons);
+
+            #endif
         }
 
         private static Texture2D[] LoadIconTextures(string folderPath, IEnumerable<string> iconNames)
