@@ -55,11 +55,11 @@ namespace Modules.Devkit.Generators
 
 	        if (isChanged)
 	        {
-	            UpdateBuildTargetScenes(sceneImporterConfig, projectScriptFolders.ScriptPath, buildTargetScenes);
+	            UpdateBuildTargetScenes(sceneImporterConfig, projectScriptFolders.ConstantsScriptPath, buildTargetScenes);
 	        }
 	        else
 	        {
-                EditorUtility.DisplayDialog("ScenesInBuildSetter", "ビルドターゲットのシーンは最新の状態です", "確認");
+                EditorUtility.DisplayDialog("ScenesInBuild", "Build target scene is up to date.", "close");
             }
 	    }
 
@@ -77,7 +77,7 @@ namespace Modules.Devkit.Generators
             ScenesScriptGenerator.Generate(managedFolderPaths, scriptPath);
             AssetDatabase.SaveAssets();
 
-            EditorUtility.DisplayDialog("SceneAssetPostprocessor", "EditorBuildSettingsの更新、SceneNamesの再出力を行いました", "確認");
+            EditorUtility.DisplayDialog("ScenesInBuild", "Build target scene is update.", "close");
         }
     }
 }
