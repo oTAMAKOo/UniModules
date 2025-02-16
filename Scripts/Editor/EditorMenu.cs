@@ -201,6 +201,12 @@ namespace Modules
             SelectorWindow.Open();
         }
 
+        [MenuItem(itemName: TextDataMenu + "Open Validation Window", priority = 2)]
+        public static void OpenTextDataValidationWindow()
+        {
+            TextDataValidationWindow.Open();
+        }
+
         //------ Excel保存時に自動更新 ------
 
         [MenuItem(itemName: TextDataMenu + "Output Converter ProcessCommand", priority = 2)]
