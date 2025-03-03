@@ -112,8 +112,8 @@ namespace Extensions
         private static byte[] Serialize<T>(T target, AesCryptoKey cryptoKey = null) where T : class
         {
             var options = StandardResolverAllowPrivate.Options
-            .WithCompression(MessagePackCompression.Lz4BlockArray)
-            .WithResolver(UnityCustomResolver.Instance);
+                .WithCompression(MessagePackCompression.Lz4BlockArray)
+                .WithResolver(UnityCustomResolver.Instance);
 
             var bytes = MessagePackSerializer.Serialize(target, options);
 
@@ -135,8 +135,8 @@ namespace Extensions
             }
 
             var options = StandardResolverAllowPrivate.Options
-            .WithCompression(MessagePackCompression.Lz4BlockArray)
-            .WithResolver(UnityCustomResolver.Instance);
+                .WithCompression(MessagePackCompression.Lz4BlockArray)
+                .WithResolver(UnityCustomResolver.Instance);
 
             var target = MessagePackSerializer.Deserialize<T>(bytes, options);
 

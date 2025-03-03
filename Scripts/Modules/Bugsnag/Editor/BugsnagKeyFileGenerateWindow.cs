@@ -1,4 +1,4 @@
-﻿
+
 #if ENABLE_BUGSNAG
 
 using UnityEngine;
@@ -151,7 +151,7 @@ namespace Modules.Bugsnag
 
             var data = new BugsnagApiKeyData()
             {
-            apiKey = apiKey,
+                apiKey = apiKey,
             };
 
             await MessagePackFileUtility.WriteAsync(filePath, data, cryptoKey);
