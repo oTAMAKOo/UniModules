@@ -8,7 +8,7 @@ namespace Modules.UI.Reactive
 {
     [ExecuteAlways]
     [RequireComponent(typeof(UIImage))]
-    public sealed class ButtonInteractablemageSprite : MonoBehaviour
+    public sealed class ButtonInteractableImageSprite : MonoBehaviour
     {
         //----- params -----
 
@@ -32,13 +32,21 @@ namespace Modules.UI.Reactive
         public Sprite EnableSprite
         {
             get { return enableSprite; }
-            set { enableSprite = value; }
+            set
+            {
+                enableSprite = value;
+                Apply(target.Button.interactable);
+            }
         }
 
         public Sprite DisableSprite
         {
             get { return disableSprite; }
-            set { disableSprite = value; }
+            set
+            {
+                disableSprite = value;
+                Apply(target.Button.interactable);
+            }
         }
 
         //----- method -----
