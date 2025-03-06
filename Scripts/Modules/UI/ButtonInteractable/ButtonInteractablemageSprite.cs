@@ -53,8 +53,6 @@ namespace Modules.UI.Reactive
 
         void Awake()
         {
-            uiImage = UnityUtility.GetComponent<UIImage>(gameObject);
-
             if (target != null && Application.isPlaying)
             {
                 target.ObserveEveryValueChanged(x => x.Button.interactable).Subscribe(x => Apply(x)).AddTo(this);
@@ -73,6 +71,11 @@ namespace Modules.UI.Reactive
         {
             var sprite = interactable ? enableSprite : disableSprite;
             var color = interactable ? enableColor : disableColor;
+
+            if (uiImage == null)
+            {
+                uiImage = UnityUtility.GetComponent<UIImage>(gameObject);
+            }
 
             uiImage.Image.sprite = sprite;
             uiImage.color = color;
