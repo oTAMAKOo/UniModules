@@ -1,4 +1,4 @@
-﻿
+
 using UnityEngine;
 using UniRx;
 using Extensions;
@@ -35,7 +35,7 @@ namespace Modules.UI.Reactive
             set { enableSprite = value; }
         }
 
-        public Sprite DisableSpriteName
+        public Sprite DisableSprite
         {
             get { return disableSprite; }
             set { disableSprite = value; }
