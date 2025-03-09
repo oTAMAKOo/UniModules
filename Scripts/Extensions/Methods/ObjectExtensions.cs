@@ -1,4 +1,4 @@
-﻿
+
 using System;
 using System.IO;
 using System.Runtime.Serialization.Formatters.Binary;
@@ -28,7 +28,9 @@ namespace Extensions
         /// <summary> Json文字列に変換  </summary>
         public static string ToJson<T>(this T obj, bool indented = false)
         {
-            return JsonConvert.SerializeObject(obj, indented ? Formatting.Indented : Formatting.None);
+            var option = new JsonSerializerSettings() { ReferenceLoopHandling = ReferenceLoopHandling.Ignore };
+
+            return JsonConvert.SerializeObject(obj, indented ? Formatting.Indented : Formatting.None, option);
         }
 
         /// <summary> 指定されたEnumに変換 </summary>
