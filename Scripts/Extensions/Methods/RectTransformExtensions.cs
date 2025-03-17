@@ -3,6 +3,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using System;
 using System.Linq;
+using System.Collections.Generic;
 using Unity.Linq;
 using Modules.UI.Layout;
 
@@ -10,6 +11,99 @@ namespace Extensions
 {
     public static class RectTransformExtensions
     {
+        public enum AnchorType
+        {
+            TopLeft,
+            TopCenter,
+            TopRight,
+
+            MiddleLeft,
+            MiddleCenter,
+            MiddleRight,
+
+            BottomLeft,
+            BottomCenter,
+            BottomRight,
+
+            VertStretchLeft,
+            VertStretchRight,
+            VertStretchCenter,
+
+            HorStretchTop,
+            HorStretchMiddle,
+            HorStretchBottom,
+
+            StretchAll
+        }
+
+        public enum PivotPreset
+        {
+            TopLeft,
+            TopCenter,
+            TopRight,
+
+            MiddleLeft,
+            MiddleCenter,
+            MiddleRight,
+
+            BottomLeft,
+            BottomCenter,
+            BottomRight,
+        }
+
+        private static readonly Dictionary<AnchorType, Vector2> AnchorMinTable = new ()
+        {
+            { AnchorType.TopLeft,             new Vector2(0.0f, 1.0f) },
+            { AnchorType.TopCenter,           new Vector2(0.5f, 1.0f) },
+            { AnchorType.TopRight,            new Vector2(1.0f, 1.0f) },
+            { AnchorType.MiddleLeft,          new Vector2(0.0f, 0.5f) },
+            { AnchorType.MiddleCenter,        new Vector2(0.5f, 0.5f) },
+            { AnchorType.MiddleRight,         new Vector2(1.0f, 0.5f) },
+            { AnchorType.BottomLeft,          new Vector2(0.0f, 0.0f) },
+            { AnchorType.BottomCenter,        new Vector2(0.5f, 0.0f) },
+            { AnchorType.BottomRight,         new Vector2(1.0f, 0.0f) },
+            { AnchorType.HorStretchTop,       new Vector2(0.0f, 1.0f) },
+            { AnchorType.HorStretchMiddle,    new Vector2(0.0f, 0.5f) },
+            { AnchorType.HorStretchBottom,    new Vector2(0.0f, 0.0f) },
+            { AnchorType.VertStretchLeft,     new Vector2(0.0f, 0.0f) },
+            { AnchorType.VertStretchCenter,   new Vector2(0.5f, 0.0f) },
+            { AnchorType.VertStretchRight,    new Vector2(1.0f, 0.0f) },
+            { AnchorType.StretchAll,          new Vector2(0.0f, 0.0f) },
+        };
+
+        private static readonly Dictionary<AnchorType, Vector2> AnchorMaxTable = new ()
+        {
+            { AnchorType.TopLeft,             new Vector2(0.0f, 1.0f) },
+            { AnchorType.TopCenter,           new Vector2(0.5f, 1.0f) },
+            { AnchorType.TopRight,            new Vector2(1.0f, 1.0f) },
+            { AnchorType.MiddleLeft,          new Vector2(0.0f, 0.5f) },
+            { AnchorType.MiddleCenter,        new Vector2(0.5f, 0.5f) },
+            { AnchorType.MiddleRight,         new Vector2(1.0f, 0.5f) },
+            { AnchorType.BottomLeft,          new Vector2(0.0f, 0.0f) },
+            { AnchorType.BottomCenter,        new Vector2(0.5f, 0.0f) },
+            { AnchorType.BottomRight,         new Vector2(1.0f, 0.0f) },
+            { AnchorType.HorStretchTop,       new Vector2(1.0f, 1.0f) },
+            { AnchorType.HorStretchMiddle,    new Vector2(1.0f, 0.5f) },
+            { AnchorType.HorStretchBottom,    new Vector2(1.0f, 0.0f) },
+            { AnchorType.VertStretchLeft,     new Vector2(0.0f, 1.0f) },
+            { AnchorType.VertStretchCenter,   new Vector2(0.5f, 1.0f) },
+            { AnchorType.VertStretchRight,    new Vector2(1.0f, 1.0f) },
+            { AnchorType.StretchAll,          new Vector2(1.0f, 1.0f) },
+        };
+
+        private static readonly Dictionary<PivotPreset, Vector2> PivotTable = new ()
+        {
+            { PivotPreset.TopLeft,             new Vector2(0.0f, 1.0f) },
+            { PivotPreset.TopCenter,           new Vector2(0.5f, 1.0f) },
+            { PivotPreset.TopRight,            new Vector2(1.0f, 1.0f) },
+            { PivotPreset.MiddleLeft,          new Vector2(0.0f, 0.5f) },
+            { PivotPreset.MiddleCenter,        new Vector2(0.5f, 0.5f) },
+            { PivotPreset.MiddleRight,         new Vector2(1.0f, 0.5f) },
+            { PivotPreset.BottomLeft,          new Vector2(0.0f, 0.0f) },
+            { PivotPreset.BottomCenter,        new Vector2(0.5f, 0.0f) },
+            { PivotPreset.BottomRight,         new Vector2(1.0f, 0.0f) },
+        };
+
         private static Vector3[] tempCorners = new Vector3[4];
 
         public static void Copy(this RectTransform transform, RectTransform source)
@@ -52,9 +146,7 @@ namespace Extensions
             return self.rect.height;
         }
 
-        /// <summary>
-        /// アンカーの設定をFillに変更.
-        /// </summary>
+        /// <summary> アンカーの設定をFillに変更. </summary>
         public static void FillRect(this RectTransform self)
         {
             self.anchorMin = new Vector2(0f, 0f);
@@ -63,29 +155,17 @@ namespace Extensions
             self.offsetMax = new Vector2(0f, 0f);
         }
 
-        public static void SetPositionOfPivot(this RectTransform self, Vector2 newPos)
+        public static void SetAnchor(this RectTransform self, AnchorType anchor, int offsetX = 0, int offsetY = 0)
         {
-            self.localPosition = new Vector3(newPos.x, newPos.y, self.localPosition.z);
+            self.anchoredPosition = new Vector3(offsetX, offsetY, 0);
+
+            self.anchorMin = AnchorMinTable.GetValueOrDefault(anchor);
+            self.anchorMax = AnchorMaxTable.GetValueOrDefault(anchor);
         }
 
-        public static void SetLeftBottomPosition(this RectTransform self, Vector2 newPos)
+        public static void SetPivot(this RectTransform source, PivotPreset pivot)
         {
-            self.localPosition = new Vector3(newPos.x + (self.pivot.x * self.rect.width), newPos.y + (self.pivot.y * self.rect.height), self.localPosition.z);
-        }
-
-        public static void SetLeftTopPosition(this RectTransform self, Vector2 newPos)
-        {
-            self.localPosition = new Vector3(newPos.x + (self.pivot.x * self.rect.width), newPos.y - ((1f - self.pivot.y) * self.rect.height), self.localPosition.z);
-        }
-
-        public static void SetRightBottomPosition(this RectTransform self, Vector2 newPos)
-        {
-            self.localPosition = new Vector3(newPos.x - ((1f - self.pivot.x) * self.rect.width), newPos.y + (self.pivot.y * self.rect.height), self.localPosition.z);
-        }
-
-        public static void SetRightTopPosition(this RectTransform self, Vector2 newPos)
-        {
-            self.localPosition = new Vector3(newPos.x - ((1f - self.pivot.x) * self.rect.width), newPos.y - ((1f - self.pivot.y) * self.rect.height), self.localPosition.z);
+            source.pivot = PivotTable.GetValueOrDefault(pivot);
         }
 
         public static void SetSize(this RectTransform self, Vector2 newSize)

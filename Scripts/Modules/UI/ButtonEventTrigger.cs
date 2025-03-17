@@ -1,4 +1,4 @@
-﻿
+
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.EventSystems;
@@ -38,6 +38,8 @@ namespace Modules.UI
 
         //----- property -----
 
+        public bool HasObservers { get; private set; }
+
         //----- method -----
 
         void Awake()
@@ -55,6 +57,21 @@ namespace Modules.UI
 
             // 領域外に出たらキャンセル.
             button.OnPointerExitAsObservable().Subscribe(_ => PressCancel()).AddTo(this);
+
+            UpdateObservers();
+        }
+
+        private void UpdateObservers()
+        {
+            var hasObservers = false;
+
+            hasObservers |= onPress != null && onPress.HasObservers;
+            hasObservers |= onRelease != null && onRelease.HasObservers;
+            hasObservers |= onCancel != null && onCancel.HasObservers;
+            hasObservers |= onLongPress != null && onLongPress.HasObservers;
+            hasObservers |= onLongPressRelease != null && onLongPressRelease.HasObservers;
+
+            HasObservers = hasObservers;
         }
 
         private void OnPointerDown(PointerEventData pointerEvent)
@@ -142,17 +159,44 @@ namespace Modules.UI
 
         public IObservable<Unit> OnPressAsObservable()
         {
-            return onPress ?? (onPress = new Subject<Unit>());
+            if(onPress == null)
+            {
+                onPress = new Subject<Unit>();
+
+                onPress.ObserveEveryValueChanged(x => x.HasObservers)
+                    .Subscribe(_ => UpdateObservers())
+                    .AddTo(this);
+            }
+
+            return onPress;
         }
 
         public IObservable<float> OnReleaseAsObservable()
         {
-            return onRelease ?? (onRelease = new Subject<float>());
+            if(onRelease == null)
+            {
+                onRelease = new Subject<float>();
+
+                onRelease.ObserveEveryValueChanged(x => x.HasObservers)
+                    .Subscribe(_ => UpdateObservers())
+                    .AddTo(this);
+            }
+
+            return onRelease;
         }
 
         public IObservable<Unit> OnCancelAsObservable()
         {
-            return onCancel ?? (onCancel = new Subject<Unit>());
+            if(onCancel == null)
+            {
+                onCancel = new Subject<Unit>();
+
+                onCancel.ObserveEveryValueChanged(x => x.HasObservers)
+                    .Subscribe(_ => UpdateObservers())
+                    .AddTo(this);
+            }
+
+            return onCancel;
         }
 
         public IObservable<Unit> OnLongPressAsObservable()
@@ -160,12 +204,30 @@ namespace Modules.UI
             OnPressAsObservable().Subscribe().AddTo(this);
             OnReleaseAsObservable().Subscribe().AddTo(this);
 
-            return onLongPress ?? (onLongPress = new Subject<Unit>());
+            if(onLongPress == null)
+            {
+                onLongPress = new Subject<Unit>();
+
+                onLongPress.ObserveEveryValueChanged(x => x.HasObservers)
+                    .Subscribe(_ => UpdateObservers())
+                    .AddTo(this);
+            }
+
+            return onLongPress;
         }
 
         public IObservable<float> OnLongPressReleaseAsObservable()
         {
-            return onLongPressRelease ?? (onLongPressRelease = new Subject<float>());
+            if(onLongPressRelease == null)
+            {
+                onLongPressRelease = new Subject<float>();
+
+                onLongPressRelease.ObserveEveryValueChanged(x => x.HasObservers)
+                    .Subscribe(_ => UpdateObservers())
+                    .AddTo(this);
+            }
+
+            return onLongPressRelease;
         }
 
         private void PressCancel()
