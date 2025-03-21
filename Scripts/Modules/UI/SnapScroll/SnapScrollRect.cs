@@ -1,4 +1,4 @@
-﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿
+﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.EventSystems;
@@ -66,7 +66,7 @@ namespace Modules.UI
 
             if (snapTarget == null) { return; }
             
-            var position = content.InverseTransformPoint(snapTarget.transform.position);
+            var position = content.InverseTransformPoint(snapTarget.transform.position) + offset.ToVector3();
 
             targetPosition = new Vector3()
             {
