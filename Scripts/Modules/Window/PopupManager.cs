@@ -43,11 +43,19 @@ namespace Modules.Window
 
         private Subject<Unit> onBlockTouch = null;
 
+        private Subject<Window> onOpenWindow = null;
+
+        private Subject<Window> onOpenedWindow = null;
+
+        private Subject<Window> onClosedWindow = null;
+
         //----- property -----
 
         public GameObject ParentInScene { get { return parentInScene != null ? parentInScene.Parent : null; } }
 
         public GameObject ParentGlobal { get { return parentGlobal != null ? parentGlobal.Parent : null; } }
+
+        public TouchBlock TouchBlock { get { return touchBlock; } }
 
         public IReadOnlyList<Window> ScenePopups { get { return scenePopups; } }
 
@@ -91,7 +99,17 @@ namespace Modules.Window
 
             Instance.UpdateContents();
 
+            if (Instance.onOpenWindow != null)
+            {
+                Instance.onOpenWindow.OnNext(popupWindow);
+            }
+
             await popupWindow.Open(inputProtect);
+
+            if (Instance.onOpenedWindow != null)
+            {
+                Instance.onOpenedWindow.OnNext(popupWindow);
+            }
         }
 
         private void RegisterGlobal(Window popupWindow)
@@ -102,13 +120,20 @@ namespace Modules.Window
                 UnityUtility.SetLayer(parentGlobal.Parent, popupWindow.gameObject, true);
                 UnityUtility.SetParent(popupWindow.gameObject, parentGlobal.Parent);
 
+                void OnCloseWindow()
+                {
+                    globalPopups.Remove(popupWindow);
+
+                    UpdateContents();
+
+                    if (onClosedWindow != null)
+                    {
+                        onClosedWindow.OnNext(popupWindow);
+                    }
+                }
+
                 popupWindow.OnCloseAsObservable()
-                    .Subscribe(
-                        _ =>
-                        {
-                            globalPopups.Remove(popupWindow);
-                            UpdateContents();
-                        })
+                    .Subscribe(_ => OnCloseWindow())
                     .AddTo(this);
 
                 globalPopups.Add(popupWindow);
@@ -353,6 +378,21 @@ namespace Modules.Window
         public IObservable<Unit> OnBlockTouchAsObservable()
         {
             return onBlockTouch ?? (onBlockTouch = new Subject<Unit>());
+        }
+
+        public IObservable<Window> OnOpenWindowAsObservable()
+        {
+            return onOpenWindow ?? (onOpenWindow = new Subject<Window>());
+        }
+
+        public IObservable<Window> OnOpenedWindowAsObservable()
+        {
+            return onOpenedWindow ?? (onOpenedWindow = new Subject<Window>());
+        }
+
+        public IObservable<Window> OnClosedWindowAsObservable()
+        {
+            return onClosedWindow ?? (onClosedWindow = new Subject<Window>());
         }
     }
 }
