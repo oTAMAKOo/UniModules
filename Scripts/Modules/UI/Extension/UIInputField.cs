@@ -1,6 +1,9 @@
-﻿
+
+using System;
+using Cysharp.Threading.Tasks;
 using UnityEngine;
 using TMPro;
+using UniRx;
 
 namespace Modules.UI.Extension
 {
@@ -11,6 +14,8 @@ namespace Modules.UI.Extension
         //----- params -----
 
         //----- field -----
+
+        private Subject<string> onEndEdit = null;
 
         //----- property -----
 
@@ -23,5 +28,22 @@ namespace Modules.UI.Extension
         }
 
         //----- method -----
+
+        public IObservable<string> OnEndEditAsObservable()
+        {
+            if (onEndEdit == null)
+            {
+                onEndEdit = new Subject<string>();
+
+                void OnEndEditCallback(string text)
+                {
+                    onEndEdit.OnNext(text);
+                }
+
+                InputField.onEndEdit.AddListener(x => OnEndEditCallback(x));
+            }
+
+            return onEndEdit;
+        }
     }
 }
