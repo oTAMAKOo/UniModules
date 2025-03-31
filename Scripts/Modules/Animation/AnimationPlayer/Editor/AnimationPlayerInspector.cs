@@ -27,11 +27,14 @@ namespace Modules.Animation
         {
             instance = target as AnimationPlayer;
 
-            animator = UnityUtility.GetComponent<Animator>(instance.gameObject);
-
-            if (!instance.IsInitialized)
+            if (instance != null)
             {
-                Reflection.InvokePublicMethod(instance, "Initialize");
+                animator = UnityUtility.GetComponent<Animator>(instance.gameObject);
+
+                if (!instance.IsInitialized)
+                {
+                    Reflection.InvokePublicMethod(instance, "Initialize");
+                }
             }
         }
 
