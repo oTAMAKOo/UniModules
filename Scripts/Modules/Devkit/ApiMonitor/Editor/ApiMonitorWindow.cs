@@ -1,4 +1,4 @@
-﻿
+
 using UnityEngine;
 using UnityEditor;
 using System;
@@ -30,8 +30,11 @@ namespace Modules.Net.WebRequest
         private object splitterState = null;
         private ApiHistoryView historyView = null;
 
+        [NonSerialized]
         private GUIStyle historyStyle = null;
+        [NonSerialized]
         private GUIStyle serverUrlLabelStyle = null;
+        [NonSerialized]
         private GUIStyle detailStyle = null;
 
         [NonSerialized]
@@ -203,6 +206,8 @@ namespace Modules.Net.WebRequest
                 {
                     alignment = TextAnchor.MiddleLeft,
                 };
+
+                serverUrlLabelStyle.normal.textColor = EditorLayoutTools.LabelColor;
             }
 
             if (historyStyle == null)
@@ -218,6 +223,7 @@ namespace Modules.Net.WebRequest
                 detailStyle.wordWrap = false;
                 detailStyle.stretchHeight = true;
                 detailStyle.margin.right = 15;
+                detailStyle.normal.textColor = EditorLayoutTools.LabelColor;
             }
         }
 
