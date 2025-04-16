@@ -213,7 +213,12 @@ namespace Modules.ExternalAssets
 
                     var index = displayGroupNames.IndexOf(x => x == groupName);
 
-                    var displayLabels = displayGroupNames.Select(x => EditorLayoutTools.ConvertSlashToUnicodeSlash(x)).ToArray();
+                    var displayLabels = displayGroupNames
+                        // スラッシュの前後に空白を挿入.
+                        .Select(x => x.Replace("/", " / "))
+                        // スラッシュをUnicodeに変換して表示できる形式に変換.
+                        .Select(x => EditorLayoutTools.ConvertSlashToUnicodeSlash(x))
+                        .ToArray();
 
                     index = EditorGUILayout.Popup(string.Empty, index, displayLabels, EditorStyles.toolbarDropDown);
 
