@@ -1,15 +1,12 @@
 
-using UnityEngine;
-using System;
-using System.Linq;
-using System.Collections.Generic;
-using Cysharp.Threading.Tasks;
-using UniRx;
+using UnityEditor;
 using Extensions;
+using Extensions.Devkit;
+using TMPro;
 
-namespace namespace
+namespace Modules.Devkit.TextMeshPro
 {
-    public sealed class CleanDynamicFontAsset : MonoBehaviour
+    public static class CleanDynamicFontAsset
     {
         //----- params -----
 
@@ -18,5 +15,25 @@ namespace namespace
         //----- property -----
 
         //----- method -----
+
+        [InitializeOnLoadMethod]
+        private static void InitializeOnLoadMethod()
+        {
+            EditorApplication.focusChanged += OnFocusChanged;
+        }
+
+        private static void OnFocusChanged(bool focus)
+        {
+            var fontAssets = UnityEditorUtility.FindAssetsByType<TMP_FontAsset>($"t:{typeof(TMP_FontAsset).FullName}");
+
+            if (focus)
+            {
+                fontAssets.ForEach(x => Reflection.InvokePrivateMethod(x, "UpdateFontAssetData"));
+            }
+            else
+            {
+                fontAssets.ForEach(x => x.ClearFontAssetData(true));
+            }
+        }
     }
 }
