@@ -1,4 +1,4 @@
-﻿
+
 using UnityEngine;
 using UnityEngine.UI;
 using System;
@@ -190,6 +190,13 @@ namespace Modules.UI.Layout
 		}
 
 		//----- method -----
+
+        public void SetCopySource(RectTransform target)
+        {
+            copySource = target;
+
+            UpdatePreferredSize();
+        }
 
 		protected override void OnEnable()
 		{
