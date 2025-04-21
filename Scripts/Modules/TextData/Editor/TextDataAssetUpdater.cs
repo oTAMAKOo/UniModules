@@ -1,4 +1,4 @@
-﻿
+
 using UnityEngine;
 using UnityEditor;
 using UnityEditor.Callbacks;
@@ -96,6 +96,11 @@ namespace Modules.TextData.Editor
                 if (internalAsset == null)
                 {
                     internalAsset = TextDataLoader.LoadTextDataAsset(TextType.Internal);
+
+                    if (internalAsset == null)
+                    {
+                        internalAsset = GenerateTextData(TextType.Internal);
+                    }
                 }
 
                 if (internalAsset != null)
@@ -113,6 +118,11 @@ namespace Modules.TextData.Editor
                 if (externalAsset == null)
                 {
                     externalAsset = TextDataLoader.LoadTextDataAsset(TextType.External);
+
+                    if (externalAsset == null)
+                    {
+                        externalAsset = GenerateTextData(TextType.External);
+                    }
                 }
 
                 if (externalAsset != null)
@@ -122,6 +132,21 @@ namespace Modules.TextData.Editor
                     await UpdateTextData(externalAsset, source, Prefs.externalLastUpdate, x => Prefs.externalLastUpdate = x);
                 }
             }
+        }
+
+        private static TextDataAsset GenerateTextData(TextType textType)
+        {
+            var languageManager = LanguageManager.Instance;
+
+            var languageInfo = languageManager.Current;
+
+            TextDataGenerator.Generate(textType, languageInfo, true);
+
+            var textDataAsset = TextDataLoader.LoadTextDataAsset(textType);
+
+            UnityConsole.Info("TextData auto generated.");
+
+            return textDataAsset;
         }
 
         private static async Task UpdateTextData(TextDataAsset textDataAsset, TextDataSource[] targets, DateTime lastUpdate, Action<DateTime> onUpdate)
