@@ -1,4 +1,4 @@
-﻿
+
 using UnityEngine;
 using UnityEditor;
 using System;
@@ -99,7 +99,7 @@ namespace Modules.Devkit.AssetTuning.TextureAsset
 		[SerializeField]
 		public SpriteImportMode spriteMode = SpriteImportMode.Single;
 		[SerializeField]
-		public SpriteMeshType meshType = SpriteMeshType.Tight;
+		public SpriteMeshType meshType = SpriteMeshType.FullRect;
 		[SerializeField]
 		public float spritePixelsPerUnit = 100f;
 		[SerializeField]
