@@ -28,11 +28,19 @@ namespace Modules.Devkit.TextMeshPro
 
             if (focus)
             {
-                fontAssets.ForEach(x => Reflection.InvokePrivateMethod(x, "UpdateFontAssetData"));
+                foreach (var fontAsset in fontAssets)
+                {
+                    Reflection.InvokePrivateMethod(fontAsset, "UpdateFontAssetData");
+                }
             }
             else
             {
-                fontAssets.ForEach(x => x.ClearFontAssetData(true));
+                foreach (var fontAsset in fontAssets)
+                {
+                    fontAsset.ClearFontAssetData(true);
+
+                    AssetDatabase.SaveAssetIfDirty(fontAsset);
+                }
             }
         }
     }

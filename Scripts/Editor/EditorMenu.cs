@@ -715,5 +715,35 @@ namespace Modules
         }
 
         #endregion
+
+        //===============================================================
+        //  HierarchyMenu.
+        //===============================================================
+
+        #region HierarchyMenu
+
+        protected const string HierarchyMenu = "GameObject/";
+
+        [MenuItem(itemName: HierarchyMenu + "Copy Hierarchy Path", priority = int.MaxValue)]
+        public static void CopyHierarchyPath()
+        {
+            var hierarchyPath = UnityUtility.GetHierarchyPath(Selection.activeGameObject);
+
+            GUIUtility.systemCopyBuffer = hierarchyPath;
+        }
+
+        [MenuItem(itemName: HierarchyMenu + "Copy Hierarchy Path", validate = true)]
+        public static bool CopyHierarchyPathValidate()
+        {
+            if (1 < Selection.gameObjects.Length){ return false; }
+
+            if (Selection.activeGameObject == null){ return false; }
+
+            if (Selection.activeGameObject.scene == null){ return false; }
+
+            return true;
+        }
+
+        #endregion
     }
 }
