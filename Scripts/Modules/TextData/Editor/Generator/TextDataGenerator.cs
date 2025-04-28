@@ -46,6 +46,8 @@ namespace Modules.TextData.Editor
 
         public static void Generate(TextType type, LanguageInfo info, bool force = false)
         {
+            if (info == null){ return; }
+
             var textData = TextData.Instance;
 
             var config = TextDataConfig.Instance;
