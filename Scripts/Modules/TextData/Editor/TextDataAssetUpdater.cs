@@ -20,7 +20,7 @@ namespace Modules.TextData.Editor
         {
             public static bool autoUpdate
             {
-                get { return ProjectPrefs.GetBool(typeof(Prefs).FullName + "-autoUpdate", false); }
+                get { return ProjectPrefs.GetBool(typeof(Prefs).FullName + "-autoUpdate", true); }
                 set { ProjectPrefs.SetBool(typeof(Prefs).FullName + "-autoUpdate", value); }
             }
 
@@ -99,7 +99,7 @@ namespace Modules.TextData.Editor
 
                     if (internalAsset == null)
                     {
-                        internalAsset = GenerateTextData(TextType.Internal);
+                        internalAsset = GenerateTextDataAsset(TextType.Internal);
                     }
                 }
 
@@ -107,7 +107,7 @@ namespace Modules.TextData.Editor
                 {
                     var source = config.Internal.Source;
 
-                    await UpdateTextData(internalAsset, source, Prefs.internalLastUpdate, x => Prefs.internalLastUpdate = x);
+                    await UpdateTextDataAsset(internalAsset, source, Prefs.internalLastUpdate, x => Prefs.internalLastUpdate = x);
                 }
             }
 
@@ -121,7 +121,7 @@ namespace Modules.TextData.Editor
 
                     if (externalAsset == null)
                     {
-                        externalAsset = GenerateTextData(TextType.External);
+                        externalAsset = GenerateTextDataAsset(TextType.External);
                     }
                 }
 
@@ -129,12 +129,12 @@ namespace Modules.TextData.Editor
                 {
                     var source = config.External.Source;
 
-                    await UpdateTextData(externalAsset, source, Prefs.externalLastUpdate, x => Prefs.externalLastUpdate = x);
+                    await UpdateTextDataAsset(externalAsset, source, Prefs.externalLastUpdate, x => Prefs.externalLastUpdate = x);
                 }
             }
         }
 
-        private static TextDataAsset GenerateTextData(TextType textType)
+        private static TextDataAsset GenerateTextDataAsset(TextType textType)
         {
             var languageManager = LanguageManager.Instance;
 
@@ -149,7 +149,7 @@ namespace Modules.TextData.Editor
             return textDataAsset;
         }
 
-        private static async Task UpdateTextData(TextDataAsset textDataAsset, TextDataSource[] targets, DateTime lastUpdate, Action<DateTime> onUpdate)
+        private static async Task UpdateTextDataAsset(TextDataAsset textDataAsset, TextDataSource[] targets, DateTime lastUpdate, Action<DateTime> onUpdate)
         {
             if (running) { return; }
 
