@@ -74,8 +74,6 @@ namespace Modules.TextData.Editor
         {
             if (Application.isPlaying) { return; }
 
-            if (!Prefs.autoUpdate){ return; }
-
             if (EditorApplication.isCompiling) { return; }
 
             if (TextDataExcel.Importing || TextDataExcel.Exporting) { return; }
@@ -88,6 +86,8 @@ namespace Modules.TextData.Editor
             nextCheckTime = DateTime.Now.AddSeconds(CheckInterval);
 
             var config = TextDataConfig.Instance;
+
+            var autoUpdate = Prefs.autoUpdate;
 
             //------ Internal ------
 
@@ -103,7 +103,7 @@ namespace Modules.TextData.Editor
                     }
                 }
 
-                if (internalAsset != null)
+                if (autoUpdate && internalAsset != null)
                 {
                     var source = config.Internal.Source;
 
@@ -125,7 +125,7 @@ namespace Modules.TextData.Editor
                     }
                 }
 
-                if (externalAsset != null)
+                if (autoUpdate && externalAsset != null)
                 {
                     var source = config.External.Source;
 

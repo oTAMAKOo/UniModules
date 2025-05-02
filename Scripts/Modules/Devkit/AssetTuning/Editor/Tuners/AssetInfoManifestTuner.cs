@@ -1,6 +1,7 @@
-﻿
+
 using UnityEditor;
 using System.Linq;
+using System.IO;
 using Cysharp.Threading.Tasks;
 using Extensions;
 using Extensions.Devkit;
@@ -30,7 +31,13 @@ namespace Modules.Devkit.AssetTuning
 
         public override bool Validate(string path)
         {
-            return assetManagement != null && assetInfoManifest != null;
+            if (assetManagement == null){ return false; }
+
+            if (assetInfoManifest == null){ return false; }
+
+            var fileName = Path.GetFileName(path);
+
+            return fileName == AssetInfoManifest.ManifestFileName;
         }
 
 		public override void OnBeforePostprocessAsset()
