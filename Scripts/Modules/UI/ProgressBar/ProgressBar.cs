@@ -1,4 +1,4 @@
-
+﻿
 using UnityEngine;
 using UnityEngine.UI;
 using System;
@@ -46,7 +46,7 @@ namespace Modules.UI
         [SerializeField][Range(0f, 1f)] 
         private float fillAmount = 1f;
         [SerializeField] 
-        private int steps = 0;
+        private long steps = 0;
 		
         private Subject<float> onValueChanged = null;
 
@@ -116,13 +116,13 @@ namespace Modules.UI
             }
         }
 
-        public int Steps 
+        public long Steps 
         {
             get { return steps; }
             set { steps = value; }
         }
 
-        public int CurrentStep 
+        public long CurrentStep 
         {
             get 
             {
@@ -133,7 +133,7 @@ namespace Modules.UI
                 return Mathf.RoundToInt(fillAmount / perStep);
             }
 
-            set 
+            set
             {
                 if (steps > 0)
                 {
@@ -176,8 +176,6 @@ namespace Modules.UI
 
 		public void UpdateBarFill()
 		{
-			if (!isActiveAndEnabled){ return; }
-
             if (fillMode == FillMode.Filled && targetImage == null){ return; }
 
             if (fillMode == FillMode.Resize && targetTransform == null){ return; }
