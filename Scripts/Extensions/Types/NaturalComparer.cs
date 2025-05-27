@@ -68,8 +68,6 @@ namespace Extensions
 
         private static int PartCompare(string left, string right)
         {
-            int x, y;
-
             if (left.Length > right.Length)
             {
                 return -1;
@@ -80,12 +78,12 @@ namespace Extensions
                 return 1;
             }
 
-            if (!int.TryParse(left, out x))
+            if (!long.TryParse(left, out var x))
             {
                 return left.CompareTo(right);
             }
 
-            if (!int.TryParse(right, out y))
+            if (!long.TryParse(right, out var y))
             {
                 return left.CompareTo(right);
             }
