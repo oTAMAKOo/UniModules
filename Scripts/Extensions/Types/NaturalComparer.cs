@@ -1,4 +1,4 @@
-﻿
+
 using System;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
@@ -36,16 +36,16 @@ namespace Extensions
 
             if (!table.TryGetValue(x, out x1))
             {
-                x1 = Regex.Split(x.Replace(" ", ""), "([0-9]+)");
+                x1 = Regex.Split(x.Replace(" ", ""), "([0-9]+)", RegexOptions.Compiled);
                 table.Add(x, x1);
             }
             if (!table.TryGetValue(y, out y1))
             {
-                y1 = Regex.Split(y.Replace(" ", ""), "([0-9]+)");
+                y1 = Regex.Split(y.Replace(" ", ""), "([0-9]+)", RegexOptions.Compiled);
                 table.Add(y, y1);
             }
 
-            for (int i = 0; i < x1.Length && i < y1.Length; i++)
+            for (var i = 0; i < x1.Length && i < y1.Length; i++)
             {
                 if (x1[i] != y1[i])
                 {
@@ -69,6 +69,16 @@ namespace Extensions
         private static int PartCompare(string left, string right)
         {
             int x, y;
+
+            if (left.Length > right.Length)
+            {
+                return -1;
+            }
+            
+            if (left.Length > right.Length)
+            {
+                return 1;
+            }
 
             if (!int.TryParse(left, out x))
             {
