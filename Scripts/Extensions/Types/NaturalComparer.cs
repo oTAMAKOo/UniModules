@@ -70,12 +70,12 @@ namespace Extensions
         {
             if (left.Length > right.Length)
             {
-                return -1;
+                return 1;
             }
             
-            if (left.Length > right.Length)
+            if (left.Length < right.Length)
             {
-                return 1;
+                return -1;
             }
 
             if (!long.TryParse(left, out var x))
