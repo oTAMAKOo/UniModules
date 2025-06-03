@@ -484,6 +484,20 @@ namespace Modules.Particle
             }
         }
 
+        public void ResetSpeed()
+        {
+            if (particleInfos == null){ return; }
+            
+            foreach (var particleInfo in particleInfos)
+            {
+                if (particleInfo.ParticleSystem == null) { continue; }
+
+                var main = particleInfo.ParticleSystem.main;
+                    
+                main.simulationSpeed = particleInfo.DefaultSpeed;
+            }
+        }
+
         private void ResetContents()
         {
             currentTime = 0f;
