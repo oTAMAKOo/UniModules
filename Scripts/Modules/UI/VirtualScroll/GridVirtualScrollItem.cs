@@ -97,6 +97,14 @@ namespace Modules.UI
                 }
             }
 
+            // 無効なオブジェクト非表示.
+            foreach (var element in elements)
+            {
+                var active = activeElements.Contains(element);
+
+                UnityUtility.SetActive(element, active);
+            }
+
             try
             {
                 await UniTask.WhenAll(updateContentsTasks);
@@ -104,14 +112,6 @@ namespace Modules.UI
             catch (Exception e)
             {
                 Debug.LogException(e);
-            }
-
-            // 無効なオブジェクト非表示.
-            foreach (var element in elements)
-            {
-                var active = activeElements.Contains(element);
-
-                UnityUtility.SetActive(element, active);
             }
         }
 
