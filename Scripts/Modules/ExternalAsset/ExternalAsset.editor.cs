@@ -1,4 +1,4 @@
-﻿﻿
+﻿
 #if UNITY_EDITOR
 
 using Modules.Devkit.Prefs;

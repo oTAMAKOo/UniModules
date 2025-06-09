@@ -1,4 +1,4 @@
-﻿﻿﻿
+﻿
 using UnityEditor;
 
 namespace Extensions.Serialize

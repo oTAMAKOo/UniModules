@@ -1,4 +1,4 @@
-﻿﻿
+﻿
 using UnityEngine;
 
 namespace Modules.Animation

@@ -1,14 +1,23 @@
-
+﻿
+using System.Collections.Generic;
+using System.Linq;
 using UnityEditor;
 using Extensions;
 using Extensions.Devkit;
 using TMPro;
+using UnityEditor.Localization.Plugins.XLIFF.V12;
 
 namespace Modules.Devkit.TextMeshPro
 {
     public static class CleanDynamicFontAsset
     {
         //----- params -----
+
+        private static readonly HashSet<AtlasPopulationMode> TargetModeTable = new HashSet<AtlasPopulationMode>
+        {
+            AtlasPopulationMode.Dynamic, 
+            AtlasPopulationMode.DynamicOS,
+        };
 
         //----- field -----
 
@@ -26,20 +35,25 @@ namespace Modules.Devkit.TextMeshPro
         {
             var fontAssets = UnityEditorUtility.FindAssetsByType<TMP_FontAsset>($"t:{typeof(TMP_FontAsset).FullName}");
 
-            if (focus)
-            {
-                foreach (var fontAsset in fontAssets)
-                {
-                    Reflection.InvokePrivateMethod(fontAsset, "UpdateFontAssetData");
-                }
-            }
-            else
-            {
-                foreach (var fontAsset in fontAssets)
-                {
-                    fontAsset.ClearFontAssetData(true);
+            var targetFontAssets = fontAssets.Where(x => TargetModeTable.Contains(x.atlasPopulationMode)).ToArray();
 
-                    AssetDatabase.SaveAssetIfDirty(fontAsset);
+            using (new AssetEditingScope())
+            {
+                if (focus)
+                {
+                    foreach (var fontAsset in targetFontAssets)
+                    {
+                        Reflection.InvokePrivateMethod(fontAsset, "UpdateFontAssetData");
+                    }
+                }
+                else
+                {
+                    foreach (var fontAsset in targetFontAssets)
+                    {
+                        fontAsset.ClearFontAssetData(true);
+
+                        AssetDatabase.SaveAssetIfDirty(fontAsset);
+                    }
                 }
             }
         }
