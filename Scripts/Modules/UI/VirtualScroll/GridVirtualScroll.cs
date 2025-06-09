@@ -45,6 +45,14 @@ namespace Modules.UI
             SetContents(elements);
         }
 
+        public TComponent[] GetAllElements<TComponent>() where TComponent : Component
+        {
+            return ListItems.Select(x => x as GridVirtualScrollItem<T, TComponent>)
+                .Where(x => x != null)
+                .SelectMany(x => x.Elements)
+                .ToArray();
+        }
+
         // ※ 基底クラスのSetContentsを隠蔽する.
         private new void SetContents(IEnumerable<GridElement> contents)
         {

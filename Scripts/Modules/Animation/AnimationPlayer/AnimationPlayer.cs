@@ -394,24 +394,25 @@ namespace Modules.Animation
                     break;
 
                 case EndActionType.Deactivate:
-                    if (Application.isPlaying)
                     {
-                        UnityUtility.SetActive(gameObject, false);
-                    }
+                        if (currentState == State.Play && Application.isPlaying)
+                        {
+                            UnityUtility.SetActive(gameObject, false);
+                        }
 
-                    currentState = State.Stop;
+                        currentState = State.Stop;
+                    }
                     break;
 
                 case EndActionType.Destroy:
-                    if (Application.isPlaying)
                     {
-                        UnityUtility.SafeDelete(gameObject);
+                        if (currentState == State.Play &&Application.isPlaying)
+                        {
+                            UnityUtility.SafeDelete(gameObject);
+                        }
+
+                        currentState = State.Stop;
                     }
-
-                    currentState = State.Stop;
-                    break;
-
-                case EndActionType.Loop:
                     break;
             }
 
