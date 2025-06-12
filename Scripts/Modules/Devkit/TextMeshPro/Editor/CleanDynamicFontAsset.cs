@@ -1,11 +1,11 @@
 ﻿
+using UnityEngine;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEditor;
 using Extensions;
 using Extensions.Devkit;
 using TMPro;
-using UnityEditor.Localization.Plugins.XLIFF.V12;
 
 namespace Modules.Devkit.TextMeshPro
 {
@@ -33,6 +33,8 @@ namespace Modules.Devkit.TextMeshPro
 
         private static void OnFocusChanged(bool focus)
         {
+            if (Application.isPlaying){ return; }
+
             var fontAssets = UnityEditorUtility.FindAssetsByType<TMP_FontAsset>($"t:{typeof(TMP_FontAsset).FullName}");
 
             var targetFontAssets = fontAssets.Where(x => TargetModeTable.Contains(x.atlasPopulationMode)).ToArray();
