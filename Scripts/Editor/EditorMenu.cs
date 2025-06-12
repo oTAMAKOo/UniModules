@@ -39,6 +39,7 @@ using Modules.Devkit.SerializeAssets;
 using Modules.Devkit.TextureViewer;
 using Modules.Devkit.UI;
 using Modules.Devkit.U2D;
+using Modules.Devkit.TextMeshPro;
 
 #if ENABLE_CRIWARE_ADX || ENABLE_CRIWARE_ADX_LE || ENABLE_CRIWARE_SOFDEC
 
@@ -620,6 +621,21 @@ namespace Modules
         public static bool AdditionalComponentLogValidate()
         {
             UnityEditor.Menu.SetChecked(SettingsMenu + "Auto Add Component/Log", AdditionalComponent.Prefs.LogEnable);
+            return true;
+        }
+
+        //------ TextMeshProのダイナミックフォントのテクスチャリフレッシュ無効化 ------
+
+        [MenuItem(itemName: SettingsMenu + "Disable CleanDynamicFontAsset", priority = 7)]
+        public static void ToggleCleanDynamicFontAsset()
+        {
+            CleanDynamicFontAsset.Prefs.disable = !CleanDynamicFontAsset.Prefs.disable;
+        }
+
+        [MenuItem(itemName: SettingsMenu + "Disable CleanDynamicFontAsset", isValidateFunction: true)]
+        public static bool ToggleCleanDynamicFontAssetValidate()
+        {
+            Menu.SetChecked(SettingsMenu + "Disable CleanDynamicFontAsset", CleanDynamicFontAsset.Prefs.disable);
             return true;
         }
 

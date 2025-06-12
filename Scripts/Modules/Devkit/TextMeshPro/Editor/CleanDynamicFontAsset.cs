@@ -1,17 +1,27 @@
 ﻿
 using UnityEngine;
+using UnityEditor;
 using System.Collections.Generic;
 using System.Linq;
-using UnityEditor;
 using Extensions;
 using Extensions.Devkit;
 using TMPro;
+using Modules.Devkit.Prefs;
 
 namespace Modules.Devkit.TextMeshPro
 {
     public static class CleanDynamicFontAsset
     {
         //----- params -----
+
+        public static class Prefs
+        {
+            public static bool disable
+            {
+                get { return ProjectPrefs.Get(typeof(Prefs).FullName + "-disable", false); }
+                set { ProjectPrefs.Set(typeof(Prefs).FullName + "-disable", value); }
+            }
+        }
 
         private static readonly HashSet<AtlasPopulationMode> TargetModeTable = new HashSet<AtlasPopulationMode>
         {
@@ -34,6 +44,8 @@ namespace Modules.Devkit.TextMeshPro
         private static void OnFocusChanged(bool focus)
         {
             if (Application.isPlaying){ return; }
+
+            if (Prefs.disable){ return; }
 
             var fontAssets = UnityEditorUtility.FindAssetsByType<TMP_FontAsset>($"t:{typeof(TMP_FontAsset).FullName}");
 
