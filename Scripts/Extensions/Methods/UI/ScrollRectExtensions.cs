@@ -1,6 +1,7 @@
-﻿
+
 using UnityEngine;
 using UnityEngine.UI;
+using System.Threading;
 using Cysharp.Threading.Tasks;
 using DG.Tweening;
 
@@ -32,7 +33,8 @@ namespace Extensions
             scrollRect.content.anchoredPosition = anchoredPosition;
         }
 
-        public static async UniTask ScrollToItemAsync(this ScrollRect scrollRect, GameObject target, float duration, Vector2? offset = null, Ease ease = Ease.OutCubic)
+        public static async UniTask ScrollToItemAsync(this ScrollRect scrollRect, GameObject target, float duration, 
+                                                      Vector2? offset = null, Ease ease = Ease.OutCubic, CancellationToken cancelToken = default)
         {
             var rt = scrollRect.transform as RectTransform;
 
@@ -53,7 +55,26 @@ namespace Extensions
                 targetAnchoredPosition.y = p1.y - p2.y + (offset.HasValue ? offset.Value.y : 0f);
             }
 
-            await scrollRect.content.DOAnchorPos(targetAnchoredPosition, duration).SetEase(ease).ToUniTask();
+            var tween =  scrollRect.content.DOAnchorPos(targetAnchoredPosition, duration)
+                .SetEase(ease)
+                .SetUpdate(true) // TimeScale 無視.
+                .SetAutoKill(true)
+                .Pause();
+
+            // キャンセル対応
+            await using (cancelToken.Register(() => tween.Kill()))
+            {
+                tween.Play();
+
+                try
+                {
+                    await tween.AsyncWaitForCompletion();
+                }
+                catch (System.OperationCanceledException)
+                {
+                    /* Canceled */
+                }
+            }
         }
     }
 }
