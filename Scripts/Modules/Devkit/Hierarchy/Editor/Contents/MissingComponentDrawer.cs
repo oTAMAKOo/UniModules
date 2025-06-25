@@ -1,7 +1,8 @@
-﻿
+
 using UnityEngine;
 using UnityEditor;
 using Unity.Linq;
+using System;
 using System.Collections.Generic;
 using Extensions;
 using Extensions.Devkit;
@@ -33,6 +34,8 @@ namespace Modules.Devkit.Hierarchy
         private Dictionary<GameObject, bool> missingSearchDictionary = null;
 
         private int frameCount = 0;
+
+        private Func<GameObject, bool> missingDetectionCallBack = null;
 
         //----- property -----
 
@@ -79,6 +82,11 @@ namespace Modules.Devkit.Hierarchy
             return rect;
         }
 
+        public void SetMissingDetectionCallBack(Func<GameObject, bool> callback)
+        {
+            missingDetectionCallBack = callback;
+        }
+
         private void OnEditorUpdate()
         {
             frameCount++;
@@ -99,9 +107,22 @@ namespace Modules.Devkit.Hierarchy
                 return missingSearchDictionary[targetObject];
             }
 
-            var gameObjects = targetObject.Children();
-
             var hasMissing = UnityEditorUtility.HasMissingReference(targetObject);
+
+            if (hasMissing)
+            {
+                if (missingDetectionCallBack != null)
+                {
+                    var changed = missingDetectionCallBack.Invoke(targetObject);
+
+                    if (changed)
+                    {
+                        hasMissing = UnityEditorUtility.HasMissingReference(targetObject);
+                    }
+                }
+            }
+
+            var gameObjects = targetObject.Children();
 
             foreach (var gameObject in gameObjects)
             {

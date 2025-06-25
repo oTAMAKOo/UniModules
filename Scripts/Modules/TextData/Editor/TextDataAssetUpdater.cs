@@ -72,18 +72,14 @@ namespace Modules.TextData.Editor
 
         private static async void AutoUpdateTextDataAssetCallback()
         {
-            if (Application.isPlaying) { return; }
-
-            if (EditorApplication.isCompiling) { return; }
-
-            if (TextDataExcel.Importing || TextDataExcel.Exporting) { return; }
-
             if (nextCheckTime.HasValue)
             {
                 if (DateTime.Now < nextCheckTime) { return; }
             }
 
             nextCheckTime = DateTime.Now.AddSeconds(CheckInterval);
+
+            if (IsAutoUpdateSkip()){ return; }
 
             var config = TextDataConfig.Instance;
 
@@ -132,6 +128,21 @@ namespace Modules.TextData.Editor
                     await UpdateTextDataAsset(externalAsset, source, Prefs.externalLastUpdate, x => Prefs.externalLastUpdate = x);
                 }
             }
+        }
+
+        private static bool IsAutoUpdateSkip()
+        {
+            if (Application.isPlaying) { return true; }
+
+            if (EditorApplication.isPlayingOrWillChangePlaymode){ return true; }
+
+            if (EditorApplication.isCompiling) { return true; }
+
+            if (EditorApplication.isUpdating){ return true; }
+
+            if (TextDataExcel.Importing || TextDataExcel.Exporting) { return true; }
+
+            return false;
         }
 
         private static TextDataAsset GenerateTextDataAsset(TextType textType)

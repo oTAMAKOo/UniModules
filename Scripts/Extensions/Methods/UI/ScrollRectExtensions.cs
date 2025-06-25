@@ -1,4 +1,3 @@
-
 using UnityEngine;
 using UnityEngine.UI;
 using System.Threading;
@@ -9,71 +8,167 @@ namespace Extensions
 {
     public static class ScrollRectExtensions
     {
-        public static void ScrollToItem(this ScrollRect scrollRect, GameObject target, Vector2? offset = null)
+        public enum ScrollAlignment
         {
-            var rt = scrollRect.transform as RectTransform;
-
-            rt.ForceRebuildLayoutGroup();
-
-            var p1 = (Vector2)rt.InverseTransformPoint(scrollRect.content.position);
-            var p2 = (Vector2)rt.InverseTransformPoint(target.transform.position);
-
-            var anchoredPosition = scrollRect.content.anchoredPosition;
-
-            if (scrollRect.horizontal)
-            {
-                anchoredPosition.x = p1.x - p2.x + (offset.HasValue ? offset.Value.x : 0f);
-            }
-
-            if (scrollRect.vertical)
-            {
-                anchoredPosition.y = p1.y - p2.y + (offset.HasValue ? offset.Value.y : 0f);
-            }
-
-            scrollRect.content.anchoredPosition = anchoredPosition;
+            Center,
+            Top,
+            Bottom,
+            Left,
+            Right
         }
 
-        public static async UniTask ScrollToItemAsync(this ScrollRect scrollRect, GameObject target, float duration, 
-                                                      Vector2? offset = null, Ease ease = Ease.OutCubic, CancellationToken cancelToken = default)
+        /// <summary> 指定したアイテムへ即座にスクロール </summary>
+        public static void ScrollToItem(this ScrollRect scrollRect, RectTransform item, ScrollAlignment alignment = ScrollAlignment.Center, Vector2 offset = default)
         {
-            var rt = scrollRect.transform as RectTransform;
+            var target = scrollRect.CalculateAlignedScrollPosition(item, alignment);
 
-            rt.ForceRebuildLayoutGroup();
+            scrollRect.normalizedPosition = scrollRect.ApplyOffset(target, offset);
+        }
 
-            var p1 = (Vector2)rt.InverseTransformPoint(scrollRect.content.position);
-            var p2 = (Vector2)rt.InverseTransformPoint(target.transform.position);
+        /// <summary> 指定したアイテムへアニメ付きでスクロール </summary>
+        public static async UniTask ScrollToItemAsync(this ScrollRect scrollRect, RectTransform item, float duration = 0.3f, ScrollAlignment alignment = ScrollAlignment.Center, Vector2 offset = default, Ease ease = Ease.OutQuad, CancellationToken cancelToken = default)
+        {
+            var target = scrollRect.CalculateAlignedScrollPosition(item, alignment);
+            
+            await scrollRect.LerpToScrollPosition(scrollRect.ApplyOffset(target, offset), duration, ease, cancelToken);
+        }
 
-            var targetAnchoredPosition = scrollRect.content.anchoredPosition;
-
-            if (scrollRect.horizontal)
+        private static Vector2 CalculateAlignedScrollPosition(this ScrollRect scrollRect, RectTransform item, ScrollAlignment alignment)
+        {
+            switch (alignment)
             {
-                targetAnchoredPosition.x = p1.x - p2.x + (offset.HasValue ? offset.Value.x : 0f);
+                case ScrollAlignment.Top:
+                    return scrollRect.CalculateTopAlignedScrollPosition(item);
+                case ScrollAlignment.Bottom:
+                    return scrollRect.CalculateBottomAlignedScrollPosition(item);
+                case ScrollAlignment.Left:
+                    return scrollRect.CalculateLeftAlignedScrollPosition(item);
+                case ScrollAlignment.Right:
+                    return scrollRect.CalculateRightAlignedScrollPosition(item);
+
+                default:
+                    return scrollRect.CalculateFocusedScrollPosition(item);
+            }
+        }
+
+        private static Vector2 CalculateTopAlignedScrollPosition(this ScrollRect scrollRect, RectTransform item)
+        {
+            var itemPoint = scrollRect.content.InverseTransformPoint(item.position);
+            var scrollPosition = scrollRect.normalizedPosition;
+
+            if (scrollRect.vertical && scrollRect.content.rect.height > scrollRect.viewport.rect.height)
+            {
+                scrollPosition.y = Mathf.Clamp01((itemPoint.y) / (scrollRect.content.rect.height - scrollRect.viewport.rect.height));
             }
 
-            if (scrollRect.vertical)
+            return scrollPosition;
+        }
+
+        private static Vector2 CalculateBottomAlignedScrollPosition(this ScrollRect scrollRect, RectTransform item)
+        {
+            var itemPoint = scrollRect.content.InverseTransformPoint(item.position);
+            var scrollPosition = scrollRect.normalizedPosition;
+
+            if (scrollRect.vertical && scrollRect.content.rect.height > scrollRect.viewport.rect.height)
             {
-                targetAnchoredPosition.y = p1.y - p2.y + (offset.HasValue ? offset.Value.y : 0f);
+                scrollPosition.y = Mathf.Clamp01((itemPoint.y - scrollRect.viewport.rect.height) / (scrollRect.content.rect.height - scrollRect.viewport.rect.height));
             }
 
-            var tween =  scrollRect.content.DOAnchorPos(targetAnchoredPosition, duration)
+            return scrollPosition;
+        }
+
+        private static Vector2 CalculateLeftAlignedScrollPosition(this ScrollRect scrollRect, RectTransform item)
+        {
+            var itemPoint = scrollRect.content.InverseTransformPoint(item.position);
+            var scrollPosition = scrollRect.normalizedPosition;
+
+            if (scrollRect.horizontal && scrollRect.content.rect.width > scrollRect.viewport.rect.width)
+            {
+                scrollPosition.x = Mathf.Clamp01((itemPoint.x) / (scrollRect.content.rect.width - scrollRect.viewport.rect.width));
+            }
+
+            return scrollPosition;
+        }
+
+        private static Vector2 CalculateRightAlignedScrollPosition(this ScrollRect scrollRect, RectTransform item)
+        {
+            var itemPoint = scrollRect.content.InverseTransformPoint(item.position);
+            var scrollPosition = scrollRect.normalizedPosition;
+
+            if (scrollRect.horizontal && scrollRect.content.rect.width > scrollRect.viewport.rect.width)
+            {
+                scrollPosition.x = Mathf.Clamp01((itemPoint.x - scrollRect.viewport.rect.width) / (scrollRect.content.rect.width - scrollRect.viewport.rect.width));
+            }
+
+            return scrollPosition;
+        }
+
+        private static Vector2 ApplyOffset(this ScrollRect scrollRect, Vector2 calculatedPosition, Vector2 offset)
+        {
+            var contentSize = scrollRect.content.rect.size;
+            var viewportSize = scrollRect.viewport.rect.size;
+
+            var normalized = calculatedPosition;
+
+            if (scrollRect.horizontal && contentSize.x > viewportSize.x)
+            {
+                normalized.x = Mathf.Clamp01(normalized.x + offset.x / (contentSize.x - viewportSize.x));
+            }
+
+            if (scrollRect.vertical && contentSize.y > viewportSize.y)
+            {
+                normalized.y = Mathf.Clamp01(normalized.y + offset.y / (contentSize.y - viewportSize.y));
+            }
+
+            return normalized;
+        }
+
+        public static Vector2 CalculateFocusedScrollPosition(this ScrollRect scrollRect, RectTransform item)
+        {
+            var itemCenterPoint = scrollRect.content.InverseTransformPoint(item.TransformPoint(item.rect.center));
+            var contentSizeOffset = scrollRect.content.rect.size;
+            contentSizeOffset.Scale(scrollRect.content.pivot);
+            return scrollRect.CalculateFocusedScrollPosition(itemCenterPoint + contentSizeOffset.ToVector3());
+        }
+
+        public static Vector2 CalculateFocusedScrollPosition(this ScrollRect scrollRect, Vector2 focusPoint)
+        {
+            var contentSize = scrollRect.content.rect.size;
+            var viewportSize = scrollRect.viewport.rect.size;
+
+            var scrollPosition = scrollRect.normalizedPosition;
+
+            if (scrollRect.horizontal && contentSize.x > viewportSize.x)
+            {
+                scrollPosition.x = Mathf.Clamp01((focusPoint.x - viewportSize.x * 0.5f) / (contentSize.x - viewportSize.x));
+            }
+
+            if (scrollRect.vertical && contentSize.y > viewportSize.y)
+            {
+                scrollPosition.y = Mathf.Clamp01((focusPoint.y - viewportSize.y * 0.5f) / (contentSize.y - viewportSize.y));
+            }
+
+            return scrollPosition;
+        }
+
+        private static async UniTask LerpToScrollPosition(this ScrollRect scrollRect, Vector2 targetNormalizedPos, float duration, Ease ease, CancellationToken cancelToken = default)
+        {
+            LayoutRebuilder.ForceRebuildLayoutImmediate(scrollRect.content);
+
+            var tween = DOTween.To(() => scrollRect.normalizedPosition, x => scrollRect.normalizedPosition = x, targetNormalizedPos, duration)
                 .SetEase(ease)
-                .SetUpdate(true) // TimeScale 無視.
+                .SetUpdate(true)
                 .SetAutoKill(true)
                 .Pause();
 
-            // キャンセル対応
-            await using (cancelToken.Register(() => tween.Kill()))
+            using (cancelToken.Register(() => tween.Kill()))
             {
                 tween.Play();
-
                 try
                 {
                     await tween.AsyncWaitForCompletion();
                 }
-                catch (System.OperationCanceledException)
-                {
-                    /* Canceled */
-                }
+                catch (System.OperationCanceledException) { }
             }
         }
     }
