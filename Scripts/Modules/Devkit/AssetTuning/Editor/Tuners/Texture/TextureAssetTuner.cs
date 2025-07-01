@@ -79,11 +79,8 @@ namespace Modules.Devkit.AssetTuning
 
             var textureData = config.DefaultData;
 
-            if(!textureData.IsIgnoreTarget(assetPath))
-            {
-                TextureImporterModify.Modify(textureImporter, textureData, Platforms);
-            }
-
+            if(textureData.IsIgnoreTarget(assetPath)){ return; }
+            
             ModifyTextureSettings(textureImporter);
         }
 
