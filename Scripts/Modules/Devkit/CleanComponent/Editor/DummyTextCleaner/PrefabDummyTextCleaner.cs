@@ -1,43 +1,79 @@
-
+﻿
 using UnityEngine;
 using UnityEditor;
-using Cysharp.Threading.Tasks;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using Extensions;
+using Extensions.Devkit;
 
 namespace Modules.Devkit.CleanComponent
 {
-    public sealed class PrefabDummyTextCleaner : AssetModificationProcessor
+    public static class PrefabDummyTextCleaner
     {
         //----- params -----
 
         //----- field -----
-		
+
         //----- property -----
 
         //----- method -----
 
-		// 初回以降はOnDestroyで破棄処理を行うので実行不要.
+        public static void CleanAllPrefabContents()
+        {
+            var prefabs = UnityEditorUtility.FindAssetsByType<GameObject>("t:prefab");
 
-		public static void OnWillCreateAsset(string assetPath)
-		{
-			if (!assetPath.EndsWith(".prefab")){ return; }
+            var cleanTargets = new List<string>();
 
-			ModifyPrefabContents(assetPath).Forget();
-		}
+            using (new AssetEditingScope())
+            {
+                foreach (var prefab in prefabs)
+                {
+                    var changed = ModifyPrefabContents(prefab);
 
-		private static async UniTask ModifyPrefabContents(string assetPath)
-		{
-			await UniTask.DelayFrame(5);
+                    if (changed)
+                    {
+                        var assetPath = AssetDatabase.GetAssetPath(prefab);
 
-			var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(assetPath);
+                        cleanTargets.Add(assetPath);
+                    }
+                }
+            }
 
-			if (prefab == null) { return; }
+            if(cleanTargets.Any())
+            {
+                var logBuilder = new StringBuilder();
 
-			var changed = DummyTextCleaner.ModifyComponents(prefab);
+                logBuilder.AppendLine("DummyText cleaned prefabs:");
 
-			if (changed)
-			{
-				PrefabUtility.SavePrefabAsset(prefab);
-			}
-		}
+                cleanTargets.ForEach(x => logBuilder.AppendLine(x));
+
+                using (new DisableStackTraceScope())
+                {
+                    Debug.LogWarning(logBuilder.ToString());
+                }
+            }
+        }
+
+        public static bool ModifyPrefabContents(string assetPath)
+        {
+            var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(assetPath);
+
+            return ModifyPrefabContents(prefab);
+        }
+
+        public static bool ModifyPrefabContents(GameObject prefab)
+        {
+            if (prefab == null) { return false; }
+
+            var changed = DummyTextCleaner.ModifyComponents(prefab);
+
+            if (changed)
+            {
+                PrefabUtility.SavePrefabAsset(prefab);
+            }
+
+            return changed;
+        }
     }
 }
