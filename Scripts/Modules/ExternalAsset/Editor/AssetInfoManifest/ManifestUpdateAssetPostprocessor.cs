@@ -95,6 +95,8 @@ namespace Modules.ExternalAssets
         {
             if (string.IsNullOrEmpty(assetPath)){ return false; }
 
+            if (PathUtility.IsFolder(assetPath)){ return false; }
+
             if (manifestAssetPath == assetPath) { return false; }
 
             if (!assetPath.StartsWith(externalAssetPath)) { return false; }
