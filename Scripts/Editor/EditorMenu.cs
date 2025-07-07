@@ -418,7 +418,7 @@ namespace Modules
             SceneLaunchWindow.Open();
         }
 
-        [MenuItem(itemName: UtilityMenu + "Open RaycastViewerWindow", priority = 1)]
+        [MenuItem(itemName: UtilityMenu + "Open RayCastViewerWindow", priority = 1)]
         public static void OpenRaycastViewerWindow()
         {
             RaycastViewerWindow.Open();
@@ -506,7 +506,13 @@ namespace Modules
             CleanDirectoryWindow.Open();
         }
 
-        [MenuItem(itemName: CleanerMenu + "Clean ParticleSystem (Selection GameObject)", priority = 1)]
+        [MenuItem(itemName: CleanerMenu + "Clean DummyText (All Prefabs)", priority = 1)]
+        public static void CleanAllPrefabDummyText()
+        {
+            PrefabDummyTextCleaner.CleanAllPrefabContents();
+        }
+
+        [MenuItem(itemName: CleanerMenu + "Clean ParticleSystem (Selection GameObject)", priority = 2)]
         public static void CleanParticleSystem()
         {
             ParticleSystemCleaner.CleanSelectionTarget();
