@@ -68,6 +68,8 @@ namespace Modules.Movie
 
         public void Play(bool loop = false)
         {
+            IsLoop = loop;
+            
             movieManagement.Play(this, loop);
         }
 
