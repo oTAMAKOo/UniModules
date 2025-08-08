@@ -4,6 +4,7 @@ using UnityEditor;
 using System;
 using System.Linq;
 using System.Collections.Generic;
+using Newtonsoft.Json;
 using UniRx;
 using Extensions;
 using Extensions.Devkit;
@@ -179,9 +180,11 @@ namespace Modules.Net.WebRequest
 
                 var selectionTab = tabData.FirstOrDefault(x => x.Item1 == tabName);
                 
+                var content = ConvertToFormatedText(selectionTab.Item2);
+
                 using (var scrollView = new EditorGUILayout.ScrollViewScope(detailScrollPosition))
                 {
-                    var vector = detailStyle.CalcSize(new GUIContent(selectionTab.Item2));
+                    var vector = detailStyle.CalcSize(new GUIContent(content));
 
                     var layoutOption = new GUILayoutOption[]
                     {
@@ -191,11 +194,33 @@ namespace Modules.Net.WebRequest
                         GUILayout.MinHeight(vector.y)
                     };
 
-                    EditorGUILayout.SelectableLabel(selectionTab.Item2, detailStyle, layoutOption);
+                    EditorGUILayout.SelectableLabel(content, detailStyle, layoutOption);
 
                     detailScrollPosition = scrollView.scrollPosition;
                 }
             }
+        }
+
+        private string ConvertToFormatedText(string text)
+        {
+            var result = string.Empty;
+
+            try
+            {
+                var parsedJson = JsonConvert.DeserializeObject(text);
+
+                if (parsedJson == null){ return null; }
+
+                var formatedJson = JsonConvert.SerializeObject(parsedJson, Formatting.Indented);
+
+                result = formatedJson;
+            }
+            catch (JsonReaderException)
+            {
+                result = text;
+            }
+
+            return result;
         }
 
         private void InitializeStyle()

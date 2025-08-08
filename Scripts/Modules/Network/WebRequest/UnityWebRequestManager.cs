@@ -4,7 +4,7 @@ using System;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using UniRx;
+using Newtonsoft.Json;
 using Extensions;
 using MessagePack;
 using MessagePack.Resolvers;
@@ -68,49 +68,27 @@ namespace Modules.Net.WebRequest
         /// <summary> 成功時イベント. </summary>
         protected override void OnComplete<TResult>(TWebRequest webRequest, TResult result, double totalMilliseconds)
         {
-            var json = string.Empty;
-
-            void SetResultJson()
-            {
-                switch (Format)
-                {
-                    case DataFormat.Json:
-                        {
-                            json = result.ToJson();
-                        }
-                        break;
-
-                    case DataFormat.MessagePack:
-                        {
-                            var options = StandardResolverAllowPrivate.Options.WithResolver(UnityCustomResolver.Instance);
-
-                            if (CompressResponseData == DataCompressType.MessagePackLZ4)
-                            {
-                                options = options.WithCompression(MessagePackCompression.Lz4Block);
-                            }
-
-                            json = MessagePackSerializer.SerializeToJson(result, options);
-                        }
-                        break;
-                }
-            }
+            var resultJson = string.Empty;
 
             #if UNITY_EDITOR
 
-            if (string.IsNullOrEmpty(json))
+            if (string.IsNullOrEmpty(resultJson))
             {
-                SetResultJson();
+                resultJson = ConvertToJson(result);
             }
 
-            ApiTracker.Instance.OnComplete(webRequest, json, totalMilliseconds);
+            ApiTracker.Instance.OnComplete(webRequest, resultJson, totalMilliseconds);
 
             #endif
 
             if (LogEnable)
             {
-                if (string.IsNullOrEmpty(json))
+                var headerString = webRequest.GetHeaderString();
+                var bodyString = webRequest.GetBodyString();
+
+                if (string.IsNullOrEmpty(resultJson))
                 {
-                    SetResultJson();
+                    resultJson = ConvertToJson(result);
                 }
 
                 var builder = new StringBuilder();
@@ -118,11 +96,56 @@ namespace Modules.Net.WebRequest
                 builder.AppendFormat("{0} ({1:F1}ms)", webRequest.HostUrl.Replace(HostUrl, string.Empty), totalMilliseconds).AppendLine();
                 builder.AppendLine();
                 builder.AppendFormat("URL: {0}", webRequest.Url).AppendLine();
-                builder.AppendFormat("Result: {0}", json).AppendLine();
-                builder.AppendLine();
+                
+                if(!string.IsNullOrEmpty(headerString))
+                {
+                    builder.AppendFormat("Header: {0}", headerString).AppendLine();
+                    builder.AppendLine();
+                }
+
+                if(!string.IsNullOrEmpty(bodyString))
+                {
+                    builder.AppendFormat("Body: {0}", bodyString).AppendLine();
+                    builder.AppendLine();
+                }
+
+                if (!string.IsNullOrEmpty(resultJson))
+                {
+                    builder.AppendFormat("Result: {0}", resultJson).AppendLine();
+                    builder.AppendLine();
+                }
 
                 UnityConsole.Event(ConsoleEventName, ConsoleEventColor, builder.ToString());
             }
+        }
+
+        private string ConvertToJson<TResult>(TResult result)
+        {
+            var resultJson = string.Empty;
+
+            switch (Format)
+            {
+                case DataFormat.Json:
+                    {
+                        resultJson = result.ToJson();
+                    }
+                    break;
+
+                case DataFormat.MessagePack:
+                    {
+                        var options = StandardResolverAllowPrivate.Options.WithResolver(UnityCustomResolver.Instance);
+
+                        if (CompressResponseData == DataCompressType.MessagePackLZ4)
+                        {
+                            options = options.WithCompression(MessagePackCompression.Lz4Block);
+                        }
+
+                        resultJson = MessagePackSerializer.SerializeToJson(result, options);
+                    }
+                    break;
+            }
+
+            return resultJson;
         }
 
         protected override void OnRetry(TWebRequest webRequest)
