@@ -59,6 +59,8 @@ namespace Modules.Scene
         private Subject<SceneInstance<TScenes>> onUnloadSceneComplete = null;
         private Subject<Unit> onUnloadError = null;
 
+        private Subject<Unit> onCancel = null;
+
         //----- property -----
 
         /// <summary> 現在のシーン情報 </summary>
@@ -279,6 +281,11 @@ namespace Modules.Scene
             transitionCancelSource = new CancellationTokenSource();
 
             IsTransition = false;
+
+            if (onCancel != null)
+            {
+                onCancel.OnNext(Unit.Default);
+            }
         }
 
         /// <summary>
@@ -1309,6 +1316,13 @@ namespace Modules.Scene
         public IObservable<SceneInstance<TScenes>> OnLeaveCompleteAsObservable()
         {
             return onLeaveComplete ?? (onLeaveComplete = new Subject<SceneInstance<TScenes>>());
+        }
+
+        //====== Cancel ======
+
+        public IObservable<Unit> OnCancelAsObservable()
+        {
+            return onCancel ?? (onCancel = new Subject<Unit>());
         }
 
         protected abstract UniTask TransitionStart<TArgument>(TArgument sceneArgument, bool isSceneBack) where TArgument : ISceneArgument<TScenes>;

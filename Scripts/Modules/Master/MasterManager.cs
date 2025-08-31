@@ -110,7 +110,7 @@ namespace Modules.Master
             masters.Remove(master);
         }
 
-        public async UniTask<bool> UpdateMaster(Dictionary<IMaster, string> updateMasters, IProgress<float> progress = null, CancellationToken cancelToken = default)
+        public async UniTask<bool> UpdateMaster(Dictionary<IMaster, string> updateMasters, IProgress<IMaster> progress = null, CancellationToken cancelToken = default)
         {
             var result = true;
 
@@ -129,9 +129,6 @@ namespace Modules.Master
             if (!EnableVersionCheck) { return true; }
 
             #endif
-
-            var amount = 1f / updateMasters.Count;
-            var progressAmount = 0f;
 
             var frameCallLimiter = new FunctionFrameLimiter(50);
 
@@ -165,11 +162,10 @@ namespace Modules.Master
                 }
 
                 result &= success;
-                progressAmount += amount;
 
                 if (progress != null)
                 {
-                    progress.Report(progressAmount);
+                    progress.Report(master);
                 }
 
                 if (onUpdateMaster != null)
@@ -181,8 +177,6 @@ namespace Modules.Master
             Exception exception = null;
 
             var stopwatch = System.Diagnostics.Stopwatch.StartNew();
-
-            if (progress != null) { progress.Report(0f); }
 
             if (updateMasters.Any())
             {
@@ -229,8 +223,6 @@ namespace Modules.Master
                 }
 
                 LogUtility.ChunkLog(updateLog.ToString(), title, OutputCallback);
-
-                if (progress != null) { progress.Report(1f); }
             }
             else
             {
