@@ -1,4 +1,5 @@
 
+using System;
 using System.Collections.Generic;
 
 namespace Extensions
@@ -45,48 +46,46 @@ namespace Extensions
         /// <summary> バイト数を100MBのような表示用文字列に変換 </summary>
         public static string GetBytesReadable(long byteSize, string format = "0.###")
         {
-            var readable = default(long);
+            var readable = default(double);
             var suffix = string.Empty;
             var sign = byteSize < 0 ? "-" : "";
 
-            byteSize = byteSize < 0 ? -byteSize : byteSize;
+            byteSize = Math.Abs(byteSize);
 
-            if (byteSize >= 0x1000000000000000)
+            if (byteSize >= 0x1000000000000000) // EB
             {
                 suffix = Suffix[SizeType.EB];
-                readable = (byteSize >> 50);
+                readable = (double)byteSize / (1L << 60);
             }
-            else if (byteSize >= 0x4000000000000)
+            else if (byteSize >= 0x4000000000000) // PB
             {
                 suffix = Suffix[SizeType.PB];
-                readable = (byteSize >> 40);
+                readable = (double)byteSize / (1L << 50);
             }
-            else if (byteSize >= 0x10000000000)
+            else if (byteSize >= 0x10000000000) // TB
             {
                 suffix = Suffix[SizeType.TB];
-                readable = (byteSize >> 30);
+                readable = (double)byteSize / (1L << 40);
             }
-            else if (byteSize >= 0x40000000)
+            else if (byteSize >= 0x40000000) // GB
             {
                 suffix = Suffix[SizeType.GB];
-                readable = (byteSize >> 20);
+                readable = (double)byteSize / (1L << 30);
             }
-            else if (byteSize >= 0x100000)
+            else if (byteSize >= 0x100000) // MB
             {
                 suffix = Suffix[SizeType.MB];
-                readable = (byteSize >> 10);
+                readable = (double)byteSize / (1L << 20);
             }
-            else if (byteSize >= 0x400)
+            else if (byteSize >= 0x400) // KB
             {
                 suffix = Suffix[SizeType.KB];
-                readable = byteSize;
+                readable = (double)byteSize / (1L << 10);
             }
             else
             {
                 return byteSize.ToString("0") + Suffix[SizeType.B];
             }
-
-            readable /= 1024;
 
             return sign + readable.ToString(format) + suffix;
         }
