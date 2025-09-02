@@ -158,14 +158,20 @@ namespace Modules.UI
             }
         }
 
-        /// <summary> 管理下のリストアイテム. </summary>
+        /// <summary> 管理下のリストアイテム </summary>
         public IEnumerable<VirtualScrollItem<T>> ListItems { get { return itemList; } }
 
-        /// <summary> リストアイテムが存在するか. </summary>
+        /// <summary> リストアイテムが存在するか </summary>
         public bool HasListItem { get { return itemList != null && itemList.Any(); } }
 
         /// <summary> スクロールの方向 </summary>
         protected Direction Direction { get { return direction; } }
+
+        /// <summary> 両端の隙間 </summary>
+        public float EdgeSpacing { get { return edgeSpacing; } }
+
+        /// <summary> リストアイテムの隙間 </summary>
+        public float ItemSpacing { get { return itemSpacing; } }
 
         //----- method -----
 

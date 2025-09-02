@@ -44,7 +44,7 @@ namespace Extensions
         public static Dictionary<SizeType, string> Suffix = new Dictionary<SizeType, string>(DefaultSuffix);
 
         /// <summary> バイト数を100MBのような表示用文字列に変換 </summary>
-        public static string GetBytesReadable(long byteSize, string format = "0.###")
+        public static string GetBytesReadable(long byteSize, string format = "0.00", bool truncate = false)
         {
             var readable = default(double);
             var suffix = string.Empty;
@@ -87,7 +87,22 @@ namespace Extensions
                 return byteSize.ToString("0") + Suffix[SizeType.B];
             }
 
-            return sign + readable.ToString(format) + suffix;
+            // 整数かどうか判定してフォーマットを分ける
+
+            var text = string.Empty;
+
+            if (truncate)
+            {
+                text = Math.Abs(readable % 1) < double.Epsilon
+                       ? ((long)readable).ToString("0") // 小数点以下なし
+                       : readable.ToString(format);     // 小数点あり
+            }
+            else
+            {
+                text = readable.ToString(format);
+            }
+
+            return sign + text + suffix;
         }
     }
 }
