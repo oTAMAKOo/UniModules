@@ -13,7 +13,7 @@ namespace Modules.View
         ViewModel GetViewModel();
     }
 
-    public interface IView<TViewModel> where TViewModel : ViewModel{  }
+    public interface IView<TViewModel> where TViewModel : ViewModel {  }
 
     public static class ViewExtensions
     {

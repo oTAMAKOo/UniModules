@@ -1,5 +1,7 @@
 ﻿
 using UnityEngine;
+using UniRx;
+using Extensions;
 
 namespace Modules.View
 {
@@ -9,13 +11,36 @@ namespace Modules.View
 
         //----- field -----
 
+        private TViewModel viewModel = null;
+
         //----- property -----
 
         protected TViewModel ViewModel
         {
-            get { return this.GetViewModel(); }
+            get
+            {
+                if (viewModel == null)
+                {
+                    viewModel = this.GetViewModel();
+
+                    if (viewModel != null)
+                    {
+                        viewModel.OnDisposeAsObservable()
+                            .Where(_ => !UnityUtility.IsNull(gameObject))
+                            .Subscribe(_ => viewModel = null)
+                            .AddTo(this);
+                    }
+                }
+
+                return viewModel;
+            }
         }
 
         //----- method -----
+
+        public void ClearViewModelCache()
+        {
+            viewModel = null;
+        }
     }
 }
