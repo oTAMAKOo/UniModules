@@ -1,13 +1,13 @@
 
 using UnityEngine;
-using UnityEngine.EventSystems;
+using UnityEngine.UI;
 
 namespace Modules.UI
 {
     /// <summary> RectTransformのサイズを指定した基準サイズのアスペクト比に固定 </summary>
     [ExecuteAlways]
     [RequireComponent(typeof(RectTransform))]
-    public sealed class FixedAspectRectTransform : UIBehaviour
+    public sealed class FixedAspectRectTransform : LayoutElement
     {
         //----- params -----
 
@@ -27,6 +27,26 @@ namespace Modules.UI
         #endif
 
         //----- property -----
+
+        public override float preferredWidth
+        {
+            get
+            {
+                var rectTransform = transform as RectTransform;
+
+                return rectTransform.sizeDelta.x;
+            }
+        }
+
+        public override float preferredHeight
+        {
+            get
+            {
+                var rectTransform = transform as RectTransform;
+
+                return rectTransform.sizeDelta.y;
+            }
+        }
 
         //----- method -----
 
