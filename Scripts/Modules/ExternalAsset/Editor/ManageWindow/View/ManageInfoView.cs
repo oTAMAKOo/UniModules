@@ -104,7 +104,7 @@ namespace Modules.ExternalAssets
         {
             if (winbtnWinCloseIconContent == null)
             {
-                winbtnWinCloseIconContent = EditorGUIUtility.TrIconContent("Toolbar Minus");
+                winbtnWinCloseIconContent = EditorGUIUtility.IconContent("Toolbar Minus");
             }
 
             IsOpen = EditorLayoutTools.Header(displayManageAssetPath, IsOpen);
