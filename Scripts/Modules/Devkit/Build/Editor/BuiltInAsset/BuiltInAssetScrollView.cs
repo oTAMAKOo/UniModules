@@ -1,8 +1,9 @@
-﻿
-using System.Collections.Generic;
+
 using UnityEngine;
 using UnityEditor;
 using System.Linq;
+using System.Collections.Generic;
+using Extensions;
 using Extensions.Devkit;
 using Modules.Cache;
 
@@ -14,13 +15,28 @@ namespace Modules.Devkit.Build
     {
 		//----- params -----
 
+        public enum AssetErrorType
+        {
+            None = 0,
+
+            /// <summary> 指定ディレクトリ以外のディレクトリに存在 </summary>
+            [Label("DirectoryLocation")]
+            InvalidDirectoryLocation,
+            /// <summary> 含まれてはいけないディレクトリに存在 </summary>
+            [Label("ForbiddenDirectory")]
+            ForbiddenDirectory,
+            /// <summary> 含まれていけないフォルダ名が含まれているか </summary>
+            [Label("FolderName")]
+            InvalidFolderName,
+        }
+
 		//----- field -----
 
 		private AssetViewMode assetViewMode = AssetViewMode.Asset;
 
 		private Cache<Object> assetCache = null;
 
-		private Dictionary<string, bool> isInvalidAssets = null;
+		private Dictionary<string, AssetErrorType> invalidAssets = null;
 
 		private string[] builtInAssetTargetPaths = null;
 		private string[] ignoreBuiltInAssetTargetPaths = null;
@@ -39,16 +55,26 @@ namespace Modules.Devkit.Build
         public BuiltInAssetScrollView()
         {
 			assetCache = new Cache<Object>();
-			isInvalidAssets = new Dictionary<string, bool>();
+            invalidAssets = new Dictionary<string, AssetErrorType>();
         }
 
 		public void Setup()
 		{
 			var builtInAssetConfig = BuiltInAssetConfig.Instance;
 
-			builtInAssetTargetPaths = builtInAssetConfig.BuiltInAssetTargets.Select(x => AssetDatabase.GetAssetPath(x)).ToArray();
-			ignoreBuiltInAssetTargetPaths = builtInAssetConfig.IgnoreBuiltInAssetTargets.Select(x => AssetDatabase.GetAssetPath(x)).ToArray();
-			ignoreBuiltInFolderNames = builtInAssetConfig.IgnoreBuiltInFolderNames;
+			builtInAssetTargetPaths = builtInAssetConfig.BuiltInAssetTargets
+                .Select(x => AssetDatabase.GetAssetPath(x))
+                .Where(x => !string.IsNullOrEmpty(x))
+                .ToArray();
+
+			ignoreBuiltInAssetTargetPaths = builtInAssetConfig.IgnoreBuiltInAssetTargets
+                .Select(x => AssetDatabase.GetAssetPath(x))
+                .Where(x => !string.IsNullOrEmpty(x))
+                .ToArray();
+			
+            ignoreBuiltInFolderNames = builtInAssetConfig.IgnoreBuiltInFolderNames
+                .Where(x => !string.IsNullOrEmpty(x))
+                .ToArray();
 
 			warningAssetSize = builtInAssetConfig.WarningAssetSize;
 		}
@@ -81,32 +107,43 @@ namespace Modules.Devkit.Build
 	                        break;
 					}
 
-					var isInvalidAsset = false;
+					var assetErrorType = AssetErrorType.None;
 
-					if (!isInvalidAssets.ContainsKey(content.assetPath))
+					if (!invalidAssets.TryGetValue(content.assetPath, out var invalidAsset))
 					{
-						isInvalidAsset =
-							!builtInAssetTargetPaths.Any(x => content.assetPath.StartsWith(x)) ||          // 指定ディレクトリ以外のディレクトリに存在.
-							ignoreBuiltInAssetTargetPaths.Any(x => content.assetPath.StartsWith(x)) ||     // 含まれてはいけないディレクトリに存在.
-							ignoreBuiltInFolderNames.Any(x => content.assetPath.Split('/').Contains(x));   // 含まれていけないフォルダ名が含まれているか.
+                        // 指定ディレクトリ以外のディレクトリに存在.
+                        if(!builtInAssetTargetPaths.Any(x => content.assetPath.StartsWith(x)))
+                        {
+                            assetErrorType = AssetErrorType.InvalidDirectoryLocation;
+                        }
+                        // 含まれてはいけないディレクトリに存在.
+                        else if(ignoreBuiltInAssetTargetPaths.Any(x => content.assetPath.StartsWith(x)))
+                        {
+                            assetErrorType = AssetErrorType.ForbiddenDirectory;
+                        }
+                        // 含まれていけないフォルダ名が含まれているか.
+                        else if(ignoreBuiltInFolderNames.Any(x => content.assetPath.Split('/').Contains(x)))
+                        {
+                            assetErrorType = AssetErrorType.InvalidFolderName;
+                        }
 
-						isInvalidAssets[content.assetPath] = isInvalidAsset;
+						invalidAssets[content.assetPath] = assetErrorType;
 					}
 					else
 					{
-						isInvalidAsset = isInvalidAssets[content.assetPath];	
+                        assetErrorType = invalidAsset;	
 					}
 
 					var titleStyle = new EditorLayoutTools.TitleGUIStyle();
 
 	                // 指定されたAsset置き場にない or 同梱しないAsset置き場のAssetが混入.
-	                if (isInvalidAsset)
+	                if (assetErrorType != AssetErrorType.None)
 	                {
 	                    titleStyle.backgroundColor = Color.red;
 	                    titleStyle.labelColor = Color.gray;
 	                    titleStyle.width = 85f;
 
-	                    EditorLayoutTools.Title("InvalidAsset", titleStyle);
+	                    EditorLayoutTools.Title(assetErrorType.ToLabelName(), titleStyle);
 	                }
 
 	                // ファイルサイズが指定された値を超えている.
