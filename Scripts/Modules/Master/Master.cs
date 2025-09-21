@@ -38,7 +38,7 @@ namespace Modules.Master
 
         //----- field -----
 
-        protected Dictionary<TKey, TMasterRecord> records = new Dictionary<TKey, TMasterRecord>();
+        private Dictionary<TKey, TMasterRecord> records = new Dictionary<TKey, TMasterRecord>();
 
         private static TMaster instance = null;
 
