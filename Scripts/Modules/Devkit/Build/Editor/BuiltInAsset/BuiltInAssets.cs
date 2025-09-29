@@ -1,4 +1,4 @@
-﻿
+
 using UnityEditor;
 using System;
 using System.Linq;
@@ -62,75 +62,61 @@ namespace Modules.Devkit.Build
 
             if (File.Exists(logFilePath))
             {
-				using (var fs = new FileStream(logFilePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
-				{
-					using (var sr = new StreamReverseReader(fs))
-					{
-                        var line = string.Empty;
-                        var count = 0;
-                        var collect = false;
-                        var exit = false;
+                var lines = File.ReadAllLines(logFilePath);
 
-                        Action<StreamReverseReader> readLineWithProgress = reader =>
+                // 最後尾から検索する為反転する.
+                lines = lines.Reverse().ToArray();
+
+                var count = 0;
+                var collect = false;
+
+                void DisplayProgress(int lineNumber)
+                {
+                    if (FrameReadLine <= count++)
+                    {
+                        count = 0;
+
+                        var progress = (float)lineNumber / lines.Length;
+
+                        EditorUtility.DisplayProgressBar("progress", "Collect built-in assets from logfile.", progress);
+                    }
+                }
+
+                for (var i = 0; i < lines.Length; i++)
+                {
+                    var line = lines[i];
+
+                    DisplayProgress(i);
+
+                    if (collect)
+                    {
+                        // 開始位置まで読み込んだので終了.
+                        if (line.StartsWith("Used Assets and files")) { break; }
+                            
+                        // プロジェクト内のAssetはAssets/から始まる.
+                        if (!line.Contains("Assets/")) { continue; }
+
+                        if (line.Contains("%"))
                         {
-                            if (FrameReadLine <= count++)
-                            {
-                                count = 0;
-
-                                var progress = 1f - (float)reader.Position / reader.Length;
-
-                                EditorUtility.DisplayProgressBar("progress", "Collect built-in assets from logfile.", progress);
-                            }
-
-                            line = reader.ReadLine();
-                        };
-
-                        while (!sr.EndOfStream)
-						{
-                            readLineWithProgress(sr);
-
-                            if (collect)
-                            {
-                                builtInAssets.Clear();
-
-                                while (!sr.EndOfStream)
-                                {
-                                    readLineWithProgress(sr);
-
-                                    // 開始位置まで読み込んだので終了.
-                                    if (line.StartsWith("Used Assets and files"))
-                                    {
-                                        exit = true;
-                                        break;
-                                    }
-                                    
-                                    // プロジェクト内のAssetはAssets/から始まる.
-                                    if (!line.Contains("Assets/")) { continue; }
-
-                                    if (line.Contains("%"))
-                                    {
-                                        builtInAssets.Add(new BuiltInAssetInfo(line));
-                                    }
-                                }
-
-                                if (exit){ break; }
-                            }
-                            else
-                            {
-                                // 終端にあるセパレータまでスキップ.
-                                if (line.StartsWith("---------------------------------------------"))
-                                {
-                                    collect = true;
-                                }
-                            }
+                            builtInAssets.Add(new BuiltInAssetInfo(line));
                         }
-					}
-				}
-			}
+                    }
+                    else
+                    {
+                        // 終端にあるセパレータまでスキップ.
+                        if (line.StartsWith("---------------------------------------------"))
+                        {
+                            collect = true;
 
-			EditorUtility.ClearProgressBar();
+                            builtInAssets.Clear();
+                        }
+                    }
+                }
+            }
 
-			return builtInAssets.OrderByDescending(x => x.size).ToArray();
+            EditorUtility.ClearProgressBar();
+
+            return builtInAssets.OrderByDescending(x => x.size).ToArray();
         }
     }
 }
