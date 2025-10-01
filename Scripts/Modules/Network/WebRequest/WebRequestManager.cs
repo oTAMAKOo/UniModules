@@ -299,7 +299,6 @@ namespace Modules.Net.WebRequest
 
 					OnComplete(webRequest, result, sw.Elapsed.TotalMilliseconds);
 				}
-
 			}
 			catch (OperationCanceledException)
 			{
@@ -392,20 +391,23 @@ namespace Modules.Net.WebRequest
             }
         }
 
-		/// <summary> ネットワーク接続待ち </summary>
-		protected virtual Task WaitNetworkReachable(CancellationToken cancelToken) { return Task.CompletedTask; }
-
-		/// <summary> 開始時イベント. </summary>
-		protected virtual void OnStart(TWebRequest webRequest) { }
-
-        /// <summary> 成功時イベント. </summary>
-        protected virtual void OnComplete<TResult>(TWebRequest webRequest, TResult result, double totalMilliseconds) { }
+        /// <summary> ネットワーク接続待ち </summary>
+        protected virtual Task WaitNetworkReachable(CancellationToken cancelToken)
+        {
+            return Task.CompletedTask;
+        }
 
         /// <summary> 通信エラーのハンドリング. </summary>
         protected virtual Task<RequestErrorHandle> WaitErrorHandling(TWebRequest webRequest)
         {
             return Task.FromResult(RequestErrorHandle.None);
         }
+
+        /// <summary> 開始時イベント. </summary>
+        protected virtual void OnStart(TWebRequest webRequest) { }
+
+        /// <summary> 成功時イベント. </summary>
+        protected virtual void OnComplete<TResult>(TWebRequest webRequest, TResult result, double totalMilliseconds) { }
 
         /// <summary> リトライ時イベント. </summary>
         protected virtual void OnRetry(TWebRequest webRequest) { }
