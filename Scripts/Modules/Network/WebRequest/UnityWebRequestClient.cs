@@ -234,14 +234,14 @@ namespace Modules.Net.WebRequest
 
             try
             {
+                await WaitNetworkReachable(token);
+
                 var bytes = await request.Send(progress, token);
 
                 if (bytes != null )
                 {
                     result = ReceiveResponse<TResult>(bytes);
                 }
-
-                IsConnecting = false;
             }
             catch (OperationCanceledException)
             {
@@ -250,6 +250,12 @@ namespace Modules.Net.WebRequest
             catch (Exception e)
             {
                 Error = e;
+
+                request.Abort();
+            }
+            finally
+            {
+                IsConnecting = false;
             }
 
             return result;
@@ -545,6 +551,11 @@ namespace Modules.Net.WebRequest
             }
 
             return json;
+        }
+
+        protected virtual async Task WaitNetworkReachable(CancellationToken cancelToken)
+        {
+            await NetworkConnection.WaitNetworkReachable(cancelToken);
         }
 
         /// <summary> 常時付与されるヘッダー情報を登録 </summary>

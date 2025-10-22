@@ -494,6 +494,12 @@ namespace Modules
             ForceReSerializeAssets.ExecuteAllPrefabs();
         }
 
+        [MenuItem(itemName: ForceReSerializeMenu + "All Assets", priority = 2)]
+        public static void ForceReSerializeAllAssets()
+        {
+            ForceReSerializeAssets.ExecuteAllAssets();
+        }
+
         #endregion
 
         #region Cleaner

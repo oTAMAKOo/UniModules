@@ -48,12 +48,16 @@ namespace Modules.CriWare
 
             if (!CriManaPlugin.IsLibraryInitialized())
             {
+                #if CRIWARE_VP9_SUPPORT
+
                 // VP9初期化.
 
                 if (CriManaVp9.SupportCurrentPlatform())
                 {
                     CriManaVp9.SetupVp9Decoder();
                 }
+
+                #endif
             }
 
             #endif

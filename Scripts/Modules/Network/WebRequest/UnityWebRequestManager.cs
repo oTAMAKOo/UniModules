@@ -42,11 +42,6 @@ namespace Modules.Net.WebRequest
             #endif
         }
 
-        protected override async Task WaitNetworkReachable(CancellationToken cancelToken)
-		{
-			await NetworkConnection.WaitNetworkReachable(cancelToken);
-		}
-
 		protected override void OnStart(TWebRequest webRequest)
         {
             #if UNITY_EDITOR

@@ -45,12 +45,18 @@ namespace Modules.Net.WebRequest
     {
         //----- params -----
 
+        /// <summary> デフォルトリトライ回数 </summary>
+        private const int DefaultRetryCount = 3;
+        /// <summary> デフォルトリトライ待ち秒数 </summary>
+        private const int DefaultRetryDelaySeconds = 2;
+
         protected enum RequestErrorHandle
         {
             None = 0,
 
             Retry,
             Cancel,
+            Exit,
         }
 
         //----- field -----
@@ -67,22 +73,22 @@ namespace Modules.Net.WebRequest
         public string HostUrl { get; private set; }
 
         /// <summary> 送信データの圧縮. </summary>
-        public DataCompressType CompressRequestData { get; private set; }
+        public DataCompressType CompressRequestData { get; private set; } 
 
         /// <summary> 受信データの圧縮. </summary>
         public DataCompressType CompressResponseData { get; private set; }
 
         /// <summary> データ内容フォーマット. </summary>
-        public DataFormat Format { get; private set; } = DataFormat.MessagePack;
+        public DataFormat Format { get; private set; }
+
+        /// <summary> リトライ回数. </summary>
+        public int RetryCount { get; private set; }
+
+        /// <summary> リトライするまでの時間(秒). </summary>
+        public float RetryDelaySeconds { get; private set; }
 
         /// <summary> ヘッダー情報 [key, (encrypted, value)]. </summary>
         public IDictionary<string, Tuple<bool, string>> Headers { get; private set; }
-
-        /// <summary> リトライ回数. </summary>
-        public int RetryCount { get; private set; } = 3;
-
-        /// <summary> リトライするまでの時間(秒). </summary>
-        public float RetryDelaySeconds { get; private set; } = 2;
 
         //----- method -----
 
@@ -91,6 +97,13 @@ namespace Modules.Net.WebRequest
             requestList = new List<TWebRequest>();
             requestQueue = new Queue<TWebRequest>();
             Headers = new Dictionary<string, Tuple<bool, string>>();
+
+            CompressRequestData = DataCompressType.GZip;
+            CompressResponseData = DataCompressType.GZip;
+            Format = DataFormat.MessagePack;
+
+            RetryCount = DefaultRetryCount;
+            RetryDelaySeconds = DefaultRetryDelaySeconds;
         }
 
         public virtual void SetHostUrl(string hostUrl)
@@ -215,10 +228,6 @@ namespace Modules.Net.WebRequest
 				{
 					await WaitQueueingRequest(webRequest, cancellationTokenSource.Token);
 				}
-
-				// ネットワーク接続待ち.
-
-				await WaitNetworkReachable(cancellationTokenSource.Token);
 				
 				if (webRequest.IsCanceled) { return null; }
 
@@ -244,26 +253,20 @@ namespace Modules.Net.WebRequest
 
 					if (result != null) { break; }
 
+                    //------ エラー ------
+
+                    if (webRequest.Error != null)
+                    {
+                        OnError(webRequest);
+                    }
+
 					//------ 通信キャンセル ------
 
 					if (webRequest.IsCanceled) { break; }
 
-					//------ エラー ------
-
-					if (webRequest.Error != null)
-					{
-						OnError(webRequest);
-					}
-
-					//------ リトライ回数オーバー ------
-
-					if (RetryCount <= retryCount)
-					{
-						OnRetryLimit(webRequest);
-						break;
-					}
-
 					//------ 通信失敗 ------
+
+                    var exit = false;
 
 					// エラーハンドリングを待つ.
 					var errorHandle = await WaitErrorHandling(webRequest);
@@ -273,18 +276,28 @@ namespace Modules.Net.WebRequest
 						case RequestErrorHandle.Retry:
 							retryCount++;
 							break;
+
+                        case RequestErrorHandle.Cancel:
+                        case RequestErrorHandle.Exit:
+                            exit = true;
+                            break;
 					}
 
-					// キャンセル時は通信終了.
-					if (errorHandle == RequestErrorHandle.Cancel)
-					{
-						break;
-					}
+					// 通信終了.
+					if (exit) { break; }
+
+                    //------ リトライ回数オーバー ------
+
+                    if (RetryCount <= retryCount)
+                    {
+                        OnRetryLimit(webRequest);
+                        break;
+                    }
+
+                    //------ リトライ ------
 
 					if (!cancellationTokenSource.IsCancellationRequested)
 					{
-						//------ リトライ ------
-
 						// リトライディレイ.
 						await Task.Delay(TimeSpan.FromSeconds(RetryDelaySeconds), cancellationTokenSource.Token);
 
@@ -391,16 +404,15 @@ namespace Modules.Net.WebRequest
             }
         }
 
-        /// <summary> ネットワーク接続待ち </summary>
-        protected virtual Task WaitNetworkReachable(CancellationToken cancelToken)
-        {
-            return Task.CompletedTask;
-        }
-
         /// <summary> 通信エラーのハンドリング. </summary>
         protected virtual Task<RequestErrorHandle> WaitErrorHandling(TWebRequest webRequest)
         {
-            return Task.FromResult(RequestErrorHandle.None);
+            if (webRequest.Error is NetworkReachabilityException)
+            {
+                return Task.FromResult(RequestErrorHandle.Exit);
+            }
+
+            return Task.FromResult(RequestErrorHandle.Retry);
         }
 
         /// <summary> 開始時イベント. </summary>

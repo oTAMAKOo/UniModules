@@ -28,6 +28,13 @@ namespace Modules.Devkit.SerializeAssets
             Execute(prefabs, options);
         }
 
+        public static void ExecuteAllAssets(ForceReserializeAssetsOptions options = ForceReserializeAssetsOptions.ReserializeAssetsAndMetadata)
+        {
+            var assetPaths = AssetDatabase.GetAllAssetPaths().ToArray();
+                
+            Execute(assetPaths, options);
+        }
+
         public static void Execute(string[] assetPaths, ForceReserializeAssetsOptions options = ForceReserializeAssetsOptions.ReserializeAssetsAndMetadata)
         {
             if (assetPaths == null || assetPaths.IsEmpty()){ return; }
