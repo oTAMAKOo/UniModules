@@ -273,9 +273,14 @@ namespace Modules.Movie
 
                 movieElement.Update();
 
+                if (UnityUtility.IsNull(movieElement.CriManaMovieMaterial))
+                {
+                    releaseElements.Add(movieElement);
+                }
+
                 if (!movieElement.IsLoop)
                 {
-                    if(movieElement.Status.HasValue && movieElement.Status.Value == Player.Status.PlayEnd)
+                    if (movieElement.Status is Player.Status.PlayEnd)
                     {
                         releaseElements.Add(movieElement);
                     }

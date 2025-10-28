@@ -509,7 +509,7 @@ namespace Modules.Sound
                 }
             }
 
-            var targets = new List<SoundSheet>();
+            List<SoundSheet> targets = null;
 
             foreach (var item in managedSoundSheets)
             {
@@ -527,14 +527,22 @@ namespace Modules.Sound
 
                 if (release)
                 {
+                    if (targets == null)
+                    {
+                        targets = new List<SoundSheet>();
+                    }
+
                     targets.Add(item.Value);
                 }
             }
 
-            foreach (var target in targets)
+            if (targets != null)
             {
-                CriAtom.RemoveCueSheet(target.AssetPath);
-                managedSoundSheets.Remove(target.AssetPath);             
+                foreach (var target in targets)
+                {
+                    CriAtom.RemoveCueSheet(target.AssetPath);
+                    managedSoundSheets.Remove(target.AssetPath);             
+                }
             }
         }
 

@@ -9,7 +9,7 @@ using Extensions;
 
 namespace Modules.Movie
 {
-    public sealed class MovieElement
+    public sealed class MovieElement : LifetimeDisposable
     {
         //----- params -----
 
@@ -64,6 +64,23 @@ namespace Modules.Movie
             Player = moviePlayer;
             Status = moviePlayer.status;
             IsFinished = false;
+
+            void OnDestroyMaterial()
+            {
+                Stop();
+
+                if (Player != null)
+                {
+                    Player.Dispose();
+                    Player = null;
+                }
+                
+                CriManaMovieMaterial = null;
+            }
+
+            CriManaMovieMaterial.OnDestroyAsObservable()
+                .Subscribe(_ => OnDestroyMaterial())
+                .AddTo(Disposable);
         }
 
         public void Play(bool loop = false)
