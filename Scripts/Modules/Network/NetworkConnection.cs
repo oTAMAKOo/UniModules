@@ -50,6 +50,15 @@ namespace Modules.Net
 
                 throw new NetworkReachabilityException();
             }
+            catch
+            {
+                if (onNotReachable != null)
+                {
+                    onNotReachable.OnNext(Unit.Default);
+                }
+
+                throw new NetworkReachabilityException();
+            }
         }
 
         private static async UniTask WaitNetworkReachableInternal(CancellationToken cancelToken)

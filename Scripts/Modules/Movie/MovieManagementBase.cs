@@ -277,8 +277,7 @@ namespace Modules.Movie
                 {
                     releaseElements.Add(movieElement);
                 }
-
-                if (!movieElement.IsLoop)
+                else if (!movieElement.IsLoop)
                 {
                     if (movieElement.Status is Player.Status.PlayEnd)
                     {
