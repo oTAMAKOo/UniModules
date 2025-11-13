@@ -102,7 +102,14 @@ namespace Modules.TextData
 
         public static string Format(string identifier, params object[] args)
         {
-            return string.Format(Instance.FindTextByIdentifier(identifier), args);
+            var format = Instance.FindTextByIdentifier(identifier);
+
+            if (string.IsNullOrEmpty(format))
+            {
+                return null;
+            }
+
+            return string.Format(format, args);
         }
 
         public static string GetAssetFileName(string identifier)

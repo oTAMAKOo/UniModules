@@ -4,6 +4,7 @@
 using UnityEngine;
 using Unity.Notifications.Android;
 using System.Linq;
+using Cysharp.Threading.Tasks;
 using Extensions;
 
 namespace Modules.Notifications
@@ -28,6 +29,18 @@ namespace Modules.Notifications
         //----- property -----
 
         //----- method -----
+
+        public async UniTask RequestNotificationPermission()
+        {
+            var request = new PermissionRequest();
+            
+            while (request.Status == PermissionStatus.RequestPending)
+            {
+                await UniTask.NextFrame();
+            }
+
+            OnRequestPermissionResult(request.Status);
+        }
 
         /// <summary> Androidで使用するプッシュ通知用のチャンネルを登録 </summary>
         public void RegisterChannel(string channelId, string title, Importance importance, string description)
@@ -62,20 +75,24 @@ namespace Modules.Notifications
                     Number = info.BadgeCount,
                 };
 
+                var status = AndroidNotificationCenter.CheckScheduledNotificationStatus(info.Identifier);
+
+                UnityEngine.Debug.Log(status);
+
                 // プッシュ通知はすでに登録済み.
-                if (AndroidNotificationCenter.CheckScheduledNotificationStatus(info.Identifier) == NotificationStatus.Scheduled)
+                if (status == NotificationStatus.Scheduled)
                 {
                     AndroidNotificationCenter.SendNotification(notification, channelId);
 
                     Debug.LogWarning("Replace the currently scheduled notification with a new notification");
                 }
                 // プッシュ通知はすでに通知済み.
-                else if (AndroidNotificationCenter.CheckScheduledNotificationStatus(info.Identifier) == NotificationStatus.Delivered)
+                else if (status == NotificationStatus.Delivered)
                 {
                     AndroidNotificationCenter.CancelNotification(info.Identifier);
                 }
                 // プッシュ通知は不明な状況.
-                else if (AndroidNotificationCenter.CheckScheduledNotificationStatus(info.Identifier) == NotificationStatus.Unknown)
+                else if (status == NotificationStatus.Unknown)
                 {
                     AndroidNotificationCenter.SendNotification(notification, channelId);
                 }
@@ -90,6 +107,8 @@ namespace Modules.Notifications
             AndroidNotificationCenter.CancelAllScheduledNotifications();
             AndroidNotificationCenter.CancelAllNotifications();
         }
+
+        protected virtual void OnRequestPermissionResult(PermissionStatus status){ }
     }
 }
 

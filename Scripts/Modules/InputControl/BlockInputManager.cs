@@ -25,6 +25,9 @@ namespace Modules.InputControl
 
 		//----- property -----
 
+        /// <summary> 入力制限中ID </summary>
+        public ulong[] BlockingIds { get { return blockingIds.ToArray(); } }
+
 		/// <summary> 入力制限中か </summary>
         public bool IsBlocking { get { return blockingIds.Any(); } }
 

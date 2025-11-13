@@ -249,42 +249,9 @@ namespace Modules.Net.WebRequest
 
 					result = await taskFunc.Invoke(cancellationTokenSource.Token);
 
-					//------ 通信成功 ------
+                    //------ 通信成功 ------
 
-					if (result != null) { break; }
-
-                    //------ エラー ------
-
-                    if (webRequest.Error != null)
-                    {
-                        OnError(webRequest);
-                    }
-
-					//------ 通信キャンセル ------
-
-					if (webRequest.IsCanceled) { break; }
-
-					//------ 通信失敗 ------
-
-                    var exit = false;
-
-					// エラーハンドリングを待つ.
-					var errorHandle = await WaitErrorHandling(webRequest);
-
-					switch (errorHandle)
-					{
-						case RequestErrorHandle.Retry:
-							retryCount++;
-							break;
-
-                        case RequestErrorHandle.Cancel:
-                        case RequestErrorHandle.Exit:
-                            exit = true;
-                            break;
-					}
-
-					// 通信終了.
-					if (exit) { break; }
+                    if (result != null) { break; }
 
                     //------ リトライ回数オーバー ------
 
@@ -294,15 +261,58 @@ namespace Modules.Net.WebRequest
                         break;
                     }
 
+                    //------ エラー ------
+
+                    if (webRequest.Error != null)
+                    {
+                        OnError(webRequest);
+                    }
+
+                    //------ 通信失敗 ------
+
+                    var exit = false;
+
+                    // エラーハンドリングを待つ.
+
+                    var errorHandle = await WaitErrorHandling(webRequest);
+
+                    switch (errorHandle)
+                    {
+                        case RequestErrorHandle.Retry:
+                            retryCount++;
+                            break;
+
+                        case RequestErrorHandle.Cancel:
+                        case RequestErrorHandle.Exit:
+                            exit = true;
+                            break;
+                    }
+
+                    // 通信終了.
+                    if (exit)
+                    {
+                        break;
+                    }
+
+                    //------ 通信キャンセル ------
+
+                    if (webRequest.IsCanceled) { break; }
+
+                    // キャンセル時は通信終了.
+                    if (errorHandle == RequestErrorHandle.Cancel)
+                    {
+                        break;
+                    }
+
                     //------ リトライ ------
 
-					if (!cancellationTokenSource.IsCancellationRequested)
-					{
-						// リトライディレイ.
-						await Task.Delay(TimeSpan.FromSeconds(RetryDelaySeconds), cancellationTokenSource.Token);
+                    if (!cancellationTokenSource.IsCancellationRequested)
+                    {
+                        // リトライディレイ.
+                        await Task.Delay(TimeSpan.FromSeconds(RetryDelaySeconds), cancellationTokenSource.Token);
 
-						OnRetry(webRequest);
-					}
+                        OnRetry(webRequest);
+                    }
 				}
 
 				if (result != null)

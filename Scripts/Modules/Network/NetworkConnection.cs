@@ -12,7 +12,7 @@ namespace Modules.Net
     {
         //----- params -----
 
-        private const float DefaultTimeOutSeconds = 30f;
+        private const float DefaultTimeOutSeconds = 5f;
 
         //----- field -----
 

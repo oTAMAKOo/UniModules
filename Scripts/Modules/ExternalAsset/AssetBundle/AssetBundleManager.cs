@@ -373,9 +373,10 @@ namespace Modules.AssetBundles
                 downloadRunning.Add(assetBundleName);
 
                 await FileDownload(installPath, assetInfo, progress, cancelToken)
-                    .ToObservable()
                     .Timeout(DownloadTimeout)
-                    .OnErrorRetry((TimeoutException ex) => OnTimeout(assetInfo, ex), RetryCount, RetryDelaySeconds);
+                    .ToObservable()
+                    .OnErrorRetry((TimeoutException ex) => OnTimeout(assetInfo, ex), RetryCount, RetryDelaySeconds)
+                    .ToUniTask(cancellationToken: cancelToken);
             }
             catch (OperationCanceledException)
             {
@@ -895,7 +896,7 @@ namespace Modules.AssetBundles
         {
             if (onTimeOut != null)
             {
-                Debug.LogErrorFormat("[Timeout] {0}", exception);
+                Debug.LogErrorFormat("[Timeout] {0}\n\n{1}", assetInfo.ResourcePath, exception);
 
                 onTimeOut.OnNext(assetInfo);
             }
