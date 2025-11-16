@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.UI;
+using System;
 using System.Threading;
 using Cysharp.Threading.Tasks;
 using DG.Tweening;
@@ -163,12 +164,16 @@ namespace Extensions
 
             using (cancelToken.Register(() => tween.Kill()))
             {
-                tween.Play();
+                var _ = tween.Play();
+
                 try
                 {
                     await tween.AsyncWaitForCompletion();
                 }
-                catch (System.OperationCanceledException) { }
+                catch (OperationCanceledException)
+                {
+                    /* Canceled */
+                }
             }
         }
     }
