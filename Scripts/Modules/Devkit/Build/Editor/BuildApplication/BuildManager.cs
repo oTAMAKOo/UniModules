@@ -195,7 +195,6 @@ namespace Modules.Devkit.Build
 
                         // ビルド実行.
 
-                        EditorUserBuildSettings.connectProfiler = applicationBuilder.Development;
                         EditorUserBuildSettings.development = applicationBuilder.Development;
 
                         var option = EditorUserBuildSettings.development
