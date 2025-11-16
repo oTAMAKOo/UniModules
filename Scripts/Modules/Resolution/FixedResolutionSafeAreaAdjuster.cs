@@ -141,8 +141,6 @@ namespace Modules.Resolution
             rt.anchorMax = new Vector2(right / resolution.x, top / resolution.y);
 
             LayoutRebuilder.ForceRebuildLayoutImmediate(rt);
-
-            Canvas.ForceUpdateCanvases();
         }
     }
 }
