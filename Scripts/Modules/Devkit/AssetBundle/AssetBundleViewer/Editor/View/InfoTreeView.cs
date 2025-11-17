@@ -11,7 +11,7 @@ using Extensions.Devkit;
 
 namespace Modules.Devkit.AssetBundleViewer
 {
-    public sealed class InfoTreeView : TreeView
+    public sealed class InfoTreeView : TreeView<int>
 	{
 		//----- params -----
 
@@ -42,7 +42,7 @@ namespace Modules.Devkit.AssetBundleViewer
 			}
 		}
 
-		private sealed class AssetBundleInfoViewItem : TreeViewItem
+		private sealed class AssetBundleInfoViewItem : TreeViewItem<int>
 		{
 			public AssetBundleInfo AssetBundleInfo { get; private set; }
 
@@ -58,7 +58,7 @@ namespace Modules.Devkit.AssetBundleViewer
 
 		private AssetBundleInfo[] currentInfos = null;
 
-		private IReadOnlyList<TreeViewItem> currentItems = null;
+		private IReadOnlyList<TreeViewItem<int>> currentItems = null;
 
 		private Vector2 scrollPosition = Vector2.zero;
 
@@ -78,7 +78,7 @@ namespace Modules.Devkit.AssetBundleViewer
 
 		//----- method -----
 
-		public InfoTreeView() : base(new TreeViewState()) { }
+		public InfoTreeView() : base(new TreeViewState<int>()) { }
 
 		public void Initialize()
 		{
@@ -213,11 +213,11 @@ namespace Modules.Devkit.AssetBundleViewer
             }
         }
 
-        protected override TreeViewItem BuildRoot()
+        protected override TreeViewItem<int> BuildRoot()
 		{
-			var root = new TreeViewItem { depth = -1 };
+			var root = new TreeViewItem<int> { depth = -1 };
 
-			var items = new List<TreeViewItem>();
+			var items = new List<TreeViewItem<int>>();
 
 			for (var i = 0; i < currentInfos.Length; i++)
 			{
@@ -230,12 +230,12 @@ namespace Modules.Devkit.AssetBundleViewer
 
 			currentItems = items;
 
-			root.children = currentItems as List<TreeViewItem>;
+			root.children = currentItems as List<TreeViewItem<int>>;
 
 			return root;
 		}
 
-		protected override bool CanMultiSelect(TreeViewItem item)
+		protected override bool CanMultiSelect(TreeViewItem<int> item)
 		{
 			return false;
 		}

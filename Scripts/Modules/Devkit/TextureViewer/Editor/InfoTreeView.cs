@@ -1,4 +1,4 @@
-﻿
+
 using UnityEngine;
 using UnityEditor;
 using UnityEditor.IMGUI.Controls;
@@ -26,13 +26,13 @@ namespace Modules.Devkit.TextureViewer
         }
     }
 
-    public sealed class InfoTreeView : TreeView
+    public sealed class InfoTreeView : TreeView<int>
     {
         //----- params -----
 
         public const string TextureNameLabel = "Name";
 
-        private sealed class TextureInfoViewItem : TreeViewItem
+        private sealed class TextureInfoViewItem : TreeViewItem<int>
         {
             public TextureInfo TextureInfo { get; private set; }
 
@@ -70,7 +70,7 @@ namespace Modules.Devkit.TextureViewer
 
         //----- method -----
 
-        public InfoTreeView() : base(new TreeViewState()) { }
+        public InfoTreeView() : base(new TreeViewState<int>()) { }
 
         public void Initialize(TextureInfo[] textureInfos, BuildTargetGroup platform, DisplayMode displayMode)
         {
@@ -119,11 +119,11 @@ namespace Modules.Devkit.TextureViewer
             }
         }
 
-        protected override TreeViewItem BuildRoot()
+        protected override TreeViewItem<int> BuildRoot()
         {
-            var root = new TreeViewItem { depth = -1 };
+            var root = new TreeViewItem<int> { depth = -1 };
 
-            var items = new List<TreeViewItem>();
+            var items = new List<TreeViewItem<int>>();
 
             foreach (var textureInfo in textureInfos)
             {
@@ -137,7 +137,7 @@ namespace Modules.Devkit.TextureViewer
             return root;
         }
 
-        protected override bool CanMultiSelect(TreeViewItem item)
+        protected override bool CanMultiSelect(TreeViewItem<int> item)
         {
             return false;
         }

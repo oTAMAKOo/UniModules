@@ -12,7 +12,7 @@ using Modules.Devkit.Prefs;
 
 namespace Modules.TextData.Components
 {
-    public sealed class RecordView : TreeView
+    public sealed class RecordView : TreeView<int>
     {
         //----- params -----
 
@@ -53,7 +53,7 @@ namespace Modules.TextData.Components
             }
         }
 
-        private sealed class RecordViewItem : TreeViewItem
+        private sealed class RecordViewItem : TreeViewItem<int>
         {
             public TextSelectData Record { get; private set; }
 
@@ -88,7 +88,7 @@ namespace Modules.TextData.Components
 
         //----- method -----
 
-        public RecordView() : base(new TreeViewState()) { }
+        public RecordView() : base(new TreeViewState<int>()) { }
 
         public void Initialize()
         {
@@ -141,11 +141,11 @@ namespace Modules.TextData.Components
             }
         }
 
-        protected override TreeViewItem BuildRoot()
+        protected override TreeViewItem<int> BuildRoot()
         {
-            var root = new TreeViewItem { depth = -1 };
+            var root = new TreeViewItem<int> { depth = -1 };
 
-            var items = new List<TreeViewItem>();
+            var items = new List<TreeViewItem<int>>();
 
             if (records != null)
             {
@@ -243,7 +243,7 @@ namespace Modules.TextData.Components
             }
         }
 
-        protected override float GetCustomRowHeight(int row, TreeViewItem treeViewItem)
+        protected override float GetCustomRowHeight(int row, TreeViewItem<int> treeViewItem)
         {
             var item = treeViewItem as RecordViewItem;
 
@@ -458,7 +458,7 @@ namespace Modules.TextData.Components
             }
         }
 
-        protected override bool CanMultiSelect(TreeViewItem item)
+        protected override bool CanMultiSelect(TreeViewItem<int> item)
         {
             return false;
         }

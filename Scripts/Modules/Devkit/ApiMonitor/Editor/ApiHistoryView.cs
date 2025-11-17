@@ -11,7 +11,7 @@ using Extensions.Devkit;
 
 namespace Modules.Net.WebRequest
 {
-    public sealed class ApiHistoryView : TreeView
+    public sealed class ApiHistoryView : TreeView<int>
     {
         //----- params -----
 
@@ -43,7 +43,7 @@ namespace Modules.Net.WebRequest
             }
         }
 
-        private sealed class ApiHistoryViewItem : TreeViewItem
+        private sealed class ApiHistoryViewItem : TreeViewItem<int>
         {
             public ApiInfo Info { get; private set; }
 
@@ -55,7 +55,7 @@ namespace Modules.Net.WebRequest
 
         //----- field -----
 
-        private IReadOnlyList<TreeViewItem> currentItems = null;
+        private IReadOnlyList<TreeViewItem<int>> currentItems = null;
 
         private ApiInfo[] contentsInfos = null;
 
@@ -72,7 +72,7 @@ namespace Modules.Net.WebRequest
 
         //----- method -----
 
-        public ApiHistoryView() : base(new TreeViewState())
+        public ApiHistoryView() : base(new TreeViewState<int>())
         {
             rowHeight = 20;
             showAlternatingRowBackgrounds = true;
@@ -206,11 +206,11 @@ namespace Modules.Net.WebRequest
             }
         }
 
-        protected override TreeViewItem BuildRoot()
+        protected override TreeViewItem<int> BuildRoot()
         {
-            var root = new TreeViewItem { depth = -1 };
+            var root = new TreeViewItem<int> { depth = -1 };
 
-            var items = new List<TreeViewItem>();
+            var items = new List<TreeViewItem<int>>();
             
             for (var i = 0; i < contentsInfos.Length; i++)
             {
@@ -223,12 +223,12 @@ namespace Modules.Net.WebRequest
 
             currentItems = items;
 
-            root.children = currentItems as List<TreeViewItem>;
+            root.children = currentItems as List<TreeViewItem<int>>;
 
             return root;
         }
 
-        protected override bool CanMultiSelect(TreeViewItem item)
+        protected override bool CanMultiSelect(TreeViewItem<int> item)
         {
             return false;
         }
