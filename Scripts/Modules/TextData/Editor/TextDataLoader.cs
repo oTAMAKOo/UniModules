@@ -81,6 +81,10 @@ namespace Modules.TextData.Editor
         {
             if (EditorApplication.isPlayingOrWillChangePlaymode) { return; }
 
+            var languageInfo = GetCurrentLanguage();
+
+            if (languageInfo == null) { return; }
+
             var textData = TextData.Instance;
 
             if (textData == null){ return; }
