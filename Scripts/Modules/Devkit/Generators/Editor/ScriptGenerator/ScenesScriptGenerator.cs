@@ -39,6 +39,10 @@ namespace #NAMESPACE#
         {
             var projectScriptFolders = ProjectScriptFolders.Instance;
 
+            if (projectScriptFolders == null){ return; }
+
+            if (sceneFolders.IsEmpty()){ return; }
+
             var enums = new StringBuilder();
             var contents = new StringBuilder();
 
@@ -57,7 +61,11 @@ namespace #NAMESPACE#
                 .ThenBy(x => x.Length)
                 .ToArray();
 
+            if (sceneFolderPaths.IsEmpty()){ return; }
+
             var scenes = EditorBuildSettings.scenes;
+
+            if (scenes.Length <= 0){ return; }
 
             for (var i = 0; i < scenes.Length; ++i)
             {
