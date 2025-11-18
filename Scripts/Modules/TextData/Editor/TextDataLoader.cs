@@ -121,6 +121,15 @@ namespace Modules.TextData.Editor
             IsLoaded = true;
         }
 
+        public static LanguageInfo GetCurrentLanguage()
+        {
+            var languageManager = LanguageManager.Instance;
+
+            var languageInfo = languageManager.Current;
+
+            return languageInfo;
+        }
+
         public static TextDataAsset LoadTextDataAsset(TextType type)
         {
             TextDataAsset textDataAsset = null;
@@ -129,9 +138,7 @@ namespace Modules.TextData.Editor
 
             var config = TextDataConfig.Instance;
 
-            var languageManager = LanguageManager.Instance;
-
-            var languageInfo = languageManager.Current;
+            var languageInfo = GetCurrentLanguage();
 
             if (languageInfo == null) { return null; }
 

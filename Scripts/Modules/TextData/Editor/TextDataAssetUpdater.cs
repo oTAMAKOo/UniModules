@@ -1,10 +1,11 @@
-﻿
+
 using UnityEngine;
 using UnityEditor;
 using UnityEditor.Callbacks;
 using System;
 using System.IO;
 using System.Threading.Tasks;
+using Cysharp.Threading.Tasks;
 using Extensions;
 using Modules.Devkit.Console;
 using Modules.Devkit.Prefs;
@@ -70,7 +71,12 @@ namespace Modules.TextData.Editor
             EditorApplication.update += AutoUpdateTextDataAssetCallback;
         }
 
-        private static async void AutoUpdateTextDataAssetCallback()
+        private static void AutoUpdateTextDataAssetCallback()
+        {
+            AutoUpdateTextDataAsset().Forget();
+        }
+
+        private static async UniTask AutoUpdateTextDataAsset()
         {
             if (nextCheckTime.HasValue)
             {
@@ -80,6 +86,14 @@ namespace Modules.TextData.Editor
             nextCheckTime = DateTime.Now.AddSeconds(CheckInterval);
 
             if (IsAutoUpdateSkip()){ return; }
+
+            // 選択中言語.
+
+            var languageInfo = TextDataLoader.GetCurrentLanguage();
+
+            if (languageInfo == null){ return; }
+
+            // テキスト生成.
 
             var config = TextDataConfig.Instance;
 
