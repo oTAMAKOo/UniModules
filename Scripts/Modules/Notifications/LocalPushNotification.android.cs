@@ -1,6 +1,6 @@
 
 #if UNITY_ANDROID && !UNITY_EDITOR
-﻿﻿﻿
+
 using UnityEngine;
 using Unity.Notifications.Android;
 using System.Linq;
@@ -64,6 +64,16 @@ namespace Modules.Notifications
 
             foreach (var info in notifications.Values)
             {
+                var time = info.UnixTime.UnixTimeToDateTime() - CurrentTime.UnixTimeToDateTime();
+
+                if (time.TotalSeconds <= 0)
+                {
+                    Debug.LogError($"Notification schedule failed.\nid = {info.Identifier}\ntitle = {info.Title}\nmessage = {info.Message}");
+                    continue;
+                }
+
+                var fireTime = DateTime.Now.Add(time);
+
                 var notification = new AndroidNotification
                 {
                     Title = info.Title,
@@ -71,7 +81,7 @@ namespace Modules.Notifications
                     SmallIcon = info.SmallIconResource,
                     LargeIcon = info.LargeIconResource,
                     Color = info.Color,
-                    FireTime = info.UnixTime.UnixTimeToDateTime(),
+                    FireTime = fireTime,
                     Number = info.BadgeCount,
                 };
 
