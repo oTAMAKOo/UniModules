@@ -233,6 +233,8 @@ namespace Modules.Movie
             element.Player.Loop(loop);
 
             element.Player.Start();
+
+            element.SetStatus(MovieElement.Status.Play);
         }
 
         #endregion
@@ -242,6 +244,8 @@ namespace Modules.Movie
             if (element == null || element.Player == null) { return; }
 
             element.Player.Pause(pause);
+
+            element.SetStatus(MovieElement.Status.Pause);
         }
 
         public void SetAudioVolume(float volume)
@@ -261,6 +265,8 @@ namespace Modules.Movie
             if (element == null || element.Player == null) { return; }
 
             element.Player.Stop();
+
+            element.SetStatus(MovieElement.Status.Stop);
         }
 
         private void UpdateElement()
@@ -279,7 +285,7 @@ namespace Modules.Movie
                 }
                 else if (!movieElement.IsLoop)
                 {
-                    if (movieElement.Status is Player.Status.PlayEnd)
+                    if (movieElement.PlayerStatus is Player.Status.PlayEnd)
                     {
                         releaseElements.Add(movieElement);
                     }

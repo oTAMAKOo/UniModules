@@ -37,20 +37,17 @@ namespace Extensions
             }
         }
 
-        public static IEnumerable<T> Concat<T>(IEnumerable<IEnumerable<T>> source)
+        /// <summary> 循環Indexを取得 </summary>
+        public static int GetWrapIndex<TSource>(this IEnumerable<TSource> source, int requestIndex)
         {
-            foreach (var item in source)
-            {
-                foreach (var item2 in item)
-                {
-                    yield return item2;
-                }
-            }
-        }
+            var length = source.Count();
 
-        public static IEnumerable<T> Concat<T>(params IEnumerable<T>[] source)
-        {
-            return Concat(source.AsEnumerable());
+            if (length <= 0)
+            {
+                throw new ArgumentException("length must be > 0");
+            }
+
+            return (requestIndex % length + length) % length;
         }
 
         #if !UNITY_2021_2_OR_NEWER

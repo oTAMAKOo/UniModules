@@ -13,6 +13,15 @@ namespace Modules.Movie
     {
         //----- params -----
 
+        public enum Status
+        {
+            None = 0,
+
+            Play,
+            Pause,
+            Stop,
+        }
+
         //----- field -----
 
         private IMovieManagement movieManagement = null;
@@ -30,10 +39,13 @@ namespace Modules.Movie
         public Player Player { get; private set; }
 
         /// <summary> 動画状態. </summary>
-        public Player.Status? Status { get; private set; }
+        public Status ElementStatus { get; private set; }
+
+        /// <summary> 動画状態. </summary>
+        public Player.Status? PlayerStatus { get; private set; }
 
         /// <summary> 再生準備が完了しているか. </summary>
-        public bool IsReady { get { return Status == Player.Status.Ready; } }
+        public bool IsReady { get { return PlayerStatus == Player.Status.Ready; } }
 
         /// <summary> 終了済みか. </summary>
         public bool IsFinished { get; private set; }
@@ -62,31 +74,19 @@ namespace Modules.Movie
             CriManaMovieMaterial = criManaMovieMaterial;
             MoviePath = moviePath;
             Player = moviePlayer;
-            Status = moviePlayer.status;
+            PlayerStatus = moviePlayer.status;
+            ElementStatus = Status.None;
             IsFinished = false;
 
-            void OnDestroyMaterial()
-            {
-                Stop();
-
-                if (Player != null)
-                {
-                    Player.Dispose();
-                    Player = null;
-                }
-                
-                CriManaMovieMaterial = null;
-            }
-
-            CriManaMovieMaterial.OnDestroyAsObservable()
-                .Subscribe(_ => OnDestroyMaterial())
+            OnFinishAsObservable()
+                .Subscribe(_ => ReleasePlayer())
                 .AddTo(Disposable);
         }
 
         public void Play(bool loop = false)
         {
             IsLoop = loop;
-            
+
             movieManagement.Play(this, loop);
         }
 
@@ -100,37 +100,57 @@ namespace Modules.Movie
             movieManagement.Stop(this);
         }
 
-        public void Update()
+        public void SetStatus(Status status)
+        {
+            ElementStatus = status;
+        }
+
+        public void Update() 
         {
             if (UnityUtility.IsNull(CriManaMovieMaterial)) { return; }
 
-            var prevStatus = Status;
+            var prevStatus = PlayerStatus;
 
-            Status = Player.status;
+            PlayerStatus = Player.status;
 
             PlayTime = GetPlayTime();
             TotalTime = GetTotalTime();
 
-            if (prevStatus != Status && Status == Player.Status.PlayEnd)
+            if (ElementStatus == Status.Play)
             {
-                if (IsLoop)
+                if (prevStatus != PlayerStatus && PlayerStatus == Player.Status.PlayEnd)
                 {
-                    Player.Start();
-                }
-                else
-                {
-                    UnityUtility.SetActive(CriManaMovieMaterial, false);
-
-                    UnityUtility.DeleteComponent(CriManaMovieMaterial);
-
-                    CriManaMovieMaterial = null;
-
-                    IsFinished = true;
-
-                    if (onFinish != null)
+                    if (IsLoop)
                     {
-                        onFinish.OnNext(Unit.Default);
+                        Player.Start();
                     }
+                    else
+                    {
+                        UnityUtility.SetActive(CriManaMovieMaterial, false);
+
+                        CriManaMovieMaterial = null;
+
+                        IsFinished = true;
+
+                        if (onFinish != null)
+                        {
+                            onFinish.OnNext(Unit.Default);
+                        }
+                    }
+                }
+            }
+
+            if (ElementStatus == Status.Stop)
+            {
+                UnityUtility.SetActive(CriManaMovieMaterial, false);
+
+                CriManaMovieMaterial = null;
+
+                IsFinished = true;
+
+                if (onFinish != null)
+                {
+                    onFinish.OnNext(Unit.Default);
                 }
             }
         }
@@ -151,6 +171,19 @@ namespace Modules.Movie
             if (movieInfo == null) { return -1f; }
             
             return movieInfo.totalFrames * 1000.0f / movieInfo.framerateN;
+        }
+
+        private void ReleasePlayer()
+        {
+            Stop();
+
+            if (Player != null)
+            {
+                Player.Dispose();
+                Player = null;
+            }
+                
+            CriManaMovieMaterial = null;
         }
 
         public IObservable<Unit> OnFinishAsObservable()
