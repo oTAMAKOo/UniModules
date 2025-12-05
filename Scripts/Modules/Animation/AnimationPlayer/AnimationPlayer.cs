@@ -179,7 +179,9 @@ namespace Modules.Animation
             // ヒエラルキー上で非アクティブでないか.
             if (!UnityUtility.IsActiveInHierarchy(gameObject))
             {
-                Debug.LogWarningFormat("Animation can't play not active in hierarchy.\n{0}", gameObject.transform.name);
+                var hierarchyPath = UnityUtility.GetHierarchyPath(gameObject);
+
+                Debug.LogErrorFormat("Animation can't play not active in hierarchy.\n{0}", hierarchyPath);
 
                 return;
             }

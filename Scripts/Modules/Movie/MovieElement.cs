@@ -47,6 +47,9 @@ namespace Modules.Movie
         /// <summary> 再生準備が完了しているか. </summary>
         public bool IsReady { get { return PlayerStatus == Player.Status.Ready; } }
 
+        /// <summary> エラーが発生しているか. </summary>
+        public bool IsError { get { return PlayerStatus == Player.Status.Error; } }
+
         /// <summary> 終了済みか. </summary>
         public bool IsFinished { get; private set; }
 
@@ -116,6 +119,8 @@ namespace Modules.Movie
             PlayTime = GetPlayTime();
             TotalTime = GetTotalTime();
 
+            var isFinish = false;
+
             if (ElementStatus == Status.Play)
             {
                 if (prevStatus != PlayerStatus && PlayerStatus == Player.Status.PlayEnd)
@@ -126,32 +131,30 @@ namespace Modules.Movie
                     }
                     else
                     {
-                        UnityUtility.SetActive(CriManaMovieMaterial, false);
-
-                        CriManaMovieMaterial = null;
-
-                        IsFinished = true;
-
-                        if (onFinish != null)
-                        {
-                            onFinish.OnNext(Unit.Default);
-                        }
+                        isFinish = true;
                     }
                 }
             }
 
-            if (ElementStatus == Status.Stop)
+            isFinish |= !Player.isAlive;
+            isFinish |= ElementStatus == Status.Stop;
+            isFinish |= PlayerStatus == Player.Status.Error;
+            
+            if(isFinish)
             {
-                UnityUtility.SetActive(CriManaMovieMaterial, false);
+                Finish();
+            }
+        }
 
-                CriManaMovieMaterial = null;
+        private void Finish()
+        {
+            UnityUtility.SetActive(CriManaMovieMaterial, false);
 
-                IsFinished = true;
+            IsFinished = true;
 
-                if (onFinish != null)
-                {
-                    onFinish.OnNext(Unit.Default);
-                }
+            if (onFinish != null)
+            {
+                onFinish.OnNext(Unit.Default);
             }
         }
 
@@ -175,15 +178,17 @@ namespace Modules.Movie
 
         private void ReleasePlayer()
         {
-            Stop();
-
             if (Player != null)
             {
-                Player.Dispose();
                 Player = null;
             }
-                
-            CriManaMovieMaterial = null;
+
+            if (CriManaMovieMaterial != null)
+            {
+                CriManaMovieMaterial.PlayerManualFinalize();
+
+                CriManaMovieMaterial = null;
+            }
         }
 
         public IObservable<Unit> OnFinishAsObservable()

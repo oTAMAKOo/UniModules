@@ -83,6 +83,15 @@ namespace Modules.Movie
 
         private MovieElement CreateMovieElement(CriManaMovieMaterialBase movieController, string moviePath)
         {
+            movieController.enabled = true;
+
+            if (movieController.player == null)
+            {
+                movieController.PlayerManualInitialize();
+            }
+
+            movieController.PlayerManualSetup();
+
             var moviePlayer = movieController.player;
 
             UnityUtility.SetActive(movieController, true);
@@ -102,16 +111,6 @@ namespace Modules.Movie
             if (shaderOverrideCallBack == null){ return; }
             
             movieElement.Player.SetShaderDispatchCallback(shaderOverrideCallBack);
-        }
-
-        private void SetupCriMovieForUI(CriMovieForUI criMovieForUI)
-        {
-            criMovieForUI.enabled = true;
-
-            if (!criMovieForUI.Initialized)
-            {
-                criMovieForUI.ManualInitialize();
-            }
         }
 
         #region Prepare
@@ -141,11 +140,6 @@ namespace Modules.Movie
         {
             var element = CreateMovieElement(movieController, moviePath);
 
-            if (movieController is CriMovieForUI movieForUI)
-            {
-                SetupCriMovieForUI(movieForUI);
-            }
-
             SetShaderDispatchCallback(element, shaderOverrideCallBack);
 
             PrepareElement(element).Forget();
@@ -160,8 +154,14 @@ namespace Modules.Movie
             if (element.Player == null){ return; }
 
             // 非アクティブ時にUpdate処理を実行.
-            while (element.Player.status == Player.Status.StopProcessing)
+            while (true)
             {
+                if (element == null){ break; }
+
+                if (element.Player == null){ break; }
+            
+                if (element.Player.status != Player.Status.StopProcessing){ break; }
+
                 if (!UnityUtility.IsActiveInHierarchy(element.CriManaMovieMaterial))
                 {
                     element.CriManaMovieMaterial.PlayerManualUpdate();
@@ -170,17 +170,21 @@ namespace Modules.Movie
                 await UniTask.NextFrame();
             }
 
-            if (element.Player.status != Player.Status.Stop && element.Player.status != Player.Status.PlayEnd)
+            // 再生準備開始.
+            if (element != null && element.Player != null)
             {
-                Debug.LogWarning($"Movie prepare failed.\nCurrent status is {element.Player.status}.");
+                element.Player.Prepare();
             }
 
-            // 再生準備開始.
-            element.Player.Prepare();
-
             // 非アクティブ時にUpdate処理を実行.
-            while (PrepareManualUpdateStateTable.Contains(element.Player.status))
+            while (true)
             {
+                if (element == null){ break; }
+
+                if (element.Player == null){ break; }
+
+                if(!PrepareManualUpdateStateTable.Contains(element.Player.status)){ break; }
+
                 if (!UnityUtility.IsActiveInHierarchy(element.CriManaMovieMaterial))
                 {
                     element.CriManaMovieMaterial.PlayerManualUpdate();
@@ -213,11 +217,6 @@ namespace Modules.Movie
         public MovieElement Play(string moviePath, CriManaMovieMaterialBase movieController, bool loop = false, Player.ShaderDispatchCallback shaderOverrideCallBack = null)
         {
             var element = CreateMovieElement(movieController, moviePath);
-
-            if (movieController is CriMovieForUI movieForUI)
-            {
-                SetupCriMovieForUI(movieForUI);
-            }
 
             SetShaderDispatchCallback(element, shaderOverrideCallBack);
 

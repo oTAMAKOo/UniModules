@@ -1,4 +1,4 @@
-﻿
+
 #if  ENABLE_CRIWARE_SOFDEC
 
 using CriWare;
@@ -30,7 +30,7 @@ namespace Modules.Movie
 
 		public void ManualInitialize()
 		{
-			if (Initialized){ return; }
+            if (Initialized){ return; }
 
 			PlayerManualInitialize();
 
