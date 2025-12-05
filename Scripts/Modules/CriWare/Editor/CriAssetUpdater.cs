@@ -38,10 +38,27 @@ namespace Modules.CriWare.Editor
 
         //----- method -----
 
-        public static void Execute()
+        public static void ExecuteAll()
+        {
+            #if ENABLE_CRIWARE_ADX || ENABLE_CRIWARE_ADX_LE
+
+            ExecuteSoundAssets();
+
+            #endif
+
+            #if ENABLE_CRIWARE_SOFDEC
+            
+            ExecuteMovieAssets();
+
+            #endif
+        }
+
+        #if ENABLE_CRIWARE_ADX || ENABLE_CRIWARE_ADX_LE
+
+        public static void ExecuteSoundAssets()
         {
             var projectUnityFolders = ProjectUnityFolders.Instance;
-			var projectScriptFolders = ProjectScriptFolders.Instance;
+            var projectScriptFolders = ProjectScriptFolders.Instance;
 			
             var scriptPath = projectScriptFolders.ConstantsScriptPath;
             var streamingAssetPath = projectUnityFolders.StreamingAssetPath;
@@ -50,22 +67,10 @@ namespace Modules.CriWare.Editor
 
             var criAssetConfig = CriAssetConfig.Instance;
 
-            #if ENABLE_CRIWARE_ADX || ENABLE_CRIWARE_ADX_LE
-
             UpdateSoundAssets(criAssetConfig, scriptPath, streamingAssetFolderName);
 
-            #endif
-
-            #if ENABLE_CRIWARE_SOFDEC
-            
-            UpdateMovieAssets(criAssetConfig, scriptPath, streamingAssetFolderName);
-
-            #endif
-
-            UnityConsole.Event(CriWareConsoleEvent.Name, CriWareConsoleEvent.Color, "UpdateCriAssets Complete.");
+            UnityConsole.Event(CriWareConsoleEvent.Name, CriWareConsoleEvent.Color, "UpdateSoundAssets Complete.");
         }
-
-        #if ENABLE_CRIWARE_ADX || ENABLE_CRIWARE_ADX_LE
 
         /// <summary>
         /// サウンドアセットをCriの成果物置き場からUnityの管理下にインポート.
@@ -103,6 +108,23 @@ namespace Modules.CriWare.Editor
         #endif
 
         #if ENABLE_CRIWARE_SOFDEC
+
+        public static void ExecuteMovieAssets()
+        {
+            var projectUnityFolders = ProjectUnityFolders.Instance;
+            var projectScriptFolders = ProjectScriptFolders.Instance;
+			
+            var scriptPath = projectScriptFolders.ConstantsScriptPath;
+            var streamingAssetPath = projectUnityFolders.StreamingAssetPath;
+            
+            var streamingAssetFolderName = Path.GetFileName(streamingAssetPath);
+
+            var criAssetConfig = CriAssetConfig.Instance;
+
+            UpdateMovieAssets(criAssetConfig, scriptPath, streamingAssetFolderName);
+
+            UnityConsole.Event(CriWareConsoleEvent.Name, CriWareConsoleEvent.Color, "UpdateMovieAssets Complete.");
+        }
 
         /// <summary>
         /// ムービーアセットをCriの成果物置き場からUnityの管理下にインポート.
@@ -317,3 +339,4 @@ namespace Modules.CriWare.Editor
 }
 
 #endif
+

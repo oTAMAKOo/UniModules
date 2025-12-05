@@ -394,11 +394,31 @@ namespace Modules
             CriAssetUpdateWindow.Open();
         }
 
-        [MenuItem(itemName: CriWareMenu + "UpdateCriAssets", priority = 20)]
-        public static void UpdateCriAssets()
+        [MenuItem(itemName: CriWareMenu + "Update all assets", priority = 20)]
+        public static void UpdateCriAllAssets()
         {
-            CriAssetUpdater.Execute();
+            CriAssetUpdater.ExecuteAll();
         }
+
+        #if ENABLE_CRIWARE_ADX || ENABLE_CRIWARE_ADX_LE
+
+        [MenuItem(itemName: CriWareMenu + "Update sound assets", priority = 21)]
+        public static void UpdateCriSoundAssets()
+        {
+            CriAssetUpdater.ExecuteSoundAssets();
+        }
+
+        #endif
+
+        #if ENABLE_CRIWARE_SOFDEC
+
+        [MenuItem(itemName: CriWareMenu + "Update movie assets", priority = 22)]
+        public static void UpdateCriMovieAssets()
+        {
+            CriAssetUpdater.ExecuteMovieAssets();
+        }
+
+        #endif
 
         #endif
 

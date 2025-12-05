@@ -1,4 +1,4 @@
-﻿
+
 #if ENABLE_CRIWARE_ADX || ENABLE_CRIWARE_ADX_LE || ENABLE_CRIWARE_SOFDEC
 
 using UnityEngine;
@@ -11,7 +11,7 @@ namespace Modules.CriWare.Editor
     {
         //----- params -----
 
-        private readonly Vector2 WindowSize = new Vector2(280f, 60f);
+        private readonly Vector2 WindowSize = new Vector2(280f, 120f);
 
         //----- field -----
 
@@ -48,10 +48,34 @@ namespace Modules.CriWare.Editor
 
             EditorLayoutTools.Title("Import from AtomCraft folder", backgroundColor, labelColor);
 
-            if (GUILayout.Button("Import"))
+            EditorGUILayout.Space(2f);
+
+            if (GUILayout.Button("Import All"))
             {
-                CriAssetUpdater.Execute();
+                CriAssetUpdater.ExecuteAll();
             }
+
+            #if ENABLE_CRIWARE_ADX || ENABLE_CRIWARE_ADX_LE
+
+            EditorGUILayout.Space(2f);
+
+            if (GUILayout.Button("Import Sound"))
+            {
+                CriAssetUpdater.ExecuteSoundAssets();
+            }
+
+            #endif
+
+            #if ENABLE_CRIWARE_SOFDEC
+
+            EditorGUILayout.Space(2f);
+
+            if (GUILayout.Button("Import Movie"))
+            {
+                CriAssetUpdater.ExecuteMovieAssets();
+            }
+
+            #endif
 
             EditorGUILayout.Separator();
         }
