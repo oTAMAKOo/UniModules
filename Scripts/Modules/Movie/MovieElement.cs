@@ -47,9 +47,6 @@ namespace Modules.Movie
         /// <summary> 再生準備が完了しているか. </summary>
         public bool IsReady { get { return PlayerStatus == Player.Status.Ready; } }
 
-        /// <summary> エラーが発生しているか. </summary>
-        public bool IsError { get { return PlayerStatus == Player.Status.Error; } }
-
         /// <summary> 終了済みか. </summary>
         public bool IsFinished { get; private set; }
 
@@ -80,10 +77,6 @@ namespace Modules.Movie
             PlayerStatus = moviePlayer.status;
             ElementStatus = Status.None;
             IsFinished = false;
-
-            OnFinishAsObservable()
-                .Subscribe(_ => ReleasePlayer())
-                .AddTo(Disposable);
         }
 
         public void Play(bool loop = false)
@@ -110,6 +103,8 @@ namespace Modules.Movie
 
         public void Update() 
         {
+            if (Player == null){ return; }
+
             if (UnityUtility.IsNull(CriManaMovieMaterial)) { return; }
 
             var prevStatus = PlayerStatus;
@@ -152,6 +147,8 @@ namespace Modules.Movie
 
             IsFinished = true;
 
+            ReleasePlayer();
+
             if (onFinish != null)
             {
                 onFinish.OnNext(Unit.Default);
@@ -176,7 +173,7 @@ namespace Modules.Movie
             return movieInfo.totalFrames * 1000.0f / movieInfo.framerateN;
         }
 
-        private void ReleasePlayer()
+        public void ReleasePlayer()
         {
             if (Player != null)
             {
@@ -189,6 +186,22 @@ namespace Modules.Movie
 
                 CriManaMovieMaterial = null;
             }
+
+            ElementStatus = Status.None;
+            PlayerStatus = null;
+        }
+
+        public bool HasError()
+        {
+            if (PlayerStatus == Player.Status.Error){ return true; }
+
+            if (Player == null){ return true; }
+
+            if (!Player.isAlive){ return true; }
+
+            if (CriManaMovieMaterial == null){ return true; }
+
+            return false;
         }
 
         public IObservable<Unit> OnFinishAsObservable()

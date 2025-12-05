@@ -138,6 +138,8 @@ namespace Modules.Movie
         /// <summary> 動画再生準備. </summary>
         public MovieElement Prepare(string moviePath, CriManaMovieMaterialBase movieController, Player.ShaderDispatchCallback shaderOverrideCallBack = null)
         {
+            UpdateElement();
+
             var element = CreateMovieElement(movieController, moviePath);
 
             SetShaderDispatchCallback(element, shaderOverrideCallBack);
@@ -297,7 +299,7 @@ namespace Modules.Movie
 
                 if (releaseElement.Player != null)
                 {
-                    releaseElement.Player.Dispose();
+                    releaseElement.ReleasePlayer();
                 }
 
                 movieElements.Remove(releaseElement);
