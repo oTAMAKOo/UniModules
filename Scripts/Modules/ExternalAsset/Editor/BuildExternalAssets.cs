@@ -37,7 +37,7 @@ namespace Modules.ExternalAssets
                 #if ENABLE_CRIWARE_ADX || ENABLE_CRIWARE_ADX_LE || ENABLE_CRIWARE_SOFDEC
 
                 // CRIの最新アセットに更新.
-                CriAssetUpdater.Execute();
+                CriAssetUpdater.ExecuteAll();
 
                 #endif
 
