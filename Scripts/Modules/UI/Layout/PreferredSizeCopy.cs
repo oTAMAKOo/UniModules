@@ -2,16 +2,14 @@
 using UnityEngine;
 using UnityEngine.UI;
 using System;
-using System.Linq;
 using Extensions;
 using Extensions.Serialize;
-using Unity.Linq;
 
 namespace Modules.UI.Layout
 {
 	[ExecuteAlways]
 	[RequireComponent(typeof(RectTransform))]
-	public sealed class PreferredSizeCopy : LayoutElement, ILayoutSelfController
+	public sealed class PreferredSizeCopy : LayoutElement, ILayoutSelfController, ICanvasElement
 	{
 		//----- params -----
 
@@ -73,6 +71,9 @@ namespace Modules.UI.Layout
         private int priority = 2;
 
 		private Vector2? prevPreferredSize = null;
+
+        private bool postLayoutQueued = false;
+
         
         #if UNITY_EDITOR
 
@@ -204,6 +205,8 @@ namespace Modules.UI.Layout
 
             UpdateLayoutImmediate();
 			UpdatePreferredSize();
+
+            QueuePostLayout();
 		}
 
         #if UNITY_EDITOR
@@ -217,12 +220,25 @@ namespace Modules.UI.Layout
 
         #endif
 
-		void LateUpdate()
-		{
-			UpdatePreferredSize();
-		}
+        void LateUpdate()
+        {
+            if (copySource == null) return;
 
-		private void UpdatePreferredSize()
+            var preferredSize = copySource.GetPreferredSize();
+
+            if (!prevPreferredSize.HasValue || prevPreferredSize.Value != preferredSize)
+            {
+                prevPreferredSize = preferredSize;
+
+                SetDirty();
+
+                QueuePostLayout();
+
+                LayoutRebuilder.MarkLayoutForRebuild((RectTransform)transform);
+            }
+        }
+
+        private void UpdatePreferredSize()
 		{
 			if (copySource == null) { return; }
 
@@ -326,5 +342,32 @@ namespace Modules.UI.Layout
 
 			rectTransform.sizeDelta = Vector.SetY(rectTransform.sizeDelta, preferredHeight);
 		}
-	}
+
+        #region ICanvasElement
+
+        private void QueuePostLayout()
+        {
+            if (postLayoutQueued){ return; }
+
+            postLayoutQueued = true;
+            
+            CanvasUpdateRegistry.RegisterCanvasElementForLayoutRebuild(this);
+        }
+
+        public void Rebuild(CanvasUpdate executing)
+        {
+            if (executing != CanvasUpdate.PostLayout) return;
+
+            postLayoutQueued = false;
+
+            SetLayoutHorizontal();
+            SetLayoutVertical();
+        }
+
+        public void LayoutComplete() { }
+
+        public void GraphicUpdateComplete() { }
+
+        #endregion
+    }
 }
