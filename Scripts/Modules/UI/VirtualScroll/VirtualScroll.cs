@@ -54,7 +54,7 @@ namespace Modules.UI
         void SetItemSpacing(float value);
     }
 
-    public abstract class VirtualScroll<T> : UIBehaviour, IVirtualScroll where T : class, IVirtualScroll
+    public abstract class VirtualScroll<T> : UIBehaviour, IVirtualScroll where T : class
     {
         //----- params -----
 
