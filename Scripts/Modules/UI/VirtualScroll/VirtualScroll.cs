@@ -45,7 +45,16 @@ namespace Modules.UI
         }
     }
 
-    public abstract class VirtualScroll<T> : UIBehaviour where T : class
+    public interface IVirtualScroll
+    {
+        ScrollRect ScrollRect { get; }
+
+        void SetEdgeSpacing(float value);
+
+        void SetItemSpacing(float value);
+    }
+
+    public abstract class VirtualScroll<T> : UIBehaviour, IVirtualScroll where T : class, IVirtualScroll
     {
         //----- params -----
 
@@ -191,6 +200,13 @@ namespace Modules.UI
             ScrollPosition = 0f;
 
             OnInitialize();
+
+            var eventHooks = UnityUtility.GetInterfaces<IVirtualScrollEventHook>(gameObject);
+
+            foreach (var eventHook in eventHooks)
+            {
+                eventHook.OnInitialize(this);
+            }
 
             status = Status.Initialize;
         }
@@ -983,6 +999,16 @@ namespace Modules.UI
             var br = corners[2];
 
             return new Rect(tl, new Vector2(br.x - tl.x, br.y - tl.y));
+        }
+
+        public void SetEdgeSpacing(float value)
+        {
+            edgeSpacing = value;
+        }
+
+        public void SetItemSpacing(float value)
+        {
+            itemSpacing = value;
         }
 
         /// <summary> リストアイテム生成時イベント </summary>
