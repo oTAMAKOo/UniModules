@@ -28,7 +28,9 @@ namespace Modules.Devkit.CleanComponent
         {
             await UniTask.DelayFrame(5);
 
-            PrefabDummyTextCleaner.ModifyPrefabContents(assetPath);
+            var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(assetPath);
+
+            PrefabDummyTextCleaner.ModifyPrefabContents(prefab);
         }
     }
 }

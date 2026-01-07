@@ -535,7 +535,7 @@ namespace Modules
         [MenuItem(itemName: CleanerMenu + "Clean DummyText (All Prefabs)", priority = 1)]
         public static void CleanAllPrefabDummyText()
         {
-            PrefabDummyTextCleaner.CleanAllPrefabContents();
+            PrefabDummyTextCleaner.CleanAllPrefabContents().Forget();
         }
 
         [MenuItem(itemName: CleanerMenu + "Clean ParticleSystem (Selection GameObject)", priority = 2)]

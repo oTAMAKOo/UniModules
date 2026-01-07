@@ -239,6 +239,19 @@ namespace Extensions.Devkit
                 .ToArray();
         }
 
+        /// <summary> 型でアセットパスを検索 </summary>
+        public static IEnumerable<string> FindAssetPathsByType(string filter, string[] searchInFolders = null)
+        {
+            if (searchInFolders == null)
+            {
+                searchInFolders = new string[] { UnityPathUtility.AssetsFolder };
+            }
+
+            return AssetDatabase.FindAssets(filter, searchInFolders)
+                .Select(x => AssetDatabase.GUIDToAssetPath(x))
+                .Where(x => !string.IsNullOrEmpty(x));
+        }
+
         /// <summary> 型でアセットを検索 </summary>
         public static IEnumerable<T> FindAssetsByType<T>(string filter, string[] searchInFolders = null) where T : UnityEngine.Object
         {

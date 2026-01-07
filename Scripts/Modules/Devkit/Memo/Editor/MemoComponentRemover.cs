@@ -1,0 +1,149 @@
+﻿
+using UnityEngine;
+using UnityEditor;
+using UnityEditor.SceneManagement;
+using Unity.Linq;
+using System;
+using System.Linq;
+using System.Text;
+using System.Collections.Generic;
+using Cysharp.Threading.Tasks;
+using Extensions;
+using Extensions.Devkit;
+using Modules.Devkit.Console;
+
+namespace Modules.Devkit.Memo
+{
+    public static class MemoComponentRemover
+    {
+        //----- params -----
+
+        //----- field -----
+
+        //----- property -----
+
+        //----- method -----
+
+        private static bool RemoveComponents(GameObject rootObject)
+        {
+            if (rootObject == null){ return false; }
+
+            var components = rootObject.DescendantsAndSelf()
+                .OfComponent<Memo>()
+                .ToArray();
+
+            foreach (var component in components)
+            {
+                UnityUtility.DeleteComponent(component, true);
+            }
+
+            return components.Any();
+        }
+
+        private static bool RemoveSceneComponents(string sceneAssetPath)
+        {
+            var changed = false;
+
+            var scene = EditorSceneManager.OpenScene(sceneAssetPath);
+
+            var rootObjests = scene.GetRootGameObjects();
+
+            foreach (var rootObjest in rootObjests)
+            {
+                changed |= RemoveComponents(rootObjest);
+            }
+
+            if (changed)
+            {
+                var asset = AssetDatabase.LoadMainAssetAtPath(sceneAssetPath);
+
+                UnityEditorUtility.SaveAsset(asset);
+            }
+
+            return changed;
+        }
+
+        public static async UniTask RemoveAllSceneComponents()
+        {
+            var scenes = EditorBuildSettings.scenes;
+
+            var targets = new List<string>();
+
+            using (new AssetEditingScope())
+            {
+                for (var i = 0; i < scenes.Length; i++)
+                {
+                    var scene = scenes[i];
+
+                    if(!scene.enabled){ continue; }
+
+                    var changed = RemoveSceneComponents(scene.path);
+
+                    if (changed)
+                    {
+                        targets.Add(scene.path);
+                    }
+
+                    await UniTask.NextFrame();
+                }
+            }
+
+            if (targets.Any())
+            {
+                var logBuilder = new StringBuilder();
+
+                targets.ForEach(x => logBuilder.AppendLine(x));
+
+                var title = "Memo component remove at scenes";
+                var logs = logBuilder.ToString();
+
+                LogUtility.ChunkLog(logs, title, x => UnityConsole.Info(x));
+            }
+        }
+
+        public static async UniTask RemoveAllPrefabComponents()
+        {
+            var assetPaths = UnityEditorUtility.FindAssetPathsByType("t:prefab");
+
+            var targets = new List<string>();
+
+            using (new AssetEditingScope())
+            {
+                var chunk = assetPaths.Chunk(150);
+
+                foreach (var items in chunk)
+                {
+                    foreach (var item in items)
+                    {
+                        var prefab = PrefabUtility.LoadPrefabContents(item);
+
+                        var changed = RemoveComponents(prefab);
+
+                        if (changed)
+                        {
+                            PrefabUtility.SaveAsPrefabAsset(prefab, item);
+
+                            targets.Add(item);
+                        }
+
+                        PrefabUtility.UnloadPrefabContents(prefab);
+                    }
+
+                    await UniTask.NextFrame();
+                }
+            }
+                
+            if(targets.Any())
+            {
+                var logBuilder = new StringBuilder();
+
+                targets.ForEach(x => logBuilder.AppendLine(x));
+
+                var title = "Memo component remove at prefabs";
+                var logs = logBuilder.ToString();
+
+                LogUtility.ChunkLog(logs, title, x => UnityConsole.Info(x));
+            }
+        }
+    }
+}

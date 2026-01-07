@@ -4,8 +4,10 @@ using UnityEditor;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using Cysharp.Threading.Tasks;
 using Extensions;
 using Extensions.Devkit;
+using Modules.Devkit.Console;
 
 namespace Modules.Devkit.CleanComponent
 {
@@ -19,24 +21,36 @@ namespace Modules.Devkit.CleanComponent
 
         //----- method -----
 
-        public static void CleanAllPrefabContents()
+        public static async UniTask CleanAllPrefabContents()
         {
-            var prefabs = UnityEditorUtility.FindAssetsByType<GameObject>("t:prefab");
+            var assetPaths = UnityEditorUtility.FindAssetPathsByType("t:prefab");
 
             var cleanTargets = new List<string>();
 
             using (new AssetEditingScope())
             {
-                foreach (var prefab in prefabs)
+                var chunk = assetPaths.Chunk(150);
+
+                foreach (var items in chunk)
                 {
-                    var changed = ModifyPrefabContents(prefab);
-
-                    if (changed)
+                    foreach (var item in items)
                     {
-                        var assetPath = AssetDatabase.GetAssetPath(prefab);
+                        var prefab = PrefabUtility.LoadPrefabContents(item);
 
-                        cleanTargets.Add(assetPath);
+                        var changed = ModifyPrefabContents(prefab);
+
+                        if (changed)
+                        {
+                            var assetPath = AssetDatabase.GetAssetPath(prefab);
+
+                            cleanTargets.Add(assetPath);
+                        }
+
+                        PrefabUtility.UnloadPrefabContents(prefab);
+
                     }
+
+                    await UniTask.NextFrame();
                 }
             }
 
@@ -44,22 +58,16 @@ namespace Modules.Devkit.CleanComponent
             {
                 var logBuilder = new StringBuilder();
 
-                logBuilder.AppendLine("DummyText cleaned prefabs:");
-
                 cleanTargets.ForEach(x => logBuilder.AppendLine(x));
 
                 using (new DisableStackTraceScope())
                 {
-                    Debug.LogWarning(logBuilder.ToString());
+                    var title = "DummyText cleaned prefabs:";
+                    var logs = logBuilder.ToString();
+
+                    LogUtility.ChunkLog(logs, title, x => UnityConsole.Info(x));
                 }
             }
-        }
-
-        public static bool ModifyPrefabContents(string assetPath)
-        {
-            var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(assetPath);
-
-            return ModifyPrefabContents(prefab);
         }
 
         public static bool ModifyPrefabContents(GameObject prefab)
