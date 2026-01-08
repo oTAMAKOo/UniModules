@@ -1,6 +1,7 @@
-﻿
+
 using UnityEngine;
 using UnityEditor;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -35,19 +36,25 @@ namespace Modules.Devkit.CleanComponent
                 {
                     foreach (var item in items)
                     {
-                        var prefab = PrefabUtility.LoadPrefabContents(item);
-
-                        var changed = ModifyPrefabContents(prefab);
-
-                        if (changed)
+                        try
                         {
-                            var assetPath = AssetDatabase.GetAssetPath(prefab);
+                            var prefab = PrefabUtility.LoadPrefabContents(item);
 
-                            cleanTargets.Add(assetPath);
+                            var changed = ModifyPrefabContents(prefab);
+
+                            if (changed)
+                            {
+                                var assetPath = AssetDatabase.GetAssetPath(prefab);
+
+                                cleanTargets.Add(assetPath);
+                            }
+
+                            PrefabUtility.UnloadPrefabContents(prefab);
                         }
-
-                        PrefabUtility.UnloadPrefabContents(prefab);
-
+                        catch (Exception e)
+                        {
+                            Debug.LogException(new Exception($"Prefab : {item}", e));
+                        }
                     }
 
                     await UniTask.NextFrame();

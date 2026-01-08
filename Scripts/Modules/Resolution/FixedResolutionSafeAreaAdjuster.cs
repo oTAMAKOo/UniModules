@@ -61,6 +61,8 @@ namespace Modules.Resolution
 
             var safeArea = Screen.safeArea;
 
+            if (canvas == null){ return; }
+
             var canvasRt = canvas.transform as RectTransform;
 
             var resolution = canvasRt.GetSize();

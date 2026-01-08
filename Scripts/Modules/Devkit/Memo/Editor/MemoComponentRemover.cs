@@ -1,4 +1,4 @@
-﻿
+
 using UnityEngine;
 using UnityEditor;
 using UnityEditor.SceneManagement;
@@ -77,11 +77,18 @@ namespace Modules.Devkit.Memo
 
                     if(!scene.enabled){ continue; }
 
-                    var changed = RemoveSceneComponents(scene.path);
-
-                    if (changed)
+                    try
                     {
-                        targets.Add(scene.path);
+                        var changed = RemoveSceneComponents(scene.path);
+
+                        if (changed)
+                        {
+                            targets.Add(scene.path);
+                        }
+                    }
+                    catch (Exception e)
+                    {
+                        Debug.LogException((new Exception($"Scene : {scene.path}", e)));
                     }
 
                     await UniTask.NextFrame();
@@ -115,18 +122,25 @@ namespace Modules.Devkit.Memo
                 {
                     foreach (var item in items)
                     {
-                        var prefab = PrefabUtility.LoadPrefabContents(item);
-
-                        var changed = RemoveComponents(prefab);
-
-                        if (changed)
+                        try
                         {
-                            PrefabUtility.SaveAsPrefabAsset(prefab, item);
+                            var prefab = PrefabUtility.LoadPrefabContents(item);
 
-                            targets.Add(item);
+                            var changed = RemoveComponents(prefab);
+
+                            if (changed)
+                            {
+                                PrefabUtility.SaveAsPrefabAsset(prefab, item);
+
+                                targets.Add(item);
+                            }
+
+                            PrefabUtility.UnloadPrefabContents(prefab);
                         }
-
-                        PrefabUtility.UnloadPrefabContents(prefab);
+                        catch (Exception e)
+                        {
+                            Debug.LogException(e);
+                        }
                     }
 
                     await UniTask.NextFrame();
