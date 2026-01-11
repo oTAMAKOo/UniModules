@@ -1,11 +1,10 @@
-
+﻿
 using UnityEngine;
 using UnityEditor;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using Cysharp.Threading.Tasks;
 using Extensions;
 using Extensions.Devkit;
 using Modules.Devkit.Console;
@@ -22,7 +21,7 @@ namespace Modules.Devkit.CleanComponent
 
         //----- method -----
 
-        public static async UniTask CleanAllPrefabContents()
+        public static void CleanAllPrefabContents()
         {
             var assetPaths = UnityEditorUtility.FindAssetPathsByType("t:prefab");
 
@@ -30,34 +29,21 @@ namespace Modules.Devkit.CleanComponent
 
             using (new AssetEditingScope())
             {
-                var chunk = assetPaths.Chunk(150);
-
-                foreach (var items in chunk)
+                foreach (var assetPath in assetPaths)
                 {
-                    foreach (var item in items)
+                    try
                     {
-                        try
+                        var changed = ModifyPrefabContents(assetPath);
+
+                        if (changed)
                         {
-                            var prefab = PrefabUtility.LoadPrefabContents(item);
-
-                            var changed = ModifyPrefabContents(prefab);
-
-                            if (changed)
-                            {
-                                var assetPath = AssetDatabase.GetAssetPath(prefab);
-
-                                cleanTargets.Add(assetPath);
-                            }
-
-                            PrefabUtility.UnloadPrefabContents(prefab);
-                        }
-                        catch (Exception e)
-                        {
-                            Debug.LogException(new Exception($"Prefab : {item}", e));
+                            cleanTargets.Add(assetPath);
                         }
                     }
-
-                    await UniTask.NextFrame();
+                    catch (Exception e)
+                    {
+                        Debug.LogException(new Exception($"Prefab : {assetPath}", e));
+                    }
                 }
             }
 
@@ -77,16 +63,20 @@ namespace Modules.Devkit.CleanComponent
             }
         }
 
-        public static bool ModifyPrefabContents(GameObject prefab)
+        public static bool ModifyPrefabContents(string assetPath)
         {
-            if (prefab == null) { return false; }
+            var prefab = PrefabUtility.LoadPrefabContents(assetPath);
+
+            if (prefab == null){ return false; }
 
             var changed = DummyTextCleaner.ModifyComponents(prefab);
 
             if (changed)
             {
-                PrefabUtility.SavePrefabAsset(prefab);
+                PrefabUtility.SaveAsPrefabAsset(prefab, assetPath);
             }
+
+            PrefabUtility.UnloadPrefabContents(prefab);
 
             return changed;
         }

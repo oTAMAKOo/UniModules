@@ -1,4 +1,4 @@
-
+﻿
 using UnityEngine;
 using UnityEditor;
 using UnityEditor.SceneManagement;
@@ -7,7 +7,6 @@ using System;
 using System.Linq;
 using System.Text;
 using System.Collections.Generic;
-using Cysharp.Threading.Tasks;
 using Extensions;
 using Extensions.Devkit;
 using Modules.Devkit.Console;
@@ -63,7 +62,7 @@ namespace Modules.Devkit.Memo
             return changed;
         }
 
-        public static async UniTask RemoveAllSceneComponents()
+        public static void RemoveAllSceneComponents()
         {
             var scenes = EditorBuildSettings.scenes;
 
@@ -90,8 +89,6 @@ namespace Modules.Devkit.Memo
                     {
                         Debug.LogException((new Exception($"Scene : {scene.path}", e)));
                     }
-
-                    await UniTask.NextFrame();
                 }
             }
 
@@ -108,7 +105,7 @@ namespace Modules.Devkit.Memo
             }
         }
 
-        public static async UniTask RemoveAllPrefabComponents()
+        public static void RemoveAllPrefabComponents()
         {
             var assetPaths = UnityEditorUtility.FindAssetPathsByType("t:prefab");
 
@@ -116,34 +113,27 @@ namespace Modules.Devkit.Memo
 
             using (new AssetEditingScope())
             {
-                var chunk = assetPaths.Chunk(150);
-
-                foreach (var items in chunk)
+                foreach (var assetPath in assetPaths)
                 {
-                    foreach (var item in items)
+                    try
                     {
-                        try
+                        var prefab = PrefabUtility.LoadPrefabContents(assetPath);
+
+                        var changed = RemoveComponents(prefab);
+
+                        if (changed)
                         {
-                            var prefab = PrefabUtility.LoadPrefabContents(item);
+                            PrefabUtility.SaveAsPrefabAsset(prefab, assetPath);
 
-                            var changed = RemoveComponents(prefab);
-
-                            if (changed)
-                            {
-                                PrefabUtility.SaveAsPrefabAsset(prefab, item);
-
-                                targets.Add(item);
-                            }
-
-                            PrefabUtility.UnloadPrefabContents(prefab);
+                            targets.Add(assetPath);
                         }
-                        catch (Exception e)
-                        {
-                            Debug.LogException(e);
-                        }
+
+                        PrefabUtility.UnloadPrefabContents(prefab);
                     }
-
-                    await UniTask.NextFrame();
+                    catch (Exception e)
+                    {
+                        Debug.LogException(new Exception($"Prefab : {assetPath}", e));
+                    }
                 }
             }
                 
