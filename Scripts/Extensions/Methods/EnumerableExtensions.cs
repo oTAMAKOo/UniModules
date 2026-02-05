@@ -75,6 +75,9 @@ namespace Extensions
             var weightTable = source.ToArray();
 
             var totalWeight = weightTable.Sum();
+
+            if (totalWeight <= 0){ return -1; }
+
             var value = random.Next(1, totalWeight + 1);
 
             var retIndex = -1;
