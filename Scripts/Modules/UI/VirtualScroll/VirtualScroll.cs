@@ -761,7 +761,7 @@ namespace Modules.UI
             scrollRect.StopMovement();
         }
 
-        private void UpdateScroll()
+        public void UpdateScroll()
         {
             if (status != Status.Done) { return; }
 
@@ -778,7 +778,7 @@ namespace Modules.UI
             prevScrollPosition = scrollPosition;
         }
 
-        public void ScrollUpdate(bool scrollPlus)
+        private void ScrollUpdate(bool scrollPlus)
         {
             if (!HasListItem){ return; }
 
