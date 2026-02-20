@@ -541,7 +541,7 @@ namespace Modules.Sound
                 foreach (var target in targets)
                 {
                     CriAtom.RemoveCueSheet(target.AssetPath);
-                    managedSoundSheets.Remove(target.AssetPath);             
+                    managedSoundSheets.Remove(target.AssetPath);
                 }
             }
         }
