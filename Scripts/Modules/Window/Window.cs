@@ -125,12 +125,12 @@ namespace Modules.Window
                 onClose.OnNext(Unit.Default);
             }
                         
+            Status = WindowStatus.Closed;
+
             if (deleteOnClose)
             {
                 UnityUtility.SafeDelete(gameObject);
             }
-
-            Status = WindowStatus.Closed;
         }
 
         public async UniTask Wait()

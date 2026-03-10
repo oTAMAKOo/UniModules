@@ -110,7 +110,7 @@ namespace Modules.Cache
 		{
 			lock (cacheReference)
 			{
-				cacheReference[referenceName] = new Reference();
+				cacheReference[referenceName] = new Reference() { referenceCount = 1 };
 			}
 
 			return cacheReference[referenceName];
@@ -138,7 +138,7 @@ namespace Modules.Cache
 
             var instance = GetInstance();
 
-            if (!instance.cache.ContainsKey(key))
+            if (instance.cache.ContainsKey(key))
             {
                 instance.cache.Remove(key);
             }
@@ -178,7 +178,7 @@ namespace Modules.Cache
 
             if (instance.cache == null) { return false; }
 
-            return instance.Keys.Contains(key);
+            return instance.cache.ContainsKey(key);
         }
 
         private Cache<T> GetInstance()

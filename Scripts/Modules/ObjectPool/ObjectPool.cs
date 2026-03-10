@@ -93,10 +93,6 @@ namespace Modules.ObjectPool
             // キャッシュ済み.
             if (cachedObjects.Contains(target)) { return; }
 
-            if (UnityUtility.IsNull(target)) { return; }
-
-            if (UnityUtility.IsNull(instance)) { return; }
-
             UnityUtility.SetParent(target.gameObject, instance);
                 
             target.transform.Reset();
