@@ -156,13 +156,20 @@ namespace Modules.Window
                 UnityUtility.SetLayer(parentInScene.Parent, popupWindow.gameObject, true);
                 UnityUtility.SetParent(popupWindow.gameObject, parentInScene.Parent);
 
+                void OnCloseWindow()
+                {
+                    scenePopups.Remove(popupWindow);
+
+                    UpdateContents();
+
+                    if (onClosedWindow != null)
+                    {
+                        onClosedWindow.OnNext(popupWindow);
+                    }
+                }
+                
                 popupWindow.OnCloseAsObservable()
-                    .Subscribe(
-                        _ =>
-                        {
-                            scenePopups.Remove(popupWindow);
-                            UpdateContents();
-                        })
+                    .Subscribe(_ => OnCloseWindow())
                     .AddTo(this);
 
                 scenePopups.Add(popupWindow);
