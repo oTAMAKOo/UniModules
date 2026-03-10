@@ -122,7 +122,7 @@ namespace Modules.StateControl
 
 			var changeStateInfo = new ChangeStateInfo()
 			{
-				from = prevNode.State, 
+				from = prevNode != null ? prevNode.State : default,
 				to = nextNode.State
 			};
 

@@ -488,7 +488,7 @@ namespace Modules.Sound
 
         private void ReleaseSoundSheet()
         {
-            for (var i = 0; i < soundElements.Count; ++i)
+            for (var i = soundElements.Count - 1; i >= 0; --i)
             {
                 var soundElement = soundElements[i];
 

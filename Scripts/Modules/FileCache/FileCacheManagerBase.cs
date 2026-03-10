@@ -120,6 +120,8 @@ namespace Modules.FileCache
 
             var cacheData = LocalDataManager.Get<CacheData>();
             
+            var changed = false;
+
             foreach (var fileData in cacheData.files)
             {
                 var fileName = GetFileName(fileData.Source);
@@ -131,6 +133,15 @@ namespace Modules.FileCache
                 if (fileData.Alive()){ continue; }
 
                 File.Delete(filePath);
+
+                changed = true;
+            }
+
+            if (changed)
+            {
+                cacheData.files = cacheData.files.Where(x => x.Alive()).ToArray();
+
+                cacheData.Save();
             }
         }
 
