@@ -778,7 +778,7 @@ namespace Modules.UI
             prevScrollPosition = scrollPosition;
         }
 
-        private void ScrollUpdate(bool scrollPlus)
+        public void ScrollUpdate(bool scrollPlus)
         {
             if (!HasListItem){ return; }
 
