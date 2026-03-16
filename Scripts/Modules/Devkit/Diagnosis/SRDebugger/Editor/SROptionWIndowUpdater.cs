@@ -8,7 +8,7 @@ using System.Collections.Generic;
 using System.Reflection;
 using UniRx;
 using Extensions;
-using SRDebugger.Editor;
+using SRDebugger;
 using SRDebugger.Internal;
 using SRDebugger.Services;
 using SRF.Service;
@@ -21,7 +21,7 @@ namespace Modules.Devkit.Diagnosis.SRDebugger
 
         //----- field -----
 
-        private static SROptionsWindow[] targetWindows = null;
+        private static Type optionsWindowType = null;
 
         private static FieldInfo optionsFieldInfo = null;
         private static MethodInfo populateMethodInfo = null;
@@ -33,17 +33,25 @@ namespace Modules.Devkit.Diagnosis.SRDebugger
         [InitializeOnEnterPlayMode]
         private static void InitializeOnEnterPlayMode()
         {
-            optionsFieldInfo = Reflection.GetFieldInfo(typeof(SROptionsWindow), "_options", BindingFlags.NonPublic | BindingFlags.Instance);
-            populateMethodInfo = Reflection.GetMethodInfo(typeof(SROptionsWindow), "Populate", BindingFlags.NonPublic | BindingFlags.Instance);
-           
+            optionsWindowType = Assembly.Load("StompyRobot.SRDebugger.Editor")
+                .GetTypes()
+                .FirstOrDefault(t => t.Name == "SROptionsWindow");
+
+            if (optionsWindowType == null){ return; }
+
+            optionsFieldInfo = Reflection.GetFieldInfo(optionsWindowType, "_options", BindingFlags.NonPublic | BindingFlags.Instance);
+            populateMethodInfo = Reflection.GetMethodInfo(optionsWindowType, "Populate", BindingFlags.NonPublic | BindingFlags.Instance);
+
             Observable.Interval(TimeSpan.FromSeconds(3)).Subscribe(_ => SyncContents());
         }
 
         private static void SyncContents()
         {
+            if (optionsWindowType == null){ return; }
+
             if (!SRServiceManager.HasService<IDebugService>()){ return; }
 
-            targetWindows = Resources.FindObjectsOfTypeAll<SROptionsWindow>();
+            var targetWindows = Resources.FindObjectsOfTypeAll(optionsWindowType);
 
             if (targetWindows.IsEmpty()){ return; }
 
