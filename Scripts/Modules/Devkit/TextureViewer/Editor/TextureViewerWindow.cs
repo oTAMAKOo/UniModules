@@ -182,43 +182,50 @@ namespace Modules.Devkit.TextureViewer
                 EditorUtility.DisplayProgressBar("Progress", "Loading texture infos in project", (float)index / total);
             };
 
-            foreach (var guids in chunk)
+            try
             {
-                displayProgress.Invoke();
-
-                foreach (var guid in guids)
+                foreach (var guids in chunk)
                 {
-                    index++;
+                    displayProgress.Invoke();
 
-                    var assetPath = PathUtility.ConvertPathSeparator(AssetDatabase.GUIDToAssetPath(guid));
+                    foreach (var guid in guids)
+                    {
+                        index++;
 
-                    // Assets以外のファイル除外.
-                    if (!assetPath.StartsWith(UnityEditorUtility.AssetsFolderName)) { continue; }
+                        var assetPath = PathUtility.ConvertPathSeparator(AssetDatabase.GUIDToAssetPath(guid));
 
-                    // 除外フォルダ以下のファイル除外.
-                    if (ignoreFolderPaths.Any(y => assetPath.StartsWith(y))) { continue; }
+                        // Assets以外のファイル除外.
+                        if (!assetPath.StartsWith(UnityEditorUtility.AssetsFolderName)) { continue; }
 
-                    // 除外フォルダ名を含むファイル除外.
+                        // 除外フォルダ以下のファイル除外.
+                        if (ignoreFolderPaths.Any(y => assetPath.StartsWith(y))) { continue; }
 
-                    var assetFolderPath = PathUtility.ConvertPathSeparator(Path.GetDirectoryName(assetPath));
-                    var folders = assetFolderPath.Split(PathUtility.PathSeparator);
+                        // 除外フォルダ名を含むファイル除外.
 
-                    if (folders.Any(x => ignoreFolderNames.Contains(x))) { continue; }
+                        var assetFolderPath = PathUtility.ConvertPathSeparator(Path.GetDirectoryName(assetPath));
+                        var folders = assetFolderPath.Split(PathUtility.PathSeparator);
 
-                    // 生成.
+                        if (folders.Any(x => ignoreFolderNames.Contains(x))) { continue; }
 
-                    var info = new TextureInfo(index, guid, assetPath);
+                        // 生成.
 
-                    // TextureImporterが取得できない場合は除外.
+                        var info = new TextureInfo(index, guid, assetPath);
 
-                    if (info.TextureImporter == null) { continue; }
+                        // TextureImporterが取得できない場合は除外.
 
-                    // 追加.
+                        if (info.TextureImporter == null) { continue; }
 
-                    infos.Add(info);
+                        // 追加.
+
+                        infos.Add(info);
+                    }
+
+                    await UniTask.Yield(ct);
                 }
-
-                await UniTask.Yield(ct);
+            }
+            catch (OperationCanceledException)
+            {
+                /* キャンセルは処理しない */
             }
 
             displayProgress.Invoke();
@@ -233,42 +240,51 @@ namespace Modules.Devkit.TextureViewer
             var index = 0;
             var total = textureInfos.Length;
 
-            foreach (var textureInfos in chunk)
+            try
             {
-                var loadingText = string.Format("Loading Texture [{0} / {1}]", index, total);
+                foreach (var textureInfos in chunk)
+                {
+                    var loadingText = string.Format("Loading Texture [{0} / {1}]", index, total);
+
+                    if (footerView != null)
+                    {
+                        footerView.SetLoadingProgressText(loadingText);
+
+                        Repaint();
+                    }
+
+                    if (initalLoading)
+                    {
+                        EditorUtility.DisplayProgressBar("Progress", loadingText, (float)index / total);
+                    }
+
+                    foreach (var textureInfo in textureInfos)
+                    {
+                        textureInfo.GetTexture();
+                        index++;
+                    }
+
+                    await UniTask.Yield(ct);
+                }
+            }
+            catch (OperationCanceledException)
+            {
+                /* キャンセルは処理しない */
+            }
+            finally
+            {
+                if (initalLoading)
+                {
+                    EditorUtility.ClearProgressBar();
+                }
 
                 if (footerView != null)
                 {
-                    footerView.SetLoadingProgressText(loadingText);
-
-                    Repaint();
+                    footerView.SetLoadingProgressText(null);
                 }
 
-                if (initalLoading)
-                {
-                    EditorUtility.DisplayProgressBar("Progress", loadingText, (float)index / total);
-                }
-
-                foreach (var textureInfo in textureInfos)
-                {
-                    textureInfo.GetTexture();
-                    index++;
-                }
-
-                await UniTask.Yield(ct);
+                Repaint();
             }
-
-            if (initalLoading)
-            {
-                EditorUtility.ClearProgressBar();
-            }
-
-            if (footerView != null)
-            {
-                footerView.SetLoadingProgressText(null);
-            }
-
-            Repaint();
         }
         
         private TextureInfo[] GetTextureInfos(string searchText)

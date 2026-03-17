@@ -72,88 +72,95 @@ namespace Modules.PathFinding
 
             ResetNode();
 
-            if (startNodeId != goalNodeId)
+            try
             {
-				// 全ノード更新
-				for (var y = 0; y < sizeY; y++)
-				{
-					for (var x = 0; x < sizeX; x++)
-					{
-						nodes[y, x].UpdateGoalNodeId(goalNodeId);
-						openNodes[y, x].UpdateGoalNodeId(goalNodeId);
-						closedNodes[y, x].UpdateGoalNodeId(goalNodeId);
-					}
-				}
+                if (startNodeId != goalNodeId)
+                {
+				    // 全ノード更新
+				    for (var y = 0; y < sizeY; y++)
+				    {
+					    for (var x = 0; x < sizeX; x++)
+					    {
+						    nodes[y, x].UpdateGoalNodeId(goalNodeId);
+						    openNodes[y, x].UpdateGoalNodeId(goalNodeId);
+						    closedNodes[y, x].UpdateGoalNodeId(goalNodeId);
+					    }
+				    }
 
-				// スタート地点の初期化
-				openNodes[startNodeId.y, startNodeId.x] = Node.CreateNode(allowDiagonal, startNodeId, goalNodeId);
-				openNodes[startNodeId.y, startNodeId.x].SetFromNodeId(startNodeId);
-				openNodes[startNodeId.y, startNodeId.x].Add();
+				    // スタート地点の初期化
+				    openNodes[startNodeId.y, startNodeId.x] = Node.CreateNode(allowDiagonal, startNodeId, goalNodeId);
+				    openNodes[startNodeId.y, startNodeId.x].SetFromNodeId(startNodeId);
+				    openNodes[startNodeId.y, startNodeId.x].Add();
 
-				var cnt = 0;
+				    var cnt = 0;
 
-				while (true)
-				{
-					var bestScoreNodeId = GetBestScoreNodeId();
+				    while (true)
+				    {
+					    var bestScoreNodeId = GetBestScoreNodeId();
 
-					OpenAround(bestScoreNodeId, goalNodeId);
+					    OpenAround(bestScoreNodeId, goalNodeId);
 
-					// ゴールに辿り着いたら終了
-					if (bestScoreNodeId == goalNodeId){ break; }
+					    // ゴールに辿り着いたら終了
+					    if (bestScoreNodeId == goalNodeId){ break; }
 
-					if (cnt % 1000 == 0)
-					{
-						await UniTask.Yield(ct);
-					}
+					    if (cnt % 1000 == 0)
+					    {
+						    await UniTask.Yield(ct);
+					    }
 
-					cnt++;
-				}
+					    cnt++;
+				    }
 
-				var node = closedNodes[goalNodeId.y, goalNodeId.x];
+				    var node = closedNodes[goalNodeId.y, goalNodeId.x];
 
-				routeList.Add(goalNodeId);
+				    routeList.Add(goalNodeId);
 
-				// 捜査トライ回数を制限 (無限ループ対応).
-				var tryCount = 1000;
-				var isSuccess = false;
+				    // 捜査トライ回数を制限 (無限ループ対応).
+				    var tryCount = 1000;
+				    var isSuccess = false;
 
-				while (cnt++ < tryCount)
-				{
-					var beforeNode = routeList[0];
+				    while (cnt++ < tryCount)
+				    {
+					    var beforeNode = routeList[0];
 
-					if (beforeNode == node.FromNodeId)
-					{
-						// 同じポジションなので終了.
-						observer.OnErrorResume(new Exception("PathFinding same position failed : " + beforeNode + " / " + node.FromNodeId + " / " + goalNodeId));
-						return;
-					}
+					    if (beforeNode == node.FromNodeId)
+					    {
+						    // 同じポジションなので終了.
+						    observer.OnErrorResume(new Exception("PathFinding same position failed : " + beforeNode + " / " + node.FromNodeId + " / " + goalNodeId));
+						    return;
+					    }
 
-					if (node.FromNodeId == startNodeId)
-					{
-						isSuccess = true;
-						break;
-					}
+					    if (node.FromNodeId == startNodeId)
+					    {
+						    isSuccess = true;
+						    break;
+					    }
 
-					// 開始座標は結果リストには追加しない.
-					routeList.Insert(0, node.FromNodeId);
+					    // 開始座標は結果リストには追加しない.
+					    routeList.Insert(0, node.FromNodeId);
 
-					node = closedNodes[node.FromNodeId.y, node.FromNodeId.x];
+					    node = closedNodes[node.FromNodeId.y, node.FromNodeId.x];
 
-					if (cnt % 100 == 0)
-					{
-						await UniTask.Yield(ct);
-					}
-				}
+					    if (cnt % 100 == 0)
+					    {
+						    await UniTask.Yield(ct);
+					    }
+				    }
 
-				if (!isSuccess)
-				{
-					observer.OnErrorResume(new Exception("PathFinding failed : " + startNodeId + " / " + node.FromNodeId));
-					return;
-				}
-			}
+				    if (!isSuccess)
+				    {
+					    observer.OnErrorResume(new Exception("PathFinding failed : " + startNodeId + " / " + node.FromNodeId));
+					    return;
+				    }
+			    }
 
-            observer.OnNext(routeList);
-            observer.OnCompleted();
+                observer.OnNext(routeList);
+                observer.OnCompleted();
+            }
+            catch (OperationCanceledException)
+            {
+                /* キャンセルは処理しない */
+            }
         }
 
         private void ResetNode()

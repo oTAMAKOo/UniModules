@@ -108,18 +108,27 @@ namespace Modules.TimeLine
 
             return Observable.FromAsync(async ct =>
             {
-                while (state != State.Finish)
+                try
                 {
-                    await UniTask.Yield(ct);
+                    while (state != State.Finish)
+                    {
+                        await UniTask.Yield(ct);
+                    }
                 }
-
-                if (playingDisposable != null)
+                catch (OperationCanceledException)
                 {
-                    playingDisposable.Dispose();
-                    playingDisposable = null;
+                    /* キャンセルは処理しない */
                 }
+                finally
+                {
+                    if (playingDisposable != null)
+                    {
+                        playingDisposable.Dispose();
+                        playingDisposable = null;
+                    }
 
-                state = State.None;
+                    state = State.None;
+                }
             });
         }
 

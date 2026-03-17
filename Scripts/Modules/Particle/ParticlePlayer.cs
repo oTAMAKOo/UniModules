@@ -333,40 +333,46 @@ namespace Modules.Particle
 
             ApplySortingOrder(sortingOrder);
 
-            while (true)
+            try
             {
-                if (!UnityUtility.IsActiveInHierarchy(gameObject)) { break; }
-
-                // 状態リセット.
-                ResetContents();
-
-                // 開始.
-                SetState(State.Play);
-
-                for (var i = 0; i < particleInfos.Length; i++)
+                while (true)
                 {
-                    var particleInfo = particleInfos[i];
+                    if (!UnityUtility.IsActiveInHierarchy(gameObject)) { break; }
 
-                    // 止まってたら開始.
-                    if (!particleInfo.ParticleSystem.isPlaying)
+                    // 状態リセット.
+                    ResetContents();
+
+                    // 開始.
+                    SetState(State.Play);
+
+                    for (var i = 0; i < particleInfos.Length; i++)
                     {
-                        particleInfo.ParticleSystem.Play();
+                        var particleInfo = particleInfos[i];
+
+                        // 止まってたら開始.
+                        if (!particleInfo.ParticleSystem.isPlaying)
+                        {
+                            particleInfo.ParticleSystem.Play();
+                        }
+
+                        particleInfo.LifeCycle = LifecycleType.None;
                     }
 
-                    particleInfo.LifeCycle = LifecycleType.None;
+                    // 再生速度.
+                    ApplySpeedRate();
+
+                    // 終了待ち.
+                    await FrameUpdate(ct);
+
+                    if (endActionType != EndActionType.Loop) { break; }
+
+                    if (State == State.Stop) { break; }
                 }
-
-                // 再生速度.
-                ApplySpeedRate();
-
-                // 終了待ち.
-                await FrameUpdate(ct);
-
-                if (endActionType != EndActionType.Loop) { break; }
-
-                if (State == State.Stop) { break; }
             }
-
+            catch (OperationCanceledException)
+            {
+                /* キャンセルは処理しない */
+            }
 
             if (!UnityUtility.IsNull(this))
             {

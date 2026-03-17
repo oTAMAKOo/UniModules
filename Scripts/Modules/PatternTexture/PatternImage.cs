@@ -439,19 +439,26 @@ namespace Modules.PatternTexture
 
             crossFadeColor = color;
 
-            while (current < time)
+            try
             {
-                current += Time.deltaTime;
+                while (current < time)
+                {
+                    current += Time.deltaTime;
 
-                var c = this.color;
+                    var c = this.color;
 
-                c.a *= 1f - Mathf.Clamp01(current / time);
+                    c.a *= 1f - Mathf.Clamp01(current / time);
 
-                crossFadeColor = c;
+                    crossFadeColor = c;
 
-                SetAllDirty();
+                    SetAllDirty();
 
-                await UniTask.Yield(ct);
+                    await UniTask.Yield(ct);
+                }
+            }
+            catch (OperationCanceledException)
+            {
+                /* キャンセルは処理しない */
             }
 
             crossFadeTextureName = null;
