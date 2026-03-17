@@ -35,9 +35,7 @@ namespace Modules.Cache
                     }
                 }
 
-                // ※ 元はEveryEndOfFrame(レンダリング完了後)で削除していたが、R3にEndOfFrame相当はないため
-                //    EveryUpdate(次フレームのUpdate)で削除する（レンダリング後であることを保証）.
-                Observable.EveryUpdate().Subscribe(_ => DeleteSprites());
+                Observable.EveryUpdate(UnityFrameProvider.PostLateUpdate).Subscribe(_ => DeleteSprites());
 
                 initialized = true;
             }
