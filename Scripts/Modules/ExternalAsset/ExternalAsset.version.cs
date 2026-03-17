@@ -295,18 +295,20 @@ namespace Modules.ExternalAssets
 
             if (saveVersionDisposable == null)
             {
+                void OnSaveVersionNext(long _)
+                {
+                    if (saveVersionIdentifier != requestSaveVersionIdentifier)
+                    {
+                        saveVersionIdentifier = requestSaveVersionIdentifier;
+
+                        SaveVersion().Forget();
+                    }
+                }
+
                 saveVersionDisposable = Observable.Interval(TimeSpan.FromSeconds(1), UnityTimeProvider.Update)
                     .Take(TimeSpan.FromSeconds(5), UnityTimeProvider.Update)
                     .Subscribe(
-                        onNext: _ =>
-                        {
-                            if (saveVersionIdentifier != requestSaveVersionIdentifier)
-                            {
-                                saveVersionIdentifier = requestSaveVersionIdentifier;
-
-                                SaveVersion().Forget();
-                            }
-                        },
+                        onNext: OnSaveVersionNext,
                         onErrorResume: _ => { },
                         onCompleted: _ => saveVersionDisposable = null)
                     .AddTo(Disposable);
