@@ -106,7 +106,7 @@ namespace Modules.TimeLine
 
             playableDirector.Play();
 
-            return Observable.Create<Unit>(async (observer, ct) =>
+            return Observable.FromAsync(async ct =>
             {
                 while (state != State.Finish)
                 {
@@ -120,9 +120,6 @@ namespace Modules.TimeLine
                 }
 
                 state = State.None;
-
-                observer.OnNext(Unit.Default);
-                observer.OnCompleted();
             });
         }
 
