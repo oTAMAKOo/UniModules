@@ -74,11 +74,11 @@ namespace Modules.Devkit.Diagnosis.SRDebugger
                        AddReportTitle();
                        UpdateView();
                    })
-                .AddTo(this.GetDestroyCancellationToken());
+                .AddTo(this);
 
             sendReportManager.OnReportCompleteAsObservable()
                 .Subscribe(x => OnReportComplete(x))
-                .AddTo(this.GetDestroyCancellationToken());
+                .AddTo(this);
 
             sendReportButton.OnClickAsObservable()
                 .Subscribe(_ =>
@@ -92,7 +92,7 @@ namespace Modules.Devkit.Diagnosis.SRDebugger
 							SendReport().Forget();
                         }
                     })
-                .AddTo(this.GetDestroyCancellationToken());
+                .AddTo(this);
 
             initialized = true;
         }
@@ -103,12 +103,12 @@ namespace Modules.Devkit.Diagnosis.SRDebugger
 
             R3.Observable.NextFrame()
                 .Subscribe(_ => OnRequestRefreshInputText())
-                .AddTo(this.GetDestroyCancellationToken());
+                .AddTo(this);
 
             R3.Observable.EveryUpdate()
                 .TakeUntil(this.OnDisableAsObservable())
                 .Subscribe(_ => UnityUtility.SetActive(sendReportButton, IsSendReportButtonEnable()))
-                .AddTo(this.GetDestroyCancellationToken());
+                .AddTo(this);
         }
 
         private void AddReportTitle()
