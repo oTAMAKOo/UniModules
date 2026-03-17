@@ -678,12 +678,7 @@ namespace Modules.AssetBundles
                 loadQueueing.Remove(assetBundleName);
             }
 
-            var task = Observable.Create<AssetBundle>(async (observer, ct) =>
-                {
-                    var result = await LoadAssetBundle(installPath, info, ct);
-                    observer.OnNext(result);
-                    observer.OnCompleted();
-                })
+            var task = Observable.FromAsync(ct => LoadAssetBundle(installPath, info, ct))
                 .Timeout(LoadTimeout, TimeProvider.System)
                 .OnErrorRetry((TimeoutException ex) => {}, RetryCount, RetryDelaySeconds)
                 .OnErrorRetry((FileLoadException ex) => {}, RetryCount, RetryDelaySeconds)
