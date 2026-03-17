@@ -1,7 +1,8 @@
 ﻿
 using UnityEngine;
 using UnityEngine.UI;
-using UniRx;
+using R3;
+using R3.Triggers;
 using Extensions;
 
 namespace Modules.UI
@@ -55,17 +56,17 @@ namespace Modules.UI
             if (inputField != null)
             {
                 inputField.ObserveEveryValueChanged(x => x.isFocused)
-                    .TakeUntilDisable(this)
+                    .TakeUntil(this.OnDisableAsObservable())
                     .Subscribe(x => OnFocuseChanged(x))
                     .AddTo(this);
 
                 Observable.EveryUpdate()
-                    .TakeUntilDisable(this)
+                    .TakeUntil(this.OnDisableAsObservable())
                     .Subscribe(_ => UpdateContents())
                     .AddTo(this);
 
-                Observable.EveryLateUpdate()
-                    .TakeUntilDisable(this)
+                Observable.EveryUpdate(UnityFrameProvider.PostLateUpdate)
+                    .TakeUntil(this.OnDisableAsObservable())
                     .Subscribe(_ => LateUpdateContents())
                     .AddTo(this);
             }

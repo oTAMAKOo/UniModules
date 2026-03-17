@@ -2,7 +2,7 @@
 #if (ENABLE_CRIWARE_ADX || ENABLE_CRIWARE_ADX_LE) && ENABLE_XLUA
 
 using System.Collections.Generic;
-using UniRx;
+using R3;
 using Modules.Sound;
 using Extensions;
 

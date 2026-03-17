@@ -6,7 +6,6 @@ using System;
 using System.Linq;
 using System.Collections.Generic;
 using Extensions;
-using UniRx;
 using Utage;
 
 namespace Modules.UtageExtension

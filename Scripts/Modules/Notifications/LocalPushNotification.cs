@@ -2,7 +2,7 @@
 using UnityEngine;
 using System;
 using System.Collections.Generic;
-using UniRx;
+using R3;
 using Extensions;
 using Modules.ApplicationEvent;
 
@@ -182,7 +182,7 @@ namespace Modules.Notifications
             Clear();
         }
 
-        public IObservable<Unit> OnNotifyRegisterAsObservable()
+        public Observable<Unit> OnNotifyRegisterAsObservable()
         {
             return onNotificationRegister ?? (onNotificationRegister = new Subject<Unit>());
         }

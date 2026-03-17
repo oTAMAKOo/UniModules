@@ -7,7 +7,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using Cysharp.Threading.Tasks;
-using UniRx;
+using R3;
 using Extensions;
 using Modules.Devkit.Diagnosis.LogTracker;
 using Modules.Net.WebRequest;
@@ -203,12 +203,12 @@ namespace Modules.Devkit.Diagnosis.SendReport
             reportContents.Add(key, value);
         }
 
-        public IObservable<Unit> OnRequestReportAsObservable()
+        public Observable<Unit> OnRequestReportAsObservable()
         {
             return onRequestReport ?? (onRequestReport = new Subject<Unit>());
         }
 
-        public IObservable<SendReportResult> OnReportCompleteAsObservable()
+        public Observable<SendReportResult> OnReportCompleteAsObservable()
         {
             return onReportComplete ?? (onReportComplete = new Subject<SendReportResult>());
         }

@@ -3,7 +3,7 @@ using UnityEngine;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using UniRx;
+using R3;
 using Extensions;
 
 namespace Modules.BackKey
@@ -24,7 +24,7 @@ namespace Modules.BackKey
         {
             receivers = new List<BackKeyReceiver>();
 
-            Observable.EveryLateUpdate()
+            Observable.EveryUpdate(UnityFrameProvider.PostLateUpdate)
                 .Subscribe(_ => HandleBackKey())
                 .AddTo(Disposable);
         }

@@ -4,7 +4,7 @@ using System;
 using System.IO;
 using System.Threading;
 using Cysharp.Threading.Tasks;
-using UniRx;
+using R3;
 using Extensions;
 using Modules.Net.WebDownload;
 using Modules.Net.WebRequest;
@@ -117,12 +117,12 @@ namespace Modules.ExternalAssets
             }
         }
 
-        public IObservable<Exception> OnErrorAsObservable()
+        public Observable<Exception> OnErrorAsObservable()
         {
             return onError ?? (onError = new Subject<Exception>());
         }
 
-        public IObservable<string> OnTimeoutAsObservable()
+        public Observable<string> OnTimeoutAsObservable()
         {
             return onTimeout ?? (onTimeout = new Subject<string>());
         }

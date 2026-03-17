@@ -5,8 +5,8 @@ using Unity.Linq;
 using System;
 using System.Linq;
 using System.Collections.Generic;
-using UniRx;
-using UniRx.Triggers;
+using R3;
+using R3.Triggers;
 using Extensions;
 
 namespace Modules.Scene

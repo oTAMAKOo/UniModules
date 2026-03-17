@@ -7,7 +7,7 @@ using System.Collections.Generic;
 using System.Text;
 using Cysharp.Threading.Tasks;
 using Extensions;
-using UniRx;
+using R3;
 using Modules.Devkit.Console;
 
 namespace Modules.ExternalAssets
@@ -295,10 +295,10 @@ namespace Modules.ExternalAssets
 
             if (saveVersionDisposable == null)
             {
-                saveVersionDisposable = Observable.Interval(TimeSpan.FromSeconds(1))
-                    .Take(TimeSpan.FromSeconds(5))
-                    .Finally(() => saveVersionDisposable = null)
-                    .Subscribe(_ =>
+                saveVersionDisposable = Observable.Interval(TimeSpan.FromSeconds(1), UnityTimeProvider.Update)
+                    .Take(TimeSpan.FromSeconds(5), UnityTimeProvider.Update)
+                    .Subscribe(
+                        onNext: _ =>
                         {
                             if (saveVersionIdentifier != requestSaveVersionIdentifier)
                             {
@@ -306,7 +306,9 @@ namespace Modules.ExternalAssets
 
                                 SaveVersion().Forget();
                             }
-                        })
+                        },
+                        onErrorResume: _ => { },
+                        onCompleted: _ => saveVersionDisposable = null)
                     .AddTo(Disposable);
             }
         }

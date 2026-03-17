@@ -8,7 +8,7 @@ using System.IO;
 using System.Linq;
 using CriWare;
 using Cysharp.Threading.Tasks;
-using UniRx;
+using R3;
 using Extensions;
 using Modules.Net;
 using Modules.ExternalAssets;
@@ -35,7 +35,7 @@ namespace Modules.CriWare
 
             public CriFsWebInstaller Installer { get; private set; }
 
-            public IObservable<CriAssetInstall> Task { get; private set; }
+            public Observable<CriAssetInstall> Task { get; private set; }
 
             //----- method -----
 

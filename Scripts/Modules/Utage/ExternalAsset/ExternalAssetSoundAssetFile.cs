@@ -4,7 +4,6 @@
 using System;
 using System.Collections;
 using Cysharp.Threading.Tasks;
-using UniRx;
 using Utage;
 using Modules.ExternalAssets;
 using Modules.Sound;
@@ -58,13 +57,16 @@ namespace Modules.UtageExtension
                 yield break;
             }
 
-            var updateYield = ExternalAsset.UpdateAsset(resourcesPath)
-				.ToObservable()
-				.ToYieldInstruction();
+            var updateCompleted = false;
+            var updateHasError = false;
 
-            yield return updateYield;
+            ExternalAsset.UpdateAsset(resourcesPath)
+                .ContinueWith(() => { updateCompleted = true; })
+                .Forget(ex => { updateHasError = true; updateCompleted = true; });
 
-            if (updateYield.HasError)
+            while (!updateCompleted) { yield return null; }
+
+            if (updateHasError)
             {
                 onFailed();
                 yield break;
@@ -72,16 +74,20 @@ namespace Modules.UtageExtension
 
             if (Priority != AssetFileLoadPriority.DownloadOnly)
             {
-                var cueYield = ExternalAsset.GetCueInfo(resourcesPath, soundName)
-					.ToObservable()
-					.ToYieldInstruction();
+                CueInfo cueResult = null;
+                var cueCompleted = false;
+                var cueHasError = false;
 
-                while (!cueYield.IsDone)
+                ExternalAsset.GetCueInfo(resourcesPath, soundName)
+                    .ContinueWith(x => { cueResult = x; cueCompleted = true; })
+                    .Forget(ex => { cueHasError = true; cueCompleted = true; });
+
+                while (!cueCompleted)
                 {
                     yield return null;
                 }
 
-                CueInfo = cueYield.Result;
+                CueInfo = cueResult;
 
                 if (CueInfo == null)
                 {

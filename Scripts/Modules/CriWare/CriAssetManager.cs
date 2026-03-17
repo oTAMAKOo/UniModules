@@ -9,7 +9,7 @@ using System.Collections.Generic;
 using System.Threading;
 using Cysharp.Threading.Tasks;
 using CriWare;
-using UniRx;
+using R3;
 using Extensions;
 using Modules.ExternalAssets;
 
@@ -93,7 +93,7 @@ namespace Modules.CriWare
                 CriFsWebInstaller.ExecuteMain();
             }
 
-            Observable.EveryUpdate()
+            Observable.EveryUpdate(UnityFrameProvider.Update)
                 .Subscribe(_ =>UpdateCriFsWebInstaller())
                 .AddTo(Disposable);
 
@@ -243,7 +243,7 @@ namespace Modules.CriWare
         {
             if (installers.IsEmpty()){ return; }
 
-            releaseInstallerDisposable = Observable.Timer(UnUseInstallerReleaseDelay)
+            releaseInstallerDisposable = Observable.Timer(UnUseInstallerReleaseDelay, TimeProvider.System)
                 .Subscribe(_ =>
                     {
                         foreach (var installer in installers)
@@ -354,7 +354,7 @@ namespace Modules.CriWare
         /// タイムアウト時のイベント.
         /// </summary>
         /// <returns></returns>
-        public IObservable<AssetInfo> OnTimeOutAsObservable()
+        public Observable<AssetInfo> OnTimeOutAsObservable()
         {
             return onTimeOut ?? (onTimeOut = new Subject<AssetInfo>());
         }
@@ -362,7 +362,7 @@ namespace Modules.CriWare
         /// <summary>
         /// エラー時のイベント.
         /// </summary>
-        public IObservable<Exception> OnErrorAsObservable()
+        public Observable<Exception> OnErrorAsObservable()
         {
             return onError ?? (onError = new Subject<Exception>());
         }

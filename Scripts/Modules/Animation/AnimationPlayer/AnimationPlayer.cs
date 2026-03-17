@@ -5,7 +5,7 @@ using System.Linq;
 using System.Collections.Generic;
 using System.Threading;
 using Cysharp.Threading.Tasks;
-using UniRx;
+using R3;
 using Extensions;
 
 namespace Modules.Animation
@@ -586,12 +586,12 @@ namespace Modules.Animation
             return func(Animator);
         }
 
-        public IObservable<AnimationPlayer> OnEnterAnimationAsObservable()
+        public Observable<AnimationPlayer> OnEnterAnimationAsObservable()
         {
             return onEnterAnimation ?? (onEnterAnimation = new Subject<AnimationPlayer>());
         }
 
-        public IObservable<AnimationPlayer> OnEndAnimationAsObservable()
+        public Observable<AnimationPlayer> OnEndAnimationAsObservable()
         {
             return onEndAnimation ?? (onEndAnimation = new Subject<AnimationPlayer>());
         }
@@ -606,7 +606,7 @@ namespace Modules.Animation
             }
         }
 
-        public IObservable<string> OnAnimationEventAsObservable()
+        public Observable<string> OnAnimationEventAsObservable()
         {
             return onAnimationEvent ?? (onAnimationEvent = new Subject<string>());
         }

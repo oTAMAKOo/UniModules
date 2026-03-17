@@ -5,7 +5,7 @@ using UnityEditorInternal;
 using System;
 using System.Linq;
 using System.Collections.Generic;
-using UniRx;
+using R3;
 using Extensions;
 
 namespace Modules.Devkit.Inspector
@@ -130,7 +130,7 @@ namespace Modules.Devkit.Inspector
             GUILayout.Space(2f);
         }
 
-        public IObservable<T[]> OnUpdateContentsAsObservable()
+        public Observable<T[]> OnUpdateContentsAsObservable()
         {
             return onUpdateContents ?? (onUpdateContents = new Subject<T[]>());
         }

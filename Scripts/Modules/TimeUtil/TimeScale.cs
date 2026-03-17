@@ -1,6 +1,6 @@
 ﻿
 using System;
-using UniRx;
+using R3;
 using Extensions;
 
 namespace Modules.TimeUtil
@@ -57,7 +57,7 @@ namespace Modules.TimeUtil
 			Value = DefaultTimeScale;
 		}
 
-		public IObservable<float> OnTimeScaleChangedAsObservable()
+		public Observable<float> OnTimeScaleChangedAsObservable()
 		{
 			return onTimeScaleChanged ?? (onTimeScaleChanged = new Subject<float>());
 		}

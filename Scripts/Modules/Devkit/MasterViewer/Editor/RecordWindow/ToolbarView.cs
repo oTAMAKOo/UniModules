@@ -4,7 +4,7 @@ using UnityEditor;
 using System;
 using System.Linq;
 using System.Collections.Generic;
-using UniRx;
+using R3;
 using Extensions;
 using Extensions.Devkit;
 
@@ -95,12 +95,12 @@ namespace Modules.Devkit.MasterViewer
             SearchText = EditorLayoutTools.DrawToolbarSearchTextField(SearchText, onChangeSearchText, onSearchCancel, GUILayout.Width(250));
         }
 
-        public IObservable<Unit> OnChangeSearchTextAsObservable()
+        public Observable<Unit> OnChangeSearchTextAsObservable()
         {
             return onUpdateSearchText ?? (onUpdateSearchText = new Subject<Unit>());
         }
 
-        public IObservable<Unit> OnResetRecordsAsObservable()
+        public Observable<Unit> OnResetRecordsAsObservable()
         {
             return onResetRecords ?? (onResetRecords = new Subject<Unit>());
         }

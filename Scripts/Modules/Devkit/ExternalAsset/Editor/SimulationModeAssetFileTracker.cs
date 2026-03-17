@@ -7,7 +7,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using Cysharp.Threading.Tasks;
-using UniRx;
+using R3;
 using Extensions;
 using Extensions.Devkit;
 using Modules.AssetBundles;
@@ -90,7 +90,7 @@ namespace Modules.Devkit.ExternalAssets
 				.Subscribe(x => IsRecording = x)
 				.AddTo(Disposable);
 
-			Observable.EveryEndOfFrame()
+			R3.Observable.EveryUpdate(UnityFrameProvider.PostLateUpdate)
 				.Subscribe(_ => Repaint())
 				.AddTo(Disposable);
 

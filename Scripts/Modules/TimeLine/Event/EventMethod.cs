@@ -6,7 +6,7 @@ using System.Reflection;
 using System.Linq;
 using System.Collections.Generic;
 using Extensions;
-using UniRx;
+using R3;
 
 namespace Modules.TimeLine.Component
 {

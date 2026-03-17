@@ -3,7 +3,7 @@ using System;
 using Cysharp.Threading.Tasks;
 using UnityEngine;
 using TMPro;
-using UniRx;
+using R3;
 
 namespace Modules.UI.Extension
 {
@@ -29,7 +29,7 @@ namespace Modules.UI.Extension
 
         //----- method -----
 
-        public IObservable<string> OnEndEditAsObservable()
+        public Observable<string> OnEndEditAsObservable()
         {
             if (onEndEdit == null)
             {

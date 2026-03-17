@@ -8,7 +8,7 @@ using System.Collections.Generic;
 using System.Text;
 using System.Threading;
 using Cysharp.Threading.Tasks;
-using UniRx;
+using R3;
 using Extensions;
 using Modules.Devkit.Console;
 using Modules.Scene.Diagnostics;
@@ -32,8 +32,8 @@ namespace Modules.Scene
         protected Dictionary<TScenes, SceneInstance<TScenes>> loadedScenes = null;
         protected FixedQueue<SceneInstance<TScenes>> cacheScenes = null;
 
-        protected Dictionary<TScenes, IObservable<SceneInstance<TScenes>>> loadingScenes = null;
-        protected Dictionary<TScenes, IObservable<Unit>> unloadingScenes = null;
+        protected Dictionary<TScenes, Observable<SceneInstance<TScenes>>> loadingScenes = null;
+        protected Dictionary<TScenes, Observable<Unit>> unloadingScenes = null;
 
         protected SceneInstance<TScenes> currentScene = null;
         protected ISceneArgument<TScenes> currentSceneArgument = null;
@@ -101,8 +101,8 @@ namespace Modules.Scene
             loadedScenes = new Dictionary<TScenes, SceneInstance<TScenes>>();
             cacheScenes = new FixedQueue<SceneInstance<TScenes>>(CacheSize);
 
-            loadingScenes = new Dictionary<TScenes, IObservable<SceneInstance<TScenes>>>();
-            unloadingScenes = new Dictionary<TScenes, IObservable<Unit>>();
+            loadingScenes = new Dictionary<TScenes, Observable<SceneInstance<TScenes>>>();
+            unloadingScenes = new Dictionary<TScenes, Observable<Unit>>();
 
             appendSceneInstances = new List<SceneInstance<TScenes>>();
 
@@ -249,7 +249,7 @@ namespace Modules.Scene
             IsTransition = true;
 
             // ※ 呼び出し元でAddTo(this)されるとシーン遷移中にdisposableされてしまうのでIObservableで公開しない.
-            ObservableEx.FromUniTask(cancelToken => TransitionCore(sceneArgument, mode, false, registerHistory, cancelToken))
+            Observable.FromAsync(cancelToken => TransitionCore(sceneArgument, mode, false, registerHistory, cancelToken))
                 .Subscribe(_ => IsTransition = false)
                 .AddTo(transitionCancelSource.Token);
         }
@@ -263,7 +263,7 @@ namespace Modules.Scene
             IsTransition = true;
 
             // ※ 呼び出し元でAddTo(this)されるとシーン遷移中にdisposableされてしまうのでIObservableで公開しない.
-            ObservableEx.FromUniTask(cancelToken => TransitionCore(currentSceneArgument, LoadSceneMode.Additive, false, false, cancelToken))
+            Observable.FromAsync(cancelToken => TransitionCore(currentSceneArgument, LoadSceneMode.Additive, false, false, cancelToken))
                 .Subscribe(_ => IsTransition = false)
                 .AddTo(transitionCancelSource.Token);
         }
@@ -312,7 +312,7 @@ namespace Modules.Scene
             {
                 IsTransition = true;
 
-                ObservableEx.FromUniTask(cancelToken => TransitionCore(argument, LoadSceneMode.Additive, true, false, cancelToken))
+                Observable.FromAsync(cancelToken => TransitionCore(argument, LoadSceneMode.Additive, true, false, cancelToken))
                     .Subscribe(_ => IsTransition = false)
                     .AddTo(transitionCancelSource.Token);
             }
@@ -766,7 +766,7 @@ namespace Modules.Scene
 
         #region Scene Load
         
-        private IObservable<SceneInstance<TScenes>> LoadScene(TScenes identifier, LoadSceneMode mode)
+        private Observable<SceneInstance<TScenes>> LoadScene(TScenes identifier, LoadSceneMode mode)
         {
             var observable = loadingScenes.GetValueOrDefault(identifier);
 
@@ -921,17 +921,17 @@ namespace Modules.Scene
             }
         }
 
-        public IObservable<SceneInstance<TScenes>> OnLoadSceneAsObservable()
+        public Observable<SceneInstance<TScenes>> OnLoadSceneAsObservable()
         {
             return onLoadScene ?? (onLoadScene = new Subject<SceneInstance<TScenes>>());
         }
 
-        public IObservable<SceneInstance<TScenes>> OnLoadSceneCompleteAsObservable()
+        public Observable<SceneInstance<TScenes>> OnLoadSceneCompleteAsObservable()
         {
             return onLoadSceneComplete ?? (onLoadSceneComplete = new Subject<SceneInstance<TScenes>>());
         }
 
-        public IObservable<Unit> OnLoadErrorAsObservable()
+        public Observable<Unit> OnLoadErrorAsObservable()
         {
             return onLoadError ?? (onLoadError = new Subject<Unit>());
         }
@@ -954,15 +954,15 @@ namespace Modules.Scene
             UnloadScene(sceneInstance).Subscribe().AddTo(Disposable);
         }
 
-        private IObservable<Unit> UnloadScene(SceneInstance<TScenes> sceneInstance)
+        private Observable<Unit> UnloadScene(SceneInstance<TScenes> sceneInstance)
         {
-            if (sceneInstance == null) { return Observable.ReturnUnit(); }
+            if (sceneInstance == null) { return Observable.Return(Unit.Default); }
 
-            if (!sceneInstance.Identifier.HasValue) { return Observable.ReturnUnit(); }
+            if (!sceneInstance.Identifier.HasValue) { return Observable.Return(Unit.Default); }
 
             var scene = sceneInstance.GetScene();
 
-            if (!scene.HasValue){ return Observable.ReturnUnit(); }
+            if (!scene.HasValue){ return Observable.Return(Unit.Default); }
 
             // メインシーンはアンロードできない.
             
@@ -972,7 +972,7 @@ namespace Modules.Scene
             {
                 Debug.LogWarning($"Main scene {sceneInstance.Identifier} is cannot be unloaded.");
 
-                return Observable.ReturnUnit();
+                return Observable.Return(Unit.Default);
             }
 
             // アンロード.
@@ -985,7 +985,7 @@ namespace Modules.Scene
             {
                 observable = UnloadSceneCore(sceneInstance)
                     .ToObservable()
-                    .AsUnitObservable()
+                    .Select(_ => Unit.Default)
                     .Do(_ => unloadingScenes.Remove(identifier))
                     .Share();
 
@@ -1094,17 +1094,17 @@ namespace Modules.Scene
             }
         }
 
-        public IObservable<SceneInstance<TScenes>> OnUnloadSceneAsObservable()
+        public Observable<SceneInstance<TScenes>> OnUnloadSceneAsObservable()
         {
             return onUnloadScene ?? (onUnloadScene = new Subject<SceneInstance<TScenes>>());
         }
 
-        public IObservable<SceneInstance<TScenes>> OnUnloadSceneCompleteAsObservable()
+        public Observable<SceneInstance<TScenes>> OnUnloadSceneCompleteAsObservable()
         {
             return onUnloadSceneComplete ?? (onUnloadSceneComplete = new Subject<SceneInstance<TScenes>>());
         }
 
-        public IObservable<Unit> OnUnloadErrorAsObservable()
+        public Observable<Unit> OnUnloadErrorAsObservable()
         {
             return onUnloadError ?? (onUnloadError = new Subject<Unit>());
         }
@@ -1187,11 +1187,11 @@ namespace Modules.Scene
         #region Scene Cache
 
         /// <summary> キャッシュ済みの全シーンをアンロード. </summary>
-        public IObservable<Unit> UnloadAllCacheScene()
+        public Observable<Unit> UnloadAllCacheScene()
         {
             var sceneInstances = cacheScenes.ToArray();
 
-            return sceneInstances.Select(x => UnloadScene(x)).WhenAll().AsUnitObservable();
+            return sceneInstances.Select(x => UnloadScene(x)).WhenAll().Select(_ => Unit.Default);
         }
 
         /// <summary> キャッシュ済みのシーンをアンロード. </summary>
@@ -1284,43 +1284,43 @@ namespace Modules.Scene
 
         //====== Prepare Scene ======
 
-        public IObservable<SceneInstance<TScenes>> OnPrepareAsObservable()
+        public Observable<SceneInstance<TScenes>> OnPrepareAsObservable()
         {
             return onPrepare ?? (onPrepare = new Subject<SceneInstance<TScenes>>());
         }
 
-        public IObservable<SceneInstance<TScenes>> OnPrepareCompleteAsObservable()
+        public Observable<SceneInstance<TScenes>> OnPrepareCompleteAsObservable()
         {
             return onPrepareComplete ?? (onPrepareComplete = new Subject<SceneInstance<TScenes>>());
         }
 
         //====== Enter Scene ======
 
-        public IObservable<SceneInstance<TScenes>> OnEnterAsObservable()
+        public Observable<SceneInstance<TScenes>> OnEnterAsObservable()
         {
             return onEnter ?? (onEnter = new Subject<SceneInstance<TScenes>>());
         }
 
-        public IObservable<SceneInstance<TScenes>> OnEnterCompleteAsObservable()
+        public Observable<SceneInstance<TScenes>> OnEnterCompleteAsObservable()
         {
             return onEnterComplete ?? (onEnterComplete = new Subject<SceneInstance<TScenes>>());
         }
 
         //====== Leave Scene ======
 
-        public IObservable<SceneInstance<TScenes>> OnLeaveAsObservable()
+        public Observable<SceneInstance<TScenes>> OnLeaveAsObservable()
         {
             return onLeave ?? (onLeave = new Subject<SceneInstance<TScenes>>());
         }
 
-        public IObservable<SceneInstance<TScenes>> OnLeaveCompleteAsObservable()
+        public Observable<SceneInstance<TScenes>> OnLeaveCompleteAsObservable()
         {
             return onLeaveComplete ?? (onLeaveComplete = new Subject<SceneInstance<TScenes>>());
         }
 
         //====== Cancel ======
 
-        public IObservable<Unit> OnCancelAsObservable()
+        public Observable<Unit> OnCancelAsObservable()
         {
             return onCancel ?? (onCancel = new Subject<Unit>());
         }

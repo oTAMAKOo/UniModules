@@ -3,7 +3,7 @@ using UnityEngine;
 using System;
 using System.Linq;
 using Cysharp.Threading.Tasks;
-using UniRx;
+using R3;
 using Extensions;
 using Modules.InputControl;
 
@@ -147,12 +147,12 @@ namespace Modules.Window
             await UniTask.NextFrame();
         }
 
-        public IObservable<Unit> OnOpenAsObservable()
+        public Observable<Unit> OnOpenAsObservable()
         {
             return onOpen ?? (onOpen = new Subject<Unit>());
         }
 
-        public IObservable<Unit> OnCloseAsObservable()
+        public Observable<Unit> OnCloseAsObservable()
         {
             return onClose ?? (onClose = new Subject<Unit>());
         }

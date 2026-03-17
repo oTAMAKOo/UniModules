@@ -1,6 +1,6 @@
 ﻿
 using System;
-using UniRx;
+using R3;
 using UnityEngine;
 using UnityEngine.Playables;
 
@@ -91,7 +91,7 @@ namespace Modules.TimeLine
             return playableGraph;
         }
 
-        public IObservable<ExposedReference<T>> OnUpdateReferenceAsObservable()
+        public Observable<ExposedReference<T>> OnUpdateReferenceAsObservable()
         {
             return onUpdateReference ?? (onUpdateReference = new Subject<ExposedReference<T>>());
         }

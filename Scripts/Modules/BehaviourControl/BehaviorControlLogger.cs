@@ -1,7 +1,7 @@
 ﻿
 using System;
 using System.Collections.Generic;
-using UniRx;
+using R3;
 using Extensions;
 
 namespace Modules.BehaviorControl
@@ -51,7 +51,7 @@ namespace Modules.BehaviorControl
             }
         }
 
-        public IObservable<Unit> OnLogUpdateAsObservable()
+        public Observable<Unit> OnLogUpdateAsObservable()
         {
             return onLogUpdate ?? (onLogUpdate = new Subject<Unit>());
         }

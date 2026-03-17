@@ -1,6 +1,5 @@
 ﻿
 using UnityEngine;
-using UniRx;
 
 namespace Modules.BackKey
 {

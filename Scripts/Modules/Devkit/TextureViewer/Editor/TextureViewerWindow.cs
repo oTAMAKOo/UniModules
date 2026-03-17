@@ -3,10 +3,11 @@ using UnityEngine;
 using UnityEditor;
 using System;
 using System.IO;
-using System.Collections;
 using System.Linq;
 using System.Collections.Generic;
-using UniRx;
+using System.Threading;
+using Cysharp.Threading.Tasks;
+using R3;
 using Extensions;
 using Extensions.Devkit;
 
@@ -60,40 +61,42 @@ namespace Modules.Devkit.TextureViewer
             DisplayMode = DisplayMode.Texture;
 
             // 非同期で初期化.
-            Observable.FromMicroCoroutine(() => InitializeAsync())
-                .Subscribe()
-                .AddTo(Disposable);
+            Observable.Create<Unit>(async (observer, ct) =>
+            {
+                await InitializeAsync(ct);
+
+                observer.OnNext(Unit.Default);
+                observer.OnCompleted();
+            })
+            .Subscribe()
+            .AddTo(Disposable);
 
             initialized = true;
         }
 
-        private IEnumerator InitializeAsync()
+        private async UniTask InitializeAsync(CancellationToken ct)
         {
             // テクスチャ情報読み込み.
-            var loadTextureInfoYield = Observable.FromMicroCoroutine<TextureInfo[]>(observer => LoadTextureInfos(observer)).ToYieldInstruction(false);
-
-            while (!loadTextureInfoYield.IsDone)
-            {
-                yield return null;
-            }
-
-            if (loadTextureInfoYield.HasResult)
-            {
-                textureInfos = loadTextureInfoYield.Result;
-            }
+            textureInfos = await LoadTextureInfos(ct);
 
             // バックグラウンド読み込み.
 
             initalLoading = true;
 
-            Observable.FromMicroCoroutine(() => LoadMainTextureBackground())
-                .Subscribe()
-                .AddTo(Disposable);
+            Observable.Create<Unit>(async (observer, ct2) =>
+            {
+                await LoadMainTextureBackground(ct2);
+
+                observer.OnNext(Unit.Default);
+                observer.OnCompleted();
+            })
+            .Subscribe()
+            .AddTo(Disposable);
 
             // View初期化.
 
             InitializeViews();
-            
+
             // 1秒後に表示.
 
             Observable.Timer(TimeSpan.FromSeconds(1))
@@ -170,7 +173,7 @@ namespace Modules.Devkit.TextureViewer
             footerView.DrawGUI();
         }
 
-        private IEnumerator LoadTextureInfos(IObserver<TextureInfo[]> observer)
+        private async UniTask<TextureInfo[]> LoadTextureInfos(CancellationToken ct)
         {
             var config = TextureViewerConfig.Instance;
 
@@ -183,7 +186,7 @@ namespace Modules.Devkit.TextureViewer
 
             var index = 0;
             var total = textureGuids.Length;
-            
+
             var chunk = textureGuids.Chunk(100).ToArray();
 
             Action displayProgress = () =>
@@ -193,6 +196,8 @@ namespace Modules.Devkit.TextureViewer
 
             foreach (var guids in chunk)
             {
+                ct.ThrowIfCancellationRequested();
+
                 displayProgress.Invoke();
 
                 foreach (var guid in guids)
@@ -219,24 +224,23 @@ namespace Modules.Devkit.TextureViewer
                     var info = new TextureInfo(index, guid, assetPath);
 
                     // TextureImporterが取得できない場合は除外.
-                
+
                     if (info.TextureImporter == null) { continue; }
-                
+
                     // 追加.
 
                     infos.Add(info);
                 }
 
-                yield return null;
+                await UniTask.Yield(ct);
             }
 
             displayProgress.Invoke();
 
-            observer.OnNext(infos.ToArray());
-            observer.OnCompleted();
+            return infos.ToArray();
         }
 
-        private IEnumerator LoadMainTextureBackground()
+        private async UniTask LoadMainTextureBackground(CancellationToken ct)
         {
             var chunk = textureInfos.Chunk(15).ToArray();
 
@@ -245,6 +249,8 @@ namespace Modules.Devkit.TextureViewer
 
             foreach (var textureInfos in chunk)
             {
+                ct.ThrowIfCancellationRequested();
+
                 var loadingText = string.Format("Loading Texture [{0} / {1}]", index, total);
 
                 if (footerView != null)
@@ -265,7 +271,7 @@ namespace Modules.Devkit.TextureViewer
                     index++;
                 }
 
-                yield return null;
+                await UniTask.Yield(ct);
             }
 
             if (initalLoading)

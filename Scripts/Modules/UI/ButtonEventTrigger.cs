@@ -3,8 +3,8 @@ using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.EventSystems;
 using System;
-using UniRx;
-using UniRx.Triggers;
+using R3;
+using R3.Triggers;
 using Extensions;
 
 namespace Modules.UI
@@ -157,7 +157,7 @@ namespace Modules.UI
             longPressDuration = duration;
         }
 
-        public IObservable<Unit> OnPressAsObservable()
+        public Observable<Unit> OnPressAsObservable()
         {
             if(onPress == null)
             {
@@ -171,7 +171,7 @@ namespace Modules.UI
             return onPress;
         }
 
-        public IObservable<float> OnReleaseAsObservable()
+        public Observable<float> OnReleaseAsObservable()
         {
             if(onRelease == null)
             {
@@ -185,7 +185,7 @@ namespace Modules.UI
             return onRelease;
         }
 
-        public IObservable<Unit> OnCancelAsObservable()
+        public Observable<Unit> OnCancelAsObservable()
         {
             if(onCancel == null)
             {
@@ -199,7 +199,7 @@ namespace Modules.UI
             return onCancel;
         }
 
-        public IObservable<Unit> OnLongPressAsObservable()
+        public Observable<Unit> OnLongPressAsObservable()
         {
             OnPressAsObservable().Subscribe().AddTo(this);
             OnReleaseAsObservable().Subscribe().AddTo(this);
@@ -216,7 +216,7 @@ namespace Modules.UI
             return onLongPress;
         }
 
-        public IObservable<float> OnLongPressReleaseAsObservable()
+        public Observable<float> OnLongPressReleaseAsObservable()
         {
             if(onLongPressRelease == null)
             {

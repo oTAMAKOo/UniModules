@@ -5,7 +5,7 @@ using UnityEditor.IMGUI.Controls;
 using System;
 using System.Linq;
 using System.Collections.Generic;
-using UniRx;
+using R3;
 using Extensions;
 using Extensions.Devkit;
 
@@ -403,7 +403,7 @@ namespace Modules.Devkit.AssetBundleViewer
             return targets.DistinctBy(x => x.AssetBundleName).ToArray();
         }
 
-		public IObservable<AssetBundleInfo> OnContentClickAsObservable()
+		public Observable<AssetBundleInfo> OnContentClickAsObservable()
 		{
 			return onContentClick ?? (onContentClick = new Subject<AssetBundleInfo>());
 		}

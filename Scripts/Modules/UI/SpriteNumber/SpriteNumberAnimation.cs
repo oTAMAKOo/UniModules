@@ -1,7 +1,7 @@
 ﻿
 using UnityEngine;
 using System;
-using UniRx;
+using R3;
 
 namespace Modules.UI.SpriteNumber
 {
@@ -34,7 +34,7 @@ namespace Modules.UI.SpriteNumber
             }
         }
 
-        public IObservable<Unit> OnCompleteAsObservable()
+        public Observable<Unit> OnCompleteAsObservable()
         {
             return onComplete ?? (onComplete = new Subject<Unit>());
         }

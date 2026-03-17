@@ -4,7 +4,7 @@
 using UnityEngine;
 using System;
 using System.Linq;
-using UniRx;
+using R3;
 using VivoxUnity;
 using Extensions;
 
@@ -55,7 +55,7 @@ namespace Modules.Vivox
 				updatePositionDisposable = null;
 			}
 
-			updatePositionDisposable = Observable.EveryLateUpdate()
+			updatePositionDisposable = Observable.EveryUpdate(UnityFrameProvider.PostLateUpdate)
 				.Subscribe(_ => OnUpdate3DPosition())
 				.AddTo(Disposable);
 		}
@@ -109,7 +109,7 @@ namespace Modules.Vivox
 
 		#region Event
 
-		public IObservable<Unit> OnRequestUpdatePositionalAsObservable()
+		public Observable<Unit> OnRequestUpdatePositionalAsObservable()
 		{
 			return onRequestUpdatePositional ?? (onRequestUpdatePositional = new Subject<Unit>());
 		}

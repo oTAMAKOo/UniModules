@@ -6,7 +6,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using Cysharp.Threading.Tasks;
-using UniRx;
+using R3;
 using Extensions;
 using Modules.Devkit.Console;
 
@@ -264,7 +264,7 @@ namespace Modules.ExternalAssets
             }
         }
 
-        public IObservable<Unit> OnReleaseManagedAssetsAsObservable()
+        public Observable<Unit> OnReleaseManagedAssetsAsObservable()
         {
             return onReleaseManagedAssets ?? (onReleaseManagedAssets = new Subject<Unit>());
         }

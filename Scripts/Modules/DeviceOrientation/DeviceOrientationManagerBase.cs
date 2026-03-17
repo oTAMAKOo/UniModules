@@ -1,7 +1,7 @@
 
 using System;
 using UnityEngine;
-using UniRx;
+using R3;
 using Extensions;
 using Modules.ApplicationEvent;
 
@@ -62,7 +62,7 @@ namespace Modules.DeviceOrientation
             Screen.orientation = ScreenOrientation.AutoRotation;
         }
 
-        public IObservable<ScreenOrientation> OnOrientationChangedAsObservable()
+        public Observable<ScreenOrientation> OnOrientationChangedAsObservable()
         {
             return onOrientationChanged ?? (onOrientationChanged = new Subject<ScreenOrientation>());
         }

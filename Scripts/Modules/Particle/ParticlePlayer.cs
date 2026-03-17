@@ -2,10 +2,10 @@
 using UnityEngine;
 using Unity.Linq;
 using System;
-using System.Collections;
 using System.Linq;
+using System.Threading;
 using Cysharp.Threading.Tasks;
-using UniRx;
+using R3;
 using Extensions;
 
 namespace Modules.Particle
@@ -143,7 +143,7 @@ namespace Modules.Particle
         private bool paused = false;
 
         // 再生中のエフェクト.
-        private IObservable<Unit> playObservable = null;
+        private Observable<Unit> playObservable = null;
 
         // 再生キャンセル用.
         private IDisposable playDisposable = null;
@@ -302,7 +302,7 @@ namespace Modules.Particle
             await PlayAsObservable(restart).ToUniTask();
         }
 
-        private IObservable<Unit> PlayAsObservable(bool restart = true)
+        private Observable<Unit> PlayAsObservable(bool restart = true)
         {
             if (!initialized)
             {
@@ -322,12 +322,18 @@ namespace Modules.Particle
             }
 
             // 再生.
-            playObservable = Observable.FromMicroCoroutine(() => PlayInternal()).Share();
+            playObservable = Observable.Create<Unit>(async (observer, ct) =>
+            {
+                await PlayInternal(ct);
+
+                observer.OnNext(Unit.Default);
+                observer.OnCompleted();
+            }).Share();
 
             return playObservable;
         }
 
-        private IEnumerator PlayInternal()
+        private async UniTask PlayInternal(CancellationToken ct)
         {
             UnityUtility.SetActive(gameObject, true);
 
@@ -335,6 +341,8 @@ namespace Modules.Particle
 
             while (true)
             {
+                ct.ThrowIfCancellationRequested();
+
                 if (!UnityUtility.IsActiveInHierarchy(gameObject)) { break; }
 
                 // 状態リセット.
@@ -360,16 +368,11 @@ namespace Modules.Particle
                 ApplySpeedRate();
 
                 // 終了待ち.
-                var updateYield = Observable.FromMicroCoroutine(() => FrameUpdate()).ToYieldInstruction();
-
-                while (!updateYield.IsDone)
-                {
-                    yield return null;
-                }                
+                await FrameUpdate(ct);
 
                 if (endActionType != EndActionType.Loop) { break; }
 
-                if (State == State.Stop) { break; }                
+                if (State == State.Stop) { break; }
             }
 
 
@@ -380,10 +383,12 @@ namespace Modules.Particle
         }
 
         // 更新.
-        private IEnumerator FrameUpdate()
+        private async UniTask FrameUpdate(CancellationToken ct)
         {
             while (true)
             {
+                ct.ThrowIfCancellationRequested();
+
                 if (State == State.Stop) { break; }
 
                 if (State == State.Play)
@@ -403,7 +408,7 @@ namespace Modules.Particle
                 // 終了監視.
                 if (!IsAlive()) { break; }
 
-                yield return null;
+                await UniTask.Yield(ct);
             }
         }
 
@@ -804,13 +809,13 @@ namespace Modules.Particle
         }
 
         /// <summary> イベント発生通知 </summary>
-        public IObservable<string> OnEventAsObservable()
+        public Observable<string> OnEventAsObservable()
         {
             return onEvent ?? (onEvent = new Subject<string>());
         }
 
         /// <summary> 終了通知 </summary>
-        public IObservable<ParticlePlayer> OnEndAsObservable()
+        public Observable<ParticlePlayer> OnEndAsObservable()
         {
             return onEnd ?? (onEnd = new Subject<ParticlePlayer>());
         }

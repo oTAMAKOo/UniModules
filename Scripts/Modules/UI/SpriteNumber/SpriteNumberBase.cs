@@ -4,7 +4,7 @@ using System;
 using System.Linq;
 using System.Collections.Generic;
 using Cysharp.Threading.Tasks;
-using UniRx;
+using R3;
 using Extensions;
 
 namespace Modules.UI.SpriteNumber
@@ -356,12 +356,12 @@ namespace Modules.UI.SpriteNumber
             components.ForEach(component => OnApply(component));
         }
 
-        public IObservable<Unit> OnAnimationStartAsObservable()
+        public Observable<Unit> OnAnimationStartAsObservable()
         {
             return onAnimationStart ?? (onAnimationStart  = new Subject<Unit>());
         }
 
-        public IObservable<Unit> OnAnimationFinishAsObservable()
+        public Observable<Unit> OnAnimationFinishAsObservable()
         {
             return onAnimationFinish ?? (onAnimationFinish  = new Subject<Unit>());
         }

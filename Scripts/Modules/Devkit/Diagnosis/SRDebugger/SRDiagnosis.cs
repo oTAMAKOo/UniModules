@@ -2,7 +2,7 @@
 using UnityEngine;
 using UnityEngine.UI;
 using Unity.Linq;
-using UniRx;
+using R3;
 using System.Linq;
 using Extensions;
 using Modules.Devkit.Diagnosis.LogTracker;
@@ -135,7 +135,7 @@ namespace Modules.Devkit.Diagnosis.SRDebugger
                     .AddTo(this);
 
                 applicationLogHandler.OnReceivedThreadedAllAsObservable()
-                    .ObserveOnMainThread()
+                    .ObserveOn(UnityFrameProvider.Update)
                     .Subscribe(x => OnLogReceive(x))
                     .AddTo(this);
 

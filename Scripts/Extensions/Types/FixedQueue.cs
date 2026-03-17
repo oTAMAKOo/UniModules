@@ -1,7 +1,7 @@
 ﻿
 using System;
 using System.Linq;
-using UniRx;
+using R3;
 
 namespace Extensions
 {
@@ -61,7 +61,7 @@ namespace Extensions
             }
         }
 
-        public IObservable<T> OnExtrudedAsObservable()
+        public Observable<T> OnExtrudedAsObservable()
         {
             return onExtruded ?? (onExtruded = new Subject<T>());
         }

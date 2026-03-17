@@ -6,7 +6,7 @@ using System;
 using System.Linq;
 using System.Collections.Generic;
 using System.Reflection;
-using UniRx;
+using R3;
 using Extensions;
 using SRDebugger.Editor;
 using SRDebugger.Internal;

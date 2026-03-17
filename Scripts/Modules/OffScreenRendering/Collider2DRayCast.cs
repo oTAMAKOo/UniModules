@@ -4,7 +4,7 @@ using System.Collections;
 using System.Collections.Generic;
   using System.Linq;
   using Extensions;
-  using UniRx;
+  using R3;
 
 namespace Modules.OffScreenRendering
 {
@@ -37,7 +37,7 @@ namespace Modules.OffScreenRendering
             }
         }
 
-        public IObservable<GameObject[]> OnRaycastHitAsObservable()
+        public Observable<GameObject[]> OnRaycastHitAsObservable()
         {
             return onRaycastHit ?? (onRaycastHit = new Subject<GameObject[]>());
         }

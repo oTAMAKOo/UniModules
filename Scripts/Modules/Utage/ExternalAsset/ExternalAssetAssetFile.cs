@@ -4,7 +4,6 @@
 using System;
 using System.Collections;
 using Cysharp.Threading.Tasks;
-using UniRx;
 using Utage;
 using Extensions;
 using Modules.ExternalAssets;
@@ -48,13 +47,16 @@ namespace Modules.UtageExtension
                 yield break;
             }
 
-            var updateYield = ExternalAsset.UpdateAsset(resourcesPath)
-				.ToObservable()
-				.ToYieldInstruction(false);
+            var updateCompleted = false;
+            var updateHasError = false;
 
-            yield return updateYield;
+            ExternalAsset.UpdateAsset(resourcesPath)
+                .ContinueWith(() => { updateCompleted = true; })
+                .Forget(ex => { updateHasError = true; updateCompleted = true; });
 
-            if (updateYield.HasError)
+            while (!updateCompleted) { yield return null; }
+
+            if (updateHasError)
             {
                 onFailed();
                 yield break;
@@ -62,19 +64,23 @@ namespace Modules.UtageExtension
             
             if (Priority != AssetFileLoadPriority.DownloadOnly)
             {
-                var loadYield = ExternalAsset.LoadAsset<T>(resourcesPath)
-					.ToObservable()
-					.ToYieldInstruction(false);
+                T loadResult = null;
+                var loadCompleted = false;
+                var loadHasError = false;
 
-                yield return loadYield;
+                ExternalAsset.LoadAsset<T>(resourcesPath)
+                    .ContinueWith(x => { loadResult = x; loadCompleted = true; })
+                    .Forget(ex => { loadHasError = true; loadCompleted = true; });
 
-                if (loadYield.HasError)
+                while (!loadCompleted) { yield return null; }
+
+                if (loadHasError)
                 {
                     onFailed();
                     yield break;
                 }
 
-                Asset = loadYield.Result;
+                Asset = loadResult;
                 OnLoadComplete(Asset);
 
                 if (Asset == null)

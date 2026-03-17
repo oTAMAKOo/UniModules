@@ -1,12 +1,12 @@
 
 using System;
-using System.Collections;
 using UnityEngine;
 using UnityEngine.UI;
 using System.IO;
 using System.Collections.Generic;
 using System.Linq;
-using UniRx;
+using R3;
+using Cysharp.Threading.Tasks;
 using Extensions;
 
 namespace Modules.PatternTexture
@@ -374,7 +374,13 @@ namespace Modules.PatternTexture
 
             crossFadeColor = color;
 
-            fadeDisposable = Observable.FromCoroutine(() => Fade(crossFadeTime))
+            fadeDisposable = Observable.Create<Unit>(async (observer, ct) =>
+                {
+                    await Fade(crossFadeTime, ct);
+
+                    observer.OnNext(Unit.Default);
+                    observer.OnCompleted();
+                })
                 .Subscribe(_ => StopCrossFade())
                 .AddTo(this);
         }
@@ -433,7 +439,7 @@ namespace Modules.PatternTexture
             vh.AddUIVertexQuad(new UIVertex[] { lb, rb, rt, lt });
         }
 
-        private IEnumerator Fade(float time)
+        private async UniTask Fade(float time, System.Threading.CancellationToken ct)
         {
             var current = 0f;
 
@@ -441,6 +447,8 @@ namespace Modules.PatternTexture
 
             while (current < time)
             {
+                ct.ThrowIfCancellationRequested();
+
                 current += Time.deltaTime;
 
                 var c = this.color;
@@ -451,7 +459,7 @@ namespace Modules.PatternTexture
 
                 SetAllDirty();
 
-                yield return null;
+                await UniTask.Yield(ct);
             }
 
             crossFadeTextureName = null;

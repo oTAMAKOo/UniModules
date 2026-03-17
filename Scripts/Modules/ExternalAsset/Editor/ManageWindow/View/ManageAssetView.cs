@@ -5,7 +5,7 @@ using System;
 using System.Linq;
 using System.Collections.Generic;
 using Cysharp.Threading.Tasks;
-using UniRx;
+using R3;
 using Extensions;
 using Extensions.Devkit;
 
@@ -147,7 +147,7 @@ namespace Modules.ExternalAssets
             await view.BuildContentsInfo(assetManagement); 
 
             view.OnUpdateManageInfoAsObservable()
-                .DelayFrame(1)
+                .DelayFrame(1, UnityFrameProvider.Update)
                 .Subscribe(async _ =>
                     {
                         assetManagement.UpdateManageInfo(view.ManageInfo);
@@ -161,7 +161,7 @@ namespace Modules.ExternalAssets
                 .AddTo(Disposable);
 
             view.OnDeleteManageInfoAsObservable()
-                .DelayFrame(1)
+                .DelayFrame(1, UnityFrameProvider.Update)
                 .Subscribe(async _ =>
                     {
                         var updateAssetPaths = await assetManagement.GetManageAssetPaths(view.ManageInfo);
@@ -266,7 +266,7 @@ namespace Modules.ExternalAssets
             return isHit;
         }
 
-        public IObservable<Unit> OnRequestRepaintAsObservable()
+        public Observable<Unit> OnRequestRepaintAsObservable()
         {
             return onRequestRepaint ?? (onRequestRepaint = new Subject<Unit>());
         }

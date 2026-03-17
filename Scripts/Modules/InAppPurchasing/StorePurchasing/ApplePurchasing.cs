@@ -4,7 +4,7 @@
 using UnityEngine;
 using UnityEngine.Purchasing;
 using System;
-using UniRx;
+using R3;
 
 namespace Modules.InAppPurchasing
 {
@@ -68,7 +68,7 @@ namespace Modules.InAppPurchasing
         /// trueの場合はなにかがリストアされたというわけではありません.
         /// 単にリストアの処理が終了したということです.
         /// </summary>
-        public IObservable<bool> OnRestoreFinishAsObservable()
+        public Observable<bool> OnRestoreFinishAsObservable()
         {
             return onRestoreFinish ?? (onRestoreFinish = new Subject<bool>());
         }

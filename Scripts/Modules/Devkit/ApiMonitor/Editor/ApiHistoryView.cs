@@ -6,7 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Extensions;
-using UniRx;
+using R3;
 using Extensions.Devkit;
 
 namespace Modules.Net.WebRequest
@@ -341,7 +341,7 @@ namespace Modules.Net.WebRequest
             }
         }
 
-        public IObservable<int> OnChangeSelectAsObservable()
+        public Observable<int> OnChangeSelectAsObservable()
         {
             return onChangeSelect ?? (onChangeSelect = new Subject<int>());
         }

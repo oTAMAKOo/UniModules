@@ -4,7 +4,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using Extensions;
 using TMPro;
-using UniRx;
+using R3;
 
 namespace Modules.TextData.Components
 {

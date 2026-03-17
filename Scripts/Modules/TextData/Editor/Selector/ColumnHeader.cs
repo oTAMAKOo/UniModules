@@ -4,7 +4,7 @@ using UnityEditor;
 using UnityEditor.IMGUI.Controls;
 using System;
 using System.Linq;
-using UniRx;
+using R3;
 
 namespace Modules.TextData.Components
 {
@@ -66,7 +66,7 @@ namespace Modules.TextData.Components
             }
         }
 
-        public IObservable<Unit> OnChangeVisibilityAsObservable()
+        public Observable<Unit> OnChangeVisibilityAsObservable()
         {
             return onChangeVisibility ?? (onChangeVisibility = new Subject<Unit>());
         }

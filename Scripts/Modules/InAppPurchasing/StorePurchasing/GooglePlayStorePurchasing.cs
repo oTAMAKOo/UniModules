@@ -4,7 +4,7 @@
 using System;
 using UnityEngine;
 using UnityEngine.Purchasing;
-using UniRx;
+using R3;
 using Extensions;
 
 namespace Modules.InAppPurchasing
@@ -69,7 +69,7 @@ namespace Modules.InAppPurchasing
         
         protected virtual void OnDeferredPurchase(Product product) { }
 
-        public IObservable<Product> OnDeferredPurchaseAsObservable()
+        public Observable<Product> OnDeferredPurchaseAsObservable()
         {
             return onDeferredPurchase ?? (onDeferredPurchase = new Subject<Product>());
         }

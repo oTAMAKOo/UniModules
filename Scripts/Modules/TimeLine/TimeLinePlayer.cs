@@ -3,10 +3,10 @@
 
 using UnityEngine;
 using System;
-using System.Collections;
 using System.Linq;
 using System.Collections.Generic;
-using UniRx;
+using R3;
+using Cysharp.Threading.Tasks;
 using Extensions;
 using Modules.TimeLine.Component;
 using UnityEngine.Playables;
@@ -75,8 +75,8 @@ namespace Modules.TimeLine
             initialize = true;
         }
         
-        /// <summary> 再生. </summary> 
-        public IObservable<Unit> Play(double time = 0, bool resetIfPlaying = true)
+        /// <summary> 再生. </summary>
+        public Observable<Unit> Play(double time = 0, bool resetIfPlaying = true)
         {
             Initialize();
 
@@ -106,23 +106,24 @@ namespace Modules.TimeLine
 
             playableDirector.Play();
 
-            return Observable.FromMicroCoroutine(() => WaitFinish());
-        }
-
-        private IEnumerator WaitFinish()
-        {
-            while (state != State.Finish)
+            return Observable.Create<Unit>(async (observer, ct) =>
             {
-                yield return null;
-            }
+                while (state != State.Finish)
+                {
+                    await UniTask.Yield(ct);
+                }
 
-            if (playingDisposable != null)
-            {
-                playingDisposable.Dispose();
-                playingDisposable = null;
-            }
+                if (playingDisposable != null)
+                {
+                    playingDisposable.Dispose();
+                    playingDisposable = null;
+                }
 
-            state = State.None;
+                state = State.None;
+
+                observer.OnNext(Unit.Default);
+                observer.OnCompleted();
+            });
         }
 
         /// <summary> 一時停止. </summary> 
@@ -154,14 +155,14 @@ namespace Modules.TimeLine
             state = State.Finish;
         }
 
-        /// <summary> Labelにジャンプして再生. </summary> 
-        public IObservable<Unit> GotoAndPlay(string label)
+        /// <summary> Labelにジャンプして再生. </summary>
+        public Observable<Unit> GotoAndPlay(string label)
         {
-            if (string.IsNullOrEmpty(label)) { return Observable.ReturnUnit(); }
+            if (string.IsNullOrEmpty(label)) { return Observable.Return(Unit.Default); }
 
             Initialize();
 
-            if (!labels.ContainsKey(label)) { return Observable.ReturnUnit(); }
+            if (!labels.ContainsKey(label)) { return Observable.Return(Unit.Default); }
 
             var time = labels.GetValueOrDefault(label);
 
@@ -245,7 +246,7 @@ namespace Modules.TimeLine
             }
         }
 
-        public IObservable<LoopInfo> OnLoopCheckAsObservable()
+        public Observable<LoopInfo> OnLoopCheckAsObservable()
         {
             return onLoopCheck ?? (onLoopCheck = new Subject<LoopInfo>());
         }

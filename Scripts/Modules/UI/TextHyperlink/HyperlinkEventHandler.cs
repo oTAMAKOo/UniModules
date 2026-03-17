@@ -2,7 +2,7 @@
 using System;
 using UnityEngine;
 using UnityEngine.EventSystems;
-using UniRx;
+using R3;
 using TMPro;
 using Extensions;
 
@@ -60,7 +60,7 @@ namespace Modules.UI.TextHyperlink
 			}
 		}
 
-		public IObservable<string> OnHyperlinkActionAsObservable()
+		public Observable<string> OnHyperlinkActionAsObservable()
 		{
 			return onHyperlinkAction ?? (onHyperlinkAction = new Subject<string>());
 		}

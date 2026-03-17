@@ -5,7 +5,8 @@ using UnityEngine.EventSystems;
 using System;
 using System.Threading;
 using Cysharp.Threading.Tasks;
-using UniRx;
+using R3;
+using R3.Triggers;
 using Extensions;
 using Modules.Devkit.Diagnosis.SendReport;
 
@@ -73,11 +74,11 @@ namespace Modules.Devkit.Diagnosis.SRDebugger
                        AddReportTitle();
                        UpdateView();
                    })
-                .AddTo(this);
+                .AddTo(this.GetDestroyCancellationToken());
 
             sendReportManager.OnReportCompleteAsObservable()
                 .Subscribe(x => OnReportComplete(x))
-                .AddTo(this);
+                .AddTo(this.GetDestroyCancellationToken());
 
             sendReportButton.OnClickAsObservable()
                 .Subscribe(_ =>
@@ -91,7 +92,7 @@ namespace Modules.Devkit.Diagnosis.SRDebugger
 							SendReport().Forget();
                         }
                     })
-                .AddTo(this);
+                .AddTo(this.GetDestroyCancellationToken());
 
             initialized = true;
         }
@@ -100,15 +101,14 @@ namespace Modules.Devkit.Diagnosis.SRDebugger
         {
             UpdateView();
 
-            Observable.NextFrame()
-                .TakeUntilDisable(this)
+            R3.Observable.NextFrame()
                 .Subscribe(_ => OnRequestRefreshInputText())
-                .AddTo(this);
+                .AddTo(this.GetDestroyCancellationToken());
 
-            Observable.EveryUpdate()
-                .TakeUntilDisable(this)
+            R3.Observable.EveryUpdate()
+                .TakeUntil(this.OnDisableAsObservable())
                 .Subscribe(_ => UnityUtility.SetActive(sendReportButton, IsSendReportButtonEnable()))
-                .AddTo(this);
+                .AddTo(this.GetDestroyCancellationToken());
         }
 
         private void AddReportTitle()
@@ -131,9 +131,7 @@ namespace Modules.Devkit.Diagnosis.SRDebugger
             await CaptureScreenShot();
 
 			// 進捗.
-            var notifier = new ScheduledNotifier<float>();
-
-            notifier.Subscribe(x => UpdatePostProgress(x));
+            var notifier = new Progress<float>(x => UpdatePostProgress(x));
 
 			try
 			{
@@ -223,7 +221,7 @@ namespace Modules.Devkit.Diagnosis.SRDebugger
 
 			await UniTask.NextFrame();
 
-            await sendReportManager.CaptureScreenShot().ToObservable();
+            await sendReportManager.CaptureScreenShot().ToUniTask();
 
 			srDebug.ShowDebugPanel(false);
 

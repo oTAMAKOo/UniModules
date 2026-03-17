@@ -2,7 +2,7 @@
 using UnityEngine;
 using UnityEngine.UI;
 using Extensions;
-using UniRx;
+using R3;
 using Modules.UI.Extension;
 
 namespace Modules.Resolution

@@ -3,7 +3,8 @@ using UnityEngine;
 using UnityEngine.EventSystems;
 using TMPro;
 using Extensions;
-using UniRx;
+using R3;
+using R3.Triggers;
 
 namespace Modules.UI.TextHyperlink
 {
@@ -39,7 +40,7 @@ namespace Modules.UI.TextHyperlink
 			base.OnEnable();
 
 			Observable.EveryUpdate()
-				.TakeUntilDisable(this)
+				.TakeUntil(this.OnDisableAsObservable())
 				.Subscribe(_ => CheckLongPressStatus())
 				.AddTo(this);
 		}

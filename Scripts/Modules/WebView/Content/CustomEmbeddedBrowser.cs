@@ -3,7 +3,7 @@
 
 #if UNITY_EDITOR || UNITY_STANDALONE_WIN || UNITY_STANDALONE_OSX
 
-using UniRx;
+using R3;
 using ZenFulcrum.EmbeddedBrowser;
 
 namespace Modules.WebView
@@ -30,7 +30,7 @@ namespace Modules.WebView
                    })
                 .AddTo(this);
 
-            Observable.EveryLateUpdate()
+            Observable.EveryUpdate(UnityFrameProvider.PostLateUpdate)
                 .Subscribe(_ =>
                    {
                        if (!gameObject.activeInHierarchy)

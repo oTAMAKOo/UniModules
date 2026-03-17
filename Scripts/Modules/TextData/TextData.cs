@@ -6,7 +6,7 @@ using System.Linq;
 using System.Text;
 using Extensions;
 using Modules.TextData.Components;
-using UniRx;
+using R3;
 
 namespace Modules.TextData
 {
@@ -129,7 +129,7 @@ namespace Modules.TextData
         }
 
         /// <summary> テキスト更新イベント. </summary>
-        public IObservable<Unit> OnUpdateContentsAsObservable()
+        public Observable<Unit> OnUpdateContentsAsObservable()
         {
             return onUpdateContents ?? (onUpdateContents = new Subject<Unit>());
         }

@@ -4,7 +4,7 @@ using UnityEditor;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using UniRx;
+using R3;
 using Extensions;
 using Extensions.Devkit;
 using Modules.TextData.Editor;
@@ -185,22 +185,22 @@ namespace Modules.TextData.Components
             SearchText = EditorLayoutTools.DrawToolbarSearchTextField(SearchText, OnChangeSearchText, OnSearchCancel, GUILayout.Width(250));
         }
 
-        public IObservable<Unit> OnContentTypeChangedAsObservable()
+        public Observable<Unit> OnContentTypeChangedAsObservable()
         {
             return onContentTypeChanged ?? (onContentTypeChanged = new Subject<Unit>());
         }
 
-        public IObservable<string> OnCategoryChangedAsObservable()
+        public Observable<string> OnCategoryChangedAsObservable()
         {
             return onCategoryChanged ?? (onCategoryChanged = new Subject<string>());
         }
 
-        public IObservable<Unit> OnChangeSearchTextAsObservable()
+        public Observable<Unit> OnChangeSearchTextAsObservable()
         {
             return onUpdateSearchText ?? (onUpdateSearchText = new Subject<Unit>());
         }
 
-        public IObservable<Unit> OnResetRecordsAsObservable()
+        public Observable<Unit> OnResetRecordsAsObservable()
         {
             return onResetRecords ?? (onResetRecords = new Subject<Unit>());
         }

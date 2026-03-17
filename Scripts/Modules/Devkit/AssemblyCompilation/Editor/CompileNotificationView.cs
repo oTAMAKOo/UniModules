@@ -2,7 +2,7 @@
 using UnityEngine;
 using UnityEditor;
 using System;
-using UniRx;
+using R3;
 using Modules.Devkit.Prefs;
 
 namespace Modules.Devkit.AssemblyCompilation
