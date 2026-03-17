@@ -94,8 +94,6 @@ namespace Modules.PathFinding
 
 				while (true)
 				{
-					ct.ThrowIfCancellationRequested();
-
 					var bestScoreNodeId = GetBestScoreNodeId();
 
 					OpenAround(bestScoreNodeId, goalNodeId);
@@ -121,8 +119,6 @@ namespace Modules.PathFinding
 
 				while (cnt++ < tryCount)
 				{
-					ct.ThrowIfCancellationRequested();
-
 					var beforeNode = routeList[0];
 
 					if (beforeNode == node.FromNodeId)

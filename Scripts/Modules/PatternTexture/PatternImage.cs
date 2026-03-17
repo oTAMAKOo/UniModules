@@ -441,8 +441,6 @@ namespace Modules.PatternTexture
 
             while (current < time)
             {
-                ct.ThrowIfCancellationRequested();
-
                 current += Time.deltaTime;
 
                 var c = this.color;

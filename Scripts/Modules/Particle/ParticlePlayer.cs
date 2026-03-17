@@ -335,8 +335,6 @@ namespace Modules.Particle
 
             while (true)
             {
-                ct.ThrowIfCancellationRequested();
-
                 if (!UnityUtility.IsActiveInHierarchy(gameObject)) { break; }
 
                 // 状態リセット.
@@ -381,8 +379,6 @@ namespace Modules.Particle
         {
             while (true)
             {
-                ct.ThrowIfCancellationRequested();
-
                 if (State == State.Stop) { break; }
 
                 if (State == State.Play)

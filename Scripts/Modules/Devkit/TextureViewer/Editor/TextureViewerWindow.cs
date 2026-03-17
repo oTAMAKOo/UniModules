@@ -184,8 +184,6 @@ namespace Modules.Devkit.TextureViewer
 
             foreach (var guids in chunk)
             {
-                ct.ThrowIfCancellationRequested();
-
                 displayProgress.Invoke();
 
                 foreach (var guid in guids)
@@ -237,8 +235,6 @@ namespace Modules.Devkit.TextureViewer
 
             foreach (var textureInfos in chunk)
             {
-                ct.ThrowIfCancellationRequested();
-
                 var loadingText = string.Format("Loading Texture [{0} / {1}]", index, total);
 
                 if (footerView != null)
