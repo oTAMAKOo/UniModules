@@ -84,10 +84,15 @@ namespace Modules.WebView
             return Observable.EveryUpdate()
                 .Timeout(new TimeSpan(0, 0, 0, TimeOutSeconds))
                 .OnErrorRetry((TimeoutException ex) => OnTimeout(ex), RetryCount, new TimeSpan(0, 0, 0, RetryDelaySeconds))
-                .DoOnError(x => OnError(x))
+                .Do(onCompleted: result =>
+                {
+                    if (result.IsFailure)
+                    {
+                        OnError(result.Exception);
+                    }
+                })
                 .SkipWhile(_ => Loading)
-                .FirstAsync()
-                .ToUniTask();
+                .FirstAsync();
         }
 
         public Observable<Unit> OnLoadCompleteAsObservable()

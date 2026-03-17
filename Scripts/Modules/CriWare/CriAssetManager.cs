@@ -193,9 +193,16 @@ namespace Modules.CriWare
             var install = GetCriAssetInstall(installPath, assetInfo, progress, cancelToken);
 
             await install.Task
-                .DoOnError(ex => OnError(ex))
-                .Finally(() => RemoveInternalQueue(install))
-                .ToUniTask(cancellationToken: cancelToken);
+                .Do(onCompleted: result =>
+                {
+                    if (result.IsFailure)
+                    {
+                        OnError(result.Exception);
+                    }
+
+                    RemoveInternalQueue(install);
+                })
+                .FirstAsync(cancelToken);
         }
 
         private CriAssetInstall GetCriAssetInstall(string installPath, AssetInfo assetInfo, IProgress<DownloadProgressInfo> progress, CancellationToken cancelToken)

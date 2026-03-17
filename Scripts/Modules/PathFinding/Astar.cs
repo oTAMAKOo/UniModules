@@ -126,7 +126,7 @@ namespace Modules.PathFinding
 					    if (beforeNode == node.FromNodeId)
 					    {
 						    // 同じポジションなので終了.
-						    observer.OnErrorResume(new Exception("PathFinding same position failed : " + beforeNode + " / " + node.FromNodeId + " / " + goalNodeId));
+						    observer.OnCompleted(Result.Failure(new Exception("PathFinding same position failed : " + beforeNode + " / " + node.FromNodeId + " / " + goalNodeId)));
 						    return;
 					    }
 
@@ -149,7 +149,7 @@ namespace Modules.PathFinding
 
 				    if (!isSuccess)
 				    {
-					    observer.OnErrorResume(new Exception("PathFinding failed : " + startNodeId + " / " + node.FromNodeId));
+					    observer.OnCompleted(Result.Failure(new Exception("PathFinding failed : " + startNodeId + " / " + node.FromNodeId)));
 					    return;
 				    }
 			    }
