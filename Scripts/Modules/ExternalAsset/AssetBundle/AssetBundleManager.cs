@@ -319,7 +319,7 @@ namespace Modules.AssetBundles
                 task = UniTask.Defer(() => DownloadAssetBundle(installPath, assetInfo, progress, cancelToken))
                     .ToObservable()
                     .OnErrorRetry((Exception _) => { }, RetryCount, RetryDelaySeconds)
-                    .Do(onErrorResume: x => OnError(x))
+                    .Do(onCompleted: result => { if (result.IsFailure) { OnError(result.Exception); } })
                     .Select(_ => Unit.Default)
                     .Share();
 
@@ -669,7 +669,11 @@ namespace Modules.AssetBundles
                 .Timeout(LoadTimeout, TimeProvider.System)
                 .OnErrorRetry((TimeoutException ex) => {}, RetryCount, RetryDelaySeconds)
                 .OnErrorRetry((FileLoadException ex) => {}, RetryCount, RetryDelaySeconds)
-                .Do(onErrorResume: error => OnError(error), onCompleted: _ => loadQueueing.Remove(assetBundleName))
+                .Do(onCompleted: result =>
+                    {
+                        if (result.IsFailure) { OnError(result.Exception); }
+                        loadQueueing.Remove(assetBundleName);
+                    })
                 .Share();
 
             loadQueueing.Add(assetBundleName, task);
