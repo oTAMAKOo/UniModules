@@ -90,7 +90,7 @@ namespace Modules.Devkit.ExternalAssets
 				.Subscribe(x => IsRecording = x)
 				.AddTo(Disposable);
 
-			R3.Observable.EveryUpdate(UnityFrameProvider.PostLateUpdate)
+			Observable.EveryUpdate(UnityFrameProvider.PostLateUpdate)
 				.Subscribe(_ => Repaint())
 				.AddTo(Disposable);
 

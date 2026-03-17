@@ -101,11 +101,11 @@ namespace Modules.Devkit.Diagnosis.SRDebugger
         {
             UpdateView();
 
-            R3.Observable.NextFrame()
+            Observable.NextFrame()
                 .Subscribe(_ => OnRequestRefreshInputText())
                 .AddTo(this);
 
-            R3.Observable.EveryUpdate()
+            Observable.EveryUpdate()
                 .TakeUntil(this.OnDisableAsObservable())
                 .Subscribe(_ => UnityUtility.SetActive(sendReportButton, IsSendReportButtonEnable()))
                 .AddTo(this);
