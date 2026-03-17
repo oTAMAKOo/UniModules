@@ -316,10 +316,18 @@ namespace Modules.AssetBundles
 
             if (task == null)
             {
+                void OnDownloadCompleted(Result result)
+                {
+                    if (result.IsFailure)
+                    {
+                        OnError(result.Exception);
+                    }
+                }
+
                 task = UniTask.Defer(() => DownloadAssetBundle(installPath, assetInfo, progress, cancelToken))
                     .ToObservable()
                     .OnErrorRetry((Exception _) => { }, RetryCount, RetryDelaySeconds)
-                    .Do(onCompleted: result => { if (result.IsFailure) { OnError(result.Exception); } })
+                    .Do(onCompleted: OnDownloadCompleted)
                     .Select(_ => Unit.Default)
                     .Share();
 
@@ -660,6 +668,16 @@ namespace Modules.AssetBundles
 
             var info = assetInfosByAssetBundleName.GetValueOrDefault(assetBundleName).FirstOrDefault();
 
+            void OnLoadCompleted(Result result)
+            {
+                if (result.IsFailure)
+                {
+                    OnError(result.Exception);
+                }
+
+                loadQueueing.Remove(assetBundleName);
+            }
+
             var task = Observable.Create<AssetBundle>(async (observer, ct) =>
                 {
                     var result = await LoadAssetBundle(installPath, info, ct);
@@ -669,11 +687,7 @@ namespace Modules.AssetBundles
                 .Timeout(LoadTimeout, TimeProvider.System)
                 .OnErrorRetry((TimeoutException ex) => {}, RetryCount, RetryDelaySeconds)
                 .OnErrorRetry((FileLoadException ex) => {}, RetryCount, RetryDelaySeconds)
-                .Do(onCompleted: result =>
-                    {
-                        if (result.IsFailure) { OnError(result.Exception); }
-                        loadQueueing.Remove(assetBundleName);
-                    })
+                .Do(onCompleted: OnLoadCompleted)
                 .Share();
 
             loadQueueing.Add(assetBundleName, task);
