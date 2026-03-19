@@ -6,7 +6,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using Cysharp.Threading.Tasks;
-using UniRx;
+using R3;
 using Extensions;
 using Modules.Devkit.Console;
 using Modules.Performance;
@@ -620,31 +620,31 @@ namespace Modules.ExternalAssets
         }
 
         /// <summary> タイムアウト時イベント. </summary>
-        public IObservable<AssetInfo> OnTimeOutAsObservable()
+        public Observable<AssetInfo> OnTimeOutAsObservable()
         {
             return onTimeOut ?? (onTimeOut = new Subject<AssetInfo>());
         }
 
         /// <summary> エラー時イベント. </summary>
-        public IObservable<Exception> OnErrorAsObservable()
+        public Observable<Exception> OnErrorAsObservable()
         {
             return onError ?? (onError = new Subject<Exception>());
         }
 
         /// <summary> アセット更新時イベント. </summary>
-        public IObservable<string> OnUpdateAssetAsObservable()
+        public Observable<string> OnUpdateAssetAsObservable()
         {
             return onUpdateAsset ?? (onUpdateAsset = new Subject<string>());
         }
 
         /// <summary> アセット読み込み時イベント. </summary>
-        public IObservable<string> OnLoadAssetAsObservable()
+        public Observable<string> OnLoadAssetAsObservable()
         {
             return onLoadAsset ?? (onLoadAsset = new Subject<string>());
         }
 
         /// <summary> アセット解放時イベント. </summary>
-        public IObservable<string> OnUnloadAssetAsObservable()
+        public Observable<string> OnUnloadAssetAsObservable()
         {
             return onUnloadAsset ?? (onUnloadAsset = new Subject<string>());
         }

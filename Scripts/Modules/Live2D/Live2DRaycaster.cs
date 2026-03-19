@@ -2,7 +2,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using UniRx;
+using R3;
 using Modules.OffScreenRendering;
 
 #if ENABLE_LIVE2D
@@ -35,7 +35,7 @@ namespace Modules.Live2D
             this.raycaster = raycaster;
         }
 
-        public IObservable<CubismDrawable> OnRaycastHitAsObservable()
+        public Observable<CubismDrawable> OnRaycastHitAsObservable()
         {
             return onRaycastHit ?? (onRaycastHit = new Subject<CubismDrawable>());
         }

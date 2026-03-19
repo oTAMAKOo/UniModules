@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Threading;
 using Cysharp.Threading.Tasks;
-using UniRx;
+using R3;
 using Extensions;
 using UnityEngine;
 
@@ -147,13 +147,13 @@ namespace Modules.ExternalAssets
         }
 
         /// <summary> タイムアウト時のイベント. </summary>
-        public IObservable<AssetInfo> OnTimeOutAsObservable()
+        public Observable<AssetInfo> OnTimeOutAsObservable()
         {
             return onTimeOut ?? (onTimeOut = new Subject<AssetInfo>());
         }
 
         /// <summary> エラー時のイベント. </summary>
-        public IObservable<Exception> OnErrorAsObservable()
+        public Observable<Exception> OnErrorAsObservable()
         {
             return onError ?? (onError = new Subject<Exception>());
         }

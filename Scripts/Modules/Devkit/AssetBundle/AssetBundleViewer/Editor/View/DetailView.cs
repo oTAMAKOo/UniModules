@@ -4,7 +4,7 @@ using UnityEditor;
 using System;
 using System.Linq;
 using System.Collections.Generic;
-using UniRx;
+using R3;
 using Extensions;
 using Extensions.Devkit;
 using Modules.AssetBundles;
@@ -225,7 +225,7 @@ namespace Modules.Devkit.AssetBundleViewer
             history.Push(target);
         }
         
-        public IObservable<Unit> OnRequestCloseAsObservable()
+        public Observable<Unit> OnRequestCloseAsObservable()
         {
             return onRequestClose ?? (onRequestClose = new Subject<Unit>());
         }

@@ -4,7 +4,7 @@ using UnityEngine.SceneManagement;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using UniRx;
+using R3;
 
 #if UNITY_EDITOR
 
@@ -33,7 +33,7 @@ namespace Extensions
         {
             Initialize();
 
-            Observable.EveryUpdate().Subscribe(_ => UpdateUnityContents());
+            Observable.EveryUpdate(UnityFrameProvider.Update).Subscribe(_ => UpdateUnityContents());
         }
 
         #else
@@ -47,9 +47,7 @@ namespace Extensions
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         private static void RuntimeInitializeOnAfterSceneLoad()
         {
-            MainThreadDispatcher.Initialize();
-
-            Observable.EveryUpdate().Subscribe(_ => UpdateUnityContents());
+            Observable.EveryUpdate(UnityFrameProvider.Update).Subscribe(_ => UpdateUnityContents());
         }
 
         #endif

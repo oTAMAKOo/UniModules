@@ -6,7 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using UniRx;
+using R3;
 using Extensions;
 
 using Object = UnityEngine.Object;
@@ -385,17 +385,17 @@ namespace Modules.Devkit.WebView
             }
         }
 
-        public IObservable<string> OnLocationChangedAsObservable()
+        public Observable<string> OnLocationChangedAsObservable()
         {
             return onLocationChanged ?? (onLocationChanged = new Subject<string>());
         }
 
-        public IObservable<string> OnLoadErrorAsObservable()
+        public Observable<string> OnLoadErrorAsObservable()
         {
             return onLoadError ?? (onLoadError = new Subject<string>());
         }
 
-        public IObservable<Unit> OnInitScriptingAsObservable()
+        public Observable<Unit> OnInitScriptingAsObservable()
         {
             return onInitScripting ?? (onInitScripting = new Subject<Unit>());
         }

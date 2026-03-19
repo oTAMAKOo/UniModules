@@ -4,7 +4,7 @@ using System;
 using System.Linq;
 using System.Collections.Generic;
 using System.Text;
-using UniRx;
+using R3;
 using Extensions;
 using Modules.Devkit.LogHandler;
 
@@ -153,7 +153,7 @@ namespace Modules.InputControl
 
 		#endregion
 
-		public IObservable<bool> OnUpdateStatusAsObservable()
+		public Observable<bool> OnUpdateStatusAsObservable()
         {
             return onUpdateStatus ?? (onUpdateStatus = new Subject<bool>());
         }

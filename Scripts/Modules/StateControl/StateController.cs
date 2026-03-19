@@ -3,7 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using Cysharp.Threading.Tasks;
-using UniRx;
+using R3;
 using Extensions;
 
 namespace Modules.StateControl
@@ -177,13 +177,13 @@ namespace Modules.StateControl
         }
 
 		/// <summary> 遷移開始時のイベント </summary>
-        public IObservable<ChangeStateInfo> OnChangeStateStartAsObservable()
+        public Observable<ChangeStateInfo> OnChangeStateStartAsObservable()
         {
             return onChangeStateStart ?? (onChangeStateStart = new Subject<ChangeStateInfo>());
         }
 
         /// <summary> 遷移完了時のイベント </summary>
-        public IObservable<ChangeStateInfo> OnChangeStateFinishAsObservable()
+        public Observable<ChangeStateInfo> OnChangeStateFinishAsObservable()
         {
             return onChangeStateFinish ?? (onChangeStateFinish = new Subject<ChangeStateInfo>());
         }

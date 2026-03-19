@@ -3,7 +3,7 @@ using System;
 using UnityEngine;
 using UnityEditor;
 using System.Linq;
-using UniRx;
+using R3;
 
 namespace Extensions.Devkit
 {
@@ -406,7 +406,7 @@ namespace Extensions.Devkit
         protected virtual void OnContentsUpdate() { }
 
         /// <summary> 再描画要求イベント </summary>
-        public IObservable<Unit> OnRepaintRequestAsObservable()
+        public Observable<Unit> OnRepaintRequestAsObservable()
         {
             return onRepaintRequest ?? (onRepaintRequest = new Subject<Unit>());
         }

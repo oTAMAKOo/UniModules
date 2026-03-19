@@ -4,7 +4,7 @@ using UnityEngine.EventSystems;
 using Unity.Linq;
 using System;
 using System.Linq;
-using UniRx;
+using R3;
 
 namespace Modules.UI
 {
@@ -321,17 +321,17 @@ namespace Modules.UI
             return position;
         }
 
-        public IObservable<PointerEventData> OnBeginDragAsObservable()
+        public Observable<PointerEventData> OnBeginDragAsObservable()
         {
             return onBeginDrag ?? (onBeginDrag = new Subject<PointerEventData>());
         }
 
-        public IObservable<PointerEventData> OnEndDragAsObservable()
+        public Observable<PointerEventData> OnEndDragAsObservable()
         {
             return onEndDrag ?? (onEndDrag = new Subject<PointerEventData>());
         }
 
-        public IObservable<PointerEventData> OnDragAsObservable()
+        public Observable<PointerEventData> OnDragAsObservable()
         {
             return onDrag ?? (onDrag = new Subject<PointerEventData>());
         }

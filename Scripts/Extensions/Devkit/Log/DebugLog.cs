@@ -1,6 +1,6 @@
 ﻿
 using System;
-using UniRx;
+using R3;
 
 namespace Modules.Devkit.Log
 {
@@ -64,27 +64,27 @@ namespace Modules.Devkit.Log
             }
         }
 
-        public static IObservable<string> OnLogReceivedAsObservable()
+        public static Observable<string> OnLogReceivedAsObservable()
         {
             return onLogReceived ?? (onLogReceived = new Subject<string>());
         }
 
-        public static IObservable<string> OnWarningReceivedAsObservable()
+        public static Observable<string> OnWarningReceivedAsObservable()
         {
             return onWarningReceived ?? (onWarningReceived = new Subject<string>());
         }
 
-        public static IObservable<string> OnErrorReceivedAsObservable()
+        public static Observable<string> OnErrorReceivedAsObservable()
         {
             return onErrorReceived ?? (onErrorReceived = new Subject<string>());
         }
 
-        public static IObservable<string> OnAssertReceivedAsObservable()
+        public static Observable<string> OnAssertReceivedAsObservable()
         {
             return onAssertReceived ?? (onAssertReceived = new Subject<string>());
         }
 
-        public static IObservable<Exception> OnExceptionReceivedAsObservable()
+        public static Observable<Exception> OnExceptionReceivedAsObservable()
         {
             return onExceptionReceived ?? (onExceptionReceived = new Subject<Exception>());
         }

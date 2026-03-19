@@ -3,7 +3,7 @@ using System;
 using UnityEngine;
 using UnityEditor;
 using UnityEditorInternal;
-using UniRx;
+using R3;
 using Modules.Devkit.Prefs;
 
 namespace Modules.Devkit.AssemblyCompilation
@@ -79,12 +79,12 @@ namespace Modules.Devkit.AssemblyCompilation
 
         #region Observable
 
-        public static IObservable<Unit> OnCompileStartAsObservable()
+        public static Observable<Unit> OnCompileStartAsObservable()
         {
             return onCompileStart ?? (onCompileStart = new Subject<Unit>());
         }
 
-        public static IObservable<Unit> OnCompileFinishAsObservable()
+        public static Observable<Unit> OnCompileFinishAsObservable()
         {
             return onCompileFinish ?? (onCompileFinish = new Subject<Unit>());
         }

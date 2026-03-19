@@ -3,7 +3,7 @@ using UnityEngine;
 using System;
 using System.Threading;
 using Cysharp.Threading.Tasks;
-using UniRx;
+using R3;
 using Extensions;
 
 namespace Modules.Net
@@ -69,7 +69,7 @@ namespace Modules.Net
             }
         }
 
-        public static IObservable<Unit> OnNotReachableAsObservable()
+        public static Observable<Unit> OnNotReachableAsObservable()
         {
             return onNotReachable ?? (onNotReachable = new Subject<Unit>());
         }

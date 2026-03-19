@@ -2,7 +2,7 @@
 using UnityEngine;
 using System;
 using Cysharp.Threading.Tasks;
-using UniRx;
+using R3;
 
 namespace Modules.UI
 {
@@ -113,12 +113,12 @@ namespace Modules.UI
             }
         }
 
-        public IObservable<float> OnChangeAlphaAsObservable()
+        public Observable<float> OnChangeAlphaAsObservable()
         {
             return onChangeAlpha ?? (onChangeAlpha = new Subject<float>());
         }
         
-        public IObservable<bool> OnChangeActiveAsObservable()
+        public Observable<bool> OnChangeActiveAsObservable()
         {
             return onChangeActive ?? (onChangeActive = new Subject<bool>());
         }

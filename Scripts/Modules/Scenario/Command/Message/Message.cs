@@ -5,7 +5,7 @@ using UnityEngine;
 using System;
 using System.Text;
 using Cysharp.Threading.Tasks;
-using UniRx;
+using R3;
 using Modules.TagTect;
 using Modules.TimeUtil;
 
@@ -120,7 +120,7 @@ namespace Modules.Scenario.Command
 
 		protected virtual string ReceiveTextEdit(string message){ return message; }
 
-		public IObservable<string> OnRequestTextChangeAsObservable()
+		public Observable<string> OnRequestTextChangeAsObservable()
 		{
 			return onRequestTextChange ?? (onRequestTextChange = new Subject<string>());
 		}

@@ -3,7 +3,7 @@ using UnityEngine;
 using System;
 using System.Linq;
 using System.Collections.Generic;
-using UniRx;
+using R3;
 using Extensions;
 
 namespace Modules.ApplicationEvent
@@ -66,25 +66,25 @@ namespace Modules.ApplicationEvent
         }
 
         /// <summary> サスペンド時のイベント </summary>
-        public static IObservable<Unit> OnSuspendAsObservable()
+        public static Observable<Unit> OnSuspendAsObservable()
         {
             return onSuspend ?? (onSuspend = new Subject<Unit>());
         }
         
         /// <summary> レジューム時のイベント (サスペンドしてからの秒数を返す) </summary>
-        public static IObservable<double> OnResumeAsObservable()
+        public static Observable<double> OnResumeAsObservable()
         {
             return onResume ?? (onResume = new Subject<double>());
         }
 
         /// <summary> メモリが不足してきた時のイベント </summary>
-        public static IObservable<Unit> OnLowMemoryAsObservable()
+        public static Observable<Unit> OnLowMemoryAsObservable()
         {
             return onLowMemory ?? (onLowMemory = new Subject<Unit>());
         }
 
         /// <summary> アプリケーション終了時のイベント </summary>
-        public static IObservable<Unit> OnQuitAsObservable()
+        public static Observable<Unit> OnQuitAsObservable()
         {
             return onQuit ?? (onQuit = new Subject<Unit>());
         }

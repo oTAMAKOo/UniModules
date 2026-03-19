@@ -3,7 +3,8 @@ using UnityEngine;
 using UnityEngine.UI;
 using System.Linq;
 using Unity.Linq;
-using UniRx;
+using R3;
+using R3.Triggers;
 using Extensions;
 
 namespace Modules.Resolution
@@ -26,8 +27,8 @@ namespace Modules.Resolution
 			{
 				// OnEnableでApplyしてもRectTransformに反映されない事があるので最初のUpdateで再度実行.
 				Observable.EveryUpdate()
-					.First()
-					.TakeUntilDisable(this)
+					.FirstAsync()
+					.TakeUntil(this.OnDisableAsObservable())
 					.Subscribe(_ => Apply())
 					.AddTo(this);
 			}

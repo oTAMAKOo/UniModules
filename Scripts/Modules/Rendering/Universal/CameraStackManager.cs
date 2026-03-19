@@ -6,8 +6,8 @@ using UnityEngine.Rendering.Universal;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using UniRx;
-using UniRx.Triggers;
+using R3;
+using R3.Triggers;
 using Extensions;
 
 namespace Modules.Rendering.Universal

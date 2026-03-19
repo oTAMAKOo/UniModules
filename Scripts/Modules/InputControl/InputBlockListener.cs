@@ -1,6 +1,6 @@
 ﻿
 using UnityEngine;
-using UniRx;
+using R3;
 using Extensions;
 
 namespace Modules.InputControl
@@ -24,7 +24,7 @@ namespace Modules.InputControl
             var blockInputManager = BlockInputManager.Instance;
 
             blockInputManager.OnUpdateStatusAsObservable()
-                .ObserveOnMainThread()
+                .ObserveOn(UnityFrameProvider.Update)
                 .Subscribe(x => UpdateInputBlock(x))
                 .AddTo(this);
 

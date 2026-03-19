@@ -2,7 +2,7 @@
 #if ENABLE_CRIWARE_SOFDEC
 
 using System;
-using UniRx;
+using R3;
 using CriWare;
 using CriWare.CriMana;
 using Extensions;
@@ -204,7 +204,7 @@ namespace Modules.Movie
             return false;
         }
 
-        public IObservable<Unit> OnFinishAsObservable()
+        public Observable<Unit> OnFinishAsObservable()
         {
             return onFinish ?? (onFinish = new Subject<Unit>());
         }

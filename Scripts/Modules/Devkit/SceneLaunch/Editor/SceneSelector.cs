@@ -4,7 +4,7 @@ using UnityEngine;
 using UnityEditor;
 using System.Collections.Generic;
 using System.Linq;
-using UniRx;
+using R3;
 using Extensions;
 using Extensions.Devkit;
 using Modules.Devkit.Prefs;
@@ -39,7 +39,7 @@ namespace Modules.Devkit.SceneLaunch
 
         //----- method -----
 
-        public static IObservable<string> Open()
+        public static Observable<string> Open()
         {
             if (instance != null)
             {

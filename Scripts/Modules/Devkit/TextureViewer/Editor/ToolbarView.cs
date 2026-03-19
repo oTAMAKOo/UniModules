@@ -2,7 +2,7 @@
 using UnityEngine;
 using System;
 using System.Linq;
-using UniRx;
+using R3;
 using Extensions;
 using Extensions.Devkit;
 using UnityEditor;
@@ -155,22 +155,22 @@ namespace Modules.Devkit.TextureViewer
             SearchText = EditorLayoutTools.DrawToolbarSearchTextField(SearchText, onChangeSearchText, onSearchCancel, GUILayout.Width(250));
         }
 
-        public IObservable<BuildTargetGroup> OnChangePlatformAsObservable()
+        public Observable<BuildTargetGroup> OnChangePlatformAsObservable()
         {
             return onChangePlatform ?? (onChangePlatform = new Subject<BuildTargetGroup>());
         }
 
-        public IObservable<DisplayMode> OnChangeDisplayModeAsObservable()
+        public Observable<DisplayMode> OnChangeDisplayModeAsObservable()
         {
             return onChangeDisplayMode ?? (onChangeDisplayMode = new Subject<DisplayMode>());
         }
 
-        public IObservable<Unit> OnRequestSortResetAsObservable()
+        public Observable<Unit> OnRequestSortResetAsObservable()
         {
             return onRequestSortReset ?? (onRequestSortReset = new Subject<Unit>());
         }
 
-        public IObservable<string> OnUpdateSearchTextAsObservable()
+        public Observable<string> OnUpdateSearchTextAsObservable()
         {
             return onUpdateSearchText ?? (onUpdateSearchText = new Subject<string>());
         }

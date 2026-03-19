@@ -7,7 +7,7 @@ using System.Collections;
 using System.Linq;
 using System.Collections.Generic;
 using System.Text;
-using UniRx;
+using R3;
 using Extensions;
 using Extensions.Devkit;
 
@@ -351,7 +351,7 @@ namespace Modules.Devkit.MasterViewer
             RefreshCustomRowHeights();
         }
 
-        public IObservable<Unit> OnChangeRecordAsObservable()
+        public Observable<Unit> OnChangeRecordAsObservable()
         {
             return onChangeRecord ?? (onChangeRecord = new Subject<Unit>());
         }

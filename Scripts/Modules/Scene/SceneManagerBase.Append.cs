@@ -6,7 +6,7 @@ using System.Linq;
 using System.Collections.Generic;
 using System.Threading;
 using Cysharp.Threading.Tasks;
-using UniRx;
+using R3;
 using Extensions;
 using Modules.Devkit.Console;
 using Modules.Scene.Diagnostics;
@@ -48,7 +48,7 @@ namespace Modules.Scene
         /// シーンを追加で読み込み.
         /// <para> Prepare, Enter, Leaveは自動で呼び出されないので自分で制御する </para>
         /// </summary>
-        public IObservable<SceneInstance<TScenes>> Append<TArgument>(TArgument sceneArgument, bool activeOnLoad = true) 
+        public Observable<SceneInstance<TScenes>> Append<TArgument>(TArgument sceneArgument, bool activeOnLoad = true) 
             where TArgument : ISceneArgument<TScenes>
         {
             async UniTask SetArgumentCallback(SceneInstance<TScenes> sceneInstance)
@@ -60,16 +60,16 @@ namespace Modules.Scene
                 await sceneInstance.Instance.SetArgument(sceneArgument);
             }
 
-            return ObservableEx.FromUniTask(cancelToken => AppendCore(sceneArgument.Identifier, activeOnLoad, SetArgumentCallback, cancelToken));
+            return Observable.FromAsync(cancelToken => AppendCore(sceneArgument.Identifier, activeOnLoad, SetArgumentCallback, cancelToken));
         }
 
         /// <summary>
         /// シーンを追加で読み込み.
         /// <para> Prepare, Enter, Leaveは自動で呼び出されないので自分で制御する </para>
         /// </summary>
-        public IObservable<SceneInstance<TScenes>> Append(TScenes identifier, bool activeOnLoad = true)
+        public Observable<SceneInstance<TScenes>> Append(TScenes identifier, bool activeOnLoad = true)
         {
-            return ObservableEx.FromUniTask(cancelToken => AppendCore(identifier, activeOnLoad, null, cancelToken));
+            return Observable.FromAsync(cancelToken => AppendCore(identifier, activeOnLoad, null, cancelToken));
         }
 
         private async UniTask<SceneInstance<TScenes>> AppendCore(TScenes? identifier, bool activeOnLoad, Func<SceneInstance<TScenes>, 
@@ -156,7 +156,7 @@ namespace Modules.Scene
 
             IsTransition = true;
             
-            ObservableEx.FromUniTask(cancelToken => AppendTransitionCore(sceneArgument, cancelToken))
+            Observable.FromAsync(cancelToken => AppendTransitionCore(sceneArgument, cancelToken))
                 .Subscribe(_ => IsTransition = false)
                 .AddTo(transitionCancelSource.Token);
         }
@@ -167,8 +167,8 @@ namespace Modules.Scene
             TransitionCancel();
 
             IsTransition = true;
-            
-            ObservableEx.FromUniTask(cancelToken => AppendTransitionCore(sceneArgument, cancelToken))
+
+            Observable.FromAsync(cancelToken => AppendTransitionCore(sceneArgument, cancelToken))
                 .Subscribe(_ => IsTransition = false)
                 .AddTo(transitionCancelSource.Token);
         }
@@ -295,7 +295,7 @@ namespace Modules.Scene
 
             IsTransition = true;
             
-            ObservableEx.FromUniTask(cancelToken => UnloadTransitionCore(transitionScene, unloadSceneInstance, cancelToken))
+            Observable.FromAsync(cancelToken => UnloadTransitionCore(transitionScene, unloadSceneInstance, cancelToken))
                 .Subscribe(_ => IsTransition = false)
                 .AddTo(transitionCancelSource.Token);
         }
@@ -315,7 +315,7 @@ namespace Modules.Scene
 
             IsTransition = true;
 
-            ObservableEx.FromUniTask(cancelToken => UnloadTransitionCore(transitionScene, unloadSceneInstance, cancelToken))
+            Observable.FromAsync(cancelToken => UnloadTransitionCore(transitionScene, unloadSceneInstance, cancelToken))
                 .Subscribe(_ => IsTransition = false)
                 .AddTo(transitionCancelSource.Token);
         }

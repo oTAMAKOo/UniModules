@@ -1,7 +1,7 @@
 ﻿
 using System;
 using Extensions;
-using UniRx;
+using R3;
 
 namespace Modules.View
 {
@@ -25,7 +25,7 @@ namespace Modules.View
             }
         }
 
-        public IObservable<Unit> OnDisposeAsObservable()
+        public Observable<Unit> OnDisposeAsObservable()
         {
             return onDispose ??= new Subject<Unit>();
         }

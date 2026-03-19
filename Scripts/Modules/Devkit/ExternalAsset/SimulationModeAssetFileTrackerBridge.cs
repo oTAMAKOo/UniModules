@@ -1,6 +1,6 @@
 ﻿
 using System;
-using UniRx;
+using R3;
 
 namespace Modules.Devkit.ExternalAssets
 {
@@ -24,7 +24,7 @@ namespace Modules.Devkit.ExternalAssets
 			}
 		}
 
-		public static IObservable<bool> OnRequestStatusChangeAsObservable()
+		public static Observable<bool> OnRequestStatusChangeAsObservable()
 		{
 			return onRequestStatusChange ?? (onRequestStatusChange = new Subject<bool>());
 		}

@@ -4,8 +4,8 @@ using System;
 using System.Linq;
 using System.Collections.Generic;
 using Cysharp.Threading.Tasks;
-using UniRx;
-using UniRx.Triggers;
+using R3;
+using R3.Triggers;
 using Extensions;
 
 namespace Modules.ObjectPool
@@ -149,17 +149,17 @@ namespace Modules.ObjectPool
             cachedObjects.Clear();
         }
 
-        public IObservable<T> OnCreateInstanceAsObservable()
+        public Observable<T> OnCreateInstanceAsObservable()
         {
             return onCreate ?? (onCreate = new Subject<T>());
         }
 
-        public IObservable<T> OnGetInstanceAsObservable()
+        public Observable<T> OnGetInstanceAsObservable()
         {
             return onGet ?? (onGet = new Subject<T>());
         }
 
-        public IObservable<T> OnReleaseInstanceAsObservable()
+        public Observable<T> OnReleaseInstanceAsObservable()
         {
             return onRelease ?? (onRelease = new Subject<T>());
         }

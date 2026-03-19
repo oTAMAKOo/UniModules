@@ -1,7 +1,7 @@
 ﻿
 using UnityEngine;
 using System;
-using UniRx;
+using R3;
 using TMPro;
 
 namespace Modules.UI.Extension
@@ -42,7 +42,7 @@ namespace Modules.UI.Extension
             }
         }
 
-        public IObservable<int> OnChangeAsObservable()
+        public Observable<int> OnChangeAsObservable()
         {
             return onChange ?? (onChange = new Subject<int>());
         }

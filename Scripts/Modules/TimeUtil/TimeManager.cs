@@ -2,7 +2,7 @@
 using UnityEngine;
 using System;
 using Extensions;
-using UniRx;
+using R3;
 
 namespace Modules.TimeUtil
 {
@@ -40,12 +40,12 @@ namespace Modules.TimeUtil
 		/// <summary>
 		/// 指定された時刻にイベントを発行.
 		/// </summary>
-		public IObservable<Unit> Notice(DateTime noticeTime)
+		public Observable<Unit> Notice(DateTime noticeTime)
 		{
 			return Observable.EveryUpdate()
 				.SkipWhile(_ => Now < noticeTime)
-				.First()
-				.AsUnitObservable();
+				.FirstAsync()
+				.Select(_ => Unit.Default);
 		}
 	}
 }

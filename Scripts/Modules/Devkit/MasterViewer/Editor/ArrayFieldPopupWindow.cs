@@ -6,7 +6,7 @@ using System.Collections;
 using System.Linq;
 using System.Collections.Generic;
 using Extensions;
-using UniRx;
+using R3;
 
 namespace Modules.Devkit.MasterViewer
 {
@@ -158,7 +158,7 @@ namespace Modules.Devkit.MasterViewer
             }
         }
 
-        public IObservable<object> OnUpdateElementsAsObservable()
+        public Observable<object> OnUpdateElementsAsObservable()
         {
             return onUpdateElements ?? (onUpdateElements = new Subject<object>());
         }

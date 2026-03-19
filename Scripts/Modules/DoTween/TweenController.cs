@@ -5,7 +5,7 @@ using System.Collections.Generic;
 using System.Threading;
 using Cysharp.Threading.Tasks;
 using DG.Tweening;
-using UniRx;
+using R3;
 using Extensions;
 using Modules.TimeUtil;
 

@@ -3,7 +3,7 @@ using System;
 using UnityEngine;
 using Cysharp.Threading.Tasks;
 using Extensions;
-using UniRx;
+using R3;
 
 namespace Modules.WebView
 {
@@ -81,36 +81,43 @@ namespace Modules.WebView
                 }
             }
 
+            void OnLoadCompleted(Result result)
+            {
+                if (result.IsFailure)
+                {
+                    OnError(result.Exception);
+                }
+            }
+
             return Observable.EveryUpdate()
                 .Timeout(new TimeSpan(0, 0, 0, TimeOutSeconds))
                 .OnErrorRetry((TimeoutException ex) => OnTimeout(ex), RetryCount, new TimeSpan(0, 0, 0, RetryDelaySeconds))
-                .DoOnError(x => OnError(x))
+                .Do(onCompleted: OnLoadCompleted)
                 .SkipWhile(_ => Loading)
-                .First()
-                .ToUniTask();
+                .FirstAsync();
         }
 
-        public IObservable<Unit> OnLoadCompleteAsObservable()
+        public Observable<Unit> OnLoadCompleteAsObservable()
         {
             return onLoadComplete ?? (onLoadComplete = new Subject<Unit>());
         }
 
-        public IObservable<string> OnLoadErrorAsObservable()
+        public Observable<string> OnLoadErrorAsObservable()
         {
             return onLoadError ?? (onLoadError = new Subject<string>());
         }
 
-        public IObservable<Unit> OnLoadTimeOutAsObservable()
+        public Observable<Unit> OnLoadTimeOutAsObservable()
         {
             return onLoadTimeout ?? (onLoadTimeout = new Subject<Unit>());
         }
 
-        public IObservable<object> OnReceivedMessageAsObservable()
+        public Observable<object> OnReceivedMessageAsObservable()
         {
             return onReceivedMessage ?? (onReceivedMessage = new Subject<object>());
         }
 
-        public IObservable<Unit> OnCloseAsObservable()
+        public Observable<Unit> OnCloseAsObservable()
         {
             return onClose ?? (onClose = new Subject<Unit>());
         }

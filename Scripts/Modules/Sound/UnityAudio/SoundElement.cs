@@ -4,7 +4,7 @@
 using UnityEngine;
 using System;
 using Extensions;
-using UniRx;
+using R3;
 
 namespace Modules.Sound
 {
@@ -131,7 +131,7 @@ namespace Modules.Sound
             Source.volume = soundManagement.Volume * soundParam.volume * Volume;
         }
 
-        public IObservable<Unit> OnFinishAsObservable()
+        public Observable<Unit> OnFinishAsObservable()
         {
             return onFinish ?? (onFinish = new Subject<Unit>());
         }

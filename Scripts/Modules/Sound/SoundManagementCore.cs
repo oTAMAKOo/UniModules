@@ -3,7 +3,7 @@ using UnityEngine;
 using System;
 using System.Linq;
 using System.Collections.Generic;
-using UniRx;
+using R3;
 using Extensions;
 
 namespace Modules.Sound
@@ -74,7 +74,7 @@ namespace Modules.Sound
             soundElements = new List<TSoundElement>();
 
             // サウンドの状態更新.
-            Observable.EveryEndOfFrame()
+            Observable.EveryUpdate(UnityFrameProvider.PostLateUpdate)
                 .Subscribe(_ => UpdateElement())
                 .AddTo(Disposable);
         }
@@ -129,43 +129,43 @@ namespace Modules.Sound
         }
 
         /// <summary> マスターボリューム変更通知 </summary>
-        public IObservable<float> OnUpdateMasterVolume()
+        public Observable<float> OnUpdateMasterVolume()
         {
             return onUpdateMasterVolume ?? (onUpdateMasterVolume = new Subject<float>());
         }
 
         /// <summary> サウンド設定更新通知 </summary>
-        public IObservable<SoundType> OnUpdateParamAsObservable()
+        public Observable<SoundType> OnUpdateParamAsObservable()
         {
             return onUpdateParam ?? (onUpdateParam = new Subject<SoundType>());
         }
 
         /// <summary> 再生通知 </summary>
-        public IObservable<TSoundElement> OnPlayAsObservable()
+        public Observable<TSoundElement> OnPlayAsObservable()
         {
             return onPlay ?? (onPlay = new Subject<TSoundElement>());
         }
 
         /// <summary> 停止通知 </summary>
-        public IObservable<TSoundElement> OnStopAsObservable()
+        public Observable<TSoundElement> OnStopAsObservable()
         {
             return onStop ?? (onStop = new Subject<TSoundElement>());
         }
 
         /// <summary> 中断通知 </summary>
-        public IObservable<TSoundElement> OnPauseAsObservable()
+        public Observable<TSoundElement> OnPauseAsObservable()
         {
             return onPause ?? (onPause = new Subject<TSoundElement>());
         }
 
         /// <summary> 復帰通知 </summary>
-        public IObservable<TSoundElement> OnResumeAsObservable()
+        public Observable<TSoundElement> OnResumeAsObservable()
         {
             return onResume ?? (onResume = new Subject<TSoundElement>());
         }
 
         /// <summary> 解放通知 </summary>
-        public IObservable<TSoundElement> OnReleaseAsObservable()
+        public Observable<TSoundElement> OnReleaseAsObservable()
         {
             return onRelease ?? (onRelease = new Subject<TSoundElement>());
         }

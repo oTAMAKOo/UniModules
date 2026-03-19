@@ -2,10 +2,10 @@
 using UnityEngine;
 using Unity.Linq;
 using System;
-using System.Collections;
 using System.Linq;
+using System.Threading;
 using Cysharp.Threading.Tasks;
-using UniRx;
+using R3;
 using Extensions;
 
 namespace Modules.Particle
@@ -143,7 +143,7 @@ namespace Modules.Particle
         private bool paused = false;
 
         // 再生中のエフェクト.
-        private IObservable<Unit> playObservable = null;
+        private Observable<Unit> playObservable = null;
 
         // 再生キャンセル用.
         private IDisposable playDisposable = null;
@@ -302,7 +302,7 @@ namespace Modules.Particle
             await PlayAsObservable(restart).ToUniTask();
         }
 
-        private IObservable<Unit> PlayAsObservable(bool restart = true)
+        private Observable<Unit> PlayAsObservable(bool restart = true)
         {
             if (!initialized)
             {
@@ -322,56 +322,57 @@ namespace Modules.Particle
             }
 
             // 再生.
-            playObservable = Observable.FromMicroCoroutine(() => PlayInternal()).Share();
+            playObservable = Observable.FromAsync(ct => PlayInternal(ct)).Share();
 
             return playObservable;
         }
 
-        private IEnumerator PlayInternal()
+        private async UniTask PlayInternal(CancellationToken ct)
         {
             UnityUtility.SetActive(gameObject, true);
 
             ApplySortingOrder(sortingOrder);
 
-            while (true)
+            try
             {
-                if (!UnityUtility.IsActiveInHierarchy(gameObject)) { break; }
-
-                // 状態リセット.
-                ResetContents();
-
-                // 開始.
-                SetState(State.Play);
-
-                for (var i = 0; i < particleInfos.Length; i++)
+                while (true)
                 {
-                    var particleInfo = particleInfos[i];
+                    if (!UnityUtility.IsActiveInHierarchy(gameObject)) { break; }
 
-                    // 止まってたら開始.
-                    if (!particleInfo.ParticleSystem.isPlaying)
+                    // 状態リセット.
+                    ResetContents();
+
+                    // 開始.
+                    SetState(State.Play);
+
+                    for (var i = 0; i < particleInfos.Length; i++)
                     {
-                        particleInfo.ParticleSystem.Play();
+                        var particleInfo = particleInfos[i];
+
+                        // 止まってたら開始.
+                        if (!particleInfo.ParticleSystem.isPlaying)
+                        {
+                            particleInfo.ParticleSystem.Play();
+                        }
+
+                        particleInfo.LifeCycle = LifecycleType.None;
                     }
 
-                    particleInfo.LifeCycle = LifecycleType.None;
+                    // 再生速度.
+                    ApplySpeedRate();
+
+                    // 終了待ち.
+                    await FrameUpdate(ct);
+
+                    if (endActionType != EndActionType.Loop) { break; }
+
+                    if (State == State.Stop) { break; }
                 }
-
-                // 再生速度.
-                ApplySpeedRate();
-
-                // 終了待ち.
-                var updateYield = Observable.FromMicroCoroutine(() => FrameUpdate()).ToYieldInstruction();
-
-                while (!updateYield.IsDone)
-                {
-                    yield return null;
-                }                
-
-                if (endActionType != EndActionType.Loop) { break; }
-
-                if (State == State.Stop) { break; }                
             }
-
+            catch (OperationCanceledException)
+            {
+                /* キャンセルは処理しない */
+            }
 
             if (!UnityUtility.IsNull(this))
             {
@@ -380,7 +381,7 @@ namespace Modules.Particle
         }
 
         // 更新.
-        private IEnumerator FrameUpdate()
+        private async UniTask FrameUpdate(CancellationToken ct)
         {
             while (true)
             {
@@ -403,7 +404,7 @@ namespace Modules.Particle
                 // 終了監視.
                 if (!IsAlive()) { break; }
 
-                yield return null;
+                await UniTask.Yield(ct);
             }
         }
 
@@ -804,13 +805,13 @@ namespace Modules.Particle
         }
 
         /// <summary> イベント発生通知 </summary>
-        public IObservable<string> OnEventAsObservable()
+        public Observable<string> OnEventAsObservable()
         {
             return onEvent ?? (onEvent = new Subject<string>());
         }
 
         /// <summary> 終了通知 </summary>
-        public IObservable<ParticlePlayer> OnEndAsObservable()
+        public Observable<ParticlePlayer> OnEndAsObservable()
         {
             return onEnd ?? (onEnd = new Subject<ParticlePlayer>());
         }

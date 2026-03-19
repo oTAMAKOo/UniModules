@@ -7,7 +7,7 @@ using System.IO;
 using System.Text;
 using System.Threading;
 using Cysharp.Threading.Tasks;
-using UniRx;
+using R3;
 using Extensions;
 using Modules.Net;
 using Modules.Net.WebRequest;
@@ -70,10 +70,10 @@ namespace Modules.AssetBundles
         private HashSet<string> downloadRunning = null;
 
         // ダウンロードタスク.
-        private Dictionary<string, IObservable<Unit>> downloadTasks = null;
+        private Dictionary<string, Observable<Unit>> downloadTasks = null;
 
         // 読み込み待ちアセットバンドル.
-        private Dictionary<string, IObservable<AssetBundle>> loadQueueing = null;
+        private Dictionary<string, Observable<AssetBundle>> loadQueueing = null;
 
         // 読み込み済みアセットバンドル.
         private Dictionary<string, AssetBundle> loadedAssetBundles = null;
@@ -123,8 +123,8 @@ namespace Modules.AssetBundles
 
             urlBuilder = new StringBuilder();
             downloadRunning = new HashSet<string>();
-            downloadTasks = new Dictionary<string, IObservable<Unit>>();
-            loadQueueing = new Dictionary<string, IObservable<AssetBundle>>();
+            downloadTasks = new Dictionary<string, Observable<Unit>>();
+            loadQueueing = new Dictionary<string, Observable<AssetBundle>>();
             loadedAssetBundles = new Dictionary<string, AssetBundle>();
             assetBundleRefCount = new Dictionary<string, int>();
             assetInfosByAssetBundleName = new Dictionary<string, List<AssetInfo>>();
@@ -316,11 +316,19 @@ namespace Modules.AssetBundles
 
             if (task == null)
             {
+                void OnDownloadCompleted(Result result)
+                {
+                    if (result.IsFailure)
+                    {
+                        OnError(result.Exception);
+                    }
+                }
+
                 task = UniTask.Defer(() => DownloadAssetBundle(installPath, assetInfo, progress, cancelToken))
                     .ToObservable()
                     .OnErrorRetry((Exception _) => { }, RetryCount, RetryDelaySeconds)
-                    .DoOnError(x => OnError(x))
-                    .AsUnitObservable()
+                    .Do(onCompleted: OnDownloadCompleted)
+                    .Select(_ => Unit.Default)
                     .Share();
 
                 downloadTasks[assetBundleName] = task;
@@ -376,7 +384,7 @@ namespace Modules.AssetBundles
                     .Timeout(DownloadTimeout)
                     .ToObservable()
                     .OnErrorRetry((TimeoutException ex) => OnTimeout(assetInfo, ex), RetryCount, RetryDelaySeconds)
-                    .ToUniTask(cancellationToken: cancelToken);
+                    .FirstAsync(cancelToken);
             }
             catch (OperationCanceledException)
             {
@@ -631,12 +639,12 @@ namespace Modules.AssetBundles
 
             // アセットバンドルを読み込み.
 
-            var assetBundle = await GetLoadTask(installPath, assetBundleName).ToUniTask(cancellationToken: cancelToken);
+            var assetBundle = await GetLoadTask(installPath, assetBundleName).FirstAsync(cancelToken);
 
             return assetBundle;
         }
 
-        private IObservable<AssetBundle> GetLoadTask(string installPath, string assetBundleName)
+        private Observable<AssetBundle> GetLoadTask(string installPath, string assetBundleName)
         {
             // 既に読み込み済み.
 
@@ -660,12 +668,21 @@ namespace Modules.AssetBundles
 
             var info = assetInfosByAssetBundleName.GetValueOrDefault(assetBundleName).FirstOrDefault();
 
-            var task = ObservableEx.FromUniTask(cancelToken => LoadAssetBundle(installPath, info, cancelToken))
-                .Timeout(LoadTimeout)
+            void OnLoadCompleted(Result result)
+            {
+                if (result.IsFailure)
+                {
+                    OnError(result.Exception);
+                }
+
+                loadQueueing.Remove(assetBundleName);
+            }
+
+            var task = Observable.FromAsync(ct => LoadAssetBundle(installPath, info, ct))
+                .Timeout(LoadTimeout, TimeProvider.System)
                 .OnErrorRetry((TimeoutException ex) => {}, RetryCount, RetryDelaySeconds)
                 .OnErrorRetry((FileLoadException ex) => {}, RetryCount, RetryDelaySeconds)
-                .DoOnError(error => OnError(error))
-                .Finally(() => loadQueueing.Remove(assetBundleName))
+                .Do(onCompleted: OnLoadCompleted)
                 .Share();
 
             loadQueueing.Add(assetBundleName, task);
@@ -916,19 +933,19 @@ namespace Modules.AssetBundles
         }
 
         /// <summary> 読み込み時イベント. </summary>
-        public IObservable<string> OnLoadAsObservable()
+        public Observable<string> OnLoadAsObservable()
         {
             return onLoad ?? (onLoad = new Subject<string>());
         }
 
         /// <summary> タイムアウト時イベント. </summary>
-        public IObservable<AssetInfo> OnTimeOutAsObservable()
+        public Observable<AssetInfo> OnTimeOutAsObservable()
         {
             return onTimeOut ?? (onTimeOut = new Subject<AssetInfo>());
         }
 
         /// <summary> エラー時イベント. </summary>
-        public IObservable<Exception> OnErrorAsObservable()
+        public Observable<Exception> OnErrorAsObservable()
         {
             return onError ?? (onError = new Subject<Exception>());
         }

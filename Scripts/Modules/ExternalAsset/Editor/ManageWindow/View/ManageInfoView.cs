@@ -5,7 +5,7 @@ using System;
 using System.Linq;
 using System.Collections.Generic;
 using Cysharp.Threading.Tasks;
-using UniRx;
+using R3;
 using Extensions;
 using Extensions.Devkit;
 
@@ -431,12 +431,12 @@ namespace Modules.ExternalAssets
             contentAssetsScrollView.Contents = assets;            
         }
 
-        public IObservable<Unit> OnUpdateManageInfoAsObservable()
+        public Observable<Unit> OnUpdateManageInfoAsObservable()
         {
             return onUpdateManageInfo ?? (onUpdateManageInfo = new Subject<Unit>());
         }
 
-        public IObservable<Unit> OnDeleteManageInfoAsObservable()
+        public Observable<Unit> OnDeleteManageInfoAsObservable()
         {
             return onDeleteManageInfo ?? (onDeleteManageInfo = new Subject<Unit>());
         }
@@ -504,7 +504,7 @@ namespace Modules.ExternalAssets
             }
         }
 
-        public IObservable<string> OnRequestDetailViewAsObservable()
+        public Observable<string> OnRequestDetailViewAsObservable()
         {
             return onRequestDetailView ?? (onRequestDetailView = new Subject<string>());
         }

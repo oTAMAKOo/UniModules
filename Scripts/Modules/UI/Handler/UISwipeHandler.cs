@@ -1,8 +1,8 @@
 ﻿
 using UnityEngine;
 using System;
-using UniRx;
-using UniRx.Triggers;
+using R3;
+using R3.Triggers;
 using Extensions;
 
 namespace Modules.UI
@@ -38,7 +38,7 @@ namespace Modules.UI
 
             eventTrigger
                 .OnBeginDragAsObservable()
-                .TakeUntilDisable(this)
+                .TakeUntil(this.OnDisableAsObservable())
                 .Where(eventData =>
                    {
                        return eventData.pointerDrag != null &&
@@ -55,7 +55,7 @@ namespace Modules.UI
 
             var onEndDragObservable = eventTrigger
                 .OnEndDragAsObservable()
-                .TakeUntilDisable(this)
+                .TakeUntil(this.OnDisableAsObservable())
                 .Where(eventData => (DateTime.Now - beginTime).TotalSeconds < thresholdSenconds)
                 .Select(eventData => eventData.position)
                 .Share();
@@ -115,22 +115,22 @@ namespace Modules.UI
             onEndDragObservable.Subscribe(_ => IsSwipe = false).AddTo(this);
         }
 
-        public IObservable<Unit> OnSwipeLeftAsObservable()
+        public Observable<Unit> OnSwipeLeftAsObservable()
         {
             return onSwipeLeft ?? (onSwipeLeft = new Subject<Unit>());
         }
 
-        public IObservable<Unit> OnSwipeRightAsObservable()
+        public Observable<Unit> OnSwipeRightAsObservable()
         {
             return onSwipeRight ?? (onSwipeRight = new Subject<Unit>());
         }
 
-        public IObservable<Unit> OnSwipeDownAsObservable()
+        public Observable<Unit> OnSwipeDownAsObservable()
         {
             return onSwipeDown ?? (onSwipeDown = new Subject<Unit>());
         }
 
-        public IObservable<Unit> OnSwipeUpAsObservable()
+        public Observable<Unit> OnSwipeUpAsObservable()
         {
             return onSwipeUp ?? (onSwipeUp = new Subject<Unit>());
         }

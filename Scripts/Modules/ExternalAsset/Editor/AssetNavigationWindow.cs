@@ -3,7 +3,7 @@ using UnityEngine;
 using UnityEditor;
 using System.Linq;
 using Cysharp.Threading.Tasks;
-using UniRx;
+using R3;
 using Extensions.Devkit;
 using Modules.Devkit.Prefs;
 

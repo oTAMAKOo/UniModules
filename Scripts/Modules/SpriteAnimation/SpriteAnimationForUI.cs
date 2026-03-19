@@ -1,7 +1,8 @@
 ﻿
 using UnityEngine;
 using UnityEngine.UI;
-using UniRx;
+using R3;
+using R3.Triggers;
 using Extensions;
 
 namespace Modules.SpriteAnimation
@@ -33,7 +34,7 @@ namespace Modules.SpriteAnimation
             if (targetImage != null)
             {
                 OnUpdateAnimationAsObservable()
-                    .TakeUntilDisable(this)
+                    .TakeUntil(this.OnDisableAsObservable())
                     .Subscribe(x => targetImage.sprite = x)
                     .AddTo(this);
 

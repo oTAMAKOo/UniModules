@@ -5,7 +5,7 @@ using System.Linq;
 using System.Collections.Generic;
 using System.Threading;
 using Cysharp.Threading.Tasks;
-using UniRx;
+using R3;
 using Extensions;
 using Modules.Scene;
 
@@ -382,22 +382,22 @@ namespace Modules.Window
             return null;
         }
 
-        public IObservable<Unit> OnBlockTouchAsObservable()
+        public Observable<Unit> OnBlockTouchAsObservable()
         {
             return onBlockTouch ?? (onBlockTouch = new Subject<Unit>());
         }
 
-        public IObservable<Window> OnOpenWindowAsObservable()
+        public Observable<Window> OnOpenWindowAsObservable()
         {
             return onOpenWindow ?? (onOpenWindow = new Subject<Window>());
         }
 
-        public IObservable<Window> OnOpenedWindowAsObservable()
+        public Observable<Window> OnOpenedWindowAsObservable()
         {
             return onOpenedWindow ?? (onOpenedWindow = new Subject<Window>());
         }
 
-        public IObservable<Window> OnClosedWindowAsObservable()
+        public Observable<Window> OnClosedWindowAsObservable()
         {
             return onClosedWindow ?? (onClosedWindow = new Subject<Window>());
         }

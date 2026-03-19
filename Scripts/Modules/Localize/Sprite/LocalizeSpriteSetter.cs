@@ -2,7 +2,7 @@
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.U2D;
-using UniRx;
+using R3;
 using Extensions;
 
 namespace Modules.Localize
@@ -89,7 +89,7 @@ namespace Modules.Localize
 			}
 		}
 
-		public IObservable<Unit> OnChangeAtlasAsObservable()
+		public Observable<Unit> OnChangeAtlasAsObservable()
 		{
 			return onChangeAtlas ?? (onChangeAtlas = new Subject<Unit>());
 		}

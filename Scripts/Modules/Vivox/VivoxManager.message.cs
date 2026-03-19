@@ -5,7 +5,7 @@ using UnityEngine;
 using System;
 using System.Linq;
 using Cysharp.Threading.Tasks;
-using UniRx;
+using R3;
 using VivoxUnity;
 using Extensions;
 
@@ -133,12 +133,12 @@ namespace Modules.Vivox
 
 		#region Event
 
-		public IObservable<IChannelTextMessage> OnReceivedMessageAsObservable()
+		public Observable<IChannelTextMessage> OnReceivedMessageAsObservable()
 		{
 			return onReceivedMessage ?? (onReceivedMessage = new Subject<IChannelTextMessage>());
 		}
 
-		public IObservable<IDirectedTextMessage> OnReceivedDirectedMessageAsObservable()
+		public Observable<IDirectedTextMessage> OnReceivedDirectedMessageAsObservable()
 		{
 			return onReceivedDirectedMessage ?? (onReceivedDirectedMessage = new Subject<IDirectedTextMessage>());
 		}

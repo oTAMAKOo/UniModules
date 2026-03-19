@@ -1,7 +1,7 @@
 ﻿
 using System;
 using UnityEngine;
-using UniRx;
+using R3;
 using Extensions;
 
 namespace Modules.Devkit.LogHandler
@@ -109,52 +109,52 @@ namespace Modules.Devkit.LogHandler
             onReceivedThreadedAll?.OnNext(logInfo);
         }
 
-        public IObservable<LogInfo> OnReceivedAllAsObservable()
+        public Observable<LogInfo> OnReceivedAllAsObservable()
         {
             return onReceivedAll ?? (onReceivedAll = new Subject<LogInfo>());
         }
 
-        public IObservable<LogInfo> OnReceivedLogAsObservable()
+        public Observable<LogInfo> OnReceivedLogAsObservable()
         {
             return onReceivedLog ?? (onReceivedLog = new Subject<LogInfo>());
         }
 
-        public IObservable<LogInfo> OnReceivedWarningAsObservable()
+        public Observable<LogInfo> OnReceivedWarningAsObservable()
         {
             return onReceivedWarning ?? (onReceivedWarning = new Subject<LogInfo>());
         }
 
-        public IObservable<LogInfo> OnReceivedErrorAsObservable()
+        public Observable<LogInfo> OnReceivedErrorAsObservable()
         {
             return onReceivedError ?? (onReceivedError = new Subject<LogInfo>());
         }
 
-        public IObservable<LogInfo> OnReceivedExceptionAsObservable()
+        public Observable<LogInfo> OnReceivedExceptionAsObservable()
         {
             return onReceivedException ?? (onReceivedException = new Subject<LogInfo>());
         }
 
-        public IObservable<LogInfo> OnReceivedThreadedAllAsObservable()
+        public Observable<LogInfo> OnReceivedThreadedAllAsObservable()
         {
             return onReceivedThreadedAll ?? (onReceivedThreadedAll = new Subject<LogInfo>());
         }
 
-        public IObservable<LogInfo> OnReceivedThreadedLogAsObservable()
+        public Observable<LogInfo> OnReceivedThreadedLogAsObservable()
         {
             return onReceivedThreadedLog ?? (onReceivedThreadedLog = new Subject<LogInfo>());
         }
 
-        public IObservable<LogInfo> OnReceivedThreadedWarningAsObservable()
+        public Observable<LogInfo> OnReceivedThreadedWarningAsObservable()
         {
             return onReceivedThreadedWarning ?? (onReceivedThreadedWarning = new Subject<LogInfo>());
         }
 
-        public IObservable<LogInfo> OnReceivedThreadedErrorAsObservable()
+        public Observable<LogInfo> OnReceivedThreadedErrorAsObservable()
         {
             return onReceivedThreadedError ?? (onReceivedThreadedError = new Subject<LogInfo>());
         }
 
-        public IObservable<LogInfo> OnReceivedThreadedExceptionAsObservable()
+        public Observable<LogInfo> OnReceivedThreadedExceptionAsObservable()
         {
             return onReceivedThreadedException ?? (onReceivedThreadedException = new Subject<LogInfo>());
         }

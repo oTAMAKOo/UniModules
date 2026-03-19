@@ -4,7 +4,7 @@ using UnityEngine.UI;
 using Unity.Linq;
 using System;
 using Cysharp.Threading.Tasks;
-using UniRx;
+using R3;
 using TMPro;
 using Extensions;
 

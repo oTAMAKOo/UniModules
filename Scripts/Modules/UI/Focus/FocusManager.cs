@@ -3,7 +3,7 @@ using UnityEngine;
 using System;
 using System.Linq;
 using System.Collections.Generic;
-using UniRx;
+using R3;
 using Extensions;
 
 namespace Modules.UI.Focus
@@ -97,7 +97,7 @@ namespace Modules.UI.Focus
             targets.Remove(target);
         }
 
-		public IObservable<Unit> OnUpdateFocusAsObservable()
+		public Observable<Unit> OnUpdateFocusAsObservable()
 		{
 			return onUpdateFocus ?? (onUpdateFocus = new Subject<Unit>());
 		}

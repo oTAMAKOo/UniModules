@@ -5,7 +5,7 @@ using UnityEditor.IMGUI.Controls;
 using System;
 using System.Linq;
 using System.Collections.Generic;
-using UniRx;
+using R3;
 using Extensions;
 
 namespace Modules.Devkit.TextureViewer
@@ -356,7 +356,7 @@ namespace Modules.Devkit.TextureViewer
             SetContents(textureInfos, false);
         }
 
-        public IObservable<TextureInfo> OnSelectionChangedAsObservable()
+        public Observable<TextureInfo> OnSelectionChangedAsObservable()
         {
             return onSelectionChanged ?? (onSelectionChanged = new Subject<TextureInfo>());
         }
