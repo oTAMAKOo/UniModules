@@ -61,7 +61,7 @@ namespace Modules.Devkit.TextureViewer
             DisplayMode = DisplayMode.Texture;
 
             // 非同期で初期化.
-            Observable.FromAsync(ct => InitializeAsync(ct))
+            Observable.FromAsync(async ct => { await InitializeAsync(ct); return Unit.Default; })
                 .Subscribe()
                 .AddTo(Disposable);
 
@@ -77,7 +77,7 @@ namespace Modules.Devkit.TextureViewer
 
             initalLoading = true;
 
-            Observable.FromAsync(ct => LoadMainTextureBackground(ct))
+            Observable.FromAsync(async ct => { await LoadMainTextureBackground(ct); return Unit.Default; })
                 .Subscribe()
                 .AddTo(Disposable);
 

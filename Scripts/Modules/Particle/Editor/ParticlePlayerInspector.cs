@@ -183,8 +183,7 @@ namespace Modules.Particle
 
                                     Reflection.InvokePrivateMethod(instance, "RunCollectContents");
 
-                                    emulateDisposable = instance.Play()
-										.ToObservable()
+                                    emulateDisposable = Observable.FromAsync(async ct => { await instance.Play(); return Unit.Default; })
                                         .Subscribe(_ =>
                                             {
                                                 instance.Stop(true, true);
