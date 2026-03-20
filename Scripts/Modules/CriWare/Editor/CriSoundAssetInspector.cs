@@ -57,7 +57,7 @@ namespace Modules.CriWare
                 // CriWareInitializerの初期化を待つ.
                 Observable.EveryUpdate(UnityFrameProvider.Update)
                     .SkipWhile(_ => !CriWareInitializer.IsInitialized())
-                    .FirstAsync()
+                    .ToUniTask()
                     .Subscribe(_ => LoadCueInfo(target))
                     .AddTo(lifetimeDisposable.Disposable);
             }

@@ -124,7 +124,7 @@ namespace Modules.Net.WebDownload
                     downloadItems.Add(url, downloadInfo);
                 }
 
-                result = await observable.FirstAsync(cancelToken);
+                result = await observable.ToUniTask(cancelToken);
             }
             catch (OperationCanceledException)
             {

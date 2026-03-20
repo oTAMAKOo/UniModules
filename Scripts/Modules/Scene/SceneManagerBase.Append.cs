@@ -85,7 +85,7 @@ namespace Modules.Scene
 
             try
             {
-                sceneInstance = await LoadScene(identifier.Value, LoadSceneMode.Additive).FirstAsync(cancelToken);
+                sceneInstance = await LoadScene(identifier.Value, LoadSceneMode.Additive).ToUniTask(cancelToken);
             }
             catch (OperationCanceledException) 
             {
@@ -210,7 +210,7 @@ namespace Modules.Scene
 
                 diagnostics.Begin(TimeDiagnostics.Measure.Load);
 
-                var sceneInstance = await Append(sceneArgument).FirstAsync(cancelToken);
+                var sceneInstance = await Append(sceneArgument).ToUniTask(cancelToken);
 
                 diagnostics.Finish(TimeDiagnostics.Measure.Load);
 

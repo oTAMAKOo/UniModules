@@ -332,7 +332,7 @@ namespace Modules.AssetBundles
                 downloadTasks[assetBundleName] = task;
             }
 
-            await task.FirstAsync(cancelToken);
+            await task.ToUniTask(cancelToken);
         }
 
         private async UniTask DownloadAssetBundle(string installPath, AssetInfo assetInfo, IProgress<DownloadProgressInfo> progress, CancellationToken cancelToken)
@@ -380,7 +380,7 @@ namespace Modules.AssetBundles
 
                 await Observable.FromAsync(async ct => { await FileDownload(installPath, assetInfo, progress, ct).Timeout(DownloadTimeout); return Unit.Default; })
                     .OnErrorRetry((TimeoutException ex) => OnTimeout(assetInfo, ex), RetryCount, RetryDelaySeconds)
-                    .FirstAsync(cancelToken);
+                    .ToUniTask(cancelToken);
             }
             catch (OperationCanceledException)
             {
@@ -635,7 +635,7 @@ namespace Modules.AssetBundles
 
             // アセットバンドルを読み込み.
 
-            var assetBundle = await GetLoadTask(installPath, assetBundleName).FirstAsync(cancelToken);
+            var assetBundle = await GetLoadTask(installPath, assetBundleName).ToUniTask(cancelToken);
 
             return assetBundle;
         }

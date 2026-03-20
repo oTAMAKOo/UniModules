@@ -492,7 +492,7 @@ namespace Modules.Scene
                 {
                     try
                     {
-                        await UnloadScene(unloadScene).FirstAsync(cancelToken);
+                        await UnloadScene(unloadScene).ToUniTask(cancelToken);
                     }
                     catch (Exception e)
                     {
@@ -527,7 +527,7 @@ namespace Modules.Scene
             {
                 try
                 {
-                    sceneInstance = await LoadScene(identifier, mode).FirstAsync(cancelToken);
+                    sceneInstance = await LoadScene(identifier, mode).ToUniTask(cancelToken);
                 }
                 catch (Exception e)
                 {
@@ -634,7 +634,7 @@ namespace Modules.Scene
                 {
                     try
                     {
-                        await UnloadScene(prev).FirstAsync(cancelToken);
+                        await UnloadScene(prev).ToUniTask(cancelToken);
                     }
                     catch (OperationCanceledException) 
                     {
@@ -1168,7 +1168,7 @@ namespace Modules.Scene
 
             try
             {
-                await LoadScene(targetScene, LoadSceneMode.Additive).FirstAsync(preLoadCancelSource.Token);
+                await LoadScene(targetScene, LoadSceneMode.Additive).ToUniTask(preLoadCancelSource.Token);
             }
             catch (Exception e)
             {
@@ -1191,7 +1191,7 @@ namespace Modules.Scene
         {
             var sceneInstances = cacheScenes.ToArray();
 
-            await UniTask.WhenAll(sceneInstances.Select(x => UnloadScene(x).FirstAsync(CancellationToken.None)));
+            await UniTask.WhenAll(sceneInstances.Select(x => UnloadScene(x).ToUniTask(CancellationToken.None)));
         }
 
         /// <summary> キャッシュ済みのシーンをアンロード. </summary>
