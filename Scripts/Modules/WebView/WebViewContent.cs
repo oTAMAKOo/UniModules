@@ -90,11 +90,11 @@ namespace Modules.WebView
             }
 
             return Observable.EveryUpdate()
-                .Timeout(new TimeSpan(0, 0, 0, TimeOutSeconds))
+                .Timeout(new TimeSpan(0, 0, 0, TimeOutSeconds), TimeProvider.System)
                 .OnErrorRetry((TimeoutException ex) => OnTimeout(ex), RetryCount, new TimeSpan(0, 0, 0, RetryDelaySeconds))
                 .Do(onCompleted: OnLoadCompleted)
                 .SkipWhile(_ => Loading)
-                .FirstAsync();
+                .ToUniTask();
         }
 
         public Observable<Unit> OnLoadCompleteAsObservable()

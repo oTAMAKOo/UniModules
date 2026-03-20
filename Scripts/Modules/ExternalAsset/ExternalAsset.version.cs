@@ -295,7 +295,7 @@ namespace Modules.ExternalAssets
 
             if (saveVersionDisposable == null)
             {
-                void OnSaveVersionNext(long _)
+                void OnSaveVersionNext(Unit _)
                 {
                     if (saveVersionIdentifier != requestSaveVersionIdentifier)
                     {

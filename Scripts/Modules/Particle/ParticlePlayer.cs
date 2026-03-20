@@ -322,7 +322,7 @@ namespace Modules.Particle
             }
 
             // 再生.
-            playObservable = Observable.FromAsync(ct => PlayInternal(ct)).Share();
+            playObservable = Observable.FromAsync(async ct => await PlayInternal(ct)).Share();
 
             return playObservable;
         }

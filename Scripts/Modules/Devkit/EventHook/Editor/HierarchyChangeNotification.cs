@@ -58,8 +58,8 @@ namespace Modules.Devkit.EventHook
                 onHierarchyChangedAsObservable.OnNext(Unit.Default);
             }
 
-            var createObserver = onCreateAsObservable != null && onCreateAsObservable.HasObservers;
-            var deleteObserver = onDeleteAsObservable != null && onDeleteAsObservable.HasObservers;
+            var createObserver = onCreateAsObservable != null && !onCreateAsObservable.IsDisposed;
+            var deleteObserver = onDeleteAsObservable != null && !onDeleteAsObservable.IsDisposed;
 
             if (createObserver || deleteObserver)
             {

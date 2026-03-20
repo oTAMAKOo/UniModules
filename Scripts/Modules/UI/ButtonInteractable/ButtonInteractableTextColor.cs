@@ -45,7 +45,7 @@ namespace Modules.UI.Reactive
 
             if (target != null && Application.isPlaying)
             {
-                target.ObserveEveryValueChanged(x => x.Button.interactable).Subscribe(x => Apply(x)).AddTo(this);
+                Observable.EveryValueChanged(target, x => x.Button.interactable).Subscribe(x => Apply(x)).AddTo(this);
             }
         }
 

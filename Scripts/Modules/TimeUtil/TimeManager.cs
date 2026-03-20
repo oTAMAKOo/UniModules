@@ -44,8 +44,7 @@ namespace Modules.TimeUtil
 		{
 			return Observable.EveryUpdate()
 				.SkipWhile(_ => Now < noticeTime)
-				.FirstAsync()
-				.Select(_ => Unit.Default);
+				.Take(1);
 		}
 	}
 }

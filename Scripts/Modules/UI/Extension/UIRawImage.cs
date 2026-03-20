@@ -3,7 +3,6 @@ using System;
 using UnityEngine;
 using UnityEngine.UI;
 using R3;
-using R3.Triggers;
 
 namespace Modules.UI.Extension
 {
@@ -70,8 +69,8 @@ namespace Modules.UI.Extension
                 }
             };
 
-            RawImage.ObserveEveryValueChanged(x => x.texture)
-                .TakeUntil(this.OnDisableAsObservable())
+            Observable.EveryValueChanged(RawImage, x => x.texture)
+                .TakeUntilDisable(this)
                 .Subscribe(_ => onTextureChanged())
                 .AddTo(this);
 

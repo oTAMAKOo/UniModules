@@ -324,17 +324,15 @@ namespace Modules.AssetBundles
                     }
                 }
 
-                task = UniTask.Defer(() => DownloadAssetBundle(installPath, assetInfo, progress, cancelToken))
-                    .ToObservable()
+                task = Observable.FromAsync(async _ => { await DownloadAssetBundle(installPath, assetInfo, progress, cancelToken); return Unit.Default; })
                     .OnErrorRetry((Exception _) => { }, RetryCount, RetryDelaySeconds)
                     .Do(onCompleted: OnDownloadCompleted)
-                    .Select(_ => Unit.Default)
                     .Share();
 
                 downloadTasks[assetBundleName] = task;
             }
 
-            await task;
+            await task.ToUniTask(cancelToken);
         }
 
         private async UniTask DownloadAssetBundle(string installPath, AssetInfo assetInfo, IProgress<DownloadProgressInfo> progress, CancellationToken cancelToken)
@@ -380,11 +378,9 @@ namespace Modules.AssetBundles
 
                 downloadRunning.Add(assetBundleName);
 
-                await FileDownload(installPath, assetInfo, progress, cancelToken)
-                    .Timeout(DownloadTimeout)
-                    .ToObservable()
+                await Observable.FromAsync(async ct => { await FileDownload(installPath, assetInfo, progress, ct).Timeout(DownloadTimeout); return Unit.Default; })
                     .OnErrorRetry((TimeoutException ex) => OnTimeout(assetInfo, ex), RetryCount, RetryDelaySeconds)
-                    .FirstAsync(cancelToken);
+                    .ToUniTask(cancelToken);
             }
             catch (OperationCanceledException)
             {
@@ -639,7 +635,7 @@ namespace Modules.AssetBundles
 
             // アセットバンドルを読み込み.
 
-            var assetBundle = await GetLoadTask(installPath, assetBundleName).FirstAsync(cancelToken);
+            var assetBundle = await GetLoadTask(installPath, assetBundleName).ToUniTask(cancelToken);
 
             return assetBundle;
         }
@@ -678,7 +674,7 @@ namespace Modules.AssetBundles
                 loadQueueing.Remove(assetBundleName);
             }
 
-            var task = Observable.FromAsync(ct => LoadAssetBundle(installPath, info, ct))
+            var task = Observable.FromAsync(async ct => await LoadAssetBundle(installPath, info, ct))
                 .Timeout(LoadTimeout, TimeProvider.System)
                 .OnErrorRetry((TimeoutException ex) => {}, RetryCount, RetryDelaySeconds)
                 .OnErrorRetry((FileLoadException ex) => {}, RetryCount, RetryDelaySeconds)

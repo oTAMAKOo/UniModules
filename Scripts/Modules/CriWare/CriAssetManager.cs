@@ -204,7 +204,7 @@ namespace Modules.CriWare
 
             await install.Task
                 .Do(onCompleted: OnInstallCompleted)
-                .FirstAsync(cancelToken);
+                .ToUniTask(cancelToken);
         }
 
         private CriAssetInstall GetCriAssetInstall(string installPath, AssetInfo assetInfo, IProgress<DownloadProgressInfo> progress, CancellationToken cancelToken)

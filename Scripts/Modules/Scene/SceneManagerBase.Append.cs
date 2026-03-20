@@ -60,7 +60,7 @@ namespace Modules.Scene
                 await sceneInstance.Instance.SetArgument(sceneArgument);
             }
 
-            return Observable.FromAsync(cancelToken => AppendCore(sceneArgument.Identifier, activeOnLoad, SetArgumentCallback, cancelToken));
+            return Observable.FromAsync(async cancelToken => await AppendCore(sceneArgument.Identifier, activeOnLoad, SetArgumentCallback, cancelToken));
         }
 
         /// <summary>
@@ -69,7 +69,7 @@ namespace Modules.Scene
         /// </summary>
         public Observable<SceneInstance<TScenes>> Append(TScenes identifier, bool activeOnLoad = true)
         {
-            return Observable.FromAsync(cancelToken => AppendCore(identifier, activeOnLoad, null, cancelToken));
+            return Observable.FromAsync(async cancelToken => await AppendCore(identifier, activeOnLoad, null, cancelToken));
         }
 
         private async UniTask<SceneInstance<TScenes>> AppendCore(TScenes? identifier, bool activeOnLoad, Func<SceneInstance<TScenes>, 
@@ -85,7 +85,7 @@ namespace Modules.Scene
 
             try
             {
-                sceneInstance = await LoadScene(identifier.Value, LoadSceneMode.Additive).ToUniTask(cancellationToken: cancelToken);
+                sceneInstance = await LoadScene(identifier.Value, LoadSceneMode.Additive).ToUniTask(cancelToken);
             }
             catch (OperationCanceledException) 
             {
@@ -156,7 +156,7 @@ namespace Modules.Scene
 
             IsTransition = true;
             
-            Observable.FromAsync(cancelToken => AppendTransitionCore(sceneArgument, cancelToken))
+            Observable.FromAsync(async cancelToken => { await AppendTransitionCore(sceneArgument, cancelToken); return Unit.Default; })
                 .Subscribe(_ => IsTransition = false)
                 .AddTo(transitionCancelSource.Token);
         }
@@ -168,7 +168,7 @@ namespace Modules.Scene
 
             IsTransition = true;
 
-            Observable.FromAsync(cancelToken => AppendTransitionCore(sceneArgument, cancelToken))
+            Observable.FromAsync(async cancelToken => { await AppendTransitionCore(sceneArgument, cancelToken); return Unit.Default; })
                 .Subscribe(_ => IsTransition = false)
                 .AddTo(transitionCancelSource.Token);
         }
@@ -210,7 +210,7 @@ namespace Modules.Scene
 
                 diagnostics.Begin(TimeDiagnostics.Measure.Load);
 
-                var sceneInstance = await Append(sceneArgument).ToUniTask(cancellationToken:cancelToken);
+                var sceneInstance = await Append(sceneArgument).ToUniTask(cancelToken);
 
                 diagnostics.Finish(TimeDiagnostics.Measure.Load);
 
@@ -295,7 +295,7 @@ namespace Modules.Scene
 
             IsTransition = true;
             
-            Observable.FromAsync(cancelToken => UnloadTransitionCore(transitionScene, unloadSceneInstance, cancelToken))
+            Observable.FromAsync(async cancelToken => { await UnloadTransitionCore(transitionScene, unloadSceneInstance, cancelToken); return Unit.Default; })
                 .Subscribe(_ => IsTransition = false)
                 .AddTo(transitionCancelSource.Token);
         }
@@ -315,7 +315,7 @@ namespace Modules.Scene
 
             IsTransition = true;
 
-            Observable.FromAsync(cancelToken => UnloadTransitionCore(transitionScene, unloadSceneInstance, cancelToken))
+            Observable.FromAsync(async cancelToken => { await UnloadTransitionCore(transitionScene, unloadSceneInstance, cancelToken); return Unit.Default; })
                 .Subscribe(_ => IsTransition = false)
                 .AddTo(transitionCancelSource.Token);
         }

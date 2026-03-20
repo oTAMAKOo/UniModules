@@ -3,7 +3,6 @@ using System.Linq;
 using UnityEngine;
 using UnityEngine.UI;
 using R3;
-using R3.Triggers;
 using Extensions;
 
 namespace Modules.UI.Extension
@@ -48,7 +47,7 @@ namespace Modules.UI.Extension
             if (Application.isPlaying)
             {
                 Observable.EveryUpdate()
-                    .TakeUntil(this.OnDisableAsObservable())
+                    .TakeUntilDisable(this)
                     .Subscribe(_ =>
                         {
                             if (modifyCanvasCamera && Canvas.worldCamera == null)

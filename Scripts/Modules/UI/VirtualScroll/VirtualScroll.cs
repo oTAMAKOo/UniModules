@@ -9,7 +9,6 @@ using System.Threading;
 using Cysharp.Threading.Tasks;
 using DG.Tweening;
 using R3;
-using R3.Triggers;
 using Extensions;
 using Modules.UI.VirtualScroll;
 
@@ -219,7 +218,7 @@ namespace Modules.UI
             base.OnEnable();
 
             Observable.EveryUpdate()
-                .TakeUntil(this.OnDisableAsObservable())
+                .TakeUntilDisable(this)
                 .Subscribe(_ => UpdateScroll())
                 .AddTo(this);
         }

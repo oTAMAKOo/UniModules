@@ -278,7 +278,7 @@ namespace Modules.InAppPurchasing
         private BuyFailureReason PurchaseInternal(string productId, string developerPayload)
         {
             // コールバックが通知できない場合は何もしない.
-            if (onStorePurchaseComplete == null || !onStorePurchaseComplete.HasObservers)
+            if (onStorePurchaseComplete == null)
             {
                 return BuyFailureReason.NoReceivePurchaseMessage;
             }
@@ -365,7 +365,7 @@ namespace Modules.InAppPurchasing
             }
 
             // コールバックが通知できない場合は何もしない.
-            if (onStorePurchaseRestore == null || !onStorePurchaseRestore.HasObservers)
+            if (onStorePurchaseRestore == null)
             {
                 return BuyFailureReason.NoReceiveRestoreMessage;
             }
@@ -590,7 +590,7 @@ namespace Modules.InAppPurchasing
             UpdatePendingProduct(product, PurchaseProcessingResult.Pending);
 
             // 通知できない場合はここで処理を終了.
-            if (onStorePurchaseComplete == null || !onStorePurchaseComplete.HasObservers)
+            if (onStorePurchaseComplete == null)
             {
                 return PurchaseProcessingResult.Pending;
             }

@@ -3,7 +3,6 @@ using UnityEngine;
 using UnityEngine.UI;
 using System;
 using R3;
-using R3.Triggers;
 using Extensions;
 
 namespace Modules.UI.DummyContent
@@ -79,8 +78,8 @@ namespace Modules.UI.DummyContent
                 }
             };
 
-            Image.ObserveEveryValueChanged(x => x.sprite)
-                .TakeUntil(this.OnDisableAsObservable())
+            Observable.EveryValueChanged(Image, x => x.sprite)
+                .TakeUntilDisable(this)
                 .Subscribe(_ => onSpriteChanged())
                 .AddTo(this);
 
