@@ -7,6 +7,7 @@ using System.Threading;
 using Cysharp.Threading.Tasks;
 using R3;
 using Extensions;
+using Modules.R3Extension;
 
 namespace Modules.Particle
 {
@@ -322,7 +323,7 @@ namespace Modules.Particle
             }
 
             // 再生.
-            playObservable = Observable.FromAsync(async ct => await PlayInternal(ct)).Share();
+            playObservable = ObservableEx.FromUniTask(ct => PlayInternal(ct)).Share();
 
             return playObservable;
         }

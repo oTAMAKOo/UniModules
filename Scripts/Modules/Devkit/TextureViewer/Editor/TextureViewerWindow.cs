@@ -10,6 +10,7 @@ using Cysharp.Threading.Tasks;
 using R3;
 using Extensions;
 using Extensions.Devkit;
+using Modules.R3Extension;
 
 namespace Modules.Devkit.TextureViewer
 {
@@ -60,8 +61,7 @@ namespace Modules.Devkit.TextureViewer
 
             DisplayMode = DisplayMode.Texture;
 
-            // 非同期で初期化.
-            Observable.FromAsync(ct => InitializeAsync(ct))
+            ObservableEx.FromUniTask(ct => InitializeAsync(ct))
                 .Subscribe()
                 .AddTo(Disposable);
 
@@ -77,7 +77,7 @@ namespace Modules.Devkit.TextureViewer
 
             initalLoading = true;
 
-            Observable.FromAsync(ct => LoadMainTextureBackground(ct))
+            ObservableEx.FromUniTask(ct => LoadMainTextureBackground(ct))
                 .Subscribe()
                 .AddTo(Disposable);
 

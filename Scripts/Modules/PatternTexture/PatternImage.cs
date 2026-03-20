@@ -8,6 +8,7 @@ using System.Linq;
 using R3;
 using Cysharp.Threading.Tasks;
 using Extensions;
+using Modules.R3Extension;
 
 namespace Modules.PatternTexture
 {
@@ -374,7 +375,7 @@ namespace Modules.PatternTexture
 
             crossFadeColor = color;
 
-            fadeDisposable = Observable.FromAsync(async ct => await Fade(crossFadeTime, ct))
+            fadeDisposable = ObservableEx.FromUniTask(ct => Fade(crossFadeTime, ct))
                 .Subscribe(_ => StopCrossFade())
                 .AddTo(this);
         }

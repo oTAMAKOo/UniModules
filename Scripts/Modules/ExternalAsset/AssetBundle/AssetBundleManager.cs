@@ -14,6 +14,7 @@ using Modules.Net.WebRequest;
 using Modules.ExternalAssets;
 using Modules.Net.WebDownload;
 using Modules.Performance;
+using Modules.R3Extension;
 
 namespace Modules.AssetBundles
 {
@@ -324,7 +325,7 @@ namespace Modules.AssetBundles
                     }
                 }
 
-                task = Observable.FromAsync(async _ => { await DownloadAssetBundle(installPath, assetInfo, progress, cancelToken); return Unit.Default; })
+                task = ObservableEx.FromUniTask(_ => DownloadAssetBundle(installPath, assetInfo, progress, cancelToken))
                     .OnErrorRetry((Exception _) => { }, RetryCount, RetryDelaySeconds)
                     .Do(onCompleted: OnDownloadCompleted)
                     .Share();
@@ -378,7 +379,7 @@ namespace Modules.AssetBundles
 
                 downloadRunning.Add(assetBundleName);
 
-                await Observable.FromAsync(async ct => { await FileDownload(installPath, assetInfo, progress, ct).Timeout(DownloadTimeout); return Unit.Default; })
+                await ObservableEx.FromUniTask(ct => FileDownload(installPath, assetInfo, progress, ct).Timeout(DownloadTimeout))
                     .OnErrorRetry((TimeoutException ex) => OnTimeout(assetInfo, ex), RetryCount, RetryDelaySeconds)
                     .ToUniTask(cancelToken);
             }
@@ -674,7 +675,7 @@ namespace Modules.AssetBundles
                 loadQueueing.Remove(assetBundleName);
             }
 
-            var task = Observable.FromAsync(async ct => await LoadAssetBundle(installPath, info, ct))
+            var task = ObservableEx.FromUniTask(ct => LoadAssetBundle(installPath, info, ct))
                 .Timeout(LoadTimeout, TimeProvider.System)
                 .OnErrorRetry((TimeoutException ex) => {}, RetryCount, RetryDelaySeconds)
                 .OnErrorRetry((FileLoadException ex) => {}, RetryCount, RetryDelaySeconds)
