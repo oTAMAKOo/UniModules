@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using R3;
 using Cysharp.Threading.Tasks;
 using Extensions;
+using Modules.R3Extension;
 using Modules.TimeLine.Component;
 using UnityEngine.Playables;
 using UnityEngine.Timeline;
@@ -106,7 +107,7 @@ namespace Modules.TimeLine
 
             playableDirector.Play();
 
-            return Observable.FromAsync(async ct =>
+            return ObservableEx.FromUniTask(async ct =>
             {
                 try
                 {

@@ -11,6 +11,7 @@ using Cysharp.Threading.Tasks;
 using R3;
 using Extensions;
 using Modules.Devkit.Console;
+using Modules.R3Extension;
 using Modules.Scene.Diagnostics;
 
 namespace Modules.Scene
@@ -249,7 +250,7 @@ namespace Modules.Scene
             IsTransition = true;
 
             // ※ 呼び出し元でAddTo(this)されるとシーン遷移中にdisposableされてしまうのでIObservableで公開しない.
-            Observable.FromAsync(async cancelToken => { await TransitionCore(sceneArgument, mode, false, registerHistory, cancelToken); return Unit.Default; })
+            ObservableEx.FromUniTask(cancelToken => TransitionCore(sceneArgument, mode, false, registerHistory, cancelToken))
                 .Subscribe(_ => IsTransition = false)
                 .AddTo(transitionCancelSource.Token);
         }
@@ -263,7 +264,7 @@ namespace Modules.Scene
             IsTransition = true;
 
             // ※ 呼び出し元でAddTo(this)されるとシーン遷移中にdisposableされてしまうのでIObservableで公開しない.
-            Observable.FromAsync(async cancelToken => { await TransitionCore(currentSceneArgument, LoadSceneMode.Additive, false, false, cancelToken); return Unit.Default; })
+            ObservableEx.FromUniTask(cancelToken => TransitionCore(currentSceneArgument, LoadSceneMode.Additive, false, false, cancelToken))
                 .Subscribe(_ => IsTransition = false)
                 .AddTo(transitionCancelSource.Token);
         }
@@ -312,7 +313,7 @@ namespace Modules.Scene
             {
                 IsTransition = true;
 
-                Observable.FromAsync(async cancelToken => { await TransitionCore(argument, LoadSceneMode.Additive, true, false, cancelToken); return Unit.Default; })
+                ObservableEx.FromUniTask(cancelToken => TransitionCore(argument, LoadSceneMode.Additive, true, false, cancelToken))
                     .Subscribe(_ => IsTransition = false)
                     .AddTo(transitionCancelSource.Token);
             }
@@ -772,7 +773,7 @@ namespace Modules.Scene
 
             if (observable == null)
             {
-                observable = Observable.FromAsync(async ct => await LoadSceneCore(identifier, mode))
+                observable = ObservableEx.FromUniTask(ct => LoadSceneCore(identifier, mode))
                     .Do(_ => loadingScenes.Remove(identifier))
                     .Share();
 
@@ -982,7 +983,7 @@ namespace Modules.Scene
 
             if (observable == null)
             {
-                observable = Observable.FromAsync(async ct => { await UnloadSceneCore(sceneInstance); return Unit.Default; })
+                observable = ObservableEx.FromUniTask(ct => UnloadSceneCore(sceneInstance))
                     .Do(_ => unloadingScenes.Remove(identifier))
                     .Share();
 

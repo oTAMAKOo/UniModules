@@ -10,6 +10,7 @@ using Cysharp.Threading.Tasks;
 using R3;
 using Extensions;
 using Extensions.Devkit;
+using Modules.R3Extension;
 using Modules.UI.Particle;
 
 namespace Modules.Particle
@@ -183,7 +184,7 @@ namespace Modules.Particle
 
                                     Reflection.InvokePrivateMethod(instance, "RunCollectContents");
 
-                                    emulateDisposable = Observable.FromAsync(async ct => { await instance.Play(); return Unit.Default; })
+                                    emulateDisposable = ObservableEx.FromUniTask(ct => instance.Play())
                                         .Subscribe(_ =>
                                             {
                                                 instance.Stop(true, true);

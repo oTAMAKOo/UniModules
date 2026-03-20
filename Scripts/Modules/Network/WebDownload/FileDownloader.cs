@@ -6,6 +6,7 @@ using System.Threading;
 using Cysharp.Threading.Tasks;
 using R3;
 using Extensions;
+using Modules.R3Extension;
 
 namespace Modules.Net.WebDownload
 {
@@ -117,7 +118,7 @@ namespace Modules.Net.WebDownload
                 }
                 else
                 {
-                    observable = Observable.FromAsync(async token => await SendRequestInternal(downloadRequest, progress, token)).Share();
+                    observable = ObservableEx.FromUniTask(token => SendRequestInternal(downloadRequest, progress, token)).Share();
 
                     var downloadInfo = new DownloadInfo(downloadRequest, observable);
 
