@@ -29,7 +29,7 @@ namespace Modules.UI
 
             eventTrigger
                 .OnBeginDragAsObservable()
-                .TakeUntil(this.OnDisableAsObservable())
+                .TakeUntilDisable(this)
                 .Where(eventData => eventData.pointerDrag.gameObject == gameObject)
                 .Select(eventData => eventData.position)
                 .Subscribe(position =>
@@ -43,7 +43,7 @@ namespace Modules.UI
 
             eventTrigger
                 .OnDragAsObservable()
-                .TakeUntil(this.OnDisableAsObservable())
+                .TakeUntilDisable(this)
                 .Where(eventData => eventData.pointerDrag.gameObject == gameObject)
                 .Select(eventData => eventData.position)
                 .Subscribe(position =>
@@ -57,7 +57,7 @@ namespace Modules.UI
 
             eventTrigger
                 .OnEndDragAsObservable()
-                .TakeUntil(this.OnDisableAsObservable())
+                .TakeUntilDisable(this)
                 .Where(eventData => eventData.pointerDrag.gameObject == gameObject)
                 .Select(eventData => eventData.position)
                 .Subscribe(position =>

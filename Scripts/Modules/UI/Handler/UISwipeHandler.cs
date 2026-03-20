@@ -38,7 +38,7 @@ namespace Modules.UI
 
             eventTrigger
                 .OnBeginDragAsObservable()
-                .TakeUntil(this.OnDisableAsObservable())
+                .TakeUntilDisable(this)
                 .Where(eventData =>
                    {
                        return eventData.pointerDrag != null &&
@@ -55,7 +55,7 @@ namespace Modules.UI
 
             var onEndDragObservable = eventTrigger
                 .OnEndDragAsObservable()
-                .TakeUntil(this.OnDisableAsObservable())
+                .TakeUntilDisable(this)
                 .Where(eventData => (DateTime.Now - beginTime).TotalSeconds < thresholdSenconds)
                 .Select(eventData => eventData.position)
                 .Share();

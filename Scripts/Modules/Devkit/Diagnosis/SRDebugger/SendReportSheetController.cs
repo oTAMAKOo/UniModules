@@ -6,7 +6,6 @@ using System;
 using System.Threading;
 using Cysharp.Threading.Tasks;
 using R3;
-using R3.Triggers;
 using Extensions;
 using Modules.Devkit.Diagnosis.SendReport;
 
@@ -106,7 +105,7 @@ namespace Modules.Devkit.Diagnosis.SRDebugger
                 .AddTo(this);
 
             Observable.EveryUpdate()
-                .TakeUntil(this.OnDisableAsObservable())
+                .TakeUntilDisable(this)
                 .Subscribe(_ => UnityUtility.SetActive(sendReportButton, IsSendReportButtonEnable()))
                 .AddTo(this);
         }

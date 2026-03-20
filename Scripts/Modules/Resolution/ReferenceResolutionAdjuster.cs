@@ -4,7 +4,6 @@ using UnityEngine.UI;
 using System.Linq;
 using Unity.Linq;
 using R3;
-using R3.Triggers;
 using Extensions;
 
 namespace Modules.Resolution
@@ -27,7 +26,7 @@ namespace Modules.Resolution
 			{
 				// OnEnableでApplyしてもRectTransformに反映されない事があるので最初のUpdateで再度実行.
 				Observable.EveryUpdate()
-					.TakeUntil(this.OnDisableAsObservable())
+					.TakeUntilDisable(this)
 					.Take(1)
 					.Subscribe(_ => Apply())
 					.AddTo(this);

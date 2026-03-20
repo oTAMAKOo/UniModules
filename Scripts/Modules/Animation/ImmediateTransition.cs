@@ -4,7 +4,6 @@ using System;
 using System.Linq;
 using System.Collections.Generic;
 using R3;
-using R3.Triggers;
 using Extensions;
 
 namespace Modules.Animation
@@ -29,7 +28,7 @@ namespace Modules.Animation
         void OnEnable()
         {
             Observable.EveryUpdate(UnityFrameProvider.PostLateUpdate)
-                .TakeUntil(this.OnDisableAsObservable())
+                .TakeUntilDisable(this)
                 .Take(1)
                 .Subscribe(_ => ForceTransitionNextState())
                 .AddTo(this);
