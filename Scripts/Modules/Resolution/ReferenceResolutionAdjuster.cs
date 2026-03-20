@@ -27,8 +27,8 @@ namespace Modules.Resolution
 			{
 				// OnEnableでApplyしてもRectTransformに反映されない事があるので最初のUpdateで再度実行.
 				Observable.EveryUpdate()
-					.FirstAsync()
 					.TakeUntil(this.OnDisableAsObservable())
+					.Take(1)
 					.Subscribe(_ => Apply())
 					.AddTo(this);
 			}

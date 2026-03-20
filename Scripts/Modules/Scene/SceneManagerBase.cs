@@ -249,7 +249,7 @@ namespace Modules.Scene
             IsTransition = true;
 
             // ※ 呼び出し元でAddTo(this)されるとシーン遷移中にdisposableされてしまうのでIObservableで公開しない.
-            Observable.FromAsync(cancelToken => TransitionCore(sceneArgument, mode, false, registerHistory, cancelToken))
+            Observable.FromAsync(async cancelToken => { await TransitionCore(sceneArgument, mode, false, registerHistory, cancelToken); return Unit.Default; })
                 .Subscribe(_ => IsTransition = false)
                 .AddTo(transitionCancelSource.Token);
         }
@@ -263,7 +263,7 @@ namespace Modules.Scene
             IsTransition = true;
 
             // ※ 呼び出し元でAddTo(this)されるとシーン遷移中にdisposableされてしまうのでIObservableで公開しない.
-            Observable.FromAsync(cancelToken => TransitionCore(currentSceneArgument, LoadSceneMode.Additive, false, false, cancelToken))
+            Observable.FromAsync(async cancelToken => { await TransitionCore(currentSceneArgument, LoadSceneMode.Additive, false, false, cancelToken); return Unit.Default; })
                 .Subscribe(_ => IsTransition = false)
                 .AddTo(transitionCancelSource.Token);
         }
@@ -312,7 +312,7 @@ namespace Modules.Scene
             {
                 IsTransition = true;
 
-                Observable.FromAsync(cancelToken => TransitionCore(argument, LoadSceneMode.Additive, true, false, cancelToken))
+                Observable.FromAsync(async cancelToken => { await TransitionCore(argument, LoadSceneMode.Additive, true, false, cancelToken); return Unit.Default; })
                     .Subscribe(_ => IsTransition = false)
                     .AddTo(transitionCancelSource.Token);
             }
@@ -492,7 +492,7 @@ namespace Modules.Scene
                 {
                     try
                     {
-                        _ = await UnloadScene(unloadScene);
+                        await UnloadScene(unloadScene).FirstAsync(cancelToken);
                     }
                     catch (Exception e)
                     {
@@ -527,7 +527,7 @@ namespace Modules.Scene
             {
                 try
                 {
-                    sceneInstance = await LoadScene(identifier, mode);
+                    sceneInstance = await LoadScene(identifier, mode).FirstAsync(cancelToken);
                 }
                 catch (Exception e)
                 {
@@ -634,7 +634,7 @@ namespace Modules.Scene
                 {
                     try
                     {
-                        await UnloadScene(prev).ToUniTask(cancellationToken: cancelToken);
+                        await UnloadScene(prev).FirstAsync(cancelToken);
                     }
                     catch (OperationCanceledException) 
                     {
@@ -1168,7 +1168,7 @@ namespace Modules.Scene
 
             try
             {
-                await LoadScene(targetScene, LoadSceneMode.Additive).ToUniTask();
+                await LoadScene(targetScene, LoadSceneMode.Additive).FirstAsync(preLoadCancelSource.Token);
             }
             catch (Exception e)
             {
@@ -1187,11 +1187,11 @@ namespace Modules.Scene
         #region Scene Cache
 
         /// <summary> キャッシュ済みの全シーンをアンロード. </summary>
-        public Observable<Unit> UnloadAllCacheScene()
+        public async UniTask UnloadAllCacheScene()
         {
             var sceneInstances = cacheScenes.ToArray();
 
-            return sceneInstances.Select(x => UnloadScene(x)).WhenAll().Select(_ => Unit.Default);
+            await UniTask.WhenAll(sceneInstances.Select(x => UnloadScene(x).FirstAsync(CancellationToken.None)));
         }
 
         /// <summary> キャッシュ済みのシーンをアンロード. </summary>

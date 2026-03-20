@@ -29,8 +29,8 @@ namespace Modules.Animation
         void OnEnable()
         {
             Observable.EveryUpdate(UnityFrameProvider.PostLateUpdate)
-                .FirstAsync()
                 .TakeUntil(this.OnDisableAsObservable())
+                .Take(1)
                 .Subscribe(_ => ForceTransitionNextState())
                 .AddTo(this);
         }

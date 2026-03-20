@@ -9,12 +9,12 @@ namespace Extensions
 	{
 		public static void Forget(this UniTask task, Component component)
 		{
-			task.ToObservable().Subscribe().AddTo(component);
+			task.ToObservable().Subscribe(_ => { }).AddTo(component);
 		}
 
 		public static void Forget(this UniTask task, GameObject gameObject)
 		{
-			task.ToObservable().Subscribe().AddTo(gameObject);
+			task.ToObservable().Subscribe(_ => { }).AddTo(gameObject);
 		}
 	}
 }

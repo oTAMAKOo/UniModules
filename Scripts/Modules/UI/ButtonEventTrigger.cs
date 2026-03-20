@@ -65,11 +65,11 @@ namespace Modules.UI
         {
             var hasObservers = false;
 
-            hasObservers |= onPress != null && onPress.HasObservers;
-            hasObservers |= onRelease != null && onRelease.HasObservers;
-            hasObservers |= onCancel != null && onCancel.HasObservers;
-            hasObservers |= onLongPress != null && onLongPress.HasObservers;
-            hasObservers |= onLongPressRelease != null && onLongPressRelease.HasObservers;
+            hasObservers |= onPress != null && !onPress.IsDisposed;
+            hasObservers |= onRelease != null && !onRelease.IsDisposed;
+            hasObservers |= onCancel != null && !onCancel.IsDisposed;
+            hasObservers |= onLongPress != null && !onLongPress.IsDisposed;
+            hasObservers |= onLongPressRelease != null && !onLongPressRelease.IsDisposed;
 
             HasObservers = hasObservers;
         }
@@ -163,9 +163,7 @@ namespace Modules.UI
             {
                 onPress = new Subject<Unit>();
 
-                onPress.ObserveEveryValueChanged(x => x.HasObservers)
-                    .Subscribe(_ => UpdateObservers())
-                    .AddTo(this);
+                UpdateObservers();
             }
 
             return onPress;
@@ -177,9 +175,7 @@ namespace Modules.UI
             {
                 onRelease = new Subject<float>();
 
-                onRelease.ObserveEveryValueChanged(x => x.HasObservers)
-                    .Subscribe(_ => UpdateObservers())
-                    .AddTo(this);
+                UpdateObservers();
             }
 
             return onRelease;
@@ -191,9 +187,7 @@ namespace Modules.UI
             {
                 onCancel = new Subject<Unit>();
 
-                onCancel.ObserveEveryValueChanged(x => x.HasObservers)
-                    .Subscribe(_ => UpdateObservers())
-                    .AddTo(this);
+                UpdateObservers();
             }
 
             return onCancel;
@@ -208,9 +202,7 @@ namespace Modules.UI
             {
                 onLongPress = new Subject<Unit>();
 
-                onLongPress.ObserveEveryValueChanged(x => x.HasObservers)
-                    .Subscribe(_ => UpdateObservers())
-                    .AddTo(this);
+                UpdateObservers();
             }
 
             return onLongPress;
@@ -222,9 +214,7 @@ namespace Modules.UI
             {
                 onLongPressRelease = new Subject<float>();
 
-                onLongPressRelease.ObserveEveryValueChanged(x => x.HasObservers)
-                    .Subscribe(_ => UpdateObservers())
-                    .AddTo(this);
+                UpdateObservers();
             }
 
             return onLongPressRelease;

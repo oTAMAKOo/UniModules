@@ -79,7 +79,7 @@ namespace Modules.UI.DummyContent
                 }
             };
 
-            Image.ObserveEveryValueChanged(x => x.sprite)
+            Observable.EveryValueChanged(Image, x => x.sprite)
                 .TakeUntil(this.OnDisableAsObservable())
                 .Subscribe(_ => onSpriteChanged())
                 .AddTo(this);

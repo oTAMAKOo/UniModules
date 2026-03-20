@@ -55,7 +55,7 @@ namespace Modules.UI
 
             if (inputField != null)
             {
-                inputField.ObserveEveryValueChanged(x => x.isFocused)
+                Observable.EveryValueChanged(inputField, x => x.isFocused)
                     .TakeUntil(this.OnDisableAsObservable())
                     .Subscribe(x => OnFocuseChanged(x))
                     .AddTo(this);

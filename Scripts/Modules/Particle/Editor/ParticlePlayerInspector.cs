@@ -85,8 +85,7 @@ namespace Modules.Particle
                 }
                 else
                 {
-                    updateDisposable = instance
-                        .ObserveEveryValueChanged(x => x.CurrentTime)
+                    updateDisposable = Observable.EveryValueChanged(instance, x => x.CurrentTime)
                         .Subscribe(x => Repaint())
                         .AddTo(disposable.Disposable);
                 }

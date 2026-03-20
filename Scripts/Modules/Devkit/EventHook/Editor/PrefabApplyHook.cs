@@ -21,7 +21,7 @@ namespace Modules.Devkit.EventHook
 
         private static string[] OnWillSaveAssets(string[] paths)
         {
-            if(!onApplyPrefab.HasObservers) { return paths; }
+            if(onApplyPrefab.IsDisposed) { return paths; }
 
             foreach (var path in paths)
             {

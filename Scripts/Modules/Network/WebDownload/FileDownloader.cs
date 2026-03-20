@@ -117,14 +117,14 @@ namespace Modules.Net.WebDownload
                 }
                 else
                 {
-                    observable = Observable.FromAsync(token => SendRequestInternal(downloadRequest, progress, token)).Share();
+                    observable = Observable.FromAsync(async token => await SendRequestInternal(downloadRequest, progress, token)).Share();
 
                     var downloadInfo = new DownloadInfo(downloadRequest, observable);
 
                     downloadItems.Add(url, downloadInfo);
                 }
 
-                result = await observable.ToUniTask(cancellationToken: cancelToken);
+                result = await observable.FirstAsync(cancelToken);
             }
             catch (OperationCanceledException)
             {

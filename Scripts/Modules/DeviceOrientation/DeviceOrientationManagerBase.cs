@@ -27,7 +27,7 @@ namespace Modules.DeviceOrientation
             Apply();
 
             // 画面方向が変化した時の処理.
-            this.ObserveEveryValueChanged(x => x.Orientation)
+            Observable.EveryValueChanged(this, x => x.Orientation)
                 .Subscribe(x => OnOrientationChanged(x))
                 .AddTo(Disposable);
 

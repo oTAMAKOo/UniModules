@@ -374,7 +374,7 @@ namespace Modules.PatternTexture
 
             crossFadeColor = color;
 
-            fadeDisposable = Observable.FromAsync(ct => Fade(crossFadeTime, ct))
+            fadeDisposable = Observable.FromAsync(async ct => await Fade(crossFadeTime, ct))
                 .Subscribe(_ => StopCrossFade())
                 .AddTo(this);
         }

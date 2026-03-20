@@ -299,7 +299,7 @@ namespace Modules.Particle
 
         public async UniTask Play(bool restart = true)
         {
-            await PlayAsObservable(restart).ToUniTask();
+            await PlayAsObservable(restart).FirstAsync();
         }
 
         private Observable<Unit> PlayAsObservable(bool restart = true)
@@ -322,7 +322,7 @@ namespace Modules.Particle
             }
 
             // 再生.
-            playObservable = Observable.FromAsync(ct => PlayInternal(ct)).Share();
+            playObservable = Observable.FromAsync(async ct => await PlayInternal(ct)).Share();
 
             return playObservable;
         }
