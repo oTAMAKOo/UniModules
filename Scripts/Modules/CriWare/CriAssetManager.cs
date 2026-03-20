@@ -252,7 +252,7 @@ namespace Modules.CriWare
         {
             if (installers.IsEmpty()){ return; }
 
-            releaseInstallerDisposable = Observable.Timer(UnUseInstallerReleaseDelay, TimeProvider.System)
+            releaseInstallerDisposable = Observable.Timer(UnUseInstallerReleaseDelay, UnityTimeProvider.Update)
                 .Subscribe(_ =>
                     {
                         foreach (var installer in installers)
