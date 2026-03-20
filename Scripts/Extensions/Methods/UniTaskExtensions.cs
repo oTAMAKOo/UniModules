@@ -71,6 +71,56 @@ namespace Extensions
 			return source.Do(onCompleted: _ => finallyAction());
 		}
 
+		//----- Retry -----
+
+		public static Observable<T> OnErrorRetry<T, TException>(
+			this Observable<T> source,
+			Action<TException> onError,
+			int retryMaxCount,
+			float retryDelay) where TException : Exception
+		{
+			return OnErrorRetry(source, onError, retryMaxCount, TimeSpan.FromSeconds(retryDelay));
+		}
+
+		public static Observable<T> OnErrorRetry<T, TException>(
+			this Observable<T> source,
+			Action<TException> onError,
+			int retryMaxCount,
+			TimeSpan retryDelay) where TException : Exception
+		{
+			return Observable.Create<T>((observer, ct) =>
+			{
+				var retryCount = 0;
+
+				void Subscribe()
+				{
+					source.Subscribe(
+						onNext: value => observer.OnNext(value),
+						onErrorResume: ex =>
+						{
+							if (ex is TException tex && retryCount < retryMaxCount)
+							{
+								retryCount++;
+								onError(tex);
+								Observable.Timer(retryDelay, TimeProvider.System)
+									.Subscribe(_ => Subscribe())
+									.RegisterTo(ct);
+							}
+							else
+							{
+								observer.OnCompleted(Result.Failure(ex));
+							}
+						},
+						onCompleted: result => observer.OnCompleted(result))
+					.RegisterTo(ct);
+				}
+
+				Subscribe();
+
+				return default;
+			});
+		}
+
 		//----- Conversion -----
 
 		public static Observable<Unit> AsUnitObservable<T>(this Observable<T> source)
@@ -78,9 +128,9 @@ namespace Extensions
 			return source.Select(_ => Unit.Default);
 		}
 
-		public static UniTask<T> ToUniTask<T>(this Observable<T> observable, CancellationToken cancellationToken = default)
+		public static async UniTask<T> ToUniTask<T>(this Observable<T> observable, CancellationToken cancellationToken = default)
 		{
-			return observable.FirstAsync(cancellationToken);
+			return await observable.FirstAsync(cancellationToken);
 		}
 
 		public static async UniTask ToUniTask(this Observable<Unit> observable, CancellationToken cancellationToken = default)
@@ -92,12 +142,12 @@ namespace Extensions
 
 		public static void Forget(this UniTask task, Component component)
 		{
-			task.ToObservable().Subscribe(_ => { }).AddTo(component);
+			task.AttachExternalCancellation(component.GetCancellationTokenOnDestroy()).Forget();
 		}
 
 		public static void Forget(this UniTask task, GameObject gameObject)
 		{
-			task.ToObservable().Subscribe(_ => { }).AddTo(gameObject);
+			task.AttachExternalCancellation(gameObject.GetCancellationTokenOnDestroy()).Forget();
 		}
 	}
 }

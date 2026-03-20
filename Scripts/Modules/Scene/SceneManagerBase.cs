@@ -772,8 +772,7 @@ namespace Modules.Scene
 
             if (observable == null)
             {
-                observable = LoadSceneCore(identifier, mode)
-                    .ToObservable()
+                observable = Observable.FromAsync(async ct => await LoadSceneCore(identifier, mode))
                     .Do(_ => loadingScenes.Remove(identifier))
                     .Share();
 
@@ -983,9 +982,7 @@ namespace Modules.Scene
 
             if (observable == null)
             {
-                observable = UnloadSceneCore(sceneInstance)
-                    .ToObservable()
-                    .Select(_ => Unit.Default)
+                observable = Observable.FromAsync(async ct => { await UnloadSceneCore(sceneInstance); return Unit.Default; })
                     .Do(_ => unloadingScenes.Remove(identifier))
                     .Share();
 
