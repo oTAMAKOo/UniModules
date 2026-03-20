@@ -83,7 +83,7 @@ namespace Modules.Sound
             CriAtomExSequencer.OnCallback += ReceiveSoundEvent;
 
             // 一定周期で未使用状態になったAcbの解放を行う.
-            Observable.Interval(TimeSpan.FromSeconds(5f), TimeProvider.System)
+            Observable.Interval(TimeSpan.FromSeconds(5f), UnityTimeProvider.Update)
                 .Subscribe(_ => ReleaseSoundSheet())
                 .AddTo(Disposable);
 

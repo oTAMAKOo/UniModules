@@ -122,7 +122,7 @@ namespace Extensions
 							{
 								retryCount++;
 								onError(tex);
-								Observable.Timer(retryDelay, TimeProvider.System)
+								Observable.Timer(retryDelay, UnityTimeProvider.Update)
 									.Subscribe(_ => Subscribe())
 									.RegisterTo(ct);
 							}

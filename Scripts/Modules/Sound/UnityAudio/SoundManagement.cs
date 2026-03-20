@@ -91,7 +91,7 @@ namespace Modules.Sound
                 .AddTo(Disposable);
 
             // 一定周期でAudioSourceの更新を実行.
-            Observable.Interval(TimeSpan.FromSeconds(5f), TimeProvider.System)
+            Observable.Interval(TimeSpan.FromSeconds(5f), UnityTimeProvider.Update)
                 .Subscribe(_ => UpdateSoundSource())
                 .AddTo(Disposable);
 
