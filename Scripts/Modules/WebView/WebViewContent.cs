@@ -90,7 +90,7 @@ namespace Modules.WebView
             }
 
             return Observable.EveryUpdate()
-                .Timeout(new TimeSpan(0, 0, 0, TimeOutSeconds), TimeProvider.System)
+                .Timeout(new TimeSpan(0, 0, 0, TimeOutSeconds), UnityTimeProvider.Update)
                 .OnErrorRetry((TimeoutException ex) => OnTimeout(ex), RetryCount, new TimeSpan(0, 0, 0, RetryDelaySeconds))
                 .Do(onCompleted: OnLoadCompleted)
                 .SkipWhile(_ => Loading)

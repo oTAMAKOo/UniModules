@@ -676,7 +676,7 @@ namespace Modules.AssetBundles
             }
 
             var task = ObservableEx.FromUniTask(ct => LoadAssetBundle(installPath, info, ct))
-                .Timeout(LoadTimeout, TimeProvider.System)
+                .Timeout(LoadTimeout, UnityTimeProvider.Update)
                 .OnErrorRetry((TimeoutException ex) => {}, RetryCount, RetryDelaySeconds)
                 .OnErrorRetry((FileLoadException ex) => {}, RetryCount, RetryDelaySeconds)
                 .Do(onCompleted: OnLoadCompleted)
