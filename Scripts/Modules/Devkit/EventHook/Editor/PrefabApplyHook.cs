@@ -2,7 +2,7 @@
 using UnityEngine;
 using UnityEditor;
 using System;
-using UniRx;
+using R3;
 using Extensions.Devkit;
 
 namespace Modules.Devkit.EventHook
@@ -21,7 +21,7 @@ namespace Modules.Devkit.EventHook
 
         private static string[] OnWillSaveAssets(string[] paths)
         {
-            if(!onApplyPrefab.HasObservers) { return paths; }
+            if(onApplyPrefab.IsDisposed) { return paths; }
 
             foreach (var path in paths)
             {
@@ -39,7 +39,7 @@ namespace Modules.Devkit.EventHook
             return paths;
         }
 
-        public static IObservable<GameObject> OnApplyPrefabAsObservable()
+        public static Observable<GameObject> OnApplyPrefabAsObservable()
         {
             return onApplyPrefab;
         }

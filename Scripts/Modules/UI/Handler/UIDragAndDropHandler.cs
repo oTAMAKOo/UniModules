@@ -1,8 +1,8 @@
 ﻿
 using System;
 using UnityEngine;
-using UniRx;
-using UniRx.Triggers;
+using R3;
+using R3.Triggers;
 using Extensions;
 
 namespace Modules.UI
@@ -75,17 +75,17 @@ namespace Modules.UI
             UnityUtility.DeleteGameObject(eventTrigger);
         }  
 
-        public IObservable<Vector2> OnDragStartAsObservable()
+        public Observable<Vector2> OnDragStartAsObservable()
         {
             return onDragStart ?? (onDragStart = new Subject<Vector2>());
         }
 
-        public IObservable<Vector2> OnDragAsObservable()
+        public Observable<Vector2> OnDragAsObservable()
         {
             return onDrag ?? (onDrag = new Subject<Vector2>());
         }
 
-        public IObservable<Vector2> OnDragEndAsObservable()
+        public Observable<Vector2> OnDragEndAsObservable()
         {
             return onDragEnd ?? (onDragEnd = new Subject<Vector2>());
         }

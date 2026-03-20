@@ -2,7 +2,7 @@
 using UnityEngine;
 using System;
 using System.Collections.Generic;
-using UniRx;
+using R3;
 using Extensions;
 
 namespace Modules.Net.WebRequest
@@ -165,7 +165,7 @@ namespace Modules.Net.WebRequest
             }
         }
 
-        public IObservable<Unit> OnUpdateInfoAsObservable()
+        public Observable<Unit> OnUpdateInfoAsObservable()
         {
             return onUpdateInfo ?? (onUpdateInfo = new Subject<Unit>());
         }

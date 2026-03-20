@@ -2,7 +2,7 @@
 using System;
 using System.Linq;
 using System.Collections.Generic;
-using UniRx;
+using R3;
 using Extensions;
 
 namespace Modules.TimeUtil
@@ -116,7 +116,7 @@ namespace Modules.TimeUtil
             }
         }
 
-        public static IObservable<Timer> OnTimeAsObservable()
+        public static Observable<Timer> OnTimeAsObservable()
         {
             return onTime ?? (onTime = new Subject<Timer>());
         }

@@ -3,12 +3,14 @@ using UnityEngine;
 using UnityEditor;
 using System;
 using System.IO;
-using System.Collections;
 using System.Linq;
 using System.Collections.Generic;
-using UniRx;
+using System.Threading;
+using Cysharp.Threading.Tasks;
+using R3;
 using Extensions;
 using Extensions.Devkit;
+using Modules.R3Extension;
 
 namespace Modules.Devkit.TextureViewer
 {
@@ -59,41 +61,30 @@ namespace Modules.Devkit.TextureViewer
 
             DisplayMode = DisplayMode.Texture;
 
-            // 非同期で初期化.
-            Observable.FromMicroCoroutine(() => InitializeAsync())
+            ObservableEx.FromUniTask(ct => InitializeAsync(ct))
                 .Subscribe()
                 .AddTo(Disposable);
 
             initialized = true;
         }
 
-        private IEnumerator InitializeAsync()
+        private async UniTask InitializeAsync(CancellationToken ct)
         {
             // テクスチャ情報読み込み.
-            var loadTextureInfoYield = Observable.FromMicroCoroutine<TextureInfo[]>(observer => LoadTextureInfos(observer)).ToYieldInstruction(false);
-
-            while (!loadTextureInfoYield.IsDone)
-            {
-                yield return null;
-            }
-
-            if (loadTextureInfoYield.HasResult)
-            {
-                textureInfos = loadTextureInfoYield.Result;
-            }
+            textureInfos = await LoadTextureInfos(ct);
 
             // バックグラウンド読み込み.
 
             initalLoading = true;
 
-            Observable.FromMicroCoroutine(() => LoadMainTextureBackground())
+            ObservableEx.FromUniTask(ct => LoadMainTextureBackground(ct))
                 .Subscribe()
                 .AddTo(Disposable);
 
             // View初期化.
 
             InitializeViews();
-            
+
             // 1秒後に表示.
 
             Observable.Timer(TimeSpan.FromSeconds(1))
@@ -170,7 +161,7 @@ namespace Modules.Devkit.TextureViewer
             footerView.DrawGUI();
         }
 
-        private IEnumerator LoadTextureInfos(IObserver<TextureInfo[]> observer)
+        private async UniTask<TextureInfo[]> LoadTextureInfos(CancellationToken ct)
         {
             var config = TextureViewerConfig.Instance;
 
@@ -183,7 +174,7 @@ namespace Modules.Devkit.TextureViewer
 
             var index = 0;
             var total = textureGuids.Length;
-            
+
             var chunk = textureGuids.Chunk(100).ToArray();
 
             Action displayProgress = () =>
@@ -191,94 +182,109 @@ namespace Modules.Devkit.TextureViewer
                 EditorUtility.DisplayProgressBar("Progress", "Loading texture infos in project", (float)index / total);
             };
 
-            foreach (var guids in chunk)
+            try
             {
-                displayProgress.Invoke();
-
-                foreach (var guid in guids)
+                foreach (var guids in chunk)
                 {
-                    index++;
+                    displayProgress.Invoke();
 
-                    var assetPath = PathUtility.ConvertPathSeparator(AssetDatabase.GUIDToAssetPath(guid));
+                    foreach (var guid in guids)
+                    {
+                        index++;
 
-                    // Assets以外のファイル除外.
-                    if (!assetPath.StartsWith(UnityEditorUtility.AssetsFolderName)) { continue; }
+                        var assetPath = PathUtility.ConvertPathSeparator(AssetDatabase.GUIDToAssetPath(guid));
 
-                    // 除外フォルダ以下のファイル除外.
-                    if (ignoreFolderPaths.Any(y => assetPath.StartsWith(y))) { continue; }
+                        // Assets以外のファイル除外.
+                        if (!assetPath.StartsWith(UnityEditorUtility.AssetsFolderName)) { continue; }
 
-                    // 除外フォルダ名を含むファイル除外.
+                        // 除外フォルダ以下のファイル除外.
+                        if (ignoreFolderPaths.Any(y => assetPath.StartsWith(y))) { continue; }
 
-                    var assetFolderPath = PathUtility.ConvertPathSeparator(Path.GetDirectoryName(assetPath));
-                    var folders = assetFolderPath.Split(PathUtility.PathSeparator);
+                        // 除外フォルダ名を含むファイル除外.
 
-                    if (folders.Any(x => ignoreFolderNames.Contains(x))) { continue; }
+                        var assetFolderPath = PathUtility.ConvertPathSeparator(Path.GetDirectoryName(assetPath));
+                        var folders = assetFolderPath.Split(PathUtility.PathSeparator);
 
-                    // 生成.
+                        if (folders.Any(x => ignoreFolderNames.Contains(x))) { continue; }
 
-                    var info = new TextureInfo(index, guid, assetPath);
+                        // 生成.
 
-                    // TextureImporterが取得できない場合は除外.
-                
-                    if (info.TextureImporter == null) { continue; }
-                
-                    // 追加.
+                        var info = new TextureInfo(index, guid, assetPath);
 
-                    infos.Add(info);
+                        // TextureImporterが取得できない場合は除外.
+
+                        if (info.TextureImporter == null) { continue; }
+
+                        // 追加.
+
+                        infos.Add(info);
+                    }
+
+                    await UniTask.Yield(ct);
                 }
-
-                yield return null;
+            }
+            catch (OperationCanceledException)
+            {
+                /* キャンセルは処理しない */
             }
 
             displayProgress.Invoke();
 
-            observer.OnNext(infos.ToArray());
-            observer.OnCompleted();
+            return infos.ToArray();
         }
 
-        private IEnumerator LoadMainTextureBackground()
+        private async UniTask LoadMainTextureBackground(CancellationToken ct)
         {
             var chunk = textureInfos.Chunk(15).ToArray();
 
             var index = 0;
             var total = textureInfos.Length;
 
-            foreach (var textureInfos in chunk)
+            try
             {
-                var loadingText = string.Format("Loading Texture [{0} / {1}]", index, total);
+                foreach (var textureInfos in chunk)
+                {
+                    var loadingText = string.Format("Loading Texture [{0} / {1}]", index, total);
+
+                    if (footerView != null)
+                    {
+                        footerView.SetLoadingProgressText(loadingText);
+
+                        Repaint();
+                    }
+
+                    if (initalLoading)
+                    {
+                        EditorUtility.DisplayProgressBar("Progress", loadingText, (float)index / total);
+                    }
+
+                    foreach (var textureInfo in textureInfos)
+                    {
+                        textureInfo.GetTexture();
+                        index++;
+                    }
+
+                    await UniTask.Yield(ct);
+                }
+            }
+            catch (OperationCanceledException)
+            {
+                /* キャンセルは処理しない */
+            }
+            finally
+            {
+                if (initalLoading)
+                {
+                    EditorUtility.ClearProgressBar();
+                }
 
                 if (footerView != null)
                 {
-                    footerView.SetLoadingProgressText(loadingText);
-
-                    Repaint();
+                    footerView.SetLoadingProgressText(null);
                 }
 
-                if (initalLoading)
-                {
-                    EditorUtility.DisplayProgressBar("Progress", loadingText, (float)index / total);
-                }
-
-                foreach (var textureInfo in textureInfos)
-                {
-                    textureInfo.GetTexture();
-                    index++;
-                }
-
-                yield return null;
+                Repaint();
             }
-
-            if (initalLoading)
-            {
-                EditorUtility.ClearProgressBar();
-            }
-
-            if (footerView != null)
-            {
-                footerView.SetLoadingProgressText(null);
-            }
-
-            Repaint();
         }
         
         private TextureInfo[] GetTextureInfos(string searchText)

@@ -2,7 +2,7 @@
 using System;
 using UnityEngine;
 using UnityEditor;
-using UniRx;
+using R3;
 
 namespace Extensions.Devkit
 {
@@ -64,7 +64,7 @@ namespace Extensions.Devkit
             instance = null;
         }
 
-        public IObservable<Unit> OnDestroyAsObservable()
+        public Observable<Unit> OnDestroyAsObservable()
         {
             return onDestroy ?? (onDestroy = new Subject<Unit>());
         }

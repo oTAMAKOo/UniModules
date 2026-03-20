@@ -2,7 +2,7 @@
 using UnityEngine;
 using UnityEngine.UI;
 using System;
-using UniRx;
+using R3;
 using Extensions;
 
 namespace Modules.UI.DummyContent

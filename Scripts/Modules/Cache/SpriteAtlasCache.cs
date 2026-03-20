@@ -2,7 +2,7 @@
 using UnityEngine;
 using UnityEngine.U2D;
 using System.Collections.Generic;
-using UniRx;
+using R3;
 using Extensions;
 
 namespace Modules.Cache
@@ -35,7 +35,7 @@ namespace Modules.Cache
                     }
                 }
 
-                Observable.EveryEndOfFrame().Subscribe(_ => DeleteSprites());
+                Observable.EveryUpdate(UnityFrameProvider.PostLateUpdate).Subscribe(_ => DeleteSprites());
 
                 initialized = true;
             }

@@ -1,7 +1,7 @@
 
 using UnityEngine;
 using System;
-using UniRx;
+using R3;
 
 namespace Modules.Animation
 {
@@ -27,7 +27,7 @@ namespace Modules.Animation
             }
         }
 
-        public IObservable<StateMachineEvent> OnStateMachineEventAsObservable()
+        public Observable<StateMachineEvent> OnStateMachineEventAsObservable()
         {
             return onStateMachineEvent ?? (onStateMachineEvent = new Subject<StateMachineEvent>());
         }

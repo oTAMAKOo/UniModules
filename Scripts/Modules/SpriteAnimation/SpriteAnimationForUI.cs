@@ -1,7 +1,7 @@
 ﻿
 using UnityEngine;
 using UnityEngine.UI;
-using UniRx;
+using R3;
 using Extensions;
 
 namespace Modules.SpriteAnimation

@@ -2,7 +2,7 @@
 using UnityEngine;
 using UnityEngine.UI;
 using System;
-using UniRx;
+using R3;
 
 namespace Modules.UI.Extension
 {
@@ -48,7 +48,7 @@ namespace Modules.UI.Extension
             }
         }
 
-        public IObservable<bool> OnChangeAsObservable()
+        public Observable<bool> OnChangeAsObservable()
         {
             return onChange ?? (onChange = new Subject<bool>());
         }

@@ -7,7 +7,7 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using Cysharp.Threading.Tasks;
-using UniRx;
+using R3;
 using Extensions;
 using Modules.Devkit.Console;
 using Modules.AssetBundles;
@@ -518,7 +518,7 @@ namespace Modules.ExternalAssets
 
         /// <summary> アセットバンドル読み込み時イベント </summary>
         /// <returns> 該当アセットバンドルのFilePath </returns>
-        public IObservable<string> OnLoadAssetBundleAsObservable()
+        public Observable<string> OnLoadAssetBundleAsObservable()
         {
             if (assetBundleManager == null){ return Observable.Empty<string>(); }
 

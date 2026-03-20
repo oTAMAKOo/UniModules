@@ -2,7 +2,7 @@
 using UnityEngine;
 using System;
 using Cysharp.Threading.Tasks;
-using UniRx;
+using R3;
 using Extensions;
 
 namespace Modules.WebView
@@ -134,12 +134,12 @@ namespace Modules.WebView
 			}
 		}
 
-        public IObservable<Unit> OnLoadAsObservable()
+        public Observable<Unit> OnLoadAsObservable()
         {
             return onLoad ?? (onLoad = new Subject<Unit>());
         }
 
-        public IObservable<Unit> OnStopAsObservable()
+        public Observable<Unit> OnStopAsObservable()
         {
             return onStop ?? (onStop = new Subject<Unit>());
         }

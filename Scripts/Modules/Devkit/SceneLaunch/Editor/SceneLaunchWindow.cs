@@ -3,7 +3,7 @@ using UnityEngine;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using System;
-using UniRx;
+using R3;
 using Extensions.Devkit;
 using Modules.Devkit.Prefs;
 

@@ -3,7 +3,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.EventSystems;
 using System;
-using UniRx;
+using R3;
 using Extensions;
 
 namespace Modules.UI
@@ -140,7 +140,7 @@ namespace Modules.UI
             Snap(nearestTarget);
         }
 
-        public IObservable<GameObject> OnSnapAsObservable()
+        public Observable<GameObject> OnSnapAsObservable()
         {
             return onSnap ?? (onSnap = new Subject<GameObject>());
         }

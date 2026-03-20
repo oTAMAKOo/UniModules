@@ -1,8 +1,9 @@
 
 using UnityEngine;
 using UnityEngine.UI;
+using Extensions;
 using Extensions.Serialize;
-using UniRx;
+using R3;
 
 namespace Modules.UI.ScreenRotation
 {
@@ -69,8 +70,8 @@ namespace Modules.UI.ScreenRotation
 		{
             // OnEnableのタイミングでApplyしてもRectTransformに反映されないので最初のUpdateで実行.
             Observable.EveryUpdate()
-                .First()
                 .TakeUntilDisable(this)
+                .Take(1)
                 .Subscribe(_ => Apply())
                 .AddTo(this);
         }

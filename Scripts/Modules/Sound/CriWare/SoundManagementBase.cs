@@ -7,7 +7,7 @@ using System.IO;
 using System.Linq;
 using System.Collections.Generic;
 using CriWare;
-using UniRx;
+using R3;
 using Cysharp.Threading.Tasks;
 using Extensions;
 
@@ -83,12 +83,12 @@ namespace Modules.Sound
             CriAtomExSequencer.OnCallback += ReceiveSoundEvent;
 
             // 一定周期で未使用状態になったAcbの解放を行う.
-            Observable.Interval(TimeSpan.FromSeconds(5f))
+            Observable.Interval(TimeSpan.FromSeconds(5f), UnityTimeProvider.Update)
                 .Subscribe(_ => ReleaseSoundSheet())
                 .AddTo(Disposable);
 
             // 毎フレームの最後に再生済みリストをクリア.
-            Observable.EveryEndOfFrame()
+            Observable.EveryUpdate(UnityFrameProvider.PostLateUpdate)
                 .Subscribe(_ => currentFramePlayedSounds.Clear())
                 .AddTo(Disposable);
 
@@ -602,13 +602,13 @@ namespace Modules.Sound
         }
 
         /// <summary> 全ポーズイベント </summary>
-        public IObservable<Unit> OnPauseAllAsObservable()
+        public Observable<Unit> OnPauseAllAsObservable()
         {
             return onPauseAll ?? (onPauseAll = new Subject<Unit>());
         }
 
         /// <summary> 全レジュームイベント </summary>
-        public IObservable<CriAtomEx.ResumeMode> OnResumeAllAsObservable()
+        public Observable<CriAtomEx.ResumeMode> OnResumeAllAsObservable()
         {
             return onResumeAll ?? (onResumeAll = new Subject<CriAtomEx.ResumeMode>());
         }

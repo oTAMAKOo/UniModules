@@ -2,7 +2,7 @@
 using System;
 using Extensions;
 
-namespace Modules.UniRxExtension
+namespace Modules.R3Extension
 {
     public sealed class AsyncHandlerScope : Scope
     {

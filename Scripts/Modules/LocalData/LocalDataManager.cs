@@ -5,7 +5,7 @@ using System.IO;
 using System.Linq;
 using System.Collections.Generic;
 using Cysharp.Threading.Tasks;
-using UniRx;
+using R3;
 using Extensions;
 using Modules.Devkit.Console;
 
@@ -277,12 +277,12 @@ namespace Modules.LocalData
             }
         }
 
-        public IObservable<ILocalData> OnLoadAsObservable()
+        public Observable<ILocalData> OnLoadAsObservable()
         {
             return onLoad ?? (onLoad = new Subject<ILocalData>());
         }
 
-        public IObservable<ILocalData> OnSaveAsObservable()
+        public Observable<ILocalData> OnSaveAsObservable()
         {
             return onSave ?? (onSave = new Subject<ILocalData>());
         }

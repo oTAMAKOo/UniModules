@@ -5,7 +5,7 @@ using UnityEngine.EventSystems;
 using System;
 using System.Threading;
 using Cysharp.Threading.Tasks;
-using UniRx;
+using R3;
 using Extensions;
 using Modules.Devkit.Diagnosis.SendReport;
 
@@ -101,7 +101,6 @@ namespace Modules.Devkit.Diagnosis.SRDebugger
             UpdateView();
 
             Observable.NextFrame()
-                .TakeUntilDisable(this)
                 .Subscribe(_ => OnRequestRefreshInputText())
                 .AddTo(this);
 
@@ -131,9 +130,7 @@ namespace Modules.Devkit.Diagnosis.SRDebugger
             await CaptureScreenShot();
 
 			// 進捗.
-            var notifier = new ScheduledNotifier<float>();
-
-            notifier.Subscribe(x => UpdatePostProgress(x));
+            var notifier = new Progress<float>(x => UpdatePostProgress(x));
 
 			try
 			{
@@ -223,7 +220,7 @@ namespace Modules.Devkit.Diagnosis.SRDebugger
 
 			await UniTask.NextFrame();
 
-            await sendReportManager.CaptureScreenShot().ToObservable();
+            await sendReportManager.CaptureScreenShot().ToUniTask();
 
 			srDebug.ShowDebugPanel(false);
 

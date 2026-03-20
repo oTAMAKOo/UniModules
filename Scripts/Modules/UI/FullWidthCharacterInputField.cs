@@ -1,7 +1,7 @@
 ﻿
 using UnityEngine;
 using UnityEngine.UI;
-using UniRx;
+using R3;
 using Extensions;
 
 namespace Modules.UI
@@ -64,7 +64,7 @@ namespace Modules.UI
                     .Subscribe(_ => UpdateContents())
                     .AddTo(this);
 
-                Observable.EveryLateUpdate()
+                Observable.EveryUpdate(UnityFrameProvider.PostLateUpdate)
                     .TakeUntilDisable(this)
                     .Subscribe(_ => LateUpdateContents())
                     .AddTo(this);

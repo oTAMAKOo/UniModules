@@ -10,7 +10,7 @@ using System.Runtime.InteropServices;
 using System.Threading;
 using AOT;
 using Cysharp.Threading.Tasks;
-using UniRx;
+using R3;
 using Extensions;
 
 namespace Modules.StandAloneWindows
@@ -348,7 +348,7 @@ namespace Modules.StandAloneWindows
             WindowHandle.SetWindowLong(GWLP_WNDPROC, oldWndProcPtr);
         }
 
-        public IObservable<ResolutionChangeInfo> OnResolutionChangedAsObservable()
+        public Observable<ResolutionChangeInfo> OnResolutionChangedAsObservable()
         {
             return onResolutionChanged ?? (onResolutionChanged = new Subject<ResolutionChangeInfo>());
         }

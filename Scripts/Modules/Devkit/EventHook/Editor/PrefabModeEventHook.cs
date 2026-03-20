@@ -5,7 +5,7 @@ using UnityEditor;
 using System;
 using System.Linq;
 using System.Collections.Generic;
-using UniRx;
+using R3;
 using Extensions;
 using Extensions.Devkit;
 using UnityEditor.Experimental.SceneManagement;
@@ -70,22 +70,22 @@ namespace Modules.Devkit.EventHook
             }
         }
 
-        public static IObservable<PrefabStage> OnOpenPrefabModeAsObservable()
+        public static Observable<PrefabStage> OnOpenPrefabModeAsObservable()
         {
             return onOpenPrefabMode ?? (onOpenPrefabMode = new Subject<PrefabStage>());
         }
 
-        public static IObservable<PrefabStage> OnClosePrefabModeAsObservable()
+        public static Observable<PrefabStage> OnClosePrefabModeAsObservable()
         {
             return onClosePrefabMode ?? (onClosePrefabMode = new Subject<PrefabStage>());
         }
 
-        public static IObservable<GameObject> OnSavingPrefabModeAsObservable()
+        public static Observable<GameObject> OnSavingPrefabModeAsObservable()
         {
             return onSavingPrefabMode ?? (onSavingPrefabMode = new Subject<GameObject>());
         }
 
-        public static IObservable<GameObject> OnSavedPrefabModeAsObservable()
+        public static Observable<GameObject> OnSavedPrefabModeAsObservable()
         {
             return onSavedPrefabMode ?? (onSavedPrefabMode = new Subject<GameObject>());
         }

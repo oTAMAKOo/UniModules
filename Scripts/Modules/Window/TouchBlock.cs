@@ -4,7 +4,7 @@ using UnityEngine.UI;
 using System;
 using System.Threading;
 using Cysharp.Threading.Tasks;
-using UniRx;
+using R3;
 using Extensions;
 
 namespace Modules.Window
@@ -121,7 +121,7 @@ namespace Modules.Window
             SetAlpha(1f);
         }
 
-        public IObservable<Unit> OnBlockTouchAsObservable()
+        public Observable<Unit> OnBlockTouchAsObservable()
         {
             return onBlockTouch ?? (onBlockTouch = new Subject<Unit>());
         }

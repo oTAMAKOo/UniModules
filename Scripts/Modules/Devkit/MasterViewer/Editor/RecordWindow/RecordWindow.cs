@@ -4,7 +4,7 @@ using UnityEditor;
 using System;
 using System.Linq;
 using System.Collections.Generic;
-using UniRx;
+using R3;
 using Extensions;
 
 namespace Modules.Devkit.MasterViewer
@@ -193,7 +193,7 @@ namespace Modules.Devkit.MasterViewer
             return list.ToArray();
         }
 
-        public IObservable<Unit> OnChangeRecordAsObservable()
+        public Observable<Unit> OnChangeRecordAsObservable()
         {
             return recordView.OnChangeRecordAsObservable();
         }

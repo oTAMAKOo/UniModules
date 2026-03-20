@@ -3,7 +3,7 @@ using UnityEngine;
 using UnityEngine.EventSystems;
 using TMPro;
 using Extensions;
-using UniRx;
+using R3;
 
 namespace Modules.UI.TextHyperlink
 {

@@ -4,7 +4,7 @@ using UnityEditor;
 using System;
 using System.Linq;
 using System.Collections.Generic;
-using UniRx;
+using R3;
 using Extensions;
 using Extensions.Devkit;
 
@@ -270,12 +270,12 @@ namespace Modules.ExternalAssets
             return groupNames.Where(x => x.IsMatch(keywords)).ToList();
         }
 
-        public IObservable<Unit> OnChangeSelectGroupAsObservable()
+        public Observable<Unit> OnChangeSelectGroupAsObservable()
         {
             return onChangeSelectGroup ?? (onChangeSelectGroup = new Subject<Unit>());
         }
 
-        public IObservable<Unit> OnRequestRepaintAsObservable()
+        public Observable<Unit> OnRequestRepaintAsObservable()
         {
             return onRequestRepaint ?? (onRequestRepaint = new Subject<Unit>());
         }

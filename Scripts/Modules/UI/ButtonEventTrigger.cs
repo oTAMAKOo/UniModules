@@ -3,8 +3,8 @@ using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.EventSystems;
 using System;
-using UniRx;
-using UniRx.Triggers;
+using R3;
+using R3.Triggers;
 using Extensions;
 
 namespace Modules.UI
@@ -65,11 +65,11 @@ namespace Modules.UI
         {
             var hasObservers = false;
 
-            hasObservers |= onPress != null && onPress.HasObservers;
-            hasObservers |= onRelease != null && onRelease.HasObservers;
-            hasObservers |= onCancel != null && onCancel.HasObservers;
-            hasObservers |= onLongPress != null && onLongPress.HasObservers;
-            hasObservers |= onLongPressRelease != null && onLongPressRelease.HasObservers;
+            hasObservers |= onPress != null && !onPress.IsDisposed;
+            hasObservers |= onRelease != null && !onRelease.IsDisposed;
+            hasObservers |= onCancel != null && !onCancel.IsDisposed;
+            hasObservers |= onLongPress != null && !onLongPress.IsDisposed;
+            hasObservers |= onLongPressRelease != null && !onLongPressRelease.IsDisposed;
 
             HasObservers = hasObservers;
         }
@@ -157,49 +157,43 @@ namespace Modules.UI
             longPressDuration = duration;
         }
 
-        public IObservable<Unit> OnPressAsObservable()
+        public Observable<Unit> OnPressAsObservable()
         {
             if(onPress == null)
             {
                 onPress = new Subject<Unit>();
 
-                onPress.ObserveEveryValueChanged(x => x.HasObservers)
-                    .Subscribe(_ => UpdateObservers())
-                    .AddTo(this);
+                UpdateObservers();
             }
 
             return onPress;
         }
 
-        public IObservable<float> OnReleaseAsObservable()
+        public Observable<float> OnReleaseAsObservable()
         {
             if(onRelease == null)
             {
                 onRelease = new Subject<float>();
 
-                onRelease.ObserveEveryValueChanged(x => x.HasObservers)
-                    .Subscribe(_ => UpdateObservers())
-                    .AddTo(this);
+                UpdateObservers();
             }
 
             return onRelease;
         }
 
-        public IObservable<Unit> OnCancelAsObservable()
+        public Observable<Unit> OnCancelAsObservable()
         {
             if(onCancel == null)
             {
                 onCancel = new Subject<Unit>();
 
-                onCancel.ObserveEveryValueChanged(x => x.HasObservers)
-                    .Subscribe(_ => UpdateObservers())
-                    .AddTo(this);
+                UpdateObservers();
             }
 
             return onCancel;
         }
 
-        public IObservable<Unit> OnLongPressAsObservable()
+        public Observable<Unit> OnLongPressAsObservable()
         {
             OnPressAsObservable().Subscribe().AddTo(this);
             OnReleaseAsObservable().Subscribe().AddTo(this);
@@ -208,23 +202,19 @@ namespace Modules.UI
             {
                 onLongPress = new Subject<Unit>();
 
-                onLongPress.ObserveEveryValueChanged(x => x.HasObservers)
-                    .Subscribe(_ => UpdateObservers())
-                    .AddTo(this);
+                UpdateObservers();
             }
 
             return onLongPress;
         }
 
-        public IObservable<float> OnLongPressReleaseAsObservable()
+        public Observable<float> OnLongPressReleaseAsObservable()
         {
             if(onLongPressRelease == null)
             {
                 onLongPressRelease = new Subject<float>();
 
-                onLongPressRelease.ObserveEveryValueChanged(x => x.HasObservers)
-                    .Subscribe(_ => UpdateObservers())
-                    .AddTo(this);
+                UpdateObservers();
             }
 
             return onLongPressRelease;

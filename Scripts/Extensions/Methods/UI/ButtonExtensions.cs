@@ -4,7 +4,7 @@ using UnityEngine.UI;
 using System;
 using System.Linq;
 using System.Collections.Generic;
-using UniRx;
+using R3;
 using Extensions;
 using Modules.UI;
 
@@ -19,35 +19,35 @@ namespace Extensions
             trigger.SetLongPressDuration(duration);
         }
 
-        public static IObservable<Unit> OnPressAsObservable(this Button button)
+        public static Observable<Unit> OnPressAsObservable(this Button button)
         {
             var trigger = UnityUtility.GetOrAddComponent<ButtonEventTrigger>(button.gameObject);
 
             return trigger.OnPressAsObservable();
         }
 
-        public static IObservable<float> OnReleaseAsObservable(this Button button)
+        public static Observable<float> OnReleaseAsObservable(this Button button)
         {
             var trigger = UnityUtility.GetOrAddComponent<ButtonEventTrigger>(button.gameObject);
 
             return trigger.OnReleaseAsObservable();
         }
 
-        public static IObservable<Unit> OnLongPressAsObservable(this Button button)
+        public static Observable<Unit> OnLongPressAsObservable(this Button button)
         {
             var trigger = UnityUtility.GetOrAddComponent<ButtonEventTrigger>(button.gameObject);
 
             return trigger.OnLongPressAsObservable();
         }
 
-        public static IObservable<float> OnLongPressReleaseAsObservable(this Button button)
+        public static Observable<float> OnLongPressReleaseAsObservable(this Button button)
         {
             var trigger = UnityUtility.GetOrAddComponent<ButtonEventTrigger>(button.gameObject);
 
             return trigger.OnLongPressReleaseAsObservable();
         }
 
-        public static IObservable<Unit> OnCancelAsObservable(this Button button)
+        public static Observable<Unit> OnCancelAsObservable(this Button button)
         {
             var trigger = UnityUtility.GetOrAddComponent<ButtonEventTrigger>(button.gameObject);
 

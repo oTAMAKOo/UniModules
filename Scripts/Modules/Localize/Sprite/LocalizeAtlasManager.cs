@@ -7,7 +7,7 @@ using System;
 using System.Linq;
 using System.Collections.Generic;
 using Cysharp.Threading.Tasks;
-using UniRx;
+using R3;
 using Extensions;
 
 namespace Modules.Localize
@@ -186,7 +186,7 @@ namespace Modules.Localize
 			return atlasCacheByAtlasFolder.Select(x => x.Key).ToArray();
 		}
 
-		public IObservable<Unit> OnLoadAtlasAsObservable()
+		public Observable<Unit> OnLoadAtlasAsObservable()
 		{
 			return onLoadAtlas ?? (onLoadAtlas = new Subject<Unit>());
 		}

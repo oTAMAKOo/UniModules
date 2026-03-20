@@ -7,7 +7,7 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using Cysharp.Threading.Tasks;
-using UniRx;
+using R3;
 using MessagePack;
 using MessagePack.Resolvers;
 using Extensions;
@@ -685,17 +685,17 @@ namespace Modules.Master
             return serializerOptions;
         }
 
-        public IObservable<Unit> OnLoadFinishAsObservable()
+        public Observable<Unit> OnLoadFinishAsObservable()
         {
             return onLoadFinish ?? (onLoadFinish = new Subject<Unit>());
         }
 
-        public IObservable<Unit> OnUpdateMasterAsObservable()
+        public Observable<Unit> OnUpdateMasterAsObservable()
         {
             return onUpdateMaster ?? (onUpdateMaster = new Subject<Unit>());
         }
 
-        public IObservable<Exception> OnErrorAsObservable()
+        public Observable<Exception> OnErrorAsObservable()
         {
             return onError ?? (onError = new Subject<Exception>());
         }

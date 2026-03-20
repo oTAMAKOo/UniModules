@@ -4,7 +4,7 @@
 using UnityEngine;
 using System;
 using CriWare;
-using UniRx;
+using R3;
 
 namespace Modules.Sound
 {
@@ -113,13 +113,13 @@ namespace Modules.Sound
             soundManagement.SetVolume(this, Volume);
         }
 
-        public IObservable<Unit> OnFinishAsObservable()
+        public Observable<Unit> OnFinishAsObservable()
         {
             return onFinish ?? (onFinish = new Subject<Unit>());
         }
 
         /// <summary> サウンドに埋め込まれたイベント通知 </summary>
-        public IObservable<CriAtomExSequencer.CriAtomExSequenceEventInfo> OnSoundEventAsObservable()
+        public Observable<CriAtomExSequencer.CriAtomExSequenceEventInfo> OnSoundEventAsObservable()
         {
             return onSoundEvent ?? (onSoundEvent = new Subject<CriAtomExSequencer.CriAtomExSequenceEventInfo>());
         }

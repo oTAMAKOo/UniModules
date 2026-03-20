@@ -3,7 +3,7 @@ using System;
 using System.Linq;
 using System.Collections.Generic;
 using Cysharp.Threading.Tasks;
-using UniRx;
+using R3;
 
 namespace Modules.Scene
 {
@@ -40,7 +40,7 @@ namespace Modules.Scene
             GC.SuppressFinalize(this);
         }
 
-        public IObservable<Unit> OnDisposeAsObservable()
+        public Observable<Unit> OnDisposeAsObservable()
         {
             return onDispose ?? (onDispose = new Subject<Unit>());
         }

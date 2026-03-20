@@ -6,7 +6,7 @@ using System;
 using System.Linq;
 using System.ComponentModel;
 using Cysharp.Threading.Tasks;
-using UniRx;
+using R3;
 using VivoxUnity;
 using Extensions;
 using Modules.Devkit.Console;
@@ -123,12 +123,10 @@ namespace Modules.Vivox
 		protected override void OnCreate()
 		{
 			client = new Client();
-			
+
 			client.Initialize();
 
-			Observable.OnceApplicationQuit()
-				.Subscribe(_ => Release())
-				.AddTo(Disposable);
+			Application.quitting += Release;
 		}
 
 		protected override void OnDispose()
@@ -648,31 +646,31 @@ namespace Modules.Vivox
 		//------ LoginEvent ------
 		
 		/// <summary> ログイン開始イベント </summary>
-		public IObservable<ILoginSession> OnLoggingInAsObservable()
+		public Observable<ILoginSession> OnLoggingInAsObservable()
 		{
 			return onLoggingIn ?? (onLoggingIn = new Subject<ILoginSession>());
 		}
 
 		/// <summary> ログイン完了イベント </summary>
-		public IObservable<ILoginSession> OnLoggedInAsObservable()
+		public Observable<ILoginSession> OnLoggedInAsObservable()
 		{
 			return onLoggedIn ?? (onLoggedIn = new Subject<ILoginSession>());
 		}
 
 		/// <summary> ログアウト完了イベント </summary>
-		public IObservable<ILoginSession> OnLoggingOutAsObservable()
+		public Observable<ILoginSession> OnLoggingOutAsObservable()
 		{
 			return onLoggingOut ?? (onLoggingOut = new Subject<ILoginSession>());
 		}
 
 		/// <summary> 切断等、意図しないログアウトイベント </summary>
-		public IObservable<ILoginSession> OnLoggedOutAsObservable()
+		public Observable<ILoginSession> OnLoggedOutAsObservable()
 		{
 			return onLoggedOut ?? (onLoggedOut = new Subject<ILoginSession>());
 		}
 
 		/// <summary> リカバリ状態変化イベント </summary>
-		public IObservable<ConnectionRecoveryState> OnRecoveryStateChangedAsObservable()
+		public Observable<ConnectionRecoveryState> OnRecoveryStateChangedAsObservable()
 		{
 			return onRecoveryStateChanged ?? (onRecoveryStateChanged = new Subject<ConnectionRecoveryState>());
 		}
@@ -680,47 +678,47 @@ namespace Modules.Vivox
 		//------ ChannelEvent ------
 
 		/// <summary> チャンネル参加開始イベント </summary>
-		public IObservable<IChannelSession> OnChannelConnectingAsObservable()
+		public Observable<IChannelSession> OnChannelConnectingAsObservable()
 		{
 			return onChannelConnecting ?? (onChannelConnecting = new Subject<IChannelSession>());
 		}
 
 		/// <summary> チャンネル参加イベント </summary>
-		public IObservable<IChannelSession> OnChannelConnectedAsObservable()
+		public Observable<IChannelSession> OnChannelConnectedAsObservable()
 		{
 			return onChannelConnected ?? (onChannelConnected = new Subject<IChannelSession>());
 		}
 
 		/// <summary> チャンネル退出開始イベント </summary>
-		public IObservable<IChannelSession> OnChannelDisconnectingAsObservable()
+		public Observable<IChannelSession> OnChannelDisconnectingAsObservable()
 		{
 			return onChannelDisconnecting ?? (onChannelDisconnecting = new Subject<IChannelSession>());
 		}
 
 		/// <summary> チャンネル退出イベント </summary>
-		public IObservable<IChannelSession> OnChannelDisconnectedAsObservable()
+		public Observable<IChannelSession> OnChannelDisconnectedAsObservable()
 		{
 			return onChannelDisconnected ?? (onChannelDisconnected = new Subject<IChannelSession>());
 		}
 
 		//------ ParticipantEvent ------
 
-		public IObservable<ParticipantStatusChangedData> OnAddedParticipantAsObservable()
+		public Observable<ParticipantStatusChangedData> OnAddedParticipantAsObservable()
 		{
 			return onAddedParticipant ?? (onAddedParticipant = new Subject<ParticipantStatusChangedData>());
 		}
 
-		public IObservable<ParticipantStatusChangedData> OnRemovedParticipantAsObservable()
+		public Observable<ParticipantStatusChangedData> OnRemovedParticipantAsObservable()
 		{
 			return onRemovedParticipant ?? (onRemovedParticipant = new Subject<ParticipantStatusChangedData>());
 		}
 
-		public IObservable<ParticipantValueChangedData> OnDetectedParticipantAsObservable()
+		public Observable<ParticipantValueChangedData> OnDetectedParticipantAsObservable()
 		{
 			return onDetectedParticipant ?? (onDetectedParticipant = new Subject<ParticipantValueChangedData>());
 		}
 
-		public IObservable<ParticipantValueUpdatedData> OnAudioEnergyChangedParticipantAsObservable()
+		public Observable<ParticipantValueUpdatedData> OnAudioEnergyChangedParticipantAsObservable()
 		{
 			return onAudioEnergyChangedParticipant ?? (onAudioEnergyChangedParticipant = new Subject<ParticipantValueUpdatedData>());
 		}

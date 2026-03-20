@@ -1,9 +1,10 @@
-﻿
+
 using System;
-using System.Collections;
-using UnityEngine;
 using System.Collections.Generic;
-using UniRx;
+using System.Threading;
+using UnityEngine;
+using R3;
+using Cysharp.Threading.Tasks;
 
 namespace Modules.PathFinding
 {
@@ -55,101 +56,111 @@ namespace Modules.PathFinding
                 }
             }
         }
-        
+
         /// <summary> ルート検索開始 </summary>
-        public IObservable<IEnumerable<Vector2Int>> SearchRoute(Vector2Int startNodeId, Vector2Int goalNodeId)
+        public Observable<IEnumerable<Vector2Int>> SearchRoute(Vector2Int startNodeId, Vector2Int goalNodeId)
         {
-            return Observable.FromMicroCoroutine<IEnumerable<Vector2Int>>(observer => SearchRouteInternal(observer, startNodeId, goalNodeId));
+            return Observable.Create<IEnumerable<Vector2Int>>(async (observer, ct) =>
+            {
+                await SearchRouteInternal(observer, startNodeId, goalNodeId, ct);
+            });
         }
 
-        private IEnumerator SearchRouteInternal(IObserver<IEnumerable<Vector2Int>> observer, Vector2Int startNodeId, Vector2Int goalNodeId)
+        private async UniTask SearchRouteInternal(Observer<IEnumerable<Vector2Int>> observer, Vector2Int startNodeId, Vector2Int goalNodeId, CancellationToken ct)
         {
             routeList.Clear();
 
             ResetNode();
 
-            if (startNodeId != goalNodeId)
-            {            
-				// 全ノード更新
-				for (var y = 0; y < sizeY; y++)
-				{
-					for (var x = 0; x < sizeX; x++)
-					{
-						nodes[y, x].UpdateGoalNodeId(goalNodeId);
-						openNodes[y, x].UpdateGoalNodeId(goalNodeId);
-						closedNodes[y, x].UpdateGoalNodeId(goalNodeId);
-					}
-				}
+            try
+            {
+                if (startNodeId != goalNodeId)
+                {
+				    // 全ノード更新
+				    for (var y = 0; y < sizeY; y++)
+				    {
+					    for (var x = 0; x < sizeX; x++)
+					    {
+						    nodes[y, x].UpdateGoalNodeId(goalNodeId);
+						    openNodes[y, x].UpdateGoalNodeId(goalNodeId);
+						    closedNodes[y, x].UpdateGoalNodeId(goalNodeId);
+					    }
+				    }
 
-				// スタート地点の初期化
-				openNodes[startNodeId.y, startNodeId.x] = Node.CreateNode(allowDiagonal, startNodeId, goalNodeId);
-				openNodes[startNodeId.y, startNodeId.x].SetFromNodeId(startNodeId);
-				openNodes[startNodeId.y, startNodeId.x].Add();
+				    // スタート地点の初期化
+				    openNodes[startNodeId.y, startNodeId.x] = Node.CreateNode(allowDiagonal, startNodeId, goalNodeId);
+				    openNodes[startNodeId.y, startNodeId.x].SetFromNodeId(startNodeId);
+				    openNodes[startNodeId.y, startNodeId.x].Add();
 
-				var cnt = 0;
+				    var cnt = 0;
 
-				while (true)
-				{
-					var bestScoreNodeId = GetBestScoreNodeId();
+				    while (true)
+				    {
+					    var bestScoreNodeId = GetBestScoreNodeId();
 
-					OpenAround(bestScoreNodeId, goalNodeId);
+					    OpenAround(bestScoreNodeId, goalNodeId);
 
-					// ゴールに辿り着いたら終了
-					if (bestScoreNodeId == goalNodeId){ break; }
+					    // ゴールに辿り着いたら終了
+					    if (bestScoreNodeId == goalNodeId){ break; }
 
-					if (cnt % 1000 == 0)
-					{
-						yield return null;
-					}
+					    if (cnt % 1000 == 0)
+					    {
+						    await UniTask.Yield(ct);
+					    }
 
-					cnt++;
-				}
+					    cnt++;
+				    }
 
-				var node = closedNodes[goalNodeId.y, goalNodeId.x];
+				    var node = closedNodes[goalNodeId.y, goalNodeId.x];
 
-				routeList.Add(goalNodeId);
+				    routeList.Add(goalNodeId);
 
-				// 捜査トライ回数を制限 (無限ループ対応).
-				var tryCount = 1000;
-				var isSuccess = false;
+				    // 捜査トライ回数を制限 (無限ループ対応).
+				    var tryCount = 1000;
+				    var isSuccess = false;
 
-				while (cnt++ < tryCount)
-				{
-					var beforeNode = routeList[0];
+				    while (cnt++ < tryCount)
+				    {
+					    var beforeNode = routeList[0];
 
-					if (beforeNode == node.FromNodeId)
-					{
-						// 同じポジションなので終了.
-						observer.OnError(new Exception("PathFinding same position failed : " + beforeNode + " / " + node.FromNodeId + " / " + goalNodeId));
-						yield break;
-					}
+					    if (beforeNode == node.FromNodeId)
+					    {
+						    // 同じポジションなので終了.
+						    observer.OnCompleted(Result.Failure(new Exception("PathFinding same position failed : " + beforeNode + " / " + node.FromNodeId + " / " + goalNodeId)));
+						    return;
+					    }
 
-					if (node.FromNodeId == startNodeId)
-					{
-						isSuccess = true;
-						break;
-					}
+					    if (node.FromNodeId == startNodeId)
+					    {
+						    isSuccess = true;
+						    break;
+					    }
 
-					// 開始座標は結果リストには追加しない.
-					routeList.Insert(0, node.FromNodeId);
+					    // 開始座標は結果リストには追加しない.
+					    routeList.Insert(0, node.FromNodeId);
 
-					node = closedNodes[node.FromNodeId.y, node.FromNodeId.x];
+					    node = closedNodes[node.FromNodeId.y, node.FromNodeId.x];
 
-					if (cnt % 100 == 0)
-					{
-						yield return null;
-					}
-				}
+					    if (cnt % 100 == 0)
+					    {
+						    await UniTask.Yield(ct);
+					    }
+				    }
 
-				if (!isSuccess)
-				{
-					observer.OnError(new Exception("PathFinding failed : " + startNodeId + " / " + node.FromNodeId));
-					yield break;
-				}
-			}
+				    if (!isSuccess)
+				    {
+					    observer.OnCompleted(Result.Failure(new Exception("PathFinding failed : " + startNodeId + " / " + node.FromNodeId)));
+					    return;
+				    }
+			    }
 
-            observer.OnNext(routeList);
-            observer.OnCompleted();
+                observer.OnNext(routeList);
+                observer.OnCompleted();
+            }
+            catch (OperationCanceledException)
+            {
+                /* キャンセルは処理しない */
+            }
         }
 
         private void ResetNode()
@@ -169,7 +180,7 @@ namespace Modules.PathFinding
         private Vector2Int GetBestScoreNodeId()
         {
             var result = new Vector2Int(0, 0);
-            
+
             // 最小スコア.
             var min = double.MaxValue;
             // 最小実コスト

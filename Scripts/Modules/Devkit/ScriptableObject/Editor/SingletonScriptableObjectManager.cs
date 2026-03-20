@@ -6,7 +6,7 @@ using System.Linq;
 using System.Collections.Generic;
 using System.IO;
 using Cysharp.Threading.Tasks;
-using UniRx;
+using R3;
 using Extensions;
 
 namespace Modules.Devkit.ScriptableObjects
@@ -23,7 +23,7 @@ namespace Modules.Devkit.ScriptableObjects
             }
         }
 
-        public IObservable<Unit> OnReloadAsObservable()
+        public Observable<Unit> OnReloadAsObservable()
         {
             return onReload ?? (onReload = new Subject<Unit>());
         }

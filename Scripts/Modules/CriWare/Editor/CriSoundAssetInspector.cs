@@ -6,7 +6,7 @@ using UnityEditor;
 using System.IO;
 using System.Collections.Generic;
 using CriWare;
-using UniRx;
+using R3;
 using Extensions;
 using Extensions.Devkit;
 using Modules.Devkit.Inspector;
@@ -55,9 +55,9 @@ namespace Modules.CriWare
             if (EditorApplication.isPlayingOrWillChangePlaymode)
             {
                 // CriWareInitializerの初期化を待つ.
-                Observable.EveryUpdate()
+                Observable.EveryUpdate(UnityFrameProvider.Update)
                     .SkipWhile(_ => !CriWareInitializer.IsInitialized())
-                    .First()
+                    .ToUniTask()
                     .Subscribe(_ => LoadCueInfo(target))
                     .AddTo(lifetimeDisposable.Disposable);
             }

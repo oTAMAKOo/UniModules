@@ -2,7 +2,7 @@
 using UnityEngine;
 using UnityEngine.UI;
 using System;
-using UniRx;
+using R3;
 using Extensions;
 
 namespace Modules.UI.Extension
@@ -55,32 +55,32 @@ namespace Modules.UI.Extension
 
         #region Button Event Extension
 
-        public IObservable<Unit> OnClickAsObservable()
+        public Observable<Unit> OnClickAsObservable()
         {
             return component.OnClickAsObservable();
         }
 
-        public IObservable<Unit> OnPressAsObservable()
+        public Observable<Unit> OnPressAsObservable()
         {
             return component.OnPressAsObservable();
         }
 
-        public IObservable<float> OnReleaseAsObservable()
+        public Observable<float> OnReleaseAsObservable()
         {
             return component.OnReleaseAsObservable();
         }
 
-        public IObservable<Unit> OnLongPressAsObservable()
+        public Observable<Unit> OnLongPressAsObservable()
         {
             return component.OnLongPressAsObservable();
         }
 
-        public IObservable<float> OnLongPressReleaseAsObservable()
+        public Observable<float> OnLongPressReleaseAsObservable()
         {
             return component.OnLongPressReleaseAsObservable();
         }
 
-        public IObservable<Unit> OnCancelAsObservable()
+        public Observable<Unit> OnCancelAsObservable()
         {
             return component.OnCancelAsObservable();
         }

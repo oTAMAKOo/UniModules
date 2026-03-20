@@ -5,8 +5,8 @@ using System;
 using System.Collections.Generic;
 using Cysharp.Threading.Tasks;
 using Extensions;
-using UniRx;
-using Modules.UniRxExtension;
+using Modules.R3Extension;
+using R3;
 
 #if UNITY_EDITOR
 
@@ -165,7 +165,7 @@ namespace Modules.ExternalAssets
             }
         }
 
-        public static IObservable<SceneLoadAsyncHandler> OnLoadSceneAsObservable()
+        public static Observable<SceneLoadAsyncHandler> OnLoadSceneAsObservable()
         {
             return onLoadScene ?? (onLoadScene = new Subject<SceneLoadAsyncHandler>());
         }

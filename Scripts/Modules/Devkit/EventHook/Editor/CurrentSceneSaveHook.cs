@@ -1,7 +1,7 @@
 ﻿
 using UnityEngine.SceneManagement;
 using System;
-using UniRx;
+using R3;
 
 namespace Modules.Devkit.EventHook
 {
@@ -38,7 +38,7 @@ namespace Modules.Devkit.EventHook
             return paths;
         }
 
-        public static IObservable<string> OnSaveSceneAsObservable()
+        public static Observable<string> OnSaveSceneAsObservable()
         {
             return onSaveScene ?? (onSaveScene = new Subject<string>());
         }

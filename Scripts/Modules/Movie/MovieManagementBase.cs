@@ -7,7 +7,7 @@ using System.IO;
 using System.Collections.Generic;
 using CriWare;
 using CriWare.CriMana;
-using UniRx;
+using R3;
 using Cysharp.Threading.Tasks;
 using Extensions;
 using Modules.CriWare;
@@ -61,7 +61,7 @@ namespace Modules.Movie
             if (initialized) { return; }
 
             // 状態更新.
-            Observable.EveryEndOfFrame().Subscribe(_ => UpdateElement()).AddTo(Disposable);
+            Observable.EveryUpdate(UnityFrameProvider.PostLateUpdate).Subscribe(_ => UpdateElement()).AddTo(Disposable);
 
             if (movieTexture == null)
             {

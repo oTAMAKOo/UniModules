@@ -9,7 +9,7 @@ using System.Linq;
 using System.Collections.Generic;
 using System.Text;
 using Cysharp.Threading.Tasks;
-using UniRx;
+using R3;
 using Extensions;
 using Modules.Devkit.Console;
 
@@ -278,7 +278,7 @@ namespace Modules.InAppPurchasing
         private BuyFailureReason PurchaseInternal(string productId, string developerPayload)
         {
             // コールバックが通知できない場合は何もしない.
-            if (onStorePurchaseComplete == null || !onStorePurchaseComplete.HasObservers)
+            if (onStorePurchaseComplete == null)
             {
                 return BuyFailureReason.NoReceivePurchaseMessage;
             }
@@ -365,7 +365,7 @@ namespace Modules.InAppPurchasing
             }
 
             // コールバックが通知できない場合は何もしない.
-            if (onStorePurchaseRestore == null || !onStorePurchaseRestore.HasObservers)
+            if (onStorePurchaseRestore == null)
             {
                 return BuyFailureReason.NoReceiveRestoreMessage;
             }
@@ -410,7 +410,7 @@ namespace Modules.InAppPurchasing
         /// ストアの商品情報更新通知.
         /// </summary>
         /// <returns></returns>
-        public IObservable<Product[]> OnStoreProductsUpdateAsObservable()
+        public Observable<Product[]> OnStoreProductsUpdateAsObservable()
         {
             return onStoreProductsUpdate ?? (onStoreProductsUpdate = new Subject<Product[]>());
         }
@@ -419,7 +419,7 @@ namespace Modules.InAppPurchasing
         /// ストア購入の結果通知.
         /// </summary>
         /// <returns></returns>
-        public IObservable<PurchaseResult> OnStorePurchaseCompleteAsObservable()
+        public Observable<PurchaseResult> OnStorePurchaseCompleteAsObservable()
         {
             return onStorePurchaseComplete ?? (onStorePurchaseComplete = new Subject<PurchaseResult>());
         }
@@ -428,7 +428,7 @@ namespace Modules.InAppPurchasing
         /// ストア購入復元を通知.
         /// </summary>
         /// <returns></returns>
-        public IObservable<Product> OnStorePurchaseRestoreAsObservable()
+        public Observable<Product> OnStorePurchaseRestoreAsObservable()
         {
             return onStorePurchaseRestore ?? (onStorePurchaseRestore = new Subject<Product>());
         }
@@ -590,7 +590,7 @@ namespace Modules.InAppPurchasing
             UpdatePendingProduct(product, PurchaseProcessingResult.Pending);
 
             // 通知できない場合はここで処理を終了.
-            if (onStorePurchaseComplete == null || !onStorePurchaseComplete.HasObservers)
+            if (onStorePurchaseComplete == null)
             {
                 return PurchaseProcessingResult.Pending;
             }

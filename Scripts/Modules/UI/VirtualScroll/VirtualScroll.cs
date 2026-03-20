@@ -8,7 +8,7 @@ using System.Collections.Generic;
 using System.Threading;
 using Cysharp.Threading.Tasks;
 using DG.Tweening;
-using UniRx;
+using R3;
 using Extensions;
 using Modules.UI.VirtualScroll;
 
@@ -1012,19 +1012,19 @@ namespace Modules.UI
         }
 
         /// <summary> リストアイテム生成時イベント </summary>
-        public IObservable<IVirtualScrollItem> OnCreateItemAsObservable()
+        public Observable<IVirtualScrollItem> OnCreateItemAsObservable()
         {
             return onCreateItem ?? (onCreateItem = new Subject<IVirtualScrollItem>());
         }
 
         /// <summary> リストアイテム更新時イベント </summary>
-        public IObservable<IVirtualScrollItem> OnUpdateItemAsObservable()
+        public Observable<IVirtualScrollItem> OnUpdateItemAsObservable()
         {
             return onUpdateItem ?? (onUpdateItem = new Subject<IVirtualScrollItem>());
         }
 
         /// <summary> リスト内容更新完了イベント </summary>
-        public IObservable<Unit> OnUpdateContentsAsObservable()
+        public Observable<Unit> OnUpdateContentsAsObservable()
         {
             return onUpdateContents ?? (onUpdateContents = new Subject<Unit>());
         }

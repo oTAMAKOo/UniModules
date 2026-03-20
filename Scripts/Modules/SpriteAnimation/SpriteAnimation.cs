@@ -2,7 +2,7 @@
 using UnityEngine;
 using UnityEngine.U2D;
 using System;
-using UniRx;
+using R3;
 using Extensions;
 using Modules.Cache;
 
@@ -157,12 +157,12 @@ namespace Modules.SpriteAnimation
             return $"{AnimationName}_{index}";
         }
 
-        public IObservable<Sprite> OnUpdateAnimationAsObservable()
+        public Observable<Sprite> OnUpdateAnimationAsObservable()
         {
             return onUpdateAnimation ?? (onUpdateAnimation = new Subject<Sprite>());
         }
 
-        public IObservable<Unit> OnLastFrameAsObservable()
+        public Observable<Unit> OnLastFrameAsObservable()
         {
             return onLastFrame ?? (onLastFrame = new Subject<Unit>());
         }

@@ -4,8 +4,9 @@ using System.Linq;
 using System.Collections.Generic;
 using System.Threading;
 using Cysharp.Threading.Tasks;
-using UniRx;
+using R3;
 using Extensions;
+using Modules.R3Extension;
 
 namespace Modules.Net.WebDownload
 {
@@ -24,9 +25,9 @@ namespace Modules.Net.WebDownload
         private sealed class DownloadInfo
         {
             public TDownloadRequest Request { get; private set; }
-            public IObservable<bool> Task { get; private set; }
+            public Observable<bool> Task { get; private set; }
 
-            public DownloadInfo(TDownloadRequest request, IObservable<bool> task)
+            public DownloadInfo(TDownloadRequest request, Observable<bool> task)
             {
                 Request = request;
                 Task = task;
@@ -106,7 +107,7 @@ namespace Modules.Net.WebDownload
 
             try
             {
-                IObservable<bool> observable = null;
+                Observable<bool> observable = null;
 
                 var url = downloadRequest.Url;
 
@@ -124,7 +125,7 @@ namespace Modules.Net.WebDownload
                     downloadItems.Add(url, downloadInfo);
                 }
 
-                result = await observable.ToUniTask(cancellationToken: cancelToken);
+                result = await observable.ToUniTask(cancelToken);
             }
             catch (OperationCanceledException)
             {

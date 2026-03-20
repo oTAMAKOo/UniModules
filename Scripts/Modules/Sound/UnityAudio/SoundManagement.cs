@@ -7,7 +7,7 @@ using System.Linq;
 using System.Collections.Generic;
 using Cysharp.Threading.Tasks;
 using DG.Tweening;
-using UniRx;
+using R3;
 using Extensions;
 using Modules.Devkit.Console;
 
@@ -91,12 +91,12 @@ namespace Modules.Sound
                 .AddTo(Disposable);
 
             // 一定周期でAudioSourceの更新を実行.
-            Observable.Interval(TimeSpan.FromSeconds(5f))
+            Observable.Interval(TimeSpan.FromSeconds(5f), UnityTimeProvider.Update)
                 .Subscribe(_ => UpdateSoundSource())
                 .AddTo(Disposable);
 
             // 同一フレーム再生リストクリア.
-            Observable.EveryEndOfFrame()
+            Observable.EveryUpdate(UnityFrameProvider.PostLateUpdate)
                 .Subscribe(_ => framePlayedAudioClips.Clear())
                 .AddTo(Disposable);
 

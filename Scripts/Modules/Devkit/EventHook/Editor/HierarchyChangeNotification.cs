@@ -6,7 +6,7 @@ using System;
 using System.Linq;
 using Extensions;
 using Extensions.Devkit;
-using UniRx;
+using R3;
 
 namespace Modules.Devkit.EventHook
 {
@@ -58,8 +58,8 @@ namespace Modules.Devkit.EventHook
                 onHierarchyChangedAsObservable.OnNext(Unit.Default);
             }
 
-            var createObserver = onCreateAsObservable != null && onCreateAsObservable.HasObservers;
-            var deleteObserver = onDeleteAsObservable != null && onDeleteAsObservable.HasObservers;
+            var createObserver = onCreateAsObservable != null && !onCreateAsObservable.IsDisposed;
+            var deleteObserver = onDeleteAsObservable != null && !onDeleteAsObservable.IsDisposed;
 
             if (createObserver || deleteObserver)
             {
@@ -104,17 +104,17 @@ namespace Modules.Devkit.EventHook
             }
         }
 
-        public static IObservable<GameObject[]> OnCreatedAsObservable()
+        public static Observable<GameObject[]> OnCreatedAsObservable()
         {
             return onCreateAsObservable ?? (onCreateAsObservable = new Subject<GameObject[]>());
         }
 
-        public static IObservable<Unit> OnDeleteAsObservable()
+        public static Observable<Unit> OnDeleteAsObservable()
         {
             return onDeleteAsObservable ?? (onDeleteAsObservable = new Subject<Unit>());
         }
 
-        public static IObservable<Unit> OnHierarchyChangedAsObservable()
+        public static Observable<Unit> OnHierarchyChangedAsObservable()
         {
             return onHierarchyChangedAsObservable ?? (onHierarchyChangedAsObservable = new Subject<Unit>());
         }

@@ -7,9 +7,10 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Cysharp.Threading.Tasks;
-using UniRx;
+using R3;
 using Extensions;
 using Extensions.Devkit;
+using Modules.R3Extension;
 using Modules.UI.Particle;
 
 namespace Modules.Particle
@@ -85,8 +86,7 @@ namespace Modules.Particle
                 }
                 else
                 {
-                    updateDisposable = instance
-                        .ObserveEveryValueChanged(x => x.CurrentTime)
+                    updateDisposable = instance.ObserveEveryValueChanged(x => x.CurrentTime)
                         .Subscribe(x => Repaint())
                         .AddTo(disposable.Disposable);
                 }
@@ -184,8 +184,7 @@ namespace Modules.Particle
 
                                     Reflection.InvokePrivateMethod(instance, "RunCollectContents");
 
-                                    emulateDisposable = instance.Play()
-										.ToObservable()
+                                    emulateDisposable = ObservableEx.FromUniTask(ct => instance.Play())
                                         .Subscribe(_ =>
                                             {
                                                 instance.Stop(true, true);
