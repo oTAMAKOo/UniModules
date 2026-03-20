@@ -1,5 +1,6 @@
 ﻿
 using System;
+using System.Collections.Generic;
 using System.Threading;
 using UnityEngine;
 using R3;
@@ -10,6 +11,25 @@ namespace Extensions
 {
 	public static class UniTaskExtensions
 	{
+		//----- Observe -----
+
+		public static Observable<TProperty> ObserveEveryValueChanged<TSource, TProperty>(
+			this TSource source,
+			Func<TSource, TProperty> propertySelector,
+			CancellationToken cancellationToken = default) where TSource : class
+		{
+			return Observable.EveryValueChanged(source, propertySelector, cancellationToken);
+		}
+
+		public static Observable<TProperty> ObserveEveryValueChanged<TSource, TProperty>(
+			this TSource source,
+			Func<TSource, TProperty> propertySelector,
+			EqualityComparer<TProperty> equalityComparer,
+			CancellationToken cancellationToken = default) where TSource : class
+		{
+			return Observable.EveryValueChanged(source, propertySelector, equalityComparer, cancellationToken);
+		}
+
 		//----- Lifecycle -----
 
 		public static Observable<T> TakeUntilDestroy<T>(this Observable<T> source, Component component)

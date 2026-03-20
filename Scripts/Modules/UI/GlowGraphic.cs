@@ -61,7 +61,7 @@ namespace Modules.UI
 
                     if (Application.isPlaying)
                     {
-                        Observable.EveryValueChanged(this, x => x.emissionColor)
+                        this.ObserveEveryValueChanged(x => x.emissionColor)
                             .Subscribe(_ => ApplyParameter())
                             .AddTo(this);
                     }
