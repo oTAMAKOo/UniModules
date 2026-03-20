@@ -70,7 +70,7 @@ namespace Modules.UI.Extension
                 }
             };
 
-            Observable.EveryValueChanged(RawImage, x => x.texture)
+            RawImage.ObserveEveryValueChanged(x => x.texture)
                 .TakeUntilDisable(this)
                 .Subscribe(_ => onTextureChanged())
                 .AddTo(this);
