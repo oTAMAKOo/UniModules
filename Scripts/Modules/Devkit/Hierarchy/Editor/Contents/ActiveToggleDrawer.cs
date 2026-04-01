@@ -1,6 +1,7 @@
 ﻿
 using UnityEngine;
 using UnityEditor;
+using Extensions.Devkit;
 using Modules.Devkit.Prefs;
 
 namespace Modules.Devkit.Hierarchy
@@ -44,6 +45,8 @@ namespace Modules.Devkit.Hierarchy
 
             if (EditorGUI.EndChangeCheck())
             {
+                UnityEditorUtility.RegisterUndo("Toggle Active", targetObject);
+
                 targetObject.SetActive(activeSelf);
 
                 EditorUtility.SetDirty(targetObject);
