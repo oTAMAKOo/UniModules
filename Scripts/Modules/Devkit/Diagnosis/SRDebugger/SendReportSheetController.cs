@@ -4,6 +4,7 @@ using UnityEngine.UI;
 using UnityEngine.EventSystems;
 using System;
 using System.Threading;
+using System.Collections;
 using Cysharp.Threading.Tasks;
 using R3;
 using Extensions;
@@ -220,11 +221,23 @@ namespace Modules.Devkit.Diagnosis.SRDebugger
 
 			await UniTask.NextFrame();
 
-            await sendReportManager.CaptureScreenShot().ToUniTask();
+            // ReadPixelsは描画フレーム内でのみ動作するため、StartCoroutineで実行する.
+            var tcs = new UniTaskCompletionSource();
+            
+            StartCoroutine(RunCoroutine(sendReportManager.CaptureScreenShot(), tcs));
+            
+            await tcs.Task;
 
-			srDebug.ShowDebugPanel(false);
+            srDebug.ShowDebugPanel(false);
 
-			await UniTask.NextFrame();
+            await UniTask.NextFrame();
+        }
+
+        private IEnumerator RunCoroutine(IEnumerator coroutine, UniTaskCompletionSource tcs)
+        {
+            yield return StartCoroutine(coroutine);
+            
+            tcs.TrySetResult();
         }
 
         /// <summary> InputFieldをリフレッシュ </summary>

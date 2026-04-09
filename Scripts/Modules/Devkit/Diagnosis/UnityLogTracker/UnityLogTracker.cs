@@ -50,13 +50,15 @@ namespace Modules.Devkit.Diagnosis.LogTracker
 
         public void Initialize()
         {
+            var applicationLogHandler = ApplicationLogHandler.Instance;
+            
             if (initialized) { return; }
 
             disposable = new LifetimeDisposable();
 
             reportQueue = new FixedQueue<LogEntry>(DefaultReportLogNum);
 
-            ApplicationLogHandler.Instance.OnReceivedThreadedAllAsObservable()
+            applicationLogHandler.OnReceivedThreadedAllAsObservable()
                 .Subscribe(x => LogCallback(x))
                 .AddTo(disposable.Disposable);
 

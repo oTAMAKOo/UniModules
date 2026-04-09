@@ -142,7 +142,10 @@ namespace Modules.Devkit.Diagnosis.SendReport
             }
         }
 
-        // ※ UniTaskだとWaitForEndOfFrameのタイミングが正しく取得できないのでコルーチンで制御する.
+        /// <summary>
+        /// スクリーンショットを取得する.
+        /// ReadPixelsは描画フレーム内でのみ動作するため、MonoBehaviour.StartCoroutineで実行する必要がある.
+        /// </summary>
         public IEnumerator CaptureScreenShot()
         {
             yield return new WaitForEndOfFrame();
