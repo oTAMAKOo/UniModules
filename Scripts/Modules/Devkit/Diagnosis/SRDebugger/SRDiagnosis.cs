@@ -139,8 +139,6 @@ namespace Modules.Devkit.Diagnosis.SRDebugger
                     .Subscribe(x => OnLogReceive(x))
                     .AddTo(this);
 
-                logTracker.Initialize();
-
                 background.color = defaultColor;
 
                 IgnoreWarnings = new string[0];

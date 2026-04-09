@@ -47,8 +47,14 @@ namespace Modules.Devkit.Diagnosis.LogTracker
         public IReadOnlyList<LogEntry> Logs { get { return reportQueue.ToArray(); } }
 
         //----- method -----
+        
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
+        private static void InitializeOnLoad()
+        {
+            Instance.Initialize();
+        }
 
-        public void Initialize()
+        private void Initialize()
         {
             var applicationLogHandler = ApplicationLogHandler.Instance;
             
