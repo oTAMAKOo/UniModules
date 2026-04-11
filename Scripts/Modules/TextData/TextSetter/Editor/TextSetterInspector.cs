@@ -168,9 +168,25 @@ namespace Modules.TextData.Components
                 label = $"{category.DisplayName} : {enumName}";
             }
 
+            var isMissing = !string.IsNullOrEmpty(currentTextGuid) && string.IsNullOrEmpty(label);
+
+            if (isMissing)
+            {
+                EditorGUILayout.HelpBox($"Text not found. GUID: {currentTextGuid}", MessageType.Error);
+            }
+
             using (new EditorGUILayout.HorizontalScope())
             {
-                if (string.IsNullOrEmpty(label))
+                if (isMissing)
+                {
+                    if (GUILayout.Button("Copy GUID", EditorStyles.miniButton, GUILayout.ExpandWidth(false)))
+                    {
+                        EditorGUIUtility.systemCopyBuffer = currentTextGuid;
+                    }
+
+                    GUILayout.FlexibleSpace();
+                }
+                else if (string.IsNullOrEmpty(label))
                 {
                     EditorGUILayout.PrefixLabel("Text");
                 }
@@ -183,8 +199,8 @@ namespace Modules.TextData.Components
                 {
                     GUILayout.Space(2f);
 
-                    var layoutOptions = string.IsNullOrEmpty(currentTextGuid) ? 
-                                        new GUILayoutOption[0] : 
+                    var layoutOptions = string.IsNullOrEmpty(currentTextGuid) ?
+                                        new GUILayoutOption[0] :
                                         new GUILayoutOption[]{ GUILayout.Width(60f) };
 
                     if (GUILayout.Button("select", EditorStyles.miniButton, layoutOptions))
