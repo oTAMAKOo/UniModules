@@ -57,8 +57,6 @@ namespace Extensions
             IsDebugBuild = Debug.isDebugBuild;
             IsBatchMode = Application.isBatchMode;
             IsEditor = Application.installMode == ApplicationInstallMode.Editor;
-            IsPlaying = Application.isPlaying;
-            RealtimeSinceStartup = Time.realtimeSinceStartup;
 
             UpdateUnityContents();
         }
@@ -82,14 +80,13 @@ namespace Extensions
 
             if (parent != null)
             {
-                gameObject.transform.parent = parent.transform;
+                SetParent(gameObject, parent, worldPositionStays);
 
                 gameObject.transform.localPosition = Vector3.zero;
                 gameObject.transform.localRotation = Quaternion.identity;
                 gameObject.transform.localScale = Vector3.one;
 
                 SetLayer(parent, gameObject);
-                SetParent(gameObject, parent, worldPositionStays);
             }
 
             return gameObject;
@@ -104,14 +101,13 @@ namespace Extensions
 
             if (parent != null)
             {
-                gameObject.transform.parent = parent.transform;
+                SetParent(gameObject, parent, worldPositionStays);
 
                 gameObject.transform.localPosition = Vector3.zero;
                 gameObject.transform.localRotation = Quaternion.identity;
                 gameObject.transform.localScale = Vector3.one;
 
                 SetLayer(parent, gameObject);
-                SetParent(gameObject, parent, worldPositionStays);
             }
 
             return gameObject.AddComponent<T>();
@@ -271,6 +267,7 @@ namespace Extensions
             }
         }
 
+        /// <summary> コンポーネント削除 </summary>
         public static void DeleteComponent<T>(T component, bool immediate = false) where T : Component
         {
             if (component != null)
@@ -286,6 +283,7 @@ namespace Extensions
             }
         }
 
+        /// <summary> GameObjectからコンポーネント削除 </summary>
         public static void DeleteComponent<T>(GameObject instance, bool immediate = false) where T : Component
         {
             var component = GetComponent<T>(instance);
@@ -293,6 +291,7 @@ namespace Extensions
             DeleteComponent(component, immediate);
         }
 
+        /// <summary> コンポーネントのGameObjectを削除 </summary>
         public static void DeleteGameObject<T>(T component, bool immediate = false) where T : Component
         {
             if (component != null)
@@ -308,6 +307,7 @@ namespace Extensions
             }
         }
 
+        /// <summary> GameObjectから指定コンポーネントを検索してそのGameObjectを削除 </summary>
         public static void DeleteGameObject<T>(GameObject instance, bool immediate = false) where T : Component
         {
             var component = GetComponent<T>(instance);
@@ -341,13 +341,13 @@ namespace Extensions
 
         #region Active Control
 
-        /// <summary> 状態取得 </summary>
+        /// <summary> アクティブ状態取得 </summary>
         public static bool IsActive(GameObject instance)
         {
             return !IsNull(instance) && instance.activeSelf;
         }
 
-        /// <summary> 状態取得 </summary>
+        /// <summary> アクティブ状態取得 </summary>
         public static bool IsActive<T>(T instance) where T : Component
         {
             return !IsNull(instance) && instance.gameObject.activeSelf;
@@ -365,7 +365,7 @@ namespace Extensions
             return !IsNull(instance) && instance.gameObject.activeInHierarchy;
         }
 
-        /// <summary> 状態設定 </summary>
+        /// <summary> アクティブ状態設定 </summary>
         public static void SetActive(GameObject instance, bool state)
         {
             if (IsNull(instance)) { return; }
@@ -375,7 +375,7 @@ namespace Extensions
             instance.SetActive(state);
         }
 
-        /// <summary> 状態設定 </summary>
+        /// <summary> アクティブ状態設定 </summary>
         public static void SetActive<T>(T instance, bool state) where T : Component
         {
             if (IsNull(instance)) { return; }
@@ -451,7 +451,7 @@ namespace Extensions
             return instance != null ? instance.GetComponent<T>() : null;
         }
 
-        /// <summary> コンポーネント取得 </summary>
+        /// <summary> コンポーネント一覧取得 </summary>
         public static IEnumerable<T> GetComponents<T>(GameObject instance) where T : Component
         {
             return instance != null ? instance.GetComponents<T>() : new T[0];
@@ -476,7 +476,7 @@ namespace Extensions
             return result;
         }
 
-        /// <summary> インターフェース取得 </summary>
+        /// <summary> インターフェース一覧取得 </summary>
         public static IEnumerable<T> GetInterfaces<T>(GameObject instance) where T : class
         {
             if (instance == null) { return new T[0]; }
@@ -507,7 +507,7 @@ namespace Extensions
             {
                 foreach (var child in GetChildrenAndSelf(item.gameObject))
                 {
-                    yield return child.gameObject;
+                    yield return child;
                 }
             }
         }
@@ -576,18 +576,18 @@ namespace Extensions
         }
 
         /// <summary>
-        /// <para>Hierarchyから特定の種類のオブジェクト取得.</para>
+        /// <para>指定オブジェクト以下から特定の種類のオブジェクト取得.</para>
         /// <para>※ 検索負荷が高いので呼び出し頻度に注意してください.</para>
         ///</summary>
         public static T FindObjectOfType<T>(GameObject rootObject) where T : Component
         {
             if (rootObject == null) { return null; }
-            
+
             var objects = GetChildrenAndSelf(rootObject);
 
             foreach (var item in objects)
             {
-                var component = GetComponents<T>(item).FirstOrDefault();
+                var component = GetComponent<T>(item);
 
                 if (component != null)
                 {
@@ -599,7 +599,7 @@ namespace Extensions
         }
 
         /// <summary>
-        /// <para>Hierarchyから特定の種類のオブジェクト一覧取得.</para>
+        /// <para>指定オブジェクト以下から特定の種類のオブジェクト一覧取得.</para>
         /// <para>※ 検索負荷が高いので呼び出し頻度に注意してください.</para>
         ///</summary>
         public static IEnumerable<T> FindObjectsOfType<T>(GameObject rootObject) where T : Component
@@ -612,7 +612,7 @@ namespace Extensions
 
             foreach (var item in objects)
             {
-                var components = GetComponents<T>(item).ToArray();
+                var components = GetComponents<T>(item);
 
                 if (components.Any())
                 {
@@ -623,6 +623,58 @@ namespace Extensions
             return list;
         }
         
+        /// <summary> 指定オブジェクト直下の子から特定の種類のコンポーネント取得 </summary>
+        public static T FindObjectOfTypeInChild<T>(GameObject rootObject) where T : Component
+        {
+            if (rootObject == null) { return null; }
+
+            foreach (Transform child in rootObject.transform)
+            {
+                var component = GetComponent<T>(child.gameObject);
+
+                if (component != null)
+                {
+                    return component;
+                }
+            }
+
+            return null;
+        }
+
+        /// <summary> 指定オブジェクト直下の子から特定の種類のコンポーネント一覧取得 </summary>
+        public static IEnumerable<T> FindObjectsOfTypeInChild<T>(GameObject rootObject) where T : Component
+        {
+            if (rootObject == null) { return new T[0]; }
+
+            var list = new List<T>();
+
+            foreach (Transform child in rootObject.transform)
+            {
+                var components = GetComponents<T>(child.gameObject).ToArray();
+
+                if (components.Any())
+                {
+                    list.AddRange(components);
+                }
+            }
+
+            return list;
+        }
+
+        /// <summary> 指定オブジェクト直下の子から指定インターフェイスを実装したコンポーネント取得 </summary>
+        public static T FindObjectOfInterfaceInChild<T>(GameObject rootObject) where T : class
+        {
+            return FindObjectsOfInterfaceInChild<T>(rootObject).FirstOrDefault();
+        }
+
+        /// <summary> 指定オブジェクト直下の子から指定インターフェイスを実装したコンポーネント一覧取得 </summary>
+        public static IEnumerable<T> FindObjectsOfInterfaceInChild<T>(GameObject rootObject) where T : class
+        {
+            var components = FindObjectsOfTypeInChild<Component>(rootObject);
+
+            return components.Select(x => x as T).Where(x => x != null);
+        }
+
         /// <summary>
         /// <para>Hierarchyから指定されたインターフェイスを実装したコンポーネントを持つオブジェクト取得.</para>
         /// <para>※ 検索負荷が高いので呼び出し頻度に注意してください.</para>
@@ -694,6 +746,8 @@ namespace Extensions
         /// <summary> Hierarchy上の子オブジェクトのパス取得 </summary>
         public static string GetChildHierarchyPath(GameObject root, GameObject target)
         {
+            if (root == null || target == null){ return string.Empty; }
+
             var trans = target.transform.parent;
 
             var builder = new StringBuilder();
@@ -717,6 +771,7 @@ namespace Extensions
 
         #region PrefabMode
 
+        /// <summary> PrefabModeのインスタンスかどうか判定 </summary>
         public static bool IsPrefabModeInstance(GameObject target)
         {
             if (IsNull(target)) { return false; }
