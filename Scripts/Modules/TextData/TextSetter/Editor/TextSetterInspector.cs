@@ -172,18 +172,13 @@ namespace Modules.TextData.Components
 
             if (isMissing)
             {
-                EditorGUILayout.HelpBox($"Text not found. GUID: {currentTextGuid}", MessageType.Error);
+                EditorGUISelectableHelpBox.Draw($"Text not found. GUID: {currentTextGuid}", MessageType.Error);
             }
 
             using (new EditorGUILayout.HorizontalScope())
             {
                 if (isMissing)
                 {
-                    if (GUILayout.Button("Copy GUID", EditorStyles.miniButton, GUILayout.ExpandWidth(false)))
-                    {
-                        EditorGUIUtility.systemCopyBuffer = currentTextGuid;
-                    }
-
                     GUILayout.FlexibleSpace();
                 }
                 else if (string.IsNullOrEmpty(label))
