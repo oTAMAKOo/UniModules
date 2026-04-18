@@ -200,9 +200,27 @@ namespace Modules.Scene
 
                 var enableScenes = loadedScenes.Values.Where(x => x.IsEnable).ToArray();
 
+                // Leave通知.
+                if (onLeave != null)
+                {
+                    foreach (var enableScene in enableScenes)
+                    {
+                        onLeave.OnNext(enableScene);
+                    }
+                }
+
                 foreach (var scene in enableScenes)
                 {
                     scene.Disable();
+                }
+
+                // Leave終了通知.
+                if (onLeaveComplete != null)
+                {
+                    foreach (var enableScene in enableScenes)
+                    {
+                        onLeaveComplete.OnNext(enableScene);
+                    }
                 }
 
                 if (cancelToken.IsCancellationRequested){ return; }
@@ -216,6 +234,12 @@ namespace Modules.Scene
                 diagnostics.Finish(TimeDiagnostics.Measure.Load);
 
                 if (cancelToken.IsCancellationRequested){ return; }
+
+                // Append側シーンをActiveSceneに設定.
+                if (sceneInstance != null)
+                {
+                    SetSceneActive(sceneInstance.GetScene());
+                }
 
                 //====== Scene Prepare ======
 
