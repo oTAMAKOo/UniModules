@@ -19,6 +19,9 @@ namespace Modules.Scene
         //----- params -----
 
         //----- field -----
+        
+        private Subject<SceneInstance<TScenes>> onAppendTransition = null;
+        private Subject<SceneInstance<TScenes>> onUnloadTransition = null;
 
         //----- property -----
 
@@ -241,6 +244,12 @@ namespace Modules.Scene
                     SetSceneActive(sceneInstance.GetScene());
                 }
 
+                // 加算遷移通知.
+                if (sceneInstance != null && onAppendTransition != null)
+                {
+                    onAppendTransition.OnNext(sceneInstance);
+                }
+
                 //====== Scene Prepare ======
 
                 diagnostics.Begin(TimeDiagnostics.Measure.Prepare);
@@ -418,6 +427,15 @@ namespace Modules.Scene
 
                 scene.Enable();
 
+                // 戻り先シーンをActiveSceneに設定.
+                SetSceneActive(scene.GetScene());
+
+                // 加算シーンアンロード遷移通知.
+                if (onUnloadTransition != null)
+                {
+                    onUnloadTransition.OnNext(scene);
+                }
+
                 await scene.Instance.OnTransition();
 
                 if (cancelToken.IsCancellationRequested){ return; }
@@ -459,6 +477,18 @@ namespace Modules.Scene
             if (UnityUtility.IsNull(target)){ return null; }
 
             return AppendSceneInstances.FirstOrDefault(x => x.GetScene() == target.scene);
+        }
+        
+        /// <summary> 加算シーン遷移時に発火（加算されたシーンを引数で通知） </summary>
+        public Observable<SceneInstance<TScenes>> OnAppendTransitionAsObservable()
+        {
+            return onAppendTransition ?? (onAppendTransition = new Subject<SceneInstance<TScenes>>());
+        }
+
+        /// <summary> 加算シーンアンロード遷移時に発火（戻り先シーンを引数で通知） </summary>
+        public Observable<SceneInstance<TScenes>> OnUnloadTransitionAsObservable()
+        {
+            return onUnloadTransition ?? (onUnloadTransition = new Subject<SceneInstance<TScenes>>());
         }
     }
 }
