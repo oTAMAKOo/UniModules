@@ -1,6 +1,5 @@
 
 using UnityEngine;
-using System;
 using System.Linq;
 using System.Collections.Generic;
 using Extensions;
@@ -48,14 +47,11 @@ namespace Modules.PatternTexture
         [SerializeField, ReadOnly]
         private Texture2D texture = null;
 
-        // テクスチャ名とブロック位置からピクセルハッシュを取得する為のディクショナリ.
-        private Dictionary<string, Dictionary<Tuple<int, int>, ushort?>> pixelIdDictionary = null;
+        // テクスチャ名からパターン情報を取得する為のディクショナリ.
+        private Dictionary<string, PatternData> patternDataByName = null;
 
         // 同じピクセル情報のブロックは存在しないはずなのでディクショナリで高速アクセスできる.
-        private Dictionary<ushort, PatternBlockData> blockByPixelId= null;
-
-		// ブロック数.
-		private int? blockCount = null;
+        private Dictionary<ushort, PatternBlockData> blockByPixelId = null;
 
         //----- property -----
 
@@ -66,34 +62,16 @@ namespace Modules.PatternTexture
 		public int FilterPixels { get { return filterPixels; } }
 
         public bool HasAlphaMap { get { return hasAlphaMap; } }
-        
+
 		public Texture2D Texture { get { return texture; } }
 
         //----- method -----
 
         private void Build()
         {
-            if(pixelIdDictionary == null)
+            if (patternDataByName == null)
             {
-                pixelIdDictionary = new Dictionary<string, Dictionary<Tuple<int, int>, ushort?>>();
-
-                foreach (var data in sourceData)
-                {
-                    var blockDictionary = new Dictionary<Tuple<int, int>, ushort?>();
-
-                    for (var y = 0; y < data.YBlock; y++)
-                    {
-                        for (var x = 0; x < data.XBlock; x++)
-                        {
-                            var key = Tuple.Create(x, y);
-                            var id = data.BlockIds[y * data.XBlock + x];
-
-                            blockDictionary.Add(key, id);
-                        }
-                    }
-
-                    pixelIdDictionary.Add(data.TextureName, blockDictionary);
-                }
+                patternDataByName = sourceData.ToDictionary(x => x.TextureName);
             }
 
             if (blockByPixelId == null)
@@ -102,7 +80,7 @@ namespace Modules.PatternTexture
             }
         }
 
-        public void Set(Texture2D texture, TextureSizeType sizeType, int blockSize, int filterPixels, 
+        public void Set(Texture2D texture, TextureSizeType sizeType, int blockSize, int filterPixels,
 						PatternData[] sourceData, PatternBlockData[] blockData, bool hasAlphaMap)
         {
             this.texture = texture;
@@ -113,9 +91,8 @@ namespace Modules.PatternTexture
             this.blockData = blockData;
             this.hasAlphaMap = hasAlphaMap;
 
-            pixelIdDictionary = null;
+            patternDataByName = null;
             blockByPixelId = null;
-			blockCount = null;
         }
 
         public IReadOnlyList<PatternData> GetAllPatternData()
@@ -127,36 +104,40 @@ namespace Modules.PatternTexture
 
         public PatternData GetPatternData(string textureName)
         {
+            if (string.IsNullOrEmpty(textureName)){ return null; }
+
             Build();
 
-            return sourceData.FirstOrDefault(x => x.TextureName == textureName);
+            return patternDataByName.GetValueOrDefault(textureName);
         }
 
         public PatternBlockData GetBlockData(string textureName, int bx, int by)
         {
+            var patternData = GetPatternData(textureName);
+
+            return GetBlockData(patternData, bx, by);
+        }
+
+        public PatternBlockData GetBlockData(PatternData patternData, int bx, int by)
+        {
+            if (patternData == null){ return null; }
+
             Build();
 
-            var texturePixelIds = pixelIdDictionary.GetValueOrDefault(textureName);
+            var index = by * patternData.XBlock + bx;
 
-            if(texturePixelIds == null) { return null; }
+            if (index < 0 || patternData.BlockIds.Length <= index){ return null; }
 
-            var key = Tuple.Create(bx, by);
+            var blockId = patternData.BlockIds[index];
 
-            var pixelId = texturePixelIds.GetValueOrDefault(key, null);
-            
-            return pixelId.HasValue ? blockByPixelId.GetValueOrDefault(pixelId.Value) : null;
+            return blockByPixelId.GetValueOrDefault(blockId);
         }
 
 		public int GetBlockCount()
 		{
 			Build();
 
-			if (!blockCount.HasValue)
-			{
-				blockCount = blockByPixelId.Count;
-			}
-
-			return blockCount.Value;
+			return blockByPixelId.Count;
 		}
     }
 }

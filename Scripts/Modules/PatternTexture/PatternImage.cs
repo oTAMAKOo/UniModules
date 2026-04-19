@@ -30,9 +30,13 @@ namespace Modules.PatternTexture
         [SerializeField]
         private PatternTexture patternTexture = null;
         [SerializeField]
+        private bool setNativeSize = true;
+        [SerializeField]
         private bool crossFade = false;
         [SerializeField]
         private float crossFadeTime = 0.5f;
+        [SerializeField]
+        private bool useUnscaledTime = false;
         [SerializeField]
         private string selectionPatternName = null;
 
@@ -49,6 +53,7 @@ namespace Modules.PatternTexture
 
         // クロスフェード.
         private string crossFadeTextureName = null;
+        private PatternData crossFadeSourceTexture = null;
         private Color crossFadeColor = Color.clear;
         private IDisposable fadeDisposable = null;
 
@@ -116,6 +121,12 @@ namespace Modules.PatternTexture
             }
         }
 
+        public bool SetNativeSizeOnEnable
+        {
+            get { return setNativeSize; }
+            set { setNativeSize = value; }
+        }
+
         public bool CrossFade
         {
             get { return crossFade; }
@@ -126,6 +137,12 @@ namespace Modules.PatternTexture
         {
             get { return crossFadeTime; }
             set { crossFadeTime = value; }
+        }
+
+        public bool UseUnscaledTime
+        {
+            get { return useUnscaledTime; }
+            set { useUnscaledTime = value; }
         }
 
         /// <summary>
@@ -181,7 +198,11 @@ namespace Modules.PatternTexture
             if (!string.IsNullOrEmpty(selectionPatternName))
             {
                 SetPatternName(selectionPatternName);
-                SetNativeSize();
+
+                if (setNativeSize)
+                {
+                    SetNativeSize();
+                }
             }
         }
 
@@ -244,7 +265,7 @@ namespace Modules.PatternTexture
 
                 for (var bx = 0; bx < sourceTexture.XBlock; bx++)
                 {
-                    var block = patternTexture.GetBlockData(currentTextureName, bx, by);
+                    var block = patternTexture.GetBlockData(sourceTexture, bx, by);
 
                     if (block == null) { continue; }
 
@@ -369,11 +390,17 @@ namespace Modules.PatternTexture
 
         private void StartCrossFade()
         {
+            // 連続切替時は残り α を引き継ぐ.
+            var continuous = !string.IsNullOrEmpty(crossFadeTextureName);
+            var inheritedAlpha = continuous ? crossFadeColor.a : color.a;
+
             StopCrossFade();
 
             crossFadeTextureName = currentTextureName;
+            crossFadeSourceTexture = sourceTexture;
 
             crossFadeColor = color;
+            crossFadeColor.a = inheritedAlpha;
 
             fadeDisposable = ObservableEx.FromUniTask(ct => Fade(crossFadeTime, ct))
                 .Subscribe(_ => StopCrossFade())
@@ -389,23 +416,24 @@ namespace Modules.PatternTexture
             }
 
             crossFadeTextureName = null;
+            crossFadeSourceTexture = null;
 
             SetAllDirty();
         }
 
         private void DrawCrossFade(VertexHelper vh, int bx, int by, Vector3 pos, float textureWidth, float textureHeight, float vertexSizeX, float vertexSizeY)
         {
-            var block = patternTexture.GetBlockData(currentTextureName, bx, by);
+            var block = patternTexture.GetBlockData(sourceTexture, bx, by);
 
-            var crossFadeBlock = patternTexture.GetBlockData(crossFadeTextureName, bx, by);
+            var crossFadeBlock = patternTexture.GetBlockData(crossFadeSourceTexture, bx, by);
 
             if (block == null || crossFadeBlock == null) { return; }
 
             // 同じピクセル情報なら描画しない.
             if (block.blockId == crossFadeBlock.blockId) { return; }
 
-            // 全ピクセルが透過なら描画しない.
-            if (block.isAllTransparent){ return; }
+            // 旧ブロックが全透過なら描画しない.
+            if (crossFadeBlock.isAllTransparent){ return; }
 
             // 左上
             var lt = UIVertex.simpleVert;
@@ -437,18 +465,17 @@ namespace Modules.PatternTexture
         private async UniTask Fade(float time, System.Threading.CancellationToken ct)
         {
             var current = 0f;
-
-            crossFadeColor = color;
+            var startAlpha = crossFadeColor.a;
 
             try
             {
                 while (current < time)
                 {
-                    current += Time.deltaTime;
+                    current += useUnscaledTime ? Time.unscaledDeltaTime : Time.deltaTime;
 
-                    var c = this.color;
+                    var c = color;
 
-                    c.a *= 1f - Mathf.Clamp01(current / time);
+                    c.a = startAlpha * (1f - Mathf.Clamp01(current / time));
 
                     crossFadeColor = c;
 
@@ -459,10 +486,11 @@ namespace Modules.PatternTexture
             }
             catch (OperationCanceledException)
             {
-                /* キャンセルは処理しない */
+                return;
             }
 
             crossFadeTextureName = null;
+            crossFadeSourceTexture = null;
 
             SetAllDirty();
         }
@@ -471,35 +499,34 @@ namespace Modules.PatternTexture
         {
             if (patternTexture == null) { return; }
 
-            var textureName = Path.GetFileNameWithoutExtension(patternName);
-
-            if (patternName != null)
-            {
-                if (sourceTexture == null || currentTextureName != textureName)
-                {
-                    if (CheckCrossFade(textureName))
-                    {
-                        StartCrossFade();
-                    }
-
-                    sourceTexture = patternTexture.GetPatternData(textureName);
-                    currentTextureName = textureName;
-
-                    if (sourceTexture == null)
-                    {
-                        Debug.LogErrorFormat("This texture is not found. {0}", textureName);
-                    }
-
-                    SetAllDirty();
-
-                    selectionPatternName = patternName;
-                }
-            }
-            else
+            if (string.IsNullOrEmpty(patternName))
             {
                 sourceTexture = null;
                 currentTextureName = null;
                 selectionPatternName = null;
+                return;
+            }
+
+            var textureName = Path.GetFileNameWithoutExtension(patternName);
+
+            if (sourceTexture == null || currentTextureName != textureName)
+            {
+                if (CheckCrossFade(textureName))
+                {
+                    StartCrossFade();
+                }
+
+                sourceTexture = patternTexture.GetPatternData(textureName);
+                currentTextureName = textureName;
+
+                if (sourceTexture == null)
+                {
+                    Debug.LogErrorFormat("This texture is not found. {0}", textureName);
+                }
+
+                SetAllDirty();
+
+                selectionPatternName = patternName;
             }
         }
 

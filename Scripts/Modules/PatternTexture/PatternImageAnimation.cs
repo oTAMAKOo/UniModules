@@ -24,6 +24,8 @@ namespace Modules.PatternTexture
 
         private IReadOnlyList<string> patternNames = null;
 
+        private int lastPatternIndex = -1;
+
         //----- property -----
 
         //----- method -----
@@ -34,15 +36,21 @@ namespace Modules.PatternTexture
 
             patternNames = GetPatternNames();
 
+            lastPatternIndex = -1;
+
             if (target != null)
             {
                 target.PatternName = patternNames.ElementAtOrDefault(patternIndex);
+                lastPatternIndex = patternIndex;
             }
         }
 
         void Update()
         {
             if (target == null){ return; }
+            if (lastPatternIndex == patternIndex){ return; }
+
+            lastPatternIndex = patternIndex;
 
             var patternName = patternNames.ElementAtOrDefault(patternIndex);
 

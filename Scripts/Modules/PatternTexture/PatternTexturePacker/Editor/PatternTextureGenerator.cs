@@ -43,22 +43,41 @@ namespace Modules.PatternTexture
 
         // ブロックに割り振るID.
         private ushort blockId = 0;
-        // ブロックのハッシュ情報とブロックIDのテーブル.
-        private Dictionary<string, ushort?> blockIdbyHashCode = null;
+        // ブロックのハッシュ情報とブロックIDのテーブル(ハッシュ衝突に備えて同一ハッシュの複数ブロックをList保持).
+        private Dictionary<string, List<(ushort blockId, Color32[] colors)>> blockIdByHashCode = null;
+        // テクスチャインポート設定を一時的に変更する前の値を保持.
+        private Dictionary<string, (bool isReadable, TextureImporterCompression compression)> originalTextureSettings = null;
 
         //----- property -----
 
         //----- method -----
 
-        public PatternTextureData Generate(string exportPath, int blockSize, int padding, int filterPixels, 
+        public PatternTextureData Generate(string exportPath, int blockSize, int padding, int filterPixels,
 											PatternTexture.TextureSizeType sizeType,Texture2D[] sourceTextures, bool hasAlphaMap)
         {
+			// テクスチャ名重複検知.
+			var duplicateNames = sourceTextures
+				.Select(x => x.name)
+				.GroupBy(x => x)
+				.Where(g => 1 < g.Count())
+				.Select(g => g.Key)
+				.ToArray();
+
+			if (duplicateNames.Any())
+			{
+				Debug.LogError($"Duplicate texture names detected. Cannot generate PatternTexture.\n{string.Join(", ", duplicateNames)}");
+				return null;
+			}
+
             var patternTextureData = new PatternTextureData();
-			
+
+			Texture2D temporaryTexture = null;
+
 			try
 			{
 				blockId = 0;
-				blockIdbyHashCode = new Dictionary<string, ushort?>();
+				blockIdByHashCode = new Dictionary<string, List<(ushort, Color32[])>>();
+				originalTextureSettings = new Dictionary<string, (bool, TextureImporterCompression)>();
 
 				// テクスチャ情報読み込み.
 
@@ -84,17 +103,17 @@ namespace Modules.PatternTexture
 				var patternTargetDatas = ReadTextureBlock(blockSize, sourceTextures);
 
 				// 書き込み用テクスチャ作成.
-				var texture = CreateTexture(sizeType, blockSize, padding, filterPixels, patternTargetDatas);
+				temporaryTexture = CreateTexture(sizeType, blockSize, padding, filterPixels, patternTargetDatas);
 
 				// パターン情報構築.
 				patternTextureData.PatternData = BuildPatternData(patternTargetDatas);
 
 				// テクスチャにピクセル情報を書き込み.
-				patternTextureData.PatternBlocks = BitBlockTransfer(texture, blockSize, padding, filterPixels, patternTargetDatas, hasAlphaMap);
+				patternTextureData.PatternBlocks = BitBlockTransfer(temporaryTexture, blockSize, padding, filterPixels, patternTargetDatas, hasAlphaMap);
 
 				// ファイルに書き込み.
 
-				File.WriteAllBytes(texturePath, texture.EncodeToPNG());
+				File.WriteAllBytes(texturePath, temporaryTexture.EncodeToPNG());
 
 				AssetDatabase.ImportAsset(texturePath);
 
@@ -103,6 +122,15 @@ namespace Modules.PatternTexture
 			finally
 			{
 				EditorUtility.ClearProgressBar();
+
+				// 一時テクスチャを破棄.
+				if (temporaryTexture != null)
+				{
+					UnityEngine.Object.DestroyImmediate(temporaryTexture);
+				}
+
+				// テクスチャインポート設定を元に戻す.
+				RestoreTextureSettings();
 			}
 
 			return patternTextureData;
@@ -115,6 +143,14 @@ namespace Modules.PatternTexture
             var assetPath = AssetDatabase.GetAssetPath(texture);
 
             var textureImporter = AssetImporter.GetAtPath(assetPath) as TextureImporter;
+
+            if (textureImporter == null){ return false; }
+
+            // 変更前の値を保持.
+            if (!originalTextureSettings.ContainsKey(assetPath))
+            {
+                originalTextureSettings.Add(assetPath, (textureImporter.isReadable, textureImporter.textureCompression));
+            }
 
             if (!textureImporter.isReadable)
             {
@@ -132,8 +168,52 @@ namespace Modules.PatternTexture
             {
                 textureImporter.SaveAndReimport();
             }
-            
+
             return changed;
+        }
+
+        private void RestoreTextureSettings()
+        {
+            if (originalTextureSettings == null){ return; }
+
+            using (new AssetEditingScope())
+            {
+                var changed = false;
+
+                foreach (var entry in originalTextureSettings)
+                {
+                    var textureImporter = AssetImporter.GetAtPath(entry.Key) as TextureImporter;
+
+                    if (textureImporter == null){ continue; }
+
+                    var modified = false;
+
+                    if (textureImporter.isReadable != entry.Value.isReadable)
+                    {
+                        textureImporter.isReadable = entry.Value.isReadable;
+                        modified = true;
+                    }
+
+                    if (textureImporter.textureCompression != entry.Value.compression)
+                    {
+                        textureImporter.textureCompression = entry.Value.compression;
+                        modified = true;
+                    }
+
+                    if (modified)
+                    {
+                        textureImporter.SaveAndReimport();
+                        changed = true;
+                    }
+                }
+
+                if (changed)
+                {
+                    AssetDatabase.Refresh();
+                }
+            }
+
+            originalTextureSettings.Clear();
         }
 
 		// テクスチャを読み込み.
@@ -226,26 +306,16 @@ namespace Modules.PatternTexture
 					{
 						var size_x = 2;
 
-						while (true)
-						{
-							if(requireWidth < size_x){ break; }
-
-							size_x *= 2;
-						}
-
-						var size_y = 2;
+						while (size_x <= requireWidth){ size_x *= 2; }
 
 						var xLineBlock = (size_x - padding) / totalBlockSize;
 						var yLineBlock = Math.Ceiling((float)totalBlockCount / xLineBlock);
 
-						var requireHight = padding + yLineBlock * totalBlockSize;
+						var requireHeight = padding + yLineBlock * totalBlockSize;
 
-						while (true)
-						{
-							if(requireHight < size_y){ break; }
+						var size_y = 2;
 
-							size_y *= 2;
-						}
+						while (size_y <= requireHeight){ size_y *= 2; }
 
 						textureSize = new Vector2Int(size_x, size_y);
 					}
@@ -255,26 +325,16 @@ namespace Modules.PatternTexture
 					{
 						var size_x = 4;
 
-						while (true)
-						{
-							if(requireWidth < size_x){ break; }
-
-							size_x += 4;
-						}
-
-						var size_y = 4;
+						while (size_x <= requireWidth){ size_x += 4; }
 
 						var xLineBlock = (size_x - padding) / totalBlockSize;
 						var yLineBlock = Math.Ceiling((float)totalBlockCount / xLineBlock);
 
-						var requireHight = padding + yLineBlock * totalBlockSize;
+						var requireHeight = padding + yLineBlock * totalBlockSize;
 
-						while (true)
-						{
-							if(requireHight < size_y){ break; }
+						var size_y = 4;
 
-							size_y += 4;
-						}
+						while (size_y <= requireHeight){ size_y += 4; }
 
 						textureSize = new Vector2Int(size_x, size_y);
 					}
@@ -284,12 +344,7 @@ namespace Modules.PatternTexture
 					{
 						var size = 2;
 
-						while (true)
-						{
-							if(requireWidth < size){ break; }
-
-							size *= 2;
-						}
+						while (size <= requireWidth){ size *= 2; }
 
 						textureSize = new Vector2Int(size, size);
 					}
@@ -299,12 +354,7 @@ namespace Modules.PatternTexture
 					{
 						var size = 4;
 
-						while (true)
-						{
-							if(requireWidth < size){ break; }
-
-							size += 4;
-						}
+						while (size <= requireWidth){ size += 4; }
 
 						textureSize = new Vector2Int(size, size);
 					}
@@ -387,8 +437,6 @@ namespace Modules.PatternTexture
 					}
 					catch
 					{
-						EditorUtility.ClearProgressBar();
-
 						using (new DisableStackTraceScope())
 						{
 							var logTexture = $"texture: {texture.width}x{texture.height}";
@@ -578,7 +626,7 @@ namespace Modules.PatternTexture
             
             var isAllTransparent = colors.All(c => c.a == 0f);
             var colorHash = GetPixelColorsHash(blockWidth, blockHeight, blockSize, colors);
-            var blockId = GetHashId(colorHash);
+            var blockId = GetHashId(colorHash, colors);
 
             var blockData = new TextureBlock()
             {
@@ -592,19 +640,53 @@ namespace Modules.PatternTexture
             return blockData;
         }
 
-        private ushort GetHashId(string hash)
+        private ushort GetHashId(string hash, Color32[] colors)
         {
-            var id = blockIdbyHashCode.GetValueOrDefault(hash, null);
-
-            if (!id.HasValue)
+            // 同一ハッシュのエントリ一覧からピクセル一致するものを探す(ハッシュ衝突対策).
+            if (blockIdByHashCode.TryGetValue(hash, out var entries))
             {
-                id = blockId;
-
-                blockIdbyHashCode.Add(hash, blockId);
-                blockId++;
+                foreach (var entry in entries)
+                {
+                    if (ColorsEqual(entry.colors, colors))
+                    {
+                        return entry.blockId;
+                    }
+                }
+            }
+            else
+            {
+                entries = new List<(ushort, Color32[])>();
+                blockIdByHashCode.Add(hash, entries);
             }
 
-            return id.Value;
+            if (blockId == ushort.MaxValue)
+            {
+                Debug.LogError($"BlockId overflow. Max = {ushort.MaxValue}. Cannot add more unique blocks.");
+            }
+
+            var newId = blockId;
+
+            entries.Add((newId, colors));
+
+            blockId++;
+
+            return newId;
+        }
+
+        private static bool ColorsEqual(Color32[] a, Color32[] b)
+        {
+            if (a == null || b == null){ return false; }
+            if (a.Length != b.Length){ return false; }
+
+            for (var i = 0; i < a.Length; i++)
+            {
+                if (a[i].r != b[i].r || a[i].g != b[i].g || a[i].b != b[i].b || a[i].a != b[i].a)
+                {
+                    return false;
+                }
+            }
+
+            return true;
         }
 
         private Color32[] GetBlockColors(int x, int y, int width, int height, int textureWidth, Color32[] colors)
@@ -634,7 +716,7 @@ namespace Modules.PatternTexture
                 for (var x = 0; x < width; x++)
                 {
                     // 0x00だとゴミピクセルを拾うことがあるので0x01以上で判定.
-                    var hasAlpha = 0x01 < colors[y * width + x].a ? 0x01 : 0x00;
+                    var hasAlpha = 0x01 <= colors[y * width + x].a ? 0x01 : 0x00;
 
                     alphaBit |= (byte)(hasAlpha << bit);
 
@@ -648,6 +730,12 @@ namespace Modules.PatternTexture
                         alphaBit = 0;
                     }
                 }
+            }
+
+            // width * height が 8 の倍数でない場合、余りビットを書き込む.
+            if (bit != 0)
+            {
+                alphaMap.Add(alphaBit);
             }
 
             return alphaMap.ToArray();

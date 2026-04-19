@@ -99,6 +99,17 @@ namespace Modules.PatternTexture
                     instance.maskable = maskable;
                 }
 
+                // SetNativeSize.
+                EditorGUI.BeginChangeCheck();
+
+                var setNativeSize = EditorGUILayout.Toggle("SetNativeSize", instance.SetNativeSizeOnEnable, GUILayout.Height(18f));
+
+                if (EditorGUI.EndChangeCheck())
+                {
+                    UnityEditorUtility.RegisterUndo(instance);
+                    instance.SetNativeSizeOnEnable = setNativeSize;
+                }
+
                 // CrossFade.
                 EditorGUI.BeginChangeCheck();
 
@@ -120,6 +131,16 @@ namespace Modules.PatternTexture
                     {
                         UnityEditorUtility.RegisterUndo(instance);
                         instance.CrossFadeTime = crossFadeTime;
+                    }
+
+                    EditorGUI.BeginChangeCheck();
+
+                    var useUnscaledTime = EditorGUILayout.Toggle("UseUnscaledTime", instance.UseUnscaledTime, GUILayout.Height(18f));
+
+                    if (EditorGUI.EndChangeCheck())
+                    {
+                        UnityEditorUtility.RegisterUndo(instance);
+                        instance.UseUnscaledTime = useUnscaledTime;
                     }
                 }
 

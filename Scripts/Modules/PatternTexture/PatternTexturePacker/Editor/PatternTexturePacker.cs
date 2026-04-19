@@ -610,9 +610,12 @@ namespace Modules.PatternTexture
 
             if (!string.IsNullOrEmpty(exportPath))
             {
-                patternTexture = ScriptableObjectGenerator.Generate<PatternTexture>(exportPath);
-
                 var data = generator.Generate(exportPath, blockSize, BlockPadding, filterPixels, sizeType, textures, hasAlphaMap);
+
+                // 名前重複等で失敗した場合は処理中止.
+                if (data == null){ return; }
+
+                patternTexture = ScriptableObjectGenerator.Generate<PatternTexture>(exportPath);
 
                 patternTexture.Set(data.Texture, sizeType, blockSize, filterPixels, data.PatternData, data.PatternBlocks, hasAlphaMap);
                 patternTexture.Texture.filterMode = filterMode;
