@@ -1,6 +1,7 @@
 
 using UnityEngine;
 using UnityEditor;
+using UnityEditorInternal;
 using System;
 using System.Linq;
 using System.Collections.Generic;
@@ -10,9 +11,13 @@ using Object = UnityEngine.Object;
 
 namespace Modules.Devkit.Pinning
 {
-	public abstract class PinningWindow<T> : SingletonEditorWindow<T> where T : PinningWindow<T>
+    public abstract class PinningWindow<T> : SingletonEditorWindow<T> where T : PinningWindow<T>
     {
         //----- params -----
+
+        private const float HandleAreaWidth = 20f;
+        private const float CancelButtonWidth = 16f;
+        private const double DoubleClickThreshold = 0.3;
 
         [Serializable]
         protected sealed class PinnedItem
@@ -27,18 +32,25 @@ namespace Modules.Devkit.Pinning
         [SerializeField]
         protected List<PinnedItem> pinning = null;
 
-		private GUIStyle labelStyle = null;
-		private GUIStyle iconStyle = null;
+        private ReorderableList reorderableList = null;
+
+        private GUIStyle labelStyle = null;
+        private GUIStyle iconStyle = null;
+        private GUIStyle cancelButtonStyle = null;
 
         private Vector2 scrollPosition = Vector2.zero;
-        private Vector2 lastClickPosition = Vector2.zero;
 
         private PinnedItem commentInputTarget = null;
+
+        private double lastClickTime = 0;
+        private int lastClickIndex = -1;
+
+        private int pressedIndex = -1;
 
         //----- property -----
 
         protected abstract string WindowTitle { get; }
-        
+
         //----- method -----
 
         public void Initialize()
@@ -54,8 +66,9 @@ namespace Modules.Devkit.Pinning
 
         void OnEnable()
         {
-			labelStyle = null;
-			iconStyle = null;
+            labelStyle = null;
+            iconStyle = null;
+            cancelButtonStyle = null;
 
             Load();
         }
@@ -76,7 +89,12 @@ namespace Modules.Devkit.Pinning
         {
             if (pinning == null){ return; }
 
-			InitializeStyle();
+            InitializeStyle();
+
+            EnsureReorderableList();
+
+            // コメント編集中は並び替えをロック.
+            reorderableList.draggable = commentInputTarget == null;
 
             var e = Event.current;
 
@@ -113,275 +131,311 @@ namespace Modules.Devkit.Pinning
 
                 var iconSize = new Vector2(16f, 16f);
 
-                var requestSave = false;
+                EditorGUIUtility.SetIconSize(iconSize);
 
-				EditorGUIUtility.SetIconSize(iconSize);
-
-                for (var i = 0; i < pinning.Count; i++)
-                {
-                    var item = pinning[i];
-
-                    if (item == null || item.target == null) { continue; }
-
-                    var thumbnail = (Texture)AssetPreview.GetMiniThumbnail(item.target);
-
-                    using (new EditorGUILayout.HorizontalScope())
-                    {
-                        using (new EditorGUILayout.HorizontalScope())
-                        {
-                            GUILayout.Space(3f);
-
-                            //------ icon ------
-
-                            var toolTipText = GetToolTipText(item.target);
-
-                            var originLabelWidth = EditorGUIUtility.labelWidth;
-
-                            EditorGUIUtility.labelWidth = 0f;
-
-                            var iconContent = new GUIContent(thumbnail, toolTipText);
-                            
-                            // アイコンが見切れるのでサイズを補正. 
-                            GUILayout.Label(iconContent, iconStyle, GUILayout.Width(iconSize.x + 2.5f), GUILayout.Height(iconSize.y));
-
-                            EditorGUIUtility.labelWidth = originLabelWidth;
-
-                            //------ label ------
-
-							using (new EditorGUILayout.VerticalScope())
-							{
-								GUILayout.Space(-0.5f);
-
-	                            var labelText = GetLabelName(item.target);
-
-	                            var labelContent = new GUIContent(labelText, toolTipText);
-
-	                            GUILayout.Label(labelContent, labelStyle, GUILayout.Height(18f));
-							}
-
-                            //------ comment ------
-
-                            if (item == commentInputTarget)
-                            {
-                                EditorGUI.BeginChangeCheck();
-
-                                var comment = EditorGUILayout.DelayedTextField(item.comment);
-
-                                if (EditorGUI.EndChangeCheck())
-                                {
-                                    item.comment = comment;
-
-                                    commentInputTarget = null;
-
-                                    requestSave = true;
-                                }
-                            }
-                            else
-                            {
-                                if (!string.IsNullOrEmpty(item.comment))
-                                {
-                                    EditorGUILayout.LabelField(item.comment, EditorStyles.miniLabel);
-                                }
-                            }
-                        }
-
-                        //------ mouse action ------
-
-                        var rect = GUILayoutUtility.GetLastRect();
-
-                        if (rect.Contains(e.mousePosition))
-                        {
-                            var doubleClick = IsDoubleClick(e);
-
-                            switch (e.button)
-                            {
-                                case 0:
-                                    MouseLeftButton(rect, e, item, doubleClick);
-                                    break;
-
-                                case 1:
-                                    MouseRightButton(rect, e, item, doubleClick);
-									break;
-                            }
-                        }
-                    }
-                }
-
-                if (requestSave)
-                {
-                    Save();
-                }
+                reorderableList.DoLayoutList();
 
                 EditorGUIUtility.SetIconSize(originIconSize);
 
                 scrollPosition = scrollViewScope.scrollPosition;
+            }
 
-                // ドロップエリア
-                switch (Event.current.type)
-                {
-                    case EventType.DragUpdated:
-                    case EventType.DragPerform:
-                        {
-                            var validate = ValidatePinned(DragAndDrop.objectReferences);
+            // ウィンドウ全体でのDrag&Drop受付(外部から追加).
+            HandleExternalDragAndDrop(e);
 
-                            DragAndDrop.visualMode = validate ? DragAndDropVisualMode.Copy : DragAndDropVisualMode.Rejected;
-
-                            if (e.type == EventType.DragPerform)
-                            {
-                                DragAndDrop.AcceptDrag();
-                                DragAndDrop.activeControlID = 0;
-
-                                if (validate)
-                                {
-                                    Pin(DragAndDrop.objectReferences);
-                                }
-                            }
-                        }
-                        break;
-                }
+            // 要素外でMouseUpした場合のpressedIndexリセット漏れ対策.
+            if (e.type == EventType.MouseUp && pressedIndex != -1)
+            {
+                pressedIndex = -1;
             }
         }
 
-        private bool IsDoubleClick(Event e)
+        private void EnsureReorderableList()
         {
-            var wasclick = e.type == EventType.MouseDown;
-            var wasused = e.type == EventType.Used;
+            if (reorderableList != null && reorderableList.list == pinning){ return; }
 
-            if (wasclick && !wasused) 
+            reorderableList = new ReorderableList(pinning, typeof(PinnedItem), true, false, false, false)
             {
-                if ((lastClickPosition - e.mousePosition).sqrMagnitude <= 5 * 5 && e.clickCount > 1)
-                {
-                    return true;
-                }
-                             
-                lastClickPosition = e.mousePosition;
-            }
-
-            return false;
+                headerHeight = 0f,
+                footerHeight = 0f,
+                drawElementCallback = DrawElement,
+                drawElementBackgroundCallback = DrawElementBackground,
+                elementHeightCallback = GetElementHeight,
+                onReorderCallback = OnReorder,
+            };
         }
 
-		private void InitializeStyle()
-		{
-			if (labelStyle == null)
-			{
-				labelStyle = new GUIStyle(EditorStyles.label)
-				{
-					alignment = TextAnchor.MiddleLeft,
-				};
-
-				labelStyle.normal.textColor = EditorLayoutTools.DefaultContentColor;
-				labelStyle.focused.textColor = EditorLayoutTools.DefaultContentColor;
-			}
-
-			if (iconStyle == null)
-			{
-				iconStyle = new GUIStyle(EditorStyles.label)
-				{
-					alignment = TextAnchor.MiddleCenter,
-				};
-			}
-		}
-
-        private void MouseLeftButton(Rect rect, Event e, PinnedItem item, bool doubleClick)
+        private float GetElementHeight(int index)
         {
-            if (e.type == EventType.MouseDown)
+            return EditorGUIUtility.singleLineHeight + 2f;
+        }
+
+        private void DrawElementBackground(Rect rect, int index, bool isActive, bool isFocused)
+        {
+            // 選択時の青色を描画しないために isActive/isFocused を常に false で渡す.
+            if (Event.current.type == EventType.Repaint)
             {
-                OnMouseLeftDown(item.target, doubleClick);
+                ReorderableList.defaultBehaviours.DrawElementBackground(rect, index, false, false, true);
             }
 
-            if (e.type == EventType.DragPerform || e.type == EventType.DragUpdated)
-            {
-                if (DragAndDrop.objectReferences.Any())
-                {
-                    DragAndDrop.visualMode = DragAndDropVisualMode.Copy;
+            if (index < 0 || pinning.Count <= index){ return; }
 
-                    if (e.type == EventType.DragPerform)
-                    {
-                        DragAndDrop.AcceptDrag();
-                        DragAndDrop.activeControlID = 0;
+            var item = pinning[index];
 
-                        // 中心より上なら上に挿入.
-                        var toAbove = new Rect(rect.position, new Vector2(rect.width, rect.height * 0.5f))
-                            .Contains(e.mousePosition);
+            if (item == null || item.target == null){ return; }
 
-                        Pin(DragAndDrop.objectReferences, item.target, toAbove);
-                    }
+            // コメント編集中はTextFieldへのフォーカスを妨げない.
+            if (item == commentInputTarget){ return; }
 
-                    e.Use();
-                }
-            }
+            // ハンドル領域(左端の≡)以外では並び替えを発動させない.
+            var e = Event.current;
 
-            if (e.type == EventType.MouseDrag)
+            if (e.button != 0){ return; }
+
+            // MouseDrag: MouseDown後にマウスが動いたら外部へのDrag&Dropを開始(位置判定なし).
+            if (e.type == EventType.MouseDrag && pressedIndex == index)
             {
                 DragAndDrop.PrepareStartDrag();
                 DragAndDrop.objectReferences = new[] { item.target };
                 DragAndDrop.StartDrag("Dragging");
 
+                pressedIndex = -1;
+
+                e.Use();
+
+                return;
+            }
+
+            var contentRect = new Rect(rect.x + HandleAreaWidth, rect.y, rect.width - HandleAreaWidth, rect.height);
+
+            if (!contentRect.Contains(e.mousePosition)){ return; }
+
+            // 本体領域のMouseDownを先に消費してReorderableListの並び替えをブロック.
+            if (e.type == EventType.MouseDown)
+            {
+                pressedIndex = index;
+
+                e.Use();
+            }
+            else if (e.type == EventType.MouseUp && pressedIndex == index)
+            {
+                pressedIndex = -1;
+
+                // 本体クリックとして扱う.
+                var currentTime = EditorApplication.timeSinceStartup;
+                var doubleClick = lastClickIndex == index && currentTime - lastClickTime < DoubleClickThreshold;
+
+                lastClickTime = currentTime;
+                lastClickIndex = index;
+
+                OnMouseLeftDown(item.target, doubleClick);
+
                 e.Use();
             }
         }
 
-        private void MouseRightButton(Rect rect, Event e, PinnedItem item, bool doubleClick)
+        private void DrawElement(Rect rect, int index, bool isActive, bool isFocused)
         {
-            if (e.type == EventType.MouseDown)
+            if (index < 0 || pinning.Count <= index){ return; }
+
+            var item = pinning[index];
+
+            if (item == null || item.target == null){ return; }
+
+            var thumbnail = (Texture)AssetPreview.GetMiniThumbnail(item.target);
+            var toolTipText = GetToolTipText(item.target);
+            var labelText = GetLabelName(item.target);
+
+            var iconSize = new Vector2(16f, 16f);
+
+            //------ icon ------
+
+            // アイコンが見切れるのでサイズを補正.
+            var iconRect = new Rect(rect.x, rect.y + 1f, iconSize.x + 2.5f, iconSize.y);
+
+            var iconContent = new GUIContent(thumbnail, toolTipText);
+
+            GUI.Label(iconRect, iconContent, iconStyle);
+
+            //------ label ------
+
+            var labelContent = new GUIContent(labelText, toolTipText);
+
+            var labelMaxWidth = Mathf.Max(0f, rect.xMax - iconRect.xMax - 4f);
+
+            var labelWidth = Mathf.Min(labelStyle.CalcSize(labelContent).x, labelMaxWidth);
+
+            var labelRect = new Rect(iconRect.xMax + 2f, rect.y, labelWidth, rect.height);
+
+            GUI.Label(labelRect, labelContent, labelStyle);
+
+            //------ comment ------
+
+            var commentX = labelRect.xMax + 4f;
+            var commentRect = new Rect(commentX, rect.y, Mathf.Max(0f, rect.xMax - commentX), rect.height);
+
+            if (item == commentInputTarget)
             {
-                var menu = new GenericMenu();
+                var textFieldWidth = Mathf.Max(0f, commentRect.width - CancelButtonWidth - 2f);
 
-                void OnMenuCommentCommand()
+                var textFieldRect = new Rect(commentRect.x, commentRect.y, textFieldWidth, commentRect.height);
+                var cancelButtonRect = new Rect(textFieldRect.xMax + 2f, commentRect.y, CancelButtonWidth, commentRect.height);
+
+                EditorGUI.BeginChangeCheck();
+
+                var comment = EditorGUI.DelayedTextField(textFieldRect, item.comment);
+
+                if (EditorGUI.EndChangeCheck())
                 {
-                    commentInputTarget = item;
-                }
+                    item.comment = comment;
 
-                menu.AddItem(new GUIContent("Comment"), false, OnMenuCommentCommand);
+                    commentInputTarget = null;
 
-                void OnMenuRemoveCommand()
-                {
-                    pinning.Remove(item);
                     Save();
                 }
 
-                menu.AddItem(new GUIContent("Remove"), false, OnMenuRemoveCommand);
+                if (GUI.Button(cancelButtonRect, "×", cancelButtonStyle))
+                {
+                    commentInputTarget = null;
 
-                menu.ShowAsContext();
+                    GUI.FocusControl(null);
+                }
+            }
+            else
+            {
+                if (!string.IsNullOrEmpty(item.comment))
+                {
+                    GUI.Label(commentRect, item.comment, EditorStyles.miniLabel);
+                }
+            }
+
+            //------ right click menu ------
+
+            HandleElementRightClick(rect, item);
+        }
+
+        private void HandleElementRightClick(Rect rect, PinnedItem item)
+        {
+            var e = Event.current;
+
+            if (!rect.Contains(e.mousePosition)){ return; }
+
+            if (e.type == EventType.MouseDown && e.button == 1)
+            {
+                ShowContextMenu(item);
 
                 e.Use();
             }
         }
 
-        private void Pin(Object target, Object adjacentObject = null, bool toAbove = false)
+        private void OnReorder(ReorderableList list)
         {
-            if(target == null) { return; }
+            Save();
 
-            Pin(new[] { target }, adjacentObject, toAbove);
+            // 選択状態の青い残像を解除.
+            list.index = -1;
+
+            Repaint();
         }
 
-        private void Pin(Object[] targets, Object adjacentObject = null, bool toAbove = false)
+        private void ShowContextMenu(PinnedItem item)
+        {
+            var menu = new GenericMenu();
+
+            void OnMenuCommentCommand()
+            {
+                commentInputTarget = item;
+            }
+
+            menu.AddItem(new GUIContent("Comment"), false, OnMenuCommentCommand);
+
+            void OnMenuRemoveCommand()
+            {
+                if (commentInputTarget == item)
+                {
+                    commentInputTarget = null;
+                }
+
+                pinning.Remove(item);
+                Save();
+            }
+
+            menu.AddItem(new GUIContent("Remove"), false, OnMenuRemoveCommand);
+
+            menu.ShowAsContext();
+        }
+
+        private void HandleExternalDragAndDrop(Event e)
+        {
+            if (e.type != EventType.DragUpdated && e.type != EventType.DragPerform){ return; }
+
+            var windowRect = new Rect(0f, 0f, position.width, position.height);
+
+            if (!windowRect.Contains(e.mousePosition)){ return; }
+
+            if (!DragAndDrop.objectReferences.Any()){ return; }
+
+            var validate = ValidatePinned(DragAndDrop.objectReferences);
+
+            DragAndDrop.visualMode = validate ? DragAndDropVisualMode.Copy : DragAndDropVisualMode.Rejected;
+
+            if (e.type == EventType.DragPerform && validate)
+            {
+                DragAndDrop.AcceptDrag();
+                DragAndDrop.activeControlID = 0;
+
+                Pin(DragAndDrop.objectReferences);
+            }
+        }
+
+        private void InitializeStyle()
+        {
+            if (labelStyle == null)
+            {
+                labelStyle = new GUIStyle(EditorStyles.label)
+                {
+                    alignment = TextAnchor.MiddleLeft,
+                };
+
+                labelStyle.normal.textColor = EditorLayoutTools.DefaultContentColor;
+                labelStyle.focused.textColor = EditorLayoutTools.DefaultContentColor;
+            }
+
+            if (iconStyle == null)
+            {
+                iconStyle = new GUIStyle(EditorStyles.label)
+                {
+                    alignment = TextAnchor.MiddleCenter,
+                };
+            }
+
+            if (cancelButtonStyle == null)
+            {
+                cancelButtonStyle = new GUIStyle(EditorStyles.label)
+                {
+                    alignment = TextAnchor.MiddleCenter,
+                    fontSize = 11,
+                };
+            }
+        }
+
+        private void Pin(Object target)
+        {
+            if (target == null){ return; }
+
+            Pin(new[] { target });
+        }
+
+        private void Pin(Object[] targets)
         {
             foreach (var obj in targets)
             {
-                var item = pinning.FirstOrDefault(x => x.target == obj);
+                // 既に登録済みの場合はスキップ(順序を変えない).
+                if (pinning.Any(x => x.target == obj)){ continue; }
 
-                if (item != null)
-                {
-                    pinning.Remove(item);
-                }
-                else
-                {
-                    item = new PinnedItem() { target = obj };
-                }
+                var item = new PinnedItem() { target = obj };
 
-                if (adjacentObject != null && pinning.Any())
-                {
-                    var insertion = pinning.FindIndex(x => x.target == adjacentObject) + (toAbove ? 0 : 1);
-
-                    var index = Mathf.Clamp(insertion, 0, pinning.Count);
-
-                    pinning.Insert(index, item);
-                }
-                else
-                {
-                    pinning.Add(item);
-                }
+                pinning.Add(item);
             }
 
             Save();
