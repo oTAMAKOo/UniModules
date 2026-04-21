@@ -86,6 +86,12 @@ namespace Modules.TextData.Components
 
         //----- property -----
 
+        public Vector2 ScrollPosition
+        {
+            get { return scrollPosition; }
+            set { scrollPosition = value; }
+        }
+
         //----- method -----
 
         public RecordView() : base(new TreeViewState<int>()) { }

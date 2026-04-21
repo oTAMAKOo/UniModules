@@ -6,7 +6,6 @@ using System.Linq;
 using System.Collections.Generic;
 using R3;
 using Extensions;
-using Modules.Devkit.AssemblyCompilation;
 
 namespace Modules.TextData.Components
 {
@@ -39,6 +38,21 @@ namespace Modules.TextData.Components
         
         //----- field -----
 
+        [SerializeField]
+        private string savedCategoryGuid = null;
+
+        [SerializeField]
+        private TextType savedTextType = default;
+
+        [SerializeField]
+        private string savedSearchText = null;
+
+        [SerializeField]
+        private Vector2 savedScrollPosition = Vector2.zero;
+
+        [SerializeField]
+        private bool stateRestored = false;
+
         private ToolbarView toolbarView = null;
 
         private RecordView recordView = null;
@@ -58,10 +72,14 @@ namespace Modules.TextData.Components
 
         public static void Open()
         {
-            if (instance != null)
+            // 既に開かれている場合はフォーカスを当てて終了.
+            var existingWindows = Resources.FindObjectsOfTypeAll<SelectorWindow>();
+
+            if (0 < existingWindows.Length)
             {
-                instance.Close();
-                instance = null;
+                instance = existingWindows[0];
+                instance.Focus();
+                return;
             }
 
             instance = CreateInstance<SelectorWindow>();
@@ -90,9 +108,36 @@ namespace Modules.TextData.Components
             recordView = new RecordView();
             recordView.Initialize();
 
+            // 初回は Setter から初期カテゴリを取得、2回目以降は保存済みの状態を復元.
+            if (stateRestored)
+            {
+                toolbarView.CategoryGuid = savedCategoryGuid;
+                toolbarView.Type = savedTextType;
+                toolbarView.SearchText = savedSearchText;
+                recordView.ScrollPosition = savedScrollPosition;
+
+                // 保存済みカテゴリが空の場合は Setter から補完.
+                if (string.IsNullOrEmpty(toolbarView.CategoryGuid))
+                {
+                    SetupSelectionCategory();
+
+                    savedCategoryGuid = toolbarView.CategoryGuid;
+                }
+            }
+            else
+            {
+                SetupSelectionCategory();
+
+                savedCategoryGuid = toolbarView.CategoryGuid;
+                savedTextType = toolbarView.Type;
+                stateRestored = true;
+            }
+
             toolbarView.OnContentTypeChangedAsObservable()
                 .Subscribe(_ =>
                     {
+                        savedTextType = toolbarView.Type;
+
                         BuildSelectionInfos(toolbarView.CategoryGuid);
                     })
                 .AddTo(lifetimeDisposable.Disposable);
@@ -100,13 +145,17 @@ namespace Modules.TextData.Components
             toolbarView.OnCategoryChangedAsObservable()
                 .Subscribe(x =>
                     {
+                        savedCategoryGuid = x;
+
                         BuildSelectionInfos(x);
                     })
                 .AddTo(lifetimeDisposable.Disposable);
 
             toolbarView.OnChangeSearchTextAsObservable()
-                .Subscribe(x =>
+                .Subscribe(_ =>
                    {
+                       savedSearchText = toolbarView.SearchText;
+
                        var records = GetMatchOfList();
 
                        recordView.SetRecords(records);
@@ -119,18 +168,13 @@ namespace Modules.TextData.Components
                 .Subscribe(_ =>
                     {
                         recordView.RefreshRowHeights();
-                    
+
                         Repaint();
                     })
                 .AddTo(lifetimeDisposable.Disposable);
 
             Selection.selectionChanged += () => { Repaint(); };
 
-            CompileNotification.OnCompileStartAsObservable()
-                .Subscribe(_ => Close())
-                .AddTo(lifetimeDisposable.Disposable);
-
-            SetupSelectionCategory();
             BuildSelectionInfos(toolbarView.CategoryGuid);
 
             initialized = true;
@@ -151,9 +195,18 @@ namespace Modules.TextData.Components
 
             var setterInspector = TextSetterInspector.Current;
 
+            // ドメインリロード直後などで一覧が失われている場合は再構築.
+            if (selectionCache == null)
+            {
+                BuildSelectionInfos(toolbarView.CategoryGuid);
+            }
+
             toolbarView.DrawGUI();
 
             recordView.DrawGUI();
+
+            // スクロール位置をシリアライズ対象に反映（コンパイル跨ぎで復元するため）.
+            savedScrollPosition = recordView.ScrollPosition;
 
             if(setterInspector == null)
             {
@@ -164,6 +217,8 @@ namespace Modules.TextData.Components
         private void SetupSelectionCategory()
         {
             var textData = TextData.Instance;
+
+            if (textData == null) { return; }
 
             var setterInspector = TextSetterInspector.Current;
 
@@ -176,6 +231,8 @@ namespace Modules.TextData.Components
         private void BuildSelectionInfos(string categoryGuid)
         {
             var textData = TextData.Instance;
+
+            if (textData == null) { return; }
 
             var categoryTexts = GetCategoryTextGuids(textData, categoryGuid);
 

@@ -34,9 +34,15 @@ namespace Modules.TextData.Components
         
         //----- property -----
 
-        public string SearchText { get; private set; }
+        public string SearchText { get; set; }
 
         public string CategoryGuid  { get; set; }
+
+        public TextType Type
+        {
+            get { return type; }
+            set { type = value; }
+        }
 
         //----- method -----
 
