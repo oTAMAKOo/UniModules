@@ -23,6 +23,8 @@ namespace Modules.Scene
 
 		public bool IsEnable { get; private set; }
 
+		public bool Append { get; private set; }
+
         public ISceneBase<TScenes> Instance { get; private set; }
 
         //----- method -----
@@ -103,6 +105,11 @@ namespace Modules.Scene
 			IsEnable = false;
 
             return true;
+        }
+
+        public void MarkAsAppend()
+        {
+            Append = true;
         }
 
         public UnityEngine.SceneManagement.Scene? GetScene()

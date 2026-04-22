@@ -223,6 +223,8 @@ namespace Modules.Scene
                 // Append側シーンをActiveSceneに設定.
                 if (sceneInstance != null)
                 {
+                    sceneInstance.MarkAsAppend();
+
                     SetSceneActive(sceneInstance.GetScene());
                 }
 
