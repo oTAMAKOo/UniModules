@@ -203,27 +203,9 @@ namespace Modules.Scene
 
                 var enableScenes = loadedScenes.Values.Where(x => x.IsEnable).ToArray();
 
-                // Leave通知.
-                if (onLeave != null)
-                {
-                    foreach (var enableScene in enableScenes)
-                    {
-                        onLeave.OnNext(enableScene);
-                    }
-                }
-
                 foreach (var scene in enableScenes)
                 {
                     scene.Disable();
-                }
-
-                // Leave終了通知.
-                if (onLeaveComplete != null)
-                {
-                    foreach (var enableScene in enableScenes)
-                    {
-                        onLeaveComplete.OnNext(enableScene);
-                    }
                 }
 
                 if (cancelToken.IsCancellationRequested){ return; }
