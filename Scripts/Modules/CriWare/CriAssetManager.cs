@@ -306,7 +306,10 @@ namespace Modules.CriWare
                 installPath = installPath.Replace(streamingAssetsPath, string.Empty).TrimStart(PathUtility.PathSeparator);
             }
 
-            return PathUtility.Combine(installPath, assetInfo.FileName);
+            // ACB/AWBのペアリングが同一ベース名で動作する必要があるためResourcePathベースでハッシュ化.
+            var fileName = ExternalAssetFileNameManager.Instance.BuildPairedHashedFileName(assetInfo);
+
+            return PathUtility.Combine(installPath, fileName);
         }
 
         #if ENABLE_CRIWARE_FILESYSTEM

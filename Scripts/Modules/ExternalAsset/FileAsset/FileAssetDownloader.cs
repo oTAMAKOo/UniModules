@@ -6,6 +6,7 @@ using System.Threading;
 using Cysharp.Threading.Tasks;
 using R3;
 using Extensions;
+using Modules.AssetBundles;
 using Modules.Net.WebDownload;
 using Modules.Net.WebRequest;
 
@@ -26,14 +27,17 @@ namespace Modules.ExternalAssets
 
         public async UniTask Download(string installPath, AssetInfo assetInfo, string url, IProgress<DownloadProgressInfo> progress = null, CancellationToken cancelToken = default)
         {
-            var filePath = PathUtility.Combine(installPath, assetInfo.FileName);
+            // ExternalAsset.GetFilePath経由でハッシュベースの命名に統一.
+            var filePath = ExternalAsset.Instance.GetFilePath(installPath, assetInfo);
 
-            if (File.Exists(filePath))
-            {
-                File.Delete(filePath);
-            }
+            if (string.IsNullOrEmpty(filePath)){ return; }
 
-            var directory = Directory.GetParent(filePath);
+            // 中断時に壊れたファイルが正規の名前で残らないよう一時ファイルに書き出す.
+            var tempFilePath = filePath + AssetBundleManager.TempPackageExtension;
+
+            AssetBundleManager.ForceDeleteFile(tempFilePath);
+
+            var directory = Directory.GetParent(tempFilePath);
 
             if (!directory.Exists)
             {
@@ -56,9 +60,17 @@ namespace Modules.ExternalAssets
                 progressReceiver = new Progress<float>(OnProgressUpdate);
             }
 
-            var downloadRequest = SetupDownloadRequest(url, filePath);
+            var downloadRequest = SetupDownloadRequest(url, tempFilePath);
 
             await Download(downloadRequest, progressReceiver, cancelToken);
+
+            if (cancelToken.IsCancellationRequested){ return; }
+
+            // DL完了後にリネーム.
+
+            AssetBundleManager.ForceDeleteFile(filePath);
+
+            File.Move(tempFilePath, filePath);
         }
 
         protected override void OnComplete(DownloadRequest downloadRequest, double totalMilliseconds) { }

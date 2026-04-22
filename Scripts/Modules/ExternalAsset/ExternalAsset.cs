@@ -105,8 +105,8 @@ namespace Modules.ExternalAssets
             // 制限.
             updateAssetCallLimiter = new FunctionFrameLimiter(150);
 
-            // バージョンチェック初期化.
-            InitializeVersionCheck();
+            // ファイル名生成マネージャーをメインスレッドで事前初期化.
+            ExternalAssetFileNameManager.CreateInstance();
 
             // AssetBundleManager初期化.
 
@@ -237,12 +237,16 @@ namespace Modules.ExternalAssets
         /// <summary> アセット情報取得 </summary>
         public AssetInfo GetAssetInfo(string resourcePath)
         {
+            if (assetInfosByResourcePath == null){ return null; }
+
             return assetInfosByResourcePath.GetValueOrDefault(resourcePath);
         }
 
         /// <summary> アセット情報が存在するか </summary>
         public bool ExistAssetInfo(string resourcePath)
         {
+            if (assetInfosByResourcePath == null){ return false; }
+
             return assetInfosByResourcePath.ContainsKey(resourcePath);
         }
 
@@ -255,20 +259,8 @@ namespace Modules.ExternalAssets
 
             try
             {
-                var tasks = new List<UniTask>();
-
-                // バージョン情報読み込み.
-
-                var loadVersionTask = LoadVersion();
-
-                tasks.Add(loadVersionTask);
-
                 // マニフェストファイルダウンロード.
-                var downloadManifestTask = DownloadManifest(linkedCancelToken);
-
-                tasks.Add(downloadManifestTask);
-
-                await UniTask.WhenAll(tasks);
+                await DownloadManifest(linkedCancelToken);
 
                 // 不要になったファイル削除.
                 DeleteUnUsedCache().Forget();
@@ -416,11 +408,17 @@ namespace Modules.ExternalAssets
 
                 if (!requireUpdate) { return; }
 
-                // バージョン情報削除.
-
-                if (!LocalMode && !SimulateMode)
+                // LocalModeは配信を行わないためローカルに無いアセットを要求された場合はエラー.
+                if (LocalMode)
                 {
-                    RemoveVersion(resourcePath);
+                    if (LogEnable && UnityConsole.Enable)
+                    {
+                        var message = $"LocalMode: Required asset is not bundled. ResourcePath={resourcePath}";
+
+                        UnityConsole.Event(ConsoleEventName, ConsoleEventColor, message, LogType.Error);
+                    }
+
+                    return;
                 }
 
                 // 外部処理.
@@ -460,9 +458,6 @@ namespace Modules.ExternalAssets
                     }
 
                     if (linkedCancelToken.IsCancellationRequested) { return; }
-
-                    // バージョン更新.
-                    UpdateVersion(resourcePath);
                 }
 
                 // 外部処理.
@@ -537,6 +532,8 @@ namespace Modules.ExternalAssets
 
         public string GetFilePath(string directory, AssetInfo assetInfo)
         {
+            if (assetInfo == null){ return null; }
+
             var filePath = string.Empty;
 
             if (assetInfo.IsAssetBundle)
@@ -555,7 +552,12 @@ namespace Modules.ExternalAssets
 
             else
             {
-                filePath = PathUtility.Combine(directory, assetInfo.FileName);
+                // ファイル名からアセット内容が推測されないようハッシュベースの命名にする (拡張子は保持).
+                var fileName = ExternalAssetFileNameManager.Instance.BuildHashedFileName(assetInfo);
+
+                if (string.IsNullOrEmpty(fileName)){ return null; }
+
+                filePath = PathUtility.Combine(directory, fileName);
             }
 
             return filePath;

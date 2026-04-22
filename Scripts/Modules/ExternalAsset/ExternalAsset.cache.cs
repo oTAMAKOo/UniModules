@@ -45,9 +45,11 @@ namespace Modules.ExternalAssets
             {
                 var count = 0;
 
+                // 別スレッドからディレクトリ変更があっても列挙が失敗しないよう即時実体化.
+                // .tmpもマニフェスト管理外として削除対象に含める (中断で残った残骸を自動掃除).
                 var directoryFiles = directoryInfo.EnumerateFiles("*", SearchOption.TopDirectoryOnly)
-                    .Where(x => x.Name != VersionFileName)
-                    .Select(x => PathUtility.ConvertPathSeparator(x.FullName));
+                    .Select(x => PathUtility.ConvertPathSeparator(x.FullName))
+                    .ToArray();
 
                 foreach (var item in directoryFiles)
                 {
@@ -79,8 +81,6 @@ namespace Modules.ExternalAssets
             }
 
             UnloadAllAssetBundles(false);
-
-            ClearVersion();
 
             if (Directory.Exists(InstallDirectory))
             {
@@ -125,11 +125,6 @@ namespace Modules.ExternalAssets
                 }, false);
 
                 return hashset;
-            }
-
-            if (versions.IsEmpty())
-            {
-                await LoadVersion();
             }
 
             var deleteFiles = new string[0];
@@ -185,11 +180,6 @@ namespace Modules.ExternalAssets
 
             var targetFilePaths = new List<string>();
 
-            if (versions.IsEmpty())
-            {
-                await LoadVersion();
-            }
-
             await UniTask.RunOnThreadPool(() =>
             {
                 foreach (var item in assetInfos)
@@ -227,10 +217,6 @@ namespace Modules.ExternalAssets
                 {
                     foreach (var item in filePaths)
                     {
-                        var fileName = Path.GetFileName(item);
-
-                        versions.Remove(fileName);
-
                         if (!File.Exists(item)) { continue; }
 
                         File.SetAttributes(item, FileAttributes.Normal);
@@ -247,10 +233,6 @@ namespace Modules.ExternalAssets
             {
                 Debug.LogException(e);
             }
-
-            // バージョン情報更新.
-
-            await SaveVersion();
 
             // ログ.
 

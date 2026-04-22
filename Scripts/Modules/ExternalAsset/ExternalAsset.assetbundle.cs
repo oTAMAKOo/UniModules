@@ -21,35 +21,6 @@ namespace Modules.ExternalAssets
         /// <summary> 最大同時ダウンロード数. </summary>
         private const uint AssetBundleDefaultInstallerCount = 8;
 
-        /// <summary> ローカルモード用バージョンチェック </summary>
-        public sealed class AssetBundleLocalModeVersionHandler : ILocalModeVersionHandler
-        {
-            private ExternalAsset externalAsset = null;
-
-            public AssetBundleLocalModeVersionHandler(ExternalAsset externalAsset)
-            {
-                this.externalAsset = externalAsset;
-            }
-
-            public bool IsRequireUpdate(AssetInfo assetInfo)
-            {
-                if (!assetInfo.IsAssetBundle){ return false; }
-
-                if (assetInfo.AssetBundle.AssetBundleName == AssetInfoManifest.AssetBundleName){ return true; }
-
-                return externalAsset.IsRequireUpdate(assetInfo);
-            }
-
-            public void OnUpdateLocalFile(AssetInfo assetInfo)
-            {
-                if (!assetInfo.IsAssetBundle){ return; }
-
-                if (assetInfo.AssetBundle.AssetBundleName == AssetInfoManifest.AssetBundleName){ return; }
-
-                externalAsset.UpdateVersion(assetInfo.ResourcePath);
-            }
-        }
-
         //----- field -----
 
         // アセットバンドル管理.
@@ -67,7 +38,6 @@ namespace Modules.ExternalAssets
             assetBundleManager = AssetBundleManager.CreateInstance();
             assetBundleManager.Initialize(SimulateMode);
             assetBundleManager.SetMaxDownloadCount(AssetBundleDefaultInstallerCount);
-            assetBundleManager.SetLocalModeVersionHandler(new AssetBundleLocalModeVersionHandler(this));
 
             assetBundleManager.OnTimeOutAsObservable().Subscribe(x => OnTimeout(x)).AddTo(Disposable);
             assetBundleManager.OnErrorAsObservable().Subscribe(x => OnError(x)).AddTo(Disposable);
@@ -240,6 +210,23 @@ namespace Modules.ExternalAssets
 
             var assetPath = GetAssetPathFromAssetInfo(externalAssetDirectory, shareAssetDirectory, assetInfo);
 
+            if (LocalMode)
+            {
+                // LocalModeで未同梱のアセットを要求された場合はエラーログ.
+                // (LoadAsset単独呼び出しでは UpdateAsset が経由されないため、ここでも通知する)
+                if (LogEnable && UnityConsole.Enable)
+                {
+                    foreach (var info in dependenciesAndSelfAssetInfos)
+                    {
+                        if (!IsRequireUpdate(info)){ continue; }
+
+                        var message = $"LocalMode: Required asset is not bundled. ResourcePath={info.ResourcePath}";
+
+                        UnityConsole.Event(ConsoleEventName, ConsoleEventColor, message, LogType.Error);
+                    }
+                }
+            }
+
             if (!LocalMode && !SimulateMode)
             {
                 // 更新中の場合待機.
@@ -249,7 +236,7 @@ namespace Modules.ExternalAssets
                     if (cancelSource.IsCancellationRequested){ return null; }
 
                     var wait = dependenciesAndSelfAssetInfos.Any(x => updateQueueing.Contains(x.ResourcePath));
-                    
+
                     if (!wait){ break; }
 
                     await UniTask.NextFrame(CancellationToken.None);
@@ -262,8 +249,8 @@ namespace Modules.ExternalAssets
                 foreach (var info in dependenciesAndSelfAssetInfos)
                 {
                     if (requireUpdateInfos.Any(x => x.FileName == info.FileName)){ continue; }
-                    
-                    if (!CheckAssetBundleVersion(info))
+
+                    if (IsRequireUpdate(info))
                     {
                         requireUpdateInfos.Add(info);
                     }
@@ -294,8 +281,6 @@ namespace Modules.ExternalAssets
 
                         return null;
                     }
-
-                    RequestSaveVersion();
 
                     sw.Stop();
 

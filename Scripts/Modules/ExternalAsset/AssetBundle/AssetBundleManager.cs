@@ -18,18 +18,13 @@ using Modules.R3Extension;
 
 namespace Modules.AssetBundles
 {
-    public interface ILocalModeVersionHandler
-    {
-        bool IsRequireUpdate(AssetInfo assetInfo);
-
-        void OnUpdateLocalFile(AssetInfo assetInfo);
-    }
-
     public sealed partial class AssetBundleManager : Singleton<AssetBundleManager>
     {
         //----- params -----
 
         public const string PackageExtension = ".package";
+
+        public const string TempPackageExtension = ".tmp";
 
         // 非同期で読み込むファイルサイズ (0.1MB).
         private const float AsyncLoadFileSize = 1024.0f * 1024.0f * 0.1f;
@@ -90,9 +85,6 @@ namespace Modules.AssetBundles
 
         // ファイルハンドラ.
         private IAssetBundleFileHandler fileHandler = null;
-
-        // ローカルモードバージョンハンドラ.
-        private ILocalModeVersionHandler localModeVersionHandler = null;
 
         // イベント通知.
         private Subject<string> onLoad = null;
@@ -165,12 +157,6 @@ namespace Modules.AssetBundles
         public void SetFileHandler(IAssetBundleFileHandler fileHandler)
         {
             this.fileHandler = fileHandler;
-        }
-
-        /// <summary> ローカルモード用バージョンハンドラ設定. </summary>
-        public void SetLocalModeVersionHandler(ILocalModeVersionHandler localModeVersionHandler)
-        {
-            this.localModeVersionHandler = localModeVersionHandler;
         }
 
         /// <summary> URLを設定. </summary>
@@ -281,11 +267,31 @@ namespace Modules.AssetBundles
         {
             if (assetInfo == null || string.IsNullOrEmpty(assetInfo.FileName)) { return null; }
 
-            var path = Path.Combine(installPath, assetInfo.FileName);
+            // ファイル名にハッシュを埋め込む事でバージョン判定をFile.Existsで完結させる.
 
-            var filePath = Path.ChangeExtension(path, PackageExtension);
+            var fileName = ExternalAssetFileNameManager.Instance.BuildHashedFileName(assetInfo, PackageExtension);
+
+            var filePath = Path.Combine(installPath, fileName);
 
             return PathUtility.ConvertPathSeparator(filePath);
+        }
+
+        /// <summary>
+        /// ReadOnly属性を解除してからファイルを削除する.
+        /// ロックされている場合はIOExceptionがそのまま送出されるため上位でリトライされる.
+        /// </summary>
+        public static void ForceDeleteFile(string filePath)
+        {
+            if (!File.Exists(filePath)){ return; }
+
+            var fileInfo = new FileInfo(filePath);
+
+            if ((fileInfo.Attributes & FileAttributes.ReadOnly) == FileAttributes.ReadOnly)
+            {
+                fileInfo.Attributes = FileAttributes.Normal;
+            }
+
+            File.Delete(filePath);
         }
 
         #region Download
@@ -342,7 +348,9 @@ namespace Modules.AssetBundles
 
             try
             {
-                var info = assetInfosByAssetBundleName.GetValueOrDefault(assetBundleName).FirstOrDefault();
+                var infos = assetInfosByAssetBundleName.GetValueOrDefault(assetBundleName);
+
+                var info = infos == null ? null : infos.FirstOrDefault();
 
                 if (info == null)
                 {
@@ -406,6 +414,11 @@ namespace Modules.AssetBundles
 
             if (string.IsNullOrEmpty(filePath)) { return; }
 
+            // 中断時に壊れたファイルが正規の名前で残らないよう一時ファイルに書き出す.
+            var tempFilePath = filePath + TempPackageExtension;
+
+            ForceDeleteFile(tempFilePath);
+
             // ダウンロード.
 
             IProgress<float> progressReceiver = null;
@@ -430,7 +443,7 @@ namespace Modules.AssetBundles
 
             using (var downloadRequest = new DownloadRequest())
             {
-                downloadRequest.Initialize(url, filePath);
+                downloadRequest.Initialize(url, tempFilePath);
 
                 downloadRequest.TimeOutSeconds = (int)DownloadTimeout.TotalSeconds;
 
@@ -443,6 +456,14 @@ namespace Modules.AssetBundles
                     throw new Exception($"File download error\nURL:{url}\nResponseCode:{e.Request.responseCode}\n\n{e.Request.error}\n");
                 }
             }
+
+            if (cancelToken.IsCancellationRequested){ return; }
+
+            // DL完了後にリネーム.
+
+            ForceDeleteFile(filePath);
+
+            File.Move(tempFilePath, filePath);
         }
 
         #endregion
@@ -663,7 +684,9 @@ namespace Modules.AssetBundles
 
             // 新規で読み込み.
 
-            var info = assetInfosByAssetBundleName.GetValueOrDefault(assetBundleName).FirstOrDefault();
+            var infos = assetInfosByAssetBundleName.GetValueOrDefault(assetBundleName);
+
+            var info = infos == null ? null : infos.FirstOrDefault();
 
             void OnLoadCompleted(Result result)
             {
@@ -700,23 +723,24 @@ namespace Modules.AssetBundles
 
             #if UNITY_ANDROID
 
+            // LocalMode時のStreamingAssetsはjar/obb内のため、persistentDataへコピーして参照する.
             if (IsLocalMode && filePath.StartsWith(UnityPathUtility.StreamingAssetsPath))
             {
-                if (localModeVersionHandler.IsRequireUpdate(assetInfo))
+                var copiedPath = AndroidUtility.ConvertStreamingAssetsLoadPath(filePath);
+
+                if (!File.Exists(copiedPath))
                 {
                     try
                     {
                         await AndroidUtility.CopyStreamingToTemporary(filePath, cancelToken);
-
-                        filePath = AndroidUtility.ConvertStreamingAssetsLoadPath(filePath);
-
-                        localModeVersionHandler.OnUpdateLocalFile(assetInfo);
                     }
                     catch (OperationCanceledException)
                     {
                         /* Canceled */
                     }
                 }
+
+                filePath = copiedPath;
             }
 
             #endif
