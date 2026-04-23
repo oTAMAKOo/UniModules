@@ -41,6 +41,9 @@ namespace Modules.Window
         protected List<Window> scenePopups = new List<Window>();
         protected List<Window> globalPopups = new List<Window>();
 
+        // ポップアップごとのClose購読.
+        private Dictionary<Window, IDisposable> windowDisposables = new Dictionary<Window, IDisposable>();
+
         private Subject<Unit> onBlockTouch = null;
 
         private Subject<Window> onOpenWindow = null;
@@ -86,7 +89,13 @@ namespace Modules.Window
                 throw new ArgumentException("Invalid popupWindow");
             }
 
-            UnityUtility.SetActive(popupWindow, false);
+            // Open済みのWindowは登録のみ行う（Stashからの復元等でOpenアニメーション・通知を再実行しないため）.
+            var alreadyOpened = popupWindow.Status == Window.WindowStatus.Opened;
+
+            if (!alreadyOpened)
+            {
+                UnityUtility.SetActive(popupWindow, false);
+            }
 
             if (isGlobal)
             {
@@ -98,6 +107,8 @@ namespace Modules.Window
             }
 
             Instance.UpdateContents();
+
+            if (alreadyOpened){ return; }
 
             if (Instance.onOpenWindow != null)
             {
@@ -112,6 +123,31 @@ namespace Modules.Window
             }
         }
 
+        /// <summary> ポップアップを管理対象から外す（閉じるアニメーションは行わない） </summary>
+        public static void Unregister(Window popupWindow)
+        {
+            if (popupWindow == null){ return; }
+
+            var removed = Instance.globalPopups.Remove(popupWindow);
+
+            removed |= Instance.scenePopups.Remove(popupWindow);
+
+            if (!removed){ return; }
+
+            Instance.DisposeWindowSubscription(popupWindow);
+
+            Instance.UpdateContents();
+        }
+
+        private void DisposeWindowSubscription(Window popupWindow)
+        {
+            if (!windowDisposables.TryGetValue(popupWindow, out var disposable)){ return; }
+
+            disposable.Dispose();
+
+            windowDisposables.Remove(popupWindow);
+        }
+
         private void RegisterGlobal(Window popupWindow)
         {
             // 新規登録された場合.
@@ -124,6 +160,8 @@ namespace Modules.Window
                 {
                     globalPopups.Remove(popupWindow);
 
+                    DisposeWindowSubscription(popupWindow);
+
                     UpdateContents();
 
                     if (onClosedWindow != null)
@@ -132,7 +170,7 @@ namespace Modules.Window
                     }
                 }
 
-                popupWindow.OnCloseAsObservable()
+                windowDisposables[popupWindow] = popupWindow.OnCloseAsObservable()
                     .Subscribe(_ => OnCloseWindow())
                     .AddTo(this);
 
@@ -160,6 +198,8 @@ namespace Modules.Window
                 {
                     scenePopups.Remove(popupWindow);
 
+                    DisposeWindowSubscription(popupWindow);
+
                     UpdateContents();
 
                     if (onClosedWindow != null)
@@ -167,8 +207,8 @@ namespace Modules.Window
                         onClosedWindow.OnNext(popupWindow);
                     }
                 }
-                
-                popupWindow.OnCloseAsObservable()
+
+                windowDisposables[popupWindow] = popupWindow.OnCloseAsObservable()
                     .Subscribe(_ => OnCloseWindow())
                     .AddTo(this);
 
@@ -340,6 +380,8 @@ namespace Modules.Window
         {
             foreach (var scenePopup in scenePopups)
             {
+                DisposeWindowSubscription(scenePopup);
+
                 UnityUtility.DeleteGameObject(scenePopup);
             }
 
