@@ -45,15 +45,41 @@ namespace Modules.Devkit.Hierarchy
         {
             if (initialized) { return; }
 
+            #if UNITY_6000_2_OR_NEWER
+
+            EditorApplication.hierarchyWindowItemByEntityIdOnGUI += OnDrawHierarchy;
+
+            #else
+
             EditorApplication.hierarchyWindowItemOnGUI += OnDrawHierarchy;
+
+            #endif
 
             initialized = true;
         }
-        
+
+        #if UNITY_6000_2_OR_NEWER
+
+        private void OnDrawHierarchy(EntityId entityId, Rect rect)
+        {
+            var targetObject = EditorUtility.EntityIdToObject(entityId) as GameObject;
+
+            DrawHierarchyContent(targetObject, rect);
+        }
+
+        #else
+
         private void OnDrawHierarchy(int instanceID, Rect rect)
         {
             var targetObject = EditorUtility.InstanceIDToObject(instanceID) as GameObject;
 
+            DrawHierarchyContent(targetObject, rect);
+        }
+
+        #endif
+
+        private void DrawHierarchyContent(GameObject targetObject, Rect rect)
+        {
             if (targetObject == null){ return; }
 
             var padding = new Vector2(14f, 0f);

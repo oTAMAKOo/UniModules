@@ -85,16 +85,24 @@ namespace Modules.Devkit.Build
 
             //------ Round ------
             {
-                var iconFolderPath = PathUtility.Combine(iconAssetDirectory, "Android/Icon/Round");
+                #if !UNITY_6000_4_OR_NEWER
 
+                var iconFolderPath = PathUtility.Combine(iconAssetDirectory, "Android/Icon/Round");
+                
                 SetPlatformIcon(BuildTargetGroup.Android, UnityEditor.Android.AndroidPlatformIconKind.Round, iconFolderPath);
+
+                #endif
             }
 
             //------ Legacy ------
             {
+                #if !UNITY_6000_4_OR_NEWER
+
                 var iconFolderPath = PathUtility.Combine(iconAssetDirectory, "Android/Icon/Legacy");
 
                 SetPlatformIcon(BuildTargetGroup.Android, UnityEditor.Android.AndroidPlatformIconKind.Legacy, iconFolderPath);
+
+                #endif
             }
         }
 
