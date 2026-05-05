@@ -542,8 +542,8 @@ namespace Extensions
 
             #if UNITY_6000_0_OR_NEWER
 
-            var dontDestroyObjects = Object.FindObjectsByType<T>(FindObjectsSortMode.None).Where(x => x.gameObject.scene.name == "DontDestroyOnLoad");
-            
+            var dontDestroyObjects = Object.FindObjectsByType<T>(FindObjectsInactive.Exclude).Where(x => x.gameObject.scene.name == "DontDestroyOnLoad");
+
             #else
 
             var dontDestroyObjects = Object.FindObjectsOfType<T>().Where(x => x.gameObject.scene.name == "DontDestroyOnLoad");

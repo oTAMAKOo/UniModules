@@ -181,12 +181,25 @@ namespace Modules.Devkit.Prefs
 
             if (retVal == null)
             {
+                #if UNITY_6000_0_OR_NEWER
+
+                ulong id;
+
+                if (ulong.TryParse(path, out id))
+                {
+                    return EditorUtility.EntityIdToObject(EntityId.FromULong(id)) as T;
+                }
+
+                #else
+
                 int id;
 
                 if (int.TryParse(path, out id))
                 {
                     return EditorUtility.InstanceIDToObject(id) as T;
                 }
+
+                #endif
             }
 
             return retVal;
@@ -210,7 +223,15 @@ namespace Modules.Devkit.Prefs
                     }
                     else
                     {
+                        #if UNITY_6000_0_OR_NEWER
+
+                        SetString(key, EntityId.ToULong(obj.GetEntityId()).ToString());
+
+                        #else
+
                         SetString(key, obj.GetInstanceID().ToString());
+
+                        #endif
                     }
                 }
                 else
