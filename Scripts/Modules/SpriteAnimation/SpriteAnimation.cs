@@ -119,7 +119,15 @@ namespace Modules.SpriteAnimation
         {
             if (spriteAtlas == null) { return; }
 
+            #if UNITY_6000_0_OR_NEWER
+
+            var referenceName = $"SpriteAnimation.{EntityId.ToULong(spriteAtlas.GetEntityId())}";
+
+            #else
+
             var referenceName = $"SpriteAnimation.{spriteAtlas.GetInstanceID()}";
+
+            #endif
 
             spriteCache = new SpriteAtlasCache(spriteAtlas, referenceName);
 
