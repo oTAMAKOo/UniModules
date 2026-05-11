@@ -41,7 +41,11 @@ namespace Modules.Devkit.AssetTuning
 
             OnFirstImport(spriteAtlas);
 
-            AssetDatabase.WriteImportSettingsIfDirty(path);
+            var spriteAtlasImporter = AssetImporter.GetAtPath(path) as SpriteAtlasImporter;
+
+            if (spriteAtlasImporter == null){ return; }
+
+            spriteAtlasImporter.SaveAndReimport();
         }
 
         protected virtual void OnFirstImport(SpriteAtlas spriteAtlas)
@@ -50,23 +54,25 @@ namespace Modules.Devkit.AssetTuning
 
             var spriteAtlasImporter = AssetImporter.GetAtPath(assetPath) as SpriteAtlasImporter;
 
-			SetIncludeInBuild(spriteAtlas);
+            if (spriteAtlasImporter == null){ return; }
+
+			SetIncludeInBuild(spriteAtlasImporter);
 
 			//------- PackingSettings -------
 
-            var packingSettings = spriteAtlas.GetPackingSettings();
+            var packingSettings = spriteAtlasImporter.packingSettings;
 
             SetPackingSettings(ref packingSettings);
 
-            spriteAtlas.SetPackingSettings(packingSettings);
+            spriteAtlasImporter.packingSettings = packingSettings;
 
             //------- TextureSettings -------
 
-            var textureSettings = spriteAtlas.GetTextureSettings();
+            var textureSettings = spriteAtlasImporter.textureSettings;
 
             SetTextureSettings(ref textureSettings);
 
-            spriteAtlas.SetTextureSettings(textureSettings);
+            spriteAtlasImporter.textureSettings = textureSettings;
 
             //------ PlatformSettings ------
 
@@ -120,13 +126,13 @@ namespace Modules.Devkit.AssetTuning
             }
         }
 
-		private void SetIncludeInBuild(SpriteAtlas spriteAtlas)
+		private void SetIncludeInBuild(SpriteAtlasImporter spriteAtlasImporter)
 		{
 			var config = SpriteAtlasConfig.Instance;
 
 			if (config == null){ return; }
 
-			var assetPath = AssetDatabase.GetAssetPath(spriteAtlas);
+			var assetPath = spriteAtlasImporter.assetPath;
 
 			var targetFolderPaths =  config.DisableIncludeInBuildFolders
 				.Where(x => x != null)
@@ -145,7 +151,7 @@ namespace Modules.Devkit.AssetTuning
 				}
 			}
 
-			spriteAtlas.SetIncludeInBuild(includeInBuild);
+			spriteAtlasImporter.includeInBuild = includeInBuild;
 		}
     }
 }
