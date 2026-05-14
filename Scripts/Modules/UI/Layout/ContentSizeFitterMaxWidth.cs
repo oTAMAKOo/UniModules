@@ -121,10 +121,6 @@ namespace Modules.UI.Layout
                 contentSizeFitter = GetComponent<ContentSizeFitter>();
             }
 
-            contentSizeFitter.horizontalFit = LayoutElement.preferredWidth > maxWidth ? 
-                                              ContentSizeFitter.FitMode.Unconstrained : 
-                                              ContentSizeFitter.FitMode.PreferredSize;
-           
             if (LayoutElement.preferredWidth > maxWidth)
             {
                 contentSizeFitter.horizontalFit = ContentSizeFitter.FitMode.Unconstrained;

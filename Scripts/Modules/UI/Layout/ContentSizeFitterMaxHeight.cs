@@ -121,10 +121,6 @@ namespace Modules.UI.Layout
                 contentSizeFitter = GetComponent<ContentSizeFitter>();
             }
 
-            contentSizeFitter.verticalFit = LayoutElement.preferredHeight > maxHeight ? 
-                                              ContentSizeFitter.FitMode.Unconstrained : 
-                                              ContentSizeFitter.FitMode.PreferredSize;
-           
             if (LayoutElement.preferredHeight > maxHeight)
             {
                 contentSizeFitter.verticalFit = ContentSizeFitter.FitMode.Unconstrained;
