@@ -34,17 +34,26 @@ namespace Modules.Devkit.SceneImporter
         /// <param name="movedFromPath"> 移動されたアセットの移動前のファイルパス。 </param>
         static void OnPostprocessAllAssets(string[] importedAssets, string[] deletedAssets, string[] movedAssets, string[] movedFromPath)
         {
-			if (Application.isBatchMode){ return; }
+            if (Application.isBatchMode){ return; }
 
             var projectScriptFolders = ProjectScriptFolders.Instance;
 
-			var constantsScriptPath = projectScriptFolders.ConstantsScriptPath;
+            var constantsScriptPath = projectScriptFolders.ConstantsScriptPath;
 
-			var sceneImporterConfig = SceneImporterConfig.Instance;
+            var sceneImporterConfig = SceneImporterConfig.Instance;
 
             if (sceneImporterConfig == null) { return; }
 
             var sceneFileExtension = SceneImporterConfig.SceneFileExtension;
+
+            // Unity起動直後のasset refreshではEditorBuildSettings.scenesがpopulate前に呼ばれて長さ0になる事がある.
+            // その状態で差分更新するとUpdateBuildTargetScenesでディスク上の正しい一覧を破壊的に上書きしてしまうため何もしない.
+            // (本当に空でも後続のシーン追加トリガーで復旧する).
+            if (EditorBuildSettings.scenes.Length == 0)
+            {
+                Debug.LogWarning("[SceneAssetPostprocessor] \nSkip: EditorBuildSettings.scenes is empty (not yet loaded during early asset refresh).");
+                return;
+            }
 
             // ビルドセッティングファイルの更新時.
             if (importedAssets.Any(x => Path.GetFileName(x) == BuildSettingsFileName))
@@ -63,7 +72,7 @@ namespace Modules.Devkit.SceneImporter
                 {
                     EditorBuildSettings.scenes = scenes;
 
-					var managedFolderPaths = sceneImporterConfig.GetManagedFolderPaths();
+                    var managedFolderPaths = sceneImporterConfig.GetManagedFolderPaths();
 
                     ScenesScriptGenerator.Generate(managedFolderPaths, constantsScriptPath);
 
@@ -79,7 +88,7 @@ namespace Modules.Devkit.SceneImporter
             {   
                 var isChanged = false;
 
-				var managedFolderPaths = sceneImporterConfig.GetManagedFolderPaths();
+                var managedFolderPaths = sceneImporterConfig.GetManagedFolderPaths();
                 var buildTargetScenes = EditorBuildSettings.scenes.ToDictionary(x => x.path);
 
                 //--------------------------------------------------------------------
@@ -88,7 +97,7 @@ namespace Modules.Devkit.SceneImporter
 
                 for (var i = 0; i < movedAssets.Length; ++i)
                 {
-					if (!buildTargetScenes.ContainsKey(movedAssets[i])) { continue; }
+                    if (!buildTargetScenes.ContainsKey(movedAssets[i])) { continue; }
 
                     // ビルド対象フォルダ内の移動は除外処理しない.
                     if (managedFolderPaths.Any(y => movedAssets[i].StartsWith(y))){ continue; }
@@ -96,8 +105,8 @@ namespace Modules.Devkit.SceneImporter
                     // ビルドターゲットに入っているシーンが移動した場合ビルド対象から外す.
                     buildTargetScenes.Remove(movedAssets[i]);
 
-					isChanged = true;
-				}
+                    isChanged = true;
+                }
 
                 //--------------------------------------------------------------------
                 // 移動 (ビルド対象に追加される場合.).
