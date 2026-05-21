@@ -242,17 +242,28 @@ namespace Modules.Devkit.AssetTuning.TextureAsset
 
         private void ForceModifyTextureSettings()
         {
+            var folderPath = AssetDatabase.GUIDToAssetPath(textureData.folderGuid);
+
+            if (string.IsNullOrEmpty(folderPath)) { return; }
+
+            // ImportRecursiveではソースに変更のない既存テクスチャの再インポートが走らず設定が適用されないため、
+            // 対象テクスチャを列挙しForceUpdateで強制的に再インポートする.
+            var assetPaths = UnityEditorUtility.FindAssetPathsByType("t:Texture", new string[] { folderPath }).ToArray();
+
+            if (assetPaths.IsEmpty()) { return; }
+
             var originForceModifyOnImport = TextureConfig.Prefs.forceModifyOnImport;
+
+            TextureConfig.Prefs.forceModifyOnImport = true;
 
             try
             {
-                var assetPath = AssetDatabase.GUIDToAssetPath(textureData.folderGuid);
-
-                if (!string.IsNullOrEmpty(assetPath))
+                using (new AssetEditingScope())
                 {
-                    TextureConfig.Prefs.forceModifyOnImport = true;
-
-                    AssetDatabase.ImportAsset(assetPath, ImportAssetOptions.ImportRecursive);
+                    foreach (var assetPath in assetPaths)
+                    {
+                        AssetDatabase.ImportAsset(assetPath, ImportAssetOptions.ForceUpdate);
+                    }
                 }
             }
             finally
