@@ -430,6 +430,13 @@ namespace Modules.Animation
 
             Animator.SetTrigger(name);
         }
+        
+        public void ResetTrigger(string name)
+        {
+            if (!Animator.IsAvailable()){ return; }
+
+            Animator.ResetTrigger(name);
+        }
 
         public void SetTrigger(int id)
         {
