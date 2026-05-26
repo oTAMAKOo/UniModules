@@ -17,15 +17,15 @@ namespace Modules.AssetBundles.Editor
 
         //----- field -----
 
-        private IAssetBundleFileHandler assetBundleFileHandler = null;
+        private AssetBundleFileStreamFactory fileStreamFactory = null;
 
         //----- property -----
 
         //----- method -----
 
-        public BuildAssetBundlePackage(IAssetBundleFileHandler assetBundleFileHandler)
+        public BuildAssetBundlePackage(AssetBundleFileStreamFactory fileStreamFactory)
         {
-            this.assetBundleFileHandler = assetBundleFileHandler;
+            this.fileStreamFactory = fileStreamFactory;
         }
 
         public async UniTask BuildAssetInfoManifestPackage(string exportPath, string assetBundlePath)
@@ -60,7 +60,7 @@ namespace Modules.AssetBundles.Editor
                         var createPackage = updatedAssetInfos.Contains(assetInfo);
 
                         var assetBundleName = assetInfo.AssetBundle.AssetBundleName;
-                        
+
                         var task = UniTask.RunOnThreadPool(async () =>
                         {
                             await ExecuteBuildTask(exportPath, assetBundlePath, assetInfo, createPackage);
@@ -109,7 +109,7 @@ namespace Modules.AssetBundles.Editor
                 // パッケージを作成.
                 if (!File.Exists(packageFilePath) || createPackage)
                 {
-                    await CreatePackage(assetBundleFilePath, packageFilePath);
+                    await CreatePackage(assetBundleFilePath, packageFilePath, assetInfo.AssetBundle.AssetBundleName);
                 }
 
                 // 出力先にパッケージファイルをコピー.
@@ -122,28 +122,19 @@ namespace Modules.AssetBundles.Editor
         }
 
         /// <summary> パッケージファイル化(難読化). </summary>
-        private async UniTask CreatePackage(string assetBundleFilePath, string packageFilePath)
+        private async UniTask CreatePackage(string assetBundleFilePath, string packageFilePath, string assetBundleName)
         {
-            // アセットバンドル読み込み.
+            // 読み込み元 (平文) → 書き込み先 (暗号化済み) をストリームで連結.
 
-            byte[] data = null;
-
-            using (var fileStream = new FileStream(assetBundleFilePath, FileMode.Open, FileAccess.Read, FileShare.Read))
+            using (var sourceStream = new FileStream(assetBundleFilePath, FileMode.Open, FileAccess.Read, FileShare.Read))
             {
-                data = new byte[fileStream.Length];
-
-                await fileStream.ReadAsync(data, 0, data.Length); 
-            }
-
-            // 難読化.
-            
-            data = await assetBundleFileHandler.Encode(data);
-
-            // 書き込み.
-
-            using (var fileStream = new FileStream(packageFilePath, FileMode.Create, FileAccess.Write, FileShare.ReadWrite))
-            {
-                await fileStream.WriteAsync(data, 0, data.Length);
+                using (var destStream = new FileStream(packageFilePath, FileMode.Create, FileAccess.Write, FileShare.ReadWrite))
+                {
+                    using (var encryptStream = fileStreamFactory(destStream, assetBundleName))
+                    {
+                        await sourceStream.CopyToAsync(encryptStream);
+                    }
+                }
             }
         }
 

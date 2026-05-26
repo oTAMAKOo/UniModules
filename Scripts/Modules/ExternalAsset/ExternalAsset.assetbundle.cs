@@ -43,10 +43,10 @@ namespace Modules.ExternalAssets
             assetBundleManager.OnErrorAsObservable().Subscribe(x => OnError(x)).AddTo(Disposable);
         }
 
-        /// <summary> ファイルハンドラ設定. </summary>
-        public void SetAssetBundleFileHandler(IAssetBundleFileHandler fileHandler)
+        /// <summary> ファイルストリームファクトリ設定. </summary>
+        public void SetAssetBundleFileStreamFactory(AssetBundleFileStreamFactory factory)
         {
-            assetBundleManager.SetFileHandler(fileHandler);
+            assetBundleManager.SetFileStreamFactory(factory);
         }
 
         public void SetAssetBundleInstallerCount(uint installerCount)

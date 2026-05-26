@@ -54,7 +54,7 @@ namespace Modules.ExternalAssets
 
         //----- property -----
 
-		public abstract IAssetBundleFileHandler FileHandler { get; }
+		public abstract AssetBundleFileStreamFactory FileStreamFactory { get; }
 
         //----- method -----
 
@@ -158,31 +158,33 @@ namespace Modules.ExternalAssets
 
             var assetPath = PathUtility.Combine(projectResourceFolders.ExternalAssetPath, manifestAssetInfo.ResourcePath);
 
-			var bytes = new byte[0];
+			var assetBundleName = manifestAssetInfo.AssetBundle.AssetBundleName;
 
             using (var fileStream = new FileStream(assetInfoManifestFilePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
             {
-				bytes = new byte[fileStream.Length];
+                using (var decryptStream = FileStreamFactory(fileStream, assetBundleName))
+                {
+                    var bundleLoadRequest = AssetBundle.LoadFromStreamAsync(decryptStream);
 
-				fileStream.Read(bytes, 0, bytes.Length);
-			}
+                    while (!bundleLoadRequest.isDone)
+                    {
+                        await UniTask.Delay(25);
+                    }
 
-			bytes = await FileHandler.Decode(bytes);
+                    var assetBundle = bundleLoadRequest.assetBundle;
 
-			var bundleLoadRequest = AssetBundle.LoadFromMemoryAsync(bytes);
+                    var loadAssetAsync = assetBundle.LoadAssetAsync(assetPath, typeof(AssetInfoManifest));
 
-			while (!bundleLoadRequest.isDone)
-			{
-				await UniTask.Delay(25);
-			}
+                    while (!loadAssetAsync.isDone)
+                    {
+                        await UniTask.Delay(25);
+                    }
 
-			var assetBundle = bundleLoadRequest.assetBundle;
+                    assetInfoManifest = loadAssetAsync.asset as AssetInfoManifest;
 
-			var loadAssetAsync = assetBundle.LoadAssetAsync(assetPath, typeof(AssetInfoManifest));
-
-			assetInfoManifest = loadAssetAsync.asset as AssetInfoManifest;
-
-			assetBundle.Unload(false);
+                    assetBundle.Unload(false);
+                }
+            }
         }
         
         /// <summary> アップロードするファイルデータ構築. </summary>

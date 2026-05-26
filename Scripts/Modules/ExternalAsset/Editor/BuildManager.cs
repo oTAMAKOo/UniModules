@@ -7,12 +7,14 @@ using System.Linq;
 using System.Collections.Generic;
 using System.Text;
 using Cysharp.Threading.Tasks;
+using R3;
 using Extensions;
 using Extensions.Devkit;
 using Modules.AssetBundles;
 using Modules.AssetBundles.Editor;
 using Modules.Devkit.Console;
 using Modules.Devkit.Project;
+using Modules.R3Extension;
 
 #if ENABLE_CRIWARE_ADX || ENABLE_CRIWARE_ADX_LE || ENABLE_CRIWARE_SOFDEC
 
@@ -55,11 +57,16 @@ namespace Modules.ExternalAssets
             }
         }
 
+        public sealed class PreBuildAsyncHandler : AsyncHandler { }
+
         //----- field -----
 
         public static IBuildAssetBundlePipeline BundlePipeline { get; set; } = new BuildAssetBundlePipeline();
 
-        public static IAssetBundleFileHandler AssetBundleFileHandler { get; set; } = new DefaultAssetBundleFileHandler();
+        public static AssetBundleFileStreamFactory FileStreamFactory { get; set; } = (stream, _) => new DefaultAssetBundleFileStream(stream);
+
+        // ビルド前処理通知 (プロジェクト固有の鍵ロード等を差し込む為のイベント).
+        private static Subject<PreBuildAsyncHandler> onPreBuild = null;
 
         //----- property -----
 
@@ -70,6 +77,16 @@ namespace Modules.ExternalAssets
         public static async UniTask<string> Build(string exportPath, AssetInfoManifest assetInfoManifest, bool openExportFolder = true)
         {
             if (string.IsNullOrEmpty(exportPath)) { return null; }
+
+            // ビルド前処理 (プロジェクト固有の鍵ロード等).
+            if (onPreBuild != null)
+            {
+                var asyncHandler = new PreBuildAsyncHandler();
+
+                onPreBuild.OnNext(asyncHandler);
+
+                await asyncHandler.Wait();
+            }
 
             // 既に存在する場合は削除.
             if (Directory.Exists(exportPath))
@@ -90,7 +107,7 @@ namespace Modules.ExternalAssets
             assetManagement.Initialize();
 
             var buildAssetBundle = new BuildAssetBundle(BundlePipeline);
-            var buildAssetBundlePackage = new BuildAssetBundlePackage(AssetBundleFileHandler);
+            var buildAssetBundlePackage = new BuildAssetBundlePackage(FileStreamFactory);
 
             EditorApplication.LockReloadAssemblies();
 
@@ -390,13 +407,19 @@ namespace Modules.ExternalAssets
                 Directory.CreateDirectory(directory);
             }
             
-            using (var fs = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.ReadWrite)) 
+            using (var fs = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.ReadWrite))
             {
-                using (var sw = new StreamWriter(fs, Encoding.UTF8)) 
+                using (var sw = new StreamWriter(fs, Encoding.UTF8))
                 {
                     sw.Write(version);
                 }
             }
+        }
+
+        /// <summary> ビルド前処理イベント. </summary>
+        public static Observable<PreBuildAsyncHandler> OnPreBuildAsObservable()
+        {
+            return onPreBuild ?? (onPreBuild = new Subject<PreBuildAsyncHandler>());
         }
     }
 }

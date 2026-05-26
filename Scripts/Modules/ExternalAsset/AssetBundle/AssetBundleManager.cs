@@ -13,7 +13,6 @@ using Modules.Net;
 using Modules.Net.WebRequest;
 using Modules.ExternalAssets;
 using Modules.Net.WebDownload;
-using Modules.Performance;
 using Modules.R3Extension;
 
 namespace Modules.AssetBundles
@@ -25,15 +24,6 @@ namespace Modules.AssetBundles
         public const string PackageExtension = ".package";
 
         public const string TempPackageExtension = ".tmp";
-
-        // 非同期で読み込むファイルサイズ (0.1MB).
-        private const float AsyncLoadFileSize = 1024.0f * 1024.0f * 0.1f;
-
-        // 1フレームで同時に同期読み込みする最大ファイルサイズ (1MB).
-        private const float FrameSyncLoadFileSize = 1024.0f * 1024.0f * 1f;
-
-        // 1フレームで同期読み込みする最大ファイル数.
-        private const int FrameSyncLoadFileNum = 20;
 
         // タイムアウトまでの時間.
         private readonly TimeSpan DownloadTimeout = TimeSpan.FromSeconds(60f);
@@ -49,11 +39,6 @@ namespace Modules.AssetBundles
 
         // 同時ダウンロード数.
         private uint maxDownloadCount = 0;
-
-        // フレーム処理数制限.
-        
-        private FunctionFrameLimiter syncLoadFileCountLimiter = null;
-        private FunctionFrameLimiter syncLoadFileSizeLimiter = null;
 
         // ダウンロード元URL.
         private string remoteUrl = null;
@@ -74,6 +59,9 @@ namespace Modules.AssetBundles
         // 読み込み済みアセットバンドル.
         private Dictionary<string, AssetBundle> loadedAssetBundles = null;
 
+        // 読み込み済みアセットバンドルのストリーム (AssetBundle Unload まで保持).
+        private Dictionary<string, Stream> loadedAssetBundleStreams = null;
+
         // 読み込み済みアセットバンドル参照カウント.
         private Dictionary<string, int> assetBundleRefCount = null;
 
@@ -83,8 +71,8 @@ namespace Modules.AssetBundles
         // 依存関係.
         private AssetBundleDependencies assetBundleDependencies = null;
 
-        // ファイルハンドラ.
-        private IAssetBundleFileHandler fileHandler = null;
+        // ファイルストリームファクトリ.
+        private AssetBundleFileStreamFactory fileStreamFactory = null;
 
         // イベント通知.
         private Subject<string> onLoad = null;
@@ -119,13 +107,11 @@ namespace Modules.AssetBundles
             downloadTasks = new Dictionary<string, Observable<Unit>>();
             loadQueueing = new Dictionary<string, Observable<AssetBundle>>();
             loadedAssetBundles = new Dictionary<string, AssetBundle>();
+            loadedAssetBundleStreams = new Dictionary<string, Stream>();
             assetBundleRefCount = new Dictionary<string, int>();
             assetInfosByAssetBundleName = new Dictionary<string, List<AssetInfo>>();
             assetBundleDependencies = new AssetBundleDependencies();
-            fileHandler = new DefaultAssetBundleFileHandler();
-
-            syncLoadFileCountLimiter = new FunctionFrameLimiter(FrameSyncLoadFileNum);
-            syncLoadFileSizeLimiter = new FunctionFrameLimiter((ulong)FrameSyncLoadFileSize);
+            fileStreamFactory = (stream, _) => new DefaultAssetBundleFileStream(stream);
 
             SetSimulateMode(simulateMode);
             SetLocalMode(false);
@@ -150,13 +136,13 @@ namespace Modules.AssetBundles
         /// <summary> ローカルモード設定. </summary>
         public void SetLocalMode(bool localMode)
         {
-            IsLocalMode= localMode;
+            IsLocalMode = localMode;
         }
 
-        /// <summary> ファイルハンドラ設定. </summary>
-        public void SetFileHandler(IAssetBundleFileHandler fileHandler)
+        /// <summary> ファイルストリームファクトリ設定. </summary>
+        public void SetFileStreamFactory(AssetBundleFileStreamFactory factory)
         {
-            this.fileHandler = fileHandler;
+            this.fileStreamFactory = factory;
         }
 
         /// <summary> URLを設定. </summary>
@@ -751,85 +737,70 @@ namespace Modules.AssetBundles
 
             if (loadedAssetBundle != null)
             {
-                assetBundle = loadedAssetBundle;
+                return loadedAssetBundle;
             }
-            else
+
+            if (!File.Exists(filePath))
             {
-                if (!File.Exists(filePath))
-                {
-                    var message = $"\nResourcePath: {assetInfo.ResourcePath}\nFilePath:\n{filePath}\n";
+                var message = $"\nResourcePath: {assetInfo.ResourcePath}\nFilePath:\n{filePath}\n";
 
-                    throw new FileNotFoundException(message);
+                throw new FileNotFoundException(message);
+            }
+
+            // ストリーム経由で AssetBundle を読み込む.
+            // ※ AssetBundle.LoadFromStreamAsync で読み込んだ AssetBundle は Unload まで Stream を保持する必要がある.
+
+            FileStream fileStream = null;
+            AssetBundleFileStream decryptStream = null;
+
+            try
+            {
+                fileStream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read, 4096, FileOptions.Asynchronous);
+
+                decryptStream = fileStreamFactory(fileStream, assetBundleName);
+
+                var bundleLoadRequest = AssetBundle.LoadFromStreamAsync(decryptStream);
+
+                // LoadFromStreamAsync は中断できないため、Stream を安全に解放するためロード完了まで待つ.
+                while (!bundleLoadRequest.isDone)
+                {
+                    await UniTask.NextFrame(CancellationToken.None);
                 }
 
-                byte[] bytes = null;
+                assetBundle = bundleLoadRequest.assetBundle;
 
-                using (var fileStream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read, 4096, true))
+                // キャンセルされていた場合は AssetBundle を破棄し Stream を解放して終了.
+                if (cancelToken.IsCancellationRequested)
                 {
-                    bytes = new byte[fileStream.Length];
-
-                    if (AsyncLoadFileSize < bytes.Length)
+                    if (assetBundle != null)
                     {
-                        await fileStream.ReadAsync(bytes, 0, bytes.Length, cancelToken);
+                        assetBundle.Unload(false);
                     }
-                    else
-                    {
-                        // 同じフレームに同期読み込みできる最大数/最大ファイルサイズを超えた場合次のフレームまで待機.
 
-                        await syncLoadFileCountLimiter.Wait(cancelToken: cancelToken);
+                    decryptStream.Dispose();
 
-                        await syncLoadFileSizeLimiter.Wait((ulong)bytes.Length, cancelToken);
-
-                        if (cancelToken.IsCancellationRequested) { return null; }
-
-                        // 同期処理で読み込む.
-                        fileStream.Read(bytes, 0, bytes.Length);
-                    }
+                    return null;
+                }
+            }
+            catch (Exception)
+            {
+                // 例外時は Stream を即解放.
+                if (decryptStream != null)
+                {
+                    decryptStream.Dispose();
+                }
+                else if (fileStream != null)
+                {
+                    fileStream.Dispose();
                 }
 
-                if (bytes != null)
-                {
-                    // 読み込み失敗.
-
-                    if (bytes.Length == 0)
-                    {
-                        var message = $"\nResourcePath: {assetInfo.ResourcePath}\nFilePath:\n{filePath}\n";
-
-                        throw new FileLoadException(message);
-                    }
-
-                    // 復元.
-
-                    bytes = await fileHandler.Decode(bytes);
-
-                    // AssetBundle読み込み.
-
-                    var bundleLoadRequest = AssetBundle.LoadFromMemoryAsync(bytes);
-
-                    while (!bundleLoadRequest.isDone)
-                    {
-                        if (cancelToken.IsCancellationRequested) { break; }
-
-                        await UniTask.NextFrame(CancellationToken.None);
-                    }
-
-                    assetBundle = bundleLoadRequest.assetBundle;
-
-                    if (cancelToken.IsCancellationRequested)
-                    {
-                        if (assetBundle != null)
-                        {
-                            assetBundle.Unload(false);
-                        }
-                        
-                        return null;
-                    }
-                }
+                throw;
             }
 
             if (assetBundle != null)
             {
                 loadedAssetBundles.Add(assetBundleName, assetBundle);
+                loadedAssetBundleStreams.Add(assetBundleName, decryptStream);
 
                 if (onLoad != null)
                 {
@@ -838,6 +809,12 @@ namespace Modules.AssetBundles
             }
             else
             {
+                // 読み込み失敗時は Stream を解放.
+                if (decryptStream != null)
+                {
+                    decryptStream.Dispose();
+                }
+
                 UnloadAsset(assetBundleName);
 
                 // ファイルを削除し次回読み込み時に再ダウンロード.
@@ -895,7 +872,17 @@ namespace Modules.AssetBundles
                 UnloadAsset(assetBundleName, unloadAllLoadedObjects, true);
             }
 
+            // 念のため残存ストリームを解放してからクリア.
+            foreach (var stream in loadedAssetBundleStreams.Values)
+            {
+                if (stream != null)
+                {
+                    stream.Dispose();
+                }
+            }
+
             loadedAssetBundles.Clear();
+            loadedAssetBundleStreams.Clear();
         }
 
         private void UnloadAssetBundleInternal(string assetBundleName, bool unloadAllLoadedObjects, bool force = false)
@@ -918,7 +905,16 @@ namespace Modules.AssetBundles
 
                 assetBundleRefCount[assetBundleName] = 0;
 
+                // AssetBundle を Unload してから Stream を Dispose する (Unity が Unload まで Stream を参照しているため).
                 loadedAssetBundle.Unload(unloadAllLoadedObjects);
+
+                var stream = loadedAssetBundleStreams.GetValueOrDefault(assetBundleName);
+
+                if (stream != null)
+                {
+                    stream.Dispose();
+                    loadedAssetBundleStreams.Remove(assetBundleName);
+                }
             }
         }
 
