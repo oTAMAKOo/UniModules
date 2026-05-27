@@ -423,9 +423,10 @@ namespace Modules.ExternalAssets
         }
 
         /// <summary> AssetBundleを解放 </summary>
-        public static void UnloadAssetBundle(string resourcePath)
+        /// <param name="unloadAllLoadedObjects">true でロード済みオブジェクトも破棄する (使用中だと参照が壊れる為注意)</param>
+        public static void UnloadAssetBundle(string resourcePath, bool unloadAllLoadedObjects = false)
         {
-            Instance.UnloadAssetInternal(resourcePath);
+            Instance.UnloadAssetInternal(resourcePath, unloadAllLoadedObjects);
         }
 
         /// <summary> 全てのAssetBundleを解放 </summary>
@@ -460,7 +461,7 @@ namespace Modules.ExternalAssets
             return Instance.assetBundleManager.GetLoadedAssetBundleNames();
         }
 
-        private void UnloadAssetInternal(string resourcePath)
+        private void UnloadAssetInternal(string resourcePath, bool unloadAllLoadedObjects)
         {
             if (string.IsNullOrEmpty(resourcePath)) { return; }
 
@@ -493,7 +494,7 @@ namespace Modules.ExternalAssets
                 return;
             }
 
-            assetBundleManager.UnloadAsset(assetInfo.AssetBundle.AssetBundleName);
+            assetBundleManager.UnloadAsset(assetInfo.AssetBundle.AssetBundleName, unloadAllLoadedObjects);
 
             if (onUnloadAsset != null)
             {

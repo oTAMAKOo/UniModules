@@ -9,6 +9,7 @@ using System.Threading;
 using Cysharp.Threading.Tasks;
 using R3;
 using Extensions;
+using Modules.ApplicationEvent;
 using Modules.Net;
 using Modules.Net.WebRequest;
 using Modules.ExternalAssets;
@@ -117,6 +118,11 @@ namespace Modules.AssetBundles
             SetLocalMode(false);
 
             AddManifestAssetInfo();
+
+            // アプリ終了/Play 停止時に保持中の Stream を解放する.
+            ApplicationEventHandler.OnQuitAsObservable()
+                .Subscribe(_ => UnloadAllAsset(true))
+                .AddTo(Disposable);
 
             isInitialized = true;
         }
@@ -848,7 +854,10 @@ namespace Modules.AssetBundles
         {
             if (IsSimulateMode) { return; }
 
-            if (!force && loadQueueing.ContainsKey(assetBundleName)) { return; }
+            // ロード中 (loadedAssetBundles 未登録) の時だけ Unload を防ぐ. ロード完了済みなら解放する.
+            var isLoading = loadQueueing.ContainsKey(assetBundleName) && !loadedAssetBundles.ContainsKey(assetBundleName);
+
+            if (!force && isLoading) { return; }
 
             var dependencies = assetBundleDependencies.GetAllDependencies(assetBundleName);
 
@@ -887,7 +896,10 @@ namespace Modules.AssetBundles
 
         private void UnloadAssetBundleInternal(string assetBundleName, bool unloadAllLoadedObjects, bool force = false)
         {
-            if (!force && loadQueueing.ContainsKey(assetBundleName)) { return; }
+            // ロード中 (loadedAssetBundles 未登録) の時だけ Unload を防ぐ. ロード完了済みなら解放する.
+            var isLoading = loadQueueing.ContainsKey(assetBundleName) && !loadedAssetBundles.ContainsKey(assetBundleName);
+
+            if (!force && isLoading) { return; }
 
             var loadedAssetBundle = loadedAssetBundles.GetValueOrDefault(assetBundleName);
 
