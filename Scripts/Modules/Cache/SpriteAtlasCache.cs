@@ -1,4 +1,4 @@
-﻿
+
 using UnityEngine;
 using UnityEngine.U2D;
 using System.Collections.Generic;
@@ -29,7 +29,7 @@ namespace Modules.Cache
                     {
                         if (targets.IsEmpty()){ return; }
 
-                        targets.ForEach(x => UnityUtility.SafeDelete(x));   
+                        targets.ForEach(x => UnityUtility.SafeDelete(x));
 
                         targets.Clear();
                     }
@@ -77,41 +77,49 @@ namespace Modules.Cache
             }
         }
 
-		protected override void OnDispose()
-		{
-			Clear();
-		}
+        protected override void OnDispose()
+        {
+            Clear();
+
+            if (spriteCache != null)
+            {
+                spriteCache.Dispose();
+                spriteCache = null;
+            }
+        }
 
         public Sprite GetSprite(string spriteName)
         {
-            if (spriteAtlas == null) { return null; }
+            if (spriteAtlas == null){ return null; }
 
-            if (string.IsNullOrEmpty(spriteName)) { return null; }
+            if (string.IsNullOrEmpty(spriteName)){ return null; }
 
             var sprite = spriteCache.Get(spriteName);
 
             if (sprite == null)
-			{
-	            sprite = spriteAtlas.GetSprite(spriteName);
+            {
+                sprite = spriteAtlas.GetSprite(spriteName);
 
-				spriteCache.Add(spriteName, sprite);
-			}
+                spriteCache.Add(spriteName, sprite);
+            }
 
             return sprite;
         }
 
-		public void Clear()
-		{
-			if (spriteCache != null)
-			{
-                var cahcedSprites = spriteCache.Values;
+        public void Clear()
+        {
+            if (spriteCache == null){ return; }
 
-                foreach (var sprite in cahcedSprites)
-                {
-                    deleteCacheObjectController.DeleteRequest(sprite);
-                }
-			}
-		}
+            var cachedSprites = spriteCache.Values;
+
+            // 共有モードでは最終参照者でない限り実クリアされない. 実クリアされた時のみ Sprite を解放する.
+            if (!spriteCache.Clear()){ return; }
+
+            foreach (var sprite in cachedSprites)
+            {
+                deleteCacheObjectController.DeleteRequest(sprite);
+            }
+        }
 
         public bool HasCache(string spriteName)
         {

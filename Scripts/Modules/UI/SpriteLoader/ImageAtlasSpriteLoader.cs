@@ -43,6 +43,21 @@ namespace Modules.UI.SpriteLoader
             initialized = true;
         }
 
+        void OnDestroy()
+        {
+            if (atlasCache != null)
+            {
+                atlasCache.Dispose();
+                atlasCache = null;
+            }
+
+            if (spriteAtlasCache != null)
+            {
+                spriteAtlasCache.Dispose();
+                spriteAtlasCache = null;
+            }
+        }
+
         public async UniTask SetSprite(string atlasLoadPath, string spriteName)
         {
             Initialize();

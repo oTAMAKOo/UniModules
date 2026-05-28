@@ -38,6 +38,15 @@ namespace Modules.UI.SpriteLoader
             initialized = true;
         }
 
+        void OnDestroy()
+        {
+            if (spriteCache != null)
+            {
+                spriteCache.Dispose();
+                spriteCache = null;
+            }
+        }
+
         public async UniTask SetSprite(string loadPath)
         {
             Initialize();
