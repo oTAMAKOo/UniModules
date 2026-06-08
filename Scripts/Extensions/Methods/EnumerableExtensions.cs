@@ -313,7 +313,11 @@ namespace Extensions
         {
             var array = source.ToArray();
 
-            return array.FirstOrDefault(c => selector(c).Equals(array.Min(selector)));
+            if (array.Length == 0){ return default(TSource); }
+
+            var min = array.Min(selector);
+
+            return array.FirstOrDefault(c => selector(c).Equals(min));
         }
 
         /// <summary>
@@ -323,7 +327,11 @@ namespace Extensions
         {
             var array = source.ToArray();
 
-            return array.FirstOrDefault(c => selector(c).Equals(array.Max(selector)));
+            if (array.Length == 0){ return default(TSource); }
+
+            var max = array.Max(selector);
+
+            return array.FirstOrDefault(c => selector(c).Equals(max));
         }
 
         /// <summary>
