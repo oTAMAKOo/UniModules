@@ -85,6 +85,20 @@ namespace Modules.TextData
             return Instance.FindText(textGuid);
         }
 
+        private static string FormatTextInternal(Enum textType, params object[] args)
+        {
+            var text = GetTextInternal(textType);
+
+            if (text == null)
+            {
+                UnityEngine.Debug.LogError($""TextData not found. ({textType.GetType().Name}.{textType})."");
+
+                return string.Empty;
+            }
+
+            return string.Format(text, args);
+        }
+
 #GETTEXT_METHODS#
     }
 }
@@ -94,7 +108,7 @@ namespace Modules.TextData
 
         private const string GetMethodTemplate = @"public static string Get(TextData.{0} textType){{ return GetTextInternal(textType); }}";
 
-        private const string FormatMethodTemplate = @"public static string Format(TextData.{0} textType, params object[] args){{ return string.Format(Get(textType), args); }}";
+        private const string FormatMethodTemplate = @"public static string Format(TextData.{0} textType, params object[] args){{ return FormatTextInternal(textType, args); }}";
 
         //----- field -----
 

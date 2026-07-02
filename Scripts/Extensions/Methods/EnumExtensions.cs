@@ -15,11 +15,6 @@ namespace Extensions
             return LabelAttributeUtility.ToLabelName(@enum, @enum.GetType(), no);
         }
 
-        public static bool HasFlag<T>(this T source, T destination) where T : struct, IComparable, IFormattable, IConvertible
-        {
-            return (Convert.ToUInt64(source) & Convert.ToUInt64(destination)) != 0;
-        }
-
         /// <summary> Enum名で検索し値を返します. </summary>
         public static T FindByName<T>(string name, T defaultValue = default)
         {

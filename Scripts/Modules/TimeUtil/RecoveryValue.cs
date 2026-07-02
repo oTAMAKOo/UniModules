@@ -16,9 +16,6 @@ namespace Modules.TimeUtil
         // 現在の値.
         private XDouble current = new XDouble(0);
 
-        // 次に回復する時間.
-        private DateTime nextRecoveryTime = default;
-
         //----- property -----
 
         /// <summary> 現在の値 </summary>
@@ -90,6 +87,11 @@ namespace Modules.TimeUtil
         public TimeSpan GetNextRecoveryTime(DateTime currentTime)
         {
             if (Max <= Current) { return TimeSpan.Zero; }
+
+            if (!LastRecoveryTime.HasValue) { return TimeSpan.Zero; }
+
+            // 次の回復時刻 = 最後に回復した時刻 + 回復間隔.
+            var nextRecoveryTime = LastRecoveryTime.Value.AddSeconds(RecoveryInterval);
 
             if (nextRecoveryTime <= currentTime) { return TimeSpan.Zero; }
 

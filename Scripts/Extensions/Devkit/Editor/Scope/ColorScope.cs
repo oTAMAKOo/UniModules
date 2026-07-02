@@ -17,7 +17,7 @@ namespace Extensions.Devkit
 
         public ColorScope(Color color)
         {
-            originColor = GUI.backgroundColor;
+            originColor = GUI.color;
 
             GUI.color = color;
         }

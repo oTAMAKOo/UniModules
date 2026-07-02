@@ -25,7 +25,7 @@ namespace Modules.SortingLayerSetter
 
             var allSortingLayers = SortingLayer.layers;
 
-            var index = allSortingLayers.IndexOf(x => x.value == instance.SortingLayer);
+            var index = allSortingLayers.IndexOf(x => x.id == instance.SortingLayer);
             var labels = allSortingLayers.Select(x => x.name).ToArray();
 
             index = EditorGUILayout.Popup("SortingLayer", index, labels);
@@ -34,8 +34,7 @@ namespace Modules.SortingLayerSetter
             {
                 UnityEditorUtility.RegisterUndo(instance);
 
-                Reflection.InvokePrivateMethod(instance, "RunCollectContents");
-                instance.SortingLayer = allSortingLayers[index].value;
+                instance.SortingLayer = allSortingLayers[index].id;
             }
 
             DrawDefaultScriptlessInspector();

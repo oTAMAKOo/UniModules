@@ -422,7 +422,7 @@ namespace Modules.Sound
 
         public async UniTask CrossFade(SoundElement inElement, SoundElement outElement, float duration)
         {
-            if (inElement == null)
+            if (inElement != null)
             {
                 inElement.Volume = 0;
 

@@ -29,19 +29,28 @@ namespace Modules.R3Extension
         {
             if (Interlocked.Decrement(ref count) <= 0)
             {
-                completionSource?.TrySetResult();
+                var source = completionSource;
+
+                completionSource = null;
+
+                if (source != null)
+                {
+                    source.TrySetResult();
+                }
             }
         }
 
-        public async UniTask Wait()
+        public UniTask Wait()
         {
-            if (IsComplete) { return; }
+            if (IsComplete) { return UniTask.CompletedTask; }
 
-            completionSource = new UniTaskCompletionSource();
+            // UniTaskCompletionSource(非プール版)は複数awaiter対応のため、待機中のsourceは共有する.
+            if (completionSource == null)
+            {
+                completionSource = new UniTaskCompletionSource();
+            }
 
-            await completionSource.Task;
-
-            completionSource = null;
+            return completionSource.Task;
         }
     }
 }

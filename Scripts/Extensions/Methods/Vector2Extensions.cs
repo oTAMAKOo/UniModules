@@ -91,17 +91,6 @@ namespace Extensions
         }
 
         /// <summary>
-        /// given a normalized vector this method reflects the vector it
-        /// is operating upon. (like the path of a ball bouncing off a wall)
-        /// </summary>
-        /// <param name="src"></param>
-        /// <param name="norm"></param>
-        public static void Reflect(this Vector2 src, Vector2 norm)
-        {
-            src += 2.0f * Vector2.Dot(src, norm) * norm.GetReverse();
-        }
-
-        /// <summary>
         /// returns the vector that is the reverse of this vector.
         /// </summary>
         /// <param name="src"></param>

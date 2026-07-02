@@ -19,18 +19,6 @@ namespace Extensions
             return to - from;
         }
 
-        /// <summary> 指定されたTimeSpanより短いか. </summary>
-        public static bool IsShorterThan(this TimeSpan timeSpan, TimeSpan amount)
-        {
-            return timeSpan > amount;
-        }
-
-        /// <summary> 指定されたTimeSpanより長いか. </summary>
-        public static bool IsLongerThan(this TimeSpan timeSpan, TimeSpan amount)
-        {
-            return timeSpan < amount;
-        }
-
         /// <summary> DateTimeからUnixTimeに変換. </summary>
         public static ulong ToUnixTime(this DateTime dateTime, UnixTimeConvert type = UnixTimeConvert.Seconds)
         {

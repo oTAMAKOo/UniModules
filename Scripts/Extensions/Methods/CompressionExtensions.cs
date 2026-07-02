@@ -2,7 +2,6 @@
 using System.IO;
 using System.IO.Compression;
 using System.Text;
-using System.Runtime.Serialization.Formatters.Binary;
 
 namespace Extensions
 {
@@ -66,19 +65,6 @@ namespace Extensions
             var bytes = encoding.GetBytes(str);
 
             return Compress(bytes, algorithm);
-        }
-
-        /// <summary> 圧縮 </summary>
-        public static byte[] Compress<T>(this T target, CompressionAlgorithm algorithm = CompressionAlgorithm.GZip) where T : class
-        {
-            var binaryFormatter = new BinaryFormatter();
-
-            using (var memoryStream = new MemoryStream())
-            {
-                binaryFormatter.Serialize(memoryStream, target);
-
-                return Compress(memoryStream.ToArray(), algorithm);
-            }
         }
 
         //-------------------------------------------
@@ -160,26 +146,6 @@ namespace Extensions
             }
 
             return encoding.GetString(decompressedBytes);
-        }
-
-        /// <summary> 圧縮されたデータを解凍 </summary>
-        public static T Decompress<T>(this byte[] bytes, CompressionAlgorithm algorithm = CompressionAlgorithm.GZip) where T : class
-        {
-            var binaryFormatter = new BinaryFormatter();
-
-            var decompressedBytes = Decompress(bytes, algorithm);
-
-            if (decompressedBytes == null || decompressedBytes.IsEmpty())
-            {
-                return default(T);
-            }
-
-            using (var memoryStream = new MemoryStream(decompressedBytes))
-            {
-                binaryFormatter.Deserialize(memoryStream);
-
-                return memoryStream as T;
-            }
         }
     }
 }

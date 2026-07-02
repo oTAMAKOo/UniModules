@@ -58,7 +58,7 @@ namespace Modules.SortingLayerSetter
 
             if (renderer != null)
             {
-                renderer.sortingLayerID = (int)sortingLayer;
+                renderer.sortingLayerID = sortingLayer;
                 renderer.sortingOrder = sortingOrder;
             }
 

@@ -98,10 +98,17 @@ namespace Modules.PathFinding
 				    {
 					    var bestScoreNodeId = GetBestScoreNodeId();
 
-					    OpenAround(bestScoreNodeId, goalNodeId);
+					    // 展開できるノードが無い = ゴールに到達不能.
+					    if (bestScoreNodeId == null)
+					    {
+						    observer.OnCompleted(Result.Failure(new Exception("PathFinding unreachable : " + startNodeId + " / " + goalNodeId)));
+						    return;
+					    }
+
+					    OpenAround(bestScoreNodeId.Value, goalNodeId);
 
 					    // ゴールに辿り着いたら終了
-					    if (bestScoreNodeId == goalNodeId){ break; }
+					    if (bestScoreNodeId.Value == goalNodeId){ break; }
 
 					    if (cnt % 1000 == 0)
 					    {
@@ -116,10 +123,11 @@ namespace Modules.PathFinding
 				    routeList.Add(goalNodeId);
 
 				    // 捜査トライ回数を制限 (無限ループ対応).
-				    var tryCount = 1000;
+				    var tryCount = sizeX * sizeY;
+				    var traceCount = 0;
 				    var isSuccess = false;
 
-				    while (cnt++ < tryCount)
+				    while (traceCount++ < tryCount)
 				    {
 					    var beforeNode = routeList[0];
 
@@ -141,7 +149,7 @@ namespace Modules.PathFinding
 
 					    node = closedNodes[node.FromNodeId.y, node.FromNodeId.x];
 
-					    if (cnt % 100 == 0)
+					    if (traceCount % 100 == 0)
 					    {
 						    await UniTask.Yield(ct);
 					    }
@@ -176,10 +184,10 @@ namespace Modules.PathFinding
             }
         }
 
-        /// <summary> 最良のノードIDを返却 </summary>
-        private Vector2Int GetBestScoreNodeId()
+        /// <summary> 最良のノードIDを返却(展開可能なノードが無い場合はnull) </summary>
+        private Vector2Int? GetBestScoreNodeId()
         {
-            var result = new Vector2Int(0, 0);
+            Vector2Int? result = null;
 
             // 最小スコア.
             var min = double.MaxValue;
