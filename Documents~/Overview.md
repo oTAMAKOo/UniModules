@@ -77,13 +77,7 @@ using を書く時・コードを探す時はフォルダ名でなく namespace 
 | `Extensions/Methods/Vector.cs` | `UnityEngine` |
 | `Extensions/Devkit/Log/DebugLog.cs` | `Modules.Devkit.Log` |
 
-## 既知の基盤バグ【2026-07 全12件対処済み】
-
-ドキュメント作成時（2026-07）の全ファイル読解で「動かない・名前と挙動が違う」実装を12件発見し、**同月中に全件対処済み**（削除5件: `Compress<T>`/`Decompress<T>`・`Vector2Extensions.Reflect`・`IsShorterThan`/`IsLongerThan`・`EnumExtensions.HasFlag<T>` / 修正6件: `ColorScope`・`SortingLayerSetter`・`PathFinding.AStar`・`RecoveryValue.GetNextRecoveryTime`・`AsyncHandler`・`TextData.Format`・`SoundManagement.CrossFade` / 配線1件: `SceneArgument.RegisterHistory`）。各修正の経緯・挙動変化は該当モジュール .md の「注意点・罠」に記録されている。
-
-挙動が変わった主な修正: BGM切替が真のクロスフェードに（Sound）、`TextData.Format` が未定義テキストでクラッシュせず空文字+エラーログに、シーン履歴が `RegisterHistory` プロパティで制御可能に（Scene）。
-
-ファイル名とクラス名の不一致（現存）: `FileDownloader.cs`→`FileDownLoader`、`DragTarget.cs`→`DragObject`、`ButtonInteractablemageSprite.cs`→`ButtonInteractableImageSprite`。
+ファイル名とクラス名の不一致: `FileDownloader.cs`→`FileDownLoader`、`DragTarget.cs`→`DragObject`、`ButtonInteractablemageSprite.cs`→`ButtonInteractableImageSprite`。
 
 ## ドキュメント群の歩き方
 

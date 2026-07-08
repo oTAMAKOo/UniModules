@@ -54,8 +54,7 @@ setter.SetSortingLayer();
 
 ## 注意点・罠
 
-- **2026-07 に2件の不具合を修正済み**: ①インスペクタのコピペ残骸（存在しない `RunCollectContents` のリフレクション呼び出しで、レイヤー変更時に例外）を削除 ②保存値の意味を `SortingLayer.value`（序数）から **`SortingLayer.id`（一意ID）** に是正（従来は Default 以外のレイヤーで `sortingLayerID` に無効値が入り効かなかった）
-- **修正②により、修正前に保存された `sortingLayer` の値（value基準）は互換性がない**。他プロジェクトで本コンポーネントの配置済みデータがある場合はインスペクタから再設定が必要（Default レイヤー(0)のみ使用なら影響なし）
+- 保存値（`sortingLayer`）は `SortingLayer.id`（一意ID）基準。value（序数）や名前ではない
 - `sortingLayer` フィールドは `[HideInInspector]`。設定はエディタ拡張のポップアップ（または `SortingLayer` プロパティ）経由のみ
 - `ApplyChildObjects` は子孫に **sortingOrder のみ**適用し、sortingLayerID は適用しない（自身のみ両方適用）
 - `[ExecuteAlways]` のため Awake 適用はエディタ（非再生時）でも走る

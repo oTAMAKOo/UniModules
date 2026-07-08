@@ -358,7 +358,7 @@ UniqueComponents（シーン跨ぎ単一コンポーネント管理）:
 | `SceneArgument.PreLoadScenes`（virtual、既定空） | Enter 後に裏で事前ロードするシーン |
 | `SceneArgument.loadingAnimation = true` | ローディングアイコン表示の有無 |
 | `SceneArgument.bgm : Sounds.Bgm?` / `bgmId : uint?` | 指定すると SetArgument 時に自動で BGM 再生（`SetBgm`） |
-| `SceneArgument.RegisterHistory`（virtual、既定 true） | このシーンを「戻る」遷移（`TransitionBack`）の対象として履歴に残すか。Boot / Title は false を宣言（2026-07 に配線。後述の罠参照） |
+| `SceneArgument.RegisterHistory`（virtual、既定 true） | このシーンを「戻る」遷移（`TransitionBack`）の対象として履歴に残すか。Boot / Title は false を宣言 |
 | `SceneBase<TArgument>.Argument : TArgument` | 遷移引数（SetArgument 以降=Prepare から参照可） |
 | `SceneBase<TArgument>.IsActive` | ルート GameObject のアクティブ制御 |
 | `SceneBase<TArgument, TViewModel>.viewModel` / `GetViewModel()` | VM 保持と IViewRoot 実装（フィールド初期化子で生成済み） |
@@ -388,8 +388,8 @@ UniqueComponents（シーン跨ぎ単一コンポーネント管理）:
 - **`Enter` は同期メソッド**。async にできない。非同期の開始処理は `ExecuteBattle().Forget()` のように投げる（`BattleScene.Enter` 参照）
 - **`SetArgument` は `Prepare` より前**に呼ばれる。`Prepare` 内から `Argument` は参照可能。逆に `Initialize` 時点では未設定の場合がある（キャッシュヒット時を除き Load 直後の Initialize が先行）
 - **AppendTransition 中は `Current` が更新されない**（Append 元を指し続ける）。仕様であり、戻り先の決定に利用されている（実例3）。加算シーンか否かは `SceneInstance.Append` で判定
-- **加算シーンからの戻りは `UnloadTransition`**。`TransitionBack`（履歴戻り）は Client では未使用。また `Transition` の `registerHistory` 既定は false で、現在シーンを履歴から外して遷移するため、履歴戻りを使いたい場合は明示的に `registerHistory: true` が必要
-- `SceneArgument.RegisterHistory` は長らく未配線の死にプロパティだったが、**2026-07 に Client側 `SceneManager` の `Transition(arg, mode)` オーバーロードとして配線済み**。bool 引数を省略した通常の遷移では「遷移元シーンの `RegisterHistory`」に従って履歴保持が自動判定される。bool を明示的に渡す3引数版（ErrorDialog / SystemModel の強制遷移が使用）はプロパティを無視して従来どおり動く
+- **加算シーンからの戻りは `UnloadTransition`**。`TransitionBack`（履歴戻り）は Client では未使用
+- **履歴保持の判定**: bool 引数を省略した Client側 `SceneManager.Transition(arg, mode)` は「遷移元シーンの `RegisterHistory`」（既定 true。Boot / Title は false）に従って、遷移元を履歴に残すか自動判定する。bool を明示する基底の3引数版はプロパティを無視する（ErrorDialog / SystemModel の強制遷移が使用）
 - **シーンルートに `SceneBase` 派生が必須**。ルート GameObject 配下から `ISceneBase` を検索するため、見つからないと `SceneBase class does not exist.` エラーで遷移が中断する
 - **シーンロード直後、アクティブだったルート GameObject は一括非アクティブ化され、Prepare 完了 + TransitionWait 解除後に再アクティブ化される**。ルートオブジェクトの Awake/Start のタイミングに依存する実装をしない（プロジェクトの Unity ライフサイクル禁止ルールとも整合）。除外したいルート（常駐演出等）には `IgnoreControl` を付ける
 - **`BeginWait` の解除漏れで遷移が永久に完了しなくなる**。`FinishWait` を必ず呼ぶか `using (BeginWait())` を使う

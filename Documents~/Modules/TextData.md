@@ -130,7 +130,7 @@ closeButton.OnClick(() => Hide().Forget());
 | `static string Get(string identifier)` | `"シート名-Enum名"` 形式の文字列キーで取得。見つからなければ **null**（例外なし） |
 | `static string Format(string identifier, params object[] args)` | 文字列キー版書式化。キーが見つからなければ **null** を返す（安全） |
 | `static string Get(TextData.General textType)` ほか | カテゴリ enum 版。**生成コード**（`Constants/TextData/TextData.definition.cs`）に全19カテゴリ分のオーバーロードがある |
-| `static string Format(TextData.General textType, params object[] args)` ほか | enum 版書式化。テキスト未ロード/未定義時は**空文字を返し `Debug.LogError`**（2026-07修正。以前は ArgumentNullException でクラッシュ） |
+| `static string Format(TextData.General textType, params object[] args)` ほか | enum 版書式化。テキスト未ロード/未定義時は**空文字を返し `Debug.LogError`** |
 | `void LoadEmbedded(string resourcesPath)` / `void LoadEmbedded(TextDataAsset)` | 内蔵テキスト読込。既存辞書を `Clear()` してから取込 |
 | `void AddContents(TextDataAsset asset)` | テキスト追加合成（配信用）。同一 Guid は上書き。完了後 `OnUpdateContents` 発火 |
 | `void Clear()` | 全テキスト破棄 |
@@ -200,7 +200,7 @@ TextData/
 ## 注意点・罠
 
 - **直書き禁止（規約）**: 表示テキストは必ず `TextData.Get` / `TextData.Format`。使う enum が見当たらない場合は勝手に足さずユーザーに確認（enum は生成物のため手編集禁止）
-- **enum 版 `Format` は 2026-07 に安全化済み**: テキスト未定義・未ロード時は空文字を返し `Debug.LogError` する（`FormatTextInternal`。ジェネレータ `TextDataScriptGenerator` と生成済み `TextData.definition.cs` の両方修正済み）。文字列キー版 `Format(string, ...)` は従来どおり null を返す。`Get` は両版とも null を返す（`""` ではない）点は不変
+- **失敗時挙動の非対称に注意**: enum 版 `Format` はテキスト未定義・未ロード時に空文字を返して `Debug.LogError`、文字列キー版 `Format(string, ...)` は null を返す。`Get` は両版とも null を返す（`""` ではない）
 - **文字列キーの形式は `シート名-Enum名`**: 例 `Item-Name_100001`。配信テキストはマスターのカラムにこのキーを設定して運用する（コード直書きしない）
 - **初期化順**: `SetCryptoKey` → `LoadEmbedded` → （マスターロード後）`AddContents`。実行時は `InitializeObject` / `LangageManager.LoadTextData` / `ContentsUpdateManager.LoadExternalTextData` が実施済みなので通常触らない。エディタでは `TextDataLoader` が自動処理
 - **TextSetter は Awake / OnEnable でテキストを上書きする**: `SetActive(true)` 直後にコードで `text` を設定する場合は**有効化後に設定**しないと TextSetter に上書きされる（実例コメント: `Client/Assets/Scripts/Client/Scene/Battle/View/BattleUnit/Parts/BattleUnitActionNameView.cs`、`CutInController.cs`）

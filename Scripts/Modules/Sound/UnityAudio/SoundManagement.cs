@@ -439,10 +439,11 @@ namespace Modules.Sound
 
                 for (var time = 0f; time < duration; time += Time.deltaTime)
                 {
-                    var value = Mathf.Cos(time / duration * 2f);
+                    // equal-powerカーブ(別曲同士のクロスフェード標準. 聴感音量の和を一定に保つ).
+                    var rad = time / duration * Mathf.PI * 0.5f;
 
-                    inElement.Volume = (1 - value) / 2 * targetVolume;
-                    outElement.Volume = (1 + value) / 2 * firstVol;
+                    inElement.Volume = Mathf.Sin(rad) * targetVolume;
+                    outElement.Volume = Mathf.Cos(rad) * firstVol;
 
                     await UniTask.NextFrame();
                 }

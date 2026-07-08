@@ -146,8 +146,8 @@
 | [TagText](Modules/TagText.md) | タグ入りテキストの文字送りビルダー（namespaceは誤記のまま `Modules.TagTect`） |
 | [Camera](Modules/Camera.md) | Camera.rect調整によるアスペクト比固定（namespace `Modules.FixedAspectCamera`） |
 | [Shader](Modules/Shader.md) | シェーダーを名前指定で差し替え（namespace `Modules.Shaders`） |
-| [SortingLayerSetter](Modules/SortingLayerSetter.md) | SortingLayer/Orderのインスペクタ設定（2026-07バグ修正済み） |
-| [PathFinding](Modules/PathFinding.md) | 2DグリッドA*経路探索（2026-07バグ修正済み） |
+| [SortingLayerSetter](Modules/SortingLayerSetter.md) | SortingLayer/Orderのインスペクタ設定 |
+| [PathFinding](Modules/PathFinding.md) | 2DグリッドA*経路探索 |
 
 ### Modules（休眠 — コンパイル対象外。使う実装を提案しないこと）
 

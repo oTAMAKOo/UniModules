@@ -67,7 +67,7 @@ astar.SearchRoute(new Vector2Int(0, 0), new Vector2Int(10, 8))
 
 ## 注意点・罠
 
-- **2026-07 に2件の不具合を修正済み**: ①到達不能ゴール（Lockで囲まれている等）で探索ループが永遠に完了しない問題 → open ノード枯渇時に `"PathFinding unreachable"` の `Result.Failure` で完了するよう修正。②探索ループのカウンタが経路復元ループの上限（固定1000）に持ち越され、大きなグリッドで正当な経路でも失敗する問題 → 復元カウンタを分離し上限を `sizeX * sizeY` に適正化。
+- ゴールへ到達不能（Lock で囲まれている等）の場合は `"PathFinding unreachable"` の `Result.Failure` で完了する。呼び出し側は失敗ケースを必ずハンドリングすること。
 - 結果の `IEnumerable<Vector2Int>` は内部フィールド `routeList` の**参照そのもの**。次回 `SearchRoute` で Clear されるため、受け取ったら即 `ToArray()` 等でコピーする。
 - 経路は「開始マスを含まない・ゴールマスを含む」順列。`start == goal` の場合は空の経路で成功通知。
 - 失敗は例外ではなく `Result.Failure` 付き完了（R3）。`Subscribe(onNext, onCompleted)` で `Result.IsFailure` を確認する。

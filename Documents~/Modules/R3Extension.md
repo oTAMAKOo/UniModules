@@ -5,7 +5,7 @@
 > **Client側使用**: 約15ファイル（2026-07時点）
 > **依存**: R3 / UniTask / Extensions（`Scope`）
 
-## R3移行状況（UniRx は廃止済み・実態調査 2026-07）
+## Rx は R3 を使う（UniRx は不在）
 
 **本プロジェクトの Rx 実装は R3（Cysharp）であり、UniRx は完全に不在**。ルート `CLAUDE.md` の「UniRx パターン」という見出しは歴史的名残で、記載されているパターン自体（Subject 遅延初期化・`AddTo` 自動解除）は R3 でそのまま有効。
 
@@ -183,7 +183,7 @@ await ObservableEx.FromUniTask(ct => FileDownload(installPath, assetInfo, progre
 |---|---|
 | `void Begin()` | 処理中カウントを +1（Interlocked） |
 | `void End()` | カウントを -1。0 以下になったら `Wait()` を解放（completionSource をクリアしてから発火） |
-| `UniTask Wait()` | 全購読者の `End` まで待機。既に完了済み（カウント0）なら即 return。**複数箇所からの同時 Wait 可**（2026-07修正） |
+| `UniTask Wait()` | 全購読者の `End` まで待機。既に完了済み（カウント0）なら即 return。複数箇所からの同時 Wait 可 |
 | `bool IsComplete` | カウントが 0 以下か |
 
 ### AsyncHandlerScope（Extensions.Scope 継承）
@@ -204,7 +204,6 @@ await ObservableEx.FromUniTask(ct => FileDownload(installPath, assetInfo, progre
 
 - **AsyncHandler は発火ごとに new する使い捨て**。使い回すとカウントと `Wait` の整合が壊れる
 - `Begin`/`End` は必ず対で呼ぶ。手動で書かず **`AsyncHandlerScope` + `using` を使う**（例外時の End 漏れ = 発火側が永久に待つ事故を防ぐ）
-- かつて「同一ハンドラの複数箇所からの同時 `Wait()` で先の待機者が永久ハングする」制約があったが、**2026-07 に待機中 completionSource を共有する実装へ修正済み**（複数 Wait 可。`UniTaskCompletionSource` 非プール版の複数awaiter対応を利用）
 - 購読者がハンドラを `Begin` しなければ発火側は待たない。「待たせたくない購読者」はスコープを同期部分だけに掛ける（`BattleView.OnTaskExecuted` 参照）
 - 発火側は `Subject` が遅延初期化のため **null チェック（購読者ゼロ）で即 return する定型**を守る（`BattleEventBridge` 全 Fire メソッド参照）
 - `Begin`/`End` は Interlocked だが `Wait` との競合まではケアされていない。**メインスレッド上での使用が前提**
