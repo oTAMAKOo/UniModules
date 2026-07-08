@@ -10,6 +10,8 @@
 `Renderer` または uGUI `Image` のマテリアルの**シェーダーをシェーダー名指定で差し替える**コンポーネント。差し替え時は新規 `Material` を生成し、元マテリアルの `mainTexture` のみ引き継ぐ。
 生成マテリアルは `HideFlags.DontSaveInBuild | DontSaveInEditor` のためアセットを汚さない。名前を空にすると `defaultShader`（初回 Setup 時に自動記憶した元シェーダー）へ戻る。
 
+主要クラス: `ShaderSetter`（sealed MonoBehaviour、`[ExecuteAlways]`。対象は同一 GameObject の Renderer か Image を自動判別）/ `ShaderSetterInspector`（エディタ専用）。
+
 ## 逆引き（〜したい）
 
 | やりたいこと | 使うもの |
@@ -18,40 +20,6 @@
 | Shader 参照を直接渡して切り替えたい | `ShaderSetter.Set(Shader shader)` |
 | 元のシェーダーに戻したい | `Set((Shader)null)`（`defaultShader` にフォールバック） |
 | インスペクタで初期シェーダーを指定したい | `shaderName` をシリアライズ設定（Awake で自動適用） |
-
-## 主要クラス
-
-| クラス | 種別 | 役割 |
-|---|---|---|
-| `ShaderSetter` | sealed MonoBehaviour（`[ExecuteAlways]`） | シェーダー差し替え本体。対象は同一 GameObject の Renderer か Image を自動判別 |
-| `ShaderSetterInspector` | エディタ専用（`Editor/`） | `shaderName` の DelayedTextField 編集（確定時に即 `Set`） |
-
-## 使い方(最小の想定例)
-
-Client側に使用実績がないため想定例。
-
-```csharp
-// 想定例（本プロジェクトに実使用コードなし）.
-var shaderSetter = UnityUtility.GetComponent<ShaderSetter>(gameObject);
-
-// シェーダー名で差し替え（Shader.Find で検索）.
-shaderSetter.Set("UI/Grayscale");
-
-// 元に戻す（defaultShader にフォールバック）.
-shaderSetter.Set((Shader)null);
-```
-
-## API(主要公開メンバー)
-
-### ShaderSetter
-
-| メンバー | 説明 |
-|---|---|
-| `void Set(string shaderName)` | `Shader.Find` で検索して適用。null/空なら defaultShader へ |
-| `void Set(Shader shader)` | Shader 参照を直接適用（内部で `Apply()`） |
-| `void Apply()` | 現在の shader（null なら defaultShader）で新規 Material を生成し差し替え |
-
-シリアライズフィールド: `shaderName`（初期適用シェーダー名）/ `defaultShader`（フォールバック。未設定なら初回 Setup 時の現行シェーダーを自動記憶）。
 
 ## 注意点・罠
 

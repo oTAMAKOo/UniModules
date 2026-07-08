@@ -9,6 +9,8 @@
 
 専用カメラで RenderTexture へオフスクリーン描画し、その結果を uGUI の `RawImage` に表示するための基盤。3D/2Dモデルを UI 上に表示する用途（キャラビューア等）を想定。`RawImage` 上のクリック位置を RenderTexture 側カメラの Ray に逆変換してヒット判定する仕組み（`RenderTextureRaycaster`）も持つ。
 
+主要クラス: `RenderTarget`（RenderTexture を生成して同 GameObject の Camera の `targetTexture` に設定）/ `RenderTextureRaycaster`（abstract。クリック位置→描画カメラの Ray に変換し `Raycast(Ray)` を呼ぶ）/ `Collider2DRayCast`（`Physics2D.RaycastAll` でヒットした GameObject 群を通知する具象）。
+
 **コンパイル対象**（シンボルゲート無し・外部SDK不要）で使用可能な状態だが、本プロジェクトでは Client コード・アセットともに未使用。派生クラスは基盤内の `Live2DRaycaster`（[Live2D](Live2D.md)、こちらは実質無効）のみ。
 
 ## 逆引き（〜したい）
@@ -21,72 +23,14 @@
 | クリックで 2D コライダーをヒット判定したい | `Collider2DRayCast.OnRaycastHitAsObservable()` |
 | 独自のヒット判定をしたい | `RenderTextureRaycaster` を継承し `Raycast(Ray)` を実装 |
 
-## 主要クラス
-
-| クラス | 種別 | 役割 |
-|---|---|---|
-| `RenderTarget` | sealed MonoBehaviour（`[ExecuteAlways]` `[RequireComponent(typeof(Camera))]`） | RenderTexture を生成して同 GameObject の Camera の `targetTexture` に設定。`Awake` で SerializeField のサイズ（既定 100x100 / depth16 / ARGB32）で自動生成 |
-| `RenderTextureRaycaster` | abstract MonoBehaviour（`[RequireComponent(typeof(RawImage))]`、`IPointerClickHandler`） | `Initialize()` で RawImage の画面上サイズに合わせた RenderTexture を `RenderTarget` に作らせ `RawImage.texture` へ設定。クリック位置→描画カメラの Ray に変換し abstract `Raycast(Ray)` を呼ぶ |
-| `Collider2DRayCast` | sealed MonoBehaviour（`RenderTextureRaycaster` 派生） | `Physics2D.RaycastAll`（最大距離10固定）でヒットした GameObject 群を `Observable<GameObject[]>` で通知 |
-
-## 使い方(実例)
-
-Client側の使用実績が無いため最小の想定例（構成: UIカメラ配下に RawImage + `Collider2DRayCast`、別レイヤーに 2Dモデル + `RenderTarget` 付きカメラ）。
-
-```csharp
-// 想定例（Client側使用実績なし）.
-using Modules.OffScreenRendering;
-
-// RawImage と同じ GameObject に付与した Collider2DRayCast.
-// inspector で renderTarget（RenderTarget）を割り当てておく.
-
-[SerializeField]
-private Collider2DRayCast raycaster = null;
-
-public void Setup()
-{
-    // RawImage の表示サイズに合わせて RenderTexture を生成・割り当て.
-    raycaster.Initialize();
-
-    // クリックした位置の 2D コライダーを受け取る.
-    raycaster.OnRaycastHitAsObservable()
-        .Subscribe(hits => OnHit(hits))
-        .AddTo(this);
-}
-```
-
-## API(主要公開メンバー)
-
-### RenderTarget
-
-| メンバー | 説明 |
-|---|---|
-| `RenderTexture : RenderTexture` | 生成済みの RenderTexture（`Awake` 前は null） |
-| `RenderCamera : Camera` | 描画に使うカメラ（同 GameObject） |
-| `CreateRenderTexture(int width, int height, int depth = 16, RenderTextureFormat format = ARGB32) : RenderTexture` | RenderTexture を生成し `targetTexture` へ設定。同サイズなら既存を再利用、サイズ違いは破棄して作り直し |
-
-### RenderTextureRaycaster（abstract）
-
-| メンバー | 説明 |
-|---|---|
-| `Initialize()` | RawImage のワールド4隅→スクリーン座標からサイズを算出し `RenderTarget.CreateRenderTexture` → `RawImage.texture` へ設定。**呼ばないとクリック判定も無効**（二重呼び出しガード有り） |
-| `OnPointerClick(PointerEventData)` | uGUI クリック→RenderTexture ローカル座標→`RenderCamera.ScreenPointToRay` に変換し `Raycast(ray)` を実行 |
-| `Raycast(Ray)`（protected abstract） | 派生側でヒット判定を実装 |
-
-### Collider2DRayCast
-
-| メンバー | 説明 |
-|---|---|
-| `OnRaycastHitAsObservable() : Observable<GameObject[]>` | クリック Ray 上の 2D コライダー（`Physics2D.RaycastAll`、距離10）を通知。ヒット無しの時は流れない |
-
 ## 注意点・罠
 
-- `RenderTextureRaycaster.Initialize()` は**手動呼び出し必須**。また SerializeField の `renderTarget` を inspector で割り当てていないと `Initialize` で NullReference になる。
+- `RenderTextureRaycaster.Initialize()` は**手動呼び出し必須**（呼ばないとクリック判定も無効）。また SerializeField の `renderTarget` を inspector で割り当てていないと `Initialize` で NullReference になる。
 - `Initialize()` はカメラを `UnityUtility.FindCameraForLayer(1 << gameObject.layer)` から「`RenderTarget` が付いていないカメラ」で検索する。RawImage のレイヤーを描画する UI カメラが存在しないと null 参照で落ちる。
 - `Initialize()` 時点の RawImage 表示サイズで RenderTexture を固定生成する。レイアウト確定前に呼ぶとサイズがずれ、以後追従もしない（リサイズ対応は無い）。
 - 入力は `IPointerClickHandler`（クリック/タップ）のみ。ドラッグ・ホバー等は未対応。RawImage が Raycast Target であることが前提。
 - `RenderTarget` は `Awake` で SerializeField サイズ（既定 100x100）の RenderTexture を勝手に作る（`[ExecuteAlways]` のためエディタ編集中も動く）。`RenderTextureRaycaster.Initialize` が後から正しいサイズで作り直す構造。
-- `Collider2DRayCast` の Ray 距離は 10 固定。カメラからコライダーまでの距離が 10 を超える配置では判定できない。
+- `Collider2DRayCast` の Ray 距離は 10 固定。カメラからコライダーまでの距離が 10 を超える配置では判定できない。また `OnRaycastHitAsObservable()` はヒット無しの時は流れない。
 - 生成した RenderTexture の明示的な破棄 API は無い（作り直し時のみ `SafeDelete`）。大量に使い捨てる場合はリークに注意。
 
 ## 関連

@@ -10,6 +10,8 @@
 `Renderer` 系コンポーネント（MeshRenderer / ParticleSystemRenderer 等、標準インスペクタに SortingLayer 欄が出ないもの）の **sortingLayerID / sortingOrder をインスペクタから設定する**ためのコンポーネント。
 `ApplyChildObjects` を有効にすると子孫の全 Renderer に sortingOrder を一括適用できる。uGUI（Canvas 配下）には効かない。
 
+主要クラス: `SortingLayerSetter`（sealed MonoBehaviour、`[ExecuteAlways]`。Awake / プロパティ set 時に自身の Renderer へ適用）/ `SortingLayerSetterInspector`（エディタ専用。SortingLayer 名のポップアップ選択 + Apply ボタン）。
+
 ## 逆引き（〜したい）
 
 | やりたいこと | 使うもの |
@@ -18,45 +20,11 @@
 | 実行時にソート順を変えたい | `SortingLayerSetter.SortingOrder = n`（set で即反映） |
 | 子孫の Renderer もまとめて設定したい | `ApplyChildObjects = true` → `SetSortingLayer()` |
 
-## 主要クラス
-
-| クラス | 種別 | 役割 |
-|---|---|---|
-| `SortingLayerSetter` | sealed MonoBehaviour（`[ExecuteAlways]`） | Awake / プロパティ set 時に自身の Renderer へ sortingLayerID / sortingOrder を適用 |
-| `SortingLayerSetterInspector` | エディタ専用（`Editor/`、`ScriptlessEditor` 継承） | SortingLayer 名のポップアップ選択 + Apply ボタン |
-
-## 使い方(最小の想定例)
-
-Client側に使用実績がないため想定例。基本はインスペクタでの設定運用。
-
-```csharp
-// 想定例（本プロジェクトに実使用コードなし）.
-var setter = UnityUtility.GetComponent<SortingLayerSetter>(gameObject);
-
-// set した時点で Renderer に即反映される.
-setter.SortingOrder = 10;
-
-// 子孫へ一括反映したい場合.
-setter.ApplyChildObjects = true;
-setter.SetSortingLayer();
-```
-
-## API(主要公開メンバー)
-
-### SortingLayerSetter
-
-| メンバー | 説明 |
-|---|---|
-| `int SortingLayer`（get/set） | SortingLayer の **id**（`UnityEngine.SortingLayer.layers[n].id`）。set で即適用 |
-| `int SortingOrder`（get/set） | sortingOrder。set で即適用 |
-| `bool ApplyChildObjects`（get/set） | true なら `SetSortingLayer()` 時に子孫 Renderer にも適用（set しただけでは再適用されない） |
-| `void SetSortingLayer()` | 現在値を Renderer に適用（Awake でも自動実行） |
-
 ## 注意点・罠
 
 - 保存値（`sortingLayer`）は `SortingLayer.id`（一意ID）基準。value（序数）や名前ではない
 - `sortingLayer` フィールドは `[HideInInspector]`。設定はエディタ拡張のポップアップ（または `SortingLayer` プロパティ）経由のみ
-- `ApplyChildObjects` は子孫に **sortingOrder のみ**適用し、sortingLayerID は適用しない（自身のみ両方適用）
+- `ApplyChildObjects` は子孫に **sortingOrder のみ**適用し、sortingLayerID は適用しない（自身のみ両方適用）。また set しただけでは再適用されない（`SetSortingLayer()` を呼ぶ）
 - `[ExecuteAlways]` のため Awake 適用はエディタ（非再生時）でも走る
 
 ## 関連

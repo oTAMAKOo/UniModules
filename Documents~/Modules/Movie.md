@@ -9,7 +9,9 @@
 
 CRI Sofdec ムービー（.usm）の再生管理基盤。`CriMana.Player` のラップ（準備→再生→終了検知→自動解放）と、uGUI / RenderTexture への描画コンポーネントを提供する。
 
-**本プロジェクトでは未使用（コンパイル対象外）**。全ファイルが `#if ENABLE_CRIWARE_SOFDEC` で丸ごと囲われており、同シンボルはどこにも定義されていない（`Client/ProjectSettings/ProjectSettings.asset` の `scriptingDefineSymbols` / `Client/Assets/csc.rsp` とも無し）。CRI SDK 自体も未導入 → [CriWare](CriWare.md)。**本プロジェクトにムービー再生基盤は現状存在しない**（必要なら Unity 標準 `VideoPlayer` 等の導入から検討）。
+主要クラス: `MovieManagementBase<TInstance, TMovie>`（abstract Singleton。再生管理の基底。利用側が具象クラスを実装する前提）/ `MovieElement`（再生1件分のハンドル。`IsReady` / `OnFinishAsObservable()` 等）/ `CriMovieForUI`（uGUI向け描画）/ `CriMovieForRenderTexture`（RenderTexture向け描画）/ `MovieScriptGenerator`（Editor専用。.usm一覧から `Movies.Mana` enum を自動生成）。
+
+**本プロジェクトでは未使用（コンパイル対象外）**。全ファイルが `#if ENABLE_CRIWARE_SOFDEC` で丸ごと囲われており、同シンボルはどこにも定義されていない（`Client/ProjectSettings/ProjectSettings.asset` の `scriptingDefineSymbols` / `Client/Assets/csc.rsp` とも無し）。CriWare の `CriWareObject` のような「型だけ常在」も無い。CRI SDK 自体も未導入 → [CriWare](CriWare.md)。**本プロジェクトにムービー再生基盤は現状存在しない**（必要なら Unity 標準 `VideoPlayer` 等の導入から検討）。
 
 ## 逆引き（〜したい）
 
@@ -22,51 +24,6 @@ CRI Sofdec ムービー（.usm）の再生管理基盤。`CriMana.Player` のラ
 | （CRI有効時）uGUIに描画 | `CriMovieForUI`（`CriManaMovieControllerForUI` 派生） |
 | （CRI有効時）RenderTextureに描画 | `CriMovieForRenderTexture.Target` に RenderTexture を設定 |
 | 【Editor・CRI有効時】.usm一覧から `Movies.Mana` enum を生成 | `MovieScriptGenerator.Generate()`（`CriAssetUpdater` から呼ばれる） |
-
-## 主要クラス
-
-全クラスが `#if ENABLE_CRIWARE_SOFDEC` 内のため、本プロジェクトでは**一切コンパイルされない**（CriWare の `CriWareObject` のような「型だけ常在」も無い）。
-
-| クラス | 種別 | 役割 |
-|---|---|---|
-| `IMovieManagement` | interface | `Play(element, loop)` / `Pause(element, pause)` / `Stop(element)` |
-| `MovieManagementBase<TInstance, TMovie>` | abstract Singleton | 再生管理の基底。`Initialize()` で `PostLateUpdate` 毎フレーム更新を開始し、再生終了・破棄済み要素を自動解放。`GetManaInfo(TMovie)` が abstract で、利用側が具象クラス（例: `MovieManagement`）を実装する前提 |
-| `MovieElement` | class（LifetimeDisposable） | 再生1件分のハンドル。状態（`Status.Play/Pause/Stop`）、`PlayTime` / `TotalTime`（取得不可時 -1）、`IsReady` / `IsFinished` / `HasError()`、`OnFinishAsObservable()` |
-| `ManaInfo` | class | .usm ファイルパス情報（`Usm` / `UsmPath`＝拡張子抜き） |
-| `CriMovieForUI` | MonoBehaviour（`CriManaMovieControllerForUI` 派生） | uGUI 向け再生。`uiRenderMode = true` 固定、`ManualInitialize()` で Awake を待たず初期化可 |
-| `CriMovieForRenderTexture` | MonoBehaviour（`CriManaMovieMaterial` 派生） | 毎フレーム `Graphics.Blit` で `Target`（RenderTexture）へ描画 |
-| `MovieScriptGenerator` | static class（**Editor専用**） | 指定フォルダの .usm を走査し `Movies.Mana` enum + `GetManaInfo` を持つ `Movies.cs` を自動生成 |
-
-## 使い方(実例)
-
-Client側の実使用コードは無い。残存しているのは以下の死にコードのみ（`using Modules.Movie` すら無く、具象 `MovieManagement` クラスも未実装のため、シンボルを定義するとむしろコンパイルエラーになる）。
-
-```csharp
-// 引用元: Client/Assets/Scripts/Client/Core/Initialize/InitializeObject/InitializeObject.manager.cs
-// ※ #if ENABLE_CRIWARE_SOFDEC 内のため本プロジェクトでは無効.
-#if ENABLE_CRIWARE_SOFDEC
-
-if (MovieManagement.Exists)
-{
-    MovieManagement.Instance.ReleaseAll();
-}
-
-#endif
-```
-
-## API(主要公開メンバー)
-
-CRI 有効時のみ存在。`MovieManagementBase<TInstance, TMovie>` の主要メンバー:
-
-| メンバー | 説明 |
-|---|---|
-| `Initialize()` | 毎フレーム更新の購読開始（二重呼び出しガード有り）。使用前に必須 |
-| `Prepare(TMovie / ManaInfo / string, CriManaMovieMaterialBase, shaderOverrideCallBack = null) : MovieElement` | 再生準備（非アクティブ中も `PlayerManualUpdate` で準備を進行） |
-| `Play(TMovie / ManaInfo / string, CriManaMovieMaterialBase, bool loop = false, ...) : MovieElement` / `Play(MovieElement, bool loop)` | 再生開始 |
-| `Pause(MovieElement, bool)` / `Stop(MovieElement)` | 一時停止 / 停止 |
-| `SetAudioVolume(float)` | 全再生中要素へ音量反映 |
-| `ReleaseAll()` | 全 Player を Dispose して管理リストをクリア |
-| `GetManaInfo(TMovie) : ManaInfo`（protected abstract） | enum値→ManaInfo 解決。派生側で実装 |
 
 ## 注意点・罠
 

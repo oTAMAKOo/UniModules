@@ -9,6 +9,8 @@
 
 enum をキーにした非同期ステートマシン。ステートごとに `Enter` / `Leave` を `UniTask` で実装したノードを登録し、`Request` で遷移する（前ステートの `Leave` 完了 → 次ステートの `Enter` 実行）。遷移引数（`StateArgument`）の受け渡しと、遷移開始/完了の R3 通知を持つ。
 
+主要クラス: `StateController<T>`（本体。ノード登録・遷移実行・キャンセル管理・遷移通知）/ `StateNode<T>`（引数なしノード。`Enter` / `Leave` を override）/ `StateNode<T, TArgument>`（引数付きノード）/ `StateArgument`（遷移引数の基底）。
+
 **本プロジェクトでは未使用**（ガード無しでコンパイルはされている）。画面遷移・ゲームフロー等でステートマシンが必要になった場合は、自作する前に本クラスの採用を検討すること。
 
 ## 逆引き（〜したい）
@@ -21,67 +23,6 @@ enum をキーにした非同期ステートマシン。ステートごとに `E
 | 実行中でも強制的に遷移したい | `Request(next, force: true)`（実行中の Enter/Leave をキャンセル） |
 | 遷移を監視したい | `OnChangeStateStartAsObservable()` / `OnChangeStateFinishAsObservable()`（`ChangeStateInfo.from/to`） |
 
-## 主要クラス
-
-| クラス | 種別 | 役割 |
-|---|---|---|
-| `StateController<T>` | sealed class（`LifetimeDisposable`、`T : Enum`） | 本体。ノード登録テーブル・遷移実行（`ChangeState`）・キャンセル管理・遷移通知 |
-| `IStateNode<T>` | interface | `State` プロパティのみ。登録テーブルの共通型 |
-| `StateNode<T>` | abstract class | 引数なしノード。`Enter(CancellationToken)` / `Leave(CancellationToken)` を virtual で提供（既定は即完了） |
-| `StateNode<T, TArgument>` | abstract class | 引数付きノード。`Enter(TArgument, CancellationToken)` / `Leave(CancellationToken)` |
-| `StateArgument` | abstract class | 遷移引数の基底（空クラス。派生で自由にフィールド定義） |
-
-## 使い方(実例)
-
-Client側・基盤内とも使用例なし。実コードのシグネチャに基づく最小の想定例。
-
-```csharp
-// 想定例（実在コードではない）. シグネチャは
-// Client/Assets/UniModules/Scripts/Modules/StateControl/StateController.cs 参照.
-public enum GameState { Title, Home, Battle }
-
-public sealed class BattleStateNode : StateNode<GameState>
-{
-    public BattleStateNode() : base(GameState.Battle) { }
-
-    public override async UniTask Enter(CancellationToken cancelToken = default)
-    {
-        // ステート開始処理.
-    }
-
-    public override async UniTask Leave(CancellationToken cancelToken = default)
-    {
-        // ステート終了処理.
-    }
-}
-
-// 構築と遷移.
-var stateController = new StateController<GameState>();
-
-stateController.Register(GameState.Battle, new BattleStateNode());
-
-stateController.OnChangeStateFinishAsObservable()
-    .Subscribe(x => Debug.Log($"{x.from} -> {x.to}"))
-    .AddTo(Disposable);
-
-stateController.Request(GameState.Battle);
-```
-
-## API(主要公開メンバー)
-
-### StateController&lt;T&gt;
-
-| メンバー | 説明 |
-|---|---|
-| `Register(T state, IStateNode<T> node)` | ノード登録（同一ステートは上書き） |
-| `Get(T state) : IStateNode<T>` | 登録ノード取得（未登録は null） |
-| `Request(T next, bool force = false)` | 遷移要求（引数なし）。実行中は force=false だと**無視される** |
-| `Request<TArgument>(T next, TArgument argument, bool force = false)` | 引数付き遷移要求（`TArgument : StateArgument, new()`） |
-| `Clear()` | 実行中遷移をキャンセルし全ノード破棄 |
-| `Current : T` | 現在ステート（未遷移時は enum の default） |
-| `IsExecute : bool` | 遷移処理（Leave/Enter）実行中か |
-| `OnChangeStateStartAsObservable()` / `OnChangeStateFinishAsObservable()` : `Observable<ChangeStateInfo>` | 遷移開始/完了通知（`from` / `to`） |
-
 ## 注意点・罠
 
 - `Request` は fire-and-forget（`ChangeState(...).Forget()`）。遷移完了を待ちたい場合は `OnChangeStateFinishAsObservable` を併用する（await できる API は無い）。
@@ -90,6 +31,7 @@ stateController.Request(GameState.Battle);
 - `StateNode<T, TArgument>.Enter` の呼び出しは **CancellationToken を渡していない**（`node.Enter(argument)` のみ。実装: `StateController.ChangeState`）。引数付きノードの `Enter` は force キャンセルが効かない点に注意。
 - 引数付きノードは `Request` の `TArgument` 型と完全一致した `StateNode<T, TArgument>` にのみディスパッチされる（型が合わないと Enter/Leave がスキップされる）。引数なし `Request` は内部で `StateEmptyArgument` を使うため、引数なしノード（`StateNode<T>`）と組み合わせて使う。
 - 遷移の再入・キュー機構は無い（Enter 中に次の Request をしたい場合は force 必須）。
+- `Current`（現在ステート）は未遷移時は enum の default を返す。
 
 ## 関連
 

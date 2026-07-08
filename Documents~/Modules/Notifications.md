@@ -9,6 +9,8 @@
 
 ローカルプッシュ通知（OSスケジュール通知）の登録基盤。ジェネリック Singleton 基底 `LocalPushNotification<TInstance>` を継承して使う（`CurrentTime` の供給が abstract）。
 「`Set()` でメモリに積む → **アプリのサスペンド/終了時にまとめて OS へ予約** → レジューム時に全消去」という方式で、フォアグラウンド中は OS に通知が残らない。
+主要クラス: `LocalPushNotification<TInstance>`（通知の登録管理とサスペンド時の OS 予約）/ `Info`（通知1件のパラメータ。UnixTime/Title/Message 必須。生成時に SecurePrefs 連番で Identifier 採番）/ Client側 `Dominion.Client.Notifications.LocalPushNotification`（`CurrentTime` に `SystemModel.CurrentUnixTime`＝サーバー時刻を供給。`Setup()` で Android チャンネル登録）。
+プラットフォーム別 partial（`#if (UNITY_ANDROID or UNITY_IOS) && !UNITY_EDITOR`）が `AddSchedule` / `ClearNotifications` を実装。
 
 ## 逆引き（〜したい）
 
@@ -21,96 +23,12 @@
 | Android の通知権限をリクエストしたい | `RequestNotificationPermission()`（Android専用 partial） |
 | Android の通知チャンネルを登録したい | `RegisterChannel(channelId, title, importance, description)`（Android専用 partial） |
 
-## 主要クラス
+## 使い方
 
-| クラス | 種別 | 役割 |
-|---|---|---|
-| `LocalPushNotification<TInstance>` | abstract Singleton（`Extensions.Singleton<T>` 継承） | 通知の登録管理とサスペンド時の OS 予約。`CurrentTime : ulong`（UnixTime）が abstract |
-| `LocalPushNotification<TInstance>.Info` | sealed class | 通知1件のパラメータ（UnixTime/Title/Message 必須。BadgeCount/アイコン/Color はオプション）。生成時に SecurePrefs 連番で Identifier 採番 |
-| Client側 `Dominion.Client.Notifications.LocalPushNotification` | sealed（Client実装） | `CurrentTime` に `SystemModel.CurrentUnixTime`（サーバー時刻）を供給。`Setup()` で Android チャンネル登録 |
-
-プラットフォーム別 partial（`#if (UNITY_ANDROID or UNITY_IOS) && !UNITY_EDITOR`）が `AddSchedule` / `ClearNotifications` を実装。
-
-## 使い方(実例)
-
-### 実例1: 起動時初期化（CreateInstance → Initialize → 権限 → Enable）
-
-```csharp
-// 引用元: Client/Assets/Scripts/Client/Core/Initialize/InitializeObject/InitializeObject.manager.cs
-private void InitializeLocalPushNotify()
-{
-    var localPushNotification = LocalPushNotification.CreateInstance();
-
-    localPushNotification.Initialize();
-
-    #if UNITY_ANDROID && !UNITY_EDITOR
-
-    localPushNotification.RequestNotificationPermission().Forget();
-
-    #endif
-
-    var playData = LocalDataManager.Get<PlayData>();
-
-    localPushNotification.Enable = playData.LocalPushNotify.EnableNotify;
-}
-```
-
-Android チャンネル登録はログイン後の `GameStartupManager.Setup()` → `localPushNotification.Setup()` で実施（`Client/Assets/Scripts/Client/Manager/GameStartupManager.cs`）。
-
-### 実例2: サスペンド時に通知を組み立てて登録（標準パターン）
-
-```csharp
-// 引用元: Client/Assets/Scripts/Client/Model/System/NotifyModel.cs（抜粋）
-localPushNotification.OnNotifyRegisterAsObservable()
-    .Subscribe(_ => NotifyRegister())
-    .AddTo(Disposable);
-
-private void NotifyRegister()
-{
-    if (!localPushNotification.CheckNotificationEnable()) { return; }
-
-    var title = TextData.Get(TextData.LocalPushNotification.Notification_Title);
-    var message = messageTable.SampleOne();
-    var time = notifyDatetime.ToUnixTime();
-
-    var userRetentionNotify = new LocalPushNotification.Info(time, title, message);
-
-    localPushNotification.Set(userRetentionNotify);
-}
-```
-
-### 実例3: 設定画面でのON/OFF
-
-```csharp
-// 引用元: Client/Assets/Scripts/Client/Feature/Window/PushNotify/PushNotifyWindow.cs（抜粋）
-var localPushNotify = LocalPushNotification.Instance;
-
-localPushNotify.Enable = enable;
-```
-
-## API(主要公開メンバー)
-
-### LocalPushNotification&lt;TInstance&gt;
-
-| メンバー | 説明 |
-|---|---|
-| `Initialize()` | ApplicationEvent（OnQuit/OnSuspend → Schedule、OnResume → Clear）を購読。起動時に1回必須 |
-| `Enable : bool` | 通知の有効/無効。値が変わると既存の OS 予約をクリア |
-| `Set(Info info) : long` | 通知登録（メモリ上）。戻り値は ID。**disable 時は -1** |
-| `Remove(long id)` | 登録解除（-1 は無視） |
-| `OnNotifyRegisterAsObservable() : Observable<Unit>` | サスペンド/終了時「OS 予約直前」の通知。ここで各機能が `Set()` する |
-| `abstract CurrentTime : ulong` | 現在 UnixTime の供給（Client実装はサーバー時刻） |
-| `RequestNotificationPermission() : UniTask` | 【Android専用】通知権限リクエスト（結果は `OnRequestPermissionResult` virtual） |
-| `RegisterChannel(channelId, title, Importance, description)` | 【Android専用】通知チャンネル登録。**AddSchedule 前に必須** |
-
-### Info（通知1件）
-
-| メンバー | 説明 |
-|---|---|
-| `Info(ulong unixTime, string title, string message)` | 発火時刻（UnixTime）・タイトル・本文。Identifier は自動採番（SecurePrefs 永続連番） |
-| `BadgeCount : int` | バッジ数（デフォルト 1） |
-| `LargeIconResource / SmallIconResource : string` | 【Android】アイコンリソース名（デフォルト "notify_icon_large" / "notify_icon_small"） |
-| `Color : Color32?` | 【Android】通知色 |
+- 起動時初期化: `LocalPushNotification.CreateInstance()` → `Initialize()` → Android 実機は `RequestNotificationPermission().Forget()` → `Enable = playData.LocalPushNotify.EnableNotify`。実例: `Client/Assets/Scripts/Client/Core/Initialize/InitializeObject/InitializeObject.manager.cs` の `InitializeLocalPushNotify()`
+- Android チャンネル登録はログイン後の `GameStartupManager.Setup()` → `localPushNotification.Setup()` で実施（`Client/Assets/Scripts/Client/Manager/GameStartupManager.cs`）
+- サスペンド時に通知を組み立てて登録（標準パターン）: `OnNotifyRegisterAsObservable()` を購読 → 中で `CheckNotificationEnable()` 判定 → `TextData` からタイトル・本文取得 → `new LocalPushNotification.Info(time, title, message)` を `Set()`。実例: `Client/Assets/Scripts/Client/Model/System/NotifyModel.cs`
+- 設定画面でのON/OFF: `LocalPushNotification.Instance.Enable = enable;`。実例: `Client/Assets/Scripts/Client/Feature/Window/PushNotify/PushNotifyWindow.cs`
 
 ## 注意点・罠
 
@@ -118,8 +36,8 @@ localPushNotify.Enable = enable;
 - `Set()` は即時に OS へ予約しない。**実際の予約はサスペンド/終了時**（`Schedule()`）。またレジューム時に全予約がクリアされるため、通知は毎サスペンドごとに `OnNotifyRegisterAsObservable` 内で組み立て直すのが前提（積みっぱなしにしない。`Schedule()` 後に内部リストもクリアされる）
 - `Enable = false` のまま `Set()` すると **-1 が返り登録されない**。Client側は `CheckNotificationEnable()`（マスターロード済み・ログイン済み・ユーザー設定ON）で事前判定している
 - 発火時刻が `CurrentTime` より過去の場合はエラーログを出してスキップされる（例外にはならない）
-- テキストは必ず `TextData` から取得する（コーディング規約。実例2参照）
-- Android はチャンネル未登録だと通知が出ない（`Setup()` がログイン後に呼ばれる点に注意）。iOS はバッジをレジューム時に 0 リセット
+- テキストは必ず `TextData` から取得する（コーディング規約）
+- Android はチャンネル未登録だと通知が出ない（`RegisterChannel` は AddSchedule 前に必須。`Setup()` がログイン後に呼ばれる点に注意）。iOS はバッジをレジューム時に 0 リセット
 
 ## 関連
 

@@ -7,7 +7,7 @@
 
 ## 概要
 
-カメラの描画アスペクト比を固定するコンポーネント `FixedAspectCamera`。画面が指定比率より横長ならピラーボックス（左右帯）、縦長ならレターボックス（上下帯）になるよう `Camera.rect` を毎フレーム調整する。
+カメラの描画アスペクト比を固定するコンポーネント `FixedAspectCamera`（sealed MonoBehaviour、`[ExecuteAlways]` `[RequireComponent(typeof(Camera))]`）。画面が指定比率より横長ならピラーボックス（左右帯）、縦長ならレターボックス（上下帯）になるよう `Camera.rect` を毎フレーム調整する。
 本プロジェクトのカメラ運用は Client 側 `CommonCamera`（`InitializeObject.core.cs` の `CreateCommonCamera()`）ベースで、本コンポーネントは未使用。
 
 ## 逆引き（〜したい）
@@ -17,36 +17,6 @@
 | カメラの描画領域を固定アスペクト比にしたい | Camera と同じ GameObject に `FixedAspectCamera` をアタッチし `fixedWidth` / `fixedHeight` を設定 |
 | 実行時に比率を変えたい | `FixedWidth` / `FixedHeight` プロパティ |
 | （参考）Windowsのウィンドウ自体を固定比にしたい | [StandAloneWindows](StandAloneWindows.md) の `AspectRatioHandler` |
-
-## 主要クラス
-
-| クラス | 種別 | 役割 |
-|---|---|---|
-| `FixedAspectCamera` | sealed MonoBehaviour（`[ExecuteAlways]` `[RequireComponent(typeof(Camera))]`） | Awake で比率計算・適用、Update で画面アスペクト変化を検知して `Camera.rect` を再計算 |
-
-## 使い方(最小の想定例)
-
-Client側に使用実績がないため想定例。
-
-```csharp
-// 想定例（本プロジェクトに実使用コードなし）.
-// 通常はインスペクタで fixedWidth / fixedHeight を設定するだけでよい.
-var fixedAspectCamera = UnityUtility.GetComponent<FixedAspectCamera>(cameraObject);
-
-fixedAspectCamera.FixedWidth = 1080f;
-fixedAspectCamera.FixedHeight = 1920f;
-```
-
-## API(主要公開メンバー)
-
-### FixedAspectCamera
-
-| メンバー | 説明 |
-|---|---|
-| `float FixedWidth`（get/set） | 固定比率の幅。set で `aspectRate = fixedWidth / fixedHeight` を再計算 |
-| `float FixedHeight`（get/set） | 固定比率の高さ。set で同上 |
-
-シリアライズフィールド: `fixedWidth` / `fixedHeight`（インスペクタ設定が基本）。
 
 ## 注意点・罠
 

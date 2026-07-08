@@ -8,7 +8,8 @@
 ## 概要
 
 マスターデータ（Excel由来の静的ゲームデータ）の配信・キャッシュ・ロード・参照基盤。1マスター = 1クラス = 1暗号化MessagePackファイル（拡張子 `.master`）で管理する。
-Client側は `Dominion.Client.Master.Master<>`（`Client/Assets/Scripts/Client/Master/Core/Master.cs`）が本基盤の `Modules.Master.Master<>` を継承し、ダウンロード実装と static アクセサを追加している。マスター定義クラス本体は `Client/Assets/Scripts/Client/Master/` 配下。
+Client側は `Dominion.Client.Master.Master<>`（`Client/Assets/Scripts/Client/Master/Core/Master.cs`）が本基盤の `Modules.Master.Master<>` を継承し、ダウンロード実装と static アクセサ（**`new static` の `GetAllRecords` / `GetRecord`**。後者は未ヒット時エラーログ + null）を追加している。マスター定義クラス本体は `Client/Assets/Scripts/Client/Master/` 配下。
+主要クラス（基盤側）: `IMaster`（マスター共通操作。`MasterManager` が一括制御する単位）/ `Master<TKey, TMaster, TMasterContainer, TMasterRecord>`（1マスターの基底。`Dictionary<TKey, TMasterRecord>` を保持し、ファイル読込→復号→デシリアライズ→登録を担う）/ `MasterContainer<TMasterRecord>`（MessagePackシリアライズの入れ物）/ `MasterManager`（Singleton。全マスターの登録・一括更新/ロード・パス/暗号化/LZ4設定・バージョン管理・R3イベント通知）/ `Reference`（レコード→他マスターレコード参照の型別キャッシュ。マスター更新/ロード時に自動 `Clear()`）/ `FileNameAttribute`（マスターファイル名の上書き）/ `CustomDataAttribute`（MasterViewer 等の表示用データ変換の拡張ポイント）。
 
 ### データの流れ（全体像）
 
@@ -26,6 +27,16 @@ Client側は `Dominion.Client.Master.Master<>`（`Client/Assets/Scripts/Client/M
 - 変換ツール `MasterConverter.exe` は Export = xlsx → `.record`(YAML)、Import = `.record` → xlsx再構築。
 - ビルド側 `MasterGenerator` / `RecordDataLoader` はエディタ専用（`UniModules/Scripts/Modules/Devkit/MasterGenerator/Editor/`、namespace は同じ `Modules.Master`）。
 
+### Client側の対応クラス
+
+| クラス | 場所 | 役割 |
+|---|---|---|
+| `Master<TKey, TMaster, TMasterContainer, TMasterRecord>` | `Client/Assets/Scripts/Client/Master/Core/Master.cs` | `Download` 実装（`MasterFileDownLoader` + rootHash URL）、Android向け `PrepareLoad`/`FileLoad`、**`new static` の `GetAllRecords` / `GetRecord`** |
+| `MasterDefinition` | `Client/Assets/Scripts/Client/Master/MasterDefinition.cs` | 全マスターを `Create()` して登録する一覧（新規マスターはここに追記必須） |
+| `MasterUpdateManager` | `Client/Assets/Scripts/Client/Module/Download/MasterUpdateManager.cs` | サーバーの `version.txt` をDLし `VersionTable`（IMaster→hash）を構築 |
+| `ContentsUpdateManager` | `Client/Assets/Scripts/Client/Module/Download/ContentsUpdateManager.cs` | 起動時の更新フロー（`LoadVersion` → `RequireUpdateMasters` → `UpdateMaster`） |
+| `ConvertTextDataAttribute` / `ContentNameAttribute` | `Client/Assets/Scripts/Client/Master/Core/Attribute/` | `CustomDataAttribute` 実装。TextDataキー列の実テキスト表示 / ContentId の名称表示 |
+
 ## 逆引き（〜したい）
 
 | やりたいこと | 使うもの |
@@ -33,7 +44,7 @@ Client側は `Dominion.Client.Master.Master<>`（`Client/Assets/Scripts/Client/M
 | ID指定で1レコード取得 | `ItemMaster.GetRecordByItemId(id)` 等（各マスターの public static アクセサ。**型名で呼ぶ**） |
 | 全レコード取得 | `ItemMaster.GetAllRecords()`（`new static`。LINQ と併用） |
 | 外部キーでグループ取得 | 各マスターが `OnSetup()` で構築したキャッシュ経由（例: `CharacterSkillMaster.GetRecordsByCharacterId(id)`） |
-| 新しいマスターを追加 | 「使い方(実例) > マスター新規追加手順」参照 |
+| 新しいマスターを追加 | 「使い方 > マスター新規追加手順」参照 |
 | 全マスター一括ロード | `MasterManager.Instance.LoadMaster()` |
 | 更新が必要なマスターの判定 | `MasterManager.Instance.RequireUpdateMasters(versionTable)` |
 | マスターの差分ダウンロード | `MasterManager.Instance.UpdateMaster(updateMasters)` |
@@ -47,188 +58,24 @@ Client側は `Dominion.Client.Master.Master<>`（`Client/Assets/Scripts/Client/M
 | エディタでDLせずローカル .master を使う | メニュー Master > Use CachedMasterFile（`MasterManager.Prefs.checkVersion` をOFF） |
 | ローカルで .master を生成して動作確認 | メニュー Master > Generate (CloneToInstallDirectory) |
 
-## 主要クラス
+## 使い方
 
-### 基盤側（`Modules.Master`）
+### 定型パターン（引用元）
 
-| クラス | 種別 | 役割 |
-|---|---|---|
-| `IMaster` | interface | マスター共通操作（`Update` / `Prepare` / `Load` / `Setup` / `Delete`）。`MasterManager` が一括制御する単位 |
-| `Master<TKey, TMaster, TMasterContainer, TMasterRecord>` | abstract generic（static `Instance` 保持） | 1マスターの基底。`Dictionary<TKey, TMasterRecord>` を保持し、ファイル読込→復号→MessagePackデシリアライズ→登録を担う |
-| `MasterContainer<TMasterRecord>` | abstract | MessagePackシリアライズの入れ物。`TMasterRecord[] records` のみ |
-| `MasterManager` | Singleton（sealed partial） | 全マスターの登録・一括更新/ロード・ファイルパス/暗号化/LZ4設定・バージョン管理（`.version.cs`）・R3イベント通知 |
-| `Reference` | Singleton | レコード→他マスターレコード参照の型別キャッシュ。マスター更新/ロード時に `Clear()` される |
-| `FileNameAttribute` | Attribute（class対象） | マスターファイル名をクラス名（Masterサフィックス除去）から上書き |
-| `CustomDataAttribute` | abstract Attribute（property対象） | 表示用データ変換の拡張ポイント（MasterViewer等のエディタツールが利用） |
-| `IVersionFileHandler` / `DefaultVersionFileHandler` | interface / sealed class | ローカル `version` ファイルの難読化（デフォルト実装は全バイトのビット反転） |
-| `MasterManager.Prefs` | エディタ専用（`MasterManager.editor.cs`） | `checkVersion`（ProjectPrefs）。`EnableVersionCheck` と合わせてバージョンチェックの有効/無効を制御 |
-
-### Client側の対応クラス（参考: `Dominion.Client.Master` 等）
-
-| クラス | 場所 | 役割 |
-|---|---|---|
-| `Master<TKey, TMaster, TMasterContainer, TMasterRecord>` | `Client/Assets/Scripts/Client/Master/Core/Master.cs` | `Download` 実装（`MasterFileDownLoader` + rootHash URL）、Android向け `PrepareLoad`/`FileLoad`、**`new static` の `GetAllRecords` / `GetRecord`** |
-| `MasterDefinition` | `Client/Assets/Scripts/Client/Master/MasterDefinition.cs` | 全マスターを `Create()` して登録する一覧（新規マスターはここに追記必須） |
-| `MasterUpdateManager` | `Client/Assets/Scripts/Client/Module/Download/MasterUpdateManager.cs` | サーバーの `version.txt` をDLし `VersionTable`（IMaster→hash）を構築 |
-| `ContentsUpdateManager` | `Client/Assets/Scripts/Client/Module/Download/ContentsUpdateManager.cs` | 起動時の更新フロー（`LoadVersion` → `RequireUpdateMasters` → `UpdateMaster`） |
-| `ConvertTextDataAttribute` / `ContentNameAttribute` | `Client/Assets/Scripts/Client/Master/Core/Attribute/` | `CustomDataAttribute` 実装。TextDataキー列の実テキスト表示 / ContentId の名称表示 |
-
-## 使い方(実例)
-
-### 1. ID指定で1レコード取得（最頻出）
-
-```csharp
-// 引用: Client/Assets/Scripts/Client/Data/User/UserItemData.cs
-var itemRecord = ItemMaster.GetRecordByItemId(ItemId);
-
-if (itemRecord == null){ return; }
-
-Vendor = itemRecord.SellPrice.HasValue && vendor;
-```
-
-### 2. 全レコード取得 + LINQ
-
-```csharp
-// 引用: Client/Assets/Scripts/Client/Core/Purchase/PurchaseManager.cs
-var purchaseRecords = PurchaseMaster.GetAllRecords()
-    .Where(x => x.Platform == platform)
-    .ToArray();
-```
-
-### 3. マスター定義の典型形（単一キー）
-
-```csharp
-// 引用: Client/Assets/Scripts/Client/Master/Item/ItemMaster.cs（抜粋）
-/// <summary> アイテム定義マスター </summary>
-public sealed partial class ItemMaster : Master<uint, ItemMaster, ItemMaster.Container, ItemMaster.Record>
-{
-    [MessagePackObject(true)]
-    public sealed partial class Container : MasterContainer<Record> { }
-
-    [MessagePackObject(true)]
-    public sealed partial class Record
-    {
-        /// <summary> アイテムID </summary>
-        public uint ItemId { get; private set; }
-        /// <summary> 名称 (TextData) </summary>
-        [ConvertTextData]
-        public string Name { get; private set; }
-        // ... 中略 ...
-
-        public Record() { }
-
-        [SerializationConstructor]
-        public Record(uint itemId, string name, /* ... */ string spriteName)
-        {
-            ItemId = itemId;
-            Name = name;
-            // ...
-        }
-    }
-
-    protected override uint GetRecordKey(Record record)
-    {
-        return record.ItemId;
-    }
-
-    public static Record GetRecordByItemId(uint itemId)
-    {
-        return GetRecord(itemId);    // 基底の protected new static GetRecord (未ヒット時エラーログ+null)
-    }
-}
-```
-
-### 4. 複合キー + OnSetupキャッシュ + Reference参照
-
-```csharp
-// 引用: Client/Assets/Scripts/Client/Master/Character/CharacterSkillMaster.cs（抜粋）
-public sealed partial class CharacterSkillMaster : Master<Tuple<uint, uint>, CharacterSkillMaster, CharacterSkillMaster.Container, CharacterSkillMaster.Record>
-{
-    [MessagePackObject(true)]
-    public sealed partial class Record
-    {
-        public uint CharacterId { get; private set; }
-        public uint SkillNo { get; private set; }
-        public uint SkillId { get; private set; }
-
-        // 他マスターのレコードをキャッシュ付きで参照 (シリアライズ対象外にする).
-        [IgnoreMember, JsonIgnore]
-        public SkillMaster.Record Skill
-        {
-            get { return Reference.Get(this, nameof(Skill), x => x.SkillId, x => SkillMaster.GetRecordBySkillId(x)); }
-        }
-        // ...
-    }
-
-    private Dictionary<uint, Record[]> recordByCharacterIdCache = null;
-
-    protected override void OnSetup()
-    {
-        // 外部キー検索用のキャッシュを構築 (※スレッドプール上で実行される).
-        recordByCharacterIdCache = GetAllRecords()
-            .GroupBy(x => x.CharacterId)
-            .ToDictionary(x => x.Key, x => x.OrderBy(y => y.SkillNo).ToArray());
-    }
-
-    protected override Tuple<uint, uint> GetRecordKey(Record record)
-    {
-        return Tuple.Create(record.CharacterId, record.SkillNo);
-    }
-
-    public static Record[] GetRecordsByCharacterId(uint characterId)
-    {
-        return Instance.recordByCharacterIdCache.GetValueOrDefault(characterId, new Record[0]);
-    }
-}
-```
-
-他の実例: `EnemyLootMaster.cs`（DEVELOPMENTビルド限定の整合性チェックを `OnSetup` 内で実施）、`CharacterLevelMaster.cs`（累計経験値テーブルを `OnSetup` で事前計算し `GetLevelTotalExp` 等で公開）、`OrbStatLevelMaster.cs`（`Tuple<StatType, int>` キー + StatType別 Min/Max レベルキャッシュ）。
-
-### 5. 初期化・起動時ロードフロー
-
-```csharp
-// 引用: Client/Assets/Scripts/Client/Core/Initialize/InitializeObject/InitializeObject.manager.cs（抜粋）
-public static void InitializeMasterManager()
-{
-    // マスターのインスタンスを生成.
-    MasterDefinition.GetAllMasters();
-
-    var masterManager = Modules.Master.MasterManager.Instance;
-
-    var keyData = keyFileManager.Get(KeyFileManager.KeyType.MasterData);
-
-    if (keyData != null)
-    {
-        var cryptoKey = new AesCryptoKey(keyData.Key, keyData.Iv);
-
-        masterManager.SetCryptoKey(cryptoKey);
-    }
-
-    masterManager.Lz4Compression = true;
-    masterManager.SetDownloadUrl(Urls.MasterUrl);
-    masterManager.SetInstallDirectory(UnityPathUtility.PersistentDataPath);
-}
-```
-
-```csharp
-// 引用: Client/Assets/Scripts/Client/Manager/GameStartupManager.cs（抜粋）
-systemModel.IsMasterLoaded = await masterManager.LoadMaster();
-
-if (!systemModel.IsMasterLoaded)
-{
-    SystemModel.ErrorTransitionToTitle(ErrorCode.MasterLoadError);
-
-    return;
-}
-```
-
-更新判定〜差分DLは `ContentsUpdateManager.BuildRequireUpdateContents()`（`LoadVersion` → `RequireUpdateMasters`）→ `StartUpdate()`（`UpdateMaster`）を参照。
+- ID指定で1レコード取得（最頻出。取得後の null チェック必須）: `Client/Assets/Scripts/Client/Data/User/UserItemData.cs`
+- 全レコード取得 + LINQ: `Client/Assets/Scripts/Client/Core/Purchase/PurchaseManager.cs`
+- マスター定義の典型形（単一キー）: `Client/Assets/Scripts/Client/Master/Item/ItemMaster.cs`
+- 複合キー（`Tuple.Create`）+ OnSetupキャッシュ + `Reference` 参照（`[IgnoreMember, JsonIgnore]` でシリアライズ対象外にする）: `Client/Assets/Scripts/Client/Master/Character/CharacterSkillMaster.cs`
+- その他の実例: `EnemyLootMaster.cs`（DEVELOPMENTビルド限定の整合性チェックを `OnSetup` 内で実施）、`CharacterLevelMaster.cs`（累計経験値テーブルを `OnSetup` で事前計算し `GetLevelTotalExp` 等で公開）、`OrbStatLevelMaster.cs`（`Tuple<StatType, int>` キー + StatType別 Min/Max レベルキャッシュ）
+- 初期化（暗号化キー・LZ4・配信URL・保存先の設定）: `Client/Assets/Scripts/Client/Core/Initialize/InitializeObject/InitializeObject.manager.cs` の `InitializeMasterManager`
+- 起動時ロード: `Client/Assets/Scripts/Client/Manager/GameStartupManager.cs`（`LoadMaster` 失敗時は `ErrorCode.MasterLoadError` でタイトルへ）
+- 更新判定〜差分DL: `ContentsUpdateManager.BuildRequireUpdateContents()`（`LoadVersion` → `RequireUpdateMasters`）→ `StartUpdate()`（`UpdateMaster`）
 
 ### マスター新規追加手順（Claude向けチェックリスト）
 
 1. **Excelデータ**: `Master/Masters/<カテゴリ>/<名前>Master/` フォルダを作成し、`ClassSchema.xlsx`（列定義。テンプレ: `Master/Template/ClassSchema.xlsx`）・`<名前>Master.xlsx`（データ本体）・`Records/*.record`（YAML、1レコード=1ファイル）・`<名前>Master.index`（レコード順リスト）を用意する。xlsx ⇔ .record の相互変換は `Master/Tools/win/_Export.bat`（xlsx→record）/ `_Import.bat`（record→xlsx）。
    - **罠**: ClassSchema のフィールド名に前後スペースがあると、その列だけ Import で空になる（MasterConverter の Trim 漏れ）。
-2. **C#定義**: `Client/Assets/Scripts/Client/Master/<カテゴリ>/<名前>Master.cs` を作成。上記「使い方(実例) 3」の形式を厳守:
+2. **C#定義**: `Client/Assets/Scripts/Client/Master/<カテゴリ>/<名前>Master.cs` を作成。`Client/Assets/Scripts/Client/Master/Item/ItemMaster.cs` の形式を厳守:
    - `Dominion.Client.Master.Master<TKey, TMaster, TMaster.Container, TMaster.Record>` を継承した `sealed partial` クラス
    - ネストクラス名は **必ず `Container` / `Record`**（`MasterGenerator` が `型名+Container` / `型名+Record` の名前でリフレクション解決するため改名不可）
    - `Container` / `Record` に `[MessagePackObject(true)]`、`Record` に引数なしコンストラクタ + `[SerializationConstructor]` 付きコンストラクタ
@@ -238,66 +85,6 @@ if (!systemModel.IsMasterLoaded)
    - TextDataキーを格納する文字列列には `[ConvertTextData]` を付与
 3. **登録**: `Client/Assets/Scripts/Client/Master/MasterDefinition.cs` の `GetAllMasters()` に `<名前>Master.Create(),` をカテゴリ順で追記（**忘れるとロードもInstance生成もされない**）。
 4. **ローカル確認**: Unityメニュー `Master > Generate (CloneToInstallDirectory)` で `.record` から `.master` を生成して保存先へ複製 → `Master > Use CachedMasterFile` をONにして起動すればDLなしで確認可能。
-
-## API(主要公開メンバー)
-
-### `Master<TKey, TMaster, TMasterContainer, TMasterRecord>`（基盤側基底）
-
-| メンバー | 説明 |
-|---|---|
-| `static TMaster Instance` | 唯一のインスタンス。`Create()` 前のアクセスは `InvalidOperationException` |
-| `static IMaster Create()` | インスタンス生成 + `MasterManager` へ登録（`MasterDefinition` から呼ぶ） |
-| `static bool IsExist()` | インスタンス生成済みか |
-| `void Delete()` | `MasterManager` から登録解除しインスタンス破棄 |
-| `IEnumerable<TMasterRecord> GetAllRecords()` | 全レコード（Dictionary.Values。順序保証が要るなら OrderBy する） |
-| `TMasterRecord GetRecord(TKey key)` | キー指定取得（未ヒットは null。基盤側はログなし） |
-| `void SetRecords(IEnumerable<TMasterRecord>)` | レコード一括登録（同一キー重複で例外） |
-| `protected IReadOnlyDictionary<TKey, TMasterRecord> Records` | 内部Dictionary への読み取りアクセス |
-| `UniTask<Tuple<bool,double>> Prepare / Load / Update`, `Tuple<bool,double> Setup` | ロードパイプライン各段（通常は `MasterManager` 経由で呼ばれ、直接は呼ばない） |
-| `protected virtual void OnSetup()` | ロード完了後のキャッシュ構築フック（**スレッドプール上で実行**） |
-| `protected virtual void Refresh()` | 内部キャッシュのクリア（ロード直前・エラー時に呼ばれる） |
-| `protected virtual void OnError()` | 失敗時フック（デフォルトは `Refresh()`） |
-| `protected virtual UniTask PrepareLoad / UniTask<byte[]> FileLoad / byte[] Decrypt / TMasterRecord[] Deserialize` | 読込各段のカスタマイズポイント |
-| `protected abstract TKey GetRecordKey(TMasterRecord)` | レコード→キー変換（必須実装） |
-| `protected abstract UniTask<bool> Download(string version, CancellationToken)` | ファイル取得（Client側基底が実装済み） |
-
-### Client側基底 `Dominion.Client.Master.Master<>` の追加メンバー
-
-| メンバー | 説明 |
-|---|---|
-| `public new static IEnumerable<TMasterRecord> GetAllRecords()` | `Instance.GetAllRecords()` の static 版 |
-| `protected new static TMasterRecord GetRecord(TKey key)` | static 版 + 未ヒット時に `Master record not found.` のエラーログを出して null を返す |
-
-### `MasterManager`（Singleton）
-
-| メンバー | 説明 |
-|---|---|
-| `IReadOnlyCollection<IMaster> Masters` | 登録済みマスター一覧 |
-| `void Register(IMaster)` / `void Remove(IMaster)` | 登録/解除（通常 `Create()`/`Delete()` 経由） |
-| `UniTask<bool> LoadMaster(CancellationToken)` | 全登録マスターを Prepare → Load → Setup の3段で並列一括ロード |
-| `UniTask<bool> UpdateMaster(Dictionary<IMaster,string>, IProgress<IMaster>, CancellationToken)` | 指定マスターをDL更新しローカルバージョン記録（25件ずつチャンク実行） |
-| `UniTask<IMaster[]> RequireUpdateMasters(Dictionary<IMaster,string> versionTable)` | ローカルバージョン/ファイル有無と突き合わせ、更新が必要なマスターを列挙 |
-| `void CancelAll()` | 実行中の更新/ロードをキャンセル |
-| `void ClearMasterCache()` | versionファイル + InstallDirectory 内ファイル + Reference キャッシュを削除 |
-| `void Clear()` | 全マスターの登録解除（インスタンス破棄） |
-| `void SetDownloadUrl(string)` / `void SetInstallDirectory(string)` / `void SetCryptoKey(AesCryptoKey)` | 配信URL / 保存先（`<dir>/Master`、iOSはNoBackupFlag付与）/ AES暗号化キー設定 |
-| `bool Lz4Compression` | MessagePackのLZ4圧縮（`Lz4BlockArray`）使用フラグ。デフォルト true |
-| `string DownloadUrl` / `string InstallDirectory` / `AesCryptoKey CryptoKey` | 設定値の参照 |
-| `string GetFilePath(IMaster)` / `string GetMasterFileName<T>()` / `string GetMasterFileName(Type)` | 保存先フルパス / マスターファイル名（CryptoKey設定時はファイル名自体も暗号化） |
-| `static string DeleteMasterSuffix(string)` | 末尾の `Master` を除去（ItemMaster → Item.master のファイル名規則） |
-| `MessagePackSerializerOptions GetSerializerOptions()` | `StandardResolverAllowPrivate` + `UnityCustomResolver`（+LZ4）のオプション |
-| `Observable<Unit> OnLoadFinishAsObservable()` / `OnUpdateMasterAsObservable()` / `Observable<Exception> OnErrorAsObservable()` | R3イベント（ロード完了 / 1マスター更新毎 / 失敗） |
-| `UniTask LoadVersion()` / `UniTask SaveVersion()` / `UniTask ClearVersion(IMaster)` | ローカル `version` ファイル（`ファイル名|hash` 行形式、難読化あり）の読み書き |
-| `void SetVersionFileHandler(IVersionFileHandler)` | versionファイル難読化方式の差し替え |
-| `bool EnableVersionCheck` | **エディタ専用**。false でバージョンチェックをスキップしローカルファイルを使用 |
-
-### `Reference`（Singleton）
-
-| メンバー | 説明 |
-|---|---|
-| `static TValue Get<TRecord,TKey,TValue>(record, keyName, keySelector, valueSelector)` | (レコード型, プロパティ名) 単位のキャッシュ付き参照解決 |
-| `static void Remove<TRecord,TKey,TValue>(record, keyName, keySelector)` | キャッシュ1件削除 |
-| `static void Clear()` | 全キャッシュ削除（`UpdateMaster` / `LoadMaster` / `ClearMasterCache` 冒頭で自動実行） |
 
 ## 注意点・罠
 

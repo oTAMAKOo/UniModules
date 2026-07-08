@@ -22,82 +22,17 @@
 | `Time.timeScale` の影響を受けない経過時間 | `RealTime.time` / `RealTime.deltaTime`（static） |
 | サーバー時刻を基準に進む「今」 | `TimeManager<T>` 派生の `Set(baseTime)` → `Now`（本プロジェクトでは `SystemModel` が同等機能を独自実装済み） |
 
-## 主要クラス
+## 使い方
 
-| クラス | 種別 | 役割 |
-|---|---|---|
-| `TimeManager<TInstance>` | abstract class（`Singleton<TInstance>`） | 基準時刻＋`Time.realtimeSinceStartup` 経過で「今」を返す。`Notice(dateTime)` で時刻到達通知（派生クラスを作って使う） |
-| `TimeNotice` | static class | 名前付きタイマー登録→時刻到達で `Timer` を通知して自動削除。現在時刻の取得関数を `Initialize` で注入 |
-| `RecoveryValue` | class | スタミナ型の回復値計算。コンストラクタで全回復時刻から現在値を逆算。`UpdateTime` で経過分回復 |
-| `TimeScale` | sealed class（`LifetimeDisposable`） | 倍率値（既定1.0）＋変更通知 Subject のみの小型クラス。`Time.timeScale` には触らない |
-| `RealTime` | Singleton（`Extensions.Singleton<T>`） | `Time.timeScale` 非依存の現実時間。static `time` / `deltaTime`（deltaは0〜1にClamp） |
-
-## 使い方(実例)
-
-Client側の使用例なし。基盤内の実使用は `TweenController` のみ。
-
-```csharp
-// 実例: Client/Assets/UniModules/Scripts/Modules/DoTween/TweenController.cs
-private TimeScale timeScale = null;
-
-public TweenController()
-{
-    timeScale = new TimeScale();
-
-    timeScale.OnTimeScaleChangedAsObservable()
-        .Subscribe(x => OnTimeScaleUpdate(x))   // 再生中の全Tweenerのtimescaleへ反映.
-        .AddTo(Disposable);
-}
-```
-
-```csharp
-// 想定例（実在コードではない）: スタミナ計算. シグネチャは RecoveryValue.cs 参照.
-var stamina = new RecoveryValue(max: 100, recoveryInterval: 300, recoveryAmount: 1, lastRecoveryTime, fullRecoveryTime);
-
-stamina.UpdateTime(systemModel.LocalTime);               // 経過分を回復.
-var remain = stamina.GetNextRecoveryTime(systemModel.LocalTime); // 次の1回復までの残り.
-```
-
-## API(主要公開メンバー)
-
-### TimeManager&lt;TInstance&gt; / TimeNotice
-
-| メンバー | 説明 |
-|---|---|
-| `TimeManager.Set(DateTime baseTime)` | 基準時刻と起点（`realtimeSinceStartup`）を記録 |
-| `TimeManager.Now : DateTime` | 基準時刻＋経過秒 |
-| `TimeManager.Notice(DateTime noticeTime) : Observable<Unit>` | `Now` が到達したら1回発火（`EveryUpdate` 監視） |
-| `TimeNotice.Initialize(Func<ulong> getCurrentTimeFunction)` | 現在UnixTimeの取得関数を注入して監視開始（多重呼び出しは無視） |
-| `TimeNotice.Set(string name, DateTime / ulong)` | 名前付きタイマー登録（同名は時刻上書き） |
-| `TimeNotice.IsExists(string name)` | 登録済み判定 |
-| `TimeNotice.OnTimeAsObservable() : Observable<Timer>` | 到達通知（到達したタイマーは自動削除） |
-
-### RecoveryValue
-
-| メンバー | 説明 |
-|---|---|
-| `RecoveryValue(max, recoveryInterval, recoveryAmount, lastRecoveryTime?, fullRecoveryTime?)` | 全回復時刻と最終回復時刻から現在値を逆算して構築（時刻が無ければ満タン扱い） |
-| `Current` / `Max` / `IsMax` / `RecoveryInterval` / `RecoveryAmount` | 現在値（内部はメモリ改竄対策の `XDouble`）/ 最大 / 満タン判定 / 回復間隔[秒] / 回復量 |
-| `UpdateTime(DateTime currentTime)` | 経過時間分だけ `RecoveryAmount` 刻みで回復（`LastRecoveryTime` を進める） |
-| `SetValue(double value, DateTime currentTime)` / `SetMaxValue(double, DateTime)` | 値/最大値の更新（`FullRecoveryTime` を再計算） |
-| `GetNextRecoveryTime(DateTime)` / `GetFullRecoveryTime(DateTime)` : TimeSpan | 次の1回復 / 全回復までの残り時間（満タン時は `TimeSpan.Zero`） |
-| `GetRatio() : double` | 現在値/最大値（0〜1） |
-
-### TimeScale / RealTime
-
-| メンバー | 説明 |
-|---|---|
-| `TimeScale.Value : float` | 倍率の取得/設定（設定で通知発火）。`DefaultTimeScale = 1f` |
-| `TimeScale.Initialize()` / `Reset()` | 初期化（1.0設定）/ 1.0へ戻す |
-| `TimeScale.OnTimeScaleChangedAsObservable() : Observable<float>` | 倍率変更通知 |
-| `RealTime.time` / `RealTime.deltaTime` : float | static。`Time.timeScale` 非依存の経過時間/デルタ（非Play中は `realtimeSinceStartup` / 0） |
+- Client側の使用例なし。基盤内の実使用は `TweenController` のみ（`new TimeScale()` + `OnTimeScaleChangedAsObservable` 購読で再生中の全 Tweener の timescale へ反映。引用元: `Client/Assets/UniModules/Scripts/Modules/DoTween/TweenController.cs`）
+- スタミナ計算の想定形（実在コードではない）: `new RecoveryValue(max, recoveryInterval, recoveryAmount, lastRecoveryTime, fullRecoveryTime)` → `UpdateTime(systemModel.LocalTime)` で経過分回復 → `GetNextRecoveryTime` / `GetFullRecoveryTime` / `GetRatio` で残り時間・割合取得（シグネチャは `RecoveryValue.cs` 参照）
 
 ## 注意点・罠
 
 - **時刻取得の正は `SystemModel`**。`TimeManager<T>` / `TimeNotice` を新規採用すると時刻系が二重管理になる。使う場合は `TimeNotice.Initialize` に `systemModel.CurrentUnixTime` を渡す等、`SystemModel` 基準に統一すること。
 - `TimeNotice` は `Initialize` 必須（未初期化で `Set` を呼ぶと `timers` が null で NullReference）。また通知は Update 駆動のため、アプリ非アクティブ中の到達は復帰後の次フレームで発火する。
 - `TimeScale` は名前に反して `UnityEngine.Time.timeScale` を変更しない（値と通知だけ）。戦闘の倍速制御はこれではなく `BattleManager.GetSpeedScale()` パターン（Client側）を使う。
-- `RecoveryValue.GetNextRecoveryTime` は `LastRecoveryTime + RecoveryInterval` から算出する。`UpdateTime` を定期的に呼んで LastRecoveryTime を進めておくこと（呼ばずに放置すると回復期限超過として Zero が返る）。
+- `RecoveryValue.GetNextRecoveryTime` は `LastRecoveryTime + RecoveryInterval` から算出する。`UpdateTime` を定期的に呼んで LastRecoveryTime を進めておくこと（呼ばずに放置すると回復期限超過として Zero が返る）。現在値は内部でメモリ改竄対策の `XDouble` 保持。
 - `RealTime.deltaTime` は 0〜1 秒に Clamp される（長フレームスパイク対策。1秒超の実デルタは取れない）。
 - `TimeManager<T>` は abstract + 自己参照ジェネリクス。使うには `sealed class GameTime : TimeManager<GameTime>` の様な派生定義が必要。
 

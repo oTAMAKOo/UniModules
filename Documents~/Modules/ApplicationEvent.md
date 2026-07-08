@@ -10,6 +10,7 @@
 アプリのサスペンド（バックグラウンド移行）/ レジューム復帰 / 低メモリ警告 / 終了を **R3 Observable として配信**する基盤。
 各クラスが Unity の `OnApplicationPause` / `OnApplicationQuit` / `Application.lowMemory` を個別に実装する必要はなく、**static メソッドの購読だけ**でイベントを受けられる（MonoBehaviour でないクラスからも購読可能）。
 ハンドラ実体（GameObject）は起動時に InitializeObject が1つだけ常駐生成する。
+主要クラス: `ApplicationEventHandler`（`SingletonMonoBehaviour<T>` 継承。Unity コールバックを static な R3 Observable に変換する常駐オブジェクト）の1クラスのみ。サスペンド重複ガードあり（サスペンド中の再サスペンド通知は無視、レジュームはサスペンド済みの時だけ通知）。
 
 ## 逆引き（〜したい）
 
@@ -22,90 +23,12 @@
 | 中断時にセーブデータを確実に書き込みたい | **OnSuspend と OnQuit の両方**を購読して Flush（SaveDataManager が実例） |
 | 長時間中断後にサーバー再同期したい | OnResume の経過秒数で判定（SystemModel が実例） |
 
-## 主要クラス
+## 使い方
 
-| クラス | 種別 | 役割 |
-|---|---|---|
-| `ApplicationEventHandler` | `SingletonMonoBehaviour<T>` 継承 | Unity コールバック（OnApplicationPause / OnApplicationQuit / Application.lowMemory）を static な R3 Observable に変換する常駐オブジェクト |
-
-### 仕組み
-
-- Subject はすべて **static** のため、`ApplicationEventHandler.OnSuspendAsObservable()` 等は**インスタンス参照なしに購読できる**
-- イベントの発火元は MonoBehaviour の Unity コールバック。**GameObject 実体が存在して初めて発火する**（起動時に `InitializeObject.CreateApplicationEventHandler()` が生成済みのため、Client実装では購読するだけでよい）
-- サスペンド重複ガードあり: サスペンド中の再サスペンド通知は無視、レジュームはサスペンド済みの時だけ通知
-- `OnResume` はサスペンド開始からの経過秒数（`DateTime.Now` 差分の `TotalSeconds`）を値として流す
-
-## 使い方(実例)
-
-### 中断・終了時にセーブを即時書き込み（購読の定番形）
-
-```csharp
-// 引用元: Client/Assets/Scripts/Client/Core/SaveData/SaveDataManager.cs
-using Modules.ApplicationEvent;
-
-// サスペンド/終了時は保留中のSaveを強制的に即時書き込み（バッチSave中でも）.
-ApplicationEventHandler.OnSuspendAsObservable()
-    .Subscribe(_ => Flush(true))
-    .AddTo(Disposable);
-
-ApplicationEventHandler.OnQuitAsObservable()
-    .Subscribe(_ => Flush(true))
-    .AddTo(Disposable);
-```
-
-### 復帰時のサーバー再同期
-
-```csharp
-// 引用元: Client/Assets/Scripts/Client/Model/System/SystemModel.cs
-ApplicationEventHandler.OnResumeAsObservable()
-    .Subscribe(x => OnApplicationResume(x).Forget())
-    .AddTo(Disposable);
-
-private async UniTask OnApplicationResume(double suspendTime)
-{
-    // サーバー同期.
-    var requireServerSync = RequireServerSync();
-
-    if (requireServerSync)
-    {
-        var result = await GetServerData();
-        // ...エラー時はタイトルへ.
-    }
-}
-```
-
-### 終了時のリソース解放
-
-```csharp
-// 引用元: Client/Assets/Scripts/Client/Core/Initialize/InitializeObject/InitializeObject.manager.cs
-// アプリ終了時に全サウンド解放.
-ApplicationEventHandler.OnQuitAsObservable().Subscribe(_ => soundManagement.ReleaseAll());
-```
-
-### 実体の生成（起動時に1回だけ・通常は書かない）
-
-```csharp
-// 引用元: Client/Assets/Scripts/Client/Core/Initialize/InitializeObject/InitializeObject.core.cs
-private void CreateApplicationEventHandler()
-{
-    if (ApplicationEventHandler.Instance == null)
-    {
-        UnityUtility.CreateGameObject<ApplicationEventHandler>(null, "ApplicationEventHandler");
-    }
-}
-```
-
-## API(主要公開メンバー)
-
-### ApplicationEventHandler（すべて static）
-
-| メンバー | 説明 |
-|---|---|
-| `static Observable<Unit> OnSuspendAsObservable()` | サスペンド時（`OnApplicationPause(true)`）。サスペンド中の重複通知はなし |
-| `static Observable<double> OnResumeAsObservable()` | レジューム時。**サスペンドしてからの経過秒数**が流れる |
-| `static Observable<Unit> OnLowMemoryAsObservable()` | メモリ不足警告（`Application.lowMemory`） |
-| `static Observable<Unit> OnQuitAsObservable()` | アプリ終了時（`OnApplicationQuit`） |
-| `static ApplicationEventHandler Instance` / `static T CreateInstance()`（基底） | 常駐インスタンス参照 / 生成（起動時に InitializeObject が実施済み） |
+- **中断・終了時にセーブを即時書き込み（購読の定番形）**: `OnSuspendAsObservable` と `OnQuitAsObservable` の両方を購読して `Flush(true)`、`.AddTo(Disposable)` で寿命管理（実例: `Client/Assets/Scripts/Client/Core/SaveData/SaveDataManager.cs`）
+- **復帰時のサーバー再同期**（`OnResumeAsObservable` の経過秒数で再同期要否を判定、エラー時はタイトルへ）: `Client/Assets/Scripts/Client/Model/System/SystemModel.cs`
+- **終了時のリソース解放**（全サウンド解放）: `Client/Assets/Scripts/Client/Core/Initialize/InitializeObject/InitializeObject.manager.cs`
+- **実体の生成**（起動時に1回だけ・通常は書かない）: `Client/Assets/Scripts/Client/Core/Initialize/InitializeObject/InitializeObject.core.cs` の `CreateApplicationEventHandler()`
 
 ## 注意点・罠
 

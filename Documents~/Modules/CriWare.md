@@ -9,6 +9,8 @@
 
 CRIWARE（ADX=サウンド / Sofdec=ムービー / FileSystem=ダウンロード）のライブラリ初期化と、CRIアセット（.acf/.acb/.awb/.usm）の配信ダウンロード・エディタ取込を担う基盤。
 
+主要クラス: `CriWareObject`（SingletonMonoBehaviour。CRIライブラリ初期化の管理。**コンパイルされるがメンバーは縮退**）/ `CriWareCustomErrorHandler`（エラーログ中継。同じく縮退コンパイル）/ `CriAssetManager`（CRIアセットの配信DL管理。コンパイルされない）/ `CriAssetDefinition`（拡張子定数）/ `CriWareConfig`（暗号化済みCRI認証キー）。Editor側（`Modules.CriWare.Editor`、全てコンパイル対象外）に `CriAssetUpdater` / `CriAssetUpdateWindow`（CRI成果物のUnity取込）/ `CriAssetGenerator`（ビルド時配信出力）等。
+
 **本プロジェクトでは未使用（コンパイル対象外）**。`ENABLE_CRIWARE_ADX` / `ENABLE_CRIWARE_ADX_LE` / `ENABLE_CRIWARE_SOFDEC` / `ENABLE_CRIWARE_FILESYSTEM` はどのプラットフォームの Scripting Define Symbols にも定義されておらず（`Client/ProjectSettings/ProjectSettings.asset` の `scriptingDefineSymbols` 参照）、モジュール内のほぼ全コードが `#if ENABLE_CRIWARE_*` で無効化されている。サウンドは UnityAudio 版 `SoundManagement` + `AudioAssetManager`（`ExternalAsset.LoadAsset<Object>` / Resources）方式で運用中 → [Sound](Sound.md)。
 
 ## 逆引き（〜したい）
@@ -25,92 +27,10 @@ CRIWARE（ADX=サウンド / Sofdec=ムービー / FileSystem=ダウンロード
 | 【Editor・CRI有効時】CRI成果物をUnityへ取込 | `CriAssetUpdater.ExecuteAll()` / `CriAssetUpdateWindow.Open()` |
 | 【Editor・CRI有効時】エディタ再生をミュート | `EditorCriWareMute.Prefs.editorAudioMute` |
 
-## 主要クラス
+## 使い方
 
-「コンパイル」列: シンボル未定義の本プロジェクトでコンパイルされるか。
-
-| クラス | 種別 | コンパイル | 役割 |
-|---|---|---|---|
-| `CriWareObject` | SingletonMonoBehaviour | **される**（メンバーは縮退） | CRIライブラリ初期化の管理。`CriAtomServer.CreateInstance()` → `CriWareInitializer`（Prefabから生成・手動初期化） → `CriWareCustomErrorHandler` → `CriFsServer` → `CriAtom` + ACF登録、の順序を保証する |
-| `CriWareConsoleEvent` | static class | される | UnityConsole 用イベント名("CRI")と色の定数 |
-| `CriWareCustomErrorHandler` | MonoBehaviour | される（中身は縮退） | `CriErrorNotifier` のコールバックを Unity ログへ中継。`SetLogOutput(LogType, bool)` で出力制御（既定: DebugBuildのみ全出力） |
-| `CriAssetManager` | Singleton（sealed partial） | されない | CRIアセット（音声/ムービー）の配信DL管理。`CriFsWebInstaller` を複数並列（既定8）で運用、タイムアウト180秒。`ExternalAsset.cri.cs` から利用される |
-| `CriAssetManager.CriAssetInstall` | class（`.install.cs`、`ENABLE_CRIWARE_FILESYSTEM`） | されない | DL1件分。ファイル欠損時のリトライ（3回/10秒間隔）付き |
-| `CriAssetDefinition` | static class | されない | 拡張子定数（.acf/.acb/.awb/.usm） |
-| `CriWareConfig` | abstract ScriptableObject | されない | 暗号化済みCRI認証キーの保持と復号（`GetCriWareKey`。`GetCryptoKey` は派生側で実装） |
-| `EditorCriWareMute` | static class（**Editor専用**） | されない | エディタ再生ミュートの Prefs |
-
-### Editor/（`Modules.CriWare.Editor` — 全て**エディタ専用**かつコンパイル対象外）
-
-| クラス | 種別 | 役割 |
-|---|---|---|
-| `CriAssetConfig` | SingletonScriptableObject | CRI成果物の取込設定（取込元/先フォルダ、ACFパス、生成スクリプトのnamespace） |
-| `CriAssetUpdater` | static class | CRI成果物置き場から StreamingAssets へ acb/awb/usm を取込み、`SoundScriptGenerator`（[Sound](Sound.md)）で `Sounds.Cue` スクリプトを自動生成 |
-| `CriAssetUpdateWindow` | SingletonEditorWindow | 上記のGUI |
-| `CriAssetGenerator` | class | ビルド時にCRIアセットを配信用出力先へコピー（`AssetInfoManifest` 連携） |
-| `CriExternalSoundInfoGenerator` | static class | 外部配信ACBから CueSheet/Cue 一覧を生成 |
-| `CriForceInitializer` | static class | エディタでのCRI強制初期化 |
-| `CriAssetConfigInspector` / `CriWareConfigInspector` / `CriSoundAssetInspector` | UnityEditor.Editor / ExtendInspector | 各種インスペクタ拡張（ACB内Cue一覧表示等） |
-
-## 使い方(実例)
-
-### Client側の唯一の使用箇所（型参照のみ）
-
-```csharp
-// 引用元: Client/Assets/Scripts/Client/Core/Scene/SceneManager.cs
-using Modules.CriWare;
-
-// シーン重複配置チェックの対象型として登録しているのみ.
-{ typeof(CriWareObject), DuplicatedSettings.Default },
-```
-
-### 基盤内の使用例（CRI有効時のみコンパイルされる参考コード）
-
-```csharp
-// 引用元: Client/Assets/UniModules/Scripts/Modules/ExternalAsset/ExternalAsset.cri.cs
-// ※ #if ENABLE_CRIWARE_* 内のため本プロジェクトでは無効.
-private void InitializeCri()
-{
-    // CriAssetManager初期化.
-
-    criAssetManager = CriAssetManager.CreateInstance();
-    criAssetManager.Initialize(SimulateMode);
-    criAssetManager.SetNumInstallers(CriDefaultInstallerCount);
-    criAssetManager.OnTimeOutAsObservable().Subscribe(x => OnTimeout(x)).AddTo(Disposable);
-    criAssetManager.OnErrorAsObservable().Subscribe(x => OnError(x)).AddTo(Disposable);
-}
-```
-
-## API(主要公開メンバー)
-
-いずれも CRI 有効時のみ存在（`CriWareObject.Initialize` と `CriWareCustomErrorHandler` はシグネチャのみ常在）。
-
-### CriWareObject
-
-| メンバー | 説明 |
-|---|---|
-| `Initialize(string cryptoKey)` | CRIライブラリ一式を初期化（本プロジェクトでは中身が空になる）。`Initializer` / `ErrorHandler` プロパティは有効時のみ |
-
-### CriAssetManager
-
-| メンバー | 説明 |
-|---|---|
-| `Initialize(bool simulateMode = false)` | 初期化。`CriFsWebInstaller.ExecuteMain()` の毎フレーム駆動を開始 |
-| `SetNumInstallers(uint)` / `SetLocalMode(bool)` / `SetUrl(remoteUrl, versionHash)` / `SetManifest(AssetInfoManifest)` | 並列DL数 / ローカルモード / DL元URL / マニフェスト設定 |
-| `UpdateCriAsset(installPath, assetInfo, progress, cancelToken) : UniTask` | CRIアセット1件をDL（音声は acb+awb の2ファイル対応） |
-| `BuildDownloadUrl(AssetInfo) : string` / `GetFilePath(installPath, AssetInfo) : string` | DL URL / ローカル保存パス構築 |
-| `IsCriAsset(string filePath) : bool` | 拡張子がCRIアセットか判定 |
-| `WaitQueueingInstall(AssetInfo, cancelToken) : UniTask` / `ClearInstallQueue()` | DL待機 / キュー全キャンセル |
-| `OnTimeOutAsObservable() : Observable<AssetInfo>` / `OnErrorAsObservable() : Observable<Exception>` | タイムアウト（180秒）/ エラー通知 |
-
-### CriWareConfig / CriWareCustomErrorHandler / CriAssetDefinition
-
-| メンバー | 説明 |
-|---|---|
-| `CriWareConfig.LoadInstance(resourcesPath) : CriWareConfig` | Resources からロード（static） |
-| `CriWareConfig.GetCriWareKey() : UniTask<string>` | 認証キーを復号して取得（`GetCryptoKey` は abstract） |
-| `CriWareCustomErrorHandler.Initialize()` / `SetLogOutput(LogType, bool)` | ログ中継の初期化 / 出力レベル制御 |
-| `CriAssetDefinition.AcfExtension` 等 | `.acf` / `.acb` / `.awb` / `.usm` / `AssetAllExtensions` |
+- Client側の唯一の使用箇所: `Client/Assets/Scripts/Client/Core/Scene/SceneManager.cs` — シーン重複配置チェックの対象型として `typeof(CriWareObject)` を登録しているのみ。
+- 基盤内の使用例（CRI有効時のみコンパイル）: `Client/Assets/UniModules/Scripts/Modules/ExternalAsset/ExternalAsset.cri.cs` の `InitializeCri()` 参照。
 
 ## 注意点・罠
 
@@ -125,4 +45,4 @@ private void InitializeCri()
 
 - [Sound](Sound.md) — サウンド再生基盤（本プロジェクトの実運用は UnityAudio 版 + `SoundPlayer`）
 - [ExternalAsset](ExternalAsset.md) — 配信アセット基盤（CRI有効時は `CriAssetManager` を内包。`GetCueInfo` / `GetMovieInfo` は無効）
-- Movie（ドキュメント未作成）— Sofdec ムービー再生（同様にコンパイル対象外）
+- [Movie](Movie.md) — Sofdec ムービー再生（同様にコンパイル対象外）

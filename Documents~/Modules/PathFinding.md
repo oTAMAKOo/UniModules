@@ -9,6 +9,8 @@
 
 2Dグリッド用の A*（A-star）経路探索。`Vector2Int` 座標のグリッドを構築し、障害物（Lock）を設定した上で開始→ゴールの経路を非同期（フレーム分割）で探索する。4方向/8方向（斜め）移動に対応。
 
+主要クラス: `AStar`（本体。グリッド初期化・Lock設定・経路探索）/ `Node`（1マスの探索状態。メンバーは internal でモジュール外から直接は操作しない）。
+
 **本プロジェクトでは未使用**（ガード無しでコンパイルはされている）。グリッドマップの経路探索が必要になった場合、自作前に本クラスを検討する。
 
 ## 逆引き（〜したい）
@@ -19,54 +21,9 @@
 | 障害物（通行不可マス）を設定したい | `AStar.SetLock(nodeId, true)` |
 | 斜め移動を許可したい | `Initialize(..., allowDiagonal: true, diagonalMoveCost)`（コスト省略時は √2） |
 
-## 主要クラス
-
-| クラス | 種別 | 役割 |
-|---|---|---|
-| `AStar` | sealed class | 本体。グリッド初期化・Lock設定・経路探索（open/closedリスト方式、1000ステップごとに `UniTask.Yield` でフレーム分割） |
-| `Node` | struct（メンバーは internal） | 1マスの探索状態（座標・遷移元・移動コスト・ヒューリスティックコスト・Lock/Active）。モジュール外から直接は操作しない |
-
-## 使い方(実例)
-
-Client側・基盤内とも使用例なし。実コードのシグネチャに基づく最小の想定例。
-
-```csharp
-// 想定例（実在コードではない）. シグネチャは
-// Client/Assets/UniModules/Scripts/Modules/PathFinding/Astar.cs 参照.
-var astar = new AStar();
-
-astar.Initialize(sizeX: 20, sizeY: 20, allowDiagonal: false);
-
-// 障害物設定.
-astar.SetLock(new Vector2Int(5, 3), true);
-
-// 探索（R3のObservable。結果は開始マスを含まずゴールマスを含む経路）.
-astar.SearchRoute(new Vector2Int(0, 0), new Vector2Int(10, 8))
-    .Subscribe(
-        route => OnRouteFound(route.ToArray()),     // 参照が使い回されるため必ずコピーする.
-        result => Debug.LogError($"PathFinding failed. {result}"))
-    .AddTo(Disposable);
-```
-
-## API(主要公開メンバー)
-
-### AStar
-
-| メンバー | 説明 |
-|---|---|
-| `Initialize(int sizeX, int sizeY, bool allowDiagonal, float? diagonalMoveCost = null)` | グリッド構築（全ノード生成）。斜めコスト既定は `Mathf.Sqrt(2f)` |
-| `SearchRoute(Vector2Int startNodeId, Vector2Int goalNodeId) : Observable<IEnumerable<Vector2Int>>` | 経路探索。購読で開始（コールド）。成功時 `OnNext(経路)` → `OnCompleted`、失敗時は `Result.Failure(Exception)` 付き `OnCompleted` |
-| `SetLock(Vector2Int lockNodeId, bool isLock)` | 通行可否の設定（探索前に設定しておく） |
-
-### Node（internal操作のみ・参考）
-
-| メンバー | 説明 |
-|---|---|
-| `NodeId` / `FromNodeId` / `MoveCost` / `IsLock` / `IsActive` | 探索状態。`GetScore()` = 実コスト + ヒューリスティック |
-| ヒューリスティック | 4方向: マンハッタン距離 / 8方向: チェビシェフ距離（`UpdateGoalNodeId`） |
-
 ## 注意点・罠
 
+- `SearchRoute` は `Observable<IEnumerable<Vector2Int>>` を返し、購読で開始（コールド）。
 - ゴールへ到達不能（Lock で囲まれている等）の場合は `"PathFinding unreachable"` の `Result.Failure` で完了する。呼び出し側は失敗ケースを必ずハンドリングすること。
 - 結果の `IEnumerable<Vector2Int>` は内部フィールド `routeList` の**参照そのもの**。次回 `SearchRoute` で Clear されるため、受け取ったら即 `ToArray()` 等でコピーする。
 - 経路は「開始マスを含まない・ゴールマスを含む」順列。`start == goal` の場合は空の経路で成功通知。

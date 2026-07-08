@@ -10,6 +10,7 @@
 URP のカメラスタック（Base カメラ + Overlay カメラ群）を priority 順に自動構成する基盤。
 Overlay にしたいカメラへ `CameraStackTarget` を付けておき（`autoStack` で有効化時に自動登録）、`CameraStackManager.SwitchMainCamera()` で Base カメラを切り替えると、登録済み Overlay が priority 昇順で新 Base のスタックに積み直される。
 シーンごとに Base カメラが変わっても Overlay 構成（UI・Devkit 等）を維持するための仕組み。
+主要クラス: `CameraStackManager`（sealed Singleton・非MonoBehaviour。現在の Base カメラ管理・Overlay リスト（priority 昇順）・スタック再構築・破棄カメラの自動除去）/ `CameraStackTarget`（sealed MonoBehaviour・`[RequireComponent(UniversalAdditionalCameraData)]`。Overlay 対象カメラのマーカー。`priority`（uint）と `autoStack`（OnEnable 時自動登録）を持つ）。
 
 ## 逆引き（〜したい）
 
@@ -22,37 +23,10 @@ Overlay にしたいカメラへ `CameraStackTarget` を付けておき（`autoS
 | 描画順を制御したい | `CameraStackTarget.priority`（**昇順に積まれる = 小さいほど奥**） |
 | スタックを組み直したい | `UpdateCurrentCameraStack()` |
 
-## 主要クラス
+## 使い方
 
-| クラス | 種別 | 役割 |
-|---|---|---|
-| `CameraStackManager` | sealed Singleton（非MonoBehaviour） | 現在の Base カメラ管理・Overlay リスト（priority 昇順）・スタック再構築・破棄カメラの自動除去 |
-| `CameraStackTarget` | sealed MonoBehaviour（`[RequireComponent(UniversalAdditionalCameraData)]`） | Overlay 対象カメラのマーカー。`priority`（uint）と `autoStack`（OnEnable 時自動登録）を持つ |
-
-## 使い方(実例)
-
-### 実例1: 起動時に Base カメラを登録（Client側唯一のコード使用箇所）
-
-```csharp
-// 引用元: Client/Assets/Scripts/Client/Core/Initialize/InitializeObject/InitializeObject.core.cs
-private void CreateCommonCamera()
-{
-    var cameraStackManager = CameraStackManager.Instance;
-
-    CommonCamera = CommonCamera.Instance ?? UnityUtility.Instantiate<CommonCamera>(null, commonCameraPrefab);
-
-    if (CommonCamera != null)
-    {
-        CommonCamera.transform.name = "CommonCamera";
-
-        cameraStackManager.SwitchMainCamera(CommonCamera.BackgroundCamera);
-    }
-}
-```
-
-### 実例2: Overlay 側はプレハブ設定のみ（コード不要）
-
-`CommonCamera.prefab`（`Client/Assets/Resource (Internal)/Core/Prefabs/CommonCamera.prefab`）の構成:
+- 起動時に Base カメラを登録（Client側唯一のコード使用箇所）: `CommonCamera` プレハブを生成し `cameraStackManager.SwitchMainCamera(CommonCamera.BackgroundCamera)`。実例: `Client/Assets/Scripts/Client/Core/Initialize/InitializeObject/InitializeObject.core.cs` の `CreateCommonCamera()`
+- Overlay 側はプレハブ設定のみ（コード不要）。`CommonCamera.prefab`（`Client/Assets/Resource (Internal)/Core/Prefabs/CommonCamera.prefab`）の構成:
 
 | カメラ | CameraStackTarget | priority | autoStack |
 |---|---|---|---|
@@ -62,25 +36,6 @@ private void CreateCommonCamera()
 | Camera (Devkit) | あり | 50 | 1 |
 
 → 描画順は Background(Base) → Main → OverLap → Devkit。`WorldMap.unity` / `Citadel.unity` のシーンカメラも同様に `CameraStackTarget` を付けて自動参加している。
-
-## API(主要公開メンバー)
-
-### CameraStackManager（Singleton）
-
-| メンバー | 説明 |
-|---|---|
-| `SwitchMainCamera(Camera camera)` | Base カメラを切替。旧 Base の cameraStack をクリアし、新 Base に登録済み Overlay を積み直す |
-| `AddStackCamera(Camera camera)` | Overlay 登録。カメラの `CameraStackTarget` 必須。**renderType を強制的に Overlay 化**し、カメラ破棄時の自動除去（OnDestroyAsObservable）も購読 |
-| `RemoveStackCamera(Camera camera)` | Overlay 登録解除（スタック再構築は別途 `UpdateCurrentCameraStack()`） |
-| `UpdateCurrentCameraStack()` | 現在の Base に対し、null 除去 + priority 昇順で cameraStack を再構築 |
-
-### CameraStackTarget（MonoBehaviour）
-
-| メンバー | 説明 |
-|---|---|
-| `Priority : uint` | スタック順（昇順。読み取り専用プロパティ・設定はインスペクタ） |
-| `AddStack()` | Manager への登録 + スタック再構築（autoStack 時は OnEnable で自動実行） |
-| `Camera : Camera` / `CameraData : UniversalAdditionalCameraData` | 対象カメラ / URP 追加データ（遅延取得） |
 
 ## 注意点・罠
 

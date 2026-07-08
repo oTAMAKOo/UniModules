@@ -9,6 +9,12 @@
 
 Android の戻るキー（Escape キー）ハンドリング基盤。`BackKeyManager` がキー押下を監視し、登録された `BackKeyReceiver` 群を **Priority 降順**に呼び出して、最初に `true` を返した Receiver で処理を打ち切る（チェーン・オブ・レスポンシビリティ）。
 本プロジェクトでの主用途は「戻るキーで最前面のポップアップを閉じる」で、[Window](Window.md) の `WindowBase` が Receiver を自動付与するため**通常は意識せずに使える**。
+主要クラス: `BackKeyManager`（sealed Singleton・非MonoBehaviour。キー監視 → Receiver を Priority 降順に実行）/ `BackKeyReceiver`（abstract MonoBehaviour。OnEnable/OnDisable で Manager へ自動登録/解除。`HandleBackKey() : bool` が実装ポイント）/ `WindowBackKeyReceiver`（`PopupManager.Current` が自分の Window のときだけ `window.Close()`。Priority 10000）/ `ButtonBackKeyReceiver`（付与された `UIButton` のクリックをレイキャストエミュレートで発火）。
+
+Client側派生（`Client/Assets/Scripts/Client/Core/BackKey/`）:
+
+- `Dominion.Client.WindowBackKeyReceiver` — チュートリアル中は無効化 + `PopupManager.Instance` を供給。**`WindowBase.OnOpen` が `GetOrAddComponent` で自動付与**（手動アタッチ不要）
+- `Dominion.Client.ButtonBackKeyReceiver` — チュートリアル中無効化のみ。**定義のみでプレハブ・シーンへの適用実績なし**（2026-07時点）
 
 ## 逆引き（〜したい）
 
@@ -21,89 +27,11 @@ Android の戻るキー（Escape キー）ハンドリング基盤。`BackKeyMan
 | 処理順を制御したい | `Priority` プロパティ（大きいほど先に処理。Window用は 10000） |
 | 全 Receiver を無効化したい | `BackKeyManager.Instance.ClearReceiver()` |
 
-## 主要クラス
+## 使い方
 
-| クラス | 種別 | 役割 |
-|---|---|---|
-| `BackKeyManager` | sealed Singleton（非MonoBehaviour） | PostLateUpdate で Escape キー監視（`#if UNITY_ANDROID`）→ Receiver を Priority 降順に実行 |
-| `BackKeyReceiver` | abstract MonoBehaviour | Receiver 基底。OnEnable/OnDisable で Manager へ自動登録/解除。`HandleBackKey() : bool` が実装ポイント |
-| `WindowBackKeyReceiver` | abstract（BackKeyReceiver 派生） | `PopupManager.Current` が自分の Window のときだけ `window.Close()`。Priority 10000。`GetPopupManager()` が abstract |
-| `ButtonBackKeyReceiver` | abstract（BackKeyReceiver 派生） | 付与された `UIButton` のクリックをレイキャストエミュレートで発火（遮蔽物・interactable チェック付き） |
-
-### Client側派生（`Client/Assets/Scripts/Client/Core/BackKey/`）
-
-| クラス | 役割 |
-|---|---|
-| `Dominion.Client.WindowBackKeyReceiver` | チュートリアル中は無効化 + `PopupManager.Instance` を供給。**`WindowBase.OnOpen` が `GetOrAddComponent` で自動付与**（手動アタッチ不要） |
-| `Dominion.Client.ButtonBackKeyReceiver` | チュートリアル中無効化のみ。**定義のみでプレハブ・シーンへの適用実績なし**（2026-07時点） |
-
-## 使い方(実例)
-
-### 実例1: 起動時初期化
-
-```csharp
-// 引用元: Client/Assets/Scripts/Client/Core/Initialize/InitializeObject/InitializeObject.manager.cs
-private void InitializeBackKeyManager()
-{
-    var backKeyManager = BackKeyManager.CreateInstance();
-
-    backKeyManager.Initialize();
-}
-```
-
-### 実例2: ウィンドウへの自動付与（WindowBase 側・間接使用の実体）
-
-```csharp
-// 引用元: Client/Assets/Scripts/Client/Core/Popup/WindowBase.cs
-protected override async UniTask OnOpen()
-{
-    if (receiveBackKeyEvent)
-    {
-        UnityUtility.GetOrAddComponent<WindowBackKeyReceiver>(gameObject);
-    }
-    ...
-}
-```
-
-### 実例3: Client側 Receiver 実装（チュートリアル中無効化）
-
-```csharp
-// 引用元: Client/Assets/Scripts/Client/Core/BackKey/WindowBackKeyReceiver.cs
-public sealed class WindowBackKeyReceiver : Modules.BackKey.WindowBackKeyReceiver
-{
-    public override bool HandleBackKey()
-    {
-        var tutorialManager = TutorialManager.Instance;
-
-        if (tutorialManager.IsTutorial) { return false; }
-
-        return base.HandleBackKey();
-    }
-
-    public override IPopupManager GetPopupManager()
-    {
-        return PopupManager.Instance;
-    }
-}
-```
-
-## API(主要公開メンバー)
-
-### BackKeyManager（Singleton）
-
-| メンバー | 説明 |
-|---|---|
-| `Initialize()` | Receiver リスト生成 + `Observable.EveryUpdate(UnityFrameProvider.PostLateUpdate)` でキー監視開始。起動時1回必須 |
-| `AddReceiver(BackKeyReceiver)` / `RemoveReceiver(BackKeyReceiver)` | 登録/解除（重複ガードあり・都度 Priority 降順ソート）。通常は BackKeyReceiver が自動で呼ぶ |
-| `ClearReceiver()` | 全解除 |
-
-### BackKeyReceiver（abstract MonoBehaviour）
-
-| メンバー | 説明 |
-|---|---|
-| `Priority : int` | 処理順（**大きいほど先**）。SerializeField・実行時変更可（次のソートから反映） |
-| `abstract HandleBackKey() : bool` | 戻るキー処理。true を返すと後続 Receiver へ伝播しない |
-| `protected virtual OnInitialize()` | 初回 OnEnable 時の初期化フック |
+- 起動時初期化: `BackKeyManager.CreateInstance()` → `Initialize()`（引用元: `Client/Assets/Scripts/Client/Core/Initialize/InitializeObject/InitializeObject.manager.cs`）
+- ウィンドウへの自動付与（間接使用の実体）: `WindowBase.OnOpen` が `receiveBackKeyEvent` 有効時に `UnityUtility.GetOrAddComponent<WindowBackKeyReceiver>(gameObject)` を実行（引用元: `Client/Assets/Scripts/Client/Core/Popup/WindowBase.cs`）
+- Client側 Receiver 実装（チュートリアル中は `HandleBackKey` で false を返して無効化 + `GetPopupManager()` で `PopupManager.Instance` を供給）: `Client/Assets/Scripts/Client/Core/BackKey/WindowBackKeyReceiver.cs`
 
 ## 注意点・罠
 

@@ -7,7 +7,7 @@
 
 ## 概要
 
-`PlayerPrefs` の**暗号化ラッパー** `SecurePrefs`（static）。キー名・値の両方を AES 暗号化して保存するため、端末上で中身を覗かれても読めない。
+`PlayerPrefs` の**暗号化ラッパー** `SecurePrefs`（static。唯一のクラス）。キー名・値の両方を AES 暗号化して保存するため、端末上で中身を覗かれても読めない。
 アプリ起動時に `KeyFileManager` 由来の鍵で初期化され（`InitializeObject.core.cs`）、以降は全レイヤー（Client / 基盤の ExternalAsset・Notifications・Devkit.Diagnosis）が軽量なキー値の永続化に使う。
 
 ### ストレージ使い分け（[Cache](Cache.md) 冒頭の比較表と対応）
@@ -40,61 +40,10 @@
 | 存在確認・削除したい | `HasKey(key)` / `DeleteKey(key)` |
 | 暗号鍵を差し替えたい（起動時初期化） | `SecurePrefs.SetCryptoKey(aesCryptoKey)` |
 
-## 主要クラス
+## 使い方
 
-| クラス | 種別 | 役割 |
-|---|---|---|
-| `SecurePrefs` | static class | 唯一のクラス。全 API を提供 |
-
-## 使い方(実例)
-
-### 起動時の鍵初期化（必須フロー・実装済み）
-
-```csharp
-// 引用元: Client/Assets/Scripts/Client/Core/Initialize/InitializeObject/InitializeObject.core.cs
-private void InitializeSecurePrefs()
-{
-    var keyData = KeyFileManager.Instance.Get(KeyFileManager.KeyType.SecurePrefs);
-
-    var cryptoKey = new AesCryptoKey(keyData.Key, keyData.Iv);
-
-    SecurePrefs.SetCryptoKey(cryptoKey);
-}
-```
-
-### ネスト static class `Prefs` パターン（基盤内の慣例）
-
-```csharp
-// 引用元: Client/Assets/UniModules/Scripts/Modules/ExternalAsset/ExternalAsset.cache.cs
-private static class Prefs
-{
-    public static DateTime deleteUnUsedCacheTime
-    {
-        get { return SecurePrefs.GetDateTime(typeof(Prefs).FullName + "-deleteUnUsedCacheTime", null); }
-        set { SecurePrefs.SetDateTime(typeof(Prefs).FullName + "-deleteUnUsedCacheTime", value); }
-    }
-}
-```
-
-キー名は `typeof(Prefs).FullName + "-項目名"` で衝突を回避するのが慣例（Devkit の `Diagnosis` / `LocalPushNotification` も同パターン）。
-
-## API(主要公開メンバー)
-
-### SecurePrefs（static）
-
-| メンバー | 説明 |
-|---|---|
-| `void SetCryptoKey(AesCryptoKey)` | 暗号鍵設定。未設定時はソース埋め込みのデフォルト鍵を使用 |
-| `void SetKeyPrefix(string)` | 全キー名に付く接頭辞（`"prefix-keyName"`）を設定 |
-| `bool HasKey(string)` / `void DeleteKey(string)` | 存在確認 / 個別削除 |
-| `void DeleteAll()` | **PlayerPrefs.DeleteAll そのもの**（下記罠参照） |
-| `void Save()` | `PlayerPrefs.Save()`（即時フラッシュ） |
-| `Set/GetString(key, value / defaultValue = "")` | 文字列（値は AES + Base64 で保存） |
-| `Set/GetInt(key, ...)` / `Set/GetFloat(key, ...)` / `Set/GetBool(key, ...)` | 数値・フラグ（内部は全て文字列保存。パース失敗時は defaultValue） |
-| `Set/GetDateTime(key, ...)` | 日時（`DateTime.ToString()` / `Parse`） |
-| `Set/GetColor(key, ...)` | Color（"r,g,b,a" 文字列） |
-| `SetEnum(key, Enum)` / `GetEnum<T>(key, default)` | Enum 名文字列で保存（名前一致で復元） |
-| `Set<T>(key, value)` / `Get<T>(key, default)` | 任意型を JsonConvert でシリアライズして保存 |
+- 起動時の鍵初期化（必須フロー・実装済み）: `KeyFileManager.Instance.Get(KeyFileManager.KeyType.SecurePrefs)` の鍵で `AesCryptoKey` を生成し `SecurePrefs.SetCryptoKey()`。実例: `Client/Assets/Scripts/Client/Core/Initialize/InitializeObject/InitializeObject.core.cs` の `InitializeSecurePrefs()`
+- ネスト static class `Prefs` パターン（基盤内の慣例）: 利用クラス内に `private static class Prefs` を定義し、プロパティ get/set で `SecurePrefs.GetXxx / SetXxx` を包む。キー名は `typeof(Prefs).FullName + "-項目名"` で衝突を回避するのが慣例。実例: `Client/Assets/UniModules/Scripts/Modules/ExternalAsset/ExternalAsset.cache.cs`（Devkit の `Diagnosis` / `LocalPushNotification` も同パターン）
 
 ## 注意点・罠
 

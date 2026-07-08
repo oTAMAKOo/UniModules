@@ -10,6 +10,7 @@
 端末ローカルに永続化するデータ（セーブデータ・ユーザー設定・履歴）の型ベース Load / Save 基盤。
 「1クラス = 1ファイル」で、`ILocalData` を実装したクラスを `LocalDataManager.Get<T>()` で読み、`data.Save()` で書く。
 シリアライズは MessagePack（LZ4 圧縮）、本文とファイル名は AES 暗号化。サーバー保存ではない点に注意（PlayFab 連携は別基盤）。
+主要クラス: `LocalDataManager`（Singleton。Load / Save / Delete と型別メモリキャッシュの管理）/ `ILocalData`（保存データ型のマーカー interface）/ `FileNameAttribute`（保存ファイル名の指定・**必須**）/ `LocalDataExtension`（`data.Save()` 拡張メソッド）。
 
 ### 保存の仕組み
 
@@ -35,61 +36,12 @@
 | 起動時に暗号鍵を設定したい | `localDataManager.SetCryptoKey(cryptoKey)` |
 | 実ファイルパスを知りたい（デバッグ） | `localDataManager.GetFilePath<T>()` |
 
-## 主要クラス
+## 使い方
 
-| クラス | 種別 | 役割 |
-|---|---|---|
-| `LocalDataManager` | Singleton（`Extensions.Singleton<T>`。`Instance` 初回アクセスで自動生成） | Load / Save / Delete と型別メモリキャッシュの管理 |
-| `ILocalData` | interface | 保存データ型のマーカー（メンバーなし） |
-| `FileNameAttribute` | Attribute（class 対象） | 保存ファイル名の指定。**必須**（無いと `GetFilePath` で例外） |
-| `LocalDataExtension` | static class | `data.Save()` 拡張メソッドを提供 |
+### データクラスの定義
 
-## 使い方(実例)
-
-### データクラスの定義（Client 実物）
-
-```csharp
-// 引用元: Client/Assets/Scripts/Client/LocalData/ServiceData/ServiceData.cs
-using MessagePack;
-using Modules.LocalData;
-
-namespace Dominion.Client.LocalData
-{
-    [FileName("Dominion-ServiceData")]
-    [MessagePackObject(true)]
-    public sealed class ServiceData : ILocalData
-    {
-        /// <summary> 規約確認バージョン </summary>
-        public uint? ServiceConfirmVersion { get; set; } = null;
-    }
-}
-```
-
-```csharp
-// 引用元: Client/Assets/Scripts/Client/LocalData/PlayData/PlayData.cs (抜粋)
-[FileName("Dominion-PlayData")]
-[MessagePackObject(true)]
-public sealed class PlayData : ILocalData
-{
-    /// <summary> 言語設定 </summary>
-    public Language? Language { get; set; }
-
-    public float MasterVolume { get; set; } = 1f;
-
-    public float BgmVolume { get; set; } = 0.5f;
-
-    /// <summary> 戦闘の演出速度倍率 </summary>
-    public BattleSpeedType BattleSpeed { get; set; } = BattleSpeedType.X1;
-}
-```
-
-ネストするデータ型（`ILocalData` 直下でないクラス）にも `[MessagePackObject(true)]` を付ける:
-
-```csharp
-// 引用元: Client/Assets/Scripts/Client/LocalData/SaveData/Data/UserSaveData.cs (抜粋)
-[MessagePackObject(true)]
-public sealed class UserSaveData
-```
+- 実例: `Client/Assets/Scripts/Client/LocalData/ServiceData/ServiceData.cs`（最小構成）/ `Client/Assets/Scripts/Client/LocalData/PlayData/PlayData.cs`（設定値プロパティ + 初期値の例）
+- ネストするデータ型（`ILocalData` 直下でないクラス）にも `[MessagePackObject(true)]` を付ける（実例: `Client/Assets/Scripts/Client/LocalData/SaveData/Data/UserSaveData.cs`）
 
 ### 新しいローカル保存データを追加する手順（Claude向け）
 
@@ -104,99 +56,12 @@ public sealed class UserSaveData
 6. **既存クラスへのプロパティ追加は後方互換**（map モードのため既存ファイルはそのまま読める）。プロパティの**リネーム・型変更は既存データが読めなくなる／消える**ので原則行わない
 7. IL2CPP 実機ビルドでは MessagePack の生成コード（GeneratedResolver）が必要（`UnityCustomResolver` は「Editor時はDynamicResolver、実行時はGeneratedResolverの振る舞い」）。生成は Source Generator（csc.rsp の `MESSAGEPACK_ANALYZER_CODE`）で自動化済みのため手動生成は不要。ただし **`[MessagePackObject(true)]` の付け忘れは生成対象から漏れ、エディタ上では Dynamic で動いてしまうため実機で初めてクラッシュする**（詳細は [MessagePack](MessagePack.md)）
 
-### 読み込み → 変更 → 保存
+### その他の定型パターン
 
-```csharp
-// 引用元: Client/Assets/Scripts/Client/Feature/Window/SoundVolume/SoundVolumeWindow.cs (抜粋)
-protected override async UniTask OnClose()
-{
-    var changed = false;
-
-    var playData = LocalDataManager.Get<PlayData>();
-
-    if (masterVolumeSlider.value != playData.MasterVolume)
-    {
-        playData.MasterVolume = masterVolumeSlider.value / 100f;
-        changed = true;
-    }
-
-    if (changed)
-    {
-        playData.Save();    // LocalDataExtension の拡張メソッド. フレーム末尾に書き込まれる.
-    }
-
-    await base.OnClose();
-}
-```
-
-### 起動時の初期化（暗号鍵の設定）
-
-```csharp
-// 引用元: Client/Assets/Scripts/Client/Core/Initialize/InitializeObject/InitializeObject.core.cs
-public static void InitializeLocalDataManager()
-{
-    var localDataManager = LocalDataManager.Instance;
-
-    var keyFileManager = KeyFileManager.Instance;
-
-    var keyData = keyFileManager.Get(KeyFileManager.KeyType.LocalData);
-
-    var cryptoKey = new AesCryptoKey(keyData.Key, keyData.Iv);
-
-    localDataManager.SetCryptoKey(cryptoKey);
-}
-```
-
-### ロード / セーブのフック（SaveDataManager が購読）
-
-```csharp
-// 引用元: Client/Assets/Scripts/Client/Core/SaveData/SaveDataManager.cs (抜粋)
-var localDataManager = LocalDataManager.Instance;
-
-localDataManager.OnLoadAsObservable()
-    .Subscribe(x => OnLoad(x))      // x は ILocalData. as SaveData で型を絞って処理.
-    .AddTo(Disposable);
-```
-
-### 削除（デバッグメニューのユーザーデータ削除）
-
-```csharp
-// 引用元: Client/Assets/Scripts/Client/Devkit/DeveloperMenu/Command/User/UserDelete.cs (抜粋)
-LocalDataManager.DeleteAll();
-```
-
-## API(主要公開メンバー)
-
-### LocalDataManager（static メソッド）
-
-| メンバー | 説明 |
-|---|---|
-| `static T Get<T>()` | 取得。未ロードなら Load してキャッシュ。ファイルが無ければ `new T()` |
-| `static void Load<T>()` | 明示ロード（通常は Get が内部で呼ぶ）。失敗時は例外 throw |
-| `static void Save<T>(T data, bool immediate = false)` | 保存。デフォルトはフレーム末尾集約 + スレッドプール書き込み。`immediate: true` で即時開始 |
-| `static bool FileExist<T>()` | 保存ファイルの存在確認 |
-| `static void Delete<T>()` | ファイル削除 + メモリキャッシュ削除 |
-| `static void DeleteAll()` | 保存ディレクトリごと削除 + 全キャッシュ削除 |
-
-### LocalDataManager（インスタンスメンバー: `LocalDataManager.Instance` 経由）
-
-| メンバー | 説明 |
-|---|---|
-| `void SetCryptoKey(AesCryptoKey cryptoKey)` | 暗号鍵の設定。起動シーケンスで最初に呼ぶ（Client 側は `InitializeObject.InitializeLocalDataManager`） |
-| `void SetFileDirectory(string directory)` | 保存先ディレクトリの変更（無ければ作成） |
-| `string GetFilePath<T>()` | 実ファイルパス取得（型→パスのキャッシュあり）。`FileNameAttribute` 未設定・`ILocalData` 未実装なら例外 |
-| `void CacheClear()` | 型→パス / 型→インスタンスの両キャッシュをクリア |
-| `Observable<ILocalData> OnLoadAsObservable()` | Load 完了時に発火（データキャッシュ登録前） |
-| `Observable<ILocalData> OnSaveAsObservable()` | ファイル書き込み直前に発火 |
-| `string DefaultFileDirectory` / `string FileDirectory` | 既定 / 現在の保存先ディレクトリ |
-
-### LocalDataExtension / FileNameAttribute / ILocalData
-
-| メンバー | 説明 |
-|---|---|
-| `data.Save()`（`LocalDataExtension.Save<T>`） | `LocalDataManager.Save(data)` の糖衣。通常はこちらを使う |
-| `FileNameAttribute(string fileName, bool encrypt = true)` | 保存ファイル名。encrypt はファイル名の暗号化ハッシュ化のみに作用（本文暗号化は鍵の有無で決まる） |
-| `ILocalData` | マーカー interface（メンバーなし） |
+- **読み込み → 変更 → 保存**: `LocalDataManager.Get<T>()` → プロパティ変更 → `data.Save()`（実例: `Client/Assets/Scripts/Client/Feature/Window/SoundVolume/SoundVolumeWindow.cs` の `OnClose`）
+- **起動時の初期化（暗号鍵の設定）**: `Client/Assets/Scripts/Client/Core/Initialize/InitializeObject/InitializeObject.core.cs` の `InitializeLocalDataManager()`（`KeyFileManager` から鍵を取得し `AesCryptoKey` を生成 → `SetCryptoKey`）
+- **ロード / セーブのフック**: `OnLoadAsObservable()`（Load 完了時・データキャッシュ登録前に発火）/ `OnSaveAsObservable()`（ファイル書き込み直前に発火）。購読実例: `Client/Assets/Scripts/Client/Core/SaveData/SaveDataManager.cs`
+- **削除**: `LocalDataManager.DeleteAll()`（実例: デバッグメニュー `Client/Assets/Scripts/Client/Devkit/DeveloperMenu/Command/User/UserDelete.cs`）
 
 ## 注意点・罠
 
