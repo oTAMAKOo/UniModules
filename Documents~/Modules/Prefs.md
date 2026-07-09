@@ -2,13 +2,12 @@
 
 > **namespace**: `Extensions`（**`Modules.Prefs` ではない**。フォルダ名と不一致）
 > **場所**: `Client/Assets/UniModules/Scripts/Modules/Prefs/SecurePrefs.cs`（1ファイルのみ）
-> **Client側使用**: 2ファイル + 基盤内4ファイル（2026-07時点・使用中）
 > **依存**: UnityEngine（PlayerPrefs） / Newtonsoft.Json / Extensions（`AesCryptoKey`, `string.Encrypt/Decrypt` 拡張）
 
 ## 概要
 
 `PlayerPrefs` の**暗号化ラッパー** `SecurePrefs`（static。唯一のクラス）。キー名・値の両方を AES 暗号化して保存するため、端末上で中身を覗かれても読めない。
-アプリ起動時に `KeyFileManager` 由来の鍵で初期化され（`InitializeObject.core.cs`）、以降は全レイヤー（Client / 基盤の ExternalAsset・Notifications・Devkit.Diagnosis）が軽量なキー値の永続化に使う。
+起動時に `KeyFileManager` 由来の鍵で初期化し、以降は各レイヤー（利用側や基盤の ExternalAsset・Notifications・Devkit.Diagnosis 等）が軽量なキー値の永続化に使う。
 
 ### ストレージ使い分け（[Cache](Cache.md) 冒頭の比較表と対応）
 
@@ -42,14 +41,14 @@
 
 ## 使い方
 
-- 起動時の鍵初期化（必須フロー・実装済み）: `KeyFileManager.Instance.Get(KeyFileManager.KeyType.SecurePrefs)` の鍵で `AesCryptoKey` を生成し `SecurePrefs.SetCryptoKey()`。実例: `Client/Assets/Scripts/Client/Core/Initialize/InitializeObject/InitializeObject.core.cs` の `InitializeSecurePrefs()`
-- ネスト static class `Prefs` パターン（基盤内の慣例）: 利用クラス内に `private static class Prefs` を定義し、プロパティ get/set で `SecurePrefs.GetXxx / SetXxx` を包む。キー名は `typeof(Prefs).FullName + "-項目名"` で衝突を回避するのが慣例。実例: `Client/Assets/UniModules/Scripts/Modules/ExternalAsset/ExternalAsset.cache.cs`（Devkit の `Diagnosis` / `LocalPushNotification` も同パターン）
+- 起動時の鍵初期化: `KeyFileManager.Instance.Get(...)` の鍵で `AesCryptoKey` を生成し `SecurePrefs.SetCryptoKey()` を呼ぶ
+- ネスト static class `Prefs` パターン（基盤内の慣例）: 利用クラス内に `private static class Prefs` を定義し、プロパティ get/set で `SecurePrefs.GetXxx / SetXxx` を包む。キー名は `typeof(Prefs).FullName + "-項目名"` で衝突を回避するのが慣例。実例: `Client/Assets/UniModules/Scripts/Modules/ExternalAsset/ExternalAsset.cache.cs`
 
 ## 注意点・罠
 
 - **`DeleteAll()` は `PlayerPrefs.DeleteAll()` を直接呼ぶ**。SecurePrefs 管轄外の生 PlayerPrefs（Unity・プラグインが書いたもの）も全消しになる
 - **鍵を変えると既存データは実質消える**: キー名自体を暗号化して PlayerPrefs キーにするため、鍵が変わると `HasKey` が false になり defaultValue が返る（例外にはならない）
-- `SetCryptoKey` 前に読み書きするとデフォルト鍵（ソースにハードコード）で動く。**書き込みが初期化より先行しないよう注意**（正規フローでは `InitializeObject` が最初期に設定）
+- `SetCryptoKey` 前に読み書きするとデフォルト鍵（ソースにハードコード）で動く。**書き込みが初期化より先行しないよう注意**（起動シーケンスの最初期に設定するのが原則）
 - int / float / DateTime も文字列として保存され、`Parse` はカルチャ依存（InvariantCulture 未指定）。端末言語で日時・小数の書式が変わる環境をまたぐと復元に失敗して defaultValue になりうる
 - `GetEnum<T>` は**名前**保存。Enum メンバーのリネームで復元不能（defaultValue）になる
 - 暗号化のオーバーヘッドがあるため、大きなデータは [LocalData](LocalData.md)、ファイルは [FileCache](FileCache.md) を使う

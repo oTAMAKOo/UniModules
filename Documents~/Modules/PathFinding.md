@@ -2,7 +2,6 @@
 
 > **namespace**: `Modules.PathFinding`
 > **場所**: `Client/Assets/UniModules/Scripts/Modules/PathFinding/`（`Astar.cs` / `Node.cs` の2ファイル）
-> **Client側使用**: 0ファイル（基盤内使用も0、2026-07時点）
 > **依存**: UniTask / R3 / UnityEngine（`Vector2Int`）
 
 ## 概要
@@ -11,7 +10,7 @@
 
 主要クラス: `AStar`（本体。グリッド初期化・Lock設定・経路探索）/ `Node`（1マスの探索状態。メンバーは internal でモジュール外から直接は操作しない）。
 
-**本プロジェクトでは未使用**（ガード無しでコンパイルはされている）。グリッドマップの経路探索が必要になった場合、自作前に本クラスを検討する。
+シンボルゲート無しでコンパイル対象。グリッドマップの経路探索が必要になった場合の選択肢。
 
 ## 逆引き（〜したい）
 

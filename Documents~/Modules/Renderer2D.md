@@ -2,7 +2,6 @@
 
 > **namespace**: `Modules.Renderer2D.DummyContent`（フォルダは `DummyContents/`・単複不一致）
 > **場所**: `Client/Assets/UniModules/Scripts/Modules/Renderer2D/DummyContents/`
-> **Client側使用**: .cs 参照 0ファイル / prefab 1件（2026-07時点）
 > **依存**: R3 / Extensions（`UnityUtility`, `FixedQueue`） / UnityEditor.U2D（エディタ partial）
 
 ## 概要
@@ -22,7 +21,7 @@
 
 ## 使い方
 
-実使用は prefab 設定のみ（`Client/Assets/Resource (Internal)/Scene/WorldMap/Prefab/Map/Tile.prefab` の SpriteRenderer にアタッチ）。
+対象の SpriteRenderer プレハブに `DummySprite` コンポーネントを付与し、インスペクタで参照する Sprite を設定するだけ（コード側の対応は不要）。
 
 ## 注意点・罠
 

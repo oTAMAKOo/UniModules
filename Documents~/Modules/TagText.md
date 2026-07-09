@@ -2,7 +2,6 @@
 
 > **namespace**: `Modules.TagTect`（**実コードのつづりが `TagTect`**。フォルダ名 TagText と不一致なので grep 注意）
 > **場所**: `Client/Assets/UniModules/Scripts/Modules/TagText/`
-> **Client側使用**: 0ファイル（2026-07時点。基盤内では `Modules.Scenario` の Message コマンドが使用するが `#if ENABLE_XLUA` 内のためコンパイル対象外）
 > **依存**: Extensions のみ（MonoBehaviour ではない純粋な C# クラス。RubyTagText のみ `UnityEngine.Debug` 使用）
 
 ## 概要
@@ -13,7 +12,7 @@
 
 主要クラス: `TagText`（非MonoBehaviour。タグ分解と文字送り部分文字列の構築。protected virtual `EditTextInfos(Info[])` が拡張ポイント）/ `RubyTagText`（`TagText` 派生。ルビ表示制御）。
 
-**コンパイル対象**（シンボルゲート無し）で使用可能な状態。
+シンボルゲート無しでコンパイル対象。
 
 ## 逆引き（〜したい）
 
@@ -27,7 +26,7 @@
 
 ## 使い方
 
-文字送りループ（`Get(0)`=空文字 〜 `Get(Length-1)`=全文、の順で1文字ずつ増やして通知）の実例: `Client/Assets/UniModules/Scripts/Modules/Scenario/Command/Message/Message.cs`（`#if ENABLE_XLUA` 内のため本プロジェクトではコンパイル対象外だが、使い方の参考として有効）。
+文字送りループ（`Get(0)`=空文字 〜 `Get(Length-1)`=全文、の順で1文字ずつ増やして通知）の実例: `Client/Assets/UniModules/Scripts/Modules/Scenario/Command/Message/Message.cs`（`#if ENABLE_XLUA` 内）。
 
 ## 注意点・罠
 
@@ -41,6 +40,6 @@
 
 ## 関連
 
-- [Scenario](Scenario.md) — 基盤内の唯一の使用元（Message コマンドの文字送り。ENABLE_XLUA 未定義のため現状無効）
+- [Scenario](Scenario.md) — 基盤内の使用元（Message コマンドの文字送り。`ENABLE_XLUA` 定義時に有効）
 - [TextData](TextData.md) — 表示するテキスト自体の取得元（ローカライズ基盤）
-- ThirdParty `RubyTextMeshPro`（`Client/Assets/ThirdParty/RubyTextMeshPro/`） — `<ruby=...>` タグを実際に描画する TextMeshPro 拡張
+- ThirdParty `RubyTextMeshPro` — `<ruby=...>` タグを実際に描画する TextMeshPro 拡張

@@ -2,7 +2,6 @@
 
 > **namespace**: `Modules.FileCache`
 > **場所**: `Client/Assets/UniModules/Scripts/Modules/FileCache/`
-> **Client側使用**: 2ファイル（2026-07時点: `InitializeObject.manager.cs`＝初期化 / `CacheManagement.cs`＝全削除）。**Save/Load の実利用箇所は現状なし**（HTML等の配信ファイルキャッシュ用に初期化だけ済んでいる状態）
 > **依存**: Extensions（`Singleton`, `AesCryptoKey`, `PathUtility`, ハッシュ/暗号化拡張） / MessagePack / **Modules.LocalData（メタ情報の保存先）**
 
 ## 概要
@@ -24,25 +23,24 @@
 | ダウンロードしたバイト列をキャッシュしたい | `FileCacheManager.Instance.Save(bytes, source, updateAt, expireAt)` |
 | キャッシュを読みたい | `FileCacheManager.Instance.Load(source)` |
 | 有効なキャッシュがあるか調べたい | `HasCache(source, updateAt)`（存在 + 期限内 + 更新日時一致 + ファイル実在） |
-| 期限切れファイルを掃除したい | `CleanExpiredFiles()`（Client ではアプリ初期化時に実行済み） |
-| キャッシュを全部消したい | `DirectoryUtility.Clean(fileCacheManager.CacheDirectory)`（`CacheManagement.DeleteAll` の実装） |
+| 期限切れファイルを掃除したい | `CleanExpiredFiles()` |
+| キャッシュを全部消したい | `DirectoryUtility.Clean(fileCacheManager.CacheDirectory)` |
 | 用途別に独立したキャッシュ置き場を作りたい | `FileCacheManagerBase<TInstance>` を継承した新 Manager を定義 |
 
 ## 使い方
 
-- 初期化（アプリ起動時に1度。暗号鍵とディレクトリ設定が必須）: `SetCryptoKey(new AesCryptoKey(keyData.Key, keyData.Iv))` → `SetBaseDirectory(Application.temporaryCachePath + "/Cache/")` → `CleanExpiredFiles()`。実例: `Client/Assets/Scripts/Client/Core/Initialize/InitializeObject/InitializeObject.manager.cs` の `InitializeFileCacheManager()`
-- キャッシュ全削除（設定画面の「キャッシュ削除」）: `DirectoryUtility.Clean(fileCacheManager.CacheDirectory)`。実例: `Client/Assets/Scripts/Client/Core/Cahce/CacheManagement.cs`
-- 保存と読み込み（Client 側に現役の呼び出しは無い）: `HasCache(source, updateAt)` で鮮度確認 → 無ければダウンロードして `Save(bytes, source, updateAt, expireAt)` → `Load(source)`。updateAt / expireAt は UnixTime（秒）
+- 初期化（アプリ起動時に1度。暗号鍵とディレクトリ設定が必須）: `SetCryptoKey(new AesCryptoKey(keyData.Key, keyData.Iv))` → `SetBaseDirectory(Application.temporaryCachePath + "/Cache/")` → `CleanExpiredFiles()`
+- キャッシュ全削除: `DirectoryUtility.Clean(fileCacheManager.CacheDirectory)`
+- 保存と読み込み: `HasCache(source, updateAt)` で鮮度確認 → 無ければダウンロードして `Save(bytes, source, updateAt, expireAt)` → `Load(source)`。updateAt / expireAt は UnixTime（秒）
 
 ## 注意点・罠
 
-- **初期化必須**: `SetCryptoKey` と `SetBaseDirectory` を呼ぶ前の Save/Load は例外にならず**黙って失敗**する（Save: no-op / Load: null）。Client では `InitializeObject.manager.cs` が初期化済みなので通常意識不要
+- **初期化必須**: `SetCryptoKey` と `SetBaseDirectory` を呼ぶ前の Save/Load は例外にならず**黙って失敗**する（Save: no-op / Load: null）
 - メタ情報（`CacheData`）は **LocalData 基盤に保存**されるため、[LocalData](LocalData.md) 側の初期化（ディレクトリ・暗号鍵）が先に済んでいる必要がある。`CacheData` 型を触る場合は MessagePack コード生成対象になる点も同様（[MessagePack](MessagePack.md)）
-- 期限判定 `CacheFileData.Alive()` は **`DateTime.Now`（端末時計）基準**。サーバー時間（`systemModel.LocalTime`）ではないため、端末の時計変更で期限がずれる
+- 期限判定 `CacheFileData.Alive()` は **`DateTime.Now`（端末時計）基準**。サーバー時間ではないため、端末の時計変更で期限がずれる
 - `Load` は期限切れでもファイルが残っていれば返す（期限チェックはしない）。鮮度が重要なら **必ず `HasCache(source, updateAt)` → Save/Load** の順で使う
-- 保存先は `Application.temporaryCachePath` 配下（Client 設定）。**OS がいつ消しても文句を言えない領域**なので、消えて困るデータは [LocalData](LocalData.md) へ
+- 保存先は利用側の指定次第だが、`Application.temporaryCachePath` 配下は **OS がいつ消しても文句を言えない領域**なので、消えて困るデータは [LocalData](LocalData.md) へ
 - ファイル名・メタ情報とも source はハッシュ化される。ディスク上から元 URL は辿れない（デバッグ時はメタ情報の `CacheData.files` を見る）
-- 暗号鍵は Client では LocalData と同じ鍵（`KeyFileManager.KeyType.LocalData`）を使用している
 
 ## 関連
 

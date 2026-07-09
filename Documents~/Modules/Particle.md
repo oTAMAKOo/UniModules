@@ -2,7 +2,6 @@
 
 > **namespace**: `Modules.Particle`
 > **場所**: `Client/Assets/UniModules/Scripts/Modules/Particle/`（ParticlePlayer.cs / ParticlePlayerSortingOrder.cs + `Editor/` にインスペクタ2ファイル）
-> **Client側使用**: using は1ファイル（2026-07時点。`Editor/TuneComponent/AdditionalComponent.cs` で実質未使用）。実利用は基盤の `TouchEffectManager`（タッチエフェクト）とプレハブ（`VfxTouchEffect.prefab` 等）経由
 > **依存**: UniTask / R3 / Unity.Linq / Extensions（`UnityUtility`, `IsPlayback`, `GetSubemitters`）/ Modules.R3Extension
 
 ## 概要
@@ -29,11 +28,9 @@
 
 ## 使い方
 
-Client側スクリプトからの直接利用は現状なし（プレハブ: `Resource (Internal)/Core/Effect/TouchEffect/VfxTouchEffect.prefab` 等に付与され、基盤 `TouchEffectManager` が制御）。
-
 - **キャッシュ再利用パターン**（`EndActionType = EndActionType.Deactivate` + `OnEndAsObservable()` 購読でキューへ返却。Play 時に自動で `SetActive(true)` されるため Deactivate 済みインスタンスをそのまま再 `Play()` できる）: `Client/Assets/UniModules/Scripts/Modules/TouchEffect/TouchEffectManager.cs`
 - [ObjectPool](ObjectPool.md) と組み合わせる場合も同様に「取得 → `Play()` → `OnEnd` で `pool.Return()`」の形になる
-- **終了まで待つ最小形**（想定例）: `UnityUtility.Instantiate<ParticlePlayer>(parent, effectPrefab)` → `await effect.Play()`
+- **終了まで待つ最小形**: `UnityUtility.Instantiate<ParticlePlayer>(parent, effectPrefab)` → `await effect.Play()`
 
 ## 注意点・罠
 
@@ -44,7 +41,6 @@ Client側スクリプトからの直接利用は現状なし（プレハブ: `Re
 - `Play(restart: false)` は再スタートせず再生中の Observable に相乗りする。`OnEndAsObservable()` の通知は EndAction 実行後
 - 子の増減時は `OnTransformChildrenChanged` で自動再収集されるが、既存子の ParticleSystem 差し替え等は ContextMenu「CollectContents」or 再アクティブ化が必要
 - `Stop(immediate: false)` は放出停止→自然消滅を待ってから終了処理・状態リセットする（即時ではない）
-- Client側 `AdditionalComponent.cs` の `using Modules.Particle` は現状未使用（自動アタッチ設定に ParticlePlayer は含まれていない）
 
 ## 関連
 

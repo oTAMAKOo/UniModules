@@ -2,7 +2,6 @@
 
 > **namespace**: `Modules.Hyphenation`
 > **場所**: `Client/Assets/UniModules/Scripts/Modules/Hyphenation/`
-> **Client側使用**: 0ファイル（2026-07時点。プレハブ/シーンからの参照も無し）
 > **依存**: Extensions / uGUI（`Text`, `UIBehaviour`） / TextMeshPro（`TMPro`）
 
 ## 概要
@@ -12,14 +11,14 @@
 
 主要クラス: `Hyphenation`（static。禁則文字テーブルと判定・整形）/ `TextHyphenationBase`（自動改行の本体。実測幅で `\n` 挿入、`LateUpdate` でテキスト変更を監視）/ `TextHyphenation`（uGUI `Text` 版）/ `TextMeshProHyphenation`（TextMeshPro 版）。
 
-**コンパイル対象**（シンボルゲート無し・外部SDK不要）で使用可能な状態だが、本プロジェクトでは Client コード・アセットともに未使用。
+シンボルゲート・外部SDK不要でコンパイル対象。
 
 ## 逆引き（〜したい）
 
 | やりたいこと | 使うもの |
 |---|---|
 | uGUI `Text` を禁則込みで自動改行したい | `TextHyphenation`（Text と同じ GameObject に付与するだけ） |
-| `TextMeshProUGUI` を禁則込みで自動改行したい | `TextMeshProHyphenation`（同上） |
+| `TextMeshProUGUI` を禁則込みで自動改行したい | `TextMeshProHyphenation`（TMP と同じ GameObject に付与するだけ） |
 | 改行位置決定済みの文字列に禁則だけ適用したい | `Hyphenation.Format(text)`（static、コンポーネント不要） |
 | ある文字が行頭禁則/行末禁則か判定したい | `Hyphenation.CheckHyphenationFront(c)` / `CheckHyphenationBack(c)` |
 | 英単語の途中で改行させたくない | コンポーネント版が対応済み（`Hyphenation.IsLatin` で単語単位に分割） |

@@ -2,13 +2,12 @@
 
 > **namespace**: `Modules.Cache`
 > **場所**: `Client/Assets/UniModules/Scripts/Modules/Cache/`
-> **Client側使用**: 約32ファイル（2026-07時点）
 > **依存**: R3（SpriteAtlasCache） / Extensions（`LifetimeDisposable`, `UnityUtility`, コレクション拡張）
 
 ## 概要
 
 **文字列キー → オブジェクト** のメモリ上キャッシュ。ロード済みアセット（SpriteAtlas / PatternTexture 等）や生成済み Sprite を使い回し、二重ロード・二重生成を防ぐ。
-キーは呼び出し側が決める（実例ではアセットのロードパスやスプライト名）。`referenceName` を指定すると**同名・同型の Cache インスタンス間でキャッシュ実体を共有**できる。
+キーは呼び出し側が決める（アセットのロードパスやスプライト名を使うのが定石）。`referenceName` を指定すると**同名・同型の Cache インスタンス間でキャッシュ実体を共有**できる。
 主要クラス: `Cache<T>`（文字列キーの汎用メモリキャッシュ。referenceName 共有・スレッドセーフ） / `SpriteAtlasCache`（`SpriteAtlas.GetSprite()` の結果をスプライト名キーでキャッシュ。内部で `Cache<Sprite>` を使用）。
 ディスクには何も書かない。永続化が必要なら本モジュールではなく下記を使う:
 
@@ -32,16 +31,15 @@
 
 ## 使い方
 
-- **キャッシュミス時のみロードして Add する定型**（`Get(loadPath)` → null なら `ExternalAsset.LoadAsset` → `Add(loadPath, asset)`。キー = ロードパス）: `Client/Assets/Scripts/Client/Manager/CommonAssetManager.cs`
-- **常駐アセットの SpriteAtlasCache**: 同上（CommonAssetManager）
-- **複数インスタンス間で Sprite キャッシュを共有**（全サムネイル(Item/Equipment/Character/Enemy...)が共有定数 `ThumbnailContent.ThumbnailAtlasCacheName` を referenceName に使い、Sprite 実体を共有）: `Client/Assets/Scripts/Client/Module/Thumbnail/Contents/ItemThumbnail.cs`
-- **アトラス自体（`Cache<SpriteAtlas>`）と Sprite（`SpriteAtlasCache`）の併用**: `Client/Assets/Scripts/Client/Module/ChipAnimation/ChipAnimation.cs`
+- **キャッシュミス時のみロードして Add する定型**: `Get(loadPath)` → null なら `ExternalAsset.LoadAsset` → `Add(loadPath, asset)`（キー = ロードパス）
+- **複数インスタンス間で Sprite キャッシュを共有**: 全サムネイル等が共通の referenceName を指定して Sprite 実体を共有する
+- **アトラス自体（`Cache<SpriteAtlas>`）と Sprite（`SpriteAtlasCache`）の併用**: アトラスは `Cache<SpriteAtlas>` でロード結果を保持し、そこから取得した Sprite は `SpriteAtlasCache` でキャッシュする
 
 ## 注意点・罠
 
 - **SpriteAtlas.GetSprite() は呼ぶたびに Sprite インスタンスを複製生成する（Unity仕様）**。アトラスから Sprite を取るコードを書くときは直接 GetSprite せず `SpriteAtlasCache` を使う（さもないと同名 Sprite が増殖しメモリを圧迫する）
 - 共有の単位は「referenceName + 型引数 T」。`Cache<Sprite>` と `Cache<SpriteAtlas>` は同じ referenceName でも**別キャッシュ**
-- referenceName は文字列でグローバル共有されるため衝突に注意。慣例は `GetType().FullName + "-用途名"`（CommonAssetManager）、意図的に共有する場合は共有定数（`ThumbnailContent.ThumbnailAtlasCacheName`）
+- referenceName は文字列でグローバル共有されるため衝突に注意。慣例は `GetType().FullName + "-用途名"`、意図的に共有する場合は共有定数を用意する
 - 共有モードの参加者は `WeakReference` 管理で、**最後の生存参加者が Dispose した時に実体がクリア**される
 - 共有モードで `Clear()` しても共有相手が生存中は消えない（no-op / false。実クリアの有無は戻り値 bool で判定できる）。「消したはずなのに残っている」はこれ。確実に手放すには `Dispose()`
 - ファイナライザは持たないため**明示的 Dispose を推奨**（多重 Dispose は安全）

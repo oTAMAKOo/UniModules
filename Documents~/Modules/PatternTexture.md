@@ -2,14 +2,12 @@
 
 > **namespace**: `Modules.PatternTexture`
 > **場所**: `Client/Assets/UniModules/Scripts/Modules/PatternTexture/`
-> **Client側使用**: 2ファイル（2026-07時点: `CommonAssetManager.cs` / `StorageReceiveWindow.cs`）
 > **依存**: UniTask / R3 / Modules.R3Extension（`ObservableEx`） / Extensions / uGUI（`MaskableGraphic`）
 
 ## 概要
 
 複数の類似テクスチャ（キャラ立ち絵・表情差分・連番アニメ等）を**ブロック単位で重複排除**してパックした独自アトラスアセット（`PatternTexture` = ScriptableObject）と、それを uGUI 描画する `PatternImage` のセット。
 同一ピクセルのブロックを1つに共有するため、差分の少ない画像群では SpriteAtlas よりメモリ・容量効率が良い。パターン名（元テクスチャ名）で表示を切り替え、クロスフェードやアルファマップによるピクセル単位ヒットテストにも対応。
-本プロジェクトでは**ナビキャラ（アシスタント）全身像**が PatternTexture アセットとして配信されている。
 主要クラス: `PatternTexture`（パック済み Texture2D + パターン/ブロック情報を保持するアセット本体）/ `PatternImage`（`MaskableGraphic`。パターン切替・クロスフェード・アルファヒットテスト）/ `PatternImageAnimation`（`patternIndex` を AnimationClip で駆動するアニメーション基底）/ `PatternTexturePacker`・`PatternTextureGenerator`（**エディタ専用**。パック作成/更新 GUI と生成処理）。
 
 ## 逆引き（〜したい）
@@ -27,8 +25,8 @@
 
 ## 使い方
 
-- アセットのロードとキャッシュ（ナビキャラ全身像）: `Cache<PatternTexture>` に無ければ `ExternalAsset.LoadAsset<PatternTexture>(loadPath)` でロードして Add（パスは `Contents/Assistant/FullBody/{assistantId}/{assistantId}.asset`）。実例: `Client/Assets/Scripts/Client/Manager/CommonAssetManager.cs` の `GetAssistantAsset()`
-- 表示: `PatternImage` はプレハブに配置して SerializeField 参照（実例: `Client/Assets/Scripts/Client/Scene/Citadel/Window/StorageReceiveWindow/StorageReceiveWindow.cs`）。切替は `PatternTexture` プロパティにアセットを差す → `PatternName` に元テクスチャ名を設定 → 必要なら `SetNativeSize()`
+- アセットのロードとキャッシュ: `Cache<PatternTexture>` に無ければ `ExternalAsset.LoadAsset<PatternTexture>(loadPath)` でロードして Add
+- 表示: `PatternImage` はプレハブに配置して SerializeField 参照。切替は `PatternTexture` プロパティにアセットを差す → `PatternName` に元テクスチャ名を設定 → 必要なら `SetNativeSize()`
 
 ## 注意点・罠
 
@@ -43,5 +41,5 @@
 ## 関連
 
 - [ExternalAsset](ExternalAsset.md) — PatternTexture アセットのロード元
-- [Cache](Cache.md) — `Cache<PatternTexture>` によるロード結果のキャッシュ（実例あり）
+- [Cache](Cache.md) — `Cache<PatternTexture>` によるロード結果のキャッシュ
 - [UI](UI.md) — uGUI 拡張コンポーネント群

@@ -2,7 +2,6 @@
 
 > **namespace**: `Modules.StateControl`
 > **場所**: `Client/Assets/UniModules/Scripts/Modules/StateControl/`（`StateController.cs` / `StateNode.cs` の2ファイル）
-> **Client側使用**: 0ファイル（基盤内使用も0、2026-07時点）
 > **依存**: UniTask / R3 / Extensions（`LifetimeDisposable`）
 
 ## 概要
@@ -11,7 +10,7 @@ enum をキーにした非同期ステートマシン。ステートごとに `E
 
 主要クラス: `StateController<T>`（本体。ノード登録・遷移実行・キャンセル管理・遷移通知）/ `StateNode<T>`（引数なしノード。`Enter` / `Leave` を override）/ `StateNode<T, TArgument>`（引数付きノード）/ `StateArgument`（遷移引数の基底）。
 
-**本プロジェクトでは未使用**（ガード無しでコンパイルはされている）。画面遷移・ゲームフロー等でステートマシンが必要になった場合は、自作する前に本クラスの採用を検討すること。
+シンボルゲート無しでコンパイル対象。画面遷移・ゲームフロー等でステートマシンが必要になった場合の選択肢。
 
 ## 逆引き（〜したい）
 
@@ -35,5 +34,5 @@ enum をキーにした非同期ステートマシン。ステートごとに `E
 
 ## 関連
 
-- [Scene](Scene.md) — 画面（シーン）遷移はこちらの基盤が担当（本モジュールとは独立）
+- [Scene](Scene.md) — 画面（シーン）遷移基盤（本モジュールとは独立）
 - [UniTask](UniTask.md) / [R3Extension](R3Extension.md) — Enter/Leave の非同期基盤・通知基盤

@@ -2,7 +2,6 @@
 
 > **namespace**: `Modules.OffScreenRendering`
 > **場所**: `Client/Assets/UniModules/Scripts/Modules/OffScreenRendering/`
-> **Client側使用**: 0ファイル（2026-07時点。プレハブ/シーンからの参照も無し）
 > **依存**: R3 / Extensions（`UnityUtility`） / uGUI（`RawImage`, `IPointerClickHandler`）
 
 ## 概要
@@ -11,7 +10,7 @@
 
 主要クラス: `RenderTarget`（RenderTexture を生成して同 GameObject の Camera の `targetTexture` に設定）/ `RenderTextureRaycaster`（abstract。クリック位置→描画カメラの Ray に変換し `Raycast(Ray)` を呼ぶ）/ `Collider2DRayCast`（`Physics2D.RaycastAll` でヒットした GameObject 群を通知する具象）。
 
-**コンパイル対象**（シンボルゲート無し・外部SDK不要）で使用可能な状態だが、本プロジェクトでは Client コード・アセットともに未使用。派生クラスは基盤内の `Live2DRaycaster`（[Live2D](Live2D.md)、こちらは実質無効）のみ。
+シンボルゲート無しでコンパイル対象。基盤内の派生クラスは `Live2DRaycaster`（[Live2D](Live2D.md)、`ENABLE_LIVE2D` 定義時のみ有効）のみ。
 
 ## 逆引き（〜したい）
 
@@ -35,6 +34,6 @@
 
 ## 関連
 
-- [Live2D](Live2D.md) — `RenderTextureRaycaster` の派生 `Live2DRaycaster`（ENABLE_LIVE2D 未定義のため実質無効）
+- [Live2D](Live2D.md) — `RenderTextureRaycaster` の派生 `Live2DRaycaster`（`ENABLE_LIVE2D` 定義時のみ有効）
 - [Rendering](Rendering.md) — 描画系ユーティリティ
 - [UI](UI.md) — uGUI 基盤

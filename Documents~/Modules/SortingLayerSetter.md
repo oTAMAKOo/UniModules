@@ -2,7 +2,6 @@
 
 > **namespace**: `Modules.SortingLayerSetter`
 > **場所**: `Client/Assets/UniModules/Scripts/Modules/SortingLayerSetter/`
-> **Client側使用**: 0ファイル（2026-07時点・未使用。prefab / scene からの参照もなし）
 > **依存**: Unity.Linq（LINQ to GameObject） / Extensions / Extensions.Devkit（エディタ）
 
 ## 概要

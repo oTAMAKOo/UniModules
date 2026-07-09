@@ -2,7 +2,6 @@
 
 > **namespace**: `Modules.SpriteAnimation`
 > **場所**: `Client/Assets/UniModules/Scripts/Modules/SpriteAnimation/`
-> **Client側使用**: 0ファイル（2026-07時点。プレハブ/シーンからの参照も無し）
 > **依存**: R3 / Extensions / Modules.Cache（`SpriteAtlasCache`） / UnityEngine.U2D（`SpriteAtlas`）
 
 ## 概要
@@ -11,7 +10,7 @@ SpriteAtlas 内の連番スプライト（`{アニメ名}_0`, `{アニメ名}_1`
 
 主要クラス: `SpriteAnimation`（本体。`Update()` で `UpdateInterval` 秒ごとに次のコマの `Sprite` を `OnUpdateAnimationAsObservable` へ流す。**自分では描画に反映しない**＝購読側が適用する設計）/ `SpriteAnimationForUI`（派生、`[RequireComponent(typeof(Image))]`。`OnEnable` で `Image.sprite` への適用を購読、`playOnEnable` で自動再生も可）。
 
-**コンパイル対象**（シンボルゲート無し・外部SDK不要）で使用可能な状態だが、本プロジェクトでは Client コード・アセットともに未使用。
+シンボルゲート・外部SDK不要でコンパイル対象。
 
 ## 逆引き（〜したい）
 

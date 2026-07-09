@@ -2,7 +2,6 @@
 
 > **namespace**: `Modules.Shaders`（**フォルダ名 `Shader/` と不一致・複数形**）
 > **場所**: `Client/Assets/UniModules/Scripts/Modules/Shader/ShaderSetter/`
-> **Client側使用**: 0ファイル（2026-07時点・未使用。prefab / scene からの参照もなし）
 > **依存**: UnityEngine.UI / Extensions / Extensions.Devkit（エディタ）
 
 ## 概要

@@ -2,7 +2,6 @@
 
 > **namespace**: `Modules.Resolution`
 > **場所**: `Client/Assets/UniModules/Scripts/Modules/Resolution/`
-> **Client側使用**: 2ファイル（2026-07時点: `SceneManager.cs` / `InitializeObject.core.cs`）
 > **依存**: R3 / Extensions（`UnityUtility`, `SingletonMonoBehaviour`, RectTransform拡張） / Unity.Linq / Modules.UI.Extension（`UICanvas`）
 
 ## 概要
@@ -16,7 +15,7 @@
 
 | やりたいこと | 使うもの |
 |---|---|
-| 基準解像度外を黒帯（レターボックス）で隠したい | `LetterBox`（プレハブを生成。Client では `InitializeObject` が生成済み） |
+| 基準解像度外を黒帯（レターボックス）で隠したい | `LetterBox`（プレハブを生成し起動時に1度だけ Instantiate） |
 | RectTransform をセーフエリアぴったりに合わせたい | `SafeAreaAdjuster` をアタッチ |
 | 固定解像度デザインでセーフエリアとレターボックス両方を考慮したい | `FixedResolutionSafeAreaAdjuster` をアタッチ |
 | RectTransform を基準解像度サイズ（中央固定）にしたい | `ReferenceResolutionAdjuster` をアタッチ |
@@ -24,16 +23,16 @@
 
 ## 使い方
 
-- LetterBox の生成（アプリ初期化時に1度だけ。プレハブから `UnityUtility.Instantiate<LetterBox>`）: 実例は `Client/Assets/Scripts/Client/Core/Initialize/InitializeObject/InitializeObject.core.cs` の `CreateLetterBox()`
-- シーン跨ぎの重複管理: `Client/Assets/Scripts/Client/Core/Scene/SceneManager.cs` で `{ typeof(LetterBox), DuplicatedSettings.Default }` を登録（シーン遷移時に重複した LetterBox を自動破棄）
-- `SafeAreaAdjuster` / `FixedResolutionSafeAreaAdjuster` / `ReferenceResolutionAdjuster` は対象の RectTransform にアタッチするだけで動作する（Client 側コードからの参照は無し。プレハブ運用）
+- LetterBox の生成: アプリ初期化時に1度だけ、プレハブから `UnityUtility.Instantiate<LetterBox>` する
+- シーン跨ぎの重複管理: `DuplicatedSettings` に `LetterBox` を登録すればシーン遷移時に重複した LetterBox を自動破棄できる
+- `SafeAreaAdjuster` / `FixedResolutionSafeAreaAdjuster` / `ReferenceResolutionAdjuster` は対象の RectTransform にアタッチするだけで動作する（コード参照は不要。プレハブ運用）
 
 ## 注意点・罠
 
 - 全クラス `[ExecuteAlways]`。エディタの編集モードでも動作し、Adjuster 2種は `DrivenRectTransformTracker` により対象 RectTransform のアンカー等が **Inspector から編集不可（Driven 表示）** になる
-- `LetterBox` はプレハブ前提（帯用 RectTransform を SerializeField で差す）。生成は `InitializeObject.core.cs` が担っており、**新規シーンで独自生成する必要はない**
+- `LetterBox` はプレハブ前提（帯用 RectTransform を SerializeField で差す）
 - `LetterBox` は `CanvasScaler.uiScaleMode == ScaleWithScreenSize` でない場合、自身の GameObject を非アクティブ化して何もしない
-- `LetterBox.StatusBarHeight` は 0 より大きい時のみステータスバー帯を表示（Client 側では未設定 = 0）
+- `LetterBox.StatusBarHeight` は 0 より大きい時のみステータスバー帯を表示
 - `SafeAreaAdjuster` と `FixedResolutionSafeAreaAdjuster` の使い分け: 前者は画面全体（`Screen.width/height`）基準、後者は基準解像度 + Canvas スケール基準でレターボックス領域を考慮する
 - 毎フレーム Apply が走るが差分チェックでスキップされる（`Apply(force: true)` で強制再適用可）。Undo でアンカーが 0 になった場合の再適用ケアも入っている（ソースコメントより）
 - このモジュールは新規実装での再発明が起きやすい（「セーフエリア対応」を自作しがち）。**セーフエリア対応はここにあるものを使う**
