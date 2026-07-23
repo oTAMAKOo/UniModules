@@ -85,7 +85,7 @@ uGUI 標準コンポーネントのラッパー（Extension）と、仮想スク
 ## 注意点・罠
 
 - **`Modules.UI.Extension` の各 UI クラスは abstract**。使う・継承するのは利用側の具象クラス。基盤側を直接継承した新クラスを乱造しない
-- **VirtualScroll は `SetContents()` → `await UpdateContents()` の2段階**。UpdateContents を呼び忘れると何も表示されない。データ変更後も再度 UpdateContents が必要（位置維持は `keepScrollPosition: true`）
+- **VirtualScroll は `SetContents()` → `await UpdateContents()` の2段階**。UpdateContents を呼び忘れると何も表示されない。データ変更後も再度 UpdateContents が必要（位置維持は `keepScrollPosition: true`）。`ScrollPosition` への代入はコンテンツの可動範囲内に自動クランプされる（件数減少で保存位置が範囲外になっても端で止まる。`ScrollType.Loop` は制限なし）
 - **VirtualScroll のセルサイズは固定**。itemPrefab の RectTransform サイズを初回に1度だけ取得する（`itemSize`）。可変高さのリストには使えない
 - itemPrefab には `VirtualScrollItem<T>` 派生コンポーネントを付けておくこと（`UnityUtility.Instantiate<VirtualScrollItem<T>>` で取得される）
 - **セルは使い回される**。`VirtualScrollItem.UpdateContents` では表示状態（active 切替含む）を毎回すべて設定する。前回データの表示が残る事故が典型的バグ。`VirtualScroll<T>.ListItems` で取得できるセルも使い回し分のみ（データ件数分ではない）

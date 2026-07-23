@@ -153,11 +153,11 @@ namespace Modules.UI
                 switch (direction)
                 {
                     case Direction.Vertical:
-                        scrollPosition.y = ScrollEnable() ? value : 0f;
+                        scrollPosition.y = ScrollEnable() ? ClampScrollPosition(value) : 0f;
                         break;
 
                     case Direction.Horizontal:
-                        scrollPosition.x = ScrollEnable() ? value : 0f;
+                        scrollPosition.x = ScrollEnable() ? ClampScrollPosition(value) : 0f;
                         break;
                 }
 
@@ -920,6 +920,33 @@ namespace Modules.UI
             }
 
             return result;
+        }
+
+        /// <summary> スクロール位置をコンテンツの可動範囲内に丸める (ループスクロールは制限なし) </summary>
+        private float ClampScrollPosition(float value)
+        {
+            if (scrollType == ScrollType.Loop){ return value; }
+
+            var contentSize = 0f;
+            var scrollSize = 0f;
+
+            switch (direction)
+            {
+                case Direction.Vertical:
+                    contentSize = scrollRect.content.rect.height;
+                    scrollSize = scrollRectTransform.rect.height;
+                    break;
+
+                case Direction.Horizontal:
+                    contentSize = scrollRect.content.rect.width;
+                    scrollSize = scrollRectTransform.rect.width;
+                    break;
+            }
+
+            // ScrollToItemのクランプと同じ規約 (コンテンツ中央基準の対称レンジ).
+            var limit = Mathf.Max(0f, (contentSize - scrollSize) * 0.5f);
+
+            return Mathf.Clamp(value, -limit, limit);
         }
 
         private async UniTask UpdateItem(VirtualScrollItem<T> item, int index)
