@@ -4,6 +4,7 @@
 using UnityEngine;
 using UnityEngine.UI;
 using System;
+using System.Collections.Generic;
 using Extensions;
 
 namespace Modules.UI.Particle
@@ -48,6 +49,11 @@ namespace Modules.UI.Particle
 
         [NonSerialized]
         private bool initialized = false;
+
+        private UIParticleTrail trailCache = null;
+
+        [NonSerialized]
+        private bool trailCameraWarned = false;
 
         //----- property -----
 
@@ -107,6 +113,8 @@ namespace Modules.UI.Particle
             base.OnDestroy();
 
             UnityUtility.SafeDelete(particleMaterial);
+
+            DeleteTrail();
         }
 
         private void Initialize()
@@ -164,6 +172,8 @@ namespace Modules.UI.Particle
             UpdateRenderingSource();
 
             SetAllDirty();
+
+            UpdateTrail();
         }
 
         private Texture GetMainTexture()
@@ -421,6 +431,145 @@ namespace Modules.UI.Particle
             particleMaterial = null;
             originMaterial = null;
         }
+
+        #region Trail
+
+        /// <summary> Trail描画の更新. TrailModule有効時は隠し子のUIParticleTrailを自動生成して描画する. </summary>
+        private void UpdateTrail()
+        {
+            var particleSystem = GetParticleSystem();
+
+            if (!particleSystem.trails.enabled)
+            {
+                // 生成済みの場合は描画をクリアして待機 (再有効化に備えて破棄はしない).
+                if (trailCache != null){ trailCache.Clear(); }
+
+                return;
+            }
+
+            var trail = GetOrCreateTrail();
+
+            if (trail == null){ return; }
+
+            trail.UpdateTrail(GetBakeCamera(), maskable);
+        }
+
+        /// <summary> 管理下のUIParticleTrailを取得 (未生成時はnull・エディタのデバッグ表示でも使用). </summary>
+        public UIParticleTrail GetTrail()
+        {
+            if (trailCache != null){ return trailCache; }
+
+            UIParticleTrail result = null;
+
+            List<UIParticleTrail> duplicates = null;
+
+            // 直下の子のみ検索 (孫のUIParticleSystemが生成したTrailを誤取得しないため).
+            for (var i = 0; i < transform.childCount; i++)
+            {
+                var trail = UnityUtility.GetComponent<UIParticleTrail>(transform.GetChild(i).gameObject);
+
+                if (trail == null){ continue; }
+
+                if (result == null)
+                {
+                    result = trail;
+                }
+                else
+                {
+                    // リロード等の残留で重複していた場合は最初の1つを採用し残りは破棄対象にする.
+                    if (duplicates == null){ duplicates = new List<UIParticleTrail>(); }
+
+                    duplicates.Add(trail);
+                }
+            }
+
+            if (duplicates != null)
+            {
+                // 走査完了後に破棄 (エディタでは即時破棄となり走査中の子順が変わるため分離する).
+                foreach (var duplicate in duplicates)
+                {
+                    UnityUtility.SafeDelete(duplicate.gameObject);
+                }
+            }
+
+            if (result != null)
+            {
+                // リロードで参照が切れた残留物を再利用するため設定し直す.
+                result.Setup(GetParticleSystem(), GetParticleSystemRenderer());
+            }
+
+            trailCache = result;
+
+            return trailCache;
+        }
+
+        private UIParticleTrail GetOrCreateTrail()
+        {
+            var trail = GetTrail();
+
+            if (trail != null){ return trail; }
+
+            var trailObject = new GameObject("Trail (UIParticleSystem)");
+
+            // Hierarchyに表示せずシーン・プレハブにも保存しない (必要時に自動再生成される).
+            trailObject.hideFlags = HideFlags.HideAndDontSave;
+
+            trailObject.layer = gameObject.layer;
+
+            var trailTransform = trailObject.AddComponent<RectTransform>();
+
+            trailTransform.SetParent(transform, false);
+            trailTransform.anchoredPosition3D = Vector3.zero;
+            trailTransform.localRotation = Quaternion.identity;
+            trailTransform.localScale = Vector3.one;
+
+            // 親にLayoutGroupがある場合にレイアウト対象へ含めない.
+            var layoutElement = trailObject.AddComponent<LayoutElement>();
+
+            layoutElement.ignoreLayout = true;
+
+            trailCache = trailObject.AddComponent<UIParticleTrail>();
+
+            trailCache.Setup(GetParticleSystem(), GetParticleSystemRenderer());
+
+            return trailCache;
+        }
+
+        private void DeleteTrail()
+        {
+            if (trailCache == null){ return; }
+
+            UnityUtility.SafeDelete(trailCache.gameObject);
+
+            trailCache = null;
+        }
+
+        /// <summary> Trailベイク用カメラを取得. </summary>
+        private Camera GetBakeCamera()
+        {
+            var currentCanvas = canvas;
+
+            if (currentCanvas == null){ return null; }
+
+            var rootCanvas = currentCanvas.rootCanvas;
+
+            // Screen Space - Overlayはベイク用カメラが存在しないためTrail描画不可.
+            if (rootCanvas.renderMode == RenderMode.ScreenSpaceOverlay)
+            {
+                if (!trailCameraWarned)
+                {
+                    trailCameraWarned = true;
+
+                    Debug.LogError("UIParticleTrail requires Screen Space - Camera or World Space canvas. (Screen Space - Overlay is not supported)");
+                }
+
+                return null;
+            }
+
+            return rootCanvas.worldCamera;
+        }
+
+        #endregion
 
         #region TextureSheetAnimation
 

@@ -80,6 +80,7 @@ uGUI 標準コンポーネントのラッパー（Extension）と、仮想スク
 - **SpriteLoader（外部アセットの画像表示）**: `await loader.SetSprite(loadPath)` / `await loader.SetSprite(atlasLoadPath, spriteName)`
 - **Focus（チュートリアルの最前面フォーカス）**: `FocusTarget` を対象 UI に付与し（FocusId は Inspector で GUID 自動生成）、`FocusManager.SetFocusCanvas(基準Canvas)` を先に設定してから `AddFocus(focusId)` / `RemoveAllFocus()` で制御
 - **ProgressBar（ゲージ）**: `gauge.FillAmount` に 0〜1 を設定
+- **UIParticleSystem（ParticleSystem を uGUI 上に描画）**: ParticleSystem と同じ GameObject に付与するだけ（`ParticleSystemRenderer` は自動無効化され CanvasRenderer 描画に切り替わる）。TrailModule が有効な場合は隠し子の `UIParticleTrail`（`HideAndDontSave`・Hierarchy 非表示）が自動生成され Trail も描画される。子 ParticleSystem がある複合エフェクトは各 ParticleSystem に個別に付与する。再生終了の await・一括制御は [Particle](Particle.md) の `ParticlePlayer` を併用する
 
 ## 注意点・罠
 
@@ -98,6 +99,9 @@ uGUI 標準コンポーネントのラッパー（Extension）と、仮想スク
 - Focus 使用前に `FocusManager.SetFocusCanvas(canvas)` が必須（未設定だと Focus が適用されない）
 - `UIImage` / `UIRawImage` / `DummySprite` / `DummyText` の `assetGuid`/`spriteId` はエディタ専用ダミーアセット機構。ビルドには含まれず、ダミー登録済み箇所は実行時に画像未設定なら自動非表示になる。実行時の画像は SpriteLoader 等で設定する
 - SpriteLoader のロードパスは ExternalAssets の規約に従う。`OnDestroy` でキャッシュを自動破棄するので手動解放は不要
+- **UIParticleSystem の Trail 描画は Canvas の RenderMode が Screen Space - Camera / World Space の場合のみ**（Trail メッシュのベイクにカメラが必須のため）。Screen Space - Overlay ではエラーログを出し Trail のみ描画されない（粒子本体は描画される）
+- **`UIParticleTrail` は UIParticleSystem が自動生成する内部コンポーネント**。直接 AddComponent・設定しない（インスペクタ設定項目なし）。描画順は粒子本体の直後（手前）固定。生成状態は UIParticleSystem のインスペクタで確認できる
+- **隠し子の `UIParticleTrail` は Hierarchy に表示されないが `childCount` / `GetChild` / `GetComponentsInChildren` には含まれる**。子を走査・全削除する処理は隠し子も対象になる（削除されても次の更新で自動再生成されるため実害はないが、子の数を前提とするロジックには注意）
 - クラス名とファイル名の不一致が2件: `DragTarget.cs` → クラス `DragObject`、`ButtonInteractablemageSprite.cs` → クラス `ButtonInteractableImageSprite`（namespace `Modules.UI.Reactive`）。grep 時に注意
 - 本モジュールの Observable は **R3**（`R3.Observable<T>` / `R3.Subject<T>`）。UniRx の `IObservable<T>` ではない。購読は `.AddTo(this)` で自動解除する
 

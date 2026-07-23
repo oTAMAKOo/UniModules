@@ -1,4 +1,5 @@
 ﻿
+using UnityEngine;
 using UnityEditor;
 using Extensions.Devkit;
 
@@ -50,6 +51,31 @@ namespace Modules.UI.Particle
                 UnityEditorUtility.RegisterUndo(instance);
 
                 instance.UseOverrideMaterial = useOverrideMaterial;
+            }
+
+            DrawTrailStatus(instance);
+        }
+
+        // Trail描画状態の表示 (隠し子のUIParticleTrailはHierarchyに出ないためここで可視化する).
+        private void DrawTrailStatus(UIParticleSystem instance)
+        {
+            var particleSystem = instance.ParticleSystem;
+
+            if (particleSystem == null){ return; }
+
+            if (!particleSystem.trails.enabled){ return; }
+
+            EditorGUILayout.Space(2f);
+
+            var trail = instance.GetTrail();
+
+            if (trail != null)
+            {
+                EditorGUILayout.HelpBox($"UIParticleTrail : Generated (vertices : {trail.GetVertexCount()})", MessageType.Info);
+            }
+            else
+            {
+                EditorGUILayout.HelpBox("UIParticleTrail : Not generated (auto generated on update)", MessageType.None);
             }
         }
     }
