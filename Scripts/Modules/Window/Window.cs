@@ -70,27 +70,44 @@ namespace Modules.Window
 
             if (ignoreOpenStatus.Contains(Status)) { return; }
 
+            var prevStatus = Status;
+
             Status = WindowStatus.Prepare;
 
             var inputBlock = blockInput ? new BlockInput() : null;
 
-            await Prepare();
-
-            if (cancelToken.IsCancellationRequested){ return; }
-
-            UnityUtility.SetActive(gameObject, true);
-
-            await OnOpen();
-
-            if (cancelToken.IsCancellationRequested){ return; }
-
-            if (inputBlock != null)
+            try
             {
-                inputBlock.Dispose();
-                inputBlock = null;
-            }
+                await Prepare();
 
-            Status = WindowStatus.Opened;
+                if (cancelToken.IsCancellationRequested){ return; }
+
+                UnityUtility.SetActive(gameObject, true);
+
+                await OnOpen();
+
+                if (cancelToken.IsCancellationRequested){ return; }
+
+                Status = WindowStatus.Opened;
+            }
+            catch (Exception)
+            {
+                // Prepare / OnOpen が失敗した場合は Status を戻して再度開けるようにする.
+                // (Prepare のまま残すと ignoreOpenStatus に引っかかり二度と開けなくなる)
+                Status = prevStatus;
+
+                UnityUtility.SetActive(gameObject, false);
+
+                throw;
+            }
+            finally
+            {
+                if (inputBlock != null)
+                {
+                    inputBlock.Dispose();
+                    inputBlock = null;
+                }
+            }
 
             if (onOpen != null)
             {
@@ -108,23 +125,38 @@ namespace Modules.Window
 
             var inputBlock = blockInput ? new BlockInput() : null;
 
-            await OnClose();
-
-            if (cancelToken.IsCancellationRequested){ return; }
-
-            UnityUtility.SetActive(gameObject, false);
-
-            if (inputBlock != null)
+            try
             {
-                inputBlock.Dispose();
-                inputBlock = null;
+                await OnClose();
+
+                if (cancelToken.IsCancellationRequested){ return; }
+
+                UnityUtility.SetActive(gameObject, false);
+            }
+            catch (Exception)
+            {
+                // OnClose が失敗した場合も閉じた状態へ確定させる.
+                // (Close のまま残すと Open も Close も受け付けなくなり、以後そのウィンドウを操作できなくなる)
+                UnityUtility.SetActive(gameObject, false);
+
+                Status = WindowStatus.Closed;
+
+                throw;
+            }
+            finally
+            {
+                if (inputBlock != null)
+                {
+                    inputBlock.Dispose();
+                    inputBlock = null;
+                }
             }
 
             if (onClose != null)
             {
                 onClose.OnNext(Unit.Default);
             }
-                        
+
             Status = WindowStatus.Closed;
 
             if (deleteOnClose)

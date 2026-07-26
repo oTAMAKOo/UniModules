@@ -89,7 +89,7 @@ namespace Modules.Window
                 throw new ArgumentException("Invalid popupWindow");
             }
 
-            // Open済みのWindowは登録のみ行う（Stashからの復元等でOpenアニメーション・通知を再実行しないため）.
+            // Open済みのWindowは登録と再表示のみ行う（Stashからの復元等でOpenアニメーション・通知を再実行しないため）.
             var alreadyOpened = popupWindow.Status == Window.WindowStatus.Opened;
 
             if (!alreadyOpened)
@@ -108,7 +108,14 @@ namespace Modules.Window
 
             Instance.UpdateContents();
 
-            if (alreadyOpened){ return; }
+            if (alreadyOpened)
+            {
+                // Stash退避等で非表示のまま Status が Opened で残っている場合は表示状態へ戻す.
+                // (Window.Open は Status が Opened だと即 return するため、ここで戻さないと二度と表示されない)
+                UnityUtility.SetActive(popupWindow, true);
+
+                return;
+            }
 
             if (Instance.onOpenWindow != null)
             {

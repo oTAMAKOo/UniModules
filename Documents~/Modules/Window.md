@@ -37,7 +37,8 @@ Window.Open(blockInput = true):
   → await Prepare()          ← override: 開く前のデータ取得・View更新（GameObjectはまだ非アクティブ）
   → SetActive(true)
   → await OnOpen()           ← override: 開くアニメ等
-  → 入力ロック解除 → Status=Opened → OnOpenAsObservable 発火
+  → Status=Opened → 入力ロック解除 → OnOpenAsObservable 発火
+  ※ Prepare/OnOpen が例外を投げた場合は Status を実行前の値へ戻し SetActive(false) して再スロー（Prepare のまま固着させない）
 
 Window.Close(blockInput = true):
   [Opened のみ実行]
@@ -45,19 +46,21 @@ Window.Close(blockInput = true):
   → await OnClose()          ← override: 閉じるアニメ等
   → SetActive(false) → 入力ロック解除 → OnCloseAsObservable 発火 → Status=Closed
   → DeleteOnClose(デフォルトtrue) なら GameObject 破棄
+  ※ OnClose が例外を投げた場合も SetActive(false) + Status=Closed まで確定させてから再スロー（Close のまま固着させない）
+  ※ 入力ロックは Open/Close とも finally で解除される（例外・キャンセルでもリークしない）
 
 PopupManager.Open(window, isGlobal = false, inputProtect = true):
   SetActive(false) → Register{Scene|Global}（Popup親へ SetParent + SetLayer + Close購読で自動リスト除去）
   → DisplayPriority 昇順ソート → UpdateContents()（siblingIndex再配置・TouchBlockを最前面ウィンドウ直下へ・FadeIn・Current更新）
   → OnOpenWindowAsObservable 発火 → await window.Open(inputProtect) → OnOpenedWindowAsObservable 発火
-  ※ Status==Opened のwindowを渡すと登録のみ（最前面化・アニメ再実行なし。Stash復元用）
+  ※ Status==Opened のwindowを渡すと登録 + SetActive(true) のみ（Openアニメ・通知は再実行しない。Stash復元用）
 ```
 
 ## 注意点・罠
 
 - **DeleteOnClose はデフォルト true**。`Close()` で GameObject ごと破棄される。使い回す場合は Open 前に `DeleteOnClose = false`。破棄後のフィールド参照に注意
 - **`Wait()` は Open 前に呼ぶと即抜けする**（非アクティブ判定のため）。必ず `await PopupManager.Open(window)` → `await window.Wait()` の順
-- **Open/Close は Status ガードで多重呼び出しを無視する**。Opened 中の再 `PopupManager.Open()` は「最前面化（再登録）」になり、Openアニメ・onOpen 通知は再実行されない
+- **Open/Close は Status ガードで多重呼び出しを無視する**。Opened 中の再 `PopupManager.Open()` は「最前面化（再登録）+ 再表示」になり、Openアニメ・onOpen 通知は再実行されない。`Status` と GameObject のアクティブ状態が乖離するのは Stash 退避中のみで、その状態で `PopupManager.Open()` すると表示状態へ復帰する（`window.Open()` を直接呼んでも Status ガードで無視されるだけなので復帰しない）
 - **シーン Leave 時に ScenePopups は `Clean()` で即破棄される**（Close を通らない = OnClose も OnCloseAsObservable も発火しない）。シーンを跨ぎたいものは `isGlobal: true`、加算遷移で戻るなら PopupStashManager
 - **Instantiate の親は null でよい**。`PopupManager.Open` が Popup 親へ SetParent + SetLayer する。逆に PopupManager を通さず自前で `window.Open()` だけ呼ぶと、親・レイヤー・TouchBlock・BackKey 対象（Current）管理から外れる
 - **Open/Close 実行中は BlockInput で全入力ロック**。`Prepare()` に通信等の長い処理を書くとその間タップ不能になる。ロック不要なら `Open(blockInput: false)`
@@ -67,7 +70,7 @@ PopupManager.Open(window, isGlobal = false, inputProtect = true):
 - **`CreateInstance()` は SerializeField が空のインスタンスを作ってしまうため使わない**。必ずプレハブから `Instantiate` → `Initialize()`
 - **Stash は ScenePopups のみ対象**（Global は退避されない）。退避中の Window は所有シーンの Leave 時に自動破棄される（戻らず別シーンへ抜けた場合のリーク対策が組み込み済み）
 - `Current` は Global 優先（GlobalPopups にあればそちらの最前面を返す。無ければ ScenePopups の最前面、どちらも無ければ null）
-- Window の GameObject が Open/Close 途中で破棄されると入力ロック解除が GC（Scope のファイナライザ）任せになる。演出中の強制破棄は避け、`Close()` を経由する
+- Window の GameObject が Open/Close 途中で破棄された場合、入力ロックは finally で解除されるが `Status` は途中値のまま残る。演出中の強制破棄は避け、`Close()` を経由する
 
 ## 関連
 
