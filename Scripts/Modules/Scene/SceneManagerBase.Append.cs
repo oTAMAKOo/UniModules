@@ -395,16 +395,21 @@ namespace Modules.Scene
                 diagnostics.Finish(TimeDiagnostics.Measure.Leave);
 
                 sceneInstance.Disable();
-                
-                UnloadAppendScene(sceneInstance);
-
-                if (cancelToken.IsCancellationRequested){ return; }
 
                 //====== Scene Active ======
+
+                // ここでキャンセル判定を行わない.
+                // 加算シーンのアンロードはActiveSceneを戻り先へ戻した後にしか成功しないため、
+                // 途中で抜けると加算シーンがloadedScenesに残り続ける (キャンセル判定はアンロード後に行う).
 
                 if (scene == null)
                 {
                     Debug.LogError($"UnloadTransition target scene not found.\n{transitionScene}");
+
+                    // 戻り先が無いとActiveSceneを戻せずアンロードも拒否されるが、管理情報は解除しておく.
+                    UnloadAppendScene(sceneInstance);
+
+                    return;
                 }
 
                 TransitionTarget = scene.Identifier;
@@ -413,6 +418,14 @@ namespace Modules.Scene
 
                 // 戻り先シーンをActiveSceneに設定.
                 SetSceneActive(scene.GetScene());
+
+                // 加算シーンをアンロード.
+                // ActiveSceneを戻り先へ戻した後に実行する。加算シーンがActiveSceneのままだと
+                // UnloadSceneがメインシーン扱いでアンロードを拒否し、loadedScenesに残り続けるため
+                // 次回の同一シーン遷移でインスタンスが再利用されInitializeがスキップされる.
+                UnloadAppendScene(sceneInstance);
+
+                if (cancelToken.IsCancellationRequested){ return; }
 
                 // 加算シーンアンロード遷移通知.
                 if (onUnloadTransition != null)
