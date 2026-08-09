@@ -49,7 +49,16 @@ namespace Modules.Devkit.TextMeshPro
 
             var fontAssets = UnityEditorUtility.FindAssetsByType<TMP_FontAsset>($"t:{typeof(TMP_FontAsset).FullName}");
 
-            var targetFontAssets = fontAssets.Where(x => TargetModeTable.Contains(x.atlasPopulationMode)).ToArray();
+            // グリフ未生成のフォントは対象外.
+            // TMP_FontAsset.ClearFontAssetData は中身が空でも無条件にアセットをDirty化して保存させるため、
+            // 除外しないとフォーカス切替の度に不要な再インポートが発生する.
+            var targetFontAssets = fontAssets
+                .Where(x => TargetModeTable.Contains(x.atlasPopulationMode))
+                .Where(x => !x.glyphTable.IsEmpty())
+                .ToArray();
+
+            // 対象が無い場合はAssetEditingScopeに入らない（StopAssetEditingでRefreshが走るのを避ける）.
+            if (targetFontAssets.IsEmpty()){ return; }
 
             using (new AssetEditingScope())
             {

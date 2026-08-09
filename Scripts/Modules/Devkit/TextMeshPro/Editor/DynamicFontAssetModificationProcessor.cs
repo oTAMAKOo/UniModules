@@ -38,24 +38,32 @@ namespace Modules.Devkit.TextMeshPro
 
         private static async UniTask DelayCleanTMPFontAsset(TMP_FontAsset fontAsset)
         {
+            // 処理中の多重実行防止（ClearFontAssetData後のSaveAssetIfDirtyで再入するため）.
             if (waitForProcess.Contains(fontAsset)){ return; }
 
             waitForProcess.Add(fontAsset);
 
-            if (fontAsset.glyphTable.IsEmpty()){ return; }
-
-            if (fontAsset.atlasPopulationMode != AtlasPopulationMode.Dynamic){ return; }
-
-            await UniTask.Delay(TimeSpan.FromSeconds(0.5f), DelayType.Realtime);
-
-            using (new AssetEditingScope())
+            // 早期returnでもwaitForProcessから必ず除外する.
+            // 除外漏れがあると以降そのフォントはContainsで弾かれ続け、クリーンアップが二度と動かなくなる.
+            try
             {
-                fontAsset.ClearFontAssetData(true);
+                if (fontAsset.glyphTable.IsEmpty()){ return; }
 
-                AssetDatabase.SaveAssetIfDirty(fontAsset);
+                if (fontAsset.atlasPopulationMode != AtlasPopulationMode.Dynamic){ return; }
+
+                await UniTask.Delay(TimeSpan.FromSeconds(0.5f), DelayType.Realtime);
+
+                using (new AssetEditingScope())
+                {
+                    fontAsset.ClearFontAssetData(true);
+
+                    AssetDatabase.SaveAssetIfDirty(fontAsset);
+                }
             }
-
-            waitForProcess.Remove(fontAsset);
+            finally
+            {
+                waitForProcess.Remove(fontAsset);
+            }
         }
     }
 } 
