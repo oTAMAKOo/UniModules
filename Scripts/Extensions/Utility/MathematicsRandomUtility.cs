@@ -45,6 +45,7 @@ namespace Extensions
             return Range(int.MinValue, int.MaxValue);
         }
 
+        /// <summary> min ~ max の範囲でランダムな整数を取得 (max を含む).</summary>
         public static int RandomInRange(int min, int max)
         {
             return Range(min, max + 1);
@@ -65,6 +66,7 @@ namespace Extensions
             return Range(float.MinValue, float.MaxValue);
         }
 
+        /// <summary> min ~ max の範囲でランダムな実数を取得 (max は含まない).</summary>
         public static float RandomInRange(float min, float max)
         {
             return Range(min, max);

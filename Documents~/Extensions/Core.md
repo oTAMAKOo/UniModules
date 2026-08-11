@@ -90,6 +90,7 @@ GameObject 操作の安全ラッパー（`UnityUtility`）を提供する。新�
 - **`Editor/` サブフォルダはエディタ専用**（各属性の PropertyDrawer、`PrefabPropertyDrawer`、`GitUtility`、`SerializationFileUtility`、`LockReloadAssembliesScope`、`DiisplayProgressScope`）。ランタイムコードから参照しない。`PrefabPropertyDrawer` のみ namespace が `Extensions.Devkit`。
 - **`LabelAttribute` は PropertyAttribute ではない**: インスペクタ表示用ではなく、`.ToLabelName()`（`Methods/EnumExtensions.cs`）で enum の表示名を取る仕組み。
 - **乱数の使い分け**: リプレイ整合性が必要な箇所は `MathematicsRandomUtility`、それ以外の汎用用途は `RandomUtility`。どちらもシード設定可。
+- **`RandomInRange` の範囲仕様**: int 版は max を**含む**（[min, max]）ため呼び出し側での `+ 1` は不要。float / double 版は max を含まない。
 - `DiisplayProgressScope` はクラス名が typo（Diisplay）のまま。grep 時に注意。
 
 ## 関連
