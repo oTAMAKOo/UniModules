@@ -38,6 +38,7 @@
 - `Enable = false` のまま `Set()` すると **-1 が返り登録されない**
 - 発火時刻が `CurrentTime` より過去の場合はエラーログを出してスキップされる（例外にはならない）
 - Android はチャンネル未登録だと通知が出ない（`RegisterChannel` は AddSchedule 前に必須）。iOS はバッジをレジューム時に 0 リセット
+- Android のアイコンは `Info` の既定値が `notify_icon_small` / `notify_icon_large`。利用側プロジェクトの `ProjectSettings/NotificationsSettings.asset` の `DrawableResources` に**同じ Id で登録**しないと解決されない（別 Id で登録する場合は `Info.SmallIconResource` / `LargeIconResource` を上書きする）
 
 ## 関連
 

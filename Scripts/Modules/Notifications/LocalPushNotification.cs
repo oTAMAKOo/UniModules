@@ -76,7 +76,7 @@ namespace Modules.Notifications
                 // 過去に登録した通知を削除.
                 if (prev != value)
                 {
-                    Clear();
+                    Clear(true);
                 }
             }
         }
@@ -160,9 +160,12 @@ namespace Modules.Notifications
             notifications.Clear();
         }
         /// <summary> 通知をすべてクリア </summary>
-        private void Clear()
+        /// <param name="force"> 通知無効時も強制的にクリアするか </param>
+        private void Clear(bool force = false)
         {
-            if (!initialized || !enable) { return; }
+            if (!initialized) { return; }
+
+            if (!enable && !force) { return; }
 
             #if (UNITY_ANDROID || UNITY_IOS) && !UNITY_EDITOR
 

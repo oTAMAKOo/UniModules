@@ -4,7 +4,6 @@
 using UnityEngine;
 using Unity.Notifications.Android;
 using System;
-using System.Linq;
 using Cysharp.Threading.Tasks;
 using Extensions;
 
@@ -13,15 +12,6 @@ namespace Modules.Notifications
     public abstract partial class LocalPushNotification<Tinstance>
     {
         //----- params -----
-
-        private sealed partial class Prefs
-        {
-            public static int[] notificationKeys
-            {
-                get { return SecurePrefs.Get<int[]>("NotificationKeys"); }
-                set { SecurePrefs.Set<int[]>("NotificationKeys", value); }
-            }
-        }
 
         //----- field -----
 
@@ -86,30 +76,9 @@ namespace Modules.Notifications
                     Number = info.BadgeCount,
                 };
 
-                var status = AndroidNotificationCenter.CheckScheduledNotificationStatus(info.Identifier);
-
-                UnityEngine.Debug.Log(status);
-
-                // プッシュ通知はすでに登録済み.
-                if (status == NotificationStatus.Scheduled)
-                {
-                    AndroidNotificationCenter.SendNotification(notification, channelId);
-
-                    Debug.LogWarning("Replace the currently scheduled notification with a new notification");
-                }
-                // プッシュ通知はすでに通知済み.
-                else if (status == NotificationStatus.Delivered)
-                {
-                    AndroidNotificationCenter.CancelNotification(info.Identifier);
-                }
-                // プッシュ通知は不明な状況.
-                else if (status == NotificationStatus.Unknown)
-                {
-                    AndroidNotificationCenter.SendNotification(notification, channelId);
-                }
+                // 識別子を指定して登録.
+                AndroidNotificationCenter.SendNotificationWithExplicitID(notification, channelId, info.Identifier);
             }
-
-            Prefs.notificationKeys = notifications.Values.Select(x => x.Identifier).ToArray();
         }
 
         private void ClearNotifications()
