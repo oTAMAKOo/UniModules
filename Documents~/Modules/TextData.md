@@ -56,7 +56,13 @@ TextData/
    - 配信: 配信用出力先に `TextData-{lang}.asset`（**enum は生成されない**。ExternalAsset として配信）
 4. テキストは生成時に AES 暗号化されアセットへ格納。実行時は参照時に遅延復号
 
-カテゴリ（シート）を追加/削除すると enum ファイルも自動生成/自動削除される。テキスト Guid が重複していると Generate がエラーログを出して中断する。
+カテゴリ（シート）を追加/削除すると enum ファイルも自動生成/自動削除される。
+
+Guid と ID名 の重複は Export 時に処理される:
+
+- **Guid 重複（行コピー等）**: 後発レコードへ新しい Guid を自動発行する。出力済み yaml でその Guid を保有していたレコードが元の Guid を保持するため、既存の `TextSetter` 参照は壊れない。再発行内容は警告として出力される
+- **同一シート内の ID名 重複**: Export がエラー終了し、yaml は更新されない（enum が同名で2つ生成されるのを防ぐ）。Excel 側の ID名 を修正する
+- Generate 側にも同じ2種の検証があり、検出時はエラーログを出して中断する（yaml を直接編集した場合の防御）
 
 ## 注意点・罠
 
@@ -70,6 +76,8 @@ TextData/
 - **`TextData.Instance` のコンストラクタは private**: `Singleton<T>` 経由（`Instance` 初回アクセスで生成）。`CreateInstance()` 呼び出しは不要
 - **配信（External）テキストに enum はない**: `ExternalSetting` に scriptFolder 自体がなく生成対象外。必ず文字列キーでアクセス
 - **Editor の自動更新**: Excel 保存だけで yaml/アセット/enum まで自動更新される（`TextDataAssetUpdater`、ProjectPrefs `autoUpdate` 既定 true）。Excel が開かれていても更新は走るが、Import ボタンはファイルロック中無効
+- **Export は Excel の ID 列（Guid）へ書き戻さない**: Guid の正本は yaml 側。Excel の ID 列が空でも、出力済み yaml と ID名 が一致すれば Guid が復元される（未 Import でも Guid が変わらないようにする仕様）。Excel の ID 列へ反映するには Import を実行する
+- **変換ツールの出力の扱い**: エラー・警告は標準エラー出力に出る。Unity 側は ExitCode != 0 なら `Debug.LogError`、正常終了時に警告があれば `Debug.LogWarning` を出す
 - モジュールの Rx は **R3**（`Observable<Unit>`）。UniRx の `IObservable` ではない点に注意
 
 ## 関連

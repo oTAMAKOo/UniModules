@@ -193,6 +193,31 @@ namespace Modules.TextData.Editor
                             logBuilder.AppendLine($"SheetName : {item.Item1.sheetName}, EnumName : {item.Item2.enumName}");
                         }
 
+                        logBuilder.AppendLine();
+                        logBuilder.AppendLine("Run excel export to reassign new guid.");
+
+                        Debug.LogError(logBuilder.ToString());
+
+                        hasError = true;
+                    }
+                }
+
+                //----- 同じシート内に同名のEnum名が存在しないか検証 -----
+
+                foreach (var item in contentsInfo.sheetDatas)
+                {
+                    var enumNameGroups = item.records.GroupBy(x => x.enumName).Where(x => 1 < x.Count());
+
+                    foreach (var group in enumNameGroups)
+                    {
+                        logBuilder.Clear();
+
+                        logBuilder.AppendLine($"Contents Duplication Enum Name : {group.Key}");
+                        logBuilder.AppendLine();
+                        logBuilder.AppendLine($"SheetName : {item.sheetName}");
+                        logBuilder.AppendLine();
+                        logBuilder.AppendLine("Fix duplicated id name in excel.");
+
                         Debug.LogError(logBuilder.ToString());
 
                         hasError = true;

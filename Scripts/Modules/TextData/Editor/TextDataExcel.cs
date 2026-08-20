@@ -1,5 +1,4 @@
 
-using System;
 using System.IO;
 using System.Text;
 using System.Threading.Tasks;
@@ -69,20 +68,14 @@ namespace Modules.TextData.Editor
         {
             var result = await ExecuteProcess(source, Mode.Import, displayConsole);
 
-            if (result.Item1 != 0)
-            {
-                Debug.LogError(result.Item2);
-            }
+            OutputResultLog(Mode.Import, result);
         }
 
         public static async Task Export(TextDataSource source, bool displayConsole)
         {
             var result = await ExecuteProcess(source, Mode.Export, displayConsole);
 
-            if (result.Item1 != 0 && !string.IsNullOrEmpty(result.Item2))
-            {
-                Debug.LogError(result.Item2);
-            }
+            OutputResultLog(Mode.Export, result);
         }
 
         public static bool IsExcelFileLocked(TextDataSource source)
@@ -94,7 +87,7 @@ namespace Modules.TextData.Editor
             return FileUtility.IsFileLocked(editExcelPath) ;
         }
 
-        private static async Task<Tuple<int, string>> ExecuteProcess(TextDataSource source, Mode mode, bool displayConsole)
+        private static async Task<ProcessExecute.Result> ExecuteProcess(TextDataSource source, Mode mode, bool displayConsole)
         {
             var config = TextDataConfig.Instance;
 
@@ -131,9 +124,39 @@ namespace Modules.TextData.Editor
                 }
             }
 
-            var result = await processExecute.StartAsync();
+            return await processExecute.StartAsync();
+        }
 
-            return Tuple.Create(result.ExitCode, result.Error);
+        /// <summary> 変換ツールの実行結果を出力 </summary>
+        private static void OutputResultLog(Mode mode, ProcessExecute.Result result)
+        {
+            if (result.ExitCode != 0)
+            {
+                var builder = new StringBuilder();
+
+                builder.AppendFormat("TextData excel {0} failed. (ExitCode : {1})", mode, result.ExitCode).AppendLine();
+
+                if (!string.IsNullOrEmpty(result.Error))
+                {
+                    builder.AppendLine().AppendLine(result.Error);
+                }
+
+                if (!string.IsNullOrEmpty(result.Output))
+                {
+                    builder.AppendLine().AppendLine(result.Output);
+                }
+
+                Debug.LogError(builder.ToString());
+
+                return;
+            }
+
+            // 変換ツールの警告は標準エラー出力に出力される.
+
+            if (!string.IsNullOrEmpty(result.Error))
+            {
+                Debug.LogWarning(result.Error);
+            }
         }
     }
 }
