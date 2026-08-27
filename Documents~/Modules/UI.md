@@ -8,7 +8,7 @@
 
 uGUI 標準コンポーネントのラッパー（Extension）と、仮想スクロールリスト・スプライトローダー・レイアウト補助・チュートリアル用フォーカス等の UI 基盤群。
 イベントは全て R3 の `Observable<T>` を `OnXxxAsObservable()` で公開する共通パターン。
-主要クラス: Extension（uGUI ラッパーの abstract 基底群）/ `VirtualScroll<T>`・`GridVirtualScroll<T>`（仮想スクロール）/ `ImageSpriteLoader`・`ImageAtlasSpriteLoader`（外部アセット画像）/ `FocusManager`+`FocusTarget`（最前面フォーカス）/ `ProgressBar`・`GraphicCast` 等の単機能コンポーネント多数（逆引き参照）。
+主要クラス: Extension（uGUI ラッパーの abstract 基底群）/ `VirtualScroll<T>`・`GridVirtualScroll<T>`（仮想スクロール）/ `ImageSpriteLoader`・`ImageAtlasSpriteLoader`（外部アセット画像）/ `FocusManager`+`FocusTarget`（最前面フォーカス）/ `ProgressBar`+`SlicedFillGraphic`（ゲージ）・`GraphicCast` 等の単機能コンポーネント多数（逆引き参照）。
 
 **最重要**: `Modules.UI.Extension` の各クラス（`UIButton` 等）は abstract。利用側は具象クラスを実装して使う。
 `VirtualScroll` / `ProgressBar` 等の Modules.UI 直下クラスは `using Modules.UI;` で使う。
@@ -28,6 +28,7 @@ uGUI 標準コンポーネントのラッパー（Extension）と、仮想スク
 | 外部アセットの Sprite を Image に表示 | `ImageSpriteLoader.SetSprite(loadPath)` |
 | SpriteAtlas 内の Sprite を Image に表示 | `ImageAtlasSpriteLoader.SetSprite(atlasLoadPath, spriteName)` |
 | HP バー等のゲージ | `ProgressBar.FillAmount` |
+| Sliced（9スライス）のままゲージにする | `ProgressBar`(FillMode=SlicedFill) + `SlicedFillGraphic` |
 | チュートリアルで UI を最前面フォーカス | `FocusManager.AddFocus(focusId)` + `FocusTarget`（対象に付与） |
 | スクロール位置を一時固定 / 先頭に戻す | `UIScrollView.LockPosition()` / `ResetPosition()` |
 | テキスト等の自動サイズに上限を付ける | `ContentSizeFitterMaxWidth` / `ContentSizeFitterMaxHeight` |
@@ -68,7 +69,8 @@ uGUI 標準コンポーネントのラッパー（Extension）と、仮想スク
 | `TMP_Dropdown` | `UIDropdown` | `OnChangeAsObservable()` |
 | `Scrollbar` | `UIScrollbar` | ラッパーのみ |
 | `Canvas`（ルート） | `UICanvas` | `UICanvasCamera` の自動割当・CanvasScaler 自動設定 |
-| `Image`(type=Filled) でゲージ自作 | `ProgressBar` | Filled/Resize/Sprites の3モード・ステップ対応 |
+| `Image` でゲージ自作 | `ProgressBar` | Filled/Resize/Sprites/SlicedFill の4モード・ステップ対応 |
+| `Image`(type=Sliced) のゲージをカット | `SlicedFillGraphic` | 生成済みメッシュを塗り量でカット（border・絵柄を引き伸ばさない） |
 | 透明 `Image` でタッチブロック | `GraphicCast` | 頂点を生成しない（描画コストゼロ） |
 | `LayoutGroup` で数百件のリスト | **禁止** → `VirtualScroll<T>` | セル使い回しで生成数を画面内+α に抑える |
 
@@ -79,12 +81,21 @@ uGUI 標準コンポーネントのラッパー（Extension）と、仮想スク
 - **GridVirtualScroll（グリッドリスト）**: 行 View は `GridVirtualScrollItem<データ型, 要素View型>` を継承し、要素1個分の更新（`UpdateContents(index, content, element, token)`）だけ書く。`elementPrefab` / `elementParent`（行内の親）は Inspector で設定。列数は Inspector の `lineElementCount` か `SetLineElementCount()`。呼び出し側は同じく `SetContents` → `await UpdateContents(keepScrollPosition)`（タブ切替時などは true で位置維持）
 - **SpriteLoader（外部アセットの画像表示）**: `await loader.SetSprite(loadPath)` / `await loader.SetSprite(atlasLoadPath, spriteName)`
 - **Focus（チュートリアルの最前面フォーカス）**: `FocusTarget` を対象 UI に付与し（FocusId は Inspector で GUID 自動生成）、`FocusManager.SetFocusCanvas(基準Canvas)` を先に設定してから `AddFocus(focusId)` / `RemoveAllFocus()` で制御
-- **ProgressBar（ゲージ）**: `gauge.FillAmount` に 0〜1 を設定
+- **ProgressBar（ゲージ）**: `gauge.FillAmount` に 0〜1 を設定。表示方法は `FillMode` で選ぶ
+  - `Filled`: `Image.fillAmount` を書く。**Image.type = Filled 必須**（Sliced では fillAmount が無視される）。9スライスの border は無視され Sprite 全体が引き伸ばされる
+  - `Resize`: 対象 RectTransform の幅を変える。`FillSizing.Parent`（親幅基準）/ `Fixed`（Min/Max Width 基準）。pivot.x = 0 でないと pivot を基準に伸縮する。幅が Sprite の左右 border 合計を下回ると Unity が border を縮小するため端が潰れ、長手方向の絵柄も圧縮される
+  - `Sprites`: 塗り量に応じて `Image.overrideSprite` を差し替える（段階表示）
+  - `SlicedFill`: `SlicedFillGraphic` に塗り量を渡す。**Sliced（9スライス）のまま端も絵柄も引き伸ばさずゲージにできる**
+- **SlicedFillGraphic（Sliced のゲージ）**: ゲージ画像の GameObject にアタッチし、`FillAmount`（0〜1）と `Origin`（Left/Right/Bottom/Top）を設定する。`Image` が生成したメッシュ（軸平行 quad の集合）を塗り量の位置でカットし、跨いだ quad は端の頂点を寄せて UV を補間する。RectTransform を変更しないため階層・レイアウト・子オブジェクトに影響せず、追加のドローコールも発生しない。`ProgressBar` から使う場合は `FillMode = SlicedFill` にして Fill Target に指定する
 - **UIParticleSystem（ParticleSystem を uGUI 上に描画）**: ParticleSystem と同じ GameObject に付与するだけ（`ParticleSystemRenderer` は自動無効化され CanvasRenderer 描画に切り替わる）。TrailModule が有効な場合は隠し子の `UIParticleTrail`（`HideAndDontSave`・Hierarchy 非表示）が自動生成され Trail も描画される。子 ParticleSystem がある複合エフェクトは各 ParticleSystem に個別に付与する。再生終了の await・一括制御は [Particle](Particle.md) の `ParticlePlayer` を併用する
 
 ## 注意点・罠
 
 - **`Modules.UI.Extension` の各 UI クラスは abstract**。使う・継承するのは利用側の具象クラス。基盤側を直接継承した新クラスを乱造しない
+- **`SlicedFillGraphic` は他のメッシュ変更コンポーネント（`ColorGradation` / `FlipGraphic` 等）より後（コンポーネント順で下）に配置する**。`Graphic` は `GetComponents` の順（インスペクタの並び順）で `IMeshModifier` を適用するため、順序で結果が変わる。`ColorGradation` が後にあると頂点バウンドから勾配を計算し直すためゲージが縮むほどグラデーションが圧縮され、`FlipGraphic` が後にあると `Origin` と見た目の向きが逆になる（順序不備はインスペクタが警告する）
+- **`SlicedFillGraphic` のカット基準は描画メッシュ全体の範囲**（RectTransform の rect ではない）。Sprite の padding や `preserveAspect` で描画範囲が rect より小さい場合、その描画範囲に対する割合になる
+- **`SlicedFillGraphic` は quad の集合でないメッシュをカットしない**（`Image.useSpriteMesh` や TextMeshPro 等）。頂点数が 6 の倍数でないメッシュは変更せずそのまま通す
+- **`ProgressBar` の `Steps` は 2 以上で有効**（0 / 1 は段階なし）。`CurrentStep` は 0〜`Steps - 1` の範囲
 - **VirtualScroll は `SetContents()` → `await UpdateContents()` の2段階**。UpdateContents を呼び忘れると何も表示されない。データ変更後も再度 UpdateContents が必要（位置維持は `keepScrollPosition: true`）。`ScrollPosition` への代入はコンテンツの可動範囲内に自動クランプされる（件数減少で保存位置が範囲外になっても端で止まる。`ScrollType.Loop` は制限なし）
 - **VirtualScroll のセルサイズは固定**。itemPrefab の RectTransform サイズを初回に1度だけ取得する（`itemSize`）。可変高さのリストには使えない
 - itemPrefab には `VirtualScrollItem<T>` 派生コンポーネントを付けておくこと（`UnityUtility.Instantiate<VirtualScrollItem<T>>` で取得される）

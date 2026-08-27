@@ -1,12 +1,7 @@
 ﻿
 using UnityEngine;
 using UnityEngine.UI;
-using System;
-using System.Linq;
-using System.Collections.Generic;
-using Cysharp.Threading.Tasks;
 using R3;
-using Extensions;
 
 namespace Modules.UI
 {
@@ -18,9 +13,10 @@ namespace Modules.UI
         {
             Filled,
             Resize,
-            Sprites
+            Sprites,
+            SlicedFill,
         }
-		
+
         public enum FillSizing
         {
             Parent,
@@ -29,59 +25,70 @@ namespace Modules.UI
 
         //----- field -----
 
-        [SerializeField] 
+        [SerializeField]
         private FillMode fillMode = FillMode.Filled;
-        [SerializeField] 
+        [SerializeField]
         private Image targetImage = null;
-        [SerializeField] 
+        [SerializeField]
         private Sprite[] sprites = null;
-        [SerializeField] 
+        [SerializeField]
         private RectTransform targetTransform = null;
-        [SerializeField] 
+        [SerializeField]
+        private SlicedFillGraphic targetSlicedFill = null;
+        [SerializeField]
         private FillSizing fillSizing = FillSizing.Parent;
         [SerializeField]
         private float minWidth = 0f;
         [SerializeField]
         private float maxWidth = 100f;
-        [SerializeField][Range(0f, 1f)] 
+        [SerializeField]
+        [Range(0f, 1f)]
         private float fillAmount = 1f;
-        [SerializeField] 
+        [SerializeField]
         private long steps = 0;
-		
+
         private Subject<float> onValueChanged = null;
 
         private bool initialized = false;
 
+        private bool updating = false;
+
         //----- property -----
 
-        public FillMode Mode 
+        public FillMode Mode
         {
             get { return fillMode; }
             set { fillMode = value; }
         }
-        
-        public Image TargetImage 
+
+        public Image TargetImage
         {
             get { return targetImage; }
             set { targetImage = value; }
         }
-	
+
         public Sprite[] Sprites
         {
             get { return sprites; }
             set { sprites = value; }
         }
 
-        public RectTransform RargetTransform 
+        public RectTransform RargetTransform
         {
             get { return targetTransform; }
             set { targetTransform = value; }
         }
 
-        public float MinWidth 
+        public SlicedFillGraphic TargetSlicedFill
+        {
+            get { return targetSlicedFill; }
+            set { targetSlicedFill = value; }
+        }
+
+        public float MinWidth
         {
             get { return minWidth; }
-            set 
+            set
             {
                 minWidth = value;
 
@@ -89,10 +96,10 @@ namespace Modules.UI
             }
         }
 
-        public float MaxWidth 
+        public float MaxWidth
         {
             get { return maxWidth; }
-            set 
+            set
             {
                 maxWidth = value;
 
@@ -100,34 +107,40 @@ namespace Modules.UI
             }
         }
 
-        public float FillAmount 
+        public float FillAmount
         {
             get { return fillAmount; }
 
-            set 
+            set
             {
-                if (fillAmount != Mathf.Clamp01(value))
-                {
-                    fillAmount = Mathf.Clamp01(value);
+                var amount = Mathf.Clamp01(value);
 
-                    UpdateBarFill();
-                    ValueChangeEvent();
-                }
+                if (fillAmount == amount){ return; }
+
+                fillAmount = amount;
+
+                UpdateBarFill();
+                ValueChangeEvent();
             }
         }
 
-        public long Steps 
+        public long Steps
         {
             get { return steps; }
-            set { steps = value; }
+            set
+            {
+                steps = value;
+
+                UpdateBarFill();
+            }
         }
 
-        public long CurrentStep 
+        public long CurrentStep
         {
-            get 
+            get
             {
-                if (steps == 0){ return 0; }
-				
+                if (HasSteps() == false){ return 0; }
+
                 var perStep = 1f / (steps - 1);
 
                 return Mathf.RoundToInt(fillAmount / perStep);
@@ -135,17 +148,19 @@ namespace Modules.UI
 
             set
             {
-                if (steps > 0)
-                {
-                    var perStep = 1f / (steps - 1);
+                if (HasSteps() == false){ return; }
 
-                    fillAmount = Mathf.Clamp(value, 0, steps) * perStep;
-                }
+                var perStep = 1f / (steps - 1);
+
+                // ステップの範囲(0 〜 steps - 1)に丸める.
+                var step = Mathf.Clamp(value, 0, steps - 1);
+
+                FillAmount = step * perStep;
             }
         }
 
         //----- method -----
-		
+
         void Start()
         {
             Initialize();
@@ -153,16 +168,7 @@ namespace Modules.UI
 
         public void Initialize()
         {
-            if (initialized) { return; }
-
-            if (fillMode == FillMode.Resize && fillSizing == FillSizing.Parent && targetTransform != null)
-            {
-                var height = targetTransform.rect.height;
-
-                targetTransform.anchorMin = targetTransform.pivot;
-                targetTransform.anchorMax = targetTransform.pivot;
-                targetTransform.SetSizeWithCurrentAnchors(RectTransform.Axis.Vertical, height);
-            }
+            if (initialized){ return; }
 
             UpdateBarFill();
 
@@ -174,86 +180,137 @@ namespace Modules.UI
             UpdateBarFill();
         }
 
-		public void UpdateBarFill()
-		{
-            if (fillMode == FillMode.Filled && targetImage == null){ return; }
+        public void UpdateBarFill()
+        {
+            // Resizeモードでは自身のRectTransformのサイズ変更を経由して再入する場合があるため多重実行を防ぐ.
+            if (updating){ return; }
 
-            if (fillMode == FillMode.Resize && targetTransform == null){ return; }
+            updating = true;
 
-            if (fillMode == FillMode.Sprites && sprites.Length == 0){ return; }
+            var fill = GetSteppedFillAmount();
 
-            var fill = fillAmount;
-			
-			if (steps > 0)
+            switch (fillMode)
             {
-				fill = Mathf.Round(fillAmount * (steps - 1)) / (steps - 1);
+                case FillMode.Filled:
+                    UpdateFilled(fill);
+                    break;
+
+                case FillMode.Resize:
+                    UpdateResize(fill);
+                    break;
+
+                case FillMode.Sprites:
+                    UpdateSprites(fill);
+                    break;
+
+                case FillMode.SlicedFill:
+                    UpdateSlicedFill(fill);
+                    break;
             }
 
-			if (fillMode == FillMode.Resize)
-			{
-                if (fillSizing == FillSizing.Fixed)
-                {
-                    var size = minWidth + (maxWidth - minWidth) * fill;
+            updating = false;
+        }
 
-                    targetTransform.SetSizeWithCurrentAnchors(RectTransform.Axis.Horizontal, size);
-                }
-                else
-                {
-                    var parentRt = targetTransform.parent as RectTransform;
+        private void UpdateFilled(float fill)
+        {
+            if (targetImage == null){ return; }
 
-                    var size = parentRt.rect.width * fill;
+            targetImage.fillAmount = fill;
+        }
 
-                    targetTransform.SetSizeWithCurrentAnchors(RectTransform.Axis.Horizontal, size);
-                }
-			}
-            else if (fillMode == FillMode.Sprites)
+        private void UpdateResize(float fill)
+        {
+            if (targetTransform == null){ return; }
+
+            var size = 0f;
+
+            if (fillSizing == FillSizing.Fixed)
             {
-                var spriteIndex = Mathf.RoundToInt(fill * sprites.Length) - 1;
-
-                if (spriteIndex > -1)
-                {
-                    targetImage.overrideSprite = sprites[spriteIndex];
-                    targetImage.canvasRenderer.SetAlpha(1f);
-                }
-                else
-                {
-                    targetImage.overrideSprite = null;
-                    targetImage.canvasRenderer.SetAlpha(0f);
-                }
+                size = minWidth + (maxWidth - minWidth) * fill;
             }
-			else
-			{
-				targetImage.fillAmount = fill;
-			}
-		}
-        
-		public void AddFill()
-		{
-			if (steps > 0)
-			{
-				CurrentStep += 1;
-			}
-			else
-			{
-				FillAmount += 0.1f;
-			}
+            else
+            {
+                var parentRt = targetTransform.parent as RectTransform;
 
-            ValueChangeEvent();
-		}
-		
-		public void RemoveFill()
-		{
-			if (steps > 0)
-			{
-				CurrentStep -= 1;
-			}
-			else
-			{
+                if (parentRt == null)
+                {
+                    Debug.LogError($"Parent RectTransform not found. ({targetTransform.name}).", this);
+
+                    return;
+                }
+
+                size = parentRt.rect.width * fill;
+            }
+
+            targetTransform.SetSizeWithCurrentAnchors(RectTransform.Axis.Horizontal, size);
+        }
+
+        private void UpdateSprites(float fill)
+        {
+            if (targetImage == null){ return; }
+
+            if (sprites == null){ return; }
+
+            if (sprites.Length == 0){ return; }
+
+            var spriteIndex = Mathf.RoundToInt(fill * sprites.Length) - 1;
+
+            if (-1 < spriteIndex)
+            {
+                targetImage.overrideSprite = sprites[spriteIndex];
+                targetImage.canvasRenderer.SetAlpha(1f);
+            }
+            else
+            {
+                targetImage.overrideSprite = null;
+                targetImage.canvasRenderer.SetAlpha(0f);
+            }
+        }
+
+        private void UpdateSlicedFill(float fill)
+        {
+            if (targetSlicedFill == null){ return; }
+
+            targetSlicedFill.FillAmount = fill;
+        }
+
+        /// <summary> ステップ指定が有効か </summary>
+        private bool HasSteps()
+        {
+            return 1 < steps;
+        }
+
+        /// <summary> ステップ数を反映した塗り量を取得 </summary>
+        private float GetSteppedFillAmount()
+        {
+            if (HasSteps() == false){ return fillAmount; }
+
+            return Mathf.Round(fillAmount * (steps - 1)) / (steps - 1);
+        }
+
+        public void AddFill()
+        {
+            if (HasSteps())
+            {
+                CurrentStep += 1;
+            }
+            else
+            {
+                FillAmount += 0.1f;
+            }
+        }
+
+        public void RemoveFill()
+        {
+            if (HasSteps())
+            {
+                CurrentStep -= 1;
+            }
+            else
+            {
                 FillAmount -= 0.1f;
-			}
-
-            ValueChangeEvent();
-		}
+            }
+        }
 
         public void ValueChangeEvent()
         {
@@ -267,22 +324,5 @@ namespace Modules.UI
         {
             return onValueChanged ?? (onValueChanged = new Subject<float>());
         }
-
-        #if UNITY_EDITOR
-
-        void OnValidate()
-        {
-            if (fillMode == FillMode.Resize && fillSizing == FillSizing.Parent && targetTransform != null)
-            {
-                var height = targetTransform.rect.height;
-
-                targetTransform.anchorMin = targetTransform.pivot;
-                targetTransform.anchorMax = targetTransform.pivot;
-                
-                targetTransform.SetSizeWithCurrentAnchors(RectTransform.Axis.Vertical, height);
-            }
-        }
-		
-        #endif
     }
 }
