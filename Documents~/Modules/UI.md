@@ -62,7 +62,7 @@ uGUI 標準コンポーネントのラッパー（Extension）と、仮想スク
 | `TextMeshProUGUI` | `UIText` | `text` プロパティ（`SetText` 経由） |
 | `Image` | `UIImage` | `sprite`/`color`/`alpha`・エディタ用ダミー画像機構 |
 | `RawImage` | `UIRawImage` | `texture`・空テクスチャ時自動非表示（ダミー登録時） |
-| `ScrollRect` | `UIScrollView` または `VirtualScroll<T>` | 位置ロック・自動スクロール無効化（`autoScrollDisable`）・横スクロールのホイール対応 |
+| `ScrollRect` | `UIScrollView` または `VirtualScroll<T>` | 位置ロック（基盤）。自動スクロール無効化・横スクロールのホイール対応は具象実装側で追加 |
 | `Slider` | `UISlider` | `value` |
 | `Toggle` | `UIToggle` | `isOn`・`OnChangeAsObservable()` |
 | `TMP_InputField` | `UIInputField` | `text`・`OnEndEditAsObservable()` |
@@ -81,12 +81,12 @@ uGUI 標準コンポーネントのラッパー（Extension）と、仮想スク
 - **GridVirtualScroll（グリッドリスト）**: 行 View は `GridVirtualScrollItem<データ型, 要素View型>` を継承し、要素1個分の更新（`UpdateContents(index, content, element, token)`）だけ書く。`elementPrefab` / `elementParent`（行内の親）は Inspector で設定。列数は Inspector の `lineElementCount` か `SetLineElementCount()`。呼び出し側は同じく `SetContents` → `await UpdateContents(keepScrollPosition)`（タブ切替時などは true で位置維持）
 - **SpriteLoader（外部アセットの画像表示）**: `await loader.SetSprite(loadPath)` / `await loader.SetSprite(atlasLoadPath, spriteName)`
 - **Focus（チュートリアルの最前面フォーカス）**: `FocusTarget` を対象 UI に付与し（FocusId は Inspector で GUID 自動生成）、`FocusManager.SetFocusCanvas(基準Canvas)` を先に設定してから `AddFocus(focusId)` / `RemoveAllFocus()` で制御
-- **ProgressBar（ゲージ）**: `gauge.FillAmount` に 0〜1 を設定。表示方法は `FillMode` で選ぶ
+- **ProgressBar（ゲージ）**: `gauge.FillAmount` に 0〜1 を設定。表示方法は `Mode` プロパティ（`FillMode` enum）で選ぶ
   - `Filled`: `Image.fillAmount` を書く。**Image.type = Filled 必須**（Sliced では fillAmount が無視される）。9スライスの border は無視され Sprite 全体が引き伸ばされる
   - `Resize`: 対象 RectTransform の幅を変える。`FillSizing.Parent`（親幅基準）/ `Fixed`（Min/Max Width 基準）。pivot.x = 0 でないと pivot を基準に伸縮する。幅が Sprite の左右 border 合計を下回ると Unity が border を縮小するため端が潰れ、長手方向の絵柄も圧縮される
   - `Sprites`: 塗り量に応じて `Image.overrideSprite` を差し替える（段階表示）
   - `SlicedFill`: `SlicedFillGraphic` に塗り量を渡す。**Sliced（9スライス）のまま端も絵柄も引き伸ばさずゲージにできる**
-- **SlicedFillGraphic（Sliced のゲージ）**: ゲージ画像の GameObject にアタッチし、`FillAmount`（0〜1）と `Origin`（Left/Right/Bottom/Top）を設定する。`Image` が生成したメッシュ（軸平行 quad の集合）を塗り量の位置でカットし、跨いだ quad は端の頂点を寄せて UV を補間する。RectTransform を変更しないため階層・レイアウト・子オブジェクトに影響せず、追加のドローコールも発生しない。`ProgressBar` から使う場合は `FillMode = SlicedFill` にして Fill Target に指定する
+- **SlicedFillGraphic（Sliced のゲージ）**: ゲージ画像の GameObject にアタッチし、`FillAmount`（0〜1）と `Origin`（Left/Right/Bottom/Top）を設定する。`Image` が生成したメッシュ（軸平行 quad の集合）を塗り量の位置でカットし、跨いだ quad は端の頂点を寄せて UV を補間する。RectTransform を変更しないため階層・レイアウト・子オブジェクトに影響せず、追加のドローコールも発生しない。`ProgressBar` から使う場合は `Mode = FillMode.SlicedFill` にして Fill Target に指定する
 - **UIParticleSystem（ParticleSystem を uGUI 上に描画）**: ParticleSystem と同じ GameObject に付与するだけ（`ParticleSystemRenderer` は自動無効化され CanvasRenderer 描画に切り替わる）。TrailModule が有効な場合は隠し子の `UIParticleTrail`（`HideAndDontSave`・Hierarchy 非表示）が自動生成され Trail も描画される。子 ParticleSystem がある複合エフェクトは各 ParticleSystem に個別に付与する。再生終了の await・一括制御は [Particle](Particle.md) の `ParticlePlayer` を併用する
 
 ## 注意点・罠
@@ -108,7 +108,7 @@ uGUI 標準コンポーネントのラッパー（Extension）と、仮想スク
 - `ButtonEventTrigger`（長押し系の内部実装）は `pointerId > 0`（2本目以降のマルチタッチ）を無視する
 - `FocusManager` / `RotationManager` は `Extensions.Singleton<T>`（非 MonoBehaviour）。`Instance` 参照で自動生成、`CreateInstance` 呼び出し不要
 - Focus 使用前に `FocusManager.SetFocusCanvas(canvas)` が必須（未設定だと Focus が適用されない）
-- `UIImage` / `UIRawImage` / `DummySprite` / `DummyText` の `assetGuid`/`spriteId` はエディタ専用ダミーアセット機構。ビルドには含まれず、ダミー登録済み箇所は実行時に画像未設定なら自動非表示になる。実行時の画像は SpriteLoader 等で設定する
+- `UIImage` / `DummySprite` の `assetGuid`/`spriteId`、`UIRawImage` の `assetGuid`、`DummyText` の暗号化ダミー文字列はエディタ専用ダミーアセット機構。ビルドには含まれない。「画像未設定なら実行時自動非表示」が働くのは `UIRawImage` / `DummySprite` のみ（`UIImage` に実行時制御は無い）。実行時の画像は SpriteLoader 等で設定する
 - SpriteLoader のロードパスは ExternalAssets の規約に従う。`OnDestroy` でキャッシュを自動破棄するので手動解放は不要
 - **UIParticleSystem の Trail 描画は Canvas の RenderMode が Screen Space - Camera / World Space の場合のみ**（Trail メッシュのベイクにカメラが必須のため）。Screen Space - Overlay ではエラーログを出し Trail のみ描画されない（粒子本体は描画される）
 - **`UIParticleTrail` は UIParticleSystem が自動生成する内部コンポーネント**。直接 AddComponent・設定しない（インスペクタ設定項目なし）。描画順は粒子本体の直後（手前）固定。生成状態は UIParticleSystem のインスペクタで確認できる

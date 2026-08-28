@@ -2,7 +2,7 @@
 
 > **namespace**: `Extensions`（Serialize 配下のみ `Extensions.Serialize`、一部 Editor 用 Drawer は `Extensions.Devkit`）
 > **場所**: `Client/Assets/UniModules/Scripts/Extensions/`（`Methods/`・`Devkit/` を除く: `Behaviour/` `Attribute/` `Component/` `Serialize/` `SafeValue/` `Scope/` `Types/` `Utility/`）
-> **依存**: R3（LifetimeDisposable / FixedQueue / UnityUtility）、UniTask（AndroidUtility / MessagePackFileUtility）、Unity.Mathematics（MathematicsRandomUtility）、MessagePack（MessagePackFileUtility）
+> **依存**: R3（LifetimeDisposable / FixedQueue / UnityUtility）、UniTask（AndroidUtility / MessagePackFileUtility）、Unity.Mathematics（MathematicsRandomUtility）、MessagePack（MessagePackFileUtility）、Newtonsoft.Json（Editor: SerializationFileUtility）。Utility の一部は上位層の Modules を参照する（MessagePackFileUtility→Modules.MessagePack、AndroidUtility→Modules.Net）
 
 ## 概要
 
@@ -19,7 +19,7 @@ GameObject 操作の安全ラッパー（`UnityUtility`）を提供する。新�
 | `SafeValue/` | `SafeValue`（XOR による Pack/UnPack） / `XInt`・`XUInt`・`XLong`・`XULong`・`XShort`・`XUShort`・`XSByte`・`XByte`・`XChar`・`XBool`・`XFloat`・`XDouble`・`XString`（メモリ上で XOR 難読化された値型。演算子オーバーロード完備、元型へ implicit 変換） |
 | `Scope/` | `Scope`（IDisposable 基底。`CloseScope()` を Dispose 時に1度だけ実行） / `DisableStackTraceScope`（ログのスタックトレース一時無効化） / `StopwatchScope`（終了時に経過ミリ秒をコールバック） / `GizmosColorScope`（`Gizmos.color` 退避・復元） / `LockReloadAssembliesScope`・`DiisplayProgressScope`（エディタ専用） |
 | `Types/` | `FixedQueue<T>`（固定長キュー・あふれ通知 `OnExtrudedAsObservable()`） / `NaturalComparer`（文字列自然順ソート） / `ProcessExecute`（外部プロセス実行。`Start()` / `StartAsync()` → `Result`） / `BezierCurve` / `CRC16`・`CRC32` / `Encode`（バイト列の文字コード判別） / `RandomBoxMuller`（正規分布乱数） / `StreamReverseReader`（ファイル末尾から逆順 `ReadLine()`） / `TypeGenerator`（動的型生成） |
-| `Utility/` | `UnityUtility`（**最重要**: GameObject 生成/削除/アクティブ/親子/レイヤー/コンポーネント/検索の安全ラッパー） / `UnityPathUtility`（Assetsパス⇔フルパス・各種ルートパス） / `PathUtility`（パス区切り `/` 統一・Combine） / `FileUtility`（SHA256 / CRC32 / ロック判定） / `DirectoryUtility` / `RandomUtility`（System.Random ベース・シード設定可・重み付き抽選） / `MathematicsRandomUtility`（Unity.Mathematics ベース。**戦闘系はこちら**） / `BiasSelectUtility`（スコア→重み関数付き抽選。`BiasLowPower` 等のプリセットあり） / `MathUtility` / `ByteDataUtility`（バイト数可読表記） / `TypeUtility` / `TextureUtility` / `ScreenUtility` / `PlatformUtility` / `CommandLineUtility`（起動引数 `Get<T>(label, default)`） / `AndroidUtility`（StreamingAssets→Temporary コピー） / `LogUtility`（長文ログの分割出力） / `Reflection`（非公開メンバーへのリフレクションアクセス） / `MessagePackFileUtility`（MessagePack ファイル Read/Write。AES 暗号オプション・UniTask版あり） / `GitUtility`・`SerializationFileUtility`（エディタ専用） |
+| `Utility/` | `UnityUtility`（**最重要**: GameObject 生成/削除/アクティブ/親子/レイヤー/コンポーネント/検索の安全ラッパー） / `UnityPathUtility`（Assetsパス⇔フルパス・各種ルートパス） / `PathUtility`（パス区切り `/` 統一・Combine） / `FileUtility`（SHA256 / CRC32 / ロック判定） / `DirectoryUtility` / `RandomUtility`（System.Random ベース・シード設定可・重み付き抽選） / `MathematicsRandomUtility`（Unity.Mathematics ベース。**シード固定の再現性が必要な処理はこちら**） / `BiasSelectUtility`（スコア→重み関数付き抽選。`BiasLowPower` 等のプリセットあり） / `MathUtility` / `ByteDataUtility`（バイト数可読表記） / `TypeUtility` / `TextureUtility` / `ScreenUtility` / `PlatformUtility` / `CommandLineUtility`（起動引数 `Get<T>(label, default)`） / `AndroidUtility`（StreamingAssets→Temporary コピー） / `LogUtility`（長文ログの分割出力） / `Reflection`（非公開メンバーへのリフレクションアクセス） / `MessagePackFileUtility`（MessagePack ファイル Read/Write。AES 暗号オプション・UniTask版あり） / `GitUtility`・`SerializationFileUtility`（エディタ専用） |
 
 ## 逆引き（〜したい）
 
@@ -43,7 +43,7 @@ GameObject 操作の安全ラッパー（`UnityUtility`）を提供する。新�
 | using で後処理を保証したい（スコープ処理を自作したい） | `Scope` 継承（`CloseScope()` 実装） |
 | ログのスタックトレースを一時無効化したい | `using (new DisableStackTraceScope())` |
 | 処理時間を計測したい | `using (new StopwatchScope(ms => ...))` |
-| 乱数・重み付き抽選・シャッフルしたい | `RandomUtility` / `MathematicsRandomUtility`（戦闘系は後者） |
+| 乱数・重み付き抽選・シャッフルしたい | `RandomUtility` / `MathematicsRandomUtility`（再現性が必要な処理は後者） |
 | スコアに応じたバイアス付き抽選をしたい | `BiasSelectUtility.SelectOne` |
 | 固定長キュー（あふれ通知付き）が欲しい | `FixedQueue<T>` |
 | 文字列を自然順（数値考慮）でソートしたい | `NaturalComparer` |

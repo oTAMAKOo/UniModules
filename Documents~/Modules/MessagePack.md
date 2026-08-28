@@ -2,7 +2,7 @@
 
 > **namespace**: `Modules.MessagePack`
 > **場所**: `Client/Assets/UniModules/Scripts/Modules/MessagePack/`
-> **依存**: MessagePack-CSharp **v3.1.3**（UPM git package `com.github.messagepack-csharp`） / Extensions / Editor側: Modules.Devkit（`ProjectPrefs`, `SingletonScriptableObject`）
+> **依存**: MessagePack-CSharp（UPM git package `com.github.messagepack-csharp`。バージョンは利用プロジェクトの manifest.json 参照） / Extensions / Editor側: UniTask / R3 / Modules.Devkit（`ProjectPrefs`, `SingletonScriptableObject`）
 
 ## 概要
 
@@ -36,7 +36,6 @@ LocalData / Master / 通信(Network) 等、バイナリシリアライズは基�
 ## 注意点・罠
 
 - **IL2CPP 実機では生成コードが必須**（Dynamic 系は実機で使えない）。利用側は `MESSAGEPACK_ANALYZER_CODE` を定義して v3 Source Generator による自動生成に任せるのが推奨（手動のコード生成作業は不要）
-  - ※ [LocalData](LocalData.md) 側に「実機ビルド前に `MessagePackCodeGenerator` でコード生成」という記述があれば旧 mpc 方式（v2系）時代のもの
 - 自動生成でも **属性の付け忘れは Source Generator の生成対象から漏れる** → エディタ（Dynamic）では動くのに実機で落ちる、という罠は残る。新規データ型は `[MessagePackObject(true)]` を必ず付け、ネスト型まで確認する
 - `MessagePackConfig.asset` / mpc 設定（`Extension > Generators > Generate MessagePack`）はレガシー。`MessagePackCodeGenerator` は `#if !MESSAGEPACK_ANALYZER_CODE` のため `MESSAGEPACK_ANALYZER_CODE` 定義時は丸ごとコンパイル除外（メニューも非表示）
 - DateTime は標準の MessagePack Timestamp ではなく**文字列**（`yyyy-MM-ddTHH:mm:ss.FFFFFFFK`。読み込みは文字列/ネイティブ両対応）でシリアライズされる。外部システムとバイナリ互換を取る際は注意

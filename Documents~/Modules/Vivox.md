@@ -8,7 +8,7 @@
 
 Vivox（ボイス・テキストチャットサービス）SDK のラッパー `VivoxManager`。ログイン、チャンネル参加/退出、テキスト送受信、3D ポジショナルボイス、参加者イベントの R3 Observable 化を提供する。
 
-全ファイルが `#if ENABLE_VIVOX` で囲まれており、利用側で `ENABLE_VIVOX` シンボルが未定義の場合はコンパイル対象外になる。CriWare（[CriWare](CriWare.md)）と同じ「SDK 導入 + シンボル定義で有効化する」休眠モジュール。
+全ファイルが `#if ENABLE_VIVOX` で囲まれており、利用側で `ENABLE_VIVOX` シンボルが未定義の場合はコンパイル対象外になる。CriWare（[CriWare](CriWare.md)）と同じ「SDK 導入 + シンボル定義で有効化する」条件付きコンパイルモジュール。
 
 ## 主要クラス
 
@@ -44,6 +44,6 @@ Vivox（ボイス・テキストチャットサービス）SDK のラッパー `
 
 ## 関連
 
-- [CriWare](CriWare.md) — 同じく「SDK 導入 + シンボル定義で有効化」する休眠モジュールの前例
+- [CriWare](CriWare.md) — 同じく「SDK 導入 + シンボル定義で有効化」する条件付きコンパイルモジュールの前例
 - [Devkit](Devkit.md) — ログ出力先の `UnityConsole`
 - [Sound](Sound.md) — ゲーム内サウンド再生（ボイスチャットとは別系統）

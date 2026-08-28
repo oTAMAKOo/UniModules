@@ -6,11 +6,11 @@
 
 ## 使い方（Claude向け）
 
-1. Client側の実装前に、まずこの INDEX の「やりたいこと逆引き」を確認する
+1. 利用側の実装前に、まずこの INDEX の「やりたいこと逆引き」を確認する
 2. 該当する個別 .md **だけ** を開いて参照する（全ドキュメントを読み込まない）
 3. 汎用処理（文字列・コレクション・GameObject操作等）を書く前に [Extensions/Methods.md](Extensions/Methods.md) を確認（車輪の再発明防止の最重要ファイル）
 4. 基盤全体の構造・共通パターン・既知の罠は [Overview.md](Overview.md) を参照
-5. **「休眠（コンパイル対象外）」のモジュールを使う実装は提案しない**（有効化にはSDK導入等が必要）
+5. **「条件付きコンパイル」のモジュール**（外部SDK依存）は、SDK導入+シンボル定義がある環境でのみ使用可。利用プロジェクトでの有効状態はプロジェクト側のドキュメントで確認してから提案する
 
 ## やりたいこと逆引き
 
@@ -49,7 +49,6 @@
 | 軽量なキー値の永続化 | [Modules/Prefs.md](Modules/Prefs.md)（`SecurePrefs`） |
 | メモリキャッシュ / ストレージの使い分け | [Modules/Cache.md](Modules/Cache.md)（冒頭に比較表） |
 | サーバーAPI呼び出し・CloudScript追加 | [Modules/PlayFab.md](Modules/PlayFab.md)（手順あり。入口ファサードは利用側で実装） |
-| 現在時刻の取得 | `systemModel.LocalTime`（`DateTime.Now`禁止）— 供給元は [Modules/PlayFab.md](Modules/PlayFab.md) |
 | 配信アセット（画像・プレハブ等）のロード | [Modules/ExternalAsset.md](Modules/ExternalAsset.md) |
 | ファイルダウンロード・オフライン検知 | [Modules/Network.md](Modules/Network.md) |
 | MessagePackシリアライズ対応クラスの定義 | [Modules/MessagePack.md](Modules/MessagePack.md) |
@@ -89,7 +88,7 @@
 | [Extensions/Core.md](Extensions/Core.md) | Singleton・LifetimeDisposable・Prefab・インスペクタ属性・Serialize型 |
 | [Extensions/Devkit.md](Extensions/Devkit.md) | エディタ拡張の共通GUI部品・アセット操作（EditorWindow/Inspector実装基盤） |
 
-### Modules（使用中）
+### Modules
 
 | モジュール | 説明 |
 |---|---|
@@ -133,11 +132,6 @@
 | [Renderer2D](Modules/Renderer2D.md) | SpriteRenderer用エディタ専用ダミー画像 |
 | [TimeUtil](Modules/TimeUtil.md) | 時間ユーティリティ（`TimeManager<T>` / `TimeNotice` / `RecoveryValue` / `TimeScale` / `RealTime`） |
 | [UniTask](Modules/UniTask.md) | UniTaskのPlayerLoop初期化前倒し（自動実行のみ・手動呼び出し不要） |
-
-### Modules（使用可能だが未使用 — 使う前に一言ユーザーに確認を推奨）
-
-| モジュール | 説明 |
-|---|---|
 | [Hyphenation](Modules/Hyphenation.md) | 日本語禁則処理+幅計測ベース自動改行 |
 | [SpriteAnimation](Modules/SpriteAnimation.md) | SpriteAtlas連番コマアニメ再生 |
 | [OffScreenRendering](Modules/OffScreenRendering.md) | RenderTexture経由のUI表示とクリック判定 |
@@ -149,22 +143,23 @@
 | [PathFinding](Modules/PathFinding.md) | 2DグリッドA*経路探索 |
 | [BehaviourControl](Modules/BehaviourControl.md) | データ駆動ルールテーブル型AI（namespace は `Modules.BehaviorControl`、綴り違いに注意） |
 
-### Modules（休眠 — コンパイル対象外。使う実装を提案しないこと）
+### Modules（条件付きコンパイル）
 
-| モジュール | 説明 |
-|---|---|
-| [CriWare](Modules/CriWare.md) | CRIライブラリ初期化・アセットDL |
-| [Movie](Modules/Movie.md) | CRI Sofdecムービー再生 |
-| [Live2D](Modules/Live2D.md) | Live2DのUIクリック判定 |
-| [Lua](Modules/Lua.md) | xLua連携基盤 |
-| [Scenario](Modules/Scenario.md) | Luaカットシーン演出基盤（コマンド約46種） |
-| [Utage](Modules/Utage.md) | ADVエンジン「宴」統合拡張 |
-| [TimeLine](Modules/TimeLine.md) | Unity Timelineラッパー |
-| [Vivox](Modules/Vivox.md) | ボイス/テキストチャットSDKラッパー |
-| [WebView](Modules/WebView.md) | アプリ内WebView抽象化 |
-| [StandAloneWindows](Modules/StandAloneWindows.md) | Windows専用ネイティブウィンドウ制御 |
+外部SDK・外部機能連携のモジュール群。コードが `#if` シンボルで囲まれており、SDK導入 + シンボル定義がない環境ではコンパイル対象外になる。利用プロジェクトで有効かどうかはプロジェクト側のドキュメント（シンボル定義状態）を参照。
+
+| モジュール | 有効化シンボル | 説明 |
+|---|---|---|
+| [CriWare](Modules/CriWare.md) | `ENABLE_CRIWARE_ADX` / `ENABLE_CRIWARE_ADX_LE` / `ENABLE_CRIWARE_SOFDEC` | CRIライブラリ初期化・アセットDL |
+| [Movie](Modules/Movie.md) | `ENABLE_CRIWARE_SOFDEC` | CRI Sofdecムービー再生 |
+| [Live2D](Modules/Live2D.md) | `ENABLE_LIVE2D` | Live2DのUIクリック判定 |
+| [Lua](Modules/Lua.md) | `ENABLE_XLUA` | xLua連携基盤 |
+| [Scenario](Modules/Scenario.md) | `ENABLE_XLUA` | Luaカットシーン演出基盤（コマンド約46種） |
+| [Utage](Modules/Utage.md) | `ENABLE_UTAGE` | ADVエンジン「宴」統合拡張 |
+| [TimeLine](Modules/TimeLine.md) | `ENABLE_UNITY_TIMELINE` | Unity Timelineラッパー（データ定義等の一部は常時コンパイル） |
+| [Vivox](Modules/Vivox.md) | `ENABLE_VIVOX` | ボイス/テキストチャットSDKラッパー |
+| [WebView](Modules/WebView.md) | `ENABLE_UNIWEBVIEW` / `ENABLE_EMBEDDEDBROWSER` | アプリ内WebView抽象化（基底2クラスは常時コンパイル・実装Contentのみシンボル依存） |
+| [StandAloneWindows](Modules/StandAloneWindows.md) | `UNITY_STANDALONE_WIN`（Unity組込） | Windows専用ネイティブウィンドウ制御 |
 
 ## 関連
 
 - 基盤全体像・共通パターン・既知の罠一覧: [Overview.md](Overview.md)
-- コーディング規約: ルート `CLAUDE.md`

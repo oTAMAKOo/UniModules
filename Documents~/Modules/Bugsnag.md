@@ -42,6 +42,6 @@
 
 ## 関連
 
-- [Crypto](Crypto.md) — ApiKey ファイル復号キーの供給元（`KeyFileManager` / `KeyType.Bugsnag`）
+- [Crypto](Crypto.md) — ApiKey ファイル復号キーの供給元（`KeyFileManager` 派生 + 利用側で定義した KeyType 値）
 - [../Extensions/Core.md](../Extensions/Core.md) — `Singleton<T>` / `MessagePackFileUtility`（ApiKey ファイル読み書き）
 - [../Extensions/Methods.md](../Extensions/Methods.md) — `AesCryptoKey` / `GetHash`（ファイル名ハッシュ）/ `ToLabelName`

@@ -37,7 +37,7 @@
 - 有効化には (1) 宴アセット本体（有償、`Utage` namespace）の導入、(2) `ENABLE_UTAGE` 定義、(3) `ExtendAssetFileManager` / `ExtendCustomCommandManager` / `ExtendGraphicManager` 等のabstract派生実装とシーン構築が必要で、シンボル定義だけでは動かない。
 - サウンド統合（`SoundManagerSystem` / `ExternalAssetSoundAssetFile`）はCRI ADX2前提。UnityAudio版サウンド構成（→ [Sound](Sound.md)）とは非互換で、この2クラスは `ENABLE_CRIWARE_ADX(_LE)` が無い限りコンパイルされない。`GetAudioSource` は常に非サポート。
 - [Scenario](Scenario.md)（xLuaベース）とは**別系統**のシナリオ基盤。採用時はどちらか（または独自実装）の設計判断が必要。
-- 初期化が `Awake` / `OnTransformChildrenChanged` 等のUnityライフサイクル前提。有効化・改修時は Setup 方式への整理を要相談。
+- 初期化が `Awake` / `OnTransformChildrenChanged` 等のUnityライフサイクル前提（明示的な Setup 呼び出し方式ではない）。
 - 宴のExcelコマンド列に独自の意味を割り当てている: `AdvExtendCommandEmotion` は Arg3=レイヤー / Arg6=フェード時間、`EmotionGraphicObject` は `SubFileName`=アニメーション名・Arg4/Arg5=表示座標。シナリオシート定義とC#実装がセットでないと動かない。
 - `ExtendCharacteGrayoutController` はクラス名がtypo（`Characte`）のまま。grep検索時に注意。
 - `PatternGraphicObject` は `Modules.PatternTexture`（→ [PatternTexture](PatternTexture.md)）の `PatternImage` / `PatternTexture` に依存。

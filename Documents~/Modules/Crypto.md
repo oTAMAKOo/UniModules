@@ -37,7 +37,7 @@ var cryptoKey = new AesCryptoKey(keyData.Key, keyData.Iv);
 | 全鍵を一括ロードしたい | `await KeyFileManager.Instance.Load()` |
 | 1種類だけロードしたい | `await KeyFileManager.Instance.LoadKeyFile(keyType)` |
 | 新しい鍵種別を追加したい | 派生クラスの `KeyType` enum に追加 → KeyFileWindow で生成 |
-| 鍵ファイルを生成・更新したい | メニュー `Extension/Tools/Open KeyFileWindow`（Key 32文字 / Iv 16文字） |
+| 鍵ファイルを生成・更新したい | `KeyFileWindow`（メニュー登録は利用側。Key 32文字 / Iv 16文字） |
 | 鍵ファイルの配置先を知りたい | `KeyFileManager.Instance.GetLoadPath(keyType)`（`StreamingAssets/<FileDirectory>/{enum名のハッシュ}`） |
 | 文字列・byte[] を暗号化/復号したい | `AESExtension`（[../Extensions/Methods.md](../Extensions/Methods.md)。本モジュールではない） |
 

@@ -8,7 +8,7 @@
 
 Unity シーンの遷移・ロード管理基盤。シーンを enum で識別し、引数オブジェクト（`ISceneArgument`）を渡して遷移する。
 ライフサイクル `Initialize（ロード時1回）→ Prepare（通信・読込）→ Enter（表示開始）→ Leave（離脱）` を自動駆動し、ローディング表示・シーンキャッシュ・履歴（戻る遷移）・加算シーン（画面の上に別シーンを重ねる）・事前ロードを提供する。
-主要クラス: `SceneManagerBase<TInstance, TScenes>`（遷移・ロード・キャッシュ・履歴・待機・UniqueComponents の本体。非MonoBehaviour の `Extensions.Singleton<T>`）/ `SceneBase<TScenes>`（シーンルートに置く基底）/ `ISceneArgument<TScenes>`（遷移引数。`Identifier` / `PreLoadScenes` / `Cache`）/ `SceneInstance<TScenes>`（ロード済みシーン1個分。`Enable/Disable` でルート GameObject 一括アクティブ制御）/ 補助 interface（`ISceneEvent` / `ITransitionHandler` / `IgnoreControl` / `WaitHandler`）。
+主要クラス: `SceneManagerBase<TInstance, TScenes>`（遷移・ロード・キャッシュ・履歴・待機・UniqueComponents の本体。非MonoBehaviour の `Extensions.Singleton<T>`）/ `SceneBase<TScenes>`（シーンルートに置く基底）/ `ISceneArgument<TScenes>`（遷移引数。`Identifier` / `PreLoadScenes` / `Cache`）/ `SceneInstance<TScenes>`（ロード済みシーン1個分。`Enable/Disable` でルート GameObject 一括アクティブ制御）/ 補助型（interface: `ISceneEvent` / `ITransitionHandler`、class: `IgnoreControl`（MonoBehaviour）/ `WaitHandler`（IDisposable））。
 
 ## 逆引き（〜したい）
 
@@ -26,14 +26,14 @@ Unity シーンの遷移・ロード管理基盤。シーンを enum で識別�
 | 遷移中かを判定したい（多重遷移防止） | `if (sceneManager.IsTransition){ return; }` |
 | 遷移の完了・各フェーズをフックしたい | `OnEnterCompleteAsObservable()` / `OnPrepareAsObservable()` 等 |
 | 遷移中に非同期処理を待たせたい（サーバー同期等） | `BeginWait()` / `FinishWait(handler)`（`using` 可） |
-| シーン側から遷移を拒否したい | シーンに `ITransitionHandler` を実装し `HandleTransition()` で false |
+| シーン側から遷移を拒否したい | シーンに `ITransitionHandler` を実装し `HandleTransition()` で false（チェックが走るのは Additive 遷移のみ。Single 遷移では呼ばれない） |
 | シーンのロード/アンロード時に処理したい | SceneBase と同一 GameObject に `ISceneEvent` 実装コンポーネント |
 | ロード済み他シーンの ViewModel を取得したい | `GetViewModel<TViewModel>(scene)`（[View](View.md) 連携） |
 | シーンがロード済みか調べたい / 実体を取りたい | `IsSceneLoaded(id)` / `GetSceneInstance(id)` |
 | 次に行くシーンを裏で先読みしたい | `SceneArgument.PreLoadScenes` を override |
 | 遷移時のルート一括非アクティブ制御から除外したい | ルート GameObject に `IgnoreControl`（`IgnoreType.ActiveControl`） |
 | ローディング演出を出さずに遷移したい | 基盤側にローディング表示制御は無い。利用側で SceneArgument に bool を追加し、`OnPrepareAsObservable()` 等をフックして表示/非表示を切り替える |
-| シーン跨ぎで1個だけ存在すべきコンポーネントを管理したい | `SceneManagerBase` 派生で `UniqueComponents`（`protected abstract Dictionary<Type, DuplicatedSettings>`）を override して定義 / 実行時登録は `RegisterUniqueComponent<T>()` |
+| シーン跨ぎで1個だけ存在すべきコンポーネントを管理したい | `SceneManagerBase` 派生で `UniqueComponents`（`protected abstract Dictionary<Type, DuplicatedSettings>`）を override して定義 / 実行時登録は `RegisterUniqueComponent<T>(target)` |
 | 起動シーンを登録したい（Boot 処理） | `RegisterBootScene()` |
 
 ## 使い方
@@ -42,7 +42,7 @@ Unity シーンの遷移・ロード管理基盤。シーンを enum で識別�
 
 ```
 Transition(argument)  ※ void・fire-and-forget（await 不可）
-  → ITransitionHandler.HandleTransition()（ロード済みシーンによる拒否チェック）
+  → ITransitionHandler.HandleTransition()（ロード済みシーンによる拒否チェック。Additive 遷移時のみ）
   → TransitionStart …… 派生 SceneManager 側で覆いのフェードアウト等を実装
   → 旧シーン: Leave() → Disable()（ルート非アクティブ化）→ 不要シーンのアンロード（キャッシュ・PreLoad 対象は残す）
   → 新シーンロード【未ロード時のみ。ロード直後にルート一括非アクティブ化 → Initialize()。キャッシュ済ならスキップ】
@@ -70,16 +70,16 @@ Transition(argument)  ※ void・fire-and-forget（await 不可）
 
 ## 注意点・罠
 
-- **`Transition` 系はすべて void（await 不可）**。内部で fire-and-forget 実行される。完了検知は `OnEnterCompleteAsObservable()` 等。呼び出し前に `if (sceneManager.IsTransition){ return; }` ガードを入れるのが定型（遷移中の呼び出しは例外なく黙って無視されるため、押下連打等で「何も起きない」だけになる）
+- **`Transition` 系はすべて void（await 不可）**。内部で fire-and-forget 実行される。完了検知は `OnEnterCompleteAsObservable()` 等。呼び出し前に `if (sceneManager.IsTransition){ return; }` ガードを入れるのが定型（`Transition` / `Reload` / `AppendTransition` / `UnloadTransition` は遷移中の呼び出しが黙って無視されるため、押下連打等で「何も起きない」だけになる。`ForceAppendTransition` / `ForceUnloadTransition` は進行中の遷移をキャンセルしてから実行する）
 - **`Initialize` はロード時1回のみ**。`Cache = true` のシーンはキャッシュから再表示された時 `Initialize` が呼ばれない。遷移毎に必要な処理は `Prepare` / `Enter` に書く
 - **`Enter` は同期メソッド**。async にできない。非同期の開始処理は `.Forget()` で投げる
 - **`SetArgument` は `Prepare` より前**に呼ばれる。`Prepare` 内から `Argument` は参照可能。逆に `Initialize` 時点では未設定の場合がある（キャッシュヒット時を除き Load 直後の Initialize が先行）
 - **AppendTransition 中は `Current` が更新されない**（Append 元を指し続ける）。仕様であり、戻り先の決定に利用できる。加算シーンか否かは `SceneInstance.Append` で判定
 - **加算シーンからの戻りは `UnloadTransition`**
 - **`Append` / `UnloadAppendScene` はライフサイクルを呼ばない**（加算ロード/アンロードのみで `Prepare` / `Enter` / `Leave` は呼ばれない。`Append` でも `SetArgument` は実行される）。ライフサイクル込みで重ねる場合は `AppendTransition` / `UnloadTransition` を使う
-- **履歴保持の判定**: bool 引数を省略した派生 `Transition(arg, mode)` は「遷移元シーンの `RegisterHistory`」に従って、遷移元を履歴に残すか自動判定する（実装側の慣例）。bool を明示する基底の3引数版はプロパティを無視する
+- **履歴保持の判定**: bool 引数を省略した派生 `Transition(arg, mode)` は「遷移元 `SceneArgument` の `RegisterHistory`」に従って、遷移元を履歴に残すか自動判定する（利用側で用意する慣例）。bool を明示する基底の3引数版はプロパティを無視する
 - **シーンルートに `SceneBase` 派生が必須**。ルート GameObject 配下から `ISceneBase` を検索するため、見つからないと `SceneBase class does not exist.` エラーで遷移が中断する
-- **シーンロード直後、アクティブだったルート GameObject は一括非アクティブ化され、Prepare 完了 + TransitionWait 解除後に再アクティブ化される**。ルートオブジェクトの Awake/Start のタイミングに依存する実装をしない。除外したいルート（常駐演出等）には `IgnoreControl` を付ける
+- **シーンロード直後、アクティブだったルート GameObject は一括非アクティブ化され、Prepare 完了 + TransitionWait 解除後に再アクティブ化される**。ルートオブジェクトの Awake/Start のタイミングに依存する実装をしない。除外したいルート（常駐演出等）には `IgnoreControl` を付け、コードから `Type` に `IgnoreType.ActiveControl` を設定する（`Type` は SerializeField ではないためアタッチのみでは除外されない）
 - **`BeginWait` の解除漏れで遷移が永久に完了しなくなる**。`FinishWait` を必ず呼ぶか `using (BeginWait())` を使う
 - **`Cache = false` にすべきシーン**: 遷移毎に引数・状態が変わるシーン。キャッシュ済みシーンは `FixedQueue`（サイズは利用側で設定）から溢れると自動アンロード
 - **`LoadSceneMode.Single` 遷移はロード済み・キャッシュ・加算シーンを全部破棄する**。通常遷移は Additive を使い、Single は起動フローや強制タイトル遷移のみ

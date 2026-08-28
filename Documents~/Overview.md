@@ -12,7 +12,7 @@ Client/Assets/UniModules/Scripts/
 ```
 
 - Extensions は最重要の共通層（拡張メソッド・Singleton・LifetimeDisposable 等）、Modules は機能単位の集まり
-- 基盤は汎用に作られており、CRI・xLua・宴・Vivox 等の**外部SDK依存モジュールはシンボル未定義でコンパイル対象外（休眠）**。休眠一覧と有効化条件は [INDEX.md](INDEX.md) 末尾参照
+- 基盤は汎用に作られており、CRI・xLua・宴・Vivox 等の**外部SDK依存モジュールはシンボル未定義でコンパイル対象外**。一覧と有効化シンボルは [INDEX.md](INDEX.md)「Modules（条件付きコンパイル）」参照
 
 ## 依存ライブラリ
 

@@ -2,7 +2,7 @@
 
 > **namespace**: `Modules.TextData`（本体） / `Modules.TextData.Components`（TextSetter・アセット・検証） / `Modules.TextData.Editor`（生成ツール）
 > **場所**: `Client/Assets/UniModules/Scripts/Modules/TextData/`
-> **依存**: R3（Observable/Subject）/ UniTask（Editor）/ TMPro・uGUI Text / Extensions（Singleton, AesCryptoKey, PathUtility）/ Modules.Devkit（Editor）/ Modules.Localize（Editor: EditorLanguage）
+> **依存**: R3（Observable/Subject）/ UniTask（Editor）/ TMPro・uGUI Text / Extensions（Singleton, AesCryptoKey, PathUtility）/ Modules.Devkit（Editor）/ Modules.Localize（Editor: EditorLanguage）/ Newtonsoft.Json（Editor）
 
 ## 概要
 
@@ -17,7 +17,7 @@
 |---|---|
 | アプリ同梱テキストを取得したい | `TextData.Get(TextData.General.Close)`（カテゴリ enum 指定） |
 | プレースホルダ入りテキストを書式化したい | `TextData.Format(TextData.General.Time_Days, days)` |
-| マスターデータのテキスト（スキル名・アイテム名等）を取得したい | `TextData.Get(record.Name)`（文字列キー版。カラム値は `"Item-Name_100001"` 形式） |
+| マスターデータのテキスト（スキル名・アイテム名等）を取得したい | `TextData.Get(record.Name)`（文字列キー版。カラム値は「シート名-Enum名」形式） |
 | uGUI Text / TextMeshProUGUI に静的テキストを表示したい | `TextSetter` コンポーネント（インスペクタでテキスト選択、コード不要） |
 | `TextSetter` 設定済みテキストを実行時に書式化したい | `textSetter.Format(args)` |
 | テキスト更新（言語切替・配信取込）に反応したい | `TextData.Instance.OnUpdateContentsAsObservable()` |
@@ -31,28 +31,19 @@
 定型パターン:
 
 - **enum 指定で取得・書式化（最頻出）**: `TextData.Get(TextData.General.Close)` / `TextData.Format(TextData.General.Time_Days, days)`
-- **マスターデータの文字列キーで取得（配信テキスト）**: `TextData.Get(skillRecord.Name)`。マスターのカラムには `シート名-Enum名` 形式のキーが入っている（例: `Item-Name_100001`）
-- **起動時初期化**: `SetCryptoKey(key, iv)` → 言語識別子（例: "jp"/"en"/"ko"/"zh-TW"/"zh-CN"）を決定 → `LoadEmbedded("TextData/TextData-{identifier}.asset")`
+- **マスターデータの文字列キーで取得（配信テキスト）**: `TextData.Get(skillRecord.Name)`。マスターのカラムには `シート名-Enum名` 形式のキーが入っている
+- **起動時初期化**: `SetCryptoKey(key, iv)` → 言語識別子（利用側で定義）を決定 → `LoadEmbedded("TextData/TextData-{identifier}.asset")`
 - **配信テキストの追加取込**: `ExternalAsset.LoadAsset<TextDataAsset>` → `TextData.Instance.AddContents(asset)` で内蔵テキストに配信分を追加合成
-- **TextSetter（静的テキストはコード不要）**: Text / TextMeshProUGUI と同じ GameObject に `TextSetter` を付け、インスペクタの「select」から選択するだけ。Text 系コンポーネントへ自動付与する設定は基盤の `AdditionalComponent` にある
+- **TextSetter（静的テキストはコード不要）**: Text / TextMeshProUGUI と同じ GameObject に `TextSetter` を付け、インスペクタの「select」から選択するだけ。Text 系コンポーネントへの自動付与は基盤の `AdditionalComponent` 機構で行う（登録内容は利用側で定義）
 
 ## テキスト追加フロー
 
-原本はリポジトリ直下（Unity プロジェクト外）に配置する:
+原本 Excel と中間データ yaml（`Contents/*.yaml`）は Unity プロジェクト外のワークスペースに配置して運用する。ワークスペースは内蔵（Embedded）と配信（Distribution）の2系統。具体的な配置場所と Excel↔yaml 変換ツールは利用プロジェクト側で定義する。
 
-```
-TextData/
-├── Embedded/Embedded.xlsx        … 内蔵テキスト原本（1シート=1カテゴリ）
-│   └── Contents/*.yaml           … Excel から Export された中間データ（git 管理対象）
-├── Distribution/Distribution.xlsx … 配信テキスト原本（Item/Equipment/ActiveSkill 等マスター用）
-│   └── Contents/*.yaml
-└── Tools/win/Converter/TextDataConverter.exe … Excel↔yaml 変換ツール
-```
-
-1. **Excel 編集**: シート=カテゴリ（enum 型名）、行=1テキスト（enumName / description / 言語別テキスト列 jp, en, ko, zh-TW, zh-CN）
+1. **Excel 編集**: シート=カテゴリ（enum 型名）、行=1テキスト（enumName / description / 言語別テキスト列）
 2. **Export（Excel→yaml）→ Generate（yaml→アセット+コード）**: Excel 保存すると `TextDataAssetUpdater` が自動検出して実行。手動は `Extension/TextData/Open Generate Window` から
 3. **生成物**:
-   - 内蔵: `TextDataConfig` で指定した出力先に `TextData-{lang}.asset` + enum スクリプト（スクリプト生成は Japanese 設定時のみ）。C# の内訳は `{カテゴリ名}.cs`（nested enum）/ `TextData.category.cs`（`CategoryType` enum + Guid テーブル）/ `TextData.definition.cs`（enum→Guid 解決テーブルと `Get`/`Format` オーバーロード群）
+   - 内蔵: `TextDataConfig` で指定した出力先に `TextData-{lang}.asset` + enum スクリプト（スクリプト生成は `LanguageInfo.ScriptGenerate` が有効な言語のみ。どの言語で生成するかは利用側の言語登録で設定）。C# の内訳は `{カテゴリ名}.cs`（nested enum）/ `TextData.category.cs`（`CategoryType` enum + Guid テーブル）/ `TextData.definition.cs`（enum→Guid 解決テーブルと `Get`/`Format` オーバーロード群）
    - 配信: 配信用出力先に `TextData-{lang}.asset`（**enum は生成されない**。ExternalAsset として配信）
 4. テキストは生成時に AES 暗号化されアセットへ格納。実行時は参照時に遅延復号
 
@@ -67,10 +58,10 @@ Guid と ID名 の重複は Export 時に処理される:
 ## 注意点・罠
 
 - **失敗時挙動の非対称に注意**: enum 版 `Format` はテキスト未定義・未ロード時に空文字を返して `Debug.LogError`、文字列キー版 `Format(string, ...)` は null を返す。`Get` は両版とも null を返す（`""` ではない）
-- **文字列キーの形式は `シート名-Enum名`**: 例 `Item-Name_100001`。配信テキストはマスターのカラムにこのキーを設定して運用する（コード直書きしない）
+- **文字列キーの形式は `シート名-Enum名`**。配信テキストはマスターのカラムにこのキーを設定して運用する（コード直書きしない）
 - **初期化順**: `SetCryptoKey` → `LoadEmbedded` → （マスターロード後）`AddContents`。エディタでは `TextDataLoader` が自動処理
 - **`LoadEmbedded` は既存辞書を `Clear()` してから取り込む**: `AddContents` は追加合成（同一 Guid は上書き、完了後 `OnUpdateContents` 発火）
-- **TextSetter は Awake / OnEnable でテキストを上書きする**: `SetActive(true)` 直後にコードで `text` を設定する場合は**有効化後に設定**しないと TextSetter に上書きされる
+- **TextSetter は実行時 Awake でテキストを設定する**（エディタの OnEnable 処理は再生中は動かない。実行時の再適用は `OnUpdateContentsAsObservable` 購読経由のみ）: 非アクティブ状態でコードから `text` を設定すると、初回アクティブ化時の Awake で TextSetter 側の値に上書きされる
 - **TextSetter 設定済みの Text を直接書き換えない**: テキスト更新イベント（言語切替・配信取込）で TextSetter が再適用し戻される。動的テキストは TextSetter の textGuid を空にしてコードで設定するか、`textSetter.Format()` を使う
 - **ダミーテキスト（`#` 付き）はエディタ専用**: textGuid 未設定時のみレイアウト確認用に表示。`OnDisable`/ビルド時に除去されるので実機には出ない
 - **`TextData.Instance` のコンストラクタは private**: `Singleton<T>` 経由（`Instance` 初回アクセスで生成）。`CreateInstance()` 呼び出しは不要

@@ -7,7 +7,7 @@
 ## 概要
 
 DOTween の `Tweener` を「await 可能・キャンセル対応・**再生速度一括制御**」で実行するコントローラ。
-`Time.timeScale` を使わずに管理下の全 Tween の `timeScale` を書き換える方式のため、UI や他演出に影響を与えずに特定グループ（例: 戦闘演出）だけ倍速/停止できる。
+`Time.timeScale` を使わずに管理下の全 Tween の `timeScale` を書き換える方式のため、UI や他演出に影響を与えずに特定グループ（同一 `TweenController` に登録した演出）だけ倍速/停止できる。
 DOTween を単発で使う分には本モジュールは不要。**速度連動・一括Killが必要なグループ演出**で使う。
 主要クラス: `TweenController`（sealed・非MonoBehaviour・`LifetimeDisposable` 継承。Tweener の await 再生・実行中リスト管理・TimeScale 一括反映・一括 Kill）の1クラスのみ。利用側はグループ演出の Singleton 等でラップし、寿命に合わせて `KillAllTweeners()` を呼ぶ。
 

@@ -2,7 +2,7 @@
 
 > **namespace**: `Modules.Localize`（`Language/Editor/`・`Sprite/Editor/` 配下も同一 namespace）
 > **場所**: `Client/Assets/UniModules/Scripts/Modules/Localize/`
-> **依存**: R3 / UniTask / Extensions（Singleton, AesCryptoKey, SerializableDictionary, UnityUtility）/ Modules.Cache（SpriteAtlasCache）/ Modules.Devkit.Prefs（Editor: ProjectPrefs）/ Modules.TextData.Editor（Editor: TextDataLoader）
+> **依存**: R3 / UniTask / Extensions（Singleton, AesCryptoKey, SerializableDictionary, UnityUtility）/ Modules.Cache（SpriteAtlasCache）/ Modules.Scene（`LocalizeAtlasRequest`）/ Modules.Devkit.Prefs（Editor: ProjectPrefs）/ Modules.TextData.Editor（Editor: TextDataLoader）
 
 ## 概要
 
@@ -24,7 +24,7 @@ EditorLanguage.selection (ProjectPrefs 保存の int。利用側言語 enum の�
 
 | やりたいこと | 使うもの |
 |---|---|
-| エディタの表示言語を切り替えたい | メニュー `Extension/Localize/Open LanguageSelector Window`（実体: `LanguageSelector.Open(typeof(<言語enum>))`） |
+| エディタの表示言語を切り替えたい | `LanguageSelector.Open(typeof(<言語enum>))`（メニュー登録は利用側） |
 | エディタの現在言語を取得/設定したい | `EditorLanguage.selection`（int。言語enumの値、未選択は -1） |
 | コードから一時的に言語を切り替えたい | `EditorLanguage.selection` を退避 → 書換え → `finally` で復元 |
 | 言語別スプライトを Image に表示したい | `LocalizeSpriteSetter`（Atlas 配信）/ `BuiltinLocalizeSpriteSetter`（アプリ同梱） |

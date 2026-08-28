@@ -8,7 +8,7 @@
 
 Unity IAP（In App Purchasing）のラッパー基盤。ストア商品の登録・購入開始・購入/復元結果の Observable 通知・Pending（購入未確定）管理を提供する。
 **サーバー検証前提の設計**: `ProcessPurchase` は常に `Pending` を返し、サーバーでのレシート検証・付与が成功した後に `PurchaseFinish` で確定（`ConfirmPendingPurchase`）する。アプリ強制終了時もレシートが Pending に残り、次回起動の Restore で救済される。
-Client 側は本基盤を継承した Manager を1つ用意し、`FetchProducts()` で「販売する商品定義」を返す実装を書く。
+利用側は本基盤を継承した Manager を1つ用意し、`FetchProducts()` で「販売する商品定義」を返す実装を書く。
 主要クラス: `PurchaseManager<TInstance>`（基盤本体。abstract、`FetchProducts()` 実装必須）/ `IStorePurchasing`・`ApplePurchasing`・`GooglePlayStorePurchasing`（ストア固有処理）/ `PurchaseResult`（購入結果）/ `BuyFailureReason`（購入開始失敗理由の enum）。
 
 ## 課金フローの全体像
@@ -74,6 +74,6 @@ Client 側は本基盤を継承した Manager を1つ用意し、`FetchProducts(
 ## 関連
 
 - [PlayFab](PlayFab.md) — レシート検証・付与をサーバー経由で行う場合の主経路
-- [Master](Master.md) — 商品 ID・プラットフォームの定義元
+- [Master](Master.md) — 商品 ID をマスターで管理する場合の供給元（マスター定義は利用側）
 - [R3Extension](R3Extension.md) — Observable 購読パターン
 - [../Extensions/Core.md](../Extensions/Core.md) — `Singleton<T>` / `CreateInstance` / `AddTo(Disposable)`

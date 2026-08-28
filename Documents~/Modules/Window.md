@@ -2,11 +2,11 @@
 
 > **namespace**: `Modules.Window`
 > **場所**: `Client/Assets/UniModules/Scripts/Modules/Window/`（Window.cs / PopupManager.cs / PopupStashManager.cs / TouchBlock.cs / PopupParent.cs の5ファイル。`Editor/` サブフォルダなし）
-> **依存**: UniTask / R3 / Extensions（`UnityUtility`, `SingletonMonoBehaviour`, `Singleton`, `Scope`）/ Modules.InputControl（`BlockInput`）/ Modules.Scene（シーン遷移連携）
+> **依存**: UniTask / R3 / Extensions（`UnityUtility`, `SingletonMonoBehaviour`, `Singleton`）/ Modules.InputControl（`BlockInput`）/ Modules.Scene（シーン遷移連携）
 
 ## 概要
 
-ポップアップウィンドウ基盤。`Window` が開閉ライフサイクル（`Open{ Prepare → SetActive(true) → OnOpen → Status=Opened }` / `Close{ OnClose → SetActive(false) → Status=Closed → DeleteOnCloseなら破棄 }`）を、`PopupManager` が多重表示管理（表示順・背面タッチブロック・シーン遷移時の破棄）を担う。
+ポップアップウィンドウ基盤。`Window` が開閉ライフサイクル（`Open{ Prepare → SetActive(true) → OnOpen → Status=Opened }` / `Close{ OnClose → SetActive(false) → Status=Closed → DeleteOnCloseなら破棄 }`）を、`PopupManager` が多重表示管理（表示順・背面タッチブロック・`Clean()` による一括破棄）を担う。
 
 主要クラス: `Window`（開閉ライフサイクルと `Status` 管理。`Prepare / OnOpen / OnClose` が override ポイント）/ `PopupManager<TInstance>`（開いている Window のリスト管理〈Scene用 / Global用の2系統〉・親GameObject生成・TouchBlock 制御）/ `PopupStashManager<...>`（ScenePopups の退避/復元スタック。加算シーン遷移用。シーン Leave 時に自動破棄）/ `TouchBlock`（背面タッチブロック兼 暗幕）/ `PopupParent`（ポップアップ親プレハブの参照ホルダ）/ `IPopupManager`（BackKey 連携用の抽象）。
 
@@ -22,9 +22,9 @@
 | 開く前にデータ・Viewを非同期更新したい | `protected override UniTask Prepare()` を override |
 | 開閉完了を購読したい | `window.OnOpenAsObservable()` / `OnCloseAsObservable()` |
 | 全ウィンドウの開閉をフックしたい | `PopupManager<T>` の `OnOpenWindowAsObservable() / OnOpenedWindowAsObservable() / OnClosedWindowAsObservable()` |
-| 最前面のウィンドウを知りたい | `PopupManager<T>.Current`（`GetCurrentWindow()` も同等） |
-| 何かウィンドウが開いている間待ちたい | `await UniTask.WaitWhile(() => PopupManager<T>.Current != null)` |
-| 加算シーン遷移時にポップアップを保持→戻りで復元したい | `PopupStashManager.Instance.Stash()` / `Restore()` |
+| 最前面のウィンドウを知りたい | `PopupManager<T>.Instance.Current`（`GetCurrentWindow()` も同等） |
+| 何かウィンドウが開いている間待ちたい | `await UniTask.WaitWhile(() => PopupManager<T>.Instance.Current != null)` |
+| 加算シーン遷移時にポップアップを保持→戻りで復元したい | `PopupStashManager` 派生の `Instance.Stash()` / `Restore()`（事前に `Initialize()` 必須。未初期化だと Stash は無言で何もしない） |
 
 ## 使い方
 
@@ -61,13 +61,13 @@ PopupManager.Open(window, isGlobal = false, inputProtect = true):
 - **DeleteOnClose はデフォルト true**。`Close()` で GameObject ごと破棄される。使い回す場合は Open 前に `DeleteOnClose = false`。破棄後のフィールド参照に注意
 - **`Wait()` は Open 前に呼ぶと即抜けする**（非アクティブ判定のため）。必ず `await PopupManager.Open(window)` → `await window.Wait()` の順
 - **Open/Close は Status ガードで多重呼び出しを無視する**。Opened 中の再 `PopupManager.Open()` は「最前面化（再登録）+ 再表示」になり、Openアニメ・onOpen 通知は再実行されない。`Status` と GameObject のアクティブ状態が乖離するのは Stash 退避中のみで、その状態で `PopupManager.Open()` すると表示状態へ復帰する（`window.Open()` を直接呼んでも Status ガードで無視されるだけなので復帰しない）
-- **シーン Leave 時に ScenePopups は `Clean()` で即破棄される**（Close を通らない = OnClose も OnCloseAsObservable も発火しない）。シーンを跨ぎたいものは `isGlobal: true`、加算遷移で戻るなら PopupStashManager
+- **ScenePopups は `Clean()` で即破棄される**（Close を通らない = OnClose も OnCloseAsObservable も発火しない。シーン Leave での `Clean()` 呼び出しは利用側でシーンイベントに配線する）。シーンを跨ぎたいものは `isGlobal: true`、加算遷移で戻るなら PopupStashManager
 - **Instantiate の親は null でよい**。`PopupManager.Open` が Popup 親へ SetParent + SetLayer する。逆に PopupManager を通さず自前で `window.Open()` だけ呼ぶと、親・レイヤー・TouchBlock・BackKey 対象（Current）管理から外れる
 - **Open/Close 実行中は BlockInput で全入力ロック**。`Prepare()` に通信等の長い処理を書くとその間タップ不能になる。ロック不要なら `Open(blockInput: false)`
 - **背景タップで閉じる挙動・BackKey 連携は利用側の PopupManager 派生側で実装する**（`Current` の `CloseIfTouchOutside` を参照して Close 等）
 - **TouchBlock（暗幕）は1枚だけを最前面ウィンドウの直下に差し込む方式**。多重表示時は最前面のみ操作可能になる。暗幕の見た目を個別ウィンドウで変えることはできない
 - **`PopupManager.Unregister` は「閉じる」ではない**。リストから外すだけでウィンドウは表示されたまま（Stash 専用と考える）。通常は `window.Close()` を呼べば Close 購読経由で自動除去される
-- **`CreateInstance()` は SerializeField が空のインスタンスを作ってしまうため使わない**。必ずプレハブから `Instantiate` → `Initialize()`
+- **`PopupManager` を `CreateInstance()` で生成しない**（`SingletonMonoBehaviour` の `CreateInstance()` は SerializeField が空の GameObject を作るため）。必ずプレハブから `Instantiate` → `Initialize()`（`Window` 側に `CreateInstance` / `Initialize` は無い）
 - **Stash は ScenePopups のみ対象**（Global は退避されない）。退避中の Window は所有シーンの Leave 時に自動破棄される（戻らず別シーンへ抜けた場合のリーク対策が組み込み済み）
 - `Current` は Global 優先（GlobalPopups にあればそちらの最前面を返す。無ければ ScenePopups の最前面、どちらも無ければ null）
 - Window の GameObject が Open/Close 途中で破棄された場合、入力ロックは finally で解除されるが `Status` は途中値のまま残る。演出中の強制破棄は避け、`Close()` を経由する
@@ -75,7 +75,7 @@ PopupManager.Open(window, isGlobal = false, inputProtect = true):
 ## 関連
 
 - [View](View.md) — VM 接続（`WindowViewModel`）・子View の VM 自動解決
-- [Scene](Scene.md) — シーン遷移イベント（OnPrepare / OnLeaveComplete / 加算遷移）。PopupManager の親再生成・Clean・Stash が連動
+- [Scene](Scene.md) — シーン遷移イベント（OnPrepare / OnLeaveComplete / 加算遷移）。PopupManager の親再生成・Clean は利用側で配線、PopupStashManager のシーン連動は基盤実装
 - [UI](UI.md) — `UIButton` / `UIText` 等、ウィンドウ内部の UI 部品
 - [Animation](Animation.md) — `AnimationPlayer`（開閉アニメ再生に利用可能。`Modules.Animation`）
 - [BackKey](BackKey.md) — `BackKeyReceiver` / `BackKeyManager`（Android バックキー基盤。`IPopupManager` 経由で本モジュールと連携）

@@ -21,7 +21,7 @@ MVVM 風の View–ViewModel 接続基盤。画面の状態を `ViewModel`（非
 | VM の状態変更を UI に反映したい | VM に `OnXxxAsObservable()`（遅延生成 Subject）を実装し、View 側で `.Subscribe().AddTo(this)` |
 | VM の破棄を検知したい | `viewModel.OnDisposeAsObservable()` |
 | ロード済みシーンの VM を外部から取得したい | `SceneManager.Instance.GetViewModel<TViewModel>(scene)`（Modules.Scene 側の連携 API。未ロードなら null） |
-| View を別の画面ルート配下へ移動した / VM を差し替えた | `viewRoot.RefreshViewModel()` / `view.ClearViewModelCache()` |
+| View を別の画面ルート配下へ移動した / VM を差し替えた | `viewRoot.RefreshViewModel()`（IViewRoot 配下一括）/ `view.RefreshViewModel()`（View 単体。static キャッシュも解除） |
 
 ## 使い方
 
@@ -57,11 +57,11 @@ Scene:   SetArgument() → Initialize()(購読・View初期化) → Prepare()(�
 
 ## 注意点・罠
 
-- **このモジュールに OnInitialize / OnPrepare 等のライフサイクルは無い**。VM の生成は画面ルート実装の責務: Window は `Setup()`→`Initialize()` 内で `new WindowViewModel()`、Scene は基底のフィールド初期化子。ライフサイクル本体は Scene（`Initialize→Prepare→Enter→Leave`）/ Window（`Open{Prepare→OnOpen}→Close{OnClose}`）を参照
+- **このモジュールに OnInitialize / OnPrepare 等のライフサイクルは無い**。VM の生成は画面ルート実装の責務: Window は利用側実装の `Initialize()` 内で `new WindowViewModel()`（その後の Prepare 中に `viewModel.Setup()` を呼ぶ慣例）、Scene は基底のフィールド初期化子。ライフサイクル本体は Scene（`Initialize→Prepare→Enter→Leave`）/ Window（`Open{Prepare→OnOpen}→Close{OnClose}`）を参照
 - **祖先に IViewRoot が無い状態で `ViewModel` プロパティにアクセスすると例外**（`IViewRoot interface not found in ancestors hierarchy.`）。Instantiate 直後・親付け前のアクセスに注意
 - **IViewRoot の Setup 前（VM 生成前）は null が返る**（例外にはならない）。子 View 側は `if (ViewModel == null){ return; }` ガードを入れる
-- **`ViewModel.Dispose()` を自動で呼ぶ仕組みは無い**。明示呼び出しが無い場合は実質 GC のファイナライザ（LifetimeDisposable）任せ。Dispose 済み VM はキャッシュ無効化され再解決される
-- **VM 解決キャッシュは static（アプリ全域共有）**。生存中の View を別の画面ルート配下へ付け替えた場合、古い VM がキャッシュに残るため `RefreshViewModel()` / `ClearViewModelCache()` を呼ぶこと
+- **`ViewModel.Dispose()` を自動で呼ぶ仕組みは無い**。明示呼び出しが無い場合は実質 GC のファイナライザ（LifetimeDisposable）任せ。Dispose 済み VM も型が一致する限り static キャッシュからそのまま返り続ける（自動では再解決されない。差し替えたら `RefreshViewModel()` で明示解除する）
+- **VM 解決キャッシュは static（アプリ全域共有）**。生存中の View を別の画面ルート配下へ付け替えた場合、古い VM がキャッシュに残るため `RefreshViewModel()` を呼ぶこと（`ClearViewModelCache()` は ViewBase のローカル参照のみクリアし、static キャッシュには効かない）
 - **R3 を使用**（`using R3;`）。`Observable<T>` / `Subject<T>` / `.AddTo(this)`。UniRx の `IObservable<T>` ではない
 - **VM は MonoBehaviour ではない**。`new` で生成し、`[SerializeField]` は使えない。UI 参照は View 側に持たせ、VM には状態とロジックのみ置く
 - 命名慣例: Window の VM はネストクラス `WindowViewModel`（ファイルは `*.viewmodel.cs`）、Scene の VM は `XxxViewModel` 単独ファイル

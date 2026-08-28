@@ -29,7 +29,7 @@ PlayFab CSharpSDK の補助基盤。基盤側は2ファイルのみで、(1) SDK
 
 - 1 Function = 1クラス（`static CallFunction()`）を作り、CloudScript 実行の共通処理（リトライ・エンコード）を1箇所に集約する
 - パラメータは **MessagePack シリアライズ → Base64 文字列化** して送信するのがこの基盤の想定（`[MessagePackObject(true)]` 付きの `RequestBody` を定義）。**Azure Functions 側もこの形式でデコードする実装が必要**
-- 環境判別のためのフィールド（`publishType` 等）を RequestBody に含めるかは利用側の設計次第
+- 環境判別のためのフィールドを RequestBody に含めるかは利用側の設計次第
 
 ## 注意点・罠
 

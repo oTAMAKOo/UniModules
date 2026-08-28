@@ -1,7 +1,7 @@
 # Devkit
 
 > **namespace**: `Modules.Devkit.*`（サブ機能ごとに分割。一部フォルダ名と不一致 → 「注意点・罠」参照）
-> **場所**: `Client/Assets/UniModules/Scripts/Modules/Devkit/`（約200ファイル・42サブフォルダ）
+> **場所**: `Client/Assets/UniModules/Scripts/Modules/Devkit/`（約200ファイル・約40サブフォルダ）
 > **依存**: UniTask / R3 / Newtonsoft.Json / Extensions（`Singleton<T>`, `LifetimeDisposable`, `SingletonEditorWindow<T>` 等）/ SRDebugger（ThirdParty, `ENABLE_SRDEBUGGER` 時）
 
 ## 概要
@@ -32,7 +32,7 @@
 | ScriptableObject アセットをコードから生成したい | `ScriptableObjectGenerator.Generate<T>()` |
 | DefineSymbol をコード/GUIで操作したい | `DefineSymbol.Add/Delete/Contains` / `Extension/Settings/Open DefineSymbolWindow` |
 | 起動シーンを経由してPlayしたい | メニュー `Extension/Utility/Open SceneLaunchWindow` |
-| マスターの中身をエディタで見たい/編集したい | メニュー `Extension/Master/Open MasterViewer`（→ [Master.md](Master.md)） |
+| マスターの中身をエディタで見たい/編集したい | `MasterViewerWindow<T>` 派生ウィンドウ（メニュー登録は利用側。→ [Master.md](Master.md)） |
 | テクスチャの圧縮状態を一覧したい | メニュー `Extension/Utility/Open TextureViewerWindow` |
 | sln/csproj 生成をカスタムしたい | `VisualStudioFileCallback` / `ProjectFilesGenerator`（`ENABLE_VSTU`） |
 | シーン内にメモを残したい（ビルド非混入） | `Memo` コンポーネント（Productionビルド時に自動除去） |
@@ -62,9 +62,9 @@
 | Inspector | `Modules.Devkit.Inspector` | `DefaultAssetInspector`, `ExtendInspector`(abstract), `FolderInspector`, `RegisterScrollView<T>`(abstract), `TransformInspector`, `RectTransformSanitizer` | インスペクタ拡張基盤。`DefaultAssetInspector.AddExtendInspector<T>()` で登録。`RegisterScrollView<T>` は設定Window用の追加/削除可能リストUI部品 |
 | EventHook | `Modules.Devkit.EventHook` | `HierarchyChangeNotification`, `CurrentSceneSaveHook`, `PrefabApplyHook`, `PrefabModeEventHook`, `AdditionalComponent` | エディタイベントのObservable化とコンポーネント自動付与。`AdditionalComponent.RegisterRequireComponents(...)` |
 | Hierarchy | `Modules.Devkit.Hierarchy` | `HierarchyItemDrawer<T>`(Singleton), `ItemContentDrawer`(abstract), `ActiveToggleDrawer`, `ComponentIconDrawer`, `MissingComponentDrawer` | Hierarchy行の装飾（トグル/アイコン/Missing警告）。表示切替 `Extension/Settings/Hierarchy/...` |
-| MasterViewer | `Modules.Devkit.MasterViewer` | `MasterViewerWindow<T>`, `MasterController`, `RecordWindow` | マスターデータ閲覧・実行中(`Application.isPlaying`)のみ編集可。入口 `Extension/Master/Open MasterViewer`（→ [Master.md](Master.md)） |
+| MasterViewer | `Modules.Devkit.MasterViewer` | `MasterViewerWindow<T>`, `MasterController`, `RecordWindow` | マスターデータ閲覧・実行中(`Application.isPlaying`)のみ編集可。入口は利用側でメニュー登録（→ [Master.md](Master.md)） |
 | MasterGenerator | **`Modules.Master`**（フォルダ名と不一致） | `MasterGenerator`, `MasterConfig`, `RecordDataLoader`, `MasterS3Uploader` | .record(YAML)→.master 生成とS3アップロード（→ [Master.md](Master.md)） |
-| MasterFileNameViewer | **`Modules.Master`** | `MasterFileNameWindow<T>`(abstract) | マスター名⇔暗号化ファイル名の対応表示。入口 `Extension/Master/Open MasterFileNameViewer` |
+| MasterFileNameViewer | **`Modules.Master`** | `MasterFileNameWindow<T>`(abstract) | マスター名⇔暗号化ファイル名の対応表示。入口は利用側でメニュー登録 |
 | TextureViewer | `Modules.Devkit.TextureViewer` | `TextureViewerWindow`, `TextureInfo`, `TextureViewerConfig` | 全テクスチャのサイズ・圧縮設定を一覧表示。入口 `Extension/Utility/Open TextureViewerWindow` |
 | ValidateAsset | `Modules.Devkit.ValidateAsset.TextureSize` / `.UnityWarning` | `ValidateTextureSize`, `TextureSizeValidateConfig`, `TextureSizeChatWorkNotify`, `UnityWarningChatWorkNotify` | テクスチャサイズ規約違反の検出とChatWork通知（CI連携） |
 | VisualStudio | `Modules.Devkit.VisualStudio` | `VisualStudioFileCallback`(static), `ProjectFilesGenerator`, `SolutionFile`, `ProjectFile` | sln/csproj 生成フック（`ENABLE_VSTU`） |
@@ -103,7 +103,7 @@
 ## UnityConsole のランタイム挙動
 
 `UnityConsole` は**リリースビルドで自動的に無効化される開発用ログ**。出力可否は `UnityConsole.Enable` が一元判定する: `UNITY_EDITOR` または `ENABLE_DEVKIT` 定義時は常に有効、それ以外（実機）は `Debug.isDebugBuild`（Developmentビルドのみ有効）。
-つまり本番ビルドでは呼び出しが空振りになるため、`#if` で囲まずにログを書ける。加えてエディタでは `UnityConsoleConfigWindow` でイベント名単位の表示ON/OFFができ、`[Battle]` `[Initialize]` のような色付きプレフィックスでフィルタしやすい。デフォルトでスタックトレースを抑制する（`DisableStackTraceScope`）ためコンソールが汚れない。
+つまり本番ビルドでは呼び出しが空振りになるため、`#if` で囲まずにログを書ける。加えてエディタでは `UnityConsoleConfigWindow` でイベント名単位の表示ON/OFFができ、`[機能名]` のような色付きプレフィックスでフィルタしやすい。デフォルトでスタックトレースを抑制する（`DisableStackTraceScope`）ためコンソールが汚れない。
 非メインスレッドからも呼べる（`SynchronizationContext.Post` でメインへ）。機能専用ログクラスの定型は、イベント名+色を定義して `UnityConsole.Event` を呼ぶ形。
 
 ## 使い方

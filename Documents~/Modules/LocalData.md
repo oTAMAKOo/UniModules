@@ -2,7 +2,7 @@
 
 > **namespace**: `Modules.LocalData`
 > **場所**: `Client/Assets/UniModules/Scripts/Modules/LocalData/`
-> **依存**: UniTask / R3 / MessagePack / Extensions（`Singleton`, `AesCryptoKey`, `MessagePackFileUtility`, `UnityPathUtility`） / Modules.Devkit.Console（ログ出力） / Modules.MessagePack（`UnityCustomResolver`）
+> **依存**: UniTask / R3 / Extensions（`Singleton`, `AesCryptoKey`, `MessagePackFileUtility`, `UnityPathUtility`） / Modules.Devkit.Console（ログ出力） / MessagePack・Modules.MessagePack（`MessagePackFileUtility` 経由の間接依存。Resolver は `UnityCustomResolver`）
 
 ## 概要
 

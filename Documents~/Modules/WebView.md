@@ -27,4 +27,4 @@
 ## 関連
 
 - [Network](Network.md) — HTTP クライアント
-- [CriWare](CriWare.md) / [Vivox](Vivox.md) — 同じく「SDK 導入 + シンボル定義で有効化」する休眠モジュール
+- [CriWare](CriWare.md) / [Vivox](Vivox.md) — 同じく「SDK 導入 + シンボル定義で有効化」する条件付きコンパイルモジュール

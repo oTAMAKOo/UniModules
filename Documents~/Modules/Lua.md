@@ -2,7 +2,7 @@
 
 > **namespace**: `Modules.Lua`（`Lua/`） / `Modules.Lua.Command`（`Lua.command/`） / `Modules.Lua.Text`（`Lua.text/`）
 > **場所**: `Client/Assets/UniModules/Scripts/Modules/Lua/` + `Lua.command/` + `Lua.text/`（3フォルダで1系統）
-> **依存**: xLua（`XLua.LuaEnv` / `LuaAsset`） / UniTask / R3 / Extensions（`LifetimeDisposable`, `AesCryptoKey`, `Security.XXTEA`） / Modules.Localize（`EditorLanguage`、Editor専用） / Modules.Devkit（Editor専用）
+> **依存**: xLua（`XLua.LuaEnv` / `LuaAsset`） / UniTask / R3 / Extensions（`LifetimeDisposable`, `AesCryptoKey`, `Security.XXTEA`） / Modules.Localize（`EditorLanguage`、Editor専用） / Modules.Devkit（Editor専用） / Newtonsoft.Json（Editor専用）
 
 ## 概要
 

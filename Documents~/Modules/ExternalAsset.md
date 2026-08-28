@@ -10,7 +10,7 @@
 アセット一覧は `AssetInfoManifest`（ScriptableObject）で管理し、**ローカルキャッシュのファイル名にコンテンツハッシュ(SHA256先頭32文字)を埋め込む**ことで、更新要否判定を `File.Exists` だけで完結させる設計。
 アセットをロードする時は原則 `await ExternalAsset.LoadAsset<T>(resourcePath)` の1行（未DLなら自動DL→ロードまで面倒を見る）。
 
-主要クラス: `ExternalAsset`（窓口）/ `AssetInfoManifest`（全 `AssetInfo` + `VersionHash`(rootHash)。それ自体もAssetBundleとして配信され毎回DLされる）/ `AssetBundleManager`（`Modules.AssetBundles`。DL・依存解決・参照カウント・ロード。DL/ロードのタイムアウト(60s/10s)+リトライ(5回/2秒間隔)内蔵）/ `FileAssetManager`（非AssetBundle生ファイルのDL。一時ファイル(.tmp)→リネームで原子的に書き込み）/ `AssetBundleFileStream`（パッケージ復号ストリーム基底。利用側で AES-CTR 等の暗号化方式を実装する）。
+主要クラス: `ExternalAsset`（窓口）/ `AssetInfoManifest`（全 `AssetInfo` + `VersionHash`(rootHash)。それ自体もAssetBundleとして配信され毎回DLされる）/ `AssetBundleManager`（`Modules.AssetBundles`。DL・依存解決・参照カウント・ロード。DL/ロードのタイムアウト(60s/10s)+リトライ(5回/2秒間隔)内蔵）/ `FileAssetManager`（非AssetBundle生ファイルのDL。実DLを担う `FileAssetDownloader` が一時ファイル(.tmp)→リネームで原子的に書き込む）/ `AssetBundleFileStream`（パッケージ復号ストリーム基底。利用側で AES-CTR 等の暗号化方式を実装する）。
 エディタ側: `ManageWindow`（グループ登録 → `ManagedAssets.asset`）→ `AssetInfoManifestGenerator`（マニフェスト生成）→ `BuildManager`（ビルド統括。出力先・除外設定は `ExternalAssetConfig`、SBP中間出力は `Library/AssetBundleBuildCache/{Platform}`）→ `ExternalAssetS3Uploader`（差分アップロード）。ビルドパイプライン/暗号化の差し替え点は `BuildManager.BundlePipeline` / `FileStreamFactory`（利用側で `[InitializeOnLoadMethod]` で設定するのが定石）。
 
 ### データの流れ（全体像）
@@ -28,7 +28,7 @@
     キャッシュ: {persistentDataPath}/Contents/{Hash先頭32文字}{拡張子}
 ```
 
-- **resourcePath**（ロードパス）= `Assets/Resource (External)/` からの相対パス・**拡張子付き**。例: `"Contents/Item/Icon/ItemIconAtlas.spriteatlasv2"`
+- **resourcePath**（ロードパス）= `Assets/Resource (External)/` からの相対パス・**拡張子付き**。例: `"Contents/<カテゴリ>/<アセット名>.spriteatlasv2"`
 - `Share:` プレフィックス付きは `Assets/Resource (Share)/` 配下（共有アセット。`ExternalAsset.ShareGroupPrefix`）
 - リモートファイル名（`AssetInfo.FileName`）はアセットバンドル名等のハッシュで難読化（`AssetManagement.SetCryptoFileName`）
 
@@ -61,13 +61,13 @@
 | 【Editor】アセットのロードパス確認 | メニュー `Extension > ExternalAsset > Open AssetNavigationWindow` |
 | 【Editor】マニフェスト手動生成 | メニュー `Extension > ExternalAsset > Generate AssetInfoManifest` |
 | 【Editor】外部アセットビルド | `BuildExternalAssets.Execute()` / `BuildManager.Build(exportPath, manifest)` |
-| 【Editor】S3アップロード | `ExternalAssetS3Uploader.Upload(uploader)`（利用側で `IUploader` 実装） |
+| 【Editor】S3アップロード | `ExternalAssetS3Uploader.Upload(uploader)`（利用側で抽象クラス `S3Uploader` 派生を実装） |
 
 ## 使い方
 
 定型パターン:
 
-- **ロード基本形（最頻出。パス直指定・型指定）**: `var atlas = await ExternalAsset.LoadAsset<SpriteAtlas>("Contents/Item/Icon/ItemIconAtlas.spriteatlasv2");`（SpriteAtlas は `SpriteAtlasCache` と併用）
+- **ロード基本形（最頻出。パス直指定・型指定）**: `var atlas = await ExternalAsset.LoadAsset<SpriteAtlas>(loadPath);`（loadPath は拡張子付き resourcePath）（SpriteAtlas は `SpriteAtlasCache` と併用）
 - **autoUnload: false + 明示解放**: `LoadAsset<SpriteAtlas>(loadPath, false)` → Sprite取得後に `ExternalAsset.UnloadAssetBundle(loadPath)`
 - **事前ダウンロード（進捗付き並列DL）**: `GetGroupAssetInfos(group)` → `IsRequireUpdate` でDLが必要なアセットのみに絞り込み → 各 `ExternalAsset.UpdateAsset(resourcePath, progress)` を `UniTask.WhenAll`（進捗は `IProgress<DownloadProgressInfo>` で受けて合算）
 - **起動時の一括更新**: `GetRequireUpdateAssetInfos()`（全グループの要更新一覧）→ グループフィルタ後に順次 `ExternalAsset.UpdateAsset(assetInfo.ResourcePath, cancelToken: cancelToken)`
