@@ -20,6 +20,7 @@ namespace Modules.Scene
 
         //----- field -----
         
+        private Subject<SceneInstance<TScenes>> onBeforeAppendTransition = null;
         private Subject<SceneInstance<TScenes>> onAppendTransition = null;
         private Subject<SceneInstance<TScenes>> onUnloadTransition = null;
 
@@ -156,7 +157,14 @@ namespace Modules.Scene
         public void AppendTransition<TArgument>(TArgument sceneArgument) where TArgument : ISceneArgument<TScenes>
         {
             // 遷移中は遷移不可.
-            if (IsTransition) { return; }
+            if (IsTransition)
+            {
+                var message = $"AppendTransition is ignored (now transitioning).\nTarget : {sceneArgument.Identifier}";
+
+                UnityConsole.Event(ConsoleEventName, ConsoleEventColor, message, LogType.Warning);
+
+                return;
+            }
 
             IsTransition = true;
             
@@ -226,6 +234,12 @@ namespace Modules.Scene
                     sceneInstance.MarkAsAppend();
 
                     SetSceneActive(sceneInstance.GetScene());
+                }
+
+                // 加算遷移成立通知 (加算遷移通知より先に発火する).
+                if (sceneInstance != null && onBeforeAppendTransition != null)
+                {
+                    onBeforeAppendTransition.OnNext(sceneInstance);
                 }
 
                 // 加算遷移通知.
@@ -309,7 +323,14 @@ namespace Modules.Scene
         public void UnloadTransition(TScenes transitionScene, SceneInstance<TScenes> unloadSceneInstance)
         {
             // 遷移中は遷移不可.
-            if (IsTransition) { return; }
+            if (IsTransition)
+            {
+                var message = $"UnloadTransition is ignored (now transitioning).\nTarget : {transitionScene}";
+
+                UnityConsole.Event(ConsoleEventName, ConsoleEventColor, message, LogType.Warning);
+
+                return;
+            }
 
             IsTransition = true;
             
@@ -476,6 +497,12 @@ namespace Modules.Scene
             return AppendSceneInstances.FirstOrDefault(x => x.GetScene() == target.scene);
         }
         
+        /// <summary> 加算シーン遷移成立時にOnAppendTransitionより先に発火（加算されたシーンを引数で通知） </summary>
+        public Observable<SceneInstance<TScenes>> OnBeforeAppendTransitionAsObservable()
+        {
+            return onBeforeAppendTransition ?? (onBeforeAppendTransition = new Subject<SceneInstance<TScenes>>());
+        }
+
         /// <summary> 加算シーン遷移時に発火（加算されたシーンを引数で通知） </summary>
         public Observable<SceneInstance<TScenes>> OnAppendTransitionAsObservable()
         {

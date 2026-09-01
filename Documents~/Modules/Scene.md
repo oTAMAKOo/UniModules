@@ -25,6 +25,7 @@ Unity シーンの遷移・ロード管理基盤。シーンを enum で識別�
 | 履歴で1つ前のシーンへ戻りたい | `TransitionBack()`（`Transition(arg, registerHistory: true, mode)` で履歴登録した遷移が対象。履歴登録可否を SceneArgument 側の bool で切り替える慣例は利用側で用意する） |
 | 遷移中かを判定したい（多重遷移防止） | `if (sceneManager.IsTransition){ return; }` |
 | 遷移の完了・各フェーズをフックしたい | `OnEnterCompleteAsObservable()` / `OnPrepareAsObservable()` 等 |
+| 加算遷移の成立をフックしたい | `OnBeforeAppendTransitionAsObservable()` → `OnAppendTransitionAsObservable()` の順で発火（引数は加算されたシーン。前者は「加算遷移通知の購読処理より先に実行したい処理」用で、シーンロード完了後＝遷移成立が確定した時点で発火する） |
 | 遷移中に非同期処理を待たせたい（サーバー同期等） | `BeginWait()` / `FinishWait(handler)`（`using` 可） |
 | シーン側から遷移を拒否したい | シーンに `ITransitionHandler` を実装し `HandleTransition()` で false（チェックが走るのは Additive 遷移のみ。Single 遷移では呼ばれない） |
 | シーンのロード/アンロード時に処理したい | SceneBase と同一 GameObject に `ISceneEvent` 実装コンポーネント |
@@ -70,7 +71,7 @@ Transition(argument)  ※ void・fire-and-forget（await 不可）
 
 ## 注意点・罠
 
-- **`Transition` 系はすべて void（await 不可）**。内部で fire-and-forget 実行される。完了検知は `OnEnterCompleteAsObservable()` 等。呼び出し前に `if (sceneManager.IsTransition){ return; }` ガードを入れるのが定型（`Transition` / `Reload` / `AppendTransition` / `UnloadTransition` は遷移中の呼び出しが黙って無視されるため、押下連打等で「何も起きない」だけになる。`ForceAppendTransition` / `ForceUnloadTransition` は進行中の遷移をキャンセルしてから実行する）
+- **`Transition` 系はすべて void（await 不可）**。内部で fire-and-forget 実行される。完了検知は `OnEnterCompleteAsObservable()` 等。呼び出し前に `if (sceneManager.IsTransition){ return; }` ガードを入れるのが定型（`Transition` / `Reload` / `AppendTransition` / `UnloadTransition` は遷移中の呼び出しが無視され、UnityConsole の "Scene" イベントに Warning ログが出る。押下連打等では「何も起きない」だけになる。`ForceAppendTransition` / `ForceUnloadTransition` は進行中の遷移をキャンセルしてから実行する）
 - **`Initialize` はロード時1回のみ**。`Cache = true` のシーンはキャッシュから再表示された時 `Initialize` が呼ばれない。遷移毎に必要な処理は `Prepare` / `Enter` に書く
 - **`Enter` は同期メソッド**。async にできない。非同期の開始処理は `.Forget()` で投げる
 - **`SetArgument` は `Prepare` より前**に呼ばれる。`Prepare` 内から `Argument` は参照可能。逆に `Initialize` 時点では未設定の場合がある（キャッシュヒット時を除き Load 直後の Initialize が先行）

@@ -241,11 +241,18 @@ namespace Modules.Scene
         }
 
         /// <summary> シーン遷移. </summary>
-        public void Transition<TArgument>(TArgument sceneArgument, bool registerHistory = false, LoadSceneMode mode = LoadSceneMode.Additive) 
+        public void Transition<TArgument>(TArgument sceneArgument, bool registerHistory = false, LoadSceneMode mode = LoadSceneMode.Additive)
             where TArgument : ISceneArgument<TScenes>
         {
             // 遷移中は遷移不可.
-            if (IsTransition) { return; }
+            if (IsTransition)
+            {
+                var message = $"Transition is ignored (now transitioning). Target : {sceneArgument.Identifier}";
+
+                UnityConsole.Event(ConsoleEventName, ConsoleEventColor, message, LogType.Warning);
+
+                return;
+            }
 
             IsTransition = true;
 
@@ -259,7 +266,14 @@ namespace Modules.Scene
         public void Reload()
         {
             // 遷移中は遷移不可.
-            if (IsTransition) { return; }
+            if (IsTransition)
+            {
+                var message = "Reload is ignored (now transitioning).";
+
+                UnityConsole.Event(ConsoleEventName, ConsoleEventColor, message, LogType.Warning);
+
+                return;
+            }
 
             IsTransition = true;
 

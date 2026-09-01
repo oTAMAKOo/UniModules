@@ -8,7 +8,7 @@
 
 ポップアップウィンドウ基盤。`Window` が開閉ライフサイクル（`Open{ Prepare → SetActive(true) → OnOpen → Status=Opened }` / `Close{ OnClose → SetActive(false) → Status=Closed → DeleteOnCloseなら破棄 }`）を、`PopupManager` が多重表示管理（表示順・背面タッチブロック・`Clean()` による一括破棄）を担う。
 
-主要クラス: `Window`（開閉ライフサイクルと `Status` 管理。`Prepare / OnOpen / OnClose` が override ポイント）/ `PopupManager<TInstance>`（開いている Window のリスト管理〈Scene用 / Global用の2系統〉・親GameObject生成・TouchBlock 制御）/ `PopupStashManager<...>`（ScenePopups の退避/復元スタック。加算シーン遷移用。シーン Leave 時に自動破棄）/ `TouchBlock`（背面タッチブロック兼 暗幕）/ `PopupParent`（ポップアップ親プレハブの参照ホルダ）/ `IPopupManager`（BackKey 連携用の抽象）。
+主要クラス: `Window`（開閉ライフサイクルと `Status` 管理。`Prepare / OnOpen / OnClose` が override ポイント）/ `PopupManager<TInstance>`（開いている Window のリスト管理〈Scene用 / Global用の2系統〉・親GameObject生成・TouchBlock 制御）/ `PopupStashManager<...>`（ScenePopups の退避/復元スタック。加算遷移成立時に自動 Stash・戻り遷移でオーナーシーンへ戻ると自動 Restore・シーン Leave 時に自動破棄）/ `TouchBlock`（背面タッチブロック兼 暗幕）/ `PopupParent`（ポップアップ親プレハブの参照ホルダ）/ `IPopupManager`（BackKey 連携用の抽象）。
 
 ## 逆引き（〜したい）
 
@@ -24,7 +24,7 @@
 | 全ウィンドウの開閉をフックしたい | `PopupManager<T>` の `OnOpenWindowAsObservable() / OnOpenedWindowAsObservable() / OnClosedWindowAsObservable()` |
 | 最前面のウィンドウを知りたい | `PopupManager<T>.Instance.Current`（`GetCurrentWindow()` も同等） |
 | 何かウィンドウが開いている間待ちたい | `await UniTask.WaitWhile(() => PopupManager<T>.Instance.Current != null)` |
-| 加算シーン遷移時にポップアップを保持→戻りで復元したい | `PopupStashManager` 派生の `Instance.Stash()` / `Restore()`（事前に `Initialize()` 必須。未初期化だと Stash は無言で何もしない） |
+| 加算シーン遷移時にポップアップを保持→戻りで復元したい | `PopupStashManager` 派生を `Initialize()` しておくだけで自動（加算遷移成立時に自動 Stash・戻り遷移でオーナーシーンへ戻ると自動 Restore。呼び出し側の実装は不要）。手動制御用に `Stash()` / `Restore()` / `DiscardTop()` / `DiscardAll()` も公開 |
 
 ## 使い方
 
@@ -68,6 +68,8 @@ PopupManager.Open(window, isGlobal = false, inputProtect = true):
 - **TouchBlock（暗幕）は1枚だけを最前面ウィンドウの直下に差し込む方式**。多重表示時は最前面のみ操作可能になる。暗幕の見た目を個別ウィンドウで変えることはできない
 - **`PopupManager.Unregister` は「閉じる」ではない**。リストから外すだけでウィンドウは表示されたまま（Stash 専用と考える）。通常は `window.Close()` を呼べば Close 購読経由で自動除去される
 - **`PopupManager` を `CreateInstance()` で生成しない**（`SingletonMonoBehaviour` の `CreateInstance()` は SerializeField が空の GameObject を作るため）。必ずプレハブから `Instantiate` → `Initialize()`（`Window` 側に `CreateInstance` / `Initialize` は無い）
+- **Stash/Restore は自動実行**（`Initialize()` 済みなら加算遷移成立時＝`OnBeforeAppendTransition` で Stash、戻り遷移で直近の退避のオーナーシーンへ戻った時に Restore が走る。手動で呼ぶ必要はない。オーナー以外への戻りではスタックに残り、オーナーへ戻った時に復元される）
+- **利用側の初期化順**: `PopupStashManager.Initialize()` は PopupManager の生成・`Initialize()` より後に呼ぶ（自動 Restore が `OnUnloadTransition` を購読するため、購読順で「ポップアップ親の再生成 → Restore」の順序を保証する必要がある）
 - **Stash は ScenePopups のみ対象**（Global は退避されない）。退避中の Window は所有シーンの Leave 時に自動破棄される（戻らず別シーンへ抜けた場合のリーク対策が組み込み済み）
 - `Current` は Global 優先（GlobalPopups にあればそちらの最前面を返す。無ければ ScenePopups の最前面、どちらも無ければ null）
 - Window の GameObject が Open/Close 途中で破棄された場合、入力ロックは finally で解除されるが `Status` は途中値のまま残る。演出中の強制破棄は避け、`Close()` を経由する

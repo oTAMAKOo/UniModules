@@ -72,13 +72,23 @@ namespace Modules.Window
                 .Subscribe(x => OnSceneLeave(x))
                 .AddTo(Disposable);
 
+            // 加算シーン遷移成立時にScenePopupsを自動退避 (加算遷移通知の購読処理より先に退避を完了させるため前段イベントを購読).
+            sceneManager.OnBeforeAppendTransitionAsObservable()
+                .Subscribe(_ => Stash())
+                .AddTo(Disposable);
+
+            // 加算シーンからの戻り遷移時に退避を自動復元.
+            sceneManager.OnUnloadTransitionAsObservable()
+                .Subscribe(x => OnUnloadTransition(x))
+                .AddTo(Disposable);
+
             stashStack = new Stack<StashEntry>();
             stashRoots = new Dictionary<TScenes, GameObject>();
 
             initialized = true;
         }
 
-        /// <summary> 現在のアクティブシーンのScenePopupsを退避 </summary>
+        /// <summary> 現在のアクティブシーンのScenePopupsを退避 (加算シーン遷移成立時に自動実行される) </summary>
         public void Stash()
         {
             if (!initialized){ return; }
@@ -129,7 +139,7 @@ namespace Modules.Window
             stashStack.Push(entry);
         }
 
-        /// <summary> 直近の退避を復元 </summary>
+        /// <summary> 直近の退避を復元 (加算シーンからの戻り遷移でオーナーシーンへ戻った時に自動実行される) </summary>
         public void Restore()
         {
             if (stashStack.Count == 0){ return; }
@@ -148,6 +158,23 @@ namespace Modules.Window
             }
 
             TryRemoveStashRoot(entry.OwnerScene);
+        }
+
+        /// <summary> 加算シーンアンロード遷移時の自動復元 </summary>
+        private void OnUnloadTransition(SceneInstance<TScenes> returnScene)
+        {
+            if (returnScene == null){ return; }
+
+            if (!returnScene.Identifier.HasValue){ return; }
+
+            if (stashStack.Count == 0){ return; }
+
+            var entry = stashStack.Peek();
+
+            // 直近の退避のオーナーが戻り先シーンでない場合は復元しない (オーナーへ戻った時に復元される).
+            if (!EqualityComparer<TScenes>.Default.Equals(entry.OwnerScene, returnScene.Identifier.Value)){ return; }
+
+            Restore();
         }
 
         /// <summary> 直近の退避を破棄（中身のWindowも削除） </summary>
