@@ -82,5 +82,7 @@ namespace Modules.Net.WebRequest
         string GetHeaderString();
 
         string GetBodyString();
+        
+        string GetReceiveResponseString();
     }
 }

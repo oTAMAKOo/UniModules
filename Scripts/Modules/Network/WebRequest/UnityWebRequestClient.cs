@@ -52,6 +52,9 @@ namespace Modules.Net.WebRequest
 
         /// <summary> 送信データ. </summary>
         public byte[] RequestData { get; private set; }
+        
+        /// <summary> 受信データ. </summary>
+        public byte[] ResponseData { get; private set; }
 
         /// <summary> 送信データの圧縮. </summary>
         public DataCompressType CompressRequestData { get; private set; }
@@ -267,11 +270,8 @@ namespace Modules.Net.WebRequest
 
             TResult result = null;
 
-            if (decryptResponse)
-            {
-                value = value.Decrypt(cryptoKey);
-            }
-
+            ResponseData = decryptResponse ? value.Decrypt(cryptoKey) : value;
+            
             switch (Format)
             {
                 case DataFormat.Json:
@@ -279,15 +279,15 @@ namespace Modules.Net.WebRequest
                         switch (CompressResponseData)
                         {
                             case DataCompressType.GZip:
-                                value = value.Decompress(CompressionAlgorithm.GZip);
+                                ResponseData = ResponseData.Decompress(CompressionAlgorithm.GZip);
                                 break;
 
                             case DataCompressType.Deflate:
-                                value = value.Decompress(CompressionAlgorithm.Deflate);
+                                ResponseData = ResponseData.Decompress(CompressionAlgorithm.Deflate);
                                 break;
                         }
 
-                        var json = Encoding.UTF8.GetString(value);
+                        var json = Encoding.UTF8.GetString(ResponseData);
 
                         if (!string.IsNullOrEmpty(json))
                         {
@@ -298,32 +298,28 @@ namespace Modules.Net.WebRequest
 
                 case DataFormat.MessagePack:
                     {
-                        if (value != null && value.Any())
+                        if (ResponseData != null && ResponseData.Any())
                         {
-                            var options = StandardResolverAllowPrivate.Options.WithResolver(UnityCustomResolver.Instance);
-
+                            var options = GetMessagePackSerializerOptions(CompressResponseData);
+                            
                             switch (CompressResponseData)
                             {
                                 case DataCompressType.GZip:
-                                    value = value.Decompress(CompressionAlgorithm.GZip);
+                                    ResponseData = ResponseData.Decompress(CompressionAlgorithm.GZip);
                                     break;
 
                                 case DataCompressType.Deflate:
-                                    value = value.Decompress(CompressionAlgorithm.Deflate);
-                                    break;
-
-                                case DataCompressType.MessagePackLZ4:
-                                    options = options.WithCompression(MessagePackCompression.Lz4Block);
+                                    ResponseData = ResponseData.Decompress(CompressionAlgorithm.Deflate);
                                     break;
                             }
 
                             try
                             {
-                                result = MessagePackSerializer.Deserialize<TResult>(value, options);
+                                result = MessagePackSerializer.Deserialize<TResult>(ResponseData, options);
                             }
                             catch
                             {
-                                var json = MessagePackSerializer.ConvertToJson(value, options);
+                                var json = MessagePackSerializer.ConvertToJson(ResponseData, options);
 
                                 UnityConsole.Info($"MessagePack Deserialize Failed.\n\n{json}", LogType.Error);
 
@@ -335,6 +331,49 @@ namespace Modules.Net.WebRequest
             }
 
             return result;
+        }
+        
+        public string GetReceiveResponseString()
+        {
+            if (request == null) { return null; }
+
+            if (ResponseData.IsEmpty()){ return null; }
+            
+            var json = string.Empty;
+            
+            switch (Format)
+            {
+                case DataFormat.Json:
+                    json = Encoding.UTF8.GetString(ResponseData);
+                    break;
+
+                case DataFormat.MessagePack:
+                {
+                    if (ResponseData != null && ResponseData.Any())
+                    {
+                        var options = GetMessagePackSerializerOptions(CompressResponseData);
+                            
+                        json = MessagePackSerializer.ConvertToJson(ResponseData, options);
+                    }
+                }
+                    break;
+            }
+            
+            return json;
+        }
+        
+        protected MessagePackSerializerOptions GetMessagePackSerializerOptions(DataCompressType compressType)
+        {
+            var options = StandardResolverAllowPrivate.Options.WithResolver(UnityCustomResolver.Instance);
+            
+            switch (compressType)
+            {
+                case DataCompressType.MessagePackLZ4:
+                    options = options.WithCompression(MessagePackCompression.Lz4Block);
+                    break;
+            }
+            
+            return options;
         }
         
         protected virtual Uri BuildUri()
@@ -428,12 +467,7 @@ namespace Modules.Net.WebRequest
 
                 case DataFormat.MessagePack:
                     {
-                        var options = StandardResolverAllowPrivate.Options.WithResolver(UnityCustomResolver.Instance);
-
-                        if (CompressRequestData == DataCompressType.MessagePackLZ4)
-                        {
-                            options = options.WithCompression(MessagePackCompression.Lz4Block);
-                        }
+                        var options = GetMessagePackSerializerOptions(CompressRequestData);
 
                         bytes = MessagePackSerializer.Serialize(content, options);
 
@@ -528,7 +562,7 @@ namespace Modules.Net.WebRequest
 
                 case DataFormat.MessagePack:
                     {
-                        var options = StandardResolverAllowPrivate.Options.WithResolver(UnityCustomResolver.Instance);
+                        var options = GetMessagePackSerializerOptions(CompressRequestData);
 
                         switch (CompressRequestData)
                         {
@@ -539,10 +573,6 @@ namespace Modules.Net.WebRequest
                             case DataCompressType.Deflate:
                                 bytes = bytes.Decompress(CompressionAlgorithm.Deflate);
                                 break;
-
-                            case DataCompressType.MessagePackLZ4:
-                                options = options.WithCompression(MessagePackCompression.Lz4Block);
-                                break;
                         }
 
                         json = MessagePackSerializer.ConvertToJson(bytes, options);
@@ -552,7 +582,8 @@ namespace Modules.Net.WebRequest
 
             return json;
         }
-
+        
+        /// <summary> ネットワーク接続待ち </summary>
         protected virtual async Task WaitNetworkReachable(CancellationToken cancelToken)
         {
             await NetworkConnection.WaitNetworkReachable(cancelToken);

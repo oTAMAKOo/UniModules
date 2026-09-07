@@ -2,9 +2,6 @@
 using UnityEngine;
 using System;
 using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
-using Newtonsoft.Json;
 using Extensions;
 using MessagePack;
 using MessagePack.Resolvers;
@@ -80,6 +77,7 @@ namespace Modules.Net.WebRequest
             {
                 var headerString = webRequest.GetHeaderString();
                 var bodyString = webRequest.GetBodyString();
+                var receiveResponseString = webRequest.GetReceiveResponseString();
 
                 if (string.IsNullOrEmpty(resultJson))
                 {
@@ -107,6 +105,12 @@ namespace Modules.Net.WebRequest
                 if (!string.IsNullOrEmpty(resultJson))
                 {
                     builder.AppendFormat("Result: {0}", resultJson).AppendLine();
+                    builder.AppendLine();
+                }
+                
+                if (!string.IsNullOrEmpty(receiveResponseString))
+                {
+                    builder.AppendFormat("ReceiveResponse: {0}", receiveResponseString).AppendLine();
                     builder.AppendLine();
                 }
 
