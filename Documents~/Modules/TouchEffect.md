@@ -1,7 +1,7 @@
 # TouchEffect
 
 > **namespace**: `Modules.TouchEffect`
-> **場所**: `Client/Assets/UniModules/Scripts/Modules/TouchEffect/`（`TouchEffectManager.cs` の1ファイルのみ）
+> **場所**: `Scripts/Modules/TouchEffect/`（`TouchEffectManager.cs` の1ファイルのみ）
 > **依存**: UniTask / R3 / Extensions（`SingletonMonoBehaviour<T>`, `UnityUtility`） / Modules.Particle（`ParticlePlayer`）
 
 ## 概要

@@ -1,7 +1,7 @@
 # Bugsnag
 
 > **namespace**: `Modules.Bugsnag`
-> **場所**: `Client/Assets/UniModules/Scripts/Modules/Bugsnag/`
+> **場所**: `Scripts/Modules/Bugsnag/`
 > **依存**: Bugsnag Unity SDK（`BugsnagUnity`。全コードが `#if ENABLE_BUGSNAG`。利用側で定義）/ UniTask / MessagePack / Extensions（Singleton, AesCryptoKey, MessagePackFileUtility, Label 拡張）
 
 ## 概要

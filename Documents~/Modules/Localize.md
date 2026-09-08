@@ -1,7 +1,7 @@
 # Localize
 
 > **namespace**: `Modules.Localize`（`Language/Editor/`・`Sprite/Editor/` 配下も同一 namespace）
-> **場所**: `Client/Assets/UniModules/Scripts/Modules/Localize/`
+> **場所**: `Scripts/Modules/Localize/`
 > **依存**: R3 / UniTask / Extensions（Singleton, AesCryptoKey, SerializableDictionary, UnityUtility）/ Modules.Cache（SpriteAtlasCache）/ Modules.Scene（`LocalizeAtlasRequest`）/ Modules.Devkit.Prefs（Editor: ProjectPrefs）/ Modules.TextData.Editor（Editor: TextDataLoader）
 
 ## 概要
@@ -35,7 +35,7 @@ EditorLanguage.selection (ProjectPrefs 保存の int。利用側言語 enum の�
 
 - **言語選択ウィンドウを開く**（エディタメニュー定義）: 利用側で `LanguageSelector.Open(typeof(<言語enum>))` を呼ぶメニュー項目を用意
 - **全言語ループで TextData を生成**（定型パターン）: `EditorLanguage.selection` を退避 → 全言語ループで書換え → `finally` で復元
-- **TextData 側からの `selection` 参照**（基盤内の使用例）: `Client/Assets/UniModules/Scripts/Modules/TextData/Editor/TextDataLanguage.cs`（`LanguageManager.Current` が selection から `LanguageInfo` を解決）
+- **TextData 側からの `selection` 参照**（基盤内の使用例）: `Scripts/Modules/TextData/Editor/TextDataLanguage.cs`（`LanguageManager.Current` が selection から `LanguageInfo` を解決）
 
 ## 注意点・罠
 

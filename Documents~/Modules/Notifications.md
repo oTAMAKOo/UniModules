@@ -1,7 +1,7 @@
 # Notifications
 
 > **namespace**: `Modules.Notifications`
-> **場所**: `Client/Assets/UniModules/Scripts/Modules/Notifications/`（`LocalPushNotification.cs` + `.android.cs` / `.ios.cs` の partial 3ファイル）
+> **場所**: `Scripts/Modules/Notifications/`（`LocalPushNotification.cs` + `.android.cs` / `.ios.cs` の partial 3ファイル）
 > **依存**: R3 / UniTask / Extensions（`Singleton`, `SecurePrefs`, UnixTime変換拡張）/ Modules.ApplicationEvent / Unity Mobile Notifications パッケージ（`Unity.Notifications.Android` / `Unity.Notifications.iOS`）
 
 ## 概要

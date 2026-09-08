@@ -1,7 +1,7 @@
 # InputControl
 
 > **namespace**: `Modules.InputControl`
-> **場所**: `Client/Assets/UniModules/Scripts/Modules/InputControl/`
+> **場所**: `Scripts/Modules/InputControl/`
 > **依存**: R3 / Extensions（`Scope`, `Singleton<T>`, `UnityUtility`）/ Modules.Devkit.LogHandler（例外時の強制解除）
 
 ## 概要
@@ -37,7 +37,7 @@ using (new BlockInput())
 
 ### その他のパターン
 
-- **using を跨げない場合**: フィールド保持 + 明示 `Dispose()`（実例: `Client/Assets/UniModules/Scripts/Modules/Window/Window.cs` の Open）
+- **using を跨げない場合**: フィールド保持 + 明示 `Dispose()`（実例: `Scripts/Modules/Window/Window.cs` の Open）
 - **全体リセット時の強制解除**（通常フローでは呼ばない）: `BlockInputManager.Instance.ForceUnlock()`
 
 ## 注意点・罠

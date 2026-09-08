@@ -1,7 +1,7 @@
 # Hyphenation
 
 > **namespace**: `Modules.Hyphenation`
-> **場所**: `Client/Assets/UniModules/Scripts/Modules/Hyphenation/`
+> **場所**: `Scripts/Modules/Hyphenation/`
 > **依存**: Extensions / uGUI（`Text`, `UIBehaviour`） / TextMeshPro（`TMPro`）
 
 ## 概要

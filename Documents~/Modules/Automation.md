@@ -1,7 +1,7 @@
 # Automation
 
 > **namespace**: `Modules.Automation.*`（サブ機能ごとに分割。現在は `Modules.Automation.PrefabPreview`）
-> **場所**: `Client/Assets/UniModules/Scripts/Modules/Automation/`（サブ機能フォルダ直下の `Editor/` にエディタ専用コードを置く）
+> **場所**: `Scripts/Modules/Automation/`（サブ機能フォルダ直下の `Editor/` にエディタ専用コードを置く）
 > **依存**: Extensions（`Scope` / `UnityUtility`）/ TextData（`TextDataLoader`）
 
 ## 概要

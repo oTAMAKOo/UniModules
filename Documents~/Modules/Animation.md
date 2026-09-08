@@ -1,7 +1,7 @@
 # Animation
 
 > **namespace**: `Modules.Animation`
-> **場所**: `Client/Assets/UniModules/Scripts/Modules/Animation/`
+> **場所**: `Scripts/Modules/Animation/`
 > **依存**: UniTask / R3 / Unity.Linq（StateMachineTrigger）/ Extensions（`UnityUtility`, `AnimatorExtensions.IsAvailable`）
 
 ## 概要
@@ -69,4 +69,4 @@ Unity の Animator（AnimatorController）による演出再生を「**ステー
 - [Window](Window.md) — Window 系の Open/Close アニメを AnimationPlayer で再生
 - [InputControl](InputControl.md) — 演出中の入力ブロック（`Window.Open/Close` は自動、任意演出は `BlockInput`）
 - [R3Extension](R3Extension.md) — Observable ⇔ UniTask 変換（終了通知を await したい場合等）
-- [DoTween](DoTween.md) — コード駆動のトゥイーン演出（Animator を使わない軽量な動きはこちら）
+- [DoTweenExtension](DoTweenExtension.md) — コード駆動のトゥイーン演出（Animator を使わない軽量な動きはこちら）

@@ -1,8 +1,8 @@
 # Scenario
 
 > **namespace**: `Modules.Scenario` / `Modules.Scenario.Command`（`RubyTextMeshProUGUIExtension` のみ `TMPro`）
-> **場所**: `Client/Assets/UniModules/Scripts/Modules/Scenario/`
-> **依存**: xLua（`XLua` namespace） / Modules.Lua系（`Modules.Lua` / `Modules.Lua.Command` / `Modules.Lua.Text`） / UniTask / R3 / DOTween（`Modules.Tweening` = `DoTween/` フォルダ） / Modules.TimeUtil / Modules.TagText（実namespaceは `Modules.TagTect`） / Modules.ExternalAssets / Modules.Animation / Modules.Particle / Modules.Sound + CRI（Sound系コマンドのみ） / RubyTextMeshPro（ThirdParty） / Extensions
+> **場所**: `Scripts/Modules/Scenario/`
+> **依存**: xLua（`XLua` namespace） / Modules.Lua系（`Modules.Lua` / `Modules.Lua.Command` / `Modules.Lua.Text`） / UniTask / R3 / DOTween（`Modules.DoTweenExtension`） / Modules.TimeUtil / Modules.TagText / Modules.ExternalAssets / Modules.Animation / Modules.Particle / Modules.Sound + CRI（Sound系コマンドのみ） / RubyTextMeshPro（ThirdParty） / Extensions
 
 ## 概要
 
@@ -27,7 +27,7 @@ Luaスクリプト（xLua）でシナリオ・カットシーン進行を記述�
 
 ## 使い方
 
-実行フローの実シグネチャは `Client/Assets/UniModules/Scripts/Modules/Scenario/ScenarioController.cs`、コマンド登録機構は `Client/Assets/UniModules/Scripts/Modules/Lua.command/CommandLoader.cs` を参照。
+実行フローの実シグネチャは `Scripts/Modules/Scenario/ScenarioController.cs`、コマンド登録機構は `Scripts/Modules/Lua.command/CommandLoader.cs` を参照。
 
 ### 新しいシナリオコマンドを追加する手順（有効化されている場合の参考）
 
@@ -48,16 +48,15 @@ Luaスクリプト（xLua）でシナリオ・カットシーン進行を記述�
 - 省略可能引数は Nullable で受けるのが規約（例: `bool? sync`）。Lua側で nil を渡せる。
 - `Message.TagText`（abstract プロパティ）・`FadeIn/FadeOut/FadeColor.TargetGraphic`・`TextLoad.EditAssetPathCallback` は利用側からの注入が前提。未設定のまま該当コマンドを呼ぶと NullReference になる。
 - `TimeScale` は2系統ある: `ScenarioController.TimeScale`（`Modules.TimeUtil.TimeScale`。メッセージ送り・アニメ/パーティクルの `SpeedRate` に反映）と `TweenControl.TimeScale`（DOTween側）。連動は自動ではない。
-- `Message.cs` の using は `Modules.TagTect`（TagTextモジュールの実namespaceがこの綴り）。grep時に `TagText` で探すと見落とすので注意。
 - `RubyTextMeshProUGUIExtension` は namespace `TMPro` に定義されている（`Modules.Scenario` ではない）。内部でリフレクションにより `RubyTextMeshProUGUI` の private フィールド（`rubyScale` / `m_maxFontSize`）へアクセスしており、ThirdParty更新で壊れうる。
 - Sound系コマンドはUnityAudio版 `SoundManagement` に非対応（CRIの `CueInfo` 前提）。CRI導入時のみ動作する。
 
 ## 関連
 
 - [Lua](Lua.md) — `Modules.Lua` / `Lua.Command` / `Lua.Text`。本モジュールの実行基盤（同じく `ENABLE_XLUA` 定義で有効化）
-- [Utage](Utage.md) — 別系統のADV/会話劇基盤（宴）
+- [UtageExtension](UtageExtension.md) — 別系統のADV/会話劇基盤（宴）
 - [CriWare](CriWare.md) — Sound系コマンドの前提
 - [Sound](Sound.md) — サウンド基盤
-- [ExternalAsset](ExternalAsset.md) — `AssetLoad<T>` / `PlaySound` が使用する配信アセット基盤
+- [ExternalAssets](ExternalAssets.md) — `AssetLoad<T>` / `PlaySound` が使用する配信アセット基盤
 - [Animation](Animation.md) — `PlayAnimation` が操作する `AnimationPlayer`
-- [TagText](TagText.md) / [TimeUtil](TimeUtil.md) / [DoTween](DoTween.md) / [Particle](Particle.md)
+- [TagText](TagText.md) / [TimeUtil](TimeUtil.md) / [DoTweenExtension](DoTweenExtension.md) / [Particle](Particle.md)

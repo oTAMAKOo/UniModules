@@ -1,7 +1,7 @@
 # Lua
 
 > **namespace**: `Modules.Lua`（`Lua/`） / `Modules.Lua.Command`（`Lua.command/`） / `Modules.Lua.Text`（`Lua.text/`）
-> **場所**: `Client/Assets/UniModules/Scripts/Modules/Lua/` + `Lua.command/` + `Lua.text/`（3フォルダで1系統）
+> **場所**: `Scripts/Modules/Lua/` + `Lua.command/` + `Lua.text/`（3フォルダで1系統）
 > **依存**: xLua（`XLua.LuaEnv` / `LuaAsset`） / UniTask / R3 / Extensions（`LifetimeDisposable`, `AesCryptoKey`, `Security.XXTEA`） / Modules.Localize（`EditorLanguage`、Editor専用） / Modules.Devkit（Editor専用） / Newtonsoft.Json（Editor専用）
 
 ## 概要
@@ -26,8 +26,8 @@ xLua（Lua実行環境）との連携基盤。Luaスクリプトのロード・�
 
 ## 使い方
 
-- 実行フロー（`LuaController` / `CommandLoader` の利用のされ方）の参考実コード: `Client/Assets/UniModules/Scripts/Modules/Scenario/ScenarioController.cs`（`ENABLE_XLUA` 内）
-- `LuaText` の利用実態: `Client/Assets/UniModules/Scripts/Modules/Scenario/Command/Text/TextLoad.cs`
+- 実行フロー（`LuaController` / `CommandLoader` の利用のされ方）の参考実コード: `Scripts/Modules/Scenario/ScenarioController.cs`（`ENABLE_XLUA` 内）
+- `LuaText` の利用実態: `Scripts/Modules/Scenario/Command/Text/TextLoad.cs`
 
 ## 注意点・罠
 
@@ -45,4 +45,4 @@ xLua（Lua実行環境）との連携基盤。Luaスクリプトのロード・�
 - [Scenario](Scenario.md) — 本モジュール上に構築されたカットシーン基盤（コマンド実装例・有効化手順の詳細）
 - [TextData](TextData.md) — テキスト管理（`Lua.Text` と役割が同種）
 - [Localize](Localize.md) — `LuaTextLanguage` が参照する言語選択（`EditorLanguage`）
-- [ExternalAsset](ExternalAsset.md) — `LuaLoader.LoadAsync` の実装先として想定される配信基盤
+- [ExternalAssets](ExternalAssets.md) — `LuaLoader.LoadAsync` の実装先として想定される配信基盤

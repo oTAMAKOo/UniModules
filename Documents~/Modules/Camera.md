@@ -1,7 +1,7 @@
 # Camera
 
 > **namespace**: `Modules.FixedAspectCamera`（**`Modules.Camera` ではない**。フォルダ名と不一致）
-> **場所**: `Client/Assets/UniModules/Scripts/Modules/Camera/FixedAspectCamera.cs`（1ファイルのみ）
+> **場所**: `Scripts/Modules/Camera/FixedAspectCamera.cs`（1ファイルのみ）
 > **依存**: UnityEngine のみ
 
 ## 概要

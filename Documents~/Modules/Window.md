@@ -1,7 +1,7 @@
 # Window
 
 > **namespace**: `Modules.Window`
-> **場所**: `Client/Assets/UniModules/Scripts/Modules/Window/`（Window.cs / PopupManager.cs / PopupStashManager.cs / TouchBlock.cs / PopupParent.cs の5ファイル。`Editor/` サブフォルダなし）
+> **場所**: `Scripts/Modules/Window/`（Window.cs / PopupManager.cs / PopupStashManager.cs / TouchBlock.cs / PopupParent.cs の5ファイル。`Editor/` サブフォルダなし）
 > **依存**: UniTask / R3 / Extensions（`UnityUtility`, `SingletonMonoBehaviour`, `Singleton`）/ Modules.InputControl（`BlockInput`）/ Modules.Scene（シーン遷移連携）
 
 ## 概要

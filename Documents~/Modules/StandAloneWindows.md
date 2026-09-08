@@ -1,7 +1,7 @@
 # StandAloneWindows
 
 > **namespace**: `Modules.StandAloneWindows`
-> **場所**: `Client/Assets/UniModules/Scripts/Modules/StandAloneWindows/`
+> **場所**: `Scripts/Modules/StandAloneWindows/`
 > **依存**: UniTask / R3 / Extensions（`Singleton<T>`）/ AOT / Win32 API（user32.dll を P/Invoke）
 
 ## 概要

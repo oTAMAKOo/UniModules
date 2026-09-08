@@ -1,7 +1,7 @@
-# DoTween
+# DoTweenExtension
 
-> **namespace**: `Modules.Tweening`（**フォルダ名 `DoTween/` と不一致**）
-> **場所**: `Client/Assets/UniModules/Scripts/Modules/DoTween/`（`TweenController.cs` の1ファイルのみ）
+> **namespace**: `Modules.DoTweenExtension`
+> **場所**: `Scripts/Modules/DoTweenExtension/`（`TweenController.cs` の1ファイルのみ）
 > **依存**: DOTween / UniTask（`UNITASK_DOTWEEN_SUPPORT` 定義が必要） / R3 / Extensions（`LifetimeDisposable`）/ Modules.TimeUtil（`TimeScale`）
 
 ## 概要
@@ -27,7 +27,6 @@ DOTween を単発で使う分には本モジュールは不要。**速度連動�
 
 ## 注意点・罠
 
-- **namespace は `Modules.Tweening`**。`using Modules.DoTween` ではない（フォルダ名と不一致）
 - `Play()` は渡された Tweener を一度 `Pause()` してから再生する。**自動再生済みの Tween を渡しても最初から意図通り制御される**が、`Play()` を通さない Tween は TimeScale 制御の対象外。await 中のキャンセルは例外にならず握りつぶされる（その他例外は `Debug.LogException`）
 - Tween 作成時は `SetLink(gameObject)` を付けるのが安全（GameObject 破棄時に自動 Kill され、`Play()` の await も解ける）。付けないと破棄済みオブジェクトを対象に Tween が走り続ける恐れ
 - `KillAllTweeners()` は **Complete させない**（途中の値のまま停止）。終了値を保証したい演出は個別に `Complete()` を検討
@@ -38,5 +37,5 @@ DOTween を単発で使う分には本モジュールは不要。**速度連動�
 ## 関連
 
 - [TimeUtil](TimeUtil.md) — `TimeScale`（値変更通知付きの倍率ホルダ。本モジュールの速度制御の実体）
-- [UniTask](UniTask.md) — `tweener.ToUniTask()`（`UNITASK_DOTWEEN_SUPPORT` による DOTween 連携）
+- [UniTaskExtension](UniTaskExtension.md) — `tweener.ToUniTask()`（`UNITASK_DOTWEEN_SUPPORT` による DOTween 連携）
 - [Extensions/Core.md](../Extensions/Core.md) — `LifetimeDisposable` / `Singleton<T>`

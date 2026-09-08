@@ -1,7 +1,7 @@
-# UniTask
+# UniTaskExtension
 
-> **namespace**: `Modules.UniTaskExtension`（**フォルダ名 `UniTask/` と不一致**。実コードで確認済み）
-> **場所**: `Client/Assets/UniModules/Scripts/Modules/UniTask/`
+> **namespace**: `Modules.UniTaskExtension`
+> **場所**: `Scripts/Modules/UniTaskExtension/`
 > **依存**: UniTask ライブラリ本体
 
 ## 概要
@@ -21,7 +21,6 @@ UniTask の PlayerLoop 初期化を、ライブラリ標準（`BeforeSceneLoad`�
 
 ## 注意点・罠
 
-- **namespace はフォルダ名と不一致**: `Modules.UniTask` ではなく `Modules.UniTaskExtension`。grep 時に注意
 - **`Extensions.UniTaskExtensions`（`Extensions/Methods/UniTaskExtensions.cs`）とは別物**。あちらは Observable⇔UniTask 変換・`Forget(component)` 等の拡張メソッド群（[Extensions/Methods.md](../Extensions/Methods.md)）。本モジュールは初期化のみ
 - UniTask 本体にも `[RuntimeInitializeOnLoadMethod(BeforeSceneLoad)]` の自己初期化があるが、本モジュールはそれより早い `AfterAssembliesLoaded` で先回りしている。**`AfterAssembliesLoaded` より前**（`SubsystemRegistration` 等）で UniTask を使うコードを書く場合は、さらに先に `PlayerLoopHelper.Initialize` を呼ぶ必要がある
 - R3 のデフォルト TimeProvider/FrameProvider 登録（`UnityProviderInitializer`）も同じ `AfterAssembliesLoaded` で走る（順序は不定）。起動最初期に R3 の時間系オペレータと UniTask を組み合わせる場合はタイミングに注意

@@ -1,7 +1,7 @@
 # Vivox
 
 > **namespace**: `Modules.Vivox`
-> **場所**: `Client/Assets/UniModules/Scripts/Modules/Vivox/`
+> **場所**: `Scripts/Modules/Vivox/`
 > **依存**: VivoxUnity SDK / UniTask / R3 / Extensions（`Singleton<T>`） / Modules.Devkit.Console
 
 ## 概要

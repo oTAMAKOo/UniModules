@@ -1,7 +1,7 @@
 # ObjectPool
 
 > **namespace**: `Modules.ObjectPool`
-> **場所**: `Client/Assets/UniModules/Scripts/Modules/ObjectPool/`
+> **場所**: `Scripts/Modules/ObjectPool/`
 > **依存**: R3 / UniTask / Extensions（`UnityUtility`）
 
 ## 概要

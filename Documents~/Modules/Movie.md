@@ -1,7 +1,7 @@
 # Movie
 
 > **namespace**: `Modules.Movie`（Editor専用: `Modules.Movie.Editor`）
-> **場所**: `Client/Assets/UniModules/Scripts/Modules/Movie/`
+> **場所**: `Scripts/Modules/Movie/`
 > **依存**: CRI SDK（`CriWare` / `CriWare.CriMana` namespace） / UniTask / R3 / Extensions / Modules.CriWare / Modules.Devkit.Generators（Editor）
 
 ## 概要
@@ -34,5 +34,5 @@ CRI Sofdec ムービー（.usm）の再生管理基盤。`CriMana.Player` のラ
 ## 関連
 
 - [CriWare](CriWare.md) — CRI ライブラリ初期化・アセット配信基盤
-- [ExternalAsset](ExternalAsset.md) — CRI有効時は `ExternalAsset.GetMovieInfo(resourcePath)` が `ManaInfo` を返す（`ExternalAsset.cri.cs`）
+- [ExternalAssets](ExternalAssets.md) — CRI有効時は `ExternalAsset.GetMovieInfo(resourcePath)` が `ManaInfo` を返す（`ExternalAsset.cri.cs`）
 - [Sound](Sound.md) — CRI(ADX) 版のサウンド基盤

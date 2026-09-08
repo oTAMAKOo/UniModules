@@ -1,7 +1,7 @@
 # TimeLine
 
 > **namespace**: `Modules.TimeLine`（Player・属性・共通型） / `Modules.TimeLine.Component`（Track/Clip/Behaviour）
-> **場所**: `Client/Assets/UniModules/Scripts/Modules/TimeLine/`
+> **場所**: `Scripts/Modules/TimeLine/`
 > **依存**: Unity Timeline（`com.unity.timeline`） / UnityEngine.Playables / UniTask / R3（`Modules.R3Extension.ObservableEx`） / Extensions
 
 ## 概要

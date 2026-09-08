@@ -1,7 +1,7 @@
 # View
 
 > **namespace**: `Modules.View`
-> **場所**: `Client/Assets/UniModules/Scripts/Modules/View/`（View.cs / ViewBase.cs / ViewModel.cs の3ファイルのみ）
+> **場所**: `Scripts/Modules/View/`（View.cs / ViewBase.cs / ViewModel.cs の3ファイルのみ）
 > **依存**: R3（UniRxではない） / Unity.Linq（LINQtoGameObject: `AncestorsAndSelf`） / Extensions（`LifetimeDisposable`, `UnityUtility`）
 
 ## 概要

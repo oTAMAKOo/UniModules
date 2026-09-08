@@ -1,11 +1,11 @@
 # UniModules 基盤 Overview
 
-`Client/Assets/UniModules` 全体の構造・共通パターン・横断的な罠のまとめ。個別モジュールの詳細は [INDEX.md](INDEX.md) から辿ること。
+UniModules 全体の構造・共通パターン・横断的な罠のまとめ。個別モジュールの詳細は [INDEX.md](INDEX.md) から辿ること。
 
 ## 全体構造
 
 ```
-Client/Assets/UniModules/Scripts/
+Scripts/
 ├── Extensions/   … 拡張メソッド + 基盤クラス（namespace: Extensions / Extensions.Serialize / Extensions.Devkit）
 ├── Modules/      … 機能モジュール約60個（namespace: Modules.*）
 └── Editor/       … EditorMenu 基底（利用側で継承して拡張）
@@ -48,20 +48,16 @@ using を書く時・コードを探す時はフォルダ名でなく namespace 
 
 | フォルダ | 実際の namespace |
 |---|---|
-| `Modules/Network/` | `Modules.Net` / `Modules.Net.WebRequest` / `Modules.Net.WebDownload` |
 | `Modules/PlayFab/` | `Modules.PlayFabCSharp` |
-| `Modules/ExternalAsset/` | `Modules.ExternalAssets`（内部に `Modules.AssetBundles` も同居） |
-| `Modules/BehaviourControl/` | `Modules.BehaviorControl`（英米綴り違い） |
-| `Modules/TagText/` | `Modules.TagTect`（**誤記のまま実装されている**） |
-| `Modules/Shader/` | `Modules.Shaders` |
+| `Modules/ExternalAssets/` | `Modules.ExternalAssets`（AssetBundle 低層は `Modules.AssetBundles`） |
 | `Modules/Camera/` | `Modules.FixedAspectCamera` |
 | `Modules/Prefs/` | `Extensions`（`SecurePrefs`） |
-| `Modules/UniTask/` | `Modules.UniTaskExtension` |
-| `Modules/DoTween/` | `Modules.Tweening` |
 | `Modules/Renderer2D/` | `Modules.Renderer2D.DummyContent` |
+| `Modules/Rendering/` | `Modules.Rendering.Universal` |
+| `Modules/Automation/` | `Modules.Automation.PrefabPreview` |
 | `Modules/AmazonWebService/` | `Modules.Amazon.S3` |
-| `Modules/Utage/` | `Modules.UtageExtension` |
-| `Modules/Devkit/ApiMonitor/` | `Modules.Net.WebRequest` |
+| `Modules/Lua.command/` / `Modules/Lua.text/` | `Modules.Lua.Command` / `Modules.Lua.Text` |
+| `Modules/Devkit/ApiMonitor/` | `Modules.Network.WebRequest` |
 | `Modules/Devkit/MasterGenerator/` | `Modules.Master` |
 | `Extensions/Methods/Vector.cs` | `UnityEngine` |
 | `Extensions/Devkit/Log/DebugLog.cs` | `Modules.Devkit.Log` |

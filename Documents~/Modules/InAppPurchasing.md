@@ -1,7 +1,7 @@
 # InAppPurchasing
 
 > **namespace**: `Modules.InAppPurchasing`
-> **場所**: `Client/Assets/UniModules/Scripts/Modules/InAppPurchasing/`
+> **場所**: `Scripts/Modules/InAppPurchasing/`
 > **依存**: Unity IAP（`UnityEngine.Purchasing`。全コードが `#if UNITY_PURCHASING`。利用側で定義）/ R3 / UniTask / Extensions（Singleton）/ Modules.Devkit.Console
 
 ## 概要

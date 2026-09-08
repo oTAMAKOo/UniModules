@@ -1,16 +1,16 @@
 # Network
 
-> **namespace**: `Modules.Net`（到達性） / `Modules.Net.WebRequest`（HTTP API通信） / `Modules.Net.WebDownload`（ファイルDL）
-> **場所**: `Client/Assets/UniModules/Scripts/Modules/Network/`
+> **namespace**: `Modules.Network`（到達性） / `Modules.Network.WebRequest`（HTTP API通信） / `Modules.Network.WebDownload`（ファイルDL）
+> **場所**: `Scripts/Modules/Network/`
 > **依存**: UniTask / R3 / Extensions（`Singleton<T>`, `LifetimeDisposable`, `PathUtility`, 圧縮・暗号化拡張） / Modules.R3Extension（`ObservableEx.FromUniTask`） / MessagePack / Newtonsoft.Json / Modules.Devkit.Console
 
 ## 概要
 
 HTTP通信の基盤モジュール。3系統に分かれる。
 
-1. **NetworkConnection**（`Modules.Net`）: ネットワーク到達性の待機・オフライン通知（static）。
-2. **WebDownload系**（`Modules.Net.WebDownload`）: HTTP GET によるファイルダウンロード基盤。CDN からのファイル取得等。主要クラスは `FileDownLoader<TDownloadRequest>`（abstract・DL管理: 同一URL重複排除・並列数制御・リトライ）/ `DownloadRequest`（1ファイルのGET DL実行体）/ `FileDownloadHandler`（ストリーム書込ハンドラ）。
-3. **WebRequest系**（`Modules.Net.WebRequest`）: GET/POST等のREST API通信基盤（リトライ・暗号化・圧縮・MessagePack/Json）。拡張メソッド `UnityWebRequest.Send()` / `HasError()` と例外型 `UnityWebRequestErrorException` は WebDownload 系・Devkit から使用されている。
+1. **NetworkConnection**（`Modules.Network`）: ネットワーク到達性の待機・オフライン通知（static）。
+2. **WebDownload系**（`Modules.Network.WebDownload`）: HTTP GET によるファイルダウンロード基盤。CDN からのファイル取得等。主要クラスは `FileDownLoader<TDownloadRequest>`（abstract・DL管理: 同一URL重複排除・並列数制御・リトライ）/ `DownloadRequest`（1ファイルのGET DL実行体）/ `FileDownloadHandler`（ストリーム書込ハンドラ）。
+3. **WebRequest系**（`Modules.Network.WebRequest`）: GET/POST等のREST API通信基盤（リトライ・暗号化・圧縮・MessagePack/Json）。拡張メソッド `UnityWebRequest.Send()` / `HasError()` と例外型 `UnityWebRequestErrorException` は WebDownload 系・Devkit から使用されている。
 
 新規にHTTPダウンロード処理を書く場合、`UnityWebRequest` を素で書かず `FileDownLoader<DownloadRequest>` 継承（キュー・リトライ・並列数制御込み）か、単発なら `DownloadRequest` 直接使用を選ぶ。
 
@@ -40,7 +40,7 @@ HTTP通信の基盤モジュール。3系統に分かれる。
 - **FileDownLoader 継承クラスの利用**: `Initialize()` → `SetMaxDownloadCount(n)` → `SetServerUrl(baseUrl)` → `Download(relativePath, filePath)`
 - **FileDownLoader 継承クラスの定義パターン**: `OnComplete` / `OnError`（`Retry` / `Cancel` を返す）/ `OnRetryLimit` の3フックを実装
 - **フルURLを直接ダウンロード**: `SetServerUrl(null)` にするとフルURLをそのまま使える
-- **DownloadRequest 単体使用**（一時ファイルにDL → 完了後 `File.Move` でリネーム）: `Client/Assets/UniModules/Scripts/Modules/ExternalAsset/AssetBundle/AssetBundleManager.cs`
+- **DownloadRequest 単体使用**（一時ファイルにDL → 完了後 `File.Move` でリネーム）: `Scripts/Modules/ExternalAssets/AssetBundle/AssetBundleManager.cs`
 
 ## 注意点・罠
 
@@ -60,7 +60,7 @@ HTTP通信の基盤モジュール。3系統に分かれる。
 
 ## 関連
 
-- [ExternalAsset](ExternalAsset.md) — アセットDLが本基盤を使用（`AssetBundleManager` は `DownloadRequest` 直接使用、`FileAssetDownLoader` は `FileDownLoader` 継承）
+- [ExternalAssets](ExternalAssets.md) — アセットDLが本基盤を使用（`AssetBundleManager` は `DownloadRequest` 直接使用、`FileAssetDownLoader` は `FileDownLoader` 継承）
 - [Master](Master.md) — マスターDLに本基盤を使用可能
 - [PlayFab](PlayFab.md) — Entity Files のDLに `FileDownLoader` 継承を使用可能
 - [CriWare](CriWare.md) — `CriAssetManager` が `NetworkConnection.WaitNetworkReachable` を使用

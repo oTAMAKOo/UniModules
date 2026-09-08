@@ -1,7 +1,7 @@
 # WebView
 
 > **namespace**: `Modules.WebView`
-> **場所**: `Client/Assets/UniModules/Scripts/Modules/WebView/`
+> **場所**: `Scripts/Modules/WebView/`
 > **依存**: UniTask / R3。実装 Content は UniWebView / ZenFulcrum EmbeddedBrowser
 
 ## 概要

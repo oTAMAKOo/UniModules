@@ -1,7 +1,7 @@
 # MessagePack
 
 > **namespace**: `Modules.MessagePack`
-> **場所**: `Client/Assets/UniModules/Scripts/Modules/MessagePack/`
+> **場所**: `Scripts/Modules/MessagePack/`
 > **依存**: MessagePack-CSharp（UPM git package `com.github.messagepack-csharp`。バージョンは利用プロジェクトの manifest.json 参照） / Extensions / Editor側: UniTask / R3 / Modules.Devkit（`ProjectPrefs`, `SingletonScriptableObject`）
 
 ## 概要

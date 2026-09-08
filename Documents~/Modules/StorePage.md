@@ -1,7 +1,7 @@
 # StorePage
 
 > **namespace**: `Modules.StorePage`
-> **場所**: `Client/Assets/UniModules/Scripts/Modules/StorePage/`
+> **場所**: `Scripts/Modules/StorePage/`
 > **依存**: UnityEngine のみ
 
 ## 概要

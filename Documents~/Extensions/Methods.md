@@ -1,7 +1,7 @@
 # Extensions/Methods（汎用拡張メソッド群）
 
 > **namespace**: `Extensions`（例外: `Vector.cs` のみ `UnityEngine`）
-> **場所**: `Client/Assets/UniModules/Scripts/Extensions/Methods/`
+> **場所**: `Scripts/Extensions/Methods/`
 > **依存**: UniTask / R3（+R3.Triggers） / DOTween（ScrollRect系） / Newtonsoft.Json（ToJson） / Unity.Linq / Modules.UI（ButtonEventTrigger・PreferredSizeCopy）
 
 ## 概要

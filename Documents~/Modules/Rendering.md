@@ -1,7 +1,7 @@
 # Rendering
 
 > **namespace**: `Modules.Rendering.Universal`
-> **場所**: `Client/Assets/UniModules/Scripts/Modules/Rendering/Universal/`（CameraStackManager.cs / CameraStackTarget.cs）。全体が `#if ENABLE_UNIVERSALRENDERPIPELINE`（利用側でシンボル定義が必要）
+> **場所**: `Scripts/Modules/Rendering/Universal/`（CameraStackManager.cs / CameraStackTarget.cs）。全体が `#if ENABLE_UNIVERSALRENDERPIPELINE`（利用側でシンボル定義が必要）
 > **依存**: URP（`UnityEngine.Rendering.Universal.UniversalAdditionalCameraData`）/ R3 + R3.Triggers（`OnDestroyAsObservable`）/ Extensions（`Singleton`, `UnityUtility`）
 
 ## 概要

@@ -1,7 +1,7 @@
 # Extensions Devkit（エディタ拡張ユーティリティ）
 
 > **namespace**: `Extensions.Devkit`（例外: `BackgroundStyle`→`Extensions.Devkit.Style`、`TextureEditorUtility`→`Extensions`、`DebugLog`→`Modules.Devkit.Log`、`Debug`→グローバル）
-> **場所**: `Client/Assets/UniModules/Scripts/Extensions/Devkit/`（全27ファイル。`Editor/` 配下はエディタ専用。直下の `Debug.cs` はビルド専用、`Log/DebugLog.cs` はランタイム共用）
+> **場所**: `Scripts/Extensions/Devkit/`（全27ファイル。`Editor/` 配下はエディタ専用。直下の `Debug.cs` はビルド専用、`Log/DebugLog.cs` はランタイム共用）
 > **依存**: R3（SingletonEditorWindow / FastScrollView / SpriteSelectorWindow / DebugLog）/ Extensions（`Scope`・`UnityUtility`・`PathUtility` 等）/ Modules.Devkit.Prefs（`ProjectPrefs`: Header 開閉永続化）/ Modules.Devkit.AssemblyCompilation（`CompileNotification`: SpriteSelectorWindow）
 
 ## 概要
@@ -62,14 +62,14 @@ UniModules の Devkit ツール群はこの層の上に書かれている。**�
 
 - SingletonEditorWindow の基本形（static `Open()` で `Instance` の titleContent / minSize を設定して `ShowUtility()`、OnGUI 内 `DisableScope` で条件付きグレーアウト）
 - 初回生成時のタイトル・minSize 設定を `OnCreateInstance()` オーバーライドで行う形
-- Header + ContentsScope + RegisterUndo（Inspector の定番。`Header(text, key)` の key で開閉状態を永続化し、値を書き込む前に `UnityEditorUtility.RegisterUndo`）: `Client/Assets/UniModules/Scripts/Modules/CriWare/Editor/CriAssetConfigInspector.cs`
+- Header + ContentsScope + RegisterUndo（Inspector の定番。`Header(text, key)` の key で開閉状態を永続化し、値を書き込む前に `UnityEditorUtility.RegisterUndo`）: `Scripts/Modules/CriWare/Editor/CriAssetConfigInspector.cs`
 - SpriteSelectorWindow（`Open(title, items, initialSelection, maxSelectCount)`。maxSelectCount: 1 = クリック即確定 / null = 無制限。初期選択は UserData 一致で判定。`OnConfirmAsObservable()` を `.AddTo(Disposable)` で購読）
 - AssetEditingScope でアセット一括操作を高速化
-- EditorSplitterGUILayout（初期化時に `CreateSplitterState(相対サイズ, 最小px, null)` → OnGUI で `BeginVerticalSplit` / `EndVerticalSplit`）: `Client/Assets/UniModules/Scripts/Modules/Devkit/ApiMonitor/Editor/ApiMonitorWindow.cs`
-- 仮想化リスト継承: `Client/Assets/UniModules/Scripts/Modules/Devkit/Build/Editor/BuiltInAsset/BuiltInAssetScrollView.cs`（`EditorGUIFastScrollView<BuiltInAssets.BuiltInAssetInfo>` 継承）
-- 検索ボックス: `Client/Assets/UniModules/Scripts/Extensions/Devkit/Editor/SpriteSelectorWindow.cs:157`（`DrawToolbarSearchTextField`）
-- Title + ContentsScope の入れ子: `Client/Assets/UniModules/Scripts/Modules/BehaviourControl/Editor/BehaviorControlMonitor.cs`
-- 選択可能 HelpBox: `Client/Assets/UniModules/Scripts/Modules/TextData/TextSetter/Editor/TextSetterInspector.cs:175`
+- EditorSplitterGUILayout（初期化時に `CreateSplitterState(相対サイズ, 最小px, null)` → OnGUI で `BeginVerticalSplit` / `EndVerticalSplit`）: `Scripts/Modules/Devkit/ApiMonitor/Editor/ApiMonitorWindow.cs`
+- 仮想化リスト継承: `Scripts/Modules/Devkit/Build/Editor/BuiltInAsset/BuiltInAssetScrollView.cs`（`EditorGUIFastScrollView<BuiltInAssets.BuiltInAssetInfo>` 継承）
+- 検索ボックス: `Scripts/Extensions/Devkit/Editor/SpriteSelectorWindow.cs:157`（`DrawToolbarSearchTextField`）
+- Title + ContentsScope の入れ子: `Scripts/Modules/BehaviorControl/Editor/BehaviorControlMonitor.cs`
+- 選択可能 HelpBox: `Scripts/Modules/TextData/TextSetter/Editor/TextSetterInspector.cs:175`
 
 ## 注意点・罠
 

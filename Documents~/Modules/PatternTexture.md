@@ -1,7 +1,7 @@
 # PatternTexture
 
 > **namespace**: `Modules.PatternTexture`
-> **場所**: `Client/Assets/UniModules/Scripts/Modules/PatternTexture/`
+> **場所**: `Scripts/Modules/PatternTexture/`
 > **依存**: UniTask / R3 / Modules.R3Extension（`ObservableEx`） / Extensions / uGUI（`MaskableGraphic`）
 
 ## 概要
@@ -40,6 +40,6 @@
 
 ## 関連
 
-- [ExternalAsset](ExternalAsset.md) — PatternTexture アセットのロード元
+- [ExternalAssets](ExternalAssets.md) — PatternTexture アセットのロード元
 - [Cache](Cache.md) — `Cache<PatternTexture>` によるロード結果のキャッシュ
 - [UI](UI.md) — uGUI 拡張コンポーネント群

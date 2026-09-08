@@ -1,7 +1,7 @@
 # UI
 
 > **namespace**: `Modules.UI`（直下） / `Modules.UI.Extension` / `Modules.UI.VirtualScroll` / `Modules.UI.SpriteLoader` / `Modules.UI.Layout` / `Modules.UI.Focus` / `Modules.UI.Reactive` / `Modules.UI.ScreenRotation` / `Modules.UI.SpriteNumber` / `Modules.UI.TextHyperlink` / `Modules.UI.DummyContent` / `Modules.UI.Particle` / `Modules.Devkit.UI`（エディタ専用）
-> **場所**: `Client/Assets/UniModules/Scripts/Modules/UI/`
+> **場所**: `Scripts/Modules/UI/`
 > **依存**: R3（UniRxではない） / UniTask / DOTween / TextMeshPro / Extensions / Modules.Cache / Modules.ExternalAssets
 
 ## 概要
@@ -120,7 +120,7 @@ uGUI 標準コンポーネントのラッパー（Extension）と、仮想スク
 
 - [View](View.md) — 画面・Window 実装基盤（本モジュールのコンポーネントを配置する上位層）
 - [TextData](TextData.md) — `UIText` に表示する文字列の取得元（直書き禁止）
-- [ExternalAsset](ExternalAsset.md) — `ImageSpriteLoader` / `ImageAtlasSpriteLoader` のロード元
+- [ExternalAssets](ExternalAssets.md) — `ImageSpriteLoader` / `ImageAtlasSpriteLoader` のロード元
 - [Cache](Cache.md) — SpriteLoader 内部のキャッシュ機構（`Cache<T>` / `SpriteAtlasCache`）
 - [Sound](Sound.md) — `UIButton` 具象実装のクリック SE 再生で組み合わせる
 - [R3Extension](R3Extension.md) — Observable まわりの拡張

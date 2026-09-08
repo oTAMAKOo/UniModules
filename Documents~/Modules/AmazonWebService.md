@@ -1,7 +1,7 @@
 # AmazonWebService
 
 > **namespace**: `Modules.Amazon.S3`（フォルダ名 `AmazonWebService/` と不一致に注意）
-> **場所**: `Client/Assets/UniModules/Scripts/Modules/AmazonWebService/Editor/`（**全ファイルがエディタ専用**）
+> **場所**: `Scripts/Modules/AmazonWebService/Editor/`（**全ファイルがエディタ専用**）
 > **依存**: AWS SDK for .NET（`Amazon.S3` / `Amazon.CognitoIdentity` / `Amazon.Runtime`） / Extensions / コンパイルシンボル `ENABLE_AMAZON_WEB_SERVICE`（利用側で定義）
 
 ## 概要
@@ -36,7 +36,7 @@ S3UploaderBase (本モジュール)
 
 ## 注意点・罠
 
-- **エディタ専用**（`Editor/` 配下のみ + `#if ENABLE_AMAZON_WEB_SERVICE`）。ランタイムコードから参照するとビルドが通らない。実機のアセットダウンロードは S3 直ではなく [ExternalAsset](ExternalAsset.md) / [Network](Network.md) 経由
+- **エディタ専用**（`Editor/` 配下のみ + `#if ENABLE_AMAZON_WEB_SERVICE`）。ランタイムコードから参照するとビルドが通らない。実機のアセットダウンロードは S3 直ではなく [ExternalAssets](ExternalAssets.md) / [Network](Network.md) 経由
 - namespace は `Modules.Amazon.S3`（`Modules.AmazonWebService` ではない）
 - 非同期は UniTask ではなく **`System.Threading.Tasks.Task`**（AWS SDK 準拠）。呼び出し側（ExternalAsset の S3Uploader 等）で UniTask に変換している
 - `S3UploaderBase.UploadFileCannedACL` の既定値が `PublicRead`。新規アップローダーでは明示的に `Private` へオーバーライドすること
@@ -46,6 +46,6 @@ S3UploaderBase (本モジュール)
 
 ## 関連
 
-- [ExternalAsset](ExternalAsset.md) — アップロードした配信アセットのランタイム側ダウンロード/管理
+- [ExternalAssets](ExternalAssets.md) — アップロードした配信アセットのランタイム側ダウンロード/管理
 - [Master](Master.md) — マスターデータの配信と読み込み
 - [Devkit](Devkit.md) — MasterGenerator（マスター生成 → S3 アップロードの流れ）

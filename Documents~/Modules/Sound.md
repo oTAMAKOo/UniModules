@@ -1,7 +1,7 @@
 # Sound
 
 > **namespace**: `Modules.Sound`（Editor専用: `Modules.Sound.Editor` — CRI有効時のみ）
-> **場所**: `Client/Assets/UniModules/Scripts/Modules/Sound/`
+> **場所**: `Scripts/Modules/Sound/`
 > **依存**: UniTask / R3 / DOTween / Extensions（`Singleton<T>`） / Modules.Devkit.Console / 条件付き: CriWare SDK・Modules.CriWare（`ENABLE_CRIWARE_ADX(_LE)` 定義時のみ）
 
 ## 概要
@@ -69,7 +69,7 @@ Introloop（イントロ付きループBGM）等の特殊な再生要素は利�
 ## 関連
 
 - [CriWare](CriWare.md) — CRI版実装のライブラリ初期化・アセット管理
-- [ExternalAsset](ExternalAsset.md) — 配信サウンド（`SoundInfo.External = true`）のロード実体
+- [ExternalAssets](ExternalAssets.md) — 配信サウンド（`SoundInfo.External = true`）のロード実体
 - [LocalData](LocalData.md) — 音量・BGM ON/OFF設定の永続化に利用
 - [Master](Master.md) — 配信サウンドのID→ResourcePath解決をマスターで実装する場合の供給元（マスター定義は利用側）
 - [Extensions/Core](../Extensions/Core.md) — `Singleton<T>`（`CreateInstance` / `Instance` / `Exists`）

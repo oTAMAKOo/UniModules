@@ -1,7 +1,7 @@
 # Crypto
 
 > **namespace**: `Modules.Crypto`
-> **場所**: `Client/Assets/UniModules/Scripts/Modules/Crypto/`
+> **場所**: `Scripts/Modules/Crypto/`
 > **依存**: UniTask / Extensions（Singleton, AesCryptoKey, AESExtension, PathUtility, UnityPathUtility, AndroidUtility）/ Modules.Devkit（Editor: KeyFileWindow）
 
 ## 概要

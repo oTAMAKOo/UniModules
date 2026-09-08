@@ -1,7 +1,7 @@
 # StateControl
 
 > **namespace**: `Modules.StateControl`
-> **場所**: `Client/Assets/UniModules/Scripts/Modules/StateControl/`（`StateController.cs` / `StateNode.cs` の2ファイル）
+> **場所**: `Scripts/Modules/StateControl/`（`StateController.cs` / `StateNode.cs` の2ファイル）
 > **依存**: UniTask / R3 / Extensions（`LifetimeDisposable`）
 
 ## 概要
@@ -35,4 +35,4 @@ enum をキーにした非同期ステートマシン。ステートごとに `E
 ## 関連
 
 - [Scene](Scene.md) — 画面（シーン）遷移基盤（本モジュールとは独立）
-- [UniTask](UniTask.md) / [R3Extension](R3Extension.md) — Enter/Leave の非同期基盤・通知基盤
+- [UniTaskExtension](UniTaskExtension.md) / [R3Extension](R3Extension.md) — Enter/Leave の非同期基盤・通知基盤

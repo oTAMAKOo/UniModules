@@ -1,7 +1,7 @@
 # SortingLayerSetter
 
 > **namespace**: `Modules.SortingLayerSetter`
-> **場所**: `Client/Assets/UniModules/Scripts/Modules/SortingLayerSetter/`
+> **場所**: `Scripts/Modules/SortingLayerSetter/`
 > **依存**: Unity.Linq（LINQ to GameObject） / Extensions / Extensions.Devkit（エディタ）
 
 ## 概要

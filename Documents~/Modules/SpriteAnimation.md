@@ -1,7 +1,7 @@
 # SpriteAnimation
 
 > **namespace**: `Modules.SpriteAnimation`
-> **場所**: `Client/Assets/UniModules/Scripts/Modules/SpriteAnimation/`
+> **場所**: `Scripts/Modules/SpriteAnimation/`
 > **依存**: R3 / Extensions / Modules.Cache（`SpriteAtlasCache`） / UnityEngine.U2D（`SpriteAtlas`）
 
 ## 概要

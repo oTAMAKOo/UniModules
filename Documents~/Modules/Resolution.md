@@ -1,7 +1,7 @@
 # Resolution
 
 > **namespace**: `Modules.Resolution`
-> **場所**: `Client/Assets/UniModules/Scripts/Modules/Resolution/`
+> **場所**: `Scripts/Modules/Resolution/`
 > **依存**: R3 / Extensions（`UnityUtility`, `SingletonMonoBehaviour`, RectTransform拡張） / Unity.Linq / Modules.UI.Extension（`UICanvas`）
 
 ## 概要

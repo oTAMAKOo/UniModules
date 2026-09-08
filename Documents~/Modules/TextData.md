@@ -1,7 +1,7 @@
 # TextData
 
 > **namespace**: `Modules.TextData`（本体） / `Modules.TextData.Components`（TextSetter・アセット・検証） / `Modules.TextData.Editor`（生成ツール）
-> **場所**: `Client/Assets/UniModules/Scripts/Modules/TextData/`
+> **場所**: `Scripts/Modules/TextData/`
 > **依存**: R3（Observable/Subject）/ UniTask（Editor）/ TMPro・uGUI Text / Extensions（Singleton, AesCryptoKey, PathUtility）/ Modules.Devkit（Editor）/ Modules.Localize（Editor: EditorLanguage）/ Newtonsoft.Json（Editor）
 
 ## 概要
@@ -74,6 +74,6 @@ Guid と ID名 の重複は Export 時に処理される:
 ## 関連
 
 - [Master](Master.md) — 配信テキストの文字列キー（`Name`/`Description` カラム）の供給元
-- [ExternalAsset](ExternalAsset.md) — 配信 TextDataAsset のダウンロード・ロード
+- [ExternalAssets](ExternalAssets.md) — 配信 TextDataAsset のダウンロード・ロード
 - [Localize](Localize.md) — エディタの言語選択（`EditorLanguage`）
 - [UI](UI.md) — テキスト表示コンポーネント全般

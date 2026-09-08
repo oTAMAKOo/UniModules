@@ -1,7 +1,7 @@
 # Performance
 
 > **namespace**: `Modules.Performance`
-> **場所**: `Client/Assets/UniModules/Scripts/Modules/Performance/`（`FrameCallLimiter.cs` の1ファイルのみ）
+> **場所**: `Scripts/Modules/Performance/`（`FrameCallLimiter.cs` の1ファイルのみ）
 > **依存**: UniTask / R3
 
 ## 概要
@@ -21,8 +21,8 @@ FPS計測などの計測機能は**ない**（モジュール名から誤解し�
 
 基盤内の実例:
 
-- マスター更新の分割実行（1フレーム50件）: `new FunctionFrameLimiter(50)` を `Master.Update(masterVersion, frameCallLimiter, cancelToken)` に渡し、内部で `Wait()` が呼ばれる。引用元: `Client/Assets/UniModules/Scripts/Modules/Master/MasterManager.cs`
-- アセット更新呼び出しの制限（1フレーム150件）: 初期化時に `new FunctionFrameLimiter(150)` を生成し、大量に並列呼び出しされる `UpdateAsset` 内で `await updateAssetCallLimiter.Wait(...)`。引用元: `Client/Assets/UniModules/Scripts/Modules/ExternalAsset/ExternalAsset.cs`
+- マスター更新の分割実行（1フレーム50件）: `new FunctionFrameLimiter(50)` を `Master.Update(masterVersion, frameCallLimiter, cancelToken)` に渡し、内部で `Wait()` が呼ばれる。引用元: `Scripts/Modules/Master/MasterManager.cs`
+- アセット更新呼び出しの制限（1フレーム150件）: 初期化時に `new FunctionFrameLimiter(150)` を生成し、大量に並列呼び出しされる `UpdateAsset` 内で `await updateAssetCallLimiter.Wait(...)`。引用元: `Scripts/Modules/ExternalAssets/ExternalAsset.cs`
 - 新規で使う場合の基本形: `new FunctionFrameLimiter(N)` を生成し、ループ内の処理前に `await limiter.Wait(cancelToken: cancelToken)` を挟むだけ
 
 ## 注意点・罠
@@ -36,4 +36,4 @@ FPS計測などの計測機能は**ない**（モジュール名から誤解し�
 ## 関連
 
 - [Master](Master.md) — `Master.Update` が `FunctionFrameLimiter` を引数に取る（マスター更新の分割実行）
-- [ExternalAsset](ExternalAsset.md) — アセット更新呼び出しの制限に使用
+- [ExternalAssets](ExternalAssets.md) — アセット更新呼び出しの制限に使用

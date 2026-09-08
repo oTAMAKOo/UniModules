@@ -1,7 +1,7 @@
 # Devkit
 
 > **namespace**: `Modules.Devkit.*`（サブ機能ごとに分割。一部フォルダ名と不一致 → 「注意点・罠」参照）
-> **場所**: `Client/Assets/UniModules/Scripts/Modules/Devkit/`（約200ファイル・約40サブフォルダ）
+> **場所**: `Scripts/Modules/Devkit/`（約200ファイル・約40サブフォルダ）
 > **依存**: UniTask / R3 / Newtonsoft.Json / Extensions（`Singleton<T>`, `LifetimeDisposable`, `SingletonEditorWindow<T>` 等）/ SRDebugger（ThirdParty, `ENABLE_SRDEBUGGER` 時）
 
 ## 概要
@@ -47,7 +47,7 @@
 | Diagnosis | `Modules.Devkit.Diagnosis`(+`.SRDebugger`/`.SendReport`/`.LogTracker`) | `Diagnosis`, `SRDiagnosis`, `SendReportManager`, `UnityLogTracker` | 実機デバッグUI・レポート送信。**詳細後述** |
 | LogHandler | `Modules.Devkit.LogHandler` | `ApplicationLogHandler`(Singleton) | `Application.logMessageReceived(Threaded)` をR3 Observable化 |
 | Log | `Modules.Devkit.Log`（実体は `Extensions/Devkit/Log/DebugLog.cs`） | `DebugLog`(static) | ログ文字列の中継ハブ（Receive→Observable）。外部通知等の橋渡し |
-| ApiMonitor | **`Modules.Net.WebRequest`**（フォルダ名と不一致） | `ApiTracker`(Singleton), `ApiInfo` | API通信履歴の記録（直近100件）。`UnityWebRequestManager` が自動で `Start/OnComplete/OnRetry/OnError` を呼ぶ。閲覧は `ApiMonitorWindow`（エディタ） |
+| ApiMonitor | **`Modules.Network.WebRequest`**（フォルダ名と不一致） | `ApiTracker`(Singleton), `ApiInfo` | API通信履歴の記録（直近100件）。`UnityWebRequestManager` が自動で `Start/OnComplete/OnRetry/OnError` を呼ぶ。閲覧は `ApiMonitorWindow`（エディタ） |
 | Memo | `Modules.Devkit.Memo` | `Memo`(MonoBehaviour) | GameObjectにメモ文字列を残すだけのコンポーネント。`MemoComponentRemover`（エディタ）でビルド時全削除 |
 | ChatWork | `Modules.Devkit.ChatWork` | `ChatWorkMessage` | ChatWork API へメッセージ/ファイル送信（`SendMessage`/`SendFile`）。CI通知用 |
 | ExternalAsset | `Modules.Devkit.ExternalAssets` | `SimulationModeAssetFileTrackerBridge`（ランタイム）+ `SimulationModeAssetFileTracker`（エディタWindow） | シミュレートモードで読まれた配信アセットの追跡 |
@@ -116,7 +116,7 @@
 ## 注意点・罠
 
 - **namespace とフォルダ名の不一致が多い**。grep 時は注意:
-  - `ApiMonitor/` → `Modules.Net.WebRequest`（ApiTracker は Network モジュール扱い）
+  - `ApiMonitor/` → `Modules.Network.WebRequest`（ApiTracker は Network モジュール扱い）
   - `MasterGenerator/`・`MasterFileNameViewer/` → `Modules.Master`
   - `ScriptableObject/` → `Modules.Devkit.ScriptableObjects`（複数形）
   - `ShaderVariants/` → `Modules.Devkit.ShaderVariant`（単数形）
@@ -133,14 +133,14 @@
 - `AssetTuner` は**登録制**。新しい Tuner を作っても登録処理を追加しないと動かない。バッチモード時は `AssetTuningPostprocessor` がスキップされる（`Application.isBatchMode`）
 - `AdditionalComponent`（コンポーネント自動付与）はメニューからOFFにできるため、必須依存は `[RequireComponent]` を正とする
 - Devkit のエディタ設定保存は `ProjectPrefs`（`EditorPrefs` + プロジェクト識別子）。他プロジェクトと衝突しないが、プロジェクトパス移動でリセットされる
-- メニュー拡張は基盤の `Modules.EditorMenu` を継承した利用側クラスで追加する（基盤側 `EditorMenu.cs` は直接編集しない）。メニュー登録の実体: 基盤 `Client/Assets/UniModules/Scripts/Editor/EditorMenu.cs`
+- メニュー拡張は基盤の `Modules.EditorMenu` を継承した利用側クラスで追加する（基盤側 `EditorMenu.cs` は直接編集しない）。メニュー登録の実体: 基盤 `Scripts/Editor/EditorMenu.cs`
 
 ## 関連
 
 - [Master.md](Master.md) — MasterViewer / MasterGenerator / MasterFileNameViewer の詳細（namespace `Modules.Master`）
 - [InputControl.md](InputControl.md) — BlockInputMonitorWindow（`Extension/Utility/...` メニュー配下）
-- [Network.md](Network.md) — `ApiTracker`（namespace `Modules.Net.WebRequest`）は `UnityWebRequestManager` から自動記録される
-- [ExternalAsset.md](ExternalAsset.md) — AssetBundleViewer / FindDependencyAssets / SimulationModeAssetFileTracker が扱う配信アセット本体
+- [Network.md](Network.md) — `ApiTracker`（namespace `Modules.Network.WebRequest`）は `UnityWebRequestManager` から自動記録される
+- [ExternalAssets.md](ExternalAssets.md) — AssetBundleViewer / FindDependencyAssets / SimulationModeAssetFileTracker が扱う配信アセット本体
 - [TextData.md](TextData.md) / [UI.md](UI.md) — DummyTextCleaner が除去する `TextSetter` / `DummyText` の定義元
 - [Bugsnag.md](Bugsnag.md) — DebugLog / ApplicationLogHandler 経由のエラー転送先の例
 - [Extensions/Core.md](../Extensions/Core.md) — `Singleton<T>` / `SingletonMonoBehaviour<T>` / `LifetimeDisposable`（Devkit 各クラスの基底）

@@ -1,7 +1,7 @@
 # Particle
 
 > **namespace**: `Modules.Particle`
-> **場所**: `Client/Assets/UniModules/Scripts/Modules/Particle/`（ParticlePlayer.cs / ParticlePlayerSortingOrder.cs + `Editor/` にインスペクタ2ファイル）
+> **場所**: `Scripts/Modules/Particle/`（ParticlePlayer.cs / ParticlePlayerSortingOrder.cs + `Editor/` にインスペクタ2ファイル）
 > **依存**: UniTask / R3 / Unity.Linq / Extensions（`UnityUtility`, `IsPlayback`, `GetSubemitters`）/ Modules.R3Extension
 
 ## 概要
@@ -28,7 +28,7 @@
 
 ## 使い方
 
-- **キャッシュ再利用パターン**（`EndActionType = EndActionType.Deactivate` + `OnEndAsObservable()` 購読でキューへ返却。Play 時に自動で `SetActive(true)` されるため Deactivate 済みインスタンスをそのまま再 `Play()` できる）: `Client/Assets/UniModules/Scripts/Modules/TouchEffect/TouchEffectManager.cs`
+- **キャッシュ再利用パターン**（`EndActionType = EndActionType.Deactivate` + `OnEndAsObservable()` 購読でキューへ返却。Play 時に自動で `SetActive(true)` されるため Deactivate 済みインスタンスをそのまま再 `Play()` できる）: `Scripts/Modules/TouchEffect/TouchEffectManager.cs`
 - [ObjectPool](ObjectPool.md) と組み合わせる場合も同様に「取得 → `Play()` → `OnEnd` で `pool.Return()`」の形になる
 - **終了まで待つ最小形**: `UnityUtility.Instantiate<ParticlePlayer>(parent, effectPrefab)` → `await effect.Play()`
 

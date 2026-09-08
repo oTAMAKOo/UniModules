@@ -1,7 +1,7 @@
 # Scene
 
 > **namespace**: `Modules.Scene`（計測補助のみ `Modules.Scene.Diagnostics`）
-> **場所**: `Client/Assets/UniModules/Scripts/Modules/Scene/`（SceneManagerBase は partial 6ファイル構成）
+> **場所**: `Scripts/Modules/Scene/`（SceneManagerBase は partial 6ファイル構成）
 > **依存**: UniTask / R3 / Extensions（`Singleton`, `FixedQueue`, `UnityUtility`） / Modules.View（VM連携） / Modules.R3Extension（`ObservableEx.FromUniTask`） / Modules.Devkit.Console
 
 ## 概要
@@ -95,4 +95,4 @@ Transition(argument)  ※ void・fire-and-forget（await 不可）
 - [View](View.md) — `SceneBase<TScenes>` 派生に `IViewRoot` を実装すると VM を保持できる（VM 型引数付きの拡張基底は利用側で用意する慣例）。`SceneManagerBase.GetViewModel<T>`（SceneManagerBase.View.cs）で他シーンの VM 取得
 - [Window](Window.md) — シーン内のポップアップ・ウィンドウ（Open/Close ライフサイクル）。シーンを跨ぐ画面は本モジュール、シーン内に重ねる画面は Window を使う
 - [UI](UI.md) — シーン内の View 実装で使う UI 部品
-- [ExternalAsset](ExternalAsset.md) — `Prepare` 内でのアセット読込に使用
+- [ExternalAssets](ExternalAssets.md) — `Prepare` 内でのアセット読込に使用

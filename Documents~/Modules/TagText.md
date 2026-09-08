@@ -1,7 +1,7 @@
 # TagText
 
-> **namespace**: `Modules.TagTect`（**実コードのつづりが `TagTect`**。フォルダ名 TagText と不一致なので grep 注意）
-> **場所**: `Client/Assets/UniModules/Scripts/Modules/TagText/`
+> **namespace**: `Modules.TagText`
+> **場所**: `Scripts/Modules/TagText/`
 > **依存**: Extensions のみ（MonoBehaviour ではない純粋な C# クラス。RubyTagText のみ `UnityEngine.Debug` 使用）
 
 ## 概要
@@ -26,11 +26,10 @@
 
 ## 使い方
 
-文字送りループ（`Get(0)`=空文字 〜 `Get(Length-1)`=全文、の順で1文字ずつ増やして通知）の実例: `Client/Assets/UniModules/Scripts/Modules/Scenario/Command/Message/Message.cs`（`#if ENABLE_XLUA` 内）。
+文字送りループ（`Get(0)`=空文字 〜 `Get(Length-1)`=全文、の順で1文字ずつ増やして通知）の実例: `Scripts/Modules/Scenario/Command/Message/Message.cs`（`#if ENABLE_XLUA` 内）。
 
 ## 注意点・罠
 
-- **namespace のつづりが `Modules.TagTect`**（Text ではなく Tect、実コード通り）。`using Modules.TagText;` と書くとコンパイルエラー。
 - `Length` は実表示文字数より **+1** 大きい（空文字の段階を含む設計）。「最後の1文字が出ない/1周多い」系のバグはここを疑う。
 - `SetText` を呼んでから `Get` を使う（状態を持つクラス。使い回す場合も `SetText` で都度リセットされる）。
 - タグ対応は `<...>` 形式のみ。シナリオ系の `[w]` / `[p]` のような角括弧制御タグは対象外（Scenario 側が Split で別処理している）。

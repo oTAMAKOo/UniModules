@@ -1,7 +1,7 @@
 # Prefs（SecurePrefs）
 
 > **namespace**: `Extensions`（**`Modules.Prefs` ではない**。フォルダ名と不一致）
-> **場所**: `Client/Assets/UniModules/Scripts/Modules/Prefs/SecurePrefs.cs`（1ファイルのみ）
+> **場所**: `Scripts/Modules/Prefs/SecurePrefs.cs`（1ファイルのみ）
 > **依存**: UnityEngine（PlayerPrefs） / Newtonsoft.Json / Extensions（`AesCryptoKey`, `string.Encrypt/Decrypt` 拡張）
 
 ## 概要
@@ -42,7 +42,7 @@
 ## 使い方
 
 - 起動時の鍵初期化: `KeyFileManager.Instance.Get(...)` の鍵で `AesCryptoKey` を生成し `SecurePrefs.SetCryptoKey()` を呼ぶ
-- ネスト static class `Prefs` パターン（基盤内の慣例）: 利用クラス内に `private static class Prefs` を定義し、プロパティ get/set で `SecurePrefs.GetXxx / SetXxx` を包む。キー名は `typeof(Prefs).FullName + "-項目名"` で衝突を回避するのが慣例。実例: `Client/Assets/UniModules/Scripts/Modules/ExternalAsset/ExternalAsset.cache.cs`
+- ネスト static class `Prefs` パターン（基盤内の慣例）: 利用クラス内に `private static class Prefs` を定義し、プロパティ get/set で `SecurePrefs.GetXxx / SetXxx` を包む。キー名は `typeof(Prefs).FullName + "-項目名"` で衝突を回避するのが慣例。実例: `Scripts/Modules/ExternalAssets/ExternalAsset.cache.cs`
 
 ## 注意点・罠
 

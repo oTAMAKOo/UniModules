@@ -1,7 +1,7 @@
 # DeviceOrientation
 
 > **namespace**: `Modules.DeviceOrientation`
-> **場所**: `Client/Assets/UniModules/Scripts/Modules/DeviceOrientation/`（`DeviceOrientationManagerBase.cs` の1ファイルのみ）
+> **場所**: `Scripts/Modules/DeviceOrientation/`（`DeviceOrientationManagerBase.cs` の1ファイルのみ）
 > **依存**: R3 / Extensions（`Singleton`）/ Modules.ApplicationEvent
 
 ## 概要

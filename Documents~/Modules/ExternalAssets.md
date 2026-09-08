@@ -1,8 +1,8 @@
-# ExternalAsset
+# ExternalAssets
 
 > **namespace**: `Modules.ExternalAssets`（AssetBundle低層・暗号化ストリームは `Modules.AssetBundles`）
-> **場所**: `Client/Assets/UniModules/Scripts/Modules/ExternalAsset/`
-> **依存**: UniTask / R3 / Extensions（`Singleton<T>`, PathUtility 等） / Modules.Net（WebRequest / WebDownload） / Modules.Devkit.Console / Modules.Performance / Modules.ApplicationEvent / 条件付き: Modules.CriWare・Modules.Sound・Modules.Movie（`ENABLE_CRIWARE_*` 定義時のみ）、Modules.Amazon.S3（`ENABLE_AMAZON_WEB_SERVICE` 定義時のみ）
+> **場所**: `Scripts/Modules/ExternalAssets/`
+> **依存**: UniTask / R3 / Extensions（`Singleton<T>`, PathUtility 等） / Modules.Network（WebRequest / WebDownload） / Modules.Devkit.Console / Modules.Performance / Modules.ApplicationEvent / 条件付き: Modules.CriWare・Modules.Sound・Modules.Movie（`ENABLE_CRIWARE_*` 定義時のみ）、Modules.Amazon.S3（`ENABLE_AMAZON_WEB_SERVICE` 定義時のみ）
 
 ## 概要
 
@@ -94,7 +94,7 @@
 ## 関連
 
 - [Master](Master.md) — 同じ「rootHash + 配信ストレージ + TitleData」方式のマスターデータ配信基盤。利用側で本モジュールとマスター更新を統合制御する
-- [Network](Network.md)（`Modules.Net`） — `DownloadRequest` / `FileDownLoader` / `NetworkConnection.WaitNetworkReachable` を下層で使用
+- [Network](Network.md)（`Modules.Network`） — `DownloadRequest` / `FileDownLoader` / `NetworkConnection.WaitNetworkReachable` を下層で使用
 - [Sound](Sound.md) / [CriWare](CriWare.md) — `CueInfo` / `CriAssetManager` 連携（CRI有効時のみ）
 - [Performance](Performance.md) — `FunctionFrameLimiter`（UpdateAsset の呼び出し制限）
 - [Devkit](Devkit.md) — `UnityConsole`（ロード/DLのログ出力先）、`ProjectResourceFolders`（`ExternalAssetPath` / `ShareResourcesPath` の定義元）、`SimulationModeAssetFileTracker`（Simulate時の使用アセット追跡）

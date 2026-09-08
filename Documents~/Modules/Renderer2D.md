@@ -1,7 +1,7 @@
 # Renderer2D
 
 > **namespace**: `Modules.Renderer2D.DummyContent`（フォルダは `DummyContents/`・単複不一致）
-> **場所**: `Client/Assets/UniModules/Scripts/Modules/Renderer2D/DummyContents/`
+> **場所**: `Scripts/Modules/Renderer2D/DummyContents/`
 > **依存**: R3 / Extensions（`UnityUtility`, `FixedQueue`） / UnityEditor.U2D（エディタ partial）
 
 ## 概要
@@ -35,4 +35,4 @@
 ## 関連
 
 - [UI](UI.md) — uGUI 版 `DummySprite` / `DummyText`（`Modules.UI.DummyContent`）と同機構
-- [ExternalAsset](ExternalAsset.md) — 実行時に本物の Sprite をロードする手段
+- [ExternalAssets](ExternalAssets.md) — 実行時に本物の Sprite をロードする手段

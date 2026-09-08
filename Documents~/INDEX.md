@@ -1,6 +1,6 @@
 # UniModules 基盤リファレンス INDEX
 
-`Client/Assets/UniModules`（プロジェクト共通ゲーム基盤）のリファレンスドキュメント群。
+UniModules（プロジェクト非依存のゲーム基盤）のリファレンスドキュメント群。
 
 **このドキュメントの目的**: Claude が実装時に基盤の既存機能を漏れなく活用し、車輪の再発明をしないこと。
 
@@ -49,7 +49,7 @@
 | 軽量なキー値の永続化 | [Modules/Prefs.md](Modules/Prefs.md)（`SecurePrefs`） |
 | メモリキャッシュ / ストレージの使い分け | [Modules/Cache.md](Modules/Cache.md)（冒頭に比較表） |
 | サーバーAPI呼び出し・CloudScript追加 | [Modules/PlayFab.md](Modules/PlayFab.md)（手順あり。入口ファサードは利用側で実装） |
-| 配信アセット（画像・プレハブ等）のロード | [Modules/ExternalAsset.md](Modules/ExternalAsset.md) |
+| 配信アセット（画像・プレハブ等）のロード | [Modules/ExternalAssets.md](Modules/ExternalAssets.md) |
 | ファイルダウンロード・オフライン検知 | [Modules/Network.md](Modules/Network.md) |
 | MessagePackシリアライズ対応クラスの定義 | [Modules/MessagePack.md](Modules/MessagePack.md) |
 | 課金処理 | [Modules/InAppPurchasing.md](Modules/InAppPurchasing.md) |
@@ -61,7 +61,7 @@
 |---|---|
 | BGM/SE再生 | [Modules/Sound.md](Modules/Sound.md)（利用側でロード付き入口ラッパーを実装するのが定石） |
 | Animatorのステート再生を await で待つ | [Modules/Animation.md](Modules/Animation.md)（`AnimationPlayer`） |
-| Tween（DOTween）を await・速度制御付きで | [Modules/DoTween.md](Modules/DoTween.md) |
+| Tween（DOTween）を await・速度制御付きで | [Modules/DoTweenExtension.md](Modules/DoTweenExtension.md) |
 | パーティクル再生を await で待つ | [Modules/Particle.md](Modules/Particle.md) |
 | エフェクト・リストアイテムの使い回し | [Modules/ObjectPool.md](Modules/ObjectPool.md) |
 
@@ -102,7 +102,7 @@
 | [ObjectPool](Modules/ObjectPool.md) | GameObjectを使い回す汎用プール（リストアイテム・エフェクト向け） |
 | [LocalData](Modules/LocalData.md) | 端末ローカル永続データの型ベースLoad/Save基盤（MessagePack+AES） |
 | [Cache](Modules/Cache.md) | 文字列キーのメモリキャッシュ（冒頭にストレージ使い分け比較表） |
-| [ExternalAsset](Modules/ExternalAsset.md) | 配信アセットのDL・キャッシュ・ロード基盤（AssetBundle/生ファイル） |
+| [ExternalAssets](Modules/ExternalAssets.md) | 配信アセットのDL・キャッシュ・ロード基盤（AssetBundle/生ファイル） |
 | [Sound](Modules/Sound.md) | BGM/SE再生管理（音量・同時再生制限・フェード） |
 | [PlayFab](Modules/PlayFab.md) | PlayFab CSharpSDK補助（生HTTP・エラー判定）。API入口ファサードは利用側で実装 |
 | [InputControl](Modules/InputControl.md) | 全画面タップ無効化基盤（`using(new BlockInput())` スコープ・多重管理） |
@@ -127,23 +127,23 @@
 | [DeviceOrientation](Modules/DeviceOrientation.md) | 画面向き(ScreenOrientation)の適用・監視Singleton基底 |
 | [Crypto](Modules/Crypto.md) | AES鍵の暗号化ファイル管理・供給（暗号化処理本体はExtensionsのAES拡張） |
 | [BackKey](Modules/BackKey.md) | Android戻るキーのPriority順ハンドリング（Window連携） |
-| [DoTween](Modules/DoTween.md) | Tweenerをawait可能・速度一括制御で実行するコントローラ |
+| [DoTweenExtension](Modules/DoTweenExtension.md) | Tweenerをawait可能・速度一括制御で実行するコントローラ |
 | [Rendering](Modules/Rendering.md) | URPカメラスタックのpriority順自動構成 |
 | [TouchEffect](Modules/TouchEffect.md) | タップ時パーティクル表示の常駐マネージャー |
 | [Prefs](Modules/Prefs.md) | PlayerPrefsのAES暗号化ラッパーSecurePrefs（namespaceは `Extensions`） |
 | [Renderer2D](Modules/Renderer2D.md) | SpriteRenderer用エディタ専用ダミー画像 |
 | [TimeUtil](Modules/TimeUtil.md) | 時間ユーティリティ（`TimeManager<T>` / `TimeNotice` / `RecoveryValue` / `TimeScale` / `RealTime`） |
-| [UniTask](Modules/UniTask.md) | UniTaskのPlayerLoop初期化前倒し（自動実行のみ・手動呼び出し不要） |
+| [UniTaskExtension](Modules/UniTaskExtension.md) | UniTaskのPlayerLoop初期化前倒し（自動実行のみ・手動呼び出し不要） |
 | [Hyphenation](Modules/Hyphenation.md) | 日本語禁則処理+幅計測ベース自動改行 |
 | [SpriteAnimation](Modules/SpriteAnimation.md) | SpriteAtlas連番コマアニメ再生 |
 | [OffScreenRendering](Modules/OffScreenRendering.md) | RenderTexture経由のUI表示とクリック判定 |
 | [StateControl](Modules/StateControl.md) | enumキーの非同期ステートマシン |
-| [TagText](Modules/TagText.md) | タグ入りテキストの文字送りビルダー（namespaceは誤記のまま `Modules.TagTect`） |
+| [TagText](Modules/TagText.md) | タグ入りテキストの文字送りビルダー |
 | [Camera](Modules/Camera.md) | Camera.rect調整によるアスペクト比固定（namespace `Modules.FixedAspectCamera`） |
-| [Shader](Modules/Shader.md) | シェーダーを名前指定で差し替え（namespace `Modules.Shaders`） |
+| [Shaders](Modules/Shaders.md) | シェーダーを名前指定で差し替え（namespace `Modules.Shaders`） |
 | [SortingLayerSetter](Modules/SortingLayerSetter.md) | SortingLayer/Orderのインスペクタ設定 |
 | [PathFinding](Modules/PathFinding.md) | 2DグリッドA*経路探索 |
-| [BehaviourControl](Modules/BehaviourControl.md) | データ駆動ルールテーブル型AI（namespace は `Modules.BehaviorControl`、綴り違いに注意） |
+| [BehaviorControl](Modules/BehaviorControl.md) | データ駆動ルールテーブル型AI |
 
 ### Modules（条件付きコンパイル）
 
@@ -156,7 +156,7 @@
 | [Live2D](Modules/Live2D.md) | `ENABLE_LIVE2D` | Live2DのUIクリック判定 |
 | [Lua](Modules/Lua.md) | `ENABLE_XLUA` | xLua連携基盤 |
 | [Scenario](Modules/Scenario.md) | `ENABLE_XLUA` | Luaカットシーン演出基盤（コマンド約46種） |
-| [Utage](Modules/Utage.md) | `ENABLE_UTAGE` | ADVエンジン「宴」統合拡張 |
+| [UtageExtension](Modules/UtageExtension.md) | `ENABLE_UTAGE` | ADVエンジン「宴」統合拡張 |
 | [TimeLine](Modules/TimeLine.md) | `ENABLE_UNITY_TIMELINE` | Unity Timelineラッパー（データ定義等の一部は常時コンパイル） |
 | [Vivox](Modules/Vivox.md) | `ENABLE_VIVOX` | ボイス/テキストチャットSDKラッパー |
 | [WebView](Modules/WebView.md) | `ENABLE_UNIWEBVIEW` / `ENABLE_EMBEDDEDBROWSER` | アプリ内WebView抽象化（基底2クラスは常時コンパイル・実装Contentのみシンボル依存） |

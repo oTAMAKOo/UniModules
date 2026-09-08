@@ -1,7 +1,7 @@
 # BackKey
 
 > **namespace**: `Modules.BackKey`
-> **場所**: `Client/Assets/UniModules/Scripts/Modules/BackKey/`（BackKeyManager.cs + `Receiver/` BackKeyReceiver.cs / WindowBackKeyReceiver.cs / ButtonBackKeyReceiver.cs）
+> **場所**: `Scripts/Modules/BackKey/`（BackKeyManager.cs + `Receiver/` BackKeyReceiver.cs / WindowBackKeyReceiver.cs / ButtonBackKeyReceiver.cs）
 > **依存**: R3 / Extensions（`Singleton`, `IsEmpty`, `UnityUtility`）/ UniTask + Modules.Window（WindowBackKeyReceiver）/ Modules.UI.Extension（ButtonBackKeyReceiver の `UIButton`）
 
 ## 概要

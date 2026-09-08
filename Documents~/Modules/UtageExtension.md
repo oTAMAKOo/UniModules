@@ -1,7 +1,7 @@
-# Utage
+# UtageExtension
 
-> **namespace**: `Modules.UtageExtension`（フォルダ名 `Utage/` と不一致に注意。Editor専用クラスも同namespace）
-> **場所**: `Client/Assets/UniModules/Scripts/Modules/Utage/`
+> **namespace**: `Modules.UtageExtension`（Editor専用クラスも同namespace）
+> **場所**: `Scripts/Modules/UtageExtension/`
 > **依存**: ADVエンジン「宴（Utage）」アセット（`Utage` namespace） / UniTask / Modules.ExternalAssets / Modules.Sound + CRI ADX2（Sound系のみ） / Modules.Animation / Modules.Particle / Modules.PatternTexture / Modules.Devkit.ScriptableObjects（Editor） / Extensions / Unity.Linq
 
 ## 概要
@@ -48,6 +48,6 @@
 - [Scenario](Scenario.md) — 別系統のシナリオ基盤（xLua）
 - [CriWare](CriWare.md) — サウンド統合の前提
 - [Sound](Sound.md) — サウンド基盤
-- [ExternalAsset](ExternalAsset.md) — `ExternalAsset*AssetFile` が使用する配信アセット基盤
+- [ExternalAssets](ExternalAssets.md) — `ExternalAsset*AssetFile` が使用する配信アセット基盤
 - [Animation](Animation.md) — `EmotionGraphicObject` が使用する `AnimationPlayer`
 - [PatternTexture](PatternTexture.md) / [Particle](Particle.md)

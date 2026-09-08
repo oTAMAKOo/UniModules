@@ -1,8 +1,8 @@
 # Extensions Core（基盤クラス群）
 
 > **namespace**: `Extensions`（Serialize 配下のみ `Extensions.Serialize`、一部 Editor 用 Drawer は `Extensions.Devkit`）
-> **場所**: `Client/Assets/UniModules/Scripts/Extensions/`（`Methods/`・`Devkit/` を除く: `Behaviour/` `Attribute/` `Component/` `Serialize/` `SafeValue/` `Scope/` `Types/` `Utility/`）
-> **依存**: R3（LifetimeDisposable / FixedQueue / UnityUtility）、UniTask（AndroidUtility / MessagePackFileUtility）、Unity.Mathematics（MathematicsRandomUtility）、MessagePack（MessagePackFileUtility）、Newtonsoft.Json（Editor: SerializationFileUtility）。Utility の一部は上位層の Modules を参照する（MessagePackFileUtility→Modules.MessagePack、AndroidUtility→Modules.Net）
+> **場所**: `Scripts/Extensions/`（`Methods/`・`Devkit/` を除く: `Behaviour/` `Attribute/` `Component/` `Serialize/` `SafeValue/` `Scope/` `Types/` `Utility/`）
+> **依存**: R3（LifetimeDisposable / FixedQueue / UnityUtility）、UniTask（AndroidUtility / MessagePackFileUtility）、Unity.Mathematics（MathematicsRandomUtility）、MessagePack（MessagePackFileUtility）、Newtonsoft.Json（Editor: SerializationFileUtility）。Utility の一部は上位層の Modules を参照する（MessagePackFileUtility→Modules.MessagePack、AndroidUtility→Modules.Network）
 
 ## 概要
 
@@ -66,9 +66,9 @@ GameObject 操作の安全ラッパー（`UnityUtility`）を提供する。新�
 - `Prefab` によるリストアイテム複数生成: `prefab.Instantiate<T>(count)`
 - `Prefab` + ObjectPool 併用（`Source` / `Parent` に分解して渡す）
 - `[SerializeField, ReadOnly]` による表示専用フィールド
-- `[Label("表示名")]` enum + `ToLabelName()`（基盤内実例: `Client/Assets/UniModules/Scripts/Modules/Network/WebRequest/WebRequestManager.cs`）
+- `[Label("表示名")]` enum + `ToLabelName()`（基盤内実例: `Scripts/Modules/Network/WebRequest/WebRequestManager.cs`）
 - SafeValue（`XInt`）で数値をメモリ改ざん対策付きで保持
-- `FloatNullable` のインスペクタ利用（基盤内実例: `Client/Assets/UniModules/Scripts/Modules/UI/Layout/PreferredSizeCopy.cs`）
+- `FloatNullable` のインスペクタ利用（基盤内実例: `Scripts/Modules/UI/Layout/PreferredSizeCopy.cs`）
 - `MathematicsRandomUtility` によるリプレイ整合性が必要な乱数生成
 
 ## 注意点・罠

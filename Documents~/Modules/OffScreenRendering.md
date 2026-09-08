@@ -1,7 +1,7 @@
 # OffScreenRendering
 
 > **namespace**: `Modules.OffScreenRendering`
-> **場所**: `Client/Assets/UniModules/Scripts/Modules/OffScreenRendering/`
+> **場所**: `Scripts/Modules/OffScreenRendering/`
 > **依存**: R3 / Extensions（`UnityUtility`） / uGUI（`RawImage`, `IPointerClickHandler`）
 
 ## 概要

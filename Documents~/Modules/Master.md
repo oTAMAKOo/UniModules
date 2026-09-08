@@ -1,7 +1,7 @@
 # Master
 
 > **namespace**: `Modules.Master`
-> **場所**: `Client/Assets/UniModules/Scripts/Modules/Master/`
+> **場所**: `Scripts/Modules/Master/`
 > **依存**: UniTask / R3 / MessagePack(+LZ4) / Extensions（`Singleton<T>`, `AesCryptoKey`）/ Modules.Performance / Modules.Devkit.Console
 
 ## 概要
@@ -76,7 +76,7 @@
 
 - [MessagePack](MessagePack.md) — シリアライズ基盤（`UnityCustomResolver`）。Editorでの動的コード生成/実機の事前生成コードに関わる
 - [TextData](TextData.md) — マスターに格納した文字列キーの実行時解決（`TextData.Get`）
-- [ExternalAsset](ExternalAsset.md) — マスターと並んで起動時に更新される外部アセット配信基盤
+- [ExternalAssets](ExternalAssets.md) — マスターと並んで起動時に更新される外部アセット配信基盤
 - [PlayFab](PlayFab.md) — 配信バージョン（rootHash）を TitleData 等から取得する連携先の例
 - [Devkit](Devkit.md) — `MasterGenerator` / `MasterConfig` / MasterViewer 等のエディタ専用ツール群（`Modules/Devkit/MasterGenerator/Editor/`）
 - [Performance](Performance.md) — 更新時のフレーム分散（`FunctionFrameLimiter`）

@@ -1,7 +1,7 @@
 # ApplicationEvent
 
 > **namespace**: `Modules.ApplicationEvent`
-> **場所**: `Client/Assets/UniModules/Scripts/Modules/ApplicationEvent/`
+> **場所**: `Scripts/Modules/ApplicationEvent/`
 > **依存**: R3 / Extensions（`SingletonMonoBehaviour<T>`, `UnityUtility`）
 
 ## 概要

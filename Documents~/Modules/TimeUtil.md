@@ -1,7 +1,7 @@
 # TimeUtil
 
 > **namespace**: `Modules.TimeUtil`
-> **場所**: `Client/Assets/UniModules/Scripts/Modules/TimeUtil/`
+> **場所**: `Scripts/Modules/TimeUtil/`
 > **依存**: R3 / Extensions（`Singleton<T>`, `LifetimeDisposable`, `XDouble`, `ToUnixTime`）
 
 ## 概要
@@ -15,12 +15,12 @@
 | サーバー時刻を基準に進む「今」を扱いたい | `TimeManager<T>` を派生（例: `sealed class GameTime : TimeManager<GameTime>`）→ `Set(baseTime)` → `Now` |
 | スタミナ等「時間で回復する値」の計算 | `RecoveryValue`（現在値・次回/全回復までの残り時間・割合） |
 | 指定時刻になったら1回だけ通知 | `TimeNotice.Set(name, unixTime)` + `OnTimeAsObservable()`（要 `Initialize`）、または `TimeManager<T>.Notice(dateTime)` |
-| 演出の再生速度を購読可能な形で持つ | `TimeScale`（`Value` 変更 → `OnTimeScaleChangedAsObservable`）。DOTween連動は [DoTween](DoTween.md) の `TweenController.TimeScale` |
+| 演出の再生速度を購読可能な形で持つ | `TimeScale`（`Value` 変更 → `OnTimeScaleChangedAsObservable`）。DOTween連動は [DoTweenExtension](DoTweenExtension.md) の `TweenController.TimeScale` |
 | `Time.timeScale` の影響を受けない経過時間 | `RealTime.time` / `RealTime.deltaTime`（static） |
 
 ## 使い方
 
-- 基盤内の実使用は `TweenController` のみ（`new TimeScale()` + `OnTimeScaleChangedAsObservable` 購読で再生中の全 Tweener の timescale へ反映。引用元: `Client/Assets/UniModules/Scripts/Modules/DoTween/TweenController.cs`）
+- 基盤内の実使用は `TweenController` のみ（`new TimeScale()` + `OnTimeScaleChangedAsObservable` 購読で再生中の全 Tweener の timescale へ反映。引用元: `Scripts/Modules/DoTweenExtension/TweenController.cs`）
 - スタミナ計算の想定形: `new RecoveryValue(max, recoveryInterval, recoveryAmount, lastRecoveryTime, fullRecoveryTime)` → `UpdateTime(currentTime)` で経過分回復 → `GetNextRecoveryTime` / `GetFullRecoveryTime` / `GetRatio` で残り時間・割合取得（シグネチャは `RecoveryValue.cs` 参照）
 - `TimeManager<T>` は abstract + 自己参照ジェネリクス。使うには `sealed class GameTime : TimeManager<GameTime>` の様な派生定義が必要
 
@@ -33,5 +33,5 @@
 
 ## 関連
 
-- [DoTween](DoTween.md) — `TweenController` が `TimeScale` を利用（基盤内唯一の実使用）
+- [DoTweenExtension](DoTweenExtension.md) — `TweenController` が `TimeScale` を利用（基盤内唯一の実使用）
 - [Scenario](Scenario.md) — `ScenarioController.TimeScale` として利用

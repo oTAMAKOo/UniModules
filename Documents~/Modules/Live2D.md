@@ -1,7 +1,7 @@
 # Live2D
 
 > **namespace**: `Modules.Live2D`
-> **場所**: `Client/Assets/UniModules/Scripts/Modules/Live2D/`
+> **場所**: `Scripts/Modules/Live2D/`
 > **依存**: Live2D Cubism SDK（`Live2D.Cubism.Core` / `Live2D.Cubism.Framework.Raycasting`） / R3 / Modules.OffScreenRendering
 
 ## 概要

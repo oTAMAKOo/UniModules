@@ -1,7 +1,7 @@
 # FileCache
 
 > **namespace**: `Modules.FileCache`
-> **場所**: `Client/Assets/UniModules/Scripts/Modules/FileCache/`
+> **場所**: `Scripts/Modules/FileCache/`
 > **依存**: Extensions（`Singleton`, `AesCryptoKey`, `PathUtility`, ハッシュ/暗号化拡張） / MessagePack / **Modules.LocalData（メタ情報の保存先）**
 
 ## 概要

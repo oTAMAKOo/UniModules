@@ -1,7 +1,7 @@
 # R3Extension
 
 > **namespace**: `Modules.R3Extension`
-> **場所**: `Client/Assets/UniModules/Scripts/Modules/R3Extension/`
+> **場所**: `Scripts/Modules/R3Extension/`
 > **依存**: R3 / UniTask / Extensions（`Scope`）
 
 ## Rx は R3 を使う
@@ -54,7 +54,7 @@ R3 の Observable と UniTask を橋渡しする小規模基盤。機能は2系�
 - **発火側: 全購読者の演出完了を待つ**（handler を new → `OnNext(handler)` → `await handler.Wait()`。購読者ゼロ＝Subject が null なら即 return）
 - **購読側: `AsyncHandlerScope` + `using` で完了を伝える**。スコープを同期処理だけに掛ければ、裏で続くアニメは発火側を待たせない
 - **派生ハンドラで双方向にデータを受け渡す**（発火側→購読側の入力フィールド + 購読側→発火側の戻り値フィールド）
-- **ObservableEx: UniTask の Observable 化**（`.Share()` による多重実行防止 / `Timeout` 等のオペレータ適用）: `Client/Assets/UniModules/Scripts/Modules/Particle/ParticlePlayer.cs`、`Client/Assets/UniModules/Scripts/Modules/ExternalAsset/AssetBundle/AssetBundleManager.cs`
+- **ObservableEx: UniTask の Observable 化**（`.Share()` による多重実行防止 / `Timeout` 等のオペレータ適用）: `Scripts/Modules/Particle/ParticlePlayer.cs`、`Scripts/Modules/ExternalAssets/AssetBundle/AssetBundleManager.cs`
 
 ## 注意点・罠
 
@@ -69,5 +69,5 @@ R3 の Observable と UniTask を橋渡しする小規模基盤。機能は2系�
 
 - [Extensions/Core.md](../Extensions/Core.md) — `Scope`（AsyncHandlerScope の基底）/ `LifetimeDisposable`（`.AddTo(Disposable)` の実体）
 - [Extensions/Methods.md](../Extensions/Methods.md) — `UniTaskExtensions`（UniRx互換シム: `ObserveEveryValueChanged` / `TakeUntilDestroy` / `DoOnError` / `OnErrorRetry` / `ToUniTask` 等）
-- [UniTask](UniTask.md) — UniTask の PlayerLoop 初期化（本モジュールの依存ライブラリ）
+- [UniTaskExtension](UniTaskExtension.md) — UniTask の PlayerLoop 初期化（本モジュールの依存ライブラリ）
 - [UI](UI.md) — `UIButton.OnClickAsObservable()` 等の R3 ベース UI イベント

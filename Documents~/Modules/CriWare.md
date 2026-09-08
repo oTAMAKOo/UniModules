@@ -1,8 +1,8 @@
 # CriWare
 
 > **namespace**: `Modules.CriWare`（Editor専用: `Modules.CriWare.Editor`）
-> **場所**: `Client/Assets/UniModules/Scripts/Modules/CriWare/`
-> **依存**: CRI SDK（`CriWare` namespace） / UniTask / R3 / Extensions / Modules.ExternalAssets / Modules.Net / Modules.Devkit.*
+> **場所**: `Scripts/Modules/CriWare/`
+> **依存**: CRI SDK（`CriWare` namespace） / UniTask / R3 / Extensions / Modules.ExternalAssets / Modules.Network / Modules.Devkit.*
 
 ## 概要
 
@@ -26,7 +26,7 @@ CRIWARE（ADX=サウンド / Sofdec=ムービー / FileSystem=ダウンロード
 
 ## 使い方
 
-- 基盤内の使用例（CRI有効時のみコンパイル）: `Client/Assets/UniModules/Scripts/Modules/ExternalAsset/ExternalAsset.cri.cs` の `InitializeCri()` 参照
+- 基盤内の使用例（CRI有効時のみコンパイル）: `Scripts/Modules/ExternalAssets/ExternalAsset.cri.cs` の `InitializeCri()` 参照
 
 ## 注意点・罠
 
@@ -39,5 +39,5 @@ CRIWARE（ADX=サウンド / Sofdec=ムービー / FileSystem=ダウンロード
 ## 関連
 
 - [Sound](Sound.md) — サウンド再生基盤（CRI 有効時は ADX 版が有効化される）
-- [ExternalAsset](ExternalAsset.md) — 配信アセット基盤（CRI有効時は `CriAssetManager` を内包。`GetCueInfo` / `GetMovieInfo` は CRI 有効時のみ）
+- [ExternalAssets](ExternalAssets.md) — 配信アセット基盤（CRI有効時は `CriAssetManager` を内包。`GetCueInfo` / `GetMovieInfo` は CRI 有効時のみ）
 - [Movie](Movie.md) — Sofdec ムービー再生

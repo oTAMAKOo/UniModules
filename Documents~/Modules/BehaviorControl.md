@@ -1,7 +1,7 @@
-# BehaviourControl
+# BehaviorControl
 
-> **namespace**: `Modules.BehaviorControl`（**フォルダ名は `BehaviourControl/`。綴りが異なるので grep 注意**）
-> **場所**: `Client/Assets/UniModules/Scripts/Modules/BehaviourControl/`
+> **namespace**: `Modules.BehaviorControl`
+> **場所**: `Scripts/Modules/BehaviorControl/`
 > **依存**: R3 / Extensions（`Singleton<T>`, `FixedQueue`, `RandomUtility`） / Editor側のみ Newtonsoft.Json・YamlDotNet・Modules.Devkit
 
 ## 概要
@@ -21,7 +21,6 @@
 
 ## 注意点・罠
 
-- **フォルダ名（BehaviourControl）と namespace（`Modules.BehaviorControl`）の綴りが違う**。using 検索は `BehaviorControl`（米綴り）で行う。
 - 確率判定は `RandomUtility.RandomInRange(1f, 100f)` の**内部直呼び**で、シード注入口が無い。リプレイ整合性が求められる用途では別途ラップまたは代替実装が必要。
 - 条件式は「左から逐次評価・false になった時点で打ち切り」。And/Or の優先順位制御は無く、`A And B Or C` のような式は数学的な優先順位通りには評価されない。2個目以降の条件に `Connecter` 未設定（None）だと評価がそこで打ち切られる。
 - `Execute` のログに残るのは「確率判定と対象選択を通過した行」のみ。確率外れ・対象選択失敗の行は Monitor に出ない（デバッグ時に空ログでも異常とは限らない）。

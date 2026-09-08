@@ -1,7 +1,7 @@
 # Cache
 
 > **namespace**: `Modules.Cache`
-> **場所**: `Client/Assets/UniModules/Scripts/Modules/Cache/`
+> **場所**: `Scripts/Modules/Cache/`
 > **依存**: R3（SpriteAtlasCache） / Extensions（`LifetimeDisposable`, `UnityUtility`, コレクション拡張）
 
 ## 概要
@@ -51,5 +51,5 @@
 
 - [FileCache](FileCache.md) — ディスク保存・有効期限付きのファイルキャッシュ（`SetCryptoKey` が必要）
 - [LocalData](LocalData.md) — 永続セーブデータ
-- [ExternalAsset](ExternalAsset.md) — アセットのロード元。ロード結果を本モジュールでキャッシュする組み合わせが定番
+- [ExternalAssets](ExternalAssets.md) — アセットのロード元。ロード結果を本モジュールでキャッシュする組み合わせが定番
 - [Extensions/Core.md](../Extensions/Core.md) — `LifetimeDisposable` / `UnityUtility.SafeDelete`
