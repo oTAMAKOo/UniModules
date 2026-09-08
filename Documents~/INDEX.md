@@ -75,6 +75,7 @@
 | クラッシュ・エラーレポート | [Modules/Bugsnag.md](Modules/Bugsnag.md) |
 | 開発用ログ出力 | [Modules/Devkit.md](Modules/Devkit.md)（`UnityConsole`。本番に残すエラーは `Debug.LogError`） |
 | エディタ拡張（EditorWindow/Inspector）を書く | [Extensions/Devkit.md](Extensions/Devkit.md) + [Modules/Devkit.md](Modules/Devkit.md) |
+| Prefab をオフスクリーン描画して画像で確認・展開して検査したい | [Modules/Automation.md](Modules/Automation.md)（`PrefabPreviewRenderer` / `PrefabPreviewScope`） |
 | S3への配信データアップロード（エディタ） | [Modules/AmazonWebService.md](Modules/AmazonWebService.md) |
 
 ## モジュール一覧
@@ -96,6 +97,7 @@
 | [View](Modules/View.md) | View-ViewModel接続基盤（画面状態の共有・自動解決） |
 | [Master](Modules/Master.md) | マスターデータの配信・暗号化キャッシュ・MessagePackロード・参照基盤 |
 | [Devkit](Modules/Devkit.md) | エディタ開発支援ツール群+実機デバッグ（UnityConsole/SRDebugger/レポート送信） |
+| [Automation](Modules/Automation.md) | プログラムから呼ぶエディタ操作の自動化（Prefab のオフスクリーン描画・検査用スコープ） |
 | [UI](Modules/UI.md) | uGUIラッパー・仮想スクロール・SpriteLoader等（Extension/ の基底は abstract。利用側で具象を実装） |
 | [ObjectPool](Modules/ObjectPool.md) | GameObjectを使い回す汎用プール（リストアイテム・エフェクト向け） |
 | [LocalData](Modules/LocalData.md) | 端末ローカル永続データの型ベースLoad/Save基盤（MessagePack+AES） |
