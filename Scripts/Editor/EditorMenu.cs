@@ -14,7 +14,7 @@ using Modules.TextData.Components;
 using Modules.MessagePack;
 using Modules.Master;
 using Modules.ExternalAssets;
-using Modules.Net.WebRequest;
+using Modules.Network.WebRequest;
 using Modules.BehaviorControl;
 using Modules.InputControl;
 using Modules.Devkit.AssetBundles;

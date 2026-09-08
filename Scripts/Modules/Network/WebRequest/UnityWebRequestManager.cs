@@ -8,7 +8,7 @@ using MessagePack.Resolvers;
 using Modules.Devkit.Console;
 using Modules.MessagePack;
 
-namespace Modules.Net.WebRequest
+namespace Modules.Network.WebRequest
 {
     public abstract class UnityWebRequestManager<TInstance, TWebRequest> : WebRequestManager<TInstance, TWebRequest>
         where TInstance : UnityWebRequestManager<TInstance, TWebRequest> 

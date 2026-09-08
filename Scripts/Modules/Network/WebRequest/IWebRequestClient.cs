@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Modules.Net.WebRequest
+namespace Modules.Network.WebRequest
 {
     public interface IWebRequestClient
     {

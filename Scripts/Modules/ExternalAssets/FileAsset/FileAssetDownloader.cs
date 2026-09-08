@@ -7,8 +7,8 @@ using Cysharp.Threading.Tasks;
 using R3;
 using Extensions;
 using Modules.AssetBundles;
-using Modules.Net.WebDownload;
-using Modules.Net.WebRequest;
+using Modules.Network.WebDownload;
+using Modules.Network.WebRequest;
 
 namespace Modules.ExternalAssets
 {

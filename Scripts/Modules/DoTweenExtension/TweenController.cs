@@ -9,7 +9,7 @@ using R3;
 using Extensions;
 using Modules.TimeUtil;
 
-namespace Modules.Tweening
+namespace Modules.DoTweenExtension
 {
 	public sealed class TweenController : LifetimeDisposable
 	{

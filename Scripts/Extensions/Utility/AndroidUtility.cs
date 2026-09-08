@@ -9,8 +9,8 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using Cysharp.Threading.Tasks;
-using Modules.Net.WebDownload;
-using Modules.Net.WebRequest;
+using Modules.Network.WebDownload;
+using Modules.Network.WebRequest;
 
 namespace Extensions
 {

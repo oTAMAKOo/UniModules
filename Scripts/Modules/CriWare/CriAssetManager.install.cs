@@ -10,7 +10,7 @@ using CriWare;
 using Cysharp.Threading.Tasks;
 using R3;
 using Extensions;
-using Modules.Net;
+using Modules.Network;
 using Modules.ExternalAssets;
 
 namespace Modules.CriWare

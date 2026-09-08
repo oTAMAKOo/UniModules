@@ -8,7 +8,7 @@ using R3;
 using Extensions;
 using Modules.R3Extension;
 
-namespace Modules.Net.WebDownload
+namespace Modules.Network.WebDownload
 {
     public abstract class FileDownLoader<TDownloadRequest> : LifetimeDisposable where TDownloadRequest : DownloadRequest, new()
     {

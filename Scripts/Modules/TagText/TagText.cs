@@ -6,7 +6,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using Extensions;
 
-namespace Modules.TagTect
+namespace Modules.TagText
 {
     public class TagText
     {

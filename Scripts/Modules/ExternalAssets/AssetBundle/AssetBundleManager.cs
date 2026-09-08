@@ -10,10 +10,10 @@ using Cysharp.Threading.Tasks;
 using R3;
 using Extensions;
 using Modules.ApplicationEvent;
-using Modules.Net;
-using Modules.Net.WebRequest;
+using Modules.Network;
+using Modules.Network.WebRequest;
 using Modules.ExternalAssets;
-using Modules.Net.WebDownload;
+using Modules.Network.WebDownload;
 using Modules.R3Extension;
 
 namespace Modules.AssetBundles

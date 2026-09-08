@@ -4,7 +4,7 @@
 using Cysharp.Threading.Tasks;
 using DG.Tweening;
 using Extensions;
-using Modules.Tweening;
+using Modules.DoTweenExtension;
 
 namespace Modules.Scenario
 {

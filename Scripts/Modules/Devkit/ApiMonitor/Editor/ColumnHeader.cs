@@ -3,7 +3,7 @@ using UnityEditor;
 using UnityEditor.IMGUI.Controls;
 using System;
 
-namespace Modules.Net.WebRequest
+namespace Modules.Network.WebRequest
 {
     public sealed class ColumnHeader : MultiColumnHeader
     {

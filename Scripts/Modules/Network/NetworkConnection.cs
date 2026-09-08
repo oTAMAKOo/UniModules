@@ -6,7 +6,7 @@ using Cysharp.Threading.Tasks;
 using R3;
 using Extensions;
 
-namespace Modules.Net
+namespace Modules.Network
 {
     public static class NetworkConnection
     {

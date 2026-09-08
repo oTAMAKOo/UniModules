@@ -1,7 +1,7 @@
 ﻿
 using System;
 
-namespace Modules.Net.WebRequest
+namespace Modules.Network.WebRequest
 {
     public class ApiInfo
     {

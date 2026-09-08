@@ -5,9 +5,9 @@ using System.IO;
 using System.Threading;
 using Cysharp.Threading.Tasks;
 using Extensions;
-using Modules.Net.WebRequest;
+using Modules.Network.WebRequest;
 
-namespace Modules.Net.WebDownload
+namespace Modules.Network.WebDownload
 {
     public class DownloadRequest : IDisposable
     {

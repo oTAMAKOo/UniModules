@@ -9,7 +9,7 @@ using R3;
 using Extensions;
 using Extensions.Devkit;
 
-namespace Modules.Net.WebRequest
+namespace Modules.Network.WebRequest
 {
     public sealed class ApiMonitorWindow : SingletonEditorWindow<ApiMonitorWindow>
     {

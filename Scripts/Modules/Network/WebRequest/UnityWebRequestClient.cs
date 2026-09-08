@@ -16,7 +16,7 @@ using Modules.Devkit.Console;
 
 using static Extensions.CompressionExtensions;
 
-namespace Modules.Net.WebRequest
+namespace Modules.Network.WebRequest
 {
     public abstract class UnityWebRequestClient : IDisposable, IWebRequestClient
     {

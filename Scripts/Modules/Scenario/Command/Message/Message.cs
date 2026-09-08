@@ -6,7 +6,7 @@ using System;
 using System.Text;
 using Cysharp.Threading.Tasks;
 using R3;
-using Modules.TagTect;
+using Modules.TagText;
 using Modules.TimeUtil;
 
 namespace Modules.Scenario.Command

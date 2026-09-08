@@ -9,7 +9,7 @@ using Extensions;
 using R3;
 using Extensions.Devkit;
 
-namespace Modules.Net.WebRequest
+namespace Modules.Network.WebRequest
 {
     public sealed class ApiHistoryView : TreeView<int>
     {

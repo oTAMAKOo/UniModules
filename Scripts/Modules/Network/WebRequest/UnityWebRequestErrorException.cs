@@ -3,7 +3,7 @@ using UnityEngine.Networking;
 using System;
 using System.Collections.Generic;
 
-namespace Modules.Net.WebRequest
+namespace Modules.Network.WebRequest
 {
 	public sealed class UnityWebRequestErrorException : Exception
 	{

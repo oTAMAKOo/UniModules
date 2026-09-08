@@ -10,7 +10,7 @@ using Cysharp.Threading.Tasks;
 using R3;
 using Extensions;
 using Modules.Devkit.Diagnosis.LogTracker;
-using Modules.Net.WebRequest;
+using Modules.Network.WebRequest;
 
 namespace Modules.Devkit.Diagnosis.SendReport
 {

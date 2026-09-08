@@ -3,7 +3,7 @@ using UnityEngine;
 using System;
 using System.Linq;
 
-namespace Modules.TagTect
+namespace Modules.TagText
 {
     public sealed class RubyTagText : TagText
     {

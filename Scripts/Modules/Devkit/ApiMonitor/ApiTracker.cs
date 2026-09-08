@@ -5,7 +5,7 @@ using System.Collections.Generic;
 using R3;
 using Extensions;
 
-namespace Modules.Net.WebRequest
+namespace Modules.Network.WebRequest
 {
     public sealed class ApiTracker : Singleton<ApiTracker>
     {

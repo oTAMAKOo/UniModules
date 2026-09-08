@@ -2,7 +2,7 @@
 using System;
 using System.Runtime.Serialization;
 
-namespace Modules.Net
+namespace Modules.Network
 {
 	[Serializable]
 	public sealed class NetworkReachabilityException : Exception

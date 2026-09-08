@@ -7,7 +7,7 @@ using System.Net;
 using System.Threading;
 using Cysharp.Threading.Tasks;
 
-namespace Modules.Net.WebRequest
+namespace Modules.Network.WebRequest
 {
     public static class UnityWebRequestExtensions
     {

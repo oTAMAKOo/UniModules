@@ -6,7 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Extensions;
 
-namespace Modules.Net.WebRequest
+namespace Modules.Network.WebRequest
 {
     public enum Method
     {
