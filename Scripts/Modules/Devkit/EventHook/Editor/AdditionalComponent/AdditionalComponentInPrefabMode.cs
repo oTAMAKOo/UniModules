@@ -46,6 +46,16 @@ namespace Modules.Devkit.EventHook
         private static void OnClosePrefabMode(PrefabStage prefabStage)
         {
             prefabModeObjects = null;
+
+            // ネストPrefabから戻った場合は上位のステージが開いたまま残るのでスナップショットを取り直す.
+            EditorApplication.delayCall += () =>
+            {
+                var currentPrefabStage = PrefabStageUtility.GetCurrentPrefabStage();
+
+                if (currentPrefabStage == null){ return; }
+
+                prefabModeObjects = GetStateGameObjects(currentPrefabStage.stageHandle);
+            };
         }
 
         private static void ModifyRequireComponents()
@@ -53,13 +63,19 @@ namespace Modules.Devkit.EventHook
             // 実行中は追加しない.
             if (Application.isPlaying) { return; }
 
-            if (prefabModeObjects == null){ return; }
-
             var currentPrefabStage = PrefabStageUtility.GetCurrentPrefabStage();
 
             if (currentPrefabStage == null){ return; }
 
             var gameObjects = GetStateGameObjects(currentPrefabStage.stageHandle);
+
+            // スナップショットが無い場合は差分の基準を作るだけで終える.
+            if (prefabModeObjects == null)
+            {
+                prefabModeObjects = gameObjects;
+
+                return;
+            }
 
             var newGameObjects = gameObjects.Where(x => !prefabModeObjects.Contains(x)).ToArray();
 
