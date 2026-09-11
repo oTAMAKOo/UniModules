@@ -150,6 +150,8 @@ namespace Modules.TextData.Editor
 
             if (EditorApplication.isPlayingOrWillChangePlaymode){ return true; }
 
+            if (Application.isBatchMode) { return true; }
+            
             if (EditorApplication.isCompiling) { return true; }
 
             if (EditorApplication.isUpdating){ return true; }

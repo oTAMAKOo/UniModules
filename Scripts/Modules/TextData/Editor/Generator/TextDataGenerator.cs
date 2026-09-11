@@ -304,19 +304,23 @@ namespace Modules.TextData.Editor
 			EditorUtility.ClearProgressBar();
         }
 
-		private static string CreateSheetsHash(IEnumerable<SheetData> sheetDatas)
-		{
-			var builder = new StringBuilder();
+        private static string CreateSheetsHash(IEnumerable<SheetData> sheetDatas)
+        {
+            var builder = new StringBuilder();
 
-			var items = sheetDatas.OrderBy(x => x.guid);
+            var items = sheetDatas.OrderBy(x => x.guid, StringComparer.Ordinal);
 
-			foreach (var item in items)
-			{
-				builder.AppendLine(item.hash);
-			}
+            foreach (var item in items)
+            {
+                builder.AppendLine(item.hash);
+            }
 
-			return builder.ToString().GetHash();
-		}
+            var text = builder.ToString().FixLineEnd();
+
+            var hash = text.GetHash();
+
+            return hash;
+        }
 
         private static IndexData LoadIndexData(FileLoader.Format fileFormat, string recordDirectory)
         {
@@ -329,6 +333,8 @@ namespace Modules.TextData.Editor
             var indexFile = Directory.EnumerateFiles(recordDirectory, "*.*", SearchOption.AllDirectories)
                 .Where(x => Path.GetExtension(x) == IndexFileExtension)
                 .Select(x => PathUtility.ConvertPathSeparator(x))
+                .OrderBy(x => x, StringComparer.OrdinalIgnoreCase)
+                .ThenBy(x => x, StringComparer.Ordinal)
                 .FirstOrDefault();
 
             var indexData = FileLoader.LoadFile<IndexData>(indexFile, fileFormat);
@@ -349,6 +355,8 @@ namespace Modules.TextData.Editor
             var sheetFiles = Directory.EnumerateFiles(recordDirectory, "*.*", SearchOption.TopDirectoryOnly)
                 .Where(x => Path.GetExtension(x) == extension)
                 .Select(x => PathUtility.ConvertPathSeparator(x))
+                .OrderBy(x => x, StringComparer.OrdinalIgnoreCase)
+                .ThenBy(x => x, StringComparer.Ordinal)
                 .ToArray();
 
             var list = new List<SheetData>();
@@ -357,7 +365,7 @@ namespace Modules.TextData.Editor
             {
                 var sheetData = FileLoader.LoadFile<SheetData>(sheetFile, fileFormat);
 
-				var hash = FileUtility.GetHash(sheetFile);
+                var hash = GetContentsHash(sheetFile);
 
                 if (sheetData != null)
                 {
@@ -368,6 +376,15 @@ namespace Modules.TextData.Editor
             }
 
             return list;
+        }
+
+        /// <summary> ファイル内容のハッシュ値を取得 </summary>
+        private static string GetContentsHash(string filePath)
+        {
+            // 実行環境による改行コードの差異を吸収する為、正規化した内容からハッシュ値を生成する.
+            var text = File.ReadAllText(filePath, new UTF8Encoding(false));
+
+            return text.FixLineEnd().GetHash();
         }
 
         private static TextDataAsset LoadAsset(string assetPath)
