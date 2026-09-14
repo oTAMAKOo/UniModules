@@ -8,7 +8,7 @@
 
 AWS S3 への薄いラッパー（`S3Client`）と、アップロードツールの基底クラス（`S3UploaderBase`）。
 主用途は **エディタから配信データを S3 へアップロードする**こと（アセットバンドル・マスターデータ等）。ランタイム（実機）からは使わない。
-主要クラス: `S3Client`（`AmazonS3Client` のラッパー。一覧/メタ取得/取得/アップロード/Put/削除）/ `S3UploaderBase`（アップローダー基底。`IBasicCredentials` or `ICognitoCredentials` を実装した派生クラスから `CreateS3Client()` で接続）。
+主要クラス: `S3Client`（`AmazonS3Client` のラッパー。一覧/メタ取得/取得/アップロード/Put/削除）/ `S3UploaderBase`（アップローダー基底。`IBasicCredentials` or `ICognitoCredentials` を実装した派生クラスから `CreateS3Client()` で接続）/ `ProfileCredentials`（`IBasicCredentials` 実装。アクセスキーを環境変数と AWS 共有認証情報ファイルから解決する）。
 
 基盤内の派生:
 
@@ -25,6 +25,7 @@ S3UploaderBase (本モジュール)
 | やりたいこと | 使うもの |
 |---|---|
 | 新しいアップロードツールを作りたい | `S3UploaderBase` を継承 + `IBasicCredentials`（or `ICognitoCredentials`）実装 |
+| アクセスキーをソースに書かずに渡したい | `ProfileCredentials`（環境変数 → AWS 共有認証情報ファイルのプロファイルの順に解決） |
 | S3上のファイル一覧を取りたい | `S3Client.GetObjectList(prefix, maxKeys)`（ページング自動追従） |
 | S3からダウンロードしたい | `S3Client.GetObject(objectPath)` |
 | ファイル/フォルダをアップロードしたい | `S3Client.Upload(filePath, objectPath)` / `UploadDirectory(directoryPath)` |
@@ -40,7 +41,8 @@ S3UploaderBase (本モジュール)
 - namespace は `Modules.Amazon.S3`（`Modules.AmazonWebService` ではない）
 - 非同期は UniTask ではなく **`System.Threading.Tasks.Task`**（AWS SDK 準拠）。呼び出し側（ExternalAsset の S3Uploader 等）で UniTask に変換している
 - `S3UploaderBase.UploadFileCannedACL` の既定値が `PublicRead`。新規アップローダーでは明示的に `Private` へオーバーライドすること
-- AWS アクセスキー/シークレットを派生クラスのソースコードに直書きする場合、値の転記・ログ出力・外部共有はしない
+- **AWS アクセスキー/シークレットをソースコードに直書きしない**。`ProfileCredentials` を `IBasicCredentials` として渡せば、環境変数（コンストラクタで名前を指定した場合のみ参照）→ AWS 共有認証情報ファイル（`~/.aws/credentials`）のプロファイルの順で解決する。どちらからも取得できない場合は `InvalidOperationException` を送出する
+- `ProfileCredentials` は解決した認証情報をインスタンス内にキャッシュする。プロファイルを更新した場合はインスタンスを作り直す
 - `GetObjectList` の prefix 正規化は「セパレータで終わっている場合にさらにセパレータを足す」実装（`prefix.EndsWith(separator)` で `+= separator`）になっており、末尾 `/` 付きで渡すと `//` になる。**prefix は末尾セパレータなしで渡す**のが安全
 - `S3Client` の Request 版オーバーロード（GetObjectList / Upload / Put / Delete 系）でも `BucketName` は S3Client 側の値で上書きされる
 
