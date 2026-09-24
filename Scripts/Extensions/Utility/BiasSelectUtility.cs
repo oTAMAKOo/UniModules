@@ -7,7 +7,7 @@ namespace Extensions
 {
     public static class BiasSelectUtility
     {
-        private static Func<double> DefaultRandomFunc = () => RandomUtility.RandomFloat();
+        private static Func<double> DefaultRandomFunc = () => RandomUtility.RandomInRange(0.0, 1.0);
 
         private static Func<double> randomFunc = DefaultRandomFunc;
 
@@ -93,8 +93,5 @@ namespace Extensions
 
         /// <summary> スコアが小さいほどより選ばれにくくなる（強調度付き） </summary>
         public static double BiasLowDisfavorPower(double ratio, double k = 2.0) => Math.Pow(ratio, k);
-
-        /// <summary> スコアが小さいほど極端に選ばれにくくなる（スコアが小さいとほぼ選ばれない） </summary>
-        public static double BiasLowDisfavorInverse(double ratio, double epsilon = 0.01) => 1.0 - BiasLowInverse(ratio, epsilon);
     }
 }
