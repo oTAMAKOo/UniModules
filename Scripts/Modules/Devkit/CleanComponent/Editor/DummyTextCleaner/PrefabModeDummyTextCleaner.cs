@@ -1,4 +1,5 @@
 ﻿
+using UnityEngine;
 using UnityEditor;
 using Unity.Linq;
 using R3;
@@ -29,6 +30,21 @@ namespace Modules.Devkit.CleanComponent
 		private static void InitializeOnLoadMethod()
 		{
 			PrefabModeEventHook.OnClosePrefabModeAsObservable().Subscribe(x => ClosePrefabMode(x));
+
+			PrefabModeEventHook.OnSavingPrefabModeAsObservable().Subscribe(x => SavingPrefabMode(x));
+
+			PrefabModeEventHook.OnSavedPrefabModeAsObservable().Subscribe(x => SavedPrefabMode(x));
+		}
+
+		private static void SavingPrefabMode(GameObject prefabRoot)
+		{
+			// 保存内容にダミーテキストを含めない.
+			DummyTextCleaner.ModifyComponents(prefabRoot);
+		}
+
+		private static void SavedPrefabMode(GameObject prefabRoot)
+		{
+			DummyTextCleaner.ReApply(prefabRoot);
 		}
 
 		private static void ClosePrefabMode(PrefabStage prefabStage)

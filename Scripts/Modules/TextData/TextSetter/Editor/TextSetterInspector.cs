@@ -210,6 +210,8 @@ namespace Modules.TextData.Components
 
                     if (GUILayout.Button("clear", EditorStyles.miniButton, GUILayout.Width(60f)))
                     {
+                        UnityEditorUtility.RegisterUndo(instance);
+
                         SetTextGuid(null);
                     }
                 }

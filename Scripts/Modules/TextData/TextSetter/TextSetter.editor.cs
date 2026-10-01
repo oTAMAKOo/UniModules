@@ -128,6 +128,9 @@ namespace Modules.TextData.Components
         {
             var cryptoKey = GetCryptoKey();
 
+            // 表示中のダミーテキストは差し替え前に消す.
+            ClearDummyText();
+
             try
             {
                 dummyText = string.IsNullOrEmpty(text) ? string.Empty : text.Encrypt(cryptoKey);

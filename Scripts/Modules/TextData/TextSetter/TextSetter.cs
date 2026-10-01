@@ -84,9 +84,17 @@ namespace Modules.TextData.Components
 
             if (textData == null) { return; }
 
+            var prevTextGuid = textGuid;
+
             textGuid = string.IsNullOrEmpty(guid) ? null : guid.Trim();
 
             content = string.Empty;
+
+            // 設定済みのテキストを外した場合は表示も空にする.
+            if (string.IsNullOrEmpty(textGuid) && !string.IsNullOrEmpty(prevTextGuid))
+            {
+                ApplyText(string.Empty);
+            }
 
             ApplyTextData();
         }
