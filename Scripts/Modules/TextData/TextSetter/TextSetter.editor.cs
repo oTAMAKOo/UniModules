@@ -37,8 +37,9 @@ namespace Modules.TextData.Components
         }
 
         void OnDisable()
-        { 
-            CleanDummyText();
+        {
+            // 無効化時は表示のみ戻し、対象を dirty にしない.
+            ClearDummyText();
         }
 
         private void EditModeImportText()
@@ -172,6 +173,18 @@ namespace Modules.TextData.Components
 
         private bool CleanDummyText()
         {
+            var cleared = ClearDummyText();
+
+            if (cleared)
+            {
+                SetDirty();
+            }
+
+            return cleared;
+        }
+
+        private bool ClearDummyText()
+        {
             if (Application.isPlaying) { return false; }
 
             if (BuildPipeline.isBuildingPlayer) { return false; }
@@ -185,8 +198,6 @@ namespace Modules.TextData.Components
             if (targetText == text)
             {
                 ApplyText(string.Empty);
-
-                SetDirty();
 
                 return true;
             }
