@@ -26,6 +26,7 @@ UniModules（プロジェクト非依存のゲーム基盤）のリファレン�
 | Rx（Observable/Subject）を書く | [Modules/R3Extension.md](Modules/R3Extension.md) — **R3を使う（UniRxは不在）**。冒頭の移行表参照 |
 | Observableの購読側処理の完了を発火側で待つ | [Modules/R3Extension.md](Modules/R3Extension.md)（`AsyncHandler`） |
 | 1フレーム内の処理量を制限（分割実行） | [Modules/Performance.md](Modules/Performance.md)（`FunctionFrameLimiter`） |
+| 一定間隔の処理を順番・例外の隔離つきで 1 か所から呼ぶ（定期通知） | [Modules/TimeUtil.md](Modules/TimeUtil.md)（`PeriodicTickManager<T>`） |
 
 ### 画面実装
 
@@ -132,7 +133,7 @@ UniModules（プロジェクト非依存のゲーム基盤）のリファレン�
 | [TouchEffect](Modules/TouchEffect.md) | タップ時パーティクル表示の常駐マネージャー |
 | [Prefs](Modules/Prefs.md) | PlayerPrefsのAES暗号化ラッパーSecurePrefs（namespaceは `Extensions`） |
 | [Renderer2D](Modules/Renderer2D.md) | SpriteRenderer用エディタ専用ダミー画像 |
-| [TimeUtil](Modules/TimeUtil.md) | 時間ユーティリティ（`TimeManager<T>` / `TimeNotice` / `RecoveryValue` / `TimeScale` / `RealTime`） |
+| [TimeUtil](Modules/TimeUtil.md) | 時間ユーティリティ（`TimeManager<T>` / `TimeNotice` / `RecoveryValue` / `TimeScale` / `RealTime` / `PeriodicTickManager<T>`） |
 | [UniTaskExtension](Modules/UniTaskExtension.md) | UniTaskのPlayerLoop初期化前倒し（自動実行のみ・手動呼び出し不要） |
 | [Hyphenation](Modules/Hyphenation.md) | 日本語禁則処理+幅計測ベース自動改行 |
 | [SpriteAnimation](Modules/SpriteAnimation.md) | SpriteAtlas連番コマアニメ再生 |
