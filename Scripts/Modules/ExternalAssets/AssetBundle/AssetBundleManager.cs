@@ -10,6 +10,7 @@ using Cysharp.Threading.Tasks;
 using R3;
 using Extensions;
 using Modules.ApplicationEvent;
+using Modules.Devkit.Console;
 using Modules.Network;
 using Modules.Network.WebRequest;
 using Modules.ExternalAssets;
@@ -319,12 +320,18 @@ namespace Modules.AssetBundles
                 {
                     if (result.IsFailure)
                     {
-                        OnError(result.Exception);
+                        if (result.Exception is TimeoutException)
+                        {
+                            OnTimeout(assetInfo, result.Exception);
+                        }
+                        else
+                        {
+                            OnError(result.Exception);
+                        }
                     }
                 }
 
                 task = ObservableEx.FromUniTask(_ => DownloadAssetBundle(installPath, assetInfo, progress, cancelToken))
-                    .OnErrorRetry((Exception _) => { }, RetryCount, RetryDelaySeconds)
                     .Do(onCompleted: OnDownloadCompleted)
                     .Share();
 
@@ -379,9 +386,47 @@ namespace Modules.AssetBundles
 
                 downloadRunning.Add(assetBundleName);
 
-                await ObservableEx.FromUniTask(ct => FileDownload(installPath, assetInfo, progress, ct).Timeout(DownloadTimeout))
-                    .OnErrorRetry((TimeoutException ex) => OnTimeout(assetInfo, ex), RetryCount, RetryDelaySeconds)
-                    .ToUniTask(cancelToken);
+                var retryCount = 0;
+
+                while (true)
+                {
+                    // タイムアウト時は実行中のダウンロードを中断してから次の試行に移る.
+                    using (var timeoutSource = CancellationTokenSource.CreateLinkedTokenSource(cancelToken))
+                    {
+                        timeoutSource.CancelAfter(DownloadTimeout);
+
+                        try
+                        {
+                            await FileDownload(installPath, assetInfo, progress, timeoutSource.Token);
+
+                            break;
+                        }
+                        catch (Exception e)
+                        {
+                            cancelToken.ThrowIfCancellationRequested();
+
+                            var isTimeout = timeoutSource.IsCancellationRequested;
+
+                            if (RetryCount <= retryCount)
+                            {
+                                if (isTimeout)
+                                {
+                                    throw new TimeoutException($"File download timeout.\nResourcePath : {assetInfo.ResourcePath}", e);
+                                }
+
+                                throw;
+                            }
+
+                            retryCount++;
+
+                            var message = $"Download retry ({retryCount}/{RetryCount}) : {assetInfo.ResourcePath}\n{(isTimeout ? "Timeout" : e.Message)}";
+
+                            UnityConsole.Event(ExternalAsset.ConsoleEventName, ExternalAsset.ConsoleEventColor, message, LogType.Warning);
+                        }
+                    }
+
+                    await UniTask.Delay(RetryDelaySeconds, cancellationToken: cancelToken);
+                }
             }
             catch (OperationCanceledException)
             {
@@ -437,7 +482,8 @@ namespace Modules.AssetBundles
             {
                 downloadRequest.Initialize(url, tempFilePath);
 
-                downloadRequest.TimeOutSeconds = (int)DownloadTimeout.TotalSeconds;
+                // タイムアウトは cancelToken で制御する.
+                downloadRequest.TimeOutSeconds = 0;
 
                 try
                 {
@@ -449,7 +495,22 @@ namespace Modules.AssetBundles
                 }
             }
 
-            if (cancelToken.IsCancellationRequested){ return; }
+            // 中断時・内容が一致しない場合は一時ファイルを残さない.
+
+            try
+            {
+                cancelToken.ThrowIfCancellationRequested();
+
+                await AssetFileValidator.Validate(tempFilePath, assetInfo, cancelToken);
+
+                cancelToken.ThrowIfCancellationRequested();
+            }
+            catch
+            {
+                ForceDeleteFile(tempFilePath);
+
+                throw;
+            }
 
             // DL完了後にリネーム.
 

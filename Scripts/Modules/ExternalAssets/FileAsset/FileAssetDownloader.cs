@@ -1,12 +1,14 @@
 ﻿
 using UnityEngine;
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Threading;
 using Cysharp.Threading.Tasks;
 using R3;
 using Extensions;
 using Modules.AssetBundles;
+using Modules.Devkit.Console;
 using Modules.Network.WebDownload;
 using Modules.Network.WebRequest;
 
@@ -18,12 +20,20 @@ namespace Modules.ExternalAssets
 
         //----- field -----
 
+        // 試行毎の最後のエラー.
+        private Dictionary<DownloadRequest, Exception> lastErrors = null;
+
         private Subject<Exception> onError = null;
         private Subject<string> onTimeout = null;
 
         //----- property -----
 
         //----- method -----
+
+        protected override void OnInitialize()
+        {
+            lastErrors = new Dictionary<DownloadRequest, Exception>();
+        }
 
         public async UniTask Download(string installPath, AssetInfo assetInfo, string url, IProgress<DownloadProgressInfo> progress = null, CancellationToken cancelToken = default)
         {
@@ -62,9 +72,28 @@ namespace Modules.ExternalAssets
 
             var downloadRequest = SetupDownloadRequest(url, tempFilePath);
 
-            await Download(downloadRequest, progressReceiver, cancelToken);
+            var result = false;
+
+            Exception lastError = null;
+
+            try
+            {
+                result = await Download(downloadRequest, progressReceiver, cancelToken);
+            }
+            finally
+            {
+                lastError = lastErrors.GetValueOrDefault(downloadRequest);
+
+                lastErrors.Remove(downloadRequest);
+            }
 
             if (cancelToken.IsCancellationRequested){ return; }
+
+            // リトライ上限に達した場合は失敗を送出する.
+            if (!result)
+            {
+                throw new Exception($"File download failed.\nURL : {downloadRequest.Url}", lastError);
+            }
 
             // DL完了後にリネーム.
 
@@ -75,59 +104,23 @@ namespace Modules.ExternalAssets
 
         protected override void OnComplete(DownloadRequest downloadRequest, double totalMilliseconds) { }
 
+        /// <summary> 試行毎の失敗はリトライし, 失敗の送出はリトライ上限到達時の Download で1回だけ行う. </summary>
         protected override UniTask<RequestErrorHandle> OnError(DownloadRequest downloadRequest, Exception ex, CancellationToken cancelToken = default)
         {
-            var type = ex.GetType();
+            lastErrors[downloadRequest] = ex;
 
-            if (type == typeof(TimeoutException))
-            {
-                if (onTimeout != null)
-                {
-                    onTimeout.OnNext(downloadRequest.Url);
-                }
-                else
-                {
-                    Debug.LogErrorFormat("DownloadRequest Timeout \n\n[URL]\n{0}\n\n[Exception]\n{1}\n", downloadRequest.Url, ex.StackTrace);
-                }
-            }
-            else if (type == typeof(UnityWebRequestErrorException) && ex is UnityWebRequestErrorException)
-            {
-                if (onError != null)
-                {
-                    onError.OnNext(ex);
-                }
-                else
-                {
-                    var exception = (UnityWebRequestErrorException)ex;
-                    var errorMessage = exception.RawErrorMessage;
+            var webRequestError = ex as UnityWebRequestErrorException;
 
-                    Debug.LogErrorFormat("DownloadRequest Error : {0}\n\n[URL]\n{1}\n\n[Exception]\n{2}\n", errorMessage, downloadRequest.Url, ex.StackTrace);
-                }
-            }
-            else
-            {
-                if (onError != null)
-                {
-                    onError.OnNext(ex);
-                }
-                else
-                {
-                    Debug.LogErrorFormat("DownloadRequest UnknownError : {0}\n\n[URL]\n{1}\n\n[Exception]\n{2}\n", ex.Message, downloadRequest.Url, ex.StackTrace);
-                }
-            }
+            var errorMessage = webRequestError != null ? webRequestError.RawErrorMessage : ex.Message;
+
+            var message = $"Download retry : {errorMessage}\nURL : {downloadRequest.Url}";
+
+            UnityConsole.Event(ExternalAsset.ConsoleEventName, ExternalAsset.ConsoleEventColor, message, LogType.Warning);
 
             return UniTask.FromResult(RequestErrorHandle.Retry);
         }
 
-        protected override void OnRetryLimit(DownloadRequest downloadRequest)
-        {
-            var ex = new Exception($"DownloadRequest RetryLimit : [URL]\n{downloadRequest.Url}");
-
-            if (onError != null)
-            {
-                onError.OnNext(ex);
-            }
-        }
+        protected override void OnRetryLimit(DownloadRequest downloadRequest) { }
 
         public Observable<Exception> OnErrorAsObservable()
         {

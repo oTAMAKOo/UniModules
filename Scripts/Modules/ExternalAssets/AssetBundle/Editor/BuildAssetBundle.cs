@@ -105,6 +105,7 @@ namespace Modules.AssetBundles.Editor
 		}
 
         /// <summary> アセットのルートハッシュ情報を書き込み </summary>
+        /// <remarks> SetFileInfo でサイズ・CRC を設定した後に呼び出す. </remarks>
         public void SetAssetInfoHash(AssetInfoManifest assetInfoManifest)
         {
             // 文字数が大きくなりすぎないように300ファイル分毎に分割.
@@ -118,7 +119,8 @@ namespace Modules.AssetBundles.Editor
 
                 foreach (var assetInfo in assetInfos)
                 {
-                    hashBuilder.AppendLine(assetInfo.Hash);
+                    // Hash が同じでも配信ファイルのサイズ・CRC が異なれば別のバージョンにする.
+                    hashBuilder.AppendFormat("hash={0},crc={1},size={2}", assetInfo.Hash, assetInfo.CRC, assetInfo.Size).AppendLine();
                 }
 
                 var hash = hashBuilder.ToString().GetHash();

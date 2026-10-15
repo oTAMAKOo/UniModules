@@ -10,7 +10,7 @@
 アセット一覧は `AssetInfoManifest`（ScriptableObject）で管理し、**ローカルキャッシュのファイル名にコンテンツハッシュ(SHA256先頭32文字)を埋め込む**ことで、更新要否判定を `File.Exists` だけで完結させる設計。
 アセットをロードする時は原則 `await ExternalAsset.LoadAsset<T>(resourcePath)` の1行（未DLなら自動DL→ロードまで面倒を見る）。
 
-主要クラス: `ExternalAsset`（窓口）/ `AssetInfoManifest`（全 `AssetInfo` + `VersionHash`(rootHash)。それ自体もAssetBundleとして配信され毎回DLされる）/ `AssetBundleManager`（`Modules.AssetBundles`。DL・依存解決・参照カウント・ロード。DL/ロードのタイムアウト(60s/10s)+リトライ(5回/2秒間隔)内蔵）/ `FileAssetManager`（非AssetBundle生ファイルのDL。実DLを担う `FileAssetDownloader` が一時ファイル(.tmp)→リネームで原子的に書き込む）/ `AssetBundleFileStream`（パッケージ復号ストリーム基底。利用側で AES-CTR 等の暗号化方式を実装する）。
+主要クラス: `ExternalAsset`（窓口）/ `AssetInfoManifest`（全 `AssetInfo` + `VersionHash`(rootHash)。それ自体もAssetBundleとして配信され毎回DLされる）/ `AssetBundleManager`（`Modules.AssetBundles`。DL・依存解決・参照カウント・ロード。DLは1試行60秒で打ち切り、最大5回まで2秒間隔でリトライする）/ `FileAssetManager`（非AssetBundle生ファイルのDL。実DLを担う `FileAssetDownloader` が一時ファイル(.tmp)→リネームで原子的に書き込む。リトライは `FileDownLoader` の既定(3回/2秒間隔)）/ `AssetBundleFileStream`（パッケージ復号ストリーム基底。利用側で AES-CTR 等の暗号化方式を実装する）。
 エディタ側: `ManageWindow`（グループ登録 → `ManagedAssets.asset`）→ `AssetInfoManifestGenerator`（マニフェスト生成）→ `BuildManager`（ビルド統括。出力先・除外設定は `ExternalAssetConfig`、SBP中間出力は `Library/AssetBundleBuildCache/{Platform}`）→ `ExternalAssetS3Uploader`（差分アップロード）。ビルドパイプライン/暗号化の差し替え点は `BuildManager.BundlePipeline` / `FileStreamFactory`（利用側で `[InitializeOnLoadMethod]` で設定するのが定石）。
 
 ### データの流れ（全体像）
@@ -83,6 +83,9 @@
 - **SimulateMode はエディタ専用**（メニュー `Extension > ExternalAsset > Simulate Mode`）。AssetDatabase から直接ロードするため、DL・キャッシュ・暗号化・更新判定が一切通らない（`IsRequireUpdate` は常に false、`GetRequireUpdateAssetInfos` は空配列、`UnloadAsset` は無効）。DL/復号の実挙動確認は Simulate OFF + アセットビルドが必要。
 - **CRI系はシンボル定義時のみ有効**: `ExternalAsset.cri.cs`（`GetCueInfo` / `GetMovieInfo`）は `ENABLE_CRIWARE_ADX/ADX_LE/SOFDEC` シンボル定義時のみコンパイルされる。未定義時は縮退し、通常のサウンド/ムービーは `ExternalAsset.LoadAsset<Object>` で AudioClip 等をロードする方式になる。
 - **シーンは LoadAsset 不可**: `ExternalAssetSceneUtility.LoadScene` を使う（内部で `LoadAsset<AssetBundle>` → `SceneManager.LoadSceneAsync` → ロード後 `UnloadAssetBundle`）。
+- **DL失敗の通知は最終失敗の1回だけ**: リトライ中の失敗はコンソールに警告を出すだけで `OnErrorAsObservable` / `OnTimeOutAsObservable` に流れない。AssetBundle は最後の試行がタイムアウトなら `OnTimeOutAsObservable`、それ以外は `OnErrorAsObservable`。FileAsset は失敗を例外で送出し `OnErrorAsObservable` に流れる。
+- **AssetBundle はリネーム前にサイズ・CRCを照合する**: `AssetInfo.Size` / `AssetInfo.CRC`（ビルド時に `.package` から算出）と一時ファイルを `AssetFileValidator` で照合し、不一致なら一時ファイルを消してリトライする。値を持たない `AssetInfo`（マニフェスト自身）は照合しない。FileAsset は照合しない。
+- **rootHash（`AssetInfoManifest.VersionHash`）は各 `AssetInfo` の Hash・CRC・サイズから計算する**: キャッシュのファイル名に使う `AssetInfo.Hash` は、AssetBundle では SBP のコンテンツハッシュ由来でシリアライズヘッダー（Unity バージョン）と圧縮設定を含まない。Unity の更新などで `.package` のバイトだけが変わった場合は rootHash だけが変わり、配信ストレージには新しいフォルダとして全ファイルが上がる。端末のキャッシュはファイル名が変わらないのでそのまま使われる。1 つの rootHash のフォルダには常に同じバイトのファイルが置かれるので、マニフェストのサイズ・CRC と配信ファイルが一致する（ダウンロード時の照合の前提）。
 - **更新判定はファイル存在のみ**: キャッシュ名 = `Hash先頭32文字+拡張子` なので中身のハッシュ再計算はしない。壊れたキャッシュはロード失敗時に `DeleteOnLoadError = true` で自動削除→次回再DL。不要キャッシュは `UpdateManifest` 後に1日1回自動削除（`Prefs.deleteUnUsedCacheTime`）。`DeleteAllCache` は削除前に `OnReleaseManagedAssetsAsObservable` が発火する（利用側はここで SpriteAtlasCache 等を解放）。
 - **アセット追加時はエディタ登録が必要**: `Resource (External)` に置いただけでは配信されない。`ManageWindow` でグループ登録（→ `ManagedAssets.asset` 変更 → マニフェスト自動再生成）。マニフェストに載っていないパスのロードは `AssetInfoNotFoundException`。
 - **外部参照違反**: 外部アセットが `Resource (External)` / `Resource (Share)`（+検査除外）以外のアセットを参照するとビルド時に警告され `InvalidDependantWindow` に表示される（そのままだと参照アセットがAssetBundleに重複格納される）。

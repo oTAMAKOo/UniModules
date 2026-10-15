@@ -167,7 +167,7 @@ enum `UnixTimeConvert { Milliseconds, Seconds, Minutes }` を同ファイルに�
 | `ObserveEveryValueChanged(propertySelector, [equalityComparer], [ct])` | 毎フレーム値を監視し変化時に発火する Observable |
 | `TakeUntilDestroy(...)` / `TakeUntilDisable(...)`（Component / GameObject） | 対象破棄 / 非アクティブ化まで購読を継続 |
 | `DoOnError` / `DoOnCompleted` / `DoOnTerminate`・`Finally` / `DoOnCancel` | 失敗時 / 成功時 / 成否問わず完了時 / 購読破棄（キャンセル）時に処理を挟む |
-| `OnErrorRetry<T, TException>(onError, retryMaxCount, retryDelay)` | 指定例外時に遅延付きリトライ（秒 float / TimeSpan 版） |
+| `OnErrorRetry<T, TException>(onError, retryMaxCount, retryDelay)` | 指定例外時に遅延付きリトライ（秒 float / TimeSpan 版）。`onErrorResume` の例外だけが対象で、`OnCompleted(Result.Failure)` による終了はリトライしない（`Observable.FromAsync` / `ObservableEx.FromUniTask` の例外と R3 の `Timeout` はこちらで流れる） |
 | `AsUnitObservable()` | `Observable<T>` → `Observable<Unit>` |
 | `ToUniTask([ct])` | Observable の最初の値を UniTask で待機（`FirstAsync`） |
 | `Forget(Component / GameObject)`（this UniTask） | **対象の Destroy で自動キャンセルされる Forget**（生存期間の紐付けに必須級） |
