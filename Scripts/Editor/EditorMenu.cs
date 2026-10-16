@@ -1,6 +1,8 @@
 
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using UnityEditor;
+using UnityEditor.SceneManagement;
 using System.IO;
 using System.Linq;
 using Cysharp.Threading.Tasks;
@@ -772,10 +774,53 @@ namespace Modules
 
         protected const string HierarchyMenu = "GameObject/";
 
-        [MenuItem(itemName: HierarchyMenu + "Copy Hierarchy Path", priority = int.MaxValue)]
+        [MenuItem(itemName: HierarchyMenu + "Copy Scene Path", priority = -102)]
+        public static void CopyScenePath()
+        {
+            GUIUtility.systemCopyBuffer = GetScenePathLabel(Selection.activeGameObject);
+        }
+
+        [MenuItem(itemName: HierarchyMenu + "Copy Scene Path", validate = true)]
+        public static bool CopyScenePathValidate()
+        {
+            return !string.IsNullOrEmpty(GetScenePathLabel(Selection.activeGameObject));
+        }
+
+        [MenuItem(itemName: HierarchyMenu + "Copy Scene Hierarchy Path", priority = -101)]
+        public static void CopySceneHierarchyPath()
+        {
+            var target = Selection.activeGameObject;
+
+            if (target == null){ return; }
+
+            var scenePathLabel = GetScenePathLabel(target);
+            var hierarchyPath = UnityUtility.GetHierarchyPath(target);
+
+            GUIUtility.systemCopyBuffer = $"{scenePathLabel}\nHierarchy: {hierarchyPath}";
+        }
+
+        [MenuItem(itemName: HierarchyMenu + "Copy Scene Hierarchy Path", validate = true)]
+        public static bool CopySceneHierarchyPathValidate()
+        {
+            if (1 < Selection.gameObjects.Length){ return false; }
+
+            var target = Selection.activeGameObject;
+
+            if (target == null){ return false; }
+
+            if (!target.scene.IsValid()){ return false; }
+
+            return !string.IsNullOrEmpty(GetScenePathLabel(target));
+        }
+
+        [MenuItem(itemName: HierarchyMenu + "Copy Hierarchy Path", priority = -100)]
         public static void CopyHierarchyPath()
         {
-            var hierarchyPath = UnityUtility.GetHierarchyPath(Selection.activeGameObject);
+            var target = Selection.activeGameObject;
+
+            if (target == null){ return; }
+
+            var hierarchyPath = UnityUtility.GetHierarchyPath(target);
 
             GUIUtility.systemCopyBuffer = hierarchyPath;
         }
@@ -787,9 +832,32 @@ namespace Modules
 
             if (Selection.activeGameObject == null){ return false; }
 
-            if (Selection.activeGameObject.scene == null){ return false; }
+            if (!Selection.activeGameObject.scene.IsValid()){ return false; }
 
             return true;
+        }
+
+        /// <summary> 対象が属するシーン（Prefab Mode 中は Prefab）のパスをラベル付きで取得 </summary>
+        private static string GetScenePathLabel(GameObject target)
+        {
+            // 対象が無い場合は編集中の Prefab またはアクティブシーン.
+            var prefabStage = PrefabStageUtility.GetCurrentPrefabStage();
+            var scene = SceneManager.GetActiveScene();
+
+            if (target != null && target.scene.IsValid())
+            {
+                prefabStage = PrefabStageUtility.GetPrefabStage(target);
+                scene = target.scene;
+            }
+
+            if (prefabStage != null)
+            {
+                return $"Prefab: {prefabStage.assetPath}";
+            }
+
+            if (string.IsNullOrEmpty(scene.path)){ return string.Empty; }
+
+            return $"Scene: {scene.path}";
         }
 
         #endregion
