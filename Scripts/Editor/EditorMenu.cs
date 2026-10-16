@@ -776,7 +776,7 @@ namespace Modules
 
         protected const string CopyPathMenu = HierarchyMenu + "Copy Path/";
 
-        [MenuItem(itemName: CopyPathMenu + "Scene", priority = -102)]
+        [MenuItem(itemName: CopyPathMenu + "Scene", priority = int.MaxValue - 100)]
         public static void CopyScenePath()
         {
             GUIUtility.systemCopyBuffer = GetScenePathLabel(Selection.activeGameObject);
@@ -788,7 +788,7 @@ namespace Modules
             return !string.IsNullOrEmpty(GetScenePathLabel(Selection.activeGameObject));
         }
 
-        [MenuItem(itemName: CopyPathMenu + "Scene + Hierarchy", priority = -101)]
+        [MenuItem(itemName: CopyPathMenu + "Scene + Hierarchy", priority = int.MaxValue - 99)]
         public static void CopySceneHierarchyPath()
         {
             var target = Selection.activeGameObject;
@@ -815,7 +815,7 @@ namespace Modules
             return !string.IsNullOrEmpty(GetScenePathLabel(target));
         }
 
-        [MenuItem(itemName: CopyPathMenu + "Hierarchy", priority = -100)]
+        [MenuItem(itemName: CopyPathMenu + "Hierarchy", priority = int.MaxValue - 98)]
         public static void CopyHierarchyPath()
         {
             var target = Selection.activeGameObject;
