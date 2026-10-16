@@ -98,10 +98,10 @@
 - `Extension/Utility/Open BuiltInAssetsWindow`（`BuiltInAssetsWindow`: ビルド内蔵アセット解析） / `Extension/Utility/SpriteAtlas/Fix SpriteAtlas Source`（`FixSpriteAtlasSource.Modify`） / `Extension/ExternalAsset/Open SimulationModeAssetFileTracker`
 - `Extension/Utility/Clean/Open CleanDirectoryWindow`・`Clean DummyText (All Prefabs)`（`PrefabDummyTextCleaner.CleanAllPrefabContents()`）・`Clean ParticleSystem (Selection GameObject)`（`ParticleSystemCleaner.CleanSelectionTarget()`）
 - `Extension/Settings/Auto Add Component/Disable・Log`（`AdditionalComponent.Prefs` トグル） / `Extension/Directory/Open PersistentDataPath` 等（各種ディレクトリをエクスプローラで開く）
-- `GameObject/Copy Scene Path`・`Copy Scene Hierarchy Path`・`Copy Hierarchy Path`（Hierarchy 右クリックでは「Prefab」の直下に並ぶ。priority は負値）
-  - `Copy Scene Path`: 選択オブジェクトが属するシーンのパスを `Scene: <パス>` でコピー。Prefab Mode 中は `Prefab: <Prefab のアセットパス>`。未選択時は編集中の Prefab またはアクティブシーン。未保存シーンでは無効
-  - `Copy Scene Hierarchy Path`: 上記の 1 行に続けて改行し `Hierarchy: <階層パス>` を付けてコピー（単一選択のみ）
-  - `Copy Hierarchy Path`: 選択オブジェクトの階層パスのみをコピー（単一選択のみ）
+- `GameObject/Copy Path/Scene`・`Scene + Hierarchy`・`Hierarchy`（Hierarchy 右クリックでは「Prefab」の直下に `Copy Path` サブメニューとして出る。priority は負値。右クリックメニューの最上位には priority の差によるセパレータが入らないため、`Create Empty` との間に区切りは無い）
+  - `Scene`: 選択オブジェクトが属するシーンのパスを `Scene: <パス>` でコピー。Prefab Mode 中は `Prefab: <Prefab のアセットパス>`。未選択時は編集中の Prefab またはアクティブシーン。未保存シーンでは無効
+  - `Scene + Hierarchy`: 上記の 1 行に続けて改行し `Hierarchy: <階層パス>` を付けてコピー（単一選択のみ）
+  - `Hierarchy`: 選択オブジェクトの階層パスのみをコピー（単一選択のみ）
   - 階層パスは名前を `/` で連結したもの。同名の兄弟がある場合は一意に定まらない
 - （右クリック）`Assets/Find Sprite References In Project`（`FindSpriteReferencesInProject`） / （コンポーネント右クリック）`CONTEXT/RectTransform/Sanitize Values`（`RectTransformSanitizer`: 浮動小数の丸め） / `Extension/Utility/Open BlockInputMonitorWindow`（InputControl モジュール → [InputControl.md](InputControl.md)）
 

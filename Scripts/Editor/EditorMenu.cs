@@ -774,19 +774,21 @@ namespace Modules
 
         protected const string HierarchyMenu = "GameObject/";
 
-        [MenuItem(itemName: HierarchyMenu + "Copy Scene Path", priority = -102)]
+        protected const string CopyPathMenu = HierarchyMenu + "Copy Path/";
+
+        [MenuItem(itemName: CopyPathMenu + "Scene", priority = -102)]
         public static void CopyScenePath()
         {
             GUIUtility.systemCopyBuffer = GetScenePathLabel(Selection.activeGameObject);
         }
 
-        [MenuItem(itemName: HierarchyMenu + "Copy Scene Path", validate = true)]
+        [MenuItem(itemName: CopyPathMenu + "Scene", validate = true)]
         public static bool CopyScenePathValidate()
         {
             return !string.IsNullOrEmpty(GetScenePathLabel(Selection.activeGameObject));
         }
 
-        [MenuItem(itemName: HierarchyMenu + "Copy Scene Hierarchy Path", priority = -101)]
+        [MenuItem(itemName: CopyPathMenu + "Scene + Hierarchy", priority = -101)]
         public static void CopySceneHierarchyPath()
         {
             var target = Selection.activeGameObject;
@@ -799,7 +801,7 @@ namespace Modules
             GUIUtility.systemCopyBuffer = $"{scenePathLabel}\nHierarchy: {hierarchyPath}";
         }
 
-        [MenuItem(itemName: HierarchyMenu + "Copy Scene Hierarchy Path", validate = true)]
+        [MenuItem(itemName: CopyPathMenu + "Scene + Hierarchy", validate = true)]
         public static bool CopySceneHierarchyPathValidate()
         {
             if (1 < Selection.gameObjects.Length){ return false; }
@@ -813,7 +815,7 @@ namespace Modules
             return !string.IsNullOrEmpty(GetScenePathLabel(target));
         }
 
-        [MenuItem(itemName: HierarchyMenu + "Copy Hierarchy Path", priority = -100)]
+        [MenuItem(itemName: CopyPathMenu + "Hierarchy", priority = -100)]
         public static void CopyHierarchyPath()
         {
             var target = Selection.activeGameObject;
@@ -825,7 +827,7 @@ namespace Modules
             GUIUtility.systemCopyBuffer = hierarchyPath;
         }
 
-        [MenuItem(itemName: HierarchyMenu + "Copy Hierarchy Path", validate = true)]
+        [MenuItem(itemName: CopyPathMenu + "Hierarchy", validate = true)]
         public static bool CopyHierarchyPathValidate()
         {
             if (1 < Selection.gameObjects.Length){ return false; }
