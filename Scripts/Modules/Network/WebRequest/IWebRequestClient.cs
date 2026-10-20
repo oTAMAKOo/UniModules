@@ -43,7 +43,7 @@ namespace Modules.Network.WebRequest
         /// <summary> タイムアウト時間(秒). </summary>
         int TimeOutSeconds { get; }
 
-        /// <summary> ステータスコード. </summary>
+        /// <summary> ステータスコード (STATUS ヘッダー. 応答ヘッダーが無い場合は null). </summary>
         string StatusCode { get; }
 
         /// <summary> 通信中か. </summary>
@@ -54,6 +54,12 @@ namespace Modules.Network.WebRequest
 
         /// <summary> 発生したエラー. </summary>
         Exception Error { get; }
+
+        /// <summary> 直近の送信が成功ステータス (<see cref="UnityWebRequestExtensions.IsSuccess"/> が true) の応答を受信し、受信データの変換まで完了したか. </summary>
+        bool IsSuccess { get; }
+
+        /// <summary> 直近の送信の HTTP ステータスコード (応答が無い場合は 0). </summary>
+        long ResponseCode { get; }
 
         //----- method -----
 

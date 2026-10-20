@@ -32,6 +32,11 @@ HTTP通信の基盤モジュール。3系統に分かれる。
 | HTTPエラーの詳細（ステータスコード等）を取りたい | `UnityWebRequestErrorException`（`StatusCode` / `RawErrorMessage` / `ResponseHeaders`） |
 | DLデータをストリームでファイル書き込み | `FileDownloadHandler`（`DownloadHandlerScript` 派生） |
 | REST APIサーバーと通信したい | `UnityWebRequestManager<T,R>` + `UnityWebRequestClient` を継承 |
+| API ごとにリトライの可否を決めたい | `Get` / `Post` / `Put` / `Patch` / `Delete` の `retry` 引数（`true` / `false`） |
+| リトライの既定をプロジェクトで変えたい（例: POST はリトライしない） | `IsRetryable(webRequest)` を override（`retry` 引数が null のときに使われる） |
+| 4xx ではリトライしないようにしたい | `IsRetryableError(webRequest)` を override し `!IsNonRetryableClientError(webRequest)` を返す |
+| 本文が空の成功応答（204 等）を成功にしたい | `IsEmptyResponseSuccess(webRequest)` を override。返り値は null のままなので成否は `webRequest.IsSuccess` で見る |
+| REST 通信の HTTP ステータスコードを数値で取りたい | `IWebRequestClient.ResponseCode`（応答なしは 0）。`StatusCode` は STATUS ヘッダーの文字列 |
 
 ## 使い方
 
@@ -54,6 +59,10 @@ HTTP通信の基盤モジュール。3系統に分かれる。
 - **`OnError` の戻り値がリトライ制御**: `RequestErrorHandle.Retry` を返すと `RetryDelaySeconds` 待って再試行、`Cancel` で即終了。上限（`RetryCount`）到達で `OnRetryLimit`。上限到達時の遷移などは継承側で実装する。
 - **タイムアウトの既定値**: `DownloadRequest` 30秒（プロパティで変更可） / `NetworkConnection` 5秒 / `UnityWebRequestClient` 10秒（virtual）。
 - **`NetworkConnection.WaitNetworkReachable` は自動で呼ばれる**: `FileDownLoader` / `UnityWebRequestClient` のDL・送信前に組み込み済み。タイムアウト時は `NetworkReachabilityException` が飛び、`OnNotReachableAsObservable` が発火する。
+- **`WebRequestManager` の既定は、回線なし以外の失敗をすべてリトライする**: 4xx も POST / PATCH も、本文が空の成功応答（204 等）も、`RetryCount` 回まで再送する。タイムアウト後の再送で、非冪等な API がサーバーで二重に実行されうる。止めるには `retry` 引数・`IsRetryable`・`IsRetryableError` を使う（逆引き参照）。
+- **リトライの判定順**: 成功（結果あり、または `IsEmptyResponseSuccess` が true の成功応答）→ キャンセルなら何も呼ばずに null → リトライを許可していない（`retry` 引数、省略時は `IsRetryable`）か `IsRetryableError` が false なら `OnError`（`Error` があるとき）→ `OnRetryLimit` で終了 → リトライ回数オーバーなら `OnRetryLimit` で終了 → それ以外は `OnError` → `WaitErrorHandling`（`Retry` / `Cancel` / `Exit`）→ `RetryDelaySeconds` 待って `OnRetry`。`WaitErrorHandling` が `Exit` / `Cancel` を返したときは `OnRetryLimit` を呼ばない。
+- **失敗・キャンセル・本文が空の成功は、どれも返り値が null**: 区別が要るときは `IWebRequestClient` の `IsSuccess`（直近の送信が成功ステータスで変換まで完了したか）・`IsCanceled`・`Error` を見る。いずれも送信ごとに初期化され、Dispose 後も読める。
+- **`StatusCode` は STATUS ヘッダーの文字列**: タイムアウト・接続失敗などで応答ヘッダーが無いときは null。数値のコードは `ResponseCode` を使う。
 - **`WebRequestManager` はデフォルト直列実行**: `parallel: false`（デフォルト）のリクエストはキューイングされ同時実行されない。並列にしたい場合のみ `parallel: true`。
 - **`UnityWebRequestClient` の暗号化フラグはデフォルト全ON**: `SetCryptoKey` を設定せずに使うと暗号化処理でキー無しのまま `Encrypt` が走る。継承時は `encryptHeader` 等の protected フィールドを用途に合わせて設定すること。
 - **`ApiTracker` はエディタ専用**: `UnityWebRequestManager` の通信記録は `#if UNITY_EDITOR` 内のみ（`Modules.Devkit.ApiMonitor`）。実機ログは `LogEnable` を有効化。

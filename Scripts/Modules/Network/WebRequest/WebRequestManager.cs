@@ -50,6 +50,11 @@ namespace Modules.Network.WebRequest
         /// <summary> デフォルトリトライ待ち秒数 </summary>
         private const int DefaultRetryDelaySeconds = 2;
 
+        /// <summary> HTTP 408 Request Timeout. </summary>
+        private const long RequestTimeoutStatusCode = 408;
+        /// <summary> HTTP 429 Too Many Requests. </summary>
+        private const long TooManyRequestsStatusCode = 429;
+
         protected enum RequestErrorHandle
         {
             None = 0,
@@ -137,7 +142,8 @@ namespace Modules.Network.WebRequest
         }
 
         /// <summary> リソースの取得. </summary>
-        protected async Task<TResult> Get<TResult>(TWebRequest webRequest, bool parallel = false, IProgress<float> progress = null) where TResult : class
+        /// <param name="retry"> 失敗時のリトライを許可するか. null の場合は <see cref="IsRetryable"/> に従う. 許可しても <see cref="IsRetryableError"/> が false のエラーではリトライしない. </param>
+        protected async Task<TResult> Get<TResult>(TWebRequest webRequest, bool parallel = false, IProgress<float> progress = null, bool? retry = null) where TResult : class
         {
             using (webRequest)
             {
@@ -145,14 +151,15 @@ namespace Modules.Network.WebRequest
 
                 var taskFunc = webRequest.Get<TResult>(progress);
 
-                var result = await Request(webRequest, taskFunc, parallel);
+                var result = await Request(webRequest, taskFunc, parallel, retry);
 
                 return result;
             }
         }
 
         /// <summary> リソースの作成、追加. </summary>
-        protected async Task<TResult> Post<TResult, TContent>(TWebRequest webRequest, TContent content, bool parallel = false, IProgress<float> progress = null) where TResult : class
+        /// <param name="retry"> 失敗時のリトライを許可するか. null の場合は <see cref="IsRetryable"/> に従う. 許可しても <see cref="IsRetryableError"/> が false のエラーではリトライしない. </param>
+        protected async Task<TResult> Post<TResult, TContent>(TWebRequest webRequest, TContent content, bool parallel = false, IProgress<float> progress = null, bool? retry = null) where TResult : class
         {
             using (webRequest)
             {
@@ -160,14 +167,15 @@ namespace Modules.Network.WebRequest
 
                 var taskFunc = webRequest.Post<TResult, TContent>(content, progress);
 
-                var result = await Request(webRequest, taskFunc, parallel);
+                var result = await Request(webRequest, taskFunc, parallel, retry);
 
                 return result;
             }
         }
 
         /// <summary> リソースの更新、作成. </summary>
-        protected async Task<TResult> Put<TResult, TContent>(TWebRequest webRequest, TContent content, bool parallel = false, IProgress<float> progress = null) where TResult : class
+        /// <param name="retry"> 失敗時のリトライを許可するか. null の場合は <see cref="IsRetryable"/> に従う. 許可しても <see cref="IsRetryableError"/> が false のエラーではリトライしない. </param>
+        protected async Task<TResult> Put<TResult, TContent>(TWebRequest webRequest, TContent content, bool parallel = false, IProgress<float> progress = null, bool? retry = null) where TResult : class
         {
             using (webRequest)
             {
@@ -175,14 +183,15 @@ namespace Modules.Network.WebRequest
 
                 var taskFunc = webRequest.Put<TResult, TContent>(content, progress);
 
-                var result = await Request(webRequest, taskFunc, parallel);
+                var result = await Request(webRequest, taskFunc, parallel, retry);
 
                 return result;
             }
         }
 
         /// <summary> リソースの部分更新. </summary>
-        protected async Task<TResult> Patch<TResult, TContent>(TWebRequest webRequest, TContent content, bool parallel = false, IProgress<float> progress = null) where TResult : class
+        /// <param name="retry"> 失敗時のリトライを許可するか. null の場合は <see cref="IsRetryable"/> に従う. 許可しても <see cref="IsRetryableError"/> が false のエラーではリトライしない. </param>
+        protected async Task<TResult> Patch<TResult, TContent>(TWebRequest webRequest, TContent content, bool parallel = false, IProgress<float> progress = null, bool? retry = null) where TResult : class
         {
             using (webRequest)
             {
@@ -190,14 +199,15 @@ namespace Modules.Network.WebRequest
 
                 var taskFunc = webRequest.Patch<TResult, TContent>(content, progress);
 
-                var result = await Request(webRequest, taskFunc, parallel);
+                var result = await Request(webRequest, taskFunc, parallel, retry);
 
                 return result;
             }
         }
 
         /// <summary> リソースの削除. </summary>
-        protected async Task<TResult> Delete<TResult>(TWebRequest webRequest, bool parallel = false, IProgress<float> progress = null) where TResult : class
+        /// <param name="retry"> 失敗時のリトライを許可するか. null の場合は <see cref="IsRetryable"/> に従う. 許可しても <see cref="IsRetryableError"/> が false のエラーではリトライしない. </param>
+        protected async Task<TResult> Delete<TResult>(TWebRequest webRequest, bool parallel = false, IProgress<float> progress = null, bool? retry = null) where TResult : class
         {
             using (webRequest)
             {
@@ -205,13 +215,13 @@ namespace Modules.Network.WebRequest
 
                 var taskFunc = webRequest.Delete<TResult>(progress);
 
-                var result = await Request(webRequest, taskFunc, parallel);
+                var result = await Request(webRequest, taskFunc, parallel, retry);
 
                 return result;
             }
         }
 
-        private async Task<TResult> Request<TResult>(TWebRequest webRequest, Func<CancellationToken, Task<TResult>> taskFunc, bool parallel) where TResult : class
+        private async Task<TResult> Request<TResult>(TWebRequest webRequest, Func<CancellationToken, Task<TResult>> taskFunc, bool parallel, bool? retry) where TResult : class
         {
 			TResult result = null;
 
@@ -220,15 +230,18 @@ namespace Modules.Network.WebRequest
 				cancellationTokenSource = new CancellationTokenSource();
 			}
 
+			// CancelAll で cancellationTokenSource が破棄されても、開始時のトークンで中止を判定する.
+			var cancelToken = cancellationTokenSource.Token;
+
 			try
 			{
 				// 実行待ち.
 
 				if (!parallel)
 				{
-					await WaitQueueingRequest(webRequest, cancellationTokenSource.Token);
+					await WaitQueueingRequest(webRequest, cancelToken);
 				}
-				
+
 				if (webRequest.IsCanceled) { return null; }
 
 				// 通信中.
@@ -239,6 +252,10 @@ namespace Modules.Network.WebRequest
 
 				var retryCount = 0;
 
+				var success = false;
+
+				var retryable = retry.HasValue ? retry.Value : IsRetryable(webRequest);
+
 				// リクエスト実行.
 				while (true)
 				{
@@ -247,16 +264,39 @@ namespace Modules.Network.WebRequest
 						OnStart(webRequest);
 					}
 
-					result = await taskFunc.Invoke(cancellationTokenSource.Token);
+					result = await taskFunc.Invoke(cancelToken);
 
                     //------ 通信成功 ------
 
-                    if (result != null) { break; }
-
-                    //------ リトライ回数オーバー ------
-
-                    if (RetryCount <= retryCount)
+                    if (result != null)
                     {
+                        success = true;
+                        break;
+                    }
+
+                    // 受信データが空の成功応答.
+                    if (webRequest.IsSuccess && IsEmptyResponseSuccess(webRequest))
+                    {
+                        success = true;
+                        break;
+                    }
+
+                    //------ 通信キャンセル ------
+
+                    if (webRequest.IsCanceled || cancelToken.IsCancellationRequested) { break; }
+
+                    //------ リトライしない / リトライ回数オーバー ------
+
+                    var stopRetry = !retryable || !IsRetryableError(webRequest);
+
+                    if (stopRetry || RetryCount <= retryCount)
+                    {
+                        // リトライしない場合は、発生したエラーを通知してから終了する.
+                        if (stopRetry && webRequest.Error != null)
+                        {
+                            OnError(webRequest);
+                        }
+
                         OnRetryLimit(webRequest);
                         break;
                     }
@@ -306,16 +346,16 @@ namespace Modules.Network.WebRequest
 
                     //------ リトライ ------
 
-                    if (!cancellationTokenSource.IsCancellationRequested)
+                    if (!cancelToken.IsCancellationRequested)
                     {
                         // リトライディレイ.
-                        await Task.Delay(TimeSpan.FromSeconds(RetryDelaySeconds), cancellationTokenSource.Token);
+                        await Task.Delay(TimeSpan.FromSeconds(RetryDelaySeconds), cancelToken);
 
                         OnRetry(webRequest);
                     }
 				}
 
-				if (result != null)
+				if (success)
 				{
 					// 正常終了.
 					sw.Stop();
@@ -397,7 +437,7 @@ namespace Modules.Network.WebRequest
 				// キューが空になっていた場合はキャンセル扱い.
                 if (requestQueue.IsEmpty())
                 {
-                    webRequest.Cancel(true);
+                    webRequest.Cancel();
                     break;
                 }
 
@@ -408,7 +448,12 @@ namespace Modules.Network.WebRequest
                     break;
                 }
 
-				if (webRequest.IsCanceled) { break; }
+				// キャンセルされたリクエストは後続の待ちを止めないようにキューから外す.
+				if (webRequest.IsCanceled)
+				{
+					requestQueue = new Queue<TWebRequest>(requestQueue.Where(x => x != webRequest));
+					break;
+				}
 
 				await Task.Delay(1, cancelToken);
             }
@@ -425,6 +470,34 @@ namespace Modules.Network.WebRequest
             return Task.FromResult(RequestErrorHandle.Retry);
         }
 
+        /// <summary> 呼び出し側でリトライの可否を指定しなかった時に、リトライしてよいリクエストか. </summary>
+        protected virtual bool IsRetryable(TWebRequest webRequest)
+        {
+            return true;
+        }
+
+        /// <summary> 発生したエラーがリトライしてよいものか. リトライを許可したリクエストでも false ならリトライしない. </summary>
+        protected virtual bool IsRetryableError(TWebRequest webRequest)
+        {
+            return true;
+        }
+
+        /// <summary> 受信データが空 (デシリアライズ結果が null) の成功応答を成功として扱うか. </summary>
+        protected virtual bool IsEmptyResponseSuccess(TWebRequest webRequest)
+        {
+            return false;
+        }
+
+        /// <summary> 再送しても結果が変わらないクライアントエラー (4xx. 408・429 を除く) か. </summary>
+        protected static bool IsNonRetryableClientError(TWebRequest webRequest)
+        {
+            var responseCode = webRequest.ResponseCode;
+
+            if (responseCode == RequestTimeoutStatusCode || responseCode == TooManyRequestsStatusCode) { return false; }
+
+            return 400 <= responseCode && responseCode < 500;
+        }
+
         /// <summary> 開始時イベント. </summary>
         protected virtual void OnStart(TWebRequest webRequest) { }
 
@@ -434,7 +507,7 @@ namespace Modules.Network.WebRequest
         /// <summary> リトライ時イベント. </summary>
         protected virtual void OnRetry(TWebRequest webRequest) { }
 
-        /// <summary> リトライ回数を超えた時のイベント. </summary>
+        /// <summary> リトライ回数を超えた時、またはリトライしないと判定した時のイベント. </summary>
         protected virtual void OnRetryLimit(TWebRequest webRequest) { }
 
         /// <summary> 通信エラー時イベント. </summary>

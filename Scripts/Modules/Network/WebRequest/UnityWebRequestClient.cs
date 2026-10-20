@@ -68,10 +68,19 @@ namespace Modules.Network.WebRequest
         /// <summary> タイムアウト時間(秒). </summary>
         public virtual int TimeOutSeconds { get { return 10; } }
 
-        /// <summary> ステータスコード. </summary>
+        /// <summary> ステータスコード (STATUS ヘッダー. 応答ヘッダーが無い場合は null). </summary>
         public string StatusCode
         {
-            get { return request.GetResponseHeaders().GetValueOrDefault("STATUS"); }
+            get
+            {
+                if (request == null) { return null; }
+
+                var headers = request.GetResponseHeaders();
+
+                if (headers == null) { return null; }
+
+                return headers.GetValueOrDefault("STATUS");
+            }
         }
 
         /// <summary> 通信中か. </summary>
@@ -82,6 +91,12 @@ namespace Modules.Network.WebRequest
 
         /// <summary> 発生したエラー. </summary>
         public Exception Error { get; private set; }
+
+        /// <summary> 直近の送信が成功ステータス (<see cref="UnityWebRequestExtensions.IsSuccess"/> が true) の応答を受信し、受信データの変換まで完了したか. </summary>
+        public bool IsSuccess { get; private set; }
+
+        /// <summary> 直近の送信の HTTP ステータスコード (応答が無い場合は 0). </summary>
+        public long ResponseCode { get; private set; }
 
         public bool IsDisposed { get; private set; }
 
@@ -141,6 +156,12 @@ namespace Modules.Network.WebRequest
         protected virtual void CreateWebRequest(string method)
         {
             var uri = BuildUri();
+
+            // リトライ時は前回の送信で生成したリクエストを破棄する.
+            if (request != null)
+            {
+                request.Dispose();
+            }
 
             request = new UnityWebRequest(uri);
 
@@ -219,6 +240,19 @@ namespace Modules.Network.WebRequest
 
         public void Cancel(bool throwException = false)
         {
+            IsCanceled = true;
+
+            // 送信前は中止するリクエストが無い.
+            if (request == null)
+            {
+                if (throwException)
+                {
+                    throw new OperationCanceledException();
+                }
+
+                return;
+            }
+
             request.Abort();
 
             if (throwException)
@@ -233,6 +267,11 @@ namespace Modules.Network.WebRequest
         {
             TResult result = null;
 
+            Error = null;
+            IsSuccess = false;
+            ResponseCode = 0;
+            ResponseData = null;
+
             IsConnecting = true;
 
             try
@@ -241,9 +280,17 @@ namespace Modules.Network.WebRequest
 
                 var bytes = await request.Send(progress, token);
 
-                if (bytes != null )
+                // キャンセル時は受信結果を扱わない.
+                if (!token.IsCancellationRequested)
                 {
-                    result = ReceiveResponse<TResult>(bytes);
+                    ResponseCode = request.responseCode;
+
+                    if (bytes != null)
+                    {
+                        result = ReceiveResponse<TResult>(bytes);
+                    }
+
+                    IsSuccess = request.IsSuccess();
                 }
             }
             catch (OperationCanceledException)
@@ -252,6 +299,8 @@ namespace Modules.Network.WebRequest
             }
             catch (Exception e)
             {
+                ResponseCode = request.responseCode;
+
                 Error = e;
 
                 request.Abort();
