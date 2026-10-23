@@ -92,6 +92,7 @@ uGUI 標準コンポーネントのラッパー（Extension）と、仮想スク
 ## 注意点・罠
 
 - **`Modules.UI.Extension` の各 UI クラスは abstract**。使う・継承するのは利用側の具象クラス。基盤側を直接継承した新クラスを乱造しない
+- **`UICanvas` のカメラの自動割当は、読み込み済みの全シーンの GameObject を走査する**（`UnityUtility.FindCameraForLayer`。GameObject の数に比例して重く、確保も多い）。実行中は、表示（OnEnable）のときに前に割り当てたカメラが破棄されずに設定されたままなら走査しない。初回・カメラが破棄されたとき・別のカメラが設定されていたときは走査して、レイヤーに合う最初の `UICanvasCamera` を割り当てる（DontDestroyOnLoad のカメラが先）。カメラが null の間は毎フレーム走査する
 - **`SlicedFillGraphic` は他のメッシュ変更コンポーネント（`ColorGradation` / `FlipGraphic` 等）より後（コンポーネント順で下）に配置する**。`Graphic` は `GetComponents` の順（インスペクタの並び順）で `IMeshModifier` を適用するため、順序で結果が変わる。`ColorGradation` が後にあると頂点バウンドから勾配を計算し直すためゲージが縮むほどグラデーションが圧縮され、`FlipGraphic` が後にあると `Origin` と見た目の向きが逆になる（順序不備はインスペクタが警告する）
 - **`SlicedFillGraphic` のカット基準は描画メッシュ全体の範囲**（RectTransform の rect ではない）。Sprite の padding や `preserveAspect` で描画範囲が rect より小さい場合、その描画範囲に対する割合になる
 - **`SlicedFillGraphic` は quad の集合でないメッシュをカットしない**（`Image.useSpriteMesh` や TextMeshPro 等）。頂点数が 6 の倍数でないメッシュは変更せずそのまま通す

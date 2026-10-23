@@ -64,10 +64,23 @@ namespace Modules.UI.Extension
                     ModifyCanvasCamera();
                 }
             }
-			
-            ModifyCanvasCamera();
+
+            // 実行中は、前に適用したカメラが破棄されずに設定されたままなら探し直さない.
+            if (!Application.isPlaying || !IsCanvasCameraApplied())
+            {
+                ModifyCanvasCamera();
+            }
+
             ModifyCanvasScaler();
 		}
+
+        /// <summary> ModifyCanvasCamera で適用したカメラが、破棄されずに Canvas に設定されたままか </summary>
+        private bool IsCanvasCameraApplied()
+        {
+            if (canvasCamera == null) { return false; }
+
+            return Canvas.worldCamera == canvasCamera;
+        }
 
 		// Canvasにカメラを適用.
         protected virtual void ModifyCanvasCamera()
