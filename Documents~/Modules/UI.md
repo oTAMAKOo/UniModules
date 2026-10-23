@@ -113,6 +113,17 @@ uGUI 標準コンポーネントのラッパー（Extension）と、仮想スク
 - **UIParticleSystem の Trail 描画は Canvas の RenderMode が Screen Space - Camera / World Space の場合のみ**（Trail メッシュのベイクにカメラが必須のため）。Screen Space - Overlay ではエラーログを出し Trail のみ描画されない（粒子本体は描画される）
 - **`UIParticleTrail` は UIParticleSystem が自動生成する内部コンポーネント**。直接 AddComponent・設定しない（インスペクタ設定項目なし）。描画順は粒子本体の直後（手前）固定。生成状態は UIParticleSystem のインスペクタで確認できる
 - **隠し子の `UIParticleTrail` は Hierarchy に表示されないが `childCount` / `GetChild` / `GetComponentsInChildren` には含まれる**。子を走査・全削除する処理は隠し子も対象になる（削除されても次の更新で自動再生成されるため実害はないが、子の数を前提とするロジックには注意）
+- **UIParticleTrail は粒が消えたあとも残りの軌跡を描き、UIParticleSystem を無効にすると消える**。ベイクはキャンバスの更新のとき（そのフレームの粒の計算のあと）に行う
+- **UIParticleSystem の描き方は `ParticleSystemRenderer` に合わせている**: Render Mode（Billboard / Stretched Billboard と Freeform Stretching / Horizontal Billboard / Vertical Billboard / Mesh）、Texture Sheet Animation（Grid / Sprites、Time Mode の Lifetime / Speed / FPS、Start Frame・Frame over Time・Row の粒ごとの乱数、Cycles）、Flip（Texture Sheet Animation の Flip U / V は Renderer の Flip と同じ値。Mesh はメッシュを鏡に映す）、Pivot、Sort Mode、Min / Max Particle Size、Render Alignment（View / World / Local / Facing / Velocity と Allow Roll）、粒の z（透視投影のカメラ・傾けた UI で奥行きが出る）、親の拡大率（縦横で違う拡大率を含む）、Custom Vertex Streams
+- **Mesh の粒はメッシュの頂点を CPU で読む**。ビルドしたアプリでは Read/Write が無効なメッシュは読めないので、エラーログを 1 度出して描かない（エディタでは描く）。1 回の描画の頂点は 65000 までで、超えた粒は描かない（エラーログを 1 度出す）。マテリアルは 1 つなので、サブメッシュは同じマテリアルで描く
+- **Custom Vertex Streams は、レンダラーの「Custom Vertex Streams」の有効・無効を `UseCustomVertexStreams` に写して使う**（実行中に有効・無効を読む API が無いため、エディタで写して保存する）。実行中に `SetActiveVertexStreams` でストリームを変えたときは `UseCustomVertexStreams` も true にする。ストリームは `ParticleSystemRenderer` と同じ並びで uv0〜uv3（16 個まで。超えた分は捨ててエラーログを 1 度出す）に詰め、法線・接線は頂点の法線・接線に入れる。足りない Additional Shader Channels（TexCoord1〜3・Normal・Tangent）はキャンバスに自動で足す
+- **Custom Vertex Streams の位置・向きの値（Center・Velocity・Speed）は、頂点の位置と同じルートのキャンバスの座標で詰める**（`ParticleSystemRenderer` はワールドの座標）。NoiseSum / NoiseImpulse と Trail のストリームは値を読めないので 0 を詰め、エラーログを 1 度出す。Mesh の UV2〜UV4 はメッシュの 2〜4 つ目の UV（メッシュにその UV が無いときは 1 つ前のストリームと同じ UV）を次のコマに写した値を詰める。Mesh の UVn は、n が選んだ UV〜UV4 のストリームの数以下のときだけ詰め、それ以外は 0（`ParticleSystemRenderer` はその値を書かない）。VaryingRandom は寿命の割合から乱数を選ぶ番号が `ParticleSystemRenderer` と 1 ずれることがある（その粒だけ隣の乱数になる）
+- **Freeform Stretching の伸びには親の拡大率の x が掛かる**（`ParticleSystemRenderer` と同じ）。拡大率の小さいキャンバス（Screen Space - Camera など）では、lengthScale の分がほとんど伸びない
+- **粒の向きは 1 つのカメラにだけ合わせる**: Screen Space - Camera はキャンバスのカメラ、World Space はキャンバスのカメラ（無ければ `Camera.main`）。Screen Space - Overlay とカメラの無いキャンバスは、ルートのキャンバスの正面から正射影で見ているとする。uGUI のメッシュは 1 つなので、ほかのカメラ（エディタのシーンビューを含む）から見ると向きが合わない
+- **粒に x・y の回転があれば、`Use3dRotation` に関係なく 3D で回す**（`ParticleSystemRenderer` と同じ）。`Use3dRotation` を有効にすると、x・y の回転が無い粒も 3D の回転として扱う（見た目は同じ）
+- **Max Particle Size（既定 0.5）で、画面の幅に対する割合を超える粒は縮む**（`ParticleSystemRenderer` と同じ。Billboard と Horizontal / Vertical Billboard に効き、Stretched Billboard と Mesh には効かない）。画面の幅の半分を超える粒を描くときは値を上げる
+- **RectMask2D の下では、枠（RectTransform）がマスクと重ならなくても、粒がマスクと重なるあいだは切り捨てない**（Trail は描いている軌跡の範囲で判定する）。マスクの外の粒を切るのはシェーダーの `_ClipRect`（`UNITY_UI_CLIP_RECT`）なので、RectMask2D の下で使うマテリアルは対応したシェーダーにする
+- **UIParticleSystem の `color`（Graphic の色）は粒の色に掛かる**
 - クラス名とファイル名の不一致が2件: `DragTarget.cs` → クラス `DragObject`、`ButtonInteractablemageSprite.cs` → クラス `ButtonInteractableImageSprite`（namespace `Modules.UI.Reactive`）。grep 時に注意
 - 本モジュールの Observable は **R3**（`R3.Observable<T>` / `R3.Subject<T>`）。UniRx の `IObservable<T>` ではない。購読は `.AddTo(this)` で自動解除する
 

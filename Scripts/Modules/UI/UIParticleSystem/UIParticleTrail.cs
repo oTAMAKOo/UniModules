@@ -23,6 +23,8 @@ namespace Modules.UI.Particle
 
         private ParticleSystemRenderer particleSystemRenderer = null;
 
+        private Camera bakeCamera = null;
+
         private Mesh bakedMesh = null;
 
         private Mesh workerMesh = null;
@@ -30,6 +32,10 @@ namespace Modules.UI.Particle
         private CombineInstance[] combineInstances = null;
 
         private Material currentTrailMaterial = null;
+
+        /// <summary> 描画を空にしたか (空のあいだは空のメッシュを入れ直さない). </summary>
+        [NonSerialized]
+        private bool cleared = false;
 
         [NonSerialized]
         private bool initialized = false;
@@ -73,6 +79,8 @@ namespace Modules.UI.Particle
 
             // リロード・再アクティブ化で残った前回のメッシュ表示を消す (次のUpdateTrailで再設定される).
             canvasRenderer.Clear();
+
+            cleared = true;
         }
 
         private void Initialize()
@@ -98,15 +106,37 @@ namespace Modules.UI.Particle
             initialized = true;
         }
 
-        /// <summary> Trailメッシュを更新 (UIParticleSystemから毎フレーム駆動される). </summary>
+        /// <summary>
+        /// Trailメッシュの更新を予約 (UIParticleSystemから毎フレーム駆動される).
+        /// ベイクはキャンバスの更新 (粒の計算のあと) で行う.
+        /// </summary>
         public void UpdateTrail(Camera bakeCamera, bool maskable)
+        {
+            if (!initialized){ return; }
+
+            this.bakeCamera = bakeCamera;
+            this.maskable = maskable;
+
+            SetVerticesDirty();
+        }
+
+        public override void Rebuild(CanvasUpdate update)
+        {
+            // ※ 切り捨て中も描く範囲を求め直すため、ベイクは切り捨てに関係なく行う.
+            if (update == CanvasUpdate.PreRender)
+            {
+                BakeTrail();
+            }
+
+            base.Rebuild(update);
+        }
+
+        private void BakeTrail()
         {
             if (!initialized){ return; }
 
             if (particleSystem == null){ return; }
             if (particleSystemRenderer == null){ return; }
-
-            this.maskable = maskable;
 
             // ベイク用カメラがない場合 (Screen Space - Overlay等) は描画不可.
             if (bakeCamera == null)
@@ -115,12 +145,8 @@ namespace Modules.UI.Particle
                 return;
             }
 
-            // 粒子がなければTrailも存在しない.
-            if (particleSystem.particleCount <= 0)
-            {
-                Clear();
-                return;
-            }
+            // 粒も軌跡も無いときはベイクしない (粒が消えたあとも残りの軌跡は描く).
+            if (particleSystem.particleCount <= 0 && cleared){ return; }
 
             bakedMesh.Clear(false);
 
@@ -132,6 +158,12 @@ namespace Modules.UI.Particle
             particleSystemRenderer.BakeTrailsMesh(bakedMesh, bakeCamera, ParticleSystemBakeMeshOptions.BakeRotationAndScale);
 
             particleSystemRenderer.enabled = rendererEnabled;
+
+            if (bakedMesh.vertexCount <= 0)
+            {
+                Clear();
+                return;
+            }
 
             if (MaxVertexCount <= bakedMesh.vertexCount)
             {
@@ -149,6 +181,8 @@ namespace Modules.UI.Particle
             workerMesh.CombineMeshes(combineInstances, true, true);
 
             canvasRenderer.SetMesh(workerMesh);
+
+            cleared = false;
 
             // trailMaterialの差し替えに追従.
             var trailMaterial = particleSystemRenderer.trailMaterial;
@@ -204,15 +238,54 @@ namespace Modules.UI.Particle
         {
             if (!initialized){ return; }
 
+            if (cleared){ return; }
+
             workerMesh.Clear(false);
 
             canvasRenderer.SetMesh(workerMesh);
+
+            cleared = true;
         }
 
         /// <summary> 現在の描画頂点数 (デバッグ表示用). </summary>
         public int GetVertexCount()
         {
             return initialized ? workerMesh.vertexCount : 0;
+        }
+
+        /// <summary>
+        /// マスクと重ならないときに切り捨てる.
+        /// 枠 (RectTransform) がマスクと重ならなくても、軌跡がマスクと重なるあいだは切り捨てない.
+        /// </summary>
+        public override void Cull(Rect clipRect, bool validRect)
+        {
+            var cull = !validRect;
+
+            if (!cull)
+            {
+                var rect = rectTransform.rect;
+
+                cull = !clipRect.Overlaps(UIParticleSystem.GetRootCanvasRect(canvas, transform, rect.min, rect.max), true) &&
+                       !OverlapsTrail(clipRect);
+            }
+
+            if (canvasRenderer.cull == cull){ return; }
+
+            canvasRenderer.cull = cull;
+
+            onCullStateChanged.Invoke(cull);
+
+            OnCullingChanged();
+        }
+
+        /// <summary> 描いている軌跡の範囲がマスクと重なるか. </summary>
+        private bool OverlapsTrail(Rect clipRect)
+        {
+            if (!initialized || cleared){ return false; }
+
+            var bounds = workerMesh.bounds;
+
+            return clipRect.Overlaps(UIParticleSystem.GetRootCanvasRect(canvas, transform, bounds.min, bounds.max), true);
         }
 
         protected override void UpdateGeometry()
