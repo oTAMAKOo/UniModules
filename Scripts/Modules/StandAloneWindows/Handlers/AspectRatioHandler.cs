@@ -122,12 +122,12 @@ namespace Modules.StandAloneWindows
             pixelHeightOfCurrentScreen = Screen.currentResolution.height;
             pixelWidthOfCurrentScreen = Screen.currentResolution.width;
 
-            setHeight = Screen.height;
-            setWidth = Mathf.RoundToInt(Screen.height * AspectRatio);
-
             wasFullscreenLastFrame = Screen.fullScreen;
 
             SetAspectRatio(aspectRatioWidth, aspectRatioHeight);
+
+            setHeight = Screen.height;
+            setWidth = Mathf.RoundToInt(Screen.height * AspectRatio);
             
             Apply();
 
