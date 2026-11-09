@@ -1,6 +1,13 @@
 
 using UnityEngine;
 using UnityEngine.UI;
+using Extensions;
+
+#if UNITY_EDITOR
+
+using UnityEditor;
+
+#endif
 
 namespace Modules.UI
 {
@@ -130,6 +137,17 @@ namespace Modules.UI
         protected override void OnValidate()
         {
             base.OnValidate();
+
+            // OnValidate中はサイズ変更に伴うSendMessageが呼び出せないため遅延実行する.
+            EditorApplication.delayCall -= DelayedUpdateSize;
+            EditorApplication.delayCall += DelayedUpdateSize;
+        }
+
+        private void DelayedUpdateSize()
+        {
+            EditorApplication.delayCall -= DelayedUpdateSize;
+
+            if (UnityUtility.IsNull(this)){ return; }
 
             UpdateSize();
         }
