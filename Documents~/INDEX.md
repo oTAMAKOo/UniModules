@@ -48,6 +48,7 @@ UniModules（プロジェクト非依存のゲーム基盤）のリファレン�
 | マスターデータの参照・新規マスター追加 | [Modules/Master.md](Modules/Master.md)（追加チェックリストあり） |
 | セーブデータ等のローカル永続化 | [Modules/LocalData.md](Modules/LocalData.md)（追加手順あり） |
 | 軽量なキー値の永続化 | [Modules/Prefs.md](Modules/Prefs.md)（`SecurePrefs`） |
+| 秘密の値を OS の安全な保存領域（Keychain / Keystore）に保存 | [Modules/SecureStorage.md](Modules/SecureStorage.md)（`SecureStorage`。条件付きコンパイル） |
 | メモリキャッシュ / ストレージの使い分け | [Modules/Cache.md](Modules/Cache.md)（冒頭に比較表） |
 | サーバーAPI呼び出し・CloudScript追加 | [Modules/PlayFab.md](Modules/PlayFab.md)（手順あり。入口ファサードは利用側で実装） |
 | 配信アセット（画像・プレハブ等）のロード | [Modules/ExternalAssets.md](Modules/ExternalAssets.md) |
@@ -162,6 +163,7 @@ UniModules（プロジェクト非依存のゲーム基盤）のリファレン�
 | [Vivox](Modules/Vivox.md) | `ENABLE_VIVOX` | ボイス/テキストチャットSDKラッパー |
 | [WebView](Modules/WebView.md) | `ENABLE_UNIWEBVIEW` / `ENABLE_EMBEDDEDBROWSER` | アプリ内WebView抽象化（基底2クラスは常時コンパイル・実装Contentのみシンボル依存） |
 | [StandAloneWindows](Modules/StandAloneWindows.md) | `UNITY_STANDALONE_WIN`（Unity組込） | Windows専用ネイティブウィンドウ制御 |
+| [SecureStorage](Modules/SecureStorage.md) | `ENABLE_SECURE_STORAGE`（ネイティブの .mm / .java もこのシンボルでビルドに含める） | iOS Keychain / Android Keystore へのキー値保存 |
 
 ## 関連
 

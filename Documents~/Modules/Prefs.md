@@ -17,6 +17,7 @@
 | [FileCache](FileCache.md)（`Modules.FileCache`） | ディスク（暗号化・有効期限付き） | 期限切れまで | ダウンロードしたファイルのキャッシュ |
 | [LocalData](LocalData.md)（`Modules.LocalData`） | ディスク（暗号化セーブデータ） | 永続 | セーブデータ・ユーザー設定 |
 | **SecurePrefs（本モジュール）** | PlayerPrefs（キー・値とも AES 暗号化） | 永続 | 軽量なキー値（フラグ・日時・設定値） |
+| [SecureStorage](SecureStorage.md)（`Modules.SecureStorage`） | iOS Keychain / Android Keystore で暗号化したファイル | 永続 | OS が鍵を管理する秘密の値 |
 
 ※ Cache.md の表では `Modules.Prefs` と表記されているが、実際の namespace は `Extensions`（using 追加は不要なことが多い）。
 
