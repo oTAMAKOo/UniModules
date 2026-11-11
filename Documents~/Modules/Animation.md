@@ -1,7 +1,7 @@
 # Animation
 
 > **namespace**: `Modules.Animation`
-> **場所**: `Scripts/Modules/Animation/`
+> **場所**: `Modules/Animation/`
 > **依存**: UniTask / R3 / Unity.Linq（StateMachineTrigger）/ Extensions（`UnityUtility`, `AnimatorExtensions.IsAvailable`）
 
 ## 概要

@@ -1,7 +1,7 @@
 # BehaviorControl
 
 > **namespace**: `Modules.BehaviorControl`
-> **場所**: `Scripts/Modules/BehaviorControl/`
+> **場所**: `Modules/BehaviorControl/`
 > **依存**: R3 / Extensions（`Singleton<T>`, `FixedQueue`, `RandomUtility`） / Editor側のみ Newtonsoft.Json・YamlDotNet・Modules.Devkit
 
 ## 概要

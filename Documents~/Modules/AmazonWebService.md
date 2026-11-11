@@ -1,7 +1,7 @@
 # AmazonWebService
 
 > **namespace**: `Modules.Amazon.S3`（フォルダ名 `AmazonWebService/` と不一致に注意）
-> **場所**: `Scripts/Modules/AmazonWebService/Editor/`（**全ファイルがエディタ専用**）
+> **場所**: `Modules/AmazonWebService/Editor/`（**全ファイルがエディタ専用**）
 > **依存**: AWS SDK for .NET（`Amazon.S3` / `Amazon.CognitoIdentity` / `Amazon.Runtime`） / Extensions / コンパイルシンボル `ENABLE_AMAZON_WEB_SERVICE`（利用側で定義）
 
 ## 概要

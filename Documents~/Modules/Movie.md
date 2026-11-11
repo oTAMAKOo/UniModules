@@ -1,7 +1,7 @@
 # Movie
 
 > **namespace**: `Modules.Movie`（Editor専用: `Modules.Movie.Editor`）
-> **場所**: `Scripts/Modules/Movie/`
+> **場所**: `Modules/Movie/`
 > **依存**: CRI SDK（`CriWare` / `CriWare.CriMana` namespace） / UniTask / R3 / Extensions / Modules.CriWare / Modules.Devkit.Generators（Editor）
 
 ## 概要

@@ -1,7 +1,7 @@
 # PlayFab
 
 > **namespace**: `Modules.PlayFabCSharp`
-> **場所**: `Scripts/Modules/PlayFab/`
+> **場所**: `Modules/PlayFab/`
 > **依存**: PlayFab CSharpSDK / System.Net.Http。全体が `#if ENABLE_PLAYFAB_CSHARP`（利用側で定義）
 
 ## 概要

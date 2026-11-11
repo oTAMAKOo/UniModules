@@ -1,7 +1,7 @@
 # PatternTexture
 
 > **namespace**: `Modules.PatternTexture`
-> **場所**: `Scripts/Modules/PatternTexture/`
+> **場所**: `Modules/PatternTexture/`
 > **依存**: UniTask / R3 / Modules.R3Extension（`ObservableEx`） / Extensions / uGUI（`MaskableGraphic`）
 
 ## 概要

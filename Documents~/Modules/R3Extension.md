@@ -1,7 +1,7 @@
 # R3Extension
 
 > **namespace**: `Modules.R3Extension`
-> **場所**: `Scripts/Modules/R3Extension/`
+> **場所**: `Modules/R3Extension/`
 > **依存**: R3 / UniTask / Extensions（`Scope`）
 
 ## Rx は R3 を使う
@@ -54,7 +54,7 @@ R3 の Observable と UniTask を橋渡しする小規模基盤。機能は2系�
 - **発火側: 全購読者の演出完了を待つ**（handler を new → `OnNext(handler)` → `await handler.Wait()`。購読者ゼロ＝Subject が null なら即 return）
 - **購読側: `AsyncHandlerScope` + `using` で完了を伝える**。スコープを同期処理だけに掛ければ、裏で続くアニメは発火側を待たせない
 - **派生ハンドラで双方向にデータを受け渡す**（発火側→購読側の入力フィールド + 購読側→発火側の戻り値フィールド）
-- **ObservableEx: UniTask の Observable 化**（`.Share()` による多重実行防止 / `Timeout` 等のオペレータ適用）: `Scripts/Modules/Particle/ParticlePlayer.cs`、`Scripts/Modules/ExternalAssets/AssetBundle/AssetBundleManager.cs`
+- **ObservableEx: UniTask の Observable 化**（`.Share()` による多重実行防止 / `Timeout` 等のオペレータ適用）: `Modules/Particle/ParticlePlayer.cs`、`Modules/ExternalAssets/AssetBundle/AssetBundleManager.cs`
 
 ## 注意点・罠
 

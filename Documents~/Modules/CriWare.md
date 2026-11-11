@@ -1,7 +1,7 @@
 # CriWare
 
 > **namespace**: `Modules.CriWare`（Editor専用: `Modules.CriWare.Editor`）
-> **場所**: `Scripts/Modules/CriWare/`
+> **場所**: `Modules/CriWare/`
 > **依存**: CRI SDK（`CriWare` namespace） / UniTask / R3 / Extensions / Modules.ExternalAssets / Modules.Network / Modules.Devkit.*
 
 ## 概要
@@ -26,7 +26,7 @@ CRIWARE（ADX=サウンド / Sofdec=ムービー / FileSystem=ダウンロード
 
 ## 使い方
 
-- 基盤内の使用例（CRI有効時のみコンパイル）: `Scripts/Modules/ExternalAssets/ExternalAsset.cri.cs` の `InitializeCri()` 参照
+- 基盤内の使用例（CRI有効時のみコンパイル）: `Modules/ExternalAssets/ExternalAsset.cri.cs` の `InitializeCri()` 参照
 
 ## 注意点・罠
 

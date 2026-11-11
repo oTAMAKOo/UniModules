@@ -1,7 +1,7 @@
 # Master
 
 > **namespace**: `Modules.Master`
-> **場所**: `Scripts/Modules/Master/`
+> **場所**: `Modules/Master/`
 > **依存**: UniTask / R3 / MessagePack(+LZ4) / Extensions（`Singleton<T>`, `AesCryptoKey`）/ Modules.Performance / Modules.Devkit.Console
 
 ## 概要
@@ -21,7 +21,7 @@
 ```
 
 - `.record`(YAML) の原本管理（Excel 等との相互変換運用）は利用プロジェクト側で行う。
-- ビルド側 `MasterGenerator` / `RecordDataLoader` はエディタ専用（`UniModules/Scripts/Modules/Devkit/MasterGenerator/Editor/`、namespace は同じ `Modules.Master`）。
+- ビルド側 `MasterGenerator` / `RecordDataLoader` はエディタ専用（`UniModules/Modules/Devkit/MasterGenerator/Editor/`、namespace は同じ `Modules.Master`）。
 
 ## 逆引き（〜したい）
 
@@ -68,7 +68,7 @@
 6. **`GetAllRecords()` の列挙順は登録順（Dictionary.Values）**。順序に意味がある場合は `OrderBy` する（`OnSetup` 内で `OrderBy` してキャッシュする形が定石）。
 7. **暗号化**: `.master` の中身（AES）＋ファイル名（AES, `SetCryptoKey` 設定時）＋ローカル `version` ファイル（`IVersionFileHandler`、デフォルトはビット反転）の3層。実ファイル名の確認は `MasterFileNameWindow<T>` 派生ウィンドウで行う（メニュー登録は利用側）。
 8. **バージョン管理は2系統**。サーバー側 `version.txt`（rootHash + マスター別hash）と、ローカル `version` ファイル（DL成功時に `UpdateVersion` → 1秒デバウンスで `SaveVersion`）。差分判定は `RequireUpdateMasters`。ロード失敗時は該当マスターのバージョン情報を消して次回強制更新。
-9. **エディタで最新マスターが反映されない場合**: `Extension/Master/Use CachedMasterFile` がONだとバージョンチェックが無効化されローカルキャッシュを使い続ける（`MasterManager.Prefs.checkVersion`、トグルは `UniModules/Scripts/Editor/EditorMenu.cs`）。逆にDLを避けてローカル生成分を使いたい場合はONにする。
+9. **エディタで最新マスターが反映されない場合**: `Extension/Master/Use CachedMasterFile` がONだとバージョンチェックが無効化されローカルキャッシュを使い続ける（`MasterManager.Prefs.checkVersion`、トグルは `UniModules/Editor/EditorMenu.cs`）。逆にDLを避けてローカル生成分を使いたい場合はONにする。
 10. **テキストはキー文字列で持つ**: マスターにはTextDataのキー（「シート名-Enum名」形式）を格納し、実行時に `TextData.Get` で解決する。テキスト直書き禁止（MasterViewer 上の表示変換はカスタム属性で行う。「マスター新規追加手順」2 参照）。
 11. `AesCryptoKey` はスレッドセーフではない（基盤側は `Load` 時にスレッド専用キーを複製して対応済み。独自に `Decrypt` を触る場合は同様の配慮が必要）。
 

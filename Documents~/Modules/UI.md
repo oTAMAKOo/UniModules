@@ -1,7 +1,7 @@
 # UI
 
 > **namespace**: `Modules.UI`（直下） / `Modules.UI.Extension` / `Modules.UI.VirtualScroll` / `Modules.UI.SpriteLoader` / `Modules.UI.Layout` / `Modules.UI.Focus` / `Modules.UI.Reactive` / `Modules.UI.ScreenRotation` / `Modules.UI.SpriteNumber` / `Modules.UI.TextHyperlink` / `Modules.UI.DummyContent` / `Modules.UI.Particle` / `Modules.Devkit.UI`（エディタ専用）
-> **場所**: `Scripts/Modules/UI/`
+> **場所**: `Modules/UI/`
 > **依存**: R3（UniRxではない） / UniTask / DOTween / TextMeshPro / Extensions / Modules.Cache / Modules.ExternalAssets
 
 ## 概要

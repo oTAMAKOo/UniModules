@@ -1,7 +1,7 @@
 # Lua
 
 > **namespace**: `Modules.Lua`（`Lua/`） / `Modules.Lua.Command`（`Lua.command/`） / `Modules.Lua.Text`（`Lua.text/`）
-> **場所**: `Scripts/Modules/Lua/` + `Lua.command/` + `Lua.text/`（3フォルダで1系統）
+> **場所**: `Modules/Lua/` + `Lua.command/` + `Lua.text/`（3フォルダで1系統）
 > **依存**: xLua（`XLua.LuaEnv` / `LuaAsset`） / UniTask / R3 / Extensions（`LifetimeDisposable`, `AesCryptoKey`, `Security.XXTEA`） / Modules.Localize（`EditorLanguage`、Editor専用） / Modules.Devkit（Editor専用） / Newtonsoft.Json（Editor専用）
 
 ## 概要
@@ -26,8 +26,8 @@ xLua（Lua実行環境）との連携基盤。Luaスクリプトのロード・�
 
 ## 使い方
 
-- 実行フロー（`LuaController` / `CommandLoader` の利用のされ方）の参考実コード: `Scripts/Modules/Scenario/ScenarioController.cs`（`ENABLE_XLUA` 内）
-- `LuaText` の利用実態: `Scripts/Modules/Scenario/Command/Text/TextLoad.cs`
+- 実行フロー（`LuaController` / `CommandLoader` の利用のされ方）の参考実コード: `Modules/Scenario/ScenarioController.cs`（`ENABLE_XLUA` 内）
+- `LuaText` の利用実態: `Modules/Scenario/Command/Text/TextLoad.cs`
 
 ## 注意点・罠
 

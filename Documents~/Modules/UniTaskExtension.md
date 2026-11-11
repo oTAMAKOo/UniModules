@@ -1,7 +1,7 @@
 # UniTaskExtension
 
 > **namespace**: `Modules.UniTaskExtension`
-> **場所**: `Scripts/Modules/UniTaskExtension/`
+> **場所**: `Modules/UniTaskExtension/`
 > **依存**: UniTask ライブラリ本体
 
 ## 概要

@@ -1,7 +1,7 @@
 # Sound
 
 > **namespace**: `Modules.Sound`（Editor専用: `Modules.Sound.Editor` — CRI有効時のみ）
-> **場所**: `Scripts/Modules/Sound/`
+> **場所**: `Modules/Sound/`
 > **依存**: UniTask / R3 / DOTween / Extensions（`Singleton<T>`） / Modules.Devkit.Console / 条件付き: CriWare SDK・Modules.CriWare（`ENABLE_CRIWARE_ADX(_LE)` 定義時のみ）
 
 ## 概要

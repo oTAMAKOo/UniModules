@@ -1,7 +1,7 @@
 # DoTweenExtension
 
 > **namespace**: `Modules.DoTweenExtension`
-> **場所**: `Scripts/Modules/DoTweenExtension/`（`TweenController.cs` の1ファイルのみ）
+> **場所**: `Modules/DoTweenExtension/`（`TweenController.cs` の1ファイルのみ）
 > **依存**: DOTween / UniTask（`UNITASK_DOTWEEN_SUPPORT` 定義が必要） / R3 / Extensions（`LifetimeDisposable`）/ Modules.TimeUtil（`TimeScale`）
 
 ## 概要

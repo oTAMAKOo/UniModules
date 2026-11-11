@@ -1,7 +1,7 @@
 # DeviceKey
 
 > **namespace**: `Modules.DeviceKey`
-> **場所**: `Scripts/Modules/DeviceKey/`（ネイティブ: `Plugins/iOS/DeviceKey.mm` / `Plugins/Android/DeviceKey.java`、ビルドに含める判定: `Editor/DeviceKeyPluginFilter.cs`）
+> **場所**: `Modules/DeviceKey/`（ネイティブ: `Plugins/iOS/DeviceKey.mm` / `Plugins/Android/DeviceKey.java`、ビルドに含める判定: `Editor/DeviceKeyPluginFilter.cs`）
 > **依存**: UnityEngine のみ
 > **有効化シンボル**: `ENABLE_DEVICE_KEY`（`csc.rsp` / Scripting Define Symbols のどちらでもよい）
 

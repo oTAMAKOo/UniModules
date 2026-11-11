@@ -1,7 +1,7 @@
 # SecureStorage
 
 > **namespace**: `Modules.SecureStorage`
-> **場所**: `Scripts/Modules/SecureStorage/`（ネイティブ: `Plugins/iOS/SecureStorage.mm` / `Plugins/Android/SecureStorage.java`、ビルドに含める判定: `Editor/SecureStoragePluginFilter.cs`）
+> **場所**: `Modules/SecureStorage/`（ネイティブ: `Plugins/iOS/SecureStorage.mm` / `Plugins/Android/SecureStorage.java`、ビルドに含める判定: `Editor/SecureStoragePluginFilter.cs`）
 > **依存**: UnityEngine / Newtonsoft.Json / Extensions（`SecurePrefs`。エディタ・その他の環境の保存先）
 > **有効化シンボル**: `ENABLE_SECURE_STORAGE`（`csc.rsp` / Scripting Define Symbols のどちらでもよい。下記「有効化」）
 

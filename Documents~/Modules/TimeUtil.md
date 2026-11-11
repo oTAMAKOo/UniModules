@@ -1,7 +1,7 @@
 # TimeUtil
 
 > **namespace**: `Modules.TimeUtil`
-> **場所**: `Scripts/Modules/TimeUtil/`
+> **場所**: `Modules/TimeUtil/`
 > **依存**: R3 / Extensions（`Singleton<T>`, `LifetimeDisposable`, `XDouble`, `ToUnixTime`）
 
 ## 概要
@@ -21,7 +21,7 @@
 
 ## 使い方
 
-- 基盤内の実使用は `TweenController` のみ（`new TimeScale()` + `OnTimeScaleChangedAsObservable` 購読で再生中の全 Tweener の timescale へ反映。引用元: `Scripts/Modules/DoTweenExtension/TweenController.cs`）
+- 基盤内の実使用は `TweenController` のみ（`new TimeScale()` + `OnTimeScaleChangedAsObservable` 購読で再生中の全 Tweener の timescale へ反映。引用元: `Modules/DoTweenExtension/TweenController.cs`）
 - スタミナ計算の想定形: `new RecoveryValue(max, recoveryInterval, recoveryAmount, lastRecoveryTime, fullRecoveryTime)` → `UpdateTime(currentTime)` で経過分回復 → `GetNextRecoveryTime` / `GetFullRecoveryTime` / `GetRatio` で残り時間・割合取得（シグネチャは `RecoveryValue.cs` 参照）
 - `TimeManager<T>` は abstract + 自己参照ジェネリクス。使うには `sealed class GameTime : TimeManager<GameTime>` の様な派生定義が必要
 

@@ -1,7 +1,7 @@
 # Shaders
 
 > **namespace**: `Modules.Shaders`
-> **場所**: `Scripts/Modules/Shaders/ShaderSetter/`
+> **場所**: `Modules/Shaders/ShaderSetter/`
 > **依存**: UnityEngine.UI / Extensions / Extensions.Devkit（エディタ）
 
 ## 概要

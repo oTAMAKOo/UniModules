@@ -1,7 +1,7 @@
 # Scene
 
 > **namespace**: `Modules.Scene`（計測補助のみ `Modules.Scene.Diagnostics`）
-> **場所**: `Scripts/Modules/Scene/`（SceneManagerBase は partial 6ファイル構成）
+> **場所**: `Modules/Scene/`（SceneManagerBase は partial 6ファイル構成）
 > **依存**: UniTask / R3 / Extensions（`Singleton`, `FixedQueue`, `UnityUtility`） / Modules.View（VM連携） / Modules.R3Extension（`ObservableEx.FromUniTask`） / Modules.Devkit.Console
 
 ## 概要

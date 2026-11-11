@@ -122,10 +122,9 @@ Sound は CRIWARE のシンボルが無い場合、Unity Audio の実装（DOTwe
 
 ```text
 UniModules/
-├── Scripts/
-│   ├── Extensions/   拡張メソッド・基盤クラス（主な namespace: Extensions / Extensions.Serialize / Extensions.Devkit）
-│   ├── Modules/      機能モジュール群（namespace: Modules.*）
-│   └── Editor/       Modules.EditorMenu（利用側で継承して [MenuItem] を追加）
+├── Extensions/       拡張メソッド・基盤クラス（主な namespace: Extensions / Extensions.Serialize / Extensions.Devkit）
+├── Modules/          機能モジュール群（namespace: Modules.*。ネイティブプラグインは各モジュールの Plugins/ に置く）
+├── Editor/           Modules.EditorMenu（利用側で継承して [MenuItem] を追加）
 ├── Documents~/       リファレンスドキュメント（INDEX.md から辿る）
 ├── CLAUDE.md         基盤コードの編集ルール（AI コーディング支援向けの記述を含む）
 └── LICENSE
@@ -137,7 +136,7 @@ UniModules/
 
 - **Extensions**: [Methods](Documents~/Extensions/Methods.md)（汎用拡張メソッド）/ [Core](Documents~/Extensions/Core.md)（`Singleton<T>` / `LifetimeDisposable` / `UnityUtility` / `Prefab` / インスペクタ属性）/ [Devkit](Documents~/Extensions/Devkit.md)（エディタ拡張の共通部品）
 - **画面・UI**: [Scene](Documents~/Modules/Scene.md) / [Window](Documents~/Modules/Window.md) / [View](Documents~/Modules/View.md) / [UI](Documents~/Modules/UI.md) / [TextData](Documents~/Modules/TextData.md) / [Localize](Documents~/Modules/Localize.md) / [Resolution](Documents~/Modules/Resolution.md) / [InputControl](Documents~/Modules/InputControl.md) / [BackKey](Documents~/Modules/BackKey.md) / [TouchEffect](Documents~/Modules/TouchEffect.md) / [OffScreenRendering](Documents~/Modules/OffScreenRendering.md) / [Hyphenation](Documents~/Modules/Hyphenation.md) / [TagText](Documents~/Modules/TagText.md) / [SpriteAnimation](Documents~/Modules/SpriteAnimation.md) / [PatternTexture](Documents~/Modules/PatternTexture.md)
-- **データ・通信**: [Master](Documents~/Modules/Master.md) / [LocalData](Documents~/Modules/LocalData.md) / [Prefs](Documents~/Modules/Prefs.md) / [Cache](Documents~/Modules/Cache.md) / [FileCache](Documents~/Modules/FileCache.md) / [Crypto](Documents~/Modules/Crypto.md) / [ExternalAssets](Documents~/Modules/ExternalAssets.md) / [Network](Documents~/Modules/Network.md) / [MessagePack](Documents~/Modules/MessagePack.md) / [Notifications](Documents~/Modules/Notifications.md) / [StorePage](Documents~/Modules/StorePage.md)
+- **データ・通信**: [Master](Documents~/Modules/Master.md) / [LocalData](Documents~/Modules/LocalData.md) / [Prefs](Documents~/Modules/Prefs.md) / [Cache](Documents~/Modules/Cache.md) / [FileCache](Documents~/Modules/FileCache.md) / [Crypto](Documents~/Modules/Crypto.md) / [ExternalAssets](Documents~/Modules/ExternalAssets.md) / [Network](Documents~/Modules/Network.md) / [MessagePack](Documents~/Modules/MessagePack.md) / [Notifications](Documents~/Modules/Notifications.md) / [StorePage](Documents~/Modules/StorePage.md) / [SecureStorage](Documents~/Modules/SecureStorage.md)（シンボルでオプトイン）/ [DeviceKey](Documents~/Modules/DeviceKey.md)（シンボルでオプトイン）
 - **演出・サウンド・描画**: [Sound](Documents~/Modules/Sound.md) / [Animation](Documents~/Modules/Animation.md) / [DoTweenExtension](Documents~/Modules/DoTweenExtension.md) / [Particle](Documents~/Modules/Particle.md) / [ObjectPool](Documents~/Modules/ObjectPool.md) / [Camera](Documents~/Modules/Camera.md) / [Shaders](Documents~/Modules/Shaders.md) / [SortingLayerSetter](Documents~/Modules/SortingLayerSetter.md) / [Renderer2D](Documents~/Modules/Renderer2D.md)
 - **制御・ユーティリティ**: [ApplicationEvent](Documents~/Modules/ApplicationEvent.md) / [StateControl](Documents~/Modules/StateControl.md) / [TimeUtil](Documents~/Modules/TimeUtil.md) / [Performance](Documents~/Modules/Performance.md) / [DeviceOrientation](Documents~/Modules/DeviceOrientation.md) / [PathFinding](Documents~/Modules/PathFinding.md) / [BehaviorControl](Documents~/Modules/BehaviorControl.md) / [R3Extension](Documents~/Modules/R3Extension.md) / [UniTaskExtension](Documents~/Modules/UniTaskExtension.md)
 - **開発支援**: [Devkit](Documents~/Modules/Devkit.md) / [Automation](Documents~/Modules/Automation.md)

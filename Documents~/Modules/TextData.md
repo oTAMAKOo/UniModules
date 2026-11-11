@@ -1,7 +1,7 @@
 # TextData
 
 > **namespace**: `Modules.TextData`（本体） / `Modules.TextData.Components`（TextSetter・アセット・検証） / `Modules.TextData.Editor`（生成ツール）
-> **場所**: `Scripts/Modules/TextData/`
+> **場所**: `Modules/TextData/`
 > **依存**: R3（Observable/Subject）/ UniTask（Editor）/ TMPro・uGUI Text / Extensions（Singleton, AesCryptoKey, PathUtility）/ Modules.Devkit（Editor）/ Modules.Localize（Editor: EditorLanguage）/ Newtonsoft.Json（Editor）
 
 ## 概要

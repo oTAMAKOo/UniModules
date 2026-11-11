@@ -1,7 +1,7 @@
 # Network
 
 > **namespace**: `Modules.Network`（到達性） / `Modules.Network.WebRequest`（HTTP API通信） / `Modules.Network.WebDownload`（ファイルDL）
-> **場所**: `Scripts/Modules/Network/`
+> **場所**: `Modules/Network/`
 > **依存**: UniTask / R3 / Extensions（`Singleton<T>`, `LifetimeDisposable`, `PathUtility`, 圧縮・暗号化拡張） / Modules.R3Extension（`ObservableEx.FromUniTask`） / MessagePack / Newtonsoft.Json / Modules.Devkit.Console
 
 ## 概要
@@ -45,7 +45,7 @@ HTTP通信の基盤モジュール。3系統に分かれる。
 - **FileDownLoader 継承クラスの利用**: `Initialize()` → `SetMaxDownloadCount(n)` → `SetServerUrl(baseUrl)` → `Download(relativePath, filePath)`
 - **FileDownLoader 継承クラスの定義パターン**: `OnComplete` / `OnError`（`Retry` / `Cancel` を返す）/ `OnRetryLimit` の3フックを実装
 - **フルURLを直接ダウンロード**: `SetServerUrl(null)` にするとフルURLをそのまま使える
-- **DownloadRequest 単体使用**（一時ファイルにDL → 完了後 `File.Move` でリネーム）: `Scripts/Modules/ExternalAssets/AssetBundle/AssetBundleManager.cs`
+- **DownloadRequest 単体使用**（一時ファイルにDL → 完了後 `File.Move` でリネーム）: `Modules/ExternalAssets/AssetBundle/AssetBundleManager.cs`
 
 ## 注意点・罠
 

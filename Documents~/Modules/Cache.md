@@ -1,7 +1,7 @@
 # Cache
 
 > **namespace**: `Modules.Cache`
-> **場所**: `Scripts/Modules/Cache/`
+> **場所**: `Modules/Cache/`
 > **依存**: R3（SpriteAtlasCache） / Extensions（`LifetimeDisposable`, `UnityUtility`, コレクション拡張）
 
 ## 概要

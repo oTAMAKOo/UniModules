@@ -1,7 +1,7 @@
 # Devkit
 
 > **namespace**: `Modules.Devkit.*`（サブ機能ごとに分割。一部フォルダ名と不一致 → 「注意点・罠」参照）
-> **場所**: `Scripts/Modules/Devkit/`（約200ファイル・約40サブフォルダ）
+> **場所**: `Modules/Devkit/`（約200ファイル・約40サブフォルダ）
 > **依存**: UniTask / R3 / Newtonsoft.Json / Extensions（`Singleton<T>`, `LifetimeDisposable`, `SingletonEditorWindow<T>` 等）/ SRDebugger（ThirdParty, `ENABLE_SRDEBUGGER` 時）
 
 ## 概要
@@ -138,7 +138,7 @@
 - `AssetTuner` は**登録制**。新しい Tuner を作っても登録処理を追加しないと動かない。バッチモード時は `AssetTuningPostprocessor` がスキップされる（`Application.isBatchMode`）
 - `AdditionalComponent`（コンポーネント自動付与）はメニューからOFFにできるため、必須依存は `[RequireComponent]` を正とする
 - Devkit のエディタ設定保存は `ProjectPrefs`（`EditorPrefs` + プロジェクト識別子）。他プロジェクトと衝突しないが、プロジェクトパス移動でリセットされる
-- メニュー拡張は基盤の `Modules.EditorMenu` を継承した利用側クラスで追加する（基盤側 `EditorMenu.cs` は直接編集しない）。メニュー登録の実体: 基盤 `Scripts/Editor/EditorMenu.cs`
+- メニュー拡張は基盤の `Modules.EditorMenu` を継承した利用側クラスで追加する（基盤側 `EditorMenu.cs` は直接編集しない）。メニュー登録の実体: 基盤 `Editor/EditorMenu.cs`
 
 ## 関連
 

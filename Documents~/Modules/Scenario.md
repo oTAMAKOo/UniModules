@@ -1,7 +1,7 @@
 # Scenario
 
 > **namespace**: `Modules.Scenario` / `Modules.Scenario.Command`（`RubyTextMeshProUGUIExtension` のみ `TMPro`）
-> **場所**: `Scripts/Modules/Scenario/`
+> **場所**: `Modules/Scenario/`
 > **依存**: xLua（`XLua` namespace） / Modules.Lua系（`Modules.Lua` / `Modules.Lua.Command` / `Modules.Lua.Text`） / UniTask / R3 / DOTween（`Modules.DoTweenExtension`） / Modules.TimeUtil / Modules.TagText / Modules.ExternalAssets / Modules.Animation / Modules.Particle / Modules.Sound + CRI（Sound系コマンドのみ） / RubyTextMeshPro（ThirdParty） / Extensions
 
 ## 概要
@@ -27,7 +27,7 @@ Luaスクリプト（xLua）でシナリオ・カットシーン進行を記述�
 
 ## 使い方
 
-実行フローの実シグネチャは `Scripts/Modules/Scenario/ScenarioController.cs`、コマンド登録機構は `Scripts/Modules/Lua.command/CommandLoader.cs` を参照。
+実行フローの実シグネチャは `Modules/Scenario/ScenarioController.cs`、コマンド登録機構は `Modules/Lua.command/CommandLoader.cs` を参照。
 
 ### 新しいシナリオコマンドを追加する手順（有効化されている場合の参考）
 

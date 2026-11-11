@@ -1,7 +1,7 @@
 # PathFinding
 
 > **namespace**: `Modules.PathFinding`
-> **場所**: `Scripts/Modules/PathFinding/`（`Astar.cs` / `Node.cs` の2ファイル）
+> **場所**: `Modules/PathFinding/`（`Astar.cs` / `Node.cs` の2ファイル）
 > **依存**: UniTask / R3 / UnityEngine（`Vector2Int`）
 
 ## 概要

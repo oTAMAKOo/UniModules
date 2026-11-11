@@ -1,7 +1,7 @@
 # TagText
 
 > **namespace**: `Modules.TagText`
-> **場所**: `Scripts/Modules/TagText/`
+> **場所**: `Modules/TagText/`
 > **依存**: Extensions のみ（MonoBehaviour ではない純粋な C# クラス。RubyTagText のみ `UnityEngine.Debug` 使用）
 
 ## 概要
@@ -26,7 +26,7 @@
 
 ## 使い方
 
-文字送りループ（`Get(0)`=空文字 〜 `Get(Length-1)`=全文、の順で1文字ずつ増やして通知）の実例: `Scripts/Modules/Scenario/Command/Message/Message.cs`（`#if ENABLE_XLUA` 内）。
+文字送りループ（`Get(0)`=空文字 〜 `Get(Length-1)`=全文、の順で1文字ずつ増やして通知）の実例: `Modules/Scenario/Command/Message/Message.cs`（`#if ENABLE_XLUA` 内）。
 
 ## 注意点・罠
 

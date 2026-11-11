@@ -1,7 +1,7 @@
 # Renderer2D
 
 > **namespace**: `Modules.Renderer2D.DummyContent`（フォルダは `DummyContents/`・単複不一致）
-> **場所**: `Scripts/Modules/Renderer2D/DummyContents/`
+> **場所**: `Modules/Renderer2D/DummyContents/`
 > **依存**: R3 / Extensions（`UnityUtility`, `FixedQueue`） / UnityEditor.U2D（エディタ partial）
 
 ## 概要

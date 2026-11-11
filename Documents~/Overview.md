@@ -5,10 +5,11 @@ UniModules 全体の構造・共通パターン・横断的な罠のまとめ。
 ## 全体構造
 
 ```
-Scripts/
+UniModules/
 ├── Extensions/   … 拡張メソッド + 基盤クラス（namespace: Extensions / Extensions.Serialize / Extensions.Devkit）
-├── Modules/      … 機能モジュール約60個（namespace: Modules.*）
-└── Editor/       … EditorMenu 基底（利用側で継承して拡張）
+├── Modules/      … 機能モジュール約60個（namespace: Modules.*）。ネイティブプラグイン（.mm / .java）は各モジュールの Plugins/ に置く
+├── Editor/       … EditorMenu 基底（利用側で継承して拡張）
+└── Documents~/   … リファレンスドキュメント（Unity のインポート対象外）
 ```
 
 - Extensions は最重要の共通層（拡張メソッド・Singleton・LifetimeDisposable 等）、Modules は機能単位の集まり

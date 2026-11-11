@@ -1,7 +1,7 @@
 # StateControl
 
 > **namespace**: `Modules.StateControl`
-> **場所**: `Scripts/Modules/StateControl/`（`StateController.cs` / `StateNode.cs` の2ファイル）
+> **場所**: `Modules/StateControl/`（`StateController.cs` / `StateNode.cs` の2ファイル）
 > **依存**: UniTask / R3 / Extensions（`LifetimeDisposable`）
 
 ## 概要

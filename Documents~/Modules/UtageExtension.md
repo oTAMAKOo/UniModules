@@ -1,7 +1,7 @@
 # UtageExtension
 
 > **namespace**: `Modules.UtageExtension`（Editor専用クラスも同namespace）
-> **場所**: `Scripts/Modules/UtageExtension/`
+> **場所**: `Modules/UtageExtension/`
 > **依存**: ADVエンジン「宴（Utage）」アセット（`Utage` namespace） / UniTask / Modules.ExternalAssets / Modules.Sound + CRI ADX2（Sound系のみ） / Modules.Animation / Modules.Particle / Modules.PatternTexture / Modules.Devkit.ScriptableObjects（Editor） / Extensions / Unity.Linq
 
 ## 概要
