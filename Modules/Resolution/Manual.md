@@ -1,0 +1,53 @@
+# Resolution
+
+画面の解像度とセーフエリアに UI を合わせる機能。
+基準解像度の外を帯で隠すことと、RectTransform をセーフエリアや基準解像度に自動で合わせることができる。
+
+## 基本情報
+
+> **namespace**: `Modules.Resolution`
+> **場所**: `Modules/Resolution/`
+> **依存**: R3 / Extensions（`UnityUtility`, `SingletonMonoBehaviour`, RectTransform拡張） / Unity.Linq / Modules.UI.Extension（`UICanvas`）
+
+## 概要
+
+画面解像度・アスペクト比・セーフエリア（ノッチ等）への UI 適応を行うコンポーネント群。
+基準解像度（`CanvasScaler.referenceResolution`）外の領域をレターボックスで隠す `LetterBox` と、RectTransform のアンカーをセーフエリア等に自動追従させる Adjuster 3種で構成。
+いずれも **シーン/プレハブにアタッチして使う MonoBehaviour** で、コードから直接操作する場面はほぼない。
+主要クラス: `LetterBox`（`SingletonMonoBehaviour`。上下 or 左右のレターボックス帯 + ステータスバー帯を表示。`CanvasScaler.matchWidthOrHeight` が 1 なら左右、それ以外なら上下の帯を出す。`CanvasScaler.ScaleWithScreenSize` 時のみ有効化）/ `SafeAreaAdjuster`（`Screen.safeArea` を正規化して自身のアンカーに反映）/ `FixedResolutionSafeAreaAdjuster`（基準解像度とセーフエリアの**狭い方**に合わせてアンカー調整。固定解像度＝レターボックス併用デザイン向け）/ `ReferenceResolutionAdjuster`（自身を中央アンカー・基準解像度サイズに固定。public API なし）。全クラス `[ExecuteAlways]`。
+
+## 逆引き（〜したい）
+
+| やりたいこと | 使うもの |
+|---|---|
+| 基準解像度外を黒帯（レターボックス）で隠したい | `LetterBox`（プレハブを生成し起動時に1度だけ Instantiate） |
+| RectTransform をセーフエリアぴったりに合わせたい | `SafeAreaAdjuster` をアタッチ |
+| 固定解像度デザインでセーフエリアとレターボックス両方を考慮したい | `FixedResolutionSafeAreaAdjuster` をアタッチ |
+| RectTransform を基準解像度サイズ（中央固定）にしたい | `ReferenceResolutionAdjuster` をアタッチ |
+| レターボックス領域を即時再計算したい | `LetterBox.Instance.Apply()`（帯のサイズが前回と同じならスキップされる。`StatusBarHeight` を変えた直後はスキップされない） |
+| セーフエリアへの追従を強制的に再適用したい | `SafeAreaAdjuster.Apply(force: true)` / `FixedResolutionSafeAreaAdjuster.Apply(force: true)` |
+
+## 使い方
+
+- LetterBox の生成: アプリ初期化時に1度だけ、プレハブから `UnityUtility.Instantiate<LetterBox>` する
+- シーン跨ぎの重複管理: `SceneManagerBase` の `UniqueComponents`（`Dictionary<Type, DuplicatedSettings>`）に `LetterBox` を登録すればシーン遷移時に重複した LetterBox を自動破棄できる
+- `SafeAreaAdjuster` / `FixedResolutionSafeAreaAdjuster` / `ReferenceResolutionAdjuster` は対象の RectTransform にアタッチするだけで動作する（コード参照は不要。プレハブ運用）
+
+## 注意点・罠
+
+- 全クラス `[ExecuteAlways]`。エディタの編集モードでも動作し、Adjuster 2種は `DrivenRectTransformTracker` により対象 RectTransform のアンカー等が **Inspector から編集不可（Driven 表示）** になる
+- `LetterBox` はプレハブ前提（帯用 RectTransform を SerializeField で差す）
+- `LetterBox` は `CanvasScaler.uiScaleMode == ScaleWithScreenSize` でない場合、自身の GameObject を非アクティブ化して何もしない
+- `LetterBox.StatusBarHeight` は 0 より大きい時のみステータスバー帯を表示。値を変えると、次の `Apply`（毎フレームの `Update` で呼ばれる）で反映される
+- `LetterBox` の帯は、Canvas のサイズと基準解像度の差の半分に 2 を足した幅・高さになる
+- `SafeAreaAdjuster` と `FixedResolutionSafeAreaAdjuster` の使い分け: 前者は画面全体（`Screen.width/height`）基準、後者は基準解像度 + Canvas スケール基準でレターボックス領域を考慮する
+- `LetterBox`（`Update`）/ `SafeAreaAdjuster`（`Update`）/ `FixedResolutionSafeAreaAdjuster`（`LateUpdate`）は毎フレーム Apply が走るが差分チェックでスキップされる（Adjuster 2種は `Apply(force: true)` で強制再適用可。`LetterBox.Apply()` に引数は無い）。Adjuster 2種は `anchorMax` が 0 のとき（Undo 後など）は差分が無くても再適用する
+- `ReferenceResolutionAdjuster` は `OnEnable` 時（実行中は最初の Update でもう1度）にだけ適用する。毎フレームは追従しない
+- `FixedResolutionSafeAreaAdjuster` / `ReferenceResolutionAdjuster` は親を辿ってルート Canvas を探す。見つからなければ何もしない
+- このモジュールは新規実装での再発明が起きやすい（「セーフエリア対応」を自作しがち）。**セーフエリア対応はここにあるものを使う**
+
+## 関連
+
+- [UI](../UI/Manual.md) — `UICanvas`（LetterBox が Canvas 取得・CanvasScaler 調整に使用）
+- [Scene](../Scene/Manual.md) — `DuplicatedSettings` による常駐オブジェクト重複管理
+- [DeviceOrientation](../DeviceOrientation/Manual.md) — 画面向き関連

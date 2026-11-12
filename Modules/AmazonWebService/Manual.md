@@ -1,0 +1,63 @@
+# AmazonWebService
+
+AWS S3 へファイルを送る機能。
+S3 上のファイルの一覧取得、取得、アップロード、削除と、アップロードツールの土台を使える。
+エディタ専用で、AWS SDK の導入と ENABLE_AMAZON_WEB_SERVICE シンボルの定義が必要。
+
+## 基本情報
+
+> **namespace**: `Modules.Amazon.S3`（フォルダ名 `AmazonWebService/` と不一致に注意）
+> **場所**: `Modules/AmazonWebService/Editor/`（**全ファイルがエディタ専用**）
+> **依存**: AWS SDK for .NET（`Amazon.S3` / `Amazon.CognitoIdentity` / `Amazon.Runtime`） / Extensions / コンパイルシンボル `ENABLE_AMAZON_WEB_SERVICE`（利用側で定義）
+
+## 概要
+
+AWS S3 への薄いラッパー（`S3Client`）と、アップロードツールの基底クラス（`S3UploaderBase`）。
+主用途は **エディタから配信データを S3 へアップロードする**こと（アセットバンドル・マスターデータ等）。ランタイム（実機）からは使わない。
+主要クラス: `S3Client`（`AmazonS3Client` のラッパー。一覧/メタ取得/取得/アップロード/Put/削除）/ `S3UploaderBase`（アップローダー基底。`IBasicCredentials` or `ICognitoCredentials` を実装した派生クラスから `CreateS3Client()` で接続）/ `ProfileCredentials`（`IBasicCredentials` 実装。アクセスキーを環境変数と AWS 共有認証情報ファイルから解決する）。
+
+基盤内の派生:
+
+```
+S3UploaderBase (本モジュール)
+├─ Modules.ExternalAssets.S3Uploader (ExternalAssets/Editor)
+└─ Modules.Master.Editor.S3Uploader (Devkit/MasterGenerator/Editor)
+```
+
+利用側でさらに派生させ、認証情報（`IBasicCredentials` 実装）とバケット設定を与える。
+
+## 逆引き（〜したい）
+
+| やりたいこと | 使うもの |
+|---|---|
+| 新しいアップロードツールを作りたい | `S3UploaderBase` を継承 + `IBasicCredentials`（or `ICognitoCredentials`）実装 |
+| アクセスキーをソースに書かずに渡したい | `ProfileCredentials`（環境変数 → AWS 共有認証情報ファイルのプロファイルの順に解決） |
+| S3上のファイル一覧を取りたい | `S3Client.GetObjectList(prefix, maxKeys)`（ページング自動追従） |
+| S3からダウンロードしたい | `S3Client.GetObject(objectPath, onComplete)`（`byte[]` を返す。`onComplete` で `GetObjectResponse` を受け取れる） |
+| S3上のファイルのメタ情報を取りたい | `S3Client.GetObjectMetaData(objectPath)` |
+| ファイル/フォルダをアップロードしたい | `S3Client.Upload(filePath, objectPath)`（`objectPath` 省略時はファイル名がキー）/ `UploadDirectory(directoryPath)` |
+| 細かい指定でアップロードしたい | `S3Client.Upload(TransferUtilityUploadRequest)` / `Put(PutObjectRequest)` |
+| S3上のファイルを消したい | `S3Client.DeleteObject(objectPath)` / `DeleteObjects(objectPaths, versionIds)` |
+| S3Client を直接作りたい | `new S3Client(bucketName, bucketRegion, IBasicCredentials)` または `ICognitoCredentials` 版 |
+
+## 使い方
+
+- アップローダー定義パターン: 用途別の `S3Uploader` 基底を継承 + `IBasicCredentials` を実装し、`GetBucketName` / `GetBucketRegion` / `UploadFileCannedACL` / `BucketFolderOverride` をオーバーライドする
+
+## 注意点・罠
+
+- **エディタ専用**（`Editor/` 配下のみ + `#if ENABLE_AMAZON_WEB_SERVICE`）。ランタイムコードから参照するとビルドが通らない。実機のアセットダウンロードは S3 直ではなく [ExternalAssets](../ExternalAssets/Manual.md) / [Network](../Network/Manual.md) 経由
+- namespace は `Modules.Amazon.S3`（`Modules.AmazonWebService` ではない）
+- 非同期は UniTask ではなく **`System.Threading.Tasks.Task`**（AWS SDK 準拠）。呼び出し側（ExternalAssets の S3Uploader 等）は UniTask のメソッドの中で await している
+- `S3UploaderBase.UploadFileCannedACL` の既定値が `PublicRead`。新規アップローダーでは明示的に `Private` へオーバーライドすること
+- **AWS アクセスキー/シークレットをソースコードに直書きしない**。`ProfileCredentials` を `IBasicCredentials` として渡せば、環境変数（コンストラクタで名前を指定した場合のみ参照）→ AWS 共有認証情報ファイル（`~/.aws/credentials`）のプロファイルの順で解決する。どちらからも取得できない場合は `InvalidOperationException` を送出する
+- `ProfileCredentials` は解決した認証情報をインスタンス内にキャッシュする。プロファイルを更新した場合はインスタンスを作り直す
+- `GetObjectList` の prefix は、セパレータで終わっていなければ末尾にセパレータを足してから検索する（`folder` を渡すと `folder/` 配下だけが対象になり、`folder2/` のような同じ接頭辞のフォルダは含まれない）。prefix と同名のオブジェクト自体は結果に含まれない
+- `S3Client` の Request 版オーバーロード（GetObjectList / GetObjectMetaData / Upload / Put / Delete 系）でも `BucketName` は S3Client 側の値で上書きされる
+- `S3UploaderBase.CreateS3Client()` は、派生クラスが `IBasicCredentials` と `ICognitoCredentials` のどちらも実装していないと例外（`Credentials not found.`）を投げる。両方を実装している場合は `IBasicCredentials` が使われる
+
+## 関連
+
+- [ExternalAssets](../ExternalAssets/Manual.md) — アップロードした配信アセットのランタイム側ダウンロード/管理
+- [Master](../Master/Manual.md) — マスターデータの配信と読み込み
+- [Devkit](../Devkit/Manual.md) — MasterGenerator（マスター生成 → S3 アップロードの流れ）

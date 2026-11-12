@@ -177,7 +177,7 @@ enum `UnixTimeConvert { Milliseconds, Seconds, Minutes }` を同ファイルに�
 `ButtonExtensions`（`ButtonEventTrigger`（Modules.UI）を GetOrAddComponent して購読。戻り値は R3 `Observable`。通常クリックは R3 標準の `button.OnClickAsObservable()` を使用）:
 `SetLongPressDuration(duration)`（長押し判定時間設定）/ `OnPressAsObservable()`（押下）/ `OnReleaseAsObservable()`（離し。押下時間 float 付き）/ `OnLongPressAsObservable()`（長押し成立）/ `OnLongPressReleaseAsObservable()`（長押し後の離し。float 付き）/ `OnCancelAsObservable()`（キャンセル）
 
-`ScrollRectExtensions`（enum `ScrollAlignment { Center, Top, Bottom, Left, Right }`。DOTween 依存。`GridListView` / `ListView` 等の仮想リスト（[UI.md](../Modules/UI.md)）は自前の `ScrollToItem(index, ...)` を持つ — これは素の `ScrollRect` 用）:
+`ScrollRectExtensions`（enum `ScrollAlignment { Center, Top, Bottom, Left, Right }`。DOTween 依存。`GridListView` / `ListView` 等の仮想リスト（[UI.md](../../Modules/UI/Manual.md)）は自前の `ScrollToItem(index, ...)` を持つ — これは素の `ScrollRect` 用）:
 `ScrollToItem(item, alignment = Center, offset)`（即座にスクロール）/ `ScrollToItemAsync(item, duration = 0.3f, alignment, offset, ease = OutQuad, ct)`（アニメ付き）/ `CalculateFocusedScrollPosition(item / focusPoint)`（対象を中央に収める normalizedPosition を計算）
 
 ### その他（ObjectExtensions.cs / TypeExtensions.cs / AnimatorExtensions.cs / ParticleSystemExtensions.cs / SpriteAtlasExtensions.cs）
@@ -211,7 +211,7 @@ enum `UnixTimeConvert { Milliseconds, Seconds, Minutes }` を同ファイルに�
 ## 関連
 
 - [Core.md](Core.md) — `UnityUtility`（GetComponent / GetOrAddComponent / SetActive / 生成・破棄 / 子オブジェクト列挙）、`Singleton`、`LabelAttribute`、`IntNullable` / `FloatNullable`（`To<T>` の変換先）、`CRC32`（`GetCRC` の実体）
-- [UI.md](../Modules/UI.md) — `ButtonEventTrigger`（ButtonExtensions の実体）、`GridListView` 等の仮想リスト
-- [R3Extension.md](../Modules/R3Extension.md) — R3 関連の追加拡張
-- [TextData.md](../Modules/TextData.md) — テキスト取得
+- [UI.md](../../Modules/UI/Manual.md) — `ButtonEventTrigger`（ButtonExtensions の実体）、`GridListView` 等の仮想リスト
+- [R3Extension.md](../../Modules/R3Extension/Manual.md) — R3 関連の追加拡張
+- [TextData.md](../../Modules/TextData/Manual.md) — テキスト取得
 - [INDEX.md](../INDEX.md) — 全モジュール一覧

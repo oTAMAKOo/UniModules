@@ -7,9 +7,9 @@ UniModules 全体の構造・共通パターン・横断的な罠のまとめ。
 ```
 UniModules/
 ├── Extensions/   … 拡張メソッド + 基盤クラス（namespace: Extensions / Extensions.Serialize / Extensions.Devkit）
-├── Modules/      … 機能モジュール約60個（namespace: Modules.*）。ネイティブプラグイン（.mm / .java）は各モジュールの Plugins/ に置く
+├── Modules/      … 機能モジュール約60個（namespace: Modules.*）。各機能フォルダの直下に説明 Manual.md を置く。ネイティブプラグイン（.mm / .java）は各モジュールの Plugins/ に置く
 ├── Editor/       … EditorMenu 基底（利用側で継承して拡張）
-└── Documents~/   … リファレンスドキュメント（Unity のインポート対象外）
+└── Documents~/   … 入口のドキュメント（INDEX.md / Overview.md）と Extensions のリファレンス（Unity のインポート対象外）
 ```
 
 - Extensions は最重要の共通層（拡張メソッド・Singleton・LifetimeDisposable 等）、Modules は機能単位の集まり
@@ -19,7 +19,7 @@ UniModules/
 
 | 分野 | ライブラリ |
 |---|---|
-| Rx | **R3**（Cysharp）。UniRx ではない。移行対応表は [Modules/R3Extension.md](Modules/R3Extension.md) 冒頭 |
+| Rx | **R3**（Cysharp）。UniRx ではない。移行対応表は [R3Extension](../Modules/R3Extension/Manual.md) 冒頭 |
 | 非同期 | UniTask（`Task` は使わない） |
 | シリアライズ | MessagePack。コード生成は Source Generator で自動（csc.rsp の `MESSAGEPACK_ANALYZER_CODE` 有効化時）。手動生成は不要 |
 | Tween | DOTween（`UNITASK_DOTWEEN_SUPPORT` 定義で `tweener.ToUniTask()` 可） |
@@ -68,8 +68,8 @@ using を書く時・コードを探す時はフォルダ名でなく namespace 
 ## ドキュメント群の歩き方
 
 1. 実装したいことが決まっている → [INDEX.md](INDEX.md) の「やりたいこと逆引き」
-2. モジュール名は知っている → INDEX のモジュール一覧から個別 .md へ
+2. モジュール名は知っている → INDEX のモジュール一覧から、機能フォルダ直下の `Manual.md` へ
 3. 汎用処理を書きそうになった → まず [Extensions/Methods.md](Extensions/Methods.md)
-4. 基盤の挙動が不審 → 各 .md の「注意点・罠」を確認
+4. 基盤の挙動が不審 → 各 `Manual.md` の「注意点・罠」を確認
 
 > コード変更でドキュメントと実態がズレた場合は実コードを正とし、ドキュメントを更新すること。

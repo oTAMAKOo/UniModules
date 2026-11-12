@@ -97,6 +97,6 @@ GameObject 操作の安全ラッパー（`UnityUtility`）を提供する。新�
 
 - [Methods.md](Methods.md) — 拡張メソッド群。`.AddTo` の R3 連携、`SampleOne` / `ForEach` / `IsEmpty`、`ToLabelName`（EnumExtensions）、`AesCryptoKey`（AESExtensions）はこちら
 - [Devkit.md](Devkit.md) — エディタ拡張ユーティリティ（`EditorLayoutTools` 等。`PrefabPropertyDrawer` が依存）
-- [../Modules/ObjectPool.md](../Modules/ObjectPool.md) — `Prefab.Source` / `Prefab.Parent` と併用するオブジェクトプール
-- [../Modules/View.md](../Modules/View.md) — View 実装での `Prefab` / `UnityUtility` 使用文脈
-- [../Modules/R3Extension.md](../Modules/R3Extension.md) — R3 関連拡張（`LifetimeDisposable` の購読管理と関係）
+- [ObjectPool](../../Modules/ObjectPool/Manual.md) — `Prefab.Source` / `Prefab.Parent` と併用するオブジェクトプール
+- [View](../../Modules/View/Manual.md) — View 実装での `Prefab` / `UnityUtility` 使用文脈
+- [R3Extension](../../Modules/R3Extension/Manual.md) — R3 関連拡張（`LifetimeDisposable` の購読管理と関係）

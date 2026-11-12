@@ -14,9 +14,9 @@ UniModules の Devkit ツール群はこの層の上に書かれている。**�
 |---|---|
 | GUI 描画（static） | `EditorLayoutTools`（GUI 部品集。static partial・6ファイル分割: 本体（Title/Header/Foldout/ボタン/Outline）+ `.draganddrop` + `.field`（ラベル幅を文字幅に自動調整する入力系・検索ボックス）+ `.sprite` + `.texture` + `.utility`（Pro/Light スキン対応の標準色・ラベル幅）） / `EditorGUIContentLayout`（`ContentsScope` の実体。直接呼びより Scope 推奨） / `EditorSplitterGUILayout`（ドラッグリサイズ可能な上下分割） / `EditorGUISelectableHelpBox`（テキスト選択（コピー）可能な HelpBox） / `BackgroundStyle`（単色背景 GUIStyle 供給） / `GUILayoutOptions`（`ColumnHeader` の引数用） |
 | Scope（using） | GUI.Scope 基底: `BackgroundColorScope` / `ColorScope` / `ContentColorScope` / `DisableScope`（グレーアウト） / `IndentLevelScope`（**絶対値**指定） / `LabelWidthScope` / `ContentsScope`（box 囲み）。`Extensions.Scope` 基底: `AssetEditingScope`（`StartAssetEditing`/`StopAssetEditing`。OnGUI 外で使用可） |
-| Window / Inspector | `SingletonEditorWindow<T>`（シングルトン EditorWindow 基底。`Instance` / `IsExist` / R3 `Disposable` / `OnDestroyAsObservable()` / 初期化フック `OnCreateInstance()`。継承ツールの実例一覧→ [Devkit (Modules)](../Modules/Devkit.md)） / `SpriteSelectorWindow`（汎用 Sprite グリッド選択ダイアログ。検索・単一/複数選択・R3 で結果通知） / `EditorGUIFastScrollView<T>`（可視範囲のみ描画する仮想化スクロールビュー。`Type` と `DrawContent` を実装して使う） / `ScriptlessEditor`（「Script」欄を出さないカスタム Inspector 基底。`DrawDefaultScriptlessInspector()`） |
+| Window / Inspector | `SingletonEditorWindow<T>`（シングルトン EditorWindow 基底。`Instance` / `IsExist` / R3 `Disposable` / `OnDestroyAsObservable()` / 初期化フック `OnCreateInstance()`。継承ツールの実例一覧→ [Devkit (Modules)](../../Modules/Devkit/Manual.md)） / `SpriteSelectorWindow`（汎用 Sprite グリッド選択ダイアログ。検索・単一/複数選択・R3 で結果通知） / `EditorGUIFastScrollView<T>`（可視範囲のみ描画する仮想化スクロールビュー。`Type` と `DrawContent` を実装して使う） / `ScriptlessEditor`（「Script」欄を出さないカスタム Inspector 基底。`DrawDefaultScriptlessInspector()`） |
 | アセット操作（static） | `UnityEditorUtility`（Undo 登録・アセット検索/保存/選択・GUID 変換・Prefab 判定・Missing 検出・AssetBundle 名取得） / `TextureEditorUtility`（テクスチャのストレージ/ランタイムメモリサイズ取得。**namespace は `Extensions`**） |
-| ランタイム系 | `Debug`（グローバル namespace・**`#if !UNITY_EDITOR` ビルド専用**の `UnityEngine.Debug` 置き換え） / `DebugLog`（ログ文字列の中継ハブ。詳細は [Devkit (Modules)](../Modules/Devkit.md) §DebugLog） |
+| ランタイム系 | `Debug`（グローバル namespace・**`#if !UNITY_EDITOR` ビルド専用**の `UnityEngine.Debug` 置き換え） / `DebugLog`（ログ文字列の中継ハブ。詳細は [Devkit (Modules)](../../Modules/Devkit/Manual.md) §DebugLog） |
 
 ## 逆引き（〜したい）
 
@@ -54,7 +54,7 @@ UniModules の Devkit ツール群はこの層の上に書かれている。**�
 | テクスチャのメモリ使用量を調べたい | `TextureEditorUtility.GetStorageMemorySizeLong(texture)` |
 | 矩形に枠線を描きたい | `EditorLayoutTools.Outline(rect, color)` |
 | 単色背景の GUIStyle が欲しい | `BackgroundStyle.Get(color)`（`Extensions.Devkit.Style`） |
-| ビルド実行時のログを購読したい（Bugsnag 連携等） | `DebugLog.On*ReceivedAsObservable()`（→ [Devkit (Modules)](../Modules/Devkit.md)） |
+| ビルド実行時のログを購読したい（Bugsnag 連携等） | `DebugLog.On*ReceivedAsObservable()`（→ [Devkit (Modules)](../../Modules/Devkit/Manual.md)） |
 
 ## 使い方
 
@@ -91,5 +91,5 @@ UniModules の Devkit ツール群はこの層の上に書かれている。**�
 
 - [Core](Core.md) — `Scope` 基底 / `Singleton<T>` / `UnityUtility` / `LifetimeDisposable` / `UnityPathUtility`・`PathUtility`
 - [Methods](Methods.md) — 本モジュール内部でも使用する汎用拡張メソッド（`FixLineEnd` / `IsMatch` / `IsEmpty` 等）
-- [Devkit (Modules)](../Modules/Devkit.md) — `Modules.Devkit.*`（ProjectPrefs / UnityConsole / CompileNotification / DebugLog 詳説）。`SingletonEditorWindow<T>` 継承ツールの実例多数
-- [R3Extension](../Modules/R3Extension.md) — Observable 購読パターン（`.AddTo(Disposable)` 等）
+- [Devkit (Modules)](../../Modules/Devkit/Manual.md) — `Modules.Devkit.*`（ProjectPrefs / UnityConsole / CompileNotification / DebugLog 詳説）。`SingletonEditorWindow<T>` 継承ツールの実例多数
+- [R3Extension](../../Modules/R3Extension/Manual.md) — Observable 購読パターン（`.AddTo(Disposable)` 等）
