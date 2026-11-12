@@ -75,6 +75,8 @@ namespace Modules.StateControl
 			nodeTable.Clear();
 
 			currentNode = null;
+
+			IsExecute = false;
         }
 
         /// <summary> ステート変更を要求 </summary>
@@ -109,8 +111,27 @@ namespace Modules.StateControl
         
         private async UniTask ChangeState<TArgument>(T next, TArgument argument) where TArgument : StateArgument
         {
-			IsExecute = true;
+            // 強制遷移で差し替わるため、この遷移のキャンセルトークンを保持する.
+            var tokenSource = cancellationTokenSource;
 
+            IsExecute = true;
+
+            try
+            {
+                await ExecuteChangeState(next, argument, tokenSource.Token);
+            }
+            finally
+            {
+                // 後続の遷移が開始されている場合は、実行中の状態を維持する.
+                if (cancellationTokenSource == tokenSource)
+                {
+                    IsExecute = false;
+                }
+            }
+        }
+
+        private async UniTask ExecuteChangeState<TArgument>(T next, TArgument argument, CancellationToken cancelToken) where TArgument : StateArgument
+        {
             var prevNode = currentNode;
 
             var nextNode = Get(next);
@@ -139,15 +160,18 @@ namespace Modules.StateControl
 				{
 					var node = prevNode as StateNode<T>;
 
-					await node.Leave(cancellationTokenSource.Token);
+					await node.Leave(cancelToken);
 				}
 				else if (prevNode is StateNode<T, TArgument>)
 				{
 					var node = prevNode as StateNode<T, TArgument>;
 
-					await node.Leave(cancellationTokenSource.Token);
+					await node.Leave(cancelToken);
 				}
 			}
+
+            // キャンセルされた遷移は、ステートを更新せずに終了する.
+            if (cancelToken.IsCancellationRequested){ return; }
 
             // 現在のステートを更新.
 
@@ -159,7 +183,7 @@ namespace Modules.StateControl
 			{
 				var node = currentNode as StateNode<T>;
 
-				await node.Enter(cancellationTokenSource.Token);
+				await node.Enter(cancelToken);
 			}
 			else if (currentNode is StateNode<T, TArgument>)
 			{
@@ -168,12 +192,12 @@ namespace Modules.StateControl
 				await node.Enter(argument);
 			}
 
+            if (cancelToken.IsCancellationRequested){ return; }
+
             if (onChangeStateFinish != null)
             {
                 onChangeStateFinish.OnNext(changeStateInfo);
             }
-
-			IsExecute = false;
         }
 
 		/// <summary> 遷移開始時のイベント </summary>

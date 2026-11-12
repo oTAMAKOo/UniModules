@@ -246,7 +246,15 @@ namespace Modules.Movie
 
             element.Player.Pause(pause);
 
-            element.SetStatus(MovieElement.Status.Pause);
+            if (pause)
+            {
+                element.SetStatus(MovieElement.Status.Pause);
+            }
+            else if (element.ElementStatus == MovieElement.Status.Pause)
+            {
+                // 一時停止からの再開は再生中の状態へ戻す.
+                element.SetStatus(MovieElement.Status.Play);
+            }
         }
 
         public void SetAudioVolume(float volume)

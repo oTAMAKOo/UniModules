@@ -71,15 +71,39 @@ namespace Modules.Localize
 
 			var atlasCache = atlasCacheByAtlasFolder.GetValueOrDefault(atlasFolder);
 
-			if (!force && atlasCache != null){ return; }
+			if (!force && atlasCache != null)
+			{
+				// 読み込み済みの場合は参照数を加算する.
+				atlasCache.AddReference();
+
+				return;
+			}
 
 			var atlas = await atlasLoader.Load(atlasFolder);
 
 			if (atlas != null)
 			{
+				// 読み込み中に他の要求が読み込みを完了している場合は、そのキャッシュを参照する.
+				var loadedCache = atlasCacheByAtlasFolder.GetValueOrDefault(atlasFolder);
+
+				if (!force && loadedCache != null)
+				{
+					loadedCache.AddReference();
+
+					return;
+				}
+
 				var atlasPath = atlasLoader.GetAtlasPath(atlasFolder);
 
 				atlasCache = new AtlasCache(atlasPath, atlas);
+
+				// 再読み込みの場合は参照数を引き継ぎ、新規の場合は要求元の参照を加算する.
+				var refCount = loadedCache != null && 0 < loadedCache.RefCount ? loadedCache.RefCount : 1;
+
+				for (var i = 0; i < refCount; i++)
+				{
+					atlasCache.AddReference();
+				}
 
 				atlasCacheByAtlasFolder[atlasFolder] = atlasCache;
 

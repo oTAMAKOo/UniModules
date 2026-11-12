@@ -154,8 +154,8 @@ namespace Modules.Network.WebDownload
                     break;
                 }
 
-                // 最大同時ダウンロード数以下.
-                if (downloading.Count <= MaxDownloadCount)
+                // 最大同時ダウンロード数未満(0指定時は1件ずつ実行).
+                if (downloading.Count < Math.Max(1u, MaxDownloadCount))
                 {
                     // ダウンロード待ちの先頭を取得.
                     var first = downloadItems.FirstOrDefault(x => downloading.All(y => x.Key != y.Url));

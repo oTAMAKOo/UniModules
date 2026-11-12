@@ -73,7 +73,7 @@ namespace Modules.UI
             set { sprites = value; }
         }
 
-        public RectTransform RargetTransform
+        public RectTransform TargetTransform
         {
             get { return targetTransform; }
             set { targetTransform = value; }

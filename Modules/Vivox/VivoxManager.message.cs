@@ -123,7 +123,7 @@ namespace Modules.Vivox
 
 			var directedTextMessage = textMessage.Value;
 
-			if (onReceivedMessage != null)
+			if (onReceivedDirectedMessage != null)
 			{
 				onReceivedDirectedMessage.OnNext(directedTextMessage);
 			}

@@ -369,7 +369,8 @@ namespace Modules.AssetBundles
                 {
                     if (cancelToken.IsCancellationRequested) { break; }
 
-                    if (downloadRunning.Count <= maxDownloadCount) { break; }
+                    // 同時ダウンロード数未満(0指定時は1件ずつ実行).
+                    if (downloadRunning.Count < Math.Max(1u, maxDownloadCount)) { break; }
 
                     await UniTask.NextFrame(CancellationToken.None);
                 }

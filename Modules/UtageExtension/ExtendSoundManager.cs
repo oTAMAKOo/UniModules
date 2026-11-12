@@ -1,5 +1,5 @@
 ﻿
-#if ENABLE_UTAGE
+#if (ENABLE_CRIWARE_ADX || ENABLE_CRIWARE_ADX_LE) && ENABLE_UTAGE
 
 using UnityEngine;
 using System;

@@ -122,7 +122,8 @@ namespace Modules.BehaviorControl
                     {
                         Generate(setting, importData);
 
-                        DeleteMissingSourceAsset(setting, importData.Keys.ToArray());
+                        // 更新の無いファイルは読み込み結果に含まれないため、削除判定には全ての入力ファイルを渡す.
+                        DeleteMissingSourceAsset(setting, GetImportFilePaths(format));
                     }
                 }
             }
@@ -155,16 +156,24 @@ namespace Modules.BehaviorControl
             Prefs.ImportDirectory = directory;
         }
 
-        private Dictionary<string, ImportData> LoadImportData(BehaviorControlSetting setting, FileLoader.Format fileFormat)
+        /// <summary> 選択中のフォルダにある入力ファイルの一覧 </summary>
+        private string[] GetImportFilePaths(FileLoader.Format fileFormat)
         {
+            if (!Directory.Exists(selectionDirectory)){ return new string[0]; }
+
             var extension = FileLoader.GetFileExtension(fileFormat);
 
-            if (!Directory.Exists(selectionDirectory)){ return null; }
-
-            var files = Directory.EnumerateFiles(selectionDirectory, "*.*", SearchOption.AllDirectories)
+            return Directory.EnumerateFiles(selectionDirectory, "*.*", SearchOption.AllDirectories)
                 .Where(x => Path.GetExtension(x) == extension)
                 .Select(x => PathUtility.ConvertPathSeparator(x))
                 .ToArray();
+        }
+
+        private Dictionary<string, ImportData> LoadImportData(BehaviorControlSetting setting, FileLoader.Format fileFormat)
+        {
+            if (!Directory.Exists(selectionDirectory)){ return null; }
+
+            var files = GetImportFilePaths(fileFormat);
 
             var dictionary = new Dictionary<string, ImportData>();
 

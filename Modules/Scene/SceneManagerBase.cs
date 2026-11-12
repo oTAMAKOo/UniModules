@@ -495,7 +495,9 @@ namespace Modules.Scene
                     result &= cacheScenes.All(x => x != sceneInstance);
 
                     // 次のシーンのPreLoad対象ではない.
-                    result &= currentSceneArgument.PreLoadScenes.All(y => !y.Equals(sceneInstance.Identifier));
+                    var preLoadScenes = currentSceneArgument.PreLoadScenes;
+
+                    result &= preLoadScenes == null || preLoadScenes.All(y => !y.Equals(sceneInstance.Identifier));
 
                     return result;
                 };

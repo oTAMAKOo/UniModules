@@ -424,16 +424,17 @@ namespace Modules.Sound
         {
             if (inElement != null)
             {
+                // 再生開始時に要素へ設定される音量を目標値とする(マスター音量は要素の音量の適用時に乗算される).
+                var soundParam = GetSoundParam(inElement.Type);
+
+                var targetVolume = soundParam != null ? soundParam.volume : inElement.Volume;
+
                 inElement.Volume = 0;
 
                 if (!inElement.IsPlaying)
                 {
                     inElement.Play();
                 }
-
-                var soundParam = GetSoundParam(inElement.Type);
-
-                var targetVolume = Volume * soundParam.volume;
 
                 var firstVol = outElement.Volume;
 

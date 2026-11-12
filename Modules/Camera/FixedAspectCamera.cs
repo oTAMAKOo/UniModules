@@ -69,13 +69,15 @@ namespace Modules.FixedAspectCamera
 
             if (aspectRate > nowAspect)
             {
+                // 指定の比率が画面より横長: 高さを縮めて上下に帯を作る.
                 changeAspect = nowAspect / aspectRate;
-                target.rect = new Rect((1 - changeAspect) * 0.5f, 0, changeAspect, 1);
+                target.rect = new Rect(0, (1 - changeAspect) * 0.5f, 1, changeAspect);
             }
             else
             {
+                // 指定の比率が画面より縦長: 幅を縮めて左右に帯を作る.
                 changeAspect = aspectRate / nowAspect;
-                target.rect = new Rect(0, (1 - changeAspect) * 0.5f, 1, changeAspect);
+                target.rect = new Rect((1 - changeAspect) * 0.5f, 0, changeAspect, 1);
             }
 
             target.ResetAspect();

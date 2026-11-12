@@ -208,6 +208,8 @@ namespace Modules.Master
                 catch (Exception e)
                 {
                     exception = e;
+
+                    result = false;
                 }
             }
 

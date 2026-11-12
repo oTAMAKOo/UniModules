@@ -105,6 +105,8 @@ namespace Modules.Crypto
 
                         using (new LabelWidthScope(50f))
                         {
+                            EditorGUI.BeginChangeCheck();
+
                             var key = EditorGUILayout.TextField("Key", keyInfo.Key);
 
                             if (EditorGUI.EndChangeCheck())

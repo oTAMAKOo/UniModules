@@ -37,7 +37,7 @@ namespace Modules.SpriteAnimation
 
         //----- property -----
 
-        public State CurrentState { get; private set; }
+        public State CurrentState { get; private set; } = State.Stop;
 
         public string CurrentAnimation { get; private set; }
 
@@ -147,6 +147,8 @@ namespace Modules.SpriteAnimation
 
         private void UpdateAnimation(int index)
         {
+            if (spriteCache == null){ return; }
+
             var spriteName = GetSpriteName(index);
 
             var sprite = spriteCache.GetSprite(spriteName);

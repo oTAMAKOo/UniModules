@@ -18,6 +18,8 @@ namespace Modules.Localize
 		[SerializeField]
 		private string[] folderGuids = null;
 
+		private bool requested = false;
+
 		//----- property -----
 
 		public IReadOnlyList<string> FolderGuids
@@ -43,6 +45,11 @@ namespace Modules.Localize
 		{
 			if (folderGuids.IsEmpty()){ return; }
 
+			// 要求済みの場合は、参照数を重ねて加算しない.
+			if (requested){ return; }
+
+			requested = true;
+
 			var localizeAtlasManager = LocalizeAtlasManager.Instance;
 
 			var tasks = new List<UniTask>();
@@ -66,6 +73,11 @@ namespace Modules.Localize
 		public void ReleaseAtlas()
 		{
 			if (folderGuids.IsEmpty()){ return; }
+
+			// 要求していない場合は、参照数を減算しない.
+			if (!requested){ return; }
+
+			requested = false;
 
 			var localizeAtlasManager = LocalizeAtlasManager.Instance;
 

@@ -106,6 +106,11 @@ namespace Modules.WebView
             {
                 webViewContent.Stop();
             }
+
+            if (onStop != null)
+            {
+                onStop.OnNext(Unit.Default);
+            }
         }
 
         public virtual void OnStop() { }

@@ -86,7 +86,7 @@ namespace Modules.Amazon.S3
 
             if (!string.IsNullOrEmpty(prefix))
             {
-                if (prefix.EndsWith(PathUtility.PathSeparator.ToString()))
+                if (!prefix.EndsWith(PathUtility.PathSeparator.ToString()))
                 {
                     prefix += PathUtility.PathSeparator;
                 }

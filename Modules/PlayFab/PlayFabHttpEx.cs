@@ -39,7 +39,7 @@ namespace Modules.PlayFabCSharp
                 return new PlayFabError
                 {
                     Error = PlayFabErrorCode.ConnectionError,
-                    ErrorMessage = e.InnerException.Message
+                    ErrorMessage = e.InnerException != null ? e.InnerException.Message : e.Message
                 };
             }
             catch (Exception e)
@@ -180,7 +180,7 @@ namespace Modules.PlayFabCSharp
                     return new PlayFabError
                     {
                         Error = PlayFabErrorCode.ConnectionError,
-                        ErrorMessage = e.InnerException.Message
+                        ErrorMessage = e.InnerException != null ? e.InnerException.Message : e.Message
                     };
                 }
                 catch (Exception e)

@@ -110,6 +110,8 @@ namespace Modules.UI
 
         private void UpdateSnapTarget()
         {
+            if (snapTargets == null){ return; }
+
             float? nearest = null;
 
             GameObject nearestTarget = null;

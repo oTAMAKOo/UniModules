@@ -61,11 +61,6 @@ namespace Modules.Shaders
                 type = Type.Image;
             }
 
-            if (shader == null && !string.IsNullOrEmpty(shaderName))
-            {
-                Set(shaderName);
-            }
-
             var material = GetMaterial();
 
             if (defaultShader == null && material != null)
@@ -73,7 +68,22 @@ namespace Modules.Shaders
                 defaultShader = material.shader;
             }
 
+            // 適用処理は未初期化だと初期化を呼び出すため、初期化済みにしてから適用する.
             initialized = true;
+
+            if (shader == null && !string.IsNullOrEmpty(shaderName))
+            {
+                var findShader = Shader.Find(shaderName);
+
+                if (findShader != null)
+                {
+                    Set(findShader);
+                }
+                else
+                {
+                    Debug.LogError($"Shader not found. ({shaderName}).", this);
+                }
+            }
         }
 
         public void Set(string shaderName)
@@ -100,6 +110,8 @@ namespace Modules.Shaders
             var material = GetMaterial();
 
             shader = shader == null ? defaultShader : shader;
+
+            if (shader == null || material == null){ return; }
 
             shaderName = shader.name;
 

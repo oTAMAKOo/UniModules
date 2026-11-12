@@ -29,10 +29,23 @@ namespace Modules.Resolution
 
 		private CanvasScaler canvasScaler = null;
 		private Vector2? lastLetterBoxSize = null;
+		private float statusBarHeight = 0f;
 
         //----- property -----
 
-        public float StatusBarHeight { get; set; }
+        public float StatusBarHeight
+        {
+            get { return statusBarHeight; }
+            set
+            {
+                if (statusBarHeight == value){ return; }
+
+                statusBarHeight = value;
+
+                // 帯のサイズが同じでも次回の適用で反映されるよう、前回の適用結果を破棄する.
+                lastLetterBoxSize = null;
+            }
+        }
 
         //----- method -----
 

@@ -35,7 +35,7 @@ namespace Modules.Lua
 
 				#else
 
-				throw new InvalidOperationException("Require un define XLUA_GENERAL.");
+				throw new InvalidOperationException("Require define XLUA_GENERAL.");
 
 				#endif
 			}
