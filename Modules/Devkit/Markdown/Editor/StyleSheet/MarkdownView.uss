@@ -1,0 +1,223 @@
+/* Markdown 表示の標準スタイル. */
+
+.md-root {
+    padding: 14px 16px 24px 16px;
+    font-size: 13px;
+    white-space: normal;
+    --md-line-height: 135;
+}
+
+.md-dark {
+    --md-text-color: rgb(214, 214, 214);
+    --md-heading-color: rgb(242, 242, 242);
+    --md-sub-color: rgb(150, 150, 150);
+    --md-border-color: rgba(255, 255, 255, 0.12);
+    --md-panel-color: rgba(255, 255, 255, 0.045);
+    --md-panel-alt-color: rgba(255, 255, 255, 0.025);
+    --md-code-block-color: rgba(0, 0, 0, 0.28);
+    --md-accent-color: rgb(92, 150, 235);
+    --md-quote-bar-color: rgba(255, 255, 255, 0.22);
+    --md-link-color: rgb(116, 174, 255);
+    --md-inline-code-color: rgb(236, 164, 120);
+    --md-inline-code-background-color: rgba(255, 255, 255, 0.09);
+}
+
+.md-light {
+    --md-text-color: rgb(36, 41, 47);
+    --md-heading-color: rgb(16, 20, 24);
+    --md-sub-color: rgb(100, 108, 116);
+    --md-border-color: rgba(0, 0, 0, 0.16);
+    --md-panel-color: rgba(0, 0, 0, 0.045);
+    --md-panel-alt-color: rgba(0, 0, 0, 0.02);
+    --md-code-block-color: rgba(0, 0, 0, 0.06);
+    --md-accent-color: rgb(9, 105, 218);
+    --md-quote-bar-color: rgba(0, 0, 0, 0.22);
+    --md-link-color: rgb(9, 105, 218);
+    --md-inline-code-color: rgb(176, 62, 24);
+    --md-inline-code-background-color: rgba(0, 0, 0, 0.07);
+}
+
+.md-root Label {
+    color: var(--md-text-color);
+    white-space: normal;
+    padding: 0;
+    margin: 0;
+}
+
+/* 見出し */
+
+.md-root .md-heading {
+    color: var(--md-heading-color);
+    -unity-font-style: bold;
+    margin-top: 22px;
+    margin-bottom: 8px;
+}
+
+
+.md-root .md-h1 {
+    font-size: 24px;
+    margin-top: 4px;
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+    border-bottom-width: 2px;
+    border-bottom-color: var(--md-accent-color);
+}
+
+.md-root .md-h2 {
+    font-size: 18px;
+    padding-bottom: 5px;
+    border-bottom-width: 1px;
+    border-bottom-color: var(--md-border-color);
+}
+
+.md-root .md-h3 {
+    font-size: 15px;
+}
+
+.md-root .md-h4, .md-root .md-h5, .md-root .md-h6 {
+    font-size: 13px;
+}
+
+.md-root .md-heading.md-first {
+    margin-top: 0;
+}
+
+/* 段落 */
+
+.md-root .md-paragraph {
+    margin-bottom: 10px;
+}
+
+/* リード文(先頭の大見出しの直後の段落) */
+
+.md-root .md-lead {
+    font-size: 15px;
+    color: var(--md-heading-color);
+    margin-top: 2px;
+    margin-bottom: 8px;
+}
+
+/* 引用 */
+
+.md-quote {
+    margin-bottom: 12px;
+    padding: 9px 12px 1px 12px;
+    border-left-width: 3px;
+    border-left-color: var(--md-quote-bar-color);
+    background-color: var(--md-panel-color);
+    border-top-right-radius: 4px;
+    border-bottom-right-radius: 4px;
+}
+
+.md-root .md-quote Label {
+    font-size: 12px;
+}
+
+/* コード */
+
+.md-code-block {
+    margin-bottom: 12px;
+    padding: 10px 12px;
+    background-color: var(--md-code-block-color);
+    border-width: 1px;
+    border-color: var(--md-border-color);
+    border-radius: 5px;
+}
+
+.md-root .md-code-lang {
+    font-size: 10px;
+    color: var(--md-sub-color);
+    margin-bottom: 4px;
+}
+
+.md-root .md-code {
+    font-size: 12px;
+    white-space: pre-wrap;
+}
+
+/* リスト */
+
+.md-list {
+    margin-bottom: 8px;
+}
+
+.md-list-item {
+    flex-direction: row;
+    margin-bottom: 4px;
+}
+
+.md-root .md-list-marker {
+    width: 20px;
+    flex-shrink: 0;
+    -unity-text-align: upper-center;
+    color: var(--md-accent-color);
+}
+
+.md-list-content {
+    flex-grow: 1;
+    flex-shrink: 1;
+    flex-basis: 0;
+}
+
+.md-root .md-list-content > .md-paragraph {
+    margin-bottom: 3px;
+}
+
+.md-list-content > .md-list {
+    margin-bottom: 0;
+}
+
+/* 表 */
+
+.md-table {
+    margin-bottom: 14px;
+    border-width: 1px;
+    border-color: var(--md-border-color);
+    border-radius: 5px;
+    overflow: hidden;
+}
+
+.md-table-row {
+    flex-direction: row;
+    border-top-width: 1px;
+    border-top-color: var(--md-border-color);
+}
+
+.md-table-row-alt {
+    background-color: var(--md-panel-alt-color);
+}
+
+.md-table-header {
+    border-top-width: 0;
+    background-color: var(--md-panel-color);
+}
+
+.md-root .md-table-cell {
+    padding: 6px 10px;
+    font-size: 12px;
+    border-left-width: 1px;
+    border-left-color: var(--md-border-color);
+}
+
+.md-root .md-table-cell.md-first {
+    border-left-width: 0;
+}
+
+.md-root .md-table-header .md-table-cell {
+    -unity-font-style: bold;
+    color: var(--md-heading-color);
+}
+
+/* 区切り線・画像 */
+
+.md-hr {
+    height: 1px;
+    margin-top: 6px;
+    margin-bottom: 16px;
+    background-color: var(--md-border-color);
+}
+
+.md-image {
+    margin-bottom: 12px;
+    align-self: flex-start;
+}

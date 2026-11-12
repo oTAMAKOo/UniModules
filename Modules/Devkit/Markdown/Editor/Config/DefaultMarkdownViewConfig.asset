@@ -1,0 +1,18 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 21be6890388cce7499f4113862e8cd6b, type: 3}
+  m_Name: DefaultMarkdownViewConfig
+  m_EditorClassIdentifier: Assembly-CSharp-Editor::Modules.Devkit.Markdown.DefaultMarkdownViewConfig
+  defaultStyleSheet: {fileID: 7433441132597879392, guid: 7d3f5b0e9c2a4e61b8f4a6d1c3e59027, type: 3}
+  rules:
+  - fileName: Manual.md
+    styleSheet: {fileID: 7433441132597879392, guid: 7d3f5b0e9c2a4e61b8f4a6d1c3e59027, type: 3}
