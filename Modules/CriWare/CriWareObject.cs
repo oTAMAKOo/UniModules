@@ -29,6 +29,12 @@ namespace Modules.CriWare
         [SerializeField]
         private Prefab initializerPrefab = null;
 
+        // 初期化時にアタッチするDSPバス設定名(空の場合はアタッチしない).
+        [SerializeField]
+        private string dspBusSettingName = null;
+
+        private CriAtom criAtom = null;
+
         #endif
 
         //----- property -----
@@ -37,6 +43,9 @@ namespace Modules.CriWare
 
         public CriWareInitializer Initializer { get; private set; }
         public CriWareCustomErrorHandler ErrorHandler { get; private set; }
+
+        /// <summary> アタッチ中のDSPバス設定名. </summary>
+        public string AttachedDspBusSettingName { get; private set; }
 
         #endif
 
@@ -129,7 +138,7 @@ namespace Modules.CriWare
             #endif
 
             // CriAtomはライブラリの初期化後に生成.
-            var criAtom = gameObject.AddComponent<CriAtom>();
+            criAtom = gameObject.AddComponent<CriAtom>();
 
             // CriAtomのSetupが隠蔽されているので手動で初期化する.
             criAtom.acfFile = Initializer.atomConfig.acfFileName;
@@ -152,10 +161,85 @@ namespace Modules.CriWare
 
                 acfPath += CriAssetDefinition.AcfExtension;
 
+                // アタッチ中のDSPバス設定を解除.
+                DetachDspBusSetting();
+
                 CriAtomEx.RegisterAcf(null, acfPath);
+
+                if (!string.IsNullOrEmpty(dspBusSettingName))
+                {
+                    AttachDspBusSetting(dspBusSettingName);
+                }
             }
 
             #endif
         }
+
+        #if ENABLE_CRIWARE_ADX || ENABLE_CRIWARE_ADX_LE || ENABLE_CRIWARE_SOFDEC
+
+        /// <summary> DSPバス設定をアタッチ(再生中の音が途切れる場合がある). </summary>
+        public bool AttachDspBusSetting(string settingName)
+        {
+            if (string.IsNullOrEmpty(settingName)){ return false; }
+
+            if (!CriAtomPlugin.IsLibraryInitialized())
+            {
+                Debug.LogWarning("CriAtom library is not initialized.");
+
+                return false;
+            }
+
+            if (settingName == AttachedDspBusSettingName){ return true; }
+
+            if (!ContainsDspBusSetting(settingName))
+            {
+                Debug.LogWarning($"DSP bus setting not found in ACF. ({settingName}).");
+
+                return false;
+            }
+
+            DetachDspBusSetting();
+
+            CriAtomEx.AttachDspBusSetting(settingName);
+
+            AttachedDspBusSettingName = settingName;
+
+            // CriAtom側の設定名にも反映.
+            if (criAtom != null)
+            {
+                criAtom.dspBusSetting = settingName;
+            }
+
+            return true;
+        }
+
+        /// <summary> DSPバス設定をデタッチ. </summary>
+        public void DetachDspBusSetting()
+        {
+            if (AttachedDspBusSettingName == null){ return; }
+
+            CriAtomEx.DetachDspBusSetting();
+
+            AttachedDspBusSettingName = null;
+
+            if (criAtom != null)
+            {
+                criAtom.dspBusSetting = string.Empty;
+            }
+        }
+
+        private static bool ContainsDspBusSetting(string settingName)
+        {
+            var count = CriAtomExAcf.GetNumDspSettings();
+
+            for (var i = 0; i < count; i++)
+            {
+                if (CriAtomExAcf.GetDspSettingNameByIndex((ushort)i) == settingName){ return true; }
+            }
+
+            return false;
+        }
+
+        #endif
     }
 }
