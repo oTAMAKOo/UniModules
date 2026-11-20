@@ -48,6 +48,10 @@ namespace Modules.TextData.Editor
 
         private static TextDataAsset externalAsset = null;
 
+        private static bool internalGenerateFailed = false;
+
+        private static bool externalGenerateFailed = false;
+
         private static DateTime? nextCheckTime = null;
 
         //----- property -----
@@ -103,13 +107,16 @@ namespace Modules.TextData.Editor
 
             if (config.Internal != null)
             {
-                if (internalAsset == null)
+                if (internalAsset == null && !internalGenerateFailed)
                 {
                     internalAsset = TextDataLoader.LoadTextDataAsset(TextType.Internal);
 
                     if (internalAsset == null)
                     {
                         internalAsset = GenerateTextDataAsset(TextType.Internal);
+
+                        // 生成できなかった場合はスクリプト再読み込みまで再生成しない.
+                        internalGenerateFailed = internalAsset == null;
                     }
                 }
 
@@ -123,15 +130,18 @@ namespace Modules.TextData.Editor
 
             //------ Distribution ------
 
-            if (config.EnableExternal)
+            if (IsExternalAvailable(config))
             {
-                if (externalAsset == null)
+                if (externalAsset == null && !externalGenerateFailed)
                 {
                     externalAsset = TextDataLoader.LoadTextDataAsset(TextType.External);
 
                     if (externalAsset == null)
                     {
                         externalAsset = GenerateTextDataAsset(TextType.External);
+
+                        // 生成できなかった場合はスクリプト再読み込みまで再生成しない.
+                        externalGenerateFailed = externalAsset == null;
                     }
                 }
 
@@ -159,6 +169,17 @@ namespace Modules.TextData.Editor
             if (TextDataExcel.Importing || TextDataExcel.Exporting) { return true; }
 
             return false;
+        }
+
+        /// <summary> 配信テキストを自動更新の対象にするか </summary>
+        private static bool IsExternalAvailable(TextDataConfig config)
+        {
+            if (!config.EnableExternal) { return false; }
+
+            // 出力先フォルダが未設定の場合はアセットを生成できない.
+            if (string.IsNullOrEmpty(config.External.AseetFolderPath)) { return false; }
+
+            return true;
         }
 
         private static TextDataAsset GenerateTextDataAsset(TextType textType)

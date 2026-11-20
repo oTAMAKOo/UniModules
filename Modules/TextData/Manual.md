@@ -84,7 +84,7 @@ Guid と ID名 の重複は Export 時に処理される:
 - **ダミーテキスト（`#` 付き）はエディタ専用**: textGuid 未設定時のみレイアウト確認用に表示。`OnDisable`/ビルド時に除去されるので実機には出ない
 - **`TextData.Instance` のコンストラクタは private**: `Singleton<T>` 経由（`Instance` 初回アクセスで生成）。`CreateInstance()` 呼び出しは不要
 - **配信（External）テキストに enum はない**: `ExternalSetting` に scriptFolder 自体がなく生成対象外。必ず文字列キーでアクセス
-- **Editor の自動更新**: Excel 保存だけで yaml/アセット/enum まで自動更新される（`TextDataAssetUpdater`、ProjectPrefs `autoUpdate` 既定 true）。Excel が開かれていても更新は走るが、Import ボタンはファイルロック中無効。再生中・バッチモード・コンパイル中・アセット更新中・手動の Import / Export 実行中は自動更新しない。選択中の言語のアセットが無いときは `autoUpdate` の値に関係なく1回生成する
+- **Editor の自動更新**: Excel 保存だけで yaml/アセット/enum まで自動更新される（`TextDataAssetUpdater`、ProjectPrefs `autoUpdate` 既定 true）。Excel が開かれていても更新は走るが、Import ボタンはファイルロック中無効。再生中・バッチモード・コンパイル中・アセット更新中・手動の Import / Export 実行中は自動更新しない。選択中の言語のアセットが無いときは `autoUpdate` の値に関係なく1回生成する。生成してもアセットができなかった場合は、スクリプトの再読み込みまで生成し直さない。配信テキストは `EnableExternal` が true で、かつ `ExternalSetting` のアセット出力先が設定されているときだけ自動更新の対象にする
 - **エディタで言語が未選択だと何も動かない**: `LanguageManager.Current` が null のあいだ、`TextDataLoader.Reload()`・自動更新は何もせず、Generate Window は「No language selected.」を表示する。`LanguageManager.Initialize` での言語登録と言語の選択が前提
 - **`LoadEmbedded` に渡したアセットが null（パスの誤り等）だと、何もせず戻る**（既存の辞書も消さず、エラーも出ない）
 - **Export は Excel の ID 列（Guid）へ書き戻さない**: Guid の正本は yaml 側。Excel の ID 列が空でも、出力済み yaml と ID名 が一致すれば Guid が復元される（未 Import でも Guid が変わらないようにする仕様）。Excel の ID 列へ反映するには Import を実行する
