@@ -50,6 +50,7 @@ uGUI 標準コンポーネントのラッパー（Extension）と、仮想スク
 | 描画なしのタッチ判定（ブロッカー） | `GraphicCast` |
 | 頂点カラーでグラデーション | `ColorGradation` |
 | 画像の左右/上下反転（scale=-1 を使わず） | `FlipGraphic` |
+| 縁取り・影などのシェーダーが矩形の外にも描けるよう、画像の描画範囲を広げる | `ExpandGraphic.Padding`（RectTransform と同じ単位） |
 | UI を発光させる | `GlowGraphic.emissionColor` |
 | CanvasGroup 等のフェード制御 | `FadeGraphic`（非 MonoBehaviour） |
 | スワイプ検知 | `UISwipeHandler.OnSwipeLeftAsObservable()` 等 |
@@ -110,6 +111,7 @@ uGUI 標準コンポーネントのラッパー（Extension）と、仮想スク
 - **`Modules.UI.Extension` の各 UI クラスは abstract**。使う・継承するのは利用側の具象クラス。基盤側を直接継承した新クラスを乱造しない
 - **`UICanvas` のカメラの自動割当は、読み込み済みの全シーンの GameObject を走査する**（`UnityUtility.FindCameraForLayer`。GameObject の数に比例して重く、確保も多い）。実行中は、表示（OnEnable）のときに前に割り当てたカメラが破棄されずに設定されたままなら走査しない。初回・カメラが破棄されたとき・別のカメラが設定されていたときは走査して、レイヤーに合う最初の `UICanvasCamera` を割り当てる（DontDestroyOnLoad のカメラが先）。カメラが null の間は毎フレーム走査する
 - **`SlicedFillGraphic` は他のメッシュ変更コンポーネント（`ColorGradation` / `FlipGraphic` 等）より後（コンポーネント順で下）に配置する**。`Graphic` は `GetComponents` の順（インスペクタの並び順）で `IMeshModifier` を適用するため、順序で結果が変わる。`ColorGradation` が後にあると頂点バウンドから勾配を計算し直すためゲージが縮むほどグラデーションが圧縮され、`FlipGraphic` が後にあると `Origin` と見た目の向きが逆になる（順序不備はインスペクタが警告する）
+- **`ExpandGraphic` は 1 枚の矩形（4 頂点）のメッシュだけを広げる**。頂点が 4 つでないメッシュ（border のある Sliced、Tiled・Filled の `Image`、`useSpriteMesh`、TextMeshPro など）は変更しない。広げた頂点の UV は元の位置と UV の対応を延長した値なので、広げた範囲はテクスチャの元の範囲の外（アトラスなら隣の絵）を指す。元の矩形の中の位置（0〜1。広げた範囲は 0 未満・1 超）に `ExpandGraphic.PositionOffset`（4）を足した値を uv0.zw に入れるので、マテリアルのシェーダーはこれを見て、元の範囲の外ではテクスチャを読まないようにする（uv0.zw が 0 なら部品が付いていない）。そうしないシェーダーで使うと、広げた範囲に隣の絵が出る。ほかのメッシュ変更コンポーネントより後（コンポーネント順で下）に置く（`ColorGradation` が後にあると、広げた範囲で勾配を計算する）。タッチの判定は RectTransform の範囲のままで、広がらない
 - **`SlicedFillGraphic` のカット基準は描画メッシュ全体の範囲**（RectTransform の rect ではない）。Sprite の padding や `preserveAspect` で描画範囲が rect より小さい場合、その描画範囲に対する割合になる
 - **`SlicedFillGraphic` は quad の集合でないメッシュをカットしない**（`Image.useSpriteMesh` や TextMeshPro 等）。頂点数が 6 の倍数でないメッシュは変更せずそのまま通す
 - **`ProgressBar` の `Steps` は 2 以上で有効**（0 / 1 は段階なし）。`CurrentStep` は 0〜`Steps - 1` の範囲
