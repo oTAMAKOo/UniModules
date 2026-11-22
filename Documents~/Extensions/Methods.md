@@ -34,6 +34,7 @@ string・コレクション・Dictionary・Transform/RectTransform・Color・Enu
 | 文字列→任意型（int/enum/bool等）変換 | `"123".To<int>()` |
 | 範囲外例外を出さない Substring | `str.SafeSubstring(start, len)` |
 | リッチテキストタグ除去 | `str.RemoveTag()` |
+| 数字を等幅で表示（TextMeshPro。タイマー・カウントの揺れ防止） | `str.ToMonospaceDigits(0.6f)` |
 | SHA256 / CRC32 ハッシュ | `str.GetHash()` / `str.GetCRC()` |
 | AES 暗号化/復号 | `bytes.Encrypt(key)` / `str.Decrypt(key)`（`AesCryptoKey`） |
 | GZip/Deflate 圧縮/解凍 | `bytes.Compress()` / `bytes.Decompress()` |
@@ -70,6 +71,7 @@ string・コレクション・Dictionary・Transform/RectTransform・Color・Enu
 | `GetHash([Encoding])` / `GetCRC([Encoding])` | SHA256 / CRC32 ハッシュ（16進小文字文字列） |
 | `IsMatch(keywords)` | 全キーワードを含むか（大文字小文字無視） |
 | `RemoveTag()` | `<...>` タグを除去（リッチテキスト除去） |
+| `ToMonospaceDigits(widthEm)` | 数字(0-9)の並びを TextMeshPro の `<mspace=widthEm em>` で囲む。数字以外の文字（`:` `/` `,` 等）とタグの中の数字は変えない。幅はフォントの数字の幅に合わせて指定する（小数点は端末の言語設定によらず `.`） |
 | `To<T>(defaultValue = default)` | 任意型へ変換（整数/浮動小数/bool("0"/"1"可)/DateTime/enum/Nullable 対応） |
 
 string を対象とする他カテゴリのメソッド: `HexToColor` / `ToHexCode`（→ Color）、`Encrypt` / `Decrypt`（→ 暗号）、`Compress(Encoding)`（→ 圧縮）。

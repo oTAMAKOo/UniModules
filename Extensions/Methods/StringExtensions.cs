@@ -2,6 +2,7 @@
 using System;
 using System.Linq;
 using System.Text;
+using System.Globalization;
 using System.Security.Cryptography;
 using System.Text.RegularExpressions;
 using Extensions.Serialize;
@@ -151,6 +152,19 @@ namespace Extensions
         public static string RemoveTag(this string text)
         {
             return Regex.Replace(text, "<.*?>", string.Empty);
+        }
+
+        /// <summary>
+        /// 数字(0-9)の並びを TextMeshPro の mspace タグで囲んだ文字列を返す.
+        /// 数字は1文字ずつ widthEm の幅で並び、数字以外の文字とタグの中の数字は変えない.
+        /// </summary>
+        public static string ToMonospaceDigits(this string text, float widthEm)
+        {
+            if (string.IsNullOrEmpty(text)) { return text; }
+
+            var openTag = $"<mspace={widthEm.ToString(CultureInfo.InvariantCulture)}em>";
+
+            return Regex.Replace(text, "<[^>]*>|[0-9]+", m => m.Value[0] == '<' ? m.Value : openTag + m.Value + "</mspace>");
         }
 
         /// <summary> 文字列を指定された型に変換 </summary>
