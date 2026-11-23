@@ -37,7 +37,16 @@ namespace Modules.PatternTexture
             if(EditorGUI.EndChangeCheck())
             {
                 UnityEditorUtility.RegisterUndo(instance);
+
+                // 外すときは選択中のパターン名も空にする (PatternTexture が設定されている間に行う).
+                if (patternTexture == null)
+                {
+                    instance.PatternName = null;
+                }
+
                 instance.PatternTexture = patternTexture;
+
+                instance.SetAllDirty();
             }
 
             if (instance.PatternTexture != null)
@@ -189,6 +198,24 @@ namespace Modules.PatternTexture
                                 instance.SetNativeSize();
                             }
                         }
+                    }
+                }
+            }
+
+            // 仮表示中は仮表示のパターンのサイズで SetNativeSize する.
+            if (instance.IsDummyActive)
+            {
+                GUILayout.Space(2f);
+
+                using (new EditorGUILayout.HorizontalScope())
+                {
+                    GUILayout.Space(EditorGUIUtility.labelWidth);
+
+                    if (GUILayout.Button("SetNativeSize"))
+                    {
+                        Undo.RecordObject(instance.rectTransform, "SetNativeSize");
+
+                        instance.SetNativeSize();
                     }
                 }
             }

@@ -122,7 +122,7 @@ UniModules（プロジェクト非依存のゲーム基盤）のリファレン�
 | [Bugsnag](../Modules/Bugsnag/Manual.md) | クラッシュ・エラーレポート送信基盤（エディタでは無効・実機のみ） |
 | [Window](../Modules/Window/Manual.md) | ポップアップ開閉ライフサイクルと多重表示管理（利用側で `Modules.Window.Window` 派生 + `PopupManager<T>` 派生を実装） |
 | [Resolution](../Modules/Resolution/Manual.md) | セーフエリア・レターボックス等の画面解像度適応UI部品 |
-| [PatternTexture](../Modules/PatternTexture/Manual.md) | 差分絵をブロック重複排除でパックする独自アトラス+描画UI |
+| [PatternTexture](../Modules/PatternTexture/Manual.md) | 差分絵をブロック重複排除でパックする独自アトラス+描画UI（エディタ専用の仮表示 `DummyPatternImage` を含む） |
 | [MessagePack](../Modules/MessagePack/Manual.md) | MP共通Resolver（コード生成はSource Generatorで自動化済み） |
 | [FileCache](../Modules/FileCache/Manual.md) | AES暗号化・有効期限付きディスクキャッシュ |
 | [AmazonWebService](../Modules/AmazonWebService/Manual.md) | エディタからS3へ配信データをアップロードするAWSラッパー |

@@ -15,7 +15,7 @@ namespace Modules.PatternTexture
     [ExecuteAlways]
     [RequireComponent(typeof(RectTransform))]
     [RequireComponent(typeof(CanvasRenderer))]
-    public sealed class PatternImage : MaskableGraphic, ICanvasRaycastFilter, ILayoutElement
+    public sealed partial class PatternImage : MaskableGraphic, ICanvasRaycastFilter, ILayoutElement
     {
         //----- params -----
 
@@ -63,7 +63,9 @@ namespace Modules.PatternTexture
         {
             get
             {
-                if (patternTexture == null)
+                var drawPatternTexture = DrawPatternTexture;
+
+                if (drawPatternTexture == null)
                 {
                     if (material != null && material.mainTexture != null)
                     {
@@ -72,7 +74,41 @@ namespace Modules.PatternTexture
                     return s_WhiteTexture;
                 }
 
-                return patternTexture.Texture;
+                return drawPatternTexture.Texture;
+            }
+        }
+
+        /// <summary> 描画に使うパターンテクスチャ </summary>
+        private PatternTexture DrawPatternTexture
+        {
+            get
+            {
+                if (patternTexture != null) { return patternTexture; }
+
+                #if UNITY_EDITOR
+
+                if (IsDummyActive) { return dummyPatternTexture; }
+
+                #endif
+
+                return null;
+            }
+        }
+
+        /// <summary> 描画に使うパターン情報 </summary>
+        private PatternData DrawSource
+        {
+            get
+            {
+                if (patternTexture != null) { return sourceTexture; }
+
+                #if UNITY_EDITOR
+
+                if (IsDummyActive) { return DummySource; }
+
+                #endif
+
+                return null;
             }
         }
 
@@ -208,13 +244,15 @@ namespace Modules.PatternTexture
 
         public override void SetNativeSize()
         {
-            if (patternTexture == null) { return; }
+            if (DrawPatternTexture == null) { return; }
 
-            if (sourceTexture == null) { return; }
+            var drawSource = DrawSource;
+
+            if (drawSource == null) { return; }
 
             rectTransform.anchorMax = rectTransform.anchorMin;
 
-            rectTransform.sizeDelta = new Vector2(sourceTexture.Width, sourceTexture.Height);
+            rectTransform.sizeDelta = new Vector2(drawSource.Width, drawSource.Height);
 
             SetAllDirty();
         }
@@ -244,11 +282,15 @@ namespace Modules.PatternTexture
 
             vh.Clear();
 
-            if (patternTexture == null) { return; }
+            var drawPatternTexture = DrawPatternTexture;
 
-            if (sourceTexture == null) { return; }
+            if (drawPatternTexture == null) { return; }
 
-            if (string.IsNullOrEmpty(currentTextureName)) { return; }
+            var drawSource = DrawSource;
+
+            if (drawSource == null) { return; }
+
+            if (patternTexture != null && string.IsNullOrEmpty(currentTextureName)) { return; }
 
             var rect = GetPixelAdjustedRect();
 
@@ -256,22 +298,22 @@ namespace Modules.PatternTexture
 
             var pos = new Vector3(rect.x, rect.y);
 
-            var textureWidth = (float)patternTexture.Texture.width;
-            var textureHeight = (float)patternTexture.Texture.height;
+            var textureWidth = (float)drawPatternTexture.Texture.width;
+            var textureHeight = (float)drawPatternTexture.Texture.height;
 
-            for (var by = 0; by < sourceTexture.YBlock; by++)
+            for (var by = 0; by < drawSource.YBlock; by++)
             {
                 var vertexSizeY = 0f;
 
-                for (var bx = 0; bx < sourceTexture.XBlock; bx++)
+                for (var bx = 0; bx < drawSource.XBlock; bx++)
                 {
-                    var block = patternTexture.GetBlockData(sourceTexture, bx, by);
+                    var block = drawPatternTexture.GetBlockData(drawSource, bx, by);
 
                     if (block == null) { continue; }
 
-                    var vertexSizeX = rect.width * ((float)block.w / sourceTexture.Width);
+                    var vertexSizeX = rect.width * ((float)block.w / drawSource.Width);
 
-                    vertexSizeY = rect.height * ((float)block.h / sourceTexture.Height);
+                    vertexSizeY = rect.height * ((float)block.h / drawSource.Height);
 
                     // 全ピクセルが透過なら描画しない.
                     if (!block.isAllTransparent)
